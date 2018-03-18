@@ -1,0 +1,2 @@
+# wasp
+🐝 Wasp = WebAssembly Lisp
