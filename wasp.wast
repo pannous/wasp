@@ -217,17 +217,28 @@
  (i32.wrap/i64 (i64.and (get_local $0) (i64.const 0x00000000FFFFFFFF) ) )
 )
 
+(func $string.add_raw (param i32) (param i32) (result i32)
+ (local $len i32)
+ (local $new i32)
+ (set_local $new (get_global $offset))
+  (set_local $len (call $string.copy (get_local $0) (get_global $offset) ))
+  (set_global $offset (i32.add (get_local $len) (get_global $offset)))
+  (drop (call $string.copy (get_local $1) (get_global $offset) ))
+  (get_local $new)
+)
 
 (func $string.add (param i64) (param i64) (result i64)
  (local $len i32)
+ (local $new i32)
+ (set_local $new (get_global $offset))
  (call $assert (call $is.string (get_local $0)))
  (call $assert (call $is.string (get_local $1)))
- ;;(if  (call $is.string (get_local $0)) (nop) (set_local $0 (call $string.raw (get_local $0)))) ;; cast
- ;;(if (call $is.string (get_local $1)) (nop) (set_local $1 (call $string.raw (get_local $1)))) ;; cast
+ ;;(if  (call $is.string (get_local $0)) (nop) (set_local $0 (call $string.from (get_local $0)))) ;; cast
+ ;;(if (call $is.string (get_local $1)) (nop) (set_local $1 (call $string.from (get_local $1)))) ;; cast
     (set_local $len (call $string.copy (get_global $offset) (call $val (get_local $0))))
     (set_global $offset (i32.add (get_local $len) (get_global $offset)))
     (drop (call $string.copy (get_global $offset) (call $val (get_local $0))))
-    (return (call $string.pointer (get_global $offset)))
+    (return (call $string.pointer (get_local $new)))
 )
 
 (func $int.parse (param i64) (result i32)
@@ -259,7 +270,7 @@
    	 ;;(call $logc (get_local $char))
      (if (get_local $char) (br $while))
   )
-  (i32.sub (get_local $0) (get_local $start))
+  (i32.sub (i32.sub (get_local $0) (get_local $start)) (i32.const 1))
 )
 	
 
@@ -277,16 +288,28 @@
   (set_local $offset (i32.sub (get_local $offset) (get_local $0)))
   (i32.sub (get_local $offset) (i32.const 1))
 )
-	
+
+
 (func $main (param i32) (result i32) 
+ (local $result i32)
  (call $logi (get_local $0))
  (call $logs (get_local $0))
   (drop (call $string.copy (get_local $0) (i32.const 20)))
-  ;;(call $string.copy (i32.const 20) (get_local $0))
-  (drop (call $string.len (i32.const 20)))
-  (return (i32.const 20))
-)
 
+  ;;(call $string.copy (i32.const 20) (get_local $0))
+  (call $logi (call $string.len (i32.const 20)))
+  ;;(call $string.add_raw (get_local $0) (i32.const 20))
+(set_local $result (call $string.add_raw (i32.const 20) (i32.const 20)))
+;;(set_local $result (call $string.add_raw (get_global $Hello) (get_global $Hello)))
+;;(call $string.len (get_global $offset))
+(call $print (get_global $offset))
+(call $print (get_global $offset))
+;;(call $print (get_global $Hello))
+;;(call $string.len (get_global $offset))
+;;(return (get_global $offset))
+(return (get_local $result))
+)
+	
 
 (func $test
  ;;(call $assert (i32.eq (i32.const 1) (i32.const 0))) throws, ok
