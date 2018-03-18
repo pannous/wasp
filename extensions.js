@@ -1104,6 +1104,7 @@ wasm = async (_wasm, imports = {}) => {
 		catch(ex=>console.error(trimStack(ex))||quit())
 		// }catch(ex){console.error(trimStack(ex));}
 	global.instance = instance
+	// memory=module.exports.memory
 	// for([k,v] of instance.exports){console.log(k)}// TypeError: undefined is not a function WTF!?!
 	for (let k of keys(instance.exports)) {
 		if (k == '__post_instantiate') continue
@@ -1111,27 +1112,33 @@ wasm = async (_wasm, imports = {}) => {
 		console.log(k)
 		global[k] = instance.exports[k]
 	}
+	buffer = new Uint8Array(memory.buffer,0 ,memory.length);
 	// for (let k of keys(instance.exports.globals)) {
 	// 	console.log(k,instance.globals[k])
-	// }
-	var offset=instance.exports.offset()||1 // 0 == NUL pointer!
-	if(offset==0)console.log("Danger NULL offset! "+offset)
-	if(offset>1)console.log("memory offset: "+offset)
-	var buffer = new Uint8Array(memory.buffer,0 ,memory.length);
-	var arg="Test";//process.argv[3] // todo : wasmx file -- args
-	if(arg)
-	for (var i=0;(i+offset)<buffer.length && i<arg.length; i++){ 
-		if(buffer[i+offset]){console.log("wasm memory not empty");break}
-		else buffer[i+offset]=ord(arg[i])
+	// // }
+	new_string=(s)=>{
+		if(!s)return 
+		var offset=instance.exports.offset()||1 // 0 == NUL pointer!
+		if(offset==0)console.log("Danger NULL offset! "+offset)
+		if(offset>1)console.log("memory offset: "+offset)
+		// instance.exports.new_string("Test")
+		for (var i=0;(i+offset)<buffer.length && i<arg.length; i++){ 
+			if(buffer[i+offset]){console.log("wasm memory not empty");break}
+			else buffer[i+offset]=ord(arg[i])
+		}
+		instance.exports.offset(arg.length)
+		return offset
 	}
+	var arg="Test";//process.argv[3] // todo : wasmx file -- args
+	s=new_string(arg); // int 'pointer' to wasm memory
 
 	if (instance.exports.main)
-		console.log(">>>", result=instance.exports.main(offset))
+		console.log(">>>", result=instance.exports.main(s))
 	if (instance.exports._main) // extern "C"
 		console.log(">>>", offset=instance.exports._main())
 	console.log("result",result)
 	log(stringy(result));
-	log(arry(result));
+	// log(arry(result));
 	log(buffer[result]);
 	return instance
 }
