@@ -30,10 +30,12 @@
  ;;(global $offset0 i32 (i32.const 100))
  (global $offset (mut i32) (i32.const 100))
 
-(func $get_offset (result i32)
+(func $get_offset (param i32) (result i32)
+ (set_global $offset (i32.add (get_local $0) (get_global $offset) ))
+ ;;(if (get_local $0) (set_global (i32.add (get_local $0) (get_global $offset) )) )
  (get_global $offset)
 )
-(export "offset" (func $get_offset (result i32))) ;; cannot export a mutable global
+(export "offset" (func $get_offset (param i32) (result i32))) ;; cannot export a mutable global
 
  (global $OK i32 (i32.const 1))
  (data (i32.const 1) "OK\00")
@@ -223,7 +225,9 @@
  (set_local $new (get_global $offset))
   (set_local $len (call $string.copy (get_local $0) (get_global $offset) ))
   (set_global $offset (i32.add (get_local $len) (get_global $offset)))
-  (drop (call $string.copy (get_local $1) (get_global $offset) ))
+  (set_local $len (call $string.copy (get_local $1) (get_global $offset) ))
+  (set_local $len (i32.add (get_local $len) (i32.const 1))) ;; '\0'
+  (set_global $offset (i32.add (get_local $len) (get_global $offset)))
   (get_local $new)
 )
 
@@ -299,10 +303,14 @@
   ;;(call $string.copy (i32.const 20) (get_local $0))
   (call $logi (call $string.len (i32.const 20)))
   ;;(call $string.add_raw (get_local $0) (i32.const 20))
-(set_local $result (call $string.add_raw (i32.const 20) (i32.const 20)))
-;;(set_local $result (call $string.add_raw (get_global $Hello) (get_global $Hello)))
+;;(set_local $result (call $string.add_raw (get_global $Hello) (get_local $0)))
+;;(set_local $result (call $string.add_raw (i32.const 20) (i32.const 20)))
+;;(set_local $result (call $string.add_raw (i32.const 20) (i32.const 100)));; cant copy to self!!
+(set_local $result (call $string.add_raw (i32.const 20) (get_global $Hello)))
+;;(set_local $result (call $string.add_raw (i32.const 20) (get_local $0)))
+(call $logi (get_local $0))
 ;;(call $string.len (get_global $offset))
-(call $print (get_global $offset))
+(call $logi (get_global $offset))
 (call $print (get_global $offset))
 ;;(call $print (get_global $Hello))
 ;;(call $string.len (get_global $offset))
