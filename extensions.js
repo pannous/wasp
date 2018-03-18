@@ -1114,7 +1114,7 @@ wasm = async (_wasm, imports = {}) => {
 	// for (let k of keys(instance.exports.globals)) {
 	// 	console.log(k,instance.globals[k])
 	// }
-	var offset=instance.exports.offset||instance.exports.mem()||1 // 0 == NUL pointer!
+	var offset=instance.exports.offset()||1 // 0 == NUL pointer!
 	if(offset==0)console.log("Danger NULL offset! "+offset)
 	if(offset>1)console.log("memory offset: "+offset)
 	var buffer = new Uint8Array(memory.buffer,0 ,memory.length);

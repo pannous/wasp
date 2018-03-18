@@ -27,8 +27,13 @@
  ;;(global $data i32 (i32.const 1))
 	;;(export "data" (global $data))
 
- (global $offset i32 (i32.const 100))
- (export "offset" (global $offset))
+ ;;(global $offset0 i32 (i32.const 100))
+ (global $offset (mut i32) (i32.const 100))
+
+(func $get_offset (result i32)
+ (get_global $offset)
+)
+(export "offset" (func $get_offset (result i32))) ;; cannot export a mutable global
 
  (global $OK i32 (i32.const 1))
  (data (i32.const 1) "OK\00")
@@ -65,7 +70,7 @@
 	(global $null  i64 (i64.const 0))
 	(global $false i32 (i32.const 0))
 	(global $true  i32 (i32.const 1))
-  (global $value.error   i64 (i64.const 0xFFFFFFFFFFFFFFFF))
+  (global $error   i64 (i64.const 0xFFFFFFFFFFFFFFFF))
   (global $mask.value    i64 (i64.const 0xFFFFFFFF00000000)) ;; shift right 32
   (global $mask.type     i64 (i64.const 0x00000000FFFFFFFF))
 
@@ -92,6 +97,9 @@
  (call $logp (get_local $type) (get_local $pointer)  ) 
 ) 
 
+(func $val (param i64) (result i32)
+ (i32.wrap/i64 (i64.shr_u (get_local $0) (i64.const 32) )) ;; shift
+) ;; ==
 (func $type.raw (param i64)  (result i32) 
  (i32.wrap/i64 (i64.shr_u (get_local $0) (i64.const 32) )) ;; shift
 ) 
@@ -180,6 +188,28 @@
  (return (get_local $i))
 )
 
+
+(func $int.multiply (param i64) (param i64) (result i64)
+ (if (call $is.int (get_local $0)) (nop) (call $raise))
+  (return (get_global $error))
+)
+
+
+
+(func $is.int (param i64) (result i32)
+ (i64.eq (call $type.of (get_local $0)) (get_global $type.int))
+)
+
+;;(func $no.int (param i64) (result i32)
+;; (i64.neq (call $type.of (get_local $0)) (get_global $type.int))
+;;)
+
+(func $multiply (param i64) (param i64) (result i64)
+ (if (call $is.int (get_local $0)) (return (call $int.multiply (get_local $0) (get_local $1))))
+  (call $raise) 
+  (return (get_global $error))
+)
+
 ;;(func $type.raw (param i64) (result i32)
 ;; (i32.wrap/i64 (i64.and (get_local $0) (i64.const 0x00000000FFFFFFFF) ) )
 ;;)
@@ -187,11 +217,24 @@
  (i32.wrap/i64 (i64.and (get_local $0) (i64.const 0x00000000FFFFFFFF) ) )
 )
 
+
+(func $string.add (param i64) (param i64) (result i64)
+ (local $len i32)
+ (call $assert (call $is.string (get_local $0)))
+ (call $assert (call $is.string (get_local $1)))
+ ;;(if  (call $is.string (get_local $0)) (nop) (set_local $0 (call $string.raw (get_local $0)))) ;; cast
+ ;;(if (call $is.string (get_local $1)) (nop) (set_local $1 (call $string.raw (get_local $1)))) ;; cast
+    (set_local $len (call $string.copy (get_global $offset) (call $val (get_local $0))))
+    (set_global $offset (i32.add (get_local $len) (get_global $offset)))
+    (drop (call $string.copy (get_global $offset) (call $val (get_local $0))))
+    (return (call $string.pointer (get_global $offset)))
+)
+
 (func $int.parse (param i64) (result i32)
  ;;(call $assert (i32.not (i32.const 0)))
  (call $logi (call $is (get_local $0) (get_global $type.string)))
  (call $assert (call $is (get_local $0) (get_global $type.string)))
- (call $atoi (i32.wrap/i64 (get_local $0)))
+ (call $atoi (call $val (get_local $0)))
  ;;(call $todo);;
  ;;(i32.const -1)
 )
@@ -204,12 +247,10 @@
  (i32.const -1)
 )
 
-(func $str_cpy (param i32) (param i32) ;; from to !
+(func $string.copy (param i32) (param i32) (result i32) ;; from to !
   (local $char i32)
-  ;;(call $logs (get_global $from))
-  ;;(call $logs (get_local $0))
-  ;;(call $logs (get_global $to))
-  ;;(call $logs (get_local $1))
+  (local $start i32)
+  (set_local $start (get_local $0))
   (loop $while
   	 (set_local $char (i32.load8 (get_local $0)))
    	 (i32.store8 (get_local $1) (get_local $char))
@@ -218,6 +259,7 @@
    	 ;;(call $logc (get_local $char))
      (if (get_local $char) (br $while))
   )
+  (i32.sub (get_local $0) (get_local $start))
 )
 	
 
@@ -239,8 +281,8 @@
 (func $main (param i32) (result i32) 
  (call $logi (get_local $0))
  (call $logs (get_local $0))
-  (call $str_cpy (get_local $0) (i32.const 20))
-  ;;(call $str_cpy (i32.const 20) (get_local $0))
+  (drop (call $string.copy (get_local $0) (i32.const 20)))
+  ;;(call $string.copy (i32.const 20) (get_local $0))
   (drop (call $string.len (i32.const 20)))
   (return (i32.const 20))
 )
