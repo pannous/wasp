@@ -12,13 +12,13 @@
 
  ;; If you try to call a exported wasm function that takes or returns an i64 type value, it currently throws
  ;; This may change — a new int64 type is being considered for future standards, which could then be used by wasm.
- (import "console" "log" (func $logp (param i32 i32))) ;;  pointer to anything / string!
+ (import "console" "log" (func $logp (param i32 i32))) ;;  pointer of any type to anything / string!
  (import "console" "logs" (func $logs (param i32))) ;;  pointer to string!
- (import "console" "logc" (func $logc (param i32))) ;;  int as char
- (import "console" "logi" (func $logi (param i32)))
- (import "console" "logx" (func $logx (param i32)))
+ (import "console" "logc" (func $logc (param i32))) ;; char
+ (import "console" "logi" (func $logi (param i32))) ;; int
+ (import "console" "logx" (func $logx (param i32))) ;; hex
  (import "console" "logi" (func $logf (param f64))) 
- (import "console" "logi" (func $logn (param f64))) 
+ (import "console" "logi" (func $logn (param f64))) ;;
  (import "console" "raise" (func $imports.raise)) ;; (param i64)
 
  ;;(global $a-mutable-global (mut f32) (f32.const 7.5))
@@ -42,32 +42,32 @@
  (data (i32.const 20) "Hello!\00")
 
 
-  (global $type.error i32 (i32.const -1))
-  (global $type.null 	i32 (i32.const 0))
-  (global $type.bool 	i32 (i32.const 0))
-  (global $type.int 	i32 (i32.const 0))
-  (global $type.byte 	i32 (i32.const 1))
-  (global $type.short i32 (i32.const 2))
-  (global $type.type 	i32 (i32.const 3))
-  (global $type.word 	i32 (i32.const 4)) ;; vs int32 float32 !
-  (global $type.json5 i32 (i32.const 5))
-  (global $type.json 	i32 (i32.const 6))
-  (global $type.data 	i32 (i32.const 7)) ;; serialized
-  (global $type.pointer i32 (i32.const 8));; vs int64, float64
-  (global $type.string i32 (i32.const 9))
-  (global $type.array  i32 (i32.const 0xA))
-  (global $type.binary i32 (i32.const 0xB)) ;; ??
-  (global $type.code   i32 (i32.const 0xC)) ;; ??
-  (global $type.data	 i32 (i32.const 0xD)) ;; ??
-  (global $type.object i32 (i32.const 0xE)) ;; entity
-  (global $type.char i32 (i32.const 20))
+  (global $type.error i64 (i64.const -1))
+  (global $type.null 	i64 (i64.const 0))
+  (global $type.bool 	i64 (i64.const 0))
+  (global $type.int 	i64 (i64.const 0))
+  (global $type.byte 	i64 (i64.const 1))
+  (global $type.short i64 (i64.const 2))
+  (global $type.type 	i64 (i64.const 3))
+  (global $type.word 	i64 (i64.const 4)) ;; vs int32 float32 !
+  (global $type.json5 i64 (i64.const 5))
+  (global $type.json 	i64 (i64.const 6))
+  (global $type.object 	i64 (i64.const 7)) ;; serialized
+  (global $type.pointer i64 (i64.const 8));; vs int64, float64
+  (global $type.string i64 (i64.const 9))
+  (global $type.array  i64 (i64.const 0xA))
+  (global $type.binary i64 (i64.const 0xB)) ;; ??
+  (global $type.code   i64 (i64.const 0xC)) ;; ??
+  (global $type.data	 i64 (i64.const 0xD)) ;; ??
+  ;;(global $type.objecte i64 (i64.const 0xE)) ;; entity
+  (global $type.char i64 (i64.const 20))
 
 	(global $null  i64 (i64.const 0))
 	(global $false i32 (i32.const 0))
 	(global $true  i32 (i32.const 1))
-	(global $value.error32 i32 (i64.const 0xFFFFFFFF))
-	(global $value.error64 i64 (i64.const 0xFFFFFFFFFFFFFFFF))
-	(global $value.error   i64 (i64.const 0xFFFFFFFFFFFFFFFF))
+  (global $value.error   i64 (i64.const 0xFFFFFFFFFFFFFFFF))
+  (global $mask.value    i64 (i64.const 0xFFFFFFFF00000000)) ;; shift right 32
+  (global $mask.type     i64 (i64.const 0x00000000FFFFFFFF))
 
 
 (func $ok 
@@ -84,7 +84,7 @@
 (func $log (param i64) 
  (local $type i32) 
  (local $pointer i32) 
- (set_local $type (call $type.ofi (get_local $0) ) )
+ (set_local $type (i32.wrap/i64 (call $type.of (get_local $0) ) ))
  (set_local $pointer (call $type.raw (get_local $0) )) 
  (call $logx (i32.const 0xFFFFFFFF))
  (call $logx (get_local $type) ) 
@@ -92,17 +92,29 @@
  (call $logp (get_local $type) (get_local $pointer)  ) 
 ) 
 
-(func $type.of (param i64)  (result i64) 
- (i64.and (get_local $0) (i64.const 0xFFFFFFFF00000000))
+(func $type.raw (param i64)  (result i32) 
+ (i32.wrap/i64 (i64.shr_u (get_local $0) (i64.const 32) )) ;; shift
 ) 
 
-(func $type.ofi (param i64)  (result i32)
- (i32.wrap/i64 (i64.shr_u (get_local $0) (i64.const 32) ))
- ;;(i64.and (get_local $0) (i64.const 0xFFFFFFFF00000000))
+(func $type.of (param i64)  (result i64)
+ (i64.and (get_local $0) (i64.const 0x00000000FFFFFFFF))
+) 
+(func $type.of32 (param i64)  (result i32)
+ (i32.wrap/i64 (get_local $0))
 ) 
 
 (func $type.to (param i32) (param i64) (result i64)
- (i64.or (i64.extend_u (get_local $0)) (get_global $type.string))
+ (i64.or 
+    (i64.shl_u (i64.extend_u (get_local $0)) (i64.const 32))
+    (get_local $1)
+  )
+)
+
+(func $type.to32 (param i32) (param i32) (result i64)
+ (i64.or 
+    (i64.extend_u (get_local $0)) 
+    (i64.extend_u (get_local $1)) 
+  )
 )
 ;;(func $type.to (param i32) (param i32) (result i64)
 ;; (i64.or (i64.extend_u (get_local $0)) (get_global $type.string))
@@ -167,9 +179,10 @@
  )
  (return (get_local $i))
 )
-(func $type.raw (param i64) (result i32)
- (i32.wrap/i64 (i64.and (get_local $0) (i64.const 0x00000000FFFFFFFF) ) )
-)
+
+;;(func $type.raw (param i64) (result i32)
+;; (i32.wrap/i64 (i64.and (get_local $0) (i64.const 0x00000000FFFFFFFF) ) )
+;;)
 (func $string.raw (param i64) (result i32)
  (i32.wrap/i64 (i64.and (get_local $0) (i64.const 0x00000000FFFFFFFF) ) )
 )
@@ -242,8 +255,8 @@
  (call $assert (i32.eq (i32.const 1) (i32.const 1)))
 	(set_local $s (call $string.pointer (get_global $OK))) 
  (call $log (get_local $s)) 
-	(call $assert (i64.eq (call $type.of (get_local $s)) (get_global $type.string) ) )
-	(call $assert_eq32 (call $type.ofi (get_local $s)) (i32.const  0x10000000 ))
+  (call $assert (i64.eq (call $type.of (get_local $s)) (get_global $type.string) ) )
+	(call $assert (i64.eq (call $type.of (get_local $s)) (i64.const 9) ) )
 	(call $logi (call $type.raw (get_local $s))) 
 	(call $assert (i32.eq (call $type.raw (get_local $s)) (get_global $OK) ) )
 	(call $assert (call $is.string (get_local $s)))
