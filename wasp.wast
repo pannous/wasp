@@ -304,7 +304,7 @@
  (local $char i32)
  (local $char_x i32)
  (local $offset i32) ;; flip len-1-i with i
- (set_local $len (call $string.length (get_local $0)))
+ (set_local $len (call $string.len (get_local $0)))
  (set_local $offset (i32.sub (get_local $len) (i32.const 1)))
  ;;(call $assert (i32.eq (call $type.of $0) (get_global $type.string)))
   (loop $while
@@ -312,9 +312,10 @@
      (set_local $char_x (i32.load8 (get_local $0)))
      (i32.store (get_local $offset) (get_local $char_x))
      (i32.store (get_local $0) (get_local $char))
-  (set_local $0 (i32.add (get_local $0) (i32.const 1)))
-  (set_local $offset (i32.sub (get_local $offset) (i32.const 1)))
-  (if (i64.lt (get_local $offset) (get_local $0)) (br $while))
+    (set_local $0 (i32.add (get_local $0) (i32.const 1)))
+    (set_local $offset (i32.sub (get_local $offset) (i32.const 1)))
+    (if (i32.const 1) (br $while)) 
+    ;;(if (i32.lt (get_local $offset) (get_local $0)) (br $while)) 
   )
   (return (get_local $0))
 )
@@ -327,7 +328,7 @@
 
   ;;(call $string.copy (i32.const 20) (get_local $0))
   (call $logi (call $string.len (i32.const 20)))
-  (call $log (call $string.reverse! (i32.const 20)))
+  (call $logs (call $string.reverse! (i32.const 20)))
   ;;(call $string.add_raw (get_local $0) (i32.const 20))
 ;;(set_local $result (call $string.add_raw (get_global $Hello) (get_local $0)))
 ;;(set_local $result (call $string.add_raw (i32.const 20) (i32.const 20)))
