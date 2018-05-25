@@ -1,4 +1,6 @@
 ;; wasmx foo.wast
+;; Wasm Lisp
+;; See schism https://github.com/google/schism for a complete lisp on WebAssembly
 ;; https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md
 ;; http://webassembly.org/docs/js/
 ;; https://github.com/WebAssembly/host-bindings
