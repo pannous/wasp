@@ -1,13 +1,14 @@
 ;; wasmx foo.wast
 ;; https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md
 ;; http://webassembly.org/docs/js/
+;; https://github.com/WebAssembly/host-bindings
 (module
 
  (table 1 1 anyfunc)
- (memory $0 10)
+ (import "env" "memory" (memory $0 1)) ;; use 
+ (export "memory" (memory $0))
  (start $test) ;; start must have 0 params
 
-	(export "memory" (memory $0))
 	(export "main" (func $main))
 
  ;; If you try to call a exported wasm function that takes or returns an i64 type value, it currently throws
@@ -20,6 +21,7 @@
  (import "console" "logi" (func $logf (param f64))) 
  (import "console" "logi" (func $logn (param f64))) ;;
  (import "console" "raise" (func $imports.raise)) ;; (param i64)
+ (import "global" "NaN" (global $NaN f64))
 
  ;;(global $a-mutable-global (mut f32) (f32.const 7.5))
  ;;(elem (i32.const 0) "$kitchen()sinker")
@@ -27,8 +29,10 @@
  ;;(global $data i32 (i32.const 1))
 	;;(export "data" (global $data))
 
- ;;(global $offset0 i32 (i32.const 100))
- (global $offset (mut i32) (i32.const 100))
+ ;;(global $MEMORY_BASE i32 (i32.const 100))
+  ;;(global $HEAP_BASE i32 (i32.const 100))
+ (global $offset (mut i32) (i32.const 100));; current heap pointer (after last object)
+
 
 (func $get_offset (param i32) (result i32)
  (set_global $offset (i32.add (get_local $0) (get_global $offset) ))
@@ -93,7 +97,7 @@
  (local $pointer i32) 
  (set_local $type (i32.wrap/i64 (call $type.of (get_local $0) ) ))
  (set_local $pointer (call $type.raw (get_local $0) )) 
- (call $logx (i32.const 0xFFFFFFFF))
+ (call $logx (i32.const 0xFFFFFFFF)) ;; -1 why?
  (call $logx (get_local $type) ) 
  (call $logx (get_local $pointer) ) 
  (call $logp (get_local $type) (get_local $pointer)  ) 
@@ -293,6 +297,25 @@
   (i32.sub (get_local $offset) (i32.const 1))
 )
 
+(func $string.reverse! (param i32) (result i32)
+ (local $len i32)
+ (local $char i32)
+ (local $char_x i32)
+ (local $offset i32) ;; flip len-1-i with i
+ (set_local $len (call $string.length (get_local $0)))
+ (set_local $offset (i32.sub (get_local $len) (i32.const 1)))
+ ;;(call $assert (i32.eq (call $type.of $0) (get_global $type.string)))
+  (loop $while
+     (set_local $char (i32.load8 (get_local $offset)))
+     (set_local $char_x (i32.load8 (get_local $0)))
+     (i32.store (get_local $offset) (get_local $char_x))
+     (i32.store (get_local $0) (get_local $char))
+  (set_local $0 (i32.add (get_local $0) (i32.const 1)))
+  (set_local $offset (i32.sub (get_local $offset) (i32.const 1)))
+  (if (i64.lt (get_local $offset) (get_local $0)) (br $while))
+  )
+  (return (get_local $0))
+)
 
 (func $main (param i32) (result i32) 
  (local $result i32)
@@ -302,6 +325,7 @@
 
   ;;(call $string.copy (i32.const 20) (get_local $0))
   (call $logi (call $string.len (i32.const 20)))
+  (call $log (call $string.reverse! (i32.const 20)))
   ;;(call $string.add_raw (get_local $0) (i32.const 20))
 ;;(set_local $result (call $string.add_raw (get_global $Hello) (get_local $0)))
 ;;(set_local $result (call $string.add_raw (i32.const 20) (i32.const 20)))
@@ -323,7 +347,10 @@
  ;;(call $assert (i32.eq (i32.const 1) (i32.const 0))) throws, ok
 	(local $s i64)  
  ;;(call $log (i64.const 0xFFFFDDDD11112222))
+ (call $logf (f64.const 0.123))
+ (call $log (i64.reinterpret/f64 (get_global $NaN))) ;; (f64.const 0.123)))
  (call $log (i64.const 0x1111222255556666))
+ ;;(call $logx (get_global $NaN))
  (call $ok) 
  (call $assert (i32.eq (i32.const 1) (i32.const 1)))
 	(set_local $s (call $string.pointer (get_global $OK))) 
