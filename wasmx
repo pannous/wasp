@@ -3,7 +3,7 @@
 // export NODE_PATH=/usr/lib/node_modules
 module.paths.push("/usr/lib/node_modules/"); // WHY??
 let {TextEncoder, TextDecoder} = require('text-encoding')
-exec=x=>require('child_process').execSync(x).toString()
+exec = x => require('child_process').execSync(x).toString()
 
 // test="/me/dev/script/wasm/wasp/wasp.wast"
 // test="/me/dev/script/kotlin/a.out.wasm"
@@ -34,16 +34,16 @@ backtrace = function (print = 1) {
         if (print) console.error(trimStack(ex, 1)); else return trimStack(ex)
     }
 }
-todo = x=>console.log("TODO ",x)
+todo = x => console.log("TODO ", x)
 demangle = function (line) {
     // return line
     if (!line.match("at ")) return line
     // name=line.match(/at ([a-zA-Z0-9.]*)/)[1]
     var [at, name, fun] = line.trim().split(' ')
     if (!name) return line
-    if (name[0]!=='_') return line
-    console.log("c++filt >>>>>>>>>>>>>>>>>>",name);
-    console.log(exec("c++filt "+	name))
+    if (name[0] !== '_') return line
+    console.log("c++filt >>>>>>>>>>>>>>>>>>", name);
+    console.log(exec("c++filt " + name))
     type = name.match(/E(.*)/)
     type = type || name.match(/PK(.*)/)
     type = type ? type[1] || "" : ""
@@ -129,9 +129,9 @@ string = function (pointer, length = -1, format = 'utf8') {
 }
 
 
-string2 = (offset,length=-1) => {
+string2 = (offset, length = -1) => {
     var str = '';
-    for (var i = offset; (buffer[i] || buffer[i + 1]||length-->0) && i < buffer.length; i++)
+    for (var i = offset; (buffer[i] || buffer[i + 1] || length-- > 0) && i < buffer.length; i++)
         str += String.fromCharCode(buffer[i]);
     return str
 }
@@ -177,15 +177,16 @@ parse = (x, type) => {
 
 
 // missing_dependency = x => console.log("missing_dependency " + x)
-truenames={}
-missing_dependency =(module,fun)=>function (x,y,z,a) {
-	true_name=truenames[fun]
-	if(!true_name){
-    true_name=exec('c++filt '+fun)
-    truenames[fun]=true_name
-	}
-    console.log("missing dependency "+module+"." +fun + "(", x||''+y||''+z||''+a||'',") : ",true_name)
+truenames = {}
+missing_dependency = (module, fun) => function (x, y, z, a) {
+    true_name = truenames[fun]
+    if (!true_name) {
+        true_name = exec('c++filt ' + fun)
+        truenames[fun] = true_name
+    }
+    console.log("missing dependency " + module + "." + fun + "(", x || '' + y || '' + z || '' + a || '', ") : ", true_name)
 }
+
 function load_wasm_dependencies(_wasm, imports) {
     try {
         parser = require('@webassemblyjs/wasm-parser') // pure JavaScript the others are compiled c ++
@@ -201,7 +202,7 @@ function load_wasm_dependencies(_wasm, imports) {
             if (!imports[modul]) imports[modul] = {}
             if (!imports[modul][fun] && 0 !== imports[modul][fun]) {
                 console.log("missing dependency " + modul + " . " + fun)
-                imports[modul][fun] = imports['env'][fun]|| missing_dependency(modul,fun)||nop
+                imports[modul][fun] = imports['env'][fun] || missing_dependency(modul, fun) || nop
             }
         }
     } catch (x) {
@@ -300,28 +301,33 @@ const readStr = (ptr, len) => {
     }
     return str;
 }
-function debug(what,stack=true) {
+
+function debug(what, stack = true) {
     return function (a, b, c, x, y, z) {
         inspect(what, a, b, c, x, y, z)
-        if(stack)printBacktrace()
+        if (stack) printBacktrace()
     }
 
 }
-function inspect(a, b, c, x, y, z){
-    let whom=arguments.callee.caller.name || inspect.caller.name
-    console.log("inspect ", whom, a, b, c, x, y, z);}
-// printf = (format, val) => process.stdout.write(string(format,length))
-printf = (format,val)=>process.stdout.write(string(format).replace("%s",string(val)).replace("%i",val))
+
+function inspect(a, b, c, x, y, z) {
+    let whom = arguments.callee.caller.name || inspect.caller.name
+    console.log("inspect ", whom, a, b, c, x, y, z);
+}
+
+print = (val) => process.stdout.write(string(val));// no \n newline
+printf = (format, val) => process.stdout.write(string(format).replace("%s", string(val)).replace("%i", val))
+
 raise = x => {
     throw new Error(string(x))
 }
-memset = function(ptr, value, num ){
-    console.log('todo("memset")',ptr, value, num)
+memset = function (ptr, value, num) {
+    console.log('todo("memset")', ptr, value, num)
 }
-malloc = function(amount){
-    todo("malloc "+amount)
-    STACK+=amount;
-    imports.env.memoryBase+=amount // ?
+malloc = function (amount) {
+    todo("malloc " + amount)
+    STACK += amount;
+    imports.env.memoryBase += amount // ?
 }
 
 imports = {
@@ -329,7 +335,7 @@ imports = {
     env: {
         memory,
         table,
-        memoryBase: 256*8*8, // todo
+        memoryBase: 256 * 8 * 8, // todo
         tableBase: 0, // how to set generically for emcc compiled stuff?
         DYNAMICTOP_PTR: 0,
         tempDoublePtr: 0,
@@ -338,7 +344,7 @@ imports = {
 
         // _raise:x=>{throw new Error(string(x))},
         _log, _logx, _logc, _logs, _logp, _logi, log16, //emcc
-        log, logc, logs, logx, logi: log, puts: logs, printf, putchar: logc,
+        log, logc, logs, logx, logi: log, puts: logs, printf, print, putchar: logc, puts: logs, println: printf,
         backtrace: debug("backtrace"),
         raise,
         // ^^ mine
@@ -411,12 +417,12 @@ function wasmx(file) {
         HEAP = exports.__heap_base // ~68000
         DATA_END = exports.__data_end // ~1100
         STACK = HEAP || DATA
-        imports.env.memoryBase=DATA_END // too late
-        i=0
-        while(i<DATA_END&&!buffer[i++]);
-        console.log("FIRST DATA ",i," DATA_END ", DATA_END, " HEAP ",HEAP)
+        imports.env.memoryBase = DATA_END // too late
+        i = 0
+        while (i < DATA_END && !buffer[i++]) ;
+        console.log("FIRST DATA ", i, " DATA_END ", DATA_END, " HEAP ", HEAP)
         console.log("first data:")
-        logs(i,100)
+        logs(i, 100)
         // for (let k of keys(instance.exports.globals))
         // 	console.log(k,instance.globals[k])
 
@@ -429,7 +435,7 @@ function wasmx(file) {
             plain = ex.replace(/^_*/, '')
             // if(!exports[plain]) instance.exports[plain]=exports[ex] DOESNT WORK WY
             // if (!ex.match("__"))
-                console.log(ex)//.replace(/^_/,''))
+            console.log(ex)//.replace(/^_/,''))
         }
         // arg=parseInt(args[0])
         let main = exports.main || exports._main/*cpp*/ || exports.run/*go*/ || exports.Konan_main || exports[func]
@@ -440,9 +446,9 @@ function wasmx(file) {
         HEAP = exports.__heap_base
         DATA_END = exports.__data_end
         STACK = HEAP || DATA
-        i=0
-        while(i<DATA_END&&!buffer[i++]);
-        console.log("FIRST DATA ",i," DATA_END ", DATA_END, " HEAP ",HEAP)
+        i = 0
+        while (i < DATA_END && !buffer[i++]) ;
+        console.log("FIRST DATA ", i, " DATA_END ", DATA_END, " HEAP ", HEAP)
 
         return result
     } catch (ex) {

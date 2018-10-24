@@ -22,14 +22,20 @@ extern "C" void logs(const char *);
 #ifndef WASM
 
 #include <cstdio>
+
 void raise(chars error);
+
 void logs(const char *s) {
 	printf("%s\n", s);
 }
-void logi(long i){
+
+void logi(long i) {
 	printf("%li\n", i);
 }
+
 #else
+
+extern "C" void print (const char *);// no \n newline
 extern "C" void logs (const char *);
 extern "C" void logc(char s);
 extern "C" void logi(int i);
@@ -38,7 +44,6 @@ void printf(const char *format, int i);
 void printf(const char *format, chars i);
 //  extern "C" int printf (const char *__restrict __format, ...);
 #endif
-
 
 
 int atoi(const char *__nptr);
@@ -242,10 +247,10 @@ public:
 
 
 	String *operator+=(char c) {
-		if (data + length + 100 >= (char*) heap) {// just append recent
+		if (data + length + 1 == (char *) memory) {// just append recent
 			data[length++] = c;
 			data[length] = 0;
-			heap += 2;
+			memory += 2;
 		} else {
 			auto *neu = static_cast<char *>(malloc(sizeof(char) * length + 5));
 			if (data)strcpy(neu, data);
@@ -271,14 +276,17 @@ public:
 //	}
 
 	String operator+(bool b) {
-		return this->operator+(b?" true":" false");
+		return this->operator+(b ? " true" : " false");
 	}
+
 	String operator+(long i) {
 		return this->operator+(String(i));
 	}
+
 	String operator+(int i) {
 		return this->operator+(String(i));
 	}
+
 	String operator+(char c) {
 		return this->operator+(String(c));
 	}
@@ -314,9 +322,9 @@ public:
 		return !data || data[0] == 0;
 	}
 
-	String replace(chars string, chars with) {
+	int indexOf(chars string) {
 		int l = len(string);
-		for (int i = 0; i < length - l; i++) {
+		for (int i = 0; i <= length - l; i++) {
 			bool ok = true;
 			for (int j = 0; j < l; j++) {
 				if (data[i + j] != string[j]) {
@@ -324,11 +332,21 @@ public:
 					break;
 				}
 			}
-			if (ok) {
-				return String(substring(0, i) + with + substring(i + l, length));
-			}
+			if (ok)
+				return i;
 		}
-		return *this;
+		return -1;//
+	}
+	bool contains(chars string){
+		return indexOf(string)>=0;
+	}
+
+	String replace(chars string, chars with) {
+		int i = this->indexOf(string);
+		if (i >= 0)
+			return String(substring(0, i) + with + substring(i + len(string), length));
+		else
+			return *this;
 	}
 };
 
@@ -369,7 +387,7 @@ Node *NIL = nullptr;
 class Node {
 public:
 	Value value;
-	Node *parent;
+	Node *parent = 0;
 	Entry *children = nullptr;
 	Type type = unknown;
 	int length = 0;
@@ -509,20 +527,20 @@ void log(Node *n0) {
 
 #ifdef WASM
 void printf(const char *s) {
-	logs(s);
+	print(s);
 }
 void printf(const char *format, int i) {
-	logs(String(format).replace("%d", String((long)i)));
+	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
 void printf(const char *format, long i) {
-	logs(String(format).replace("%d", String(i)));
+	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
 void printf(const char *format, chars value) {
-	logs(String(format).replace("%s", value));
+	print(String(format).replace("%s", value));
 }
 
 void printf(const char *format, void* value) {
-	logs(String(format).replace("%p", String((long)value)));
+	print(String(format).replace("%p", String((long)value)));
 }
 #endif
 

@@ -13,8 +13,8 @@ set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 #find_package( READLINE )
 
 #-std=c99 -Wall -j8
-set(CMAKE_C_FLAGS "-lreadline -lz -Wno-write-strings ")
-set(CMAKE_CXX_FLAGS "-lreadline -lz -Wno-write-strings -Wno-deprecated ${CMAKE_CXX_FLAGS}")
+#set(CMAKE_C_FLAGS "-lreadline -lz -Wno-write-strings ")
+set(CMAKE_CXX_FLAGS "-lreadline -lz -Wno-write-strings -dM -Wno-deprecated ${CMAKE_CXX_FLAGS}")
 
 set(SOURCE_FILES mark.cpp)
 #String.cpp
