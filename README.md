@@ -1,4 +1,4 @@
-<h1 style='font-family:Helvetica,Arial,sans-serif'>Mark Notation</h1>
+# Mark Notation
 
 [![npm version](https://badge.fury.io/js/mark-js.svg)](https://badge.fury.io/js/mark-js)
 [![Build Status](https://travis-ci.org/henry-luo/mark.svg?branch=master)](https://travis-ci.org/henry-luo/mark)
@@ -29,7 +29,7 @@ For example, a HTML registration form:
 
 ```html
 <form>
-  <!-- comment -->
+  <!--comment-->
   <div class="form-group">
     <label for="email">Email address:</label>
     <input type="email" id="email">
@@ -46,7 +46,7 @@ Could be represented in Mark as:
 
 ```text
 {form                                   // object type-name 'form'
-  {!-- comment --}                      // Mark pragma, similar to HTML comment
+  (!--comment)                          // Mark pragma, like HTML comment
   {div class:"form-group"               // nested Mark object
     {label for:"email"                  // object with property 'for'
       "Email address:"                  // text needs to be quoted
@@ -55,7 +55,7 @@ Could be represented in Mark as:
   }
   {div class:"form-group"
     {label for:"pwd" "Password"}
-    {input type:"password" id:"pwd"}    // comma between properties is optional
+    {input type:"password" id:"pwd"}    // comma is optional 
   }
   {button class:['btn' 'btn-info']      // property with complex values
     'Submit'                            // text quoted with single quote
@@ -67,17 +67,19 @@ You can refer to the [syntax spec](https://mark.js.org/mark-syntax.html) for det
 
 ## Mark Data Model
 
-Mark object has a very simple and fully-typed data model. Each Mark object has 3 facets of data:
+Mark has a very simple and fully-typed data model. 
+
+Each Mark object has 3 facets of data:
 
 - **Type name**, which is mapped to `object.constructor.name` under JavaScript.
 - **Properties**, which is a collection of key-value pairs, stored as normal JavaScript *named properties*.
 - **Contents**, which is a list of content objects, stored as *indexed properties* inside the same JavaScript object.
 
-Mark utilizes a novel feature in JavaScript that an plain JS object is actually *array-like*, it can contain both named properties and indexed properties.
+Mark utilizes a novel feature in JavaScript that a plain JS object is actually *array-like*, it can contain both named properties and indexed properties.
 
-So each Mark object is mapped to just **one** plain JavaScript object, which is more compact and efficient comparing to other JSON-based DOM models (e.g. [JsonML](http://www.jsonml.org/), [virtual-dom](https://github.com/Matt-Esch/virtual-dom)), and more intuitive to used in JS.
+So each Mark object is mapped to just **one** plain JavaScript object, which is more compact and efficient comparing to other JSON-based DOM models (e.g. [JsonML](http://www.jsonml.org/), [virtual-dom](https://github.com/Matt-Esch/virtual-dom), [MicroXML](https://dvcs.w3.org/hg/microxml/raw-file/tip/spec/microxml.html)), and more intuitive to used in JS.
 
-Roughly speaking, data model of JSON, XML/HTML are subsets of Mark, and Mark data model is a subset of JS data model.
+Roughly speaking, data models of JSON, XML/HTML are subsets of Mark data model, and Mark data model is a subset of JS data model.
 
 <div align="center">
 <img src='https://mark.js.org/data-model.png' width='300'>
@@ -93,7 +95,7 @@ Comparing to JSON, Mark has the following advantages:
 
 - It has a type-name, which is important in identifying what the data represents; whereas JSON is actually an anonymous object, missing the type name.
 - It can have nested content objects, which is common in all markup formats, and thus allows Mark to convenient represent document-oriented data, which is awkward for JSON.
-- It incorporates most of the enhancements of [JSON5](http://json5.org/) to JSON (e.g. allowing comments, property name without quotes, etc.), and makes the format more friendly for human.
+- It incorporates some syntax enhancements to JSON (e.g. allowing comments, property name without quotes, optional trailing comma or between properties and array values), and makes the format more friendly for human.
 
 Some disadvantages of Mark, comparing to JSON would be:
 
@@ -127,11 +129,12 @@ The advantage of Mark over S-expressions is that it takes a more modern, JS-firs
 
 ## mark.js
 
-`mark.js` is the JS library to work with data in Mark format. It consists of 3 modules:
+`mark.js` is the JS library to work with data in Mark format. It consists of 4 modules:
 
-- The core module `mark.js`, which provides `parse()` and `stringify()` functions, like JSON, and a direct Mark object construction function `Mark()`. *(in beta)*
-- Sub-module `mark.convert.js`, which provides conversion between Mark format and other formats like HTML, XML, etc. *(in beta)*
-- Sub-module `mark.selector.js`, which provides CSS selector based query interface on the Mark object model, like jQuery. *(in beta)*
+- The core module `mark.js`, which provides `parse()` and `stringify()` functions, like JSON, and a direct Mark object construction function `Mark()`, and some functional APIs to work with the object content.
+- Sub-module `mark.mutate.js`, which provides mutative APIs to change the Mark object data model.
+- Sub-module `mark.convert.js`, which provides conversion between Mark format and other formats like HTML and XML.
+- Sub-module `mark.selector.js`, which provides CSS selector based query interface on the Mark object model, like jQuery.
 
 ## Usage
 
@@ -154,12 +157,14 @@ To use the library in browser, you can include the `mark.js` under `/dist` direc
 ```html
 <script src='mark.js'></script>
 <script>
-var obj = Mark.parse(`{div {span 'Hello World!'}}`);
+var obj = Mark(`{div {span 'Hello World!'}}`);  // using a shorthand
 console.log("Greeting from Mark: " + Mark.stringify(obj));
 </script>
 ```
 
-*Note: /dist/mark.js has bundled mark.convert.js and mark.selector.js and all dependencies with it, and is meant to run in browser. The entire script is about 13K after gzip. It supports latest browsers, including Chrome, Safari, Firefox, Edge.*
+Note: /dist/mark.js has bundled mark.mutate.js, mark.convert.js and mark.selector.js and all dependencies with it, and is meant to run in browser. The entire script is about 14K after gzip. It supports latest browsers, including Chrome, Safari, Firefox, Edge.
+
+*If you just want the core functional API, without the sub-modules, you can also use mark.core.js, which is only 7K after gzip. You can also refer to the package.json to create your own custom bundle with the sub-modules you need.* 
 
 *If you need to support legacy browsers, like IE11, which do not have proper ES6 support, you need to use /dist/mark.es5.js. IE < 11 are not supported.*
 
@@ -168,7 +173,7 @@ console.log("Greeting from Mark: " + Mark.stringify(obj));
 - [Syntax specification](https://mark.js.org/mark-syntax.html)
 - [Data model and API specification](https://mark.js.org/mark-model.html)
 - [FAQ](https://mark.js.org/faq.html)
-- Past discussion about Mark at [Hacker News](https://news.ycombinator.com/item?id=16308581)
+- Discussion about Mark at [Hacker News](https://news.ycombinator.com/item?id=16308581)
 - Examples:
   - You can take a look at all the [test scripts](https://github.com/henry-luo/mark/tree/master/test), which also serve as basic demonstration of API usage.
   - [Mark HTML example](https://plnkr.co/edit/DCgNxf?p=preview)
