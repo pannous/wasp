@@ -6,25 +6,74 @@
 // which is further based of Douglas Crockford's json_parse.js:
 // https://github.com/douglascrockford/JSON-js/blob/master/json_parse.js
 
+"use strict";
+
 // symbols used internally
-const $length = Symbol('Mark.length');
-const $parent = Symbol('Mark.parent');
-const $pragma = Symbol('Mark.pragma');
+const $length = Symbol.for('Mark.length'), // for content length
+	$parent = Symbol.for('Mark.parent'), // for parent object
+	$pragma = Symbol.for('Mark.pragma'), // for pragma value
+	$paired = Symbol.for('Mark.pragmaPaired');
+	
+let $convert = null,  // Mark Convert API
+	$ctrs = {};	// cached constructors for the Mark objects
 
-// static Mark API
+// MARK is the static Mark API, it is different from the Mark.prototype that Mark object extends
 var MARK = (function() {
-	"use strict";
-	// cached constructors for the Mark objects
-	let constructors = {};	
+	// patch IE11
+	if (!$ctrs.constructor.name) { // IE11 does not set constructor.name to 'Object'
+		$ctrs.constructor.name = 'Object';
+	}
 
-	// Mark object constructor
-	function Mark(typeName, props, contents, parent) {
-		"use strict";
+	function push(val) {
+		let len = this[$length];
+		let t = typeof val;
+		if (t === 'string') {
+			if (!val.length) return; // skip empty text '', ""
+			let prevType = len ? (typeof this[len - 1]):null;
+			if (prevType === 'string') { 
+				len--;  val = this[len] + val;  // merge text nodes
+			}
+		}
+		else if (t === 'object') {
+			if (val === null) return; // skip null value
+			else if (val instanceof Array) { // expanded it inline
+				for (let v of val) { push.call(this, v); }
+				return;
+			}
+			// else, Mark object or pragma
+			val[$parent] = this;  // set $parent
+		}
+		else if (t === 'undefined') {
+			return;
+		}
+		else { // other primitive values are converted to string
+			val = val.toString(); // convert to string, as Mark only accept text and Mark object as content
+			let prevType = len ? (typeof this[len - 1]):null;
+			if (prevType === 'string') {
+				len--;  val = this[len] + val;  // merge text nodes
+			}
+		}
+		Object.defineProperty(this, len, {value:val, writable:true, configurable:true}); // make content non-enumerable
+		this[$length] = len + 1;
+		// additional params
+		for (let i=1; i<arguments.length; i++) {
+			push.call(this, arguments[i]);
+		}
+		return this;  // for call chaining
+	}
+	
+	// Mark.prototype and Mark object constructor
+	function Mark(typeName, props, contents) {
+		// handle special shorthand
+		if (arguments.length === 1 && typeName[0] === '{') { 
+			return MARK.parse(typeName); 
+		}
+		
 		// 1. prepare the constructor
-		var con = constructors[typeName];
+		let con = $ctrs[typeName];
 		if (!con) {
 			if (typeof typeName !== 'string') { throw "Type name should be a string"; }
-			con = constructors[typeName] = function(){};
+			con = $ctrs[typeName] = function(){};
 			// con.prototype.constructor is set to con by JS
 			// sets the type name
 			Object.defineProperty(con, 'name', {value:typeName, configurable:true}); // non-writable, as we don't want the name to be changed
@@ -36,75 +85,21 @@ var MARK = (function() {
 		}
 		
 		// 2. create object
-		var obj = Object.create(con.prototype);
+		let obj = Object.create(con.prototype);
 		
 		// 3. copy properties, numeric keys are not allowed
 		if (props) { 
 			for (let p in props) {
-				// accept only non-numeric key; key should have no duplicate here
+				// accept only non-numeric key; and we do no check key duplication here, last definition wins
 				if (isNaN(p*1)) { obj[p] = props[p]; }
 			}
 		}
 		
 		// 4. copy contents if any
-		let len = 0;
-		if (contents) { 
-			let prev_type = null;
-			function addContents(items) {
-				for (let val of items) {
-					let t = typeof val;
-					if (t === 'string') {
-						if (!val.length) continue; // skip empty text '', ""
-						if (prev_type === 'string') { 
-							len--;  val = obj[len] + val;  // merge text nodes
-						}
-					}
-					else if (t === 'object') {
-						if (val === null) continue; // skip null value
-						else if (val instanceof Array) { // expanded it inline
-							addContents(val);  continue;
-						}
-						// else, assume Mark object
-					}
-					else if (t === 'undefined') {
-						continue;
-					}
-					else { // other primitive values
-						// val might be null
-						val = val.toString(); // convert to string, as Mark only accept text and Mark object as content
-						if (prev_type === 'string') {
-							len--;  val = obj[len] + val;  // merge text nodes
-						}
-					}
-					Object.defineProperty(obj, len, {value:val, writable:true, configurable:true}); // make content non-enumerable
-					prev_type = t;  len++;
-				}
-			}
-			addContents(contents);
-		}
-		// set $length
-		obj[$length] = len;
-		
-		// set $parent
-		if (parent) { obj[$parent] = parent; }
+		obj[$length] = 0;
+		if (contents) { push.call(obj, contents); }
 		return obj;
 	};
-	
-	// reset content of this object
-	function replaceWith(trg, obj) {
-		// console.log('src obj:', obj);
-		// reset properties and contents
-		for (let p in trg) { if (typeof trg[p] !== 'function') delete trg[p]; }
-		for (let i=0, len=trg[$length]; i<len; i++) { delete trg[i]; }  // console.log('obj afte reset:', trg);
-		// copy over new constructr, properties and contents
-		Object.setPrototypeOf(trg, Object.getPrototypeOf(obj));
-		for (let p in obj) { trg[p] = obj[p]; }
-		var length = obj[$length];
-		for (let i=0; i<length; i++) {
-			Object.defineProperty(trg, i, {value:obj[i], writable:true, configurable:true}); // make content item non-enumerable
-		}
-		trg[$length] = length;  // console.log('obj afte copy:', trg);
-	}
 		
 	// Mark object API functions
 	var api = {
@@ -118,81 +113,13 @@ var MARK = (function() {
 		length: function() {
 			return this[$length];
 		},
-		// to set or get a property
-		prop: function(name, value) {
-			// accept only non-numeric key
-			if (typeof name === 'string' && isNaN(name*1)) { 
-				if (value !== undefined) { this[name] = value;  return this; } // returns this, so that the call can be chained
-				else return this[name];				
-			}
-			else { throw "Property name should not be numeric"; }
-		},
-		// to set or get parent
+		// get parent
 		parent: function(pa) {
-			if (pa !== undefined) { this[$parent] = pa;  return this; } // returns this, so that the call can be chained
-			else return this[$parent];
+			return this[$parent];
 		},
-		// to set or get pragma content
+		// get pragma content
 		pragma: function(value) {
-			if (value !== undefined) { this[$pragma] = value;  return this; } // returns this, so that the call can be chained
-			else return this[$pragma];
-		},
-		
-		// todo: do content normalization
-		push: function() {
-			// copy the arguments
-			let length = this[$length];
-			for (let i=0; i<arguments.length; i++) {
-				Object.defineProperty(this, length+i, {value:arguments[i], writable:true, configurable:true}); // make content item non-enumerable
-			}
-			length += arguments.length;
-			this[$length] = length;
-			return length;
-		},
-		pop: function() {
-			let length = this[$length];
-			if (length > 0) {
-				let item = this[length-1];  delete this[length-1];
-				this[$length] = length - 1;
-				return item;
-			} else {
-				return undefined;
-			}
-		},
-		// insert item(s) at the given index  // todo: do content normalization
-		insert: function(item, index) {
-			index = index || 0;
-			let length = this[$length];
-			if (index < 0 || index > length) { throw "Invalid index"; }
-			let offset = item instanceof Array ? item.length:1;
-			// shift items after index
-			for (let i=length-1; i>=index; i--) {
-				Object.defineProperty(this, i+offset, {value:this[i], writable:true, configurable:true});  // make content item non-enumerable
-			}
-			// insert items
-			if (offset > 1) {
-				for (let i=0; i<offset; i++) {
-					Object.defineProperty(this, index+i, {value:item[i], writable:true, configurable:true});  // make content item non-enumerable
-				}
-			} else {
-				Object.defineProperty(this, index, {value:item, writable:true, configurable:true});  // make content item non-enumerable
-			}
-			this[$length] = length + offset;
-			return this; // for call chaining
-		},
-		// can consider support 2nd param of cnt (for no. of items to remove)
-		// consider remove self
-		remove: function(index) {
-			if (arguments.length) {
-				// shift the items
-				var length = this[$length];
-				if (index >=0 && index < length) {
-					for (var i = index; i < length - 1; i++) { this[i] = this[i+1]; }
-					this[$length] = length - 1;
-				}
-				// else invalid index
-			}
-			return this; // for call chaining
+			return this[$pragma];
 		},
 
 		// filter: like Array.prototype.filter
@@ -257,64 +184,57 @@ var MARK = (function() {
 			return false;
 		},
 		
-		// Mark selector APIs
-		// find() is similar to jQuery find(), diff from Array.prototype.find()
-		find: function(selector) { 
-			// load helper on demand
-			if (!MARK.$select) { MARK.$select = require('./lib/mark.selector.js'); }
-			return MARK.$select(this).find(selector);
-		},
-		matches: function(selector) {
-			// load helper on demand
-			if (!MARK.$select) { MARK.$select = require('./lib/mark.selector.js'); }
-			return MARK.$select(this).matches(selector);
+		// each: like Array.prototype.forEach
+		each: function(func, thisArg) {
+			if (!(typeof func === 'function' && this)) throw new TypeError();
+			let i = 0, obj = Object(this);
+			for (const n of obj) {
+				func.call(thisArg || obj, n, i, obj);
+				i++;
+			}
 		},
 		
 		// conversion APIs
-		source: function() {
-			// get the source
-			if (!arguments.length) { return MARK.stringify(this); }
-			// set the source
-			replaceWith(this, MARK.parse(arguments[0]));
-			return this;  // for call chaining
+		source: function(options) {
+			return MARK.stringify(this, options);
 		},
-		// json: function() {}
-		html: function() {
-			if (!arguments.length) { // get html source
-				// load helper on demand
-				return MARK.stringify(this, {format:'html'});
-			} else { // set html source
-				let options = arguments[1] || {};  options.format = 'html';
-				replaceWith(this, MARK.parse(arguments[0], options));
-				return this;  // for call chaining
+		text : function() {
+			let txt = [];
+			let _text = function(obj) {
+				for (let n of obj) {
+					if (typeof n === 'string') { txt.push(n); }
+					else if (n.constructor) { _text(n); }
+				}
 			}
+			_text(this);
+			return txt.join('');
 		},
-		xml: function() {
-			if (!arguments.length) { // get xml source
-				// load helper on demand
-				return MARK.stringify(this, {format:'xml'});
-			} else { // set xml source
-				let options = arguments[1] || {};  options.format = 'xml';
-				replaceWith(this, MARK.parse(arguments[0], options));
-				return this;  // for call chaining
-			}
+		html: function(options) {
+			let opt = options || {};  opt.format = 'html';
+			return MARK.stringify(this, opt);
+		},
+		xml: function(options) {
+			let opt = options || {};  opt.format = 'xml';
+			return MARK.stringify(this, opt);
 		},		
 	}
 	// set the APIs
 	for (let a in api) {
-		let func = {value:api[a], writable:true, configurable:true};
-		// Mark.prototype[a] = api[a];  // direct assignment will make the API functions enumerable
-		Object.defineProperty(Mark.prototype, a, func);  // make API functions non-enumerable
-		
-		// no longer set the APIs on static MARK object, as 'length' cannot be overridden in IE11
-		// note: 'length' is non-writable in node, and non-configurable in IE
-		/*
-		try {
-			Object.defineProperty(Mark, a, func);
-		} catch (error) {
-			Mark[a] = api[a]; // 'length' is non-configurable in IE
-		}
-		*/
+		// API functions are non-enumerable
+		Object.defineProperty(Mark.prototype, a, {value:api[a], writable:true, configurable:true});  
+		// no longer set the APIs on static MARK object, as 'length' is non-writable in node, and non-configurable in IE11
+	}
+	// load mark.selector APIs
+	try {
+		require('./lib/mark.selector.js')(Mark);
+	} catch (e) {
+		console.trace("No Mark Selector API", e.message);
+	}	
+	// load mark.mutate APIs
+	try {
+		require('./lib/mark.mutate.js')(Mark, push, $length);
+	} catch (e) {
+		console.trace("No Mark Mutate API", e.message);
 	}
 	
 	// define additional APIs on Mark prototype
@@ -325,50 +245,44 @@ var MARK = (function() {
 	}
 	
 	// Mark pragma constructor
-	Mark.pragma = function(pragma, parent) {
-		let con = constructors['!pragma'];
+	Mark.pragma = function(pragma) {
+		let con = $ctrs[$pragma];
 		if (!con) {
 			con = Object.create(null);
 			Object.defineProperty(con, 'pragma', {value:api.pragma});
 			Object.defineProperty(con, 'parent', {value:api.parent});
 			Object.defineProperty(con, 'valueOf', {value:Object.valueOf});
 			Object.defineProperty(con, 'toString', {value:function() { return '[object Pragma]'; }});
-			// any other API?
-			constructors['!pragma'] = con;
+			$ctrs[$pragma] = con;
 		}
 		let obj = Object.create(con);
 		obj[$pragma] = pragma;  // pragma conent stored as Symbol
-		if (parent) { obj[$parent] = parent; }
 		return obj;
 	}
 	
-    function isNameChar(c) {
-        return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') ||
-            c === '_' || c === '$' || c === '.' || c === '-';
-    }
-    function isNameStart(c) {
-        return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c === '_' || c === '$';
-    }
-	// exported for convenience
-    Mark.isName = function(key) {
-        if (typeof key !== 'string') {
-            return false;
-        }
-        if (!isNameStart(key[0])) {
-            return false;
-        }
-        var i = 1, length = key.length;
-        while (i < length) {
-            if (!isNameChar(key[i])) {
-                return false;
-            }
-            i++;
-        }
-        return true;
-    }	
-	
 	return Mark;
 })();
+
+// check if a string is a Mark identifier, exported for convenience
+function isNameChar(c) {
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') ||
+		c === '_' || c === '$' || c === '.' || c === '-';
+}
+function isNameStart(c) {
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c === '_' || c === '$';
+}
+MARK.isName = function(key) {
+	if (typeof key !== 'string') { return false; }
+	if (!isNameStart(key[0])) { return false; }
+	var i = 1, length = key.length;
+	while (i < length) {
+		if (!isNameChar(key[i])) { return false; }
+		i++;
+	}
+	return true;
+}
+	
+const base64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 // parse() is only defined on the static Mark API
 MARK.parse = (function() {
@@ -376,545 +290,589 @@ MARK.parse = (function() {
 	// It is a simple, recursive descent parser. It does not use eval or regular expressions, 
 	// so it can be used as a model for implementing a Mark parser in other languages.
 	"use strict";
-	let UNEXPECT_END = "Unexpected end of input";
+	let UNEXPECT_END = "Unexpected end of input",
+		UNEXPECT_CHAR = "Unexpected character ";
 	
     let at,           	// The index of the current character
         lineNumber,   	// The current line number
-        columnNumber, 	// The current column number
+        columnStart, 	// The index of column start char
         ch,           	// The current character
 		text,			// The text being parsed
 		
-        escapee = {
-            "'":  "'",		// this is needed as we allows single quote
-            '"':  '"',
-            '\\': '\\',
-            '/':  '/',
-            '\n': '',       // Replace escaped newlines in strings w/ empty string
-            b:    '\b',
-            f:    '\f',
-            n:    '\n',
-            r:    '\r',
-            t:    '\t'
-        },
-        ws = [
-            ' ',
-            '\t',
-            '\r',
-            '\n',
-            '\v',
-            '\f',
-            '\xA0',
-            '\uFEFF'
-        ],
+	escapee = {
+		"'":  "'",		// this is needed as we allows single quote
+		'"':  '"',
+		'\\': '\\',
+		'/':  '/',
+		'\n': '',       // Replace escaped newlines in strings w/ empty string
+		b:    '\b',
+		f:    '\f',
+		n:    '\n',
+		r:    '\r',
+		t:    '\t'
+	},
+	ws = [' ', '\t', '\r', '\n'],
         
-        renderChar = function(chr) {
-            return chr === '' ? 'EOF' : "'" + chr + "'";
-        },
+    renderChar = function(chr) {
+		return chr === '' ? 'EOF' : "'" + chr + "'";
+	},
 
-        error = function(m) {
-			// Call error when something is wrong.
-			// todo: Still to read can scan to end of line
-			var msg = m + " at line " + lineNumber + " column " + columnNumber + " of the Mark data. Still to read: " + JSON.stringify(text.substring(at - 1, at + 30) + "...");
-            var error = new SyntaxError(msg);
-            // beginning of message suffix to agree with that provided by Gecko - see https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse
-            error.at = at;
-            // These two property names have been chosen to agree with the ones in Gecko, the only popular
-            // environment which seems to supply this info on JSON.parse
-            error.lineNumber = lineNumber;
-            error.columnNumber = columnNumber;
-            throw error;
-        },
+	error = function(m) {
+		// Call error when something is wrong.
+		// todo: Still to read can scan to end of line
+		var columnNumber = at - columnStart;
+		var msg = m + " at line " + lineNumber + " column " + columnNumber + " of the Mark data. Still to read: " + JSON.stringify(text.substring(at - 1, at + 30) + "...");
+		var error = new SyntaxError(msg);
+		// beginning of message suffix to agree with that provided by Gecko - see https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse
+		error.at = at;
+		// These two property names have been chosen to agree with the ones in Gecko, the only popular
+		// environment which seems to supply this info on JSON.parse
+		error.lineNumber = lineNumber;
+		error.columnNumber = columnNumber;
+		throw error;
+	},
 
-        next = function (c) {
-			// If a c parameter is provided, verify that it matches the current character.
-            if (c && c !== ch) {
-                error("Expected " + renderChar(c) + " instead of " + renderChar(ch));
-            }
+	next = function (c) {
+		// If a c parameter is provided, verify that it matches the current character.
+		if (c && c !== ch) {
+			error("Expected '" + c + "' instead of " + renderChar(ch));
+		}
+		// Get the next character. When there are no more characters, return the empty string.
+		ch = text.charAt(at);  at++;
+		if (ch === '\n' || ch === '\r' && text[at] !== '\n') {
+			lineNumber++;  columnStart = at;
+		}
+		return ch;
+	},
 
-			// Get the next character. When there are no more characters,
-			// return the empty string.
-            ch = text.charAt(at);
-            at++;
-            columnNumber++;
-            if (ch === '\n' || ch === '\r' && peek() !== '\n') {
-                lineNumber++;
-                columnNumber = 0;
-            }
-            return ch;
-        },
+	// Parse an identifier.
+	identifier = function () {
+		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
+		var key = ch;
 
-        peek = function () {
-			// Get the next character without consuming it or
-			// assigning it to the ch varaible.
-            return text.charAt(at);
-        },
+		// identifiers must start with a letter, _ or $.
+		if ((ch !== '_' && ch !== '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z')) {
+			error(UNEXPECT_CHAR + renderChar(ch));
+		}
+		// subsequent characters can contain digits
+		while (next() && (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch === '_' || ch === '$' ||
+			// '.' and '-' are commonly used in html and xml names, but not valid JS name chars
+			ch === '.' || ch === '-')) {
+			key += ch;
+		}
 
-		// Parse an identifier.
-        identifier = function () {
-			// Normally, reserved words are disallowed here, but we
-			// only use this for unquoted object keys, where reserved words are allowed,
-			// so we don't check for those here. References:
-			// - http://es5.github.com/#x7.6
-			// - https://developer.mozilla.org/en/Core_JavaScript_1.5_Guide/Core_Language_Features#Variables
-			// - http://docstore.mik.ua/orelly/webprog/jscript/ch02_07.htm
-			// TODO Identifiers can have Unicode "letters" in them; add support for those.
+		return key;
+	},
 
-            var key = ch;
+	// Parse a number value.
+	number = function () {
+		let number, sign = '', string = '', base = 10;
 
-            // Identifiers must start with a letter, _ or $.
-            if ((ch !== '_' && ch !== '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z')) {
-                error("Bad identifier as unquoted key");
-            }
+		if (ch === '-' || ch === '+') {
+			sign = ch;  next(ch);
+		}
 
-            // Subsequent characters can contain digits.
-            while (next() && (
-				('a' <= ch && ch <= 'z') ||
-				('A' <= ch && ch <= 'Z') ||
-				('0' <= ch && ch <= '9') ||
-				ch === '_' || ch === '$' ||
-				ch === '.' || ch === '-'  // add 2 special chars commonly used in html and xml names, which are not valid JS name chars
-				)) {
-                key += ch;
-            }
-
-            return key;
-        },
-
-		// Parse a number value.
-        number = function () {
-            let number, sign = '', string = '', base = 10;
-
-            if (ch === '-' || ch === '+') {
-                sign = ch;  next(ch);
-            }
-
-            // support for Infinity (could tweak to allow other words):
-            if (ch === 'I') {
-                number = word();
-                if (typeof number !== 'number' || isNaN(number)) {
-                    error('Unexpected word for number');
-                }
-                return (sign === '-') ? -number : number;
-            }
-
-            // support for NaN
-            if (ch === 'N' ) {
-              number = word();
-              if (!isNaN(number)) {
-                error('expected word to be NaN');
-              }
-              // ignore sign as -NaN also is NaN
-              return number;
-            }
-
-            if (ch === '0') {
-                string += ch;  next();
-			} else {
-                while (ch >= '0' && ch <= '9' ) {
-                    string += ch;
-                    next();
-                }
-                if (ch === '.') {
-                    string += '.';
-                    while (next() && ch >= '0' && ch <= '9') {
-                        string += ch;
-                    }
-                }
-                if (ch === 'e' || ch === 'E') {
-                    string += ch;
-                    next();
-                    if (ch === '-' || ch === '+') {
-                        string += ch;
-                        next();
-                    }
-                    while (ch >= '0' && ch <= '9') {
-                        string += ch;
-                        next();
-                    }
-                }			
+		// support for Infinity (could tweak to allow other words):
+		if (ch === 'I') {
+			number = word();
+			if (typeof number !== 'number' || isNaN(number)) {
+				error('Unexpected word for number');
 			}
+			return (sign === '-') ? -number : number;
+		}
 
-            if (sign === '-') {
-                number = -string;
-            } else {
-                number = +string;
-            }
+		// support for NaN
+		if (ch === 'N' ) {
+			number = word();
+			if (!isNaN(number)) {
+			error('expected word to be NaN');
+			}
+			// ignore sign as -NaN also is NaN
+			return number;
+		}
 
-            if (!isFinite(number)) {
-                error("Bad number");
-            } else {
-                return number;
-            }
-        },
-
-		// Parse a string value.
-        string = function() {			
-            var hex, i, string = '', triple = false,
-                delim,      // double quote or single quote
-                uffff;
-
-			// when parsing for string values, we must look for ' or " and \ characters.
-            if (ch === '"' || ch === "'") {
-                delim = ch;
-				if (peek() === delim && text.charAt(at+1) === delim) { // got tripple quote
-					triple = true;  next();  next();
+		if (ch === '0') {
+			string += ch;  next();
+		} else {
+			while (ch >= '0' && ch <= '9' ) {
+				string += ch;
+				next();
+			}
+			if (ch === '.') {
+				string += '.';
+				while (next() && ch >= '0' && ch <= '9') {
+					string += ch;
 				}
-                while (next()) {
-                    if (ch === delim) {
-                        next();
-						if (!triple) { // end of string
-							return string;
-						}
-						else if (ch === delim && peek() === delim) { // end of tripple quoted text
-							next();  next();  return string;
-						}
-						else {
-							string += delim;
-						}
-						// continue
-                    }
-					if (ch === '\\') { // escape sequence
-						if (triple) { string += '\\'; } // treated as normal char
-						else { // escape sequence
-							next();
-							if (ch === 'u') { // unicode escape sequence
-								uffff = 0;
-								for (i = 0; i < 4; i += 1) {
-									hex = parseInt(next(), 16);
-									if (!isFinite(hex)) {
-										break;
-									}
-									uffff = uffff * 16 + hex;
-								}
-								string += String.fromCharCode(uffff);
-							} 
-							else if (ch === '\r') { // ignore the line-end, as defined in ES5
-								if (peek() === '\n') {
-									next();
-								}
-							} else if (typeof escapee[ch] === 'string') {
-								string += escapee[ch];
-							} else { 
-								break;  // bad escape
-							}
-						}
-                    } 
-					// else if (ch === '\n') {
-                        // unescaped newlines are invalid in JSON, but valid in Mark; 
-                        // see: https://github.com/json5/json5/issues/24
-                        // break;
-                    // } 
-					else { // normal char
-                        string += ch;
-                    }
-                }
-            }
-            error("Bad string");
-        },
-
-		// Skip an inline comment
-        inlineComment = function () {
-			// Skip an inline comment, assuming this is one. The current character should
-			// be the second / character in the // pair that begins this inline comment.
-			// To finish the inline comment, we look for a newline or the end of the text.
-            if (ch !== '/') {
-                error("Not an inline comment");
-            }
-            do {
-                next();
-                if (ch === '\n' || ch === '\r') {
-                    next();
-                    return;
-                }
-            } while (ch);
-        },
-
-		// Skip a block comment
-        blockComment = function () {
-			// Skip a block comment, assuming this is one. The current character should be
-			// the * character in the /* pair that begins this block comment.
-			// To finish the block comment, we look for an ending */ pair of characters,
-			// but we also watch for the end of text before the comment is terminated.
-            if (ch !== '*') {
-                error("Not a block comment");
-            }
-            do {
-                next();
-                while (ch === '*') {
-                    next('*');
-                    if (ch === '/') {
-                        next('/');
-                        return;
-                    }
-                }
-            } while (ch);
-
-            error("Unterminated block comment");
-        },
-
-		// Skip a comment
-        comment = function () {
-			// Skip a comment, whether inline or block-level, assuming this is one.
-			// Comments always begin with a / character.
-            if (ch !== '/') {
-                error("Not a comment");
-            }
-            next('/');
-            if (ch === '/') {
-                inlineComment();
-            } else if (ch === '*') {
-                blockComment();
-            } else {
-                error("Unrecognized comment");
-            }
-        },
-
-		// Skip whitespace and comments.
-        white = function () {
-			// Note that we're detecting comments by only a single / character.
-			// This works since regular expressions are not valid JSON(5), but this will
-			// break if there are other valid values that begin with a / character!
-            while (ch) {
-                if (ch === '/') {
-                    comment();
-                } else if (ws.indexOf(ch) >= 0) {
-                    next();
-                } else {
-                    return;
-                }
-            }
-        },
-
-		// Parse true, false, or null.
-        word = function () {
-            switch (ch) {
-            case 't':
-                next('t');
-                next('r');
-                next('u');
-                next('e');
-                return true;
-            case 'f':
-                next('f');
-                next('a');
-                next('l');
-                next('s');
-                next('e');
-                return false;
-            case 'n':
-                next('n');
-                next('u');
-                next('l');
-                next('l');
-                return null;
-            case 'I':
-                next('I');
-                next('n');
-                next('f');
-                next('i');
-                next('n');
-                next('i');
-                next('t');
-                next('y');
-                return Infinity;
-            case 'N':
-              next('N');
-              next('a');
-              next('N');
-              return NaN;
-            }
-            error("Unexpected character " + renderChar(ch));
-        },
-
-        value,  // Place holder for the value function.
-
-		// parse an array value
-        array = function () {
-            var array = [];
-			
-			next();  // skip the starting '['
-			white();
-			while (ch) {
-				if (ch === ']') {
+			}
+			if (ch === 'e' || ch === 'E') {
+				string += ch;
+				next();
+				if (ch === '-' || ch === '+') {
+					string += ch;
 					next();
-					return array;   // Potentially empty array
 				}
-				// ES5 allows omitting elements in arrays, e.g. [,] and [,null]. JSON and Mark don't allow this.
-				if (ch === ',') {
-					error("Missing array element");
-				} else {
-					array.push(value());
+				while (ch >= '0' && ch <= '9') {
+					string += ch;
+					next();
 				}
-				white();
-				
-				// comma is optional in Mark
-				if (ch === ',') { next();  white(); }
+			}			
+		}
+
+		if (sign === '-') {
+			number = -string;
+		} else {
+			number = +string;
+		}
+
+		if (!isFinite(number)) {
+			error("Bad number");
+		} else {
+			return number;
+		}
+	},
+
+	// Parse a string value.
+	string = function() {			
+		var hex, i, string = '', triple = false,
+			delim,      // double quote or single quote
+			uffff;
+
+		// when parsing for string values, we must look for ' or " and \ characters.
+		if (ch === '"' || ch === "'") {
+			delim = ch;
+			if (text[at] === delim && text[at+1] === delim) { // got tripple quote
+				triple = true;  next();  next();
 			}
-        },
-
-		// Parse an object value
-        object = function(parent) {
-            let key, obj = {}, 
-				extended = false, // whether the is extended Mark object or legacy JSON object
-				hasBrace = false, // whether the object has any unescaped brace
-				index = 0;  	
-			// all 3 types: Mark object, JSON object, Mark pragma store reference to parent 
-			if (parent) { obj[$parent] = parent; } 
-
-			next();  // skip the starting '{'
-			// store the current source position, in case we need to backtrack later
-			let bkAt = at, bkLineNumber = lineNumber, bkColumnNumber = columnNumber;
-
-			try {
-				let putText = function(text) {
-					// check preceding node
-					if (index > 0 && typeof obj[index-1] === 'string') { // merge with previous text
-						obj[index-1] += text;
-					} else {
-						Object.defineProperty(obj, index, {value:text, writable:true, configurable:true}); // make content non-enumerable
-						index++;
+			while (next()) {
+				if (ch === delim) {
+					next();
+					if (!triple) { // end of string
+						return string;
 					}
-				},
-				parseContent = function() {
-					while (ch) {
-						if (ch === '{') { // child object
-							hasBrace = true;
-							Object.defineProperty(obj, index, {value:object(obj), writable:true, configurable:true}); // make content non-enumerable
-							index++;  
-						}
-						else if (ch === '"' || ch === "'") { // text node
-							let str = string();
-							// only output non empty text
-							if (str) putText(str);
-						}
-						else if (ch === '}') { 
-							next();  obj[$length] = index;
-							return;
-						}
-						else {
-							error("Unexpected character " + renderChar(ch));
-						}
-						white();
+					else if (ch === delim && text[at] === delim) { // end of tripple quoted text
+						next();  next();  return string;
 					}
-					error(UNEXPECT_END);		
-				};
-				
-				white();
-				while (ch) {
-					if (ch === '}') { // end of the object
-						next();  
-						if (extended) { obj[$length] = index; }
-						return obj;   // potentially empty object
+					else {
+						string += delim;
 					}
-
-					// scan the key
-					if (ch === '"' || ch === "'") { // quoted key
-						var str = string();  white();
-						if (ch == ':') { // property, legacy JSON
-							key = str;
-						} else {
-							if (extended) { // got text node
-								// only output non-empty text
-								if (str) putText(str);
-								parseContent();
-								return obj;
-							}
-							else if (!key) { // at the starting of the object
-								// create the object
-								obj = MARK(str, null, null, parent);
-								extended = true;  key = str;
-								continue;							
-							}
-							// else bad object
-						}
-					}
-					else if (ch === '{') { // child object
-						if (extended) {
-							hasBrace = true;  parseContent();  return obj;
-						}
-						error("Unexpected character '{'");
-					}
-					else { // JSON5 or Mark unquoted key, which needs to be valid JS identifier.
-						var ident = identifier();
-						white();
-						if (!key) { // at the starting of the object						
-							if (ch != ':') { // assume is Mark object
-								// console.log("got Mark object of type: ", ident);
-								// create the object
-								obj = MARK(ident, null, null, parent);
-								extended = true;  key = ident;
-								continue;
-							}
-							else { // JSON object
-								if (!obj.constructor.name) { obj.constructor.name = 'Object'; } // IE11 does not set constructor.name to 'Object'
-							}
-						}
-						key = ident;
-					}
-					
-					if (ch == ':') { // key-value pair
+					// continue
+				}
+				if (ch === '\\') { // escape sequence
+					if (triple) { string += '\\'; } // treated as normal char
+					else { // escape sequence
 						next();
-						if (ch === '{') { hasBrace = true; }
-						var val = value();
-						if (extended && !isNaN(key*1)) { // any numeric key is rejected for Mark object
-							error("Numeric key not allowed as Mark property name");
-						}
-						if (obj[key] && typeof obj[key] !== 'function') {
-							error("Duplicate key not allowed: " + key);
-						}
-						obj[key] = val;
-						white();
-						// ',' is optional in Mark
-						if (ch === ',') {
-							next();  white();
+						if (ch === 'u') { // unicode escape sequence
+							uffff = 0;
+							for (i = 0; i < 4; i += 1) {
+								hex = parseInt(next(), 16);
+								if (!isFinite(hex)) {
+									break;
+								}
+								uffff = uffff * 16 + hex;
+							}
+							string += String.fromCharCode(uffff);
 						} 
-					} else {
-						error("Bad object");
+						else if (ch === '\r') { // ignore the line-end, as defined in ES5
+							if (text[at] === '\n') {
+								next();
+							}
+						} else if (typeof escapee[ch] === 'string') {
+							string += escapee[ch];
+						} else { 
+							break;  // bad escape
+						}
+					}
+				} 
+				// else if (ch === '\n') {
+					// control characters like TAB and LF are invalid in JSON, but valid in Mark; 
+					// break;
+				// } 
+				else { // normal char
+					string += ch;
+				}
+			}
+		}
+		error("Bad string");
+	},
+
+	// Parse an inline comment
+	inlineComment = function () {
+		// Skip an inline comment, assuming this is one. The current character should
+		// be the second / character in the // pair that begins this inline comment.
+		// To finish the inline comment, we look for a newline or the end of the text.
+		if (ch !== '/') {
+			error("Not an inline comment");
+		}
+		do {
+			next();
+			if (ch === '\n' || ch === '\r') {
+				next();  return;
+			}
+		} while (ch);
+	},
+
+	// Parse a block comment
+	blockComment = function () {
+		// Skip a block comment, assuming this is one. The current character should be
+		// the * character in the /* pair that begins this block comment.
+		// To finish the block comment, we look for an ending */ pair of characters,
+		// but we also watch for the end of text before the comment is terminated.
+		if (ch !== '*') {
+			error("Not a block comment");
+		}
+		do {
+			next();
+			while (ch === '*') {
+				next();
+				if (ch === '/') { next();  return; }
+			}
+			if (ch === '/' && text[at] === '*') { // nested block comment
+				next();  blockComment();
+			}
+		} while (ch);
+		error("Unterminated block comment");
+	},
+
+	// Parse a comment
+	comment = function () {
+		// Skip a comment, whether inline or block-level, assuming this is one.
+		// Comments always begin with a / character.
+		if (ch !== '/') {
+			error("Not a comment");
+		}
+		next('/');
+		if (ch === '/') {
+			inlineComment();
+		} else if (ch === '*') {
+			blockComment();
+		} else {
+			error("Unrecognized comment");
+		}
+	},
+
+	// Parse whitespace and comments.
+	white = function() {
+		// Note that we're detecting comments by only a single / character.
+		// This works since regular expressions are not valid JSON(5), but this will
+		// break if there are other valid values that begin with a / character!
+		while (ch) {
+			if (ch === '/') {
+				comment();
+			} else if (ws.indexOf(ch) >= 0) {
+				next();
+			} else {
+				return;
+			}
+		}
+	},
+
+	isSuffix = function(suffix) {
+		let len = suffix.length;
+		for (let i=0; i<len; i++) {
+			if (text[at+i] !== suffix[i]) { return false; }
+		}
+		if (isNameStart(text[at+len])) { return false; }
+		ch = text[at+len];  at += len + 1;  
+		return true;
+	},
+	// Parse true, false, null, Infinity, NaN
+	word = function() {
+		switch (ch) {
+		case 't':  if (isSuffix('rue')) { return true; }  break;
+		case 'f':  if (isSuffix('alse')) { return false; }  break;
+		case 'n':  if (isSuffix('ull')) { return null; }  break;
+		case 'I':  if (isSuffix('nfinity')) { return Infinity; }  break;
+		case 'N':  if (isSuffix('aN')) { return NaN; }
+		}
+		return identifier(); // treated as string
+	},
+	
+	pragma = function() {
+		let prag = '', level = 0;
+		next();  // skip starting '('
+		if (ch === '?') { 
+			next();  // skip '?'
+			while (ch) {
+				if (ch === '?' && text[at] === ')') {
+					// end of pragma
+					at++;  next();  // skip ending ')'
+					return MARK.pragma(prag);
+				}
+				// else - normal char
+				prag += ch;  next();
+			}
+		} else {
+			while (ch) {
+				if (ch === ')') {
+					if (level) { level--; } // embedded (...)
+					else { // end of pragma
+						next();  // skip ending ')'
+						let p = MARK.pragma(prag);
+						p[$paired] = true; 
+						return p;
 					}
 				}
-				error(UNEXPECT_END);
+				else if (ch === '(') { level++; } // store as normal char
+				// else - normal char
+				prag += ch;  next();
 			}
-			catch (e) {
-				if (hasBrace) { throw e; } // cannot be parsed as Mark pragma and throw the error again, as brace needs to be escaped in Mark pragma
-				// restore parsing position, and try parse as Mark pragma
-				at = bkAt;  lineNumber = bkLineNumber;  columnNumber = bkColumnNumber;
-				ch = text.charAt(at - 1);
-				
-				let pragma = '';
-				while (ch) {
-					if (ch === '}') { // end of pragma
-						next();
-						return MARK.pragma(pragma, parent);
-					}				
-					else if (ch === '\\') { // escape '{', '}', ':', ';', as html, xml comment may contain these characters
-						next();
-						if (ch !== '{' && ch !== '}' && ch !== ':' && ch !== ';') { pragma += '\\'; }
+		}
+		error(UNEXPECT_END);
+	},
+
+	value,  // Place holder for the value function.
+
+	// Parse an array
+	array = function() {
+		var array = [];
+		
+		next();  // skip the starting '['
+		white();
+		while (ch) {
+			if (ch === ']') {
+				next();
+				return array;   // Potentially empty array
+			}
+			// ES5 allows omitted elements in arrays, e.g. [,] and [,null]. JSON and Mark don't allow this.
+			if (ch === ',') {
+				error("Missing array element");
+			} else {
+				array.push(value());
+			}
+			white();
+			
+			// comma is optional in Mark
+			if (ch === ',') { next();  white(); }
+		}
+	};
+
+	// Parse binary value
+	// Use a lookup table to find the index.
+	let lookup64 = new Uint8Array(128), lookup85 = new Uint8Array(128);
+	if (lookup64.fill) { lookup64.fill(65); lookup85.fill(86); } // '65' denotes invalid value
+	else { // patch for IE11
+		for (var i = 0; i < 128; i++) { lookup64[i] = 65;  lookup85[i] = 86; } 
+	}
+	for (var i = 0; i < 64; i++) { lookup64[base64.charCodeAt(i)] = i; }
+	// ' ', \t', '\r', '\n' spaces also allowed in base64 stream
+	lookup64[32] = lookup64[9] = lookup64[13] = lookup64[10] = 64;
+	for (var i = 0; i < 128; i++) { if (33 <= i && i <= 117) lookup85[i] = i - 33; }
+	// ' ', \t', '\r', '\n' spaces also allowed in base85 stream
+	lookup85[32] = lookup85[9] = lookup85[13] = lookup85[10] = 85;
+	
+	let binary = function() {
+		at++;  // skip the starting '{:'
+		if (text[at] === '~') { // base85
+			at++;  // skip '~'
+			// code based on https://github.com/noseglid/base85/blob/master/lib/base85.js
+			let end = text.indexOf('~}', at);  // scan binary end
+			if (end < 0) { error("Missing ascii85 end delimiter"); }
+			
+			// first run decodes into base85 int values, and skip the spaces
+			let p = 0, base = new Uint8Array(new ArrayBuffer(end - at + 3));  // 3 extra bytes of padding
+			while (at < end) {
+				let code = lookup85[text.charCodeAt(at)];  // console.log('bin: ', text[at], code);
+				if (code > 85) { error("Invalid ascii85 character"); }
+				if (code < 85) { base[p++] = code; }
+				// else skip spaces
+				at++;
+			}
+			at = end+2;  next();  // skip '~}'			
+			// check length
+			if (p % 5 == 1) { error("Invalid ascii85 stream length"); }
+		
+			// second run decodes into actual binary data
+			let dataLength = p, padding = (dataLength % 5 === 0) ? 0 : 5 - dataLength % 5,
+				buffer = new ArrayBuffer(4 * Math.ceil(dataLength / 5) - padding), 
+				bytes = new DataView(buffer), trail = buffer.byteLength - 4;
+			base[p] = base[p+1] = base[p+2] = 84;  // 3 extra bytes of padding
+			// console.log('base85 byte length: ', buffer.byteLength);
+			for (let i = 0, p = 0; i < dataLength; i += 5, p+=4) {
+				let num = (((base[i] * 85 + base[i+1]) * 85 + base[i+2]) * 85 + base[i+3]) * 85 + base[i+4];
+				// console.log("set byte to val:", p, num, String.fromCodePoint(num >> 24), String.fromCodePoint((num >> 16) & 0xff),
+				//	String.fromCodePoint((num >> 8) & 0xff), String.fromCodePoint(num & 0xff));
+				// write the uint32 value
+				if (p <= trail) { // bulk of bytes
+					bytes.setUint32(p, num); // big endian
+				} else { // trailing bytes
+					switch (padding) {
+					case 1:  bytes.setUint8(p+2, (num >> 8) & 0xff);  // fall through
+					case 2:  bytes.setUint16(p, num >> 16);  break;
+					case 3:  bytes.setUint8(p, num >> 24);
 					}
-					else if (ch === '{' || ch === '}' || ch === ':') {
-						throw e; // rethrow the error, assuming user wants to write JSON or Mark object
-					}
-					else if (ch === ';') {
-						error("Character ';' should be escaped in Mark pragma");
-					}
-					pragma += ch;
-					next();
 				}
-				error(UNEXPECT_END);
+			}			
+			buffer.encoding = 'a85';
+			return buffer;			
+		}
+		else { // base64
+			// code based on https://github.com/niklasvh/base64-arraybuffer
+			let end = text.indexOf('}', at), bufEnd = end, pad = 0;  // scan binary end
+			if (end < 0) { error("Missing base64 end delimiter"); }
+			// strip optional padding
+			if (text[bufEnd-1] === '=') { // 1st padding
+				bufEnd--;  pad = 1;
+				if (text[bufEnd-1] === '=') { // 2nd padding
+					bufEnd--;  pad = 2;
+				}
 			}
-        };
+			// console.log('binary char length: ', bufEnd - at);
+
+			// first run decodes into base64 int values, and skip the spaces
+			let base = new Uint8Array(new ArrayBuffer(bufEnd - at)), p = 0;
+			while (at < bufEnd) {
+				let code = lookup64[text.charCodeAt(at)];  // console.log('bin: ', text[at], code);
+				if (code > 64) { error("Invalid base64 character"); }
+				if (code < 64) { base[p++] = code; }
+				// else skip spaces
+				at++;
+			}
+			at = end+1;  next();  // skip '}'
+			// check length
+			if (pad && (p + pad) % 4 != 0 || !pad && p % 4 == 1) { error("Invalid base64 stream length"); }
+
+			// second run decodes into actual binary data
+			let len = Math.floor(p * 0.75), code1, code2, code3, code4,
+				buffer = new ArrayBuffer(len), bytes = new Uint8Array(buffer);
+			// console.log('binary length: ', len);
+			for (let i = 0, p = 0; p < len; i += 4) {
+				code1 = base[i];  code2 = base[i+1];
+				code3 = base[i+2];  code4 = base[i+3];
+				bytes[p++] = (code1 << 2) | (code2 >> 4);
+				// extra undefined bytes casted into 0 by JS binary operator
+				bytes[p++] = ((code2 & 15) << 4) | (code3 >> 2);
+				bytes[p++] = ((code3 & 3) << 6) | (code4 & 63);
+			}
+			// console.log('binary decoded length:', p);
+			buffer.encoding = 'b64';
+			return buffer;
+		}
+	};
+
+	// Parse an object, pragma or binary
+	let object = function() {
+		let obj = {}, 
+			key = null, 		// property key
+			extended = false, 	// whether the is extended Mark object or legacy JSON object
+			index = 0;
+		
+		let putText = function(text) {
+			// check preceding node
+			if (index > 0 && typeof obj[index-1] === 'string') {
+				// merge with previous text
+				obj[index-1] += text;
+			} else {
+				Object.defineProperty(obj, index, {value:text, writable:true, configurable:true}); // make content non-enumerable
+				index++;
+			}
+		},
+		parseContent = function() {
+			while (ch) {
+				if (ch === '{' || ch === '(') { // child object
+					let child = (ch === '(') ? pragma(obj) : (text[at] === ':' ? binary(obj):object(obj));  
+					Object.defineProperty(obj, index, {value:child, writable:true, configurable:true}); // make content non-enumerable
+					// all 4 types: Mark object, JSON object, Mark pragma, Mark binary store reference to parent 
+					child[$parent] = obj;  index++;  
+				}
+				else if (ch === '"' || ch === "'") { // text node
+					let str = string();
+					// only output non empty text
+					if (str) putText(str);
+				}
+				else if (ch === '}') { 
+					next();  obj[$length] = index;
+					return;
+				}
+				else {
+					error(UNEXPECT_CHAR + renderChar(ch));
+				}
+				white();
+			}
+			error(UNEXPECT_END);		
+		};
+		
+		next();  white();  // skip the starting '{'
+		while (ch) {
+			if (ch === '}') { // end of the object
+				next();  
+				if (extended) { obj[$length] = index; }
+				return obj;   // could be empty object
+			}
+			// scan the key
+			if (ch === '{' || ch === '(') { // child object or pragma
+				if (extended) {
+					parseContent();  return obj;
+				}
+				error(UNEXPECT_CHAR + "'{'");
+			}
+			if (ch === '"' || ch === "'") { // quoted key
+				var str = string();  white();
+				if (ch === ':') { // property or JSON object
+					key = str;
+				} else {
+					if (extended) { // already got type name
+						// only output non-empty text
+						if (str) putText(str);
+						parseContent();  return obj;
+					}
+					else if (!key) { // at the starting of the object
+						// create the object
+						obj = MARK(str, null, null);
+						extended = true;  // key = str;
+						continue;							
+					}
+					else { 
+						error(UNEXPECT_CHAR + renderChar(ch));
+					}
+				}
+			}
+			else { // if (ch==='_' || ch==='$' || 'a'<=ch && ch<='z' || 'A'<=ch && ch<='Z')
+				// Mark unquoted key, which needs to be valid JS identifier.
+				var ident = identifier();  white();
+				if (ch == ':') { // property value
+					key = ident;
+				} else {
+					if (!extended) { // start of Mark object
+						obj = MARK(ident, null, null);
+						extended = true;  // key = ident;
+						continue;
+					}
+					error(UNEXPECT_CHAR + renderChar(ch));
+				}
+			}
+			
+			// key-value pair
+			next(); // skip ':'
+			var val = value();
+			if (extended && !isNaN(key*1)) { // any numeric key is rejected for Mark object
+				error("Numeric key not allowed as Mark property name");
+			}
+			if (obj[key] && typeof obj[key] !== 'function') {
+				error("Duplicate key not allowed: " + key);
+			}
+			obj[key] = val;  white();
+			// ',' is optional in Mark
+			if (ch === ',') {
+				next();  white();
+			} 
+		}
+		error(UNEXPECT_END);
+	};
 
 	// Parse a JSON value. 
-	value = function () {
+	value = function() {
 		// A JSON value could be an object, an array, a string, a number, or a word.
         white();
         switch (ch) {
         case '{':
-            return object();
+            return (text[at] === ':') ? binary() : object();
         case '[':
             return array();
         case '"':
         case "'":
             return string();
+		case '(':
+			return pragma();
         case '-':
         case '+':
         case '.':
@@ -927,50 +885,21 @@ MARK.parse = (function() {
 	// Return the enclosed parse function. It will have access to all of the above functions and variables.
     return function(source, options) {
 		// initialize the contextual variables
-        at = 0;
-        lineNumber = 1;
-        columnNumber = 1;
-        ch = ' ';
+        at = 0;  lineNumber = 1;  columnStart = at;  ch = ' ';
 		text = String(source);
 		
 		if (!source) { text = '';  error(UNEXPECT_END); }
 		if (typeof options === 'object' && options.format && options.format != 'mark') { // parse as other formats
-			// is it better to use a Symbol here?
-			if (!MARK.$convert) { MARK.$convert = require('./lib/mark.convert.js')(MARK); }
-			return MARK.$convert.parse(source, options);
+			if (!$convert) { $convert = require('./lib/mark.convert.js')(MARK); }
+			return $convert.parse(source, options);
 		} 
 		// else // parse as Mark
         
-		// start parsing as a JSON value
+		// start parsing the root value
         var result = value();
         white();
-        if (ch) {
-            error("Syntax error");
-        }
-		
-		// Mark does not support the legacy JSON reviver function:
-		// If there is a reviver function, we recursively walk the new structure,
-		// passing each name/value pair to the reviver function for possible
-		// transformation, starting with a temporary root object that holds the result
-		// in an empty key. If there is not a reviver function, we simply return the result.
-		/*
-        return typeof options === 'function' ? (function walk(holder, key) {
-            var k, v, value = holder[key];
-            if (value && typeof value === 'object') {
-                for (k in value) {
-                    if (Object.prototype.hasOwnProperty.call(value, k)) {
-                        v = walk(value, k);
-                        if (v !== undefined) {
-                            value[k] = v;
-                        } else {
-                            delete value[k];
-                        }
-                    }
-                }
-            }
-            return options.call(holder, key, value);
-        }({'': result}, '')) : result;
-		*/
+        if (ch) { error("Expect end of input"); }
+		// Mark does not support the legacy JSON reviver function
 		return result;
     };
 }());
@@ -980,74 +909,48 @@ MARK.parse = (function() {
 MARK.stringify = function(obj, options) {
 	"use strict";
 	
-	var indentStr, space, omitComma;
-	if (options)  {
-		if (options.format && options.format !== 'mark') {
-			// load helper on demand
-			if (!MARK.$convert) { MARK.$convert = require('./lib/mark.convert.js')(MARK); }
-			if (options.format === 'xml') return MARK.$convert.toXml(obj, options);
-			if (options.format === 'html') return MARK.$convert.toHtml(obj, options);
+	var indentStep, indentStrs, space, omitComma;
+	
+    function indent(num, noNewLine) {
+		if (num >= indentStrs.length) { // expand the cached indent strs
+			for (var i = indentStrs.length; i <= num; i++) {
+				indentStrs[i] = indentStrs[i-1] + indentStep;
+			}
 		}
-		
-		// stringify as Mark
+        return noNewLine ? indentStrs[num] : "\n" + indentStrs[num];
+    }	
+	
+	// option handling
+	if (options)  {
 		omitComma = options.omitComma;
 		space = options.space;
+		indentStrs = [''];
 		if (space) {
 			if (typeof space === "string") {
-				indentStr = space;
+				indentStep = space;
 			} else if (typeof space === "number" && space >= 0) {
-				indentStr = makeIndent(" ", space, true);
+				indentStep = new Array(space + 1).join(" ");
 			} else {
-				// ignore space parameter
+				// unknown type, ignore space parameter
+				indentStep = '';
 			}
 			// indentation step no more than 10 chars
-			if (indentStr && indentStr.length > 10) {
-				indentStr = indentStr.substring(0, 10);
+			if (indentStep && indentStep.length > 10) {
+				indentStep = indentStep.substring(0, 10);
 			}
 		}
+		
+		if (options.format && options.format !== 'mark') {
+			// load helper on demand
+			if (!$convert) { $convert = require('./lib/mark.convert.js')(MARK); }
+			$convert.indent = indent;
+			if (options.format === 'xml' || options.format === 'html') 
+				return $convert.toSgml(obj, options);
+			else return null;
+		}
+		// else stringify as Mark	
 	}
 	
-	// Mark no longer supports replacer
-	/*
-	var replacer = null;
-    if (options) {
-		if (typeof options === "function" || isArray(options)) { replacer = options; }
-		else if (typeof options !== "object") throw new Error('Option must be a function or an object');
-    }
-    var getReplacedValueOrUndefined = function(holder, key, isTopLevel) {
-        var value = holder[key];
-		
-		// toJSON call might not be secure, so we don't call it
-        // Replace the value with its toJSON value first, if possible 
-        // if (value && typeof value.toJSON === "function") {
-        //    value = value.toJSON();
-        // }
-		
-        // If the user-supplied replacer if a function, call it. If it's an array, check objects' string keys for
-        // presence in the array (removing the key/value pair from the resulting JSON if the key is missing).
-        if (typeof(replacer) === "function") {
-            return replacer.call(holder, key, value);
-        } else if(replacer) {
-            if (isTopLevel || isArray(holder) || replacer.indexOf(key) >= 0) {
-                return value;
-            } else {
-                return undefined;
-            }
-        } else {
-            return value;
-        }
-    };
-	*/
-
-    // polyfills
-    function isArray(obj) {
-        if (Array.isArray) {
-            return Array.isArray(obj);
-        } else {
-            return Object.prototype.toString.call(obj) === '[object Array]';
-        }
-    }
-
     function isDate(obj) {
         return Object.prototype.toString.call(obj) === '[object Date]';
     }
@@ -1056,17 +959,9 @@ MARK.stringify = function(obj, options) {
     function checkForCircular(obj) {
         for (var i = 0; i < objStack.length; i++) {
             if (objStack[i] === obj) {
-                throw new TypeError("Converting circular structure to JSON");
+                throw new TypeError("Got circular reference");
             }
         }
-    }
-
-    function makeIndent(str, num, noNewLine) {
-        var indent = noNewLine ? "" : "\n";
-        for (var i = 0; i < num; i++) {
-            indent += str;
-        }
-        return indent;
     }
 
     // Copied from Crokford's implementation of JSON
@@ -1096,106 +991,161 @@ MARK.stringify = function(obj, options) {
     }
     // End
 
-    function internalStringify(obj_part) {
-        var buffer, res;
-
-        // Replace the value, if necessary
-        // var obj_part = holder[key]; // getReplacedValueOrUndefined(holder, key, isTopLevel);
-
-        if (obj_part && !isDate(obj_part)) {
+    function _stringify(value) {
+        let buffer;
+        // Mark no longer supports JSON replacer
+		
+        if (value && !isDate(value)) {
             // unbox objects, don't unbox dates, since will turn it into number
-            obj_part = obj_part.valueOf();
+            value = value.valueOf();
         }
-        switch (typeof obj_part) {
+        switch (typeof value) {
             case "boolean":
-                return obj_part.toString();
+                return value.toString();
 
             case "number":
-                if (isNaN(obj_part) || !isFinite(obj_part)) {
+                if (isNaN(value) || !isFinite(value)) {
                     return "null";
                 }
-                return obj_part.toString();
+                return value.toString();
 
             case "string":
-                return escapeString(obj_part.toString());
+                return escapeString(value.toString());
 
             case "object":
-                if (obj_part === null) { // null value
+                if (value === null) { // null value
                     return "null";
                 } 
-				else if (isArray(obj_part)) { // Array
-                    checkForCircular(obj_part);  // console.log('print array', obj_part);
+				else if (Array.isArray(value)) { // array
+                    checkForCircular(value);  // console.log('print array', value);
                     buffer = "[";
-                    objStack.push(obj_part);
+                    objStack.push(value);
 
-                    for (var i = 0; i < obj_part.length; i++) {
-                        res = internalStringify(obj_part[i]);
-                        if (indentStr) buffer += makeIndent(indentStr, objStack.length);
-                        if (res === null || typeof res === "undefined") {
+                    for (var i = 0; i < value.length; i++) {
+                        let res = _stringify(value[i]);
+                        if (indentStep) buffer += indent(objStack.length);
+                        if (res === null || res === undefined) { 
+							// undefined is also converted to null, as Mark and JSON does not support 'undefined' value
                             buffer += "null";
                         } else {
                             buffer += res;
                         }
-                        if (i < obj_part.length-1) {
+                        if (i < value.length-1) {
                             buffer += omitComma ? ' ':',';
-                        } else if (indentStr) {
+                        } else if (indentStep) {
                             buffer += "\n";
                         }
                     }
                     objStack.pop();
-                    if (obj_part.length && indentStr) {
-                        buffer += makeIndent(indentStr, objStack.length, true);
+                    if (value.length && indentStep) {
+                        buffer += indent(objStack.length, true);
                     }
                     buffer += "]";
                 }
+				else if (value instanceof ArrayBuffer) { // binary
+					if (value.encoding === 'a85') { // base85
+						let bytes = new DataView(value), fullLen = value.byteLength, len = fullLen - (fullLen % 4), chars = new Array(5);
+						buffer = '{:~';
+						// bulk of encoding
+						let i = 0;
+						for (; i < len; i+=4) {
+							let num = bytes.getUint32(i);  // big endian
+							// encode into 5 bytes
+							if (num) {
+								for (let j = 0; j < 5; ++j) {
+									chars[j] = String.fromCodePoint(num % 85 + 33);
+									num = Math.floor(num / 85);
+								}
+								buffer += chars[4] + chars[3] + chars[2] + chars[1] + chars[0];  // need to reverse the bytes
+							} else { // special case zero
+								buffer += 'z';
+							}
+						}
+						// trailing bytes and padding
+						let padding = 4 - fullLen % 4, num;
+						if (padding) {
+							switch (padding) {
+							case 1:  num = ((bytes.getUint16(i)<<8) + bytes.getUint8(i+2))<<8;  break;
+							case 2:  num = bytes.getUint16(i) << 16;  break;
+							case 3:  num = bytes.getUint8(i) << 24;
+							}
+							for (let j = 0; j < 5; ++j) {
+								chars[j] = String.fromCodePoint(num % 85 + 33);
+								num = Math.floor(num / 85);
+							}
+							// reverse the bytes and remove padding bytes
+							buffer += (chars[4] + chars[3] + chars[2] + chars[1] + chars[0]).substr(0, 5 - padding);
+						}
+						buffer += '~}';					
+					} 
+					else { // base64
+						let bytes = new Uint8Array(value), i, fullLen = bytes.length, len = fullLen - (fullLen % 3);
+						buffer = '{:';
+						// bulk of encoding
+						for (i = 0; i < len; i+=3) {
+							buffer += base64[bytes[i] >> 2];
+							buffer += base64[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)];
+							buffer += base64[((bytes[i + 1] & 15) << 2) | (bytes[i + 2] >> 6)];
+							buffer += base64[bytes[i + 2] & 63];
+						}
+						// trailing bytes and padding
+						if (fullLen % 3) {
+							buffer += base64[bytes[i] >> 2] + base64[((bytes[i] & 3) << 4) | (bytes[i + 1] >> 4)] +
+								(fullLen % 3 === 2 ? base64[(bytes[i + 1] & 15) << 2] : "=") + "=";
+						}
+						buffer += '}';
+					}
+				}
 				else { // pragma or object
-                    checkForCircular(obj_part);  // console.log('print obj', obj_part);
+                    checkForCircular(value);  // console.log('print obj', value);
                     buffer = "{";
                     var nonEmpty = false;
-					if (!obj_part.constructor) { // assume Mark pragma
+					if (!value.constructor) { // assume Mark pragma
 						// todo: should escape '{','}' in $pragma
-						return obj_part[$pragma] ? '{' + obj_part[$pragma] + '}' : 'null'/* unknown object */;
+						return value[$pragma] ?  (value[$paired] ? '('+ value[$pragma] +')' : '(?'+ value[$pragma] +'?)') : 'null'/* unknown object */;
 					}
 					// Mark or JSON object
-					objStack.push(obj_part);
+					objStack.push(value);
 					// print object type-name, if any
-					if (obj_part.constructor.name !== 'Object' || obj_part instanceof MARK) { 
-						buffer += obj_part.constructor.name;  nonEmpty = true;
+					if (value.constructor.name !== 'Object' || value instanceof MARK) { 
+						buffer += value.constructor.name;  nonEmpty = true;
 					} 
 					// else JSON
 
 					// print object attributes
-					var hasAttr = false;
-                    for (var prop in obj_part) {
-						var value = internalStringify(obj_part[prop]);
-						if (typeof value !== "undefined") {
-							// buffer += makeIndent(indentStr, objStack.length);                            
-							var key = MARK.isName(prop) ? prop : escapeString(prop);
-							buffer += (hasAttr ? (omitComma ? ' ':', '):(nonEmpty ? ' ':''))+ key +":"+ value;
+					let hasAttr = false;
+                    for (var prop in value) {
+						// prop of undefined value is omitted, as Mark and JSON does not support 'undefined' value
+						let res = _stringify(value[prop]);
+						if (res !== undefined) {                           
+							let key = MARK.isName(prop) ? prop : escapeString(prop);
+							buffer += (hasAttr ? (omitComma ? ' ':', '):(nonEmpty ? ' ':''))+ key +":"+ res;
 							hasAttr = true;  nonEmpty = true;
 						}
                     }
+					
 					// print object content
-					var length = obj_part[$length];
+					let length = value[$length];
 					if (length) {
-						for (var i = 0; i<length; i++) {
+						for (let i = 0; i<length; i++) {
 							buffer += ' ';
-							var item = obj_part[i];
+							let item = value[i];
 							if (typeof item === "string") {
-								if (indentStr) buffer += makeIndent(indentStr, objStack.length);
+								if (indentStep) buffer += indent(objStack.length);
 								buffer += escapeString(item.toString());
 							}
 							else if (typeof item === "object") {
-								if (indentStr) buffer += makeIndent(indentStr, objStack.length);
-								buffer += internalStringify(item);
+								if (indentStep) buffer += indent(objStack.length);
+								buffer += _stringify(item);
 							}
 							else { console.log("unknown object", item); }
 						}
 					}
+					
                     objStack.pop();
                     if (nonEmpty ) {
-                        // buffer = buffer.substring(0, buffer.length-1) + makeIndent(indentStr, objStack.length) + "}";
-						if (length && indentStr) { buffer += makeIndent(indentStr, objStack.length); }
+                        // buffer = buffer.substring(0, buffer.length-1) + indent(objStack.length) + "}";
+						if (length && indentStep) { buffer += indent(objStack.length); }
 						buffer += "}";
                     } else {
                         buffer = '{}';
@@ -1211,9 +1161,9 @@ MARK.stringify = function(obj, options) {
     // special case...when undefined is used inside of a compound object/array, return null.
     // but when top-level, return undefined
     if (obj === undefined) { return undefined; }
-    return internalStringify(obj);
+    return _stringify(obj);
 };
 
 // export the Mark interface
-if (typeof module === 'object')
 module.exports = MARK;
+if (typeof window !== 'undefined') { window.Mark = MARK; }

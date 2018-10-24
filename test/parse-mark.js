@@ -2,9 +2,15 @@
 const Mark = require('./../mark.js');
 
 test('Parse Mark object', function(assert) {
+	// test literal values
+	assert.equal(Mark.parse("Infinity"), Infinity, "Infinite value");
+	assert.equal(Mark.parse("true"), true, "Infinite value");
+	assert.equal(Mark.parse("word"), "word", "Unquoted identifier as string value");
+	
 	// test array
 	assert.deepEqual(Mark.parse("[1 true 'text']"), [1, true, 'text'], "Comma is optional in Mark array");
 	assert.deepEqual(Mark.parse("[1 true, 'text']"), [1, true, 'text'], "Comma is optional in Mark array");
+	assert.deepEqual(Mark.parse("[1 true yellow]"), [1, true, 'yellow'], "Unquoted identifier as string value in Mark array");
 	
 	// test name
 	assert.equal(Mark.parse('{obj}').constructor.name, 'obj', "Mark object constructor.name should be 'obj'");
@@ -27,7 +33,6 @@ test('Parse Mark object', function(assert) {
 	assert.equal(Mark.parse('{div style:{width:"10px"}}').style.width, "10px", 'Object {div style:{width:"10px"}}.style.width should be "10px"');
 	assert.equal(Mark.parse('{div "class":"large"}').class, "large", 'Object {div "class":"large"}.class should be "large"');
 	assert.equal(Mark.parse("{div 'class':'large'}").class, "large", 'Object {div "class":"large"}.class should be "large"');
-	assert.equal(Mark.parse("{obj length:100}").prop('length'), 100, "Object {obj length:100}.prop('length') should be 100");
 	assert.deepEqual(Object.keys(Mark.parse('{obj}')), [], 'Object {obj}.keys() should be empty');
 	assert.deepEqual(Object.keys(Mark.parse('{div class:"test", style:{color:"red"}}')), ['class','style'], 
 		'Object {div class:"test", style:{color:"red"}} keys should be ["class","style"]');
@@ -35,6 +40,7 @@ test('Parse Mark object', function(assert) {
 	assert.deepEqual(Mark.parse("{form id:'test-form', buttons:[{kind:'back'}, 'save', {action:'submit', class:'btn btn-warning'}] }").buttons, 
 		[{kind:'back'}, 'save', {action:'submit', class:'btn btn-warning'}] , "form buttons with array of data");
 	assert.deepEqual(Object.keys(Mark.parse("{obj map:1, every:2, constructor:3}")), ["map", "every", "constructor"], "properties should not conflict with Mark API functions");
+	assert.equal(Mark('{div align:left}').align, 'left', "Identifier as literal string value");
 	
 	// test content model
 	assert.equal(Mark.parse('{obj}').length(), 0, "Object {obj}.length should be 0");
@@ -54,16 +60,16 @@ test('Parse Mark object', function(assert) {
 	assert.equal(Mark.parse('{div {"width":1}}')[0].width, 1, "JSON object allowed as Mark content");
 	
 	// test Mark pragma
-	assert.equal(Mark.parse('{!-- comment --}').constructor, undefined, "Mark pragma");
-	assert.equal(Mark.parse('{!-- comment --}').pragma(), "!-- comment --", "Mark pragma as root");
-	assert.equal(Mark.parse('{!-- comment with escape \\{\\} \\ --}').pragma(), "!-- comment with escape {} \\ --", "Mark pragma with escape");
-	assert.equal(Mark.parse('{div {!-- comment --} }')[0].pragma(), "!-- comment --", "Mark pragma as content");
-	assert.equal(Mark.parse("{'some text' + ' and more'}").pragma(), "'some text' + ' and more'", "Mark pragma parsing that needs backtracking");
-	let pragma = Mark.parse("{div '100%' 'text'!}");
-	assert.equal(pragma.pragma(), "div '100%' 'text'!", "Mark pragma parsing that needs backtracking");
-	pragma = Mark.parse("{field name:'test', required:{this.context.user.hasRole('admin')}}");
+	assert.equal(Mark.parse('(?-- comment ?)').pragma(), "-- comment ", "Mark pragma as root");
+	assert.equal(Mark.parse('(!-- comment --)').pragma(), "!-- comment --", "Mark pragma as root");
+	assert.equal(Mark.parse('(!-- comment --)').constructor, undefined, "Mark pragma");
+	assert.equal(Mark.parse('(!-- comment with embedded (...) \\ --)').pragma(), "!-- comment with embedded (...) \\ --", "Mark pragma with embedded ()");
+	assert.equal(Mark.parse('{div (!-- comment --)}')[0].pragma(), "!-- comment --", "Mark pragma as content");
+	//let pragma = Mark.parse("{div '100%' 'text'!}");
+	//assert.equal(pragma.pragma(), "div '100%' 'text'!", "Mark pragma parsing that needs backtracking");
+	pragma = Mark.parse("{field name:'test', required:(this.context.user.hasRole('admin'))}");
 	assert.equal(pragma.required.pragma(), "this.context.user.hasRole('admin')", "Mark pragma parsing that needs backtracking");
-	assert.equal(Mark.parse(`{var t = "\r\n"}`).pragma(), `var t = "\r\n"`, "Mark pragma should preserve JS escape");
+	assert.equal(Mark.parse('(var t = "\r\n")').pragma(), 'var t = "\r\n"', "Mark pragma should preserve JS escape");
 	
 	// test multiline text
 	assert.equal(Mark.parse('{div "string"\n" 2nd line"\n\t\t" and 3rd"}')[0], "string 2nd line and 3rd", "Mark multiline text");
@@ -82,6 +88,67 @@ test('Parse Mark object', function(assert) {
 	// test comment
 	assert.equal(Mark.parse('{div //comment\n}').constructor.name, "div", "Mark with line comment");
 	assert.equal(Mark.parse('{div /*comment*/}').constructor.name, "div", "Mark with block comment");
+	assert.equal(Mark.parse('{div /*comment /*nested*/ */}').constructor.name, "div", "Mark with nested block comment");
+	
+	// test shorthand
+	assert.equal(Mark('{div "text"}').constructor.name, "div", "Mark() shorthand");
+	
+	assert.end();
+});
+
+function stringArrayBuffer(str) {
+    var buffer = new ArrayBuffer(str.length);
+    var bytes = new Uint8Array(buffer);
+    str.split('').forEach(function(str, i) {
+      bytes[i] = str.charCodeAt(0);
+    });
+    return buffer;
+}
+
+function compareArrayBuffers(buffer1, buffer2) {
+    var len1 = buffer1.byteLength;
+    var len2 = buffer2.byteLength;
+    var view1 = new Uint8Array(buffer1);
+    var view2 = new Uint8Array(buffer2);
+
+    if (len1 !== len2) {
+      return false;
+    }
+
+    for (var i = 0; i < len1; i++) {
+      if (!view1[i] || view1[i] !== view2[i]) {
+        return false;
+      }
+    }
+    return true;
+}
+
+test('Parse Mark binary value', function(assert) {
+	// test base64 parsing
+	var bin = Mark('{:\n}');
+	assert.equal(compareArrayBuffers(bin, new ArrayBuffer(0)), true, "zero-length base64 binary");
+	assert.equal(bin.byteLength, 0, "zero-length base64 binary");
+	bin = Mark('{:QXJ0}');
+	assert.equal(compareArrayBuffers(bin, stringArrayBuffer("Art")), true, "Parse base64 of 'Art'");
+	assert.equal(bin instanceof ArrayBuffer, true, "Mark base64 is instance of ArrayBuffer");
+	assert.equal(bin.byteLength, 3, "byteLength of 'Art' is 3");
+	assert.equal(compareArrayBuffers(Mark('{:SGVs bG8 gd29 ybGQ=}'), stringArrayBuffer("Hello world")), true, "Parse base64 of 'Hello world'");
+	assert.equal(compareArrayBuffers(Mark('{: SGVsb \t G8gd29 \r\n ybGRzIQ==}'), stringArrayBuffer("Hello worlds!")), true, "Parse base64 of 'Hello worlds!'");
+	
+	var doc = Mark("{doc mime:'text/html' data:{:PGgxPkhlbGxvLCBXb3JsZCE8L2gxPg==}}");
+	assert.equal(compareArrayBuffers(doc.data, stringArrayBuffer("<h1>Hello, World!</h1>")), true, "Parse base64 of '<h1>Hello, World!</h1>'");
+	
+	// test base85 parsing
+	bin = Mark('{:~ \n ~}');
+	assert.equal(compareArrayBuffers(bin, new ArrayBuffer(0)), true, "zero-length base85 binary");
+	assert.equal(bin.byteLength, 0, "zero-length base85 binary");	
+	bin = Mark("{:~@ps7tD.7's~}");
+	assert.equal(compareArrayBuffers(bin, stringArrayBuffer("canumber")), true, "Parse base85 of 'canumber'");
+	assert.equal(bin instanceof ArrayBuffer, true, "Mark base85 is instance of ArrayBuffer");
+	assert.equal(bin.byteLength, 8, "byteLength of 'canumber' is 8");
+	assert.equal(compareArrayBuffers(Mark("{:~BOu! \t \n rDZ~}"), stringArrayBuffer("hello")), true, "Parse base85 of 'hello'");
+	assert.equal(compareArrayBuffers(Mark("{:~\n@p\ns7\ntD.3~}"), stringArrayBuffer("canumb")), true, "Parse base85 of 'canumb'");
+	assert.equal(compareArrayBuffers(Mark("{:~ @<5pm \rBfIs ~}"), stringArrayBuffer("ascii85")), true, "Parse base85 of 'ascii85'");
 	
 	assert.end();
 });
