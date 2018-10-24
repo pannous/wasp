@@ -856,12 +856,20 @@ struct TTT {
 	char wtf[1000];
 };
 
+void init(){
+	NIL = new Node("NIL");
+	NIL->type = nils;
+	True.value.longy=1;
+	True.type = bools;
+	False.value.longy=0;
+	False.type = bools;
+}
+
 int main(int argp, char **argv) {
+	init();
 	log(String("OK %s").replace("%s", "WASM"));
 	logi(argp);
 	log("HALL-o-MARK");
-	NIL = new Node("NIL");
-	NIL->type = nils;
 	log(True);
 	log(False);
 	try {
