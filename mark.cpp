@@ -1,5 +1,5 @@
 //#define WASM 1
-
+//#define X86_64 1
 #define let auto
 #define var auto
 typedef void *any;
@@ -9,9 +9,13 @@ void raise(chars error) { throw error; }
 
 unsigned int *memory = (unsigned int *)4096; // todo how to not handtune _data_end?
 #ifdef WASM
+#ifdef X86_64
+typedef long unsigned int size_t;
+#else
 typedef unsigned int size_t;
-unsigned int *current;
+#endif
 
+unsigned int *current;
 extern "C" void logs (const char *);
 extern "C" void logc(char s);
 extern "C" void logi(int i);
@@ -853,71 +857,14 @@ struct TTT {
 };
 
 int main(int argp, char **argv) {
+	log(String("OK %s").replace("%s", "WASM"));
 	logi(argp);
-	logs("OK?");
-	log("HALLO WASM");
-	let s = String("TEST");
-	log(s);
-	String *wo;
-	String *wo2;
-	String okx;
-	logi(argp);
-	for (int i = 0; i < 10; i++) {
-		new TTT();
-		auto x = TTT();
-		TTT k = {1, "ja"};
-		wo = new String("1234");
-//		logi((long)memory); same, ok
-		if (i == 3) {
-			log(wo->data);
-			logs("TRICK");
-			wo2 = new String("WO2WO2");
-			logi((long) wo);
-			logi((long) wo2);
-			logi((long) &wo);
-			logi((long) &wo2);
-			log(wo->data);
-			log(wo2->data);
-			okx = (String("567") + itoa(i));
-			log(okx.data);
-			wo2 = wo;
-		}
-		logi((long) wo);
-	}
-	logi((long) wo);
-	logi((long) wo2);
-#ifdef WASM
-	printf("HALLO >%s<  \n\n", "WASM");
-	char* arg=(char*)argp;
-	log(arg);
-	logi(123);
-	logi(123456);
-	logi((long)wo);
-	logi((long)wo2);
-	logi((long)&s);
-	logi((long)&wo);
-	logi((long)&wo2);
-#endif
-	printf("%p", &wo);
-	printf("%p", &s);
-	return 0;
-	chars ok = "abc";
-	const char *&charr = ok;
-	if (charr[0] == 'a')
-		log("OK");
-
+	log("HALL-o-MARK");
 	NIL = new Node("NIL");
 	NIL->type = nils;
-
 	log(True);
 	log(False);
-//	if(1>0)
-//	 return 42;
-//	ok();
 	try {
-#ifdef BACKTRACE
-		signal(SIGSEGV, handler);   // install our handler
-#endif
 //		const char *source = "{a:3,b:4,c:{d:'hi'}}";
 		const char *source = "{d:{} b:3 a:'HIO'}";
 //		const char *source = "a='hooo'";
@@ -926,6 +873,10 @@ int main(int argp, char **argv) {
 		log(result);
 		log(result[0]);
 		log(result[1]);
+		log(result["a"]);
+		log(result["a"]->parent);
+		log(result["b"]);
+		log(result["c"]);
 		log(result["a"]);
 		log(result["b"]);
 		log(result["c"]);
