@@ -107,9 +107,13 @@ public:
 
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
-	Node parse(String source) {
+    static Node parse(String source) {
+		return Mark().read(source);
+    }
+
+	Node read(String source) {
 		if (source.empty()) {
-			return *NIL;
+			return NIL;
 		}
 
 		// initialize the contextual variables
@@ -363,7 +367,7 @@ private:
 			}
 		}
 		error("Bad string");
-		return *NIL;
+		return NIL;
 	};
 
 	// Parse an inline comment
@@ -785,8 +789,8 @@ private:
 			if (extended && !isNaN(key)) { // any numeric key is rejected for Mark object
 				error("Numeric key not allowed as Mark property name");
 			}
-			Node *child = obj[key];
-			if (child && child->length != 0) {//} && obj[key].type != "function") {
+			Node child = obj[key];
+			if (child.length != 0) {//} && obj[key].type != "function") {
 				error(s("Duplicate key not allowed: ") + key);
 			}
 			obj.set(key, val);
@@ -857,12 +861,20 @@ struct TTT {
 };
 
 void init(){
-	NIL = new Node("NIL");
-	NIL->type = nils;
+	NIL.type = nils;
 	True.value.longy=1;
 	True.type = bools;
 	False.value.longy=0;
 	False.type = bools;
+}
+
+void test(){
+	Node div=Mark::parse("{div {span class:'bold' 'text'} {br}}");
+	div["span"];
+	div["span"]["class"];
+
+
+
 }
 
 int main(int argp, char **argv) {
@@ -876,13 +888,13 @@ int main(int argp, char **argv) {
 //		const char *source = "{a:3,b:4,c:{d:'hi'}}";
 		const char *source = "{d:{} b:3 a:'HIO'}";
 //		const char *source = "a='hooo'";
-		Node result = Mark().parse(source);
+		Node result = Mark::parse(source);
 		log("OK");
 		log(result);
 		log(result[0]);
 		log(result[1]);
 		log(result["a"]);
-		log(result["a"]->parent);
+		log(result["a"].parent);
 		log(result["b"]);
 		log(result["c"]);
 		log(result["a"]);
