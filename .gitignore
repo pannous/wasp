@@ -1,12 +1,12 @@
+/yarn.lock
+.idea/
+.idea/*
 node_modules/
 tmp/
 coverage/
 package-lock.json*
 npm-debug.log
 .DS_Store
-/yarn.lock
-.idea/
-.idea/*
 cmake-build-debug/
 mark.bc
 mark.cpp.wasm
