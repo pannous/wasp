@@ -18,6 +18,7 @@ extern unsigned int *memory;
 extern unsigned int *&heap;
 
 extern "C" void logs(const char *);
+extern void *malloc (size_t __size);
 
 #ifndef WASM
 
@@ -382,8 +383,6 @@ union Value {
 
 struct Entry;
 
-Node *NIL = nullptr;
-
 class Node {
 public:
 	Value value;
@@ -435,13 +434,24 @@ public:
 	}
 
 	// moved outside because circular dependency
-	Node *operator[](int i);
+	Node& operator[](int i);
 
-	Node *operator[](String s);
+	Node& operator[](String s);
 
 	void set(String string, Node node);
 };
 
+
+//new String();
+//auto ws = {' ', '\t', '\r', '\n'};
+Node Infinity = Node("Infinity");
+String EMPTY = String('\0');
+Node NaN = Node("NaN");
+//NIL=0;
+//Node NIL;
+Node NIL = Node("NIL");
+Node True = Node("True");
+Node False = Node("False");
 
 struct Entry {
 	String key;
@@ -449,15 +459,15 @@ struct Entry {
 };
 
 
-Node *Node::operator[](int i) {
-	return &this->children[i].value;
+Node& Node::operator[](int i) {
+	return this->children[i].value;
 }
 
-Node *Node::operator[](String s) {
+Node& Node::operator[](String s) {
 	for (int i = 0; i < length; i++) {
-		Entry &entry = children[i];
+		Entry &entry = this->children[i];
 		if (s == entry.key)
-			return &entry.value;
+			return entry.value;
 	}
 //		raise("NO SUCH KEY");
 	return NIL;
@@ -472,16 +482,6 @@ void Node::set(String string, Node node) {
 	this->length++;
 }
 
-//new String();
-//auto ws = {' ', '\t', '\r', '\n'};
-Node Infinity = Node("Infinity");
-String EMPTY = String('\0');
-Node NaN = Node("NaN");
-//NIL=0;
-//Node NIL;
-//Node NIL = Node("NIL");
-Node True = Node("True");
-Node False = Node("False");
 
 
 void log(long i) {
@@ -493,7 +493,7 @@ void log(Node n) {
 //		return;
 //	Node n=*n0;
 	printf("Node ");
-	if (&n == NIL || n.type == nils) {
+	if (n == NIL || n.type == nils) {
 		printf("NIL\n");
 		return;
 	}
