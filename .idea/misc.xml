@@ -4,6 +4,7 @@
   <component name="CidrRootsConfiguration">
     <excludeRoots>
       <file path="$PROJECT_DIR$/bak" />
+      <file path="$PROJECT_DIR$/js" />
     </excludeRoots>
   </component>
   <component name="JavaScriptSettings">

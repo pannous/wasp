@@ -8,17 +8,20 @@
 
 //void *malloc(int size);
 
+//#include <malloc.h>
 #define let auto
 #define var auto
 typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
+//typedef int size_t;
 
 extern unsigned int *memory;
 extern unsigned int *&heap;
 
 extern "C" void logs(const char *);
-extern void *malloc (size_t __size);
+//extern void *malloc (size_t __size);
+//extern void *malloc (int __size);
 
 #ifndef WASM
 
@@ -47,20 +50,27 @@ void printf(const char *format, chars i);
 #endif
 
 
-int atoi(const char *__nptr);
+int atoi0(const char *__nptr);
 
 
 bool eq(const char *dest, const char *src) {
 	if (!dest || !src)
 		return false;
 	int i = 0;
-	while (char c = src[i]) {
-		if (!dest[i] || !c)
+	while (char c = dest[i]) {
+		if (!src[i] || !c)
 			return false;
-		if (dest[i] != c)
+		if (src[i] != c)
 			return false;
 		i++;
 	}
+//	while (char c = src[i]) {
+//		if (!dest[i] || !c)
+//			return false;
+//		if (dest[i] != c)
+//			return false;
+//		i++;
+//	}
 	return true;
 }
 
@@ -77,16 +87,19 @@ void strcpy(char *dest, const char *src, int length = -1) {
 }
 
 
-int atoi(const char *p) {
+int atoi0(const char *p) {
 	int k = 0;
 	while (*p) {
-		k = (k << 3) + (k << 1) + (*p) - '0';
+		int n = (*p) - '0';
+		if(n<0 or n>9)
+			return k;
+		k = (k << 3) + (k << 1) + n;
 		p++;
 	}
 	return k;
 }
 
-double atof(const char *string) {
+double atof0(const char *string) {
 	double result = 0.0;
 	if (!string) return result;
 
@@ -94,7 +107,7 @@ double atof(const char *string) {
 	double divisor = 1.0;
 	int integer_portion = 0;
 
-	integer_portion = atoi(string);
+	integer_portion = atoi0(string);
 
 	result = (double) integer_portion;
 	if (*string == '-') {
@@ -192,6 +205,7 @@ public:
 	String(char c) {
 		data = static_cast<char *>(malloc(2));
 		data[0] = c;
+		data[1]=0;
 		length = 1;
 	}
 
@@ -230,8 +244,9 @@ public:
 //	operator std::string() const { return "Hi"; }
 
 	String substring(int from, int to) {
-		auto *neu = static_cast<char *>(malloc(to - from));
+		auto *neu = static_cast<char *>(malloc((sizeof(char))*( to - from)));
 		strcpy(neu, &data[from], to - from);
+		neu[to - from]=0;
 		return String(neu);
 	}
 
@@ -289,6 +304,10 @@ public:
 	}
 
 	String operator+(char c) {
+		return this->operator+(String(c));
+	}
+
+	String operator+(char* c) {
 		return this->operator+(String(c));
 	}
 
@@ -356,9 +375,9 @@ public:
 //};
 
 enum Type {
-	strings = 0,
+	object=0,
+	strings,
 	arrays,// same as:
-	object,
 	buffers,
 	nodes,
 	longs,
@@ -385,6 +404,9 @@ struct Entry;
 
 class Node {
 public:
+
+//	Node(const char*);
+
 	Value value;
 	Node *parent = 0;
 	Entry *children = nullptr;
@@ -394,6 +416,7 @@ public:
 	Node() {
 		type = object;
 	}
+
 
 	explicit Node(int buffer[]) {
 		value.data = buffer;
@@ -406,9 +429,10 @@ public:
 		type = longs;
 	}
 
-	explicit Node(String string0) {
+
+	explicit Node(String s) {
 		type = strings;
-		value.string = string0;
+		value.string = s;
 	}
 
 	explicit Node(Node **pNode) {
@@ -416,12 +440,14 @@ public:
 		value.data = pNode;
 	}
 
+	bool operator==(int other);
+	bool operator==(long other);
+	bool operator==(float other);
+	bool operator==(double other);
+	bool operator==(String other);
+	bool operator==(Node other);
+	bool operator!=(Node other);
 
-	bool operator==(Node x) {
-//		todo
-		return type == x.type && value.floaty == x.value.floaty;
-		return children == x.children;
-	}
 
 //	Node(bool b) {
 //		Value(b ? 0 : 1);
@@ -435,12 +461,24 @@ public:
 
 	// moved outside because circular dependency
 	Node& operator[](int i);
-
+	Node& operator[](char c);
 	Node& operator[](String s);
 
-	void set(String string, Node node);
+	Node& operator=(int i);
+
+	Node& operator=(chars s);
+
+	Node& set(String string, Node node);
 };
 
+//
+//String operator "" s(const char* c, size_t){
+//return String(c);// "bla"s
+//}
+
+//String operator ""_s(const char* c, size_t){
+//	return String(c);// "bla"_s
+//}
 
 //new String();
 //auto ws = {' ', '\t', '\r', '\n'};
@@ -458,8 +496,20 @@ struct Entry {
 	Node value;
 };
 
+Node& Node::operator=(int i){
+	this->value.longy = i;
+	this->type = longs;
+	return *this;
+}
+
+Node& Node::operator=(chars c){
+	this->value.string = String(c);
+	this->type = strings;
+	return *this;
+}
 
 Node& Node::operator[](int i) {
+	if(i>=length)throw String("out of range ") +  i + " > " + length;
 	return this->children[i].value;
 }
 
@@ -470,39 +520,87 @@ Node& Node::operator[](String s) {
 			return entry.value;
 	}
 //		raise("NO SUCH KEY");
-	return NIL;
+	return set(s, Node());// for n["a"]=b // todo: return DANGLING/NIL
+//	return NIL;
 }
 
-void Node::set(String string, Node node) {
-	if (!children)children = static_cast<Entry *>(malloc(10000));
+
+Node& Node::operator[](char c){
+	return (*this)[String(c)];
+}
+
+Node& Node::set(String string, Node node) {
+	if (!children)children = static_cast<Entry *>(malloc(1000));
 	Entry &entry = children[this->length];
 	entry.key = string;
 	entry.value = node;
 	node.parent = this;
 	this->length++;
+	return entry.value;
 }
 
+//Node::Node(const char *string) {
+//	this->value.string = String(string);
+//	this->type = strings;
+//}
+
+bool Node::operator==(String other) {
+	return this->type==strings and this->value.string == other;
+}
+bool Node::operator==(int other) {
+	return (this->type==longs and this->value.longy == other) or (this->type==floats and value.floaty == other);
+}
+bool Node::operator==(long other) {
+	return (this->type==longs and this->value.longy == other) or (this->type==floats and value.floaty == other);
+}
+bool Node::operator==(double other) {
+	return (this->type==floats and this->value.floaty == ((float )other)) or (this->type==longs and this->value.longy == other) ;
+}
+bool Node::operator==(float other) {
+	return (this->type==floats and this->value.floaty == other) or (this->type==longs and this->value.longy == other) ;
+}
+
+bool Node::operator==(Node other) {
+	for (int i = 0; i < length; i++) {
+		Entry &field = this->children[i];
+		Node &val = other[field.key];
+		if(field.value != val )
+			return false;
+	}
+	if(type != other.type)
+		return false;
+	if(type==strings)
+		return value.string == other.value.string;
+	return value.floaty == other.value.floaty;
+}
+bool Node::operator!=(Node other) {
+	return not(*this == other);
+}
 
 
 void log(long i) {
 	printf("%li", i);
 }
-
+void log(chars s) {
+	printf("%s\n",s);
+}
 void log(Node n) {
 //	if(!n0)
 //		return;
 //	Node n=*n0;
 	printf("Node ");
-	if (n == NIL || n.type == nils) {
+	if (&n == &NIL || n.type == nils) {
 		printf("NIL\n");
 		return;
 	}
 	printf("length %i ", n.length);
 	printf("type %i ", n.type);
-	if (n == True)
+	if (&n == &True)
 		printf("TRUE");
-	if (n == False)
+	if (&n == &False)
 		printf("FALSE");
+	if (n.type == object and n.value.data)
+		printf(" name %s", n.value.string.data);
 	if (n.type == bools)
 		printf(" value %s", n.value.longy ? "TRUE" : "FALSE");
 	if (n.type == strings)
@@ -545,3 +643,15 @@ void printf(const char *format, void* value) {
 #endif
 
 //#endif //NETBASE_STRING_CPP
+
+
+String operator "" s(const char* c, size_t){
+	return String(c);// "bla"s  literal operator suffixes not preceded by ‘_’ are reserved for future standardization
+}
+
+String operator "" _s(const char* c, size_t){
+	return String(c);
+}
+String operator "" _(const char* c, unsigned long t){
+	return String(c);
+}
