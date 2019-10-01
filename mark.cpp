@@ -5,13 +5,17 @@
 typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
-void raise(chars error) { throw error; }
 
-unsigned int *memory = (unsigned int *)4096; // todo how to not handtune _data_end?
+extern "C" void raise(chars error);
+extern "C" chars fetch(chars url);
+
+
+unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 #ifdef WASM
 #ifdef X86_64
 typedef long unsigned int size_t;
 #else
+// typedef long unsigned int size_t;
 typedef unsigned int size_t;
 #endif
 
@@ -59,8 +63,12 @@ void _cxa_throw(){
 }
 
 #else // NOT WASM:
-  #include <malloc.h>
-//#include <cstdlib> // malloc too
+
+void raise(chars error) { throw error; }
+
+#include <malloc.h>
+#include <assert.h>
+// #include <cstdlib> // malloc too
 //#include <stdio.h> // printf
 #endif
 
@@ -76,8 +84,13 @@ void* operator new(unsigned long size){
 #endif
 
 
-#import "String.cpp" // against mangling in wasm
+#import "String.cpp" // import against mangling in wasm (vs include)
 
+#ifndef WASM
+
+#import "Fetch.cpp"
+
+#endif
 
 //#include "String.h"
 void raise(String error) {
@@ -107,34 +120,22 @@ public:
 
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
-    static Node parse(String source) {
+	static Node parse(String source) {
 		return Mark().read(source);
-    }
+	}
 
 	Node read(String source) {
-		if (source.empty()) {
-			return NIL;
-		}
-
-		// initialize the contextual variables
-		at = 0;
+		if (source.empty()) return NIL;
+		columnStart = at = 0;
 		lineNumber = 1;
-		columnStart = at;
 		ch = ' ';
 		text = String(source);
-
-//		if (typeof options == "object" && options.format && options.format != "mark") { // parse as other formats
+//		if (typeof options == "object" && options.format && options.format != "mark")  // parse as other formats
 //			return $convert.parse(source, options);
-//		}
-		// else // parse as Mark
-
-		// start parsing the root value
-		var result = value();
+		var result = value(); // <<
 		white();
-		if (ch && ch != -1) {
-			error("Expect end of input");
-		}
-		// Mark does not support the legacy JSON reviver function
+		if (ch && ch != -1) error("Expect end of input");
+		// Mark does not support the legacy JSON reviver function todo ??
 		return result;
 	}
 
@@ -222,7 +223,7 @@ private:
 		        ch == '.' || ch == '-')) {
 			key += ch;
 		}
-
+		key += 0x00;
 		return key;
 	};
 
@@ -282,10 +283,12 @@ private:
 			}
 		}
 
+			if(string.contains("."))
+				return Node(atof0(string.data));
 		if (sign == '-') {
-			number0 = -atoi(string.data);
+			number0 = -atoi0(string.data);
 		} else {
-			number0 = +atoi(string.data);
+			number0 = +atoi0(string.data);
 		}
 
 //		if (!isFinite(number)) {
@@ -543,8 +546,8 @@ private:
 		return 'x';
 	}
 
+	// {: 00aacc :} base64 values
 	Node binary() {
-
 // Parse binary value
 // Use a lookup table to find the index.
 		byte lookup64[128];
@@ -676,8 +679,12 @@ private:
 //	int index = 0;
 
 	void putText(String text, Node obj) {
-		// check preceding node
-		todo("BUGy");
+		obj["text"] = Node(text);
+		if (!obj.value.string)
+			obj.value.string = text.data;
+		else
+			log(obj.value.string);
+//			todo("BUGy");
 //		if (index > 0 && obj[index - 1]->type == strings) {
 //			// merge with previous text
 //			obj.set(index - 1, obj[index - 1]->string() + text);
@@ -690,6 +697,7 @@ private:
 	};
 
 	void todo(const char string[]) {
+		raise(string);
 		throw string;
 	}
 
@@ -748,7 +756,7 @@ private:
 			if (ch == '"' || ch == '\'') { // quoted key
 				var str = string();
 				white();
-				if (ch == ':') { // property or JSON object
+				if (ch == ':' or ch == '=') { // property or JSON object
 					key = str.string();
 				} else {
 					if (extended) { // already got type name
@@ -771,7 +779,7 @@ private:
 				// Mark unquoted key, which needs to be valid JS identifier.
 				var ident = identifier();
 				white();
-				if (ch == ':') { // property value
+				if (ch == ':' or ch =='=') { // property value
 					key = ident;
 				} else {
 					if (!extended) { // start of Mark object
@@ -789,11 +797,14 @@ private:
 			if (extended && !isNaN(key)) { // any numeric key is rejected for Mark object
 				error("Numeric key not allowed as Mark property name");
 			}
-			Node child = obj[key];
+			Node& child = obj[key];
 			if (child.length != 0) {//} && obj[key].type != "function") {
 				error(s("Duplicate key not allowed: ") + key);
 			}
-			obj.set(key, val);
+//			child.value.node=&val;
+//			child.type=val.type;
+			child=val;// SET reference!
+//			obj.set(key, val);
 //			obj[key] = val;
 //			assert(obj[key].value == &val);
 			white();
@@ -814,7 +825,8 @@ private:
 		white();
 		switch (ch) {
 			case '{':
-				return (text[at] == ':') ? binary() : object();
+				return (text[at] == ':' or text[at] == '=') ?
+					 binary() : object();
 			case '[':
 				return array();
 			case '"':
@@ -860,55 +872,110 @@ struct TTT {
 	char wtf[1000];
 };
 
-void init(){
+void init() {
 	NIL.type = nils;
-	True.value.longy=1;
+	True.value.longy = 1;
 	True.type = bools;
-	False.value.longy=0;
+	False.value.longy = 0;
 	False.type = bools;
 }
 
-void test(){
-	Node div=Mark::parse("{div {span class:'bold' 'text'} {br}}");
+void testNetbase() {
+
+	chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
+	chars json = fetch(url);
+	log(json);
+	Node div = Mark::parse(json);
+}
+
+void testDiv() {
+	Node div = Mark::parse("{div {span class:'bold' 'text'} {br}}");
 	div["span"];
 	div["span"]["class"];
+}
 
+
+void testMarkAsMap() {
+	Node compare = Node();
+//	compare["d"] = Node();
+	compare["b"] = 3;
+	compare["a"] = "HIO";
+	Node &node = compare["a"];
+	assert(node == "HIO");
+	const char *source = "{b:3 a:'HIO'}";// d:{}
+	Node marked = Mark::parse(source);
+	Node &node1 = marked["a"];
+	assert(node1 == "HIO");
+	assert(marked["a"]==compare["a"]);
+	assert(marked["b"]==compare["b"]);
+	bool ok = compare == marked;
+	assert(ok);
+	assert(compare == marked);
+}
+
+void testMark() {
+	log("primitives");
+//	assert(Mark::parse("a=3") == 3);
+//	assert(Mark::parse("a=3")["a"] == 3);
+	Node a = Mark::parse("{a:3}");
+	Node &a3 = a["a"];
+	assert(a3 == 3);
+	assert(Mark::parse("{a=3}")["a"] == 3);
+	assert(Mark::parse("3.") == 3.);
+	assert(Mark::parse("3.") == 3.f);
+//	assert(Mark::parse("3.1") == 3.1); // todo epsilon
+//	assert(Mark::parse("3.1") == 3.1f);// todo epsilon
+	assert(Mark::parse("'hi'") == "hi");
+	assert(Mark::parse("3") == 3);
+//		const char *source = "{a:3,b:4,c:{d:'hi'}}";
+	const char *source = "{d:{} b:3 a:'HIO'}";
+//		const char *source = "a='hooo'";
+	Node result = Mark::parse(source);
+	Node &node = result['b'];
+	log("OK");
+	log(result);
+	log(result[0]);
+	log(result[1]);
+	log(result["a"]);
+	log(result["a"].parent);
+	log(result["b"]);
+	log(result["c"]);
+	log(result["a"]);
+	log(result["b"]);
+	log(result["c"]);
+//	assert(result['d']=={})
+
+	assert(result["b"]==3);
+	assert(result['b']==3);
+	assert(result['a']=="HIO");
 
 
 }
 
+void test() {
+//	testNetbase();
+	testMark();
+	testMarkAsMap();
+	testDiv();
+}
+//String operator ++(const char*);
+
+
 int main(int argp, char **argv) {
+	auto s = "hello world"_;
 	init();
 	log(String("OK %s").replace("%s", "WASM"));
-	logi(argp);
-	log("HALL-o-MARK");
-	log(True);
-	log(False);
 	try {
-//		const char *source = "{a:3,b:4,c:{d:'hi'}}";
-		const char *source = "{d:{} b:3 a:'HIO'}";
-//		const char *source = "a='hooo'";
-		Node result = Mark::parse(source);
-		log("OK");
-		log(result);
-		log(result[0]);
-		log(result[1]);
-		log(result["a"]);
-		log(result["a"].parent);
-		log(result["b"]);
-		log(result["c"]);
-		log(result["a"]);
-		log(result["b"]);
-		log(result["c"]);
-	} catch (char *err) {
+		test();
+//		log(Node("hello"_));
+	} catch (chars err) {
 		printf("\nERROR\n");
 		printf("%s", err);
 	} catch (String err) {
 		printf("\nERROR\n");
 		printf("%s", err.data);
-//		fprintf(stderr, "\nERROR\n");
-//		fprintf(stderr, "%s",err.data);
 	}
+
 	return 42;
 }
 
