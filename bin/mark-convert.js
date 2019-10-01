@@ -2,7 +2,7 @@
 
 const program = require('commander');
 const fs = require('fs');
-const mark = require('./../mark.js');
+const mark = require('../js/mark.js');
 	
 // expose the metadata
 exports.command = {

@@ -226,13 +226,13 @@ var MARK = (function() {
 	}
 	// load mark.selector APIs
 	try {
-		require('./lib/mark.selector.js')(Mark);
+		require('../lib/mark.selector.js')(Mark);
 	} catch (e) {
 		console.trace("No Mark Selector API", e.message);
 	}	
 	// load mark.mutate APIs
 	try {
-		require('./lib/mark.mutate.js')(Mark, push, $length);
+		require('../lib/mark.mutate.js')(Mark, push, $length);
 	} catch (e) {
 		console.trace("No Mark Mutate API", e.message);
 	}
@@ -890,7 +890,7 @@ MARK.parse = (function() {
 		
 		if (!source) { text = '';  error(UNEXPECT_END); }
 		if (typeof options === 'object' && options.format && options.format != 'mark') { // parse as other formats
-			if (!$convert) { $convert = require('./lib/mark.convert.js')(MARK); }
+			if (!$convert) { $convert = require('../lib/mark.convert.js')(MARK); }
 			return $convert.parse(source, options);
 		} 
 		// else // parse as Mark
@@ -942,7 +942,7 @@ MARK.stringify = function(obj, options) {
 		
 		if (options.format && options.format !== 'mark') {
 			// load helper on demand
-			if (!$convert) { $convert = require('./lib/mark.convert.js')(MARK); }
+			if (!$convert) { $convert = require('../lib/mark.convert.js')(MARK); }
 			$convert.indent = indent;
 			if (options.format === 'xml' || options.format === 'html') 
 				return $convert.toSgml(obj, options);
