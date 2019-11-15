@@ -9,6 +9,7 @@ typedef const char *chars;
 extern "C" void raise(chars error);
 extern "C" chars fetch(chars url);
 
+bool throwing=true;// otherwise fallover beautiful-soup style generous parsing
 
 unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 #ifdef WASM
@@ -124,6 +125,10 @@ public:
 		return Mark().read(source);
 	}
 
+	static Node eval(String source) {
+		return Mark().read(source).evaluate();
+	}
+
 	Node read(String source) {
 		if (source.empty()) return NIL;
 		columnStart = at = 0;
@@ -137,6 +142,21 @@ public:
 		if (ch && ch != -1) error("Expect end of input");
 		// Mark does not support the legacy JSON reviver function todo ??
 		return result;
+	}
+
+	static char * readFile(const char* filename) {
+		FILE *f = fopen(filename, "rt");
+		fseek(f, 0, SEEK_END);
+		long fsize = ftell(f);
+		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+		char *s = static_cast<char *>(malloc(fsize + 1));
+		fread(s, 1, fsize, f);
+		fclose(f);
+		return s;
+	}
+
+	static Node parseFile(const char* filename) {
+			return Mark::parse(readFile(filename));
 	}
 
 private:
@@ -523,10 +543,11 @@ private:
 				next();
 				return arr;   // Potentially empty array
 			}
-			// ES5 allows omitted elements in arrays, e.g. [,] and [,null]. JSON and Mark don't allow this.
-			if (ch == ',') {
-				error("Missing array element");
-			} else {
+			// ES5 and Mark allow omitted elements in arrays, e.g. [,] and [,null]. JSON don't allow this.
+//			if (ch == ',') {
+//				error("Missing array element");
+//			}
+			else {
 				Node val = value();
 				array0[len++] = val;
 //				array0.push(value());
@@ -534,7 +555,7 @@ private:
 			white();
 
 			// comma is optional in Mark
-			if (ch == ',') {
+			if (ch == ',') { //  or ch == ';' not in list
 				next();
 				white();
 			}
@@ -740,6 +761,7 @@ private:
 			if (ch == '}') { // end of the object
 				next();
 				if (extended) {
+					log("TODO");// TODO
 //					obj.set($length, index);
 //					obj[$length] = index;
 				}
@@ -799,6 +821,8 @@ private:
 			}
 			Node& child = obj[key];
 			if (child.length != 0) {//} && obj[key].type != "function") {
+				log(child);
+				child = obj[key];// debug
 				error(s("Duplicate key not allowed: ") + key);
 			}
 //			child.value.node=&val;
@@ -809,7 +833,7 @@ private:
 //			assert(obj[key].value == &val);
 			white();
 			// ',' is optional in Mark
-			if (ch == ',') {
+			if (ch == ',' or ch ==';') {
 				next();
 				white();
 			}
@@ -872,6 +896,7 @@ struct TTT {
 	char wtf[1000];
 };
 
+
 void init() {
 	NIL.type = nils;
 	True.value.longy = 1;
@@ -921,6 +946,7 @@ void testMark() {
 	Node &a3 = a["a"];
 	assert(a3 == 3);
 	assert(Mark::parse("{a=3}")["a"] == 3);
+	assert(Mark::parse("{a=3}")["a"].name=="a");
 	assert(Mark::parse("3.") == 3.);
 	assert(Mark::parse("3.") == 3.f);
 //	assert(Mark::parse("3.1") == 3.1); // todo epsilon
@@ -951,13 +977,39 @@ void testMark() {
 
 
 }
+void testErrors(){
+	throwing=false;
+	Node node= Mark::parseFile("samples/errors.mark");
+	throwing=true;
+}
+void testSamples() {
+//	Node node= Mark::parseFile("samples/comments.mark");
+	Node node= Mark::parseFile("samples/kitchensink.mark");
+
+	assert(node['a']=="classical json");
+	assert(node['b']=="quotes optional");
+	assert(node['c']=="commas optional");
+	assert(node['d']=="semicolons optional");
+	assert(node['e']=="trailing comments"); // trailing comments
+	assert(node["f"]== /*inline comments*/ "inline comments");
+}
+
+void testEval(){
+	auto math = "one plus one";
+	Mark::parse(math);
+}
 
 void test() {
 //	testNetbase();
+
 	testMark();
 	testMarkAsMap();
 	testDiv();
+	testEval();
+	testSamples();
+	testErrors();
 }
+
 //String operator ++(const char*);
 
 

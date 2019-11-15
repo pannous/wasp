@@ -64,6 +64,8 @@ bool eq(const char *dest, const char *src) {
 			return false;
 		i++;
 	}
+	if(src[i])
+		return false;// different length!
 //	while (char c = src[i]) {
 //		if (!dest[i] || !c)
 //			return false;
@@ -281,6 +283,7 @@ public:
 		auto *neu = static_cast<char *>(malloc(length + c.length + 1));
 		if (data)strcpy(neu, data, length);
 		if (c.data)strcpy(neu + length, c.data, c.length);
+		neu[length + c.length]=0;
 		return String(neu);
 	}
 
@@ -315,13 +318,13 @@ public:
 		return !empty() && this[0] == c && this[1] == '\0';
 	}
 
-	bool operator==(String s) {
+	bool operator==(String& s) {
 		return eq(data, s.data);
 	}
-
-	bool operator==(char *c) {
-		return eq(data, c);
-	}
+//
+//	bool operator==(char *c) {
+//		return eq(data, c);
+//	}
 
 	bool operator!=(char *c) {
 		return eq(data, c);
@@ -404,9 +407,9 @@ struct Entry;
 
 class Node {
 public:
-
 //	Node(const char*);
 
+	String name; // for keys and variables
 	Value value;
 	Node *parent = 0;
 	Entry *children = nullptr;
@@ -456,7 +459,8 @@ public:
 	String string() {
 		if (type == strings)
 			return value.string;
-		throw "WRING TYPE";
+//		return name;
+		throw "WRONG TYPE";
 	}
 
 	// moved outside because circular dependency
@@ -469,6 +473,8 @@ public:
 	Node& operator=(chars s);
 
 	Node& set(String string, Node node);
+
+	Node evaluate();
 };
 
 //
@@ -577,6 +583,14 @@ bool Node::operator!=(Node other) {
 	return not(*this == other);
 }
 
+Node Node::evaluate() {
+	if (this->string() == "add") {
+
+	}
+//	if(this.name)
+	return Node();
+}
+
 
 void log(long i) {
 	printf("%li", i);
@@ -611,7 +625,12 @@ void log(Node n) {
 		printf(" value %f", n.value.floaty);
 	printf("\n");
 }
-
+#ifndef WASM
+#import <string>
+void log(std::string s) {
+	printf("%s\n", s.data());
+}
+#endif
 void log(String s) {
 	printf("%s\n", s.data);
 }
@@ -644,7 +663,7 @@ void printf(const char *format, void* value) {
 
 //#endif //NETBASE_STRING_CPP
 
-
+//-Wliteral-suffix
 String operator "" s(const char* c, size_t){
 	return String(c);// "bla"s  literal operator suffixes not preceded by ‘_’ are reserved for future standardization
 }
@@ -654,4 +673,16 @@ String operator "" _s(const char* c, size_t){
 }
 String operator "" _(const char* c, unsigned long t){
 	return String(c);
+}
+
+
+String string(const char*&s){
+	return String(s);
+}
+
+String str(const char*&s){
+	return String(s);
+}
+String s(const char*&s){
+	return String(s);
 }
