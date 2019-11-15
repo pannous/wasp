@@ -5,12 +5,18 @@ module.paths.push("/usr/lib/node_modules/"); // WHY??
 let {TextEncoder, TextDecoder} = require('text-encoding')
 exec = x => require('child_process').execSync(x).toString()
 
+// wasi_unstable=null
+// let WASIPolyfill=require('/me/dev/wasm/wasi_unstable.js')
+let WASIPolyfill=wasi_unstable=require('./wasi_unstable.js')
+
+
 // test="/me/dev/script/wasm/wasp/wasp.wast"
 // test="/me/dev/script/kotlin/a.out.wasm"
 // test="/me/dev/script/kotlin/test.wasm"
 // test="/me/dev/script/wasm/test.wasm"
+test="/me/dev/script/wasm/a.out.wasm"
 // test = "/me/dev/script/wasm/mark/mark.wasm"
-test="/me/dev/script/wasm/strings.ts"
+// test="/me/dev/script/wasm/strings.ts"
 
 file = arg = process.argv[2] || test
 func = process.argv[3] || "main"
@@ -54,7 +60,9 @@ demangle = function (line) {
 	name = name.replace(/PK.*?$/g, '')
 	name = name.replace(/_Z\d/, '')
 	name = name.replace(/v$/, '')
-	name = name.replace(/_ZN\d/, '')
+	name = name.replace(/_ZN\d/, 'xxx')
+
+	name = name.replace(/_ZN\d*_?/, '')
 	name = name.replace(/\d/g, '.')
 	name = name.replace("_", "")
 	// if(!type)
@@ -93,7 +101,8 @@ trimStack = function (ex, more = 0) {
 // table = new WebAssembly.Table({initial: 256 * 4, element: "anyfunc"});
 
 memory = new WebAssembly.Memory({initial: 256, maximum: 256});
-table = new WebAssembly.Table({initial: 662, maximum: 662, element: "anyfunc"});
+// table = new WebAssembly.Table({initial: 662, maximum: 662, element: "anyfunc"});
+table = new WebAssembly.Table({initial: 10, maximum: 10, element: "anyfunc"});
 
 nop = x => 0
 log = x => console.log(x)
@@ -112,13 +121,15 @@ const utf8_encoder = new TextDecoder('utf8');
 const utf16encoder = new TextDecoder('utf-16le');
 const utf8_decoder = new TextDecoder('utf8');
 const utf16denoder = new TextDecoder('utf-16le');
-
+_malloc=function _malloc(x,y,z){
+	console.log("_malloc", x,y,z)
+}
 string = function (pointer, length = -1, format = 'utf8') {
 	if(pointer>0){
 	console.log("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
 	for(var i=0;i < 30; i++)
 	console.log(String.fromCodePoint(buffer[pointer+i]))
-exit()
+	// exit()
 }
 	if (length <= 0) { // auto length
 		// if (format != 'utf8') while (buffer[pointer + ++length] || buffer[pointer + length + 1]) ;
@@ -374,13 +385,16 @@ const ctx = canvas.getContext('2d')
 teavm.canvas=ctx
 
 imports = {
+	wasi_unstable,
 	global: {NaN: 0, Infinity, Math},
 	js:{print_ln:log,perf_counter:nop},// wasmfun
 	env: {
 		memory,
 		table,
-		memoryBase: 256 * 8 * 8, // todo
 		tableBase: 0, // how to set generically for emcc compiled stuff?
+		__table_base: 0,
+		__memory_base: 256 * 8 * 8, // todo
+		memoryBase: 256 * 8 * 8, // todo
 		DYNAMICTOP_PTR: 0,
 		STACKTOP: 0,
 		tempDoublePtr: 0,
@@ -461,6 +475,7 @@ function wasmx(file) {
 
 		module = new WebAssembly.Module(binary)
 		instance = new WebAssembly.Instance(module, imports)
+		if(wasi_unstable)wasi_unstable.setInstance(instance)
 		exports = instance.exports
 		memory = exports.memory || exports._memory || memory
 		buffer = new Uint8Array(memory.buffer, 0, memory.length);
@@ -492,7 +507,10 @@ function wasmx(file) {
 		main = main || exports.cwa_main /*tiny go*/
 		/* bash arg */
 		main = main || exports.___emscripten_environ_constructor || exports.Konan_main
-		if (main) result = main(arg) // process.argc,args) doesnt work that way:(
+		if (main){
+			console.log("FOUND main! Calling",main,args)
+		 result = main(arg) // process.argc,args) doesnt work that way:(
+		}
 		else result = "NO MAIN! Entry function main not found."
 		console.log(">>>", result)
 
@@ -502,7 +520,6 @@ function wasmx(file) {
 		i = 0
 		while (i < DATA_END && !buffer[i++] && i<2**32) ;
 		console.log("FIRST DATA ", i, " DATA_END ", DATA_END, " HEAP ", HEAP)
-
 		return result
 	} catch (ex) {
 		console.error(ex)
