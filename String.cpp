@@ -409,6 +409,7 @@ union Value {
 
 struct Node;
 String nil = "nil";
+
 class Node {
 public:
 //	Node(const char*);
@@ -530,11 +531,15 @@ Node &Node::operator[](String s) {
 	for (int i = 0; i < length; i++) {
 		Node &entry = this->children[i];
 		if (s == entry.name)
-			return entry;
+			if ((entry.type==nodes or entry.type==nils) and entry.value.node)
+				return *entry.value.node;
+			else // danger overwrite a["b"]=c => a["b"].name == "c":
+				return entry;
 	}
-	Node& neu= set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
-	neu.type=nils; // until ref is set!
-	return neu;
+	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
+	neu.type = nils; // until ref is set!
+	if(neu.value.node) return *neu.value.node;
+	else return neu;
 }
 
 
@@ -542,15 +547,29 @@ Node &Node::operator[](char c) {
 	return (*this)[String(c)];
 }
 
+int capacity = 100;
+int maxNodes=10000;
+int last=0;
+Node* all = static_cast<Node *>(malloc(capacity*maxNodes));// super wasteful, for debug
 Node &Node::set(String string, Node *node0) {
-	if (!children)children = static_cast<Node *>(malloc(100));
-	if (this->length >= 100)todo("GROW children");
+//	if (!children)children = static_cast<Node *>(malloc(capacity));
+	if (!children)children=&all[capacity*last++];
+	if (this->length >= capacity/2)todo("GROW children");
 //	children = static_cast<Node *>(malloc(1000));// copy old
 	Node &entry = children[this->length];
 	entry.parent = this;
 	entry.name = string;
-	if (!node0);// dangling ref to be set
-	else{
+	if (!node0){
+//		entry.value.node=&entry;// HACK to set reference to self!
+		entry.value.node=&children[capacity - this->length -1];//  HACK to get key and value node dummy from children
+//		 todo: reduce capacity per node
+		entry.value.node->name=string;
+		entry.value.node->type=nodes;// todo value
+		entry.value.node->parent=&entry;
+		entry.type = nodes;
+//		entry.value.node=Node();// dangling ref to be set
+	}
+	else {
 		Node node = *node0;
 		entry.type = node.type;
 //	if(node.type==) // ...
@@ -592,19 +611,26 @@ bool Node::operator==(float other) {
 }
 
 bool Node::operator==(Node other) {
-	for (int i = 0; i < length; i++) {
-		Node &field = this->children[i];
-		Node &val = other[field.name];
-		if (field != val and field.value.node != &val)
-			return false;
-	}
 	if (type != other.type)
-		return false;
+		if(type!=nodes and other.type!=nodes) return false;
 	if (type == longs)
 		return this->value.longy = other.value.longy;
 	if (type == strings)
 		return value.string == other.value.string;
-	return value.floaty == other.value.floaty;
+	if (type == floats)
+		return value.floaty == other.value.floaty;
+	// if ...
+	for (int i = 0; i < length; i++) {
+		Node &field = this->children[i];
+		Node &val = other[field.name];
+		if (field != val) {
+			if ((field.type != nodes and field.type !=nils) or !field.value.node)
+				return false;
+			Node deep = *field.value.node;
+			return deep == val;
+		}
+	}
+	return false;
 }
 
 bool Node::operator!=(Node other) {

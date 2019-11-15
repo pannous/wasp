@@ -935,8 +935,6 @@ void testMarkAsMap() {
 	assert(node1 == "HIO");
 	assert(marked["a"] == compare["a"]);
 	assert(marked["b"] == compare["b"]);
-	bool ok = compare == marked;
-	assert(ok);
 	assert(compare == marked);
 }
 
@@ -952,6 +950,7 @@ void testMark() {
 
 	Node &b = a["b"];
 	a["b"] = a3;
+	assert(a["b"] == a3);
 	assert(a["b"] == a3);
 	assert(a["b"] == 3);
 
