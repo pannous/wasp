@@ -1,0 +1,9 @@
+{
+  "a": "classical json",
+  b: "quotes optional",
+  c: "commas optional"
+  d: "semicolons optional";
+  e: "trailing comments" // trailing comments
+  "f": /*inline comments*/ "inline comments",
+// todo ? <!-- html comments ? -->
+}
