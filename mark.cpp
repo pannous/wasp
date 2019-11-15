@@ -9,7 +9,7 @@ typedef const char *chars;
 extern "C" void raise(chars error);
 extern "C" chars fetch(chars url);
 
-bool throwing=true;// otherwise fallover beautiful-soup style generous parsing
+bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
 unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 #ifdef WASM
@@ -144,7 +144,7 @@ public:
 		return result;
 	}
 
-	static char * readFile(const char* filename) {
+	static char *readFile(const char *filename) {
 		FILE *f = fopen(filename, "rt");
 		fseek(f, 0, SEEK_END);
 		long fsize = ftell(f);
@@ -155,8 +155,8 @@ public:
 		return s;
 	}
 
-	static Node parseFile(const char* filename) {
-			return Mark::parse(readFile(filename));
+	static Node parseFile(const char *filename) {
+		return Mark::parse(readFile(filename));
 	}
 
 private:
@@ -303,8 +303,8 @@ private:
 			}
 		}
 
-			if(string.contains("."))
-				return Node(atof0(string.data));
+		if (string.contains("."))
+			return Node(atof0(string.data));
 		if (sign == '-') {
 			number0 = -atoi0(string.data);
 		} else {
@@ -543,7 +543,7 @@ private:
 				next();
 				return arr;   // Potentially empty array
 			}
-			// ES5 and Mark allow omitted elements in arrays, e.g. [,] and [,null]. JSON don't allow this.
+				// ES5 and Mark allow omitted elements in arrays, e.g. [,] and [,null]. JSON don't allow this.
 //			if (ch == ',') {
 //				error("Missing array element");
 //			}
@@ -726,7 +726,7 @@ private:
 		while (ch) {
 			if (ch == '{' || ch == '(') { // child object
 				let child = (ch == '(') ? pragma() : (text[at] == ':' ? binary() : object());
-				obj.set(obj.length, child);// NR as key!
+				obj.set(obj.length, &child);// NR as key!
 			} else if (ch == '"' || ch == '\'') { // text node
 				let str = string();
 				// only output non empty text
@@ -801,7 +801,7 @@ private:
 				// Mark unquoted key, which needs to be valid JS identifier.
 				var ident = identifier();
 				white();
-				if (ch == ':' or ch =='=') { // property value
+				if (ch == ':' or ch == '=') { // property value
 					key = ident;
 				} else {
 					if (!extended) { // start of Mark object
@@ -819,7 +819,7 @@ private:
 			if (extended && !isNaN(key)) { // any numeric key is rejected for Mark object
 				error("Numeric key not allowed as Mark property name");
 			}
-			Node& child = obj[key];
+			Node &child = obj[key];
 			if (child.length != 0) {//} && obj[key].type != "function") {
 				log(child);
 				child = obj[key];// debug
@@ -827,13 +827,15 @@ private:
 			}
 //			child.value.node=&val;
 //			child.type=val.type;
-			child=val;// SET reference!
+			child = val;// SET reference!
+			child.parent = &obj;
+			child.name = key;
 //			obj.set(key, val);
 //			obj[key] = val;
 //			assert(obj[key].value == &val);
 			white();
 			// ',' is optional in Mark
-			if (ch == ',' or ch ==';') {
+			if (ch == ',' or ch == ';') {
 				next();
 				white();
 			}
@@ -850,7 +852,7 @@ private:
 		switch (ch) {
 			case '{':
 				return (text[at] == ':' or text[at] == '=') ?
-					 binary() : object();
+				       binary() : object();
 			case '[':
 				return array();
 			case '"':
@@ -931,8 +933,8 @@ void testMarkAsMap() {
 	Node marked = Mark::parse(source);
 	Node &node1 = marked["a"];
 	assert(node1 == "HIO");
-	assert(marked["a"]==compare["a"]);
-	assert(marked["b"]==compare["b"]);
+	assert(marked["a"] == compare["a"]);
+	assert(marked["b"] == compare["b"]);
 	bool ok = compare == marked;
 	assert(ok);
 	assert(compare == marked);
@@ -945,8 +947,14 @@ void testMark() {
 	Node a = Mark::parse("{a:3}");
 	Node &a3 = a["a"];
 	assert(a3 == 3);
-	assert(Mark::parse("{a=3}")["a"] == 3);
-	assert(Mark::parse("{a=3}")["a"].name=="a");
+	assert(a3.type == longs);
+	assert(a3.name == "a");
+
+	Node &b = a["b"];
+	a["b"] = a3;
+	assert(a["b"] == a3);
+	assert(a["b"] == 3);
+
 	assert(Mark::parse("3.") == 3.);
 	assert(Mark::parse("3.") == 3.f);
 //	assert(Mark::parse("3.1") == 3.1); // todo epsilon
@@ -971,30 +979,32 @@ void testMark() {
 	log(result["c"]);
 //	assert(result['d']=={})
 
-	assert(result["b"]==3);
-	assert(result['b']==3);
-	assert(result['a']=="HIO");
+	assert(result["b"] == 3);
+	assert(result['b'] == 3);
+	assert(result['a'] == "HIO");
 
 
 }
-void testErrors(){
-	throwing=false;
-	Node node= Mark::parseFile("samples/errors.mark");
-	throwing=true;
+
+void testErrors() {
+	throwing = false;
+	Node node = Mark::parseFile("samples/errors.mark");
+	throwing = true;
 }
+
 void testSamples() {
 //	Node node= Mark::parseFile("samples/comments.mark");
-	Node node= Mark::parseFile("samples/kitchensink.mark");
+	Node node = Mark::parseFile("samples/kitchensink.mark");
 
-	assert(node['a']=="classical json");
-	assert(node['b']=="quotes optional");
-	assert(node['c']=="commas optional");
-	assert(node['d']=="semicolons optional");
-	assert(node['e']=="trailing comments"); // trailing comments
-	assert(node["f"]== /*inline comments*/ "inline comments");
+	assert(node['a'] == "classical json");
+	assert(node['b'] == "quotes optional");
+	assert(node['c'] == "commas optional");
+	assert(node['d'] == "semicolons optional");
+	assert(node['e'] == "trailing comments"); // trailing comments
+	assert(node["f"] == /*inline comments*/ "inline comments");
 }
 
-void testEval(){
+void testEval() {
 	auto math = "one plus one";
 	Mark::parse(math);
 }
