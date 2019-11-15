@@ -2,11 +2,11 @@
 #include <curl/easy.h>
 #include <sstream>
 #include <iostream>
-using namespace std;
+//using namespace std;
 typedef const char *chars;
 size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
-	string data((const char*) ptr, (size_t) size * nmemb);
-	*((stringstream*) stream) << data << endl;
+	std::string data((const char*) ptr, (size_t) size * nmemb);
+	*((std::stringstream*) stream) << data << std::endl;
 	return size * nmemb;
 }
 
