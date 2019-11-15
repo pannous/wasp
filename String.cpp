@@ -29,6 +29,8 @@ extern "C" void logs(const char *);
 
 void raise(chars error);
 
+void todo(chars error);
+
 void logs(const char *s) {
 	printf("%s\n", s);
 }
@@ -64,7 +66,7 @@ bool eq(const char *dest, const char *src) {
 			return false;
 		i++;
 	}
-	if(src[i])
+	if (src[i])
 		return false;// different length!
 //	while (char c = src[i]) {
 //		if (!dest[i] || !c)
@@ -93,7 +95,7 @@ int atoi0(const char *p) {
 	int k = 0;
 	while (*p) {
 		int n = (*p) - '0';
-		if(n<0 or n>9)
+		if (n < 0 or n > 9)
 			return k;
 		k = (k << 3) + (k << 1) + n;
 		p++;
@@ -207,7 +209,7 @@ public:
 	String(char c) {
 		data = static_cast<char *>(malloc(2));
 		data[0] = c;
-		data[1]=0;
+		data[1] = 0;
 		length = 1;
 	}
 
@@ -246,9 +248,9 @@ public:
 //	operator std::string() const { return "Hi"; }
 
 	String substring(int from, int to) {
-		auto *neu = static_cast<char *>(malloc((sizeof(char))*( to - from)));
+		auto *neu = static_cast<char *>(malloc((sizeof(char)) * (to - from)));
 		strcpy(neu, &data[from], to - from);
-		neu[to - from]=0;
+		neu[to - from] = 0;
 		return String(neu);
 	}
 
@@ -283,7 +285,7 @@ public:
 		auto *neu = static_cast<char *>(malloc(length + c.length + 1));
 		if (data)strcpy(neu, data, length);
 		if (c.data)strcpy(neu + length, c.data, c.length);
-		neu[length + c.length]=0;
+		neu[length + c.length] = 0;
 		return String(neu);
 	}
 
@@ -310,7 +312,7 @@ public:
 		return this->operator+(String(c));
 	}
 
-	String operator+(char* c) {
+	String operator+(char *c) {
 		return this->operator+(String(c));
 	}
 
@@ -318,13 +320,13 @@ public:
 		return !empty() && this[0] == c && this[1] == '\0';
 	}
 
-	bool operator==(String& s) {
+	bool operator==(String &s) {
 		return eq(data, s.data);
 	}
-//
-//	bool operator==(char *c) {
-//		return eq(data, c);
-//	}
+
+	bool operator==(char *c) {
+		return eq(data, c);
+	}
 
 	bool operator!=(char *c) {
 		return eq(data, c);
@@ -360,8 +362,9 @@ public:
 		}
 		return -1;//
 	}
-	bool contains(chars string){
-		return indexOf(string)>=0;
+
+	bool contains(chars string) {
+		return indexOf(string) >= 0;
 	}
 
 	String replace(chars string, chars with) {
@@ -378,7 +381,8 @@ public:
 //};
 
 enum Type {
-	object=0,
+// plurals because of namespace clash
+			object = 0,
 	strings,
 	arrays,// same as:
 	buffers,
@@ -403,16 +407,16 @@ union Value {
 	Value() {}// = default;
 };
 
-struct Entry;
-
+struct Node;
+String nil = "nil";
 class Node {
 public:
 //	Node(const char*);
 
-	String name; // for keys and variables
+	String name = nil;
 	Value value;
-	Node *parent = 0;
-	Entry *children = nullptr;
+	Node *parent = nullptr;
+	Node *children = nullptr;
 	Type type = unknown;
 	int length = 0;
 
@@ -444,11 +448,17 @@ public:
 	}
 
 	bool operator==(int other);
+
 	bool operator==(long other);
+
 	bool operator==(float other);
+
 	bool operator==(double other);
+
 	bool operator==(String other);
+
 	bool operator==(Node other);
+
 	bool operator!=(Node other);
 
 
@@ -464,15 +474,17 @@ public:
 	}
 
 	// moved outside because circular dependency
-	Node& operator[](int i);
-	Node& operator[](char c);
-	Node& operator[](String s);
+	Node &operator[](int i);
 
-	Node& operator=(int i);
+	Node &operator[](char c);
 
-	Node& operator=(chars s);
+	Node &operator[](String s);
 
-	Node& set(String string, Node node);
+	Node &operator=(int i);
+
+	Node &operator=(chars s);
+
+	Node &set(String string, Node *node);
 
 	Node evaluate();
 };
@@ -497,52 +509,59 @@ Node NIL = Node("NIL");
 Node True = Node("True");
 Node False = Node("False");
 
-struct Entry {
-	String key;
-	Node value;
-};
-
-Node& Node::operator=(int i){
+Node &Node::operator=(int i) {
 	this->value.longy = i;
 	this->type = longs;
 	return *this;
 }
 
-Node& Node::operator=(chars c){
+Node &Node::operator=(chars c) {
 	this->value.string = String(c);
 	this->type = strings;
 	return *this;
 }
 
-Node& Node::operator[](int i) {
-	if(i>=length)throw String("out of range ") +  i + " > " + length;
-	return this->children[i].value;
+Node &Node::operator[](int i) {
+	if (i >= length)throw String("out of range ") + i + " > " + length;
+	return this->children[i];
 }
 
-Node& Node::operator[](String s) {
+Node &Node::operator[](String s) {
 	for (int i = 0; i < length; i++) {
-		Entry &entry = this->children[i];
-		if (s == entry.key)
-			return entry.value;
+		Node &entry = this->children[i];
+		if (s == entry.name)
+			return entry;
 	}
-//		raise("NO SUCH KEY");
-	return set(s, Node());// for n["a"]=b // todo: return DANGLING/NIL
-//	return NIL;
+	Node& neu= set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
+	neu.type=nils; // until ref is set!
+	return neu;
 }
 
 
-Node& Node::operator[](char c){
+Node &Node::operator[](char c) {
 	return (*this)[String(c)];
 }
 
-Node& Node::set(String string, Node node) {
-	if (!children)children = static_cast<Entry *>(malloc(1000));
-	Entry &entry = children[this->length];
-	entry.key = string;
-	entry.value = node;
-	node.parent = this;
+Node &Node::set(String string, Node *node0) {
+	if (!children)children = static_cast<Node *>(malloc(100));
+	if (this->length >= 100)todo("GROW children");
+//	children = static_cast<Node *>(malloc(1000));// copy old
+	Node &entry = children[this->length];
+	entry.parent = this;
+	entry.name = string;
+	if (!node0);// dangling ref to be set
+	else{
+		Node node = *node0;
+		entry.type = node.type;
+//	if(node.type==) // ...
+		entry.value = node.value; // copy by ref
+		if (node.type == unknown) {
+			entry.type = nodes;
+			entry.value.node = &node;
+		}
+	}
 	this->length++;
-	return entry.value;
+	return entry;
 }
 
 //Node::Node(const char *string) {
@@ -551,34 +570,43 @@ Node& Node::set(String string, Node node) {
 //}
 
 bool Node::operator==(String other) {
-	return this->type==strings and this->value.string == other;
+	return this->type == strings and this->value.string == other;
 }
+
 bool Node::operator==(int other) {
-	return (this->type==longs and this->value.longy == other) or (this->type==floats and value.floaty == other);
+	return (this->type == longs and this->value.longy == other) or (this->type == floats and value.floaty == other);
 }
+
 bool Node::operator==(long other) {
-	return (this->type==longs and this->value.longy == other) or (this->type==floats and value.floaty == other);
+	return (this->type == longs and this->value.longy == other) or (this->type == floats and value.floaty == other);
 }
+
 bool Node::operator==(double other) {
-	return (this->type==floats and this->value.floaty == ((float )other)) or (this->type==longs and this->value.longy == other) ;
+	return (this->type == floats and this->value.floaty == ((float) other)) or
+	       (this->type == longs and this->value.longy == other);
 }
+
 bool Node::operator==(float other) {
-	return (this->type==floats and this->value.floaty == other) or (this->type==longs and this->value.longy == other) ;
+	return (this->type == floats and this->value.floaty == other) or
+	       (this->type == longs and this->value.longy == other);
 }
 
 bool Node::operator==(Node other) {
 	for (int i = 0; i < length; i++) {
-		Entry &field = this->children[i];
-		Node &val = other[field.key];
-		if(field.value != val )
+		Node &field = this->children[i];
+		Node &val = other[field.name];
+		if (field != val and field.value.node != &val)
 			return false;
 	}
-	if(type != other.type)
+	if (type != other.type)
 		return false;
-	if(type==strings)
+	if (type == longs)
+		return this->value.longy = other.value.longy;
+	if (type == strings)
 		return value.string == other.value.string;
 	return value.floaty == other.value.floaty;
 }
+
 bool Node::operator!=(Node other) {
 	return not(*this == other);
 }
@@ -595,9 +623,11 @@ Node Node::evaluate() {
 void log(long i) {
 	printf("%li", i);
 }
+
 void log(chars s) {
-	printf("%s\n",s);
+	printf("%s\n", s);
 }
+
 void log(Node n) {
 //	if(!n0)
 //		return;
@@ -625,12 +655,17 @@ void log(Node n) {
 		printf(" value %f", n.value.floaty);
 	printf("\n");
 }
+
 #ifndef WASM
+
 #import <string>
+
 void log(std::string s) {
 	printf("%s\n", s.data());
 }
+
 #endif
+
 void log(String s) {
 	printf("%s\n", s.data);
 }
@@ -664,25 +699,35 @@ void printf(const char *format, void* value) {
 //#endif //NETBASE_STRING_CPP
 
 //-Wliteral-suffix
-String operator "" s(const char* c, size_t){
+String operator "" s(const char *c, size_t) {
 	return String(c);// "bla"s  literal operator suffixes not preceded by ‘_’ are reserved for future standardization
 }
 
-String operator "" _s(const char* c, size_t){
-	return String(c);
-}
-String operator "" _(const char* c, unsigned long t){
+String operator "" _s(const char *c, size_t) {
 	return String(c);
 }
 
+String operator "" _(const char *c, unsigned long t) {
+	return String(c);
+}
 
-String string(const char*&s){
+
+String string(const char *&s) {
 	return String(s);
 }
 
-String str(const char*&s){
+String str(const char *&s) {
 	return String(s);
 }
-String s(const char*&s){
+
+String str(char *s) {
 	return String(s);
+}
+
+String s(const char *&s) {
+	return String(s);
+}
+
+void todo(chars error) {
+	raise(str("TODO ") + error);
 }
