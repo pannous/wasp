@@ -6,7 +6,7 @@ typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
 
-extern "C" void raise(chars error);
+extern "C" void rais(chars error);
 extern "C" chars fetch(chars url);
 
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
@@ -65,10 +65,14 @@ void _cxa_throw(){
 
 #else // NOT WASM:
 
-void raise(chars error) { throw error; }
 
+#import "Backtrace.cpp"
+#include "ErrorHandler.h"
 #include <malloc.h>
 #include <assert.h>
+
+void rais(chars error) { throw error; }
+
 // #include <cstdlib> // malloc too
 //#include <stdio.h> // printf
 #endif
@@ -94,8 +98,9 @@ void* operator new(unsigned long size){
 #endif
 
 //#include "String.h"
-void raise(String error) {
-	raise(error.data);
+// raise defined in signal.h :(
+void rais(String error) {
+	rais(error.data);
 }
 
 class Mark {
@@ -125,7 +130,7 @@ public:
 		return Mark().read(source);
 	}
 
-	static Node eval(String source) {
+	static Node eval(String source) { // return by value ok, rarely used and stable
 		return Mark().read(source).evaluate();
 	}
 
@@ -139,6 +144,9 @@ public:
 //			return $convert.parse(source, options);
 		var result = value(); // <<
 		white();
+
+//			while(result.type==reference)
+
 		if (ch && ch != -1) error("Expect end of input");
 		// Mark does not support the legacy JSON reviver function todo ??
 		return result;
@@ -189,12 +197,24 @@ private:
 		return chr == '\n' ? s("-1") : String('\'') + chr + '\'';
 	};
 
+	String backtrace2() {
+		return Backtrace(3);// skip to Mark::error()
+//		String stack;
+//		void *array[10];
+//		size_t size;
+//		size = backtrace(array, 10);
+//		backtrace_symbols_fd(array, size, 2 /*STDERR_FILENO*/);
+		// mark(+0x649e)[0x55715b27e49e] hmmm
+//		Compiling with -g -rdynamic gets you symbol info in your output, which glibc can use to make a nice stacktrace
+	};
+
 	String error(String m) {
 		// Call error when something is wrong.
 		// todo: Still to read can scan to end of line
 		var columnNumber = at - columnStart;
 		var msg = m + "\n at line " + lineNumber + " column " + columnNumber;
-		msg = msg + s(" of the Mark data. Still to read: ") + text.substring(at - 1, at + 30) + "...";
+		msg = msg + s(" of the Mark data. \nStill to read: \n") + text.substring(at - 1, at + 30) + "\n^^ ...";
+		msg = msg + backtrace2();
 //		var error = new SyntaxError(msg);
 //		error.at = at;
 //		error.lineNumber = lineNumber;
@@ -226,15 +246,27 @@ private:
 		return ch;
 	};
 
+	bool is_bracket(char ch){
+		return ch=='(' or ch==')' or ch=='[' or ch==']' or ch=='{' or ch=='}';
+	}
+
+	bool is_operator(char ch){// todo is_KNOWN_operator
+		return ch>' ' and ch!=';' and !is_bracket(ch) and ch!='\'' and ch!='"' and !isdigit_l(ch,LC_GLOBAL_LOCALE) ;// ANY UTF 8
+	}
+
+	bool is_identifier(char ch){
+		return not ((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
+	};
+
 	// Parse an identifier.
 	String identifier() {
-		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
-		var key = String(ch);
-
 		// identifiers must start with a letter, _ or $.
-		if ((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z')) {
+		if (!is_identifier(ch)) {
 			error(UNEXPECT_CHAR + renderChar(ch));
 		}
+
+		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
+		var key = String(ch);
 		// subsequent characters can contain digits
 		while (next() &&
 		       (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_' ||
@@ -381,7 +413,7 @@ private:
 					}
 				}
 					// else if (ch == '\n') {
-					// control characters like TAB and LF are invalid in JSON, but valid in Mark; 
+					// control characters like TAB and LF are invalid in JSON, but valid in Mark;
 					// break;
 					// }
 				else { // normal char
@@ -471,7 +503,10 @@ private:
 		return i > 'a' && i < 'Z';
 	}
 
-	bool isSuffix(String suffix) {
+	bool token(String token) {
+		return ch == token[0] and suffix(++token);
+	}
+	bool suffix(String suffix) {
 		let len = suffix.length;
 		for (let i = 0; i < len; i++) {
 			if (text[at + i] != suffix[i]) {
@@ -488,25 +523,63 @@ private:
 		return true;
 	};
 
+	Node expression(){
+		Node expression= Node(identifier());
+		expression.add(expression);// naja one{one plus one}
+		white();
+		while(ch and is_identifier(ch) or is_operator(ch)){
+			Node symbol= Node(identifier());
+			expression.add(symbol);
+			expression.type=nodes;
+			white();
+		}
+		return expression;
+	}
+
+	Node words() {
+		bool allow_unknown_words = true;// todo depending on context
+		if (allow_unknown_words)
+			return expression();
+		else return word();
+	}
 	// Parse true, false, null, Infinity, NaN
 	Node word() {
 		switch (ch) {
 			case 't':
-				if (isSuffix("rue")) { return True; }
+				if (token("true")) { return True; }
+				break;
+			case 'T':
+				if (token("True")) { return True; }
 				break;
 			case 'f':
-				if (isSuffix("alse")) { return False; }
+				if (token("false")) { return False; }
+				break;
+			case 'F':
+				if (token("False")) { return False; }
 				break;
 			case 'n':
-				if (isSuffix("ull")) { return False; }
-				break;
-			case 'I':
-				if (isSuffix("nfinity")) { return Infinity; }
+				if (token("nil")) { return False; }
+				if (token("nill")) { return False; }
+				if (token("null")) { return False; }
+				if (token("none")) { return False; }
 				break;
 			case 'N':
-				if (isSuffix("aN")) { return NaN; }
+				if (token("NaN")) { return NaN; }
+				if (token("Nil")) { return False; }
+				if (token("Nill")) { return False; }
+				if (token("Null")) { return False; }
+				if (token("None")) { return False; }
+				break;
+			case 'I':
+				if (token("Infinity")) { return Infinity; }
+				break;
 		}
-		throw error(UNEXPECT_CHAR + renderChar(text.charAt(at - 1)));
+		if (token("one")) { return True; }
+		if (token("two")) { return Node(2); }
+
+		const String &message = UNEXPECT_CHAR + renderChar(text.charAt(at - 1));
+//		throw message;
+		throw error(message);
 	};
 
 	Node pragma(char prag = '\n') {
@@ -718,7 +791,7 @@ private:
 	};
 
 	void todo(const char string[]) {
-		raise(string);
+		rais(string);
 		throw string;
 	}
 
@@ -865,7 +938,7 @@ private:
 			case '.':
 				return number();
 			default:
-				return ch >= '0' && ch <= '9' ? number() : word();
+				return ch >= '0' && ch <= '9' ? number() : words();
 		}
 	};;
 	int $length{};
@@ -1004,30 +1077,36 @@ void testSamples() {
 }
 
 void testEval() {
-	auto math = "one plus one";
-	Mark::parse(math);
+	auto math = "one plus two";
+	Node result = Mark::eval(math);
+	assert(result == 3);
 }
 
 void test() {
 //	testNetbase();
-
 	testMark();
 	testMarkAsMap();
 	testDiv();
 	testEval();
 	testSamples();
 	testErrors();
+
 }
 
-//String operator ++(const char*);
-
+void testCurrent(){
+	testEval();
+//	test();
+}
 
 int main(int argp, char **argv) {
-	auto s = "hello world"_;
-	init();
-	log(String("OK %s").replace("%s", "WASM"));
+	register_global_signal_exception_handler();
 	try {
-		test();
+//	throw "OK";
+		auto s = "hello world"_;
+		init();
+		log(String("OK %s").replace("%s", "WASM"));
+//		test();
+		testCurrent();
 //		log(Node("hello"_));
 	} catch (chars err) {
 		printf("\nERROR\n");
