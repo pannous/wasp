@@ -26,6 +26,7 @@ extern "C" void logs(const char *);
 #ifndef WASM
 
 #include <cstdio>
+#include <tgmath.h>
 
 void rais(chars error);
 
@@ -54,9 +55,10 @@ void printf(const char *format, chars i);
 // NodeType todo move
 enum Type {
 // plurals because of namespace clash
-			object = 0,
+			objects = 0,
 	reference,// variable identifier name x
 	symbol,// one / plus / Jesus
+	operators,// or just symbol?
 	expression,// one plus one
 	strings,
 	arrays,// same as:
@@ -298,8 +300,7 @@ public:
 		return -1;//error
 	}
 
-
-	String *operator+=(char c) {
+	String &append(char c) {
 		if (data + length + 1 == (char *) memory) {// just append recent
 			data[length++] = c;
 			data[length] = 0;
@@ -311,10 +312,30 @@ public:
 			data = neu;
 			data[length] = 0;
 		}
-		return this;
+		return *this;
+	}
+
+	String *operator+=(String &c) {
+		this->data = (*this + c).data;
+		this->length += c.length;
+	}
+
+	String *operator+=(String *c) {
+		this->data = (*this + c).data;
+		this->length += c->length;
+	}
+
+	String *operator+=(char *c) {
+		while (c++)append(c[0]);
+	}
+
+	String *operator+=(char c) {
+		append(c);
 	}
 
 	String operator+(String c) {
+		if (c.length <= 0)
+			return *this;
 		auto *neu = static_cast<char *>(malloc(length + c.length + 1));
 		if (data)strcpy(neu, data, length);
 		if (c.data)strcpy(neu + length, c.data, c.length);
@@ -345,14 +366,15 @@ public:
 		return this->operator+(String(c));
 	}
 
-	String operator++(){
+	String operator++() {
 		this->data++;// self modifying ok?
 		length--;
 		return *this;
 	}
-	String operator++(int postfix){//
-		this->data+=postfix;// self modifying ok?
-		length-=postfix;
+
+	String operator++(int postfix) {//
+		this->data += postfix;// self modifying ok?
+		length -= postfix;
 		return *this;
 	}
 
@@ -418,6 +440,14 @@ public:
 		else
 			return *this;
 	}
+
+	String times(short i) {
+		if (i < 0)
+			return "";
+		String concat = "";
+		while (i-- > 0)
+			concat += this;
+	}
 };
 //String String::operator++() {
 //	this->data++;// self modifying ok?
@@ -432,7 +462,7 @@ public:
 class Node;
 
 union Value {
-	Node *node=0;// todo DANGER, can be lost :( !!
+	Node *node = 0;// todo DANGER, can be lost :( !!
 //	Node node;// incomplete type
 	String string;
 	long longy;
@@ -461,7 +491,7 @@ public:
 	int length = 0;
 
 	Node() {
-		type = object;
+		type = objects;
 	}
 
 
@@ -470,6 +500,29 @@ public:
 		type = buffers;
 //			buffer.encoding = "a85";
 	}
+
+	explicit Node(char c) {
+		name = c;
+		value.string = c;
+		type = strings;
+	}
+
+	explicit Node(double nr) {
+		value.floaty = nr;
+		type = floats;
+	}
+
+
+	explicit Node(float nr) {
+		value.floaty = nr;
+		type = floats;
+	}
+
+	explicit Node(int nr) {
+		value.longy = nr;
+		type = longs;
+	}
+
 
 	explicit Node(long nr) {
 		value.longy = nr;
@@ -537,6 +590,8 @@ public:
 
 	void add(Node &node);
 
+	void add(Node *node);
+
 	void remove(Node *node); // directly from children
 	void remove(Node &node); // via compare children
 
@@ -551,7 +606,7 @@ public:
 			return;
 		}
 //		if || name==nil_name …
-		if (name and type != object)
+		if (name and type != objects)
 			printf("name %s ", name.data);
 		printf("length %i ", length);
 		printf("type  %s", typeName(type));
@@ -559,7 +614,7 @@ public:
 			printf("TRUE");
 		if (this == &False)
 			printf("FALSE");
-		if (type == object and value.data)
+		if (type == objects and value.data)
 			printf(" name %s", value.string.data);
 		if (type == bools)
 			printf(" value %s", value.longy ? "TRUE" : "FALSE");
@@ -575,6 +630,8 @@ public:
 	float precedence(Node &node);
 
 	Node apply(Node left, Node op, Node right);
+
+	Node setType(Type type);
 };
 
 //
@@ -737,38 +794,42 @@ bool Node::operator!=(Node other) {
 void log(Node &);
 
 bool recursive = true;
-Node values(Node n){
-	if(eq(n.name,"one"))return Node(1);
-	if(eq(n.name,"two"))return Node(2);
+
+Node values(Node n) {
+	if (eq(n.name, "one"))return Node(1l);
+	if (eq(n.name, "two"))return Node(2l);
+	if (eq(n.name, "three"))return Node(3l);
 	return n;
 }
+
 Node Node::evaluate() {
 	if (this->length == 0)return values(*this);
 	if (this->length == 1)return values(children[0]);
-	if (this->type != expression and this->type != nodes)return *this;
-	float max;
-	do {
-		max = 0;
-		Node left;
-		Node right;
-		for (Node &node : *this) {
-			float p = precedence(node);
-			if (p > max) max = p;
-			node.log();
-		}
-		Node *op=0;
-		for (Node &n : *this) {
-			float p = precedence(n);
-			if (p == max and not op) {
-				op = &n;
-			} else if (op)
-				right.add(n);
-			else left.add(n);
-		}
+//	if (this->type != expression and this->type != nodes)
+//		return *this;
+	float max = 0; // do{
+	Node left;
+	Node right;
+	for (Node &node : *this) {
+		float p = precedence(node);
+		if (p > max) max = p;
+		node.log();
+	}
+	if (max == 0)
+		return *this;
+	Node *op = 0;
+	for (Node &n : *this) {
+		float p = precedence(n);
+		if (p == max and not op) {
+			op = &n;
+		} else if (op)
+			right.add(n);
+		else left.add(n);
+	}
 //		this->remove(&op);// fucks up pointers?
-		if (recursive)
-			return apply(left, *op, right);
-	} while (max > 0);
+	if (recursive)
+		return apply(left, *op, right);
+//	};// while (max > 0);
 	return *this;
 }
 
@@ -795,14 +856,23 @@ void Node::remove(Node &node) {
 	}
 }
 
-void Node::add(Node &node) {
+void Node::add(Node *node) {
 	if (not children or (length == 0 and not value.node))
-		value.node = &node;
+		value.node = node;
 	if (!children) children = &all[capacity * last++];
+	children[length++] = *node;
+}
+
+void Node::add(Node &node) {
+//	if (not children or (length == 0 and not value.node) and type==nils)
+//		value.node = &node;
+	if (!children)
+		children = &all[capacity * last++];
 	children[length++] = node;
 }
 
 float Node::precedence(Node &node) {
+	// like c++ here HIGHER up == lower number evaluated earlier , except 0 WTF
 /*
 1 	:: 	Scope resolution 	Left-to-right
 
@@ -847,6 +917,9 @@ co_yield 	yield-expression (C++20)
 &=   ^=   |= 	Compound assignment by bitwise AND, XOR, and OR
 17 	, 	Comma 	Left-to-right
 	 */
+
+	// unlike c++ here HIGHER == more important
+	if (eq(node.name, "√"))return 3;
 	if (eq(node.name, "times"))return 5;
 	if (eq(node.name, "*"))return 5;
 	if (eq(node.name, "add"))return 6;
@@ -858,9 +931,20 @@ co_yield 	yield-expression (C++20)
 }
 
 Node Node::apply(Node left, Node op, Node right) {
-	left=left.evaluate();
-	right=right.evaluate();
+	right = right.evaluate();
+	if (eq(op.name, "√")){
+		Node &unary_result=NIL;
+		if(right.type == floats)
+			unary_result= Node(sqrt(right.value.floaty));
+		if(right.type == longs)
+			unary_result= Node(sqrt(right.value.longy)).setType(floats);
+		left.add(unary_result);
+		return left.evaluate();
+	}
+	left = left.evaluate();
+
 //	if(!is_KNOWN_operator(op))return call(left, op, right);
+	
 	if (eq(op.name, "+") or eq(op.name, "add") or eq(op.name, "plus")) {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
 		if (left.type == floats and right.type == floats) return Node(left.value.floaty + right.value.floaty);
@@ -875,9 +959,23 @@ Node Node::apply(Node left, Node op, Node right) {
 		if (left.type == floats and right.type == longs) return Node(left.value.floaty - right.value.longy);
 		if (left.type == longs and right.type == longs) return Node(left.value.longy - right.value.longy);
 	}
+
+	if (eq(op.name, "*") or eq(op.name, "times")) {
+		if (left.type == strings or right.type == strings) return Node(left.string().times(right.value.longy));
+		if (left.type == floats and right.type == floats) return Node(left.value.floaty * right.value.floaty);
+		if (left.type == longs and right.type == floats) return Node(left.value.longy * right.value.floaty);
+		if (left.type == floats and right.type == longs) return Node(left.value.floaty * right.value.longy);
+		if (left.type == longs and right.type == longs) return Node(left.value.longy * right.value.longy);
+//		if (right.type == longs) return Node(left.value.longy * right.value.longy);
+	}
 	todo(op.name + " is NOT a builtin operator ");
 //	log("NO builtin operator "+op+" calling…")
 //	return call(left, op, right);
+}
+
+Node Node::setType(Type type) {
+	this->type = type;
+	return *this;
 }
 
 
@@ -979,6 +1077,8 @@ String typeName(Type t) {
 			return "reference";
 		case symbol:
 			return "symbol";
+		case operators:
+			return "operator";
 		case expression:
 			return "expression";
 		case strings:
@@ -1002,7 +1102,7 @@ String typeName(Type t) {
 		case unknown :
 			return "unknown";
 		default:
-			throw "MISSING Type name mapping";
+			throw "MISSING Type name mapping "+t;
 	}
 
 }
