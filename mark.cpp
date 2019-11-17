@@ -246,16 +246,17 @@ private:
 		return ch;
 	};
 
-	bool is_bracket(char ch){
-		return ch=='(' or ch==')' or ch=='[' or ch==']' or ch=='{' or ch=='}';
+	bool is_bracket(char ch) {
+		return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
 	}
 
-	bool is_operator(char ch){// todo is_KNOWN_operator
-		return ch>' ' and ch!=';' and !is_bracket(ch) and ch!='\'' and ch!='"' and !isdigit_l(ch,LC_GLOBAL_LOCALE) ;// ANY UTF 8
+	bool is_operator(char ch) {// todo is_KNOWN_operator
+		return ch < 0 or ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"' and
+		       !is_identifier(ch) and !isalnum(ch);// ANY UTF 8
 	}
 
-	bool is_identifier(char ch){
-		return not ((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
+	bool is_identifier(char ch) {
+		return not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
 	};
 
 	// Parse an identifier.
@@ -275,7 +276,7 @@ private:
 		        ch == '.' || ch == '-')) {
 			key += ch;
 		}
-		key += 0x00;
+		key += '\0';// 0x00;
 		return key;
 	};
 
@@ -506,6 +507,7 @@ private:
 	bool token(String token) {
 		return ch == token[0] and suffix(++token);
 	}
+
 	bool suffix(String suffix) {
 		let len = suffix.length;
 		for (let i = 0; i < len; i++) {
@@ -523,14 +525,34 @@ private:
 		return true;
 	};
 
-	Node expression(){
-		Node expression= Node(identifier());
+	Node builtin_operator() {
+		Node node = Node(ch);
+		node.setType(operators);// todo ++
+		next();
+		if(node.name[0]<0)
+		while (ch < 0) {
+			node.name += ch;
+			next();
+		}
+		return node;
+	}
+
+	Node symbol() {
+		if (ch >= '0' && ch <= '9')return number();
+		if (is_identifier(ch))return Node(identifier());// or op
+		if (is_operator(ch))return builtin_operator();
+		error(UNEXPECT_CHAR + renderChar(ch));
+	}
+
+	Node expression() {
+		Node expression = symbol();
 		expression.add(expression);// naja one{one plus one}
 		white();
-		while(ch and is_identifier(ch) or is_operator(ch)){
-			Node symbol= Node(identifier());
-			expression.add(symbol);
-			expression.type=nodes;
+
+		while (ch and is_identifier(ch) or isalnum(ch) or is_operator(ch)) {
+			Node node = symbol();
+			expression.add(node);
+			expression.type = nodes;
 			white();
 		}
 		return expression;
@@ -540,8 +562,9 @@ private:
 		bool allow_unknown_words = true;// todo depending on context
 		if (allow_unknown_words)
 			return expression();
-		else return word();
+		return ch >= '0' && ch <= '9' ? number() : word();
 	}
+
 	// Parse true, false, null, Infinity, NaN
 	Node word() {
 		switch (ch) {
@@ -921,10 +944,11 @@ private:
 // Parse a JSON value.
 	Node value() {
 		// A JSON value could be an object, an array, a string, a number, or a word.
-		white();
+		white();// todo 1+1 != 1 +1
+		char next = text[at];
 		switch (ch) {
 			case '{':
-				return (text[at] == ':' or text[at] == '=') ?
+				return (next == ':' or next == '=') ?
 				       binary() : object();
 			case '[':
 				return array();
@@ -936,9 +960,14 @@ private:
 			case '-':
 			case '+':
 			case '.':
-				return number();
+				if (isdigit_l(next, LC_GLOBAL_LOCALE))
+					return number();
+				else
+					return words();
+
 			default:
-				return ch >= '0' && ch <= '9' ? number() : words();
+				return words();
+//				return ch >= '0' && ch <= '9' ? number() : word();
 		}
 	};;
 	int $length{};
@@ -1076,10 +1105,16 @@ void testSamples() {
 	assert(node["f"] == /*inline comments*/ "inline comments");
 }
 
-void testEval() {
+void testEval3() {
 	auto math = "one plus two";
 	Node result = Mark::eval(math);
 	assert(result == 3);
+}
+
+void testEval() {
+	auto math = "one plus two times three";
+	Node result = Mark::eval(math);
+	assert(result == 7);
 }
 
 void test() {
@@ -1093,7 +1128,7 @@ void test() {
 
 }
 
-void testCurrent(){
+void testCurrent() {
 	testEval();
 //	test();
 }
@@ -1106,7 +1141,8 @@ int main(int argp, char **argv) {
 		init();
 		log(String("OK %s").replace("%s", "WASM"));
 //		test();
-		testCurrent();
+//		testCurrent();
+		return Mark::eval("40+√4").value.longy;
 //		log(Node("hello"_));
 	} catch (chars err) {
 		printf("\nERROR\n");
