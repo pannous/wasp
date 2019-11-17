@@ -27,7 +27,7 @@ extern "C" void logs(const char *);
 
 #include <cstdio>
 
-void raise(chars error);
+void rais(chars error);
 
 void todo(chars error);
 
@@ -51,6 +51,30 @@ void printf(const char *format, chars i);
 //  extern "C" int printf (const char *__restrict __format, ...);
 #endif
 
+// NodeType todo move
+enum Type {
+// plurals because of namespace clash
+			object = 0,
+	reference,// variable identifier name x
+	symbol,// one / plus / Jesus
+	expression,// one plus one
+	strings,
+	arrays,// same as:
+	buffers,
+	nodes,
+	floats,
+	longs,
+	ints,
+	bools,
+	nils,
+	unknown = 20 //7
+};
+
+class String;
+
+String str(const char *&s);
+
+String typeName(Type t);
 
 int atoi0(const char *__nptr);
 
@@ -194,7 +218,6 @@ void reverse(char *str, int len) {
 //	return (char) (i + 0x30);
 //}
 
-
 class String {
 public:
 	String() {
@@ -213,6 +236,9 @@ public:
 		length = 1;
 	}
 
+//		String operator+(Type e){
+	String(Type e) : String(typeName(e)) {}
+
 	explicit String(int c) {
 		data = itoa(c);
 		length = len(data);
@@ -223,10 +249,17 @@ public:
 		length = len(data);
 	}
 
+#ifndef WASM
+
+	String(std::string basicString) {
+		data = const_cast<char *>(basicString.data());// copy?
+	}
+
+#endif
 
 	char charAt(int i) {
 		if (i >= length)
-			raise((String("IndexOutOfBounds at ") + itoa(i) + " in " + data).data);
+			rais((String("IndexOutOfBounds at ") + itoa(i) + " in " + data).data);
 		return data[i];
 	}
 
@@ -312,6 +345,17 @@ public:
 		return this->operator+(String(c));
 	}
 
+	String operator++(){
+		this->data++;// self modifying ok?
+		length--;
+		return *this;
+	}
+	String operator++(int postfix){//
+		this->data+=postfix;// self modifying ok?
+		length-=postfix;
+		return *this;
+	}
+
 	String operator+(char *c) {
 		return this->operator+(String(c));
 	}
@@ -375,32 +419,23 @@ public:
 			return *this;
 	}
 };
+//String String::operator++() {
+//	this->data++;// self modifying ok?
+//	return *this;
+//}
+
 
 //class NodeMap{
 //
 //};
 
-enum Type {
-// plurals because of namespace clash
-			object = 0,
-	strings,
-	arrays,// same as:
-	buffers,
-	nodes,
-	longs,
-	bools,
-	floats,
-	ints,
-	nils,
-	unknown = 20 //7
-};
-
 class Node;
 
 union Value {
-	Node *node;
+	Node *node=0;// todo DANGER, can be lost :( !!
+//	Node node;// incomplete type
 	String string;
-	long longy = 0;
+	long longy;
 	float floaty;
 	void *data;
 
@@ -408,13 +443,17 @@ union Value {
 };
 
 struct Node;
-String nil = "nil";
+String nil_name = "nil";
+String object_name = "<object>";
+extern Node True;
+extern Node False;
+extern Node NIL;
 
 class Node {
 public:
 //	Node(const char*);
 
-	String name = nil;
+	String name = nil_name;
 	Value value;
 	Node *parent = nullptr;
 	Node *children = nullptr;
@@ -438,9 +477,16 @@ public:
 	}
 
 
-	explicit Node(String s) {
-		type = strings;
-		value.string = s;
+	explicit Node(String s, bool identifier = false) {
+		identifier = identifier || !s.contains(" ");
+		if (identifier) {
+//			if(check_reference and not symbol)...
+			name = s;
+			type = reference;
+		} else {
+			type = strings;
+			value.string = s;
+		}
 	}
 
 	explicit Node(Node **pNode) {
@@ -488,6 +534,47 @@ public:
 	Node &set(String string, Node *node);
 
 	Node evaluate();
+
+	void add(Node &node);
+
+	void remove(Node *node); // directly from children
+	void remove(Node &node); // via compare children
+
+	Node *begin();
+
+	Node *end();
+
+	void log() {
+		printf("Node ");
+		if (this == &NIL || type == nils) {
+			printf("NIL\n");
+			return;
+		}
+//		if || name==nil_name …
+		if (name and type != object)
+			printf("name %s ", name.data);
+		printf("length %i ", length);
+		printf("type  %s", typeName(type));
+		if (this == &True)
+			printf("TRUE");
+		if (this == &False)
+			printf("FALSE");
+		if (type == object and value.data)
+			printf(" name %s", value.string.data);
+		if (type == bools)
+			printf(" value %s", value.longy ? "TRUE" : "FALSE");
+		if (type == strings)
+			printf(" value %s", value.string.data);
+		if (type == longs)
+			printf(" value %li", value.longy);
+		if (type == floats)
+			printf(" value %f", value.floaty);
+		printf("\n");
+	}
+
+	float precedence(Node &node);
+
+	Node apply(Node left, Node op, Node right);
 };
 
 //
@@ -531,45 +618,55 @@ Node &Node::operator[](String s) {
 	for (int i = 0; i < length; i++) {
 		Node &entry = this->children[i];
 		if (s == entry.name)
-			if ((entry.type==nodes or entry.type==nils) and entry.value.node)
+			if ((entry.type == nodes or entry.type == nils) and entry.value.node)
 				return *entry.value.node;
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
 				return entry;
 	}
 	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
 	neu.type = nils; // until ref is set!
-	if(neu.value.node) return *neu.value.node;
+	if (neu.value.node) return *neu.value.node;
 	else return neu;
 }
 
+Node *Node::begin() {
+	return children;
+}
+
+Node *Node::end() {
+	return children + length;
+}
 
 Node &Node::operator[](char c) {
 	return (*this)[String(c)];
 }
 
 int capacity = 100;
-int maxNodes=10000;
-int last=0;
-Node* all = static_cast<Node *>(malloc(capacity*maxNodes));// super wasteful, for debug
+int maxNodes = 10000;
+int last = 0;
+Node *all = static_cast<Node *>(malloc(capacity * maxNodes));// super wasteful, for debug
 Node &Node::set(String string, Node *node0) {
 //	if (!children)children = static_cast<Node *>(malloc(capacity));
-	if (!children)children=&all[capacity*last++];
-	if (this->length >= capacity/2)todo("GROW children");
+
+	if (!children) {
+		children = &all[capacity * last++];
+		if (this->name == nil_name)this->name = object_name;
+	}
+	if (this->length >= capacity / 2)todo("GROW children");
 //	children = static_cast<Node *>(malloc(1000));// copy old
 	Node &entry = children[this->length];
 	entry.parent = this;
 	entry.name = string;
-	if (!node0){
+	if (!node0) {
 //		entry.value.node=&entry;// HACK to set reference to self!
-		entry.value.node=&children[capacity - this->length -1];//  HACK to get key and value node dummy from children
+		entry.value.node = &children[capacity - this->length - 1];//  HACK to get key and value node dummy from children
 //		 todo: reduce capacity per node
-		entry.value.node->name=string;
-		entry.value.node->type=nodes;// todo value
-		entry.value.node->parent=&entry;
+		entry.value.node->name = string;
+		entry.value.node->type = nodes;// todo value
+		entry.value.node->parent = &entry;
 		entry.type = nodes;
 //		entry.value.node=Node();// dangling ref to be set
-	}
-	else {
+	} else {
 		Node node = *node0;
 		entry.type = node.type;
 //	if(node.type==) // ...
@@ -612,7 +709,7 @@ bool Node::operator==(float other) {
 
 bool Node::operator==(Node other) {
 	if (type != other.type)
-		if(type!=nodes and other.type!=nodes) return false;
+		if (type != nodes and other.type != nodes) return false;
 	if (type == longs)
 		return this->value.longy = other.value.longy;
 	if (type == strings)
@@ -624,7 +721,7 @@ bool Node::operator==(Node other) {
 		Node &field = this->children[i];
 		Node &val = other[field.name];
 		if (field != val) {
-			if ((field.type != nodes and field.type !=nils) or !field.value.node)
+			if ((field.type != nodes and field.type != nils) or !field.value.node)
 				return false;
 			Node deep = *field.value.node;
 			return deep == val;
@@ -637,12 +734,150 @@ bool Node::operator!=(Node other) {
 	return not(*this == other);
 }
 
-Node Node::evaluate() {
-	if (this->string() == "add") {
+void log(Node &);
 
+bool recursive = true;
+Node values(Node n){
+	if(eq(n.name,"one"))return Node(1);
+	if(eq(n.name,"two"))return Node(2);
+	return n;
+}
+Node Node::evaluate() {
+	if (this->length == 0)return values(*this);
+	if (this->length == 1)return values(children[0]);
+	if (this->type != expression and this->type != nodes)return *this;
+	float max;
+	do {
+		max = 0;
+		Node left;
+		Node right;
+		for (Node &node : *this) {
+			float p = precedence(node);
+			if (p > max) max = p;
+			node.log();
+		}
+		Node *op=0;
+		for (Node &n : *this) {
+			float p = precedence(n);
+			if (p == max and not op) {
+				op = &n;
+			} else if (op)
+				right.add(n);
+			else left.add(n);
+		}
+//		this->remove(&op);// fucks up pointers?
+		if (recursive)
+			return apply(left, *op, right);
+	} while (max > 0);
+	return *this;
+}
+
+void Node::remove(Node *node) {
+	if (!children)return;// directly from pointer
+	if (length == 0)return;
+	if (node < children or node > children + length)return;
+	for (int j = node - children; j < length - 1; j++) {
+		children[j] = children[j + 1];
 	}
-//	if(this.name)
-	return Node();
+	children[length - 1] = 0;
+	length--;
+}
+
+void Node::remove(Node &node) {
+	if (!children)return;
+	for (int i = 0; i < length; i++) {
+		if (children[i] == node) {
+			for (int j = i; j < length; j++) {
+				children[j] = children[j + 1];
+			}
+			length--;
+		}
+	}
+}
+
+void Node::add(Node &node) {
+	if (not children or (length == 0 and not value.node))
+		value.node = &node;
+	if (!children) children = &all[capacity * last++];
+	children[length++] = node;
+}
+
+float Node::precedence(Node &node) {
+/*
+1 	:: 	Scope resolution 	Left-to-right
+
+2 	a++   a-- 	Suffix/postfix increment and decrement
+type()   type{} 	Functional cast
+a() 	Function call
+a[] 	Subscript
+.   -> 	Member access
+
+3
+ ++a   --a 	Prefix increment and decrement 	Right-to-left
++a   -a 	Unary plus and minus
+!   ~ 	Logical NOT and bitwise NOT
+(type) 	C-style cast
+*a 	Indirection (dereference)
+&a 	Address-of
+sizeof 	Size-of[note 1]
+co_await 	await-expression (C++20)
+new   new[] 	Dynamic memory allocation
+delete   delete[] 	Dynamic memory deallocation
+
+4 	.*   ->* 	Pointer-to-member 	Left-to-right
+5 	a*b   a/b   a%b 	Multiplication, division, and remainder
+6 	a+b   a-b 	Addition and subtraction
+7 	<<   >> 	Bitwise left shift and right shift
+8 	<=> 	Three-way comparison operator (since C++20)
+9 	<   <= 	For relational operators < and ≤ respectively
+>   >= 	For relational operators > and ≥ respectively
+10 	==   != 	For relational operators = and ≠ respectively
+11 	& 	Bitwise AND
+12 	^ 	Bitwise XOR (exclusive or)
+13 	| 	Bitwise OR (inclusive or)
+14 	&& 	Logical AND
+15 	|| 	Logical OR
+16 	a?b:c 	Ternary conditional[note 2] 	Right-to-left
+throw 	throw operator
+co_yield 	yield-expression (C++20)
+= 	Direct assignment (provided by default for C++ classes)
++=   -= 	Compound assignment by sum and difference
+*=   /=   %= 	Compound assignment by product, quotient, and remainder
+<<=   >>= 	Compound assignment by bitwise left shift and right shift
+&=   ^=   |= 	Compound assignment by bitwise AND, XOR, and OR
+17 	, 	Comma 	Left-to-right
+	 */
+	if (eq(node.name, "times"))return 5;
+	if (eq(node.name, "*"))return 5;
+	if (eq(node.name, "add"))return 6;
+	if (eq(node.name, "plus"))return 6;
+	if (eq(node.name, "+"))return 6;
+	if (eq(node.name, "minus"))return 6;
+	if (eq(node.name, "-"))return 6;
+	return 0;// no precedence
+}
+
+Node Node::apply(Node left, Node op, Node right) {
+	left=left.evaluate();
+	right=right.evaluate();
+//	if(!is_KNOWN_operator(op))return call(left, op, right);
+	if (eq(op.name, "+") or eq(op.name, "add") or eq(op.name, "plus")) {
+		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
+		if (left.type == floats and right.type == floats) return Node(left.value.floaty + right.value.floaty);
+		if (left.type == longs and right.type == floats) return Node(left.value.longy + right.value.floaty);
+		if (left.type == floats and right.type == longs) return Node(left.value.floaty + right.value.longy);
+		if (left.type == longs and right.type == longs) return Node(left.value.longy + right.value.longy);
+//		if(left.type==arrays …
+	}
+	if (eq(op.name, "-") or eq(op.name, "minus") or eq(op.name, "subtract")) {
+		if (left.type == floats and right.type == floats) return Node(left.value.floaty - right.value.floaty);
+		if (left.type == longs and right.type == floats) return Node(left.value.longy - right.value.floaty);
+		if (left.type == floats and right.type == longs) return Node(left.value.floaty - right.value.longy);
+		if (left.type == longs and right.type == longs) return Node(left.value.longy - right.value.longy);
+	}
+	todo(op.name + " is NOT a builtin operator ");
+//	log("NO builtin operator "+op+" calling…")
+//	return call(left, op, right);
 }
 
 
@@ -654,33 +889,16 @@ void log(chars s) {
 	printf("%s\n", s);
 }
 
-void log(Node n) {
-//	if(!n0)
-//		return;
-//	Node n=*n0;
-	printf("Node ");
-	if (&n == &NIL || n.type == nils) {
-		printf("NIL\n");
-		return;
-	}
-	printf("length %i ", n.length);
-	printf("type %i ", n.type);
-	if (&n == &True)
-		printf("TRUE");
-	if (&n == &False)
-		printf("FALSE");
-	if (n.type == object and n.value.data)
-		printf(" name %s", n.value.string.data);
-	if (n.type == bools)
-		printf(" value %s", n.value.longy ? "TRUE" : "FALSE");
-	if (n.type == strings)
-		printf(" value %s", n.value.string.data);
-	if (n.type == longs)
-		printf(" value %li", n.value.longy);
-	if (n.type == floats)
-		printf(" value %f", n.value.floaty);
-	printf("\n");
+void log(Node &n) {
+	n.log();
 }
+
+
+//void log(Node &node) {
+//	Node node2 = node;
+//	log(node2);
+//}
+
 
 #ifndef WASM
 
@@ -754,6 +972,42 @@ String s(const char *&s) {
 	return String(s);
 }
 
+
+String typeName(Type t) {
+	switch (t) {
+		case reference:
+			return "reference";
+		case symbol:
+			return "symbol";
+		case expression:
+			return "expression";
+		case strings:
+			return "string";
+		case arrays:
+			return "array";
+		case buffers:
+			return "buffer";
+		case nodes:
+			return "node";
+		case floats:
+			return "float";
+		case longs:
+			return "long";
+		case ints:
+			return "int";
+		case bools:
+			return "bool";
+		case nils:
+			return "nil";
+		case unknown :
+			return "unknown";
+		default:
+			throw "MISSING Type name mapping";
+	}
+
+}
+
+
 void todo(chars error) {
-	raise(str("TODO ") + error);
+	rais(str("TODO ") + error);
 }
