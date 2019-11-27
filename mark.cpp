@@ -6,12 +6,15 @@ typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
 
-extern "C" void rais(chars error);
+extern "C" void err(chars error);
 extern "C" chars fetch(chars url);
 
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
 unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
+
+
+
 #ifdef WASM
 #ifdef X86_64
 typedef long unsigned int size_t;
@@ -71,7 +74,10 @@ void _cxa_throw(){
 #include <malloc.h>
 #include <assert.h>
 
-void rais(chars error) { throw error; }
+void err(chars error) {
+	Backtrace(3);
+	throw error;
+}
 
 // #include <cstdlib> // malloc too
 //#include <stdio.h> // printf
@@ -99,9 +105,10 @@ void* operator new(unsigned long size){
 
 //#include "String.h"
 // raise defined in signal.h :(
-void rais(String error) {
-	rais(error.data);
+void err(String error) {
+	err(error.data);
 }
+
 
 class Mark {
 	String text = EMPTY;
@@ -529,11 +536,11 @@ private:
 		Node node = Node(ch);
 		node.setType(operators);// todo ++
 		next();
-		if(node.name[0]<0)
-		while (ch < 0) {
-			node.name += ch;
-			next();
-		}
+		if (node.name[0] < 0)
+			while (ch < 0) {// utf8 √ …
+				node.name += ch;
+				next();
+			}
 		return node;
 	}
 
@@ -542,6 +549,7 @@ private:
 		if (is_identifier(ch))return Node(identifier());// or op
 		if (is_operator(ch))return builtin_operator();
 		error(UNEXPECT_CHAR + renderChar(ch));
+		return NIL;
 	}
 
 	Node expression() {
@@ -814,7 +822,7 @@ private:
 	};
 
 	void todo(const char string[]) {
-		rais(string);
+		err(string);
 		throw string;
 	}
 
@@ -1001,6 +1009,8 @@ struct TTT {
 };
 
 
+//void assert_is(char *mark, Node result);
+
 void init() {
 	NIL.type = nils;
 	True.value.longy = 1;
@@ -1048,7 +1058,7 @@ void testMark() {
 	Node &a3 = a["a"];
 	assert(a3 == 3);
 	assert(a3.type == longs);
-	assert(a3.name == "a");
+	assert(a3.name == "a"s);
 
 	Node &b = a["b"];
 	a["b"] = a3;
@@ -1111,10 +1121,78 @@ void testEval3() {
 	assert(result == 3);
 }
 
-void testEval() {
+
+bool assert_equals(long a, long b, char *context) {
+	if (a != b)// err
+		puts("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
+	else puts("OK %d==%d in %s"s % a % b % context);
+	return a==b;
+}
+bool assert_equals(float a, float b, char *context) {
+	float epsilon=fabs(a+b)/100000.;
+	bool ok= a == b or fabs(a-b)<=epsilon;
+	if (!ok)
+		puts("FAILED assert_equals! %f should be %f in %s"s % a % b % context);
+//		 err("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
+	else puts("OK %f==%f in %s"s % a % b % context);
+	return ok;
+}
+
+bool assert_isx(char *mark, Node result) {
+	Node left = Mark::eval(mark);
+	if (left.type == floats or result.type == floats)
+		return assert_equals(left.floate(), result.floate(), mark);
+	if (left.type == longs or result.type == longs)
+		return assert_equals(left.longe(), result.longe(), mark);
+	return left==result;
+}
+
+// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
+#define assert_is(mark,result) {\
+    printf("TEST %s==%s\n",#mark,#result);\
+    bool ok=assert_isx(mark,result);\
+	if(ok)printf("PASSED %s==%s\n",#mark,#result);\
+	else{printf("FAILED %s==%s\n",#mark,#result);\
+	printf("%s:%d\n",__FILE__,__LINE__);exit(0);}\
+}
+
+void testMath() {
 	auto math = "one plus two times three";
 	Node result = Mark::eval(math);
 	assert(result == 7);
+
+	assert_is("√4", 2);
+	assert_is("40+√4", 42);
+	assert_is("√4+40", 42);
+//	assert_is("√42*√42", Node(42.));
+	assert_is("√42*√42", 42.);
+	assert_is("√42*√42", 42);
+
+//	assert_is("√42*√42",42);// int rounding to 41 todo?
+}
+
+void testLogic() {
+	assert_is("0 xor 1", true);
+	assert_is("1 xor 0", true);
+	assert_is("0 xor 0", false);
+	assert_is("1 xor 1", false);
+	assert_is("0 or 1", true);
+	assert_is("0 or 0", false);
+	assert_is("1 or 0", true);
+	assert_is("1 or 1", true);
+
+	assert_is("1 and 1", true);
+	assert_is("1 and 0", false);
+	assert_is("0 and 1", false);
+	assert_is("0 and 0", false);
+
+
+}
+
+void testEval() {
+	assert_is("√4", 2);
+	testLogic();
+	testMath();
 }
 
 void test() {
@@ -1133,6 +1211,7 @@ void testCurrent() {
 //	test();
 }
 
+
 int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
 	try {
@@ -1141,9 +1220,8 @@ int main(int argp, char **argv) {
 		init();
 		log(String("OK %s").replace("%s", "WASM"));
 //		test();
-//		testCurrent();
-		return Mark::eval("40+√4").value.longy;
-//		log(Node("hello"_));
+		testCurrent();
+		return 42;
 	} catch (chars err) {
 		printf("\nERROR\n");
 		printf("%s", err);
@@ -1151,8 +1229,6 @@ int main(int argp, char **argv) {
 		printf("\nERROR\n");
 		printf("%s", err.data);
 	}
-
-	return 42;
+	return -1;
 }
-
 
