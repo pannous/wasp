@@ -28,7 +28,7 @@ extern "C" void logs(const char *);
 #include <cstdio>
 #include <tgmath.h>
 
-void rais(chars error);
+void err(chars error);
 
 void todo(chars error);
 
@@ -261,7 +261,7 @@ public:
 
 	char charAt(int i) {
 		if (i >= length)
-			rais((String("IndexOutOfBounds at ") + itoa(i) + " in " + data).data);
+			err((String("IndexOutOfBounds at ") + itoa(i) + " in " + data).data);
 		return data[i];
 	}
 
@@ -315,22 +315,49 @@ public:
 		return *this;
 	}
 
+	String clone() {
+		return String(this->data);
+	}
+
+
+	String operator%(String &c) {
+		String b = this->clone();
+		b.replace("%s", c);
+		return b;
+	}
+
+	String operator%(char *c) {
+		return this->replace("%s", c);
+	}
+
+	String operator%(long d) {
+		return this->replace("%d", itoa(d));
+	}
+	String operator%(double f) {
+		String formated=String()+itoa(f)+"."+itoa((f-int(f))*10000);
+		return this->replace("%f", formated);
+	}
+
 	String *operator+=(String &c) {
 		this->data = (*this + c).data;
 		this->length += c.length;
+		return this;
 	}
 
 	String *operator+=(String *c) {
 		this->data = (*this + c).data;
 		this->length += c->length;
+		return this;
 	}
 
 	String *operator+=(char *c) {
 		while (c++)append(c[0]);
+		return this;
 	}
 
 	String *operator+=(char c) {
 		append(c);
+		return this;
 	}
 
 	String operator+(String c) {
@@ -402,7 +429,7 @@ public:
 		return data[i];
 	}
 
-	operator chars() {
+	operator chars() {// !
 		return data;
 	}
 
@@ -447,6 +474,7 @@ public:
 		String concat = "";
 		while (i-- > 0)
 			concat += this;
+		return concat;
 	}
 };
 //String String::operator++() {
@@ -523,8 +551,15 @@ public:
 		type = longs;
 	}
 
+	explicit Node(bool nr) {
+		value.longy = nr;
+		type = longs;
+//		this=True; todo
+	}
 
-	explicit Node(long nr) {
+
+//	explicit
+	Node(long nr) {
 		value.longy = nr;
 		type = longs;
 	}
@@ -545,6 +580,11 @@ public:
 	explicit Node(Node **pNode) {
 		type = arrays;
 		value.data = pNode;
+	}
+
+	explicit
+	operator bool() {
+		return value.longy or length>1 or (length==1 and this!=this->children and (bool)(this->children[0]));
 	}
 
 	bool operator==(int other);
@@ -609,7 +649,7 @@ public:
 		if (name and type != objects)
 			printf("name %s ", name.data);
 		printf("length %i ", length);
-		printf("type  %s", typeName(type));
+		printf("type  %s", typeName(type).data);
 		if (this == &True)
 			printf("TRUE");
 		if (this == &False)
@@ -632,6 +672,14 @@ public:
 	Node apply(Node left, Node op, Node right);
 
 	Node setType(Type type);
+
+	long longe() {
+		return type == longs ? value.longy : value.floaty;// danger
+	}
+
+	float floate() {
+		return type == longs ? value.longy : value.floaty;// danger
+	}
 };
 
 //
@@ -808,8 +856,8 @@ Node Node::evaluate() {
 //	if (this->type != expression and this->type != nodes)
 //		return *this;
 	float max = 0; // do{
-	Node left;
 	Node right;
+	Node left;
 	for (Node &node : *this) {
 		float p = precedence(node);
 		if (p > max) max = p;
@@ -871,8 +919,7 @@ void Node::add(Node &node) {
 	children[length++] = node;
 }
 
-float Node::precedence(Node &node) {
-	// like c++ here HIGHER up == lower number evaluated earlier , except 0 WTF
+// like c++ here HIGHER up == lower number evaluated earlier , except 0 WTF
 /*
 1 	:: 	Scope resolution 	Left-to-right
 
@@ -883,17 +930,11 @@ a[] 	Subscript
 .   -> 	Member access
 
 3
- ++a   --a 	Prefix increment and decrement 	Right-to-left
+++a   --a 	Prefix increment and decrement 	Right-to-left
 +a   -a 	Unary plus and minus
 !   ~ 	Logical NOT and bitwise NOT
-(type) 	C-style cast
-*a 	Indirection (dereference)
-&a 	Address-of
-sizeof 	Size-of[note 1]
-co_await 	await-expression (C++20)
 new   new[] 	Dynamic memory allocation
 delete   delete[] 	Dynamic memory deallocation
-
 4 	.*   ->* 	Pointer-to-member 	Left-to-right
 5 	a*b   a/b   a%b 	Multiplication, division, and remainder
 6 	a+b   a-b 	Addition and subtraction
@@ -918,8 +959,25 @@ co_yield 	yield-expression (C++20)
 17 	, 	Comma 	Left-to-right
 	 */
 
-	// unlike c++ here HIGHER == more important
+float Node::precedence(Node &node) {
+	// like c++ here HIGHER up == lower value == more important
+//	switch (node.name) nope
+	if (eq(node.name, "not"))return 1;
+	if (eq(node.name, "¬"))return 1;
+	if (eq(node.name, "!"))return 1;
+	if (eq(node.name, "and"))return 1.1;
+	if (eq(node.name, "&&"))return 1.1;
+	if (eq(node.name, "&"))return 1.1;
+	if (eq(node.name, "xor"))return 1.2;
+	if (eq(node.name, "or"))return 1.2;
+	if (eq(node.name, "||"))return 1.2;
+
 	if (eq(node.name, "√"))return 3;
+	if (eq(node.name, "++"))return 3;
+//	if (eq(node.name, "+"))return 3;//
+	if (eq(node.name, "--"))return 3;
+	if (eq(node.name, "-"))return 3;// 1 + -x
+
 	if (eq(node.name, "times"))return 5;
 	if (eq(node.name, "*"))return 5;
 	if (eq(node.name, "add"))return 6;
@@ -927,24 +985,63 @@ co_yield 	yield-expression (C++20)
 	if (eq(node.name, "+"))return 6;
 	if (eq(node.name, "minus"))return 6;
 	if (eq(node.name, "-"))return 6;
+	if (eq(node.name, "-"))return 6;
+	if (eq(node.name, "-"))return 6;
+
+
 	return 0;// no precedence
 }
 
 Node Node::apply(Node left, Node op, Node right) {
-	right = right.evaluate();
-	if (eq(op.name, "√")){
-		Node &unary_result=NIL;
-		if(right.type == floats)
-			unary_result= Node(sqrt(right.value.floaty));
-		if(right.type == longs)
-			unary_result= Node(sqrt(right.value.longy)).setType(floats);
+	left = left.evaluate();
+	bool lazy = eq(op.name, "or") and (bool) left;
+	if (!lazy)
+		right = right.evaluate();
+
+	if (eq(op.name, "not") or eq(op.name, "¬") or eq(op.name, "!")) {
+		bool x = not left.evaluate();
+		return Node(x);
+	}
+	if (eq(op.name, "√")) {
+		Node &unary_result = NIL;
+		if (right.type == floats)
+			unary_result = Node(sqrt(right.value.floaty));
+		if (right.type == longs)
+			unary_result = Node(sqrt(right.value.longy)).setType(floats);
 		left.add(unary_result);
 		return left.evaluate();
 	}
-	left = left.evaluate();
 
 //	if(!is_KNOWN_operator(op))return call(left, op, right);
-	
+
+	if (eq(op.name, "|")) {
+		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
+		if (left.type == longs and right.type == longs) return Node(left.value.longy | right.value.longy);
+		// pipe todo
+	}
+
+	if (eq(op.name, "&")) {
+		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
+		return Node(left.value.longy & right.value.longy);
+	}
+
+	if (eq(op.name, "xor") or eq(op.name, "^|")) {
+		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
+		return Node(left.value.longy ^ right.value.longy);
+	}
+
+
+	if (eq(op.name, "and") or eq(op.name, "&&")) {
+		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
+		return Node(left.value.longy and right.value.longy);
+	}// bool?
+
+	if (eq(op.name, "or") or eq(op.name, "||") or eq(op.name, "&")) {
+		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
+		return Node(left.value.longy or right.value.longy);
+	}// bool?
+
+
 	if (eq(op.name, "+") or eq(op.name, "add") or eq(op.name, "plus")) {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
 		if (left.type == floats and right.type == floats) return Node(left.value.floaty + right.value.floaty);
@@ -953,6 +1050,8 @@ Node Node::apply(Node left, Node op, Node right) {
 		if (left.type == longs and right.type == longs) return Node(left.value.longy + right.value.longy);
 //		if(left.type==arrays …
 	}
+
+	// todo: 2 * -x
 	if (eq(op.name, "-") or eq(op.name, "minus") or eq(op.name, "subtract")) {
 		if (left.type == floats and right.type == floats) return Node(left.value.floaty - right.value.floaty);
 		if (left.type == longs and right.type == floats) return Node(left.value.longy - right.value.floaty);
@@ -966,9 +1065,12 @@ Node Node::apply(Node left, Node op, Node right) {
 		if (left.type == longs and right.type == floats) return Node(left.value.longy * right.value.floaty);
 		if (left.type == floats and right.type == longs) return Node(left.value.floaty * right.value.longy);
 		if (left.type == longs and right.type == longs) return Node(left.value.longy * right.value.longy);
+		todo(op.name + " operator NOT defined for types %s and %s ");
+
 //		if (right.type == longs) return Node(left.value.longy * right.value.longy);
 	}
 	todo(op.name + " is NOT a builtin operator ");
+	return NIL;
 //	log("NO builtin operator "+op+" calling…")
 //	return call(left, op, right);
 }
@@ -1040,7 +1142,8 @@ void printf(const char *format, void* value) {
 
 //#endif //NETBASE_STRING_CPP
 
-//-Wliteral-suffix
+#pragma clang diagnostic ignored "-Wuser-defined-literals"
+#pragma clang diagnostic ignored "-Wliteral-suffix"
 String operator "" s(const char *c, size_t) {
 	return String(c);// "bla"s  literal operator suffixes not preceded by ‘_’ are reserved for future standardization
 }
@@ -1102,12 +1205,12 @@ String typeName(Type t) {
 		case unknown :
 			return "unknown";
 		default:
-			throw "MISSING Type name mapping "+t;
+			throw "MISSING Type name mapping " + t;
 	}
 
 }
 
 
 void todo(chars error) {
-	rais(str("TODO ") + error);
+	err(str("TODO ") + error);
 }
