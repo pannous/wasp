@@ -18,7 +18,9 @@ set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 
 # just for Backtrace.cpp :
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -Wl,--no-as-needed -ldl")
-set(CMAKE_CXX_FLAGS "-lreadline -ldl -lcurl -lz -Wno-write-strings -dM -Wno-deprecated -g -rdynamic ${CMAKE_CXX_FLAGS}")
+# DISABLED WARNINGS
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wliteral-suffix -Wno-deprecated  -Wno-write-strings")
+set(CMAKE_CXX_FLAGS "-lreadline -ldl -lcurl -lz -dM -g -rdynamic ${CMAKE_CXX_FLAGS}")
 
 set(SOURCE_FILES mark.cpp Node.cpp Node.h ErrorHandler.cpp ErrorHandler.h)
 #String.cpp
