@@ -13,7 +13,7 @@ bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
 unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 
-
+#define breakpoint_helper printf("%s:%d\n",__FILE__,__LINE__);
 
 #ifdef WASM
 #ifdef X86_64
@@ -219,13 +219,19 @@ private:
 		// Call error when something is wrong.
 		// todo: Still to read can scan to end of line
 		var columnNumber = at - columnStart;
-		var msg = m + "\n at line " + lineNumber + " column " + columnNumber;
-		msg = msg + s(" of the Mark data. \nStill to read: \n") + text.substring(at - 1, at + 30) + "\n^^ ...";
+		var msg = s("");
+//				s("IN CODE:\n");
+		msg = msg + m + " ";
+		msg = msg + " in line " + lineNumber + " column " + columnNumber + "\n";
+		msg = msg + text + "\n";
+		msg = msg + (s(" ").times(at - 1)) + "^^^\n";
+//		msg = msg + s(" of the Mark data. \nStill to read: \n") + text.substring(at - 1, at + 30) + "\n^^ ...";
 		msg = msg + backtrace2();
-//		var error = new SyntaxError(msg);
+		var error = new SyntaxError(msg);
 //		error.at = at;
 //		error.lineNumber = lineNumber;
 //		error.columnNumber = columnNumber;
+		throw error;
 		throw msg;//error;
 		return m;
 	};
@@ -373,7 +379,6 @@ private:
 		var string = String();
 		var triple = false;
 		var delim = '"';      // double quote or single quote
-		long uffff;
 
 		// when parsing for string values, we must look for ' or " and \ characters.
 		if (ch == '"' || ch == '\'') {
@@ -402,7 +407,7 @@ private:
 					else { // escape sequence
 						next();
 						if (ch == 'u') { // unicode escape sequence
-							uffff = 0;
+							long uffff = 0; // unicode
 							for (i = 0; i < 4; i += 1) {
 								hex = parseInt(next(), 16);
 //								if (!isFinite(hex)) { break; }
@@ -548,8 +553,23 @@ private:
 		if (ch >= '0' && ch <= '9')return number();
 		if (is_identifier(ch))return Node(identifier());// or op
 		if (is_operator(ch))return builtin_operator();
+		breakpoint_helper
 		error(UNEXPECT_CHAR + renderChar(ch));
 		return NIL;
+	}
+
+//	// {a:1 b:2} vs { x = add 1 2 }
+	bool lookahead_ambiguity() {
+		int braces = 0;
+		int pos = at;
+		while (pos<text.length and text[pos]!=0 and text[pos] != '\n' and braces >= 0) {
+			if (text[pos] == '}')braces--;
+			if (text[pos] == ':' and braces == 0)return true;// ambiguity
+			if (text[pos] == '=' and braces == 0)return true;// ambiguity
+			if (text[pos] == '{')braces++;
+			pos++;
+		}
+		return false;
 	}
 
 	Node expression() {
@@ -557,12 +577,14 @@ private:
 		expression.add(expression);// naja one{one plus one}
 		white();
 
-		while (ch and is_identifier(ch) or isalnum(ch) or is_operator(ch)) {
-			Node node = symbol();
-			expression.add(node);
-			expression.type = nodes;
-			white();
-		}
+		// {a:1 b:2} vs { x = add 1 2 }
+		if (!lookahead_ambiguity())
+			while (ch and is_identifier(ch) or isalnum(ch) or is_operator(ch)) {
+				Node node = symbol();
+				expression.add(node);
+				expression.type = nodes;
+				white();
+			}
 		return expression;
 	}
 
@@ -843,6 +865,7 @@ private:
 //				obj[$length] = index;
 				return;
 			} else {
+				breakpoint_helper
 				error(UNEXPECT_CHAR + renderChar(ch));
 			}
 			white();
@@ -877,6 +900,7 @@ private:
 					parseContent(obj);
 					return obj;
 				}
+				breakpoint_helper
 				error(UNEXPECT_CHAR + "'{'");
 			}
 			if (ch == '"' || ch == '\'') { // quoted key
@@ -897,6 +921,7 @@ private:
 						extended = true;  // key = str;
 						continue;
 					} else {
+						breakpoint_helper
 						error(UNEXPECT_CHAR + renderChar(ch));
 					}
 				}
@@ -913,6 +938,7 @@ private:
 						extended = true;  // key = ident;
 						continue;
 					}
+					breakpoint_helper
 					error(UNEXPECT_CHAR + renderChar(ch));
 				}
 			}
@@ -960,6 +986,8 @@ private:
 				       binary() : object();
 			case '[':
 				return array();
+			case 'ø':
+				return NIL;
 			case '"':
 			case '\'':
 				return string();
@@ -978,9 +1006,9 @@ private:
 //				return ch >= '0' && ch <= '9' ? number() : word();
 		}
 	};;
-	int $length{};
-	int $convert{};
-	int $parent{};
+//	int $length{};//????
+//	int $convert{};
+//	int $parent{};
 };
 
 void ok() {
@@ -1019,203 +1047,27 @@ void init() {
 	False.type = bools;
 }
 
-void testNetbase() {
-
-	chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
-	chars json = fetch(url);
-	log(json);
-	Node div = Mark::parse(json);
-}
-
-void testDiv() {
-	Node div = Mark::parse("{div {span class:'bold' 'text'} {br}}");
-	div["span"];
-	div["span"]["class"];
-}
-
-
-void testMarkAsMap() {
-	Node compare = Node();
-//	compare["d"] = Node();
-	compare["b"] = 3;
-	compare["a"] = "HIO";
-	Node &node = compare["a"];
-	assert(node == "HIO");
-	const char *source = "{b:3 a:'HIO'}";// d:{}
-	Node marked = Mark::parse(source);
-	Node &node1 = marked["a"];
-	assert(node1 == "HIO");
-	assert(marked["a"] == compare["a"]);
-	assert(marked["b"] == compare["b"]);
-	assert(compare == marked);
-}
-
-void testMark() {
-	log("primitives");
-//	assert(Mark::parse("a=3") == 3);
-//	assert(Mark::parse("a=3")["a"] == 3);
-	Node a = Mark::parse("{a:3}");
-	Node &a3 = a["a"];
-	assert(a3 == 3);
-	assert(a3.type == longs);
-	assert(a3.name == "a"s);
-
-	Node &b = a["b"];
-	a["b"] = a3;
-	assert(a["b"] == a3);
-	assert(a["b"] == a3);
-	assert(a["b"] == 3);
-
-	assert(Mark::parse("3.") == 3.);
-	assert(Mark::parse("3.") == 3.f);
-//	assert(Mark::parse("3.1") == 3.1); // todo epsilon
-//	assert(Mark::parse("3.1") == 3.1f);// todo epsilon
-	assert(Mark::parse("'hi'") == "hi");
-	assert(Mark::parse("3") == 3);
-//		const char *source = "{a:3,b:4,c:{d:'hi'}}";
-	const char *source = "{d:{} b:3 a:'HIO'}";
-//		const char *source = "a='hooo'";
-	Node result = Mark::parse(source);
-	Node &node = result['b'];
-	log("OK");
-	log(result);
-	log(result[0]);
-	log(result[1]);
-	log(result["a"]);
-	log(result["a"].parent);
-	log(result["b"]);
-	log(result["c"]);
-	log(result["a"]);
-	log(result["b"]);
-	log(result["c"]);
-//	assert(result['d']=={})
-
-	assert(result["b"] == 3);
-	assert(result['b'] == 3);
-	assert(result['a'] == "HIO");
-
+#import "tests.cpp"
+void testUTF(){
+//	using namespace std;
+//	const auto str = u8"عربى";
+//	wstring_convert<codecvt_utf8<char32_t>, char32_t> cv;
+//	auto str32 = cv.from_bytes(str);
+//	for(auto c : str32)
+//		cout << uint_least32_t(c) << '\n';
+//		char a = '☹';// char (by definition) is one byte WTF WTF WTF WTF WTF WTF WTF WTF
+//		wchar_t  a = '☹';// NOPE
+//		char32_t a = '☹';// NOPE
+//		__wchar_t__ a = '☹';// NOPE
+//int a= '☹';// NOPE
+//char* a='☹';// NOPE
+//		char[10] a='☹';// NOPE
 
 }
-
-void testErrors() {
-	throwing = false;
-	Node node = Mark::parseFile("samples/errors.mark");
-	throwing = true;
-}
-
-void testSamples() {
-//	Node node= Mark::parseFile("samples/comments.mark");
-	Node node = Mark::parseFile("samples/kitchensink.mark");
-
-	assert(node['a'] == "classical json");
-	assert(node['b'] == "quotes optional");
-	assert(node['c'] == "commas optional");
-	assert(node['d'] == "semicolons optional");
-	assert(node['e'] == "trailing comments"); // trailing comments
-	assert(node["f"] == /*inline comments*/ "inline comments");
-}
-
-void testEval3() {
-	auto math = "one plus two";
-	Node result = Mark::eval(math);
-	assert(result == 3);
-}
-
-
-bool assert_equals(long a, long b, char *context) {
-	if (a != b)// err
-		puts("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
-	else puts("OK %d==%d in %s"s % a % b % context);
-	return a==b;
-}
-bool assert_equals(float a, float b, char *context) {
-	float epsilon=fabs(a+b)/100000.;
-	bool ok= a == b or fabs(a-b)<=epsilon;
-	if (!ok)
-		puts("FAILED assert_equals! %f should be %f in %s"s % a % b % context);
-//		 err("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
-	else puts("OK %f==%f in %s"s % a % b % context);
-	return ok;
-}
-
-bool assert_isx(char *mark, Node result) {
-	Node left = Mark::eval(mark);
-	if (left.type == floats or result.type == floats)
-		return assert_equals(left.floate(), result.floate(), mark);
-	if (left.type == longs or result.type == longs)
-		return assert_equals(left.longe(), result.longe(), mark);
-	return left==result;
-}
-
-// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
-#define assert_is(mark,result) {\
-    printf("TEST %s==%s\n",#mark,#result);\
-    bool ok=assert_isx(mark,result);\
-	if(ok)printf("PASSED %s==%s\n",#mark,#result);\
-	else{printf("FAILED %s==%s\n",#mark,#result);\
-	printf("%s:%d\n",__FILE__,__LINE__);exit(0);}\
-}
-
-void testMath() {
-	auto math = "one plus two times three";
-	Node result = Mark::eval(math);
-	assert(result == 7);
-
-	assert_is("√4", 2);
-	assert_is("40+√4", 42);
-	assert_is("√4+40", 42);
-//	assert_is("√42*√42", Node(42.));
-	assert_is("√42*√42", 42.);
-	assert_is("√42*√42", 42);
-
-//	assert_is("√42*√42",42);// int rounding to 41 todo?
-}
-
-void testLogic() {
-	assert_is("0 xor 1", true);
-	assert_is("1 xor 0", true);
-	assert_is("0 xor 0", false);
-	assert_is("1 xor 1", false);
-	assert_is("0 or 1", true);
-	assert_is("0 or 0", false);
-	assert_is("1 or 0", true);
-	assert_is("1 or 1", true);
-
-	assert_is("1 and 1", true);
-	assert_is("1 and 0", false);
-	assert_is("0 and 1", false);
-	assert_is("0 and 0", false);
-
-
-}
-
-void testEval() {
-	assert_is("√4", 2);
-	testLogic();
-	testMath();
-}
-
-void test() {
-//	testNetbase();
-	testMark();
-	testMarkAsMap();
-	testDiv();
-	testEval();
-	testSamples();
-	testErrors();
-
-}
-
-void testCurrent() {
-	testEval();
-//	test();
-}
-
 
 int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
 	try {
-//	throw "OK";
 		auto s = "hello world"_;
 		init();
 		log(String("OK %s").replace("%s", "WASM"));
@@ -1228,6 +1080,9 @@ int main(int argp, char **argv) {
 	} catch (String err) {
 		printf("\nERROR\n");
 		printf("%s", err.data);
+	} catch (SyntaxError *err) {
+		printf("\nERROR\n");
+		printf("%s", err->data);
 	}
 	return -1;
 }

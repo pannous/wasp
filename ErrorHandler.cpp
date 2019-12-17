@@ -54,7 +54,7 @@ using __cxxabiv1::__cxa_demangle;
 #endif
 bool showRegisters= false;
 
-// NICE BREAKPOINT WORKS!!!
+// NICE, BREAKPOINT WORKS!!!
 static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 	static const char *si_codes[3] = {"", "SEGV_MAPERR", "SEGV_ACCERR"};
 	int i, f = 0;
@@ -122,12 +122,15 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
         sigsegv_outp("%s", strings[i]);
 #endif
 	sigsegv_outp("End of stack trace.");
+	sigsegv_outp("Debug to catch Segmentation Fault on the spot, set breakpoint on signal_segv()");
+
 #else
 	sigsegv_outp("Not printing stack strace.");
 #endif
 	_exit (-1);
 }
-
+// Alternative: turn SIGSEGV into c++ exception https://stackoverflow.com/questions/2350489/how-to-catch-segmentation-fault-in-linux
+// Alternative: check if pointer is 'good' in advance … use rarely!!
 
 //istead of _Unwind_Backtrace(tracer, &state);
 

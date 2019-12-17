@@ -17,6 +17,7 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 	char **symbols = backtrace_symbols(callstack, nFrames);
 
 	std::ostringstream trace_buf;
+
 	for (int i = skip; i < nFrames - skipEnd; i++) {
 		// skip __libc_start_main _start
 //		printf("%s\n", symbols[i]);
@@ -30,10 +31,7 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 				demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
 			auto name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
 			unsigned long offset = (char *) callstack[i] - (char *) info.dli_saddr;
-			snprintf(buf, sizeof(buf), "%-3d %s + %zd\n",
-			         i,
-                     name,
-                     offset);
+			snprintf(buf, sizeof(buf), "%-3d %s + %zd\n", i, name, offset);
 			free(demangled);
 		} else {
 			snprintf(buf, sizeof(buf), "%-3d %*p %s\n",
@@ -45,6 +43,7 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 	if (nFrames == nMaxFrames)
 		trace_buf << "[truncated]\n";
 	printf("%s\n", trace_buf.str().c_str());
+//	printf("/me/dev/script/wasm/mark/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
 	return trace_buf.str();
 #endif
 }
