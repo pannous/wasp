@@ -1,3 +1,9 @@
+bool assert_equals(double a, double b, char *context) {
+	if (a != b)// err
+		puts("FAILED assert_equals! %f should be %f in %s"s % a % b % context);
+	else puts("OK %f==%f in %s"s % a % b % context);
+	return a == b;
+}
 bool assert_equals(long a, long b, char *context) {
 	if (a != b)// err
 		puts("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
@@ -24,6 +30,12 @@ bool assert_parsesx(const char *mark) {
 	try {
 		Mark::parse(mark);
 		return true;
+	} catch (chars err) {
+		printf("\nTEST FAILED WITH ERROR\n");
+		printf("%s", err);
+	} catch (String err) {
+		printf("\nTEST FAILED WITH ERROR\n");
+		printf("%s", err.data);
 	} catch (SyntaxError *err) {
 		printf("\nTEST FAILED WITH ERROR\n");
 		printf("%s", err->data);
@@ -31,7 +43,7 @@ bool assert_parsesx(const char *mark) {
 	return false;
 }
 
-#define assert_parses(mark) if(!assert_parsesx(mark)){printf("%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define assert_parses(mark) if(!assert_parsesx(mark)){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
 #define assert_is(mark, result) {\
@@ -41,6 +53,10 @@ bool assert_parsesx(const char *mark) {
     else{printf("FAILED %s==%s\n",#mark,#result);\
     printf("%s:%d\n",__FILE__,__LINE__);exit(0);}\
 }
+
+void testC();
+
+void testBUG();
 
 void testNetbase() {
 
@@ -101,7 +117,8 @@ void testMarkSimple() {
 }
 
 
-void testUTF() {
+void testUTFinCPP() {
+	// char = byte % 128   char<0 => utf or something;)
 //	using namespace std;
 //	const auto str = u8"عربى";
 //	wstring_convert<codecvt_utf8<char32_t>, char32_t> cv;
@@ -115,12 +132,32 @@ void testUTF() {
 //int a= '☹';// NOPE
 //char* a='☹';// NOPE
 //		char[10] a='☹';// NOPE
-	char *a = "☹";// NOPE
+	char *a = "☹"; // OK
 	byte *b = reinterpret_cast<byte *>(a);
-	short *s = reinterpret_cast<short *>(b);
-	const char *source = "{:ø}";
-	assert_parses(source);
+//	a[0] = {char} -30 '\xe2'
+//	a[1] = {char} -104 '\x98'
+//	a[2] = {char} -71 '\xb9'
+//	b[0] = {byte} 226 '\xe2'
+//	b[1] = {byte} 152 '\x98'
+//	b[2] = {byte} 185 '\xb9'
+//	b[3] = {byte} 0 '\0'
+}
 
+//testUTFø  error: stray ‘\303’ in program
+void testUTF0() {
+	const char *source = "{ç:ø}";
+	assert_parses(source);
+	Node node = Mark::parse(source);
+	assert(node["ç"]=="ø");
+}
+
+void testUTF() {
+	testUTFinCPP();
+	testUTF0();
+	const char *source = "{ç:111}";
+	assert_parses(source);
+	Node node = Mark::parse(source);
+	assert(node["ç"]==111);
 }
 
 
@@ -157,6 +194,7 @@ void testErrors() {
 }
 
 void testSamples() {
+//	ln -s /me/dev/script/wasm/mark/samples /me/dev/script/wasm/mark/cmake-build-debug/
 //	Node node= Mark::parseFile("samples/comments.mark");
 	Node node = Mark::parseFile("samples/kitchensink.mark");
 
@@ -196,9 +234,11 @@ void testRoot() {
 	assert_is("√4+40", 42);
 	assert_is("40 + √4", 42);
 	assert_is("40+√4", 42);
-//	assert_is("√42*√42", Node(42.));
+}
+void testRootFloat() {
 	assert_is("√42*√42", 42.);
-	assert_is("√42*√42", 42);
+//	assert_is("√42*√42", Node(42.));
+//	assert_is("√42*√42", 42);
 
 //	assert_is("√42*√42",42);// int rounding to 41 todo?
 }
@@ -226,18 +266,30 @@ void testEval() {
 	testLogic();
 	testMath();
 	testRoot();
+	testRootFloat();
 }
 
+
+void testC() {
+	assert(1 < 2 < 3);
+	assert('a' < 'b' < 'c');
+	char b = 'b';
+	assert('a' < b < 'c');
+}
+
+
 void test() {
-//	testNetbase();
 	testMarkSimple();
 	testMarkMulti();
 	testMarkAsMap();
+	testBUG();
+	testC();
+	testUTF();
 	testDiv();
 	testEval();
 	testSamples();
 	testErrors();
-
+	testNetbase();
 }
 
 void testBUG() {
@@ -248,9 +300,7 @@ void testBUG() {
 }
 
 void testCurrent() {
-//	testBUG();
-	testUTF();
-	testMarkMulti();
+	testNetbase();
 //	printf("testCurrent OK\n NOW TESTING ALL\n");
 	test();
 }

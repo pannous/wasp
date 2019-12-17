@@ -161,6 +161,7 @@ public:
 
 	static char *readFile(const char *filename) {
 		FILE *f = fopen(filename, "rt");
+		if (!f)err("FILE NOT FOUND "_s + filename);
 		fseek(f, 0, SEEK_END);
 		long fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
@@ -231,9 +232,11 @@ private:
 //		error.at = at;
 //		error.lineNumber = lineNumber;
 //		error.columnNumber = columnNumber;
-		throw error;
+		if (throwing)
+			throw error;
+		else
+			return msg;
 		throw msg;//error;
-		return m;
 	};
 
 	String s(const char string[]) {
@@ -269,13 +272,17 @@ private:
 	}
 
 	bool is_identifier(char ch) {
-		return not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
+		if (ch == "√"[0])return false;// todo … !?!?
+		return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
+		       ch < 0;// ch<0: UNICODE
+//		not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
 	};
 
 	// Parse an identifier.
 	String identifier() {
 		// identifiers must start with a letter, _ or $.
 		if (!is_identifier(ch)) {
+			breakpoint_helper
 			error(UNEXPECT_CHAR + renderChar(ch));
 		}
 
@@ -284,9 +291,8 @@ private:
 		// subsequent characters can contain digits
 		while (next() &&
 		       (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_' ||
-		        ch == '$' ||
-		        // '.' and '-' are commonly used in html and xml names, but not valid JS name chars
-		        ch == '.' || ch == '-')) {
+		        ch == '$' || ch < 0 /* UTF */ || ch == '.' || ch == '-')) {
+			// '.' and '-' are commonly used in html and xml names, but not valid JS name chars
 			key += ch;
 		}
 		key += '\0';// 0x00;
@@ -562,14 +568,14 @@ private:
 	bool lookahead_ambiguity() {
 		int braces = 0;
 		int pos = at;
-		while (pos<text.length and text[pos]!=0 and text[pos] != '\n' and braces >= 0) {
+		while (pos < text.length and text[pos] != 0 and text[pos] != '\n' and braces >= 0) {
 			if (text[pos] == '}')braces--;
 			if (text[pos] == ':' and braces == 0)return true;// ambiguity
 			if (text[pos] == '=' and braces == 0)return true;// ambiguity
 			if (text[pos] == '{')braces++;
 			pos++;
 		}
-		return false;
+		return false;// OK, no ambiguity
 	}
 
 	Node expression() {
@@ -629,7 +635,7 @@ private:
 		}
 		if (token("one")) { return True; }
 		if (token("two")) { return Node(2); }
-
+		breakpoint_helper
 		const String &message = UNEXPECT_CHAR + renderChar(text.charAt(at - 1));
 //		throw message;
 		throw error(message);
@@ -650,6 +656,7 @@ private:
 			prag += ch;
 			next();
 		}
+		breakpoint_helper
 		throw error(UNEXPECT_END);
 	};
 
@@ -706,8 +713,10 @@ private:
 		}
 		for (var i = 0; i < 64; i++) {
 			char charCode = text.charCodeAt(i);
-			if(charCode>128 or charCode<0)err(("Invalid binary charCode %d "_s % (long)charCode) +  text.substring(i,i+2));
-			lookup64[charCode] = i; }
+			if (charCode > 128 or charCode < 0)
+				err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
+			lookup64[charCode] = i;
+		}
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
 		lookup64[32] = lookup64[9] = lookup64[13] = lookup64[10] = 64;
 		for (var i = 0; i < 128; i++) { if (33 <= i && i <= 117) lookup85[i] = i - 33; }
@@ -873,6 +882,7 @@ private:
 			}
 			white();
 		}
+		breakpoint_helper
 		error(UNEXPECT_END);
 	};
 
@@ -973,10 +983,15 @@ private:
 				white();
 			}
 		}
+		breakpoint_helper
 		throw error(UNEXPECT_END);
 	};
 
 //Mark::Mark(const Node &obj) : obj(obj) {}
+
+	bool isDigit(char next) {
+		return next>='0' and next<='9';
+	}
 
 // Parse a JSON value.
 	Node value() {
@@ -999,7 +1014,7 @@ private:
 			case '-':
 			case '+':
 			case '.':
-				if (isdigit_l(next, LC_GLOBAL_LOCALE))
+				if (isDigit(next))
 					return number();
 				else
 					return words();
