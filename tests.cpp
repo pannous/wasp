@@ -100,6 +100,30 @@ void testMarkSimple() {
 //		const char *source = "{a:3,b:4,c:{d:'hi'}}";
 }
 
+
+void testUTF() {
+//	using namespace std;
+//	const auto str = u8"عربى";
+//	wstring_convert<codecvt_utf8<char32_t>, char32_t> cv;
+//	auto str32 = cv.from_bytes(str);
+//	for(auto c : str32)
+//		cout << uint_least32_t(c) << '\n';
+//		char a = '☹';// char (by definition) is one byte WTF WTF WTF WTF WTF WTF WTF WTF
+//		wchar_t  a = '☹';// NOPE
+//		char32_t a = '☹';// NOPE
+//		__wchar_t__ a = '☹';// NOPE
+//int a= '☹';// NOPE
+//char* a='☹';// NOPE
+//		char[10] a='☹';// NOPE
+	char *a = "☹";// NOPE
+	byte *b = reinterpret_cast<byte *>(a);
+	short *s = reinterpret_cast<short *>(b);
+	const char *source = "{:ø}";
+	assert_parses(source);
+
+}
+
+
 void testMarkMulti() {
 	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
 //	const char *source = "{d:{} b:3 a:'HIO'}";
@@ -112,7 +136,6 @@ void testMarkMulti() {
 	log(result[0]);
 	log(result[1]);
 	log(result["a"]);
-	log(result["a"].parent);
 	log(result["b"]);
 	log(result["c"]);
 	log(result["a"]);
@@ -217,7 +240,16 @@ void test() {
 
 }
 
+void testBUG() {
+	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
+	assert_parses(source);
+	Node result = Mark::parse(source);
+	log(result["a"].parent);// BROKEN, WHY??
+}
+
 void testCurrent() {
+//	testBUG();
+	testUTF();
 	testMarkMulti();
 //	printf("testCurrent OK\n NOW TESTING ALL\n");
 	test();

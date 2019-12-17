@@ -704,7 +704,10 @@ private:
 			lookup64[i] = 65;
 			lookup85[i] = 86;
 		}
-		for (var i = 0; i < 64; i++) { lookup64[text.charCodeAt(i)] = i; }
+		for (var i = 0; i < 64; i++) {
+			char charCode = text.charCodeAt(i);
+			if(charCode>128 or charCode<0)err(("Invalid binary charCode %d "_s % (long)charCode) +  text.substring(i,i+2));
+			lookup64[charCode] = i; }
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
 		lookup64[32] = lookup64[9] = lookup64[13] = lookup64[10] = 64;
 		for (var i = 0; i < 128; i++) { if (33 <= i && i <= 117) lookup85[i] = i - 33; }
@@ -1048,22 +1051,6 @@ void init() {
 }
 
 #import "tests.cpp"
-void testUTF(){
-//	using namespace std;
-//	const auto str = u8"عربى";
-//	wstring_convert<codecvt_utf8<char32_t>, char32_t> cv;
-//	auto str32 = cv.from_bytes(str);
-//	for(auto c : str32)
-//		cout << uint_least32_t(c) << '\n';
-//		char a = '☹';// char (by definition) is one byte WTF WTF WTF WTF WTF WTF WTF WTF
-//		wchar_t  a = '☹';// NOPE
-//		char32_t a = '☹';// NOPE
-//		__wchar_t__ a = '☹';// NOPE
-//int a= '☹';// NOPE
-//char* a='☹';// NOPE
-//		char[10] a='☹';// NOPE
-
-}
 
 int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
