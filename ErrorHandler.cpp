@@ -56,7 +56,7 @@ bool showRegisters= false;
 
 // NICE, BREAKPOINT WORKS!!!
 static void signal_segv(int signum, siginfo_t* info, void*ptr) {
-	static const char *si_codes[3] = {"", "SEGV_MAPERR", "SEGV_ACCERR"};
+	static const char *si_codes[4] = {"", "SEGV_MAPERR", "SEGV_ACCERR","SIGABRT"};
 	int i, f = 0;
 	ucontext_t *ucontext = (ucontext_t*)ptr;
 	Dl_info dlinfo;

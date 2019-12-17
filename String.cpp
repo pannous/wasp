@@ -293,7 +293,7 @@ public:
 
 	String substring(int from, int to = -1) { // excluding to
 		if (to < 0 or to > length)to = length;
-		auto *neu = static_cast<char *>(malloc((sizeof(char)) * (to - from)));
+		auto *neu = static_cast<char *>(malloc((sizeof(char)) * (to - from)+1));
 		strcpy(neu, &data[from], to - from);
 		neu[to - from] = 0;
 		return String(neu);
@@ -664,7 +664,8 @@ public:
 			return;
 		}
 //		if || name==nil_name …
-		if (name.data < (char *) 0xffff) err("BUG");
+		if (name.data < (char *) 0xffff)
+			err("BUG");
 		if (name and name.data and name.data > (char *) 0xffff and type != objects)
 			printf("name %s ", name.data);
 		printf("length %i ", length);
@@ -1238,7 +1239,6 @@ String typeName(Type t) {
 		default:
 			throw str("MISSING Type name mapping ") + t;
 	}
-
 }
 
 
