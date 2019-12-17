@@ -1,0 +1,22 @@
+# https://stackoverflow.com/questions/41108037/how-to-add-a-hexadecimal-watch-in-clion
+
+# type format add --format dec int32_t
+# type format add --format hex int
+
+# https://lldb.llvm.org/varformats.html
+type summary add --summary-string "${var.data}" String
+type summary add --summary-string "${var.data}" Value
+#type summary add --summary-string "${var.longy%B}" Value
+#type summary add --summary-string "name=${var.name} type=${var.type} length=${var.length} value=${var.value}" Node
+type summary add --summary-string "${var.name} ${var.length} ${var.type}  value:${var.value%B} children:${var.children%B}" Node
+
+# ${var.children[0-5].name}
+
+# https://youtrack.jetbrains.com/issue/CPP-6550 'Show as array' for pointer variables
+# use (Node(*)[10])this.children in watch!
+type summary add --summary-string "${var[0-5].name}" "Node *"
+
+
+type format add -f Node[] Node*
+
+# ${addr} ${addr-file-or-load} ${ansi} ${current-pc-arrow} ${file} ${language} ${frame} ${function} ${line} ${module} ${process} ${script} ${svar} ${thread} ${target} ${var}"

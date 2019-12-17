@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+	<Type Name="String">
+		<DisplayString Condition="m_storage.data == 0">empty</DisplayString>
+		<DisplayString Condition="m_storage.data != 0">[{m_storage.data}]</DisplayString>
+		<Expand>
+			<Item Name="[length]">m_storage.length</Item>
+			<ArrayItems>
+				<Size>m_storage.length</Size>
+				<ValuePointer>m_storage.m_data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<Type Name="Node">
+		<DisplayString>yay</DisplayString>
+	</Type>
+
+</AutoVisualizer>
