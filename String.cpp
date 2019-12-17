@@ -504,7 +504,8 @@ union Value {
 //	Node node;// incomplete type
 	String string;
 	long longy;
-	float floaty;
+//	float floaty;
+	double floaty;
 	void *data;
 
 	Value() {}// = default;
@@ -988,31 +989,34 @@ co_yield 	yield-expression (C++20)
 float Node::precedence(Node &node) {
 	// like c++ here HIGHER up == lower value == more important
 //	switch (node.name) nope
-	if (eq(node.name, "not"))return 1;
-	if (eq(node.name, "¬"))return 1;
-	if (eq(node.name, "!"))return 1;
-	if (eq(node.name, "and"))return 1.1;
-	if (eq(node.name, "&&"))return 1.1;
-	if (eq(node.name, "&"))return 1.1;
-	if (eq(node.name, "xor"))return 1.2;
-	if (eq(node.name, "or"))return 1.2;
-	if (eq(node.name, "||"))return 1.2;
+	String &name = node.name;
+	if(node.type==strings)// and name.empty()
+		name = node.value.string;
+	if (eq(name, "not"))return 1;
+	if (eq(name, "¬"))return 1;
+	if (eq(name, "!"))return 1;
+	if (eq(name, "and"))return 1.1;
+	if (eq(name, "&&"))return 1.1;
+	if (eq(name, "&"))return 1.1;
+	if (eq(name, "xor"))return 1.2;
+	if (eq(name, "or"))return 1.2;
+	if (eq(name, "||"))return 1.2;
 
-	if (eq(node.name, "√"))return 3;
-	if (eq(node.name, "++"))return 3;
+	if (eq(name, "√"))return 3;
+	if (eq(name, "++"))return 3;
 //	if (eq(node.name, "+"))return 3;//
-	if (eq(node.name, "--"))return 3;
-	if (eq(node.name, "-"))return 3;// 1 + -x
+	if (eq(name, "--"))return 3;
+	if (eq(name, "-"))return 3;// 1 + -x
 
-	if (eq(node.name, "times"))return 5;
-	if (eq(node.name, "*"))return 5;
-	if (eq(node.name, "add"))return 6;
-	if (eq(node.name, "plus"))return 6;
-	if (eq(node.name, "+"))return 6;
-	if (eq(node.name, "minus"))return 6;
-	if (eq(node.name, "-"))return 6;
-	if (eq(node.name, "-"))return 6;
-	if (eq(node.name, "-"))return 6;
+	if (eq(name, "times"))return 5;
+	if (eq(name, "*"))return 5;
+	if (eq(name, "add"))return 6;
+	if (eq(name, "plus"))return 6;
+	if (eq(name, "+"))return 6;
+	if (eq(name, "minus"))return 6;
+	if (eq(name, "-"))return 6;
+	if (eq(name, "-"))return 6;
+	if (eq(name, "-"))return 6;
 
 
 	return 0;// no precedence
