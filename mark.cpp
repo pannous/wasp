@@ -115,10 +115,10 @@ class Mark {
 	String UNEXPECT_END = "Unexpected end of input";
 	String UNEXPECT_CHAR = "Unexpected character ";
 
-	int at{},            // The index of the current character
-			lineNumber{},    // The current line number
-			columnStart{};    // The index of column start char
+	int at{};            // The index of the current character PLUS ONE todo
 	char ch = 0;            // The current character
+	int lineNumber{};    // The current line number
+	int columnStart{};    // The index of column start char
 
 //	Node obj = Node();
 //	obj.
@@ -243,6 +243,11 @@ private:
 		return {string};
 	}
 
+	char back() {
+		ch = text.charAt(at--);
+		at++;
+	}
+
 	char next(char c = 0) {
 		// If a c parameter is provided, verify that it matches the current character.
 		if (c && c != ch) {
@@ -272,7 +277,7 @@ private:
 	}
 
 	bool is_identifier(char ch) {
-		if (ch == "√"[0] and text[at]=="√"[1])return false;// todo … !?!?
+		if (ch == "√"[0] and text[at] == "√"[1])return false;// todo … !?!?
 		return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
 		       ch < 0;// ch<0: UNICODE
 //		not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
@@ -400,11 +405,11 @@ private:
 					next();
 					if (!triple) { // end of string
 						return Node(string);
-						return Node(text.substring(start,at-2));
+						return Node(text.substring(start, at - 2));
 					} else if (ch == delim && text[at] == delim) { // end of tripple quoted text
 						next();
 						next();
-						return Node(text.substring(start,at-2));
+						return Node(text.substring(start, at - 2));
 //						todo: escape
 					} else {
 						string += delim;
@@ -674,7 +679,7 @@ private:
 	// Parse an array
 	Node array() {
 //		arr.type = arrays;
-		auto *array0 = static_cast<Node *>(malloc(sizeof(Node*)*100));// todo: GROW!
+		auto *array0 = static_cast<Node *>(malloc(sizeof(Node *) * 100));// todo: GROW!
 //		arr.value.node = array0;
 		int len = 0;
 		next();  // skip the starting '['
@@ -973,7 +978,7 @@ private:
 				error("Numeric key not allowed as Mark property name");
 			}
 			Node &child = obj[key];
-			if(obj.length==1)assert(obj.children==&child or obj.children==child.parent);
+			if (obj.length == 1)assert(obj.children == &child or obj.children == child.parent);
 			if (child.length != 0) {//} && obj[key].type != "function") {
 				log(child);
 				child = obj[key];// debug
@@ -1018,7 +1023,10 @@ private:
 				return array();
 			case "ø"[0]:
 				next();
-				return NIL;
+				if (ch == "ø"[1]) {
+					next();
+					return NIL;
+				} else back();
 			case '"':
 			case '\'':
 				return string();
