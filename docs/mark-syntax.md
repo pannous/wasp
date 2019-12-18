@@ -23,7 +23,7 @@ key ::= string | identifier
 Comparing to a JSON object, a Mark object has two extensions:
 
 - A **type name**, which corresponds to class name or type name of an object. In JavaScript, that is `obj.constructor.name`. In HTML and XML, that's the element name.
-- Optional list of **content** values following the named properties, which corresponds to child nodes in markup documents like HTML and XML.
+- Optional list of **content** values following the named properties, which corresponds to child keyNode in markup documents like HTML and XML.
 
 ### 1.1 Properties
 

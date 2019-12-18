@@ -58,7 +58,10 @@ void printf(const char *format, chars i);
 // NodeType todo move
 enum Type {
 // plurals because of namespace clash
-			objects = 0,
+	// TODO add subtypes of Class:Node Variable:Node etc ^^^
+	nils = 0,
+	objects, // {…} children
+	keyNode, // key with value
 	reference,// variable identifier name x
 	symbol,// one / plus / Jesus
 	operators,// or just symbol?
@@ -66,12 +69,10 @@ enum Type {
 	strings,
 	arrays,// same as:
 	buffers,
-	nodes,
 	floats,
 	longs,
 	ints,
 	bools,
-	nils,
 	unknown = 20 //7
 };
 
@@ -180,8 +181,9 @@ public:
 void reverse(char *str, int len);
 
 // Implementation of itoa()
+
 char *itoa(long num, int base = 10) {
-	char *str = new char[100];
+	char *str = (char *)malloc(100);// todo: from context.names char*
 	int len = 0;
 	bool isNegative = false;
 	/* Handle 0 explicitely, otherwise empty string is printed for 0 */
@@ -223,6 +225,7 @@ void reverse(char *str, int len) {
 //	return (char) (i + 0x30);
 //}
 
+#include <malloc.h>
 class String {
 
 public:
@@ -230,12 +233,12 @@ public:
 	int length = -1;
 
 	String() {
-		data = static_cast<char *>(malloc(sizeof(char) * 2));
+		data = static_cast<char *>(calloc(sizeof(char),2));
 		length = 0;
 	}
 
 	String(char c) {
-		data = static_cast<char *>(malloc(sizeof(char) * 2));
+		data = static_cast<char *>(calloc(sizeof(char) , 2));
 		data[0] = c;
 		data[1] = 0;
 		length = 1;
@@ -293,7 +296,7 @@ public:
 
 	String substring(int from, int to = -1) { // excluding to
 		if (to < 0 or to > length)to = length;
-		auto *neu = static_cast<char *>(malloc((sizeof(char)) * (to - from)+1));
+		auto *neu = static_cast<char *>(malloc((sizeof(char)) * (to - from) + 1));
 		strcpy(neu, &data[from], to - from);
 		neu[to - from] = 0;
 		return String(neu);
@@ -311,7 +314,7 @@ public:
 	}
 
 	String &append(char c) {
-		if(!data)data = static_cast<char *>(malloc(sizeof(char) * 2));
+		if (!data)data = static_cast<char *>(malloc(sizeof(char) * 2));
 		if (data + length + 1 == (char *) memory) {// just append recent
 			data[length++] = c;
 			data[length] = 0;
@@ -514,7 +517,8 @@ union Value {
 struct Node;
 String nil_name = "nil";
 String empty_name = "";
-String object_name = "<object>";
+String object_name = "{…}";
+//String object_name = "<object>";
 extern Node True;
 extern Node False;
 extern Node NIL;
@@ -590,15 +594,23 @@ public:
 //			if(check_reference and not symbol)...
 			name = s;
 			type = reference;
-		} else {
+		}
+//		else if (atoi(s) and s == itoa(atoi(s))) {
+//			value.longy = atoi(s);
+//			type = longs;
+//			}
+//		else if (atof(s)) { value.floaty = atoi(s); }
+		else {
 			type = strings;
 			value.string = s;
+			if(name==empty_name)name = s;
 		}
 	}
 
 	explicit Node(Node **pNode) {
+		this->children = pNode[0];
 		type = arrays;
-		value.data = pNode;
+		value.data = pNode[0];
 	}
 
 	explicit
@@ -629,7 +641,8 @@ public:
 		if (type == strings)
 			return value.string;
 //		return name;
-		throw "WRONG TYPE";
+		breakpoint_helper
+		err(String("WRONG TYPE ") + typeName(type));
 	}
 
 	// moved outside because circular dependency
@@ -676,7 +689,7 @@ public:
 		if (this == &False)
 			printf("FALSE");
 		if (type == objects and value.data)
-			printf(" name %s", value.string.data);
+			printf(" value.name %s", value.string.data);// ???
 		if (type == bools)
 			printf(" value %s", value.longy ? "TRUE" : "FALSE");
 		if (type == strings)
@@ -685,6 +698,15 @@ public:
 			printf(" value %li", value.longy);
 		if (type == floats)
 			printf(" value %f", value.floaty);
+
+		printf(" [ ");
+		for (int i = 0; i < length; i++) {
+			Node &node = children[i];
+//			if(check(node))
+			printf(node.name);
+			printf(" ");
+		}
+		printf("]");
 		printf("\n");
 	}
 
@@ -733,11 +755,14 @@ Node &Node::operator=(int i) {
 Node &Node::operator=(chars c) {
 	this->value.string = String(c);
 	this->type = strings;
+	if(name==empty_name)name = this->value.string;
 	return *this;
 }
-
 Node &Node::operator[](int i) {
-	if (i >= length)throw String("out of range ") + i + " > " + length;
+	if (i >= length){
+		breakpoint_helper
+		err(String("out of range ") + i + " > " + length);
+	}
 	return this->children[i];
 }
 
@@ -745,7 +770,7 @@ Node &Node::operator[](String s) {
 	for (int i = 0; i < length; i++) {
 		Node &entry = this->children[i];
 		if (s == entry.name)
-			if ((entry.type == nodes or entry.type == nils) and entry.value.node)
+			if ((entry.type == keyNode or entry.type == nils) and entry.value.node)
 				return *entry.value.node;
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
 				return entry;
@@ -771,8 +796,18 @@ Node &Node::operator[](char c) {
 int capacity = 100;
 int maxNodes = 10000;
 int last = 0;
-Node *all = static_cast<Node *>(malloc(capacity * maxNodes));// super wasteful, for debug
-Node &Node::set(String string, Node *node0) {
+
+void *calloc(int i);
+
+Node *all = static_cast<Node *>(calloc(capacity * maxNodes));
+
+void *calloc(int i) {
+	void * mem= malloc(i);
+	while(i>0){ ((char*)mem)[--i] = 0; }
+	return mem;
+}
+// super wasteful, for debug
+Node& Node::set(String string, Node *node0) {
 //	if (!children)children = static_cast<Node *>(malloc(capacity));
 
 	if (!children) {
@@ -791,12 +826,12 @@ Node &Node::set(String string, Node *node0) {
 	entry.name = string;
 	if (!node0) {
 //		entry.value.node=&entry;// HACK to set reference to self!
+		entry.type = keyNode;
 		entry.value.node = &children[capacity - this->length - 1];//  HACK to get key and value node dummy from children
 //		 todo: reduce capacity per node
 		entry.value.node->name = string;
-		entry.value.node->type = nodes;// todo value
+		entry.value.node->type = Type::unknown;
 		entry.value.node->parent = &entry;
-		entry.type = nodes;
 //		entry.value.node=Node();// dangling ref to be set
 	} else {
 		Node node = *node0;
@@ -804,7 +839,7 @@ Node &Node::set(String string, Node *node0) {
 //	if(node.type==) // ...
 		entry.value = node.value; // copy by ref
 		if (node.type == unknown) {
-			entry.type = nodes;
+			entry.type = keyNode;
 			entry.value.node = &node;
 		}
 	}
@@ -818,11 +853,19 @@ Node &Node::set(String string, Node *node0) {
 //}
 
 bool Node::operator==(String other) {
-	return this->type == strings and this->value.string == other;
+	if (this->type == objects)return *this->value.node == other;
+	if(this->type == longs) return other == itoa(this->value.longy);
+	return this->type == strings and other == this->value.string ;
 }
 
 bool Node::operator==(int other) {
-	return (this->type == longs and this->value.longy == other) or (this->type == floats and value.floaty == other);
+	if(this==0)return false;// HOW?
+	if ((this->type == longs and this->value.longy == other) or (this->type == floats and value.floaty == other))
+		return true;
+	if (this->type == keyNode and value.node and *value.node == other)return true;
+	if (this->type == strings and atoi(value.string) == other)return true;
+	if (atoi(name) == other)return true;
+	return false;
 }
 
 bool Node::operator==(long other) {
@@ -841,7 +884,7 @@ bool Node::operator==(float other) {
 
 bool Node::operator==(Node other) {
 	if (type != other.type)
-		if (type != nodes and other.type != nodes) return false;
+		if (type != keyNode and other.type != keyNode) return false;
 	if (type == longs)
 		return this->value.longy = other.value.longy;
 	if (type == strings)
@@ -853,7 +896,7 @@ bool Node::operator==(Node other) {
 		Node &field = this->children[i];
 		Node &val = other[field.name];
 		if (field != val) {
-			if ((field.type != nodes and field.type != nils) or !field.value.node)
+			if ((field.type != keyNode and field.type != nils) or !field.value.node)
 				return false;
 			Node deep = *field.value.node;
 			return deep == val;
@@ -880,7 +923,7 @@ Node values(Node n) {
 Node Node::evaluate() {
 	if (this->length == 0)return values(*this);
 	if (this->length == 1)return values(children[0]);
-//	if (this->type != expression and this->type != nodes)
+//	if (this->type != expression and this->type != keyNode)
 //		return *this;
 	float max = 0; // do{
 	Node right;
@@ -990,7 +1033,7 @@ float Node::precedence(Node &node) {
 	// like c++ here HIGHER up == lower value == more important
 //	switch (node.name) nope
 	String &name = node.name;
-	if(node.type==strings)// and name.empty()
+	if (node.type == strings)// and name.empty()
 		name = node.value.string;
 	if (eq(name, "not"))return 1;
 	if (eq(name, "¬"))return 1;
@@ -1226,7 +1269,7 @@ String typeName(Type t) {
 			return "array";
 		case buffers:
 			return "buffer";
-		case nodes:
+		case keyNode:
 			return "node";
 		case floats:
 			return "float";
@@ -1247,6 +1290,7 @@ String typeName(Type t) {
 
 
 void todo(chars error) {
+	breakpoint_helper
 	err(str("TODO ") + error);
 }
 
