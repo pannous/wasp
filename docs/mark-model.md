@@ -53,7 +53,7 @@ A Mark object essentially contains 3 facets of data in its data model:
 - **properties**: a collection of key-value pairs, like properties of JSON objects, and attributes of HTML/XML elements. 
   - For Mark object, property key **cannot be numeric**, which is reserved for the content objects. JSON object in Mark can still have all kinds of keys.
   - And property key must be **unique** under the same object, for both Mark and JSON object. (JSON spec has left this open, and there are many implementations accept duplicate keys.)
-- **contents**: an ordered list of content objects, which are like child nodes of elements in HTML/XML. Mark utilizes a *novel* feature of JS that JS object can be array-like. It can store both named properties and indexed properties.
+- **contents**: an ordered list of content objects, which are like child keyNode of elements in HTML/XML. Mark utilizes a *novel* feature of JS that JS object can be array-like. It can store both named properties and indexed properties.
 
 Mark has some restrictions on the objects that can be stored in the content:
 
