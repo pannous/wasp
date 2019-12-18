@@ -272,7 +272,7 @@ private:
 	}
 
 	bool is_identifier(char ch) {
-		if (ch == "√"[0])return false;// todo … !?!?
+		if (ch == "√"[0] and text[at]=="√"[1])return false;// todo … !?!?
 		return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
 		       ch < 0;// ch<0: UNICODE
 //		not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
@@ -382,9 +382,10 @@ private:
 	Node string() {
 		var hex = 0;
 		var i = 0;
-		var string = String();
 		var triple = false;
 		var delim = '"';      // double quote or single quote
+		var start = at;
+		String string;
 
 		// when parsing for string values, we must look for ' or " and \ characters.
 		if (ch == '"' || ch == '\'') {
@@ -399,10 +400,12 @@ private:
 					next();
 					if (!triple) { // end of string
 						return Node(string);
+						return Node(text.substring(start,at-2));
 					} else if (ch == delim && text[at] == delim) { // end of tripple quoted text
 						next();
 						next();
-						return Node(string);
+						return Node(text.substring(start,at-2));
+//						todo: escape
 					} else {
 						string += delim;
 					}
@@ -567,31 +570,37 @@ private:
 //	// {a:1 b:2} vs { x = add 1 2 }
 	bool lookahead_ambiguity() {
 		int braces = 0;
-		int pos = at;
+		int pos = at - 1;
 		while (pos < text.length and text[pos] != 0 and text[pos] != '\n' and braces >= 0) {
-			if (text[pos] == '}')braces--;
+			if (text[pos] == '{')braces++;
+			if (text[pos] == ',' and braces == 0)return true;// ambiguity
 			if (text[pos] == ':' and braces == 0)return true;// ambiguity
 			if (text[pos] == '=' and braces == 0)return true;// ambiguity
-			if (text[pos] == '{')braces++;
+			if (text[pos] == ';' and braces == 0)return true;// end of statement!
+			if (text[pos] == '}')braces--;
 			pos++;
 		}
 		return false;// OK, no ambiguity
 	}
 
 	Node expression() {
-		Node expression = symbol();
-		expression.add(expression);// naja one{one plus one}
-		white();
-
+		Node node = symbol();
+		if (lookahead_ambiguity())
+			return node;
 		// {a:1 b:2} vs { x = add 1 2 }
-		if (!lookahead_ambiguity())
-			while (ch and is_identifier(ch) or isalnum(ch) or is_operator(ch)) {
-				Node node = symbol();
-				expression.add(node);
-				expression.type = nodes;
-				white();
-			}
-		return expression;
+		Node expressions = Node();
+		expressions.type = Type::expression;
+		expressions.add(node);
+		white();
+		while (ch and is_identifier(ch) or isalnum(ch) or is_operator(ch)) {
+			node = symbol();
+			expressions.add(node);
+			white();
+		}
+//		expressions.name=map(children.name)
+		if (expressions.length > 1)
+			return expressions;
+		else return node;
 	}
 
 	Node words() {
@@ -665,15 +674,16 @@ private:
 	// Parse an array
 	Node array() {
 //		arr.type = arrays;
-		auto *array0 = static_cast<Node *>(malloc(100));
+		auto *array0 = static_cast<Node *>(malloc(sizeof(Node*)*100));// todo: GROW!
 //		arr.value.node = array0;
-		Node arr = Node(&array0);
 		int len = 0;
 		next();  // skip the starting '['
 		white();
 		while (ch) {
 			if (ch == ']') {
 				next();
+				Node arr = Node(&array0);
+				arr.length = len;
 				return arr;   // Potentially empty array
 			}
 				// ES5 and Mark allow omitted elements in arrays, e.g. [,] and [,null]. JSON don't allow this.
@@ -921,6 +931,7 @@ private:
 				white();
 				if (ch == ':' or ch == '=') { // property or JSON object
 					key = str.string();
+					str.type = objects;// keys
 				} else {
 					if (extended) { // already got type name
 						// only output non-empty text
@@ -958,24 +969,25 @@ private:
 
 			// key-value pair
 			next(); // skip ':'
-			var val = value();
 			if (extended && !isNaN(key)) { // any numeric key is rejected for Mark object
 				error("Numeric key not allowed as Mark property name");
 			}
 			Node &child = obj[key];
+			if(obj.length==1)assert(obj.children==&child or obj.children==child.parent);
 			if (child.length != 0) {//} && obj[key].type != "function") {
 				log(child);
 				child = obj[key];// debug
 				error(s("Duplicate key not allowed: ") + key);
 			}
-//			child.value.node=&val;
-//			child.type=val.type;
+			var val = value();
+			if (val.name.length == 0 and val.type == strings)val.name = val.value.string;
+			if (val.name.length == 0 and val.type == keyNode)val.name = val.value.node->name;
+			if (obj.name.length == 0)obj.name = object_name;
 			child = val;// SET reference!
-			child.parent = &obj;
 			child.name = key;
-//			obj.set(key, val);
-//			obj[key] = val;
-//			assert(obj[key].value == &val);
+			child.type = val.type;
+			child.parent = &obj;
+			obj.type = objects;
 			white();
 			// ',' is optional in Mark
 			if (ch == ',' or ch == ';') {
@@ -990,21 +1002,22 @@ private:
 //Mark::Mark(const Node &obj) : obj(obj) {}
 
 	bool isDigit(char next) {
-		return next>='0' and next<='9';
+		return next >= '0' and next <= '9';
 	}
 
 // Parse a JSON value.
 	Node value() {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		white();// todo 1+1 != 1 +1
-		char next = text[at];
+		char _next = text[at];
 		switch (ch) {
 			case '{':
-				return (next == ':' or next == '=') ?
+				return (_next == ':' or _next == '=') ?
 				       binary() : object();
 			case '[':
 				return array();
-			case 'ø':
+			case "ø"[0]:
+				next();
 				return NIL;
 			case '"':
 			case '\'':
@@ -1014,7 +1027,7 @@ private:
 			case '-':
 			case '+':
 			case '.':
-				if (isDigit(next))
+				if (isDigit(_next))
 					return number();
 				else
 					return words();
