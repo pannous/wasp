@@ -177,8 +177,8 @@ void testUTF() {
 	assert_parses("{ç:ø}");
 	Node &node = result["ç"];
 	node.log();
+	assert(node == NIL);
 //	assert(node == "ø"); => OK
-//	assert(node == NIL);
 }
 
 
@@ -305,7 +305,6 @@ void test() {
 	testMarkSimple();
 	testMarkMulti();
 	testMarkAsMap();
-	testBUG();
 	testC();
 	testUTF();
 	testDiv();
@@ -322,9 +321,10 @@ void testBUG() {
 	log(result["a"].parent);// BROKEN, WHY??
 }
 
+// valgrind --track-origins=yes ./mark
 void testCurrent() {
-	testUTF();
 //	printf("testCurrent OK\n NOW TESTING ALL\n");
+//	testBUG();// always shows up when something is in valgrind ;) <3
 	test();
 }
 

@@ -573,7 +573,12 @@ public:
 		if (debug)name = itoa(nr);
 	}
 
+	explicit Node(const char* name) {
+		this->name = name;
+	}
 	explicit Node(bool nr) {
+		if(this==&NIL)
+			name = "HOW";
 		value.longy = nr;
 		type = longs;
 		if (debug)name = nr ? "true" : "false";
@@ -628,7 +633,9 @@ public:
 
 	bool operator==(String other);
 
-	bool operator==(Node other);
+//	bool operator==(Node other);
+	bool operator==(Node& other);
+
 
 	bool operator!=(Node other);
 
@@ -882,7 +889,8 @@ bool Node::operator==(float other) {
 	       (this->type == longs and this->value.longy == other);
 }
 
-bool Node::operator==(Node other) {
+bool Node::operator==(Node& other) {
+	if(&other==&NIL and type==nils and length==0 and value.data==0)return true;
 	if (type != other.type)
 		if (type != keyNode and other.type != keyNode) return false;
 	if (type == longs)
