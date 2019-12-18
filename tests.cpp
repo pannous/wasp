@@ -1,9 +1,19 @@
-bool assert_equals(double a, double b, char *context) {
+Node result;
+
+bool assert_equals(double a, double b, char *context = "") {
 	if (a != b)// err
 		puts("FAILED assert_equals! %f should be %f in %s"s % a % b % context);
 	else puts("OK %f==%f in %s"s % a % b % context);
 	return a == b;
 }
+
+bool assert_equals(String a, String b, char *context = "") {
+	if (a != b)// err
+		puts("FAILED assert_equals! %s should be %s in %s"s % a % b % context);
+	else puts("OK %s==%s in %s"s % a % b % context);
+	return a == b;
+}
+
 bool assert_equals(long a, long b, char *context) {
 	if (a != b)// err
 		puts("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
@@ -26,10 +36,9 @@ bool assert_isx(char *mark, Node result) {
 	return false;
 }
 
-bool assert_parsesx(const char *mark) {
+Node assert_parsesx(const char *mark) {
 	try {
-		Mark::parse(mark);
-		return true;
+		return Mark::parse(mark);
 	} catch (chars err) {
 		printf("\nTEST FAILED WITH ERROR\n");
 		printf("%s", err);
@@ -40,10 +49,10 @@ bool assert_parsesx(const char *mark) {
 		printf("\nTEST FAILED WITH ERROR\n");
 		printf("%s", err->data);
 	}
-	return false;
+	return 0;
 }
 
-#define assert_parses(mark) if(!assert_parsesx(mark)){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}else log(result);
 
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
 #define assert_is(mark, result) {\
@@ -58,12 +67,24 @@ void testC();
 
 void testBUG();
 
-void testNetbase() {
+void testLists();
 
+void testNetBase() {
 	chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
 	chars json = fetch(url);
 	log(json);
-	Node div = Mark::parse(json);
+	Node result = Mark::parse(json);
+	assert(result["query"] == "2");
+	assert(result["count"] == "1");
+	assert(result["count"] == 1);
+	Node results = result["results"];
+	Node Erde = results[0];
+	assert(Erde["name"] == "Erde");
+//	assert(Erde.name == "Erde");
+	assert(Erde["id"] == 2);
+//	assert(Erde.id==2);
+	Node &statements = Erde["statements"];
+	assert(statements.length >= 1);
 }
 
 void testDiv() {
@@ -144,47 +165,37 @@ void testUTFinCPP() {
 }
 
 //testUTFø  error: stray ‘\303’ in program
-void testUTF0() {
-	const char *source = "{ç:ø}";
-	assert_parses(source);
-	Node node = Mark::parse(source);
-	assert(node["ç"]=="ø");
-}
-
 void testUTF() {
 	testUTFinCPP();
-	testUTF0();
-	const char *source = "{ç:111}";
-	assert_parses(source);
-	Node node = Mark::parse(source);
-	assert(node["ç"]==111);
+
+	assert_parses("{ç:111}");
+	assert(result["ç"] == 111);
+
+	assert_parses("{ç:☺}");
+	assert(result["ç"] == "☺");
+
+	assert_parses("{ç:ø}");
+	Node &node = result["ç"];
+	node.log();
+//	assert(node == "ø"); => OK
+//	assert(node == NIL);
 }
 
 
 void testMarkMulti() {
-	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
-//	const char *source = "{d:{} b:3 a:'HIO'}";
+//	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
+	const char *source = "{a:'HIO' d:{} b:3}";
 	assert_parses(source);
-//		const char *source = "a='hooo'";
-	Node result = Mark::parse(source);
 	Node &node = result['b'];
-	log("OK");
-	log(result);
-	log(result[0]);
-	log(result[1]);
+	log(result['a']);
+	log(result['b']);
+	log(result['d']);
 	log(result["a"]);
 	log(result["b"]);
-	log(result["c"]);
-	log(result["a"]);
-	log(result["b"]);
-	log(result["c"]);
-//	assert(result['d']=={})
-
+	log(result["d"]);
+	assert(result['a'] == "HIO");
 	assert(result["b"] == 3);
 	assert(result['b'] == 3);
-	assert(result['a'] == "HIO");
-
-
 }
 
 void testErrors() {
@@ -235,6 +246,7 @@ void testRoot() {
 	assert_is("40 + √4", 42);
 	assert_is("40+√4", 42);
 }
+
 void testRootFloat() {
 	assert_is("√42*√42", 42.);
 //	assert_is("√42*√42", Node(42.));
@@ -242,6 +254,16 @@ void testRootFloat() {
 
 //	assert_is("√42*√42",42);// int rounding to 41 todo?
 }
+
+void testLists() {
+	assert_parses("[1,2,3]");
+	assert(result.length == 3);
+	assert(result[2] == 3);
+	assert(result[0] == 1);
+	assert(result[0] == "1");
+//	assert_is("[1,2,3]",1);
+}
+
 
 void testLogic() {
 	assert_is("0 xor 1", true);
@@ -275,6 +297,7 @@ void testC() {
 	assert('a' < 'b' < 'c');
 	char b = 'b';
 	assert('a' < b < 'c');
+	assert_equals(String("abcd").substring(1, 2), "bc");
 }
 
 
@@ -289,18 +312,19 @@ void test() {
 	testEval();
 	testSamples();
 	testErrors();
-	testNetbase();
+	testNetBase();
+	testLists();
 }
 
 void testBUG() {
 	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
 	assert_parses(source);
-	Node result = Mark::parse(source);
 	log(result["a"].parent);// BROKEN, WHY??
 }
 
 void testCurrent() {
-	testNetbase();
+	testUTF();
 //	printf("testCurrent OK\n NOW TESTING ALL\n");
 	test();
 }
+
