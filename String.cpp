@@ -408,11 +408,11 @@ public:
 		return !empty() && this[0] == c && this[1] == '\0';
 	}
 
-	bool operator==(String &s) {
+	bool operator==(String &s) const {
 		return eq(data, s.data);
 	}
 
-	bool operator==(char *c) {
+	bool operator==(char *c) const {
 		if(!this)
 			return false;// how lol e.g. me.children[0].name => nil.name
 		return eq(data, c);

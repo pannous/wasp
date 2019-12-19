@@ -14,6 +14,11 @@ bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 
 #define breakpoint_helper printf("%s:%d\n",__FILE__,__LINE__);
+#define assert(condition) try{\
+   if(condition==0)throw "assert FAILED";else printf("\nassert OK: %s\n",#condition);\
+   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
+
+
 
 #ifdef WASM
 #ifdef X86_64
@@ -72,8 +77,9 @@ void _cxa_throw(){
 #import "Backtrace.cpp"
 #include "ErrorHandler.h"
 #include <malloc.h>
-#include <assert.h>
+#include <zconf.h>
 
+//NEEDED, else terminate called without an active exception
 void err(chars error) {
 	Backtrace(3);
 	throw error;
@@ -154,7 +160,10 @@ public:
 
 //			while(result.type==reference)
 
-		if (ch && ch != -1) error("Expect end of input");
+		if (ch && ch != -1){
+			breakpoint_helper
+			error("Expect end of input");
+		}
 		// Mark does not support the legacy JSON reviver function todo ??
 		return result;
 	}
@@ -244,8 +253,9 @@ private:
 	}
 
 	char back() {
-		ch = text.charAt(at--);
-		at++;
+		ch = text.charAt(--at);
+		at--;
+		return ch;
 	}
 
 	char next(char c = 0) {
@@ -278,6 +288,7 @@ private:
 
 	bool is_identifier(char ch) {
 		if (ch == "√"[0] and text[at] == "√"[1])return false;// todo … !?!?
+		if (ch == "≠"[0] and text[at] == "≠"[1])return false;// todo … !?!?
 		return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
 		       ch < 0;// ch<0: UNICODE
 //		not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
@@ -655,7 +666,7 @@ private:
 		throw error(message);
 	};
 
-	Node pragma(char prag = '\n') {
+	Node pragma2(char prag = '\n') {// sende in mark??
 		let level = 0;
 		next();  // skip starting '('
 		while (ch) {
@@ -663,7 +674,7 @@ private:
 				if (level) { level--; } // embedded (...)
 				else { // end of pragma
 					next();  // skip ending ')'
-					return pragma(prag);
+					return pragma2(prag);
 				}
 			} else if (ch == '(') { level++; } // store as normal char
 			// else - normal char
@@ -875,24 +886,33 @@ private:
 		throw string;
 	}
 
-	void parseContent(Node& obj) {//context
+	void parseContent(Node &obj) {//context
 		while (ch) {
-			if (ch == '#') while(ch!='\n' and ch!=0)next();
-			if (ch == '{' || ch == '(') { // child object
-				let child = (ch == '(') ? pragma() : (text[at] == ':' ? binary() : object());
+			if (ch == ' ')next();// allow spaces {a : 3}
+			else if (ch == '#') while (ch != '\n' and ch != 0)next();
+			else if (ch == '(') {
+//				let child = pragma();
+				Node child = object(')');
+				if(child.type==objects and child.length==1)child = child.children[0];
+				if(child.type==nils and child.value.data)child=*child.value.node;// todo bug<<
+//				obj.setParams(child.children)
+				obj.set(obj.length, &child);// OR ATTRIBUTE!
+			} else if (ch == '{') { // child object
+				let child = (text[at] == ':' ? binary() : object());
 				obj.set(obj.length, &child);// NR as key!
 			} else if (ch == '"' || ch == '\'') { // text node
 				let str = string();
-				// only output non empty text
-//					if (str.string())
-				todo("what to do with list of string? concat?");
+				obj.value.string = str.string();
+				obj.type = strings; // unless mixed content {div "Hi" button{"OK"}}
 				putText(str.string(), obj);
+				todo("what to do with list of string? concat?");
 			} else if (ch == ';' || ch == ',' || ch == '\n') {// end of expression
 				next();
+			} else if (ch == ')') {
+				next();
+				return;
 			} else if (ch == '}') {
 				next();
-//				obj.set($length, index);
-//				obj[$length] = index;
 				return;
 			} else {
 				breakpoint_helper
@@ -908,7 +928,7 @@ private:
 		return key[0] < '0' || key[0] > '9';//todo
 	}
 
-	Node object() {
+	Node object(char closing_brace = '}') {
 		next();
 		white();  // skip the starting '{'
 		String key = EMPTY;        // property key
@@ -916,7 +936,7 @@ private:
 		int index = 0;
 		Node obj;
 		while (ch && ch != -1) {
-			if (ch == '}') { // end of the object
+			if (ch == closing_brace /* '}' or ')'*/) { // end of the object
 				next();
 				if (extended) {
 					log("TODO");// TODO
@@ -932,7 +952,7 @@ private:
 					return obj;
 				}
 				breakpoint_helper
-				error(UNEXPECT_CHAR + "'{'");
+				error(UNEXPECT_CHAR + ch);
 			}
 			if (ch == '"' || ch == '\'') { // quoted key
 				var str = string();
@@ -969,7 +989,12 @@ private:
 						obj = Node(ident); //MARK(ident, null, null);
 						extended = true;  // key = ident;
 						continue;
+					} else if (ch == '(') {
+						continue;
+// e.g. graphQL  height(unit: FOOT)
+						// Params or immediate object todo
 					}
+//							else if(ch=='{')
 					breakpoint_helper
 					error(UNEXPECT_CHAR + renderChar(ch));
 				}
@@ -981,7 +1006,7 @@ private:
 				error("Numeric key not allowed as Mark property name");
 			}
 			Node &child = obj[key];
-			if (obj.length == 1)assert(obj.children == &child or obj.children == child.parent);
+//			if (obj.length == 1)assert(obj.children == &child or obj.children == child.parent);
 			if (child.length != 0) {//} && obj[key].type != "function") {
 				log(child);
 				child = obj[key];// debug
@@ -1034,7 +1059,7 @@ private:
 			case '\'':
 				return string();
 			case '(':
-				return pragma();
+				return object();
 			case '-':
 			case '+':
 			case '.':
@@ -1091,6 +1116,12 @@ void init() {
 
 #import "tests.cpp"
 
+//
+//It has clean syntax with FULLY-TYPE data model (like JSON or even better)
+//It is generic and EXTENSIBLE (like XML or even better)
+//It has built-in MIXED CONTENT support (like HTML5 or even better)
+//It supportsHIGH-ORDER COMPOSITION (like S-expressions or even better)
+
 int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
 	try {
@@ -1110,6 +1141,7 @@ int main(int argp, char **argv) {
 		printf("\nERROR\n");
 		printf("%s", err->data);
 	}
+	usleep(1000000000);
 	return -1;
 }
 
