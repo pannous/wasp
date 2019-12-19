@@ -255,12 +255,33 @@ void testRootFloat() {
 //	assert_is("√42*√42",42);// int rounding to 41 todo?
 }
 
+
+void testDeepLists() {
+	assert_parses("{a:1 name:'ok' x:[1,2,3]}");
+	assert(result.length == 3);
+	assert(result["x"].length == 3);
+	assert(result["x"][2] == 3);
+}
+
 void testLists() {
 	assert_parses("[1,2,3]");
 	assert(result.length == 3);
 	assert(result[2] == 3);
 	assert(result[0] == 1);
 	assert(result[0] == "1");
+//	assert_is("[1,2,3]",1);
+}
+
+void testMapsAsLists() {
+//	assert_parses("{1,2,3}");
+	assert_parses("(add x y)");// expression!
+	assert_parses("{add x y}");// expression?
+	assert_parses("{'a' 'b' 'c'}");// expression?
+	assert_parses("{'a','b','c'}");// list
+	assert_parses("{'a'\n'b'\n'c'}");
+	assert_parses("{'a';'b';'c'}");// list
+	assert(result.length == 3);
+	assert(result[1] == "b");
 //	assert_is("[1,2,3]",1);
 }
 
@@ -300,8 +321,39 @@ void testC() {
 	assert_equals(String("abcd").substring(1, 2), "bc");
 }
 
+void testGraphQlQuery() {
+	assert_parses("{  me {    name  } # Queries can have comments!\n}");
+	assert(result.children[0].name == "name");// result IS me !!
+	assert(result["me"].children[0].name == "name");// me.me = me good idea?
+	assert_parses("{\n"
+	              "  human(id: \"1000\") {\n"
+	              "    name\n"
+	              "    height(unit: FOOT)\n"
+	              "  }\n"
+	              "}");
+	assert(result["id"] == 1000);
+	var graphResult = "{\n  \"data\": {\n"
+	                  "    \"hero\": {\n"
+	                  "      \"name\": \"R2-D2\",\n"
+	                  "\"height\": 5.6430448,"
+	                  "      \"friends\": [\n"
+	                  "        {\n"
+	                  "          \"name\": \"Luke Skywalker\"\n"
+	                  "        },\n"
+	                  "        {\n"
+	                  "          \"name\": \"Han Solo\"\n"
+	                  "        },\n"
+	                  "      ]\n"
+	                  "    }\n"
+	                  "  }\n"
+	                  "}";
+	assert_parses(graphResult);
+	assert(result["data"]["hero"]["name"] == "R2-D2");
+}
+
 
 void test() {
+	testGraphQlQuery();
 	testMarkSimple();
 	testMarkMulti();
 	testMarkAsMap();
@@ -313,6 +365,8 @@ void test() {
 	testErrors();
 	testNetBase();
 	testLists();
+	testDeepLists();
+	testMapsAsLists();
 }
 
 void testBUG() {
@@ -323,7 +377,8 @@ void testBUG() {
 
 // valgrind --track-origins=yes ./mark
 void testCurrent() {
-//	printf("testCurrent OK\n NOW TESTING ALL\n");
+	testGraphQlQuery();
+//	testMapsAsLists();
 //	testBUG();// always shows up when something is in valgrind ;) <3
 	test();
 }

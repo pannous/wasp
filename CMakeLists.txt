@@ -22,9 +22,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -Wl,--no-as-needed -ldl")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wliteral-suffix -Wno-deprecated  -Wno-write-strings")
 set(CMAKE_CXX_FLAGS "-lreadline -ldl -lcurl -lz -dM -g -rdynamic ${CMAKE_CXX_FLAGS}")
 
-set(SOURCE_FILES mark.cpp Node.cpp Node.h ErrorHandler.cpp ErrorHandler.h)
+set(SOURCE_FILES mark.cpp  ErrorHandler.cpp ErrorHandler.h String.h NodeTypes.h)
 #String.cpp
 #String.h
+#Node.cpp Node.h
 
 
 add_executable(mark ${SOURCE_FILES})

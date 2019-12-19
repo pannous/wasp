@@ -875,8 +875,9 @@ private:
 		throw string;
 	}
 
-	void parseContent(Node obj) {//context
+	void parseContent(Node& obj) {//context
 		while (ch) {
+			if (ch == '#') while(ch!='\n' and ch!=0)next();
 			if (ch == '{' || ch == '(') { // child object
 				let child = (ch == '(') ? pragma() : (text[at] == ':' ? binary() : object());
 				obj.set(obj.length, &child);// NR as key!
@@ -884,8 +885,10 @@ private:
 				let str = string();
 				// only output non empty text
 //					if (str.string())
-				todo("?");
+				todo("what to do with list of string? concat?");
 				putText(str.string(), obj);
+			} else if (ch == ';' || ch == ',' || ch == '\n') {// end of expression
+				next();
 			} else if (ch == '}') {
 				next();
 //				obj.set($length, index);
@@ -938,7 +941,7 @@ private:
 					key = str.string();
 					str.type = objects;// keys
 				} else {
-					if (extended) { // already got type name
+					if (extended) { // already got type name {cat hair:blue}
 						// only output non-empty text
 //						if (str)
 						putText(str.string(), obj);
