@@ -11,7 +11,6 @@ extern Node False;
 extern Node NIL;
 
 
-
 union Value {
 	Node *node = 0;// todo DANGER, can be lost :( !!
 //	Node node;// incomplete type
@@ -32,7 +31,17 @@ public:
 	String name = empty_name;// nil_name;
 	Value value;
 	Node *parent = nullptr;
-	Node *children = nullptr;
+	Node *params = nullptr;// attributes meta modifiers decorators annotations
+	Node *children = nullptr;// body content
+	/* don't mix children with params, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
+	 * CONCEPTUAL CLEANUP NEEDED!
+	 * children["_meta_"]
+	 * children["_head_"]
+	 * children["_body_"]
+	 * children["_attrib_"]
+	 * children["_name"] == this.name
+	 *
+	 * */
 	Node *next = nullptr;// in children list, danger: don't use for any ref/var
 	Type type = unknown;
 	int length = 0;
@@ -75,11 +84,12 @@ public:
 		if (debug)name = itoa(nr);
 	}
 
-	explicit Node(const char* name) {
+	explicit Node(const char *name) {
 		this->name = name;
 	}
+
 	explicit Node(bool nr) {
-		if(this==&NIL)
+		if (this == &NIL)
 			name = "HOW";
 		value.longy = nr;
 		type = longs;
@@ -110,7 +120,7 @@ public:
 		else {
 			type = strings;
 			value.string = s;
-			if(name==empty_name)name = s;
+			if (name == empty_name)name = s;
 		}
 	}
 
@@ -136,10 +146,13 @@ public:
 	bool operator==(String other);
 
 //	bool operator==(Node other);
-	bool operator==(Node& other);
+	bool operator==(Node &other);// equals
 
+	bool operator!=(Node &other);// why not auto
 
-	bool operator!=(Node other);
+//	 +=, -=, *=, /=, %=, <<=, >>=, &=, |=, ^=
+//	bool operator<<=(Node &other);// EVIL MAGIC ;)
+//	bool operator~();// MUST BE UNITARY:(
 
 
 //	Node(bool b) {
@@ -151,7 +164,7 @@ public:
 			return value.string;
 //		return name;
 		breakpoint_helper
-				err(String("WRONG TYPE ") + typeName(type));
+		err(String("WRONG TYPE ") + typeName(type));
 	}
 
 	// moved outside because circular dependency
@@ -187,8 +200,8 @@ public:
 			return;
 		}
 //		if || name==nil_name …
-		if (name.data < (char *) 0xffff)
-			err("BUG");
+		if (name.data < (char *) 0xffff){printf("BUG");return ;}
+//		assert (name.data < (char *) 0xffff);
 		if (name and name.data and name.data > (char *) 0xffff and type != objects)
 			printf("name %s ", name.data);
 		printf("length %i ", length);
@@ -219,7 +232,7 @@ public:
 		printf("\n");
 	}
 
-	float precedence(Node &node);
+	float precedence(Node &operater);
 
 	Node apply(Node left, Node op0, Node right);
 
@@ -232,6 +245,8 @@ public:
 	float floate() {
 		return type == longs ? value.longy : value.floaty;// danger
 	}
+
+	Node *has(String s);
 };
 
 //
@@ -251,6 +266,7 @@ Node NaN = Node("NaN");
 //NIL=0;
 //Node NIL;
 Node NIL = Node("NIL");
+Node ERR = Node("ERR");// ≠ NIL
 Node True = Node("True");
 Node False = Node("False");
 
@@ -264,30 +280,29 @@ Node &Node::operator=(int i) {
 Node &Node::operator=(chars c) {
 	this->value.string = String(c);
 	this->type = strings;
-	if(name==empty_name)name = this->value.string;
+	if (name == empty_name)name = this->value.string;
 	return *this;
 }
+
 Node &Node::operator[](int i) {
-	if (i >= length){
-		breakpoint_helper
-				err(String("out of range ") + i + " > " + length);
+	if (i >= length) {
+		breakpoint_helper;
+		err(String("out of range index[] ") + i + " >= length " + length);
 	}
 	return this->children[i];
 }
 
 Node &Node::operator[](String s) {
-	for (int i = 0; i < length; i++) {
-		Node &entry = this->children[i];
-		if (s == entry.name)
-			if ((entry.type == keyNode or entry.type == nils) and entry.value.node)
-				return *entry.value.node;
-			else // danger overwrite a["b"]=c => a["b"].name == "c":
-				return entry;
-	}
-	if(name==s)// me.me == me ? really? let's see if it's a stupid idea…
+	Node *found = has(s);
+	if (found)return *found;
+	if (name == s)// me.me == me ? really? let's see if it's a stupid idea…
 		return *this;
+	if (length == 1)
+		if (children[0].has(s))return children[0][s];
+
 	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
 	neu.type = nils; // until ref is set!
+	neu.parent = this;
 	if (neu.value.node) return *neu.value.node;
 	else return neu;
 }
@@ -313,12 +328,13 @@ void *calloc(int i);
 Node *all = static_cast<Node *>(calloc(capacity * maxNodes));
 
 void *calloc(int i) {
-	void * mem= malloc(i);
-	while(i>0){ ((char*)mem)[--i] = 0; }
+	void *mem = malloc(i);
+	while (i > 0) { ((char *) mem)[--i] = 0; }
 	return mem;
 }
+
 // super wasteful, for debug
-Node& Node::set(String string, Node *node) {
+Node &Node::set(String string, Node *node) {
 //	if (!children)children = static_cast<Node *>(malloc(capacity));
 
 	if (!children) {
@@ -346,6 +362,7 @@ Node& Node::set(String string, Node *node) {
 //		entry.value.node=Node();// dangling ref to be set
 	} else {
 		entry = *node;// copy by value OK
+		entry.parent = this;
 	}
 	this->length++;
 	return entry;
@@ -358,12 +375,12 @@ Node& Node::set(String string, Node *node) {
 
 bool Node::operator==(String other) {
 	if (this->type == objects)return *this->value.node == other;
-	if(this->type == longs) return other == itoa(this->value.longy);
-	return this->type == strings and other == this->value.string ;
+	if (this->type == longs) return other == itoa(this->value.longy);
+	return this->type == strings and other == this->value.string;
 }
 
 bool Node::operator==(int other) {
-	if(this==0)return false;// HOW?
+	if (this == 0)return false;// HOW?
 	if ((this->type == longs and this->value.longy == other) or (this->type == floats and value.floaty == other))
 		return true;
 	if (this->type == keyNode and value.node and *value.node == other)return true;
@@ -386,9 +403,13 @@ bool Node::operator==(float other) {
 	       (this->type == longs and this->value.longy == other);
 }
 
-bool Node::operator==(Node& other) {
-	if(&other==&NIL and type==nils and length==0 and value.data==0)return true;
-	if (type != other.type)
+bool Node::operator==(Node &other) {
+	if (this == &other)return true;// same pointer!
+	if (this->value.node == &other)return true;// same value enough?
+	if (this == other.value.node)return true;// same value enough?
+
+	if (&other == &NIL and type == nils and length == 0 and value.data == 0)return true;
+	if (type != other.type and this->type != unknown)
 		if (type != keyNode and other.type != keyNode) return false;
 	if (type == longs)
 		return this->value.longy = other.value.longy;
@@ -407,10 +428,12 @@ bool Node::operator==(Node& other) {
 			return deep == val;
 		}
 	}
+//	if(name==other.name and length>0 and length==other.length)
+//		return true;
 	return false;
 }
 
-bool Node::operator!=(Node other) {
+bool Node::operator!=(Node &other) {
 	return not(*this == other);
 }
 
@@ -534,12 +557,17 @@ co_yield 	yield-expression (C++20)
 17 	, 	Comma 	Left-to-right
 	 */
 
-float Node::precedence(Node &node) {
+bool leftAssociativity(Node &operater) {
+	return false;
+//	https://icarus.cs.weber.edu/~dab/cs1410/textbook/2.Core/operators.html
+}
+
+float Node::precedence(Node &operater) {
 	// like c++ here HIGHER up == lower value == more important
 //	switch (node.name) nope
-	String &name = node.name;
-	if (node.type == strings)// and name.empty()
-		name = node.value.string;
+	String &name = operater.name;
+	if (operater.type == strings)// and name.empty()
+		name = operater.value.string;
 	if (eq(name, "not"))return 1;
 	if (eq(name, "¬"))return 1;
 	if (eq(name, "!"))return 1;
@@ -622,6 +650,13 @@ Node Node::apply(Node left, Node op0, Node right) {
 		return Node(left.value.longy or right.value.longy);
 	}// bool?
 
+	if (op == "==" or op == "equals") {
+		return left == right;
+	}
+
+	if (op == "!=" or op == "^=" or op == "≠" or op == "is not") {
+		return left != right;
+	}
 
 	if (op == "+" or op == "add" or op == "plus") {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
@@ -659,4 +694,17 @@ Node Node::apply(Node left, Node op0, Node right) {
 Node Node::setType(Type type) {
 	this->type = type;
 	return *this;
+}
+
+// Node* OK? else Node&
+Node *Node::has(String s) {
+	for (int i = 0; i < length; i++) {
+		Node &entry = this->children[i];
+		if (s == entry.name)
+			if ((entry.type == keyNode or entry.type == nils) and entry.value.node)
+				return entry.value.node;
+			else // danger overwrite a["b"]=c => a["b"].name == "c":
+				return &entry;
+	}
+	return 0;// NIL
 }
