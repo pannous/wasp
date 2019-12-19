@@ -21,14 +21,15 @@ bool assert_equals(long a, long b, char *context) {
 	return a == b;
 }
 
-bool assert_isx(char *mark, Node result) {
+bool assert_isx(char *mark, Node expect) {
 	try {
 		Node left = Mark::eval(mark);
-		if (left.type == floats or result.type == floats)
-			return assert_equals(left.floate(), result.floate(), mark);
-		if (left.type == longs or result.type == longs)
-			return assert_equals(left.longe(), result.longe(), mark);
-		return left == result;
+		if (left.type == floats or expect.type == floats)
+			return assert_equals(left.floate(), expect.floate(), mark);
+		if (left.type == longs or expect.type == longs)
+			return assert_equals(left.longe(), expect.longe(), mark);
+		if (left != expect)printf("%s≠%s\n", left.name, expect.name);
+		return left == expect;
 	} catch (SyntaxError *err) {
 		printf("\nTEST FAILED WITH ERROR\n");
 		printf("%s", err->data);
@@ -38,7 +39,9 @@ bool assert_isx(char *mark, Node result) {
 
 Node assert_parsesx(const char *mark) {
 	try {
-		return Mark::parse(mark);
+		Node result = Mark::parse(mark);
+		log(result);
+		return result;
 	} catch (chars err) {
 		printf("\nTEST FAILED WITH ERROR\n");
 		printf("%s", err);
@@ -46,13 +49,17 @@ Node assert_parsesx(const char *mark) {
 		printf("\nTEST FAILED WITH ERROR\n");
 		printf("%s", err.data);
 	} catch (SyntaxError *err) {
-		printf("\nTEST FAILED WITH ERROR\n");
+		printf("\nTEST FAILED WITH SyntaxError\n");
 		printf("%s", err->data);
+	} catch (...) {
+		printf("\nTEST FAILED WITH UNKNOWN ERROR\n");
 	}
-	return 0;
+	return ERR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
 
-#define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}else log(result);
+//#define assert_parses(mark) result=assert_parsesx(mark);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+
 
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
 #define assert_is(mark, result) {\
@@ -110,12 +117,15 @@ void testMarkAsMap() {
 	assert(compare == marked);
 }
 
+void testMarkSimpleAssign() {
+	assert_parses("a=3");
+	assert(result["a"] == 3);
+}
+
 void testMarkSimple() {
-	log("primitives");
-	assert(Mark::parse("{a:3}"));
-//	assert(Mark::parse("a=3")["a"] == 3);
-	Node a = Mark::parse("{a:3}");
-	Node &a3 = a["a"];
+	log("testMarkSimple");
+	Node &a = assert_parses("{a:3}");
+	Node &a3 = result["a"];
 	assert(a3 == 3);
 	assert(a3.type == longs);
 	assert("a"s == a3.name);
@@ -321,10 +331,13 @@ void testC() {
 	assert_equals(String("abcd").substring(1, 2), "bc");
 }
 
-void testGraphQlQuery() {
+void testGraphSimple() {
 	assert_parses("{  me {    name  } # Queries can have comments!\n}");
 	assert(result.children[0].name == "name");// result IS me !!
 	assert(result["me"].children[0].name == "name");// me.me = me good idea?
+}
+
+void testGraphQlQuery() {
 	assert_parses("{\n"
 	              "  human(id: \"1000\") {\n"
 	              "    name\n"
@@ -348,12 +361,32 @@ void testGraphQlQuery() {
 	                  "  }\n"
 	                  "}";
 	assert_parses(graphResult);
+	assert(result["data"]["hero"]["friends"][0]["name"] == "Luke Skywalker");
 	assert(result["data"]["hero"]["name"] == "R2-D2");
+//todo	assert(result["hero"] == result["data"]["hero"]);
+//	assert(result["hero"]["friends"][0]["name"] == "Luke Skywalker")// if 1-child, treat as root
+}
+
+void testGraphParams() {
+	assert_parses("{\n  empireHero: hero(episode: EMPIRE) {\n    name\n  }\n"
+	              "  jediHero: hero(episode: JEDI) {\n    name\n  }\n}");
+	assert(result["empireHero"]["episode"] == "EMPIRE");
+	assert_parses("\nfragment comparisonFields on Character {\n"
+	              "  name\n  appearsIn\n  friends {\n    name\n  }\n }");
+	assert_parses("\nfragment comparisonFields on Character {\n  name\n  appearsIn\n  friends {\n    name\n  }\n}")
+// VARIAblE: { "episode": "JEDI" }
+	assert_parses("query HeroNameAndFriends($episode: Episode) {\n"
+	              "  hero(episode: $episode) {\n"
+	              "    name\n"
+	              "    friends {\n"
+	              "      name\n"
+	              "    }\n"
+	              "  }\n"
+	              "}")
 }
 
 
-void test() {
-	testGraphQlQuery();
+void tests() {
 	testMarkSimple();
 	testMarkMulti();
 	testMarkAsMap();
@@ -366,20 +399,30 @@ void test() {
 	testNetBase();
 	testLists();
 	testDeepLists();
-	testMapsAsLists();
+	testGraphQlQuery();
 }
 
 void testBUG() {
 	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
 	assert_parses(source);
+	assert(result["a"].parent);
+	assert(result["a"].parent == &result);
 	log(result["a"].parent);// BROKEN, WHY??
 }
 
+void todos() {
+	assert_is("1≠2", True);
+	testBUG();
+	testMarkSimpleAssign();
+	testMapsAsLists();
+	testGraphParams();
+}
+
 // valgrind --track-origins=yes ./mark
-void testCurrent() {
-	testGraphQlQuery();
+void testCurrent() { // move to tests() once OK
+//	todos();
+//	testGraphQlQuery();
 //	testMapsAsLists();
-//	testBUG();// always shows up when something is in valgrind ;) <3
-	test();
+	tests();
 }
 
