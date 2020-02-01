@@ -51,6 +51,16 @@ public:
 //		if(debug)name = "[]";
 	}
 
+//	if you do not declare a copy constructor, the compiler gives you one implicitly.
+//	Node( Node& other ){// copy constructor!!
+
+
+	Node *clone() {// const cast?
+		Node *copy= new Node();
+		*copy=*this;// copy value ok
+		return copy;
+	}
+
 
 	explicit Node(int buffer[]) {
 		value.data = buffer;
@@ -200,7 +210,10 @@ public:
 			return;
 		}
 //		if || name==nil_name …
-		if (name.data < (char *) 0xffff){printf("BUG");return ;}
+		if (name.data < (char *) 0xffff) {
+			printf("BUG");
+			return;
+		}
 //		assert (name.data < (char *) 0xffff);
 		if (name and name.data and name.data > (char *) 0xffff and type != objects)
 			printf("name %s ", name.data);
@@ -225,7 +238,7 @@ public:
 		for (int i = 0; i < length; i++) {
 			Node &node = children[i];
 //			if(check(node))
-			printf(node.name);
+			printf("%s", node.name.data);
 			printf(" ");
 		}
 		printf("]");
@@ -236,10 +249,10 @@ public:
 
 	Node apply(Node left, Node op0, Node right);
 
-	Node setType(Type type);
+	Node& setType(Type type);
 
 	long longe() {
-		return type == longs ? value.longy : value.floaty;// danger
+		return type == longs or type==bools? value.longy : value.floaty;// danger
 	}
 
 	float floate() {
@@ -247,6 +260,19 @@ public:
 	}
 
 	Node *has(String s);
+
+// type conversions
+	explicit operator bool() const { return this->value.longy; }
+
+	explicit operator int() const { return this->value.longy; }
+
+	explicit operator long() const { return this->value.longy; }
+
+	explicit operator float() const { return this->value.floaty; }
+
+	explicit operator String() const { return this->value.string; }
+
+	explicit operator char *() const { return this->value.string.data; }// or name()
 };
 
 //
@@ -412,7 +438,7 @@ bool Node::operator==(Node &other) {
 	if (type != other.type and this->type != unknown)
 		if (type != keyNode and other.type != keyNode) return false;
 	if (type == longs)
-		return this->value.longy = other.value.longy;
+		return this->value.longy == other.value.longy;
 	if (type == strings)
 		return value.string == other.value.string;
 	if (type == floats)
@@ -461,8 +487,10 @@ Node Node::evaluate() {
 		if (p > max) max = p;
 		node.log();
 	}
-	if (max == 0)
+	if (max == 0) {
+		error(String("could not find operator:") % name);
 		return *this;
+	}
 	Node *op = 0;
 	for (Node &n : *this) {
 		float p = precedence(n);
@@ -591,10 +619,12 @@ float Node::precedence(Node &operater) {
 	if (eq(name, "+"))return 6;
 	if (eq(name, "minus"))return 6;
 	if (eq(name, "-"))return 6;
-	if (eq(name, "-"))return 6;
-	if (eq(name, "-"))return 6;
-
-
+	if (eq(name, "="))return 10;
+	if (eq(name, "=="))return 10;
+	if (eq(name, "≠"))return 10;
+	if (eq(name, "!="))return 10;
+	if (eq(name, "equals"))return 10;
+	if (eq(name, "equal"))return 10;
 	return 0;// no precedence
 }
 
@@ -611,6 +641,9 @@ Node Node::apply(Node left, Node op0, Node right) {
 	if (op == "not" or op == "¬" or op == "!") {
 		bool x = not left.evaluate();
 		return Node(x);
+	}
+	if (op == "#") {
+		return right.length;// or right["size"] or right["count"]  or right["length"]
 	}
 	if (op == "√") {
 		Node &unary_result = NIL;
@@ -691,7 +724,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 //	return call(left, op0, right);
 }
 
-Node Node::setType(Type type) {
+Node& Node::setType(Type type) {
 	this->type = type;
 	return *this;
 }
