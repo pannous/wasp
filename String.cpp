@@ -314,11 +314,21 @@ public:
 	}
 
 
+
 	String operator%(String &c) {
+		if(!contains("%s"))
+			return *this + c;
 		String b = this->clone();
 		b.replace("%s", c);
 		return b;
 	}
+
+	String operator%(chars &c) {
+		String b = this->clone();
+		b.replace("%s", c);
+		return b;
+	}
+
 
 	String operator%(char *c) {
 		return this->replace("%s", c);
@@ -426,10 +436,6 @@ public:
 		return data[i];
 	}
 
-	operator chars() {// !
-		return data;
-	}
-
 	bool empty() {
 		return !data || data[0] == 0;
 	}
@@ -470,6 +476,13 @@ public:
 			concat += this;
 		return concat;
 	}
+
+// type conversions
+
+	explicit operator int() { return atoi(data); }
+//	 operator char*()  { return data; }
+	explicit operator int() const { return atoi(data); }
+	operator char*() const { return data; }
 
 };
 //String String::operator++() {
@@ -618,6 +631,7 @@ String typeName(Type t) {
 		case unknown :
 			return "unknown";
 		default:
+			breakpoint_helper
 			throw str("MISSING Type name mapping ") + t;
 	}
 }
