@@ -7,17 +7,19 @@ typedef unsigned char byte;
 typedef const char *chars;
 
 extern "C" void err(chars error);
+extern "C" void error(chars error);
+extern "C" void warn(chars error);
+extern "C" void warning(chars error);
 extern "C" chars fetch(chars url);
 
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
 unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 
-#define breakpoint_helper printf("%s:%d\n",__FILE__,__LINE__);
+#define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
 #define assert(condition) try{\
    if(condition==0)throw "assert FAILED";else printf("\nassert OK: %s\n",#condition);\
    }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
-
 
 
 #ifdef WASM
@@ -85,6 +87,18 @@ void err(chars error) {
 	throw error;
 }
 
+void error(chars error) {
+	err(error);
+}
+
+void warn(chars warning) {
+	printf(warning);
+}
+
+void warning(chars warning) {
+	printf(warning);
+}
+
 // #include <cstdlib> // malloc too
 //#include <stdio.h> // printf
 #endif
@@ -121,7 +135,7 @@ class Mark {
 	String UNEXPECT_END = "Unexpected end of input";
 	String UNEXPECT_CHAR = "Unexpected character ";
 
-	int at{};            // The index of the current character PLUS ONE todo
+	int at = -1;//{};            // The index of the current character PLUS ONE todo
 	char ch = 0;            // The current character
 	int lineNumber{};    // The current line number
 	int columnStart{};    // The index of column start char
@@ -160,7 +174,7 @@ public:
 
 //			while(result.type==reference)
 
-		if (ch && ch != -1){
+		if (ch && ch != -1) {
 			breakpoint_helper
 			error("Expect end of input");
 		}
@@ -281,12 +295,19 @@ private:
 		return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
 	}
 
+	// everything that is not an is_identifier is treated as operator/symbol/identifier?
 	bool is_operator(char ch) {// todo is_KNOWN_operator
-		return ch < 0 or ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"' and
-		       !is_identifier(ch) and !isalnum(ch);// ANY UTF 8
+		if (ch > 0x207C and ch < 0x2200) return true;
+		if (ch < 0) return true;// utf
+		if (is_identifier(ch)) return false;
+		if (isalnum(ch)) return false;// ANY UTF 8
+		return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
 	}
 
 	bool is_identifier(char ch) {
+		if (ch == '#')return false;// size/count/length
+		if (ch == '=')return false;// size/count/length
+		if (ch == "＝"[0] and text[at] == "＝"[1])return false;// todo … !?!?
 		if (ch == "√"[0] and text[at] == "√"[1])return false;// todo … !?!?
 		if (ch == "≠"[0] and text[at] == "≠"[1])return false;// todo … !?!?
 		return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
@@ -566,11 +587,10 @@ private:
 		Node node = Node(ch);
 		node.setType(operators);// todo ++
 		next();
-		if (node.name[0] < 0)
-			while (ch < 0) {// utf8 √ …
-				node.name += ch;
-				next();
-			}
+		while (ch < 0 or is_operator(ch)) {// utf8 √ …
+			node.name += ch;
+			next();
+		}
 		return node;
 	}
 
@@ -591,8 +611,9 @@ private:
 			if (text[pos] == '{')braces++;
 			if (text[pos] == ',' and braces == 0)return true;// ambiguity
 			if (text[pos] == ':' and braces == 0)return true;// ambiguity
-			if (text[pos] == '=' and braces == 0)return true;// ambiguity
 			if (text[pos] == ';' and braces == 0)return true;// end of statement!
+			if (text[pos] == '=' and braces == 0)
+				return text[pos + 1] != '=' and text[pos - 1] != '=' and text[pos - 1] != '!';// == != OK
 			if (text[pos] == '}')braces--;
 			pos++;
 		}
@@ -893,8 +914,8 @@ private:
 			else if (ch == '(') {
 //				let child = pragma();
 				Node child = object(')');
-				if(child.type==objects and child.length==1)child = child.children[0];
-				if(child.type==nils and child.value.data)child=*child.value.node;// todo bug<<
+				if (child.type == objects and child.length == 1)child = child.children[0];
+				if (child.type == nils and child.value.data)child = *child.value.node;// todo bug<<
 //				obj.setParams(child.children)
 				obj.set(obj.length, &child);// OR ATTRIBUTE!
 			} else if (ch == '{') { // child object
@@ -928,7 +949,17 @@ private:
 		return key[0] < '0' || key[0] > '9';//todo
 	}
 
-	Node object(char closing_brace = '}') {
+//		array() a[1 2 3] or
+	Node &selector() {
+		return object(']');
+	}
+
+//		value() or a(1) or a(x=1)
+	Node &params() {
+		return object(')');
+	}
+
+	Node &object(char closing_brace = '}') {
 		next();
 		white();  // skip the starting '{'
 		String key = EMPTY;        // property key
@@ -1038,8 +1069,83 @@ private:
 		return next >= '0' and next <= '9';
 	}
 
+//	Node quote(char type, char close) {
+//	}
+	Node value(char close = 0) {
+		// A JSON value could be an object, an array, a string, a number, or a word.
+		Node current;
+		var length = text.length;
+		int start = at;
+		loop:
+		next();
+		while (at < length) {
+//			white();// sets ch todo 1+1 != 1 +1
+			char _next = text[at];
+			if (ch == close) {
+				next();
+				break;
+			}// inner match ok
+			if (ch == '}' or ch == ']' or ch == ')')
+				return current;// outer match unresolved so far
+			switch (ch) {
+				case ':': {
+					current.value.node = value().clone();// applies to WHOLE expression
+				}
+//				current.params = value().children;
+					current.children = value().children;
+				case '{':
+					return value('}');
+				case '[':
+					return value(']');
+				case '(':
+					return value(')');
+				case '}':
+				case ')':
+				case ']':
+//					break loop;// not in c++
+					error("wrong closing bracket");
+				case '-':
+				case '+':
+				case '.':
+					if (isDigit(_next))
+						return number();
+					else
+						return words();
+				case '"':
+				case '\'':
+				case '`': {
+					if (close == 0) // open string
+						return value(ch);
+					Node id = Node(text.substring(start, at));
+					id.setType(Type::strings);
+					current.add(id);
+					break;
+				}
+				case ' ': {
+					if (close == '"' or close == '\'' or close == '`')continue;
+					Node id = Node(text.substring(start, at));
+					current.add(id);
+				}
+				default: {
+					Node *node = words().clone();
+					current.add(node);
+				}
+			}
+		}
+		if (current.length == 1) {
+//			if (current.value.node == &current.children[0])return *current.value.node;
+//			if (current.value.longy and current.children[0].value.longy)
+//				if (current.value.node->value.longy != current.children[0].value.longy)
+//					error("ambiguous values");
+//			if (current.value.longy)
+//				current.children[0].value = current.value;
+			return current.children[0];
+		}
+		return current;
+	};
+
 // Parse a JSON value.
-	Node value() {
+	Node value2() {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		white();// todo 1+1 != 1 +1
 		char _next = text[at];
@@ -1049,6 +1155,9 @@ private:
 				       binary() : object();
 			case '[':
 				return array();
+			case '(':
+				return params();
+//				return object();
 			case "ø"[0]:
 				next();
 				if (ch == "ø"[1]) {
@@ -1058,8 +1167,6 @@ private:
 			case '"':
 			case '\'':
 				return string();
-			case '(':
-				return object();
 			case '-':
 			case '+':
 			case '.':
@@ -1069,8 +1176,10 @@ private:
 					return words();
 
 			default:
-				return words();
-//				return ch >= '0' && ch <= '9' ? number() : word();
+				Node id = words();
+				if (ch == '(')id.params = &params();
+				if (ch == '[')id.params = &selector();
+				if (ch == '{')id.children = &object();
 		}
 	};;
 //	int $length{};//????

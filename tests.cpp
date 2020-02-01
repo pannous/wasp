@@ -14,6 +14,21 @@ bool assert_equals(String a, String b, char *context = "") {
 	return a == b;
 }
 
+
+bool assert_equals(Node a, String b, char *context = "") {
+	if (a.name != b)// err
+		puts("FAILED assert_equals! %s should be %s in %s"s % a.name % b % context);
+	else puts("OK %s==%s in %s"s % a.name % b % context);
+	return a == b;
+}
+
+//bool assert_equals(chars a, chars b, char *context = "") {
+//	if (a != b)// err
+//		puts("FAILED assert_equals! %s should be %s in %s"s % a % b % context);
+//	else puts("OK %s==%s in %s"s % a % b % context);
+//	return a == b;
+//}
+
 bool assert_equals(long a, long b, char *context) {
 	if (a != b)// err
 		puts("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
@@ -26,8 +41,10 @@ bool assert_isx(char *mark, Node expect) {
 		Node left = Mark::eval(mark);
 		if (left.type == floats or expect.type == floats)
 			return assert_equals(left.floate(), expect.floate(), mark);
-		if (left.type == longs or expect.type == longs)
-			return assert_equals(left.longe(), expect.longe(), mark);
+		if (left.type == longs or expect.type == longs) {
+			long b = expect.longe();
+			return assert_equals(left.longe(), b, mark);
+		}
 		if (left != expect)printf("%s≠%s\n", left.name, expect.name);
 		return left == expect;
 	} catch (SyntaxError *err) {
@@ -35,6 +52,10 @@ bool assert_isx(char *mark, Node expect) {
 		printf("%s", err->data);
 	}
 	return false;
+}
+
+bool assert_isx(char *mark, const char *expect) {
+	return assert_isx(mark, Node(expect));
 }
 
 Node assert_parsesx(const char *mark) {
@@ -46,7 +67,7 @@ Node assert_parsesx(const char *mark) {
 		printf("\nTEST FAILED WITH ERROR\n");
 		printf("%s", err);
 	} catch (String err) {
-		printf("\nTEST FAILED WITH ERROR\n");
+		printf("\nTEST FAILED WITH ERRORs\n");
 		printf("%s", err.data);
 	} catch (SyntaxError *err) {
 		printf("\nTEST FAILED WITH SyntaxError\n");
@@ -59,9 +80,14 @@ Node assert_parsesx(const char *mark) {
 
 //#define assert_parses(mark) result=assert_parsesx(mark);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 #define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
 
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
+bool assert_isx(char *mark, Node expect);
+
+bool assert_isx(char *mark, chars expect);
+
 #define assert_is(mark, result) {\
     printf("TEST %s==%s\n",#mark,#result);\
     bool ok=assert_isx(mark,result);\
@@ -75,6 +101,8 @@ void testC();
 void testBUG();
 
 void testLists();
+
+void testParams();
 
 void testNetBase() {
 	chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
@@ -311,15 +339,14 @@ void testLogic() {
 	assert_is("0 and 1", false);
 	assert_is("0 and 0", false);
 
-
-}
-
-void testEval() {
-	assert_is("√4", 2);
-	testLogic();
-	testMath();
-	testRoot();
-	testRootFloat();
+	assert_is("1≠2", True);
+	assert_is("1==2", False);
+	//	assert_is("1=2", False);
+	assert_is("1!=2", True);
+	assert_is("1≠1", False);
+//	assert_is("2=2", True);
+	assert_is("2==2", True);
+	assert_is("2!=2", False);
 }
 
 
@@ -386,6 +413,43 @@ void testGraphParams() {
 }
 
 
+void testParams() {
+	skip(assert_parses("multi_body{1}{1}{1}"));// why not generalize from the start?
+	skip(assert_parses("chained_ops(1)(1)(1)"));// why not generalize from the start?
+	assert_parses("a(x:1)");
+	assert_parses("a(x=1)");
+	assert_parses("a{y=1}");
+	assert_parses("a(x=1){y=1}");
+	skip(assert_parses("a(1){1}"));
+
+	assert_parses("while(x<3){y:z}");
+	Node body = assert_parses("body(style='blue'){a(link)}");
+	assert(body["style"] == "blue");
+	Node body2 = assert_parses("body(style='blue'){style:green}");// is that whole xml compatibility a good idea?
+	assert(body2["style"] ==
+	       "green");// body has prescedence over params, semantically params provide extra data to body
+	assert(body2[".style"] == "blue");
+	assert_parses("a(href='#'){'a link'}");
+	assert_parses("(markdown link)[www]");
+
+}
+
+typedef Node N;
+
+void testDidYouMeanAlias() {
+	Node ok1 = assert_parses("puts('hi')");
+	assert_equals(ok1[".warnings"], "DYM print");
+}
+
+void testEval() {
+	assert_is("√4", 2);
+	assert_is("#(a b c)", 3);
+	testLogic();
+	testMath();
+	testRoot();
+	testRootFloat();
+}
+
 void tests() {
 	testMarkSimple();
 	testMarkMulti();
@@ -400,6 +464,7 @@ void tests() {
 	testLists();
 	testDeepLists();
 	testGraphQlQuery();
+	testParams();
 }
 
 void testBUG() {
@@ -411,8 +476,9 @@ void testBUG() {
 }
 
 void todos() {
-	assert_is("1≠2", True);
+	testParams();
 	testBUG();
+	testDidYouMeanAlias();
 	testMarkSimpleAssign();
 	testMapsAsLists();
 	testGraphParams();
@@ -420,7 +486,8 @@ void todos() {
 
 // valgrind --track-origins=yes ./mark
 void testCurrent() { // move to tests() once OK
-//	todos();
+//	tests();// make sure all still ok after changes
+	todos();
 //	testGraphQlQuery();
 //	testMapsAsLists();
 	tests();
