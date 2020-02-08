@@ -94,18 +94,35 @@ public:
 		type = floats;
 	}
 
-
-	explicit Node(int nr,...){
+// how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
+// Pass the number of arguments as the first variable
+// Require the last variable argument to be null, zero or whatever
+	explicit Node(int a,int b,...){
 		type = objects;// groups list
-		int SOME_PROPER_LENGTH=10000;
-		char buff[SOME_PROPER_LENGTH];
-		char *format = "";
+		add(Node(a).clone());
 		va_list args;
-		va_start(args, nr);
-		add(Node((int) va_arg(args, int)))
-				va_end(args);
-
+		va_start(args, a);
+		int i= b;
+		do {
+			add(Node(i).clone());
+			i = (int) va_arg(args, int);
+		} while (i);
+		va_end(args);
 	}
+
+	explicit Node(char* a,char* b,...){
+		type = objects;// groups list
+		add(Node(a).clone());
+		va_list args;
+		va_start(args, a);
+		char* i= b;
+		do {
+			add(Node(i).clone());
+			i = (char*) va_arg(args, char*);
+		} while (i);
+		va_end(args);
+	}
+
 
 	explicit Node(int nr) {
 		value.longy = nr;
@@ -115,6 +132,7 @@ public:
 
 	explicit Node(const char *name) {
 		this->name = name;
+//		type = strings NAH;// unless otherwise specified! NO
 	}
 
 	explicit Node(bool nr) {
@@ -450,16 +468,19 @@ bool Node::operator==(float other) {
 
 bool Node::operator==(Node &other) {
 	if (this == &other)return true;// same pointer!
+	if(this->name==NIL.name or this->name==False.name or this->name=="")
+		if(other.name==NIL.name or other.name==False.name or other.name=="" )
+		return true;// TODO: SHOULD already BE SAME by engine!
 	if (this->value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// same value enough?
 
 	if (&other == &NIL and type == nils and length == 0 and value.data == 0)return true;
-	if (type != other.type and this->type != unknown)
+	if (type != other.type and this->type != unknown and other.type!=unknown)
 		if (type != keyNode and other.type != keyNode) return false;
 	if (type == longs)
 		return this->value.longy == other.value.longy;
 	if (type == strings)
-		return value.string == other.value.string;
+		return value.string == other.value.string or value.string == other.name;// !? match by name??
 	if (type == floats)
 		return value.floaty == other.value.floaty;
 	// if ...
@@ -473,8 +494,9 @@ bool Node::operator==(Node &other) {
 			return deep == val;
 		}
 	}
-//	if(name==other.name and length>0 and length==other.length)
-//		return true;
+
+	if(name==other.name and length==other.length==0)
+		return true;
 	return false;
 }
 
@@ -507,7 +529,8 @@ Node Node::evaluate() {
 		node.log();
 	}
 	if (max == 0) {
-		error(String("could not find operator:") % name);
+		warn(String("could not find operator: ") % name );
+//		error(String("could not find operator:") % name);
 		return *this;
 	}
 	Node *op = 0;
@@ -761,6 +784,3 @@ Node *Node::has(String s) {
 	return 0;// NIL
 }
 
-Node::Node(int i, int i1, int i2) {
-
-}
