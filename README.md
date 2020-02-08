@@ -1,10 +1,10 @@
-# Mark Notation
+# Angle Language
 
+Angle is a new Programming Language as well as data format, "Lisp with Hashes"
 
-[![npm version](https://badge.fury.io/js/mark-js.svg)](https://badge.fury.io/js/mark-js)
-[![Build Status](https://travis-ci.org/henry-luo/mark.svg?branch=master)](https://travis-ci.org/henry-luo/mark)
-[![codecov](https://codecov.io/gh/henry-luo/mark/branch/master/graph/badge.svg)](https://codecov.io/gh/henry-luo/mark)
-[![Analytics](https://ga-beacon.appspot.com/UA-114747922-1/readme.md)](https://github.com/henry-luo/mark)
+Based on [Mark Notation](https://github.com/henry-luo/mark)
+
+In Lisp to create an object like foo:{bar:3} you have to resort to ugly reader macros like `#S(foo :bar 3)` 
 
 *Objective Markup Notation*, abbreviated as Mark Notation or just **Mark**, is a new unified notation for both object and markup data. The notation is a superset of what can be represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very clean syntax and simple data model.
 
@@ -15,12 +15,12 @@
 
 |                        | Mark                           | JSON     | HTML | XML                            | S-expr                             | YAML                                  |
 | ---------------------- | ------------------------------ | -------- | ---- | ------------------------------ | ---------------------------------- | ------------------------------------- |
-| Clean syntax           | yes                            | yes      | no   | verbose                        | yes                                | yes <sub>(only for basic usage)</sub> |
-| Fully-typed            | yes                            | yes      | no   | no <sub>(when no schema)</sub> | yes                                | yes                                   |
-| Generic                | yes                            | yes      | no   | yes                            | yes                                | yes                                   |
-| Mixed content support  | yes                            | hard     | yes  | yes                            | hard <sub>(poor map support)</sub> | hard                                  |
-| High-order composition | yes                            | possible | no   | verbose                        | yes                                | possible                              |
-| Wide adoption          | not <sub>(at the moment)</sub> | yes      | yes  | yes                            | limited                            | limited                               |
+| Clean syntax           | yes | yes| no   | yes | yes| yes|
+| Fully-typed            | yes | yes| no   | no| yes| yes |
+| Generic                | yes | yes| no   | yes | yes| yes |
+| Mixed content support  | yes | hard     | yes | yes | hard | hard                                  |
+| High-order composition | yes | possible | no   | yes | yes| possible                              |
+| Wide adoption          | not yet | yes| yes | yes | limited                            | limited                               |
 
 ## Mark Syntax
 
@@ -43,22 +43,22 @@ For example, a HTML registration form:
 </form>
 ```
 
-Could be represented in Mark as:
+Could be represented in Angle as:
 
 ```text
-{form                                   // object type-name 'form'
-  (!--comment)                          // Mark pragma, like HTML comment
-  {div class:"form-group"               // nested Mark object
-    {label for:"email"                  // object with property 'for'
+form{                                  // object type-name 'form'
+  //comment                          
+  div{ class:"form-group"               // nested Mark object
+    label{ for:email                  // object with property 'for'
       "Email address:"                  // text needs to be quoted
     }
-    {input type:"email" id:"email"}     // object without any contents
+    input{ type:email id:email}     // object without any contents
   }
-  {div class:"form-group"
-    {label for:"pwd" "Password"}
-    {input type:"password" id:"pwd"}    // comma is optional 
+  div{ class:"form-group"
+    label(for:pwd):"Password"
+    input{ type:password id:"pwd"}    // comma is optional 
   }
-  {button class:['btn' 'btn-info']      // property with complex values
+  button{ class:['btn' 'btn-info']      // property with complex values
     'Submit'                            // text quoted with single quote
   }
 }
@@ -128,38 +128,30 @@ S-expression from Lisp gave rise to novel ideas like high-order composition, sel
 
 The advantage of Mark over S-expressions is that it takes a more modern, JS-first approach in its design, and can be more conveniently used in web and node.js environments.
 
-## mark.js
-
-`mark.js` is the JS library to work with data in Mark format. It consists of 4 modules:
-
-- The core module `mark.js`, which provides `parse()` and `stringify()` functions, like JSON, and a direct Mark object construction function `Mark()`, and some functional APIs to work with the object content.
-- Sub-module `mark.mutate.js`, which provides mutative APIs to change the Mark object data model.
-- Sub-module `mark.convert.js`, which provides conversion between Mark format and other formats like HTML and XML.
-- Sub-module `mark.selector.js`, which provides CSS selector based query interface on the Mark object model, like jQuery.
 
 ## Usage
 
 Install from NPM:
 
 ```
-npm install mark-js --save
+npm install angle --save
 ```
 
 Then in your node script, use it as:
 
 ```js
-const Mark = require('mark-js');
-var obj = Mark.parse(`{div {span 'Hello World!'}}`);
-console.log("Greeting from Mark: " + Mark.stringify(obj));
+const Mark = require('angle');
+var obj = Angle(`div:span:'Hello World!'`);  // using a shorthand
+console.log("Greeting from Angle: " + obj);
 ```
 
-To use the library in browser, you can include the `mark.js` under `/dist` directory into your html page, like:
+To use the library in browser, you can include the `angle.js` into your html page, like:
 
 ```html
-<script src='mark.js'></script>
+<script src='angle.js'></script>
 <script>
-var obj = Mark(`{div {span 'Hello World!'}}`);  // using a shorthand
-console.log("Greeting from Mark: " + Mark.stringify(obj));
+var obj = Angle(`div:span:'Hello World!'`);  // using a shorthand
+console.log("Greeting from Angle: " + obj);
 </script>
 ```
 
@@ -181,10 +173,20 @@ Note: /dist/mark.js has bundled mark.mutate.js, mark.convert.js and mark.selecto
   - [Mark conversion example](https://plnkr.co/edit/cMSCW3?p=preview)
 
 
-## Extensions and Applications of Mark
+## Differences to original Mark:
+objects are created left of the bracket, so
+`{html {body}}` in mark is `html{body}` in Angle.
 
-- [Mark Template](https://github.com/henry-luo/mark-template): a JS template engine inspired by JSX and XSLT, using Mark for the template syntax.
+Assignment and object creation
+foo{bar:3}  #object creation
+foo:{bar:3} #property assignment (nested objects)
+foo={bar:3} #variable assignment (of calling context)
 
-## Credits
+## Questions
 
-Thanks to the following platforms or services that support the open source development of Mark: NPM, GitHub, [Travis CI](https://travis-ci.org/), [Codecov](https://codecov.io/), [BrowserStack](https://www.browserstack.com), [jsDelivr](https://www.jsdelivr.com/), [Plunker](https://plnkr.co/), [JS.org](https://js.org/).
+should '=',':' be treated as operators or handled hardwiredly?
+elegance vs efficiency
+
+
+div{ class:"form-group"} vs div(class:"form-group") vs div{ class:{"form-group"}}
+label(for:pwd):"Password"
