@@ -92,11 +92,11 @@ void error(chars error) {
 }
 
 void warn(chars warning) {
-	printf("%s\n",warning);
+	printf("%s\n", warning);
 }
 
 void warning(chars warning) {
-	printf("%s\n",warning);
+	printf("%s\n", warning);
 }
 
 // #include <cstdlib> // malloc too
@@ -245,10 +245,10 @@ private:
 		var columnNumber = at - columnStart;
 		var msg = s("");
 //				s("IN CODE:\n");
-		msg = msg + m + " ";
+		msg = msg + m;
 		msg = msg + " in line " + lineNumber + " column " + columnNumber + "\n";
 		msg = msg + text + "\n";
-		msg = msg + (s(" ").times(at - 1)) + "^^^\n";
+		msg = msg + (s(" ").times(at - 1)) + "^\n";
 //		msg = msg + s(" of the Mark data. \nStill to read: \n") + text.substring(at - 1, at + 30) + "\n^^ ...";
 		msg = msg + backtrace2();
 		var error = new SyntaxError(msg);
@@ -599,12 +599,19 @@ private:
 		if (node.name == "False")return False;
 		if (node.name == "no")return False;
 		if (node.name == "No")return False;
+		if (node.name == "ƒ")return False;// ‽
+		//		if (node.name == "wrong")return False;
+//		if (node.name == "Wrong")return False;
 		if (node.name == "true")return True;
 		if (node.name == "True")return True;
 		if (node.name == "yes")return True;
 		if (node.name == "Yes")return True;
+		if (node.name == "√")return True;
+//		if (node.name == "Right")return True;// unless class!
+//		if (node.name == "right")return True;
 		if (node.name == "NIL")return NIL;
 		if (node.name == "null")return NIL;
+		if (node.name == "nill")return NIL;
 		if (node.name == "nil")return NIL;
 		return node;
 	}
@@ -1140,10 +1147,13 @@ private:
 					current.add(id);
 					break;
 				}
+				case ';':
+				case ',':
 				case ' ': {
 					if (close == '"' or close == '\'' or close == '`')continue;
-					Node id = Node(text.substring(start, at));
-					current.add(id);
+					next();
+//					Node id = Node(text.substring(start, at-1)); handled by default before
+//					current.add(id);
 				}
 				default: {
 					Node *node = words().clone();

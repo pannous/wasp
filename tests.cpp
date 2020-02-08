@@ -48,7 +48,7 @@ bool assert_isx(char *mark, Node expect) {
 		if (left != expect)printf("%s≠%s\n", left.name.data, expect.name.data);
 		return left == expect;
 	} catch (SyntaxError *err) {
-		printf("\nTEST FAILED WITH ERROR\n");
+		printf("\nERROR IN TEST\n");
 		printf("%s", err->data);
 	}
 	return false;
@@ -413,23 +413,52 @@ void testGraphParams() {
 }
 
 void testRootLists() {
+	assert_is("1;2;3", Node(1, 2, 3))
+	assert_is("a;b;c", Node("a", "b", "c"))
 	assert_is("1 2 3", Node(1, 2, 3))
 	assert_is("a b c", Node("a", "b", "c"))
-	assert_is("1 2 3", Node(1, 2, 3))
-	assert_is("a b c", Node("a", "b", "c"))
+	assert_is("1,2,3", Node(1, 2, 3))
+	assert_is("a,b,c", Node("a", "b", "c"))
+	assert_is("(1 2 3)", Node(1, 2, 3))
+	assert_is("(a b c)", Node("a", "b", "c"))
+	assert_is("(1,2,3)", Node(1, 2, 3))
+	assert_is("(a,b,c)", Node("a", "b", "c"))
+	assert_is("(1;2;3)", Node(1, 2, 3))
+	assert_is("(a;b;c)", Node("a", "b", "c"))
+	assert_is("{1 2 3}", Node(1, 2, 3))
+	assert_is("{a b c}", Node("a", "b", "c"))
+	assert_is("{1,2,3}", Node(1, 2, 3))
+	assert_is("{a,b,c}", Node("a", "b", "c"))
+	assert_is("{1;2;3}", Node(1, 2, 3))
+	assert_is("{a;b;c}", Node("a", "b", "c"))
+	assert_is("[1 2 3]", Node(1, 2, 3))
+	assert_is("[a b c]", Node("a", "b", "c"))
+	assert_is("[1,2,3]", Node(1, 2, 3))
+	assert_is("[a,b,c]", Node("a", "b", "c"))
+	assert_is("[1;2;3]", Node(1, 2, 3))
+	assert_is("[a;b;c]", Node("a", "b", "c"))
 }
 
 
 void testRoots() {
+	assert_is("True", True)
+	assert_is("False", False)
+	assert_is("true", True)
+	assert_is("false", False)
+	assert_is("yes", True)
+	assert_is("no", False)
+//	assert_is("right", True)
+//	assert_is("wrong", False)
 	assert_is("hello", "hello");
 	assert_is("null", NIL);
 	assert_is("", NIL);
 	assert_is("0", NIL);
-	assert_is("()", NIL);
-//	assert_is("{}",NIL);// NOP
 	assert_is("1", 1)
+	assert_is("123", 123)
 	assert_is("\"hello\"", "hello")
 	testRootLists();
+	skip(assert_is("()", NIL))
+	skip(assert_is("{}",NIL));// NOP
 }
 
 
@@ -486,6 +515,7 @@ void tests() {
 	testDeepLists();
 	testGraphQlQuery();
 	testParams();
+	testRoots();
 }
 
 void testBUG() {
@@ -497,7 +527,6 @@ void testBUG() {
 }
 
 void todos() {
-	testRoots();
 	testRootLists();
 	testParams();
 	testBUG();

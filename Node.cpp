@@ -477,6 +477,8 @@ bool Node::operator==(Node &other) {
 	if (&other == &NIL and type == nils and length == 0 and value.data == 0)return true;
 	if (type != other.type and this->type != unknown and other.type!=unknown)
 		if (type != keyNode and other.type != keyNode) return false;
+	if (type == bools)
+		return this->value.longy == other.value.longy or (other!=NIL and other!=False) or this->value.longy and other.value.longy;
 	if (type == longs)
 		return this->value.longy == other.value.longy;
 	if (type == strings)
