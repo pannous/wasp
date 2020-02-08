@@ -79,7 +79,7 @@ Node assert_parsesx(const char *mark) {
 }
 
 //#define assert_parses(mark) result=assert_parsesx(mark);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-#define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(0);}
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
 
@@ -412,15 +412,21 @@ void testGraphParams() {
 	              "}")
 }
 
+void testRootLists() {
+	assert_is("1",1)
+	assert_is("1 2",Node(1,2,3))
+	assert_is("a b",Node('a','b'))
+}
 
 void testParams() {
-	skip(assert_parses("multi_body{1}{1}{1}"));// why not generalize from the start?
-	skip(assert_parses("chained_ops(1)(1)(1)"));// why not generalize from the start?
+	Mark::parse("a(x:1)");
 	assert_parses("a(x:1)");
 	assert_parses("a(x=1)");
 	assert_parses("a{y=1}");
 	assert_parses("a(x=1){y=1}");
 	skip(assert_parses("a(1){1}"));
+	skip(assert_parses("multi_body{1}{1}{1}"));// why not generalize from the start?
+	skip(assert_parses("chained_ops(1)(1)(1)"));// why not generalize from the start?
 
 	assert_parses("while(x<3){y:z}");
 	Node body = assert_parses("body(style='blue'){a(link)}");

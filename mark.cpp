@@ -1085,6 +1085,7 @@ private:
 				next();
 				break;
 			}// inner match ok
+
 			if (ch == '}' or ch == ']' or ch == ')')
 				return current;// outer match unresolved so far
 			switch (ch) {
@@ -1094,11 +1095,13 @@ private:
 //				current.params = value().children;
 					current.children = value().children;
 				case '{':
-					return value('}');
+//					return value('}');
+					Node &type = value('}').setType(Type::objects);
+					current.add(type);
 				case '[':
-					return value(']');
+					current.add(value(')').setType(Type::patterns));
 				case '(':
-					return value(')');
+					current.add(value(')').setType(Type::groups));
 				case '}':
 				case ')':
 				case ']':

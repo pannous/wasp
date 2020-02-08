@@ -28,11 +28,17 @@ class Node {
 public:
 //	Node(const char*);
 
+
+	Node(va_list args){
+
+}
+
 	String name = empty_name;// nil_name;
 	Value value;
 	Node *parent = nullptr;
 	Node *params = nullptr;// attributes meta modifiers decorators annotations
-	Node *children = nullptr;// body content
+	Node *children = nullptr;// block body content
+
 	/* don't mix children with params, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
 	 * CONCEPTUAL CLEANUP NEEDED!
 	 * children["_meta_"]
@@ -86,6 +92,19 @@ public:
 		if (debug)name = String((long) nr) + String(".…");//#+"#";
 		value.floaty = nr;
 		type = floats;
+	}
+
+
+	explicit Node(int nr,...){
+		type = objects;// groups list
+		int SOME_PROPER_LENGTH=10000;
+		char buff[SOME_PROPER_LENGTH];
+		char *format = "";
+		va_list args;
+		va_start(args, nr);
+		add(Node((int) va_arg(args, int)))
+				va_end(args);
+
 	}
 
 	explicit Node(int nr) {
@@ -740,4 +759,8 @@ Node *Node::has(String s) {
 				return &entry;
 	}
 	return 0;// NIL
+}
+
+Node::Node(int i, int i1, int i2) {
+
 }
