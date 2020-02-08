@@ -45,7 +45,7 @@ bool assert_isx(char *mark, Node expect) {
 			long b = expect.longe();
 			return assert_equals(left.longe(), b, mark);
 		}
-		if (left != expect)printf("%s≠%s\n", left.name, expect.name);
+		if (left != expect)printf("%s≠%s\n", left.name.data, expect.name.data);
 		return left == expect;
 	} catch (SyntaxError *err) {
 		printf("\nTEST FAILED WITH ERROR\n");
@@ -413,10 +413,25 @@ void testGraphParams() {
 }
 
 void testRootLists() {
-	assert_is("1",1)
-	assert_is("1 2",Node(1,2,3))
-	assert_is("a b",Node('a','b'))
+	assert_is("1 2 3", Node(1, 2, 3))
+	assert_is("a b c", Node("a", "b", "c"))
+	assert_is("1 2 3", Node(1, 2, 3))
+	assert_is("a b c", Node("a", "b", "c"))
 }
+
+
+void testRoots() {
+	assert_is("hello", "hello");
+	assert_is("null", NIL);
+	assert_is("", NIL);
+	assert_is("0", NIL);
+	assert_is("()", NIL);
+//	assert_is("{}",NIL);// NOP
+	assert_is("1", 1)
+	assert_is("\"hello\"", "hello")
+	testRootLists();
+}
+
 
 void testParams() {
 	Mark::parse("a(x:1)");
@@ -482,6 +497,8 @@ void testBUG() {
 }
 
 void todos() {
+	testRoots();
+	testRootLists();
 	testParams();
 	testBUG();
 	testDidYouMeanAlias();

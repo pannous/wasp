@@ -92,11 +92,11 @@ void error(chars error) {
 }
 
 void warn(chars warning) {
-	printf(warning);
+	printf("%s\n",warning);
 }
 
 void warning(chars warning) {
-	printf(warning);
+	printf("%s\n",warning);
 }
 
 // #include <cstdlib> // malloc too
@@ -594,9 +594,24 @@ private:
 		return node;
 	}
 
+	Node resolve(Node node) {
+		if (node.name == "false")return False;
+		if (node.name == "False")return False;
+		if (node.name == "no")return False;
+		if (node.name == "No")return False;
+		if (node.name == "true")return True;
+		if (node.name == "True")return True;
+		if (node.name == "yes")return True;
+		if (node.name == "Yes")return True;
+		if (node.name == "NIL")return NIL;
+		if (node.name == "null")return NIL;
+		if (node.name == "nil")return NIL;
+		return node;
+	}
+
 	Node symbol() {
 		if (ch >= '0' && ch <= '9')return number();
-		if (is_identifier(ch))return Node(identifier());// or op
+		if (is_identifier(ch)) return resolve(Node(identifier()));// or op
 		if (is_operator(ch))return builtin_operator();
 		breakpoint_helper
 		error(UNEXPECT_CHAR + renderChar(ch));
@@ -1078,7 +1093,7 @@ private:
 		int start = at;
 		loop:
 		next();
-		while (at < length) {
+		while (at <= length) {
 //			white();// sets ch todo 1+1 != 1 +1
 			char _next = text[at];
 			if (ch == close) {
@@ -1095,13 +1110,14 @@ private:
 //				current.params = value().children;
 					current.children = value().children;
 				case '{':
-//					return value('}');
-					Node &type = value('}').setType(Type::objects);
-					current.add(type);
+					current.add(value('}').setType(Type::objects));
+					break;
 				case '[':
-					current.add(value(')').setType(Type::patterns));
+					current.add(value(']').setType(Type::patterns));
+					break;
 				case '(':
 					current.add(value(')').setType(Type::groups));
+					break;
 				case '}':
 				case ')':
 				case ']':
