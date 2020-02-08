@@ -602,6 +602,8 @@ String typeName(Type t) {
 	switch (t) {
 		case objects:
 			return "object";
+		case keyNode:
+			return "node";
 		case reference:
 			return "reference";
 		case symbol:
@@ -616,8 +618,6 @@ String typeName(Type t) {
 			return "array";
 		case buffers:
 			return "buffer";
-		case keyNode:
-			return "node";
 		case floats:
 			return "float";
 		case longs:
