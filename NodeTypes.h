@@ -10,6 +10,8 @@ enum Type {
 	// TODO add subtypes of Class:Node Variable:Node etc ^^^
 			nils = 0,
 	objects, // {…} children
+	groups, // (…) meta parameter attributes lists
+	patterns, // […] selectors matches, annotations! [public export extern] function mul(x,y){x*y}
 	keyNode, // key with value
 	reference,// variable identifier name x
 	symbol,// one / plus / Jesus
