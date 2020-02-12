@@ -33,6 +33,7 @@ bool debug = true;
 
 #include <cstdio>
 #include <tgmath.h>
+//#include <cstring>
 
 void err(chars error);
 
@@ -68,10 +69,16 @@ String str(const char *&s);
 int atoi0(const char *__nptr);
 
 
+//#include <stdio.h>
+//#include <string.h>
+#include <cstring> //strlen
+
+//#define cstring
 bool eq(const char *dest, const char *src) {
 	if (!dest || !src)
 		return false;
 	int i = 0;
+	if (strlen(dest) != strlen(src))return false;
 	while (char c = dest[i]) {
 		if (!src[i] || !c)
 			return false;
@@ -91,8 +98,9 @@ bool eq(const char *dest, const char *src) {
 	return true;
 }
 
-
-void strcpy(char *dest, const char *src, int length = -1) {
+// or cstring
+//#ifndef cstring
+void strcpy2(char *dest, const char *src, int length = -1) {
 	if (!dest || !src)
 		return;
 	int i = 0;
@@ -102,7 +110,7 @@ void strcpy(char *dest, const char *src, int length = -1) {
 		i++;
 	}
 }
-
+//#endif
 
 int atoi0(const char *p) {
 	int k = 0;
@@ -279,11 +287,18 @@ public:
 //	operator std::string() const { return "Hi"; }
 
 	String substring(int from, int to = -1) { // excluding to
+		if (to <= from)return "";
 		if (to < 0 or to > length)to = length;
-		auto *neu = static_cast<char *>(malloc((sizeof(char)) * (to - from) + 1));
-		strcpy(neu, &data[from], to - from);
+		int len = (to - from) + 1;
+		auto *neu = static_cast<char *>(malloc((sizeof(char)) * len));
+//#ifdef cstring
+//		strcpy(neu, &data[from]);
+//#else
+		strcpy2(neu, &data[from], to - from);
+//#endif
 		neu[to - from] = 0;
 		return String(neu);
+//		free(neu);
 	}
 
 	int len(const char *data) {
@@ -372,8 +387,13 @@ public:
 		if (c.length <= 0)
 			return *this;
 		auto *neu = static_cast<char *>(malloc(length + c.length + 1));
-		if (data)strcpy(neu, data, length);
-		if (c.data)strcpy(neu + length, c.data, c.length);
+#ifdef cstring
+		if (data)strcpy(neu, data);
+		if (c.data)strcpy(neu + length, c.data);
+#else
+		if (data)strcpy2(neu, data, length);
+		if (c.data)strcpy2(neu + length, c.data, c.length);
+#endif
 		neu[length + c.length] = 0;
 		return String(neu);
 	}
@@ -408,8 +428,8 @@ public:
 	}
 
 	String operator++(int postfix) {//
-		this->data += 1+postfix;// self modifying ok?
-		length -= 1+postfix;
+		this->data += 1 + postfix;// self modifying ok?
+		length -= 1 + postfix;
 		return *this;
 	}
 
@@ -421,7 +441,9 @@ public:
 		return !empty() && this[0] == c && this[1] == '\0';
 	}
 
-	bool operator==(String &s) const {
+	bool operator==(String &s) {// const
+		if (this->empty())return s.empty();
+		if (s.empty())return this->empty();
 		return eq(data, s.data);
 	}
 
@@ -440,7 +462,7 @@ public:
 	}
 
 	bool empty() {
-		return !data || data[0] == 0;
+		return this==0 || length==0  ||  !data || data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}" ||  data[0] == 0;
 	}
 
 	int indexOf(chars string) {
@@ -508,6 +530,8 @@ class Node;
 String nil_name = "nil";
 String empty_name = "";
 String object_name = "{…}";
+String groups_name = "(…)";
+String patterns_name = "[…]";
 //String object_name = "<object>";
 
 #import "Node.cpp"
