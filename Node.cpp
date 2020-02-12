@@ -30,9 +30,9 @@ public:
 //	Node(const char*);
 
 
-	Node(va_list args){
+	Node(va_list args) {
 
-}
+	}
 
 	String name = empty_name;// nil_name;
 	Value value;
@@ -63,8 +63,8 @@ public:
 
 
 	Node *clone() {// const cast?
-		Node *copy= new Node();
-		*copy=*this;// copy value ok
+		Node *copy = new Node();
+		*copy = *this;// copy value ok
 		return copy;
 	}
 
@@ -98,12 +98,12 @@ public:
 // how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
 // Pass the number of arguments as the first variable
 // Require the last variable argument to be null, zero or whatever
-	explicit Node(int a,int b,...){
+	explicit Node(int a, int b, ...) {
 		type = objects;// groups list
 		add(Node(a).clone());
 		va_list args;
 		va_start(args, a);
-		int i= b;
+		int i = b;
 		do {
 			add(Node(i).clone());
 			i = (int) va_arg(args, int);
@@ -111,15 +111,15 @@ public:
 		va_end(args);
 	}
 
-	explicit Node(char* a,char* b,...){
+	explicit Node(char *a, char *b, ...) {
 		type = objects;// groups list
 		add(Node(a).clone());
 		va_list args;
 		va_start(args, a);
-		char* i= b;
+		char *i = b;
 		do {
 			add(Node(i).clone());
-			i = (char*) va_arg(args, char*);
+			i = (char *) va_arg(args, char*);
 		} while (i);
 		va_end(args);
 	}
@@ -230,7 +230,9 @@ public:
 
 	Node evaluate();
 
-	void add(Node &node);
+	void add(Node node);
+
+//	void add(Node &node);
 
 	void add(Node *node);
 
@@ -287,10 +289,10 @@ public:
 
 	Node apply(Node left, Node op0, Node right);
 
-	Node& setType(Type type);
+	Node &setType(Type type);
 
 	long longe() {
-		return type == longs or type==bools? value.longy : value.floaty;// danger
+		return type == longs or type == bools ? value.longy : value.floaty;// danger
 	}
 
 	float floate() {
@@ -312,6 +314,8 @@ public:
 
 	explicit operator char *() const { return value.string.data; }// or name()
 	Node &last();
+
+	bool empty();
 };
 
 //
@@ -338,8 +342,8 @@ Node False = Node("False");
 Node &Node::operator=(int i) {
 	value.longy = i;
 	type = longs;
-	if(name.empty() or name.isNumber())
-	name = itoa(i);
+	if (name.empty() or name.isNumber())
+		name = itoa(i);
 	return *this;
 }
 
@@ -360,12 +364,13 @@ Node &Node::operator[](int i) {
 
 Node &Node::operator[](String s) {
 	Node *found = has(s);
-	if(s[0]=='.'){
-		s++;found = has(s);
+	if (s[0] == '.') {
+		s++;
+		found = has(s);
 	}
 	if (found)return *found;
 	if (name == s) {// me.me == me ? really? let's see if it's a stupid idea…
-		if(type==objects and value.node)
+		if (type == objects and value.node)
 			return *value.node;
 		return *this;
 	}
@@ -397,7 +402,7 @@ int lastChild = 0;
 
 void *calloc(int i);
 
-Node *all = static_cast<Node *>(calloc(capacity * maxNodes));
+Node *all = static_cast<Node *>(calloc(capacity * maxNodes * sizeof(Node *)));
 
 void *calloc(int i) {
 	void *mem = malloc(i);
@@ -446,8 +451,9 @@ Node &Node::set(String string, Node *node) {
 //}
 
 bool Node::operator==(String other) {
-	if (type == objects)return *value.node == other;
+	if (type == objects or type==keyNode)return *value.node == other or value.string == other;
 	if (type == longs) return other == itoa(value.longy);
+	if (type == reference) return other == name;
 	return type == strings and other == value.string;
 }
 
@@ -458,7 +464,7 @@ bool Node::operator==(int other) {
 	if (type == keyNode and value.node and *value.node == other)return true;
 	if (type == strings and atoi(value.string) == other)return true;
 	if (atoi(name) == other)return true;
-	if (type == objects and length==1)return last()==other;
+	if (type == objects and length == 1)return last() == other;
 //	if (type == objects)return value.node->longe()==other;// WTF
 	return false;
 }
@@ -479,17 +485,18 @@ bool Node::operator==(float other) {
 
 bool Node::operator==(Node &other) {
 	if (this == &other)return true;// same pointer!
-	if(name==NIL.name or name==False.name or name=="")
-		if(other.name==NIL.name or other.name==False.name or other.name=="" )
-		return true;// TODO: SHOULD already BE SAME by engine!
+	if (name == NIL.name or name == False.name or name == "")
+		if (other.name == NIL.name or other.name == False.name or other.name == "")
+			return true;// TODO: SHOULD already BE SAME by engine!
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// same value enough?
 
 	if (&other == &NIL and type == nils and length == 0 and value.data == 0)return true;
-	if (type != other.type and type != unknown and other.type!=unknown)
+	if (type != other.type and type != unknown and other.type != unknown)
 		if (type != keyNode and other.type != keyNode) return false;
 	if (type == bools)
-		return value.longy == other.value.longy or (other!=NIL and other!=False) or value.longy and other.value.longy;
+		return value.longy == other.value.longy or (other != NIL and other != False) or value.longy and
+		       other.value.longy;
 	if (type == longs)
 		return value.longy == other.value.longy;
 	if (type == strings)
@@ -508,7 +515,7 @@ bool Node::operator==(Node &other) {
 		}
 	}
 
-	if(name==other.name and length==other.length==0)
+	if (name == other.name and length == other.length == 0)
 		return true;
 	return false;
 }
@@ -530,8 +537,8 @@ Node values(Node n) {
 
 Node Node::evaluate() {
 	if (length == 0)return values(*this);
-	if (length == 1){
-		if(type==operators)
+	if (length == 1) {
+		if (type == operators)
 			return apply(NIL, *this, *children);
 		return values(children[0]);
 	}
@@ -546,7 +553,7 @@ Node Node::evaluate() {
 		node.log();
 	}
 	if (max == 0) {
-		warn(String("could not find operator: ") % name );
+		warn(String("could not find operator: ") % name);
 //		error(String("could not find operator:") % name);
 		return *this;
 	}
@@ -590,25 +597,37 @@ void Node::remove(Node &node) {
 }
 
 void Node::add(Node *node) {
+	if (node->empty())
+		return;// skipp nils!
+	if(not params and node->type==groups)
+		params=node->children;
+	else if (not children and node->type == patterns) {
+		children = node->children;// todo
+		length = node->length;
+		type=patterns;//todo!
+	}
+	else if (not children and node->type == objects and node->name.empty()) {
+		children = node->children;
+		length = node->length;
+	}else { // todo a{x}{y z} => a{x,{y z}} BAD
 //	if (not children or (length == 0 and not value.node))
 //		value.node = node; later!
-	if (!children) children = &all[capacity * lastChild++];
-	children[length++] = *node;
+		if (length >= capacity)
+			error("Out of node Memory");
+		if (lastChild >= maxNodes)
+			error("Out of global Memory");
+		if (!children) children = &all[capacity * lastChild++];
+		children[length++] = *node;
+	}
 }
 
-void Node::add(Node &node) {
-//	if (not children or (length == 0 and not value.node) and type==nils)
-//		value.node = &node;
-	if (!children)
-		children = &all[capacity * lastChild++];
-	if(length>=capacity)
-		error("Out of Memory");
-	Node &slot = children[length];
-	slot = node;// set reference = copy value
-//	if(length)children[length - 1].next = &slot;// &node;// danger: can be LOST
-//	else this->next = &slot;// &node;// WE NEED TRIPLES cause objects can occur in many lists
-	length++;
+void Node::add(Node node) {// merge?
+		add(&node);
 }
+//
+//void Node::add(Node &node) {
+//	add(&node);
+//}
 
 // like c++ here HIGHER up == lower number evaluated earlier , except 0 WTF
 /*
@@ -789,16 +808,32 @@ Node Node::apply(Node left, Node op0, Node right) {
 //	return call(left, op0, right);
 }
 
-Node& Node::setType(Type type) {
-	if(length<2 and (type==groups or type==objects)); // skip!
+Node &Node::setType(Type type) {
+	if (length < 2 and (type == groups or type == objects)); // skip!
 	else this->type = type;
+//	if(name.empty()){
+//		if(type==objects)name = object_name;
+//		if(type==groups)name = groups_name;
+//		if(type==patterns)name = patterns_name;
+//	}
 	return *this;
 }
 
 // Node* OK? else Node&
 Node *Node::has(String s) {
+	if((type==objects or type==keyNode) and s==value.node->name)
+		return value.node;
 	for (int i = 0; i < length; i++) {
 		Node &entry = children[i];
+		if (s == entry.name)
+			if ((entry.type == keyNode or entry.type == nils) and entry.value.node)
+				return entry.value.node;
+			else // danger overwrite a["b"]=c => a["b"].name == "c":
+				return &entry;
+	}
+	for (int i = 0; i < length; i++) {
+		Node &entry = params[i];
+		if(&entry==0)break;
 		if (s == entry.name)
 			if ((entry.type == keyNode or entry.type == nils) and entry.value.node)
 				return entry.value.node;
@@ -809,6 +844,10 @@ Node *Node::has(String s) {
 }
 
 Node &Node::last() {
-	return length>0 ? children[length-1] : *this;
+	return length > 0 ? children[length - 1] : *this;
+}
+
+bool Node::empty() {// nil!
+	return length == 0 and value.longy == 0 and name.empty();
 }
 
