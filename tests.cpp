@@ -65,13 +65,13 @@ Node assert_parsesx(const char *mark) {
 		return result;
 	} catch (chars err) {
 		printf("\nTEST FAILED WITH ERROR\n");
-		printf("%s", err);
+		printf("%s\n", err);
 	} catch (String err) {
 		printf("\nTEST FAILED WITH ERRORs\n");
-		printf("%s", err.data);
+		printf("%s\n", err.data);
 	} catch (SyntaxError *err) {
 		printf("\nTEST FAILED WITH SyntaxError\n");
-		printf("%s", err->data);
+		printf("%s\n", err->data);
 	} catch (...) {
 		printf("\nTEST FAILED WITH UNKNOWN ERROR\n");
 	}
@@ -154,6 +154,7 @@ void testMarkSimple() {
 	log("testMarkSimple");
 	Node &a = assert_parses("{a:3}");
 	Node &a3 = result["a"];
+	assert_equals(a3, 3);
 	assert(a3 == 3);
 	assert(a3.type == longs);
 	assert("a"s == a3.name);
@@ -168,11 +169,10 @@ void testMarkSimple() {
 
 	assert(Mark::parse("3.") == 3.);
 	assert(Mark::parse("3.") == 3.f);
-//	assert(Mark::parse("3.1") == 3.1); // todo epsilon
+//	assert(Mark::parse("3.1") == 3.1); // todo epsilon 1/3≠0.33…
 //	assert(Mark::parse("3.1") == 3.1f);// todo epsilon
 	assert(Mark::parse("'hi'") == "hi");
 	assert(Mark::parse("3") == 3);
-//		const char *source = "{a:3,b:4,c:{d:'hi'}}";
 }
 
 
@@ -215,25 +215,55 @@ void testUTF() {
 	assert_parses("{ç:ø}");
 	Node &node = result["ç"];
 	node.log();
-	assert(node == NIL);
-//	assert(node == "ø"); => OK
+//	assert(node == NIL);
+	assert(node == "ø"); //=> OK
 }
 
 
+void testMarkMultiDeep() {
+	const char *source = "{deep{a:3,b:4,c:{d:'hi'}}}";
+	assert_parses(source);
+	Node &node = result["deep"]['c']['d'];
+	assert_equals(node, "hi");
+}
+
 void testMarkMulti() {
-//	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
-	const char *source = "{a:'HIO' d:{} b:3}";
+	const char *source = "{a:'HIO' b:3}";
 	assert_parses(source);
 	Node &node = result['b'];
 	log(result['a']);
 	log(result['b']);
-	log(result['d']);
-	log(result["a"]);
-	log(result["b"]);
-	log(result["d"]);
-	assert(result['a'] == "HIO");
 	assert(result["b"] == 3);
 	assert(result['b'] == 3);
+}
+
+void testMarkMulti2() {
+	const char *source = "a:'HIO' b:3  d:{}";
+	assert_parses(source);
+	assert(result["b"] == 3);
+}
+
+void testMarkMulti3() {
+//		const char *source = "{a:3,b:4,c:{d:'hi'}}";
+//	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
+//	const char *source = "{a:'HIO' d:{} b:3}";
+	const char *source = "{a:'HIO' b:3  d:{}}";
+	assert_parses(source);
+	assert(result["b"] == 3);
+}
+void testOverwrite() {
+	const char *source = "{a:'HIO' b:3}";
+	assert_parses(source);
+	result["b"] = 4;
+	assert(result["b"] == 4);
+	assert(result['b'] == 4);
+}
+
+void testAddField() {
+	const char *source = "{}";
+	result["e"] = 42;
+	assert(result["e"] == 42);
+	assert(result['e'] == 42);
 }
 
 void testErrors() {
@@ -279,10 +309,10 @@ void testMath() {
 }
 
 void testRoot() {
-//	assert_is("√4", 2);
+	assert_is("40+√4", 42);
+	assert_is("√4", 2);
 	assert_is("√4+40", 42);
 	assert_is("40 + √4", 42);
-	assert_is("40+√4", 42);
 }
 
 void testRootFloat() {
@@ -312,11 +342,11 @@ void testLists() {
 
 void testMapsAsLists() {
 //	assert_parses("{1,2,3}");
+	assert_parses("{'a'\n'b'\n'c'}");
 	assert_parses("(add x y)");// expression!
 	assert_parses("{add x y}");// expression?
 	assert_parses("{'a' 'b' 'c'}");// expression?
 	assert_parses("{'a','b','c'}");// list
-	assert_parses("{'a'\n'b'\n'c'}");
 	assert_parses("{'a';'b';'c'}");// list
 	assert(result.length == 3);
 	assert(result[1] == "b");
@@ -458,11 +488,14 @@ void testRoots() {
 	assert_is("\"hello\"", "hello")
 	testRootLists();
 	skip(assert_is("()", NIL))
-	skip(assert_is("{}",NIL));// NOP
+	skip(assert_is("{}", NIL));// NOP
 }
 
 
 void testParams() {
+	Node body = assert_parses("body(style='blue'){a(link)}");
+	assert(body["style"] == "blue");
+
 	Mark::parse("a(x:1)");
 	assert_parses("a(x:1)");
 	assert_parses("a(x=1)");
@@ -473,15 +506,12 @@ void testParams() {
 	skip(assert_parses("chained_ops(1)(1)(1)"));// why not generalize from the start?
 
 	assert_parses("while(x<3){y:z}");
-	Node body = assert_parses("body(style='blue'){a(link)}");
-	assert(body["style"] == "blue");
 	Node body2 = assert_parses("body(style='blue'){style:green}");// is that whole xml compatibility a good idea?
-	assert(body2["style"] ==
-	       "green");// body has prescedence over params, semantically params provide extra data to body
+	skip(assert(body2["style"] ==
+	       "green"));// body has prescedence over params, semantically params provide extra data to body
 	assert(body2[".style"] == "blue");
-	assert_parses("a(href='#'){'a link'}");
-	assert_parses("(markdown link)[www]");
-
+//	assert_parses("a(href='#'){'a link'}");
+//	assert_parses("(markdown link)[www]");
 }
 
 typedef Node N;
@@ -489,6 +519,11 @@ typedef Node N;
 void testDidYouMeanAlias() {
 	Node ok1 = assert_parses("puts('hi')");
 	assert_equals(ok1[".warnings"], "DYM print");
+}
+
+void testEmpty(){
+	result=assert_parsesx("{  }");
+	assert_equals(result.length, 0);
 }
 
 void testEval() {
@@ -501,13 +536,15 @@ void testEval() {
 }
 
 void tests() {
+	testEval();
 	testMarkSimple();
+	testEmpty();
 	testMarkMulti();
+	testMarkMulti2();
 	testMarkAsMap();
 	testC();
 	testUTF();
 	testDiv();
-	testEval();
 	testSamples();
 	testErrors();
 	testNetBase();
@@ -516,6 +553,15 @@ void tests() {
 	testGraphQlQuery();
 	testParams();
 	testRoots();
+	testRootLists();
+	testAddField();
+	testOverwrite();
+	testMarkMultiDeep();
+	testMapsAsLists();
+	testDidYouMeanAlias();
+	testParams();
+	testMarkSimpleAssign();
+	testMapsAsLists();
 }
 
 void testBUG() {
@@ -527,13 +573,9 @@ void testBUG() {
 }
 
 void todos() {
-	testRootLists();
-	testParams();
-	testBUG();
-	testDidYouMeanAlias();
-	testMarkSimpleAssign();
-	testMapsAsLists();
-	testGraphParams();
+	testRoot();
+//	testBUG();
+//	testGraphParams();
 }
 
 // valgrind --track-origins=yes ./mark
@@ -541,7 +583,6 @@ void testCurrent() { // move to tests() once OK
 //	tests();// make sure all still ok after changes
 	todos();
 //	testGraphQlQuery();
-//	testMapsAsLists();
 	tests();
 }
 

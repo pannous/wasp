@@ -196,11 +196,14 @@ json sucks, angle is more like ecmascript:
 
 ### Differences to javascript
 
-`a={b:1,c:d()}` legal angle and javascript 
-`a:{b=1,c{d()}}` legal angle 
+`a={b:1,c:d()}` legal angle and javascript
+legal syntax only in angle:
+`a:{b=1,c{d()}}`
+`hello:world` root maps
+`{1:i i^2:-1}` no restriction on map keys
+`{a:b}` values are symbolic until evaluated (see above)!
 
 Attention:
-
 
 objects can be constructed with a{} a={} a:{} mostly equivalently 
 in javascript '=' is used for variable setters and ':' is used for fields
