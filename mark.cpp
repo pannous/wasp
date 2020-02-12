@@ -191,7 +191,7 @@ public:
 		fseek(f, 0, SEEK_END);
 		long fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-		char *s = static_cast<char *>(malloc(fsize + 1));
+		char *s = (char *) (malloc(fsize + 2));
 		fread(s, 1, fsize, f);
 		fclose(f);
 		return s;
@@ -422,12 +422,21 @@ private:
 		return (char) (uffff);// itoa(uffff);
 	}
 
+	Node string(char delim = '"') {
+		int start = at;
+		proceed();
+		while (ch and ch != delim and previous != '\\')
+			proceed();
+		const String &substring = text.substring(start, at - 1);
+		proceed();
+		return Node(substring);
+	}
+
 // Parse a string value.
-	Node string() {
+	Node string2(char delim = '"') {
 		var hex = 0;
 		var i = 0;
 		var triple = false;
-		var delim = '"';      // double quote or single quote
 		var start = at;
 		String string;
 
@@ -625,7 +634,7 @@ private:
 
 	Node symbol() {
 		if (ch >= '0' && ch <= '9')return number();
-		if (is_identifier(ch)) return resolve(Node(identifier()));// or op
+		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
 		if (is_operator(ch))return builtin_operator();
 		breakpoint_helper
 		error(UNEXPECT_CHAR + renderChar(ch));
@@ -1125,7 +1134,8 @@ private:
 // "=" is long-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
 // special : close=';' : single expression a = 1 + 2
-// significant whitespace a {} == a,{}{}  
+// significant whitespace a {} == a,{}{}
+// todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
 	Node value(char close = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		Node list;
@@ -1135,13 +1145,15 @@ private:
 		int start = at;
 		loop:
 		proceed();
+		white();
 		while (ch and at <= length) {
 //			white();// sets ch todo 1+1 != 1 +1
 			if (previous == '\\') {
 				proceed();
 				continue;
 			}// escape ANYTHING
-			if (ch == close or close == ' ' and (ch == ';' or ch == ',' or ch == '\n')) {// todo: a=1,2,3
+			if (ch == close or (close == ' ' or close == ',') and
+			    (ch == ';' or ch == ',' or ch == '\n')) {// todo: a=1,2,3
 				proceed();
 				break;
 			}// inner match ok
@@ -1152,16 +1164,22 @@ private:
 				case ':': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
-					Node *val = value(' ').clone();// applies to WHOLE expression
-					if ((val->type == groups or val->type == objects) and val->length == 1)
-						val = &val->last();// singleton
-					if (val->value.longy) {
-						key.value = val->value;// direct copy value SURE?? what about meta data... ?
-						key.type = val->type;
+					Node &val = *value(' ').clone();// applies to WHOLE expression
+					if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1)
+						val = val.last();// singleton
+					if (val.value.longy and val.type!=objects) {
+						key.value = val.value;// direct copy value SURE?? what about meta data... ?
+						key.type = val.type;
 					} else {
-						key.value.node = val;
-//					if(val->type==objects)
 						key.type = keyNode;
+						if (!key.children and val.name.empty() and val.length > 1) { // deep copy why?
+							key.children = val.children;
+							key.length = val.length;
+							key.type = val.type;
+						} else
+							key.value.node = &val;// clone?
+//						key.add(val);
+//					if(val->type==objects)
 					}
 //					val->name = key.name;// really? "3" == "a" ?
 //key.setValue(val);// :
@@ -1197,11 +1215,11 @@ private:
 					if (previous == '\\')continue;// escape
 					if (close != ch) {
 						// open string
-						current.add(value(ch).setType(strings));
+						current.add(string(ch));
 						break;
 					}
 					Node id = Node(text.substring(start, at));
-					id.setType(Type::strings);
+//					id.setType(Type::strings);// NO "3" could have be resolved as number
 					current.add(id);
 					break;
 				}
@@ -1210,12 +1228,15 @@ private:
 				case ';':
 				case ',':
 				case ' ': {
-					if (close == '"' or close == '\'' or close == '`')continue;
-					current.add(value(ch).clone());// space is list operator
+					if (previous == ',' or previous == close or close == '"' or close == '\'' or close == '`') {
+						proceed();
+						continue;
+					}
+					current.add(value(ch));// space is list operator
 					break;
 				}
 				default: {
-					Node *node = words().clone();
+					Node node = words();
 					current.add(node);
 				}
 			}
