@@ -13,7 +13,9 @@
 #pragma clang diagnostic ignored "-Wstring-compare"
 #define let auto
 #define var auto
+
 #include "NodeTypes.h"
+
 typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
@@ -57,6 +59,7 @@ void printf(const char *format, chars i);
 #endif
 
 class String;
+
 String typeName(Type t);
 
 String str(const char *&s);
@@ -163,7 +166,7 @@ void reverse(char *str, int len);
 // Implementation of itoa()
 
 char *itoa(long num, int base = 10) {
-	char *str = (char *)malloc(100);// todo: from context.names char*
+	char *str = (char *) malloc(100);// todo: from context.names char*
 	int len = 0;
 	bool isNegative = false;
 	/* Handle 0 explicitely, otherwise empty string is printed for 0 */
@@ -206,6 +209,7 @@ void reverse(char *str, int len) {
 //}
 
 #include <malloc.h>
+
 class String {
 
 public:
@@ -213,12 +217,12 @@ public:
 	int length = -1;
 
 	String() {
-		data = static_cast<char *>(calloc(sizeof(char),2));
+		data = static_cast<char *>(calloc(sizeof(char), 2));
 		length = 0;
 	}
 
 	String(char c) {
-		data = static_cast<char *>(calloc(sizeof(char) , 2));
+		data = static_cast<char *>(calloc(sizeof(char), 2));
 		data[0] = c;
 		data[1] = 0;
 		length = 1;
@@ -314,9 +318,8 @@ public:
 	}
 
 
-
 	String operator%(String &c) {
-		if(!contains("%s"))
+		if (!contains("%s"))
 			return *this + c;
 		String b = this->clone();
 		b.replace("%s", c);
@@ -405,8 +408,8 @@ public:
 	}
 
 	String operator++(int postfix) {//
-		this->data += postfix;// self modifying ok?
-		length -= postfix;
+		this->data += 1+postfix;// self modifying ok?
+		length -= 1+postfix;
 		return *this;
 	}
 
@@ -423,7 +426,7 @@ public:
 	}
 
 	bool operator==(char *c) const {
-		if(!this)
+		if (!this)
 			return false;// how lol e.g. me.children[0].name => nil.name
 		return eq(data, c);
 	}
@@ -480,10 +483,15 @@ public:
 // type conversions
 
 	explicit operator int() { return atoi(data); }
+
 //	 operator char*()  { return data; }
 	explicit operator int() const { return atoi(data); }
-	operator char*() const { return data; }
 
+	operator char *() const { return data; }
+
+	bool isNumber() {
+		return atoi0(data);
+	}
 };
 //String String::operator++() {
 //	this->data++;// self modifying ok?
@@ -602,6 +610,10 @@ String typeName(Type t) {
 	switch (t) {
 		case objects:
 			return "object";
+		case groups:
+			return "group";
+		case patterns:
+			return "pattern";
 		case keyNode:
 			return "node";
 		case reference:
