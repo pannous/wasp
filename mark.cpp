@@ -136,7 +136,9 @@ class Mark {
 	String UNEXPECT_CHAR = "Unexpected character ";
 
 	int at = -1;//{};            // The index of the current character PLUS ONE todo
+	char previous = 0;
 	char ch = 0;            // The current character
+	char next = 0;
 	int lineNumber{};    // The current line number
 	int columnStart{};    // The index of column start char
 
@@ -154,6 +156,7 @@ public:
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
 	static Node parse(String source) {
+		printf("Parsing %s\n", source.data);
 		return Mark().read(source);
 	}
 
@@ -225,7 +228,7 @@ private:
 	};
 
 	String renderChar(char chr) {
-		return chr == '\n' ? s("-1") : String('\'') + chr + '\'';
+		return chr == '\n' ? s("\\n") : String('\'') + chr + '\'';
 	};
 
 	String backtrace2() {
@@ -267,12 +270,13 @@ private:
 	}
 
 	char back() {
+		previous = ch;
 		ch = text.charAt(--at);
 		at--;
 		return ch;
 	}
 
-	char next(char c = 0) {
+	char proceed(char c = 0) {
 		// If a c parameter is provided, verify that it matches the current character.
 		if (c && c != ch) {
 			error(s("Expected '") + c + "' instead of " + renderChar(ch));
@@ -282,9 +286,12 @@ private:
 			return -1;
 		}
 		// Get the next character. When there are no more characters, return the empty string.
+		previous = ch;
 		ch = text.charAt(at);
+		if (at + 1 >= text.length)next = 0;
+		else next = text.charAt(at + 1);
 		at++;
-		if (ch == '\n' || (ch == '\r' && text[at] != '\n')) {
+		if (ch == '\n' || (ch == '\r' && next != '\n')) {
 			lineNumber++;
 			columnStart = at;
 		}
@@ -307,9 +314,9 @@ private:
 	bool is_identifier(char ch) {
 		if (ch == '#')return false;// size/count/length
 		if (ch == '=')return false;// size/count/length
-		if (ch == "＝"[0] and text[at] == "＝"[1])return false;// todo … !?!?
-		if (ch == "√"[0] and text[at] == "√"[1])return false;// todo … !?!?
-		if (ch == "≠"[0] and text[at] == "≠"[1])return false;// todo … !?!?
+		if (ch == "＝"[0] and next == "＝"[1])return false;// todo … !?!?
+		if (ch == "√"[0] and next == "√"[1])return false;// todo … !?!?
+		if (ch == "≠"[0] and next == "≠"[1])return false;// todo … !?!?
 		return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
 		       ch < 0;// ch<0: UNICODE
 //		not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
@@ -326,7 +333,7 @@ private:
 		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
 		var key = String(ch);
 		// subsequent characters can contain digits
-		while (next() &&
+		while (proceed() &&
 		       (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_' ||
 		        ch == '$' || ch < 0 /* UTF */ || ch == '.' || ch == '-')) {
 			// '.' and '-' are commonly used in html and xml names, but not valid JS name chars
@@ -344,7 +351,7 @@ private:
 
 		if (ch == '-' || ch == '+') {
 			sign = ch;
-			next(ch);
+			proceed(ch);
 		}
 
 		// support for Infinity (could tweak to allow other words):
@@ -366,28 +373,28 @@ private:
 
 		if (ch == '0') {
 			string += ch;
-			next();
+			proceed();
 		} else {
 			while (ch >= '0' && ch <= '9') {
 				string += ch;
-				next();
+				proceed();
 			}
 			if (ch == '.') {
 				string += '.';
-				while (next() && ch >= '0' && ch <= '9') {
+				while (proceed() && ch >= '0' && ch <= '9') {
 					string += ch;
 				}
 			}
 			if (ch == 'e' || ch == 'E') {
 				string += ch;
-				next();
+				proceed();
 				if (ch == '-' || ch == '+') {
 					string += ch;
-					next();
+					proceed();
 				}
 				while (ch >= '0' && ch <= '9') {
 					string += ch;
-					next();
+					proceed();
 				}
 			}
 		}
@@ -427,20 +434,20 @@ private:
 		// when parsing for string values, we must look for ' or " and \ characters.
 		if (ch == '"' || ch == '\'') {
 			delim = ch;
-			if (text[at] == delim && text[at + 1] == delim) { // got tripple quote
+			if (next == delim && text[at + 1] == delim) { // got tripple quote
 				triple = true;
-				next();
-				next();
+				proceed();
+				proceed();
 			}
-			while (next()) {
+			while (proceed()) {
 				if (ch == delim) {
-					next();
+					proceed();
 					if (!triple) { // end of string
 						return Node(string);
 						return Node(text.substring(start, at - 2));
-					} else if (ch == delim && text[at] == delim) { // end of tripple quoted text
-						next();
-						next();
+					} else if (ch == delim && next == delim) { // end of tripple quoted text
+						proceed();
+						proceed();
 						return Node(text.substring(start, at - 2));
 //						todo: escape
 					} else {
@@ -451,18 +458,18 @@ private:
 				if (ch == '\\') { // escape sequence
 					if (triple) { string += '\\'; } // treated as normal char
 					else { // escape sequence
-						next();
+						proceed();
 						if (ch == 'u') { // unicode escape sequence
 							long uffff = 0; // unicode
 							for (i = 0; i < 4; i += 1) {
-								hex = parseInt(next(), 16);
+								hex = parseInt(proceed(), 16);
 //								if (!isFinite(hex)) { break; }
 								uffff = uffff * 16 + hex;
 							}
 							string = string + fromCharCode(uffff);
 						} else if (ch == '\r') { // ignore the line-end, as defined in ES5
-							if (text[at] == '\n') {
-								next();
+							if (next == '\n') {
+								proceed();
 							}
 						} else if (escapee(ch)) {
 							string += escapee(ch);
@@ -493,9 +500,9 @@ private:
 			error("Not an inline comment");
 		}
 		do {
-			next();
+			proceed();
 			if (ch == '\n' || ch == '\r') {
-				next();
+				proceed();
 				return;
 			}
 		} while (ch);
@@ -511,11 +518,11 @@ private:
 			error("Not a block comment");
 		}
 		do {
-			next();
+			proceed();
 			while (ch == '*') {
-				next('*');
+				proceed('*');
 				if (ch == '/') {
-					next('/');
+					proceed('/');
 					return;
 				}
 			}
@@ -531,7 +538,7 @@ private:
 		if (ch != '/') {
 			error("Not a comment");
 		}
-		next('/');
+		proceed('/');
 		if (ch == '/') {
 			inlineComment();
 		} else if (ch == '*') {
@@ -551,7 +558,7 @@ private:
 				comment();
 //				auto ws = {' ', '\t', '\r', '\n'};
 			} else if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
-				next();
+				proceed();
 			} else {
 				return;
 			}
@@ -586,10 +593,10 @@ private:
 	Node builtin_operator() {
 		Node node = Node(ch);
 		node.setType(operators);// todo ++
-		next();
+		proceed();
 		while (ch < 0 or is_operator(ch)) {// utf8 √ …
 			node.name += ch;
-			next();
+			proceed();
 		}
 		return node;
 	}
@@ -711,18 +718,18 @@ private:
 
 	Node pragma2(char prag = '\n') {// sende in mark??
 		let level = 0;
-		next();  // skip starting '('
+		proceed();  // skip starting '('
 		while (ch) {
 			if (ch == ')') {
 				if (level) { level--; } // embedded (...)
 				else { // end of pragma
-					next();  // skip ending ')'
+					proceed();  // skip ending ')'
 					return pragma2(prag);
 				}
 			} else if (ch == '(') { level++; } // store as normal char
 			// else - normal char
 			prag += ch;
-			next();
+			proceed();
 		}
 		breakpoint_helper
 		throw error(UNEXPECT_END);
@@ -736,11 +743,11 @@ private:
 		auto *array0 = static_cast<Node *>(malloc(sizeof(Node *) * 100));// todo: GROW!
 //		arr.value.node = array0;
 		int len = 0;
-		next();  // skip the starting '['
+		proceed();  // skip the starting '['
 		white();
 		while (ch) {
 			if (ch == ']') {
-				next();
+				proceed();
 				Node arr = Node(&array0);
 				arr.length = len;
 				return arr;   // Potentially empty array
@@ -758,7 +765,7 @@ private:
 
 			// comma is optional in Mark
 			if (ch == ',') { //  or ch == ';' not in list
-				next();
+				proceed();
 				white();
 			}
 		}
@@ -794,7 +801,7 @@ private:
 
 
 		at++;  // skip the starting '{:'
-		if (text[at] == '~') { // base85
+		if (next == '~') { // base85
 			at++;  // skip '~'
 			// code based on https://github.com/noseglid/base85/blob/master/lib/base85.js
 			let end = text.indexOf('}', at + 1);  // scan binary end
@@ -804,14 +811,14 @@ private:
 			let p = 0;
 			byte base[end - at + 3];  // 3 extra bytes of padding
 			while (at < end) {
-				let code = lookup85[text.charCodeAt(at)];  // console.log('bin: ', text[at], code);
+				let code = lookup85[text.charCodeAt(at)];  // console.log('bin: ', next, code);
 				if (code > 85) { error("Invalid ascii85 character"); }
 				if (code < 85) { base[p++] = code; }
 				// else skip spaces
 				at++;
 			}
 			at = end + 2;
-			next();  // skip '~}'
+			proceed();  // skip '~}'
 			// check length
 			if (p % 5 == 1) { error("Invalid ascii85 stream length"); }
 
@@ -864,14 +871,14 @@ private:
 			byte base[bufEnd - at];
 			let p = 0;
 			while (at < bufEnd) {
-				let code = lookup64[text.charCodeAt(at)];  // console.log('bin: ', text[at], code);
+				let code = lookup64[text.charCodeAt(at)];  // console.log('bin: ', next, code);
 				if (code > 64) { error("Invalid base64 character"); }
 				if (code < 64) { base[p++] = code; }
 				// else skip spaces
 				at++;
 			}
 			at = end + 1;
-			next();  // skip '}'
+			proceed();  // skip '}'
 			// check length
 			if ((pad && (p + pad) % 4 != 0) || (!pad && p % 4 == 1)) {
 				error("Invalid base64 stream length");
@@ -931,8 +938,8 @@ private:
 
 	void parseContent(Node &obj) {//context
 		while (ch) {
-			if (ch == ' ')next();// allow spaces {a : 3}
-			else if (ch == '#') while (ch != '\n' and ch != 0)next();
+			if (ch == ' ')proceed();// allow spaces {a : 3}
+			else if (ch == '#') while (ch != '\n' and ch != 0)proceed();
 			else if (ch == '(') {
 //				let child = pragma();
 				Node child = object(')');
@@ -941,7 +948,7 @@ private:
 //				obj.setParams(child.children)
 				obj.set(obj.length, &child);// OR ATTRIBUTE!
 			} else if (ch == '{') { // child object
-				let child = (text[at] == ':' ? binary() : object());
+				let child = (next == ':' ? binary() : object());
 				obj.set(obj.length, &child);// NR as key!
 			} else if (ch == '"' || ch == '\'') { // text node
 				let str = string();
@@ -950,12 +957,12 @@ private:
 				putText(str.string(), obj);
 				todo("what to do with list of string? concat?");
 			} else if (ch == ';' || ch == ',' || ch == '\n') {// end of expression
-				next();
+				proceed();
 			} else if (ch == ')') {
-				next();
+				proceed();
 				return;
 			} else if (ch == '}') {
-				next();
+				proceed();
 				return;
 			} else {
 				breakpoint_helper
@@ -982,7 +989,7 @@ private:
 	}
 
 	Node &object(char closing_brace = '}') {
-		next();
+		proceed();
 		white();  // skip the starting '{'
 		String key = EMPTY;        // property key
 		bool extended = false;    // whether the is extended Mark object or legacy JSON object
@@ -990,7 +997,7 @@ private:
 		Node obj;
 		while (ch && ch != -1) {
 			if (ch == closing_brace /* '}' or ')'*/) { // end of the object
-				next();
+				proceed();
 				if (extended) {
 					log("TODO");// TODO
 //					obj.set($length, index);
@@ -1054,7 +1061,7 @@ private:
 			}
 
 			// key-value pair
-			next(); // skip ':'
+			proceed(); // skip ':'
 			if (extended && !isNaN(key)) { // any numeric key is rejected for Mark object
 				error("Numeric key not allowed as Mark property name");
 			}
@@ -1077,7 +1084,7 @@ private:
 			white();
 			// ',' is optional in Mark
 			if (ch == ',' or ch == ';') {
-				next();
+				proceed();
 				white();
 			}
 		}
@@ -1093,37 +1100,84 @@ private:
 
 //	Node quote(char type, char close) {
 //	}
+
+
+/*
+			Node &child = obj[key];
+//			if (obj.length == 1)assert(obj.children == &child or obj.children == child.parent);
+			if (child.length != 0) {//} && obj[key].type != "function") {
+				log(child);
+				child = obj[key];// debug
+				error(s("Duplicate key not allowed: ") + key);
+			}
+			var val = value();
+			if (val.name.length == 0 and val.type == strings)val.name = val.value.string;
+			if (val.name.length == 0 and val.type == keyNode)val.name = val.value.node->name;
+			if (obj.name.length == 0)obj.name = object_name;
+			child = val;// SET reference!
+			child.name = key;
+			child.type = val.type;
+			child.parent = &obj;
+			obj.type = objects;
+ */
+
+// ":" is short binding a b:c d == a (b:c) d
+// "=" is long-binding a b=c d == (a b)=(c d)   todo a=b c=d
+// special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
+// special : close=';' : single expression a = 1 + 2
+// significant whitespace a {} == a,{}{}  
 	Node value(char close = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
+		Node list;
 		Node current;
+		current.setType(groups);// may be changed later, default (1 2)==1,2
 		var length = text.length;
 		int start = at;
 		loop:
-		next();
-		while (at <= length) {
+		proceed();
+		while (ch and at <= length) {
 //			white();// sets ch todo 1+1 != 1 +1
-			char _next = text[at];
-			if (ch == close) {
-				next();
+			if (previous == '\\') {
+				proceed();
+				continue;
+			}// escape ANYTHING
+			if (ch == close or close == ' ' and (ch == ';' or ch == ',' or ch == '\n')) {// todo: a=1,2,3
+				proceed();
 				break;
 			}// inner match ok
-
 			if (ch == '}' or ch == ']' or ch == ')')
 				return current;// outer match unresolved so far
 			switch (ch) {
+				case '=':
 				case ':': {
-					current.value.node = value().clone();// applies to WHOLE expression
+					// todo {a b c:d} vs {a:b c:d}
+					Node &key = current.last();
+					Node *val = value(' ').clone();// applies to WHOLE expression
+					if ((val->type == groups or val->type == objects) and val->length == 1)
+						val = &val->last();// singleton
+					if (val->value.longy) {
+						key.value = val->value;// direct copy value SURE?? what about meta data... ?
+						key.type = val->type;
+					} else {
+						key.value.node = val;
+//					if(val->type==objects)
+						key.type = keyNode;
+					}
+//					val->name = key.name;// really? "3" == "a" ?
+//key.setValue(val);// :
+//					if(val->type==longs)key.value = val->value; ja?
+					break;
 				}
-//				current.params = value().children;
-					current.children = value().children;
 				case '{':
-					current.add(value('}').setType(Type::objects));
+					current.last().add(value('}').setType(Type::objects));
+//					current.add(value('}').setType(Type::objects));
 					break;
 				case '[':
 					current.add(value(']').setType(Type::patterns));
 					break;
 				case '(':
-					current.add(value(')').setType(Type::groups));
+					current.last().add(value(')').setType(Type::groups));// lists handled by ' '!
+//					current.add(value(')').setType(Type::groups));
 					break;
 				case '}':
 				case ')':
@@ -1133,27 +1187,32 @@ private:
 				case '-':
 				case '+':
 				case '.':
-					if (isDigit(_next))
+					if (isDigit(next))
 						return number();
 					else
 						return words();
 				case '"':
 				case '\'':
 				case '`': {
-					if (close == 0) // open string
-						return value(ch);
+					if (previous == '\\')continue;// escape
+					if (close != ch) {
+						// open string
+						current.add(value(ch).setType(strings));
+						break;
+					}
 					Node id = Node(text.substring(start, at));
 					id.setType(Type::strings);
 					current.add(id);
 					break;
 				}
+				case '\t':
+				case '\n':
 				case ';':
 				case ',':
 				case ' ': {
 					if (close == '"' or close == '\'' or close == '`')continue;
-					next();
-//					Node id = Node(text.substring(start, at-1)); handled by default before
-//					current.add(id);
+					current.add(value(ch).clone());// space is list operator
+					break;
 				}
 				default: {
 					Node *node = words().clone();
@@ -1161,6 +1220,7 @@ private:
 				}
 			}
 		}
+		bool keepBlock = close == '}';
 		if (current.length == 1) {
 //			if (current.value.node == &current.children[0])return *current.value.node;
 //			if (current.value.longy and current.children[0].value.longy)
@@ -1177,7 +1237,7 @@ private:
 	Node value2() {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		white();// todo 1+1 != 1 +1
-		char _next = text[at];
+		char _next = next;
 		switch (ch) {
 			case '{':
 				return (_next == ':' or _next == '=') ?
@@ -1188,9 +1248,9 @@ private:
 				return params();
 //				return object();
 			case "ø"[0]:
-				next();
+				proceed();
 				if (ch == "ø"[1]) {
-					next();
+					proceed();
 					return NIL;
 				} else back();
 			case '"':
