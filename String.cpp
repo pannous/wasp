@@ -78,6 +78,7 @@ bool eq(const char *dest, const char *src) {
 	if (!dest || !src)
 		return false;
 	int i = 0;
+	if(dest=="" and src[0])return false ;
 	if (strlen(dest) != strlen(src))return false;
 	while (char c = dest[i]) {
 		if (!src[i] || !c)
@@ -86,15 +87,6 @@ bool eq(const char *dest, const char *src) {
 			return false;
 		i++;
 	}
-	if (src[i])
-		return false;// different length!
-//	while (char c = src[i]) {
-//		if (!dest[i] || !c)
-//			return false;
-//		if (dest[i] != c)
-//			return false;
-//		i++;
-//	}
 	return true;
 }
 
