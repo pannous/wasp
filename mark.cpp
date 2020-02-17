@@ -313,7 +313,11 @@ private:
 
 	bool is_identifier(char ch) {
 		if (ch == '#')return false;// size/count/length
-		if (ch == '=')return false;// size/count/length
+		if (ch == '=')return false;
+		if (ch == ' ')return false;
+		if (ch == ';')return false;
+		if (ch == '.')return false;
+//		if (ch == '-')return false;// todo
 		if (ch == "＝"[0] and next == "＝"[1])return false;// todo … !?!?
 		if (ch == "√"[0] and next == "√"[1])return false;// todo … !?!?
 		if (ch == "≠"[0] and next == "≠"[1])return false;// todo … !?!?
@@ -332,13 +336,15 @@ private:
 
 		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
 		var key = String(ch);
+		// subsequent characters can contain ANYTHING
+		while (proceed() and is_identifier(ch))key+=ch;
 		// subsequent characters can contain digits
-		while (proceed() &&
-		       (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_' ||
-		        ch == '$' || ch < 0 /* UTF */ || ch == '.' || ch == '-')) {
-			// '.' and '-' are commonly used in html and xml names, but not valid JS name chars
-			key += ch;
-		}
+//		while (proceed() &&
+//		       (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_' ||
+//		        ch == '$' || ch < 0 /* UTF */ || ch == '.' || ch == '-')) {
+//			 '.' and '-' are commonly used in html and xml names, but not valid JS name chars
+//			key += ch;
+//		}
 		key += '\0';// 0x00;
 		return key;
 	};
@@ -429,7 +435,7 @@ private:
 			proceed();
 		const String &substring = text.substring(start, at - 1);
 		proceed();
-		return Node(substring);
+		return Node(substring).setType(strings);// DONT do "3"==3 (here or ever)!
 	}
 
 // Parse a string value.
@@ -616,19 +622,28 @@ private:
 		if (node.name == "no")return False;
 		if (node.name == "No")return False;
 		if (node.name == "ƒ")return False;// ‽
+		if (node.name == "𐄂")return False;// ‽
+
 		//		if (node.name == "wrong")return False;
 //		if (node.name == "Wrong")return False;
 		if (node.name == "true")return True;
 		if (node.name == "True")return True;
 		if (node.name == "yes")return True;
 		if (node.name == "Yes")return True;
-		if (node.name == "√")return True;
+		if (node.name == "✔\uefb88f")return True;// green
+		if (node.name == "✔")return True;
+		if (node.name == "🗸")return True;
+		if (node.name == "✓️")return True;
+		if (node.name == "✓")return True;
+		if (node.name == "☑")return True;
+		if (node.name == "🗹")return True;
 //		if (node.name == "Right")return True;// unless class!
 //		if (node.name == "right")return True;
 		if (node.name == "NIL")return NIL;
 		if (node.name == "null")return NIL;
 		if (node.name == "nill")return NIL;
 		if (node.name == "nil")return NIL;
+		if (node.name == "ø")return NIL;// nil not added to lists
 		return node;
 	}
 
@@ -1130,6 +1145,25 @@ private:
 			obj.type = objects;
  */
 
+	Node &setField(Node &key) { // a:{b}
+		Node &val = *value(' ').clone();// applies to WHOLE expression
+		if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1)
+			val = val.last();// singleton
+		if (val.value.longy and val.type != objects) {
+			key.value = val.value;// direct copy value SURE?? what about meta data... ?
+			key.type = val.type;
+		} else {
+			key.type = keyNode;
+			if (!key.children and val.name.empty() and val.length > 1) { // deep copy why?
+				key.children = val.children;
+				key.length = val.length;
+				key.type = val.type;
+			} else if(!val.isNil())
+				key.value.node = &val;// clone?
+		}
+		return key;
+	}
+
 // ":" is short binding a b:c d == a (b:c) d
 // "=" is long-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
@@ -1164,32 +1198,18 @@ private:
 				case ':': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
-					Node &val = *value(' ').clone();// applies to WHOLE expression
-					if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1)
-						val = val.last();// singleton
-					if (val.value.longy and val.type!=objects) {
-						key.value = val.value;// direct copy value SURE?? what about meta data... ?
-						key.type = val.type;
-					} else {
-						key.type = keyNode;
-						if (!key.children and val.name.empty() and val.length > 1) { // deep copy why?
-							key.children = val.children;
-							key.length = val.length;
-							key.type = val.type;
-						} else
-							key.value.node = &val;// clone?
-//						key.add(val);
-//					if(val->type==objects)
-					}
-//					val->name = key.name;// really? "3" == "a" ?
-//key.setValue(val);// :
-//					if(val->type==longs)key.value = val->value; ja?
+					setField(key);
 					break;
 				}
 				case '{':
 					current.last().add(value('}').setType(Type::objects));
 //					current.add(value('}').setType(Type::objects));
 					break;
+				case '/':
+					if(next=='/' or next=='*'){
+						comment();
+						break;
+					}
 				case '[':
 					current.add(value(']').setType(Type::patterns));
 					break;
@@ -1219,7 +1239,7 @@ private:
 						break;
 					}
 					Node id = Node(text.substring(start, at));
-//					id.setType(Type::strings);// NO "3" could have be resolved as number
+					id.setType(Type::strings);// todo "3" could have be resolved as number? DONT do js magifuckery
 					current.add(id);
 					break;
 				}
