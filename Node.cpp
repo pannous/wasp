@@ -16,10 +16,10 @@ union Value {
 	Node *node = 0;// todo DANGER, can be lost :( !!
 //	Node **children = 0;
 	String string;
+	void *data;
 	long longy;
 //	float floaty;
 	double floaty;
-	void *data;
 
 	Value() {}// = default;
 };
@@ -132,7 +132,7 @@ public:
 	}
 
 	explicit Node(const char *name) {
-		name = name;
+		this->name = name;
 //		type = strings NAH;// unless otherwise specified! NO
 	}
 
@@ -315,7 +315,9 @@ public:
 	explicit operator char *() const { return value.string.data; }// or name()
 	Node &last();
 
-	bool empty();
+	bool empty();// same:
+	bool isEmpty();
+	bool isNil();
 };
 
 //
@@ -334,10 +336,10 @@ String EMPTY = String('\0');
 Node NaN = Node("NaN");
 //NIL=0;
 //Node NIL;
-Node NIL = Node("NIL");
-Node ERR = Node("ERR");// ≠ NIL
-Node True = Node("True");
-Node False = Node("False");
+Node NIL = Node("NIL").setType(nils);
+Node ERR = Node("ERR").setType(nils);// ≠ NIL
+Node True = Node("True").setType(bools);
+Node False = Node("False").setType(bools);
 
 Node &Node::operator=(int i) {
 	value.longy = i;
@@ -451,7 +453,7 @@ Node &Node::set(String string, Node *node) {
 //}
 
 bool Node::operator==(String other) {
-	if (type == objects or type==keyNode)return *value.node == other or value.string == other;
+	if (type == objects or type == keyNode)return *value.node == other or value.string == other;
 	if (type == longs) return other == itoa(value.longy);
 	if (type == reference) return other == name;
 	return type == strings and other == value.string;
@@ -491,12 +493,13 @@ bool Node::operator==(Node &other) {
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// same value enough?
 
-	if (&other == &NIL and type == nils and length == 0 and value.data == 0)return true;
+	if (&other == &NIL and (isNil() or empty()))
+		return true;
 	if (type != other.type and type != unknown and other.type != unknown)
 		if (type != keyNode and other.type != keyNode) return false;
 	if (type == bools)
-		return value.longy == other.value.longy or (other != NIL and other != False) or value.longy and
-		       other.value.longy;
+		return value.data == other.value.data or (other != NIL and other != False) or value.data and
+		       other.value.data;
 	if (type == longs)
 		return value.longy == other.value.longy;
 	if (type == strings)
@@ -537,11 +540,13 @@ Node values(Node n) {
 
 Node Node::evaluate() {
 	if (length == 0)return values(*this);
-	if (length == 1) {
+	if (length == 1)
 		if (type == operators)
 			return apply(NIL, *this, *children);
-		return values(children[0]);
-	}
+		else return values(children[0]);
+	if (length > 1)
+		if (type == operators)
+			return apply(NIL, *this, this->clone()->setType(objects));
 //	if (type != expression and type != keyNode)
 //		return *this;
 	float max = 0; // do{
@@ -597,19 +602,18 @@ void Node::remove(Node &node) {
 }
 
 void Node::add(Node *node) {
-	if (node->empty())
+	if (node->isNil())
 		return;// skipp nils!
-	if(not params and node->type==groups)
-		params=node->children;
+	if (not params and node->type == groups)
+		params = node->children;
 	else if (not children and node->type == patterns) {
 		children = node->children;// todo
 		length = node->length;
-		type=patterns;//todo!
-	}
-	else if (not children and node->type == objects and node->name.empty()) {
+		type = patterns;//todo!
+	} else if (not children and node->type == objects and node->name.empty()) {
 		children = node->children;
 		length = node->length;
-	}else { // todo a{x}{y z} => a{x,{y z}} BAD
+	} else { // todo a{x}{y z} => a{x,{y z}} BAD
 //	if (not children or (length == 0 and not value.node))
 //		value.node = node; later!
 		if (length >= capacity)
@@ -622,7 +626,7 @@ void Node::add(Node *node) {
 }
 
 void Node::add(Node node) {// merge?
-		add(&node);
+	add(&node);
 }
 //
 //void Node::add(Node &node) {
@@ -747,8 +751,10 @@ Node Node::apply(Node left, Node op0, Node right) {
 		// pipe todo
 	}
 
-	if (op == "&") {
+	if (op == "&") {// todo
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
+		if (left.type == bools or right.type == bools)
+			return left.value.data and right.value.data ? True : False;
 		return Node(left.value.longy & right.value.longy);
 	}
 
@@ -759,13 +765,14 @@ Node Node::apply(Node left, Node op0, Node right) {
 
 	if (op == "and" or op == "&&") {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		return Node(left.value.longy and right.value.longy);
-	}// bool?
+		return left.value.data and right.value.data ? True : False;
+	}
 
 	if (op == "or" or op == "||" or op == "&") {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		return Node(left.value.longy or right.value.longy);
-	}// bool?
+		if(!left.empty() and left!=NIL and left!=False)return left;
+		return left.value.data or right.value.data ? True : False;
+	}
 
 	if (op == "==" or op == "equals") {
 		return left == right;
@@ -821,7 +828,7 @@ Node &Node::setType(Type type) {
 
 // Node* OK? else Node&
 Node *Node::has(String s) {
-	if((type==objects or type==keyNode) and s==value.node->name)
+	if ((type == objects or type == keyNode) and s == value.node->name)
 		return value.node;
 	for (int i = 0; i < length; i++) {
 		Node &entry = children[i];
@@ -833,7 +840,7 @@ Node *Node::has(String s) {
 	}
 	for (int i = 0; i < length; i++) {
 		Node &entry = params[i];
-		if(&entry==0)break;
+		if (&entry == 0)break;
 		if (s == entry.name)
 			if ((entry.type == keyNode or entry.type == nils) and entry.value.node)
 				return entry.value.node;
@@ -848,6 +855,14 @@ Node &Node::last() {
 }
 
 bool Node::empty() {// nil!
-	return length == 0 and value.longy == 0 and name.empty();
+	return isEmpty();
+}
+
+bool Node::isEmpty() {// not required here: name.empty()
+	return length == 0 and value.longy == 0  or isNil();
+}
+
+bool Node::isNil() { // required here: name.empty()
+	return type == nils or ((type == keyNode or type == unknown or name.empty()) and length == 0 and value.data == 0);
 }
 

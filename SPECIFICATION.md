@@ -208,14 +208,27 @@ Attention:
 objects can be constructed with a{} a={} a:{} mostly equivalently 
 in javascript '=' is used for variable setters and ':' is used for fields
 
-DANGER a,b=c,d TWO READINGS 1. {a;b=c;d} 2. (a,b)=(c,d)
-
 Groups, blocks, lists
 () Node *params == group attributes meta modifiers decorators annotations
 {} Node *children == block body content 'set':setters!=Set? [[Setter Problem]]
 [] Node *list == selector pattern match
 a[b]=c == a.b=c
-a[[b]]=c (a that b)=c  a@b a~b
+a[[b]]=c (a that b)=c  a@b a~b=c (a.filter(b))=c
+
+
+DANGER a,b=c,d TWO READINGS
+1. (a;b=c;d) 2. (a,b)=(c,d)
+a b:c d ==  a,(b:c),d   "short-binding"
+a b=c d == (a,b)=(c,d)  "long- binding"
+
+usually '=' is long-binding, meaning it has higher prescedence than other operations,
+so the second reading is default.
+Within Groups, '=' is shortbinding like ':' a(href='link' hidden)
+BUT DANGER: group is default bag CONTRADICTION
+
+Solution? '=' be left-short-binding  a b=c d == (a b):c,d  NO WAY
+Solution: just write a(href:link style="")
+Solution: short-binding in lists, but how do we know?
 
 
 Diffenence of maps and constructors
