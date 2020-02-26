@@ -317,6 +317,7 @@ public:
 
 	bool empty();// same:
 	bool isEmpty();
+
 	bool isNil();
 };
 
@@ -616,6 +617,8 @@ void Node::add(Node *node) {
 	} else { // todo a{x}{y z} => a{x,{y z}} BAD
 //	if (not children or (length == 0 and not value.node))
 //		value.node = node; later!
+		if (node->length == 1 and node->name.empty())
+			node = &node->last();
 		if (length >= capacity)
 			error("Out of node Memory");
 		if (lastChild >= maxNodes)
@@ -770,7 +773,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 
 	if (op == "or" or op == "||" or op == "&") {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		if(!left.empty() and left!=NIL and left!=False)return left;
+		if (!left.empty() and left != NIL and left != False)return left;
 		return left.value.data or right.value.data ? True : False;
 	}
 
@@ -859,7 +862,7 @@ bool Node::empty() {// nil!
 }
 
 bool Node::isEmpty() {// not required here: name.empty()
-	return length == 0 and value.longy == 0  or isNil();
+	return length == 0 and value.longy == 0 or isNil();
 }
 
 bool Node::isNil() { // required here: name.empty()

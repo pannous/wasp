@@ -109,19 +109,22 @@ void testNetBase() {
 	chars json = fetch(url);
 	log(json);
 	Node result = Mark::parse(json);
-	assert(result["query"] == "2");
-	assert(result["count"] == "1");
-	assert(result["count"] == 1);
 	Node results = result["results"];
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
 	Node Erde = results;
+	Node &statements = Erde["statements"];
+	assert(statements.length >= 1); // or statements.value.node->length >=
+	assert(result["query"] == "2");
+	assert(result["count"] == "1");
+	assert(result["count"] == 1);
+
+//	skip(
+//			 );
 	assert(Erde["name"] == "Erde");
 //	assert(Erde.name == "Erde");
 	assert(Erde["id"] == 2);// todo : auto numbers when?
 	assert(Erde["kind"]==-104);
 //	assert(Erde.id==2);
-	Node &statements = Erde["statements"];
-	skip(assert(statements.length >= 1 or statements.value.node->length >= 1));
 }
 
 void testDiv() {
