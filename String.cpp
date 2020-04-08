@@ -207,9 +207,9 @@ void reverse(char *str, int len) {
 //char itoa(byte i) {
 //	return (char) (i + 0x30);
 //}
-
+#ifndef __APPLE__
 #include <malloc.h>
-
+#endif
 class String {
 
 public:
@@ -430,7 +430,7 @@ public:
 	}
 
 	bool operator==(char c) {
-		return !empty() && this[0] == c && this[1] == '\0';
+		return !length==0  && data  && data[0] == c && data[1] == '\0';
 	}
 
 	bool operator==(String &s) {// const
