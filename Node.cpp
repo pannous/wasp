@@ -698,6 +698,7 @@ float Node::precedence(Node &operater) {
 	if (eq(name, "||"))return 1.2;
 
 	if (eq(name, "√"))return 3;
+	if (eq(name, "#"))return 3;// count
 	if (eq(name, "++"))return 3;
 //	if (eq(node.name, "+"))return 3;//
 	if (eq(name, "--"))return 3;
@@ -733,10 +734,10 @@ Node Node::apply(Node left, Node op0, Node right) {
 		bool x = not left.evaluate();
 		return Node(x);
 	}
-	if (op == "#") {
+	if (op == "#" or op == '#') {
 		return right.length;// or right["size"] or right["count"]  or right["length"]
 	}
-	if (op == "√") {
+	if(op == "√" or String(op.data) == "√") {
 		Node &unary_result = NIL;
 		if (right.type == floats)
 			unary_result = Node(sqrt(right.value.floaty));

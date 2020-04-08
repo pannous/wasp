@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
+//The deprecated ucontext routines require _XOPEN_SOURCE to be defined
+#define _XOPEN_SOURCE
 #include <ucontext.h>
 #include <dlfcn.h>
 #ifndef NO_CPP_DEMANGLE
@@ -54,6 +56,8 @@ using __cxxabiv1::__cxa_demangle;
 #endif
 bool showRegisters= false;
 
+#define MAC
+
 // NICE, BREAKPOINT WORKS!!!
 static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 	static const char *si_codes[4] = {"", "SEGV_MAPERR", "SEGV_ACCERR","SIGABRT"};
@@ -62,7 +66,8 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 	Dl_info dlinfo;
 	void **bp = 0;
 	void *ip = 0;
-
+#ifdef HAS_ULSLIB
+//#ifndef MAC
 	sigsegv_outp("Segmentation Fault!");
 	sigsegv_outp("info.si_signo = %d", signum);
 	sigsegv_outp("info.si_errno = %d", info->si_errno);
@@ -127,6 +132,8 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 #else
 	sigsegv_outp("Not printing stack strace.");
 #endif
+#endif
+
 	_exit (-1);
 }
 // Alternative: turn SIGSEGV into c++ exception https://stackoverflow.com/questions/2350489/how-to-catch-segmentation-fault-in-linux
