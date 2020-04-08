@@ -130,13 +130,13 @@ void testNetBase() {
 void testDiv() {
 	Node div = Mark::parse("div{ span{ class:'bold' 'text'} br}");
 	Node &node = div["span"];
-	assert(div["span"].length == 2)
-	assert(div["span"]["class"]=="bold");
+	assert(div["span"].length == 2);
+//	assert(div["span"]["class"] == "bold")
 }
 
 void testDivMark() {
 	Node div = Mark::parse("{div {span class:'bold' 'text'} {br}}");
-	assert(div["span"].length==2)
+	assert(div["span"].length==2);
 	assert(div["span"]["class"]=="bold");
 }
 
@@ -555,7 +555,6 @@ void testLengthOperator() {
 }
 
 void tests() {
-	testRoots();
 	testLengthOperator();
 	testEval();
 	testLogic();
@@ -587,6 +586,7 @@ void tests() {
 	testMapsAsLists();
 	testSamples();
 	testNetBase();
+	testRoots();
 }
 
 void testBUG() {
