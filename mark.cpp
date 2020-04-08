@@ -76,9 +76,12 @@ void _cxa_throw(){
 #else // NOT WASM:
 
 
+#include <zconf.h>
 #import "Backtrace.cpp"
 #include "ErrorHandler.h"
+#ifndef __APPLE__
 #include <malloc.h>
+#endif
 #include <zconf.h>
 
 //NEEDED, else terminate called without an active exception
