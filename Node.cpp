@@ -4,6 +4,7 @@
 //
 ////#include "Node.h"
 #include "String.h"
+#include "NodeTypes.h"
 
 struct Node;
 extern Node True;
@@ -228,7 +229,7 @@ public:
 
 	Node &set(String string, Node *node);
 
-	Node evaluate();
+	Node evaluate(bool expectOperator);
 
 	void add(Node node);
 
@@ -539,7 +540,7 @@ Node values(Node n) {
 	return n;
 }
 
-Node Node::evaluate() {
+Node Node::evaluate(bool expectOperator=true) {
 	if (length == 0)return values(*this);
 	if (length == 1)
 		if (type == operators)
@@ -728,7 +729,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 	String &op = op0.name;
 	bool lazy = (op == "or") and (bool) left;
 	if (!lazy)
-		right = right.evaluate();
+		right = right.evaluate(false);
 
 	if (op == "not" or op == "¬" or op == "!") {
 		bool x = not left.evaluate();
@@ -737,7 +738,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 	if (op == "#" or op == '#') {
 		return right.length;// or right["size"] or right["count"]  or right["length"]
 	}
-	if(op == "√" or String(op.data) == "√") {
+	if(op == "√" or String(op.data) == String("√")) { // why String( on mac?
 		Node &unary_result = NIL;
 		if (right.type == floats)
 			unary_result = Node(sqrt(right.value.floaty));

@@ -78,6 +78,7 @@ Node assert_parsesx(const char *mark) {
 	return ERR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
 
+#define check(test) if(test){}else{printf("NOT PARSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 //#define assert_parses(mark) result=assert_parsesx(mark);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 #define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(0);}
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
@@ -598,6 +599,9 @@ void testBUG() {
 }
 
 void todos() {
+	String a="xor";
+bool ok=	a=="xor";
+	check(a=="xor")
 	assert_parses("(add x y)");// expression!
 	//	testNetBase();
 //	testBUG();
@@ -607,7 +611,7 @@ void todos() {
 // valgrind --track-origins=yes ./mark
 void testCurrent() { // move to tests() once OK
 //	tests();// make sure all still ok after changes
-//	todos();
+	todos();
 	testNetBase();
 //	testGraphQlQuery();
 	tests();
