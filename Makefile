@@ -48,10 +48,10 @@ RM = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/me/mark
+CMAKE_SOURCE_DIR = /Users/me/dev/apps/mark
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/me/mark
+CMAKE_BINARY_DIR = /Users/me/dev/apps/mark
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/me/mark/CMakeFiles /Users/me/mark/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/me/dev/apps/mark/CMakeFiles /Users/me/dev/apps/mark/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/me/mark/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/me/dev/apps/mark/CMakeFiles 0
 .PHONY : all
 
 # The main clean target

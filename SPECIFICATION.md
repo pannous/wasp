@@ -209,7 +209,7 @@ objects can be constructed with a{} a={} a:{} mostly equivalently
 in javascript '=' is used for variable setters and ':' is used for fields
 
 Groups, blocks, lists
-() Node *params == group attributes meta modifiers decorators annotations
+() Node *param == group attributes meta modifiers decorators annotations
 {} Node *children == block body content 'set':setters!=Set? [[Setter Problem]]
 [] Node *list == selector pattern match
 a[b]=c == a.b=c
