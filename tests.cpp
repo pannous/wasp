@@ -1,8 +1,11 @@
 Node result;
 
 bool assert_equals(double a, double b, char *context = "") {
-	if (a != b)// err
-		puts("FAILED assert_equals! %f should be %f in %s"s % a % b % context);
+	if (a != b){
+		printf("FAILED assert_equals! %f should be %f in %s",  a , b , context);
+//		puts("FAILED assert_equals! %f should be %f in %s"s % a % b % context);
+//		exit(0);
+	}// err
 	else puts("OK %f==%f in %s"s % a % b % context);
 	return a == b;
 }
@@ -45,7 +48,10 @@ bool assert_isx(char *mark, Node expect) {
 			long b = expect.longe();
 			return assert_equals(left.longe(), b, mark);
 		}
-		if (left != expect)printf("%s≠%s\n", left.name.data, expect.name.data);
+		if (left != expect)
+//			breakpoint_helper
+			if (left != expect)// Redundant for Breakpoint ;)
+				printf("FAILED %s≠%s\n", left.name.data, expect.name.data);
 		return left == expect;
 	} catch (SyntaxError *err) {
 		printf("\nERROR IN TEST\n");
@@ -78,7 +84,7 @@ Node assert_parsesx(const char *mark) {
 	return ERR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
 
-#define check(test) if(test){}else{printf("NOT PARSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+#define check(test) if(test){}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 //#define assert_parses(mark) result=assert_parsesx(mark);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 #define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(0);}
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
@@ -124,7 +130,7 @@ void testNetBase() {
 	assert(Erde["name"] == "Erde");
 //	assert(Erde.name == "Erde");
 	assert(Erde["id"] == 2);// todo : auto numbers when?
-	assert(Erde["kind"]==-104);
+	assert(Erde["kind"] == -104);
 //	assert(Erde.id==2);
 }
 
@@ -137,8 +143,8 @@ void testDiv() {
 
 void testDivMark() {
 	Node div = Mark::parse("{div {span class:'bold' 'text'} {br}}");
-	assert(div["span"].length==2);
-	assert(div["span"]["class"]=="bold");
+	assert(div["span"].length == 2);
+	assert(div["span"]["class"] == "bold");
 }
 
 void testMarkAsMap() {
@@ -270,6 +276,7 @@ void testMarkMulti3() {
 	assert_parses(source);
 	assert(result["b"] == 3);
 }
+
 void testOverwrite() {
 	const char *source = "{a:'HIO' b:3}";
 	assert_parses(source);
@@ -328,7 +335,7 @@ void testMath() {
 }
 
 void testRoot() {
-	skip(assert_is("40+√4", 42));// todo tokenized as +√
+	skip(assert_is("40+√4", 42, 0));// todo tokenized as +√
 	assert_is("√4", 2);
 	assert_is("√4+40", 42);
 	assert_is("40 + √4", 42);
@@ -337,7 +344,7 @@ void testRoot() {
 void testRootFloat() {
 //	assert_is("√42*√42", 42.);// todo tokenized as *√
 	assert_is("√42 * √42", 42.);
-//	assert_is("√42*√42", Node(42.));
+//	assert_is("√42*√42", Node(42.,0 ));
 //	assert_is("√42*√42", 42);
 //	assert_is("√42*√42",42);// int rounding to 41 todo?
 }
@@ -441,7 +448,7 @@ void testGraphQlQuery() {
 	              "  }\n"
 	              "}");
 	assert(result["human"]["id"] == 1000);
-	skip(assert(result["id"] == 1000));// if length==1 descend!
+	skip(assert(result["id"] == 1000, 0));// if length==1 descend!
 }
 
 void testGraphParams() {
@@ -463,36 +470,38 @@ void testGraphParams() {
 }
 
 void testRootLists() {
-	assert_is("1;2;3", Node(1, 2, 3))
-	assert_is("a;b;c", Node("a", "b", "c"))
-	assert_is("1 2 3", Node(1, 2, 3))
-	assert_is("a b c", Node("a", "b", "c"))
-	assert_is("1,2,3", Node(1, 2, 3))
-	assert_is("a,b,c", Node("a", "b", "c"))
-	assert_is("(1 2 3)", Node(1, 2, 3))
-	assert_is("(a b c)", Node("a", "b", "c"))
-	assert_is("(1,2,3)", Node(1, 2, 3))
-	assert_is("(a,b,c)", Node("a", "b", "c"))
-	assert_is("(1;2;3)", Node(1, 2, 3))
-	assert_is("(a;b;c)", Node("a", "b", "c"))
-	assert_is("{1 2 3}", Node(1, 2, 3))
-	assert_is("{a b c}", Node("a", "b", "c"))
-	assert_is("{1,2,3}", Node(1, 2, 3))
-	assert_is("{a,b,c}", Node("a", "b", "c"))
-	assert_is("{1;2;3}", Node(1, 2, 3))
-	assert_is("{a;b;c}", Node("a", "b", "c"))
-	assert_is("[1 2 3]", Node(1, 2, 3))
-	assert_is("[a b c]", Node("a", "b", "c"))
-	assert_is("[1,2,3]", Node(1, 2, 3))
-	assert_is("[a,b,c]", Node("a", "b", "c"))
-	assert_is("[1;2;3]", Node(1, 2, 3))
-	assert_is("[a;b;c]", Node("a", "b", "c"))
+	// vargs needs to be 0 terminated, otherwise pray!
+	assert_is("(1,2,3)", Node(1, 2, 3, 0))
+	assert_is("(a,b,c)", Node("a", "b", "c", 0))
+	assert_is("(1;2;3)", Node(1, 2, 3, 0))
+	assert_is("(a;b;c)", Node("a", "b", "c", 0))
+	assert_is("a;b;c", Node("a", "b", "c", 0))
+	assert_is("1;2;3", Node(1, 2, 3, 0, 0))//ok
+	assert_is("1,2,3", Node(1, 2, 3, 0))
+	assert_is("a,b,c", Node("a", "b", "c", 0))
+	assert_is("{1 2 3}", Node(1, 2, 3, 0))
+	assert_is("{a b c}", Node("a", "b", "c", 0))
+	assert_is("{1,2,3}", Node(1, 2, 3, 0))
+	assert_is("{a,b,c}", Node("a", "b", "c", 0))
+	assert_is("{1;2;3}", Node(1, 2, 3, 0))
+	assert_is("{a;b;c}", Node("a", "b", "c", 0))
+	assert_is("[1 2 3]", Node(1, 2, 3, 0))
+	assert_is("[a b c]", Node("a", "b", "c", 0))
+	assert_is("[1,2,3]", Node(1, 2, 3, 0))
+	assert_is("[a,b,c]", Node("a", "b", "c", 0))
+	assert_is("[1;2;3]", Node(1, 2, 3, 0))
+	assert_is("[a;b;c]", Node("a", "b", "c", 0))
+	assert_is("1 2 3", Node(1, 2, 3, 0))
+	assert_is("a b c", Node("a", "b", "c", 0, 0))
+	assert_is("(1 2 3)", Node(1, 2, 3, 0))
+	assert_is("(a b c)", Node("a", "b", "c", 0))
 }
 
 
 void testRoots() {
+	check(NIL.value.longy==0);
 	assert_is("'hello'", "hello");
-	skip(assert_is("hello", "hello"));// todo reference==string really?
+	skip(assert_is("hello", "hello", 0));// todo reference==string really?
 	assert_is("True", True)
 	assert_is("False", False)
 	assert_is("true", True)
@@ -503,13 +512,14 @@ void testRoots() {
 //	assert_is("wrong", False)
 	assert_is("null", NIL);
 	assert_is("", NIL);
+	check(NIL.value.longy==0);
 	assert_is("0", NIL);
 	assert_is("1", 1)
 	assert_is("123", 123)
 	assert_is("\"hello\"", "hello")
 	testRootLists();
-	skip(assert_is("()", NIL))
-	skip(assert_is("{}", NIL));// NOP
+	skip(assert_is("()", NIL, 0))
+	skip(assert_is("{}", NIL, 0));// NOP
 }
 
 
@@ -522,14 +532,14 @@ void testParams() {
 	assert_parses("a(x=1)");
 	assert_parses("a{y=1}");
 	assert_parses("a(x=1){y=1}");
-	skip(assert_parses("a(1){1}"));
-	skip(assert_parses("multi_body{1}{1}{1}"));// why not generalize from the start?
-	skip(assert_parses("chained_ops(1)(1)(1)"));// why not generalize from the start?
+	skip(assert_parses("a(1){1}", 0));
+	skip(assert_parses("multi_body{1}{1}{1}", 0));// why not generalize from the start?
+	skip(assert_parses("chained_ops(1)(1)(1)", 0));// why not generalize from the start?
 
 	assert_parses("while(x<3){y:z}");
 	Node body2 = assert_parses("body(style='blue'){style:green}");// is that whole xml compatibility a good idea?
 	skip(assert(body2["style"] ==
-	       "green"));// body has prescedence over params, semantically params provide extra data to body
+	            "green", 0));// body has prescedence over param, semantically param provide extra data to body
 	assert(body2[".style"] == "blue");
 //	assert_parses("a(href='#'){'a link'}");
 //	assert_parses("(markdown link)[www]");
@@ -542,24 +552,43 @@ void testDidYouMeanAlias() {
 	assert_equals(ok1[".warnings"], "DYM print");
 }
 
-void testEmpty(){
-	result=assert_parsesx("{  }");
+void testEmpty() {
+	result = assert_parsesx("{  }");
 	assert_equals(result.length, 0);
 }
 
 void testEval() {
 	assert_is("√4", 2);
 }
+
 void testLengthOperator() {
 	assert_is("#{a b c}", 3);
-	skip(assert_is("#(a b c)", 3));// todo: groups
+	skip(assert_is("#(a b c)", 3, 0));// todo: groups
+}
+
+void testNodeName() {
+	Node a = Node("xor");// NOT type string by default!
+	bool ok = a == "xor";
+	check(a == "xor")
+	check(ok)
 }
 
 void tests() {
+	check(NIL.value.longy==0);
+
+	testNodeName();
 	testLengthOperator();
+	check(NIL.value.longy==0);
+
 	testEval();
+	check(NIL.value.longy==0);
+
 	testLogic();
+
+	check(NIL.value.longy==0);
 	testMath();
+
+	check(NIL.value.longy==0);
 	testRoot();
 	testRootFloat();
 	testMarkSimple();
@@ -568,6 +597,8 @@ void tests() {
 	testMarkMulti2();
 	testMarkAsMap();
 	testC();
+	check(NIL.value.longy==0);
+
 	testUTF();
 	testDiv();
 	testMarkAsMap();
@@ -587,6 +618,8 @@ void tests() {
 	testMapsAsLists();
 	testSamples();
 	testNetBase();
+	check(NIL.value.longy==0);
+
 	testRoots();
 }
 
@@ -599,10 +632,14 @@ void testBUG() {
 }
 
 void todos() {
-	String a="xor";
-bool ok=	a=="xor";
-	check(a=="xor")
-	assert_parses("(add x y)");// expression!
+	assert_equals(NIL.value.longy, 0);
+//	String a="xor";
+//	testLogic();
+	testRootLists();
+//	testLengthOperator();
+//	testNetBase();
+//	testGraphQlQuery();
+//	assert_parses("(add x yy)");// expression!
 	//	testNetBase();
 //	testBUG();
 //	testGraphParams();
@@ -611,9 +648,13 @@ bool ok=	a=="xor";
 // valgrind --track-origins=yes ./mark
 void testCurrent() { // move to tests() once OK
 //	tests();// make sure all still ok after changes
+	check(NIL.value.longy==0);
+	assert_is("√4", 2);
+	check(NIL.value.longy==0);
 	todos();
-	testNetBase();
-//	testGraphQlQuery();
+	check(NIL.value.longy==0);
 	tests();
+	check(NIL.value.longy==0);
+
 }
 

@@ -43,10 +43,10 @@ RM = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/me/mark
+CMAKE_SOURCE_DIR = /Users/me/dev/apps/mark
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/me/mark
+CMAKE_BINARY_DIR = /Users/me/dev/apps/mark
 
 # Include any dependencies generated for this target.
 include CMakeFiles/mark.dir/depend.make
@@ -58,28 +58,28 @@ include CMakeFiles/mark.dir/progress.make
 include CMakeFiles/mark.dir/flags.make
 
 CMakeFiles/mark.dir/mark.cpp.o: mark.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/me/mark/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/mark.dir/mark.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mark.dir/mark.cpp.o -c /Users/me/mark/mark.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/me/dev/apps/mark/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/mark.dir/mark.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mark.dir/mark.cpp.o -c /Users/me/dev/apps/mark/mark.cpp
 
 CMakeFiles/mark.dir/mark.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/mark.dir/mark.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/me/mark/mark.cpp > CMakeFiles/mark.dir/mark.cpp.i
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/me/dev/apps/mark/mark.cpp > CMakeFiles/mark.dir/mark.cpp.i
 
 CMakeFiles/mark.dir/mark.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/mark.dir/mark.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/me/mark/mark.cpp -o CMakeFiles/mark.dir/mark.cpp.s
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/me/dev/apps/mark/mark.cpp -o CMakeFiles/mark.dir/mark.cpp.s
 
 CMakeFiles/mark.dir/ErrorHandler.cpp.o: ErrorHandler.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/me/mark/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/mark.dir/ErrorHandler.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mark.dir/ErrorHandler.cpp.o -c /Users/me/mark/ErrorHandler.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/me/dev/apps/mark/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/mark.dir/ErrorHandler.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/mark.dir/ErrorHandler.cpp.o -c /Users/me/dev/apps/mark/ErrorHandler.cpp
 
 CMakeFiles/mark.dir/ErrorHandler.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/mark.dir/ErrorHandler.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/me/mark/ErrorHandler.cpp > CMakeFiles/mark.dir/ErrorHandler.cpp.i
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/me/dev/apps/mark/ErrorHandler.cpp > CMakeFiles/mark.dir/ErrorHandler.cpp.i
 
 CMakeFiles/mark.dir/ErrorHandler.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/mark.dir/ErrorHandler.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/me/mark/ErrorHandler.cpp -o CMakeFiles/mark.dir/ErrorHandler.cpp.s
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/me/dev/apps/mark/ErrorHandler.cpp -o CMakeFiles/mark.dir/ErrorHandler.cpp.s
 
 # Object files for target mark
 mark_OBJECTS = \
@@ -92,7 +92,7 @@ mark_EXTERNAL_OBJECTS =
 mark: CMakeFiles/mark.dir/mark.cpp.o
 mark: CMakeFiles/mark.dir/ErrorHandler.cpp.o
 mark: CMakeFiles/mark.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/me/mark/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable mark"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/me/dev/apps/mark/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable mark"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/mark.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -105,6 +105,6 @@ CMakeFiles/mark.dir/clean:
 .PHONY : CMakeFiles/mark.dir/clean
 
 CMakeFiles/mark.dir/depend:
-	cd /Users/me/mark && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/me/mark /Users/me/mark /Users/me/mark /Users/me/mark /Users/me/mark/CMakeFiles/mark.dir/DependInfo.cmake --color=$(COLOR)
+	cd /Users/me/dev/apps/mark && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/me/dev/apps/mark /Users/me/dev/apps/mark /Users/me/dev/apps/mark /Users/me/dev/apps/mark /Users/me/dev/apps/mark/CMakeFiles/mark.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/mark.dir/depend
 
