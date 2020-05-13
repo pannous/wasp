@@ -433,6 +433,16 @@ public:
 		return !length==0  && data  && data[0] == c && data[1] == '\0';
 	}
 
+	bool operator==(chars c) {
+		return !length == 0 && data && eq(data, c);
+	}
+
+	bool operator==(char* c) {
+		return !length == 0 && data && eq(data, c);
+	}
+
+
+
 	bool operator==(String &s) {// const
 		if (this->empty())return s.empty();
 		if (s.empty())return this->empty();
@@ -501,6 +511,8 @@ public:
 //	 operator char*()  { return data; }
 	explicit operator int() const { return atoi(data); }
 
+//	otherwise String("abc") == "abc"  is char* comparison hence false
+//	explicit
 	operator char *() const { return data; }
 
 	bool isNumber() {
@@ -604,6 +616,14 @@ String operator "" _(const char *c, unsigned long t) {
 	return String(c);
 }
 
+
+bool eq(String &dest, const char *src) {
+	return dest.data == src;
+}
+
+void err(String error){
+	err(error.data);
+}
 
 String string(const char *&s) {
 	return String(s);
