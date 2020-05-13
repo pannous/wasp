@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/Users/me/mark/Backtrace.cpp
+/Users/me/dev/apps/mark/Backtrace.cpp
 execinfo.h
 -
 dlfcn.h
@@ -22,33 +22,9 @@ string
 sstream
 -
 
-/Users/me/mark/ErrorHandler.cpp
-ErrorHandler.h
-/Users/me/mark/ErrorHandler.h
-memory.h
--
-stdlib.h
--
-stdio.h
--
-unistd.h
--
-signal.h
--
-ucontext.h
--
-dlfcn.h
--
-cxxabi.h
--
-unwind.h
--
-uls/logger.h
-/Users/me/mark/uls/logger.h
+/Users/me/dev/apps/mark/ErrorHandler.h
 
-/Users/me/mark/ErrorHandler.h
-
-/Users/me/mark/Fetch.cpp
+/Users/me/dev/apps/mark/Fetch.cpp
 curl/curl.h
 -
 curl/easy.h
@@ -58,17 +34,17 @@ sstream
 iostream
 -
 
-/Users/me/mark/Node.cpp
+/Users/me/dev/apps/mark/Node.cpp
 String.h
-/Users/me/mark/String.h
+/Users/me/dev/apps/mark/String.h
 NodeTypes.h
-/Users/me/mark/NodeTypes.h
+/Users/me/dev/apps/mark/NodeTypes.h
 
-/Users/me/mark/NodeTypes.h
+/Users/me/dev/apps/mark/NodeTypes.h
 
-/Users/me/mark/String.cpp
+/Users/me/dev/apps/mark/String.cpp
 NodeTypes.h
-/Users/me/mark/NodeTypes.h
+/Users/me/dev/apps/mark/NodeTypes.h
 cstdio
 -
 tgmath.h
@@ -78,29 +54,29 @@ cstring
 malloc.h
 -
 Node.cpp
-/Users/me/mark/Node.cpp
+/Users/me/dev/apps/mark/Node.cpp
 string
 -
 
-/Users/me/mark/String.h
+/Users/me/dev/apps/mark/String.h
 
-/Users/me/mark/mark.cpp
+/Users/me/dev/apps/mark/mark.cpp
 zconf.h
 -
 Backtrace.cpp
-/Users/me/mark/Backtrace.cpp
+/Users/me/dev/apps/mark/Backtrace.cpp
 ErrorHandler.h
-/Users/me/mark/ErrorHandler.h
+/Users/me/dev/apps/mark/ErrorHandler.h
 malloc.h
 -
 zconf.h
 -
 String.cpp
-/Users/me/mark/String.cpp
+/Users/me/dev/apps/mark/String.cpp
 Fetch.cpp
-/Users/me/mark/Fetch.cpp
+/Users/me/dev/apps/mark/Fetch.cpp
 tests.cpp
-/Users/me/mark/tests.cpp
+/Users/me/dev/apps/mark/tests.cpp
 
-/Users/me/mark/tests.cpp
+/Users/me/dev/apps/mark/tests.cpp
 

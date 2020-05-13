@@ -37,11 +37,15 @@ public:
 
 	String name = empty_name;// nil_name;
 	Value value;
-	Node *parent = nullptr;
-	Node *params = nullptr;// attributes meta modifiers decorators annotations
-	Node *children = nullptr;// block body content
 
-	/* don't mix children with params, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
+	// TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
+//	Node &parent=NIL;
+//	Node &param=NIL;
+	Node *parent= nullptr;
+	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
+	Node *children = nullptr;// LIST, not link. block body content
+
+	/* don't mix children with param, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
 	 * CONCEPTUAL CLEANUP NEEDED!
 	 * children["_meta_"]
 	 * children["_head_"]
@@ -52,7 +56,8 @@ public:
 	 * */
 //	Node *next = nullptr;// NO, WE NEED TRIPLES cause objects can occur in many lists + danger: don't use for any ref/var
 	Type type = unknown;
-	int length = 0;
+	int length = 0;// children
+//	int count = 0;// use param.length for arguments / param
 
 	Node() {
 		type = objects;
@@ -112,6 +117,8 @@ public:
 		va_end(args);
 	}
 
+	// why not auto null terminated on mac?
+	// vargs needs to be 0 terminated, otherwise pray!
 	explicit Node(char *a, char *b, ...) {
 		type = objects;// groups list
 		add(Node(a).clone());
@@ -119,7 +126,8 @@ public:
 		va_start(args, a);
 		char *i = b;
 		do {
-			add(Node(i).clone());
+			Node *node = Node(i).clone();
+			add(node);
 			i = (char *) va_arg(args, char*);
 		} while (i);
 		va_end(args);
@@ -134,7 +142,7 @@ public:
 
 	explicit Node(const char *name) {
 		this->name = name;
-//		type = strings NAH;// unless otherwise specified! NO
+//		type = strings NAH;// unless otherwise specified!
 	}
 
 	explicit Node(bool nr) {
@@ -414,6 +422,17 @@ void *calloc(int i) {
 	return mem;
 }
 
+
+bool typesCompatible(Node &one, Node &other) {
+	if(one.type== other.type)return true;
+	if(one.type==objects or one.type==groups or one.type==patterns or one.type==expression)
+		return other.type == objects or other.type == groups or other.type == patterns or other.type==expression;
+	if(one.type != keyNode and other.type != keyNode) return false;
+	return false;
+}
+
+
+
 // super wasteful, for debug
 Node &Node::set(String string, Node *node) {
 //	if (!children)children = static_cast<Node *>(malloc(capacity));
@@ -425,6 +444,8 @@ Node &Node::set(String string, Node *node) {
 	if (length >= capacity / 2)todo("GROW children");
 //	children = static_cast<Node *>(malloc(1000));// copy old
 	Node &entry = children[length];
+	if(&entry==&NIL)
+		error("IMPOSSIBLE");
 	if (length > 0) {
 		Node &current = children[length - 1];
 //		current.next = &entry;// WE NEED TRIPLES cause objects can occur in many lists
@@ -458,6 +479,7 @@ bool Node::operator==(String other) {
 	if (type == objects or type == keyNode)return *value.node == other or value.string == other;
 	if (type == longs) return other == itoa(value.longy);
 	if (type == reference) return other == name;
+	if (type == unknown) return other == name;
 	return type == strings and other == value.string;
 }
 
@@ -467,7 +489,7 @@ bool Node::operator==(int other) {
 		return true;
 	if (type == keyNode and value.node and *value.node == other)return true;
 	if (type == strings and atoi(value.string) == other)return true;
-	if (atoi(name) == other)return true;
+	if (atoi(this->name) == other)return true;
 	if (type == objects and length == 1)return last() == other;
 //	if (type == objects)return value.node->longe()==other;// WTF
 	return false;
@@ -487,18 +509,22 @@ bool Node::operator==(float other) {
 	       (type == longs and value.longy == other);
 }
 
+// are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
 	if (this == &other)return true;// same pointer!
+	if (&other == &NIL and (isNil() or empty()))
+		return true;
 	if (name == NIL.name or name == False.name or name == "")
 		if (other.name == NIL.name or other.name == False.name or other.name == "")
 			return true;// TODO: SHOULD already BE SAME by engine!
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// same value enough?
 
-	if (&other == &NIL and (isNil() or empty()))
-		return true;
-	if (type != other.type and type != unknown and other.type != unknown)
-		if (type != keyNode and other.type != keyNode) return false;
+	if (other.type == unknown and name == other.name)
+		return true; // weak criterum for dangling unknowns!! TODO ok??
+
+	if( not typesCompatible(*this,other))
+		return false;
 	if (type == bools)
 		return value.data == other.value.data or (other != NIL and other != False) or value.data and
 		       other.value.data;
@@ -508,7 +534,11 @@ bool Node::operator==(Node &other) {
 		return value.string == other.value.string or value.string == other.name;// !? match by name??
 	if (type == floats)
 		return value.floaty == other.value.floaty;
-	// if ...
+
+	if (length != other.length)
+		return false;
+
+	// if ... compare fields independent of type object {}, group [] ()
 	for (int i = 0; i < length; i++) {
 		Node &field = children[i];
 		Node &val = other[field.name];
@@ -520,7 +550,7 @@ bool Node::operator==(Node &other) {
 		}
 	}
 
-	if (name == other.name and length == other.length == 0)
+	if (name == other.name)
 		return true;
 	return false;
 }
@@ -540,7 +570,7 @@ Node values(Node n) {
 	return n;
 }
 
-Node Node::evaluate(bool expectOperator=true) {
+Node Node::evaluate(bool expectOperator = true) {
 	if (length == 0)return values(*this);
 	if (length == 1)
 		if (type == operators)
@@ -560,8 +590,9 @@ Node Node::evaluate(bool expectOperator=true) {
 		node.log();
 	}
 	if (max == 0) {
-		warn(String("could not find operator: ") % name);
-//		error(String("could not find operator:") % name);
+//		breakpoint_helper // ok need not always have known operators
+		if (!name.empty())
+			warn(String("could not find operator: ") % name);
 		return *this;
 	}
 	Node *op = 0;
@@ -604,10 +635,12 @@ void Node::remove(Node &node) {
 }
 
 void Node::add(Node *node) {
-	if (node->isNil())
+	if (node->isNil() and node->name.empty())
 		return;// skipp nils!
-	if (not params and node->type == groups)
-		params = node->children;
+	if (not param and node->type == groups){
+		param = node; //->children;
+//		count = length;
+	}
 	else if (not children and node->type == patterns) {
 		children = node->children;// todo
 		length = node->length;
@@ -738,13 +771,11 @@ Node Node::apply(Node left, Node op0, Node right) {
 	if (op == "#" or op == '#') {
 		return right.length;// or right["size"] or right["count"]  or right["length"]
 	}
-	if(op == "√" or String(op.data) == String("√")) { // why String( on mac?
-		Node &unary_result = NIL;
+	if (op == "√" or String(op.data) == String("√")) { // why String( on mac?
 		if (right.type == floats)
-			unary_result = Node(sqrt(right.value.floaty));
+			left.add(Node(sqrt(right.value.floaty)));
 		if (right.type == longs)
-			unary_result = Node(sqrt(right.value.longy)).setType(floats);
-		left.add(unary_result);
+			left.add(Node(sqrt(right.value.longy)).setType(floats));
 		return left.evaluate();
 	}
 
@@ -844,7 +875,7 @@ Node *Node::has(String s) {
 				return &entry;
 	}
 	for (int i = 0; i < length; i++) {
-		Node &entry = params[i];
+		Node &entry = param[i];
 		if (&entry == 0)break;
 		if (s == entry.name)
 			if ((entry.type == keyNode or entry.type == nils) and entry.value.node)
@@ -868,6 +899,5 @@ bool Node::isEmpty() {// not required here: name.empty()
 }
 
 bool Node::isNil() { // required here: name.empty()
-	return type == nils or ((type == keyNode or type == unknown or name.empty()) and length == 0 and value.data == 0);
+	return this==&NIL or type == nils or ((type == keyNode or type == unknown or name.empty()) and length == 0 and value.data == 0);
 }
-

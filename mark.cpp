@@ -85,6 +85,7 @@ void _cxa_throw(){
 #include <zconf.h>
 
 //NEEDED, else terminate called without an active exception
+
 void err(chars error) {
 	Backtrace(3);
 	throw error;
@@ -128,9 +129,6 @@ void* operator new(unsigned long size){
 
 //#include "String.h"
 // raise defined in signal.h :(
-void err(String error) {
-	err(error.data);
-}
 
 
 class Mark {
@@ -1153,6 +1151,9 @@ private:
 		if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1)
 			val = val.last();// singleton
 		if (val.value.longy and val.type != objects) {
+			if(&key==&NIL or key.isNil() or key==NIL or val.value.floaty==6.4807)
+				if(key.name==nil_name)
+					warn("impossible");
 			key.value = val.value;// direct copy value SURE?? what about meta data... ?
 			key.type = val.type;
 		} else {
@@ -1265,7 +1266,13 @@ private:
 			}
 		}
 		bool keepBlock = close == '}';
-		if (current.length == 1) {
+		if (current.length ==0 and current.param){
+			current.children=current.param->children;
+			current.length = current.param->length;
+			current.param = nullptr;; // delete after copy to current.param . todo: what about extra meta info?
+			current.type = groups;// todo: lose type if unbound?
+		}
+			if (current.length == 1) {
 //			if (current.value.node == &current.children[0])return *current.value.node;
 //			if (current.value.longy and current.children[0].value.longy)
 //				if (current.value.node->value.longy != current.children[0].value.longy)
@@ -1310,9 +1317,12 @@ private:
 
 			default:
 				Node id = words();
-				if (ch == '(')id.params = &params();
-				if (ch == '[')id.params = &selector();
-				if (ch == '{')id.children = &object();
+				if (ch == '(')
+					id.param = &params();
+				if (ch == '[')
+					id.param = &selector();
+				if (ch == '{')
+					id.children = &object();
 		}
 	};;
 //	int $length{};//????
@@ -1350,10 +1360,11 @@ struct TTT {
 
 void init() {
 	NIL.type = nils;
-	True.value.longy = 1;
-	True.type = bools;
-	False.value.longy = 0;
+	NIL.value.longy = 0;
 	False.type = bools;
+	False.value.longy = 0;
+	True.type = bools;
+	True.value.longy = 1;
 }
 
 #import "tests.cpp"
