@@ -516,10 +516,12 @@ void testRoots() {
 	assert_is("0", NIL);
 	assert_is("1", 1)
 	assert_is("123", 123)
-	assert_is("\"hello\"", "hello")
 	testRootLists();
-	skip(assert_is("()", NIL, 0))
-	skip(assert_is("{}", NIL, 0));// NOP
+	skip(
+			assert_is("()", NIL);
+			assert_is("{}", NIL);// NOP
+	)
+	assert_is("\"hello\"", "hello")
 }
 
 
@@ -571,6 +573,9 @@ void testNodeName() {
 	bool ok = a == "xor";
 	check(a == "xor")
 	check(ok)
+}
+void testIndentAsBlock(){
+	assert_is("a\n\tb","a{b}")
 }
 
 void tests() {
@@ -630,8 +635,8 @@ void testBUG() {
 	assert(result["a"].parent == &result);
 	log(result["a"].parent);// BROKEN, WHY??
 }
-
 void todos() {
+	testIndentAsBlock();
 	assert_equals(NIL.value.longy, 0);
 //	String a="xor";
 //	testLogic();
@@ -648,13 +653,10 @@ void todos() {
 // valgrind --track-origins=yes ./mark
 void testCurrent() { // move to tests() once OK
 //	tests();// make sure all still ok after changes
-	check(NIL.value.longy==0);
-	assert_is("√4", 2);
-	check(NIL.value.longy==0);
+//	assert_is("()", NIL);
+//	assert_is("{}", NIL);// NOP
 	todos();
-	check(NIL.value.longy==0);
 	tests();
-	check(NIL.value.longy==0);
 
 }
 
