@@ -48,12 +48,12 @@ public:
 	Node *children = nullptr;// LIST, not link. block body content
 
 	/* don't mix children with param, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
-	 * CONCEPTUAL CLEANUP NEEDED!
-	 * children["_meta_"]
-	 * children["_head_"]
-	 * children["_body_"]
-	 * children["_attrib_"]
-	 * children["_name"] == this.name
+	 * conceptual cleanup needed... => DONE?
+	 * children["_body_"] => children / $html.body
+	 * children["_attrib_"] => params
+	 * children["_head_"] => params / params.head / $html.head
+	 * children["_meta_"] => params.meta
+	 * children["_name"] == name
 	 *
 	 * */
 //	Node *next = nullptr;// NO, WE NEED TRIPLES cause objects can occur in many lists + danger: don't use for any ref/var
