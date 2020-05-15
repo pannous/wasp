@@ -42,6 +42,8 @@ public:
 //	Node &parent=NIL;
 //	Node &param=NIL;
 	Node *parent= nullptr;
+
+	// a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms
 	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *children = nullptr;// LIST, not link. block body content
 
@@ -69,6 +71,10 @@ public:
 
 
 	Node *clone() {// const cast?
+		if(this==&NIL)return this;
+		if(this==&True)return this;
+		if(this==&False)return this;
+		// todo ...
 		Node *copy = new Node();
 		*copy = *this;// copy value ok
 		return copy;
@@ -346,7 +352,7 @@ String EMPTY = String('\0');
 Node NaN = Node("NaN");
 //NIL=0;
 //Node NIL;
-Node NIL = Node("NIL").setType(nils);
+Node NIL = Node(nil_name).setType(nils);
 Node ERR = Node("ERR").setType(nils);// ≠ NIL
 Node True = Node("True").setType(bools);
 Node False = Node("False").setType(bools);
@@ -771,7 +777,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 	if (op == "#" or op == '#') {
 		return right.length;// or right["size"] or right["count"]  or right["length"]
 	}
-	if (op == "√" or String(op.data) == String("√")) { // why String( on mac?
+	if (op == "√") { // why String( on mac?
 		if (right.type == floats)
 			left.add(Node(sqrt(right.value.floaty)));
 		if (right.type == longs)
