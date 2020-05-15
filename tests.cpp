@@ -516,7 +516,6 @@ void testRoots() {
 	assert_is("0", NIL);
 	assert_is("1", 1)
 	assert_is("123", 123)
-	testRootLists();
 	skip(
 			assert_is("()", NIL);
 			assert_is("{}", NIL);// NOP
@@ -611,6 +610,7 @@ void tests() {
 	testLists();
 	testDeepLists();
 	testGraphQlQuery();
+	testGraphParams();
 	testParams();
 	testRootLists();
 	testAddField();
@@ -623,6 +623,8 @@ void tests() {
 	testMapsAsLists();
 	testSamples();
 	testNetBase();
+	testRootLists();
+
 	check(NIL.value.longy==0);
 
 	testRoots();
@@ -636,27 +638,16 @@ void testBUG() {
 	log(result["a"].parent);// BROKEN, WHY??
 }
 void todos() {
+	skip(
+	testBUG();
 	testIndentAsBlock();
-	assert_equals(NIL.value.longy, 0);
-//	String a="xor";
-//	testLogic();
-	testRootLists();
-//	testLengthOperator();
-//	testNetBase();
-//	testGraphQlQuery();
-//	assert_parses("(add x yy)");// expression!
-	//	testNetBase();
-//	testBUG();
-//	testGraphParams();
+	)
 }
 
 // valgrind --track-origins=yes ./mark
 void testCurrent() { // move to tests() once OK
 //	tests();// make sure all still ok after changes
-//	assert_is("()", NIL);
-//	assert_is("{}", NIL);// NOP
 	todos();
 	tests();
-
 }
 
