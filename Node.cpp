@@ -41,7 +41,7 @@ public:
 	// TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
 //	Node &parent=NIL;
 //	Node &param=NIL;
-	Node *parent= nullptr;
+	Node *parent = nullptr;
 
 	// a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms
 	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
@@ -71,9 +71,9 @@ public:
 
 
 	Node *clone() {// const cast?
-		if(this==&NIL)return this;
-		if(this==&True)return this;
-		if(this==&False)return this;
+		if (this == &NIL)return this;
+		if (this == &True)return this;
+		if (this == &False)return this;
 		// todo ...
 		Node *copy = new Node();
 		*copy = *this;// copy value ok
@@ -97,14 +97,14 @@ public:
 	explicit Node(double nr) {
 		value.floaty = nr;
 		type = floats;
-		if (debug)name = itoa(nr);
+//		if (debug)name = itoa(nr); // messes with setField contraction
 	}
 
 
 	explicit Node(float nr) {
-		if (debug)name = String((long) nr) + String(".…");//#+"#";
 		value.floaty = nr;
 		type = floats;
+//		if (debug)name = String((long) nr) + String(".…");//#+"#"; // messes with setField contraction
 	}
 
 // how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
@@ -143,7 +143,7 @@ public:
 	explicit Node(int nr) {
 		value.longy = nr;
 		type = longs;
-		if (debug)name = itoa(nr);
+//		if (debug)name = itoa(nr); // messes with setField contraction
 	}
 
 	explicit Node(const char *name) {
@@ -211,7 +211,9 @@ public:
 //	bool operator==(Node other);
 	bool operator==(Node &other);// equals
 
-	bool operator!=(Node &other);// why not auto
+	bool operator!=(Node other);
+
+//	bool operator!=(Node &other);// why not auto
 
 //	 +=, -=, *=, /=, %=, <<=, >>=, &=, |=, ^=
 //	bool operator<<=(Node &other);// EVIL MAGIC ;)
@@ -430,13 +432,12 @@ void *calloc(int i) {
 
 
 bool typesCompatible(Node &one, Node &other) {
-	if(one.type== other.type)return true;
-	if(one.type==objects or one.type==groups or one.type==patterns or one.type==expression)
-		return other.type == objects or other.type == groups or other.type == patterns or other.type==expression;
-	if(one.type != keyNode and other.type != keyNode) return false;
+	if (one.type == other.type)return true;
+	if (one.type == objects or one.type == groups or one.type == patterns or one.type == expression)
+		return other.type == objects or other.type == groups or other.type == patterns or other.type == expression;
+	if (one.type != keyNode and other.type != keyNode) return false;
 	return false;
 }
-
 
 
 // super wasteful, for debug
@@ -450,7 +451,7 @@ Node &Node::set(String string, Node *node) {
 	if (length >= capacity / 2)todo("GROW children");
 //	children = static_cast<Node *>(malloc(1000));// copy old
 	Node &entry = children[length];
-	if(&entry==&NIL)
+	if (&entry == &NIL)
 		error("IMPOSSIBLE");
 	if (length > 0) {
 		Node &current = children[length - 1];
@@ -518,7 +519,9 @@ bool Node::operator==(float other) {
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
 	if (this == &other)return true;// same pointer!
-	if (&other == &NIL and (isNil() or empty()))
+	if (isNil() and other.isNil())
+		return true;
+	if (isEmpty() and other.isEmpty())
 		return true;
 	if (name == NIL.name or name == False.name or name == "")
 		if (other.name == NIL.name or other.name == False.name or other.name == "")
@@ -529,7 +532,7 @@ bool Node::operator==(Node &other) {
 	if (other.type == unknown and name == other.name)
 		return true; // weak criterum for dangling unknowns!! TODO ok??
 
-	if( not typesCompatible(*this,other))
+	if (not typesCompatible(*this, other))
 		return false;
 	if (type == bools)
 		return value.data == other.value.data or (other != NIL and other != False) or value.data and
@@ -547,7 +550,9 @@ bool Node::operator==(Node &other) {
 	// if ... compare fields independent of type object {}, group [] ()
 	for (int i = 0; i < length; i++) {
 		Node &field = children[i];
-		Node &val = other[field.name];
+		Node &val = other.children[i];
+		if (!field.name.empty())
+			val = other[field.name];
 		if (field != val) {
 			if ((field.type != keyNode and field.type != nils) or !field.value.node)
 				return false;
@@ -561,7 +566,11 @@ bool Node::operator==(Node &other) {
 	return false;
 }
 
-bool Node::operator!=(Node &other) {
+//bool Node::operator!=(Node &other) {
+//	return not(*this == other);
+//}
+//use of overloaded operator '!=' is ambiguous
+bool Node::operator!=(Node other) {
 	return not(*this == other);
 }
 
@@ -641,13 +650,13 @@ void Node::remove(Node &node) {
 }
 
 void Node::add(Node *node) {
-	if (node->isNil() and node->name.empty())
+	if (node->isNil() and node->name.empty() and node->type != longs)
 		return;// skipp nils!
-	if (not param and node->type == groups){
+	node->parent = this;
+	if (not param and node->type == groups) {
 		param = node; //->children;
 //		count = length;
-	}
-	else if (not children and node->type == patterns) {
+	} else if (not children and node->type == patterns) {
 		children = node->children;// todo
 		length = node->length;
 		type = patterns;//todo!
@@ -905,5 +914,11 @@ bool Node::isEmpty() {// not required here: name.empty()
 }
 
 bool Node::isNil() { // required here: name.empty()
-	return this==&NIL or type == nils or ((type == keyNode or type == unknown or name.empty()) and length == 0 and value.data == 0);
+	return this == &NIL or type == nils or
+	       ((type == keyNode or type == unknown or name.empty()) and length == 0 and value.data == 0);
+}
+
+String toString(Node &node) {
+//	return node.serialize();
+	return node.name or node.string();
 }
