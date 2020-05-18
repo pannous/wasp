@@ -6,6 +6,10 @@
 
 #IncludeRegexTransform: 
 
+/Users/me/dev/apps/mark/Angle.cpp
+mark.cpp
+/Users/me/dev/apps/mark/mark.cpp
+
 /Users/me/dev/apps/mark/Backtrace.cpp
 execinfo.h
 -
