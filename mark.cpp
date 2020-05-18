@@ -17,9 +17,6 @@ bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 
 #define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
-#define assert(condition) try{\
-   if(condition==0)throw "assert FAILED";else printf("\nassert OK: %s\n",#condition);\
-   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
 
 
 #ifdef WASM
@@ -79,9 +76,11 @@ void _cxa_throw(){
 #include <zconf.h>
 #import "Backtrace.cpp"
 #include "ErrorHandler.h"
+
 #ifndef __APPLE__
 #include <malloc.h>
 #endif
+
 #include <zconf.h>
 
 //NEEDED, else terminate called without an active exception
@@ -338,7 +337,7 @@ private:
 		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
 		var key = String(ch);
 		// subsequent characters can contain ANYTHING
-		while (proceed() and is_identifier(ch))key+=ch;
+		while (proceed() and is_identifier(ch))key += ch;
 		// subsequent characters can contain digits
 //		while (proceed() &&
 //		       (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_' ||
@@ -1148,11 +1147,12 @@ private:
 
 	Node &setField(Node &key) { // a:{b}
 		Node &val = *value(' ').clone();// applies to WHOLE expression
-		if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1)
+		if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1 and
+		    val.name.empty())
 			val = val.last();// singleton
-		if (val.value.longy and val.type != objects) {
-			if(&key==&NIL or key.isNil() or key==NIL or val.value.floaty==6.4807)
-				if(key.name==nil_name)
+		if (val.value.longy and val.type != objects and val.name.empty()) {
+			if (&key == &NIL or key.isNil() or key == NIL or val.value.floaty == 6.4807)
+				if (key.name == nil_name)
 					warn("impossible");
 			key.value = val.value;// direct copy value SURE?? what about meta data... ?
 			key.type = val.type;
@@ -1162,7 +1162,7 @@ private:
 				key.children = val.children;
 				key.length = val.length;
 				key.type = val.type;
-			} else if(!val.isNil())
+			} else if (!val.isNil())
 				key.value.node = &val;// clone?
 		}
 		return key;
@@ -1196,6 +1196,7 @@ private:
 				break;
 			}// inner match ok
 			if (ch == '}' or ch == ']' or ch == ')')
+//				break;
 				return current;// outer match unresolved so far
 			switch (ch) {
 				case '=':
@@ -1210,7 +1211,7 @@ private:
 //					current.add(value('}').setType(Type::objects));
 					break;
 				case '/':
-					if(next=='/' or next=='*'){
+					if (next == '/' or next == '*') {
 						comment();
 						break;
 					}
@@ -1266,13 +1267,13 @@ private:
 			}
 		}
 		bool keepBlock = close == '}';
-		if (current.length ==0 and current.param){
-			current.children=current.param->children;
+		if (current.length == 0 and current.param) {
+			current.children = current.param->children;
 			current.length = current.param->length;
 			current.param = nullptr;; // delete after copy to current.param . todo: what about extra meta info?
 			current.type = groups;// todo: lose type if unbound?
 		}
-			if (current.length == 1) {
+		if (current.length == 1) {
 //			if (current.value.node == &current.children[0])return *current.value.node;
 //			if (current.value.longy and current.children[0].value.longy)
 //				if (current.value.node->value.longy != current.children[0].value.longy)
@@ -1369,12 +1370,18 @@ void init() {
 
 #import "tests.cpp"
 
+static Node parse(String source) {
+	printf("Parsing %s\n", source.data);
+	return Mark().read(source);
+}
+
 //
 //It has clean syntax with FULLY-TYPE data model (like JSON or even better)
 //It is generic and EXTENSIBLE (like XML or even better)
 //It has built-in MIXED CONTENT support (like HTML5 or even better)
 //It supportsHIGH-ORDER COMPOSITION (like S-expressions or even better)
 
+#ifndef _main_
 int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
 	try {
@@ -1397,4 +1404,4 @@ int main(int argp, char **argv) {
 	usleep(1000000000);
 	return -1;
 }
-
+#endif

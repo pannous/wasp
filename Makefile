@@ -123,6 +123,33 @@ mark/fast:
 	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/build
 .PHONY : mark/fast
 
+Angle.o: Angle.cpp.o
+
+.PHONY : Angle.o
+
+# target to build an object file
+Angle.cpp.o:
+	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/Angle.cpp.o
+.PHONY : Angle.cpp.o
+
+Angle.i: Angle.cpp.i
+
+.PHONY : Angle.i
+
+# target to preprocess a source file
+Angle.cpp.i:
+	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/Angle.cpp.i
+.PHONY : Angle.cpp.i
+
+Angle.s: Angle.cpp.s
+
+.PHONY : Angle.s
+
+# target to generate assembly for a file
+Angle.cpp.s:
+	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/Angle.cpp.s
+.PHONY : Angle.cpp.s
+
 ErrorHandler.o: ErrorHandler.cpp.o
 
 .PHONY : ErrorHandler.o
@@ -150,33 +177,6 @@ ErrorHandler.cpp.s:
 	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/ErrorHandler.cpp.s
 .PHONY : ErrorHandler.cpp.s
 
-mark.o: mark.cpp.o
-
-.PHONY : mark.o
-
-# target to build an object file
-mark.cpp.o:
-	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/mark.cpp.o
-.PHONY : mark.cpp.o
-
-mark.i: mark.cpp.i
-
-.PHONY : mark.i
-
-# target to preprocess a source file
-mark.cpp.i:
-	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/mark.cpp.i
-.PHONY : mark.cpp.i
-
-mark.s: mark.cpp.s
-
-.PHONY : mark.s
-
-# target to generate assembly for a file
-mark.cpp.s:
-	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/mark.cpp.s
-.PHONY : mark.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -186,12 +186,12 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... mark"
+	@echo "... Angle.o"
+	@echo "... Angle.i"
+	@echo "... Angle.s"
 	@echo "... ErrorHandler.o"
 	@echo "... ErrorHandler.i"
 	@echo "... ErrorHandler.s"
-	@echo "... mark.o"
-	@echo "... mark.i"
-	@echo "... mark.s"
 .PHONY : help
 
 

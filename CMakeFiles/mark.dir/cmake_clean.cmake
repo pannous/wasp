@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/mark.dir/Angle.cpp.o"
   "CMakeFiles/mark.dir/ErrorHandler.cpp.o"
-  "CMakeFiles/mark.dir/mark.cpp.o"
   "mark"
   "mark.pdb"
 )

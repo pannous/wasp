@@ -146,6 +146,9 @@ double atof0(const char *string) {
 }
 
 class String;
+class Node; // can't pre-access properties, BUT can use functions:
+String toString(Node &node);
+
 
 class Error {
 public:
@@ -329,8 +332,17 @@ public:
 		if (!contains("%s"))
 			return *this + c;
 		String b = this->clone();
-		b.replace("%s", c);
-		return b;
+		String d=b.replace("%s", c);
+		return d;
+	}
+
+
+	String operator%(Node &c) {
+		if (!contains("%s"))
+			return *this + toString(c);
+		String b = this->clone();
+		String d=b.replace("%s", toString(c));
+		return d;
 	}
 
 	String operator%(chars &c) {
@@ -348,10 +360,19 @@ public:
 		return this->replace("%d", itoa(d));
 	}
 
+	String operator%(int d) {
+		return this->replace("%d", itoa(d));
+	}
+
 	String operator%(double f) {
 		String formated = String() + itoa(f) + "." + itoa((f - int(f)) * 10000);
 		return this->replace("%f", formated);
 	}
+//
+//	String operator%(float f) {
+//		String formated = String() + itoa(f) + "." + itoa((f - int(f)) * 10000);
+//		return this->replace("%f", formated);
+//	}
 
 	String *operator+=(String &c) {
 		this->data = (*this + c).data;
@@ -442,11 +463,24 @@ public:
 	}
 
 
+	bool operator!=(String &s) {// const
+		if (this->empty())return !s.empty();
+		if (s.empty())return !this->empty();
+		return !eq(data, s.data);
+	}
+
 
 	bool operator==(String &s) {// const
 		if (this->empty())return s.empty();
 		if (s.empty())return this->empty();
 		return eq(data, s.data);
+	}
+
+	bool operator==(String *s) {// const
+		if (this->empty() and not s)return true;
+		if (this->empty())return s->empty();
+		if (s->empty())return this->empty();
+		return eq(data, s->data);
 	}
 
 	bool operator==(char *c) const {
