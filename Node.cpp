@@ -318,7 +318,7 @@ public:
 		return type == longs ? value.longy : value.floaty;// danger
 	}
 
-	Node *has(String s);
+	Node *has(String s,bool searchParams=true);
 
 // type conversions
 	explicit operator bool() const { return value.longy; }
@@ -537,8 +537,8 @@ bool Node::operator==(Node &other) {
 	if (not typesCompatible(*this, other))
 		return false;
 	if (type == bools)
-		return value.data == other.value.data or (other != NIL and other != False) or value.data and
-		       other.value.data;
+		return value.data == other.value.data or (other != NIL and other != False) or (value.data and
+		       other.value.data);
 	if (type == longs)
 		return value.longy == other.value.longy;
 	if (type == strings)
@@ -882,7 +882,7 @@ Node &Node::setType(Type type) {
 }
 
 // Node* OK? else Node&
-Node *Node::has(String s) {
+Node *Node::has(String s,bool searchParams) {
 	if ((type == objects or type == keyNode) and s == value.node->name)
 		return value.node;
 	for (int i = 0; i < length; i++) {
@@ -893,15 +893,8 @@ Node *Node::has(String s) {
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
 				return &entry;
 	}
-	for (int i = 0; i < length; i++) {
-		Node &entry = param[i];
-		if (&entry == 0)break;
-		if (s == entry.name)
-			if ((entry.type == keyNode or entry.type == nils) and entry.value.node)
-				return entry.value.node;
-			else // danger overwrite a["b"]=c => a["b"].name == "c":
-				return &entry;
-	}
+	if(param and searchParams)
+		return param->has(s);
 	return 0;// NIL
 }
 
@@ -914,7 +907,7 @@ bool Node::empty() {// nil!
 }
 
 bool Node::isEmpty() {// not required here: name.empty()
-	return length == 0 and value.longy == 0 or isNil();
+	return (length == 0 and value.longy == 0) or isNil();
 }
 
 bool Node::isNil() { // required here: name.empty()

@@ -165,6 +165,7 @@ public:
 		return Mark().read(source).evaluate();
 	}
 
+
 	Node read(String source) {
 		if (source.empty()) return NIL;
 		columnStart = at = 0;
@@ -306,7 +307,7 @@ private:
 
 	// everything that is not an is_identifier is treated as operator/symbol/identifier?
 	bool is_operator(char ch) {// todo is_KNOWN_operator
-		if (ch > 0x207C and ch < 0x2200) return true;
+//		if (ch > 0x207C and ch < 0x2200) return true; char is signed_byte -127..127
 		if (ch < 0) return true;// utf
 		if (is_identifier(ch)) return false;
 		if (isalnum(ch)) return false;// ANY UTF 8
@@ -684,7 +685,7 @@ private:
 		expressions.type = Type::expression;
 		expressions.add(node);
 		white();
-		while (ch and is_identifier(ch) or isalnum(ch) or is_operator(ch)) {
+		while ((ch and is_identifier(ch)) or isalnum(ch) or is_operator(ch)) {
 			node = symbol();
 			expressions.add(node);
 			white();
@@ -802,7 +803,7 @@ private:
 		return 'x';
 	}
 
-	// {: 00aacc :} base64 values
+	// {: 00aacc :} base64 values todo: USE
 	Node binary() {
 // Parse binary value
 // Use a lookup table to find the index.
@@ -815,7 +816,7 @@ private:
 		}
 		for (var i = 0; i < 64; i++) {
 			char charCode = text.charCodeAt(i);
-			if (charCode > 128 or charCode < 0)
+			if (charCode < 0) // never true: charCode > 128 or
 				err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
 			lookup64[charCode] = i;
 		}
@@ -932,223 +933,12 @@ private:
 		}
 	};
 
-	// Parse an object, pragma or binary
-////	class Object {
-//	Node obj = Node();
-//	String key;        // property key
-//	bool extended = false;    // whether the is extended Mark object or legacy JSON object
-//	int index = 0;
-
-	void putText(String text, Node obj) {
-		obj["text"] = Node(text);
-		if (!obj.value.string)
-			obj.value.string = text.data;
-		else
-			log(obj.value.string);
-//			todo("BUGy");
-//		if (index > 0 && obj[index - 1]->type == strings) {
-//			// merge with previous text
-//			obj.set(index - 1, obj[index - 1]->string() + text);
-////			obj[index - 1] = obj[index - 1].string() + text;
-//		} else {
-//			obj.set(index, text);
-////			obj[index] = text;
-//			index++;
-//		}
-	};
-
-	void todo(const char string[]) {
-		err(string);
-		throw string;
-	}
-
-	void parseContent(Node &obj) {//context
-		while (ch) {
-			if (ch == ' ')proceed();// allow spaces {a : 3}
-			else if (ch == '#') while (ch != '\n' and ch != 0)proceed();
-			else if (ch == '(') {
-//				let child = pragma();
-				Node child = object(')');
-				if (child.type == objects and child.length == 1)child = child.children[0];
-				if (child.type == nils and child.value.data)child = *child.value.node;// todo bug<<
-//				obj.setParams(child.children)
-				obj.set(obj.length, &child);// OR ATTRIBUTE!
-			} else if (ch == '{') { // child object
-				let child = (next == ':' ? binary() : object());
-				obj.set(obj.length, &child);// NR as key!
-			} else if (ch == '"' || ch == '\'') { // text node
-				let str = string();
-				obj.value.string = str.string();
-				obj.type = strings; // unless mixed content {div "Hi" button{"OK"}}
-				putText(str.string(), obj);
-				todo("what to do with list of string? concat?");
-			} else if (ch == ';' || ch == ',' || ch == '\n') {// end of expression
-				proceed();
-			} else if (ch == ')') {
-				proceed();
-				return;
-			} else if (ch == '}') {
-				proceed();
-				return;
-			} else {
-				breakpoint_helper
-				error(UNEXPECT_CHAR + renderChar(ch));
-			}
-			white();
-		}
-		breakpoint_helper
-		error(UNEXPECT_END);
-	};
-
-	bool isNaN(String key) {
-		return key[0] < '0' || key[0] > '9';//todo
-	}
-
-//		array() a[1 2 3] or
-	Node &selector() {
-		return object(']');
-	}
-
-//		value() or a(1) or a(x=1)
-	Node &params() {
-		return object(')');
-	}
-
-	Node &object(char closing_brace = '}') {
-		proceed();
-		white();  // skip the starting '{'
-		String key = EMPTY;        // property key
-		bool extended = false;    // whether the is extended Mark object or legacy JSON object
-		int index = 0;
-		Node obj;
-		while (ch && ch != -1) {
-			if (ch == closing_brace /* '}' or ')'*/) { // end of the object
-				proceed();
-				if (extended) {
-					log("TODO");// TODO
-//					obj.set($length, index);
-//					obj[$length] = index;
-				}
-				return obj;   // could be empty object
-			}
-			// scan the key
-			if (ch == '{' || ch == '(') { // child object or pragma
-				if (extended) {
-					parseContent(obj);
-					return obj;
-				}
-				breakpoint_helper
-				error(UNEXPECT_CHAR + ch);
-			}
-			if (ch == '"' || ch == '\'') { // quoted key
-				var str = string();
-				white();
-				if (ch == ':' or ch == '=') { // property or JSON object
-					key = str.string();
-					str.type = objects;// keys
-				} else {
-					if (extended) { // already got type name {cat hair:blue}
-						// only output non-empty text
-//						if (str)
-						putText(str.string(), obj);
-						parseContent(obj);
-						return obj;
-					} else if (key.empty()) { // at the starting of the object
-						// create the object
-						obj = str;// MARK(str, null, null);
-						extended = true;  // key = str;
-						continue;
-					} else {
-						breakpoint_helper
-						error(UNEXPECT_CHAR + renderChar(ch));
-					}
-				}
-			} else {
-				// if (ch=='_' || ch=='$' || 'a'<=ch && ch<='z' || 'A'<=ch && ch<='Z')
-				// Mark unquoted key, which needs to be valid JS identifier.
-				var ident = identifier();
-				white();
-				if (ch == ':' or ch == '=') { // property value
-					key = ident;
-				} else {
-					if (!extended) { // start of Mark object
-						obj = Node(ident); //MARK(ident, null, null);
-						extended = true;  // key = ident;
-						continue;
-					} else if (ch == '(') {
-						continue;
-// e.g. graphQL  height(unit: FOOT)
-						// Params or immediate object todo
-					}
-//							else if(ch=='{')
-					breakpoint_helper
-					error(UNEXPECT_CHAR + renderChar(ch));
-				}
-			}
-
-			// key-value pair
-			proceed(); // skip ':'
-			if (extended && !isNaN(key)) { // any numeric key is rejected for Mark object
-				error("Numeric key not allowed as Mark property name");
-			}
-			Node &child = obj[key];
-//			if (obj.length == 1)assert(obj.children == &child or obj.children == child.parent);
-			if (child.length != 0) {//} && obj[key].type != "function") {
-				log(child);
-				child = obj[key];// debug
-				error(s("Duplicate key not allowed: ") + key);
-			}
-			var val = value();
-			if (val.name.length == 0 and val.type == strings)val.name = val.value.string;
-			if (val.name.length == 0 and val.type == keyNode)val.name = val.value.node->name;
-			if (obj.name.length == 0)obj.name = object_name;
-			child = val;// SET reference!
-			child.name = key;
-			child.type = val.type;
-			child.parent = &obj;
-			obj.type = objects;
-			white();
-			// ',' is optional in Mark
-			if (ch == ',' or ch == ';') {
-				proceed();
-				white();
-			}
-		}
-		breakpoint_helper
-		throw error(UNEXPECT_END);
-	};
-
-//Mark::Mark(const Node &obj) : obj(obj) {}
-
 	bool isDigit(char next) {
 		return next >= '0' and next <= '9';
 	}
 
-//	Node quote(char type, char close) {
-//	}
-
-
-/*
-			Node &child = obj[key];
-//			if (obj.length == 1)assert(obj.children == &child or obj.children == child.parent);
-			if (child.length != 0) {//} && obj[key].type != "function") {
-				log(child);
-				child = obj[key];// debug
-				error(s("Duplicate key not allowed: ") + key);
-			}
-			var val = value();
-			if (val.name.length == 0 and val.type == strings)val.name = val.value.string;
-			if (val.name.length == 0 and val.type == keyNode)val.name = val.value.node->name;
-			if (obj.name.length == 0)obj.name = object_name;
-			child = val;// SET reference!
-			child.name = key;
-			child.type = val.type;
-			child.parent = &obj;
-			obj.type = objects;
- */
-
 	Node &setField(Node &key) { // a:{b}
-		Node &val = *value(' ',&key).clone();// applies to WHOLE expression
+		Node &val = *value(' ', &key).clone();// applies to WHOLE expression
 		if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1 and
 		    val.name.empty())
 			val = val.last();// singleton
@@ -1176,11 +966,11 @@ private:
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
-	Node value(char close = 0, Node* parent=0) {
+	Node value(char close = 0, Node *parent = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		Node list;
 		Node current;
-		current.parent=parent;
+		current.parent = parent;
 		current.setType(groups);// may be changed later, default (1 2)==1,2
 		var length = text.length;
 		int start = at;
@@ -1193,17 +983,18 @@ private:
 				proceed();
 				continue;
 			}// escape ANYTHING
-			if (ch == close or (close == ' ' or close == ',') and
-			    (ch == ';' or ch == ',' or ch == '\n')) {// todo: a=1,2,3
+			if (ch == close or ((close == ' ' or close == ',') and
+			    (ch == ';' or ch == ',' or ch == '\n'))) {// todo: a=1,2,3
 				proceed();
 				break;
 			}// inner match ok
-			if (ch == '}' or ch == ']' or ch == ')'){ // todo: ERROR if not opened before!
-				if(ch != close) // cant debug wth?
-					if(!current.parent)
+			if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
+				if (ch != close) // cant debug wth?
+					if (!current.parent)
 						return ERROR;// throwing? throw "NOT MATCHING" : ERROR;
 //				break;
-				return current;}// outer match unresolved so far
+				return current;
+			}// outer match unresolved so far
 			switch (ch) {
 				case '=':
 				case ':': {
@@ -1263,7 +1054,7 @@ private:
 						proceed();
 						continue;
 					}
-					current.add(value(ch,&current));// space is list operator
+					current.add(value(ch, &current));// space is list operator
 					break;
 				}
 				default: {
@@ -1290,50 +1081,6 @@ private:
 		}
 		return current;
 	};
-
-// Parse a JSON value.
-	Node value2() {
-		// A JSON value could be an object, an array, a string, a number, or a word.
-		white();// todo 1+1 != 1 +1
-		char _next = next;
-		switch (ch) {
-			case '{':
-				return (_next == ':' or _next == '=') ?
-				       binary() : object();
-			case '[':
-				return array();
-			case '(':
-				return params();
-//				return object();
-			case "ø"[0]:
-				proceed();
-				if (ch == "ø"[1]) {
-					proceed();
-					return NIL;
-				} else back();
-			case '"':
-			case '\'':
-				return string();
-			case '-':
-			case '+':
-			case '.':
-				if (isDigit(_next))
-					return number();
-				else
-					return words();
-
-			default:
-				Node id = words();
-				if (ch == '(')
-					id.param = &params();
-				if (ch == '[')
-					id.param = &selector();
-				if (ch == '{')
-					id.children = &object();
-		}
-	};;
-//	int $length{};//????
-//	int $convert{};
 //	int $parent{};
 };
 
