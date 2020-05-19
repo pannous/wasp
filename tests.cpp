@@ -433,6 +433,78 @@ void testMapsAsLists() {
 
 
 void testLogic() {
+	assert_is("not true", false);
+	assert_is("false xor true", true);
+	assert_is("true xor false", true);
+	assert_is("false xor false", false);
+	assert_is("true xor true", false);
+	assert_is("false or true", true);
+	assert_is("false or false", false);
+	assert_is("true or false", true);
+	assert_is("true or true", true);
+
+	assert_is("true and true", true);
+	assert_is("true and false", false);
+	assert_is("false and true", false);
+	assert_is("false and false", false);
+
+	assert_is("not false", true);
+}
+
+
+void testLogicEmptySet() {
+	assert_is("not ()", true);
+	assert_is("() xor 1", true);
+	assert_is("1 xor ()", true);
+	assert_is("() xor ()", false);
+	assert_is("1 xor 1", false);
+	assert_is("() or 1", true);
+	assert_is("() or ()", false);
+	assert_is("1 or ()", true);
+	assert_is("1 or 1", true);
+
+	assert_is("1 and 1", true);
+	assert_is("1 and ()", false);
+	assert_is("() and 1", false);
+	assert_is("() and ()", false);
+
+	assert_is("not 1", false);
+	assert_is("{} xor 1", true);
+	assert_is("1 xor {}", true);
+	assert_is("{} xor {}", false);
+	assert_is("1 xor 1", false);
+	assert_is("{} or 1", true);
+	assert_is("{} or {}", false);
+	assert_is("1 or {}", true);
+	assert_is("1 or 1", true);
+
+	assert_is("1 and 1", true);
+	assert_is("1 and {}", false);
+	assert_is("{} and 1", false);
+	assert_is("{} and {}", false);
+
+	assert_is("not {}", true);
+	assert_is("not 1", false);
+
+	assert_is("[] xor 1", true);
+	assert_is("1 xor []", true);
+	assert_is("[] xor []", false);
+	assert_is("1 xor 1", false);
+	assert_is("[] or 1", true);
+	assert_is("[] or []", false);
+	assert_is("1 or []", true);
+	assert_is("1 or 1", true);
+
+	assert_is("1 and 1", true);
+	assert_is("1 and []", false);
+	assert_is("[] and 1", false);
+	assert_is("[] and []", false);
+
+	assert_is("not []", true);
+	assert_is("not 1", false);
+}
+
+void testLogic01() {
 	assert_is("0 xor 1", true);
 	assert_is("1 xor 0", true);
 	assert_is("0 xor 0", false);
@@ -447,6 +519,8 @@ void testLogic() {
 	assert_is("0 and 1", false);
 	assert_is("0 and 0", false);
 
+	assert_is("not 0", true);
+	assert_is("not 1", false);
 	assert_is("1≠2", True);
 	assert_is("1==2", False);
 	//	assert_is("1=2", False);
@@ -455,6 +529,15 @@ void testLogic() {
 //	assert_is("2=2", True);
 	assert_is("2==2", True);
 	assert_is("2!=2", False);
+}
+
+
+void testLogicPrescedence() {
+	assert_is("true or true and false", true);
+	assert_is("true or false and true", true);
+	assert_is("true or false and false", true);
+	assert_is("false or true and false", false);
+	assert_is("false or true and false", false);
 }
 
 
@@ -677,11 +760,16 @@ void tests() {
 	testLengthOperator();
 	testEval();
 	testLogic();
+	testLogicEmptySet();
+	testLogicPrescedence();
+	testLogic01();
 	testMath();
 	testRoot();
 	testRootFloat();
 	testMarkSimple();
 	testEmpty();
+	testErrors();
+	testAllSamples();
 	testMarkMulti();
 	testMarkMulti2();
 	testMarkAsMap();
@@ -721,8 +809,7 @@ void testBUG() {
 
 
 void todos() {
-	testErrors();
-	testAllSamples();
+	assert_is("not ()", true);
 	skip(
 			testBUG();
 //	log("OK %s %d"s % ("WASM",1));// only 1 handed over
