@@ -451,15 +451,15 @@ public:
 	}
 
 	bool operator==(char c) {
-		return !length==0  && data  && data[0] == c && data[1] == '\0';
+		return length!=0  && data  && data[0] == c && data[1] == '\0';
 	}
 
 	bool operator==(chars c) {
-		return !length == 0 && data && eq(data, c);
+		return length != 0 && data && eq(data, c);
 	}
 
 	bool operator==(char* c) {
-		return !length == 0 && data && eq(data, c);
+		return length != 0 && data && eq(data, c);
 	}
 
 
@@ -636,7 +636,7 @@ void printf(const char *format, void* value) {
 //#endif //NETBASE_STRING_CPP
 
 #pragma clang diagnostic ignored "-Wuser-defined-literals"
-#pragma clang diagnostic ignored "-Wliteral-suffix"
+//#pragma clang diagnostic ignored "-Wliteral-suffix"
 
 String operator "" s(const char *c, size_t) {
 	return String(c);// "bla"s  literal operator suffixes not preceded by ‘_’ are reserved for future standardization
