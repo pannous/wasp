@@ -160,6 +160,7 @@ public:
 		return Mark().read(source);
 	}
 
+	// see 'apply' for operator eval
 	static Node eval(String source) { // return by value ok, rarely used and stable
 		return Mark().read(source).evaluate();
 	}
