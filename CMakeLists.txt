@@ -13,16 +13,17 @@ set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 #find_package( READLINE )
 
 #-std=c99 -Wall -j8 -std=c++2a
-#set(CMAKE_C_FLAGS "-lreadline -lz -Wno-write-strings ")
-#-g -rdynamic -lLLVMSupport
-
-# just for Backtrace.cpp :
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -Wl,--no-as-needed -ldl")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -Wl -ldl")
 
 # DISABLED WARNINGS
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Wliteral-suffix -Wno-deprecated  -Wno-write-strings")
-set(CMAKE_CXX_FLAGS "-lreadline -ldl -lcurl -lz -dM -g -rdynamic ${CMAKE_CXX_FLAGS}")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Wliteral-suffix -Wno-deprecated  -Wno-write-strings")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wundefined-bool-conversion -Wno-writable-strings -Wno-dangling-else")
+
+# LIBRARIES
+set(CMAKE_CXX_FLAGS " -dM -g ${CMAKE_CXX_FLAGS}")
+#set(CMAKE_CXX_FLAGS " -lreadline -ldl -lcurl -lz ${CMAKE_CXX_FLAGS}") # extra libraries
+# just for Backtrace.cpp :
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -Wl,--no-as-needed -ldl")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -Wl -ldl")
 
 set(SOURCE_FILES ErrorHandler.cpp ErrorHandler.h String.h NodeTypes.h Angle.cpp)
 #via Angle.cpp:
