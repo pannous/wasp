@@ -180,6 +180,7 @@ public:
 		if (ch && ch != -1) {
 			breakpoint_helper
 			error("Expect end of input");
+			result = ERROR;
 		}
 		// Mark does not support the legacy JSON reviver function todo ??
 		return result;
@@ -1146,7 +1147,7 @@ private:
  */
 
 	Node &setField(Node &key) { // a:{b}
-		Node &val = *value(' ').clone();// applies to WHOLE expression
+		Node &val = *value(' ',&key).clone();// applies to WHOLE expression
 		if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1 and
 		    val.name.empty())
 			val = val.last();// singleton
@@ -1174,10 +1175,11 @@ private:
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
-	Node value(char close = 0) {
+	Node value(char close = 0, Node* parent=0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		Node list;
 		Node current;
+		current.parent=parent;
 		current.setType(groups);// may be changed later, default (1 2)==1,2
 		var length = text.length;
 		int start = at;
@@ -1195,9 +1197,12 @@ private:
 				proceed();
 				break;
 			}// inner match ok
-			if (ch == '}' or ch == ']' or ch == ')')
+			if (ch == '}' or ch == ']' or ch == ')'){ // todo: ERROR if not opened before!
+				if(ch != close) // cant debug wth?
+					if(!current.parent)
+						return ERROR;// throwing? throw "NOT MATCHING" : ERROR;
 //				break;
-				return current;// outer match unresolved so far
+				return current;}// outer match unresolved so far
 			switch (ch) {
 				case '=':
 				case ':': {
@@ -1257,7 +1262,7 @@ private:
 						proceed();
 						continue;
 					}
-					current.add(value(ch));// space is list operator
+					current.add(value(ch,&current));// space is list operator
 					break;
 				}
 				default: {
