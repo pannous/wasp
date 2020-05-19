@@ -15,7 +15,7 @@ extern Node ERROR;
 
 
 union Value {
-//	Node node;// incomplete type
+//	Node node;//  incomplete type
 	Node *node = 0;// todo DANGER, can be lost :( !!
 //	Node **children = 0;
 	String string;
