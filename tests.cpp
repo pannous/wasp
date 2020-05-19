@@ -542,12 +542,12 @@ void testLogicPrescedence() {
 
 
 void testC() {
-	assert(1 < 2 < 3);
-	assert('a' < 'b' < 'c');
-	char b = 'b';
-	assert('a' < b < 'c');
-//	assert(!('c' < b < 'a'));
-	assert_equals(String("abcd").substring(1, 2), "b");
+//	esult of comparison of constant 3 with expression of type 'bool' is always true
+//	assert(1 < 2 < 3);// NOT WHAT YOU EXPECT!
+//	assert(3 > 2 > 1);// NOT WHAT YOU EXPECT!
+//	assert('a' < 'b' < 'c');// NOT WHAT YOU EXPECT!
+//	assert('a' < b and b < 'c');// ONLY WAY <<
+	assert_equals(String("abcd").substring(1, 2), "b");// excluding, like js
 	assert_equals(String("abcd").substring(1, 3), "bc");
 }
 
