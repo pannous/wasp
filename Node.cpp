@@ -581,6 +581,7 @@ void log(Node &);
 bool recursive = true;
 
 Node values(Node n) {
+	if (eq(n.name, "not"))return True;// not () == True; hack for missing param todo: careful!
 	if (eq(n.name, "one"))return Node(1l);
 	if (eq(n.name, "two"))return Node(2l);
 	if (eq(n.name, "three"))return Node(3l);
@@ -782,8 +783,9 @@ Node Node::apply(Node left, Node op0, Node right) {
 		right = right.evaluate(false);
 
 	if (op == "not" or op == "¬" or op == "!") {
-		bool x = not left.evaluate();
-		return Node(x);
+		// todo: what if left is present?
+		Node x = right.evaluate();
+		return !x;
 	}
 	if (op == "#" or op == '#') {
 		return right.length;// or right["size"] or right["count"]  or right["length"]
