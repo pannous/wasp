@@ -1,4 +1,5 @@
 Node result;
+static Node parse(String source);
 
 #undef assert // <cassert> / <assert.h>
 
@@ -113,7 +114,7 @@ Node assert_parsesx(const char *mark) {
 	} catch (...) {
 		printf("\nTEST FAILED WITH UNKNOWN ERROR\n");
 	}
-	return ERR;// DANGEEER 0 wrapped as Node(int=0) !!!
+	return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
 
 #define check(test) if(test){}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
@@ -331,15 +332,40 @@ void testAddField() {
 
 void testErrors() {
 	throwing = false;
+	result = Mark::parse("]");
+	assert(result == ERROR);
 	Node node = Mark::parseFile("samples/errors.mark");
 	throwing = true;
 }
 
-void testSamples() {
-//	ln -s /me/dev/script/wasm/mark/samples /me/dev/script/wasm/mark/cmake-build-debug/
-//	Node node= Mark::parseFile("samples/comments.mark");
-	Node node = Mark::parseFile("samples/kitchensink.mark");
 
+
+void testForEach() {
+	int sum=0;
+	for(Node& item : parse("1 2 3"))
+		sum += item.value.longy;
+	assert(sum==6);
+}
+
+#include <filesystem>
+
+using files = std::filesystem::recursive_directory_iterator;
+
+void testAllSamples() {
+	for (const auto& file : files("samples/")){
+		const char *filename = file.path().string().data();
+		if(!s(filename).contains("error"))
+		Mark::parseFile(filename);
+	}
+}
+
+void testSample() {
+	Node node= Mark::parseFile("samples/comments.mark");
+}
+
+void testKitchensink() {
+//	ln -s /me/dev/script/wasm/mark/samples /me/dev/script/wasm/mark/cmake-build-debug/
+	Node node = Mark::parseFile("samples/kitchensink.mark");
 	assert(node['a'] == "classical json");
 	assert(node['b'] == "quotes optional");
 	assert(node['c'] == "commas optional");
@@ -674,14 +700,17 @@ void tests() {
 	testOverwrite();
 	testMarkMultiDeep();
 	testMapsAsLists();
+	testForEach();
 	testDidYouMeanAlias();
 	testParams();
 	testMarkSimpleAssign();
 	testMapsAsLists();
-	testSamples();
+	testKitchensink();
 	testNetBase();
 	testRootLists();
 	testRoots();
+	testForEach();
+	testAllSamples();
 	check(NIL.value.longy == 0);// should never be modified
 }
 
@@ -690,12 +719,10 @@ void testBUG() {
 	testParentBUG();
 }
 
-static Node parse(String source);
 
 void todos() {
-	const Node &null = parse("0");
-	assert_equals(null, NIL);
-	assert_is("0", NIL);
+	testErrors();
+	testAllSamples();
 	skip(
 			testBUG();
 //	log("OK %s %d"s % ("WASM",1));// only 1 handed over
