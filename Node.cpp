@@ -10,6 +10,8 @@ struct Node;
 extern Node True;
 extern Node False;
 extern Node NIL;
+extern Node ERROR;
+
 
 
 union Value {
@@ -355,7 +357,7 @@ Node NaN = Node("NaN");
 //NIL=0;
 //Node NIL;
 Node NIL = Node(nil_name).setType(nils);
-Node ERR = Node("ERR").setType(nils);// ≠ NIL
+Node ERROR = Node("ERROR").setType(nils);// ≠ NIL
 Node True = Node("True").setType(bools);
 Node False = Node("False").setType(bools);
 
