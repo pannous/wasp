@@ -22,9 +22,14 @@ bool assert_equals_x(Node &a, char *b, char *context = "") {
 	return a == b;
 }
 
-bool assert_equals_x(Node &a, float b, char *context = "") {
-	if (a != Node(b))puts("FAILED assert_equals! %s should be %s in %s"s % a.name % b % context);
+bool assert_equals_x(Node &a, double b, char *context = "") {
+	if (a != Node(b))puts("FAILED assert_equals! %s should be %f in %s"s % a.name % b % context);
 	else puts("OK %f==%f in %f"s % a.value.floaty % b % context);
+	return a == b;
+}
+bool assert_equals_x(Node &a, long b, char *context = "") {
+	if (!(a==b))puts("FAILED assert_equals! %s should be %d in %s"s % a	% b % context);
+	else puts("OK %d==%d in %f"s % a.value.longy % b % context);
 	return a == b;
 }
 
@@ -69,7 +74,7 @@ bool assert_equals_x(float a, float b, char *context = "") {
 	return ok;
 }
 
-#define assert_equals(a, b) if (!assert_equals_x(a,b)){printf("%s == %s",#a,#b);backtrace_line();}
+#define assert_equals(a, b) if (!assert_equals_x(a,b)){printf("%s != %s",#a,#b);backtrace_line();}
 
 
 bool assert_isx(char *mark, Node expect) {
@@ -206,10 +211,10 @@ void testMarkSimple() {
 	log("testMarkSimple");
 	Node &a = assert_parses("{a:3}");
 	Node &a3 = a;
-	assert(a3.type == longs);
-	assert(a3.name == "a"s);
+	assert_equals(a3, long(3));
 	assert(a3 == 3);
-	assert_equals(a3, 3);
+	assert(a3.type == longs or a3.type==keyNode and a3.value.node->type==longs);
+	assert(a3.name == "a"s);
 //	assert(a3.name == "a"s);// todo? cant
 
 
@@ -753,8 +758,40 @@ void testAsserts() {
 	assert_equals("a", "a");
 	assert_equals("a"s, "a"s);
 }
+void testStringConcatenation() {
+//	assert_equals(Node("✔️"), True);
+//	assert_equals(Node("✔"), True);
+//	assert_equals(Node("✖️"), False);
+//	assert_equals(Node("✖"), False);
+
+	assert_equals("a"s + 2, "a2");
+	assert_equals("a"s + 2.2, "a2.2");
+	assert_equals("a"s + "2.2", "a2.2");
+	assert_equals("a"s + 'b', "ab");
+	assert_equals("a"s + "bc", "abc");
+	assert_equals("a"s + true, "a✔️"s);
+
+
+
+}
+void testConcatenation(){
+	testStringConcatenation();
+	assert_equals(Node("1", "2", 0) + Node("3"s), Node("1", "2", "3", 0));
+	assert_equals(Node(1, 2, 0) + Node(3), Node(1, 2, 3, 0));
+	assert_equals(Node(1, 2, 0) + Node(3, 4, 0), Node(1, 2, 3, 4, 0));
+	assert_equals(Node("1", "2", 0) + Node("3","4",0), Node("1", "2", "3","4", 0));
+
+
+	assert_equals(Node(1)+Node(2),Node(3));
+	assert_equals(Node(1)+Node(2.4),Node(3.4));
+	assert_equals(Node(1.0)+Node(2),Node(3.0));
+	assert_equals(Node(1)+Node("a"s),Node("1a"));
+	assert_equals(Node("1"s)+Node(2),Node("12"));
+	assert_equals(Node("a"s)+Node(2.2),Node("a2.2"));
+}
 
 void tests() {
+	testConcatenation();
 	testAsserts();
 	testNodeName();
 	testLengthOperator();
@@ -820,6 +857,7 @@ void todos() {
 
 // valgrind --track-origins=yes ./mark
 void testCurrent() { // move to tests() once OK
+	testMarkSimple();
 //	tests();// make sure all still ok after changes
 	todos();
 	tests();

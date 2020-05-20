@@ -250,6 +250,21 @@ public:
 		length = len(data);
 	}
 
+
+	explicit String(double c) {
+		int max_length=4;
+		data = itoa(c);
+		length = len(data);
+//		itof :
+		append('.');
+		c = c - (long(c));
+		while(length<max_length){
+			c=(c-long(c))*10;
+			if(int(c)==0)break;
+			append(int(c)+0x30);
+		}
+	}
+
 #ifndef WASM
 
 	String(std::string basicString) {
@@ -419,7 +434,12 @@ public:
 //	}
 
 	String operator+(bool b) {
+		return this->operator+(b ? "✔️" : "✖️");//✓
 		return this->operator+(b ? " true" : " false");
+	}
+
+	String operator+(double i) {
+		return this->operator+(String(i));
 	}
 
 	String operator+(long i) {
