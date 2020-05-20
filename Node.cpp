@@ -12,6 +12,7 @@ extern Node False;
 extern Node NIL;
 extern Node ERROR;
 
+String str(char *string);
 
 
 union Value {
@@ -99,14 +100,14 @@ public:
 	explicit Node(double nr) {
 		value.floaty = nr;
 		type = floats;
-//		if (debug)name = itoa(nr); // messes with setField contraction
+		if (debug)name = itoa(nr); // messes with setField contraction
 	}
 
 
 	explicit Node(float nr) {
 		value.floaty = nr;
 		type = floats;
-//		if (debug)name = String((long) nr) + String(".…");//#+"#"; // messes with setField contraction
+		if (debug)name = String((long) nr) + String(".…");//#+"#"; // messes with setField contraction
 	}
 
 // how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
@@ -145,7 +146,7 @@ public:
 	explicit Node(int nr) {
 		value.longy = nr;
 		type = longs;
-//		if (debug)name = itoa(nr); // messes with setField contraction
+		if (debug)name = itoa(nr); // messes with setField contraction
 	}
 
 	explicit Node(const char *name) {
@@ -158,7 +159,8 @@ public:
 			name = "HOW";
 		value.longy = nr;
 		type = longs;
-		if (debug)name = nr ? "true" : "false";
+		if (debug)name = nr ? "✔️" : "✖️";
+//		if (debug)name = nr ? "true" : "false";
 //		this=True; todo
 	}
 
@@ -215,6 +217,8 @@ public:
 
 	bool operator!=(Node other);
 
+	Node operator+(Node other);
+
 //	bool operator!=(Node &other);// why not auto
 
 //	 +=, -=, *=, /=, %=, <<=, >>=, &=, |=, ^=
@@ -222,14 +226,10 @@ public:
 //	bool operator~();// MUST BE UNITARY:(
 
 
-//	Node(bool b) {
-//		Value(b ? 0 : 1);
-//	}
-
 	String string() {
 		if (type == strings)
 			return value.string;
-//		return name;
+		return name;
 		breakpoint_helper
 		err(String("WRONG TYPE ") + typeName(type));
 	}
@@ -249,7 +249,9 @@ public:
 
 	Node evaluate(bool expectOperator);
 
-	void add(Node node);
+	Node insert(Node &node, int at = -1);// non-modifying
+
+	void add(Node node);// modifying
 
 //	void add(Node &node);
 
@@ -261,6 +263,8 @@ public:
 	Node *begin();
 
 	Node *end();
+
+	Node &merge(Node &other);// non-modifying
 
 	void log() {
 		printf("Node ");
@@ -318,7 +322,7 @@ public:
 		return type == longs ? value.longy : value.floaty;// danger
 	}
 
-	Node *has(String s,bool searchParams=true);
+	Node *has(String s, bool searchParams = true);
 
 // type conversions
 	explicit operator bool() const { return value.longy; }
@@ -414,6 +418,20 @@ Node *Node::end() {
 	return children + length;
 }
 
+// non-modifying
+Node &Node::merge(Node &other) {
+	if (other.isNil())return *this;
+	if (other.length == 0)return *this->insert(other).clone();
+	Node &neu = *clone();// non-modifying
+	for (Node &item:other)
+		neu.add(item);
+	return neu;
+//	Node *clon = this->clone();
+//	clon->add(other);
+//	return *clon;
+}// non-modifying
+
+
 Node &Node::operator[](char c) {
 	return (*this)[String(c)];
 }
@@ -505,15 +523,18 @@ bool Node::operator==(int other) {
 }
 
 bool Node::operator==(long other) {
+	if(type==keyNode and value.node and value.node->value.longy == other)return true;
 	return (type == longs and value.longy == other) or (type == floats and value.floaty == other);
 }
 
 bool Node::operator==(double other) {
+	if(type==keyNode and value.node and value.node->value.floaty == other)return true;
 	return (type == floats and value.floaty == ((float) other)) or
 	       (type == longs and value.longy == other);
 }
 
 bool Node::operator==(float other) {
+	if(type==keyNode and value.node and value.node->value.floaty == other)return true;
 	return (type == floats and value.floaty == other) or
 	       (type == longs and value.longy == other);
 }
@@ -531,6 +552,7 @@ bool Node::operator==(Node &other) {
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// same value enough?
 
+	if(type==keyNode and this->value.node and *this->value.node==other)return true;// todo again?
 	if (other.type == unknown and name == other.name)
 		return true; // weak criterum for dangling unknowns!! TODO ok??
 
@@ -538,7 +560,7 @@ bool Node::operator==(Node &other) {
 		return false;
 	if (type == bools)
 		return value.data == other.value.data or (other != NIL and other != False) or (value.data and
-		       other.value.data);
+		                                                                               other.value.data);
 	if (type == longs)
 		return value.longy == other.value.longy;
 	if (type == strings)
@@ -553,7 +575,7 @@ bool Node::operator==(Node &other) {
 	for (int i = 0; i < length; i++) {
 		Node &field = children[i];
 		Node &val = other.children[i];
-		if (!field.name.empty())
+		if (field != val and !field.name.empty())
 			val = other[field.name];
 		if (field != val) {
 			if ((field.type != keyNode and field.type != nils) or !field.value.node)
@@ -576,6 +598,31 @@ bool Node::operator!=(Node other) {
 	return not(*this == other);
 }
 
+Node Node::operator+(Node other) {
+	if (type == strings and other.type == longs)
+		return Node(value.string + other.value.longy);
+	if (type == strings and other.type == floats)
+		return Node(value.string + other.value.floaty);
+	if (type == strings and other.type == strings)
+		return Node(value.string + other.value.string);
+	if (type == longs and other.type == longs)
+		return Node(value.longy + other.value.longy);
+	if (type == floats and other.type == longs)
+		return Node(value.floaty + other.value.longy);
+	if (type == longs and other.type == floats)
+		return Node(value.longy + other.value.floaty);
+	if (type == floats and other.type == floats)
+		return Node(value.floaty + other.value.floaty);
+	if (type == longs and other.type == strings)
+		return Node(value.longy + other.value.string);
+//	if(type==floats and other.type==strings)
+//		return Node(value.floaty + other.value.string);
+	if (type == objects)
+		return this->merge(other);
+	if (other.type == objects)
+		return other.insert(*this, 0);
+	throw str("Operator + not supported for node types %s and %s") % typeName(type) % typeName(other.type);
+};
 void log(Node &);
 
 bool recursive = true;
@@ -682,6 +729,20 @@ void Node::add(Node *node) {
 
 void Node::add(Node node) {// merge?
 	add(&node);
+}
+
+//non-modifying
+Node Node::insert(Node &node, int at) {
+	if (length == 0)return node;//  todo: rescue value,name?
+	while (at < 0)at = length + at;
+	if (at >= length-1) {
+		Node* clon=this->clone();
+		clon->add(node);
+		return *clon;
+	}
+	if (at == 0)return node + *this;
+	if (at > 0)
+		throw "Not implemented: insert at offset";
 }
 //
 //void Node::add(Node &node) {
@@ -882,7 +943,7 @@ Node &Node::setType(Type type) {
 }
 
 // Node* OK? else Node&
-Node *Node::has(String s,bool searchParams) {
+Node *Node::has(String s, bool searchParams) {
 	if ((type == objects or type == keyNode) and s == value.node->name)
 		return value.node;
 	for (int i = 0; i < length; i++) {
@@ -893,7 +954,7 @@ Node *Node::has(String s,bool searchParams) {
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
 				return &entry;
 	}
-	if(param and searchParams)
+	if (param and searchParams)
 		return param->has(s);
 	return 0;// NIL
 }
@@ -917,5 +978,5 @@ bool Node::isNil() { // required here: name.empty()
 
 String toString(Node &node) {
 //	return node.serialize();
-	return node.name or node.string();
+	return node.name.empty()? node.string() : node.name;
 }
