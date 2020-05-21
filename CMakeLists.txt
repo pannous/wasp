@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.5)
-project(mark)
+cmake_minimum_required(VERSION 3.16)
+project(wasp)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -32,7 +32,8 @@ set(SOURCE_FILES ErrorHandler.cpp ErrorHandler.h String.h NodeTypes.h Angle.cpp)
 #String.h
 #Node.cpp Node.h
 
+add_executable(wasp ${SOURCE_FILES})
 
-add_executable(mark ${SOURCE_FILES})
+TARGET_LINK_LIBRARIES(wasp curl)
 
-TARGET_LINK_LIBRARIES(mark curl)
+#include_directories(.)

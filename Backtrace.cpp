@@ -43,7 +43,7 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 	if (nFrames == nMaxFrames)
 		trace_buf << "[truncated]\n";
 	printf("%s\n", trace_buf.str().c_str());
-//	printf("/me/dev/script/wasm/mark/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
+//	printf("/me/dev/script/wasm/wasp/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
 	return trace_buf.str();
 #endif
 }

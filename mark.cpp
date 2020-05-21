@@ -172,7 +172,7 @@ public:
 		lineNumber = 1;
 		ch = ' ';
 		text = String(source);
-//		if (typeof options == "object" && options.format && options.format != "mark")  // parse as other formats
+//		if (typeof options == "object" && options.format && options.format != "wasp")  // parse as other formats
 //			return $convert.parse(source, options);
 		var result = value(); // <<
 		white();
@@ -241,7 +241,7 @@ private:
 //		size_t size;
 //		size = backtrace(array, 10);
 //		backtrace_symbols_fd(array, size, 2 /*STDERR_FILENO*/);
-		// mark(+0x649e)[0x55715b27e49e] hmmm
+		// wasp(+0x649e)[0x55715b27e49e] hmmm
 //		Compiling with -g -rdynamic gets you symbol info in your output, which glibc can use to make a nice stacktrace
 	};
 
@@ -743,7 +743,7 @@ private:
 		throw error(message);
 	};
 
-	Node pragma2(char prag = '\n') {// sende in mark??
+	Node pragma2(char prag = '\n') {// sende in wasp??
 		let level = 0;
 		proceed();  // skip starting '('
 		while (ch) {
@@ -1110,7 +1110,7 @@ struct TTT {
 };
 
 
-//void assert_is(char *mark, Node result);
+//void assert_is(char *wasp, Node result);
 
 void init() {
 	NIL.type = nils;
