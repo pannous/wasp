@@ -119,10 +119,10 @@ public:
 		va_list args;
 		va_start(args, a);
 		int i = b;
-		do {
+		while (i){
 			add(Node(i).clone());
 			i = (int) va_arg(args, int);
-		} while (i);
+		}
 		va_end(args);
 	}
 
@@ -134,11 +134,11 @@ public:
 		va_list args;
 		va_start(args, a);
 		char *i = b;
-		do {
+		while (i){
 			Node *node = Node(i).clone();
 			add(node);
 			i = (char *) va_arg(args, char*);
-		} while (i);
+		}
 		va_end(args);
 	}
 
