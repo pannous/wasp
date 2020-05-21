@@ -20,3 +20,4 @@ cmake_install.cmake
 eigen.natvis
 mark.cbp
 CMakeFiles
+wasp.cbp
