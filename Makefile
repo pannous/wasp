@@ -111,17 +111,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named mark
+# Target rules for targets named wasp
 
 # Build rule for target.
-mark: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 mark
-.PHONY : mark
+wasp: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 wasp
+.PHONY : wasp
 
 # fast build rule for target.
-mark/fast:
-	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/build
-.PHONY : mark/fast
+wasp/fast:
+	$(MAKE) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/build
+.PHONY : wasp/fast
 
 Angle.o: Angle.cpp.o
 
@@ -129,7 +129,7 @@ Angle.o: Angle.cpp.o
 
 # target to build an object file
 Angle.cpp.o:
-	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/Angle.cpp.o
+	$(MAKE) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Angle.cpp.o
 .PHONY : Angle.cpp.o
 
 Angle.i: Angle.cpp.i
@@ -138,7 +138,7 @@ Angle.i: Angle.cpp.i
 
 # target to preprocess a source file
 Angle.cpp.i:
-	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/Angle.cpp.i
+	$(MAKE) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Angle.cpp.i
 .PHONY : Angle.cpp.i
 
 Angle.s: Angle.cpp.s
@@ -147,7 +147,7 @@ Angle.s: Angle.cpp.s
 
 # target to generate assembly for a file
 Angle.cpp.s:
-	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/Angle.cpp.s
+	$(MAKE) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Angle.cpp.s
 .PHONY : Angle.cpp.s
 
 ErrorHandler.o: ErrorHandler.cpp.o
@@ -156,7 +156,7 @@ ErrorHandler.o: ErrorHandler.cpp.o
 
 # target to build an object file
 ErrorHandler.cpp.o:
-	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/ErrorHandler.cpp.o
+	$(MAKE) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/ErrorHandler.cpp.o
 .PHONY : ErrorHandler.cpp.o
 
 ErrorHandler.i: ErrorHandler.cpp.i
@@ -165,7 +165,7 @@ ErrorHandler.i: ErrorHandler.cpp.i
 
 # target to preprocess a source file
 ErrorHandler.cpp.i:
-	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/ErrorHandler.cpp.i
+	$(MAKE) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/ErrorHandler.cpp.i
 .PHONY : ErrorHandler.cpp.i
 
 ErrorHandler.s: ErrorHandler.cpp.s
@@ -174,7 +174,7 @@ ErrorHandler.s: ErrorHandler.cpp.s
 
 # target to generate assembly for a file
 ErrorHandler.cpp.s:
-	$(MAKE) -f CMakeFiles/mark.dir/build.make CMakeFiles/mark.dir/ErrorHandler.cpp.s
+	$(MAKE) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/ErrorHandler.cpp.s
 .PHONY : ErrorHandler.cpp.s
 
 # Help Target
@@ -185,7 +185,7 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... mark"
+	@echo "... wasp"
 	@echo "... Angle.o"
 	@echo "... Angle.i"
 	@echo "... Angle.s"

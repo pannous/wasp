@@ -3,22 +3,14 @@
 //
 #define _main_
 
-#include "mark.cpp"
-
-//
-//It has clean syntax with FULLY-TYPE data model (like JSON or even better)
-//It is generic and EXTENSIBLE (like XML or even better)
-//It has built-in MIXED CONTENT support (like HTML5 or even better)
-//It supportsHIGH-ORDER COMPOSITION (like S-expressions or even better)
+#include "Wasp.cpp"
 
 int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
 	try {
-		auto s = "hello world"_;
 		init();
-//		test();
 		testCurrent();
-		return 42;
+		return 420;
 	} catch (chars err) {
 		printf("\nERROR\n");
 		printf("%s", err);
