@@ -26,7 +26,7 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 			char *demangled = NULL;
 			int status = -1;
 			if (i == skip)
-				printf("\n%s\n", info.dli_fname);
+				printf("%s\n", info.dli_fname);
 			if (info.dli_sname[0] == '_')
 				demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
 			auto name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
