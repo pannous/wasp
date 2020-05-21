@@ -10,7 +10,7 @@ int main(int argp, char **argv) {
 	try {
 		init();
 		testCurrent();
-		return 420;
+		return 42;
 	} catch (chars err) {
 		printf("\nERROR\n");
 		printf("%s", err);
