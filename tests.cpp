@@ -357,6 +357,7 @@ void testForEach() {
 using files = std::filesystem::recursive_directory_iterator;
 
 void testAllSamples() {
+//	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-debug/
 	for (const auto& file : files("samples/")){
 		const char *filename = file.path().string().data();
 		if(!s(filename).contains("error"))
@@ -369,7 +370,6 @@ void testSample() {
 }
 
 void testKitchensink() {
-//	ln -s /me/dev/script/wasm/wasp/samples /me/dev/script/wasm/wasp/cmake-build-debug/
 	Node node = Mark::parseFile("samples/kitchensink.wasp");
 	assert(node['a'] == "classical json");
 	assert(node['b'] == "quotes optional");
@@ -780,8 +780,8 @@ void testConcatenationBorderCases() {
 // Todo Edge case a=[] a+=1
 	//  BUG: singleton {1}+2==1+2 = 12/3 should be {1,2}
 //	skip(//todo if int works why not string?
-			assert_equals(Node("1", 0) + Node("2", 0), Node("1", "2", 0));
-			assert_equals(Node("1", 0) + Node("x"s), Node("1", "x", 0));
+			assert_equals(Node("1", 0,0) + Node("2",0, 0), Node("1", "2", 0));
+			assert_equals(Node("1", 0,0) + Node("x"s), Node("1", "x", 0));
 //	)
 //	assert_equals(parse("{1}+2"),Node("1","2")); angle, not wasp
 	assert_equals(Node(1, 0) + Node(3, 0), Node(1, 3, 0));// ok
