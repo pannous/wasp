@@ -123,7 +123,7 @@ Node assert_parsesx(const char *mark) {
 }
 
 #define check(test) if(test){}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-//#define assert_parses(mark) result=assert_parsesx(mark);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 #define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(0);}
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
@@ -339,7 +339,7 @@ void testErrors() {
 	throwing = false;
 	result = Mark::parse("]");
 	assert(result == ERROR);
-	Node node = Mark::parseFile("samples/errors.mark");
+	Node node = Mark::parseFile("samples/errors.wasp");
 	throwing = true;
 }
 
@@ -365,12 +365,12 @@ void testAllSamples() {
 }
 
 void testSample() {
-	Node node= Mark::parseFile("samples/comments.mark");
+	Node node= Mark::parseFile("samples/comments.wasp");
 }
 
 void testKitchensink() {
-//	ln -s /me/dev/script/wasm/mark/samples /me/dev/script/wasm/mark/cmake-build-debug/
-	Node node = Mark::parseFile("samples/kitchensink.mark");
+//	ln -s /me/dev/script/wasm/wasp/samples /me/dev/script/wasm/wasp/cmake-build-debug/
+	Node node = Mark::parseFile("samples/kitchensink.wasp");
 	assert(node['a'] == "classical json");
 	assert(node['b'] == "quotes optional");
 	assert(node['c'] == "commas optional");
@@ -774,12 +774,26 @@ void testStringConcatenation() {
 
 
 }
+
+void testConcatenationBorderCases() {
+// Border cases: {1}==1;
+// Todo Edge case a=[] a+=1
+	//  BUG: singleton {1}+2==1+2 = 12/3 should be {1,2}
+//	skip(//todo if int works why not string?
+			assert_equals(Node("1", 0) + Node("2", 0), Node("1", "2", 0));
+			assert_equals(Node("1", 0) + Node("x"s), Node("1", "x", 0));
+//	)
+//	assert_equals(parse("{1}+2"),Node("1","2")); angle, not wasp
+	assert_equals(Node(1, 0) + Node(3, 0), Node(1, 3, 0));// ok
+}
+
 void testConcatenation(){
 	testStringConcatenation();
 	assert_equals(Node("1", "2", 0) + Node("3"s), Node("1", "2", "3", 0));
 	assert_equals(Node(1, 2, 0) + Node(3), Node(1, 2, 3, 0));
 	assert_equals(Node(1, 2, 0) + Node(3, 4, 0), Node(1, 2, 3, 4, 0));
 	assert_equals(Node("1", "2", 0) + Node("3","4",0), Node("1", "2", "3","4", 0));
+
 
 
 	assert_equals(Node(1)+Node(2),Node(3));
@@ -847,7 +861,9 @@ void testBUG() {
 
 void todos() {
 	assert_is("not ()", true);
+	testConcatenationBorderCases();
 	skip(
+			assert_equals(Node("1", 0) + Node("2"s), Node("1", "2", 0));
 			testBUG();
 //	log("OK %s %d"s % ("WASM",1));// only 1 handed over
 			log("OK %d %d"s % (2, 1));// only 1 handed over
@@ -855,11 +871,9 @@ void todos() {
 	)
 }
 
-// valgrind --track-origins=yes ./mark
 void testCurrent() { // move to tests() once OK
-	testMarkSimple();
 //	tests();// make sure all still ok after changes
 	todos();
 	tests();
 }
-
+// valgrind --track-origins=yes ./wasp
