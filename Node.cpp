@@ -130,7 +130,7 @@ public:
 	// vargs needs to be 0 terminated, otherwise pray!
 	explicit Node(char *a, char *b, ...) {
 		type = objects;// groups list
-		add(Node(a).clone());
+		add(Node(a).clone(),false);
 		va_list args;
 		va_start(args, a);
 		char *i = b;
@@ -255,7 +255,7 @@ public:
 
 //	void add(Node &node);
 
-	void add(Node *node);
+	void add(Node *node, bool flatten=true);
 
 	void remove(Node *node); // directly from children
 	void remove(Node &node); // via compare children
@@ -699,7 +699,7 @@ void Node::remove(Node &node) {
 	}
 }
 
-void Node::add(Node *node) {
+void Node::add(Node *node,bool flatten) {
 	if (node->isNil() and node->name.empty() and node->type != longs)
 		return;// skipp nils!
 	node->parent = this;
@@ -716,7 +716,7 @@ void Node::add(Node *node) {
 	} else { // todo a{x}{y z} => a{x,{y z}} BAD
 //	if (not children or (length == 0 and not value.node))
 //		value.node = node; later!
-		if (node->length == 1 and node->name.empty())
+		if (node->length == 1 and flatten and node->name.empty())
 			node = &node->last();
 		if (length >= capacity)
 			error("Out of node Memory");
