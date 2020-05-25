@@ -1,8 +1,11 @@
 # 🐝 Wasp = Wasm-Lisp
 
-Lisp in WebAssembly (version -0.0.∞)
+Wasp is a modern data format and a 'post-lisp' programming language, fixing the shortcomings of JSON, ECMA and [Lisp](https://github.com/google/schism).
 
-See [schism](https://github.com/google/schism) for a complete R6RS lisp on Wasm / [discussion](https://news.ycombinator.com/item?id=16488605) .
+What do Lisp, ECMA and Wasm have in common anyway?
+Unbeknownst to many, thanks to closures and ECMA Objects, modern JavaScript is getting ever closser to the original idea of Lisp:
+
+«Data is Code and Code is Data»
 
 # Angle Language
 
@@ -10,14 +13,14 @@ Angle is a new Programming Language as well as data format, "Lisp with Hashes"
 
 In Lisp to create an object like foo:{bar:3} you have to resort to ugly reader macros like `#S(foo :bar 3)` 
 
-*Objective Markup Notation*, abbreviated as Wasp Notation or just **Wasp**, is a new unified notation for both object and markup data. The notation is a superset of what can be represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very clean syntax and simple data model.
+ **Wasp**, is a new unified notation for both object and markup data. The notation is a superset of what can be represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very clean syntax and simple data model.
 
 - It has **clean syntax** with **fully-type** data model *(like JSON or even better)*
 - It is **generic** and **extensible** *(like XML or even better)*
 - It has built-in **mixed content** support *(like HTML5 or even better)*
 - It supports **high-order** composition *(like S-expressions or even better)*
 
-|                        | Wasp                           | JSON     | HTML | XML                            | S-expr                             | YAML                                  |
+|                        | Wasp/[[Mark](https://github.com/henry-luo/mark)                           | JSON     | HTML | XML                            | S-expr                             | YAML                                  |
 | ---------------------- | ------------------------------ | -------- | ---- | ------------------------------ | ---------------------------------- | ------------------------------------- |
 | Clean syntax           | yes | yes| no   | yes | yes| yes|
 | Fully-typed            | yes | yes| no   | no| yes| yes |
@@ -47,7 +50,7 @@ For example, a HTML registration form:
 </form>
 ```
 
-Could be represented in Angle as:
+Could be represented in Wasp/Angle as:
 
 ```text
 form{                                  // object type-name 'form'
@@ -68,8 +71,6 @@ form{                                  // object type-name 'form'
 }
 ```
 
-You can refer to the [syntax spec](https://wasp.js.org/wasp-syntax.html) for details.
-
 ## Wasp Data Model
 
 Wasp has a very simple and fully-typed data model. 
@@ -85,10 +86,6 @@ Wasp utilizes a novel feature in JavaScript that a plain JS object is actually *
 So each Wasp object is mapped to just **one** plain JavaScript object, which is more compact and efficient comparing to other JSON-based DOM models (e.g. [JsonML](http://www.jsonml.org/), [virtual-dom](https://github.com/Matt-Esch/virtual-dom), [MicroXML](https://dvcs.w3.org/hg/microxml/raw-file/tip/spec/microxml.html)), and more intuitive to used in JS.
 
 Roughly speaking, data models of JSON, XML/HTML are subsets of Wasp data model, and Wasp data model is a subset of JS data model.
-
-<div align="center">
-<img src='https://wasp.js.org/data-model.png' width='300'>
-</div>
 
 You can refer to the [data model spec](https://wasp.js.org/wasp-model.html) for details.
 
