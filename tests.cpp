@@ -1,4 +1,5 @@
 Node result;
+
 static Node parse(String source);
 
 #undef assert // <cassert> / <assert.h>
@@ -27,8 +28,9 @@ bool assert_equals_x(Node &a, double b, char *context = "") {
 	else puts("OK %f==%f in %f"s % a.value.floaty % b % context);
 	return a == b;
 }
+
 bool assert_equals_x(Node &a, long b, char *context = "") {
-	if (!(a==b))puts("FAILED assert_equals! %s should be %d in %s"s % a	% b % context);
+	if (!(a == b))puts("FAILED assert_equals! %s should be %d in %s"s % a % b % context);
 	else puts("OK %d==%d in %f"s % a.value.longy % b % context);
 	return a == b;
 }
@@ -213,7 +215,7 @@ void testMarkSimple() {
 	Node &a3 = a;
 	assert_equals(a3, long(3));
 	assert(a3 == 3);
-	assert(a3.type == longs or a3.type==keyNode and a3.value.node->type==longs);
+	assert(a3.type == longs or a3.type == keyNode and a3.value.node->type == longs);
 	assert(a3.name == "a"s);
 //	assert(a3.name == "a"s);// todo? cant
 
@@ -344,12 +346,11 @@ void testErrors() {
 }
 
 
-
 void testForEach() {
-	int sum=0;
-	for(Node& item : parse("1 2 3"))
+	int sum = 0;
+	for (Node &item : parse("1 2 3"))
 		sum += item.value.longy;
-	assert(sum==6);
+	assert(sum == 6);
 }
 
 #include <filesystem>
@@ -358,15 +359,15 @@ using files = std::filesystem::recursive_directory_iterator;
 
 void testAllSamples() {
 //	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-debug/
-	for (const auto& file : files("samples/")){
+	for (const auto &file : files("samples/")) {
 		const char *filename = file.path().string().data();
-		if(!s(filename).contains("error"))
-		Mark::parseFile(filename);
+		if (!s(filename).contains("error"))
+			Mark::parseFile(filename);
 	}
 }
 
 void testSample() {
-	Node node= Mark::parseFile("samples/comments.wasp");
+	Node node = Mark::parseFile("samples/comments.wasp");
 }
 
 void testKitchensink() {
@@ -758,6 +759,7 @@ void testAsserts() {
 	assert_equals("a", "a");
 	assert_equals("a"s, "a"s);
 }
+
 void testStringConcatenation() {
 //	assert_equals(Node("✔️"), True);
 //	assert_equals(Node("✔"), True);
@@ -772,7 +774,6 @@ void testStringConcatenation() {
 	assert_equals("a"s + true, "a✔️"s);
 
 
-
 }
 
 void testConcatenationBorderCases() {
@@ -780,50 +781,47 @@ void testConcatenationBorderCases() {
 // Todo Edge case a=[] a+=1
 	//  BUG: singleton {1}+2==1+2 = 12/3 should be {1,2}
 //	skip(//todo if int works why not string?
-			assert_equals(Node("1", 0,0) + Node("2",0, 0), Node("1", "2", 0));
-			assert_equals(Node("1", 0,0) + Node("x"s), Node("1", "x", 0));
+	assert_equals(Node("1", 0, 0) + Node("2", 0, 0), Node("1", "2", 0));
+	assert_equals(Node("1", 0, 0) + Node("x"s), Node("1", "x", 0));
 //	)
 //	assert_equals(parse("{1}+2"),Node("1","2")); angle, not wasp
 	assert_equals(Node(1, 0) + Node(3, 0), Node(1, 3, 0));// ok
 }
 
-void testConcatenation(){
+void testConcatenation() {
 	testStringConcatenation();
 	assert_equals(Node("1", "2", 0) + Node("3"s), Node("1", "2", "3", 0));
 	assert_equals(Node(1, 2, 0) + Node(3), Node(1, 2, 3, 0));
 	assert_equals(Node(1, 2, 0) + Node(3, 4, 0), Node(1, 2, 3, 4, 0));
-	assert_equals(Node("1", "2", 0) + Node("3","4",0), Node("1", "2", "3","4", 0));
-
-
-
-	assert_equals(Node(1)+Node(2),Node(3));
-	assert_equals(Node(1)+Node(2.4),Node(3.4));
-	assert_equals(Node(1.0)+Node(2),Node(3.0));
-	assert_equals(Node(1)+Node("a"s),Node("1a"));
-	assert_equals(Node("1"s)+Node(2),Node("12"));
-	assert_equals(Node("a"s)+Node(2.2),Node("a2.2"));
+	assert_equals(Node("1", "2", 0) + Node("3", "4", 0), Node("1", "2", "3", "4", 0));
+	assert_equals(Node(1) + Node(2), Node(3));
+	assert_equals(Node(1) + Node(2.4), Node(3.4));
+	assert_equals(Node(1.0) + Node(2), Node(3.0));
+	assert_equals(Node(1) + Node("a"s), Node("1a"));
+	assert_equals(Node("1"s) + Node(2), Node("12"));
+	assert_equals(Node("a"s) + Node(2.2), Node("a2.2"));
 }
 
 
-void testParamizedKeys(){
+void testParamizedKeys() {
 //	<label for="pwd">Password</label>
 // 1. paramize keys: label{param=(for:password)}:"Text"
-	Node label1=parse("label(for:password):'Passwort'");
-	assert_equals(label1,"Passwort");
-	assert_equals(label1["for"],"password");
+	Node label1 = parse("label(for:password):'Passwort'");
+	assert_equals(label1, "Passwort");
+	assert_equals(label1["for"], "password");
 //	assert_equals(label1["for:password"],"Passwort");
 
 // 2. paramize values
-	Node label2=parse("label:'Passwort'(for:password)");
-	auto ok=label2=="Passwort";
-	assert_equals(label2,"Passwort");
-	assert_equals(label2.value.node[0]["for"],"password");
+	Node label2 = parse("label:'Passwort'(for:password)");
+	auto ok = label2 == "Passwort";
+	assert_equals(label2, "Passwort");
+	assert_equals(label2.value.node[0]["for"], "password");
 
 	skip(
 //	3. relative equivalence? todo not really
-	assert_equals(label1,label2);
-	Node label3=parse("label:{for:password 'Password'}");
-			)
+			assert_equals(label1, label2);
+			Node label3 = parse("label:{for:password 'Password'}");
+	)
 }
 
 void tests() {
