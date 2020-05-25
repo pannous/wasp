@@ -804,7 +804,31 @@ void testConcatenation(){
 	assert_equals(Node("a"s)+Node(2.2),Node("a2.2"));
 }
 
+
+void testParamizedKeys(){
+//	<label for="pwd">Password</label>
+// 1. paramize keys: label{param=(for:password)}:"Text"
+	Node label1=parse("label(for:password):'Passwort'");
+	assert_equals(label1,"Passwort");
+	assert_equals(label1["for"],"password");
+//	assert_equals(label1["for:password"],"Passwort");
+
+// 2. paramize values
+	Node label2=parse("label:'Passwort'(for:password)");
+	auto ok=label2=="Passwort";
+	assert_equals(label2,"Passwort");
+	assert_equals(label2.value.node[0]["for"],"password");
+
+	skip(
+//	3. relative equivalence? todo not really
+	assert_equals(label1,label2);
+	Node label3=parse("label:{for:password 'Password'}");
+			)
+}
+
 void tests() {
+	testParamizedKeys();
+	testConcatenationBorderCases();
 	testConcatenation();
 	testAsserts();
 	testNodeName();
@@ -860,8 +884,7 @@ void testBUG() {
 
 
 void todos() {
-	assert_is("not ()", true);
-	testConcatenationBorderCases();
+	testParamizedKeys();
 	skip(
 			assert_equals(Node("1", 0) + Node("2"s), Node("1", "2", 0));
 			testBUG();
