@@ -359,6 +359,7 @@ using files = std::filesystem::recursive_directory_iterator;
 
 void testAllSamples() {
 //	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-debug/
+//	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/
 	for (const auto &file : files("samples/")) {
 		const char *filename = file.path().string().data();
 		if (!s(filename).contains("error"))
