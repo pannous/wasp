@@ -3,6 +3,8 @@
 ////
 //
 ////#include "Node.h"
+#include <cstdarg>
+#include <tgmath.h> // sqrt macro
 #include "String.h"
 #include "NodeTypes.h"
 
@@ -14,6 +16,11 @@ extern Node ERROR;
 
 String str(char *string);
 
+
+void todo(chars error) {
+	breakpoint_helper
+	err(str("TODO ") + error);
+}
 
 union Value {
 //	Node node;//  incomplete type
@@ -69,6 +76,12 @@ public:
 //		if(debug)name = "[]";
 	}
 
+	Node& first(){
+		if (length>0)return children[0];
+		throw "No such element";
+//		return ERROR;
+	}
+
 //	if you do not declare a copy constructor, the compiler gives you one implicitly.
 //	Node( Node& other ){// copy constructor!!
 
@@ -117,7 +130,7 @@ public:
 		type = objects;// groups list
 		add(Node(a).clone());
 		va_list args;
-		va_start(args, a);
+		va_start(args, b);
 		int i = b;
 		while (i){
 			add(Node(i).clone());
@@ -132,7 +145,7 @@ public:
 		type = objects;// groups list
 		add(Node(a).clone(),false);
 		va_list args;
-		va_start(args, a);
+		va_start(args, b);
 		char *i = b;
 		while (i){
 			Node *node = Node(i).clone();
@@ -267,45 +280,45 @@ public:
 	Node &merge(Node &other);// non-modifying
 
 	void log() {
-		printf("Node ");
+		print("Node ");
 		if (this == &NIL || type == nils) {
-			printf("NIL\n");
+			print("NIL\n");
 			return;
 		}
 //		if || name==nil_name …
 		if (name.data < (char *) 0xffff) {
-			printf("BUG");
+			print("BUG");
 			return;
 		}
 //		assert (name.data < (char *) 0xffff);
 		if (name and name.data and name.data > (char *) 0xffff and type != objects)
-			printf("name %s ", name.data);
-		printf("length %i ", length);
-		printf("type  %s", typeName(type).data);
+			print("name %s ", name.data);
+		print("length %i ", length);
+		print("type  %s", typeName(type).data);
 		if (this == &True)
-			printf("TRUE");
+			print("TRUE");
 		if (this == &False)
-			printf("FALSE");
+			print("FALSE");
 		if (type == objects and value.data)
-			printf(" value.name %s", value.string.data);// ???
+			print(" value.name %s", value.string.data);// ???
 		if (type == bools)
-			printf(" value %s", value.longy ? "TRUE" : "FALSE");
+			print(" value %s", value.longy ? "TRUE" : "FALSE");
 		if (type == strings)
-			printf(" value %s", value.string.data);
+			print(" value %s", value.string.data);
 		if (type == longs)
-			printf(" value %li", value.longy);
+			print(" value %li", value.longy);
 		if (type == floats)
-			printf(" value %f", value.floaty);
+			print(" value %f", value.floaty);
 
-		printf(" [ ");
+		print(" [ ");
 		for (int i = 0; i < length; i++) {
 			Node &node = children[i];
 //			if(check(node))
-			printf("%s", node.name.data);
-			printf(" ");
+			print("%s", node.name.data);
+			print(" ");
 		}
-		printf("]");
-		printf("\n");
+		print("]");
+		print("\n");
 	}
 
 	float precedence(Node &operater);
@@ -511,12 +524,12 @@ bool Node::operator==(String other) {
 }
 
 bool Node::operator==(int other) {
-	if (this == 0)return false;// HOW?
+//	if (this == 0)return false;// HOW?
 	if ((type == longs and value.longy == other) or (type == floats and value.floaty == other))
 		return true;
 	if (type == keyNode and value.node and *value.node == other)return true;
-	if (type == strings and atoi(value.string) == other)return true;
-	if (atoi(this->name) == other)return true;
+	if (type == strings and atoi0(value.string) == other)return true;
+	if (atoi0(this->name) == other)return true;
 	if (type == objects and length == 1)return last() == other;
 //	if (type == objects)return value.node->longe()==other;// WTF
 	return false;
@@ -743,6 +756,7 @@ Node Node::insert(Node &node, int at) {
 	if (at == 0)return node + *this;
 	if (at > 0)
 		throw "Not implemented: insert at offset";
+	return ERROR;
 }
 //
 //void Node::add(Node &node) {
