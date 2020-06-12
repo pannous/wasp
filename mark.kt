@@ -1,7 +1,7 @@
 import kotlinx.serialization.*
 
 import kotlin.io.println as println
-import kotlin.io.println as puts
+import kotlin.io.println as print
 import com.beust.klaxon.JsonReader
 import com.beust.klaxon.KlaxonException
 import kotlinx.io.StringReader
