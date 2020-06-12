@@ -5,78 +5,78 @@ static Node parse(String source);
 #undef assert // <cassert> / <assert.h>
 
 #define assert(condition) try{\
-   if(condition==0)throw "assert FAILED";else printf("\nassert OK: %s\n",#condition);\
-   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
+   if(condition==0)throw "assert FAILED";else print("\nassert OK: %s\n",#condition);\
+   }catch(chars m){print("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
 
-#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-//#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
+#define backtrace_line() {print("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+//#define backtrace_line(msg) {print("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
 
 bool assert_equals_x(String a, String b, char *context = "") {
-	if (a == b)puts("OK %s==%s in %s"s % a % b % context);
-	else puts("FAILED assert_equals!\n %s should be %s in %s"s % a % b % context);
+	if (a == b)print("OK %s==%s in %s"s % a % b % context);
+	else print("FAILED assert_equals!\n %s should be %s in %s"s % a % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
-	if (a.name != b)puts("FAILED assert_equals! %s should be %s in %s"s % a.name % b % context);
-	else puts("OK %s==%s in %s"s % a.name % b % context);
+	if (a.name != b)print("FAILED assert_equals! %s should be %s in %s"s % a.name % b % context);
+	else print("OK %s==%s in %s"s % a.name % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, double b, char *context = "") {
-	if (a != Node(b))puts("FAILED assert_equals! %s should be %f in %s"s % a.name % b % context);
-	else puts("OK %f==%f in %f"s % a.value.floaty % b % context);
+	if (a != Node(b))print("FAILED assert_equals! %s should be %f in %s"s % a.name % b % context);
+	else print("OK %f==%f in %f"s % a.value.floaty % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, long b, char *context = "") {
-	if (!(a == b))puts("FAILED assert_equals! %s should be %d in %s"s % a % b % context);
-	else puts("OK %d==%d in %f"s % a.value.longy % b % context);
+	if (!(a == b))print("FAILED assert_equals! %s should be %d in %s"s % a % b % context);
+	else print("OK %d==%d in %f"s % a.value.longy % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node a, String b, char *context = "") {
-	if (a.name != b)puts("FAILED assert_equals! %s should be %s in %s"s % a.name % b % context);
-	else puts("OK %s==%s in %s"s % a.name % b % context);
+	if (a.name != b)print("FAILED assert_equals! %s should be %s in %s"s % a.name % b % context);
+	else print("OK %s==%s in %s"s % a.name % b % context);
 	return a == b;
 }
 
 
 bool assert_equals_x(Node a, Node b, char *context = "") {
-	if (a != b)puts("FAILED assert_equals! %s should be %s in %s"s % a % b % context);
-	else puts("OK %s==%s in %s"s % a % b % context);
+	if (a != b)print("FAILED assert_equals! %s should be %s in %s"s % a % b % context);
+	else print("OK %s==%s in %s"s % a % b % context);
 	return a == b;
 }
 
 //bool assert_equals(chars a, chars b, char *context = "") {
 //	if (a != b)// err
-//		puts("FAILED assert_equals! %s should be %s in %s"s % a % b % context);
-//	else puts("OK %s==%s in %s"s % a % b % context);
+//		print("FAILED assert_equals! %s should be %s in %s"s % a % b % context);
+//	else print("OK %s==%s in %s"s % a % b % context);
 //	return a == b;
 //}
 
 bool assert_equals_x(long a, long b, char *context) {
-	if (a != b)puts("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
-	else puts("OK %d==%d in %s"s % a % b % context);
+	if (a != b)print("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
+	else print("OK %d==%d in %s"s % a % b % context);
 	return a == b;
 }
 
 
 bool assert_equals_x(int a, int b, char *context) {
-	if (a != b)puts("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
-	else puts("OK %d==%d in %s"s % a % b % context);
+	if (a != b)print("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
+	else print("OK %d==%d in %s"s % a % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(float a, float b, char *context = "") {
 	float epsilon = fabs(a + b) / 100000.;// 𝕚𝚤:=-1
 	bool ok = a == b or fabs(a - b) <= epsilon;
-	if (!ok)puts("FAILED assert_equals!\n %f should be %f in %s"s % a % b % context);
-	else puts("OK %f==%f in %s"s % a % b % context);
+	if (!ok)print("FAILED assert_equals!\n %f should be %f in %s"s % a % b % context);
+	else print("OK %f==%f in %s"s % a % b % context);
 	return ok;
 }
 
-#define assert_equals(a, b) if (!assert_equals_x(a,b)){printf("%s != %s",#a,#b);backtrace_line();}
+#define assert_equals(a, b) if (!assert_equals_x(a,b)){print("%s != %s",#a,#b);backtrace_line();}
 
 
 bool assert_isx(char *mark, Node expect) {
@@ -91,11 +91,11 @@ bool assert_isx(char *mark, Node expect) {
 		if (left != expect)
 //			breakpoint_helper
 			if (left != expect)// Redundant for Breakpoint ;)
-				printf("FAILED %s≠%s\n", left.name.data, expect.name.data);
+				print("FAILED %s≠%s\n", left.name.data, expect.name.data);
 		return left == expect;
 	} catch (SyntaxError *err) {
-		printf("\nERROR IN TEST\n");
-		printf("%s", err->data);
+		print("\nERROR IN TEST\n");
+		print("%s", err->data);
 	}
 	return false;
 }
@@ -110,24 +110,24 @@ Node assert_parsesx(const char *mark) {
 		log(result);
 		return result;
 	} catch (chars err) {
-		printf("\nTEST FAILED WITH ERROR\n");
-		printf("%s\n", err);
+		print("\nTEST FAILED WITH ERROR\n");
+		print("%s\n", err);
 	} catch (String err) {
-		printf("\nTEST FAILED WITH ERRORs\n");
-		printf("%s\n", err.data);
+		print("\nTEST FAILED WITH ERRORs\n");
+		print("%s\n", err.data);
 	} catch (SyntaxError *err) {
-		printf("\nTEST FAILED WITH SyntaxError\n");
-		printf("%s\n", err->data);
+		print("\nTEST FAILED WITH SyntaxError\n");
+		print("%s\n", err->data);
 	} catch (...) {
-		printf("\nTEST FAILED WITH UNKNOWN ERROR\n");
+		print("\nTEST FAILED WITH UNKNOWN ERROR\n");
 	}
 	return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
 
-#define check(test) if(test){}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-#define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(0);}
-#define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
+#define check(test) if(test){}else{print("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){print("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define assert_parses(mark) result=assert_parsesx(mark);if(!result){print("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(0);}
+#define skip(test) print("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
 
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
@@ -136,11 +136,11 @@ bool assert_isx(char *mark, Node expect);
 bool assert_isx(char *mark, chars expect);
 
 #define assert_is(mark, result) {\
-    printf("TEST %s==%s\n",#mark,#result);\
+    print("TEST %s==%s\n",#mark,#result);\
     bool ok=assert_isx(mark,result);\
-    if(ok)printf("PASSED %s==%s\n",#mark,#result);\
-    else{printf("FAILED %s==%s\n",#mark,#result);\
-    printf("%s:%d\n",__FILE__,__LINE__);exit(0);}\
+    if(ok)print("PASSED %s==%s\n",#mark,#result);\
+    else{print("FAILED %s==%s\n",#mark,#result);\
+    print("%s:%d\n",__FILE__,__LINE__);exit(0);}\
 }
 
 void testC();
@@ -353,8 +353,8 @@ void testForEach() {
 	assert(sum == 6);
 }
 
+#ifndef WASM
 #include <filesystem>
-
 using files = std::filesystem::recursive_directory_iterator;
 
 void testAllSamples() {
@@ -365,6 +365,7 @@ void testAllSamples() {
 			Mark::parseFile(filename);
 	}
 }
+#endif
 
 void testSample() {
 	Node node = Mark::parseFile("samples/comments.wasp");
@@ -669,6 +670,8 @@ void testRoots() {
 
 
 void testParams() {
+	assert_equals(parse("f(x)=x*x").param->first(),"x");
+
 	Node body = assert_parses("body(style='blue'){a(link)}");
 	assert(body["style"] == "blue");
 
@@ -693,7 +696,7 @@ void testParams() {
 typedef Node N;
 
 void testDidYouMeanAlias() {
-	Node ok1 = assert_parses("puts('hi')");
+	Node ok1 = assert_parses("print('hi')");
 	skip(
 			assert_equals(ok1[".warnings"], "DYM print");// THIS CAN NEVER HAVED WORKED! BUG IN TEST PIPELINE!
 	)
@@ -772,20 +775,17 @@ void testStringConcatenation() {
 	assert_equals("a"s + 'b', "ab");
 	assert_equals("a"s + "bc", "abc");
 	assert_equals("a"s + true, "a✔️"s);
-
-
 }
 
 void testConcatenationBorderCases() {
-// Border cases: {1}==1;
-// Todo Edge case a=[] a+=1
-	//  BUG: singleton {1}+2==1+2 = 12/3 should be {1,2}
-//	skip(//todo if int works why not string?
-	assert_equals(Node("1", 0, 0) + Node("2", 0, 0), Node("1", "2", 0));
-	assert_equals(Node("1", 0, 0) + Node("x"s), Node("1", "x", 0));
-//	)
-//	assert_equals(parse("{1}+2"),Node("1","2")); angle, not wasp
 	assert_equals(Node(1, 0) + Node(3, 0), Node(1, 3, 0));// ok
+	assert_equals(Node("1", 0, 0) + Node("2", 0, 0), Node("1", "2", 0));
+// Border cases: {1}==1;
+	assert_equals(parse("{1}"), parse("1"));
+// Todo Edge case a=[] a+=1
+	assert_equals(Node() + Node("1", 0, 0), Node("1", 0, 0));
+	//  singleton {1}+2==1+2 = 12/3 should be {1,2}
+	assert_equals(Node("1", 0, 0) + Node("x"s), Node("1", "x", 0));
 }
 
 void testConcatenation() {
@@ -842,7 +842,6 @@ void tests() {
 	testMarkSimple();
 	testEmpty();
 	testErrors();
-	testAllSamples();
 	testMarkMulti();
 	testMarkMulti2();
 	testMarkAsMap();
@@ -871,18 +870,22 @@ void tests() {
 	testRootLists();
 	testRoots();
 	testForEach();
+#ifndef WASM
 	testAllSamples();
+#endif
 	check(NIL.value.longy == 0);// should never be modified
 }
 
+#include "testAngle.cpp"
 
 void testBUG() {
 	testParentBUG();
 }
 
 
+
 void todos() {
-	testParamizedKeys();
+	testAngle();
 	skip(
 			assert_equals(Node("1", 0) + Node("2"s), Node("1", "2", 0));
 			testBUG();

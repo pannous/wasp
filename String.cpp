@@ -30,9 +30,9 @@ bool debug = true;
 //extern void *malloc (int __size);
 
 #ifndef WASM
-
 #include <cstdio>
 #include <tgmath.h>
+
 //#include <cstring>
 
 void err(chars error);
@@ -40,23 +40,28 @@ void err(chars error);
 void todo(chars error);
 
 void logs(const char *s) {
-	printf("%s\n", s);
+	print("%s\n", s);
 }
 
 void logi(long i) {
-	printf("%li\n", i);
+	print("%li\n", i);
 }
 
 #else
-
+#pragma message "using wasm imports"
 extern "C" void print (const char *);// no \n newline
 extern "C" void logs (const char *);
 extern "C" void logc(char s);
 extern "C" void logi(int i);
-void printf(const char *s);
-void printf(const char *format, int i);
-void printf(const char *format, chars i);
-//  extern "C" int printf (const char *__restrict __format, ...);
+void print(const char *s);
+void print(const char *format, int i);
+void print(const char *format, chars i);
+void print(const char *format, chars i, int line);
+void print(const char *format, chars i, chars j);
+void print(const char *format, chars i, chars j, int l);
+void print(const char *format, chars i, chars j, chars k, int l);
+
+//  extern "C" int print (const char *__restrict __format, ...);
 #endif
 
 class String;
@@ -215,8 +220,12 @@ void reverse(char *str, int len) {
 #endif
 class String {
 
+#ifdef WASM
+void* calloc(size_t s,int idk);
+#endif
+
 public:
-	char *data{};
+	char *data;//{};
 	int length = -1;
 
 	String() {
@@ -504,8 +513,7 @@ public:
 	}
 
 	bool operator==(char *c) const {
-		if (!this)
-			return false;// how lol e.g. me.children[0].name => nil.name
+//		if (!this)return false;// how lol e.g. me.children[0].name => nil.name
 		return eq(data, c);
 	}
 
@@ -517,7 +525,7 @@ public:
 		return data[i];
 	}
 
-	bool empty() {
+	bool empty() {//this==0 in testMarkMulti!
 		return this==0 || length==0  ||  !data || data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}" ||  data[0] == 0;
 	}
 
@@ -560,10 +568,10 @@ public:
 
 // type conversions
 
-	explicit operator int() { return atoi(data); }
+	explicit operator int() { return atoi0(data); }
 
 //	 operator char*()  { return data; }
-	explicit operator int() const { return atoi(data); }
+	explicit operator int() const { return atoi0(data); }
 
 //	otherwise String("abc") == "abc"  is char* comparison hence false
 //	explicit
@@ -595,11 +603,11 @@ String patterns_name = "[…]";
 #import "Node.cpp"
 
 void log(long i) {
-	printf("%li", i);
+	print("%li", i);
 }
 
 void log(chars s) {
-	printf("%s\n", s);
+	print("%s\n", s);
 }
 
 void log(Node &n) {
@@ -618,13 +626,13 @@ void log(Node &n) {
 #import <string>
 
 void log(std::string s) {
-	printf("%s\n", s.data());
+	print("%s\n", s.data());
 }
 
 #endif
 
 void log(String s) {
-	printf("%s\n", s.data);
+	print("%s\n", s.data);
 }
 
 void log(Node *n0) {
@@ -635,20 +643,20 @@ void log(Node *n0) {
 }
 
 #ifdef WASM
-void printf(const char *s) {
+void print(const char *s) {
 	print(s);
 }
-void printf(const char *format, int i) {
+void print(const char *format, int i) {
 	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
-void printf(const char *format, long i) {
+void print(const char *format, long i) {
 	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
-void printf(const char *format, chars value) {
+void print(const char *format, chars value) {
 	print(String(format).replace("%s", value));
 }
 
-void printf(const char *format, void* value) {
+void print(const char *format, void* value) {
 	print(String(format).replace("%p", String((long)value)));
 }
 #endif
@@ -736,12 +744,6 @@ String typeName(Type t) {
 			breakpoint_helper
 			throw str("MISSING Type name mapping ") + t;
 	}
-}
-
-
-void todo(chars error) {
-	breakpoint_helper
-	err(str("TODO ") + error);
 }
 
 class SyntaxError : String {
