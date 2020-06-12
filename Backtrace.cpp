@@ -11,6 +11,7 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 #endif
 // This function produces a stack backtrace with demangled function & method names.
 #ifndef WASM
+#include "String.h"
 	void *callstack[128];
 	const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
 	char buf[1024];

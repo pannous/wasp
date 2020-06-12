@@ -28,14 +28,16 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wundefined-bool-conversion -Wno-writabl
 
 # LIBRARIES
 #include_directories(/usr/include/)
-set(CMAKE_CXX_FLAGS " -dM -g ${CMAKE_CXX_FLAGS}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
+set(CMAKE_CXX_FLAGS " -dM -ferror-limit=5 -g ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS " -lreadline -ldl -lcurl -lz ${CMAKE_CXX_FLAGS}") # extra libraries
 # just for Backtrace.cpp :
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -Wl,--no-as-needed -ldl")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -Wl -ldl")
 
+# WASM:
 #set(SOURCE_FILES String.h NodeTypes.h Wasp.cpp)
-set(SOURCE_FILES NodeTypes.h Fetch.cpp String.cpp Wasp.cpp)
+set(SOURCE_FILES NodeTypes.h Fetch.cpp String.h Wasp.cpp)
 #not WASM: ErrorHandler.cpp  ErrorHandler.h
 #via Angle.cpp:
 #mark.cpp

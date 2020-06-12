@@ -4,6 +4,7 @@
 #define _main_
 unsigned long __stack_chk_guard= 0xBAAAAAAD;
 #include "Wasp.cpp"
+
 int main(int argp, char **argv) {
 #ifndef WASM
 	register_global_signal_exception_handler();
