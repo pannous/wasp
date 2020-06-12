@@ -21,10 +21,11 @@ extern "C" chars fetch(chars url) {
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &out);
 	CURLcode res = curl_easy_perform(curl);
 	if (res != CURLE_OK)
-		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+		printf("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+//		fprint(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 	char *copy = (char *) malloc(sizeof(char)*out.str().length()+1);
-	sprintf(copy,"%s",out.str().data());
+//	sprint(copy,"%s",out.str().data());
 //	strcpy(copy, data);
-//	printf("%s", copy);
+//	print("%s", copy);
 	return copy;
 }
