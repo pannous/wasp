@@ -19,8 +19,16 @@ unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_
 
 #define breakpoint_helper print("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
 
+
+#ifdef WASM
+#warning COMPILING TO WASM
+#else
+#warning COMPILING TO APPLE
+#endif
+
 #ifndef WASM
 #include "ErrorHandler.h"
+#include "String.h"
 #else
 void usleep(long l){}
 #endif
@@ -79,7 +87,7 @@ void _cxa_throw(){
 
 #else // NOT WASM:
 #include <zconf.h>
-#import "Backtrace.cpp"
+//#import "Backtrace.cpp"
 #include "ErrorHandler.h"
 
 #ifndef __APPLE__
@@ -91,7 +99,9 @@ void _cxa_throw(){
 //NEEDED, else terminate called without an active exception
 
 void err(chars error) {
+#ifdef Backtrace
 	Backtrace(3);
+#endif
 	throw error;
 }
 

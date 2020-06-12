@@ -6,6 +6,9 @@
 //#define NETBASE_STRING_CPP
 //#include "String.h" prefering one big WASM object
 
+
+#warning COMPILING String
+
 //void *malloc(int size);
 
 //#include <malloc.h>
