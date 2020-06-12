@@ -11,20 +11,35 @@ extern "C" void error(chars error);
 extern "C" void warn(chars error);
 extern "C" void warning(chars error);
 extern "C" chars fetch(chars url);
+extern "C" void* alloc(long i);
 
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
 unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 
-#define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
+#define breakpoint_helper print("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
 
+
+#ifdef WASM
+#warning COMPILING TO WASM
+#else
+#warning COMPILING TO APPLE
+#endif
+
+#ifndef WASM
+#include "ErrorHandler.h"
+#include "String.h"
+#else
+void usleep(long l){}
+#endif
 
 #ifdef WASM
 #ifdef X86_64
 typedef long unsigned int size_t;
 #else
 // typedef long unsigned int size_t;
-typedef unsigned int size_t;
+//typedef unsigned int size_t;
+typedef unsigned long size_t;
 #endif
 
 unsigned int *current;
@@ -71,10 +86,8 @@ void _cxa_throw(){
 }
 
 #else // NOT WASM:
-
-
 #include <zconf.h>
-#import "Backtrace.cpp"
+//#import "Backtrace.cpp"
 #include "ErrorHandler.h"
 
 #ifndef __APPLE__
@@ -86,7 +99,9 @@ void _cxa_throw(){
 //NEEDED, else terminate called without an active exception
 
 void err(chars error) {
+#ifdef Backtrace
 	Backtrace(3);
+#endif
 	throw error;
 }
 
@@ -95,15 +110,15 @@ void error(chars error) {
 }
 
 void warn(chars warning) {
-	printf("%s\n", warning);
+	print("%s\n", warning);
 }
 
 void warning(chars warning) {
-	printf("%s\n", warning);
+	print("%s\n", warning);
 }
 
 // #include <cstdlib> // malloc too
-//#include <stdio.h> // printf
+//#include <stdio.h> // print
 #endif
 
 #ifdef WASM64
@@ -156,7 +171,7 @@ public:
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
 	static Node parse(String source) {
-		printf("Parsing %s\n", source.data);
+		print("Parsing %s\n", source.data);
 		return Mark().read(source);
 	}
 
@@ -188,13 +203,15 @@ public:
 		return result;
 	}
 
+
+
 	static char *readFile(const char *filename) {
 		FILE *f = fopen(filename, "rt");
 		if (!f)err("FILE NOT FOUND "_s + filename);
 		fseek(f, 0, SEEK_END);
 		long fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-		char *s = (char *) (malloc(fsize + 2));
+		char *s = (char *) (alloc(fsize + 2));
 		fread(s, 1, fsize, f);
 		fclose(f);
 		return s;
@@ -235,7 +252,9 @@ private:
 	};
 
 	String backtrace2() {
+#ifndef WASM
 		return Backtrace(3);// skip to Mark::error()
+#endif
 //		String stack;
 //		void *array[10];
 //		size_t size;
@@ -1097,7 +1116,7 @@ void handler(int sig) {
 	size = backtrace(array, 10);
 
 	// print out all the frames to stderr
-	fprintf(stderr, "Error: signal %d:\n", sig);
+	fprint(stderr, "Error: signal %d:\n", sig);
 	backtrace_symbols_fd(array, size, STDERR_FILENO);
 	exit(1);
 }
@@ -1124,7 +1143,7 @@ void init() {
 #import "tests.cpp"
 
 static Node parse(String source) {
-	printf("Parsing %s\n", source.data);
+	print("Parsing %s\n", source.data);
 	return Mark().read(source);
 }
 
@@ -1136,7 +1155,9 @@ static Node parse(String source) {
 
 #ifndef _main_
 int main(int argp, char **argv) {
+#ifndef WASM
 	register_global_signal_exception_handler();
+#endif
 	try {
 		auto s = "hello world"_;
 		init();
@@ -1145,14 +1166,14 @@ int main(int argp, char **argv) {
 		testCurrent();
 		return 42;
 	} catch (chars err) {
-		printf("\nERROR\n");
-		printf("%s", err);
+		print("\nERROR\n");
+		print("%s", err);
 	} catch (String err) {
-		printf("\nERROR\n");
-		printf("%s", err.data);
+		print("\nERROR\n");
+		print("%s", err.data);
 	} catch (SyntaxError *err) {
-		printf("\nERROR\n");
-		printf("%s", err->data);
+		print("\nERROR\n");
+		print("%s", err->data);
 	}
 	usleep(1000000000);
 	return -1;
