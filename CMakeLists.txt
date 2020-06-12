@@ -13,7 +13,11 @@ set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 #find_package( READLINE )
 
 #-std=c99 -Wall -j8 -std=c++2a
-
+if ( WASM==1)
+    message(WASM "${WASM}")
+else()
+    message(NO WASM "${WASM}")
+endif ()
 # DISABLED WARNINGS
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Wliteral-suffix -Wno-deprecated  -Wno-write-strings")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wundefined-bool-conversion -Wno-writable-strings -Wno-dangling-else -Wundefined-bool-conversion")
