@@ -22,21 +22,21 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 
 	for (int i = skip; i < nFrames - skipEnd; i++) {
 		// skip __libc_start_main _start
-//		print("%s\n", symbols[i]);
+//		printf("%s\n", symbols[i]);
 		Dl_info info;
 		if (dladdr(callstack[i], &info) && info.dli_sname) {
 			char *demangled = NULL;
 			int status = -1;
 			if (i == skip)
-				print("%s\n", info.dli_fname);
+				printf("%s\n", info.dli_fname);
 			if (info.dli_sname[0] == '_')
 				demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
 			auto name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
 			unsigned long offset = (char *) callstack[i] - (char *) info.dli_saddr;
-			snprint(buf, sizeof(buf), "%-3d %s + %zd\n", i, name, offset);
+			snprintf(buf, sizeof(buf), "%-3d %s + %zd\n", i, name, offset);
 			free(demangled);
 		} else {
-			snprint(buf, sizeof(buf), "%-3d %*p %s\n",
+			snprintf(buf, sizeof(buf), "%-3d %*p %s\n",
 			         i, int(2 + sizeof(void *) * 2), callstack[i], symbols[i]);
 		}
 		trace_buf << buf;
@@ -44,8 +44,8 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 	free(symbols);
 	if (nFrames == nMaxFrames)
 		trace_buf << "[truncated]\n";
-	print("%s\n", trace_buf.str().c_str());
-//	print("/me/dev/script/wasm/wasp/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
+	printf("%s\n", trace_buf.str().c_str());
+//	printf("/me/dev/script/wasm/wasp/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
 	return trace_buf.str();
 #endif
 }

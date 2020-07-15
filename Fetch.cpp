@@ -3,12 +3,12 @@
 #include <sstream>
 #include <iostream>
 //using namespace std;
-typedef const char *chars;
 size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
 	std::string data((const char*) ptr, (size_t) size * nmemb);
 	*((std::stringstream*) stream) << data << std::endl;
 	return size * nmemb;
 }
+typedef const char *chars;
 
 extern "C" chars fetch(chars url) {
 	std::stringstream out;
@@ -22,10 +22,10 @@ extern "C" chars fetch(chars url) {
 	CURLcode res = curl_easy_perform(curl);
 	if (res != CURLE_OK)
 		printf("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-//		fprint(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+//		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 	char *copy = (char *) malloc(sizeof(char)*out.str().length()+1);
-//	sprint(copy,"%s",out.str().data());
+//	sprintf(copy,"%s",out.str().data());
 //	strcpy(copy, data);
-//	print("%s", copy);
+//	printf("%s", copy);
 	return copy;
 }

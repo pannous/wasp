@@ -6,18 +6,10 @@ typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
 
-extern "C" void err(chars error);
-extern "C" void error(chars error);
-extern "C" void warn(chars error);
-extern "C" void warning(chars error);
-extern "C" chars fetch(chars url);
-extern "C" void* alloc(long i);
-
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
 unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 
-#define breakpoint_helper print("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
 
 
 #ifdef WASM
@@ -26,12 +18,19 @@ unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_
 #warning COMPILING TO APPLE
 #endif
 
+typedef unsigned long size_t;
+
 #ifndef WASM
 #include "ErrorHandler.h"
-#include "String.h"
 #else
+//void    *malloc(size_t __size) __result_use_check __alloc_size(1);
+//char* malloc(long l);
 void usleep(long l){}
 #endif
+
+//#include "String.h" // variable has incomplete type
+#import "String.cpp" // import against mangling in wasm (vs include)
+
 
 #ifdef WASM
 #ifdef X86_64
@@ -68,7 +67,7 @@ void* operator new(size_t size){ // stack
 	return current;
 }
 
-void *malloc(int size) { // heap
+void *malloc(size_t size)  __result_use_check __alloc_size(1){ // heap
 //	logs("malloc");
 //	logi((long)current);
 	current = memory;//heap;
@@ -86,6 +85,7 @@ void _cxa_throw(){
 }
 
 #else // NOT WASM:
+
 #include <zconf.h>
 //#import "Backtrace.cpp"
 #include "ErrorHandler.h"
@@ -95,6 +95,7 @@ void _cxa_throw(){
 #endif
 
 #include <zconf.h>
+#include <cstdio>
 
 //NEEDED, else terminate called without an active exception
 
@@ -110,11 +111,11 @@ void error(chars error) {
 }
 
 void warn(chars warning) {
-	print("%s\n", warning);
+	printf("%s\n", warning);
 }
 
 void warning(chars warning) {
-	print("%s\n", warning);
+	printf("%s\n", warning);
 }
 
 // #include <cstdlib> // malloc too
@@ -132,23 +133,16 @@ void* operator new(unsigned long size){
 }
 #endif
 
-
-#import "String.cpp" // import against mangling in wasm (vs include)
-
 #ifndef WASM
-
 #import "Fetch.cpp"
+#include "Node.h"
 
 #endif
 
-//#include "String.h"
 // raise defined in signal.h :(
 
 
 class Mark {
-	String text = EMPTY;
-	String UNEXPECT_END = "Unexpected end of input";
-	String UNEXPECT_CHAR = "Unexpected character ";
 
 	int at = -1;//{};            // The index of the current character PLUS ONE todo
 	char previous = 0;
@@ -171,7 +165,7 @@ public:
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
 	static Node parse(String source) {
-		print("Parsing %s\n", source.data);
+		printf("Parsing %s\n", source.data);
 		return Mark().read(source);
 	}
 
@@ -204,14 +198,13 @@ public:
 	}
 
 
-
 	static char *readFile(const char *filename) {
 		FILE *f = fopen(filename, "rt");
 		if (!f)err("FILE NOT FOUND "_s + filename);
 		fseek(f, 0, SEEK_END);
 		long fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-		char *s = (char *) (alloc(fsize + 2));
+		char *s = (char *) (malloc(fsize + 2));
 		fread(s, 1, fsize, f);
 		fclose(f);
 		return s;
@@ -252,8 +245,10 @@ private:
 	};
 
 	String backtrace2() {
-#ifndef WASM
+#ifdef Backtrace
 		return Backtrace(3);// skip to Mark::error()
+#else
+		return "no Backtrace compiled in";
 #endif
 //		String stack;
 //		void *array[10];
@@ -1003,7 +998,7 @@ private:
 				continue;
 			}// escape ANYTHING
 			if (ch == close or ((close == ' ' or close == ',') and
-			    (ch == ';' or ch == ',' or ch == '\n'))) {// todo: a=1,2,3
+			                    (ch == ';' or ch == ',' or ch == '\n'))) {// todo: a=1,2,3
 				proceed();
 				break;
 			}// inner match ok
@@ -1116,7 +1111,7 @@ void handler(int sig) {
 	size = backtrace(array, 10);
 
 	// print out all the frames to stderr
-	fprint(stderr, "Error: signal %d:\n", sig);
+	fprintf(stderr, "Error: signal %d:\n", sig);
 	backtrace_symbols_fd(array, size, STDERR_FILENO);
 	exit(1);
 }
@@ -1143,7 +1138,7 @@ void init() {
 #import "tests.cpp"
 
 static Node parse(String source) {
-	print("Parsing %s\n", source.data);
+	printf("Parsing %s\n", source.data);
 	return Mark().read(source);
 }
 
@@ -1154,8 +1149,9 @@ static Node parse(String source) {
 //It supportsHIGH-ORDER COMPOSITION (like S-expressions or even better)
 
 #ifndef _main_
+
 int main(int argp, char **argv) {
-#ifndef WASM
+#ifdef register_global_signal_exception_handler
 	register_global_signal_exception_handler();
 #endif
 	try {
@@ -1166,16 +1162,17 @@ int main(int argp, char **argv) {
 		testCurrent();
 		return 42;
 	} catch (chars err) {
-		print("\nERROR\n");
-		print("%s", err);
+		printf("\nERROR\n");
+		printf("%s", err);
 	} catch (String err) {
-		print("\nERROR\n");
-		print("%s", err.data);
+		printf("\nERROR\n");
+		printf("%s", err.data);
 	} catch (SyntaxError *err) {
-		print("\nERROR\n");
-		print("%s", err->data);
+		printf("\nERROR\n");
+		printf("%s", err->data);
 	}
 	usleep(1000000000);
 	return -1;
 }
+
 #endif

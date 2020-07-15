@@ -6,9 +6,7 @@
 #define MARK_NODE_H
 
 
-class Node {
-
-};
+class Node;
 
 
 #endif //MARK_NODE_H

@@ -1,3 +1,5 @@
+#  error: summary string parsing error in Xcode!
+
 # https://stackoverflow.com/questions/41108037/how-to-add-a-hexadecimal-watch-in-clion
 
 # type format add --format dec int32_t
