@@ -6,7 +6,7 @@ unsigned long __stack_chk_guard= 0xBAAAAAAD;
 #include "Wasp.cpp"
 
 int main(int argp, char **argv) {
-#ifndef WASM
+#ifdef register_global_signal_exception_handler
 	register_global_signal_exception_handler();
 #endif
 	try {
@@ -15,14 +15,14 @@ int main(int argp, char **argv) {
 //		testCurrent();
 		return 42;
 	} catch (chars err) {
-		print("\nERROR\n");
-		print("%s", err);
+		printf("\nERROR\n");
+		printf("%s", err);
 	} catch (String err) {
-		print("\nERROR\n");
-		print("%s", err.data);
+		printf("\nERROR\n");
+		printf("%s", err.data);
 	} catch (SyntaxError *err) {
-		print("\nERROR\n");
-		print("%s", err->data);
+		printf("\nERROR\n");
+		printf("%s", err->data);
 	}
 #ifndef WASM
 	usleep(1000000000);

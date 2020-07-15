@@ -42,7 +42,7 @@ using __cxxabiv1::__cxa_demangle;
 #include "uls/logger.h"
 #define sigsegv_outp(x)         sigsegv_outp(,gx)
 #else
-#define sigsegv_outp(x, ...)    fprint(stderr, x "\n", ##__VA_ARGS__)
+#define sigsegv_outp(x, ...)    fprintf(stderr, x "\n", ##__VA_ARGS__)
 #endif
 
 #if defined(REG_RIP)
@@ -144,8 +144,8 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 
 static void handler(int sig, siginfo_t *si, void *context)
 {
-	print("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
-	print("Implements the handler only\n");
+	printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
+	printf("Implements the handler only\n");
 //	Backtrace();
 }
 
