@@ -8,9 +8,12 @@
 
 
 #include "String.h"
-//void *malloc(int size);
+#ifdef WASM
+#include "WasmHelpers.h"
+#endif
+//void *alloc(int size);
 
-//#include <malloc.h>
+//#include <alloc.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wstring-compare"
 #define let auto
@@ -22,13 +25,11 @@ typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
 
-extern unsigned int *memory;
-extern unsigned int *&heap;
 
 extern "C" void logs(const char *);
 bool debug = true;
-//extern void *malloc (size_t __size);
-//extern void *malloc (int __size);
+//extern void *alloc (size_t __size);
+//extern void *alloc (int __size);
 
 #ifndef WASM
 #include <cstdio>
@@ -166,9 +167,13 @@ public:
 void reverse(char *str, int len);
 
 // Implementation of itoa()
-
+#ifndef WASM
+void* alloc(long size){
+return 	malloc(size);
+}
+#endif
 char *itoa(long num, int base = 10) {
-	char *str = (char *) malloc(100);// todo: from context.names char*
+	char *str = (char *) alloc(100);// todo: from context.names char*
 	int len = 0;
 	bool isNegative = false;
 	/* Handle 0 explicitely, otherwise empty string is printed for 0 */
@@ -211,7 +216,7 @@ void reverse(char *str, int len) {
 //	return (char) (i + 0x30);
 //}
 #ifndef __APPLE__
-#include <malloc.h>
+#include <alloc.h>
 #endif
 class String {
 
@@ -304,7 +309,7 @@ public:
 		if (to <= from)return "";
 		if (to < 0 or to > length)to = length;
 		int len = (to - from) + 1;
-		auto *neu = static_cast<char *>(malloc((sizeof(char)) * len));
+		auto *neu = static_cast<char *>(alloc((sizeof(char)) * len));
 //#ifdef cstring
 //		strcpy(neu, &data[from]);
 //#else
@@ -327,13 +332,13 @@ public:
 	}
 
 	String &append(char c) {
-		if (!data)data = static_cast<char *>(malloc(sizeof(char) * 2));
+		if (!data)data = static_cast<char *>(alloc(sizeof(char) * 2));
 		if (data + length + 1 == (char *) memory) {// just append recent
 			data[length++] = c;
 			data[length] = 0;
 			memory += 2;
 		} else {
-			auto *neu = static_cast<char *>(malloc(sizeof(char) * length + 5));
+			auto *neu = static_cast<char *>(alloc(sizeof(char) * length + 5));
 			if (data)strcpy(neu, data);
 			neu[length++] = c;
 			data = neu;
@@ -418,7 +423,7 @@ public:
 	String operator+(String c) {
 		if (c.length <= 0)
 			return *this;
-		auto *neu = static_cast<char *>(malloc(length + c.length + 1));
+		auto *neu = static_cast<char *>(alloc(length + c.length + 1));
 #ifdef cstring
 		if (data)strcpy(neu, data);
 		if (c.data)strcpy(neu + length, c.data);
@@ -636,26 +641,6 @@ void log(Node *n0) {
 	Node n = *n0;
 	log(n);
 }
-
-#ifdef WASM
-void printf(const char *s) {
-	printf(s);
-}
-void printf(const char *format, int i) {
-	printf(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
-}
-void printf(const char *format, long i) {
-	printf(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
-}
-void printf(const char *format, chars value) {
-	printf(String(format).replace("%s", value));
-}
-
-void printf(const char *format, void* value) {
-	printf(String(format).replace("%p", String((long)value)));
-}
-#endif
-
 //#endif //NETBASE_STRING_CPP
 
 #pragma clang diagnostic ignored "-Wuser-defined-literals"

@@ -458,7 +458,7 @@ void *calloc(int i);
 Node *all = static_cast<Node *>(calloc(capacity * maxNodes * sizeof(Node *)));
 
 void *calloc(int i) {
-	void *mem = malloc(i);
+	void *mem = alloc(i);
 	while (i > 0) { ((char *) mem)[--i] = 0; }
 	return mem;
 }
@@ -475,14 +475,14 @@ bool typesCompatible(Node &one, Node &other) {
 
 // super wasteful, for debug
 Node &Node::set(String string, Node *node) {
-//	if (!children)children = static_cast<Node *>(malloc(capacity));
+//	if (!children)children = static_cast<Node *>(alloc(capacity));
 
 	if (!children) {
 		children = &all[capacity * lastChild++];
 		if (name == nil_name)name = object_name;
 	}
 	if (length >= capacity / 2)todo("GROW children");
-//	children = static_cast<Node *>(malloc(1000));// copy old
+//	children = static_cast<Node *>(alloc(1000));// copy old
 	Node &entry = children[length];
 	if (&entry == &NIL)
 		error("IMPOSSIBLE");
