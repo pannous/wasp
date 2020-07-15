@@ -8,13 +8,18 @@ set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 #set (CMAKE_SUPPRESS_REGENERATION)
 
+if ( WASM )
+    message(WASM)
+    set(CMAKE_CXX_FLAGS "-DWASM -Wno-main -fvisibility=hidden ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-w -isystem --target=wasm32-unknown-unknown-wasm -emit-llvm -Oz -c -o wasp.bc ${CMAKE_CXX_FLAGS}")
+else()
+    message(NO WASM "${WASM}")
+endif ()
 
 #find_package( Readline)
 #find_package( READLINE )
 
 # WASM:
-#set(CMAKE_CXX_FLAGS "-DWASM -Wno-main -fvisibility=hidden ${CMAKE_CXX_FLAGS}")
-#set(CMAKE_CXX_FLAGS "-w -isystem --target=wasm32-unknown-unknown-wasm -emit-llvm -Oz -c -o wasp.bc ${CMAKE_CXX_FLAGS}")
 
 # NORMAL:
 #set(CMAKE_CXX_FLAGS "-Wall -std=c++2a ${CMAKE_CXX_FLAGS} -I /usr/include/")
@@ -24,7 +29,7 @@ set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 
 # DISABLED WARNINGS
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Wliteral-suffix -Wno-deprecated  -Wno-write-strings")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wundefined-bool-conversion -Wno-writable-strings -Wno-dangling-else -Wundefined-bool-conversion")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wundefined-bool-conversion -Wno-writable-strings -Wno-dangling-else -Wundefined-bool-conversion -Wno-format-security")
 
 # LIBRARIES
 #include_directories(/usr/include/)
@@ -37,7 +42,8 @@ set(CMAKE_CXX_FLAGS " -lreadline -ldl -lcurl -lz ${CMAKE_CXX_FLAGS}") # extra li
 
 # WASM:
 #set(SOURCE_FILES String.h NodeTypes.h Wasp.cpp)
-set(SOURCE_FILES NodeTypes.h Fetch.cpp String.h Wasp.cpp)
+set(SOURCE_FILES NodeTypes.h Wasp.cpp)
+#String.h
 #not WASM: ErrorHandler.cpp  ErrorHandler.h
 #via Angle.cpp:
 #mark.cpp

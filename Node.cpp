@@ -280,45 +280,45 @@ public:
 	Node &merge(Node &other);// non-modifying
 
 	void log() {
-		print("Node ");
+		printf("Node ");
 		if (this == &NIL || type == nils) {
-			print("NIL\n");
+			printf("NIL\n");
 			return;
 		}
 //		if || name==nil_name …
 		if (name.data < (char *) 0xffff) {
-			print("BUG");
+			printf("BUG");
 			return;
 		}
 //		assert (name.data < (char *) 0xffff);
 		if (name and name.data and name.data > (char *) 0xffff and type != objects)
-			print("name %s ", name.data);
-		print("length %i ", length);
-		print("type  %s", typeName(type).data);
+			printf("name %s ", name.data);
+		printf("length %i ", length);
+		printf("type  %s", typeName(type).data);
 		if (this == &True)
-			print("TRUE");
+			printf("TRUE");
 		if (this == &False)
-			print("FALSE");
+			printf("FALSE");
 		if (type == objects and value.data)
-			print(" value.name %s", value.string.data);// ???
+			printf(" value.name %s", value.string.data);// ???
 		if (type == bools)
-			print(" value %s", value.longy ? "TRUE" : "FALSE");
+			printf(" value %s", value.longy ? "TRUE" : "FALSE");
 		if (type == strings)
-			print(" value %s", value.string.data);
+			printf(" value %s", value.string.data);
 		if (type == longs)
-			print(" value %li", value.longy);
+			printf(" value %li", value.longy);
 		if (type == floats)
-			print(" value %f", value.floaty);
+			printf(" value %f", value.floaty);
 
-		print(" [ ");
+		printf(" [ ");
 		for (int i = 0; i < length; i++) {
 			Node &node = children[i];
 //			if(check(node))
-			print("%s", node.name.data);
-			print(" ");
+			printf("%s", node.name.data);
+			printf(" ");
 		}
-		print("]");
-		print("\n");
+		printf("]");
+		printf("\n");
 	}
 
 	float precedence(Node &operater);
