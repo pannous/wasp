@@ -153,12 +153,14 @@ void testParams();
 
 void testNetBase() {
 	chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
+	log(url);
 	chars json = fetch(url);
 	log(json);
 	Node result = Mark::parse(json);
 	Node results = result["results"];
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
 	Node Erde = results;
+	assert(Erde.name=="Erde" or Erde["name"]=="Erde");
 	Node &statements = Erde["statements"];
 	assert(statements.length >= 1); // or statements.value.node->length >=
 	assert(result["query"] == "2");
@@ -341,7 +343,8 @@ void testErrors() {
 	throwing = false;
 	result = Mark::parse("]");
 	assert(result == ERROR);
-//	ln -s ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/out
+//	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/out
+//  ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-default/out
 	Node node = Mark::parseFile("samples/errors.wasp");
 	throwing = true;
 }
@@ -890,7 +893,8 @@ void testBUG() {
 
 
 void todos() {
-	testAngle();
+	testNetBase();
+//	testAngle();
 	skip(
 			assert_equals(Node("1", 0) + Node("2"s), Node("1", "2", 0));
 			testBUG();

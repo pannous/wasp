@@ -23,8 +23,8 @@ typedef unsigned long size_t;
 #ifndef WASM
 #include "ErrorHandler.h"
 #else
-//void    *malloc(size_t __size) __result_use_check __alloc_size(1);
-//char* malloc(long l);
+//void    *alloc(size_t __size) __result_use_check __alloc_size(1);
+//char* alloc(long l);
 void usleep(long l){}
 #endif
 
@@ -41,10 +41,6 @@ typedef long unsigned int size_t;
 typedef unsigned long size_t;
 #endif
 
-unsigned int *current;
-extern "C" void logs (const char *);
-extern "C" void logc(char s);
-extern "C" void logi(int i);
 
 extern "C" void * memset ( void * ptr, int value, size_t num ){
 	int* ptr0=(int*)ptr;
@@ -52,31 +48,23 @@ extern "C" void * memset ( void * ptr, int value, size_t num ){
 		ptr0[i]=value;
 	return ptr;
 }
-void* operator new[](size_t size){ // stack
-	current=memory;
-	memory+=size;
-//	logs("new[]");
-//	logi((long)current);
-	return current;
-}
-void* operator new(size_t size){ // stack
-	current=memory;
-	memory+=size;
-//	logs("new");
-//	logi((long)current);
-	return current;
-}
-
-void *malloc(size_t size)  __result_use_check __alloc_size(1){ // heap
-//	logs("malloc");
-//	logi((long)current);
-	current = memory;//heap;
-	memory += size * 2 + 1;
-	return current;
-}
+//void* operator new[](size_t size){ // stack
+//	current=memory;
+//	memory+=size;
+////	logs("new[]");
+////	logi((long)current);
+//	return current;
+//}
+//void* operator new(size_t size){ // stack
+//	current=memory;
+//	memory+=size;
+////	logs("new");
+////	logi((long)current);
+//	return current;
+//}
 
 void _cxa_allocate_exception(){
- logs("_cxa_allocate_exception");
+ logs("_cxa_allocate_exception!");
 }
 
 void _cxa_throw(){
@@ -91,7 +79,7 @@ void _cxa_throw(){
 #include "ErrorHandler.h"
 
 #ifndef __APPLE__
-#include <malloc.h>
+#include <alloc.h>
 #endif
 
 #include <zconf.h>
@@ -118,7 +106,7 @@ void warning(chars warning) {
 	printf("%s\n", warning);
 }
 
-// #include <cstdlib> // malloc too
+// #include <cstdlib> // alloc too
 //#include <stdio.h> // print
 #endif
 
@@ -204,7 +192,7 @@ public:
 		fseek(f, 0, SEEK_END);
 		long fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-		char *s = (char *) (malloc(fsize + 2));
+		char *s = (char *) (alloc(fsize + 2));
 		fread(s, 1, fsize, f);
 		fclose(f);
 		return s;
@@ -781,7 +769,7 @@ private:
 	// Parse an array
 	Node array() {
 //		arr.type = arrays;
-		auto *array0 = static_cast<Node *>(malloc(sizeof(Node *) * 100));// todo: GROW!
+		auto *array0 = static_cast<Node *>(alloc(sizeof(Node *) * 100));// todo: GROW!
 //		arr.value.node = array0;
 		int len = 0;
 		proceed();  // skip the starting '['
