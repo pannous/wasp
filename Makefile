@@ -143,60 +143,6 @@ wasp/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/build
 .PHONY : wasp/fast
 
-Fetch.o: Fetch.cpp.o
-
-.PHONY : Fetch.o
-
-# target to build an object file
-Fetch.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Fetch.cpp.o
-.PHONY : Fetch.cpp.o
-
-Fetch.i: Fetch.cpp.i
-
-.PHONY : Fetch.i
-
-# target to preprocess a source file
-Fetch.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Fetch.cpp.i
-.PHONY : Fetch.cpp.i
-
-Fetch.s: Fetch.cpp.s
-
-.PHONY : Fetch.s
-
-# target to generate assembly for a file
-Fetch.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Fetch.cpp.s
-.PHONY : Fetch.cpp.s
-
-String.o: String.cpp.o
-
-.PHONY : String.o
-
-# target to build an object file
-String.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/String.cpp.o
-.PHONY : String.cpp.o
-
-String.i: String.cpp.i
-
-.PHONY : String.i
-
-# target to preprocess a source file
-String.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/String.cpp.i
-.PHONY : String.cpp.i
-
-String.s: String.cpp.s
-
-.PHONY : String.s
-
-# target to generate assembly for a file
-String.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/String.cpp.s
-.PHONY : String.cpp.s
-
 Wasp.o: Wasp.cpp.o
 
 .PHONY : Wasp.o
@@ -233,12 +179,6 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... wasp"
-	@echo "... Fetch.o"
-	@echo "... Fetch.i"
-	@echo "... Fetch.s"
-	@echo "... String.o"
-	@echo "... String.i"
-	@echo "... String.s"
 	@echo "... Wasp.o"
 	@echo "... Wasp.i"
 	@echo "... Wasp.s"

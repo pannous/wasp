@@ -7,8 +7,7 @@
 //#include "String.h" prefering one big WASM object
 
 
-#warning COMPILING String
-
+#include "String.h"
 //void *malloc(int size);
 
 //#include <malloc.h>
@@ -22,7 +21,6 @@
 typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
-//typedef int size_t;
 
 extern unsigned int *memory;
 extern unsigned int *&heap;
@@ -43,11 +41,11 @@ void err(chars error);
 void todo(chars error);
 
 void logs(const char *s) {
-	print("%s\n", s);
+	printf("%s\n", s);
 }
 
 void logi(long i) {
-	print("%li\n", i);
+	printf("%li\n", i);
 }
 
 #else
@@ -56,13 +54,6 @@ extern "C" void print (const char *);// no \n newline
 extern "C" void logs (const char *);
 extern "C" void logc(char s);
 extern "C" void logi(int i);
-void print(const char *s);
-void print(const char *format, int i);
-void print(const char *format, chars i);
-void print(const char *format, chars i, int line);
-void print(const char *format, chars i, chars j);
-void print(const char *format, chars i, chars j, int l);
-void print(const char *format, chars i, chars j, chars k, int l);
 
 //  extern "C" int print (const char *__restrict __format, ...);
 #endif
@@ -206,6 +197,7 @@ char *itoa(long num, int base = 10) {
 	reverse(str, len);
 	return str;
 }
+
 
 void reverse(char *str, int len) {
 	for (int i = 0; i < len / 2; i++) {
@@ -606,11 +598,11 @@ String patterns_name = "[…]";
 #import "Node.cpp"
 
 void log(long i) {
-	print("%li", i);
+	printf("%li", i);
 }
 
 void log(chars s) {
-	print("%s\n", s);
+	printf("%s\n", s);
 }
 
 void log(Node &n) {
@@ -629,13 +621,13 @@ void log(Node &n) {
 #import <string>
 
 void log(std::string s) {
-	print("%s\n", s.data());
+	printf("%s\n", s.data());
 }
 
 #endif
 
 void log(String s) {
-	print("%s\n", s.data);
+	printf("%s\n", s.data);
 }
 
 void log(Node *n0) {
@@ -646,21 +638,21 @@ void log(Node *n0) {
 }
 
 #ifdef WASM
-void print(const char *s) {
-	print(s);
+void printf(const char *s) {
+	printf(s);
 }
-void print(const char *format, int i) {
-	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
+void printf(const char *format, int i) {
+	printf(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
-void print(const char *format, long i) {
-	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
+void printf(const char *format, long i) {
+	printf(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
-void print(const char *format, chars value) {
-	print(String(format).replace("%s", value));
+void printf(const char *format, chars value) {
+	printf(String(format).replace("%s", value));
 }
 
-void print(const char *format, void* value) {
-	print(String(format).replace("%p", String((long)value)));
+void printf(const char *format, void* value) {
+	printf(String(format).replace("%p", String((long)value)));
 }
 #endif
 
@@ -757,5 +749,10 @@ public:
 		this->data = error.data;
 	}
 };
+
+String text = EMPTY;
+String UNEXPECT_END = "Unexpected end of input";
+String UNEXPECT_CHAR = "Unexpected character ";
+
 
 #pragma clang diagnostic pop
