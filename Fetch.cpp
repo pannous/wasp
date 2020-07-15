@@ -10,7 +10,8 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
 }
 typedef const char *chars;
 
-extern "C" chars fetch(chars url) {
+//extern "C"
+chars fetch(chars url) {
 	std::stringstream out;
 	auto curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_URL, url);
@@ -23,8 +24,8 @@ extern "C" chars fetch(chars url) {
 	if (res != CURLE_OK)
 		printf("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 //		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-	char *copy = (char *) malloc(sizeof(char)*out.str().length()+1);
-//	sprintf(copy,"%s",out.str().data());
+	char *copy = (char *) alloc(sizeof(char)*out.str().length()+1);
+	sprintf(copy,"%s",out.str().data());
 //	strcpy(copy, data);
 //	printf("%s", copy);
 	return copy;
