@@ -3,8 +3,11 @@
 ////
 //
 ////#include "Node.h"
+#ifndef WASM
 #include <cstdarg>
-#include <tgmath.h> // sqrt macro
+#endif
+#include <cmath>
+//#include <tgmath.h> // sqrt macro
 #include "String.h"
 #include "NodeTypes.h"
 
@@ -13,6 +16,8 @@ extern Node True;
 extern Node False;
 extern Node NIL;
 extern Node ERROR;
+
+typedef const Node Nodec;
 
 String str(char *string);
 
@@ -239,7 +244,7 @@ public:
 //	bool operator~();// MUST BE UNITARY:(
 
 
-	String string() {
+	String string() const {
 		if (type == strings)
 			return value.string;
 		return name;
@@ -249,10 +254,12 @@ public:
 
 	// moved outside because circular dependency
 	Node &operator[](int i);
+	Node &operator[](int i) const;
 
 	Node &operator[](char c);
 
 	Node &operator[](String s);
+	Node &operator[](String s) const;
 
 	Node &operator=(int i);
 
@@ -273,9 +280,9 @@ public:
 	void remove(Node *node); // directly from children
 	void remove(Node &node); // via compare children
 
-	Node *begin();
+	Node *begin() const;
 
-	Node *end();
+	Node *end() const;
 
 	Node &merge(Node &other);// non-modifying
 
@@ -355,6 +362,15 @@ public:
 	bool isEmpty();
 
 	bool isNil();
+
+	const char *toString();
+	const char *toString() const;
+
+	const char * serialize() const;
+
+	const char *serializeValue() const;
+
+	void print();
 };
 
 //
@@ -401,6 +417,14 @@ Node &Node::operator[](int i) {
 	return children[i];
 }
 
+Node &Nodec::operator[](int i) const {
+	if (i >= length) {
+		breakpoint_helper;
+		err(String("out of range index[] ") + i + " >= length " + length);
+	}
+	return children[i];
+}
+
 Node &Node::operator[](String s) {
 	Node *found = has(s);
 	if (s[0] == '.') {
@@ -423,11 +447,15 @@ Node &Node::operator[](String s) {
 	else return neu;
 }
 
-Node *Node::begin() {
+Node &Nodec::operator[](String s) const{
+	return ((Node) this)[s];
+}
+
+Node *Node::begin() const {
 	return children;
 }
 
-Node *Node::end() {
+Node *Node::end() const{
 	return children + length;
 }
 
@@ -516,6 +544,7 @@ Node &Node::set(String string, Node *node) {
 //}
 
 bool Node::operator==(String other) {
+	if (this==0)return other.empty();
 	if (type == objects or type == keyNode)return *value.node == other or value.string == other;
 	if (type == longs) return other == itoa(value.longy);
 	if (type == reference) return other == name;
@@ -662,7 +691,7 @@ Node Node::evaluate(bool expectOperator = true) {
 	float max = 0; // do{
 	Node right;
 	Node left;
-	for (Node &node : *this) {
+	for (Node &node : *this) {// foreach
 		float p = precedence(node);
 		if (p > max) max = p;
 		node.log();
@@ -712,13 +741,16 @@ void Node::remove(Node &node) {
 	}
 }
 
+
 void Node::add(Node *node,bool flatten) {
 	if (node->isNil() and node->name.empty() and node->type != longs)
 		return;// skipp nils!
 	node->parent = this;
-	if (not param and node->type == groups) {
+	if (not param and node->type == groups and polish_notation) {
+		param = node;
+	}
+	if (not param and node->type == groups and not polish_notation) {
 		param = node; //->children;
-//		count = length;
 	} else if (not children and node->type == patterns) {
 		children = node->children;// todo
 		length = node->length;
@@ -990,7 +1022,51 @@ bool Node::isNil() { // required here: name.empty()
 	       ((type == keyNode or type == unknown or name.empty()) and length == 0 and value.data == 0);
 }
 
+const char * Node::serializeValue() const {
+	String wasp="";
+	switch (this->type) {
+		case strings:
+			return this->value.string;
+		case longs:
+			return itoa(this->value.longy);
+		case floats:
+			return ftoa(this->value.floaty);
+
+	}
+}
+const char * Node::serialize() const {
+	String wasp="";
+	bool markmode=true;
+	if(not markmode or this->length==0){
+	if( not this->name.empty() ) wasp += this->name;
+	else if (this->value.data){wasp += "="; wasp +=this->serializeValue();}
+	}
+	if(this->length>0){
+		wasp += (this->type == groups ? "(" : "{");
+		if(markmode and not this->name.empty() )wasp += this->name;
+		for (Node &node : *this) {
+			wasp += " ";
+			wasp+=node.serialize();
+		}
+		wasp += (this->type == groups ? " )" : "}");
+	}
+	return wasp;
+//	return this->name.empty()? this->string() : this->name;
+//	return node.name.empty()? node.string() : node.name;
+}
+
+const char *Node::toString() {
+	return this->serialize();
+}
+
+const char *Node::toString() const {
+	return this->serialize();
+}
+
 String toString(Node &node) {
-//	return node.serialize();
-	return node.name.empty()? node.string() : node.name;
+	return node.serialize();
+}
+
+void Node::print() {
+	printf(this->serialize());
 }

@@ -46,7 +46,10 @@ endif ()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wundefined-bool-conversion -Wno-writable-strings -Wno-dangling-else -Wundefined-bool-conversion -Wno-format-security")
 
 # LIBRARIES
-#include_directories(/usr/include/)
+include_directories(/usr/include/)
+#include_directories(/usr/local/Cellar/llvm/10.0.0_3/include/c++/v1/)
+#include_directories(/Library/Developer/CommandLineTools/usr/include/c++/v1/) # error: "No thread API"
+#include_directories(/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include/)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 # just for Backtrace.cpp :
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -Wl,--no-as-needed -ldl")

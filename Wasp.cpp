@@ -5,6 +5,8 @@
 typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
+bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
+//bool polish_notation = true;
 
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
@@ -199,6 +201,7 @@ public:
 	}
 
 	static Node parseFile(const char *filename) {
+//		const char filename=replace(filename0,"~","/Users/me")
 		return Mark::parse(readFile(filename));
 	}
 
@@ -1005,22 +1008,21 @@ private:
 					setField(key);
 					break;
 				}
-				case '{':
-					current.last().add(value('}').setType(Type::objects));
-//					current.add(value('}').setType(Type::objects));
+				case '{': {
+					Node &object = value('}').setType(Type::objects);
+					current.last().add(object);
 					break;
-				case '/':
-					if (next == '/' or next == '*') {
-						comment();
-						break;
-					}
-				case '[':
-					current.add(value(']').setType(Type::patterns));
+				}
+				case '[': {
+					Node &pattern = value(']').setType(Type::patterns);
+					current.add(pattern);
 					break;
-				case '(':
-					current.last().add(value(')').setType(Type::groups));// lists handled by ' '!
-//					current.add(value(')').setType(Type::groups));
+				}
+				case '(': {
+					Node &group = value(')').setType(Type::groups);
+					current.last().add(group);
 					break;
+				}// lists handled by ' '!
 				case '}':
 				case ')':
 				case ']':
@@ -1033,6 +1035,11 @@ private:
 						return number();
 					else
 						return words();
+				case '/':
+					if (next == '/' or next == '*') {
+						comment();
+						break;
+					}
 				case '"':
 				case '\'':
 				case '`': {
@@ -1056,12 +1063,16 @@ private:
 						proceed();
 						continue;
 					}
-					current.add(value(ch, &current));// space is list operator
+					const Node &sub = value(ch, &current);
+					current.add(sub);// space is list operator
 					break;
 				}
 				default: {
 					Node node = words();
-					current.add(node);
+					if(polish_notation && current.length == 0)
+						current=node;
+					else
+						current.add(node);
 				}
 			}
 		}
