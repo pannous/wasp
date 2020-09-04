@@ -71,8 +71,16 @@ int atoi0(const char *__nptr);
 
 //#include <stdio.h>
 //#include <string.h>
+#ifndef WASM
 #include <cstring> //strlen
-
+#else
+//#include "string.h"
+int strlen(const char* x){
+	int l=0;
+	while(x++)l++;
+	return l;
+}
+#endif
 //#define cstring
 bool eq(const char *dest, const char *src) {
 	if (!dest || !src)
@@ -203,6 +211,22 @@ char *itoa(long num, int base = 10) {
 	return str;
 }
 
+const char *concat(const char *a, const char *b) {
+//const char* concat(char* a,char* b){// free manually!
+	if (!b)return a;
+	int la = (int) strlen(a);
+	int lb = (int) strlen(b);
+//	char c[la+lb];
+	char *c = (char *) malloc((la + lb + 1) * sizeof(char) );
+	strcpy(c, a);
+	strcpy(&c[la], b);
+	c[la + lb] = 0;
+	return c;
+}
+
+const char *ftoa(float num, int base = 10, int precision=4) {/*significant digits*/
+	return concat(concat(itoa(int(num),base),"."),itoa(int(num*pow(base,precision)),base));
+}
 
 void reverse(char *str, int len) {
 	for (int i = 0; i < len / 2; i++) {
@@ -215,13 +239,15 @@ void reverse(char *str, int len) {
 //char itoa(byte i) {
 //	return (char) (i + 0x30);
 //}
-#ifndef __APPLE__
-#include <alloc.h>
-#endif
+
 class String {
 
 #ifdef WASM
 void* calloc(size_t s,int idk);
+#else
+	#ifndef __APPLE__
+#include <alloc.h>
+#endif
 #endif
 
 public:
@@ -339,7 +365,7 @@ public:
 			memory += 2;
 		} else {
 			auto *neu = static_cast<char *>(alloc(sizeof(char) * length + 5));
-			if (data)strcpy(neu, data);
+			if (data)strcpy2(neu, data);
 			neu[length++] = c;
 			data = neu;
 			data[length] = 0;
@@ -411,7 +437,12 @@ public:
 	}
 
 	String *operator+=(char *c) {
-		while (c++)append(c[0]);
+		while (c[0] && c++)append(c[-1]);
+		return this;
+	}
+
+	String *operator+=(chars c) {
+		while (c[0] && c++)append(c[-1]);
 		return this;
 	}
 
@@ -525,7 +556,7 @@ public:
 		return data[i];
 	}
 
-	bool empty() {//this==0 in testMarkMulti!
+	bool empty() const {//this==0 in testMarkMulti!
 		return this==0 || length==0  ||  !data || data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}" ||  data[0] == 0;
 	}
 
