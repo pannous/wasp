@@ -12,67 +12,67 @@ static Node parse(String source);
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
 
 bool assert_equals_x(String a, String b, char *context = "") {
-	if (a == b)printf("OK %s==%s in %s"s % a % b % context);
-	else printf("FAILED assert_equals!\n %s should be %s in %s"s % a % b % context);
+	if (a == b)printf("OK %s==%s in %s\n"s % a % b % context);
+	else printf("FAILED assert_equals!\n %s should be %s in %s\n"s % a % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
-	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s"s % a.name % b % context);
-	else printf("OK %s==%s in %s"s % a.name % b % context);
+	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
+	else printf("OK %s==%s in %s\n"s % a.name % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, double b, char *context = "") {
-	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s"s % a.name % b % context);
-	else printf("OK %f==%f in %f"s % a.value.floaty % b % context);
+	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"s % a.name % b % context);
+	else printf("OK %f==%f in %f\n"s % a.value.floaty % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, long b, char *context = "") {
-	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s"s % a % b % context);
-	else printf("OK %d==%d in %f"s % a.value.longy % b % context);
+	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"s % a % b % context);
+	else printf("OK %d==%d in %f\n"s % a.value.longy % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node a, String b, char *context = "") {
-	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s"s % a.name % b % context);
-	else printf("OK %s==%s in %s"s % a.name % b % context);
-	return a == b;
+	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
+	else printf("OK %s==%s in %s\n"s % a.name % b % context);
+	return b==a.name or a == b;
 }
 
 
 bool assert_equals_x(Node a, Node b, char *context = "") {
-	if (a != b)printf("FAILED assert_equals! %s should be %s in %s"s % a % b % context);
-	else printf("OK %s==%s in %s"s % a % b % context);
+	if (a != b)printf("FAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
+	else printf("OK %s==%s in %s\n"s % a % b % context);
 	return a == b;
 }
 
 //bool assert_equals(chars a, chars b, char *context = "") {
 //	if (a != b)// err
-//		printf("FAILED assert_equals! %s should be %s in %s"s % a % b % context);
-//	else printf("OK %s==%s in %s"s % a % b % context);
+//		printf("FAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
+//	else printf("OK %s==%s in %s\n"s % a % b % context);
 //	return a == b;
 //}
 
 bool assert_equals_x(long a, long b, char *context) {
-	if (a != b)printf("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
-	else printf("OK %d==%d in %s"s % a % b % context);
+	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
+	else printf("OK %d==%d in %s\n"s % a % b % context);
 	return a == b;
 }
 
 
 bool assert_equals_x(int a, int b, char *context) {
-	if (a != b)printf("FAILED assert_equals! %d should be %d in %s"s % a % b % context);
-	else printf("OK %d==%d in %s"s % a % b % context);
+	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
+	else printf("OK %d==%d in %s\n"s % a % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(float a, float b, char *context = "") {
 	float epsilon = fabs(a + b) / 100000.;// 𝕚𝚤:=-1
 	bool ok = a == b or fabs(a - b) <= epsilon;
-	if (!ok)printf("FAILED assert_equals!\n %f should be %f in %s"s % a % b % context);
-	else printf("OK %f==%f in %s"s % a % b % context);
+	if (!ok)printf("FAILED assert_equals!\n %f should be %f in %s\n"s % a % b % context);
+	else printf("OK %f==%f in %s\n"s % a % b % context);
 	return ok;
 }
 
@@ -815,6 +815,7 @@ void testParamizedKeys() {
 //	<label for="pwd">Password</label>
 // 1. paramize keys: label{param=(for:password)}:"Text"
 	Node label1 = parse("label(for:password):'Passwort'");
+	label1.print();
 	assert_equals(label1, "Passwort");
 	assert_equals(label1["for"], "password");
 //	assert_equals(label1["for:password"],"Passwort");
@@ -885,6 +886,7 @@ void tests() {
 }
 
 #include "testAngle.cpp"
+#include "testWast.cpp"
 
 void testBUG() {
 	testParentBUG();
@@ -905,6 +907,7 @@ void todos() {
 }
 
 void testCurrent() { // move to tests() once OK
+	testWast();
 //	tests();// make sure all still ok after changes
 	todos();
 	tests();
