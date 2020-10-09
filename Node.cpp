@@ -5,8 +5,11 @@
 ////#include "Node.h"
 #ifndef WASM
 #include <cstdarg>
+#include <stdio.h>
 #endif
-#include <cmath>
+#include <stdarg.h> // va_list
+
+//#include <cmath>
 //#include <tgmath.h> // sqrt macro
 #include "String.h"
 #include "NodeTypes.h"

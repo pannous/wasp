@@ -6,14 +6,25 @@
 //#define NETBASE_STRING_CPP
 //#include "String.h" prefering one big WASM object
 
-
+//extern double pow(double x, double y);
+extern "C" double pow(double x, double y);
+extern "C" double sqrt(double __a);
 #include "String.h"
 #ifdef WASM
 #include "WasmHelpers.h"
-#endif
-//void *alloc(int size);
+#else
+#include <stdlib.h> // pulls in declaration of malloc, free
+//#include <tgmath.h> // pow
+#include <math.h> // pow
+//#include <cmath> // MISSING ON MAC WTF
 
-//#include <alloc.h>
+//#include <string.h> // strcpy
+//#include <cstring> // strcpy doesn't work!?
+void* alloc(long size){
+	return 	malloc(size);
+}
+#endif
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wstring-compare"
 #define let auto
@@ -175,11 +186,7 @@ public:
 void reverse(char *str, int len);
 
 // Implementation of itoa()
-#ifndef WASM
-void* alloc(long size){
-return 	malloc(size);
-}
-#endif
+
 char *itoa(long num, int base = 10) {
 	char *str = (char *) alloc(100);// todo: from context.names char*
 	int len = 0;
@@ -217,9 +224,9 @@ const char *concat(const char *a, const char *b) {
 	int la = (int) strlen(a);
 	int lb = (int) strlen(b);
 //	char c[la+lb];
-	char *c = (char *) malloc((la + lb + 1) * sizeof(char) );
-	strcpy(c, a);
-	strcpy(&c[la], b);
+	char *c = (char *) alloc((la + lb + 1) * sizeof(char) );
+	strcpy2(c, a);
+	strcpy2(&c[la], b);
 	c[la + lb] = 0;
 	return c;
 }
@@ -475,7 +482,7 @@ public:
 
 	String operator+(bool b) {
 		return this->operator+(b ? "✔️" : "✖️");//✓
-		return this->operator+(b ? " true" : " false");
+//		return this->operator+(b ? " true" : " false");
 	}
 
 	String operator+(double i) {

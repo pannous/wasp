@@ -11,7 +11,7 @@ bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
 unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
-
+extern "C" int isalnum(int _c);
 
 
 #ifdef WASM
@@ -189,6 +189,7 @@ public:
 
 
 	static char *readFile(const char *filename) {
+#ifndef WASM
 		FILE *f = fopen(filename, "rt");
 		if (!f)err("FILE NOT FOUND "_s + filename);
 		fseek(f, 0, SEEK_END);
@@ -198,6 +199,9 @@ public:
 		fread(s, 1, fsize, f);
 		fclose(f);
 		return s;
+#else
+		return 0;
+#endif
 	}
 
 	static Node parseFile(const char *filename) {
