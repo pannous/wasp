@@ -1,7 +1,7 @@
 Node result;
 
 static Node parse(String source);
-
+void exit(int);
 #undef assert // <cassert> / <assert.h>
 
 #define assert(condition) try{\
@@ -67,10 +67,10 @@ bool assert_equals_x(int a, int b, char *context) {
 	else printf("OK %d==%d in %s\n"s % a % b % context);
 	return a == b;
 }
-
+inline float abs_(float x)noexcept{return x>0?x:-x;}
 bool assert_equals_x(float a, float b, char *context = "") {
-	float epsilon = fabs(a + b) / 100000.;// 𝕚𝚤:=-1
-	bool ok = a == b or fabs(a - b) <= epsilon;
+	float epsilon = abs_(a + b) / 100000.;// 𝕚𝚤:=-1
+	bool ok = a == b or abs_(a - b) <= epsilon;
 	if (!ok)printf("FAILED assert_equals!\n %f should be %f in %s\n"s % a % b % context);
 	else printf("OK %f==%f in %s\n"s % a % b % context);
 	return ok;
