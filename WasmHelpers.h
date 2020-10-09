@@ -8,7 +8,7 @@
 #endif //WASP_WASMHELPERS_H
 
 #ifdef WASM
-//void printf(const char *s);  //stdio
+void printf(const char *s);  //stdio
 //void print(const char *format, int i);
 void printf(char const *format, int i);
 void printf(const char *format, chars i);
