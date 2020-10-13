@@ -1165,7 +1165,7 @@ int main(int argp, char **argv) {
 		auto s = "hello world"_s;
 		init();
 		log(String("OK %s").format("WASM"));
-		emitter(0);
+//		emitter(0);
 //		test();
 		testCurrent();
 		return 42;
