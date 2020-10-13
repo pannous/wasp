@@ -5,14 +5,12 @@
 typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
-bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
 //bool polish_notation = true;
 
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
-unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 extern "C" int isalnum(int _c);
-
+extern bool polish_notation;
 
 #ifdef WASM
 #warning COMPILING TO WASM
@@ -31,8 +29,8 @@ void usleep(long l){}
 #endif
 
 //#include "String.h" // variable has incomplete type
-#import "String.cpp" // import against mangling in wasm (vs include)
-
+//#import "String.cpp" // import against mangling in wasm (vs include)
+#include "wasm-emitter.h"
 
 #ifdef WASM
 #ifdef X86_64
@@ -65,12 +63,14 @@ extern "C" void * memset ( void * ptr, int value, size_t num ){
 //	return current;
 //}
 
+extern void log(char *);
+
 void _cxa_allocate_exception(){
- logs("_cxa_allocate_exception!");
+ log("_cxa_allocate_exception!");
 }
 
 void _cxa_throw(){
-	logs("_cxa_throw");
+	log("_cxa_throw");
   throw "OUT OF MEMORY";
 }
 
@@ -125,10 +125,13 @@ void* operator new(unsigned long size){
 
 #ifndef WASM
 #import "Fetch.cpp"
-#include "Node.h"
-
+//#include "Fetch.h"
 #endif
 
+#include "Node.h"
+#include "String.h"
+
+String text = EMPTY;
 // raise defined in signal.h :(
 
 
@@ -1158,9 +1161,11 @@ int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
 #endif
 	try {
-		auto s = "hello world"_;
+
+		auto s = "hello world"_s;
 		init();
-		log(String("OK %s").replace("%s", "WASM"));
+		log(String("OK %s").format("WASM"));
+		emitter(0);
 //		test();
 		testCurrent();
 		return 42;

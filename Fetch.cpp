@@ -24,7 +24,7 @@ chars fetch(chars url) {
 	if (res != CURLE_OK)
 		printf("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 //		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-	char *copy = (char *) alloc(sizeof(char)*out.str().length()+1);
+	char *copy = (char *) malloc(sizeof(char)*out.str().length()+1);
 	sprintf(copy,"%s",out.str().data());
 //	strcpy(copy, data);
 //	printf("%s", copy);
