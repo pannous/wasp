@@ -7,6 +7,7 @@ if(file.match(".wast")){
 	file = file.replace(".wast",".wasm")
 	require('child_process').execSync(cmd+" -o "+file)
 }
+// console.log("file: ",file)
 
 backtrace=function (print=1){
 	try{throw new Error()}catch(ex){if(print)console.error(trimStack(ex,1)); else return trimStack(ex)}
@@ -55,9 +56,9 @@ trimStack=function (ex,more=0) {
 }
 
 
-// console.log(file)
-// console.log()
 binary = require('fs').readFileSync(file)
+// console.log(file)
+// console.log(binary)
 module = new WebAssembly.Module(binary)
 // memory = new WebAssembly.Memory({initial: 256, maximum: 256}); 
 // table = new WebAssembly.Table({initial: 10, maximum:10, element: "anyfunc"});
