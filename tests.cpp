@@ -1,6 +1,12 @@
 Node result;
-
+//#include "String.h"
 static Node parse(String source);
+
+void log(Node &);
+void log(Node*);
+void log(chars);
+
+
 void exit(int);
 #undef assert // <cassert> / <assert.h>
 
@@ -12,67 +18,67 @@ void exit(int);
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
 
 bool assert_equals_x(String a, String b, char *context = "") {
-	if (a == b)printf("OK %s==%s in %s\n"s % a % b % context);
-	else printf("FAILED assert_equals!\n %s should be %s in %s\n"s % a % b % context);
+	if (a == b)printf("OK %s==%s in %s\n"_s % a % b % context);
+	else printf("FAILED assert_equals!\n %s should be %s in %s\n"_s % a % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
-	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
-	else printf("OK %s==%s in %s\n"s % a.name % b % context);
+	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"_s % a.name % b % context);
+	else printf("OK %s==%s in %s\n"_s % a.name % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, double b, char *context = "") {
-	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"s % a.name % b % context);
-	else printf("OK %f==%f in %f\n"s % a.value.floaty % b % context);
+	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"_s % a.name % b % context);
+	else printf("OK %f==%f in %f\n"_s % a.value.floaty % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, long b, char *context = "") {
-	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"s % a % b % context);
-	else printf("OK %d==%d in %f\n"s % a.value.longy % b % context);
+	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"_s % a % b % context);
+	else printf("OK %d==%d in %f\n"_s % a.value.longy % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node a, String b, char *context = "") {
-	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
-	else printf("OK %s==%s in %s\n"s % a.name % b % context);
+	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"_s % a.name % b % context);
+	else printf("OK %s==%s in %s\n"_s % a.name % b % context);
 	return b==a.name or a == b;
 }
 
 
 bool assert_equals_x(Node a, Node b, char *context = "") {
-	if (a != b)printf("FAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
-	else printf("OK %s==%s in %s\n"s % a % b % context);
+	if (a != b)printf("FAILED assert_equals! %s should be %s in %s\n"_s % a % b % context);
+	else printf("OK %s==%s in %s\n"_s % a % b % context);
 	return a == b;
 }
 
 //bool assert_equals(chars a, chars b, char *context = "") {
 //	if (a != b)// err
-//		printf("FAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
-//	else printf("OK %s==%s in %s\n"s % a % b % context);
+//		printf("FAILED assert_equals! %s should be %s in %s\n"_s % a % b % context);
+//	else printf("OK %s==%s in %s\n"_s % a % b % context);
 //	return a == b;
 //}
 
 bool assert_equals_x(long a, long b, char *context) {
-	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
-	else printf("OK %d==%d in %s\n"s % a % b % context);
+	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"_s % a % b % context);
+	else printf("OK %d==%d in %s\n"_s % a % b % context);
 	return a == b;
 }
 
 
 bool assert_equals_x(int a, int b, char *context) {
-	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
-	else printf("OK %d==%d in %s\n"s % a % b % context);
+	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"_s % a % b % context);
+	else printf("OK %d==%d in %s\n"_s % a % b % context);
 	return a == b;
 }
 inline float abs_(float x)noexcept{return x>0?x:-x;}
 bool assert_equals_x(float a, float b, char *context = "") {
 	float epsilon = abs_(a + b) / 100000.;// 𝕚𝚤:=-1
 	bool ok = a == b or abs_(a - b) <= epsilon;
-	if (!ok)printf("FAILED assert_equals!\n %f should be %f in %s\n"s % a % b % context);
-	else printf("OK %f==%f in %s\n"s % a % b % context);
+	if (!ok)printf("FAILED assert_equals!\n %f should be %f in %s\n"_s % a % b % context);
+	else printf("OK %f==%f in %s\n"_s % a % b % context);
 	return ok;
 }
 
@@ -152,6 +158,8 @@ void testLists();
 void testParams();
 
 void testNetBase() {
+	warn("NETBASE OFFLINE");
+	if(1>0)return;
 	chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
 	log(url);
 	chars json = fetch(url);
@@ -161,7 +169,7 @@ void testNetBase() {
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
 	Node Erde = results;
 	assert(Erde.name=="Erde" or Erde["name"]=="Erde");
-	Node &statements = Erde["statements"];
+	Node &statements = Erde["_statements"];
 	assert(statements.length >= 1); // or statements.value.node->length >=
 	assert(result["query"] == "2");
 	assert(result["count"] == "1");
@@ -178,15 +186,15 @@ void testNetBase() {
 
 void testDiv() {
 	Node div = Mark::parse("div{ span{ class:'bold' 'text'} br}");
-	Node &node = div["span"];
-	assert(div["span"].length == 2);
-//	assert(div["span"]["class"] == "bold")
+	Node &node = div["_span"];
+	assert(div["_span"].length == 2);
+//	assert(div["_span"]["class"] == "bold")
 }
 
 void testDivMark() {
 	Node div = Mark::parse("{div {span class:'bold' 'text'} {br}}");
-	assert(div["span"].length == 2);
-	assert(div["span"]["class"] == "bold");
+	assert(div["_span"].length == 2);
+	assert(div["_span"]["class"] == "bold");
 }
 
 void testMarkAsMap() {
@@ -218,8 +226,8 @@ void testMarkSimple() {
 	assert_equals(a3, long(3));
 	assert(a3 == 3);
 	assert(a3.type == longs or a3.type == keyNode and a3.value.node->type == longs);
-	assert(a3.name == "a"s);
-//	assert(a3.name == "a"s);// todo? cant
+	assert(a3.name == "a"_s);
+//	assert(a3.name == "a"_s);// todo? cant
 
 
 	Node &b = a["b"];
@@ -294,7 +302,7 @@ void testMarkMultiDeep() {
 	Node &c = result["deep"]['c'];
 	Node &node = result["deep"]['c']['d'];
 	assert_equals(node, "hi");
-	assert(node == "hi"s);
+	assert(node == "hi"_s);
 	assert(node == "hi");
 	assert(node == c['d']);
 }
@@ -345,7 +353,7 @@ void testErrors() {
 	assert(result == ERROR);
 //	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/out
 //  ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-default/out
-	Node node = Mark::parseFile("samples/errors.wasp");
+	Node node = Mark::parseFile("_samples/errors.wasp");
 	throwing = true;
 }
 
@@ -367,7 +375,7 @@ void testAllSamples() {
 // ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/
 //	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/
 // ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/out wtf
-	for (const auto &file : files("samples/")) {
+	for (const auto &file : files("_samples/")) {
 		const char *filename = file.path().string().data();
 		if (!s(filename).contains("error"))
 			Mark::parseFile(filename);
@@ -376,15 +384,15 @@ void testAllSamples() {
 #endif
 
 void testSample() {
-	Node node = Mark::parseFile("samples/comments.wasp");
+	Node node = Mark::parseFile("_samples/comments.wasp");
 }
 
 void testKitchensink() {
-	Node node = Mark::parseFile("samples/kitchensink.wasp");
+	Node node = Mark::parseFile("_samples/kitchensink.wasp");
 	assert(node['a'] == "classical json");
 	assert(node['b'] == "quotes optional");
 	assert(node['c'] == "commas optional");
-	assert(node['d'] == "semicolons optional");
+	assert(node['d'] == "_semicolons optional");
 	assert(node['e'] == "trailing comments"); // trailing comments
 	assert(node["f"] == /*inline comments*/ "inline comments");
 }
@@ -681,7 +689,7 @@ void testParams() {
 //	assert_equals(parse("f(x)=x*x").param->first(),"x");
 
 	Node body = assert_parses("body(style='blue'){a(link)}");
-	assert(body["style"] == "blue");
+	assert(body["_style"] == "blue");
 
 	Mark::parse("a(x:1)");
 	assert_parses("a(x:1)");
@@ -694,7 +702,7 @@ void testParams() {
 
 	assert_parses("while(x<3){y:z}");
 	Node body2 = assert_parses("body(style='blue'){style:green}");// is that whole xml compatibility a good idea?
-	skip(assert(body2["style"] ==
+	skip(assert(body2["_style"] ==
 	            "green", 0));// body has prescedence over param, semantically param provide extra data to body
 	assert(body2[".style"] == "blue");
 //	assert_parses("a(href='#'){'a link'}");
@@ -768,7 +776,7 @@ void testAsserts() {
 	assert_equals(11, 11);
 	assert_equals(11., 11.);
 	assert_equals("a", "a");
-	assert_equals("a"s, "a"s);
+	assert_equals("a"_s, "a"_s);
 }
 
 void testStringConcatenation() {
@@ -777,12 +785,12 @@ void testStringConcatenation() {
 //	assert_equals(Node("✖️"), False);
 //	assert_equals(Node("✖"), False);
 
-	assert_equals("a"s + 2, "a2");
-	assert_equals("a"s + 2.2, "a2.2");
-	assert_equals("a"s + "2.2", "a2.2");
-	assert_equals("a"s + 'b', "ab");
-	assert_equals("a"s + "bc", "abc");
-	assert_equals("a"s + true, "a✔️"s);
+	assert_equals("a"_s + 2, "a2");
+	assert_equals("a"_s + 2.2, "a2.2");
+	assert_equals("a"_s + "2.2", "a2.2");
+	assert_equals("a"_s + 'b', "ab");
+	assert_equals("a"_s + "bc", "abc");
+	assert_equals("a"_s + true, "a✔️"_s);
 }
 
 void testConcatenationBorderCases() {
@@ -793,21 +801,21 @@ void testConcatenationBorderCases() {
 // Todo Edge case a=[] a+=1
 	assert_equals(Node() + Node("1", 0, 0), Node("1", 0, 0));
 	//  singleton {1}+2==1+2 = 12/3 should be {1,2}
-	assert_equals(Node("1", 0, 0) + Node("x"s), Node("1", "x", 0));
+	assert_equals(Node("1", 0, 0) + Node("x"_s), Node("1", "x", 0));
 }
 
 void testConcatenation() {
 	testStringConcatenation();
-	assert_equals(Node("1", "2", 0) + Node("3"s), Node("1", "2", "3", 0));
+	assert_equals(Node("1", "2", 0) + Node("3"_s), Node("1", "2", "3", 0));
 	assert_equals(Node(1, 2, 0) + Node(3), Node(1, 2, 3, 0));
 	assert_equals(Node(1, 2, 0) + Node(3, 4, 0), Node(1, 2, 3, 4, 0));
 	assert_equals(Node("1", "2", 0) + Node("3", "4", 0), Node("1", "2", "3", "4", 0));
 	assert_equals(Node(1) + Node(2), Node(3));
 	assert_equals(Node(1) + Node(2.4), Node(3.4));
 	assert_equals(Node(1.0) + Node(2), Node(3.0));
-	assert_equals(Node(1) + Node("a"s), Node("1a"));
-	assert_equals(Node("1"s) + Node(2), Node("12"));
-	assert_equals(Node("a"s) + Node(2.2), Node("a2.2"));
+	assert_equals(Node(1) + Node("a"_s), Node("1a"));
+	assert_equals(Node("1"_s) + Node(2), Node("12"));
+	assert_equals(Node("a"_s) + Node(2.2), Node("a2.2"));
 }
 
 
@@ -898,10 +906,10 @@ void todos() {
 	testNetBase();
 //	testAngle();
 	skip(
-			assert_equals(Node("1", 0) + Node("2"s), Node("1", "2", 0));
+			assert_equals(Node("1", 0) + Node("2"_s), Node("1", "2", 0));
 			testBUG();
-//	log("OK %s %d"s % ("WASM",1));// only 1 handed over
-			log("OK %d %d"s % (2, 1));// only 1 handed over
+//	log("OK %s %d"_s % ("WASM",1));// only 1 handed over
+			log("OK %d %d"_s % (2, 1));// only 1 handed over
 			testIndentAsBlock();
 	)
 }
