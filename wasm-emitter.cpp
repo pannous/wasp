@@ -19,7 +19,7 @@ void * memcpy ( void * destination, const void * source, size_t num );
 //using namespace std;
 
 void todo() {
-	printf("TODO");
+	printf("TODO ");
 }
 
 typedef int number;
@@ -34,7 +34,7 @@ bytes concat(Code& a, Code& b);
 
 
 bytes concat(byter a, byter b,int len_a, int len_b) {
-	bytes c=new char[len_a+len_a];
+	bytes c=new char[len_a+len_a+1];
 	memcpy(c, a, len_a);
 	memcpy(c+len_a, b, len_b);
 	return c;
@@ -131,7 +131,8 @@ public:
 class Code{
 public:
 	bytes data;
-	int length;
+	int length=0;
+	bool encoded= false;// first byte = size of vector
 
 	Code(){}
 	Code(bytes a, int len){
@@ -153,14 +154,16 @@ public:
 	Code(char byte){
 		data = static_cast<bytes>(alloc(1));
 		data[0] = byte;
+		length = 1;
 	}
 	Code(char section, Code code) {
 		data = concat(section, code.data,code.length);
 		length = code.length+1;
 	}
 
-	Code(char section, bytes data, int len) {
-		data = concat(section, data, len);
+	Code(char section, bytes dat, int len) {
+		data = concat(section, dat, len);
+		length=len+1;
 	}
 	Code operator +(Code more){
 		return this->push(more);
@@ -192,7 +195,21 @@ public:
 	Code &clone() {
 		return *this;
 	}
+
+	void debug() {
+		for (int i = 0; i < length; i++)printf("%02x", data[i]);
+		save();
+	}
+	void save(char* file_name="test.wasm"){
+		FILE* file=fopen(file_name,"w");
+		fwrite(data, length, 1, file);
+		fclose(file);
+		system("/Users/me/dev/apps/wasp/wasmx /Users/me/dev/apps/wasp/test.wasm");
+	}
+
 };
+//#include <iostream>
+
 class Bytes{
 public:
 	int length;
@@ -343,8 +360,9 @@ bytes flatten(byter data) {
 	return data;
 }
 
-bytes flatten(Code data) {
-	return data.data;
+Code flatten(Code data) {
+	todo();
+	return data;
 }
 #ifdef WASM
 typedef char uint8_t;
@@ -371,17 +389,12 @@ Code unsignedLEB128(int n) {
 //}
 
 Code encodeVector (Code data) {
+	if(data.encoded)return data;
 //	return Code(unsignedLEB128(data.length), flatten(data),data.length);
-	return Code(concat(unsignedLEB128(data.length), flatten(data),8,data.length),data.length+8);
-
+	Code code = unsignedLEB128(data.length) + flatten(data);
+	code.encoded = true;
+	return code;
 }
-
-Code encodeVector (Code data,Code more) {
-	return unsignedLEB128(data.length).push(data).push(more);
-}
-//Code encodeVector (char data[] ,char more[] ) {
-//	return Code(unsignedLEB128(sizeof(data)), flatten(data)).push(more);
-//}
 
 // https://webassembly.github.io/spec/core/binary/modules.html#code-section
 Code encodeLocal (number count, Valtype type) {
@@ -620,70 +633,13 @@ Code codeFromProc (ProcStatementNod node, TransformedProgram program_node) {
 	todo();// check if ok: localCount == size of locals ???
 //	return encodeVector([...encodeVector(locals), ...code, Opcodes.end]);
 	return encodeVector(Code(locals,localCount).push(code).push(end_opcode));
-};;
-Code& emitter(TransformedProgram* ast0) {
-	TransformedProgram ast;
-
-	// Function types are vectors of parameters and return types. Currently
-	// WebAssembly only supports single return values
-//  bytes printFunctionType = new char[]{functionType,encodeVector(f32), emptyArray}
-	Code printFunctionType = Code(functionType).push(encodeVector(Code(f32))).push(emptyArray);
-
-	ProcStatementNod proc;
-
-	// optimise TODO - some of the procs might have the same type signature
-	Code funcTypes;
-	for (Nod &node : ast) {
-		Code args;
-		for (Nod arg: proc.args) { args.push(f32); }
-		Code functionType = Code(functionType).push(encodeVector(args)).push(emptyArray);
-	}
-//  ast.map(proc {[functionType, encodeVector(proc.args.map(_ -> f32)), emptyArray]);
-
-	// the type section is a vector of function types
-	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
-
-	// the function section is a vector of type indices that indicate the type of each function
-	// in the code section
-	auto lambdo = [](String val, int index) { return index + 1; /* type index */};
-	Code funcSection = createSection(func, encodeVector(Code()));
-//			encodeVector(ast.mapp(lambdo)) TODO
-
-	// the import section is a vector of imported functions
-	Code printFunctionImport = encodeString("env").push(
-			encodeString("print")).push(func_export).push(0x00)/* type index*/ ;
-
-	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
-	auto memoryImport = encodeString("env")+ encodeString("memory")+mem_export+ 0x00+ 0x01;
-
-	auto importSection = createSection(
-			import,
-			encodeVector(printFunctionImport+memoryImport)
-	);
-
-	// the export section is a vector of exported functions
-	auto exportSection = createSection(
-			exports,
-			encodeVector(
-					             encodeString("run")+
-					             func_export+
-					             Code(ast.findIndex([](Nod a) { return a.name == "main"; }) + 1)
-			)
-	);
-
-	// the code section contains vectors of functions
-
-	auto lambde = [](String val, int index) { return index + 1; /* type index */};
-	Code da_code=Code();// ast.mapp(lambde(ast)); TODO
-//	a -> codeFromProc(a, ast)
-	auto codeSection = createSection(code_section, encodeVector(da_code));
-
-	return (Code(magicModuleHeader,4) + Code(moduleVersion,4)+ typeSection+ importSection+ funcSection+ exportSection+ codeSection).clone();
-}
+};
 
 
 Code encodeString(char *str) {
-	return Code(strlen(str), str,strlen(str)+1);
+	size_t len = strlen(str);
+	Code code = Code(len, str, len);
+	return code;//.push(0);
 };
 
 //bytes
@@ -710,3 +666,78 @@ bytes concat(Code& a, Code& b) {
 	memcpy(c+a.length, b, b.length);
 	return c;
 }
+
+
+Code& emitter(TransformedProgram* ast0) {
+	TransformedProgram ast;
+
+	// Function types are vectors of parameters and return types. Currently
+	// WebAssembly only supports single return values
+//  bytes printFunctionType = new char[]{functionType,encodeVector(f32), emptyArray}
+	Code printFunctionType = Code(functionType).push(encodeVector(Code(f32))).push(emptyArray);
+
+	ProcStatementNod proc;
+
+	// optimise TODO - some of the procs might have the same type signature
+	Code funcTypes;
+	for (Nod &node : ast) {
+		Code args;
+		for (Nod arg: proc.args) { args.push(f32); }
+		Code functionType = Code(functionType).push(encodeVector(args)).push(emptyArray);
+	}
+//  ast.map(proc {[functionType, encodeVector(proc.args.map(_ -> f32)), emptyArray]);
+
+
+
+	// the type section is a vector of function types
+//	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
+	char type0[]={0x06,0x01,0x60,0x01,0x7F,0x01,0x7F};
+	auto typeSection=Code(0x01,type0,sizeof(type0));
+	// the function section is a vector of type indices that indicate the type of each function
+	// in the code section
+	auto lambdo = [](String val, int index) { return index + 1; /* type index */};
+	char func_types[]={0x01,0x00};
+	Code funcSection = createSection(func, Code(func_types,2));
+
+//			encodeVector(ast.mapp(lambdo)) TODO
+
+	// the import section is a vector of imported functions
+	Code printFunctionImport = encodeString("env").push(
+			encodeString("print")).push(func_export).push(0x00)/* type index*/ ;
+
+	auto memorySection = createSection(memory_section, encodeVector(Code()));
+
+
+	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
+	auto memoryImport = encodeString("env")+ encodeString("memory")+mem_export+ 0x00+ 0x01;
+
+	auto importSection = createSection(
+			import,
+			encodeVector(printFunctionImport+memoryImport)
+	);
+
+	// the export section is a vector of exported functions
+	auto exportSection = createSection(
+			exports,
+			encodeVector(
+					Code(0x01)+
+					             encodeString("main")+
+					             func_export + Code(0)//.push(0).push(0)
+//					             Code(ast.findIndex([](Nod a) { return a.name == "main"; }) + 1)
+			)
+	);
+
+	// the code section contains vectors of functions
+
+	auto lambde = [](String val, int index) { return index + 1; /* type index */};
+	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};
+	Code da_code=Code(code_data,sizeof(code_data));// ast.mapp(lambde(ast)); TODO
+//	a -> codeFromProc(a, ast)
+	auto codeSection = createSection(code_section, encodeVector(da_code));
+
+	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection+ exportSection +  codeSection;
+//			+ memorySection + importSection + exportSection + codeSection;
+	code.debug();
+	return code.clone();
+}
+
