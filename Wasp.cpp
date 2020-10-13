@@ -1165,9 +1165,9 @@ int main(int argp, char **argv) {
 		auto s = "hello world"_s;
 		init();
 		log(String("OK %s").format("WASM"));
-//		emitter(0);
+		emitter(0);
 //		test();
-		testCurrent();
+//		testCurrent();
 		return 42;
 	} catch (chars err) {
 		printf("\nERROR\n");
