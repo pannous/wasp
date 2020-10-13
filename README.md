@@ -2,7 +2,7 @@
 
 Wasp is a modern programming language and 'post-lisp' data format, fixing the shortcomings of JSON, ECMA and [Lisp](https://github.com/google/schism).
 
-The big difference to Lisp is that everything is map based, lists are flat maps in JS : ['a','b'] == {1:'a' 2:'b'}.
+The big difference to Lisp is that everything is map based, lists are flat maps like in JS : ['a','b'] == {0:'a' 1:'b'}.
 
 This gives an universal exceptionless object data type, just like lists in lisp.
 
