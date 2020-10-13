@@ -1,6 +1,7 @@
 //
 // Created by me on 15.07.20.
 //
+typedef const char *chars;
 
 #ifndef WASP_WASMHELPERS_H
 #define WASP_WASMHELPERS_H
@@ -8,6 +9,7 @@
 #endif //WASP_WASMHELPERS_H
 
 #ifdef WASM
+#define size_t unsigned long
 void printf(const char *s);  //stdio
 //void print(const char *format, int i);
 void printf(char const *format, int i);

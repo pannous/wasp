@@ -25,18 +25,22 @@ if ( WASM )
     ADD_COMPILE_FLAG("-emit-llvm")
     ADD_COMPILE_FLAG("-o wasp.bc")
 else()
+    # NORMAL:
     message(NO WASM "${WASM}")
     set(CMAKE_CXX_FLAGS " -dM -ferror-limit=5 -g ${CMAKE_CXX_FLAGS}")
-    set(CMAKE_CXX_FLAGS " -lreadline -ldl -lcurl -lz ${CMAKE_CXX_FLAGS}") # extra libraries
+
+
+    #    set(CMAKE_CXX_FLAGS " -lreadline -ldl -lcurl -lz ${CMAKE_CXX_FLAGS}") # extra libraries
 endif ()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.15" ) #initializer_list
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmacosx-version-min=10.15" ) #initializer_list
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++2a  -stdlib=libc++ -I /usr/include/")
 
 #find_package( Readline)
 #find_package( READLINE )
 
 # WASM:
-
-# NORMAL:
-#set(CMAKE_CXX_FLAGS "-Wall -std=c++2a ${CMAKE_CXX_FLAGS} -I /usr/include/")
 
 
 # -I /usr/include/" # -nostdinc -nostdlib
@@ -44,6 +48,7 @@ endif ()
 # DISABLED WARNINGS
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -Wliteral-suffix -Wno-deprecated  -Wno-write-strings")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wundefined-bool-conversion -Wno-writable-strings -Wno-dangling-else -Wundefined-bool-conversion -Wno-format-security")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.7")
 
 # LIBRARIES
 include_directories(/usr/include/)
@@ -57,7 +62,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 # WASM:
 #set(SOURCE_FILES String.h NodeTypes.h Wasp.cpp)
-set(SOURCE_FILES NodeTypes.h Wasp.cpp)
+set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp )
 #String.h
 #not WASM: ErrorHandler.cpp  ErrorHandler.h
 #via Angle.cpp:
