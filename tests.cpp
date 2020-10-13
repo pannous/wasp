@@ -169,7 +169,7 @@ void testNetBase() {
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
 	Node Erde = results;
 	assert(Erde.name=="Erde" or Erde["name"]=="Erde");
-	Node &statements = Erde["_statements"];
+	Node &statements = Erde["statements"];
 	assert(statements.length >= 1); // or statements.value.node->length >=
 	assert(result["query"] == "2");
 	assert(result["count"] == "1");
@@ -186,15 +186,15 @@ void testNetBase() {
 
 void testDiv() {
 	Node div = Mark::parse("div{ span{ class:'bold' 'text'} br}");
-	Node &node = div["_span"];
-	assert(div["_span"].length == 2);
-//	assert(div["_span"]["class"] == "bold")
+	Node &node = div["span"];
+	assert(div["span"].length == 2);
+//	assert(div["span"]["class"] == "bold")
 }
 
 void testDivMark() {
 	Node div = Mark::parse("{div {span class:'bold' 'text'} {br}}");
-	assert(div["_span"].length == 2);
-	assert(div["_span"]["class"] == "bold");
+	assert(div["span"].length == 2);
+	assert(div["span"]["class"] == "bold");
 }
 
 void testMarkAsMap() {
@@ -351,9 +351,11 @@ void testErrors() {
 	throwing = false;
 	result = Mark::parse("]");
 	assert(result == ERROR);
-//	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/out
-//  ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-default/out
-	Node node = Mark::parseFile("_samples/errors.wasp");
+/*
+	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/out
+	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-default/out
+  */
+	Node node = Mark::parseFile("samples/errors.wasp");
 	throwing = true;
 }
 
@@ -375,7 +377,7 @@ void testAllSamples() {
 // ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/
 //	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/
 // ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/out wtf
-	for (const auto &file : files("_samples/")) {
+	for (const auto &file : files("samples/")) {
 		const char *filename = file.path().string().data();
 		if (!s(filename).contains("error"))
 			Mark::parseFile(filename);
@@ -384,15 +386,15 @@ void testAllSamples() {
 #endif
 
 void testSample() {
-	Node node = Mark::parseFile("_samples/comments.wasp");
+	Node node = Mark::parseFile("samples/comments.wasp");
 }
 
 void testKitchensink() {
-	Node node = Mark::parseFile("_samples/kitchensink.wasp");
+	Node node = Mark::parseFile("samples/kitchensink.wasp");
 	assert(node['a'] == "classical json");
 	assert(node['b'] == "quotes optional");
 	assert(node['c'] == "commas optional");
-	assert(node['d'] == "_semicolons optional");
+	assert(node['d'] == "semicolons optional");
 	assert(node['e'] == "trailing comments"); // trailing comments
 	assert(node["f"] == /*inline comments*/ "inline comments");
 }
@@ -689,7 +691,7 @@ void testParams() {
 //	assert_equals(parse("f(x)=x*x").param->first(),"x");
 
 	Node body = assert_parses("body(style='blue'){a(link)}");
-	assert(body["_style"] == "blue");
+	assert(body["style"] == "blue");
 
 	Mark::parse("a(x:1)");
 	assert_parses("a(x:1)");
@@ -702,7 +704,7 @@ void testParams() {
 
 	assert_parses("while(x<3){y:z}");
 	Node body2 = assert_parses("body(style='blue'){style:green}");// is that whole xml compatibility a good idea?
-	skip(assert(body2["_style"] ==
+	skip(assert(body2["style"] ==
 	            "green", 0));// body has prescedence over param, semantically param provide extra data to body
 	assert(body2[".style"] == "blue");
 //	assert_parses("a(href='#'){'a link'}");
