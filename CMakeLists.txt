@@ -62,7 +62,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
 
 # WASM:
 #set(SOURCE_FILES String.h NodeTypes.h Wasp.cpp)
-set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp )
+set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp wasm-opcodes.h)
 #String.h
 #not WASM: ErrorHandler.cpp  ErrorHandler.h
 #via Angle.cpp:

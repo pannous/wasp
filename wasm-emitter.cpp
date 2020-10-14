@@ -1,22 +1,9 @@
 // BASED ON https://github.com/ColinEberhardt/chasm/blob/master/src/emitter.ts
 //https://github.com/ColinEberhardt/chasm/blob/master/src/encoding.ts
-// import {
-//   unsignedLEB128,
-//   signedLEB128,
-//   encodeString,
-//   ieee754
-// }; from "./encoding";
-// import traverse from "./traverse";
-// #include <String>
-//#include <String>
-//#include <map>
 #include "String.h"
 #include "wasm-emitter.h"
-//#include <cstring> // memcpy
-//#include <string.h> // memcpy
 #include "string.h" // memcpy
 void * memcpy ( void * destination, const void * source, size_t num );
-//using namespace std;
 
 void todo() {
 	printf("TODO ");
@@ -30,7 +17,6 @@ typedef char byter[];
 //typedef char id;
 
 
-bytes concat(Code& a, Code& b);
 
 
 bytes concat(byter a, byter b,int len_a, int len_b) {
@@ -201,10 +187,18 @@ public:
 		save();
 	}
 	void save(char* file_name="test.wasm"){
+#ifndef WASM
 		FILE* file=fopen(file_name,"w");
 		fwrite(data, length, 1, file);
 		fclose(file);
-		system("/Users/me/dev/apps/wasp/wasmx /Users/me/dev/apps/wasp/test.wasm");
+		char *command = "wasmx test.wasm";
+		int ok=system(command);
+//		FILE *result=popen(command, "r");
+//		char buf[100000];
+//		while(fgets(buf, sizeof(buf), result) != NULL) {
+//		printf("%s",buf);
+//		}
+#endif
 	}
 
 };
@@ -246,58 +240,7 @@ Code encodeString(char *String);
 // Code flatten (any arr[]) {
 // [].concat.apply([], arr);
 
-// https://webassembly.github.io/spec/core/binary/modules.html#sections
-enum Section {
-	custom = 0,
-	type = 1,
-	import = 2,
-	func = 3,
-	table = 4,
-	memory_section = 5,
-	global = 6,
-	exports = 7,
-	start = 8,
-	element = 9,
-	code_section = 10,
-	data = 11
-};
 
-// https://webassembly.github.io/spec/core/binary/types.html
-enum Valtype {
-	i32 = 0x7f,
-	f32 = 0x7d
-};
-
-// https://webassembly.github.io/spec/core/binary/types.html#binary-blocktype
-enum Blocktype {
-	void_block = 0x40
-};
-
-// https://webassembly.github.io/spec/core/binary/instructions.html
-enum Opcodes {
-	block = 0x02,
-	loop = 0x03,
-	br = 0x0c,
-	br_if = 0x0d,
-	end_opcode = 0x0b,
-	call = 0x10,
-	get_local = 0x20,
-	set_local = 0x21,
-	i32_store_8 = 0x3a,
-	i32_auto = 0x41,
-	f32_auto = 0x43,
-	i32_eqz = 0x45,
-	i32_eq = 0x46,
-	f32_eq = 0x5b,
-	f32_lt = 0x5d,
-	f32_gt = 0x5e,
-	i32_and = 0x71,
-	f32_add = 0x92,
-	f32_sub = 0x93,
-	f32_mul = 0x94,
-	f32_div = 0x95,
-	i32_trunc_f32_s = 0xa8
-};
 bool eq(const char *op, const char *string);
 class BinaryOpcode{
 	int operator [](const char *s){
@@ -511,9 +454,9 @@ Code emitStatements (StatementNod statements) {
 				code.push(br);
 				code.push(signedLEB128(0));
 				// end loop
-				code.push(end_opcode);
+				code.push(end_block);
 				// end block
-				code.push(end_opcode);
+				code.push(end_block);
 				break;
 			case ifStatement:
 				// if block
@@ -528,7 +471,7 @@ Code emitStatements (StatementNod statements) {
 				// the nested logic
 				emitStatements(statement.consequent);
 				// end block
-				code.push(end_opcode);
+				code.push(end_block);
 
 				// else block
 				code.push(block);
@@ -544,7 +487,7 @@ Code emitStatements (StatementNod statements) {
 				// the nested logic
 				emitStatements(statement.alternate);
 				// end block
-				code.push(end_opcode);
+				code.push(end_block);
 				break;
 			case callStatement:
 				if (statement.name == "setpixel") {
@@ -632,7 +575,7 @@ Code codeFromProc (ProcStatementNod node, TransformedProgram program_node) {
 	bytes locals = localCount > 0 ? encodeLocal(localCount, f32).data : new char[]{};
 	todo();// check if ok: localCount == size of locals ???
 //	return encodeVector([...encodeVector(locals), ...code, Opcodes.end]);
-	return encodeVector(Code(locals,localCount).push(code).push(end_opcode));
+	return encodeVector(Code(locals,localCount).push(code).push(end_block));
 };
 
 
@@ -660,13 +603,6 @@ Code signedLEB128(int n) {
 //	return result.data;
 }
 
-bytes concat(Code& a, Code& b) {
-	bytes c=new char[a.length+b.length];
-	memcpy(c, a, a.length);
-	memcpy(c+a.length, b, b.length);
-	return c;
-}
-
 
 Code& emitter(TransformedProgram* ast0) {
 	TransformedProgram ast;
@@ -691,30 +627,35 @@ Code& emitter(TransformedProgram* ast0) {
 
 	// the type section is a vector of function types
 //	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
-	char type0[]={0x06,0x01,0x60,0x01,0x7F,0x01,0x7F};
-	auto typeSection=Code(0x01,type0,sizeof(type0));
+//	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
+	char type0[]={0x60/*const type form*/,0x00/*param count*/,0x00/*return count*/};
+	char type1[]={0x60/*const type form*/,0x01/*param count*/,0x7F/*int*/,0x01/*return count*/,0x7F/*int*/};
+	int typeCount=2;
+
+
+//	auto typeSection=Code(type,type0,sizeof(type0));
+	const Code &type_data = encodeVector(Code(typeCount) + Code(type1, sizeof(type1))+ Code(type0, sizeof(type0)));
+	auto typeSection = Code(type, type_data);
+
 	// the function section is a vector of type indices that indicate the type of each function
 	// in the code section
 	auto lambdo = [](String val, int index) { return index + 1; /* type index */};
-	char func_types[]={0x01,0x00};
-	Code funcSection = createSection(func, Code(func_types,2));
+//	char func_types[]={0x01,0x00};
 
 //			encodeVector(ast.mapp(lambdo)) TODO
 
 	// the import section is a vector of imported functions
-	Code printFunctionImport = encodeString("env").push(
-			encodeString("print")).push(func_export).push(0x00)/* type index*/ ;
+	Code printFunctionImport = encodeString("env") +
+	                           encodeString("print").push(func_export).push(0x00)/* type index*/ ;
 
-	auto memorySection = createSection(memory_section, encodeVector(Code()));
+	auto memorySection = createSection(memory_section, encodeVector(Code(2)));
 
 
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
-	auto memoryImport = encodeString("env")+ encodeString("memory")+mem_export+ 0x00+ 0x01;
+	auto memoryImport = encodeString("env")+ encodeString("memory")+mem_export/*type*/+ 0x00+ 0x01;
 
-	auto importSection = createSection(
-			import,
-			encodeVector(printFunctionImport+memoryImport)
-	);
+	auto importSection = createSection(import, encodeVector(Code(0)));
+	auto importSection2 = createSection(import, encodeVector({printFunctionImport,memoryImport}));
 
 	// the export section is a vector of exported functions
 	auto exportSection = createSection(
@@ -730,13 +671,34 @@ Code& emitter(TransformedProgram* ast0) {
 	// the code section contains vectors of functions
 
 	auto lambde = [](String val, int index) { return index + 1; /* type index */};
-	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};
-	Code da_code=Code(code_data,sizeof(code_data));// ast.mapp(lambde(ast)); TODO
 //	a -> codeFromProc(a, ast)
-	auto codeSection = createSection(code_section, encodeVector(da_code));
+// ast.mapp(lambde(ast)); TODO
+// https://pengowray.github.io/wasm-ops/
+//	char code_data[] = createSection() 0x01,0x08,0x00,0x01,0x3f,0x0F,0x0B};// ok 0x01==nop
+//  Code code_data=encodeVectors(encodeVector(1/*function_index/))
+//	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
+//function body count
 
-	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection+ exportSection +  codeSection;
-//			+ memorySection + importSection + exportSection + codeSection;
+
+//	char func_types[]={0x01,0x00};
+	char func_types[]={0x02,0x00,0x01};
+	Code funcSection = createSection(func, Code(func_types,sizeof(func_types)));
+
+//	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
+//	char code_data[] = {0x00,0x41,0x2A,0x0F,0x0B};// 0x00 == unreachable as block header !?
+	char code_data[] = {0/*locals_count*/,i32_auto,42,return_block,end_block};// 0x00 == unreachable as block header !?
+	char code_data1[] = {0/*locals_count*/,end_block};
+//	char code_data[] = {0x00,0x0b,0x02,0x00,0x0b};// empty type:1 len:2
+
+
+//	Code function1 = codeBlock(code_data);
+	Code da_code=Code(code_data,sizeof(code_data));
+	Code da_code1=Code(code_data1,sizeof(code_data1));
+	char function_count = 2;
+	auto codeSection = createSection(code_section, Code(function_count)+encodeVector(da_code)+encodeVector(da_code1));
+
+	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection ;
+//	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection;// + memorySection + importSection;
 	code.debug();
 	return code.clone();
 }
