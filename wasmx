@@ -1,9 +1,23 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --experimental-wasm-eh
+
+// Reference types (--experimental-wasm-anyref)
+// BigInt between js and wasm (--experimental-wasm-bigint)
+// Bulk memory operations (--experimental-wasm-bulk-memory)
+// Exceptions (--experimental-wasm-eh)
+// Multi values (--experimental-wasm-mv)
+// Tail recursion calls (--experimental-wasm-return-call)
+// Saturated (non-trapping) conversions from float to int (--experimental-wasm-sat-f2i-conversions)
+// Sign/zero extensions (--experimental-wasm-se)
+// SIMD (--experimental-wasm-simd)
+// Threads (--experimental-wasm-threads)
+// Type reflection (--experimental-wasm-type-reflection)
+
+
 
 file=arg=process.argv[2]
 if(file.match("wasmx"))file="/me/dev/script/wasm/wasp/wasp.wast"
 if(file.match(".wast")){
-	cmd="wasm-as "+file
+	cmd="wasm-as --all-features "+file 
 	file = file.replace(".wast",".wasm")
 	require('child_process').execSync(cmd+" -o "+file)
 }
