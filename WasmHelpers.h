@@ -10,8 +10,24 @@ typedef const char *chars;
 
 #ifdef WASM
 #define size_t unsigned long
+//#define size_t int
+
+//TypeError: wasm function signature contains illegal type:
+// ONLY INT and FLOAT in wasm functions!!!
+extern "C" void exit(int);
+extern "C" void logc(char s);
+extern "C" void logi(int i);
+// helpers calling
+
+void err(char const*);
+void warn(char const*);
+void log(char*);
+void log(chars s);
+//extern "C" void print (const char *);// no \n newline
+//extern "C" void logs (const char *);// can't work!
 void printf(const char *s);  //stdio
-//void print(const char *format, int i);
+void print(const char *format, int i);
+void printf(char const*, char const*);
 void printf(char const *format, int i);
 void printf(const char *format, chars i);
 void printf(const char *format, chars i, int line);
@@ -23,7 +39,7 @@ void printf(const char *format, chars i, chars j, chars k, int l);
 //extern
 //void* alloc(size_t __size);
 //extern
-void* alloc(long i);
+void* alloc(int i);
 #endif
 #endif
 //#endif //MARK_STRING_H

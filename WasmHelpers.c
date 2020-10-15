@@ -21,7 +21,7 @@ void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	memory += size * 2 + 1;
 	return current;
 }
-void* alloc(long size){
+void* alloc(int size){
 	current = memory;//heap;
 	memory += size * 2 + 1;
 	return current;
@@ -30,8 +30,14 @@ void* alloc(long size){
 
 
 #ifdef WASM
+void log(chars s) {
+	while(s++)logc(s[0]);
+}
+void log(char *s) {
+	while(s++)logc(s[0]);
+}
 void printf(const char *s) {
-//	printf(s);
+	while(s++)logc(s[0]);
 }
 void printf(const char *format, int i) {
 	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
