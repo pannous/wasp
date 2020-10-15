@@ -1224,14 +1224,19 @@ int main(int argp, char **argv) {
 //		String* asdf3=new String(123);
 		log(asdf);
 		String asdf1=String("sdaff111");
-		log(asdf1);
-		String asdf2=*new String("sdaff222");
-		log(asdf2);
+		log(asdf1);// ok
+		log(asdf1.length);// 8 ok
 #ifdef WASM
 		log("TODO String* storage throws: wasm function signature contains illegal type ");
 #else
+		String asdf2=*new String("sdaff222");
+		log(asdf2);
 		String* asdf3=new String("String*");
 		log(asdf3);
+		log(new String('a'));// not ok
+//		log(new String(123));// not ok
+//		new String(123);// not ok
+		new String("dasf");// NOT OK
 #endif
 // missing dependency env._ZN6String6callocEii  IMPLICIT C++ calloc!!
 //		new String();
@@ -1240,13 +1245,8 @@ int main(int argp, char **argv) {
 		log(String(123)+"456");// ok
 		log(String("\n?????2\n"));
 		new String('a');// ok
-		log(new String('a'));// not ok
 		log(String(123));// ok
-//		log(new String(123));// not ok
-//		new String(123);// not ok
 
-		log(new String("dasf"));
-		new String("dasf");
 		log(String("\n?????3\n"));
 
 //		printf("FAILED assert_equals!\n %f should be %f in %s\n"_s % a % b % context);
