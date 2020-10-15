@@ -203,7 +203,7 @@ public:
 #else
 		data = const_cast<char *>(string);
 #endif
-		length = strlen0(string);
+		length = strlen(string);// TODO!
 	}
 
 
