@@ -1,3 +1,4 @@
+#pragma once
 //#define X86_64 1
 
 #include "String.cpp"
@@ -1198,64 +1199,18 @@ String& operator "" _ss(const char *c, unsigned long t) {// function signature c
 	return *pString;
 }
 
+
 #ifndef _main_
 int main(int argp, char **argv) {
 
 #ifdef register_global_signal_exception_handler
 	register_global_signal_exception_handler();
 #endif
+
 	try {
-#ifdef WASM
-		// WASM IS VERY UNHAPPY WITH NEW keyword / pointers:
-//		String(123) OK , but ...   new String(123) NOT OK!!!
-//		wasm function signature contains illegal type
-		log(String("OK %s").format("WASM!"));
-#endif
-		String afs;
-		log("\n...\n");
-		log(String("\n!!!!!\n"));
-//		itoa0(42);
-		itoa(42);
-		log(itoa(42));
-		log(strlen("sdafdsfa"));
-		log("\n!!!!..///////\n");
-
-		String asdf=String(123);
-//		String* asdf3=new String(123);
-		log(asdf);
-		String asdf1=String("sdaff111");
-		log(asdf1);// ok
-		log(asdf1.length);// 8 ok
-#ifdef WASM
-		log("TODO String* storage throws: wasm function signature contains illegal type ");
-#else
-		String asdf2=*new String("sdaff222");
-		log(asdf2);
-		String* asdf3=new String("String*");
-		log(asdf3);
-		log(new String('a'));// not ok
-//		log(new String(123));// not ok
-//		new String(123);// not ok
-		new String("dasf");// NOT OK
-#endif
-// missing dependency env._ZN6String6callocEii  IMPLICIT C++ calloc!!
-//		new String();
-		log(String("\n?????1.3\n"));
-		log(String("456").length);// ok
-		log(String(123)+"456");// ok
-		log(String("\n?????2\n"));
-		new String('a');// ok
-		log(String(123));// ok
-
-		log(String("\n?????3\n"));
-
-//		printf("FAILED assert_equals!\n %f should be %f in %s\n"_s % a % b % context);
-		int num[] = { 1,2,3 };
-		int size = sizeof(num)/sizeof(int);
-//		assert_equals(size,3);
-		auto s = "hello world"_s;
-		init();
-//		emitter(0);
+		log("Hello %s"_s.format("WASM"));
+		log("Hello "_ + 123);
+//		printf("Hello %s", "WASM");
 //		test();
 //		testCurrent();
 		return 42;
