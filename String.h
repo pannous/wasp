@@ -142,7 +142,7 @@ void strcpy2(char *dest, const char *src, int length) {// =-1
 }
 
 //const char *ftoa(float num, int base = 10, int precision = 4);
-const char *ftoa(float num, int base, int precision);
+const char *ftoa0(float num, int base, int precision);
 const char *ftoa(float num);
 
 class Error {
@@ -192,14 +192,7 @@ public:
 	void operator delete (void*){memory++;}// Todo ;)
 
 	String(char c) {
-//		log("x");
-#ifdef WASM
-//		data = (char *) memory++;
-		data = "x";
-		memory++;// wasm function signature contains illegal type WTF HOW WHY??
-#else
 		data = static_cast<char *>(calloc(sizeof(char),2));
-#endif
 		data[0] = c;
 		data[1] = 0;
 		length = 1;
@@ -590,8 +583,9 @@ String operator ""_s(const char* c, unsigned long );
 
 extern String UNEXPECT_END;// = "Unexpected end of input";
 extern String UNEXPECT_CHAR;// = "Unexpected character ";
+String empty_name = "";
 extern String nil_name;// = "nil";
-extern String empty_name;// = "";
+//extern String empty_name;// = "";
 extern String object_name;// = "{…}";
 extern String groups_name;// = "(…)";
 extern String patterns_name;// = "[…]";
