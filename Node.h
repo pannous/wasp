@@ -6,7 +6,8 @@
 #define MARK_NODE_H
 
 #include "String.h"
-#include <stdarg.h> // va_list
+//#import  "String.h" // FFS
+#include <stdarg.h> // va_list OK IN WASM???
 
 extern bool debug;
 
@@ -19,6 +20,7 @@ extern Node Infinity;// = Node("Infinity");
 extern Node NaN;// = Node("NaN");
 
 void log(Node &);
+void log(Node*);
 
 //class String;
 union Value {
@@ -112,7 +114,7 @@ public:
 	explicit Node(double nr) {
 		value.floaty = nr;
 		type = floats;
-		if (debug)name = itoa(nr); // messes with setField contraction
+		if (debug)name = itoa0(nr); // messes with setField contraction
 	}
 
 
@@ -158,7 +160,7 @@ public:
 	explicit Node(int nr) {
 		value.longy = nr;
 		type = longs;
-		if (debug)name = itoa(nr); // messes with setField contraction
+		if (debug)name = itoa0(nr); // messes with setField contraction
 	}
 
 	explicit Node(const char *name) {
@@ -191,7 +193,7 @@ public:
 			name = s;
 			type = reference;
 		}
-//		else if (atoi(s) and s == itoa(atoi(s))) {
+//		else if (atoi(s) and s == itoa0(atoi(s))) {
 //			value.longy = atoi(s);
 //			type = longs;
 //			}
