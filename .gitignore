@@ -22,3 +22,6 @@ mark.cbp
 CMakeFiles
 wasp.cbp
 *.bc
+*.wat
+*.wast
+*.wasm
