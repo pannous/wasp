@@ -44,7 +44,7 @@ void printf(const char *format, chars i, chars j, chars k, int l);
 //void* alloc(size_t __size);
 //extern
 void* alloc(int i);
-void *calloc(int i);
+void* calloc(int i);
 
 #endif
 #endif

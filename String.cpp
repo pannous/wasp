@@ -2,32 +2,27 @@
 // Created by pannous on 24.10.18.
 //
 
-//#ifndef NETBASE_STRING_CPP
-//#define NETBASE_STRING_CPP
-//#include "String.h" prefering one big WASM object
+#include "String.h"
+#include "NodeTypes.h"
+#include "WasmHelpers.h"
+
+#ifndef WASM
+//#include <string.h> // strcpy
+//#include <cstring> // strcpy doesn't work!?
+#include <stdlib.h> // pulls in declaration of malloc, free
+#include <math.h> // pow
+#endif
 
 //extern double pow(double x, double y);
 extern "C" double pow(double x, double y);
 extern "C" double sqrt(double __a);
-#include "String.h"
-#include "WasmHelpers.h"
-#include <stdlib.h> // pulls in declaration of malloc, free
-#include <math.h> // pow
-//#include <tgmath.h> // pow
-//#include <cmath> // MISSING ON MAC WTF
-//#include <string.h> // strcpy
-//#include <cstring> // strcpy doesn't work!?
-void* alloc(long size){
-	return 	malloc(size);
-}
-#endif
+
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wstring-compare"
 #define let auto
 #define var auto
 
-#include "NodeTypes.h"
 
 typedef void *any;
 typedef unsigned char byte;

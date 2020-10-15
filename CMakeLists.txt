@@ -8,8 +8,8 @@ add_compile_definitions(WASM)
 #target_compile_definitions(my_target WASM WASM)
 set(CMAKE_CXX_STANDARD 20)
 
-#set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
-#set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
+set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 
 FUNCTION(ADD_COMPILE_FLAG value)
     MESSAGE(STATUS "Building with ${value}")
