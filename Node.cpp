@@ -2,7 +2,7 @@
 //// Created by me on 30.09.19.
 ////
 //
-////#include "Node.h"
+#include "Node.h"
 #ifndef WASM
 #include <cstdarg>
 #include <stdio.h>
@@ -44,7 +44,7 @@ Node &Node::operator=(int i) {
 	value.longy = i;
 	type = longs;
 	if (name.empty() or name.isNumber())
-		name = itoa(i);
+		name = itoa0(i);
 	return *this;
 }
 
@@ -192,7 +192,7 @@ Node &Node::set(String string, Node *node) {
 bool Node::operator==(String other) {
 	if (this==0)return other.empty();
 	if (type == objects or type == keyNode)return *value.node == other or value.string == other;
-	if (type == longs) return other == itoa(value.longy);
+	if (type == longs) return other == itoa0(value.longy);
 	if (type == reference) return other == name;
 	if (type == unknown) return other == name;
 	return type == strings and other == value.string;
@@ -673,7 +673,7 @@ const char * Node::serializeValue() const {
 		case strings:
 			return this->value.string;
 		case longs:
-			return itoa(this->value.longy);
+			return itoa0(this->value.longy);
 		case floats:
 			return ftoa(this->value.floaty);
 
@@ -714,4 +714,15 @@ String toString(Node &node) {
 
 void Node::print() {
 	printf(this->serialize());
+}
+
+void log(Node &n) {
+	n.log();
+}
+
+void log(Node *n0) {
+	if (!n0)
+		return;
+	Node n = *n0;
+	log(n);
 }

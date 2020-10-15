@@ -1,15 +1,21 @@
-//#pragma once // needs to be on top
-
-
+#pragma once
 //
 // Created by me on 19.12.19.
 //
 
 #include "WasmHelpers.h"
 #include "NodeTypes.h"
-#include "Node.h"
-#ifndef WASP_STRING
-#define WASP_STRING
+
+char *itoa0(long num, int base);
+char *itoa0(long num);
+int atoi0(const char *__nptr);
+double atof0(const char *string);
+
+#pragma once // needs to be on top
+//#include "Node.h"
+
+//#ifndef WASP_STRING
+//#define WASP_STRING
 class Node;
 typedef const char *chars;
 
@@ -18,7 +24,7 @@ typedef const char *chars;
 #include <stdlib.h> // pulls in declaration of malloc, free
 #else
 #endif
-void* alloc(long size);// wasm | linux
+//void* alloc(long size);// wasm | linux
 extern unsigned int *memory;
 
 extern void err(chars error);
@@ -38,15 +44,11 @@ bool eq(const char *dest, const char *src);
 void strcpy2(char *dest, const char *src);
 void strcpy2(char *dest, const char *src, int length);
 size_t   strlen(const char *__s);
-char *itoa(long num, int base);
-char *itoa(long num);
-int atoi0(const char *__nptr);
-double atof0(const char *string);
 
 
-const char *ftoa(float num, int base = 10, int precision = 4);
-//const char *ftoa(float num, int base, int precision);
-//const char *ftoa(float num);
+//const char *ftoa(float num, int base = 10, int precision = 4);
+const char *ftoa(float num, int base, int precision);
+const char *ftoa(float num);
 
 class Error {
 public:
@@ -101,19 +103,19 @@ public:
 	String(Type e) : String(typeName(e)) {}
 
 	explicit String(int c) {
-		data = itoa(c);
+		data = itoa0(c);
 		length = len(data);
 	}
 
 	explicit String(long c) {
-		data = itoa(c);
+		data = itoa0(c);
 		length = len(data);
 	}
 
 
 	explicit String(double c) {
 		int max_length=4;
-		data = itoa(c);
+		data = itoa0(c);
 		length = len(data);
 //		itof :
 		append('.');
@@ -133,7 +135,7 @@ public:
 
 	char charAt(int i) {
 		if (i >= length)
-			err((String("IndexOutOfBounds at ") + itoa(i) + " in " + data).data);
+			err((String("IndexOutOfBounds at ") + itoa0(i) + " in " + data).data);
 		return data[i];
 	}
 
@@ -230,20 +232,20 @@ public:
 	}
 
 	String operator%(long d) {
-		return this->replace("%d", itoa(d));
+		return this->replace("%d", itoa0(d));
 	}
 
 	String operator%(int d) {
-		return this->replace("%d", itoa(d));
+		return this->replace("%d", itoa0(d));
 	}
 
 	String operator%(double f) {
-		String formated = String() + itoa(f) + "." + itoa((f - int(f)) * 10000);
+		String formated = String() + itoa0(f) + "." + itoa0((f - int(f)) * 10000);
 		return this->replace("%f", formated);
 	}
 //
 //	String operator%(float f) {
-//		String formated = String() + itoa(f) + "." + itoa((f - int(f)) * 10000);
+//		String formated = String() + itoa0(f) + "." + itoa0((f - int(f)) * 10000);
 //		return this->replace("%f", formated);
 //	}
 
@@ -436,7 +438,7 @@ public:
 	}
 
 	String format(long i) {
-		return this->replace("%d", itoa(i));
+		return this->replace("%d", itoa0(i));
 	}
 
 	String format(char *string) {
@@ -470,4 +472,4 @@ String operator "" s(const char *c, size_t);
 String operator "" _(const char *c, size_t);
 String operator "" _s(const char *c, size_t);
 
-#endif
+//#endif

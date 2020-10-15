@@ -150,6 +150,18 @@ imports={
 			DYNAMICTOP_PTR: 100, 
 			// STACKTOP:0,STACK_MAX:1000,enlargeMemory:log,getTotalMemory:log,abortOnCannotGrowMemory:log,
 			tempDoublePtr: 0, ABORT: 2, memoryBase: 0, tableBase: 0,
+
+_Z3logPc:logc,
+_Z3logPKc:logc,
+_Z6printfPKc:printf,
+_Z4itoal:itoa,
+_Z6printfPKcS0_S0_:,
+_Z4exiti:,
+_Z3logPKc:,
+_Z6printfPKcS0_i:,
+_Z5allocl:,
+_Z7strcpy2PcPKci:,
+_ZN6String6callocEmi:,
 			logi:log,logc,logs, _raise:x=>{throw new Error(string(x))},
 			backtrace:x=>console.error(backtrace()),
 		},
@@ -159,6 +171,7 @@ try{
 	args=process.argv.slice(3,process.argv.length) 
 	let main = instance.exports.main || instance.exports._main
 	if (main) console.log(">>>", result=main(process.argc,args))
+
 }catch(ex){console.error(trimStack(ex));}
 
 // console.log(Module.getValue(buffer+i*nByte, 'i32'));

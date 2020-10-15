@@ -63,12 +63,9 @@ void logi(long i) {
 
 #else
 #pragma message "using wasm imports"
-extern "C" void print (const char *);// no \n newline
-extern "C" void logs (const char *);
-extern "C" void logc(char s);
-extern "C" void logi(int i);
-
-//  extern "C" int print (const char *__restrict __format, ...);
+void printf(const char *s){
+	while(s++)logc((char)s[0]);
+}
 #endif
 
 class String;
@@ -173,10 +170,10 @@ String toString(Node &node);
 
 void reverse(char *str, int len);
 
-// Implementation of itoa()
+// Implementation of itoa0()
 
 
-char *itoa(long num, int base ) {
+char *itoa0(long num, int base ) {
 	char *str = (char *) alloc(100);// todo: from context.names char*
 	int len = 0;
 	bool isNegative = false;
@@ -186,7 +183,7 @@ char *itoa(long num, int base ) {
 		str[len] = '\0';
 		return str;
 	}
-	// In standard itoa(), negative numbers are handled only with
+	// In standard itoa0(), negative numbers are handled only with
 	// base 10. Otherwise numbers are considered unsigned.
 	if (num < 0 && base == 10) {
 		isNegative = true;
@@ -206,8 +203,8 @@ char *itoa(long num, int base ) {
 	reverse(str, len);
 	return str;
 }
-char *itoa(long num){
-	return itoa(num, 10);
+char *itoa0(long num){
+	return itoa0(num, 10);
 }
 const char *concat(const char *a, const char *b) {
 //const char* concat(char* a,char* b){// free manually!
@@ -222,8 +219,8 @@ const char *concat(const char *a, const char *b) {
 	return c;
 }
 
-const char *ftoa(float num, int base, int precision) {/*significant digits*/
-	return concat(concat(itoa(int(num),base),"."),itoa(int(num*pow(base,precision)),base));
+const char *ftoa(float num, int base=10, int precision=4) {/*significant digits*/
+	return concat(concat(itoa0(int(num),base),"."),itoa0(int(num*pow(base,precision)),base));
 }
 
 void reverse(char *str, int len) {
@@ -234,7 +231,7 @@ void reverse(char *str, int len) {
 	}
 }
 
-//char itoa(byte i) {
+//char itoa0(byte i) {
 //	return (char) (i + 0x30);
 //}
 
@@ -256,16 +253,13 @@ class Node;
 
 
 void log(long i) {
+#ifdef WASM
+	logi((int) i);
+#else
 	printf("%li", i);
+#endif
 }
 
-void log(chars s) {
-	printf("%s\n", s);
-}
-
-void log(Node &n) {
-	n.log();
-}
 
 
 //void log(Node &node) {
@@ -289,20 +283,14 @@ void log(String s) {
 	printf("%s\n", s.data);
 }
 
-void log(Node *n0) {
-	if (!n0)
-		return;
-	Node n = *n0;
-	log(n);
-}
 //#endif //NETBASE_STRING_CPP
 
 #pragma clang diagnostic ignored "-Wuser-defined-literals"
 //#pragma clang diagnostic ignored "-Wliteral-suffix"
 
-String operator "" s(const char *c, size_t) {
-	return String(c);// "bla"s  literal operator suffixes not preceded by ‘_’ are reserved for future standardization
-}
+//String operator "" s(const char *c, size_t) {
+//	return String(c);// "bla"s  literal operator suffixes not preceded by ‘_’ are reserved for future standardization
+//}
 
 String operator "" _s(const char *c, size_t) {
 	return String(c);

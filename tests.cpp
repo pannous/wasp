@@ -2,12 +2,9 @@ Node result;
 //#include "String.h"
 static Node parse(String source);
 
-void log(Node &);
-void log(Node*);
-void log(chars);
 
 
-void exit(int);
+
 #undef assert // <cassert> / <assert.h>
 
 #define assert(condition) try{\
