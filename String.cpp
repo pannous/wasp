@@ -69,9 +69,9 @@ class String;
 #include <cstring> //strlen
 #else
 //#include "string.h"
-size_t  strlen(const char *x){
+size_t strlen(const char *x){
 	int l=0;
-	while(x++)l++;
+	while(x[0]&&l<100){x++;l++;}
 	return l;
 }
 #endif
