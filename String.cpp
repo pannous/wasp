@@ -48,7 +48,7 @@ void logs(const char *s) {
 	printf("%s\n", s);
 }
 
-void logi(long i) {
+void logi(number i) {
 	printf("%li\n", i);
 }
 
@@ -94,19 +94,7 @@ bool eq(const char *dest, const char *src) {
 
 // or cstring
 //#ifndef cstring
-void strcpy2(char *dest, const char *src, int length) {// =-1
-	if (!dest || !src)
-		return;
-	int i = 0;
-	if(length<0)length = strlen(src);
-//	if(strlen(src)<length)throw "Illegal strcpy2 length"; could be filled with 0 :(
-//	if(strlen(dest)<length)throw "Illegal strcpy2 length"; could be filled with 0 :(
-	while (char c = src[i]) {
-		if (length-- == 0)break;
-		dest[i] = c;
-		i++;
-	}
-}
+
 void strcpy2(char *dest, const char *src){
 	strcpy2(dest, src, -1);
 }
@@ -159,12 +147,11 @@ class String;
 class Node; // can't pre-access properties, BUT can use functions:
 String toString(Node &node);
 
-void reverse(char *str, int len);
 
 // Implementation of itoa0()
 
 
-char *itoa0(long num, int base ) {
+char *itoa0(number num, int base =10 ) {
 	char *str = (char *) alloc(100);// todo: from context.names char*
 	int len = 0;
 	bool isNegative = false;
@@ -194,7 +181,10 @@ char *itoa0(long num, int base ) {
 	reverse(str, len);
 	return str;
 }
-char *itoa0(long num){
+char *itoa0(number num){
+	return itoa0(num, 10);
+}
+char *itoa(number num){
 	return itoa0(num, 10);
 }
 const char *concat(const char *a, const char *b) {
@@ -243,7 +233,7 @@ class Node;
 //#import "Node.cpp"
 
 
-void log(long i) {
+void log(number i) {
 #ifdef WASM
 	logi((int) i);
 #else
@@ -271,7 +261,8 @@ void log(std::string s) {
 #endif
 
 void log(String s) {
-	printf("%s\n", s.data);
+	log(s.data);
+//	printf("%s\n", s.data);
 }
 
 //#endif //NETBASE_STRING_CPP
@@ -283,7 +274,10 @@ void log(String s) {
 //	return String(c);// "bla"s  literal operator suffixes not preceded by ‘_’ are reserved for future standardization
 //}
 
-String operator "" _s(const char *c, size_t) {
+//String operator "" _s(const char *c, int x) {// invalid literal operator parameter type 'int', did you mean 'unsigned number'
+//	return String(c);
+//}
+String operator "" _s(const char *c, unsigned long t) {// function signature contains illegal type WHYY??
 	return String(c);
 }
 
@@ -343,8 +337,8 @@ String typeName(Type t) {
 			return "buffer";
 		case floats:
 			return "float";
-		case longs:
-			return "long";
+		case numbers:
+			return "number";
 		case ints:
 			return "int";
 		case bools:
@@ -370,8 +364,6 @@ String object_name = "{…}";
 String groups_name = "(…)";
 String patterns_name = "[…]";
 String EMPTY = String('\0');
-
-unsigned int *memory = (unsigned int *) 4096; // todo how to not handtune _data_end?
 
 #pragma clang diagnostic pop
 

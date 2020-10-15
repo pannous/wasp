@@ -32,7 +32,7 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 			if (info.dli_sname[0] == '_')
 				demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
 			auto name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
-			unsigned long offset = (char *) callstack[i] - (char *) info.dli_saddr;
+			unsigned number offset = (char *) callstack[i] - (char *) info.dli_saddr;
 			snprintf(buf, sizeof(buf), "%-3d %s + %zd\n", i, name, offset);
 			free(demangled);
 		} else {

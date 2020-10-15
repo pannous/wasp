@@ -16,7 +16,7 @@ void todo() {
 	printf("TODO ");
 }
 
-typedef int number;
+//typedef int number;
 //typedef char byte;
 //typedef char* Code;
 //typedef char id;
@@ -392,11 +392,11 @@ bytes ieee754(String& value) {
 	return value.data;
 }
 
-bytes ieee754(float number) {
+bytes ieee754(float num) {
 	todo();
 	byt data[4];
 	float* hack=((float*)data);
-	*hack = number;
+	*hack = num;
 	return reinterpret_cast<bytes>(hack);
 }
 

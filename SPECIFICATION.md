@@ -219,9 +219,9 @@ a[[b]]=c (a that b)=c  a@b a~b=c (a.filter(b))=c
 DANGER a,b=c,d TWO READINGS
 1. (a;b=c;d) 2. (a,b)=(c,d)
 a b:c d ==  a,(b:c),d   "short-binding"
-a b=c d == (a,b)=(c,d)  "long- binding"
+a b=c d == (a,b)=(c,d)  "number- binding"
 
-usually '=' is long-binding, meaning it has higher prescedence than other operations,
+usually '=' is number-binding, meaning it has higher prescedence than other operations,
 so the second reading is default.
 Within Groups, '=' is shortbinding like ':' a(href='link' hidden)
 BUT DANGER: group is default bag CONTRADICTION

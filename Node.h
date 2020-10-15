@@ -29,7 +29,7 @@ union Value {
 //	Node **children = 0;
 	String string;
 	void *data;
-	long longy;
+	number numbery;
 //	float floaty;
 	double floaty;
 
@@ -114,14 +114,14 @@ public:
 	explicit Node(double nr) {
 		value.floaty = nr;
 		type = floats;
-		if (debug)name = itoa0(nr); // messes with setField contraction
+		if (debug)name = itoa0(nr,10); // messes with setField contraction
 	}
 
 
 	explicit Node(float nr) {
 		value.floaty = nr;
 		type = floats;
-		if (debug)name = String((long) nr) + String(".…");//#+"#"; // messes with setField contraction
+		if (debug)name = String((number) nr) + String(".…");//#+"#"; // messes with setField contraction
 	}
 
 // how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
@@ -157,10 +157,11 @@ public:
 	}
 
 
-	explicit Node(int nr) {
-		value.longy = nr;
-		type = longs;
-		if (debug)name = itoa0(nr); // messes with setField contraction
+//	explicit
+	Node(int nr) {
+		value.numbery = nr;
+		type = numbers;
+		if (debug)name = itoa0(nr,10); // messes with setField contraction
 	}
 
 	explicit Node(const char *name) {
@@ -171,20 +172,20 @@ public:
 	explicit Node(bool nr) {
 		if (this == &NIL)
 			name = "HOW";
-		value.longy = nr;
-		type = longs;
+		value.numbery = nr;
+		type = numbers;
 		if (debug)name = nr ? "✔️" : "✖️";
 //		if (debug)name = nr ? "true" : "false";
 //		this=True; todo
 	}
 
-
-//	explicit
-	Node(long nr) {
-		value.longy = nr;
-		type = longs;
+#ifndef WASM
+	explicit
+	Node(number nr) {
+		value.numbery = nr;
+		type = numbers;
 	}
-
+#endif
 
 	explicit Node(String s, bool identifier = false) {
 //		identifier = identifier || !s.contains(" "); BULLSHIT 'hi' is strings!!
@@ -194,8 +195,8 @@ public:
 			type = reference;
 		}
 //		else if (atoi(s) and s == itoa0(atoi(s))) {
-//			value.longy = atoi(s);
-//			type = longs;
+//			value.numbery = atoi(s);
+//			type = numbers;
 //			}
 //		else if (atof(s)) { value.floaty = atoi(s); }
 		else {
@@ -213,12 +214,14 @@ public:
 
 	explicit
 	operator bool() {
-		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
+		return value.numbery or length > 1 or (length == 1 and this != children and (bool) (children[0]));
 	}
 
 	bool operator==(int other);
 
-	bool operator==(long other);
+#ifndef WASM
+	bool operator==(number other);
+#endif
 
 	bool operator==(float other);
 
@@ -305,11 +308,11 @@ public:
 		if (type == objects and value.data)
 			printf(" value.name %s", value.string.data);// ???
 		if (type == bools)
-			printf(" value %s", value.longy ? "TRUE" : "FALSE");
+			printf(" value %s", value.numbery ? "TRUE" : "FALSE");
 		if (type == strings)
 			printf(" value %s", value.string.data);
-		if (type == longs)
-			printf(" value %li", value.longy);
+		if (type == numbers)
+			printf(" value %li", value.numbery);
 		if (type == floats)
 			printf(" value %f", value.floaty);
 
@@ -330,22 +333,24 @@ public:
 
 	Node &setType(Type type);
 
-	long longe() {
-		return type == longs or type == bools ? value.longy : value.floaty;// danger
+	number numbere() {
+		return type == numbers or type == bools ? value.numbery : value.floaty;// danger
 	}
 
 	float floate() {
-		return type == longs ? value.longy : value.floaty;// danger
+		return type == numbers ? value.numbery : value.floaty;// danger
 	}
 
 	Node *has(String s, bool searchParams = true);
 
 // type conversions
-	explicit operator bool() const { return value.longy; }
+	explicit operator bool() const { return value.numbery; }
 
-	explicit operator int() const { return value.longy; }
+	explicit operator int() const { return value.numbery; }
 
-	explicit operator long() const { return value.longy; }
+#ifndef WASM
+	explicit operator number() const { return value.numbery; }
+#endif
 
 	explicit operator float() const { return value.floaty; }
 

@@ -16,7 +16,7 @@ chars fetch(chars url) {
 	auto curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1); //Prevent "longjmp causes uninitialized stack frame" bug
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1); //Prevent "numberjmp causes uninitialized stack frame" bug
 	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "deflate");
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &out);
