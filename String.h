@@ -5,10 +5,60 @@
 #include "WasmHelpers.h"
 #include "NodeTypes.h"
 
-char *itoa0(long num, int base);
-char *itoa0(long num);
+void reverse(char *str, int len);
+
+char *itoa1(int num) {
+	char *str = (char *) alloc(100);// todo: from context.names char*
+	int len = 0;
+	bool isNegative = false;
+	return "WTFFFF";
+
+	/* Handle 0 explicitely, otherwise empty string is printed for 0 */
+	if (num == 0) {
+		str[len++] = '0';
+		str[len] = '\0';
+		return str;
+	}
+	// In standard itoa0(), negative numbers are handled only with
+	// base 10. Otherwise numbers are considered unsigned.
+	int base = 10;
+
+	if (num < 0 && base == 10) {
+		isNegative = true;
+		num = -num;
+	}
+
+	// Process individual digits
+	while (num != 0) {
+		int rem = num % base;
+		str[len++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
+		num = num / base;
+	}
+
+	// If number is negative, append '-'
+	if (isNegative)
+		str[len++] = '-';
+	str[len] = '\0'; // Append string terminator
+	// Reverse the string
+	reverse(str, len);
+	return str;
+}
+
+char *itoa0(number num, int base);
+char *itoa0(number num);
+char *itoa(number num);
 int atoi0(const char *__nptr);
 double atof0(const char *string);
+//void* calloc(int i);
+//extern "C" void* calloc(int size,int count);
+//extern "C" void* calloc(int size);
+//extern "C"
+void *calloc(size_t nitems, size_t size);// __result_use_check __alloc_size(1,2);
+void *calloc(size_t nitems, size_t size){
+	void *mem = alloc(nitems*size);
+	while (nitems > 0) { ((char *) mem)[--nitems] = 0; }
+	return mem;
+}
 
 #pragma once // needs to be on top
 //#include "Node.h"
@@ -23,7 +73,7 @@ typedef const char *chars;
 #include <stdlib.h> // pulls in declaration of malloc, free
 #else
 #endif
-//void* alloc(long size);// wasm | linux
+//void* alloc(number size);// wasm | linux
 extern unsigned int *memory;
 
 extern void err(chars error);
@@ -43,7 +93,19 @@ bool eq(const char *dest, const char *src);
 void strcpy2(char *dest, const char *src);
 void strcpy2(char *dest, const char *src, int length);
 size_t   strlen(const char *__s);
-
+void strcpy2(char *dest, const char *src, int length) {// =-1
+	if (!dest || !src)
+		return;
+	int i = 0;
+	if(length<0)length = strlen(src);
+//	if(strlen(src)<length)throw "Illegal strcpy2 length"; could be filled with 0 :(
+//	if(strlen(dest)<length)throw "Illegal strcpy2 length"; could be filled with 0 :(
+	while (char c = src[i]) {
+		if (length-- == 0)break;
+		dest[i] = c;
+		i++;
+	}
+}
 
 //const char *ftoa(float num, int base = 10, int precision = 4);
 const char *ftoa(float num, int base, int precision);
@@ -68,8 +130,8 @@ String typeName(Type t);
 class String{
 
 #ifdef WASM
-#define size_t unsigned long
-	void* calloc(size_t s,int idk);
+//#define size_t unsigned number
+//	void* calloc(size_t s,int idk);
 #else
 #ifndef __APPLE__
 #include <alloc.h>
@@ -81,20 +143,36 @@ public:
 	int length = -1;
 
 	String() {
-		data = static_cast<char *>(calloc(sizeof(char), 2));
+#ifdef WASM
+		data = (char *) memory++;
+#else
+		data = static_cast<char *>(calloc(sizeof(char),1));
+#endif
+		data[0]=0;// be safe!
 		length = 0;
 	}
 
 	String(char c) {
-		data = static_cast<char *>(calloc(sizeof(char), 2));
+//		log("x");
+#ifdef WASM
+//		data = (char *) memory++;
+		data = "x";
+		memory++;// wasm function signature contains illegal type WTF HOW WHY??
+#else
+		data = static_cast<char *>(calloc(sizeof(char),2));
+#endif
 		data[0] = c;
 		data[1] = 0;
 		length = 1;
 	}
 
 	String(const char string[]) {
+#ifdef WASM
+		data = (char *) string;
+#else
 		data = const_cast<char *>(string);
-		length = len(data);
+#endif
+		length = strlen(data);
 	}
 
 
@@ -102,14 +180,17 @@ public:
 	String(Type e) : String(typeName(e)) {}
 
 	explicit String(int c) {
-		data = itoa0(c);
-		length = len(data);
+//		data = "sdfasdfa";//
+		data = itoa(c);// wasm function signature contains illegal type WHYYYY
+		length = strlen(data);// len(data);
 	}
 
+#ifndef WASM
 	explicit String(long c) {
 		data = itoa0(c);
 		length = len(data);
 	}
+#endif
 
 
 	explicit String(double c) {
@@ -118,9 +199,9 @@ public:
 		length = len(data);
 //		itof :
 		append('.');
-		c = c - (long(c));
+		c = c - (number(c));
 		while(length<max_length){
-			c=(c-long(c))*10;
+			c=(c-number(c))*10;
 			if(int(c)==0)break;
 			append(int(c)+0x30);
 		}
@@ -230,13 +311,16 @@ public:
 		return this->replace("%s", c);
 	}
 
-	String operator%(long d) {
-		return this->replace("%d", itoa0(d));
-	}
-
 	String operator%(int d) {
 		return this->replace("%d", itoa0(d));
 	}
+
+
+#ifndef WASM
+	String operator%(number d) {
+		return this->replace("%d", itoa0(d));
+	}
+#endif
 
 	String operator%(double f) {
 		String formated = String() + itoa0(f) + "." + itoa0((f - int(f)) * 10000);
@@ -306,13 +390,14 @@ public:
 		return this->operator+(String(i));
 	}
 
-	String operator+(long i) {
-		return this->operator+(String(i));
-	}
-
 	String operator+(int i) {
 		return this->operator+(String(i));
 	}
+#ifndef WASM
+	String operator+(number i) {
+		return this->operator+(String(i));
+	}
+#endif
 
 	String operator+(char c) {
 		return this->operator+(String(c));
@@ -437,7 +522,7 @@ public:
 		return atoi0(data);
 	}
 
-	String format(long i) {
+	String format(number i) {
 		return this->replace("%d", itoa0(i));
 	}
 
@@ -457,7 +542,9 @@ public:
 };
 
 #define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
-String operator ""_s(const char* c, size_t);
+//String operator ""_s(const char* c, size_t);
+String operator ""_s(const char* c, unsigned long );
+
 
 extern String UNEXPECT_END;// = "Unexpected end of input";
 extern String UNEXPECT_CHAR;// = "Unexpected character ";
@@ -468,8 +555,12 @@ extern String groups_name;// = "(…)";
 extern String patterns_name;// = "[…]";
 extern String EMPTY;// = String('\0');
 
-String operator "" s(const char *c, size_t);
-String operator "" _(const char *c, size_t);
-String operator "" _s(const char *c, size_t);
-
+String operator "" s(const char *c, unsigned long );//size_t
+String operator "" _(const char *c, unsigned long );
+String operator "" _s(const char *c, unsigned long );
+void log(String *s) {
+	log("Todo wasm String* handling throws");// wasm function signature contains illegal type  :
+//	if(s)
+//		log(s->data);// TODO
+}
 //#endif

@@ -10,7 +10,7 @@ And there even are programmers [utilize that loophole](https://stackoverflow.com
 
 ## Is Mark a subset of JavaScript?
 
-No. Mark has introduced many syntax extensions to JSON, and its syntax is no longer valid in JavaScript.
+No. Mark has introduced many syntax extensions to JSON, and its syntax is no numberer valid in JavaScript.
 
 But Mark has a clean data model that is a subset of JS data model.
 
@@ -26,7 +26,7 @@ During parsing and serialization, Mark does not call any custom code. Objects an
 
 Standard `JSON.stringify()` implementation calls `toJSON()` method if it is defined on the object, before stringifying the value. Such invocation might not be secure, and is not supported under Mark.
 
-JSON.parse() and JSON.stringify() also accept an optional parameter of a reviver and a replacer function. There are neither structured nor secure way to serialize and deserialize custom data types, thus no longer supported under Mark.
+JSON.parse() and JSON.stringify() also accept an optional parameter of a reviver and a replacer function. There are neither structured nor secure way to serialize and deserialize custom data types, thus no numberer supported under Mark.
 
 Mark shall support serialize and deserialize custom data types under a separate project Mark Schema.
 
