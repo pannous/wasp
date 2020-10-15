@@ -21,7 +21,7 @@ enum Type {
 	arrays,// same as:
 	buffers,
 	floats,
-	longs,
+	numbers,
 	ints,
 	bools,
 	unknown = 20 //7
