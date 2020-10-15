@@ -25,8 +25,7 @@ void printf(const char *s) {
 	while(s++)logc(s[0]);
 }
 void print(String s){
-	log("GRRRR");
-//		logs(s.data);
+		log(s.data);
 //	logs(s.data,s.length)
 }
 void printf(const char *format, int i) {
