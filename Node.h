@@ -1,3 +1,4 @@
+#pragma once
 //
 // Created by pannous on 30.09.19.
 //
@@ -9,9 +10,9 @@
 //#import  "String.h" // FFS
 #include <stdarg.h> // va_list OK IN WASM???
 
-extern bool debug;
 
 class Node;
+extern bool debug;
 extern Node True;
 extern Node False;
 extern Node NIL;
@@ -39,15 +40,11 @@ union Value {
 
 class Node {
 public:
-//	Node(const char*);
-
-
-	Node(va_list args) {
-
-	}
-
 	String name = empty_name;// nil_name;
 	Value value;
+	Type type = unknown;
+	int length = 0;// children
+//	int count = 0;// use param.length for arguments / param
 
 	// TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
 //	Node &parent=NIL;
@@ -68,14 +65,20 @@ public:
 	 *
 	 * */
 //	Node *next = nullptr;// NO, WE NEED TRIPLES cause objects can occur in many lists + danger: don't use for any ref/var
-	Type type = unknown;
-	int length = 0;// children
-//	int count = 0;// use param.length for arguments / param
 
 	Node() {
 		type = objects;
 //		if(debug)name = "[]";
 	}
+
+	//	Node(const char*);
+//	Node(va_list args) {
+//	}
+	void* operator new(unsigned long size){
+		return static_cast<Node *>(calloc(sizeof(Node),size));// WOW THAT WORKS!!!
+	}
+	void operator delete (void*){}
+
 
 	Node& first(){
 		if (length>0)return children[0];
@@ -375,5 +378,55 @@ public:
 };
 typedef const Node Nodec;
 
+void log(Node& node){
+	printf("Node ");
+	Type type = node.type;
+	String name= node.name;
+	Value value=node.value;
+	int length=node.length;
+	if (node == NIL || type == nils) {
+		printf("NIL\n");
+		return;
+	}
+//		if || name==nil_name …
+	if (name.data < (char *) 0xffff) {
+		printf("BUG");
+		return;
+	}
+//		assert (name.data < (char *) 0xffff);
+	if (name and name.data and name.data > (char *) 0xffff and type != objects)
+		printf("name %s ", name.data);
+	printf("length %i ", length);
+	printf("type  %s", typeName(type).data);
+	if (node == True)
+		printf("TRUE");
+	if (node == False)
+		printf("FALSE");
+	if (type == objects and value.data)
+		printf(" value.name %s", value.string.data);// ???
+	if (type == bools)
+		printf(" value %s", value.numbery ? "TRUE" : "FALSE");
+	if (type == strings)
+		printf(" value %s", value.string.data);
+	if (type == numbers)
+		printf(" value %li", value.numbery);
+	if (type == floats)
+		printf(" value %f", value.floaty);
 
+	printf(" [ ");
+	for (int i = 0; i < length; i++) {
+		Node &node = node.children[i];
+//			if(check(node))
+		printf("%s", node.name.data);
+		printf(" ");
+	}
+	printf("]");
+	printf("\n");
+}
+
+void log(Node *n0) {
+	if (!n0)return;
+	Node n = *n0;
+	log(n);
+}
 #endif //MARK_NODE_H

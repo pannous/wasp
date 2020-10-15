@@ -44,7 +44,7 @@ Node &Node::operator=(int i) {
 	value.numbery = i;
 	type = numbers;
 	if (name.empty() or name.isNumber())
-		name = itoa0(i);
+		name = itoa(i);
 	return *this;
 }
 
@@ -186,7 +186,7 @@ Node &Node::set(String string, Node *node) {
 bool Node::operator==(String other) {
 	if (this==0)return other.empty();
 	if (type == objects or type == keyNode)return *value.node == other or value.string == other;
-	if (type == numbers) return other == itoa0(value.numbery);
+	if (type == numbers) return other == itoa(value.numbery);
 	if (type == reference) return other == name;
 	if (type == unknown) return other == name;
 	return type == strings and other == value.string;
@@ -668,7 +668,7 @@ const char * Node::serializeValue() const {
 		case strings:
 			return this->value.string;
 		case numbers:
-			return itoa0(this->value.numbery);
+			return itoa(this->value.numbery);
 		case floats:
 			return ftoa(this->value.floaty);
 
@@ -711,13 +711,6 @@ void Node::print() {
 	printf(this->serialize());
 }
 
-void log(Node &n) {
-	n.log();
-}
-
-void log(Node *n0) {
-	if (!n0)
-		return;
-	Node n = *n0;
-	log(n);
-}
+//void log(Node &n) {
+//	n.log();
+//}

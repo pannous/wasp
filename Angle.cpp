@@ -2,7 +2,6 @@
 // Created by pannous on 18.05.20.
 //
 #define _main_
-unsigned number __stack_chk_guard= 0xBAAAAAAD;
 #include "Wasp.cpp"
 
 #import "WasmHelpers.h" // IMPORT so that they don't get mangled!

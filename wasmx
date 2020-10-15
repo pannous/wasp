@@ -503,7 +503,7 @@ let imports = {
 		abortStackOverflow: raise,
 		// ^^ emcc
 		resource_write:log, //tiny-go
-
+__stack_chk_fail:x=>{console.log(x);return 3},
 // CPP mangle shit:
 _Z3logPc:logc,
 _Z3logPKc:logc,
