@@ -1,3 +1,4 @@
+#include "Node.h"
 Node result;
 //#include "String.h"
 static Node parse(String source);
