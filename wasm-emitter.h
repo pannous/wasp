@@ -11,7 +11,7 @@ enum Section {
 	memory_section = 5,
 	global = 6,
 	exports = 7,
-	start = 8,
+	start_section = 8,
 	element = 9,
 	code_section = 10, // 0x0a
 	data = 11

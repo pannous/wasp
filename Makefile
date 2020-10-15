@@ -59,19 +59,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /opt/homebrew/Cellar/cmake/3.17.1/bin/cmake
+CMAKE_COMMAND = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake
 
 # The command to remove a file.
-RM = /opt/homebrew/Cellar/cmake/3.17.1/bin/cmake -E rm -f
+RM = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /me/dev/angles/wasp
+CMAKE_SOURCE_DIR = /Users/me/dev/apps/wasp
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /me/dev/angles/wasp
+CMAKE_BINARY_DIR = /Users/me/dev/apps/wasp
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -79,7 +79,7 @@ CMAKE_BINARY_DIR = /me/dev/angles/wasp
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/opt/homebrew/Cellar/cmake/3.17.1/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -89,8 +89,8 @@ rebuild_cache/fast: rebuild_cache
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	/opt/homebrew/Cellar/cmake/3.17.1/bin/ccmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
+	/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -100,9 +100,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /me/dev/angles/wasp/CMakeFiles /me/dev/angles/wasp/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/me/dev/apps/wasp/CMakeFiles /Users/me/dev/apps/wasp/CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /me/dev/angles/wasp/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/me/dev/apps/wasp/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -130,103 +130,6 @@ depend:
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
-#=============================================================================
-# Target rules for targets named wasp
-
-# Build rule for target.
-wasp: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 wasp
-.PHONY : wasp
-
-# fast build rule for target.
-wasp/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/build
-.PHONY : wasp/fast
-
-<<<<<<< HEAD
-=======
-Fetch.o: Fetch.cpp.o
-
-.PHONY : Fetch.o
-
-# target to build an object file
-Fetch.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Fetch.cpp.o
-.PHONY : Fetch.cpp.o
-
-Fetch.i: Fetch.cpp.i
-
-.PHONY : Fetch.i
-
-# target to preprocess a source file
-Fetch.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Fetch.cpp.i
-.PHONY : Fetch.cpp.i
-
-Fetch.s: Fetch.cpp.s
-
-.PHONY : Fetch.s
-
-# target to generate assembly for a file
-Fetch.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Fetch.cpp.s
-.PHONY : Fetch.cpp.s
-
-String.o: String.cpp.o
-
-.PHONY : String.o
-
-# target to build an object file
-String.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/String.cpp.o
-.PHONY : String.cpp.o
-
-String.i: String.cpp.i
-
-.PHONY : String.i
-
-# target to preprocess a source file
-String.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/String.cpp.i
-.PHONY : String.cpp.i
-
-String.s: String.cpp.s
-
-.PHONY : String.s
-
-# target to generate assembly for a file
-String.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/String.cpp.s
-.PHONY : String.cpp.s
-
->>>>>>> ec21bc7f0fc62a703bd31a4b6e5d150e0e92d114
-Wasp.o: Wasp.cpp.o
-
-.PHONY : Wasp.o
-
-# target to build an object file
-Wasp.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Wasp.cpp.o
-.PHONY : Wasp.cpp.o
-
-Wasp.i: Wasp.cpp.i
-
-.PHONY : Wasp.i
-
-# target to preprocess a source file
-Wasp.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Wasp.cpp.i
-.PHONY : Wasp.cpp.i
-
-Wasp.s: Wasp.cpp.s
-
-.PHONY : Wasp.s
-
-# target to generate assembly for a file
-Wasp.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/Wasp.cpp.s
-.PHONY : Wasp.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -235,10 +138,6 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... wasp"
-	@echo "... Wasp.o"
-	@echo "... Wasp.i"
-	@echo "... Wasp.s"
 .PHONY : help
 
 
