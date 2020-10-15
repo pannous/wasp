@@ -1,5 +1,5 @@
 ////
-//// Created by me on 30.09.19.
+//// Created by pannous on 30.09.19.
 ////
 //
 #include "Node.h"
@@ -127,15 +127,9 @@ int capacity = 100;
 int maxNodes = 10000;
 int lastChild = 0;
 
-void *calloc(int i);
 
 Node *all = static_cast<Node *>(calloc(capacity * maxNodes * sizeof(Node *)));
 
-void *calloc(int i) {
-	void *mem = alloc(i);
-	while (i > 0) { ((char *) mem)[--i] = 0; }
-	return mem;
-}
 
 
 bool typesCompatible(Node &one, Node &other) {

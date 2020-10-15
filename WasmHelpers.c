@@ -1,6 +1,6 @@
 //#include <climits>
 //
-// Created by me on 15.07.20.
+// Created by pannous on 15.07.20.
 //
 
 #include "WasmHelpers.h"
@@ -25,6 +25,12 @@ void* alloc(int size){
 	current = memory;//heap;
 	memory += size * 2 + 1;
 	return current;
+}
+
+void *calloc(int i) {// clean ('0') alloc
+	void *mem = alloc(i);
+	while (i > 0) { ((char *) mem)[--i] = 0; }
+	return mem;
 }
 #endif
 

@@ -1,5 +1,5 @@
 //
-// Created by me on 18.05.20.
+// Created by pannous on 18.05.20.
 //
 #define _main_
 unsigned long __stack_chk_guard= 0xBAAAAAAD;
