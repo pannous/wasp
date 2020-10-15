@@ -30,7 +30,7 @@ typedef const char *chars;
 
 
 extern "C" void logs(const char *);
-bool debug = true;
+//bool debug = true;
 //extern void *alloc (size_t __size);
 //extern void *alloc (int __size);
 
@@ -200,7 +200,7 @@ const char *concat(const char *a, const char *b) {
 	return c;
 }
 
-const char *ftoa(float num, int base=10, int precision=4) {/*significant digits*/
+const char *ftoa0(float num, int base=10, int precision=4) {/*significant digits*/
 	return concat(concat(itoa0(int(num),base),"."),itoa0(int(num*pow(base,precision)),base));
 }
 
@@ -359,7 +359,7 @@ String UNEXPECT_CHAR = "Unexpected character ";
 
 
 String nil_name = "nil";
-String empty_name = "";
+//String empty_name = "";
 String object_name = "{…}";
 String groups_name = "(…)";
 String patterns_name = "[…]";

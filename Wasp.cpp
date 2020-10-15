@@ -1,11 +1,15 @@
 #pragma once
 //#define X86_64 1
 
-#include "String.cpp"
-
+bool debug=true;
+#include "String.cpp" // Todo: wasm can't link to String.cpp functions from String.h (e.g. itoa0)
+//#include "Node.cpp"
 extern unsigned int *memory;
 unsigned int *memory=(unsigned int *) 4096; // todo how to not handtune _data_end?
 
+unsigned long __stack_chk_guard= 0xBAAAAAAD;
+void __stack_chk_guard_setup(void) { __stack_chk_guard = 0xBAAAAAAD;/*provide some magic numbers*/ }
+void __stack_chk_fail(void) { /*log("__stack_chk_fail"); /* Error message will be called when guard variable is corrupted*/ }
 
 #define let auto
 #define var auto
@@ -1172,11 +1176,6 @@ static Node parse(String source) {
 	return Mark().read(source);
 }
 
-Node NIL = Node(nil_name).setType(nils);
-Node ERROR = Node("ERROR").setType(nils);// ≠ NIL
-Node True = Node("True").setType(bools);
-Node False = Node("False").setType(bools);
-
 // Mark/wasp has clean syntax with FULLY-TYPED data model (like JSON or even better)
 // Mark/wasp is generic and EXTENSIBLE (like XML or even better)
 // Mark/wasp has built-in MIXED CONTENT support (like HTML5 or even better)
@@ -1185,8 +1184,8 @@ Node False = Node("False").setType(bools);
 
 
 class String;
-void print(String){
-	log("GRRRR");
+void print(String s){
+	log(s.data);
 }
 
 //char* operator "" _ss(const char *c, unsigned number t) {// function signature contains illegal type WHYY??
@@ -1199,7 +1198,9 @@ String& operator "" _ss(const char *c, unsigned long t) {// function signature c
 	return *pString;
 }
 
+//wasm-ld: error: wasp.o: undefined symbol: vtable for __cxxabiv1::__class_type_info
 
+char newline = '\n';
 #ifndef _main_
 int main(int argp, char **argv) {
 
@@ -1208,8 +1209,13 @@ int main(int argp, char **argv) {
 #endif
 
 	try {
-		log("Hello %s"_s.format("WASM"));
-		log("Hello "_ + 123);
+		log("Hello %s\n"_s.format("WASM"));
+		log("Hello "_ + 123 + newline);
+//		Node(123);// undefined symbol: __stack_chk_guard
+//		log(new Node(123));
+//		Node(123).log();
+//		log(Node(123));
+
 //		printf("Hello %s", "WASM");
 //		test();
 //		testCurrent();
