@@ -9,12 +9,8 @@
 //extern double pow(double x, double y);
 extern "C" double pow(double x, double y);
 extern "C" double sqrt(double __a);
-
 #include "String.h"
-
-#ifdef WASM
 #include "WasmHelpers.h"
-#else
 #include <stdlib.h> // pulls in declaration of malloc, free
 #include <math.h> // pow
 //#include <tgmath.h> // pow
@@ -64,7 +60,7 @@ void logi(long i) {
 #else
 #pragma message "using wasm imports"
 void printf(const char *s){
-	while(s++)logc((char)s[0]);
+	while(*s)logc(*s++);
 }
 #endif
 

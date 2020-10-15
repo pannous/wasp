@@ -1,8 +1,7 @@
 #pragma once
 //
-// Created by me on 19.12.19.
+// Created by pannous on 19.12.19.
 //
-
 #include "WasmHelpers.h"
 #include "NodeTypes.h"
 
@@ -407,6 +406,7 @@ public:
 
 	String replace(chars string, chars with) {// first only!
 		int i = this->indexOf(string);
+		logi(i);
 		if (i >= 0)
 			return String(substring(0, i) + with + substring(i + len(string), length));
 		else
