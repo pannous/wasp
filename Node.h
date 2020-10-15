@@ -1,5 +1,5 @@
 //
-// Created by me on 30.09.19.
+// Created by pannous on 30.09.19.
 //
 
 #ifndef MARK_NODE_H

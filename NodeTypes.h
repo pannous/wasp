@@ -1,5 +1,5 @@
 //
-// Created by me on 19.12.19.
+// Created by pannous on 19.12.19.
 //
 
 #ifndef MARK_NODETYPES_H

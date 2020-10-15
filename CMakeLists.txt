@@ -29,6 +29,8 @@ if ( WASM )
     set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(wasp ${SOURCE_FILES})
     set(CMAKE_EXECUTABLE_SUFFIX ".wasm")
+    add_custom_command ( OUTPUT wasp.wasm COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build-wasm.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+    add_custom_target(BuildWasm ALL DEPENDS wasp.wasm)
 #    set_target_properties(wasp PROPERTIES LINK_FLAGS "-s WASM=1 -s EXPORTED_FUNCTIONS='[_main]'")
 else() # NORMAL:
     message(NO WASM "${WASM}")
