@@ -32,9 +32,9 @@ bool assert_equals_x(Node &a, double b, char *context = "") {
 	return a == b;
 }
 
-bool assert_equals_x(Node &a, long b, char *context = "") {
+bool assert_equals_x(Node &a, number b, char *context = "") {
 	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"_s % a % b % context);
-	else printf("OK %d==%d in %f\n"_s % a.value.longy % b % context);
+	else printf("OK %d==%d in %f\n"_s % a.value.numbery % b % context);
 	return a == b;
 }
 
@@ -57,13 +57,13 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 //	else printf("OK %s==%s in %s\n"_s % a % b % context);
 //	return a == b;
 //}
-
-bool assert_equals_x(long a, long b, char *context) {
+#ifndef WASM
+bool assert_equals_x(number a, number b, char *context) {
 	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"_s % a % b % context);
 	else printf("OK %d==%d in %s\n"_s % a % b % context);
 	return a == b;
 }
-
+#endif
 
 bool assert_equals_x(int a, int b, char *context) {
 	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"_s % a % b % context);
@@ -74,6 +74,7 @@ inline float abs_(float x)noexcept{return x>0?x:-x;}
 bool assert_equals_x(float a, float b, char *context = "") {
 	float epsilon = abs_(a + b) / 100000.;// 𝕚𝚤:=-1
 	bool ok = a == b or abs_(a - b) <= epsilon;
+	printf("WTF");
 	if (!ok)printf("FAILED assert_equals!\n %f should be %f in %s\n"_s % a % b % context);
 	else printf("OK %f==%f in %s\n"_s % a % b % context);
 	return ok;
@@ -87,9 +88,9 @@ bool assert_isx(char *mark, Node expect) {
 		Node left = Mark::eval(mark);
 		if (left.type == floats or expect.type == floats)
 			return assert_equals_x(left.floate(), expect.floate(), mark);
-		if (left.type == longs or expect.type == longs) {
-			long b = expect.longe();
-			return assert_equals_x(left.longe(), b, mark);
+		if (left.type == numbers or expect.type == numbers) {
+			number b = expect.numbere();
+			return assert_equals_x(left.numbere(), b, mark);
 		}
 		if (left != expect)
 //			breakpoint_helper
@@ -220,9 +221,9 @@ void testMarkSimple() {
 	log("testMarkSimple");
 	Node &a = assert_parses("{a:3}");
 	Node &a3 = a;
-	assert_equals(a3, long(3));
+	assert_equals(a3, number(3));
 	assert(a3 == 3);
-	assert(a3.type == longs or a3.type == keyNode and a3.value.node->type == longs);
+	assert(a3.type == numbers or a3.type == keyNode and a3.value.node->type == numbers);
 	assert(a3.name == "a"_s);
 //	assert(a3.name == "a"_s);// todo? cant
 
@@ -360,7 +361,7 @@ void testErrors() {
 void testForEach() {
 	int sum = 0;
 	for (Node &item : parse("1 2 3"))
-		sum += item.value.longy;
+		sum += item.value.numbery;
 	assert(sum == 6);
 }
 
@@ -659,7 +660,7 @@ void testRootLists() {
 
 
 void testRoots() {
-	check(NIL.value.longy == 0);
+	check(NIL.value.numbery == 0);
 	assert_is("'hello'", "hello");
 	skip(assert_is("hello", "hello", 0));// todo reference==string really?
 	assert_is("True", True)
@@ -672,7 +673,7 @@ void testRoots() {
 //	assert_is("wrong", False)
 	assert_is("null", NIL);
 	assert_is("", NIL);
-	check(NIL.value.longy == 0);
+	check(NIL.value.numbery == 0);
 	assert_is("0", NIL);
 	assert_is("1", 1)
 	assert_is("123", 123)
@@ -889,7 +890,7 @@ void tests() {
 #ifndef WASM
 	testAllSamples();
 #endif
-	check(NIL.value.longy == 0);// should never be modified
+	check(NIL.value.numbery == 0);// should never be modified
 }
 
 #include "testAngle.cpp"

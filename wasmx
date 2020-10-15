@@ -523,10 +523,10 @@ _Z6printfPKc:printf,//  needs ref types
 		// ^^ mine
 
 		memset,//debug("memset",false),
-		// _Znam: malloc, // operator new[](unsigned long)
+		// _Znam: malloc, // operator new[](unsigned number)
 		// _Znaj: malloc, // operator new[](unsigned int)
 		// _Znwj: malloc, // operator new(unsigned int)
-		// _Znwm: malloc, // operator new(unsigned long) //  c++filt
+		// _Znwm: malloc, // operator new(unsigned number) //  c++filt
 		__cxa_throw: debug("__cxa_throw"),
 		__cxa_allocate_exception: debug("__cxa_allocate_exception"),
 		// _Z6printfPKci: logs,// WHY? printf(char const*, int)
@@ -619,7 +619,7 @@ function wasmx(file) {
 		main = main || exports._run_lua
 		if (main){
 			console.log("FOUND main! Calling",main,args)
-		 result = main(arg) // process.argc,args) doesnt work that way:(
+			result = main(arg) // process.argc,args) doesnt work that way:(
 		}
 		else result = "NO MAIN! Entry function main not found."
 		console.log(">>>", result)
