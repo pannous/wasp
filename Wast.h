@@ -1,5 +1,5 @@
 //
-// Created by me on 31.08.20.
+// Created by pannous on 31.08.20.
 //
 
 #ifndef WASP_WAST_H

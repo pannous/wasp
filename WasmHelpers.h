@@ -1,5 +1,6 @@
+#pragma once
 //
-// Created by me on 15.07.20.
+// Created by pannous on 15.07.20.
 //
 typedef const char *chars;
 
@@ -14,7 +15,7 @@ typedef const char *chars;
 
 //TypeError: wasm function signature contains illegal type:
 // ONLY INT and FLOAT in wasm functions!!!
-extern "C" void exit(int);
+extern "C" void exit(int code=0);
 extern "C" void logc(char s);
 extern "C" void logi(int i);
 // helpers calling
@@ -23,6 +24,9 @@ void err(char const*);
 void warn(char const*);
 void log(char*);
 void log(chars s);
+//void    *alloc(size_t __size) __result_use_check __alloc_size(1);
+//char* alloc(long l);
+void usleep(long l);
 //extern "C" void print (const char *);// no \n newline
 //extern "C" void logs (const char *);// can't work!
 void printf(const char *s);  //stdio
@@ -40,6 +44,8 @@ void printf(const char *format, chars i, chars j, chars k, int l);
 //void* alloc(size_t __size);
 //extern
 void* alloc(int i);
+void *calloc(int i);
+
 #endif
 #endif
 //#endif //MARK_STRING_H

@@ -1,5 +1,5 @@
 //
-// Created by me on 17.11.19.
+// Created by pannous on 17.11.19.
 //
 
 #ifndef MARK_ERRORHANDLER_H
