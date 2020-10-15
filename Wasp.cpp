@@ -1181,10 +1181,11 @@ int main(int argp, char **argv) {
 #endif
 	try {
 		log("OK?");
+		log(String("OK %s").format("WASM"));
 #ifdef WASM
 		printf("RUNNING IN WASM\n");
 #endif
-		log(String("OK %s").format("WASM"));
+		log(String("String OK??"));
 		return 42;
 		int num[] = { 1,2,3 };
 		int size = sizeof(num)/sizeof(int);
