@@ -5,6 +5,36 @@
 #include "WasmHelpers.h"
 #include "NodeTypes.h"
 
+//wasm function signature contains illegal type
+// ^^ THIS HAPPENS When .h file calls .cpp content!!
+// ^^ THIS HAPPENS when pointer overflows e.g. while(x++) vs while(*x++)
+
+int strlen0(const char *x){
+
+//	if(x[0]==0)return 0;// THIS FAILS if l<2
+//	if(x[1]==0)return 1;// THIS FAILS if l<2 !!
+	if(x[2]==0)return 2;// THIS IS OK, YET THIS FAILS::!!!
+
+//	if(((int)x[0])==0)return 0;
+	for (int i = 2; i < 2; i++) {
+		if(x[i]==0)return i;
+	}
+
+	int l=2;
+//	char c1 = x[1];
+	char c1 = x[l];
+	if(c1=='\0')return l;
+//	return x[1];
+//	return (int) c ;//x[l];
+	while(true){
+		char c = x[l];
+		if(c=='\0')return l;
+		l++;
+		if(l>2)return l;// WTF clang bug:
+	}
+	return l;
+//	return -1;//(int) x[4];
+}
 void reverse(char *str, int len);
 
 char *itoa1(int num) {
@@ -92,6 +122,7 @@ String s(const char *&s);
 bool eq(const char *dest, const char *src);
 void strcpy2(char *dest, const char *src);
 void strcpy2(char *dest, const char *src, int length);
+int strlen0(const char *x);
 size_t   strlen(const char *__s);
 void strcpy2(char *dest, const char *src, int length) {// =-1
 	if (!dest || !src)
@@ -172,7 +203,7 @@ public:
 #else
 		data = const_cast<char *>(string);
 #endif
-		length = strlen(data);
+		length = strlen0(string);
 	}
 
 
@@ -360,6 +391,7 @@ public:
 	}
 
 	String operator+(String c) {
+		return String(c.length);// String("operator+");
 		if (c.length <= 0)
 			return *this;
 		auto *neu = static_cast<char *>(alloc(length + c.length + 1));
@@ -371,7 +403,9 @@ public:
 		if (c.data)strcpy2(neu + length, c.data, c.length);
 #endif
 		neu[length + c.length] = 0;
-		return String(neu);
+		String ok=String(neu);
+		ok.length = length + c.length;
+		return ok;
 	}
 
 	String operator+(const char x[]) {
