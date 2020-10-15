@@ -1,4 +1,3 @@
-//#define WASM 1
 //#define X86_64 1
 #define let auto
 #define var auto
@@ -28,7 +27,11 @@ typedef unsigned long size_t;
 void usleep(long l){}
 #endif
 
-//#include "String.h" // variable has incomplete type
+
+#import "WasmHelpers.h" // import so names are not mangled
+//#include "WasmHelpers.h"
+#include "String.h" // variable has incomplete type
+#include "Node.h"
 //#import "String.cpp" // import against mangling in wasm (vs include)
 #include "wasm-emitter.h"
 
@@ -63,7 +66,23 @@ extern "C" void * memset ( void * ptr, int value, size_t num ){
 //	return current;
 //}
 
-extern void log(char *);
+// WHY NOT WORKING WHEN IMPORTED? FUCKING MANGLING!
+void log(char* s) {
+#ifdef WASM
+	while(s++)logc(s[-1]);
+#else
+	printf("%s\n", s);
+#endif
+}
+
+void log(chars s) {
+#ifdef WASM
+	while(s++)logc(s[-1]);
+#else
+	printf("%s\n", s);
+#endif
+}
+
 
 void _cxa_allocate_exception(){
  log("_cxa_allocate_exception!");
@@ -440,7 +459,7 @@ private:
 	}
 
 	String fromCharCode(long uffff) {
-		return (char) (uffff);// itoa(uffff);
+		return (char) (uffff);// itoa0(uffff);
 	}
 
 	Node string(char delim = '"') {
@@ -1148,24 +1167,35 @@ static Node parse(String source) {
 	return Mark().read(source);
 }
 
-//
-//It has clean syntax with FULLY-TYPE data model (like JSON or even better)
-//It is generic and EXTENSIBLE (like XML or even better)
-//It has built-in MIXED CONTENT support (like HTML5 or even better)
-//It supportsHIGH-ORDER COMPOSITION (like S-expressions or even better)
+Node NIL = Node(nil_name).setType(nils);
+Node ERROR = Node("ERROR").setType(nils);// ≠ NIL
+Node True = Node("True").setType(bools);
+Node False = Node("False").setType(bools);
 
+// Mark/wasp has clean syntax with FULLY-TYPED data model (like JSON or even better)
+// Mark/wasp is generic and EXTENSIBLE (like XML or even better)
+// Mark/wasp has built-in MIXED CONTENT support (like HTML5 or even better)
+// Mark/wasp supports HIGH-ORDER COMPOSITION (like S-expressions or even better)
 #ifndef _main_
-
 int main(int argp, char **argv) {
 #ifdef register_global_signal_exception_handler
 	register_global_signal_exception_handler();
 #endif
 	try {
+		logi(44);
+		log("WASM WORKS");
+		logc('!');
+		log(String("OK %s").format("WASM"));
 
+//#ifndef WASM
+//		test_ini({1, 2, 3});
+//#endif
+		int num[] = { 1,2,3 };
+		int size = sizeof(num)/sizeof(int);
+//		assert_equals(size,3);
 		auto s = "hello world"_s;
 		init();
-		log(String("OK %s").format("WASM"));
-		emitter(0);
+//		emitter(0);
 //		test();
 //		testCurrent();
 		return 42;

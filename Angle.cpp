@@ -5,6 +5,9 @@
 unsigned long __stack_chk_guard= 0xBAAAAAAD;
 #include "Wasp.cpp"
 
+#import "WasmHelpers.h" // IMPORT so that they don't get mangled!
+
+
 int main(int argp, char **argv) {
 #ifdef register_global_signal_exception_handler
 	register_global_signal_exception_handler();
