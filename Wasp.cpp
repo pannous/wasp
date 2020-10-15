@@ -21,15 +21,11 @@ typedef unsigned long size_t;
 
 #ifndef WASM
 #include "ErrorHandler.h"
-#else
-//void    *alloc(size_t __size) __result_use_check __alloc_size(1);
-//char* alloc(long l);
-void usleep(long l){}
 #endif
 
 
-#import "WasmHelpers.h" // import so names are not mangled
-//#include "WasmHelpers.h"
+//#import "WasmHelpers.h" // import so names are not mangled
+#include "WasmHelpers.h"
 #include "String.h" // variable has incomplete type
 #include "Node.h"
 //#import "String.cpp" // import against mangling in wasm (vs include)
@@ -67,9 +63,10 @@ extern "C" void * memset ( void * ptr, int value, size_t num ){
 //}
 
 // WHY NOT WORKING WHEN IMPORTED? FUCKING MANGLING!
+// bus error == access out of scope, e.g. logc((void*)-1000)
 void log(char* s) {
 #ifdef WASM
-	while(s++)logc(s[-1]);
+	while(*s)logc(*s++);
 #else
 	printf("%s\n", s);
 #endif
@@ -77,7 +74,7 @@ void log(char* s) {
 
 void log(chars s) {
 #ifdef WASM
-	while(s++)logc(s[-1]);
+	while(*s)logc(*s++);
 #else
 	printf("%s\n", s);
 #endif
@@ -1178,18 +1175,17 @@ Node False = Node("False").setType(bools);
 // Mark/wasp supports HIGH-ORDER COMPOSITION (like S-expressions or even better)
 #ifndef _main_
 int main(int argp, char **argv) {
+
 #ifdef register_global_signal_exception_handler
 	register_global_signal_exception_handler();
 #endif
 	try {
-		logi(44);
-		log("WASM WORKS");
-		logc('!');
+		log("OK?");
+#ifdef WASM
+		printf("RUNNING IN WASM\n");
+#endif
 		log(String("OK %s").format("WASM"));
-
-//#ifndef WASM
-//		test_ini({1, 2, 3});
-//#endif
+		return 42;
 		int num[] = { 1,2,3 };
 		int size = sizeof(num)/sizeof(int);
 //		assert_equals(size,3);
