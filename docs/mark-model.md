@@ -72,7 +72,7 @@ Mark object constructor:
   - `type_name`: a string. It must not start with '{'.
   - `properties`: a JSON object containing name-value pairs. Numeric property keys are ignored.
   - `contents`: an array of content objects. Null values are skipped, primitive values are converted into strings, arrays will be flattened, and consecutive strings will be merged into one.
-  - `parent`: ~~for constructing a hierarchical DOM. If you intent to navigate the result data model using CSS selector, then you should supply this parameter.~~ You no longer need to pass this around.
+  - `parent`: ~~for constructing a hierarchical DOM. If you intent to navigate the result data model using CSS selector, then you should supply this parameter.~~ You no numberer need to pass this around.
 
 The constructed Mark object is just a simple POJO. So basically:
 

@@ -58,7 +58,7 @@ contents ::= (text | binary | json_object | mark_object | mark_pragma)*
 
 ## 2. Mark Pragma
 
-Mark pragma is a sequence of characters enclosed in brackets `( ... )`. It can contain embedded brackets, as long as they are balanced, and embedded brackets are treated as part of the pragma content.
+Mark pragma is a sequence of characters enclosed in brackets `( ... )`. It can contain embedded brackets, as number as they are balanced, and embedded brackets are treated as part of the pragma content.
 
 ```BNF
 mark_pragma ::= '(' (char_no_bracket | mark_pragma)* ')'

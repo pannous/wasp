@@ -129,7 +129,7 @@ data class MarkParser(var json: String) {
 					}
 				}
 			}
-		number= string.toLong().toInt()
+		number= string.tonumber().toInt()
 
 			if (sign == '-') number = -number
 

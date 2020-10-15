@@ -99,7 +99,7 @@ Comparing to JSON, Mark has the following advantages:
 
 Some disadvantages of Mark, comparing to JSON would be:
 
-- It is no longer a subset of JavaScript in syntax, although a Mark object is still a simple POJO in data model.
+- It is no numberer a subset of JavaScript in syntax, although a Mark object is still a simple POJO in data model.
 - It does not yet have wide support, like JSON, at the moment.
 
 ## Mark vs. HTML

@@ -1,4 +1,11 @@
 //#define X86_64 1
+
+#include "String.cpp"
+
+extern unsigned int *memory;
+unsigned int *memory=(unsigned int *) 4096; // todo how to not handtune _data_end?
+
+
 #define let auto
 #define var auto
 typedef void *any;
@@ -33,9 +40,9 @@ typedef unsigned long size_t;
 
 #ifdef WASM
 #ifdef X86_64
-typedef long unsigned int size_t;
+typedef number unsigned int size_t;
 #else
-// typedef long unsigned int size_t;
+// typedef number unsigned int size_t;
 //typedef unsigned int size_t;
 typedef unsigned long size_t;
 #endif
@@ -51,14 +58,14 @@ extern "C" void * memset ( void * ptr, int value, size_t num ){
 //	current=memory;
 //	memory+=size;
 ////	logs("new[]");
-////	logi((long)current);
+////	logi((number)current);
 //	return current;
 //}
 //void* operator new(size_t size){ // stack
 //	current=memory;
 //	memory+=size;
 ////	logs("new");
-////	logi((long)current);
+////	logi((number)current);
 //	return current;
 //}
 
@@ -129,11 +136,11 @@ void warning(chars warning) {
 #endif
 
 #ifdef WASM64
-void* operator new[](unsigned long size){
+void* operator new[](unsigned number size){
 	memory+=size;
 	return memory;
 }
-void* operator new(unsigned long size){
+void* operator new(unsigned number size){
 	memory+=size;
 	return memory;
 }
@@ -212,7 +219,7 @@ public:
 		FILE *f = fopen(filename, "rt");
 		if (!f)err("FILE NOT FOUND "_s + filename);
 		fseek(f, 0, SEEK_END);
-		long fsize = ftell(f);
+		number fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
 		char *s = (char *) (alloc(fsize + 2));
 		fread(s, 1, fsize, f);
@@ -381,7 +388,7 @@ private:
 	};
 
 	// Parse a number value.
-	Node number() {
+	Node numbers() {
 		let sign = '\n';
 		let string = String("");
 		int number0, base = 10;
@@ -455,7 +462,7 @@ private:
 		return next - '0';
 	}
 
-	String fromCharCode(long uffff) {
+	String fromCharCode(number uffff) {
 		return (char) (uffff);// itoa0(uffff);
 	}
 
@@ -506,7 +513,7 @@ private:
 					else { // escape sequence
 						proceed();
 						if (ch == 'u') { // unicode escape sequence
-							long uffff = 0; // unicode
+							number uffff = 0; // unicode
 							for (i = 0; i < 4; i += 1) {
 								hex = parseInt(proceed(), 16);
 //								if (!isFinite(hex)) { break; }
@@ -679,7 +686,7 @@ private:
 	}
 
 	Node symbol() {
-		if (ch >= '0' && ch <= '9')return number();
+		if (ch >= '0' && ch <= '9')return numbers();
 		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
 		if (is_operator(ch))return builtin_operator();
 		breakpoint_helper
@@ -728,7 +735,7 @@ private:
 		bool allow_unknown_words = true;// todo depending on context
 		if (allow_unknown_words)
 			return expression();
-		return ch >= '0' && ch <= '9' ? number() : word();
+		return ch >= '0' && ch <= '9' ? numbers() : word();
 	}
 
 	// Parse true, false, null, Infinity, NaN
@@ -845,7 +852,7 @@ private:
 		for (var i = 0; i < 64; i++) {
 			char charCode = text.charCodeAt(i);
 			if (charCode < 0) // never true: charCode > 128 or
-				err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
+				err(("Invalid binary charCode %d "_s % (number) charCode) + text.substring(i, i + 2) + "\n" + text);
 			lookup64[charCode] = i;
 		}
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
@@ -970,7 +977,7 @@ private:
 		if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1 and
 		    val.name.empty())
 			val = val.last();// singleton
-		if (val.value.longy and val.type != objects and val.name.empty()) {
+		if (val.value.numbery and val.type != objects and val.name.empty()) {
 			if (&key == &NIL or key.isNil() or key == NIL or val.value.floaty == 6.4807)
 				if (key.name == nil_name)
 					warn("impossible");
@@ -989,7 +996,7 @@ private:
 	}
 
 // ":" is short binding a b:c d == a (b:c) d
-// "=" is long-binding a b=c d == (a b)=(c d)   todo a=b c=d
+// "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
@@ -1055,7 +1062,7 @@ private:
 				case '+':
 				case '.':
 					if (isDigit(next))
-						return number();
+						return numbers();
 					else
 						return words();
 				case '/':
@@ -1108,10 +1115,10 @@ private:
 		}
 		if (current.length == 1) {
 //			if (current.value.node == &current.children[0])return *current.value.node;
-//			if (current.value.longy and current.children[0].value.longy)
-//				if (current.value.node->value.longy != current.children[0].value.longy)
+//			if (current.value.numbery and current.children[0].value.numbery)
+//				if (current.value.node->value.numbery != current.children[0].value.numbery)
 //					error("ambiguous values");
-//			if (current.value.longy)
+//			if (current.value.numbery)
 //				current.children[0].value = current.value;
 			return current.children[0];
 		}
@@ -1150,11 +1157,11 @@ struct TTT {
 
 void init() {
 	NIL.type = nils;
-	NIL.value.longy = 0;
+	NIL.value.numbery = 0;
 	False.type = bools;
-	False.value.longy = 0;
+	False.value.numbery = 0;
 	True.type = bools;
-	True.value.longy = 1;
+	True.value.numbery = 1;
 }
 
 #import "tests.cpp"
@@ -1173,6 +1180,24 @@ Node False = Node("False").setType(bools);
 // Mark/wasp is generic and EXTENSIBLE (like XML or even better)
 // Mark/wasp has built-in MIXED CONTENT support (like HTML5 or even better)
 // Mark/wasp supports HIGH-ORDER COMPOSITION (like S-expressions or even better)
+
+
+
+class String;
+void print(String){
+	log("GRRRR");
+}
+
+//char* operator "" _ss(const char *c, unsigned number t) {// function signature contains illegal type WHYY??
+//	return "NOO";
+//}
+String& operator "" _ss(const char *c, unsigned long t) {// function signature contains illegal type WHYY??
+	String string;
+	String *pString = &string;
+//	String *pString = new String("NOO");
+	return *pString;
+}
+
 #ifndef _main_
 int main(int argp, char **argv) {
 
@@ -1180,13 +1205,48 @@ int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
 #endif
 	try {
-		log("OK?");
-		log(String("OK %s").format("WASM"));
 #ifdef WASM
-		printf("RUNNING IN WASM\n");
+		// WASM IS VERY UNHAPPY WITH NEW keyword / pointers:
+//		String(123) OK , but ...   new String(123) NOT OK!!!
+//		wasm function signature contains illegal type
+		log(String("OK %s").format("WASM!"));
 #endif
-		log(String("String OK??"));
-		return 42;
+		String afs;
+		log("\n...\n");
+		log(String("\n!!!!!\n"));
+//		itoa0(42);
+		itoa(42);
+		log(itoa(42));
+		log(strlen("sdafdsfa"));
+		log("\n!!!!..///////\n");
+
+		String asdf=String(123);
+//		String* asdf3=new String(123);
+		log(asdf);
+		String asdf1=String("sdaff111");
+		log(asdf1);
+		String asdf2=*new String("sdaff222");
+		log(asdf2);
+#ifdef WASM
+		log("TODO String* storage throws: wasm function signature contains illegal type ");
+#else
+		String* asdf3=new String("String*");
+		log(asdf3);
+#endif
+// missing dependency env._ZN6String6callocEii  IMPLICIT C++ calloc!!
+//		new String();
+		log(String("\n?????2\n"));
+		new String('a');// ok
+		log(new String('a'));// not ok
+		log(String(123));// ok
+//		log(new String(123));// not ok
+//		new String(123);// not ok
+
+		log(new String("dasf"));
+		new String("dasf");
+		log(String("\n?????3\n"));
+
+//		printf("FAILED assert_equals!\n %f should be %f in %s\n"_s % a % b % context);
 		int num[] = { 1,2,3 };
 		int size = sizeof(num)/sizeof(int);
 //		assert_equals(size,3);

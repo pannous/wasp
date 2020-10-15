@@ -105,7 +105,7 @@ Comparing to JSON, Wasp has the following advantages:
 
 Some disadvantages of Wasp, comparing to JSON would be:
 
-- It is no longer a subset of JavaScript in syntax, although a Wasp object is still a simple POJO in data model.
+- It is no numberer a subset of JavaScript in syntax, although a Wasp object is still a simple POJO in data model.
 - It does not yet have wide support, like JSON, at the moment.
 
 ## Wasp vs. HTML
