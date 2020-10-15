@@ -1,16 +1,18 @@
+#pragma once
 //#include <climits>
 //
 // Created by pannous on 15.07.20.
 //
 
 #include "WasmHelpers.h"
+#include "String.h"
 #define size_t int
 
 extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
 
 unsigned int *current;
-extern void logs (const char *);
+extern void logs (const char *,int len=-1 /*auto*/);
 extern void logc(char s);
 extern void logi(int i);
 #ifndef _MALLOC_UNDERSCORE_MALLOC_H_ // ;)
@@ -44,6 +46,10 @@ void log(char *s) {
 }
 void printf(const char *s) {
 	while(s++)logc(s[0]);
+}
+void print(String s){
+		logs(s.data);
+//	logs(s.data,s.length)
 }
 void printf(const char *format, int i) {
 	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
