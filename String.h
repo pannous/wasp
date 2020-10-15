@@ -10,8 +10,12 @@
 // ^^ THIS HAPPENS when pointer overflows e.g. while(x++) vs while(*x++)
 
 int strlen0(const char *x){
+	int l=0;
+	while(*x++)l++;
+	return l;
 
-//	if(x[0]==0)return 0;// THIS FAILS if l<2
+//	return 666;
+	if(x[0]==0)return 0;// THIS FAILS if l<2
 //	if(x[1]==0)return 1;// THIS FAILS if l<2 !!
 	if(x[2]==0)return 2;// THIS IS OK, YET THIS FAILS::!!!
 
@@ -20,7 +24,6 @@ int strlen0(const char *x){
 		if(x[i]==0)return i;
 	}
 
-	int l=2;
 //	char c1 = x[1];
 	char c1 = x[l];
 	if(c1=='\0')return l;
@@ -170,7 +173,7 @@ class String{
 #endif
 
 public:
-	char *data;//{};
+	char *data{};
 	int length = -1;
 
 	String() {
@@ -182,6 +185,11 @@ public:
 		data[0]=0;// be safe!
 		length = 0;
 	}
+
+	void* operator new(unsigned long size){
+		return static_cast<String *>(calloc(sizeof(String),size));// WOW THAT WORKS!!!
+	}
+	void operator delete (void*){memory++;}// Todo ;)
 
 	String(char c) {
 //		log("x");
@@ -211,9 +219,8 @@ public:
 	String(Type e) : String(typeName(e)) {}
 
 	explicit String(int c) {
-//		data = "sdfasdfa";//
 		data = itoa(c);// wasm function signature contains illegal type WHYYYY
-		length = strlen(data);// len(data);
+		length = len(data);
 	}
 
 #ifndef WASM
@@ -391,7 +398,6 @@ public:
 	}
 
 	String operator+(String c) {
-		return String(c.length);// String("operator+");
 		if (c.length <= 0)
 			return *this;
 		auto *neu = static_cast<char *>(alloc(length + c.length + 1));
@@ -570,6 +576,8 @@ class SyntaxError : String {
 public:
 	char *data;
 public:
+	void* operator new(unsigned long size){}
+	void operator delete (void*){}
 	SyntaxError(String &error) {
 		this->data = error.data;
 	}
@@ -593,8 +601,6 @@ String operator "" s(const char *c, unsigned long );//size_t
 String operator "" _(const char *c, unsigned long );
 String operator "" _s(const char *c, unsigned long );
 void log(String *s) {
-	log("Todo wasm String* handling throws");// wasm function signature contains illegal type  :
-//	if(s)
-//		log(s->data);// TODO
+	if(s)log(s->data);
 }
 //#endif
