@@ -1235,6 +1235,9 @@ int main(int argp, char **argv) {
 #endif
 // missing dependency env._ZN6String6callocEii  IMPLICIT C++ calloc!!
 //		new String();
+		log(String("\n?????1.3\n"));
+		log(String("456").length);// ok
+		log(String(123)+"456");// ok
 		log(String("\n?????2\n"));
 		new String('a');// ok
 		log(new String('a'));// not ok
