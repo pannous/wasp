@@ -5,78 +5,7 @@
 #include "WasmHelpers.h"
 #include "NodeTypes.h"
 
-//wasm function signature contains illegal type
-// ^^ THIS HAPPENS When .h file calls .cpp content!!
-// ^^ THIS HAPPENS when pointer overflows e.g. while(x++) vs while(*x++)
-
-int strlen0(const char *x){
-	int l=0;
-	while(*x++)l++;
-	return l;
-
-//	return 666;
-	if(x[0]==0)return 0;// THIS FAILS if l<2
-//	if(x[1]==0)return 1;// THIS FAILS if l<2 !!
-	if(x[2]==0)return 2;// THIS IS OK, YET THIS FAILS::!!!
-
-//	if(((int)x[0])==0)return 0;
-	for (int i = 2; i < 2; i++) {
-		if(x[i]==0)return i;
-	}
-
-//	char c1 = x[1];
-	char c1 = x[l];
-	if(c1=='\0')return l;
-//	return x[1];
-//	return (int) c ;//x[l];
-	while(true){
-		char c = x[l];
-		if(c=='\0')return l;
-		l++;
-		if(l>2)return l;// WTF clang bug:
-	}
-	return l;
-//	return -1;//(int) x[4];
-}
 void reverse(char *str, int len);
-
-char *itoa1(int num) {
-	char *str = (char *) alloc(100);// todo: from context.names char*
-	int len = 0;
-	bool isNegative = false;
-	return "WTFFFF";
-
-	/* Handle 0 explicitely, otherwise empty string is printed for 0 */
-	if (num == 0) {
-		str[len++] = '0';
-		str[len] = '\0';
-		return str;
-	}
-	// In standard itoa0(), negative numbers are handled only with
-	// base 10. Otherwise numbers are considered unsigned.
-	int base = 10;
-
-	if (num < 0 && base == 10) {
-		isNegative = true;
-		num = -num;
-	}
-
-	// Process individual digits
-	while (num != 0) {
-		int rem = num % base;
-		str[len++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
-		num = num / base;
-	}
-
-	// If number is negative, append '-'
-	if (isNegative)
-		str[len++] = '-';
-	str[len] = '\0'; // Append string terminator
-	// Reverse the string
-	reverse(str, len);
-	return str;
-}
-
 char *itoa0(number num, int base);
 char *itoa0(number num);
 char *itoa(number num);
@@ -86,12 +15,13 @@ double atof0(const char *string);
 //extern "C" void* calloc(int size,int count);
 //extern "C" void* calloc(int size);
 //extern "C"
-void *calloc(size_t nitems, size_t size);// __result_use_check __alloc_size(1,2);
-void *calloc(size_t nitems, size_t size){
-	void *mem = alloc(nitems*size);
-	while (nitems > 0) { ((char *) mem)[--nitems] = 0; }
-	return mem;
-}
+
+//void *calloc(size_t nitems, size_t size);// __result_use_check __alloc_size(1,2);
+//void *calloc(size_t nitems, size_t size){
+//	void *mem = alloc(nitems*size);
+//	while (nitems > 0) { ((char *) mem)[--nitems] = 0; }
+//	return mem;
+//}
 
 #pragma once // needs to be on top
 //#include "Node.h"
@@ -127,19 +57,7 @@ void strcpy2(char *dest, const char *src);
 void strcpy2(char *dest, const char *src, int length);
 int strlen0(const char *x);
 size_t   strlen(const char *__s);
-void strcpy2(char *dest, const char *src, int length) {// =-1
-	if (!dest || !src)
-		return;
-	int i = 0;
-	if(length<0)length = strlen(src);
-//	if(strlen(src)<length)throw "Illegal strcpy2 length"; could be filled with 0 :(
-//	if(strlen(dest)<length)throw "Illegal strcpy2 length"; could be filled with 0 :(
-	while (char c = src[i]) {
-		if (length-- == 0)break;
-		dest[i] = c;
-		i++;
-	}
-}
+
 
 //const char *ftoa(float num, int base = 10, int precision = 4);
 const char *ftoa0(float num, int base, int precision);
@@ -499,7 +417,8 @@ public:
 	}
 
 	bool empty() const {//this==0 in testMarkMulti!
-		return this==0 || length==0  ||  !data || data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}" ||  data[0] == 0;
+		return this==0 || length==0  ||  !data  ||  data[0] == 0;
+//		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
 	}
 
 	int indexOf(chars string) {
@@ -524,7 +443,6 @@ public:
 
 	String replace(chars string, chars with) {// first only!
 		int i = this->indexOf(string);
-		logi(i);
 		if (i >= 0)
 			return String(substring(0, i) + with + substring(i + len(string), length));
 		else
@@ -569,9 +487,12 @@ class SyntaxError : String {
 public:
 	char *data;
 public:
-	void* operator new(unsigned long size){}
+	void* operator new(unsigned long size){
+		return static_cast<Node *>(calloc(sizeof(SyntaxError),size));// WOW THAT WORKS!!!
+	}
 	void operator delete (void*){}
-	SyntaxError(String &error) {
+	~SyntaxError()= default;
+	explicit SyntaxError(String &error) {
 		this->data = error.data;
 	}
 };
@@ -583,7 +504,7 @@ String operator ""_s(const char* c, unsigned long );
 
 extern String UNEXPECT_END;// = "Unexpected end of input";
 extern String UNEXPECT_CHAR;// = "Unexpected character ";
-String empty_name = "";
+extern String empty_name;
 extern String nil_name;// = "nil";
 //extern String empty_name;// = "";
 extern String object_name;// = "{…}";
@@ -594,7 +515,6 @@ extern String EMPTY;// = String('\0');
 String operator "" s(const char *c, unsigned long );//size_t
 String operator "" _(const char *c, unsigned long );
 String operator "" _s(const char *c, unsigned long );
-void log(String *s) {
-	if(s)log(s->data);
-}
+void log(String *s);
+void log(chars s);
 //#endif

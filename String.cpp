@@ -1,3 +1,4 @@
+//#pragma once
 //
 // Created by pannous on 24.10.18.
 //
@@ -92,9 +93,27 @@ bool eq(const char *dest, const char *src) {
 	return true;
 }
 
+int strlen0(const char *x){
+	int l=0;
+	while(*x++)l++;
+	return l;
+}
+
 // or cstring
 //#ifndef cstring
-
+void strcpy2(char *dest, const char *src, int length) {// =-1
+	if (!dest || !src)
+		return;
+	int i = 0;
+	if(length<0)length = strlen(src);
+//	if(strlen(src)<length)throw "Illegal strcpy2 length"; could be filled with 0 :(
+//	if(strlen(dest)<length)throw "Illegal strcpy2 length"; could be filled with 0 :(
+	while (char c = src[i]) {
+		if (length-- == 0)break;
+		dest[i] = c;
+		i++;
+	}
+}
 void strcpy2(char *dest, const char *src){
 	strcpy2(dest, src, -1);
 }
@@ -203,6 +222,7 @@ const char *concat(const char *a, const char *b) {
 const char *ftoa0(float num, int base=10, int precision=4) {/*significant digits*/
 	return concat(concat(itoa0(int(num),base),"."),itoa0(int(num*pow(base,precision)),base));
 }
+const char* ftoa(float num){ return ftoa0(num, 10, 4); }
 
 void reverse(char *str, int len) {
 	for (int i = 0; i < len / 2; i++) {
@@ -249,20 +269,19 @@ void log(number i) {
 //}
 
 
-#ifndef WASM
-
-//#import <string>
-#include  <string>
-
-void log(std::string s) {
-	printf("%s\n", s.data());
-}
-
-#endif
+//#ifndef WASM
+//#include  <string>
+//void log(std::string s) {
+//	printf("%s\n", s.data());
+//}
+//#endif
 
 void log(String s) {
-	log(s.data);
-//	printf("%s\n", s.data);
+#ifdef WASM
+	log((chars)s.data);
+#else
+	printf("%s\n", s.data);
+#endif
 }
 
 //#endif //NETBASE_STRING_CPP
@@ -333,8 +352,8 @@ String typeName(Type t) {
 			return "string";
 		case arrays:
 			return "array";
-		case buffers:
-			return "buffer";
+//		case buffers:
+//			return "buffer";
 		case floats:
 			return "float";
 		case numbers:
@@ -359,7 +378,7 @@ String UNEXPECT_CHAR = "Unexpected character ";
 
 
 String nil_name = "nil";
-//String empty_name = "";
+String empty_name = "";
 String object_name = "{…}";
 String groups_name = "(…)";
 String patterns_name = "[…]";
@@ -367,3 +386,19 @@ String EMPTY = String('\0');
 
 #pragma clang diagnostic pop
 
+
+void log(String *s) {
+#ifdef WASM
+	if(s)log(s->data);
+#else
+	printf(s->data);
+#endif
+}
+
+void log(chars s){
+#ifdef WASM
+logs(s);
+#else
+printf(s);
+#endif
+}

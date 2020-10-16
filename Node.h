@@ -8,8 +8,8 @@
 
 #include "String.h"
 //#import  "String.h" // FFS
-#include <stdarg.h> // va_list OK IN WASM???
-
+//#include <stdarg.h> // va_list OK IN WASM???
+//typedef char const * chars;
 
 class Node;
 extern bool debug;
@@ -35,6 +35,12 @@ union Value {
 	double floaty;
 
 	Value() {}// = default;
+	Value(int i) {
+		numbery = i;
+	}
+	Value(bool b) {
+		numbery = 1;
+	}
 };
 
 
@@ -66,10 +72,6 @@ public:
 	 * */
 //	Node *next = nullptr;// NO, WE NEED TRIPLES cause objects can occur in many lists + danger: don't use for any ref/var
 
-	Node() {
-		type = objects;
-//		if(debug)name = "[]";
-	}
 
 	//	Node(const char*);
 //	Node(va_list args) {
@@ -78,7 +80,13 @@ public:
 		return static_cast<Node *>(calloc(sizeof(Node),size));// WOW THAT WORKS!!!
 	}
 	void operator delete (void*){}
+	~Node()= default; // destructor
+//	virtual ~Node();
 
+	Node() {
+		type = objects;
+//		if(debug)name = "[]";
+	}
 
 	Node& first(){
 		if (length>0)return children[0];
@@ -104,6 +112,7 @@ public:
 	explicit Node(int buffer[]) {
 		value.data = buffer;
 		type = buffers;
+//		todo ("type of array");
 		if (debug)name = "int[]";
 //			buffer.encoding = "a85";
 	}
@@ -133,6 +142,7 @@ public:
 	explicit Node(int a, int b, ...) {
 		type = objects;// groups list
 		add(Node(a).clone());
+#ifndef WASM
 		va_list args;
 		va_start(args, b);
 		int i = b;
@@ -141,6 +151,7 @@ public:
 			i = (int) va_arg(args, int);
 		}
 		va_end(args);
+#endif
 	}
 
 	// why not auto null terminated on mac?
@@ -148,6 +159,7 @@ public:
 	explicit Node(char *a, char *b, ...) {
 		type = objects;// groups list
 		add(Node(a).clone(),false);
+#ifndef WASM
 		va_list args;
 		va_start(args, b);
 		char *i = b;
@@ -157,6 +169,7 @@ public:
 			i = (char *) va_arg(args, char*);
 		}
 		va_end(args);
+#endif
 	}
 
 
@@ -164,7 +177,7 @@ public:
 	Node(int nr) {
 		value.numbery = nr;
 		type = numbers;
-		if (debug)name = itoa0(nr,10); // messes with setField contraction
+		if (debug)name = String(itoa(nr)); // messes with setField contraction
 	}
 
 	explicit Node(const char *name) {
@@ -172,12 +185,13 @@ public:
 //		type = strings NAH;// unless otherwise specified!
 	}
 
-	explicit Node(bool nr) {
+	explicit Node(bool truth) {
+		throw "DONT USE CONSTRUCTION, USE ok?True:False";
 		if (this == &NIL)
 			name = "HOW";
-		value.numbery = nr;
+		value.numbery = truth;
 		type = numbers;
-		if (debug)name = nr ? "✔️" : "✖️";
+		if (debug)name = truth ? "✔️" : "✖️";
 //		if (debug)name = nr ? "true" : "false";
 //		this=True; todo
 	}
@@ -301,25 +315,25 @@ public:
 		}
 //		assert (name.data < (char *) 0xffff);
 		if (name and name.data and name.data > (char *) 0xffff and type != objects)
-			printf("name %s ", name.data);
-		printf("length %i ", length);
-		printf("type  %s", typeName(type).data);
-		if (this == &True)
-			printf("TRUE");
-		if (this == &False)
-			printf("FALSE");
-		if (type == objects and value.data)
-			printf(" value.name %s", value.string.data);// ???
-		if (type == bools)
-			printf(" value %s", value.numbery ? "TRUE" : "FALSE");
-		if (type == strings)
-			printf(" value %s", value.string.data);
-		if (type == numbers)
-			printf(" value %li", value.numbery);
-		if (type == floats)
-			printf(" value %f", value.floaty);
-
-		printf(" [ ");
+			printf("name:%s ", name.data);
+		printf("length:%i ", length);
+		printf("type:%s ", typeName(type).data);
+		printf("value:%s ", serializeValue());
+//		if (this == &True)
+//			printf("TRUE");
+//		if (this == &False)
+//			printf("FALSE");
+//		if (type == objects and value.data)
+//			printf(" value.name %s", value.string.data);// ???
+//		if (type == bools)
+//			printf(" value %s", value.numbery ? "TRUE" : "FALSE");
+//		if (type == strings)
+//			printf(" value %s", value.string.data);
+//		if (type == numbers)
+//			printf(" value %li", value.numbery);
+//		if (type == floats)
+//			printf(" value %f", value.floaty);
+		printf("[");
 		for (int i = 0; i < length; i++) {
 			Node &node = children[i];
 //			if(check(node))
@@ -375,58 +389,8 @@ public:
 	const char *serializeValue() const;
 
 	void print();
+
+	Node setValue(Value v);
 };
 typedef const Node Nodec;
-
-void log(Node& node){
-	printf("Node ");
-	Type type = node.type;
-	String name= node.name;
-	Value value=node.value;
-	int length=node.length;
-	if (node == NIL || type == nils) {
-		printf("NIL\n");
-		return;
-	}
-//		if || name==nil_name …
-	if (name.data < (char *) 0xffff) {
-		printf("BUG");
-		return;
-	}
-//		assert (name.data < (char *) 0xffff);
-	if (name and name.data and name.data > (char *) 0xffff and type != objects)
-		printf("name %s ", name.data);
-	printf("length %i ", length);
-	printf("type  %s", typeName(type).data);
-	if (node == True)
-		printf("TRUE");
-	if (node == False)
-		printf("FALSE");
-	if (type == objects and value.data)
-		printf(" value.name %s", value.string.data);// ???
-	if (type == bools)
-		printf(" value %s", value.numbery ? "TRUE" : "FALSE");
-	if (type == strings)
-		printf(" value %s", value.string.data);
-	if (type == numbers)
-		printf(" value %li", value.numbery);
-	if (type == floats)
-		printf(" value %f", value.floaty);
-
-	printf(" [ ");
-	for (int i = 0; i < length; i++) {
-		Node &node = node.children[i];
-//			if(check(node))
-		printf("%s", node.name.data);
-		printf(" ");
-	}
-	printf("]");
-	printf("\n");
-}
-
-void log(Node *n0) {
-	if (!n0)return;
-	Node n = *n0;
-	log(n);
-}
 #endif //MARK_NODE_H
