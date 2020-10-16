@@ -3,7 +3,7 @@
 #include "String.h"
 #include "Map.h"
 #include "wasm-emitter.h"
-#include "string.h" // memcpy
+//#include "string.h" // memcpy
 void * memcpy ( void * destination, const void * source, size_t num );
 class Code;
 typedef char* bytes;
@@ -266,6 +266,7 @@ public:
 		if(eq(s, ">"))return f32_gt;
 		if(eq(s, "<"))return f32_lt;
 		if(eq(s, "&&"))return i32_and;
+		throw "UNKNOWN OP";
 	}
 };
 BinaryOpcode binaryOpcode;
@@ -340,7 +341,8 @@ Code unsignedLEB128(int n) {
 //	code.encoded = true;
 //	return code;
 //}
-Code& encodeVector (Code data) {
+//Code& encodeVector (Code& data) {
+Code encodeVector (Code data) {
 //	return data.vector();
 	if(data.encoded)return data;
 	Code code = unsignedLEB128(data.length) + flatten(data);
@@ -553,11 +555,11 @@ class TransformedProgram:public Nod{
 public:
 	TransformedProgram() {}
 
-	char *mapp(char* (lambda)(String, int)) {
-		for(Nod n:*this){
-			lambda(n.value, n.index);
-		}
-	}
+//	char *mapp(char* (lambda)(String, int)) {
+//		for(Nod n:*this){
+//			lambda(n.value, n.index);
+//		}
+//	}
 	int findIndex(bool (lambda)(Nod)) {
 		int i=0;
 		for(Nod n:*this){
@@ -626,7 +628,7 @@ Code& emitter(TransformedProgram* ast0) {
 	for (Nod &node : ast) {
 		Code args;
 		for (Nod arg: proc.args) { args.push(f32); }
-		Code functionType = Code(functionType).push(encodeVector(args)).push(emptyArray);
+		Code functionTypes = Code(functionType).push(encodeVector(args)).push(emptyArray);
 	}
 //  ast.map(proc {[functionType, encodeVector(proc.args.map(_ -> f32)), emptyArray]);
 

@@ -18,8 +18,8 @@ enum Type {
 	operators,// or just symbol?
 	expression,// one plus one
 	strings,
-	arrays,// same as:
-	buffers,
+	arrays,// Node[] vs any[]? vs
+	buffers,// int[]
 	floats,
 	numbers,
 	ints,
