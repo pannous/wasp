@@ -160,9 +160,9 @@ void testNetBase() {
 	warn("NETBASE OFFLINE");
 	if(1>0)return;
 	chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
-	log(url);
+//	log(url);
 	chars json = fetch(url);
-	log(json);
+//	log(json);
 	Node result = Mark::parse(json);
 	Node results = result["results"];
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
@@ -377,9 +377,8 @@ void testAllSamples() {
 //	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/
 // ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/out wtf
 	for (const auto &file : files("samples/")) {
-		const char *filename = file.path().string().data();
-		if (!s(filename).contains("error"))
-			Mark::parseFile(filename);
+		if (!String(file.path().string().data()).contains("error"))
+			Mark::parseFile(file.path().string().data());
 	}
 }
 #endif

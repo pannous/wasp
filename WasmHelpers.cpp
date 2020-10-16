@@ -1,4 +1,4 @@
-#pragma once
+//#pragma once
 //#include <climits>
 //
 // Created by pannous on 15.07.20.
@@ -50,3 +50,5 @@ void printf(const char *format, void* value) {
 
 }
 #endif
+
+void* alloc(int size) { return malloc(size);}

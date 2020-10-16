@@ -1,15 +1,20 @@
-#pragma once
+//#pragma once
 //#define X86_64 1
 
 bool debug=true;
+#ifdef WASM
 #include "String.cpp" // Todo: wasm can't link to String.cpp functions from String.h (e.g. itoa0)
+#else
+#include "String.h"
+#endif
+
 //#include "Node.cpp"
 extern unsigned int *memory;
 unsigned int *memory=(unsigned int *) 4096; // todo how to not handtune _data_end?
 
 unsigned long __stack_chk_guard= 0xBAAAAAAD;
 void __stack_chk_guard_setup(void) { __stack_chk_guard = 0xBAAAAAAD;/*provide some magic numbers*/ }
-void __stack_chk_fail(void) { /*log("__stack_chk_fail"); /* Error message will be called when guard variable is corrupted*/ }
+void __stack_chk_fail(void) { /*log("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
 
 #define let auto
 #define var auto
@@ -20,7 +25,7 @@ typedef const char *chars;
 
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
-extern "C" int isalnum(int _c);
+//extern "C" int isalnum(int _c);
 extern bool polish_notation;
 
 #ifdef WASM
@@ -1211,13 +1216,19 @@ int main(int argp, char **argv) {
 	try {
 		log("Hello %s\n"_s.format("WASM"));
 		log("Hello "_ + 123 + newline);
-//		Node(123);// undefined symbol: __stack_chk_guard
+		Node* n0=new Node(123);
+		log(n0);
+//		Node n=Node(123);
+//		Node n=Node(true);
+//		log(n.type);
+
+//		Node n = Node("abc");
 //		log(new Node(123));
 //		Node(123).log();
 //		log(Node(123));
 
 //		printf("Hello %s", "WASM");
-//		test();
+		tests();
 //		testCurrent();
 		return 42;
 	} catch (chars err) {
