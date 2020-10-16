@@ -1,3 +1,4 @@
+//#pragma once
 ////
 //// Created by pannous on 30.09.19.
 ////
@@ -35,9 +36,9 @@ Node Infinity = Node("Infinity");
 Node NaN = Node("NaN");
 //NIL=0;
 //Node NIL;
-Node NIL = Node(nil_name).setType(nils);
+Node NIL = Node(nil_name).setType(nils).setValue(0);
 Node ERROR = Node("ERROR").setType(nils);// ≠ NIL
-Node True = Node("True").setType(bools);
+Node True = Node("True").setType(bools).setValue(true);
 Node False = Node("False").setType(bools);
 
 Node &Node::operator=(int i) {
@@ -92,10 +93,10 @@ Node &Node::operator[](String s) {
 	if (neu.value.node) return *neu.value.node;
 	else return neu;
 }
-
-Node &Nodec::operator[](String s) const{
-	return ((Node) this)[s];
-}
+//
+//Node &Nodec::operator[](String s) const{
+//	return (*this)[s];
+//}
 
 Node *Node::begin() const {
 	return children;
@@ -562,7 +563,8 @@ Node Node::apply(Node left, Node op0, Node right) {
 
 	if (op == "xor" or op == "^|") {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		return Node(left.value.numbery ^ right.value.numbery);
+		long xored = left.value.numbery ^right.value.numbery;
+		return Node(xored);
 	}
 
 	if (op == "and" or op == "&&") {
@@ -664,13 +666,29 @@ bool Node::isNil() { // required here: name.empty()
 
 const char * Node::serializeValue() const {
 	String wasp="";
+	Value val = this->value;
 	switch (this->type) {
 		case strings:
-			return this->value.string;
+			return val.string;
+		case ints:
 		case numbers:
-			return itoa(this->value.numbery);
+			return itoa(val.numbery);
 		case floats:
-			return ftoa(this->value.floaty);
+			return ftoa(val.floaty);
+		case nils: return "ø";
+		case objects: return object_name;
+		case groups: return groups_name;
+		case patterns: return patterns_name;
+		case keyNode:return "";
+		case reference:return val.data ? val.node->name : "ø";
+		case symbol: return val.string;
+		case bools: return val.numbery>0?"true": "false";
+		case arrays: return "[…]";//val.data type?
+		case buffers: return "int[]";//val.data lenght?
+		case operators:
+		case expression:
+		case unknown: return "¿";
+		default: return "MISSING CASE";
 
 	}
 }
@@ -711,6 +729,18 @@ void Node::print() {
 	printf(this->serialize());
 }
 
-//void log(Node &n) {
-//	n.log();
-//}
+Node Node::setValue(Value v) {
+	value = v;
+	return *this;
+}
+
+void log(Node &n) {
+	n.log();
+}
+
+
+void log(Node *n0) {
+	if (!n0)return;
+	Node n = *n0;
+	log(n);
+}
