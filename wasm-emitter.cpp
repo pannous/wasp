@@ -589,7 +589,7 @@ Code codeFromProc (ProcStatementNod node, TransformedProgram program_node) {
 
 
 Code encodeString(char *str) {
-	size_t len = strlen(str);
+	size_t len = strlen0(str);
 	Code code = Code(len, str, len);
 	return code;//.push(0);
 };

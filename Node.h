@@ -10,7 +10,7 @@
 //#import  "String.h" // FFS
 //#include <stdarg.h> // va_list OK IN WASM???
 //typedef char const * chars;
-
+#define min(a,b) a<b?a:b
 class Node;
 extern bool debug;
 extern Node True;
@@ -189,7 +189,7 @@ public:
 	}
 
 	explicit Node(const char *name) {
-		this->name = name;
+		this->name = String(name);
 //		type = strings NAH;// unless otherwise specified!
 	}
 //
@@ -308,16 +308,22 @@ public:
 			return;
 		}
 //		if || name==nil_name …
+#ifndef WASM
 		if (name.data < (char *) 0xffff) {
 			printf("BUG");
 			return;
 		}
+#endif
 //		assert (name.data < (char *) 0xffff);
 		if (name and name.data and name.data > (char *) 0xffff and type != objects)
-			printf("name:%s ", name.data);
-		printf("length:%i ", length);
-		printf("type:%s ", typeName(type).data);
-		printf("value:%s ", serializeValue());
+			printf("name:"_s + String(name.data));
+		printf(" length:"_s + itoa(length));
+		printf(" type:"_s + typeName(type));
+		printf(" value:"_s + serializeValue());
+//			printf("name:%s ", name.data);
+//		printf("length:%i ", length);
+//		printf("type:%s ", typeName(type).data);
+//		printf("value:%s ", serializeValue());
 //		if (this == &True)
 //			printf("TRUE");
 //		if (this == &False)
@@ -332,20 +338,20 @@ public:
 //			printf(" value %li", value.numbery);
 //		if (type == floats)
 //			printf(" value %f", value.floaty);
-		printf("[");
-		for (int i = 0; i < length; i++) {
+		printf(" [");
+		for (int i = 0; i < min(length,10); i++) {
 			Node &node = children[i];
 //			if(check(node))
-			printf("%s", node.name.data);
+			printf(node.name);
 			printf(" ");
 		}
 		printf("]");
 		printf("\n");
 	}
 
-	float precedence(Node &operater);
+	static float precedence(Node &operater);
 
-	Node apply(Node left, Node op0, Node right);
+	static Node apply(Node left, Node op0, Node right);
 
 	Node &setType(Type type);
 
@@ -357,7 +363,7 @@ public:
 		return type == numbers ? value.numbery : value.floaty;// danger
 	}
 
-	Node *has(String s, bool searchParams = true);
+	Node *has(String s, bool searchParams = true) const;
 
 // type conversions
 	explicit operator bool() const { return value.numbery; }
