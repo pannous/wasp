@@ -1262,7 +1262,8 @@ int main(int argp, char **argv) {
 //		Node node = Node("123");// type mismatch in implicit return, expected [i32] but got [] FUUUCK
 //		Compiling function #16:"main" failed: expected 1 elements on the stack for fallthru to @5, found 0
 //		log(node);
-		auto n=new Node(123);//.setType(strings);
+//		auto n=new Node(123);//.setType(strings);
+		auto n=new Node("123");//.setType(strings);
 		n->log();
 //		if(1>0)
 //		raise("test_error");
