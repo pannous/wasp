@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(wasp)
 
 
-option(WASM "Compiles to native WASM" OFF)
-#set(WASM 1)
+# If <variable> is already set as a normal or cache variable, then the command does nothing!!
+set(WASM 1)
 #add_compile_definitions(WASM)
 #target_compile_definitions(my_target WASM WASM)
 set(CMAKE_CXX_STANDARD 20)
@@ -21,17 +21,20 @@ ENDFUNCTION()
 #ADD_COMPILE_FLAG(" -w") # NO WARNINGS
 ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
 #set (CMAKE_SUPPRESS_REGENERATION)
-if ( WASM1 )
+if ( WASM )
     message(WASM)
     ADD_COMPILE_FLAG("-DWASM=1 -Wno-main -fvisibility=hidden")
     ADD_COMPILE_FLAG("-w -isystem --target=wasm32-unknown-unknown-wasm -emit-llvm -Oz -c -o wasp.bc ")
     set(CMAKE_C_FLAGS "-s STANDALONE_WASM" )
-    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
+    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp WasmHelpers.cpp)
+#    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(wasp ${SOURCE_FILES})
     set(CMAKE_EXECUTABLE_SUFFIX ".wasm")
     add_custom_command ( OUTPUT wasp COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build-wasm.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
+    add_custom_command ( OUTPUT wasp.wasm COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/build-wasm.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/)
     add_custom_target(BuildWasm ALL DEPENDS wasp.wasm)
-#    set_target_properties(wasp PROPERTIES LINK_FLAGS "-s WASM=1 -s EXPORTED_FUNCTIONS='[_main]'")
+
+    #    set_target_properties(wasp PROPERTIES LINK_FLAGS "-s WASM=1 -s EXPORTED_FUNCTIONS='[_main]'")
 else() # NORMAL:
     message(NO WASM "${WASM}")
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
@@ -45,7 +48,8 @@ else() # NORMAL:
 #    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(angle ${SOURCE_FILES})
     TARGET_LINK_LIBRARIES(angle curl)
-    add_custom_target(BuildWasp ALL DEPENDS angle)
+#    set(CMAKE_EXECUTABLE_SUFFIX ".exe")
+    add_custom_target(BuildWasp ALL DEPENDS angle) #.exe
 endif ()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
