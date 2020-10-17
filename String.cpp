@@ -106,8 +106,8 @@ void strcpy2(char *dest, const char *src, int length) {// =-1
 		return;
 	int i = 0;
 	if(length<0)length = strlen0(src);
-//	if(strlen(src)<length)throw String("Illegal strcpy2 length");// could be filled with 0 :(
-//	if(strlen(dest)<length)throw "Illegal strcpy2 length"_s;// could be filled with 0 :(
+//	if(strlen(src)<length)error(string("Illegal strcpy2 length"));// could be filled with 0 :(
+//	if(strlen(dest)<length)error("Illegal strcpy2 length"_s);// could be filled with 0 :(
 	while (char c = src[i]) {
 		if (length-- == 0)break;
 		dest[i] = c;
@@ -370,7 +370,7 @@ String typeName(Type t) {
 			return "unknown";
 		default:
 			breakpoint_helper
-			throw str("MISSING Type name mapping ") + t;
+			error(str("MISSING Type name mapping ") + t);
 	}
 }
 

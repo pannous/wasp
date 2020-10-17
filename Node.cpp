@@ -305,7 +305,7 @@ Node Node::operator+(Node other) {
 		return this->merge(other);
 	if (other.type == objects)
 		return other.insert(*this, 0);
-	throw str("Operator + not supported for node types %s and %s") % typeName(type) % typeName(other.type);
+	error(str("Operator + not supported for node types %s and %s") % typeName(type) % typeName(other.type));
 };
 
 bool recursive = true;
@@ -428,7 +428,7 @@ Node Node::insert(Node &node, int at) {
 	}
 	if (at == 0)return node + *this;
 	if (at > 0)
-		throw "Not implemented: insert at offset";
+		error("Not implemented: insert at offset");
 	return ERROR;
 }
 //
