@@ -13,7 +13,7 @@ int main(int argp, char **argv) {
 #endif
 	try {
 		init();
-		throw "HhhU";
+		error("HhhU");
 //		testCurrent();
 		return 42;
 	} catch (chars err) {

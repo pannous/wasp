@@ -9,7 +9,7 @@ static Node parse(String source);
 #undef assert // <cassert> / <assert.h>
 
 #define assert(condition) try{\
-   if(condition==0)throw "assert FAILED";else printf("\nassert OK: %s\n",#condition);\
+   if(condition==0)error("assert FAILED");else printf("\nassert OK: %s\n",#condition);\
    }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}

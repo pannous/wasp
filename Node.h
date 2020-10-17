@@ -93,7 +93,7 @@ public:
 
 	Node& first(){
 		if (length>0)return children[0];
-		throw "No such element";
+		error("No such element");
 //		return ERROR;
 	}
 
@@ -194,7 +194,7 @@ public:
 	}
 //
 //	explicit Node(bool truth) {
-//		throw "DONT USE CONSTRUCTION, USE ok?True:False";
+//		error("DONT USE CONSTRUCTION, USE ok?True:False");
 //		if (this == &NIL)
 //			name = "HOW";
 //		value.numbery = truth;
