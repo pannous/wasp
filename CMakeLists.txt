@@ -3,7 +3,7 @@ project(wasp)
 
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
-set(WASM 0)
+set(WASM 1)
 #add_compile_definitions(WASM)
 #target_compile_definitions(my_target WASM WASM)
 set(CMAKE_CXX_STANDARD 20)
