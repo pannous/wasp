@@ -688,7 +688,7 @@ const char * Node::serializeValue() const {
 		case buffers: return "int[]";//val.data lenght?
 		case operators:
 		case expression:
-		case unknown: return "¿";
+		case unknown: return "?";
 		default:
 			error("MISSING CASE");
 			return "MISSING CASE";
