@@ -7,7 +7,7 @@ bool debug=true;
 void raise(char *error){
 	throw ;// wasm CAN'T throw andy object!!: undefined symbol: typeinfo for char const*
 //		throw;// YAY OK!!
-//		throw "OK";// undefined symbol: typeinfo for char const*
+//		error("OK");// undefined symbol: typeinfo for char const*
 //			throw ("OK");
 //		throw 0;// undefined symbol: typeinfo for int
 //		throw String();// vtable for __cxxabiv1::__class_type_info
@@ -120,7 +120,7 @@ void _cxa_allocate_exception(){
 
 void _cxa_throw(){
 	log("_cxa_throw");
-  throw "OUT OF MEMORY";
+  error("OUT OF MEMORY");
 }
 
 #else // NOT WASM:
@@ -801,7 +801,7 @@ private:
 		breakpoint_helper
 		const String &message = UNEXPECT_CHAR + renderChar(text.charAt(at - 1));
 //		throw message;
-		throw error(message);
+		error(message);
 	};
 
 	Node pragma2(char prag = '\n') {// sende in wasp??
@@ -820,7 +820,7 @@ private:
 			proceed();
 		}
 		breakpoint_helper
-		throw error(UNEXPECT_END);
+		error(UNEXPECT_END);
 	};
 
 //	value,  // Place holder for the value function.
@@ -857,7 +857,7 @@ private:
 				white();
 			}
 		}
-		throw error("Expecting ]");
+		error("Expecting ]");
 	};
 
 	char charCodeAt(int base64) {
@@ -1052,7 +1052,7 @@ private:
 			if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
 				if (ch != close) // cant debug wth?
 					if (!current.parent)
-						return ERROR;// throwing? throw "NOT MATCHING" : ERROR;
+						return ERROR;// throwing? error("NOT MATCHING" : ERROR);
 //				break;
 				return current;
 			}// outer match unresolved so far
@@ -1154,7 +1154,7 @@ private:
 };
 
 void ok() {
-	throw "WHAAA";
+	error("WHAAA");
 }
 
 #ifdef BACKTRACE
@@ -1246,17 +1246,14 @@ int main(int argp, char **argv) {
 #endif
 //		logi(reinterpret_cast<long>(args.data));// 0
 //		logi(reinterpret_cast<long>(memory));// 4096
-//		String *neu = new String("a");// 1028 HOW?
-//		logi(reinterpret_cast<long>(neu->data));
-//		Node dat=parse(args);
-//		check(dat["arg"]["test"]=="abc123𐋣OK");
 		log("Hello");
-		log("Hello"_s);
-		log(ftoa(123.456789));
 		log("Hello "_s+"WASM"+"!!!");
+		log("OK format %d"_s.format(123));
 		log("OK format %s???"_s.replace("%s","WASM!"));
-		if(1>0)
-		raise("test_error");
+		Node node = Node("123");// type mismatch in implicit return, expected [i32] but got [] FUUUCK
+		log(node);
+//		if(1>0)
+//		raise("test_error");
 //		tests();
 //		testCurrent();
 		return 43;

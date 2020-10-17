@@ -253,7 +253,7 @@ class BinaryOpcode{
 		if(eq(s, ">"))return f32_gt;
 		if(eq(s, "<"))return f32_lt;
 		if(eq(s, "&&"))return i32_and;
-		throw "invalid operator";
+		error("invalid operator");
 	}
 
 public:
@@ -266,7 +266,7 @@ public:
 		if(eq(s, ">"))return f32_gt;
 		if(eq(s, "<"))return f32_lt;
 		if(eq(s, "&&"))return i32_and;
-		throw "UNKNOWN OP";
+		error("UNKNOWN OP");
 	}
 };
 BinaryOpcode binaryOpcode;
