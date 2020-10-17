@@ -30,7 +30,7 @@ union Value {
 //	Node **children = 0;
 	String string;
 	void *data;
-	number numbery;
+	long numbery;
 //	float floaty;
 	double floaty;
 
@@ -41,6 +41,8 @@ union Value {
 	Value(bool b) {
 		numbery = 1;
 	}
+
+//	~Value() = default;
 };
 
 
@@ -80,8 +82,9 @@ public:
 		return static_cast<Node *>(calloc(sizeof(Node),size));// WOW THAT WORKS!!!
 	}
 	void operator delete (void*){}
-	~Node()= default; // destructor
-//	virtual ~Node();
+//	~Node()= default; // destructor
+//	virtual ~Node() = default;
+
 
 	Node() {
 		type = objects;
@@ -113,27 +116,27 @@ public:
 		value.data = buffer;
 		type = buffers;
 //		todo ("type of array");
-		if (debug)name = "int[]";
+//		if (debug)name = "int[]";
 //			buffer.encoding = "a85";
 	}
 
 	explicit Node(char c) {
-		name = c;
-		value.string = c;
+		name = String(c);
+		value.string = String(c);
 		type = strings;
 	}
 
 	explicit Node(double nr) {
 		value.floaty = nr;
 		type = floats;
-		if (debug)name = itoa0(nr,10); // messes with setField contraction
+		if (debug)name = String(itoa0(nr,10)); // messes with setField contraction
 	}
 
 
 	explicit Node(float nr) {
 		value.floaty = nr;
 		type = floats;
-		if (debug)name = String((number) nr) + String(".…");//#+"#"; // messes with setField contraction
+		if (debug)name = String((long) nr) + String(".…");//#+"#"; // messes with setField contraction
 	}
 
 // how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
@@ -174,7 +177,12 @@ public:
 
 
 //	explicit
-	Node(int nr) {
+	Node(long nr) {
+		value.numbery = nr;
+		type = numbers;
+		if (debug)name = String(itoa(nr)); // messes with setField contraction
+	}
+	explicit Node(int nr) {
 		value.numbery = nr;
 		type = numbers;
 		if (debug)name = String(itoa(nr)); // messes with setField contraction
@@ -184,25 +192,18 @@ public:
 		this->name = name;
 //		type = strings NAH;// unless otherwise specified!
 	}
+//
+//	explicit Node(bool truth) {
+//		throw "DONT USE CONSTRUCTION, USE ok?True:False";
+//		if (this == &NIL)
+//			name = "HOW";
+//		value.numbery = truth;
+//		type = numbers;
+//		if (debug)name = truth ? "✔️" : "✖️";
+////		if (debug)name = nr ? "true" : "false";
+////		this=True; todo
+//	}
 
-	explicit Node(bool truth) {
-		throw "DONT USE CONSTRUCTION, USE ok?True:False";
-		if (this == &NIL)
-			name = "HOW";
-		value.numbery = truth;
-		type = numbers;
-		if (debug)name = truth ? "✔️" : "✖️";
-//		if (debug)name = nr ? "true" : "false";
-//		this=True; todo
-	}
-
-#ifndef WASM
-	explicit
-	Node(number nr) {
-		value.numbery = nr;
-		type = numbers;
-	}
-#endif
 
 	explicit Node(String s, bool identifier = false) {
 //		identifier = identifier || !s.contains(" "); BULLSHIT 'hi' is strings!!
@@ -236,9 +237,7 @@ public:
 
 	bool operator==(int other);
 
-#ifndef WASM
-	bool operator==(number other);
-#endif
+	bool operator==(long other);
 
 	bool operator==(float other);
 
@@ -350,7 +349,7 @@ public:
 
 	Node &setType(Type type);
 
-	number numbere() {
+	long numbere() {
 		return type == numbers or type == bools ? value.numbery : value.floaty;// danger
 	}
 
@@ -366,7 +365,7 @@ public:
 	explicit operator int() const { return value.numbery; }
 
 #ifndef WASM
-	explicit operator number() const { return value.numbery; }
+	explicit operator long() const { return value.numbery; }
 #endif
 
 	explicit operator float() const { return value.floaty; }

@@ -33,7 +33,7 @@ bool assert_equals_x(Node &a, double b, char *context = "") {
 	return a == b;
 }
 
-bool assert_equals_x(Node &a, number b, char *context = "") {
+bool assert_equals_x(Node &a, long b, char *context = "") {
 	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"_s % a % b % context);
 	else printf("OK %d==%d in %f\n"_s % a.value.numbery % b % context);
 	return a == b;
@@ -58,15 +58,7 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 //	else printf("OK %s==%s in %s\n"_s % a % b % context);
 //	return a == b;
 //}
-#ifndef WASM
-bool assert_equals_x(number a, number b, char *context) {
-	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"_s % a % b % context);
-	else printf("OK %d==%d in %s\n"_s % a % b % context);
-	return a == b;
-}
-#endif
-
-bool assert_equals_x(int a, int b, char *context) {
+bool assert_equals_x(long a, long b, char *context) {
 	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"_s % a % b % context);
 	else printf("OK %d==%d in %s\n"_s % a % b % context);
 	return a == b;
@@ -75,7 +67,7 @@ inline float abs_(float x)noexcept{return x>0?x:-x;}
 bool assert_equals_x(float a, float b, char *context = "") {
 	float epsilon = abs_(a + b) / 100000.;// 𝕚𝚤:=-1
 	bool ok = a == b or abs_(a - b) <= epsilon;
-	printf("WTF");
+	printf("WTF ");
 	if (!ok)printf("FAILED assert_equals!\n %f should be %f in %s\n"_s % a % b % context);
 	else printf("OK %f==%f in %s\n"_s % a % b % context);
 	return ok;
@@ -90,7 +82,7 @@ bool assert_isx(char *mark, Node expect) {
 		if (left.type == floats or expect.type == floats)
 			return assert_equals_x(left.floate(), expect.floate(), mark);
 		if (left.type == numbers or expect.type == numbers) {
-			number b = expect.numbere();
+			long b = expect.numbere();
 			return assert_equals_x(left.numbere(), b, mark);
 		}
 		if (left != expect)
@@ -222,7 +214,7 @@ void testMarkSimple() {
 	log("testMarkSimple");
 	Node &a = assert_parses("{a:3}");
 	Node &a3 = a;
-	assert_equals(a3, number(3));
+	assert_equals(a3, long(3));
 	assert(a3 == 3);
 	assert(a3.type == numbers or a3.type == keyNode and a3.value.node->type == numbers);
 	assert(a3.name == "a"_s);
