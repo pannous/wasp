@@ -317,6 +317,7 @@ Node Node::operator+(Node other) {
 	if (other.type == objects)
 		return other.insert(*this, 0);
 	error(str("Operator + not supported for node types %s and %s") % typeName(type) % typeName(other.type));
+	return ERROR;
 };
 
 bool recursive = true;
