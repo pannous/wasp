@@ -47,8 +47,10 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 
 
 bool assert_equals_x(Node a, Node b, char *context = "") {
-	if (a != b)printf("FAILED assert_equals! %s should be %s in %s\n"_s % a % b % context);
-	else printf("OK %s==%s in %s\n"_s % a % b % context);
+	if (a == b)
+		printf("OK %s==%s in %s\n"_s % a % b % context);
+	else
+		printf("FAILED assert_equals! %s should be %s in %s\n"_s % a % b % context);
 	return a == b;
 }
 
@@ -75,6 +77,8 @@ bool assert_equals_x(float a, float b, char *context = "") {
 
 #define assert_equals(a, b) if (!assert_equals_x(a,b)){printf("%s != %s",#a,#b);backtrace_line();}
 
+//bool assert_isx(char *mark, Node expect);
+//bool assert_isx(char *mark, chars expect);
 
 bool assert_isx(char *mark, Node expect) {
 	try {
@@ -93,6 +97,8 @@ bool assert_isx(char *mark, Node expect) {
 	} catch (SyntaxError *err) {
 		printf("\nERROR IN TEST\n");
 		printf("%s", err->data);
+	} catch (...){
+		raise("\nERROR IN TEST (no further data):\n");
 	}
 	return false;
 }
@@ -128,10 +134,6 @@ Node assert_parsesx(const char *mark) {
 
 
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
-bool assert_isx(char *mark, Node expect);
-
-bool assert_isx(char *mark, chars expect);
-
 #define assert_is(mark, result) {\
     printf("TEST %s==%s\n",#mark,#result);\
     bool ok=assert_isx(mark,result);\
