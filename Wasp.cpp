@@ -3,14 +3,30 @@
 
 bool debug=true;
 #ifdef WASM
+//#include <exception>
+void raise(char *error){
+	throw ;// wasm CAN'T throw andy object!!: undefined symbol: typeinfo for char const*
+//		throw;// YAY OK!!
+//		throw "OK";// undefined symbol: typeinfo for char const*
+//			throw ("OK");
+//		throw 0;// undefined symbol: typeinfo for int
+//		throw String();// vtable for __cxxabiv1::__class_type_info
+//		throw nullptr;// ERR();
+//		throw std::exception();// doesn't help … undefined symbol: vtable for std::exception
+}
 #include "String.cpp" // Todo: wasm can't link to String.cpp functions from String.h (e.g. itoa0)
 #else
+#include <cctype>
 #include "String.h"
+void raise(char *error){
+	throw error;
+	}
 #endif
 
 //#include "Node.cpp"
 extern unsigned int *memory;
 unsigned int *memory=(unsigned int *) 4096; // todo how to not handtune _data_end?
+unsigned int *current = memory;
 
 unsigned long __stack_chk_guard= 0xBAAAAAAD;
 void __stack_chk_guard_setup(void) { __stack_chk_guard = 0xBAAAAAAD;/*provide some magic numbers*/ }
@@ -89,13 +105,13 @@ void log(char* s) {
 #endif
 }
 
-void log(chars s) {
-#ifdef WASM
-	while(*s)logc(*s++);
-#else
-	printf("%s\n", s);
-#endif
-}
+//void log(chars s) {
+//#ifdef WASM
+//	while(*s)logc(*s++);
+//#else
+//	printf("%s\n", s);
+//#endif
+//}
 
 
 void _cxa_allocate_exception(){
@@ -229,9 +245,9 @@ public:
 		FILE *f = fopen(filename, "rt");
 		if (!f)err("FILE NOT FOUND "_s + filename);
 		fseek(f, 0, SEEK_END);
-		number fsize = ftell(f);
+		long fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-		char *s = (char *) (alloc(fsize + 2));
+		char *s = (char *) (alloc(fsize , 2));
 		fread(s, 1, fsize, f);
 		fclose(f);
 		return s;
@@ -472,8 +488,8 @@ private:
 		return next - '0';
 	}
 
-	String fromCharCode(number uffff) {
-		return (char) (uffff);// itoa0(uffff);
+	String fromCharCode(long uffff) {// todo UTF
+		return String((char) (uffff));// itoa0(uffff);
 	}
 
 	Node string(char delim = '"') {
@@ -523,7 +539,7 @@ private:
 					else { // escape sequence
 						proceed();
 						if (ch == 'u') { // unicode escape sequence
-							number uffff = 0; // unicode
+							long uffff = 0; // unicode
 							for (i = 0; i < 4; i += 1) {
 								hex = parseInt(proceed(), 16);
 //								if (!isFinite(hex)) { break; }
@@ -812,7 +828,7 @@ private:
 	// Parse an array
 	Node array() {
 //		arr.type = arrays;
-		auto *array0 = static_cast<Node *>(alloc(sizeof(Node *) * 100));// todo: GROW!
+		auto *array0 = static_cast<Node *>(alloc(sizeof(Node *) , 100));// todo: GROW!
 //		arr.value.node = array0;
 		int len = 0;
 		proceed();  // skip the starting '['
@@ -862,7 +878,7 @@ private:
 		for (var i = 0; i < 64; i++) {
 			char charCode = text.charCodeAt(i);
 			if (charCode < 0) // never true: charCode > 128 or
-				err(("Invalid binary charCode %d "_s % (number) charCode) + text.substring(i, i + 2) + "\n" + text);
+				err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
 			lookup64[charCode] = i;
 		}
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
@@ -1205,6 +1221,13 @@ String& operator "" _ss(const char *c, unsigned long t) {// function signature c
 
 //wasm-ld: error: wasp.o: undefined symbol: vtable for __cxxabiv1::__class_type_info
 
+// 2020: WASI does not yet support C++ exceptions. C++ code is supported only with -fno-exceptions for now.
+// https://github.com/WebAssembly/wasi-sdk
+//struct ERR{
+//public:
+//	ERR() = default;
+//	virtual ~ERR() = default;
+//};
 char newline = '\n';
 #ifndef _main_
 int main(int argp, char **argv) {
@@ -1214,23 +1237,29 @@ int main(int argp, char **argv) {
 #endif
 
 	try {
-		log("Hello %s\n"_s.format("WASM"));
-		log("Hello "_ + 123 + newline);
-		Node* n0=new Node(123);
-		log(n0);
-//		Node n=Node(123);
-//		Node n=Node(true);
-//		log(n.type);
-
-//		Node n = Node("abc");
-//		log(new Node(123));
-//		Node(123).log();
-//		log(Node(123));
-
-//		printf("Hello %s", "WASM");
-		tests();
+//		String args=String((char*)0);// RuntimeError: unreachable
+#ifdef WASM
+		String args;// hack: written to by wasmx
+		args.data[0] = '{';
+		log(args);
+		current += strlen(args);
+#endif
+//		logi(reinterpret_cast<long>(args.data));// 0
+//		logi(reinterpret_cast<long>(memory));// 4096
+//		String *neu = new String("a");// 1028 HOW?
+//		logi(reinterpret_cast<long>(neu->data));
+//		Node dat=parse(args);
+//		check(dat["arg"]["test"]=="abc123𐋣OK");
+		log("Hello");
+		log("Hello"_s);
+		log(ftoa(123.456789));
+		log("Hello "_s+"WASM"+"!!!");
+		log("OK format %s???"_s.replace("%s","WASM!"));
+		if(1>0)
+		raise("test_error");
+//		tests();
 //		testCurrent();
-		return 42;
+		return 43;
 	} catch (chars err) {
 		printf("\nERROR\n");
 		printf("%s", err);
