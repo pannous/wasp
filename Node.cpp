@@ -353,7 +353,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		else left.add(n);
 	}
 //		remove(&op);// fucks up pointers?
-	if (recursive)
+	if (recursive and op)
 		return apply(left, *op, right);
 //	};// while (max > 0);
 	return *this;
@@ -363,7 +363,7 @@ void Node::remove(Node *node) {
 	if (!children)return;// directly from pointer
 	if (length == 0)return;
 	if (node < children or node > children + length)return;
-	for (int j = node - children; j < length - 1; j++) {
+	for (long j = node - children; j < length - 1; j++) {
 		children[j] = children[j + 1];
 	}
 	children[length - 1] = 0;
@@ -476,10 +476,10 @@ co_yield 	yield-expression (C++20)
 17 	, 	Comma 	Left-to-right
 	 */
 
-bool leftAssociativity(Node &operater) {
-	return false;
-//	https://icarus.cs.weber.edu/~dab/cs1410/textbook/2.Core/operators.html
-}
+//bool leftAssociativity(Node &operater) {
+//	return false;
+////	https://icarus.cs.weber.edu/~dab/cs1410/textbook/2.Core/operators.html
+//}
 
 float Node::precedence(Node &operater) {
 	// like c++ here HIGHER up == lower value == more important
@@ -564,7 +564,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 	if (op == "xor" or op == "^|") {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
 		if (left.type == bools or right.type == bools) return left.value.numbery ^right.value.numbery ? True : False;
-		return left.value.numbery ^ right.value.numbery;
+		return Node(left.value.numbery ^ right.value.numbery);
 	}
 
 	if (op == "and" or op == "&&") {
@@ -632,7 +632,7 @@ Node &Node::setType(Type type) {
 }
 
 // Node* OK? else Node&
-Node *Node::has(String s, bool searchParams) {
+Node *Node::has(String s, bool searchParams) const {
 	if ((type == objects or type == keyNode) and s == value.node->name)
 		return value.node;
 	for (int i = 0; i < length; i++) {
@@ -662,13 +662,13 @@ bool Node::isEmpty() {// not required here: name.empty()
 
 bool Node::isNil() { // required here: name.empty()
 	return this == &NIL or type == nils or
-	       ((type == keyNode or type == unknown or name.empty()) and length == 0 and value.data == 0);
+	       ((type == keyNode or type == unknown or name.empty()) and length == 0 and value.data == nullptr);
 }
 
 const char * Node::serializeValue() const {
 	String wasp="";
-	Value val = this->value;
-	switch (this->type) {
+	Value val = value;
+	switch (type) {
 		case strings:
 			return val.string;
 		case ints:
@@ -689,8 +689,9 @@ const char * Node::serializeValue() const {
 		case operators:
 		case expression:
 		case unknown: return "¿";
-		default: return "MISSING CASE";
-
+		default:
+			error("MISSING CASE");
+			return "MISSING CASE";
 	}
 }
 const char * Node::serialize() const {

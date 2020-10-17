@@ -55,9 +55,9 @@ void logi(long i) {
 
 #else
 #pragma message "using wasm imports"
-void printf(const char *s){
-	while(*s)logc(*s++);
-}
+//void printf(const char *s){
+//	while(*s)logc(*s++);
+//}
 #endif
 
 class String;
@@ -70,11 +70,11 @@ class String;
 #include <cstring> //strlen
 #else
 //#include "string.h"
-size_t strlen(const char *x){
-	int l=0;
-	while(x[0]&&l<100){x++;l++;}
-	return l;
-}
+//size_t strlen(const char *x){
+//	int l=0;
+//	while(x[0]&&l<100){x++;l++;}
+//	return l;
+//}
 #endif
 //#define cstring
 bool eq(const char *dest, const char *src) {
@@ -82,7 +82,7 @@ bool eq(const char *dest, const char *src) {
 		return false;
 	int i = 0;
 	if(dest=="" and src[0])return false ;
-	if (strlen(dest) != strlen(src))return false;
+	if (strlen0(dest) != strlen0(src))return false;
 	while (char c = dest[i]) {
 		if (!src[i] || !c)
 			return false;
@@ -211,8 +211,8 @@ char *itoa(long num){
 const char *concat(const char *a, const char *b) {
 //const char* concat(char* a,char* b){// free manually!
 	if (!b)return a;
-	int la = (int) strlen(a);
-	int lb = (int) strlen(b);
+	int la = (int) strlen0(a);
+	int lb = (int) strlen0(b);
 //	char c[la+lb];
 	char *c = (char *) alloc(sizeof(char), la + lb + 1);
 	strcpy2(c, a,-1);
@@ -255,13 +255,11 @@ class Node;
 //#import "Node.cpp"
 
 
+#ifndef WASM
 void log(long i) {
-#ifdef WASM
-	logi((int) i);
-#else
 	printf("%li", i);
-#endif
 }
+#endif
 
 
 
@@ -354,8 +352,8 @@ String typeName(Type t) {
 			return "string";
 		case arrays:
 			return "array";
-//		case buffers:
-//			return "buffer";
+		case buffers:
+			return "buffer";
 		case floats:
 			return "float";
 		case numbers:
@@ -371,6 +369,7 @@ String typeName(Type t) {
 		default:
 			breakpoint_helper
 			error(str("MISSING Type name mapping ") + t);
+			return "ERROR";
 	}
 }
 
@@ -397,10 +396,8 @@ void log(String *s) {
 #endif
 }
 
+#ifndef WASM
 void log(chars s){
-#ifdef WASM
-logs(s);
-#else
 printf(s);
-#endif
 }
+#endif

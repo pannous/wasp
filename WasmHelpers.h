@@ -47,11 +47,11 @@ void printf(Node&){
 int isalnum ( int c );
 
 void printf(const char *s);  //stdio
-void print(const char *format, int i);
 void printf(char const*, char const*);
+//void print(const char *format, int i);
 void printf(char const *format, int i);
+void printf(char const *format, char const*,int);
 void printf(const char *format, chars i);
-void printf(const char *format, chars i, int line);
 void printf(const char *format, chars i, chars j);
 void printf(const char *format, chars i, chars j, int l);
 void printf(const char *format, chars i, chars j, chars k, int l);

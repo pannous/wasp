@@ -16,10 +16,12 @@ extern void logi(int i);
 
 #ifdef WASM
 void log(chars s) {
-	while(s++)logc(s[0]);
+	while(*s)logc(*s++);
+	logc('\n');
 }
 void log(char *s) {
-	while(s++)logc(s[0]);
+	while(*s)logc(*s++);
+	logc('\n');
 }
 void log(char c) {
 	logc(c);
@@ -31,7 +33,7 @@ void log(long c) {
 	logi((int)c);
 }
 void printf(const char *s) {
-	while(s++)logc(s[0]);
+	while(*s)logc(*s++);
 }
 void print(String s){
 		log(s.data);
@@ -47,6 +49,10 @@ void printf(const char *format, number i) {
 #endif
 void printf(const char *format, chars value) {
 	print(String(format).replace("%s", value));
+}
+
+void printf(const char *format, const char *val, int value) {
+	print(String(format).format((char*)val).format(value));
 }
 
 void printf(const char *format, void* value) {
