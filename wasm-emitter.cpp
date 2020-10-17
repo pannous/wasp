@@ -132,7 +132,7 @@ public:
 	}
 
 	Code(char byte){
-		data = static_cast<bytes>(alloc(1));
+		data = static_cast<bytes>(alloc(sizeof(char),1));
 		data[0] = byte;
 		length = 1;
 	}
@@ -351,7 +351,7 @@ Code encodeVector (Code data) {
 }
 
 // https://webassembly.github.io/spec/core/binary/modules.html#code-section
-Code encodeLocal (number count, Valtype type) {
+Code encodeLocal (long count, Valtype type) {
 	return unsignedLEB128(count).push(type);
 }
 

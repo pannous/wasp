@@ -21,6 +21,15 @@ void log(chars s) {
 void log(char *s) {
 	while(s++)logc(s[0]);
 }
+void log(char c) {
+	logc(c);
+}
+void log(int i) {
+	logi(i);
+}
+void log(long c) {
+	logi((int)c);
+}
 void printf(const char *s) {
 	while(s++)logc(s[0]);
 }
@@ -51,4 +60,7 @@ void printf(const char *format, void* value) {
 }
 #endif
 
-void* alloc(int size) { return malloc(size);}
+#ifndef WASM
+void* alloc(int size,int num) { return malloc(size*num);}
+#endif
+
