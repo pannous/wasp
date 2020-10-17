@@ -10,7 +10,7 @@
 //#import  "String.h" // FFS
 //#include <stdarg.h> // va_list OK IN WASM???
 //typedef char const * chars;
-#define min(a,b) a<b?a:b
+#define min(a,b) (a < b ? a : b)
 class Node;
 extern bool debug;
 extern Node True;
@@ -94,7 +94,7 @@ public:
 	Node& first(){
 		if (length>0)return children[0];
 		error("No such element");
-//		return ERROR;
+		return ERROR;
 	}
 
 //	if you do not declare a copy constructor, the compiler gives you one implicitly.
