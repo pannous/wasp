@@ -313,10 +313,11 @@ public:
 			printf("BUG");
 			return;
 		}
-#endif
-//		assert (name.data < (char *) 0xffff);
 		if (name and name.data and name.data > (char *) 0xffff and type != objects)
-			printf("name:"_s + String(name.data));
+			printf("name:"_s + name);
+#else
+		printf("name:"_s + name);
+#endif
 		printf(" length:"_s + itoa(length));
 		printf(" type:"_s + typeName(type));
 		printf(" value:"_s + serializeValue());
