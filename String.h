@@ -121,7 +121,7 @@ public:
 //	explicit
 	String(const char string[]) {
 		data = const_cast<char *>(string);
-		length = len(string);
+		length = strlen0(string);
 	}
 
 
@@ -313,7 +313,7 @@ public:
 //		log(" + 2.");
 //		log(c);
 //		log("\n");
-		auto *neu = static_cast<char *>(alloc(sizeof(char), length + c.length + 2));
+		auto *neu = static_cast<char *>(alloc(sizeof(char), length + c.length + 1));
 #ifdef cstring
 		if (data)strcpy(neu, data);
 		if (c.data)strcpy(neu + length, c.data);
@@ -321,7 +321,7 @@ public:
 		if (data)strcpy2(neu, data, length);
 		if (c.data)strcpy2(neu + length, c.data, c.length);
 #endif
-		neu[length + c.length + 1] = 0;
+		neu[length + c.length] = 0;
 //		log(neu);
 //		String* ok=new String(neu);
 //		log("3.");
@@ -448,7 +448,7 @@ public:
 	String replace(chars string, chars with) {// first only!
 		int i = this->indexOf(string);
 		if (i >= 0) {
-			unsigned int from = i + strlen(string);
+			unsigned int from = i + strlen0(string);
 			String string2 = substring(from, -1);
 			String string1 = substring(0, i) + with;
 			String ok = string1 + string2;
