@@ -107,16 +107,15 @@ Node *Node::end() const{
 }
 
 // non-modifying
-Node &Node::merge(Node &other) {
+Node Node::merge(Node &other) {
 	if (other.isNil())return *this;
-	if (other.length == 0)return *this->insert(other).clone();
+	if (other.length == 0){
+		return this->insert(other);
+	}
 	Node &neu = *clone();// non-modifying
 	for (Node &item:other)
 		neu.add(item);
 	return neu;
-//	Node *clon = this->clone();
-//	clon->add(other);
-//	return *clon;
 }// non-modifying
 
 
@@ -225,6 +224,8 @@ bool Node::operator==(float other) {
 
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
+
+
 	if (this == &other)return true;// same pointer!
 	if (isNil() and other.isNil())
 		return true;
@@ -239,12 +240,13 @@ bool Node::operator==(Node &other) {
 	if(type==keyNode and this->value.node and *this->value.node==other)return true;// todo again?
 	if (other.type == unknown and name == other.name)
 		return true; // weak criterum for dangling unknowns!! TODO ok??
-
 	if (not typesCompatible(*this, other))
 		return false;
 	if (type == bools)
-		return value.data == other.value.data or (other != NIL and other != False) or (value.data and
-		                                                                               other.value.data);
+		return value.data == other.value.data;// or (value.data!= nullptr and other.value.data != nullptr a);
+//	CompileError: WebAssembly.Module(): Compiling function #53:"Node::operator==(Node&)" failed: expected 1 elements on the stack for fallthru to @3, found 0 @+5465
+//	or (other != NIL and other != False) or
+
 	if (type == numbers)
 		return value.numbery == other.value.numbery;
 	if (type == strings)
@@ -252,8 +254,15 @@ bool Node::operator==(Node &other) {
 	if (type == floats)
 		return value.floaty == other.value.floaty;
 
+
 	if (length != other.length)
 		return false;
+
+#ifdef WASM
+	todo("Node::operator==(Node &other) in WASM");
+	return false;
+#endif
+
 
 	// if ... compare fields independent of type object {}, group [] ()
 	for (int i = 0; i < length; i++) {
@@ -269,6 +278,7 @@ bool Node::operator==(Node &other) {
 		}
 	}
 
+
 	if (name == other.name)
 		return true;
 	return false;
@@ -278,6 +288,7 @@ bool Node::operator==(Node &other) {
 //	return not(*this == other);
 //}
 //use of overloaded operator '!=' is ambiguous
+//expected 1 elements on the stack for fallthru  BAD somehow!?
 bool Node::operator!=(Node other) {
 	return not(*this == other);
 }

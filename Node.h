@@ -299,7 +299,7 @@ public:
 
 	Node *end() const;
 
-	Node &merge(Node &other);// non-modifying
+	Node merge(Node &other);// non-modifying
 
 	void log() {
 		printf("Node ");
