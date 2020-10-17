@@ -232,7 +232,7 @@ let truenames = {}
 let missing_dependency = (module, fun) => function (x, y, z, a) {
 	true_name = truenames[fun]
 	if (!true_name) {
-		true_name = exec('c++filt ' + fun)
+		true_name = exec('c++filt _' + fun)
 		truenames[fun] = true_name
 	}
 	console.log("missing dependency " + module + "." + fun + "(", x || '' + y || '' + z || '' + a || '', ") : ", true_name)
@@ -252,7 +252,12 @@ function load_wasm_dependencies(_wasm, imports) {
 			// console.log("dependency "+modul+"."+fun)
 			if (!imports[modul]) imports[modul] = {}
 			if (!imports[modul][fun] && 0 !== imports[modul][fun]) {
-				console.log("missing dependency " + modul + "." + fun)
+					true_name = truenames[fun]
+					if (!true_name) {
+						true_name = exec('c++filt _' + fun)
+						truenames[fun] = true_name
+					}
+				console.log("missing dependency " + modul + "." + fun + " : " + true_name)
 				imports[modul][fun] = imports['env'][fun] || missing_dependency(modul, fun) || nop
 			}
 		}
@@ -517,6 +522,7 @@ _Z3logPKc:logc,
 exit:x=>{console.log("EXIT!");process.exit()},
 _Z4exiti:x=>{console.log("EXIT!");process.exit()},
 _Z6printfPKc:printf,//  needs ref types
+_Z5errorPKc:x=>{console.log("ERROR",string(x));process.exit()},
 // _Z4itoal:itoa,
 		// _raise:x=>{throw new Error(string(x))},
 		// print_ln:logs,

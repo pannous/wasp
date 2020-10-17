@@ -13,10 +13,10 @@ export CPPFLAGS="-I/usr/local/opt/llvm/include"
 #
 clang_options="-DWASM  -fvisibility=hidden" # -I /usr/include/ " VS -stdlib=libc++ -nostdinc -nostdlib
 #"String.cpp" "Node.cpp" "WasmHelpers.cpp"
-clang -w -g -emit-llvm -isystem --target=wasm32-unknown-unknown-wasm  -Oz -c $clang_options "Wasp.cpp"
+clang -w -g -emit-llvm -isystem --target=wasm32-unknown-unknown-wasm  -Oz -c $clang_options  "Wasp.cpp"
 llc -march=wasm32 -filetype=obj Wasp.bc -o wasp.o &> /dev/null # --split-dwarf-file=wasp.dwarf --split-dwarf-output=wasp.map ONLY with ELF
 #"--export-all  --flavor wasm
-wasm_ld_options="--export-table --gc-sections -error-limit=10 --entry main"
+wasm_ld_options="--export-table --gc-sections -error-limit=0 --no-check-features --allow-undefined --entry main" #  --undefined=NIL
 #wasm-ld $wasm_ld_options --demangle --allow-undefined CMakeFiles/wasp.dir/Wasp.cpp.o -o wasp.wasm || exit
 wasm-ld $wasm_ld_options --demangle --allow-undefined wasp.o -o wasp.wasm || exit
 wasm2wat wasp.wasm > wasp.wat

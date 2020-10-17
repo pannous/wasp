@@ -3,6 +3,9 @@
 
 bool debug=true;
 #ifdef WASM
+//#import "String.cpp"
+#import "WasmHelpers.cpp"
+#import "Node.cpp"
 //#include <exception>
 void raise(char *error){
 	throw ;// wasm CAN'T throw andy object!!: undefined symbol: typeinfo for char const*
@@ -25,7 +28,7 @@ void raise(char *error){
 
 //#include "Node.cpp"
 extern unsigned int *memory;
-unsigned int *memory=(unsigned int *) 4096; // todo how to not handtune _data_end?
+unsigned int *memory=(unsigned int *) (2*4096); // todo how to not handtune _data_end?
 unsigned int *current = memory;
 
 unsigned long __stack_chk_guard= 0xBAAAAAAD;
@@ -97,13 +100,13 @@ extern "C" void * memset ( void * ptr, int value, size_t num ){
 
 // WHY NOT WORKING WHEN IMPORTED? FUCKING MANGLING!
 // bus error == access out of scope, e.g. logc((void*)-1000)
-void log(char* s) {
-#ifdef WASM
-	while(*s)logc(*s++);
-#else
-	printf("%s\n", s);
-#endif
-}
+//void log(char* s) {
+//#ifdef WASM
+//	while(*s)logc(*s++);
+//#else
+//	printf("%s\n", s);
+//#endif
+//}
 
 //void log(chars s) {
 //#ifdef WASM
@@ -795,6 +798,8 @@ private:
 			case 'I':
 				if (token("Infinity")) { return Infinity; }
 				break;
+			default:
+				break;
 		}
 		if (token("one")) { return True; }
 		if (token("two")) { return Node(2); }
@@ -936,6 +941,8 @@ private:
 							break;
 						case 3:
 							bytes8[p] = num >> 24;
+						default:
+							break;
 					}
 				}
 			}
@@ -1205,10 +1212,11 @@ static Node parse(String source) {
 
 
 class String;
+#ifndef WASM
 void print(String s){
 	log(s.data);
 }
-
+#endif
 //char* operator "" _ss(const char *c, unsigned number t) {// function signature contains illegal type WHYY??
 //	return "NOO";
 //}
@@ -1242,16 +1250,20 @@ int main(int argp, char **argv) {
 		String args;// hack: written to by wasmx
 		args.data[0] = '{';
 		log(args);
-		current += strlen(args);
+		current += strlen0(args);
 #endif
 //		logi(reinterpret_cast<long>(args.data));// 0
 //		logi(reinterpret_cast<long>(memory));// 4096
-		log("Hello");
+		log("Hallo");
 		log("Hello "_s+"WASM"+"!!!");
 		log("OK format %d"_s.format(123));
 		log("OK format %s???"_s.replace("%s","WASM!"));
-		Node node = Node("123");// type mismatch in implicit return, expected [i32] but got [] FUUUCK
-		log(node);
+//		log(typeName(numbers));
+//		Node node = Node("123");// type mismatch in implicit return, expected [i32] but got [] FUUUCK
+//		Compiling function #16:"main" failed: expected 1 elements on the stack for fallthru to @5, found 0
+//		log(node);
+		auto n=new Node(123);//.setType(strings);
+		n->log();
 //		if(1>0)
 //		raise("test_error");
 //		tests();
