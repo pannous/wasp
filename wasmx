@@ -116,10 +116,10 @@ let trimStack = function (ex, more = 0) {
 // console.log(file)
 // console.log()
 
-// memory = new WebAssembly.Memory({initial: 16384, maximum: 65536});
+let memory = new WebAssembly.Memory({initial: 16384, maximum: 65536});
 // table = new WebAssembly.Table({initial: 256 * 4, element: "anyfunc"});
 
-let memory = new WebAssembly.Memory({initial: 256, maximum: 256});
+// let memory = new WebAssembly.Memory({initial: 256, maximum: 256});
 // table = new WebAssembly.Table({initial: 662, maximum: 662, element: "anyfunc"});
 let table = new WebAssembly.Table({initial: 294, maximum: 294, element: "anyfunc"});
 // let table = new WebAssembly.Table({initial: 10, maximum: 10, element: "anyfunc"});
@@ -503,8 +503,13 @@ let imports = {
 		abortStackOverflow: raise,
 		// ^^ emcc
 		resource_write:log, //tiny-go
+Math,
+pow:Math.pow,
+sqrt:Math.sqrt, //...
+__cxa_rethrow:x=>{console.log("CODE THREW (an exception?)",x);process.exit()},
 __stack_chk_fail:x=>{console.log(x);return 3},
 // CPP mangle shit:
+_Z3logc:logc,
 _Z3logPc:logc,
 _Z3logPKc:logc,
 // _Z5allocl:,

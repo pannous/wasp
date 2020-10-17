@@ -7,11 +7,11 @@
 #ifndef WASM
 #include <cstdarg>
 #include <stdio.h>
-#endif
 #include <stdarg.h> // va_list
+#endif
 
 bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
-extern "C" double sqrt(double __a);
+extern "C" double sqrt(double);
 
 //#include <cmath>
 //#include <tgmath.h> // sqrt macro
@@ -45,7 +45,7 @@ Node &Node::operator=(int i) {
 	value.numbery = i;
 	type = numbers;
 	if (name.empty() or name.isNumber())
-		name = itoa(i);
+		name = String(itoa(i));
 	return *this;
 }
 
@@ -206,7 +206,7 @@ bool Node::operator==(int other) {
 }
 
 #ifndef WASM
-bool Node::operator==(number other) {
+bool Node::operator==(long other) {
 	if(type==keyNode and value.node and value.node->value.numbery == other)return true;
 	return (type == numbers and value.numbery == other) or (type == floats and value.floaty == other);
 }
@@ -550,7 +550,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 
 	if (op == "|") {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		if (left.type == numbers and right.type == numbers) return Node(left.value.numbery | right.value.numbery);
+		if (left.type == numbers and right.type == numbers) return Node((long) (left.value.numbery | right.value.numbery));
 		// pipe todo
 	}
 
@@ -563,13 +563,14 @@ Node Node::apply(Node left, Node op0, Node right) {
 
 	if (op == "xor" or op == "^|") {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		long xored = left.value.numbery ^right.value.numbery;
-		return Node(xored);
+		if (left.type == bools or right.type == bools) return left.value.numbery ^right.value.numbery ? True : False;
+		return left.value.numbery ^ right.value.numbery;
 	}
 
 	if (op == "and" or op == "&&") {
 		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		return left.value.data and right.value.data ? True : False;
+		if (left.type == bools or right.type == bools) return left.value.data and right.value.data ? True : False;
+		return Node(left.value.numbery and right.value.numbery);
 	}
 
 	if (op == "or" or op == "||" or op == "&") {

@@ -49,7 +49,7 @@ void logs(const char *s) {
 	printf("%s\n", s);
 }
 
-void logi(number i) {
+void logi(long i) {
 	printf("%li\n", i);
 }
 
@@ -105,15 +105,16 @@ void strcpy2(char *dest, const char *src, int length) {// =-1
 	if (!dest || !src)
 		return;
 	int i = 0;
-	if(length<0)length = strlen(src);
-//	if(strlen(src)<length)throw "Illegal strcpy2 length"; could be filled with 0 :(
-//	if(strlen(dest)<length)throw "Illegal strcpy2 length"; could be filled with 0 :(
+	if(length<0)length = strlen0(src);
+//	if(strlen(src)<length)throw String("Illegal strcpy2 length");// could be filled with 0 :(
+//	if(strlen(dest)<length)throw "Illegal strcpy2 length"_s;// could be filled with 0 :(
 	while (char c = src[i]) {
 		if (length-- == 0)break;
 		dest[i] = c;
 		i++;
 	}
 }
+
 void strcpy2(char *dest, const char *src){
 	strcpy2(dest, src, -1);
 }
@@ -170,8 +171,9 @@ String toString(Node &node);
 // Implementation of itoa0()
 
 
-char *itoa0(number num, int base =10 ) {
-	char *str = (char *) alloc(100);// todo: from context.names char*
+char *itoa0(long num, int base =10 ) {
+	// length 22 -> log(num)/2+2 for base 10
+	char *str = (char *) alloc(sizeof(char),22);// -18446744073709552000  todo: from context.names char*
 	int len = 0;
 	bool isNegative = false;
 	/* Handle 0 explicitely, otherwise empty string is printed for 0 */
@@ -200,10 +202,10 @@ char *itoa0(number num, int base =10 ) {
 	reverse(str, len);
 	return str;
 }
-char *itoa0(number num){
+char *itoa0(long num){
 	return itoa0(num, 10);
 }
-char *itoa(number num){
+char *itoa(long num){
 	return itoa0(num, 10);
 }
 const char *concat(const char *a, const char *b) {
@@ -212,7 +214,7 @@ const char *concat(const char *a, const char *b) {
 	int la = (int) strlen(a);
 	int lb = (int) strlen(b);
 //	char c[la+lb];
-	char *c = (char *) alloc((la + lb + 1) * sizeof(char) );
+	char *c = (char *) alloc(sizeof(char), la + lb + 1);
 	strcpy2(c, a,-1);
 	strcpy2(&c[la], b,-1);
 	c[la + lb] = 0;
@@ -220,7 +222,7 @@ const char *concat(const char *a, const char *b) {
 }
 
 const char *ftoa0(float num, int base=10, int precision=4) {/*significant digits*/
-	return concat(concat(itoa0(int(num),base),"."),itoa0(int(num*pow(base,precision)),base));
+	return concat(concat(itoa0(int(num),base),"."),itoa0(int((num-(long)num)*pow(base,precision)),base));
 }
 const char* ftoa(float num){ return ftoa0(num, 10, 4); }
 
@@ -253,7 +255,7 @@ class Node;
 //#import "Node.cpp"
 
 
-void log(number i) {
+void log(long i) {
 #ifdef WASM
 	logi((int) i);
 #else

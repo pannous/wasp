@@ -6,9 +6,9 @@
 #include "NodeTypes.h"
 
 void reverse(char *str, int len);
-char *itoa0(number num, int base);
-char *itoa0(number num);
-char *itoa(number num);
+char *itoa0(long num, int base);
+char *itoa0(long num);
+char *itoa(long num);
 int atoi0(const char *__nptr);
 double atof0(const char *string);
 //void* calloc(int i);
@@ -96,7 +96,7 @@ public:
 
 	String() {
 #ifdef WASM
-		data = (char *) memory++;
+		data = (char *) current++;
 #else
 		data = static_cast<char *>(calloc(sizeof(char),1));
 #endif
@@ -109,37 +109,34 @@ public:
 	}
 	void operator delete (void*){memory++;}// Todo ;)
 
-	String(char c) {
-		data = static_cast<char *>(calloc(sizeof(char),2));
+//	~String()=default;
+
+	explicit String(char c) {
+		data = static_cast<char *>(alloc(sizeof(char),2));
 		data[0] = c;
 		data[1] = 0;
 		length = 1;
 	}
 
+//	explicit
 	String(const char string[]) {
-#ifdef WASM
-		data = (char *) string;
-#else
 		data = const_cast<char *>(string);
-#endif
-		length = strlen(string);// TODO!
+		length = len(string);
 	}
 
 
 //		String operator+(Type e){
-	String(Type e) : String(typeName(e)) {}
+	explicit String(Type e) : String(typeName(e)) {}
 
 	explicit String(int c) {
 		data = itoa(c);// wasm function signature contains illegal type WHYYYY
 		length = len(data);
 	}
 
-#ifndef WASM
 	explicit String(long c) {
 		data = itoa0(c);
 		length = len(data);
 	}
-#endif
 
 
 	explicit String(double c) {
@@ -148,9 +145,9 @@ public:
 		length = len(data);
 //		itof :
 		append('.');
-		c = c - (number(c));
+		c = c - (long(c));
 		while(length<max_length){
-			c=(c-number(c))*10;
+			c= (c - long(c)) * 10;
 			if(int(c)==0)break;
 			append(int(c)+0x30);
 		}
@@ -186,16 +183,17 @@ public:
 //	operator std::string() const { return "Hi"; }
 
 	String substring(int from, int to = -1) { // excluding to
-		if (to <= from)return "";
 		if (to < 0 or to > length)to = length;
+		if (to <= from)return String();
 		int len = (to - from) + 1;
-		auto *neu = static_cast<char *>(alloc((sizeof(char)) * len));
+		auto neu = static_cast<char *>(alloc((sizeof(char)) , len+1));
 //#ifdef cstring
 //		strcpy(neu, &data[from]);
 //#else
 		strcpy2(neu, &data[from], to - from);
 //#endif
 		neu[to - from] = 0;
+		neu[len]=0;
 		return String(neu);
 //		free(neu);
 	}
@@ -212,13 +210,13 @@ public:
 	}
 
 	String &append(char c) {
-		if (!data)data = static_cast<char *>(alloc(sizeof(char) * 2));
-		if (data + length + 1 == (char *) memory) {// just append recent
+		if (!data)data = static_cast<char *>(alloc(sizeof(char), 2));
+		if (data + length + 1 == (char *) current) {// just append recent
 			data[length++] = c;
 			data[length] = 0;
-			memory += 2;
+			current += 2;
 		} else {
-			auto *neu = static_cast<char *>(alloc(sizeof(char) * length + 5));
+			auto *neu = static_cast<char *>(alloc(sizeof(char) , length + 5));
 			if (data)strcpy2(neu, data);
 			neu[length++] = c;
 			data = neu;
@@ -265,11 +263,10 @@ public:
 	}
 
 
-#ifndef WASM
-	String operator%(number d) {
+	String operator%(long d) {
+//		todo %l ??
 		return this->replace("%d", itoa0(d));
 	}
-#endif
 
 	String operator%(double f) {
 		String formated = String() + itoa0(f) + "." + itoa0((f - int(f)) * 10000);
@@ -311,7 +308,12 @@ public:
 	String operator+(String c) {
 		if (c.length <= 0)
 			return *this;
-		auto *neu = static_cast<char *>(alloc(length + c.length + 1));
+//		log("1.");
+//		log(this);
+//		log(" + 2.");
+//		log(c);
+//		log("\n");
+		auto *neu = static_cast<char *>(alloc(sizeof(char), length + c.length + 2));
 #ifdef cstring
 		if (data)strcpy(neu, data);
 		if (c.data)strcpy(neu + length, c.data);
@@ -319,10 +321,14 @@ public:
 		if (data)strcpy2(neu, data, length);
 		if (c.data)strcpy2(neu + length, c.data, c.length);
 #endif
-		neu[length + c.length] = 0;
-		String ok=String(neu);
-		ok.length = length + c.length;
-		return ok;
+		neu[length + c.length + 1] = 0;
+//		log(neu);
+//		String* ok=new String(neu);
+//		log("3.");
+//		log(ok);
+//		ok.length = length + c.length;
+//		log("-----------------");
+		return String(neu);
 	}
 
 	String operator+(const char x[]) {
@@ -344,11 +350,9 @@ public:
 	String operator+(int i) {
 		return this->operator+(String(i));
 	}
-#ifndef WASM
-	String operator+(number i) {
+	String operator+(long i) {
 		return this->operator+(String(i));
 	}
-#endif
 
 	String operator+(char c) {
 		return this->operator+(String(c));
@@ -443,16 +447,25 @@ public:
 
 	String replace(chars string, chars with) {// first only!
 		int i = this->indexOf(string);
-		if (i >= 0)
-			return String(substring(0, i) + with + substring(i + len(string), length));
+		if (i >= 0) {
+			unsigned int from = i + strlen(string);
+			String string2 = substring(from, -1);
+			String string1 = substring(0, i) + with;
+			String ok = string1 + string2;
+//			log(ok);
+//			log("LENGTH");
+//			logi(ok.length);
+//			return string1;
+			return ok;
+		}
 		else
 			return *this;
 	}
 
 	String times(short i) {
 		if (i < 0)
-			return "";
-		String concat = "";
+			return String();
+		String concat = String();
 		while (i-- > 0)
 			concat += this;
 		return concat;
@@ -469,14 +482,19 @@ public:
 //	explicit
 	operator char *() const { return data; }
 
-	bool isNumber() {
+	[[nodiscard]] bool isNumber() const {
 		return atoi0(data);
 	}
 
-	String format(number i) {
+	String format(int i) {
 		return this->replace("%d", itoa0(i));
 	}
-
+	String format(long i) {
+		return this->replace("%d", itoa0(i));
+	}
+	String format(double f) {
+		return this->replace("%f" , ftoa(f));
+	}
 	String format(char *string) {
 		return this->replace("%s", string);
 	}
