@@ -145,7 +145,7 @@ void err(chars error) {
 #ifdef Backtrace
 	Backtrace(3);
 #endif
-	throw error;
+	raise(error);
 }
 
 void error(chars error) {
@@ -183,7 +183,7 @@ void* operator new(unsigned number size){
 #include "Node.h"
 #include "String.h"
 
-String text = EMPTY;
+String& text = EMPTY;
 // raise defined in signal.h :(
 
 
@@ -220,7 +220,7 @@ public:
 	}
 
 
-	Node read(String source) {
+	Node& read(String source) {
 		if (source.empty()) return NIL;
 		columnStart = at = 0;
 		lineNumber = 1;
@@ -228,7 +228,14 @@ public:
 		text = String(source);
 //		if (typeof options == "object" && options.format && options.format != "wasp")  // parse as other formats
 //			return $convert.parse(source, options);
-		var result = value(); // <<
+//		Node result = NIL;//  Compiling function #34:"Mark::read(String)" failed: expected 1 elements on the stack for fallthru
+		Node& result = NIL;// OK!  WOW, can't copy values!?!
+		return result;
+
+		value();
+//		Node result = value(); // <<
+
+
 		white();
 
 //			while(result.type==reference)
@@ -326,10 +333,9 @@ private:
 //		error.lineNumber = lineNumber;
 //		error.columnNumber = columnNumber;
 		if (throwing)
-			throw error;
+			raise(msg);
 		else
 			return msg;
-		throw msg;//error;
 	};
 
 	String s(const char string[]) {
@@ -1265,6 +1271,10 @@ int main(int argp, char **argv) {
 //		auto n=new Node(123);//.setType(strings);
 		auto n=new Node("123");//.setType(strings);
 		n->log();
+//		"main" failed: expected 1 elements on the stack for fallthru
+		Mark().read("1+1");//.evaluate();
+//		Node left = Mark::eval("1+1");
+
 //		if(1>0)
 //		raise("test_error");
 //		tests();
