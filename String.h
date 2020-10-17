@@ -166,8 +166,8 @@ public:
 	}
 
 	char charCodeAt(int i) {
-		if (i >= length)
-			throw IndexOutOfBounds(data, i);
+//		if (i >= length)
+//			raise(IndexOutOfBounds(data, i).message);
 //		String("IndexOutOfBounds at ") + i + " in " + data;
 //			throw new IndexOutOfBounds(String(" at ") + i + " in " + data);
 		return data[i];
