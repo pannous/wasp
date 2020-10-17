@@ -145,7 +145,11 @@ void err(chars error) {
 #ifdef Backtrace
 	Backtrace(3);
 #endif
+#ifdef WASM
 	raise(error);
+#else
+	throw error;
+#endif
 }
 
 void error(chars error) {
@@ -229,12 +233,9 @@ public:
 //		if (typeof options == "object" && options.format && options.format != "wasp")  // parse as other formats
 //			return $convert.parse(source, options);
 //		Node result = NIL;//  Compiling function #34:"Mark::read(String)" failed: expected 1 elements on the stack for fallthru
-		Node& result = NIL;// OK!  WOW, can't copy values!?!
-		return result;
-
-		value();
-//		Node result = value(); // <<
-
+//		Node& result = NIL;// OK!  WOW, can't copy values!?!
+//		return result;
+		Node result = value(); // <<
 
 		white();
 
@@ -246,7 +247,7 @@ public:
 			result = ERROR;
 		}
 		// Mark does not support the legacy JSON reviver function todo ??
-		return result;
+		return *result.clone();
 	}
 
 
@@ -336,6 +337,7 @@ private:
 			raise(msg);
 		else
 			return msg;
+		return msg;
 	};
 
 	String s(const char string[]) {
@@ -811,28 +813,28 @@ private:
 		if (token("two")) { return Node(2); }
 		breakpoint_helper
 		const String &message = UNEXPECT_CHAR + renderChar(text.charAt(at - 1));
-//		throw message;
-		error(message);
+		error(message);// throws, but WASM still needs:
+		return ERROR;
 	};
 
-	Node pragma2(char prag = '\n') {// sende in wasp??
-		let level = 0;
-		proceed();  // skip starting '('
-		while (ch) {
-			if (ch == ')') {
-				if (level) { level--; } // embedded (...)
-				else { // end of pragma
-					proceed();  // skip ending ')'
-					return pragma2(prag);
-				}
-			} else if (ch == '(') { level++; } // store as normal char
-			// else - normal char
-			prag += ch;
-			proceed();
-		}
-		breakpoint_helper
-		error(UNEXPECT_END);
-	};
+//	void pragma2(char prag = '\n') {// sende in wasp??
+//		let level = 0;
+//		proceed();  // skip starting '('
+//		while (ch) {
+//			if (ch == ')') {
+//				if (level) { level--; } // embedded (...)
+//				else { // end of pragma
+//					proceed();  // skip ending ')'
+//					return pragma2(prag);
+//				}
+//			} else if (ch == '(') { level++; } // store as normal char
+//			// else - normal char
+//			prag += ch;
+//			proceed();
+//		}
+//		breakpoint_helper
+//		error(UNEXPECT_END);
+//	};
 
 //	value,  // Place holder for the value function.
 
@@ -869,6 +871,7 @@ private:
 			}
 		}
 		error("Expecting ]");
+		return ERROR;
 	};
 
 	char charCodeAt(int base64) {
@@ -1277,9 +1280,11 @@ int main(int argp, char **argv) {
 
 //		if(1>0)
 //		raise("test_error");
-//		tests();
+#ifndef WASM
+		tests();
+#endif
 //		testCurrent();
-		return 43;
+		return 42;
 	} catch (chars err) {
 		printf("\nERROR\n");
 		printf("%s", err);
