@@ -64,6 +64,9 @@ void printf(const char *format, void* value) {
 #endif
 
 }
+int isalnum ( int c ){
+	return c>20;// todo lol
+}
 #endif
 
 #ifndef WASM
