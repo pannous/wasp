@@ -988,7 +988,7 @@ void testWasm() {
 
 
 void testBUG() {// move to tests() once done!
-	testParentBUG();
+//	testParentBUG();
 }
 
 
@@ -1007,8 +1007,8 @@ void todos() {
 
 void testCurrent() { // move to tests() once OK
 //	tests();// make sure all still ok before changes
-	testBUG();
-
+//	testBUG();
+//	testParentBUG();
 
 //	testWasm();
 //	testWast();
