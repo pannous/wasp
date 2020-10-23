@@ -11,15 +11,17 @@ rm *.o
 # export CPPFLAGS="-I/usr/local/opt/llvm/include"
 #export C_INCLUDE_PATH="/usr/include/:/usr/lib/x86_64-linux-gnu/glib-2.0/include/"
 #for x in `ls -d /usr/include/*/`;do export C_INCLUDE_PATH="$C_INCLUDE_PATH:$x";done
-clang=/opt/wasm/wasi-sdk-11.0/bin/clang
+clang=/opt/wasm/wasi-sdk/bin/clang
 export BINARYEN=/opt/wasm/binaryen/
-export CPATH=/opt/wasm/swift-wasm/usr/share/wasi-sysroot/include/
+export CPATH=/opt/wasm/wasi-sdk/share/wasi-sysroot/include/
 
 # clang-10: error: cannot specify -o when generating multiple output files
 #"String.cpp" "Node.cpp" "WasmHelpers.cpp"
 
+# --target=wasm32-unknown-unknown-wasm -nostartfiles -nostdlib -allow-undefined ,--export-table,--gc-sections
+
 #DIRECT COMPILE: SLOWER!
-clang_options="-O2 -DWASM -s --target=wasm32-unknown-unknown-wasm -nostartfiles -nostdlib -allow-undefined -Wl,--no-entry,--export-all,--allow-undefined,--export-table,--gc-sections"
+clang_options="-O2 -DWASM -s  -Wl,--no-entry,--export-all,--allow-undefined"
 # -Wl…,… == linker flags for wasm-ld
 # --relocatable
 # --print-gc-sections
@@ -32,10 +34,12 @@ clang_options="-O2 -DWASM -s --target=wasm32-unknown-unknown-wasm -nostartfiles 
   #   --features=<value>
 
 # 
-# $clang $clang_options -w String.cpp -o wasp.wasm #Wasp.cpp #--sysroot=/opt/wasm/swift-wasm/usr/share/wasi-sysroot
+# $clang $clang_options -w String.cpp -o wasp.wasm #Wasp.cpp #--sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot
 
 # COMPILE DIRECTLY from .cpp files wow WORKS!!
-/opt/wasm/wasi-sdk-11.0/bin/clang -std=c++2a -DWASM=1 -nostdlib -march=wasm  -w -v -Wl,--entry=main,--demangle,--allow-undefined String.cpp Node.cpp WasmHelpers.cpp Wasp.cpp -o wasp.wasm || exit
+# -nostdlib -march=wasm  
+# -lstd_v2 -lCsup -lunwind 
+/opt/wasm/wasi-sdk-11.0/bin/clang -std=c++2a -DWASI=1 -lm --sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot -w -Wl,--entry=main,--demangle,--allow-undefined String.cpp Node.cpp WasmHelpers.cpp Wasp.cpp -o wasp.wasm || exit
 
 
 # COMPILE FROM .o files WORKS!!
@@ -71,5 +75,6 @@ wasm-dis -sm wasp.wasm.map wasp.wasm -o wasp.dis
 wasm-decompile wasp.wasm -o wasp.decompile # WORKS EVEN IF wasm2wat FAILS!! also very readable
 # No wasm-compile exists: The format is very low-level, much like Wasm itself, so even though it looks more high level than the .wat format, it wouldn't be any more suitable for general purpose programming.
 
-wasmx wasp.wasm  # danger, -O0 fucks up memoryBase !
+# wasmx wasp.wasm  # danger, -O0 fucks up memoryBase !
+wasmer wasp.wasm
 
