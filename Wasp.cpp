@@ -1,34 +1,25 @@
 //#pragma once
-//#define X86_64 1
+
+#include "WasmHelpers.h"
+#include "String.h" // variable has incomplete type
+#include "Node.h"
+//#import "String.cpp" // import against mangling in wasm (vs include)
+#include "wasm-emitter.h"
 
 bool debug=true;
+
 #ifdef WASM
-//#import "String.cpp"
-#import "WasmHelpers.cpp"
-#import "Node.cpp"
-//#include <exception>
-void raise(char *error){
-	throw ;// wasm CAN'T throw andy object!!: undefined symbol: typeinfo for char const*
-//		throw;// YAY OK!!
-//		error("OK");// undefined symbol: typeinfo for char const*
-//			throw ("OK");
-//		throw 0;// undefined symbol: typeinfo for int
-//		throw String();// vtable for __cxxabiv1::__class_type_info
-//		throw nullptr;// ERR();
-//		throw std::exception();// doesn't help … undefined symbol: vtable for std::exception
-}
-#include "String.cpp" // Todo: wasm can't link to String.cpp functions from String.h (e.g. itoa0)
+//#import "WasmHelpers.cpp"
+//#import "Node.cpp"
+//#import "Map.cpp"
+//#import "String.cpp" // Todo: wasm can't link to String.cpp functions from String.h (e.g. itoa0): 'clang -o x.bc only allows one file)
 #else
 #include <cctype>
-#include "String.h"
-void raise(char *error){
-	throw error;
-	}
 #endif
 
 //#include "Node.cpp"
 extern unsigned int *memory;
-unsigned int *memory=(unsigned int *) (2*4096); // todo how to not handtune _data_end?
+unsigned int *memory=(unsigned int *) 1024; // <?> memoryBase set in wasmx !?!?   todo how to not handtune _data_end?
 unsigned int *current = memory;
 
 unsigned long __stack_chk_guard= 0xBAAAAAAD;
@@ -60,127 +51,22 @@ typedef unsigned long size_t;
 #endif
 
 
-//#import "WasmHelpers.h" // import so names are not mangled
-#include "WasmHelpers.h"
-#include "String.h" // variable has incomplete type
-#include "Node.h"
-//#import "String.cpp" // import against mangling in wasm (vs include)
-#include "wasm-emitter.h"
-
-#ifdef WASM
-#ifdef X86_64
-typedef number unsigned int size_t;
-#else
-// typedef number unsigned int size_t;
-//typedef unsigned int size_t;
-typedef unsigned long size_t;
-#endif
-
-
-extern "C" void * memset ( void * ptr, int value, size_t num ){
-	int* ptr0=(int*)ptr;
-	for (int i = 0; i < num; i++)
-		ptr0[i]=value;
-	return ptr;
-}
-//void* operator new[](size_t size){ // stack
-//	current=memory;
-//	memory+=size;
-////	logs("new[]");
-////	logi((number)current);
-//	return current;
-//}
-//void* operator new(size_t size){ // stack
-//	current=memory;
-//	memory+=size;
-////	logs("new");
-////	logi((number)current);
-//	return current;
-//}
-
-// WHY NOT WORKING WHEN IMPORTED? FUCKING MANGLING!
-// bus error == access out of scope, e.g. logc((void*)-1000)
-//void log(char* s) {
-//#ifdef WASM
-//	while(*s)logc(*s++);
-//#else
-//	printf("%s\n", s);
-//#endif
-//}
-
-//void log(chars s) {
-//#ifdef WASM
-//	while(*s)logc(*s++);
-//#else
-//	printf("%s\n", s);
-//#endif
-//}
-
-
-void _cxa_allocate_exception(){
- log("_cxa_allocate_exception!");
-}
-
-void _cxa_throw(){
-	log("_cxa_throw");
-  error("OUT OF MEMORY");
-}
-
-#else // NOT WASM:
-
-#include <zconf.h>
-//#import "Backtrace.cpp"
-#include "ErrorHandler.h"
-
-#ifndef __APPLE__
-#include <alloc.h>
-#endif
-
-#include <zconf.h>
-#include <cstdio>
-
-//NEEDED, else terminate called without an active exception
-
-void err(chars error) {
-#ifdef Backtrace
-	Backtrace(3);
-#endif
-#ifdef WASM
-	raise(error);
-#else
-	throw error;
-#endif
-}
-
-void error(chars error) {
-	err(error);
-}
-
-void warn(chars warning) {
-	printf("%s\n", warning);
-}
-
-void warning(chars warning) {
-	printf("%s\n", warning);
-}
-
-// #include <cstdlib> // alloc too
-//#include <stdio.h> // print
-#endif
 
 #ifdef WASM64
-void* operator new[](unsigned number size){
-	memory+=size;
-	return memory;
+void* operator new[](unsigned long size){
+	last = current;
+	current+=size;
+	return last;
 }
-void* operator new(unsigned number size){
-	memory+=size;
-	return memory;
+void* operator new(unsigned long size){
+	last = current;
+	current+=size;
+	return last;
 }
 #endif
 
-#ifndef WASM
-#import "Fetch.cpp"
+#ifndef WASM || WASI
+//#import "Fetch.cpp"
 //#include "Fetch.h"
 #endif
 
@@ -229,18 +115,9 @@ public:
 		columnStart = at = 0;
 		lineNumber = 1;
 		ch = ' ';
-		text = String(source);
-//		if (typeof options == "object" && options.format && options.format != "wasp")  // parse as other formats
-//			return $convert.parse(source, options);
-//		Node result = NIL;//  Compiling function #34:"Mark::read(String)" failed: expected 1 elements on the stack for fallthru
-//		Node& result = NIL;// OK!  WOW, can't copy values!?!
-//		return result;
+		text = source;
 		Node result = value(); // <<
-
 		white();
-
-//			while(result.type==reference)
-
 		if (ch && ch != -1) {
 			breakpoint_helper
 			error("Expect end of input");
@@ -425,7 +302,7 @@ private:
 	};
 
 	// Parse a number value.
-	Node numbers() {
+	Node numbero() {
 		let sign = '\n';
 		let string = String("");
 		int number0, base = 10;
@@ -723,11 +600,11 @@ private:
 	}
 
 	Node symbol() {
-		if (ch >= '0' && ch <= '9')return numbers();
+		if (ch >= '0' && ch <= '9')return numbero();
 		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
 		if (is_operator(ch))return builtin_operator();
 		breakpoint_helper
-		error(UNEXPECT_CHAR + renderChar(ch));
+		raise(UNEXPECT_CHAR + renderChar(ch));
 		return NIL;
 	}
 
@@ -772,7 +649,7 @@ private:
 		bool allow_unknown_words = true;// todo depending on context
 		if (allow_unknown_words)
 			return expression();
-		return ch >= '0' && ch <= '9' ? numbers() : word();
+		return ch >= '0' && ch <= '9' ? numbero() : word();
 	}
 
 	// Parse true, false, null, Infinity, NaN
@@ -813,7 +690,7 @@ private:
 		if (token("two")) { return Node(2); }
 		breakpoint_helper
 		const String &message = UNEXPECT_CHAR + renderChar(text.charAt(at - 1));
-		error(message);// throws, but WASM still needs:
+		raise(message);// throws, but WASM still needs:
 		return ERROR;
 	};
 
@@ -1019,7 +896,15 @@ private:
 		if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1 and
 		    val.name.empty())
 			val = val.last();// singleton
-		if (val.value.numbery and val.type != objects and val.name.empty()) {
+		bool deep_copy = val.name.empty() or !debug;
+		if(debug) {
+			deep_copy = deep_copy || val.type == Type::numbers and val.name == itoa(val.value.number);
+			deep_copy = deep_copy || val.type == Type::bools and (val.name == "True" or val.name == "False");
+			deep_copy = deep_copy || val.type == Type::floats and val.name == ftoa(val.value.floaty);
+		} // shit just for debug labels. might remove!!
+// last part to preserve {deep{a:3,b:4,c:{d:'hi'}}} != {deep{a:3,b:4,c:'hi'}}
+
+		if (val.value.number and val.type != objects and deep_copy) {
 			if (&key == &NIL or key.isNil() or key == NIL or val.value.floaty == 6.4807)
 				if (key.name == nil_name)
 					warn("impossible");
@@ -1069,8 +954,7 @@ private:
 				if (ch != close) // cant debug wth?
 					if (!current.parent)
 						return ERROR;// throwing? error("NOT MATCHING" : ERROR);
-//				break;
-				return current;
+				break;//				return current but with extra logic: merge a:3 so that a has value 3 etc;
 			}// outer match unresolved so far
 			switch (ch) {
 				case '=':
@@ -1081,17 +965,17 @@ private:
 					break;
 				}
 				case '{': {
-					Node &object = value('}').setType(Type::objects);
+					Node &object = value('}',&current.last()).setType(Type::objects);
 					current.last().add(object);
 					break;
 				}
 				case '[': {
-					Node &pattern = value(']').setType(Type::patterns);
-					current.add(pattern);
+					Node &pattern = value(']',&current).setType(Type::patterns);
+					current.last().add(pattern);
 					break;
 				}
 				case '(': {
-					Node &group = value(')').setType(Type::groups);
+					Node &group = value(')',&current.last()).setType(Type::groups);
 					current.last().add(group);
 					break;
 				}// lists handled by ' '!
@@ -1104,7 +988,7 @@ private:
 				case '+':
 				case '.':
 					if (isDigit(next))
-						return numbers();
+						return numbero();
 					else
 						return words();
 				case '/':
@@ -1149,7 +1033,7 @@ private:
 			}
 		}
 		bool keepBlock = close == '}';
-		if (current.length == 0 and current.param) {
+		if (current.length == 0 and current.param) {// promote params to children!!
 			current.children = current.param->children;
 			current.length = current.param->length;
 			current.param = nullptr;; // delete after copy to current.param . todo: what about extra meta info?
@@ -1157,11 +1041,12 @@ private:
 		}
 		if (current.length == 1) {
 //			if (current.value.node == &current.children[0])return *current.value.node;
-//			if (current.value.numbery and current.children[0].value.numbery)
-//				if (current.value.node->value.numbery != current.children[0].value.numbery)
+//			if (current.value.number and current.children[0].value.number)
+//				if (current.value.node->value.number != current.children[0].value.number)
 //					error("ambiguous values");
-//			if (current.value.numbery)
+//			if (current.value.number)
 //				current.children[0].value = current.value;
+			current.children[0].parent = current.parent;
 			return current.children[0];
 		}
 		return current;
@@ -1188,28 +1073,23 @@ void handler(int sig) {
 }
 #endif
 
-struct TTT {
-	int x;
-	chars y;
-	char wtf[1000];
-};
-
 
 //void assert_is(char *wasp, Node result);
 
 void init() {
 	NIL.type = nils;
-	NIL.value.numbery = 0;
+	NIL.value.number = 0;
 	False.type = bools;
-	False.value.numbery = 0;
+	False.value.number = 0;
 	True.type = bools;
-	True.value.numbery = 1;
+	True.value.number = 1;
 }
 
 #import "tests.cpp"
 
 static Node parse(String source) {
 	printf("Parsing %s\n", source.data);
+	if(!source.data)return NIL;
 	return Mark().read(source);
 }
 
@@ -1226,16 +1106,8 @@ void print(String s){
 	log(s.data);
 }
 #endif
-//char* operator "" _ss(const char *c, unsigned number t) {// function signature contains illegal type WHYY??
-//	return "NOO";
-//}
-String& operator "" _ss(const char *c, unsigned long t) {// function signature contains illegal type WHYY??
-	String string;
-	String *pString = &string;
-//	String *pString = new String("NOO");
-	return *pString;
-}
 
+struct Exception {};
 //wasm-ld: error: wasp.o: undefined symbol: vtable for __cxxabiv1::__class_type_info
 
 // 2020: WASI does not yet support C++ exceptions. C++ code is supported only with -fno-exceptions for now.
@@ -1247,6 +1119,7 @@ String& operator "" _ss(const char *c, unsigned long t) {// function signature c
 //};
 char newline = '\n';
 #ifndef _main_
+#define __MAIN__
 int main(int argp, char **argv) {
 
 #ifdef register_global_signal_exception_handler
@@ -1254,37 +1127,20 @@ int main(int argp, char **argv) {
 #endif
 
 	try {
-//		String args=String((char*)0);// RuntimeError: unreachable
 #ifdef WASM
-		String args;// hack: written to by wasmx
+		String args((char*)alloc(1,1));// hack: written to by wasmx
 		args.data[0] = '{';
 		log(args);
-		current += strlen0(args);
+		current += strlen0(args)+1;
 #endif
-//		logi(reinterpret_cast<long>(args.data));// 0
-//		logi(reinterpret_cast<long>(memory));// 4096
-		log("Hallo");
-		log("Hello "_s+"WASM"+"!!!");
-		log("OK format %d"_s.format(123));
-		log("OK format %s???"_s.replace("%s","WASM!"));
-//		log(typeName(numbers));
-//		Node node = Node("123");// type mismatch in implicit return, expected [i32] but got [] FUUUCK
-//		Compiling function #16:"main" failed: expected 1 elements on the stack for fallthru to @5, found 0
-//		log(node);
-//		auto n=new Node(123);//.setType(strings);
-		auto n=new Node("123");//.setType(strings);
-		n->log();
-//		"main" failed: expected 1 elements on the stack for fallthru
-		Mark().read("1+1");//.evaluate();
-//		Node left = Mark::eval("1+1");
-
-//		if(1>0)
-//		raise("test_error");
-#ifndef WASM
+		log("Hello "_s + "WASM");
+		testCurrent();
 		tests();
+#ifndef WASM
 #endif
-//		testCurrent();
 		return 42;
+	} catch (Exception e) {
+		printf("\nException WOOW\n");
 	} catch (chars err) {
 		printf("\nERROR\n");
 		printf("%s", err);
@@ -1295,7 +1151,7 @@ int main(int argp, char **argv) {
 		printf("\nERROR\n");
 		printf("%s", err->data);
 	}
-	usleep(1000000000);
+//	usleep(1000000000);
 	return -1;
 }
 

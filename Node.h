@@ -3,12 +3,9 @@
 // Created by pannous on 30.09.19.
 //
 
-#ifndef MARK_NODE_H
-#define MARK_NODE_H
-
 #include "String.h"
 //#import  "String.h" // FFS
-//#include <stdarg.h> // va_list OK IN WASM???
+#include <stdarg.h> // va_list OK IN WASM???
 //typedef char const * chars;
 #define min(a,b) (a < b ? a : b)
 class Node;
@@ -22,6 +19,7 @@ extern Node NaN;// = Node("NaN");
 
 void log(Node &);
 void log(Node*);
+void printf(Node&);
 
 //class String;
 union Value {
@@ -30,16 +28,16 @@ union Value {
 //	Node **children = 0;
 	String string;
 	void *data;
-	long numbery;
+	long number;
 //	float floaty;
 	double floaty;
 
 	Value() {}// = default;
 	Value(int i) {
-		numbery = i;
+		number = i;
 	}
 	Value(bool b) {
-		numbery = 1;
+		number = 1;
 	}
 
 //	~Value() = default;
@@ -81,7 +79,9 @@ public:
 	void* operator new(unsigned long size){
 		return static_cast<Node *>(calloc(sizeof(Node),size));// WOW THAT WORKS!!!
 	}
-	void operator delete (void*){}
+	void operator delete (void* a){
+		printf("DELETING");
+	}
 //	~Node()= default; // destructor
 //	virtual ~Node() = default;
 
@@ -178,12 +178,12 @@ public:
 
 //	explicit
 	Node(long nr) {
-		value.numbery = nr;
+		value.number = nr;
 		type = numbers;
 		if (debug)name = String(itoa(nr)); // messes with setField contraction
 	}
 	explicit Node(int nr) {
-		value.numbery = nr;
+		value.number = nr;
 		type = numbers;
 		if (debug)name = String(itoa(nr)); // messes with setField contraction
 	}
@@ -197,7 +197,7 @@ public:
 //		error("DONT USE CONSTRUCTION, USE ok?True:False");
 //		if (this == &NIL)
 //			name = "HOW";
-//		value.numbery = truth;
+//		value.number = truth;
 //		type = numbers;
 //		if (debug)name = truth ? "✔️" : "✖️";
 ////		if (debug)name = nr ? "true" : "false";
@@ -213,7 +213,7 @@ public:
 			type = reference;
 		}
 //		else if (atoi(s) and s == itoa0(atoi(s))) {
-//			value.numbery = atoi(s);
+//			value.number = atoi(s);
 //			type = numbers;
 //			}
 //		else if (atof(s)) { value.floaty = atoi(s); }
@@ -232,7 +232,7 @@ public:
 
 	explicit
 	operator bool() {
-		return value.numbery or length > 1 or (length == 1 and this != children and (bool) (children[0]));
+		return value.number or length > 1 or (length == 1 and this != children and (bool) (children[0]));
 	}
 
 	bool operator==(int other);
@@ -295,9 +295,9 @@ public:
 	void remove(Node *node); // directly from children
 	void remove(Node &node); // via compare children
 
-	Node *begin() const;
+	[[nodiscard]] Node *begin() const;
 
-	Node *end() const;
+	[[nodiscard]] Node *end() const;
 
 	Node merge(Node &other);// non-modifying
 
@@ -309,15 +309,15 @@ public:
 		}
 //		if || name==nil_name …
 #ifndef WASM
+#ifndef WASI
 		if (name.data < (char *) 0xffff) {
 			printf("BUG");
 			return;
 		}
 		if (name and name.data and name.data > (char *) 0xffff and type != objects)
-			printf("name:"_s + name);
-#else
-		printf("name:"_s + name);
 #endif
+#endif
+		printf("name:"_s + name);
 		printf(" length:"_s + itoa(length));
 		printf(" type:"_s + typeName(type));
 		printf(" value:"_s + serializeValue());
@@ -332,11 +332,11 @@ public:
 //		if (type == objects and value.data)
 //			printf(" value.name %s", value.string.data);// ???
 //		if (type == bools)
-//			printf(" value %s", value.numbery ? "TRUE" : "FALSE");
+//			printf(" value %s", value.number ? "TRUE" : "FALSE");
 //		if (type == strings)
 //			printf(" value %s", value.string.data);
 //		if (type == numbers)
-//			printf(" value %li", value.numbery);
+//			printf(" value %li", value.number);
 //		if (type == floats)
 //			printf(" value %f", value.floaty);
 		printf(" [");
@@ -357,23 +357,21 @@ public:
 	Node &setType(Type type);
 
 	long numbere() {
-		return type == numbers or type == bools ? value.numbery : value.floaty;// danger
+		return type == numbers or type == bools ? value.number : value.floaty;// danger
 	}
 
 	float floate() {
-		return type == numbers ? value.numbery : value.floaty;// danger
+		return type == numbers ? value.number : value.floaty;// danger
 	}
 
 	Node *has(String s, bool searchParams = true) const;
 
 // type conversions
-	explicit operator bool() const { return value.numbery; }
+	explicit operator bool() const { return value.number; }
 
-	explicit operator int() const { return value.numbery; }
+	explicit operator int() const { return value.number; }
 
-#ifndef WASM
-	explicit operator long() const { return value.numbery; }
-#endif
+	explicit operator long() const { return value.number; }
 
 	explicit operator float() const { return value.floaty; }
 
@@ -399,4 +397,3 @@ public:
 	Node setValue(Value v);
 };
 typedef const Node Nodec;
-#endif //MARK_NODE_H
