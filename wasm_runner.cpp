@@ -2,12 +2,17 @@
 // Created by me on 23.10.20.
 //
 
+// https://pengowray.github.io/wasm-ops/
+
 #include <include/wasm_c_api.h>
 #include "wasm_runner.h"
 /*
  * Copyright (C) 2019 Intel Corporation.  All rights reserved.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  */
+
+//#define RAW 1
+#define RAW 0
 
 #include "wasm_export.h"
 #include "bh_read_file.h"
@@ -29,11 +34,16 @@ uint8_t buffer0[] = {// test program
 //int32_t is just int
 int intToStr(int x, char *str, int str_len, int digit) {}// wavm can call char* ! no JS restrictions!!
 
-int32_t get_pow(wasm_exec_env_t exec_env, int32_t x, int32_t y) {
-	printf("exec_env %s", exec_env);
+int get_pow(int x, int y) {
+	return x*y;
+}
+int32_t get_powx(wasm_exec_env_t exec_env, int32_t x, int32_t y) {
 	return x*y;
 }
 long get_pow2(long x, long y) {
+	return x*y;
+}
+long get_pow2x(wasm_exec_env_t grr, long x, long y) {
 	return x*y;
 }
 wasm_trap_t* hello_callback(const wasm_val_t args[], wasm_val_t results[]) {
@@ -41,7 +51,7 @@ wasm_trap_t* hello_callback(const wasm_val_t args[], wasm_val_t results[]) {
 	printf("> Hello World!\n");
 	return NULL;
 }
-//void logi2(int x);
+void logi(int x);
 void logi2(wasm_exec_env_t exec_env,int x){
 	printf ("calling into native function: %s\n", __FUNCTION__);
 	printf("%d\n", x);
@@ -131,7 +141,7 @@ int main(int argc, char *argv_main[]) {
 						},
 						{
 								"logi",            // the name of WASM function name
-								(void *) logi2,            // the native function pointer
+								(void *) logi,            // the native function pointer
 								"(i)",            // the function prototype signature, avoid to use i32
 								NULL                // attachment is NULL
 						}
@@ -145,6 +155,7 @@ int main(int argc, char *argv_main[]) {
 		init_args.n_native_symbols = sizeof(native_symbols) / sizeof(NativeSymbol);
 		init_args.native_module_name = "env";
 		init_args.native_symbols = native_symbols;
+		init_args.native_raw_functions = RAW; // false;// true;// use WASM_ENABLE_RAW_NATIVES 1
 
 		if (!wasm_runtime_full_init(&init_args))
 			return fail("Init runtime environment FAILED.\n");
