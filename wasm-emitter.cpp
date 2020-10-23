@@ -3,8 +3,12 @@
 #include "String.h"
 #include "Map.h"
 #include "wasm-emitter.h"
+#include "WasmHelpers.h"
+#ifdef WASM
+#import  "WasmHelpers.cpp"
+#endif
 //#include "string.h" // memcpy
-void * memcpy ( void * destination, const void * source, size_t num );
+
 class Code;
 typedef char* bytes;
 typedef char byter[];
@@ -24,12 +28,19 @@ void todo() {
 
 
 
-bytes concat(bytes a, bytes b,int len_a, int len_b) {
+void memcpy(bytes c, bytes a, int i);
+
+bytes concat(bytes a, bytes b, int len_a, int len_b) {
 	bytes c=new char[len_a+len_b+1];
 	memcpy(c, a, len_a);
 	memcpy(c+len_a, b, len_b);
 	return c;
 }
+
+void memcpy(bytes dest, bytes source, int i) {
+ while (i--)dest[i]=source[i];
+}
+
 bytes concat(byter a, char b,int len) {
 	bytes c=new char[len+1];
 	memcpy(c, a, len);

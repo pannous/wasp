@@ -2,8 +2,13 @@
 //
 // Created by pannous on 19.12.19.
 //
+//#include <c++/v1/cstdlib>
 #include "WasmHelpers.h"
 #include "NodeTypes.h"
+#ifndef WASM
+#include <cstdlib>
+#include <cstdio> // printf
+#endif
 
 void reverse(char *str, int len);
 char *itoa0(long num, int base);
@@ -32,8 +37,8 @@ class Node;
 typedef const char *chars;
 
 #ifndef WASM
-#include <string>
-#include <stdlib.h> // pulls in declaration of malloc, free
+//#include <string>
+//#include <stdlib.h> // pulls in declaration of malloc, free
 #else
 #endif
 //void* alloc(number size);// wasm | linux
@@ -56,7 +61,7 @@ bool eq(const char *dest, const char *src);
 void strcpy2(char *dest, const char *src);
 void strcpy2(char *dest, const char *src, int length);
 int strlen0(const char *x);
-size_t   strlen(const char *__s);
+//size_t   strlen(const char *__s);
 
 
 //const char *ftoa(float num, int base = 10, int precision = 4);
@@ -78,7 +83,7 @@ public:
 };
 
 String typeName(Type t);
-
+//char null_value[]={0};// todo make sure it's immutable!!
 class String{
 
 #ifdef WASM
@@ -86,7 +91,7 @@ class String{
 //	void* calloc(size_t s,int idk);
 #else
 #ifndef __APPLE__
-#include <alloc.h>
+//#include <alloc.h>
 #endif
 #endif
 
@@ -95,19 +100,16 @@ public:
 	int length = -1;
 
 	String() {
-#ifdef WASM
-		data = (char *) current++;
-#else
-		data = static_cast<char *>(calloc(sizeof(char),1));
-#endif
-		data[0]=0;// be safe!
+//		assert(null_value[0] == 0);
+		data =  {0};//null_value;
+//		data = static_cast<char *>(calloc(1, 1));
 		length = 0;
 	}
 
 	void* operator new(unsigned long size){
 		return static_cast<String *>(calloc(sizeof(String),size));// WOW THAT WORKS!!!
 	}
-	void operator delete (void*){memory++;}// Todo ;)
+	void operator delete (void*){}// Todo ;)
 
 //	~String()=default;
 
@@ -120,8 +122,10 @@ public:
 
 //	explicit
 	String(const char string[]) {
-		data = const_cast<char *>(string);
+		data = const_cast<char *>(string);// heap may disappear, use copy!
 		length = strlen0(string);
+//		data = static_cast<char *>(alloc(sizeof(char), length));
+//		strcpy2(data, string, length+1);
 	}
 
 
@@ -153,7 +157,7 @@ public:
 		}
 	}
 
-#ifndef WASM
+#ifdef std
 	String(std::string basicString) {
 		data = const_cast<char *>(basicString.data());// copy?
 	}
@@ -253,9 +257,15 @@ public:
 		return b;
 	}
 
+	String operator%(const char *c) {
+		return this->replace("%s", c);
+	}
 
 	String operator%(char *c) {
 		return this->replace("%s", c);
+	}
+	String operator%(char c) {
+		return this->replace("%c", String(c).data);
 	}
 
 	String operator%(int d) {
@@ -426,7 +436,7 @@ public:
 	}
 
 	int indexOf(chars string) {
-		int l = len(string);
+		int l = strlen0(string);
 		for (int i = 0; i <= length - l; i++) {
 			bool ok = true;
 			for (int j = 0; j < l; j++) {
@@ -449,17 +459,11 @@ public:
 		int i = this->indexOf(string);
 		if (i >= 0) {
 			unsigned int from = i + strlen0(string);
-			String string2 = substring(from, -1);
-			String string1 = substring(0, i) + with;
-			String ok = string1 + string2;
-//			log(ok);
-//			log("LENGTH");
-//			logi(ok.length);
-//			return string1;
-			return ok;
+			return substring(0, i) + with + substring(from, -1);
 		}
-		else
+		else {
 			return *this;
+		}
 	}
 
 	String times(short i) {
@@ -516,8 +520,11 @@ public:
 };
 
 #define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
-//String operator ""_s(const char* c, size_t);
+
+String operator ""_(const char* c, unsigned long );
 String operator ""_s(const char* c, unsigned long );
+String operator ""s(const char* c, unsigned long );
+
 
 
 extern String UNEXPECT_END;// = "Unexpected end of input";
@@ -530,9 +537,9 @@ extern String groups_name;// = "(…)";
 extern String patterns_name;// = "[…]";
 extern String EMPTY;// = String('\0');
 
-String operator "" s(const char *c, unsigned long );//size_t
-String operator "" _(const char *c, unsigned long );
-String operator "" _s(const char *c, unsigned long );
+//String operator "" s(const char *c, unsigned long );// wasm function signature contains illegal type
+//String operator "" _(const char *c, unsigned long );
+//String operator "" _s(const char *c, unsigned long );
 void log(String *s);
 void log(chars s);
 //#endif
