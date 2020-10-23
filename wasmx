@@ -3,9 +3,23 @@
 
 // ^^ TRICK to get wasm --harmony > --experimental-modules 
 // https://stackoverflow.com/questions/48179714/how-can-an-es6-module-be-run-as-a-script-in-node
-// #!/usr/bin/env node 
+
+// #!/usr/bin/env node
 
 // /me/dev/script/shell/wasmx
+
+
+test="/me/wasp/example.wasm" // if no param given
+
+// let memory_size=256 // noo lol
+let memory_size=16384
+let memoryBase=1024
+let table_size=294
+
+let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
+let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
+
+
 
 module.paths.push("/usr/lib/node_modules/"); // WHY??
 
@@ -15,22 +29,25 @@ module.paths.push("/usr/lib/node_modules/"); // WHY??
 let Schism=require('/opt/wasm/schism_runtime.js')
 // [Engine,Pair,Closure,EOF]
 let {TextEncoder, TextDecoder} = require('text-encoding')
+
 exec = x => require('child_process').execSync(x).toString()
+let rt,kotlin_imports=require('./wasmx.extensions.js')
+try{let WASIPolyfill=wasi_unstable=require('./wasi_unstable.js') }catch(x){wasi_unstable=null}
+
+
+let teavm={benchmark:{},runtime:{},canvas:{},math:Math}
+teavm.runtime={NaN: 0, Infinity, Math,isFinite}
+teavm.runtime.currentTimeMillis=()=>new Date().getTime()
+
 try{
-let WASIPolyfill=wasi_unstable=require('./wasi_unstable.js')
-}catch(x){wasi_unstable=null}
+const { createCanvas, loadImage } = require('canvas')
+const canvas = createCanvas(200, 200)
+const ctx = canvas.getContext('2d')
+teavm.canvas=ctx
+}catch(ex){console.error(ex);}
 
-// test="/me/dev/script/wasm/wasp/wasp.wast"
-// test="/me/dev/script/kotlin/a.out.wasm"
-// test="/me/dev/script/kotlin/test.wasm"
-// test="/me/dev/script/wasm/test.wasm"
-// test="/me/dev/script/wasm/test.wat"
-test="/me/wasp/example.wasm"
 
-// let test="/me/dev/script/wasm/a.out.wasm"
-// test = "/me/dev/script/wasm/mark/mark.wasm"
-// test="/me/dev/script/wasm/strings.ts"
-// test="/opt/wasm/schism/test.wasm"
+
 let file = process.argv[2] || test
 let arg = file
 let func = process.argv[3] || "main"
@@ -38,9 +55,7 @@ if (!file.match(/\./)) file = file + ".wasm"
 if (file.match("wasmx")) file = test
 if (file.match(".ts"))file = file.replace(".ts",".wasm")
 if (file.match(".wat")) {
-	// cmd = "/opt/wasm/wabt/bin/wat2wasm --debug-names " + file
 	cmd = "wat2wasm --debug-names " + file
-
 	file = file.replace(".wat", ".wasm")
 	require('child_process').execSync(cmd + " -o " + file)
 }
@@ -49,7 +64,9 @@ if (file.match(".wast")) {
 	file = file.replace(".wast", ".wasm")
 	require('child_process').execSync(cmd + " -o " + file)
 }
+
 console.log(file)
+
 let pure = file.replace(".wasm", "")
 let backtrace = function (print = 1) {
 	try {
@@ -58,16 +75,19 @@ let backtrace = function (print = 1) {
 		if (print) console.error(trimStack(ex, 1)); else return trimStack(ex)
 	}
 }
+
 let todo = x => console.log("TODO ", x)
+
 let demangle = function (line) {
-	// return line
 	if (!line.match("at ")) return line
 	// name=line.match(/at ([a-zA-Z0-9.]*)/)[1]
 	var [at, name, fun] = line.trim().split(' ')
 	if (!name) return line
 	if (name[0] !== '_') return line
-	console.log("c++filt >>>>>>>>>>>>>>>>>>", name);
-	console.log(exec("c++filt " + name))
+	var demangled=exec("c++filt " + name)
+	if(demangled!=name)return demangled
+	var demangled=exec("c++filt _" + name)
+	if(demangled!=name)return demangled
 	type = name.match(/E(.*)/)
 	type = type || name.match(/PK(.*)/)
 	type = type ? type[1] || "" : ""
@@ -115,15 +135,6 @@ let trimStack = function (ex, more = 0) {
 
 // console.log(file)
 // console.log()
-
-let memory = new WebAssembly.Memory({initial: 16384, maximum: 65536});
-// table = new WebAssembly.Table({initial: 256 * 4, element: "anyfunc"});
-
-// let memory = new WebAssembly.Memory({initial: 256, maximum: 256});
-// table = new WebAssembly.Table({initial: 662, maximum: 662, element: "anyfunc"});
-let table = new WebAssembly.Table({initial: 294, maximum: 294, element: "anyfunc"});
-// let table = new WebAssembly.Table({initial: 10, maximum: 10, element: "anyfunc"});
-
 let nop = x => 0
 let log = x => console.log(x)
 
@@ -146,13 +157,16 @@ let new_string = (s) => {
 	STACK += uint8array.length + 1
 	return current
 }
+
 const utf8_encoder = new TextDecoder('utf8');
 const utf16encoder = new TextDecoder('utf-16le');
 const utf8_decoder = new TextDecoder('utf8');
 const utf16denoder = new TextDecoder('utf-16le');
+
 let _malloc=function _malloc(x,y,z){
 	console.log("_malloc", x,y,z)
 }
+
 let string = function (pointer, length = -1, format = 'utf8') {
 	if(pointer>0){
 		//console.log("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
@@ -198,12 +212,14 @@ let str = function (x, len = -1) {
 	return buf.slice(x, x + len).toString('utf16le')
 	// return buf.slice(x,x+len).toString('utf8')
 }
+
 let arry = (offset) => {
 	var arr = [];
 	for (var i = offset; buffer[i] && i < buffer.length; i++)
 		arr.push(buffer[i])
 	return arr
 }
+
 let parse = (x, type) => {
 	if (!type) return x // raw value: int/bool/null
 	switch (type % 16) {
@@ -232,7 +248,7 @@ let truenames = {}
 let missing_dependency = (module, fun) => function (x, y, z, a) {
 	true_name = truenames[fun]
 	if (!true_name) {
-		true_name = exec('c++filt _' + fun)
+		true_name = demangle(fun)
 		truenames[fun] = true_name
 	}
 	console.log("missing dependency " + module + "." + fun + "(", x || '' + y || '' + z || '' + a || '', ") : ", true_name)
@@ -283,116 +299,7 @@ let _logi = logi
 let _log = log
 let dummy = log
 
- // Schism runtime
-let engine={input_index:0,input_port_data:"(+1 1);test"}
-function peek() {
-    if (engine.input_index < engine.input_port_data.length) {
-        return engine.input_port_data[engine.input_index];
-    }
-    return -1;
-}
-let rt={ // Schism runtime
-    'eq?': (x, y) => x === y,
-    'number?': x => typeof(x) == 'number' && (x & 1) === 0,
-    'char?': x => typeof(x) == 'number' && (x & 1) === 1,
-    '%make-number': n => n << 1,
-    '%make-char': n => (n << 1) | 1,
-    '%number-value': n => n >> 1,
-    '%char-value': n => n >>> 1,
-    'string?': x => (typeof x === 'string' || x instanceof String) && x.charAt(0) === 's',
-    '%symbol?': x => typeof(x) === 'string' && x.charAt(0) === 'S',
-    '%string=?' : (x, y) => x.valueOf() === y.valueOf(),
-    '%list->string': chars => {
-        let ret = 's';
-        for (; chars != null; chars = chars.cdr)
-            ret += String.fromCharCode(chars.car >>> 1);
-        return new String (ret);
-    },
-    '%string->list': x => {
-        let ret = null;
-        for (let i = x.length - 1; i > 0; i--)
-            ret = new Pair((x.charCodeAt(i) << 1) | 1, ret);
-        return ret;
-    },
 
-    '%string->symbol': value => 'S' + value,
-    '%symbol->string': x => x.substring(1),
-    '%make-gensym': str => new String('S' + str),
-    '%gensym?': x => x instanceof String && x.charAt(0) === 'S',
-    'cons': (car, cdr) => new Pair(car, cdr),
-    'pair?': x => x instanceof Pair,
-    '%car': x => x.car,
-    '%cdr': x => x.cdr,
-    '%set-car!': (x, y) => x.car = y,
-    '%set-cdr!': (x, y) => x.cdr = y,
-
-    '%get-false': () => false,
-    '%get-true': () => true,
-    '%get-null': () => null,
-    'eof-object': () => eofValue,
-    '%get-void': () => undefined,
-
-    '%make-closure': (index, nfree) => new Closure(index, nfree),
-    'procedure?': x => x instanceof Closure,
-    '%closure-index': x => x.index,
-    '%set-closure-free-var!': (x, i, v) => x.env[i] = v,
-    '%closure-free-var': (x, i) => x.env[i],
-
-    '%read-char': () => {
-        const val = peek();
-        if (val >= 0) {
-            engine.input_index++;
-        }
-        return val;
-    },
-    '%peek-char': peek,
-    '%write-char': byte => engine.output_data.push(byte),
-    'error': function (where, what) {
-        throw new SchemeError(schemeToJS(where), schemeToJS(what));
-    },
-    '%log-char': byte => engine.log += String.fromCharCode(byte),
-    '%flush-log': () => {
-        console.info(engine.log);
-        engine.log = "";
-    },
-    '%open-as-stdin': (filename) => {
-        filename = schemeToJS(filename);
-        const file = engine.filesystem.open(filename);
-        engine.setCurrentInputPort(file.readContents());
-    }
-}
-
-
-let kotlin_imports = {
-	nullFunc_X: nop,
-	nullFunc_ii: nop,// kotlin
-	nullFunc_iiii: nop,// kotlin
-	nullFunc_vi: nop,// kotlin
-	nullFunc_viiii: nop,// kotlin
-	nullFunc_viiiii: nop,// kotlin
-	nullFunc_viiiiii: nop,// kotlin
-	Konan_abort: dummy,
-	Konan_heap_grow: dummy,
-	Konan_heap_lower: dummy,
-	Konan_heap_upper: dummy,
-	Konan_js_allocateArena: dummy,
-	Konan_date_now: Date.now,
-	Konan_js_arg_size: dummy,
-	Konan_js_fetch_arg: dummy,
-	write: dummy,// kotlin
-	___lock: dummy,
-	___unlock: dummy,
-	_abort: dummy,
-	___setErrNo: dummy,
-	_emscripten_memcpy_big: dummy,// kotlin
-	___syscall140: dummy,
-	___syscall146: dummy,
-	___syscall54: dummy,
-	___syscall6: dummy,// kotlin
-	enlargeMemory: log,
-	getTotalMemory: log,
-	abortOnCannotGrowMemory: log,// kotlin
-}
 
 const writeStr = (ptr, str) => {
 	// buffer = new Uint32Array(memory.buffer);
@@ -462,25 +369,18 @@ let printf = (format, val) => process.stdout.write(string(format).replace("%s", 
 let raise = x => {
 	throw new Error(string(x))
 }
+
 let memset = function (ptr, value, num) {
+	memory[ptr]=value// ?
 	console.log('todo("memset")', ptr, value, num)
 }
+
 let malloc = function (amount) {
 	todo("malloc " + amount)
 	STACK += amount;
 	imports.env.memoryBase += amount // ?
 }
 
-
-let teavm={benchmark:{},runtime:{},canvas:{},math:Math}
-teavm.runtime={NaN: 0, Infinity, Math,isFinite}
-teavm.runtime.currentTimeMillis=()=>new Date().getTime()
-try{
-const { createCanvas, loadImage } = require('canvas')
-const canvas = createCanvas(200, 200)
-const ctx = canvas.getContext('2d')
-teavm.canvas=ctx
-}catch(ex){console.error(ex);}
 let fd_write=(x,y,z,k)=>{
 	console.log("fd_write",x,y,z,k);
 	log(string(1024+buffer[y]));
@@ -497,13 +397,14 @@ let imports = {
 	env: {
 		memory,
 		table,
+		memory_size,
 		tableBase: 0, // how to set generically for emcc compiled stuff?
 		__table_base: 0,
-		__memory_base: 256 * 8 * 8, // todo
-		memoryBase: 256 * 8 * 8, // todo
+		__memory_base: memoryBase, // todo
+		memoryBase: memoryBase, // todo
 		STACK_MAX: 0x100000 , // lua
 		DYNAMICTOP_PTR: 0,
-		STACKTOP: 0,
+		STACKTOP: memoryBase,// 0?
 		tempDoublePtr: 0,
 		abortStackOverflow: raise,
 		// ^^ emcc
@@ -514,16 +415,15 @@ sqrt:Math.sqrt, //...
 __cxa_rethrow:x=>{console.log("CODE THREW (an exception?)",x);process.exit()},
 __stack_chk_fail:x=>{console.log(x);return 3},
 // CPP mangle shit:
-_Z3logc:logc,
-_Z3logPc:logc,
-_Z3logPKc:logc,
+// _Z3logc:logc, // compile with -Wl,--demangle !
+// _Z3logPc:logc,
+// _Z3logPKc:logc,
 // _Z5allocl:,
 
 exit:x=>{console.log("EXIT!");process.exit()},
-_Z4exiti:x=>{console.log("EXIT!");process.exit()},
-_Z6printfPKc:printf,//  needs ref types
-_Z5errorPKc:x=>{console.log("ERROR",string(x));process.exit()},
-// _Z4itoal:itoa,
+// _Z4exiti:x=>{console.log("EXIT!");process.exit()},
+// _Z6printfPKc:printf,//  needs ref types
+// _Z5errorPKc:x=>{console.log("ERROR",string(x));process.exit()},
 		// _raise:x=>{throw new Error(string(x))},
 		// print_ln:logs,
 		_log, _logx, _logc, _logs, _logp, _logi, log16, //emcc
@@ -534,6 +434,7 @@ _Z5errorPKc:x=>{console.log("ERROR",string(x));process.exit()},
 		// ^^ mine
 
 		memset,//debug("memset",false),
+
 		// _Znam: malloc, // operator new[](unsigned number)
 		// _Znaj: malloc, // operator new[](unsigned int)
 		// _Znwj: malloc, // operator new(unsigned int)
@@ -598,7 +499,7 @@ function wasmx(file) {
 		memory = exports.memory || exports._memory || memory
 		buffer = new Uint8Array(memory.buffer, 0, memory.length);
 		HEAP = exports.__heap_base // ~68000
-		DATA_END = exports.__data_end // ~1100
+		DATA_END = exports.__data_end || memoryBase // ~1100
 		STACK = HEAP || DATA_END
 		imports.env.memoryBase = DATA_END // too late
 		i = 0
@@ -611,7 +512,7 @@ function wasmx(file) {
 
 		// writeStr(0,"HOHOäß∂𐋣HOH")
 		args = {argc: process.argv.length, argv: process.argv, arg: {test: "abc123𐋣OK"}}
-		arg = new_string(JSON.stringify(args))
+		// arg = new_string(JSON.stringify(args)) // DANGER might mess with memory if memoryBase set wrongly!!!
 		// arg=0;
 		// console.log(exports)
 		for (ex of Object.keys(exports)) {

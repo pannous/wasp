@@ -9,8 +9,11 @@
 #include "String.h"
 #include "Node.h"
 
+// don't use template! just use int-map
 template<class S,class T>
 class Map {
+	T *values = (T*) alloc(sizeof(T), 10);
+	int _size;
 
 public:
 	bool contains(String &string) {
@@ -22,18 +25,19 @@ public:
 	}
 
 	int size() {
-		return 0;
+		return _size;
 	}
 
-	bool insert_or_assign(char* string, int i) {
+	bool insert_or_assign(char* string, T i) {
+		values[_size++] = i;
 		return false;
 	}
-	bool insert_or_assign(String &string, int i) {
-		return false;
+	T& insert_or_assign(String &string, T i) {
+		return i;
 	}
 
-	int operator[](String name){
-		return 0;
+	T& operator[](String name){
+		return values[0];
 	}
 
 };
