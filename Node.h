@@ -6,7 +6,9 @@
 #include "String.h"
 //#import  "String.h" // FFS
 #include <stdarg.h> // va_list OK IN WASM???
-//typedef char const * chars;
+typedef char const * chars;
+typedef unsigned char byte;//!
+
 #define min(a,b) (a < b ? a : b)
 
 extern bool debug;
