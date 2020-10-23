@@ -27,4 +27,4 @@ wasp.cbp
 *.wasm
 *.o
 cmake-build-default/
-cmake-build-wasm/
+cmake-build-wasm/old/
