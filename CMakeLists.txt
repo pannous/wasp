@@ -14,117 +14,128 @@ set(CMAKE_CXX_STANDARD 20)
 
 FUNCTION(ADD_COMPILE_FLAG value)
     MESSAGE(STATUS "Building with ${value}")
-    FOREACH(variable CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+    FOREACH (variable CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
         SET(${variable} "${${variable}} ${value}" PARENT_SCOPE)
-    ENDFOREACH(variable)
+    ENDFOREACH (variable)
 ENDFUNCTION()
 
 #ADD_COMPILE_FLAG(" -w") # NO WARNINGS
 #ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
-if ( WASM )
+if (WASM)
     message(WASM)
     SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
     ADD_COMPILE_FLAG("-DWASM=1")
     ADD_COMPILE_FLAG("-nostdlib -march=wasm -w -g -O0") #-v
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
-#    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem -Oz -c ") # ???
+    #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem -Oz -c ") # ???
 
-#    ADD_COMPILE_FLAG("    --target=wasm32-unknown-unknown-wasm") # default:wasi ok
-#    ADD_COMPILE_FLAG("    --target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
+    #    ADD_COMPILE_FLAG("    --target=wasm32-unknown-unknown-wasm") # default:wasi ok
+    #    ADD_COMPILE_FLAG("    --target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
 
-# AVOID   -search_paths_first BUG! : if ( NOT WASM ) in Darwin.cmake (homebrew) OR  remove from CMAKE_CXX_LINK_FLAGS
+    # AVOID   -search_paths_first BUG! : if ( NOT WASM ) in Darwin.cmake (homebrew) OR  remove from CMAKE_CXX_LINK_FLAGS
 
     ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined,--no-check-features,--demangle,-t") # wasm-ld flags forwarded from clang
 
-#    ADD_COMPILE_FLAG("-Wl,-t,--verbose") # ,-O0  VERBOSE!
+    #    ADD_COMPILE_FLAG("-Wl,-t,--verbose") # ,-O0  VERBOSE!
     ADD_COMPILE_FLAG("-Wl,--export-table,--emit-relocs") # DEBUG info and symbols!
-#    ADD_COMPILE_FLAG("-Ws,-O4,--gc-sections") RELEASE strip maximum!
+    #    ADD_COMPILE_FLAG("-Ws,-O4,--gc-sections") RELEASE strip maximum!
 
-#   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
+    #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
 
     set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp WasmHelpers.cpp)
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasm ALL DEPENDS wasp.wasm)
-elseif(WASI)
+elseif (WASI)
     message(WASI)
     add_compile_definitions(WASI) # same as -DWASI=1
     SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
     set(CMAKE_OSX_SYSROOT "")
-#    SET(FIND_PATH /opt/wasm/wasi-sdk/share/wasi-sysroot/)
-#    SET(CMAKE_FIND_ROOT_PATH /opt/wasm/wasi-sdk/share/wasi-sysroot/)
-#    SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY)
-#    SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-#    SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-#    set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+    #    SET(FIND_PATH /opt/wasm/wasi-sdk/share/wasi-sysroot/)
+    #    SET(CMAKE_FIND_ROOT_PATH /opt/wasm/wasi-sdk/share/wasi-sysroot/)
+    #    SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY)
+    #    SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+    #    SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+    #    set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-#    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const
-#    ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
+    #    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const
+    #    ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
 
     ADD_COMPILE_FLAG("-w -g -O0 -v ") # -nostdlib
     set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp WasmHelpers.cpp exceptions.cpp)
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
-elseif(VM) # NORMAL:
-    add_compile_definitions(WASM_ENABLE_INTERP)
-    add_compile_definitions(WASM_ENABLE_FAST_INTERP)
+elseif (VM) # NORMAL:
+    SET(WAMR_ROOT_DIR wasm-micro-runtime)
+    if (APPLE)
+        add_definitions(-DBH_PLATFORM_DARWIN)
+        SET(WAMR_BUILD_PLATFORM darwin)
+    endif ()
     message("USING INTERNAL WASM RUNTIME TO DEBUG")
-    ADD_COMPILE_FLAG("-w -Oz")
-#    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
-#    SET(WASMVM wasm_runtime/src/)
-    SET(WASMVM wasm_runtime/core/)
-    SET(WASMVM_COMMON wasm_runtime/core/iwasm/common/)
-    SET(WASMVM_INTERPRETER wasm_runtime/core/iwasm/interpreter/)
-    SET(WASMVM_UTILS wasm_runtime/core/shared/utils/)
-    SET(WASMVM_UTILS2 wasm_runtime/core/shared/utils/uncommon/)
+    set(WAMR_BUILD_INTERP 1)
+    add_compile_definitions(WASM_ENABLE_INTERP)
+    if (APPLE)
+        set(WAMR_BUILD_PLATFORM "darwin")
+        add_definitions(-DBH_PLATFORM_DARWIN)
+    endif ()
+    # Reset default linker flags
+    set (CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+    set (CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
+    set(WAMR_BUILD_TARGET "X86_64")
+    set (WAMR_BUILD_LIBC_BUILTIN 1)
+
+    ################  wasm-micro-runtime  ################
+    include(${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
+    ################  application related  ################
+    #    include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
+    include(${SHARED_DIR}/utils/uncommon/shared_uncommon.cmake)
+    # why extra?
+#    include(${WAMR_ROOT_DIR}/core/iwasm/libraries/libc-builtin/libc_builtin.cmake)
+
+    add_library(vmlib ${WAMR_RUNTIME_LIB_SOURCE})
+    # Build as X86_32 by default in 32-bit platform
+    #    set (WAMR_BUILD_TARGET "X86_32")
+    #    add_compile_definitions(WASM_ENABLE_FAST_INTERP)
+    ADD_COMPILE_FLAG("-w -Oz")
+    #    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
     set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h
             WasmHelpers.cpp wasm-emitter.cpp wasm_runner.cpp
-            # todo : proper WASMVM cmake include
-            ${WASMVM_COMMON}/wasm_runtime_common.c
-            ${WASMVM_COMMON}/wasm_native.c
-            ${WASMVM_COMMON}/wasm_exec_env.c
-            ${WASMVM_COMMON}/wasm_memory.c
-#            ${WASMVM_INTERPRETER}/wasm_interp_classic.c
-            ${WASMVM_INTERPRETER}/wasm_runtime.c
-            ${WASMVM_INTERPRETER}/wasm_interp_fast.c
-            ${WASMVM_INTERPRETER}/wasm_loader.c
-            ./wasm_runtime/core/shared/platform/darwin/platform_init.c # vprintf
-            ./wasm_runtime/core/shared/platform/common/posix/posix_malloc.c
-            ./wasm_runtime/core/shared/platform/common/posix/posix_time.c
-            ./wasm_runtime/core/shared/platform/common/posix/posix_memmap.c
-            ./wasm_runtime/core/shared/platform/common/posix/posix_thread.c
-            ./wasm_runtime/core/shared/utils/runtime_timer.c
-            ./wasm_runtime/core/shared/utils/bh_common.c
-            ./wasm_runtime/core/shared/mem-alloc/mem_alloc.c
-            ./wasm_runtime/core/shared/mem-alloc/ems/ems_kfc.c
-            ./wasm_runtime/core/shared/mem-alloc/ems/ems_alloc.c
-            ./wasm_runtime/core/iwasm/common/arch/invokeNative_general.c
-            ${WASMVM_UTILS}/bh_log.c
-            ${WASMVM_UTILS2}/bh_read_file.c wasm_runner.h)
-    add_executable(debug_wasm_emitter ${SOURCE_FILES})
-    add_custom_target(BuildWart ALL DEPENDS debug_wasm_emitter) #.exe
-    target_sources(debug_wasm_emitter PUBLIC wasm_runtime/src/shared/utils/uncommon/ wasm_runtime/src/shared/utils/ wasm_runtime/src/)
-    target_include_directories(debug_wasm_emitter PUBLIC
-            wasm_runtime/include wasm_runtime/core/iwasm/ wasm_runtime/core/iwasm/include/
-            wasm_runtime/core/shared/utils wasm_runtime/core/shared/utils/uncommon
-            wasm_runtime/core/shared/platform/include/
-            wasm_runtime/core/shared/platform/darwin/ wasm_runtime/core/shared/mem-alloc)
+            )
+    add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
 
-else() # NORMAL:
+    if (APPLE)
+        target_link_libraries(wasp vmlib -lm -ldl -lpthread)
+    else ()
+        target_link_libraries(wasp vmlib -lm -ldl -lpthread -lrt)
+    endif ()
+
+    add_custom_target(BuildWart ALL DEPENDS wasp) #.exe
+    target_include_directories(wasp PUBLIC
+            ${WAMR_ROOT_DIR}/core/iwasm/interpreter/
+            ${WAMR_ROOT_DIR}/include
+            ${WAMR_ROOT_DIR}/core/iwasm/
+            ${WAMR_ROOT_DIR}/core/iwasm/include/
+            ${WAMR_ROOT_DIR}/core/shared/utils
+            ${WAMR_ROOT_DIR}/core/shared/utils/uncommon
+            ${WAMR_ROOT_DIR}/core/shared/platform/include/
+            ${WAMR_ROOT_DIR}/core/shared/platform/darwin/
+            ${WAMR_ROOT_DIR}/core/shared/mem-alloc)
+
+else () # NORMAL:
     message(NO WASM "${WASM}")
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
-#    ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare -Wno-user-defined-literals")
+    #    ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare -Wno-user-defined-literals")
     # just for Backtrace.cpp :
-#    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")
+    #    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")
     #find_package( Readline)    #find_package( READLINE )
     #    ADD_COMPILE_FLAG(" -lreadline -ldl -lcurl -lz") # extra libraries
-    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp WasmHelpers.cpp wasm-emitter.cpp Map.cpp )
+    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp WasmHelpers.cpp wasm-emitter.cpp Map.cpp)
 
-#    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
+    #    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(angle ${SOURCE_FILES})
     TARGET_LINK_LIBRARIES(angle curl)
-#    set(CMAKE_EXECUTABLE_SUFFIX ".exe")
+    #    set(CMAKE_EXECUTABLE_SUFFIX ".exe")
     add_custom_target(BuildWasp ALL DEPENDS angle) #.exe
 endif ()
 
@@ -135,4 +146,4 @@ endif ()
 #ADD_COMPILE_FLAG(" -Wundefined-bool-conversion -Wno-writable-strings -Wno-dangling-else -Wundefined-bool-conversion -Wno-format-security")
 #ADD_COMPILE_FLAG(" -Werror=sizeof-array-argument") # DOES NOT work to treat size-of-array-argument as array:(
 
-set (CMAKE_SUPPRESS_REGENERATION)
+set(CMAKE_SUPPRESS_REGENERATION)
