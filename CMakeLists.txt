@@ -71,24 +71,25 @@ elseif(VM) # NORMAL:
     message("USING INTERNAL WASM RUNTIME TO DEBUG")
     ADD_COMPILE_FLAG("-w -Oz")
 #    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
-    SET(WASMVM wasm_runtime/src/)
-    SET(WASMVM_UTILS wasm_runtime/src/shared/utils/)
-    SET(WASMVM_UTILS2 wasm_runtime/src/shared/utils/uncommon/)
+#    SET(WASMVM wasm_runtime/src/)
+    SET(WASMVM wasm_runtime/core/)
+    SET(WASMVM_COMMON wasm_runtime/core/iwasm/common/)
+    SET(WASMVM_INTERPRETER wasm_runtime/core/iwasm/interpreter/)
+    SET(WASMVM_UTILS wasm_runtime/core/shared/utils/)
+    SET(WASMVM_UTILS2 wasm_runtime/core/shared/utils/uncommon/)
 
     set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h
             WasmHelpers.cpp wasm-emitter.cpp wasm_runner.cpp
-#            Wasp.cpp
-            ${WASMVM}/wasm_runtime_common.c
-            ${WASMVM}/wasm_native.c
-            ${WASMVM}/wasm_runtime.c
-#            ${WASMVM}/wasm_interp_classic.c
-            ${WASMVM}/wasm_interp_fast.c
-            ${WASMVM}/wasm_exec_env.c
-            wasm_runtime/src/shared/platform/darwin/platform_init.c # vprintf
-            wasm_runtime/src/wasm_runtime.c
-#            core/iwasm/interpreter/wasm_interp.h
-            ${WASMVM}/wasm_memory.c
-            ${WASMVM}/wasm_loader.c
+            # todo : proper WASMVM cmake include
+            ${WASMVM_COMMON}/wasm_runtime_common.c
+            ${WASMVM_COMMON}/wasm_native.c
+            ${WASMVM_COMMON}/wasm_exec_env.c
+            ${WASMVM_COMMON}/wasm_memory.c
+#            ${WASMVM_INTERPRETER}/wasm_interp_classic.c
+            ${WASMVM_INTERPRETER}/wasm_runtime.c
+            ${WASMVM_INTERPRETER}/wasm_interp_fast.c
+            ${WASMVM_INTERPRETER}/wasm_loader.c
+            ./wasm_runtime/core/shared/platform/darwin/platform_init.c # vprintf
             ./wasm_runtime/core/shared/platform/common/posix/posix_malloc.c
             ./wasm_runtime/core/shared/platform/common/posix/posix_time.c
             ./wasm_runtime/core/shared/platform/common/posix/posix_memmap.c
