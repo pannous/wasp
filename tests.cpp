@@ -1,81 +1,91 @@
 #include "Node.h"
+
 Node result;
+
 //#include "String.h"
 static Node parse(String source);
 
 
-
-
 #undef assert // <cassert> / <assert.h>
 
+
+//#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
+//#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+
+
 #define assert(condition) try{\
-   if(condition==0)error("assert FAILED");else printf("\nassert OK: %s\n",#condition);\
+   if((condition)==0)error("assert FAILED");else printf("\nassert OK: %s\n",#condition);\
    }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
 
 bool assert_equals_x(String a, String b, char *context = "") {
-	if (a == b)printf("OK %s==%s in %s\n"_s % a % b % context);
-	else printf("FAILED assert_equals!\n %s should be %s in %s\n"_s % a % b % context);
+	if (a == b)printf("OK %s==%s %s\n"s % a % b % context);
+	else printf("FAILED assert_equals!\n %s should be %s in %s\n"s % a % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
-	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"_s % a.name % b % context);
-	else printf("OK %s==%s in %s\n"_s % a.name % b % context);
+	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
+	else printf("OK %s==%s in %s\n"s % a.name % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, double b, char *context = "") {
-	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"_s % a.name % b % context);
-	else printf("OK %f==%f in %f\n"_s % a.value.floaty % b % context);
+	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"s % a.name % b % context);
+	else printf("OK %f==%f in %f\n"s % a.value.floaty % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, long b, char *context = "") {
-	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"_s % a % b % context);
-	else printf("OK %d==%d in %f\n"_s % a.value.numbery % b % context);
+	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"s % a % b % context);
+	else printf("OK %d==%d in %f\n"s % a.value.number % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node a, String b, char *context = "") {
-	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"_s % a.name % b % context);
-	else printf("OK %s==%s in %s\n"_s % a.name % b % context);
-	return b==a.name or a == b;
+	if (a.name != b and b != a.value.string)
+		printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
+	else printf("OK %s==%s in %s\n"s % a.name % b % context);
+	return b == a.name or a == b;
 }
 
 
 bool assert_equals_x(Node a, Node b, char *context = "") {
+	check(NIL.value.number==0);// WHEN DOES IT BREAK??
 	if (a == b)
-		printf("OK %s==%s in %s\n"_s % a % b % context);
+		printf("OK %s==%s in %s\n"s % a % b % context);
 	else
-		printf("FAILED assert_equals! %s should be %s in %s\n"_s % a % b % context);
+		printf("FAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
 	return a == b;
 }
 
 //bool assert_equals(chars a, chars b, char *context = "") {
 //	if (a != b)// err
-//		printf("FAILED assert_equals! %s should be %s in %s\n"_s % a % b % context);
-//	else printf("OK %s==%s in %s\n"_s % a % b % context);
+//		printf("FAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
+//	else printf("OK %s==%s in %s\n"s % a % b % context);
 //	return a == b;
 //}
 bool assert_equals_x(long a, long b, char *context) {
-	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"_s % a % b % context);
-	else printf("OK %d==%d in %s\n"_s % a % b % context);
+	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
+	else printf("OK %d==%d in %s\n"s % a % b % context);
 	return a == b;
 }
-inline float abs_(float x)noexcept{return x>0?x:-x;}
+
+inline float abs_(float x) noexcept { return x > 0 ? x : -x; }
+
 bool assert_equals_x(float a, float b, char *context = "") {
 	float epsilon = abs_(a + b) / 100000.;// 𝕚𝚤:=-1
 	bool ok = a == b or abs_(a - b) <= epsilon;
-	printf("WTF ");
-	if (!ok)printf("FAILED assert_equals!\n %f should be %f in %s\n"_s % a % b % context);
-	else printf("OK %f==%f in %s\n"_s % a % b % context);
+	if (!ok)printf("FAILED assert_equals!\n %f should be %f in %s\n"s % a % b % context);
+	else printf("OK %f==%f in %s\n"s % a % b % context);
 	return ok;
 }
 
-#define assert_equals(a, b) if (!assert_equals_x(a,b)){printf("%s != %s",#a,#b);backtrace_line();}
+//# DEFINES CAN MESS WITH LOCALS!! so use α, β
+#define assert_equals(α, β) if (!assert_equals_x(α,β)){printf("%s != %s",#α,#β);backtrace_line();}
 
 //bool assert_isx(char *mark, Node expect);
 //bool assert_isx(char *mark, chars expect);
@@ -97,7 +107,7 @@ bool assert_isx(char *mark, Node expect) {
 	} catch (SyntaxError *err) {
 		printf("\nERROR IN TEST\n");
 		printf("%s", err->data);
-	} catch (...){
+	} catch (...) {
 		raise("\nERROR IN TEST (no further data):\n");
 	}
 	return false;
@@ -126,8 +136,6 @@ Node assert_parsesx(const char *mark) {
 	}
 	return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
-
-#define check(test) if(test){}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 //#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 #define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(0);}
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
@@ -142,17 +150,30 @@ Node assert_parsesx(const char *mark) {
     printf("%s:%d\n",__FILE__,__LINE__);exit(0);}\
 }
 
-void testC();
+void testModernCpp() {
+	auto αα = 1. * 2;
+	printf("%f", αα);// lol
+}
 
-void testBUG();
+void testDeepCopyDebugBugBug() {
+	const char *source = "{deep{a:3,b:4,c:{d:true}}}";
+	assert_parses(source);
+	Node &node = result["deep"]['c']['d'];
+	assert_equals(node.value.number, (long) 1);
+	assert_equals(node, (long) 1);
+}
 
-void testLists();
-
-void testParams();
+void testDeepCopyDebugBugBug2() {
+	const char *source = "{deep{a:3,b:4,c:{d:123}}}";
+	assert_parses(source);
+	Node &node = result["deep"]['c']['d'];
+	assert_equals(node.value.number, (long) 123);
+	assert_equals(node, (long) 123);
+}
 
 void testNetBase() {
 	warn("NETBASE OFFLINE");
-	if(1>0)return;
+	if (1 > 0)return;
 	chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
 //	log(url);
 	chars json = fetch(url);
@@ -161,7 +182,7 @@ void testNetBase() {
 	Node results = result["results"];
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
 	Node Erde = results;
-	assert(Erde.name=="Erde" or Erde["name"]=="Erde");
+	assert(Erde.name == "Erde" or Erde["name"] == "Erde");
 	Node &statements = Erde["statements"];
 	assert(statements.length >= 1); // or statements.value.node->length >=
 	assert(result["query"] == "2");
@@ -215,18 +236,18 @@ void testMarkSimpleAssign() {
 void testMarkSimple() {
 	log("testMarkSimple");
 	Node &a = assert_parses("{a:3}");
-	Node &a3 = a;
-	assert_equals(a3, long(3));
-	assert(a3 == 3);
-	assert(a3.type == numbers or a3.type == keyNode and a3.value.node->type == numbers);
-	assert(a3.name == "a"_s);
+	assert_equals(a.value.number, 3);
+	assert_equals(a, long(3));
+	assert(a == 3);
+	assert(a.type == numbers or a.type == keyNode and a.value.node->type == numbers);
+	assert(a.name == "a"_s);
 //	assert(a3.name == "a"_s);// todo? cant
 
 
 	Node &b = a["b"];
-	a["b"] = a3;
-	assert(a["b"] == a3);
-	assert(a["b"] == a3);
+	a["b"] = a;
+	assert(a["b"] == a);
+	assert(a["b"] == a);
 	assert(a["b"] == 3);
 
 	assert(Mark::parse("3.") == 3.);
@@ -341,6 +362,10 @@ void testAddField() {
 }
 
 void testErrors() {
+#if defined(WASI) || defined(WASM)
+	skip("can't catch ERROR in wasm")
+	return;
+#endif
 	throwing = false;
 	result = Mark::parse("]");
 	assert(result == ERROR);
@@ -356,11 +381,13 @@ void testErrors() {
 void testForEach() {
 	int sum = 0;
 	for (Node &item : parse("1 2 3"))
-		sum += item.value.numbery;
+		sum += item.value.number;
 	assert(sum == 6);
 }
 
 #ifndef WASM
+#ifndef WASI
+#ifdef APPLE
 #include <filesystem>
 using files = std::filesystem::recursive_directory_iterator;
 
@@ -375,6 +402,8 @@ void testAllSamples() {
 			Mark::parseFile(file.path().string().data());
 	}
 }
+#endif
+#endif
 #endif
 
 void testSample() {
@@ -564,8 +593,6 @@ void testC() {
 //	assert(3 > 2 > 1);// NOT WHAT YOU EXPECT!
 //	assert('a' < 'b' < 'c');// NOT WHAT YOU EXPECT!
 //	assert('a' < b and b < 'c');// ONLY WAY <<
-	assert_equals(String("abcd").substring(1, 2), "b");// excluding, like js
-	assert_equals(String("abcd").substring(1, 3), "bc");
 }
 
 void testGraphSimple() {
@@ -654,7 +681,7 @@ void testRootLists() {
 
 
 void testRoots() {
-	check(NIL.value.numbery == 0);
+	check(NIL.value.number == 0);
 	assert_is("'hello'", "hello");
 	skip(assert_is("hello", "hello", 0));// todo reference==string really?
 	assert_is("True", True)
@@ -667,7 +694,7 @@ void testRoots() {
 //	assert_is("wrong", False)
 	assert_is("null", NIL);
 	assert_is("", NIL);
-	check(NIL.value.numbery == 0);
+	check(NIL.value.number == 0);
 	assert_is("0", NIL);
 	assert_is("1", 1)
 	assert_is("123", 123)
@@ -730,6 +757,7 @@ void testNodeName() {
 	Node a = Node("xor");// NOT type string by default!
 	bool ok = a == "xor";
 	check(a == "xor")
+	check(a.name == "xor")
 	check(ok)
 }
 
@@ -755,15 +783,19 @@ void testParentContext() {
 }
 
 void testParentBUG() {
-	testParentContext();// make sure parsed correctly
-	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
+//	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
+	const char *source = "{a:'HIO'}";
+
 	assert_parses(source);
 	Node &a = result["a"];
-	assert(a.parent);
-	log(a.parent);// BROKEN, WHY?? let's find out:
-	assert_equals(a.parent->type, objects);
-	assert_equals(a.parent->name, "");
-	assert(a.parent == &result);
+	Node *parent = a.parent;
+	assert(parent);
+	log(parent);// BROKEN, WHY?? let's find out:
+	assert(parent == &result);
+	assert_equals(parent->type, objects);
+	assert_equals(parent->name, "");
+	assert(parent == &result);
+	testParentContext();// make sure parsed correctly
 }
 
 void testAsserts() {
@@ -786,6 +818,48 @@ void testStringConcatenation() {
 	assert_equals("a"_s + "bc", "abc");
 	assert_equals("a"_s + true, "a✔️"_s);
 }
+
+void testWasmMemoryIntegrity() {
+//	Bus error: 10  if i > memory_size
+	for (int i = 0; i <= 32624 / 2 /*memory_size*/; ++i) {
+		memory[i] = i;
+		if (memory[i] != i) {
+//			printf("MEMORY CORRUPTION");
+			exit(-1);
+		}
+	}
+
+//	String s = "ja %s gut"s % "so";
+	for (int i = 0; i <= 32624 / 2 /*memory_size*/; ++i) {
+		if (memory[i] != i) {
+//			logi(i);
+		}
+	}
+
+}
+
+void testString() {
+	check("%s"s.replace("%s", "ja") == "ja");
+	check("hi %s"s.replace("%s", "ja") == "hi ja");
+	check("%s ok"s.replace("%s", "ja") == "ja ok");
+	check("hi %s ok"s.replace("%s", "ja") == "hi ja ok");
+	check("hi %s ok"s % "ja" == "hi ja ok");
+	check("abc"_ == "abc");
+	check("%d"s % 5 == "5");
+	check("%s"s % "ja" == "ja");
+	check("1234%d6789"s % 5 == "123456789");
+	check("char %c"s % 'a' == "char a");
+	check("%c %d"s % 'a' % 3 == "a 3");
+	check("abc"s.replace("a", "d") == "dbc");
+	check("hi %s ok"s % "ja" == "hi ja ok");
+	check("%s %d"s % "hu" % 3 == "hu 3");
+	check("%s %s %d"s % "ha" % "hu" % 3 == "ha hu 3");
+	testStringConcatenation();
+
+	assert_equals(String("abcd").substring(1, 2), "b");// excluding, like js
+	assert_equals(String("abcd").substring(1, 3), "bc");
+}
+
 
 void testConcatenationBorderCases() {
 	assert_equals(Node(1, 0) + Node(3, 0), Node(1, 3, 0));// ok
@@ -815,6 +889,12 @@ void testConcatenation() {
 
 void testParamizedKeys() {
 //	<label for="pwd">Password</label>
+
+// 0. parameters accessible
+	Node label0 = parse("label(for:password)");
+	assert_equals(label0["for"], "password");
+
+
 // 1. paramize keys: label{param=(for:password)}:"Text"
 	Node label1 = parse("label(for:password):'Passwort'");
 	label1.print();
@@ -823,10 +903,15 @@ void testParamizedKeys() {
 //	assert_equals(label1["for:password"],"Passwort");
 
 // 2. paramize values
-	Node label2 = parse("label:'Passwort'(for:password)");
-	auto ok = label2 == "Passwort";
-	assert_equals(label2, "Passwort");
-	assert_equals(label2.value.node[0]["for"], "password");
+// TODO 1. move params of Passwort up to lable   OR 2. preserve Passwort as object in stead of making it string value of label!
+	skip(
+			Node label2 = parse("label:'Passwort'(for:password)");
+			check(label2 == "Passwort");
+			assert_equals(label2, "Passwort");
+			assert_equals(label2["for"], "password");
+			assert_equals(label2["for"], "password");// descend value??
+			assert_equals(label2["Passwort"]["for"], "password");
+	)
 
 	skip(
 //	3. relative equivalence? todo not really
@@ -835,65 +920,76 @@ void testParamizedKeys() {
 	)
 }
 
+void testsFailingInWasm() {
+	testKitchensink();
+	testMarkSimpleAssign();
+}
+
 void tests() {
-	testParamizedKeys();
-	testConcatenationBorderCases();
-	testConcatenation();
-	testAsserts();
-	testNodeName();
-	testLengthOperator();
-	testEval();
+	skip(
+			testsFailingInWasm();
+	)
+//	raise("test once if raising");
+	testMarkAsMap();
 	testLogic();
+	testEval();
 	testLogicEmptySet();
-	testLogicPrescedence();
-	testLogic01();
-	testMath();
+	testParamizedKeys();
+	testForEach();
+	testString();
+	testNodeName();
+	testEmpty();
+	testDiv();
+	testUTF();
 	testRoot();
+	testMath();
+	testLogic01();
+	testLogicPrescedence();
 	testRootFloat();
 	testMarkSimple();
-	testEmpty();
-	testErrors();
 	testMarkMulti();
 	testMarkMulti2();
-	testMarkAsMap();
 	testC();
-	testUTF();
-	testDiv();
-	testMarkAsMap();
 	testErrors();
 	testLists();
 	testDeepLists();
 	testGraphQlQuery();
 	testGraphParams();
 	testParams();
-	testRootLists();
 	testAddField();
 	testOverwrite();
 	testMarkMultiDeep();
 	testMapsAsLists();
-	testForEach();
 	testDidYouMeanAlias();
-	testParams();
-	testMarkSimpleAssign();
-	testMapsAsLists();
-	testKitchensink();
 	testNetBase();
 	testRootLists();
 	testRoots();
 	testForEach();
-#ifndef WASM
+	testConcatenation();
+	testConcatenationBorderCases();
+	testAsserts();
+	testLengthOperator();
+	testDeepCopyDebugBugBug();
+	testDeepCopyDebugBugBug2();
+//#ifndef WASM
+#ifdef APPLE
 	testAllSamples();
 #endif
-	check(NIL.value.numbery == 0);// should never be modified
+//#endif
+	check(NIL.value.number == 0);// should never be modified
 }
 
 #include "testAngle.cpp"
 #include "testWast.cpp"
 
-void testBUG() {
-	testParentBUG();
+void testWasm() {
+	testString();
 }
 
+
+void testBUG() {// move to tests() once done!
+	testParentBUG();
+}
 
 
 void todos() {
@@ -902,16 +998,22 @@ void todos() {
 	skip(
 			assert_equals(Node("1", 0) + Node("2"_s), Node("1", "2", 0));
 			testBUG();
-//	log("OK %s %d"_s % ("WASM",1));// only 1 handed over
-			log("OK %d %d"_s % (2, 1));// only 1 handed over
+//	log("OK %s %d"s % ("WASM",1));// only 1 handed over
+			log("OK %d %d"s % (2, 1));// only 1 handed over
 			testIndentAsBlock();
 	)
 }
 
+
 void testCurrent() { // move to tests() once OK
-	testWast();
-//	tests();// make sure all still ok after changes
-	todos();
-	tests();
+//	tests();// make sure all still ok before changes
+	testBUG();
+
+
+//	testWasm();
+//	testWast();
+//	todos();// those not passing yet (skip)
+	tests();// make sure all still ok after changes
 }
+
 // valgrind --track-origins=yes ./wasp

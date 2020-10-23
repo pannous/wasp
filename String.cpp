@@ -11,12 +11,14 @@
 //#include <string.h> // strcpy
 //#include <cstring> // strcpy doesn't work!?
 #include <stdlib.h> // pulls in declaration of malloc, free
-#include <math.h> // pow
+//#include <math.h> // pow
+//#include "math.h"
+//#include <cmath>
 #endif
 
 //extern double pow(double x, double y);
-extern "C" double pow(double x, double y);
-extern "C" double sqrt(double __a);
+//extern "C" double pow(double x, double y);
+//extern "C" double sqrt(double __a);
 
 
 #pragma clang diagnostic push
@@ -30,7 +32,7 @@ typedef unsigned char byte;
 typedef const char *chars;
 
 
-extern "C" void logs(const char *);
+//extern "C" void logs(const char *,int len);
 //bool debug = true;
 //extern void *alloc (size_t __size);
 //extern void *alloc (int __size);
@@ -221,8 +223,11 @@ const char *concat(const char *a, const char *b) {
 	return c;
 }
 
+
+//#define pow(val,exp)
 const char *ftoa0(float num, int base=10, int precision=4) {/*significant digits*/
-	return concat(concat(itoa0(int(num),base),"."),itoa0(int((num-(long)num)*pow(base,precision)),base));
+	int p=1000;//pow(base,precision);
+	return concat(concat(itoa0(int(num),base),"."),itoa0(int((num-(long)num)*p),base));
 }
 const char* ftoa(float num){ return ftoa0(num, 10, 4); }
 
@@ -256,6 +261,7 @@ class Node;
 
 
 #ifndef WASM
+#undef log // expanded from macro 'log' tgmath.h:245:25:
 void log(long i) {
 	printf("%li", i);
 }
@@ -299,7 +305,9 @@ void log(String s) {
 String operator "" _s(const char *c, unsigned long t) {// function signature contains illegal type WHYY??
 	return String(c);
 }
-
+String operator "" s(const char *c, unsigned long t) {// function signature contains illegal type WHYY??
+	return String(c);
+}
 String operator "" _(const char *c, unsigned long t) {
 	return String(c);
 }
@@ -398,6 +406,6 @@ void log(String *s) {
 
 #ifndef WASM
 void log(chars s){
-printf(s);
+printf("%s\n",s);
 }
 #endif

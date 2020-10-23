@@ -10,7 +10,7 @@ enum Type {
 	// TODO add subtypes of Class:Node Variable:Node etc ^^^
 			nils = 0,
 	objects, // {…} children
-	groups, // (…) meta parameter attributes lists
+	groups, // (…) meta params parameter attributes lists
 	patterns, // […] selectors matches, annotations! [public export extern] function mul(x,y){x*y}
 	keyNode, // key with value
 	reference,// variable identifier name x
@@ -25,6 +25,6 @@ enum Type {
 	ints,
 	bools,
 	unknown = 20 //7
-};
+};// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 #endif //MARK_NODETYPES_H
