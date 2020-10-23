@@ -6,7 +6,6 @@
 //#import "String.cpp" // import against mangling in wasm (vs include)
 #include "wasm-emitter.h"
 
-bool debug=true;
 
 #ifdef WASM
 //#import "WasmHelpers.cpp"
@@ -18,34 +17,6 @@ bool debug=true;
 #endif
 
 //#include "Node.cpp"
-extern unsigned int *memory;
-unsigned int *memory=(unsigned int *) 1024; // <?> memoryBase set in wasmx !?!?   todo how to not handtune _data_end?
-unsigned int *current = memory;
-
-unsigned long __stack_chk_guard= 0xBAAAAAAD;
-void __stack_chk_guard_setup(void) { __stack_chk_guard = 0xBAAAAAAD;/*provide some magic numbers*/ }
-void __stack_chk_fail(void) { /*log("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
-
-#define let auto
-#define var auto
-typedef void *any;
-typedef unsigned char byte;
-typedef const char *chars;
-//bool polish_notation = true;
-
-bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
-
-//extern "C" int isalnum(int _c);
-extern bool polish_notation;
-
-#ifdef WASM
-#warning COMPILING TO WASM
-#else
-#warning COMPILING TO APPLE
-#endif
-
-typedef unsigned long size_t;
-
 #ifndef WASM
 #include "ErrorHandler.h"
 #endif

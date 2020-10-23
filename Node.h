@@ -8,8 +8,32 @@
 #include <stdarg.h> // va_list OK IN WASM???
 //typedef char const * chars;
 #define min(a,b) (a < b ? a : b)
-class Node;
+
 extern bool debug;
+extern bool throwing;
+extern bool polish_notation;
+
+extern unsigned int *memory;
+
+#define let auto
+#define var auto
+typedef void *any;
+typedef unsigned char byte;
+typedef const char *chars;
+
+//extern "C" int isalnum(int _c);
+
+#ifdef WASM
+#warning COMPILING TO WASM
+#else
+#warning COMPILING TO APPLE
+#endif
+
+typedef unsigned long size_t;
+
+
+class Node;
+
 extern Node True;
 extern Node False;
 extern Node NIL;
