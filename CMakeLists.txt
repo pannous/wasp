@@ -6,7 +6,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 set(WASM 0) # OR :
 set(WASI 0)
-set(VM 0)
+set(VM 1)
 set(CMAKE_CXX_STANDARD 20)
 
 #set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
@@ -77,7 +77,7 @@ elseif(VM) # NORMAL:
 
     set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h
             WasmHelpers.cpp wasm-emitter.cpp wasm_runner.cpp
-            Wasp.cpp
+#            Wasp.cpp
             ${WASMVM}/wasm_runtime_common.c
             ${WASMVM}/wasm_native.c
             ${WASMVM}/wasm_runtime.c
