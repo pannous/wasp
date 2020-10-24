@@ -131,19 +131,22 @@ int main(int argc, char *argv_main[]) {
 								"get_pow",            // the name of WASM function name
 								(void *) get_pow,            // the native function pointer
 								"(ii)i",            // the function prototype signature, avoid to use i32
-								NULL                // attachment is NULL
+								NULL,                // attachment is NULL
+								false
 						},
 						{
 								"get_pow2",            // the name of WASM function name
 								(void *) get_pow2,            // the native function pointer
 								"(II)I",            // the function prototype signature, avoid to use i32
-								NULL                // attachment is NULL
+								NULL,                // attachment is NULL
+								false
 						},
 						{
 								"logi",            // the name of WASM function name
 								(void *) logi,            // the native function pointer
 								"(i)",            // the function prototype signature, avoid to use i32
-								NULL                // attachment is NULL
+								NULL,                // attachment is NULL
+								false
 						}
 				};
 
