@@ -74,7 +74,7 @@ elseif (VM) # NORMAL:
     message("USING INTERNAL WASM RUNTIME TO DEBUG")
     set(WAMR_BUILD_INTERP 1)
     add_compile_definitions(WASM_ENABLE_INTERP)
-    add_compile_definitions(WASM_ENABLE_RAW_NATIVES)# kaa 2020-10-42 custom flag
+#    add_compile_definitions(WASM_ENABLE_RAW_NATIVES)# kaa 2020-10-42 custom flag
 
     if (APPLE)
         set(WAMR_BUILD_PLATFORM "darwin")
