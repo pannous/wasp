@@ -5,10 +5,9 @@
 #ifndef WASP_WASM_RUNNER_H
 #define WASP_WASM_RUNNER_H
 
-
-class wasm_runner {
-
-};
+//#include <bh_platform.h>
+typedef unsigned char uint8_t;
+int run_wasm(const char *buffer, int buf_size);
 
 
 #endif //WASP_WASM_RUNNER_H

@@ -1104,9 +1104,9 @@ int main(int argp, char **argv) {
 		log(args);
 		current += strlen0(args)+1;
 #endif
-		log("Hello "_s + "WASM");
+		log("Hello "_s + "WASM");
 		testCurrent();
-		tests();
+//		tests();
 #ifndef WASM
 #endif
 		return 42;

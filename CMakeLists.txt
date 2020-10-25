@@ -5,6 +5,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 set(WASM 0) # OR :
+#if($ENV{WASI})
 set(WASI 0)
 set(VM 1)
 set(CMAKE_CXX_STANDARD 20)
@@ -51,6 +52,9 @@ elseif (WASI)
     SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
     set(CMAKE_OSX_SYSROOT "")
+    set(CMAKE_SYSROOT "")
+#    sd mv MacOSX.sdk.x ! WHY is CMAKE_OSX_SYSROOT still found???
+
     #    SET(FIND_PATH /opt/wasm/wasi-sdk/share/wasi-sysroot/)
     #    SET(CMAKE_FIND_ROOT_PATH /opt/wasm/wasi-sdk/share/wasi-sysroot/)
     #    SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY)
@@ -60,26 +64,25 @@ elseif (WASI)
 
     #    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const
     #    ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
+#${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
 
     ADD_COMPILE_FLAG("-w -g -O0 -v ") # -nostdlib
     set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp WasmHelpers.cpp exceptions.cpp)
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
 elseif (VM) # NORMAL:
+    if($ENV{WASI})
+        return()
+    endif()
+    message("USING INTERNAL WASM RUNTIME TO DEBUG")
+    add_compile_definitions(WASM_ENABLE_INTERP)
+    set(WAMR_BUILD_INTERP 1)
     SET(WAMR_ROOT_DIR wasm-micro-runtime)
     if (APPLE)
         add_definitions(-DBH_PLATFORM_DARWIN)
         SET(WAMR_BUILD_PLATFORM darwin)
     endif ()
-    message("USING INTERNAL WASM RUNTIME TO DEBUG")
-    set(WAMR_BUILD_INTERP 1)
-    add_compile_definitions(WASM_ENABLE_INTERP)
-#    add_compile_definitions(WASM_ENABLE_RAW_NATIVES)# kaa 2020-10-42 custom flag
 
-    if (APPLE)
-        set(WAMR_BUILD_PLATFORM "darwin")
-        add_definitions(-DBH_PLATFORM_DARWIN)
-    endif ()
     # Reset default linker flags
     set (CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
     set (CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
@@ -99,9 +102,9 @@ elseif (VM) # NORMAL:
     # Build as X86_32 by default in 32-bit platform
     #    set (WAMR_BUILD_TARGET "X86_32")
     #    add_compile_definitions(WASM_ENABLE_FAST_INTERP)
-    ADD_COMPILE_FLAG("-w -Oz")
-    #    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
-    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h
+#    ADD_COMPILE_FLAG("-w -Oz") # maximal optimization, CANT DEBUG!
+    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
+    set(SOURCE_FILES  Wasp.cpp String.cpp Node.cpp NodeTypes.h
             WasmHelpers.cpp wasm-emitter.cpp wasm_runner.cpp
             )
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
@@ -112,7 +115,7 @@ elseif (VM) # NORMAL:
         target_link_libraries(wasp vmlib -lm -ldl -lpthread -lrt)
     endif ()
 
-    add_custom_target(BuildWart ALL DEPENDS wasp) #.exe
+    add_custom_target(BuildEmitter ALL DEPENDS wasp) #.exe
     target_include_directories(wasp PUBLIC
             ${WAMR_ROOT_DIR}/core/iwasm/interpreter/
             ${WAMR_ROOT_DIR}/include
@@ -122,8 +125,9 @@ elseif (VM) # NORMAL:
             ${WAMR_ROOT_DIR}/core/shared/utils/uncommon
             ${WAMR_ROOT_DIR}/core/shared/platform/include/
             ${WAMR_ROOT_DIR}/core/shared/platform/darwin/
-            ${WAMR_ROOT_DIR}/core/shared/mem-alloc)
-
+            ${WAMR_ROOT_DIR}/core/shared/mem-alloc
+#            VERSUS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
+            )
 else () # NORMAL:
     message(NO WASM "${WASM}")
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
