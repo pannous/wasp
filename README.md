@@ -66,7 +66,7 @@ form{                                  // object type-name 'form'
     input{ type:email id:email}     // object without any contents
   }
   div{ class:"form-group"
-    label(for:pwd):"Password"
+    label(for:pwd):"Password"        // nodes have child/body and parameter/attribute slots
     input{ type:password id:"pwd"}    // comma is optional 
   }
   button{ class:['btn' 'btn-info']      // property with complex values
@@ -194,13 +194,21 @@ foo={bar:3} #variable assignment (of calling context)
 should '=',':' be treated as operators or handled hardwiredly?
 elegance vs efficiency
 
+How to do n-ary operators a = b % c ?
+Are there really enough usecases?
+Can n-ary operators even replace a macro system?
+Are n-ary operators part of the general [[patern matching]] vision?
 
-div{ class:"form-group"} vs div(class:"form-group") vs div{ class:{"form-group"}}
-label(for:pwd):"Password"
 
 Difference between Wasp and [Mark Notation](https://github.com/henry-luo/mark) :
 Wasp  has the object/node type on the left side of braces:
 Wasp: `html{ div{'hello world'}}` vs
 Mark: `{html {div 'hello world'}}`
 
-The main reason is that wasp is lisp based 
+The later 'polish-notation' (or sexp/lisp-notation with braces) can be used via compile flag (#pragma?).
+
+div{ class:"form-group" } vs div(class="form-group") vs div{ class:{"form-group"}} ?
+Should be [identical](identities) under most circumstances
+
+[[Todos]]
+* replace wasm-micro-runtime: The codebase is cancer
