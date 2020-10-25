@@ -171,6 +171,14 @@ void testDeepCopyDebugBugBug2() {
 	assert_equals(node, (long) 123);
 }
 
+
+void testEmitter() {
+
+	Code &code = emitter(0);
+	code.run();
+
+}
+
 void testNetBase() {
 	warn("NETBASE OFFLINE");
 	if (1 > 0)return;
@@ -1006,6 +1014,7 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+	testEmitter();
 //	tests();// make sure all still ok before changes
 //	testBUG();
 //	testParentBUG();
@@ -1013,7 +1022,7 @@ void testCurrent() { // move to tests() once OK
 //	testWasm();
 //	testWast();
 //	todos();// those not passing yet (skip)
-	tests();// make sure all still ok after changes
+//	tests();// make sure all still ok after changes
 }
 
 // valgrind --track-origins=yes ./wasp
