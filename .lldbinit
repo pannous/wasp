@@ -1,3 +1,4 @@
+settings set target.load-cwd-lldbinit true
 #  error: summary string parsing error in Xcode!
 # error: Invalid format character or name 'Node[]'.
 # https://stackoverflow.com/questions/41108037/how-to-add-a-hexadecimal-watch-in-clion

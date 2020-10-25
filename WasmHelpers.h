@@ -8,6 +8,11 @@ extern "C" unsigned int *current;
 //extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
 
+
+extern "C" void logs (const char *,int len=-1 /*auto*/);
+extern "C" void logc(char s);
+extern "C" void logi(int i);
+
 #ifndef WASM
 //#include <cstdlib>
 //#include "stdlib.h"

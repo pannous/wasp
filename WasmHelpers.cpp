@@ -9,10 +9,6 @@
 //#define size_t int
 //extern unsigned int *memory;
 
-extern "C" void logs (const char *,int len=-1 /*auto*/);
-extern void logc(char s);
-extern void logi(int i);
-
 
 #ifdef WASM
 
