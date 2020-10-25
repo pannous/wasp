@@ -1,6 +1,106 @@
-class Code;
-class TransformedProgram;
-Code& emitter(TransformedProgram* ast);
+#pragma once
+
+#include "wasm_runner.h"
+
+typedef char* bytes;
+bytes concat(bytes a, bytes b, int len_a, int len_b);
+bytes concat(bytes a, char b,int len);
+bytes concat(char section, bytes a, int len_a);
+
+class String;
+class Nod;
+class ExpressionNod;
+class StatementNod;
+class ProcStatementNod;
+class Code{
+public:
+	bytes data;
+	int length=0;
+	bool encoded= false;// first byte = size of vector
+
+	Code(){}
+	Code(bytes a, int len){
+		data=a;
+		length=len;
+	}
+
+	Code(char byte){
+		data = static_cast<bytes>(alloc(sizeof(char),1));
+		data[0] = byte;
+		length = 1;
+	}
+	Code(char section, Code code) {
+		data = concat(section, code.data,code.length);
+		length = code.length+1;
+	}
+
+	Code(char section, bytes dat, int len) {
+		data = concat(section, dat, len);
+		length=len+1;
+	}
+
+	Code operator +(Code more){
+		return this->push(more);
+	}
+	Code operator +(char more){
+		return this->push(more);
+	}
+
+	operator bytes(){return data;}// implicit cast yay
+	Code& push(Code more) {
+		data = concat(data, more.data,length,more.length);
+		length = length + more.length;
+		return *this;
+
+	}
+
+	Code& push(char opcode) {
+		data = concat(data, opcode,length);
+		length++;
+		return *this;
+
+	}
+	Code& push(bytes more,int len) {
+		data = concat(data, more,length,len);
+		length = length + len;
+		return *this;
+	}
+
+	Code &clone() {
+		return *this;
+	}
+
+	void debug() {
+		for (int i = 0; i < length; i++)printf("%s%02x",i%4==0?" 0x":"", data[i]);
+		printf("\n");
+		save();
+	}
+	void save(char* file_name="test.wasm"){
+#ifndef WASM
+		FILE* file=fopen(file_name,"w");
+		fwrite(data, length, 1, file);
+		fclose(file);
+		char *command = "wasmx test.wasm";
+		int ok=system(command);
+//		FILE *result=popen(command, "r");
+//		char buf[100000];
+//		while(fgets(buf, sizeof(buf), result) != NULL) {
+//		printf("%s",buf);
+//		}
+#endif
+	}
+	void run(){
+		run_wasm(data, length);
+	}
+
+//	Code& vector() {
+//		if(encoded)return *this;
+//		Code code = unsignedLEB128(length) + flatten(*this);
+//		code.encoded = true;
+//		return code;
+//	}
+};
+
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 enum Section {
 	custom = 0,
@@ -59,3 +159,5 @@ enum Opcodes {
 };
 //char start_function=0x00;//unreachable strange convention
 extern char unreachable;//=0x00;//unreachable strange convention
+class TransformedProgram;
+Code& emitter(TransformedProgram* ast);

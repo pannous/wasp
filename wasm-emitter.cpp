@@ -4,13 +4,13 @@
 #include "Map.h"
 #include "wasm-emitter.h"
 #include "WasmHelpers.h"
+#include "wasm_runner.h"
+
 #ifdef WASM
 #import  "WasmHelpers.cpp"
 #endif
 //#include "string.h" // memcpy
 
-class Code;
-typedef char* bytes;
 typedef char byter[];
 
 //Code& unsignedLEB128(int);
@@ -54,11 +54,6 @@ bytes concat(char a, byter  b,int len) {
 	return c;
 }
 
-class String;
-class Nod;
-class ExpressionNod;
-class StatementNod;
-class ProcStatementNod;
 class Nod{
 public:
 	Nod(StatementNod &alternate, ExpressionNod &args, StatementNod &consequent, ExpressionNod &expression,
@@ -130,90 +125,6 @@ public:
 	}
 };
 
-class Code{
-public:
-	bytes data;
-	int length=0;
-	bool encoded= false;// first byte = size of vector
-
-	Code(){}
-	Code(bytes a, int len){
-		data=a;
-		length=len;
-	}
-
-	Code(char byte){
-		data = static_cast<bytes>(alloc(sizeof(char),1));
-		data[0] = byte;
-		length = 1;
-	}
-	Code(char section, Code code) {
-		data = concat(section, code.data,code.length);
-		length = code.length+1;
-	}
-
-	Code(char section, bytes dat, int len) {
-		data = concat(section, dat, len);
-		length=len+1;
-	}
-
-	Code operator +(Code more){
-		return this->push(more);
-	}
-	Code operator +(char more){
-		return this->push(more);
-	}
-
-	operator bytes(){return data;}// implicit cast yay
-	Code& push(Code more) {
-		data = concat(data, more.data,length,more.length);
-		length = length + more.length;
-		return *this;
-
-	}
-
-	Code& push(char opcode) {
-		data = concat(data, opcode,length);
-		length++;
-		return *this;
-
-	}
-	Code& push(bytes more,int len) {
-		data = concat(data, more,length,len);
-		length = length + len;
-		return *this;
-	}
-
-	Code &clone() {
-		return *this;
-	}
-
-	void debug() {
-		for (int i = 0; i < length; i++)printf("%02x", data[i]);
-		save();
-	}
-	void save(char* file_name="test.wasm"){
-#ifndef WASM
-		FILE* file=fopen(file_name,"w");
-		fwrite(data, length, 1, file);
-		fclose(file);
-		char *command = "wasmx test.wasm";
-		int ok=system(command);
-//		FILE *result=popen(command, "r");
-//		char buf[100000];
-//		while(fgets(buf, sizeof(buf), result) != NULL) {
-//		printf("%s",buf);
-//		}
-#endif
-	}
-
-//	Code& vector() {
-//		if(encoded)return *this;
-//		Code code = unsignedLEB128(length) + flatten(*this);
-//		code.encoded = true;
-//		return code;
-//	}
-};
 //#include <iostream>
 
 class Bytes{
@@ -650,10 +561,12 @@ Code& emitter(TransformedProgram* ast0) {
 	// the type section is a vector of function types
 //	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
 //	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
-	char type0[]={0x60/*const type form*/,0x01/*param count*/,0x7F/*int*/,0x01/*return count*/,0x7F/*int*/};
-	char type1[]={0x60/*const type form*/,0x00/*param count*/,0x00/*return count*/};
-	int typeCount=2;
-	const Code &type_data = encodeVector(Code(typeCount) + Code(type0, sizeof(type0))+ Code(type1, sizeof(type1)));
+	char ii[]={0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x01/*return count*/, 0x7F/*int*/};
+	char vi[]={0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/, 0x7F/*int*/};// our main function! todo : be flexible!
+	char iv[]={0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x00/*return count*/};
+	char vv[]={0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
+	int typeCount=3;
+	const Code &type_data = encodeVector(Code(typeCount) + Code(vi, sizeof(vi)) + Code(iv, sizeof(iv))+ Code(vv, sizeof(vv)));
 	auto typeSection = Code(type, type_data);
 
 	auto lambdo = [](String val, int index) { return index + 1; /* type index */};
@@ -665,7 +578,8 @@ Code& emitter(TransformedProgram* ast0) {
 	auto memoryImport = encodeString("env")+ encodeString("memory")+mem_export/*type*/+ 0x00+ 0x01;
 
 	// the import section is a vector of imported functions
-	Code printFunctionImport = encodeString("env") + encodeString("logi").push(func_export).push(0x00)/* type index*/ ;
+	byte type_index=1;// iv "(i)" int->void
+	Code printFunctionImport = encodeString("env") + encodeString("logi").push(func_export).push(type_index);
 
 //	auto importSection = createSection(import, encodeVector(Code(0)));
 	int import_count = 1;
@@ -692,12 +606,13 @@ Code& emitter(TransformedProgram* ast0) {
 
 	// the function section is a vector of type indices that indicate the type of each function in the code section
 //	char func_types[]={0x01,0x00};
-	char func_types[]={0x02,0x00,0x01};
-	Code funcSection = createSection(func, Code(func_types,sizeof(func_types)));
+	char types_of_functions[]={0x02, 0x00, 0x01};// mapping/connecting function index to type index
+	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
+	Code funcSection = createSection(func, Code(types_of_functions, sizeof(types_of_functions)));
 
 //	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 //	char code_data[] = {0x00,0x41,0x2A,0x0F,0x0B};// 0x00 == unreachable as block header !?
-	char code_data[] = {0/*locals_count*/,i32_auto,42,return_block,end_block};// 0x00 == unreachable as block header !?
+	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 	char code_data1[] = {0/*locals_count*/,end_block};
 //	char code_data[] = {0x00,0x0b,0x02,0x00,0x0b};// empty type:1 len:2
 
@@ -708,7 +623,7 @@ Code& emitter(TransformedProgram* ast0) {
 	char function_count = 2;
 	auto codeSection = createSection(code_section, Code(function_count)+encodeVector(da_code)+encodeVector(da_code1));
 
-	auto customSection = createSection(custom, encodeVector(Code(func_types,3)));
+	auto customSection = createSection(custom, encodeVector(Code(types_of_functions, 3)));
 //
 	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + importSection + funcSection + exportSection + codeSection + customSection ;
 //	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection;// + memorySection + ;
