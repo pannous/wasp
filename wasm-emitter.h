@@ -144,6 +144,7 @@ enum Opcodes {
 	set_local = 0x21,
 	i32_store_8 = 0x3a,
 	i32_auto = 0x41,
+	i32_const = 0x41,
 	f32_auto = 0x43,
 	i32_eqz = 0x45,
 	i32_eq = 0x46,
