@@ -612,7 +612,12 @@ Code& emitter(TransformedProgram* ast0) {
 
 //	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 //	char code_data[] = {0x00,0x41,0x2A,0x0F,0x0B};// 0x00 == unreachable as block header !?
-	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+//	0a 0e 02 09 00  41 2a 10 00 41 15 0f 0b 02 00
+//	0a 0a 02 05 00              41 15 0f 0b 02 00
+// fun #c #f        const 42 call oo
+
+	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+//	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 	char code_data1[] = {0/*locals_count*/,end_block};
 //	char code_data[] = {0x00,0x0b,0x02,0x00,0x0b};// empty type:1 len:2
 
