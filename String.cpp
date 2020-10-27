@@ -364,7 +364,7 @@ String typeName(Type t) {
 			return "buffer";
 		case floats:
 			return "float";
-		case numbers:
+		case longs:
 			return "number";
 		case ints:
 			return "int";

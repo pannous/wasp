@@ -48,7 +48,7 @@ String& text = EMPTY;
 // raise defined in signal.h :(
 
 
-class Mark {
+class Wasp {
 
 	int at = -1;//{};            // The index of the current character PLUS ONE todo
 	char previous = 0;
@@ -72,12 +72,12 @@ public:
 //    Node return_fuck(auto source,auto options) {
 	static Node parse(String source) {
 		printf("Parsing %s\n", source.data);
-		return Mark().read(source);
+		return Wasp().read(source);
 	}
 
 	// see 'apply' for operator eval
 	static Node eval(String source) { // return by value ok, rarely used and stable
-		return Mark().read(source).evaluate();
+		return Wasp().read(source).evaluate();
 	}
 
 
@@ -117,7 +117,7 @@ public:
 
 	static Node parseFile(const char *filename) {
 //		const char filename=replace(filename0,"~","/Users/me")
-		return Mark::parse(readFile(filename));
+		return Wasp::parse(readFile(filename));
 	}
 
 private:
@@ -602,7 +602,7 @@ private:
 			return node;
 		// {a:1 b:2} vs { x = add 1 2 }
 		Node expressions = Node();
-		expressions.type = Type::expression;
+		expressions.kind = Type::expression;
 		expressions.add(node);
 		white();
 		while ((ch and is_identifier(ch)) or isalnum(ch) or is_operator(ch)) {
@@ -864,29 +864,29 @@ private:
 
 	Node &setField(Node &key) { // a:{b}
 		Node &val = *value(' ', &key).clone();// applies to WHOLE expression
-		if ((val.type == groups or val.type == patterns or val.type == objects) and val.length == 1 and
+		if ((val.kind == groups or val.kind == patterns or val.kind == objects) and val.length == 1 and
 		    val.name.empty())
 			val = val.last();// singleton
 		bool deep_copy = val.name.empty() or !debug;
 		if(debug) {
-			deep_copy = deep_copy || val.type == Type::numbers and val.name == itoa(val.value.number);
-			deep_copy = deep_copy || val.type == Type::bools and (val.name == "True" or val.name == "False");
-			deep_copy = deep_copy || val.type == Type::floats and val.name == ftoa(val.value.floaty);
+			deep_copy = deep_copy || val.kind == Type::longs and val.name == itoa(val.value.number);
+			deep_copy = deep_copy || val.kind == Type::bools and (val.name == "True" or val.name == "False");
+			deep_copy = deep_copy || val.kind == Type::floats and val.name == ftoa(val.value.floaty);
 		} // shit just for debug labels. might remove!!
 // last part to preserve {deep{a:3,b:4,c:{d:'hi'}}} != {deep{a:3,b:4,c:'hi'}}
 
-		if (val.value.number and val.type != objects and deep_copy) {
+		if (val.value.number and val.kind != objects and deep_copy) {
 			if (&key == &NIL or key.isNil() or key == NIL or val.value.floaty == 6.4807)
 				if (key.name == nil_name)
 					warn("impossible");
 			key.value = val.value;// direct copy value SURE?? what about meta data... ?
-			key.type = val.type;
+			key.kind = val.kind;
 		} else {
-			key.type = keyNode;
+			key.kind = keyNode;
 			if (!key.children and val.name.empty() and val.length > 1) { // deep copy why?
 				key.children = val.children;
 				key.length = val.length;
-				key.type = val.type;
+				key.kind = val.kind;
 			} else if (!val.isNil())
 				key.value.node = &val;// clone?
 		}
@@ -922,7 +922,7 @@ private:
 				break;
 			}// inner match ok
 			if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
-				if (ch != close) // cant debug wth?
+				if (ch != close and close!=' ' and close!='\t' /*???*/) // cant debug wth?
 					if (!current.parent)
 						return ERROR;// throwing? error("NOT MATCHING" : ERROR);
 				break;//				return current but with extra logic: merge a:3 so that a has value 3 etc;
@@ -1008,7 +1008,7 @@ private:
 			current.children = current.param->children;
 			current.length = current.param->length;
 			current.param = nullptr;; // delete after copy to current.param . todo: what about extra meta info?
-			current.type = groups;// todo: lose type if unbound?
+			current.kind = groups;// todo: lose type if unbound?
 		}
 		if (current.length == 1) {
 //			if (current.value.node == &current.children[0])return *current.value.node;
@@ -1048,20 +1048,32 @@ void handler(int sig) {
 //void assert_is(char *wasp, Node result);
 
 void init() {
-	NIL.type = nils;
+	NIL.kind = nils;
 	NIL.value.number = 0;
-	False.type = bools;
+	False.kind = bools;
 	False.value.number = 0;
-	True.type = bools;
+	True.kind = bools;
 	True.value.number = 1;
 }
 
 #import "tests.cpp"
 
-static Node parse(String source) {
+
+Node emit(String code){
+	Node charged=Wasp::parse(code);
+	Node node = emitter(charged).run();
+	return node;
+}
+
+static Node run(String source){
+	return emit(source);
+}
+
+//static
+Node parse(String source) {
 	printf("Parsing %s\n", source.data);
 	if(!source.data)return NIL;
-	return Mark().read(source);
+	return Wasp().read(source);
 }
 
 // Mark/wasp has clean syntax with FULLY-TYPED data model (like JSON or even better)
