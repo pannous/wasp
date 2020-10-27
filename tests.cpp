@@ -1,9 +1,9 @@
 #include "Node.h"
+#include "Wasp.h"
 
 Node result;
 
 //#include "String.h"
-static Node parse(String source);
 
 
 #undef assert // <cassert> / <assert.h>
@@ -92,10 +92,10 @@ bool assert_equals_x(float a, float b, char *context = "") {
 
 bool assert_isx(char *mark, Node expect) {
 	try {
-		Node left = Mark::eval(mark);
-		if (left.type == floats or expect.type == floats)
+		Node left = Wasp::eval(mark);
+		if (left.kind == floats or expect.kind == floats)
 			return assert_equals_x(left.floate(), expect.floate(), mark);
-		if (left.type == numbers or expect.type == numbers) {
+		if (left.kind == longs or expect.kind == longs) {
 			long b = expect.numbere();
 			return assert_equals_x(left.numbere(), b, mark);
 		}
@@ -119,7 +119,7 @@ bool assert_isx(char *mark, const char *expect) {
 
 Node assert_parsesx(const char *mark) {
 	try {
-		result = Mark::parse(mark);
+		result = Wasp::parse(mark);
 		log(result);
 		return result;
 	} catch (chars err) {
@@ -173,10 +173,10 @@ void testDeepCopyDebugBugBug2() {
 
 
 void testEmitter() {
-
-	Code &code = emitter(0);
-	code.run();
-
+	Node node = Node(42);
+	Code &code = emitter(node);
+	int result=code.run();
+	check(result==42);
 }
 
 void testNetBase() {
@@ -186,7 +186,7 @@ void testNetBase() {
 //	log(url);
 	chars json = fetch(url);
 //	log(json);
-	Node result = Mark::parse(json);
+	Node result = Wasp::parse(json);
 	Node results = result["results"];
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
 	Node Erde = results;
@@ -207,14 +207,14 @@ void testNetBase() {
 }
 
 void testDiv() {
-	Node div = Mark::parse("div{ span{ class:'bold' 'text'} br}");
+	Node div = Wasp::parse("div{ span{ class:'bold' 'text'} br}");
 	Node &node = div["span"];
 	assert(div["span"].length == 2);
 //	assert(div["span"]["class"] == "bold")
 }
 
 void testDivMark() {
-	Node div = Mark::parse("{div {span class:'bold' 'text'} {br}}");
+	Node div = Wasp::parse("{div {span class:'bold' 'text'} {br}}");
 	assert(div["span"].length == 2);
 	assert(div["span"]["class"] == "bold");
 }
@@ -227,7 +227,7 @@ void testMarkAsMap() {
 	Node &node = compare["a"];
 	assert(node == "HIO");
 	const char *source = "{b:3 a:'HIO'}";// d:{}
-	Node marked = Mark::parse(source);
+	Node marked = Wasp::parse(source);
 	Node &node1 = marked["a"];
 	assert(node1 == "HIO");
 	assert(marked["a"] == compare["a"]);
@@ -247,7 +247,7 @@ void testMarkSimple() {
 	assert_equals(a.value.number, 3);
 	assert_equals(a, long(3));
 	assert(a == 3);
-	assert(a.type == numbers or a.type == keyNode and a.value.node->type == numbers);
+	assert(a.kind == longs or a.kind == keyNode and a.value.node->kind == longs);
 	assert(a.name == "a"_s);
 //	assert(a3.name == "a"_s);// todo? cant
 
@@ -258,12 +258,12 @@ void testMarkSimple() {
 	assert(a["b"] == a);
 	assert(a["b"] == 3);
 
-	assert(Mark::parse("3.") == 3.);
-	assert(Mark::parse("3.") == 3.f);
+	assert(Wasp::parse("3.") == 3.);
+	assert(Wasp::parse("3.") == 3.f);
 //	assert(Mark::parse("3.1") == 3.1); // todo epsilon 1/3≠0.33…
 //	assert(Mark::parse("3.1") == 3.1f);// todo epsilon
-	assert(Mark::parse("'hi'") == "hi");
-	assert(Mark::parse("3") == 3);
+	assert(Wasp::parse("'hi'") == "hi");
+	assert(Wasp::parse("3") == 3);
 }
 
 
@@ -375,13 +375,13 @@ void testErrors() {
 	return;
 #endif
 	throwing = false;
-	result = Mark::parse("]");
+	result = Wasp::parse("]");
 	assert(result == ERROR);
 /*
 	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/out
 	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-default/out
   */
-	Node node = Mark::parseFile("samples/errors.wasp");
+	Node node = Wasp::parseFile("samples/errors.wasp");
 	throwing = true;
 }
 
@@ -415,11 +415,11 @@ void testAllSamples() {
 #endif
 
 void testSample() {
-	Node node = Mark::parseFile("samples/comments.wasp");
+	Node node = Wasp::parseFile("samples/comments.wasp");
 }
 
 void testKitchensink() {
-	Node node = Mark::parseFile("samples/kitchensink.wasp");
+	Node node = Wasp::parseFile("samples/kitchensink.wasp");
 	assert(node['a'] == "classical json");
 	assert(node['b'] == "quotes optional");
 	assert(node['c'] == "commas optional");
@@ -430,14 +430,14 @@ void testKitchensink() {
 
 void testEval3() {
 	auto math = "one plus two";
-	Node result = Mark::eval(math);
+	Node result = Wasp::eval(math);
 	assert(result == 3);
 }
 
 
 void testMath() {
 	auto math = "one plus two times three";
-	Node result = Mark::eval(math);
+	Node result = Wasp::eval(math);
 	assert(result == 7);
 }
 
@@ -720,7 +720,7 @@ void testParams() {
 	Node body = assert_parses("body(style='blue'){a(link)}");
 	assert(body["style"] == "blue");
 
-	Mark::parse("a(x:1)");
+	Wasp::parse("a(x:1)");
 	assert_parses("a(x:1)");
 	assert_parses("a(x=1)");
 	assert_parses("a{y=1}");
@@ -779,13 +779,13 @@ void testParentContext() {
 	result.log();
 	Node &a = result["a"];
 	a.log();
-	assert_equals(a.type, strings);
+	assert_equals(a.kind, strings);
 	assert_equals(a.value.string, "HIO");
 	assert_equals(a.string(), "HIO");// keyNodes go to values!
 	assert(a == "HIO");
 //	assert_equals(a.name,"a" or"HIO");// keyNodes go to values!
 	skip(
-			assert_equals(a.type, keyNode);
+			assert_equals(a.kind, keyNode);
 			assert(a.name == "HIO");
 	)
 }
@@ -800,7 +800,7 @@ void testParentBUG() {
 	assert(parent);
 	log(parent);// BROKEN, WHY?? let's find out:
 	assert(parent == &result);
-	assert_equals(parent->type, objects);
+	assert_equals(parent->kind, objects);
 	assert_equals(parent->name, "");
 	assert(parent == &result);
 	testParentContext();// make sure parsed correctly
@@ -989,9 +989,14 @@ void tests() {
 
 #include "testAngle.cpp"
 #include "testWast.cpp"
+#include "testWasm.cpp"
+
+
 
 void testWasm() {
-	testString();
+	testConstReturn();
+//	testWasp();
+//	testWast();
 }
 
 
@@ -1014,7 +1019,11 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-	testEmitter();
+//	testEmitter();
+//	testWast();
+	testWasm();
+//	testWasp();
+
 //	tests();// make sure all still ok before changes
 //	testBUG();
 //	testParentBUG();

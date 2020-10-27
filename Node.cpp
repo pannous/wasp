@@ -55,7 +55,7 @@ Node False = Node("False").setType(bools);
 
 Node &Node::operator=(int i) {
 	value.number = i;
-	type = numbers;
+	kind = longs;
 	if (name.empty() or name.isNumber())
 		name = String(itoa(i));
 	return *this;
@@ -63,7 +63,7 @@ Node &Node::operator=(int i) {
 
 Node &Node::operator=(chars c) {
 	value.string = String(c);
-	type = strings;
+	kind = strings;
 	if (name == empty_name)name = value.string;
 	return *this;
 }
@@ -92,7 +92,7 @@ Node &Node::operator[](String s) {
 	}
 	if (found)return *found;
 	if (name == s) {// me.me == me ? really? let's see if it's a stupid idea…
-		if (type == objects and value.node)
+		if (kind == objects and value.node)
 			return *value.node;
 		return *this;
 	}
@@ -100,15 +100,15 @@ Node &Node::operator[](String s) {
 		if (children[0].has(s))return children[0][s];
 
 	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
-	neu.type = nils; // until ref is set!
+	neu.kind = nils; // until ref is set!
 	neu.parent = this;
 	if (neu.value.node) return *neu.value.node;
 	else return neu;
 }
-//
-//Node &Nodec::operator[](String s) const{
-//	return (*this)[s];
-//}
+
+Node &Nodec::operator[](String s) const{
+	return (*this)[s];
+}
 
 Node *Node::begin() const {
 	return children;
@@ -145,10 +145,10 @@ Node *all = static_cast<Node *>(calloc(sizeof(Node),capacity * maxNodes));
 
 
 bool typesCompatible(Node &one, Node &other) {
-	if (one.type == other.type)return true;
-	if (one.type == objects or one.type == groups or one.type == patterns or one.type == expression)
-		return other.type == objects or other.type == groups or other.type == patterns or other.type == expression;
-	if (one.type != keyNode and other.type != keyNode) return false;
+	if (one.kind == other.kind)return true;
+	if (one.kind == objects or one.kind == groups or one.kind == patterns or one.kind == expression)
+		return other.kind == objects or other.kind == groups or other.kind == patterns or other.kind == expression;
+	if (one.kind != keyNode and other.kind != keyNode) return false;
 	return false;
 }
 
@@ -175,11 +175,11 @@ Node &Node::set(String string, Node *node) {
 	entry.name = string;
 	if (!node) {
 //		entry.value.node=&entry;// HACK to set reference to self!
-		entry.type = keyNode;
+		entry.kind = keyNode;
 		entry.value.node = &children[capacity - length - 1];//  HACK to get key and value node dummy from children
 //		 todo: reduce capacity per node
 		entry.value.node->name = string;
-		entry.value.node->type = Type::unknown;
+		entry.value.node->kind = Type::unknown;
 		entry.value.node->parent = &entry;
 //		entry.value.node=Node();// dangling ref to be set
 	} else {
@@ -197,40 +197,40 @@ Node &Node::set(String string, Node *node) {
 
 bool Node::operator==(String other) {
 	if (this==0)return other.empty();
-	if (type == objects or type == keyNode)return *value.node == other or value.string == other;
-	if (type == numbers) return other == itoa(value.number);
-	if (type == reference) return other == name;
-	if (type == unknown) return other == name;
-	return type == strings and other == value.string;
+	if (kind == objects or kind == keyNode)return *value.node == other or value.string == other;
+	if (kind == longs) return other == itoa(value.number);
+	if (kind == reference) return other == name;
+	if (kind == unknown) return other == name;
+	return kind == strings and other == value.string;
 }
 
 bool Node::operator==(int other) {
 //	if (this == 0)return false;// HOW?
-	if ((type == numbers and value.number == other) or (type == floats and value.floaty == other))
+	if ((kind == longs and value.number == other) or (kind == floats and value.floaty == other))
 		return true;
-	if (type == keyNode and value.node and *value.node == other)return true;
-	if (type == strings and atoi0(value.string) == other)return true;
+	if (kind == keyNode and value.node and *value.node == other)return true;
+	if (kind == strings and atoi0(value.string) == other)return true;
 	if (atoi0(this->name) == other)return true;
-	if (type == objects and length == 1)return last() == other;
+	if (kind == objects and length == 1)return last() == other;
 //	if (type == objects)return value.node->numbere()==other;// WTF
 	return false;
 }
 
 bool Node::operator==(long other) {
-	if(type==keyNode and value.node and value.node->value.number == other)return true;
-	return (type == numbers and value.number == other) or (type == floats and value.floaty == other) or (type == bools and value.number == other);
+	if(kind == keyNode and value.node and value.node->value.number == other)return true;
+	return (kind == longs and value.number == other) or (kind == floats and value.floaty == other) or (kind == bools and value.number == other);
 }
 
 bool Node::operator==(double other) {
-	if(type==keyNode and value.node and value.node->value.floaty == other)return true;
-	return (type == floats and value.floaty == ((float) other)) or
-	       (type == numbers and value.number == other);
+	if(kind == keyNode and value.node and value.node->value.floaty == other)return true;
+	return (kind == floats and value.floaty == ((float) other)) or
+	       (kind == longs and value.number == other);
 }
 
 bool Node::operator==(float other) {
-	if(type==keyNode and value.node and value.node->value.floaty == other)return true;
-	return (type == floats and value.floaty == other) or
-	       (type == numbers and value.number == other);
+	if(kind == keyNode and value.node and value.node->value.floaty == other)return true;
+	return (kind == floats and value.floaty == other) or
+	       (kind == longs and value.number == other);
 }
 
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
@@ -248,21 +248,21 @@ bool Node::operator==(Node &other) {
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// same value enough?
 
-	if(type==keyNode and this->value.node and *this->value.node==other)return true;// todo again?
-	if (other.type == unknown and name == other.name)
+	if(kind == keyNode and this->value.node and *this->value.node == other)return true;// todo again?
+	if (other.kind == unknown and name == other.name)
 		return true; // weak criterum for dangling unknowns!! TODO ok??
 	if (not typesCompatible(*this, other))
 		return false;
-	if (type == bools)
+	if (kind == bools)
 		return value.data == other.value.data;// or (value.data!= nullptr and other.value.data != nullptr a);
 //	CompileError: WebAssembly.Module(): Compiling function #53:"Node::operator==(Node&)" failed: expected 1 elements on the stack for fallthru to @3, found 0 @+5465
 //	or (other != NIL and other != False) or
 
-	if (type == numbers)
+	if (kind == longs)
 		return value.number == other.value.number;
-	if (type == strings)
+	if (kind == strings)
 		return value.string == other.value.string or value.string == other.name;// !? match by name??
-	if (type == floats)
+	if (kind == floats)
 		return value.floaty == other.value.floaty;
 
 
@@ -282,7 +282,7 @@ bool Node::operator==(Node &other) {
 		if (field != val and !field.name.empty())
 			val = other[field.name];
 		if (field != val) {
-			if ((field.type != keyNode and field.type != nils) or !field.value.node)
+			if ((field.kind != keyNode and field.kind != nils) or !field.value.node)
 				return false;
 			Node deep = *field.value.node;
 			return deep == val;
@@ -305,29 +305,29 @@ bool Node::operator!=(Node other) {
 }
 
 Node Node::operator+(Node other) {
-	if (type == strings and other.type == numbers)
+	if (kind == strings and other.kind == longs)
 		return Node(value.string + other.value.number);
-	if (type == strings and other.type == floats)
+	if (kind == strings and other.kind == floats)
 		return Node(value.string + other.value.floaty);
-	if (type == strings and other.type == strings)
+	if (kind == strings and other.kind == strings)
 		return Node(value.string + other.value.string);
-	if (type == numbers and other.type == numbers)
+	if (kind == longs and other.kind == longs)
 		return Node(value.number + other.value.number);
-	if (type == floats and other.type == numbers)
+	if (kind == floats and other.kind == longs)
 		return Node(value.floaty + other.value.number);
-	if (type == numbers and other.type == floats)
+	if (kind == longs and other.kind == floats)
 		return Node(value.number + other.value.floaty);
-	if (type == floats and other.type == floats)
+	if (kind == floats and other.kind == floats)
 		return Node(value.floaty + other.value.floaty);
-	if (type == numbers and other.type == strings)
+	if (kind == longs and other.kind == strings)
 		return Node(value.number + other.value.string);
 //	if(type==floats and other.type==strings)
 //		return Node(value.floaty + other.value.string);
-	if (type == objects)
+	if (kind == objects)
 		return this->merge(other);
-	if (other.type == objects)
+	if (other.kind == objects)
 		return other.insert(*this, 0);
-	error(str("Operator + not supported for node types %s and %s") % typeName(type) % typeName(other.type));
+	error(str("Operator + not supported for node types %s and %s") % typeName(kind) % typeName(other.kind));
 	return ERROR;
 };
 
@@ -344,11 +344,11 @@ Node values(Node n) {
 Node Node::evaluate(bool expectOperator /* = true*/) {
 	if (length == 0)return values(*this);
 	if (length == 1)
-		if (type == operators)
+		if (kind == operators)
 			return apply(NIL, *this, *children);
 		else return values(children[0]);
 	if (length > 1)
-		if (type == operators)
+		if (kind == operators)
 			return apply(NIL, *this, this->clone()->setType(objects));
 //	if (type != expression and type != keyNode)
 //		return *this;
@@ -407,16 +407,16 @@ void Node::remove(Node &node) {
 
 
 void Node::add(Node *node,bool flatten) {
-	if (node->isNil() and node->name.empty() and node->type != numbers)
+	if (node->isNil() and node->name.empty() and node->kind != longs)
 		return;// skipp nils!
 	node->parent = this;
-	if (not param and node->type == groups ) {// polish_notation
+	if (not param and node->kind == groups ) {// polish_notation
 		param = node;// polish_notation: children?
-	} else if (not children and node->type == patterns) {
+	} else if (not children and node->kind == patterns) {
 		children = node->children;// todo
 		length = node->length;
-		type = patterns;//todo!
-	} else if (not children and node->type == objects and node->name.empty()) {
+		kind = patterns;//todo!
+	} else if (not children and node->kind == objects and node->name.empty()) {
 		children = node->children;
 		length = node->length;
 	} else { // todo a{x}{y z} => a{x,{y z}} BAD
@@ -506,7 +506,7 @@ float Node::precedence(Node &operater) {
 	// like c++ here HIGHER up == lower value == more important
 //	switch (node.name) nope
 	String &name = operater.name;
-	if (operater.type == strings)// and name.empty()
+	if (operater.kind == strings)// and name.empty()
 		name = operater.value.string;
 	if (eq(name, "not"))return 1;
 	if (eq(name, "¬"))return 1;
@@ -564,9 +564,9 @@ Node Node::apply(Node left, Node op0, Node right) {
 		return Node(right.length);// or right["size"] or right["count"]  or right["length"]
 	}
 	if (op == "√") { // why String( on mac?
-		if (right.type == floats)
+		if (right.kind == floats)
 			left.add(Node(sqrt(right.value.floaty)));
-		if (right.type == numbers)
+		if (right.kind == longs)
 			left.add(Node(sqrt(right.value.number)).setType(floats));
 		return left.evaluate();
 	}
@@ -574,35 +574,35 @@ Node Node::apply(Node left, Node op0, Node right) {
 //	if(!is_KNOWN_operator(op0))return call(left, op0, right);
 
 	if (op == "|") {
-		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		if (left.type == numbers and right.type == numbers) return Node((long) (left.value.number | right.value.number));
+		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
+		if (left.kind == longs and right.kind == longs) return Node((long) (left.value.number | right.value.number));
 		// pipe todo
 	}
 
 	if (op == "&") {// todo
-		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		if (left.type == bools or right.type == bools)
+		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
+		if (left.kind == bools or right.kind == bools)
 			return left.value.data and right.value.data ? True : False;
 		return Node(left.value.number & right.value.number);
 	}
 
 	if (op == "xor" or op == "^|") {
 		printf("XOR REACHED");
-		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		if (left.type == bools or right.type == bools){
+		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
+		if (left.kind == bools or right.kind == bools){
 		return left.value.number ^ right.value.number ? True : False;
 		}
 		return Node(left.value.number ^ right.value.number);
 	}
 
 	if (op == "and" or op == "&&") {
-		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		if (left.type == bools or right.type == bools) return left.value.data and right.value.data ? True : False;
+		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
+		if (left.kind == bools or right.kind == bools) return left.value.data and right.value.data ? True : False;
 		return Node(left.value.number and right.value.number);
 	}
 
 	if (op == "or" or op == "||" or op == "&") {
-		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
+		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (!left.empty() and left != NIL and left != False)return left;
 		return left.value.data or right.value.data ? True : False;
 	}
@@ -616,28 +616,28 @@ Node Node::apply(Node left, Node op0, Node right) {
 	}
 
 	if (op == "+" or op == "add" or op == "plus") {
-		if (left.type == strings or right.type == strings) return Node(left.string() + right.string());
-		if (left.type == floats and right.type == floats) return Node(left.value.floaty + right.value.floaty);
-		if (left.type == floats and right.type == numbers) return Node(left.value.floaty + right.value.number);
-		if (left.type == numbers and right.type == floats) return Node(left.value.number + right.value.floaty);
-		if (left.type == numbers and right.type == numbers) return Node(left.value.number + right.value.number);
+		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
+		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty + right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty + right.value.number);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.number + right.value.floaty);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.number + right.value.number);
 //		if(left.type==arrays …
 	}
 
 	// todo: 2 * -x
 	if (op == "-" or op == "minus" or op == "subtract") {
-		if (left.type == floats and right.type == floats) return Node(left.value.floaty - right.value.floaty);
-		if (left.type == numbers and right.type == floats) return Node(left.value.number - right.value.floaty);
-		if (left.type == floats and right.type == numbers) return Node(left.value.floaty - right.value.number);
-		if (left.type == numbers and right.type == numbers) return Node(left.value.number - right.value.number);
+		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty - right.value.floaty);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.number - right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty - right.value.number);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.number - right.value.number);
 	}
 
 	if (op == "*" or op == "⋆" or op == "×" or op == "∗" or op == "times") {// ⊗
-		if (left.type == strings or right.type == strings) return Node(left.string().times(right.value.number));
-		if (left.type == floats and right.type == floats) return Node(left.value.floaty * right.value.floaty);
-		if (left.type == numbers and right.type == floats) return Node(left.value.number * right.value.floaty);
-		if (left.type == floats and right.type == numbers) return Node(left.value.floaty * right.value.number);
-		if (left.type == numbers and right.type == numbers) return Node(left.value.number * right.value.number);
+		if (left.kind == strings or right.kind == strings) return Node(left.string().times(right.value.number));
+		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty * right.value.floaty);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.number * right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty * right.value.number);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.number * right.value.number);
 		todo(op + " operator NOT defined for types %s and %s ");
 
 //		if (right.type == numbers) return Node(left.value.number * right.value.number);
@@ -650,7 +650,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 
 Node &Node::setType(Type type) {
 	if (length < 2 and (type == groups or type == objects)); // skip!
-	else this->type = type;
+	else this->kind = type;
 //	if(name.empty()){
 //		if(type==objects)name = object_name;
 //		if(type==groups)name = groups_name;
@@ -661,12 +661,12 @@ Node &Node::setType(Type type) {
 
 // Node* OK? else Node&
 Node *Node::has(String s, bool searchParams) const {
-	if ((type == objects or type == keyNode) and s == value.node->name)
+	if ((kind == objects or kind == keyNode) and s == value.node->name)
 		return value.node;
 	for (int i = 0; i < length; i++) {
 		Node &entry = children[i];
 		if (s == entry.name)
-			if ((entry.type == keyNode or entry.type == nils) and entry.value.node)
+			if ((entry.kind == keyNode or entry.kind == nils) and entry.value.node)
 				return entry.value.node;
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
 				return &entry;
@@ -689,18 +689,18 @@ bool Node::isEmpty() {// not required here: name.empty()
 }
 
 bool Node::isNil() { // required here: name.empty()
-	return this == &NIL or type == nils or
-	       ((type == keyNode or type == unknown or name.empty()) and length == 0 and value.data == nullptr);
+	return this == &NIL or kind == nils or
+	       ((kind == keyNode or kind == unknown or name.empty()) and length == 0 and value.data == nullptr);
 }
 
 const char * Node::serializeValue() const {
 	String wasp="";
 	Value val = value;
-	switch (type) {
+	switch (kind) {
 		case strings:
 			return val.string;
 		case ints:
-		case numbers:
+		case longs:
 			return itoa(val.number);
 		case floats:
 			return ftoa(val.floaty);
@@ -730,13 +730,13 @@ const char * Node::serialize() const {
 	else if (this->value.data){wasp += "="; wasp +=this->serializeValue();}
 	}
 	if(this->length>0){
-		wasp += (this->type == groups ? "(" : "{");
+		wasp += (this->kind == groups ? "(" : "{");
 		if(markmode and not this->name.empty() )wasp += this->name;
 		for (Node &node : *this) {
 			wasp += " ";
 			wasp+=node.serialize();
 		}
-		wasp += (this->type == groups ? " )" : " }");
+		wasp += (this->kind == groups ? " )" : " }");
 	}
 	return wasp;
 //	return this->name.empty()? this->string() : this->name;
