@@ -3,6 +3,7 @@
 //
 
 #include "WasmHelpers.h"
+#include "Node.h"
 
 chars wat=R"(module
   (table (;0;) 1 1 funcref)
@@ -33,7 +34,7 @@ chars wat=R"(module
 void testParse(){
 //	Mark::markmode();
 //	const Node &node = Mark::parseFile("/Users/me/dev/wasm/test.wat");
-	const Node &module = Mark::parse(wat);
+	const Node &module = Wasp::parse(wat);
 	assert_equals(module, "module");
 	printf(module.toString());
 	assert_equals(module.length, 8);
@@ -42,14 +43,13 @@ void testParse(){
 	assert_equals(module[0], "table");
 	assert_equals(module[1], "memory");
 	assert_equals(module[2], "export");
-}
+	check(module["func"].length==2)
+	check(module["func"]["$main"]["param"].length==2);
 
-void testAllWast(){
-	testParse();
 }
 
 void testWast() {
 	polish_notation = true;
-	testAllWast();
+	testParse();
 	polish_notation = false;
 }

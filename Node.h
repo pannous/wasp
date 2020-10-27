@@ -74,7 +74,7 @@ class Node {
 public:
 	String name = empty_name;// nil_name;
 	Value value;
-	Type type = unknown;
+	Type kind = unknown;
 	int length = 0;// children
 //	int count = 0;// use param.length for arguments / param
 
@@ -113,7 +113,7 @@ public:
 
 
 	Node() {
-		type = objects;
+		kind = objects;
 //		if(debug)name = "[]";
 	}
 
@@ -140,7 +140,7 @@ public:
 
 	explicit Node(int buffer[]) {
 		value.data = buffer;
-		type = buffers;
+		kind = buffers;
 //		todo ("type of array");
 //		if (debug)name = "int[]";
 //			buffer.encoding = "a85";
@@ -149,19 +149,19 @@ public:
 	explicit Node(char c) {
 		name = String(c);
 		value.string = String(c);
-		type = strings;
+		kind = strings;
 	}
 
 	explicit Node(double nr) {
 		value.floaty = nr;
-		type = floats;
+		kind = floats;
 		if (debug)name = String(itoa0(nr,10)); // messes with setField contraction
 	}
 
 
 	explicit Node(float nr) {
 		value.floaty = nr;
-		type = floats;
+		kind = floats;
 		if (debug)name = String((long) nr) + String(".…");//#+"#"; // messes with setField contraction
 	}
 
@@ -169,7 +169,7 @@ public:
 // Pass the number of arguments as the first variable
 // Require the last variable argument to be null, zero or whatever
 	explicit Node(int a, int b, ...) {
-		type = objects;// groups list
+		kind = objects;// groups list
 		add(Node(a).clone());
 #ifndef WASM
 		va_list args;
@@ -186,7 +186,7 @@ public:
 	// why not auto null terminated on mac?
 	// vargs needs to be 0 terminated, otherwise pray!
 	explicit Node(char *a, char *b, ...) {
-		type = objects;// groups list
+		kind = objects;// groups list
 		add(Node(a).clone(),false);
 #ifndef WASM
 		va_list args;
@@ -205,12 +205,12 @@ public:
 //	explicit
 	Node(long nr) {
 		value.number = nr;
-		type = numbers;
+		kind = longs;
 		if (debug)name = String(itoa(nr)); // messes with setField contraction
 	}
 	explicit Node(int nr) {
 		value.number = nr;
-		type = numbers;
+		kind = longs;
 		if (debug)name = String(itoa(nr)); // messes with setField contraction
 	}
 
@@ -236,7 +236,7 @@ public:
 		if (identifier) {
 //			if(check_reference and not symbol)...
 			name = s;
-			type = reference;
+			kind = reference;
 		}
 //		else if (atoi(s) and s == itoa0(atoi(s))) {
 //			value.number = atoi(s);
@@ -244,7 +244,7 @@ public:
 //			}
 //		else if (atof(s)) { value.floaty = atoi(s); }
 		else {
-			type = strings;
+			kind = strings;
 			value.string = s;
 			if (name == empty_name)name = s;
 		}
@@ -252,7 +252,7 @@ public:
 
 	explicit Node(Node **pNode) {
 		children = pNode[0];
-		type = arrays;
+		kind = arrays;
 		value.data = pNode[0];
 	}
 
@@ -286,11 +286,11 @@ public:
 
 
 	String string() const {
-		if (type == strings)
+		if (kind == strings)
 			return value.string;
 		return name;
 		breakpoint_helper
-				err(String("WRONG TYPE ") + typeName(type));
+				err(String("WRONG TYPE ") + typeName(kind));
 	}
 
 	// moved outside because circular dependency
@@ -329,7 +329,7 @@ public:
 
 	void log() {
 		printf("Node ");
-		if (this == &NIL || type == nils) {
+		if (this == &NIL || kind == nils) {
 			printf("NIL\n");
 			return;
 		}
@@ -340,12 +340,12 @@ public:
 			printf("BUG");
 			return;
 		}
-		if (name and name.data and name.data > (char *) 0xffff and type != objects)
+		if (name and name.data and name.data > (char *) 0xffff and kind != objects)
 #endif
 #endif
 		printf("name:"_s + name);
 		printf(" length:"_s + itoa(length));
-		printf(" type:"_s + typeName(type));
+		printf(" type:"_s + typeName(kind));
 		printf(" value:"_s + serializeValue());
 //			printf("name:%s ", name.data);
 //		printf("length:%i ", length);
@@ -383,11 +383,11 @@ public:
 	Node &setType(Type type);
 
 	long numbere() {
-		return type == numbers or type == bools ? value.number : value.floaty;// danger
+		return kind == longs or kind == bools ? value.number : value.floaty;// danger
 	}
 
 	float floate() {
-		return type == numbers ? value.number : value.floaty;// danger
+		return kind == longs ? value.number : value.floaty;// danger
 	}
 
 	Node *has(String s, bool searchParams = true) const;
