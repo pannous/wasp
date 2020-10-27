@@ -1,10 +1,13 @@
 // BASED ON https://github.com/ColinEberhardt/chasm/blob/master/src/emitter.ts
-//https://github.com/ColinEberhardt/chasm/blob/master/src/encoding.ts
+// https://github.com/ColinEberhardt/chasm/blob/master/src/encoding.ts
+// https://pengowray.github.io/wasm-ops/
+#include "Wasp.h"
 #include "String.h"
 #include "Map.h"
 #include "wasm-emitter.h"
 #include "WasmHelpers.h"
 #include "wasm_runner.h"
+#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 #ifdef WASM
 #import  "WasmHelpers.cpp"
@@ -12,7 +15,8 @@
 //#include "string.h" // memcpy
 
 typedef char byter[];
-
+Code Call(char* symbol);//Node* args
+Code& unsignedLEB128(int n);
 //Code& unsignedLEB128(int);
 //Code& flatten(byter);
 //Code& flatten (Code& data);
@@ -53,77 +57,77 @@ bytes concat(char a, byter  b,int len) {
 	memcpy(c+1, b, len);
 	return c;
 }
-
-class Nod{
-public:
-	Nod(StatementNod &alternate, ExpressionNod &args, StatementNod &consequent, ExpressionNod &expression,
-	    ExpressionNod &initializer, String &name, StatementNod &statements, String &typeName, String &value)
-			: alternate(alternate), args(args), consequent(consequent), expression(expression),
-			  initializer(initializer), name(name), statements(statements), type_name(typeName), value(value) {
-
-	}
-
-	Nod(StatementNod *alternate, ExpressionNod *args, StatementNod *consequent, ExpressionNod *expression,
-			ExpressionNod *initializer, String *name, StatementNod *statements, String *typeName, String *value)
-	: alternate(*alternate), args(*args), consequent(*consequent), expression(*expression),
-	initializer(*initializer), name(*name), statements(*statements), type_name(*typeName), value(*value) {
-
-	}
-	Nod():Nod(0,0,0,0,0,0,0,0,0){}
-
-	String& type_name;
-	int type;
-
-	String& value;// variable name or operator "+" …
-	ExpressionNod& expression;
-	ExpressionNod& initializer;
-	String& name;
-	ExpressionNod& args;
-	StatementNod& statements;
-	StatementNod& consequent;
-	StatementNod& alternate;
-	int index;// for args
-	StatementNod *begin() const{
-		todo();
-		return &statements;
-	}
-	Nod *end() const{
-		todo();
-		return 0;
-	}
-
-	Nod& operator[](int i){
-		todo();
-		return *this;
-	}
-};
-class ExpressionNod : public Nod{
-public:
-	ExpressionNod() {}
-
-	ExpressionNod& operator[](int i){
-		todo();
-		return *this;
-	}
-};
-
-class StatementNod : public Nod{
-public:
-	StatementNod() {}
-	StatementNod& operator[](int i){
-		todo();
-		return *this;
-	}
-};
-
-class ProcStatementNod : public Nod{
-public:
-	ProcStatementNod() {}
-	ProcStatementNod& operator[](int i){
-		todo();
-		return *this;
-	}
-};
+//
+//class Nod{
+//public:
+//	Nod(Block &alternate, ExpressionNod &args, Block &consequent, ExpressionNod &expression,
+//	    ExpressionNod &initializer, String &name, Block &statements, String &typeName, String &value)
+//			: alternate(alternate), args(args), consequent(consequent), expression(expression),
+//			  initializer(initializer), name(name), statements(statements), type_name(typeName), value(value) {
+//
+//	}
+//
+//	Nod(Block *alternate, ExpressionNod *args, Block *consequent, ExpressionNod *expression,
+//	    ExpressionNod *initializer, String *name, Block *statements, String *typeName, String *value)
+//	: alternate(*alternate), args(*args), consequent(*consequent), expression(*expression),
+//	initializer(*initializer), name(*name), statements(*statements), type_name(*typeName), value(*value) {
+//
+//	}
+//	Nod():Nod(0,0,0,0,0,0,0,0,0){}
+//
+//	String type_name;
+//	int type;
+//
+//	String& value;// variable name or operator "+" …
+//	ExpressionNod& expression;
+//	ExpressionNod& initializer;
+//	String& name;
+//	ExpressionNod& args;
+//	Block& statements;
+//	Block& consequent;
+//	Block& alternate;
+//	int index;// for args
+//	Block *begin() const{
+//		todo();
+//		return &statements;
+//	}
+//	Nod *end() const{
+//		todo();
+//		return 0;
+//	}
+//
+//	Nod& operator[](int i){
+//		todo();
+//		return *this;
+//	}
+//};
+//class ExpressionNod : public Nod{
+//public:
+//	ExpressionNod() {}
+//
+//	ExpressionNod& operator[](int i){
+//		todo();
+//		return *this;
+//	}
+//};
+//
+//class Block : public Nod{
+//public:
+//	Block() {}
+//	Block& operator[](int i){
+//		todo();
+//		return *this;
+//	}
+//};
+//
+//class ProcStatementNod : public Nod{
+//public:
+//	ProcStatementNod() {}
+//	ProcStatementNod& operator[](int i){
+//		todo();
+//		return *this;
+//	}
+//};
 
 //#include <iostream>
 
@@ -165,6 +169,8 @@ Code encodeString(char *String);
 
 
 bool eq(const char *op, const char *string);
+
+
 class BinaryOpcode{
 	int operator [](const char *s){
 		if(eq(s, "+"))return f32_add;
@@ -207,7 +213,7 @@ BinaryOpcode binaryOpcode;
 
 // http://webassembly.github.io/spec/core/binary/modules.html#export-section
 enum ExportType {
-	func_export = 0x00,
+	func_export = (char)0x00,
 	table_export = 0x01,
 	mem_export = 0x02,
 	global_export = 0x03
@@ -238,16 +244,19 @@ typedef char uint8_t;
 #endif
 
 typedef uint8_t byt;
-Code unsignedLEB128(int n) {
+//https://en.wikipedia.org/wiki/LEB128
+// little endian 257 = 0x81 (001) + 0x02 (256)
+Code& unsignedLEB128(int n) {
+//	return Code(n); // todo what is this?
 	Code buffer;
 //	Code* buffer=new Code(); // IF RETURNING Code&
 	do {
 		byt byte = n & 0x7f;
 		n = n >> 7;
 		if (n != 0) {
-			byte |= 0x80;
+			byte |= 0x80;// continuation bit
 		}
-		buffer.push(byte);
+		buffer.add(byte);
 	} while (n != 0);
 	return buffer;
 }
@@ -269,14 +278,15 @@ Code unsignedLEB128(int n) {
 Code encodeVector (Code data) {
 //	return data.vector();
 	if(data.encoded)return data;
-	Code code = unsignedLEB128(data.length) + flatten(data);
+//	Code code = unsignedLEB128(data.length) + flatten(data);
+	Code code = Code((byte)data.length) + flatten(data);
 	code.encoded = true;
 	return code;
 }
 
 // https://webassembly.github.io/spec/core/binary/modules.html#code-section
 Code encodeLocal (long count, Valtype type) {
-	return unsignedLEB128(count).push(type);
+	return unsignedLEB128(count).push((char)type);
 }
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
@@ -294,12 +304,11 @@ int localIndexForSymbol (String& name) {
 	return symbols[name];
 };;
 int localIndexForSymbol (char* name) {
-	todo();
 	if (!symbols.contains(name)) {
 		symbols.insert_or_assign(name, symbols.size());
 	}
 	return symbols[name];
-};;
+};
 
 enum NodTypes{
 	numberLiteral,
@@ -325,191 +334,226 @@ bytes ieee754(float num) {
 	*hack = num;
 	return reinterpret_cast<bytes>(hack);
 }
+//Code emitExpression (Node* nodes);
 
-Code emitExpression (ExpressionNod nodes) {
-//Code emitExpression (Nod nodes) {
+Code emitBlock(Node node);
+Code emitExpression (Node* node);
+Code emitExpression (Node node) { // expression, statement or BODY (list)
+//	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
+	NodTypes type;// todo: type/kind
 	Code code;
-	for (Nod node : nodes) {
-		switch (node.type) {
-			case numberLiteral:
-				code.push(f32_auto);
-				code.push(ieee754(node.value),4);
-				break;
-			case identifier:
-				code.push(get_local);
-				code.push(unsignedLEB128(localIndexForSymbol(node.value)), 8);
-				break;
-			case binaryExpression:
-				code.push(binaryOpcode[node.value]);
-				break;
-		};
-	}
-	return code;
-}
-
-
-Code emitStatements (StatementNod statements) {
-	Code code;// global object for now
-	for (Nod statement : statements) {
-		switch (statement.type) {
-			case printStatement:
-				emitExpression(statement.expression);
-				code.push(call);
-				code.push(unsignedLEB128(0),8);
-				break;
-			case variableDeclaration:
-				emitExpression(statement.initializer);
-				code.push(set_local);
-				code.push(unsignedLEB128(localIndexForSymbol(statement.name)), 8);
-				break;
-			case variableAssignment:
-				todo();
-//				emitExpression(statement.value);
-				code.push(set_local);
-				code.push(unsignedLEB128(localIndexForSymbol(statement.name)), 8);
-				break;
+		Node statement = node;
+	switch (type) {
 			case whileStatement:
 				// outer block
-				code.push(block);
-				code.push(void_block);
+				code.opcode(block);
+				code.opcode(void_block);
 				// inner loop
-				code.push(loop);
-				code.push(void_block);
+				code.opcode(loop);
+				code.opcode(void_block);
 				// compute the while expression
-				emitExpression(statement.expression);
-				code.push(i32_eqz);
+				emitExpression(statement.param);
+				code.opcode(i32_eqz);
 				// br_if $label0
-				code.push(br_if);
-				code.push(signedLEB128(1));
+				code.opcode(br_if);
+				code.opcode(1);
+//			code.push(signedLEB128(1));
 				// the nested logic
-				emitStatements(statement.statements);
+				emitExpression(statement.value.node);// BODY
 				// br $label1
-				code.push(br);
-				code.push(signedLEB128(0));
+				code.opcode(br);
+			code.opcode(0);
+
+//				code.push(signedLEB128(0));
 				// end loop
-				code.push(end_block);
+				code.opcode(end_block);
 				// end block
-				code.push(end_block);
+				code.opcode(end_block);
 				break;
 			case ifStatement:
 				// if block
-				code.push(block);
-				code.push(void_block);
+				code.opcode(block);
+				code.opcode(void_block);
 				// compute the if expression
-				emitExpression(statement.expression);
-				code.push(i32_eqz);
+				emitExpression(statement.param);
+				code.opcode(i32_eqz);
 				// br_if $label0
-				code.push(br_if);
-				code.push(signedLEB128(0));
+				code.opcode(br_if);
+			code.opcode(0);
+//			code.opcode(signedLEB128(0));
 				// the nested logic
-				emitStatements(statement.consequent);
+				emitExpression(statement.value.node);// BODY
 				// end block
-				code.push(end_block);
+				code.opcode(end_block);
 
 				// else block
-				code.push(block);
-				code.push(void_block);
+				code.opcode(block);
+				code.opcode(void_block);
 				// compute the if expression
-				emitExpression(statement.expression);
-				code.push(i32_auto);
-				code.push(signedLEB128(1));
-				code.push(i32_eq);
+				emitExpression(statement.param);
+				code.opcode(i32_auto);
+//				code.opcode(signedLEB128(1));
+			code.opcode(1);
+				code.opcode(i32_eq);
 				// br_if $label0
-				code.push(br_if);
-				code.push(signedLEB128(0));
+				code.opcode(br_if);
+			code.opcode(0);
+//				code.opcode(signedLEB128(0));
 				// the nested logic
-				emitStatements(statement.alternate);
+				emitExpression(&statement["else"]);
 				// end block
-				code.push(end_block);
+				code.opcode(end_block);
 				break;
 			case callStatement:
 				if (statement.name == "setpixel") {
 					// compute and cache the setpixel parameters
-					emitExpression(statement.args[0]);
-					code.push(set_local);
-					code.push(unsignedLEB128(localIndexForSymbol("x")));
-
-					emitExpression(statement.args[1]);
-					code.push(set_local);
-					code.push(unsignedLEB128(localIndexForSymbol("y")));
-
-					emitExpression(statement.args[2]);
-					code.push(set_local);
-					code.push(unsignedLEB128(localIndexForSymbol("color")));
-
-					// compute the offset (x * 100) + y
-					code.push(get_local);
-					code.push(unsignedLEB128(localIndexForSymbol("y")));
-					code.push(f32_auto);
-					code.push(ieee754(100),4);
-					code.push(f32_mul);
-
-					code.push(get_local);
-					code.push(unsignedLEB128(localIndexForSymbol("x")));
-					code.push(f32_add);
-
-					// convert to an integer
-					code.push(i32_trunc_f32_s);
-
-					// fetch the color
-					code.push(get_local);
-					code.push(unsignedLEB128(localIndexForSymbol("color")));
-					code.push(i32_trunc_f32_s);
+					emitExpression(statement.param[0]);
+					code.opcode(set_local);
+					code.opcode(localIndexForSymbol("x"));
+//					code.opcode(unsignedLEB128(localIndexForSymbol("x")));
 
 					// write
-					code.push(i32_store_8);
-					code.push((char) 0x00);
-					code.push((char) 0x00); // align and offset
+					code.opcode(i32_store_8);
+					code.opcode((char) 0x00);
+					code.opcode((char) 0x00); // align and offset
 				} else {
-					for (Nod arg : statement.args) {
-						emitExpression(*((ExpressionNod *) &arg));
-					};
-					int index = 0;
+//					for (Node arg : *statement.param) {
+//						emitExpression(*((ExpressionNod *) &arg));
+//					};
 					todo();
-//            findIndex(f {f.name == statement.name);
-					code.push(call);
-					code.push(unsignedLEB128(index + 1));
+					int index = 					localIndexForSymbol(statement.name);
+					code.opcode(call);
+					code.opcode((index + 1));
+//					code.opcode(unsignedLEB128(index + 1));
+
 				};
 				break;
 		};
+
+	switch (node.kind) {
+		case operators: {
+			byte opcode = BinaryOpcode()[node.name];
+			if (opcode > 0)
+				code.opcode(opcode);
+		}
+		case bools:
+		case ints:
+			code.opcode((byte)i32_auto);
+			code.push(node.value.number);
+//				code.opcode(ieee754(node.value.longy),4);
+			break;
+		case longs:
+//			if(call_extern)
+			code.opcode((byte)i32_const);
+//			code.opcode((byte)i64_auto);
+			code.push(node.value.number);
+//				code.opcode(ieee754(node.value.longy),4);
+			break;
+		case floats:
+			code.opcode((byte)f32_auto);
+			code.push(ieee754(node.value.floaty), 4);
+			break;
+//			case identifier:
+//				code.opcode(get_local);
+//				code.opcode(unsignedLEB128(localIndexForSymbol(node.value)), 8);
+//				break;
+//			case binaryExpression:
+//				code.opcode(binaryOpcode[node.value]);
+//				break;
+		case groups:
+		case objects:
+			for (Node child : node) {
+				code.push(emitExpression(node));
+			};
+			break;
+		case printStatement:
+			emitExpression(statement.param);
+			code.push(Call("print"));
+			break;
+//			case variableDeclaration:
+//				emitExpression(statement.initializer);
+//				code.opcode(set_local);
+//				code.opcode(unsignedLEB128(localIndexForSymbol(statement.name)), 8);
+//				break;
+//			case variableAssignment:
+//				todo();
+////				emitExpression(statement.value);
+//				code.opcode(set_local);
+//				code.opcode(unsignedLEB128(localIndexForSymbol(statement.name)), 8);
+//				break;
 	}
 	return code;
 }
-class TransformedProgram:public Nod{
+Code emitExpression (Node* nodes){
+	if(!nodes)return Code();
+//	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
+	return emitExpression(*nodes);
+}
+
+Code Call(char* symbol){//},Node* args=0) {
+	Code code;
+	code.opcode(call);
+	int i = localIndexForSymbol(symbol);
+//	code.opcode(unsignedLEB128(i),8);
+	code.opcode(i);
+	return Code();
+}
+
+class Program{
 public:
-	TransformedProgram() {}
+	Node& ast;
+	Node main;
+	Program() : ast(NIL) {
+	}
+
+	Program(Node node) : ast(node) {
+//		collectFunctions();
+//		collectLambdas();// closures all over
+//		collectImports();
+//		collectExports();
+//		collectGlobals();
+//		collectStrings();
+		collectMain();
+	}
+
+	void collectMain() {
+//		if(!functions["main"])
+		main = ast;// root statements form 'main'
+	}
+
 
 //	char *mapp(char* (lambda)(String, int)) {
 //		for(Nod n:*this){
 //			lambda(n.value, n.index);
 //		}
 //	}
-	int findIndex(bool (lambda)(Nod)) {
-		int i=0;
-		for(Nod n:*this){
-			if(lambda(n)){
-				return i;
-			}
-			i++;
-		}
-		return -1;
-	}
+//	int findIndex(bool (lambda)(Nod)) {
+//		int i=0;
+//		for(Nod n:*this){
+//			if(lambda(n)){
+//				return i;
+//			}
+//			i++;
+//		}
+//		return -1;
+//	}
+	Node functions;
 };
 
 
-Code codeFromProc (ProcStatementNod node, TransformedProgram program_node) {
-	for(Nod arg:node.args){
-		symbols.insert_or_assign(arg.value, arg.index);
-	}
-	Code code;// not global ;)
-	emitStatements(node.statements);
-
-	auto localCount = symbols.size();
-	bytes locals = localCount > 0 ? encodeLocal(localCount, f32).data : new char[]{};
-	todo();// check if ok: localCount == size of locals ???
-//	return encodeVector([...encodeVector(locals), ...code, Opcodes.end]);
-	return encodeVector(Code(locals,localCount).push(code).push(end_block));
-};
+//Code codeFromProc (ProcStatementNod node, Program program_node) {
+//	for(Nod arg:node.args){
+//		symbols.insert_or_assign(arg.value, arg.index);
+//	}
+//	Code code;// not global ;)
+//	emitStatements(node.statements);
+//
+//	auto localCount = symbols.size();
+//	bytes locals = localCount > 0 ? encodeLocal(localCount, f32).data : new char[]{};
+//	todo();// check if ok: localCount == size of locals ???
+////	return encodeVector([...encodeVector(locals), ...code, Opcodes.end]);
+//	return encodeVector(Code(locals,localCount).push(code).push(end_block));
+//};
 
 
 Code encodeString(char *str) {
@@ -528,30 +572,29 @@ Code signedLEB128(int n) {
 				(n == 0 && (byt & 0x40) == 0) ||
 				(n == -1 && (byt & 0x40) != 0)
 				) {
-			result.push(byt);
+			result.opcode(byt);
 			return result;
 		}
-		result.push(byt | 0x80);
+		result.opcode(byt | 0x80);
 	}
 //	return result.data;
 }
 
 
-Code& emitter(TransformedProgram* ast0) {
-	TransformedProgram ast;
+Code& emitter(Program ast) {
+
 
 	// Function types are vectors of parameters and return types. Currently
 	// WebAssembly only supports single return values
 //  bytes printFunctionType = new char[]{functionType,encodeVector(f32), emptyArray}
 	Code printFunctionType = Code(functionType).push(encodeVector(Code(f32))).push(emptyArray);
 
-	ProcStatementNod proc;
 
 	// optimise TODO - some of the procs might have the same type signature
 	Code funcTypes;
-	for (Nod &node : ast) {
+	for (Node &proc : ast.functions) {
 		Code args;
-		for (Nod arg: proc.args) { args.push(f32); }
+		for (Node arg: *proc.param) { args.opcode(f32); }
 		Code functionTypes = Code(functionType).push(encodeVector(args)).push(emptyArray);
 	}
 //  ast.map(proc {[functionType, encodeVector(proc.args.map(_ -> f32)), emptyArray]);
@@ -575,11 +618,11 @@ Code& emitter(TransformedProgram* ast0) {
 
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
 	auto memorySection = createSection(memory_section, encodeVector(Code(2)));
-	auto memoryImport = encodeString("env")+ encodeString("memory")+mem_export/*type*/+ 0x00+ 0x01;
+	auto memoryImport = encodeString("env")+ encodeString("memory")+ (byte)mem_export/*type*/+ (byte)0x00 + (byte)0x01;
 
 	// the import section is a vector of imported functions
 	byte type_index=1;// iv "(i)" int->void
-	Code printFunctionImport = encodeString("env") + encodeString("logi").push(func_export).push(type_index);
+	Code printFunctionImport = encodeString("env") + encodeString("logi").push((char)func_export).push(type_index);
 
 //	auto importSection = createSection(import, encodeVector(Code(0)));
 	int import_count = 1;
@@ -589,7 +632,7 @@ Code& emitter(TransformedProgram* ast0) {
 	// the export section is a vector of exported functions
 	int main_offset=import_count;// first func after import functions (which have an index too!)
 	auto exportSection = createSection(exports,
-			encodeVector(Code(0x01)+ encodeString("main")+ func_export + Code(main_offset)/*.push(0).push(0)*/ ));
+			encodeVector(Code(0x01)+ encodeString("main")+ (byte)func_export + Code(main_offset)/*.push(0).push(0)*/ ));
 //					             Code(ast.findIndex([](Nod a) { return a.name == "main"; }) + 1)
 
 	// the code section contains vectors of functions
@@ -616,17 +659,21 @@ Code& emitter(TransformedProgram* ast0) {
 //	0a 0a 02 05 00              41 15 0f 0b 02 00
 // fun #c #f        const 42 call oo
 
-	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
-//	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+//	char code_data[] = {0/*locals_count*/,i32_const,48,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+	char code_data[] = {0/*locals_count*/,i32_auto,42,return_block,end_block};// 0x00 == unreachable as block header !?
 	char code_data1[] = {0/*locals_count*/,end_block};
 //	char code_data[] = {0x00,0x0b,0x02,0x00,0x0b};// empty type:1 len:2
 
 
 //	Code function1 = codeBlock(code_data);
 	Code da_code=Code(code_data,sizeof(code_data));
+	Code da_code2 = emitBlock(ast.main);
+	check(da_code2 == da_code);
 	Code da_code1=Code(code_data1,sizeof(code_data1));
+
 	char function_count = 2;
 	auto codeSection = createSection(code_section, Code(function_count)+encodeVector(da_code)+encodeVector(da_code1));
+
 
 	auto customSection = createSection(custom, encodeVector(Code(types_of_functions, 3)));
 //
@@ -636,3 +683,22 @@ Code& emitter(TransformedProgram* ast0) {
 	return code.clone();
 }
 
+Code emitBlock(Node node) {
+//	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+//	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+//	Code(code_data,sizeof(code_data)); // todo : memcopy, else stack value is LOST
+	Code block;
+	int locals_count = 0;
+	block.add(locals_count);
+	Code inner_code_data = emitExpression(node);
+	block.push(inner_code_data);
+//if not return_block
+	block.opcode(return_block);
+	block.opcode(end_block);
+	return block;
+}
+
+
+Code& emitter(Node& code) {
+	return emitter(Program(code));
+}

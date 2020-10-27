@@ -276,7 +276,7 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0=0
 		}
 		if (module) wasm_runtime_unload(module);
 		wasm_runtime_destroy();
-		return 0;
+		return argv[0];
 
 	} catch (const char *err) {
 		printf("\nERROR\n");
@@ -284,7 +284,7 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0=0
 	}
 }
 int run_wasm(const char *buffer, int buf_size){
-	run_wasm(reinterpret_cast<const uint8 *>(buffer), buf_size, 0);
+	return run_wasm(reinterpret_cast<const uint8 *>(buffer), buf_size, 0);
 }
 int main3(int argc, char *argv_main[]) {
 	try {

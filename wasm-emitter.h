@@ -6,11 +6,23 @@ typedef char* bytes;
 bytes concat(bytes a, bytes b, int len_a, int len_b);
 bytes concat(bytes a, char b,int len);
 bytes concat(char section, bytes a, int len_a);
+class Code;
+Code& unsignedLEB128(int n);
 
 class String;
 class Nod;
 class ExpressionNod;
-class StatementNod;
+//class Block;
+//class Block : Node{
+//
+//	Block *begin() const {
+//		return children;  CANT specialize/INHERIT:  obviously
+//	}
+//
+//	Block *end() const{
+//		return children + length;
+//	}
+//};
 class ProcStatementNod;
 class Code{
 public:
@@ -20,6 +32,7 @@ public:
 
 	Code(){}
 	Code(bytes a, int len){
+//		 todo : memcopy, else stack value is LOST
 		data=a;
 		length=len;
 	}
@@ -45,6 +58,19 @@ public:
 	Code operator +(char more){
 		return this->push(more);
 	}
+	Code operator +(byte more){
+		return this->push(more);
+	}
+	bool operator==(Code& other){
+		if(length!=other.length)
+			return false;
+		if(data==other.data)return true;// same pointer shortcut
+		for (int i = 0; i < length; ++i) {
+			if(data[i]!=other.data[i])
+				return false;
+		}
+		return true;
+	}
 
 	operator bytes(){return data;}// implicit cast yay
 	Code& push(Code more) {
@@ -54,11 +80,40 @@ public:
 
 	}
 
+	Code& opcode(byte opcode) {
+		data = concat(data, opcode,length);
+		length++;
+		return *this;
+	}
+
+	Code& add(byte opcode) {
+		data = concat(data, opcode,length);
+		length++;
+		return *this;
+	}
+
 	Code& push(char opcode) {
 		data = concat(data, opcode,length);
 		length++;
 		return *this;
+	}
+	Code& push(unsigned char opcode) {
+		data = concat(data, opcode,length);
+		length++;
+		return *this;
+	}
+	Code& push(short opcode) {
+		data = concat(data, opcode,length);
+		length++;
+		return *this;
+	}
 
+	Code& push(long nr) {
+		Code &val = unsignedLEB128(nr);
+		int l = val.length;
+		data = concat(data, val.data, length, l);
+		length+= l;
+		return *this;
 	}
 	Code& push(bytes more,int len) {
 		data = concat(data, more,length,len);
@@ -89,8 +144,8 @@ public:
 //		}
 #endif
 	}
-	void run(){
-		run_wasm(data, length);
+	int run(){
+		return run_wasm(data, length);
 	}
 
 //	Code& vector() {
@@ -129,6 +184,7 @@ enum Blocktype {
 };
 
 // https://webassembly.github.io/spec/core/binary/instructions.html
+// https://pengowray.github.io/wasm-ops/
 enum Opcodes {
 //	start = 0x00,
 	start_function = 0x00,
@@ -143,8 +199,10 @@ enum Opcodes {
 	get_local = 0x20,
 	set_local = 0x21,
 	i32_store_8 = 0x3a,
-	i32_auto = 0x41,
+	i32_auto = (byte)0x41,
 	i32_const = 0x41,
+	i64_auto = 0x42,
+	i64_const = 0x42,
 	f32_auto = 0x43,
 	i32_eqz = 0x45,
 	i32_eq = 0x46,
@@ -160,5 +218,5 @@ enum Opcodes {
 };
 //char start_function=0x00;//unreachable strange convention
 extern char unreachable;//=0x00;//unreachable strange convention
-class TransformedProgram;
-Code& emitter(TransformedProgram* ast);
+Code &emitter(Node &code);
+
