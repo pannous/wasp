@@ -21,8 +21,8 @@ enum Type {
 	arrays,// Node[] vs any[]? vs
 	buffers,// int[]
 	floats,
-	numbers,
-	ints,
+	longs,
+	ints,// use longy field, but in wasm longs are pointers!
 	bools,
 	unknown = 20 //7
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
