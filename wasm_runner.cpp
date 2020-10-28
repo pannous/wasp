@@ -213,20 +213,20 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0=0
 		argv[0] = 10000;
 //	memcpy(&argv[1], &arg_d, sizeof(arg_d));
 
-		wasm_function_inst_t func = NULL;
-		if (!(func = wasm_runtime_lookup_function(module_inst, "generate_float", NULL))) {
-			fail("The generate_float wasm function is not found.\n");
-//			return -1;
-		}
-
-		// pass 4 elements for function arguments
-		if (!wasm_runtime_call_wasm(exec_env, func, 4, argv)) {
-			fail("call wasm function generate_float FAILED. %s\n", wasm_runtime_get_exception(module_inst));
-//			return
-		} else{
-		float ret_val = *(float *) argv;// oh reuse args as return? that's evil ;) TODO
-		printf("Native finished calling wasm function generate_float(), returned a float value: %ff\n", ret_val);
-		}
+//		wasm_function_inst_t func = NULL;
+//		if (!(func = wasm_runtime_lookup_function(module_inst, "generate_float", NULL))) {
+//			fail("The generate_float wasm function is not found.\n");
+////			return -1;
+//		}
+//
+//		// pass 4 elements for function arguments
+//		if (!wasm_runtime_call_wasm(exec_env, func, 4, argv)) {
+//			fail("call wasm function generate_float FAILED. %s\n", wasm_runtime_get_exception(module_inst));
+////			return
+//		} else{
+//		float ret_val = *(float *) argv;// oh reuse args as return? that's evil ;) TODO
+//		printf("Native finished calling wasm function generate_float(), returned a float value: %ff\n", ret_val);
+//		}
 
 
 		/////////////////////////
@@ -241,9 +241,6 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0=0
 		}
 		if (!wasm_runtime_call_wasm(exec_env, _start, 0, argv)) {
 			return fail("call wasm function main/_start FAILED. %s\n", wasm_runtime_get_exception(module_inst));
-		} else{
-			int ret_val = *(int *) argv;// oh reuse args as return? that's evil ;) TODO
-			printf("main returned value: %d\n", ret_val);
 		}
 		printf("RETURN VALUE: %d\n", argv[0]);
 
