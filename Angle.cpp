@@ -156,7 +156,7 @@ Node &Node::setType(Type type) {
 }
 
 Node values(Node n) {
-//	if (eq(n.name, "not"))return True;// not () == True; hack for missing param todo: careful!
+	if (eq(n.name, "not"))return True;// not () == True; hack for missing param todo: careful!
 	if (eq(n.name, "one"))return Node(1);
 	if (eq(n.name, "two"))return Node(2);
 	if (eq(n.name, "three"))return Node(3);
