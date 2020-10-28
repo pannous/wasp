@@ -225,9 +225,16 @@ void testMarkAsMap() {
 //	compare["d"] = Node();
 	compare["b"] = 3;
 	compare["a"] = "HIO";
+	Node& dangling=compare["c"];
+	check(dangling==NIL);
+	dangling = Node(3);
+//	dangling = 3;
+	check(dangling==3);
+	check(compare["c"]==3);
+	assert_equals(compare["c"],Node(3));
 	Node &node = compare["a"];
 	assert(node == "HIO");
-	const char *source = "{b:3 a:'HIO'}";// d:{}
+	const char *source = "{b:3 a:'HIO' c:3}";// d:{}
 	Node marked = Wasp::parse(source);
 	Node &node1 = marked["a"];
 	assert(node1 == "HIO");
@@ -320,6 +327,7 @@ void testUTF() {
 
 
 void testMarkMultiDeep() {
+	// fragile:( problem :  c:{d:'hi'}} becomes c:'hi' because … bug
 	const char *source = "{deep{a:3,b:4,c:{d:'hi'}}}";
 	assert_parses(source);
 	Node &c = result["deep"]['c'];
@@ -382,6 +390,7 @@ void testErrors() {
 	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/out
 	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-default/out
   */
+	breakpoint_helper
 	Node node = Wasp::parseFile("samples/errors.wasp");
 	throwing = true;
 }
@@ -1020,14 +1029,8 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-//	testWast();
-	Node n = Node("HI");
-	n["ok"] = 42;
-	Node &what = n["NO"];
-	Node &OK = n["OK"];
-	OK = Node(44);
-	testAllWasm();
-//	tests();// make sure all still ok before changes
+	tests();// make sure all still ok before changes
+//	testWasm();
 //	testBUG();
 //	testParentBUG();
 
