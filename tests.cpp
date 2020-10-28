@@ -1003,12 +1003,6 @@ void tests() {
 
 
 
-void testWasm() {
-	testConstReturn();
-//	testWasp();
-//	testWast();
-}
-
 
 void testBUG() {// move to tests() once done!
 //	testParentBUG();
@@ -1029,8 +1023,10 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+	testAllWasm();
+	testAllAngle();
+
 	tests();// make sure all still ok before changes
-//	testWasm();
 //	testBUG();
 //	testParentBUG();
 
