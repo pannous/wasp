@@ -16,6 +16,12 @@ char *itoa0(long num);
 char *itoa(long num);
 int atoi0(const char *__nptr);
 double atof0(const char *string);
+
+void err(chars error);
+
+void todo(chars error);
+
+
 //void* calloc(int i);
 //extern "C" void* calloc(int size,int count);
 //extern "C" void* calloc(int size);

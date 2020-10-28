@@ -48,7 +48,11 @@ Node Infinity = Node("Infinity");
 Node NaN = Node("NaN");
 //NIL=0;
 //Node NIL;
-Node NIL = Node(nil_name).setType(nils).setValue(0);
+Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent
+Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
+Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
+Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent
+
 Node ERROR = Node("ERROR").setType(nils);// ≠ NIL
 Node True = Node("True").setType(bools).setValue(true);
 Node False = Node("False").setType(bools);
@@ -72,6 +76,7 @@ Node &Node::operator[](int i) {
 	if (i >= length) {
 		breakpoint_helper;
 		err(String("out of range index[] ") + i + " >= length " + length);
+		// todo: allow insertion of unknown indices? prefered method: not
 	}
 	return children[i];
 }
@@ -100,7 +105,7 @@ Node &Node::operator[](String s) {
 		if (children[0].has(s))return children[0][s];
 
 	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
-	neu.kind = nils; // until ref is set!
+	neu.kind = nils; // until ref is set! but neu never knows when its set!! :(
 	neu.parent = this;
 	if (neu.value.node) return *neu.value.node;
 	else return neu;
@@ -183,7 +188,7 @@ Node &Node::set(String string, Node *node) {
 		entry.value.node->parent = &entry;
 //		entry.value.node=Node();// dangling ref to be set
 	} else {
-		entry = *node;// copy by value OK
+		entry = (Node)*node;// copy by value OK
 		entry.parent = this;
 	}
 	length++;
@@ -246,15 +251,15 @@ bool Node::operator==(Node &other) {
 		if (other.name == NIL.name or other.name == False.name or other.name == "")
 			return true;// TODO: SHOULD already BE SAME by engine!
 	if (value.node == &other)return true;// same value enough?
-	if (this == other.value.node)return true;// same value enough?
+	if (this == other.value.node)return true;// reference ~= its value
 
 	if(kind == keyNode and this->value.node and *this->value.node == other)return true;// todo again?
 	if (other.kind == unknown and name == other.name)
 		return true; // weak criterum for dangling unknowns!! TODO ok??
+	if (kind == bools or other.kind==bools)
+		return value.data == other.value.data;// or (value.data!= nullptr and other.value.data != nullptr a);
 	if (not typesCompatible(*this, other))
 		return false;
-	if (kind == bools)
-		return value.data == other.value.data;// or (value.data!= nullptr and other.value.data != nullptr a);
 //	CompileError: WebAssembly.Module(): Compiling function #53:"Node::operator==(Node&)" failed: expected 1 elements on the stack for fallthru to @3, found 0 @+5465
 //	or (other != NIL and other != False) or
 
@@ -330,57 +335,6 @@ Node Node::operator+(Node other) {
 	error(str("Operator + not supported for node types %s and %s") % typeName(kind) % typeName(other.kind));
 	return ERROR;
 };
-
-bool recursive = true;
-
-Node values(Node n) {
-	if (eq(n.name, "not"))return True;// not () == True; hack for missing param todo: careful!
-	if (eq(n.name, "one"))return Node(1);
-	if (eq(n.name, "two"))return Node(2);
-	if (eq(n.name, "three"))return Node(3);
-	return n;
-}
-
-Node Node::evaluate(bool expectOperator /* = true*/) {
-	if (length == 0)return values(*this);
-	if (length == 1)
-		if (kind == operators)
-			return apply(NIL, *this, *children);
-		else return values(children[0]);
-	if (length > 1)
-		if (kind == operators)
-			return apply(NIL, *this, this->clone()->setType(objects));
-//	if (type != expression and type != keyNode)
-//		return *this;
-	float max = 0; // do{
-	Node right;
-	Node left;
-	for (Node &node : *this) {// foreach
-		float p = precedence(node);
-		if (p > max) max = p;
-		node.log();
-	}
-	if (max == 0) {
-//		breakpoint_helper // ok need not always have known operators
-		if (!name.empty())
-			warn(String("could not find operator: ") % name);
-		return *this;
-	}
-	Node *op = 0;
-	for (Node &n : *this) {
-		float p = precedence(n);
-		if (p == max and not op) {
-			op = &n;
-		} else if (op)
-			right.add(n);
-		else left.add(n);
-	}
-//		remove(&op);// fucks up pointers?
-	if (recursive and op)
-		return apply(left, *op, right);
-//	};// while (max > 0);
-	return *this;
-}
 
 void Node::remove(Node *node) {
 	if (!children)return;// directly from pointer
@@ -541,123 +495,6 @@ float Node::precedence(Node &operater) {
 	return 0;// no precedence
 }
 
-/*
-0x2218	8728	RING OPERATOR	∘
- */
-Node Node::apply(Node left, Node op0, Node right) {
-	printf("apply");
-	left.log();
-	op0.log();
-	right.log();
-	left = left.evaluate();
-	String &op = op0.name;
-	bool lazy = (op == "or") and (bool) left;
-	if (!lazy)
-		right = right.evaluate(false);
-
-	if (op == "not" or op == "¬" or op == "!") {
-		// todo: what if left is present?
-		Node x = right.evaluate();
-		return x.empty() ? True : False;
-	}
-	if (op == "#" or op == '#') {
-		return Node(right.length);// or right["size"] or right["count"]  or right["length"]
-	}
-	if (op == "√") { // why String( on mac?
-		if (right.kind == floats)
-			left.add(Node(sqrt(right.value.floaty)));
-		if (right.kind == longs)
-			left.add(Node(sqrt(right.value.number)).setType(floats));
-		return left.evaluate();
-	}
-
-//	if(!is_KNOWN_operator(op0))return call(left, op0, right);
-
-	if (op == "|") {
-		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (left.kind == longs and right.kind == longs) return Node((long) (left.value.number | right.value.number));
-		// pipe todo
-	}
-
-	if (op == "&") {// todo
-		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (left.kind == bools or right.kind == bools)
-			return left.value.data and right.value.data ? True : False;
-		return Node(left.value.number & right.value.number);
-	}
-
-	if (op == "xor" or op == "^|") {
-		printf("XOR REACHED");
-		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (left.kind == bools or right.kind == bools){
-		return left.value.number ^ right.value.number ? True : False;
-		}
-		return Node(left.value.number ^ right.value.number);
-	}
-
-	if (op == "and" or op == "&&") {
-		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (left.kind == bools or right.kind == bools) return left.value.data and right.value.data ? True : False;
-		return Node(left.value.number and right.value.number);
-	}
-
-	if (op == "or" or op == "||" or op == "&") {
-		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (!left.empty() and left != NIL and left != False)return left;
-		return left.value.data or right.value.data ? True : False;
-	}
-
-	if (op == "==" or op == "equals") {
-		return left == right ? True : False;
-	}
-
-	if (op == "!=" or op == "^=" or op == "≠" or op == "is not") {
-		return left != right ? True : False;
-	}
-
-	if (op == "+" or op == "add" or op == "plus") {
-		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty + right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty + right.value.number);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.number + right.value.floaty);
-		if (left.kind == longs and right.kind == longs) return Node(left.value.number + right.value.number);
-//		if(left.type==arrays …
-	}
-
-	// todo: 2 * -x
-	if (op == "-" or op == "minus" or op == "subtract") {
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty - right.value.floaty);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.number - right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty - right.value.number);
-		if (left.kind == longs and right.kind == longs) return Node(left.value.number - right.value.number);
-	}
-
-	if (op == "*" or op == "⋆" or op == "×" or op == "∗" or op == "times") {// ⊗
-		if (left.kind == strings or right.kind == strings) return Node(left.string().times(right.value.number));
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty * right.value.floaty);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.number * right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty * right.value.number);
-		if (left.kind == longs and right.kind == longs) return Node(left.value.number * right.value.number);
-		todo(op + " operator NOT defined for types %s and %s ");
-
-//		if (right.type == numbers) return Node(left.value.number * right.value.number);
-	}
-	todo(op + " is NOT a builtin operator ");
-	return NIL;
-//	log("NO builtin operator "+op0+" calling…")
-//	return call(left, op0, right);
-}
-
-Node &Node::setType(Type type) {
-	if (length < 2 and (type == groups or type == objects)); // skip!
-	else this->kind = type;
-//	if(name.empty()){
-//		if(type==objects)name = object_name;
-//		if(type==groups)name = groups_name;
-//		if(type==patterns)name = patterns_name;
-//	}
-	return *this;
-}
 
 // Node* OK? else Node&
 Node *Node::has(String s, bool searchParams) const {
@@ -699,7 +536,7 @@ const char * Node::serializeValue() const {
 	switch (kind) {
 		case strings:
 			return val.string;
-		case ints:
+//		case ints:
 		case longs:
 			return itoa(val.number);
 		case floats:
@@ -762,6 +599,29 @@ void Node::print() {
 Node Node::setValue(Value v) {
 	value = v;
 	return *this;
+}
+
+Node Node::to(Node match) {
+	Node rhs;
+	for (Node child:*this) {
+		if(child == match)
+			break;
+		rhs.add(child);
+	}
+	rhs.kind = kind;
+	return rhs;
+}
+
+// rest of node children split
+Node Node::from(Node match) {
+	Node lhs;
+	bool start = false;
+	for (Node child:*this) {
+		if(start)lhs.add(child);
+		if(child == match)start=true;
+	}
+	lhs.kind = kind;
+	return lhs;
 }
 
 void log(Node &n) {

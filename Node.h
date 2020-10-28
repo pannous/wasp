@@ -133,7 +133,7 @@ public:
 		if (this == &False)return this;
 		// todo ...
 		Node *copy = new Node();
-		*copy = *this;// copy value ok
+		*copy = (Node)*this;// copy value ok
 		return copy;
 	}
 
@@ -261,6 +261,27 @@ public:
 		return value.number or length > 1 or (length == 1 and this != children and (bool) (children[0]));
 	}
 
+	//	 explicit copy operator not neccessary
+//	Node& operator=(Node val){
+//		this->name = val.name;
+//		this->value = val.value;
+//		this->kind = val.kind;
+//	}
+
+//	Node &operator=(Node& n);
+//	 DOESN'T work like this: references are always set via internal reference mechanism, this is for value copy!
+//	Node& operator=(Node& val){
+//		if(name and kind==nils){
+//			this->kind = reference;
+//			this->value.node = &val;
+//		} else{
+//			this->name = val.name;
+//			this->value = val.value;
+//			this->kind = val.kind;
+//		}
+//		return *this;
+//	}
+
 	bool operator==(int other);
 
 	bool operator==(long other);
@@ -305,6 +326,7 @@ public:
 	Node &operator=(int i);
 
 	Node &operator=(chars s);
+
 
 	Node &set(String string, Node *node);
 
@@ -421,5 +443,9 @@ public:
 	void print();
 
 	Node setValue(Value v);
+
+	Node to(Node match);
+
+	Node from(Node node);
 };
 typedef const Node Nodec;

@@ -92,7 +92,7 @@ public:
 		if (ch && ch != -1) {
 			breakpoint_helper
 			error("Expect end of input");
-			result = ERROR;
+			result = (Node)ERROR;
 		}
 		// Mark does not support the legacy JSON reviver function todo ??
 		return *result.clone();
@@ -706,8 +706,8 @@ private:
 //				error("Missing array element");
 //			}
 			else {
-				Node val = value();
-				array0[len++] = val;
+				Node val = value();// copy by value!
+				array0[len++] = (Node)val;
 //				array0.push(value());
 			}
 			white();
@@ -1047,25 +1047,19 @@ void handler(int sig) {
 
 //void assert_is(char *wasp, Node result);
 
-void init() {
-	NIL.kind = nils;
-	NIL.value.number = 0;
-	False.kind = bools;
-	False.value.number = 0;
-	True.kind = bools;
-	True.value.number = 1;
-}
+//void init() {
+//	NIL.kind = nils;
+//	NIL.value.number = 0;
+//	False.kind = bools;
+//	False.value.number = 0;
+//	True.kind = bools;
+//	True.value.number = 1;
+//}
 
 #import "tests.cpp"
 
 
-Node emit(String code){
-	Node charged=Wasp::parse(code);
-	Node node = emitter(charged).run();
-	return node;
-}
-
-static Node run(String source){
+Node run(String source){
 	return emit(source);
 }
 

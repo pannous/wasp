@@ -1,5 +1,6 @@
 #include "Node.h"
 #include "Wasp.h"
+#include "Angle.h"
 
 Node result;
 
@@ -174,7 +175,7 @@ void testDeepCopyDebugBugBug2() {
 
 void testEmitter() {
 	Node node = Node(42);
-	Code &code = emitter(node);
+	Code &code = emit(node);
 	int result=code.run();
 	check(result==42);
 }
@@ -243,7 +244,7 @@ void testMarkSimpleAssign() {
 
 void testMarkSimple() {
 	log("testMarkSimple");
-	Node &a = assert_parses("{a:3}");
+	Node a = assert_parses("{a:3}");
 	assert_equals(a.value.number, 3);
 	assert_equals(a, long(3));
 	assert(a == 3);
@@ -1019,17 +1020,17 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-//	testEmitter();
 //	testWast();
-	testWasm();
-//	testWasp();
-
+	Node n = Node("HI");
+	n["ok"] = 42;
+	Node &what = n["NO"];
+	Node &OK = n["OK"];
+	OK = Node(44);
+	testAllWasm();
 //	tests();// make sure all still ok before changes
 //	testBUG();
 //	testParentBUG();
 
-//	testWasm();
-//	testWast();
 //	todos();// those not passing yet (skip)
 //	tests();// make sure all still ok after changes
 }
