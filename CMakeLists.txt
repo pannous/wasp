@@ -104,7 +104,7 @@ elseif (VM) # NORMAL:
     #    add_compile_definitions(WASM_ENABLE_FAST_INTERP)
 #    ADD_COMPILE_FLAG("-w -Oz") # maximal optimization, CANT DEBUG!
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
-    set(SOURCE_FILES Wasp.cpp String.cpp Node.cpp NodeTypes.h
+    set(SOURCE_FILES Angle.cpp Wasp.cpp String.cpp Node.cpp NodeTypes.h
             WasmHelpers.cpp wasm-emitter.cpp wasm_runner.cpp
             )
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})

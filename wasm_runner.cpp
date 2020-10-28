@@ -140,12 +140,15 @@ int main2(int argc, char *argv_main[]) {
 }
 
 int init_vm(RuntimeInitArgs init_args, NativeSymbol* native_symbols, int symbol_count){
-	static bool done;
-	if(done){
-		printf("\nWARNING: init_vm was already called before, CAN'T LOAD NEW native_symbols\n");
-		return 0;// ONLY ONCE!!
-	}
-	else done=true;
+//	static bool done;
+//	if(done){
+//		printf("\nWARNING: init_vm was already called before, CAN'T LOAD NEW native_symbols\n");
+//		return 0;// ONLY ONCE!!
+//	}
+//	else{
+//		printf("INITIALIZING WASM VM");
+//		done=true;
+//	}
 
 	static char global_heap_buf[512 * 1024];
 	init_args.mem_alloc_type = Alloc_With_Pool;
@@ -169,7 +172,6 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0=0
 			memset(&init_args, 0, sizeof(RuntimeInitArgs));
 			init_vm(init_args,native_symbols, sizeof(native_symbols));// DANGER sizeof only works for []
 		}
-
 
 		char error_buf[128];
 
@@ -269,6 +271,7 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0=0
 //		}
 
 		cleanup:
+//		done = false;
 		if (exec_env) wasm_runtime_destroy_exec_env(exec_env);
 		if (module_inst) {
 			if (wasm_buffer) wasm_runtime_module_free(module_inst, wasm_buffer);
