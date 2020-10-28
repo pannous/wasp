@@ -127,6 +127,12 @@ Node Node::apply(Node left, Node op0, Node right) {
 		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty - right.value.number);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.number - right.value.number);
 	}
+	if (op == "/" or op == "div" or op == "divide") { // "by"
+		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty / right.value.floaty);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.number / right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty / right.value.number);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.number / right.value.number);
+	}
 
 	if (op == "*" or op == "⋆" or op == "×" or op == "∗" or op == "times") {// ⊗
 		if (left.kind == strings or right.kind == strings) return Node(left.string().times(right.value.number));

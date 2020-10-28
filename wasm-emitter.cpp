@@ -7,6 +7,7 @@
 #include "wasm-emitter.h"
 #include "WasmHelpers.h"
 #include "wasm_runner.h"
+
 #define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 #ifdef WASM
@@ -15,15 +16,17 @@
 //#include "string.h" // memcpy
 
 typedef char byter[];
-Code Call(char* symbol);//Node* args
-Code& unsignedLEB128(long n);
-Code& signedLEB128(long value);
+
+Code Call(char *symbol);//Node* args
+Code &unsignedLEB128(long n);
+
+Code &signedLEB128(long value);
 
 //Code& unsignedLEB128(int);
 //Code& flatten(byter);
 //Code& flatten (Code& data);
-void todo(char* message="") {
-	printf("TODO %s\n",message);
+void todo(char *message = "") {
+	printf("TODO %s\n", message);
 }
 
 //typedef int number;
@@ -37,26 +40,27 @@ void todo(char* message="") {
 void memcpy(bytes c, bytes a, int i);
 
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
-	bytes c=new char[len_a+len_b+1];
+	bytes c = new char[len_a + len_b + 1];
 	memcpy(c, a, len_a);
-	memcpy(c+len_a, b, len_b);
+	memcpy(c + len_a, b, len_b);
 	return c;
 }
 
 void memcpy(bytes dest, bytes source, int i) {
- while (i--)dest[i]=source[i];
+	while (i--)dest[i] = source[i];
 }
 
-bytes concat(byter a, char b,int len) {
-	bytes c=new char[len+1];
+bytes concat(byter a, char b, int len) {
+	bytes c = new char[len + 1];
 	memcpy(c, a, len);
-	c[len]=b;
+	c[len] = b;
 	return c;
 }
-bytes concat(char a, byter  b,int len) {
-	bytes c=new char[len+1];
-	c[0]=a;
-	memcpy(c+1, b, len);
+
+bytes concat(char a, byter b, int len) {
+	bytes c = new char[len + 1];
+	c[0] = a;
+	memcpy(c + 1, b, len);
 	return c;
 }
 //
@@ -133,7 +137,7 @@ bytes concat(char a, byter  b,int len) {
 
 //#include <iostream>
 
-class Bytes{
+class Bytes {
 public:
 	int length;
 //	int length(){
@@ -173,43 +177,44 @@ Code encodeString(char *String);
 bool eq(const char *op, const char *string);
 
 
-byte opcodes(const char *s,byte kind=0){
-	if(kind==0){ // INT32
-		if(eq(s, "+"))return i32_add;
-		if(eq(s, "-"))return i32_sub;
-		if(eq(s, "*"))return i32_mul;
-		if(eq(s, "/"))return i32_div;
-		if(eq(s, "=="))return i32_eq;
-		if(eq(s, "!="))return i32_ne;
-		if(eq(s, ">"))return i32_gt;
-		if(eq(s, "<"))return i32_lt;
-		if(eq(s, ">="))return i32_ge;
-		if(eq(s, "<="))return i32_le;
-		if(eq(s, "≥"))return i32_ge;
-		if(eq(s, "≤"))return i32_le;
+byte opcodes(const char *s, byte kind = 0) {
+	if (kind == 0) { // INT32
+		if (eq(s, "+"))return i32_add;
+		if (eq(s, "-"))return i32_sub;
+		if (eq(s, "*"))return i32_mul;
+		if (eq(s, "/"))return i32_div;
+		if (eq(s, "=="))return i32_eq;
+		if (eq(s, "!="))return i32_ne;
+		if (eq(s, ">"))return i32_gt;
+		if (eq(s, "<"))return i32_lt;
+		if (eq(s, ">="))return i32_ge;
+		if (eq(s, "<="))return i32_le;
+		if (eq(s, "≥"))return i32_ge;
+		if (eq(s, "≤"))return i32_le;
 
-		if(eq(s, "&"))return i32_and;
-		if(eq(s, "&&"))return i32_and;
-		if(eq(s, "and"))return i32_and;
-		if(eq(s, "or"))return i32_or;
-		if(eq(s, "||"))return i32_or;
-		if(eq(s, "|"))return i32_or;
-	} else{
-		if(eq(s, "+"))return f32_add;
-		if(eq(s, "-"))return f32_sub;
-		if(eq(s, "*"))return f32_mul;
-		if(eq(s, "/"))return f32_div;
-		if(eq(s, "=="))return f32_eq;
-		if(eq(s, ">"))return f32_gt;
-		if(eq(s, "<"))return f32_lt;
+		if (eq(s, "&"))return i32_and;
+		if (eq(s, "&&"))return i32_and;
+		if (eq(s, "and"))return i32_and;
+		if (eq(s, "or"))return i32_or;
+		if (eq(s, "||"))return i32_or;
+		if (eq(s, "|"))return i32_or;
+	} else {
+		if (eq(s, "+"))return f32_add;
+		if (eq(s, "-"))return f32_sub;
+		if (eq(s, "*"))return f32_mul;
+		if (eq(s, "/"))return f32_div;
+		if (eq(s, "=="))return f32_eq;
+		if (eq(s, ">"))return f32_gt;
+		if (eq(s, "<"))return f32_lt;
 	}
-		error("invalid operator");
-		return -1;
-	}
+	printf("unknown operator %s", s);
+//		error("invalid operator");
+	return 0;
+}
 
 // http://webassembly.github.io/spec/core/binary/modules.html#export-section
 enum ExportType {
-	func_export = (char)0x00,
+	func_export = (char) 0x00,
 	table_export = 0x01,
 	mem_export = 0x02,
 	global_export = 0x03
@@ -221,9 +226,8 @@ char functionType = 0x60;
 char emptyArray = 0x0;
 
 // https://webassembly.github.io/spec/core/binary/modules.html#binary-module
-bytes magicModuleHeader = new char[] { 0x00, 0x61, 0x73, 0x6d };
-bytes moduleVersion = new char[] { 0x01, 0x00, 0x00, 0x00 };
-
+bytes magicModuleHeader = new char[]{0x00, 0x61, 0x73, 0x6d};
+bytes moduleVersion = new char[]{0x01, 0x00, 0x00, 0x00};
 
 
 bytes flatten(byter data) {
@@ -231,18 +235,20 @@ bytes flatten(byter data) {
 	return data;
 }
 
-Code& flatten(Code& data) {
+Code &flatten(Code &data) {
 	todo();
 	return data;
 }
+
 #ifdef WASM
 typedef char uint8_t;
 #endif
 
 typedef uint8_t byt;
+
 //https://en.wikipedia.org/wiki/LEB128
 // little endian 257 = 0x81 (001) + 0x02 (256)
-Code& unsignedLEB128(long n) {
+Code &unsignedLEB128(long n) {
 	Code buffer;
 //	Code* buffer=new Code(); // IF RETURNING Code&
 	do {
@@ -255,11 +261,12 @@ Code& unsignedLEB128(long n) {
 	} while (n != 0);
 	return buffer;
 }
-Code& signedLEB128(long value){
+
+Code &signedLEB128(long value) {
 	Code buffer;
 	int more = 1;
 	bool negative = (value < 0);
-	long val=value;
+	long val = value;
 /* the size in bits of the variable value, e.g., 64 if value's type is int64_t */
 //	size = no. of bits in signed integer;
 //	int size = 64;
@@ -275,8 +282,8 @@ Code& signedLEB128(long value){
 		bool clear = (byte & 0x40) == 0;  /*sign bit of byte is clear*/
 		bool set = byte & 0x40; /*sign bit of byte is set*/
 		if ((val == 0 && clear) || (val == -1 && set))
-		    more = 0;
-		else{
+			more = 0;
+		else {
 			byte |= 0x80;// continuation bit:  set high order bit of byte;
 		}
 		buffer.add(byte); //		emit byte;
@@ -297,42 +304,44 @@ Code& signedLEB128(long value){
 //	return code;
 //}
 //Code& encodeVector (Code& data) {
-Code encodeVector (Code data) {
+Code encodeVector(Code data) {
 //	return data.vector();
-	if(data.encoded)return data;
+	if (data.encoded)return data;
 //	Code code = unsignedLEB128(data.length) + flatten(data);
-	Code code = Code((byte)data.length) + flatten(data);
+	Code code = Code((byte) data.length) + flatten(data);
 	code.encoded = true;
 	return code;
 }
 
 // https://webassembly.github.io/spec/core/binary/modules.html#code-section
-Code encodeLocal (long count, Valtype type) {
-	return unsignedLEB128(count).push((char)type);
+Code encodeLocal(long count, Valtype type) {
+	return unsignedLEB128(count).push((char) type);
 }
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 // sections are encoded by their type followed by their vector contents
-Code createSection (Section sectionType, Code data) {
+Code createSection(Section sectionType, Code data) {
 	return Code(sectionType, encodeVector(data));
 }
-//std::map<String ,int> symbols;
-Map<String ,int> symbols;
 
-int localIndexForSymbol (String& name) {
+//std::map<String ,int> symbols;
+Map<String, int> symbols;
+
+int localIndexForSymbol(String &name) {
 	if (!symbols.contains(name)) {
 		symbols.insert_or_assign(name, symbols.size());
 	}
 	return symbols[name];
 };;
-int localIndexForSymbol (char* name) {
+
+int localIndexForSymbol(char *name) {
 	if (!symbols.contains(name)) {
 		symbols.insert_or_assign(name, symbols.size());
 	}
 	return symbols[name];
 };
 
-enum NodTypes{
+enum NodTypes {
 	numberLiteral,
 	identifier,
 	binaryExpression,
@@ -345,7 +354,7 @@ enum NodTypes{
 	internalError,
 };
 
-bytes ieee754(String& value) {
+bytes ieee754(String &value) {
 	todo();
 	return value.data;
 }
@@ -353,54 +362,56 @@ bytes ieee754(String& value) {
 bytes ieee754(float num) {
 	todo();
 	byt data[4];
-	float* hack=((float*)data);
+	float *hack = ((float *) data);
 	*hack = num;
 	return reinterpret_cast<bytes>(hack);
 }
 //Code emitExpression (Node* nodes);
 
 Code emitBlock(Node node);
-Code emitExpression (Node* node);
-Code emitExpression (Node node) { // expression, statement or BODY (list)
+
+Code emitExpression(Node *node);
+
+Code emitExpression(Node node) { // expression, statement or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
-	NodTypes type=internalError;// todo: type/kind
+	NodTypes type = internalError;// todo: type/kind
 	Code code;
 	Node statement = node;
 
 	switch (node.kind) {
 		case reference:
 		case operators: {
-			if(node.length==2){// binary operator
-				emitExpression(node["lhs"]);
-				emitExpression(node["rhs"]);
+			if (node.length == 2) {// binary operator
+				code.push(emitExpression(node["lhs"]));
+				code.push(emitExpression(node["rhs"]));
 			}
 			byte opcode = opcodes(node.name);
 			if (opcode > 0)
 				code.opcode(opcode);
 			else
-				todo("unknown opcode / call / symbol");
+				error("unknown opcode / call / symbol: "s + node.name);
 		}
 			break;
 		case nils:
 //			code.opcode((byte)i64_auto);// nil is pointer
-			code.opcode((byte)i32_auto);// nil is pointer
-			code.push((long)0);
+			code.opcode((byte) i32_auto);// nil is pointer
+			code.push((long) 0);
 			break;
 		case bools:
 //		case ints:
-			code.opcode((byte)i32_auto);
+			code.opcode((byte) i32_auto);
 			code.push(node.value.number);
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case longs:
 //			if(call_extern)
-			code.opcode((byte)i32_const);
+			code.opcode((byte) i32_const);
 //			code.opcode((byte)i64_auto);
 			code.push(node.value.number);
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case floats:
-			code.opcode((byte)f32_auto);
+			code.opcode((byte) f32_auto);
 			code.push(ieee754(node.value.floaty), 4);
 			break;
 //			case identifier:
@@ -511,7 +522,7 @@ Code emitExpression (Node node) { // expression, statement or BODY (list)
 //						emitExpression(*((ExpressionNod *) &arg));
 //					};
 				todo();
-				int index = 					localIndexForSymbol(statement.name);
+				int index = localIndexForSymbol(statement.name);
 				code.opcode(call);
 				code.opcode((index + 1));
 //					code.opcode(unsignedLEB128(index + 1));
@@ -522,13 +533,14 @@ Code emitExpression (Node node) { // expression, statement or BODY (list)
 
 	return code;
 }
-Code emitExpression (Node* nodes){
-	if(!nodes)return Code();
+
+Code emitExpression(Node *nodes) {
+	if (!nodes)return Code();
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	return emitExpression(*nodes);
 }
 
-Code Call(char* symbol){//},Node* args=0) {
+Code Call(char *symbol) {//},Node* args=0) {
 	Code code;
 	code.opcode(call);
 	int i = localIndexForSymbol(symbol);
@@ -537,10 +549,11 @@ Code Call(char* symbol){//},Node* args=0) {
 	return Code();
 }
 
-class Program{
+class Program {
 public:
-	Node& ast;
+	Node &ast;
 	Node main;
+
 	Program() : ast(NIL) {
 	}
 
@@ -619,7 +632,7 @@ Code signedLEB128(int n) {
 }
 
 
-Code& emit(Program ast) {
+Code &emit(Program ast) {
 
 
 	// Function types are vectors of parameters and return types. Currently
@@ -642,12 +655,14 @@ Code& emit(Program ast) {
 	// the type section is a vector of function types
 //	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
 //	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
-	char ii[]={0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x01/*return count*/, 0x7F/*int*/};
-	char vi[]={0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/, 0x7F/*int*/};// our main function! todo : be flexible!
-	char iv[]={0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x00/*return count*/};
-	char vv[]={0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
-	int typeCount=3;
-	const Code &type_data = encodeVector(Code(typeCount) + Code(vi, sizeof(vi)) + Code(iv, sizeof(iv))+ Code(vv, sizeof(vv)));
+	char ii[] = {0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x01/*return count*/, 0x7F/*int*/};
+	char vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/,
+	             0x7F/*int*/};// our main function! todo : be flexible!
+	char iv[] = {0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x00/*return count*/};
+	char vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
+	int typeCount = 3;
+	const Code &type_data = encodeVector(
+			Code(typeCount) + Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv)));
 	auto typeSection = Code(type, type_data);
 
 	auto lambdo = [](String val, int index) { return index + 1; /* type index */};
@@ -656,21 +671,23 @@ Code& emit(Program ast) {
 
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
 	auto memorySection = createSection(memory_section, encodeVector(Code(2)));
-	auto memoryImport = encodeString("env")+ encodeString("memory")+ (byte)mem_export/*type*/+ (byte)0x00 + (byte)0x01;
+	auto memoryImport =
+			encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
 
 	// the import section is a vector of imported functions
-	byte type_index=1;// iv "(i)" int->void
-	Code printFunctionImport = encodeString("env") + encodeString("logi").push((char)func_export).push(type_index);
+	byte type_index = 1;// iv "(i)" int->void
+	Code printFunctionImport = encodeString("env") + encodeString("logi").push((char) func_export).push(type_index);
 
 //	auto importSection = createSection(import, encodeVector(Code(0)));
 	int import_count = 1;
-	auto importSection = createSection(import, Code(import_count)+printFunctionImport);
+	auto importSection = createSection(import, Code(import_count) + printFunctionImport);
 //	auto importSection = createSection(import, encodeVector(printFunctionImport));//+memoryImport
 
 	// the export section is a vector of exported functions
-	int main_offset=import_count;// first func after import functions (which have an index too!)
+	int main_offset = import_count;// first func after import functions (which have an index too!)
 	auto exportSection = createSection(exports,
-			encodeVector(Code(0x01)+ encodeString("main")+ (byte)func_export + Code(main_offset)/*.push(0).push(0)*/ ));
+	                                   encodeVector(Code(0x01) + encodeString("main") + (byte) func_export +
+	                                                Code(main_offset)/*.push(0).push(0)*/ ));
 //					             Code(ast.findIndex([](Nod a) { return a.name == "main"; }) + 1)
 
 	// the code section contains vectors of functions
@@ -687,7 +704,7 @@ Code& emit(Program ast) {
 
 	// the function section is a vector of type indices that indicate the type of each function in the code section
 //	char func_types[]={0x01,0x00};
-	char types_of_functions[]={0x02, 0x00, 0x01};// mapping/connecting function index to type index
+	char types_of_functions[] = {0x02, 0x00, 0x01};// mapping/connecting function index to type index
 	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
 	Code funcSection = createSection(func, Code(types_of_functions, sizeof(types_of_functions)));
 
@@ -698,8 +715,9 @@ Code& emit(Program ast) {
 // fun #c #f        const 42 call oo
 
 //	char code_data[] = {0/*locals_count*/,i32_const,48,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
-	char code_data[] = {0/*locals_count*/,i32_auto,42,return_block,end_block};// 0x00 == unreachable as block header !?
-	char code_data1[] = {0/*locals_count*/,end_block};
+	char code_data[] = {0/*locals_count*/, i32_auto, 42, return_block,
+	                    end_block};// 0x00 == unreachable as block header !?
+	char code_data1[] = {0/*locals_count*/, end_block};
 //	char code_data[] = {0x00,0x0b,0x02,0x00,0x0b};// empty type:1 len:2
 
 
@@ -707,15 +725,17 @@ Code& emit(Program ast) {
 //	Code da_code2=Code(code_data,sizeof(code_data));
 	Code da_code = emitBlock(ast.main);
 //	check(da_code2 == da_code);
-	Code da_code1=Code(code_data1,sizeof(code_data1));
+	Code da_code1 = Code(code_data1, sizeof(code_data1));
 
 	char function_count = 2;
-	auto codeSection = createSection(code_section, Code(function_count)+encodeVector(da_code)+encodeVector(da_code1));
+	auto codeSection = createSection(code_section,
+	                                 Code(function_count) + encodeVector(da_code) + encodeVector(da_code1));
 
 
 	auto customSection = createSection(custom, encodeVector(Code(types_of_functions, 3)));
 //
-	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + importSection + funcSection + exportSection + codeSection + customSection ;
+	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + importSection + funcSection +
+	            exportSection + codeSection + customSection;
 //	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection;// + memorySection + ;
 	code.debug();
 	return code.clone();
@@ -737,6 +757,6 @@ Code emitBlock(Node node) {
 }
 
 
-Code& emit(Node& code) {
+Code &emit(Node &code) {
 	return emit(Program(code));
 }
