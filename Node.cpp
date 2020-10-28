@@ -482,6 +482,7 @@ float Node::precedence(Node &operater) {
 	if (eq(name, "--"))return 3;
 	if (eq(name, "-"))return 3;// 1 + -x
 
+	if (eq(name, "/"))return 4.9;
 	if (eq(name, "times"))return 5;
 	if (eq(name, "*"))return 5;
 	if (eq(name, "add"))return 6;

@@ -23,10 +23,11 @@ void testMathPrimitives() {
 
 void testMathOperators(){
 //	assert_equals(emit("42 2 *"), 84) // may be evaluated by compiler!
+	assert_equals(eval("42/2"), 21) // may be evaluated by compiler!
+	assert_equals(emit("42/2"), 21) // may be evaluated by compiler!
 	assert_equals(emit("42*2"), 84) // may be evaluated by compiler!
 	assert_equals(emit("42+2"), 44) // may be evaluated by compiler!
 	assert_equals(emit("42-2"), 40) // may be evaluated by compiler!
-	assert_equals(emit("42/2"), 21) // may be evaluated by compiler!
 	assert_equals(emit("42^2"), 1764) // may be evaluated by compiler! NO SUCH PRIMITIVE
 }
 
