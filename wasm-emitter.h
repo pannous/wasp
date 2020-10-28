@@ -7,7 +7,9 @@ bytes concat(bytes a, bytes b, int len_a, int len_b);
 bytes concat(bytes a, char b,int len);
 bytes concat(char section, bytes a, int len_a);
 class Code;
-Code& unsignedLEB128(int n);
+Code& unsignedLEB128(long n);
+Code& signedLEB128(long value);
+
 
 class String;
 class Nod;
@@ -109,7 +111,8 @@ public:
 	}
 
 	Code& push(long nr) {
-		Code &val = unsignedLEB128(nr);
+		Code &val = signedLEB128(nr);
+//		Code &val = unsignedLEB128(nr);
 		int l = val.length;
 		data = concat(data, val.data, length, l);
 		length+= l;
@@ -204,12 +207,31 @@ enum Opcodes {
 	i64_auto = 0x42,
 	i64_const = 0x42,
 	f32_auto = 0x43,
-	i32_eqz = 0x45,
+
+	i32_eqz = 0x45, // use for not!
 	i32_eq = 0x46,
+	i32_ne = 0x47,
+	i32_lt = 0x48,
+	i32_gt = 0x4A,
+	i32_le = 0x4C,
+	i32_ge = 0x4E,
+
 	f32_eq = 0x5b,
+	f32_ne = 0x5c,
 	f32_lt = 0x5d,
 	f32_gt = 0x5e,
+
+	i32_add = 0x6A,
+	i32_sub = 0x6B,
+	i32_mul = 0x6C,
+	i32_div = 0x6D,
+	i32_rem = 0x6F,
+	i32_modulo = 0x6F,
+
 	i32_and = 0x71,
+	i32_or = 0x72,
+	i32_xor = 0x73,
+
 	f32_add = 0x92,
 	f32_sub = 0x93,
 	f32_mul = 0x94,
@@ -218,5 +240,5 @@ enum Opcodes {
 };
 //char start_function=0x00;//unreachable strange convention
 extern char unreachable;//=0x00;//unreachable strange convention
-Code &emitter(Node &code);
+Code &emit(Node &code);
 
