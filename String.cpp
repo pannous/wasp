@@ -43,10 +43,6 @@ typedef const char *chars;
 
 //#include <cstring>
 
-void err(chars error);
-
-void todo(chars error);
-
 void logs(const char *s) {
 	printf("%s\n", s);
 }
@@ -366,8 +362,8 @@ String typeName(Type t) {
 			return "float";
 		case longs:
 			return "number";
-		case ints:
-			return "int";
+//		case ints:
+//			return "int";
 		case bools:
 			return "bool";
 		case nils:
