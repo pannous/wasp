@@ -95,6 +95,8 @@ Node &Node::operator[](String s) {
 		s++;
 		found = has(s);
 	}
+//	if (found and found->kind==keyNode and found->value.node)return *found->value.node;
+// ^^ DON'T DO THAT! a:{b:{c:'hi'}} => a["b"] must be c, not "hi"
 	if (found)return *found;
 	if (name == s) {// me.me == me ? really? let's see if it's a stupid idea…
 		if (kind == objects and value.node)
@@ -105,7 +107,7 @@ Node &Node::operator[](String s) {
 		if (children[0].has(s))return children[0][s];
 
 	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
-	neu.kind = nils; // until ref is set! but neu never knows when its set!! :(
+	neu.kind = keyNode;//nils; // until ref is set! but neu never knows when its set!! :(
 	neu.parent = this;
 	if (neu.value.node) return *neu.value.node;
 	else return neu;
@@ -204,7 +206,8 @@ bool Node::operator==(String other) {
 	if (this==0)return other.empty();
 	if (kind == objects or kind == keyNode)return *value.node == other or value.string == other;
 	if (kind == longs) return other == itoa(value.number);
-	if (kind == reference) return other == name;
+	if (kind == reference) return other == name or value.node and *value.node==other;
+	if (kind == keyNode) return other == name or value.node and *value.node==other;// todo: a=3 a=="a" ??? really?
 	if (kind == unknown) return other == name;
 	return kind == strings and other == value.string;
 }
