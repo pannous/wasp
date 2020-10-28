@@ -13,14 +13,17 @@
 //#import "Map.cpp"
 //#import "String.cpp" // Todo: wasm can't link to String.cpp functions from String.h (e.g. itoa0): 'clang -o x.bc only allows one file)
 #else
+
 #include <cctype>
+
 #endif
 
 //#include "Node.cpp"
 #ifndef WASM
-#include "ErrorHandler.h"
-#endif
 
+#include "ErrorHandler.h"
+
+#endif
 
 
 #ifdef WASM64
@@ -44,7 +47,7 @@ void* operator new(unsigned long size){
 #include "Node.h"
 #include "String.h"
 
-String& text = EMPTY;
+String &text = EMPTY;
 // raise defined in signal.h :(
 
 
@@ -81,7 +84,7 @@ public:
 	}
 
 
-	Node& read(String source) {
+	Node &read(String source) {
 		if (source.empty()) return NIL;
 		columnStart = at = 0;
 		lineNumber = 1;
@@ -92,7 +95,7 @@ public:
 		if (ch && ch != -1) {
 			breakpoint_helper
 			error("Expect end of input");
-			result = (Node)ERROR;
+			result = (Node) ERROR;
 		}
 		// Mark does not support the legacy JSON reviver function todo ??
 		return *result.clone();
@@ -106,7 +109,7 @@ public:
 		fseek(f, 0, SEEK_END);
 		long fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-		char *s = (char *) (alloc(fsize , 2));
+		char *s = (char *) (alloc(fsize, 2));
 		fread(s, 1, fsize, f);
 		fclose(f);
 		return s;
@@ -476,13 +479,15 @@ private:
 		if (ch != '/') {
 			error("Not a comment");
 		}
-		proceed('/');
-		if (ch == '/') {
+		if (next == '/') {
+			proceed('/');
 			inlineComment();
-		} else if (ch == '*') {
+		} else if (next == '*') {
+			proceed('/');
 			blockComment();
 		} else {
-			error("Unrecognized comment");
+			// division handled elsewhere
+//			error("Unrecognized comment");
 		}
 	};
 
@@ -494,6 +499,7 @@ private:
 		while (ch) {
 			if (ch == '/') {
 				comment();
+				return;
 //				auto ws = {' ', '\t', '\r', '\n'};
 			} else if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
 				proceed();
@@ -689,7 +695,7 @@ private:
 	// Parse an array
 	Node array() {
 //		arr.type = arrays;
-		auto *array0 = static_cast<Node *>(alloc(sizeof(Node *) , 100));// todo: GROW!
+		auto *array0 = static_cast<Node *>(alloc(sizeof(Node *), 100));// todo: GROW!
 //		arr.value.node = array0;
 		int len = 0;
 		proceed();  // skip the starting '['
@@ -707,7 +713,7 @@ private:
 //			}
 			else {
 				Node val = value();// copy by value!
-				array0[len++] = (Node)val;
+				array0[len++] = (Node) val;
 //				array0.push(value());
 			}
 			white();
@@ -868,7 +874,7 @@ private:
 		    val.name.empty())
 			val = val.last();// singleton
 		bool deep_copy = val.name.empty() or !debug;
-		if(debug) {
+		if (debug) {
 			deep_copy = deep_copy || val.kind == Type::longs and val.name == itoa(val.value.number);
 			deep_copy = deep_copy || val.kind == Type::bools and (val.name == "True" or val.name == "False");
 			deep_copy = deep_copy || val.kind == Type::floats and val.name == ftoa(val.value.floaty);
@@ -922,7 +928,7 @@ private:
 				break;
 			}// inner match ok
 			if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
-				if (ch != close and close!=' ' and close!='\t' /*???*/) // cant debug wth?
+				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
 					if (!current.parent)
 						return ERROR;// throwing? error("NOT MATCHING" : ERROR);
 				break;//				return current but with extra logic: merge a:3 so that a has value 3 etc;
@@ -936,17 +942,17 @@ private:
 					break;
 				}
 				case '{': {
-					Node &object = value('}',&current.last()).setType(Type::objects);
+					Node &object = value('}', &current.last()).setType(Type::objects);
 					current.last().add(object);
 					break;
 				}
 				case '[': {
-					Node &pattern = value(']',&current).setType(Type::patterns);
+					Node &pattern = value(']', &current).setType(Type::patterns);
 					current.last().add(pattern);
 					break;
 				}
 				case '(': {
-					Node &group = value(')',&current.last()).setType(Type::groups);
+					Node &group = value(')', &current.last()).setType(Type::groups);
 					current.last().add(group);
 					break;
 				}// lists handled by ' '!
@@ -996,8 +1002,8 @@ private:
 				}
 				default: {
 					Node node = words();
-					if(polish_notation && current.length == 0)
-						current=node;
+					if (polish_notation && current.length == 0)
+						current = node;
 					else
 						current.add(node);
 				}
@@ -1059,14 +1065,14 @@ void handler(int sig) {
 #import "tests.cpp"
 
 
-Node run(String source){
+Node run(String source) {
 	return emit(source);
 }
 
 //static
 Node parse(String source) {
 	printf("Parsing %s\n", source.data);
-	if(!source.data)return NIL;
+	if (!source.data)return NIL;
 	return Wasp().read(source);
 }
 
@@ -1078,13 +1084,17 @@ Node parse(String source) {
 
 
 class String;
+
 #ifndef WASM
-void print(String s){
+
+void print(String s) {
 	log(s.data);
 }
+
 #endif
 
-struct Exception {};
+struct Exception {
+};
 //wasm-ld: error: wasp.o: undefined symbol: vtable for __cxxabiv1::__class_type_info
 
 // 2020: WASI does not yet support C++ exceptions. C++ code is supported only with -fno-exceptions for now.
@@ -1097,6 +1107,7 @@ struct Exception {};
 char newline = '\n';
 #ifndef _main_
 #define __MAIN__
+
 int main(int argp, char **argv) {
 
 #ifdef register_global_signal_exception_handler

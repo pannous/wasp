@@ -138,8 +138,6 @@ public:
 		FILE* file=fopen(file_name,"w");
 		fwrite(data, length, 1, file);
 		fclose(file);
-		char *command = "wasmx test.wasm";
-		int ok=system(command);
 //		FILE *result=popen(command, "r");
 //		char buf[100000];
 //		while(fgets(buf, sizeof(buf), result) != NULL) {
@@ -148,6 +146,8 @@ public:
 #endif
 	}
 	int run(){
+//		char *command = "wasmx test.wasm";
+//		int ok=system(command);
 		return run_wasm(data, length);
 	}
 
