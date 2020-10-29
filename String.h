@@ -403,12 +403,16 @@ public:
 	}
 
 
+
 	bool operator!=(String &s) {// const
 		if (this->empty())return !s.empty();
 		if (s.empty())return !this->empty();
 		return !eq(data, s.data);
 	}
 
+//	bool operator==(const String other ) {
+//		return length == other.length && eq(data, other.data);
+//	}  ambiguous with
 
 	bool operator==(String &s) {// const
 		if (this->empty())return s.empty();

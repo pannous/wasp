@@ -210,28 +210,26 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 	return *this;
 }
 
+bool interpret=true;
 Node eval(String code){
-	return parse(code).evaluate();
+	if(interpret)
+		return parse(code).evaluate();
+	else
+		return emit(analyze(parse(code))).run();// int -> Node todo: int* -> Node*
 }
 // if a then b else c == a and b or c
 // (a op c) => op(a c)
-String operator_list[]={"+","-","*","/","^","xor","and","or"}; // "while" ...
+String operator_list[]={"+","-","*","/","^","xor","and","or","not"}; // "while" ...
 Node groupOperators(Node expression){
-	for(String op : operator_list){
-		for(Node c : expression){
-			if(c.name==op){
-				expression.value.node=&c;
-//				if binary op
-				Node lhs = expression.to(c);
-				Node rhs = expression.from(c);
-				c["lhs"]=groupOperators(lhs);
-				c["rhs"]=groupOperators(rhs);
-				// promote expression to its main operator!  (a op c) => op(a c) !!!
-				expression.kind = operators;
-				expression.name = c.name;
-				expression["lhs"]=groupOperators(lhs);
-				expression["rhs"]=groupOperators(rhs);
-				return c;// (a op c) => op(a c)
+	for(String operator_name : operator_list){
+		for(Node op : expression){
+			if(op.name == operator_name){
+				Node lhs = expression.to(op);
+				Node rhs = expression.from(op);
+				op["lhs"]=groupOperators(lhs);
+				op["rhs"]=groupOperators(rhs);
+				// should NOT MODIFY original AST, because iterate by value, right?
+				return op;// (a op c) => op(a c)
 			}
 		}
 	}
@@ -241,8 +239,8 @@ Node Angle::analyze(Node data){
 	if(data.kind==expression){
 		return groupOperators(data);
 	}
-	for(Node child: data)
-		analyze(child);
+	for(Node& child: data)
+		child=analyze(child);// REPLACE with their ast? NO! todo
 	return data;
 }
 Node analyze(Node data){
