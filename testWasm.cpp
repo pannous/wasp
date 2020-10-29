@@ -13,40 +13,49 @@ void testPrint(){
 void testMathPrimitives() {
 	skip(
 			assert_equals(emit("42.1"), 42.1) // todo: return &Node(42.1) or print value to stdout
-	assert_equals(emit("-42.1"), 42.1) // may be evaluated by compiler!
+	assert_equals(emit("-42.1"), 42.1)
 	)
-	assert_equals(emit("42"), 42) // may be evaluated by compiler!
-	assert_equals(emit("-42"), -42) // may be evaluated by compiler!
-	assert_equals(emit("2000000000"), 2000000000) // may be evaluated by compiler!
-	assert_equals(emit("-2000000000"), -2000000000) // may be evaluated by compiler!
+	assert_equals(emit("42"), 42)
+	assert_equals(emit("-42"), -42)
+	assert_equals(emit("2000000000"), 2000000000)
+	assert_equals(emit("-2000000000"), -2000000000)
 }
 
 void testMathOperators(){
-//	assert_equals(emit("42 2 *"), 84) // may be evaluated by compiler!
-	assert_equals(eval("42/2"), 21) // may be evaluated by compiler!
-	assert_equals(emit("42/2"), 21) // may be evaluated by compiler!
-	assert_equals(emit("42*2"), 84) // may be evaluated by compiler!
-	assert_equals(emit("42+2"), 44) // may be evaluated by compiler!
-	assert_equals(emit("42-2"), 40) // may be evaluated by compiler!
+//	assert_equals(emit("42 2 *"), 84)
+	assert_equals(eval("42/2"), 21)
+	assert_equals(emit("42/2"), 21)
+	assert_equals(emit("42*2"), 84)
+	assert_equals(emit("42+2"), 44)
+	assert_equals(emit("42-2"), 40)
 	skip(
-	assert_equals(emit("42^2"), 1764) // may be evaluated by compiler! NO SUCH PRIMITIVE
+	assert_equals(emit("42^2"), 1764) NO SUCH PRIMITIVE
 			)
 }
 
 
 void testComparisonPrimitives() {
-	assert_equals(emit("42>2"), 1) // may be evaluated by compiler!
-	assert_equals(emit("1<2"), 1) // may be evaluated by compiler!
-	assert_equals(emit("452==452"), 1) // may be evaluated by compiler!
-	assert_equals(emit("13!=14"), 1) // may be evaluated by compiler!
-	assert_equals(emit("13<=14"), 1) // may be evaluated by compiler!
-	assert_equals(emit("15>=14"), 1) // may be evaluated by compiler!
+	// may be evaluated by compiler!
+	assert_equals(emit("42>2"), 1)
+	assert_equals(emit("1<2"), 1)
+	assert_equals(emit("452==452"), 1)
+	assert_equals(emit("42≥2"), 1)
+	assert_equals(emit("2≥2"), 1)
+	assert_equals(emit("2≤2"), 1)
+	assert_equals(emit("2≤24"), 1)
+	assert_equals(emit("13!=14"), 1)
+	assert_equals(emit("13<=14"), 1)
+	assert_equals(emit("15>=14"), 1)
 	assert_equals(emit("42<2"), False);
 	assert_equals(emit("1>2"), False);
 	assert_equals(emit("452!=452"), False);
 	assert_equals(emit("13==14"), False);
 	assert_equals(emit("13>=14"), False);
 	assert_equals(emit("15<=14"), False);
+	assert_equals(emit("42≥112"), false)
+	assert_equals(emit("2≥112"), false)
+	assert_equals(emit("12≤2"), false)
+	assert_equals(emit("112≤24"), false)
 }
 
 void testWasmLogicPrimitives() {
@@ -113,6 +122,8 @@ void testWasmLogic(){
 	assert_emit("true and false", false);
 	assert_emit("true and true", true);
 
+	assert_emit("true or false and false", true);// == true or (false)
+
 	assert_emit("false xor true", true);
 	assert_emit("true xor false", true);
 	assert_emit("false xor false", false);
@@ -122,19 +133,38 @@ void testWasmLogic(){
 	assert_emit("true or false", true);
 	assert_emit("true or true", true);
 }
+
+void testWasmControlFlow(){
+	assert_emit("if(condition=2,then=3,else=4)", 3); // this is what happens under the hood (?)
+	assert_emit("if 2 : 3 else 4", 3);
+	assert_emit("if 2 then 3 else 4", 3);
+	assert_emit("if(2,3,4)", 3);
+	assert_emit("if({2},{3},{4})", 3);
+	assert_emit("if(condition=2,then=3)", 3);
+	assert_emit("if(2){3}{4}", 3);
+}
+
 void wasm_todos(){
 	assert_equals(emit("42.1"), 42.1) // main returns int, should be pointer to value!
 }
 void testAllWasm(){
+	// constant things may be evaluated by compiler!
 	// todo: reuse all tests via
 //	interpret = false;
+//	assert_equals(emit("x*=14"), 1)
+//	assert_equals(emit("x>=14"), 1)
+	assert_emit("true or false and false", true);// == true or (false)
+
+	testComparisonPrimitives();
+//	testWasmControlFlow();
 	testWasmLogicUnary();
-	skip(
-	testWasmLogicOnObjects();
-			)
 	testWasmLogic();
 	testWasmLogicPrimitives();
 	testMathOperators();
 	testMathPrimitives();
 	testConstReturn();
+	skip(
+			wasm_todos();
+			testWasmLogicOnObjects();
+	)
 }
