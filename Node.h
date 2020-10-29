@@ -54,17 +54,17 @@ union Value {
 //	Node **children = 0;
 	String string;
 	void *data;
-	long number;
+	long longy;
 
 //	float floaty;
 	double floaty;
 
 	Value() {}// = default;
 	Value(int i) {
-		number = i;
+		longy = i;
 	}
 	Value(bool b) {
-		number = 1;
+		longy = 1;
 	}
 
 //	~Value() = default;
@@ -205,12 +205,12 @@ public:
 
 //	explicit
 	Node(long nr) {
-		value.number = nr;
+		value.longy = nr;
 		kind = longs;
 		if (debug)name = String(itoa(nr)); // messes with setField contraction
 	}
 	explicit Node(int nr) {
-		value.number = nr;
+		value.longy = nr;
 		kind = longs;
 		if (debug)name = String(itoa(nr)); // messes with setField contraction
 	}
@@ -259,7 +259,7 @@ public:
 
 	explicit
 	operator bool() {
-		return value.number or length > 1 or (length == 1 and this != children and (bool) (children[0]));
+		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
 	}
 
 	//	 explicit copy operator not neccessary
@@ -406,21 +406,21 @@ public:
 	Node &setType(Type type);
 
 	long numbere() {
-		return kind == longs or kind == bools ? value.number : value.floaty;// danger
+		return kind == longs or kind == bools ? value.longy : value.floaty;// danger
 	}
 
 	float floate() {
-		return kind == longs ? value.number : value.floaty;// danger
+		return kind == longs ? value.longy : value.floaty;// danger
 	}
 
 	Node *has(String s, bool searchParams = true) const;
 
 // type conversions
-	explicit operator bool() const { return value.number; }
+	explicit operator bool() const { return value.longy; }
 
-	explicit operator int() const { return value.number; }
+	explicit operator int() const { return value.longy; }
 
-	explicit operator long() const { return value.number; }
+	explicit operator long() const { return value.longy; }
 
 	explicit operator float() const { return value.floaty; }
 

@@ -42,7 +42,7 @@ bool assert_equals_x(Node &a, double b, char *context = "") {
 
 bool assert_equals_x(Node &a, long b, char *context = "") {
 	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"s % a % b % context);
-	else printf("OK %d==%d in %f\n"s % a.value.number % b % context);
+	else printf("OK %d==%d in %f\n"s % a.value.longy % b % context);
 	return a == b;
 }
 
@@ -55,7 +55,7 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 
 
 bool assert_equals_x(Node a, Node b, char *context = "") {
-	check(NIL.value.number==0);// WHEN DOES IT BREAK??
+	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
 	if (a == b)
 		printf("OK %s==%s in %s\n"s % a % b % context);
 	else
@@ -160,7 +160,7 @@ void testDeepCopyDebugBugBug() {
 	const char *source = "{deep{a:3,b:4,c:{d:true}}}";
 	assert_parses(source);
 	Node &node = result["deep"]['c']['d'];
-	assert_equals(node.value.number, (long) 1);
+	assert_equals(node.value.longy, (long) 1);
 	assert_equals(node, (long) 1);
 }
 
@@ -168,7 +168,7 @@ void testDeepCopyDebugBugBug2() {
 	const char *source = "{deep{a:3,b:4,c:{d:123}}}";
 	assert_parses(source);
 	Node &node = result["deep"]['c']['d'];
-	assert_equals(node.value.number, (long) 123);
+	assert_equals(node.value.longy, (long) 123);
 	assert_equals(node, (long) 123);
 }
 
@@ -252,7 +252,7 @@ void testMarkSimpleAssign() {
 void testMarkSimple() {
 	log("testMarkSimple");
 	Node a = assert_parses("{a:3}");
-	assert_equals(a.value.number, 3);
+	assert_equals(a.value.longy, 3);
 	assert_equals(a, long(3));
 	assert(a == 3);
 	assert(a.kind == longs or a.kind == keyNode and a.value.node->kind == longs);
@@ -399,7 +399,7 @@ void testErrors() {
 void testForEach() {
 	int sum = 0;
 	for (Node &item : parse("1 2 3"))
-		sum += item.value.number;
+		sum += item.value.longy;
 	assert(sum == 6);
 }
 
@@ -480,14 +480,14 @@ void testIterate(){
 	liste.log();
 	for (Node &child : liste) {
 		// SHOULD effect result
-		child.value.number=child.value.number+10;
+		child.value.longy= child.value.longy + 10;
 	}
-	check(liste[0].value.number == 11)
+	check(liste[0].value.longy == 11)
 	for (Node child : liste) {
 		// should NOT effect result
-		child.value.number=child.value.number+1;
+		child.value.longy= child.value.longy + 1;
 	}
-	check(liste[0].value.number == 11)
+	check(liste[0].value.longy == 11)
 }
 
 
@@ -716,7 +716,7 @@ void testRootLists() {
 
 
 void testRoots() {
-	check(NIL.value.number == 0);
+	check(NIL.value.longy == 0);
 	assert_is("'hello'", "hello");
 	skip(assert_is("hello", "hello", 0));// todo reference==string really?
 	assert_is("True", True)
@@ -729,7 +729,7 @@ void testRoots() {
 //	assert_is("wrong", False)
 	assert_is("null", NIL);
 	assert_is("", NIL);
-	check(NIL.value.number == 0);
+	check(NIL.value.longy == 0);
 	assert_is("0", NIL);
 	assert_is("1", 1)
 	assert_is("123", 123)
@@ -1014,7 +1014,7 @@ void tests() {
 	testAllSamples();
 #endif
 //#endif
-	check(NIL.value.number == 0);// should never be modified
+	check(NIL.value.longy == 0);// should never be modified
 }
 
 #include "testAngle.cpp"

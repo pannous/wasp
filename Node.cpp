@@ -58,7 +58,7 @@ Node True = Node("True").setType(bools).setValue(true);
 Node False = Node("False").setType(bools);
 
 Node &Node::operator=(int i) {
-	value.number = i;
+	value.longy = i;
 	kind = longs;
 	if (name.empty() or name.isNumber())
 		name = String(itoa(i));
@@ -208,7 +208,7 @@ Node &Node::set(String string, Node *node) {
 bool Node::operator==(String other) {
 	if (this==0)return other.empty();
 	if (kind == objects or kind == keyNode)return *value.node == other or value.string == other;
-	if (kind == longs) return other == itoa(value.number);
+	if (kind == longs) return other == itoa(value.longy);
 	if (kind == reference) return other == name or value.node and *value.node==other;
 	if (kind == keyNode) return other == name or value.node and *value.node==other;// todo: a=3 a=="a" ??? really?
 	if (kind == unknown) return other == name;
@@ -217,7 +217,7 @@ bool Node::operator==(String other) {
 
 bool Node::operator==(int other) {
 //	if (this == 0)return false;// HOW?
-	if ((kind == longs and value.number == other) or (kind == floats and value.floaty == other))
+	if ((kind == longs and value.longy == other) or (kind == floats and value.floaty == other))
 		return true;
 	if (kind == keyNode and value.node and *value.node == other)return true;
 	if (kind == strings and atoi0(value.string) == other)return true;
@@ -228,20 +228,20 @@ bool Node::operator==(int other) {
 }
 
 bool Node::operator==(long other) {
-	if(kind == keyNode and value.node and value.node->value.number == other)return true;
-	return (kind == longs and value.number == other) or (kind == floats and value.floaty == other) or (kind == bools and value.number == other);
+	if(kind == keyNode and value.node and value.node->value.longy == other)return true;
+	return (kind == longs and value.longy == other) or (kind == floats and value.floaty == other) or (kind == bools and value.longy == other);
 }
 
 bool Node::operator==(double other) {
 	if(kind == keyNode and value.node and value.node->value.floaty == other)return true;
 	return (kind == floats and value.floaty == ((float) other)) or
-	       (kind == longs and value.number == other);
+	       (kind == longs and value.longy == other);
 }
 
 bool Node::operator==(float other) {
 	if(kind == keyNode and value.node and value.node->value.floaty == other)return true;
 	return (kind == floats and value.floaty == other) or
-	       (kind == longs and value.number == other);
+	       (kind == longs and value.longy == other);
 }
 
 bool namesCompatible(Node a, Node b){
@@ -264,20 +264,20 @@ bool Node::operator==(Node &other) {
 	if (this == other.value.node)return true;// reference ~= its value
 
 	if(kind == keyNode and this->value.node and *this->value.node == other)return true;// todo again?
-	if(kind==nils and other.kind==longs)return other.value.number == 0;
-	if(other.kind==nils and kind==longs)return value.number == 0;
+	if(kind==nils and other.kind==longs)return other.value.longy == 0;
+	if(other.kind==nils and kind==longs)return value.longy == 0;
 
 	if (other.kind == unknown and name == other.name)
 		return true; // weak criterum for dangling unknowns!! TODO ok??
 	if (kind == bools or other.kind==bools) // 1 == true
-		return value.number == other.value.number;// or (value.data!= nullptr and other.value.data != nullptr a);
+		return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
 	if (not typesCompatible(*this, other))
 		return false;
 //	CompileError: WebAssembly.Module(): Compiling function #53:"Node::operator==(Node&)" failed: expected 1 elements on the stack for fallthru to @3, found 0 @+5465
 //	or (other != NIL and other != False) or
 
 	if (kind == longs)
-		return value.number == other.value.number;
+		return value.longy == other.value.longy;
 	if (kind == strings)
 		return value.string == other.value.string or value.string == other.name;// !? match by name??
 	if (kind == floats)
@@ -324,21 +324,21 @@ bool Node::operator!=(Node other) {
 
 Node Node::operator+(Node other) {
 	if (kind == strings and other.kind == longs)
-		return Node(value.string + other.value.number);
+		return Node(value.string + other.value.longy);
 	if (kind == strings and other.kind == floats)
 		return Node(value.string + other.value.floaty);
 	if (kind == strings and other.kind == strings)
 		return Node(value.string + other.value.string);
 	if (kind == longs and other.kind == longs)
-		return Node(value.number + other.value.number);
+		return Node(value.longy + other.value.longy);
 	if (kind == floats and other.kind == longs)
-		return Node(value.floaty + other.value.number);
+		return Node(value.floaty + other.value.longy);
 	if (kind == longs and other.kind == floats)
-		return Node(value.number + other.value.floaty);
+		return Node(value.longy + other.value.floaty);
 	if (kind == floats and other.kind == floats)
 		return Node(value.floaty + other.value.floaty);
 	if (kind == longs and other.kind == strings)
-		return Node(value.number + other.value.string);
+		return Node(value.longy + other.value.string);
 //	if(type==floats and other.type==strings)
 //		return Node(value.floaty + other.value.string);
 	if (kind == objects)
@@ -538,7 +538,7 @@ bool Node::empty() {// nil!
 }
 
 bool Node::isEmpty() {// not required here: name.empty()
-	return (length == 0 and value.number == 0) or isNil();
+	return (length == 0 and value.longy == 0) or isNil();
 }
 
 bool Node::isNil() { // required here: name.empty()
@@ -554,7 +554,7 @@ const char * Node::serializeValue() const {
 			return val.string;
 //		case ints:
 		case longs:
-			return itoa(val.number);
+			return itoa(val.longy);
 		case floats:
 			return ftoa(val.floaty);
 		case nils: return "ø";
@@ -564,7 +564,7 @@ const char * Node::serializeValue() const {
 		case keyNode:return "";
 		case reference:return val.data ? val.node->name : "ø";
 		case symbol: return val.string;
-		case bools: return val.number > 0 ? "true" : "false";
+		case bools: return val.longy > 0 ? "true" : "false";
 		case arrays: return "[…]";//val.data type?
 		case buffers: return "int[]";//val.data lenght?
 		case operators:
