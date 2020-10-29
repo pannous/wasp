@@ -117,6 +117,9 @@ Node &Nodec::operator[](String s) const{
 	return (*this)[s];
 }
 
+// CAREFUL: iterate by value or by reference ?!
+//for (Node &child : liste) { // DOES effect liste
+//for (Node child : liste) { // Does NOT effect liste
 Node *Node::begin() const {
 	return children;
 }
@@ -190,7 +193,7 @@ Node &Node::set(String string, Node *node) {
 		entry.value.node->parent = &entry;
 //		entry.value.node=Node();// dangling ref to be set
 	} else {
-		entry = (Node)*node;// copy by value OK
+		entry = *node;// copy by value OK
 		entry.parent = this;
 	}
 	length++;
@@ -241,6 +244,10 @@ bool Node::operator==(float other) {
 	       (kind == longs and value.number == other);
 }
 
+bool namesCompatible(Node a, Node b){
+
+}
+
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
 
@@ -248,8 +255,8 @@ bool Node::operator==(Node &other) {
 	if (this == &other)return true;// same pointer!
 	if (isNil() and other.isNil())
 		return true;
-	if (isEmpty() and other.isEmpty())
-		return true;
+//	if (isEmpty() and other.isEmpty()) // todo: THIS MIGHT NOT BE ENOUGH!!! "false and false" != "and false"
+//		return true;
 	if (name == NIL.name or name == False.name or name == "")
 		if (other.name == NIL.name or other.name == False.name or other.name == "")
 			return true;// TODO: SHOULD already BE SAME by engine!
@@ -257,10 +264,13 @@ bool Node::operator==(Node &other) {
 	if (this == other.value.node)return true;// reference ~= its value
 
 	if(kind == keyNode and this->value.node and *this->value.node == other)return true;// todo again?
+	if(kind==nils and other.kind==longs)return other.value.number == 0;
+	if(other.kind==nils and kind==longs)return value.number == 0;
+
 	if (other.kind == unknown and name == other.name)
 		return true; // weak criterum for dangling unknowns!! TODO ok??
-	if (kind == bools or other.kind==bools)
-		return value.data == other.value.data;// or (value.data!= nullptr and other.value.data != nullptr a);
+	if (kind == bools or other.kind==bools) // 1 == true
+		return value.number == other.value.number;// or (value.data!= nullptr and other.value.data != nullptr a);
 	if (not typesCompatible(*this, other))
 		return false;
 //	CompileError: WebAssembly.Module(): Compiling function #53:"Node::operator==(Node&)" failed: expected 1 elements on the stack for fallthru to @3, found 0 @+5465
@@ -361,11 +371,19 @@ void Node::remove(Node &node) {
 		}
 	}
 }
-
+void Node::addRaw(Node *node){
+	if (length >= capacity -1 )
+		error("Out of node Memory");
+	if (lastChild >= maxNodes)
+		error("Out of global Memory");
+	if (!children) children = &all[capacity * lastChild++];
+	children[length++] = *node;
+	node->parent = this;
+}
 
 void Node::add(Node *node,bool flatten) {
 	if (node->isNil() and node->name.empty() and node->kind != longs)
-		return;// skipp nils!
+		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
 	node->parent = this;
 	if (not param and node->kind == groups ) {// polish_notation
 		param = node;// polish_notation: children?
@@ -377,17 +395,11 @@ void Node::add(Node *node,bool flatten) {
 		children = node->children;
 		length = node->length;
 	} else { // todo a{x}{y z} => a{x,{y z}} BAD
-//	if (not children or (length == 0 and not value.node))
-//		value.node = node; later!
 		if (node->length == 1 and flatten and node->name.empty())
 			node = &node->last();
-		if (length >= capacity -1 )
-			error("Out of node Memory");
-		if (lastChild >= maxNodes)
-			error("Out of global Memory");
-		if (!children) children = &all[capacity * lastChild++];
-		children[length++] = *node;
-		node->parent = this;
+//	if (not children or (length == 0 and not value.node))
+//		value.node = node; later!
+		addRaw(node);
 	}
 }
 
@@ -608,9 +620,9 @@ Node Node::setValue(Value v) {
 Node Node::to(Node match) {
 	Node rhs;
 	for (Node child:*this) {
-		if(child == match)
+		if(child.name == match.name)
 			break;
-		rhs.add(child);
+		rhs.addRaw(&child);
 	}
 	rhs.kind = kind;
 	return rhs;
@@ -621,8 +633,8 @@ Node Node::from(Node match) {
 	Node lhs;
 	bool start = false;
 	for (Node child:*this) {
-		if(start)lhs.add(child);
-		if(child == match)start=true;
+		if(start)lhs.addRaw(&child);
+		if(child.name == match.name)start=true;
 	}
 	lhs.kind = kind;
 	return lhs;

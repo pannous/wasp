@@ -82,7 +82,7 @@ public:
 
 	}
 
-	Code& opcode(byte opcode) {
+	Code& addByte(byte opcode) {
 		data = concat(data, opcode,length);
 		length++;
 		return *this;
@@ -240,5 +240,5 @@ enum Opcodes {
 };
 //char start_function=0x00;//unreachable strange convention
 extern char unreachable;//=0x00;//unreachable strange convention
-Code &emit(Node &code);
+Code &emit(Node code);
 

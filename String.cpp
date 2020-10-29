@@ -75,6 +75,7 @@ class String;
 //}
 #endif
 //#define cstring
+
 bool eq(const char *dest, const char *src) {
 	if (!dest || !src)
 		return false;

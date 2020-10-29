@@ -95,7 +95,7 @@ public:
 		if (ch && ch != -1) {
 			breakpoint_helper
 			error("Expect end of input");
-			result = (Node) ERROR;
+			result = ERROR;
 		}
 		// Mark does not support the legacy JSON reviver function todo ??
 		return *result.clone();
@@ -713,7 +713,7 @@ private:
 //			}
 			else {
 				Node val = value();// copy by value!
-				array0[len++] = (Node) val;
+				array0[len++] = val;
 //				array0.push(value());
 			}
 			white();
