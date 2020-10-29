@@ -595,7 +595,7 @@ private:
 			if (text[pos] == ':' and braces == 0)return true;// ambiguity
 			if (text[pos] == ';' and braces == 0)return true;// end of statement!
 			if (text[pos] == '=' and braces == 0)
-				return text[pos + 1] != '=' and text[pos - 1] != '=' and text[pos - 1] != '!';// == != OK
+				return text[pos + 1] != '=' and text[pos - 1] != '=' and not is_operator(text[pos - 1]);// == != OK
 			if (text[pos] == '}')braces--;
 			pos++;
 		}
