@@ -474,6 +474,23 @@ void testDeepLists() {
 	assert(result["x"][2] == 3);
 }
 
+void testIterate(){
+//	parse("(1 2 3)");
+	Node liste=parse("{1 2 3}");
+	liste.log();
+	for (Node &child : liste) {
+		// SHOULD effect result
+		child.value.number=child.value.number+10;
+	}
+	check(liste[0].value.number == 11)
+	for (Node child : liste) {
+		// should NOT effect result
+		child.value.number=child.value.number+1;
+	}
+	check(liste[0].value.number == 11)
+}
+
+
 void testLists() {
 	assert_parses("[1,2,3]");
 	assert(result.length == 3);
@@ -605,7 +622,7 @@ void testLogicPrescedence() {
 }
 
 
-void testC() {
+void testCpp() {
 //	esult of comparison of constant 3 with expression of type 'bool' is always true
 //	assert(1 < 2 < 3);// NOT WHAT YOU EXPECT!
 //	assert(3 > 2 > 1);// NOT WHAT YOU EXPECT!
@@ -948,6 +965,9 @@ void tests() {
 			testsFailingInWasm();
 	)
 //	raise("test once if raising");
+
+	testIterate();
+	testLists();
 	testMarkAsMap();
 	testLogic();
 	testEval();
@@ -967,7 +987,7 @@ void tests() {
 	testMarkSimple();
 	testMarkMulti();
 	testMarkMulti2();
-	testC();
+	testCpp();
 	testErrors();
 	testLists();
 	testDeepLists();
@@ -1023,10 +1043,10 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+//	tests();// make sure all still ok before changes
 	testAllWasm();
-	testAllAngle();
+//	testAllAngle();
 
-	tests();// make sure all still ok before changes
 //	testBUG();
 //	testParentBUG();
 
