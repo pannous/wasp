@@ -63,7 +63,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 		if (right.kind == floats)
 			left.add(Node(sqrt(right.value.floaty)));
 		if (right.kind == longs)
-			left.add(Node(sqrt(right.value.number)).setType(floats));
+			left.add(Node(sqrt(right.value.longy)).setType(floats));
 		return left.evaluate();
 	}
 
@@ -71,7 +71,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 
 	if (op == "|") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (left.kind == longs and right.kind == longs) return Node((long) (left.value.number | right.value.number));
+		if (left.kind == longs and right.kind == longs) return Node((long) (left.value.longy | right.value.longy));
 		// pipe todo
 	}
 
@@ -79,22 +79,22 @@ Node Node::apply(Node left, Node op0, Node right) {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (left.kind == bools or right.kind == bools)
 			return left.value.data and right.value.data ? True : False;
-		return Node(left.value.number & right.value.number);
+		return Node(left.value.longy & right.value.longy);
 	}
 
 	if (op == "xor" or op == "^|") {
 		printf("XOR REACHED");
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (left.kind == bools or right.kind == bools){
-			return left.value.number ^ right.value.number ? True : False;
+			return left.value.longy ^ right.value.longy ? True : False;
 		}
-		return Node(left.value.number ^ right.value.number);
+		return Node(left.value.longy ^ right.value.longy);
 	}
 
 	if (op == "and" or op == "&&") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (left.kind == bools or right.kind == bools) return left.value.data and right.value.data ? True : False;
-		return Node(left.value.number and right.value.number);
+		return Node(left.value.longy and right.value.longy);
 	}
 
 	if (op == "or" or op == "||" or op == "&") {
@@ -114,32 +114,32 @@ Node Node::apply(Node left, Node op0, Node right) {
 	if (op == "+" or op == "add" or op == "plus") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty + right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty + right.value.number);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.number + right.value.floaty);
-		if (left.kind == longs and right.kind == longs) return Node(left.value.number + right.value.number);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty + right.value.longy);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy + right.value.floaty);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.longy + right.value.longy);
 //		if(left.type==arrays …
 	}
 
 	// todo: 2 * -x
 	if (op == "-" or op == "minus" or op == "subtract") {
 		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty - right.value.floaty);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.number - right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty - right.value.number);
-		if (left.kind == longs and right.kind == longs) return Node(left.value.number - right.value.number);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy - right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty - right.value.longy);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.longy - right.value.longy);
 	}
 	if (op == "/" or op == "div" or op == "divide") { // "by"
 		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty / right.value.floaty);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.number / right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty / right.value.number);
-		if (left.kind == longs and right.kind == longs) return Node(left.value.number / right.value.number);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy / right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty / right.value.longy);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.longy / right.value.longy);
 	}
 
 	if (op == "*" or op == "⋆" or op == "×" or op == "∗" or op == "times") {// ⊗
-		if (left.kind == strings or right.kind == strings) return Node(left.string().times(right.value.number));
+		if (left.kind == strings or right.kind == strings) return Node(left.string().times(right.value.longy));
 		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty * right.value.floaty);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.number * right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty * right.value.number);
-		if (left.kind == longs and right.kind == longs) return Node(left.value.number * right.value.number);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy * right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty * right.value.longy);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.longy * right.value.longy);
 		todo(op + " operator NOT defined for types %s and %s ");
 
 //		if (right.type == numbers) return Node(left.value.number * right.value.number);
