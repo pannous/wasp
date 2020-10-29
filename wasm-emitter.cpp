@@ -402,14 +402,14 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 		case bools:
 //		case ints:
 			code.addByte((byte) i32_auto);
-			code.push(node.value.number);
+			code.push(node.value.longy);
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case longs:
 //			if(call_extern)
 			code.addByte((byte) i32_const);
 //			code.opcode((byte)i64_auto);
-			code.push(node.value.number);
+			code.push(node.value.longy);
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case floats:

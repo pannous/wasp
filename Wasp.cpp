@@ -875,13 +875,13 @@ private:
 			val = val.last();// singleton
 		bool deep_copy = val.name.empty() or !debug;
 		if (debug) {
-			deep_copy = deep_copy || val.kind == Type::longs and val.name == itoa(val.value.number);
+			deep_copy = deep_copy || val.kind == Type::longs and val.name == itoa(val.value.longy);
 			deep_copy = deep_copy || val.kind == Type::bools and (val.name == "True" or val.name == "False");
 			deep_copy = deep_copy || val.kind == Type::floats and val.name == ftoa(val.value.floaty);
 		} // shit just for debug labels. might remove!!
 // last part to preserve {deep{a:3,b:4,c:{d:'hi'}}} != {deep{a:3,b:4,c:'hi'}}
 
-		if (val.value.number and val.kind != objects and deep_copy) {
+		if (val.value.longy and val.kind != objects and deep_copy) {
 			if (&key == &NIL or key.isNil() or key == NIL or val.value.floaty == 6.4807)
 				if (key.name == nil_name)
 					warn("impossible");
