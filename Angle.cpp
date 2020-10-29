@@ -219,7 +219,8 @@ Node eval(String code){
 }
 // if a then b else c == a and b or c
 // (a op c) => op(a c)
-String operator_list[]={"+","-","*","/","^","xor","and","or","not"}; // "while" ...
+// further right means higher prescedence
+String operator_list[]={"+","-","*","/","^","xor","or","||","|","&&","&","and","not","<=",">=","≥","≤","<",">","less","bigger","=","is","equal","equals","==","!=","≠"}; // "while" ...
 Node groupOperators(Node expression){
 	for(String operator_name : operator_list){
 		for(Node op : expression){
