@@ -133,7 +133,7 @@ public:
 		if (this == &False)return this;
 		// todo ...
 		Node *copy = new Node();
-		*copy = (Node)*this;// copy value ok
+		*copy = *this;// copy value ok
 		return copy;
 	}
 
@@ -337,12 +337,13 @@ public:
 	void add(Node node);// modifying
 
 //	void add(Node &node);
-
+	void addRaw(Node* node);
 	void add(Node *node, bool flatten=true);
 
 	void remove(Node *node); // directly from children
 	void remove(Node &node); // via compare children
 
+	// danger: iterate by value or by reference?
 	[[nodiscard]] Node *begin() const;
 
 	[[nodiscard]] Node *end() const;
@@ -358,9 +359,8 @@ public:
 //		if || name==nil_name …
 #ifndef WASM
 #ifndef WASI
-		if (name.data < (char *) 0xffff) {
+		if (name and name.data and name.data < (char *) 0xffff) {
 			printf("BUG");
-			return;
 		}
 		if (name and name.data and name.data > (char *) 0xffff and kind != objects)
 #endif

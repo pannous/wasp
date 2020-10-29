@@ -196,6 +196,8 @@ byte opcodes(const char *s, byte kind = 0) {
 		if (eq(s, "&&"))return i32_and;
 		if (eq(s, "and"))return i32_and;
 		if (eq(s, "or"))return i32_or;
+		if (eq(s, "xor"))return i32_xor;
+		if (eq(s, "not"))return i32_eqz;
 		if (eq(s, "||"))return i32_or;
 		if (eq(s, "|"))return i32_or;
 	} else {
@@ -381,37 +383,37 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 	switch (node.kind) {
 		case reference:
 		case operators: {
-			if (node.length == 2) {// binary operator
-				code.push(emitExpression(node["lhs"]));
-				code.push(emitExpression(node["rhs"]));
-			}
+//			if (node.length == 2) {// binary operators, and others
+				code.push(emitExpression(node["lhs"]));// might be empty ok
+				code.push(emitExpression(node["rhs"]));// might be empty ok
+//			}
 			byte opcode = opcodes(node.name);
 			if (opcode > 0)
-				code.opcode(opcode);
+				code.addByte(opcode);
 			else
 				error("unknown opcode / call / symbol: "s + node.name);
 		}
 			break;
-		case nils:
+		case nils:// also 0, false
 //			code.opcode((byte)i64_auto);// nil is pointer
-			code.opcode((byte) i32_auto);// nil is pointer
+			code.addByte((byte) i32_auto);// nil is pointer
 			code.push((long) 0);
 			break;
 		case bools:
 //		case ints:
-			code.opcode((byte) i32_auto);
+			code.addByte((byte) i32_auto);
 			code.push(node.value.number);
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case longs:
 //			if(call_extern)
-			code.opcode((byte) i32_const);
+			code.addByte((byte) i32_const);
 //			code.opcode((byte)i64_auto);
 			code.push(node.value.number);
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case floats:
-			code.opcode((byte) f32_auto);
+			code.addByte((byte) f32_auto);
 			code.push(ieee754(node.value.floaty), 4);
 			break;
 //			case identifier:
@@ -447,84 +449,84 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 	switch (type) {
 		case whileStatement:
 			// outer block
-			code.opcode(block);
-			code.opcode(void_block);
+			code.addByte(block);
+			code.addByte(void_block);
 			// inner loop
-			code.opcode(loop);
-			code.opcode(void_block);
+			code.addByte(loop);
+			code.addByte(void_block);
 			// compute the while expression
 			emitExpression(statement.param);
-			code.opcode(i32_eqz);
+			code.addByte(i32_eqz);
 			// br_if $label0
-			code.opcode(br_if);
-			code.opcode(1);
+			code.addByte(br_if);
+			code.addByte(1);
 //			code.push(signedLEB128(1));
 			// the nested logic
 			emitExpression(statement.value.node);// BODY
 			// br $label1
-			code.opcode(br);
-			code.opcode(0);
+			code.addByte(br);
+			code.addByte(0);
 
 //				code.push(signedLEB128(0));
 			// end loop
-			code.opcode(end_block);
+			code.addByte(end_block);
 			// end block
-			code.opcode(end_block);
+			code.addByte(end_block);
 			break;
 		case ifStatement:
 			// if block
-			code.opcode(block);
-			code.opcode(void_block);
+			code.addByte(block);
+			code.addByte(void_block);
 			// compute the if expression
 			emitExpression(statement.param);
-			code.opcode(i32_eqz);
+			code.addByte(i32_eqz);
 			// br_if $label0
-			code.opcode(br_if);
-			code.opcode(0);
+			code.addByte(br_if);
+			code.addByte(0);
 //			code.opcode(signedLEB128(0));
 			// the nested logic
 			emitExpression(statement.value.node);// BODY
 			// end block
-			code.opcode(end_block);
+			code.addByte(end_block);
 
 			// else block
-			code.opcode(block);
-			code.opcode(void_block);
+			code.addByte(block);
+			code.addByte(void_block);
 			// compute the if expression
 			emitExpression(statement.param);
-			code.opcode(i32_auto);
+			code.addByte(i32_auto);
 //				code.opcode(signedLEB128(1));
-			code.opcode(1);
-			code.opcode(i32_eq);
+			code.addByte(1);
+			code.addByte(i32_eq);
 			// br_if $label0
-			code.opcode(br_if);
-			code.opcode(0);
+			code.addByte(br_if);
+			code.addByte(0);
 //				code.opcode(signedLEB128(0));
 			// the nested logic
 			emitExpression(&statement["else"]);
 			// end block
-			code.opcode(end_block);
+			code.addByte(end_block);
 			break;
 		case callStatement:
 			if (statement.name == "setpixel") {
 				// compute and cache the setpixel parameters
 				emitExpression(statement.param[0]);
-				code.opcode(set_local);
-				code.opcode(localIndexForSymbol("x"));
+				code.addByte(set_local);
+				code.addByte(localIndexForSymbol("x"));
 //					code.opcode(unsignedLEB128(localIndexForSymbol("x")));
 
 				// write
-				code.opcode(i32_store_8);
-				code.opcode((char) 0x00);
-				code.opcode((char) 0x00); // align and offset
+				code.addByte(i32_store_8);
+				code.addByte((char) 0x00);
+				code.addByte((char) 0x00); // align and offset
 			} else {
 //					for (Node arg : *statement.param) {
 //						emitExpression(*((ExpressionNod *) &arg));
 //					};
 				todo();
 				int index = localIndexForSymbol(statement.name);
-				code.opcode(call);
-				code.opcode((index + 1));
+				code.addByte(call);
+				code.addByte((index + 1));
 //					code.opcode(unsignedLEB128(index + 1));
 
 			};
@@ -542,10 +544,10 @@ Code emitExpression(Node *nodes) {
 
 Code Call(char *symbol) {//},Node* args=0) {
 	Code code;
-	code.opcode(call);
+	code.addByte(call);
 	int i = localIndexForSymbol(symbol);
 //	code.opcode(unsignedLEB128(i),8);
-	code.opcode(i);
+	code.addByte(i);
 	return Code();
 }
 
@@ -569,7 +571,7 @@ public:
 
 	void collectMain() {
 //		if(!functions["main"])
-		main = (Node) ast;// root statements form 'main'
+		main = ast;// root statements form 'main'
 	}
 
 
@@ -623,10 +625,10 @@ Code signedLEB128(int n) {
 				(n == 0 && (byt & 0x40) == 0) ||
 				(n == -1 && (byt & 0x40) != 0)
 				) {
-			result.opcode(byt);
+			result.addByte(byt);
 			return result;
 		}
-		result.opcode(byt | 0x80);
+		result.addByte(byt | 0x80);
 	}
 //	return result.data;
 }
@@ -645,7 +647,7 @@ Code &emit(Program ast) {
 	Code funcTypes;
 	for (Node &proc : ast.functions) {
 		Code args;
-		for (Node arg: *proc.param) { args.opcode(f32); }
+		for (Node arg: *proc.param) { args.addByte(f32); }
 		Code functionTypes = Code(functionType).push(encodeVector(args)).push(emptyArray);
 	}
 //  ast.map(proc {[functionType, encodeVector(proc.args.map(_ -> f32)), emptyArray]);
@@ -751,12 +753,12 @@ Code emitBlock(Node node) {
 	Code inner_code_data = emitExpression(node);
 	block.push(inner_code_data);
 //if not return_block
-	block.opcode(return_block);
-	block.opcode(end_block);
+	block.addByte(return_block);
+	block.addByte(end_block);
 	return block;
 }
 
 
-Code &emit(Node &code) {
+Code &emit(Node code) {
 	return emit(Program(code));
 }
