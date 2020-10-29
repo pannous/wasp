@@ -28,6 +28,8 @@ void testMathOperators(){
 	assert_equals(emit("42*2"), 84)
 	assert_equals(emit("42+2"), 44)
 	assert_equals(emit("42-2"), 40)
+	assert_equals(emit("3+3*3"), 12)
+
 	skip(
 	assert_equals(emit("42^2"), 1764) NO SUCH PRIMITIVE
 			)
