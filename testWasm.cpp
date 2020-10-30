@@ -29,7 +29,17 @@ void testMathOperators(){
 	assert_equals(emit("42+2"), 44)
 	assert_equals(emit("42-2"), 40)
 	assert_equals(emit("3+3*3"), 12)
-
+	assert_equals(emit("3+3*3>3+3+3"), true)
+	assert_equals(emit("3+3*3<3*3*3"), true)
+	assert_equals(emit("3+3*3<3+3+3"), false)
+	assert_equals(emit("3+3*3>3*3*3"), false)
+	assert_equals(emit("3+3+3<3+3*3"), true)
+	assert_equals(emit("3*3*3>3+3*3"), true)
+//	assert_equals(emit("3⁰"),1);
+//	assert_equals(emit("3¹"),3);
+//	assert_equals(emit("3²"),9);
+//	assert_equals(emit("3³"),27);
+//	assert_equals(emit("3⁴"),9*9);
 	skip(
 	assert_equals(emit("42^2"), 1764) NO SUCH PRIMITIVE
 			)
@@ -150,6 +160,7 @@ void wasm_todos(){
 	assert_equals(emit("42.1"), 42.1) // main returns int, should be pointer to value!
 }
 void testAllWasm(){
+	skip(testsFailingInWasm();)
 	// constant things may be evaluated by compiler!
 	// todo: reuse all tests via
 //	interpret = false;

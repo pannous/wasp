@@ -24,7 +24,9 @@ enum Type {
 	longs, // the signature of parameters/variables is independent!
 //	ints,// use longy field, but in wasm longs are pointers!
 	bools,
+	errors,// internal wasp error, NOT to be used in Angle!
 	unknown = 20 //7
+
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 #endif //MARK_NODETYPES_H

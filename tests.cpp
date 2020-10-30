@@ -138,7 +138,7 @@ Node assert_parsesx(const char *mark) {
 	return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
 //#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-#define assert_parses(mark) result=assert_parsesx(mark);if(!result){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(0);}
+#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(0);}
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
 
@@ -305,23 +305,24 @@ void testUTFinCPP() {
 void testUTF() {
 	testUTFinCPP();
 
-	assert_parsesx("{ç:☺}");
+	assert_parses("{ç:☺}");
 	assert(result["ç"] == "☺");
 
-	assert_parses("ç='☺'");
+	assert_parses("ç:'☺'");
 	assert(result == "☺");
 
 	assert_parses("{ç:111}");
 	assert(result["ç"] == 111);
 
-	assert_parsesx("{ç:ø}");
+	assert_parses("{ç:ø}");
 	Node &node = result["ç"];
 	assert(node == NIL);
 
-	assert_parsesx("ç=☺");
-	assert(result == "☺");
+	assert_parses("ç='☺'");
+	assert(eval("ç='☺'") == "☺");
 
-
+	assert_parses("ç=☺");
+	assert(result == "☺" or result.kind==Type::expression);
 //	assert(node == "ø"); //=> OK
 }
 
@@ -954,6 +955,11 @@ void testParamizedKeys() {
 			Node label3 = parse("label:{for:password 'Password'}");
 	)
 }
+void testStackedLambdas(){
+	Node node = parse("a{x:1}{y:2}{3}");
+	check(node[0]==parse("{x:1}"));
+	check(node[1]==parse("{y:2}"));
+}
 
 void testsFailingInWasm() {
 	testKitchensink();
@@ -961,14 +967,11 @@ void testsFailingInWasm() {
 }
 
 void tests() {
-	skip(
-			testsFailingInWasm();
-	)
-//	raise("test once if raising");
-
+	testStackedLambdas();
 	testIterate();
 	testLists();
 	testMarkAsMap();
+//	raise("test once if raising");
 	testLogic();
 	testEval();
 	testLogicEmptySet();
@@ -1043,7 +1046,8 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-//	tests();// make sure all still ok before changes
+
+	tests();// make sure all still ok before changes
 	testAllWasm();
 //	testAllAngle();
 
