@@ -53,7 +53,7 @@ Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
 Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent
 
-Node ERROR = Node("ERROR").setType(nils);// ≠ NIL
+Node ERROR = Node("ERROR").setType(errors);// ≠ NIL
 Node True = Node("True").setType(bools).setValue(true);
 Node False = Node("False").setType(bools);
 
@@ -250,7 +250,8 @@ bool namesCompatible(Node a, Node b){
 
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
-
+	if(this->kind==errors)return other.kind == errors;
+	if(other.kind==errors)return this->kind == errors;
 
 	if (this == &other)return true;// same pointer!
 	if (isNil() and other.isNil())
