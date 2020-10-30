@@ -231,6 +231,7 @@ private:
 	// everything that is not an is_identifier is treated as operator/symbol/identifier?
 	bool is_operator(char ch) {// todo is_KNOWN_operator
 //		if (ch > 0x207C and ch < 0x2200) return true; char is signed_byte -127..127
+//		if(ch=='=') return false;// internal treatment
 		if (ch < 0) return true;// utf
 		if (is_identifier(ch)) return false;
 		if (isalnum(ch)) return false;// ANY UTF 8
@@ -240,6 +241,7 @@ private:
 	bool is_identifier(char ch) {
 		if (ch == '#')return false;// size/count/length
 		if (ch == '=')return false;
+		if (ch == ':')return false;
 		if (ch == ' ')return false;
 		if (ch == ';')return false;
 		if (ch == '.')return false;
@@ -263,7 +265,7 @@ private:
 		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
 		var key = String(ch);
 		// subsequent characters can contain ANYTHING
-		while (proceed() and is_identifier(ch))key += ch;
+		while (proceed() and is_identifier(ch) )key += ch;
 		// subsequent characters can contain digits
 //		while (proceed() &&
 //		       (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_' ||
@@ -538,7 +540,8 @@ private:
 		Node node = Node(ch);
 		node.setType(operators);// todo ++
 		proceed();
-		while (ch < 0 or is_operator(ch)) {// utf8 √ …
+		// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
+		while ((ch < 0 or is_operator(ch)) and (previous!='=' or ch=='=')) {// utf8 √ …
 			node.name += ch;
 			proceed();
 		}
@@ -612,7 +615,7 @@ private:
 		expressions.add(node);
 		white();
 		while ((ch and is_identifier(ch)) or isalnum(ch) or is_operator(ch)) {
-			node = symbol();
+			node = symbol();// including operators `=` ...
 			expressions.add(node);
 			white();
 		}
@@ -868,8 +871,7 @@ private:
 		return next >= '0' and next <= '9';
 	}
 
-	Node &setField(Node &key) { // a:{b}
-		Node &val = *value(' ', &key).clone();// applies to WHOLE expression
+	Node &setField(Node &key, Node& val) { // a:{b}
 		if ((val.kind == groups or val.kind == patterns or val.kind == objects) and val.length == 1 and
 		    val.name.empty())
 			val = val.last();// singleton
@@ -938,7 +940,8 @@ private:
 				case ':': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
-					setField(key);
+					Node &val = *value(' ', &key).clone();// applies to WHOLE expression
+					setField(key, val);
 					break;
 				}
 				case '{': {
@@ -979,7 +982,10 @@ private:
 					if (previous == '\\')continue;// escape
 					if (close != ch) {
 						// open string
-						current.add(string(ch));
+						if(current.last().kind==Type::expression)
+							current.last().add(string(ch));
+						else
+							current.add(string(ch));
 						break;
 					}
 					Node id = Node(text.substring(start, at));
@@ -1001,7 +1007,7 @@ private:
 					break;
 				}
 				default: {
-					Node node = words();
+					Node node = expression();//words();
 					if (polish_notation && current.length == 0)
 						current = node;
 					else

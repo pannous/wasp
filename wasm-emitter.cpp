@@ -390,8 +390,11 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			byte opcode = opcodes(node.name);
 			if (opcode > 0)
 				code.addByte(opcode);
-			else
+			else{
+				breakpoint_helper
 				error("unknown opcode / call / symbol: "s + node.name);
+			}
+
 		}
 			break;
 		case nils:// also 0, false
