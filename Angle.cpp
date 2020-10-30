@@ -141,8 +141,18 @@ Node Node::apply(Node left, Node op0, Node right) {
 		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty * right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy * right.value.longy);
 		todo(op + " operator NOT defined for types %s and %s ");
-
 //		if (right.type == numbers) return Node(left.value.number * right.value.number);
+	}
+	if (op == "=" or op==":=" or op==":"){
+		warn("proper '=' operator");
+		left.kind = reference;
+		if(right.value.data){// and ...
+			left.kind = right.kind; // there are certainly things lost here!?!
+			left.value.data = right.value.data;
+		}
+		else
+			left.value.node = &right;
+		return left;
 	}
 	todo(op + " is NOT a builtin operator ");
 	return NIL;
@@ -219,8 +229,9 @@ Node eval(String code){
 }
 // if a then b else c == a and b or c
 // (a op c) => op(a c)
-// further right means higher prescedence
-String operator_list[]={"+","-","*","/","^","xor","or","||","|","&&","&","and","not","<=",">=","≥","≤","<",">","less","bigger","=","is","equal","equals","==","!=","≠"}; // "while" ...
+// further right means higher prescedence/binding, gets grouped first
+// todo "=" ":" handled differently?
+String operator_list[]={"is","equal","equals","==","!=","≠","xor","or","||","|","&&","&","and","not","<=",">=","≥","≤","<",">","less","bigger","⁰","¹","²","³","⁴","+","-","*","×","⋅","⋆","/","÷","^"}; // "while" ...
 Node groupOperators(Node expression){
 	for(String operator_name : operator_list){
 		for(Node op : expression){
