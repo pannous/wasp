@@ -6,6 +6,7 @@
 
 #include "WasmHelpers.h"
 #include "String.h"
+#include "Backtrace.h"
 //#define size_t int
 //extern unsigned int *memory;
 
@@ -98,6 +99,9 @@ int isalnum ( int c ){
 #ifndef WASM
 #ifndef WASI
 void raise(chars error){
+//#ifdef _Backtrace_
+	Backtrace(3);
+//#endif
 	throw error;
 }
 #else
@@ -194,9 +198,6 @@ void logi(int l){
 #endif
 
 void err(chars error) {
-#ifdef Backtrace
-	Backtrace(3);
-#endif
 	raise(error);
 }
 

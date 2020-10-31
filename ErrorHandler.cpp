@@ -2,6 +2,8 @@
 // Created by pannous on 17.11.19.
 //
 
+#define ErrorHandler
+
 #include "ErrorHandler.h"
 
 //#include <zconf.h>
@@ -145,7 +147,7 @@ static void signal_segv(int signum, siginfo_t* info, void*ptr) {
 
 static void handler(int sig, siginfo_t *si, void *context)
 {
-	printf("Got SIGSEGV at address: 0x%lx\n",(number) si->si_addr);
+	printf("Got SIGSEGV at address: 0x%lx\n",(long) si->si_addr);
 	printf("Implements the handler only\n");
 //	Backtrace();
 }
