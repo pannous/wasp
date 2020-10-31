@@ -25,8 +25,8 @@ enum Type {
 //	ints,// use longy field, but in wasm longs are pointers!
 	bools,
 	errors,// internal wasp error, NOT to be used in Angle!
+	function,
 	unknown = 20 //7
-
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 #endif //MARK_NODETYPES_H
