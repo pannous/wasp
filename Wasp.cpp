@@ -6,23 +6,9 @@
 //#import "String.cpp" // import against mangling in wasm (vs include)
 #include "wasm-emitter.h"
 
-
-#ifdef WASM
-//#import "WasmHelpers.cpp"
-//#import "Node.cpp"
-//#import "Map.cpp"
-//#import "String.cpp" // Todo: wasm can't link to String.cpp functions from String.h (e.g. itoa0): 'clang -o x.bc only allows one file)
-#else
-
-#include <cctype>
-
-#endif
-
-//#include "Node.cpp"
 #ifndef WASM
-
+#include <cctype>
 #include "ErrorHandler.h"
-
 #endif
 
 
@@ -549,6 +535,7 @@ private:
 	}
 
 	Node resolve(Node node) {
+//		if
 		if (node.name == "false")return False;
 		if (node.name == "False")return False;
 		if (node.name == "no")return False;
@@ -1116,11 +1103,13 @@ char newline = '\n';
 
 int main(int argp, char **argv) {
 
-#ifdef register_global_signal_exception_handler
+//#ifdef ErrorHandler
+#ifndef WASM
 	register_global_signal_exception_handler();
 #endif
 
 	try {
+//		raise("ABC");
 #ifdef WASM
 		String args((char*)alloc(1,1));// hack: written to by wasmx
 		args.data[0] = '{';
