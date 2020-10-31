@@ -1,17 +1,15 @@
-#ifndef WASM
 #include <execinfo.h> // for backtrace
 #include <dlfcn.h>    // for dladdr needs compile flag -ldl
 #include <cxxabi.h>   // for __cxa_demangle
-
+#define _Backtrace_
 #include <cstdio>
 #include <cstdlib>
 #include <string>
 #include <sstream>
-std::string Backtrace(int skip = 1, int skipEnd = 2) {
-#endif
-// This function produces a stack backtrace with demangled function & method names.
-#ifndef WASM
 #include "String.h"
+
+String Backtrace(int skip = 0, int skipEnd = 1) {
+// This function produces a stack backtrace with demangled function & method names.
 	void *callstack[128];
 	const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
 	char buf[1024];
@@ -19,7 +17,7 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 	char **symbols = backtrace_symbols(callstack, nFrames);
 
 	std::ostringstream trace_buf;
-
+	trace_buf << "Backtrace:\n";
 	for (int i = skip; i < nFrames - skipEnd; i++) {
 		// skip __libc_start_main _start
 //		printf("%s\n", symbols[i]);
@@ -46,6 +44,5 @@ std::string Backtrace(int skip = 1, int skipEnd = 2) {
 		trace_buf << "[truncated]\n";
 	printf("%s\n", trace_buf.str().c_str());
 //	printf("/me/dev/script/wasm/wasp/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
-	return trace_buf.str();
-#endif
+	return String(trace_buf.str().data());
 }

@@ -1047,15 +1047,15 @@ void todos() {
 
 void testCurrent() { // move to tests() once OK
 
-	tests();// make sure all still ok before changes
-	testAllWasm();
-//	testAllAngle();
+//	tests();// make sure all still ok before changes
+//	testAngle();
+//	testAllWasm();
 
 //	testBUG();
 //	testParentBUG();
 
 //	todos();// those not passing yet (skip)
-//	tests();// make sure all still ok after changes
+	tests();// make sure all still ok after changes
 }
 
 // valgrind --track-origins=yes ./wasp

@@ -372,6 +372,7 @@ void Node::remove(Node &node) {
 		}
 	}
 }
+
 void Node::addRaw(Node *node){
 	if (length >= capacity -1 )
 		error("Out of node Memory");
@@ -471,47 +472,6 @@ co_yield 	yield-expression (C++20)
 //	return false;
 ////	https://icarus.cs.weber.edu/~dab/cs1410/textbook/2.Core/operators.html
 //}
-
-float Node::precedence(Node &operater) {
-	// like c++ here HIGHER up == lower value == more important
-//	switch (node.name) nope
-	String &name = operater.name;
-	if (operater.kind == strings)// and name.empty()
-		name = operater.value.string;
-	if (eq(name, "not"))return 1;
-	if (eq(name, "¬"))return 1;
-	if (eq(name, "!"))return 1;
-	if (eq(name, "and"))return 1.1;
-	if (eq(name, "&&"))return 1.1;
-	if (eq(name, "&"))return 1.1;
-	if (eq(name, "xor"))return 1.2;
-	if (eq(name, "or"))return 1.2;
-	if (eq(name, "||"))return 1.2;
-
-	if (eq(name, "√"))return 3;
-	if (eq(name, "#"))return 3;// count
-	if (eq(name, "++"))return 3;
-//	if (eq(node.name, "+"))return 3;//
-	if (eq(name, "--"))return 3;
-	if (eq(name, "-"))return 3;// 1 + -x
-
-	if (eq(name, "/"))return 4.9;
-	if (eq(name, "times"))return 5;
-	if (eq(name, "*"))return 5;
-	if (eq(name, "add"))return 6;
-	if (eq(name, "plus"))return 6;
-	if (eq(name, "+"))return 6;
-	if (eq(name, "minus"))return 6;
-	if (eq(name, "-"))return 6;
-	if (eq(name, "="))return 10;
-	if (eq(name, "=="))return 10;
-	if (eq(name, "≠"))return 10;
-	if (eq(name, "!="))return 10;
-	if (eq(name, "equals"))return 10;
-	if (eq(name, "equal"))return 10;
-	return 0;// no precedence
-}
-
 
 // Node* OK? else Node&
 Node *Node::has(String s, bool searchParams) const {

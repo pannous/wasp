@@ -512,6 +512,22 @@ public:
 	String format(char *string) {
 		return this->replace("%s", string);
 	}
+
+// return position(==index+1), NOT index!
+	int in(String array[]) {
+		int i = 0;
+//		for(String x:array){}
+		while (array[i]){
+			if(*this==array[i])
+				return i+1;
+			i++;
+		}
+		return 0;
+	}
+
+//	bool in(String* array) {
+//		return false;
+//	}
 };
 
 
