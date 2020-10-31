@@ -146,7 +146,7 @@ void testWasmLogic(){
 	assert_emit("true or true", true);
 }
 
-void testWasmControlFlow(){
+void testWasmIf(){
 	assert_emit("if(condition=2,then=3,else=4)", 3); // this is what happens under the hood (?)
 	assert_emit("if 2 : 3 else 4", 3);
 	assert_emit("if 2 then 3 else 4", 3);
@@ -155,7 +155,7 @@ void testWasmControlFlow(){
 	assert_emit("if(condition=2,then=3)", 3);
 	assert_emit("if(2){3}{4}", 3);
 }
-
+//testWasmControlFlow
 void wasm_todos(){
 	assert_equals(emit("42.1"), 42.1) // main returns int, should be pointer to value!
 }
@@ -165,7 +165,7 @@ void testAllWasm(){
 	// todo: reuse all tests via
 //	interpret = false;
 //	assert_equals(emit("x*=14"), 1)
-//	assert_equals(emit("x>=14"), 1)
+//	assert_equals(emit("x=15;x>=14"), 1)
 	assert_emit("true or false and false", true);// == true or (false)
 
 	testComparisonPrimitives();

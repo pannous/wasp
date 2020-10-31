@@ -6,6 +6,7 @@
 #include "Angle.h" // analyze
 
 #define assert_ast(α, β) if (!assert_equals_x(analyze(parse(α)),parse(β))){printf("%s != %s",#α,#β);backtrace_line();}
+#define assert_eval(α, β) if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 
 
 void testFunctionParams(){
@@ -17,8 +18,63 @@ void testOperatorBinding(){
 	assert_ast("a and b", "and(a,b)");
 }
 
+void testIf(){
+	assert_eval("if 2 {3}", 3);
+	assert_eval("if 0 {3}", false);
+	assert_eval("if (2) {3}", 3);
+	assert_eval("if (0) {3}", false);
+	assert_eval("if(2){3}", 3);
+	assert_eval("if(0){3}", false);
+	assert_eval("if(2):{3}", 3);
+	assert_eval("if(0):{3}", false);
+	assert_eval("if 2:{3}", 3);
+	assert_eval("if 0:{3}", false);
+	assert_eval("if 2:3", 3);
+	assert_eval("if 0:3", false);
+
+	assert_eval("if 2 {3} else 4", 3);
+	assert_eval("if 0 {3} else 4", 4);
+	assert_eval("if (2) {3} else 4", 3);
+	assert_eval("if (0) {3} else 4", 4);
+	assert_eval("if(2){3} else 4", 3);
+	assert_eval("if(0){3} else 4", 4);
+	assert_eval("if(2):{3} else 4", 3);
+	assert_eval("if(0):{3} else 4", 4);
+	assert_eval("if 2:{3} else 4", 3);
+	assert_eval("if 0:{3} else 4", 4);
+	assert_eval("if 2:3 else 4", 3);
+	assert_eval("if 0:3 else 4", 4);
+
+	assert_eval("if 2 {3} else {4}", 3);
+	assert_eval("if 0 {3} else {4}", 4);
+	assert_eval("if (2) {3} else {4}", 3);
+	assert_eval("if (0) {3} else {4}", 4);
+	assert_eval("if(2){3} else {4}", 3);
+	assert_eval("if(0){3} else {4}", 4);
+	assert_eval("if(2):{3} else {4}", 3);
+	assert_eval("if(0):{3} else {4}", 4);
+	assert_eval("if 2:{3} else {4}", 3);
+	assert_eval("if 0:{3} else {4}", 4);
+	assert_eval("if 2:3 else {4}", 3);
+	assert_eval("if 0:3 else {4}", 4);
+
+	assert_eval("if 2 , 3 , 4", 3);
+//	assert_eval("if{2 , 3 , 4}", 3);
+	assert_eval("if 2 : 3 else 4", 3);
+	assert_eval("if 2 then 3 else 4", 3);
+	assert_eval("if(2,3,4)", 3);
+	assert_eval("if({2},{3},{4})", 3);
+	assert_eval("if(condition=2,then=3)", 3);
+	assert_eval("if(2){3}{4}", 3);
+	assert_parses("if(condition=2,then=3,else=4)");
+	check(result["condition"]==2);
+	check(result["else"]==4);
+	assert_eval("if(condition=2,then=3,else=4)", 3); // this is what happens under the hood (?)
+}
+
 void testAllAngle(){
-	testFunctionParams();
+	testIf();
+//	testFunctionParams();
 }
 
 void testAngle() {
