@@ -176,8 +176,8 @@ void testDeepCopyDebugBugBug2() {
 void testEmitter() {
 	Node node = Node(42);
 	Code &code = emit(node);
-	int result=code.run();
-	check(result==42);
+	int result = code.run();
+	check(result == 42);
 }
 
 void testNetBase() {
@@ -210,6 +210,7 @@ void testNetBase() {
 void testDiv() {
 	Node div = Wasp::parse("div{ span{ class:'bold' 'text'} br}");
 	Node &node = div["span"];
+	node.log();
 	assert(div["span"].length == 2);
 //	assert(div["span"]["class"] == "bold")
 }
@@ -225,13 +226,13 @@ void testMarkAsMap() {
 //	compare["d"] = Node();
 	compare["b"] = 3;
 	compare["a"] = "HIO";
-	Node& dangling=compare["c"];
-	check(dangling==NIL);
+	Node &dangling = compare["c"];
+	check(dangling == NIL);
 	dangling = Node(3);
 //	dangling = 3;
-	check(dangling==3);
-	check(compare["c"]==3);
-	assert_equals(compare["c"],Node(3));
+	check(dangling == 3);
+	check(compare["c"] == 3);
+	assert_equals(compare["c"], Node(3));
 	Node &node = compare["a"];
 	assert(node == "HIO");
 	const char *source = "{b:3 a:'HIO' c:3}";// d:{}
@@ -322,7 +323,7 @@ void testUTF() {
 	assert(eval("ç='☺'") == "☺");
 
 	assert_parses("ç=☺");
-	assert(result == "☺" or result.kind==Type::expression);
+	assert(result == "☺" or result.kind == Type::expression);
 //	assert(node == "ø"); //=> OK
 }
 
@@ -351,15 +352,6 @@ void testMarkMulti() {
 
 void testMarkMulti2() {
 	const char *source = "a:'HIO' b:3  d:{}";
-	assert_parses(source);
-	assert(result["b"] == 3);
-}
-
-void testMarkMulti3() {
-//		const char *source = "{a:3,b:4,c:{d:'hi'}}";
-//	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
-//	const char *source = "{a:'HIO' d:{} b:3}";
-	const char *source = "{a:'HIO' b:3  d:{}}";
 	assert_parses(source);
 	assert(result["b"] == 3);
 }
@@ -475,18 +467,18 @@ void testDeepLists() {
 	assert(result["x"][2] == 3);
 }
 
-void testIterate(){
+void testIterate() {
 //	parse("(1 2 3)");
-	Node liste=parse("{1 2 3}");
+	Node liste = parse("{1 2 3}");
 	liste.log();
 	for (Node &child : liste) {
 		// SHOULD effect result
-		child.value.longy= child.value.longy + 10;
+		child.value.longy = child.value.longy + 10;
 	}
 	check(liste[0].value.longy == 11)
 	for (Node child : liste) {
 		// should NOT effect result
-		child.value.longy= child.value.longy + 1;
+		child.value.longy = child.value.longy + 1;
 	}
 	check(liste[0].value.longy == 11)
 }
@@ -766,7 +758,6 @@ void testParams() {
 //	assert_parses("(markdown link)[www]");
 }
 
-typedef Node N;
 
 void testDidYouMeanAlias() {
 	Node ok1 = assert_parses("printf('hi')");
@@ -855,25 +846,6 @@ void testStringConcatenation() {
 	assert_equals("a"_s + true, "a✔️"_s);
 }
 
-void testWasmMemoryIntegrity() {
-//	Bus error: 10  if i > memory_size
-	for (int i = 0; i <= 32624 / 2 /*memory_size*/; ++i) {
-		memory[i] = i;
-		if (memory[i] != i) {
-//			printf("MEMORY CORRUPTION");
-			exit(-1);
-		}
-	}
-
-//	String s = "ja %s gut"s % "so";
-	for (int i = 0; i <= 32624 / 2 /*memory_size*/; ++i) {
-		if (memory[i] != i) {
-//			logi(i);
-		}
-	}
-
-}
-
 void testString() {
 	check("%s"s.replace("%s", "ja") == "ja");
 	check("hi %s"s.replace("%s", "ja") == "hi ja");
@@ -955,10 +927,19 @@ void testParamizedKeys() {
 			Node label3 = parse("label:{for:password 'Password'}");
 	)
 }
-void testStackedLambdas(){
+
+void testStackedLambdas() {
 	Node node = parse("a{x:1}{y:2}{3}");
-	check(node[0]==parse("{x:1}"));
-	check(node[1]==parse("{y:2}"));
+	check(node[0] == parse("{x:1}"));
+	check(node[1] == parse("{y:2}"));
+	check(node[2] == parse("{3}"));
+	check(node[2] != parse("{4}"));
+
+	check(parse("a{x}{y z}") != parse("a{x,{y z}}"));
+}
+
+void testIndex() {
+	assert_is("[a b c]#2", "b");
 }
 
 void testsFailingInWasm() {
@@ -1025,19 +1006,16 @@ void tests() {
 #include "testWasm.cpp"
 
 
-
-
 void testBUG() {// move to tests() once done!
-//	testParentBUG();
+	testParentBUG();
 }
 
 
 void todos() {
-	testNetBase();
-//	testAngle();
 	skip(
-			assert_equals(Node("1", 0) + Node("2"_s), Node("1", "2", 0));
+			testNetBase();
 			testBUG();
+			assert_equals(Node("1", 0) + Node("2"_s), Node("1", "2", 0));
 //	log("OK %s %d"s % ("WASM",1));// only 1 handed over
 			log("OK %d %d"s % (2, 1));// only 1 handed over
 			testIndentAsBlock();
@@ -1046,15 +1024,16 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+//	testIndex();
+	tests();// make sure all still ok before changes
 
-//	tests();// make sure all still ok before changes
-//	testAngle();
+	todos();// those not passing yet (skip)
+
+	//	testAngle();
 //	testAllWasm();
-
 //	testBUG();
 //	testParentBUG();
 
-//	todos();// those not passing yet (skip)
 	tests();// make sure all still ok after changes
 }
 

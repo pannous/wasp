@@ -82,13 +82,15 @@ Node If(Node n){
 
 Node Node::evaluate(bool expectOperator /* = true*/) {
 	if (length == 0)return values(*this);
-	if (length == 1)
+	if (length == 1){
 		if (kind == operators)
 			return apply(NIL, *this, *children);
 		else return values(children[0]);
+	}
+
 	if (length > 1)
-		if (kind == operators)
-			return apply(NIL, *this, this->clone()->setType(objects));
+		if (kind == operators or precedence(*this))
+			return apply(NIL, *this, this->clone()->setType(objects).setName(empty_name));
 //	if (type != expression and type != keyNode)
 //		return *this;
 	float max = 0; // do{
@@ -116,7 +118,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 	}
 //		remove(&op);// fucks up pointers?
 	if (recursive and op)
-		return apply(left, *op, right);
+		return apply(left.flat(), *op, right.flat());
 //	};// while (max > 0);
 	return *this;
 }
@@ -132,7 +134,7 @@ Node eval(String code){
 // (a op c) => op(a c)
 // further right means higher prescedence/binding, gets grouped first
 // todo "=" ":" handled differently?
-String operator_list[]={"is","equal","equals","==","!=","≠","xor","or","||","|","&&","&","and","not","<=",">=","≥","≤","<",">","less","bigger","⁰","¹","²","³","⁴","+","-","*","×","⋅","⋆","/","÷","^"}; // "while" ...
+String operator_list[]={"is","equal","equals","==","!=","≠","xor","or","else","||","|","&&","&","and","not","<=",">=","≥","≤","<",">","less","bigger","⁰","¹","²","³","⁴","+","-","*","×","⋅","⋆","/","÷","^"}; // "while" ...
 Node groupOperators(Node expression){
 	for(String operator_name : operator_list){
 		for(Node op : expression){
@@ -157,13 +159,16 @@ Node Node::apply(Node left, Node op0, Node right) {
 	left.log();
 	op0.log();
 	right.log();
-	if(right.length==0 and op0.param){
-		warn("using param for args");
-		right = *op0.param;
-	}
+//	if(right.length==0 and op0.param){
+//		warn("using param for args");
+//		right = *op0.param;
+//	}
 	left = left.evaluate();
 	String &op = op0.name;
 	bool lazy = (op == "or") and (bool) left;
+	lazy = lazy || (op == "and") and not (bool) left;
+	lazy = lazy || (op == "#");
+
 	if (!lazy)
 		right = right.evaluate(false);
 
@@ -216,7 +221,7 @@ Node Node::apply(Node left, Node op0, Node right) {
 	if (op == "or" or op == "||" or op == "&") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (!left.empty() and left != NIL and left != False)return left;
-		return left.value.data or right.value.data ? True : False;
+		return left.value.data or right;//.value.data ? True : False;
 	}
 
 	if (op == "==" or op == "equals") {
@@ -310,6 +315,7 @@ float Node::precedence(Node &operater) {
 	// like c++ here HIGHER up == lower value == more important
 //	switch (node.name) nope
 	String &name = operater.name;
+	if(name.empty())return 0;// no precedence
 	if (operater.kind == strings)// and name.empty()
 		name = operater.value.string;
 	if (eq(name, "not"))return 1;

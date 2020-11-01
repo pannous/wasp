@@ -4,32 +4,37 @@
 ////
 //
 #include "Node.h"
+
 #ifndef WASM
+
 #include <cstdarg>
 #include <stdio.h>
 #include <stdarg.h> // va_list
+
 #endif
 
 bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 
-bool debug=true;
+bool debug = true;
 extern "C" double sqrt(double);
 
 
-unsigned int *memory=(unsigned int *) 1024; // <?> memoryBase set in wasmx !?!?   todo how to not handtune _data_end?
+unsigned int *memory = (unsigned int *) 1024; // <?> memoryBase set in wasmx !?!?   todo how to not handtune _data_end?
 unsigned int *current = memory;
 
-unsigned long __stack_chk_guard= 0xBAAAAAAD;
+unsigned long __stack_chk_guard = 0xBAAAAAAD;
+
 void __stack_chk_guard_setup(void) { __stack_chk_guard = 0xBAAAAAAD;/*provide some magic numbers*/ }
-void __stack_chk_fail(void) { /*log("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
+
+void
+__stack_chk_fail(void) { /*log("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
 
 
 //#include <cmath>
 //#include <tgmath.h> // sqrt macro
 #include "String.h"
 #include "NodeTypes.h"
-
 
 
 void todo(chars error) {
@@ -113,7 +118,7 @@ Node &Node::operator[](String s) {
 	else return neu;
 }
 
-Node &Nodec::operator[](String s) const{
+Node &Nodec::operator[](String s) const {
 	return (*this)[s];
 }
 
@@ -124,14 +129,14 @@ Node *Node::begin() const {
 	return children;
 }
 
-Node *Node::end() const{
+Node *Node::end() const {
 	return children + length;
 }
 
 // non-modifying
 Node Node::merge(Node &other) {
 	if (other.isNil())return *this;
-	if (other.length == 0){
+	if (other.length == 0) {
 		return this->insert(other);
 	}
 	Node &neu = *clone();// non-modifying
@@ -150,8 +155,7 @@ int maxNodes = 10000;
 int lastChild = 0;
 
 
-Node *all = static_cast<Node *>(calloc(sizeof(Node),capacity * maxNodes));
-
+Node *all = static_cast<Node *>(calloc(sizeof(Node), capacity * maxNodes));
 
 
 bool typesCompatible(Node &one, Node &other) {
@@ -206,11 +210,11 @@ Node &Node::set(String string, Node *node) {
 //}
 
 bool Node::operator==(String other) {
-	if (this==0)return other.empty();
+	if (this == 0)return other.empty();
 	if (kind == objects or kind == keyNode)return *value.node == other or value.string == other;
 	if (kind == longs) return other == itoa(value.longy);
-	if (kind == reference) return other == name or value.node and *value.node==other;
-	if (kind == keyNode) return other == name or value.node and *value.node==other;// todo: a=3 a=="a" ??? really?
+	if (kind == reference) return other == name or value.node and *value.node == other;
+	if (kind == keyNode) return other == name or value.node and *value.node == other;// todo: a=3 a=="a" ??? really?
 	if (kind == unknown) return other == name;
 	return kind == strings and other == value.string;
 }
@@ -228,30 +232,31 @@ bool Node::operator==(int other) {
 }
 
 bool Node::operator==(long other) {
-	if(kind == keyNode and value.node and value.node->value.longy == other)return true;
-	return (kind == longs and value.longy == other) or (kind == floats and value.floaty == other) or (kind == bools and value.longy == other);
+	if (kind == keyNode and value.node and value.node->value.longy == other)return true;
+	return (kind == longs and value.longy == other) or (kind == floats and value.floaty == other) or
+	       (kind == bools and value.longy == other);
 }
 
 bool Node::operator==(double other) {
-	if(kind == keyNode and value.node and value.node->value.floaty == other)return true;
+	if (kind == keyNode and value.node and value.node->value.floaty == other)return true;
 	return (kind == floats and value.floaty == ((float) other)) or
 	       (kind == longs and value.longy == other);
 }
 
 bool Node::operator==(float other) {
-	if(kind == keyNode and value.node and value.node->value.floaty == other)return true;
+	if (kind == keyNode and value.node and value.node->value.floaty == other)return true;
 	return (kind == floats and value.floaty == other) or
 	       (kind == longs and value.longy == other);
 }
 
-bool namesCompatible(Node a, Node b){
+bool namesCompatible(Node a, Node b) {
 
 }
 
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
-	if(this->kind==errors)return other.kind == errors;
-	if(other.kind==errors)return this->kind == errors;
+	if (this->kind == errors)return other.kind == errors;
+	if (other.kind == errors)return this->kind == errors;
 
 	if (this == &other)return true;// same pointer!
 	if (isNil() and other.isNil())
@@ -264,13 +269,13 @@ bool Node::operator==(Node &other) {
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// reference ~= its value
 
-	if(kind == keyNode and this->value.node and *this->value.node == other)return true;// todo again?
-	if(kind==nils and other.kind==longs)return other.value.longy == 0;
-	if(other.kind==nils and kind==longs)return value.longy == 0;
+	if (kind == keyNode and this->value.node and *this->value.node == other)return true;// todo again?
+	if (kind == nils and other.kind == longs)return other.value.longy == 0;
+	if (other.kind == nils and kind == longs)return value.longy == 0;
 
 	if (other.kind == unknown and name == other.name)
 		return true; // weak criterum for dangling unknowns!! TODO ok??
-	if (kind == bools or other.kind==bools) // 1 == true
+	if (kind == bools or other.kind == bools) // 1 == true
 		return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
 	if (not typesCompatible(*this, other))
 		return false;
@@ -373,36 +378,33 @@ void Node::remove(Node &node) {
 	}
 }
 
-void Node::addRaw(Node *node){
-	if (length >= capacity -1 )
+void Node::addRaw(Node *node) {
+	if (length >= capacity - 1)
 		error("Out of node Memory");
 	if (lastChild >= maxNodes)
 		error("Out of global Memory");
 	if (!children) children = &all[capacity * lastChild++];
+	if (length > 0)
+		children[length - 1].next = &children[length];
 	children[length++] = *node;
 	node->parent = this;
 }
 
-void Node::add(Node *node,bool flatten) {
+void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
 	if (node->isNil() and node->name.empty() and node->kind != longs)
 		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
 	node->parent = this;
-	if (not param and node->kind == groups ) {// polish_notation
-		param = node;// polish_notation: children?
-	} else if (not children and node->kind == patterns) {
-		children = node->children;// todo
-		length = node->length;
-		kind = patterns;//todo!
-	} else if (not children and node->kind == objects and node->name.empty()) {
+	if (node->length == 1 and flatten and node->name.empty())
+		node = &node->last();
+
+	if (not children and (node->kind == objects or node->kind == groups or node->kind == patterns) and node->name.empty()) {
 		children = node->children;
 		length = node->length;
-	} else { // todo a{x}{y z} => a{x,{y z}} BAD
-		if (node->length == 1 and flatten and node->name.empty())
-			node = &node->last();
-//	if (not children or (length == 0 and not value.node))
-//		value.node = node; later!
+		if(kind != groups) kind = node->kind; // todo: keep kind if … ?
+	} else {
 		addRaw(node);
 	}
+// todo a{x}{y z} => a{x,{y z}} BAD
 }
 
 void Node::add(Node node) {// merge?
@@ -413,8 +415,8 @@ void Node::add(Node node) {// merge?
 Node Node::insert(Node &node, int at) {
 	if (length == 0)return node;//  todo: rescue value,name?
 	while (at < 0)at = length + at;
-	if (at >= length-1) {
-		Node* clon=this->clone();
+	if (at >= length - 1) {
+		Node *clon = this->clone();
 		clon->add(node);
 		return *clon;
 	}
@@ -474,7 +476,7 @@ co_yield 	yield-expression (C++20)
 //}
 
 // Node* OK? else Node&
-Node *Node::has(String s, bool searchParams) const {
+Node *Node::has(String s, bool searchMeta) const {
 	if ((kind == objects or kind == keyNode) and s == value.node->name)
 		return value.node;
 	for (int i = 0; i < length; i++) {
@@ -485,8 +487,8 @@ Node *Node::has(String s, bool searchParams) const {
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
 				return &entry;
 	}
-	if (param and searchParams)
-		return param->has(s);
+	if (meta and searchMeta)
+		return meta->has(s);
 	return 0;// NIL
 }
 
@@ -507,8 +509,8 @@ bool Node::isNil() { // required here: name.empty()
 	       ((kind == keyNode or kind == unknown or name.empty()) and length == 0 and value.data == nullptr);
 }
 
-const char * Node::serializeValue() const {
-	String wasp="";
+const char *Node::serializeValue() const {
+	String wasp = "";
 	Value val = value;
 	switch (kind) {
 		case strings:
@@ -518,37 +520,52 @@ const char * Node::serializeValue() const {
 			return itoa(val.longy);
 		case floats:
 			return ftoa(val.floaty);
-		case nils: return "ø";
-		case objects: return object_name;
-		case groups: return groups_name;
-		case patterns: return patterns_name;
-		case keyNode:return "";
-		case reference:return val.data ? val.node->name : "ø";
-		case symbol: return val.string;
-		case bools: return val.longy > 0 ? "true" : "false";
-		case arrays: return "[…]";//val.data type?
-		case buffers: return "int[]";//val.data lenght?
+		case nils:
+			return "ø";
+		case objects:
+			return object_name;
+		case groups:
+			return groups_name;
+		case patterns:
+			return patterns_name;
+		case keyNode:
+			return "";
+		case reference:
+			return val.data ? val.node->name : "ø";
+		case symbol:
+			return val.string;
+		case bools:
+			return val.longy > 0 ? "true" : "false";
+		case arrays:
+			return "[…]";//val.data type?
+		case buffers:
+			return "int[]";//val.data lenght?
 		case operators:
 		case expression:
-		case unknown: return "?";
+		case unknown:
+			return "?";
 		default:
 			error("MISSING CASE");
 			return "MISSING CASE";
 	}
 }
-const char * Node::serialize() const {
-	String wasp="";
-	bool markmode=true;
-	if(not markmode or this->length==0){
-	if( not this->name.empty() ) wasp += this->name;
-	else if (this->value.data){wasp += "="; wasp +=this->serializeValue();}
+
+const char *Node::serialize() const {
+	String wasp = "";
+	bool markmode = true;
+	if (not markmode or this->length == 0) {
+		if (not this->name.empty()) wasp += this->name;
+		else if (this->value.data) {
+			wasp += "=";
+			wasp += this->serializeValue();
+		}
 	}
-	if(this->length>0){
+	if (this->length > 0) {
 		wasp += (this->kind == groups ? "(" : "{");
-		if(markmode and not this->name.empty() )wasp += this->name;
+		if (markmode and not this->name.empty())wasp += this->name;
 		for (Node &node : *this) {
 			wasp += " ";
-			wasp+=node.serialize();
+			wasp += node.serialize();
 		}
 		wasp += (this->kind == groups ? " )" : " }");
 	}
@@ -573,7 +590,7 @@ void Node::print() {
 	printf(this->serialize());
 }
 
-Node Node::setValue(Value v) {
+Node& Node::setValue(Value v) {
 	value = v;
 	return *this;
 }
@@ -581,7 +598,7 @@ Node Node::setValue(Value v) {
 Node Node::to(Node match) {
 	Node rhs;
 	for (Node child:*this) {
-		if(child.name == match.name)
+		if (child.name == match.name)
 			break;
 		rhs.addRaw(&child);
 	}
@@ -594,11 +611,28 @@ Node Node::from(Node match) {
 	Node lhs;
 	bool start = false;
 	for (Node child:*this) {
-		if(start)lhs.addRaw(&child);
-		if(child.name == match.name)start=true;
+		if (start)lhs.addRaw(&child);
+		if (child.name == match.name)start = true;
 	}
 	lhs.kind = kind;
 	return lhs;
+}
+
+//	Node& flatten(Node &current){
+Node &Node::flat() {
+	if (length == 0 and name.empty() and value.node)return *value.node;
+	if (length == 1 and value.node == &children[0])// todo remove redundancy
+		return *value.node;
+	if (length == 1 and not value.data and name.empty()) {
+		children[0].parent = parent;
+		return children[0].flat();
+	}
+	return *this;
+}
+
+Node& Node::setName(char *name0) {
+	name = name0;
+	return *this;
 }
 
 void log(Node &n) {
@@ -613,6 +647,6 @@ void log(Node *n0) {
 }
 
 
-void printf(Node&){
+void printf(Node &) {
 	log("void printf(Node&);");
 }

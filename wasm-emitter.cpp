@@ -300,7 +300,7 @@ Code &signedLEB128(long value) {
 
 //Code& encodeVector (Code& data) {
 //	if(data.encoded)return data;
-////	return Code(unsignedLEB128(data.length), flatten(data),data.length);
+////	return Code(unsignedLEB128(data.length), flat(data),data.length);
 //	Code code = unsignedLEB128(data.length) + flatten(data);
 //	code.encoded = true;
 //	return code;
@@ -434,7 +434,7 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			};
 			break;
 		case printStatement:
-			emitExpression(statement.param);
+			emitExpression(statement.children);// only int so far lol
 			code.push(Call("print"));
 			break;
 //			case variableDeclaration:
@@ -458,14 +458,14 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			code.addByte(loop);
 			code.addByte(void_block);
 			// compute the while expression
-			emitExpression(statement.param);
+			emitExpression(statement[0]);// statement.value.node or
 			code.addByte(i32_eqz);
 			// br_if $label0
 			code.addByte(br_if);
 			code.addByte(1);
 //			code.push(signedLEB128(1));
 			// the nested logic
-			emitExpression(statement.value.node);// BODY
+			emitExpression( statement[1]);// BODY
 			// br $label1
 			code.addByte(br);
 			code.addByte(0);
@@ -481,39 +481,42 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			code.addByte(block);
 			code.addByte(void_block);
 			// compute the if expression
-			emitExpression(statement.param);
+			emitExpression(statement[0]);
 			code.addByte(i32_eqz);
 			// br_if $label0
 			code.addByte(br_if);
 			code.addByte(0);
 //			code.opcode(signedLEB128(0));
 			// the nested logic
-			emitExpression(statement.value.node);// BODY
+			emitExpression(statement[1]);// BODY
 			// end block
 			code.addByte(end_block);
 
-			// else block
-			code.addByte(block);
-			code.addByte(void_block);
-			// compute the if expression
-			emitExpression(statement.param);
-			code.addByte(i32_auto);
-//				code.opcode(signedLEB128(1));
-			code.addByte(1);
-			code.addByte(i32_eq);
-			// br_if $label0
-			code.addByte(br_if);
-			code.addByte(0);
-//				code.opcode(signedLEB128(0));
-			// the nested logic
-			emitExpression(&statement["else"]);
-			// end block
-			code.addByte(end_block);
+			// else block SUPERFLUOUS:
+//			or if OR-IF YAY semantically beautiful if false {} or if 2>1 {}
+//
+//			// compute the if expression (elsif) elif orif
+//			code.addByte(block);
+//			code.addByte(void_block);
+//
+//			emitExpression(statement.param);
+//			code.addByte(i32_auto);
+////				code.opcode(signedLEB128(1));
+//			code.addByte(1);
+//			code.addByte(i32_eq);
+//			// br_if $label0
+//			code.addByte(br_if);
+//			code.addByte(0);
+////				code.opcode(signedLEB128(0));
+//			// the nested logic
+//			emitExpression(&statement["else"]);
+//			// end block
+//			code.addByte(end_block);
 			break;
 		case callStatement:
 			if (statement.name == "setpixel") {
 				// compute and cache the setpixel parameters
-				emitExpression(statement.param[0]);
+				emitExpression(statement["x"]);
 				code.addByte(set_local);
 				code.addByte(localIndexForSymbol("x"));
 //					code.opcode(unsignedLEB128(localIndexForSymbol("x")));
@@ -650,7 +653,7 @@ Code &emit(Program ast) {
 	Code funcTypes;
 	for (Node &proc : ast.functions) {
 		Code args;
-		for (Node arg: *proc.param) { args.addByte(f32); }
+		for (Node arg: proc[0]) { args.addByte(f32); }
 		Code functionTypes = Code(functionType).push(encodeVector(args)).push(emptyArray);
 	}
 //  ast.map(proc {[functionType, encodeVector(proc.args.map(_ -> f32)), emptyArray]);
