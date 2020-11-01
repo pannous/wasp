@@ -11,7 +11,7 @@ type summary add --summary-string "${var.data}" String
 type summary add --summary-string "${var.data}" Value
 #type summary add --summary-string "${var.longy%B}" Value
 #type summary add --summary-string "name=${var.name} type=${var.kind} length=${var.length} value=${var.value}" Node
-type summary add --summary-string "${var.name} ${var.kind} #:${var.length} value:${var.value%B} param:${var.param%B} children:${var.children%B}" Node
+type summary add --summary-string "${var.name} ${var.kind} #:${var.length} value:${var.value%B} children:${var.children%B} meta:${var.meta}" Node
 #  ${addr} ERROR why
 # ${var.children[0-5].name}
 

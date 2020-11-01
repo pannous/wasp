@@ -155,6 +155,26 @@ void testWasmIf(){
 	assert_emit("if(condition=2,then=3)", 3);
 	assert_emit("if(2){3}{4}", 3);
 }
+
+
+void testWasmMemoryIntegrity() {
+//	Bus error: 10  if i > memory_size
+	for (int i = 0; i <= 32624 / 2 /*memory_size*/; ++i) {
+		memory[i] = i;
+		if (memory[i] != i) {
+//			printf("MEMORY CORRUPTION");
+			exit(-1);
+		}
+	}
+
+//	String s = "ja %s gut"s % "so";
+	for (int i = 0; i <= 32624 / 2 /*memory_size*/; ++i) {
+		if (memory[i] != i) {
+//			logi(i);
+		}
+	}
+}
+
 //testWasmControlFlow
 void wasm_todos(){
 	assert_equals(emit("42.1"), 42.1) // main returns int, should be pointer to value!

@@ -207,8 +207,12 @@ void error(chars error) {
 	raise(error);
 //	err(error);
 }
+void newline(){
+	printf("\n");
+}
 void warn(chars warning) {
 	printf(warning);
+	newline();
 }
 
 void warning(chars warning) {
