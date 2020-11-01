@@ -563,6 +563,7 @@ private:
 		if (node.name == "nill")return NIL;
 		if (node.name == "nil")return NIL;
 		if (node.name == "ø")return NIL;// nil not added to lists
+//		if(node.name.in(operator_list))node.setType(operators); // later: in angle!
 		return node;
 	}
 
@@ -888,7 +889,10 @@ private:
 		return key;
 	}
 
-// ":" is short binding a b:c d == a (b:c) d
+
+
+
+	// ":" is short binding a b:c d == a (b:c) d
 // "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
 // special : close=';' : single expression a = 1 + 2
@@ -995,34 +999,17 @@ private:
 				}
 				default: {
 					Node node = expression();//words();
-					if (polish_notation && current.length == 0)
-						current = node;
-					else
-						current.add(node);
+					current.addRaw(&node);
 				}
 			}
 		}
 		bool keepBlock = close == '}';
-		if (current.length == 0 and current.param) {// promote params to children!!
-			current.children = current.param->children;
-			current.length = current.param->length;
-			current.param = nullptr;; // delete after copy to current.param . todo: what about extra meta info?
-			current.kind = groups;// todo: lose type if unbound?
-		}
-		if (current.length == 1) {
-//			if (current.value.node == &current.children[0])return *current.value.node;
-//			if (current.value.number and current.children[0].value.number)
-//				if (current.value.node->value.number != current.children[0].value.number)
-//					error("ambiguous values");
-//			if (current.value.number)
-//				current.children[0].value = current.value;
-			current.children[0].parent = current.parent;
-			return current.children[0];
-		}
-		return current;
+		Node &result = current.flat();
+		return result;
 	};
 //	int $parent{};
 };
+
 
 void ok() {
 	error("WHAAA");

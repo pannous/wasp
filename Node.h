@@ -51,7 +51,7 @@ void printf(Node&);
 union Value {
 //	Node node;//  incomplete type
 	Node *node = 0;// todo DANGER, can be lost :( !!
-//	Node **children = 0;
+//	Node **children = 0; //todo todo DANGER node and children REDUNDANT!
 	String string;
 	void *data;
 	long longy;
@@ -83,9 +83,12 @@ public:
 //	Node &parent=NIL;
 //	Node &param=NIL;
 	Node *parent = nullptr;
+	Node *next = 0; // in children list
 
 	// a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms
-	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
+//	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
+
+	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *children = nullptr;// LIST, not link. block body content
 
 	/* don't mix children with param, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
@@ -366,7 +369,8 @@ public:
 		if (name and name.data and name.data > (char *) 0xffff and kind != objects)
 #endif
 #endif
-		printf("name:"_s + name);
+//		printf("name:"_s + name);
+		printf("name: %s", name.data);
 		printf(" length:"_s + itoa(length));
 		printf(" type:"_s + typeName(kind));
 		printf(" value:"_s + serializeValue());
@@ -413,7 +417,7 @@ public:
 		return kind == longs ? value.longy : value.floaty;// danger
 	}
 
-	Node *has(String s, bool searchParams = true) const;
+	Node *has(String s, bool searchMeta = true) const;
 
 // type conversions
 	explicit operator bool() const { return value.longy; }
@@ -443,10 +447,14 @@ public:
 
 	void print();
 
-	Node setValue(Value v);
+	Node& setValue(Value v);
 
 	Node to(Node match);
 
 	Node from(Node node);
+
+	Node& flat();
+
+	Node& setName(char *name0);
 };
 typedef const Node Nodec;
