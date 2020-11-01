@@ -10,7 +10,7 @@
 
 
 void testFunctionParams(){
-	assert_equals(parse("f(x)=x*x").param->first(),"x");
+//	assert_equals(parse("f(x)=x*x").param->first(),"x");
 	assert_equals("f(x)=x*x;f(3)","9");// functions => angle!
 }
 
@@ -19,6 +19,10 @@ void testOperatorBinding(){
 }
 
 void testIf(){
+	assert_eval("false or 3", 3);
+	assert_eval("false else 3", 3);
+	assert_eval("4 or 3", 4);
+	assert_eval("4 else 3", 4);
 	assert_eval("if 2 {3}", 3);
 	assert_eval("if 0 {3}", false);
 	assert_eval("if (2) {3}", 3);
