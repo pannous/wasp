@@ -119,7 +119,7 @@ void raise(chars error){
 }
 #endif
 #endif
-void* alloc(int size,int num) { return malloc(size*num);}
+void* alloc(int size,int num) { return calloc((size+1),(num));}
 void *calloc(int size, int num) {// clean ('0') alloc
 	void *mem = alloc(size,num);
 	while (num > 0) { ((char *) mem)[--num] = 0; }

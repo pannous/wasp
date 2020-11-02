@@ -338,10 +338,12 @@ public:
 
 	Node insert(Node &node, int at = -1);// non-modifying
 
-	void add(Node node);// modifying
+	void addSmart(Node node);// modifying
 
 //	void add(Node &node);
 	void addRaw(Node* node);
+	void addRaw(Node& node);
+
 	void add(Node *node, bool flatten=true);
 
 	void remove(Node *node); // directly from children
@@ -366,11 +368,11 @@ public:
 		if (name and name.data and name.data < (char *) 0xffff) {
 			printf("BUG");
 		}
-		if (name and name.data and name.data > (char *) 0xffff and kind != objects)
+		if (name and name.data and name.data > (char *) 0xffff ) // and kind != objects
 #endif
 #endif
 //		printf("name:"_s + name);
-		printf("name: %s", name.data);
+		printf("name:%s", name.data);
 		printf(" length:"_s + itoa(length));
 		printf(" type:"_s + typeName(kind));
 		printf(" value:"_s + serializeValue());
@@ -401,11 +403,13 @@ public:
 		}
 		printf("]");
 		printf("\n");
+		printf(serialize());
+		printf("\n");
 	}
 
 	static float precedence(Node &operater);
 
-	static Node apply(Node left, Node op0, Node right);
+	Node apply(Node left, Node op0, Node right);
 
 	Node &setType(Type type);
 

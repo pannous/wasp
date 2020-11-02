@@ -141,7 +141,7 @@ Node Node::merge(Node &other) {
 	}
 	Node &neu = *clone();// non-modifying
 	for (Node &item:other)
-		neu.add(item);
+		neu.addRaw(item);
 	return neu;
 }// non-modifying
 
@@ -390,6 +390,18 @@ void Node::addRaw(Node *node) {
 	node->parent = this;
 }
 
+void Node::addRaw(Node &node) {
+	if (length >= capacity - 1)
+		error("Out of node Memory");
+	if (lastChild >= maxNodes)
+		error("Out of global Memory");
+	if (!children) children = &all[capacity * lastChild++];
+	if (length > 0)
+		children[length - 1].next = &children[length];
+	children[length++] = node;
+	node.parent = this;
+}
+
 void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
 	if (node->isNil() and node->name.empty() and node->kind != longs)
 		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
@@ -397,18 +409,34 @@ void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
 	if (node->length == 1 and flatten and node->name.empty())
 		node = &node->last();
 
-	if (not children and (node->kind == objects or node->kind == groups or node->kind == patterns) and node->name.empty()) {
+	if (not children and (node->kind == objects or node->kind == groups or node->kind == patterns) and
+	    node->name.empty()) {
 		children = node->children;
 		length = node->length;
-		if(kind != groups) kind = node->kind; // todo: keep kind if … ?
+		if (kind != groups) kind = node->kind; // todo: keep kind if … ?
 	} else {
 		addRaw(node);
 	}
 // todo a{x}{y z} => a{x,{y z}} BAD
 }
 
-void Node::add(Node node) {// merge?
-	add(&node);
+void Node::addSmart(Node node) {// merge?
+	if(polish_notation and node.length>0){
+		if(name.empty())
+			name = node[0].name;
+		else
+			parent->addRaw(node);// REALLY?
+//			todo("polish_notation how?");
+		Node args = node.from(node[0]);
+		addRaw(args);
+		return;
+	}
+	// a{x:1} != a {x:1} but {x:1} becomes child of a
+	// a{x:1} == a:{x:1} ?
+	if (name.empty())// last().kind==reference)
+		last().add(&node);
+	else
+		add(&node);
 }
 
 //non-modifying
@@ -417,7 +445,7 @@ Node Node::insert(Node &node, int at) {
 	while (at < 0)at = length + at;
 	if (at >= length - 1) {
 		Node *clon = this->clone();
-		clon->add(node);
+		clon->addRaw(node);
 		return *clon;
 	}
 	if (at == 0)return node + *this;
@@ -477,8 +505,9 @@ co_yield 	yield-expression (C++20)
 
 // Node* OK? else Node&
 Node *Node::has(String s, bool searchMeta) const {
-	if ((kind == objects or kind == keyNode) and s == value.node->name)
+	if ((kind == objects or kind == keyNode) and value.node and s == value.node->name)
 		return value.node;
+	if(!children)return 0;
 	for (int i = 0; i < length; i++) {
 		Node &entry = children[i];
 		if (s == entry.name)
@@ -487,6 +516,8 @@ Node *Node::has(String s, bool searchMeta) const {
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
 				return &entry;
 	}
+	if(s == name.data )
+		return const_cast<Node *>(this);
 	if (meta and searchMeta)
 		return meta->has(s);
 	return 0;// NIL
@@ -514,7 +545,7 @@ const char *Node::serializeValue() const {
 	Value val = value;
 	switch (kind) {
 		case strings:
-			return val.string;
+			return "'"s+val.string+"'";
 //		case ints:
 		case longs:
 			return itoa(val.longy);
@@ -529,7 +560,7 @@ const char *Node::serializeValue() const {
 		case patterns:
 			return patterns_name;
 		case keyNode:
-			return "";
+			return val.node ? val.node->name : "";// val.node->serialize();
 		case reference:
 			return val.data ? val.node->name : "ø";
 		case symbol:
@@ -552,17 +583,18 @@ const char *Node::serializeValue() const {
 
 const char *Node::serialize() const {
 	String wasp = "";
-	bool markmode = true;
-	if (not markmode or this->length == 0) {
+	if (not polish_notation or this->length == 0) {
 		if (not this->name.empty()) wasp += this->name;
-		else if (this->value.data) {
-			wasp += "=";
-			wasp += this->serializeValue();
+		const char *serializedValue = serializeValue();
+		if (this->value.data and name != serializedValue and !eq(serializedValue,"{…}")) {
+			wasp += ":";
+			wasp += serializedValue;
+			wasp += " ";
 		}
 	}
 	if (this->length > 0) {
 		wasp += (this->kind == groups ? "(" : "{");
-		if (markmode and not this->name.empty())wasp += this->name;
+		if (polish_notation and not this->name.empty())wasp += this->name;
 		for (Node &node : *this) {
 			wasp += " ";
 			wasp += node.serialize();
@@ -590,7 +622,7 @@ void Node::print() {
 	printf(this->serialize());
 }
 
-Node& Node::setValue(Value v) {
+Node &Node::setValue(Value v) {
 	value = v;
 	return *this;
 }
@@ -630,7 +662,7 @@ Node &Node::flat() {
 	return *this;
 }
 
-Node& Node::setName(char *name0) {
+Node &Node::setName(char *name0) {
 	name = name0;
 	return *this;
 }
