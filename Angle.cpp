@@ -91,6 +91,11 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 	if (length > 1)
 		if (kind == operators or precedence(*this))
 			return apply(NIL, *this, this->clone()->setType(objects).setName(empty_name));
+
+	if(length==2 and children[1].kind==expression){
+		length = 1;
+		return this->merge(children[1]).evaluate();// stop hacking
+	}
 //	if (type != expression and type != keyNode)
 //		return *this;
 	float max = 0; // do{
@@ -113,9 +118,14 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		if (p == max and not op) {
 			op = &n;
 		} else if (op)
-			right.add(n);
-		else left.add(n);
+			right.addRaw(n);
+		else
+			left.addRaw(n);
 	}
+	if(op->children and right.empty()) {
+		right = op->children[0];
+	}// DONT work around bugs like this!!
+
 //		remove(&op);// fucks up pointers?
 	if (recursive and op)
 		return apply(left.flat(), *op, right.flat());
@@ -182,9 +192,9 @@ Node Node::apply(Node left, Node op0, Node right) {
 	}
 	if (op == "√") { // why String( on mac?
 		if (right.kind == floats)
-			left.add(Node(sqrt(right.value.floaty)));
+			left.addSmart(Node(sqrt(right.value.floaty)));
 		if (right.kind == longs)
-			left.add(Node(sqrt(right.value.longy)).setType(floats));
+			left.addSmart(Node(sqrt(right.value.longy)).setType(floats));
 		return left.evaluate();
 	}
 
