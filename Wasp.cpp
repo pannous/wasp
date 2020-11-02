@@ -589,7 +589,7 @@ private:
 		// {a:1 b:2} vs { x = add 1 2 }
 		Node expressions = Node();
 		expressions.kind = Type::expression;
-		expressions.addSmart(node);
+		expressions.addRaw(node);
 		white();
 		while ((ch and is_identifier(ch)) or isalnum(ch) or is_operator(ch)) {
 			node = symbol();// including operators `=` ...
