@@ -406,3 +406,9 @@ void log(chars s){
 printf("%s\n",s);
 }
 #endif
+
+
+bool String::empty() const {//this==0 in testMarkMulti!
+	return this==0 || length==0  ||  !data  ||  data[0] == 0 || data==object_name.data;
+//		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
+}
