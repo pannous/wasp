@@ -22,6 +22,8 @@ void testIf(){
 
 	assert_eval("2 and 3 or 4", 3);
 	assert_eval("2 then 3 else 4", 3);
+	assert_eval("if 2 then 3 else 4", 3);
+
 	skip(
 	assert_eval("if(0):{3}", false);
 	assert_eval("if 0:3", false);
