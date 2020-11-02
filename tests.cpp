@@ -629,6 +629,7 @@ void testLogic01() {
 
 
 void testLogicPrescedence() {
+//	prescedence();
 	assert_is("true or true and false", true);
 	assert_is("true or false and true", true);
 	assert_is("true or false and false", true);
@@ -1048,6 +1049,7 @@ void testBUG() {// move to tests() once done!
 
 void todos() {
 	skip(
+			assert_eval("if(0):{3}", false);// 0:3 messy node
 			testNetBase();
 			testBUG();
 			assert_equals(Node("1", 0) + Node("2"_s), Node("1", "2", 0));
@@ -1059,10 +1061,9 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-	assert_is("[] or 1", true);
-	testLogicEmptySet();
+	testStackedLambdas();
+	testAngle();
 	tests();// make sure all still ok before changes
-//	testAngle();
 
 	todos();// those not passing yet (skip)
 

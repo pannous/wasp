@@ -63,18 +63,36 @@ Node values(Node n) {
 Node eval(Node n){
 	return n.evaluate();
 }
+
+Node If(Node condition, Node then){
+	Node ok0 = condition.evaluate();
+	bool ok = (bool)ok0;
+	if(ok)return then.evaluate();
+	else return False;
+}
 Node If(Node n){
 	breakpoint_helper
-	if(n.length==0)
+	if(n.length==0 and !n.value.data)
 		error("no if condition given");
-	if(n.length==1)
+	if(n.length==1 and !n.value.data)
 		error("no if block given");
+	if(n.value.data){
+		Node condition_fulfilled = n.kind!=objects or  n.value.node->evaluate();
+		if(condition_fulfilled){
+			return eval(n[0]);
+		} else{
+			if (n.length == 2)// else
+				return eval(n[1]);
+			else
+				return False;
+		}
+	}
 	Node condition_fulfilled = eval(n[0]);
 	if(condition_fulfilled){
 		return eval(n[1]);
 	} else{
 		if (n.length == 3)
-			return eval(n[3]);
+			return eval(n[2]);// else
 		else
 			return False;
 	}
@@ -222,16 +240,17 @@ Node Node::apply(Node left, Node op0, Node right) {
 		return Node(left.value.longy ^ right.value.longy);
 	}
 
-	if (op == "and" or op == "&&") {
+	if (op == "and" or op == "&&" or op=="then") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (left.kind == bools or right.kind == bools) return left.value.data and right.value.data ? True : False;
-		return Node(left.value.longy and right.value.longy);
+		if (left.value.longy)return right;
+		return Node(left.value.longy and right.value.longy);// todo just False?
 	}
 
-	if (op == "or" or op == "||" or op == "&") {
+	if (op == "or" or op == "||" or op == "&" or op=="else") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (!left.empty() and left != NIL and left != False)return left;
-		return left.value.data or right;//.value.data ? True : False;
+		return right;
 	}
 
 	if (op == "==" or op == "equals") {
@@ -288,6 +307,13 @@ Node Node::apply(Node left, Node op0, Node right) {
 	if(op.in(function_list) or op.in(functor_list)){
 //		kind=Type::function; // functor same concept, different arguments
 		// careful, functions take arguments, functors take bodies if(1,2,3)!=if{1}{2}{3}
+
+		if(right.length==0 and right.value.data)
+			return If(right, right);
+		if(right.length>1)
+			return If(right);
+		if(op0.next)
+			return If(*op0.next, right);
 		if(op=="if")
 			return If(right);
 	}
@@ -359,6 +385,9 @@ float Node::precedence(Node &operater) {
 	if (eq(name, "!="))return 10;
 	if (eq(name, "equals"))return 10;
 	if (eq(name, "equal"))return 10;
+	if (eq(name, "if"))return 10.8;
+	if (eq(name, "else"))return 11.09;
+	if (eq(name, "then"))return 11.15;
 	if(	name.in(function_list1) or name.in(functor_list1))
 		return 1000;// function calls outmost operation todo? add 3*square 4+1
 	return 0;// no precedence
