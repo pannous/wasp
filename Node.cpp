@@ -433,7 +433,7 @@ void Node::addSmart(Node node) {// merge?
 	}
 	// a{x:1} != a {x:1} but {x:1} becomes child of a
 	// a{x:1} == a:{x:1} ?
-	if (name.empty())// last().kind==reference)
+	if (last().kind==reference or name.empty() and not kind==expression)// last().kind==reference)
 		last().add(&node);
 	else
 		add(&node);
