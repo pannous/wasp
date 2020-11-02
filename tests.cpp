@@ -159,7 +159,7 @@ void testModernCpp() {
 void testDeepCopyDebugBugBug() {
 	const char *source = "{deep{a:3,b:4,c:{d:true}}}";
 	assert_parses(source);
-	check(result.name=="deep");
+	check(result.name == "deep");
 	result.log();
 	Node &node = result["deep"]['c']['d'];
 	assert_equals(node.value.longy, (long) 1);
@@ -234,8 +234,8 @@ void testDiv() {
 	assert(result["class"] == "bold")
 	testDivDeep();
 	skip(
-	testDivMark();
-			)
+			testDivMark();
+	)
 }
 
 
@@ -544,6 +544,32 @@ void testLogic() {
 	assert_is("not false", true);
 }
 
+void testTruthiness() {
+	assert_is("false", false);
+	assert_is("true", true);
+	assert_is("False", false);
+	assert_is("True", true);
+	assert_is("False", False);
+	assert_is("True", True);
+	assert_is("false", False);
+	assert_is("true", True);
+	assert_is("ø", NIL);
+	assert_is("nil", NIL);
+	assert_is("nil", False);
+	assert_is("nil", false);
+	assert_is("ø", false);
+	assert_is("1", true);
+	skip(
+			assert_is("2", true);
+			assert_is("2", True);
+	// Truthiness != equality with 'True' !
+	)
+	assert_is("x", false);
+	assert_is("{x}", false);
+	// empty references are falsey! OK
+	assert_is("{1}", true);
+	assert_is("{x:1}", true);
+}
 
 void testLogicEmptySet() {
 	assert_is("not ()", true);
@@ -971,7 +997,7 @@ void testStackedLambdas() {
 void testIndex() {
 	assert_parses("[a b c]#2");
 	result.log();
-	check(result.length==3);
+	check(result.length == 3);
 	assert_is("[a b c]#2", "b");
 }
 
@@ -1061,6 +1087,7 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+	testTruthiness();
 	testStackedLambdas();
 	testAngle();
 	tests();// make sure all still ok before changes
