@@ -544,6 +544,7 @@ void testLogic() {
 	assert_is("not false", true);
 }
 
+// use the bool() function to determine if a value is truthy or falsy.
 void testTruthiness() {
 	assert_is("false", false);
 	assert_is("true", true);
@@ -563,12 +564,17 @@ void testTruthiness() {
 			assert_is("2", true);
 			assert_is("2", True);
 	// Truthiness != equality with 'True' !
+	assert_is("{x:0}", true); // wow falsey so deep?
+	assert_is("[0]", true);  // wow falsey so deep?
 	)
+
 	assert_is("x", false);
 	assert_is("{x}", false);
 	// empty references are falsey! OK
+
 	assert_is("{1}", true);
 	assert_is("{x:1}", true);
+	assert_is("cat{}", false);
 }
 
 void testLogicEmptySet() {
