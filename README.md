@@ -13,7 +13,7 @@ Unbeknownst to many, thanks to closures and ECMA Objects, modern JavaScript is g
 
 # Angle Language
 
-Angle is a new Programming Language as well as data format, "Lisp with Hashes"
+[Angle](https://github.com/pannous/angle) is a new Programming Language using Wasp as data format, "Lisp with Hashes"
 
 In Lisp to create an object like foo:{bar:3} you have to resort to ugly reader macros like `#S(foo :bar 3)` 
 
