@@ -159,6 +159,8 @@ void testModernCpp() {
 void testDeepCopyDebugBugBug() {
 	const char *source = "{deep{a:3,b:4,c:{d:true}}}";
 	assert_parses(source);
+	check(result.name=="deep");
+	result.log();
 	Node &node = result["deep"]['c']['d'];
 	assert_equals(node.value.longy, (long) 1);
 	assert_equals(node, (long) 1);
@@ -207,19 +209,35 @@ void testNetBase() {
 //	assert(Erde.id==2);
 }
 
-void testDiv() {
+void testDivDeep() {
 	Node div = Wasp::parse("div{ span{ class:'bold' 'text'} br}");
 	Node &node = div["span"];
 	node.log();
 	assert(div["span"].length == 2);
-//	assert(div["span"]["class"] == "bold")
+	assert(div["span"]["class"] == "bold")
 }
 
 void testDivMark() {
+	polish_notation = true;
 	Node div = Wasp::parse("{div {span class:'bold' 'text'} {br}}");
-	assert(div["span"].length == 2);
-	assert(div["span"]["class"] == "bold");
+	Node &span = div["span"];
+	span.log();
+	assert(span.length == 2);
+	assert(span["class"] == "bold");
+	polish_notation = false;
 }
+
+void testDiv() {
+	Node result = Wasp::parse("div{ class:'bold' 'text'}");
+	result.log();
+	assert(result.length == 2);
+	assert(result["class"] == "bold")
+	testDivDeep();
+	skip(
+	testDivMark();
+			)
+}
+
 
 void testMarkAsMap() {
 	Node compare = Node();
@@ -486,6 +504,7 @@ void testIterate() {
 
 void testLists() {
 	assert_parses("[1,2,3]");
+	result.log();
 	assert(result.length == 3);
 	assert(result[2] == 3);
 	assert(result[0] == 1);
@@ -560,10 +579,6 @@ void testLogicEmptySet() {
 	assert_is("not {}", true);
 	assert_is("not 1", false);
 
-	assert_is("[] xor 1", true);
-	assert_is("1 xor []", true);
-	assert_is("[] xor []", false);
-	assert_is("1 xor 1", false);
 	assert_is("[] or 1", true);
 	assert_is("[] or []", false);
 	assert_is("1 or []", true);
@@ -576,6 +591,13 @@ void testLogicEmptySet() {
 
 	assert_is("not []", true);
 	assert_is("not 1", false);
+
+
+	assert_is("[] xor 1", true);
+	assert_is("1 xor []", true);
+	assert_is("[] xor []", false);
+	assert_is("1 xor 1", false);
+
 }
 
 void testLogic01() {
@@ -646,7 +668,13 @@ void testGraphQlQuery() {
 	                  "  }\n"
 	                  "}";
 	assert_parses(graphResult);
-	assert(result["data"]["hero"]["id"] == "R2-D2");
+	result.log();
+	Node &data = result["data"];
+	data.log();
+	data["hero"].log();
+	data["hero"]["id"].log();
+
+	assert(data["hero"]["id"] == "R2-D2");
 	assert(result["data"]["hero"]["friends"][0]["name"] == "Luke Skywalker");
 //todo	assert(result["hero"] == result["data"]["hero"]);
 //	assert(result["hero"]["friends"][0]["name"] == "Luke Skywalker")// if 1-child, treat as root
@@ -881,7 +909,6 @@ void testConcatenationBorderCases() {
 }
 
 void testConcatenation() {
-	testStringConcatenation();
 	assert_equals(Node("1", "2", 0) + Node("3"_s), Node("1", "2", "3", 0));
 	assert_equals(Node(1, 2, 0) + Node(3), Node(1, 2, 3, 0));
 	assert_equals(Node(1, 2, 0) + Node(3, 4, 0), Node(1, 2, 3, 4, 0));
@@ -930,6 +957,8 @@ void testParamizedKeys() {
 
 void testStackedLambdas() {
 	Node node = parse("a{x:1}{y:2}{3}");
+	node.log();
+	// whait, is {x:1} really a child of a, or a neighbor in an operator list #4
 	check(node[0] == parse("{x:1}"));
 	check(node[1] == parse("{y:2}"));
 	check(node[2] == parse("{3}"));
@@ -939,6 +968,9 @@ void testStackedLambdas() {
 }
 
 void testIndex() {
+	assert_parses("[a b c]#2");
+	result.log();
+	check(result.length==3);
 	assert_is("[a b c]#2", "b");
 }
 
@@ -948,14 +980,14 @@ void testsFailingInWasm() {
 }
 
 void tests() {
+	testIndex();
 	testStackedLambdas();
+	testRootLists();
 	testIterate();
 	testLists();
 	testMarkAsMap();
 //	raise("test once if raising");
-	testLogic();
 	testEval();
-	testLogicEmptySet();
 	testParamizedKeys();
 	testForEach();
 	testString();
@@ -984,15 +1016,18 @@ void tests() {
 	testMapsAsLists();
 	testDidYouMeanAlias();
 	testNetBase();
-	testRootLists();
 	testRoots();
 	testForEach();
 	testConcatenation();
+	testStringConcatenation();
 	testConcatenationBorderCases();
 	testAsserts();
 	testLengthOperator();
 	testDeepCopyDebugBugBug();
 	testDeepCopyDebugBugBug2();
+	testLogic();
+	testLogicEmptySet();
+
 //#ifndef WASM
 #ifdef APPLE
 	testAllSamples();
@@ -1024,8 +1059,10 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-//	testIndex();
+	assert_is("[] or 1", true);
+	testLogicEmptySet();
 	tests();// make sure all still ok before changes
+//	testAngle();
 
 	todos();// those not passing yet (skip)
 
