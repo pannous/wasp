@@ -227,7 +227,7 @@ public:
 			current += 2;
 		} else {
 			auto *neu = static_cast<char *>(alloc(sizeof(char) , length + 5));
-			if (data)strcpy2(neu, data);
+			if (data)strcpy2(neu, data, length);
 			neu[length++] = c;
 			data = neu;
 			data[length] = 0;
@@ -439,11 +439,7 @@ public:
 	char operator[](int i) {
 		return data[i];
 	}
-
-	bool empty() const {//this==0 in testMarkMulti!
-		return this==0 || length==0  ||  !data  ||  data[0] == 0;
-//		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
-	}
+	bool empty() const;
 
 	int indexOf(chars string) {
 		int l = strlen0(string);

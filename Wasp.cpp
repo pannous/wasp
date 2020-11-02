@@ -3,6 +3,8 @@
 #include "WasmHelpers.h"
 #include "String.h" // variable has incomplete type
 #include "Node.h"
+#include "Backtrace.h" // header ok in WASM
+
 //#import "String.cpp" // import against mangling in wasm (vs include)
 #include "wasm-emitter.h"
 
@@ -66,7 +68,9 @@ public:
 
 	// see 'apply' for operator eval
 	static Node eval(String source) { // return by value ok, rarely used and stable
-		return Wasp().read(source).evaluate();
+		Node parsed = parse(source);
+		parsed.log();
+		return parsed.evaluate();
 	}
 
 
@@ -139,21 +143,6 @@ private:
 		return chr == '\n' ? s("\\n") : String('\'') + chr + '\'';
 	};
 
-	String backtrace2() {
-#ifdef Backtrace
-		return Backtrace(3);// skip to Mark::error()
-#else
-		return "no Backtrace compiled in";
-#endif
-//		String stack;
-//		void *array[10];
-//		size_t size;
-//		size = backtrace(array, 10);
-//		backtrace_symbols_fd(array, size, 2 /*STDERR_FILENO*/);
-		// wasp(+0x649e)[0x55715b27e49e] hmmm
-//		Compiling with -g -rdynamic gets you symbol info in your output, which glibc can use to make a nice stacktrace
-	};
-
 	String error(String m) {
 		// Call error when something is wrong.
 		// todo: Still to read can scan to end of line
@@ -165,7 +154,7 @@ private:
 		msg = msg + text + "\n";
 		msg = msg + (s(" ").times(at - 1)) + "^\n";
 //		msg = msg + s(" of the Mark data. \nStill to read: \n") + text.substring(at - 1, at + 30) + "\n^^ ...";
-		msg = msg + backtrace2();
+//		msg = msg + backtrace2();
 		var error = new SyntaxError(msg);
 //		error.at = at;
 //		error.lineNumber = lineNumber;
@@ -600,11 +589,11 @@ private:
 		// {a:1 b:2} vs { x = add 1 2 }
 		Node expressions = Node();
 		expressions.kind = Type::expression;
-		expressions.add(node);
+		expressions.addSmart(node);
 		white();
 		while ((ch and is_identifier(ch)) or isalnum(ch) or is_operator(ch)) {
 			node = symbol();// including operators `=` ...
-			expressions.add(node);
+			expressions.addRaw(&node);
 			white();
 		}
 //		expressions.name=map(children.name)
@@ -909,22 +898,20 @@ private:
 		loop:
 		proceed();
 		white();
+
 		while (ch and at <= length) {
 //			white();// sets ch todo 1+1 != 1 +1
-			if (previous == '\\') {
+			if (previous == '\\') {// escape ANYTHING
 				proceed();
 				continue;
-			}// escape ANYTHING
-			if (ch == close or ((close == ' ' or close == ',') and
-			                    (ch == ';' or ch == ',' or ch == '\n'))) {// todo: a=1,2,3
+			}
+			if (ch == close or ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
 				proceed();
 				break;
 			}// inner match ok
 			if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
-				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
-					if (!current.parent)
-						return ERROR;// throwing? error("NOT MATCHING" : ERROR);
-				break;//				return current but with extra logic: merge a:3 so that a has value 3 etc;
+//				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
+				break;
 			}// outer match unresolved so far
 			switch (ch) {
 				case '=':
@@ -937,17 +924,17 @@ private:
 				}
 				case '{': {
 					Node &object = value('}', &current.last()).setType(Type::objects);
-					current.last().add(object);
+					current.addSmart(object);
 					break;
 				}
 				case '[': {
-					Node &pattern = value(']', &current).setType(Type::patterns);
-					current.last().add(pattern);
+					Node &pattern = value(']', &current.last()).setType(Type::patterns);
+					current.addRaw(pattern);
 					break;
 				}
 				case '(': {
 					Node &group = value(')', &current.last()).setType(Type::groups);
-					current.last().add(group);
+					current.addSmart(group);
 					break;
 				}// lists handled by ' '!
 				case '}':
@@ -974,14 +961,14 @@ private:
 					if (close != ch) {
 						// open string
 						if(current.last().kind==Type::expression)
-							current.last().add(string(ch));
+							current.last().addSmart(string(ch));
 						else
-							current.add(string(ch));
+							current.addRaw(string(ch).clone());
 						break;
 					}
 					Node id = Node(text.substring(start, at));
 					id.setType(Type::strings);// todo "3" could have be resolved as number? DONT do js magifuckery
-					current.add(id);
+					current.addRaw(id);
 					break;
 				}
 				case '\t':
@@ -993,16 +980,22 @@ private:
 						proceed();
 						continue;
 					}
-					const Node &sub = value(ch, &current);
-					current.add(sub);// space is list operator
+					Node sub = value(ch, &current);
+					current.addRaw(sub);// space is list operator
 					break;
 				}
 				default: {
 					Node node = expression();//words();
-					current.addRaw(&node);
+					if(node.length>1){
+						for(Node arg:node)current.addRaw(arg);
+						current.kind = Type::expression;
+					} else{
+						current.addRaw(&node);
+					}
 				}
 			}
 		}
+
 		bool keepBlock = close == '}';
 		Node &result = current.flat();
 		return result;
