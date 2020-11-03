@@ -262,6 +262,8 @@ public:
 
 	explicit operator bool() {// TRUTHINESS operator, implicit in if, while
 //		https://github.com/pannous/angle/wiki/truthiness
+//		if(name=="nil")return false;
+//		if(name=="0")return false;
 		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
 	}
 
@@ -451,10 +453,11 @@ public:
 
 	Node& setValue(Value v);
 
-	Node to(Node match);
 
-	Node from(Node node);
+	Node from(Node node);// exclusive
 	Node from(String match);
+	Node to(Node match);// exclusive
+	Node to(String match);
 
 	Node& flat();
 
@@ -463,5 +466,6 @@ public:
 	Node values();
 };
 typedef const Node Nodec;
-float precedence(Node &operater);
+
 float precedence(String name);
+float precedence(Node &operater);
