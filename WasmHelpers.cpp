@@ -182,9 +182,9 @@ void _cxa_throw(){
 
 
 #ifndef WASM
-int square(int n){
-	return n * n;
-}
+//int square(int n){
+//	return n * n;
+//}
 void logi(int l){
 	printf("%d\n", l);
 }
