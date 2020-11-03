@@ -200,6 +200,10 @@ void testAllWasm() {
 			assert_equals(emit("x*=14"), 1)
 			assert_equals(emit("x=15;x>=14"), 1)
 	)
+//	assert_emit("logi 3",(long)0);
+	assert_emit("square 3",(long)9);
+	exit(72);
+//	assert_emit("square 3",9)
 	testWasmLogicUnary();
 	testConstReturn();
 	testWasmLogic();
