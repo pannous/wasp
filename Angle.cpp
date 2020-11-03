@@ -16,7 +16,6 @@ bool recursive = true;// whats that?
 String functor_list[] = {"if", "while",0};// MUST END WITH 0, else BUG
 String function_list[] = {"square","log", "puts", "print", "printf", "println", "logi","logf","log_f32","logi64","logx","logc",0};// MUST END WITH 0, else BUG
 
-
 int main4(int argp, char **argv) {
 #ifdef register_global_signal_exception_handler
 	register_global_signal_exception_handler();
@@ -200,6 +199,17 @@ Node groupOperators(Node expression) {
 			}
 		}
 	}
+	for (Node op : expression) {
+		if(op.name.in(function_list)){
+			op.kind = function;
+			if(!op.children){
+				Node *n=&op;
+				while(n=n->next)
+					op.addRaw(n);
+			}
+			return op;
+		}
+	}
 	return expression;// no op
 }
 
@@ -356,6 +366,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 
 Node Angle::analyze(Node data) {
+
 	if (data.kind == expressions) {
 		return groupOperators(data);
 	}
