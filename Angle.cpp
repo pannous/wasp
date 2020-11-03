@@ -76,25 +76,27 @@ Node If(Node condition, Node then) {
 }
 
 Node If(Node n) {
+	if(n.length==0)return If(n, n.values());
 	breakpoint_helper
 	if (n.length == 0 and !n.value.data)
 		error("no if condition given");
 	if (n.length == 1 and !n.value.data)
 		error("no if block given");
 	Node &condition = n.children[0];
-	Node &then = n[1];
-	if (n.value.data) {
-		todo("remove hack");
-		Node condition_fulfilled = n.kind != objects or n.value.node->evaluate();
-		if (condition_fulfilled) {
-			return eval(condition);
-		} else {
-			if (n.length == 2)// else
-				return eval(then);
-			else
-				return False;
-		}
-	}
+	Node then = n[1];
+
+//	if (n.value.data) {
+////		todo("remove hack");
+//		Node condition_fulfilled = n.kind != objects or n.value.node->evaluate();
+//		if (condition_fulfilled) {
+//			return eval(condition);
+//		} else {
+//			if (n.length == 2)// else
+//				return eval(then);
+//			else
+//				return False;
+//		}
+//	}
 	if(condition.name=="condition")
 		condition = condition.values();
 	Node condition_fulfilled0 = eval(condition);
@@ -336,18 +338,10 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		return left;
 	}
 	if(op=="else" or op=="then")return right;// consume by "if"! todo COULD be used as or if there is no 'if'
+	if (op == "if") return If(right);
 	if (op.in(function_list) or op.in(functor_list)) {
 //		kind=Type::function; // functor same concept, different arguments
 		// careful, functions take arguments, functors take bodies if(1,2,3)!=if{1}{2}{3}
-		if (op == "if") {
-			if (right.length == 0 and right.value.data)
-				return If(right, right.values());
-			if (right.length > 1)
-				return If(right);
-			if (op0.next)
-				return If(*op0.next, right);// old hack
-			return If(right);
-		}
 	}
 	todo(op + " is NOT a builtin operator ");
 	return NIL;

@@ -95,6 +95,79 @@ void testIf(){
 			)
 }
 
+
+void testIfGt(){
+	assert_eval("if(3<0):{3} else {4}", 4);
+	assert_eval("if 0>1 : {3} else {4}", 4);
+	assert_eval("if 0>1 : 3 else {4}", 4);
+	assert_eval("if 0>1 : 3 else 4", 4);
+	assert_eval("if 0>1:3 else 4", 4);
+	assert_eval("if 0>1:{3} else {4}", 4);
+	assert_eval("if 0>1:3 else {4}", 4);
+
+	assert_eval("if 0>1 {3} else {4}", 4);
+	assert_eval("if 1<2 : 3 else 4", 3);
+	assert_eval("if(2<4):{3}", 3);
+	assert_eval("if 0>1:3", false);
+	assert_eval("if (2<3) {3} else 4", 3);
+	assert_eval("if(2<4){3} else 4", 3);
+	assert_eval("if(3<0){3} else 4", 4);
+
+	assert_eval("if 1<2 {3} else {4}", 3);
+	assert_eval("if 0>1 {3} else {4}", 4);
+	assert_eval("if (2<3) {3} else {4}", 3);
+	assert_eval("if(2<4){3} else {4}", 3);
+	assert_eval("if(3<0){3} else {4}", 4);
+
+	assert_eval("if (0<1) {3} else {4}", 4);
+	assert_eval("if(2<4):{3} else 4", 3);
+	assert_eval("if(2<4):{3} else {4}", 3);
+	assert_eval("if 1<2:{3} else 4", 3);
+	assert_eval("if 1<2:3 else 4", 3);
+	assert_eval("if 1<2:{3} else {4}", 3);
+	assert_eval("if 1<2:3 else {4}", 3);
+	assert_eval("if 1<2 {3}", 3);
+	assert_eval("if(3<0):{3}", false);
+	assert_eval("if(3<0):{3} else 4", 4);
+	assert_eval("if (0<1) {3}", false);
+	assert_eval("if 1<2 then 3 else 4", 3);
+	assert_eval("if (0<1) {3} else 4", 4);
+//	assert_eval("2 then 3 else 4", 3);
+	assert_eval("2 and 3 or 4", 3);
+	assert_eval("1 and 0 or 4", 4);
+	assert_eval("if 1 then 0 else 4", (long)0);
+	assert_eval("if 0>1:{3} else 4", 4);
+
+
+	assert_eval("if 0>1 {3}", false);
+	assert_eval("1<0 or 3", 3);
+	assert_eval("1<0 else 3", 3);
+	assert_eval("4 or 3", 4);
+//	assert_eval("4 else 3", 4);
+	assert_eval("if (2<3) {3}", 3);
+	assert_eval("if(2<4){3}", 3);
+	assert_eval("if(3<0){3}", false);
+	assert_eval("if 1<2:{3}", 3);
+	assert_eval("if 1<2:3", 3);
+
+	assert_eval("if 0>1 {3} else 4", 4);
+	assert_eval("if 1<2 {3} else 4", 3);
+
+//	assert_eval("if 1<2 , 3 , 4", 3);
+//	assert_eval("if{2 , 3 , 4}", 3);
+//	assert_eval("if 1<2 then 3 else 4", 3);
+	assert_eval("if(2<4,3,4)", 3);
+	assert_eval("if(3<{2},{3},{4})", 3);
+	assert_eval("if(2<4){3}{4}", 3);
+	skip(
+			assert_parses("if(3<condition=2,then=3,else=4)");
+			check(result["condition"]==2);
+			check(result["else"]==4);
+			assert_eval("if(3<condition=2,then=3,else=4)", 3); // this is what happens under the hood (?)
+	)
+}
+
+
 void testAllAngle(){
 	testIf();
 //	testFunctionParams();
