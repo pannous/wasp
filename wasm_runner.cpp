@@ -62,7 +62,7 @@ long get_pow2x(wasm_exec_env_t grr, long x, long y) {
 
 
 static NativeSymbol native_symbols[] =
-		{        // WAVM can call f(char*)! No JS restrictions!!
+		{        // WAVM can call f(float) f(char*)! No JS restrictions!!
 				{
 						"get_pow",            // the name of WASM function name
 						(void *) get_pow,            // the native function pointer
@@ -70,22 +70,10 @@ static NativeSymbol native_symbols[] =
 						NULL,                // attachment is NULL
 						false
 				},
-				{
-						"get_pow2",            // the name of WASM function name
-						(void *) get_pow2,            // the native function pointer
-						"(II)I",            // the function prototype signature, avoid to use i32
-						NULL,                // attachment is NULL
-						false
-				},
-				{
-						"logi",            // the name of WASM function name
-						(void *) logi,            // the native function pointer
-						"(i)",            // the function prototype signature, avoid to use i32
-						NULL,                // attachment is NULL
-						false
-				}
+				{"square", (void *) square, "(i)i", NULL, false},
+				{"logi", (void *) logi, "(i)", NULL, false},
+				{"log_f32", (void *) log_f32, "(f)", NULL, false}
 		};
-
 
 wasm_trap_t *hello_callback(const wasm_val_t args[], wasm_val_t results[]) {
 	printf("Calling back...\n");
