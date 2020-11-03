@@ -592,7 +592,7 @@ const char *Node::serialize() const {
 	if (not polish_notation or this->length == 0) {
 		if (not this->name.empty()) wasp += this->name;
 		const char *serializedValue = serializeValue();
-		if (this->value.data and name != serializedValue and !eq(serializedValue,"{…}")) {
+		if (this->value.data and !eq(name, serializedValue) and !eq(serializedValue,"{…}") and !eq(serializedValue,"?")) {
 			wasp += ":";
 			wasp += serializedValue;
 			wasp += " ";

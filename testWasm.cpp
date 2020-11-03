@@ -177,9 +177,16 @@ void testWasmMemoryIntegrity() {
 	}
 }
 
+
+void testsFailingInWasm() {
+	testKitchensink();
+	testMarkSimpleAssign();
+}
+
 //testWasmControlFlow
 void wasm_todos() {
 	assert_equals(emit("42.1"), 42.1) // main returns int, should be pointer to value!
+	testsFailingInWasm();
 }
 
 void testAllWasm() {
