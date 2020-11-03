@@ -12,6 +12,8 @@ extern "C" unsigned int *current;
 extern "C" void logs (const char *,int len=-1 /*auto*/);
 extern "C" void logc(char s);
 extern "C" void logi(int i);
+extern "C" void log_f32(float f);
+
 
 #ifndef WASM
 //#include <cstdlib>
