@@ -81,7 +81,8 @@ Node If(Node n) {
 		error("no if condition given");
 	if (n.length == 1 and !n.value.data)
 		error("no if block given");
-	Node &condition = n[0];
+	Node &condition = n.children[0];
+	Node &then = n[1];
 	if (n.value.data) {
 		todo("remove hack");
 		Node condition_fulfilled = n.kind != objects or n.value.node->evaluate();
@@ -89,11 +90,13 @@ Node If(Node n) {
 			return eval(condition);
 		} else {
 			if (n.length == 2)// else
-				return eval(n[1]);
+				return eval(then);
 			else
 				return False;
 		}
 	}
+	if(condition.name=="condition")
+		condition = condition.values();
 	Node condition_fulfilled0 = eval(condition);
 	bool condition_fulfilled = (bool)condition_fulfilled0;
 	if(condition.kind==floats or condition.kind==longs)
@@ -101,11 +104,14 @@ Node If(Node n) {
 	else if(condition.value.data and condition.kind==objects) // or ...
 		error("If statements need a space after colon");
 	if (condition_fulfilled) {
-		if(n[1]=="then")
+		if(then.name == "then"){
+			if(then.value.data or then.children) // then={} as arg
+				return eval(then.values());
 			return eval(n[2]);
+		}
 		if(condition.value.data and !condition.next or condition.next->name=="else")
 			return eval(condition.values());
-		return eval(n[1]);
+		return eval(then);
 	} else {
 		if(n.has("else"))
 			return eval(n.from("else"));

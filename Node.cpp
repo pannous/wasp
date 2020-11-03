@@ -439,7 +439,7 @@ void Node::addSmart(Node node) {// merge?
 		return;
 	}
 
-	if (last().kind==reference or name.empty() and not kind==expression)// last().kind==reference)
+	if (last().kind==reference or last().kind==keyNode or name.empty() and not kind==expression)// last().kind==reference)
 		last().add(&node);
 	else
 		add(&node);
@@ -662,6 +662,9 @@ Node Node::from(String match) {
 		if (start)lhs.addRaw(&child);
 		if (child.name == match)start = true;
 	}
+	if(lhs.length==0)
+		for (Node child:*this)
+			if (child.name == match)return child.values();
 	lhs.kind = kind;
 	return lhs;
 }
@@ -689,6 +692,7 @@ Node Node::values() {
 	if(kind==floats)return Node(value.floaty);
 	if(kind==strings)return Node(value.string);
 	if(kind==bools)return value.data ? True : False;
+	if(kind==keyNode)return *value.node;
 	Node &val = clone()->setName("");
 	val.children = 0;
 	return val;
