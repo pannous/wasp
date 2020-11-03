@@ -99,7 +99,7 @@ Node If(Node n) {
 	if(condition.kind==floats or condition.kind==longs)
 		condition_fulfilled = condition.name.empty() and condition.value.data or condition.name != "0";
 	else if(condition.value.data and condition.kind==objects) // or ...
-		error("If statements need a space after colon if 1 : 2 else 3");
+		error("If statements need a space after colon");
 	if (condition_fulfilled) {
 		if(n[1]=="then")
 			return eval(n[2]);
