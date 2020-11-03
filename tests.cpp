@@ -1114,6 +1114,10 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+//	testIfGt();
+	testIf();
+	testAllWasm();
+	exit(42);
 	tests();// make sure all still ok before changes
 	testIf();
 
@@ -1121,7 +1125,6 @@ void testCurrent() { // move to tests() once OK
 //	testAngle();
 	todos();// those not passing yet (skip)
 	//	testAngle();
-//	testAllWasm();
 //	testBUG();
 //	testParentBUG();
 
