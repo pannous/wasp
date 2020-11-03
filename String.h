@@ -88,6 +88,7 @@ public:
 	IndexOutOfBounds(char *data, int i) : Error() {}
 };
 
+//char *empty_string = "";
 String typeName(Type t);
 //char null_value[]={0};// todo make sure it's immutable!!
 class String{
@@ -107,7 +108,9 @@ public:
 
 	String() {
 //		assert(null_value[0] == 0);
-		data =  {0};//null_value;
+		data = "";
+//		data = empty_string;
+//		data =  {0};//null_value;
 //		data = static_cast<char *>(calloc(1, 1));
 		length = 0;
 	}
@@ -374,6 +377,11 @@ public:
 		return this->operator+(String(c));
 	}
 
+	String operator+(String* s) {
+		if(!s or !s->data)return *this;
+		return this->operator+(s->data);
+	}
+
 	String operator++() {
 		this->data++;// self modifying ok?
 		length--;
@@ -513,9 +521,11 @@ public:
 	int in(String array[]) {
 		int i = 0;
 //		for(String x:array){}
+		String dis = *this;
 		while (array[i]){
-			if(*this==array[i])
+			if(array[i] == dis) {
 				return i+1;
+			}
 			i++;
 		}
 		return 0;

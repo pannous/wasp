@@ -70,13 +70,13 @@ Node eval(Node n) {
 Node If(Node condition, Node then) {
 	Node ok0 = condition.evaluate();
 	bool ok = (bool) ok0;
-	if(condition.name=="0")ok= false;// hack
+	if (condition.name == "0")ok = false;// hack
 	if (ok)return then.evaluate();
 	else return False;
 }
 
 Node If(Node n) {
-	if(n.length==0)return If(n, n.values());
+	if (n.length == 0)return If(n, n.values());
 	breakpoint_helper
 	if (n.length == 0 and !n.value.data)
 		error("no if condition given");
@@ -84,40 +84,31 @@ Node If(Node n) {
 		error("no if block given");
 	Node &condition = n.children[0];
 	Node then = n[1];
-
-//	if (n.value.data) {
-////		todo("remove hack");
-//		Node condition_fulfilled = n.kind != objects or n.value.node->evaluate();
-//		if (condition_fulfilled) {
-//			return eval(condition);
-//		} else {
-//			if (n.length == 2)// else
-//				return eval(then);
-//			else
-//				return False;
-//		}
-//	}
-	if(condition.name=="condition")
-		condition = condition.values();
-	Node condition_fulfilled0 = eval(condition);
-	bool condition_fulfilled = (bool)condition_fulfilled0;
-	if(condition.kind==floats or condition.kind==longs)
+	if (n.has(":")) {
+		condition = condition.evaluate();
+		then = n.from(":");
+		if (n.has("else"))then = then.to("else");
+	}
+//	if(condition.name=="condition")
+//		condition = condition.values();
+	bool condition_fulfilled = (bool) eval(condition);
+	if (condition.kind == floats or condition.kind == longs)
 		condition_fulfilled = condition.name.empty() and condition.value.data or condition.name != "0";
-	else if(condition.value.data and condition.kind==objects) // or ...
+	else if (condition.value.data and condition.kind == objects) // or ...
 		error("If statements need a space after colon");
 	if (condition_fulfilled) {
-		if(then.name == "then"){
-			if(then.value.data or then.children) // then={} as arg
+		if (then.name == "then") {
+			if (then.value.data or then.children) // then={} as arg
 				return eval(then.values());
 			return eval(n[2]);
 		}
-		if(condition.value.data and !condition.next or condition.next->name=="else")
+		if (condition.value.data and !condition.next or condition.next->name == "else")
 			return eval(condition.values());
 		return eval(then);
 	} else {
-		if(n.has("else"))
+		if (n.has("else"))
 			return eval(n.from("else"));
-		if (n.length == 3)
+		if (n.length == 3 and not n.has(":"))
 			return eval(n[2]);// else
 		else
 			return False;
@@ -136,7 +127,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		if (kind == operators or precedence(*this))
 			return apply_op(NIL, *this, this->clone()->setType(objects).setName(empty_name));
 
-	if (length == 2 and children[1].kind == expression) {
+	if (length == 2 and children[1].kind == expressions) {
 		length = 1;
 		return this->merge(children[1]).evaluate();// stop hacking
 	}
@@ -324,7 +315,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		if (left.kind == longs and right.kind == floats) return Node(left.value.longy * right.value.floaty);
 		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty * right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy * right.value.longy);
-		todo(op + " operator NOT defined for types %s and %s ");
+		todo(op + " operator NOT defined for types %s and %s "s % typeName(left.kind) % typeName(right.kind));
 //		if (right.type == numbers) return Node(left.value.number * right.value.number);
 	}
 	if (op == "=" or op == ":=" or op == ":") {
@@ -337,7 +328,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 			left.value.node = &right;
 		return left;
 	}
-	if(op=="else" or op=="then")return right;// consume by "if"! todo COULD be used as or if there is no 'if'
+	if (op == "else" or op == "then")return right;// consume by "if"! todo COULD be used as or if there is no 'if'
 	if (op == "if") return If(right);
 	if (op.in(function_list) or op.in(functor_list)) {
 //		kind=Type::function; // functor same concept, different arguments
@@ -351,7 +342,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 
 Node Angle::analyze(Node data) {
-	if (data.kind == expression) {
+	if (data.kind == expressions) {
 		return groupOperators(data);
 	}
 	for (Node &child: data)
@@ -371,8 +362,8 @@ Node emit(String code) {
 }
 
 
-String functor_list1[] = {"if", "while"};
-String function_list1[] = {"log", "puts", "print", "printf", "println", "logi"};
+String functor_list1[] = {"if", "while", 0};
+String function_list1[] = {"log", "puts", "print", "printf", "println", "logi", 0};
 
 
 float precedence(String name) {
@@ -404,10 +395,12 @@ float precedence(String name) {
 	if (eq(name, "+"))return 6;
 	if (eq(name, "minus"))return 6;
 	if (eq(name, "-"))return 6;
+	if (eq(name, "=="))return 9;
+	if (eq(name, ":"))return 10;// todo:
 	if (eq(name, "="))return 10;
-	if (eq(name, "=="))return 10;
 	if (eq(name, "≠"))return 10;
 	if (eq(name, "!="))return 10;
+	if (eq(name, ":="))return 11;
 	if (eq(name, "equals"))return 10;
 	if (eq(name, "equal"))return 10;
 	if (eq(name, "if"))return 12.8;

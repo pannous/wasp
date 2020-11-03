@@ -178,9 +178,11 @@ void testDeepCopyDebugBugBug() {
 }
 
 void testDeepCopyDebugBugBug2() {
-	const char *source = "{deep{a:3,b:4,c:{d:123}}}";
+//	const char *source = "{deep{a:3,b:4,c:{d:123}}}";
+	const char *source = "{deep{c:{d:123}}}";
 	assert_parses(source);
-	Node &node = result["deep"]['c']['d'];
+	Node &c = result["deep"]['c'];
+	Node &node = c['d'];
 	assert_equals(node.value.longy, (long) 123);
 	assert_equals(node, (long) 123);
 }
@@ -334,12 +336,12 @@ void testUTFinCPP() {
 //testUTFø  error: stray ‘\303’ in program
 void testUTF() {
 	testUTFinCPP();
-
 	assert_parses("{ç:☺}");
 	assert(result["ç"] == "☺");
 
 	assert_parses("ç:'☺'");
 	assert(result == "☺");
+
 
 	assert_parses("{ç:111}");
 	assert(result["ç"] == 111);
@@ -352,7 +354,7 @@ void testUTF() {
 	assert(eval("ç='☺'") == "☺");
 
 	assert_parses("ç=☺");
-	assert(result == "☺" or result.kind == Type::expression);
+	assert(result == "☺" or result.kind == expressions);
 //	assert(node == "ø"); //=> OK
 }
 
@@ -1066,7 +1068,6 @@ void tests() {
 	testParams();
 	testAddField();
 	testOverwrite();
-	testMarkMultiDeep();
 	testMapsAsLists();
 	testDidYouMeanAlias();
 	testNetBase();
@@ -1077,10 +1078,13 @@ void tests() {
 	testConcatenationBorderCases();
 	testAsserts();
 	testLengthOperator();
-	testDeepCopyDebugBugBug();
 	testLogic();
 	testLogicEmptySet();
-skip(testDeepCopyDebugBugBug2()) /*SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!*/
+	testDeepCopyDebugBugBug2();
+	testDeepCopyDebugBugBug();
+	testMarkMultiDeep();
+
+	skip(testDeepCopyDebugBugBug2()) /*SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!*/
 //#ifndef WASM
 #ifdef APPLE
 	testAllSamples();
@@ -1114,14 +1118,16 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-//	testIfGt();
-	testIf();
-	testAllWasm();
-	exit(42);
+	testDeepCopyDebugBugBug2();
+
+	//	testIfGt();
+//	testIf();
+//	testIfMath();
 	tests();// make sure all still ok before changes
+	testAllWasm();
+
 	testIf();
 
-//	testDeepCopyDebugBugBug2();
 //	testAngle();
 	todos();// those not passing yet (skip)
 	//	testAngle();

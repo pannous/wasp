@@ -426,7 +426,7 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 //			case binaryExpression:
 //				code.opcode(binaryOpcode[node.value]);
 //				break;
-		case expression:
+		case expressions:
 		case groups:
 		case objects:
 			for (Node child : node) {
