@@ -185,6 +185,9 @@ void _cxa_throw(){
 void logi(int l){
 	printf("%d\n", l);
 }
+void log_f32(float l){
+	printf("%f\n", l);
+}
 
 //#import "Backtrace.cpp"
 //#include "ErrorHandler.h"

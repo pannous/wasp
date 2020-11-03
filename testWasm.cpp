@@ -3,17 +3,18 @@
 
 #define assert_emit(α, β) if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 
-void testConstReturn(){
+void testConstReturn() {
 	assert_equals(emit("42"), 42)
 }
 
-void testPrint(){
+void testPrint() {
 	assert_equals(emit("print 42"), 42)
 }
+
 void testMathPrimitives() {
 	skip(
 			assert_equals(emit("42.1"), 42.1) // todo: return &Node(42.1) or print value to stdout
-	assert_equals(emit("-42.1"), 42.1)
+			assert_equals(emit("-42.1"), 42.1)
 	)
 	assert_equals(emit("42"), 42)
 	assert_equals(emit("-42"), -42)
@@ -21,7 +22,7 @@ void testMathPrimitives() {
 	assert_equals(emit("-2000000000"), -2000000000)
 }
 
-void testMathOperators(){
+void testMathOperators() {
 //	assert_equals(emit("42 2 *"), 84)
 	assert_equals(eval("42/2"), 21)
 	assert_equals(emit("42/2"), 21)
@@ -41,8 +42,8 @@ void testMathOperators(){
 //	assert_equals(emit("3³"),27);
 //	assert_equals(emit("3⁴"),9*9);
 	skip(
-	assert_equals(emit("42^2"), 1764) NO SUCH PRIMITIVE
-			)
+			assert_equals(emit("42^2"), 1764) NO SUCH PRIMITIVE
+	)
 }
 
 
@@ -73,9 +74,9 @@ void testComparisonPrimitives() {
 void testWasmLogicPrimitives() {
 
 	skip( // todo: if emit returns Node:
-	assert_equals(emit("false").name, False.name);// NO LOL emit only returns number
-	assert_equals(emit("false"), False);
-			)
+			assert_equals(emit("false").name, False.name);// NO LOL emit only returns number
+			assert_equals(emit("false"), False);
+	)
 
 	assert_emit("true", True);
 	assert_emit("true", true);
@@ -83,7 +84,7 @@ void testWasmLogicPrimitives() {
 
 	assert_emit("false", false);
 	assert_emit("false", False);
-	assert_emit("false", (long)0);
+	assert_emit("false", (long) 0);
 
 	assert_emit("nil", false);
 	assert_emit("null", false);
@@ -99,15 +100,16 @@ void testWasmLogicUnaryVariables() {
 }
 
 void testWasmLogicUnary() {
-	assert_emit("not false", true);
-	assert_emit("not 0", true);
 	assert_emit("not 0.0", true);
 	assert_emit("not ø", true);
+	assert_emit("not false", true);
+	assert_emit("not 0", true);
 
 	assert_emit("not true", false);
 	assert_emit("not 1", false);
 	assert_emit("not 123", false);
 }
+
 void testWasmLogicOnObjects() {
 	assert_emit("not 'a'", false);
 	assert_emit("not {a:2}", false);
@@ -120,15 +122,15 @@ void testWasmLogicOnObjects() {
 
 }
 
-void testWasmLogic(){
+void testWasmLogic() {
 	skip(
 // should be easy to do, but do we really want this?
-	assert_emit("true true and", true);
-	assert_emit("false true and", false);
-	assert_emit("false false and ", false);
-	assert_emit("true false and ", false);
+			assert_emit("true true and", true);
+			assert_emit("false true and", false);
+			assert_emit("false false and ", false);
+			assert_emit("true false and ", false);
 	)
-	check(parse("false and false").length==3);
+	check(parse("false and false").length == 3);
 	assert_emit("false and false", false);
 	assert_emit("false and true", false);
 	assert_emit("true and false", false);
@@ -146,7 +148,7 @@ void testWasmLogic(){
 	assert_emit("true or true", true);
 }
 
-void testWasmIf(){
+void testWasmIf() {
 	assert_emit("if(condition=2,then=3,else=4)", 3); // this is what happens under the hood (?)
 	assert_emit("if 2 : 3 else 4", 3);
 	assert_emit("if 2 then 3 else 4", 3);
@@ -176,25 +178,27 @@ void testWasmMemoryIntegrity() {
 }
 
 //testWasmControlFlow
-void wasm_todos(){
+void wasm_todos() {
 	assert_equals(emit("42.1"), 42.1) // main returns int, should be pointer to value!
 }
-void testAllWasm(){
-	skip(testsFailingInWasm();)
-	// constant things may be evaluated by compiler!
-	// todo: reuse all tests via
-//	interpret = false;
-//	assert_equals(emit("x*=14"), 1)
-//	assert_equals(emit("x=15;x>=14"), 1)
-	assert_emit("true or false and false", true);// == true or (false)
 
-//	testWasmControlFlow();
+void testAllWasm() {
+	// todo: reuse all tests via
+	//	interpret = false;
+	// constant things may be evaluated by compiler!
+	skip(
+			testsFailingInWasm();
+			assert_emit("0.0", (long) 0);// can't emit float yet
+			assert_emit("true or false and false", true);// == true or (false)
+			assert_equals(emit("x*=14"), 1)
+			assert_equals(emit("x=15;x>=14"), 1)
+	)
+	testWasmLogicUnary();
+	testConstReturn();
 	testWasmLogic();
 	testWasmLogicPrimitives();
 	testMathOperators();
 	testMathPrimitives();
-	testConstReturn();
-	testWasmLogicUnary();
 	testComparisonPrimitives();
 
 	skip(

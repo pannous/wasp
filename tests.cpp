@@ -1118,13 +1118,10 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-	testDeepCopyDebugBugBug2();
-
+	testAllWasm();
 	//	testIfGt();
-//	testIf();
 //	testIfMath();
 	tests();// make sure all still ok before changes
-	testAllWasm();
 
 	testIf();
 

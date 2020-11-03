@@ -662,7 +662,7 @@ Node Node::to(String match) {
 //	if(rhs.length==0)// no match
 //		return *this;
 	rhs.kind = kind;
-	return rhs;
+	return rhs.flat();
 }
 Node Node::to(Node match) {
 	return to(match.name);

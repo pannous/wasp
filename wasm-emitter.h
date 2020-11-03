@@ -216,6 +216,9 @@ enum Opcodes {
 	i32_le = 0x4C,
 	i32_ge = 0x4E,
 
+	i64_eqz = 0x50,
+//	f32_eqz = 0x50, no such thing!
+
 	f32_eq = 0x5b,
 	f32_ne = 0x5c,
 	f32_lt = 0x5d,
