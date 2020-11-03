@@ -409,6 +409,6 @@ printf("%s\n",s);
 
 
 bool String::empty() const {//this==0 in testMarkMulti!
-	return this==0 || length==0  ||  !data  ||  data[0] == 0 || data==object_name.data;
+	return this==0 || length==0  ||  !data  || (long)data==0x03 /*bug!*/ ||  data[0] == 0 || data==object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
 }

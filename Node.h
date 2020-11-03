@@ -260,8 +260,8 @@ public:
 		value.data = pNode[0];
 	}
 
-	explicit
-	operator bool() {
+	explicit operator bool() {// TRUTHINESS operator, implicit in if, while
+//		https://github.com/pannous/angle/wiki/truthiness
 		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
 	}
 
@@ -407,9 +407,7 @@ public:
 		printf("\n");
 	}
 
-	static float precedence(Node &operater);
-
-	Node apply(Node left, Node op0, Node right);
+	Node apply_op(Node left, Node op0, Node right);
 
 	Node &setType(Type type);
 
@@ -456,9 +454,14 @@ public:
 	Node to(Node match);
 
 	Node from(Node node);
+	Node from(String match);
 
 	Node& flat();
 
 	Node& setName(char *name0);
+
+	Node values();
 };
 typedef const Node Nodec;
+float precedence(Node &operater);
+float precedence(String name);
