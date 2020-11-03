@@ -197,6 +197,7 @@ Node groupOperators(Node expression) {
 			}
 		}
 	}
+	return expression;// no op
 }
 
 
