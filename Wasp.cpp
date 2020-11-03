@@ -511,7 +511,8 @@ private:
 		return true;
 	};
 
-	Node builtin_operator() {
+
+	Node any_operator() {
 		Node node = Node(ch);
 		node.setType(operators);// todo ++
 		proceed();
@@ -522,6 +523,8 @@ private:
 		}
 		return node;
 	}
+
+
 
 	Node resolve(Node node) {
 //		if
@@ -559,7 +562,7 @@ private:
 	Node symbol() {
 		if (ch >= '0' && ch <= '9')return numbero();
 		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
-		if (is_operator(ch))return builtin_operator();
+		if (is_operator(ch))return any_operator();
 		breakpoint_helper
 		raise(UNEXPECT_CHAR + renderChar(ch));
 		return NIL;
@@ -582,6 +585,10 @@ private:
 		return false;// OK, no ambiguity
 	}
 
+	bool is_known_functor(Node node){
+		if(precedence(node))return true;
+		else return false;
+	}
 	Node expression() {
 		Node node = symbol();
 		if (lookahead_ambiguity())
@@ -593,6 +600,8 @@ private:
 		white();
 		while ((ch and is_identifier(ch)) or isalnum(ch) or is_operator(ch)) {
 			node = symbol();// including operators `=` ...
+			if(is_known_functor(node))
+				node.kind = operators;
 			expressions.addRaw(&node);
 			white();
 		}
@@ -986,6 +995,7 @@ private:
 				}
 				default: {
 					Node node = expression();//words();
+					if(precedence(node))node.kind = operators;
 					if(node.length>1){
 						for(Node arg:node)current.addRaw(arg);
 						current.kind = Type::expression;

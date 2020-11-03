@@ -20,36 +20,6 @@ void testOperatorBinding(){
 
 void testIf(){
 
-	assert_eval("2 and 3 or 4", 3);
-	assert_eval("2 then 3 else 4", 3);
-	assert_eval("if 2 then 3 else 4", 3);
-
-	skip(
-	assert_eval("if(0):{3}", false);
-	assert_eval("if 0:3", false);
-			assert_eval("if(0):{3} else 4", 4);
-			assert_eval("if 0:{3} else 4", 4);
-			assert_eval("if 0:3 else 4", 4);
-			assert_eval("if (0) {3}", false);
-			assert_eval("if(2):{3}", 3);
-			assert_eval("if (0) {3} else 4", 4);
-
-	)
-
-	assert_eval("if 2 {3}", 3);
-	assert_eval("if 0 {3}", false);
-	assert_eval("false or 3", 3);
-	assert_eval("false else 3", 3);
-	assert_eval("4 or 3", 4);
-	assert_eval("4 else 3", 4);
-	assert_eval("if (2) {3}", 3);
-	assert_eval("if(2){3}", 3);
-	assert_eval("if(0){3}", false);
-	assert_eval("if 2:{3}", 3);
-	assert_eval("if 2:3", 3);
-
-	assert_eval("if 0 {3} else 4", 4);
-	assert_eval("if 2 {3} else 4", 3);
 	assert_eval("if (2) {3} else 4", 3);
 	assert_eval("if(2){3} else 4", 3);
 	assert_eval("if(0){3} else 4", 4);
@@ -60,15 +30,48 @@ void testIf(){
 	assert_eval("if(2){3} else {4}", 3);
 	assert_eval("if(0){3} else {4}", 4);
 
-skip(
+//skip(
 	assert_eval("if (0) {3} else {4}", 4);
 	assert_eval("if(2):{3} else 4", 3);
 	assert_eval("if(2):{3} else {4}", 3);
-		)
+//		)
 	assert_eval("if 2:{3} else 4", 3);
 	assert_eval("if 2:3 else 4", 3);
 	assert_eval("if 2:{3} else {4}", 3);
 	assert_eval("if 2:3 else {4}", 3);
+	assert_eval("if 2 {3}", 3);
+	assert_eval("if(0):{3}", false);
+	assert_eval("if(0):{3} else 4", 4);
+	assert_eval("if (0) {3}", false);
+	assert_eval("if 2 then 3 else 4", 3);
+			assert_eval("if (0) {3} else 4", 4);
+//	assert_eval("2 then 3 else 4", 3);
+	assert_eval("2 and 3 or 4", 3);
+	assert_eval("1 and 0 or 4", 4);
+	assert_eval("if 1 then 0 else 4", (long)0);
+			assert_eval("if 0:{3} else 4", 4);
+
+	skip(
+	assert_eval("if 0:3 else 4", 4);
+			assert_eval("if 0:3 else 4", 4);
+			assert_eval("if(2):{3}", 3);
+	assert_eval("if 0:3", false);
+	)
+
+	assert_eval("if 0 {3}", false);
+	assert_eval("false or 3", 3);
+	assert_eval("false else 3", 3);
+	assert_eval("4 or 3", 4);
+//	assert_eval("4 else 3", 4);
+	assert_eval("if (2) {3}", 3);
+	assert_eval("if(2){3}", 3);
+	assert_eval("if(0){3}", false);
+	assert_eval("if 2:{3}", 3);
+	assert_eval("if 2:3", 3);
+
+	assert_eval("if 0 {3} else 4", 4);
+	assert_eval("if 2 {3} else 4", 3);
+
 	skip(
 	assert_eval("if(0):{3} else {4}", 4);
 	assert_eval("if 0:{3} else {4}", 4);
