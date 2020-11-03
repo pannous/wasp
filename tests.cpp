@@ -1117,9 +1117,9 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-	testCall();
 	testAllWasm();
 	exit(43);
+	testCall();
 	//	testIfGt();
 //	testIfMath();
 	tests();// make sure all still ok before changes
