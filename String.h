@@ -518,7 +518,7 @@ public:
 	}
 
 // return position(==index+1), NOT index!
-	int in(String array[]) {
+	int in(String array[]) {// array NEEDS to be 0 terminated!!!!
 		int i = 0;
 //		for(String x:array){}
 		String dis = *this;

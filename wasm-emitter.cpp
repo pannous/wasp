@@ -321,7 +321,7 @@ Code encodeVector(Code data) {
 
 // https://webassembly.github.io/spec/core/binary/modules.html#code-section
 Code encodeLocal(long count, Valtype type) {
-	return unsignedLEB128(count).push((char) type);
+	return unsignedLEB128(count).addByte( type);
 }
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
@@ -367,22 +367,32 @@ bytes ieee754(float num) {
 	*hack = num;
 	char *flip = static_cast<char *>(malloc(5));
 	short i = 4;
-	while (i--)flip[3-i] = data[i];
+	while (i--)flip[3 - i] = data[i];
 	return flip;
 }
 //Code emitExpression (Node* nodes);
 
 Code emitBlock(Node node);
 
-Code emitExpression(Node *node);
+Code emitExpression(Node *node)__attribute__((warn_unused_result));
+//Code emitExpression(Node *node)__attribute__((error_unused_result));
 
 Code emitExpression(Node node) { // expression, statement or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	NodTypes type = internalError;// todo: type/kind
 	Code code;
 	Node statement = node;
+	int index = localIndexForSymbol(node.name);
 
 	switch (node.kind) {
+		case function:
+			for (Node arg : node) {
+				code.push(emitExpression(arg));
+			};
+			code.addByte(call);
+			code.addByte((index + 1));// ok till index>127?
+//					code.opcode(unsignedLEB128(index + 1));
+			break;
 		case reference:
 		case operators: {
 //			if (node.length == 2) {// binary operators, and others
@@ -393,6 +403,15 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			code.push(lhs_code);// might be empty ok
 			code.push(rhs_code);// might be empty ok
 //			}
+			if (index > 0) {// FUNCTION CALL
+				log("FUNCTION CALL: %s\n"s%node.name);
+				for (Node arg : node) {
+					emitExpression(arg);
+				};
+				code.addByte(call);
+				code.addByte((index + 1));// ok till index>127?
+				break;
+			}
 			byte opcode = opcodes(node.name, rhs.kind == floats);
 			if (opcode == 0x50) { // hack for missing f32_eqz
 //				0.0 + code.addByte(f32_eq);
@@ -674,14 +693,14 @@ Code &emit(Program ast) {
 	// the type section is a vector of function types
 //	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
 //	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
-	char ii[] = {0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x01/*return count*/, 0x7F/*int*/};
-	char vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/,
-	             0x7F/*int*/};// our main function! todo : be flexible!
+	char vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/, 0x7F/*int*/};// our main function! todo : be flexible!
 	char iv[] = {0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x00/*return count*/};
 	char vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
-	int typeCount = 3;
+	char ii[] = {0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x01/*return count*/, 0x7F/*int*/};
+	char iii[] = {0x60/*const type form*/, 0x02/*param count*/, 0x7F/*int*/, 0x7F/*int*/, 0x01/*return count*/, 0x7F/*int*/};
+	int typeCount = 5;
 	const Code &type_data = encodeVector(
-			Code(typeCount) + Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv)));
+			Code(typeCount) + Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv))+ Code(ii, sizeof(ii))+ Code(iii, sizeof(iii)));
 	auto typeSection = Code(type, type_data);
 
 	auto lambdo = [](String val, int index) { return index + 1; /* type index */};
@@ -694,12 +713,10 @@ Code &emit(Program ast) {
 			encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
 
 	// the import section is a vector of imported functions
-	byte type_index = 1;// iv "(i)" int->void
-	Code printFunctionImport = encodeString("env") + encodeString("logi").push((char) func_export).push(type_index);
-
-//	auto importSection = createSection(import, encodeVector(Code(0)));
-	int import_count = 1;
-	auto importSection = createSection(import, Code(import_count) + printFunctionImport);
+	Code printFunctionImport = encodeString("env") + encodeString("logi").addByte( func_export).addByte(1);
+	Code squareFunctionImport = encodeString("env") + encodeString("square").addByte( func_export).addByte(3);
+	int import_count = 2;
+	auto importSection = createSection(import, Code(import_count) + printFunctionImport+squareFunctionImport);
 //	auto importSection = createSection(import, encodeVector(printFunctionImport));//+memoryImport
 
 	// the export section is a vector of exported functions
@@ -746,9 +763,13 @@ Code &emit(Program ast) {
 //	check(da_code2 == da_code);
 	Code da_code1 = Code(code_data1, sizeof(code_data1));
 
-	char function_count = 2;
+	char function_count = 2;// offset by imports!?
 	auto codeSection = createSection(code_section,
 	                                 Code(function_count) + encodeVector(da_code) + encodeVector(da_code1));
+	symbols.insert_or_assign("main", import_count);
+	symbols.insert_or_assign("rem", import_count+1);// NOP code_data1
+	symbols.insert_or_assign("logi", 0);// import!
+	symbols.insert_or_assign("square", 1);
 
 
 	auto customSection = createSection(custom, encodeVector(Code(types_of_functions, 3)));
