@@ -16,7 +16,7 @@ enum Type {
 	reference,// variable identifier name x
 	symbol,// one / plus / Jesus
 	operators,// or just symbol?
-	expression,// one plus one
+	expressions,// one plus one
 	strings,
 	arrays,// Node[] vs any[]? vs
 	buffers,// int[]

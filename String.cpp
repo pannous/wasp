@@ -93,6 +93,7 @@ bool eq(const char *dest, const char *src) {
 }
 
 int strlen0(const char *x){
+	if(!x)return 0;
 	int l=0;
 	while(*x++)l++;
 	return l;
@@ -351,7 +352,7 @@ String typeName(Type t) {
 			return "symbol";
 		case operators:
 			return "operator";
-		case expression:
+		case expressions:
 			return "expression";
 		case strings:
 			return "string";

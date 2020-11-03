@@ -594,21 +594,21 @@ private:
 		if (lookahead_ambiguity())
 			return node;
 		// {a:1 b:2} vs { x = add 1 2 }
-		Node expressions = Node();
-		expressions.kind = Type::expression;
-		expressions.addRaw(node);
-		if(stop_at_space and ch==' ')return expressions;
+		Node expressionas = Node();
+		expressionas.kind = expressions;
+		expressionas.addRaw(node);
+		if(stop_at_space and ch==' ')return expressionas;
 		white();
 		while ((ch and is_identifier(ch)) or isalnum(ch) or is_operator(ch)) {
 			node = symbol();// including operators `=` ...
 			if(is_known_functor(node))
 				node.kind = operators;
-			expressions.addRaw(&node);
+			expressionas.addRaw(&node);
 			white();
 		}
 //		expressions.name=map(children.name)
-		if (expressions.length > 1)
-			return expressions;
+		if (expressionas.length > 1)
+			return expressionas;
 		else return node;
 	}
 
@@ -856,7 +856,7 @@ private:
 		    val.name.empty())
 			val = val.last();// singleton
 		val.parent = &key;// todo bug: might get lost!
-		bool deep_copy = val.name.empty() or !debug;
+		bool deep_copy = val.name.empty() or !debug or key.kind==reference and val.name.empty();
 		if (debug) {
 			deep_copy = deep_copy || val.kind == Type::longs and val.name == itoa(val.value.longy);
 			deep_copy = deep_copy || val.kind == Type::bools and (val.name == "True" or val.name == "False");
@@ -922,8 +922,14 @@ private:
 				case ':': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
+					if(current.kind==expressions or key.kind == expressions)
+						current.addRaw(Node(ch).setType(operators));
 					Node &val = *value(' ', &key).clone();// applies to WHOLE expression
-					setField(key, val);
+					if(current.kind==expressions or key.kind == expressions){// complex expressions are not simple maps
+						current.addRaw(val);
+					} else {
+						setField(key, val);
+					}
 					break;
 				}
 				case '{': {
@@ -964,7 +970,7 @@ private:
 					if (previous == '\\')continue;// escape
 					if (close != ch) {
 						// open string
-						if(current.last().kind==Type::expression)
+						if(current.last().kind==expressions)
 							current.last().addSmart(string(ch));
 						else
 							current.addRaw(string(ch).clone());
@@ -998,10 +1004,13 @@ private:
 				default: {
 					// a:b c != a:(b c)
 					Node node = expression(close==' ');//word();
-					if(precedence(node))node.kind = operators;
+					if(precedence(node)){
+						node.kind = operators;
+						current.kind = expressions;
+					}
 					if(node.length>1){
 						for(Node arg:node)current.addRaw(arg);
-						current.kind = Type::expression;
+						current.kind = expressions;
 					} else{
 						current.addRaw(&node);
 					}

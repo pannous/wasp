@@ -160,8 +160,8 @@ Node *all = static_cast<Node *>(calloc(sizeof(Node), capacity * maxNodes));
 
 bool typesCompatible(Node &one, Node &other) {
 	if (one.kind == other.kind)return true;
-	if (one.kind == objects or one.kind == groups or one.kind == patterns or one.kind == expression)
-		return other.kind == objects or other.kind == groups or other.kind == patterns or other.kind == expression;
+	if (one.kind == objects or one.kind == groups or one.kind == patterns or one.kind == expressions)
+		return other.kind == objects or other.kind == groups or other.kind == patterns or other.kind == expressions;
 	if (one.kind != keyNode and other.kind != keyNode) return false;
 	return false;
 }
@@ -212,9 +212,9 @@ Node &Node::set(String string, Node *node) {
 bool Node::operator==(String other) {
 	if (this == 0)return other.empty();
 	if (kind == objects or kind == keyNode)return *value.node == other or value.string == other;
+	if (kind == keyNode) return other == name or value.node and *value.node == other;// todo: a=3 a=="a" ??? really?
 	if (kind == longs) return other == itoa(value.longy);
 	if (kind == reference) return other == name or value.node and *value.node == other;
-	if (kind == keyNode) return other == name or value.node and *value.node == other;// todo: a=3 a=="a" ??? really?
 	if (kind == unknown) return other == name;
 	if (kind == operators) return other == name;
 	return kind == strings and other == value.string;
@@ -439,7 +439,7 @@ void Node::addSmart(Node node) {// merge?
 		return;
 	}
 
-	if (last().kind==reference or last().kind==keyNode or name.empty() and not kind==expression)// last().kind==reference)
+	if (last().kind==reference or last().kind==keyNode or name.empty() and not kind == expressions)// last().kind==reference)
 		last().add(&node);
 	else
 		add(&node);
@@ -578,7 +578,7 @@ const char *Node::serializeValue() const {
 		case buffers:
 			return "int[]";//val.data lenght?
 		case operators:
-		case expression:
+		case expressions:
 		case unknown:
 			return "?";
 		default:
@@ -633,27 +633,10 @@ Node &Node::setValue(Value v) {
 	return *this;
 }
 
-Node Node::to(Node match) {
-	Node rhs;
-	for (Node child:*this) {
-		if (child.name == match.name)
-			break;
-		rhs.addRaw(&child);
-	}
-	rhs.kind = kind;
-	return rhs;
-}
 
 // rest of node children split
 Node Node::from(Node match) {
-	Node lhs;
-	bool start = false;
-	for (Node child:*this) {
-		if (start)lhs.addRaw(&child);
-		if (child.name == match.name)start = true;
-	}
-	lhs.kind = kind;
-	return lhs;
+	return from(match.name);
 }
 Node Node::from(String match) {
 	Node lhs;
@@ -666,12 +649,28 @@ Node Node::from(String match) {
 		for (Node child:*this)
 			if (child.name == match)return child.values();
 	lhs.kind = kind;
-	return lhs;
+	return lhs.flat();
+}
+
+Node Node::to(String match) {
+	Node rhs;
+	for (Node child:*this) {
+		if (child.name == match)
+			break;
+		rhs.addRaw(&child);
+	}
+//	if(rhs.length==0)// no match
+//		return *this;
+	rhs.kind = kind;
+	return rhs;
+}
+Node Node::to(Node match) {
+	return to(match.name);
 }
 
 //	Node& flatten(Node &current){
 Node &Node::flat() {
-	if (length == 0 and name.empty() and value.node)return *value.node;
+	if (length == 0 and kind==keyNode and name.empty() and value.node)return *value.node;
 	if (length == 1 and value.node == &children[0])// todo remove redundancy
 		return *value.node;
 	if (length == 1 and not value.data and name.empty()) {
@@ -694,7 +693,7 @@ Node Node::values() {
 	if(kind==bools)return value.data ? True : False;
 	if(kind==keyNode)return *value.node;
 	Node &val = clone()->setName("");
-	val.children = 0;
+//	val.children = 0;
 	return val;
 }
 

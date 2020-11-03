@@ -188,14 +188,15 @@ void testAllWasm(){
 //	assert_equals(emit("x=15;x>=14"), 1)
 	assert_emit("true or false and false", true);// == true or (false)
 
-	testComparisonPrimitives();
 //	testWasmControlFlow();
-	testWasmLogicUnary();
 	testWasmLogic();
 	testWasmLogicPrimitives();
 	testMathOperators();
 	testMathPrimitives();
 	testConstReturn();
+	testWasmLogicUnary();
+	testComparisonPrimitives();
+
 	skip(
 			wasm_todos();
 			testWasmLogicOnObjects();
