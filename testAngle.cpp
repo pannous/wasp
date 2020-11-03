@@ -20,6 +20,23 @@ void testOperatorBinding(){
 
 void testIf(){
 
+//	skip(
+	assert_eval("if(condition=2,then=3)", 3);
+	assert_eval("if(condition=0,then=3,else=4)", 4);
+	assert_eval("if(condition=1,then=3,else=4)", 3);
+			assert_eval("if(0):{3} else {4}", 4);
+			assert_eval("if 0:{3} else {4}", 4);
+			assert_eval("if 0:3 else {4}", 4);
+
+
+//	)
+
+	assert_eval("if 0 {3} else {4}", 4);
+	assert_eval("if 2 : 3 else 4", 3);
+	assert_eval("if 0:3 else 4", 4);
+	assert_eval("if 0:3 else 4", 4);
+	assert_eval("if(2):{3}", 3);
+	assert_eval("if 0:3", false);
 	assert_eval("if (2) {3} else 4", 3);
 	assert_eval("if(2){3} else 4", 3);
 	assert_eval("if(0){3} else 4", 4);
@@ -30,11 +47,9 @@ void testIf(){
 	assert_eval("if(2){3} else {4}", 3);
 	assert_eval("if(0){3} else {4}", 4);
 
-//skip(
 	assert_eval("if (0) {3} else {4}", 4);
 	assert_eval("if(2):{3} else 4", 3);
 	assert_eval("if(2):{3} else {4}", 3);
-//		)
 	assert_eval("if 2:{3} else 4", 3);
 	assert_eval("if 2:3 else 4", 3);
 	assert_eval("if 2:{3} else {4}", 3);
@@ -51,12 +66,6 @@ void testIf(){
 	assert_eval("if 1 then 0 else 4", (long)0);
 			assert_eval("if 0:{3} else 4", 4);
 
-	skip(
-	assert_eval("if 0:3 else 4", 4);
-			assert_eval("if 0:3 else 4", 4);
-			assert_eval("if(2):{3}", 3);
-	assert_eval("if 0:3", false);
-	)
 
 	assert_eval("if 0 {3}", false);
 	assert_eval("false or 3", 3);
@@ -72,17 +81,8 @@ void testIf(){
 	assert_eval("if 0 {3} else 4", 4);
 	assert_eval("if 2 {3} else 4", 3);
 
-	skip(
-	assert_eval("if(0):{3} else {4}", 4);
-	assert_eval("if 0:{3} else {4}", 4);
-	assert_eval("if 0:3 else {4}", 4);
-			assert_eval("if(condition=2,then=3)", 3);
-
-	)
-
 //	assert_eval("if 2 , 3 , 4", 3);
 //	assert_eval("if{2 , 3 , 4}", 3);
-	assert_eval("if 2 : 3 else 4", 3);
 //	assert_eval("if 2 then 3 else 4", 3);
 	assert_eval("if(2,3,4)", 3);
 	assert_eval("if({2},{3},{4})", 3);
