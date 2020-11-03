@@ -1029,9 +1029,8 @@ void testIndex() {
 	assert_is("[a b c]#2", "b");
 }
 
-void testsFailingInWasm() {
-	testKitchensink();
-	testMarkSimpleAssign();
+void testCall(){
+	assert_is("square 3",9)
 }
 
 void tests() {
@@ -1118,7 +1117,9 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+	testCall();
 	testAllWasm();
+	exit(43);
 	//	testIfGt();
 //	testIfMath();
 	tests();// make sure all still ok before changes

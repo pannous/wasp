@@ -11,6 +11,12 @@
 
 bool recursive = true;// whats that?
 
+
+
+String functor_list[] = {"if", "while",0};// MUST END WITH 0, else BUG
+String function_list[] = {"square","log", "puts", "print", "printf", "println", "logi","logf","log_f32","logi64","logx","logc",0};// MUST END WITH 0, else BUG
+
+
 int main4(int argp, char **argv) {
 #ifdef register_global_signal_exception_handler
 	register_global_signal_exception_handler();
@@ -40,9 +46,6 @@ int _start() { // for wasm-ld
 	main4(0, 0);
 }
 
-
-String functor_list[] = {"if", "while"};
-String function_list[] = {"log", "puts", "print", "printf", "println", "logi"};
 
 Node &Node::setType(Type type) {
 	if (length < 2 and (type == groups or type == objects)); // skip!
@@ -143,8 +146,8 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 	}
 	if (max == 0) {
 //		breakpoint_helper // ok need not always have known operators
-		if (!name.empty())
-			warn(String("could not find operator: ") % name);
+		if (!name.empty() or length>1)
+			warn(String("could not find operator: ") + serialize());
 		return *this;
 	}
 	Node *op = 0;
@@ -200,6 +203,11 @@ Node groupOperators(Node expression) {
 	return expression;// no op
 }
 
+Node do_call(Node left, Node op0, Node right){
+	String op = op0.name;
+	if(op=="square")return square(right.numbere());
+	error("Unregistered function "s + op);
+}
 
 /*
 0x2218	8728	RING OPERATOR	∘
@@ -219,9 +227,14 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	lazy = lazy || (op == "and") and not(bool) left;
 	lazy = lazy || (op == "#");
 	lazy = lazy || (op == "if");
+//	lazy = lazy || arg#n is block
 
 	if (!lazy)
 		right = right.evaluate(false);
+
+	if(op.in(function_list))
+		if(op.in(function_list))
+			return do_call(left, op0, right);
 
 	if (op == "not" or op == "¬" or op == "!") {
 		// todo: what if left is present?
@@ -363,9 +376,6 @@ Node emit(String code) {
 }
 
 
-String functor_list1[] = {"if", "while", 0};
-String function_list1[] = {"log", "puts", "print", "printf", "println", "logi", 0};
-
 
 float precedence(String name) {
 	// like c++ here HIGHER up == lower value == more important
@@ -407,7 +417,7 @@ float precedence(String name) {
 	if (eq(name, "if"))return 12.8;
 	if (eq(name, "else"))return 11.09;
 	if (eq(name, "then"))return 11.15;
-	if (name.in(function_list1) or name.in(functor_list1))
+	if (name.in(function_list) or name.in(functor_list))
 		return 1000;// function calls outmost operation todo? add 3*square 4+1
 	return 0;// no precedence
 }
@@ -418,5 +428,7 @@ float precedence(Node &operater) {
 	if (operater.kind == floats)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (name.empty())return 0;// no precedence
 	if (operater.kind == strings)return 0;// and name.empty()
+
+	if (operater.name.in(function_list))return 999;// function call
 	return precedence(name);
 }
