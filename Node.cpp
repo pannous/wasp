@@ -216,6 +216,7 @@ bool Node::operator==(String other) {
 	if (kind == reference) return other == name or value.node and *value.node == other;
 	if (kind == keyNode) return other == name or value.node and *value.node == other;// todo: a=3 a=="a" ??? really?
 	if (kind == unknown) return other == name;
+	if (kind == operators) return other == name;
 	return kind == strings and other == value.string;
 }
 
@@ -433,6 +434,11 @@ void Node::addSmart(Node node) {// merge?
 	}
 	// a{x:1} != a {x:1} but {x:1} becomes child of a
 	// a{x:1} == a:{x:1} ?
+	if(last().kind==operators){
+		addRaw(node);
+		return;
+	}
+
 	if (last().kind==reference or name.empty() and not kind==expression)// last().kind==reference)
 		last().add(&node);
 	else
@@ -649,6 +655,16 @@ Node Node::from(Node match) {
 	lhs.kind = kind;
 	return lhs;
 }
+Node Node::from(String match) {
+	Node lhs;
+	bool start = false;
+	for (Node child:*this) {
+		if (start)lhs.addRaw(&child);
+		if (child.name == match)start = true;
+	}
+	lhs.kind = kind;
+	return lhs;
+}
 
 //	Node& flatten(Node &current){
 Node &Node::flat() {
@@ -665,6 +681,17 @@ Node &Node::flat() {
 Node &Node::setName(char *name0) {
 	name = name0;
 	return *this;
+}
+
+// extract value from this (remove name)
+Node Node::values() {
+	if(kind==longs)return Node(value.longy);
+	if(kind==floats)return Node(value.floaty);
+	if(kind==strings)return Node(value.string);
+	if(kind==bools)return value.data ? True : False;
+	Node &val = clone()->setName("");
+	val.children = 0;
+	return val;
 }
 
 void log(Node &n) {
