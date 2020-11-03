@@ -64,7 +64,7 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 
 
 bool assert_equals_x(Node a, Node b, char *context = "") {
-	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
+//	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
 	if (a == b)
 //		printf("OK %s==%s in %s\n"s % a % b % context);
 	printf("OK %s==%s in %s\n", a , b , context);
@@ -722,7 +722,8 @@ void testGraphQlQuery() {
 	data["hero"]["id"].log();
 
 	assert(data["hero"]["id"] == "R2-D2");
-	assert(result["data"]["hero"]["friends"][0]["name"] == "Luke Skywalker");
+	Node &friends = result["data"]["hero"]["friends"];
+	assert(friends[0]["name"] == "Luke Skywalker");
 //todo	assert(result["hero"] == result["data"]["hero"]);
 //	assert(result["hero"]["friends"][0]["name"] == "Luke Skywalker")// if 1-child, treat as root
 
@@ -739,7 +740,9 @@ void testGraphQlQuery() {
 void testGraphParams() {
 	assert_parses("{\n  empireHero: hero(episode: EMPIRE) {\n    name\n  }\n"
 	              "  jediHero: hero(episode: JEDI) {\n    name\n  }\n}");
-	assert(result["empireHero"]["episode"] == "EMPIRE");
+	Node &hero = result["empireHero"];
+	hero.log();
+	assert(hero["episode"] == "EMPIRE");
 	assert_parses("\nfragment comparisonFields on Character {\n"
 	              "  name\n  appearsIn\n  friends {\n    name\n  }\n }");
 	assert_parses("\nfragment comparisonFields on Character {\n  name\n  appearsIn\n  friends {\n    name\n  }\n}")
@@ -1111,12 +1114,12 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-	testIf();
 	tests();// make sure all still ok before changes
+	testIf();
 
-	testAngle();
+//	testDeepCopyDebugBugBug2();
+//	testAngle();
 	todos();// those not passing yet (skip)
-
 	//	testAngle();
 //	testAllWasm();
 //	testBUG();

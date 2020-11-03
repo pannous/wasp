@@ -589,7 +589,7 @@ private:
 		if(precedence(node))return true;
 		else return false;
 	}
-	Node expression() {
+	Node expression(bool stop_at_space) {
 		Node node = symbol();
 		if (lookahead_ambiguity())
 			return node;
@@ -597,6 +597,7 @@ private:
 		Node expressions = Node();
 		expressions.kind = Type::expression;
 		expressions.addRaw(node);
+		if(stop_at_space and ch==' ')return expressions;
 		white();
 		while ((ch and is_identifier(ch)) or isalnum(ch) or is_operator(ch)) {
 			node = symbol();// including operators `=` ...
@@ -609,13 +610,6 @@ private:
 		if (expressions.length > 1)
 			return expressions;
 		else return node;
-	}
-
-	Node words() {
-		bool allow_unknown_words = true;// todo depending on context
-		if (allow_unknown_words)
-			return expression();
-		return ch >= '0' && ch <= '9' ? numbero() : word();
 	}
 
 	// Parse true, false, null, Infinity, NaN
@@ -861,6 +855,7 @@ private:
 		if ((val.kind == groups or val.kind == patterns or val.kind == objects) and val.length == 1 and
 		    val.name.empty())
 			val = val.last();// singleton
+		val.parent = &key;// todo bug: might get lost!
 		bool deep_copy = val.name.empty() or !debug;
 		if (debug) {
 			deep_copy = deep_copy || val.kind == Type::longs and val.name == itoa(val.value.longy);
@@ -898,7 +893,6 @@ private:
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
 	Node value(char close = 0, Node *parent = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
-		Node list;
 		Node current;
 		current.parent = parent;
 		current.setType(groups);// may be changed later, default (1 2)==1,2
@@ -915,7 +909,8 @@ private:
 				continue;
 			}
 			if (ch == close or ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
-				proceed();
+				if(close != ' ')// significant
+					proceed();
 				break;
 			}// inner match ok
 			if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
@@ -957,7 +952,7 @@ private:
 					if (isDigit(next))
 						return numbero();
 					else
-						return words();
+						return word();
 				case '/':
 					if (next == '/' or next == '*') {
 						comment();
@@ -980,21 +975,29 @@ private:
 					current.addRaw(id);
 					break;
 				}
+				case ' ':
 				case '\t':
 				case '\n':
 				case ';':
 				case ',':
-				case ' ': {
-					if (previous == ',' or previous == close or close == '"' or close == '\'' or close == '`') {
+					{
+					if (next==':' or previous == ',' or previous == close or close == '"' or close == '\'' or close == '`') {
 						proceed();
 						continue;
 					}
 					Node sub = value(ch, &current);
+//					if(sub.length>1)// bullshit [1 [2 3]] != [1 2 3]
+//						for(Node arg:sub)
+//							current.addRaw(arg);
+//					else
 					current.addRaw(sub);// space is list operator
 					break;
+//					proceed();
+//					continue;
 				}
 				default: {
-					Node node = expression();//words();
+					// a:b c != a:(b c)
+					Node node = expression(close==' ');//word();
 					if(precedence(node))node.kind = operators;
 					if(node.length>1){
 						for(Node arg:node)current.addRaw(arg);
