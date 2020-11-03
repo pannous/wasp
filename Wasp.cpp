@@ -9,8 +9,10 @@
 #include "wasm-emitter.h"
 
 #ifndef WASM
+
 #include <cctype>
 #include "ErrorHandler.h"
+
 #endif
 
 
@@ -240,7 +242,7 @@ private:
 		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
 		var key = String(ch);
 		// subsequent characters can contain ANYTHING
-		while (proceed() and is_identifier(ch) )key += ch;
+		while (proceed() and is_identifier(ch))key += ch;
 		// subsequent characters can contain digits
 //		while (proceed() &&
 //		       (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_' ||
@@ -280,31 +282,30 @@ private:
 			return NaN;
 		}
 
-		if (ch == '0') {
+//		if (ch == '0') {
+//			string += ch;
+//			proceed();
+//		} else {
+		while (ch >= '0' && ch <= '9') {
 			string += ch;
 			proceed();
-		} else {
+		}
+		if (ch == '.') {
+			string += '.';
+			while (proceed() && ch >= '0' && ch <= '9') {
+				string += ch;
+			}
+		}
+		if (ch == 'e' || ch == 'E') {
+			string += ch;
+			proceed();
+			if (ch == '-' || ch == '+') {
+				string += ch;
+				proceed();
+			}
 			while (ch >= '0' && ch <= '9') {
 				string += ch;
 				proceed();
-			}
-			if (ch == '.') {
-				string += '.';
-				while (proceed() && ch >= '0' && ch <= '9') {
-					string += ch;
-				}
-			}
-			if (ch == 'e' || ch == 'E') {
-				string += ch;
-				proceed();
-				if (ch == '-' || ch == '+') {
-					string += ch;
-					proceed();
-				}
-				while (ch >= '0' && ch <= '9') {
-					string += ch;
-					proceed();
-				}
 			}
 		}
 
@@ -517,13 +518,12 @@ private:
 		node.setType(operators);// todo ++
 		proceed();
 		// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
-		while ((ch < 0 or is_operator(ch)) and (previous!='=' or ch=='=')) {// utf8 √ …
+		while ((ch < 0 or is_operator(ch)) and (previous != '=' or ch == '=')) {// utf8 √ …
 			node.name += ch;
 			proceed();
 		}
 		return node;
 	}
-
 
 
 	Node resolve(Node node) {
@@ -585,10 +585,11 @@ private:
 		return false;// OK, no ambiguity
 	}
 
-	bool is_known_functor(Node node){
-		if(precedence(node))return true;
+	bool is_known_functor(Node node) {
+		if (precedence(node))return true;
 		else return false;
 	}
+
 	Node expression(bool stop_at_space) {
 		Node node = symbol();
 		if (lookahead_ambiguity())
@@ -597,11 +598,11 @@ private:
 		Node expressionas = Node();
 		expressionas.kind = expressions;
 		expressionas.addRaw(node);
-		if(stop_at_space and ch==' ')return expressionas;
+		if (stop_at_space and ch == ' ')return expressionas;
 		white();
 		while ((ch and is_identifier(ch)) or isalnum(ch) or is_operator(ch)) {
 			node = symbol();// including operators `=` ...
-			if(is_known_functor(node))
+			if (is_known_functor(node))
 				node.kind = operators;
 			expressionas.addRaw(&node);
 			white();
@@ -851,12 +852,12 @@ private:
 		return next >= '0' and next <= '9';
 	}
 
-	Node &setField(Node &key, Node& val) { // a:{b}
+	Node &setField(Node &key, Node &val) { // a:{b}
 		if ((val.kind == groups or val.kind == patterns or val.kind == objects) and val.length == 1 and
 		    val.name.empty())
 			val = val.last();// singleton
 		val.parent = &key;// todo bug: might get lost!
-		bool deep_copy = val.name.empty() or !debug or key.kind==reference and val.name.empty();
+		bool deep_copy = val.name.empty() or !debug or key.kind == reference and val.name.empty();
 		if (debug) {
 			deep_copy = deep_copy || val.kind == Type::longs and val.name == itoa(val.value.longy);
 			deep_copy = deep_copy || val.kind == Type::bools and (val.name == "True" or val.name == "False");
@@ -883,8 +884,6 @@ private:
 	}
 
 
-
-
 	// ":" is short binding a b:c d == a (b:c) d
 // "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
@@ -908,8 +907,9 @@ private:
 				proceed();
 				continue;
 			}
-			if (ch == close or ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
-				if(close != ' ')// significant
+			if (ch == close or
+			    ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
+				if (close != ' ')// significant
 					proceed();
 				break;
 			}// inner match ok
@@ -922,10 +922,11 @@ private:
 				case ':': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
-					if(current.kind==expressions or key.kind == expressions)
+					if (current.kind == expressions or key.kind == expressions)
 						current.addRaw(Node(ch).setType(operators));
 					Node &val = *value(' ', &key).clone();// applies to WHOLE expression
-					if(current.kind==expressions or key.kind == expressions){// complex expressions are not simple maps
+					if (current.kind == expressions or
+					    key.kind == expressions) {// complex expressions are not simple maps
 						current.addRaw(val);
 					} else {
 						setField(key, val);
@@ -970,7 +971,7 @@ private:
 					if (previous == '\\')continue;// escape
 					if (close != ch) {
 						// open string
-						if(current.last().kind==expressions)
+						if (current.last().kind == expressions)
 							current.last().addSmart(string(ch));
 						else
 							current.addRaw(string(ch).clone());
@@ -985,9 +986,9 @@ private:
 				case '\t':
 				case '\n':
 				case ';':
-				case ',':
-					{
-					if (next==':' or previous == ',' or previous == close or close == '"' or close == '\'' or close == '`') {
+				case ',': {
+					if (next == ':' or previous == ',' or previous == close or close == '"' or close == '\'' or
+					    close == '`') {
 						proceed();
 						continue;
 					}
@@ -1003,15 +1004,15 @@ private:
 				}
 				default: {
 					// a:b c != a:(b c)
-					Node node = expression(close==' ');//word();
-					if(precedence(node)){
+					Node node = expression(close == ' ');//word();
+					if (precedence(node)) {
 						node.kind = operators;
 						current.kind = expressions;
 					}
-					if(node.length>1){
-						for(Node arg:node)current.addRaw(arg);
+					if (node.length > 1) {
+						for (Node arg:node)current.addRaw(arg);
 						current.kind = expressions;
-					} else{
+					} else {
 						current.addRaw(&node);
 					}
 				}

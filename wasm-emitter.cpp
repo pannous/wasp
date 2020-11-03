@@ -43,6 +43,7 @@ bytes concat(bytes a, bytes b, int len_a, int len_b) {
 	bytes c = new char[len_a + len_b + 1];
 	memcpy(c, a, len_a);
 	memcpy(c + len_a, b, len_b);
+	c[len_a + len_b + 1] = 0;
 	return c;
 }
 
@@ -176,7 +177,7 @@ Code encodeString(char *String);
 
 bool eq(const char *op, const char *string);
 
-
+// https://pengowray.github.io/wasm-ops/
 byte opcodes(const char *s, byte kind = 0) {
 	if (kind == 0) { // INT32
 		if (eq(s, "+"))return i32_add;
@@ -201,6 +202,9 @@ byte opcodes(const char *s, byte kind = 0) {
 		if (eq(s, "||"))return i32_or;
 		if (eq(s, "|"))return i32_or;
 	} else {
+
+//		if (eq(s, "not"))return f32_eqz; // no such thing!
+		if (eq(s, "not"))return i64_eqz;
 		if (eq(s, "+"))return f32_add;
 		if (eq(s, "-"))return f32_sub;
 		if (eq(s, "*"))return f32_mul;
@@ -356,17 +360,15 @@ enum NodTypes {
 	internalError,
 };
 
-bytes ieee754(String &value) {
-	todo();
-	return value.data;
-}
 
 bytes ieee754(float num) {
-	todo();
-	byt data[4];
+	char data[4];
 	float *hack = ((float *) data);
 	*hack = num;
-	return reinterpret_cast<bytes>(hack);
+	char *flip = static_cast<char *>(malloc(5));
+	short i = 4;
+	while (i--)flip[3-i] = data[i];
+	return flip;
 }
 //Code emitExpression (Node* nodes);
 
@@ -384,13 +386,22 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 		case reference:
 		case operators: {
 //			if (node.length == 2) {// binary operators, and others
-				code.push(emitExpression(node["lhs"]));// might be empty ok
-				code.push(emitExpression(node["rhs"]));// might be empty ok
+			Node &lhs = node["lhs"];
+			Node &rhs = node["rhs"];
+			const Code &lhs_code = emitExpression(lhs);
+			const Code &rhs_code = emitExpression(rhs);
+			code.push(lhs_code);// might be empty ok
+			code.push(rhs_code);// might be empty ok
 //			}
-			byte opcode = opcodes(node.name);
-			if (opcode > 0)
+			byte opcode = opcodes(node.name, rhs.kind == floats);
+			if (opcode == 0x50) { // hack for missing f32_eqz
+//				0.0 + code.addByte(f32_eq);
+				code.addByte(0xBC);// f32->i32
+				code.addByte(i32_eqz);
+				break;
+			} else if (opcode > 0)
 				code.addByte(opcode);
-			else{
+			else {
 				breakpoint_helper
 				error("unknown opcode / call / symbol: "s + node.name);
 			}
@@ -465,7 +476,7 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			code.addByte(1);
 //			code.push(signedLEB128(1));
 			// the nested logic
-			emitExpression( statement[1]);// BODY
+			emitExpression(statement[1]);// BODY
 			// br $label1
 			code.addByte(br);
 			code.addByte(0);
