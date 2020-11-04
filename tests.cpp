@@ -162,6 +162,11 @@ Node assert_parsesx(const char *mark) {
     printf("%s:%d\n",__FILE__,__LINE__);exit(0);}\
 }
 
+
+#include "testAngle.cpp"
+#include "testWast.cpp"
+#include "testWasm.cpp"
+
 void testModernCpp() {
 	auto αα = 1. * 2;
 	printf("%f", αα);// lol
@@ -346,6 +351,11 @@ void testUTF() {
 	assert_parses("{ç:111}");
 	assert(result["ç"] == 111);
 
+
+	assert_parses("{ç:null}");
+	Node &node1 = result["ç"];
+	assert(node1 == NIL);
+
 	assert_parses("{ç:ø}");
 	Node &node = result["ç"];
 	assert(node == NIL);
@@ -450,6 +460,10 @@ void testAllSamples() {
 
 void testSample() {
 	Node node = Wasp::parseFile("samples/comments.wasp");
+}
+void testNewlineLists(){
+	Node node=parse("  c: \"commas optional\"\n d: \"semicolons optional\"; e: \"trailing comments\"");
+	assert(node['d'] == "semicolons optional");
 }
 
 void testKitchensink() {
@@ -1029,11 +1043,9 @@ void testIndex() {
 	assert_is("[a b c]#2", "b");
 }
 
-void testCall(){
-	assert_is("square 3",9)
-}
 
 void tests() {
+	testNewlineLists();
 	testTruthiness();
 	testIndex();
 	testStackedLambdas();
@@ -1082,19 +1094,16 @@ void tests() {
 	testDeepCopyDebugBugBug2();
 	testDeepCopyDebugBugBug();
 	testMarkMultiDeep();
-
-	skip(testDeepCopyDebugBugBug2()) /*SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!*/
-//#ifndef WASM
-#ifdef APPLE
-	testAllSamples();
-#endif
-//#endif
+//	void testsFailingInWasm() {
+		testKitchensink();
+		testMarkSimpleAssign();
+	#ifdef APPLE
+		testAllSamples();
+	#endif
 	check(NIL.value.longy == 0);// should never be modified
+	log("ALL TESTS PASSED");
 }
 
-#include "testAngle.cpp"
-#include "testWast.cpp"
-#include "testWasm.cpp"
 
 
 void testBUG() {// move to tests() once done!
@@ -1117,12 +1126,14 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-	testAllWasm();
-	exit(43);
-	testCall();
+	testIndex();
+	testKitchensink();
+//	testAllWasm();
+//	exit(43);
 	//	testIfGt();
 //	testIfMath();
 	tests();// make sure all still ok before changes
+	testCall();
 
 	testIf();
 
@@ -1133,6 +1144,7 @@ void testCurrent() { // move to tests() once OK
 //	testParentBUG();
 
 	tests();// make sure all still ok after changes
+	log("CURRENT TESTS PASSED");
 }
 
 // valgrind --track-origins=yes ./wasp
