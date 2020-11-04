@@ -907,10 +907,13 @@ private:
 				proceed();
 				continue;
 			}
-			if (ch == close or
-			    ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
-				if (close != ' ')// significant
+			if (ch == close or ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
+				if (close != ' ') // significant whitespace
 					proceed();
+				if (close == ' ' and current.length == 0 and current.value.data == 0 and current.name.empty()){
+					proceed(); // insignificant whitespace: need more data
+					continue;
+				}
 				break;
 			}// inner match ok
 			if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
@@ -987,17 +990,18 @@ private:
 				case '\n':
 				case ';':
 				case ',': {
-					if (next == ':' or previous == ',' or previous == close or close == '"' or close == '\'' or
-					    close == '`') {
+					if (next == ':' or next == 0 or previous == ',' or previous == close or close == '"' or
+					    close == '\'' or close == '`') {
 						proceed();
 						continue;
 					}
 					Node sub = value(ch, &current);
-//					if(sub.length>1)// bullshit [1 [2 3]] != [1 2 3]
-//						for(Node arg:sub)
-//							current.addRaw(arg);
-//					else
-					current.addRaw(sub);// space is list operator
+					if (sub.empty() and sub.name.empty())break;
+					if (sub.length > 1 and sub.kind == groups)// bullshit (1 (2 3)) != (1 2 3) , OR IS IT here?
+						for (Node arg:sub)
+							current.addRaw(arg);
+					else
+						current.addRaw(sub);// space is list operator
 					break;
 //					proceed();
 //					continue;
