@@ -353,6 +353,37 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	if (op == "!=" or op == "^=" or op == "≠" or op == "is not") {
 		return left != right ? True : False;
 	}
+	if (op == "<" or op == "less" or op == "lt") {
+		if (left.kind == strings or right.kind == strings) return Node(left.string() < right.string());
+		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty < right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty < right.value.longy);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy < right.value.floaty);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.longy < right.value.longy);
+	}
+
+	if (op == "<=" or op == "le" or op == "≤") {
+		if (left.kind == strings or right.kind == strings) return Node(left.string() <= right.string());
+		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty <= right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty <= right.value.longy);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy <= right.value.floaty);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.longy <= right.value.longy);
+	}
+
+	if (op == ">=" or op == "ge" or op == "≥") {
+		if (left.kind == strings or right.kind == strings) return Node(left.string() >= right.string());
+		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty >= right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty >= right.value.longy);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy >= right.value.floaty);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.longy >= right.value.longy);
+	}
+
+	if (op == ">" or op == "gt") {
+		if (left.kind == strings or right.kind == strings) return Node(left.string() > right.string());
+		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty > right.value.floaty);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty > right.value.longy);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy > right.value.floaty);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.longy > right.value.longy);
+	}
 
 	if (op == "+" or op == "add" or op == "plus") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
@@ -455,6 +486,15 @@ float precedence(String name) {
 	if (eq(name, "minus"))return 6;
 	if (eq(name, "-"))return 6;
 
+	if (eq(name, "<"))return 6.5;
+	if (eq(name, "<="))return 6.5;
+	if (eq(name, ">="))return 6.5;
+	if (eq(name, ">"))return 6.5;
+	if (eq(name, "≥"))return 6.5;
+	if (eq(name, "≤"))return 6.5;
+	if (eq(name, "≈"))return 6.5;
+	if (eq(name, "=="))return 6.6;
+
 	if (eq(name, "and"))return 7.1;
 	if (eq(name, "&&"))return 7.1;
 	if (eq(name, "&"))return 7.1;
@@ -462,7 +502,6 @@ float precedence(String name) {
 	if (eq(name, "or"))return 7.2;
 	if (eq(name, "||"))return 7.2;
 
-	if (eq(name, "=="))return 9;
 	if (eq(name, ":"))return 10;// todo:
 	if (eq(name, "="))return 10;
 	if (eq(name, "≠"))return 10;
