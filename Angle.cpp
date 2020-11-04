@@ -47,9 +47,12 @@ int _start() { // for wasm-ld
 
 
 Node &Node::setType(Type type) {
-	if (length < 2 and (type == groups or type == objects)); // skip!
-	else this->kind = type;
-//	if(name.empty()){
+	if(value.data and (type==groups or type==objects))
+		return *this;
+	if(kind==nils and not value.data)
+		return *this;
+	this->kind = type;
+//	if(name.empty() and debug){
 //		if(type==objects)name = object_name;
 //		if(type==groups)name = groups_name;
 //		if(type==patterns)name = patterns_name;
@@ -117,10 +120,14 @@ Node If(Node n) {
 	}
 }
 
+bool isFunction(String op){
+	return op.in(function_list);
+}
+
 Node Node::evaluate(bool expectOperator /* = true*/) {
 	if (length == 0)return constants(*this);
 	if (length == 1) {
-		if (kind == operators)
+		if (kind == operators or isFunction(name))
 			return apply_op(NIL, *this, *children);
 		else return constants(children[0]);
 	}
@@ -162,10 +169,16 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 	if (op->children and right.empty()) {
 		right = op->children[0];
 	}// DONT work around bugs like this!!
-
 //		remove(&op);// fucks up pointers?
-	if (recursive and op)
-		return apply_op(left.flat(), *op, right.flat());
+	if (recursive and op) {
+		right = right.flat();
+		Node left1 = left.flat();
+		Node result = apply_op(left1, *op, right);
+		if(isFunction(op->name) and not left.empty()){
+			result = left.addRaw(result).evaluate();
+		}
+		return result;
+	}
 //	};// while (max > 0);
 	return *this;
 }
@@ -219,6 +232,7 @@ Node do_call(Node left, Node op0, Node right){
 	error("Unregistered function "s + op);
 }
 
+
 /*
 0x2218	8728	RING OPERATOR	∘
  */
@@ -231,8 +245,9 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 //		warn("using param for args");
 //		right = *op0.param;
 //	}
-	left = left.evaluate();
 	String &op = op0.name;
+	if(!isFunction(op)) // 1 + square 2  => "1+" kept dangling
+		left = left.evaluate();
 	bool lazy = (op == "or") and (bool) left;
 	lazy = lazy || (op == "and") and not(bool) left;
 	lazy = lazy || (op == "#");
@@ -243,7 +258,6 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		right = right.evaluate(false);
 
 	if(op.in(function_list))
-		if(op.in(function_list))
 			return do_call(left, op0, right);
 
 	if (op == "not" or op == "¬" or op == "!") {
@@ -316,7 +330,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty + right.value.longy);
 		if (left.kind == longs and right.kind == floats) return Node(left.value.longy + right.value.floaty);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy + right.value.longy);
-//		if(left.type==arrays …
+		todo(op + " operator NOT defined for types %s and %s "s % typeName(left.kind) % typeName(right.kind));
 	}
 
 	// todo: 2 * -x
@@ -339,7 +353,6 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		if (left.kind == longs and right.kind == floats) return Node(left.value.longy * right.value.floaty);
 		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty * right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy * right.value.longy);
-		todo(op + " operator NOT defined for types %s and %s "s % typeName(left.kind) % typeName(right.kind));
 //		if (right.type == numbers) return Node(left.value.number * right.value.number);
 	}
 	if (op == "=" or op == ":=" or op == ":") {
@@ -358,7 +371,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 //		kind=Type::function; // functor same concept, different arguments
 		// careful, functions take arguments, functors take bodies if(1,2,3)!=if{1}{2}{3}
 	}
-	todo(op + " is NOT a builtin operator ");
+	todo(op + " operator NOT defined for types %s and %s "s % typeName(left.kind) % typeName(right.kind));
 	return NIL;
 //	log("NO builtin operator "+op0+" calling…")
 //	return call(left, op0, right);
@@ -435,7 +448,7 @@ float precedence(String name) {
 
 float precedence(Node &operater) {
 	String &name = operater.name;
-	if (operater == NIL)return 0;
+//	if (operater == NIL)return 0; error prone
 	if (operater.kind == floats)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (name.empty())return 0;// no precedence
 	if (operater.kind == strings)return 0;// and name.empty()

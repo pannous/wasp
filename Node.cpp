@@ -262,8 +262,8 @@ bool Node::operator==(Node &other) {
 	if (this == &other)return true;// same pointer!
 	if (isNil() and other.isNil())
 		return true;
-//	if (isEmpty() and other.isEmpty()) // todo: THIS MIGHT NOT BE ENOUGH!!! "false and false" != "and false"
-//		return true;
+	if (isEmpty() and other.isEmpty()) // todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
+		return true;
 	if (name == NIL.name or name == False.name or name == "")
 		if (other.name == NIL.name or other.name == False.name or other.name == "")
 			return true;// TODO: SHOULD already BE SAME by engine!
@@ -391,7 +391,7 @@ void Node::addRaw(Node *node) {
 	node->parent = this;
 }
 
-void Node::addRaw(Node &node) {
+Node& Node::addRaw(Node &node) {
 	if (length >= capacity - 1)
 		error("Out of node Memory");
 	if (lastChild >= maxNodes)
@@ -401,6 +401,7 @@ void Node::addRaw(Node &node) {
 		children[length - 1].next = &children[length];
 	children[length++] = node;
 	node.parent = this;
+	return *this;
 }
 
 void Node::add(Node *node, bool flatten) { // flatten AFTER construction!

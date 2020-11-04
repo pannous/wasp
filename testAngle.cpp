@@ -18,6 +18,19 @@ void testOperatorBinding() {
 	assert_ast("a and b", "and(a,b)");
 }
 
+void testCall(){
+	assert_is("square(3)",9)
+	assert_is("square 3",9)
+	assert_is("square(1+2)",9)
+	assert_is("square 1+2",9)
+	assert_is("1+square(2+3)",26)
+	assert_is("1+square 2+3",26)
+	assert_is("1 + square 1+2",10)
+	skip(
+	assert_is("square{i:3}",9) //todo: match arguments!
+			)
+}
+
 void testIf() {
 	assert_eval("if(0):{3}", false);
 	assert_eval("if(2):{3}", 3);
@@ -232,6 +245,7 @@ void testIfGt() {
 
 void testAllAngle() {
 	testIf();
+	testCall();
 //	testFunctionParams();
 }
 
