@@ -24,7 +24,7 @@ Node result;
 
 bool assert_equals_x(String a, String b, char *context = "") {
 	if (a == b)
-		printf("OK %s==%s in %s\n", a.data , b.data , context);
+		printf("OK %s==%s in %s\n", a.data, b.data, context);
 	else printf("FAILED assert_equals!\n %s should be %s in %s\n"s % a % b % context);
 	return a == b;
 }
@@ -32,7 +32,7 @@ bool assert_equals_x(String a, String b, char *context = "") {
 bool assert_equals_x(Node &a, char *b, char *context = "") {
 	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
 //	else printf("OK %s==%s in %s\n"s % a.name % b % context);
-	else printf("OK %d==%s in %s\n", a.value.longy , b , context);
+	else printf("OK %d==%s in %s\n", a.value.longy, b, context);
 
 	return a == b;
 }
@@ -40,7 +40,7 @@ bool assert_equals_x(Node &a, char *b, char *context = "") {
 bool assert_equals_x(Node &a, double b, char *context = "") {
 	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"s % a.name % b % context);
 //	else printf("OK %f==%f in %s\n"s % a.value.floaty % b % context);
-	else printf("OK %d==%d in %s\n", a.value.longy , b , context);
+	else printf("OK %d==%d in %s\n", a.value.longy, b, context);
 
 	return a == b;
 }
@@ -48,7 +48,7 @@ bool assert_equals_x(Node &a, double b, char *context = "") {
 bool assert_equals_x(Node &a, long b, char *context = "") {
 	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"s % a % b % context);
 //	else printf("OK %d==%d in %s\n"s % a.value.longy % b % context);// Uninitialised value was created by a stack allocation
-	else printf("OK %d==%d in %s\n", a.value.longy , b , context);
+	else printf("OK %d==%d in %s\n", a.value.longy, b, context);
 	return a == b;
 }
 
@@ -57,7 +57,7 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 	if (name != b and b != a.value.string)
 		printf("FAILED assert_equals! %s should be %s in %s\n"s % name % b % context);
 //	else printf("OK %s==%s in %s\n"s % a.name % b % context);
-	else printf("OK %s==%s in %s\n", name.data, b.data , context);
+	else printf("OK %s==%s in %s\n", name.data, b.data, context);
 
 	return b == name or a == b;
 }
@@ -67,7 +67,7 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 //	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
 	if (a == b)
 //		printf("OK %s==%s in %s\n"s % a % b % context);
-	printf("OK %s==%s in %s\n", a , b , context);
+		printf("OK %s==%s in %s\n", a, b, context);
 	else
 		printf("FAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
 	return a == b;
@@ -82,7 +82,7 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 bool assert_equals_x(long a, long b, char *context) {
 	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
 //	else printf("OK %d==%d in %s\n"s % a % b % context);
-	printf("OK %d==%d in %s\n", a , b , context);
+	printf("OK %d==%d in %s\n", a, b, context);
 	return a == b;
 }
 
@@ -172,12 +172,20 @@ void testModernCpp() {
 	printf("%f", αα);// lol
 }
 
+void testDeepCopyBug() {
+	const char *source = "{c:{d:123}}";
+	assert_parses(source);
+	check(result["d"] == 123);
+}
+
 void testDeepCopyDebugBugBug() {
+	testDeepCopyBug();
 	const char *source = "{deep{a:3,b:4,c:{d:true}}}";
 	assert_parses(source);
 	check(result.name == "deep");
 	result.log();
-	Node &node = result["deep"]['c']['d'];
+	Node &c = result["deep"]['c'];
+	Node &node = c['d'];
 	assert_equals(node.value.longy, (long) 1);
 	assert_equals(node, (long) 1);
 }
@@ -351,15 +359,6 @@ void testUTF() {
 	assert_parses("{ç:111}");
 	assert(result["ç"] == 111);
 
-
-	assert_parses("{ç:null}");
-	Node &node1 = result["ç"];
-	assert(node1 == NIL);
-
-	assert_parses("{ç:ø}");
-	Node &node = result["ç"];
-	assert(node == NIL);
-
 	assert_parses("ç='☺'");
 	assert(eval("ç='☺'") == "☺");
 
@@ -461,8 +460,9 @@ void testAllSamples() {
 void testSample() {
 	Node node = Wasp::parseFile("samples/comments.wasp");
 }
-void testNewlineLists(){
-	Node node=parse("  c: \"commas optional\"\n d: \"semicolons optional\"; e: \"trailing comments\"");
+
+void testNewlineLists() {
+	Node node = parse("  c: \"commas optional\"\n d: \"semicolons optional\"; e: \"trailing comments\"");
 	assert(node['d'] == "semicolons optional");
 }
 
@@ -590,9 +590,9 @@ void testTruthiness() {
 	skip(
 			assert_is("2", true);
 			assert_is("2", True);
-	// Truthiness != equality with 'True' !
-	assert_is("{x:0}", true); // wow falsey so deep?
-	assert_is("[0]", true);  // wow falsey so deep?
+			// Truthiness != equality with 'True' !
+			assert_is("{x:0}", true); // wow falsey so deep?
+			assert_is("[0]", true);  // wow falsey so deep?
 	)
 
 	assert_is("x", false);
@@ -963,6 +963,20 @@ void testString() {
 }
 
 
+void testNilValues() {
+	assert_parses("{a:null}");
+	assert_equals(result["a"], NIL);
+
+	assert_parses("{ç:null}");
+	Node &node1 = result["ç"];
+	assert(node1 == NIL);
+
+	assert_parses("{ç:ø}");
+	Node &node = result["ç"];
+	assert(node == NIL);
+}
+
+
 void testConcatenationBorderCases() {
 	assert_equals(Node(1, 0) + Node(3, 0), Node(1, 3, 0));// ok
 	assert_equals(Node("1", 0, 0) + Node("2", 0, 0), Node("1", "2", 0));
@@ -1092,18 +1106,17 @@ void tests() {
 	testLogic();
 	testLogicEmptySet();
 	testDeepCopyDebugBugBug2();
-	testDeepCopyDebugBugBug();
-	testMarkMultiDeep();
+//	testDeepCopyDebugBugBug();
 //	void testsFailingInWasm() {
-		testKitchensink();
-		testMarkSimpleAssign();
-	#ifdef APPLE
-		testAllSamples();
-	#endif
+	testKitchensink();
+	testMarkSimpleAssign();
+	testMarkMultiDeep();
+#ifdef APPLE
+	testAllSamples();
+#endif
 	check(NIL.value.longy == 0);// should never be modified
 	log("ALL TESTS PASSED");
 }
-
 
 
 void testBUG() {// move to tests() once done!
@@ -1126,6 +1139,17 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+	testIfMath();
+	testMarkMultiDeep();
+	testDeepCopyDebugBugBug2();
+	skip(
+	testDeepCopyDebugBugBug();
+			)
+	assert_is("1 or 0", true);
+	testNilValues();
+	testKitchensink();
+
+
 	testIndex();
 	testKitchensink();
 //	testAllWasm();
@@ -1136,6 +1160,7 @@ void testCurrent() { // move to tests() once OK
 	testCall();
 
 	testIf();
+//	testIfGt();
 
 //	testAngle();
 	todos();// those not passing yet (skip)

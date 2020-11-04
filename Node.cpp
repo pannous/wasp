@@ -387,8 +387,8 @@ void Node::addRaw(Node *node) {
 	if (!children) children = &all[capacity * lastChild++];
 	if (length > 0)
 		children[length - 1].next = &children[length];
-	children[length++] = *node;
 	node->parent = this;
+	children[length++] = *node;
 }
 
 Node& Node::addRaw(Node &node) {
@@ -415,6 +415,8 @@ void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
 	    node->name.empty()) {
 		children = node->children;
 		length = node->length;
+		for(Node& child:*this)
+			child.parent = this;
 		if (kind != groups) kind = node->kind; // todo: keep kind if … ?
 	} else {
 		addRaw(node);
