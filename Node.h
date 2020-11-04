@@ -82,14 +82,14 @@ public:
 	// TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
 //	Node &parent=NIL;
 //	Node &param=NIL;
+
+	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
+	Node *children = nullptr;// LIST, not link. block body content
 	Node *next = 0; // in children list
 
 	// a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms
 //	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
-
-	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
-	Node *children = nullptr;// LIST, not link. block body content
 
 	/* don't mix children with param, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
 	 * conceptual cleanup needed... => DONE?
@@ -260,13 +260,6 @@ public:
 		value.data = pNode[0];
 	}
 
-	explicit operator bool() {// TRUTHINESS operator, implicit in if, while
-//		https://github.com/pannous/angle/wiki/truthiness
-//		if(name=="nil")return false;
-//		if(name=="0")return false;
-		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
-	}
-
 	//	 explicit copy operator not neccessary
 //	Node& operator=(Node val){
 //		this->name = val.name;
@@ -344,7 +337,7 @@ public:
 
 //	void add(Node &node);
 	void addRaw(Node* node);
-	void addRaw(Node& node);
+	Node& addRaw(Node& node);
 
 	void add(Node *node, bool flatten=true);
 
@@ -423,8 +416,17 @@ public:
 
 	Node *has(String s, bool searchMeta = true) const;
 
-// type conversions
-	explicit operator bool() const { return value.longy; }
+
+//		https://github.com/pannous/angle/wiki/truthiness
+//		if(name=="nil")return false;
+//		if(name=="0")return false;
+	explicit operator bool() {// TRUTHINESS operator, implicit in if, while
+		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
+	}
+	// type conversions
+	explicit operator bool() const {
+		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
+	}
 
 	explicit operator int() const { return value.longy; }
 
