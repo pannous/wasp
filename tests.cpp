@@ -1059,6 +1059,8 @@ void testIndex() {
 
 
 void tests() {
+	testNilValues();
+	testCall();
 	testNewlineLists();
 	testTruthiness();
 	testIndex();
@@ -1127,6 +1129,7 @@ void testBUG() {// move to tests() once done!
 void todos() {
 	skip(
 			testDeepCopyDebugBugBug2();// SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!
+			testDeepCopyDebugBugBug();
 			assert_eval("if(0):{3}", false);// 0:3 messy node
 			testNetBase();
 			testBUG();
@@ -1139,35 +1142,18 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+	testIfGt();
 	testIfMath();
-	testMarkMultiDeep();
-	testDeepCopyDebugBugBug2();
-	skip(
-	testDeepCopyDebugBugBug();
-			)
-	assert_is("1 or 0", true);
-	testNilValues();
-	testKitchensink();
 
+	tests();// make sure all still ok before changes
 
-	testIndex();
-	testKitchensink();
 //	testAllWasm();
 //	exit(43);
-	//	testIfGt();
-//	testIfMath();
-	tests();// make sure all still ok before changes
-	testCall();
 
-	testIf();
-//	testIfGt();
-
-//	testAngle();
+	testAngle();
 	todos();// those not passing yet (skip)
-	//	testAngle();
 //	testBUG();
 //	testParentBUG();
-
 	tests();// make sure all still ok after changes
 	log("CURRENT TESTS PASSED");
 }
