@@ -13,8 +13,9 @@ bool recursive = true;// whats that?
 
 
 
-String functor_list[] = {"if", "while",0};// MUST END WITH 0, else BUG
-String function_list[] = {"square","log", "puts", "print", "printf", "println", "logi","logf","log_f32","logi64","logx","logc",0};// MUST END WITH 0, else BUG
+String functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
+String function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
+                          "logx", "logc", 0};// MUST END WITH 0, else BUG
 
 int main4(int argp, char **argv) {
 #ifdef register_global_signal_exception_handler
@@ -47,9 +48,9 @@ int _start() { // for wasm-ld
 
 
 Node &Node::setType(Type type) {
-	if(value.data and (type==groups or type==objects))
+	if (value.data and (type == groups or type == objects))
 		return *this;
-	if(kind==nils and not value.data)
+	if (kind == nils and not value.data)
 		return *this;
 	this->kind = type;
 //	if(name.empty() and debug){
@@ -89,14 +90,36 @@ Node If(Node n) {
 		error("no if block given");
 	Node &condition = n.children[0];
 	Node then = n[1];
-	if (n.has(":")) {
-		condition = condition.evaluate();
-		then = n.from(":");
-		if (n.has("else"))then = then.to("else");
+	if(n.has("then")){
+		condition = n.to("then");
+		then = n.from("then");
 	}
+
+	if (condition.value.data and !condition.next)
+		then=condition.values();
+	if (condition.next and condition.next->name == "else")
+		then=condition.values();
+
+	// todo: UNMESS how?
+	if (n.has(":") /*before else: */) {
+		condition = n.to(":");
+		if(condition.has("else"))
+			condition = condition.to("else");// shouldn't happen?
+		then=n.from(":");
+	}
+	else if (condition.has(":") ) {// as child
+		then = condition.from(":");
+		condition = condition.evaluate();
+	}
+	if(then.has("then"))
+		then=n.from("then");
+	if (then.has("else"))
+		then = then.to("else");
 //	if(condition.name=="condition")
 //		condition = condition.values();
-	bool condition_fulfilled = (bool) eval(condition);
+
+	Node condit = condition.evaluate();
+	bool condition_fulfilled = (bool) condit;
 	if (condition.kind == floats or condition.kind == longs)
 		condition_fulfilled = condition.name.empty() and condition.value.data or condition.name != "0";
 	else if (condition.value.data and condition.kind == objects) // or ...
@@ -107,8 +130,6 @@ Node If(Node n) {
 				return eval(then.values());
 			return eval(n[2]);
 		}
-		if (condition.value.data and !condition.next or condition.next->name == "else")
-			return eval(condition.values());
 		return eval(then);
 	} else {
 		if (n.has("else"))
@@ -120,9 +141,10 @@ Node If(Node n) {
 	}
 }
 
-bool isFunction(String op){
+bool isFunction(String op) {
 	return op.in(function_list);
 }
+
 
 Node Node::evaluate(bool expectOperator /* = true*/) {
 	if (length == 0)return constants(*this);
@@ -143,22 +165,27 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 //	if (type != expression and type != keyNode)
 //		return *this;
 	float max = 0; // do{
+	float min = 999999;
 	Node right;
 	Node left;
 	for (Node &node : *this) {// foreach
 		float p = precedence(node);
 		if (p > max) max = p;
-		node.log();
+		if (p < min and p != 0) min = p;
 	}
 	if (max == 0) {
 //		breakpoint_helper // ok need not always have known operators
-		if (!name.empty() or length>1)
+		if (!name.empty() or length > 1)
 			warn(String("could not find operator: ") + serialize());
 		return *this;
 	}
 	Node *op = 0;
+	Node *inner = 0;// NIL;
+	Node *prev = 0;
 	for (Node &n : *this) {
 		float p = precedence(n);
+		if (p == min and not inner) inner = &n;
+		else if (not inner) prev = &n;
 		if (p == max and not op) {
 			op = &n;
 		} else if (op)
@@ -166,6 +193,9 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		else
 			left.addRaw(n);
 	}
+//	const Node &arg = inner.next ? *inner.next : NIL;
+//	replace ... apply_op(prev, inner, arg);
+
 	if (op->children and right.empty()) {
 		right = op->children[0];
 	}// DONT work around bugs like this!!
@@ -174,7 +204,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		right = right.flat();
 		Node left1 = left.flat();
 		Node result = apply_op(left1, *op, right);
-		if(isFunction(op->name) and not left.empty()){
+		if (isFunction(op->name) and not left.empty()) {
 			result = left.addRaw(result).evaluate();
 		}
 		return result;
@@ -213,11 +243,11 @@ Node groupOperators(Node expression) {
 		}
 	}
 	for (Node op : expression) {
-		if(op.name.in(function_list)){
+		if (op.name.in(function_list)) {
 			op.kind = function;
-			if(!op.children){
-				Node *n=&op;
-				while(n=n->next)
+			if (!op.children) {
+				Node *n = &op;
+				while (n = n->next)
 					op.addRaw(n);
 			}
 			return op;
@@ -226,9 +256,9 @@ Node groupOperators(Node expression) {
 	return expression;// no op
 }
 
-Node do_call(Node left, Node op0, Node right){
+Node do_call(Node left, Node op0, Node right) {
 	String op = op0.name;
-	if(op=="square")return square(right.numbere());
+	if (op == "square")return square(right.numbere());
 	error("Unregistered function "s + op);
 }
 
@@ -246,7 +276,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 //		right = *op0.param;
 //	}
 	String &op = op0.name;
-	if(!isFunction(op)) // 1 + square 2  => "1+" kept dangling
+	if (!isFunction(op)) // 1 + square 2  => "1+" kept dangling
 		left = left.evaluate();
 	bool lazy = (op == "or") and (bool) left;
 	lazy = lazy || (op == "and") and not(bool) left;
@@ -257,8 +287,8 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	if (!lazy)
 		right = right.evaluate(false);
 
-	if(op.in(function_list))
-			return do_call(left, op0, right);
+	if (op.in(function_list))
+		return do_call(left, op0, right);
 
 	if (op == "not" or op == "¬" or op == "!") {
 		// todo: what if left is present?
@@ -400,7 +430,6 @@ Node emit(String code) {
 }
 
 
-
 float precedence(String name) {
 	// like c++ here HIGHER up == lower value == more important
 //	switch (node.name) nope
@@ -408,12 +437,7 @@ float precedence(String name) {
 	if (eq(name, "not"))return 1;
 	if (eq(name, "¬"))return 1;
 	if (eq(name, "!"))return 1;
-	if (eq(name, "and"))return 1.1;
-	if (eq(name, "&&"))return 1.1;
-	if (eq(name, "&"))return 1.1;
-	if (eq(name, "xor"))return 1.2;
-	if (eq(name, "or"))return 1.2;
-	if (eq(name, "||"))return 1.2;
+
 
 	if (eq(name, "√"))return 3;
 	if (eq(name, "#"))return 3;// count
@@ -430,6 +454,14 @@ float precedence(String name) {
 	if (eq(name, "+"))return 6;
 	if (eq(name, "minus"))return 6;
 	if (eq(name, "-"))return 6;
+
+	if (eq(name, "and"))return 7.1;
+	if (eq(name, "&&"))return 7.1;
+	if (eq(name, "&"))return 7.1;
+	if (eq(name, "xor"))return 7.2;
+	if (eq(name, "or"))return 7.2;
+	if (eq(name, "||"))return 7.2;
+
 	if (eq(name, "=="))return 9;
 	if (eq(name, ":"))return 10;// todo:
 	if (eq(name, "="))return 10;
@@ -438,9 +470,9 @@ float precedence(String name) {
 	if (eq(name, ":="))return 11;
 	if (eq(name, "equals"))return 10;
 	if (eq(name, "equal"))return 10;
-	if (eq(name, "if"))return 12.8;
 	if (eq(name, "else"))return 11.09;
 	if (eq(name, "then"))return 11.15;
+	if (eq(name, "if"))return 12.8;
 	if (name.in(function_list) or name.in(functor_list))
 		return 1000;// function calls outmost operation todo? add 3*square 4+1
 	return 0;// no precedence

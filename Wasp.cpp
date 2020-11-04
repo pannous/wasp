@@ -925,11 +925,10 @@ private:
 				case ':': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
-					if (current.kind == expressions or key.kind == expressions)
-						current.addRaw(Node(ch).setType(operators));
+					bool add_raw = current.kind == expressions or key.kind == expressions or (current.last().kind == groups and current.length>1);
+					if (add_raw) current.addRaw(Node(ch).setType(operators));
 					Node &val = *value(' ', &key).clone();// applies to WHOLE expression
-					if (current.kind == expressions or
-					    key.kind == expressions) {// complex expressions are not simple maps
+					if (add_raw) {  // complex expressions are not simple maps
 						current.addRaw(val);
 					} else {
 						setField(key, val);
@@ -959,10 +958,13 @@ private:
 				case '-':
 				case '+':
 				case '.':
-					if (isDigit(next))
-						return numbero();
-					else
-						return word();
+					if (isDigit(next) and previous==' ')
+						current.addSmart(numbero());// (2+2) != (2 +2) !!!
+					else {
+						current.kind = expressions;
+						current.addSmart(any_operator());
+					}
+					break;
 				case '/':
 					if (next == '/' or next == '*') {
 						comment();
