@@ -23,7 +23,7 @@ void testMathPrimitives() {
 }
 
 void testFloatOperators() {
-	assert_equals(eval("42.0/2.0"), 21)
+//	assert_equals(eval("42.0/2.0"), 21)
 	assert_equals(emit("42.0/2.0"), 21)
 	assert_equals(emit("42.0*2.0"), 84)
 	assert_equals(emit("42.0+2.0"), 44)
@@ -207,8 +207,9 @@ void testAllWasm() {
 			assert_equals(emit("x*=14"), 1)
 			assert_equals(emit("x=15;x>=14"), 1)
 	)
+	assert_emit("logf 3.1",(long)3);
 	assert_emit("logi 3",(long)0);
-//	assert_emit("square 3",9);
+	assert_emit("square 3",9);
 	testFloatOperators();
 	testWasmLogicUnary();
 	testConstReturn();
