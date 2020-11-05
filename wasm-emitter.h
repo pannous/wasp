@@ -178,7 +178,14 @@ enum Section {
 // https://webassembly.github.io/spec/core/binary/types.html
 enum Valtype {
 	i32 = 0x7f,
-	f32 = 0x7d
+	f32 = 0x7d,
+	i64 = 0x7E,
+	f64 = 0x7C,
+	int32 = 0x7f,
+	float32 = 0x7d,
+	int64 = 0x7E,
+	float64 = 0x7C,
+	voids = 0x00, // internal only for return type
 };
 
 // https://webassembly.github.io/spec/core/binary/types.html#binary-blocktype
@@ -199,6 +206,7 @@ enum Opcodes {
 	end_block = 0x0b,
 	return_block = 0x0f,
 	call = 0x10,
+	drop = 0x1a,
 	get_local = 0x20,
 	set_local = 0x21,
 	i32_store_8 = 0x3a,
@@ -239,7 +247,9 @@ enum Opcodes {
 	f32_sub = 0x93,
 	f32_mul = 0x94,
 	f32_div = 0x95,
-	i32_trunc_f32_s = 0xa8
+	i32_trunc_f32_s = 0xa8,
+	i32_reinterpret_f32 = 0xbc
+
 };
 //char start_function=0x00;//unreachable strange convention
 extern char unreachable;//=0x00;//unreachable strange convention

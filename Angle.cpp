@@ -446,7 +446,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy * right.value.longy);
 //		if (right.type == numbers) return Node(left.value.number * right.value.number);
 	}
-	if (op == "=" or op == ":=" or op == ":") {
+	if (op == "=" or op == ":=" or op == ":" or op == "⇒" or op == "=>") {
 		warn("proper '=' operator");
 		left.kind = reference;
 		if (right.value.data) {// and ...
@@ -498,6 +498,7 @@ float precedence(String name) {
 	if (eq(name, "."))return 0.5;
 	if (eq(name, "of"))return 0.6;
 	if (eq(name, "in"))return 0.7;
+	if (eq(name, "from"))return 0.8;
 
 	if (eq(name, "not"))return 1;
 	if (eq(name, "¬"))return 1;
@@ -536,7 +537,9 @@ float precedence(String name) {
 	if (eq(name, "or"))return 7.2;
 	if (eq(name, "||"))return 7.2;
 
-	if (eq(name, ":"))return 10;// todo:
+	if (eq(name, ":"))return 9;// todo:
+	if (eq(name, "⇒"))return 9;// todo
+	if (eq(name, "=>"))return 9;// todo:
 	if (eq(name, "="))return 10;
 	if (eq(name, "≠"))return 10;
 	if (eq(name, "!="))return 10;

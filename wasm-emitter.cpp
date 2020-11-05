@@ -372,10 +372,12 @@ bytes ieee754(float num) {
 }
 //Code emitExpression (Node* nodes);
 
-Code emitBlock(Node node);
+Code emitBlock(Node node, Valtype returns);
 
 Code emitExpression(Node *node)__attribute__((warn_unused_result));
 //Code emitExpression(Node *node)__attribute__((error_unused_result));
+
+Valtype last_type;// autocast if not int
 
 Code emitExpression(Node node) { // expression, statement or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
@@ -383,14 +385,13 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 	Code code;
 	Node statement = node;
 	int index = localIndexForSymbol(node.name);
-
 	switch (node.kind) {
 		case function:
 			for (Node arg : node) {
 				code.push(emitExpression(arg));
 			};
 			code.addByte(call);
-			code.addByte((index + 1));// ok till index>127?
+			code.addByte(index);// ok till index>127?
 //					code.opcode(unsignedLEB128(index + 1));
 			break;
 		case reference:
@@ -446,6 +447,7 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case floats:
+			last_type = f32;// auto cast return!
 			code.addByte((byte) f32_auto);
 			code.push(ieee754(node.value.floaty), 4);
 			break;
@@ -717,6 +719,9 @@ Code &emit(Program ast) {
 	Code squareFunctionImport = encodeString("env") + encodeString("square").addByte( func_export).addByte(3);
 	int import_count = 2;
 	auto importSection = createSection(import, Code(import_count) + printFunctionImport+squareFunctionImport);
+	symbols.insert_or_assign("logi", 0);// import!
+	symbols.insert_or_assign("square", 1);
+
 //	auto importSection = createSection(import, encodeVector(printFunctionImport));//+memoryImport
 
 	// the export section is a vector of exported functions
@@ -759,7 +764,7 @@ Code &emit(Program ast) {
 
 //	Code function1 = codeBlock(code_data);
 //	Code da_code2=Code(code_data,sizeof(code_data));
-	Code da_code = emitBlock(ast.main);
+	Code da_code = emitBlock(ast.main,Valtype::i32);
 //	check(da_code2 == da_code);
 	Code da_code1 = Code(code_data1, sizeof(code_data1));
 
@@ -768,8 +773,7 @@ Code &emit(Program ast) {
 	                                 Code(function_count) + encodeVector(da_code) + encodeVector(da_code1));
 	symbols.insert_or_assign("main", import_count);
 	symbols.insert_or_assign("rem", import_count+1);// NOP code_data1
-	symbols.insert_or_assign("logi", 0);// import!
-	symbols.insert_or_assign("square", 1);
+
 
 
 	auto customSection = createSection(custom, encodeVector(Code(types_of_functions, 3)));
@@ -781,7 +785,7 @@ Code &emit(Program ast) {
 	return code.clone();
 }
 
-Code emitBlock(Node node) {
+Code emitBlock(Node node,Valtype returns) {
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	Code(code_data,sizeof(code_data)); // todo : memcopy, else stack value is LOST
@@ -790,6 +794,17 @@ Code emitBlock(Node node) {
 	block.add(locals_count);
 	Code inner_code_data = emitExpression(node);
 	block.push(inner_code_data);
+	if(returns!=last_type){
+		if(returns==Valtype::voids)// and dangling
+			block.addByte(drop);
+		if(returns==Valtype::i32 and last_type==Valtype::f32)
+			block.addByte(i32_reinterpret_f32);
+		if(returns==Valtype::i32 and last_type==Valtype::voids)
+			block.addByte(i32_const).addByte(0);// hack? return 0/false by default. ok? see python!
+
+//		if(returns==Valtype::f32)…
+	}
+
 //if not return_block
 	block.addByte(return_block);
 	block.addByte(end_block);
