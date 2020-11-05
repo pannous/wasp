@@ -210,6 +210,7 @@ void err(chars error) {
 void error(chars error) {
 	printf("ERROR\n");
 	printf(error);
+	printf("\n");
 	raise(error);
 //	err(error);
 }
