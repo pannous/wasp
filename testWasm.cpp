@@ -22,6 +22,20 @@ void testMathPrimitives() {
 	assert_equals(emit("-2000000000"), -2000000000)
 }
 
+void testFloatOperators() {
+	assert_equals(eval("42.0/2.0"), 21)
+	assert_equals(emit("42.0/2.0"), 21)
+	assert_equals(emit("42.0*2.0"), 84)
+	assert_equals(emit("42.0+2.0"), 44)
+	assert_equals(emit("42.0-2.0"), 40)
+	assert_equals(emit("3.0+3.0*3.0"), 12)
+	assert_equals(emit("3.0+3.0*3.0>3.0+3.0+3.0"), true)
+	assert_equals(emit("3.0+3.0*3.0<3.0*3.0*3.0"), true)
+	assert_equals(emit("3.0+3.0*3.0<3.0+3.0+3.0"), false)
+	assert_equals(emit("3.0+3.0*3.0>3.0*3.0*3.0"), false)
+	assert_equals(emit("3.0+3.0+3.0<3.0+3.0*3.0"), true)
+	assert_equals(emit("3.0*3.0*3.0>3.0+3.0*3.0"), true)
+}
 void testMathOperators() {
 //	assert_equals(emit("42 2 *"), 84)
 	assert_equals(eval("42/2"), 21)
@@ -135,7 +149,6 @@ void testWasmLogic() {
 	assert_emit("false and true", false);
 	assert_emit("true and false", false);
 	assert_emit("true and true", true);
-
 	assert_emit("true or false and false", true);// == true or (false)
 
 	assert_emit("false xor true", true);
@@ -191,12 +204,12 @@ void testAllWasm() {
 	skip(
 			testsFailingInWasm();
 			assert_emit("0.0", (long) 0);// can't emit float yet
-			assert_emit("true or false and false", true);// == true or (false)
 			assert_equals(emit("x*=14"), 1)
 			assert_equals(emit("x=15;x>=14"), 1)
 	)
-//	assert_emit("logi 3",(long)0);
-	assert_emit("square 3",9);
+	assert_emit("logi 3",(long)0);
+//	assert_emit("square 3",9);
+	testFloatOperators();
 	testWasmLogicUnary();
 	testConstReturn();
 	testWasmLogic();
