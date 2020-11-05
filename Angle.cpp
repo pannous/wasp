@@ -174,9 +174,10 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		if (p < min and p != 0) min = p;
 	}
 	if (max == 0) {
-//		breakpoint_helper // ok need not always have known operators
-		if (!name.empty() or length > 1)
+		if (!name.empty() or length > 1){
+			breakpoint_helper // ok need not always have known operators
 			warn(String("could not find operator: ") + serialize());
+		}
 		return *this;
 	}
 	Node *op = 0;
@@ -203,7 +204,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 	if (recursive and op) {
 		right = right.flat();
 		Node left1 = left.flat();
-		Node result = apply_op(left1, *op, right);
+		Node result = apply_op(left1, *op, right);// <<<<<<<<<
 		if (isFunction(op->name) and not left.empty()) {
 			result = left.addRaw(result).evaluate();
 		}
@@ -262,6 +263,14 @@ Node do_call(Node left, Node op0, Node right) {
 	error("Unregistered function "s + op);
 }
 
+Node matchPattern(Node object,Node pattern0){
+//	[1 2 3]#1 == 1 == [1 2 3][0]
+	Node pattern=pattern0.evaluate(); // [1 2 3][3-2]==2
+	if(pattern.kind==longs)return object[(int)pattern.numbere()];
+	if(pattern.kind==strings)return object[pattern.value.string];
+// todo proper matches, references...
+	return object[pattern.name];
+}
 
 /*
 0x2218	8728	RING OPERATOR	∘
@@ -280,7 +289,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		left = left.evaluate();
 	bool lazy = (op == "or") and (bool) left;
 	lazy = lazy || (op == "and") and not(bool) left;
-	lazy = lazy || (op == "#");
+	lazy = lazy || (op == "#");// length and index
 	lazy = lazy || (op == "if");
 //	lazy = lazy || arg#n is block
 
@@ -290,14 +299,35 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	if (op.in(function_list))
 		return do_call(left, op0, right);
 
+	if(op0.kind==patterns)
+		return matchPattern(left, op0);
+
+	if(op == "."){
+		return matchPattern(left, right);
+	}
+
+	if(op == "of" or op == "in"){
+		return matchPattern(right,left);
+	}
+
+	if (op == "#" ) {
+		if(left.length==0) // length operator #{a b c} == 3
+			return Node(right.length);// or right["size"] or right["count"]  or right["length"]
+		else{  // index operator [a b c]#2 == b
+			long index = right.value.longy;
+			if(index<=0)error("index<=0 ! Angle index operator # starts from 1. So [a b c]#2 == b. Use [] operator for zero based indexing");
+			if(index>left.length)error("Index out of range: %d > %d !"s%index%left.length);
+			return left.children[index - 1];
+		}
+	}
+
+
 	if (op == "not" or op == "¬" or op == "!") {
 		// todo: what if left is present?
 		Node x = right.evaluate();
 		return x.empty() ? True : False;
 	}
-	if (op == "#" or op == '#') {
-		return Node(right.length);// or right["size"] or right["count"]  or right["length"]
-	}
+
 	if (op == "√") { // why String( on mac?
 		if (right.kind == floats)
 			left.addSmart(Node(sqrt(right.value.floaty)));
@@ -465,6 +495,10 @@ float precedence(String name) {
 	// like c++ here HIGHER up == lower value == more important
 //	switch (node.name) nope
 //		name = operater.value.string;// NO strings are not automatic operators lol WTF
+	if (eq(name, "."))return 0.5;
+	if (eq(name, "of"))return 0.6;
+	if (eq(name, "in"))return 0.7;
+
 	if (eq(name, "not"))return 1;
 	if (eq(name, "¬"))return 1;
 	if (eq(name, "!"))return 1;
@@ -511,7 +545,7 @@ float precedence(String name) {
 	if (eq(name, "equal"))return 10;
 	if (eq(name, "else"))return 11.09;
 	if (eq(name, "then"))return 11.15;
-	if (eq(name, "if"))return 12.8;
+	if (eq(name, "if"))return 100;
 	if (name.in(function_list) or name.in(functor_list))
 		return 1000;// function calls outmost operation todo? add 3*square 4+1
 	return 0;// no precedence
@@ -523,7 +557,16 @@ float precedence(Node &operater) {
 	if (operater.kind == floats)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (name.empty())return 0;// no precedence
 	if (operater.kind == strings)return 0;// and name.empty()
-
+//	not yet!
+//	if(operater.kind==patterns)return 123456;// {a:1 b:2}[a]==1 raw/symbolic map access
+//	if(operater.kind==groups)return 12345;// {a:1 b:2+3}(b)"==5  evaluation
+	if(operater.kind==groups or operater.kind==patterns){
+		return precedence("if")*0.999;// needs to be smaller than functor/function calls
+	}
+//		if (!prev or prev->kind!=objects) p=0;
+//		else p=123456; // {a:1 b:2}[a]==1  only works on objects todo and on references
+//	}
 	if (operater.name.in(function_list))return 999;// function call
+
 	return precedence(name);
 }

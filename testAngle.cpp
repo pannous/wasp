@@ -182,6 +182,7 @@ void testIfMath() {
 
 
 void testIfGt() {
+	assert_eval("if(2<4):{3}", 3);
 	assert_eval("1<0 or 3", 3);
 	assert_eval("1<0 else 3", 3);
 	assert_eval("4 or 3", 4);
@@ -205,7 +206,8 @@ void testIfGt() {
 
 	assert_eval("if 0>1 {3} else {4}", 4);
 	assert_eval("if 1<2 : 3 else 4", 3);
-	assert_eval("if(2<4):{3}", 3);
+//	assert_eval("if 3<2 5 else 4", 4);
+
 	assert_eval("if 0>1:3", false);
 	assert_eval("if (2<3) {3} else 4", 3);
 	assert_eval("if(2<4){3} else 4", 3);
@@ -257,10 +259,20 @@ void testIfGt() {
 	)
 }
 
+void testSwitch(){
+//	todo if(1>0) ... innocent groups
+	assert_is("{a:1 b:2}[a]",1)
+	assert_is("{a:1+1 b:2}(a)",2)
+	assert_is("x=a;{a:1 b:2}(x)",1)
+	// functor switch(x,xs)=xs[x] or xs[default]
+}
 
 void testAllAngle() {
 	testIf();
 	testCall();
+	skip(
+	testSwitch();
+			)
 //	testFunctionParams();
 }
 

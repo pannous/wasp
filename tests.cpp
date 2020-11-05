@@ -1055,6 +1055,10 @@ void testIndex() {
 	result.log();
 	check(result.length == 3);
 	assert_is("[a b c]#2", "b");
+	assert_is("{a:1 b:2}[a]",1)
+	assert_is("{a:1 b:2}.a",1)
+	assert_is("a of {a:1 b:2}",1)
+	assert_is("a in {a:1 b:2}",1)
 }
 
 
@@ -1142,6 +1146,7 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+	testIndex();
 	testIfGt();
 	testIfMath();
 
