@@ -82,6 +82,12 @@ public:
 
 	}
 
+	Code& addType(short type) {
+		data = concat(data, type,length);
+		length++;
+		return *this;
+	}
+
 	Code& addByte(byte opcode) {
 		data = concat(data, opcode,length);
 		length++;

@@ -40,7 +40,7 @@ void todo(char *message = "") {
 void memcpy(bytes c, bytes a, int i);
 
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
-	bytes c = new char[len_a + len_b + 1];
+	bytes c = new char[len_a + len_b + 4];
 	memcpy(c, a, len_a);
 	memcpy(c + len_a, b, len_b);
 	c[len_a + len_b + 1] = 0;
@@ -337,15 +337,11 @@ int localIndexForSymbol(String &name) {
 	if (!symbols.contains(name)) {
 		symbols.insert_or_assign(name, symbols.size());
 	}
-	return symbols[name];
-};;
-
-int localIndexForSymbol(char *name) {
-	if (!symbols.contains(name)) {
-		symbols.insert_or_assign(name, symbols.size());
-	}
+//	int* ok=symbols[name];//
+//	if(!ok)error("key can never be 0");
 	return symbols[name];
 };
+
 
 enum NodTypes {
 	numberLiteral,
@@ -367,7 +363,8 @@ bytes ieee754(float num) {
 	*hack = num;
 	char *flip = static_cast<char *>(malloc(5));
 	short i = 4;
-	while (i--)flip[3 - i] = data[i];
+//	while (i--)flip[3 - i] = data[i];
+	while (i--)flip[i] = data[i];// don't flip, just copy to malloc
 	return flip;
 }
 //Code emitExpression (Node* nodes);
@@ -384,15 +381,18 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 	NodTypes type = internalError;// todo: type/kind
 	Code code;
 	Node statement = node;
-	int index = localIndexForSymbol(node.name);
+	symbols.setDefault(-1);
+	int index = symbols[node.name];
 	switch (node.kind) {
 		case function:
+			if(index<0)
+				error("MISSING WASM import/declaration for function %s\n"s% node.name);
 			for (Node arg : node) {
 				code.push(emitExpression(arg));
 			};
 			code.addByte(call);
-			code.addByte(index);// ok till index>127?
-//					code.opcode(unsignedLEB128(index + 1));
+			code.addByte(index);// ok till index>127, then use unsignedLEB128
+			last_type = voids;// todo lookup return type
 			break;
 		case reference:
 		case operators: {
@@ -550,7 +550,7 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 				// compute and cache the setpixel parameters
 				emitExpression(statement["x"]);
 				code.addByte(set_local);
-				code.addByte(localIndexForSymbol("x"));
+				code.addByte(symbols["x"]);
 //					code.opcode(unsignedLEB128(localIndexForSymbol("x")));
 
 				// write
@@ -583,7 +583,7 @@ Code emitExpression(Node *nodes) {
 Code Call(char *symbol) {//},Node* args=0) {
 	Code code;
 	code.addByte(call);
-	int i = localIndexForSymbol(symbol);
+	int i = symbols[symbol];
 //	code.opcode(unsignedLEB128(i),8);
 	code.addByte(i);
 	return Code();
@@ -673,7 +673,7 @@ Code signedLEB128(int n) {
 
 
 Code &emit(Program ast) {
-
+	symbols.clear();
 
 	// Function types are vectors of parameters and return types. Currently
 	// WebAssembly only supports single return values
@@ -695,15 +695,17 @@ Code &emit(Program ast) {
 	// the type section is a vector of function types
 //	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
 //	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
-	char vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/, 0x7F/*int*/};// our main function! todo : be flexible!
-	char iv[] = {0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x00/*return count*/};
+	char vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/, i32};// our main function! todo : be flexible!
+	char iv[] = {0x60/*const type form*/, 0x01/*param count*/, i32, 0x00/*return count*/};
 	char vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
-	char ii[] = {0x60/*const type form*/, 0x01/*param count*/, 0x7F/*int*/, 0x01/*return count*/, 0x7F/*int*/};
-	char iii[] = {0x60/*const type form*/, 0x02/*param count*/, 0x7F/*int*/, 0x7F/*int*/, 0x01/*return count*/, 0x7F/*int*/};
+	char ii[] = {0x60/*const type form*/, 0x01/*param count*/, i32, 0x01/*return count*/, i32};
+	char iii[] = {0x60/*const type form*/, 0x02/*param count*/, i32, i32, 0x01/*return count*/, i32};
+	char fv[] = {0x60/*const type form*/, 0x01/*param count*/, f32, 0x00/*return count*/};
+
 	int typeCount = 5;
-	const Code &type_data = encodeVector(
-			Code(typeCount) + Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv))+ Code(ii, sizeof(ii))+ Code(iii, sizeof(iii)));
-	auto typeSection = Code(type, type_data);
+	const Code &type_data = Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv)) + Code(ii, sizeof(ii)) +
+	                        Code(fv, sizeof(fv)); //			+ Code(iii, sizeof(iii));
+	auto typeSection = Code(type, encodeVector(Code(typeCount) + type_data));
 
 	auto lambdo = [](String val, int index) { return index + 1; /* type index */};
 //	char func_types[]={0x01,0x00};
@@ -715,12 +717,14 @@ Code &emit(Program ast) {
 			encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
 
 	// the import section is a vector of imported functions
-	Code printFunctionImport = encodeString("env") + encodeString("logi").addByte( func_export).addByte(1);
-	Code squareFunctionImport = encodeString("env") + encodeString("square").addByte( func_export).addByte(3);
-	int import_count = 2;
-	auto importSection = createSection(import, Code(import_count) + printFunctionImport+squareFunctionImport);
-	symbols.insert_or_assign("logi", 0);// import!
-	symbols.insert_or_assign("square", 1);
+	Code logi_iv = encodeString("env") + encodeString("logi").addByte(func_export).addType(1);
+	Code logf_fv = encodeString("env") + encodeString("logf").addByte( func_export).addType(4);
+	Code square_ii = encodeString("env") + encodeString("square").addByte(func_export).addType(3);
+	int import_count = 3;
+	auto importSection = createSection(import, Code(import_count) + logi_iv + logf_fv + square_ii);
+	symbols.insert_or_assign("logi", symbols.size());// import!
+	symbols.insert_or_assign("logf", symbols.size());// import!
+	symbols.insert_or_assign("square", symbols.size());
 
 //	auto importSection = createSection(import, encodeVector(printFunctionImport));//+memoryImport
 
@@ -795,13 +799,12 @@ Code emitBlock(Node node,Valtype returns) {
 	Code inner_code_data = emitExpression(node);
 	block.push(inner_code_data);
 	if(returns!=last_type){
-		if(returns==Valtype::voids)// and dangling
+		if(returns==Valtype::voids and last_type!=Valtype::voids)
 			block.addByte(drop);
 		if(returns==Valtype::i32 and last_type==Valtype::f32)
 			block.addByte(i32_reinterpret_f32);
 		if(returns==Valtype::i32 and last_type==Valtype::voids)
 			block.addByte(i32_const).addByte(0);// hack? return 0/false by default. ok? see python!
-
 //		if(returns==Valtype::f32)…
 	}
 
