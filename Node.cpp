@@ -260,6 +260,16 @@ bool Node::operator==(Node &other) {
 	if (other.kind == errors)return this->kind == errors;
 
 	if (this == &other)return true;// same pointer!
+
+	if (kind == longs and other.kind==longs)
+		return value.longy == other.value.longy;
+	if (kind == longs and other.kind==floats)
+		return value.longy == other.value.floaty;
+	if (kind == floats and other.kind==floats)
+		return value.floaty == other.value.floaty;
+	if (kind == floats and other.kind==longs)
+		return value.floaty == other.value.longy;
+
 	if (isNil() and other.isNil())
 		return true;
 	if (isEmpty() and other.isEmpty()) // todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
@@ -283,12 +293,8 @@ bool Node::operator==(Node &other) {
 //	CompileError: WebAssembly.Module(): Compiling function #53:"Node::operator==(Node&)" failed: expected 1 elements on the stack for fallthru to @3, found 0 @+5465
 //	or (other != NIL and other != False) or
 
-	if (kind == longs)
-		return value.longy == other.value.longy;
 	if (kind == strings)
 		return value.string == other.value.string or value.string == other.name;// !? match by name??
-	if (kind == floats)
-		return value.floaty == other.value.floaty;
 
 
 	if (length != other.length)
