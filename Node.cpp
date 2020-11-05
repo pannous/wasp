@@ -58,7 +58,7 @@ Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
 Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent
 
-Node ERROR = Node("ERROR").setType(errors);// ≠ NIL
+Node ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
 Node True = Node("True").setType(bools).setValue(true);
 Node False = Node("False").setType(bools);
 
