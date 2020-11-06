@@ -1011,7 +1011,7 @@ private:
 				default: {
 					// a:b c != a:(b c)
 					Node node = expression(close == ' ');//word();
-					if (precedence(node)) {
+					if (precedence(node) and ch!=':') {
 						node.kind = operators;
 						current.kind = expressions;
 					}
