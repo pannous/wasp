@@ -431,21 +431,18 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		if (left.kind == floats and right.kind == longs) return Node(left.value.real - right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy - right.value.longy);
 	}
-	if (op == "/" or op == "div" or op == "divide") { // "by"
+
+	if (op == "%" or op == "rem" or op == "modulo") {
+		if (left.kind == longs and right.kind == longs) return Node(left.value.longy % right.value.longy);
+	}
+
+	if (op == "/" or op == "÷" or op == "div" or op == "divide") { // "by"
 		if (left.kind == floats and right.kind == floats) return Node(left.value.real / right.value.real);
 		if (left.kind == longs and right.kind == floats) return Node(left.value.longy / right.value.real);
 		if (left.kind == floats and right.kind == longs) return Node(left.value.real / right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy / right.value.longy);
 	}
 
-	if (op == "*" or op == "⋆" or op == "×" or op == "∗" or op == "times") {// ⊗
-		if (left.kind == strings or right.kind == strings) return Node(left.string().times(right.value.longy));
-		if (left.kind == floats and right.kind == floats) return Node(left.value.real * right.value.real);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy * right.value.real);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.real * right.value.longy);
-		if (left.kind == longs and right.kind == longs) return Node(left.value.longy * right.value.longy);
-//		if (right.type == numbers) return Node(left.value.number * right.value.number);
-	}
 	if (op == "=" or op == ":=" or op == ":" or op == "⇒" or op == "=>") {
 		warn("proper '=' operator");
 		left.kind = reference;
@@ -513,13 +510,20 @@ float precedence(String name) {
 	if (eq(name, "-"))return 3;// 1 + -x
 
 	if (eq(name, "/"))return 4.9;
+	if (eq(name, "÷"))return 4.9;
+
+
 	if (eq(name, "times"))return 5;
 	if (eq(name, "*"))return 5;
+	if (eq(name, "×"))return 5;
 	if (eq(name, "add"))return 6;
 	if (eq(name, "plus"))return 6;
 	if (eq(name, "+"))return 6;
 	if (eq(name, "minus"))return 6;
 	if (eq(name, "-"))return 6;
+	if (eq(name, "%"))return 6.1;
+	if (eq(name, "rem"))return 6.1;
+	if (eq(name, "modulo"))return 6.1;
 
 	if (eq(name, "<"))return 6.5;
 	if (eq(name, "<="))return 6.5;
