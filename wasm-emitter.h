@@ -212,9 +212,11 @@ enum Opcodes {
 	end_block = 0x0b,
 	return_block = 0x0f,
 	call = 0x10,
-	drop = 0x1a,
-	get_local = 0x20,
-	set_local = 0x21,
+	drop = 0x1a, // pop stack
+	get_local = 0x20,// get to stack
+	set_local = 0x21,// set and pop
+	tee_local = 0x22,// set and leave on stack
+
 	i32_store_8 = 0x3a,
 	i32_auto = (byte)0x41,
 	i32_const = 0x41,
