@@ -360,7 +360,7 @@ String typeName(Type t) {
 			return "array";
 		case buffers:
 			return "buffer";
-		case floats:
+		case reals:
 			return "float";
 		case longs:
 			return "number";

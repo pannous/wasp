@@ -158,14 +158,14 @@ public:
 
 	explicit Node(double nr) {
 		value.real = nr;
-		kind = floats;
+		kind = reals;
 		if (debug)name = String(itoa0(nr,10)); // messes with setField contraction
 	}
 
 
 	explicit Node(float nr) {
 		value.real = nr;
-		kind = floats;
+		kind = reals;
 		if (debug)name = String((long) nr) + String(".…");//#+"#"; // messes with setField contraction
 	}
 
@@ -295,6 +295,7 @@ public:
 	bool operator==(Node &other);// equals
 
 	bool operator!=(Node other);
+	bool operator>(Node other);
 
 	Node operator+(Node other);
 
@@ -339,6 +340,7 @@ public:
 	void addRaw(Node* node);
 	Node& addRaw(Node& node);
 
+	void add(Node &node);
 	void add(Node *node, bool flatten=true);
 
 	void remove(Node *node); // directly from children
