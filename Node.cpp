@@ -337,10 +337,30 @@ bool Node::operator!=(Node other) {
 }
 
 bool Node::operator>(Node other) {
+	if(kind==strings and other.kind==strings){
+		return value.string > other.value.string;
+	}
+	if(kind==longs){
+		if (other.kind == longs)return value.longy > other.value.longy;
+		if (other.kind == reals)return value.longy > other.value.real;
+	}
+	if(kind==reals){
+		if (other.kind == longs)return value.real > other.value.longy;
+		if (other.kind == reals)return value.real > other.value.real;
+	}
 	if (other.kind == longs) {
 		if (kind == longs)return value.longy > other.value.longy;
 		if (kind == reals)return value.real > other.value.longy;
+		if(kind==objects or kind==groups or kind==patterns)
+			return length > other.value.longy;
 	}
+	if (other.kind==objects or other.kind==groups or other.kind==patterns){
+		if (kind == longs)return value.longy > other.length;
+		if(kind==objects or kind==groups or kind==patterns)
+		return length > other.value.longy;
+	}
+	if(!has("compare") and !has("greater") and !has("less"))
+		error("Missing compare functions for objects %s > %s ?"s % name % other);
 }
 
 Node Node::operator+(Node other) {
