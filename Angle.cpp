@@ -120,7 +120,7 @@ Node If(Node n) {
 
 	Node condit = condition.evaluate();
 	bool condition_fulfilled = (bool) condit;
-	if (condition.kind == floats or condition.kind == longs)
+	if (condition.kind == reals or condition.kind == longs)
 		condition_fulfilled = condition.name.empty() and condition.value.data or condition.name != "0";
 	else if (condition.value.data and condition.kind == objects) // or ...
 		error("If statements need a space after colon");
@@ -168,15 +168,18 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 	float min = 999999;
 	Node right;
 	Node left;
+	Node unknown_symbols;
 	for (Node &node : *this) {// foreach
 		float p = precedence(node);
 		if (p > max) max = p;
 		if (p < min and p != 0) min = p;
+		if(p==0 and node.kind==reference)unknown_symbols.add(node);
 	}
 	if (max == 0) {
 		if (!name.empty() or length > 1){
 			breakpoint_helper // ok need not always have known operators
 			warn(String("could not find operator: ") + serialize());
+			if(unknown_symbols>0)
 		}
 		return *this;
 	}
@@ -329,10 +332,10 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	}
 
 	if (op == "√") { // why String( on mac?
-		if (right.kind == floats)
+		if (right.kind == reals)
 			left.addSmart(Node(sqrt(right.value.real)));
 		if (right.kind == longs)
-			left.addSmart(Node(sqrt(right.value.longy)).setType(floats));
+			left.addSmart(Node(sqrt(right.value.longy)).setType(reals));
 		return left.evaluate();
 	}
 
@@ -385,50 +388,50 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	}
 	if (op == "<" or op == "less" or op == "lt") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() < right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.real < right.value.real);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.real < right.value.longy);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy < right.value.real);
+		if (left.kind == reals and right.kind == reals) return Node(left.value.real < right.value.real);
+		if (left.kind == reals and right.kind == longs) return Node(left.value.real < right.value.longy);
+		if (left.kind == longs and right.kind == reals) return Node(left.value.longy < right.value.real);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy < right.value.longy);
 	}
 
 	if (op == "<=" or op == "le" or op == "≤") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() <= right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.real <= right.value.real);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.real <= right.value.longy);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy <= right.value.real);
+		if (left.kind == reals and right.kind == reals) return Node(left.value.real <= right.value.real);
+		if (left.kind == reals and right.kind == longs) return Node(left.value.real <= right.value.longy);
+		if (left.kind == longs and right.kind == reals) return Node(left.value.longy <= right.value.real);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy <= right.value.longy);
 	}
 
 	if (op == ">=" or op == "ge" or op == "≥") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() >= right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.real >= right.value.real);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.real >= right.value.longy);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy >= right.value.real);
+		if (left.kind == reals and right.kind == reals) return Node(left.value.real >= right.value.real);
+		if (left.kind == reals and right.kind == longs) return Node(left.value.real >= right.value.longy);
+		if (left.kind == longs and right.kind == reals) return Node(left.value.longy >= right.value.real);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy >= right.value.longy);
 	}
 
 	if (op == ">" or op == "gt") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() > right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.real > right.value.real);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.real > right.value.longy);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy > right.value.real);
+		if (left.kind == reals and right.kind == reals) return Node(left.value.real > right.value.real);
+		if (left.kind == reals and right.kind == longs) return Node(left.value.real > right.value.longy);
+		if (left.kind == longs and right.kind == reals) return Node(left.value.longy > right.value.real);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy > right.value.longy);
 	}
 
 	if (op == "+" or op == "add" or op == "plus") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.real + right.value.real);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.real + right.value.longy);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy + right.value.real);
+		if (left.kind == reals and right.kind == reals) return Node(left.value.real + right.value.real);
+		if (left.kind == reals and right.kind == longs) return Node(left.value.real + right.value.longy);
+		if (left.kind == longs and right.kind == reals) return Node(left.value.longy + right.value.real);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy + right.value.longy);
 		todo(op + " operator NOT defined for types %s and %s "s % typeName(left.kind) % typeName(right.kind));
 	}
 
 	// todo: 2 * -x
 	if (op == "-" or op == "minus" or op == "subtract") {
-		if (left.kind == floats and right.kind == floats) return Node(left.value.real - right.value.real);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy - right.value.real);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.real - right.value.longy);
+		if (left.kind == reals and right.kind == reals) return Node(left.value.real - right.value.real);
+		if (left.kind == longs and right.kind == reals) return Node(left.value.longy - right.value.real);
+		if (left.kind == reals and right.kind == longs) return Node(left.value.real - right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy - right.value.longy);
 	}
 
@@ -437,9 +440,9 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	}
 
 	if (op == "/" or op == "÷" or op == "div" or op == "divide") { // "by"
-		if (left.kind == floats and right.kind == floats) return Node(left.value.real / right.value.real);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy / right.value.real);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.real / right.value.longy);
+		if (left.kind == reals and right.kind == reals) return Node(left.value.real / right.value.real);
+		if (left.kind == longs and right.kind == reals) return Node(left.value.longy / right.value.real);
+		if (left.kind == reals and right.kind == longs) return Node(left.value.real / right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy / right.value.longy);
 	}
 
@@ -561,7 +564,7 @@ float precedence(String name) {
 float precedence(Node &operater) {
 	String &name = operater.name;
 //	if (operater == NIL)return 0; error prone
-	if (operater.kind == floats)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
+	if (operater.kind == reals)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (name.empty())return 0;// no precedence
 	if (operater.kind == strings)return 0;// and name.empty()
 //	not yet!
