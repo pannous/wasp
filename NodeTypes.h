@@ -8,8 +8,8 @@
 enum Type {
 // plurals because of namespace clash
 	// TODO add subtypes of Class:Node Variable:Node etc ^^^
-			nils = 0,
-	objects, // {…} children
+	nils = 0,
+	objects, // {…} block data with children closures
 	groups, // (…) meta params parameter attributes lists
 	patterns, // […] selectors matches, annotations! [public export extern] function mul(x,y){x*y}
 	keyNode, // key with value
