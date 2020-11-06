@@ -119,6 +119,12 @@ bool assert_isx(char *mark, Node expect) {
 	} catch (SyntaxError *err) {
 		printf("\nERROR IN TEST\n");
 		printf("%s", err->data);
+	}  catch (String *err) {
+		printf("\nERROR IN TEST\n");
+		printf("%s", err->data);
+	} catch (chars err) {
+		printf("\nERROR IN TEST\n");
+		printf("%s\n", err);
 	} catch (...) {
 		raise("\nERROR IN TEST (no further data):\n");
 	}

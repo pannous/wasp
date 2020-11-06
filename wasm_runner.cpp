@@ -137,7 +137,7 @@ int init_vm(RuntimeInitArgs init_args, NativeSymbol* native_symbols, int symbol_
 //		return 0;// ONLY ONCE!!
 //	}
 //	else{
-//		printf("INITIALIZING WASM VM");
+		printf("INITIALIZING WASM VM\n");
 //		done=true;
 //	}
 
@@ -277,22 +277,18 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0=0
 int run_wasm(const char *buffer, int buf_size){
 	return run_wasm(reinterpret_cast<const uint8 *>(buffer), buf_size, 0);
 }
-int main3(int argc, char *argv_main[]) {
+int run_wasm_file(const char *wasm_path){
 	try {
-		const char *wasm_path = "test.wasm";
-		if (argc > 1)
-			wasm_path = argv_main[1];
-
-		run_wasm(buffer0, sizeof(buffer0), 0);
-
 		RuntimeInitArgs init_args;
 		memset(&init_args, 0, sizeof(RuntimeInitArgs));
 		init_vm(init_args,native_symbols, sizeof(native_symbols));// DANGER sizeof only works for []
 		uint32 buf_size;
 		const uint8 *buffer;
 		buffer = (uint8 *) bh_read_file_to_buffer(wasm_path, &buf_size);
-		if (!buffer)
-			return fail("Open wasm app file [%s] FAILED.\n", wasm_path);
+		if (!buffer){
+			fail("Open wasm app file [%s] FAILED.\n", wasm_path);
+			exit(-1);
+		}
 		run_wasm(buffer, buf_size, &init_args);
 
 
@@ -300,4 +296,11 @@ int main3(int argc, char *argv_main[]) {
 		printf("\nERROR\n");
 		printf("%s", err);
 	}
+}
+int main3(int argc, char *argv_main[]) {
+	run_wasm(buffer0, sizeof(buffer0), 0);
+	if (argc > 1)
+		run_wasm_file(argv_main[1]);
+	else
+		run_wasm_file();
 }

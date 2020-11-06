@@ -15,7 +15,7 @@ bool recursive = true;// whats that?
 
 String functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
 String function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
-                          "logx", "logc", 0};// MUST END WITH 0, else BUG
+                          "logx", "logc","id", 0};// MUST END WITH 0, else BUG
 
 int main4(int argp, char **argv) {
 #ifdef register_global_signal_exception_handler
@@ -180,6 +180,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 			breakpoint_helper // ok need not always have known operators
 			warn(String("could not find operator: ") + serialize());
 			if(unknown_symbols>0)
+				error("unknown symbol "s + unknown_symbols.serialize());
 		}
 		return *this;
 	}
@@ -262,7 +263,9 @@ Node groupOperators(Node expression) {
 
 Node do_call(Node left, Node op0, Node right) {
 	String op = op0.name;
+	if (op == "id")return right;// identity
 	if (op == "square")return square(right.numbere());
+	breakpoint_helper
 	error("Unregistered function "s + op);
 }
 
@@ -564,19 +567,11 @@ float precedence(String name) {
 float precedence(Node &operater) {
 	String &name = operater.name;
 //	if (operater == NIL)return 0; error prone
-	if (operater.kind == reals)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (name.empty())return 0;// no precedence
+	if (operater.kind == reals)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
+	if (operater.kind == longs)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (operater.kind == strings)return 0;// and name.empty()
-//	not yet!
-//	if(operater.kind==patterns)return 123456;// {a:1 b:2}[a]==1 raw/symbolic map access
-//	if(operater.kind==groups)return 12345;// {a:1 b:2+3}(b)"==5  evaluation
-	if(operater.kind==groups or operater.kind==patterns){
-		return precedence("if")*0.999;// needs to be smaller than functor/function calls
-	}
-//		if (!prev or prev->kind!=objects) p=0;
-//		else p=123456; // {a:1 b:2}[a]==1  only works on objects todo and on references
-//	}
+	if (operater.kind==groups or operater.kind==patterns) return precedence("if")*0.999;// needs to be smaller than functor/function calls
 	if (operater.name.in(function_list))return 999;// function call
-
 	return precedence(name);
 }

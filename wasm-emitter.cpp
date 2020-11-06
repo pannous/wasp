@@ -179,6 +179,10 @@ bool eq(const char *op, const char *string);
 
 // https://pengowray.github.io/wasm-ops/
 byte opcodes(const char *s, byte kind = 0) {
+//	if(eq(s,"$1="))return set_local;
+	if(eq(s,"=$1"))return get_local;
+	if(eq(s,"=$1"))return tee_local;
+
 	if (kind == 0) { // INT32
 		if (eq(s, "+"))return i32_add;
 		if (eq(s, "-"))return i32_sub;
@@ -753,11 +757,11 @@ Code &emit(Program ast) {
 //function body count
 
 
-	// the function section is a vector of type indices that indicate the type of each function in the code section
-//	char func_types[]={0x01,0x00};
-	char types_of_functions[] = {0x02, 0x00, 0x01};// mapping/connecting function index to type index
-	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
-	Code funcSection = createSection(func, Code(types_of_functions, sizeof(types_of_functions)));
+	short function_offset = import_count;
+// index needs to be known before emitting code, so call $i works
+	symbols.insert_or_assign("main", function_offset);
+	symbols.insert_or_assign("nop", function_offset+1);// NOP code_data1
+	symbols.insert_or_assign("id", function_offset+2);// NOP code_data1
 
 //	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 //	char code_data[] = {0x00,0x41,0x2A,0x0F,0x0B};// 0x00 == unreachable as block header !?
@@ -768,7 +772,8 @@ Code &emit(Program ast) {
 //	char code_data[] = {0/*locals_count*/,i32_const,48,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 	char code_data[] = {0/*locals_count*/, i32_auto, 42, return_block,
 	                    end_block};// 0x00 == unreachable as block header !?
-	char code_data1[] = {0/*locals_count*/, end_block};
+	char code_data_nop[] = {0/*locals_count*/, end_block};// NOP
+	char code_data_id[] = {0/*locals_count*/,0,get_local,return_block, end_block};// NOP
 //	char code_data[] = {0x00,0x0b,0x02,0x00,0x0b};// empty type:1 len:2
 
 
@@ -776,13 +781,19 @@ Code &emit(Program ast) {
 //	Code da_code2=Code(code_data,sizeof(code_data));
 	Code da_code = emitBlock(ast.main,Valtype::i32);
 //	check(da_code2 == da_code);
-	Code da_code1 = Code(code_data1, sizeof(code_data1));
+	Code da_code1 = Code(code_data_nop, sizeof(code_data_nop));
+	Code da_code_id = Code(code_data_id, sizeof(code_data_id));
 
-	char function_count = 2;// offset by imports!?
+	char function_count = 3;// offset by imports!?
 	auto codeSection = createSection(code_section,
-	                                 Code(function_count) + encodeVector(da_code) + encodeVector(da_code1));
-	symbols.insert_or_assign("main", import_count);
-	symbols.insert_or_assign("rem", import_count+1);// NOP code_data1
+	                                 Code(function_count) + encodeVector(da_code) + encodeVector(da_code1) + encodeVector(da_code_id));
+
+
+	// the function section is a vector of type indices that indicate the type of each function in the code section
+//	char func_types[]={0x01,0x00};
+	char types_of_functions[] = {function_count, 0x00, 0x01, 0x04};// mapping/connecting function index to type index
+	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
+	Code funcSection = createSection(func, Code(types_of_functions, sizeof(types_of_functions)));
 
 
 
