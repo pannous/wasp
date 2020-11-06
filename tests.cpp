@@ -105,7 +105,7 @@ bool assert_equals_x(float a, float b, char *context = "") {
 bool assert_isx(char *mark, Node expect) {
 	try {
 		Node left = Wasp::eval(mark);
-		if (left.kind == floats or expect.kind == floats)
+		if (left.kind == reals or expect.kind == reals)
 			return assert_equals_x(left.floate(), expect.floate(), mark);
 		if (left.kind == longs or expect.kind == longs) {
 			long b = expect.numbere();

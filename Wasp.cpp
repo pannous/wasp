@@ -861,7 +861,7 @@ private:
 		if (debug) {
 			deep_copy = deep_copy || val.kind == Type::longs and val.name == itoa(val.value.longy);
 			deep_copy = deep_copy || val.kind == Type::bools and (val.name == "True" or val.name == "False");
-			deep_copy = deep_copy || val.kind == Type::floats and val.name == ftoa(val.value.real);
+			deep_copy = deep_copy || val.kind == Type::reals and val.name == ftoa(val.value.real);
 		} // shit just for debug labels. might remove!!
 // last part to preserve {deep{a:3,b:4,c:{d:'hi'}}} != {deep{a:3,b:4,c:'hi'}}
 

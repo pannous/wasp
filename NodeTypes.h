@@ -20,7 +20,7 @@ enum Type {
 	strings,
 	arrays,// Node[] vs any[]? vs
 	buffers,// int[]
-	floats,
+	reals,
 	longs, // the signature of parameters/variables is independent!
 //	ints,// use longy field, but in wasm longs are pointers!
 	bools,
