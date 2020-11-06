@@ -222,7 +222,7 @@ bool Node::operator==(String other) {
 
 bool Node::operator==(int other) {
 //	if (this == 0)return false;// HOW?
-	if ((kind == longs and value.longy == other) or (kind == floats and value.floaty == other))
+	if ((kind == longs and value.longy == other) or (kind == floats and value.real == other))
 		return true;
 	if (kind == keyNode and value.node and *value.node == other)return true;
 	if (kind == strings and atoi0(value.string) == other)return true;
@@ -234,19 +234,19 @@ bool Node::operator==(int other) {
 
 bool Node::operator==(long other) {
 	if (kind == keyNode and value.node and value.node->value.longy == other)return true;
-	return (kind == longs and value.longy == other) or (kind == floats and value.floaty == other) or
+	return (kind == longs and value.longy == other) or (kind == floats and value.real == other) or
 	       (kind == bools and value.longy == other);
 }
 
 bool Node::operator==(double other) {
-	if (kind == keyNode and value.node and value.node->value.floaty == other)return true;
-	return (kind == floats and value.floaty == ((float) other)) or
+	if (kind == keyNode and value.node and value.node->value.real == other)return true;
+	return (kind == floats and value.real == ((float) other)) or
 	       (kind == longs and value.longy == other);
 }
 
 bool Node::operator==(float other) {
-	if (kind == keyNode and value.node and value.node->value.floaty == other)return true;
-	return (kind == floats and value.floaty == other) or
+	if (kind == keyNode and value.node and value.node->value.real == other)return true;
+	return (kind == floats and value.real == other) or
 	       (kind == longs and value.longy == other);
 }
 
@@ -264,11 +264,11 @@ bool Node::operator==(Node &other) {
 	if (kind == longs and other.kind==longs)
 		return value.longy == other.value.longy;
 	if (kind == longs and other.kind==floats)
-		return value.longy == other.value.floaty;
+		return value.longy == other.value.real;
 	if (kind == floats and other.kind==floats)
-		return value.floaty == other.value.floaty;
+		return value.real == other.value.real;
 	if (kind == floats and other.kind==longs)
-		return value.floaty == other.value.longy;
+		return value.real == other.value.longy;
 
 	if (isNil() and other.isNil())
 		return true;
@@ -339,21 +339,21 @@ Node Node::operator+(Node other) {
 	if (kind == strings and other.kind == longs)
 		return Node(value.string + other.value.longy);
 	if (kind == strings and other.kind == floats)
-		return Node(value.string + other.value.floaty);
+		return Node(value.string + other.value.real);
 	if (kind == strings and other.kind == strings)
 		return Node(value.string + other.value.string);
 	if (kind == longs and other.kind == longs)
 		return Node(value.longy + other.value.longy);
 	if (kind == floats and other.kind == longs)
-		return Node(value.floaty + other.value.longy);
+		return Node(value.real + other.value.longy);
 	if (kind == longs and other.kind == floats)
-		return Node(value.longy + other.value.floaty);
+		return Node(value.longy + other.value.real);
 	if (kind == floats and other.kind == floats)
-		return Node(value.floaty + other.value.floaty);
+		return Node(value.real + other.value.real);
 	if (kind == longs and other.kind == strings)
 		return Node(value.longy + other.value.string);
 //	if(type==floats and other.type==strings)
-//		return Node(value.floaty + other.value.string);
+//		return Node(value.real + other.value.string);
 	if (kind == objects)
 		return this->merge(other);
 	if (other.kind == objects)
@@ -565,7 +565,7 @@ const char *Node::serializeValue() const {
 		case longs:
 			return itoa(val.longy);
 		case floats:
-			return ftoa(val.floaty);
+			return ftoa(val.real);
 		case nils:
 			return "ø";
 		case objects:
@@ -697,7 +697,7 @@ Node &Node::setName(char *name0) {
 // extract value from this (remove name)
 Node Node::values() {
 	if(kind==longs)return Node(value.longy);
-	if(kind==floats)return Node(value.floaty);
+	if(kind==floats)return Node(value.real);
 	if(kind==strings)return Node(value.string);
 	if(kind==bools)return value.data ? True : False;
 	if(kind==keyNode)return *value.node;

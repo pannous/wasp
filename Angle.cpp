@@ -330,7 +330,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 	if (op == "√") { // why String( on mac?
 		if (right.kind == floats)
-			left.addSmart(Node(sqrt(right.value.floaty)));
+			left.addSmart(Node(sqrt(right.value.real)));
 		if (right.kind == longs)
 			left.addSmart(Node(sqrt(right.value.longy)).setType(floats));
 		return left.evaluate();
@@ -385,64 +385,64 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	}
 	if (op == "<" or op == "less" or op == "lt") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() < right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty < right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty < right.value.longy);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy < right.value.floaty);
+		if (left.kind == floats and right.kind == floats) return Node(left.value.real < right.value.real);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.real < right.value.longy);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy < right.value.real);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy < right.value.longy);
 	}
 
 	if (op == "<=" or op == "le" or op == "≤") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() <= right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty <= right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty <= right.value.longy);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy <= right.value.floaty);
+		if (left.kind == floats and right.kind == floats) return Node(left.value.real <= right.value.real);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.real <= right.value.longy);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy <= right.value.real);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy <= right.value.longy);
 	}
 
 	if (op == ">=" or op == "ge" or op == "≥") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() >= right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty >= right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty >= right.value.longy);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy >= right.value.floaty);
+		if (left.kind == floats and right.kind == floats) return Node(left.value.real >= right.value.real);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.real >= right.value.longy);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy >= right.value.real);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy >= right.value.longy);
 	}
 
 	if (op == ">" or op == "gt") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() > right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty > right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty > right.value.longy);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy > right.value.floaty);
+		if (left.kind == floats and right.kind == floats) return Node(left.value.real > right.value.real);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.real > right.value.longy);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy > right.value.real);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy > right.value.longy);
 	}
 
 	if (op == "+" or op == "add" or op == "plus") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty + right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty + right.value.longy);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy + right.value.floaty);
+		if (left.kind == floats and right.kind == floats) return Node(left.value.real + right.value.real);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.real + right.value.longy);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy + right.value.real);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy + right.value.longy);
 		todo(op + " operator NOT defined for types %s and %s "s % typeName(left.kind) % typeName(right.kind));
 	}
 
 	// todo: 2 * -x
 	if (op == "-" or op == "minus" or op == "subtract") {
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty - right.value.floaty);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy - right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty - right.value.longy);
+		if (left.kind == floats and right.kind == floats) return Node(left.value.real - right.value.real);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy - right.value.real);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.real - right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy - right.value.longy);
 	}
 	if (op == "/" or op == "div" or op == "divide") { // "by"
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty / right.value.floaty);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy / right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty / right.value.longy);
+		if (left.kind == floats and right.kind == floats) return Node(left.value.real / right.value.real);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy / right.value.real);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.real / right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy / right.value.longy);
 	}
 
 	if (op == "*" or op == "⋆" or op == "×" or op == "∗" or op == "times") {// ⊗
 		if (left.kind == strings or right.kind == strings) return Node(left.string().times(right.value.longy));
-		if (left.kind == floats and right.kind == floats) return Node(left.value.floaty * right.value.floaty);
-		if (left.kind == longs and right.kind == floats) return Node(left.value.longy * right.value.floaty);
-		if (left.kind == floats and right.kind == longs) return Node(left.value.floaty * right.value.longy);
+		if (left.kind == floats and right.kind == floats) return Node(left.value.real * right.value.real);
+		if (left.kind == longs and right.kind == floats) return Node(left.value.longy * right.value.real);
+		if (left.kind == floats and right.kind == longs) return Node(left.value.real * right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy * right.value.longy);
 //		if (right.type == numbers) return Node(left.value.number * right.value.number);
 	}

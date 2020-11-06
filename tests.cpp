@@ -39,7 +39,7 @@ bool assert_equals_x(Node &a, char *b, char *context = "") {
 
 bool assert_equals_x(Node &a, double b, char *context = "") {
 	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"s % a.name % b % context);
-//	else printf("OK %f==%f in %s\n"s % a.value.floaty % b % context);
+//	else printf("OK %f==%f in %s\n"s % a.value.real % b % context);
 	else printf("OK %d==%d in %s\n", a.value.longy, b, context);
 
 	return a == b;
