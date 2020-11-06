@@ -53,11 +53,11 @@ union Value {
 	Node *node = 0;// todo DANGER, can be lost :( !!
 //	Node **children = 0; //todo todo DANGER node and children REDUNDANT!
 	String string;
-	void *data;
+	void *data;// any bytes
 	long longy;
 
-//	float floaty;
-	double floaty;
+//	float real;
+	double real;
 
 	Value() {}// = default;
 	Value(int i) {
@@ -157,14 +157,14 @@ public:
 	}
 
 	explicit Node(double nr) {
-		value.floaty = nr;
+		value.real = nr;
 		kind = floats;
 		if (debug)name = String(itoa0(nr,10)); // messes with setField contraction
 	}
 
 
 	explicit Node(float nr) {
-		value.floaty = nr;
+		value.real = nr;
 		kind = floats;
 		if (debug)name = String((long) nr) + String(".…");//#+"#"; // messes with setField contraction
 	}
@@ -246,7 +246,7 @@ public:
 //			value.number = atoi(s);
 //			type = numbers;
 //			}
-//		else if (atof(s)) { value.floaty = atoi(s); }
+//		else if (atof(s)) { value.real = atoi(s); }
 		else {
 			kind = strings;
 			value.string = s;
@@ -388,7 +388,7 @@ public:
 //		if (type == numbers)
 //			printf(" value %li", value.number);
 //		if (type == floats)
-//			printf(" value %f", value.floaty);
+//			printf(" value %f", value.real);
 		printf(" [");
 		for (int i = 0; i < min(length,10); i++) {
 			Node &node = children[i];
@@ -407,11 +407,11 @@ public:
 	Node &setType(Type type);
 
 	long numbere() {
-		return kind == longs or kind == bools ? value.longy : value.floaty;// danger
+		return kind == longs or kind == bools ? value.longy : value.real;// danger
 	}
 
 	float floate() {
-		return kind == longs ? value.longy : value.floaty;// danger
+		return kind == longs ? value.longy : value.real;// danger
 	}
 
 	Node *has(String s, bool searchMeta = true) const;
@@ -432,7 +432,7 @@ public:
 
 	explicit operator long() const { return value.longy; }
 
-	explicit operator float() const { return value.floaty; }
+	explicit operator float() const { return value.real; }
 
 	explicit operator String() const { return value.string; }
 
