@@ -231,7 +231,7 @@ enum Opcodes {
 	i32_ge = 0x4E,
 
 	i64_eqz = 0x50,
-//	f32_eqz = 0x50, no such thing!
+	f32_eqz = 0x50, // HACK: no such thing!
 
 	f32_eq = 0x5b,
 	f32_ne = 0x5c,
@@ -242,7 +242,7 @@ enum Opcodes {
 	i32_sub = 0x6B,
 	i32_mul = 0x6C,
 	i32_div = 0x6D,
-	i32_rem = 0x6F,
+	i32_rem = 0x6F, // 5%4=1
 	i32_modulo = 0x6F,
 
 	i32_and = 0x71,
@@ -253,8 +253,8 @@ enum Opcodes {
 	f32_sub = 0x93,
 	f32_mul = 0x94,
 	f32_div = 0x95,
-	i32_trunc_f32_s = 0xa8,
-	i32_reinterpret_f32 = 0xbc
+	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
+	i32_reinterpret_f32 = 0xbc // bit wise reinterpret != cast/trunc/convert
 
 };
 //char start_function=0x00;//unreachable strange convention
