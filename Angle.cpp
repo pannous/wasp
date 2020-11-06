@@ -179,7 +179,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		if (!name.empty() or length > 1){
 			breakpoint_helper // ok need not always have known operators
 			warn(String("could not find operator: ") + serialize());
-			if(unknown_symbols>0)
+			if(unknown_symbols>0 and expectOperator)
 				error("unknown symbol "s + unknown_symbols.serialize());
 		}
 		return *this;
@@ -294,7 +294,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 //	}
 	String &op = op0.name;
 	if (!isFunction(op)) // 1 + square 2  => "1+" kept dangling
-		left = left.evaluate();
+		left = left.evaluate(false);
 	bool lazy = (op == "or") and (bool) left;
 	lazy = lazy || (op == "and") and not(bool) left;
 	lazy = lazy || (op == "#");// length and index
@@ -432,12 +432,24 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		todo(op + " operator NOT defined for types %s and %s "s % typeName(left.kind) % typeName(right.kind));
 	}
 
+
+
 	// todo: 2 * -x
 	if (op == "-" or op == "minus" or op == "subtract") {
 		if (left.kind == reals and right.kind == reals) return Node(left.value.real - right.value.real);
 		if (left.kind == longs and right.kind == reals) return Node(left.value.longy - right.value.real);
 		if (left.kind == reals and right.kind == longs) return Node(left.value.real - right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy - right.value.longy);
+	}
+
+
+	if (op == "*" or op == "⋆" or op == "×" or op == "∗" or op == "times") {// ⊗
+		if (left.kind == strings) return Node(left.string().times(right.value.longy));
+		if (right.kind == strings) return Node(right.string().times(left.value.longy));
+		if (left.kind == reals and right.kind == reals) return Node(left.value.real * right.value.real);
+		if (left.kind == longs and right.kind == reals) return Node(left.value.longy * right.value.real);
+		if (left.kind == reals and right.kind == longs) return Node(left.value.real * right.value.longy);
+		if (left.kind == longs and right.kind == longs) return Node(left.value.longy * right.value.longy);
 	}
 
 	if (op == "%" or op == "rem" or op == "modulo") {
@@ -467,7 +479,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 //		kind=Type::function; // functor same concept, different arguments
 		// careful, functions take arguments, functors take bodies if(1,2,3)!=if{1}{2}{3}
 	}
-	todo(op + " operator NOT defined for types %s and %s "s % typeName(left.kind) % typeName(right.kind));
+	todo("operator “%s” NOT defined for types %s and %s "s % op % typeName(left.kind) % typeName(right.kind));
 	return NIL;
 //	log("NO builtin operator "+op0+" calling…")
 //	return call(left, op0, right);
