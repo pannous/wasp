@@ -235,6 +235,19 @@ String operator_list[] = {"is", "equal", "equals", "==", "!=", "≠", "xor", "or
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
                           "*", "×", "⋅", "⋆", "/", "÷", "^"}; // "while" ...
 Node groupOperators(Node expression) {
+	if(expression.length==1)return groupOperators(expression.children[0]); // Nothing to be grouped
+	expression.log();
+	for (Node op : expression) {
+		if (op.name.in(function_list)) {
+			op.kind = function;
+			if (!op.children) {
+				Node *n = &op;
+				while (n = n->next)
+					op.addRaw(n);
+			}
+			return groupOperators(op.flat());// applied on children
+		}
+	}
 	for (String operator_name : operator_list) {
 		for (Node op : expression) {
 			if (op.name == operator_name) {
@@ -245,17 +258,6 @@ Node groupOperators(Node expression) {
 				// should NOT MODIFY original AST, because iterate by value, right?
 				return op;// (a op c) => op(a c)
 			}
-		}
-	}
-	for (Node op : expression) {
-		if (op.name.in(function_list)) {
-			op.kind = function;
-			if (!op.children) {
-				Node *n = &op;
-				while (n = n->next)
-					op.addRaw(n);
-			}
-			return op;
 		}
 	}
 	return expression;// no op
