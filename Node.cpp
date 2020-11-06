@@ -222,7 +222,7 @@ bool Node::operator==(String other) {
 
 bool Node::operator==(int other) {
 //	if (this == 0)return false;// HOW?
-	if ((kind == longs and value.longy == other) or (kind == floats and value.real == other))
+	if ((kind == longs and value.longy == other) or (kind == reals and value.real == other))
 		return true;
 	if (kind == keyNode and value.node and *value.node == other)return true;
 	if (kind == strings and atoi0(value.string) == other)return true;
@@ -234,19 +234,19 @@ bool Node::operator==(int other) {
 
 bool Node::operator==(long other) {
 	if (kind == keyNode and value.node and value.node->value.longy == other)return true;
-	return (kind == longs and value.longy == other) or (kind == floats and value.real == other) or
+	return (kind == longs and value.longy == other) or (kind == reals and value.real == other) or
 	       (kind == bools and value.longy == other);
 }
 
 bool Node::operator==(double other) {
 	if (kind == keyNode and value.node and value.node->value.real == other)return true;
-	return (kind == floats and value.real == ((float) other)) or
+	return (kind == reals and value.real == ((float) other)) or
 	       (kind == longs and value.longy == other);
 }
 
 bool Node::operator==(float other) {
 	if (kind == keyNode and value.node and value.node->value.real == other)return true;
-	return (kind == floats and value.real == other) or
+	return (kind == reals and value.real == other) or
 	       (kind == longs and value.longy == other);
 }
 
@@ -261,18 +261,19 @@ bool Node::operator==(Node &other) {
 
 	if (this == &other)return true;// same pointer!
 
-	if (kind == longs and other.kind==longs)
+	if (kind == longs and other.kind == longs)
 		return value.longy == other.value.longy;
-	if (kind == longs and other.kind==floats)
+	if (kind == longs and other.kind == reals)
 		return value.longy == other.value.real;
-	if (kind == floats and other.kind==floats)
+	if (kind == reals and other.kind == reals)
 		return value.real == other.value.real;
-	if (kind == floats and other.kind==longs)
+	if (kind == reals and other.kind == longs)
 		return value.real == other.value.longy;
 
 	if (isNil() and other.isNil())
 		return true;
-	if (isEmpty() and other.isEmpty()) // todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
+	if (isEmpty() and
+	    other.isEmpty()) // todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
 		return true;
 	if (name == NIL.name or name == False.name or name == "")
 		if (other.name == NIL.name or other.name == False.name or other.name == "")
@@ -335,20 +336,27 @@ bool Node::operator!=(Node other) {
 	return not(*this == other);
 }
 
+bool Node::operator>(Node other) {
+	if (other.kind == longs) {
+		if (kind == longs)return value.longy > other.value.longy;
+		if (kind == reals)return value.real > other.value.longy;
+	}
+}
+
 Node Node::operator+(Node other) {
 	if (kind == strings and other.kind == longs)
 		return Node(value.string + other.value.longy);
-	if (kind == strings and other.kind == floats)
+	if (kind == strings and other.kind == reals)
 		return Node(value.string + other.value.real);
 	if (kind == strings and other.kind == strings)
 		return Node(value.string + other.value.string);
 	if (kind == longs and other.kind == longs)
 		return Node(value.longy + other.value.longy);
-	if (kind == floats and other.kind == longs)
+	if (kind == reals and other.kind == longs)
 		return Node(value.real + other.value.longy);
-	if (kind == longs and other.kind == floats)
+	if (kind == longs and other.kind == reals)
 		return Node(value.longy + other.value.real);
-	if (kind == floats and other.kind == floats)
+	if (kind == reals and other.kind == reals)
 		return Node(value.real + other.value.real);
 	if (kind == longs and other.kind == strings)
 		return Node(value.longy + other.value.string);
@@ -397,7 +405,7 @@ void Node::addRaw(Node *node) {
 	children[length++] = *node;
 }
 
-Node& Node::addRaw(Node &node) {
+Node &Node::addRaw(Node &node) {
 	if (length >= capacity - 1)
 		error("Out of node Memory");
 	if (lastChild >= maxNodes)
@@ -408,6 +416,10 @@ Node& Node::addRaw(Node &node) {
 	children[length++] = node;
 	node.parent = this;
 	return *this;
+}
+
+void Node::add(Node &node) {
+	add(&node);
 }
 
 void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
@@ -421,7 +433,7 @@ void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
 	    node->name.empty()) {
 		children = node->children;
 		length = node->length;
-		for(Node& child:*this)
+		for (Node &child:*this)
 			child.parent = this;
 		if (kind != groups) kind = node->kind; // todo: keep kind if … ?
 	} else {
@@ -431,8 +443,8 @@ void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
 }
 
 void Node::addSmart(Node node) {// merge?
-	if(polish_notation and node.length>0){
-		if(name.empty())
+	if (polish_notation and node.length > 0) {
+		if (name.empty())
 			name = node[0].name;
 		else
 			parent->addRaw(node);// REALLY?
@@ -443,12 +455,13 @@ void Node::addSmart(Node node) {// merge?
 	}
 	// a{x:1} != a {x:1} but {x:1} becomes child of a
 	// a{x:1} == a:{x:1} ?
-	if(last().kind==operators){
+	if (last().kind == operators) {
 		addRaw(node);
 		return;
 	}
 
-	if (last().kind==reference or last().kind==keyNode or name.empty() and not kind == expressions)// last().kind==reference)
+	if (last().kind == reference or last().kind == keyNode or name.empty() and
+	    not kind == expressions)// last().kind==reference)
 		last().add(&node);
 	else
 		add(&node);
@@ -522,7 +535,7 @@ co_yield 	yield-expression (C++20)
 Node *Node::has(String s, bool searchMeta) const {
 	if ((kind == objects or kind == keyNode) and value.node and s == value.node->name)
 		return value.node;
-	if(!children)return 0;
+	if (!children)return 0;
 	for (int i = 0; i < length; i++) {
 		Node &entry = children[i];
 		if (s == entry.name)
@@ -531,7 +544,7 @@ Node *Node::has(String s, bool searchMeta) const {
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
 				return &entry;
 	}
-	if(s == name.data )
+	if (s == name.data)
 		return const_cast<Node *>(this);
 	if (meta and searchMeta)
 		return meta->has(s);
@@ -560,11 +573,11 @@ const char *Node::serializeValue() const {
 	Value val = value;
 	switch (kind) {
 		case strings:
-			return "'"s+val.string+"'";
+			return "'"s + val.string + "'";
 //		case ints:
 		case longs:
 			return itoa(val.longy);
-		case floats:
+		case reals:
 			return ftoa(val.real);
 		case nils:
 			return "ø";
@@ -601,7 +614,8 @@ const char *Node::serialize() const {
 	if (not polish_notation or this->length == 0) {
 		if (not this->name.empty()) wasp += this->name;
 		const char *serializedValue = serializeValue();
-		if (this->value.data and !eq(name, serializedValue) and !eq(serializedValue,"{…}") and !eq(serializedValue,"?")) {
+		if (this->value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
+		    !eq(serializedValue, "?")) {
 			wasp += ":";
 			wasp += serializedValue;
 			wasp += " ";
@@ -647,6 +661,7 @@ Node &Node::setValue(Value v) {
 Node Node::from(Node match) {
 	return from(match.name);
 }
+
 Node Node::from(String match) {
 	Node lhs;
 	bool start = false;
@@ -654,7 +669,7 @@ Node Node::from(String match) {
 		if (start)lhs.addRaw(&child);
 		if (child.name == match)start = true;
 	}
-	if(lhs.length==0)
+	if (lhs.length == 0)
 		for (Node child:*this)
 			if (child.name == match)return child.values();
 	lhs.kind = kind;
@@ -673,13 +688,14 @@ Node Node::to(String match) {
 	rhs.kind = kind;
 	return rhs.flat();
 }
+
 Node Node::to(Node match) {
 	return to(match.name);
 }
 
 //	Node& flatten(Node &current){
 Node &Node::flat() {
-	if (length == 0 and kind==keyNode and name.empty() and value.node)return *value.node;
+	if (length == 0 and kind == keyNode and name.empty() and value.node)return *value.node;
 	if (length == 1 and value.node == &children[0])// todo remove redundancy
 		return *value.node;
 	if (length == 1 and not value.data and name.empty()) {
@@ -696,11 +712,11 @@ Node &Node::setName(char *name0) {
 
 // extract value from this (remove name)
 Node Node::values() {
-	if(kind==longs)return Node(value.longy);
-	if(kind==floats)return Node(value.real);
-	if(kind==strings)return Node(value.string);
-	if(kind==bools)return value.data ? True : False;
-	if(kind==keyNode)return *value.node;
+	if (kind == longs)return Node(value.longy);
+	if (kind == reals)return Node(value.real);
+	if (kind == strings)return Node(value.string);
+	if (kind == bools)return value.data ? True : False;
+	if (kind == keyNode)return *value.node;
 	Node &val = clone()->setName("");
 //	val.children = 0;
 	return val;
