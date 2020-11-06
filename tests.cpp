@@ -489,10 +489,8 @@ void testEval3() {
 }
 
 
-void testMath() {
-	auto math = "one plus two times three";
-	Node result = Wasp::eval(math);
-	assert(result == 7);
+void testMathExtra() {
+	assert_is("one plus two times three",7);
 }
 
 void testRoot() {
@@ -748,7 +746,8 @@ void testGraphQlQuery() {
 	assert(friends[0]["name"] == "Luke Skywalker");
 //todo	assert(result["hero"] == result["data"]["hero"]);
 //	assert(result["hero"]["friends"][0]["name"] == "Luke Skywalker")// if 1-child, treat as root
-
+}
+void testGraphQlQuery2() {
 	assert_parses("{\n"
 	              "  human(id: \"1000\") {\n"
 	              "    name\n"
@@ -1069,6 +1068,8 @@ void testIndex() {
 
 
 void tests() {
+	assert_is("[a b c]#2", "b");
+
 	testNilValues();
 	testCall();
 	testNewlineLists();
@@ -1089,7 +1090,7 @@ void tests() {
 	testDiv();
 	testUTF();
 	testRoot();
-	testMath();
+	testMathExtra();
 	testLogic01();
 	testLogicPrecedence();
 	testRootFloat();
@@ -1152,8 +1153,11 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+	testGraphQlQuery2();
+	assert_is("one plus two times three",7);
+
 	testAllWasm();
-	exit(43);
+//	exit(43);
 
 	tests();// make sure all still ok before changes
 
