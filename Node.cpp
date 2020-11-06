@@ -619,11 +619,14 @@ const char *Node::serializeValue() const {
 			return "[…]";//val.data type?
 		case buffers:
 			return "int[]";//val.data lenght?
+		case function:
+			return "{…}";
 		case operators:
 		case expressions:
 		case unknown:
 			return "?";
 		default:
+			breakpoint_helper
 			error("MISSING CASE");
 			return "MISSING CASE";
 	}
