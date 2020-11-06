@@ -93,7 +93,7 @@ public:
 	}
 
 	bool use_default=false;
-	T defaulty=0;
+	T defaulty;
 	void setDefault(T d){
 		defaulty = d;
 		use_default = true;
