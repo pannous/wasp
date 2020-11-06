@@ -449,7 +449,7 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 		case floats:
 			last_type = f32;// auto cast return!
 			code.addByte((byte) f32_auto);
-			code.push(ieee754(node.value.floaty), 4);
+			code.push(ieee754(node.value.real), 4);
 			break;
 //			case identifier:
 //				code.opcode(get_local);
