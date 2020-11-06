@@ -215,8 +215,10 @@ void testAllWasm() {
 //	assert_emit("logi 3",(long)0);
 	run_wasm_file("../tests/t.wasm");
 	assert_is("id 3+3",6);
+	assert_emit("id (3+3)",(long)6);
+	assert_emit("id 123",(long)123);
 	assert_emit("id 3+3",(long)6);
-	assert_emit("logi 3+3",(long)0);
+	assert_emit("logi 3+3",(long)6);// how lol
 	exit(1);
 	testFloatOperators();
 	testWasmLogicUnary();
