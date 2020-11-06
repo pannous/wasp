@@ -372,6 +372,8 @@ String typeName(Type t) {
 			return "nil";
 		case unknown :
 			return "unknown";
+		case function:
+			return "function";
 		default:
 			breakpoint_helper
 			error(str("MISSING Type name mapping ") + t);
