@@ -208,11 +208,14 @@ void testAllWasm() {
 			assert_equals(emit("x*=14"), 1)
 			assert_equals(emit("x=15;x>=14"), 1)
 	)
-	assert_equals(emit("3.0+3.0*3.0"), 12)
-
-	assert_emit("square 3",9);
-	assert_emit("logf 3.1",(long)0);// auto return 0 if call returns void
-	assert_emit("logi 3",(long)0);
+//	assert_equals(emit("3.0+3.0*3.0"), 12)
+//
+//	assert_emit("square 3",9);
+//	assert_emit("logf 3.1",(long)0);// auto return 0 if call returns void
+//	assert_emit("logi 3",(long)0);
+	assert_is("id 3+3",6);
+	assert_emit("logi 3+3",(long)0);
+	exit(1);
 	testFloatOperators();
 	testWasmLogicUnary();
 	testConstReturn();
