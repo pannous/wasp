@@ -184,6 +184,7 @@ byte opcodes(const char *s, byte kind = 0) {
 		if (eq(s, "-"))return i32_sub;
 		if (eq(s, "*"))return i32_mul;
 		if (eq(s, "/"))return i32_div;
+		if (eq(s, "%"))return i32_rem;
 		if (eq(s, "=="))return i32_eq;
 		if (eq(s, "!="))return i32_ne;
 		if (eq(s, ">"))return i32_gt;
@@ -203,8 +204,7 @@ byte opcodes(const char *s, byte kind = 0) {
 		if (eq(s, "|"))return i32_or;
 	} else {
 
-//		if (eq(s, "not"))return f32_eqz; // no such thing!
-		if (eq(s, "not"))return i64_eqz;
+		if (eq(s, "not"))return f32_eqz; // HACK: no such thing!
 		if (eq(s, "+"))return f32_add;
 		if (eq(s, "-"))return f32_sub;
 		if (eq(s, "*"))return f32_mul;
@@ -375,6 +375,7 @@ Code emitExpression(Node *node)__attribute__((warn_unused_result));
 //Code emitExpression(Node *node)__attribute__((error_unused_result));
 
 Valtype last_type;// autocast if not int
+Map<String,Valtype> return_types;
 
 Code emitExpression(Node node) { // expression, statement or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
@@ -392,7 +393,8 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			};
 			code.addByte(call);
 			code.addByte(index);// ok till index>127, then use unsignedLEB128
-			last_type = voids;// todo lookup return type
+
+			last_type = return_types[node.name];// voids;// todo lookup return type
 			break;
 		case reference:
 		case operators: {
@@ -413,11 +415,12 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 				code.addByte((index + 1));// ok till index>127?
 				break;
 			}
-			byte opcode = opcodes(node.name, rhs.kind == floats);
-			if (opcode == 0x50) { // hack for missing f32_eqz
+			byte opcode = opcodes(node.name, last_type == f32);
+			if (opcode == f32_eqz) { // hack for missing f32_eqz
 //				0.0 + code.addByte(f32_eq);
-				code.addByte(0xBC);// f32->i32
+				code.addByte(i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
 				code.addByte(i32_eqz);
+				last_type = i32;// bool'ish
 				break;
 			} else if (opcode > 0)
 				code.addByte(opcode);
@@ -425,7 +428,8 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 				breakpoint_helper
 				error("unknown opcode / call / symbol: "s + node.name);
 			}
-
+			if(opcode==f32_eq or opcode==f32_gt or opcode==f32_lt)
+				last_type = i32;// bool'ish
 		}
 			break;
 		case nils:// also 0, false
@@ -725,6 +729,8 @@ Code &emit(Program ast) {
 	symbols.insert_or_assign("logi", symbols.size());// import!
 	symbols.insert_or_assign("logf", symbols.size());// import!
 	symbols.insert_or_assign("square", symbols.size());
+	return_types.setDefault(voids);
+	return_types.insert_or_assign("square", int32);
 
 //	auto importSection = createSection(import, encodeVector(printFunctionImport));//+memoryImport
 
@@ -802,7 +808,7 @@ Code emitBlock(Node node,Valtype returns) {
 		if(returns==Valtype::voids and last_type!=Valtype::voids)
 			block.addByte(drop);
 		if(returns==Valtype::i32 and last_type==Valtype::f32)
-			block.addByte(i32_reinterpret_f32);
+			block.addByte(i32_trunc_f32_s);
 		if(returns==Valtype::i32 and last_type==Valtype::voids)
 			block.addByte(i32_const).addByte(0);// hack? return 0/false by default. ok? see python!
 //		if(returns==Valtype::f32)…
