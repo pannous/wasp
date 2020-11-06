@@ -390,8 +390,11 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 	int index = symbols[node.name];
 	switch (node.kind) {
 		case function:
-			if(index<0)
+			if(index<0){
+				breakpoint_helper
 				error("MISSING WASM import/declaration for function %s\n"s% node.name);
+			}
+
 			for (Node arg : node) {
 				code.push(emitExpression(arg));
 			};
@@ -432,6 +435,8 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 				breakpoint_helper
 				error("unknown opcode / call / symbol: "s + node.name);
 			}
+			if(opcode==i32_add or opcode==i32_modulo or opcode==i32_sub or opcode==i32_div or opcode==i32_mul)
+				last_type = i32;
 			if(opcode==f32_eq or opcode==f32_gt or opcode==f32_lt)
 				last_type = i32;// bool'ish
 		}
@@ -762,7 +767,7 @@ Code &emit(Program ast) {
 	symbols.insert_or_assign("main", function_offset);
 	symbols.insert_or_assign("nop", function_offset+1);// NOP code_data1
 	symbols.insert_or_assign("id", function_offset+2);// NOP code_data1
-
+	return_types["id"] = i32;
 //	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 //	char code_data[] = {0x00,0x41,0x2A,0x0F,0x0B};// 0x00 == unreachable as block header !?
 //	0a 0e 02 09 00  41 2a 10 00 41 15 0f 0b 02 00
@@ -773,7 +778,8 @@ Code &emit(Program ast) {
 	char code_data[] = {0/*locals_count*/, i32_auto, 42, return_block,
 	                    end_block};// 0x00 == unreachable as block header !?
 	char code_data_nop[] = {0/*locals_count*/, end_block};// NOP
-	char code_data_id[] = {0/*locals_count*/,0,get_local,return_block, end_block};// NOP
+//	char code_data_id[] = {0/*locals_count*/, end_block};// NOP
+	char code_data_id[] = {1/*locals_count*/,1,i32,get_local,0,return_block, end_block};// NOP
 //	char code_data[] = {0x00,0x0b,0x02,0x00,0x0b};// empty type:1 len:2
 
 
@@ -781,17 +787,17 @@ Code &emit(Program ast) {
 //	Code da_code2=Code(code_data,sizeof(code_data));
 	Code da_code = emitBlock(ast.main,Valtype::i32);
 //	check(da_code2 == da_code);
-	Code da_code1 = Code(code_data_nop, sizeof(code_data_nop));
+	Code da_code_nop = Code(code_data_nop, sizeof(code_data_nop));
 	Code da_code_id = Code(code_data_id, sizeof(code_data_id));
 
 	char function_count = 3;// offset by imports!?
 	auto codeSection = createSection(code_section,
-	                                 Code(function_count) + encodeVector(da_code) + encodeVector(da_code1) + encodeVector(da_code_id));
+	                                 Code(function_count) + encodeVector(da_code) + encodeVector(da_code_nop) + encodeVector(da_code_id));
 
 
 	// the function section is a vector of type indices that indicate the type of each function in the code section
 //	char func_types[]={0x01,0x00};
-	char types_of_functions[] = {function_count, 0x00, 0x01, 0x04};// mapping/connecting function index to type index
+	char types_of_functions[] = {function_count, 0x00, 0x01, 0x03};// mapping/connecting function index to type index
 	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
 	Code funcSection = createSection(func, Code(types_of_functions, sizeof(types_of_functions)));
 
@@ -800,7 +806,7 @@ Code &emit(Program ast) {
 	auto customSection = createSection(custom, encodeVector(Code(types_of_functions, 3)));
 //
 	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + importSection + funcSection +
-	            exportSection + codeSection + customSection;
+	            exportSection + codeSection;// + customSection;
 //	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection;// + memorySection + ;
 	code.debug();
 	return code.clone();
