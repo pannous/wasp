@@ -181,7 +181,10 @@ enum Section {
 	data = 11
 };
 
+
+
 // https://webassembly.github.io/spec/core/binary/types.html
+// https://webassembly.github.io/spec/core/binary/values.html
 enum Valtype {
 	i32 = 0x7f,
 	f32 = 0x7d,
