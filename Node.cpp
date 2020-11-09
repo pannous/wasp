@@ -439,7 +439,7 @@ Node &Node::addRaw(Node &node) {
 }
 
 void Node::add(Node &node) {
-	add(&node);
+	return add(&node);
 }
 
 void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
@@ -725,7 +725,7 @@ Node &Node::flat() {
 		children[0].parent = parent;
 		return children[0].flat();
 	}
-	return *this;
+	return *this->clone();
 }
 
 Node &Node::setName(char *name0) {
