@@ -213,11 +213,14 @@ void testAllWasm() {
 //	assert_emit("square 3",9);
 //	assert_emit("logf 3.1",(long)0);// auto return 0 if call returns void
 //	assert_emit("logi 3",(long)0);
+	assert_emit("3 + id 3+3",(long)9);
+
 	run_wasm_file("../tests/t.wasm");
 	assert_is("id 3+3",6);
 	assert_emit("id (3+3)",(long)6);
 	assert_emit("id 123",(long)123);
 	assert_emit("id 3+3",(long)6);
+
 	assert_emit("logi 3+3",(long)6);// how lol
 //	exit(1);
 	testFloatOperators();

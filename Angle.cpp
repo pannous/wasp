@@ -237,6 +237,7 @@ String operator_list[] = {"is", "equal", "equals", "==", "!=", "≠", "xor", "or
 Node groupOperators(Node expression) {
 	if(expression.length==1)return groupOperators(expression.children[0]); // Nothing to be grouped
 	expression.log();
+	Node lhs;
 	for (Node op : expression) {
 		if (op.name.in(function_list)) {
 			op.kind = function;
@@ -245,8 +246,12 @@ Node groupOperators(Node expression) {
 				while (n = n->next)
 					op.addRaw(n);
 			}
-			return groupOperators(op.flat());// applied on children
-		}
+			Node* right = groupOperators(op.flat()).clone();// applied on children
+			if(lhs.empty())return *right;
+			lhs.add(right);
+			groupOperators(lhs);
+		} else		lhs.add(op);
+
 	}
 	for (String operator_name : operator_list) {
 		for (Node op : expression) {
