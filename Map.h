@@ -69,7 +69,10 @@ public:
 	T &operator[](S key) {
 		int position1 = position(key);
 		if (position1 < 0) {
-			if(use_default)return defaulty;
+			if(use_default){
+				insert_or_assign(key, defaulty);
+				return values[_size - 1];
+			}
 			else error("MISSING KEY: %s\n"s % key);
 		}
 		T &t = values[position1];
