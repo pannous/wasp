@@ -235,18 +235,25 @@ String operator_list[] = {"is", "equal", "equals", "==", "!=", "≠", "xor", "or
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
                           "*", "×", "⋅", "⋆", "/", "÷", "^"}; // "while" ...
 Node groupOperators(Node expression) {
-	if(expression.length==1)return groupOperators(expression.children[0]); // Nothing to be grouped
+//	if(expression.kind==function)return expression;// already grouped
+	if(expression.length==0)return expression;
+	if(expression.length==1)
+		if(expression.kind!=function)
+			return groupOperators(expression.children[0]); // Nothing to be grouped
 	expression.log();
 	Node lhs;
 	for (Node op : expression) {
-		if (op.name.in(function_list)) {
+		if (op.name.in(function_list) and op.length==0) { // todo: op.length>0 means already has body?
 			op.kind = function;
 			if (!op.children) {
 				Node *n = &op;
-				while (n = n->next)
+				if(n->next and n->next->kind==groups)
+					op.add(n->next); //f(x,y)+1
+				else while (n = n->next) // f x+1
 					op.addRaw(n);
 			}
-			Node* right = groupOperators(op.flat()).clone();// applied on children
+			Node &flat = op.flat();
+			Node* right = groupOperators(flat).clone();// applied on children
 			if(lhs.empty())return *right;
 			lhs.add(right);
 			groupOperators(lhs);
@@ -260,6 +267,11 @@ Node groupOperators(Node expression) {
 				Node rhs = expression.from(op);
 				op["lhs"] = groupOperators(lhs);
 				op["rhs"] = groupOperators(rhs);
+				if(expression.kind==function){// f 3*3 => f(*(3 3))
+					expression.children = op.clone();
+					expression.length = 1;
+					return expression;
+				}
 				// should NOT MODIFY original AST, because iterate by value, right?
 				return op;// (a op c) => op(a c)
 			}

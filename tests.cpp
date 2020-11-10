@@ -1069,7 +1069,8 @@ void testIndex() {
 
 void tests() {
 	assert_is("[a b c]#2", "b");
-
+	assert_is("one plus two times three",7);
+	testGraphQlQuery2();
 	testNilValues();
 	testCall();
 	testNewlineLists();
@@ -1153,8 +1154,6 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-	testGraphQlQuery2();
-	assert_is("one plus two times three",7);
 
 	testAllWasm();
 //	exit(43);
