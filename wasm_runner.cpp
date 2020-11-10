@@ -63,6 +63,9 @@ int square(int a){
 	return a * a;
 }
 
+int sqrt1(int a){
+	return a * a;
+}
 static NativeSymbol native_symbols[] =
 		{        // WAVM can call f(float) f(char*)! No JS restrictions!!
 				{
@@ -73,6 +76,7 @@ static NativeSymbol native_symbols[] =
 						false
 				},
 				{"square", (void *) square, "(i)i", NULL, false},
+				{"√", (void *) sqrt1, "(i)i", NULL, false},
 				{"logi", (void *) logi, "(i)", NULL, false},
 				{"log_f32", (void *) log_f32, "(f)", NULL, false},
 				{"logf", (void *) log_f32, "(f)", NULL, false},

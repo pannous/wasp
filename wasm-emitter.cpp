@@ -378,7 +378,7 @@ Code emitBlock(Node node, Valtype returns);
 Code emitExpression(Node *node)__attribute__((warn_unused_result));
 //Code emitExpression(Node *node)__attribute__((error_unused_result));
 
-Valtype last_type;// autocast if not int
+Valtype last_type=voids;// autocast if not int
 Map<String,Valtype> return_types;
 
 Code emitExpression(Node node) { // expression, statement or BODY (list)
@@ -387,6 +387,7 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 	Code code;
 	Node statement = node;
 	symbols.setDefault(-1);
+	return_types.setDefault(voids);
 	int index = symbols[node.name];
 	switch (node.kind) {
 		case function:
@@ -400,7 +401,6 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			};
 			code.addByte(call);
 			code.addByte(index);// ok till index>127, then use unsignedLEB128
-
 			last_type = return_types[node.name];// voids;// todo lookup return type
 			break;
 		case reference:
@@ -413,13 +413,13 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			code.push(lhs_code);// might be empty ok
 			code.push(rhs_code);// might be empty ok
 //			}
-			if (index > 0) {// FUNCTION CALL
+			if (index >= 0) {// FUNCTION CALL
 				log("FUNCTION CALL: %s\n"s%node.name);
 				for (Node arg : node) {
 					emitExpression(arg);
 				};
 				code.addByte(call);
-				code.addByte((index + 1));// ok till index>127?
+				code.addByte((index));// ok till index>127?
 				break;
 			}
 			byte opcode = opcodes(node.name, last_type == f32);
@@ -687,7 +687,7 @@ Code signedLEB128(int n) {
 
 Code &emit(Program ast) {
 	symbols.clear();
-
+	return_types.setDefault(voids);
 	// Function types are vectors of parameters and return types. Currently
 	// WebAssembly only supports single return values
 //  bytes printFunctionType = new char[]{functionType,encodeVector(f32), emptyArray}
@@ -733,13 +733,18 @@ Code &emit(Program ast) {
 	Code logi_iv = encodeString("env") + encodeString("logi").addByte(func_export).addType(1);
 	Code logf_fv = encodeString("env") + encodeString("logf").addByte( func_export).addType(4);
 	Code square_ii = encodeString("env") + encodeString("square").addByte(func_export).addType(3);
-	int import_count = 3;
-	auto importSection = createSection(import, Code(import_count) + logi_iv + logf_fv + square_ii);
+	Code sqrt_ii = encodeString("env") + encodeString("√").addByte(func_export).addType(3);
+
+	int import_count = 4;
+	auto importSection = createSection(import, Code(import_count) + logi_iv + logf_fv + square_ii + sqrt_ii);
+//
 	symbols.insert_or_assign("logi", symbols.size());// import!
 	symbols.insert_or_assign("logf", symbols.size());// import!
 	symbols.insert_or_assign("square", symbols.size());
-	return_types.setDefault(voids);
+	symbols.insert_or_assign("√", symbols.size());
 	return_types.insert_or_assign("square", int32);
+//	return_types.insert_or_assign("logi", voids);
+	return_types.insert_or_assign("√", int32);
 
 //	auto importSection = createSection(import, encodeVector(printFunctionImport));//+memoryImport
 
@@ -764,9 +769,10 @@ Code &emit(Program ast) {
 
 	short function_offset = import_count;
 // index needs to be known before emitting code, so call $i works
-	symbols.insert_or_assign("main", function_offset);
-	symbols.insert_or_assign("nop", function_offset+1);// NOP code_data1
-	symbols.insert_or_assign("id", function_offset+2);// NOP code_data1
+	symbols.insert_or_assign("main", function_offset++);
+	symbols.insert_or_assign("nop", function_offset++);
+	symbols.insert_or_assign("id", function_offset++);
+
 	return_types["id"] = i32;
 //	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 //	char code_data[] = {0x00,0x41,0x2A,0x0F,0x0B};// 0x00 == unreachable as block header !?
@@ -785,14 +791,14 @@ Code &emit(Program ast) {
 
 //	Code function1 = codeBlock(code_data);
 //	Code da_code2=Code(code_data,sizeof(code_data));
-	Code da_code = emitBlock(ast.main,Valtype::i32);
+	Code main_block = emitBlock(ast.main, Valtype::i32);
 //	check(da_code2 == da_code);
-	Code da_code_nop = Code(code_data_nop, sizeof(code_data_nop));
-	Code da_code_id = Code(code_data_id, sizeof(code_data_id));
+	Code nop_block = Code(code_data_nop, sizeof(code_data_nop));
+	Code id_block = Code(code_data_id, sizeof(code_data_id));
 
 	char function_count = 3;// offset by imports!?
 	auto codeSection = createSection(code_section,
-	                                 Code(function_count) + encodeVector(da_code) + encodeVector(da_code_nop) + encodeVector(da_code_id));
+	                                 Code(function_count) + encodeVector(main_block) + encodeVector(nop_block) + encodeVector(id_block));
 
 
 	// the function section is a vector of type indices that indicate the type of each function in the code section
@@ -820,6 +826,7 @@ Code emitBlock(Node node,Valtype returns) {
 	int locals_count = 0;
 	block.add(locals_count);
 	Code inner_code_data = emitExpression(node);
+	Valtype x = last_type;
 	block.push(inner_code_data);
 	if(returns!=last_type){
 		if(returns==Valtype::voids and last_type!=Valtype::voids)

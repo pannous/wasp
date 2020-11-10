@@ -337,29 +337,29 @@ bool Node::operator!=(Node other) {
 }
 
 bool Node::operator>(Node other) {
-	if(kind==strings and other.kind==strings){
+	if (kind == strings and other.kind == strings) {
 		return value.string > other.value.string;
 	}
-	if(kind==longs){
+	if (kind == longs) {
 		if (other.kind == longs)return value.longy > other.value.longy;
 		if (other.kind == reals)return value.longy > other.value.real;
 	}
-	if(kind==reals){
+	if (kind == reals) {
 		if (other.kind == longs)return value.real > other.value.longy;
 		if (other.kind == reals)return value.real > other.value.real;
 	}
 	if (other.kind == longs) {
 		if (kind == longs)return value.longy > other.value.longy;
 		if (kind == reals)return value.real > other.value.longy;
-		if(kind==objects or kind==groups or kind==patterns)
+		if (kind == objects or kind == groups or kind == patterns)
 			return length > other.value.longy;
 	}
-	if (other.kind==objects or other.kind==groups or other.kind==patterns){
+	if (other.kind == objects or other.kind == groups or other.kind == patterns) {
 		if (kind == longs)return value.longy > other.length;
-		if(kind==objects or kind==groups or kind==patterns)
-		return length > other.value.longy;
+		if (kind == objects or kind == groups or kind == patterns)
+			return length > other.value.longy;
 	}
-	if(!has("compare") and !has("greater") and !has("less"))
+	if (!has("compare") and !has("greater") and !has("less"))
 		error("Missing compare functions for objects %s > %s ?"s % name % other);
 }
 
@@ -695,7 +695,8 @@ Node Node::from(String match) {
 	if (lhs.length == 0)
 		for (Node child:*this)
 			if (child.name == match)return child.values();
-	lhs.kind = kind;
+	if (kind != function)
+		lhs.kind = kind;
 	return lhs.flat();
 }
 
@@ -708,7 +709,8 @@ Node Node::to(String match) {
 	}
 //	if(rhs.length==0)// no match
 //		return *this;
-	rhs.kind = kind;
+	if (kind != function)
+		rhs.kind = kind;
 	return rhs.flat();
 }
 
@@ -718,6 +720,7 @@ Node Node::to(Node match) {
 
 //	Node& flatten(Node &current){
 Node &Node::flat() {
+	if (kind == function)return *this->clone();
 	if (length == 0 and kind == keyNode and name.empty() and value.node)return *value.node;
 	if (length == 1 and value.node == &children[0])// todo remove redundancy
 		return *value.node;
