@@ -395,6 +395,7 @@ let imports = {
 	global: {NaN: 0, Infinity, Math},
 	js:{print_ln:log,perf_counter:nop},// wasmfun
 	env: {
+		_square:x=>x*x,
 		memory,
 		table,
 		memory_size,
