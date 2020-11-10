@@ -3,6 +3,25 @@
 
 #define assert_emit(α, β) if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 
+
+void testWasmFunctionCalls() {
+
+	assert_is("id 3+3",6);
+	assert_emit("id 123",(long)123);
+	assert_emit("square 3",9);
+	assert_emit("logf 3.1",(long)0);// auto return 0 if call returns void
+	assert_emit("logi 3",(long)0);
+	assert_emit("logi 3+3",(long)0);
+	assert_emit("4*5 + square 2*3",(long)56);
+	assert_emit("id 3+3",(long)6);
+	assert_emit("3 + square 3",(long)12);
+	assert_emit("1+2 + square 1+2",(long)12);
+
+	assert_emit("id (3+3)",(long)6);
+	assert_is("id 3+3",6);
+	assert_emit("3 + id 3+3",(long)9);
+	assert_emit("3 + √3",(long)12);
+}
 void testConstReturn() {
 	assert_equals(emit("42"), 42)
 }
@@ -23,7 +42,8 @@ void testMathPrimitives() {
 }
 
 void testFloatOperators() {
-//	assert_equals(eval("42.0/2.0"), 21)
+	assert_equals(eval("42.0/2.0"), 21)
+	assert_equals(emit("3.0+3.0*3.0"), 12)
 	assert_equals(emit("42.0/2.0"), 21)
 	assert_equals(emit("42.0*2.0"), 84)
 	assert_equals(emit("42.0+2.0"), 44)
@@ -208,28 +228,8 @@ void testAllWasm() {
 			assert_equals(emit("x*=14"), 1)
 			assert_equals(emit("x=15;x>=14"), 1)
 	)
-//	assert_equals(emit("3.0+3.0*3.0"), 12)
-//
-//	assert_emit("square 3",9);
-//	assert_emit("logf 3.1",(long)0);// auto return 0 if call returns void
-//	assert_emit("logi 3",(long)0);
-	assert_emit("logi 3+3",(long)0);
-	assert_emit("4*5 + square 2*3",(long)56);
-	assert_emit("id 3+3",(long)6);
-	assert_emit("3 + square 3",(long)12);
-	assert_emit("1+2 + square 1+2",(long)12);
-
-	assert_emit("id (3+3)",(long)6);
-	assert_is("id 3+3",6);
-	assert_emit("3 + id 3+3",(long)9);
-	assert_emit("3 + √3",(long)12);
-
-
-
+testWasmFunctionCalls();
 	run_wasm_file("../tests/t.wasm");
-	assert_is("id 3+3",6);
-	assert_emit("id 123",(long)123);
-
 //	exit(1);
 	testFloatOperators();
 	testWasmLogicUnary();
