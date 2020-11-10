@@ -79,7 +79,6 @@ public:
 		data = concat(data, more.data,length,more.length);
 		length = length + more.length;
 		return *this;
-
 	}
 
 	Code& addType(short type) {
