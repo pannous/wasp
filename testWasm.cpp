@@ -23,94 +23,145 @@ void testWasmFunctionCalls() {
 	assert_emit("3 + √3",(long)12);
 }
 void testConstReturn() {
-	assert_equals(emit("42"), 42)
+	assert_emit(("42"), 42)
 }
 
 void testPrint() {
-	assert_equals(emit("print 42"), 42)
+	assert_emit(("print 42"), 42)
 }
 
 void testMathPrimitives() {
 	skip(
-			assert_equals(emit("42.1"), 42.1) // todo: return &Node(42.1) or print value to stdout
-			assert_equals(emit("-42.1"), 42.1)
+			assert_emit(("42.1"), 42.1) // todo: return &Node(42.1) or print value to stdout
+			assert_emit(("-42.1"), 42.1)
 	)
-	assert_equals(emit("42"), 42)
-	assert_equals(emit("-42"), -42)
-	assert_equals(emit("2000000000"), 2000000000)
-	assert_equals(emit("-2000000000"), -2000000000)
+	assert_emit(("42"), 42)
+	assert_emit(("-42"), -42)
+	assert_emit(("2000000000"), 2000000000)
+	assert_emit(("-2000000000"), -2000000000)
 }
 
 void testFloatOperators() {
 	assert_equals(eval("42.0/2.0"), 21)
-	assert_equals(emit("3.0+3.0*3.0"), 12)
-	assert_equals(emit("42.0/2.0"), 21)
-	assert_equals(emit("42.0*2.0"), 84)
-	assert_equals(emit("42.0+2.0"), 44)
-	assert_equals(emit("42.0-2.0"), 40)
-	assert_equals(emit("3.0+3.0*3.0"), 12)
-	assert_equals(emit("3.0+3.0*3.0>3.0+3.0+3.0"), true)
-	assert_equals(emit("3.0+3.0*3.0<3.0*3.0*3.0"), true)
-	assert_equals(emit("3.0+3.0*3.0<3.0+3.0+3.0"), false)
-	assert_equals(emit("3.0+3.0*3.0>3.0*3.0*3.0"), false)
-	assert_equals(emit("3.0+3.0+3.0<3.0+3.0*3.0"), true)
-	assert_equals(emit("3.0*3.0*3.0>3.0+3.0*3.0"), true)
+	assert_emit(("3.0+3.0*3.0"), 12)
+	assert_emit(("42.0/2.0"), 21)
+	assert_emit(("42.0*2.0"), 84)
+	assert_emit(("42.0+2.0"), 44)
+	assert_emit(("42.0-2.0"), 40)
+	assert_emit(("3.0+3.0*3.0"), 12)
+	assert_emit(("3.0+3.0*3.0>3.0+3.0+3.0"), true)
+	assert_emit(("3.0+3.0*3.0<3.0*3.0*3.0"), true)
+	assert_emit(("3.0+3.0*3.0<3.0+3.0+3.0"), false)
+	assert_emit(("3.0+3.0*3.0>3.0*3.0*3.0"), false)
+	assert_emit(("3.0+3.0+3.0<3.0+3.0*3.0"), true)
+	assert_emit(("3.0*3.0*3.0>3.0+3.0*3.0"), true)
 }
 void testMathOperators() {
-//	assert_equals(emit("42 2 *"), 84)
+//	assert_emit(("42 2 *"), 84)
 	assert_equals(eval("7%5"), 2)
 	assert_equals(eval("42/2"), 21)
-	assert_equals(emit("42/2"), 21)
-	assert_equals(emit("42*2"), 84)
-	assert_equals(emit("42+2"), 44)
-	assert_equals(emit("42-2"), 40)
-	assert_equals(emit("3+3*3"), 12)
-	assert_equals(emit("3+3*3>3+3+3"), true)
-	assert_equals(emit("3+3*3<3*3*3"), true)
-	assert_equals(emit("3+3*3<3+3+3"), false)
-	assert_equals(emit("3+3*3>3*3*3"), false)
-	assert_equals(emit("3+3+3<3+3*3"), true)
-	assert_equals(emit("3*3*3>3+3*3"), true)
-//	assert_equals(emit("3⁰"),1);
-//	assert_equals(emit("3¹"),3);
-//	assert_equals(emit("3²"),9);
-//	assert_equals(emit("3³"),27);
-//	assert_equals(emit("3⁴"),9*9);
+	assert_emit(("42/2"), 21)
+	assert_emit(("42*2"), 84)
+	assert_emit(("42+2"), 44)
+	assert_emit(("42-2"), 40)
+	assert_emit(("3+3*3"), 12)
+	assert_emit(("3+3*3>3+3+3"), true)
+	assert_emit(("3+3*3<3*3*3"), true)
+	assert_emit(("3+3*3<3+3+3"), false)
+	assert_emit(("3+3*3>3*3*3"), false)
+	assert_emit(("3+3+3<3+3*3"), true)
+	assert_emit(("3*3*3>3+3*3"), true)
+//	assert_emit(("3⁰"),1);
+//	assert_emit(("3¹"),3);
+//	assert_emit(("3²"),9);
+//	assert_emit(("3³"),27);
+//	assert_emit(("3⁴"),9*9);
 	skip(
-			assert_equals(emit("42^2"), 1764) NO SUCH PRIMITIVE
+			assert_emit(("42^2"), 1764) NO SUCH PRIMITIVE
 	)
 }
 
+void testComparisonMath() {
+	// may be evaluated by compiler!
+	assert_emit(("3*42>2*3"), 1)
+	assert_emit(("3*1<2*3"), 1)
+	assert_emit(("3*452==452*3"), 1)
+	assert_emit(("3*42≥2*3"), 1)
+	assert_emit(("3*2≥2*3"), 1)
+	assert_emit(("3*2≤2*3"), 1)
+	assert_emit(("3*2≤24*3"), 1)
+	assert_emit(("3*13!=14*3"), 1)
+	assert_emit(("3*13<=14*3"), 1)
+	assert_emit(("3*15>=14*3"), 1)
+	assert_emit(("3*42<2*3"), False);
+	assert_emit(("3*1>2*3"), False);
+	assert_emit(("3*452!=452*3"), False);
+	assert_emit(("3*13==14*3"), False);
+	assert_emit(("3*13>=14*3"), False);
+	assert_emit(("3*15<=14*3"), False);
+	assert_emit(("3*42≥112*3"), false)
+	assert_emit(("3*2≥112*3"), false)
+	assert_emit(("3*12≤2*3"), false)
+	assert_emit(("3*112≤24*3"), false)
+}
+
+
+void testComparisonId() {
+	// may be evaluated by compiler!
+	assert_emit("id 3*42> id 2*3", 1)
+	assert_emit("id 3*1< id 2*3", 1)
+	assert_emit("id 3*452==452*3", 1)
+	assert_emit(("id 3*42≥2*3"), 1)
+	assert_emit(("id 3*2≥2*3"), 1)
+	assert_emit(("id 3*2≤2*3"), 1)
+	assert_emit(("id 3*2≤24*3"), 1)
+	assert_emit(("id 3*13!=14*3"), 1)
+	assert_emit(("id 3*13<= id 14*3"), 1)
+	assert_emit(("id 3*13<= id 14*3"), 1)
+
+	assert_emit(("id 3*15>= id 14*3"), 1)
+	assert_emit(("id 3*42< id 2*3"), False);
+	assert_emit(("id 3*1> id 2*3"), False);
+	assert_emit(("id 3*452!=452*3"), False);
+	assert_emit(("id 3*13==14*3"), False);
+	assert_emit(("id 3*13>= id 14*3"), False);
+	assert_emit(("id 3*15<= id 14*3"), False);
+	assert_emit(("id 3*42≥112*3"), false)
+	assert_emit(("id 3*2≥112*3"), false)
+	assert_emit(("id 3*12≤2*3"), false)
+	assert_emit(("id 3*112≤24*3"), false)
+}
 
 void testComparisonPrimitives() {
 	// may be evaluated by compiler!
-	assert_equals(emit("42>2"), 1)
-	assert_equals(emit("1<2"), 1)
-	assert_equals(emit("452==452"), 1)
-	assert_equals(emit("42≥2"), 1)
-	assert_equals(emit("2≥2"), 1)
-	assert_equals(emit("2≤2"), 1)
-	assert_equals(emit("2≤24"), 1)
-	assert_equals(emit("13!=14"), 1)
-	assert_equals(emit("13<=14"), 1)
-	assert_equals(emit("15>=14"), 1)
-	assert_equals(emit("42<2"), False);
-	assert_equals(emit("1>2"), False);
-	assert_equals(emit("452!=452"), False);
-	assert_equals(emit("13==14"), False);
-	assert_equals(emit("13>=14"), False);
-	assert_equals(emit("15<=14"), False);
-	assert_equals(emit("42≥112"), false)
-	assert_equals(emit("2≥112"), false)
-	assert_equals(emit("12≤2"), false)
-	assert_equals(emit("112≤24"), false)
+	assert_emit(("42>2"), 1)
+	assert_emit(("1<2"), 1)
+	assert_emit(("452==452"), 1)
+	assert_emit(("42≥2"), 1)
+	assert_emit(("2≥2"), 1)
+	assert_emit(("2≤2"), 1)
+	assert_emit(("2≤24"), 1)
+	assert_emit(("13!=14"), 1)
+	assert_emit(("13<=14"), 1)
+	assert_emit(("15>=14"), 1)
+	assert_emit(("42<2"), False);
+	assert_emit(("1>2"), False);
+	assert_emit(("452!=452"), False);
+	assert_emit(("13==14"), False);
+	assert_emit(("13>=14"), False);
+	assert_emit(("15<=14"), False);
+	assert_emit(("42≥112"), false)
+	assert_emit(("2≥112"), false)
+	assert_emit(("12≤2"), false)
+	assert_emit(("112≤24"), false)
 }
 
 void testWasmLogicPrimitives() {
+	assert_emit(("id 3*13<= id 14*3"), 1)
 
 	skip( // todo: if emit returns Node:
-			assert_equals(emit("false").name, False.name);// NO LOL emit only returns number
-			assert_equals(emit("false"), False);
+			assert_emit(("false").name, False.name);// NO LOL emit only returns number
+			assert_emit(("false"), False);
 	)
 
 	assert_emit("true", True);
@@ -215,7 +266,7 @@ void testWasmMemoryIntegrity() {
 
 //testWasmControlFlow
 void wasm_todos() {
-	assert_equals(emit("42.1"), 42.1) // main returns int, should be pointer to value!
+	assert_emit(("42.1"), 42.1) // main returns int, should be pointer to value!
 }
 
 void testAllWasm() {
@@ -225,12 +276,13 @@ void testAllWasm() {
 	skip(
 			testsFailingInWasm();
 			assert_emit("0.0", (long) 0);// can't emit float yet
-			assert_equals(emit("x*=14"), 1)
-			assert_equals(emit("x=15;x>=14"), 1)
+			assert_emit(("x*=14"), 1)
+			assert_emit(("x=15;x>=14"), 1)
 	)
-testWasmFunctionCalls();
-	run_wasm_file("../tests/t.wasm");
+	assert_emit("id 3*42> id 2*3", 1)
 //	exit(1);
+	run_wasm_file("../tests/t.wasm");
+	testWasmFunctionCalls();
 	testFloatOperators();
 	testWasmLogicUnary();
 	testConstReturn();
@@ -239,7 +291,8 @@ testWasmFunctionCalls();
 	testMathOperators();
 	testMathPrimitives();
 	testComparisonPrimitives();
-
+	testComparisonMath();
+	testComparisonId();
 	skip(
 			wasm_todos();
 			testWasmLogicOnObjects();
