@@ -578,7 +578,11 @@ float precedence(String name) {
 	if (eq(name, "or"))return 7.2;
 	if (eq(name, "||"))return 7.2;
 
-	if (eq(name, ":"))return 9;// todo:
+	if (eq(name, ":"))return 7.5;// todo:
+
+	if (name.in(function_list))// f 1 > f 2
+		return 8;// 1000;// function calls outmost operation todo? add 3*square 4+1
+
 	if (eq(name, "⇒"))return 9;// todo
 	if (eq(name, "=>"))return 9;// todo:
 	if (eq(name, "="))return 10;
@@ -590,8 +594,8 @@ float precedence(String name) {
 	if (eq(name, "else"))return 11.09;
 	if (eq(name, "then"))return 11.15;
 	if (eq(name, "if"))return 100;
-	if (name.in(function_list) or name.in(functor_list))
-		return 1000;// function calls outmost operation todo? add 3*square 4+1
+	if( name.in(functor_list))// f 1 > f 2
+		return 1000;// if, while, ... statements calls outmost operation todo? add 3*square 4+1
 	return 0;// no precedence
 }
 
