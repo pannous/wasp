@@ -450,9 +450,12 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 //		case ints:
 			code.addByte((byte) i32_auto);
 			code.push(node.value.longy);
+			last_type = i32;
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case longs:
+			// todo: ints!!!
+			last_type = i32;
 //			if(call_extern)
 			code.addByte((byte) i32_const);
 //			code.opcode((byte)i64_auto);

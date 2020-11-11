@@ -217,6 +217,11 @@ void error(chars error) {
 void newline(){
 	printf("\n");
 }
+void info(chars msg) {
+	printf(msg);
+	newline();
+}
+
 void warn(chars warning) {
 	printf(warning);
 	newline();
