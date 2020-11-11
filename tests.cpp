@@ -718,7 +718,16 @@ void testGraphSimple() {
 	assert(result["me"].children[0].name == "name");// me.me = me good idea?
 }
 
+
+void testGraphQlQueryBug() {
+	var graphResult = "{friends: [ {name:x}, {name:y}]}";
+	assert_parses(graphResult);
+	Node &friends = result["friends"];
+	assert(friends[0]["name"] == "x");
+}
+
 void testGraphQlQuery() {
+	testGraphQlQueryBug();
 	var graphResult = "{\n  \"data\": {\n"
 	                  "    \"hero\": {\n"
 	                  "      \"id\": \"R2-D2\",\n"
@@ -1168,11 +1177,10 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-	assert_is("-2", -2);
-
-	testAllWasm();
+	testGraphQlQuery();
 	tests();// make sure all still ok before changes
-
+	testAllWasm();
+//	testWasmFunctionDefiniton();
 
 	testAngle();
 	todos();// those not passing yet (skip)

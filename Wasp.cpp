@@ -566,7 +566,7 @@ private:
 		if (node.name == "nill")return NIL;
 		if (node.name == "nil")return NIL;
 		if (node.name == "ø")return NIL;// nil not added to lists
-		if(node.name.in(operator_list))node.setType(operators); // later: in angle!? NO! HERE: a xor {} != a xxx{}
+		if (node.name.in(operator_list))node.setType(operators); // later: in angle!? NO! HERE: a xor {} != a xxx{}
 		return node;
 	}
 
@@ -899,7 +899,7 @@ private:
 		// wait, this should be part of case ' ', no?
 		//						a of {a:1 b:2}
 		return previous == ' ' and current.last().kind != operators and current.last().kind != function and
-				(!parent or parent and parent->last().kind != operators and parent->last().kind != function ) and
+		       (!parent or parent and parent->last().kind != operators and parent->last().kind != function) and
 		       lastNonWhite != ':' and lastNonWhite != '=' and lastNonWhite != ',' and lastNonWhite != ';' and
 		       lastNonWhite != '{' and lastNonWhite != '(' and lastNonWhite != '[';
 	}
@@ -918,7 +918,7 @@ private:
 		var length = text.length;
 		int start = at;
 		loop:
-		proceed();
+		proceed();// consumes char of LAST switch '(' ':' ... or 0 when starting
 		white();
 
 		while (ch and at <= length) {
@@ -943,12 +943,17 @@ private:
 			}// outer match unresolved so far
 			switch (ch) {
 				case '{': {
-					if (checkAmbiguousBlock(current,parent)) {
+					if (checkAmbiguousBlock(current, parent)) {
 						breakpoint_helper
 						warn("Ambiguous reading a {x} => Did you mean a{x} or a:{x} or a , {x}");
 					}
+					bool asListItem =
+							lastNonWhite == ',' or lastNonWhite == ';' or previous == ' ' and lastNonWhite != ':';
 					Node &object = value('}', &current.last()).setType(Type::objects);
-					current.addSmart(object);
+					if(asListItem)
+						current.addRaw(object);
+					else
+						current.addSmart(object);
 					break;
 				}
 				case '[': {
@@ -969,7 +974,7 @@ private:
 				case '-':
 				case '+':
 				case '.':
-					if (isDigit(next) and previous == ' ' or previous==0)
+					if (isDigit(next) and previous == ' ' or previous == 0)
 						current.addSmart(numbero());// (2+2) != (2 +2) !!!
 					else {
 						current.kind = expressions;
@@ -999,8 +1004,16 @@ private:
 					break;
 				}
 
-				case '=':
-				case ':': {
+				case ':':
+					if (next == '=') { // f x:=2x
+						current.addRaw(resolve(Node(":=")).setType(operators));
+						current.setType(expressions);
+						proceed();
+						proceed();
+						break;
+					}
+					// FALLTHROUGH:
+				case '=': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
 					bool add_raw = current.kind == expressions or key.kind == expressions or
@@ -1028,8 +1041,11 @@ private:
 //					break;// next expression
 					// FALLTHROUGH! >>
 				case ' ': // possibly significant whitespace not consumed by white()
-				case '\t':
+				case '\t': // why not skip to default:symbol ... ?
 				case ',': {
+					proceed();
+					white();
+					break;
 					if (next == ':' or next == 0 or previous == ',' or previous == close or close == '"' or
 					    close == '\'' or close == '`') {
 						proceed();
@@ -1039,7 +1055,8 @@ private:
 					if (sub.empty() and sub.name.empty())break;
 					if (current.kind == expressions or current.last() == expressions)
 						todo("what");
-					if (sub.length > 1 and sub.kind == groups and sub.name.empty())// bullshit (1 (2 3)) != (1 2 3) , OR IS IT here?
+					if (sub.length > 1 and sub.kind == groups and
+					    sub.name.empty())// bullshit (1 (2 3)) != (1 2 3) , OR IS IT here?
 						for (Node arg:sub)
 							current.addRaw(arg);
 					else
