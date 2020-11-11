@@ -50,10 +50,11 @@ typedef const char *chars;
 //void* alloc(number size);// wasm | linux
 extern unsigned int *memory;
 
-extern void err(chars error);
-extern void error(chars error);
-extern void warn(chars error);
-extern void warning(chars error);
+extern void err(chars);
+extern void error(chars);
+extern void info(chars);
+extern void warn(chars);
+extern void warning(chars);
 
 extern chars fetch(chars url);
 
@@ -186,8 +187,8 @@ public:
 		return data[i];
 	}
 
-	int indexOf(char c, int i = 0) {
-		for (int j = i; j < length; j++) {
+	int indexOf(char c, int from = 0) {
+		for (int j = from; j < length; j++) {
 			if (data[j] == c)return j;
 		}
 		return -1;
@@ -540,6 +541,9 @@ public:
 class SyntaxError : String {
 public:
 	char *data;
+	int lineNumber;
+	int columnNumber;
+	int at;
 public:
 	void* operator new(unsigned long size){
 		return static_cast<Node *>(calloc(sizeof(SyntaxError),size));// WOW THAT WORKS!!!

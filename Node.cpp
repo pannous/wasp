@@ -39,7 +39,7 @@ __stack_chk_fail(void) { /*log("__stack_chk_fail");*/} //  Error message will be
 
 void todo(chars error) {
 	breakpoint_helper
-	err(str("TODO ") + error);
+	warn(str("TODO ") + error);
 }
 
 //
@@ -50,6 +50,7 @@ void todo(chars error) {
 //new String();
 //auto ws = {' ', '\t', '\r', '\n'};
 Node Infinity = Node("Infinity");
+Node NegInfinity = Node("-Infinity");
 Node NaN = Node("NaN");
 //NIL=0;
 //Node NIL;
