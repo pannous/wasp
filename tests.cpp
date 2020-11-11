@@ -119,7 +119,7 @@ bool assert_isx(char *mark, Node expect) {
 	} catch (SyntaxError *err) {
 		printf("\nERROR IN TEST\n");
 		printf("%s", err->data);
-	}  catch (String *err) {
+	} catch (String *err) {
 		printf("\nERROR IN TEST\n");
 		printf("%s", err->data);
 	} catch (chars err) {
@@ -490,7 +490,7 @@ void testEval3() {
 
 
 void testMathExtra() {
-	assert_is("one plus two times three",7);
+	assert_is("one plus two times three", 7);
 }
 
 void testRoot() {
@@ -738,16 +738,29 @@ void testGraphQlQuery() {
 	result.log();
 	Node &data = result["data"];
 	data.log();
-	data["hero"].log();
-	data["hero"]["id"].log();
-
-	assert(data["hero"]["id"] == "R2-D2");
+	Node &hero = data["hero"];
+	hero.log();
+	hero["id"].log();
+	assert(hero["id"] == "R2-D2");
 	Node &friends = result["data"]["hero"]["friends"];
 	assert(friends[0]["name"] == "Luke Skywalker");
 //todo	assert(result["hero"] == result["data"]["hero"]);
 //	assert(result["hero"]["friends"][0]["name"] == "Luke Skywalker")// if 1-child, treat as root
 }
+
 void testGraphQlQuery2() {
+	assert_parses("{\n"
+	              "  human(id: \"1000\"){\n"
+	              "    name\n"
+	              "    height(unit: FOOT)\n"
+	              "  }\n"
+	              "}");
+	assert(result["human"]["id"] == 1000);
+	skip(assert(result["id"] == 1000, 0));// if length==1 descend!
+}
+
+void testGraphQlQuerySignificantWhitespace() {
+	// human() {} != human(){}
 	assert_parses("{\n"
 	              "  human(id: \"1000\") {\n"
 	              "    name\n"
@@ -759,19 +772,19 @@ void testGraphQlQuery2() {
 }
 
 void testGraphParams() {
-	assert_parses("{\n  empireHero: hero(episode: EMPIRE) {\n    name\n  }\n"
-	              "  jediHero: hero(episode: JEDI) {\n    name\n  }\n}");
+	assert_parses("{\n  empireHero: hero(episode: EMPIRE){\n    name\n  }\n"
+	              "  jediHero: hero(episode: JEDI){\n    name\n  }\n}");
 	Node &hero = result["empireHero"];
 	hero.log();
 	assert(hero["episode"] == "EMPIRE");
-	assert_parses("\nfragment comparisonFields on Character {\n"
-	              "  name\n  appearsIn\n  friends {\n    name\n  }\n }");
-	assert_parses("\nfragment comparisonFields on Character {\n  name\n  appearsIn\n  friends {\n    name\n  }\n}")
+	assert_parses("\nfragment comparisonFields on Character{\n"
+	              "  name\n  appearsIn\n  friends{\n    name\n  }\n }");
+	assert_parses("\nfragment comparisonFields on Character{\n  name\n  appearsIn\n  friends{\n    name\n  }\n}")
 // VARIAblE: { "episode": "JEDI" }
-	assert_parses("query HeroNameAndFriends($episode: Episode) {\n"
-	              "  hero(episode: $episode) {\n"
+	assert_parses("query HeroNameAndFriends($episode: Episode){\n"
+	              "  hero(episode: $episode){\n"
 	              "    name\n"
-	              "    friends {\n"
+	              "    friends{\n"
 	              "      name\n"
 	              "    }\n"
 	              "  }\n"
@@ -1060,16 +1073,16 @@ void testIndex() {
 	result.log();
 	check(result.length == 3);
 	assert_is("[a b c]#2", "b");
-	assert_is("{a:1 b:2}[a]",1)
-	assert_is("{a:1 b:2}.a",1)
-	assert_is("a of {a:1 b:2}",1)
-	assert_is("a in {a:1 b:2}",1)
+	assert_is("{a:1 b:2}[a]", 1)
+	assert_is("{a:1 b:2}.a", 1)
+	assert_is("a of {a:1 b:2}", 1)
+	assert_is("a in {a:1 b:2}", 1)
 }
 
 
 void tests() {
 	assert_is("[a b c]#2", "b");
-	assert_is("one plus two times three",7);
+	assert_is("one plus two times three", 7);
 	testGraphQlQuery2();
 	testNilValues();
 	testCall();
@@ -1089,7 +1102,6 @@ void tests() {
 	testNodeName();
 	testEmpty();
 	testDiv();
-	testUTF();
 	testRoot();
 	testMathExtra();
 	testLogic01();
@@ -1125,6 +1137,7 @@ void tests() {
 	testKitchensink();
 	testMarkSimpleAssign();
 	testMarkMultiDeep();
+	testUTF();// fails sometimes => bad pointer!?
 #ifdef APPLE
 	testAllSamples();
 #endif
@@ -1134,6 +1147,7 @@ void tests() {
 
 
 void testBUG() {// move to tests() once done!
+	testUTF();// fails sometimes => bad pointer!?
 	testParentBUG();
 }
 
@@ -1154,10 +1168,9 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
+	assert_is("-2", -2);
 
 	testAllWasm();
-//	exit(43);
-
 	tests();// make sure all still ok before changes
 
 

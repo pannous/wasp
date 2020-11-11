@@ -41,6 +41,7 @@ extern Node False;
 extern Node NIL;
 extern Node ERROR;
 extern Node Infinity;// = Node("Infinity");
+extern Node NegInfinity;// = Node("Infinity");
 extern Node NaN;// = Node("NaN");
 
 void log(Node &);
