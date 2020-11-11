@@ -2,7 +2,10 @@
 #include "Wasp.h"
 
 #define assert_emit(α, β) if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
-
+void testWasmFunctionDefiniton(){
+	assert_is("add1 x:=x+1;add1 3",(long)4);
+	assert_emit("add1 x:=x+1;add1 3",(long)4);
+}
 
 void testWasmFunctionCalls() {
 
@@ -36,7 +39,7 @@ void testMathPrimitives() {
 			assert_emit(("-42.1"), 42.1)
 	)
 	assert_emit(("42"), 42)
-	assert_emit(("-42"), -42)
+	assert_emit("-42", -42)
 	assert_emit(("2000000000"), 2000000000)
 	assert_emit(("-2000000000"), -2000000000)
 }
@@ -279,6 +282,9 @@ void testAllWasm() {
 			assert_emit(("x*=14"), 1)
 			assert_emit(("x=15;x>=14"), 1)
 	)
+	assert_emit("-42", -42)
+
+//	testWasmFunctionDefiniton();
 	assert_emit("id 3*42> id 2*3", 1)
 //	exit(1);
 	run_wasm_file("../tests/t.wasm");

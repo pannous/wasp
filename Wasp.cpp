@@ -14,7 +14,7 @@
 #include "ErrorHandler.h"
 
 #endif
-
+extern String operator_list[];// resolve xor->operator ... semantic wasp parser really?
 
 #ifdef WASM64
 void* operator new[](unsigned long size){
@@ -45,8 +45,10 @@ class Wasp {
 
 	int at = -1;//{};            // The index of the current character PLUS ONE todo
 	char previous = 0;
+	char lastNonWhite = 0;
 	char ch = 0;            // The current character
-	char next = 0;
+	char next = 0; // set in proceed()
+	String line;
 	int lineNumber{};    // The current line number
 	int columnStart{};    // The index of column start char
 
@@ -80,7 +82,7 @@ public:
 		if (source.empty()) return NIL;
 		columnStart = at = 0;
 		lineNumber = 1;
-		ch = ' ';
+		ch = 0;
 		text = source;
 		Node result = value(); // <<
 		white();
@@ -145,22 +147,27 @@ private:
 		return chr == '\n' ? s("\\n") : String('\'') + chr + '\'';
 	};
 
+	String pointer() {
+		var columnNumber = at - columnStart;
+		String msg;
+//				s("IN CODE:\n");
+		msg = msg + " at position " + at + " in line " + lineNumber + " column " + columnNumber + "\n";
+		msg = msg + line + "\n";
+		msg = msg + (s(" ").times(columnNumber - 1)) + "^\n";
+		return msg;
+	}
+
 	String error(String m) {
 		// Call error when something is wrong.
 		// todo: Still to read can scan to end of line
-		var columnNumber = at - columnStart;
-		var msg = s("");
-//				s("IN CODE:\n");
-		msg = msg + m;
-		msg = msg + " in line " + lineNumber + " column " + columnNumber + "\n";
-		msg = msg + text + "\n";
-		msg = msg + (s(" ").times(at - 1)) + "^\n";
+		String msg = m;
+		msg += pointer();
 //		msg = msg + s(" of the Mark data. \nStill to read: \n") + text.substring(at - 1, at + 30) + "\n^^ ...";
 //		msg = msg + backtrace2();
 		var error = new SyntaxError(msg);
-//		error.at = at;
-//		error.lineNumber = lineNumber;
-//		error.columnNumber = columnNumber;
+		error->at = at;
+		error->lineNumber = lineNumber;
+		error->columnNumber = at - columnStart;
 		if (throwing)
 			raise(msg);
 		else
@@ -190,6 +197,8 @@ private:
 		}
 		// Get the next character. When there are no more characters, return the empty string.
 		previous = ch;
+		if (ch != ' ' and ch != '\n' and ch != '\r' and ch != '\t')
+			lastNonWhite = ch;
 		ch = text.charAt(at);
 		if (at + 1 >= text.length)next = 0;
 		else next = text.charAt(at + 1);
@@ -198,6 +207,8 @@ private:
 			lineNumber++;
 			columnStart = at;
 		}
+		if (previous == '\n' or previous == 0)
+			line = text.substring(columnStart, text.indexOf('\n', columnStart));
 		return ch;
 	};
 
@@ -242,7 +253,7 @@ private:
 		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
 		var key = String(ch);
 		// subsequent characters can contain ANYTHING
-		while (proceed() and is_identifier(ch))key += ch;
+		while (proceed() and is_identifier(ch) or isDigit(ch))key += ch;
 		// subsequent characters can contain digits
 //		while (proceed() &&
 //		       (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_' ||
@@ -259,18 +270,17 @@ private:
 		let sign = '\n';
 		let string = String("");
 		int number0, base = 10;
-
+		if (ch == '+')warn("unnecessary + sign or missing whitespace 1 +1 == [1 1]");
 		if (ch == '-' || ch == '+') {
 			sign = ch;
 			proceed(ch);
 		}
 
+
 		// support for Infinity (could tweak to allow other words):
 		if (ch == 'I') {
 			const Node &ok = word();
-//			if(!ok)
-			return Infinity;
-//			return (sign == '-') ? -Infinity : Infinity;
+			return (sign == '-') ? NegInfinity : Infinity;
 		}
 
 		// support for NaN
@@ -479,7 +489,8 @@ private:
 				comment();
 				return;
 //				auto ws = {' ', '\t', '\r', '\n'};
-			} else if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
+// || ch == '\r' || ch == '\n' NEWLINE IS NOT A WHITE LOL, it has semantics
+			} else if (ch == ' ' || ch == '\t') {
 				proceed();
 			} else {
 				return;
@@ -555,7 +566,7 @@ private:
 		if (node.name == "nill")return NIL;
 		if (node.name == "nil")return NIL;
 		if (node.name == "ø")return NIL;// nil not added to lists
-//		if(node.name.in(operator_list))node.setType(operators); // later: in angle!
+		if(node.name.in(operator_list))node.setType(operators); // later: in angle!? NO! HERE: a xor {} != a xxx{}
 		return node;
 	}
 
@@ -884,7 +895,16 @@ private:
 	}
 
 
-	// ":" is short binding a b:c d == a (b:c) d
+	bool checkAmbiguousBlock(Node current, Node *parent) {
+		// wait, this should be part of case ' ', no?
+		//						a of {a:1 b:2}
+		return previous == ' ' and current.last().kind != operators and current.last().kind != function and
+				(!parent or parent and parent->last().kind != operators and parent->last().kind != function ) and
+		       lastNonWhite != ':' and lastNonWhite != '=' and lastNonWhite != ',' and lastNonWhite != ';' and
+		       lastNonWhite != '{' and lastNonWhite != '(' and lastNonWhite != '[';
+	}
+
+// ":" is short binding a b:c d == a (b:c) d
 // "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
 // special : close=';' : single expression a = 1 + 2
@@ -907,10 +927,11 @@ private:
 				proceed();
 				continue;
 			}
-			if (ch == close or ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
+			if (ch == close or
+			    ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
 				if (close != ' ') // significant whitespace
 					proceed();
-				if (close == ' ' and current.length == 0 and current.value.data == 0 and current.name.empty()){
+				if (close == ' ' and current.length == 0 and current.value.data == 0 and current.name.empty()) {
 					proceed(); // insignificant whitespace: need more data
 					continue;
 				}
@@ -921,21 +942,11 @@ private:
 				break;
 			}// outer match unresolved so far
 			switch (ch) {
-				case '=':
-				case ':': {
-					// todo {a b c:d} vs {a:b c:d}
-					Node &key = current.last();
-					bool add_raw = current.kind == expressions or key.kind == expressions or (current.last().kind == groups and current.length>1);
-					if (add_raw) current.addRaw(Node(ch).setType(operators));
-					Node &val = *value(' ', &key).clone();// applies to WHOLE expression
-					if (add_raw) {  // complex expressions are not simple maps
-						current.addRaw(val);
-					} else {
-						setField(key, val);
-					}
-					break;
-				}
 				case '{': {
+					if (checkAmbiguousBlock(current,parent)) {
+						breakpoint_helper
+						warn("Ambiguous reading a {x} => Did you mean a{x} or a:{x} or a , {x}");
+					}
 					Node &object = value('}', &current.last()).setType(Type::objects);
 					current.addSmart(object);
 					break;
@@ -958,7 +969,7 @@ private:
 				case '-':
 				case '+':
 				case '.':
-					if (isDigit(next) and previous==' ')
+					if (isDigit(next) and previous == ' ' or previous==0)
 						current.addSmart(numbero());// (2+2) != (2 +2) !!!
 					else {
 						current.kind = expressions;
@@ -987,10 +998,37 @@ private:
 					current.addRaw(id);
 					break;
 				}
-				case ' ':
-				case '\t':
+
+				case '=':
+				case ':': {
+					// todo {a b c:d} vs {a:b c:d}
+					Node &key = current.last();
+					bool add_raw = current.kind == expressions or key.kind == expressions or
+					               (current.last().kind == groups and current.length > 1);
+					if (add_raw) current.addRaw(Node(ch).setType(operators));
+					Node &val = *value(' ', &key).clone();// applies to WHOLE expression
+					if (add_raw) {  // complex expressions are not simple maps
+						current.addRaw(val);
+					} else {
+						setField(key, val);
+					}
+					break;
+				}
 				case '\n':
-				case ';':
+				case ';': // indent 􀋵  ☞ 𒋰 𒐂 ˆ ˃
+					// closing ' ' handled above
+					if (current.kind != groups and current.kind != objects) {
+						Node neu;// wrap
+						neu.kind = groups;
+						neu.parent = parent;
+						neu.addRaw(current);
+						current = neu;
+					}
+//					proceed();// acts as whitespace
+//					break;// next expression
+					// FALLTHROUGH! >>
+				case ' ': // possibly significant whitespace not consumed by white()
+				case '\t':
 				case ',': {
 					if (next == ':' or next == 0 or previous == ',' or previous == close or close == '"' or
 					    close == '\'' or close == '`') {
@@ -999,7 +1037,9 @@ private:
 					}
 					Node sub = value(ch, &current);
 					if (sub.empty() and sub.name.empty())break;
-					if (sub.length > 1 and sub.kind == groups)// bullshit (1 (2 3)) != (1 2 3) , OR IS IT here?
+					if (current.kind == expressions or current.last() == expressions)
+						todo("what");
+					if (sub.length > 1 and sub.kind == groups and sub.name.empty())// bullshit (1 (2 3)) != (1 2 3) , OR IS IT here?
 						for (Node arg:sub)
 							current.addRaw(arg);
 					else
@@ -1011,7 +1051,7 @@ private:
 				default: {
 					// a:b c != a:(b c)
 					Node node = expression(close == ' ');//word();
-					if (precedence(node) and ch!=':') {
+					if (precedence(node) and ch != ':') {
 						node.kind = operators;
 						current.kind = expressions;
 					}
