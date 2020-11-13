@@ -546,7 +546,7 @@ private:
 		if (node.name == "ƒ")return False;// ‽
 		if (node.name == "𐄂")return False;// ‽
 
-		//		if (node.name == "wrong")return False;
+//		if (node.name == "wrong")return False;
 //		if (node.name == "Wrong")return False;
 		if (node.name == "true")return True;
 		if (node.name == "True")return True;
@@ -987,7 +987,9 @@ private:
 						break;
 					}
 				case '"':
-				case '\'':
+				case '\'': /* don't use modifiers ` ˋ ˎ */
+				case u'‘':// Character too large for enclosing character literal type
+				case u'“':
 				case '`': {
 					if (previous == '\\')continue;// escape
 					if (close != ch) {
