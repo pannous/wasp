@@ -5,22 +5,31 @@
 //#include <c++/v1/cstdlib>
 #include "WasmHelpers.h"
 #include "NodeTypes.h"
+
 #ifndef WASM
+
 #include <cstdlib>
 #include <cstdio> // printf
+
 #endif
 
 void reverse(char *str, int len);
+
 char *itoa0(long num, int base);
+
 char *itoa0(long num);
+
 char *itoa(long num);
+
 int atoi0(const char *__nptr);
+
 double atof0(const char *string);
 
 void err(chars error);
 
 void todo(chars error);
 
+void encode_unicode_character(char *buffer, wchar_t ucs_character);
 
 //void* calloc(int i);
 //extern "C" void* calloc(int size,int count);
@@ -40,6 +49,7 @@ void todo(chars error);
 //#ifndef WASP_STRING
 //#define WASP_STRING
 class Node;
+
 typedef const char *chars;
 
 #ifndef WASM
@@ -51,28 +61,40 @@ typedef const char *chars;
 extern unsigned int *memory;
 
 extern void err(chars);
+
 extern void error(chars);
+
 extern void info(chars);
+
 extern void warn(chars);
+
 extern void warning(chars);
 
 extern chars fetch(chars url);
 
 class String;
+
 String toString(Node &node);
+
 String str(const char *&s);
+
 String str(char *string);
+
 String s(const char *&s);
 
 bool eq(const char *dest, const char *src);
+
 void strcpy2(char *dest, const char *src);
+
 void strcpy2(char *dest, const char *src, int length);
+
 int strlen0(const char *x);
 //size_t   strlen(const char *__s);
 
 
 //const char *ftoa(float num, int base = 10, int precision = 4);
 const char *ftoa0(float num, int base, int precision);
+
 const char *ftoa(float num);
 
 class Error {
@@ -91,19 +113,21 @@ public:
 
 //char *empty_string = "";
 String typeName(Type t);
+
 //char null_value[]={0};// todo make sure it's immutable!!
-class String{
+class String {
 
 #ifdef WASM
-//#define size_t unsigned number
-//	void* calloc(size_t s,int idk);
+	//#define size_t unsigned number
+	//	void* calloc(size_t s,int idk);
 #else
 #ifndef __APPLE__
-//#include <alloc.h>
+	//#include <alloc.h>
 #endif
 #endif
 
 public:
+
 	char *data{};
 	int length = -1;
 
@@ -116,15 +140,16 @@ public:
 		length = 0;
 	}
 
-	void* operator new(unsigned long size){
-		return static_cast<String *>(calloc(sizeof(String),size));// WOW THAT WORKS!!!
+	void *operator new(unsigned long size) {
+		return static_cast<String *>(calloc(sizeof(String), size));// WOW THAT WORKS!!!
 	}
-	void operator delete (void*){}// Todo ;)
+
+	void operator delete(void *) {}// Todo ;)
 
 //	~String()=default;
 
 	explicit String(char c) {
-		data = static_cast<char *>(alloc(sizeof(char),2));
+		data = static_cast<char *>(alloc(sizeof(char), 2));
 		data[0] = c;
 		data[1] = 0;
 		length = 1;
@@ -132,10 +157,13 @@ public:
 
 //	explicit
 	String(const char string[]) {
-		data = const_cast<char *>(string);// heap may disappear, use copy!
+//		data = const_cast<char *>(string);// todo heap may disappear, use copy!
 		length = strlen0(string);
-//		data = static_cast<char *>(alloc(sizeof(char), length));
-//		strcpy2(data, string, length+1);
+		if (length == 0)data = 0;//{data[0]=0;}
+		else {
+			data = static_cast<char *>(alloc(sizeof(char), length + 1));
+			strcpy2(data, string, length + 1);
+		}
 	}
 
 
@@ -153,17 +181,41 @@ public:
 	}
 
 
+	explicit String(char16_t i) {
+		data = static_cast<char *>(calloc(sizeof(char16_t), 2));
+		encode_unicode_character(data, i);
+		length = len(data);
+	}
+
+//	explicit String(char16_t* chars){
+//		data = static_cast<char *>(calloc(sizeof(char16_t),len(chars)));
+//		encode_unicode_characters(data, chars);
+//		length = len(data);
+//	}
+
+	explicit String(char32_t i) {// conflicts with int
+		data = static_cast<char *>(calloc(sizeof(char32_t), 2));
+		encode_unicode_character(data, i);
+		length = len(data);
+	}
+
+	explicit String(wchar_t i) {
+		data = static_cast<char *>(calloc(sizeof(wchar_t), 2));
+		encode_unicode_character(data, i);
+		length = len(data);
+	}
+
 	explicit String(double c) {
-		int max_length=4;
+		int max_length = 4;
 		data = itoa0(c);
 		length = len(data);
 //		itof :
 		append('.');
 		c = c - (long(c));
-		while(length<max_length){
-			c= (c - long(c)) * 10;
-			if(int(c)==0)break;
-			append(int(c)+0x30);
+		while (length < max_length) {
+			c = (c - long(c)) * 10;
+			if (int(c) == 0)break;
+			append(int(c) + 0x30);
 		}
 	}
 
@@ -200,14 +252,14 @@ public:
 		if (to < 0 or to > length)to = length;
 		if (to <= from)return String();
 		int len = (to - from) + 1;
-		auto neu = static_cast<char *>(alloc((sizeof(char)) , len+1));
+		auto neu = static_cast<char *>(alloc((sizeof(char)), len + 1));
 //#ifdef cstring
 //		strcpy(neu, &data[from]);
 //#else
 		strcpy2(neu, &data[from], to - from);
 //#endif
 		neu[to - from] = 0;
-		neu[len]=0;
+		neu[len] = 0;
 		return String(neu);
 //		free(neu);
 	}
@@ -223,6 +275,7 @@ public:
 		return -1;//error
 	}
 
+
 	String &append(char c) {
 		if (!data)data = static_cast<char *>(alloc(sizeof(char), 2));
 		if (data + length + 1 == (char *) current) {// just append recent
@@ -230,7 +283,7 @@ public:
 			data[length] = 0;
 			current += 2;
 		} else {
-			auto *neu = static_cast<char *>(alloc(sizeof(char) , length + 5));
+			auto *neu = static_cast<char *>(alloc(sizeof(char), length + 5));
 			if (data)strcpy2(neu, data, length);
 			neu[length++] = c;
 			data = neu;
@@ -248,7 +301,7 @@ public:
 		if (!contains("%s"))
 			return *this + c;
 		String b = this->clone();
-		String d=b.replace("%s", c);
+		String d = b.replace("%s", c);
 		return d;
 	}
 
@@ -257,7 +310,7 @@ public:
 		if (!contains("%s"))
 			return *this + toString(c);
 		String b = this->clone();
-		String d=b.replace("%s", toString(c));
+		String d = b.replace("%s", toString(c));
 		return d;
 	}
 
@@ -274,6 +327,7 @@ public:
 	String operator%(char *c) {
 		return this->replace("%s", c);
 	}
+
 	String operator%(char c) {
 		return this->replace("%c", String(c).data);
 	}
@@ -316,7 +370,7 @@ public:
 	}
 
 	String *operator+=(chars c) {
-		while (c[0] && c++)append(c[-1]);
+		while (c and c[0] && c++)append(c[-1]);
 		return this;
 	}
 
@@ -370,6 +424,7 @@ public:
 	String operator+(int i) {
 		return this->operator+(String(i));
 	}
+
 	String operator+(long i) {
 		return this->operator+(String(i));
 	}
@@ -378,8 +433,8 @@ public:
 		return this->operator+(String(c));
 	}
 
-	String operator+(String* s) {
-		if(!s or !s->data)return *this;
+	String operator+(String *s) {
+		if (!s or !s->data)return *this;
 		return this->operator+(s->data);
 	}
 
@@ -399,18 +454,30 @@ public:
 		return this->operator+(String(c));
 	}
 
+
+	bool operator==(char16_t c) {
+		return this == String(c);
+	}
+
+	bool operator==(char32_t c) {
+		return this == String(c);
+	}
+
+	bool operator==(wchar_t c) {
+		return this == String(c);
+	}
+
 	bool operator==(char c) {
-		return length!=0  && data  && data[0] == c && data[1] == '\0';
+		return length != 0 && data && data[0] == c && data[1] == '\0';
 	}
 
 	bool operator==(chars c) {
 		return length != 0 && data && eq(data, c);
 	}
 
-	bool operator==(char* c) {
+	bool operator==(char *c) {
 		return length != 0 && data && eq(data, c);
 	}
-
 
 
 	bool operator!=(String &s) {// const
@@ -448,6 +515,7 @@ public:
 	char operator[](int i) {
 		return data[i];
 	}
+
 	bool empty() const;
 
 	int indexOf(chars string) {
@@ -475,8 +543,7 @@ public:
 		if (i >= 0) {
 			unsigned int from = i + strlen0(string);
 			return substring(0, i) + with + substring(from, -1);
-		}
-		else {
+		} else {
 			return *this;
 		}
 	}
@@ -508,12 +575,15 @@ public:
 	String format(int i) {
 		return this->replace("%d", itoa0(i));
 	}
+
 	String format(long i) {
 		return this->replace("%d", itoa0(i));
 	}
+
 	String format(double f) {
-		return this->replace("%f" , ftoa(f));
+		return this->replace("%f", ftoa(f));
 	}
+
 	String format(char *string) {
 		return this->replace("%s", string);
 	}
@@ -523,9 +593,9 @@ public:
 		int i = 0;
 //		for(String x:array){}
 		String dis = *this;
-		while (array[i]){
-			if(array[i] == dis) {
-				return i+1;
+		while (array[i]) {
+			if (array[i] == dis) {
+				return i + 1;
 			}
 			i++;
 		}
@@ -545,11 +615,14 @@ public:
 	int columnNumber;
 	int at;
 public:
-	void* operator new(unsigned long size){
-		return static_cast<Node *>(calloc(sizeof(SyntaxError),size));// WOW THAT WORKS!!!
+	void *operator new(unsigned long size) {
+		return static_cast<Node *>(calloc(sizeof(SyntaxError), size));// WOW THAT WORKS!!!
 	}
-	void operator delete (void*){}
-	~SyntaxError()= default;
+
+	void operator delete(void *) {}
+
+	~SyntaxError() = default;
+
 	explicit SyntaxError(String &error) {
 		this->data = error.data;
 	}
@@ -557,10 +630,11 @@ public:
 
 #define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
 
-String operator ""_(const char* c, unsigned long );
-String operator ""_s(const char* c, unsigned long );
-String operator ""s(const char* c, unsigned long );
+String operator ""_(const char *c, unsigned long);
 
+String operator ""_s(const char *c, unsigned long);
+
+String operator ""s(const char *c, unsigned long);
 
 
 extern String UNEXPECT_END;// = "Unexpected end of input";
@@ -577,5 +651,6 @@ extern String EMPTY;// = String('\0');
 //String operator "" _(const char *c, unsigned long );
 //String operator "" _s(const char *c, unsigned long );
 void log(String *s);
+
 void log(chars s);
 //#endif

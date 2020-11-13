@@ -412,6 +412,61 @@ printf("%s\n",s);
 
 
 bool String::empty() const {//this==0 in testMarkMulti!
-	return this==0 || length==0  ||  !data  || (long)data==0x03 /*bug!*/ ||  data[0] == 0 || data==object_name.data;
+	return this==0 || length==0  ||  !data  || (long)data<128 /*bug!*/ ||  data[0] == 0 || data==object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
+}
+
+
+void encode_unicode_character(char* buffer, wchar_t ucs_character)
+{
+	int offset = 0;
+	if (ucs_character <= 0x7F)
+	{
+		// Plain single-byte ASCII.
+		buffer[offset++] = (char) ucs_character;
+	}
+	else if (ucs_character <= 0x7FF)
+	{
+		// Two bytes.
+		buffer[offset++] = 0xC0 | (ucs_character >> 6);
+		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+	}
+	else if (ucs_character <= 0xFFFF)
+	{
+		// Three bytes.
+		buffer[offset++] = 0xE0 | (ucs_character >> 12);
+		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
+		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+	}
+	else if (ucs_character <= 0x1FFFFF)
+	{
+		// Four bytes.
+		buffer[offset++] = 0xF0 | (ucs_character >> 18);
+		buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
+		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
+		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+	}
+	else if (ucs_character <= 0x3FFFFFF)
+	{
+		// Five bytes.
+		buffer[offset++] = 0xF8 | (ucs_character >> 24);
+		buffer[offset++] = 0x80 | ((ucs_character >> 18) & 0x3F);
+		buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
+		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
+		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+	}
+	else if (ucs_character <= 0x7FFFFFFF)
+	{
+		// Six bytes.
+		buffer[offset++] = 0xFC | (ucs_character >> 30);
+		buffer[offset++] = 0x80 | ((ucs_character >> 24) & 0x3F);
+		buffer[offset++] = 0x80 | ((ucs_character >> 18) & 0x3F);
+		buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
+		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
+		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+	}
+	else
+	{
+		// Invalid char; don't encode anything.
+	}
 }
