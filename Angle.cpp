@@ -306,10 +306,10 @@ Node matchPattern(Node object,Node pattern0){
 0x2218	8728	RING OPERATOR	∘
  */
 Node Node::apply_op(Node left, Node op0, Node right) {
-	printf("apply");
-	left.log();
-	op0.log();
-	right.log();
+//	printf("apply_op\n");
+//	left.log();
+//	op0.log();
+//	right.log();
 //	if(right.length==0 and op0.param){
 //		warn("using param for args");
 //		right = *op0.param;
@@ -490,7 +490,8 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		left.kind = reference;
 		if (right.value.data) {// and ...
 			left.kind = right.kind; // there are certainly things lost here!?!
-			left.value.data = right.value.data;
+			left.value.data = right.value.data;// todo failed copy assignment: length=0!!!
+			if(right.kind==strings)left.value.string.length=right.value.string.length;// DONT WORKAROUND BUGS!!
 		} else
 			left.value.node = &right;
 		return left;
