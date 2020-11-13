@@ -1,3 +1,5 @@
+//https://blog.sentry.io/2020/08/11/the-pain-of-debugging-webassembly
+//https://github.com/mdn/webassembly-examples/tree/master/understanding-text-format
 // BASED ON https://github.com/ColinEberhardt/chasm/blob/master/src/emitter.ts
 // https://github.com/ColinEberhardt/chasm/blob/master/src/encoding.ts
 // https://pengowray.github.io/wasm-ops/
@@ -810,12 +812,20 @@ Code &emit(Program ast) {
 	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
 	Code funcSection = createSection(func, Code(types_of_functions, sizeof(types_of_functions)));
 
+enum nameSubSectionTypes{
+	module_name=0,
+	function_names=1,
+	local_names=2,
+};
+	auto nameSubSectionModuleName = Code(module_name) + encodeVector(Code("wasp_module"));
+//	auto nameSubSectionFuncNames = Code(module_name) + encodeVector(Code("wasp_module"));
+//	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’. The name section should appear only once in a module, and only after the data section.
+	auto nameSection = createSection(custom, encodeVector(Code("name")+nameSubSectionModuleName));
 
+	auto customSection = createSection(custom,encodeVector(Code("custom123")+Code("random custom section data")));
 
-	auto customSection = createSection(custom, encodeVector(Code(types_of_functions, 3)));
-//
 	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + importSection + funcSection +
-	            exportSection + codeSection;// + customSection;
+	            exportSection + codeSection + nameSection + customSection;
 //	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection;// + memorySection + ;
 	code.debug();
 	return code.clone();

@@ -6,10 +6,11 @@
 #include "String.h"
 //#import  "String.h" // FFS
 #include <stdarg.h> // va_list OK IN WASM???
-typedef char const * chars;
+
+typedef char const *chars;
 typedef unsigned char byte;//!
 
-#define min(a,b) (a < b ? a : b)
+#define min(a, b) (a < b ? a : b)
 
 extern bool debug;
 extern bool throwing;
@@ -45,14 +46,16 @@ extern Node NegInfinity;// = Node("Infinity");
 extern Node NaN;// = Node("NaN");
 
 void log(Node &);
-void log(Node*);
-void printf(Node&);
+
+void log(Node *);
+
+void printf(Node &);
 
 //class String;
 union Value {
 //	Node node;//  incomplete type
-	Node *node = 0;// todo DANGER, can be lost :( !!
-//	Node **children = 0; //todo todo DANGER node and children REDUNDANT!
+	Node *node = 0;// todo DANGER, can be lost :( !! CANT be
+//	Node **children = 0; //todo DANGER node and children/next are NOT REDUNDANT! (a:b c:d) == a(value=b next=c(value=d))
 	String string;
 	void *data;// any bytes
 	long longy;
@@ -64,6 +67,7 @@ union Value {
 	Value(int i) {
 		longy = i;
 	}
+
 	Value(bool b) {
 		longy = 1;
 	}
@@ -75,7 +79,7 @@ union Value {
 class Node {
 public:
 	String name = empty_name;// nil_name;
-	Value value;
+	Value value;// value.node and children/next are NOT REDUNDANT
 	Type kind = unknown;
 	int length = 0;// children
 //	int count = 0;// use param.length for arguments / param
@@ -94,10 +98,10 @@ public:
 
 	/* don't mix children with param, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
 	 * conceptual cleanup needed... => DONE?
-	 * children["_body_"] => children / $html.body
-	 * children["_attrib_"] => params
-	 * children["_head_"] => params / params.head / $html.head
-	 * children["_meta_"] => params.meta
+	 * children["_body"] => children / $html.body
+	 * children["_attrib"] => params
+	 * children["_head"] => params / params.head / $html.head
+	 * children["_meta"] => params.meta
 	 * children["_name"] == name
 	 *
 	 * */
@@ -107,10 +111,11 @@ public:
 	//	Node(const char*);
 //	Node(va_list args) {
 //	}
-	void* operator new(unsigned long size){
-		return static_cast<Node *>(calloc(sizeof(Node),size));// WOW THAT WORKS!!!
+	void *operator new(unsigned long size) {
+		return static_cast<Node *>(calloc(sizeof(Node), size));// WOW THAT WORKS!!!
 	}
-	void operator delete (void* a){
+
+	void operator delete(void *a) {
 		printf("DELETING");
 	}
 //	~Node()= default; // destructor
@@ -122,8 +127,8 @@ public:
 //		if(debug)name = "[]";
 	}
 
-	Node& first(){
-		if (length>0)return children[0];
+	Node &first() {
+		if (length > 0)return children[0];
 		error("No such element");
 		return ERROR;
 	}
@@ -160,7 +165,7 @@ public:
 	explicit Node(double nr) {
 		value.real = nr;
 		kind = reals;
-		if (debug)name = String(itoa0(nr,10)); // messes with setField contraction
+		if (debug)name = String(itoa0(nr, 10)); // messes with setField contraction
 	}
 
 
@@ -180,7 +185,7 @@ public:
 		va_list args;
 		va_start(args, b);
 		int i = b;
-		while (i){
+		while (i) {
 			add(Node(i).clone());
 			i = (int) va_arg(args, int);
 		}
@@ -192,12 +197,12 @@ public:
 	// vargs needs to be 0 terminated, otherwise pray!
 	explicit Node(char *a, char *b, ...) {
 		kind = objects;// groups list
-		add(Node(a).clone(),false);
+		add(Node(a).clone(), false);
 #ifndef WASM
 		va_list args;
 		va_start(args, b);
 		char *i = b;
-		while (i){
+		while (i) {
 			Node *node = Node(i).clone();
 			add(node);
 			i = (char *) va_arg(args, char*);
@@ -213,6 +218,7 @@ public:
 		kind = longs;
 		if (debug)name = String(itoa(nr)); // messes with setField contraction
 	}
+
 	explicit Node(int nr) {
 		value.longy = nr;
 		kind = longs;
@@ -296,6 +302,7 @@ public:
 	bool operator==(Node &other);// equals
 
 	bool operator!=(Node other);
+
 	bool operator>(Node other);
 
 	Node operator+(Node other);
@@ -312,16 +319,18 @@ public:
 			return value.string;
 		return name;
 		breakpoint_helper
-				err(String("WRONG TYPE ") + typeName(kind));
+		err(String("WRONG TYPE ") + typeName(kind));
 	}
 
 	// moved outside because circular dependency
 	Node &operator[](int i);
+
 	Node &operator[](int i) const;
 
 	Node &operator[](char c);
 
 	Node &operator[](String s);
+
 	Node &operator[](String s) const;
 
 	Node &operator=(int i);
@@ -331,18 +340,20 @@ public:
 
 	Node &set(String string, Node *node);
 
-	Node evaluate(bool expectOperator=false);
+	Node evaluate(bool expectOperator = false);
 
 	Node insert(Node &node, int at = -1);// non-modifying
 
 	void addSmart(Node node);// modifying
 
 //	void add(Node &node);
-	void addRaw(Node* node);
-	Node& addRaw(Node& node);
+	void addRaw(Node *node);
+
+	Node &addRaw(Node &node);
 
 	void add(Node &node);
-	void add(Node *node, bool flatten=true);
+
+	void add(Node *node, bool flatten = true);
 
 	void remove(Node *node); // directly from children
 	void remove(Node &node); // via compare children
@@ -366,11 +377,11 @@ public:
 		if (name and name.data and name.data < (char *) 0xffff) {
 			printf("BUG");
 		}
-		if (name and name.data and name.data > (char *) 0xffff ) // and kind != objects
+		if (name and name.data and name.data > (char *) 0xffff) // and kind != objects
 #endif
 #endif
 //		printf("name:"_s + name);
-		printf("name:%s", name.data);
+			printf("name:%s", name.data);
 		printf(" length:"_s + itoa(length));
 		printf(" type:"_s + typeName(kind));
 		printf(" value:"_s + serializeValue());
@@ -393,15 +404,19 @@ public:
 //		if (type == floats)
 //			printf(" value %f", value.real);
 		printf(" [");
-		for (int i = 0; i < min(length,10); i++) {
+		for (int i = 0; i < min(length, 10); i++) {
 			Node &node = children[i];
 //			if(check(node))
-			printf(node.name);
-			printf(" ");
+			if (!node.name.empty()) {
+				printf(node.name);
+				printf(" ");
+			}
 		}
 		printf("]");
 		printf("\n");
-		printf(serialize());
+		const char *string1 = serialize();
+		if(string1)
+		printf(string1);
 		printf("\n");
 	}
 
@@ -426,6 +441,7 @@ public:
 	explicit operator bool() {// TRUTHINESS operator, implicit in if, while
 		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
 	}
+
 	// type conversions
 	explicit operator bool() const {
 		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
@@ -448,29 +464,33 @@ public:
 	bool isNil();
 
 	const char *toString();
+
 	const char *toString() const;
 
-	const char * serialize() const;
+	const char *serialize() const;
 
 	const char *serializeValue() const;
 
 	void print();
 
-	Node& setValue(Value v);
+	Node &setValue(Value v);
 
 
 	Node from(Node node);// exclusive
 	Node from(String match);
+
 	Node to(Node match);// exclusive
 	Node to(String match);
 
-	Node& flat();
+	Node &flat();
 
-	Node& setName(char *name0);
+	Node &setName(char *name0);
 
 	Node values();
 };
+
 typedef const Node Nodec;
 
 float precedence(String name);
+
 float precedence(Node &operater);
