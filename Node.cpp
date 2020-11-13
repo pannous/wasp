@@ -218,7 +218,8 @@ bool Node::operator==(String other) {
 	if (kind == reference) return other == name or value.node and *value.node == other;
 	if (kind == unknown) return other == name;
 	if (kind == operators) return other == name;
-	return kind == strings and other == value.string;
+	if (kind == strings) return other == value.string;
+	return false;
 }
 
 bool Node::operator==(int other) {
@@ -415,6 +416,8 @@ void Node::remove(Node &node) {
 }
 
 void Node::addRaw(Node *node) {
+	if(kind==longs or kind==reals)
+		error("can't modify primitives, only their references a=7 a.nice=yes");
 	if (length >= capacity - 1)
 		error("Out of node Memory");
 	if (lastChild >= maxNodes)
@@ -594,7 +597,7 @@ const char *Node::serializeValue() const {
 	Value val = value;
 	switch (kind) {
 		case strings:
-			return "'"s + val.string + "'";
+			return "\""s + val.string + "\"";
 //		case ints:
 		case longs:
 			return itoa(val.longy);
@@ -638,7 +641,7 @@ const char *Node::serialize() const {
 	if (not polish_notation or this->length == 0) {
 		if (not this->name.empty()) wasp += this->name;
 		const char *serializedValue = serializeValue();
-		if (this->value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
+		if (serializedValue and this->value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
 		    !eq(serializedValue, "?")) {
 			wasp += ":";
 			wasp += serializedValue;

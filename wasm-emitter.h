@@ -2,6 +2,7 @@
 
 #include "wasm_runner.h"
 
+typedef const char *wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
 typedef char* bytes;
 bytes concat(bytes a, bytes b, int len_a, int len_b);
 bytes concat(bytes a, char b,int len);
@@ -28,6 +29,7 @@ class ExpressionNod;
 class ProcStatementNod;
 class Code{
 public:
+
 	bytes data;
 	int length=0;
 	bool encoded= false;// first byte = size of vector
@@ -39,6 +41,13 @@ public:
 		length=len;
 	}
 
+	Code(const char *string) {
+		long len = (long) strlen0(string);
+		push(len);
+		push((bytes)string, len);
+		// wasm strings start with their length and do NOT end with 0 !! :(
+	}
+	
 	Code(char byte){
 		data = static_cast<bytes>(alloc(sizeof(char),1));
 		data[0] = byte;
