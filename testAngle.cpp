@@ -266,8 +266,45 @@ void testSwitch(){
 	assert_is("x=a;{a:1 b:2}(x)",1)
 	// functor switch(x,xs)=xs[x] or xs[default]
 }
+#include "smart_types.h"
 
+void initMemory(){
+	memory = static_cast<unsigned int *>(malloc(1000000));
+	memoryChars = (char *) memory;
+}
+
+void testSmartTypes(){
+	check(Node(0xCA000020)==' ');
+	char* hi="Hello";
+	if(memory==0)initMemory();
+	strcpy2(&memoryChars[0x1000], hi);
+	printf(">>>%s<<<", &memoryChars[0x1000]);
+	check(Node(0x90001000)==hi);
+
+	short typ=getSmartType(0x10000000);
+	check(typ==0x1);
+	printf("%08x", u'√');// ok 0x221a
+	printf("%08x", U'√');// ok 0x221a
+	printf("%08x", L'√');// ok 0x221a
+//	printf("%08x", u'𒈚');// too small: character too large for enclosing character literal type
+	printf("%08x", U'𒈚');// ok 0x1221a
+	printf("%08x", L'𒈚');// ok 0x1221a
+	check(Node((spointer)0x00000009)==9);
+	check(Node(0xCA00221a)=="√");
+	check(Node(0xCA00221a)==String(u'√'));
+	check(Node(0xCA00221a)==String(U'√'));
+	check(Node(0xCA00221a)==String(L'√'));
+	check(Node(0xCA01221A)==String(U'𒈚'));
+//	check(Node(0xD808DE1A)==U'𒈚');
+	typ=getSmartType(0xC0000000);
+	check(typ==0xC);
+	check(Node(0xCA000020)==' ');
+
+	check(Node(0xFFFFFFFF)==-1);
+
+}
 void testAllAngle() {
+	testSmartTypes();
 	testIf();
 	testCall();
 	skip(

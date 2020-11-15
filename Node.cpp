@@ -19,8 +19,12 @@ bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 bool debug = true;
 extern "C" double sqrt(double);
 
-
+#ifdef WASM
 unsigned int *memory = (unsigned int *) 1024; // <?> memoryBase set in wasmx !?!?   todo how to not handtune _data_end?
+#else
+unsigned int *memory = (unsigned int *)malloc(1000000);
+char* memoryChars = (char*)memory;
+#endif
 unsigned int *current = memory;
 
 unsigned long __stack_chk_guard = 0xBAAAAAAD;
@@ -221,7 +225,9 @@ bool Node::operator==(String other) {
 	if (kind == strings) return other == value.string;
 	return false;
 }
-
+bool Node::operator==(char other) {
+	return kind == strings and value.string == String(other);
+}
 bool Node::operator==(int other) {
 //	if (this == 0)return false;// HOW?
 	if ((kind == longs and value.longy == other) or (kind == reals and value.real == other))
