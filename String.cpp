@@ -36,7 +36,7 @@ typedef const char *chars;
 //bool debug = true;
 //extern void *alloc (size_t __size);
 //extern void *alloc (int __size);
-
+char *empty_string = "";
 #ifndef WASM
 #include <cstdio>
 #include <tgmath.h>
@@ -123,6 +123,7 @@ void strcpy2(char *dest, const char *src){
 //#endif
 
 int atoi0(const char *p) {
+	if(!p)return 0;
 	int k = 0;
 	while (*p) {
 		int n = (*p) - '0';

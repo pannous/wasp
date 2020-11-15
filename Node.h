@@ -4,6 +4,7 @@
 //
 
 #include "String.h"
+#include "smart_types.h"
 //#import  "String.h" // FFS
 #include <stdarg.h> // va_list OK IN WASM???
 
@@ -20,7 +21,7 @@ extern unsigned int *memory;
 
 #define let auto
 #define var auto
-typedef void *any;
+//typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
 
@@ -125,6 +126,45 @@ public:
 	Node() {
 		kind = objects;
 //		if(debug)name = "[]";
+	}
+
+	explicit
+	Node(spointer spo){
+		smartType type = getSmartType(spo);
+		int payload=spo<<4>>4;
+		if(type!=int28)payload=spo<<8>>8;
+		switch (type) {
+			case int28:
+			case sint28:
+				value.longy = (int)spo;
+				kind = longs;
+				break;
+			case float28:
+				value.real = payload;// todo!
+				kind = reals;
+				break;
+			case any:
+				*this = *(Node *) memory[payload];
+				break;
+			case symbola:
+				name = String(&memoryChars[payload]); // todo 0x10 ... 0x1F or length header
+				kind = reference;
+				break;
+			case stringa:
+				value.string = String(&memoryChars[payload]);
+				name = value.string;
+				kind = strings;
+				break;
+			case code:
+			case utf8char:
+				value.string = String((wchar_t) payload);
+				name = value.string;
+				kind = strings;
+				break;
+			default:
+				error("unknown type");
+		}
+		
 	}
 
 	Node &first() {
@@ -287,6 +327,7 @@ public:
 //		}
 //		return *this;
 //	}
+	bool operator==(char other);
 
 	bool operator==(int other);
 

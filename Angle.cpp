@@ -8,7 +8,7 @@
 #import "WasmHelpers.h" // IMPORT so that they don't get mangled!
 #include "Node.h"
 #include "wasm-emitter.h"
-
+#include "math.h" // sqrt
 bool recursive = true;// whats that?
 
 
@@ -179,7 +179,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		if (!name.empty() or length > 1){
 			breakpoint_helper // ok need not always have known operators
 			info(String("No operator in : ") + serialize());
-			if(unknown_symbols>0 and expectOperator)
+			if(unknown_symbols>(long)0 and expectOperator)
 				error("unknown symbol "s + unknown_symbols.serialize());
 		}
 		for (int i = 0; i < length; ++i) {
@@ -238,7 +238,7 @@ Node eval(String code) {
 // todo "=" ":" handled differently?
 String operator_list[] = {"is", "equal", "equals", "==", "!=", "≠", "xor", "or", "else", "||", "|", "&&", "&", "and",
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
-                          "*", "×", "⋅", "⋆", "/", "÷", "^","in","of","from"}; // "while" ...
+                          "*", "×", "⋅", "⋆", "/", "÷", "^","∈","∉","⊂","⊃","in","of","from"}; // "while" ...
 Node groupOperators(Node expression) {
 //	if(expression.kind==function)return expression;// already grouped
 	if(expression.length==0)return expression;

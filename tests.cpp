@@ -1,23 +1,22 @@
 #include "Node.h"
 #include "Wasp.h"
 #include "Angle.h"
-
-Node result;
-
-//#include "String.h"
-
+#include "String.h"
 
 #undef assert // <cassert> / <assert.h>
 
+Node result;
 
-//#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
-//#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 
 #define assert(condition) try{\
    if((condition)==0)error("assert FAILED");else printf("\nassert OK: %s\n",#condition);\
    }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
+
+
+//#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
+//#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
@@ -380,9 +379,9 @@ void testUnicode_UTF16_UTF32(){// constructors/ conversion maybe later
 	check(String("牛")==U'牛');
 	check(String("牛")==L'牛');
 	check(String("牛")=="牛");
-	log(character);
-	log(hanzi);
-	log(word);
+//	log(character);
+//	log(hanzi);
+//	log(word);
 	log(sizeof(char32_t));// 32 lol
 	log(sizeof(wchar_t));
 }

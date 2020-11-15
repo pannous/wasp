@@ -186,7 +186,7 @@ enum Section {
 	start_section = 8,
 	element = 9,
 	code_section = 10, // 0x0a
-	data = 11
+	data_section = 11
 };
 
 
