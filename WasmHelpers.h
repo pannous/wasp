@@ -4,6 +4,7 @@
 //
 typedef const char *chars;
 extern "C" unsigned int *memory;
+extern "C" char *memoryChars;
 extern "C" unsigned int *current;
 //extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
