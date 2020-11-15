@@ -31,6 +31,9 @@ void todo(chars error);
 
 void encode_unicode_character(char *buffer, wchar_t ucs_character);
 
+#ifndef WASM
+void log(long i);
+#endif
 //void* calloc(int i);
 //extern "C" void* calloc(int size,int count);
 //extern "C" void* calloc(int size);
@@ -110,8 +113,9 @@ public:
 //	IndexOutOfBounds(String *string1) : Error(string1){}
 	IndexOutOfBounds(char *data, int i) : Error() {}
 };
+extern char *empty_string;// = "";
 
-//char *empty_string = "";
+//duplicate symbol '_empty_string'
 String typeName(Type t);
 
 //char null_value[]={0};// todo make sure it's immutable!!
@@ -149,6 +153,11 @@ public:
 //	~String()=default;
 
 	explicit String(char c) {
+		if(c==0){
+			length = 0;
+			data=0;//SUBTLE BUGS if setting data=""; data=empty_string;
+			return;
+		}
 		data = static_cast<char *>(alloc(sizeof(char), 2));
 		data[0] = c;
 		data[1] = 0;
@@ -159,7 +168,7 @@ public:
 	String(const char string[]) {
 //		data = const_cast<char *>(string);// todo heap may disappear, use copy!
 		length = strlen0(string);
-		if (length == 0)data = 0;//{data[0]=0;}
+		if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
 		else {
 			data = static_cast<char *>(alloc(sizeof(char), length + 1));
 			strcpy2(data, string, length + 1);

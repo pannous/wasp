@@ -67,7 +67,7 @@ elseif (WASI)
 #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
 
     ADD_COMPILE_FLAG("-w -g -O0 -v ") # -nostdlib
-    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp WasmHelpers.cpp exceptions.cpp)
+    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp WasmHelpers.cpp exceptions.cpp smart_types.cpp)
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
 elseif (VM) # NORMAL:
@@ -106,13 +106,13 @@ elseif (VM) # NORMAL:
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
     set(SOURCE_FILES Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
             WasmHelpers.cpp wasm-emitter.cpp wasm_runner.cpp
-            )
+            smart_types.cpp)
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
 
     if (APPLE)
-        target_link_libraries(wasp vmlib -lm -ldl -lpthread)
+        target_link_libraries(wasp vmlib -ldl -lpthread) # -lm
     else ()
-        target_link_libraries(wasp vmlib -lm -ldl -lpthread -lrt)
+        target_link_libraries(wasp vmlib -ldl -lpthread -lrt)
     endif ()
 
     add_custom_target(BuildEmitter ALL DEPENDS wasp) #.exe
@@ -136,7 +136,7 @@ else () # NORMAL:
     #    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")
     #find_package( Readline)    #find_package( READLINE )
     #    ADD_COMPILE_FLAG(" -lreadline -ldl -lcurl -lz") # extra libraries
-    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp WasmHelpers.cpp wasm-emitter.cpp Map.cpp)
+    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp WasmHelpers.cpp wasm-emitter.cpp Map.cpp smart_types.cpp)
 
     #    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(angle ${SOURCE_FILES})

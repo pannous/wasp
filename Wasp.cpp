@@ -942,6 +942,7 @@ private:
 				break;
 			}// outer match unresolved so far
 			switch (ch) {
+				case u'⸨': // '⸩'
 				case '{': {
 					if (checkAmbiguousBlock(current, parent)) {
 						breakpoint_helper

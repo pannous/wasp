@@ -17,8 +17,13 @@
 #endif
 //#include "string.h" // memcpy
 
-typedef char byter[];
+//typedef char byter[];
 
+enum nameSubSectionTypes{
+	module_name=0,
+	function_names=1,
+	local_names=2,
+};
 Code Call(char *symbol);//Node* args
 Code &unsignedLEB128(long n);
 
@@ -53,14 +58,14 @@ void memcpy(bytes dest, bytes source, int i) {
 	while (i--)dest[i] = source[i];
 }
 
-bytes concat(byter a, char b, int len) {
+bytes concat(bytes a, char b, int len) {
 	bytes c = new char[len + 1];
 	memcpy(c, a, len);
 	c[len] = b;
 	return c;
 }
 
-bytes concat(char a, byter b, int len) {
+bytes concat(char a, bytes b, int len) {
 	bytes c = new char[len + 1];
 	c[0] = a;
 	memcpy(c + 1, b, len);
@@ -242,7 +247,7 @@ bytes magicModuleHeader = new char[]{0x00, 0x61, 0x73, 0x6d};
 bytes moduleVersion = new char[]{0x01, 0x00, 0x00, 0x00};
 
 
-bytes flatten(byter data) {
+bytes flatten(bytes data) {
 	todo();
 	return data;
 }
@@ -812,11 +817,7 @@ Code &emit(Program ast) {
 	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
 	Code funcSection = createSection(func, Code(types_of_functions, sizeof(types_of_functions)));
 
-enum nameSubSectionTypes{
-	module_name=0,
-	function_names=1,
-	local_names=2,
-};
+
 	auto nameSubSectionModuleName = Code(module_name) + encodeVector(Code("wasp_module"));
 //	auto nameSubSectionFuncNames = Code(module_name) + encodeVector(Code("wasp_module"));
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’. The name section should appear only once in a module, and only after the data section.
