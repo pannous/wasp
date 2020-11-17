@@ -287,8 +287,14 @@ void testAllWasm() {
 //	const Node &node = parse("x:40;x+1");
 //	check(node.length==2)
 //	check(node[0]["x"]==40)
+	assert_emit("if 4>1 then 2 else 3", 2)
+//	assert_emit("id 3*42> id 2*3", 1)
+	assert_emit("x:41;if x>1 then 2 else 3", 2)
+	assert_emit("x:41;if x<1 then 2 else 3", 3)
+
 	assert_emit("x:41;x+1", 42)
-//	exit(1);
+
+	exit(1);
 //	const Node &node1 = parse("x:40;x++;x+1");
 //	check(node.length==3)
 //	check(node[0]["x"]==40)
@@ -296,7 +302,6 @@ void testAllWasm() {
 	assert_emit("3 + √9",(long)6);
 	assert_emit("square 3",9);
 	assert_emit("-42", -42)
-	assert_emit("id 3*42> id 2*3", 1)
 	run_wasm_file("../tests/t.wasm");
 	testWasmFunctionCalls();
 	testFloatOperators();
