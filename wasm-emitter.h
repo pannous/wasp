@@ -41,10 +41,12 @@ public:
 		length=len;
 	}
 
-	Code(const char *string) {
+	Code(const char *string,bool size_header=true,bool null_terminated=false) {
 		long len = (long) strlen0(string);
-		push(len);
+		if(null_terminated)len++;
+		if(size_header){ push(len); }
 		push((bytes)string, len);
+		if(null_terminated)push((byte )0);
 		// wasm strings start with their length and do NOT end with 0 !! :(
 	}
 	

@@ -942,6 +942,9 @@ private:
 				break;
 			}// outer match unresolved so far
 			switch (ch) {
+//				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
+//				https://en.wikipedia.org/wiki/ASCII#Character_set
+				case '\x0E': // Shift Out close='\x0F' Shift In
 				case u'⸨': // '⸩'
 				case '{': {
 					if (checkAmbiguousBlock(current, parent)) {
@@ -989,12 +992,17 @@ private:
 					}
 				case '"':
 				case '\'': /* don't use modifiers ` ˋ ˎ */
-				case u'‘':// Character too large for enclosing character literal type
-				case u'“':
+				case u'«': // «…»
+				case u'‘':// ‘𝚗𝚊𝚖𝚎’
+				case u'“':// “…” Character too large for enclosing character literal type
 				case '`': {
 					if (previous == '\\')continue;// escape
-					if (close != ch) {
-						// open string
+					bool matches = close == ch;
+					matches = matches || close==u'‘' && ch==u'’';
+					matches = matches || close==u'’' && ch==u'‘';
+					matches = matches || close==u'“' && ch==u'”';
+					matches = matches || close==u'”' && ch==u'“';
+					if (!matches) { // open string
 						if (current.last().kind == expressions)
 							current.last().addSmart(string(ch));
 						else
@@ -1033,15 +1041,18 @@ private:
 				case '\n':
 				case ';': // indent 􀋵  ☞ 𒋰 𒐂 ˆ ˃
 					// closing ' ' handled above
-					if (current.kind != groups and current.kind != objects) {
+//
+					if (current.kind != groups and current.last()!=groups and current.kind != objects) {
 						Node neu;// wrap
 						neu.kind = groups;
 						neu.parent = parent;
 						neu.addRaw(current);
 						current = neu;
 					}
-//					proceed();// acts as whitespace
-//					break;// next expression
+//					else {
+//						proceed();// acts as whitespace
+//						break;// next expression
+//					}
 					// FALLTHROUGH! >>
 				case ' ': // possibly significant whitespace not consumed by white()
 				case '\t': // why not skip to default:symbol ... ?
@@ -1070,12 +1081,14 @@ private:
 				}
 				default: {
 					// a:b c != a:(b c)
+					// {a} ; b c vs {a} b c vs {a} + c
+					bool addFlat = lastNonWhite != ';' and previous != '\n';
 					Node node = expression(close == ' ');//word();
 					if (precedence(node) and ch != ':') {
 						node.kind = operators;
 						current.kind = expressions;
 					}
-					if (node.length > 1) {
+					if (node.length > 1 and addFlat) {
 						for (Node arg:node)current.addRaw(arg);
 						current.kind = expressions;
 					} else {
