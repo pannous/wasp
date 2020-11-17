@@ -1,4 +1,4 @@
-# settings set target.load-cwd-lldbinit true
+settings set target.load-cwd-lldbinit true
 #  error: summary string parsing error in Xcode!
 # error: Invalid format character or name 'Node[]'.
 # https://stackoverflow.com/questions/41108037/how-to-add-a-hexadecimal-watch-in-clion
@@ -7,7 +7,8 @@
 # type format add --format hex int
 
 # https://lldb.llvm.org/varformats.html
-type summary add --summary-string "${var.data}" String
+# type summary add --python-script  "data = valobj.GetChildMemberWithName('data'); return data ? data : ''" String
+type summary add --summary-string "${var.data%s}" String
 type summary add --summary-string "${var.data}" Value
 type summary add --summary-string "${var.length}" Code
 #type summary add --summary-string "${var.longy%B}" Value

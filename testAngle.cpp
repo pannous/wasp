@@ -274,7 +274,7 @@ void initMemory(){
 }
 
 void testSmartTypes(){
-	check(Node(0xCA000020)==' ');
+	check(Node(0xC0000020)==' ');
 	char* hi="Hello";
 	if(memory==0)initMemory();
 	strcpy2(&memoryChars[0x1000], hi);
@@ -290,15 +290,17 @@ void testSmartTypes(){
 	printf("%08x", U'𒈚');// ok 0x1221a
 	printf("%08x", L'𒈚');// ok 0x1221a
 	check(Node((spointer)0x00000009)==9);
-	check(Node(0xCA00221a)=="√");
-	check(Node(0xCA00221a)==String(u'√'));
-	check(Node(0xCA00221a)==String(U'√'));
-	check(Node(0xCA00221a)==String(L'√'));
-	check(Node(0xCA01221A)==String(U'𒈚'));
+	check(Node(0xC000221a)=="√");
+	check(Node(0xC000221a)==String(u'√'));
+	check(Node(0xC000221a)==String(U'√'));
+	check(Node(0xC000221a)==String(L'√'));
+	check(Node(0xC001221A)==String(U'𒈚'));
+	check(Node(0xC001221A)=="𒈚");
+
 //	check(Node(0xD808DE1A)==U'𒈚');
 	typ=getSmartType(0xC0000000);
 	check(typ==0xC);
-	check(Node(0xCA000020)==' ');
+	check(Node(0xC0000020)==' ');
 
 	check(Node(0xFFFFFFFF)==-1);
 

@@ -50,5 +50,5 @@ typedef enum smartType{
 //	sint28=0xF,
 //};
 
-typedef unsigned int spointer;
+typedef unsigned int spointer;// smart_pointer
 smartType getSmartType(spointer spo);
