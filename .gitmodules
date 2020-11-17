@@ -1,0 +1,3 @@
+[submodule "wasm3"]
+	path = wasm3
+	url = ./wasm3
