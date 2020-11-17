@@ -493,17 +493,26 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 				last_type = i32;// bool'ish
 		}
 			break;
+		case nils:
+		case longs:
+		case reals:
+		case bools:
+		case strings:
+			if(not node.isSetter())
+				return emitValue(node);
+//			else FALLTHROUGH!
 		case reference:
-			if (!node.isEmpty()) { //SET handled below
+			if (node.isSetter()) { //SET handled below
 				Map<int, String> current_local_names = locals[context];
-				int local_index = current_local_names.size();
-				current_local_names.insert_or_assign(local_index, node.name);
+				int local_index = current_local_names.position(node.name);// defined in block header
+				if (local_index < 0)err("UNKNOWN local symbol "s + node.name);
 				code = code + emitValue(node); // done above!
 				code.addByte(set_local);
 				code.addByte(local_index);
 			} else {// GET
 				Map<int, String> current_local_names = locals[context];
 				int local_index = current_local_names.position(node.name);
+				if (local_index < 0)err("UNKNOWN local symbol "s + node.name);
 				code.addByte(get_local);
 				code.addByte(local_index);
 			}
@@ -519,12 +528,7 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			emitExpression(statement.children);// only int so far lol
 			code.push(Call("print"));
 			break;
-		case nils:
-		case longs:
-		case reals:
-		case bools:
-		case strings:
-			return emitValue(node);
+
 		default:
 			breakpoint_helper
 			error("unhandled node type: "s + typeName(node.kind));
@@ -802,7 +806,7 @@ Code &emit(Program ast) {
 	                    end_block};// 0x00 == unreachable as block header !?
 	char code_data_nop[] = {0/*locals_count*/, end_block};// NOP
 //	char code_data_id[] = {0/*locals_count*/, end_block};// NOP
-	char code_data_id[] = {1/*locals_count*/, 1, i32, get_local, 0, return_block, end_block};// NOP
+	char code_data_id[] = {1/*locals_count*/, 1/*???*/, i32, get_local, 0, return_block, end_block};// NOP
 //	char code_data[] = {0x00,0x0b,0x02,0x00,0x0b};// empty type:1 len:2
 
 
@@ -894,14 +898,16 @@ Code emitBlock(Node node, Valtype returns) {
 //	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	Code(code_data,sizeof(code_data)); // todo : memcopy, else stack value is LOST
 	Code block;
-	int context=0;
-	Map<int, String> current_local_names=collect_locals(node);
+	int context = 0;
+	Map<int, String> current_local_names = collect_locals(node);
 	int locals_count = current_local_names.size();
 	locals.insert_or_assign(context, current_local_names);
-	block.add(locals_count);
-	for(int i : current_local_names){
-		block.addByte(i32);// kind
+	block.addByte(locals_count);
+	for (int i = 0; i < locals_count; ++i) {
+		block.addByte(i+1);// index
+		block.addByte(i32);// type
 	}
+
 	Code inner_code_data = emitExpression(node);
 	Valtype x = last_type;
 	block.push(inner_code_data);
@@ -923,10 +929,10 @@ Code emitBlock(Node node, Valtype returns) {
 
 Map<int, String> collect_locals(Node node) {
 	Map<int, String> current_locals;
-	for(Node n : node){
-		if(n.kind==reference and not functionIndices.has(n.name))
+	for (Node n : node) {
+		if (n.kind == reference and not functionIndices.has(n.name))
 			current_locals.insert_or_assign(current_locals.size(), n.name);
-		else if(n.kind==longs and not n.length==0 and not n.name.empty())
+		else if (n.kind == longs and not n.name.empty() and not atoi0(n.name))
 			current_locals.insert_or_assign(current_locals.size(), n.name);
 	}
 	return current_locals;
