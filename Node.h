@@ -528,6 +528,8 @@ public:
 	Node &setName(char *name0);
 
 	Node values();
+
+	bool isSetter();
 };
 
 typedef const Node Nodec;
