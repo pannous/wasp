@@ -188,8 +188,8 @@ bool eq(const char *op, const char *string);
 // https://pengowray.github.io/wasm-ops/
 byte opcodes(const char *s, byte kind = 0) {
 //	if(eq(s,"$1="))return set_local;
-	if (eq(s, "=$1"))return get_local;
-	if (eq(s, "=$1"))return tee_local;
+//	if (eq(s, "=$1"))return get_local;
+//	if (eq(s, "=$1"))return tee_local;
 
 	if (kind == 0) { // INT32
 		if (eq(s, "+"))return i32_add;
@@ -422,6 +422,8 @@ Code emitValue(Node node) {
 //			case binaryExpression:
 //				code.opcode(binaryOpcode[node.value]);
 //				break;
+		default:
+			error("emitValue unknown type: "s + typeName(node.kind));
 	}
 	return code;
 }
@@ -462,10 +464,10 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			code.push(rhs_code);// might be empty ok
 //			}
 			if (index >= 0) {// FUNCTION CALL
-				log("FUNCTION CALL: %s\n"s % node.name);
-				for (Node arg : node) {
-					emitExpression(arg);
-				};
+				log("OPERATOR FUNCTION CALL: %s\n"s % node.name);
+//				for (Node arg : node) {
+//					emitExpression(arg);
+//				};
 				code.addByte(call);
 				code.addByte((index));// ok till index>127?
 				break;
@@ -517,20 +519,10 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			emitExpression(statement.children);// only int so far lol
 			code.push(Call("print"));
 			break;
-//			case variableDeclaration:
-//				emitExpression(statement.initializer);
-//				code.opcode(set_local);
-//				code.opcode(unsignedLEB128(localIndexForSymbol(statement.name)), 8);
-//				break;
-//			case variableAssignment:
-//				todo();
-////				emitExpression(statement.value);
-//				code.opcode(set_local);
-//				code.opcode(unsignedLEB128(localIndexForSymbol(statement.name)), 8);
-//				break;
 		case nils:
 		case longs:
 		case reals:
+		case bools:
 		case strings:
 			return emitValue(node);
 		default:
@@ -768,6 +760,7 @@ Code &emit(Program ast) {
 	functionIndices.insert_or_assign("√", functionIndices.size());
 	return_types.insert_or_assign("square", int32);
 	return_types.insert_or_assign("√", int32);
+	return_types.insert_or_assign("id", int32);
 //	return_types.insert_or_assign("logi", voids);
 
 //	auto importSection = createSection(import, encodeVector(printFunctionImport));//+memoryImport
@@ -931,8 +924,9 @@ Code emitBlock(Node node, Valtype returns) {
 Map<int, String> collect_locals(Node node) {
 	Map<int, String> current_locals;
 	for(Node n : node){
-		if(n.kind==reference)current_locals.insert_or_assign(current_locals.size(), n.name);
-		else if(n.kind==longs and not n.empty() and not n.name.empty())
+		if(n.kind==reference and not functionIndices.has(n.name))
+			current_locals.insert_or_assign(current_locals.size(), n.name);
+		else if(n.kind==longs and not n.length==0 and not n.name.empty())
 			current_locals.insert_or_assign(current_locals.size(), n.name);
 	}
 	return current_locals;
