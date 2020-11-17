@@ -217,12 +217,15 @@ enum Blocktype {
 
 // https://webassembly.github.io/spec/core/binary/instructions.html
 // https://pengowray.github.io/wasm-ops/
+// USE wasm-objdump -d  to see function disassembled:
 enum Opcodes {
 //	start = 0x00,
 	start_function = 0x00,
 //	unreachable = 0x00,
 	block = 0x02,
 	loop = 0x03,
+	if_i = 0x04,// precede by i32 result, follow by i32_type (7f)
+	elsa = 0x05,
 	br = 0x0c,
 	br_if = 0x0d,
 	end_block = 0x0b,
