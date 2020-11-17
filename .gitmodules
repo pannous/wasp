@@ -1,3 +1,6 @@
 [submodule "wasm3"]
 	path = wasm3
 	url = ./wasm3
+[submodule "wasm-micro-runtime"]
+	path = wasm-micro-runtime
+	url = ./wasm-micro-runtime
