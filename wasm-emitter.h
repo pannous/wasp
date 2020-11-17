@@ -126,7 +126,7 @@ public:
 		return *this;
 	}
 
-	Code& push(long nr, bool sign= false) {
+	Code& push(long nr, bool sign= true) {
 		Code val;
 		if(sign)
 			val = signedLEB128(nr);
