@@ -14,8 +14,10 @@ bool recursive = true;// whats that?
 
 
 String functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
+
+// functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
 String function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
-                          "logx", "logc","id", 0};// MUST END WITH 0, else BUG
+                          "logx", "logc","id",0};// MUST END WITH 0, else BUG
 
 int main4(int argp, char **argv) {
 #ifdef register_global_signal_exception_handler
@@ -238,7 +240,7 @@ Node eval(String code) {
 // todo "=" ":" handled differently?
 String operator_list[] = {"is", "equal", "equals", "==", "!=", "≠", "xor", "or", "else", "||", "|", "&&", "&", "and",
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
-                          "*", "×", "⋅", "⋆", "/", "÷", "^","∈","∉","⊂","⊃","in","of","from"}; // "while" ...
+                          "*", "×", "⋅", "⋆", "/", "÷","^", "√","++","--", "∈","∉","⊂","⊃","in","of","from"}; // "while" ...
 Node groupOperators(Node expression) {
 //	if(expression.kind==function)return expression;// already grouped
 	if(expression.length==0)return expression;
@@ -289,6 +291,8 @@ Node do_call(Node left, Node op0, Node right) {
 	String op = op0.name;
 	if (op == "id")return right;// identity
 	if (op == "square")return square(right.numbere());
+	if (op == "√")return sqrtl(right.numbere());
+
 	breakpoint_helper
 	error("Unregistered function "s + op);
 }
