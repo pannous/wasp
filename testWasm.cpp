@@ -287,8 +287,8 @@ void testAllWasm() {
 //	const Node &node = parse("x:40;x+1");
 //	check(node.length==2)
 //	check(node[0]["x"]==40)
-//	assert_emit("x:41;x+1", 42)
-//
+	assert_emit("x:41;x+1", 42)
+//	exit(1);
 //	const Node &node1 = parse("x:40;x++;x+1");
 //	check(node.length==3)
 //	check(node[0]["x"]==40)
