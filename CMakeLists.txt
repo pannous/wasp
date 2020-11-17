@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
+set(CMAKE_OSX_SYSROOT "")
+
 project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
@@ -51,7 +53,6 @@ elseif (WASI)
     add_compile_definitions(WASI) # same as -DWASI=1
     SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
-    set(CMAKE_OSX_SYSROOT "")
     set(CMAKE_SYSROOT "")
 #    sd mv MacOSX.sdk.x ! WHY is CMAKE_OSX_SYSROOT still found???
 

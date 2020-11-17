@@ -284,9 +284,18 @@ void testAllWasm() {
 	)
 
 //	testWasmFunctionDefiniton();
-	assert_emit("id 3*42> id 2*3", 1)
+
+	const Node &node = parse("x:40;x+1");
+	check(node.length==2)
+	check(node[0]["x"]==40)
+	assert_emit("x:41;x+1", 42)
+
+	const Node &node1 = parse("x:40;x++;x+1");
+	check(node.length==3)
+	check(node[0]["x"]==40)
+	exit(1);
 	assert_emit("-42", -42)
-//	exit(1);
+	assert_emit("id 3*42> id 2*3", 1)
 	run_wasm_file("../tests/t.wasm");
 	testWasmFunctionCalls();
 	testFloatOperators();

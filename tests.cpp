@@ -1128,6 +1128,7 @@ void testIndex() {
 void tests() {
 	assert_is("[a b c]#2", "b");
 	assert_is("one plus two times three", 7);
+	testUnicode_UTF16_UTF32();
 	testGraphQlQuery2();
 	testNilValues();
 	testCall();
@@ -1220,15 +1221,10 @@ void todos() {
 void testCurrent() { // move to tests() once OK
 //	testGraphQlQuery();
 //	testWasmFunctionDefiniton();
-
+//	testAllWasm();
+//	exit(1);
 //	assert(eval("ç='☺'") == "☺");
-	String function_list_test[] = {"square", 0};
-
-	check(not"+"s.in(function_list_test));
 	testAllWasm();
-	testUnicode_UTF16_UTF32();
-
-	testUTF();
 	tests();// make sure all still ok before changes
 	testAngle();
 	todos();// those not passing yet (skip)
