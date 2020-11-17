@@ -231,3 +231,11 @@ void warning(chars warning) {
 	printf(warning);// for now
 }
 
+
+int square(int a){
+	return a * a;
+}
+
+int sqrt1(int a){
+	return sqrt(a);
+}

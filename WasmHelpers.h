@@ -16,6 +16,7 @@ extern "C" void logi(int i);
 extern "C" void log_f32(float f);
 extern "C" int square(int n);// test wasm
 extern "C" int squaref(int n);// test wasm
+extern int sqrt1(int a);
 
 #ifndef WASM
 //#include <cstdlib>
