@@ -8,7 +8,6 @@ void testWasmFunctionDefiniton(){
 }
 
 void testWasmFunctionCalls() {
-
 	assert_emit("square 3",9);
 	assert_emit("id 123",(long)123);
 	assert_is("id 3+3",6);
@@ -23,7 +22,7 @@ void testWasmFunctionCalls() {
 	assert_emit("id (3+3)",(long)6);
 	assert_is("id 3+3",6);
 	assert_emit("3 + id 3+3",(long)9);
-	assert_emit("3 + √3",(long)12);
+	assert_emit("3 + √9",(long)6);
 }
 void testConstReturn() {
 	assert_emit(("42"), 42)
@@ -284,16 +283,18 @@ void testAllWasm() {
 	)
 
 //	testWasmFunctionDefiniton();
-
-	const Node &node = parse("x:40;x+1");
-	check(node.length==2)
-	check(node[0]["x"]==40)
-	assert_emit("x:41;x+1", 42)
-
-	const Node &node1 = parse("x:40;x++;x+1");
-	check(node.length==3)
-	check(node[0]["x"]==40)
-	exit(1);
+//
+//	const Node &node = parse("x:40;x+1");
+//	check(node.length==2)
+//	check(node[0]["x"]==40)
+//	assert_emit("x:41;x+1", 42)
+//
+//	const Node &node1 = parse("x:40;x++;x+1");
+//	check(node.length==3)
+//	check(node[0]["x"]==40)
+//	exit(1);
+	assert_emit("3 + √9",(long)6);
+	assert_emit("square 3",9);
 	assert_emit("-42", -42)
 	assert_emit("id 3*42> id 2*3", 1)
 	run_wasm_file("../tests/t.wasm");

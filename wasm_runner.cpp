@@ -59,13 +59,7 @@ long get_pow2(long x, long y) {
 long get_pow2x(wasm_exec_env_t grr, long x, long y) {
 	return x * y;
 }
-int square(int a){
-	return a * a;
-}
 
-int sqrt1(int a){
-	return a * a;
-}
 static NativeSymbol native_symbols[] =
 		{        // WAVM can call f(float) f(char*)! No JS restrictions!!
 				{

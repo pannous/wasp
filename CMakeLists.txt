@@ -1,15 +1,19 @@
 cmake_minimum_required(VERSION 3.16)
-set(CMAKE_OSX_SYSROOT "")
+#set(CMAKE_OSX_SYSROOT "")
 
 project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
+set(DEBUG 1)
+add_compile_definitions(DEBUG)
+
 set(WASM 0) # OR :
 #if($ENV{WASI})
 set(WASI 0)
-set(VM 1)
+#set(VM 1)
+set(WASM3 1)
 set(CMAKE_CXX_STANDARD 20)
 
 #set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
@@ -129,6 +133,20 @@ elseif (VM) # NORMAL:
             ${WAMR_ROOT_DIR}/core/shared/mem-alloc
 #            VERSUS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
             )
+elseif (WASM3) # NORMAL:
+    message(WASM3 VM)
+    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
+    include(wasm3/cmake_install.cmake)
+
+    add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)
+    set(SOURCE_FILES
+            Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
+            WasmHelpers.cpp wasm-emitter.cpp wasm3_runner.cpp
+            smart_types.cpp)
+    add_executable(angle ${SOURCE_FILES})
+    target_include_directories(angle PUBLIC wasm3/source/)
+    target_link_libraries(angle PRIVATE m3)
+    add_custom_target(BuildWasm3 ALL DEPENDS angle) #.exe
 else () # NORMAL:
     message(NO WASM "${WASM}")
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
@@ -137,7 +155,7 @@ else () # NORMAL:
     #    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")
     #find_package( Readline)    #find_package( READLINE )
     #    ADD_COMPILE_FLAG(" -lreadline -ldl -lcurl -lz") # extra libraries
-    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp WasmHelpers.cpp wasm-emitter.cpp Map.cpp smart_types.cpp)
+    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp WasmHelpers.cpp wasm-emitter.cpp Map.cpp smart_types.cpp wasm3_runner.cpp wasm3_runner.h)
 
     #    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(angle ${SOURCE_FILES})
