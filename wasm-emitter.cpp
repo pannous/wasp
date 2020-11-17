@@ -498,11 +498,11 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 		case reals:
 		case bools:
 		case strings:
-			if(not node.isSetter())
+			if(not node.isSetter() || node.value.longy==0) // todo 0
 				return emitValue(node);
 //			else FALLTHROUGH!
 		case reference:
-			if (node.isSetter()) { //SET handled below
+			if (node.isSetter()) { //SET
 				Map<int, String> current_local_names = locals[context];
 				int local_index = current_local_names.position(node.name);// defined in block header
 				if (local_index < 0)err("UNKNOWN local symbol "s + node.name);
