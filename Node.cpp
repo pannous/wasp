@@ -758,6 +758,12 @@ Node Node::values() {
 	return val;
 }
 
+bool Node::isSetter() {
+	if(kind==longs)// || kind==reals || kind==bools||kind==strings)
+		return not atoi(name);// todo WTF hack
+	return kind == reference and value.data or length > 0;
+}
+
 void log(Node &n) {
 	n.log();
 }

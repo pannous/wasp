@@ -126,9 +126,12 @@ public:
 		return *this;
 	}
 
-	Code& push(long nr) {
-		Code &val = signedLEB128(nr);
-//		Code &val = unsignedLEB128(nr);
+	Code& push(long nr, bool sign= false) {
+		Code val;
+		if(sign)
+			val = signedLEB128(nr);
+		else
+		   val = unsignedLEB128(nr);
 		int l = val.length;
 		data = concat(data, val.data, length, l);
 		length+= l;
@@ -192,7 +195,6 @@ enum Section {
 };
 
 
-
 // https://webassembly.github.io/spec/core/binary/types.html
 // https://webassembly.github.io/spec/core/binary/values.html
 enum Valtype {
@@ -204,6 +206,7 @@ enum Valtype {
 	float32 = 0x7d,
 	int64 = 0x7E,
 	float64 = 0x7C,
+	none = 0x40,
 	voids = 0x00, // internal only for return type
 };
 
