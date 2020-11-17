@@ -76,16 +76,16 @@ bytes concat(char a, bytes b, int len) {
 //class Nod{
 //public:
 //	Nod(Block &alternate, ExpressionNod &args, Block &consequent, ExpressionNod &expression,
-//	    ExpressionNod &initializer, String &name, Block &statements, String &typeName, String &value)
+//	    ExpressionNod &initializer, String &name, Block &nodes, String &typeName, String &value)
 //			: alternate(alternate), args(args), consequent(consequent), expression(expression),
-//			  initializer(initializer), name(name), statements(statements), type_name(typeName), value(value) {
+//			  initializer(initializer), name(name), nodes(nodes), type_name(typeName), value(value) {
 //
 //	}
 //
 //	Nod(Block *alternate, ExpressionNod *args, Block *consequent, ExpressionNod *expression,
-//	    ExpressionNod *initializer, String *name, Block *statements, String *typeName, String *value)
+//	    ExpressionNod *initializer, String *name, Block *nodes, String *typeName, String *value)
 //	: alternate(*alternate), args(*args), consequent(*consequent), expression(*expression),
-//	initializer(*initializer), name(*name), statements(*statements), type_name(*typeName), value(*value) {
+//	initializer(*initializer), name(*name), nodes(*nodes), type_name(*typeName), value(*value) {
 //
 //	}
 //	Nod():Nod(0,0,0,0,0,0,0,0,0){}
@@ -98,13 +98,13 @@ bytes concat(char a, bytes b, int len) {
 //	ExpressionNod& initializer;
 //	String& name;
 //	ExpressionNod& args;
-//	Block& statements;
+//	Block& nodes;
 //	Block& consequent;
 //	Block& alternate;
 //	int index;// for args
 //	Block *begin() const{
 //		todo();
-//		return &statements;
+//		return &nodes;
 //	}
 //	Nod *end() const{
 //		todo();
@@ -374,7 +374,7 @@ bytes ieee754(float num) {
 
 Code emitBlock(Node node, Valtype returns);
 
-Code emitExpression(Node *node)__attribute__((warn_unused_result));
+//Code emitExpression(Node *node)__attribute__((warn_unused_result));
 //Code emitExpression(Node *node)__attribute__((error_unused_result));
 
 Code emitValue(Node value);
@@ -388,7 +388,6 @@ Map<int, Map<int, String>> locals;
 Code emitValue(Node node) {
 	Code code;
 	switch (node.kind) {
-
 		case nils:// also 0, false
 //			code.opcode((byte)i64_auto);// nil is pointer
 			code.addByte((byte) i32_auto);// nil is pointer
@@ -427,18 +426,24 @@ Code emitValue(Node node) {
 	}
 	return code;
 }
+Code emitIf(Node &node);
+Code emitExpression(Node *nodes);
 
-Code emitExpression(Node node) { // expression, statement or BODY (list)
+Code emitExpression(Node &node) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	NodTypes type = internalError;// todo: type/kind
 	Code code;
-	Node statement = node;
 	int context = 0;// changes in declarations (also with lambdas as functions)
 	functionIndices.setDefault(-1);
 	return_types.setDefault(voids);
 	int index = functionIndices[node.name];
 	if (index >= 0 and not locals.has(index))
 		locals.insert_or_assign(index, Map<int, String>());
+
+
+	if (node.name == "if")
+		return emitIf(node);
+
 
 	switch (node.kind) {
 		case function:
@@ -458,6 +463,8 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 //			if (node.length == 2) {// binary operators, and others
 			Node &lhs = node["lhs"];
 			Node &rhs = node["rhs"];
+			if(lhs==node or rhs==node)
+				error("op rhs lhs BUG");
 			const Code &lhs_code = emitExpression(lhs);
 			const Code &rhs_code = emitExpression(rhs);
 			code.push(lhs_code);// might be empty ok
@@ -498,7 +505,7 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 		case reals:
 		case bools:
 		case strings:
-			if(not node.isSetter() || node.value.longy==0) // todo 0
+			if (not node.isSetter() || node.value.longy == 0) // todo 0
 				return emitValue(node);
 //			else FALLTHROUGH!
 		case reference:
@@ -525,7 +532,7 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			};
 			break;
 		case printStatement:
-			emitExpression(statement.children);// only int so far lol
+			emitExpression(node.children);// only int so far lol
 			code.push(Call("print"));
 			break;
 
@@ -542,14 +549,14 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			code.addByte(loop);
 			code.addByte(void_block);
 			// compute the while expression
-			emitExpression(statement[0]);// statement.value.node or
+			emitExpression(node[0]);// node.value.node or
 			code.addByte(i32_eqz);
 			// br_if $label0
 			code.addByte(br_if);
 			code.addByte(1);
 //			code.push(signedLEB128(1));
 			// the nested logic
-			emitExpression(statement[1]);// BODY
+			emitExpression(node[1]);// BODY
 			// br $label1
 			code.addByte(br);
 			code.addByte(0);
@@ -559,43 +566,6 @@ Code emitExpression(Node node) { // expression, statement or BODY (list)
 			code.addByte(end_block);
 			// end block
 			code.addByte(end_block);
-			break;
-		case ifStatement:
-			// if block
-			code.addByte(block);
-			code.addByte(void_block);
-			// compute the if expression
-			emitExpression(statement[0]);
-			code.addByte(i32_eqz);
-			// br_if $label0
-			code.addByte(br_if);
-			code.addByte(0);
-//			code.opcode(signedLEB128(0));
-			// the nested logic
-			emitExpression(statement[1]);// BODY
-			// end block
-			code.addByte(end_block);
-
-			// else block SUPERFLUOUS:
-//			or if OR-IF YAY semantically beautiful if false {} or if 2>1 {}
-//
-//			// compute the if expression (elsif) elif orif
-//			code.addByte(block);
-//			code.addByte(void_block);
-//
-//			emitExpression(statement.param);
-//			code.addByte(i32_auto);
-////				code.opcode(signedLEB128(1));
-//			code.addByte(1);
-//			code.addByte(i32_eq);
-//			// br_if $label0
-//			code.addByte(br_if);
-//			code.addByte(0);
-////				code.opcode(signedLEB128(0));
-//			// the nested logic
-//			emitExpression(&statement["else"]);
-//			// end block
-//			code.addByte(end_block);
 			break;
 	};
 	if (node.kind == reference and !node.isEmpty()) { //SET local
@@ -610,6 +580,81 @@ Code emitExpression(Node *nodes) {
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	return emitExpression(*nodes);
 }
+
+
+Code emitIf(Node &node) {
+	Code code;
+//	Node *condition = node[0].value.node;
+	Node &condition = node["condition"];
+	code=code+emitExpression(condition);
+	if(last_type!=int32){
+		err("todo");
+	}
+	code.addByte(if_i);
+	code.addByte(int32);
+//	Node *then = node[1].value.node;
+	Node& then = node["then"];
+	code=code+emitExpression(then);// BODY
+	if(node.length==3){
+		code.addByte(elsa);
+		Node *otherwise = node[2].value.node;//->clone();
+		code=code+emitExpression(otherwise);
+	}
+	code.addByte(end_block);
+	return code;
+}
+
+Code emitIf_OLD(Node &node) {
+	Code code;
+//	case ifStatement:
+	// if block
+	code.addByte(block);
+	code.addByte(void_block);
+	// compute the if expression
+	Node *condition = node[0].value.node;
+//	Node *condition = node["condition"];//.value.node->clone();
+	emitExpression(condition);
+	code.addByte(i32_eqz);
+	// br_if $label0
+	code.addByte(br_if);
+	code.addByte(0);
+//			code.opcode(signedLEB128(0));
+	// the nested logic
+	Node *then = node[1].value.node;
+//	Node *then = node["then"].value.node->clone();
+	emitExpression(then);// BODY
+	// end block
+	code.addByte(end_block);
+
+	if(node.length==3){
+
+	// else block
+//			or if OR-IF YAY semantically beautiful if false {} or if 2>1 {}
+//			// compute the if expression (elsif) elif orif
+			code.addByte(block);
+			code.addByte(void_block);
+//
+//			emitExpression(node.param);
+			code.addByte(i32_auto);
+////				code.opcode(signedLEB128(1));
+			code.addByte(1);
+			code.addByte(i32_eq);
+//			// br_if $label0
+			code.addByte(br_if);
+			code.addByte(0);
+////				code.opcode(signedLEB128(0));
+//			// the nested logic
+//		Node *otherwise = node["else"].value.node->clone();
+		Node *otherwise = node[2].value.node;//->clone();
+		emitExpression(otherwise);
+
+//			// end block
+			code.addByte(end_block);
+	}
+	return code;
+}
+
+
 
 Code Call(char *symbol) {//},Node* args=0) {
 	Code code;
@@ -640,7 +685,7 @@ public:
 
 	void collectMain() {
 //		if(!functions["main"])
-		main = ast;// root statements form 'main'
+		main = ast;// root nodes form 'main'
 	}
 
 
@@ -668,7 +713,7 @@ public:
 //		symbols.insert_or_assign(arg.value, arg.index);
 //	}
 //	Code code;// not global ;)
-//	emitStatements(node.statements);
+//	emitStatements(node.nodes);
 //
 //	auto localCount = symbols.size();
 //	bytes locals = localCount > 0 ? encodeLocal(localCount, f32).data : new char[]{};
@@ -854,7 +899,7 @@ Code &emit(Program ast) {
 	Code localNameMap;
 //	Map< localNames
 	for (String key : functionIndices) {
-		if (key != "mainx")continue;
+		if (key != "main")continue;
 		int function_index = functionIndices[key];
 		Map<int, String> &currentLocalNames = locals[function_index - main_offset];
 		int local_count = currentLocalNames.size();
@@ -870,8 +915,9 @@ Code &emit(Program ast) {
 	}
 //	localNameMap = localNameMap + Code((byte) 0) + Code((byte) 1) + Code((byte) 0) + Code((byte) 0);// 1 unnamed local
 //	localNameMap = localNameMap + Code((byte) 4) + Code((byte) 0);// no locals for function4
-	localNameMap = localNameMap + Code((byte) 5) /*index*/ + Code((byte) 1) /*nr*/ + Code((byte) 0) /*l.nr*/ +
-	               Code("var1");// function 5 with one local : var1
+	localNameMap =
+			localNameMap + Code((byte) 5) /*function index*/ + Code((byte) 1) /*count*/ + Code((byte) 0) /*l.nr*/ +
+			Code("var1");// function 5 with one local : var1
 	auto nameSubSectionLocalNames = Code(local_names) + encodeVector(Code((byte) 1) + localNameMap);
 
 
@@ -904,7 +950,7 @@ Code emitBlock(Node node, Valtype returns) {
 	locals.insert_or_assign(context, current_local_names);
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; ++i) {
-		block.addByte(i+1);// index
+		block.addByte(i + 1);// index
 		block.addByte(i32);// type
 	}
 

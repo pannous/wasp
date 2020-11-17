@@ -9,6 +9,7 @@
 #include "Node.h"
 #include "wasm-emitter.h"
 #include "math.h" // sqrt
+
 bool recursive = true;// whats that?
 
 
@@ -17,7 +18,8 @@ String functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
 
 // functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
 String function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
-                          "logx", "logc","id",0};// MUST END WITH 0, else BUG
+                          "logx", "logc", "id", 0};// MUST END WITH 0, else BUG
+String control_flows[]={"if","while","unless","until","as soon as",0};
 
 int main4(int argp, char **argv) {
 #ifdef register_global_signal_exception_handler
@@ -92,29 +94,28 @@ Node If(Node n) {
 		error("no if block given");
 	Node &condition = n.children[0];
 	Node then = n[1];
-	if(n.has("then")){
+	if (n.has("then")) {
 		condition = n.to("then");
 		then = n.from("then");
 	}
 
 	if (condition.value.data and !condition.next)
-		then=condition.values();
+		then = condition.values();
 	if (condition.next and condition.next->name == "else")
-		then=condition.values();
+		then = condition.values();
 
 	// todo: UNMESS how?
 	if (n.has(":") /*before else: */) {
 		condition = n.to(":");
-		if(condition.has("else"))
+		if (condition.has("else"))
 			condition = condition.to("else");// shouldn't happen?
-		then=n.from(":");
-	}
-	else if (condition.has(":") ) {// as child
+		then = n.from(":");
+	} else if (condition.has(":")) {// as child
 		then = condition.from(":");
 		condition = condition.evaluate();
 	}
-	if(then.has("then"))
-		then=n.from("then");
+	if (then.has("then"))
+		then = n.from("then");
 	if (then.has("else"))
 		then = then.to("else");
 //	if(condition.name=="condition")
@@ -175,13 +176,13 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		float p = precedence(node);
 		if (p > max) max = p;
 		if (p < min and p != 0) min = p;
-		if(p==0 and node.kind==reference)unknown_symbols.add(node);
+		if (p == 0 and node.kind == reference)unknown_symbols.add(node);
 	}
 	if (max == 0) {
-		if (!name.empty() or length > 1){
+		if (!name.empty() or length > 1) {
 			breakpoint_helper // ok need not always have known operators
 			info(String("No operator in : ") + serialize());
-			if(unknown_symbols>(long)0 and expectOperator)
+			if (unknown_symbols > (long) 0 and expectOperator)
 				error("unknown symbol "s + unknown_symbols.serialize());
 		}
 		for (int i = 0; i < length; ++i) {
@@ -233,6 +234,9 @@ Node eval(String code) {
 	else
 		return emit(analyze(parse(code))).run();// int -> Node todo: int* -> Node*
 }
+Node groupIf(Node n);
+
+
 
 // if a then b else c == a and b or c
 // (a op c) => op(a c)
@@ -240,41 +244,48 @@ Node eval(String code) {
 // todo "=" ":" handled differently?
 String operator_list[] = {"is", "equal", "equals", "==", "!=", "≠", "xor", "or", "else", "||", "|", "&&", "&", "and",
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
-                          "*", "×", "⋅", "⋆", "/", "÷","^", "√","++","--", "∈","∉","⊂","⊃","in","of","from"}; // "while" ...
-Node groupOperators(Node expression) {
+                          "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
+                          "from"}; // "while" ...
+
+Node groupOperators(Node& expression) {
+	if (expression.name == "if")return groupIf(expression);
 //	if(expression.kind==function)return expression;// already grouped
-	if(expression.length==0)return expression;
-	if(expression.length==1)
-		if(expression.kind!=function)
+	if (expression.length == 0)return expression;
+	if(expression.kind==longs)return expression;
+	if (expression.length == 1)
+		if (expression.kind != function)
 			return groupOperators(expression.children[0]); // Nothing to be grouped
 	expression.log();
 	Node lhs;
-	for (Node op : expression) {
-		if (op.name.in(function_list) and op.length==0) { // todo: op.length>0 means already has body?
-			op.kind = function;
+	for (Node& op : expression) {
+		int isFunc = op.name.in(function_list);
+		int isControl = op.name.in(control_flows);
+		if ((isControl or isFunc) and op.length == 0) { // todo: op.length>0 means already has body?
+			if(isFunc) op.kind = function;
 			if (!op.children) {
 				Node *n = &op;
-				if(n->next and n->next->kind==groups)
+				if (n->next and n->next->kind == groups)
 					op.add(n->next); //f(x,y)+1
-				else while (n = n->next) // f x+1
-					op.addRaw(n);
+				else
+					while (n = n->next) // f x+1
+						op.addRaw(n);
 			}
 			Node &flat = op.flat();
-			Node* right = groupOperators(flat).clone();// applied on children
-			if(lhs.empty())return *right;
+			Node *right = groupOperators(flat).clone();// applied on children
+			if (lhs.empty())return *right;
 			lhs.add(right);
-			groupOperators(lhs);
-		} else		lhs.add(op);
+			return groupOperators(lhs);
+		} else lhs.add(op);
 
 	}
 	for (String operator_name : operator_list) {
-		for (Node op : expression) {
+		for (Node& op : expression) {
 			if (op.name == operator_name) {
 				Node lhs = expression.to(op);
 				Node rhs = expression.from(op);
 				op["lhs"] = groupOperators(lhs);
 				op["rhs"] = groupOperators(rhs);
-				if(expression.kind==function){// f 3*3 => f(*(3 3))
+				if (expression.kind == function) {// f 3*3 => f(*(3 3))
 					expression.children = op.clone();
 					expression.length = 1;
 					return expression;
@@ -287,6 +298,83 @@ Node groupOperators(Node expression) {
 	return expression;// no op
 }
 
+
+Node groupIf(Node n) {
+	breakpoint_helper
+	if (n.length == 0 and !n.value.data)
+		error("no if condition given");
+	if (n.length == 1 and !n.value.data)
+		error("no if block given");
+	Node &condition = n.children[0];
+	Node then;
+	if (n.length > 0)then = n[1];
+	if (n.length == 0) then = n.values();
+	if (n.has("then")) {
+		condition = n.to("then");
+		then = n.from("then");
+	}
+
+	if (condition.value.data and !condition.next)
+		then = condition.values();
+	if (condition.next and condition.next->name == "else")
+		then = condition.values();
+
+	// todo: UNMESS how?
+	if (n.has(":") /*before else: */) {
+		condition = n.to(":");
+		if (condition.has("else"))
+			condition = condition.to("else");// shouldn't happen?
+		then = n.from(":");
+	} else if (condition.has(":")) {// as child
+		then = condition.from(":");
+		condition = condition.evaluate();
+	}
+	Node otherwise;
+	if (n.has("else"))
+		otherwise = n["else"];
+	if (then.has("then"))
+		then = n.from("then");
+	if (then.has("else")) {
+		otherwise = then.from("else");
+		then = then.to("else");
+	}
+	if(n.length==3 and otherwise.empty())
+		otherwise = n[3];
+//	if(condition.name=="condition")
+//		condition = condition.values();
+
+
+	Node ef=Node("if");
+	ef.kind = expressions;
+	ef["condition"] = groupOperators(condition);
+	ef["then"] = groupOperators(then);
+	ef["else"] = groupOperators(otherwise);
+	Node &node = ef["condition"];// debug
+	return *ef.clone();
+
+	Node condit = condition.evaluate();
+	bool condition_fulfilled = (bool) condit;
+	if (condition.kind == reals or condition.kind == longs)
+		condition_fulfilled = condition.name.empty() and condition.value.data or condition.name != "0";
+	else if (condition.value.data and condition.kind == objects) // or ...
+		error("If statements need a space after colon");
+	if (condition_fulfilled) {
+		if (then.name == "then") {
+			if (then.value.data or then.children) // then={} as arg
+				return eval(then.values());
+			return eval(n[2]);
+		}
+		return eval(then);
+	} else {
+		if (n.has("else"))
+			return eval(n.from("else"));
+		if (n.length == 3 and not n.has(":"))
+			return eval(n[2]);// else
+		else
+			return False;
+	}
+}
+
 Node do_call(Node left, Node op0, Node right) {
 	String op = op0.name;
 	if (op == "id")return right;// identity
@@ -297,11 +385,11 @@ Node do_call(Node left, Node op0, Node right) {
 	error("Unregistered function "s + op);
 }
 
-Node matchPattern(Node object,Node pattern0){
+Node matchPattern(Node object, Node pattern0) {
 //	[1 2 3]#1 == 1 == [1 2 3][0]
-	Node pattern=pattern0.evaluate(); // [1 2 3][3-2]==2
-	if(pattern.kind==longs)return object[(int)pattern.numbere()];
-	if(pattern.kind==strings)return object[pattern.value.string];
+	Node pattern = pattern0.evaluate(); // [1 2 3][3-2]==2
+	if (pattern.kind == longs)return object[(int) pattern.numbere()];
+	if (pattern.kind == strings)return object[pattern.value.string];
 // todo proper matches, references...
 	return object[pattern.name];
 }
@@ -333,24 +421,25 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	if (op.in(function_list))
 		return do_call(left, op0, right);
 
-	if(op0.kind==patterns)
+	if (op0.kind == patterns)
 		return matchPattern(left, op0);
 
-	if(op == "."){
+	if (op == ".") {
 		return matchPattern(left, right);
 	}
 
-	if(op == "of" or op == "in"){
-		return matchPattern(right,left);
+	if (op == "of" or op == "in") {
+		return matchPattern(right, left);
 	}
 
-	if (op == "#" ) {
-		if(left.length==0) // length operator #{a b c} == 3
+	if (op == "#") {
+		if (left.length == 0) // length operator #{a b c} == 3
 			return Node(right.length);// or right["size"] or right["count"]  or right["length"]
-		else{  // index operator [a b c]#2 == b
+		else {  // index operator [a b c]#2 == b
 			long index = right.value.longy;
-			if(index<=0)error("index<=0 ! Angle index operator # starts from 1. So [a b c]#2 == b. Use [] operator for zero based indexing");
-			if(index>left.length)error("Index out of range: %d > %d !"s%index%left.length);
+			if (index <= 0)
+				error("index<=0 ! Angle index operator # starts from 1. So [a b c]#2 == b. Use [] operator for zero based indexing");
+			if (index > left.length)error("Index out of range: %d > %d !"s % index % left.length);
 			return left.children[index - 1];
 		}
 	}
@@ -495,7 +584,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		if (right.value.data) {// and ...
 			left.kind = right.kind; // there are certainly things lost here!?!
 			left.value.data = right.value.data;// todo failed copy assignment: length=0!!!
-			if(right.kind==strings)left.value.string.length=right.value.string.length;// DONT WORKAROUND BUGS!!
+			if (right.kind == strings)left.value.string.length = right.value.string.length;// DONT WORKAROUND BUGS!!
 		} else
 			left.value.node = &right;
 		return left;
@@ -604,7 +693,7 @@ float precedence(String name) {
 	if (eq(name, "else"))return 11.09;
 	if (eq(name, "then"))return 11.15;
 	if (eq(name, "if"))return 100;
-	if( name.in(functor_list))// f 1 > f 2
+	if (name.in(functor_list))// f 1 > f 2
 		return 1000;// if, while, ... statements calls outmost operation todo? add 3*square 4+1
 	return 0;// no precedence
 }
@@ -616,7 +705,8 @@ float precedence(Node &operater) {
 	if (operater.kind == reals)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (operater.kind == longs)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (operater.kind == strings)return 0;// and name.empty()
-	if (operater.kind==groups or operater.kind==patterns) return precedence("if")*0.999;// needs to be smaller than functor/function calls
+	if (operater.kind == groups or operater.kind == patterns)
+		return precedence("if") * 0.999;// needs to be smaller than functor/function calls
 	if (operater.name.in(function_list))return 999;// function call
 	return precedence(name);
 }
