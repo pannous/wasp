@@ -30,4 +30,15 @@ wasp.cbp
 cmake-build-default/
 cmake-build-wasm/old/
 cmake-build-wasm
+cmake-build-wasi/
+cmake-build-wasi-1/
 old
+CNAME
+angle
+clean.sh
+features
+libSystem.B.dylib
+t.c
+test.angle.data
+tests/
+x
