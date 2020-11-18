@@ -316,10 +316,6 @@ bool eq(String &dest, const char *src) {
 	return dest.data == src;
 }
 
-void err(String error){
-	err(error.data);
-}
-
 String string(const char *&s) {
 	return String(s);
 }
@@ -375,6 +371,8 @@ String typeName(Type t) {
 			return "unknown";
 		case function:
 			return "function";
+		case declaration:
+			return "declaration";
 		default:
 			breakpoint_helper
 			error(str("MISSING Type name mapping ") + t);

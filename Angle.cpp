@@ -19,7 +19,7 @@ String functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
 // functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
 String function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
                           "logx", "logc", "id", 0};// MUST END WITH 0, else BUG
-String control_flows[]={"if","while","unless","until","as soon as",0};
+String control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
 
 int main4(int argp, char **argv) {
 #ifdef register_global_signal_exception_handler
@@ -234,34 +234,34 @@ Node eval(String code) {
 	else
 		return emit(analyze(parse(code))).run();// int -> Node todo: int* -> Node*
 }
-Node groupIf(Node n);
 
+Node groupIf(Node n);
 
 
 // if a then b else c == a and b or c
 // (a op c) => op(a c)
 // further right means higher prescedence/binding, gets grouped first
 // todo "=" ":" handled differently?
-String operator_list[] = {":=","else","then",  "be","is", "equal", "equals", "==", "!=", "≠", "xor", "or", "||", "|", "&&", "&", "and",
+String operator_list[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "||", "|", "&&", "&", "and",
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
                           "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
                           "from",}; // "while" ...
 
-Node groupOperators(Node& expression) {
+Node groupOperators(Node &expression) {
 	if (expression.name == "if")return groupIf(expression);
 //	if(expression.kind==function)return expression;// already grouped
 	if (expression.length == 0)return expression;
-	if(expression.kind==longs)return expression;
+	if (expression.kind == longs)return expression;
 	if (expression.length == 1)
 		if (expression.kind != function)
 			return groupOperators(expression.children[0]); // Nothing to be grouped
 	expression.log();
 	Node lhs;
-	for (Node& op : expression) {
+	for (Node &op : expression) {
 		int isFunc = op.name.in(function_list);
 		int isControl = op.name.in(control_flows);
 		if ((isControl or isFunc) and op.length == 0) { // todo: op.length>0 means already has body?
-			if(isFunc) op.kind = function;
+			if (isFunc) op.kind = function;
 			if (!op.children) {
 				Node *n = &op;
 				if (n->next and n->next->kind == groups)
@@ -279,7 +279,7 @@ Node groupOperators(Node& expression) {
 
 	}
 	for (String operator_name : operator_list) {
-		for (Node& op : expression) {
+		for (Node &op : expression) {
 			if (op.name == operator_name) {
 				Node lhs = expression.to(op);
 				Node rhs = expression.from(op);
@@ -338,13 +338,13 @@ Node groupIf(Node n) {
 		otherwise = then.from("else");
 		then = then.to("else");
 	}
-	if(n.length==3 and otherwise.empty())
+	if (n.length == 3 and otherwise.empty())
 		otherwise = n[3];
 //	if(condition.name=="condition")
 //		condition = condition.values();
 
 
-	Node ef=Node("if");
+	Node ef = Node("if");
 	ef.kind = expressions;
 	ef["condition"] = groupOperators(condition);
 	ef["then"] = groupOperators(then);
@@ -603,13 +603,19 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 
 Node Angle::analyze(Node data) {
-
-	if (data.kind == expressions) {
+	if (data.kind == reference and data.length == 0)return data;
+	if (data.kind == expressions or data.kind == declaration) {
 		return groupOperators(data);
-	}
-	for (Node &child: data)
+	} else // or data.kind==groups or
+		warn("REPLACE with their ast?");
+	Node grouped=*data.clone();
+	grouped.children = 0;
+	grouped.length = 0;
+	for (Node &child: data) {
 		child = analyze(child);// REPLACE with their ast? NO! todo
-	return data;
+		grouped.addRaw(child);
+	}
+	return grouped;
 }
 
 Node analyze(Node data) {
