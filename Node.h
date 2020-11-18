@@ -360,7 +360,7 @@ public:
 			return value.string;
 		return name;
 		breakpoint_helper
-		err(String("WRONG TYPE ") + typeName(kind));
+		error(String("WRONG TYPE ") + typeName(kind));
 	}
 
 	// moved outside because circular dependency
@@ -473,7 +473,7 @@ public:
 		return kind == longs ? value.longy : value.real;// danger
 	}
 
-	Node *has(String s, bool searchMeta = true) const;
+	Node *has(String s, bool searchMeta = true, short searchDepth=0) const;
 
 
 //		https://github.com/pannous/angle/wiki/truthiness
