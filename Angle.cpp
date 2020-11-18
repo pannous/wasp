@@ -242,10 +242,10 @@ Node groupIf(Node n);
 // (a op c) => op(a c)
 // further right means higher prescedence/binding, gets grouped first
 // todo "=" ":" handled differently?
-String operator_list[] = {"is", "equal", "equals", "==", "!=", "≠", "xor", "or", "else", "||", "|", "&&", "&", "and",
+String operator_list[] = {":=","else","then",  "be","is", "equal", "equals", "==", "!=", "≠", "xor", "or", "||", "|", "&&", "&", "and",
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
                           "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
-                          "from"}; // "while" ...
+                          "from",}; // "while" ...
 
 Node groupOperators(Node& expression) {
 	if (expression.name == "if")return groupIf(expression);

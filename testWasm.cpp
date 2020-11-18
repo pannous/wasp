@@ -288,9 +288,13 @@ void testAllWasm() {
 //	check(node.length==2)
 //	check(node[0]["x"]==40)
 	assert_emit("if 4>1 then 2 else 3", 2)
+	exit(123);
+	assert_emit("fib:=it<2 or fib(it-1)+fib(it-2);fib(4)", 5)
+//	assert_emit("fib:=it<2 then 1 else fib(it-1)+fib(it-2);fib(4)", 5)
 //	assert_emit("id 3*42> id 2*3", 1)
 	assert_emit("x:41;if x>1 then 2 else 3", 2)
 	assert_emit("x:41;if x<1 then 2 else 3", 3)
+
 
 	assert_emit("x:41;x+1", 42)
 

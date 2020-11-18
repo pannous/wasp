@@ -30,7 +30,7 @@ class ProcStatementNod;
 class Code{
 public:
 
-	bytes data;
+	bytes data=0;
 	int length=0;
 	bool encoded= false;// first byte = size of vector
 
