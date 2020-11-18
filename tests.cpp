@@ -1219,7 +1219,7 @@ void todos() {
 
 
 void testCurrent() { // move to tests() once OK
-	assert_is("√4+40", 42);
+//	assert_is("√4+40", 42);
 
 //	testGraphQlQuery();
 //	testWasmFunctionDefiniton();

@@ -69,11 +69,12 @@ public:
 		int position1 = position(key);
 		if (position1 < 0) {
 			if(use_default){
-//				insert_or_assign(key, defaulty); prepare assignment. BAD because unknown symbols will be added!!
-				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
-//				return values[_size - 1];
+				insert_or_assign(key, defaulty);// prepare assignment a[b]=c  BAD because unknown symbols will be added!!
+				return values[_size - 1];// MUST USE map.has(x) instead of map[x] otherwise it is created!!
+//				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
 			}
-			else error("MISSING KEY: %s\n"s % key);
+			else
+				error("MISSING KEY: %s\n"s % key);
 		}
 		T &t = values[position1];
 		return t;
