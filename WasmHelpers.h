@@ -17,7 +17,7 @@ extern "C" void log_f32(float f);
 extern "C" int square(int n);// test wasm
 extern "C" int squaref(int n);// test wasm
 extern int sqrt1(int a);
-
+void printf(int);
 #ifndef WASM
 //#include <cstdlib>
 //#include "stdlib.h"
@@ -40,7 +40,6 @@ extern "C" void logc(char s);
 extern "C" void logi(int i);
 // helpers calling
 
-void err(char const*);
 void warn(char const*);
 void error(char const*);
 //void raise(char const*);
