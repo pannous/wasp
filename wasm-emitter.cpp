@@ -342,9 +342,34 @@ Code createSection(Section sectionType, Code data) {
 	return Code(sectionType, encodeVector(data));
 }
 
+
+class Signature {
+public:
+	Map<int, Valtype> types;
+	Valtype _returns;
+
+	int size() {
+		return types.size();
+	}
+
+	Signature add(Valtype t) {
+		types.insert_or_assign(types.size(), t);
+		return *this;
+	}
+
+	Signature &returns(Valtype valtype) {
+		_returns = valtype;
+		return *this;
+	}
+};
+
+
 //std::map<String ,int> symbols;
 Map<String, int> functionIndices;
-
+Map<String, Code> functionCodes;
+Map<String, Signature> functionSignatures;
+//	Map<int, long> typeMap;
+Map<String, int> typeMap;
 
 enum NodTypes {
 	numberLiteral,
@@ -426,7 +451,13 @@ Code emitValue(Node node) {
 	}
 	return code;
 }
+
 Code emitIf(Node &node);
+
+Code emitCall(Node &node);
+
+Code emitDeclaration(Node &fun, Node &body);
+
 Code emitExpression(Node *nodes);
 
 Code emitExpression(Node &node) { // expression, node or BODY (list)
@@ -434,8 +465,6 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 	NodTypes type = internalError;// todo: type/kind
 	Code code;
 	int context = 0;// changes in declarations (also with lambdas as functions)
-	functionIndices.setDefault(-1);
-	return_types.setDefault(voids);
 	int index = functionIndices[node.name];
 	if (index >= 0 and not locals.has(index))
 		locals.insert_or_assign(index, Map<int, String>());
@@ -443,27 +472,26 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 
 	if (node.name == "if")
 		return emitIf(node);
+	if (node.name == "it") {
+		code.addByte(get_local);
+		code.addByte(0);// todo: LAST local?
+		return code;
+	}
 
 
 	switch (node.kind) {
 		case function:
-			if (index < 0) {
-				breakpoint_helper
-				error("MISSING WASM import/declaration for function %s\n"s % node.name);
-			}
-
-			for (Node arg : node) {
-				code.push(emitExpression(arg));
-			};
-			code.addByte(call);
-			code.addByte(index);// ok till index>127, then use unsignedLEB128
-			last_type = return_types[node.name];// voids;// todo lookup return type
+			emitCall(node);
 			break;
 		case operators: {
+			if (node.name == "then")return emitIf(*node.parent);// pure if handled before
+			if (node.name == ":=") return emitDeclaration(node["lhs"], node["rhs"]);
+
+
 //			if (node.length == 2) {// binary operators, and others
 			Node &lhs = node["lhs"];
 			Node &rhs = node["rhs"];
-			if(lhs==node or rhs==node)
+			if (lhs == node or rhs == node)
 				error("op rhs lhs BUG");
 			const Code &lhs_code = emitExpression(lhs);
 			const Code &rhs_code = emitExpression(rhs);
@@ -500,6 +528,9 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 				last_type = i32;// bool'ish
 		}
 			break;
+		case declaration:
+			emitDeclaration(node, *node.begin());
+			break;
 		case nils:
 		case longs:
 		case reals:
@@ -508,27 +539,35 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 			if (not node.isSetter() || node.value.longy == 0) // todo 0
 				return emitValue(node);
 //			else FALLTHROUGH!
-		case reference:
+		case reference: {
+			Map<int, String> current_local_names = locals[context];
+			int local_index = current_local_names.position(node.name);// defined in block header
+			if (local_index < 0) { // collected before, so can't be setter here
+				if (functionCodes.has(node.name))
+					return emitCall(node);
+				breakpoint_helper
+				err("UNKNOWN local symbol "s + node.name);
+			}
+
 			if (node.isSetter()) { //SET
-				Map<int, String> current_local_names = locals[context];
-				int local_index = current_local_names.position(node.name);// defined in block header
-				if (local_index < 0)err("UNKNOWN local symbol "s + node.name);
 				code = code + emitValue(node); // done above!
 				code.addByte(set_local);
 				code.addByte(local_index);
 			} else {// GET
-				Map<int, String> current_local_names = locals[context];
-				int local_index = current_local_names.position(node.name);
-				if (local_index < 0)err("UNKNOWN local symbol "s + node.name);
 				code.addByte(get_local);
 				code.addByte(local_index);
 			}
+		}
+
 			break;
 		case expressions:
 		case groups:
 		case objects:
 			for (Node child : node) {
-				code.push(emitExpression(child));
+				if (child.name == "fib")
+					debug = 1;
+				const Code &expression = emitExpression(child);
+				code.push(expression);
 			};
 			break;
 		case printStatement:
@@ -581,24 +620,60 @@ Code emitExpression(Node *nodes) {
 	return emitExpression(*nodes);
 }
 
+Code emitCall(Node &fun) {
+	Code code;
+	int index = functionIndices[fun.name];
+
+	if (index < 0) {
+		breakpoint_helper
+		error("MISSING WASM import/declaration for function %s\n"s % fun.name);
+	}
+
+	for (Node arg : fun) {
+		code.push(emitExpression(arg));
+	};
+	code.addByte(call);
+	code.addByte(index);// ok till index>127, then use unsignedLEB128
+	last_type = return_types[fun.name];// voids;// todo lookup return type
+	return code;
+}
+
+Code emitDeclaration(Node &fun, Node &body) {
+	if (not functionIndices.has(fun.name)) {
+		functionIndices[fun.name] = functionIndices.size();
+//		functionIndices.insert_or_assign(fun.name, functionIndices.size());
+	}
+	Signature signature;
+	if (signature.size() == 0 and body.has("it"))signature.add(i32);
+	functionSignatures[fun.name] = signature;
+
+
+//			body=*fun.begin()
+	Valtype returns = int32;// todo
+	return_types[fun.name] = returns;
+	functionCodes[fun.name] = emitBlock(body, returns);
+	last_type = voids;// todo reference to new symbol x = (y:=z)
+	return code;// empty
+}
+
 
 Code emitIf(Node &node) {
 	Code code;
 //	Node *condition = node[0].value.node;
 	Node &condition = node["condition"];
-	code=code+emitExpression(condition);
-	if(last_type!=int32){
+	code = code + emitExpression(condition);
+	if (last_type != int32) {
 		err("todo");
 	}
 	code.addByte(if_i);
 	code.addByte(int32);
 //	Node *then = node[1].value.node;
-	Node& then = node["then"];
-	code=code+emitExpression(then);// BODY
-	if(node.length==3){
+	Node &then = node["then"];
+	code = code + emitExpression(then);// BODY
+	if (node.length == 3) {
 		code.addByte(elsa);
 		Node *otherwise = node[2].value.node;//->clone();
-		code=code+emitExpression(otherwise);
+		code = code + emitExpression(otherwise);
 	}
 	code.addByte(end_block);
 	return code;
@@ -626,22 +701,22 @@ Code emitIf_OLD(Node &node) {
 	// end block
 	code.addByte(end_block);
 
-	if(node.length==3){
+	if (node.length == 3) {
 
-	// else block
+		// else block
 //			or if OR-IF YAY semantically beautiful if false {} or if 2>1 {}
 //			// compute the if expression (elsif) elif orif
-			code.addByte(block);
-			code.addByte(void_block);
+		code.addByte(block);
+		code.addByte(void_block);
 //
 //			emitExpression(node.param);
-			code.addByte(i32_auto);
+		code.addByte(i32_auto);
 ////				code.opcode(signedLEB128(1));
-			code.addByte(1);
-			code.addByte(i32_eq);
+		code.addByte(1);
+		code.addByte(i32_eq);
 //			// br_if $label0
-			code.addByte(br_if);
-			code.addByte(0);
+		code.addByte(br_if);
+		code.addByte(0);
 ////				code.opcode(signedLEB128(0));
 //			// the nested logic
 //		Node *otherwise = node["else"].value.node->clone();
@@ -649,11 +724,10 @@ Code emitIf_OLD(Node &node) {
 		emitExpression(otherwise);
 
 //			// end block
-			code.addByte(end_block);
+		code.addByte(end_block);
 	}
 	return code;
 }
-
 
 
 Code Call(char *symbol) {//},Node* args=0) {
@@ -748,197 +822,6 @@ Code signedLEB128(int n) {
 }
 
 
-Code &emit(Program ast) {
-	functionIndices.clear();
-	return_types.setDefault(voids);
-	locals.insert_or_assign(0, Map<int, String>());
-	// Function types are vectors of parameters and return types. Currently
-	// WebAssembly only supports single return values
-//  bytes printFunctionType = new char[]{functionType,encodeVector(f32), emptyArray}
-	Code printFunctionType = Code(functionType).push(encodeVector(Code(f32))).push(emptyArray);
-
-
-	// optimise TODO - some of the procs might have the same type signature
-	Code funcTypes;
-	for (Node &proc : ast.functions) {
-		Code args;
-		for (Node arg: proc[0]) { args.addByte(f32); }
-		Code functionTypes = Code(functionType).push(encodeVector(args)).push(emptyArray);
-	}
-//  ast.map(proc {[functionType, encodeVector(proc.args.map(_ -> f32)), emptyArray]);
-
-
-
-	// the type section is a vector of function types
-//	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
-//	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
-	char vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/,
-	             i32};// our main function! todo : be flexible!
-	char iv[] = {0x60/*const type form*/, 0x01/*param count*/, i32, 0x00/*return count*/};
-	char vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
-	char ii[] = {0x60/*const type form*/, 0x01/*param count*/, i32, 0x01/*return count*/, i32};
-	char iii[] = {0x60/*const type form*/, 0x02/*param count*/, i32, i32, 0x01/*return count*/, i32};
-	char fv[] = {0x60/*const type form*/, 0x01/*param count*/, f32, 0x00/*return count*/};
-
-	int typeCount = 5;
-	const Code &type_data = Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv)) + Code(ii, sizeof(ii)) +
-	                        Code(fv, sizeof(fv)); //			+ Code(iii, sizeof(iii));
-	auto typeSection = Code(type, encodeVector(Code(typeCount) + type_data));
-
-	auto lambdo = [](String val, int index) { return index + 1; /* type index */};
-//	char func_types[]={0x01,0x00};
-//			encodeVector(ast.mapp(lambdo)) TODO
-
-	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
-	auto memorySection = createSection(memory_section, encodeVector(Code(2)));
-	auto memoryImport =
-			encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
-
-	// the import section is a vector of imported functions
-	Code logi_iv = encodeString("env") + encodeString("logi").addByte(func_export).addType(1);
-	Code logf_fv = encodeString("env") + encodeString("logf").addByte(func_export).addType(4);
-	Code square_ii = encodeString("env") + encodeString("square").addByte(func_export).addType(3);
-	Code sqrt_ii = encodeString("env") + encodeString("√").addByte(func_export).addType(3);
-
-	int import_count = 4;
-	auto importSection = createSection(import, Code(import_count) + logi_iv + logf_fv + square_ii + sqrt_ii);
-//
-	functionIndices.insert_or_assign("logi", functionIndices.size());// import!
-	functionIndices.insert_or_assign("logf", functionIndices.size());// import!
-	functionIndices.insert_or_assign("square", functionIndices.size());
-	functionIndices.insert_or_assign("√", functionIndices.size());
-	return_types.insert_or_assign("square", int32);
-	return_types.insert_or_assign("√", int32);
-	return_types.insert_or_assign("id", int32);
-//	return_types.insert_or_assign("logi", voids);
-
-//	auto importSection = createSection(import, encodeVector(printFunctionImport));//+memoryImport
-
-	// the export section is a vector of exported functions
-	int main_offset = import_count;// first func after import functions (which have an index too!)
-	const Code &exportsData = encodeVector(
-			Code(0x01) + encodeString("main") + (byte) func_export + Code(main_offset)/*.push(0).push(0)*/ );
-	auto exportSection = createSection(exports, exportsData);
-//	Code(ast.findIndex([](Nod a) { return a.name == "main"; }) + 1)
-
-	// the code section contains vectors of functions
-
-	auto lambde = [](String val, int index) { return index + 1; /* type index */};
-//	a -> codeFromProc(a, ast)
-// ast.mapp(lambde(ast)); TODO
-// https://pengowray.github.io/wasm-ops/
-//	char code_data[] = createSection() 0x01,0x08,0x00,0x01,0x3f,0x0F,0x0B};// ok 0x01==nop
-//  Code code_data=encodeVectors(encodeVector(1/*function_index/))
-//	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
-//function body count
-
-
-	short function_offset = import_count;
-// index needs to be known before emitting code, so call $i works
-	functionIndices.insert_or_assign("main", function_offset++);
-	functionIndices.insert_or_assign("nop", function_offset++);
-	functionIndices.insert_or_assign("id", function_offset++);
-
-	return_types["id"] = i32;
-//	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
-//	char code_data[] = {0x00,0x41,0x2A,0x0F,0x0B};// 0x00 == unreachable as block header !?
-//	0a 0e 02 09 00  41 2a 10 00 41 15 0f 0b 02 00
-//	0a 0a 02 05 00              41 15 0f 0b 02 00
-// fun #c #f        const 42 call oo
-
-//	char code_data[] = {0/*locals_count*/,i32_const,48,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
-	char code_data[] = {0/*locals_count*/, i32_auto, 42, return_block,
-	                    end_block};// 0x00 == unreachable as block header !?
-	char code_data_nop[] = {0/*locals_count*/, end_block};// NOP
-//	char code_data_id[] = {0/*locals_count*/, end_block};// NOP
-	char code_data_id[] = {1/*locals_count*/, 1/*???*/, i32, get_local, 0, return_block, end_block};// NOP
-//	char code_data[] = {0x00,0x0b,0x02,0x00,0x0b};// empty type:1 len:2
-
-
-//	Code function1 = codeBlock(code_data);
-//	Code da_code2=Code(code_data,sizeof(code_data));
-	Code main_block = emitBlock(ast.main, Valtype::i32);
-//	check(da_code2 == da_code);
-	Code nop_block = Code(code_data_nop, sizeof(code_data_nop));
-	Code id_block = Code(code_data_id, sizeof(code_data_id));
-
-	char function_count = 3;// offset by imports!?
-	auto codeSection = createSection(code_section,
-	                                 Code(function_count) + encodeVector(main_block) + encodeVector(nop_block) +
-	                                 encodeVector(id_block));
-
-
-	// the function section is a vector of type indices that indicate the type of each function in the code section
-//	char func_types[]={0x01,0x00};
-	char types_of_functions[] = {function_count, 0x00, 0x01, 0x03};// mapping/connecting function index to type index
-	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
-	Code funcSection = createSection(func, Code(types_of_functions, sizeof(types_of_functions)));
-
-
-	auto nameSubSectionModuleName = Code(module_name) + encodeVector(Code("wasp_module"));
-
-	Code nameMap;
-//	check(symbols["logi"]==0);
-//	check(symbols["√"]==3);// "\e2\88\9a"
-//	nameMap =  Code((byte) 0) + Code("logi");
-	for (int index = 0; index < functionIndices.size(); index++) {
-		// danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
-		String &name = functionIndices.keys[index];
-		nameMap = nameMap + Code(index) + Code(name);
-	}
-
-
-	auto nameSubSectionFunctionNames = Code(function_names) + encodeVector(Code(functionIndices.size()) + nameMap);
-//	auto nameSubSectionFunctionNames = Code(function_names) + encodeVector(Code(1) + Code((byte) 0) + Code("logi"));
-
-//	functions without parameters need  entry ( 00 01 00 00 )
-//  functions 5 with local 'hello' :  05 01 00 05 68 65 6c 6c 6f
-//  functions 5 with local 'hello' :  05 02 00 05 68 65 6c 6c 6f 01 00 AND unnamed (local i32)
-// localMapEntry = (index nrLocals 00? string )
-
-	Code localNameMap;
-//	Map< localNames
-	for (String key : functionIndices) {
-		if (key != "main")continue;
-		int function_index = functionIndices[key];
-		Map<int, String> &currentLocalNames = locals[function_index - main_offset];
-		int local_count = currentLocalNames.size();
-		localNameMap = localNameMap + Code(function_index) + Code(local_count); /*???*/
-		for (int i = 0; i < currentLocalNames.size(); ++i) {
-//		String local_name = "test_"s+key+"#"+local_count;
-			String local_name = currentLocalNames[i];
-			localNameMap = localNameMap + Code(i) + Code(local_name);
-		}
-
-
-//		error: expected local name count (1) <= local count (0) FOR FUNCTION ...
-	}
-//	localNameMap = localNameMap + Code((byte) 0) + Code((byte) 1) + Code((byte) 0) + Code((byte) 0);// 1 unnamed local
-//	localNameMap = localNameMap + Code((byte) 4) + Code((byte) 0);// no locals for function4
-	localNameMap =
-			localNameMap + Code((byte) 5) /*function index*/ + Code((byte) 1) /*count*/ + Code((byte) 0) /*l.nr*/ +
-			Code("var1");// function 5 with one local : var1
-	auto nameSubSectionLocalNames = Code(local_names) + encodeVector(Code((byte) 1) + localNameMap);
-
-
-//	auto nameSubSectionFuncNames = Code(module_name) + encodeVector(Code("wasp_module"));
-//	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’. The name section should appear only once in a module, and only after the data section.
-	const Code &nameSectionData = encodeVector(
-			Code("name") + nameSubSectionModuleName + nameSubSectionFunctionNames + nameSubSectionLocalNames);
-	auto nameSection = createSection(custom, nameSectionData);
-
-
-//	+
-
-	auto customSection = createSection(custom, encodeVector(Code("custom123") + Code("random custom section data")));
-
-	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + importSection + funcSection +
-	            exportSection + codeSection + nameSection;// + customSection;
-//	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection;// + memorySection + ;
-	code.debug();
-	return code.clone();
-}
-
 Code emitBlock(Node node, Valtype returns) {
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
@@ -984,6 +867,232 @@ Map<int, String> collect_locals(Node node) {
 	return current_locals;
 }
 
+
+Code typeSection() {
+	// Function types are vectors of parameters and return types. Currently
+	// optimise TODO - some of the procs might have the same type signature
+	// the type section is a vector of function types
+//	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
+//	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
+	char vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/,
+	             i32};// our main function! todo : be flexible!
+	char iv[] = {0x60/*const type form*/, 0x01/*param count*/, i32, 0x00/*return count*/};
+	char vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
+	char ii[] = {0x60/*const type form*/, 0x01/*param count*/, i32, 0x01/*return count*/, i32};
+	char iii[] = {0x60/*const type form*/, 0x02/*param count*/, i32, i32, 0x01/*return count*/, i32};
+	char fv[] = {0x60/*const type form*/, 0x01/*param count*/, f32, 0x00/*return count*/};
+
+	int typeCount = 5;
+	Code type_data = Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv)) + Code(ii, sizeof(ii)) +
+	                 Code(fv, sizeof(fv)); //			+ Code(iii, sizeof(iii));
+
+	for (String fun :functionSignatures) {
+		typeMap[fun] = typeCount;
+		typeCount++;
+		Signature &signature = functionSignatures[fun];
+		int param_count = signature.size();
+		Code td = {0x60 /*const type form*/, param_count};
+		for (int i = 0; i < param_count; ++i) {
+			td = td + Code(signature.types[i]);
+		}
+		Valtype &ret = return_types[fun];
+		if (ret == voids) {
+			td.addByte(0);
+		} else {
+			td.addByte(1/*return count*/).addByte(ret);
+		}
+		type_data = type_data + td;
+
+	}
+//auto typeSection =
+	return Code(type, encodeVector(Code(typeCount) + type_data));
+}
+
+int import_count = 4;
+
+Code importSection() {
+	// the import section is a vector of imported functions
+
+//  bytes printFunctionType = new char[]{functionType,encodeVector(f32), emptyArray}
+	Code printFunctionType = Code(functionType).push(encodeVector(Code(f32))).push(emptyArray);
+
+	Code logi_iv = encodeString("env") + encodeString("logi").addByte(func_export).addType(1);
+	Code logf_fv = encodeString("env") + encodeString("logf").addByte(func_export).addType(4);
+	Code square_ii = encodeString("env") + encodeString("square").addByte(func_export).addType(3);
+	Code sqrt_ii = encodeString("env") + encodeString("√").addByte(func_export).addType(3);
+
+//
+	functionIndices.insert_or_assign("logi", functionIndices.size());// import!
+	functionIndices.insert_or_assign("logf", functionIndices.size());// import!
+	functionIndices.insert_or_assign("square", functionIndices.size());
+	functionIndices.insert_or_assign("√", functionIndices.size());
+	return_types.insert_or_assign("square", int32);
+	return_types.insert_or_assign("√", int32);
+	return_types.insert_or_assign("id", int32);
+//	return_types.insert_or_assign("logi", voids);
+
+//	auto importSection = createSection(import, encodeVector(printFunctionImport));//+memoryImport
+
+	auto importSection = createSection(import, Code(import_count) + logi_iv + logf_fv + square_ii + sqrt_ii);
+	return importSection;
+}
+
+int function_count;
+Code codeSection(Node root) {
+	// the code section contains vectors of functions
+
+	short function_offset = import_count;
+
+// https://pengowray.github.io/wasm-ops/
+//	char code_data[] = createSection() 0x01,0x08,0x00,0x01,0x3f,0x0F,0x0B};// ok 0x01==nop
+//  Code code_data=encodeVectors(encodeVector(1/*function_index/))
+//	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
+//function body count
+
+// index needs to be known before emitting code, so call $i works
+	functionIndices.insert_or_assign("main", function_offset++);
+	functionIndices.insert_or_assign("nop", function_offset++);
+	functionIndices.insert_or_assign("id", function_offset++);
+	return_types["id"] = i32;
+	return_types["main"] = i32;
+	return_types["nop"] = voids;
+	functionSignatures["nop"] = Signature();
+	functionSignatures["id"] = Signature().add(i32).returns(i32);
+	functionSignatures["main"] = Signature().returns(i32);
+	short builtin_count = 2;
+	function_count = builtin_count + 1/*main*/ + functionCodes.size();// offset by imports!?
+
+
+
+	char code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};// 0x00 == unreachable as block header !?
+	char code_data_nop[] = {0/*locals_count*/, end_block};// NOP
+	char code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32, get_local, 0, return_block, end_block};// NOP
+//	char code_data[] = {0/*locals_count*/,i32_const,48,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+//	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
+
+	Code main_block = emitBlock(root, return_types["main"]);
+	Code nop_block = Code(code_data_nop, sizeof(code_data_nop));
+	Code id_block = Code(code_data_id, sizeof(code_data_id));
+	Code code_blocks = encodeVector(main_block) + encodeVector(nop_block) + encodeVector(id_block);
+	for (String fun : functionCodes) {
+		code_blocks = code_blocks + functionCodes[fun];
+	}
+	auto codeSection = createSection(code_section, Code(function_count) + code_blocks);
+	return codeSection;
+}
+
+Code exportSection() {
+// the export section is a vector of exported functions etc
+	short exports_count = 1;
+	int main_offset = functionIndices["main"];
+	const Code &exportsData = encodeVector(Code(exports_count) + encodeString("main") + (byte) func_export + Code(main_offset));
+	auto exportSection = createSection(exports, exportsData);
+	return exportSection;
+}
+
+
+Code funcTypeSection() {
+	// the function section is a vector of type indices that indicate the type of each function in the code section
+	char types_data[] = {(char) function_count, 0x00, 0x01, 0x03};// mapping/connecting function index to type index
+	// map function(index) to type as defined in typeSection()
+	Code types_of_functions= Code(types_data, sizeof(types_data));
+//	Code types_of_functions=Code(function_count);//  = Code(types_data, sizeof(types_data));
+//	for (int i = 0; i < function_count; ++i) {
+//		types_of_functions.push((byte) typeMap[i]);
+//	}
+	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
+	Code funcSection = createSection(func, types_of_functions);
+	return funcSection;
+}
+
+Code functionSection() {
+	return funcTypeSection();// (misnomer) vs codeSection() !
+}
+
+Code nameSection() {
+
+	auto nameSubSectionModuleName = Code(module_name) + encodeVector(Code("wasp_module"));
+
+	Code nameMap;
+//	check(symbols["logi"]==0);
+//	check(symbols["√"]==3);// "\e2\88\9a"
+//	nameMap =  Code((byte) 0) + Code("logi");
+	for (int index = 0; index < functionIndices.size(); index++) {
+		// danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
+		String &name = functionIndices.keys[index];
+		nameMap = nameMap + Code(index) + Code(name);
+	}
+
+
+	auto nameSubSectionFunctionNames = Code(function_names) + encodeVector(Code(functionIndices.size()) + nameMap);
+//	auto nameSubSectionFunctionNames = Code(function_names) + encodeVector(Code(1) + Code((byte) 0) + Code("logi"));
+
+//	functions without parameters need  entry ( 00 01 00 00 )
+//  functions 5 with local 'hello' :  05 01 00 05 68 65 6c 6c 6f
+//  functions 5 with local 'hello' :  05 02 00 05 68 65 6c 6c 6f 01 00 AND unnamed (local i32)
+// localMapEntry = (index nrLocals 00? string )
+
+	Code localNameMap;
+//	Map< localNames
+	for (String key : functionIndices) {
+		if (key != "main")continue;
+		int function_index = functionIndices[key];
+		Map<int, String> &currentLocalNames = locals[function_index - functionIndices["main"]];
+		int local_count = currentLocalNames.size();
+		localNameMap = localNameMap + Code(function_index) + Code(local_count); /*???*/
+		for (int i = 0; i < currentLocalNames.size(); ++i) {
+//		String local_name = "test_"s+key+"#"+local_count;
+			String local_name = currentLocalNames[i];
+			localNameMap = localNameMap + Code(i) + Code(local_name);
+		}
+
+
+//		error: expected local name count (1) <= local count (0) FOR FUNCTION ...
+	}
+//	localNameMap = localNameMap + Code((byte) 0) + Code((byte) 1) + Code((byte) 0) + Code((byte) 0);// 1 unnamed local
+//	localNameMap = localNameMap + Code((byte) 4) + Code((byte) 0);// no locals for function4
+	localNameMap =
+			localNameMap + Code((byte) 5) /*function index*/ + Code((byte) 1) /*count*/ + Code((byte) 0) /*l.nr*/ +
+			Code("var1");// function 5 with one local : var1
+	auto nameSubSectionLocalNames = Code(local_names) + encodeVector(Code((byte) 1) + localNameMap);
+
+
+//	auto nameSubSectionFuncNames = Code(module_name) + encodeVector(Code("wasp_module"));
+//	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’. The name section should appear only once in a module, and only after the data section.
+	const Code &nameSectionData = encodeVector(
+			Code("name") + nameSubSectionModuleName + nameSubSectionFunctionNames + nameSubSectionLocalNames);
+	auto nameSection = createSection(custom, nameSectionData);
+	return nameSection;
+}
+
+
+Code &emit(Program ast) {
+	functionIndices.clear();
+	functionIndices.setDefault(-1);
+	functionSignatures.setDefault(Signature());
+	functionCodes.setDefault(Code());
+	typeMap.setDefault(-1);
+	return_types.setDefault(voids);
+	return_types.setDefault(voids);
+	locals.insert_or_assign(0, Map<int, String>());
+	// WebAssembly only supports single return values
+
+	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
+	auto memorySection = createSection(memory_section, encodeVector(Code(2)));
+	auto memoryImport =
+			encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
+
+	auto customSection = createSection(custom, encodeVector(Code("custom123") + Code("random custom section data")));
+	const Code &importSection1 = importSection();
+	const Code &codeSection1 = codeSection(ast.main);// depends on importSection, yields data for funcTypeSection!
+	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection() + importSection1 +
+	            funcTypeSection() +
+	            exportSection() + codeSection1 + nameSection();// + customSection;
+// memorySection +
+//	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection;// + memorySection + ;
+	code.debug();
+	return code.clone();
+}
 
 Code &emit(Node code) {
 	return emit(Program(code));

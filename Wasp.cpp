@@ -1018,7 +1018,7 @@ private:
 				case ':':
 					if (next == '=') { // f x:=2x
 						current.addRaw(resolve(Node(":=")).setType(operators));
-						current.setType(expressions);
+						current.setType(declaration);
 						proceed();
 						proceed();
 						break;
@@ -1084,7 +1084,7 @@ private:
 					// {a} ; b c vs {a} b c vs {a} + c
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
 					Node node = expression(close == ' ');//word();
-					if (precedence(node) and ch != ':') {
+					if (precedence(node) and ch != ':' and not current.kind==declaration) {
 						node.kind = operators;
 						current.kind = expressions;
 					}
