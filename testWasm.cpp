@@ -287,9 +287,12 @@ void testAllWasm() {
 //	const Node &node = parse("x:40;x+1");
 //	check(node.length==2)
 //	check(node[0]["x"]==40)
-	assert_emit("if 4>1 then 2 else 3", 2)
+//0 , 1 , 1 , 2 , 3 , 5 , 8 , 13 , 21 , 34 , 55 , 89 , 144
+//	assert_emit("fib(it-1)",3);
+	assert_emit("double:=it*2;double(4)", 8)
+//	assert_emit("fib:=it<2 or fib(it-1)+fib(it-2);fib(4)", 5)
 	exit(123);
-	assert_emit("fib:=it<2 or fib(it-1)+fib(it-2);fib(4)", 5)
+	assert_emit("if 4>1 then 2 else 3", 2)
 //	assert_emit("fib:=it<2 then 1 else fib(it-1)+fib(it-2);fib(4)", 5)
 //	assert_emit("id 3*42> id 2*3", 1)
 	assert_emit("x:41;if x>1 then 2 else 3", 2)

@@ -25,7 +25,6 @@ int atoi0(const char *__nptr);
 
 double atof0(const char *string);
 
-void err(chars error);
 
 void todo(chars error);
 
@@ -63,7 +62,7 @@ typedef const char *chars;
 //void* alloc(number size);// wasm | linux
 extern unsigned int *memory;
 
-extern void err(chars);
+extern void error(chars);
 
 extern void error(chars);
 
@@ -236,7 +235,7 @@ public:
 
 	char charAt(int i) {
 		if (i >= length)
-			err((String("IndexOutOfBounds at ") + itoa0(i) + " in " + data).data);
+			error((String("IndexOutOfBounds at ") + itoa0(i) + " in " + data).data);
 		return data[i];
 	}
 
@@ -311,6 +310,14 @@ public:
 			return *this + c;
 		String b = this->clone();
 		String d = b.replace("%s", c);
+		return d;
+	}
+	String operator%(String *c) {
+		if(!c)return *this;
+		if (!contains("%s"))
+			return *this + c;
+		String b = this->clone();
+		String d = b.replace("%s", *c);
 		return d;
 	}
 

@@ -85,7 +85,7 @@ Node &Node::operator=(chars c) {
 Node &Node::operator[](int i) {
 	if (i >= length) {
 		breakpoint_helper;
-		err(String("out of range index[] ") + i + " >= length " + length);
+		error(String("out of range index[] ") + i + " >= length " + length);
 		// todo: allow insertion of unknown indices? prefered method: not
 	}
 	return children[i];
@@ -94,7 +94,7 @@ Node &Node::operator[](int i) {
 Node &Nodec::operator[](int i) const {
 	if (i >= length) {
 		breakpoint_helper;
-		err(String("out of range index[] ") + i + " >= length " + length);
+		error(String("out of range index[] ") + i + " >= length " + length);
 	}
 	return children[i];
 }
@@ -562,10 +562,10 @@ co_yield 	yield-expression (C++20)
 //}
 
 // Node* OK? else Node&
-Node *Node::has(String s, bool searchMeta) const {
+Node *Node::has(String s, bool searchMeta, short searchDepth) const {
+	if(searchDepth<0)return 0;
 	if ((kind == objects or kind == keyNode) and value.node and s == value.node->name)
 		return value.node;
-	if (!children)return 0;
 	for (int i = 0; i < length; i++) {
 		Node &entry = children[i];
 		if (s == entry.name)
@@ -576,8 +576,19 @@ Node *Node::has(String s, bool searchMeta) const {
 	}
 	if (s == name.data)
 		return const_cast<Node *>(this);
-	if (meta and searchMeta)
-		return meta->has(s);
+	if (meta and searchMeta and searchDepth==0){// todo: dont search leaves when searchDepth-->0
+		Node *found = meta->has(s);
+		if(found)return found;
+	}
+		
+
+	if(searchDepth>0){
+		for (int i = 0; i < length; i++) {
+			Node *found = children[i].has(s, searchMeta, searchDepth--);
+			if (found)return found;
+		}
+		if (kind == keyNode)return value.node->has(s, searchMeta, searchDepth--);
+	}
 	return 0;// NIL
 }
 
@@ -632,6 +643,7 @@ const char *Node::serializeValue() const {
 		case function:
 			return "{…}";
 		case operators:
+		case declaration:
 		case expressions:
 		case unknown:
 			return "?";
@@ -705,7 +717,7 @@ Node Node::from(String match) {
 	if (lhs.length == 0)
 		for (Node child:*this)
 			if (child.name == match)return child.values();
-	if (kind != function)
+	if (kind != function and kind!=declaration)
 		lhs.kind = kind;
 	return lhs.flat();
 }
@@ -719,7 +731,7 @@ Node Node::to(String match) {
 	}
 //	if(rhs.length==0)// no match
 //		return *this;
-	if (kind != function)
+	if (kind != function and kind!=declaration)
 		rhs.kind = kind;
 	return rhs.flat();
 }
