@@ -84,7 +84,7 @@ public:
 		lineNumber = 1;
 		ch = 0;
 		text = source;
-		Node result = value(); // <<
+		Node result = valueNode(); // <<
 		white();
 		if (ch && ch != -1) {
 			breakpoint_helper
@@ -99,7 +99,7 @@ public:
 	static char *readFile(const char *filename) {
 #ifndef WASM
 		FILE *f = fopen(filename, "rt");
-		if (!f)err("FILE NOT FOUND "_s + filename);
+		if (!f)raise("FILE NOT FOUND "_s + filename);
 		fseek(f, 0, SEEK_END);
 		long fsize = ftell(f);
 		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
@@ -707,7 +707,7 @@ private:
 //				error("Missing array element");
 //			}
 			else {
-				Node val = value();// copy by value!
+				Node val = valueNode();// copy by value!
 				array0[len++] = val;
 //				array0.push(value());
 			}
@@ -741,7 +741,7 @@ private:
 		for (var i = 0; i < 64; i++) {
 			char charCode = text.charCodeAt(i);
 			if (charCode < 0) // never true: charCode > 128 or
-				err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
+				error(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
 			lookup64[charCode] = i;
 		}
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
@@ -910,7 +910,7 @@ private:
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
-	Node value(char close = 0, Node *parent = 0) {
+	Node valueNode(char close = 0, Node *parent = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		Node current;
 		current.parent = parent;
@@ -953,7 +953,7 @@ private:
 					}
 					bool asListItem =
 							lastNonWhite == ',' or lastNonWhite == ';' or previous == ' ' and lastNonWhite != ':';
-					Node &object = value('}', &current.last()).setType(Type::objects);
+					Node &object = valueNode('}', &current.last()).setType(Type::objects);
 					if(asListItem)
 						current.addRaw(object);
 					else
@@ -961,12 +961,12 @@ private:
 					break;
 				}
 				case '[': {
-					Node &pattern = value(']', &current.last()).setType(Type::patterns);
+					Node &pattern = valueNode(']', &current.last()).setType(Type::patterns);
 					current.addRaw(pattern);
 					break;
 				}
 				case '(': {
-					Node &group = value(')', &current.last()).setType(Type::groups);
+					Node &group = valueNode(')', &current.last()).setType(Type::groups);
 					current.addSmart(group);
 					break;
 				}// lists handled by ' '!
@@ -1030,7 +1030,7 @@ private:
 					bool add_raw = current.kind == expressions or key.kind == expressions or
 					               (current.last().kind == groups and current.length > 1);
 					if (add_raw) current.addRaw(Node(ch).setType(operators));
-					Node &val = *value(' ', &key).clone();// applies to WHOLE expression
+					Node &val = *valueNode(' ', &key).clone();// applies to WHOLE expression
 					if (add_raw) {  // complex expressions are not simple maps
 						current.addRaw(val);
 					} else {
@@ -1041,8 +1041,7 @@ private:
 				case '\n':
 				case ';': // indent 􀋵  ☞ 𒋰 𒐂 ˆ ˃
 					// closing ' ' handled above
-//
-					if (current.kind != groups and current.last()!=groups and current.kind != objects) {
+					if (current.kind==declaration or current.kind != groups and current.last()!=groups and current.kind != objects) {
 						Node neu;// wrap
 						neu.kind = groups;
 						neu.parent = parent;
@@ -1065,7 +1064,7 @@ private:
 						proceed();
 						continue;
 					}
-					Node sub = value(ch, &current);
+					Node sub = valueNode(ch, &current);
 					if (sub.empty() and sub.name.empty())break;
 					if (current.kind == expressions or current.last() == expressions)
 						todo("what");

@@ -203,10 +203,6 @@ void log_f32(float l){
 //NEEDED, else terminate called without an active exception?
 #endif
 
-void err(chars error) {
-	raise(error);
-}
-
 void error(chars error) {
 	printf("ERROR\n");
 	printf(error);
@@ -238,4 +234,7 @@ int square(int a){
 
 int sqrt1(int a){
 	return sqrt(a);
+}
+void printf(int i){
+	printf("%d", i);
 }
