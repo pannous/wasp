@@ -157,7 +157,7 @@ private:
 		return msg;
 	}
 
-	String error(String m) {
+	String err(String m) {
 		// Call error when something is wrong.
 		// todo: Still to read can scan to end of line
 		String msg = m;
@@ -898,8 +898,8 @@ private:
 	bool checkAmbiguousBlock(Node current, Node *parent) {
 		// wait, this should be part of case ' ', no?
 		//						a of {a:1 b:2}
-		return previous == ' ' and current.last().kind != operators and current.last().kind != function and
-		       (!parent or parent and parent->last().kind != operators and parent->last().kind != function) and
+		return previous == ' ' and current.last().kind != operators and current.last().kind != call and
+		       (!parent or parent and parent->last().kind != operators and parent->last().kind != call) and
 		       lastNonWhite != ':' and lastNonWhite != '=' and lastNonWhite != ',' and lastNonWhite != ';' and
 		       lastNonWhite != '{' and lastNonWhite != '(' and lastNonWhite != '[';
 	}
@@ -1018,7 +1018,8 @@ private:
 				case ':':
 					if (next == '=') { // f x:=2x
 						current.addRaw(resolve(Node(":=")).setType(operators));
-						current.setType(declaration);
+						current.setType(expressions);
+//						current.setType(declaration); // later!
 						proceed();
 						proceed();
 						break;
@@ -1041,7 +1042,8 @@ private:
 				case '\n':
 				case ';': // indent 􀋵  ☞ 𒋰 𒐂 ˆ ˃
 					// closing ' ' handled above
-					if (current.kind==declaration or current.kind != groups and current.last()!=groups and current.kind != objects) {
+					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
+					if (current.kind==expressions or current.kind==declaration or current.kind != groups and current.last()!=groups and current.kind != objects) {
 						Node neu;// wrap
 						neu.kind = groups;
 						neu.parent = parent;
@@ -1106,7 +1108,7 @@ private:
 
 
 void ok() {
-	error("WHAAA");
+	error1("WHAAA");
 }
 
 #ifdef BACKTRACE

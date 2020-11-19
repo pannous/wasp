@@ -443,10 +443,14 @@ Code emitValue(Node node) {
 			code.addByte((byte) f32_auto);
 			code.push(ieee754(node.value.real), 4);
 			break;
-//			case identifier:
-//				code.opcode(get_local);
-//				code.opcode(unsignedLEB128(localIndexForSymbol(node.value)), 8);
-//				break;
+		case reference:
+		case identifier: {
+			int local_index = locals[0].position(node.name);
+			if (local_index < 0)error("UNKNOWN symbol "s + node.name);
+			code.addByte(get_local);
+			code.addByte(local_index);
+		}
+			break;
 //			case binaryExpression:
 //				code.opcode(binaryOpcode[node.value]);
 //				break;
@@ -470,53 +474,61 @@ int context = 0;// changes in declarations (also with lambdas as functions)
 Code emitExpression(Node &node) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	Code code;
-	int index = functionIndices.position(node.name);
+	String &name = node.name;
+	int index = functionIndices.position(name);
 	if (index >= 0 and not locals.has(index))
 		locals[index] = List<String>();
 //	locals[index]= Map<int, String>();
 
-	if (node.name == "if")
+	if (name == "if")
 		return emitIf(node);
-	if (node.name == "while")
+	if (name == "while")
 		return emitWhile(node);
-	if (node.name == "it") {
+	if (name == "it") {
 		code.addByte(get_local);
 		code.addByte(0);// todo: LAST local?
 		return code;
 	}
-	if((node.kind==reference or node.kind==groups) and functionIndices.has(node.name))
+	if ((node.kind == reference or node.kind == groups) and functionIndices.has(name))
 		return emitCall(node);
 
 	switch (node.kind) {
-		case function:
+		case call:
 			return emitCall(node);
 			break;
 		case operators: {
-			if (node.name == "then")return emitIf(*node.parent);// pure if handled before
-			if (node.name == ":=")
-				return emitDeclaration(node["lhs"], node["rhs"]);
-
-
-//			if (node.length == 2) {// binary operators, and others
-			Node &lhs = node["lhs"];
-			Node &rhs = node["rhs"];
-			if (lhs == node or rhs == node)
-				error("op rhs lhs BUG");
-			const Code &lhs_code = emitExpression(lhs);
-			const Code &rhs_code = emitExpression(rhs);
-			code.push(lhs_code);// might be empty ok
-			code.push(rhs_code);// might be empty ok
-//			}
+			if (name == "then")return emitIf(*node.parent);// pure if handled before
+			if (name == ":=")
+				return emitDeclaration(node.children[0], node.children[1]);
+			if (node.length < 1) {
+				node.log();
+				error("missing args for operator "s+name);
+			} else if (node.length ==1) {
+//				if(name.in(function_list)) SHOULDN'T HAPPEN!
+//				error("unexpected unary operator: "s + name);
+				Node arg = node.children[0];
+				const Code &arg_code = emitExpression(arg);// should ALWAYS just be value, right?
+				code.push(arg_code);// might be empty ok
+			} else if(node.length==2){
+				Node lhs = node.children[0];//["lhs"];
+				Node rhs = node.children[1];//["rhs"];
+				const Code &lhs_code = emitExpression(lhs);
+				const Code &rhs_code = emitExpression(rhs);
+				code.push(lhs_code);// might be empty ok
+				code.push(rhs_code);// might be empty ok
+			}else if(node.length>2) {// todo: n-ary? ∑? is just a function!
+				error("Too many args for operator "s+name);
+			}
 			if (index >= 0) {// FUNCTION CALL
-				log("OPERATOR FUNCTION CALL: %s\n"s % node.name);
+				log("OPERATOR FUNCTION CALL: %s\n"s % name);
 //				for (Node arg : node) {
 //					emitExpression(arg);
 //				};
-				code.addByte(call);
+				code.addByte(function);
 				code.addByte((index));// ok till index>127?
 				break;
 			}
-			byte opcode = opcodes(node.name, last_type == f32);
+			byte opcode = opcodes(name, last_type == f32);
 			if (opcode == f32_eqz) { // hack for missing f32_eqz
 //				0.0 + code.addByte(f32_eq);
 				code.addByte(
@@ -528,7 +540,7 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 				code.addByte(opcode);
 			else {
 				breakpoint_helper
-				error("unknown opcode / call / symbol: "s + node.name);
+				error("unknown opcode / call / symbol: "s + name);
 			}
 			if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or
 			    opcode == i32_mul)
@@ -538,7 +550,7 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 		}
 			break;
 		case declaration:
-			emitDeclaration(node, node);
+			return emitDeclaration(node.children[0], node.children[1]);
 			break;
 		case nils:
 		case longs:
@@ -551,12 +563,12 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 		case reference: {
 //			Map<int, String>
 			List<String> current_local_names = locals[context];
-			int local_index = current_local_names.position(node.name);// defined in block header
+			int local_index = current_local_names.position(name);// defined in block header
 			if (local_index < 0) { // collected before, so can't be setter here
-				if (functionCodes.has(node.name))
+				if (functionCodes.has(name))
 					return emitCall(node);
 				breakpoint_helper
-				error("UNKNOWN local symbol "s + node.name);
+				error("UNKNOWN local symbol "s + name);
 			}
 			if (node.isSetter()) { //SET
 				code = code + emitValue(node); // done above!
@@ -630,20 +642,22 @@ Code emitCall(Node &fun) {
 	for (Node arg : fun) {
 		code.push(emitExpression(arg));
 	};
-	code.addByte(call);
+	code.addByte(function);
 	code.addByte(index);// ok till index>127, then use unsignedLEB128
 	last_type = return_types[fun.name];// voids;// todo lookup return type
 	return code;
 }
 
 Code emitDeclaration(Node fun, Node &body) {
-	if(fun.name.empty()){
-		fun = body[0];
-		if(body.has(":="))
-		   body = body.from(":=");
-		else
-			error("??");
+	if (fun.name.empty()) {
+		fun = body[0].flat();
 	}
+	if (fun.name.empty())
+		error("NO SYMBOL NAME FOR declaration");
+
+	if (body.has(":="))
+		body = body.from(":=");
+//		error("parser error :=");
 	if (not functionIndices.has(fun.name)) {
 		functionIndices[fun.name] = functionIndices.size();
 	} else {
@@ -740,7 +754,7 @@ Code emitIf_OLD(Node &node) {
 
 Code Call(char *symbol) {//},Node* args=0) {
 	Code code;
-	code.addByte(call);
+	code.addByte(function);
 	int i = functionIndices.position(symbol);
 	if (i < 0)error("UNKNOWN symbol "s + symbol);
 //	code.opcode(unsignedLEB128(i),8);
@@ -839,7 +853,7 @@ Code emitBlock(Node node, Valtype returns) {
 	int context = 0;
 //	Map<int, String>
 	List<String> current_local_names = collect_locals(node);
-	int locals_count = current_local_names.size;
+	int locals_count = current_local_names.size();
 	locals[context] = current_local_names;
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; ++i) {
@@ -985,7 +999,7 @@ Code codeSection(Node root) {
 	char code_data_nop[] = {0/*locals_count*/, end_block};// NOP
 	char code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32, get_local, 0, return_block,
 	                       end_block};// NOP
-//	char code_data[] = {0/*locals_count*/,i32_const,48,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+//	char code_data[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 
 	Code main_block = emitBlock(root, return_types["main"]);
@@ -997,8 +1011,12 @@ Code codeSection(Node root) {
 		code_blocks = code_blocks + encodeVector(func);
 	}
 	function_count = builtin_count + 1/*main*/ + functionCodes.size();// offset by imports!?
-	if (function_count != functionIndices.size() - import_count)
-		error("inconsistent function_count");
+	int index_size = functionIndices.size();
+	if (function_count != index_size - import_count) {
+		functionCodes.log();
+		functionIndices.log();
+		error("inconsistent function_count %d != %d - %d"s % function_count % index_size % import_count);
+	}
 	auto codeSection = createSection(code_section, Code(function_count) + code_blocks);
 	return codeSection;
 }
@@ -1060,9 +1078,9 @@ Code nameSection() {
 		int function_index = functionIndices[key];
 //		Map<int, String> &
 		List<String> currentLocalNames = locals[function_index - functionIndices["main"]];
-		int local_count = currentLocalNames.size;
+		int local_count = currentLocalNames.size();
 		localNameMap = localNameMap + Code(function_index) + Code(local_count); /*???*/
-		for (int i = 0; i < currentLocalNames.size; ++i) {
+		for (int i = 0; i < currentLocalNames.size(); ++i) {
 //		String local_name = "test_"s+key+"#"+local_count;
 			String local_name = currentLocalNames[i];
 			localNameMap = localNameMap + Code(i) + Code(local_name);
@@ -1090,6 +1108,9 @@ Code nameSection() {
 
 Code &emit(Program ast) {
 	functionIndices.clear();
+	functionCodes.clear();
+	functionSignatures.clear();
+	typeMap.clear();
 	functionIndices.setDefault(-1);
 	functionSignatures.setDefault(Signature());
 	functionCodes.setDefault(Code());

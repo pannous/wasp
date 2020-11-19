@@ -183,7 +183,13 @@ public:
 		if (this == &False)return this;
 		// todo ...
 		Node *copy = new Node();
-		*copy = *this;// copy value ok
+		copy->name = name;
+		copy->kind = kind;
+		copy->value = value;// value.clone
+		copy->children=0;
+		copy->length = 0;
+		if(meta)copy->meta = meta->clone();
+		for(Node& n:*this) copy->addRaw(n);// necessary, else children is the same pointer!
 		return copy;
 	}
 
@@ -341,6 +347,9 @@ public:
 
 //	bool operator==(Node other);
 	bool operator==(Node &other);// equals
+
+	bool operator==(const Node &other);// equals
+
 
 	bool operator!=(Node other);
 
@@ -519,6 +528,7 @@ public:
 
 	Node from(Node node);// exclusive
 	Node from(String match);
+	Node from(int pos);
 
 	Node to(Node match);// exclusive
 	Node to(String match);
@@ -530,6 +540,14 @@ public:
 	Node values();
 
 	bool isSetter();
+
+	int lastIndex(String &string, int start);
+	int index(String &string, int start = 0, bool reverse=false);
+
+	void replace(int from, int to, Node &node);
+	void replace(int from, int to, Node *node);
+	void remove(int at, int to);
+
 };
 
 typedef const Node Nodec;
