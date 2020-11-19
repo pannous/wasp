@@ -369,7 +369,7 @@ String typeName(Type t) {
 			return "nil";
 		case unknown :
 			return "unknown";
-		case function:
+		case call:
 			return "function";
 		case declaration:
 			return "declaration";

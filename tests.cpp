@@ -2,12 +2,10 @@
 #include "Wasp.h"
 #include "Angle.h"
 #include "String.h"
-
+#include "Map.h"
 #undef assert // <cassert> / <assert.h>
 
 Node result;
-
-
 
 #define assert(condition) try{\
    if((condition)==0)error("assert FAILED");else printf("\nassert OK: %s\n",#condition);\
@@ -1217,10 +1215,50 @@ void todos() {
 	)
 }
 
+void testSort(){
+	List<int> list={3,1,2,5,4};
+	List<int> listb={1,2,3,4,5};
+	check(list.sort()==listb)
+	auto by_precedence=[](int &a, int& b){ return a*a>b*b; };
+	check(list.sort(by_precedence)==listb)
+	auto by_square=[](int &a){ return (float)a*a;};
+	check(list.sort(by_square)==listb)
+}
+void testSort1(){
+	List<int> list={3,1,2,5,4};
+	List<int> listb={1,2,3,4,5};
+	auto by_precedence=[](int &a, int& b){ return a*a>b*b; };
+	check(list.sort(by_precedence)==listb)
+}
+
+void testSort2(){
+	List<int> list={3,1,2,5,4};
+	List<int> listb={1,2,3,4,5};
+	auto by_square=[](int &a){ return (float)a*a;};
+	check(list.sort(by_square)==listb)
+}
+
+void testRemove(){
+	Node result=parse("a b c d");
+	result.remove(1,2);
+	const Node &replaced = parse("a d");
+	check(result==replaced);
+}
+
+void testReplace(){
+	Node result=parse("a b c d");
+	result.replace(1,2,new Node("x"));
+	const Node &replaced = parse("a x d");
+	check(result==replaced);
+}
 
 void testCurrent() { // move to tests() once OK
 //	assert_is("√4+40", 42);
-
+	testSort();
+	testSort1();
+	testSort2();
+	testReplace();
+	testRemove();
 //	testGraphQlQuery();
 //	testWasmFunctionDefiniton();
 //	testAllWasm();

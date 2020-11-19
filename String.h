@@ -62,9 +62,9 @@ typedef const char *chars;
 //void* alloc(number size);// wasm | linux
 extern unsigned int *memory;
 
-extern void error(chars);
+#define error(msg) error1(msg,__FILE__,__LINE__)
 
-extern void error(chars);
+extern void error1(chars message, chars file=0, int line=0);
 
 extern void info(chars);
 

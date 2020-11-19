@@ -1,13 +1,15 @@
 #include "Angle.h" // emit
 #include "Wasp.h"
 
-#define assert_emit(α, β) if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+//#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+ #define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
 void testWasmFunctionDefiniton(){
 	assert_is("add1 x:=x+1;add1 3",(long)4);
 	assert_emit("add1 x:=x+1;add1 3",(long)4);
 }
 
 void testWasmFunctionCalls() {
+	assert_emit("id (3+3)",(long)6);
 	assert_emit("square 3",9);
 	assert_emit("id 123",(long)123);
 	assert_is("id 3+3",6);
@@ -19,7 +21,6 @@ void testWasmFunctionCalls() {
 	assert_emit("3 + square 3",(long)12);
 	assert_emit("1+2 + square 1+2",(long)12);
 
-	assert_emit("id (3+3)",(long)6);
 	assert_is("id 3+3",6);
 	assert_emit("3 + id 3+3",(long)9);
 	assert_emit("3 + √9",(long)6);
@@ -264,6 +265,12 @@ void testWasmMemoryIntegrity() {
 	}
 }
 
+void testGrouping(){
+	Node expression = parse("2-3-4*5-6/7");
+	check(precedence("*")<precedence("+"));
+	check(precedence("+")<=precedence("-"));
+	check(precedence("*")<precedence("-"));
+}
 
 
 //testWasmControlFlow
@@ -282,17 +289,31 @@ void testAllWasm() {
 			assert_emit(("x=15;x>=14"), 1)
 	)
 
+	testGrouping();
 //	testWasmFunctionDefiniton();
 //
 //	const Node &node = parse("x:40;x+1");
 //	check(node.length==2)
 //	check(node[0]["x"]==40)
+	assert_emit("square 3",9);
+
 //0 , 1 , 1 , 2 , 3 , 5 , 8 , 13 , 21 , 34 , 55 , 89 , 144
 //	assert_emit("fib(it-1)",3);
-	assert_emit("double:=it*2;double(4)", 8)
-//	assert_emit("fib:=it<2 or fib(it-1)+fib(it-2);fib(4)", 5)
-	exit(123);
 	assert_emit("if 4>1 then 2 else 3", 2)
+
+	assert_emit("1*2 - square 3+4",(long)-47);
+	assert_emit("double := it * 2 ; double(4)", 8)
+	assert_emit("double:=it*2;double(4)", 8)
+
+	assert_emit("1 -3 - square 3+4",(long)-51);
+	assert_emit("1+2 + square 3+4",(long)52);
+
+	assert_emit("4*5 + square 2*3",(long)56);
+
+//	assert_emit("double x:=x*2;double(4)", 8)
+
+//	assert_emit("fib:=it<2 or fib(it-1)+fib(it-2);fib(4)", 5)
+//	exit(123);
 //	assert_emit("fib:=it<2 then 1 else fib(it-1)+fib(it-2);fib(4)", 5)
 //	assert_emit("id 3*42> id 2*3", 1)
 	assert_emit("x:41;if x>1 then 2 else 3", 2)
@@ -301,7 +322,7 @@ void testAllWasm() {
 
 	assert_emit("x:41;x+1", 42)
 
-	exit(1);
+//	exit(1);
 //	const Node &node1 = parse("x:40;x++;x+1");
 //	check(node.length==3)
 //	check(node[0]["x"]==40)
@@ -309,7 +330,7 @@ void testAllWasm() {
 	assert_emit("3 + √9",(long)6);
 	assert_emit("square 3",9);
 	assert_emit("-42", -42)
-	run_wasm_file("../tests/t.wasm");
+	run_wasm_file("../t.wasm");
 	testWasmFunctionCalls();
 	testFloatOperators();
 	testWasmLogicUnary();

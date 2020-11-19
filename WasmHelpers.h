@@ -2,6 +2,7 @@
 //
 // Created by pannous on 15.07.20.
 //
+
 typedef const char *chars;
 extern "C" unsigned int *memory;
 extern "C" char *memoryChars;
