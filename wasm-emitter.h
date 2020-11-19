@@ -230,7 +230,7 @@ enum Opcodes {
 	br_if = 0x0d,
 	end_block = 0x0b,
 	return_block = 0x0f,
-	call = 0x10,
+	function = 0x10,
 	drop = 0x1a, // pop stack
 	get_local = 0x20,// get to stack
 	set_local = 0x21,// set and pop
