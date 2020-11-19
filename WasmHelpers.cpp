@@ -99,9 +99,6 @@ int isalnum ( int c ){
 #ifndef WASM
 #ifndef WASI
 void raise(chars error){
-//#ifdef _Backtrace_
-	Backtrace(3);
-//#endif
 	throw error;
 }
 #else
@@ -203,11 +200,14 @@ void log_f32(float l){
 //NEEDED, else terminate called without an active exception?
 #endif
 
-void error(chars error) {
-	printf("ERROR\n");
-	printf(error);
-	printf("\n");
-	raise(error);
+
+void error1(chars message, chars file, int line) {
+	//#ifdef _Backtrace_
+	Backtrace(2);
+//#endif
+	if(file)
+	printf("%s:%d\n",file,line);
+	raise(message);
 //	err(error);
 }
 void newline(){
