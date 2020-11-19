@@ -8,37 +8,190 @@
 
 #include "String.h"
 #include "Node.h"
+#include "../../../../../opt/wasi-sdk/share/wasi-sysroot/include/c++/v1/initializer_list"
 
-int MAX = 1000;
+#define MAXI 1000
+
+template<class S>
+inline void swap(S *a, S *b) {
+	S c = *a;
+	*a = *b;
+	*b = c;
+}
+
+
+template<class S>
+void heapify(S arr[], int n, int i) {
+	int largest = i; // Initialize largest as root
+	int l = 2 * i + 1; // left = 2*i + 1
+	int r = 2 * i + 2; // right = 2*i + 2
+	// If left child is larger than root
+	if (l < n && arr[l] > arr[largest])
+		largest = l;
+	// If right child is larger than largest so far
+	if (r < n && arr[r] > arr[largest])
+		largest = r;
+	// If largest is not root
+	if (largest != i) {
+		swap(&arr[i], &arr[largest]);
+		// Recursively heapify the affected sub-tree
+		heapify(arr, n, largest);
+	}
+}
+
+template<class S>
+void heapify(S arr[], int n, int i, float (valuator)(S &)) {
+	int largest = i; // Initialize largest as root
+	int l = 2 * i + 1; // left = 2*i + 1
+	int r = 2 * i + 2; // right = 2*i + 2
+	// If left child is larger than root
+	if (l < n && valuator(arr[l]) > valuator(arr[largest]))
+		largest = l;
+	// If right child is larger than largest so far
+	if (r < n && valuator(arr[r]) > valuator(arr[largest]))
+		largest = r;
+	// If largest is not root
+	if (largest != i) {
+		swap(&arr[i], &arr[largest]);
+		// Recursively heapify the affected sub-tree
+		heapify(arr, n, largest, valuator);
+	}
+}
+
+
+template<class S>
+void heapify(S arr[], int n, int i, bool (comparator)(S &, S &)) {
+	int largest = i; // Initialize largest as root
+	int l = 2 * i + 1; // left = 2*i + 1
+	int r = 2 * i + 2; // right = 2*i + 2
+	if (l < n && comparator(arr[l], arr[largest]))
+		largest = l;
+	if (r < n && comparator(arr[r], arr[largest]))
+		largest = r;
+	if (largest != i) {
+		swap(&arr[i], &arr[largest]);
+		heapify(arr, n, largest, comparator);
+	}
+}
+
+
+template<class S>
+void heapSort(S arr[], int n) {
+	for (int i = n / 2 - 1; i >= 0; i--)
+		heapify(arr, n, i);
+	// One by one extract an element from heap
+	for (int i = n - 1; i > 0; i--) {
+		// Move current root to end
+		swap(&arr[0], &arr[i]);
+		// call max heapify on the reduced heap
+		heapify(arr, i, 0);
+	}
+}
+
+template<class S>
+void heapSort(S arr[], int n, float (valuator)(S &)) {
+	for (int i = n / 2 - 1; i >= 0; i--)
+		heapify(arr, n, i, valuator);
+	for (int i = n - 1; i > 0; i--) {
+		swap(&arr[0], &arr[i]);
+		heapify(arr, i, 0, valuator);
+	}
+}
+
+template<class S>
+void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
+	for (int i = n / 2 - 1; i >= 0; i--)
+		heapify(arr, n, i, comparator);
+	for (int i = n - 1; i > 0; i--) {
+		swap(&arr[0], &arr[i]);
+		heapify(arr, i, 0, comparator);
+	}
+}
+
 
 template<class S>
 class List {
+	int _size = 0;
 public:
-	int size = 0;
-	S *items = (S *) calloc(sizeof(S), MAX);
+	S *items = (S *) calloc(sizeof(S), MAXI);
 
-	S &add(S s) {
-		items[size++] = s;
-		return items[size - 1];
+
+	List() {}
+
+	List(const std::initializer_list<S> &_items) {
+		for (const S &s : _items) {
+			items[_size++] = s;
+		}
 	}
 
-	S &operator[](int index) {
-		if (index < 0 or index > size)error("index out of range : %d > %d"s % index % size);
+	int size() { return _size; };
+
+	S &add(S s) {
+		items[_size++] = s;
+		return items[_size - 1];
+	}
+
+	S &operator[](short index) {
+		if (index < 0 or index > _size)error("index out of range : %d > %d"s % index % _size);
 		return items[index];
 	}
 
 	S &operator[](S key) {
-		for (int i = 0; i < size; ++i) {
+		for (int i = 0; i < _size; ++i) {
 			if (items[i] == key)return items[i];
 		}
-		return items[size++];// create new!
+		return items[_size++];// create new!
+	}
+
+
+	bool operator==(List<S> other) {
+		if (_size != other.size())return false;
+		for (int i = 0; i < _size; ++i) {
+			if (items[i] != other.items[i])return false;
+		}
+		return true;
+	}
+
+	S *begin() {
+		return items;
+	}
+
+	S *end() {
+		return &items[_size];
 	}
 
 	int position(S s) {
-		for (int i = 0; i < size; ++i) {
+		for (int i = 0; i < _size; ++i) {
 			if (items[i] == s)return i;
 		}
 		return -1;
+	}
+
+	void sort(bool (comparator)(S a, S b)) {
+		heapSort(items, _size, comparator);
+	}
+
+	List<S> &sort(bool (comparator)(S &, S &)) {
+		heapSort(items, _size, comparator);
+		return *this;
+	}
+
+	List<S> &sort(float (valuator)(S &a)) {
+		heapSort(items, _size, valuator);
+		return *this;
+	}
+
+	List<S> &sort() {
+		heapSort(items, _size);
+		return *this;
+	}
+
+	bool has(S &item) {
+		return position(item) >= 0;
+	}
+
+	bool contains(S &item) {
+		return position(item) >= 0;
 	}
 };
 
@@ -47,8 +200,8 @@ template<class S, class T>
 class Map {
 	int _size = 0;
 public:
-	S *keys = (S *) calloc(sizeof(S), MAX);
-	T *values = (T *) calloc(sizeof(T), MAX);
+	S *keys = (S *) calloc(sizeof(S), MAXI);
+	T *values = (T *) calloc(sizeof(T), MAXI);
 
 	S *lookup(T t) {
 		for (int i = 0; (values[i] or keys[i]) and i < _size; i++)
@@ -127,8 +280,8 @@ public:
 	void clear() {
 		free(keys);
 		free(values);
-		keys = (S *) calloc(sizeof(T), MAX);
-		values = (T *) calloc(sizeof(T), MAX);
+		keys = (S *) calloc(sizeof(T), MAXI);
+		values = (T *) calloc(sizeof(T), MAXI);
 		_size = 0;
 	}
 

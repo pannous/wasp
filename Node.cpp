@@ -205,6 +205,7 @@ Node &Node::set(String string, Node *node) {
 		entry = *node;// copy by value OK
 		entry.parent = this;
 	}
+	if(length>0)children[length - 1].next = &entry;
 	length++;
 	return entry;
 }
@@ -261,7 +262,9 @@ bool Node::operator==(float other) {
 bool namesCompatible(Node a, Node b) {
 
 }
-
+bool Node::operator==(const Node &other) {
+	return *this == (Node)other;
+}
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
 	if (this->kind == errors)return other.kind == errors;
@@ -640,7 +643,7 @@ const char *Node::serializeValue() const {
 			return "[…]";//val.data type?
 		case buffers:
 			return "int[]";//val.data lenght?
-		case function:
+		case call:
 			return "{…}";
 		case operators:
 		case declaration:
@@ -707,6 +710,15 @@ Node Node::from(Node match) {
 	return from(match.name);
 }
 
+
+Node Node::from(int pos) {// inclusive
+	Node lhs;
+	for (int i = pos; i < length; i++) {
+		lhs.addRaw(children[i]);
+	}
+	return lhs.flat();
+}
+
 Node Node::from(String match) {
 	Node lhs;
 	bool start = false;
@@ -717,21 +729,21 @@ Node Node::from(String match) {
 	if (lhs.length == 0)
 		for (Node child:*this)
 			if (child.name == match)return child.values();
-	if (kind != function and kind!=declaration)
+	if (kind != call and kind != declaration)
 		lhs.kind = kind;
 	return lhs.flat();
 }
 
 Node Node::to(String match) {
 	Node rhs;
-	for (Node child:*this) {
+	for (Node& child:*this) {
 		if (child.name == match)
 			break;
 		rhs.addRaw(&child);
 	}
 //	if(rhs.length==0)// no match
 //		return *this;
-	if (kind != function and kind!=declaration)
+	if (kind != call and kind != declaration)
 		rhs.kind = kind;
 	return rhs.flat();
 }
@@ -742,7 +754,7 @@ Node Node::to(Node match) {
 
 //	Node& flatten(Node &current){
 Node &Node::flat() {
-	if (kind == function)return *this->clone();
+	if (kind == call)return *this->clone();
 	if (length == 0 and kind == keyNode and name.empty() and value.node)return *value.node;
 	if (length == 1 and value.node == &children[0])// todo remove redundancy
 		return *value.node;
@@ -774,6 +786,47 @@ bool Node::isSetter() {
 	if(kind==longs)// || kind==reals || kind==bools||kind==strings)
 		return not atoi(name);// todo WTF hack
 	return kind == reference and value.data or length > 0;
+}
+
+int Node::index(String &string, int start, bool reverse) {
+	if(reverse)return lastIndex(string, start);
+	for (int i = start; i < length; ++i) {
+		if(children[i].name == string)
+			return i;
+	}
+	return -1;// throw "not found"
+}
+
+int Node::lastIndex(String &string, int start) {
+	if(start<=0)start = length;
+	for (int i = start; i >= 0; --i) {
+		if(children[i].name == string)
+			return i;
+	}
+	return -1;// throw "not found"
+}
+
+void Node::replace(int from, int to, Node *node) {
+	children[from] = *node;
+	int i=0;
+	while (from + i++ <= to)
+		children[from + i] = children[to + i ];// ok if beyond length
+	length = length - (to - from);
+}
+
+// INCLUDING to: [a b c d].remove(1,2)==[a d]
+void Node::remove(int from, int to) {
+	if(to<0)to = length;
+	if(to<from)to = from;
+	int i=-1;
+	while (++i + from <= to)
+		children[from + i] = children[to + i + 1];// ok if beyond length
+	length = length - (to - from) -1;
+}
+
+
+void Node::replace(int from, int to, Node &node) {
+	replace(from, to, &node);
 }
 
 void log(Node &n) {

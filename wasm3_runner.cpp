@@ -7,6 +7,7 @@
 #include <cstdio>
 #include "wasm3_cpp.h"
 #include "WasmHelpers.h"
+#include "String.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -101,6 +102,7 @@ int test_wasm3(const uint8_t *prog, int len)
 int run_wasm_file(char const* file){
 	FILE *ptr;
 	ptr = fopen(file,"rb");  // r for read, b for binary
+	if(!ptr)error("File not found "s + file);
 	fseek(ptr, 0L, SEEK_END);
 	int sz = ftell(ptr);
 	unsigned char buffer[sz];
