@@ -98,8 +98,9 @@ int isalnum ( int c ){
 //#include <typeinfo>       // operator typeid
 #ifndef WASM
 #ifndef WASI
+extern bool throwing;// false for error tests etc
 void raise(chars error){
-	throw error;
+	if(throwing) throw error;
 }
 #else
 extern "C" void ___cxa_throw(

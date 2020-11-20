@@ -1122,6 +1122,45 @@ void testIndex() {
 	assert_is("a in {a:1 b:2}", 1)
 }
 
+// can be removed because noone touches List.sort algorithm!
+void testSort(){
+	List<int> list={3,1,2,5,4};
+	List<int> listb={1,2,3,4,5};
+	check(list.sort()==listb)
+	auto by_precedence=[](int &a, int& b){ return a*a>b*b; };
+	check(list.sort(by_precedence)==listb)
+	auto by_square=[](int &a){ return (float)a*a;};
+	check(list.sort(by_square)==listb)
+}
+void testSort1(){
+	List<int> list={3,1,2,5,4};
+	List<int> listb={1,2,3,4,5};
+	auto by_precedence=[](int &a, int& b){ return a*a>b*b; };
+	check(list.sort(by_precedence)==listb)
+}
+
+void testSort2(){
+	List<int> list={3,1,2,5,4};
+	List<int> listb={1,2,3,4,5};
+	auto by_square=[](int &a){ return (float)a*a;};
+	check(list.sort(by_square)==listb)
+}
+
+void testRemove(){
+	Node result=parse("a b c d");
+	result.remove(1,2);
+	const Node &replaced = parse("a d");
+	check(result==replaced);
+}
+
+void testReplace(){
+	Node result=parse("a b c d");
+	result.replace(1,2,new Node("x"));
+	const Node &replaced = parse("a x d");
+	check(result==replaced);
+}
+
+
 
 void tests() {
 	assert_is("[a b c]#2", "b");
@@ -1181,6 +1220,11 @@ void tests() {
 	testKitchensink();
 	testMarkSimpleAssign();
 	testMarkMultiDeep();
+	testSort();
+	testSort1();
+	testSort2();
+	testReplace();
+	testRemove();
 	testUTF();// fails sometimes => bad pointer!?
 #ifdef APPLE
 	testAllSamples();
@@ -1215,56 +1259,18 @@ void todos() {
 	)
 }
 
-void testSort(){
-	List<int> list={3,1,2,5,4};
-	List<int> listb={1,2,3,4,5};
-	check(list.sort()==listb)
-	auto by_precedence=[](int &a, int& b){ return a*a>b*b; };
-	check(list.sort(by_precedence)==listb)
-	auto by_square=[](int &a){ return (float)a*a;};
-	check(list.sort(by_square)==listb)
-}
-void testSort1(){
-	List<int> list={3,1,2,5,4};
-	List<int> listb={1,2,3,4,5};
-	auto by_precedence=[](int &a, int& b){ return a*a>b*b; };
-	check(list.sort(by_precedence)==listb)
-}
-
-void testSort2(){
-	List<int> list={3,1,2,5,4};
-	List<int> listb={1,2,3,4,5};
-	auto by_square=[](int &a){ return (float)a*a;};
-	check(list.sort(by_square)==listb)
-}
-
-void testRemove(){
-	Node result=parse("a b c d");
-	result.remove(1,2);
-	const Node &replaced = parse("a d");
-	check(result==replaced);
-}
-
-void testReplace(){
-	Node result=parse("a b c d");
-	result.replace(1,2,new Node("x"));
-	const Node &replaced = parse("a x d");
-	check(result==replaced);
-}
-
 void testCurrent() { // move to tests() once OK
 //	assert_is("√4+40", 42);
-	testSort();
-	testSort1();
-	testSort2();
-	testReplace();
-	testRemove();
+
 //	testGraphQlQuery();
 //	testWasmFunctionDefiniton();
 //	testAllWasm();
 //	exit(1);
 //	assert(eval("ç='☺'") == "☺");
-	testAllWasm();
+//	testAllWasm();
+	assert_eval("if(2):{3}", 3);
+	assert_eval("if(0):{3}", false);
+	testIf();
 	tests();// make sure all still ok before changes
 	testAngle();
 	todos();// those not passing yet (skip)

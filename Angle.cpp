@@ -283,6 +283,7 @@ Node &groupOperators(Node &expression0) {
 		fromRight=fromRight||prefixOperators.has(op); // !√!-1 == !(√(!(-1)))
 		int i = expression.index(op, last_position, fromRight);
 		if (i < 0) {
+			i = expression.index(op, last_position, fromRight);// try again for debug
 			expression0.log();
 			expression.log();
 			error("operator missing "s + op);
@@ -853,8 +854,7 @@ float precedence(Node &operater) {
 	if (operater.kind == reals)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (operater.kind == longs)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (operater.kind == strings)return 0;// and name.empty()
-	if (operater.kind == groups or operater.kind == patterns)
-		return precedence("if") * 0.999;// needs to be smaller than functor/function calls
+	if (operater.kind == groups or operater.kind == patterns) return precedence("if") * 0.999;// needs to be smaller than functor/function calls
 	if (operater.name.in(function_list))return 999;// function call
 	return precedence(name);
 }

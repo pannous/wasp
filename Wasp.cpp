@@ -87,7 +87,6 @@ public:
 		Node result = valueNode(); // <<
 		white();
 		if (ch && ch != -1) {
-			breakpoint_helper
 			error("Expect end of input");
 			result = ERROR;
 		}
@@ -966,6 +965,7 @@ private:
 					break;
 				}
 				case '(': {
+					// checkAmbiguousBlock? x (1) == x(1) or [x 1] ?? todo too bad!!!
 					Node &group = valueNode(')', &current.last()).setType(Type::groups);
 					current.addSmart(group);
 					break;
@@ -1085,7 +1085,7 @@ private:
 					// {a} ; b c vs {a} b c vs {a} + c
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
 					Node node = expression(close == ' ');//word();
-					if (precedence(node) and ch != ':' and not current.kind==declaration) {
+					if (precedence(node) and ch != ':') {
 						node.kind = operators;
 						current.kind = expressions;
 					}

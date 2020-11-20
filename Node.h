@@ -186,9 +186,12 @@ public:
 		copy->name = name;
 		copy->kind = kind;
 		copy->value = value;// value.clone
+		if(meta)copy->meta = meta->clone();
+		if(parent)copy->parent = parent;//->clone(); DEFAULT: assume exact copy is desired
+		if(next)copy->next = next;//->clone(); // Todo: deep cloning whole tree?
+
 		copy->children=0;
 		copy->length = 0;
-		if(meta)copy->meta = meta->clone();
 		for(Node& n:*this) copy->addRaw(n);// necessary, else children is the same pointer!
 		return copy;
 	}
