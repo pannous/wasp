@@ -492,9 +492,18 @@ void Node::addSmart(Node node) {// merge?
 		addRaw(node);
 		return;
 	}
+	// f (x) == f(x) ~= f x
+//	if(last().kind == reference and node.kind==groups){
+//		if(!last().children){// todo: this is redundant to ...
+//			last().children = node.children;
+//			last().length = node.length;
+//		}
+//		else
+//			last().addRaw(node);
+//		return;
+//	}
 
-	if (last().kind == reference or last().kind == keyNode or name.empty() and
-	    not kind == expressions)// last().kind==reference)
+	if (last().kind == reference or last().kind == keyNode or name.empty() and not kind == expressions)// last().kind==reference)
 		last().add(&node);
 	else
 		add(&node);
@@ -809,7 +818,7 @@ int Node::lastIndex(String &string, int start) {
 void Node::replace(int from, int to, Node *node) {
 	children[from] = *node;
 	int i=0;
-	while (from + i++ <= to)
+	while (to + i++ <= length)
 		children[from + i] = children[to + i ];// ok if beyond length
 	length = length - (to - from);
 }
@@ -819,7 +828,7 @@ void Node::remove(int from, int to) {
 	if(to<0)to = length;
 	if(to<from)to = from;
 	int i=-1;
-	while (++i + from <= to)
+	while (to + i++ <= length)
 		children[from + i] = children[to + i + 1];// ok if beyond length
 	length = length - (to - from) -1;
 }
