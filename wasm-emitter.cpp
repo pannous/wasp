@@ -504,22 +504,22 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 				return emitDeclaration(node.children[0], node.children[1]);
 			if (node.length < 1) {
 				node.log();
-				error("missing args for operator "s+name);
-			} else if (node.length ==1) {
+				error("missing args for operator "s + name);
+			} else if (node.length == 1) {
 //				if(name.in(function_list)) SHOULDN'T HAPPEN!
 //				error("unexpected unary operator: "s + name);
 				Node arg = node.children[0];
 				const Code &arg_code = emitExpression(arg);// should ALWAYS just be value, right?
 				code.push(arg_code);// might be empty ok
-			} else if(node.length==2){
+			} else if (node.length == 2) {
 				Node lhs = node.children[0];//["lhs"];
 				Node rhs = node.children[1];//["rhs"];
 				const Code &lhs_code = emitExpression(lhs);
 				const Code &rhs_code = emitExpression(rhs);
 				code.push(lhs_code);// might be empty ok
 				code.push(rhs_code);// might be empty ok
-			}else if(node.length>2) {// todo: n-ary? ∑? is just a function!
-				error("Too many args for operator "s+name);
+			} else if (node.length > 2) {// todo: n-ary? ∑? is just a function!
+				error("Too many args for operator "s + name);
 			}
 			if (index >= 0) {// FUNCTION CALL
 				log("OPERATOR FUNCTION CALL: %s\n"s % name);
@@ -541,7 +541,6 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 			} else if (opcode > 0)
 				code.addByte(opcode);
 			else {
-				breakpoint_helper
 				error("unknown opcode / call / symbol: "s + name);
 			}
 			if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or
@@ -569,7 +568,6 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 			if (local_index < 0) { // collected before, so can't be setter here
 				if (functionCodes.has(name))
 					return emitCall(node);
-				breakpoint_helper
 				error("UNKNOWN local symbol "s + name);
 			}
 			if (node.isSetter()) { //SET
@@ -593,7 +591,6 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 			};
 			break;
 		default:
-			breakpoint_helper
 			error("unhandled node type: "s + typeName(node.kind));
 	}
 	return code;
@@ -635,12 +632,7 @@ Code emitExpression(Node *nodes) {
 Code emitCall(Node &fun) {
 	Code code;
 	int index = functionIndices[fun.name];
-
-	if (index < 0) {
-		breakpoint_helper
-		error("MISSING WASM import/declaration for function %s\n"s % fun.name);
-	}
-
+	if (index < 0) error("MISSING import/declaration for function %s\n"s % fun.name);
 	for (Node arg : fun) {
 		code.push(emitExpression(arg));
 	};
