@@ -1,6 +1,6 @@
 # 🐝 Wasp = Wasm-Lisp
 
-Wasp is a modern programming language and 'post-lisp' data format, fixing the shortcomings of JSON, ECMA and [Lisp](https://github.com/google/schism).
+Wasp is a modern programming language and 'post-lisp' data format, fixing the shortcomings of JSON, ECMA and [Lisp](https://github.com/google/schism).   Wasp is the foundation layer of the higher order programming language [angle](https://github.com/pannous/angle).
 
 The big difference to Lisp is that everything is map based, lists are flat maps like in JS : ['a','b'] == {0:'a' 1:'b'}.
 
