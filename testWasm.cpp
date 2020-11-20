@@ -282,13 +282,13 @@ void testWasmMemoryIntegrity() {
 	}
 }
 void testRecentRandomBugs(){
+	assert_emit("square 3", 9);
 	assert_emit("square (3+3)", (long) 36);
 	assert_emit("id (3+3)", (long) 6);
 	const Node &node = parse("x:40;x+1");
 	check(node.length==2)
 	check(node[0]["x"]==40)
 
-	assert_emit("square 3", 9);
 
 //0 , 1 , 1 , 2 , 3 , 5 , 8 , 13 , 21 , 34 , 55 , 89 , 144
 //	assert_emit("fib(it-1)",3);
@@ -335,7 +335,7 @@ void testAllWasm() {
 			assert_emit(("x*=14"), 1)
 			assert_emit(("x=15;x>=14"), 1)
 	)
-	assert_emit(("3.0+3.0+3.0<3.0+3.0*3.0"), true)
+	assert_emit("square (3+3)", (long) 36);
 	testRecentRandomBugs();
 //	run_wasm_file("../t.wasm");
 
