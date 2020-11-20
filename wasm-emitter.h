@@ -255,9 +255,18 @@ enum Opcodes {
 	f32_eqz = 0x50, // HACK: no such thing!
 
 	f32_eq = 0x5b,
-	f32_ne = 0x5c,
+	f32_ne = 0x5c, // !=
 	f32_lt = 0x5d,
 	f32_gt = 0x5e,
+	f32_le = 0x5f,
+	f32_ge = 0x60,
+
+	f64_eq = 0x61,
+	f64_ne = 0x62, // !=
+	f64_lt = 0x63,
+	f64_gt = 0x64,
+	f64_le = 0x65,
+	f64_ge = 0x66,
 
 	i32_add = 0x6A,
 	i32_sub = 0x6B,
