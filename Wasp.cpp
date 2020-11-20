@@ -245,7 +245,6 @@ private:
 	String identifier() {
 		// identifiers must start with a letter, _ or $.
 		if (!is_identifier(ch)) {
-			breakpoint_helper
 			error(UNEXPECT_CHAR + renderChar(ch));
 		}
 
@@ -573,8 +572,7 @@ private:
 		if (ch >= '0' && ch <= '9')return numbero();
 		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
 		if (is_operator(ch))return any_operator();
-		breakpoint_helper
-		raise(UNEXPECT_CHAR + renderChar(ch));
+		error(UNEXPECT_CHAR + renderChar(ch));
 		return NIL;
 	}
 
@@ -659,9 +657,7 @@ private:
 		}
 		if (token("one")) { return True; }
 		if (token("two")) { return Node(2); }
-		breakpoint_helper
-		const String &message = UNEXPECT_CHAR + renderChar(text.charAt(at - 1));
-		raise(message);// throws, but WASM still needs:
+		error(UNEXPECT_CHAR + renderChar(text.charAt(at - 1)));// throws, but WASM still needs:
 		return ERROR;
 	};
 
@@ -680,7 +676,7 @@ private:
 //			prag += ch;
 //			proceed();
 //		}
-//		breakpoint_helper
+//
 //		error(UNEXPECT_END);
 //	};
 

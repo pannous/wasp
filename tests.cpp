@@ -1267,10 +1267,7 @@ void testCurrent() { // move to tests() once OK
 //	testAllWasm();
 //	exit(1);
 //	assert(eval("ç='☺'") == "☺");
-//	testAllWasm();
-	assert_eval("if(2):{3}", 3);
-	assert_eval("if(0):{3}", false);
-	testIf();
+	testAllWasm();
 	tests();// make sure all still ok before changes
 	testAngle();
 	todos();// those not passing yet (skip)
