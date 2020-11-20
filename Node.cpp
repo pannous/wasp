@@ -83,19 +83,13 @@ Node &Node::operator=(chars c) {
 }
 
 Node &Node::operator[](int i) {
-	if (i >= length) {
-		breakpoint_helper;
-		error(String("out of range index[] ") + i + " >= length " + length);
+	if (i >= length) error(String("out of range index[] ") + i + " >= length " + length);
 		// todo: allow insertion of unknown indices? prefered method: not
-	}
 	return children[i];
 }
 
 Node &Nodec::operator[](int i) const {
-	if (i >= length) {
-		breakpoint_helper;
-		error(String("out of range index[] ") + i + " >= length " + length);
-	}
+	if (i >= length) error(String("out of range index[] ") + i + " >= length " + length);
 	return children[i];
 }
 
@@ -660,7 +654,6 @@ const char *Node::serializeValue() const {
 		case unknown:
 			return "?";
 		default:
-			breakpoint_helper
 			error("MISSING CASE");
 			return "MISSING CASE";
 	}
@@ -830,7 +823,7 @@ void Node::remove(int from, int to) {
 	int i=-1;
 	while (to + i++ <= length)
 		children[from + i] = children[to + i + 1];// ok if beyond length
-	length = length - (to - from) -1;
+	length = length - i;
 }
 
 

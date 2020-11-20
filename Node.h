@@ -192,7 +192,7 @@ public:
 
 		copy->children=0;
 		copy->length = 0;
-		for(Node& n:*this) copy->addRaw(n);// necessary, else children is the same pointer!
+		if(length>0)for(Node& n:*this) copy->addRaw(n);// necessary, else children is the same pointer!
 		return copy;
 	}
 
@@ -371,7 +371,6 @@ public:
 		if (kind == strings)
 			return value.string;
 		return name;
-		breakpoint_helper
 		error(String("WRONG TYPE ") + typeName(kind));
 	}
 

@@ -374,7 +374,6 @@ String typeName(Type t) {
 		case declaration:
 			return "declaration";
 		default:
-			breakpoint_helper
 			error(str("MISSING Type name mapping ") + t);
 			return "ERROR";
 	}
