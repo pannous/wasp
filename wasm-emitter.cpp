@@ -223,7 +223,9 @@ byte opcodes(const char *s, byte kind = 0) {
 		if (eq(s, "/"))return f32_div;
 		if (eq(s, "=="))return f32_eq;
 		if (eq(s, ">"))return f32_gt;
+		if (eq(s, ">="))return f32_ge;
 		if (eq(s, "<"))return f32_lt;
+		if (eq(s, "<="))return f32_le;
 	}
 	printf("unknown operator %s", s);
 //		error("invalid operator");
