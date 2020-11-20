@@ -88,7 +88,6 @@ Node If(Node condition, Node then) {
 
 Node If(Node n) {
 	if (n.length == 0)return If(n, n.values());
-	breakpoint_helper
 	if (n.length == 0 and !n.value.data)
 		error("no if condition given");
 	if (n.length == 1 and !n.value.data)
@@ -423,7 +422,6 @@ Node groupOperators2(Node &expression) {
 
 
 Node& groupIf(Node n) {
-	breakpoint_helper
 	if (n.length == 0 and !n.value.data)
 		error("no if condition given");
 	if (n.length == 1 and !n.value.data)
@@ -506,8 +504,6 @@ Node do_call(Node left, Node op0, Node right) {
 	if (op == "id")return right;// identity
 	if (op == "square")return square(right.numbere());
 	if (op == "√")return sqrtl(right.numbere());
-
-	breakpoint_helper
 	error("Unregistered function "s + op);
 }
 
