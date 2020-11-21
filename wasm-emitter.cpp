@@ -250,16 +250,6 @@ bytes magicModuleHeader = new char[]{0x00, 0x61, 0x73, 0x6d};
 bytes moduleVersion = new char[]{0x01, 0x00, 0x00, 0x00};
 
 
-bytes flatten(bytes data) {
-	todo();
-	return data;
-}
-
-Code &flatten(Code &data) {
-	todo();
-	return data;
-}
-
 #ifdef WASM
 typedef char uint8_t;
 #endif
@@ -328,7 +318,7 @@ Code encodeVector(Code data) {
 //	return data.vector();
 	if (data.encoded)return data;
 //	Code code = unsignedLEB128(data.length) + flatten(data);
-	Code code = Code((byte) data.length) + flatten(data);
+	Code code = Code((byte) data.length) + data;
 	code.encoded = true;
 	return code;
 }
@@ -491,17 +481,26 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 		code.addByte(0);// todo: LAST local?
 		return code;
 	}
-	if ((node.kind == reference or node.kind == groups) and functionIndices.has(name))
+	if (node.kind==call or (node.kind == reference or node.kind == groups) and functionIndices.has(name))
 		return emitCall(node);
 
 	switch (node.kind) {
+		case expressions:
+		case groups:
+		case objects:
+			for (Node child : node) {
+				const Code &expression = emitExpression(child);
+				code.push(expression);
+			};
+			break;
 		case call:
 			return emitCall(node);
 			break;
 		case operators: {
 			if (name == "then")return emitIf(*node.parent);// pure if handled before
 			if (name == ":=")
-				return emitDeclaration(node.children[0], node.children[1]);
+				return emitDeclaration(node, node.first());
+//			return emitDeclaration(node.children[0], node.children[1]);
 			if (node.length < 1) {
 				node.log();
 				error("missing args for operator "s + name);
@@ -551,7 +550,8 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 		}
 			break;
 		case declaration:
-			return emitDeclaration(node.children[0], node.children[1]);
+//			return emitDeclaration(node.children[0], node.children[1]);
+			return emitDeclaration(node, node.first());
 			break;
 		case nils:
 		case longs:
@@ -579,16 +579,6 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 				code.addByte(local_index);
 			}
 		}
-			break;
-		case expressions:
-		case groups:
-		case objects:
-			for (Node child : node) {
-				if (child.name == "fib")
-					debug = 1;
-				const Code &expression = emitExpression(child);
-				code.push(expression);
-			};
 			break;
 		default:
 			error("unhandled node type: "s + typeName(node.kind));
@@ -642,16 +632,20 @@ Code emitCall(Node &fun) {
 	return code;
 }
 
-Code emitDeclaration(Node fun, Node &body) {
+Code emitDeclaration2(Node fun, Node &body) {
+	// OLD SHIT
 	if (fun.name.empty()) {
 		fun = body[0].flat();
 	}
+
 	if (fun.name.empty())
 		error("NO SYMBOL NAME FOR declaration");
 
 	if (body.has(":="))
 		body = body.from(":=");
 //		error("parser error :=");
+}
+Code emitDeclaration(Node fun, Node &body) {
 	if (not functionIndices.has(fun.name)) {
 		functionIndices[fun.name] = functionIndices.size();
 	} else {
@@ -661,7 +655,6 @@ Code emitDeclaration(Node fun, Node &body) {
 	if (signature.size() == 0 and body.has("it", false, 100))
 		signature.add(i32);
 	functionSignatures[fun.name] = signature;
-
 
 //			body=*fun.begin()
 	Valtype returns = int32;// todo
