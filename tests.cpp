@@ -502,11 +502,12 @@ void testSample() {
 }
 
 void testNewlineLists() {
-	Node node = parse("  c: \"commas optional\"\n d: \"semicolons optional\"; e: \"trailing comments\"");
+	Node node = parse("  c: \"commas optional\"\n d: \"semicolons optional\"\n e: \"trailing comments\"");
 	assert(node['d'] == "semicolons optional");
 }
 
 void testKitchensink() {
+
 	Node node = Wasp::parseFile("samples/kitchensink.wasp");
 	assert(node['a'] == "classical json");
 	assert(node['b'] == "quotes optional");
@@ -1153,6 +1154,13 @@ void testRemove(){
 	check(result==replaced);
 }
 
+void testRemove2(){
+	Node result=parse("a b c d");
+	result.remove(2,10);
+	const Node &replaced = parse("a b");
+	check(result==replaced);
+}
+
 void testReplace(){
 	Node result=parse("a b c d");
 	result.replace(1,2,new Node("x"));
@@ -1160,12 +1168,40 @@ void testReplace(){
 	check(result==replaced);
 }
 
+void testGroupCascade(){
+	Node result=parse("{ a b c, d e f; g h i , j k l \n "
+	   "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2 \n}"
+	"{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
+ "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
+	result.log();
+	Node reparse = parse(result.serialize());
+	check(result == reparse);
+	check(result.kind==groups);
+	check(result.first().kind==objects);
+	check(result.first().first().kind==groups);// or expression if x is op
+	check(result.length==2)// {…} and {and}
+	check(result[0].length==2) // a…  and a2…  with significant newline
+	check(result[0][0].length==2)// a b c, d e f  and  g h i , j k l
+	check(result[0][0][0].length==2)// a b c  and  d e f
+	check(result[0][0]==Node("a b c, d e f; g h i , j k l"));// significant newline!
+	check(result[0][1]==Node("a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2"));// significant newline!
+	check(result[0][0][0][0].length==3)// a b c
+	check(result[0][0][0][0]==Node("a b c"));
+	check(result[0][0][0][0][0]=="a");
+	check(result[0][0][0][0][1]=="b");
+	check(result[0][0][0][0][2]=="c");
+	check(result[0][0][0][1][0]=="d");
+	check(result[0][0][0][1][1]=="e");
+	check(result[0][0][0][1][2]=="f");
+	check(result[1][1][0][1][2]=="f4");
+}
 
 
 void tests() {
 	assert_is("[a b c]#2", "b");
 	assert_is("one plus two times three", 7);
 	testUnicode_UTF16_UTF32();
+//	testGroupCascade();
 	testGraphQlQuery2();
 	testNilValues();
 	testCall();
@@ -1194,7 +1230,7 @@ void tests() {
 	testMarkMulti();
 	testMarkMulti2();
 	testCpp();
-	testErrors();
+//	testErrors();
 	testLists();
 	testDeepLists();
 	testGraphQlQuery();
@@ -1225,6 +1261,7 @@ void tests() {
 	testSort2();
 	testReplace();
 	testRemove();
+	testRemove2();
 	testUTF();// fails sometimes => bad pointer!?
 #ifdef APPLE
 	testAllSamples();
@@ -1262,12 +1299,16 @@ void todos() {
 void testCurrent() { // move to tests() once OK
 //	assert_is("√4+40", 42);
 
+
 //	testGraphQlQuery();
 //	testWasmFunctionDefiniton();
 //	testAllWasm();
 //	exit(1);
 //	assert(eval("ç='☺'") == "☺");
-	testAllWasm();
+//testGroupCascade();
+//	testAllWasm();
+	assert_is("(1,2,3)", Node(1, 2, 3, 0))
+	testNewlineLists();
 	tests();// make sure all still ok before changes
 	testAngle();
 	todos();// those not passing yet (skip)
