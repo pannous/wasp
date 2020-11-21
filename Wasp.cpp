@@ -18,6 +18,7 @@ extern String operator_list[];// resolve xor->operator ... semantic wasp parser 
 
 
 bool closing(char ch, char closer) {
+	if(ch == closer )return true;
 	if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
 //				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
 		return true;
@@ -190,8 +191,7 @@ private:
 	}
 
 	char back() {
-		previous = ch;
-		ch = text.charAt(--at);
+		ch = previous;
 		at--;
 		return ch;
 	}
@@ -907,7 +907,9 @@ private:
 		return previous == ' ' and current.last().kind != operators and current.last().kind != call and
 		       (!parent or parent and parent->last().kind != operators and parent->last().kind != call) and
 		       lastNonWhite != ':' and lastNonWhite != '=' and lastNonWhite != ',' and lastNonWhite != ';' and
-		       lastNonWhite != '{' and lastNonWhite != '(' and lastNonWhite != '[';
+		       lastNonWhite != '{' and lastNonWhite != '(' and lastNonWhite != '[' and
+				lastNonWhite != '}' and lastNonWhite != ']' and lastNonWhite != ')';
+
 	}
 
 // ":" is short binding a b:c d == a (b:c) d
@@ -933,19 +935,23 @@ private:
 				proceed();
 				continue;
 			}
-			if (ch == close or
-			    ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
-				if (close != ' ') // significant whitespace
-					proceed();
-				if (close == ' ' and current.length == 0 and current.value.data == 0 and current.name.empty()) {
-					proceed(); // insignificant whitespace: need more data
-					continue;
-				}
+			if(ch==close){
+				proceed();
+				break;
+			}
+			if (closing(ch,close)){
+//			    ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
+//				if (close != ' ') // significant whitespace
+//					proceed();
+//				if (close == ' ' and current.length == 0 and current.value.data == 0 and current.name.empty()) {
+//					proceed(); // insignificant whitespace: need more data
+//					continue;
+//				}
 				break;
 			}// inner match ok
 			if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
 //				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
-				break;
+				break;// cant be reached
 			}// outer match unresolved so far
 			switch (ch) {
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
@@ -954,11 +960,11 @@ private:
 				case u'⸨': // '⸩'
 				case '{': {
 					if (checkAmbiguousBlock(current, parent)) {
+						log(pointer());
 						breakpoint_helper
 						warn("Ambiguous reading a {x} => Did you mean a{x} or a:{x} or a , {x}");
 					}
-					bool asListItem =
-							lastNonWhite == ',' or lastNonWhite == ';' or previous == ' ' and lastNonWhite != ':';
+					bool asListItem =  lastNonWhite == ',' or lastNonWhite == ';' or previous == ' ' and lastNonWhite != ':';
 					Node &object = valueNode('}', &current.last()).setType(Type::objects);
 					if (asListItem)
 						current.addRaw(object);
@@ -1051,20 +1057,24 @@ private:
 				case ',': {
 					// closing ' ' handled above
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
-					if (current.grouper and current.grouper != ch) {
+					if (current.grouper != ch or current.length>1) {
 						Node neu;// wrap
 						neu.kind = groups;
 						neu.parent = parent;
-						neu.grouper = ch;
+//						neu.grouper = ch;
 						neu.addRaw(current);
 						current = neu;
+						current.grouper = ch;
 						char closer = ch;// need to keep troughout loop!
-						while (closing(ch, closer) and not closing(ch, close)) {// todo: outer close ok?
-							// now all elements in the block need to be treated as groups (don't flatten?)
-							Node *element = valueNode(closer).clone();
-							current.addRaw(element);
+						int i=0;
+//						closing(ch, closer) and not closing(ch, close) and ch!='}' and ch!=')' and ch!=']' and ch!=0
+						while (ch==closer) {
+							Node element = valueNode(closer);// todo stop copying!
+							current.addRaw(element.clone());
 						}
+						break;
 					}// else fallthough!
+//					current.grouper = ch;
 				}
 				case ' ': // possibly significant whitespace not consumed by white()
 				{

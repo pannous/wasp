@@ -185,9 +185,11 @@ public:
 		if (this == &False)return this;
 		// todo ...
 		Node *copy = new Node();
+		*copy = *this;
 		copy->name = name;
 		copy->kind = kind;
 		copy->value = value;// value.clone
+		copy->grouper = grouper;
 		if(meta)copy->meta = meta->clone();
 		if(parent)copy->parent = parent;//->clone(); DEFAULT: assume exact copy is desired
 		if(next)copy->next = next;//->clone(); // Todo: deep cloning whole tree?
