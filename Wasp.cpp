@@ -1057,7 +1057,7 @@ private:
 				case ',': {
 					// closing ' ' handled above
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
-					if (current.grouper != ch or current.length>1) {
+					if (current.grouper != ch and current.length>1) {
 						Node neu;// wrap
 						neu.kind = groups;
 						neu.parent = parent;
@@ -1074,7 +1074,7 @@ private:
 						}
 						break;
 					}// else fallthough!
-//					current.grouper = ch;
+					current.grouper = ch;
 				}
 				case ' ': // possibly significant whitespace not consumed by white()
 				{
