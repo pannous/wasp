@@ -93,6 +93,7 @@ public:
 	Node *parent = nullptr;
 	Node *children = nullptr;// LIST, not link. block body content
 	Node *next = 0; // in children list
+	char grouper=0;// ";" ","
 
 	// a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms
 //	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
@@ -169,8 +170,9 @@ public:
 
 	Node &first() {
 		if (length > 0)return children[0];
-		error("No such element");
-		return ERROR;
+		return *this;
+//		error("No such element");
+//		return ERROR;
 	}
 
 //	if you do not declare a copy constructor, the compiler gives you one implicitly.
@@ -550,10 +552,13 @@ public:
 	void replace(int from, int to, Node *node);
 	void remove(int at, int to);
 
+	Node& metas();
 };
 
 typedef const Node Nodec;
 
+extern float function_precedence;
 float precedence(String name);
 
 float precedence(Node &operater);
+float precedence(char group); // special: don't mix

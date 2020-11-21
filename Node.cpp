@@ -675,7 +675,8 @@ const char *Node::serialize() const {
 		wasp += (this->kind == groups ? "(" : "{");
 		if (polish_notation and not this->name.empty())wasp += this->name;
 		for (Node &node : *this) {
-			wasp += " ";
+			if(grouper) wasp += grouper;
+			else wasp += " ";
 			wasp += node.serialize();
 		}
 		wasp += (this->kind == groups ? " )" : " }");
@@ -817,18 +818,25 @@ void Node::replace(int from, int to, Node *node) {
 }
 
 // INCLUDING to: [a b c d].remove(1,2)==[a d]
-void Node::remove(int from, int to) {
+void Node::remove(int from, int to) {// including
 	if(to<0)to = length;
 	if(to<from)to = from;
+	if(to>=length)to = length - 1;
 	int i=-1;
-	while (to + i++ <= length)
+	while (to + i++ < length)
 		children[from + i] = children[to + i + 1];// ok if beyond length
-	length = length - i;
+	length = length - (to-from) -1;
 }
 
 
 void Node::replace(int from, int to, Node &node) {
 	replace(from, to, &node);
+}
+
+Node& Node::metas() {
+	if(!meta)meta = new Node();
+	meta->setType(patterns);// naja!
+	return *meta;
 }
 
 void log(Node &n) {
