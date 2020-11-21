@@ -672,14 +672,17 @@ const char *Node::serialize() const {
 		}
 	}
 	if (this->length > 0) {
+		if(not this->grouper)
 		wasp += (this->kind == groups ? "(" : "{");
 		if (polish_notation and not this->name.empty())wasp += this->name;
+		int i=0;
 		for (Node &node : *this) {
-			if(grouper) wasp += grouper;
+			if(grouper and i++>0) wasp += grouper;
 			else wasp += " ";
 			wasp += node.serialize();
 		}
-		wasp += (this->kind == groups ? " )" : " }");
+		if(not this->grouper)
+			wasp += (this->kind == groups ? " )" : " }");
 	}
 	return wasp;
 //	return this->name.empty()? this->string() : this->name;
