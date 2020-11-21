@@ -911,5 +911,6 @@ float precedence(char group) {
 	if(group==' ')return 5;
 	if(group=='_')return 6;
 //	...
-error("unknown precedence for symbol: "s+group);
+return 9999;
+//error("unknown precedence for symbol: "s+group);
 }
