@@ -3,6 +3,7 @@
 #include "Angle.h"
 #include "String.h"
 #include "Map.h"
+
 #undef assert // <cassert> / <assert.h>
 
 Node result;
@@ -349,7 +350,7 @@ void testUTFinCPP() {
 //	b[3] = {byte} 0 '\0'
 }
 
-void testUnicode_UTF16_UTF32(){// constructors/ conversion maybe later
+void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 //	char letter = '牛';// Character too large for enclosing character literal type
 	char16_t character = u'牛';
 	char32_t hanzi = U'牛';
@@ -358,25 +359,25 @@ void testUnicode_UTF16_UTF32(){// constructors/ conversion maybe later
 	assert(eval("ç='☺'") == String(L'☺'));
 	assert(eval("ç='☺'") == String(U'☺'));
 
-	check(String(u'牛')=="牛");
-	check(String(L'牛')=="牛");
-	check(String(U'牛')=="牛");
+	check(String(u'牛') == "牛");
+	check(String(L'牛') == "牛");
+	check(String(U'牛') == "牛");
 
-	check(String(L'牛')==u'牛');
-	check(String(L'牛')==U'牛');
-	check(String(L'牛')==L'牛');
-	check(String(U'牛')==u'牛');
-	check(String(U'牛')==U'牛');
-	check(String(U'牛')=="牛");
-	check(String(U'牛')==L'牛');
-	check(String(u'牛')==u'牛');
-	check(String(u'牛')==U'牛');
-	check(String(u'牛')==L'牛');
-	check(String(u'牛')=="牛");
-	check(String("牛")==u'牛');
-	check(String("牛")==U'牛');
-	check(String("牛")==L'牛');
-	check(String("牛")=="牛");
+	check(String(L'牛') == u'牛');
+	check(String(L'牛') == U'牛');
+	check(String(L'牛') == L'牛');
+	check(String(U'牛') == u'牛');
+	check(String(U'牛') == U'牛');
+	check(String(U'牛') == "牛");
+	check(String(U'牛') == L'牛');
+	check(String(u'牛') == u'牛');
+	check(String(u'牛') == U'牛');
+	check(String(u'牛') == L'牛');
+	check(String(u'牛') == "牛");
+	check(String("牛") == u'牛');
+	check(String("牛") == U'牛');
+	check(String("牛") == L'牛');
+	check(String("牛") == "牛");
 //	log(character);
 //	log(hanzi);
 //	log(word);
@@ -398,12 +399,12 @@ void testUTF() {
 	assert(result["ç"] == 111);
 
 	skip(
-	assert_parses("ç='☺'");
-	assert(eval("ç='☺'") == "☺");
+			assert_parses("ç='☺'");
+			assert(eval("ç='☺'") == "☺");
 
-	assert_parses("ç=☺");
-	assert(result == "☺" or result.kind == expressions);
-			)
+			assert_parses("ç=☺");
+			assert(result == "☺" or result.kind == expressions);
+	)
 //	assert(node == "ø"); //=> OK
 }
 
@@ -762,7 +763,6 @@ void testGraphQlQueryBug() {
 }
 
 void testGraphQlQuery() {
-	testGraphQlQueryBug();
 	var graphResult = "{\n  \"data\": {\n"
 	                  "    \"hero\": {\n"
 	                  "      \"id\": \"R2-D2\",\n"
@@ -784,8 +784,9 @@ void testGraphQlQuery() {
 	data.log();
 	Node &hero = data["hero"];
 	hero.log();
-	hero["id"].log();
-	assert(hero["id"] == "R2-D2");
+	Node &id = hero["id"];
+	id.log();
+	assert(id == "R2-D2");
 	Node &friends = result["data"]["hero"]["friends"];
 	assert(friends[0]["name"] == "Luke Skywalker");
 //todo	assert(result["hero"] == result["data"]["hero"]);
@@ -1124,74 +1125,75 @@ void testIndex() {
 }
 
 // can be removed because noone touches List.sort algorithm!
-void testSort(){
-	List<int> list={3,1,2,5,4};
-	List<int> listb={1,2,3,4,5};
-	check(list.sort()==listb)
-	auto by_precedence=[](int &a, int& b){ return a*a>b*b; };
-	check(list.sort(by_precedence)==listb)
-	auto by_square=[](int &a){ return (float)a*a;};
-	check(list.sort(by_square)==listb)
-}
-void testSort1(){
-	List<int> list={3,1,2,5,4};
-	List<int> listb={1,2,3,4,5};
-	auto by_precedence=[](int &a, int& b){ return a*a>b*b; };
-	check(list.sort(by_precedence)==listb)
+void testSort() {
+	List<int> list = {3, 1, 2, 5, 4};
+	List<int> listb = {1, 2, 3, 4, 5};
+	check(list.sort() == listb)
+	auto by_precedence = [](int &a, int &b) { return a * a > b * b; };
+	check(list.sort(by_precedence) == listb)
+	auto by_square = [](int &a) { return (float) a * a; };
+	check(list.sort(by_square) == listb)
 }
 
-void testSort2(){
-	List<int> list={3,1,2,5,4};
-	List<int> listb={1,2,3,4,5};
-	auto by_square=[](int &a){ return (float)a*a;};
-	check(list.sort(by_square)==listb)
+void testSort1() {
+	List<int> list = {3, 1, 2, 5, 4};
+	List<int> listb = {1, 2, 3, 4, 5};
+	auto by_precedence = [](int &a, int &b) { return a * a > b * b; };
+	check(list.sort(by_precedence) == listb)
 }
 
-void testRemove(){
-	Node result=parse("a b c d");
-	result.remove(1,2);
+void testSort2() {
+	List<int> list = {3, 1, 2, 5, 4};
+	List<int> listb = {1, 2, 3, 4, 5};
+	auto by_square = [](int &a) { return (float) a * a; };
+	check(list.sort(by_square) == listb)
+}
+
+void testRemove() {
+	Node result = parse("a b c d");
+	result.remove(1, 2);
 	const Node &replaced = parse("a d");
-	check(result==replaced);
+	check(result == replaced);
 }
 
-void testRemove2(){
-	Node result=parse("a b c d");
-	result.remove(2,10);
+void testRemove2() {
+	Node result = parse("a b c d");
+	result.remove(2, 10);
 	const Node &replaced = parse("a b");
-	check(result==replaced);
+	check(result == replaced);
 }
 
-void testReplace(){
-	Node result=parse("a b c d");
-	result.replace(1,2,new Node("x"));
+void testReplace() {
+	Node result = parse("a b c d");
+	result.replace(1, 2, new Node("x"));
 	const Node &replaced = parse("a x d");
-	check(result==replaced);
+	check(result == replaced);
 }
 
-void testGroupCascade(){
-	Node result=parse("{ a b c, d e f; g h i , j k l \n "
-	   "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2}"
-	"{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
- "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
+void testGroupCascade() {
+	Node result = parse("{ a b c, d e f; g h i , j k l \n "
+	                    "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2}"
+	                    "{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
+	                    "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
 	result.log();
-	check(result.kind==groups);
-	check(result.first().kind==objects);
-	check(result.first().first().kind==groups);// or expression if x is op
-	check(result.length==2)// {…} and {and}
-	check(result[0].length==2) // a…  and a2…  with significant newline
-	check(result[0][0].length==2)// a b c, d e f  and  g h i , j k l
-	check(result[0][0][0].length==2)// a b c  and  d e f
-	check(result[0][0]==Node("a b c, d e f; g h i , j k l"));// significant newline!
-	check(result[0][1]==Node("a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2"));// significant newline!
-	check(result[0][0][0][0].length==3)// a b c
-	check(result[0][0][0][0]==Node("a b c"));
-	check(result[0][0][0][0][0]=="a");
-	check(result[0][0][0][0][1]=="b");
-	check(result[0][0][0][0][2]=="c");
-	check(result[0][0][0][1][0]=="d");
-	check(result[0][0][0][1][1]=="e");
-	check(result[0][0][0][1][2]=="f");
-	check(result[1][1][0][1][2]=="f4");
+	check(result.kind == groups);
+	check(result.first().kind == objects);
+	check(result.first().first().kind == groups);// or expression if x is op
+	check(result.length == 2)// {…} and {and}
+	check(result[0].length == 2) // a…  and a2…  with significant newline
+	check(result[0][0].length == 2)// a b c, d e f  and  g h i , j k l
+	check(result[0][0][0].length == 2)// a b c  and  d e f
+	check(result[0][0] == Node("a b c, d e f; g h i , j k l"));// significant newline!
+	check(result[0][1] == Node("a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2"));// significant newline!
+	check(result[0][0][0][0].length == 3)// a b c
+	check(result[0][0][0][0] == Node("a b c"));
+	check(result[0][0][0][0][0] == "a");
+	check(result[0][0][0][0][1] == "b");
+	check(result[0][0][0][0][2] == "c");
+	check(result[0][0][0][1][0] == "d");
+	check(result[0][0][0][1][1] == "e");
+	check(result[0][0][0][1][2] == "f");
+	check(result[1][1][0][1][2] == "f4");
 	Node reparse = parse(result.serialize());
 	check(result == reparse);
 
@@ -1202,8 +1204,6 @@ void tests() {
 	assert_is("[a b c]#2", "b");
 	assert_is("one plus two times three", 7);
 	testUnicode_UTF16_UTF32();
-//	testGroupCascade();
-	testGraphQlQuery2();
 	testNilValues();
 	testCall();
 	testNewlineLists();
@@ -1214,7 +1214,6 @@ void tests() {
 	testIterate();
 	testLists();
 	testMarkAsMap();
-//	raise("test once if raising");
 	testEval();
 	testParamizedKeys();
 	testForEach();
@@ -1234,7 +1233,6 @@ void tests() {
 //	testErrors();
 	testLists();
 	testDeepLists();
-	testGraphQlQuery();
 	testGraphParams();
 	testParams();
 	testAddField();
@@ -1251,10 +1249,8 @@ void tests() {
 	testLengthOperator();
 	testLogic();
 	testLogicEmptySet();
+	testDeepCopyDebugBugBug();
 	testDeepCopyDebugBugBug2();
-//	testDeepCopyDebugBugBug();
-//	void testsFailingInWasm() {
-	testKitchensink();
 	testMarkSimpleAssign();
 	testMarkMultiDeep();
 	testSort();
@@ -1263,7 +1259,12 @@ void tests() {
 	testReplace();
 	testRemove();
 	testRemove2();
+	testGraphQlQueryBug();
+	testGraphQlQuery();// fails sometimes => bad pointer!?
+	testGraphQlQuery2();
 	testUTF();// fails sometimes => bad pointer!?
+	testKitchensink();
+	testGroupCascade();
 #ifdef APPLE
 	testAllSamples();
 #endif
@@ -1298,15 +1299,14 @@ void todos() {
 }
 
 void testCurrent() { // move to tests() once OK
-//	assert_is("√4+40", 42);
-	testLists();
 
+//	assert(eval("ç='☺'") == "☺");// fails later => bad pointer?
 //	testGraphQlQuery();
+
 //	testWasmFunctionDefiniton();
 //	testAllWasm();
 //	exit(1);
-//	assert(eval("ç='☺'") == "☺");
-//testGroupCascade();
+//	testGroupCascade();
 //	testAllWasm();
 	assert_is("(1,2,3)", Node(1, 2, 3, 0))
 	tests();// make sure all still ok before changes
