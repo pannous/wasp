@@ -912,6 +912,16 @@ private:
 
 	}
 
+	bool skipBorders(char ch) {// {\n} == {}
+		if(lastNonWhite==':')return true;
+		if(lastNonWhite=='{' or next=='}')return true;// todo: nextNonWhite
+		if(lastNonWhite=='(' or next==')')return true;
+		if(lastNonWhite=='[' or next==']')return true;
+		if(ch==',' and next == ';')return true;// 1,2,3,; => 1,2,3;
+		if(ch==';' and next == '\n')return true;// 1,2,3,; => 1,2,3;
+		return false;
+	}
+
 // ":" is short binding a b:c d == a (b:c) d
 // "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
@@ -1055,6 +1065,10 @@ private:
 				case '\t': // only in tables
 				case ';': // indent 􀋵  ☞ 𒋰 𒐂 ˆ ˃
 				case ',': {
+					if(skipBorders(ch)){
+						proceed();
+						continue;
+					}
 					// closing ' ' handled above
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
 					if (current.grouper != ch and current.length>1) {
