@@ -6,9 +6,13 @@
 #define WASP_MAP_H
 
 
-#include "String.h"
+//#include "String.h"
 #include "Node.h"
-#include "../../../../../opt/wasi-sdk/share/wasi-sysroot/include/c++/v1/initializer_list"
+#include "WasmHelpers.h"
+
+#ifndef WASM
+#include <initializer_list> // allow List x={1,2,3};
+#endif
 
 #define MAXI 1000
 
@@ -118,11 +122,13 @@ public:
 
 	List() {}
 
+#ifndef WASM
 	List(const std::initializer_list<S> &_items) {
 		for (const S &s : _items) {
 			items[_size++] = s;
 		}
 	}
+#endif
 
 	int size() { return _size; };
 
