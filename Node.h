@@ -93,7 +93,7 @@ public:
 	Node *parent = nullptr;
 	Node *children = nullptr;// LIST, not link. block body content
 	Node *next = 0; // in children list
-	char grouper=0;// ";" ","
+	char grouper = 0;// ";" ","
 
 	// a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms
 //	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
@@ -130,14 +130,14 @@ public:
 	}
 
 	explicit
-	Node(spointer spo){
+	Node(spointer spo) {
 		smartType type = getSmartType(spo);
-		int payload=spo<<4>>4;
-		if(type!=int28)payload=spo<<8>>8;
+		int payload = spo << 4 >> 4;
+		if (type != int28)payload = spo << 8 >> 8;
 		switch (type) {
 			case int28:
 			case sint28:
-				value.longy = (int)spo;
+				value.longy = (int) spo;
 				kind = longs;
 				break;
 			case float28:
@@ -165,7 +165,7 @@ public:
 			default:
 				error("unknown type");
 		}
-		
+
 	}
 
 	Node &first() {
@@ -179,7 +179,7 @@ public:
 //	Node( Node& other ){// copy constructor!!
 
 
-	Node *clone(bool childs=true) {// const cast?
+	Node *clone(bool childs = true) {// const cast?
 		if (this == &NIL)return this;
 		if (this == &True)return this;
 		if (this == &False)return this;
@@ -195,11 +195,13 @@ public:
 //		if(next)copy->next = next;//->clone();
 //
 // Todo: deep cloning whole tree? definitely clone children
-if(childs){
-		copy->children=0;
-		copy->length = 0;
-		if(length>0)for(Node& n:*this) copy->addRaw(n);// necessary, else children is the same pointer!
-}
+		if (childs) {
+			if (kind == keyNode)
+				copy->value.node = value.node->clone(false);
+			copy->children = 0;
+			copy->length = 0;
+			if (length > 0)for (Node &n:*this) copy->addRaw(n);// necessary, else children is the same pointer!
+		}
 		return copy;
 	}
 
@@ -490,7 +492,7 @@ if(childs){
 		return kind == longs ? value.longy : value.real;// danger
 	}
 
-	Node *has(String s, bool searchMeta = true, short searchDepth=0) const;
+	Node *has(String s, bool searchMeta = true, short searchDepth = 0) const;
 
 
 //		https://github.com/pannous/angle/wiki/truthiness
@@ -527,7 +529,7 @@ if(childs){
 
 	String serialize() const;
 
-	String serializeValue(bool deep=true) const;
+	String serializeValue(bool deep = true) const;
 
 	void print();
 
@@ -536,6 +538,7 @@ if(childs){
 
 	Node from(Node node);// exclusive
 	Node from(String match);
+
 	Node from(int pos);
 
 	Node to(Node match);// exclusive
@@ -550,19 +553,24 @@ if(childs){
 	bool isSetter();
 
 	int lastIndex(String &string, int start);
-	int index(String &string, int start = 0, bool reverse=false);
+
+	int index(String &string, int start = 0, bool reverse = false);
 
 	void replace(int from, int to, Node &node);
+
 	void replace(int from, int to, Node *node);
+
 	void remove(int at, int to);
 
-	Node& metas();
+	Node &metas();
 };
 
 typedef const Node Nodec;
 
 extern float function_precedence;
+
 float precedence(String name);
 
 float precedence(Node &operater);
+
 float precedence(char group); // special: don't mix
