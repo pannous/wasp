@@ -56,10 +56,17 @@ String &text = EMPTY;
 class Wasp {
 
 	int at = -1;//{};            // The index of the current character PLUS ONE todo
-	char previous = 0;
+
 	char lastNonWhite = 0;
-	char ch = 0;            // The current character
-	char next = 0; // set in proceed()
+//	char previous = 0;
+//	char ch = 0;            // The current character
+//	char* point = 0;            // The current character
+//	char next = 0; // set in proceed()
+
+	codepoint ch = 0;            // The current character
+	codepoint next = 0; // set in proceed()
+	codepoint previous = 0;
+
 	String line;
 	int lineNumber{};    // The current line number
 	int columnStart{};    // The index of column start char
@@ -92,7 +99,8 @@ public:
 
 	Node &read(String source) {
 		if (source.empty()) return NIL;
-		columnStart = at = 0;
+		columnStart = 0;
+		at = -1;
 		lineNumber = 1;
 		ch = 0;
 		text = source;
@@ -129,12 +137,26 @@ public:
 	}
 
 //	List<String> operators; // reuse functions!
+//	if(is_grapheme_modifier(ch))error("multi codepoint graphemes not");
 	// everything that is not an is_identifier is treated as operator/symbol/identifier?
-	//	☺ == e2 98 ba  √ == e2 88 9a
-	bool is_operator(unsigned char ch) {// todo is_KNOWN_operator
-//		if (ch > 0x207C and ch < 0x2200) return true; char is signed_byte -127..127
+	// NEEDs complete codepoint, not just leading char because	☺ == e2 98 ba  √ == e2 88 9a
+	bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
+//	0x0086	134	<control>: START OF SELECTED AREA	†
+		if (ch == U'∞')return false;// or can it be made as operator!?
+		if (ch == U'⅓')return false;// numbers are implicit operators 3y = 3*y
+		if (ch == U'∅')return false;// Explicitly because it is part of the operator range 0x2200 - 0x2319
+//		0x20D0	8400	COMBINING LEFT HARPOON ABOVE	⃐
+//		0x2300	8960	DIAMETER SIGN	⌀
+		if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
+		if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
+		if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
+
+		if (ch == u'√')return true;// 0x221A redundant
+		if (ch == u'＝')return true;
+		if (ch == u'≠')return true;
 //		if(ch=='=') return false;// internal treatment
-		if (ch > 0x80) return false;// utf NOT enough: ç. can still be a reference!
+		if (ch > 0x80)
+			return false;// utf NOT enough: ç. can still be a reference!
 		if (is_identifier(ch)) return false;
 		if (isalnum(ch)) return false;// ANY UTF 8
 		return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
@@ -213,18 +235,22 @@ private:
 		if (c && c != ch) {
 			error(s("Expected '") + c + "' instead of " + renderChar(ch));
 		}
-		if (at >= text.length) {
-			ch = 0;
-			return -1;
-		}
 		// Get the next character. When there are no more characters, return the empty string.
 		previous = ch;
 		if (ch != ' ' and ch != '\n' and ch != '\r' and ch != '\t')
 			lastNonWhite = ch;
-		ch = text.charAt(at);
-		if (at + 1 >= text.length)next = 0;
-		else next = text.charAt(at + 1);
-		at++;
+		short step = utf8_byte_count(previous);
+		at = at + step;
+		if (at >= text.length) {
+			ch = 0;
+//			point = 0;
+			return -1;
+		}
+		ch = decode_unicode_character(text.data + at);// charAt(at);
+		short width = utf8_byte_count(ch);
+		if (at + width >= text.length)next = 0;
+		else next = decode_unicode_character(text.data + at + width);
+//		point = text.data + at;
 		if (ch == '\n' || (ch == '\r' && next != '\n')) {
 			lineNumber++;
 			columnStart = at;
@@ -238,20 +264,17 @@ private:
 		return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
 	}
 
-	bool is_identifier(char ch) {
+//	bool is_identifier(char ch) {
+	bool is_identifier(codepoint ch) {
 		if (ch == '#')return false;// size/count/length
 		if (ch == '=')return false;
 		if (ch == ':')return false;
 		if (ch == ' ')return false;
 		if (ch == ';')return false;
 		if (ch == '.')return false;
-//		if (ch == '-')return false;// todo
-		if (ch == "＝"[0] and next == "＝"[1])return false;// todo … !?!?
-		if (ch == "√"[0] and next == "√"[1])return false;// todo … !?!?
-		if (ch == "≠"[0] and next == "≠"[1])return false;// todo … !?!?
-		if(ch < 0)return true;// all UTF identifier todo ;)
-		return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
-		       ch < 0;// ch<0: UNICODE
+		if (ch == '-')return false;// todo
+		if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
+		return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$';// ch<0: UNICODE
 //		not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
 	};
 
@@ -586,7 +609,7 @@ private:
 		if (ch >= '0' && ch <= '9')return numbero();
 		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
 		if (is_operator(ch))return any_operator();
-		error(UNEXPECT_CHAR + String((char)text[at]) + String((char)text[at+1]) + String((char)text[at+2]));
+		error(UNEXPECT_CHAR + String((char) text[at]) + String((char) text[at + 1]) + String((char) text[at + 2]));
 		return NIL;
 	}
 
@@ -979,6 +1002,7 @@ private:
 						current.addSmart(object);
 					break;
 				}
+				case U'［': // FULLWIDTH ｛ ｢ ｣
 				case '[': {
 					Node &pattern = valueNode(']', &current.last()).setType(Type::patterns);
 					current.addRaw(pattern);
@@ -1034,6 +1058,7 @@ private:
 					current.addRaw(id);
 					break;
 				}
+				case U'：':
 				case ':':
 					if (next == '=') { // f x:=2x
 						current.addRaw(new Node(":="));
@@ -1044,17 +1069,18 @@ private:
 						break;
 					}
 					// FALLTHROUGH:
+				case U'＝':
 				case '=': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
 					bool add_raw = next == '=' or current.kind == expressions or key.kind == expressions or
 					               (current.last().kind == groups and current.length > 1);
-					if(is_operator(previous))add_raw = true;
+					if (is_operator(previous))add_raw = true;// todo &previous may be nonsense: only first byte of codepoint copied
 					if (add_raw) {
-						if(is_operator(previous)){// += *= == ...
+						if (is_operator(previous)) {// += *= == ...
 							current.last().name += "=";
 						} else
-						current.addRaw(Node(ch).setType(operators));
+							current.addRaw(Node(ch).setType(operators));
 					}
 					Node &val = *valueNode(' ', &key).clone();// applies to WHOLE expression
 					if (add_raw) {  // complex expressions are not simple maps
@@ -1183,7 +1209,14 @@ class String;
 #ifndef WASM
 
 void print(String s) {
-	log(s.data);
+	if (!s.shared_reference)
+		log(s.data);
+	else {
+		char tmp = s.data[s.length];
+		s.data[s.length] == 0;// hack not thread-safe
+		log(s.data);
+		s.data[s.length] == tmp;
+	}
 }
 
 #endif
