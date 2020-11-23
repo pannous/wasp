@@ -72,7 +72,8 @@ elseif (WASI)
 #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
 
     ADD_COMPILE_FLAG("-w -g -O0 -v ") # -nostdlib
-    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp WasmHelpers.cpp exceptions.cpp smart_types.cpp)
+    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp WasmHelpers.cpp exceptions.cpp )
+    # smart_types.cpp
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
 elseif (VM) # NORMAL:
