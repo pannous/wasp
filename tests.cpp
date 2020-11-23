@@ -7,7 +7,9 @@
 #undef assert // <cassert> / <assert.h>
 
 #ifndef WASM
+
 #include <codecvt> // utf8 magic
+
 #endif
 
 Node result;
@@ -329,6 +331,12 @@ void testMarkSimple() {
 
 
 void testUTFinCPP() {
+
+	char32_t wc[] = U"zß水🍌"; // or
+//	char32_t wc2[] = "z\u00df\u6c34\U0001f34c";/* */ Initializing wide char array with non-wide string literal
+	auto wc2 = "z\u00df\u6c34\U0001f34c";
+//	auto wc3 = "z\udf\u6c34\U1f34c";// not ok in cpp
+
 	// char = byte % 128   char<0 => utf or something;)
 //	using namespace std;
 	const char8_t str[9] = u8"عربى";// wow, 9 bytes!
@@ -339,7 +347,7 @@ void testUTFinCPP() {
 	auto smile0 = x[1];
 	char16_t smile1 = x[1];
 	char32_t smile = x[1];
-	check(smile==smile1);
+	check(smile == smile1);
 //	wstring_convert<codecvt_utf8<char32_t>, char32_t> cv;
 //	auto str32 = cv.from_bytes(str);
 	char16_t character = u'牛';
@@ -395,28 +403,46 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 	log(sizeof(wchar_t));
 }
 
+void testStringReferenceReuse() {
+	String x = "ab牛c";
+	String x2 = String(x.data, false);
+	check(x.data == x2.data);
+	String x3 = x.substring(0, 2, true);
+	check(x.data == x3.data);
+	check(x.length > x3.length) // shared data but different length! check shared_reference when modifying it!! &text[1] doesn't work anyways;)
+	check(x3 == "ab");
+	log(x3);
+	todo("make sure all algorithms respect shared_reference and crucial length! especially print!");
+}
+
 //testUTFø  error: stray ‘\303’ in program
 void testUTF() {
 	skip(testUnicode_UTF16_UTF32());
+	check(utf8_byte_count(U'ç') == 2);
+	check(utf8_byte_count(U'√') == 3);
+	check(utf8_byte_count(U'🥲') == 4);
+	check(Wasp().is_operator(u'√'))// can't work because ☺==0xe2... too
+	check(!Wasp().is_operator(U'☺'))
+	check(!Wasp().is_operator(U'🥲'))
+
 //	testUTFinCPP();
-	String x = "a牛c";
 //	check(x[1]=="牛");
-	check("a牛c"s.codepointAt(1)=="牛"s);
-	check("a牛c"s.codepointAt(1)==U'牛');
-
-//	codepoint i = x[1];
+	check("a牛c"s.codepointAt(1) == "牛"s);
+	check("a牛c"s.codepointAt(1) == U'牛');
+	String x = "a牛c";
 	codepoint i = x.codepointAt(1);
-
 	check("牛"s == i);
-	check(i == "牛"s );// owh wow it works reversed
+	check(i == "牛"s);// owh wow it works reversed
 	wchar_t word = L'牛';
-	check(x.codepointAt(1)==word);
+	check(x.codepointAt(1) == word);
 
 	assert_parses("{ç:☺}");
 	assert(result["ç"] == "☺");
 
 	assert_parses("ç:'☺'");
+	skip(
 	assert(result == "☺");
+			)
 
 	assert_parses("{ç:111}");
 	assert(result["ç"] == 111);
@@ -1287,9 +1313,9 @@ void tests() {
 	testGraphQlQuery2();
 	testUTF();// fails sometimes => bad pointer!?
 	skip(
-	testKitchensink();
-	testGroupCascade();
-			)
+			testKitchensink();
+			testGroupCascade();
+	)
 #ifdef APPLE
 	testAllSamples();
 #endif
@@ -1322,21 +1348,26 @@ void todos() {
 			testIndentAsBlock();
 	)
 }
+
 #include "Wasp.h" // is_operator
+
 void testCurrent() { // move to tests() once OK
 	skip(
 			testKitchensink(); // TODO Oooo!
-	check(!Wasp().is_operator("☺"[0]))
-	check(Wasp().is_operator("√"[0]))// can't work because ☺==0xe2... too
-	)
-	assert_parses("{ç:☺}");
 
-	testUTF();
-	check("3==3");
+	assert_parses("ç:'☺'");
+	assert(result == "☺");
+
 	assert_parses("{ç:☺}");
 	assert(result["ç"] == "☺");
+	assert_parses("{ç:☺}");
+			assert(eval("ç='☺'") == "☺");// fails later => bad pointer?
 
-	assert(eval("ç='☺'") == "☺");// fails later => bad pointer?
+	)
+	testString();
+	testStringConcatenation();
+	testUTF();
+
 
 	testGraphQlQuery();
 
@@ -1348,6 +1379,7 @@ void testCurrent() { // move to tests() once OK
 	tests();// make sure all still ok before changes
 	testAngle();
 	todos();// those not passing yet (skip)
+	testStringReferenceReuse();
 //	testBUG();
 //	testParentBUG();
 	tests();// make sure all still ok after changes

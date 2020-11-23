@@ -449,19 +449,6 @@ size_t utf8_strlen(char *utf8bytes) {
 	return len;
 }
 
-codepoint decode_unicode_character2(char *utf8bytes) {
-	size_t len = 0;  // warning: untested code.
-	long utf32char;
-	for (const char *p = utf8bytes; *p; ++p) {
-		char more = *p & 0x7F;
-		if ((*p & 0xc0) != 0x80) {
-			utf32char << 6;
-			++len;
-		}
-		utf32char = utf32char ^ more;
-	}
-}
-
 codepoint decode_unicode_character(char *text, int *len) {
 	if ((text[0] & 0b10000000) == 0) {
 //		if(len)*len=1; // 1 byte code point, ASCII
@@ -520,11 +507,23 @@ void encode_unicode_character(char *buffer, wchar_t ucs_character) {
 }
 
 // Taken from boost internals
-inline unsigned utf8_byte_count(unsigned char c) {
+inline short utf8_byte_count(char c0) {
+	unsigned char c=c0;
+	if(c&0x80==0x00)return 1;
+	if(c&0xE0==0xC0)return 2;
+	if(c&0xF0==0xE0)return 3;
+//	if(c&0xF0==0xF0)return 4;
+	// redundant:
 	if ((c & 0b10000000) == 0) return 1;
 	if ((c & 0b11100000) == 0b11000000) return 2;
 	if ((c & 0b11110000) == 0b11100000) return 3;
 	return 4;
+}
+
+// utf8_byte_count on the first byte of a codepoint represented as utf8 is fine, however AUTO-CASTING U'√' to char is NOT fine!
+short utf8_byte_count(codepoint c) {
+	if(c==0)return 1;
+	return String(c).length;
 }
 
 //List<codepoint> split_by_codepoint(String input) {
@@ -552,3 +551,5 @@ codepoint *String::extractCodepoints(bool again) {
 	return codepoints;
 
 }
+String EMPTY_STRING0="";
+String& EMPTY_STRING=EMPTY_STRING0;

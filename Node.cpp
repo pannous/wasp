@@ -211,7 +211,7 @@ Node &Node::set(String string, Node *node) {
 
 bool Node::operator==(String other) {
 	if (this == 0)return other.empty();
-	if (kind == objects or kind == keyNode)return *value.node == other or value.string == other;
+//	if (kind == objects or kind == keyNode)objects={…} NOT have value!  return *value.node == other or value.string == other;
 	if (kind == keyNode) return other == name or value.node and *value.node == other;// todo: a=3 a=="a" ??? really?
 	if (kind == longs) return other == itoa(value.longy);
 	if (kind == reference) return other == name or value.node and *value.node == other;
