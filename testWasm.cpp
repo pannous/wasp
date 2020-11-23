@@ -128,7 +128,34 @@ void testComparisonMath() {
 
 void testComparisonId() {
 	// may be evaluated by compiler!
-	assert_emit("id 3*42> id 2*3", 1)
+	assert_emit("id(3*42 )> id 2*3", 1)
+	assert_emit("id(3*1)< id 2*3", 1)
+	assert_emit("id(3*452)==452*3", 1)
+	assert_emit(("id(3*42)≥2*3"), 1)
+	assert_emit(("id(3*2)≥2*3"), 1)
+	assert_emit(("id(3*2)≤2*3"), 1)
+	assert_emit(("id(3*2)≤24*3"), 1)
+	assert_emit(("id(3*13)!=14*3"), 1)
+	assert_emit(("id(3*13)<= id 14*3"), 1)
+	assert_emit(("id(3*13)<= id 14*3"), 1)
+
+	assert_emit(("id(3*15)>= id 14*3"), 1)
+	assert_emit(("id(3*42)< id 2*3"), False);
+	assert_emit(("id(3*1)> id 2*3"), False);
+	assert_emit(("id(3*452)!=452*3"), False);
+	assert_emit(("id(3*13)==14*3"), False);
+	assert_emit(("id(3*13)>= id 14*3"), False);
+	assert_emit(("id(3*15)<= id 14*3"), False);
+	assert_emit(("id(3*13)<= id 14*3"), 1)
+	assert_emit(("id(3*42)≥112*3"), false)
+	assert_emit(("id(3*2)≥112*3"), false)
+	assert_emit(("id(3*12)≤2*3"), false)
+	assert_emit(("id(3*112)≤24*3"), false)
+}
+
+void testComparisonIdPrecedence() {
+	// may be evaluated by compiler!
+	assert_emit("id 3*42 > id 2*3", 1)
 	assert_emit("id 3*1< id 2*3", 1)
 	assert_emit("id 3*452==452*3", 1)
 	assert_emit(("id 3*42≥2*3"), 1)
@@ -151,7 +178,6 @@ void testComparisonId() {
 	assert_emit(("id 3*2≥112*3"), false)
 	assert_emit(("id 3*12≤2*3"), false)
 	assert_emit(("id 3*112≤24*3"), false)
-
 }
 
 void testComparisonPrimitives() {
