@@ -13,15 +13,16 @@
 
 #endif
 
+class String;
+extern String& EMPTY_STRING;
 //What 'char' and 'wchar_t' represent are completely ambiguous.
 //You might think that they represent a "character", but depending on the encoding, that might not be true.
 //typedef wchar_t character;// overloaded term that can mean many things:
 typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
 class Codepoint{ char32_t nr; };// to avoid wrong autocast codepoint x=string[i]
-//wchar_t
-typedef wchar_t grapheme;// sequence of one or more code points that are displayed as a single 'character' ä may be two code points a¨, or one ä
-//☀️=☀+_ e2 98 80 + ef b8 8f
-//typedef wchar_t glyph; image, usually stored in a font (which is a collection of glyphs), used to represent graphemes
+//typedef char* grapheme;// sequence of one or more code points that are displayed as a single 'character' ä may be two code points a¨, or one ä
+typedef String grapheme;// sequence of one or more code points that are displayed as a single 'character' ☀️=☀+_ e2 98 80 + ef b8 8f
+//typedef graphics glyph; image, usually stored in a font (which is a collection of glyphs), used to represent graphemes
 //https://stackoverflow.com/questions/27331819/whats-the-difference-between-a-character-a-code-point-a-glyph-and-a-grapheme
 // '\uD83D\uDC0A' UTF-16 code units expressing a single code point (U+1F40A)  char(0x1F40A) == '🐊'
 //https://github.com/foliojs/grapheme-breaker/blob/master/src/GraphemeBreaker.js
@@ -156,7 +157,9 @@ class String {
 private:
 	codepoint *codepoints=0;// extract on demand from data
 	int codepoint_count = -1;
+
 public:
+	bool shared_reference= false;// length terminated substrings!
 
 	char *data{};
 	int length = -1;
@@ -178,47 +181,59 @@ public:
 
 //	~String()=default;
 
-	explicit String(char c) {
-		if (c == 0) {
+	explicit String(char* datas,int len, bool share) {
+		data=datas;
+		length=len;
+		shared_reference=share;
+		if(!share)error("use other constructor");
+	}
+
+	explicit String(char byte_character) {
+		if (byte_character == 0) {
 			length = 0;
 			data = 0;//SUBTLE BUGS if setting data=""; data=empty_string;
 			return;
 		}
 		data = static_cast<char *>(alloc(sizeof(char), 2));
-		data[0] = c;
+		data[0] = byte_character;
 		data[1] = 0;
 		length = 1;
 	}
 
 //	explicit
-	String(const char string[]) {
+	String(const char string[],bool copy=true) {
 //		data = const_cast<char *>(string);// todo heap may disappear, use copy!
 		length = strlen0(string);
 		if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
 		else {
+			if(copy){
 			data = static_cast<char *>(alloc(sizeof(char), length + 1));
 			strcpy2(data, string, length + 1);
+			} else{
+				shared_reference = true;
+				data=(char*)string;
+			}
 		}
 	}
 
 
 //		String operator+(Type e){
-	explicit String(Type e) : String(typeName(e)) {}
+	explicit String(Type type) : String(typeName(type)) {}// lil hack to get String of specific enums
 
-	explicit String(int c) {
-		data = itoa(c);// wasm function signature contains illegal type WHYYYY
+	explicit String(int integer) {
+		data = itoa(integer);// wasm function signature contains illegal type WHYYYY
 		length = len(data);
 	}
 
-	explicit String(long c) {
-		data = itoa0(c);
+	explicit String(long number) {
+		data = itoa0(number);
 		length = len(data);
 	}
 
 
-	explicit String(char16_t i) {
+	explicit String(char16_t utf16char) {
 		data = static_cast<char *>(calloc(sizeof(char16_t), 2));
-		encode_unicode_character(data, i);
+		encode_unicode_character(data, utf16char);
 		length = len(data);
 	}
 
@@ -228,29 +243,29 @@ public:
 //		length = len(data);
 //	}
 
-	explicit String(char32_t i) {// conflicts with int
+	explicit String(char32_t utf32char) {// conflicts with int
 		data = static_cast<char *>(calloc(sizeof(char32_t), 2));
-		encode_unicode_character(data, i);
+		encode_unicode_character(data, utf32char);
 		length = len(data);
 	}
 
-	explicit String(wchar_t i) {
+	explicit String(wchar_t wideChar) {
 		data = static_cast<char *>(calloc(sizeof(wchar_t), 2));
-		encode_unicode_character(data, i);
+		encode_unicode_character(data, wideChar);
 		length = len(data);
 	}
 
-	explicit String(double c) {
+	explicit String(double real) {
 		int max_length = 4;
-		data = itoa0(c);
+		data = itoa0(real);
 		length = len(data);
 //		itof :
 		append('.');
-		c = c - (long(c));
+		real = real - (long(real));
 		while (length < max_length) {
-			c = (c - long(c)) * 10;
-			if (int(c) == 0)break;
-			append(int(c) + 0x30);
+			real = (real - long(real)) * 10;
+			if (int(real) == 0)break;
+			append(int(real) + 0x30);
 		}
 	}
 
@@ -282,18 +297,18 @@ public:
 		}
 	}
 
-	char charAt(int i) {
-		if (i >= length)
-			error((String("IndexOutOfBounds at ") + itoa0(i) + " in " + data).data);
-		return data[i];
+	char charAt(int position) {
+		if (position >= length)
+			error((String("IndexOutOfBounds at ") + itoa0(position) + " in " + data).data);
+		return data[position];
 	}
 
-	char charCodeAt(int i) {
-//		if (i >= length)
-//			raise(IndexOutOfBounds(data, i).message);
+	char charCodeAt(int position) {
+//		if (position >= length)
+//			raise(IndexOutOfBounds(data, position).message);
 //		String("IndexOutOfBounds at ") + i + " in " + data;
 //			throw new IndexOutOfBounds(String(" at ") + i + " in " + data);
-		return data[i];
+		return data[position];
 	}
 
 	int indexOf(char c, int from = 0) {
@@ -305,10 +320,15 @@ public:
 
 //	operator std::string() const { return "Hi"; }
 
-	String substring(int from, int to = -1) { // excluding to
+// excluding to
+	String substring(int from, int to = -1, bool ref= false) { // excluding to
 		if (to < 0 or to > length)to = length;
-		if (to <= from)return String();
+		if (to <= from)return EMPTY_STRING;
 		int len = (to - from) + 1;
+		if(ref){
+			return String(data+from, len,ref);
+		}
+
 		auto neu = static_cast<char *>(alloc((sizeof(char)), len + 1));
 //#ifdef cstring
 //		strcpy(neu, &data[from]);
@@ -626,6 +646,9 @@ public:
 	char operator[](int i) {
 		return data[i];
 	}
+	// expensive
+//	String operator[](int i);
+//	grapheme operator[](int i);
 
 	bool empty() const;
 
@@ -771,3 +794,6 @@ void log(String *s);
 
 void log(chars s);
 //#endif
+//unsigned  == unsigned int!
+inline short utf8_byte_count(char c);
+short utf8_byte_count(codepoint c);
