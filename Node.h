@@ -179,24 +179,27 @@ public:
 //	Node( Node& other ){// copy constructor!!
 
 
-	Node *clone() {// const cast?
+	Node *clone(bool childs=true) {// const cast?
 		if (this == &NIL)return this;
 		if (this == &True)return this;
 		if (this == &False)return this;
 		// todo ...
 		Node *copy = new Node();
 		*copy = *this;
-		copy->name = name;
-		copy->kind = kind;
-		copy->value = value;// value.clone
-		copy->grouper = grouper;
-		if(meta)copy->meta = meta->clone();
-		if(parent)copy->parent = parent;//->clone(); DEFAULT: assume exact copy is desired
-		if(next)copy->next = next;//->clone(); // Todo: deep cloning whole tree?
-
+//		copy->name = name;
+//		copy->kind = kind;
+//		copy->value = value;// value.clone
+//		copy->grouper = grouper;
+//		if(meta)copy->meta = meta->clone();
+//		if(parent)copy->parent = parent;//->clone(); DEFAULT: assume exact copy is desired
+//		if(next)copy->next = next;//->clone();
+//
+// Todo: deep cloning whole tree? definitely clone children
+if(childs){
 		copy->children=0;
 		copy->length = 0;
 		if(length>0)for(Node& n:*this) copy->addRaw(n);// necessary, else children is the same pointer!
+}
 		return copy;
 	}
 
@@ -438,9 +441,9 @@ public:
 #endif
 //		printf("name:"_s + name);
 			printf("name:%s", name.data);
-		printf(" length:"_s + itoa(length));
+		printf(" length:%d", length);
 		printf(" type:"_s + typeName(kind));
-		printf(" value:"_s + serializeValue());
+		printf(" value: %s\n\n", serializeValue(false));// NEEDS "%s", otherwise HACKABLE
 //			printf("name:%s ", name.data);
 //		printf("length:%i ", length);
 //		printf("type:%s ", typeName(type).data);
@@ -470,9 +473,8 @@ public:
 		}
 		printf("]");
 		printf("\n");
-		const char *string1 = serialize();
-		if(string1)
-		printf(string1);
+		const String &serialized = serialize();
+		printf("%s", serialized.data);
 		printf("\n");
 	}
 
@@ -523,9 +525,9 @@ public:
 
 	const char *toString() const;
 
-	const char *serialize() const;
+	String serialize() const;
 
-	const char *serializeValue() const;
+	String serializeValue(bool deep=true) const;
 
 	void print();
 

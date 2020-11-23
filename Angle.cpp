@@ -143,9 +143,9 @@ Node If(Node n) {
 	}
 }
 
-bool isFunction(Node& op) {
-	if(op.kind == declaration)return false;
-	if(declaredSymbols.has(op.name))return true;
+bool isFunction(Node &op) {
+	if (op.kind == declaration)return false;
+	if (declaredSymbols.has(op.name))return true;
 	return op.name.in(function_list);
 }
 
@@ -243,7 +243,7 @@ Node eval(String code) {
 Node &groupIf(Node n);
 
 
-String extractFunctionName(Node& node) {
+String extractFunctionName(Node &node) {
 	// todo: public go home to family => go_home
 	return node.name;
 }
@@ -280,6 +280,36 @@ List<String> suffixOperators = {"…++", "…--", "⁻¹", "⁰", "¹", "²", "�
 List<String> declaration_operators = {":="};
 
 
+// a + b c + d
+Node &groupDeclarations(Node &expression0) {
+	Node &expression = *expression0.clone();
+	for (Node &node : expression) {
+		if (node.kind == declaration or declaration_operators.has(node.name)) {
+			// todo: public export function jaja (a:num …) := …
+			Node modifiers = expression.to(node);// including public… :(
+			Node rest = expression.from(node);
+			Node *body = analyze(rest).clone();
+			String name = extractFunctionName(modifiers);
+			declaredSymbols.add(name);
+			Node *decl = new Node(name);//node.name+":={…}");
+			decl->setType(declaration);
+			decl->metas().add(modifiers);
+//			decl->addRaw(symbol);
+			decl->addRaw(body);// addChildren makes emitting harder
+			return *decl;
+		}
+	}
+	return expression;
+}
+
+bool hasFunction(Node &n) {
+	for (Node &child : n) {
+		if (isFunction(child))
+			return true;
+	}
+	return false;
+}
+
 Node &groupOperators(Node &expression0) {
 	Node &expression = *expression0.clone();// modified in place!
 	if (expression.name == "if")return expression;// analyzed before!
@@ -305,14 +335,15 @@ Node &groupOperators(Node &expression0) {
 		} else {
 			Node &prev = expression.children[i - 1];
 			if (suffixOperators.has(node.name)) { // x²
+				if (i < 1)error("suffix operator misses left side");
 				node.addRaw(prev);
 				expression.replace(i - 1, i, node);
-			} else if (node.name.in(function_list)) {
+			} else if (node.name.in(function_list)) {// handled above!
 				while (i++ < node.length)
 					node.addRaw(expression.children[i]);
 				expression.replace(i, node.length, node);
 			} else if (isFunction(next)) { // 3 + double 8
-				Node rest = expression.from(i+1);
+				Node rest = expression.from(i + 1);
 				Node args = analyze(rest);
 				node.addRaw(prev);
 				node.addRaw(args);
@@ -329,37 +360,6 @@ Node &groupOperators(Node &expression0) {
 	return expression;
 }
 
-
-// a + b c + d
-Node &groupDeclarations(Node &expression0) {
-	Node &expression = *expression0.clone();
-	for (Node &node : expression) {
-		if (node.kind == declaration or declaration_operators.has(node.name)) {
-			// todo: public export function jaja (a:num …) := …
-			Node modifiers = expression.to(node);// including public… :(
-			Node rest = expression.from(node);
-			Node *body = analyze(rest).clone();
-			String name = extractFunctionName(modifiers);
-			declaredSymbols.add(name);
-			Node *decl = new Node(name);//node.name+":={…}");
-			decl->setType(declaration);
-			decl->metas().add(modifiers);
-//			decl->addRaw(symbol);
-			decl->addRaw(body);// addChildren makes emitting harder
-			return *decl;
-		}
-	}
-	return expression;
-}
-
-bool hasFunction(Node &n) {
-	for (Node &child : n) {
-		if(isFunction(child))
-			return true;
-	}
-	return false;
-}
-
 Node &groupFunctions(Node &expression0) {
 	Node &expression = *expression0.clone();
 	for (int i = 0; i < expression.length; ++i) {
@@ -370,6 +370,10 @@ Node &groupFunctions(Node &expression0) {
 			node.kind = call;
 		if (node.kind != call)
 			continue;
+		if (node.length > 0){
+			expression.replace(i, i, groupOperators(node));
+			continue;// already done HOW??
+		}
 //		else found function call!
 		int maxArity = 1;// todo
 		int minArity = 1;
@@ -900,17 +904,17 @@ float precedence(Node &operater) {
 }
 
 float precedence(char group) {
-	if(group==0)return 1;
-	if(group=='}')return 1;
-	if(group==']')return 1;
-	if(group==')')return 1;
-	if(group<0x20)return 1.5;
-	if(group=='\n')return 2;
-	if(group==';')return 3;
-	if(group==',')return 4;
-	if(group==' ')return 5;
-	if(group=='_')return 6;
+	if (group == 0)return 1;
+	if (group == '}')return 1;
+	if (group == ']')return 1;
+	if (group == ')')return 1;
+	if (0 < group and group < 0x20)return 1.5;
+	if (group == '\n')return 2;
+	if (group == ';')return 3;
+	if (group == ',')return 4;
+	if (group == ' ')return 5;
+	if (group == '_')return 6;
 
 //error("unknown precedence for symbol: "s+group);
-return 999;
+	return 999;
 }

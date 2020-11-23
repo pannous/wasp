@@ -26,7 +26,7 @@ type summary add --summary-string "${var.length}" Code
 #type summary add --summary-string "name=${var.name} type=${var.kind} length=${var.length} value=${var.value}" Node
 # type summary add --summary-string "${var.name} #${var.length} ${var.kind} value:${var.value%B} children:${var.children%B} meta:${var.meta[0-1]}" Node
 
-type summary add --summary-string "${var.kind} #${var.length} ${var.grouper%C} ${var.name} value:${var.value%B} children:${var.children%B} meta:${var.meta[0-1]}" Node
+type summary add --summary-string "${var.kind} #${var.length} ${var.name} value:${var.value%B} children:${var.children%B} meta:${var.meta[0-1]}" Node
 
 #  ${addr} ERROR why
 # ${var.children[0-5].name}
