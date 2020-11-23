@@ -6,6 +6,7 @@
 #include "String.h"
 #include "NodeTypes.h"
 #include "WasmHelpers.h"
+#include "Map.h"
 
 #ifndef WASM
 //#include <string.h> // strcpy
@@ -27,7 +28,7 @@
 #define var auto
 
 
-typedef void *any;
+//typedef void *any;
 typedef unsigned char byte;
 typedef const char *chars;
 
@@ -38,6 +39,7 @@ typedef const char *chars;
 //extern void *alloc (int __size);
 char *empty_string = "";
 #ifndef WASM
+
 #include <cstdio>
 #include <tgmath.h>
 
@@ -65,7 +67,9 @@ class String;
 //#include <stdio.h>
 //#include <string.h>
 #ifndef WASM
+
 #include <cstring> //strlen
+
 #else
 //#include "string.h"
 //size_t strlen(const char *x){
@@ -80,7 +84,7 @@ bool eq(const char *dest, const char *src) {
 	if (!dest || !src)
 		return false;
 	int i = 0;
-	if(dest=="" and src[0])return false ;
+	if (dest == "" and src[0])return false;
 	if (strlen0(dest) != strlen0(src))return false;
 	while (char c = dest[i]) {
 		if (!src[i] || !c)
@@ -92,10 +96,10 @@ bool eq(const char *dest, const char *src) {
 	return true;
 }
 
-int strlen0(const char *x){
-	if(!x)return 0;
-	int l=0;
-	while(*x++)l++;
+int strlen0(const char *x) {
+	if (!x)return 0;
+	int l = 0;
+	while (*x++)l++;
 	return l;
 }
 
@@ -105,7 +109,7 @@ void strcpy2(char *dest, const char *src, int length) {// =-1
 	if (!dest || !src)
 		return;
 	int i = 0;
-	if(length<0)length = strlen0(src);
+	if (length < 0)length = strlen0(src);
 //	if(strlen(src)<length)error(string("Illegal strcpy2 length"));// could be filled with 0 :(
 //	if(strlen(dest)<length)error("Illegal strcpy2 length"_s);// could be filled with 0 :(
 	while (char c = src[i]) {
@@ -115,7 +119,7 @@ void strcpy2(char *dest, const char *src, int length) {// =-1
 	}
 }
 
-void strcpy2(char *dest, const char *src){
+void strcpy2(char *dest, const char *src) {
 	strcpy2(dest, src, -1);
 }
 
@@ -123,7 +127,7 @@ void strcpy2(char *dest, const char *src){
 //#endif
 
 int atoi0(const char *p) {
-	if(!p)return 0;
+	if (!p)return 0;
 	int k = 0;
 	while (*p) {
 		int n = (*p) - '0';
@@ -165,6 +169,7 @@ double atof0(const char *string) {
 }
 
 class String;
+
 class Node; // can't pre-access properties, BUT can use functions:
 String toString(Node &node);
 
@@ -172,9 +177,9 @@ String toString(Node &node);
 // Implementation of itoa0()
 
 
-char *itoa0(long num, int base =10 ) {
+char *itoa0(long num, int base = 10) {
 	// length 22 -> log(num)/2+2 for base 10
-	char *str = (char *) alloc(sizeof(char),22);// -18446744073709552000  todo: from context.names char*
+	char *str = (char *) alloc(sizeof(char), 22);// -18446744073709552000  todo: from context.names char*
 	int len = 0;
 	bool isNegative = false;
 	/* Handle 0 explicitely, otherwise empty string is printed for 0 */
@@ -203,12 +208,15 @@ char *itoa0(long num, int base =10 ) {
 	reverse(str, len);
 	return str;
 }
-char *itoa0(long num){
+
+char *itoa0(long num) {
 	return itoa0(num, 10);
 }
-char *itoa(long num){
+
+char *itoa(long num) {
 	return itoa0(num, 10);
 }
+
 const char *concat(const char *a, const char *b) {
 //const char* concat(char* a,char* b){// free manually!
 	if (!b)return a;
@@ -216,19 +224,20 @@ const char *concat(const char *a, const char *b) {
 	int lb = (int) strlen0(b);
 //	char c[la+lb];
 	char *c = (char *) alloc(sizeof(char), la + lb + 1);
-	strcpy2(c, a,-1);
-	strcpy2(&c[la], b,-1);
+	strcpy2(c, a, -1);
+	strcpy2(&c[la], b, -1);
 	c[la + lb] = 0;
 	return c;
 }
 
 
 //#define pow(val,exp)
-const char *ftoa0(float num, int base=10, int precision=4) {/*significant digits*/
-	int p=1000;//pow(base,precision);
-	return concat(concat(itoa0(int(num),base),"."),itoa0(int((num-(long)num)*p),base));
+const char *ftoa0(float num, int base = 10, int precision = 4) {/*significant digits*/
+	int p = 1000;//pow(base,precision);
+	return concat(concat(itoa0(int(num), base), "."), itoa0(int((num - (long) num) * p), base));
 }
-const char* ftoa(float num){ return ftoa0(num, 10, 4); }
+
+const char *ftoa(float num) { return ftoa0(num, 10, 4); }
 
 void reverse(char *str, int len) {
 	for (int i = 0; i < len / 2; i++) {
@@ -261,9 +270,11 @@ class Node;
 
 #ifndef WASM
 #undef log // expanded from macro 'log' tgmath.h:245:25:
+
 void log(long i) {
 	printf("%li", i);
 }
+
 #endif
 
 
@@ -304,9 +315,11 @@ void log(String s) {
 String operator "" _s(const char *c, unsigned long t) {// function signature contains illegal type WHYY??
 	return String(c);
 }
+
 String operator "" s(const char *c, unsigned long t) {// function signature contains illegal type WHYY??
 	return String(c);
 }
+
 String operator "" _(const char *c, unsigned long t) {
 	return String(c);
 }
@@ -403,58 +416,97 @@ void log(String *s) {
 }
 
 #ifndef WASM
-void log(chars s){
-printf("%s\n",s);
+
+void log(chars s) {
+	printf("%s\n", s);
 }
+
 #endif
 
 
 bool String::empty() const {//this==0 in testMarkMulti!
-	return this==0 || length==0  ||  !data  || (long)data<128 /*bug!*/ ||  data[0] == 0 || data==object_name.data;
+	return this == 0 || length == 0 || !data || (long) data < 128 /*bug!*/ || data[0] == 0 || data == object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
 }
 
 
-void encode_unicode_character(char* buffer, wchar_t ucs_character)
-{
+codepoint *String::begin() {
+	if (!codepoints)extractCodepoints();
+	return &codepoints[0];
+}
+
+codepoint *String::end() {
+	if (!codepoints)extractCodepoints();
+	return &codepoints[codepoint_count];
+}
+
+
+size_t utf8_strlen(char *utf8bytes) {
+	size_t len = 0;
+	for (const char *p = utf8bytes; *p; ++p)
+		if ((*p & 0xc0) != 0x80)
+			++len;
+	return len;
+}
+
+codepoint decode_unicode_character2(char *utf8bytes) {
+	size_t len = 0;  // warning: untested code.
+	long utf32char;
+	for (const char *p = utf8bytes; *p; ++p) {
+		char more = *p & 0x7F;
+		if ((*p & 0xc0) != 0x80) {
+			utf32char << 6;
+			++len;
+		}
+		utf32char = utf32char ^ more;
+	}
+}
+
+codepoint decode_unicode_character(char *text, int *len) {
+	if ((text[0] & 0b10000000) == 0) {
+//		if(len)*len=1; // 1 byte code point, ASCII
+		return (text[0] & 0b01111111);
+	} else if ((text[0] & 0b11100000) == 0b11000000) {
+//		if(len)*len=2; // 2 byte code point
+		return (text[0] & 0b00011111) << 6 | (text[0 + 1] & 0b00111111);
+	} else if ((text[0] & 0b11110000) == 0b11100000) {
+//		if(len)*len=3; // 3 byte code point
+		return (text[0] & 0b00001111) << 12 | (text[0 + 1] & 0b00111111) << 6 | (text[0 + 2] & 0b00111111);
+	} else {
+//		if(len)*len=4; // 4 byte code point
+		return (text[0] & 0b00000111) << 18 | (text[0 + 1] & 0b00111111) << 12 | (text[0 + 2] & 0b00111111) << 6 | (text[0 + 3] & 0b00111111);
+	}
+}
+
+
+void encode_unicode_character(char *buffer, wchar_t ucs_character) {
 	int offset = 0;
-	if (ucs_character <= 0x7F)
-	{
+	if (ucs_character <= 0x7F) {
 		// Plain single-byte ASCII.
 		buffer[offset++] = (char) ucs_character;
-	}
-	else if (ucs_character <= 0x7FF)
-	{
+	} else if (ucs_character <= 0x7FF) {
 		// Two bytes.
 		buffer[offset++] = 0xC0 | (ucs_character >> 6);
 		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
-	}
-	else if (ucs_character <= 0xFFFF)
-	{
+	} else if (ucs_character <= 0xFFFF) {
 		// Three bytes.
 		buffer[offset++] = 0xE0 | (ucs_character >> 12);
 		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
 		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
-	}
-	else if (ucs_character <= 0x1FFFFF)
-	{
+	} else if (ucs_character <= 0x1FFFFF) {
 		// Four bytes.
 		buffer[offset++] = 0xF0 | (ucs_character >> 18);
 		buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
 		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
 		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
-	}
-	else if (ucs_character <= 0x3FFFFFF)
-	{
+	} else if (ucs_character <= 0x3FFFFFF) {
 		// Five bytes.
 		buffer[offset++] = 0xF8 | (ucs_character >> 24);
 		buffer[offset++] = 0x80 | ((ucs_character >> 18) & 0x3F);
 		buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
 		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
 		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
-	}
-	else if (ucs_character <= 0x7FFFFFFF)
-	{
+	} else if (ucs_character <= 0x7FFFFFFF) {
 		// Six bytes.
 		buffer[offset++] = 0xFC | (ucs_character >> 30);
 		buffer[offset++] = 0x80 | ((ucs_character >> 24) & 0x3F);
@@ -462,9 +514,41 @@ void encode_unicode_character(char* buffer, wchar_t ucs_character)
 		buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
 		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
 		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+	} else {
+		warn("Invalid char; don't encode anything.");
 	}
-	else
-	{
-		// Invalid char; don't encode anything.
+}
+
+// Taken from boost internals
+inline unsigned utf8_byte_count(unsigned char c) {
+	if ((c & 0b10000000) == 0) return 1;
+	if ((c & 0b11100000) == 0b11000000) return 2;
+	if ((c & 0b11110000) == 0b11100000) return 3;
+	return 4;
+}
+
+//List<codepoint> split_by_codepoint(String input) {
+//	List<codepoint> ret;
+//	auto it = input.begin();
+//	while (it != input.end()) {
+//		uint8_t count = utf8_byte_count(*it);
+//		ret.add(input.codepointAt(it));
+//		it += count;
+//	}
+//	return ret;
+//}
+
+
+codepoint *String::extractCodepoints(bool again) {
+	if (codepoints and not again)
+		return codepoints;
+	codepoint_count = 0;
+	codepoints = (codepoint *) calloc(length, sizeof(codepoint));
+	for (int i = 0; i < length;) {
+		short count = utf8_byte_count(data[i]);
+		codepoints[codepoint_count++] = decode_unicode_character(&data[i]);
+		i += count;
 	}
+	return codepoints;
+
 }

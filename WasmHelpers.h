@@ -23,6 +23,7 @@ void printf(int);
 //#include <cstdlib>
 //#include "stdlib.h"
 void* alloc(int size,int num);
+//void *calloc(int size, int num);
 void raise(chars error);
 #endif
 

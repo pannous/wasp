@@ -18,7 +18,7 @@ extern String operator_list[];// resolve xor->operator ... semantic wasp parser 
 
 
 bool closing(char ch, char closer) {
-	if(ch == closer )return true;
+	if (ch == closer)return true;
 	if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
 //				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
 		return true;
@@ -128,6 +128,18 @@ public:
 		return Wasp::parse(readFile(filename));
 	}
 
+//	List<String> operators; // reuse functions!
+	// everything that is not an is_identifier is treated as operator/symbol/identifier?
+	//	☺ == e2 98 ba  √ == e2 88 9a
+	bool is_operator(unsigned char ch) {// todo is_KNOWN_operator
+//		if (ch > 0x207C and ch < 0x2200) return true; char is signed_byte -127..127
+//		if(ch=='=') return false;// internal treatment
+		if (ch > 0x80) return false;// utf NOT enough: ç. can still be a reference!
+		if (is_identifier(ch)) return false;
+		if (isalnum(ch)) return false;// ANY UTF 8
+		return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
+	}
+
 private:
 	char escapee(char c) {
 		switch (c) {
@@ -226,16 +238,6 @@ private:
 		return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
 	}
 
-	// everything that is not an is_identifier is treated as operator/symbol/identifier?
-	bool is_operator(char ch) {// todo is_KNOWN_operator
-//		if (ch > 0x207C and ch < 0x2200) return true; char is signed_byte -127..127
-//		if(ch=='=') return false;// internal treatment
-		if (ch < 0) return true;// utf
-		if (is_identifier(ch)) return false;
-		if (isalnum(ch)) return false;// ANY UTF 8
-		return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
-	}
-
 	bool is_identifier(char ch) {
 		if (ch == '#')return false;// size/count/length
 		if (ch == '=')return false;
@@ -247,6 +249,7 @@ private:
 		if (ch == "＝"[0] and next == "＝"[1])return false;// todo … !?!?
 		if (ch == "√"[0] and next == "√"[1])return false;// todo … !?!?
 		if (ch == "≠"[0] and next == "≠"[1])return false;// todo … !?!?
+		if(ch < 0)return true;// all UTF identifier todo ;)
 		return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
 		       ch < 0;// ch<0: UNICODE
 //		not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
@@ -583,7 +586,7 @@ private:
 		if (ch >= '0' && ch <= '9')return numbero();
 		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
 		if (is_operator(ch))return any_operator();
-		error(UNEXPECT_CHAR + renderChar(ch));
+		error(UNEXPECT_CHAR + String((char)text[at]) + String((char)text[at+1]) + String((char)text[at+2]));
 		return NIL;
 	}
 
@@ -908,17 +911,19 @@ private:
 		       (!parent or parent and parent->last().kind != operators and parent->last().kind != call) and
 		       lastNonWhite != ':' and lastNonWhite != '=' and lastNonWhite != ',' and lastNonWhite != ';' and
 		       lastNonWhite != '{' and lastNonWhite != '(' and lastNonWhite != '[' and
-				lastNonWhite != '}' and lastNonWhite != ']' and lastNonWhite != ')';
+		       lastNonWhite != '}' and lastNonWhite != ']' and lastNonWhite != ')';
 
 	}
 
 	bool skipBorders(char ch) {// {\n} == {}
-		if(lastNonWhite==':')return true;
-		if(lastNonWhite=='{' or next=='}')return true;// todo: nextNonWhite
-		if(lastNonWhite=='(' or next==')')return true;
-		if(lastNonWhite=='[' or next==']')return true;
-		if(ch==',' and next == ';')return true;// 1,2,3,; => 1,2,3;
-		if(ch==';' and next == '\n')return true;// 1,2,3,; => 1,2,3;
+		if (lastNonWhite == ':')return true;
+		if (lastNonWhite == '{' or next == '}')return true;// todo: nextNonWhite
+		if (lastNonWhite == '(' or next == ')')return true;
+		if (lastNonWhite == '[' or next == ']')return true;
+		if (ch == ',' and next == ';')return true;// 1,2,3,; => 1,2,3;
+		if (ch == ',' and next == '\n')return true;// 1,2,3,\n => 1,2,3;
+		if (lastNonWhite == ',' and ch == '\n')return true;// ambiguous! newline acts as whitespace here a{b:c,\n d:e}
+		if (lastNonWhite == ';' and ch == '\n')return true;// ambiguous! newline acts as whitespace here
 		return false;
 	}
 
@@ -936,7 +941,7 @@ private:
 		var length = text.length;
 		int start = at;
 		loop:
-		proceed();// consumes char of LAST switch '(' ':' ... or 0 when starting
+		proceed();// consumes char of LAST switch : {  ... or 0 when starting
 		white();
 
 		while (ch and at <= length) {
@@ -945,22 +950,14 @@ private:
 				proceed();
 				continue;
 			}
-			if(ch==close){
+			if (ch == close) { // (…) {…} «…» ...
 				proceed();
 				break;
 			}
-			if (closing(ch,close)){
-//			    ((close == ' ' or close == ',') and (ch == ';' or ch == ',' or ch == '\n'))) { // todo: a=1,2,3
-//				if (close != ' ') // significant whitespace
-//					proceed();
-//				if (close == ' ' and current.length == 0 and current.value.data == 0 and current.name.empty()) {
-//					proceed(); // insignificant whitespace: need more data
-//					continue;
-//				}
+			if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
 				break;
 			}// inner match ok
 			if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
-//				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
 				break;// cant be reached
 			}// outer match unresolved so far
 			switch (ch) {
@@ -974,7 +971,7 @@ private:
 						breakpoint_helper
 						warn("Ambiguous reading a {x} => Did you mean a{x} or a:{x} or a , {x}");
 					}
-					bool asListItem =  lastNonWhite == ',' or lastNonWhite == ';' or previous == ' ' and lastNonWhite != ':';
+					bool asListItem = lastNonWhite == ',' or lastNonWhite == ';' or previous == ' ' and lastNonWhite != ':';
 					Node &object = valueNode('}', &current.last()).setType(Type::objects);
 					if (asListItem)
 						current.addRaw(object);
@@ -1050,9 +1047,15 @@ private:
 				case '=': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
-					bool add_raw = current.kind == expressions or key.kind == expressions or
+					bool add_raw = next == '=' or current.kind == expressions or key.kind == expressions or
 					               (current.last().kind == groups and current.length > 1);
-					if (add_raw) current.addRaw(Node(ch).setType(operators));
+					if(is_operator(previous))add_raw = true;
+					if (add_raw) {
+						if(is_operator(previous)){// += *= == ...
+							current.last().name += "=";
+						} else
+						current.addRaw(Node(ch).setType(operators));
+					}
 					Node &val = *valueNode(' ', &key).clone();// applies to WHOLE expression
 					if (add_raw) {  // complex expressions are not simple maps
 						current.addRaw(val);
@@ -1065,13 +1068,13 @@ private:
 				case '\t': // only in tables
 				case ';': // indent 􀋵  ☞ 𒋰 𒐂 ˆ ˃
 				case ',': {
-					if(skipBorders(ch)){
+					if (skipBorders(ch)) {
 						proceed();
 						continue;
 					}
 					// closing ' ' handled above
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
-					if (current.grouper != ch and current.length>1) {
+					if (current.grouper != ch and current.length > 1) {
 						Node neu;// wrap
 						neu.kind = groups;
 						neu.parent = parent;
@@ -1080,9 +1083,9 @@ private:
 						current = neu;
 						current.grouper = ch;
 						char closer = ch;// need to keep troughout loop!
-						int i=0;
+						int i = 0;
 //						closing(ch, closer) and not closing(ch, close) and ch!='}' and ch!=')' and ch!=']' and ch!=0
-						while (ch==closer) {
+						while (ch == closer) {
 							Node element = valueNode(closer);// todo stop copying!
 							current.addRaw(element.clone());
 						}
@@ -1095,24 +1098,6 @@ private:
 					proceed();
 					white();
 					break;
-					if (next == ':' or next == 0 or previous == ',' or previous == close or close == '"' or
-					    close == '\'' or close == '`') {
-						proceed();
-						continue;
-					}
-					Node sub = valueNode(ch, &current);
-					if (sub.empty() and sub.name.empty())break;
-					if (current.kind == expressions or current.last() == expressions)
-						todo("what");
-					if (sub.length > 1 and sub.kind == groups and
-					    sub.name.empty())// bullshit (1 (2 3)) != (1 2 3) , OR IS IT here?
-						for (Node arg:sub)
-							current.addRaw(arg);
-					else
-						current.addRaw(sub);// space is list operator
-					break;
-//					proceed();
-//					continue;
 				}
 				default: {
 					// a:b c != a:(b c)

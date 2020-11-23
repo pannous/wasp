@@ -5,7 +5,7 @@
 //#include <c++/v1/cstdlib>
 #include "WasmHelpers.h"
 #include "NodeTypes.h"
-
+//#include "Map.h"
 #ifndef WASM
 
 #include <cstdlib>
@@ -13,8 +13,29 @@
 
 #endif
 
-void reverse(char *str, int len);
+//What 'char' and 'wchar_t' represent are completely ambiguous.
+//You might think that they represent a "character", but depending on the encoding, that might not be true.
+//typedef wchar_t character;// overloaded term that can mean many things:
+typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
+class Codepoint{ char32_t nr; };// to avoid wrong autocast codepoint x=string[i]
+//wchar_t
+typedef wchar_t grapheme;// sequence of one or more code points that are displayed as a single 'character' ä may be two code points a¨, or one ä
+//☀️=☀+_ e2 98 80 + ef b8 8f
+//typedef wchar_t glyph; image, usually stored in a font (which is a collection of glyphs), used to represent graphemes
+//https://stackoverflow.com/questions/27331819/whats-the-difference-between-a-character-a-code-point-a-glyph-and-a-grapheme
+// '\uD83D\uDC0A' UTF-16 code units expressing a single code point (U+1F40A)  char(0x1F40A) == '🐊'
+//https://github.com/foliojs/grapheme-breaker/blob/master/src/GraphemeBreaker.js
 
+enum sizeMeasure {
+	by_char8s,// bytes
+//	char16s,
+	by_codepoints,
+	by_graphemes
+};
+
+void reverse(char *str, int len);
+codepoint decode_unicode_character(char *utf8bytes,int* len=0);
+//decode_codepoint
 char *itoa0(long num, int base);
 
 char *itoa0(long num);
@@ -31,7 +52,9 @@ void todo(chars error);
 void encode_unicode_character(char *buffer, wchar_t ucs_character);
 
 #ifndef WASM
+
 void log(long i);
+
 #endif
 //void* calloc(int i);
 //extern "C" void* calloc(int size,int count);
@@ -64,7 +87,7 @@ extern unsigned int *memory;
 
 #define error(msg) error1(msg,__FILE__,__LINE__)
 
-extern void error1(chars message, chars file=0, int line=0);
+extern void error1(chars message, chars file = 0, int line = 0);
 
 extern void info(chars);
 
@@ -112,6 +135,7 @@ public:
 //	IndexOutOfBounds(String *string1) : Error(string1){}
 	IndexOutOfBounds(char *data, int i) : Error() {}
 };
+
 extern char *empty_string;// = "";
 
 //duplicate symbol '_empty_string'
@@ -129,6 +153,9 @@ class String {
 #endif
 #endif
 
+private:
+	codepoint *codepoints=0;// extract on demand from data
+	int codepoint_count = -1;
 public:
 
 	char *data{};
@@ -152,9 +179,9 @@ public:
 //	~String()=default;
 
 	explicit String(char c) {
-		if(c==0){
+		if (c == 0) {
 			length = 0;
-			data=0;//SUBTLE BUGS if setting data=""; data=empty_string;
+			data = 0;//SUBTLE BUGS if setting data=""; data=empty_string;
 			return;
 		}
 		data = static_cast<char *>(alloc(sizeof(char), 2));
@@ -232,6 +259,28 @@ public:
 		data = const_cast<char *>(basicString.data());// copy?
 	}
 #endif
+
+
+	codepoint codepointAt(int i) {
+		if(!codepoints)extractCodepoints();
+		if(i>codepoint_count)
+			error("index > codepoint count");
+		return codepoints[i];
+	}
+
+	grapheme graphemeAt(int i) {
+		todo("grapheme");
+	}
+
+	codepoint *extractCodepoints(bool again = false);
+
+	int size(enum sizeMeasure by = by_codepoints) {
+		if (by == by_char8s)return length;
+		if (by == by_codepoints) {
+			if (codepoint_count < 0)extractCodepoints();
+			return codepoint_count;
+		}
+	}
 
 	char charAt(int i) {
 		if (i >= length)
@@ -312,8 +361,9 @@ public:
 		String d = b.replace("%s", c);
 		return d;
 	}
+
 	String operator%(String *c) {
-		if(!c)return *this;
+		if (!c)return *this;
 		if (!contains("%s"))
 			return *this + c;
 		String b = this->clone();
@@ -381,7 +431,7 @@ public:
 	}
 
 	String *operator+=(char *c) {
-		while (c[0] && c++)append(c[-1]);
+		while (c and c[0] && c++)append(c[-1]);
 		return this;
 	}
 
@@ -390,7 +440,14 @@ public:
 		return this;
 	}
 
+//	 DANGER string + ' ' + " " yields NONSENSE!!!
 	String *operator+=(char c) {
+		append(c);
+		return this;
+	}
+
+
+	String *operator+(wchar_t c) {
 		append(c);
 		return this;
 	}
@@ -475,6 +532,7 @@ public:
 		return this == String(c);
 	}
 
+//	check(U'牛' == "牛"s );// owh wow it works reversed
 	bool operator==(char32_t c) {
 		return this == String(c);
 	}
@@ -528,6 +586,43 @@ public:
 		return eq(data, c);
 	}
 
+
+#define min(a, b) (a < b ? a : b)
+
+	bool operator>(String other) {
+		for (int i = 0; i < min(length,other.length); ++i) {
+			if(data[i]<other.data[i])return false;
+		}
+		return length >= other.length;
+	}
+	bool operator>=(String other) {
+		for (int i = 0; i < min(length,other.length); ++i) {
+			if(data[i]<other.data[i])return false;
+		}
+		return length >= other.length;
+	}
+	bool operator<=(String other) {
+		for (int i = 0; i < min(length,other.length); ++i) {
+			if(data[i]>other.data[i])return false;
+		}
+		return length <= other.length;
+	}
+	bool operator<(String other) {
+		for (int i = 0; i < min(length,other.length); ++i) {
+			if(data[i]>other.data[i])return false;
+		}
+		return length <= other.length;
+	}
+	/*
+	char16_t character = u'牛';
+	char32_t hanzi = U'牛';
+	wchar_t word = L'牛';
+	exposed usage? */
+//	codepoint operator[](int i) {
+//		return codepointAt(i);
+//	}
+
+	// internal usage
 	char operator[](int i) {
 		return data[i];
 	}
@@ -584,6 +679,9 @@ public:
 //	explicit
 	operator char *() const { return data; }
 
+//	operator codepoint *() { return extractCodepoints(); }
+
+
 	[[nodiscard]] bool isNumber() const {
 		return atoi0(data);
 	}
@@ -621,6 +719,9 @@ public:
 //	bool in(String* array) {
 //		return false;
 //	}
+	codepoint *begin();
+
+	codepoint *end();
 };
 
 

@@ -384,7 +384,7 @@ Node Node::operator+(Node other) {
 	if (kind == reals and other.kind == reals)
 		return Node(value.real + other.value.real);
 	if (kind == longs and other.kind == strings)
-		return Node(value.longy + other.value.string);
+		return Node(String(value.longy) + other.value.string);
 //	if(type==floats and other.type==strings)
 //		return Node(value.real + other.value.string);
 	if (kind == objects)
@@ -615,7 +615,7 @@ bool Node::isNil() { // required here: name.empty()
 	       ((kind == keyNode or kind == unknown or name.empty()) and length == 0 and value.data == nullptr);
 }
 
-const char *Node::serializeValue() const {
+String Node::serializeValue(bool deep) const {
 	String wasp = "";
 	Value val = value;
 	switch (kind) {
@@ -629,13 +629,17 @@ const char *Node::serializeValue() const {
 		case nils:
 			return "ø";
 		case objects:
-			return object_name;
+			return deep?"": object_name;// useful for debugging, but later return "" for
 		case groups:
-			return groups_name;
+			return deep?"":groups_name;
 		case patterns:
-			return patterns_name;
+			return deep?"":patterns_name;
 		case keyNode:
-			return val.node ? val.node->name : "";// val.node->serialize();
+			if(deep)
+			return val.node ? val.node->serialize() : "";// val.node->serialize();
+			else
+				return val.node ? val.node->name : "";// val.node->serialize();
+
 		case reference:
 			return val.data ? val.node->name : "ø";
 		case symbol:
@@ -647,8 +651,9 @@ const char *Node::serializeValue() const {
 		case buffers:
 			return "int[]";//val.data lenght?
 		case call:
-			return "{…}";
+			return "!";//"{…}";
 		case operators:
+			return name;
 		case declaration:
 		case expressions:
 		case unknown:
@@ -659,11 +664,17 @@ const char *Node::serializeValue() const {
 	}
 }
 
-const char *Node::serialize() const {
+String Node::serialize() const {
 	String wasp = "";
 	if (not polish_notation or this->length == 0) {
 		if (not this->name.empty()) wasp += this->name;
-		const char *serializedValue = serializeValue();
+		String serializedValue = serializeValue();
+		if(kind==strings and name and (name.empty() or name==value.string))
+			return serializedValue;// no text:"text", just "text"
+		if(kind==longs and name and (name.empty() or name==itoa(value.longy)))
+			return serializedValue;// no "3":3
+		if(kind==reals)// and name and (name.empty() or name==itoa(value.longy)))
+			return serializedValue;// no "3":3.14
 		if (serializedValue and this->value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
 		    !eq(serializedValue, "?")) {
 			wasp += ":";
@@ -672,17 +683,23 @@ const char *Node::serialize() const {
 		}
 	}
 	if (this->length > 0) {
-		if(not this->grouper)
-		wasp += (this->kind == groups ? "(" : "{");
+		if(not this->grouper) {
+			if (this->kind == groups)wasp += "(";
+			if (this->kind == objects)wasp += "{";
+			if (this->kind == patterns)wasp += "[";
+		}
 		if (polish_notation and not this->name.empty())wasp += this->name;
 		int i=0;
 		for (Node &node : *this) {
-			if(grouper and i++>0) wasp += grouper;
-			else wasp += " ";
+			if(grouper and i++>0) wasp += grouper;// DANGER + " " fucks up + chain pointer!
+			wasp += " ";
 			wasp += node.serialize();
 		}
-		if(not this->grouper)
-			wasp += (this->kind == groups ? " )" : " }");
+		if(not this->grouper){
+			if(this->kind == groups)wasp += ")";
+			if(this->kind == objects)wasp += "}";
+			if(this->kind == patterns)wasp += "]";
+		}
 	}
 	return wasp;
 //	return this->name.empty()? this->string() : this->name;
