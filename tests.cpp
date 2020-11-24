@@ -1316,6 +1316,7 @@ void tests() {
 	testGraphQlQuery();// fails sometimes => bad pointer!?
 	testGraphQlQuery2();
 	testUTF();// fails sometimes => bad pointer!?
+	testRecentRandomBugs();
 	skip(
 			testGroupCascade();
 			testKitchensink();
@@ -1359,10 +1360,6 @@ void testCurrent() { // move to tests() once OK
 	skip(
 			testKitchensink(); // TODO Oooo!
 	)
-	assert(eval("ç='☺'") == "☺");// fails later => bad pointer?
-	assert(eval("(2+1)==(4-1)") == 1);
-	assert(eval("3==2+1") == 1);
-	assert(eval("2+1==2+1") == 1);
 
 
 //	testGraphQlQuery();
@@ -1371,12 +1368,15 @@ void testCurrent() { // move to tests() once OK
 //	testAllWasm();
 //	exit(1);
 //	testGroupCascade();
+//	const Node &node = parse("x+1");
+//	check(node.length==3)
 	testAllWasm();
 	tests();// make sure all still ok before changes
 	testAngle();
 	todos();// those not passing yet (skip)
 //	testBUG();
 //	testParentBUG();
+
 	tests();// make sure all still ok after changes
 	log("CURRENT TESTS PASSED");
 }
