@@ -137,6 +137,7 @@ elseif (VM) # NORMAL:
 elseif (WASM3) # NORMAL:
     message(WASM3 VM)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
+    ADD_COMPILE_FLAG("-fsanitize=address -fno-omit-frame-pointer")
     include(wasm3/cmake_install.cmake)
 
     add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)

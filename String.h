@@ -174,19 +174,19 @@ public:
 	}
 
 	void *operator new(unsigned long size) {
-		return static_cast<String *>(calloc(sizeof(String), size));// WOW THAT WORKS!!!
+		return static_cast<String *>(calloc(sizeof(String), size+1));// WOW THAT WORKS!!!
 	}
 
-	void operator delete(void *) {}// Todo ;)
+	void operator delete(void *) {/*lol*/} // Todo ;)
 
 //	~String()=default;
 
-	explicit String(char* datas,int len, bool share) {
-		data=datas;
-		length=len;
-		shared_reference=share;
-		if(!share)error("use other constructor");
-	}
+//	explicit String(char* datas,int len, bool share) {
+//		data=datas;
+//		length=len;
+//		shared_reference=share;
+//		if(!share)error("use other constructor");
+//	}
 
 	explicit String(char byte_character) {
 		if (byte_character == 0) {
@@ -234,7 +234,7 @@ public:
 	explicit String(char16_t utf16char) {
 		data = static_cast<char *>(calloc(sizeof(char16_t), 2));
 		encode_unicode_character(data, utf16char);
-		length = len(data);
+		length = len(data);// at most 2 bytes
 	}
 
 //	explicit String(char16_t* chars){
@@ -246,7 +246,7 @@ public:
 	explicit String(char32_t utf32char) {// conflicts with int
 		data = static_cast<char *>(calloc(sizeof(char32_t), 2));
 		encode_unicode_character(data, utf32char);
-		length = len(data);
+		length = len(data);// at most 4 bytes
 	}
 
 	explicit String(wchar_t wideChar) {
@@ -264,8 +264,8 @@ public:
 		real = real - (long(real));
 		while (length < max_length) {
 			real = (real - long(real)) * 10;
-			if (int(real) == 0)break;
-			append(int(real) + 0x30);
+			if (int(real) == 0)break;// todo 0.30303
+			append(int(real) + '0' );// = '0'+1,2,3
 		}
 	}
 
@@ -325,9 +325,9 @@ public:
 		if (to < 0 or to > length)to = length;
 		if (to <= from)return EMPTY_STRING;
 		int len = (to - from) + 1;
-		if(ref){
-			return String(data+from, len,ref);
-		}
+//		if(ref){
+//			return String(data+from, len,ref);
+//		}
 
 		auto neu = static_cast<char *>(alloc((sizeof(char)), len + 1));
 //#ifdef cstring
