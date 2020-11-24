@@ -108,7 +108,7 @@ String str(char *string);
 
 String s(const char *&s);
 
-bool eq(const char *dest, const char *src);
+bool eq(const char *dest, const char *src, int length=-1);
 
 void strcpy2(char *dest, const char *src);
 
@@ -181,12 +181,12 @@ public:
 
 //	~String()=default;
 
-//	explicit String(char* datas,int len, bool share) {
-//		data=datas;
-//		length=len;
-//		shared_reference=share;
-//		if(!share)error("use other constructor");
-//	}
+	explicit String(char* datas,int len, bool share) {
+		data=datas;
+		length=len;
+		shared_reference=share;
+		if(!share)error("use other constructor");
+	}
 
 	explicit String(char byte_character) {
 		if (byte_character == 0) {
@@ -324,10 +324,10 @@ public:
 	String substring(int from, int to = -1, bool ref= false) { // excluding to
 		if (to < 0 or to > length)to = length;
 		if (to <= from)return EMPTY_STRING;
-		int len = (to - from) + 1;
-//		if(ref){
-//			return String(data+from, len,ref);
-//		}
+		int len = to - from;
+		if(ref){
+			return String(data+from, len,ref);
+		}
 
 		auto neu = static_cast<char *>(alloc((sizeof(char)), len + 1));
 //#ifdef cstring
@@ -566,6 +566,8 @@ public:
 	}
 
 	bool operator==(chars c) {
+		if(shared_reference)
+			return length != 0 && data && eq(data, c,length);
 		return length != 0 && data && eq(data, c);
 	}
 
