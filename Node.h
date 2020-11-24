@@ -80,7 +80,7 @@ union Value {
 class Node {
 public:
 	String name = empty_name;// nil_name;
-	Value value;// value.node and children/next are NOT REDUNDANT
+	Value value;// value.node and children/next are NOT REDUNDANT  label(for:password):'Passwort'
 	Type kind = unknown;
 	int length = 0;// children
 //	int count = 0;// use param.length for arguments / param
@@ -127,6 +127,14 @@ public:
 	Node() {
 		kind = objects;
 //		if(debug)name = "[]";
+	}
+
+
+	explicit
+	Node(codepoint c) {
+		name = String(c);
+		value.string = name;
+		kind = strings;
 	}
 
 	explicit
@@ -196,7 +204,7 @@ public:
 //
 // Todo: deep cloning whole tree? definitely clone children
 		if (childs) {
-			if (kind == keyNode)
+			if (kind == keyNode and value.data)
 				copy->value.node = value.node->clone(false);
 			copy->children = 0;
 			copy->length = 0;
@@ -445,7 +453,8 @@ public:
 			printf("name:%s", name.data);
 		printf(" length:%d", length);
 		printf(" type:"_s + typeName(kind));
-		printf(" value: %s\n\n", serializeValue(false));// NEEDS "%s", otherwise HACKABLE
+		const String &string1 = serializeValue(false);
+		printf(" value: %s\n\n", string1);// NEEDS "%s", otherwise HACKABLE
 //			printf("name:%s ", name.data);
 //		printf("length:%i ", length);
 //		printf("type:%s ", typeName(type).data);
