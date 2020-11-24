@@ -17,6 +17,54 @@
 extern String operator_list[];// resolve xor->operator ... semantic wasp parser really?
 
 
+//	bool is_identifier(char ch) {
+bool is_identifier(codepoint ch) {
+	if (ch == '#')return false;// size/count/length
+	if (ch == '=')return false;
+	if (ch == ':')return false;
+	if (ch == ' ')return false;
+	if (ch == ';')return false;
+	if (ch == '.')return false;
+	if (ch == '-')return false;// todo
+	if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
+	return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$';// ch<0: UNICODE
+//		not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
+};
+
+
+bool is_bracket(char ch) {
+	return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
+}
+
+//	List<String> operators; // reuse functions!
+//	if(is_grapheme_modifier(ch))error("multi codepoint graphemes not");
+// everything that is not an is_identifier is treated as operator/symbol/identifier?
+// NEEDs complete codepoint, not just leading char because	☺ == e2 98 ba  √ == e2 88 9a
+bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
+//	0x0086	134	<control>: START OF SELECTED AREA	†
+	if (ch == U'∞')return false;// or can it be made as operator!?
+	if (ch == U'⅓')return false;// numbers are implicit operators 3y = 3*y
+	if (ch == U'∅')return false;// Explicitly because it is part of the operator range 0x2200 - 0x2319
+//		0x20D0	8400	COMBINING LEFT HARPOON ABOVE	⃐
+//		0x2300	8960	DIAMETER SIGN	⌀
+	if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
+	if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
+	if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
+
+	if (ch == u'√')return true;// 0x221A redundant
+	if (ch == u'＝')return true;
+	if (ch == u'≠')return true;
+	if (ch == u'#')return true;
+
+//		if(ch=='=') return false;// internal treatment
+	if (ch > 0x80)
+		return false;// utf NOT enough: ç. can still be a reference!
+	if (is_identifier(ch)) return false;
+	if (isalnum(ch)) return false;// ANY UTF 8
+	return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
+}
+
+
 bool closing(char ch, char closer) {
 	if (ch == closer)return true;
 	if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
@@ -104,6 +152,7 @@ public:
 		lineNumber = 1;
 		ch = 0;
 		text = source;
+		proceed();// at=0
 		Node result = valueNode(); // <<
 		white();
 		if (ch && ch != -1) {
@@ -134,32 +183,6 @@ public:
 	static Node parseFile(const char *filename) {
 //		const char filename=replace(filename0,"~","/Users/me")
 		return Wasp::parse(readFile(filename));
-	}
-
-//	List<String> operators; // reuse functions!
-//	if(is_grapheme_modifier(ch))error("multi codepoint graphemes not");
-	// everything that is not an is_identifier is treated as operator/symbol/identifier?
-	// NEEDs complete codepoint, not just leading char because	☺ == e2 98 ba  √ == e2 88 9a
-	bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
-//	0x0086	134	<control>: START OF SELECTED AREA	†
-		if (ch == U'∞')return false;// or can it be made as operator!?
-		if (ch == U'⅓')return false;// numbers are implicit operators 3y = 3*y
-		if (ch == U'∅')return false;// Explicitly because it is part of the operator range 0x2200 - 0x2319
-//		0x20D0	8400	COMBINING LEFT HARPOON ABOVE	⃐
-//		0x2300	8960	DIAMETER SIGN	⌀
-		if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
-		if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
-		if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
-
-		if (ch == u'√')return true;// 0x221A redundant
-		if (ch == u'＝')return true;
-		if (ch == u'≠')return true;
-//		if(ch=='=') return false;// internal treatment
-		if (ch > 0x80)
-			return false;// utf NOT enough: ç. can still be a reference!
-		if (is_identifier(ch)) return false;
-		if (isalnum(ch)) return false;// ANY UTF 8
-		return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
 	}
 
 private:
@@ -231,6 +254,10 @@ private:
 	}
 
 	char proceed(char c = 0) {
+		if(not ch and at>=0){
+			warn("end of code");
+			return ch;
+		}
 		// If a c parameter is provided, verify that it matches the current character.
 		if (c && c != ch) {
 			error(s("Expected '") + c + "' instead of " + renderChar(ch));
@@ -258,24 +285,6 @@ private:
 		if (previous == '\n' or previous == 0)
 			line = text.substring(columnStart, text.indexOf('\n', columnStart));
 		return ch;
-	};
-
-	bool is_bracket(char ch) {
-		return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
-	}
-
-//	bool is_identifier(char ch) {
-	bool is_identifier(codepoint ch) {
-		if (ch == '#')return false;// size/count/length
-		if (ch == '=')return false;
-		if (ch == ':')return false;
-		if (ch == ' ')return false;
-		if (ch == ';')return false;
-		if (ch == '.')return false;
-		if (ch == '-')return false;// todo
-		if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
-		return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$';// ch<0: UNICODE
-//		not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
 	};
 
 	// Parse an identifier.
@@ -378,11 +387,12 @@ private:
 	}
 
 	Node string(char delim = '"') {
-		int start = at;
 		proceed();
+		int start = at;
 		while (ch and ch != delim and previous != '\\')
 			proceed();
-		const String &substring = text.substring(start, at - 1);
+//		const String &substring = text.substring(start, at - 1);
+		String substring = text.substring(start, at);
 		proceed();
 		return Node(substring).setType(strings);// DONT do "3"==3 (here or ever)!
 	}
@@ -607,8 +617,8 @@ private:
 
 	Node symbol() {
 		if (ch >= '0' && ch <= '9')return numbero();
-		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
 		if (is_operator(ch))return any_operator();
+		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
 		error(UNEXPECT_CHAR + String((char) text[at]) + String((char) text[at + 1]) + String((char) text[at + 2]));
 		return NIL;
 	}
@@ -956,6 +966,7 @@ private:
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
+// PROBLEM(?) DANGER: consumes first character! do NOT proceed before calling! why?
 	Node valueNode(char close = 0, Node *parent = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		Node current;
@@ -964,7 +975,7 @@ private:
 		var length = text.length;
 		int start = at;
 		loop:
-		proceed();// consumes char of LAST switch : {  ... or 0 when starting
+//		proceed();// consumes char of LAST switch : {  ... or 0 when starting
 		white();
 
 		while (ch and at <= length) {
@@ -995,7 +1006,8 @@ private:
 						warn("Ambiguous reading a {x} => Did you mean a{x} or a:{x} or a , {x}");
 					}
 					bool asListItem = lastNonWhite == ',' or lastNonWhite == ';' or previous == ' ' and lastNonWhite != ':';
-					Node &object = valueNode('}', &current.last()).setType(Type::objects);
+					proceed();
+					Node object = valueNode('}', &current.last()).setType(Type::objects);
 					if (asListItem)
 						current.addRaw(object);
 					else
@@ -1004,13 +1016,15 @@ private:
 				}
 				case U'［': // FULLWIDTH ｛ ｢ ｣
 				case '[': {
-					Node &pattern = valueNode(']', &current.last()).setType(Type::patterns);
+					proceed();
+					Node pattern = valueNode(']', &current.last()).setType(Type::patterns);
 					current.addRaw(pattern);
 					break;
 				}
 				case '(': {
 					// checkAmbiguousBlock? x (1) == x(1) or [x 1] ?? todo too bad!!!
-					Node &group = valueNode(')', &current.last()).setType(Type::groups);
+					proceed();
+					Node group = valueNode(')', &current.last()).setType(Type::groups);
 					current.addSmart(group);
 					break;
 				}// lists handled by ' '!
@@ -1073,15 +1087,13 @@ private:
 				case '=': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
-					bool add_raw = next == '=' or current.kind == expressions or key.kind == expressions or
-					               (current.last().kind == groups and current.length > 1);
-					if (is_operator(previous))add_raw = true;// todo &previous may be nonsense: only first byte of codepoint copied
-					if (add_raw) {
-						if (is_operator(previous)) {// += *= == ...
-							current.last().name += "=";
-						} else
-							current.addRaw(Node(ch).setType(operators));
-					}
+					bool add_raw = current.kind == expressions or key.kind == expressions or (current.last().kind == groups and current.length > 1);
+					if (is_operator(previous))
+						add_raw = true;// == *=
+					Node op = symbol();// extend *= ...
+					if(op.name.length>1)
+						add_raw=true;
+					if (add_raw) { current.addRaw(op.setType(operators)).setType(expressions); continue;}
 					Node &val = *valueNode(' ', &key).clone();// applies to WHOLE expression
 					if (add_raw) {  // complex expressions are not simple maps
 						current.addRaw(val);
