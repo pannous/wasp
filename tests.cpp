@@ -1370,12 +1370,11 @@ void testCurrent() { // move to tests() once OK
 //	testAllWasm();
 //	exit(1);
 //	testGroupCascade();
-	testParamizedKeys();
-	tests();// make sure all still ok before changes
+	testStringReferenceReuse();
 	testAllWasm();
+	tests();// make sure all still ok before changes
 	testAngle();
 	todos();// those not passing yet (skip)
-	testStringReferenceReuse();
 //	testBUG();
 //	testParentBUG();
 	tests();// make sure all still ok after changes

@@ -80,16 +80,21 @@ class String;
 #endif
 //#define cstring
 
-bool eq(const char *dest, const char *src) {
+bool eq(const char *dest, const char *src, int length) {
 	if (!dest || !src)
 		return false;
 	int i = 0;
 	if (dest == "" and src[0])return false;
-	if (strlen0(dest) != strlen0(src))return false;
+	if (length<0 and strlen0(dest) != strlen0(src))
+		return false;
+//	if length>0 it forces comparison of reference strings terminated by length, not by 0!
 	while (char c = dest[i]) {
-		if (!src[i] || !c)
+		if(length>=0 and i>=length)
+			break;
+		char d = src[i];
+		if (!d || !c)
 			return false;
-		if (src[i] != c)
+		if (d != c)
 			return false;
 		i++;
 	}

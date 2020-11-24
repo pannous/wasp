@@ -966,7 +966,6 @@ private:
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
-// PROBLEM(?) DANGER: consumes first character! do NOT proceed before calling! why?
 	Node valueNode(char close = 0, Node *parent = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		Node current;
@@ -975,11 +974,9 @@ private:
 		var length = text.length;
 		int start = at;
 		loop:
-//		proceed();// consumes char of LAST switch : {  ... or 0 when starting
-		white();
-
+		white();// insignificant whitespace HERE
 		while (ch and at <= length) {
-//			white();// sets ch todo 1+1 != 1 +1
+//			white()  significant whitespace   1+1 != 1 +1 = [1 1]
 			if (previous == '\\') {// escape ANYTHING
 				proceed();
 				continue;
