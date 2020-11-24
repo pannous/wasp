@@ -183,7 +183,6 @@ Code encodeString(char *String);
 // [].concat.apply([], arr);
 
 
-bool eq(const char *op, const char *string);
 
 // https://pengowray.github.io/wasm-ops/
 byte opcodes(const char *s, byte kind = 0) {

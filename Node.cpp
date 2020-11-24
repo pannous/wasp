@@ -217,7 +217,8 @@ bool Node::operator==(String other) {
 	if (kind == reference) return other == name or value.node and *value.node == other;
 	if (kind == unknown) return other == name;
 	if (kind == operators) return other == name;
-	if (kind == strings) return other == value.string;
+	if (kind == strings)
+		return other == value.string;
 	return false;
 }
 bool Node::operator==(char other) {
