@@ -1072,7 +1072,8 @@ private:
 				case U'：':
 				case ':':
 					if (next == '=') { // f x:=2x
-						current.addRaw(new Node(":="));
+						Node *op = new Node(":=");
+						current.addRaw(op->setType(operators));
 						current.setType(expressions);
 //						current.setType(declaration); // later!
 						proceed();
@@ -1121,6 +1122,7 @@ private:
 						int i = 0;
 //						closing(ch, closer) and not closing(ch, close) and ch!='}' and ch!=')' and ch!=']' and ch!=0
 						while (ch == closer) {
+							proceed();
 							Node element = valueNode(closer);// todo stop copying!
 							current.addRaw(element.clone());
 						}
