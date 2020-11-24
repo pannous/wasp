@@ -166,9 +166,11 @@ public:
 
 	String() {
 //		assert(null_value[0] == 0);
+//		data = 0;
 		data = "";
 //		data = empty_string;
 //		data =  {0};//null_value;
+//		data = (char *)calloc(1, 1);
 //		data = static_cast<char *>(calloc(1, 1));
 		length = 0;
 	}
