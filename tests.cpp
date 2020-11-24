@@ -34,7 +34,8 @@ bool assert_equals_x(String a, String b, char *context = "") {
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
-	if (a.name != b)printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
+	if (a.name != b)
+		printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
 //	else printf("OK %s==%s in %s\n"s % a.name % b % context);
 	else printf("OK %d==%s in %s\n", a.value.longy, b, context);
 
@@ -50,7 +51,7 @@ bool assert_equals_x(Node &a, double b, char *context = "") {
 }
 
 bool assert_equals_x(Node &a, long b, char *context = "") {
-	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"s % a % b % context);
+	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"s % a.name % b % context);
 //	else printf("OK %d==%d in %s\n"s % a.value.longy % b % context);// Uninitialised value was created by a stack allocation
 	else printf("OK %d==%d in %s\n", a.value.longy, b, context);
 	return a == b;
@@ -58,12 +59,12 @@ bool assert_equals_x(Node &a, long b, char *context = "") {
 
 bool assert_equals_x(Node a, String b, char *context = "") {
 	String &name = a.name;
-	if (name != b and b != a.value.string)
-		printf("FAILED assert_equals! %s should be %s in %s\n"s % name % b % context);
-//	else printf("OK %s==%s in %s\n"s % a.name % b % context);
-	else printf("OK %s==%s in %s\n", name.data, b.data, context);
-
-	return b == name or a == b;
+	bool ok = name==b or a == b; //  b == name or  !(name != b and b != a.value.string;)
+	if (ok)
+		printf("OK %s==%s in %s\n", name.data, b.data, context);
+	else
+		printf("FAILED assert_equals! %s should be %s in %s\n"s % name.data % b % context);
+	return ok;
 }
 
 
@@ -71,7 +72,7 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 //	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
 	if (a == b)
 //		printf("OK %s==%s in %s\n"s % a % b % context);
-		printf("OK %s==%s in %s\n", a, b, context);
+		printf("OK %s==%s in %s\n", a.name, b.name, context);
 	else
 		printf("FAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
 	return a == b;
@@ -421,10 +422,11 @@ void testUTF() {
 	check(utf8_byte_count(U'ç') == 2);
 	check(utf8_byte_count(U'√') == 3);
 	check(utf8_byte_count(U'🥲') == 4);
-	check(Wasp().is_operator(u'√'))// can't work because ☺==0xe2... too
-	check(!Wasp().is_operator(U'☺'))
-	check(!Wasp().is_operator(U'🥲'))
-
+	check(is_operator(u'√'))// can't work because ☺==0xe2... too
+	check(!is_operator(U'☺'))
+	check(!is_operator(U'🥲'))
+	check(not is_operator(U'ç'));
+	check(is_operator(U'='));
 //	testUTFinCPP();
 //	check(x[1]=="牛");
 	check("a牛c"s.codepointAt(1) == "牛"s);
@@ -1119,6 +1121,7 @@ void testParamizedKeys() {
 
 // 0. parameters accessible
 	Node label0 = parse("label(for:password)");
+	label0.log();
 	Node &node = label0["for"];
 	assert_equals(node, "password");
 	assert_equals(label0["for"], "password");
@@ -1354,29 +1357,22 @@ void todos() {
 void testCurrent() { // move to tests() once OK
 	skip(
 			testKitchensink(); // TODO Oooo!
-
-	assert_parses("ç:'☺'");
-	assert(result == "☺");
-
-	assert_parses("{ç:☺}");
-	assert(result["ç"] == "☺");
-	assert_parses("{ç:☺}");
-			assert(eval("ç='☺'") == "☺");// fails later => bad pointer?
-
 	)
-	testString();
-	testStringConcatenation();
-	testUTF();
+	assert(eval("ç='☺'") == "☺");// fails later => bad pointer?
+	assert(eval("(2+1)==(4-1)") == 1);
+	assert(eval("3==2+1") == 1);
+	assert(eval("2+1==2+1") == 1);
 
 
-	testGraphQlQuery();
+//	testGraphQlQuery();
 
 //	testWasmFunctionDefiniton();
 //	testAllWasm();
 //	exit(1);
 //	testGroupCascade();
-	testAllWasm();
+	testParamizedKeys();
 	tests();// make sure all still ok before changes
+	testAllWasm();
 	testAngle();
 	todos();// those not passing yet (skip)
 	testStringReferenceReuse();

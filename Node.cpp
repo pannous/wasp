@@ -227,6 +227,7 @@ bool Node::operator==(int other) {
 //	if (this == 0)return false;// HOW?
 	if ((kind == longs and value.longy == other) or (kind == reals and value.real == other))
 		return true;
+	if(kind==bools)return other==value.longy;
 	if (kind == keyNode and value.node and *value.node == other)return true;
 	if (kind == strings and atoi0(value.string) == other)return true;
 	if (atoi0(this->name) == other)return true;
@@ -719,7 +720,7 @@ String toString(Node &node) {
 }
 
 void Node::print() {
-	printf(this->serialize());
+	printf("%s", this->serialize());
 }
 
 Node &Node::setValue(Value v) {
