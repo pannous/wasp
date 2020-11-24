@@ -83,7 +83,8 @@ Node &Node::operator=(chars c) {
 }
 
 Node &Node::operator[](int i) {
-	if (i >= length) error(String("out of range index[] ") + i + " >= length " + length);
+	if (i >= length)
+		error(String("out of range index[] ") + i + " >= length " + length);
 		// todo: allow insertion of unknown indices? prefered method: not
 	return children[i];
 }

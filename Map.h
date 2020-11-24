@@ -119,7 +119,6 @@ class List {
 public:
 	S *items = (S *) calloc(sizeof(S), MAXI);
 
-
 	List() {}
 
 #ifndef WASM
@@ -199,6 +198,11 @@ public:
 	bool contains(S &item) {
 		return position(item) >= 0;
 	}
+
+	void clear() {
+		items = (S *) calloc(sizeof(S), MAXI);
+		_size = 0;
+	}
 };
 
 // don't use template! just use int-map
@@ -241,6 +245,7 @@ public:
 		return _size;
 	}
 
+	// currently same as map[key]=value
 	int insert_or_assign(S key, T value) {
 		int found = position(key);
 		if (found >= 0) {
@@ -255,7 +260,7 @@ public:
 	}
 
 //	T *operator[](S key) {
-	T &operator[](S key) {
+	T &operator[](S key) {// CREATING on access! use map.has(x) if not desired
 		int position1 = position(key);
 		if (position1 < 0) {
 			if (use_default) {
@@ -263,6 +268,7 @@ public:
 				return values[_size - 1];// MUST USE map.has(x) instead of map[x] otherwise it is created!!
 //				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
 			} else {
+				error("MISSING KEY: "s + key);
 				printf("MISSING KEY: ");
 				printf(key);
 				printf("\n");

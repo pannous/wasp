@@ -19,6 +19,7 @@ type summary add --summary-string "#${var._size} ${var.items%B}" List<String>
 # type summary add --python-script  "data = valobj.GetChildMemberWithName('data'); return data ? data : ''" String
 type summary add --summary-string "${var.data%s}" String
 # type summary add --summary-string "${var.data}" String
+type summary add --summary-string "${var.function}.${var.name}:${var.type}" Arg
 
 type summary add --summary-string "${var.data}" Value
 type summary add --summary-string "${var.length}" Code
