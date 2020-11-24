@@ -611,7 +611,8 @@ private:
 		if (node.name == "nill")return NIL;
 		if (node.name == "nil")return NIL;
 		if (node.name == "ø")return NIL;// nil not added to lists
-		if (node.name.in(operator_list))node.setType(operators); // later: in angle!? NO! HERE: a xor {} != a xxx{}
+		if (node.name.in(operator_list))
+			node.setType(operators); // later: in angle!? NO! HERE: a xor {} != a xxx{}
 		return node;
 	}
 
@@ -655,7 +656,7 @@ private:
 		expressionas.addRaw(node);
 		if (stop_at_space and ch == ' ')return expressionas;
 		white();
-		while ((ch and is_identifier(ch)) or isalnum(ch) or is_operator(ch)) {
+		while (ch and (is_identifier(ch) or isalnum(ch) or is_operator(ch))) {
 			node = symbol();// including operators `=` ...
 			if (is_known_functor(node))
 				node.kind = operators;
@@ -1036,8 +1037,9 @@ private:
 					if (isDigit(next) and previous == ' ' or previous == 0)
 						current.addSmart(numbero());// (2+2) != (2 +2) !!!
 					else {
+						Node *op = any_operator().clone();
+						current.addRaw(op);
 						current.kind = expressions;
-						current.addSmart(any_operator());
 					}
 					break;
 				case '/':
@@ -1088,7 +1090,7 @@ private:
 					bool add_raw = current.kind == expressions or key.kind == expressions or (current.last().kind == groups and current.length > 1);
 					if (is_operator(previous))
 						add_raw = true;// == *=
-					Node op = symbol();// extend *= ...
+					Node op = any_operator();// extend *= ...
 					if(op.name.length>1)
 						add_raw=true;
 					if (add_raw) { current.addRaw(op.setType(operators)).setType(expressions); continue;}

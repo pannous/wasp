@@ -21,13 +21,22 @@ String function_list[] = {"square", "log", "puts", "print", "printf", "println",
                           "logx", "logc", "id", 0};// MUST END WITH 0, else BUG
 String control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
 
+
+class Arg{
+public:
+	String function;
+	String name;
+	Valtype type;
+	Node modifiers;
+};
+
+
 int main4(int argp, char **argv) {
 #ifdef register_global_signal_exception_handler
 	register_global_signal_exception_handler();
 #endif
 	try {
-		error("HhhU");
-//		testCurrent();
+		Node("hello");
 		return 42;
 	} catch (chars err) {
 		printf("\nERROR\n");
@@ -150,6 +159,7 @@ bool isFunction(Node &op) {
 }
 
 bool isFunction(String op) {
+	if (declaredSymbols.has(op))return true;
 	return op.in(function_list);// or op.in(functor_list); if
 }
 
@@ -242,8 +252,17 @@ Node eval(String code) {
 
 Node &groupIf(Node n);
 
+List<Arg> extractFunctionArgs(String function, Node &node) {
+	List<Arg> args;
+	if(node.length>1)
+	args.add({function, node.children[1].name, int32, node});
+	if(node.length>2)
+		error("TODO args");
+	return args;
+}
 
 String extractFunctionName(Node &node) {
+	if(node.length>1)return node.first().name;
 	// todo: public go home to family => go_home
 	return node.name;
 }
@@ -288,9 +307,17 @@ Node &groupDeclarations(Node &expression0) {
 			// todo: public export function jaja (a:num …) := …
 			Node modifiers = expression.to(node);// including public… :(
 			Node rest = expression.from(node);
-			Node *body = analyze(rest).clone();
 			String name = extractFunctionName(modifiers);
+			if(isFunction(name))
+				error("Symbol already declared: "s+name);
 			declaredSymbols.add(name);
+			List<Arg> args= extractFunctionArgs(name, modifiers);
+			Signature &signature = functionSignatures[name];
+			for(Arg arg: args){
+				locals[name].add(arg.name);
+				signature.add(int32);
+			}
+			Node *body = analyze(rest).clone();
 			Node *decl = new Node(name);//node.name+":={…}");
 			decl->setType(declaration);
 			decl->metas().add(modifiers);
@@ -328,6 +355,7 @@ Node &groupOperators(Node &expression0) {
 			error("operator missing "s + op);
 		}
 		Node &node = expression.children[i];
+		if(node.length)continue;// already processed
 		Node &next = expression.children[i + 1];
 		if (prefixOperators.has(node.name)) {// {++x
 			node.addRaw(next);
@@ -347,8 +375,11 @@ Node &groupOperators(Node &expression0) {
 				Node args = analyze(rest);
 				node.addRaw(prev);
 				node.addRaw(args);
-				expression.replace(i - 1, -1, node);
+				expression.replace(i - 1,  i + 1 , node);// replace ALL REST
+				expression.remove(i, -1);
 			} else {
+				if(node.name=="=" and prev.kind==reference)
+					locals["main"].add(prev.name);
 				node.addRaw(prev);
 				node.addRaw(next);
 				expression.replace(i - 1, i + 1, node);
@@ -361,8 +392,10 @@ Node &groupOperators(Node &expression0) {
 }
 
 Node &groupFunctions(Node &expression0) {
+	if(expression0.kind==declaration)return expression0;// handled before
 	Node &expression = *expression0.clone();
-	for (int i = 0; i < expression.length; ++i) {
+		for (int i = 0; i < expression.length; ++i) {
+//	for (int i = expression.length; i>0; --i) {
 		Node &node = expression.children[i];
 		if (node.name == "if") // kinda functor
 			return groupIf(expression0.from("if"));
@@ -377,7 +410,21 @@ Node &groupFunctions(Node &expression0) {
 //		else found function call!
 		int maxArity = 1;// todo
 		int minArity = 1;
-		Node rest = expression.from(i + 1);
+		Node rest;
+		if(expression[i+1].kind==groups){// f(x) todo f (x) (y) (z)
+//	todo		expression[i+1].length>=minArity
+			rest = expression[i + 1];
+			if(rest.length>1)rest.setType(expressions);
+			Node args = analyze(rest);
+			node.addRaw(args);
+			expression.remove(i + 1, i + 1);
+			continue;
+		}
+		rest= expression.from(i + 1);
+		if(rest.length>1)
+			rest.setType(expressions);// SUUURE?
+		if(rest.kind==groups)// and rest.has(operator))
+			rest.setType(expressions);// todo f(1,2) vs f(1+2)
 		if (hasFunction(rest) and rest.first().kind != groups)
 			error("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
 		if (rest.first().kind == groups)
@@ -392,7 +439,7 @@ Node &groupFunctions(Node &expression0) {
 		else if (rest.length == 0 and minArity > 0)
 			error("missing arguments for function %s, or to pass function pointer use func keyword"s % node.name);
 		else if (rest.length >= maxArity) {
-			Node args = groupOperators(rest);// todo: could contain another call!
+			Node args = analyze(rest);// todo: could contain another call!
 			node.addRaw(args);
 			if (rest.kind == groups)
 				expression.remove(i + 1, i + 1);
@@ -506,19 +553,22 @@ Node &groupIf(Node n) {
 		then = then.to("else");
 	}
 	if (n.length == 3 and otherwise.empty())
-		otherwise = n[3];
-//	if(condition.name=="condition")
-//		condition = condition.values();
-
-
+		otherwise = n[2];
 	Node *eff = new Node("if");
 	Node &ef = *eff;
 	ef.kind = expressions;
 //	ef.kind = ifStatement;
-	ef["condition"] = groupOperators(condition);
-	ef["then"] = groupOperators(then);
-	ef["else"] = groupOperators(otherwise);
-	Node &node = ef["condition"];// debug
+	if(condition.length>0)condition.setType(expressions);// so far treated as group!
+	if(then.length>0)then.setType(expressions);
+	if(otherwise.length>0)otherwise.setType(expressions);
+	ef["condition"] = analyze(condition);
+	ef["then"] = analyze(then);
+	ef["else"] = analyze(otherwise);
+//	ef[0] = groupOperators(condition);
+//	ef[1] = groupOperators(then);
+//	ef[2] = groupOperators(otherwise);
+//	Node &node = ef["else"];// debug
+	Node &node = ef[2];// debug
 	return ef;
 	return *ef.clone();
 //
@@ -770,8 +820,11 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 }
 
 
-Node &Angle::analyze(Node data) {
+Node analyze(Node data) {
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
+	if(data.kind==keyNode){
+		data.value.node = analyze(*data.value.node).clone();
+	}
 	if (data.kind == groups or data.kind == objects) {
 		Node grouped = *data.clone();
 		grouped.children = 0;
@@ -805,13 +858,16 @@ Node analyze2(Node data) {
 	return grouped;
 }
 
-Node analyze(Node data) {
-	return Angle::analyze(data);
-}
-
 Node emit(String code) {
 	Node data = parse(code);
-	Node charged = Angle::analyze(data);
+	data.log();
+	locals.clear();
+	locals.setDefault(List<String>());
+	declaredSymbols.clear();
+	functionSignatures.clear();
+	functionSignatures.setDefault(Signature());
+	locals.insert_or_assign("main", List<String>());
+	Node charged = analyze(data);
 	Node node = emit(charged).run();
 	return node;
 }
