@@ -1256,6 +1256,7 @@ void tests() {
 	assert_is("[a b c]#2", "b");
 	assert_is("one plus two times three", 7);
 	testUnicode_UTF16_UTF32();
+	testStringReferenceReuse();
 	testNilValues();
 	testCall();
 	testNewlineLists();
@@ -1316,8 +1317,8 @@ void tests() {
 	testGraphQlQuery2();
 	testUTF();// fails sometimes => bad pointer!?
 	skip(
-			testKitchensink();
 			testGroupCascade();
+			testKitchensink();
 	)
 #ifdef APPLE
 	testAllSamples();
@@ -1370,7 +1371,6 @@ void testCurrent() { // move to tests() once OK
 //	testAllWasm();
 //	exit(1);
 //	testGroupCascade();
-	testStringReferenceReuse();
 	testAllWasm();
 	tests();// make sure all still ok before changes
 	testAngle();
