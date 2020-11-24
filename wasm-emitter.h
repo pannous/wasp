@@ -1,7 +1,7 @@
 #pragma once
 
 #include "wasm_runner.h"
-
+#include "Map.h"
 typedef const char *wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
 typedef char* bytes;
 bytes concat(bytes a, bytes b, int len_a, int len_b);
@@ -289,5 +289,31 @@ enum Opcodes {
 };
 //char start_function=0x00;//unreachable strange convention
 extern char unreachable;//=0x00;//unreachable strange convention
-Code &emit(Node code);
+Code &emit(Node root_ast);
+class Signature;
+
+extern Map<String, Valtype> return_types;
+extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals; // access from Angle!
+extern Map<String, Signature> functionSignatures;
+
+class Signature {
+public:
+	Map<int, Valtype> types;
+	Valtype _returns = voids;
+
+	int size() {
+		return types.size();
+	}
+
+	Signature add(Valtype t) {
+		types.insert_or_assign(types.size(), t);
+		return *this;
+	}
+
+	Signature &returns(Valtype valtype) {
+		_returns = valtype;
+//		return_types[name] = valtype;
+		return *this;
+	}
+};
 
