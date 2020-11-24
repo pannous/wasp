@@ -15,9 +15,16 @@
 #ifdef WASM
 #import  "WasmHelpers.cpp"
 #endif
-//#include "string.h" // memcpy
 
-//typedef char byter[];
+Valtype last_type = voids;// autocast if not int
+Map<String, Valtype> return_types;
+//Map<int, List<String>> locals;
+Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
+Map<String, Signature> functionSignatures;
+//Map<int, Map<int, String>> locals;
+Map<String, int> functionIndices;
+Map<String, Code> functionCodes;
+Map<String, int> typeMap;
 
 enum nameSubSectionTypes {
 	module_name = 0,
@@ -334,35 +341,6 @@ Code createSection(Section sectionType, Code data) {
 }
 
 
-class Signature {
-public:
-	Map<int, Valtype> types;
-	Valtype _returns = voids;
-
-	int size() {
-		return types.size();
-	}
-
-	Signature add(Valtype t) {
-		types.insert_or_assign(types.size(), t);
-		return *this;
-	}
-
-	Signature &returns(Valtype valtype) {
-		_returns = valtype;
-//		return_types[name] = valtype;
-		return *this;
-	}
-};
-
-
-//std::map<String ,int> symbols;
-Map<String, int> functionIndices;
-Map<String, Code> functionCodes;
-Map<String, Signature> functionSignatures;
-//	Map<int, long> typeMap;
-Map<String, int> typeMap;
-
 enum NodTypes {
 	numberLiteral,
 	identifier,
@@ -389,23 +367,17 @@ bytes ieee754(float num) {
 }
 //Code emitExpression (Node* nodes);
 
-Code emitBlock(Node node, Valtype returns);
+Code emitBlock(Node node, String functionContext);
 
 //Code emitExpression(Node *node)__attribute__((warn_unused_result));
 //Code emitExpression(Node *node)__attribute__((error_unused_result));
 
-Code emitValue(Node value);
 
 //Map<int, String>
-List<String> collect_locals(Node node);
-
-Valtype last_type = voids;// autocast if not int
-Map<String, Valtype> return_types;
-//Map<int, Map<int, String>> locals;
-Map<int, List<String>> locals;
+List<String> collect_locals(Node node, String string);
 
 
-Code emitValue(Node node) {
+Code emitValue(Node node, String context) {
 	Code code;
 	switch (node.kind) {
 		case nils:// also 0, false
@@ -436,8 +408,8 @@ Code emitValue(Node node) {
 			break;
 		case reference:
 		case identifier: {
-			int local_index = locals[0].position(node.name);
-			if (local_index < 0)error("UNKNOWN symbol "s + node.name);
+			int local_index = locals[context].position(node.name);
+			if (local_index < 0)error("UNKNOWN symbol "s + node.name + " in context " + context);
 			code.addByte(get_local);
 			code.addByte(local_index);
 		}
@@ -451,52 +423,51 @@ Code emitValue(Node node) {
 	return code;
 }
 
-Code emitWhile(Node &node);
+Code emitWhile(Node &node, String context);
 
-Code emitIf(Node &node);
+Code emitIf(Node &node, String context);
 
-Code emitCall(Node &node);
+Code emitCall(Node &node, String context);
 
 Code emitDeclaration(Node fun, Node &body);
 
-Code emitExpression(Node *nodes);
+Code emitExpression(Node *nodes, String context);
 
-int context = 0;// changes in declarations (also with lambdas as functions)
-Code emitExpression(Node &node) { // expression, node or BODY (list)
+Code emitExpression(Node &node, String context/*="main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	Code code;
 	String &name = node.name;
 	int index = functionIndices.position(name);
-	if (index >= 0 and not locals.has(index))
-		locals[index] = List<String>();
+	if (index >= 0 and not locals.has(name))
+		locals[name] = List<String>();
 //	locals[index]= Map<int, String>();
 
 	if (name == "if")
-		return emitIf(node);
+		return emitIf(node, context);
 	if (name == "while")
-		return emitWhile(node);
+		return emitWhile(node, context);
 	if (name == "it") {
 		code.addByte(get_local);
 		code.addByte(0);// todo: LAST local?
 		return code;
 	}
-	if (node.kind==call or (node.kind == reference or node.kind == groups) and functionIndices.has(name))
-		return emitCall(node);
+	if (node.kind == call or (node.kind == reference or node.kind == groups) and functionIndices.has(name))
+		return emitCall(node, context);
 
 	switch (node.kind) {
 		case expressions:
 		case groups:
 		case objects:
 			for (Node child : node) {
-				const Code &expression = emitExpression(child);
+				const Code &expression = emitExpression(child, context);
 				code.push(expression);
 			};
 			break;
 		case call:
-			return emitCall(node);
+			return emitCall(node, context);
 			break;
 		case operators: {
-			if (name == "then")return emitIf(*node.parent);// pure if handled before
+			if (name == "then")return emitIf(*node.parent, context);// pure if handled before
 			if (name == ":=")
 				return emitDeclaration(node, node.first());
 //			return emitDeclaration(node.children[0], node.children[1]);
@@ -507,13 +478,13 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 //				if(name.in(function_list)) SHOULDN'T HAPPEN!
 //				error("unexpected unary operator: "s + name);
 				Node arg = node.children[0];
-				const Code &arg_code = emitExpression(arg);// should ALWAYS just be value, right?
+				const Code &arg_code = emitExpression(arg, context);// should ALWAYS just be value, right?
 				code.push(arg_code);// might be empty ok
 			} else if (node.length == 2) {
 				Node lhs = node.children[0];//["lhs"];
 				Node rhs = node.children[1];//["rhs"];
-				const Code &lhs_code = emitExpression(lhs);
-				const Code &rhs_code = emitExpression(rhs);
+				const Code &lhs_code = emitExpression(lhs, context);
+				const Code &rhs_code = emitExpression(rhs, context);
 				code.push(lhs_code);// might be empty ok
 				code.push(rhs_code);// might be empty ok
 			} else if (node.length > 2) {// todo: n-ary? ∑? is just a function!
@@ -522,7 +493,7 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 			if (index >= 0) {// FUNCTION CALL
 				log("OPERATOR FUNCTION CALL: %s\n"s % name);
 //				for (Node arg : node) {
-//					emitExpression(arg);
+//					emitExpression(arg,context);
 //				};
 				code.addByte(function);
 				code.addByte((index));// ok till index>127?
@@ -558,19 +529,24 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 		case bools:
 		case strings:
 			if (not node.isSetter() || node.value.longy == 0) // todo 0
-				return emitValue(node);
+				return emitValue(node, context);
 //			else FALLTHROUGH!
 		case reference: {
 //			Map<int, String>
-			List<String> current_local_names = locals[context];
+			List<String> &current_local_names = locals[context];
 			int local_index = current_local_names.position(name);// defined in block header
 			if (local_index < 0) { // collected before, so can't be setter here
 				if (functionCodes.has(name))
-					return emitCall(node);
-				error("UNKNOWN local symbol "s + name);
+					return emitCall(node, context);
+				if (!node.isSetter())
+					error("UNKNOWN local symbol "s + name + " in context " + context);
+				else {
+					current_local_names.add(name);// ad hoc x=42
+					local_index = current_local_names.size() - 1;
+				}
 			}
 			if (node.isSetter()) { //SET
-				code = code + emitValue(node); // done above!
+				code = code + emitValue(node, context); // done above!
 				code.addByte(set_local);
 				code.addByte(local_index);
 			} else {// GET
@@ -585,7 +561,7 @@ Code emitExpression(Node &node) { // expression, node or BODY (list)
 	return code;
 }
 
-Code emitWhile(Node &node) {
+Code emitWhile(Node &node, String context) {
 	Code code;
 	// outer block
 	code.addByte(block);
@@ -594,14 +570,14 @@ Code emitWhile(Node &node) {
 	code.addByte(loop);
 	code.addByte(void_block);
 	// compute the while expression
-	emitExpression(node[0]);// node.value.node or
+	emitExpression(node[0], context);// node.value.node or
 	code.addByte(i32_eqz);
 	// br_if $label0
 	code.addByte(br_if);
 	code.addByte(1);
 //			code.push(signedLEB128(1));
 	// the nested logic
-	emitExpression(node[1]);// BODY
+	emitExpression(node[1], context);// BODY
 	// br $label1
 	code.addByte(br);
 	code.addByte(0);
@@ -612,18 +588,18 @@ Code emitWhile(Node &node) {
 }
 
 
-Code emitExpression(Node *nodes) {
+Code emitExpression(Node *nodes, String context) {
 	if (!nodes)return Code();
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
-	return emitExpression(*nodes);
+	return emitExpression(*nodes, context);
 }
 
-Code emitCall(Node &fun) {
+Code emitCall(Node &fun, String context) {
 	Code code;
 	int index = functionIndices[fun.name];
 	if (index < 0) error("MISSING import/declaration for function %s\n"s % fun.name);
 	for (Node arg : fun) {
-		code.push(emitExpression(arg));
+		code.push(emitExpression(arg, context));
 	};
 	code.addByte(function);
 	code.addByte(index);// ok till index>127, then use unsignedLEB128
@@ -644,49 +620,51 @@ Code emitDeclaration2(Node fun, Node &body) {
 		body = body.from(":=");
 //		error("parser error :=");
 }
+
 Code emitDeclaration(Node fun, Node &body) {
 	if (not functionIndices.has(fun.name)) {
 		functionIndices[fun.name] = functionIndices.size();
 	} else {
 		error("redeclaration of symbol: "s + fun.name);
 	}
-	Signature signature;
+	Signature &signature = functionSignatures[fun.name];
 	if (signature.size() == 0 and body.has("it", false, 100))
 		signature.add(i32);
-	functionSignatures[fun.name] = signature;
 
 //			body=*fun.begin()
 	Valtype returns = int32;// todo
 	return_types[fun.name] = returns;
 	signature.returns(returns);
-	functionCodes[fun.name] = emitBlock(body, returns);
+	functionCodes[fun.name] = emitBlock(body, fun.name);
 	last_type = voids;// todo reference to new symbol x = (y:=z)
 	return Code();// empty
 }
 
 
-Code emitIf(Node &node) {
+Code emitIf(Node &node, String context) {
 	Code code;
-//	Node *condition = node[0].value.node;
-	Node &condition = node["condition"];
-	code = code + emitExpression(condition);
+	Node *condition = node[0].value.node;
+//	Node &condition = node["condition"];
+	code = code + emitExpression(condition, context);
 	if (last_type != int32) {
-		error("todo");
+		last_type = int32;
+		printf("todo\n");
 	}
 	code.addByte(if_i);
 	code.addByte(int32);
-//	Node *then = node[1].value.node;
-	Node &then = node["then"];
-	code = code + emitExpression(then);// BODY
+	Node *then = node[1].value.node;
+//	Node &then = node["then"];
+	code = code + emitExpression(then, context);// BODY
 	if (node.length == 3) {
 		code.addByte(elsa);
 		Node *otherwise = node[2].value.node;//->clone();
-		code = code + emitExpression(otherwise);
+		code = code + emitExpression(otherwise, context);
 	}
 	code.addByte(end_block);
 	return code;
 }
 
+/*
 Code emitIf_OLD(Node &node) {
 	Code code;
 //	case ifStatement:
@@ -696,7 +674,7 @@ Code emitIf_OLD(Node &node) {
 	// compute the if expression
 	Node *condition = node[0].value.node;
 //	Node *condition = node["condition"];//.value.node->clone();
-	emitExpression(condition);
+	emitExpression(condition,context);
 	code.addByte(i32_eqz);
 	// br_if $label0
 	code.addByte(br_if);
@@ -736,7 +714,7 @@ Code emitIf_OLD(Node &node) {
 	}
 	return code;
 }
-
+*/
 
 Code Call(char *symbol) {//},Node* args=0) {
 	Code code;
@@ -747,64 +725,6 @@ Code Call(char *symbol) {//},Node* args=0) {
 	code.addByte(i);
 	return Code();
 }
-
-class Program {
-public:
-	Node &ast;
-	Node main;
-
-	Program() : ast(NIL) {
-	}
-
-	Program(Node node) : ast(node) {
-//		collectFunctions();
-//		collectLambdas();// closures all over
-//		collectImports();
-//		collectExports();
-//		collectGlobals();
-//		collectStrings();
-		collectMain();
-	}
-
-	void collectMain() {
-//		if(!functions["main"])
-		main = ast;// root nodes form 'main'
-	}
-
-
-//	char *mapp(char* (lambda)(String, int)) {
-//		for(Nod n:*this){
-//			lambda(n.value, n.index);
-//		}
-//	}
-//	int findIndex(bool (lambda)(Nod)) {
-//		int i=0;
-//		for(Nod n:*this){
-//			if(lambda(n)){
-//				return i;
-//			}
-//			i++;
-//		}
-//		return -1;
-//	}
-	Node functions;
-};
-
-
-//Code codeFromProc (ProcStatementNod node, Program program_node) {
-//	for(Nod arg:node.args){
-//		symbols[arg.value, arg.index);
-//	}
-//	Code code;// not global ;)
-//	emitStatements(node.nodes);
-//
-//	auto localCount = symbols.size();
-//	bytes locals = localCount > 0 ? encodeLocal(localCount, f32).data : new char[]{};
-//	todo();// check if ok: localCount == size of locals ???
-////	return encodeVector([...encodeVector(locals), ...code, Opcodes.end]);
-//	return encodeVector(Code(locals,localCount).push(code).push(end_block));
-//};
-
 
 Code encodeString(char *str) {
 	size_t len = strlen0(str);
@@ -831,25 +751,31 @@ Code signedLEB128(int n) {
 }
 
 
-Code emitBlock(Node node, Valtype returns) {
+Code emitBlock(Node node, String context) {
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	Code(code_data,sizeof(code_data)); // todo : memcopy, else stack value is LOST
 	Code block;
-	int context = 0;
 //	Map<int, String>
-	List<String> current_local_names = collect_locals(node);
-	int locals_count = current_local_names.size();
-	locals[context] = current_local_names;
+	collect_locals(node, context);// DONE IN analyze
+//	int locals_count = current_local_names.size();
+//	locals[context] = current_local_names;
+	int locals_count = locals[context].size();
+	int argument_count = functionSignatures[context].size();
+	if (locals_count >= argument_count)
+		locals_count = locals_count - argument_count;
+	else
+		warn("locals consumed by arguments");
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; ++i) {
 		block.addByte(i + 1);// index
-		block.addByte(i32);// type
+		block.addByte(i32);// type todo
 	}
 
-	Code inner_code_data = emitExpression(node);
+	Code inner_code_data = emitExpression(node, context);
 	Valtype x = last_type;
 	block.push(inner_code_data);
+	Valtype returns = return_types[context];
 	if (returns != last_type) {
 		if (returns == Valtype::voids and last_type != Valtype::voids)
 			block.addByte(drop);
@@ -867,17 +793,15 @@ Code emitBlock(Node node, Valtype returns) {
 }
 
 //Map<int, String>
-List<String> collect_locals(Node node) {
-	List<String> current_locals; // no, because there might be gaps(unnamed locals!)
-//	Map<int, String>current_locals;
-//	current_locals.setDefault("");
+List<String> collect_locals(Node node, String string) {
+	List<String> &current_locals = locals[string]; // no, because there might be gaps(unnamed locals!)
 	for (Node n : node) {
-		if (n.kind == reference and not functionIndices.has(n.name))
+		bool add = false;
+		if (n.kind == longs and atoi(n.name) != n.value.longy)add = true;
+		if (n.kind == longs and not n.name.empty() and not atoi0(n.name))add = true;
+		if (n.kind == reference and not functionIndices.has(n.name))add = true;
+		if (add and not current_locals.has(n.name))
 			current_locals.add(n.name);
-//			current_locals[current_locals.size()]=n.name;
-		else if (n.kind == longs and not n.name.empty() and not atoi0(n.name))
-			current_locals.add(n.name);
-//		current_locals[current_locals.size()]=n.name;
 	}
 	return current_locals;
 }
@@ -988,7 +912,7 @@ Code codeSection(Node root) {
 //	char code_data[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 
-	Code main_block = emitBlock(root, return_types["main"]);
+	Code main_block = emitBlock(root, "main");
 	Code nop_block = Code(code_data_nop, sizeof(code_data_nop));
 	Code id_block = Code(code_data_id, sizeof(code_data_id));
 	Code code_blocks = encodeVector(main_block) + encodeVector(nop_block) + encodeVector(id_block);
@@ -1060,28 +984,28 @@ Code nameSection() {
 
 	Code localNameMap;
 	for (String key : functionIndices) {
-		if (key != "main")continue;
+//		if (key != "main")continue;
 		int function_index = functionIndices[key];
-//		Map<int, String> &
-		List<String> currentLocalNames = locals[function_index - functionIndices["main"]];
-		int local_count = currentLocalNames.size();
+		List<String> localNames = locals[key];// including arguments
+		int local_count = localNames.size();
 		localNameMap = localNameMap + Code(function_index) + Code(local_count); /*???*/
-		for (int i = 0; i < currentLocalNames.size(); ++i) {
+		for (int i = 0; i < localNames.size(); ++i) {
 //		String local_name = "test_"s+key+"#"+local_count;
-			String local_name = currentLocalNames[i];
+			String local_name = localNames[i];
 			localNameMap = localNameMap + Code(i) + Code(local_name);
 		}
 //		error: expected local name count (1) <= local count (0) FOR FUNCTION ...
 	}
 //	localNameMap = localNameMap + Code((byte) 0) + Code((byte) 1) + Code((byte) 0) + Code((byte) 0);// 1 unnamed local
 //	localNameMap = localNameMap + Code((byte) 4) + Code((byte) 0);// no locals for function4
-	localNameMap = localNameMap + Code((byte) 5) /*function index*/ + Code((byte) 1) /*count*/ +
-	               Code((byte) 0) /*l.nr*/ + Code("var1");// function 5 with one local : var1
+//	Code exampleNames= Code((byte) 5) /*function index*/ + Code((byte) 1) /*count*/ + Code((byte) 0) /*l.nr*/ + Code("var1");
+	// function 5 with one local : var1
 
+//	localNameMap = localNameMap + exampleNames;
 
 	auto nameSubSectionModuleName = Code(module_name) + encodeVector(Code("wasp_module"));
 	auto nameSubSectionFunctionNames = Code(function_names) + encodeVector(Code(functionIndices.size()) + nameMap);
-	auto nameSubSectionLocalNames = Code(local_names) + encodeVector(Code((byte) 1) + localNameMap);
+	auto nameSubSectionLocalNames = Code(local_names) + encodeVector(Code(functionIndices.size()) + localNameMap);
 
 //	auto nameSubSectionFuncNames = Code(module_name) + encodeVector(Code("wasp_module"));
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’. The name section should appear only once in a module, and only after the data section.
@@ -1092,10 +1016,9 @@ Code nameSection() {
 }
 
 
-Code &emit(Program ast) {
+Code &emit(Node root_ast) {
 	functionIndices.clear();
 	functionCodes.clear();
-	functionSignatures.clear();
 	typeMap.clear();
 	functionIndices.setDefault(-1);
 	functionSignatures.setDefault(Signature());
@@ -1104,9 +1027,6 @@ Code &emit(Program ast) {
 	return_types.setDefault(voids);
 	return_types.setDefault(voids);
 //	Map<int, String>
-	List<String> default_locals;
-	locals.setDefault(default_locals);
-	locals[0] = default_locals;// necessary?
 
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
 	auto memorySection = createSection(memory_section, encodeVector(Code(2)));
@@ -1114,15 +1034,11 @@ Code &emit(Program ast) {
 
 	auto customSection = createSection(custom, encodeVector(Code("custom123") + Code("random custom section data")));
 	const Code &importSection1 = importSection();
-	const Code &codeSection1 = codeSection(ast.main);// depends on importSection, yields data for funcTypeSection!
+	const Code &codeSection1 = codeSection(root_ast);// depends on importSection, yields data for funcTypeSection!
 	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection() + importSection1 +
 	            funcTypeSection() + exportSection() + codeSection1 + nameSection();// + customSection;
 // memorySection +
 //	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection;// + memorySection + ;
 	code.debug();
 	return code.clone();
-}
-
-Code &emit(Node code) {
-	return emit(Program(code));
 }

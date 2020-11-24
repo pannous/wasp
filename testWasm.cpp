@@ -8,14 +8,22 @@ void testWasmFunctionDefiniton() {
 //	assert_is("add1 x:=x+1;add1 3", (long) 4);
 	assert_emit("add1 x:=x+1;add1 3", (long) 4);
 	assert_emit("double x:=x*2;double(4)", 8)
+	assert_emit("double:=it*2; double 3", 6)
+	assert_emit("double:=it*2; double 3*4", 24)
+	assert_emit("double:=it*2; double(3*42) > double 2*3", 1)
 	//0 , 1 , 1 , 2 , 3 , 5 , 8 , 13 , 21 , 34 , 55 , 89 , 144
+	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
+	assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
+	skip(
 	assert_emit("fib:=it<2 and it or fib(it-1)+fib(it-2);fib(7)", 13)
 	assert_emit("fib:=it<2 then it or fib(it-1)+fib(it-2);fib(7)", 13)
 	assert_emit("fib:=it<2 or fib(it-1)+fib(it-2);fib(4)", 5)
 	assert_emit("fib:=it<2 then 1 else fib(it-1)+fib(it-2);fib(4)", 5)
+			)
 }
 
 void testWasmFunctionCalls() {
+
 	assert_emit("id (3+3)", (long) 6);
 	assert_emit("square 3", 9);
 	assert_emit("id 123", (long) 123);
@@ -31,6 +39,8 @@ void testWasmFunctionCalls() {
 	assert_is("id 3+3", 6);
 	assert_emit("3 + id 3+3", (long) 9);
 	assert_emit("3 + √9", (long) 6);
+	assert_emit("id(3*42) > id 2*3", 1)
+	assert_emit("square(3*42) > square 2*3", 1)
 }
 
 void testConstReturn() {
@@ -310,6 +320,10 @@ void testWasmMemoryIntegrity() {
 }
 
 void testRecentRandomBugs() {
+	assert(eval("ç='☺'") == "☺");// fails later => bad pointer?
+	assert(eval("(2+1)==(4-1)") == 1);
+	assert(eval("3==2+1") == 1);
+	assert(eval("2+1==2+1") == 1);
 	assert_emit("square 3", 9);
 	assert_emit("square (3+3)", (long) 36);
 	assert_emit("id (3+3)", (long) 6);
@@ -331,6 +345,7 @@ void testRecentRandomBugs() {
 
 	assert_emit("4*5 + square 2*3", (long) 56);
 //	assert_emit("id 3*42> id 2*3", 1)
+	assert_emit("x=41;if x>1 then 2 else 3", 2)
 	assert_emit("x:41;if x>1 then 2 else 3", 2)
 	assert_emit("x:41;if x<1 then 2 else 3", 3)
 
@@ -367,20 +382,22 @@ void testAllWasm() {
 	// todo: reuse all tests via
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
-	assert_emit("double:=it*2; double(3*42) > double 2*3", 1)
+	assert_emit("x=41;x+1", 42)
+	assert_emit("id(4*42) > id 2+3", 1)
 	assert_emit("double:=it*2; double 3", 6)
-	assert_emit("double:=it*2; double 3*4", 24)
-	assert_emit("double:=it*2; double(3*42) > double 2*3", 1)
+	assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)
+	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
 
-	assert_emit("id(3*42) > id 2*3", 1)
-	assert_emit("square(3*42) > square 2*3", 1)
 
-	testRecentRandomBugs();
+	assert_emit("add1 x:=x+1;add1 3", (long) 4);
+
+//	testRecentRandomBugs();
 //	run_wasm_file("../t.wasm");
 
 //	testWasmFunctionDefiniton();
 
 // TRUE TESTS:
+	testWasmFunctionDefiniton();
 	testWasmFunctionCalls();
 	testFloatOperators();
 	testWasmLogicUnary();
