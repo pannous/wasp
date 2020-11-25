@@ -567,6 +567,8 @@ void testKitchensink() {
 	assert(node['d'] == "semicolons optional");
 	assert(node['e'] == "trailing comments"); // trailing comments
 	assert(node["f"] == /*inline comments*/ "inline comments");
+	skip(
+			)
 }
 
 void testEval3() {
@@ -1222,6 +1224,13 @@ void testReplace() {
 	check(result == replaced);
 }
 
+void testWasmString(){
+	wasm_string x = reinterpret_cast<wasm_string>("\03abc");
+	String y = String(x);
+	check(y.length==3);
+	check(y=="abc"s);
+}
+
 void testGroupCascade() {
 	Node result = parse("{ a b c, d e f; g h i , j k l \n "
 	                    "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2}"
@@ -1259,6 +1268,7 @@ void tests() {
 	testStringReferenceReuse();
 	testNilValues();
 	testCall();
+	testWasmString();
 	testNewlineLists();
 	testTruthiness();
 	testIndex();
@@ -1317,9 +1327,9 @@ void tests() {
 	testGraphQlQuery2();
 	testUTF();// fails sometimes => bad pointer!?
 	testRecentRandomBugs();
-	skip(
-			testGroupCascade();
 			testKitchensink();
+			testGroupCascade();
+	skip(
 	)
 #ifdef APPLE
 	testAllSamples();
@@ -1357,10 +1367,9 @@ void todos() {
 #include "Wasp.h" // is_operator
 
 void testCurrent() { // move to tests() once OK
-	skip(
-			testKitchensink(); // TODO Oooo!
-	)
-
+	testGroupCascade();
+	testKitchensink(); // TODO Oooo!
+	testWasmString();
 
 //	testGraphQlQuery();
 
@@ -1376,7 +1385,7 @@ void testCurrent() { // move to tests() once OK
 	todos();// those not passing yet (skip)
 //	testBUG();
 //	testParentBUG();
-
+testWasmString();
 	tests();// make sure all still ok after changes
 	log("CURRENT TESTS PASSED");
 }
