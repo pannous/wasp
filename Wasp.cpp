@@ -254,7 +254,7 @@ private:
 	}
 
 	char proceed(char c = 0) {
-		if(not ch and at>=0){
+		if (not ch and at >= 0) {
 			warn("end of code");
 			return ch;
 		}
@@ -506,19 +506,26 @@ private:
 	};
 
 	// Parse a comment
-	void comment() {
+	bool comment() {
+
 		// Skip a comment, whether inline or block-level, assuming this is one.
 		// Comments always begin with a / character.
+		char preserveLast = lastNonWhite;
 		if (ch != '/') {
 			error("Not a comment");
 		}
 		if (next == '/') {
 			proceed('/');
 			inlineComment();
+			previous=lastNonWhite = preserveLast;
+			return true;
 		} else if (next == '*') {
 			proceed('/');
 			blockComment();
+			previous=lastNonWhite = preserveLast;
+			return true;
 		} else {
+			return false; // not a comment
 			// division handled elsewhere
 //			error("Unrecognized comment");
 		}
@@ -531,15 +538,13 @@ private:
 		// break if there are other valid values that begin with a / character!
 		while (ch) {
 			if (ch == '/') {
-				comment();
-				return;
+				if(not comment()) return; // else loop on
 //				auto ws = {' ', '\t', '\r', '\n'};
 // || ch == '\r' || ch == '\n' NEWLINE IS NOT A WHITE LOL, it has semantics
 			} else if (ch == ' ' || ch == '\t') {
 				proceed();
-			} else {
+			} else
 				return;
-			}
 		}
 	};
 
@@ -956,8 +961,7 @@ private:
 		if (lastNonWhite == '[' or next == ']')return true;
 		if (ch == ',' and next == ';')return true;// 1,2,3,; => 1,2,3;
 		if (ch == ',' and next == '\n')return true;// 1,2,3,\n => 1,2,3;
-		if (lastNonWhite == ',' and ch == '\n')return true;// ambiguous! newline acts as whitespace here a{b:c,\n d:e}
-		if (lastNonWhite == ';' and ch == '\n')return true;// ambiguous! newline acts as whitespace here
+		if (ch == ';' and next == '\n')return true;// 1,2,3,\n => 1,2,3;
 		return false;
 	}
 
@@ -983,15 +987,13 @@ private:
 				continue;
 			}
 			if (ch == close) { // (…) {…} «…» ...
-				proceed();
+				if (ch == '}' or ch == ']' or ch == ')')
+					proceed();
 				break;
 			}
 			if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
 				break;
 			}// inner match ok
-			if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
-				break;// cant be reached
-			}// outer match unresolved so far
 			switch (ch) {
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 //				https://en.wikipedia.org/wiki/ASCII#Character_set
@@ -1091,9 +1093,12 @@ private:
 					if (is_operator(previous))
 						add_raw = true;// == *=
 					Node op = any_operator();// extend *= ...
-					if(op.name.length>1)
-						add_raw=true;
-					if (add_raw) { current.addRaw(op.setType(operators)).setType(expressions); continue;}
+					if (op.name.length > 1)
+						add_raw = true;
+					if (add_raw) {
+						current.addRaw(op.setType(operators)).setType(expressions);
+						continue;
+					}
 					Node &val = *valueNode(' ', &key).clone();// applies to WHOLE expression
 					if (add_raw) {  // complex expressions are not simple maps
 						current.addRaw(val);
