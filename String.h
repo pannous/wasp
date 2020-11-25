@@ -5,6 +5,7 @@
 //#include <c++/v1/cstdlib>
 #include "WasmHelpers.h"
 #include "NodeTypes.h"
+
 //#include "Map.h"
 #ifndef WASM
 
@@ -13,6 +14,7 @@
 
 #endif
 
+typedef const unsigned char* wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
 class String;
 extern String& EMPTY_STRING;
 //What 'char' and 'wchar_t' represent are completely ambiguous.
@@ -89,10 +91,12 @@ extern unsigned int *memory;
 #define error(msg) error1(msg,__FILE__,__LINE__)
 
 extern void error1(chars message, chars file = 0, int line = 0);
-
+//void error1(String message, chars file = 0, int line = 0);
 extern void info(chars);
 
 extern void warn(chars);
+
+void warn(String warning);
 
 extern void warning(chars);
 
@@ -140,7 +144,9 @@ public:
 extern char *empty_string;// = "";
 
 //duplicate symbol '_empty_string'
-String typeName(Type t);
+
+//String
+const char* typeName(Type t);
 
 //char null_value[]={0};// todo make sure it's immutable!!
 class String {
@@ -218,6 +224,15 @@ public:
 		}
 	}
 
+	explicit
+	String(wasm_string s) {
+		shared_reference = true;
+		short length_bytes=1;// LEB128 length encoding header
+		length=s[0];
+		if(length<0 or length>=128)
+			todo("decode full LEB128");
+		data = (char *) s + length_bytes;
+	}
 
 //		String operator+(Type e){
 	explicit String(Type type) : String(typeName(type)) {}// lil hack to get String of specific enums
@@ -568,42 +583,40 @@ public:
 	}
 
 	bool operator==(chars c) {
-		if(shared_reference)
-			return length != 0 && data && eq(data, c,length);
-		return length != 0 && data && eq(data, c);
+		return length != 0 && data && eq(data, c,shared_reference? length:-1);
 	}
 
 	bool operator==(char *c) {
-		return length != 0 && data && eq(data, c);
+		return length != 0 && data && eq(data, c, shared_reference? length:-1);
 	}
 
 
 	bool operator!=(String &s) {// const
 		if (this->empty())return !s.empty();
 		if (s.empty())return !this->empty();
-		return !eq(data, s.data);
+		return !eq(data, s.data,shared_reference? length:-1);
 	}
 
 //	bool operator==(const String other ) {
-//		return length == other.length && eq(data, other.data);
+//		return length == other.length && eq(data, other.data, shared_reference? length:-1);
 //	}  ambiguous with
 
 	bool operator==(String &s) {// const
 		if (this->empty())return s.empty();
 		if (s.empty())return this->empty();
-		return eq(data, s.data);
+		return eq(data, s.data,shared_reference? length:-1);
 	}
 
 	bool operator==(String *s) {// const
 		if (this->empty() and not s)return true;
 		if (this->empty())return s->empty();
 		if (s->empty())return this->empty();
-		return eq(data, s->data);
+		return eq(data, s->data,shared_reference? length:-1);
 	}
 
 	bool operator==(char *c) const {
-//		if (!this)return false;// how lol e.g. me.children[0].name => nil.name
-		return eq(data, c);
+		if (!this)return false;// how lol e.g. me.children[0].name => nil.name
+		return eq(data, c,shared_reference? length:-1);
 	}
 
 	bool operator!=(char *c) {
@@ -685,6 +698,9 @@ public:
 			return *this;
 		}
 	}
+	String replace(chars string, String with) {// first only!
+		return replace(string, with.data);
+		}
 
 	String times(short i) {
 		if (i < 0)
@@ -702,8 +718,8 @@ public:
 //	 operator char*()  { return data; }
 	explicit operator int() const { return atoi0(data); }
 
-//	otherwise String("abc") == "abc"  is char* comparison hence false
-//	explicit
+//	MUST BE explicit, otherwise String("abc") != "abc"  : char* comparison hence false
+//	explicit cast
 	operator char *() const { return data; }
 
 //	operator codepoint *() { return extractCodepoints(); }
@@ -734,7 +750,7 @@ public:
 		int i = 0;
 //		for(String x:array){}
 		String dis = *this;
-		while (array[i]) {
+		while (not array[i].empty()) {
 			if (array[i] == dis) {
 				return i + 1;
 			}
