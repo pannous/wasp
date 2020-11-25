@@ -351,7 +351,8 @@ String s(const char *&s) {
 }
 
 
-String typeName(Type t) {
+//String
+const char* typeName(Type t) {
 	switch (t) {
 		case objects:
 			return "object";
@@ -558,3 +559,6 @@ codepoint *String::extractCodepoints(bool again) {
 }
 String EMPTY_STRING0="";
 String& EMPTY_STRING=EMPTY_STRING0;
+void error1(String message, chars file, int line){
+	error1(message.data, file, line);
+}

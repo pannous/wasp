@@ -223,6 +223,10 @@ void warn(chars warning) {
 	printf(warning);
 	newline();
 }
+void warn(String warning) {
+	printf(warning.data);
+	newline();
+}
 
 void warning(chars warning) {
 	printf(warning);// for now

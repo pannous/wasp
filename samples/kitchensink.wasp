@@ -1,9 +1,9 @@
 {
-f: /*inline comments*/ "inline comments"
+f: /*inline comments*/ "inline comments",
   "a": "classical json",
+  d: "semicolons optional";
   b: "quotes optional",
   c: "commas optional"
-  d: "semicolons optional";
   e: "trailing comments" // trailing comments
 
   "g": /*inline comments*/ "inline comments"
@@ -11,7 +11,7 @@ f: /*inline comments*/ "inline comments"
   "address": {
     street="highway 66",
     distict="Metro",
-    distict="Metro",// Duplicate key not allowed
+    distict="Metro",// Duplicate key not allowed?
     //    distict=Metro,
     //    city:{Paris France}
   }

@@ -383,6 +383,7 @@ void testAllWasm() {
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
 	assert_emit("x=41;x+1", 42)
+	assert_emit("x=40;y=2;x+y", 42)
 	assert_emit("id(4*42) > id 2+3", 1)
 	assert_emit("double:=it*2; double 3", 6)
 	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)

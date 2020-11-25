@@ -388,7 +388,7 @@ public:
 		if (kind == strings)
 			return value.string;
 		return name;
-		error(String("WRONG TYPE ") + typeName(kind));
+		error((char*)(String("WRONG TYPE ") + String(kind)));
 	}
 
 	// moved outside because circular dependency
@@ -440,19 +440,10 @@ public:
 			printf("NIL\n");
 			return;
 		}
-//		if || name==nil_name …
-#ifndef WASM
-#ifndef WASI
-		if (name and name.data and name.data < (char *) 0xffff) {
-			printf("BUG");
-		}
-		if (name and name.data and name.data > (char *) 0xffff) // and kind != objects
-#endif
-#endif
-//		printf("name:"_s + name);
+		if (name.data)
 			printf("name:%s", name.data);
 		printf(" length:%d", length);
-		printf(" type:"_s + typeName(kind));
+		printf(" type: %s", typeName(kind));
 		const String &string1 = serializeValue(false);
 		printf(" value: %s\n\n", string1);// NEEDS "%s", otherwise HACKABLE
 //			printf("name:%s ", name.data);
@@ -478,7 +469,7 @@ public:
 			Node &node = children[i];
 //			if(check(node))
 			if (!node.name.empty()) {
-				printf(node.name);
+				printf("%s",node.name.data);
 				printf(" ");
 			}
 		}
