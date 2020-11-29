@@ -6,8 +6,8 @@
 #include "Wasp.h"
 #include "String.h"
 #include "Map.h"
-#include "wasm-emitter.h"
-#include "WasmHelpers.h"
+#include "wasm_emitter.h"
+#include "wasm_helpers.h"
 #include "wasm_runner.h"
 
 #define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
@@ -389,12 +389,12 @@ Code emitValue(Node node, String context) {
 //		case ints:
 			code.addByte((byte) i32_auto);
 			code.push(node.value.longy);
-			last_type = i32;
+			last_type = i32t;
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case longs:
 			// todo: ints!!!
-			last_type = i32;
+			last_type = i32t;
 //			if(call_extern)
 			code.addByte((byte) i32_const);
 //			code.opcode((byte)i64_auto);
@@ -402,7 +402,7 @@ Code emitValue(Node node, String context) {
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case reals:
-			last_type = f32;// auto cast return!
+			last_type = f32t;// auto cast return!
 			code.addByte((byte) f32_auto);
 			code.push(ieee754(node.value.real), 4);
 			break;
@@ -499,13 +499,13 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				code.addByte((index));// ok till index>127?
 				break;
 			}
-			byte opcode = opcodes(name, last_type == f32);
+			byte opcode = opcodes(name, last_type == f32t);
 			if (opcode == f32_eqz) { // hack for missing f32_eqz
 //				0.0 + code.addByte(f32_eq);
 				code.addByte(
 						i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
 				code.addByte(i32_eqz);
-				last_type = i32;// bool'ish
+				last_type = i32t;// bool'ish
 				break;
 			} else if (opcode > 0)
 				code.addByte(opcode);
@@ -514,9 +514,9 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			}
 			if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or
 			    opcode == i32_mul)
-				last_type = i32;
+				last_type = i32t;
 			if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt)
-				last_type = i32;// bool'ish
+				last_type = i32t;// bool'ish
 		}
 			break;
 		case declaration:
@@ -603,6 +603,7 @@ Code emitCall(Node &fun, String context) {
 	};
 	code.addByte(function);
 	code.addByte(index);// ok till index>127, then use unsignedLEB128
+	code.addByte(nop);// padding for potential relocation
 	last_type = return_types[fun.name];// voids;// todo lookup return type
 	return code;
 }
@@ -629,7 +630,7 @@ Code emitDeclaration(Node fun, Node &body) {
 	}
 	Signature &signature = functionSignatures[fun.name];
 	if (signature.size() == 0 and body.has("it", false, 100))
-		signature.add(i32);
+		signature.add(i32t);
 
 //			body=*fun.begin()
 	Valtype returns = int32;// todo
@@ -769,7 +770,7 @@ Code emitBlock(Node node, String context) {
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; ++i) {
 		block.addByte(i + 1);// index
-		block.addByte(i32);// type todo
+		block.addByte(i32t);// type todo
 	}
 
 	Code inner_code_data = emitExpression(node, context);
@@ -779,9 +780,9 @@ Code emitBlock(Node node, String context) {
 	if (returns != last_type) {
 		if (returns == Valtype::voids and last_type != Valtype::voids)
 			block.addByte(drop);
-		if (returns == Valtype::i32 and last_type == Valtype::f32)
+		if (returns == Valtype::i32t and last_type == Valtype::f32t)
 			block.addByte(i32_trunc_f32_s);
-		if (returns == Valtype::i32 and last_type == Valtype::voids)
+		if (returns == Valtype::i32t and last_type == Valtype::voids)
 			block.addByte(i32_const).addByte(0);// hack? return 0/false by default. ok? see python!
 //		if(returns==Valtype::f32)…
 	}
@@ -814,12 +815,12 @@ Code typeSection() {
 //	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
 //	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
 	char vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/,
-	             i32};// our main function! todo : be flexible!
-	char iv[] = {0x60/*const type form*/, 0x01/*param count*/, i32, 0x00/*return count*/};
+	             i32t};// our main function! todo : be flexible!
+	char iv[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x00/*return count*/};
 	char vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
-	char ii[] = {0x60/*const type form*/, 0x01/*param count*/, i32, 0x01/*return count*/, i32};
-	char iii[] = {0x60/*const type form*/, 0x02/*param count*/, i32, i32, 0x01/*return count*/, i32};
-	char fv[] = {0x60/*const type form*/, 0x01/*param count*/, f32, 0x00/*return count*/};
+	char ii[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x01/*return count*/, i32t};
+	char iii[] = {0x60/*const type form*/, 0x02/*param count*/, i32t, i32t, 0x01/*return count*/, i32t};
+	char fv[] = {0x60/*const type form*/, 0x01/*param count*/, f32t, 0x00/*return count*/};
 
 	int typeCount = 5;
 	Code type_data = Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv)) + Code(ii, sizeof(ii)) +
@@ -853,11 +854,11 @@ Code importSection() {
 	// the import section is a vector of imported functions
 
 //  bytes printFunctionType = new char[]{functionType,encodeVector(f32), emptyArray}
-	Code printFunctionType = Code(functionType).push(encodeVector(Code(f32))).push(emptyArray);
-//	functionSignatures["logi"] = Signature().add(i32);
+	Code printFunctionType = Code(functionType).push(encodeVector(Code(f32t))).push(emptyArray);
+//	functionSignatures["logi"] = Signature().add(i32t);
 //	functionSignatures["logf"] = Signature().add(f32);
-//	functionSignatures["square"] = Signature().add(i32).returns(i32);
-//	functionSignatures["sqrt"] = Signature().add(i32).returns(i32);
+//	functionSignatures["square"] = Signature().add(i32t).returns(i32t);
+//	functionSignatures["sqrt"] = Signature().add(i32t).returns(i32t);
 
 // todo: remove hardcoded!
 	Code logi_iv = encodeString("env") + encodeString("logi").addByte(func_export).addType(1);
@@ -896,18 +897,18 @@ Code codeSection(Node root) {
 	functionIndices["main"] = function_offset++;
 	functionIndices["nop"] = function_offset++;
 	functionIndices["id"] = function_offset++;
-	return_types["id"] = i32;
-	return_types["main"] = i32;
+	return_types["id"] = i32t;
+	return_types["main"] = i32t;
 	return_types["nop"] = voids;
 	functionSignatures["nop"] = Signature();
-	functionSignatures["id"] = Signature().add(i32).returns(i32);
-	functionSignatures["main"] = Signature().returns(i32);
+	functionSignatures["id"] = Signature().add(i32t).returns(i32t);
+	functionSignatures["main"] = Signature().returns(i32t);
 	short builtin_count = 2;
 
 
 	char code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block}; // 0x00 == unreachable as block header !?
 	char code_data_nop[] = {0/*locals_count*/, end_block};// NOP
-	char code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32, get_local, 0, return_block,
+	char code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block,
 	                       end_block};// NOP
 //	char code_data[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
@@ -979,7 +980,7 @@ Code nameSection() {
 //	auto nameSubSectionFunctionNames = Code(function_names) + encodeVector(Code(1) + Code((byte) 0) + Code("logi"));
 //	functions without parameters need  entry ( 00 01 00 00 )
 //  functions 5 with local 'hello' :  05 01 00 05 68 65 6c 6c 6f
-//  functions 5 with local 'hello' :  05 02 00 05 68 65 6c 6c 6f 01 00 AND unnamed (local i32)
+//  functions 5 with local 'hello' :  05 02 00 05 68 65 6c 6c 6f 01 00 AND unnamed (local i32t)
 // localMapEntry = (index nrLocals 00? string )
 
 	Code localNameMap;
@@ -1010,11 +1011,61 @@ Code nameSection() {
 //	auto nameSubSectionFuncNames = Code(module_name) + encodeVector(Code("wasp_module"));
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’. The name section should appear only once in a module, and only after the data section.
 	const Code &nameSectionData = encodeVector(
-			Code("name") + nameSubSectionModuleName + nameSubSectionFunctionNames + nameSubSectionLocalNames);
+			Code("name") + nameSubSectionModuleName);// + nameSubSectionFunctionNames + nameSubSectionLocalNames);
 	auto nameSection = createSection(custom, nameSectionData);
+	nameSection.debug();
 	return nameSection;
 }
 
+Code dataSection(){
+	return Code();
+}
+Code eventSection(){
+}
+
+/*
+ *  There are currently two ways in which function indices are stored in the code section:
+    Immediate argument of the call instruction (calling a function)
+    Immediate argument of the i32.const instruction (taking the address of a function).
+    The immediate argument of all such instructions are stored as padded LEB128 such that they can be rewritten without altering the size of the code section. !
+    For each such instruction a R_WASM_FUNCTION_INDEX_LEB or R_WASM_TABLE_INDEX_SLEB reloc entry is generated pointing to the offset of the immediate within the code section.
+
+    R_WASM_FUNCTION_INDEX_LEB relocations may fail to be processed, in which case linking fails. This occurs if there is a weakly-undefined function symbol, in which case there is no legal value that can be written as the target of any call instruction. The frontend must generate calls to undefined weak symbols via a call_indirect instruction.
+*/
+Code linkingSection(){
+//	https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
+	short version=2;
+	Code subsection;
+	short type=5;// SEGMENT alignment & flags
+	short payload_len=0;
+	Code payload_data;
+	subsection.add(type).add(payload_len).push(payload_data);
+	Code subsections;
+/*
+	5 / WASM_SEGMENT_INFO - Extra metadata about the data segments.
+	6 / WASM_INIT_FUNCS - Specifies a list of constructor functions to be called at startup. Called after memory has been initialized.
+	7 / WASM_COMDAT_INFO - Specifies the COMDAT groups of associated linking objects, which are linked only once and all together.
+	8 / WASM_SYMBOL_TABLE - Specifies extra information about the symbols present in the module.
+// https://en.wikipedia.org/wiki/Relocatable_Object_Module_Format
+// http://wiki.dwarfstd.org/index.php?title=COMDAT_Type_Sections
+	COMDAT - (C2h/C3h) Initialized common data
+	COMDEF - (B0h) Uninitialized common data
+ Thread-agnostic objects can be safely linked with objects that do or do not use atomics, although not both at the same time.
+*/
+	return createSection(custom, encodeVector(Code("linking") + Code(version) + subsections));
+}
+/*
+ * The generally accepted features are:
+    atomics
+    bulk-memory
+    exception-handling
+    multivalue
+    mutable-globals
+    nontrapping-fptoint
+    sign-ext
+    simd128
+    tail-call
+ */
 
 Code &emit(Node root_ast) {
 	functionIndices.clear();
@@ -1036,7 +1087,7 @@ Code &emit(Node root_ast) {
 	const Code &importSection1 = importSection();
 	const Code &codeSection1 = codeSection(root_ast);// depends on importSection, yields data for funcTypeSection!
 	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection() + importSection1 +
-	            funcTypeSection() + exportSection() + codeSection1 + nameSection();// + customSection;
+	            funcTypeSection() + exportSection() + codeSection1 + dataSection() + linkingSection() + nameSection();// + customSection;
 // memorySection +
 //	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection;// + memorySection + ;
 	code.debug();

@@ -6,7 +6,7 @@
 #include "wasm3.h"
 #include <cstdio>
 #include "wasm3_cpp.h"
-#include "WasmHelpers.h"
+#include "wasm_helpers.h"
 #include "String.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -74,9 +74,10 @@ int test_wasm3(const uint8_t *prog, int len)
 
 	try {
 		wasm3::environment env;
-		wasm3::runtime runtime = env.new_runtime(1024);
 		wasm3::module mod = env.parse_module(prog,len);
+		wasm3::runtime runtime = env.new_runtime(1024);
 		runtime.load(mod);
+
 		mod.link_optional<sum>("*", "sum");
 		mod.link_optional<ext_memcpy>("*", "ext_memcpy");
 		mod.link_optional<sqrt1>("*", "√");

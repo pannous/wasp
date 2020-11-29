@@ -5,6 +5,7 @@ f: /*inline comments*/ "inline comments",
   b: "quotes optional",
   c: "commas optional"
   e: "trailing comments" // trailing comments
+  x: "paired group", y:"paired group" // parsed as (x y) , should still be accessible via root[x] !
 
   "g": /*inline comments*/ "inline comments"
   // todo ? <!-- html comments ? -->

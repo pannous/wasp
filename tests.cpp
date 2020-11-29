@@ -174,9 +174,9 @@ Node assert_parsesx(const char *mark) {
 }
 
 
-#include "testAngle.cpp"
-#include "testWast.cpp"
-#include "testWasm.cpp"
+#include "test_angle.cpp"
+#include "test_wast.cpp"
+#include "test_wasm.cpp"
 
 void testModernCpp() {
 	auto αα = 1. * 2;
@@ -1237,8 +1237,8 @@ void testGroupCascade() {
 	                    "{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
 	                    "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
 	result.log();
-	check(result.kind == groups);
-	check(result.first().kind == objects);
+	check(result.kind == groups);// objects because {}!
+	check(result.first().kind == groups);
 	check(result.first().first().kind == groups);// or expression if x is op
 	check(result.length == 2)// {…} and {and}
 	check(result[0].length == 2) // a…  and a2…  with significant newline
@@ -1365,11 +1365,12 @@ void todos() {
 }
 
 #include "Wasp.h" // is_operator
+#include "wasm_reader.h"
 
 void testCurrent() { // move to tests() once OK
-	testGroupCascade();
-	testKitchensink(); // TODO Oooo!
-	testWasmString();
+//	testGroupCascade();
+//	testKitchensink(); // TODO Oooo!
+//	testWasmString();
 
 //	testGraphQlQuery();
 
