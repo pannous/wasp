@@ -3,7 +3,7 @@
 // Created by pannous on 19.12.19.
 //
 //#include <c++/v1/cstdlib>
-#include "WasmHelpers.h"
+#include "wasm_helpers.h"
 #include "NodeTypes.h"
 
 //#include "Map.h"

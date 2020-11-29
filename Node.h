@@ -164,7 +164,7 @@ public:
 				name = value.string;
 				kind = strings;
 				break;
-			case code:
+			case codes:
 			case utf8char:
 				value.string = String((wchar_t) payload);
 				name = value.string;

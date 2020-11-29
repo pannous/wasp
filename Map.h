@@ -8,7 +8,7 @@
 
 //#include "String.h"
 #include "Node.h"
-#include "WasmHelpers.h"
+#include "wasm_helpers.h"
 
 #ifndef WASM
 #include <initializer_list> // allow List x={1,2,3};
