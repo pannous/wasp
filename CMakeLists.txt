@@ -9,11 +9,10 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 set(DEBUG 1)
 add_compile_definitions(DEBUG)
 
-set(WASM 0) # OR :
-#if($ENV{WASI})
-set(WASI 0)
+set(WASM 1) # OR :
+#set(WASI 1)
 #set(VM 1)
-set(WASM3 1)
+#set(WASM3 1)
 set(CMAKE_CXX_STANDARD 20)
 
 #set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
@@ -49,7 +48,7 @@ if (WASM)
 
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
 
-    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp WasmHelpers.cpp)
+    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp wasm_helpers.cpp)
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasm ALL DEPENDS wasp.wasm)
 elseif (WASI)
@@ -72,7 +71,7 @@ elseif (WASI)
 #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
 
     ADD_COMPILE_FLAG("-w -g -O0 -v ") # -nostdlib
-    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp WasmHelpers.cpp exceptions.cpp )
+    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp wasm_helpers.cpp exceptions.cpp )
     # smart_types.cpp
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
@@ -111,7 +110,7 @@ elseif (VM) # NORMAL:
 #    ADD_COMPILE_FLAG("-w -Oz") # maximal optimization, CANT DEBUG!
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
     set(SOURCE_FILES Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
-            WasmHelpers.cpp wasm-emitter.cpp wasm_runner.cpp
+            wasm_helpers.cpp wasm_emitter.cpp wasm_runner.cpp
             smart_types.cpp)
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
 
@@ -143,8 +142,8 @@ elseif (WASM3) # NORMAL:
     add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)
     set(SOURCE_FILES
             Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
-            WasmHelpers.cpp wasm-emitter.cpp wasm3_runner.cpp
-            smart_types.cpp)
+            wasm_helpers.cpp wasm_emitter.cpp wasm3_runner.cpp
+            smart_types.cpp wasm_reader.cpp)
     add_executable(angle ${SOURCE_FILES})
     target_include_directories(angle PUBLIC wasm3/source/)
     target_link_libraries(angle PRIVATE m3)
@@ -157,7 +156,7 @@ else () # NORMAL:
     #    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")
     #find_package( Readline)    #find_package( READLINE )
     #    ADD_COMPILE_FLAG(" -lreadline -ldl -lcurl -lz") # extra libraries
-    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp WasmHelpers.cpp wasm-emitter.cpp Map.cpp smart_types.cpp wasm3_runner.cpp wasm3_runner.h)
+    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm_helpers.cpp wasm_emitter.cpp Map.cpp smart_types.cpp wasm3_runner.cpp wasm3_runner.h wasm_reader.cpp wasm_reader.h)
 
     #    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(angle ${SOURCE_FILES})

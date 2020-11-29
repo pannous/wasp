@@ -5,7 +5,7 @@
 
 #include "String.h"
 #include "NodeTypes.h"
-#include "WasmHelpers.h"
+#include "wasm_helpers.h"
 #include "Map.h"
 
 #ifndef WASM
