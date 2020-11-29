@@ -1,12 +1,12 @@
 //#pragma once
 
-#include "WasmHelpers.h"
+#include "wasm_helpers.h"
 #include "String.h" // variable has incomplete type
 #include "Node.h"
 #include "Backtrace.h" // header ok in WASM
 
 //#import "String.cpp" // import against mangling in wasm (vs include)
-#include "wasm-emitter.h"
+#include "wasm_emitter.h"
 
 #ifndef WASM
 

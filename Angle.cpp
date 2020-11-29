@@ -5,9 +5,9 @@
 
 #include "Wasp.h"
 #include "Angle.h"
-#import "WasmHelpers.h" // IMPORT so that they don't get mangled!
+#import "wasm_helpers.h" // IMPORT so that they don't get mangled!
 #include "Node.h"
-#include "wasm-emitter.h"
+#include "wasm_emitter.h"
 #include "math.h" // sqrt
 #include "Map.h"
 

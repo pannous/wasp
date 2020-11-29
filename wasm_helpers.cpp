@@ -4,7 +4,7 @@
 // Created by pannous on 15.07.20.
 //
 
-#include "WasmHelpers.h"
+#include "wasm_helpers.h"
 #include "String.h"
 #include "Backtrace.h"
 //#define size_t int
@@ -238,7 +238,9 @@ int square(int a){
 }
 
 int sqrt1(int a){
+#ifndef WASM
 	return sqrt(a);
+#endif
 }
 void printf(int i){
 	printf("%d", i);
