@@ -1,5 +1,6 @@
 #include "Angle.h" // emit
 #include "Wasp.h"
+#include "wasm_reader.h"
 
 //#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 #define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
@@ -383,6 +384,8 @@ void testAllWasm() {
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
 	assert_emit("x=41;x+1", 42)
+	readWasm("test.wasm");
+	exit(0);
 	assert_emit("x=40;y=2;x+y", 42)
 	assert_emit("id(4*42) > id 2+3", 1)
 	assert_emit("double:=it*2; double 3", 6)

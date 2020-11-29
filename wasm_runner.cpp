@@ -6,7 +6,7 @@
 
 #include <include/wasm_c_api.h>
 #include "wasm_runner.h"
-#include "WasmHelpers.h"
+#include "wasm_helpers.h"
 /*
  * Copyright (C) 2019 Intel Corporation.  All rights reserved.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception

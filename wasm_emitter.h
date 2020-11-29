@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstring>
 #include "wasm_runner.h"
 #include "Map.h"
 typedef const unsigned char* wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
@@ -10,7 +11,8 @@ bytes concat(char section, bytes a, int len_a);
 class Code;
 Code& unsignedLEB128(long n);
 Code& signedLEB128(long value);
-
+extern bytes magicModuleHeader;
+extern bytes moduleVersion;
 
 class String;
 class Nod;
@@ -32,6 +34,7 @@ public:
 
 	bytes data=0;
 	int length=0;
+	int pos=0;// internal reader pointer
 	bool encoded= false;// first byte = size of vector
 
 	Code(){}
@@ -55,6 +58,12 @@ public:
 		data[0] = byte;
 		length = 1;
 	}
+
+	Code(byte *datas, int from, int to/*exclusive*/) {
+		data = static_cast<bytes>(alloc(sizeof(char), to - from));
+		memcpy(data,datas,to-from);
+	}
+
 	Code(char section, Code code) {
 		data = concat(section, code.data,code.length);
 		length = code.length+1;
@@ -102,6 +111,11 @@ public:
 		data = concat(data, opcode,length);
 		length++;
 		return *this;
+	}
+
+	Code& add(Code more){
+		if(more.length>0)
+		push(more);
 	}
 
 	Code& add(byte opcode) {
@@ -176,6 +190,9 @@ public:
 //		code.encoded = true;
 //		return code;
 //	}
+	Code rest() {
+		return Code(data,pos,length);
+	}
 };
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
@@ -198,10 +215,10 @@ enum Section {
 // https://webassembly.github.io/spec/core/binary/types.html
 // https://webassembly.github.io/spec/core/binary/values.html
 enum Valtype {
-	i32 = 0x7f,
-	f32 = 0x7d,
-	i64 = 0x7E,
-	f64 = 0x7C,
+	i32t = 0x7f,
+	f32t = 0x7d,
+	i64t = 0x7E,
+	f64t = 0x7C,
 	int32 = 0x7f,
 	float32 = 0x7d,
 	int64 = 0x7E,
@@ -222,6 +239,7 @@ enum Opcodes {
 //	start = 0x00,
 	start_function = 0x00,
 //	unreachable = 0x00,
+	nop = 0x01, // useful for relocation padding call 1 -> call 10000000
 	block = 0x02,
 	loop = 0x03,
 	if_i = 0x04,// precede by i32 result, follow by i32_type (7f)
