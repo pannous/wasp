@@ -5,7 +5,7 @@
 #ifndef WASP_WAST_H
 #define WASP_WAST_H
 
-static char *readFile(const char *filename);
+static char *readFile(chars filename);
 
 
 #endif //WASP_WAST_H

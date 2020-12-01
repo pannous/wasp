@@ -5,8 +5,8 @@
 #ifndef WASP_WASM3_RUNNER_H
 #define WASP_WASM3_RUNNER_H
 
-int run_wasm(char const*, int);
-int run_wasm_file(char const* file);
+int run_wasm(chars, int);
+int run_wasm_file(chars file);
 
 
 #endif //WASP_WASM3_RUNNER_H

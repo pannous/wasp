@@ -12,10 +12,6 @@
 
 #define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
-#ifdef WASM
-#import  "WasmHelpers.cpp"
-#endif
-
 Valtype last_type = voids;// autocast if not int
 Map<String, Valtype> return_types;
 //Map<int, List<String>> locals;
@@ -52,23 +48,19 @@ void todo(char *message = "") {
 
 
 
-void memcpy(bytes c, bytes a, int i);
 
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
 	bytes c = new char[len_a + len_b + 4];
-	memcpy(c, a, len_a);
-	memcpy(c + len_a, b, len_b);
+	memcpy0(c, a, len_a);
+	memcpy0(c + len_a, b, len_b);
 	c[len_a + len_b + 1] = 0;
 	return c;
 }
 
-void memcpy(bytes dest, bytes source, int i) {
-	while (i--)dest[i] = source[i];
-}
 
 bytes concat(bytes a, char b, int len) {
 	bytes c = new char[len + 1];
-	memcpy(c, a, len);
+	memcpy0(c, a, len);
 	c[len] = b;
 	return c;
 }
@@ -76,7 +68,7 @@ bytes concat(bytes a, char b, int len) {
 bytes concat(char a, bytes b, int len) {
 	bytes c = new char[len + 1];
 	c[0] = a;
-	memcpy(c + 1, b, len);
+	memcpy0(c + 1, b, len);
 	return c;
 }
 //
@@ -192,7 +184,7 @@ Code encodeString(char *String);
 
 
 // https://pengowray.github.io/wasm-ops/
-byte opcodes(const char *s, byte kind = 0) {
+byte opcodes(chars s, byte kind = 0) {
 //	if(eq(s,"$1="))return set_local;
 //	if (eq(s, "=$1"))return get_local;
 //	if (eq(s, "=$1"))return tee_local;
@@ -256,9 +248,6 @@ bytes magicModuleHeader = new char[]{0x00, 0x61, 0x73, 0x6d};
 bytes moduleVersion = new char[]{0x01, 0x00, 0x00, 0x00};
 
 
-#ifdef WASM
-typedef char uint8_t;
-#endif
 
 typedef uint8_t byt;
 
@@ -359,7 +348,7 @@ bytes ieee754(float num) {
 	char data[4];
 	float *hack = ((float *) data);
 	*hack = num;
-	char *flip = static_cast<char *>(malloc(5));
+	char *flip = static_cast<char *>(alloc(5));
 	short i = 4;
 //	while (i--)flip[3 - i] = data[i];
 	while (i--)flip[i] = data[i];// don't flip, just copy to malloc
@@ -798,7 +787,7 @@ List<String> collect_locals(Node node, String string) {
 	List<String> &current_locals = locals[string]; // no, because there might be gaps(unnamed locals!)
 	for (Node n : node) {
 		bool add = false;
-		if (n.kind == longs and atoi(n.name) != n.value.longy)add = true;
+		if (n.kind == longs and atoi0(n.name) != n.value.longy)add = true;
 		if (n.kind == longs and not n.name.empty() and not atoi0(n.name))add = true;
 		if (n.kind == reference and not functionIndices.has(n.name))add = true;
 		if (add and not current_locals.has(n.name))

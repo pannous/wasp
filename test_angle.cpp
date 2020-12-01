@@ -269,7 +269,9 @@ void testSwitch(){
 #include "smart_types.h"
 
 void initMemory(){
+#ifndef WASM
 	memory = static_cast<unsigned int *>(malloc(1000000));
+#endif
 	memoryChars = (char *) memory;
 }
 
@@ -303,9 +305,24 @@ void testSmartTypes(){
 	check(Node(0xC0000020)==' ');
 
 	check(Node(0xFFFFFFFF)==-1);
-
 }
+
+
+//Prescedence typo for Precedence
+void testLogicPrecedence() {
+	check(precedence("and") > 1);
+
+
+	assert_is("true or true and false", true);
+	assert_is("true or false and true", true);
+	assert_is("true or false and false", true);
+	assert_is("false or true and false", false);
+	assert_is("false or true and false", false);
+}
+
+
 void testAllAngle() {
+	testLogicPrecedence();
 	testSmartTypes();
 	testIf();
 	testCall();

@@ -92,13 +92,13 @@ void logi2(wasm_exec_env_t exec_env, int x) {
 //}
 
 
-int fail(const char *format, const char *val) {
+int fail(chars format, chars val) {
 	printf(format, val);
 //	throw "FAIL";
 	return -1;
 }
 
-int fail(const char *string) {
+int fail(chars string) {
 	printf("FAIL %s", string);
 	return -1;
 }
@@ -267,15 +267,15 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0=0
 		wasm_runtime_destroy();
 		return argv[0];
 
-	} catch (const char *err) {
+	} catch (chars err) {
 		printf("\nERROR\n");
 		printf("%s", err);
 	}
 }
-int run_wasm(const char *buffer, int buf_size){
+int run_wasm(chars buffer, int buf_size){
 	return run_wasm(reinterpret_cast<const uint8 *>(buffer), buf_size, 0);
 }
-int run_wasm_file(const char *wasm_path){
+int run_wasm_file(chars wasm_path){
 	try {
 		RuntimeInitArgs init_args;
 		memset(&init_args, 0, sizeof(RuntimeInitArgs));
@@ -290,7 +290,7 @@ int run_wasm_file(const char *wasm_path){
 		run_wasm(buffer, buf_size, &init_args);
 
 
-	} catch (const char *err) {
+	} catch (chars err) {
 		printf("\nERROR\n");
 		printf("%s", err);
 	}

@@ -18,12 +18,14 @@ extern bool throwing;
 extern bool polish_notation;
 
 extern unsigned int *memory;
+//extern unsigned char __heap_base;
+//unsigned int bump_pointer = &__heap_base;
 
 #define let auto
 #define var auto
 //typedef void *any;
 typedef unsigned char byte;
-typedef const char *chars;
+typedef chars chars;
 
 //extern "C" int isalnum(int _c);
 
@@ -33,7 +35,6 @@ typedef const char *chars;
 #warning COMPILING TO APPLE
 #endif
 
-typedef unsigned long size_t;
 
 
 class Node;
@@ -110,10 +111,11 @@ public:
 //	Node *next = nullptr;// NO, WE NEED TRIPLES cause objects can occur in many lists + danger: don't use for any ref/var
 
 
-	//	Node(const char*);
+	//	Node(chars);
 //	Node(va_list args) {
 //	}
-	void *operator new(unsigned long size) {
+
+	void *operator new(size_t size) {
 		return static_cast<Node *>(calloc(sizeof(Node), size));// WOW THAT WORKS!!!
 	}
 
@@ -291,7 +293,7 @@ public:
 		if (debug)name = String(itoa(nr)); // messes with setField contraction
 	}
 
-	explicit Node(const char *name) {
+	explicit Node(chars name) {
 		this->name = String(name);
 //		type = strings NAH;// unless otherwise specified!
 	}
@@ -523,9 +525,9 @@ public:
 
 	bool isNil();
 
-	const char *toString();
+	chars toString();
 
-	const char *toString() const;
+	chars toString() const;
 
 	String serialize() const;
 
@@ -566,11 +568,3 @@ public:
 };
 
 typedef const Node Nodec;
-
-extern float function_precedence;
-
-float precedence(String name);
-
-float precedence(Node &operater);
-
-float precedence(char group); // special: don't mix

@@ -1,4 +1,10 @@
-#pragma once
+//#pragma once
+
+#ifdef WASI
+//#include <cstdio> // printf
+//#include </usr/local/Cellar/llvm/11.0.0/include/c++/v1/stdio.h> // printf
+#endif
+
 //#include <climits>
 //
 // Created by pannous on 15.07.20.
@@ -10,8 +16,15 @@
 //#define size_t int
 //extern unsigned int *memory;
 
+//#ifdef WASI
+//#include <stdio.h> // printf
+//#endif
+
 
 #ifdef WASM
+
+void free(void*){/*lol*/}
+
 
 void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	void* last = current;
@@ -20,20 +33,13 @@ void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	return last;
 }
 
-void * memcpy ( char * destination, char * source, size_t num ){
-	while(--num>=0)destination[num] = source[num];
-}
-void * memcpy ( void * destination, const void * source, size_t num ){
-	memcpy((char *) destination, (char *) source, num);
-}
-
 void log(chars s) {
 	logs(s);
 }
 void log(char *s) {
 	logs(s);
 //	while(*s)logc(*s++);
-//	logc('\n');
+	logc('\n');
 }
 
 void log(char c) {
@@ -49,38 +55,44 @@ void println(String s){
 	print(s);
 	logc('\n');
 }
-void printf(const char *s) {
-	logs(s);
-//	while(*s)logc(*s++);
-}
+//void printf(chars s) {
+//	logs(s);
+////	while(*s)logc(*s++);
+//}
 void print(String s){
 		log(s.data);
 //	logs(s.data,s.length)
 }
-void printf(const char *format, int i) {
+void printf(chars format, int i) {
 	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
 #ifndef WASM
-void printf(const char *format, number i) {
+void printf(chars format, number i) {
 	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
 #endif
-void printf(const char *format, chars value) {
+void printf(chars format, chars value) {
 	print(String(format).replace("%s", value));
 }
-void printf(const char *format, chars i, chars j){
+void printf(chars format, chars i, chars j){
 	print(String(format).replace("%s", i).replace("%s", j));
 }
 
-void printf(const char *format, chars i, chars j, int l){
+void printf(chars format, chars i, chars j, int l){
 	print(String(format).replace("%s", i).replace("%s", j).replace("%d", String(l)));
 }
+void printf(chars format, chars i, chars j, chars l){
+print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
+}
+void printf(chars format,long i,long j){
+	print(String(format).replace("%d", String(i)).replace("%d", String(j)));
+}
 
-void printf(const char *format, const char *val, int value) {
+void printf(chars format, chars val, int value) {
 	print(String(format).format((char*)val).format(value));
 }
 
-void printf(const char *format, void* value) {
+void printf(chars format, void* value) {
 #ifndef WASM
 	print(String(format).replace("%p", String((number)value)));
 #else
@@ -99,16 +111,17 @@ int isalnum ( int c ){
 #ifndef WASM
 #ifndef WASI
 extern bool throwing;// false for error tests etc
-void raise(chars error){
-	if(throwing) throw error;
+void raise(chars error) {
+	if (throwing) throw error;
 }
+
 #else
 extern "C" void ___cxa_throw(
 		void* thrown_exception,
 		struct type_info *tinfo,
 		void (*dest)(void*));
 void raise(chars error){
-//	throw error;//  typeinfo for char const* yadiya
+//	throw error;//  typeinfo for chars yadiya
 //	_raise(error);
 	printf("ERROR %s\n",error);
 	throw String(error);// OMG works in WASI, kinda, via exceptions.cpp polyfill, BUT doesn't add anything lol
@@ -117,38 +130,37 @@ void raise(chars error){
 }
 #endif
 #endif
-void* alloc(int size,int num) { return calloc((size+1),(num));}
+
+void *alloc(int size, int num) { return calloc((size + 1), (num)); }
+
 void *calloc(int size, int num) {// clean ('0') alloc
-	void *mem = alloc(size,num);
+	void *mem = malloc(size * num);
 	while (num > 0) { ((char *) mem)[--num] = 0; }
 	return mem;
 }
 
-typedef unsigned long size_t;
-
-
 // WOW CALLED INTERNALLY FROM C!!
 //extern "C"
-void * memset ( void * ptr, int value, size_t num ){
-	int* ptr0=(int*)ptr;
+void *memset(void *ptr, int value, size_t num) {
+	int *ptr0 = (int *) ptr;
 	for (int i = 0; i < num; i++)
-		ptr0[i]=value;
+		ptr0[i] = value;
 	return ptr;
 }
-//void* operator new[](size_t size){ // stack
-//	current=memory;
-//	memory+=size;
-////	logs("new[]");
-////	logi((number)current);
-//	return current;
-//}
-//void* operator new(size_t size){ // stack
-//	current=memory;
-//	memory+=size;
-////	logs("new");
-////	logi((number)current);
-//	return current;
-//}
+
+// new operator for ALL objects
+void *operator new[](size_t size) { // stack
+	current = memory;
+	memory += size;
+	return current;
+}
+
+// new operator for ALL objects
+void *operator new(size_t size) { // stack
+	current = memory;
+	memory += size;
+	return current;
+}
 
 // WHY NOT WORKING WHEN IMPORTED? FUCKING MANGLING!
 // bus error == access out of scope, e.g. logc((void*)-1000)
@@ -169,24 +181,26 @@ void * memset ( void * ptr, int value, size_t num ){
 //}
 
 
-void _cxa_allocate_exception(){
+void _cxa_allocate_exception() {
 	log("_cxa_allocate_exception!");
 }
 
-void _cxa_throw(){
+void _cxa_throw() {
 	log("_cxa_throw");
 	error("OUT OF MEMORY");
 }
 
 
 #ifndef WASM
+
 //int square(int n){
 //	return n * n;
 //}
-void logi(int l){
+void logi(int l) {
 	printf("%d\n", l);
 }
-void log_f32(float l){
+
+void log_f32(float l) {
 	printf("%f\n", l);
 }
 
@@ -206,42 +220,111 @@ void error1(chars message, chars file, int line) {
 	//#ifdef _Backtrace_
 	Backtrace(2);
 //#endif
-	if(file)
-	printf("%s:%d\n",file,line);
+	if (file)
+		printf("%s:%d\n", file, line);
 	raise(message);
 //	err(error);
 }
-void newline(){
+
+void newline() {
 	printf("\n");
 }
+
 void info(chars msg) {
-	printf(msg);
+	printf("%s",msg);
 	newline();
 }
 
 void warn(chars warning) {
-	printf(warning);
+	printf("%s",warning);
 	newline();
 }
+
 void warn(String warning) {
-	printf(warning.data);
+	printf("%s",warning.data);
 	newline();
 }
 
 void warning(chars warning) {
-	printf(warning);// for now
+	printf("%s",warning);// for now
 }
 
 
-int square(int a){
+int square(int a) {
 	return a * a;
 }
 
-int sqrt1(int a){
+int sqrt1(int a) {
 #ifndef WASM
 	return sqrt(a);
 #endif
+	todo("own sqrt");
+	return -1;
 }
-void printf(int i){
+
+void printf(int i) {
 	printf("%d", i);
 }
+
+#ifdef WASI
+String Backtrace(int skip, int skipEnd){
+	return "Backtrace: TODO";
+}
+#endif
+
+
+void memcpy0(bytes dest, bytes source, int i) {
+	while (i--)dest[i] = source[i];
+}
+
+void memcpy0(char *destination, char *source, size_t num) {
+	while (--num >= 0)destination[num] = source[num];
+}
+//void * memcpy (void * destination, const void * source, size_t num ){
+//	memcpy0((char *) destination, (char *) source, num);
+//}
+
+extern "C"
+void *memcpy(void *destination, const void *source, size_t num) {
+	memcpy0((char *) destination, (char *) source, num);
+	return destination;// yes?
+}
+
+typedef struct wasi_buffer {
+	const void *buf;
+	size_t buf_len;
+} wasi_buffer;
+
+void logs(chars s) { // works in wasmer and wasmtime!
+#ifndef WASM
+	return; // this should ONLY be called in wasm context!
+#endif
+//#ifdef WASI
+//	printf(s);
+//#else // fake WASI … OR use wasmx import logs
+	size_t len = strlen0(s);
+	wasi_buffer buf = {s, len};
+	size_t out;
+	fd_write(1, &buf, len, &out);
+//#endif
+}
+
+
+#ifdef WASI
+
+
+
+extern "C" void logc(char c){
+	printf("%c" , c);
+}
+
+extern "C" void raise(chars error){
+	printf("%s" , error);
+}
+
+
+//extern "C" void exit(int fd){
+	// todo HOW??
+// Error while importing "wasi_snapshot_preview1"."proc_exit": unknown import.
+//}
+#endif
