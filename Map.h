@@ -120,6 +120,22 @@ public:
 	S *items = (S *) calloc(sizeof(S), MAXI);
 
 	List() {}
+	List(S first,...){
+		items[0] = first;
+		va_list args;
+		va_start(args, first);
+		S *i = &first;
+		while (i) {
+			i = (S *) va_arg(args, S*);
+		}
+		va_end(args);
+	}
+	List(S* args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
+		while(args[_size] and _size<MAXI){
+			items[_size]=args[_size];
+			_size++;
+		}
+	}
 
 #ifndef WASM
 	List(const std::initializer_list<S> &_items) {
@@ -270,7 +286,7 @@ public:
 			} else {
 				error("MISSING KEY: "s + key);
 				printf("MISSING KEY: ");
-				printf(key);
+				printf("%s",key);
 				printf("\n");
 				return values[_size++];
 //				error("MISSING KEY");
@@ -320,9 +336,9 @@ public:
 	void log() {
 		printf("Map (size: %d)\n"s % _size);
 		for (int i = 0; i < size(); ++i) {
-			printf(keys[i]);
+			printf("%s",keys[i]);
 			printf(": ");
-			printf(values[i]);
+			printf("%s",values[i]);
 			printf("\n");
 		}
 	}

@@ -37,7 +37,7 @@ bool assert_equals_x(Node &a, char *b, char *context = "") {
 	if (a.name != b)
 		printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
 //	else printf("OK %s==%s in %s\n"s % a.name % b % context);
-	else printf("OK %d==%s in %s\n", a.value.longy, b, context);
+	else printf("OK %d==%s in %s\n", a.name, b, context);
 
 	return a == b;
 }
@@ -45,7 +45,7 @@ bool assert_equals_x(Node &a, char *b, char *context = "") {
 bool assert_equals_x(Node &a, double b, char *context = "") {
 	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"s % a.name % b % context);
 //	else printf("OK %f==%f in %s\n"s % a.value.real % b % context);
-	else printf("OK %d==%d in %s\n", a.value.longy, b, context);
+	else printf("OK %d==%d\n", a.value.longy, b);
 
 	return a == b;
 }
@@ -53,7 +53,7 @@ bool assert_equals_x(Node &a, double b, char *context = "") {
 bool assert_equals_x(Node &a, long b, char *context = "") {
 	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"s % a.name % b % context);
 //	else printf("OK %d==%d in %s\n"s % a.value.longy % b % context);// Uninitialised value was created by a stack allocation
-	else printf("OK %d==%d in %s\n", a.value.longy, b, context);
+	else printf("OK %d==%d in %s\n", a.value.longy, b);
 	return a == b;
 }
 
@@ -87,7 +87,7 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 bool assert_equals_x(long a, long b, char *context) {
 	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
 //	else printf("OK %d==%d in %s\n"s % a % b % context);
-	printf("OK %d==%d in %s\n", a, b, context);
+	printf("OK %d==%d in %s\n", a, b);
 	return a == b;
 }
 
@@ -136,11 +136,11 @@ bool assert_isx(char *mark, Node expect) {
 	return false;
 }
 
-bool assert_isx(char *mark, const char *expect) {
+bool assert_isx(char *mark, chars expect) {
 	return assert_isx(mark, Node(expect).setType(strings));
 }
 
-Node assert_parsesx(const char *mark) {
+Node assert_parsesx(chars mark) {
 	try {
 		result = Wasp::parse(mark);
 		log(result);
@@ -184,14 +184,14 @@ void testModernCpp() {
 }
 
 void testDeepCopyBug() {
-	const char *source = "{c:{d:123}}";
+	chars source = "{c:{d:123}}";
 	assert_parses(source);
 	check(result["d"] == 123);
 }
 
 void testDeepCopyDebugBugBug() {
 	testDeepCopyBug();
-	const char *source = "{deep{a:3,b:4,c:{d:true}}}";
+	chars source = "{deep{a:3,b:4,c:{d:true}}}";
 	assert_parses(source);
 	check(result.name == "deep");
 	result.log();
@@ -202,8 +202,8 @@ void testDeepCopyDebugBugBug() {
 }
 
 void testDeepCopyDebugBugBug2() {
-//	const char *source = "{deep{a:3,b:4,c:{d:123}}}";
-	const char *source = "{deep{c:{d:123}}}";
+//	chars source = "{deep{a:3,b:4,c:{d:123}}}";
+	chars source = "{deep{c:{d:123}}}";
 	assert_parses(source);
 	Node &c = result["deep"]['c'];
 	Node &node = c['d'];
@@ -290,7 +290,7 @@ void testMarkAsMap() {
 	assert_equals(compare["c"], Node(3));
 	Node &node = compare["a"];
 	assert(node == "HIO");
-	const char *source = "{b:3 a:'HIO' c:3}";// d:{}
+	chars source = "{b:3 a:'HIO' c:3}";// d:{}
 	Node marked = Wasp::parse(source);
 	Node &node1 = marked["a"];
 	assert(node1 == "HIO");
@@ -343,12 +343,14 @@ void testUTFinCPP() {
 	const char8_t str[9] = u8"عربى";// wow, 9 bytes!
 	const char str1[9] = "عربى";
 
+#ifndef WASM
 	std::string x = "0☺2√";
 	// 2009 :  std::string is a complete joke if you're looking for Unicode suppor
 	auto smile0 = x[1];
 	char16_t smile1 = x[1];
 	char32_t smile = x[1];
 	check(smile == smile1);
+#endif
 //	wstring_convert<codecvt_utf8<char32_t>, char32_t> cv;
 //	auto str32 = cv.from_bytes(str);
 	char16_t character = u'牛';
@@ -462,7 +464,7 @@ void testUTF() {
 
 void testMarkMultiDeep() {
 	// fragile:( problem :  c:{d:'hi'}} becomes c:'hi' because … bug
-	const char *source = "{deep{a:3,b:4,c:{d:'hi'}}}";
+	chars source = "{deep{a:3,b:4,c:{d:'hi'}}}";
 	assert_parses(source);
 	Node &c = result["deep"]['c'];
 	Node &node = result["deep"]['c']['d'];
@@ -473,7 +475,7 @@ void testMarkMultiDeep() {
 }
 
 void testMarkMulti() {
-	const char *source = "{a:'HIO' b:3}";
+	chars source = "{a:'HIO' b:3}";
 	assert_parses(source);
 	Node &node = result['b'];
 	log(result['a']);
@@ -483,13 +485,13 @@ void testMarkMulti() {
 }
 
 void testMarkMulti2() {
-	const char *source = "a:'HIO' b:3  d:{}";
+	chars source = "a:'HIO' b:3  d:{}";
 	assert_parses(source);
 	assert(result["b"] == 3);
 }
 
 void testOverwrite() {
-	const char *source = "{a:'HIO' b:3}";
+	chars source = "{a:'HIO' b:3}";
 	assert_parses(source);
 	result["b"] = 4;
 	assert(result["b"] == 4);
@@ -497,7 +499,7 @@ void testOverwrite() {
 }
 
 void testAddField() {
-	const char *source = "{}";
+	chars source = "{}";
 	result["e"] = 42;
 	assert(result["e"] == 42);
 	assert(result['e'] == 42);
@@ -780,18 +782,6 @@ void testLogic01() {
 }
 
 
-//Prescedence typo for Precedence
-void testLogicPrecedence() {
-	check(precedence("and") > 1);
-
-
-	assert_is("true or true and false", true);
-	assert_is("true or false and true", true);
-	assert_is("true or false and false", true);
-	assert_is("false or true and false", false);
-	assert_is("false or true and false", false);
-}
-
 
 void testCpp() {
 //	esult of comparison of constant 3 with expression of type 'bool' is always true
@@ -1003,7 +993,7 @@ void testIndentAsBlock() {
 }
 
 void testParentContext() {
-	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
+	chars source = "{a:'HIO' d:{} b:3 c:ø}";
 	assert_parses(source);
 	result.log();
 	Node &a = result["a"];
@@ -1020,8 +1010,8 @@ void testParentContext() {
 }
 
 void testParentBUG() {
-//	const char *source = "{a:'HIO' d:{} b:3 c:ø}";
-	const char *source = "{a:'HIO'}";
+//	chars source = "{a:'HIO' d:{} b:3 c:ø}";
+	chars source = "{a:'HIO'}";
 
 	assert_parses(source);
 	Node &a = result["a"];
@@ -1180,6 +1170,7 @@ void testIndex() {
 
 // can be removed because noone touches List.sort algorithm!
 void testSort() {
+#ifndef WASM
 	List<int> list = {3, 1, 2, 5, 4};
 	List<int> listb = {1, 2, 3, 4, 5};
 	check(list.sort() == listb)
@@ -1187,20 +1178,25 @@ void testSort() {
 	check(list.sort(by_precedence) == listb)
 	auto by_square = [](int &a) { return (float) a * a; };
 	check(list.sort(by_square) == listb)
+#endif
 }
 
 void testSort1() {
+#ifndef WASM
 	List<int> list = {3, 1, 2, 5, 4};
 	List<int> listb = {1, 2, 3, 4, 5};
 	auto by_precedence = [](int &a, int &b) { return a * a > b * b; };
 	check(list.sort(by_precedence) == listb)
+#endif
 }
 
 void testSort2() {
+#ifndef WASM
 	List<int> list = {3, 1, 2, 5, 4};
 	List<int> listb = {1, 2, 3, 4, 5};
 	auto by_square = [](int &a) { return (float) a * a; };
 	check(list.sort(by_square) == listb)
+#endif
 }
 
 void testRemove() {
@@ -1380,13 +1376,18 @@ void testCurrent() { // move to tests() once OK
 //	testGroupCascade();
 //	const Node &node = parse("x+1");
 //	check(node.length==3)
-	testAllWasm();
 	tests();// make sure all still ok before changes
+#ifndef WASI
+#ifndef WASM
+//	testAllWasm();
+
 	testAngle();
+testWasmString();
 	todos();// those not passing yet (skip)
+#endif
+#endif
 //	testBUG();
 //	testParentBUG();
-testWasmString();
 	tests();// make sure all still ok after changes
 	log("CURRENT TESTS PASSED");
 }

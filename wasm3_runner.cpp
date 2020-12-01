@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-//extern int ext_memcpy(void*, const void*, size_t);
+//extern int ext_memcpy0(void*, const void*, size_t);
 
 
 int sum(int a, int b)
@@ -19,9 +19,9 @@ int sum(int a, int b)
 	return a + b;
 }
 
-void * ext_memcpy (void* dst, const void* arg, int32_t size)
+void * ext_memcpy0 (void* dst, const void* arg, int32_t size)
 {
-	return memcpy(dst, arg, (size_t) size);
+	return memcpy0(dst, arg, (size_t) size);
 }
 
 unsigned char test_prog_wasm[] = {
@@ -59,13 +59,13 @@ int WASM_EXPORT test(int32_t arg1, int32_t arg2)
 	return sum(x, y) / 2;
 }
 
-int64_t WASM_EXPORT test_memcpy(void)
+int64_t WASM_EXPORT test_memcpy0(void)
 {
 	int64_t x = 0;
 	int32_t low = 0x01234567;
 	int32_t high = 0x89abcdef;
-	ext_memcpy(&x, &low, 4);
-	ext_memcpy(((uint8_t*)&x) + 4, &high, 4);
+	ext_memcpy0(&x, &low, 4);
+	ext_memcpy0(((uint8_t*)&x) + 4, &high, 4);
 	return x;
 }
 int test_wasm3(const uint8_t *prog, int len)
@@ -79,7 +79,7 @@ int test_wasm3(const uint8_t *prog, int len)
 		runtime.load(mod);
 
 		mod.link_optional<sum>("*", "sum");
-		mod.link_optional<ext_memcpy>("*", "ext_memcpy");
+		mod.link_optional<ext_memcpy0>("*", "ext_memcpy0");
 		mod.link_optional<sqrt1>("*", "√");
 		mod.link_optional<square>("*", "square");
 		mod.link_optional<log_f32>("*", "logf");// danger logf is cuda function!
@@ -100,7 +100,7 @@ int test_wasm3(const uint8_t *prog, int len)
 	}
 }
 
-int run_wasm_file(char const* file){
+int run_wasm_file(chars file){
 	FILE *ptr;
 	ptr = fopen(file,"rb");  // r for read, b for binary
 	if(!ptr)error("File not found "s + file);
@@ -111,7 +111,7 @@ int run_wasm_file(char const* file){
 	return test_wasm3((const uint8_t *)buffer, sz);
 }
 
-int run_wasm(char const* wasm_bytes, int len){
+int run_wasm(chars wasm_bytes, int len){
 //	test_wasm3(test_prog_wasm, test_prog_wasm_len);
 	return test_wasm3((const uint8_t *)wasm_bytes, len);
 }
