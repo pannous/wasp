@@ -71,5 +71,7 @@ wasm-dis -sm wasp.wasm.map wasp.wasm -o wasp.dis
 wasm-decompile wasp.wasm -o wasp.decompile # WORKS EVEN IF wasm2wat FAILS!! also very readable
 # No wasm-compile exists: The format is very low-level, much like Wasm itself, so even though it looks more high level than the .wat format, it wouldn't be any more suitable for general purpose programming.
 
+./wasm-sourcemap.py -o wasp.map wasp.wasm  
+
 wasmx wasp.wasm  # danger, -O0 fucks up memoryBase !
 

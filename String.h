@@ -6,16 +6,22 @@
 #include "wasm_helpers.h"
 #include "NodeTypes.h"
 
-//#include "Map.h"
+//#include "Map.h" recursive include error Node.h:60:9: error: field has incomplete type 'String'
+
 #ifndef WASM
+//typedef long __int64_t;
+//typedef unsigned long __uint64_t;
+//typedef int __int32_t;
+//typedef unsigned int __uint32_t;
 
 #include <cstdlib>
 #include <cstdio> // printf
-
 #endif
+
 
 typedef const unsigned char* wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
 class String;
+template<class S> class List;
 extern String& EMPTY_STRING;
 //What 'char' and 'wchar_t' represent are completely ambiguous.
 //You might think that they represent a "character", but depending on the encoding, that might not be true.
@@ -45,9 +51,9 @@ char *itoa0(long num);
 
 char *itoa(long num);
 
-int atoi0(const char *__nptr);
+int atoi0(chars __nptr);
 
-double atof0(const char *string);
+double atof0(chars string);
 
 
 void todo(chars error);
@@ -78,7 +84,7 @@ void log(long i);
 //#define WASP_STRING
 class Node;
 
-typedef const char *chars;
+typedef chars chars;
 
 #ifndef WASM
 //#include <string>
@@ -106,26 +112,26 @@ class String;
 
 String toString(Node &node);
 
-String str(const char *&s);
+String str(chars &s);
 
 String str(char *string);
 
-String s(const char *&s);
+String s(chars &s);
 
-bool eq(const char *dest, const char *src, int length=-1);
+bool eq(chars dest, chars src, int length=-1);
 
-void strcpy2(char *dest, const char *src);
+void strcpy2(char *dest, chars src);
 
-void strcpy2(char *dest, const char *src, int length);
+void strcpy2(char *dest, chars src, int length);
 
-int strlen0(const char *x);
-//size_t   strlen(const char *__s);
+int strlen0(chars x);
+//size_t   strlen(chars __s);
 
 
-//const char *ftoa(float num, int base = 10, int precision = 4);
-const char *ftoa0(float num, int base, int precision);
+//chars ftoa(float num, int base = 10, int precision = 4);
+chars ftoa0(float num, int base, int precision);
 
-const char *ftoa(float num);
+chars ftoa(float num);
 
 class Error {
 public:
@@ -146,7 +152,7 @@ extern char *empty_string;// = "";
 //duplicate symbol '_empty_string'
 
 //String
-const char* typeName(Type t);
+chars typeName(Type t);
 
 //char null_value[]={0};// todo make sure it's immutable!!
 class String {
@@ -181,9 +187,12 @@ public:
 		length = 0;
 	}
 
-	void *operator new(unsigned long size) {
+//#ifndef WASM
+////	Error while importing "env"."_Znwm": unknown import.
+	void *operator new(size_t size) {
 		return static_cast<String *>(calloc(sizeof(String), size+1));// WOW THAT WORKS!!!
 	}
+//#endif
 
 	void operator delete(void *) {/*lol*/} // Todo ;)
 
@@ -300,9 +309,9 @@ public:
 		return codepoints[i];
 	}
 
-	grapheme graphemeAt(int i) {
-		todo("grapheme");
-	}
+//	grapheme graphemeAt(int i) {
+//		todo("grapheme");
+//	}
 
 	codepoint *extractCodepoints(bool again = false);
 
@@ -312,6 +321,11 @@ public:
 			if (codepoint_count < 0)extractCodepoints();
 			return codepoint_count;
 		}
+		if (by == by_graphemes) {
+			todo("graphemes");
+		}
+		todo("unknown sizeMeasure");
+		return -1;
 	}
 
 	char charAt(int position) {
@@ -358,7 +372,7 @@ public:
 //		free(neu);
 	}
 
-	int len(const char *data) {
+	int len(chars data) {
 		if (!data)data = this->data;
 		if (!data || data[0] == 0)
 			return 0;
@@ -423,7 +437,7 @@ public:
 		return b;
 	}
 
-	String operator%(const char *c) {
+	String operator%(chars c) {
 		return this->replace("%s", c);
 	}
 
@@ -745,7 +759,7 @@ public:
 		return this->replace("%s", string);
 	}
 
-// return position(==index+1), NOT index!
+	// 0 = NO, 1 = yes at #1
 	int in(String array[]) {// array NEEDS to be 0 terminated!!!!
 		int i = 0;
 //		for(String x:array){}
@@ -758,6 +772,9 @@ public:
 		}
 		return 0;
 	}
+
+	int in(List<String> list);
+
 
 //	bool in(String* array) {
 //		return false;
@@ -775,14 +792,13 @@ public:
 	int columnNumber;
 	int at;
 public:
-	void *operator new(unsigned long size) {
-		return static_cast<Node *>(calloc(sizeof(SyntaxError), size));// WOW THAT WORKS!!!
-	}
 
 	void operator delete(void *) {}
 
 	~SyntaxError() = default;
-
+	void *operator new(size_t size) {
+		return static_cast<String *>(calloc(sizeof(SyntaxError), size+1));// WOW THAT WORKS!!!
+	}
 	explicit SyntaxError(String &error) {
 		this->data = error.data;
 	}
@@ -790,11 +806,11 @@ public:
 
 #define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
 
-String operator ""_(const char *c, unsigned long);
+String operator ""_(chars c, unsigned long);
 
-String operator ""_s(const char *c, unsigned long);
+String operator ""_s(chars c, unsigned long);
 
-String operator ""s(const char *c, unsigned long);
+String operator ""s(chars c, unsigned long);
 
 
 extern String UNEXPECT_END;// = "Unexpected end of input";
@@ -807,9 +823,9 @@ extern String groups_name;// = "(…)";
 extern String patterns_name;// = "[…]";
 extern String EMPTY;// = String('\0');
 
-//String operator "" s(const char *c, unsigned long );// wasm function signature contains illegal type
-//String operator "" _(const char *c, unsigned long );
-//String operator "" _s(const char *c, unsigned long );
+//String operator "" s(chars c, unsigned long );// wasm function signature contains illegal type
+//String operator "" _(chars c, unsigned long );
+//String operator "" _s(chars c, unsigned long );
 void log(String *s);
 
 void log(chars s);

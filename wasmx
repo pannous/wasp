@@ -442,7 +442,7 @@ exit:x=>{console.log("EXIT!");process.exit()},
 		// _Znwm: malloc, // operator new(unsigned number) //  c++filt
 		__cxa_throw: debug("__cxa_throw"),
 		__cxa_allocate_exception: debug("__cxa_allocate_exception"),
-		// _Z6printfPKci: logs,// WHY? printf(char const*, int)
+		// _Z6printfPKci: logs,// WHY? printf(chars, int)
 //  ^^ gcc
 
 		// _printf:printf,

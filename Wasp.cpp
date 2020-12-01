@@ -1,5 +1,6 @@
 //#pragma once
 
+#include "Wasp.h"
 #include "wasm_helpers.h"
 #include "String.h" // variable has incomplete type
 #include "Node.h"
@@ -14,9 +15,11 @@
 #include "ErrorHandler.h"
 
 #endif
-extern String operator_list[];// resolve xor->operator ... semantic wasp parser really?
-
-
+String operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "||", "|", "&&", "&", "and",
+                          "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
+                          "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
+                          "from", 0, 0, 0, 0}; // "while" ...
+List<String> operator_list(operator_list0);
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
 	if (ch == '#')return false;// size/count/length
@@ -76,18 +79,18 @@ bool closing(char ch, char closer) {
 	return false;
 }
 
-#ifdef WASM64
-void* operator new[](unsigned long size){
-	last = current;
-	current+=size;
-	return last;
-}
-void* operator new(unsigned long size){
-	last = current;
-	current+=size;
-	return last;
-}
-#endif
+//#ifdef WASM64
+//void* operator new[](unsigned long size){
+//	last = current;
+//	current+=size;
+//	return last;
+//}
+//void* operator new(unsigned long size){
+//	last = current;
+//	current+=size;
+//	return last;
+//}
+//#endif
 
 #ifndef WASM || WASI
 //#import "Fetch.cpp"
@@ -164,7 +167,7 @@ public:
 	}
 
 
-	static char *readFile(const char *filename) {
+	static char *readFile(chars filename) {
 #ifndef WASM
 		FILE *f = fopen(filename, "rt");
 		if (!f)error("FILE NOT FOUND "_s + filename);
@@ -180,7 +183,7 @@ public:
 #endif
 	}
 
-	static Node parseFile(const char *filename) {
+	static Node parseFile(chars filename) {
 //		const char filename=replace(filename0,"~","/Users/me")
 		return Wasp::parse(readFile(filename));
 	}
@@ -1170,6 +1173,22 @@ private:
 };
 
 
+float precedence(char group) {
+	if (group == 0)return 1;
+	if (group == '}')return 1;
+	if (group == ']')return 1;
+	if (group == ')')return 1;
+	if (0 < group and group < 0x20)return 1.5;
+	if (group == '\n')return 2;
+	if (group == ';')return 3;
+	if (group == ',')return 4;
+	if (group == ' ')return 5;
+	if (group == '_')return 6;
+//error("unknown precedence for symbol: "s+group);
+	return 999;
+}
+
+
 void ok() {
 	error1("WHAAA");
 }
@@ -1269,9 +1288,12 @@ int main(int argp, char **argv) {
 		log(args);
 		current += strlen0(args)+1;
 #endif
+		log("OK?");
+		log("OK??"_s);
+		log("OK???"_s + 123);
 		log("Hello "_s + "WASM");
-		testCurrent();
 //		tests();
+		testCurrent();
 #ifndef WASM
 #endif
 		return 42;
@@ -1291,4 +1313,10 @@ int main(int argp, char **argv) {
 	return -1;
 }
 
+#endif
+
+#ifndef WASI
+extern "C" void _start() { // for wasm-ld
+	main(0, 0);
+}
 #endif

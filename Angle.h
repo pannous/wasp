@@ -14,3 +14,4 @@ Node analyze(Node data);// wasp -> code  // build ast via operators
 Node eval(String code);// wasp -> code -> data   // interpreter mode vs:
 Node emit(String code);//  wasp -> code -> wasm  // to debug currently same as:
 Node run(String source);// wasp -> code -> wasm() -> data
+//extern Map<String, Signature> functionSignatures;
