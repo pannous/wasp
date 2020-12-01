@@ -21,7 +21,7 @@ namespace __cxxabiv1 {
 //	bool operator!=(const type_info &rhs) const noexcept;
 //	bool before(const type_info &rhs) const noexcept;
 //	size_t hash_code() const noexcept;
-//	const char *name() const noexcept;
+//	chars name() const noexcept;
 //};
 #define EXCEPTION_BUFF_SIZE 255
 char exception_buff[EXCEPTION_BUFF_SIZE];

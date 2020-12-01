@@ -7,9 +7,9 @@
 
 //#include <bh_platform.h>
 typedef unsigned char uint8_t;
-int run_wasm(const char *buffer, int buf_size);
+int run_wasm(chars buffer, int buf_size);
 
-int run_wasm_file(const char *wasm_path = "test.wasm");
+int run_wasm_file(chars wasm_path = "test.wasm");
 
 
 #endif //WASP_WASM_RUNNER_H

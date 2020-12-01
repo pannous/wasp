@@ -30,10 +30,10 @@
 
 //typedef void *any;
 typedef unsigned char byte;
-typedef const char *chars;
+typedef chars chars;
 
 
-//extern "C" void logs(const char *,int len);
+//extern "C" void logs(chars ,int len);
 //bool debug = true;
 //extern void *alloc (size_t __size);
 //extern void *alloc (int __size);
@@ -45,7 +45,7 @@ char *empty_string = "";
 
 //#include <cstring>
 
-void logs(const char *s) {
+void logs(chars s) {
 	printf("%s\n", s);
 }
 
@@ -55,7 +55,7 @@ void logi(long i) {
 
 #else
 #pragma message "using wasm imports"
-//void printf(const char *s){
+//void printf(chars s){
 //	while(*s)logc(*s++);
 //}
 #endif
@@ -72,7 +72,7 @@ class String;
 
 #else
 //#include "string.h"
-//size_t strlen(const char *x){
+//size_t strlen(chars x){
 //	int l=0;
 //	while(x[0]&&l<100){x++;l++;}
 //	return l;
@@ -80,7 +80,7 @@ class String;
 #endif
 //#define cstring
 
-bool eq(const char *dest, const char *src, int length) {
+bool eq(chars dest, chars src, int length) {
 	if (!dest || !src)
 		return false;
 	int i = 0;
@@ -101,7 +101,7 @@ bool eq(const char *dest, const char *src, int length) {
 	return true;
 }
 
-int strlen0(const char *x) {
+int strlen0(chars x) {
 	if (!x)return 0;
 	int l = 0;
 	while (*x++)l++;
@@ -110,7 +110,7 @@ int strlen0(const char *x) {
 
 // or cstring
 //#ifndef cstring
-void strcpy2(char *dest, const char *src, int length) {// =-1
+void strcpy2(char *dest, chars src, int length) {// =-1
 	if (!dest || !src)
 		return;
 	int i = 0;
@@ -124,14 +124,14 @@ void strcpy2(char *dest, const char *src, int length) {// =-1
 	}
 }
 
-void strcpy2(char *dest, const char *src) {
+void strcpy2(char *dest, chars src) {
 	strcpy2(dest, src, -1);
 }
 
 
 //#endif
 
-int atoi0(const char *p) {
+int atoi0(chars p) {
 	if (!p)return 0;
 	int k = 0;
 	while (*p) {
@@ -144,7 +144,7 @@ int atoi0(const char *p) {
 	return k;
 }
 
-double atof0(const char *string) {
+double atof0(chars string) {
 	double result = 0.0;
 	if (!string) return result;
 
@@ -222,8 +222,8 @@ char *itoa(long num) {
 	return itoa0(num, 10);
 }
 
-const char *concat(const char *a, const char *b) {
-//const char* concat(char* a,char* b){// free manually!
+chars concat(chars a, chars b) {
+//chars concat(char* a,char* b){// free manually!
 	if (!b)return a;
 	int la = (int) strlen0(a);
 	int lb = (int) strlen0(b);
@@ -237,12 +237,12 @@ const char *concat(const char *a, const char *b) {
 
 
 //#define pow(val,exp)
-const char *ftoa0(float num, int base = 10, int precision = 4) {/*significant digits*/
+chars ftoa0(float num, int base = 10, int precision = 4) {/*significant digits*/
 	int p = 1000;//pow(base,precision);
 	return concat(concat(itoa0(int(num), base), "."), itoa0(int((num - (long) num) * p), base));
 }
 
-const char *ftoa(float num) { return ftoa0(num, 10, 4); }
+chars ftoa(float num) { return ftoa0(num, 10, 4); }
 
 void reverse(char *str, int len) {
 	for (int i = 0; i < len / 2; i++) {
@@ -310,35 +310,35 @@ void log(String s) {
 #pragma clang diagnostic ignored "-Wuser-defined-literals"
 //#pragma clang diagnostic ignored "-Wliteral-suffix"
 
-//String operator "" s(const char *c, size_t) {
+//String operator "" s(chars c, size_t) {
 //	return String(c);// "bla"s  literal operator suffixes not preceded by ‘_’ are reserved for future standardization
 //}
 
-//String operator "" _s(const char *c, int x) {// invalid literal operator parameter type 'int', did you mean 'unsigned number'
+//String operator "" _s(chars c, int x) {// invalid literal operator parameter type 'int', did you mean 'unsigned number'
 //	return String(c);
 //}
-String operator "" _s(const char *c, unsigned long t) {// function signature contains illegal type WHYY??
+String operator "" _s(chars c, unsigned long t) {// function signature contains illegal type WHYY??
 	return String(c);
 }
 
-String operator "" s(const char *c, unsigned long t) {// function signature contains illegal type WHYY??
+String operator "" s(chars c, unsigned long t) {// function signature contains illegal type WHYY??
 	return String(c);
 }
 
-String operator "" _(const char *c, unsigned long t) {
+String operator "" _(chars c, unsigned long t) {
 	return String(c);
 }
 
 
-bool eq(String &dest, const char *src) {
+bool eq(String &dest, chars src) {
 	return dest.data == src;
 }
 
-String string(const char *&s) {
+String string(chars &s) {
 	return String(s);
 }
 
-String str(const char *&s) {
+String str(chars &s) {
 	return String(s);
 }
 
@@ -346,13 +346,13 @@ String str(char *s) {
 	return String(s);
 }
 
-String s(const char *&s) {
+String s(chars &s) {
 	return String(s);
 }
 
 
 //String
-const char* typeName(Type t) {
+chars typeName(Type t) {
 	switch (t) {
 		case objects:
 			return "object";
@@ -449,7 +449,7 @@ codepoint *String::end() {
 
 size_t utf8_strlen(char *utf8bytes) {
 	size_t len = 0;
-	for (const char *p = utf8bytes; *p; ++p)
+	for (chars p = utf8bytes; *p; ++p)
 		if ((*p & 0xc0) != 0x80)
 			++len;
 	return len;
@@ -561,4 +561,15 @@ String EMPTY_STRING0="";
 String& EMPTY_STRING=EMPTY_STRING0;
 void error1(String message, chars file, int line){
 	error1(message.data, file, line);
+}
+
+
+// 0 = NO, 1 = yes at #1
+
+int String::in(List<String> list) {
+	for (int i = 0; i < list.size(); ++i) {
+		if (list[i] == this)
+			return i+1;
+	}
+	return 0;
 }

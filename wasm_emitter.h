@@ -1,6 +1,7 @@
 #pragma once
-
+#ifndef WASM
 #include <cstring>
+#endif
 #include "wasm_runner.h"
 #include "Map.h"
 typedef const unsigned char* wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
@@ -44,7 +45,7 @@ public:
 		length=len;
 	}
 
-	Code(const char *string,bool size_header=true,bool null_terminated=false) {
+	Code(chars string,bool size_header=true,bool null_terminated=false) {
 		long len = (long) strlen0(string);
 		if(null_terminated)len++;
 		if(size_header){ push(len); }
@@ -59,9 +60,9 @@ public:
 		length = 1;
 	}
 
-	Code(byte *datas, int from, int to/*exclusive*/) {
+	Code(bytes datas, int from, int to/*exclusive*/) {
 		data = static_cast<bytes>(alloc(sizeof(char), to - from));
-		memcpy(data,datas,to-from);
+		memcpy0(data,datas,to-from);
 	}
 
 	Code(char section, Code code) {
@@ -181,7 +182,9 @@ public:
 	int run(){
 //		char *command = "wasmx test.wasm";
 //		int ok=system(command);
+#ifndef WASM
 		return run_wasm(data, length);
+#endif
 	}
 
 //	Code& vector() {

@@ -3,12 +3,15 @@
 #include <sstream>
 #include <iostream>
 //using namespace std;
+
+typedef const char* chars;
+
+
 size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
-	std::string data((const char*) ptr, (size_t) size * nmemb);
+	std::string data((chars) ptr, (size_t) size * nmemb);
 	*((std::stringstream*) stream) << data << std::endl;
 	return size * nmemb;
 }
-typedef const char *chars;
 
 //extern "C"
 chars fetch(chars url) {
