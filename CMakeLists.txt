@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-#set(CMAKE_OSX_SYSROOT "")
+#SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
+set(CMAKE_SYSROOT "")
 
 project(wasp)
 
@@ -8,9 +9,10 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 set(DEBUG 1)
 add_compile_definitions(DEBUG)
+add_compile_definitions(NO_CPP_DEMANGLE)
 
-set(WASM 1) # OR :
-#set(WASI 1)
+set(WASM 1)
+set(WASI 1)
 #set(VM 1)
 #set(WASM3 1)
 set(CMAKE_CXX_STANDARD 20)
@@ -27,28 +29,49 @@ ENDFUNCTION()
 
 #ADD_COMPILE_FLAG(" -w") # NO WARNINGS
 #ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
-if (WASM)
+
+ADD_COMPILE_FLAG("-Wno-writable-strings")
+ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # -mmacosx-version-min=11.0
+ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
+ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
+ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
+
+if (WASM) # OR WASI)
     message(WASM)
     SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
     ADD_COMPILE_FLAG("-DWASM=1")
-    ADD_COMPILE_FLAG("-nostdlib -march=wasm -w -g -O0") #-v
+    add_compile_definitions(WASM)
+    if(WASI)
+    add_compile_definitions(WASI) # same as -DWASI=1
+
+    SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
+    set(CMAKE_SYSROOT "")
+    ADD_COMPILE_FLAG("--sysroot=/opt/wasi-sdk/share/wasi-sysroot")
+    else()
+        ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
+    ADD_COMPILE_FLAG("-nostdlib -march=wasm -w") #-v
+endif()
+#    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem ... -Oz -c ") # BREAKS BUILD! ???
+#    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan ")
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
-    #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem -Oz -c ") # ???
+#    ADD_COMPILE_FLAG("-fno-builtin")
+#    ADD_COMPILE_FLAG("-nostdlib -fno-builtin") # use our OWN memcpy (and printf?)
+#    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const
 
-    #    ADD_COMPILE_FLAG("    --target=wasm32-unknown-unknown-wasm") # default:wasi ok
-    #    ADD_COMPILE_FLAG("    --target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
-
+#    ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
     # AVOID   -search_paths_first BUG! : if ( NOT WASM ) in Darwin.cmake (homebrew) OR  remove from CMAKE_CXX_LINK_FLAGS
-
-    ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined,--no-check-features,--demangle,-t") # wasm-ld flags forwarded from clang
-
-    #    ADD_COMPILE_FLAG("-Wl,-t,--verbose") # ,-O0  VERBOSE!
-    ADD_COMPILE_FLAG("-Wl,--export-table,--emit-relocs") # DEBUG info and symbols!
-    #    ADD_COMPILE_FLAG("-Ws,-O4,--gc-sections") RELEASE strip maximum!
-
+#-lwasmer
+    ADD_COMPILE_FLAG("-Wl,--entry=main,--demangle,--allow-undefined,--no-check-features,-t") # wasm-ld flags forwarded from clang
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
-
-    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp wasm_helpers.cpp)
+    #ADD_COMPILE_FLAG("-Wl,-t,--verbose,--export-table") # ,-O0  VERBOSE!
+    ADD_COMPILE_FLAG(" -g -O0") # DEBUG
+#    -Wl,-z,stack-size=$[8 * 1024 * 1024] \ # Set maximum stack size to 8MiB
+#    -flto \ # Add metadata for link-time optimizations
+#    ADD_COMPILE_FLAG("-Oz -flto -Qn -Ws,--lto-O3,-O4,--gc-sections") # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
+#    ADD_COMPILE_FLAG("-Wl,--emit-relocs")
+#    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp wasm_helpers.cpp) # module only
+#    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp wasm_helpers.cpp Angle.cpp) # with interpreter
+    set(SOURCE_FILES String.cpp Node.cpp Wasp.cpp wasm_helpers.cpp Angle.cpp wasm_emitter.cpp) # with compiler
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasm ALL DEPENDS wasp.wasm)
 elseif (WASI)
@@ -57,17 +80,8 @@ elseif (WASI)
     SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
     set(CMAKE_SYSROOT "")
-#    sd mv MacOSX.sdk.x ! WHY is CMAKE_OSX_SYSROOT still found???
-
-    #    SET(FIND_PATH /opt/wasm/wasi-sdk/share/wasi-sysroot/)
-    #    SET(CMAKE_FIND_ROOT_PATH /opt/wasm/wasi-sdk/share/wasi-sysroot/)
-    #    SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM ONLY)
-    #    SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-    #    SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-    #    set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
-
-    #    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const
-    #    ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
+    ADD_COMPILE_FLAG("--sysroot=/opt/wasi-sdk/share/wasi-sysroot")
+#    ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
 #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
 
     ADD_COMPILE_FLAG("-w -g -O0 -v ") # -nostdlib

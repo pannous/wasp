@@ -8,8 +8,10 @@
 #import "wasm_helpers.h" // IMPORT so that they don't get mangled!
 #include "Node.h"
 #include "wasm_emitter.h"
-#include "math.h" // sqrt
 #include "Map.h"
+#ifndef WASM
+#include "math.h" // sqrt
+#endif
 
 bool recursive = true;// whats that?
 List<String> declaredSymbols;// todo: buildup by preparsing
@@ -51,28 +53,6 @@ int main4(int argp, char **argv) {
 	return -1;
 }
 
-int start() { // for wasm-ld
-	main4(0, 0);
-}
-
-int _start() { // for wasm-ld
-	main4(0, 0);
-}
-
-
-Node &Node::setType(Type type) {
-	if (value.data and (type == groups or type == objects))
-		return *this;
-	if (kind == nils and not value.data)
-		return *this;
-	this->kind = type;
-//	if(name.empty() and debug){
-//		if(type==objects)name = object_name;
-//		if(type==groups)name = groups_name;
-//		if(type==patterns)name = patterns_name;
-//	}
-	return *this;
-}
 
 Node constants(Node n) {
 	if (eq(n.name, "not"))return True;// not () == True; hack for missing param todo: careful!
@@ -83,7 +63,10 @@ Node constants(Node n) {
 }
 
 Node eval(Node n) {
+#ifndef WASI
 	return n.evaluate();
+#endif
+	return Node();
 }
 
 Node If(Node condition, Node then) {
@@ -240,13 +223,14 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 //	};// while (max > 0);
 	return *this;
 }
-
 bool interpret = true;
 
 Node eval(String code) {
+#ifndef WASI
 	if (interpret)
 		return parse(code).evaluate();
 	else
+#endif
 		return emit(analyze(parse(code))).run();// int -> Node todo: int* -> Node*
 }
 
@@ -271,10 +255,7 @@ String extractFunctionName(Node &node) {
 // (a op c) => op(a c)
 // further right means higher prescedence/binding, gets grouped first
 // todo "=" ":" handled differently?
-String operator_list[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "||", "|", "&&", "&", "and",
-                          "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
-                          "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
-                          "from", 0, 0, 0, 0}; // "while" ...
+
 
 List<String> collectOperators(Node &expression) {
 	List<String> operators;
@@ -293,7 +274,11 @@ List<String> collectOperators(Node &expression) {
 }
 
 //https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
-List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
+//List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
+String ras[]={"=", "?:", "+=", "++:",0};
+//List<String> rightAssociatives = List(ras);
+List<String> rightAssociatives = List<String>{"=", "?:", "+=", "++:",0};// a=b=1 == a=(b=1) => a=1
+
 List<String> prefixOperators = {"not", "!", "√", "-…", "--…", "++…", "+…", "~", "*…", "&…", "sizeof", "new", "delete[]"};
 List<String> suffixOperators = {"…++", "…--", "⁻¹", "⁰", "¹", "²", "³", "…%", "﹪", "％", "٪", "‰"};// ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
 List<String> declaration_operators = {":="};
@@ -599,7 +584,7 @@ Node do_call(Node left, Node op0, Node right) {
 	String op = op0.name;
 	if (op == "id")return right;// identity
 	if (op == "square")return square(right.numbere());
-	if (op == "√")return sqrtl(right.numbere());
+	if (op == "√")return sqrt1(right.numbere());
 	error("Unregistered function "s + op);
 }
 
@@ -671,9 +656,9 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 	if (op == "√") { // why String( on mac?
 		if (right.kind == reals)
-			left.addSmart(Node(sqrt(right.value.real)));
+			left.addSmart(Node(sqrt1(right.value.real)));
 		if (right.kind == longs)
-			left.addSmart(Node(sqrt(right.value.longy)).setType(reals));
+			left.addSmart(Node(sqrt1(right.value.longy)).setType(reals));
 		return left.evaluate();
 	}
 
@@ -868,7 +853,9 @@ Node emit(String code) {
 	functionSignatures.setDefault(Signature());
 	locals.insert_or_assign("main", List<String>());
 	Node charged = analyze(data);
-	Node node = emit(charged).run();
+	Code binary = emit(charged);
+//	code.link(wasp) more beautiful with multiple memory sections
+	Node node=binary.run();
 	return node;
 }
 
@@ -957,20 +944,4 @@ float precedence(Node &operater) {
 	if (operater.kind == groups or operater.kind == patterns) return precedence("if") * 0.999;// needs to be smaller than functor/function calls
 	if (operater.name.in(function_list))return 999;// function call
 	return precedence(name);
-}
-
-float precedence(char group) {
-	if (group == 0)return 1;
-	if (group == '}')return 1;
-	if (group == ']')return 1;
-	if (group == ')')return 1;
-	if (0 < group and group < 0x20)return 1.5;
-	if (group == '\n')return 2;
-	if (group == ';')return 3;
-	if (group == ',')return 4;
-	if (group == ' ')return 5;
-	if (group == '_')return 6;
-
-//error("unknown precedence for symbol: "s+group);
-	return 999;
 }

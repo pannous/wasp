@@ -23,9 +23,11 @@ extern "C" double sqrt(double);
 unsigned int *memory = (unsigned int *) 1024; // <?> memoryBase set in wasmx !?!?   todo how to not handtune _data_end?
 #else
 unsigned int *memory = (unsigned int *)malloc(1000000);
-char* memoryChars = (char*)memory;
+//extern unsigned char __heap_base;
 #endif
 unsigned int *current = memory;
+//unsigned int bump_pointer = &__heap_base;
+char* memoryChars = (char*)memory;
 
 unsigned long __stack_chk_guard = 0xBAAAAAAD;
 
@@ -47,7 +49,7 @@ void todo(chars error) {
 }
 
 //
-//String operator "" s(const char* c, size_t){
+//String operator "" s(chars c, size_t){
 //return String(c);// "bla"s
 //}
 
@@ -205,7 +207,7 @@ Node &Node::set(String string, Node *node) {
 	return entry;
 }
 
-//Node::Node(const char *string) {
+//Node::Node(chars string) {
 //	value.string = String(string);
 //	type = strings;
 //}
@@ -709,11 +711,11 @@ String Node::serialize() const {
 //	return node.name.empty()? node.string() : node.name;
 }
 
-const char *Node::toString() {
+chars Node::toString() {
 	return this->serialize();
 }
 
-const char *Node::toString() const {
+chars Node::toString() const {
 	return this->serialize();
 }
 
@@ -810,7 +812,7 @@ Node Node::values() {
 
 bool Node::isSetter() {
 	if(kind==longs)// || kind==reals || kind==bools||kind==strings)
-		return not atoi(name);// todo WTF hack
+		return not atoi0(name);// todo WTF hack
 	return kind == reference and value.data or length > 0;
 }
 
@@ -873,7 +875,22 @@ void log(Node *n0) {
 	log(n);
 }
 
-
 void printf(Node &) {
 	log("void printf(Node&);");
+}
+
+
+
+Node &Node::setType(Type type) {
+	if (value.data and (type == groups or type == objects))
+		return *this;
+	if (kind == nils and not value.data)
+		return *this;
+	this->kind = type;
+//	if(name.empty() and debug){
+//		if(type==objects)name = object_name;
+//		if(type==groups)name = groups_name;
+//		if(type==patterns)name = patterns_name;
+//	}
+	return *this;
 }
