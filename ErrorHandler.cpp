@@ -61,6 +61,7 @@ using __cxxabiv1::__cxa_demangle;
 bool showRegisters= false;
 
 #define MAC
+typedef char const *chars;
 
 // NICE, BREAKPOINT WORKS!!!
 static void signal_segv(int signum, siginfo_t* info, void*ptr) {

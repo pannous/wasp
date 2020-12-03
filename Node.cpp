@@ -15,27 +15,7 @@
 
 bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
-
 bool debug = true;
-extern "C" double sqrt(double);
-
-#ifdef WASM
-unsigned int *memory = (unsigned int *) 1024; // <?> memoryBase set in wasmx !?!?   todo how to not handtune _data_end?
-#else
-unsigned int *memory = (unsigned int *)malloc(1000000);
-//extern unsigned char __heap_base;
-#endif
-unsigned int *current = memory;
-//unsigned int bump_pointer = &__heap_base;
-char* memoryChars = (char*)memory;
-
-unsigned long __stack_chk_guard = 0xBAAAAAAD;
-
-void __stack_chk_guard_setup(void) { __stack_chk_guard = 0xBAAAAAAD;/*provide some magic numbers*/ }
-
-void
-__stack_chk_fail(void) { /*log("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
-
 
 //#include <cmath>
 //#include <tgmath.h> // sqrt macro

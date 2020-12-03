@@ -8,7 +8,7 @@
 #include <sstream>
 #include "String.h"
 
-String Backtrace(int skip = 0, int skipEnd = 1) {
+extern "C" String Backtrace(int skip = 0, int skipEnd = 1) {
 // This function produces a stack backtrace with demangled function & method names.
 	void *callstack[128];
 	const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
@@ -42,7 +42,8 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 	free(symbols);
 	if (nFrames == nMaxFrames)
 		trace_buf << "[truncated]\n";
-	printf("%s\n", trace_buf.str().c_str());
+	const char *cStr = trace_buf.str().c_str();
+	printf("%s\n", cStr);
 //	printf("/me/dev/script/wasm/wasp/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
 	return String(trace_buf.str().data());
 }

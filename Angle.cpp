@@ -9,9 +9,6 @@
 #include "Node.h"
 #include "wasm_emitter.h"
 #include "Map.h"
-#ifndef WASM
-#include "math.h" // sqrt
-#endif
 
 bool recursive = true;// whats that?
 List<String> declaredSymbols;// todo: buildup by preparsing
