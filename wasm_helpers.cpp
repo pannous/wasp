@@ -28,18 +28,20 @@ void free(void*){/*lol*/}
 
 void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	void* last = current;
-	last = current;
-	current += size * 2 + 1;
+	current += size * 2 + 1 ;//greedy
 	return last;
 }
-
+//void log(chars s) {
+//	logs(s);
+//}
 void log(chars s) {
-	logs(s);
-}
-void log(char *s) {
-	logs(s);
-//	while(*s)logc(*s++);
+#ifndef MY_WASM
+	printf(s);
+	printf("\n");
+#else
+	while(*s)logc(*s++);
 	logc('\n');
+#endif
 }
 
 void log(char c) {
@@ -130,12 +132,35 @@ void raise(chars error){
 }
 #endif
 #endif
+int MAX_MEM=65536*1024;// todo lol
+extern "C" double sqrt(double);
+
+//unsigned long __stack_chk_guard = 0xBAAAAAAD;
+//void __stack_chk_guard_setup(void) { __stack_chk_guard = 0xBAAAAAAD;/*provide some magic numbers*/ }
+//void __stack_chk_fail(void) { /*log("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
+
 
 void *alloc(int size, int num) { return calloc((size + 1), (num)); }
 
+void num10000(){current[10000]=1;}
+void num100000(){current[100000]=1;}
+void num1000000(){current[1000000]=1;}
+void panic(){current[10000000000]=1;} // any better way?
+#ifndef WASM
+
+unsigned int *memory= static_cast<unsigned int *>(malloc(1000000));
+char *memoryChars=(char*)memory;
+char* __heap_base=(char*)memory;
+#else
+unsigned int *memory=0;
+unsigned char* __heap_base=0;
+#endif
+char *current=__heap_base + 65536;
+
+
 void *calloc(int size, int num) {// clean ('0') alloc
-	void *mem = malloc(size * num);
-	while (num > 0) { ((char *) mem)[--num] = 0; }
+	char *mem =(char *) malloc(size * num);
+	while (num<MAX_MEM and num > 0) { ((char *) mem)[--num] = 0; }
 	return mem;
 }
 
@@ -150,16 +175,16 @@ void *memset(void *ptr, int value, size_t num) {
 
 // new operator for ALL objects
 void *operator new[](size_t size) { // stack
-	current = memory;
-	memory += size;
-	return current;
+	char *use = current;
+	current += size;
+	return use;
 }
 
 // new operator for ALL objects
 void *operator new(size_t size) { // stack
-	current = memory;
-	memory += size;
-	return current;
+	char *use = current;
+	current += size;
+	return use;
 }
 
 // WHY NOT WORKING WHEN IMPORTED? FUCKING MANGLING!
@@ -218,7 +243,7 @@ void log_f32(float l) {
 
 void error1(chars message, chars file, int line) {
 	//#ifdef _Backtrace_
-	Backtrace(2);
+//	Backtrace(2);
 //#endif
 	if (file)
 		printf("%s:%d\n", file, line);
@@ -254,9 +279,10 @@ int square(int a) {
 	return a * a;
 }
 
+// wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and log()
 int sqrt1(int a) {
 #ifndef WASM
-	return sqrt(a);
+//	return sqrt(a);
 #endif
 	todo("own sqrt");
 	return -1;
@@ -272,13 +298,12 @@ String Backtrace(int skip, int skipEnd){
 }
 #endif
 
-
 void memcpy0(bytes dest, bytes source, int i) {
-	while (i--)dest[i] = source[i];
+	while (i<MAX_MEM and --i>=0)dest[i] = source[i];
 }
 
 void memcpy0(char *destination, char *source, size_t num) {
-	while (--num >= 0)destination[num] = source[num];
+	while (num<MAX_MEM and --num >= 0)destination[num] = source[num];
 }
 //void * memcpy (void * destination, const void * source, size_t num ){
 //	memcpy0((char *) destination, (char *) source, num);
@@ -296,6 +321,10 @@ typedef struct wasi_buffer {
 } wasi_buffer;
 
 void logs(chars s) { // works in wasmer and wasmtime!
+#ifdef MY_WASM
+	while(*s){logc(*s);s++;}
+	return;
+#endif
 #ifndef WASM
 	return; // this should ONLY be called in wasm context!
 #endif
@@ -313,16 +342,21 @@ void logs(chars s) { // works in wasmer and wasmtime!
 #ifdef WASI
 
 
-
+#ifndef MY_WASM
 extern "C" void logc(char c){
 	printf("%c" , c);
 }
-
+#endif
 extern "C" void raise(chars error){
 	printf("%s" , error);
 }
 
+//#include <stdlib.h>
+void exit0(){
+//	exit(0);
+}
 
+//wasm-ld: error: duplicate symbol: exit
 //extern "C" void exit(int fd){
 	// todo HOW??
 // Error while importing "wasi_snapshot_preview1"."proc_exit": unknown import.

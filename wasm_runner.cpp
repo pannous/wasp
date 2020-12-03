@@ -272,7 +272,7 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0=0
 		printf("%s", err);
 	}
 }
-int run_wasm(chars buffer, int buf_size){
+int run_wasm(bytes buffer, int buf_size){
 	return run_wasm(reinterpret_cast<const uint8 *>(buffer), buf_size, 0);
 }
 int run_wasm_file(chars wasm_path){

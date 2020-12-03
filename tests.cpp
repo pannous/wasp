@@ -42,11 +42,10 @@ bool assert_equals_x(Node &a, char *b, char *context = "") {
 	return a == b;
 }
 
-bool assert_equals_x(Node &a, double b, char *context = "") {
+bool assert_equals_x(Node a, double b, char *context = "") {
 	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"s % a.name % b % context);
 //	else printf("OK %f==%f in %s\n"s % a.value.real % b % context);
-	else printf("OK %d==%d\n", a.value.longy, b);
-
+	else printf("OK %d==%d\n", a.value.real, b);
 	return a == b;
 }
 
@@ -402,8 +401,8 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 //	log(character);
 //	log(hanzi);
 //	log(word);
-	log(sizeof(char32_t));// 32 lol
-	log(sizeof(wchar_t));
+	logi(sizeof(char32_t));// 32 lol
+	logi(sizeof(wchar_t));
 }
 
 void testStringReferenceReuse() {
@@ -1027,7 +1026,8 @@ void testParentBUG() {
 
 void testAsserts() {
 	assert_equals(11, 11);
-	assert_equals(11., 11.);
+	assert_equals((float )11., (float)11.);
+//	assert_equals((double)11., (double )11.);
 	assert_equals("a", "a");
 	assert_equals("a"_s, "a"_s);
 }
@@ -1371,7 +1371,7 @@ void testCurrent() { // move to tests() once OK
 //	testGraphQlQuery();
 
 //	testWasmFunctionDefiniton();
-//	testAllWasm();
+	testAllWasm();
 //	exit(1);
 //	testGroupCascade();
 //	const Node &node = parse("x+1");

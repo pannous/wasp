@@ -50,7 +50,7 @@ void todo(char *message = "") {
 
 
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
-	bytes c = new char[len_a + len_b + 4];
+	bytes c = new unsigned char[len_a + len_b + 4];
 	memcpy0(c, a, len_a);
 	memcpy0(c + len_a, b, len_b);
 	c[len_a + len_b + 1] = 0;
@@ -59,14 +59,14 @@ bytes concat(bytes a, bytes b, int len_a, int len_b) {
 
 
 bytes concat(bytes a, char b, int len) {
-	bytes c = new char[len + 1];
+	bytes c = new unsigned char[len + 1];
 	memcpy0(c, a, len);
 	c[len] = b;
 	return c;
 }
 
 bytes concat(char a, bytes b, int len) {
-	bytes c = new char[len + 1];
+	bytes c = new unsigned char[len + 1];
 	c[0] = a;
 	memcpy0(c + 1, b, len);
 	return c;
@@ -242,10 +242,10 @@ enum ExportType {
 char functionType = 0x60;
 
 char emptyArray = 0x0;
-
+typedef unsigned char byte;
 // https://webassembly.github.io/spec/core/binary/modules.html#binary-module
-bytes magicModuleHeader = new char[]{0x00, 0x61, 0x73, 0x6d};
-bytes moduleVersion = new char[]{0x01, 0x00, 0x00, 0x00};
+bytes magicModuleHeader = new byte[]{0x00, 0x61, 0x73, 0x6d};
+bytes moduleVersion = new byte[]{0x01, 0x00, 0x00, 0x00};
 
 
 
@@ -348,7 +348,7 @@ bytes ieee754(float num) {
 	char data[4];
 	float *hack = ((float *) data);
 	*hack = num;
-	char *flip = static_cast<char *>(alloc(5));
+	byte  *flip = static_cast<byte *>(alloc(5));
 	short i = 4;
 //	while (i--)flip[3 - i] = data[i];
 	while (i--)flip[i] = data[i];// don't flip, just copy to malloc
@@ -718,7 +718,7 @@ Code Call(char *symbol) {//},Node* args=0) {
 
 Code encodeString(char *str) {
 	size_t len = strlen0(str);
-	Code code = Code(len, str, len);
+	Code code = Code(len, (bytes) str, len);
 	return code;//.push(0);
 };
 

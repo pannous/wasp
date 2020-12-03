@@ -41,17 +41,9 @@ char *empty_string = "";
 #ifndef WASM
 
 #include <cstdio>
-#include <tgmath.h>
 
 //#include <cstring>
 
-void logs(chars s) {
-	printf("%s\n", s);
-}
-
-void logi(long i) {
-	printf("%li\n", i);
-}
 
 #else
 #pragma message "using wasm imports"
@@ -115,6 +107,7 @@ void strcpy2(char *dest, chars src, int length) {// =-1
 		return;
 	int i = 0;
 	if (length < 0)length = strlen0(src);
+	if (length <= 0)return ;
 //	if(strlen(src)<length)error(string("Illegal strcpy2 length"));// could be filled with 0 :(
 //	if(strlen(dest)<length)error("Illegal strcpy2 length"_s);// could be filled with 0 :(
 	while (char c = src[i]) {
@@ -301,6 +294,7 @@ void log(String s) {
 #ifdef WASM
 	log((chars)s.data);
 #else
+	if(s.data)
 	printf("%s\n", s.data);
 #endif
 }

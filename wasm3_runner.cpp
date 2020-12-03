@@ -21,7 +21,8 @@ int sum(int a, int b)
 
 void * ext_memcpy0 (void* dst, const void* arg, int32_t size)
 {
-	return memcpy0(dst, arg, (size_t) size);
+	memcpy0((bytes)dst, (bytes)arg, (size_t) size);
+	return dst;
 }
 
 unsigned char test_prog_wasm[] = {
@@ -111,7 +112,7 @@ int run_wasm_file(chars file){
 	return test_wasm3((const uint8_t *)buffer, sz);
 }
 
-int run_wasm(chars wasm_bytes, int len){
+int run_wasm(bytes wasm_bytes, int len){
 //	test_wasm3(test_prog_wasm, test_prog_wasm_len);
 	return test_wasm3((const uint8_t *)wasm_bytes, len);
 }

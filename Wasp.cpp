@@ -19,6 +19,11 @@ String operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", 
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
                           "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
                           "from", 0, 0, 0, 0}; // "while" ...
+//∧  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
+// ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
+
+
+
 List<String> operator_list(operator_list0);
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
@@ -597,19 +602,20 @@ private:
 		if (node.name == "no")return False;
 		if (node.name == "No")return False;
 		if (node.name == "ƒ")return False;// ‽
-		if (node.name == "𐄂")return False;// ‽
-
+		if (node.name == "⊥")return False;//
+//		if (node.name == "𐄂")return False; ambiguous: multiplication 𐄂 + / check 𐄂
 //		if (node.name == "wrong")return False;
 //		if (node.name == "Wrong")return False;
+		if (node.name == "⊤")return True; // + vs -
 		if (node.name == "true")return True;
 		if (node.name == "True")return True;
 		if (node.name == "yes")return True;
 		if (node.name == "Yes")return True;
-		if (node.name == "✔\uefb88f")return True;// green
 		if (node.name == "✔")return True;
+		if (node.name == "✔\uefb88f")return True;// green ✔️ ~ ✔
+		if (node.name == "✔️")return True;
 		if (node.name == "🗸")return True;
 		if (node.name == "✓️")return True;
-		if (node.name == "✓")return True;
 		if (node.name == "☑")return True;
 		if (node.name == "🗹")return True;
 //		if (node.name == "Right")return True;// unless class!
@@ -1077,6 +1083,7 @@ private:
 					break;
 				}
 				case U'：':
+				case U'≔': // ≕ =:
 				case ':':
 					if (next == '=') { // f x:=2x
 						Node *op = new Node(":=");
@@ -1273,24 +1280,19 @@ char newline = '\n';
 #ifndef _main_
 #define __MAIN__
 
+// called AFTER __wasm_call_ctors() !!!
 int main(int argp, char **argv) {
-
-//#ifdef ErrorHandler
 #ifndef WASM
 	register_global_signal_exception_handler();
 #endif
-
 	try {
-//		raise("ABC");
 #ifdef WASM
+//		String args(current);
 		String args((char*)alloc(1,1));// hack: written to by wasmx
 		args.data[0] = '{';
 		log(args);
 		current += strlen0(args)+1;
 #endif
-		log("OK?");
-		log("OK??"_s);
-		log("OK???"_s + 123);
 		log("Hello "_s + "WASM");
 //		tests();
 		testCurrent();
