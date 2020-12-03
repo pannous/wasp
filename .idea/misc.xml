@@ -5,6 +5,9 @@
     <sourceRoots>
       <file path="$PROJECT_DIR$" />
     </sourceRoots>
+    <libraryRoots>
+      <file path="$PROJECT_DIR$/wabt/src" />
+    </libraryRoots>
     <excludeRoots>
       <file path="$PROJECT_DIR$/bak" />
       <file path="$PROJECT_DIR$/js" />

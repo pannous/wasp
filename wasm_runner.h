@@ -6,10 +6,10 @@
 #define WASP_WASM_RUNNER_H
 
 //#include <bh_platform.h>
-typedef unsigned char uint8_t;
-int run_wasm(chars buffer, int buf_size);
+typedef unsigned char* bytes;
 
-int run_wasm_file(chars wasm_path = "test.wasm");
+int run_wasm(bytes buffer, int buf_size);
+int run_wasm_file(char* wasm_path = "test.wasm");
 
 
 #endif //WASP_WASM_RUNNER_H

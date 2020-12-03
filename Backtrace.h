@@ -1,2 +1,2 @@
 #include "String.h"
-String Backtrace(int skip = 1, int skipEnd = 2);
+extern "C" String Backtrace(int skip = 1, int skipEnd = 2);

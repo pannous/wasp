@@ -10,13 +10,15 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 set(DEBUG 1)
 add_compile_definitions(DEBUG)
 add_compile_definitions(NO_CPP_DEMANGLE)
-
-set(WASM 1)
-set(WASI 1)
+#add_compile_definitions(MY_WASM) # use log() !
+#set(WASM 1)
+#set(WASI 1)
 #set(VM 1)
+set(WABT 1)
 #set(WASM3 1)
 set(CMAKE_CXX_STANDARD 20)
 
+#    ADD_COMPILE_FLAG("-fsanitize=address -fno-omit-frame-pointer")
 #set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
 #set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 
@@ -27,6 +29,9 @@ FUNCTION(ADD_COMPILE_FLAG value)
     ENDFOREACH (variable)
 ENDFUNCTION()
 
+include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
+# ^^ fixes <cmath> mac errors!
+
 #ADD_COMPILE_FLAG(" -w") # NO WARNINGS
 #ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
 
@@ -36,6 +41,8 @@ ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
 ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 
+ADD_COMPILE_FLAG("-fsanitize=address -fno-omit-frame-pointer")
+
 if (WASM) # OR WASI)
     message(WASM)
     SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
@@ -43,7 +50,6 @@ if (WASM) # OR WASI)
     add_compile_definitions(WASM)
     if(WASI)
     add_compile_definitions(WASI) # same as -DWASI=1
-
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
     set(CMAKE_SYSROOT "")
     ADD_COMPILE_FLAG("--sysroot=/opt/wasi-sdk/share/wasi-sysroot")
@@ -147,10 +153,24 @@ elseif (VM) # NORMAL:
             ${WAMR_ROOT_DIR}/core/shared/mem-alloc
 #            VERSUS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
             )
+elseif (WABT) # NORMAL:
+    message(WABT)
+    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
+    include(wabt/cmake_install.cmake)
+
+    add_subdirectory(wabt)
+    set(SOURCE_FILES
+            Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
+            wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp )
+    add_executable(angle ${SOURCE_FILES})
+    target_include_directories(angle PUBLIC wabt/)
+    target_include_directories(angle PUBLIC wabt/src/)
+    target_link_libraries(angle PRIVATE libwabt) # libwabt.a 20 MB only for local stuff!
+    add_custom_target(BuildWabtc ALL DEPENDS angle) #.exe
+
 elseif (WASM3) # NORMAL:
     message(WASM3 VM)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
-    ADD_COMPILE_FLAG("-fsanitize=address -fno-omit-frame-pointer")
     include(wasm3/cmake_install.cmake)
 
     add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)

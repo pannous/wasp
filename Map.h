@@ -286,7 +286,8 @@ public:
 			} else {
 				error("MISSING KEY: "s + key);
 				printf("MISSING KEY: ");
-				printf("%s",key);
+//				log(key);
+//				printf("%s",key);// todo unsafe!! can be int etc!
 				printf("\n");
 				return values[_size++];
 //				error("MISSING KEY");
@@ -334,11 +335,11 @@ public:
 	}
 
 	void log() {
-		printf("Map (size: %d)\n"s % _size);
+		printf("Map (size: %d)\n" ,  _size);
 		for (int i = 0; i < size(); ++i) {
 			printf("%s",keys[i]);
 			printf(": ");
-			printf("%s",values[i]);
+			printf("%s",values[i]);// todo: unsafe
 			printf("\n");
 		}
 	}

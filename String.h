@@ -92,7 +92,6 @@ typedef chars chars;
 #else
 #endif
 //void* alloc(number size);// wasm | linux
-extern unsigned int *memory;
 
 #define error(msg) error1(msg,__FILE__,__LINE__)
 
