@@ -5,7 +5,7 @@
 #include "wasm_runner.h"
 #include "Map.h"
 typedef const unsigned char* wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
-typedef char* bytes;
+typedef unsigned char* bytes;
 bytes concat(bytes a, bytes b, int len_a, int len_b);
 bytes concat(bytes a, char b,int len);
 bytes concat(char section, bytes a, int len_a);

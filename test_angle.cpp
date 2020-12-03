@@ -266,19 +266,11 @@ void testSwitch(){
 	assert_is("x=a;{a:1 b:2}(x)",1)
 	// functor switch(x,xs)=xs[x] or xs[default]
 }
+/*
 #include "smart_types.h"
-
-void initMemory(){
-#ifndef WASM
-	memory = static_cast<unsigned int *>(malloc(1000000));
-#endif
-	memoryChars = (char *) memory;
-}
-
 void testSmartTypes(){
 	check(Node(0xC0000020)==' ');
 	char* hi="Hello";
-	if(memory==0)initMemory();
 	strcpy2(&memoryChars[0x1000], hi);
 	printf(">>>%s<<<", &memoryChars[0x1000]);
 	check(Node(0x90001000)==hi);
@@ -306,7 +298,7 @@ void testSmartTypes(){
 
 	check(Node(0xFFFFFFFF)==-1);
 }
-
+*/
 
 //Prescedence typo for Precedence
 void testLogicPrecedence() {
@@ -323,7 +315,7 @@ void testLogicPrecedence() {
 
 void testAllAngle() {
 	testLogicPrecedence();
-	testSmartTypes();
+//	testSmartTypes();
 	testIf();
 	testCall();
 	skip(

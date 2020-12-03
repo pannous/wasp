@@ -2,6 +2,7 @@
 //
 // Created by pannous on 30.09.19.
 //
+extern unsigned char* __heap_base;
 
 #include "String.h"
 #include "smart_types.h"
@@ -17,7 +18,6 @@ extern bool debug;
 extern bool throwing;
 extern bool polish_notation;
 
-extern unsigned int *memory;
 //extern unsigned char __heap_base;
 //unsigned int bump_pointer = &__heap_base;
 
