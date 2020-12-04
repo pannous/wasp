@@ -41,8 +41,8 @@ ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
 ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 
-ADD_COMPILE_FLAG("-fsanitize=address -fno-omit-frame-pointer")
-#ADD_COMPILE_FLAG("-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer  -shared-libasan ")
+#ADD_COMPILE_FLAG("-fsanitize=address -fno-omit-frame-pointer")
+ADD_COMPILE_FLAG("-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer  -shared-libasan ")
 #add_compile_definitions(ASAN_OPTIONS=halt_on_error=0)
 #ASAN_OPTIONS=strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1
 #add_compile_definitions(_FORTIFY_SOURCE)

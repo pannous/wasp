@@ -348,7 +348,7 @@ bytes ieee754(float num) {
 	char data[4];
 	float *hack = ((float *) data);
 	*hack = num;
-	byte  *flip = static_cast<byte *>(alloc(5));
+	byte  *flip = static_cast<byte *>(alloc(1,5));
 	short i = 4;
 //	while (i--)flip[3 - i] = data[i];
 	while (i--)flip[i] = data[i];// don't flip, just copy to malloc
