@@ -141,13 +141,9 @@ extern "C" double sqrt(double);
 
 
 void *alloc(int size, int num) {
-	return calloc(size*2, num*2);
+	return calloc(size, num);
 }
 
-void num10000(){current[10000]=1;}
-void num100000(){current[100000]=1;}
-void num1000000(){current[1000000]=1;}
-void panic(){current[10000000000]=1;} // any better way?
 #ifndef WASM
 
 unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(malloc(1000000));
@@ -175,6 +171,7 @@ void *memset(void *ptr, int value, size_t num) {
 	return ptr;
 }
 
+#ifdef WASM
 // new operator for ALL objects
 void *operator new[](size_t size) { // stack
 	char *use = current;
@@ -188,6 +185,7 @@ void *operator new(size_t size) { // stack
 	current += size;
 	return use;
 }
+#endif
 
 // WHY NOT WORKING WHEN IMPORTED? FUCKING MANGLING!
 // bus error == access out of scope, e.g. logc((void*)-1000)
@@ -311,11 +309,13 @@ void memcpy0(char *destination, char *source, size_t num) {
 //	memcpy0((char *) destination, (char *) source, num);
 //}
 
+#ifdef WASM
 extern "C"
 void *memcpy(void *destination, const void *source, size_t num) {
 	memcpy0((char *) destination, (char *) source, num);
 	return destination;// yes?
 }
+#endif
 
 typedef struct wasi_buffer {
 	const void *buf;

@@ -2,7 +2,6 @@
 //
 // Created by pannous on 30.09.19.
 //
-extern unsigned char* __heap_base;
 
 #include "String.h"
 #include "smart_types.h"

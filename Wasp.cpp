@@ -15,7 +15,7 @@
 #include "ErrorHandler.h"
 
 #endif
-String operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "||", "|", "&&", "&", "and",
+chars operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "||", "|", "&&", "&", "and",
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
                           "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
                           "from", 0, 0, 0, 0}; // "while" ...
@@ -24,7 +24,7 @@ String operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", 
 
 
 
-List<String> operator_list(operator_list0);
+List<chars> operator_list(operator_list0);
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
 	if (ch == '#')return false;// size/count/length
@@ -299,7 +299,7 @@ private:
 	String identifier() {
 		// identifiers must start with a letter, _ or $.
 		if (!is_identifier(ch)) {
-			error(UNEXPECT_CHAR + renderChar(ch));
+			error("Unexpected identifier character "s + renderChar(ch));
 		}
 
 		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
@@ -625,7 +625,8 @@ private:
 		if (node.name == "nill")return NIL;
 		if (node.name == "nil")return NIL;
 		if (node.name == "ø")return NIL;// nil not added to lists
-		if (node.name.in(operator_list))
+//		if (node.name.in(operator_list))
+			if(operator_list.has(node.name))
 			node.setType(operators); // later: in angle!? NO! HERE: a xor {} != a xxx{}
 		return node;
 	}
@@ -634,7 +635,7 @@ private:
 		if (ch >= '0' && ch <= '9')return numbero();
 		if (is_operator(ch))return any_operator();
 		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
-		error(UNEXPECT_CHAR + String((char) text[at]) + String((char) text[at + 1]) + String((char) text[at + 2]));
+		error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) + String((char) text[at + 2]));
 		return NIL;
 	}
 
@@ -719,7 +720,7 @@ private:
 		}
 		if (token("one")) { return True; }
 		if (token("two")) { return Node(2); }
-		error(UNEXPECT_CHAR + renderChar(text.charAt(at - 1)));// throws, but WASM still needs:
+		error("Unexpected character "s + renderChar(text.charAt(at - 1)));// throws, but WASM still needs:
 		return ERROR;
 	};
 
