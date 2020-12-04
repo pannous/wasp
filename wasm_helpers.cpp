@@ -140,7 +140,9 @@ extern "C" double sqrt(double);
 //void __stack_chk_fail(void) { /*log("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
 
 
-void *alloc(int size, int num) { return calloc((size + 1), (num)); }
+void *alloc(int size, int num) {
+	return calloc(size*2, num*2);
+}
 
 void num10000(){current[10000]=1;}
 void num100000(){current[100000]=1;}
@@ -148,7 +150,7 @@ void num1000000(){current[1000000]=1;}
 void panic(){current[10000000000]=1;} // any better way?
 #ifndef WASM
 
-unsigned int *memory= static_cast<unsigned int *>(malloc(1000000));
+unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(malloc(1000000));
 char *memoryChars=(char*)memory;
 char* __heap_base=(char*)memory;
 #else
@@ -157,13 +159,13 @@ unsigned char* __heap_base=0;
 #endif
 char *current=__heap_base + 65536;
 
-
+#ifdef WASM
 void *calloc(int size, int num) {// clean ('0') alloc
 	char *mem =(char *) malloc(size * num);
 	while (num<MAX_MEM and num > 0) { ((char *) mem)[--num] = 0; }
 	return mem;
 }
-
+#endif
 // WOW CALLED INTERNALLY FROM C!!
 //extern "C"
 void *memset(void *ptr, int value, size_t num) {
