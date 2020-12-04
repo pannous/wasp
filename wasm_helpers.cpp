@@ -299,7 +299,8 @@ String Backtrace(int skip, int skipEnd){
 #endif
 
 void memcpy0(bytes dest, bytes source, int i) {
-	while (i<MAX_MEM and --i>=0)dest[i] = source[i];
+	while (i<MAX_MEM and --i>=0)
+		dest[i] = source[i];
 }
 
 void memcpy0(char *destination, char *source, size_t num) {
