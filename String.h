@@ -223,7 +223,7 @@ public:
 		if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
 		else {
 			if(copy){
-			data = static_cast<char *>(alloc(sizeof(char), length + 1));
+			data = static_cast<char *>(alloc(sizeof(char), length + 2));
 			strcpy2(data, string, length + 1);
 			} else{
 				shared_reference = true;

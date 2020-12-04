@@ -42,6 +42,13 @@ ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 
 ADD_COMPILE_FLAG("-fsanitize=address -fno-omit-frame-pointer")
+#ADD_COMPILE_FLAG("-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer  -shared-libasan ")
+#add_compile_definitions(ASAN_OPTIONS=halt_on_error=0)
+#ASAN_OPTIONS=strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1
+#add_compile_definitions(_FORTIFY_SOURCE)
+#A: Doesn't work if  you link with -Wl,-z,defs or -Wl,--no-undefined.
+# These flags don't work with ASan unless you also use -shared-libasan (which is the default mode for GCC, but not for Clang).
+
 
 if (WASM) # OR WASI)
     message(WASM)

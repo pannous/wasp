@@ -60,7 +60,7 @@ int unsignedLEB128(Code code) {
 		byte b = code[code.pos++];
 		n = n << 7;
 		n = n ^ (b & 0x7f);
-		if(b & 0x80 == 0)break;
+		if((b & 0x80) == 0)break;
 	} while (n != 0);
 	return n;
 }
@@ -86,12 +86,15 @@ Code consumeTypeSection(){
 
 Code read(byte *code0, int length) {
 	pos = 0;
+	int from=pos;
 	code = code0;
 	consume(4, reinterpret_cast<byte *>(magicModuleHeader));
 	consume(4, reinterpret_cast<byte *>(moduleVersion));
 	consumeTypeSection();
 //	consumeImportSection();
+	return Code(code, from, pos);
 }
+
 int fileSize(char const *file) {
 	FILE *ptr;
 	ptr = fopen(file, "rb");  // r for read, b for binary
@@ -128,8 +131,6 @@ static void DebugBuffer(const OutputBuffer& buffer) {
 static void ParseOptions(int argc, char** argv); // wasm-link.cc
 int ProgramMain(const char* infile) {
 	string_view s_infile = "t.wat";
-	chars filename = "out.wasm";
-	InitStdio();
 	std::vector<uint8_t> file_data;
 	Result result = ReadFile(s_infile, &file_data);
 	std::unique_ptr<WastLexer> lexer = WastLexer::CreateBufferLexer(s_infile, file_data.data(), file_data.size());
@@ -153,7 +154,7 @@ int ProgramMain(const char* infile) {
 		result = WriteBinaryModule(&stream, module.get(), s_write_binary_options);
 		if (Succeeded(result)) {
 			OutputBuffer &buffer = stream.output_buffer();
-			buffer.WriteToFile(filename);
+			buffer.WriteToFile(s_infile.substr(0,s_infile.find(".wat")));
 			if(s_dump_module)DebugBuffer(buffer);
 		}
 	}
@@ -167,6 +168,7 @@ int ProgramMain(const char* infile) {
 
 int run_wasm(bytes buffer, int buf_size){
 	ProgramMain("test.wasm");
+	return 23;
 }
 
 Code readWasm(char const *file) {
@@ -179,6 +181,7 @@ Code readWasm(char const *file) {
 	unsigned char buffer[sz];
 	fread(buffer, sizeof(buffer), sz, ptr);
 	Code c(buffer, 0, sz);
+	return c;
 //	c.run();
 //	c.debug();
 }
