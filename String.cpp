@@ -96,7 +96,7 @@ bool eq(chars dest, chars src, int length) {
 int strlen0(chars x) {
 	if (!x)return 0;
 	int l = 0;
-	while (*x++)l++;
+	while (l<10000 and *x++)l++;
 	return l;
 }
 
