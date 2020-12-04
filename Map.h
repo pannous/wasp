@@ -120,16 +120,16 @@ public:
 	S *items = (S *) calloc(sizeof(S), MAXI);
 
 	List() {}
-	List(S first,...){
-		items[0] = first;
-		va_list args;
-		va_start(args, first);
-		S *i = &first;
-		while (i) {
-			i = (S *) va_arg(args, S*);
-		}
-		va_end(args);
-	}
+//	List(S first,...){
+//		items[0] = first;
+//		va_list args;
+//		va_start(args, first);
+//		S *i = &first;
+//		while (i) {
+//			i = (S *) va_arg(args, S*);
+//		}
+//		va_end(args);
+//	}
 	List(S* args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
 		while(args[_size] and _size<MAXI){
 			items[_size]=args[_size];
@@ -207,10 +207,15 @@ public:
 		return *this;
 	}
 
-	bool has(S &item) {
+	bool has(S *item) {
 		return position(item) >= 0;
 	}
-
+//	bool has(S &item) {
+//		return position(item) >= 0;
+//	}
+	bool has(S item) {
+		return position(item) >= 0;
+	}
 	bool contains(S &item) {
 		return position(item) >= 0;
 	}
@@ -345,5 +350,11 @@ public:
 	}
 };
 
+//int String::in(List<chars> list){
+//	for(chars word : list){
+//		if(eq(data,word))return list.position(word);
+//	}
+//	return -1;
+//}
 
 #endif //WASP_MAP_H

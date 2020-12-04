@@ -29,7 +29,7 @@ extern "C" int square(int n);// test wasm
 extern "C" int squaref(int n);// test wasm
 extern int sqrt1(int a);
 //void printf(int);
-void* alloc(int size,int num=1);
+void* alloc(int size,int num);
 
 
 
