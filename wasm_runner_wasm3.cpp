@@ -2,7 +2,7 @@
 // Created by me on 17.11.20.
 //
 
-#include "wasm3_runner.h"
+#include "wasm_runner.h"
 #include "wasm3.h"
 #include <cstdio>
 #include "wasm3_cpp.h"

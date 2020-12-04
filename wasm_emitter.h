@@ -54,12 +54,17 @@ public:
 		// wasm strings start with their length and do NOT end with 0 !! :(
 	}
 	
-	Code(char byte){
+//	Code(char byte){
+//		data = static_cast<bytes>(alloc(sizeof(char),1));
+//		data[0] = byte;
+//		length = 1;
+//	}
+
+	Code(byte byte){
 		data = static_cast<bytes>(alloc(sizeof(char),1));
 		data[0] = byte;
 		length = 1;
 	}
-
 	Code(bytes datas, int from, int to/*exclusive*/) {
 		data = static_cast<bytes>(alloc(sizeof(char), to - from));
 		memcpy0(data,datas,to-from);
@@ -172,19 +177,10 @@ public:
 		FILE* file=fopen(file_name,"w");
 		fwrite(data, length, 1, file);
 		fclose(file);
-//		FILE *result=popen(command, "r");
-//		char buf[100000];
-//		while(fgets(buf, sizeof(buf), result) != NULL) {
-//		printf("%s",buf);
-//		}
 #endif
 	}
 	int run(){
-//		char *command = "wasmx test.wasm";
-//		int ok=system(command);
-#ifndef WASM
 		return run_wasm(data, length);
-#endif
 	}
 
 //	Code& vector() {
@@ -249,7 +245,7 @@ enum Opcodes {
 	elsa = 0x05,
 	br = 0x0c,
 	br_if = 0x0d,
-	end_block = 0x0b,
+	end_block = 0x0b, //11
 	return_block = 0x0f,
 	function = 0x10,
 	drop = 0x1a, // pop stack
