@@ -352,6 +352,7 @@ public:
 
 // excluding to
 	String substring(int from, int to = -1, bool ref= false) { // excluding to
+		if(from<0 or from==0 and to==length)return *this;
 		if (to < 0 or to > length)to = length;
 		if (to <= from)return EMPTY_STRING;
 		int len = to - from;
