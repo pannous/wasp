@@ -1280,6 +1280,8 @@ char newline = '\n';
 #ifndef _main_
 #define __MAIN__
 
+#include <string>
+#include <vector>
 // called AFTER __wasm_call_ctors() !!!
 int main(int argp, char **argv) {
 #ifndef WASM
@@ -1293,6 +1295,7 @@ int main(int argp, char **argv) {
 		log(args);
 		current += strlen0(args)+1;
 #endif
+		std::vector<std::string> temp={"param", "result"};
 		log("Hello "_s + "WASM");
 //		tests();
 		testCurrent();
