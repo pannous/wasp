@@ -168,10 +168,12 @@ elseif (WABT) # NORMAL:
     add_subdirectory(wabt)
     set(SOURCE_FILES
             Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
-            wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp )
+            wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp  wasm_runner_console.cpp)
+#     wasm_runner_wabt.cpp  error: call to implicitly-deleted copy constructor WHY???
     add_executable(angle ${SOURCE_FILES})
     target_include_directories(angle PUBLIC wabt/)
     target_include_directories(angle PUBLIC wabt/src/)
+    target_include_directories(angle PUBLIC wabt/src/interp)
     target_link_libraries(angle PRIVATE libwabt) # libwabt.a 20 MB only for local stuff!
     add_custom_target(BuildWabtc ALL DEPENDS angle) #.exe
 
@@ -183,7 +185,7 @@ elseif (WASM3) # NORMAL:
     add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)
     set(SOURCE_FILES
             Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
-            wasm_helpers.cpp wasm_emitter.cpp wasm3_runner.cpp
+            wasm_helpers.cpp wasm_emitter.cpp wasm_runner_wasm3.cpp
             smart_types.cpp wasm_reader.cpp)
     add_executable(angle ${SOURCE_FILES})
     target_include_directories(angle PUBLIC wasm3/source/)
@@ -197,7 +199,7 @@ else () # NORMAL:
     #    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")
     #find_package( Readline)    #find_package( READLINE )
     #    ADD_COMPILE_FLAG(" -lreadline -ldl -lcurl -lz") # extra libraries
-    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm_helpers.cpp wasm_emitter.cpp Map.cpp smart_types.cpp wasm3_runner.cpp wasm3_runner.h wasm_reader.cpp wasm_reader.h)
+    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm_helpers.cpp wasm_emitter.cpp Map.cpp smart_types.cpp wasm_runner_wasm3.cpp wasm_runner3.h wasm_reader.cpp wasm_reader.h)
 
     #    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(angle ${SOURCE_FILES})

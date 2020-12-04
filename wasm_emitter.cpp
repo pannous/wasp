@@ -50,10 +50,10 @@ void todo(char *message = "") {
 
 
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
-	bytes c = new unsigned char[len_a + len_b + 4];
+	bytes c = new unsigned char[len_a + len_b];// why+4 ?? else heap-buffer-overflow
 	memcpy0(c, a, len_a);
 	memcpy0(c + len_a, b, len_b);
-	c[len_a + len_b + 1] = 0;
+//	c[len_a + len_b + 1] = 0;// hwhy?
 	return c;
 }
 
@@ -592,7 +592,7 @@ Code emitCall(Node &fun, String context) {
 	};
 	code.addByte(function);
 	code.addByte(index);// ok till index>127, then use unsignedLEB128
-	code.addByte(nop);// padding for potential relocation
+//	code.addByte(nop);// padding for potential relocation
 	last_type = return_types[fun.name];// voids;// todo lookup return type
 	return code;
 }
@@ -803,13 +803,13 @@ Code typeSection() {
 	// the type section is a vector of function types
 //	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
 //	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
-	char vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/,
+	byte vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/,
 	             i32t};// our main function! todo : be flexible!
-	char iv[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x00/*return count*/};
-	char vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
-	char ii[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x01/*return count*/, i32t};
-	char iii[] = {0x60/*const type form*/, 0x02/*param count*/, i32t, i32t, 0x01/*return count*/, i32t};
-	char fv[] = {0x60/*const type form*/, 0x01/*param count*/, f32t, 0x00/*return count*/};
+	byte iv[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x00/*return count*/};
+	byte vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
+	byte ii[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x01/*return count*/, i32t};
+	byte iii[] = {0x60/*const type form*/, 0x02/*param count*/, i32t, i32t, 0x01/*return count*/, i32t};
+	byte fv[] = {0x60/*const type form*/, 0x01/*param count*/, f32t, 0x00/*return count*/};
 
 	int typeCount = 5;
 	Code type_data = Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv)) + Code(ii, sizeof(ii)) +
@@ -821,6 +821,7 @@ Code typeSection() {
 		Signature &signature = functionSignatures[fun];
 		int param_count = signature.size();
 		Code td = {0x60 /*const type form*/, param_count};
+		check(td.length==2)
 		for (int i = 0; i < param_count; ++i) {
 			td = td + Code(signature.types[i]);
 		}
@@ -895,12 +896,12 @@ Code codeSection(Node root) {
 	short builtin_count = 2;
 
 
-	char code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block}; // 0x00 == unreachable as block header !?
-	char code_data_nop[] = {0/*locals_count*/, end_block};// NOP
-	char code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block,
+	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block}; // 0x00 == unreachable as block header !?
+	byte code_data_nop[] = {0/*locals_count*/, end_block};// NOP
+	byte code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block,
 	                       end_block};// NOP
-//	char code_data[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
-//	char code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
+//	byte code_data[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+//	byte code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 
 	Code main_block = emitBlock(root, "main");
 	Code nop_block = Code(code_data_nop, sizeof(code_data_nop));

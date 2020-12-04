@@ -7,6 +7,7 @@
 #include <wast-lexer.h>
 #include <error.h>
 #include <shared-validator.h>
+#include <vector>
 #include "wasm_reader.h"
 #include "wasm_emitter.h"
 
@@ -23,7 +24,17 @@
 #include "validator.h"
 #include "wast-parser.h"
 
+static wabt::Features wabt_features;
+static bool validate_wasm = true;
+static wabt::WriteBinaryOptions write_binary_options;
+static bool dump_module= false;//debug
+
+
 #define consume(len,bytes) if(!consume_x(code,&pos,len,bytes)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
+
+#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+
+#define pointer std::unique_ptr
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
 //	if(bytes)
@@ -111,16 +122,12 @@ Code mergeModules(Code api, Code code){
 
 using namespace wabt;
 
-static bool s_dump_module= false;//debug
-static WriteBinaryOptions s_write_binary_options;
-static bool s_validate = true;
-static Features s_features;
 
-static std::unique_ptr<FileStream> s_log_stream;// = FileStream::CreateStdout();
+static pointer<FileStream> s_log_stream;// = FileStream::CreateStdout();
 
 
 static void DebugBuffer(const OutputBuffer& buffer) {
-		std::unique_ptr<FileStream> stream = FileStream::CreateStdout();
+	pointer<FileStream> stream = FileStream::CreateStdout();
 		if (!buffer.data.empty()) {
 			stream->WriteMemoryDump(buffer.data.data(), buffer.data.size());
 		}
@@ -133,29 +140,38 @@ int ProgramMain(const char* infile) {
 	string_view s_infile = "t.wat";
 	std::vector<uint8_t> file_data;
 	Result result = ReadFile(s_infile, &file_data);
-	std::unique_ptr<WastLexer> lexer = WastLexer::CreateBufferLexer(s_infile, file_data.data(), file_data.size());
+	pointer<WastLexer> lexer = WastLexer::CreateBufferLexer(s_infile, file_data.data(), file_data.size());
 	if (Failed(result)) {
 		WABT_FATAL("unable to read file: %s\n", s_infile);
 	}
 
 	Errors errors;
-	std::unique_ptr<Module> module;
-	WastParseOptions parse_wast_options(s_features);
-	result = ParseWatModule(lexer.get(), &module, &errors, &parse_wast_options);
+	pointer<Module> module;
 
-	if (Succeeded(result) && s_validate) {
-		ValidateOptions options(s_features);
+	WastParseOptions parse_wast_options(wabt_features);
+	result = ParseWatModule(lexer.get(), &module, &errors, &parse_wast_options);
+	bool found=false;
+	for(Func* f : module->funcs){
+		if(f->name=="abc")found = true;
+		if(f->name=="$abc")found = true;// todo rename ON CONSTRUCTION
+	}
+	check(found)
+//	Func* abc=module->funcs.front();
+//	check(abc->name=="abc");
+
+	if (Succeeded(result) && validate_wasm) {
+		ValidateOptions options(wabt_features);
 		result = ValidateModule(module.get(), &errors, options);
 	}
 
 	if (Succeeded(result)) {
 		MemoryStream stream;
-		s_write_binary_options.features = s_features;
-		result = WriteBinaryModule(&stream, module.get(), s_write_binary_options);
+		write_binary_options.features = wabt_features;
+		result = WriteBinaryModule(&stream, module.get(), write_binary_options);
 		if (Succeeded(result)) {
 			OutputBuffer &buffer = stream.output_buffer();
 			buffer.WriteToFile(s_infile.substr(0,s_infile.find(".wat")));
-			if(s_dump_module)DebugBuffer(buffer);
+			if(dump_module)DebugBuffer(buffer);
 		}
 	}
 
@@ -163,12 +179,6 @@ int ProgramMain(const char* infile) {
 	FormatErrorsToFile(errors, Location::Type::Text, line_finder.get());
 
 	return result != Result::Ok;
-}
-
-
-int run_wasm(bytes buffer, int buf_size){
-	ProgramMain("test.wasm");
-	return 23;
 }
 
 Code readWasm(char const *file) {
@@ -190,15 +200,15 @@ Code readWasm(char const *file) {
 Code readWasmW3(char const *file) {
 	result = ParseWatModule(lexer.get(), &module, &errors, &parse_wast_options);
 
-	if (Succeeded(result) && s_validate) {
-		ValidateOptions options(s_features);
+	if (Succeeded(result) && validate_wasm) {
+		ValidateOptions options(wabt_features);
 		result = ValidateModule(module.get(), &errors, options);
 	}
 
 	if (Succeeded(result)) {
 		MemoryStream stream(s_log_stream.get());
-		s_write_binary_options.features = s_features;
-		result = WriteBinaryModule(&stream, module.get(), s_write_binary_options);
+		write_binary_options.features = wabt_features;
+		result = WriteBinaryModule(&stream, module.get(), write_binary_options);
 
 	IM3Environment environment=m3_NewEnvironment();
 	IM3Module module;
