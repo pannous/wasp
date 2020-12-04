@@ -392,11 +392,6 @@ chars typeName(Type t) {
 	}
 }
 
-
-String UNEXPECT_END = "Unexpected end of input";
-String UNEXPECT_CHAR = "Unexpected character ";
-
-
 String nil_name = "nil";
 String empty_name = "";
 String object_name = "{…}";
@@ -560,10 +555,10 @@ void error1(String message, chars file, int line){
 
 // 0 = NO, 1 = yes at #1
 
-int String::in(List<String> list) {
-	for (int i = 0; i < list.size(); ++i) {
-		if (list[i] == this)
-			return i+1;
-	}
-	return 0;
-}
+//int String::in(List<String> list) {
+//	for (int i = 0; i < list.size(); ++i) {
+//		if (list[i] == this)
+//			return i+1;
+//	}
+//	return 0;
+//}
