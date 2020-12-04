@@ -1,4 +1,5 @@
-//#include "src/binary-reader.h"
+#include "stdio.h"
+#include "src/binary-reader.h"
 #include <wast-lexer.h>
 #include <error.h>
 #include <shared-validator.h>
@@ -6,56 +7,65 @@
 #include "src/interp/interp.h"
 
 typedef unsigned char* bytes;
+#define pointer std::unique_ptr
 
-//using namespace wabt::interp;
-using wabt::interp::Store;
-using wabt::interp::ModuleDesc;
-using wabt::interp::Module;
-using wabt::interp::Ref;
-using wabt::interp::RefVec;
-using wabt::interp::RefPtr;
-using wabt::interp::FuncType;
-using wabt::interp::HostFunc;
-using wabt::interp::Thread;
-using wabt::interp::Value;
-using wabt::interp::Values;
-using wabt::interp::Trap;
-using wabt::interp::Instance;
+using namespace wabt::interp;
 
 //using RefVec = std::vector<Ref>;
+
+double root(double n){
+	double lo = 0, hi = n, mid;
+	for(int i = 0 ; i < 100 ; i++){
+		mid = (lo+hi)/2;
+		if(mid*mid == n) return mid;
+		if(mid*mid > n) hi = mid;
+		else lo = mid;
+	}
+	return mid;
+}
 
 static bool validate_wasm = true;
 static wabt::ReadBinaryOptions s_write_binary_options;
 static wabt::Features wabt_features;
 
-void BindImports(Module::Ptr& module, std::vector<Ref> &imports, Store store) {
+wabt::Result do_square(Thread& thread, const Values& params, Values& results, Trap::Ptr* trap){
+	int x = params.front().Get<int>();
+	results.front() = wabt::interp::Value::Make(x * x);
+	return wabt::Result::Ok;
+};
+
+wabt::Result do_logi(Thread& thread, const Values& params, Values& results, Trap::Ptr* trap){
+	printf("%d\n",params.front().Get<int>());
+};
+
+wabt::Result do_logf(Thread& thread, const Values& params, Values& results, Trap::Ptr* trap){
+	printf("%d\n",params.front().Get<float>());
+};
+
+wabt::Result do_sqrt(Thread& thread, const Values& params, Values& results, Trap::Ptr* trap){
+	int x = params.front().Get<int>();
+	results.front() = wabt::interp::Value::Make(root(x));
+};
+
+
+
+void BindImports(Module* module, std::vector<Ref> &imports, Store& store) {
 //	auto* stream = s_stdout_stream.get();
 	bool hostPrint = true;//false;
-
-
-
+	// convoluted shit, I don't like it
 	for (auto&& import : module->desc().imports) {
 		auto func_type = *wabt::cast<FuncType>(import.type.type.get());
-		// convoluted shit, I don't like it
-		auto host_square = HostFunc::New(store, func_type,
-		                                 [=](Thread& thread, const Values& params,
-		                                     Values& results, Trap::Ptr* trap) -> wabt::Result {
-			                                 results.push_back(wabt::interp::Value::Make(42));
-			                                 return wabt::Result::Ok;
-		                                 });
-		if (import.type.name == "square")
-			imports.push_back(host_square.ref());
+		if (import.type.name == "square")imports.push_back(HostFunc::New(store, func_type,do_square).ref());
+		else if (import.type.name == "logi")imports.push_back(HostFunc::New(store, func_type,do_logi).ref());
+		else if (import.type.name == "logf")imports.push_back(HostFunc::New(store, func_type,do_logf).ref());
+		else if (import.type.name == "√")imports.push_back(HostFunc::New(store, func_type,do_sqrt).ref());
 		else imports.push_back(Ref::Null);
 		// By default, just push an null reference. This won't resolve, and instantiation will fail.
 	}
 }
-
 // wabt has HORRIBLE api, but ok
 int run_wasm(bytes buffer, int buf_size){
-//	Module ModuleRead(buffer, buf_size); // binaryen
-//	ReadBinaryInterp();
 	Store store;
-
 	ModuleDesc module_desc;
 	const bool kReadDebugNames = true;
 	const bool kStopOnFirstError = true;
@@ -64,30 +74,35 @@ int run_wasm(bytes buffer, int buf_size){
 	                                kStopOnFirstError, kFailOnCustomSectionError);
 	wabt::Errors errors;
 	CHECK_RESULT(ReadBinaryInterp(buffer, buf_size, options, &errors, &module_desc));
-//	BindImports(const Module::Ptr& module, RefVec& imports);
-//	wabt::interp::Module module=wabt::interp::Module(store, module_desc);
-	wabt::interp::Module::Ptr module = wabt::interp::Module::New(store, module_desc);
+	auto module = wabt::interp::Module::New(store, module_desc);
 	RefVec imports;
 #if WASI
 	uvwasi_t uvwasi;
     std::vector<const char*> argv; // ...
 #endif
-	BindImports(module, imports, store);
+	BindImports(module.get(), imports, store);
 
-	Instance::Ptr instance;
 	RefPtr<Trap> trap;
-	Instance::Instantiate(store, module.ref(), imports, &trap);
+	Instance::Ptr instance = Instance::Instantiate(store, module.ref(), imports, &trap);
+	if(trap){
+		printf("\nERROR in module\n");
+		printf("%s\n\n",trap.get()->message().data());
+		return -1;
+	}
+
 
 	for (wabt::interp::ExportDesc export_ : module_desc.exports) {
 		if (export_.type.type->kind != wabt::ExternalKind::Func) continue;
 		if (export_.type.name != "main") continue;
 		auto *func_type = wabt::cast<wabt::interp::FuncType>(export_.type.type.get());
 		if (func_type->params.empty()) {
-			auto func = store.UnsafeGet<wabt::interp::Func>(instance->funcs()[export_.index]);
+			RefVec funcs = instance->funcs();
+			Ref &func0 = funcs[export_.index];
+			auto func = store.UnsafeGet<wabt::interp::Func>(func0);
 			Values params;
 			Values results;
 			Trap::Ptr trap;
-			wabt::Result ok = func->Call(store, params, results, &trap, 0  /*stream*/);
+			wabt::Result ok = func->Call(store, params, results, &trap, 0 );
 			int result0 = results.front().Get<int>();
 			return result0;
 //			WriteCall(s_stdout_stream.get(), export_.type.name, *func_type, params, results, trap);
