@@ -168,7 +168,8 @@ elseif (WABT) # NORMAL:
     add_subdirectory(wabt)
     set(SOURCE_FILES
             Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
-            wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp  wasm_runner_console.cpp)
+            wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp  wasm_runner_wabt.cpp)
+#    wasm_runner_console.cpp
 #     wasm_runner_wabt.cpp  error: call to implicitly-deleted copy constructor WHY???
     add_executable(angle ${SOURCE_FILES})
     target_include_directories(angle PUBLIC wabt/)

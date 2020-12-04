@@ -34,7 +34,7 @@ static bool dump_module= false;//debug
 
 #define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
-#define pointer std::unique_ptr
+#define pointerr std::unique_ptr
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
 //	if(bytes)
@@ -123,11 +123,11 @@ Code mergeModules(Code api, Code code){
 using namespace wabt;
 
 
-static pointer<FileStream> s_log_stream;// = FileStream::CreateStdout();
+static pointerr<FileStream> s_log_stream;// = FileStream::CreateStdout();
 
 
 static void DebugBuffer(const OutputBuffer& buffer) {
-	pointer<FileStream> stream = FileStream::CreateStdout();
+	pointerr<FileStream> stream = FileStream::CreateStdout();
 		if (!buffer.data.empty()) {
 			stream->WriteMemoryDump(buffer.data.data(), buffer.data.size());
 		}
@@ -140,13 +140,13 @@ int ProgramMain(const char* infile) {
 	string_view s_infile = "t.wat";
 	std::vector<uint8_t> file_data;
 	Result result = ReadFile(s_infile, &file_data);
-	pointer<WastLexer> lexer = WastLexer::CreateBufferLexer(s_infile, file_data.data(), file_data.size());
+	pointerr<WastLexer> lexer = WastLexer::CreateBufferLexer(s_infile, file_data.data(), file_data.size());
 	if (Failed(result)) {
 		WABT_FATAL("unable to read file: %s\n", s_infile);
 	}
 
 	Errors errors;
-	pointer<Module> module;
+	pointerr<Module> module;
 
 	WastParseOptions parse_wast_options(wabt_features);
 	result = ParseWatModule(lexer.get(), &module, &errors, &parse_wast_options);
@@ -221,3 +221,4 @@ Code readWasmW3(char const *file) {
 //	read(buffer, sz);
 }
 #endif
+#undef pointerr
