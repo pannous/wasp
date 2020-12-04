@@ -13,12 +13,12 @@
 bool recursive = true;// whats that?
 List<String> declaredSymbols;// todo: buildup by preparsing
 
-String functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
+chars functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
 
 // functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
-String function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
+chars function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
                           "logx", "logc", "id", 0};// MUST END WITH 0, else BUG
-String control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
+chars control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
 
 
 class Arg{
@@ -257,7 +257,8 @@ String extractFunctionName(Node &node) {
 List<String> collectOperators(Node &expression) {
 	List<String> operators;
 	for (Node &op : expression) {
-		if (op.name.in(operator_list))
+		if (operator_list.has(op.name))
+//			if (op.name.in(operator_list))
 			operators.add(op.name);
 //		if (op.name.in(function_list))
 //			operators.add(op.name);
@@ -272,13 +273,13 @@ List<String> collectOperators(Node &expression) {
 
 //https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
 //List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
-String ras[]={"=", "?:", "+=", "++:",0};
-//List<String> rightAssociatives = List(ras);
-List<String> rightAssociatives = List<String>{"=", "?:", "+=", "++:",0};// a=b=1 == a=(b=1) => a=1
+chars ras[]={"=", "?:", "+=", "++:",0};
+//List<chars> rightAssociatives = List(ras);
+List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++:",0};// a=b=1 == a=(b=1) => a=1
 
-List<String> prefixOperators = {"not", "!", "√", "-…", "--…", "++…", "+…", "~", "*…", "&…", "sizeof", "new", "delete[]"};
-List<String> suffixOperators = {"…++", "…--", "⁻¹", "⁰", "¹", "²", "³", "…%", "﹪", "％", "٪", "‰"};// ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
-List<String> declaration_operators = {":="};
+List<chars> prefixOperators = {"not", "!", "√", "-…", "--…", "++…", "+…", "~", "*…", "&…", "sizeof", "new", "delete[]"};
+List<chars> suffixOperators = {"…++", "…--", "⁻¹", "⁰", "¹", "²", "³", "…%", "﹪", "％", "٪", "‰"};// ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
+List<chars> declaration_operators = {":="};
 
 
 // a + b c + d

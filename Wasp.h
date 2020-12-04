@@ -5,7 +5,7 @@
 Node parse(String source);// wasp -> data
 bool is_operator(codepoint ch);// todo: next?
 //extern String operator_list[];// resolve xor->operator ... semantic wasp parser really?
-extern List<String> operator_list;
+extern List<chars> operator_list;
 
 extern float function_precedence;
 

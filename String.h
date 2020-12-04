@@ -223,8 +223,8 @@ public:
 		if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
 		else {
 			if(copy){
-			data = static_cast<char *>(alloc(sizeof(char), length + 2));
-			strcpy2(data, string, length + 1);
+			data = static_cast<char *>(alloc(sizeof(char), length + 1));
+			strcpy2(data, string, length);
 			} else{
 				shared_reference = true;
 				data=(char*)string;
@@ -757,7 +757,16 @@ public:
 	String format(char *string) {
 		return this->replace("%s", string);
 	}
-
+//	int in(List<chars> liste);
+	int in(chars array[]) {// array NEEDS to be 0 terminated!!!!
+		int i = 0;
+		while (array[i]) {
+			if (eq(array[i],data))
+				return i + 1;
+			i++;
+		}
+		return 0;
+	}
 	// 0 = NO, 1 = yes at #1
 	int in(String array[]) {// array NEEDS to be 0 terminated!!!!
 		int i = 0;
@@ -771,9 +780,6 @@ public:
 		}
 		return 0;
 	}
-
-	int in(List<String> list);
-
 
 //	bool in(String* array) {
 //		return false;
@@ -832,3 +838,5 @@ void log(chars s);
 //unsigned  == unsigned int!
 inline short utf8_byte_count(char c);
 short utf8_byte_count(codepoint c);
+
+#include "Map.h"
