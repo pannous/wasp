@@ -44,7 +44,7 @@ wabt::Result do_logf(Thread& thread, const Values& params, Values& results, Trap
 
 wabt::Result do_sqrt(Thread& thread, const Values& params, Values& results, Trap::Ptr* trap){
 	int x = params.front().Get<int>();
-	results.front() = wabt::interp::Value::Make(root(x));
+	results.front() = wabt::interp::Value::Make((int)root(x));
 };
 
 

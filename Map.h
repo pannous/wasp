@@ -181,9 +181,11 @@ public:
 		return &items[_size];
 	}
 
+
 	int position(S s) {
 		for (int i = 0; i < _size; ++i) {
 			if (items[i] == s)return i;
+			if(eq(items[i],s))return i;// char*
 		}
 		return -1;
 	}
