@@ -82,10 +82,12 @@ Node If(Node n) {
 		error("no if block given");
 	Node &condition = n.children[0];
 	Node then = n[1];
+
 	if (n.has("then")) {
 		condition = n.to("then");
 		then = n.from("then");
 	}
+
 
 	if (condition.value.data and !condition.next)
 		then = condition.values();
