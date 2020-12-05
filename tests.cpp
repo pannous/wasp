@@ -1329,9 +1329,9 @@ void tests() {
 	testGraphQlQuery2();
 	testUTF();// fails sometimes => bad pointer!?
 	testRecentRandomBugs();
+	skip(
 			testKitchensink();
 			testGroupCascade();
-	skip(
 	)
 #ifdef APPLE
 	testAllSamples();
@@ -1370,6 +1370,7 @@ void todos() {
 #include "wasm_reader.h"
 
 void testCurrent() { // move to tests() once OK
+	assert_eval("if(0):{3}", false);
 //	testGroupCascade();
 //	testKitchensink(); // TODO Oooo!
 //	testWasmString();

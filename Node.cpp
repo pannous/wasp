@@ -229,7 +229,8 @@ bool Node::operator==(long other) {
 bool Node::operator==(double other) {
 	if (kind == keyNode and value.node and value.node->value.real == other)return true;
 	return (kind == reals and value.real == ((float) other)) or
-	       (kind == longs and value.longy == other);
+	       (kind == longs and value.longy == other) or
+	       (kind == bools and value.longy == other);
 }
 
 bool Node::operator==(float other) {
@@ -259,6 +260,8 @@ bool Node::operator==(Node &other) {
 		return value.real == other.value.real;
 	if (kind == reals and other.kind == longs)
 		return value.real == other.value.longy;
+	if (kind == bools or other.kind == bools) // 1 == true
+		return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
 
 	if (isNil() and other.isNil())
 		return true;
@@ -277,8 +280,6 @@ bool Node::operator==(Node &other) {
 
 	if (other.kind == unknown and name == other.name)
 		return true; // weak criterum for dangling unknowns!! TODO ok??
-	if (kind == bools or other.kind == bools) // 1 == true
-		return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
 	if (not typesCompatible(*this, other))
 		return false;
 //	CompileError: WebAssembly.Module(): Compiling function #53:"Node::operator==(Node&)" failed: expected 1 elements on the stack for fallthru to @3, found 0 @+5465

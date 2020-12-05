@@ -126,6 +126,9 @@ void strcpy2(char *dest, chars src) {
 
 int atoi0(chars p) {
 	if (!p)return 0;
+	while(*p=='+')p++;
+	short sig=1;
+	if(*p=='-'){ sig=-1;p++; }
 	int k = 0;
 	while (*p) {
 		int n = (*p) - '0';
@@ -134,7 +137,7 @@ int atoi0(chars p) {
 		k = (k << 3) + (k << 1) + n;
 		p++;
 	}
-	return k;
+	return sig * k;
 }
 
 double atof0(chars string) {
