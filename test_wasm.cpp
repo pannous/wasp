@@ -326,7 +326,6 @@ void testRecentRandomBugs() {
 	assert(eval("3==2+1") == 1);
 	assert(eval("2+1==2+1") == 1);
 	assert_emit("square 3", 9);
-	assert_emit("square (3+3)", (long) 36);
 	assert_emit("id (3+3)", (long) 6);
 	const Node &node = parse("x:40;x+1");
 	check(node.length == 2)
@@ -337,7 +336,6 @@ void testRecentRandomBugs() {
 //	assert_emit("fib(it-1)",3);
 	assert_emit("if 4>1 then 2 else 3", 2)
 
-	assert_emit("1*2 - square 3+4", (long) -47);
 	assert_emit("double := it * 2 ; double(4)", 8)
 	assert_emit("double:=it*2;double(4)", 8)
 
@@ -383,8 +381,10 @@ void testAllWasm() {
 	// todo: reuse all tests via
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
-	readWasm("t.wasm");
+	assert_emit("-42", -42)
+	assert_emit("double := it * 2 ; double(4)", 8)
 	assert_emit("x=41;x+1", 42)
+	readWasm("t.wasm");
 	exit(0);
 	assert_emit("x=40;y=2;x+y", 42)
 	assert_emit("id(4*42) > id 2+3", 1)
