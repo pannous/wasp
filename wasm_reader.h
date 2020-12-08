@@ -6,7 +6,7 @@ public:
 	Code import_data;
 	Code export_data;
 	Code code_data;
-	Code func_data;
+	Code functype_data;
 	Code name_data;
 	int type_count;
 	int func_count;

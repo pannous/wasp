@@ -906,7 +906,7 @@ Code nameSection() {
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’. The name section should appear only once in a module, and only after the data section.
 	const Code &nameSectionData = encodeVector(
 			Code("name") + nameSubSectionModuleName);// + nameSubSectionFunctionNames + nameSubSectionLocalNames);
-	auto nameSection = createSection(custom, nameSectionData);
+	auto nameSection = createSection(custom, nameSectionData ); // auto encodeVector AGAIN!
 	nameSection.debug();
 	return nameSection;
 }
