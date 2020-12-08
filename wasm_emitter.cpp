@@ -15,11 +15,14 @@
 #define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 int runtime_offset = 0; // imports + funcs
+int import_count = 0;
+short builtin_count = 0;// function_offset - import_count - runtime_offset;
+
 Module runtime;
 String start = "main";
 
 Valtype last_type = voids;// autocast if not int
-Map<String, Valtype> return_types;
+//Map<String, Valtype> return_types;
 //Map<int, List<String>> locals;
 Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 Map<String, Signature> functionSignatures;
@@ -499,7 +502,7 @@ Code emitCall(Node &fun, String context) {
 	code.addByte(function);
 	code.addByte(index);// ok till index>127, then use unsignedLEB128
 //	code.addByte(nop);// padding for potential relocation
-	last_type = return_types[fun.name];// voids;// todo lookup return type
+	last_type = functionSignatures[fun.name].return_type;
 	return code;
 }
 
@@ -529,7 +532,6 @@ Code emitDeclaration(Node fun, Node &body) {
 
 //			body=*fun.begin()
 	Valtype returns = int32;// todo
-	return_types[fun.name] = returns;
 	signature.returns(returns);
 	functionCodes[fun.name] = emitBlock(body, fun.name);
 	last_type = voids;// todo reference to new symbol x = (y:=z)
@@ -671,7 +673,7 @@ Code emitBlock(Node node, String context) {
 	Code inner_code_data = emitExpression(node, context);
 	Valtype x = last_type;
 	block.push(inner_code_data);
-	Valtype returns = return_types[context];
+	Valtype returns = functionSignatures[context].return_type;// switch back to return_types[context] for block?
 	if (returns != last_type) {
 		if (returns == Valtype::voids and last_type != Valtype::voids)
 			block.addByte(drop);
@@ -707,25 +709,8 @@ Code typeSection() {
 	// Function types are vectors of parameters and return types. Currently
 	// optimise TODO - some of the procs might have the same type signature
 	// the type section is a vector of function types
-//	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
-//	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
-//	byte vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/,
-//	             i32t};// our main function! todo : be flexible!
-//	byte iv[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x00/*return count*/};
-//	byte vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
-//	byte ii[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x01/*return count*/, i32t};
-//	byte iii[] = {0x60/*const type form*/, 0x02/*param count*/, i32t, i32t, 0x01/*return count*/, i32t};
-//	byte fv[] = {0x60/*const type form*/, 0x01/*param count*/, f32t, 0x00/*return count*/};
-
-	int typeCount = 0;
+	int typeCount = runtime.type_count;// 0 in pure wasm
 	Code type_data;
-/*	if(not runtime_offset){
-	typeCount =5;
-	type_data = Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv)) + Code(ii, sizeof(ii)) +
-	                 Code(fv, sizeof(fv)); //			+ Code(iii, sizeof(iii));
-	                 // else reuse types
-	}*/
-
 	for (String fun :functionSignatures) {
 		typeMap[fun] = typeCount++;
 		Signature &signature = functionSignatures[fun];
@@ -735,20 +720,16 @@ Code typeSection() {
 		for (int i = 0; i < param_count; ++i) {
 			td = td + Code(signature.types[i]);
 		}
-		Valtype &ret = return_types[fun];
+		Valtype &ret = functionSignatures[fun].return_type;
 		if (ret == voids) {
 			td.addByte(0);
 		} else {
 			td.addByte(1/*return count*/).addByte(ret);
 		}
 		type_data = type_data + td;
-
 	}
-//auto typeSection =
 	return Code(type, encodeVector(Code(typeCount) + type_data));
 }
-
-int import_count = 0;
 
 Code importSection() {
 	if (runtime_offset) {
@@ -756,35 +737,13 @@ Code importSection() {
 		import_count = 0;
 		return Code();
 	}
-	import_count = 4;// todo
 	// the import section is a vector of imported functions
-
-//  bytes printFunctionType = new char[]{functionType,encodeVector(f32), emptyArray}
-//	Code printFunctionType = Code(functionType).push(encodeVector(Code(f32t))).push(emptyArray);
-//	functionSignatures["logi"] = Signature().add(i32t);
-//	functionSignatures["logf"] = Signature().add(f32);
-//	functionSignatures["square"] = Signature().add(i32t).returns(i32t);
-//	functionSignatures["sqrt"] = Signature().add(i32t).returns(i32t);
-
 // todo: remove hardcoded!
-	Code logi_iv = encodeString("env") + encodeString("logi").addByte(func_export).addType(1);
-	Code logf_fv = encodeString("env") + encodeString("logf").addByte(func_export).addType(4);
-	Code square_ii = encodeString("env") + encodeString("square").addByte(func_export).addType(3);
-	Code sqrt_ii = encodeString("env") + encodeString("√").addByte(func_export).addType(3);
-
-//
-	functionIndices["logi"] = functionIndices.size();// import!
-	functionIndices["logf"] = functionIndices.size();// import!
-	functionIndices["square"] = functionIndices.size();
-	functionIndices["√"] = functionIndices.size();
-	return_types["square"] = int32;
-	return_types["id"] = int32;
-	return_types["√"] = int32;
-//	return_types["logi", voids);
-
-//	auto importSection = createSection(import, encodeVector(printFunctionImport));//+memoryImport
-
-	auto importSection = createSection(import, Code(import_count) + logi_iv + logf_fv + square_ii + sqrt_ii);
+	Code logi_iv = encodeString("env") + encodeString("logi").addByte(func_export).addType(typeMap["logi"]);
+	Code logf_fv = encodeString("env") + encodeString("logf").addByte(func_export).addType(typeMap["logf"]);
+	Code square_ii = encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
+//	Code sqrt_ii = encodeString("env") + encodeString("√").addByte(func_export).addType(typeMap["√"]); builtin wasm anyways!!
+	auto importSection = createSection(import, Code(import_count) + logi_iv + logf_fv + square_ii );// + sqrt_ii
 	return importSection;
 }
 
@@ -792,48 +751,40 @@ int function_count;// minus import_count  (together : functionIndices.size() )
 Code codeSection(Node root) {
 	// the code section contains vectors of functions
 	int index_size = functionIndices.size();
-	if (index_size != import_count + runtime_offset)
-		error("inconsistent function_count");
-	short function_offset = import_count + runtime_offset;
+	if (import_count + runtime_offset + builtin_count + 1 != index_size) {
+		log(functionIndices);
+		error("inconsistent function_count %d + %d + %d + main != %d"s % import_count % builtin_count % runtime_offset % index_size);
+	}
 // https://pengowray.github.io/wasm-ops/
 //	char code_data[] = createSection() 0x01,0x08,0x00,0x01,0x3f,0x0F,0x0B};// ok 0x01==nop
 //  Code code_data=encodeVectors(encodeVector(1/*function_index/))
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
 
 // index needs to be known before emitting code, so call $i works
-	if (!functionIndices.has(start))
-		functionIndices[start] = function_offset++;
-	else
-		error("start already declared: "s + start);
-	if (!functionIndices.has("nop"))functionIndices["nop"] = function_offset++;
-	if (!functionIndices.has("id"))functionIndices["id"] = function_offset++;
-	return_types["id"] = i32t;
-	return_types["nop"] = voids;
-	return_types[start] = i32t;
-	functionSignatures["nop"] = Signature();
-	functionSignatures["id"] = Signature().add(i32t).returns(i32t);
-	functionSignatures[start] = Signature().returns(i32t);
-	short builtin_count = function_offset - import_count - runtime_offset;
+
 
 
 	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block}; // 0x00 == unreachable as block header !?
 	byte code_data_nop[] = {0/*locals_count*/, end_block};// NOP
-	byte code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block,
-	                       end_block};// NOP
-//	byte code_data[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+	byte code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block, end_block};// NOP
+//	byte code_data_log21[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	byte code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 
 	Code main_block = emitBlock(root, start);
 	Code nop_block = Code(code_data_nop, sizeof(code_data_nop));
 	Code id_block = Code(code_data_id, sizeof(code_data_id));
-	Code code_blocks = encodeVector(main_block) + encodeVector(nop_block) + encodeVector(id_block);
-	for (String fun : functionCodes) {
+
+	// order matters, in functionType section!
+	Code code_blocks = encodeVector(nop_block) + encodeVector(id_block) + encodeVector(main_block);
+	for (String fun : functionCodes) {// MAIN block extra ^^^
 		Code &func = functionCodes[fun];
 		code_blocks = code_blocks + encodeVector(func);
 	}
-	function_count = builtin_count /*main*/ + functionCodes.size();// offset by imports!?
 	index_size = functionIndices.size();
-	if (function_count + import_count + runtime_offset != index_size) {
+
+	function_count = builtin_count + 1 /*main*/ + functionCodes.size();
+
+	if (runtime_offset + import_count + function_count != index_size) {
 //		log(functionCodes.keys);
 		log(functionIndices);
 		error("inconsistent function_count %d + %d + %d != %d "s % function_count % import_count % runtime_offset % index_size);
@@ -853,25 +804,26 @@ Code exportSection() {
 }
 
 
-Code funcTypeSection() {
+Code funcTypeSection() {// depends on codeSection, but must appear earlier in wasm
 	// funcType_count = function_count EXCLUDING imports, they encode their type inline!
 	// the function section is a vector of type indices that indicate the type of each function in the code section
+
 	Code types_of_functions = Code(function_count);//  = Code(types_data, sizeof(types_data));
+//	order matters in functionType section! must be same as in functionIndices
 	for (int i = 0; i < function_count; ++i) {
 		//	import section types separate WTF wasm
 		int index = i + import_count + runtime_offset;
 		String *fun = functionIndices.lookup(index);
-		if (!fun){
+		if (!fun) {
 			log(functionIndices);
 			error("missing typeMap for index "s + index);
-		}
-		else {
+		} else {
 			int typeIndex = typeMap[*fun];
-			if (typeIndex < 0){
-				if(runtime_offset==0) // todo else ASSUME all handled correctly before
-				error("missing typeMap for function %s index %d "s % fun % i);
-			}else
-			types_of_functions.push((byte) typeIndex);
+			if (typeIndex < 0) {
+				if (runtime_offset == 0) // todo else ASSUME all handled correctly before
+					error("missing typeMap for function %s index %d "s % fun % i);
+			} else
+				types_of_functions.push((byte) typeIndex);
 		}
 	}
 	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
@@ -986,34 +938,75 @@ Code linkingSection() {
     tail-call
  */
 
+void add_builtins() {
+	// imports
+	functionSignatures["logi"] = Signature().add(i32t).import();
+	functionSignatures["logf"] = Signature().add(f32t).import();
+	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
+//	functionSignatures["sqrt"] = Signature().add(i32t).returns(i32t).import();
+	import_count = functionSignatures.size();
+
+	functionIndices["logi"] = functionIndices.size();// import!
+	functionIndices["logf"] = functionIndices.size();// import!
+	functionIndices["square"] = functionIndices.size();// import!
+//	functionIndices["√"] = functionIndices.size();
+
+	// builtins
+	functionSignatures["nop"] = Signature();
+	functionSignatures["id"] = Signature().add(i32t).returns(i32t);
+
+	if (!functionIndices.has("nop"))functionIndices["nop"] = functionIndices.size();
+	if (!functionIndices.has("id"))functionIndices["id"] = functionIndices.size();
+	// order matters, main now comes AFTER builtins!
+
+	builtin_count = functionIndices.size() - import_count;//  - runtime_offset;
+}
+
 Code &emit(Node root_ast, Module *runtime0, String _start) {
 	start = _start;
+
+	typeMap.setDefault(-1);
+	functionIndices.setDefault(-1);
+	functionCodes.setDefault(Code());
+	functionSignatures.setDefault(Signature());
+
 	if (runtime0)runtime = *runtime0;// else filled with 0's
-	if (runtime0 == 0) {
+	if (runtime0) {
+		runtime_offset = functionIndices.size();
+	} else {
 		typeMap.clear();
 		functionIndices.clear();
-	} else runtime_offset = functionIndices.size();
+		functionSignatures.clear();
+		add_builtins();
+	}
+	if (!functionIndices.has(start)){
+		functionIndices[start] = functionIndices.size();// AFTER collecting imports!!
+	}
+	else
+		error("start already declared: "s + start);
+	functionSignatures[start] = Signature().returns(i32t);
 	functionCodes.clear();
-	functionCodes.setDefault(Code());
-	functionIndices.setDefault(-1);
-	functionSignatures.clear();
-	functionSignatures.setDefault(Signature());
-	typeMap.setDefault(-1);
-	return_types.setDefault(voids);
 	locals.setDefault(List<String>());
-//	Map<int, String>
 
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
 	auto memorySection = createSection(memory_section, encodeVector(Code(2)));
 	auto memoryImport = encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
-
 	auto customSection = createSection(custom, encodeVector(Code("custom123") + Code("random custom section data")));
-	const Code &importSection1 = importSection();
-	const Code &codeSection1 = codeSection(root_ast);// depends on importSection, yields data for funcTypeSection!
-	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection() + importSection1 +
-	            funcTypeSection() + exportSection() + codeSection1 + dataSection() + linkingSection() + nameSection();// + customSection;
-// memorySection +
-//	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4) + typeSection + funcSection + exportSection + codeSection;// + memorySection + ;
+	Code typeSection1 = typeSection();
+	Code codeSection1= codeSection(root_ast);
+	Code importSection1 = importSection();
+	Code funcTypeSection1 = funcTypeSection();// depends on codeSection, but must come before it!!
+	Code exportSection1=exportSection();// depends on codeSection, but must come before it!!
+	Code code = Code(magicModuleHeader, 4)
+	            + Code(moduleVersion, 4)
+	            + typeSection1
+	            + importSection1
+	            + funcTypeSection1 // signatures
+	            + exportSection1
+	            + codeSection1 // depends on importSection, yields data for funcTypeSection!
+	            //			+ dataSection()
+	            //			+ linkingSection()
+	            + nameSection();// + customSection;
 	code.debug();
 	return code.clone();
 }
