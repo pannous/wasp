@@ -72,7 +72,7 @@ int unsignedLEB128() {
 int unsignedLEB128(Code code) {
 	int n = 0;
 	do {
-		byte b = code[code.pos++];
+		byte b = code[code.start++];
 		n = n << 7;
 		n = n ^ (b & 0x7f);
 		if ((b & 0x80) == 0)break;
