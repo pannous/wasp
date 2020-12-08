@@ -20,9 +20,6 @@ extern bool polish_notation;
 //extern unsigned char __heap_base;
 //unsigned int bump_pointer = &__heap_base;
 
-#define let auto
-#define var auto
-//typedef void *any;
 typedef unsigned char byte;
 typedef chars chars;
 
@@ -65,14 +62,10 @@ union Value {
 	double real;
 
 	Value() {}// = default;
-	Value(int i) {
-		longy = i;
-	}
-
-	Value(bool b) {
-		longy = 1;
-	}
-
+	Value(int i) { longy = i; }
+	Value(long i) { longy = i; }
+	Value(bool b) { longy = b; }
+	Value(double r) { real = r; }
 //	~Value() = default;
 };
 
