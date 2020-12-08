@@ -321,6 +321,8 @@ void testWasmMemoryIntegrity() {
 }
 
 void testRecentRandomBugs() {
+//		testGraphQlQuery();
+
 	assert(eval("ç='☺'") == "☺");// fails later => bad pointer?
 	assert(eval("(2+1)==(4-1)") == 1);
 	assert(eval("3==2+1") == 1);
@@ -377,28 +379,70 @@ void wasm_todos() {
 	)
 }
 
+//void testRefactor(){
+//	wabt::Module *module = readWasm("t.wasm");
+//	refactor_wasm(module, "__original_main", "_start");
+//	module = readWasm("out.wasm");
+//	check(module->funcs.front()->name == "_start");
+//}
+
+void testMerge(){
+	Node charged = analyze(parse("test:=42"));
+	Code lib = emit(charged);
+	Module module = read_wasm("test.wasm");
+	charged = analyze(parse("test"));
+	Code main = emit(charged,&module);
+//	Code merged=merge_code(lib, main);
+//	int ok = merged.run();
+	int ok = main.run();
+	check(ok==42);
+}
+
+
+//#include "wasm_merger.h"
+void testMergeWabt(){
+//	merge_files({"test-lld-wasm/main.wasm", "test-lld-wasm/lib.wasm"});
+//	wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
+//	wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
+//	Module *merged = merge_wasm(main, module);
+//	save_wasm(merged);
+//	int ok=run_wasm(merged);
+	int ok=run_wasm("a.wasm");
+	check(ok==42);
+}
+
+void testWasmModuleExtension(){
+	// doesn't work: cannot insert imports or function types!
+//	emit("test");
+//	merge_files({"test.wasm", "test-lld-wasm/lib.wasm"});
+//	wabt::Module *main=readWasm("test.wasm");
+//	wabt::Module *lib = readWasm("test-lld-wasm/lib.wasm");
+//	wabt::Module *merged=merge_wasm(lib, main);
+//	save_wasm(merged, "prog.wasm");
+}
+
 void testAllWasm() {
 	// todo: reuse all tests via
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
+//	testWasmModuleExtension();
+	testMerge();
+	exit(0);
+//	testRefactor();
+
+//	readWasm("t.wasm");
 	assert_emit("-42", -42)
 	assert_emit("double := it * 2 ; double(4)", 8)
 	assert_emit("x=41;x+1", 42)
-	readWasm("t.wasm");
-	exit(0);
 	assert_emit("x=40;y=2;x+y", 42)
 	assert_emit("id(4*42) > id 2+3", 1)
 	assert_emit("double:=it*2; double 3", 6)
 	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
 	assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)
-
-
 	assert_emit("add1 x:=x+1;add1 3", (long) 4);
 
 //	testRecentRandomBugs();
-//	run_wasm_file("../t.wasm");
-
-//	testWasmFunctionDefiniton();
+//	run_wasm("../t.wasm");
 
 // TRUE TESTS:
 	testWasmFunctionDefiniton();

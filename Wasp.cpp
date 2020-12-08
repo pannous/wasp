@@ -224,7 +224,7 @@ private:
 	};
 
 	String pointer() {
-		var columnNumber = at - columnStart;
+		auto columnNumber = at - columnStart;
 		String msg;
 //				s("IN CODE:\n");
 		msg = msg + " at position " + at + " in line " + lineNumber + " column " + columnNumber + "\n";
@@ -240,7 +240,7 @@ private:
 		msg += pointer();
 //		msg = msg + s(" of the Mark data. \nStill to read: \n") + text.substring(at - 1, at + 30) + "\n^^ ...";
 //		msg = msg + backtrace2();
-		var error = new SyntaxError(msg);
+		auto error = new SyntaxError(msg);
 		error->at = at;
 		error->lineNumber = lineNumber;
 		error->columnNumber = at - columnStart;
@@ -303,7 +303,7 @@ private:
 		}
 
 		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
-		var key = String(ch);
+		auto key = String(ch);
 		// subsequent characters can contain ANYTHING
 		while (proceed() and is_identifier(ch) or isDigit(ch))key += ch;
 		// subsequent characters can contain digits
@@ -319,8 +319,8 @@ private:
 
 	// Parse a number value.
 	Node numbero() {
-		let sign = '\n';
-		let string = String("");
+		auto sign = '\n';
+		auto string = String("");
 		int number0, base = 10;
 		if (ch == '+')warn("unnecessary + sign or missing whitespace 1 +1 == [1 1]");
 		if (ch == '-' || ch == '+') {
@@ -407,10 +407,10 @@ private:
 
 // Parse a string value.
 	Node string2(char delim = '"') {
-		var hex = 0;
-		var i = 0;
-		var triple = false;
-		var start = at;
+		auto hex = 0;
+		auto i = 0;
+		auto triple = false;
+		auto start = at;
 		String string;
 
 		// when parsing for string values, we must look for ' or " and \ characters.
@@ -565,8 +565,8 @@ private:
 	}
 
 	bool suffix(String suffix) {
-		let len = suffix.length;
-		for (let i = 0; i < len; i++) {
+		auto len = suffix.length;
+		for (auto i = 0; i < len; i++) {
 			if (text[at + i] != suffix[i]) {
 				at += i + 1;
 				return false;
@@ -725,7 +725,7 @@ private:
 	};
 
 //	void pragma2(char prag = '\n') {// sende in wasp??
-//		let level = 0;
+//		auto level = 0;
 //		proceed();  // skip starting '('
 //		while (ch) {
 //			if (ch == ')') {
@@ -792,11 +792,11 @@ private:
 		byte lookup64[128];
 		byte lookup85[128];
 
-		for (var i = 0; i < 128; i++) {
+		for (auto i = 0; i < 128; i++) {
 			lookup64[i] = 65;
 			lookup85[i] = 86;
 		}
-		for (var i = 0; i < 64; i++) {
+		for (auto i = 0; i < 64; i++) {
 			char charCode = text.charCodeAt(i);
 			if (charCode < 0) // never true: charCode > 128 or
 				error(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
@@ -804,7 +804,7 @@ private:
 		}
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
 		lookup64[32] = lookup64[9] = lookup64[13] = lookup64[10] = 64;
-		for (var i = 0; i < 128; i++) { if (33 <= i && i <= 117) lookup85[i] = i - 33; }
+		for (auto i = 0; i < 128; i++) { if (33 <= i && i <= 117) lookup85[i] = i - 33; }
 // ' ', \t', '\r', '\n' spaces also allowed in base85 stream
 		lookup85[32] = lookup85[9] = lookup85[13] = lookup85[10] = 85;
 
@@ -813,14 +813,14 @@ private:
 		if (next == '~') { // base85
 			at++;  // skip '~'
 			// code based on https://github.com/noseglid/base85/blob/master/lib/base85.js
-			let end = text.indexOf('}', at + 1);  // scan binary end
+			auto end = text.indexOf('}', at + 1);  // scan binary end
 			if (end < 0) { error("Missing ascii85 end delimiter"); }
 
 			// first run decodes into base85 int values, and skip the spaces
-			let p = 0;
+			auto p = 0;
 			byte base[end - at + 3];  // 3 extra bytes of padding
 			while (at < end) {
-				let code = lookup85[text.charCodeAt(at)];  // console.log('bin: ', next, code);
+				auto code = lookup85[text.charCodeAt(at)];  // console.log('bin: ', next, code);
 				if (code > 85) { error("Invalid ascii85 character"); }
 				if (code < 85) { base[p++] = code; }
 				// else skip spaces
@@ -832,7 +832,7 @@ private:
 			if (p % 5 == 1) { error("Invalid ascii85 stream length"); }
 
 			// second run decodes into actual binary data
-			let dataLength = p, padding = (dataLength % 5 == 0) ? 0 : 5 - dataLength % 5;
+			auto dataLength = p, padding = (dataLength % 5 == 0) ? 0 : 5 - dataLength % 5;
 			int buffer[4 * dataLength / 5 - padding];
 //				bytes = new DataView(buffer),
 			int *bytes = buffer;// views:
@@ -841,8 +841,8 @@ private:
 			int trail = dataLength - 4;//buffer.byteLength - 4;
 			base[p] = base[p + 1] = base[p + 2] = 84;  // 3 extra bytes of padding
 			// console.log('base85 byte length: ', buffer.byteLength);
-			for (let i = 0, p = 0; i < dataLength; i += 5, p += 4) {
-				let num = (((base[i] * 85 + base[i + 1]) * 85 + base[i + 2]) * 85 + base[i + 3]) * 85 + base[i + 4];
+			for (auto i = 0, p = 0; i < dataLength; i += 5, p += 4) {
+				auto num = (((base[i] * 85 + base[i + 1]) * 85 + base[i + 2]) * 85 + base[i + 3]) * 85 + base[i + 4];
 				// console.log("set byte to val:", p, num, String.fromCodePoint(num >> 24), String.fromCodePoint((num >> 16) & 0xff),
 				//	String.fromCodePoint((num >> 8) & 0xff), String.fromCodePoint(num & 0xff));
 				// write the uint32 value
@@ -865,7 +865,7 @@ private:
 			return Node(buffer);// {buffer};
 		} else { // base64
 			// code based on https://github.com/niklasvh/base64-arraybuffer
-			let end = text.indexOf('}', at), bufEnd = end, pad = 0;  // scan binary end
+			auto end = text.indexOf('}', at), bufEnd = end, pad = 0;  // scan binary end
 			if (end < 0) { error("Missing base64 end delimiter"); }
 			// strip optional padding
 			if (text[bufEnd - 1] == '=') { // 1st padding
@@ -880,9 +880,9 @@ private:
 
 			// first run decodes into base64 int values, and skip the spaces
 			byte base[bufEnd - at];
-			let p = 0;
+			auto p = 0;
 			while (at < bufEnd) {
-				let code = lookup64[text.charCodeAt(at)];  // console.log('bin: ', next, code);
+				auto code = lookup64[text.charCodeAt(at)];  // console.log('bin: ', next, code);
 				if (code > 64) { error("Invalid base64 character"); }
 				if (code < 64) { base[p++] = code; }
 				// else skip spaces
@@ -896,12 +896,12 @@ private:
 			}
 
 			// second run decodes into actual binary data
-			let len = int(p * 0.75);
+			auto len = int(p * 0.75);
 			int code1, code2, code3, code4 = 0;
 			int buffer[len];
 			auto *bytes = reinterpret_cast<byte *>(buffer);// views:
 			// console.log('binary length: ', len);
-			for (let i = 0, p = 0; p < len; i += 4) {
+			for (auto i = 0, p = 0; p < len; i += 4) {
 				code1 = base[i];
 				code2 = base[i + 1];
 				code3 = base[i + 2];
@@ -986,7 +986,7 @@ private:
 		Node current;
 		current.parent = parent;
 		current.setType(groups);// may be changed later, default (1 2)==1,2
-		var length = text.length;
+		auto length = text.length;
 		int start = at;
 		loop:
 		white();// insignificant whitespace HERE
