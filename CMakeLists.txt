@@ -14,7 +14,7 @@ add_compile_definitions(NO_CPP_DEMANGLE)
 #set(WASM 1)
 #set(WASI 1)
 #set(VM 1)
-set(WABT 1)
+#set(WABT 1)
 #set(WASM3 1)
 set(CMAKE_CXX_STANDARD 20)
 
@@ -201,8 +201,8 @@ else () # NORMAL:
     #    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")
     #find_package( Readline)    #find_package( READLINE )
     #    ADD_COMPILE_FLAG(" -lreadline -ldl -lcurl -lz") # extra libraries
-    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm_helpers.cpp wasm_emitter.cpp Map.cpp smart_types.cpp wasm_runner_wasm3.cpp wasm_runner3.h wasm_reader.cpp wasm_merger.cpp wasm_merger.h Code.cpp Code.h)
-
+    set(SOURCE_FILES String.cpp Map.cpp Node.cpp Wasp.cpp Angle.cpp Code.cpp wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp wasm_runner_console.cpp)
+#smart_types.cpp wasm_runner_wasm3.cpp wasm_runner3.h NodeTypes.h wasm_merger.cpp
     #    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(angle ${SOURCE_FILES})
     TARGET_LINK_LIBRARIES(angle curl)

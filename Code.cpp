@@ -102,7 +102,7 @@ Code encodeVector(Code data) {
 String sectionName(Section section){
 	switch (section) {
 		case type: return "type";
-		case func: return "func";
+		case functypes: return "func";
 		case table: return "table";
 		case import: return "import";
 		case custom: return "custom";
@@ -115,4 +115,7 @@ String sectionName(Section section){
 		case memory_section: return "memory";
 		default:error("ERRONEOUS SECTION: "s + section);
 	}
+}
+Code createSection(Section sectionType, Code data) {
+	return Code(sectionType, encodeVector(data));
 }

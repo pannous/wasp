@@ -14,3 +14,5 @@ public:
 	int export_count;
 };
 Module read_wasm(char const *file);
+
+Code merge_code(Module lib, Module main);

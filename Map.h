@@ -340,18 +340,11 @@ public:
 	bool has(S s) {
 		return position(s) >= 0;
 	}
-
-	void log() {
-		printf("Map (size: %d)\n" ,  _size);
-		for (int i = 0; i < size(); ++i) {
-			printf("%s",keys[i]);
-			printf(": ");
-//			printf("%s",values[i]);// todo: unsafe, depends on type  %d for int ...
-			printf("%d",values[i]);
-			printf("\n");
-		}
-	}
+//	void log() {
+//		error("use log(map) instead of map(log");
+//	}
 };
+void log(Map<String, int> map);
 
 //int String::in(List<chars> list){
 //	for(chars word : list){

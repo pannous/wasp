@@ -32,7 +32,7 @@ class ExpressionNod;
 //char start_function=0x00;//unreachable strange convention
 extern char unreachable;//=0x00;//unreachable strange convention
 //Code &emit(Node root_ast);
-Code &emit(Node root_ast, Module* runtime0=0);
+Code &emit(Node root_ast, Module* runtime0=0, String _start="main");
 class Signature;
 
 extern Map<String, Valtype> return_types;
