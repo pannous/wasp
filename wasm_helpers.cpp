@@ -113,7 +113,7 @@ int isalnum ( int c ){
 #ifndef WASM
 #ifndef WASI
 extern bool throwing;// false for error tests etc
-void raise(chars error) {
+int raise(chars error) {
 	if (throwing) throw error;
 }
 

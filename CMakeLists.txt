@@ -13,9 +13,10 @@ add_compile_definitions(NO_CPP_DEMANGLE)
 #add_compile_definitions(MY_WASM) # use log() !
 #set(WASM 1)
 #set(WASI 1)
-#set(VM 1)
-#set(WABT 1)
-#set(WASM3 1)
+# TO EXECUTE wasm
+set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
+#set(WABT 1) #  wasm_runner_wabt.cpp
+#set(WASM3 1) # wasm_runner_wasm3.cpp
 set(CMAKE_CXX_STANDARD 20)
 
 #    ADD_COMPILE_FLAG("-fsanitize=address -fno-omit-frame-pointer")
@@ -48,6 +49,9 @@ ADD_COMPILE_FLAG("-fsanitize=address -fsanitize-recover=address -fno-omit-frame-
 #add_compile_definitions(_FORTIFY_SOURCE)
 #A: Doesn't work if  you link with -Wl,-z,defs or -Wl,--no-undefined.
 # These flags don't work with ASan unless you also use -shared-libasan (which is the default mode for GCC, but not for Clang).
+
+
+set(SOURCE_FILES String.cpp Node.cpp Map.cpp Wasp.cpp Angle.cpp Code.cpp wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp) # COMMON FOR ALL
 
 
 if (WASM) # OR WASI)
@@ -106,7 +110,7 @@ elseif (VM) # NORMAL:
     if($ENV{WASI})
         return()
     endif()
-    message("USING INTERNAL WASM RUNTIME TO DEBUG")
+    message("USING INTERNAL WASM MICRO RUNTIME TO DEBUG")
     add_compile_definitions(WASM_ENABLE_INTERP)
     set(WAMR_BUILD_INTERP 1)
     SET(WAMR_ROOT_DIR wasm-micro-runtime)
@@ -136,9 +140,7 @@ elseif (VM) # NORMAL:
     #    add_compile_definitions(WASM_ENABLE_FAST_INTERP)
 #    ADD_COMPILE_FLAG("-w -Oz") # maximal optimization, CANT DEBUG!
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
-    set(SOURCE_FILES Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
-            wasm_helpers.cpp wasm_emitter.cpp wasm_runner.cpp
-            smart_types.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_micro.cpp)
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
 
     if (APPLE)
@@ -201,8 +203,9 @@ else () # NORMAL:
     #    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")
     #find_package( Readline)    #find_package( READLINE )
     #    ADD_COMPILE_FLAG(" -lreadline -ldl -lcurl -lz") # extra libraries
-    set(SOURCE_FILES String.cpp Map.cpp Node.cpp Wasp.cpp Angle.cpp Code.cpp wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp wasm_runner_console.cpp)
-#smart_types.cpp wasm_runner_wasm3.cpp wasm_runner3.h NodeTypes.h wasm_merger.cpp
+    set(SOURCE_FILES String.cpp Map.cpp Node.cpp Wasp.cpp Angle.cpp Code.cpp wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp)
+#    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
+#smart_types.cpp wasm_runner3.h NodeTypes.h wasm_merger.cpp
     #    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(angle ${SOURCE_FILES})
     TARGET_LINK_LIBRARIES(angle curl)
