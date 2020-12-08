@@ -1285,7 +1285,7 @@ char newline = '\n';
 #include <vector>
 // called AFTER __wasm_call_ctors() !!!
 int main(int argp, char **argv) {
-#ifndef WASM
+#ifdef ErrorHandler
 	register_global_signal_exception_handler();
 #endif
 	try {

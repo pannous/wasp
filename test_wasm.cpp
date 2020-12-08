@@ -388,13 +388,16 @@ void wasm_todos() {
 
 void testMerge(){
 	Node charged = analyze(parse("test:=42"));
-	Code lib = emit(charged);
+	Code lib = emit(charged,0,"lib_main");
 	Module module = read_wasm("test.wasm");
 	charged = analyze(parse("test"));
 	Code main = emit(charged,&module);
-//	Code merged=merge_code(lib, main);
-//	int ok = merged.run();
-	int ok = main.run();
+	main.save("main.wasm");
+	Module prog = read_wasm("main.wasm");
+	Code merged=merge_code(module, prog);
+	merged.save("merged.wasm");
+	int ok = merged.run();
+//	int ok = main.run();
 	check(ok==42);
 }
 
