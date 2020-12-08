@@ -24,8 +24,8 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wstring-compare"
-#define let auto
-#define var auto
+//#define let auto
+//#define var auto
 
 
 //typedef void *any;

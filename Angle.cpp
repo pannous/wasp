@@ -297,7 +297,9 @@ Node &groupDeclarations(Node &expression0) {
 				error("Symbol already declared: "s+name);
 			declaredSymbols.add(name);
 			List<Arg> args= extractFunctionArgs(name, modifiers);
-			Signature &signature = functionSignatures[name];
+			Signature signature;
+			if(functionSignatures.has(name))
+				signature = functionSignatures[name];
 			for(Arg arg: args){
 				locals[name].add(arg.name);
 				signature.add(int32);
