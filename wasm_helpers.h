@@ -16,8 +16,10 @@ extern "C" unsigned int *memory;
 extern "C" char *memoryChars;
 extern "C" /*unsigned */ char *current;
 void panic();//
-extern "C" void raise(chars error);
-
+#ifndef WASM_ENABLE_INTERP
+extern "C"
+#endif
+int raise(chars error);// conflicts with signal.h
 //extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
 
@@ -60,7 +62,7 @@ class String;
 void print(String);
 void println(String);
 void log(String *s);
-int isalnum ( int c );
+//int isalnum ( int c );
 
 #ifdef WASM
 #ifndef WASI

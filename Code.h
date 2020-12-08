@@ -12,6 +12,7 @@ typedef const char* chars;
 typedef byte* bytes;
 class Code;
 int run_wasm(bytes wasm_bytes, int len);
+int run_wasm(chars wasm_path);
 
 
 bytes concat(bytes a, bytes b, int len_a, int len_b);
@@ -291,6 +292,7 @@ enum Opcodes {
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 enum Section {
+	// with the exception of custom, these Sections must appear in the following order:
 	custom = 0,
 	type = 1,
 	import = 2,
@@ -308,19 +310,23 @@ enum Section {
 class Signature {
 public:
 	Map<int, Valtype> types;
-	Valtype _returns = voids;
+	Valtype return_type = voids;
+	bool is_import = false; // not serialized in functype section, but in import section wt
 
 	int size() {
 		return types.size();
 	}
-
+	Signature import(){
+		is_import = true;
+		return *this;
+	}
 	Signature add(Valtype t) {
 		types.insert_or_assign(types.size(), t);
 		return *this;
 	}
 
 	Signature &returns(Valtype valtype) {
-		_returns = valtype;
+		return_type = valtype;
 //		return_types[name] = valtype;
 		return *this;
 	}
