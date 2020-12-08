@@ -103,9 +103,16 @@ String sectionName(Section section){
 	switch (section) {
 		case type: return "type";
 		case func: return "func";
+		case table: return "table";
 		case import: return "import";
-		case exports: return "exports";
 		case custom: return "custom";
-		default:error("UNKNONWN SECTION");
+		case global: return "global";
+		case element: return "element";
+		case exports: return "exports";
+		case code_section: return "code";
+		case data_section: return "data";
+		case start_section: return "start";
+		case memory_section: return "memory";
+		default:error("ERRONEOUS SECTION: "s + section);
 	}
 }

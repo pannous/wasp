@@ -25,7 +25,7 @@ public:
 
 	bytes data=0;
 	int length=0;
-	int pos=0;// internal reader pointer
+	int start=0;// internal reader pointer
 	bool encoded= false;// first byte = size of vector
 
 	Code(){}
@@ -56,8 +56,13 @@ public:
 		length = 1;
 	}
 	Code(bytes datas, int from, int to/*exclusive*/) {
-		data = static_cast<bytes>(alloc(sizeof(char), to - from));
-		memcpy0(data,datas,to-from);
+		if(from<0 or to<0 or from>=to)
+			error("bad indices");
+		data = datas;// just reuse, if created with new
+		length = to-from;
+//		data = static_cast<bytes>(alloc(sizeof(char), to - from));
+//		start=from;NO! start=0 refers to OWN data!
+//		memcpy0(data,datas,to-from);
 	}
 
 	Code(char section, Code code) {
@@ -180,7 +185,7 @@ public:
 //		return code;
 //	}
 	Code rest() {
-		return Code(data,pos,length);
+		return Code(data, start, length);
 	}
 };
 
