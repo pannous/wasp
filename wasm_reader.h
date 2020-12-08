@@ -1,13 +1,16 @@
-//
-// Created by me on 27.11.20.
-//
-
-#ifndef WASP_WASM_READER_H
-#define WASP_WASM_READER_H
-
-#include "wasm_emitter.h"
-
-Code readWasm(char const *file);
-
-
-#endif //WASP_WASM_READER_H
+#pragma once
+#include "Code.h"
+class Module{
+public:
+	Code type_data;
+	Code import_data;
+	Code export_data;
+	Code code_data;
+	Code func_data;
+	Code name_data;
+	int type_count;
+	int func_count;
+	int import_count;
+	int export_count;
+};
+Module read_wasm(char const *file);

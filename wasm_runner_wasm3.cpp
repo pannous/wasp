@@ -116,3 +116,30 @@ int run_wasm(bytes wasm_bytes, int len){
 //	test_wasm3(test_prog_wasm, test_prog_wasm_len);
 	return test_wasm3((const uint8_t *)wasm_bytes, len);
 }
+
+
+#ifdef WASM3
+Code readWasmW3(char const *file) {
+	result = ParseWatModule(lexer.get(), &module, &errors, &parse_wast_options);
+
+	if (Succeeded(result) && validate_wasm) {
+		ValidateOptions options(wabt_features);
+		result = ValidateModule(module.get(), &errors, options);
+	}
+
+	if (Succeeded(result)) {
+		MemoryStream stream(s_log_stream.get());
+		write_binary_options.features = wabt_features;
+		result = WriteBinaryModule(&stream, module.get(), write_binary_options);
+
+	IM3Environment environment=m3_NewEnvironment();
+	IM3Module module;
+	M3Result result = m3_ParseModule(environment, &module, buffer, sz);
+	printf("parsed: %s\n", result);
+	printf("Module: %s\n", module->name);
+//	M3Result  Module_AddFunction  (IM3Module io_module, u32 i_typeIndex, IM3ImportInfo i_importInfo)
+
+
+//	read(buffer, sz);
+}
+#endif

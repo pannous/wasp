@@ -346,7 +346,8 @@ public:
 		for (int i = 0; i < size(); ++i) {
 			printf("%s",keys[i]);
 			printf(": ");
-			printf("%s",values[i]);// todo: unsafe
+//			printf("%s",values[i]);// todo: unsafe, depends on type  %d for int ...
+			printf("%d",values[i]);
 			printf("\n");
 		}
 	}

@@ -45,7 +45,7 @@ bool assert_equals_x(Node &a, char *b, char *context = "") {
 bool assert_equals_x(Node a, double b, char *context = "") {
 	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"s % a.name % b % context);
 //	else printf("OK %f==%f in %s\n"s % a.value.real % b % context);
-	else printf("OK %d==%d\n", a.value.real, b);
+	else printf("OK %f==%f\n", a.value.real, b);
 	return a == b;
 }
 
@@ -58,7 +58,7 @@ bool assert_equals_x(Node &a, long b, char *context = "") {
 
 bool assert_equals_x(Node a, String b, char *context = "") {
 	String &name = a.name;
-	bool ok = name==b or a == b; //  b == name or  !(name != b and b != a.value.string;)
+	bool ok = name == b or a == b; //  b == name or  !(name != b and b != a.value.string;)
 	if (ok)
 		printf("OK %s==%s in %s\n", name.data, b.data, context);
 	else
@@ -86,7 +86,7 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 bool assert_equals_x(long a, long b, char *context) {
 	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
 //	else printf("OK %d==%d in %s\n"s % a % b % context);
-	printf("OK %d==%d in %s\n", a, b,context);
+	printf("OK %d==%d in %s\n", a, b, context);
 	return a == b;
 }
 
@@ -250,7 +250,7 @@ void testDivDeep() {
 	Node &node = div["span"];
 	node.log();
 	assert(div["span"].length == 2);
-	assert(div["span"]["class"] == "bold")
+	assert(div["span"]["class"] == "bold");
 }
 
 void testDivMark() {
@@ -267,7 +267,7 @@ void testDiv() {
 	Node result = Wasp::parse("div{ class:'bold' 'text'}");
 	result.log();
 	assert(result.length == 2);
-	assert(result["class"] == "bold")
+	assert(result["class"] == "bold");
 	testDivDeep();
 	skip(
 			testDivMark();
@@ -444,8 +444,8 @@ void testUTF() {
 
 	assert_parses("ç:'☺'");
 	skip(
-	assert(result == "☺");
-			)
+			assert(result == "☺");
+	)
 
 	assert_parses("{ç:111}");
 	assert(result["ç"] == 111);
@@ -569,7 +569,7 @@ void testKitchensink() {
 	assert(node['e'] == "trailing comments"); // trailing comments
 	assert(node["f"] == /*inline comments*/ "inline comments");
 	skip(
-			)
+	)
 }
 
 void testEval3() {
@@ -586,20 +586,20 @@ void testMathExtra() {
 void testRoot() {
 	skip(
 			assert_is("40+√4", 42, 0)
-	assert_is("√4", 2);
-	assert_is("√4+40", 42);
-	assert_is("40 + √4", 42);
+			assert_is("√4", 2);
+			assert_is("√4+40", 42);
+			assert_is("40 + √4", 42);
 	);// todo tokenized as +√
 }
 
 void testRootFloat() {
 	skip(  // include <cmath> causes problems, so skip
 //	assert_is("√42*√42", 42.);// todo tokenized as *√
-	assert_is("√42 * √42", 42.);
+			assert_is("√42 * √42", 42.);
 //	assert_is("√42*√42", Node(42.,0 ));
 //	assert_is("√42*√42", 42);
 //	assert_is("√42*√42",42);// int rounding to 41 todo?
-			)
+	)
 }
 
 
@@ -785,7 +785,6 @@ void testLogic01() {
 }
 
 
-
 void testCpp() {
 //	esult of comparison of constant 3 with expression of type 'bool' is always true
 //	assert(1 < 2 < 3);// NOT WHAT YOU EXPECT!
@@ -802,28 +801,28 @@ void testGraphSimple() {
 
 
 void testGraphQlQueryBug() {
-	var graphResult = "{friends: [ {name:x}, {name:y}]}";
+	auto graphResult = "{friends: [ {name:x}, {name:y}]}";
 	assert_parses(graphResult);
 	Node &friends = result["friends"];
 	assert(friends[0]["name"] == "x");
 }
 
 void testGraphQlQuery() {
-	var graphResult = "{\n  \"data\": {\n"
-	                  "    \"hero\": {\n"
-	                  "      \"id\": \"R2-D2\",\n"
-	                  "      \"height\": 5.6430448,\n"
-	                  "      \"friends\": [\n"
-	                  "        {\n"
-	                  "          \"name\": \"Luke Skywalker\"\n"
-	                  "        },\n"
-	                  "        {\n"
-	                  "          \"name\": \"Han Solo\"\n"
-	                  "        },\n"
-	                  "      ]" /* todo \n nextNonWhite */
-	                  "    }\n"
-	                  "  }\n"
-	                  "}";
+	auto graphResult = "{\n  \"data\": {\n"
+	                   "    \"hero\": {\n"
+	                   "      \"id\": \"R2-D2\",\n"
+	                   "      \"height\": 5.6430448,\n"
+	                   "      \"friends\": [\n"
+	                   "        {\n"
+	                   "          \"name\": \"Luke Skywalker\"\n"
+	                   "        },\n"
+	                   "        {\n"
+	                   "          \"name\": \"Han Solo\"\n"
+	                   "        },\n"
+	                   "      ]" /* todo \n nextNonWhite */
+	                   "    }\n"
+	                   "  }\n"
+	                   "}";
 	assert_parses(graphResult);
 	result.log();
 	Node &data = result["data"];
@@ -976,8 +975,8 @@ void testEmpty() {
 
 void testEval() {
 	skip(
-	assert_is("√4", 2);
-			)
+			assert_is("√4", 2);
+	)
 }
 
 void testLengthOperator() {
@@ -1032,7 +1031,7 @@ void testParentBUG() {
 
 void testAsserts() {
 	assert_equals(11, 11);
-	assert_equals((float )11., (float)11.);
+	assert_equals((float) 11., (float) 11.);
 //	assert_equals((double)11., (double )11.);
 	assert_equals("a", "a");
 	assert_equals("a"_s, "a"_s);
@@ -1226,11 +1225,11 @@ void testReplace() {
 	check(result == replaced);
 }
 
-void testWasmString(){
+void testWasmString() {
 	wasm_string x = reinterpret_cast<wasm_string>("\03abc");
 	String y = String(x);
-	check(y.length==3);
-	check(y=="abc"s);
+	check(y.length == 3);
+	check(y == "abc"s);
 }
 
 void testGroupCascade() {
@@ -1367,29 +1366,20 @@ void todos() {
 }
 
 #include "Wasp.h" // is_operator
-#include "wasm_reader.h"
 
 void testCurrent() { // move to tests() once OK
-	assert_eval("if(0):{3}", false);
 //	testGroupCascade();
 //	testKitchensink(); // TODO Oooo!
 //	testWasmString();
+	testAllWasm();
 
-//	testGraphQlQuery();
-
-//	testWasmFunctionDefiniton();
-//	testAllWasm();
 //	exit(1);
-//	testGroupCascade();
-//	const Node &node = parse("x+1");
-//	check(node.length==3)
 	tests();// make sure all still ok before changes
 #ifndef WASI
 #ifndef WASM
-//	testAllWasm();
-
+	testAllWasm();
 	testAngle();
-testWasmString();
+	testWasmString();
 	todos();// those not passing yet (skip)
 #endif
 #endif

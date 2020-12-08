@@ -9,7 +9,11 @@
 typedef unsigned char* bytes;
 
 int run_wasm(bytes buffer, int buf_size);
-int run_wasm_file(char* wasm_path = "test.wasm");
+int run_wasm(char* wasm_path = "test.wasm");
 
-
+#ifdef WABT
+#include "ir.h" // Intermediate representation
+int run_wasm(wabt::Module* module);
+#endif
+#undef Module;
 #endif //WASP_WASM_RUNNER_H

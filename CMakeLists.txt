@@ -162,13 +162,14 @@ elseif (VM) # NORMAL:
             )
 elseif (WABT) # NORMAL:
     message(WABT)
+    add_compile_definitions(WABT)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
     include(wabt/cmake_install.cmake)
 
     add_subdirectory(wabt)
     set(SOURCE_FILES
             Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
-            wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp  wasm_runner_wabt.cpp)
+            wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp  wasm_runner_wabt.cpp wasm_merger.cpp Code.cpp)
 #    wasm_runner_console.cpp
 #     wasm_runner_wabt.cpp  error: call to implicitly-deleted copy constructor WHY???
     add_executable(angle ${SOURCE_FILES})
@@ -200,7 +201,7 @@ else () # NORMAL:
     #    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")
     #find_package( Readline)    #find_package( READLINE )
     #    ADD_COMPILE_FLAG(" -lreadline -ldl -lcurl -lz") # extra libraries
-    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm_helpers.cpp wasm_emitter.cpp Map.cpp smart_types.cpp wasm_runner_wasm3.cpp wasm_runner3.h wasm_reader.cpp wasm_reader.h)
+    set(SOURCE_FILES String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm_helpers.cpp wasm_emitter.cpp Map.cpp smart_types.cpp wasm_runner_wasm3.cpp wasm_runner3.h wasm_reader.cpp wasm_merger.cpp wasm_merger.h Code.cpp Code.h)
 
     #    set(SOURCE_FILES Node.h String.h String.cpp Node.cpp NodeTypes.h Wasp.cpp wasm-emitter.cpp Map.cpp)
     add_executable(angle ${SOURCE_FILES})
