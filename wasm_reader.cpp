@@ -73,7 +73,9 @@ Code vec() {
 	int len = siz();
 	int from = pos;
 	consume(len, 0);
-	return Code(code+from, from, pos);
+//	return Code(code+from, from, pos);
+	return Code(code+from, pos-from);
+
 }
 
 void consumeTypeSection() {
@@ -163,7 +165,7 @@ void consumeSections(){
 		case code_section:
 			consumeCodeSection();
 			break;
-		case func:
+		case functypes:
 			consumeFuncTypeSection();
 			break;
 		case start_section:
@@ -179,15 +181,61 @@ void consumeSections(){
 }
 
 Module read_wasm(char const *file) {
+	pos = 0;
 	printf("parsing: %s\n", file);
 	size = fileSize(file);
-	unsigned char buffer[size];
+	bytes buffer=(bytes)alloc(1, size);// do not free
 	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
 	code = buffer;
 	consume(4, reinterpret_cast<byte *>(magicModuleHeader));
 	consume(4, reinterpret_cast<byte *>(moduleVersion));
 	consumeSections();
 	return module;
+}
+
+Code mergeTypeSection(Module lib, Module main){
+	return Code(type, encodeVector(Code(lib.type_count+main.type_count) + lib.type_data + main.type_data));
+}
+Code mergeImportSection(Module lib, Module main){
+	return createSection(import, Code(lib.import_count+main.import_count)+  lib.import_data + main.import_data);
+}
+
+Code mergeFuncTypeSection(Module lib, Module main){
+	return createSection(functypes, Code(lib.func_count + main.func_count) + lib.functype_data + main.functype_data);
+}
+Code mergeExportSection(Module lib, Module main){
+	return createSection(exports, Code(lib.export_count + main.export_count) + lib.export_data + main.export_data);
+}
+Code relocate(Code blocks){
+	return blocks;// todo, maybe
+}
+
+Code mergeCodeSection(Module lib, Module main) {
+	return createSection(code_section, Code(lib.func_count + main.func_count) + lib.code_data + relocate(main.code_data));
+}
+
+Code mergeDataSection(Module lib, Module main) {
+	return Code();// todo
+}
+Code mergeLinkingSection(Module lib, Module main) {
+	return Code();// todo
+}
+Code mergeNameSection(Module lib, Module main) {
+	return Code();// todo
+}
+
+Code merge_code(Module lib, Module main){
+	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4)
+			+ mergeTypeSection(lib,main)
+			+ mergeImportSection(lib,main)
+			+ mergeFuncTypeSection(lib,main)
+			+ mergeExportSection(lib,main)
+			+ mergeCodeSection(lib,main)
+			+ mergeDataSection(lib,main)
+			+ mergeLinkingSection(lib,main)
+			+ mergeNameSection(lib,main);
+//	+ mergeCustomeSection(lib,main);
+	return code.clone();
 }
 
 #undef pointerr
