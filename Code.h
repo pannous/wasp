@@ -328,5 +328,7 @@ public:
 
 String sectionName(Section section);
 Code createSection(Section sectionType, Code data) ;
+Code& unsignedLEB128(long n);
+Code& signedLEB128(long value);
 
 #endif //WASP_CODE_H
