@@ -55,15 +55,16 @@ public:
 		data[0] = byte;
 		length = 1;
 	}
-	Code(bytes datas, int from, int to/*exclusive*/) {
+	/*Code(bytes datas, int from, int to*//*exclusive*//*) {
+		// AMBIGUOUS: from offset on DATA?
 		if(from<0 or to<0 or from>=to)
 			error("bad indices");
-		data = datas;// just reuse, if created with new
+		data = datas+from;// just reuse, if created with new
+		start=from;// NO! start=0 refers to OWN data!
 		length = to-from;
 //		data = static_cast<bytes>(alloc(sizeof(char), to - from));
-//		start=from;NO! start=0 refers to OWN data!
-//		memcpy0(data,datas,to-from);
-	}
+//		memcpy0(data,datas+from,to-from);
+	}*/
 
 	Code(char section, Code code) {
 		data = concat(section, code.data,code.length);
@@ -184,8 +185,11 @@ public:
 //		code.encoded = true;
 //		return code;
 //	}
-	Code rest() {
-		return Code(data, start, length);
+	Code rest(int start0=-1) {
+		if(start0<0)start0=start;
+		return Code(data+start0, length-start0);
+//		return Code(data, start, length);
+
 	}
 };
 
@@ -290,7 +294,7 @@ enum Section {
 	custom = 0,
 	type = 1,
 	import = 2,
-	func = 3,
+	functypes = 3,
 	table = 4,
 	memory_section = 5,
 	global = 6,
@@ -323,5 +327,6 @@ public:
 };
 
 String sectionName(Section section);
+Code createSection(Section sectionType, Code data) ;
 
 #endif //WASP_CODE_H

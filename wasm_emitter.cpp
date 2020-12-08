@@ -11,7 +11,12 @@
 #include "wasm_helpers.h"
 //#include "wasm_runner.h"
 #include "wasm_reader.h"
+
 #define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+
+int runtime_offset = 0; // imports + funcs
+Module runtime;
+String start = "main";
 
 Valtype last_type = voids;// autocast if not int
 Map<String, Valtype> return_types;
@@ -229,9 +234,6 @@ Code encodeLocal(long count, Valtype type) {
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 // sections are encoded by their type followed by their vector contents
-Code createSection(Section sectionType, Code data) {
-	return Code(sectionType, encodeVector(data));
-}
 
 
 enum NodTypes {
@@ -252,7 +254,7 @@ bytes ieee754(float num) {
 	char data[4];
 	float *hack = ((float *) data);
 	*hack = num;
-	byte  *flip = static_cast<byte *>(alloc(1,5));
+	byte *flip = static_cast<byte *>(alloc(1, 5));
 	short i = 4;
 //	while (i--)flip[3 - i] = data[i];
 	while (i--)flip[i] = data[i];// don't flip, just copy to malloc
@@ -707,25 +709,29 @@ Code typeSection() {
 	// the type section is a vector of function types
 //	auto typeSection = createSection(type, encodeVector(printFunctionType).push(funcTypes));
 //	char type0[]={0x01,0x60/*const type form*/,0x02/*param count*/,0x7F,0x7F,0x01/*return count*/,0x7F};
-	byte vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/,
-	             i32t};// our main function! todo : be flexible!
-	byte iv[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x00/*return count*/};
-	byte vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
-	byte ii[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x01/*return count*/, i32t};
-	byte iii[] = {0x60/*const type form*/, 0x02/*param count*/, i32t, i32t, 0x01/*return count*/, i32t};
-	byte fv[] = {0x60/*const type form*/, 0x01/*param count*/, f32t, 0x00/*return count*/};
+//	byte vi[] = {0x60/*const type form*/, 0x00/*param count*/, 0x01/*return count*/,
+//	             i32t};// our main function! todo : be flexible!
+//	byte iv[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x00/*return count*/};
+//	byte vv[] = {0x60/*const type form*/, 0x00/*param count*/, 0x00/*return count*/};
+//	byte ii[] = {0x60/*const type form*/, 0x01/*param count*/, i32t, 0x01/*return count*/, i32t};
+//	byte iii[] = {0x60/*const type form*/, 0x02/*param count*/, i32t, i32t, 0x01/*return count*/, i32t};
+//	byte fv[] = {0x60/*const type form*/, 0x01/*param count*/, f32t, 0x00/*return count*/};
 
-	int typeCount = 5;
-	Code type_data = Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv)) + Code(ii, sizeof(ii)) +
+	int typeCount = 0;
+	Code type_data;
+/*	if(not runtime_offset){
+	typeCount =5;
+	type_data = Code(vi, sizeof(vi)) + Code(iv, sizeof(iv)) + Code(vv, sizeof(vv)) + Code(ii, sizeof(ii)) +
 	                 Code(fv, sizeof(fv)); //			+ Code(iii, sizeof(iii));
+	                 // else reuse types
+	}*/
 
 	for (String fun :functionSignatures) {
-		typeMap[fun] = typeCount;
-		typeCount++;
+		typeMap[fun] = typeCount++;
 		Signature &signature = functionSignatures[fun];
 		int param_count = signature.size();
 		Code td = {0x60 /*const type form*/, param_count};
-		check(td.length==2)
+		check(td.length == 2)
 		for (int i = 0; i < param_count; ++i) {
 			td = td + Code(signature.types[i]);
 		}
@@ -742,13 +748,19 @@ Code typeSection() {
 	return Code(type, encodeVector(Code(typeCount) + type_data));
 }
 
-int import_count = 4;
+int import_count = 0;
 
 Code importSection() {
+	if (runtime_offset) {
+		printf("imports currently not supported\n");
+		import_count = 0;
+		return Code();
+	}
+	import_count = 4;// todo
 	// the import section is a vector of imported functions
 
 //  bytes printFunctionType = new char[]{functionType,encodeVector(f32), emptyArray}
-	Code printFunctionType = Code(functionType).push(encodeVector(Code(f32t))).push(emptyArray);
+//	Code printFunctionType = Code(functionType).push(encodeVector(Code(f32t))).push(emptyArray);
 //	functionSignatures["logi"] = Signature().add(i32t);
 //	functionSignatures["logf"] = Signature().add(f32);
 //	functionSignatures["square"] = Signature().add(i32t).returns(i32t);
@@ -779,25 +791,29 @@ Code importSection() {
 int function_count;// minus import_count  (together : functionIndices.size() )
 Code codeSection(Node root) {
 	// the code section contains vectors of functions
-	if (functionIndices.size() != import_count)
+	int index_size = functionIndices.size();
+	if (index_size != import_count + runtime_offset)
 		error("inconsistent function_count");
-	short function_offset = import_count;
+	short function_offset = import_count + runtime_offset;
 // https://pengowray.github.io/wasm-ops/
 //	char code_data[] = createSection() 0x01,0x08,0x00,0x01,0x3f,0x0F,0x0B};// ok 0x01==nop
 //  Code code_data=encodeVectors(encodeVector(1/*function_index/))
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
 
 // index needs to be known before emitting code, so call $i works
-	functionIndices["main"] = function_offset++;
-	functionIndices["nop"] = function_offset++;
-	functionIndices["id"] = function_offset++;
+	if (!functionIndices.has(start))
+		functionIndices[start] = function_offset++;
+	else
+		error("start already declared: "s + start);
+	if (!functionIndices.has("nop"))functionIndices["nop"] = function_offset++;
+	if (!functionIndices.has("id"))functionIndices["id"] = function_offset++;
 	return_types["id"] = i32t;
-	return_types["main"] = i32t;
 	return_types["nop"] = voids;
+	return_types[start] = i32t;
 	functionSignatures["nop"] = Signature();
 	functionSignatures["id"] = Signature().add(i32t).returns(i32t);
-	functionSignatures["main"] = Signature().returns(i32t);
-	short builtin_count = 2;
+	functionSignatures[start] = Signature().returns(i32t);
+	short builtin_count = function_offset - import_count - runtime_offset;
 
 
 	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block}; // 0x00 == unreachable as block header !?
@@ -807,7 +823,7 @@ Code codeSection(Node root) {
 //	byte code_data[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	byte code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 
-	Code main_block = emitBlock(root, "main");
+	Code main_block = emitBlock(root, start);
 	Code nop_block = Code(code_data_nop, sizeof(code_data_nop));
 	Code id_block = Code(code_data_id, sizeof(code_data_id));
 	Code code_blocks = encodeVector(main_block) + encodeVector(nop_block) + encodeVector(id_block);
@@ -815,12 +831,12 @@ Code codeSection(Node root) {
 		Code &func = functionCodes[fun];
 		code_blocks = code_blocks + encodeVector(func);
 	}
-	function_count = builtin_count + 1/*main*/ + functionCodes.size();// offset by imports!?
-	int index_size = functionIndices.size();
-	if (function_count != index_size - import_count) {
-		functionCodes.log();
-		functionIndices.log();
-		error("inconsistent function_count %d != %d - %d"s % function_count % index_size % import_count);
+	function_count = builtin_count /*main*/ + functionCodes.size();// offset by imports!?
+	index_size = functionIndices.size();
+	if (function_count + import_count + runtime_offset != index_size) {
+//		log(functionCodes.keys);
+		log(functionIndices);
+		error("inconsistent function_count %d + %d + %d != %d "s % function_count % import_count % runtime_offset % index_size);
 	}
 	auto codeSection = createSection(code_section, Code(function_count) + code_blocks);
 	return codeSection;
@@ -830,29 +846,36 @@ short exports_count = 1;
 
 Code exportSection() {
 // the export section is a vector of exported functions etc
-	int main_offset = functionIndices["main"];
-	Code exportsData = encodeVector(Code(exports_count) + encodeString("main") + (byte) func_export + Code(main_offset));
+	int main_offset = functionIndices[start];
+	Code exportsData = encodeVector(Code(exports_count) + encodeString(start) + (byte) func_export + Code(main_offset));
 	auto exportSection = createSection(exports, exportsData);
 	return exportSection;
 }
 
 
 Code funcTypeSection() {
+	// funcType_count = function_count EXCLUDING imports, they encode their type inline!
 	// the function section is a vector of type indices that indicate the type of each function in the code section
 	Code types_of_functions = Code(function_count);//  = Code(types_data, sizeof(types_data));
 	for (int i = 0; i < function_count; ++i) {
 		//	import section types separate WTF wasm
-		String *fun = functionIndices.lookup(i + import_count);
-		if (!fun)error("missing typeMap for index "s + i);
+		int index = i + import_count + runtime_offset;
+		String *fun = functionIndices.lookup(index);
+		if (!fun){
+			log(functionIndices);
+			error("missing typeMap for index "s + index);
+		}
 		else {
 			int typeIndex = typeMap[*fun];
-			if (typeIndex < 0)
+			if (typeIndex < 0){
+				if(runtime_offset==0) // todo else ASSUME all handled correctly before
 				error("missing typeMap for function %s index %d "s % fun % i);
+			}else
 			types_of_functions.push((byte) typeIndex);
 		}
 	}
 	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
-	Code funcSection = createSection(func, types_of_functions);
+	Code funcSection = createSection(functypes, types_of_functions);
 	return funcSection;
 }
 
@@ -879,7 +902,7 @@ Code nameSection() {
 
 	Code localNameMap;
 	for (String key : functionIndices) {
-//		if (key != "main")continue;
+//		if (key != start)continue;
 		int function_index = functionIndices[key];
 		List<String> localNames = locals[key];// including arguments
 		int local_count = localNames.size();
@@ -906,15 +929,16 @@ Code nameSection() {
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’. The name section should appear only once in a module, and only after the data section.
 	const Code &nameSectionData = encodeVector(
 			Code("name") + nameSubSectionModuleName);// + nameSubSectionFunctionNames + nameSubSectionLocalNames);
-	auto nameSection = createSection(custom, nameSectionData ); // auto encodeVector AGAIN!
+	auto nameSection = createSection(custom, nameSectionData); // auto encodeVector AGAIN!
 	nameSection.debug();
 	return nameSection;
 }
 
-Code dataSection(){
+Code dataSection() {
 	return Code();
 }
-Code eventSection(){
+
+Code eventSection() {
 }
 
 /*
@@ -926,12 +950,12 @@ Code eventSection(){
 
     R_WASM_FUNCTION_INDEX_LEB relocations may fail to be processed, in which case linking fails. This occurs if there is a weakly-undefined function symbol, in which case there is no legal value that can be written as the target of any call instruction. The frontend must generate calls to undefined weak symbols via a call_indirect instruction.
 */
-Code linkingSection(){
+Code linkingSection() {
 //	https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
-	short version=2;
+	short version = 2;
 	Code subsection;
-	short type=5;// SEGMENT alignment & flags
-	short payload_len=0;
+	short type = 5;// SEGMENT alignment & flags
+	short payload_len = 0;
 	Code payload_data;
 	subsection.add(type).add(payload_len).push(payload_data);
 	Code subsections;
@@ -948,6 +972,7 @@ Code linkingSection(){
 */
 	return createSection(custom, encodeVector(Code("linking") + Code(version) + subsections));
 }
+
 /*
  * The generally accepted features are:
     atomics
@@ -961,15 +986,18 @@ Code linkingSection(){
     tail-call
  */
 
-Module runtime;
-Code &emit(Node root_ast, Module* runtime0) {
-	if(runtime0)runtime=*runtime0;// else filled with 0's
-	if(runtime0==0) functionIndices.clear();
+Code &emit(Node root_ast, Module *runtime0, String _start) {
+	start = _start;
+	if (runtime0)runtime = *runtime0;// else filled with 0's
+	if (runtime0 == 0) {
+		typeMap.clear();
+		functionIndices.clear();
+	} else runtime_offset = functionIndices.size();
 	functionCodes.clear();
-	typeMap.clear();
-	functionIndices.setDefault(-1);
-	functionSignatures.setDefault(Signature());
 	functionCodes.setDefault(Code());
+	functionIndices.setDefault(-1);
+	functionSignatures.clear();
+	functionSignatures.setDefault(Signature());
 	typeMap.setDefault(-1);
 	return_types.setDefault(voids);
 	locals.setDefault(List<String>());
