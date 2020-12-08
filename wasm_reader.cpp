@@ -14,14 +14,19 @@ Module module;
 bytes magicModuleHeader = new byte[]{0x00, 0x61, 0x73, 0x6d};
 bytes moduleVersion = new byte[]{0x01, 0x00, 0x00, 0x00};
 
-#define consume(len, bytes) if(!consume_x(code,&pos,len,bytes)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
+#define consume(len, match) if(!consume_x(code,&pos,len,match)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
 #define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
-#define pointerr std::unique_ptr
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
-//	if(bytes)
+	if(*pos+len>size)
+		error("END OF FILE");
+	if(not bytes){
+		*pos = *pos + len;
+		return true;
+	}
+
 	int i = 0;
 	while (i < len) {
 		if (bytes and code[*pos] != bytes[i])
@@ -48,10 +53,11 @@ int unsignedLEB128() {
 	return n;
 }
 
-int unsignedLEB128(Code code) {
+// DANGER: modifies the start reader position of code, but not it's data!
+int unsignedLEB128(Code& byt) {
 	int n = 0;
 	do {
-		byte b = code[code.pos++];
+		byte b = byt[byt.start++];
 		n = n << 7;
 		n = n ^ (b & 0x7f);
 		if ((b & 0x80) == 0)break;
@@ -64,18 +70,71 @@ int siz() {
 }
 
 Code vec() {
-	int from = pos;
 	int len = siz();
+	int from = pos;
 	consume(len, 0);
-	return Code(code, from, pos);
+	return Code(code+from, from, pos);
 }
 
-Code consumeTypeSection() {
+void consumeTypeSection() {
 	Code type_vector = vec();
-	module.type_count = unsignedLEB128(type_vector);
-	printf("typeCount %d\n", module.type_count);
+	int typeCount = unsignedLEB128(type_vector);
+	module.type_count = typeCount;
+	printf("types: %d\n", module.type_count);
 	module.type_data = type_vector.rest();
-	return type_vector;
+}
+void consumeStartSection(){
+	int start_index = unsignedLEB128();
+}
+String name(Code wstring){
+	int len = unsignedLEB128(wstring);
+	return String((char*)wstring.data+wstring.start, len, true);
+}
+void consumeNameSection(Code data) {
+	printf("names: …\n");
+}
+
+// https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
+void consumeLinkingSection(Code data) {
+	printf("linking: …\n");
+//	int version = unsignedLEB128(data);
+}
+
+void consumeCustomSection(){
+	Code customSectionDatas=vec();
+	String type = name(customSectionDatas);
+	if(type=="names")consumeNameSection(customSectionDatas);
+	else if(type=="linking")consumeLinkingSection(customSectionDatas);
+	else error("consumeCustomSection not implementated for "s+type);
+}
+
+void consumeFuncTypeSection(){
+	Code type_vector = vec();
+	module.func_count = unsignedLEB128(type_vector);
+	printf("signatures: %d\n", module.func_count);
+	module.functype_data = type_vector.rest();
+}
+void consumeCodeSection(){
+	Code codes_vector = vec();
+	int codeCount = unsignedLEB128(codes_vector);
+	printf("codes: %d\n", codeCount);
+	if(module.func_count != codeCount)error("missing code/signatures");
+	module.code_data = codes_vector.rest();
+}
+
+void consumeExportSection(){
+	Code exports_vector = vec();
+	int exportCount = unsignedLEB128(exports_vector);
+	printf("exports: %d\n", exportCount);
+	module.export_count = exportCount;
+	module.export_data = exports_vector.rest();
+}
+void consumeImportSection() {
+	Code imports_vector = vec();
+	int importCount = unsignedLEB128(imports_vector);
+	printf("imports %d\n", importCount);
+	module.import_count = importCount;
+	module.import_data = imports_vector.rest();
 }
 
 
@@ -89,15 +148,34 @@ int fileSize(char const *file) {
 }
 
 void consumeSections(){
+	while (pos<size){
 	Section section = typ();
 	switch (section) {
 		case type:
 			consumeTypeSection();
+			break;
 		case import:
+			consumeImportSection();
+			break;
+		case exports:
+			consumeExportSection();
+			break;
+		case code_section:
+			consumeCodeSection();
+			break;
+		case func:
+			consumeFuncTypeSection();
+			break;
+		case start_section:
+			consumeStartSection();
+			break;
+		case custom:
+			consumeCustomSection();
+			break;
 		default:
-			error("not implemented"s + sectionName(section));
+			error("not implemented: "s + sectionName(section));
 	}
-
+	}
 }
 
 Module read_wasm(char const *file) {
