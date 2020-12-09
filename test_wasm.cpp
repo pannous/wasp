@@ -432,6 +432,7 @@ void testAllWasm() {
 //	testMerge();
 //	exit(0);
 //	testRefactor();
+	assert_emit("double := it * 2 ; double(4)", 8)
 
 	read_wasm("main.wasm");
 	assert_emit("-42", -42)
