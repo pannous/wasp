@@ -404,8 +404,8 @@ void testMergeWabt(){
 void testWasmModuleExtension(){
 	Node charged = analyze(parse("test:=42"));
 	Code lib = emit(charged,0,"lib_main");
-	lib.save("test.wasm");
-	Module module = read_wasm("test.wasm");
+	lib.save("lib.wasm");
+	Module module = read_wasm("lib.wasm");
 	charged = analyze(parse("test"));
 	Code main = emit(charged,&module);
 	main.save("main.wasm");
@@ -439,7 +439,7 @@ void testAllWasm() {
 	// todo: reuse all tests via
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
-//	testWasmModuleExtension();
+	testWasmModuleExtension();
 //	testMerge();
 //	exit(0);
 //	testRefactor();
