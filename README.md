@@ -1,41 +1,11 @@
 # 🐝 Wasp = Wasm-Lisp
 
-Wasp is a modern programming language and 'post-lisp' data format, fixing the shortcomings of JSON, ECMA and [Lisp](https://github.com/google/schism).   Wasp is the foundation layer of the higher order programming language [angle](https://github.com/pannous/angle).
-
-The big difference to Lisp is that everything is map based, lists are flat maps like in JS : ['a','b'] == {0:'a' 1:'b'}.
-
-This gives an universal exceptionless object data type, just like lists in lisp.
-
-What do Lisp, ECMA and Wasm have in common anyway?
-Unbeknownst to many, thanks to closures and ECMA Objects, modern JavaScript is getting ever closser to the original idea of Lisp:
-
+ **Wasp** is a new unified notation for both object and markup data and code.
+ Wasp is the foundation layer of the higher order programming language [angle](https://github.com/pannous/angle).
+ 
 «Data is Code and Code is Data»
 
-# Angle Language
-
-[Angle](https://github.com/pannous/angle) is a new Programming Language using Wasp as data format, "Lisp with Hashes"
-
-In Lisp to create an object like foo:{bar:3} you have to resort to ugly reader macros like `#S(foo :bar 3)` 
-
- **Wasp**, is a new unified notation for both object and markup data. The notation is a superset of what can be represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very clean syntax and simple data model.
-
-- It has **clean syntax** with **fully-type** data model *(like JSON or even better)*
-- It is **generic** and **extensible** *(like XML or even better)*
-- It has built-in **mixed content** support *(like HTML5 or even better)*
-- It supports **high-order** composition *(like S-expressions or even better)*
-
-|                        | Wasp/[[Mark](https://github.com/henry-luo/mark)                           | JSON     | HTML | XML                            | S-expr                             | YAML                                  |
-| ---------------------- | ------------------------------ | -------- | ---- | ------------------------------ | ---------------------------------- | ------------------------------------- |
-| Clean syntax           | yes | yes| no   | yes | yes| yes|
-| Fully-typed            | yes | yes| no   | no| yes| yes |
-| Generic                | yes | yes| no   | yes | yes| yes |
-| Mixed content support  | yes | hard     | yes | yes | hard | hard                                  |
-| High-order composition | yes | possible | no   | yes | yes| possible                              |
-| Wide adoption          | not yet | yes| yes | yes | limited                            | limited                               |
-
 ## Wasp Syntax
-
-The major syntax extension Wasp makes to JSON is the introduction of a Wasp object. It is a JSON object extended with a type name and a list of content items, similar to element in HTML and XML.
 
 For example, a HTML registration form:
 
@@ -46,16 +16,10 @@ For example, a HTML registration form:
     <label for="email">Email address:</label>
     <input type="email" id="email">
   </div>
-  <div class="form-group">
-    <label for="pwd">Password</label>
-    <input type="password" id="pwd">
-  </div>
   <button class='btn btn-info'>Submit</button>
 </form>
 ```
-
 Could be represented in Wasp/Angle as:
-
 ```text
 form{                                  // object type-name 'form'
   //comment                          
@@ -65,15 +29,45 @@ form{                                  // object type-name 'form'
     }
     input{ type:email id:email}     // object without any contents
   }
-  div{ class:"form-group"
-    label(for:pwd):"Password"        // nodes have child/body and parameter/attribute slots
-    input{ type:password id:"pwd"}    // comma is optional 
-  }
   button{ class:['btn' 'btn-info']      // property with complex values
     'Submit'                            // text quoted with single quote
   }
 }
 ```
+
+# Angle Language
+
+[Angle](https://github.com/pannous/angle) is a new Programming Language using Wasp as data format, "Lisp with Hashes"
+
+In Lisp to create an object like foo:{bar:3} you have to resort to ugly reader macros like `#S(foo :bar 3)` 
+
+Wasp is a modern programming language and 'post-lisp' data format, fixing the shortcomings of JSON (no comments, verbose quoted keys…) , ECMA (breaking JS semantics) and [Lisp](https://github.com/google/schism) (maps second order citizens).  
+
+The big difference to Lisp is that everything is map based, lists are flat maps like in JS : ['a','b'] == {0:'a' 1:'b'}.
+
+This gives an universal exceptionless object data type, just like lists in lisp.
+
+What do Lisp, ECMA and Wasm have in common anyway?
+Unbeknownst to many, thanks to closures and ECMA Objects, modern JavaScript is getting ever closser to the original idea of Lisp:
+
+The Wasp syntax was influenced by [Mark](https://github.com/henry-luo/mark)
+
+ **Wasp**, is a new unified notation for both object and markup data. The notation is a superset of what can be represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very clean syntax and simple data model.
+
+- It has **clean syntax** with **fully-type** data model *(like JSON or even better)*
+- It is **generic** and **extensible** *(like XML or even better)*
+- It has built-in **mixed content** support *(like HTML5 or even better)*
+- It supports **high-order** composition *(like S-expressions or even better)*
+
+|                        | Wasp/[Mark](https://github.com/henry-luo/mark)                           | JSON     | HTML | XML                            | S-expr                             | YAML                                  |
+| ---------------------- | ------------------------------ | -------- | ---- | ------------------------------ | ---------------------------------- | ------------------------------------- |
+| Clean syntax           | yes | yes| no   | yes | yes| yes|
+| Fully-typed            | yes | yes| no   | no| yes| yes |
+| Generic                | yes | yes| no   | yes | yes| yes |
+| Mixed content support  | yes | hard     | yes | yes | hard | hard                                  |
+| High-order composition | yes | possible | no   | yes | yes| possible                              |
+| Wide adoption          | not yet | yes| yes | yes | limited                            | limited                               |
+
 
 ## Wasp Data Model
 
