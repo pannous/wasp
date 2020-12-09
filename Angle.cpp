@@ -297,12 +297,14 @@ Node &groupDeclarations(Node &expression0) {
 				error("Symbol already declared: "s+name);
 			declaredSymbols.add(name);
 			List<Arg> args= extractFunctionArgs(name, modifiers);
-			Signature signature;
-			signature = functionSignatures[name];// use Default
+			Signature& signature = functionSignatures[name];// use Default
 			for(Arg arg: args){
 				locals[name].add(arg.name);
 				signature.add(int32);
 			}
+			if (signature.size() == 0 and rest.has("it", false, 100))
+				signature.add(i32t);
+			signature.returns(i32t);// todo what if not lol
 			Node *body = analyze(rest).clone();
 			Node *decl = new Node(name);//node.name+":={…}");
 			decl->setType(declaration);

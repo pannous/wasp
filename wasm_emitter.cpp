@@ -172,7 +172,7 @@ byte opcodes(chars s, byte kind = 0) {
 //	if (eq(s, "=$1"))return get_local;
 //	if (eq(s, "=$1"))return tee_local;
 
-	if (kind == 0) { // INT32
+	if (kind == 0 or kind == i32t) { // INT32
 		if (eq(s, "+"))return i32_add;
 		if (eq(s, "-"))return i32_sub;
 		if (eq(s, "*"))return i32_mul;
@@ -208,7 +208,8 @@ byte opcodes(chars s, byte kind = 0) {
 		if (eq(s, "<"))return f32_lt;
 		if (eq(s, "<="))return f32_le;
 	}
-	printf("unknown operator %s", s);
+	if (eq(s, "√"))return f32_sqrt; // forces i32->f32
+	printf("unknown operator %s\n", s);
 //		error("invalid operator");
 	return 0;
 }
@@ -397,11 +398,18 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				code.addByte((index));// ok till index>127?
 				break;
 			}
-			byte opcode = opcodes(name, last_type == f32t);
+			byte opcode = opcodes(name, last_type);
+			if (opcode == f32_sqrt and last_type==i32t) {
+				code.addByte(f32_convert_i32_s);// i32->f32
+				code.addByte(f32_sqrt);
+				code.addByte(i32_trunc_f32_s);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
+//				last_type = f32t; todo: try upgrade type 2 + √2 -> float
+				break;
+
+			}
 			if (opcode == f32_eqz) { // hack for missing f32_eqz
 //				0.0 + code.addByte(f32_eq);
-				code.addByte(
-						i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
+				code.addByte(i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
 				code.addByte(i32_eqz);
 				last_type = i32t;// bool'ish
 				break;
@@ -527,12 +535,6 @@ Code emitDeclaration(Node fun, Node &body) {
 		error("redeclaration of symbol: "s + fun.name);
 	}
 	Signature &signature = functionSignatures[fun.name];
-	if (signature.size() == 0 and body.has("it", false, 100))
-		signature.add(i32t);
-
-//			body=*fun.begin()
-	Valtype returns = int32;// todo
-	signature.returns(returns);
 	functionCodes[fun.name] = emitBlock(body, fun.name);
 	last_type = voids;// todo reference to new symbol x = (y:=z)
 	return Code();// empty
@@ -727,7 +729,7 @@ Code typeSection() {
 		}
 		type_data = type_data + td;
 	}
-	return Code(type, encodeVector(Code(typeCount) + type_data));
+	return Code(type, encodeVector(Code(typeCount) + type_data)).clone();
 }
 
 Code importSection() {
@@ -743,7 +745,7 @@ Code importSection() {
 	Code square_ii = encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
 //	Code sqrt_ii = encodeString("env") + encodeString("√").addByte(func_export).addType(typeMap["√"]); builtin wasm anyways!!
 	auto importSection = createSection(import, Code(import_count) + logi_iv + logf_fv + square_ii );// + sqrt_ii
-	return importSection;
+	return importSection.clone();
 }
 
 int function_count;// minus import_count  (together : functionIndices.size() )
@@ -783,7 +785,7 @@ Code codeSection(Node root) {
 		error("inconsistent function_count %d + %d + %d != %d "s % function_count % import_count % runtime_offset % index_size);
 	}
 	auto codeSection = createSection(code_section, Code(function_count) + code_blocks);
-	return codeSection;
+	return codeSection.clone();
 }
 
 short exports_count = 1;
@@ -839,7 +841,7 @@ Code nameSection() {
 		nameMap = nameMap + Code(index) + Code(name);
 	}
 
-//	auto nameSubSectionFunctionNames = Code(function_names) + encodeVector(Code(1) + Code((byte) 0) + Code("logi"));
+//	auto functionNames = Code(function_names) + encodeVector(Code(1) + Code((byte) 0) + Code("logi"));
 //	functions without parameters need  entry ( 00 01 00 00 )
 //  functions 5 with local 'hello' :  05 01 00 05 68 65 6c 6c 6f
 //  functions 5 with local 'hello' :  05 02 00 05 68 65 6c 6c 6f 01 00 AND unnamed (local i32t)
@@ -866,17 +868,16 @@ Code nameSection() {
 
 //	localNameMap = localNameMap + exampleNames;
 
-	auto nameSubSectionModuleName = Code(module_name) + encodeVector(Code("wasp_module"));
-	auto nameSubSectionFunctionNames = Code(function_names) + encodeVector(Code(functionIndices.size()) + nameMap);
-	auto nameSubSectionLocalNames = Code(local_names) + encodeVector(Code(functionIndices.size()) + localNameMap);
+	auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
+	auto functionNames = Code(function_names) + encodeVector(Code(functionIndices.size()) + nameMap);
+	auto localNames = Code(local_names) + encodeVector(Code(functionIndices.size()) + localNameMap);
 
-//	auto nameSubSectionFuncNames = Code(module_name) + encodeVector(Code("wasp_module"));
-//	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’. The name section should appear only once in a module, and only after the data section.
-	const Code &nameSectionData = encodeVector(
-			Code("name") + nameSubSectionModuleName);// + nameSubSectionFunctionNames + nameSubSectionLocalNames);
+//	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
+//	The name section should appear only once in a module, and only after the data section.
+	const Code &nameSectionData = encodeVector(Code("name") + moduleName + functionNames + localNames);
 	auto nameSection = createSection(custom, nameSectionData); // auto encodeVector AGAIN!
 	nameSection.debug();
-	return nameSection;
+	return nameSection.clone();
 }
 
 Code dataSection() {
@@ -932,12 +933,14 @@ Code linkingSection() {
  */
 
 void add_builtins() {
+	int previous_signatures = functionSignatures.size(); // found via analyze()
+
 	// imports
 	functionSignatures["logi"] = Signature().add(i32t).import();
 	functionSignatures["logf"] = Signature().add(f32t).import();
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 //	functionSignatures["sqrt"] = Signature().add(i32t).returns(i32t).import();
-	import_count = functionSignatures.size();
+	import_count = functionSignatures.size() - previous_signatures;
 
 	functionIndices["logi"] = functionIndices.size();// import!
 	functionIndices["logf"] = functionIndices.size();// import!
@@ -952,7 +955,7 @@ void add_builtins() {
 	if (!functionIndices.has("id"))functionIndices["id"] = functionIndices.size();
 	// order matters, main now comes AFTER builtins!
 
-	builtin_count = functionIndices.size() - import_count;//  - runtime_offset;
+	builtin_count = functionSignatures.size() - import_count - previous_signatures;//  - runtime_offset;
 }
 
 Code &emit(Node root_ast, Module *runtime0, String _start) {
@@ -985,7 +988,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	auto memorySection = createSection(memory_section, encodeVector(Code(2)));
 	auto memoryImport = encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
 	auto customSection = createSection(custom, encodeVector(Code("custom123") + Code("random custom section data")));
-	Code typeSection1 = typeSection();
+	Code typeSection1 = typeSection();// types can be defined in analyze(), not in code declaration
 	Code codeSection1= codeSection(root_ast);
 	Code importSection1 = importSection();
 	Code funcTypeSection1 = funcTypeSection();// depends on codeSection, but must come before it!!
