@@ -394,7 +394,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				break;
 			}
 			byte opcode = opcodes(name, last_type);
-			if (opcode == f32_sqrt and last_type==i32t) {
+			if (opcode == f32_sqrt and last_type == i32t) {
 				code.addByte(f32_convert_i32_s);// i32->f32
 				code.addByte(f32_sqrt);
 				code.addByte(i32_trunc_f32_s);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
@@ -710,7 +710,7 @@ Code typeSection() {
 	Code type_data;
 	for (String fun :functionSignatures) {
 		Signature &signature = functionSignatures[fun];
-		if(signature.is_handled)
+		if (signature.is_handled)
 			continue;
 		typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
 		signature.is_handled = true;
@@ -742,7 +742,7 @@ Code importSection() {
 	Code logf_fv = encodeString("env") + encodeString("logf").addByte(func_export).addType(typeMap["logf"]);
 	Code square_ii = encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
 //	Code sqrt_ii = encodeString("env") + encodeString("√").addByte(func_export).addType(typeMap["√"]); builtin wasm anyways!!
-	auto importSection = createSection(import, Code(import_count) + logi_iv + logf_fv + square_ii );// + sqrt_ii
+	auto importSection = createSection(import, Code(import_count) + logi_iv + logf_fv + square_ii);// + sqrt_ii
 	return importSection.clone();
 }
 
@@ -764,11 +764,15 @@ Code codeSection(Node root) {
 //	byte code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 
 	Code main_block = emitBlock(root, start);
-	Code nop_block = Code(code_data_nop, sizeof(code_data_nop));
-	Code id_block = Code(code_data_id, sizeof(code_data_id));
+	Code code_blocks;
+	if (runtime.code_count == 0) {
+		Code nop_block = Code(code_data_nop, sizeof(code_data_nop));
+		Code id_block = Code(code_data_id, sizeof(code_data_id));
+		// order matters, in functionType section!
+		code_blocks = code_blocks + encodeVector(nop_block) + encodeVector(id_block);
+	} else builtin_count = 0;
 
-	// order matters, in functionType section!
-	Code code_blocks = encodeVector(nop_block) + encodeVector(id_block) + encodeVector(main_block);
+	code_blocks = code_blocks + encodeVector(main_block);
 	for (String fun : functionCodes) {// MAIN block extra ^^^
 		Code &func = functionCodes[fun];
 		code_blocks = code_blocks + encodeVector(func);
@@ -780,7 +784,7 @@ Code codeSection(Node root) {
 	if (runtime_offset + import_count + function_count != index_size) {
 //		log(functionCodes.keys);
 		log(functionIndices);
-		error("inconsistent function_count %d + %d + %d != %d "s % function_count % import_count % runtime_offset % index_size);
+		error("inconsistent function_count %d + %d + %d != %d "s % runtime_offset % import_count % function_count % index_size);
 	}
 	auto codeSection = createSection(code_section, Code(function_count) + code_blocks);
 	return codeSection.clone();
@@ -851,7 +855,7 @@ Code nameSection() {
 	for (String key : functionIndices) {
 //		if (key != start)continue;
 		int function_index = functionIndices[key];
-		if(function_index<runtime_offset)continue;
+		if (function_index < runtime_offset)continue;
 		List<String> localNames = locals[key];// including arguments
 		int local_count = localNames.size();
 		localNameMap = localNameMap + Code(function_index) + Code(local_count); /*???*/
@@ -870,8 +874,8 @@ Code nameSection() {
 //	localNameMap = localNameMap + exampleNames;
 
 	auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
-	auto functionNames = Code(function_names) + encodeVector(Code(functionIndices.size()-runtime_offset) + nameMap);
-	auto localNames = Code(local_names) + encodeVector(Code(functionIndices.size()-runtime_offset) + localNameMap);
+	auto functionNames = Code(function_names) + encodeVector(Code(functionIndices.size() - runtime_offset) + nameMap);
+	auto localNames = Code(local_names) + encodeVector(Code(functionIndices.size() - runtime_offset) + localNameMap);
 
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
 //	The name section should appear only once in a module, and only after the data section.
@@ -968,21 +972,22 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	functionCodes.setDefault(Code());
 	functionSignatures.setDefault(Signature());
 
-	if (runtime0)runtime = *runtime0;// else filled with 0's
 	if (runtime0) {
+		runtime = *runtime0;// else filled with 0's
 		runtime_offset = functionIndices.size();
-		import_count=0;
+		import_count = 0;
 		builtin_count = 0;
 	} else {
+		runtime = *new Module();// all zero
+		runtime_offset = 0;
 		typeMap.clear();
 		functionIndices.clear();
 //		functionSignatures.clear(); BEFORE analyze(), not after!
 		add_builtins();
 	}
-	if (!functionIndices.has(start)){
+	if (!functionIndices.has(start)) {
 		functionIndices[start] = functionIndices.size();// AFTER collecting imports!!
-	}
-	else
+	} else
 		error("start already declared: "s + start);
 	functionSignatures[start] = Signature().returns(i32t);
 	functionCodes.clear();
@@ -993,10 +998,10 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	auto memoryImport = encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
 	auto customSection = createSection(custom, encodeVector(Code("custom123") + Code("random custom section data")));
 	Code typeSection1 = typeSection();// types can be defined in analyze(), not in code declaration
-	Code codeSection1= codeSection(root_ast);
+	Code codeSection1 = codeSection(root_ast);
 	Code importSection1 = importSection();
 	Code funcTypeSection1 = funcTypeSection();// signatures depends on codeSection, but must come before it!!
-	Code exportSection1=exportSection();// depends on codeSection, but must come before it!!
+	Code exportSection1 = exportSection();// depends on codeSection, but must come before it!!
 	Code code = Code(magicModuleHeader, 4)
 	            + Code(moduleVersion, 4)
 	            + typeSection1
@@ -1004,9 +1009,12 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	            + funcTypeSection1 // signatures
 	            + exportSection1
 	            + codeSection1 // depends on importSection, yields data for funcTypeSection!
-	            //			+ dataSection()
-	            //			+ linkingSection()
-	            + nameSection();// + customSection;
+	//			+ dataSection()
+	//			+ linkingSection()
+//	            + nameSection()
+	// + customSection
+	;
 	code.debug();
+	if(runtime0)functionSignatures.clear(); // cleanup after NAJA
 	return code.clone();
 }

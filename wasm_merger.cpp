@@ -27,12 +27,13 @@ Code relocate(Code &blocks) {
 }
 
 Code mergeCodeSection(Module lib, Module main) {
-	return createSection(code_section, Code(lib.code_count + main.code_count) + lib.code_data + main.code_data); // relocate(
+	int codes = lib.code_count + main.code_count;
+	return createSection(code_section, Code(codes) + lib.code_data + main.code_data); // relocate(
 }
 
 Code mergeCustomSections(Module lib, Module main) {
-	Code list;
-	for (Code sec: lib.custom_sections) {
+	Code list=*new Code();
+	for (Code& sec: lib.custom_sections) {
 		Code more = encodeVector(sec);
 		list.add(more);
 	}
@@ -73,6 +74,7 @@ Code merge_wasm(Module lib, Module main) {
 	            //	            + mergeDataSection(lib, main)
 	            //	            + mergeLinkingSection(lib, main)
 	            //	            + mergeNameSection(lib, main)
-	            + mergeCustomSections(lib, main);
+//	            + mergeCustomSections(lib, main)
+	            ;
 	return code.clone();
 }
