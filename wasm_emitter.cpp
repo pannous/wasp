@@ -706,13 +706,13 @@ Code typeSection() {
 	// Function types are vectors of parameters and return types. Currently
 	// optimise TODO - some of the procs might have the same type signature
 	// the type section is a vector of function types
-	int typeCount = runtime.type_count;// 0 in pure wasm
+	int typeCount = 0;
 	Code type_data;
 	for (String fun :functionSignatures) {
-		typeMap[fun] = typeCount++;
 		Signature &signature = functionSignatures[fun];
 		if(signature.is_handled)
 			continue;
+		typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
 		signature.is_handled = true;
 		int param_count = signature.size();
 		Code td = {0x60 /*const type form*/, param_count};
@@ -829,12 +829,13 @@ Code functionSection() {
 	return funcTypeSection();// (misnomer) vs codeSection() !
 }
 
+// todo : convert library references to named imports!
 Code nameSection() {
 	Code nameMap;
 //	check(symbols["logi"]==0);
 //	check(symbols["√"]==3);// "\e2\88\9a"
 //	nameMap =  Code((byte) 0) + Code("logi");
-	for (int index = 0; index < functionIndices.size(); index++) {
+	for (int index = runtime_offset; index < functionIndices.size(); index++) {
 		// danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
 		String &name = functionIndices.keys[index];
 		nameMap = nameMap + Code(index) + Code(name);
@@ -850,6 +851,7 @@ Code nameSection() {
 	for (String key : functionIndices) {
 //		if (key != start)continue;
 		int function_index = functionIndices[key];
+		if(function_index<runtime_offset)continue;
 		List<String> localNames = locals[key];// including arguments
 		int local_count = localNames.size();
 		localNameMap = localNameMap + Code(function_index) + Code(local_count); /*???*/
@@ -868,8 +870,8 @@ Code nameSection() {
 //	localNameMap = localNameMap + exampleNames;
 
 	auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
-	auto functionNames = Code(function_names) + encodeVector(Code(functionIndices.size()) + nameMap);
-	auto localNames = Code(local_names) + encodeVector(Code(functionIndices.size()) + localNameMap);
+	auto functionNames = Code(function_names) + encodeVector(Code(functionIndices.size()-runtime_offset) + nameMap);
+	auto localNames = Code(local_names) + encodeVector(Code(functionIndices.size()-runtime_offset) + localNameMap);
 
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
 //	The name section should appear only once in a module, and only after the data section.
