@@ -1,6 +1,11 @@
 //
-// Created by me on 07.12.20.
+// Created by me on 09.12.20.
 //
-#include <vector>
-#include <string>
-int merge_files(std::vector<std::string> infiles);
+
+#ifndef WASP_WASM_MERGER_H
+#define WASP_WASM_MERGER_H
+#include "Code.h"
+#include "wasm_reader.h"
+Code merge_wasm(Module lib, Module main);
+
+#endif //WASP_WASM_MERGER_H

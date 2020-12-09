@@ -31,11 +31,6 @@ Map<String, int> functionIndices;
 Map<String, Code> functionCodes;
 Map<String, int> typeMap;
 
-enum nameSubSectionTypes {
-	module_name = 0,
-	function_names = 1,
-	local_names = 2,
-};
 
 Code Call(char *symbol);//Node* args
 
@@ -716,6 +711,9 @@ Code typeSection() {
 	for (String fun :functionSignatures) {
 		typeMap[fun] = typeCount++;
 		Signature &signature = functionSignatures[fun];
+		if(signature.is_handled)
+			continue;
+		signature.is_handled = true;
 		int param_count = signature.size();
 		Code td = {0x60 /*const type form*/, param_count};
 		for (int i = 0; i < param_count; ++i) {
@@ -753,7 +751,7 @@ Code codeSection(Node root) {
 	// the code section contains vectors of functions
 	// index needs to be known before emitting code, so call $i works
 	int index_size = functionIndices.size();
-	if (import_count + runtime_offset + builtin_count + 1 != index_size) {
+	if (import_count + builtin_count + 1 + runtime_offset != index_size) {
 		log(functionIndices);
 		error("inconsistent function_count %d + %d + %d + main != %d"s % import_count % builtin_count % runtime_offset % index_size);
 	}
@@ -799,6 +797,7 @@ Code exportSection() {
 }
 
 
+// Signatures
 Code funcTypeSection() {// depends on codeSection, but must appear earlier in wasm
 	// funcType_count = function_count EXCLUDING imports, they encode their type inline!
 	// the function section is a vector of type indices that indicate the type of each function in the code section
@@ -823,7 +822,7 @@ Code funcTypeSection() {// depends on codeSection, but must appear earlier in wa
 	}
 	// @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
 	Code funcSection = createSection(functypes, types_of_functions);
-	return funcSection;
+	return funcSection.clone();
 }
 
 Code functionSection() {
@@ -960,8 +959,9 @@ void add_builtins() {
 
 Code &emit(Node root_ast, Module *runtime0, String _start) {
 	start = _start;
-
 	typeMap.setDefault(-1);
+	typeMap.clear();
+
 	functionIndices.setDefault(-1);
 	functionCodes.setDefault(Code());
 	functionSignatures.setDefault(Signature());
@@ -969,6 +969,8 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	if (runtime0)runtime = *runtime0;// else filled with 0's
 	if (runtime0) {
 		runtime_offset = functionIndices.size();
+		import_count=0;
+		builtin_count = 0;
 	} else {
 		typeMap.clear();
 		functionIndices.clear();
@@ -991,7 +993,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	Code typeSection1 = typeSection();// types can be defined in analyze(), not in code declaration
 	Code codeSection1= codeSection(root_ast);
 	Code importSection1 = importSection();
-	Code funcTypeSection1 = funcTypeSection();// depends on codeSection, but must come before it!!
+	Code funcTypeSection1 = funcTypeSection();// signatures depends on codeSection, but must come before it!!
 	Code exportSection1=exportSection();// depends on codeSection, but must come before it!!
 	Code code = Code(magicModuleHeader, 4)
 	            + Code(moduleVersion, 4)
