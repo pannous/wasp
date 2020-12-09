@@ -118,9 +118,10 @@ public:
 		return *this;
 	}
 
-	Code& add(Code more){
+	Code& add(Code& more){
 		if(more.length>0)
 			push(more);
+		return *this;
 	}
 
 	Code& add(byte opcode) {
@@ -163,7 +164,9 @@ public:
 	}
 
 	Code &clone() {
-		return *this;
+		Code* copy = new Code();
+		*copy = *this;
+		return *copy;
 	}
 
 	void debug() {

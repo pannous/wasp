@@ -260,6 +260,7 @@ void consumeSections() {
 // => consumeNameSection()
 				break;
 			default:
+				printf("invalid section %d at pos %d %x\n", section, pos, pos);
 				error("not implemented: "s + sectionName(section));
 		}
 	}

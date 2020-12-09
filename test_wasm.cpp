@@ -402,6 +402,7 @@ void testMergeWabt(){
 
 //testMerge
 void testWasmModuleExtension(){
+	functionSignatures.clear();
 	Node charged = analyze(parse("test:=42"));
 	Code lib = emit(charged,0,"lib_main");
 	lib.save("lib.wasm");
