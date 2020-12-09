@@ -281,12 +281,27 @@ enum Opcodes {
 	i32_or = 0x72,
 	i32_xor = 0x73,
 
+	f32_abs = 0x8B,
+	f32_neg = 0x8C,
+
+	// todo : difference : ???
+	f32_ceil = 0x8D,
+	f32_floor = 0x8E,
+	f32_trunc = 0x8F,
+	f32_round = 0x90,
+	f32_nearest = 0x90,
+
+	f32_sqrt = 0x91,
 	f32_add = 0x92,
 	f32_sub = 0x93,
 	f32_mul = 0x94,
 	f32_div = 0x95,
+
 	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
-	i32_reinterpret_f32 = 0xbc // bit wise reinterpret != cast/trunc/convert
+	f32_convert_i32_s = 0xB2,
+
+	i32_reinterpret_f32 = 0xbc, // f32->i32 bit wise reinterpret != cast/trunc/convert
+	f32_reinterpret_i32 = 0xBE, // i32->f32
 
 };
 
@@ -309,6 +324,7 @@ enum Section {
 
 class Signature {
 public:
+	String function;// could be reused by multiple, but useful to debug
 	Map<int, Valtype> types;
 	Valtype return_type = voids;
 	bool is_import = false; // not serialized in functype section, but in import section wt
