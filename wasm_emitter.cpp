@@ -663,7 +663,7 @@ Code emitBlock(Node node, String context) {
 	if (locals_count >= argument_count)
 		locals_count = locals_count - argument_count;
 	else
-		warn("locals consumed by arguments");
+		warn("locals consumed by arguments"); // ok in  double := it * 2; => double(it){it*2}
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; ++i) {
 		block.addByte(i + 1);// index
@@ -716,7 +716,6 @@ Code typeSection() {
 		Signature &signature = functionSignatures[fun];
 		int param_count = signature.size();
 		Code td = {0x60 /*const type form*/, param_count};
-		check(td.length == 2)
 		for (int i = 0; i < param_count; ++i) {
 			td = td + Code(signature.types[i]);
 		}
@@ -750,24 +749,18 @@ Code importSection() {
 int function_count;// minus import_count  (together : functionIndices.size() )
 Code codeSection(Node root) {
 	// the code section contains vectors of functions
+	// index needs to be known before emitting code, so call $i works
 	int index_size = functionIndices.size();
 	if (import_count + runtime_offset + builtin_count + 1 != index_size) {
 		log(functionIndices);
 		error("inconsistent function_count %d + %d + %d + main != %d"s % import_count % builtin_count % runtime_offset % index_size);
 	}
 // https://pengowray.github.io/wasm-ops/
-//	char code_data[] = createSection() 0x01,0x08,0x00,0x01,0x3f,0x0F,0x0B};// ok 0x01==nop
-//  Code code_data=encodeVectors(encodeVector(1/*function_index/))
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
-
-// index needs to be known before emitting code, so call $i works
-
-
-
-	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block}; // 0x00 == unreachable as block header !?
+	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
 	byte code_data_nop[] = {0/*locals_count*/, end_block};// NOP
 	byte code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block, end_block};// NOP
-//	byte code_data_log21[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+//	byte code_data_logi_21[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};
 //	byte code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 
 	Code main_block = emitBlock(root, start);
@@ -976,7 +969,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	} else {
 		typeMap.clear();
 		functionIndices.clear();
-		functionSignatures.clear();
+//		functionSignatures.clear(); BEFORE analyze(), not after!
 		add_builtins();
 	}
 	if (!functionIndices.has(start)){
