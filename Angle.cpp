@@ -809,6 +809,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 
 Node analyze(Node data) {
+	functionSignatures.setDefault(Signature());
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	if(data.kind==keyNode){
 		data.value.node = analyze(*data.value.node).clone();

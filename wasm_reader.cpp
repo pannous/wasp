@@ -14,15 +14,17 @@ Module module;
 bytes magicModuleHeader = new byte[]{0x00, 0x61, 0x73, 0x6d};
 bytes moduleVersion = new byte[]{0x01, 0x00, 0x00, 0x00};
 
+void parseFunctionNames(Code& code);
+
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
 #define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
-	if(*pos+len>size)
+	if (*pos + len > size)
 		error("END OF FILE");
-	if(not bytes){
+	if (not bytes) {
 		*pos = *pos + len;
 		return true;
 	}
@@ -38,7 +40,7 @@ bool consume_x(byte *code, int *pos, int len, byte *bytes) {
 }
 
 Section typ() {
-	return (Section)code[pos++];
+	return (Section) code[pos++];
 }
 
 int unsignedLEB128() {
@@ -47,7 +49,7 @@ int unsignedLEB128() {
 		byte b = code[pos++];
 		n = n << 7;
 		n = n ^ (b & 0x7f);
-		if ( (b & 0x80) == 0)
+		if ((b & 0x80) == 0)
 			break;
 	} while (n != 0);
 	return n;
@@ -74,8 +76,15 @@ Code vec() {
 	int from = pos;
 	consume(len, 0);
 //	return Code(code+from, from, pos);
-	return Code(code+from, pos-from);
+	return Code(code + from, pos - from);
+}
 
+Code vec(Code& data, bool consume= true) {
+	int len = unsignedLEB128(data);
+	Code code1 = Code(data.data+data.start, len);
+	if(consume) data.start += len;
+	else data.start-=1;// undo len read
+	return code1;
 }
 
 void consumeTypeSection() {
@@ -85,52 +94,114 @@ void consumeTypeSection() {
 	printf("types: %d\n", module.type_count);
 	module.type_data = type_vector.rest();
 }
-void consumeStartSection(){
+
+void consumeStartSection() {
 	int start_index = unsignedLEB128();
 }
-String name(Code wstring){
-	int len = unsignedLEB128(wstring);
-	return String((char*)wstring.data+wstring.start, len, true);
+void consumeTableSection(){
+	module.table_data = vec();
 }
-void consumeNameSection(Code data) {
+
+void consumeMemorySection(){
+	module.memory_data=vec();// todo ?
+}
+void consumeGlobalSection(){
+	module.globals_data=vec();// todo
+}
+
+String name(Code& wstring) {
+	int len = unsignedLEB128(wstring);
+	const String &string = String((char *) wstring.data + wstring.start, len, true);
+	wstring.start += len;// advance internally
+	return string;
+}
+
+void consumeNameSection(Code& data) {
 	printf("names: …\n");
+	module.name_data = data;
+	while (data.start < data.length) {
+		int type = unsignedLEB128(data);
+		Code payload = vec(data);// todo test!
+		switch (type) {
+			case module_name: {
+				module.name = name(payload);// wrapped in vector why?
+			}
+				break;
+			case function_names:
+				module.function_names = payload;
+				parseFunctionNames(payload.clone());
+				break;
+			case local_names:
+				module.local_names = payload;
+				break;
+			default:
+				error("INVALID NAME TYPE");
+		}
+	}
+}
+
+void parseFunctionNames(Code& payload) {
+	int function_count = unsignedLEB128(payload);
+	for (int i = 0; i < function_count; ++i) {
+		int index = unsignedLEB128(payload);
+		String name1 = name(payload);
+	}
 }
 
 // https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
-void consumeLinkingSection(Code data) {
+void consumeLinkingSection(Code& data) {
 	printf("linking: …\n");
+	module.linking_section = data;
 //	int version = unsignedLEB128(data);
 }
 
-void consumeCustomSection(){
-	Code customSectionDatas=vec();
-	String type = name(customSectionDatas);
-	if(type=="names")consumeNameSection(customSectionDatas);
-	else if(type=="linking")consumeLinkingSection(customSectionDatas);
-	else error("consumeCustomSection not implementated for "s+type);
+void consumeRelocateSection(Code& data) {
+	printf("relocate: …\n");
+	module.relocate_section = data;
 }
 
-void consumeFuncTypeSection(){
+void consumeDataSection() {
+	module.data_section = vec();
+}
+
+void consumeCustomSection() {
+	Code customSectionDatas = vec();
+	String type = name(customSectionDatas);
+	Code payload = customSectionDatas.rest();
+	if (type == "names")consumeNameSection(payload);
+	else if (type == "linking")consumeLinkingSection(payload);
+	else if (type == "relocate")consumeRelocateSection(payload);
+	else {
+		module.custom_sections = module.custom_sections + customSectionDatas;
+		pos = size;// force finish
+//		error("consumeCustomSection not implementated for "s + type);
+	}
+}
+
+// connect func/code indices to type indices
+void consumeFuncTypeSection() {
 	Code type_vector = vec();
-	module.func_count = unsignedLEB128(type_vector);
+	module.code_count = unsignedLEB128(type_vector);
 	printf("signatures: %d\n", module.func_count);
 	module.functype_data = type_vector.rest();
 }
-void consumeCodeSection(){
+
+void consumeCodeSection() {
 	Code codes_vector = vec();
 	int codeCount = unsignedLEB128(codes_vector);
 	printf("codes: %d\n", codeCount);
-	if(module.func_count != codeCount)error("missing code/signatures");
+	if (module.code_count != codeCount)error("missing code/signatures");
 	module.code_data = codes_vector.rest();
 }
 
-void consumeExportSection(){
+void consumeExportSection() {
 	Code exports_vector = vec();
 	int exportCount = unsignedLEB128(exports_vector);
 	printf("exports: %d\n", exportCount);
 	module.export_count = exportCount;
 	module.export_data = exports_vector.rest();
 }
+
 void consumeImportSection() {
 	Code imports_vector = vec();
 	int importCount = unsignedLEB128(imports_vector);
@@ -149,93 +220,62 @@ int fileSize(char const *file) {
 	return sz;
 }
 
-void consumeSections(){
-	while (pos<size){
-	Section section = typ();
-	switch (section) {
-		case type:
-			consumeTypeSection();
-			break;
-		case import:
-			consumeImportSection();
-			break;
-		case exports:
-			consumeExportSection();
-			break;
-		case code_section:
-			consumeCodeSection();
-			break;
-		case functypes:
-			consumeFuncTypeSection();
-			break;
-		case start_section:
-			consumeStartSection();
-			break;
-		case custom:
-			consumeCustomSection();
-			break;
-		default:
-			error("not implemented: "s + sectionName(section));
-	}
+void consumeSections() {
+	while (pos < size) {
+		Section section = typ();
+		switch (section) {
+			case type:
+				consumeTypeSection();
+				break;
+			case import:
+				consumeImportSection();
+				break;
+			case exports:
+				consumeExportSection();
+				break;
+			case code_section:
+				consumeCodeSection();
+				break;
+			case functypes:
+				consumeFuncTypeSection();
+				break;
+			case start_section:
+				consumeStartSection();
+				break;
+			case table:
+				consumeTableSection();
+				break;
+			case memory_section:
+				consumeMemorySection();
+				break;
+			case global:
+				consumeGlobalSection();
+				break;
+			case data_section:
+				consumeDataSection();
+				break;
+			case custom:
+				consumeCustomSection();
+// => consumeNameSection()
+				break;
+			default:
+				error("not implemented: "s + sectionName(section));
+		}
 	}
 }
 
 Module read_wasm(char const *file) {
+	module = *new Module();
 	pos = 0;
 	printf("parsing: %s\n", file);
 	size = fileSize(file);
-	bytes buffer=(bytes)alloc(1, size);// do not free
+	bytes buffer = (bytes) alloc(1, size);// do not free
 	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
 	code = buffer;
 	consume(4, reinterpret_cast<byte *>(magicModuleHeader));
 	consume(4, reinterpret_cast<byte *>(moduleVersion));
 	consumeSections();
+	module.func_count = module.import_count + module.code_count;
 	return module;
 }
-
-Code mergeTypeSection(Module lib, Module main){
-	return Code(type, encodeVector(Code(lib.type_count+main.type_count) + lib.type_data + main.type_data));
-}
-Code mergeImportSection(Module lib, Module main){
-	return createSection(import, Code(lib.import_count+main.import_count)+  lib.import_data + main.import_data);
-}
-
-Code mergeFuncTypeSection(Module lib, Module main){
-	return createSection(functypes, Code(lib.func_count + main.func_count) + lib.functype_data + main.functype_data);
-}
-Code mergeExportSection(Module lib, Module main){
-	return createSection(exports, Code(lib.export_count + main.export_count) + lib.export_data + main.export_data);
-}
-Code relocate(Code blocks){
-	return blocks;// todo, maybe
-}
-
-Code mergeCodeSection(Module lib, Module main) {
-	return createSection(code_section, Code(lib.func_count + main.func_count) + lib.code_data + relocate(main.code_data));
-}
-
-Code mergeDataSection(Module lib, Module main) {
-	return Code();// todo
-}
-Code mergeLinkingSection(Module lib, Module main) {
-	return Code();// todo
-}
-Code mergeNameSection(Module lib, Module main) {
-	return Code();// todo
-}
-
-Code merge_code(Module lib, Module main){
-	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4)
-			+ mergeTypeSection(lib,main)
-			+ mergeImportSection(lib,main)
-			+ mergeFuncTypeSection(lib,main)
-			+ mergeExportSection(lib,main)
-			+ mergeCodeSection(lib,main)
-			+ mergeDataSection(lib,main)
-			+ mergeLinkingSection(lib,main)
-			+ mergeNameSection(lib,main);
-//	+ mergeCustomeSection(lib,main);
-	return code.clone();
-}
-
 #undef pointerr
