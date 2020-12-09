@@ -113,7 +113,7 @@ String sectionName(Section section){
 		case data_section: return "data";
 		case start_section: return "start";
 		case memory_section: return "memory";
-		default:error("ERRONEOUS SECTION: "s + section);
+		default:error("INVALID SECTION #%d\nprevious section must have been corrupted\n"s % section);
 	}
 }
 Code createSection(Section sectionType, Code data) {

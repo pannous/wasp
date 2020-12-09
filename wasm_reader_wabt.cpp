@@ -161,7 +161,7 @@ void remove_function(Module *module, chars fun){
 	}
 }
 
-#include "wasm_merger.h"
+#include "wasm_merger_wabt.h"
 Module* merge_wasm(Module *base, Module *module) {
 	for (wabt::Func *f : module->funcs){
 		remove_import(base, f->name.c_str());
