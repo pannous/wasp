@@ -18,7 +18,7 @@ public:
 	Code data_section;
 	Code linking_section;
 	Code relocate_section;
-	Code custom_sections;// all remaining
+	List<Code> custom_sections;// all remaining
 
 	int type_count;
 	int code_count;
