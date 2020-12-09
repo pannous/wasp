@@ -140,7 +140,7 @@ elseif (VM) # NORMAL:
     #    add_compile_definitions(WASM_ENABLE_FAST_INTERP)
 #    ADD_COMPILE_FLAG("-w -Oz") # maximal optimization, CANT DEBUG!
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
-    set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_micro.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_micro.cpp wasm_merger.cpp wasm_merger.h)
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
 
     if (APPLE)
@@ -171,7 +171,7 @@ elseif (WABT) # NORMAL:
     add_subdirectory(wabt)
     set(SOURCE_FILES
             Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
-            wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp  wasm_runner_wabt.cpp wasm_merger.cpp Code.cpp)
+            wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp  wasm_runner_wabt.cpp wasm_merger_wabt.cpp Code.cpp)
 #    wasm_runner_console.cpp
 #     wasm_runner_wabt.cpp  error: call to implicitly-deleted copy constructor WHY???
     add_executable(angle ${SOURCE_FILES})

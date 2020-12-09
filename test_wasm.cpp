@@ -1,6 +1,7 @@
 #include "Angle.h" // emit
 #include "Wasp.h"
 #include "wasm_reader.h"
+#include "wasm_merger.h"
 
 //#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 #define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
@@ -386,21 +387,6 @@ void wasm_todos() {
 //	check(module->funcs.front()->name == "_start");
 //}
 
-void testMerge(){
-	Node charged = analyze(parse("test:=42"));
-	Code lib = emit(charged,0,"lib_main");
-	Module module = read_wasm("test.wasm");
-	charged = analyze(parse("test"));
-	Code main = emit(charged,&module);
-	main.save("main.wasm");
-	Module prog = read_wasm("main.wasm");
-	Code merged=merge_code(module, prog);
-	merged.save("merged.wasm");
-	int ok = merged.run();
-//	int ok = main.run();
-	check(ok==42);
-}
-
 
 //#include "wasm_merger.h"
 void testMergeWabt(){
@@ -414,12 +400,37 @@ void testMergeWabt(){
 	check(ok==42);
 }
 
+//testMerge
 void testWasmModuleExtension(){
+	Node charged = analyze(parse("test:=42"));
+	Code lib = emit(charged,0,"lib_main");
+	lib.save("test.wasm");
+	Module module = read_wasm("test.wasm");
+	charged = analyze(parse("test"));
+	Code main = emit(charged,&module);
+	main.save("main.wasm");
+	Module prog = read_wasm("main.wasm");
+	Code merged= merge_wasm(module, prog);
+	merged.save("merged.wasm");
+	read_wasm("merged.wasm");
+	int ok = merged.run();
+//	int ok = main.run();
+	check(ok==42);
+}
+
+
+
+void testMergeRelocate(){
 	// doesn't work: cannot insert imports or function types!
 //	emit("test");
 //	merge_files({"test.wasm", "test-lld-wasm/lib.wasm"});
-//	wabt::Module *main=readWasm("test.wasm");
-//	wabt::Module *lib = readWasm("test-lld-wasm/lib.wasm");
+	Module lib = read_wasm("test-lld-wasm/lib.wasm");
+	Module main = read_wasm("test-lld-wasm/main.wasm");
+//	Module main=read_wasm("test.wasm");
+	Code merged=merge_wasm(lib, main);
+	merged.save("merged.wasm");
+	Module merged1 = read_wasm("merged.wasm");
+	merged.run();
 //	wabt::Module *merged=merge_wasm(lib, main);
 //	save_wasm(merged, "prog.wasm");
 }

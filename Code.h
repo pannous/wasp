@@ -14,6 +14,8 @@ class Code;
 int run_wasm(bytes wasm_bytes, int len);
 int run_wasm(chars wasm_path);
 
+extern bytes magicModuleHeader;
+extern bytes moduleVersion;
 
 bytes concat(bytes a, bytes b, int len_a, int len_b);
 bytes concat(bytes a, char b,int len);
@@ -176,6 +178,7 @@ public:
 		fclose(file);
 #endif
 	}
+
 	int run(){
 		return run_wasm(data, length);
 	}
@@ -322,6 +325,12 @@ enum Section {
 	data_section = 11
 };
 
+enum nameSubSectionTypes {
+	module_name = 0,
+	function_names = 1,
+	local_names = 2,
+};
+
 class Signature {
 public:
 	String function;// could be reused by multiple, but useful to debug
@@ -346,6 +355,8 @@ public:
 //		return_types[name] = valtype;
 		return *this;
 	}
+
+	bool is_handled=false;
 };
 
 String sectionName(Section section);

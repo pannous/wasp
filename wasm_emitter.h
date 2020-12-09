@@ -10,8 +10,6 @@
 typedef const unsigned char* wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
 typedef unsigned char* bytes;
 
-extern bytes magicModuleHeader;
-extern bytes moduleVersion;
 
 class String;
 
