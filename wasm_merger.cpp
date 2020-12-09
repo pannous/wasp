@@ -3,7 +3,8 @@
 //
 
 #include "wasm_merger.h"
-int total_functions=-1;
+
+int total_functions = -1;
 
 Code mergeTypeSection(Module lib, Module main) {
 	return Code(type, encodeVector(Code(lib.type_count + main.type_count) + lib.type_data + main.type_data));
@@ -13,24 +14,38 @@ Code mergeImportSection(Module lib, Module main) {
 	return createSection(import, Code(lib.import_count + main.import_count) + lib.import_data + main.import_data);
 }
 
-Code mergeFuncTypeSection(Module lib, Module main) {
-	return createSection(functypes, Code(lib.func_count + main.func_count) + lib.functype_data + main.functype_data);
+Code mergeFuncTypeSection(Module lib, Module main) { // signatures
+	return createSection(functypes, Code(lib.code_count + main.code_count) + lib.functype_data + main.functype_data);
 }
 
 Code mergeExportSection(Module lib, Module main) {
 	return createSection(exports, Code(lib.export_count + main.export_count) + lib.export_data + main.export_data);
 }
 
-Code relocate(Code& blocks) {
+Code relocate(Code &blocks) {
 	return blocks;// todo, maybe
 }
 
 Code mergeCodeSection(Module lib, Module main) {
-	return createSection(code_section, Code(lib.func_count + main.func_count) + lib.code_data + relocate(main.code_data));
+	return createSection(code_section, Code(lib.code_count + main.code_count) + lib.code_data + main.code_data); // relocate(
 }
 
+Code mergeCustomSections(Module lib, Module main) {
+	Code list;
+	for (Code sec: lib.custom_sections) {
+		Code more = encodeVector(sec);
+		list.add(more);
+	}
+	for (Code sec: main.custom_sections) {
+		Code more = encodeVector(sec);
+		list.add(more);
+	}
+	return list;
+}
+
+
 Code mergeNameSection(Module lib, Module main) {
-	return encodeVector(lib.name_data + main.name_data);// blindly blend and append moduleName + functionNames …
+	return createSection(custom, lib.name_data + main.name_data);// blindly blend and append moduleName + functionNames …
 	auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
 	auto functionNames = Code(function_names) + encodeVector(Code(total_functions) + lib.function_names + main.function_names);
 	auto localNames = Code(local_names) + encodeVector(Code(total_functions) + lib.local_names + main.local_names);
@@ -53,12 +68,11 @@ Code merge_wasm(Module lib, Module main) {
 	            + mergeTypeSection(lib, main)
 	            + mergeImportSection(lib, main) // needed for correct functypes
 	            + mergeFuncTypeSection(lib, main)
-	            //	            + mergeExportSection(lib, main)
+	            + mergeExportSection(lib, main)
 	            + mergeCodeSection(lib, main)
-//	            + mergeDataSection(lib, main)
-//	            + mergeLinkingSection(lib, main)
-//	            + mergeNameSection(lib, main)
-//				+ mergeCustomSection(lib,main)
-	;
+	            //	            + mergeDataSection(lib, main)
+	            //	            + mergeLinkingSection(lib, main)
+	            //	            + mergeNameSection(lib, main)
+	            + mergeCustomSections(lib, main);
 	return code.clone();
 }

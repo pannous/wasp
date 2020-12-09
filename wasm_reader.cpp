@@ -118,7 +118,7 @@ String name(Code& wstring) {
 
 void consumeNameSection(Code& data) {
 	printf("names: …\n");
-	module.name_data = data;
+	module.name_data = data.clone();
 	while (data.start < data.length) {
 		int type = unsignedLEB128(data);
 		Code payload = vec(data);// todo test!
@@ -172,17 +172,17 @@ void consumeCustomSection() {
 	else if (type == "linking")consumeLinkingSection(payload);
 	else if (type == "relocate")consumeRelocateSection(payload);
 	else {
-		module.custom_sections = module.custom_sections + customSectionDatas;
 		pos = size;// force finish
 //		error("consumeCustomSection not implementated for "s + type);
 	}
+	module.custom_sections.add(customSectionDatas);// raw
 }
 
 // connect func/code indices to type indices
 void consumeFuncTypeSection() {
 	Code type_vector = vec();
-	module.code_count = unsignedLEB128(type_vector);
-	printf("signatures: %d\n", module.func_count);
+	module.code_count = unsignedLEB128(type_vector);// import type indices are part of import struct!
+	printf("signatures: %d\n", module.code_count);
 	module.functype_data = type_vector.rest();
 }
 
@@ -192,6 +192,7 @@ void consumeCodeSection() {
 	printf("codes: %d\n", codeCount);
 	if (module.code_count != codeCount)error("missing code/signatures");
 	module.code_data = codes_vector.rest();
+	printf("code length: %d\n", module.code_data.length);
 }
 
 void consumeExportSection() {
