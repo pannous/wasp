@@ -38,7 +38,7 @@
     // This is googles recommended way of loading WebAssembly.
     // try {
         // const response = await fetch('wasp.wasm')
-        let memory_size = 65536
+        let memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
         let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
         imports = {
             env: {

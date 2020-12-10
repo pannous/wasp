@@ -305,6 +305,16 @@ void memcpy0(bytes dest, bytes source, int i) {
 }
 
 void memcpy0(char *destination, char *source, size_t num) {
+#ifdef WASM
+	if((int)destination>10000 or (int)destination<0 or (int)source>10000 or (int)source<0 ){
+		printf("invalid destination\n");
+		printf("destination %d %x\n",(int)destination,(int)destination);
+		printf("source %d %x\n",(int)source,(int)source);
+		printf("%p\n",destination);
+		printf("%s\n",destination);
+		printf("%s\n",source);
+	}
+#endif
 	while (num<MAX_MEM and --num >= 0)destination[num] = source[num];
 }
 //void * memcpy (void * destination, const void * source, size_t num ){
