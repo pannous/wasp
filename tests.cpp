@@ -23,7 +23,7 @@ Node result;
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
-
+#define check_eq assert_equals
 bool assert_equals_x(String a, String b, char *context = "") {
 	if (a == b)
 		printf("OK %s==%s in %s\n", a.data, b.data, context);
@@ -1261,15 +1261,41 @@ void testGroupCascade() {
 
 }
 
+void testNodeBasic(){
+	Node a = Node("a");
+	check(a.name=="a");
+	check(a=="a");
+	Node a1 = Node(1);
+	check(a1.name=="1");// debug only!
+	check(a1==1);
+	Node a11 = Node(1.1);
+	check_eq(a11.name,"1.1");
+	check(a11==1.1);
+	Node b = Node("b");
+	a.add(b);
+	a["b"]="c";
+	a["d"]="e";
+	check(a.length==2);
+	check(a["b"]=="c");
+}
 
 void tests() {
+	testNodeBasic();
+	testAsserts();
+	testNodeName();
+	testStringConcatenation();
 	testStringReferenceReuse();
+	testConcatenation();
+	testConcatenationBorderCases();
 	testNilValues();
 	testCall();
 	testWasmString();
 	testNewlineLists();
 	testTruthiness();
 	testIndex();
+	testMarkSimple();
+	testMarkMulti();
+	testMarkMulti2();
 	testStackedLambdas();
 	testRootLists();
 	testIterate();
@@ -1279,7 +1305,6 @@ void tests() {
 	testParamizedKeys();
 	testForEach();
 	testString();
-	testNodeName();
 	testEmpty();
 	testDiv();
 	testRoot();
@@ -1287,9 +1312,6 @@ void tests() {
 	testLogic01();
 	testLogicPrecedence();
 	testRootFloat();
-	testMarkSimple();
-	testMarkMulti();
-	testMarkMulti2();
 	testCpp();
 //	testErrors();
 	testLists();
@@ -1303,10 +1325,6 @@ void tests() {
 	testNetBase();
 	testRoots();
 	testForEach();
-	testConcatenation();
-	testStringConcatenation();
-	testConcatenationBorderCases();
-	testAsserts();
 	testLengthOperator();
 	testLogic();
 	testLogicEmptySet();

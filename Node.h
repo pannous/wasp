@@ -225,7 +225,9 @@ public:
 	explicit Node(double nr) {
 		value.real = nr;
 		kind = reals;
-		if (debug)name = String(itoa0(nr, 10)); // messes with setField contraction
+		if (debug)
+		name = String(ftoa(nr)); // messes with setField contraction
+//			name = String(itoa0(nr, 10)); // messes with setField contraction
 	}
 
 

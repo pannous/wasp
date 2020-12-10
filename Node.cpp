@@ -228,7 +228,8 @@ bool Node::operator==(long other) {
 
 bool Node::operator==(double other) {
 	if (kind == keyNode and value.node and value.node->value.real == other)return true;
-	return (kind == reals and value.real == ((float) other)) or
+	return (kind == reals and value.real == other) or
+//			(kind == reals and (float )value.real == (float)other) or // lost precision
 	       (kind == longs and value.longy == other) or
 	       (kind == bools and value.longy == other);
 }
