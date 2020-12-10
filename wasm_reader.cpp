@@ -11,9 +11,6 @@ int size = 0;
 byte *code;
 Module module;
 
-bytes magicModuleHeader = new byte[]{0x00, 0x61, 0x73, 0x6d};
-bytes moduleVersion = new byte[]{0x01, 0x00, 0x00, 0x00};
-
 void parseFunctionNames(Code& code);
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
