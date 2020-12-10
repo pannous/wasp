@@ -13,11 +13,8 @@
 bool recursive = true;// whats that?
 List<String> declaredSymbols;// todo: buildup by preparsing
 
-chars functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
 
 // functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
-chars function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
-                          "logx", "logc", "id", 0};// MUST END WITH 0, else BUG
 chars control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
 
 
@@ -230,7 +227,11 @@ Node eval(String code) {
 		return parse(code).evaluate();
 	else
 #endif
+#ifndef RUNTIME_ONLY
 		return emit(analyze(parse(code))).run();// int -> Node todo: int* -> Node*
+#else
+		return parse(code).evaluate();
+#endif
 }
 
 Node &groupIf(Node n);
@@ -277,12 +278,19 @@ List<String> collectOperators(Node &expression) {
 //List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
 chars ras[]={"=", "?:", "+=", "++:",0};
 //List<chars> rightAssociatives = List(ras);
+#ifndef WASM
 List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++:",0};// a=b=1 == a=(b=1) => a=1
-
 List<chars> prefixOperators = {"not", "!", "√", "-…", "--…", "++…", "+…", "~", "*…", "&…", "sizeof", "new", "delete[]"};
 List<chars> suffixOperators = {"…++", "…--", "⁻¹", "⁰", "¹", "²", "³", "…%", "﹪", "％", "٪", "‰"};// ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
 List<chars> declaration_operators = {":="};
-
+#else
+// TODO!
+List<chars> rightAssociatives;
+List<chars> prefixOperators;
+List<chars> suffixOperators;
+List<chars> declaration_operators;
+//no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
+#endif
 
 // a + b c + d
 Node &groupDeclarations(Node &expression0) {
@@ -297,6 +305,7 @@ Node &groupDeclarations(Node &expression0) {
 				error("Symbol already declared: "s+name);
 			declaredSymbols.add(name);
 			List<Arg> args= extractFunctionArgs(name, modifiers);
+#ifndef RUNTIME_ONLY
 			Signature& signature = functionSignatures[name];// use Default
 			for(Arg arg: args){
 				locals[name].add(arg.name);
@@ -305,6 +314,7 @@ Node &groupDeclarations(Node &expression0) {
 			if (signature.size() == 0 and rest.has("it", false, 100))
 				signature.add(i32t);
 			signature.returns(i32t);// todo what if not lol
+#endif
 			Node *body = analyze(rest).clone();
 			Node *decl = new Node(name);//node.name+":={…}");
 			decl->setType(declaration);
@@ -366,8 +376,10 @@ Node &groupOperators(Node &expression0) {
 				expression.replace(i - 1,  i + 1 , node);// replace ALL REST
 				expression.remove(i, -1);
 			} else {
+#ifndef RUNTIME_ONLY
 				if(node.name=="=" and prev.kind==reference)
 					locals["main"].add(prev.name);
+#endif
 				node.addRaw(prev);
 				node.addRaw(next);
 				expression.replace(i - 1, i + 1, node);
@@ -809,7 +821,9 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 
 Node analyze(Node data) {
+#ifndef RUNTIME_ONLY
 	functionSignatures.setDefault(Signature());
+#endif
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	if(data.kind==keyNode){
 		data.value.node = analyze(*data.value.node).clone();
@@ -849,6 +863,9 @@ Node analyze2(Node data) {
 
 Node emit(String code) {
 	Node data = parse(code);
+#ifdef RUNTIME_ONLY
+	return data.evaluate();
+#else
 	data.log();
 	locals.clear();
 	locals.setDefault(List<String>());
@@ -861,91 +878,5 @@ Node emit(String code) {
 //	code.link(wasp) more beautiful with multiple memory sections
 	Node node=binary.run();
 	return node;
-}
-
-float function_precedence = 1000;
-
-float precedence(String name) {
-	// like c++ here HIGHER up == lower value == more important
-//	switch (node.name) nope
-//		name = operater.value.string;// NO strings are not automatic operators lol WTF
-	if (eq(name, "."))return 0.5;
-	if (eq(name, "of"))return 0.6;
-	if (eq(name, "in"))return 0.7;
-	if (eq(name, "from"))return 0.8;
-
-	if (eq(name, "not"))return 1;
-	if (eq(name, "¬"))return 1;
-	if (eq(name, "-..."))return 1;
-	if (eq(name, "!"))return 1;
-	if (eq(name, "√"))return 1;// !√1 √!-1
-	if (eq(name, "#"))return 3;// count
-	if (eq(name, "++"))return 3;
-//	if (eq(node.name, "+"))return 3;//
-	if (eq(name, "--"))return 3;
-	if (eq(name, "-…"))return 3;// 1 + -x
-
-	if (eq(name, "/"))return 4.9;
-	if (eq(name, "÷"))return 4.9;
-
-
-	if (eq(name, "times"))return 5;
-	if (eq(name, "*"))return 5;
-	if (eq(name, "×"))return 5;
-	if (eq(name, "add"))return 6;
-	if (eq(name, "plus"))return 6;
-	if (eq(name, "+"))return 6;
-	if (eq(name, "minus"))return 6;
-	if (eq(name, "-"))return 6;
-	if (eq(name, "%"))return 6.1;
-	if (eq(name, "rem"))return 6.1;
-	if (eq(name, "modulo"))return 6.1;
-
-	if (eq(name, "<"))return 6.5;
-	if (eq(name, "<="))return 6.5;
-	if (eq(name, ">="))return 6.5;
-	if (eq(name, ">"))return 6.5;
-	if (eq(name, "≥"))return 6.5;
-	if (eq(name, "≤"))return 6.5;
-	if (eq(name, "≈"))return 6.5;
-	if (eq(name, "=="))return 6.6;
-
-	if (eq(name, "and"))return 7.1;
-	if (eq(name, "&&"))return 7.1;
-	if (eq(name, "&"))return 7.1;
-	if (eq(name, "xor"))return 7.2;
-	if (eq(name, "or"))return 7.2;
-	if (eq(name, "||"))return 7.2;
-
-	if (eq(name, ":"))return 7.5;// todo:
-
-	if (name.in(function_list))// f 1 > f 2
-		return 8;// 1000;// function calls outmost operation todo? add 3*square 4+1
-
-	if (eq(name, "⇒"))return 9;// todo
-	if (eq(name, "=>"))return 9;// todo:
-	if (eq(name, "="))return 10;
-	if (eq(name, "≠"))return 10;
-	if (eq(name, "!="))return 10;
-	if (eq(name, ":="))return 11;
-	if (eq(name, "equals"))return 10;
-	if (eq(name, "equal"))return 10;
-	if (eq(name, "else"))return 11.09;
-	if (eq(name, "then"))return 11.15;
-	if (eq(name, "if"))return 100;
-	if (name.in(functor_list))// f 1 > f 2
-		return function_precedence;// if, while, ... statements calls outmost operation todo? add 3*square 4+1
-	return 0;// no precedence
-}
-
-float precedence(Node &operater) {
-	String &name = operater.name;
-//	if (operater == NIL)return 0; error prone
-	if (name.empty())return 0;// no precedence
-	if (operater.kind == reals)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
-	if (operater.kind == longs)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
-	if (operater.kind == strings)return 0;// and name.empty()
-	if (operater.kind == groups or operater.kind == patterns) return precedence("if") * 0.999;// needs to be smaller than functor/function calls
-	if (operater.name.in(function_list))return 999;// function call
-	return precedence(name);
+#endif
 }

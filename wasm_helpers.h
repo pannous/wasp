@@ -85,7 +85,7 @@ void free(void*);
 
 extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_unstable"), import_name("proc_exit")));
 
-extern "C" void raise(chars);
+extern "C" int raise(chars);
 //extern "C" void exit(int code);
 //extern "C" void exit(int fd) __attribute__((__noreturn__));
 //extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_snapshot_preview1"), import_name("proc_exit")));
@@ -109,3 +109,5 @@ void memcpy0(bytes dest, bytes source, int i);
 extern "C"
 int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten)
 __attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")));
+
+int isalnum(int c);
