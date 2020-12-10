@@ -885,9 +885,9 @@ Code nameSection() {
 	return nameSection.clone();
 }
 
-Code dataSection() {
-	return Code();
-}
+//Code dataSection() {
+//	return Code();
+//}
 
 Code eventSection() {
 }
@@ -922,6 +922,10 @@ Code linkingSection() {
  Thread-agnostic objects can be safely linked with objects that do or do not use atomics, although not both at the same time.
 */
 	return createSection(custom, encodeVector(Code("linking") + Code(version) + subsections));
+}
+
+Code dwarfSection(){
+	return createSection(custom, encodeVector(Code("external_debug_info") + Code("main.dwarf")));
 }
 
 /*
@@ -1012,7 +1016,8 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	//			+ dataSection()
 	//			+ linkingSection()
 //	            + nameSection()
-	// + customSection
+//	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
+//	 + customSection
 	;
 	code.debug();
 	if(runtime0)functionSignatures.clear(); // cleanup after NAJA
