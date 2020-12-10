@@ -12,14 +12,20 @@
 
 Node result;
 
+//#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
+#define check(test) if(test){log("\nOK check passes: ");log(#test);}else{ \
+printf("\nNOT PASSING: "); log(#test);log("\n");printf(__FILE__); printf(":%d\n",__LINE__); \
+exit(0);}
+
+
 #define assert(condition) try{\
    if((condition)==0)error("assert FAILED");else printf("\nassert OK: %s\n",#condition);\
    }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
 
 
-//#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
 //#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
@@ -27,13 +33,13 @@ Node result;
 bool assert_equals_x(String a, String b, char *context = "") {
 	if (a == b)
 		printf("OK %s==%s in %s\n", a.data, b.data, context);
-	else printf("FAILED assert_equals!\n %s should be %s in %s\n"s % a % b % context);
+	else printf("\nFAILED assert_equals!\n %s should be %s in %s\n"s % a % b % context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
 	if (a.name != b)
-		printf("FAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
+		printf("\nFAILED assert_equals! %s should be %s in %s\n"s % a.name % b % context);
 //	else printf("OK %s==%s in %s\n"s % a.name % b % context);
 	else printf("OK %d==%s in %s\n", a.name, b, context);
 
@@ -41,14 +47,14 @@ bool assert_equals_x(Node &a, char *b, char *context = "") {
 }
 
 bool assert_equals_x(Node a, double b, char *context = "") {
-	if (a != Node(b))printf("FAILED assert_equals! %s should be %f in %s\n"s % a.name % b % context);
+	if (a != Node(b))printf("\nFAILED assert_equals! %s should be %f in %s\n"s % a.name % b % context);
 //	else printf("OK %f==%f in %s\n"s % a.value.real % b % context);
 	else printf("OK %f==%f\n", a.value.real, b);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, long b, char *context = "") {
-	if (!(a == b))printf("FAILED assert_equals! %s should be %d in %s\n"s % a.name % b % context);
+	if (!(a == b))printf("\nFAILED assert_equals! %s should be %d in %s\n"s % a.name % b % context);
 //	else printf("OK %d==%d in %s\n"s % a.value.longy % b % context);// Uninitialised value was created by a stack allocation
 	else printf("OK %d==%d in %s\n", a.value.longy, b, context);
 	return a == b;
@@ -60,7 +66,7 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 	if (ok)
 		printf("OK %s==%s in %s\n", name.data, b.data, context);
 	else
-		printf("FAILED assert_equals! %s should be %s in %s\n"s % name.data % b % context);
+		printf("\nFAILED assert_equals! %s should be %s in %s\n"s % name.data % b % context);
 	return ok;
 }
 
@@ -71,18 +77,18 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 //		printf("OK %s==%s in %s\n"s % a % b % context);
 		printf("OK %s==%s in %s\n", a.name, b.name, context);
 	else
-		printf("FAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
+		printf("\nFAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
 	return a == b;
 }
 
 //bool assert_equals(chars a, chars b, char *context = "") {
 //	if (a != b)// err
-//		printf("FAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
+//		printf("F\nAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
 //	else printf("OK %s==%s in %s\n"s % a % b % context);
 //	return a == b;
 //}
 bool assert_equals_x(long a, long b, char *context) {
-	if (a != b)printf("FAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
+	if (a != b)printf("\nFAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
 //	else printf("OK %d==%d in %s\n"s % a % b % context);
 	printf("OK %d==%d in %s\n", a, b, context);
 	return a == b;
@@ -93,7 +99,7 @@ inline float abs_(float x) noexcept { return x > 0 ? x : -x; }
 bool assert_equals_x(float a, float b, char *context = "") {
 	float epsilon = abs_(a + b) / 100000.;// 𝕚𝚤:=-1
 	bool ok = a == b or abs_(a - b) <= epsilon;
-	if (!ok)printf("FAILED assert_equals!\n %f should be %f in %s\n"s % a % b % context);
+	if (!ok)printf("\nFAILED assert_equals!\n %f should be %f in %s\n"s % a % b % context);
 	else printf("OK %f==%f in %s\n"s % a % b % context);
 	return ok;
 }
@@ -671,6 +677,9 @@ void testLogic() {
 
 // use the bool() function to determine if a value is truthy or falsy.
 void testTruthiness() {
+//	check(True.value.longy == true);
+//	check(True.name == "true");
+//	check(True == true);
 	assert_is("false", false);
 	assert_is("true", true);
 	assert_is("False", false);
@@ -1049,14 +1058,15 @@ void testStringConcatenation() {
 	assert_equals("a"_s + 'b', "ab");
 	assert_equals("a"_s + "bc", "abc");
 	assert_equals("a"_s + true, "a✔️"_s);
+	assert_equals("a%sb"_s % "hi", "ahib");
+
+	assert_equals("a%db"_s % 123, "a123b");
+	assert_equals("a%s%db"_s % "hi" % 123, "ahi123b");
 }
 
 void testString() {
-	check("%s"s.replace("%s", "ja") == "ja");
-	check("hi %s"s.replace("%s", "ja") == "hi ja");
-	check("%s ok"s.replace("%s", "ja") == "ja ok");
 	check("hi %s ok"s.replace("%s", "ja") == "hi ja ok");
-	check("hi %s ok"s % "ja" == "hi ja ok");
+
 	check("abc"_ == "abc");
 	check("%d"s % 5 == "5");
 	check("%s"s % "ja" == "ja");
@@ -1067,10 +1077,19 @@ void testString() {
 	check("hi %s ok"s % "ja" == "hi ja ok");
 	check("%s %d"s % "hu" % 3 == "hu 3");
 	check("%s %s %d"s % "ha" % "hu" % 3 == "ha hu 3");
-	testStringConcatenation();
-
 	assert_equals(String("abcd").substring(1, 2), "b");// excluding, like js
 	assert_equals(String("abcd").substring(1, 3), "bc");
+	check("%s"s.replace("%s", "ja") == "ja");
+	check("hi %s"s.replace("%s", "ja") == "hi ja");
+	check("%s ok"s.replace("%s", "ja") == "ja ok");
+	check("hi %s ok"s.replace("%s", "ja") == "hi ja ok");
+	auto x = "hi %s ok"s % "ja";
+	check(x);
+	printf("%s",x);
+	printf(x);
+	check(x == "hi ja ok");
+	check("hi %s ok"s % "ja" == "hi ja ok");
+	testStringConcatenation();
 }
 
 
@@ -1280,14 +1299,13 @@ void testNodeBasic(){
 }
 
 void tests() {
+	testString();
 	testAsserts();
 	testNodeName();
 	testStringConcatenation();
 	testConcatenation();
-	testConcatenationBorderCases();
 	testNodeBasic();
 	testStringReferenceReuse();
-	testNilValues();
 	testCall();
 	testWasmString();
 	testNewlineLists();
@@ -1314,6 +1332,8 @@ void tests() {
 	testRootFloat();
 	testCpp();
 //	testErrors();
+	testNilValues();
+
 	testLists();
 	testDeepLists();
 	testGraphParams();
@@ -1343,6 +1363,7 @@ void tests() {
 	testGraphQlQuery2();
 	testUTF();// fails sometimes => bad pointer!?
 	testUnicode_UTF16_UTF32();
+	testConcatenationBorderCases();
 	assert_is("[a b c]#2", "b");
 	assert_is("one plus two times three", 7);
 	skip(

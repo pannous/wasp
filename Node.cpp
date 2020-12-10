@@ -416,7 +416,7 @@ void Node::addRaw(Node *node) {
 	if (length > 0)
 		children[length - 1].next = &children[length];
 	node->parent = this;
-	children[length++] = *node;
+	children[length++] = *node; // invokes memcpy
 }
 
 Node &Node::addRaw(Node &node) {
