@@ -1280,13 +1280,13 @@ void testNodeBasic(){
 }
 
 void tests() {
-	testNodeBasic();
 	testAsserts();
 	testNodeName();
 	testStringConcatenation();
-	testStringReferenceReuse();
 	testConcatenation();
 	testConcatenationBorderCases();
+	testNodeBasic();
+	testStringReferenceReuse();
 	testNilValues();
 	testCall();
 	testWasmString();

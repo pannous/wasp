@@ -14,7 +14,7 @@ ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
 #ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() !
 set(RUNTIME_ONLY 1) # no Angle eval emit etc!
 set(DEBUG 1)
-#set(WASM 1)
+set(WASM 1)
 #set(WASI 1)
 # TO EXECUTE wasm
 #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
