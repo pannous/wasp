@@ -105,7 +105,7 @@ void printf(chars format, void* value) {
 
 }
 int isalnum (int c){
-	return c>20;// todo lol
+	return c>='0' and c<='9' or c>='a' and c<='z' or c>='A' and c <= 'Z';// todo lol
 }
 #endif
 //#define __cxa_allocate_exception 1
@@ -298,24 +298,21 @@ String Backtrace(int skip, int skipEnd){
 	return "Backtrace: TODO";
 }
 #endif
-
+void* memmove0(char *dest, const char *source, size_t num){
+	while (num < MAX_MEM and --num >= 0)
+		dest[num] = source[num];
+}
+void* memmove(void *dest, const void *source, size_t num) {
+	memmove0((char*)dest,(char*) source, num);
+}
 void memcpy0(bytes dest, bytes source, int i) {
 	while (i<MAX_MEM and --i>=0)
 		dest[i] = source[i];
 }
 
 void memcpy0(char *destination, char *source, size_t num) {
-#ifdef WASM
-	if((int)destination>10000 or (int)destination<0 or (int)source>10000 or (int)source<0 ){
-		printf("invalid destination\n");
-		printf("destination %d %x\n",(int)destination,(int)destination);
-		printf("source %d %x\n",(int)source,(int)source);
-		printf("%p\n",destination);
-		printf("%s\n",destination);
-		printf("%s\n",source);
-	}
-#endif
-	while (num<MAX_MEM and --num >= 0)destination[num] = source[num];
+	while (num<MAX_MEM and --num > 0)
+		destination[num] = source[num];
 }
 //void * memcpy (void * destination, const void * source, size_t num ){
 //	memcpy0((char *) destination, (char *) source, num);

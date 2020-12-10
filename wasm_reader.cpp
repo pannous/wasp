@@ -15,7 +15,7 @@ void parseFunctionNames(Code& code);
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
-#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+#define check(test) if(test){log("\nOK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {

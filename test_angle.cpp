@@ -19,8 +19,8 @@ void testOperatorBinding() {
 }
 
 void testCall(){
-	assert_is("square(3)",9)
 	assert_is("square 3",9)
+	assert_is("square(3)",9)
 	assert_is("square(1+2)",9)
 	assert_is("square 1+2",9)
 	assert_is("1+square(2+3)",26)
@@ -299,7 +299,9 @@ void testSmartTypes(){
 	check(Node(0xFFFFFFFF)==-1);
 }
 */
-
+void nl(){
+	log("\n");
+}
 //Prescedence typo for Precedence
 void testLogicPrecedence() {
 	check(precedence("and") > 1);
