@@ -13,6 +13,7 @@
 #include "wasm_helpers.h"
 #include "String.h"
 #include "Backtrace.h"
+#include "Code.h"
 //#define size_t int
 //extern unsigned int *memory;
 
@@ -103,7 +104,7 @@ void printf(chars format, void* value) {
 #endif
 
 }
-int isalnum ( int c ){
+int isalnum (int c){
 	return c>20;// todo lol
 }
 #endif
@@ -153,7 +154,7 @@ char* __heap_base=(char*)memory;
 unsigned int *memory=0;
 unsigned char* __heap_base=0;
 #endif
-char *current=__heap_base + 65536;
+char *current=(char *)__heap_base + 65536;
 
 #ifdef WASM
 void *calloc(int size, int num) {// clean ('0') alloc
@@ -364,4 +365,24 @@ void exit0(){
 	// todo HOW??
 // Error while importing "wasi_snapshot_preview1"."proc_exit": unknown import.
 //}
+#endif
+
+#ifdef RUNTIME_ONLY
+int read_wasm(chars wasm_path){};
+int run_wasm(chars wasm_path){};
+int run_wasm(bytes data,int size){}
+#endif
+
+#ifdef RUNTIME_ONLY_MOCK
+// mock
+Node analyze(Node data){return data;};// wasp -> code  // build ast via operators
+Node eval(String code){return Node(code);};// wasp -> code -> data   // interpreter mode vs:
+Node emit(String code){return Node(code);};//  wasp -> code -> wasm  // to debug currently same as:
+//Node parse(String code) {};// wasp -> data  // this is the pure Wasp part
+//Node run(String source){};// wasp -> code -> wasm() -> data
+//Code &emit(Node root_ast, Module *runtime0, String _start){};
+Node Node::evaluate(bool){ return *this; }
+int read_wasm(chars wasm_path){};
+int run_wasm(chars wasm_path){};
+int run_wasm(bytes data,int size){}
 #endif

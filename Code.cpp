@@ -4,6 +4,8 @@
 
 #include "Code.h"
 
+bytes magicModuleHeader = new byte[]{0x00, 0x61, 0x73, 0x6d};
+bytes moduleVersion = new byte[]{0x01, 0x00, 0x00, 0x00};
 
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
 	bytes c = new unsigned char[len_a + len_b];// why+4 ?? else heap-buffer-overflow
