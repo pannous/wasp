@@ -7,8 +7,6 @@ project(wasp)
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
-set(DEBUG 1)
-ADD_COMPILE_DEFINITIONS(DEBUG)
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
 
 #ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() !
@@ -42,11 +40,12 @@ include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/
 
 
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
+ADD_COMPILE_FLAG("-Wno-writable-strings") # allow conversion from string literal to 'char *'
+
 if(DEBUG)
     ADD_COMPILE_FLAG(" -g -O0 -v ") # DEBUG
 else()
     ADD_COMPILE_FLAG("-w") # hide warnings
-    ADD_COMPILE_FLAG("-Wno-writable-strings")
     ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # -mmacosx-version-min=11.0
     ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
     ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
@@ -87,7 +86,7 @@ if (WASM) # OR WASI)
     #-lwasmer
     ADD_COMPILE_FLAG("-Wl,--entry=main,--demangle,--allow-undefined,--no-check-features,-t") # wasm-ld flags forwarded from clang
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
-    #    ADD_COMPILE_FLAG("-Wl,-z,stack-size=$[8 * 1024 * 1024]") # Set maximum stack size to 8MiB
+    ADD_COMPILE_FLAG("-Wl,-z,stack-size=1073741824") # Set maximum stack size to 1GB / 8MiB 1073741824
     #    -flto \ # Add metadata for link-time optimizations
     if(DEBUG)
         ADD_COMPILE_FLAG("-Wl,-t,--verbose,--export-table") # ,-O0  VERBOSE!

@@ -594,6 +594,9 @@ private:
 
 	Node resolve(Node node) {
 //		if
+		log("resolve");
+		log(node.name);
+
 		if (node.name == "false")return False;
 		if (node.name == "False")return False;
 		if (node.name == "no")return False;
@@ -1287,7 +1290,7 @@ int main(int argp, char **argv) {
 #ifdef WASM
 //		String args(current);
 		String args((char*)alloc(1,1));// hack: written to by wasmx
-		args.data[0] = '{';
+//		args.data[0] = '{';
 		log(args);
 		current += strlen0(args)+1;
 #endif
@@ -1320,99 +1323,3 @@ extern "C" void _start() { // for wasm-ld
 	main(0, 0);
 }
 #endif
-
-// todo!
-// moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-chars function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
-                         "logx", "logc", "id", 0};// MUST END WITH 0, else BUG
-chars functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
-
-float precedence(Node &operater) {
-	String &name = operater.name;
-//	if (operater == NIL)return 0; error prone
-	if (name.empty())return 0;// no precedence
-	if (operater.kind == reals)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
-	if (operater.kind == longs)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
-	if (operater.kind == strings)return 0;// and name.empty()
-	if (operater.kind == groups or operater.kind == patterns) return precedence("if") * 0.999;// needs to be smaller than functor/function calls
-	if (operater.name.in(function_list))return 999;// function call todo: remove here
-	return precedence(name);
-}
-
-
-float function_precedence = 1000;
-
-float precedence(String name) {
-	// like c++ here HIGHER up == lower value == more important
-//	switch (node.name) nope
-//		name = operater.value.string;// NO strings are not automatic operators lol WTF
-	if (eq(name, "."))return 0.5;
-	if (eq(name, "of"))return 0.6;
-	if (eq(name, "in"))return 0.7;
-	if (eq(name, "from"))return 0.8;
-
-	if (eq(name, "not"))return 1;
-	if (eq(name, "¬"))return 1;
-	if (eq(name, "-..."))return 1;
-	if (eq(name, "!"))return 1;
-	if (eq(name, "√"))return 1;// !√1 √!-1
-	if (eq(name, "#"))return 3;// count
-	if (eq(name, "++"))return 3;
-//	if (eq(node.name, "+"))return 3;//
-	if (eq(name, "--"))return 3;
-	if (eq(name, "-…"))return 3;// 1 + -x
-
-	if (eq(name, "/"))return 4.9;
-	if (eq(name, "÷"))return 4.9;
-
-
-	if (eq(name, "times"))return 5;
-	if (eq(name, "*"))return 5;
-	if (eq(name, "×"))return 5;
-	if (eq(name, "add"))return 6;
-	if (eq(name, "plus"))return 6;
-	if (eq(name, "+"))return 6;
-	if (eq(name, "minus"))return 6;
-	if (eq(name, "-"))return 6;
-	if (eq(name, "%"))return 6.1;
-	if (eq(name, "rem"))return 6.1;
-	if (eq(name, "modulo"))return 6.1;
-
-	if (eq(name, "<"))return 6.5;
-	if (eq(name, "<="))return 6.5;
-	if (eq(name, ">="))return 6.5;
-	if (eq(name, ">"))return 6.5;
-	if (eq(name, "≥"))return 6.5;
-	if (eq(name, "≤"))return 6.5;
-	if (eq(name, "≈"))return 6.5;
-	if (eq(name, "=="))return 6.6;
-
-	if (eq(name, "and"))return 7.1;
-	if (eq(name, "&&"))return 7.1;
-	if (eq(name, "&"))return 7.1;
-	if (eq(name, "xor"))return 7.2;
-	if (eq(name, "or"))return 7.2;
-	if (eq(name, "||"))return 7.2;
-
-	if (eq(name, ":"))return 7.5;// todo:
-
-	if (name.in(function_list))// f 1 > f 2
-		return 8;// 1000;// function calls outmost operation todo? add 3*square 4+1
-
-	if (eq(name, "⇒"))return 9;// todo
-	if (eq(name, "=>"))return 9;// todo:
-	if (eq(name, "="))return 10;
-	if (eq(name, "≠"))return 10;
-	if (eq(name, "!="))return 10;
-	if (eq(name, ":="))return 11;
-	if (eq(name, "equals"))return 10;
-	if (eq(name, "equal"))return 10;
-	if (eq(name, "else"))return 11.09;
-	if (eq(name, "then"))return 11.15;
-	if (eq(name, "if"))return 100;
-	if (name.in(functor_list))// f 1 > f 2
-		return function_precedence;// if, while, ... statements calls outmost operation todo? add 3*square 4+1
-	return 0;// no precedence
-}
-
-

@@ -35,6 +35,12 @@
             if (print) console.error(ex); else return trimStack(ex)
         }
     }
+    function memmove(d,s,nr){
+        raise("who calls this??")
+        while(--nr>=0) buffer[d+nr]=buffer[s+nr];// todo: 1. DO IT IN WASM! 2. OK??
+    }
+
+
     // This is googles recommended way of loading WebAssembly.
     // try {
         // const response = await fetch('wasp.wasm')
@@ -42,6 +48,7 @@
         let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
         imports = {
             env: {
+
                 // if compiled without Angle:
                 _ZN4Node8evaluateEb: x=>x,
                 _Z4eval6String: x=>x,
@@ -51,8 +58,11 @@
     // : x=>x,
     // : x=>x,
                 Backtrace,
+                memmove,
                 raise: x => {throw new Error(string(x))},
                 printf: x => console.log(string(x)),
+                puts: x => console.log(x),// todo
+                putchar: x => console.log(x),// todo
                 log: x => console.log(x),// todo
                 logi: x => console.log(x),
                 // logc:x=>console.log(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
