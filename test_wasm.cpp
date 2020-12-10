@@ -400,9 +400,19 @@ void testMergeWabt(){
 	check(ok==42);
 }
 
+void testWasmRuntimeExtension() {
+#ifndef RUNTIME_ONLY
+	Module runtime = read_wasm("wasp.wasm");
+	Node charged = analyze(parse("test:=42"));
+	Code lib = emit(charged, &runtime, "main");
+	lib.save("main.wasm");
+	lib.run();
+#endif
+}
+
 //testMerge
 void testWasmModuleExtension(){
-	functionSignatures.clear();
+#ifndef RUNTIME_ONLY
 	Node charged = analyze(parse("test:=42"));
 	Code lib = emit(charged,0,"lib_main");
 	lib.save("lib.wasm");
@@ -417,11 +427,13 @@ void testWasmModuleExtension(){
 	int ok = merged.run();
 //	int ok = main.run();
 	check(ok==42);
+#endif
 }
 
 
 
 void testMergeRelocate(){
+#ifndef RUNTIME_ONLY
 	// doesn't work: cannot insert imports or function types!
 //	emit("test");
 //	merge_files({"test.wasm", "test-lld-wasm/lib.wasm"});
@@ -434,6 +446,7 @@ void testMergeRelocate(){
 	merged.run();
 //	wabt::Module *merged=merge_wasm(lib, main);
 //	save_wasm(merged, "prog.wasm");
+#endif
 }
 
 void testAllWasm() {
@@ -441,6 +454,8 @@ void testAllWasm() {
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
 	testWasmModuleExtension();
+	testWasmRuntimeExtension();
+
 //	testMerge();
 //	exit(0);
 //	testRefactor();

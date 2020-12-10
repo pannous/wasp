@@ -1,4 +1,4 @@
-<script src="wasp.js"></script>
+<!--<script src="wasp.js"></script>-->
 <script type="text/javascript">
     var buffer;
 
@@ -36,12 +36,20 @@
         }
     }
     // This is googles recommended way of loading WebAssembly.
-    try {
+    // try {
         // const response = await fetch('wasp.wasm')
         let memory_size = 65536
         let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
         imports = {
             env: {
+                // if compiled without Angle:
+                _ZN4Node8evaluateEb: x=>x,
+                _Z4eval6String: x=>x,
+                _Z4emit6String: x=>x,
+    // : x=>x,
+    // : x=>x,
+    // : x=>x,
+    // : x=>x,
                 Backtrace,
                 raise: x => {throw new Error(string(x))},
                 printf: x => console.log(string(x)),
@@ -83,8 +91,8 @@
                 //alert(result)
             }
         )
-    } catch (error) {
-        console.log(error)
-        console.log("\n RUN as\n sudo python3 -m http.server")
-    }
+    // } catch (error) {
+    //     console.log(error)
+    //     console.log("\n RUN as\n sudo python3 -m http.server")
+    // }
 </script>%

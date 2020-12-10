@@ -7,9 +7,7 @@
 #undef assert // <cassert> / <assert.h>
 
 #ifndef WASM
-
-#include <codecvt> // utf8 magic
-
+#include <codecvt> // utf8 magic ...?
 #endif
 
 Node result;
@@ -212,10 +210,12 @@ void testDeepCopyDebugBugBug2() {
 
 
 void testEmitter() {
+#ifndef RUNTIME_ONLY
 	Node node = Node(42);
 	Code &code = emit(node);
 	int result = code.run();
 	check(result == 42);
+#endif
 }
 
 void testNetBase() {
@@ -1263,9 +1263,6 @@ void testGroupCascade() {
 
 
 void tests() {
-	assert_is("[a b c]#2", "b");
-	assert_is("one plus two times three", 7);
-	testUnicode_UTF16_UTF32();
 	testStringReferenceReuse();
 	testNilValues();
 	testCall();
@@ -1327,8 +1324,11 @@ void tests() {
 	testGraphQlQuery();// fails sometimes => bad pointer!?
 	testGraphQlQuery2();
 	testUTF();// fails sometimes => bad pointer!?
-	testRecentRandomBugs();
+	testUnicode_UTF16_UTF32();
+	assert_is("[a b c]#2", "b");
+	assert_is("one plus two times three", 7);
 	skip(
+			testRecentRandomBugs();
 			testKitchensink();
 			testGroupCascade();
 	)
@@ -1371,15 +1371,18 @@ void testCurrent() { // move to tests() once OK
 //	testGroupCascade();
 //	testKitchensink(); // TODO Oooo!
 //	testWasmString();
-	testAllWasm();
+//	testAllWasm();
 
 //	exit(1);
 	tests();// make sure all still ok before changes
 #ifndef WASI
 #ifndef WASM
+
+#ifndef RUNTIME_ONLY
 	testAllWasm();
-	testAngle();
 	testWasmString();
+#endif
+	testAngle();
 	todos();// those not passing yet (skip)
 #endif
 #endif
