@@ -217,7 +217,7 @@ public:
 	}
 
 //	explicit
-	String(const char string[],bool copy=true) {
+	String(const char string[],bool copy=false/*true*/) {
 //		data = const_cast<char *>(string);// todo heap may disappear, use copy!
 		length = strlen0(string);
 		if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
@@ -357,7 +357,7 @@ public:
 		if (to <= from)return EMPTY_STRING;
 		int len = to - from;
 		if(ref){
-			return String(data+from, len,ref);
+			return *new String(data+from, len,ref);
 		}
 
 		auto neu = static_cast<char *>(alloc((sizeof(char)), len + 1));
@@ -368,7 +368,7 @@ public:
 //#endif
 		neu[to - from] = 0;
 		neu[len] = 0;
-		return String(neu);
+		return *new String(neu);
 //		free(neu);
 	}
 
