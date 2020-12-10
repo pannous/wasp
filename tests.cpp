@@ -1328,8 +1328,8 @@ void tests() {
 	assert_is("[a b c]#2", "b");
 	assert_is("one plus two times three", 7);
 	skip(
-			testRecentRandomBugs();
 			testKitchensink();
+			testRecentRandomBugs();
 			testGroupCascade();
 	)
 #ifdef APPLE
