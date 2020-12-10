@@ -108,7 +108,7 @@ public:
 //	}
 
 	void *operator new(size_t size) {
-		return static_cast<Node *>(calloc(sizeof(Node), size));// WOW THAT WORKS!!!
+		return (Node *)(calloc(sizeof(Node), size));// WOW THAT WORKS!!!
 	}
 
 	void operator delete(void *a) {

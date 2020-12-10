@@ -101,7 +101,7 @@ void* memcpy (void * destination, const void * source, size_t num );// asm ("mem
 //__attribute__((import_module("env"), import_name("memcpy")));;
 extern "C" void memcpy0 ( char * destination, char * source, size_t num );
 void memcpy0(bytes dest, bytes source, int i);
-
+void* memmove(void *__dst, const void *__src, size_t num);
 
 
 

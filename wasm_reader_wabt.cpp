@@ -35,7 +35,7 @@ static bool dump_module = false;//debug
 
 #define consume(len, bytes) if(!consume_x(code,&pos,len,bytes)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
-#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+#define check(test) if(test){log("OK check passes: ");printf("%s",(#test));}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 #define pointerr std::unique_ptr
 
