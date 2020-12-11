@@ -600,6 +600,8 @@ Node do_call(Node left, Node op0, Node right) {
 	if (op == "id")return right;// identity
 	if (op == "square")return square(right.numbere());
 	if (op == "√")return sqrt1(right.numbere());
+	if (op == "printf"){log(right);return right;}
+
 	error("Unregistered function "s + op);
 	return ERROR;
 }

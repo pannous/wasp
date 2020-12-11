@@ -176,7 +176,7 @@ public:
 	}
 	void save(char* file_name="test.wasm"){
 #ifndef WASM
-		FILE* file=fopen(file_name,"w");
+		FILE* file=fopen(file_name,"wb");
 		fwrite(data, length, 1, file);
 		fclose(file);
 #endif
