@@ -40,7 +40,6 @@
         while(--nr>=0) buffer[d+nr]=buffer[s+nr];// todo: 1. DO IT IN WASM! 2. OK??
     }
 
-
     // This is googles recommended way of loading WebAssembly.
     // try {
         // const response = await fetch('wasp.wasm')
@@ -48,15 +47,7 @@
         let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
         imports = {
             env: {
-
                 // if compiled without Angle:
-                _ZN4Node8evaluateEb: x=>x,
-                _Z4eval6String: x=>x,
-                _Z4emit6String: x=>x,
-    // : x=>x,
-    // : x=>x,
-    // : x=>x,
-    // : x=>x,
                 Backtrace,
                 memmove,
                 raise: x => {throw new Error(string(x))},
@@ -71,7 +62,7 @@
             wasi_unstable: {
                 // wasi_snapshot_preview1:{
                 ok: x => console.log("OK"),
-                proc_exit: x => process.exit(x),
+                proc_exit: x => {throw "exit"},//exit(x),
                 fd_write: (a, b, c, d) => {
                     console.log(a, b, c, d, string(1024 + buffer[b]));
                     return -1

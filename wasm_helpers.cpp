@@ -116,6 +116,7 @@ int isalnum (int c){
 extern bool throwing;// false for error tests etc
 int raise(chars error) {
 	if (throwing) throw error;
+	return -1;
 }
 
 #else
@@ -151,13 +152,22 @@ unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(mal
 char *memoryChars=(char*)memory;
 char* __heap_base=(char*)memory;
 #else
-unsigned int *memory=0;
-unsigned char* __heap_base=0;
+//unsigned int *memory=0;
+//unsigned char* __heap_base=0;
 #endif
-char *current=(char *)__heap_base + 65536;
+//char *current=(char *)__heap_base + 65536/2;
+char *current=(char *)memory + 65536/2;
 
 #ifdef WASM
+
+
+void panic(){
+	char* x=0;
+	x[-1]=2;// Bus error: 10
+}
+
 void *calloc(int size, int num) {// clean ('0') alloc
+	if(num==10000*100)panic();//debug
 	char *mem =(char *) malloc(size * num);
 	while (num<MAX_MEM and num > 0) { ((char *) mem)[--num] = 0; }
 	return mem;
@@ -301,9 +311,11 @@ String Backtrace(int skip, int skipEnd){
 void* memmove0(char *dest, const char *source, size_t num){
 	while (num < MAX_MEM and --num >= 0)
 		dest[num] = source[num];
+	return dest;
+// memmove will never return anything other than dest.  It's useful for chaining
 }
 void* memmove(void *dest, const void *source, size_t num) {
-	memmove0((char*)dest,(char*) source, num);
+	return memmove0((char*)dest,(char*) source, num);
 }
 void memcpy0(bytes dest, bytes source, int i) {
 	while (i<MAX_MEM and --i>=0)
@@ -375,9 +387,9 @@ void exit0(){
 #endif
 
 #ifdef RUNTIME_ONLY
-int read_wasm(chars wasm_path){};
-int run_wasm(chars wasm_path){};
-int run_wasm(bytes data,int size){}
+int read_wasm(chars wasm_path){return -1;};
+int run_wasm(chars wasm_path){return -1;};
+int run_wasm(bytes data,int size){return -1;}
 #endif
 
 #ifdef RUNTIME_ONLY_MOCK
