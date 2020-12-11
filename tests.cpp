@@ -1318,21 +1318,38 @@ void testGroupCascade() {
 }
 
 void testNodeBasic() {
-	Node a = Node("a");
-	check(a.name == "a");
-	check(a == "a");
 	Node a1 = Node(1);
-	check(a1.name == "1");// debug only!
+//	check(a1.name == "1");// debug only!
 	check(a1 == 1);
 	Node a11 = Node(1.1);
 	check_eq(a11.name, "1.1");
 	check(a11 == 1.1);
-	Node b = Node("b");
-	a.add(b);
-	a["b"] = "c";
+
+	Node a = Node("a");
+	check(a.name == "a");
+	check(a == "a");
+	Node b = Node("c");
+	a.addRaw(b);
+	check_eq(a.length , 1);
+	check(a.children);
+	Node *b2 = b.clone();
+	check(b==b2);
+	check_eq(b , a.children[0]);
+	check(a.has("b"));
+	check(b == a.has("b"));
+
+//	a["b"] = "c";
+	check_eq(b , a.children[0]);
+	check(a.has("b"));
+	check(b == a.has("b"));
+
+//	a["b"] = "c";
 	a["d"] = "e";
-	check(a.length == 2);
+	check_eq(a.length , 2);
 	check(a["b"] == "c");
+
+	a.add(b);
+
 }
 
 void tests() {
