@@ -95,19 +95,24 @@ extern "C" int raise(chars);
 #endif
 
 extern "C" int printf(chars s, ...);  //stdio
+//extern "C" int printf(chars s, String c);  conflict
+
 
 extern "C"
 void* memcpy (void * destination, const void * source, size_t num );// asm ("memcpy");;
 //__attribute__((import_module("env"), import_name("memcpy")));;
 extern "C" void memcpy0 ( char * destination, char * source, size_t num );
 void memcpy0(bytes dest, bytes source, int i);
-void* memmove(void *__dst, const void *__src, size_t num);
+extern "C" void* memmove(void *__dst, const void *__src, size_t num);
 
 
 
 //extern "C" void _fd_write(int fd, const wasi_buffer *iovs, size_t iovs_len, size_t *nwritten);
 extern "C"
-int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten)
+#ifdef WASI
+int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
 __attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")));
-
+#else
+int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
+#endif
 int isalnum(int c);

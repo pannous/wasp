@@ -147,7 +147,7 @@ public:
 				kind = reals;
 				break;
 			case any:
-				*this = *(Node *) memory[payload];
+				*this = memory[payload];// todo
 				break;
 			case symbola:
 				name = String(&memoryChars[payload]); // todo 0x10 ... 0x1F or length header
@@ -396,14 +396,14 @@ public:
 
 	Node &operator[](String s);
 
-	Node &operator[](String s) const;
+//	Node &operator[](String s) const;
 
 	Node &operator=(int i);
 
 	Node &operator=(chars s);
 
 
-	Node &set(String string, Node *node);
+	Node & set(String string, Node *node);
 
 	Node evaluate(bool expectOperator = false);
 
@@ -441,7 +441,7 @@ public:
 		printf(" length:%d", length);
 		printf(" type: %s", typeName(kind));
 		const String &string1 = serializeValue(false);
-		printf(" value: %s\n\n", string1);// NEEDS "%s", otherwise HACKABLE
+		printf(" value: %s\n\n", string1.data);// NEEDS "%s", otherwise HACKABLE
 //			printf("name:%s ", name.data);
 //		printf("length:%i ", length);
 //		printf("type:%s ", typeName(type).data);
