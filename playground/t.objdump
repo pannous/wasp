@@ -1,0 +1,235 @@
+
+t.wasm:	file format wasm 0x1
+
+Sections:
+
+     Type start=0x0000000a end=0x0000001d (size=0x00000013) count: 4
+ Function start=0x0000001f end=0x00000026 (size=0x00000007) count: 6
+    Table start=0x00000028 end=0x0000002d (size=0x00000005) count: 1
+   Memory start=0x0000002f end=0x00000032 (size=0x00000003) count: 1
+   Global start=0x00000034 end=0x00000065 (size=0x00000031) count: 8
+   Export start=0x00000068 end=0x0000012b (size=0x000000c3) count: 15
+     Code start=0x0000012e end=0x0000026a (size=0x0000013c) count: 6
+     Data start=0x0000026c end=0x00000277 (size=0x0000000b) count: 1
+   Custom start=0x0000027a end=0x00000354 (size=0x000000da) ".debug_info"
+   Custom start=0x00000356 end=0x0000038c (size=0x00000036) ".debug_ranges"
+   Custom start=0x0000038f end=0x0000042b (size=0x0000009c) ".debug_abbrev"
+   Custom start=0x0000042e end=0x000004d6 (size=0x000000a8) ".debug_line"
+   Custom start=0x000004d9 end=0x0000058f (size=0x000000b6) ".debug_str"
+   Custom start=0x00000591 end=0x000005d3 (size=0x00000042) "name"
+   Custom start=0x000005d6 end=0x0000065b (size=0x00000085) "producers"
+
+Section Details:
+
+Type[4]:
+ - type[0] () -> nil
+ - type[1] (i32) -> i32
+ - type[2] (i32, i32) -> i32
+ - type[3] () -> i32
+Function[6]:
+ - func[0] sig=0 <__wasm_call_ctors>
+ - func[1] sig=0 <panic>
+ - func[2] sig=1 <id>
+ - func[3] sig=2 <add>
+ - func[4] sig=3 <__original_main>
+ - func[5] sig=2 <main>
+Table[1]:
+ - table[0] type=funcref initial=1 max=1
+Memory[1]:
+ - memory[0] pages: initial=2
+Global[8]:
+ - global[0] i32 mutable=1 - init i32=66576
+ - global[1] i32 mutable=0 <x> - init i32=1024
+ - global[2] i32 mutable=0 <__dso_handle> - init i32=1024
+ - global[3] i32 mutable=0 <__data_end> - init i32=1028
+ - global[4] i32 mutable=0 <__global_base> - init i32=1024
+ - global[5] i32 mutable=0 <__heap_base> - init i32=66576
+ - global[6] i32 mutable=0 <__memory_base> - init i32=0
+ - global[7] i32 mutable=0 <__table_base> - init i32=1
+Export[15]:
+ - memory[0] -> "memory"
+ - table[0] -> "__indirect_function_table"
+ - func[0] <__wasm_call_ctors> -> "__wasm_call_ctors"
+ - func[1] <panic> -> "panic"
+ - func[2] <id> -> "id"
+ - func[3] <add> -> "add"
+ - func[4] <__original_main> -> "__original_main"
+ - func[5] <main> -> "main"
+ - global[1] -> "x"
+ - global[2] -> "__dso_handle"
+ - global[3] -> "__data_end"
+ - global[4] -> "__global_base"
+ - global[5] -> "__heap_base"
+ - global[6] -> "__memory_base"
+ - global[7] -> "__table_base"
+Code[6]:
+ - func[0] size=2 <__wasm_call_ctors>
+ - func[1] size=64 <panic>
+ - func[2] size=73 <id>
+ - func[3] size=61 <add>
+ - func[4] size=94 <__original_main>
+ - func[5] size=15 <main>
+Data[1]:
+ - segment[0] memory=0 size=4 - init i32=1024
+  - 0000400: 7b00 0000                                {...
+Custom:
+ - name: ".debug_info"
+Custom:
+ - name: ".debug_ranges"
+Custom:
+ - name: ".debug_abbrev"
+Custom:
+ - name: ".debug_line"
+Custom:
+ - name: ".debug_str"
+Custom:
+ - name: "name"
+ - func[0] <__wasm_call_ctors>
+ - func[1] <panic>
+ - func[2] <id>
+ - func[3] <add>
+ - func[4] <__original_main>
+ - func[5] <main>
+Custom:
+ - name: "producers"
+
+Code Disassembly:
+
+000130 func[0] <__wasm_call_ctors>:
+ 000131: 0b                         | end
+000133 func[1] <panic>:
+ 000134: 08 7f                      | local[0..7] type=i32
+ 000136: 23 80 80 80 80 00          | global.get 0
+ 00013c: 21 00                      | local.set 0
+ 00013e: 41 10                      | i32.const 16
+ 000140: 21 01                      | local.set 1
+ 000142: 20 00                      | local.get 0
+ 000144: 20 01                      | local.get 1
+ 000146: 6b                         | i32.sub
+ 000147: 21 02                      | local.set 2
+ 000149: 41 02                      | i32.const 2
+ 00014b: 21 03                      | local.set 3
+ 00014d: 41 00                      | i32.const 0
+ 00014f: 21 04                      | local.set 4
+ 000151: 20 02                      | local.get 2
+ 000153: 20 04                      | local.get 4
+ 000155: 36 02 0c                   | i32.store 2 12
+ 000158: 20 02                      | local.get 2
+ 00015a: 28 02 0c                   | i32.load 2 12
+ 00015d: 21 05                      | local.set 5
+ 00015f: 41 7f                      | i32.const 4294967295
+ 000161: 21 06                      | local.set 6
+ 000163: 20 05                      | local.get 5
+ 000165: 20 06                      | local.get 6
+ 000167: 6a                         | i32.add
+ 000168: 21 07                      | local.set 7
+ 00016a: 20 07                      | local.get 7
+ 00016c: 20 03                      | local.get 3
+ 00016e: 3a 00 00                   | i32.store8 0 0
+ 000171: 0f                         | return
+ 000172: 0b                         | end
+000174 func[2] <id>:
+ 000175: 06 7f                      | local[0..5] type=i32
+ 000177: 23 80 80 80 80 00          | global.get 0
+ 00017d: 21 01                      | local.set 1
+ 00017f: 41 10                      | i32.const 16
+ 000181: 21 02                      | local.set 2
+ 000183: 20 01                      | local.get 1
+ 000185: 20 02                      | local.get 2
+ 000187: 6b                         | i32.sub
+ 000188: 21 03                      | local.set 3
+ 00018a: 20 03                      | local.get 3
+ 00018c: 24 80 80 80 80 00          | global.set 0
+ 000192: 20 03                      | local.get 3
+ 000194: 20 00                      | local.get 0
+ 000196: 36 02 0c                   | i32.store 2 12
+ 000199: 10 81 80 80 80 00          | call 1 <panic>
+ 00019f: 20 03                      | local.get 3
+ 0001a1: 28 02 0c                   | i32.load 2 12
+ 0001a4: 21 04                      | local.set 4
+ 0001a6: 41 10                      | i32.const 16
+ 0001a8: 21 05                      | local.set 5
+ 0001aa: 20 03                      | local.get 3
+ 0001ac: 20 05                      | local.get 5
+ 0001ae: 6a                         | i32.add
+ 0001af: 21 06                      | local.set 6
+ 0001b1: 20 06                      | local.get 6
+ 0001b3: 24 80 80 80 80 00          | global.set 0
+ 0001b9: 20 04                      | local.get 4
+ 0001bb: 0f                         | return
+ 0001bc: 0b                         | end
+0001be func[3] <add>:
+ 0001bf: 06 7f                      | local[0..5] type=i32
+ 0001c1: 23 80 80 80 80 00          | global.get 0
+ 0001c7: 21 02                      | local.set 2
+ 0001c9: 41 10                      | i32.const 16
+ 0001cb: 21 03                      | local.set 3
+ 0001cd: 20 02                      | local.get 2
+ 0001cf: 20 03                      | local.get 3
+ 0001d1: 6b                         | i32.sub
+ 0001d2: 21 04                      | local.set 4
+ 0001d4: 20 04                      | local.get 4
+ 0001d6: 20 00                      | local.get 0
+ 0001d8: 36 02 0c                   | i32.store 2 12
+ 0001db: 20 04                      | local.get 4
+ 0001dd: 20 01                      | local.get 1
+ 0001df: 36 02 08                   | i32.store 2 8
+ 0001e2: 20 04                      | local.get 4
+ 0001e4: 28 02 0c                   | i32.load 2 12
+ 0001e7: 21 05                      | local.set 5
+ 0001e9: 20 04                      | local.get 4
+ 0001eb: 28 02 08                   | i32.load 2 8
+ 0001ee: 21 06                      | local.set 6
+ 0001f0: 20 05                      | local.get 5
+ 0001f2: 20 06                      | local.get 6
+ 0001f4: 6a                         | i32.add
+ 0001f5: 21 07                      | local.set 7
+ 0001f7: 20 07                      | local.get 7
+ 0001f9: 0f                         | return
+ 0001fa: 0b                         | end
+0001fc func[4] <__original_main>:
+ 0001fd: 0a 7f                      | local[0..9] type=i32
+ 0001ff: 23 80 80 80 80 00          | global.get 0
+ 000205: 21 00                      | local.set 0
+ 000207: 41 10                      | i32.const 16
+ 000209: 21 01                      | local.set 1
+ 00020b: 20 00                      | local.get 0
+ 00020d: 20 01                      | local.get 1
+ 00020f: 6b                         | i32.sub
+ 000210: 21 02                      | local.set 2
+ 000212: 20 02                      | local.get 2
+ 000214: 24 80 80 80 80 00          | global.set 0
+ 00021a: 41 16                      | i32.const 22
+ 00021c: 21 03                      | local.set 3
+ 00021e: 41 14                      | i32.const 20
+ 000220: 21 04                      | local.set 4
+ 000222: 41 00                      | i32.const 0
+ 000224: 21 05                      | local.set 5
+ 000226: 20 02                      | local.get 2
+ 000228: 20 05                      | local.get 5
+ 00022a: 36 02 0c                   | i32.store 2 12
+ 00022d: 20 03                      | local.get 3
+ 00022f: 20 04                      | local.get 4
+ 000231: 10 83 80 80 80 00          | call 3 <add>
+ 000237: 21 06                      | local.set 6
+ 000239: 20 06                      | local.get 6
+ 00023b: 10 82 80 80 80 00          | call 2 <id>
+ 000241: 21 07                      | local.set 7
+ 000243: 41 10                      | i32.const 16
+ 000245: 21 08                      | local.set 8
+ 000247: 20 02                      | local.get 2
+ 000249: 20 08                      | local.get 8
+ 00024b: 6a                         | i32.add
+ 00024c: 21 09                      | local.set 9
+ 00024e: 20 09                      | local.get 9
+ 000250: 24 80 80 80 80 00          | global.set 0
+ 000256: 20 07                      | local.get 7
+ 000258: 0f                         | return
+ 000259: 0b                         | end
+00025b func[5] <main>:
+ 00025c: 01 7f                      | local[0] type=i32
+ 00025e: 10 84 80 80 80 00          | call 4 <__original_main>
+ 000264: 21 02                      | local.set 2
+ 000266: 20 02                      | local.get 2
+ 000268: 0f                         | return
+ 000269: 0b                         | end

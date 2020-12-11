@@ -1,0 +1,11 @@
+replacing "main" with "0x6DE28891" in hexedit works, and can be invoked:
+wasmer t.wasm -i m∑ 
+
+wat does not work though
+w2w yields $m___ instead of $m∑ and does not compile back:
+
+(module
+  (type (;0;) (func (result i32)))
+  (func $m∑ (type 0) (result i32)
+    i32.const 123)
+  (export "m\e2\88\91" (func $m∑)))
