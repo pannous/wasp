@@ -304,19 +304,19 @@ void testWasmIf() {
 
 
 void testWasmMemoryIntegrity() {
+	printf("MEMORY start at %d\n",memory);
+	printf("current start at %d\n",current);
 //	Bus error: 10  if i > memory_size
-	for (int i = 0; i <= 32624 / 2 /*memory_size*/; ++i) {
+// Fails at 100000, works at 100001 WHERE IS THIS SET?
+//	int start=125608;
+	int start=heap_offset;// out of bounds table access CORRUPTION!
+	for (int i = start; i <= start+32624 / 2 /*memory_size*/; ++i) {
+//		memory[i] = memory[i]+1;
+//		memory[i] = memory[i]-1;
 		memory[i] = i;
 		if (memory[i] != i) {
-//			printf("MEMORY CORRUPTION");
-			exit(-1);
-		}
-	}
-
-//	String s = "ja %s gut"s % "so";
-	for (int i = 0; i <= 32624 / 2 /*memory_size*/; ++i) {
-		if (memory[i] != i) {
-//			logi(i);
+			printf("MEMORY CORRUPTION at %d",i);
+			exit(0);
 		}
 	}
 }
@@ -450,6 +450,7 @@ void testMergeRelocate(){
 }
 
 void testAllWasm() {
+	testWasmMemoryIntegrity();
 	// todo: reuse all tests via
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
