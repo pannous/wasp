@@ -35,19 +35,19 @@ void todo(chars error) {
 
 //new String();
 //auto ws = {' ', '\t', '\r', '\n'};
-Node Infinity = Node("Infinity");
-Node NegInfinity = Node("-Infinity");
-Node NaN = Node("NaN");
+const Node Infinity = Node("Infinity");
+const Node NegInfinity = Node("-Infinity");
+const Node NaN = Node("NaN");
 //NIL=0;
 //Node NIL;
-const Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent
-Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
-Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
-Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent
+const Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
+const Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
+const Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
+const Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
 
-Node ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
-Node True = Node("True").setType(bools).setValue(true);
-Node False = Node("False").setType(bools);
+const Node ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
+const Node True = Node("True").setType(bools).setValue(true);
+const Node False = Node("False").setType(bools);
 
 Node &Node::operator=(int i) {
 	value.longy = i;
@@ -268,8 +268,8 @@ bool Node::operator==(Node &other) {
 	if (isEmpty() and
 	    other.isEmpty()) // todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
 		return true;
-	if (name == NIL.name.data or name == False.name or name == "")
-		if (other.name == NIL.name.data or other.name == False.name or other.name == "")
+	if (name == NIL.name.data or name == False.name.data or name == "")
+		if (other.name == NIL.name.data or other.name == False.name.data or other.name == "")
 			return true;// TODO: SHOULD already BE SAME by engine!
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// reference ~= its value
