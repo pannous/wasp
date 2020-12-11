@@ -1085,13 +1085,11 @@ void testStringConcatenation() {
 	assert_equals("a"_s + "2.2", "a2.2");
 	assert_equals("a"_s + 'b', "ab");
 	assert_equals("a"_s + "bc", "abc");
+	assert_equals("a"_s + true, "a✔️"_s);
 	assert_equals("a%sb"_s % "hi", "ahib");
 
 	assert_equals("a%db"_s % 123, "a123b");
 	assert_equals("a%s%db"_s % "hi" % 123, "ahi123b");
-#ifndef WASM
-	assert_equals("a"_s + true, "a✔️"_s);
-#endif
 }
 
 void testString() {
@@ -1113,10 +1111,10 @@ void testString() {
 	check("hi %s ok"s % "ja" == "hi ja ok");
 	check("%s %d"s % "hu" % 3 == "hu 3");
 	check("%s %s %d"s % "ha" % "hu" % 3 == "ha hu 3");
-	assert_equals(String("abcd").substring(1, 2, true/*share*/), "b");// excluding, like js
-	assert_equals(String("abcd").substring(1, 3, true), "bc");
 	assert_equals(String("abcd").substring(1, 2, false), "b");
 	assert_equals(String("abcd").substring(1, 3, false), "bc");
+	assert_equals(String("abcd").substring(1, 2, true/*share*/), "b");// excluding, like js
+	assert_equals(String("abcd").substring(1, 3, true), "bc");
 	assert_equals(String("abcd").substring(1, 3), "bc");
 	assert_equals(String("abcd").substring(1, 2), "b");
 	check("%s"s.replace("%s", "ja") == "ja");
@@ -1320,33 +1318,21 @@ void testGroupCascade() {
 }
 
 void testNodeBasic() {
+	Node a = Node("a");
+	check(a.name == "a");
+	check(a == "a");
 	Node a1 = Node(1);
-//	check(a1.name == "1");// debug only!
+	check(a1.name == "1");// debug only!
 	check(a1 == 1);
 	Node a11 = Node(1.1);
 	check_eq(a11.name, "1.1");
 	check(a11 == 1.1);
-
-	Node a = Node("a");
-	check(a.name == "a");
-	check(a == "a");
-	Node b = Node("c");
-	a.addRaw(b);
-	check_eq(a.length , 1);
-	check(a.children);
-	Node *b2 = b.clone();
-	check(b==b2);
-	check_eq(b , a.children[0]);
-	check(a.has("b"));
-	check(b == a.has("b"));
-
-//	a["b"] = "c";
-	a["d"] = "e";
-	check_eq(a.length , 2);
-	check(a["b"] == "c");
-
+	Node b = Node("b");
 	a.add(b);
-
+	a["b"] = "c";
+	a["d"] = "e";
+	check(a.length == 2);
+	check(a["b"] == "c");
 }
 
 void tests() {
@@ -1356,6 +1342,7 @@ void tests() {
 	testStringConcatenation();
 	testNodeBasic();
 	testStringReferenceReuse();
+	testCall();
 	testWasmString();
 	testNewlineLists();
 	testTruthiness();
