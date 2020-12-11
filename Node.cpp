@@ -76,7 +76,8 @@ Node &Nodec::operator[](int i) const {
 	return children[i];
 }
 
-Node &Node::operator[](String s) {
+//Node &Node::operator[](String s) {
+	Node &Node::operator[](chars s) {
 	Node *found = has(s);
 	if (s[0] == '.') {
 		s++;
@@ -85,7 +86,7 @@ Node &Node::operator[](String s) {
 //	if (found and found->kind==keyNode and found->value.node)return *found->value.node;
 // ^^ DON'T DO THAT! a:{b:{c:'hi'}} => a["b"] must be c, not "hi"
 	if (found)return *found;
-	if (name == s.data) {// me.me == me ? really? let's see if it's a stupid idea…
+	if (name == s) {// me.me == me ? really? let's see if it's a stupid idea…
 		if (kind == objects and value.node)
 			return *value.node;
 		return (Node&)*this;
