@@ -376,7 +376,7 @@ public:
 		if (!data)data = this->data;
 		if (!data || data[0] == 0)
 			return 0;
-		int MAX = 100000;
+		int MAX = 10000;
 		for (int i = 0; i < MAX; ++i) {
 			if (!data[i])return i;
 		}

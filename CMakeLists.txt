@@ -8,16 +8,22 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
-
 #ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() !
 set(RUNTIME_ONLY 1) # no Angle eval emit etc!
 set(DEBUG 1)
+#set(RELEASE 1)
+
 #set(WASM 1)
-#set(WASI 1)
-# TO EXECUTE wasm
+set(WASI 1)
+    # TO EXECUTE wasm
 #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
 #set(WABT 1) #  wasm_runner_wabt.cpp
 #set(WASM3 1) # wasm_runner_wasm3.cpp
+
+if(WASI)
+    set(WASM 1)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 
 #set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
@@ -48,8 +54,8 @@ ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
 ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
 ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
+ADD_COMPILE_FLAG(" -g") # DEBUG
 if(DEBUG)
-    ADD_COMPILE_FLAG(" -g") # DEBUG
 #    ADD_COMPILE_FLAG(" -O0 -v ") # DEBUG lld
 else()
     ADD_COMPILE_FLAG("-w") # hide warnings
@@ -57,7 +63,7 @@ else()
     ADD_COMPILE_FLAG(" -Os -Oz ") # size should be ok? -O1 removes symbol names https://bugs.llvm.org/show_bug.cgi?id=45602 !
 endif()
 
-#ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
+ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
 
 set(SOURCE_FILES String.cpp Node.cpp Map.cpp Wasp.cpp  Angle.cpp wasm_helpers.cpp) # COMMON FOR ALL
 if(!RUNTIME_ONLY)
@@ -91,7 +97,7 @@ if (WASM) # OR WASI)
     #-lwasmer
     ADD_COMPILE_FLAG("-Wl,--entry=main,--demangle,--allow-undefined,--no-check-features,-t") # wasm-ld flags forwarded from clang
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
-    ADD_COMPILE_FLAG("-Wl,-z,stack-size=1073741824") # Set maximum stack size to 1GB / 8MiB 1073741824
+#    ADD_COMPILE_FLAG("-Wl,-z,stack-size=1073741824") # Set maximum stack size to 1GB / 8MiB 1073741824
     #    -flto \ # Add metadata for link-time optimizations
     if(DEBUG)
         ADD_COMPILE_FLAG("-Wl,-t,--verbose,--export-table") # ,-O0  VERBOSE!

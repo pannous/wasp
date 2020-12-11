@@ -146,17 +146,6 @@ void *alloc(int size, int num) {
 	return calloc(size, num);
 }
 
-#ifndef WASM
-
-unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(malloc(1000000));
-char *memoryChars=(char*)memory;
-char* __heap_base=(char*)memory;
-#else
-//unsigned int *memory=0;
-//unsigned char* __heap_base=0;
-#endif
-//char *current=(char *)__heap_base + 65536/2;
-char *current=(char *)memory + 65536/2;
 
 #ifdef WASM
 
@@ -167,9 +156,11 @@ void panic(){
 }
 
 void *calloc(int size, int num) {// clean ('0') alloc
-	if(num==10000*100)panic();//debug
 	char *mem =(char *) malloc(size * num);
+#ifndef WASI
+	//fails in WASI, why??
 	while (num<MAX_MEM and num > 0) { ((char *) mem)[--num] = 0; }
+#endif
 	return mem;
 }
 #endif
@@ -323,8 +314,9 @@ void memcpy0(bytes dest, bytes source, int i) {
 }
 
 void memcpy0(char *destination, char *source, size_t num) {
-	while (num<MAX_MEM and --num > 0)
+	while (--num<MAX_MEM and num >= 0){
 		destination[num] = source[num];
+	}
 }
 //void * memcpy (void * destination, const void * source, size_t num ){
 //	memcpy0((char *) destination, (char *) source, num);
@@ -369,9 +361,13 @@ void logs(chars s) { // works in wasmer and wasmtime!
 extern "C" void logc(char c){
 	printf("%c" , c);
 }
+extern "C" void logi(int i) {
+	printf("%d", i);
+}
 #endif
-extern "C" void raise(chars error){
+extern "C" int raise(chars error){
 	printf("%s" , error);
+	return -1;
 }
 
 //#include <stdlib.h>
