@@ -17,6 +17,7 @@ char* __heap_base=(char*)memory;
 //unsigned char* __heap_base=0;
 char *memoryChars=(char*)memory;
 int heap_offset=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
+int memory_size=1048576-heap_offset; // todo set in CMake !
 char *current = (char *) memory + heap_offset;
 #endif
 

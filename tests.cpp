@@ -34,9 +34,8 @@ exit(0);}
 #define check_eq assert_equals
 
 bool assert_equals_x(String a, String b, char *context = "") {
-	if (a == b)
-		printf("OK %s==%s in %s\n", a.data, b.data, context);
-	else printf("\nFAILED assert_equals!\n %s should be %s in %s\n"s, a, b, context);
+	if (a == b) printf("OK %s==%s in %s\n", a.data, b.data, context);
+	else printf("\nFAILED assert_equals!\n %s should be %s in %s\n"s, a.data, b.data, context);
 	return a == b;
 }
 
@@ -284,8 +283,8 @@ void testDiv() {
 
 void checkNil() {
 	check(NIL.isNil());
-	if(NIL.name.data != nil_name)
-		assert_equals(NIL.name.data , nil_name);
+	if (NIL.name.data != nil_name)
+		assert_equals(NIL.name.data, nil_name);
 	check(NIL.name.data == nil_name);
 	check(NIL.length == 0);
 	check(NIL.children == 0);
@@ -1072,7 +1071,15 @@ void testStringConcatenation() {
 //	assert_equals(Node("✔"), True);
 //	assert_equals(Node("✖️"), False);
 //	assert_equals(Node("✖"), False);
+	String huh = "a"_s + 2;
+	check_eq(huh.length,2);
+	check_eq(huh[0],'a');
+	check_eq(huh[1],'2');
+	check_eq(huh[2],0);
+	check(eq("a2", "a2"));
+	check(eq("a2", "a2",3));
 
+	assert_equals(huh, "a2");
 	assert_equals("a"_s + 2, "a2");
 	assert_equals("a"_s + 2.2, "a2.2");
 	assert_equals("a"_s + "2.2", "a2.2");
@@ -1086,8 +1093,14 @@ void testStringConcatenation() {
 }
 
 void testString() {
+	String *a = new String("abc");
+	String b = String("abc");
+	String c = *a;
+	check(b == "abc");
+	check(c == "abc");
+	check(b == c);
+	check(b == a);
 	check("hi %s ok"s.replace("%s", "ja") == "hi ja ok");
-
 	check("abc"_ == "abc");
 	check("%d"s % 5 == "5");
 	check("%s"s % "ja" == "ja");
@@ -1098,8 +1111,12 @@ void testString() {
 	check("hi %s ok"s % "ja" == "hi ja ok");
 	check("%s %d"s % "hu" % 3 == "hu 3");
 	check("%s %s %d"s % "ha" % "hu" % 3 == "ha hu 3");
-	assert_equals(String("abcd").substring(1, 2), "b");// excluding, like js
+	assert_equals(String("abcd").substring(1, 2, false), "b");
+	assert_equals(String("abcd").substring(1, 3, false), "bc");
+	assert_equals(String("abcd").substring(1, 2, true/*share*/), "b");// excluding, like js
+	assert_equals(String("abcd").substring(1, 3, true), "bc");
 	assert_equals(String("abcd").substring(1, 3), "bc");
+	assert_equals(String("abcd").substring(1, 2), "b");
 	check("%s"s.replace("%s", "ja") == "ja");
 	check("hi %s"s.replace("%s", "ja") == "hi ja");
 	check("%s ok"s.replace("%s", "ja") == "ja ok");
@@ -1323,7 +1340,6 @@ void tests() {
 	testAsserts();
 	testNodeName();
 	testStringConcatenation();
-	testConcatenation();
 	testNodeBasic();
 	testStringReferenceReuse();
 	testCall();
@@ -1332,6 +1348,7 @@ void tests() {
 	testTruthiness();
 	testIndex();
 	testMarkSimple();
+	testConcatenation();
 	testMarkMulti();
 	testMarkMulti2();
 	testStackedLambdas();
@@ -1425,7 +1442,8 @@ void todos() {
 }
 
 #include "Wasp.h" // is_operator
-int dump_nr=1;
+
+int dump_nr = 1;
 //void dumpMemory(){
 //	String file_name="dumps/dump"s+dump_nr++;
 //	FILE* file=fopen(file_name,"wb");
@@ -1438,10 +1456,10 @@ int dump_nr=1;
 void testCurrent() { // move to tests() once OK
 	testWasmMemoryIntegrity();
 	new Node();
-	auto a0=new Node();
-	Node* a=new Node();
-	Node& b=*new Node();
-	Node c=*new Node();
+	auto a0 = new Node();
+	Node *a = new Node();
+	Node &b = *new Node();
+	Node c = *new Node();
 
 //	dumpMemory();
 //	testGroupCascade();

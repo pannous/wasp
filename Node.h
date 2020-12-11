@@ -394,7 +394,9 @@ public:
 
 	Node &operator[](char c);
 
-	Node &operator[](String s);
+	Node &operator[](chars s);
+//	Node &operator[](String s);
+
 
 //	Node &operator[](String s) const;
 

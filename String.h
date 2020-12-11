@@ -182,7 +182,7 @@ public:
 //		data = empty_string;
 //		data =  {0};//null_value;
 //		data = (char *)calloc(1, 1);
-//		data = static_cast<char *>(calloc(1, 1));
+//		data = (char*)(calloc(1, 1));
 		length = 0;
 	}
 
@@ -201,7 +201,11 @@ public:
 		data=datas;
 		length=len;
 		shared_reference=share;
-		if(!share)error("use other constructor");
+		if(!share){
+			data = (char *)alloc(sizeof(char), length+1);// including \0
+			strcpy2(data, datas, length);
+			data[length] = 0;
+		}
 	}
 
 	explicit String(char byte_character) {
@@ -210,7 +214,7 @@ public:
 			data = 0;//SUBTLE BUGS if setting data=""; data=empty_string;
 			return;
 		}
-		data = static_cast<char *>(alloc(sizeof(char), 2));
+		data = (char*)(alloc(sizeof(char), 2));
 		data[0] = byte_character;
 		data[1] = 0;
 		length = 1;
@@ -223,7 +227,7 @@ public:
 		if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
 		else {
 			if(copy){
-			data = static_cast<char *>(alloc(sizeof(char), length + 1));
+			data = (char*)(alloc(sizeof(char), length + 1));
 			strcpy2(data, string, length);
 			} else{
 				shared_reference = true;
@@ -257,25 +261,25 @@ public:
 
 
 	explicit String(char16_t utf16char) {
-		data = static_cast<char *>(calloc(sizeof(char16_t), 2));
+		data = (char*)(calloc(sizeof(char16_t), 2));
 		encode_unicode_character(data, utf16char);
 		length = len(data);// at most 2 bytes
 	}
 
 //	explicit String(char16_t* chars){
-//		data = static_cast<char *>(calloc(sizeof(char16_t),len(chars)));
+//		data = (char*)(calloc(sizeof(char16_t),len(chars)));
 //		encode_unicode_characters(data, chars);
 //		length = len(data);
 //	}
 
 	explicit String(char32_t utf32char) {// conflicts with int
-		data = static_cast<char *>(calloc(sizeof(char32_t), 2));
+		data = (char*)(calloc(sizeof(char32_t), 2));
 		encode_unicode_character(data, utf32char);
 		length = len(data);// at most 4 bytes
 	}
 
 	explicit String(wchar_t wideChar) {
-		data = static_cast<char *>(calloc(sizeof(wchar_t), 2));
+		data = (char*)(calloc(sizeof(wchar_t), 2));
 		encode_unicode_character(data, wideChar);
 		length = len(data);
 	}
@@ -351,25 +355,13 @@ public:
 //	operator std::string() const { return "Hi"; }
 
 // excluding to
-	String substring(int from, int to = -1, bool ref= false) { // excluding to
+	String& substring(int from, int to = -1, bool ref= true/*false*/) { // excluding to
 		if(from<0 or from==0 and to==length)return *this;
 		if (to < 0 or to > length)to = length;
 		if (to <= from)return EMPTY_STRING;
 		int len = to - from;
-		if(ref){
-			return *new String(data+from, len,ref);
-		}
-
-		auto neu = static_cast<char *>(alloc((sizeof(char)), len + 1));
-//#ifdef cstring
-//		strcpy(neu, &data[from]);
-//#else
-		strcpy2(neu, &data[from], to - from);
-//#endif
-		neu[to - from] = 0;
-		neu[len] = 0;
-		return *new String(neu);
-//		free(neu);
+		auto* neu = new String(data + from, len, ref);
+		return *neu;
 	}
 
 	int len(chars data) {
@@ -385,13 +377,13 @@ public:
 
 
 	String &append(char c) {
-		if (!data)data = static_cast<char *>(alloc(sizeof(char), 2));
+		if (!data)data = (char*)(alloc(sizeof(char), 2));
 		if (data + length + 1 == (char *) current) {// just append recent
 			data[length++] = c;
 			data[length] = 0;
 			current += 2;
 		} else {
-			auto *neu = static_cast<char *>(alloc(sizeof(char), length + 5));
+			auto *neu = (char*)(alloc(sizeof(char), length + 5));
 			if (data)strcpy2(neu, data, length);
 			neu[length++] = c;
 			data = neu;
@@ -503,15 +495,10 @@ public:
 		return this;
 	}
 
-	String operator+(String c) {
+	String& operator+(String c) {
 		if (c.length <= 0)
 			return *this;
-//		log("1.");
-//		log(this);
-//		log(" + 2.");
-//		log(c);
-//		log("\n");
-		auto *neu = static_cast<char *>(alloc(sizeof(char), length + c.length + 1));
+		auto *neu = (char*)alloc(sizeof(char), length + c.length + 1);
 #ifdef cstring
 		if (data)strcpy(neu, data);
 		if (c.data)strcpy(neu + length, c.data);
@@ -521,12 +508,9 @@ public:
 #endif
 		neu[length + c.length] = 0;
 //		log(neu);
-//		String* ok=new String(neu);
-//		log("3.");
-//		log(ok);
-//		ok.length = length + c.length;
-//		log("-----------------");
-		return String(neu);
+		String* ok=new String(neu);
+		ok->length = length + c.length;
+		return *ok;
 	}
 
 	String operator+(const char x[]) {
