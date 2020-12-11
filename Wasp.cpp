@@ -128,7 +128,7 @@ public:
 
 
 	Node &read(String source) {
-		if (source.empty()) return NIL;
+		if (source.empty()) return const_cast<Node &>(NIL);
 		columnStart = 0;
 		at = -1;
 		lineNumber = 1;

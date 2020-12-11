@@ -40,7 +40,7 @@ Node NegInfinity = Node("-Infinity");
 Node NaN = Node("NaN");
 //NIL=0;
 //Node NIL;
-Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent
+const Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent
 Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
 Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent
@@ -261,13 +261,15 @@ bool Node::operator==(Node &other) {
 	if (kind == bools or other.kind == bools) // 1 == true
 		return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
 
+	auto a1 = isNil();
+	auto a2 = other.isNil();
 	if (isNil() and other.isNil())
 		return true;
 	if (isEmpty() and
 	    other.isEmpty()) // todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
 		return true;
-	if (name == NIL.name or name == False.name or name == "")
-		if (other.name == NIL.name or other.name == False.name or other.name == "")
+	if (name == NIL.name.data or name == False.name or name == "")
+		if (other.name == NIL.name.data or other.name == False.name or other.name == "")
 			return true;// TODO: SHOULD already BE SAME by engine!
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// reference ~= its value
@@ -597,7 +599,7 @@ bool Node::isEmpty() {// not required here: name.empty()
 	return (length == 0 and value.longy == 0) or isNil();
 }
 
-bool Node::isNil() { // required here: name.empty()
+bool Node::isNil() const { // required here: name.empty()
 	return this == &NIL or kind == nils or
 	       ((kind == keyNode or kind == unknown or name.empty()) and length == 0 and value.data == nullptr);
 }
