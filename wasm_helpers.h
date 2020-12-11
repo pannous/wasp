@@ -14,7 +14,8 @@ typedef const char* chars;
 typedef unsigned char* bytes;
 extern "C" unsigned int *memory;
 extern "C" char *memoryChars;
-extern "C" /*unsigned */ char *current;
+extern "C" int heap_offset; // todo
+extern "C" /*unsigned */ char *current;// memory + heap_offset
 void panic();//
 #ifndef WASM_ENABLE_INTERP
 extern "C"

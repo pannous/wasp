@@ -15,6 +15,8 @@
 #endif
 
 #define MAXI 1000
+#define MAX_STRING_LENGTH 10000
+
 
 template<class S>
 inline void swap(S *a, S *b) {
