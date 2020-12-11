@@ -432,12 +432,13 @@ void log(chars s) {
 
 
 bool String::empty() const {//this==0 in testMarkMulti!
-#ifdef WASM
-	if(memory_size and (long) data > memory_size/*bug!*/)
-		error("CORRUPT String pointer");
-//		return true;
-#endif
-	return this == 0 || length == 0 || !data || data[0] == 0 || data == object_name.data;
+//#ifdef WASM
+//	if(memory_size and data and (long) data > memory_size/*bug!*/)
+//		error("CORRUPT String pointer");
+////		return true;
+//#endif
+	if(this == 0)return true;
+	return length == 0 || !data || data[0] == 0 || data == object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
 }
 
@@ -580,3 +581,7 @@ void error1(String message, chars file, int line){
 //	return 0;
 //}
 
+
+bool empty(String& s){return s.empty();}
+bool empty(String* s){return not s or s->empty();}
+bool empty(chars s){return not s or strlen0(s);}

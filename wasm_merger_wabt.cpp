@@ -621,7 +621,7 @@ void Linker::ResolveSymbols() {
 			export_map.emplace(export_.name, Binding(export_list.size() - 1));
 		}
 		for (const Func &func : binary->functions) {
-			if(not func.name.empty()){
+			if(not empty(func.name)){
 				func_map.emplace(func.name, func.index);
 				func_list.emplace_back(&func, binary.get());
 			}

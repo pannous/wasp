@@ -173,7 +173,7 @@ Module* merge_wasm(Module *base, Module *module) {
 void write_module(Module *module, chars file=0) {
 //	string_view filename = module->loc.filename;
 	std::string filename = module->loc.filename.to_string();
-	if (filename.empty()) filename = "out.wasm";
+	if (fileempty(name)) filename = "out.wasm";
 	if(file)filename = file;
 //	FileStream *stream = new FileStream(filename);
 	MemoryStream *stream = new MemoryStream();// MoveDataImpl not implemented for FileStream
