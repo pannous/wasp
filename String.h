@@ -825,5 +825,8 @@ void log(chars s);
 //unsigned  == unsigned int!
 inline short utf8_byte_count(char c);
 short utf8_byte_count(codepoint c);
+bool empty(String& s);
+bool empty(String* s);
+bool empty(chars s);
 
 #include "Map.h"

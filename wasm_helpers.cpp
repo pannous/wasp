@@ -326,6 +326,12 @@ void memcpy0(bytes dest, bytes source, int i) {
 }
 
 void memcpy0(char *destination, char *source, size_t num) {
+	if((int)destination+num>=memory_size)return ;
+//		panic();
+	if((int)source+num>=memory_size)return ;
+//		panic();
+	if(num<0)return ;
+//		panic();
 	while (--num<MAX_MEM and num >= 0){
 		destination[num] = source[num];
 	}
