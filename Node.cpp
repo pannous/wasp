@@ -138,7 +138,7 @@ int maxNodes = 10000;
 int lastChild = 0;
 
 
-Node *all = (Node *)calloc(sizeof(Node), capacity * maxNodes);
+Node *all;// = (Node *)calloc(sizeof(Node), capacity * maxNodes);
 
 
 bool typesCompatible(Node &one, Node &other) {
@@ -153,6 +153,7 @@ bool typesCompatible(Node &one, Node &other) {
 // super wasteful, for debug
 Node & Node::set(String string, Node *node) {
 //	if (!children)children = static_cast<Node *>(alloc(capacity));
+	if(!all)all = (Node*)calloc(sizeof(Node), capacity * maxNodes);
 
 	if (!children) {
 		children = &all[capacity * lastChild++];
@@ -425,6 +426,7 @@ void Node::addRaw(Node *node) {
 }
 
 Node &Node::addRaw(Node &node) {
+	if(!all)all = (Node*)calloc(sizeof(Node), capacity * maxNodes);
 	if (length >= capacity - 1)
 		error("Out of node Memory");
 	if (lastChild >= maxNodes)
