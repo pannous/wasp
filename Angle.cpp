@@ -475,7 +475,7 @@ Node groupOperators2(Node &expression) {
 				if (n->next and n->next->kind == groups)
 					fun.add(n->next); //f(x,y)+1
 				else
-					while (n = n->next) // f x+1
+					while ((n = n->next)) // f x+1
 						fun.addRaw(n);
 			}
 			if (!fun.meta)fun.meta = new Node("analyzed");
@@ -601,6 +601,7 @@ Node do_call(Node left, Node op0, Node right) {
 	if (op == "square")return square(right.numbere());
 	if (op == "√")return sqrt1(right.numbere());
 	error("Unregistered function "s + op);
+	return ERROR;
 }
 
 Node matchPattern(Node object, Node pattern0) {

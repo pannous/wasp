@@ -12,7 +12,7 @@
 
 // ... somewhere inside the bar(int) function that is called recursively:
 
-extern "C" String Backtrace(int skip = 0, int skipEnd = 1) {
+String Backtrace(int skip = 0, int skipEnd = 1) {
 	return boost::stacktrace::stacktrace();
 
 // This function produces a stack backtrace with demangled function & method names.

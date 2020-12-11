@@ -81,30 +81,7 @@ bool closing(char ch, char closer) {
 	return false;
 }
 
-//#ifdef WASM64
-//void* operator new[](unsigned long size){
-//	last = current;
-//	current+=size;
-//	return last;
-//}
-//void* operator new(unsigned long size){
-//	last = current;
-//	current+=size;
-//	return last;
-//}
-//#endif
-
-#ifndef WASM || WASI
-//#import "Fetch.cpp"
-//#include "Fetch.h"
-#endif
-
-#include "Node.h"
-#include "String.h"
-
 String &text = EMPTY;
-// raise defined in signal.h :(
-
 
 class Wasp {
 
@@ -981,7 +958,7 @@ private:
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
-	Node valueNode(char close = 0, Node *parent = 0) {
+	Node valueNode(codepoint close = 0, Node *parent = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		Node current;
 		current.parent = parent;
@@ -1258,9 +1235,9 @@ void print(String s) {
 		log(s.data);
 	else {
 		char tmp = s.data[s.length];
-		s.data[s.length] == 0;// hack not thread-safe
+		s.data[s.length] = 0;// hack not thread-safe
 		log(s.data);
-		s.data[s.length] == tmp;
+		s.data[s.length] = tmp;
 	}
 }
 
