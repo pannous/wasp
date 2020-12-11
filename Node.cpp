@@ -205,6 +205,10 @@ bool Node::operator==(String other) {
 		return other == value.string;
 	return false;
 }
+bool Node::operator==(Node* other) {
+	return *this == *other;
+}
+
 bool Node::operator==(char other) {
 	return kind == strings and value.string == String(other);
 }
