@@ -9,6 +9,17 @@
 //#import "String.cpp" // import against mangling in wasm (vs include)
 #include "wasm_emitter.h"
 
+
+#ifdef WASM
+// NEEDS TO BE IN Wasp because __wasm_call_ctors !
+unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(malloc(1000000));
+char* __heap_base=(char*)memory;
+//unsigned char* __heap_base=0;
+char *memoryChars=(char*)memory;
+int heap_offset=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
+char *current = (char *) memory + heap_offset;
+#endif
+
 #ifndef WASM
 
 #include <cctype>
@@ -21,7 +32,12 @@ chars operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "
                           "from", 0, 0, 0, 0}; // "while" ...
 //∧  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
 // ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
+#ifdef WASI
+List<chars> operator_list;
+#else
 List<chars> operator_list(operator_list0);
+#endif
+
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
 	if (ch == '#')return false;// size/count/length

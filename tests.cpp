@@ -15,14 +15,14 @@
 Node &result = *new Node();
 
 //#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
-#define check(test) if(test){log("\nOK check passes: ");log(#test);}else{ \
+#define check(test) if(test){log("\nOK check passes: ");printf("%s",#test);}else{ \
 printf("\nNOT PASSING: "); log(#test);log("\n");printf(__FILE__); printf(":%d\n",__LINE__); \
 exit(0);}
 
 
-//#define assert(condition) try{\
-//   if((condition)==0)error("assert FAILED");else printf("\nassert OK: %s\n",#condition);\
-//   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
+#define assert(condition) try{\
+   if((condition)==0)error("assert FAILED");else printf("\nassert OK: %s\n",#condition);\
+   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
 
 
 //#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
@@ -1426,14 +1426,23 @@ void todos() {
 
 #include "Wasp.h" // is_operator
 int dump_nr=1;
-void dumpMemory(){
-	String file_name="dumps/dump"s+dump_nr++;
-	FILE* file=fopen(file_name,"wb");
-	size_t length = 65536*10;
-	fwrite(memory, length, 1, file);
-	fclose(file);
-}
+//void dumpMemory(){
+//	String file_name="dumps/dump"s+dump_nr++;
+//	FILE* file=fopen(file_name,"wb");
+//	size_t length = 65536*10;
+//	fwrite(memory, length, 1, file);
+//	fclose(file);
+//}
+
+
 void testCurrent() { // move to tests() once OK
+	testWasmMemoryIntegrity();
+	new Node();
+	auto a0=new Node();
+	Node* a=new Node();
+	Node& b=*new Node();
+	Node c=*new Node();
+
 //	dumpMemory();
 //	testGroupCascade();
 //	testKitchensink(); // TODO Oooo!
