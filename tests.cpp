@@ -7,10 +7,12 @@
 #undef assert // <cassert> / <assert.h>
 
 #ifndef WASM
+
 #include <codecvt> // utf8 magic ...?
+
 #endif
 
-Node& result=NIL;
+Node &result = *new Node();
 
 //#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
 #define check(test) if(test){log("\nOK check passes: ");log(#test);}else{ \
@@ -30,30 +32,31 @@ exit(0);}
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
 #define check_eq assert_equals
+
 bool assert_equals_x(String a, String b, char *context = "") {
 	if (a == b)
 		printf("OK %s==%s in %s\n", a.data, b.data, context);
-	else printf("\nFAILED assert_equals!\n %s should be %s in %s\n"s , a , b , context);
+	else printf("\nFAILED assert_equals!\n %s should be %s in %s\n"s, a, b, context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
 	if (a.name != b)
-		printf("\nFAILED assert_equals! %s should be %s in %s\n"s , a.name , b , context);
+		printf("\nFAILED assert_equals! %s should be %s in %s\n"s, a.name, b, context);
 	else printf("OK %s==%s in %s\n", a.name.data, b, context);
 
 	return a == b;
 }
 
 bool assert_equals_x(Node a, double b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %s should be %f in %s\n"s , a.name , b , context);
+	if (a != Node(b))printf("\nFAILED assert_equals! %s should be %f in %s\n"s, a.name, b, context);
 //	else printf("OK %f==%f in %s\n"s % a.value.real % b % context);
 	else printf("OK %f==%f\n", a.value.real, b);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, long b, char *context = "") {
-	if (!(a == b))printf("\nFAILED assert_equals! %s should be %d in %s\n"s , a.name , b , context);
+	if (!(a == b))printf("\nFAILED assert_equals! %s should be %d in %s\n"s, a.name, b, context);
 //	else printf("OK %d==%d in %s\n"s % a.value.longy % b % context);// Uninitialised value was created by a stack allocation
 	else printf("OK %ld==%ld in %s\n", a.value.longy, b, context);
 	return a == b;
@@ -65,19 +68,18 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 	if (ok)
 		printf("OK %s==%s in %s\n", name.data, b.data, context);
 	else
-		printf("\nFAILED assert_equals! %s should be %s in %s\n"s , name.data , b , context);
+		printf("\nFAILED assert_equals! %s should be %s in %s\n"s, name.data, b, context);
 	return ok;
 }
 
 
 bool assert_equals_x(Node a, Node b, char *context = "") {
 //	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
-	if (a == b){
-		if(a.name and b.name)
-		printf("OK %s==%s in %s\n", a.name.data, b.name.data, context);
-	}
-	else
-		printf("\nFAILED assert_equals! %s should be %s in %s\n"s , a , b , context);
+	if (a == b) {
+		if (a.name and b.name)
+			printf("OK %s==%s in %s\n", a.name.data, b.name.data, context);
+	} else
+		printf("\nFAILED assert_equals! %s should be %s in %s\n"s, a, b, context);
 	return a == b;
 }
 
@@ -151,10 +153,10 @@ Node assert_parsesx(chars mark) {
 	} catch (chars err) {
 		printf("\nTEST FAILED WITH ERROR\n");
 		printf("%s\n", err);
-	} catch (String& err) {
+	} catch (String &err) {
 		printf("\nTEST FAILED WITH ERRORs\n");
 		printf("%s\n", err.data);
-	} catch (SyntaxError& err) {
+	} catch (SyntaxError &err) {
 		printf("\nTEST FAILED WITH SyntaxError\n");
 		printf("%s\n", err.data);
 	} catch (...) {
@@ -280,6 +282,16 @@ void testDiv() {
 	)
 }
 
+void checkNil() {
+	check(NIL.isNil());
+	if(NIL.name.data != nil_name)
+		assert_equals(NIL.name.data , nil_name);
+	check(NIL.name.data == nil_name);
+	check(NIL.length == 0);
+	check(NIL.children == 0);
+	check(NIL.parent == 0);
+	check(NIL.next == 0);
+}
 
 void testMarkAsMap() {
 	Node compare = Node();
@@ -287,7 +299,10 @@ void testMarkAsMap() {
 	compare["b"] = 3;
 	compare["a"] = "HIO";
 	Node &dangling = compare["c"];
+	check(dangling.isNil());
+	checkNil();
 	check(dangling == NIL);
+	check(&dangling != &NIL);// not same pointer!
 	dangling = Node(3);
 //	dangling = 3;
 	check(dangling == 3);
@@ -1091,7 +1106,7 @@ void testString() {
 	check("hi %s ok"s.replace("%s", "ja") == "hi ja ok");
 	auto x = "hi %s ok"s % "ja";
 	check(x);
-	printf("%s",x.data);
+	printf("%s", x.data);
 	check(x == "hi ja ok");
 	check("hi %s ok"s % "ja" == "hi ja ok");
 	testStringConcatenation();
@@ -1285,22 +1300,22 @@ void testGroupCascade() {
 
 }
 
-void testNodeBasic(){
+void testNodeBasic() {
 	Node a = Node("a");
-	check(a.name=="a");
-	check(a=="a");
+	check(a.name == "a");
+	check(a == "a");
 	Node a1 = Node(1);
-	check(a1.name=="1");// debug only!
-	check(a1==1);
+	check(a1.name == "1");// debug only!
+	check(a1 == 1);
 	Node a11 = Node(1.1);
-	check_eq(a11.name,"1.1");
-	check(a11==1.1);
+	check_eq(a11.name, "1.1");
+	check(a11 == 1.1);
 	Node b = Node("b");
 	a.add(b);
-	a["b"]="c";
-	a["d"]="e";
-	check(a.length==2);
-	check(a["b"]=="c");
+	a["b"] = "c";
+	a["d"] = "e";
+	check(a.length == 2);
+	check(a["b"] == "c");
 }
 
 void tests() {
@@ -1410,14 +1425,21 @@ void todos() {
 }
 
 #include "Wasp.h" // is_operator
-
+int dump_nr=1;
+void dumpMemory(){
+	String file_name="dumps/dump"s+dump_nr++;
+	FILE* file=fopen(file_name,"wb");
+	size_t length = 65536*10;
+	fwrite(memory, length, 1, file);
+	fclose(file);
+}
 void testCurrent() { // move to tests() once OK
+//	dumpMemory();
 //	testGroupCascade();
 //	testKitchensink(); // TODO Oooo!
 //	testWasmString();
 //	testAllWasm();
-
-//	exit(1);
+	//	exit(1);
 	tests();// make sure all still ok before changes
 #ifndef WASI
 #ifndef WASM
