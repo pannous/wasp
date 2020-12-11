@@ -467,7 +467,7 @@ public:
 		for (int i = 0; i < min(length, 10); i++) {
 			Node &node = children[i];
 //			if(check(node))
-			if (!node.name.empty()) {
+			if (!empty(node.name)) {
 				printf("%s",node.name.data);
 				printf(" ");
 			}
@@ -517,7 +517,7 @@ public:
 	explicit operator char *() const { return value.string.data; }// or name()
 	Node &last();
 
-	bool empty();// same:
+//	bool empty();// same:
 	bool isEmpty();
 
 	bool isNil() const;

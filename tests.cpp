@@ -1348,7 +1348,6 @@ void testNodeBasics() {
 	check(a["d"] == "e");
 
 	a.add(b);// why?
-
 }
 
 void tests() {

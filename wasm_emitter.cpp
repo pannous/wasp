@@ -511,11 +511,11 @@ Code emitCall(Node &fun, String context) {
 
 Code emitDeclaration2(Node fun, Node &body) {
 	// OLD SHIT
-	if (fun.name.empty()) {
+	if (empty(fun.name)) {
 		fun = body[0].flat();
 	}
 
-	if (fun.name.empty())
+	if (empty(fun.name))
 		error("NO SYMBOL NAME FOR declaration");
 
 	if (body.has(":="))
@@ -693,7 +693,7 @@ List<String> collect_locals(Node node, String string) {
 	for (Node n : node) {
 		bool add = false;
 		if (n.kind == longs and atoi0(n.name) != n.value.longy)add = true;
-		if (n.kind == longs and not n.name.empty() and not atoi0(n.name))add = true;
+		if (n.kind == longs and not empty(n.name) and not atoi0(n.name))add = true;
 		if (n.kind == reference and not functionIndices.has(n.name))add = true;
 		if (add and not current_locals.has(n.name))
 			current_locals.add(n.name);

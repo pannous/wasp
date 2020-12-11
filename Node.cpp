@@ -52,7 +52,7 @@ const Node False = Node("False").setType(bools);
 Node &Node::operator=(int i) {
 	value.longy = i;
 	kind = longs;
-	if (name.empty() or name.isNumber())
+	if (empty(name) or name.isNumber())
 		name = String(itoa(i));
 	return *this;
 }
@@ -220,7 +220,7 @@ bool Node::operator==(int other) {
 	if(kind==bools)return other==value.longy;
 	if (kind == keyNode and value.node and *value.node == other)return true;
 	if (kind == strings and atoi0(value.string) == other)return true;
-	if (atoi0(this->name) == other)return true;
+	if (atoi0(name) == other)return true;
 	if (kind == objects and length == 1)return last() == other;
 //	if (type == objects)return value.node->numbere()==other;// WTF
 	return false;
@@ -308,7 +308,7 @@ bool Node::operator==(Node &other) {
 	for (int i = 0; i < length; i++) {
 		Node &field = children[i];
 		Node &val = other.children[i];
-		if (field != val and !field.name.empty())
+		if (field != val and !empty(field.name))
 			val = other[field.name];
 		if (field != val) {
 			if ((field.kind != keyNode and field.kind != nils) or !field.value.node)
@@ -412,6 +412,8 @@ void Node::remove(Node &node) {
 }
 
 void Node::addRaw(Node *node) {
+	if((int)node>memory_size)
+		error("node Out of Memory");
 	if(kind==longs or kind==reals)
 		error("can't modify primitives, only their references a=7 a.nice=yes");
 	if (length >= capacity - 1)
@@ -434,8 +436,9 @@ Node &Node::addRaw(Node &node) {
 	if (!children) children = &all[capacity * lastChild++];
 	if (length > 0)
 		children[length - 1].next = &children[length];
-	children[length++] = node;
-	node.parent = this;
+	children[length] = node;
+//	children[length].parent = this;
+	length++;
 	return *this;
 }
 
@@ -444,14 +447,15 @@ void Node::add(Node &node) {
 }
 
 void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
-	if (node->isNil() and node->name.empty() and node->kind != longs)
+	if(!node->name)return ;// cursed
+	if (node->isNil() and empty(node->name) and node->kind != longs)
 		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
 	node->parent = this;
-	if (node->length == 1 and flatten and node->name.empty())
+	if (node->length == 1 and flatten and empty(node->name))
 		node = &node->last();
 
 	if (not children and (node->kind == objects or node->kind == groups or node->kind == patterns) and
-	    node->name.empty()) {
+	    empty(node->name)) {
 		children = node->children;
 		length = node->length;
 		for (Node &child:*this)
@@ -464,8 +468,9 @@ void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
 }
 
 void Node::addSmart(Node node) {// merge?
+	if(!node.name)return ;// cursed
 	if (polish_notation and node.length > 0) {
-		if (name.empty())
+		if (empty(name))
 			name = node[0].name;
 		else
 			parent->addRaw(node);// REALLY?
@@ -491,7 +496,7 @@ void Node::addSmart(Node node) {// merge?
 //		return;
 //	}
 
-	if (last().kind == reference or last().kind == keyNode or (name.empty() and kind != expressions))// last().kind==reference)
+	if (last().kind == reference or last().kind == keyNode or (empty(name) and kind != expressions))// last().kind==reference)
 		last().add(&node);
 	else
 		add(&node);
@@ -598,17 +603,17 @@ Node &Node::last() {
 	return length > 0 ? children[length - 1] : *this;
 }
 
-bool Node::empty() {// nil!
-	return isEmpty();
-}
+//bool Node::empty() {// nil!
+//	return isEmpty();
+//}
 
-bool Node::isEmpty() {// not required here: name.empty()
+bool Node::isEmpty() {// not required here: empty(name)
 	return (length == 0 and value.longy == 0) or isNil();
 }
 
-bool Node::isNil() const { // required here: name.empty()
+bool Node::isNil() const { // required here: empty(name)
 	return this == &NIL or kind == nils or
-	       ((kind == keyNode or kind == unknown or name.empty()) and length == 0 and value.data == nullptr);
+	       ((kind == keyNode or kind == unknown or empty(name)) and length == 0 and value.data == nullptr);
 }
 
 String Node::serializeValue(bool deep) const {
@@ -663,13 +668,13 @@ String Node::serializeValue(bool deep) const {
 String Node::serialize() const {
 	String wasp = "";
 	if (not polish_notation or this->length == 0) {
-		if (not this->name.empty()) wasp += this->name;
+		if (not empty(name)) wasp += name;
 		String serializedValue = serializeValue();
-		if(kind==strings and name and (name.empty() or name==value.string))
+		if(kind==strings and name and (empty(name) or name==value.string))
 			return serializedValue;// no text:"text", just "text"
-		if(kind==longs and name and (name.empty() or name==itoa(value.longy)))
+		if(kind==longs and name and (empty(name) or name==itoa(value.longy)))
 			return serializedValue;// no "3":3
-		if(kind==reals)// and name and (name.empty() or name==itoa(value.longy)))
+		if(kind==reals)// and name and (empty(name) or name==itoa(value.longy)))
 			return serializedValue;// no "3":3.14
 		if (serializedValue and this->value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
 		    !eq(serializedValue, "?")) {
@@ -684,7 +689,7 @@ String Node::serialize() const {
 			if (this->kind == objects)wasp += "{";
 			if (this->kind == patterns)wasp += "[";
 		}
-		if (polish_notation and not this->name.empty())wasp += this->name;
+		if (polish_notation and not empty(name))wasp += name;
 		int i=0;
 		for (Node &node : *this) {
 			if(grouper and i++>0) wasp += grouper;// DANGER + " " fucks up + chain pointer!
@@ -698,8 +703,8 @@ String Node::serialize() const {
 		}
 	}
 	return wasp;
-//	return this->name.empty()? this->string() : this->name;
-//	return node.name.empty()? node.string() : node.name;
+//	return empty(name)? this->string() : name;
+//	return empty(node.name)? node.string() : node.name;
 }
 
 chars Node::toString() {
@@ -774,10 +779,10 @@ Node Node::to(Node match) {
 //	Node& flatten(Node &current){
 Node &Node::flat() {
 	if (kind == call)return *this->clone();
-	if (length == 0 and kind == keyNode and name.empty() and value.node)return *value.node;
+	if (length == 0 and kind == keyNode and empty(name) and value.node)return *value.node;
 	if (length == 1 and value.node == &children[0])// todo remove redundancy
 		return *value.node;
-	if (length == 1 and not value.data and name.empty()) {
+	if (length == 1 and (int)children<memory_size and not value.data and empty(name)) {
 		children[0].parent = parent;
 		return children[0].flat();
 	}
@@ -878,7 +883,7 @@ Node &Node::setType(Type type) {
 	if (kind == nils and not value.data)
 		return *this;
 	this->kind = type;
-//	if(name.empty() and debug){
+//	if(empty(name) and debug){
 //		if(type==objects)name = object_name;
 //		if(type==groups)name = groups_name;
 //		if(type==patterns)name = patterns_name;
