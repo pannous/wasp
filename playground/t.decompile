@@ -1,0 +1,79 @@
+export memory memory(initial: 2, max: 0);
+
+global g_a:int = 66576;
+export global x:int = 1024;
+export global dso_handle:int = 1024;
+export global data_end:int = 1028;
+export global global_base:int = 1024;
+export global heap_base:int = 66576;
+export global memory_base:int = 0;
+export global table_base:int = 1;
+
+export table indirect_function_table:funcref(min: 1, max: 1);
+
+data d_a(offset: 1024) = "{\00\00\00";
+
+export function wasm_call_ctors() {
+}
+
+export function panic() {
+  var a:int = g_a;
+  var b:int = 16;
+  var c:int_ptr = a - b;
+  var d:int = 2;
+  var e:int = 0;
+  c[3] = e;
+  var f:int = c[3];
+  var g:int = -1;
+  var h:byte_ptr = f + g;
+  h[0] = d;
+}
+
+export function id(a:int):int {
+  var b:int = g_a;
+  var c:int = 16;
+  var d:int_ptr = b - c;
+  g_a = d;
+  d[3] = a;
+  panic();
+  var e:int = d[3];
+  var f:int = 16;
+  var g:int = d + f;
+  g_a = g;
+  return e;
+}
+
+export function add(a:int, b:int):int {
+  var c:int = g_a;
+  var d:int = 16;
+  var e:int_ptr = c - d;
+  e[3] = a;
+  e[2] = b;
+  var f:int = e[3];
+  var g:int = e[2];
+  var h:int = f + g;
+  return h;
+}
+
+export function original_main():int {
+  var a:int = g_a;
+  var b:int = 16;
+  var c:int_ptr = a - b;
+  g_a = c;
+  var d:int = 22;
+  var e:int = 20;
+  var f:int = 0;
+  c[3] = f;
+  var g:int = add(d, e);
+  var h:int = id(g);
+  var i:int = 16;
+  var j:int = c + i;
+  g_a = j;
+  return h;
+}
+
+export function main(a:int, b:int):int {
+  var c:int = original_main();
+  return c;
+}
+
