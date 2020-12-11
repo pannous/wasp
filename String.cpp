@@ -180,7 +180,10 @@ String toString(Node &node);
 
 char *itoa0(long num, int base = 10) {
 	// length 22 -> log(num)/2+2 for base 10
-	char *str = (char *) alloc(sizeof(char), 22);// -18446744073709552000  todo: from context.names char*
+	char *str = (char *) alloc(sizeof(char), 22+1);// -18446744073709552000  todo: from context.names char*
+//	int addr=(int)(long)str;
+//	if(addr<0 or addr>memory_size)
+//		error("OUT OF MEMORY");
 	int len = 0;
 	bool isNegative = false;
 	/* Handle 0 explicitely, otherwise empty string is printed for 0 */
@@ -196,7 +199,7 @@ char *itoa0(long num, int base = 10) {
 		num = -num;
 	}
 	// Process individual digits
-	while (num != 0) {
+	while (num != 0 and len<22) {
 		int rem = num % base;
 		str[len++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
 		num = num / base;
