@@ -415,7 +415,7 @@ void log(String *s) {
 #ifdef WASM
 	if(s)log(s->data);
 #else
-	printf(s->data);
+	printf("%s",s->data);
 #endif
 }
 
@@ -512,15 +512,15 @@ void encode_unicode_character(char *buffer, wchar_t ucs_character) {
 
 // Taken from boost internals
 inline short utf8_byte_count(char c0) {
-	unsigned char c=c0;
-	if(c&0x80==0x00)return 1;
-	if(c&0xE0==0xC0)return 2;
-	if(c&0xF0==0xE0)return 3;
+	unsigned int c=c0;
+	if((c&0x80u)==0x00)return 1;
+	if((c&0xE0u)==0xC0)return 2;
+	if((c&0xF0u)==0xE0)return 3;
 //	if(c&0xF0==0xF0)return 4;
 	// redundant:
-	if ((c & 0b10000000) == 0) return 1;
-	if ((c & 0b11100000) == 0b11000000) return 2;
-	if ((c & 0b11110000) == 0b11100000) return 3;
+	if ((c & 0b10000000u) == 0) return 1;
+	if ((c & 0b11100000u) == 0b11000000) return 2;
+	if ((c & 0b11110000u) == 0b11100000) return 3;
 	return 4;
 }
 

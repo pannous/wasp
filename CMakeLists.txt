@@ -12,7 +12,7 @@ ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
 #ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() !
 set(RUNTIME_ONLY 1) # no Angle eval emit etc!
 set(DEBUG 1)
-set(WASM 1)
+#set(WASM 1)
 #set(WASI 1)
 # TO EXECUTE wasm
 #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
@@ -38,17 +38,22 @@ ENDFUNCTION()
 include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
 # ^^ fixes <cmath> mac errors!
 
-
+# enable:
+ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
+# disable:
 ADD_COMPILE_FLAG("-Wno-writable-strings") # allow conversion from string literal to 'char *'
-
+ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
+ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
+ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
+ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
+ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
 if(DEBUG)
-    ADD_COMPILE_FLAG(" -g -O0 -v ") # DEBUG
+    ADD_COMPILE_FLAG(" -g") # DEBUG
+#    ADD_COMPILE_FLAG(" -O0 -v ") # DEBUG lld
 else()
     ADD_COMPILE_FLAG("-w") # hide warnings
     ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # -mmacosx-version-min=11.0
-    ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
-    ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
     ADD_COMPILE_FLAG(" -Os -Oz ") # size should be ok? -O1 removes symbol names https://bugs.llvm.org/show_bug.cgi?id=45602 !
 endif()
 
