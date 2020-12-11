@@ -1,0 +1,21 @@
+
+t.wasm:	file format WASM
+
+Sections:
+Idx Name          Size     VMA      Type
+  0 TYPE          00000013 00000000 
+  1 FUNCTION      00000007 00000000 
+  2 TABLE         00000005 00000000 
+  3 MEMORY        00000003 00000000 
+  4 GLOBAL        00000031 00000000 
+  5 EXPORT        000000c3 00000000 
+  6 CODE          0000013c 00000000 TEXT
+  7 DATA          0000000b 00000000 DATA
+  8 .debug_info   000000ce 00000000 
+  9 .debug_ranges 00000028 00000000 
+ 10 .debug_abbrev 0000008e 00000000 
+ 11 .debug_line   0000009c 00000000 
+ 12 .debug_str    000000ab 00000000 
+ 13 name          0000003d 00000000 
+ 14 producers     0000007b 00000000 
+
