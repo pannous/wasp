@@ -244,6 +244,11 @@ bool Node::operator==(float other) {
 bool Node::operator==(const Node &other) {
 	return *this == (Node)other;
 }
+bool Node::operator==(Node *other){
+	return *this == (Node)*other;
+}
+
+
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
 	if (this->kind == errors)return other.kind == errors;
