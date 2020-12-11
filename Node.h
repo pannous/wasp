@@ -37,7 +37,7 @@ class Node;
 
 extern Node True;
 extern Node False;
-extern Node NIL;
+extern const Node NIL;
 extern Node ERROR;
 extern Node Infinity;// = Node("Infinity");
 extern Node NegInfinity;// = Node("Infinity");
@@ -517,7 +517,7 @@ public:
 	bool empty();// same:
 	bool isEmpty();
 
-	bool isNil();
+	bool isNil() const;
 
 	chars toString();
 
