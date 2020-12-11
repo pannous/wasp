@@ -304,6 +304,9 @@ void testWasmIf() {
 
 
 void testWasmMemoryIntegrity() {
+	if(!memory_size){
+		error("NO MEMORY");
+	}
 	printf("MEMORY start at %d\n",memory);
 	printf("current start at %d\n",current);
 //	Bus error: 10  if i > memory_size

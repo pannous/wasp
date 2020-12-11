@@ -134,11 +134,11 @@ Node &Node::operator[](char c) {
 }
 
 int capacity = 100;// todo !!! lol lists>100 elements;)
-int maxNodes = 10000;
-int lastChild = 0;
+int maxNodes = 1000;
+int lastChild = 1;
 
 
-Node *all;// = (Node *)calloc(sizeof(Node), capacity * maxNodes);
+Node *all=0;// = (Node *)calloc(sizeof(Node), capacity * maxNodes);
 
 
 bool typesCompatible(Node &one, Node &other) {

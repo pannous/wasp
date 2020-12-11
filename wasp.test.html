@@ -35,6 +35,7 @@
             if (print) console.error(ex); else return trimStack(ex)
         }
     }
+    function index(){}// for cmd+o (find symbol)
     function memmove(d,s,nr){
         raise("who calls this??")
         while(--nr>=0) buffer[d+nr]=buffer[s+nr];// todo: 1. DO IT IN WASM! 2. OK??
@@ -43,19 +44,22 @@
     // This is googles recommended way of loading WebAssembly.
     // try {
         // const response = await fetch('wasp.wasm')
+        let min_memory_size = 65536/64 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
         let memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
-        let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
+        let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: memory_size});
         imports = {
             env: {
                 // if compiled without Angle:
                 Backtrace,
                 memmove,
                 raise: x => {throw new Error(string(x))},
-                printf: x => console.log(string(x)),
-                puts: x => console.log(x),// todo
+                printf: x => console.log(string(x)),// not quite!
+                puts: x => console.log(string(x)),// todo
                 putchar: x => console.log(x),// todo
-                log: x => console.log(x),// todo
+                log: x => console.log(string(x)),
                 logi: x => console.log(x),
+                logs: x => console.log(string(x)),
+
                 // logc:x=>console.log(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
                 logc: x => write(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
             },

@@ -30,6 +30,16 @@ void free(void*){/*lol*/}
 void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	void* last = current;
 	current += size * 2 + 1 ;//greedy
+	if(memory_size and (long)current>=memory_size/2){
+		logi((int)last);
+		logi((int)memory);
+		logi((int)current);
+		logi((int)heap_offset);
+		logi(memory_size);
+		current=(char*)heap_offset;// circle through memory
+//		error("OUT OF MEMORY");
+//		panic();
+	}
 	return last;
 }
 //void log(chars s) {
@@ -40,8 +50,9 @@ void log(chars s) {
 	printf(s);
 	printf("\n");
 #else
-	while(*s)logc(*s++);
-	logc('\n');
+	logs(s);
+//	while(*s)logc(*s++);
+//	logc('\n');
 #endif
 }
 
@@ -157,10 +168,10 @@ void panic(){
 
 void *calloc(int size, int num) {// clean ('0') alloc
 	char *mem =(char *) malloc(size * num);
-#ifndef WASI
+//#ifndef WASM
 	//fails in WASI, why??
 	while (num<MAX_MEM and num > 0) { ((char *) mem)[--num] = 0; }
-#endif
+//#endif
 	return mem;
 }
 #endif
@@ -250,6 +261,7 @@ void error1(chars message, chars file, int line) {
 	if (file)
 		printf("\n%s:%d\n", file, line);
 	raise(message);
+	panic();
 //	err(error);
 }
 
@@ -335,11 +347,10 @@ typedef struct wasi_buffer {
 	size_t buf_len;
 } wasi_buffer;
 
+#ifndef MY_WASM
 void logs(chars s) { // works in wasmer and wasmtime!
-#ifdef MY_WASM
 	while(*s){logc(*s);s++;}
 	return;
-#endif
 #ifndef WASM
 	return; // this should ONLY be called in wasm context!
 #endif
@@ -352,6 +363,7 @@ void logs(chars s) { // works in wasmer and wasmtime!
 	fd_write(1, &buf, len, &out);
 //#endif
 }
+#endif
 
 
 #ifdef WASI

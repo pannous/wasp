@@ -433,11 +433,11 @@ void log(chars s) {
 
 bool String::empty() const {//this==0 in testMarkMulti!
 #ifdef WASM
-	if((long) data > memory_size/*bug!*/)
+	if(memory_size and (long) data > memory_size/*bug!*/)
 		error("CORRUPT String pointer");
 //		return true;
 #endif
-	return this == 0 || length == 0 || !data || (long) data < heap_offset/14  || data[0] == 0 || data == object_name.data;
+	return this == 0 || length == 0 || !data || data[0] == 0 || data == object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
 }
 

@@ -326,12 +326,12 @@ void testMarkSimpleAssign() {
 
 void testMarkSimple() {
 	log("testMarkSimple");
-	Node a = assert_parses("{a:3}");
+	Node a = assert_parses("{aa:3}");
 	assert_equals(a.value.longy, 3);
 	assert_equals(a, long(3));
 	assert(a == 3);
 	assert(a.kind == longs or a.kind == keyNode and a.value.node->kind == longs);
-	assert(a.name == "a"_s);
+	assert(a.name == "aa"_s);
 //	assert(a3.name == "a"_s);// todo? cant
 
 
@@ -1317,7 +1317,7 @@ void testGroupCascade() {
 
 }
 
-void testNodeBasic() {
+void testNodeBasics() {
 	Node a1 = Node(1);
 //	check(a1.name == "1");// debug only!
 	check(a1 == 1);
@@ -1335,20 +1335,19 @@ void testNodeBasic() {
 	Node *b2 = b.clone();
 	check(b==b2);
 	check_eq(b , a.children[0]);
-	check(a.has("b"));
-	check(b == a.has("b"));
 
 //	a["b"] = "c";
 	check_eq(b , a.children[0]);
-	check(a.has("b"));
-	check(b == a.has("b"));
+	check(a.has("c"));
+	check(b == a.has("c"));
 
 //	a["b"] = "c";
 	a["d"] = "e";
 	check_eq(a.length , 2);
-	check(a["b"] == "c");
+	check(a.has("d"));
+	check(a["d"] == "e");
 
-	a.add(b);
+	a.add(b);// why?
 
 }
 
@@ -1357,7 +1356,7 @@ void tests() {
 	testAsserts();
 	testNodeName();
 	testStringConcatenation();
-	testNodeBasic();
+	testNodeBasics();
 	testStringReferenceReuse();
 	testCall();
 	testWasmString();
@@ -1472,11 +1471,6 @@ int dump_nr = 1;
 
 void testCurrent() { // move to tests() once OK
 	testWasmMemoryIntegrity();
-	new Node();
-	auto a0 = new Node();
-	Node *a = new Node();
-	Node &b = *new Node();
-	Node c = *new Node();
 
 //	dumpMemory();
 //	testGroupCascade();

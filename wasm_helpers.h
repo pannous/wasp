@@ -12,10 +12,12 @@
 
 typedef const char* chars;
 typedef unsigned char* bytes;
-extern "C" unsigned int *memory;
+extern "C" unsigned int *memory;// =0; always, BUT heap_offset/current is higher from beginning!
 extern "C" char *memoryChars;
-extern "C" int heap_offset; // todo
-extern "C" int memory_size; // todo
+//extern "C" int __heap_base; ==
+//extern "C" int heap_offset; // via CMake  todo ?
+//extern "C" int memory_size; // via CMake  todo ?
+//#define memory_size 10485760
 
 extern "C" /*unsigned */ char *current;// memory + heap_offset
 void panic();//
