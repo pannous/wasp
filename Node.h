@@ -363,6 +363,7 @@ public:
 
 //	bool operator==(Node other);
 	bool operator==(Node &other);// equals
+	bool operator==(Node *other);// equals
 
 	bool operator==(const Node &other);// equals
 
