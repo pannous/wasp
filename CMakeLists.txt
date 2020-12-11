@@ -97,7 +97,9 @@ if (WASM) # OR WASI)
     #-lwasmer
     ADD_COMPILE_FLAG("-Wl,--entry=main,--demangle,--allow-undefined,--no-check-features,-t") # wasm-ld flags forwarded from clang
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
-#    ADD_COMPILE_FLAG("-Wl,-z,stack-size=1073741824") # Set maximum stack size to 1GB / 8MiB 1073741824
+    ADD_COMPILE_FLAG("-Wl,-z,stack-size=10485760") # 1MB*10  pointers will START from high and go lower!
+    ADD_COMPILE_FLAG("-Wl,-z,heap-size=10485760") # 1MB*10
+    #    ADD_COMPILE_FLAG("-Wl,-z,stack-size=1073741824") # Set maximum stack size to 1GB / 8MiB 1073741824
     #    -flto \ # Add metadata for link-time optimizations
     if(DEBUG)
         ADD_COMPILE_FLAG("-Wl,-t,--verbose,--export-table") # ,-O0  VERBOSE!
