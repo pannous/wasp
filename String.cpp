@@ -429,7 +429,12 @@ void log(chars s) {
 
 
 bool String::empty() const {//this==0 in testMarkMulti!
-	return this == 0 || length == 0 || !data || (long) data < 128 /*bug!*/ || data[0] == 0 || data == object_name.data;
+#ifdef WASM
+	if((long) data > memory_size/*bug!*/)
+		error("CORRUPT String pointer");
+//		return true;
+#endif
+	return this == 0 || length == 0 || !data || (long) data < heap_offset/14  || data[0] == 0 || data == object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
 }
 

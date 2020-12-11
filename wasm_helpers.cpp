@@ -248,7 +248,7 @@ void error1(chars message, chars file, int line) {
 //	Backtrace(2);
 //#endif
 	if (file)
-		printf("%s:%d\n", file, line);
+		printf("\n%s:%d\n", file, line);
 	raise(message);
 //	err(error);
 }
