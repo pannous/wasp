@@ -111,7 +111,7 @@ Node If(Node n) {
 	Node condit = condition.evaluate();
 	bool condition_fulfilled = (bool) condit;
 	if (condition.kind == reals or condition.kind == longs)
-		condition_fulfilled = condition.name.empty() and condition.value.data or condition.name != "0";
+		condition_fulfilled = (!condition.name or empty(condition.name)) and condition.value.data or condition.name != "0";
 	else if (condition.value.data and condition.kind == objects) // or ...
 		error("If statements need a space after colon");
 	if (condition_fulfilled) {
@@ -173,7 +173,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		if (p == 0 and node.kind == reference)unknown_symbols.add(node);
 	}
 	if (max == 0) {
-		if (!name.empty() or length > 1) {
+		if (!empty(name) or length > 1) {
 			breakpoint_helper // ok need not always have known operators
 			info(String("No operator in : ") + serialize());
 			if (unknown_symbols > (long) 0 and expectOperator)
@@ -203,7 +203,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 //	const Node &arg = inner.next ? *inner.next : NIL;
 //	replace ... apply_op(prev, inner, arg);
 
-	if (op->children and right.empty()) {
+	if (op->children and right.isEmpty()) {
 		right = op->children[0];
 	}// DONT work around bugs like this!!
 //		remove(&op);// fucks up pointers?
@@ -211,7 +211,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		right = right.flat();
 		Node left1 = left.flat();
 		Node result = apply_op(left1, *op, right);// <<<<<<<<<
-		if (isFunction(*op) and not left.empty()) {
+		if (isFunction(*op) and not left.isEmpty()) {
 			result = left.addRaw(result).evaluate();
 		}
 		return result;
@@ -481,7 +481,7 @@ Node groupOperators2(Node &expression) {
 			if (!fun.meta)fun.meta = new Node("analyzed");
 			Node &flat = fun.flat();
 			Node *right = groupOperators(flat).clone();// applied on children
-			if (lhs.empty())return *right;
+			if (lhs.isEmpty())return *right;
 			lhs.add(right);
 			return groupOperators(lhs);
 		} else lhs.add(fun);
@@ -552,7 +552,7 @@ Node &groupIf(Node n) {
 		otherwise = then.from("else");
 		then = then.to("else");
 	}
-	if (n.length == 3 and otherwise.empty())
+	if (n.length == 3 and otherwise.isEmpty())
 		otherwise = n[2];
 	Node *eff = new Node("if");
 	Node &ef = *eff;
@@ -575,7 +575,7 @@ Node &groupIf(Node n) {
 //	Node condit = condition.evaluate();
 //	bool condition_fulfilled = (bool) condit;
 //	if (condition.kind == reals or condition.kind == longs)
-//		condition_fulfilled = condition.name.empty() and condition.value.data or condition.name != "0";
+//		condition_fulfilled = empty(condition.name) and condition.value.data or condition.name != "0";
 //	else if (condition.value.data and condition.kind == objects) // or ...
 //		error("If statements need a space after colon");
 //	if (condition_fulfilled) {
@@ -669,7 +669,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	if (op == "not" or op == "¬" or op == "!") {
 		// todo: what if left is present?
 		Node x = right.evaluate();
-		return x.empty() ? True : False;
+		return x.isEmpty() ? True : False;
 	}
 
 	if (op == "√") { // why String( on mac?
@@ -716,7 +716,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 */
 	if (op == "or" or op == "||" or op == "&") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (!left.empty() and left != NIL and left != False)return left;
+		if (!left.isEmpty() and left != NIL and left != False)return left;
 		return right;
 	}
 
@@ -896,10 +896,10 @@ chars functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
 float precedence(Node &operater) {
 	String &name = operater.name;
 //	if (operater == NIL)return 0; error prone
-	if (name.empty())return 0;// no precedence
+	if (empty(name))return 0;// no precedence
 	if (operater.kind == reals)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (operater.kind == longs)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
-	if (operater.kind == strings)return 0;// and name.empty()
+	if (operater.kind == strings)return 0;// and empty(name)
 	if (operater.kind == groups or operater.kind == patterns) return precedence("if") * 0.999;// needs to be smaller than functor/function calls
 	if (operater.name.in(function_list))return 999;// function call todo: remove here
 	return precedence(name);

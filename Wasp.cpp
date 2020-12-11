@@ -918,10 +918,10 @@ private:
 
 	Node &setField(Node &key, Node &val) { // a:{b}
 		if ((val.kind == groups or val.kind == patterns or val.kind == objects) and val.length == 1 and
-		    val.name.empty())
+		    empty(val.name))
 			val = val.last();// singleton
 		val.parent = &key;// todo bug: might get lost!
-		bool deep_copy = val.name.empty() or !debug or key.kind == reference and val.name.empty();
+		bool deep_copy = empty(val.name) or !debug or key.kind == reference and empty(val.name);
 		if (debug) {
 			deep_copy = deep_copy || val.kind == Type::longs and val.name == itoa(val.value.longy);
 			deep_copy = deep_copy || val.kind == Type::bools and (val.name == "True" or val.name == "False");
@@ -937,7 +937,7 @@ private:
 			key.kind = val.kind;
 		} else {
 			key.kind = keyNode;
-			if (!key.children and val.name.empty() and val.length > 1) { // deep copy why?
+			if (!key.children and empty(val.name) and val.length > 1) { // deep copy why?
 				key.children = val.children;
 				key.length = val.length;
 				key.kind = val.kind;
