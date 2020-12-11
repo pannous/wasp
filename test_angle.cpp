@@ -28,7 +28,7 @@ void testCall(){
 	assert_is("1 + square 1+2",10)
 	skip(
 	assert_is("square{i:3}",9) //todo: match arguments!
-			)
+	)
 }
 
 void testIf() {
