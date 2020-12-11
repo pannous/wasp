@@ -85,6 +85,7 @@ public:
 	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
 	Node *children = nullptr;// LIST, not link. block body content
+//	Node *child = nullptr;// LIST, not link. block body content
 	Node *next = 0; // in children list
 	char grouper = 0;// ";" ","
 
@@ -365,6 +366,7 @@ public:
 	bool operator==(Node &other);// equals
 
 	bool operator==(const Node &other);// equals
+	bool operator==(Node *other);// equals
 
 
 	bool operator!=(Node other);
