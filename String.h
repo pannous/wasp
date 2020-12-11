@@ -6,6 +6,8 @@
 #include "wasm_helpers.h"
 #include "NodeTypes.h"
 
+#define MAX_STRING_LENGTH 10000
+
 //#include "Map.h" recursive include error Node.h:60:9: error: field has incomplete type 'String'
 
 #ifndef WASM
@@ -346,7 +348,7 @@ public:
 	}
 
 	int indexOf(char c, int from = 0) {
-		for (int j = from; j < length; j++) {
+		for (int j = from; j < length and j < MAX_STRING_LENGTH; j++) {
 			if (data[j] == c)return j;
 		}
 		return -1;

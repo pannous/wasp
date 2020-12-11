@@ -16,9 +16,11 @@ unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(mal
 char* __heap_base=(char*)memory;
 //unsigned char* __heap_base=0;
 char *memoryChars=(char*)memory;
-int heap_offset=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
-int memory_size=1048576-heap_offset; // todo set in CMake !
-char *current = (char *) memory + heap_offset;
+//int heap_offset=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
+//#define heap_offset 65536
+//int memory_size=1048576-heap_offset; // todo set in CMake !
+char *current = (char *) heap_offset;
+
 #endif
 
 #ifndef WASM
@@ -587,10 +589,8 @@ private:
 
 
 	Node resolve(Node node) {
-//		if
 		log("resolve");
 		log(node.name);
-
 		if (node.name == "false")return False;
 		if (node.name == "False")return False;
 		if (node.name == "no")return False;
@@ -622,6 +622,7 @@ private:
 //		if (node.name.in(operator_list))
 			if(operator_list.has(node.name))
 			node.setType(operators); // later: in angle!? NO! HERE: a xor {} != a xxx{}
+		log("resolve NOT FOUND");
 		return node;
 	}
 
@@ -655,7 +656,7 @@ private:
 		else return false;
 	}
 
-	Node expression(bool stop_at_space) {
+	Node& expression(bool stop_at_space) {
 		Node node = symbol();
 		if (lookahead_ambiguity())
 			return node;
@@ -975,7 +976,7 @@ private:
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
-	Node valueNode(codepoint close = 0, Node *parent = 0) {
+	Node& valueNode(codepoint close = 0, Node *parent = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		Node current;
 		current.parent = parent;

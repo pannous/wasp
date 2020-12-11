@@ -8,13 +8,13 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
-#ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() !
+ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() !
 set(RUNTIME_ONLY 1) # no Angle eval emit etc!
 set(DEBUG 1)
 #set(RELEASE 1)
 
-#set(WASM 1)
-set(WASI 1)
+set(WASM 1)
+#set(WASI 1)
     # TO EXECUTE wasm
 #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
 #set(WABT 1) #  wasm_runner_wabt.cpp
@@ -84,7 +84,6 @@ if (WASM) # OR WASI)
         ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
         ADD_COMPILE_FLAG("-nostdlib -march=wasm") #-v
     endif ()
-
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem ... -Oz -c ") # BREAKS BUILD! ???
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan ")
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
@@ -97,8 +96,12 @@ if (WASM) # OR WASI)
     #-lwasmer
     ADD_COMPILE_FLAG("-Wl,--entry=main,--demangle,--allow-undefined,--no-check-features,-t") # wasm-ld flags forwarded from clang
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
-    ADD_COMPILE_FLAG("-Wl,-z,stack-size=10485760") # 1MB*10  pointers will START from high and go lower!
-    ADD_COMPILE_FLAG("-Wl,-z,heap-size=10485760") # 1MB*10
+    add_definitions(-Dheap_offset=65536)
+#--import-memory        Import memory from the environment
+    ADD_COMPILE_FLAG("-Wl,--initial-memory=1179648") # stack size plus some
+    add_definitions(-Dmemory_size=1179648)
+    ADD_COMPILE_FLAG("-Wl,-z,stack-size=1048576") # 1MB*10  pointers will START from high and go lower!
+#    ADD_COMPILE_FLAG("-Wl,-z,heap-size=1048576") # 1MB*10
     #    ADD_COMPILE_FLAG("-Wl,-z,stack-size=1073741824") # Set maximum stack size to 1GB / 8MiB 1073741824
     #    -flto \ # Add metadata for link-time optimizations
     if(DEBUG)
