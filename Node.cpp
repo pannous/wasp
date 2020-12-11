@@ -85,24 +85,24 @@ Node &Node::operator[](String s) {
 //	if (found and found->kind==keyNode and found->value.node)return *found->value.node;
 // ^^ DON'T DO THAT! a:{b:{c:'hi'}} => a["b"] must be c, not "hi"
 	if (found)return *found;
-	if (name == s) {// me.me == me ? really? let's see if it's a stupid idea…
+	if (name == s.data) {// me.me == me ? really? let's see if it's a stupid idea…
 		if (kind == objects and value.node)
 			return *value.node;
-		return *this;
+		return (Node&)*this;
 	}
 	if (length == 1)
 		if (children[0].has(s))return children[0][s];
 
 	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
 	neu.kind = keyNode;//nils; // until ref is set! but neu never knows when its set!! :(
-	neu.parent = this;
+	neu.parent = (Node*)this;
 	if (neu.value.node) return *neu.value.node;
 	else return neu;
 }
 
-Node &Nodec::operator[](String s) const {
-	return (*this)[s];
-}
+//Node &Nodec::operator[](String s) const {
+//	return (*this)[s];
+//}
 
 // CAREFUL: iterate by value or by reference ?!
 //for (Node &child : liste) { // DOES effect liste
@@ -137,7 +137,7 @@ int maxNodes = 10000;
 int lastChild = 0;
 
 
-Node *all = static_cast<Node *>(calloc(sizeof(Node), capacity * maxNodes));
+Node *all = (Node *)calloc(sizeof(Node), capacity * maxNodes);
 
 
 bool typesCompatible(Node &one, Node &other) {
@@ -150,7 +150,7 @@ bool typesCompatible(Node &one, Node &other) {
 
 
 // super wasteful, for debug
-Node &Node::set(String string, Node *node) {
+Node & Node::set(String string, Node *node) {
 //	if (!children)children = static_cast<Node *>(alloc(capacity));
 
 	if (!children) {
@@ -240,9 +240,6 @@ bool Node::operator==(float other) {
 	       (kind == longs and value.longy == other);
 }
 
-bool namesCompatible(Node a, Node b) {
-
-}
 bool Node::operator==(const Node &other) {
 	return *this == (Node)other;
 }
@@ -353,6 +350,7 @@ bool Node::operator>(Node other) {
 	}
 	if (!has("compare") and !has("greater") and !has("less"))
 		error("Missing compare functions for objects %s > %s ?"s % name % other);
+	return false;
 }
 
 Node Node::operator+(Node other) {
@@ -484,7 +482,7 @@ void Node::addSmart(Node node) {// merge?
 //		return;
 //	}
 
-	if (last().kind == reference or last().kind == keyNode or name.empty() and not kind == expressions)// last().kind==reference)
+	if (last().kind == reference or last().kind == keyNode or (name.empty() and kind != expressions))// last().kind==reference)
 		last().add(&node);
 	else
 		add(&node);
@@ -561,11 +559,13 @@ Node *Node::has(String s, bool searchMeta, short searchDepth) const {
 		return value.node;
 	for (int i = 0; i < length; i++) {
 		Node &entry = children[i];
-		if (s == entry.name)
+		if (s == entry.name){
 			if ((entry.kind == keyNode or entry.kind == nils) and entry.value.node)
 				return entry.value.node;
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
 				return &entry;
+		}
+
 	}
 	if (s == name.data)
 		return const_cast<Node *>(this);
@@ -706,7 +706,7 @@ String toString(Node &node) {
 }
 
 void Node::print() {
-	printf("%s", this->serialize());
+	printf("%s", this->serialize().data);
 }
 
 Node &Node::setValue(Value v) {

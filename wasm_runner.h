@@ -15,5 +15,5 @@ int run_wasm(char* wasm_path = "test.wasm");
 #include "ir.h" // Intermediate representation
 int run_wasm(wabt::Module* module);
 #endif
-#undef Module;
+#undef Module
 #endif //WASP_WASM_RUNNER_H
