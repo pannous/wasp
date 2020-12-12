@@ -128,6 +128,8 @@ int isalnum (int c){
 //#include <typeinfo>       // operator typeid
 #ifndef WASM
 #ifndef WASI
+extern "C" unsigned int *memory = 0;// dummies, remove!
+extern "C" /*unsigned */ char *current = 0;// dummies, remove!
 extern bool throwing;// false for error tests etc
 int raise(chars error) {
 	if (throwing) throw error;
@@ -328,15 +330,14 @@ void memcpy0(bytes dest, bytes source, int i) {
 	while (i<MAX_MEM and --i>=0)
 		dest[i] = source[i];
 }
-
 void memcpy0(char *destination, char *source, size_t num) {
-	if((int)destination+num>=memory_size)return ;
+	if ((long) destination + num >= memory_size)return;
 //		panic();
-	if((int)source+num>=memory_size)return ;
+	if ((long) source + num >= memory_size)return;
 //		panic();
-	if(num<0)return ;
+	if (num < 0)return;
 //		panic();
-	while (--num<MAX_MEM and num >= 0){
+	while (--num < MAX_MEM and num >= 0) {
 		destination[num] = source[num];
 	}
 }
@@ -359,11 +360,15 @@ typedef struct wasi_buffer {
 
 #ifndef MY_WASM
 void logs(chars s) { // works in wasmer and wasmtime!
-	while(*s){logc(*s);s++;}
-	return;
 #ifndef WASM
+	printf("%s\n", s);
 	return; // this should ONLY be called in wasm context!
 #endif
+	while (*s) {
+		logc(*s);
+		s++;
+	}
+	return;
 //#ifdef WASI
 //	printf(s);
 //#else // fake WASI … OR use wasmx import logs
@@ -422,4 +427,17 @@ Node Node::evaluate(bool){ return *this; }
 int read_wasm(chars wasm_path){};
 int run_wasm(chars wasm_path){};
 int run_wasm(bytes data,int size){}
+#endif
+
+#ifndef MY_WASM
+
+void panic() {
+#ifndef WASM
+	raise("panic");
+#else
+	char* x=0;
+	x[-1]=2;// Bus error: 10
+#endif
+}
+
 #endif
