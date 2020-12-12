@@ -211,7 +211,7 @@ public:
 				copy->value.node = value.node->clone(false);
 			copy->children = 0;
 			copy->length = 0;
-			if (length > 0)for (Node &n:*this) copy->addRaw(n);// necessary, else children is the same pointer!
+			if (length > 0)for (Node &n:*this) copy->add(n);// necessary, else children is the same pointer!
 		}
 		return copy;
 	}
@@ -252,24 +252,21 @@ public:
 	explicit Node(int a, int b, ...) {
 		kind = objects;// groups list
 		add(Node(a).clone());
-#ifndef WASM
-		va_list args;
+		va_list args;// WORK WITHOUT WASI!!
 		va_start(args, b);
 		int i = b;
 		while (i) {
-			add(Node(i).clone());
+			addSmart(Node(i).clone());
 			i = (int) va_arg(args, int);
 		}
 		va_end(args);
-#endif
 	}
 
 	// why not auto null terminated on mac?
 	// vargs needs to be 0 terminated, otherwise pray!
 	explicit Node(char *a, char *b, ...) {
 		kind = objects;// groups list
-		add(Node(a).clone(), false);
-#ifndef WASM
+		add(Node(a).clone());
 		va_list args;
 		va_start(args, b);
 		char *i = b;
@@ -279,7 +276,6 @@ public:
 			i = (char *) va_arg(args, char*);
 		}
 		va_end(args);
-#endif
 	}
 
 
@@ -421,16 +417,15 @@ public:
 
 	Node insert(Node &node, int at = -1);// non-modifying
 
-	void addSmart(Node node);// modifying
 
-//	void add(Node &node);
-	void addRaw(Node *node);
+//	Node &add(Node node);
+	Node &add(Node *node);
+	Node &add(Node &node);
 
-	Node &addRaw(Node &node);
+//	void addSmart(Node &node);// modifying
+	void addSmart(Node node);
 
-	void add(Node &node);
-
-	void add(Node *node, bool flatten = true);
+	void addSmart(Node *node, bool flatten = true);
 
 	void remove(Node *node); // directly from children
 	void remove(Node &node); // via compare children

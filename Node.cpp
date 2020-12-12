@@ -125,6 +125,8 @@ Node &Node::operator[](chars s) {
 	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
 	neu.kind = keyNode;//nils; // until ref is set! but neu never knows when its set!! :(
 	neu.parent = (Node *) this;
+	neu.length=0;
+	neu.children=0;
 	if (neu.value.node) return *neu.value.node;
 	else return neu;
 }
@@ -148,11 +150,11 @@ Node *Node::end() const {
 Node Node::merge(Node &other) {
 	if (other.isNil())return *this;
 	if (other.length == 0) {
-		return this->insert(other);
+		return this->add(other);
 	}
 	Node &neu = *clone();// non-modifying
 	for (Node &item:other)
-		neu.addRaw(item);
+		neu.add(item);
 	return neu;
 }// non-modifying
 
@@ -329,11 +331,6 @@ bool Node::operator==(Node &other) {
 	if (length != other.length)
 		return false;
 
-#ifdef WASM
-	todo("Node::operator==(Node &other) in WASM");
-	return false;
-#endif
-
 
 	// if ... compare fields independent of type object {}, group [] ()
 	for (int i = 0; i < length; i++) {
@@ -342,10 +339,15 @@ bool Node::operator==(Node &other) {
 		if (field != val and !empty(field.name))
 			val = other[field.name];
 		if (field != val) {
-			if ((field.kind != keyNode and field.kind != nils) or !field.value.node)
+			if ((field.kind != keyNode and field.kind != nils) or !field.value.node){
+				logs("CHILD MISMATCH");
 				return false;
+			}
 			Node deep = *field.value.node;
-			return deep == val;
+			if(deep != val){
+				logs("CHILD MISMATCH");
+				return false;
+			}
 		}
 	}
 
@@ -442,42 +444,53 @@ void Node::remove(Node &node) {
 	}
 }
 
-void Node::addRaw(Node *node) {
+Node& Node::add(Node *node) {
 	if ((int) node > memory_size)
 		error("node Out of Memory");
 	if (kind == longs or kind == reals)
 		error("can't modify primitives, only their references a=7 a.nice=yes");
-	if (length >= capacity - 1)
+	if (length >= capacity - 1){
+		logi(length);
+		logi(capacity);
+		logs(name);
 		error("Out of node Memory");
+	}
 	if (lastChild >= maxNodes)
 		error("Out of global Memory");
 	if (!children) children = &all[capacity * lastChild++];
 	if (length > 0)
 		children[length - 1].next = &children[length];
 	node->parent = this;
-	children[length++] = *node; // invokes memcpy
-}
-
-Node &Node::addRaw(Node &node) {
-	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
-	if (length >= capacity - 1)
-		error("Out of node Memory");
-	if (lastChild >= maxNodes)
-		error("Out of global Memory");
-	if (!children) children = &all[capacity * lastChild++];
-	if (length > 0)
-		children[length - 1].next = &children[length];
-	children[length] = node;
-//	children[length].parent = this;
+	children[length] = *node; // invokes memcpy
 	length++;
 	return *this;
 }
-
-void Node::add(Node &node) {
+Node& Node::add(Node &node) {
 	return add(&node);
 }
 
-void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
+//void Node::add(Node node) {
+//	add(&node);
+//}
+//
+//Node &Node::add(Node &node) {
+//	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
+//	if (length >= capacity - 1)
+//		error("Out of node Memory");
+//	if (lastChild >= maxNodes)
+//		error("Out of global Memory");
+//	if (!children) children = &all[capacity * lastChild++];
+//	if (length > 0)
+//		children[length - 1].next = &children[length];
+//	children[length] = node;
+////	children[length].parent = this;
+//	length++;
+//	return *this;
+//}
+
+
+// todo remove redundant addSmart LOL!
+void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
 	if (!node->name)return;// cursed
 	if (node->isNil() and empty(node->name) and node->kind != longs)
 		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
@@ -493,27 +506,34 @@ void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
 			child.parent = this;
 		if (kind != groups) kind = node->kind; // todo: keep kind if … ?
 	} else {
-		addRaw(node);
+
+		add(node);
 	}
 // todo a{x}{y z} => a{x,{y z}} BAD
 }
 
+//void Node::addSmart(Node &node) {
+//	return addSmart(&node);
+//}
+
+// todo remove redundant addSmart LOL!
 void Node::addSmart(Node node) {// merge?
+
 	if (!node.name)return;// cursed
 	if (polish_notation and node.length > 0) {
 		if (empty(name))
 			name = node[0].name;
 		else
-			parent->addRaw(node);// REALLY?
+			parent->add(node);// REALLY?
 //			todo("polish_notation how?");
 		Node args = node.from(node[0]);
-		addRaw(args);
+		add(args);
 		return;
 	}
 	// a{x:1} != a {x:1} but {x:1} becomes child of a
 	// a{x:1} == a:{x:1} ?
 	if (last().kind == operators) {
-		addRaw(node);
+		add(node);
 		return;
 	}
 	// f (x) == f(x) ~= f x
@@ -523,14 +543,15 @@ void Node::addSmart(Node node) {// merge?
 //			last().length = node.length;
 //		}
 //		else
-//			last().addRaw(node);
+//			last().add(node);
 //		return;
 //	}
 
+
 	if (last().kind == reference or last().kind == keyNode or (empty(name) and kind != expressions))// last().kind==reference)
-		last().add(&node);
+		last().addSmart(&node);
 	else
-		add(&node);
+		addSmart(&node);
 }
 
 //non-modifying
@@ -539,7 +560,7 @@ Node Node::insert(Node &node, int at) {
 	while (at < 0)at = length + at;
 	if (at >= length - 1) {
 		Node *clon = this->clone();
-		clon->addRaw(node);
+		clon->add(node);
 		return *clon;
 	}
 	if (at == 0)return node + *this;
@@ -631,6 +652,7 @@ Node *Node::has(String s, bool searchMeta, short searchDepth) const {
 }
 
 Node &Node::last() {
+
 	return length > 0 ? children[length - 1] : *this;
 }
 
@@ -769,7 +791,7 @@ Node Node::from(Node match) {
 Node Node::from(int pos) {// inclusive
 	Node lhs;
 	for (int i = pos; i < length; i++) {
-		lhs.addRaw(children[i]);
+		lhs.add(children[i]);
 	}
 	return lhs.flat();
 }
@@ -778,7 +800,7 @@ Node Node::from(String match) {
 	Node lhs;
 	bool start = false;
 	for (Node child:*this) {
-		if (start)lhs.addRaw(&child);
+		if (start)lhs.add(&child);
 		if (child.name == match)start = true;
 	}
 	if (lhs.length == 0)
@@ -794,7 +816,7 @@ Node Node::to(String match) {
 	for (Node &child:*this) {
 		if (child.name == match)
 			break;
-		rhs.addRaw(&child);
+		rhs.add(&child);
 	}
 //	if(rhs.length==0)// no match
 //		return *this;

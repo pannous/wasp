@@ -196,9 +196,9 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		if (p == max and not op) {
 			op = &n;
 		} else if (op)
-			right.addRaw(n);
+			right.add(n);
 		else
-			left.addRaw(n);
+			left.add(n);
 	}
 //	const Node &arg = inner.next ? *inner.next : NIL;
 //	replace ... apply_op(prev, inner, arg);
@@ -212,7 +212,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		Node left1 = left.flat();
 		Node result = apply_op(left1, *op, right);// <<<<<<<<<
 		if (isFunction(*op) and not left.isEmpty()) {
-			result = left.addRaw(result).evaluate();
+			result = left.add(result).evaluate();
 		}
 		return result;
 	}
@@ -319,8 +319,8 @@ Node &groupDeclarations(Node &expression0) {
 			Node *decl = new Node(name);//node.name+":={…}");
 			decl->setType(declaration);
 			decl->metas().add(modifiers);
-//			decl->addRaw(symbol);
-			decl->addRaw(body);// addChildren makes emitting harder
+//			decl->add(symbol);
+			decl->add(body);// addChildren makes emitting harder
 			return *decl;
 		}
 	}
@@ -356,23 +356,23 @@ Node &groupOperators(Node &expression0) {
 		if(node.length)continue;// already processed
 		Node &next = expression.children[i + 1];
 		if (prefixOperators.has(node.name)) {// {++x
-			node.addRaw(next);
+			node.add(next);
 			expression.replace(i, i + 1, node);
 		} else {
 			Node &prev = expression.children[i - 1];
 			if (suffixOperators.has(node.name)) { // x²
 				if (i < 1)error("suffix operator misses left side");
-				node.addRaw(prev);
+				node.add(prev);
 				expression.replace(i - 1, i, node);
 			} else if (node.name.in(function_list)) {// handled above!
 				while (i++ < node.length)
-					node.addRaw(expression.children[i]);
+					node.add(expression.children[i]);
 				expression.replace(i, node.length, node);
 			} else if (isFunction(next)) { // 3 + double 8
 				Node rest = expression.from(i + 1);
 				Node args = analyze(rest);
-				node.addRaw(prev);
-				node.addRaw(args);
+				node.add(prev);
+				node.add(args);
 				expression.replace(i - 1,  i + 1 , node);// replace ALL REST
 				expression.remove(i, -1);
 			} else {
@@ -380,8 +380,8 @@ Node &groupOperators(Node &expression0) {
 				if(node.name=="=" and prev.kind==reference)
 					locals["main"].add(prev.name);
 #endif
-				node.addRaw(prev);
-				node.addRaw(next);
+				node.add(prev);
+				node.add(next);
 				expression.replace(i - 1, i + 1, node);
 			}
 		}
@@ -416,7 +416,7 @@ Node &groupFunctions(Node &expression0) {
 			rest = expression[i + 1];
 			if(rest.length>1)rest.setType(expressions);
 			Node args = analyze(rest);
-			node.addRaw(args);
+			node.add(args);
 			expression.remove(i + 1, i + 1);
 			continue;
 		}
@@ -440,7 +440,7 @@ Node &groupFunctions(Node &expression0) {
 			error("missing arguments for function %s, or to pass function pointer use func keyword"s % node.name);
 		else if (rest.length >= maxArity) {
 			Node args = analyze(rest);// todo: could contain another call!
-			node.addRaw(args);
+			node.add(args);
 			if (rest.kind == groups)
 				expression.remove(i + 1, i + 1);
 			else
@@ -473,18 +473,18 @@ Node groupOperators2(Node &expression) {
 			if (!fun.children) {
 				Node *n = &fun;
 				if (n->next and n->next->kind == groups)
-					fun.add(n->next); //f(x,y)+1
+					fun.addSmart(n->next); //f(x,y)+1
 				else
 					while ((n = n->next)) // f x+1
-						fun.addRaw(n);
+						fun.add(n);
 			}
 			if (!fun.meta)fun.meta = new Node("analyzed");
 			Node &flat = fun.flat();
 			Node *right = groupOperators(flat).clone();// applied on children
 			if (lhs.isEmpty())return *right;
-			lhs.add(right);
+			lhs.addSmart(right);
 			return groupOperators(lhs);
-		} else lhs.add(fun);
+		} else lhs.addSmart(fun);
 	}
 
 	// todo : left associativity! 3-2-1==(3-2)-1==0 NOT 3-(2-1)==2
@@ -837,7 +837,7 @@ Node analyze(Node data) {
 		grouped.length = 0;
 		for (Node &child: data) {
 			child = analyze(child);// REPLACE with their ast? NO! todo
-			grouped.addRaw(child);
+			grouped.add(child);
 		}
 		return grouped;
 	}
@@ -858,7 +858,7 @@ Node analyze2(Node data) {
 	grouped.length = 0;
 	for (Node &child: data) {
 		child = analyze(child);// REPLACE with their ast? NO! todo
-		grouped.addRaw(child);
+		grouped.add(child);
 	}
 	grouped.log();
 	return grouped;
