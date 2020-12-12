@@ -75,7 +75,10 @@ void printf(chars, chars);
 //void print(chars format, int i);
 void printf(char const *format, int i);
 void printf(char const *format, chars,int);
-void printf(chars format,long i,long);
+void printf(chars format, long i, long);
+
+void printf(chars format, double i, double j);
+
 void printf(chars format, chars i);
 void printf(chars format, chars i, chars j);
 void printf(chars format, chars i, chars j, int l);

@@ -98,8 +98,12 @@ void printf(chars format, chars i, chars j, int l){
 void printf(chars format, chars i, chars j, chars l){
 print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
 }
-void printf(chars format,long i,long j){
+void printf(chars format, long i, long j) {
 	print(String(format).replace("%d", String(i)).replace("%d", String(j)));
+}
+
+void printf(chars format, double i, double j) {
+	print(String(format).replace("%f", String(i)).replace("%f", String(j)));
 }
 
 void printf(chars format, chars val, int value) {

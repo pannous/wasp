@@ -96,7 +96,11 @@ bool eq(chars dest, chars src, int length) {
 int strlen0(chars x) {
 	if (!x)return 0;
 	int l = 0;
-	while (l<MAX_STRING_LENGTH and *x++)l++;
+	if ((int) x > memory_size) {
+		logs(x);
+		error("corrupt string");
+	}
+	while (l < MAX_STRING_LENGTH and *x++)l++;
 	return l;
 }
 
