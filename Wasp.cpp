@@ -320,8 +320,6 @@ private:
 			sign = ch;
 			proceed(ch);
 		}
-
-
 		// support for Infinity (could tweak to allow other words):
 		if (ch == 'I') {
 			const Node &ok = word();
@@ -589,9 +587,7 @@ private:
 
 
 	Node resolve(Node node) {
-		log("resolve");
 		String &symbol = node.name;
-		log(symbol);
 		if (symbol == "false")return False;
 		if (symbol == "False")return False;
 		if (symbol == "no")return False;

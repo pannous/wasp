@@ -4,20 +4,30 @@
 //
 
 #ifndef WASM
+
 #include <cstddef> // size_t
+
 #else
 #define size_t unsigned long
 //#define size_t unsigned int error: 'operator new' takes type size_t ('unsigned long') as first parameter
 #endif
 
-typedef const char* chars;
-typedef unsigned char* bytes;
+typedef const char *chars;
+typedef unsigned char *bytes;
 extern "C" unsigned int *memory;// =0; always, BUT heap_offset/current is higher from beginning!
 extern "C" char *memoryChars;
 //extern "C" int __heap_base; ==
 //extern "C" int heap_offset; // via CMake  todo ?
 //extern "C" int memory_size; // via CMake  todo ?
 //#define memory_size 10485760
+
+#ifndef WASM
+#define memory_size 1844674407370955200 //(2**64)/10
+#define heap_offset 0
+//#define memory 0
+//#define current 0
+#endif
+
 
 extern "C" /*unsigned */ char *current;// memory + heap_offset
 void panic();//
