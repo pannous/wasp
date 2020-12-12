@@ -35,13 +35,22 @@ typedef chars chars;
 
 class Node;
 
-extern const Node True;
-extern const Node False;
-extern const Node NIL;
-extern const Node ERROR;
-extern const Node Infinity;// = Node("Infinity");
-extern const Node NegInfinity;// = Node("Infinity");
-extern const Node NaN;// = Node("NaN");
+//extern const Node True;
+//extern const Node False;
+//extern const Node NIL;
+//extern const Node ERROR;
+//extern const Node Infinity;// = Node("Infinity");
+//extern const Node NegInfinity;// = Node("Infinity");
+//extern const Node NaN;// = Node("NaN");
+//
+
+extern Node True;
+extern Node False;
+extern Node NIL;
+extern Node ERROR;
+extern Node Infinity;// = Node("Infinity");
+extern Node NegInfinity;// = Node("Infinity");
+extern Node NaN;// = Node("NaN");
 
 void log(Node &);
 
@@ -565,3 +574,5 @@ public:
 };
 
 typedef const Node Nodec;
+
+void initSymbols();// wasm doesn't do it why!?

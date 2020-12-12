@@ -590,39 +590,41 @@ private:
 
 	Node resolve(Node node) {
 		log("resolve");
-		log(node.name);
-		if (node.name == "false")return False;
-		if (node.name == "False")return False;
-		if (node.name == "no")return False;
-		if (node.name == "No")return False;
-		if (node.name == "ƒ")return False;// ‽
-		if (node.name == "⊥")return False;//
+		String &symbol = node.name;
+		log(symbol);
+		if (symbol == "false")return False;
+		if (symbol == "False")return False;
+		if (symbol == "no")return False;
+		if (symbol == "No")return False;
+		if (symbol == "ƒ")return False;// ‽
+		if (symbol == "⊥")return False;//
 //		if (node.name == "𐄂")return False; ambiguous: multiplication 𐄂 + / check 𐄂
 //		if (node.name == "wrong")return False;
 //		if (node.name == "Wrong")return False;
-		if (node.name == "⊤")return True; // + vs -
-		if (node.name == "true")return True;
-		if (node.name == "True")return True;
-		if (node.name == "yes")return True;
-		if (node.name == "Yes")return True;
-		if (node.name == "✔")return True;
-		if (node.name == "✔\uefb88f")return True;// green ✔️ ~ ✔
-		if (node.name == "✔️")return True;
-		if (node.name == "🗸")return True;
-		if (node.name == "✓️")return True;
-		if (node.name == "☑")return True;
-		if (node.name == "🗹")return True;
+		if (symbol == "⊤")return True; // + vs -
+		if (symbol == "true")return True;
+		if (symbol == "True")return True;
+		if (symbol == "yes")return True;
+		if (symbol == "Yes")return True;
+		if (symbol == "✔")return True;
+		if (symbol == "✔\uefb88f")return True;// green ✔️ ~ ✔
+		if (symbol == "✔️")return True;
+		if (symbol == "🗸")return True;
+		if (symbol == "✓️")return True;
+		if (symbol == "☑")return True;
+		if (symbol == "🗹")return True;
 //		if (node.name == "Right")return True;// unless class!
 //		if (node.name == "right")return True;
-		if (node.name == "NIL")return NIL;
-		if (node.name == "null")return NIL;
-		if (node.name == "nill")return NIL;
-		if (node.name == "nil")return NIL;
-		if (node.name == "ø")return NIL;// nil not added to lists
+		if (symbol == "NIL")return NIL;
+		if (symbol == "null")return NIL;
+		if (symbol == "nill")return NIL;
+		if (symbol == "nil")return NIL;
+		if (symbol == "ø")return NIL;// nil not added to lists
 //		if (node.name.in(operator_list))
-			if(operator_list.has(node.name))
+			if(operator_list.has(symbol))
 			node.setType(operators); // later: in angle!? NO! HERE: a xor {} != a xxx{}
 		log("resolve NOT FOUND");
+		log(symbol);
 		return node;
 	}
 
@@ -1283,6 +1285,7 @@ int main(int argp, char **argv) {
 #endif
 	try {
 #ifdef WASM
+		initSymbols();
 //		String args(current);
 		String args((char*)alloc(1,1));// hack: written to by wasmx
 //		args.data[0] = '{';

@@ -697,6 +697,9 @@ void testTruthiness() {
 	log(node.name);
 	nl();
 	logi(node.value.longy);
+	check(True.kind==bools);
+	check(True.name=="True");
+	check(True.value.longy==1);
 	assert_is("false", false);
 	assert_is("true", true);
 //	check(True.value.longy == true);
@@ -1357,9 +1360,7 @@ void tests() {
 	testStringConcatenation();
 	testNodeBasics();
 	testStringReferenceReuse();
-	testCall();
 	testWasmString();
-	testNewlineLists();
 	testTruthiness();
 	testIndex();
 	testMarkSimple();
@@ -1416,6 +1417,9 @@ void tests() {
 	testUTF();// fails sometimes => bad pointer!?
 	testUnicode_UTF16_UTF32();
 	testConcatenationBorderCases();
+	testCall();
+	testNewlineLists();
+
 	assert_is("[a b c]#2", "b");
 	assert_is("one plus two times three", 7);
 	skip(
