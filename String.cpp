@@ -398,6 +398,8 @@ chars typeName(Type t) {
 			return "function";
 		case declaration:
 			return "declaration";
+		case errors:
+			return "error";
 		default:
 			error(str("MISSING Type name mapping ") + t);
 			return "ERROR";

@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-#SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
-set(CMAKE_SYSROOT "")
-
 project(wasp)
+
+set(CMAKE_SYSROOT "")
+#SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
+
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
@@ -15,7 +16,8 @@ set(DEBUG 1)
 
 set(WASM 1)
 #set(WASI 1)
-    # TO EXECUTE wasm
+
+# TO EXECUTE wasm:
 #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
 #set(WABT 1) #  wasm_runner_wabt.cpp
 #set(WASM3 1) # wasm_runner_wasm3.cpp
