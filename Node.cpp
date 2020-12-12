@@ -35,19 +35,47 @@ void todo(chars error) {
 
 //new String();
 //auto ws = {' ', '\t', '\r', '\n'};
-const Node Infinity = Node("Infinity");
-const Node NegInfinity = Node("-Infinity");
-const Node NaN = Node("NaN");
 //NIL=0;
 //Node NIL;
-const Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
-const Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
-const Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
-const Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
+//const Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
+//const Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
+//const Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
+//const Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
+//
+//const Node ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
+//const Node True = Node("True").setType(bools).setValue(true);
+//const Node False = Node("False").setType(bools);
 
-const Node ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
-const Node True = Node("True").setType(bools).setValue(true);
-const Node False = Node("False").setType(bools);
+//const Node Infinity = Node("Infinity");
+//const Node NegInfinity = Node("-Infinity");
+//const Node NaN = Node("NaN");
+
+Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
+Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
+Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
+Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
+//
+Node ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
+Node True = Node("True").setType(bools).setValue(true);
+Node False = Node("False").setType(bools);
+
+Node Infinity = Node("Infinity");
+Node NegInfinity = Node("-Infinity");
+Node NaN = Node("NaN");
+
+void initSymbols() {
+	if(True.kind==bools)error("Wasm DOES init symbols!?");
+	NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
+//	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
+//	Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
+//	Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
+	ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
+	True = Node("True").setType(bools).setValue(true);
+	False = Node("False").setType(bools);
+	Infinity = Node("Infinity");
+	NegInfinity = Node("-Infinity");
+	NaN = Node("NaN");
+}
 
 Node &Node::operator=(int i) {
 	value.longy = i;
@@ -67,7 +95,7 @@ Node &Node::operator=(chars c) {
 Node &Node::operator[](int i) {
 	if (i >= length)
 		error(String("out of range index[] ") + i + " >= length " + length);
-		// todo: allow insertion of unknown indices? prefered method: not
+	// todo: allow insertion of unknown indices? prefered method: not
 	return children[i];
 }
 
@@ -77,7 +105,7 @@ Node &Nodec::operator[](int i) const {
 }
 
 //Node &Node::operator[](String s) {
-	Node &Node::operator[](chars s) {
+Node &Node::operator[](chars s) {
 	Node *found = has(s);
 	if (s[0] == '.') {
 		s++;
@@ -89,14 +117,14 @@ Node &Nodec::operator[](int i) const {
 	if (name == s) {// me.me == me ? really? let's see if it's a stupid idea…
 		if (kind == objects and value.node)
 			return *value.node;
-		return (Node&)*this;
+		return (Node &) *this;
 	}
 	if (length == 1)
 		if (children[0].has(s))return children[0][s];
 
 	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
 	neu.kind = keyNode;//nils; // until ref is set! but neu never knows when its set!! :(
-	neu.parent = (Node*)this;
+	neu.parent = (Node *) this;
 	if (neu.value.node) return *neu.value.node;
 	else return neu;
 }
@@ -138,7 +166,7 @@ int maxNodes = 1000;
 int lastChild = 1;
 
 
-Node *all=0;// = (Node *)calloc(sizeof(Node), capacity * maxNodes);
+Node *all = 0;// = (Node *)calloc(sizeof(Node), capacity * maxNodes);
 
 
 bool typesCompatible(Node &one, Node &other) {
@@ -151,9 +179,9 @@ bool typesCompatible(Node &one, Node &other) {
 
 
 // super wasteful, for debug
-Node & Node::set(String string, Node *node) {
+Node &Node::set(String string, Node *node) {
 //	if (!children)children = static_cast<Node *>(alloc(capacity));
-	if(!all)all = (Node*)calloc(sizeof(Node), capacity * maxNodes);
+	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
 
 	if (!children) {
 		children = &all[capacity * lastChild++];
@@ -184,7 +212,7 @@ Node & Node::set(String string, Node *node) {
 		entry = *node;// copy by value OK
 		entry.parent = this;
 	}
-	if(length>0)children[length - 1].next = &entry;
+	if (length > 0)children[length - 1].next = &entry;
 	length++;
 	return entry;
 }
@@ -206,18 +234,20 @@ bool Node::operator==(String other) {
 		return other == value.string;
 	return false;
 }
-bool Node::operator==(Node* other) {
+
+bool Node::operator==(Node *other) {
 	return *this == *other;
 }
 
 bool Node::operator==(char other) {
 	return kind == strings and value.string == String(other);
 }
+
 bool Node::operator==(int other) {
 //	if (this == 0)return false;// HOW?
 	if ((kind == longs and value.longy == other) or (kind == reals and value.real == other))
 		return true;
-	if(kind==bools)return other==value.longy;
+	if (kind == bools)return other == value.longy;
 	if (kind == keyNode and value.node and *value.node == other)return true;
 	if (kind == strings and atoi0(value.string) == other)return true;
 	if (atoi0(name) == other)return true;
@@ -235,7 +265,7 @@ bool Node::operator==(long other) {
 bool Node::operator==(double other) {
 	if (kind == keyNode and value.node and value.node->value.real == other)return true;
 	return (kind == reals and value.real == other) or
-//			(kind == reals and (float )value.real == (float)other) or // lost precision
+	       //			(kind == reals and (float )value.real == (float)other) or // lost precision
 	       (kind == longs and value.longy == other) or
 	       (kind == bools and value.longy == other);
 }
@@ -247,8 +277,9 @@ bool Node::operator==(float other) {
 }
 
 bool Node::operator==(const Node &other) {
-	return *this == (Node)other;
+	return *this == (Node) other;
 }
+
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
 	if (this->kind == errors)return other.kind == errors;
@@ -412,9 +443,9 @@ void Node::remove(Node &node) {
 }
 
 void Node::addRaw(Node *node) {
-	if((int)node>memory_size)
+	if ((int) node > memory_size)
 		error("node Out of Memory");
-	if(kind==longs or kind==reals)
+	if (kind == longs or kind == reals)
 		error("can't modify primitives, only their references a=7 a.nice=yes");
 	if (length >= capacity - 1)
 		error("Out of node Memory");
@@ -428,7 +459,7 @@ void Node::addRaw(Node *node) {
 }
 
 Node &Node::addRaw(Node &node) {
-	if(!all)all = (Node*)calloc(sizeof(Node), capacity * maxNodes);
+	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
 	if (length >= capacity - 1)
 		error("Out of node Memory");
 	if (lastChild >= maxNodes)
@@ -447,7 +478,7 @@ void Node::add(Node &node) {
 }
 
 void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
-	if(!node->name)return ;// cursed
+	if (!node->name)return;// cursed
 	if (node->isNil() and empty(node->name) and node->kind != longs)
 		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
 	node->parent = this;
@@ -468,7 +499,7 @@ void Node::add(Node *node, bool flatten) { // flatten AFTER construction!
 }
 
 void Node::addSmart(Node node) {// merge?
-	if(!node.name)return ;// cursed
+	if (!node.name)return;// cursed
 	if (polish_notation and node.length > 0) {
 		if (empty(name))
 			name = node[0].name;
@@ -568,12 +599,12 @@ co_yield 	yield-expression (C++20)
 
 // Node* OK? else Node&
 Node *Node::has(String s, bool searchMeta, short searchDepth) const {
-	if(searchDepth<0)return 0;
+	if (searchDepth < 0)return 0;
 	if ((kind == objects or kind == keyNode) and value.node and s == value.node->name)
 		return value.node;
 	for (int i = 0; i < length; i++) {
 		Node &entry = children[i];
-		if (s == entry.name){
+		if (s == entry.name) {
 			if ((entry.kind == keyNode or entry.kind == nils) and entry.value.node)
 				return entry.value.node;
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
@@ -583,13 +614,13 @@ Node *Node::has(String s, bool searchMeta, short searchDepth) const {
 	}
 	if (s == name.data)
 		return const_cast<Node *>(this);
-	if (meta and searchMeta and searchDepth==0){// todo: dont search leaves when searchDepth-->0
+	if (meta and searchMeta and searchDepth == 0) {// todo: dont search leaves when searchDepth-->0
 		Node *found = meta->has(s);
-		if(found)return found;
+		if (found)return found;
 	}
-		
 
-	if(searchDepth>0){
+
+	if (searchDepth > 0) {
 		for (int i = 0; i < length; i++) {
 			Node *found = children[i].has(s, searchMeta, searchDepth--);
 			if (found)return found;
@@ -630,14 +661,14 @@ String Node::serializeValue(bool deep) const {
 		case nils:
 			return "ø";
 		case objects:
-			return deep?"": object_name;// useful for debugging, but later return "" for
+			return deep ? "" : object_name;// useful for debugging, but later return "" for
 		case groups:
-			return deep?"":groups_name;
+			return deep ? "" : groups_name;
 		case patterns:
-			return deep?"":patterns_name;
+			return deep ? "" : patterns_name;
 		case keyNode:
-			if(deep)
-			return val.node ? val.node->serialize() : "";// val.node->serialize();
+			if (deep)
+				return val.node ? val.node->serialize() : "";// val.node->serialize();
 			else
 				return val.node ? val.node->name : "";// val.node->serialize();
 
@@ -670,11 +701,11 @@ String Node::serialize() const {
 	if (not polish_notation or this->length == 0) {
 		if (not empty(name)) wasp += name;
 		String serializedValue = serializeValue();
-		if(kind==strings and name and (empty(name) or name==value.string))
+		if (kind == strings and name and (empty(name) or name == value.string))
 			return serializedValue;// no text:"text", just "text"
-		if(kind==longs and name and (empty(name) or name==itoa(value.longy)))
+		if (kind == longs and name and (empty(name) or name == itoa(value.longy)))
 			return serializedValue;// no "3":3
-		if(kind==reals)// and name and (empty(name) or name==itoa(value.longy)))
+		if (kind == reals)// and name and (empty(name) or name==itoa(value.longy)))
 			return serializedValue;// no "3":3.14
 		if (serializedValue and this->value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
 		    !eq(serializedValue, "?")) {
@@ -684,22 +715,22 @@ String Node::serialize() const {
 		}
 	}
 	if (this->length > 0) {
-		if(not this->grouper) {
+		if (not this->grouper) {
 			if (this->kind == groups)wasp += "(";
 			if (this->kind == objects)wasp += "{";
 			if (this->kind == patterns)wasp += "[";
 		}
 		if (polish_notation and not empty(name))wasp += name;
-		int i=0;
+		int i = 0;
 		for (Node &node : *this) {
-			if(grouper and i++>0) wasp += grouper;// DANGER + " " fucks up + chain pointer!
+			if (grouper and i++ > 0) wasp += grouper;// DANGER + " " fucks up + chain pointer!
 			wasp += " ";
 			wasp += node.serialize();
 		}
-		if(not this->grouper){
-			if(this->kind == groups)wasp += ")";
-			if(this->kind == objects)wasp += "}";
-			if(this->kind == patterns)wasp += "]";
+		if (not this->grouper) {
+			if (this->kind == groups)wasp += ")";
+			if (this->kind == objects)wasp += "}";
+			if (this->kind == patterns)wasp += "]";
 		}
 	}
 	return wasp;
@@ -760,7 +791,7 @@ Node Node::from(String match) {
 
 Node Node::to(String match) {
 	Node rhs;
-	for (Node& child:*this) {
+	for (Node &child:*this) {
 		if (child.name == match)
 			break;
 		rhs.addRaw(&child);
@@ -782,7 +813,7 @@ Node &Node::flat() {
 	if (length == 0 and kind == keyNode and empty(name) and value.node)return *value.node;
 	if (length == 1 and value.node == &children[0])// todo remove redundancy
 		return *value.node;
-	if (length == 1 and (int)children<memory_size and not value.data and empty(name)) {
+	if (length == 1 and (int) children < memory_size and not value.data and empty(name)) {
 		children[0].parent = parent;
 		return children[0].flat();
 	}
@@ -807,24 +838,24 @@ Node Node::values() {
 }
 
 bool Node::isSetter() {
-	if(kind==longs)// || kind==reals || kind==bools||kind==strings)
+	if (kind == longs)// || kind==reals || kind==bools||kind==strings)
 		return not atoi0(name);// todo WTF hack
 	return kind == reference and value.data or length > 0;
 }
 
 int Node::index(String &string, int start, bool reverse) {
-	if(reverse)return lastIndex(string, start);
+	if (reverse)return lastIndex(string, start);
 	for (int i = start; i < length; ++i) {
-		if(children[i].name == string)
+		if (children[i].name == string)
 			return i;
 	}
 	return -1;// throw "not found"
 }
 
 int Node::lastIndex(String &string, int start) {
-	if(start<=0)start = length;
+	if (start <= 0)start = length;
 	for (int i = start; i >= 0; --i) {
-		if(children[i].name == string)
+		if (children[i].name == string)
 			return i;
 	}
 	return -1;// throw "not found"
@@ -832,21 +863,21 @@ int Node::lastIndex(String &string, int start) {
 
 void Node::replace(int from, int to, Node *node) {
 	children[from] = *node;
-	int i=0;
+	int i = 0;
 	while (to + i++ <= length)
-		children[from + i] = children[to + i ];// ok if beyond length
+		children[from + i] = children[to + i];// ok if beyond length
 	length = length - (to - from);
 }
 
 // INCLUDING to: [a b c d].remove(1,2)==[a d]
 void Node::remove(int from, int to) {// including
-	if(to<0)to = length;
-	if(to<from)to = from;
-	if(to>=length)to = length - 1;
-	int i=-1;
+	if (to < 0)to = length;
+	if (to < from)to = from;
+	if (to >= length)to = length - 1;
+	int i = -1;
 	while (to + i++ < length)
 		children[from + i] = children[to + i + 1];// ok if beyond length
-	length = length - (to-from) -1;
+	length = length - (to - from) - 1;
 }
 
 
@@ -854,8 +885,8 @@ void Node::replace(int from, int to, Node &node) {
 	replace(from, to, &node);
 }
 
-Node& Node::metas() {
-	if(!meta)meta = new Node();
+Node &Node::metas() {
+	if (!meta)meta = new Node();
 	meta->setType(patterns);// naja!
 	return *meta;
 }
@@ -876,13 +907,21 @@ void printf(Node &) {
 }
 
 
-
 Node &Node::setType(Type type) {
+	logs("S");
 	if (value.data and (type == groups or type == objects))
 		return *this;
+	logs("S");
+
 	if (kind == nils and not value.data)
 		return *this;
+	logs("S");
+
 	this->kind = type;
+	logs("S");
+	logs(typeName(type));
+	logs("-------------------");
+
 //	if(empty(name) and debug){
 //		if(type==objects)name = object_name;
 //		if(type==groups)name = groups_name;
