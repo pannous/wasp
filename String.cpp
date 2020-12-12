@@ -96,7 +96,7 @@ bool eq(chars dest, chars src, int length) {
 int strlen0(chars x) {
 	if (!x)return 0;
 	int l = 0;
-	if ((int) x > memory_size) {
+	if ((long) x > memory_size) {
 		logs(x);
 		error("corrupt string");
 	}
@@ -588,6 +588,8 @@ void error1(String message, chars file, int line){
 //}
 
 
-bool empty(String& s){return s.empty();}
-bool empty(String* s){return not s or s->empty();}
-bool empty(chars s){return not s or strlen0(s);}
+bool empty(String &s) { return s.empty(); }
+
+bool empty(String *s) { return not s or s->empty(); }
+
+bool empty(chars s) { return not s or strlen0(s) == 0; }

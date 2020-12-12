@@ -141,12 +141,28 @@ bool assert_isx(char *mark, Node expect) {
 }
 
 bool assert_isx(char *mark, chars expect) {
-	return assert_isx(mark, Node(expect).setType(strings));
+	return assert_isx(mark, Node(expect));// explicit conversion ok!
+}
+
+bool assert_isx(char *mark, int expect) {
+	return assert_isx(mark, Node(expect));// explicit conversion ok!
+}
+
+bool assert_isx(char *mark, long expect) {
+	return assert_isx(mark, Node(expect));// explicit conversion ok!
+}
+
+bool assert_isx(char *mark, double expect) {
+	return assert_isx(mark, Node(expect));// explicit conversion ok!
+}
+
+bool assert_isx(char *mark, bool expect) {
+	return assert_isx(mark, Node(expect));
 }
 
 Node assert_parsesx(chars mark) {
 	try {
-		result = Wasp::parse(mark);
+		result = parse(mark);
 		log(result);
 		return result;
 	} catch (chars err) {
@@ -232,7 +248,7 @@ void testNetBase() {
 //	log(url);
 	chars json = fetch(url);
 //	log(json);
-	Node result = Wasp::parse(json);
+	Node result = parse(json);
 	Node results = result["results"];
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
 	Node Erde = results;
@@ -253,7 +269,7 @@ void testNetBase() {
 }
 
 void testDivDeep() {
-	Node div = Wasp::parse("div{ span{ class:'bold' 'text'} br}");
+	Node div = parse("div{ span{ class:'bold' 'text'} br}");
 	Node &node = div["span"];
 	node.log();
 	assert(div["span"].length == 2);
@@ -262,7 +278,7 @@ void testDivDeep() {
 
 void testDivMark() {
 	polish_notation = true;
-	Node div = Wasp::parse("{div {span class:'bold' 'text'} {br}}");
+	Node div = parse("{div {span class:'bold' 'text'} {br}}");
 	Node &span = div["span"];
 	span.log();
 	assert(span.length == 2);
@@ -271,7 +287,7 @@ void testDivMark() {
 }
 
 void testDiv() {
-	Node result = Wasp::parse("div{ class:'bold' 'text'}");
+	Node result = parse("div{ class:'bold' 'text'}");
 	result.log();
 	assert(result.length == 2);
 	assert(result["class"] == "bold");
@@ -310,7 +326,7 @@ void testMarkAsMap() {
 	Node &node = compare["a"];
 	assert(node == "HIO");
 	chars source = "{b:3 a:'HIO' c:3}";// d:{}
-	Node marked = Wasp::parse(source);
+	Node marked = parse(source);
 	Node &node1 = marked["a"];
 	assert(node1 == "HIO");
 	assert(marked["a"] == compare["a"]);
@@ -341,12 +357,16 @@ void testMarkSimple() {
 	assert(a["b"] == a);
 	assert(a["b"] == 3);
 
-	assert(Wasp::parse("3.") == 3.);
-	assert(Wasp::parse("3.") == 3.f);
+	assert(parse("3.") == 3.);
+	assert(parse("3.") == 3.f);
 //	assert(Mark::parse("3.1") == 3.1); // todo epsilon 1/3≠0.33…
 //	assert(Mark::parse("3.1") == 3.1f);// todo epsilon
-	assert(Wasp::parse("'hi'") == "hi");
-	assert(Wasp::parse("3") == 3);
+	Node node = parse("'hi'");
+	check(node.kind == strings);
+	check(node.value.string == "hi");
+	check(node == "hi");
+	assert(parse("'hi'") == "hi");
+	assert(parse("3") == 3);
 }
 
 
@@ -530,7 +550,7 @@ void testErrors() {
 	return;
 #endif
 	throwing = false;
-	result = Wasp::parse("]");
+	result = parse("]");
 	assert(result == ERROR);
 /*
 	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/out
@@ -563,7 +583,7 @@ void testAllSamples() {
 // ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/out wtf
 	for (const auto &file : files("samples/")) {
 		if (!String(file.path().string().data()).contains("error"))
-			Mark::parseFile(file.path().string().data());
+			Mark::Wasp::parseFile(file.path().string().data());
 	}
 }
 #endif
@@ -974,7 +994,7 @@ void testParams() {
 	Node body = assert_parses("body(style='blue'){a(link)}");
 	assert(body["style"] == "blue");
 
-	Wasp::parse("a(x:1)");
+	parse("a(x:1)");
 	assert_parses("a(x:1)");
 	assert_parses("a(x=1)");
 	assert_parses("a{y=1}");
@@ -1160,19 +1180,39 @@ void testConcatenationBorderCases() {
 
 void testConcatenation() {
 	Node node1 = Node("1", "2", "3", 0);
-	check(node1.length==3);
-	check(node1.last()=="3");
-	node1=node1 + Node("4"_s);
-	check(node1.length==4);
-	check(node1.last()=="4");
+	check(node1.length == 3);
+	check(node1.last() == "3");
+	check(node1.kind == objects);
+	Node other = Node("4").setType(strings);// necessary: Node("x") == reference|strings? => kind=unknown
+	check(other.kind == strings);
+	check(!other.isNil());
+	check(!(&other == &NIL));
+	check(!(other == &NIL));
+	check(not(&other == &NIL));
+	check(not(other == &NIL));
+	check(other != &NIL);
+	check(&other != &NIL);
+
+
+	check(not other.isNil());
+	Node node1234 = node1.merge(other);
+//	Node node1234=node1.merge(Node("4"));
+//	Node node1234=node1.merge(new Node("4"));
+	node1.add(new Node("4"));
+//	node1=node1 + Node("4");
+	check_eq(node1.length, 4);
+	check(node1.last() == "4");
+
+	check_eq(node1234.length, 4);
+	check(node1234.last() == "4");
 
 	assert_equals(node1, Node("1", "2", "3", "4", 0));
 	Node first = Node(1, 2, 0);
-	check_eq(first.length,2);
-	check_eq(first.kind,objects);
+	check_eq(first.length, 2);
+	check_eq(first.kind, objects);
 	Node node = first + Node(3);
-	check_eq(node.length,3);
-	check(node.last()==3);
+	check_eq(node.length, 3);
+	check(node.last() == 3);
 
 	assert_equals(Node(1, 2, 0) + Node(3), Node(1, 2, 3, 0));
 	assert_equals(Node(1, 2, 0) + Node(3, 4, 0), Node(1, 2, 3, 4, 0));
@@ -1183,6 +1223,10 @@ void testConcatenation() {
 	assert_equals(Node(1) + Node("a"_s), Node("1a"));
 	assert_equals(Node("1"_s) + Node(2), Node("12"));
 	assert_equals(Node("a"_s) + Node(2.2), Node("a2.2"));
+	skip(
+	// "3" is type unknown => it is treated as NIL and not added!
+			assert_equals(Node("1", "2", 0) + Node("3"), Node("1", "2", "3", 0));// can't work ^^
+	)
 }
 
 
@@ -1379,8 +1423,8 @@ void tests() {
 	testStringReferenceReuse();
 	testWasmString();
 	testTruthiness();
-	testMarkSimple();
 	testConcatenation();
+	testMarkSimple();
 	testMarkMulti();
 	testMarkMulti2();
 	testStackedLambdas();
@@ -1488,12 +1532,69 @@ void todos() {
 //	fclose(file);
 //}
 
+#ifdef IMPLICIT_NODES
+void testNodeImplicitConversions(){
+	// looks nice, but only causes trouble and is not necessary for our runtime!
+	Node b=true;
+	log(typeName(b.kind));
+	check(b.value.longy==1);
+	check(b.kind==bools);
+	check(b==True);
+	Node a=1;
+	check(a.kind==longs);
+	check(a.value.longy=1);
+	Node a0=10l;
+	check(a0.kind==longs);
+	check(a0.value.longy=1);
+	Node a1=1.1;
+	check_eq(a1.kind,reals);
+	check(a1.kind==reals);
+	check(a1.value.real=1.1);
+	Node a2=1.2f;
+	check(a2.kind==reals);
+	check(a2.value.real=1.2f);
+	Node as = 'a';
+	check(as.kind==strings);
+	check(as.value.string=='a');
+}
+#endif
+
+void testNodeConversions() {
+	Node b = Node(true);
+	log(typeName(b.kind));
+	check(b.value.longy == 1);
+	check(b.kind == bools);
+	check(b == True);
+	Node a = Node(1);
+	check(a.kind == longs);
+	check(a.value.longy = 1);
+	Node a0 = Node(10l);
+	check(a0.kind == longs);
+	check(a0.value.longy = 1);
+	Node a1 = Node(1.1);
+	check_eq(a1.kind, reals);
+	check(a1.kind == reals);
+	check(a1.value.real = 1.1);
+	Node a2 = Node(1.2f);
+	check(a2.kind == reals);
+	check(a2.value.real = 1.2f);
+	Node as = Node('a');
+	check(as.kind == strings);
+	check(as.value.string == 'a');
+}
 
 void testCurrent() { // move to tests() once OK
+	testNodeConversions();
 	testWasmMemoryIntegrity();
 	operator_list = List(operator_list0);
 	check(operator_list.has("+"));
+	check(not(bool) Node("x"));
+	check(false == (bool) Node("x"));
 	check(Node("x") == false);
+	assert_is("x", Node(false));// passes now but not later!!
+
+	assert_is("x", false);// passes now but not later!!
+	assert_is("y", false);
 	assert_is("x", false);
 
 	tests();// make sure all still ok before changes

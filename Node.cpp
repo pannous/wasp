@@ -147,17 +147,22 @@ Node *Node::end() const {
 }
 
 // non-modifying
-Node Node::merge(Node &other) {
-	if (other.isNil())return *this;
-	if (other.length == 0) {
-		return this->add(other);
+Node &Node::merge(Node &other) {
+	if (other.isNil()) {
+		return *this;
 	}
 	Node &neu = *clone();// non-modifying
-	for (Node &item:other)
+	if (other.length == 0) {
+		neu.add(other);
+	}// else
+	for (Node &item:other) {
 		neu.add(item);
+	}
 	return neu;
 }// non-modifying
-
+Node &Node::merge(Node *other) {
+	return this->merge(*other);
+}
 
 Node &Node::operator[](char c) {
 	return (*this)[String(c)];
@@ -225,10 +230,13 @@ Node &Node::set(String string, Node *node) {
 //}
 
 bool Node::operator==(String other) {
+//	return (*this == other.data); // todo unify/simplify
 	if (this == 0)return other.empty();
 //	if (kind == objects or kind == keyNode)objects={…} NOT have value!  return *value.node == other or value.string == other;
 	if (kind == keyNode) return other == name or value.node and *value.node == other;// todo: a=3 a=="a" ??? really?
-	if (kind == longs) return other == itoa(value.longy);
+	if (kind == longs) return other == itoa(value.longy);// "3" == 3   php style ARE YOU SURE? ;) only if otherwise consistent!
+	if (kind == reals) return other == ftoa(value.real);// parseFloat(other)==value.real
+
 	if (kind == reference) return other == name or value.node and *value.node == other;
 	if (kind == unknown) return other == name;
 	if (kind == operators) return other == name;
@@ -241,8 +249,20 @@ bool Node::operator==(Node *other) {
 	return *this == *other;
 }
 
+bool Node::operator==(bool other) {
+	logs("ewrerwrew");
+	return other == this->operator bool();
+}
+
 bool Node::operator==(char other) {
 	return kind == strings and value.string == String(other);
+}
+
+bool Node::operator==(chars other) {
+	if (kind == strings and eq(value.string.data, other, value.string.shared_reference ? value.string.length : -1))return true;
+	if (eq(name.data, other, name.shared_reference ? name.length : -1))return true;// todo really name==other?
+	if (kind == keyNode and value.node and *value.node == other)return true;
+	return false;
 }
 
 bool Node::operator==(int other) {
@@ -304,15 +324,14 @@ bool Node::operator==(Node &other) {
 	auto a2 = other.isNil();
 	if (isNil() and other.isNil())
 		return true;
-	if (isEmpty() and
-	    other.isEmpty()) // todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
+	if (kind != strings and other.kind != strings and isEmpty() and other.isEmpty())
+		// todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
 		return true;
 	if (name == NIL.name.data or name == False.name.data or name == "")
 		if (other.name == NIL.name.data or other.name == False.name.data or other.name == "")
 			return true;// TODO: SHOULD already BE SAME by engine!
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// reference ~= its value
-
 	if (kind == keyNode and this->value.node and *this->value.node == other)return true;// todo again?
 	if (kind == nils and other.kind == longs)return other.value.longy == 0;
 	if (other.kind == nils and kind == longs)return value.longy == 0;
@@ -445,11 +464,11 @@ void Node::remove(Node &node) {
 }
 
 Node& Node::add(Node *node) {
-	if ((int) node > memory_size)
+	if ((long) node > memory_size)
 		error("node Out of Memory");
 	if (kind == longs or kind == reals)
 		error("can't modify primitives, only their references a=7 a.nice=yes");
-	if (length >= capacity - 1){
+	if (length >= capacity - 1) {
 		logi(length);
 		logi(capacity);
 		logs(name);
@@ -457,9 +476,9 @@ Node& Node::add(Node *node) {
 	}
 	if (lastChild >= maxNodes)
 		error("Out of global Memory");
+	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
 	if (!children) children = &all[capacity * lastChild++];
-	if (length > 0)
-		children[length - 1].next = &children[length];
+	if (length > 0) children[length - 1].next = &children[length];
 	node->parent = this;
 	children[length] = *node; // invokes memcpy
 	length++;
@@ -664,9 +683,9 @@ bool Node::isEmpty() {// not required here: empty(name)
 	return (length == 0 and value.longy == 0) or isNil();
 }
 
+// todo : [x y]+[z] = [x y z] BUT z isNil() ??  Node("z").kind==unknown ! empty references ARE NIL OR NOT?? x==nil?
 bool Node::isNil() const { // required here: empty(name)
-	return this == &NIL or kind == nils or
-	       ((kind == keyNode or kind == unknown or empty(name)) and length == 0 and value.data == nullptr);
+	return this == &NIL or kind == nils or ((kind == keyNode or kind == unknown or empty(name)) and length == 0 and value.data == nullptr);
 }
 
 String Node::serializeValue(bool deep) const {
@@ -835,7 +854,7 @@ Node &Node::flat() {
 	if (length == 0 and kind == keyNode and empty(name) and value.node)return *value.node;
 	if (length == 1 and value.node == &children[0])// todo remove redundancy
 		return *value.node;
-	if (length == 1 and (int) children < memory_size and not value.data and empty(name)) {
+	if (length == 1 and (long) children < memory_size and not value.data and empty(name)) {
 		children[0].parent = parent;
 		return children[0].flat();
 	}
