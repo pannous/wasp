@@ -63,17 +63,21 @@ union Value {
 //	Node node;//  incomplete type
 	Node *node = 0;// todo DANGER, can be lost :( !! CANT be
 //	Node **children = 0; //todo DANGER node and children/next are NOT REDUNDANT! (a:b c:d) == a(value=b next=c(value=d))
-	String string;
+	String string;// todo: wasm_chars*
 	void *data;// any bytes
 	long longy;
+	codepoint chary;
 
 //	float real;
 	double real;
 
 	Value() {}// = default;
 	Value(int i) { longy = i; }
+
 	Value(long i) { longy = i; }
+
 	Value(bool b) { longy = b; }
+
 	Value(double r) { real = r; }
 //	~Value() = default;
 };
@@ -132,6 +136,129 @@ public:
 //		if(debug)name = "[]";
 	}
 
+
+	explicit Node(int buffer[]) {
+		value.data = buffer;
+		kind = buffers;
+//		todo ("type of array");
+//		if (debug)name = "int[]";
+//			buffer.encoding = "a85";
+	}
+
+	explicit
+	Node(char c) {
+		name = String(c);
+		value.chary = c;
+		kind = codepoints;
+		// todo ^^ keep!
+		value.string = String(c);
+		kind = strings;
+
+	}
+
+	explicit
+	Node(double nr) {
+		value.real = nr;
+		kind = reals;
+		if (debug) name = String(ftoa(nr)); // messes with setField contraction
+//			name = String(itoa0(nr, 10)); // messes with setField contraction
+	}
+
+	explicit Node(int nr) : Node((long) nr) {}
+
+
+	explicit Node(float nr) : Node((double) nr) {}
+
+// how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
+// Pass the number of arguments as the first variable
+// Require the last variable argument to be null, zero or whatever
+	explicit Node(int a, int b, ...) {
+		kind = objects;// groups list
+		add(Node(a).clone());
+		va_list args;// WORK WITHOUT WASI!!
+		va_start(args, b);
+		int i = b;
+		while (i) {
+			addSmart(Node(i).clone());
+			i = (int) va_arg(args, int);
+		}
+		va_end(args);
+	}
+
+	// why not auto null terminated on mac?
+	// vargs needs to be 0 terminated, otherwise pray!
+	explicit Node(char *a, char *b, ...) {
+		kind = objects;// groups list
+		add(Node(a).clone());
+		va_list args;
+		va_start(args, b);
+		char *i = b;
+		while (i) {
+			Node *node = Node(i).clone();
+			add(node);
+			i = (char *) va_arg(args, char*);
+		}
+		va_end(args);
+	}
+
+
+	explicit
+	Node(long nr) {
+		value.longy = nr;
+		kind = longs;
+		if (debug)name = String(itoa(nr)); // messes with setField contraction
+	}
+
+	explicit // wow without explicit everything breaks WHY?
+	Node(bool yes) {
+		if (yes)
+			*this = True;
+		else
+			*this = False;
+	}
+
+
+	explicit Node(chars name) {
+		this->name = String(name);
+//		type = strings NAH;// unless otherwise specified!
+	}
+
+//	explicit Node(bool truth) {
+//		error("DONT USE CONSTRUCTION, USE ok?True:False"); // todo : can't we auto-cast?  Node &bool::operator(){return True;}
+//		if (this == &NIL)
+//			name = "HOW";
+//		value.number = truth;
+//		type = numbers;
+//		if (debug)name = truth ? "✔️" : "✖️";
+////		if (debug)name = nr ? "true" : "false";
+////		this=True; todo
+//	}
+
+
+	explicit Node(String s, bool identifier = false) {
+//		identifier = identifier || !s.contains(" "); BULLSHIT 'hi' is strings!!
+		if (identifier) {
+//			if(check_reference and not symbol)...
+			name = s;
+			kind = reference;
+		}
+//		else if (atoi(s) and s == itoa0(atoi(s))) {
+//			value.number = atoi(s);
+//			type = numbers;
+//			}
+//		else if (atof(s)) { value.real = atoi(s); }
+		else {
+			kind = strings;
+			value.string = s;
+			if (name == empty_name)name = s;
+		}
+	}
+
+	explicit Node(Node **pNode) {
+		children = pNode[0];
+		kind = arrays;
+		value.data = pNode[0];
+	}
 
 	explicit
 	Node(codepoint c) {
@@ -216,124 +343,6 @@ public:
 		return copy;
 	}
 
-
-	explicit Node(int buffer[]) {
-		value.data = buffer;
-		kind = buffers;
-//		todo ("type of array");
-//		if (debug)name = "int[]";
-//			buffer.encoding = "a85";
-	}
-
-	explicit Node(char c) {
-		name = String(c);
-		value.string = String(c);
-		kind = strings;
-	}
-
-	explicit Node(double nr) {
-		value.real = nr;
-		kind = reals;
-		if (debug)
-		name = String(ftoa(nr)); // messes with setField contraction
-//			name = String(itoa0(nr, 10)); // messes with setField contraction
-	}
-
-
-	explicit Node(float nr) {
-		value.real = nr;
-		kind = reals;
-		if (debug)name = String((long) nr) + String(".…");//#+"#"; // messes with setField contraction
-	}
-
-// how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
-// Pass the number of arguments as the first variable
-// Require the last variable argument to be null, zero or whatever
-	explicit Node(int a, int b, ...) {
-		kind = objects;// groups list
-		add(Node(a).clone());
-		va_list args;// WORK WITHOUT WASI!!
-		va_start(args, b);
-		int i = b;
-		while (i) {
-			addSmart(Node(i).clone());
-			i = (int) va_arg(args, int);
-		}
-		va_end(args);
-	}
-
-	// why not auto null terminated on mac?
-	// vargs needs to be 0 terminated, otherwise pray!
-	explicit Node(char *a, char *b, ...) {
-		kind = objects;// groups list
-		add(Node(a).clone());
-		va_list args;
-		va_start(args, b);
-		char *i = b;
-		while (i) {
-			Node *node = Node(i).clone();
-			add(node);
-			i = (char *) va_arg(args, char*);
-		}
-		va_end(args);
-	}
-
-
-//	explicit
-	Node(long nr) {
-		value.longy = nr;
-		kind = longs;
-		if (debug)name = String(itoa(nr)); // messes with setField contraction
-	}
-
-	explicit Node(int nr) {
-		value.longy = nr;
-		kind = longs;
-		if (debug)name = String(itoa(nr)); // messes with setField contraction
-	}
-
-	explicit Node(chars name) {
-		this->name = String(name);
-//		type = strings NAH;// unless otherwise specified!
-	}
-//
-//	explicit Node(bool truth) {
-//		error("DONT USE CONSTRUCTION, USE ok?True:False");
-//		if (this == &NIL)
-//			name = "HOW";
-//		value.number = truth;
-//		type = numbers;
-//		if (debug)name = truth ? "✔️" : "✖️";
-////		if (debug)name = nr ? "true" : "false";
-////		this=True; todo
-//	}
-
-
-	explicit Node(String s, bool identifier = false) {
-//		identifier = identifier || !s.contains(" "); BULLSHIT 'hi' is strings!!
-		if (identifier) {
-//			if(check_reference and not symbol)...
-			name = s;
-			kind = reference;
-		}
-//		else if (atoi(s) and s == itoa0(atoi(s))) {
-//			value.number = atoi(s);
-//			type = numbers;
-//			}
-//		else if (atof(s)) { value.real = atoi(s); }
-		else {
-			kind = strings;
-			value.string = s;
-			if (name == empty_name)name = s;
-		}
-	}
-
-	explicit Node(Node **pNode) {
-		children = pNode[0];
-		kind = arrays;
-		value.data = pNode[0];
-	}
-
 	//	 explicit copy operator not neccessary
 //	Node& operator=(Node val){
 //		this->name = val.name;
@@ -354,6 +363,9 @@ public:
 //		}
 //		return *this;
 //	}
+
+	bool operator==(bool other);
+
 	bool operator==(char other);
 
 	bool operator==(int other);
@@ -363,6 +375,8 @@ public:
 	bool operator==(float other);
 
 	bool operator==(double other);
+
+	bool operator==(chars other);
 
 	bool operator==(String other);
 
@@ -435,7 +449,8 @@ public:
 
 	[[nodiscard]] Node *end() const;
 
-	Node merge(Node &other);// non-modifying
+	Node &merge(Node &other);// non-modifying
+	Node &merge(Node *other);
 
 	void log() {
 		printf("Node ");
@@ -571,3 +586,12 @@ public:
 typedef const Node Nodec;
 
 void initSymbols();// wasm doesn't do it why!?
+class [[maybe_unused]] BoolBridge {
+	bool _b;
+public:
+//	Single-argument constructors must be marked explicit to avoid unintentional implicit conversions
+// but this is INTENTIONAL! doesn't work though
+	BoolBridge(bool b) { _b = b; }
+
+	operator Node &() { return _b ? True : False; }
+};

@@ -176,7 +176,7 @@ Node Node::evaluate(bool expectOperator /* = true*/) {
 		if (!empty(name) or length > 1) {
 			breakpoint_helper // ok need not always have known operators
 			info(String("No operator in : ") + serialize());
-			if (unknown_symbols > (long) 0 and expectOperator)
+			if (unknown_symbols.length > 0 and expectOperator)
 				error("unknown symbol "s + unknown_symbols.serialize());
 		}
 		for (int i = 0; i < length; ++i) {
@@ -598,9 +598,12 @@ Node &groupIf(Node n) {
 Node do_call(Node left, Node op0, Node right) {
 	String op = op0.name;
 	if (op == "id")return right;// identity
-	if (op == "square")return square(right.numbere());
-	if (op == "√")return sqrt1(right.numbere());
-	if (op == "printf"){log(right);return right;}
+	if (op == "square")return Node(square(right.numbere()));
+	if (op == "√")return Node(sqrt1(right.numbere()));
+	if (op == "printf") {
+		log(right);
+		return right;
+	}
 
 	error("Unregistered function "s + op);
 	return ERROR;

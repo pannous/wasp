@@ -304,24 +304,28 @@ void testWasmIf() {
 
 
 void testWasmMemoryIntegrity() {
-	if(!memory_size){
+#ifndef WASM
+	return;
+#endif
+
+	if (!memory_size) {
 		error("NO MEMORY");
 	}
-	printf("MEMORY start at %d\n",memory);
-	printf("current start at %d\n",current);
+	printf("MEMORY start at %d\n", memory);
+	printf("current start at %d\n", current);
 //	Bus error: 10  if i > memory_size
 // Fails at 100000, works at 100001 WHERE IS THIS SET?
 //	int start=125608;
-	int start = heap_offset*2;// out of bounds table access CORRUPTION!
-	int end = memory_size/4; // /4 because 1 int = 4 bytes
+	int start = heap_offset * 2;// out of bounds table access CORRUPTION!
+	int end = memory_size / 4; // /4 because 1 int = 4 bytes
 	for (int i = start; i < end; ++i) {
-		int tmp=memory[i];
+		int tmp = memory[i];
 //		memory[i] = memory[i]+1;
 //		memory[i] = memory[i]-1;
 		memory[i] = i;
 //		if(i%10000==0)logi(i);// logi USES STACK, so it can EXHAUST if called too often!
 		if (memory[i] != i) {
-			printf("MEMORY CORRUPTION at %d",i);
+			printf("MEMORY CORRUPTION at %d", i);
 			exit(0);
 		}
 		memory[i]=tmp;// else test fail
