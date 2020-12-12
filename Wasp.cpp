@@ -623,8 +623,8 @@ private:
 //		if (node.name.in(operator_list))
 			if(operator_list.has(symbol))
 			node.setType(operators); // later: in angle!? NO! HERE: a xor {} != a xxx{}
-		log("resolve NOT FOUND");
-		log(symbol);
+//		log("resolve NOT FOUND");
+//		log(symbol);
 		return node;
 	}
 
@@ -1234,6 +1234,11 @@ Node run(String source) {
 
 //static
 Node parse(String source) {
+	operator_list=List(operator_list0);// wasm hack
+	// WE HAVE A GENERAL PROBLEM:
+	// 1. top level objects are not constructed True
+	// 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
+
 	printf("Parsing %s\n", source.data);
 	if (!source.data)return NIL;
 	return Wasp().read(source);
