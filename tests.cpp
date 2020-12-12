@@ -725,8 +725,8 @@ void testTruthiness() {
 			assert_is("[0]", true);  // wow falsey so deep?
 	)
 
-	assert_is("x", false);
 	assert_is("{x}", false);
+	assert_is("x", false);
 	// empty references are falsey! OK
 
 	assert_is("{1}", true);
