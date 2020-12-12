@@ -9,18 +9,21 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
-ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() !
 set(RUNTIME_ONLY 1) # no Angle eval emit etc!
 set(DEBUG 1)
 #set(RELEASE 1)
 
-set(WASM 1)
+#set(WASM 1)
 #set(WASI 1)
 
 # TO EXECUTE wasm:
 #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
 #set(WABT 1) #  wasm_runner_wabt.cpp
 #set(WASM3 1) # wasm_runner_wasm3.cpp
+
+if (WASM)
+    ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
+endif ()
 
 if(WASI)
     set(WASM 1)

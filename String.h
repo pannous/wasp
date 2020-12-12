@@ -671,7 +671,7 @@ public:
 
 	int indexOf(chars string) {
 		int l = strlen0(string);
-		if ((int) data + l > memory_size)
+		if ((long) data + l > memory_size)
 			error("corrupt string");
 		for (int i = 0; i <= length - l; i++) {
 			bool ok = true;

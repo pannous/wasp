@@ -19,6 +19,7 @@ enum Type {
 	expressions, // one plus one
 	declaration, // x:=1
 	strings,
+	codepoints,
 	arrays, // Node[] vs any[]? vs
 	buffers, // int[]
 	reals,
