@@ -716,22 +716,22 @@ void testTruthiness() {
 	assert_is("nil", False);
 	assert_is("nil", false);
 	assert_is("ø", false);
-	assert_is("1", true);
 	skip(
-			assert_is("2", true);
-			assert_is("2", True);
-			// Truthiness != equality with 'True' !
+			assert_is("2", true);  // Truthiness != equality with 'true' !
+			assert_is("2", True); // Truthiness != equality with 'True' !
 			assert_is("{x:0}", true); // wow falsey so deep?
 			assert_is("[0]", true);  // wow falsey so deep?
 	)
+	assert_is("1", true);
 
-	assert_is("{x}", false);
-	assert_is("x", false);
-	// empty references are falsey! OK
 
 	assert_is("{1}", true);
 	assert_is("{x:1}", true);
+
+	assert_is("x", false);
+	assert_is("{x}", false);
 	assert_is("cat{}", false);
+	// empty references are falsey! OK
 }
 
 void testLogicEmptySet() {
@@ -1479,7 +1479,7 @@ void todos() {
 
 #include "Wasp.h" // is_operator
 
-int dump_nr = 1;
+//int dump_nr = 1;
 //void dumpMemory(){
 //	String file_name="dumps/dump"s+dump_nr++;
 //	FILE* file=fopen(file_name,"wb");
@@ -1491,29 +1491,15 @@ int dump_nr = 1;
 
 void testCurrent() { // move to tests() once OK
 	testWasmMemoryIntegrity();
-	operator_list=List(operator_list0);
+	operator_list = List(operator_list0);
 	check(operator_list.has("+"));
+	check(Node("x") == false);
+	assert_is("x", false);
 
-//	dumpMemory();
-//	testGroupCascade();
-//	testKitchensink(); // TODO Oooo!
-//	testWasmString();
-//	testAllWasm();
-	//	exit(1);
 	tests();// make sure all still ok before changes
-#ifndef WASI
-#ifndef WASM
-
-#ifndef RUNTIME_ONLY
 	testAllWasm();
-	testWasmString();
-#endif
 	testAngle();
 	todos();// those not passing yet (skip)
-#endif
-#endif
-//	testBUG();
-//	testParentBUG();
 	tests();// make sure all still ok after changes
 	log("CURRENT TESTS PASSED");
 }
