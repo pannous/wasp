@@ -9,6 +9,7 @@
 //#include "String.h"
 #include "Node.h"
 #include "wasm_helpers.h"
+#include <cstdarg> // va_list ok in wasm even without wasi!
 
 #ifndef WASM
 #include <initializer_list> // allow List x={1,2,3};
@@ -121,16 +122,16 @@ public:
 	S *items = (S *) calloc(sizeof(S), MAXI);
 
 	List() {}
-//	List(S first,...){
-//		items[0] = first;
-//		va_list args;
-//		va_start(args, first);
-//		S *i = &first;
-//		while (i) {
-//			i = (S *) va_arg(args, S*);
-//		}
-//		va_end(args);
-//	}
+	List(S first,...){
+		items[0] = first;
+		va_list args;// WORKS WITHOUT WASI! with stdargs
+		va_start(args, first);
+		S *i = &first;
+		while (i) {
+			i = (S *) va_arg(args, S*);
+		}
+		va_end(args);
+	}
 	List(S* args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
 		while(args[_size] and _size<MAXI){
 			items[_size]=args[_size];

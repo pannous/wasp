@@ -665,14 +665,14 @@ private:
 		// {a:1 b:2} vs { x = add 1 2 }
 		Node expressionas = Node();
 		expressionas.kind = expressions;
-		expressionas.addRaw(node);
+		expressionas.add(node);
 		if (stop_at_space and ch == ' ')return expressionas;
 		white();
 		while (ch and (is_identifier(ch) or isalnum(ch) or is_operator(ch))) {
 			node = symbol();// including operators `=` ...
 			if (is_known_functor(node))
 				node.kind = operators;
-			expressionas.addRaw(&node);
+			expressionas.add(&node);
 			white();
 		}
 //		expressions.name=map(children.name)
@@ -1016,7 +1016,7 @@ private:
 					proceed();
 					Node object = valueNode('}', &current.last()).setType(Type::objects);
 					if (asListItem)
-						current.addRaw(object);
+						current.add(object);
 					else
 						current.addSmart(object);
 					break;
@@ -1025,7 +1025,7 @@ private:
 				case '[': {
 					proceed();
 					Node pattern = valueNode(']', &current.last()).setType(Type::patterns);
-					current.addRaw(pattern);
+					current.add(pattern);
 					break;
 				}
 				case '(': {
@@ -1047,7 +1047,7 @@ private:
 						current.addSmart(numbero());// (2+2) != (2 +2) !!!
 					else {
 						Node *op = any_operator().clone();
-						current.addRaw(op);
+						current.add(op);
 						current.kind = expressions;
 					}
 					break;
@@ -1072,12 +1072,12 @@ private:
 						if (current.last().kind == expressions)
 							current.last().addSmart(string(ch));
 						else
-							current.addRaw(string(ch).clone());
+							current.add(string(ch).clone());
 						break;
 					}
 					Node id = Node(text.substring(start, at));
 					id.setType(Type::strings);// todo "3" could have be resolved as number? DONT do js magifuckery
-					current.addRaw(id);
+					current.add(id);
 					break;
 				}
 				case U'：':
@@ -1085,7 +1085,7 @@ private:
 				case ':':
 					if (next == '=') { // f x:=2x
 						Node *op = new Node(":=");
-						current.addRaw(op->setType(operators));
+						current.add(op->setType(operators));
 						current.setType(expressions);
 //						current.setType(declaration); // later!
 						proceed();
@@ -1104,12 +1104,12 @@ private:
 					if (op.name.length > 1)
 						add_raw = true;
 					if (add_raw) {
-						current.addRaw(op.setType(operators)).setType(expressions);
+						current.add(op.setType(operators)).setType(expressions);
 						continue;
 					}
 					Node &val = *valueNode(' ', &key).clone();// applies to WHOLE expression
 					if (add_raw) {  // complex expressions are not simple maps
-						current.addRaw(val);
+						current.add(val);
 					} else {
 						setField(key, val);
 					}
@@ -1130,7 +1130,7 @@ private:
 						neu.kind = groups;
 						neu.parent = parent;
 //						neu.grouper = ch;
-						neu.addRaw(current);
+						neu.add(current);
 						current = neu;
 						current.grouper = ch;
 						char closer = ch;// need to keep troughout loop!
@@ -1139,7 +1139,7 @@ private:
 						while (ch == closer) {
 							proceed();
 							Node element = valueNode(closer);// todo stop copying!
-							current.addRaw(element.clone());
+							current.add(element.clone());
 						}
 						break;
 					}// else fallthough!
@@ -1161,10 +1161,10 @@ private:
 						current.kind = expressions;
 					}
 					if (node.length > 1 and addFlat) {
-						for (Node arg:node)current.addRaw(arg);
+						for (Node arg:node)current.add(arg);
 						current.kind = expressions;
 					} else {
-						current.addRaw(&node);
+						current.add(&node);
 					}
 				}
 			}
