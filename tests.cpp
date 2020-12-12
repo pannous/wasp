@@ -1342,6 +1342,32 @@ void testReplace() {
 	check(result == replaced);
 }
 
+
+void testNodeConversions() {
+	Node b = Node(true);
+	log(typeName(b.kind));
+	check(b.value.longy == 1);
+	check(b.kind == bools);
+	check(b == True);
+	Node a = Node(1);
+	check(a.kind == longs);
+	check(a.value.longy = 1);
+	Node a0 = Node(10l);
+	check(a0.kind == longs);
+	check(a0.value.longy = 1);
+	Node a1 = Node(1.1);
+	check_eq(a1.kind, reals);
+	check(a1.kind == reals);
+	check(a1.value.real = 1.1);
+	Node a2 = Node(1.2f);
+	check(a2.kind == reals);
+	check(a2.value.real = 1.2f);
+	Node as = Node('a');
+	check(as.kind == strings);
+	check(as.value.string == 'a');
+}
+
+
 void testWasmString() {
 	wasm_string x = reinterpret_cast<wasm_string>("\03abc");
 	String y = String(x);
@@ -1423,6 +1449,7 @@ void tests() {
 	testStringReferenceReuse();
 	testWasmString();
 	testTruthiness();
+	testNodeConversions();
 	testConcatenation();
 	testMarkSimple();
 	testMarkMulti();
@@ -1559,32 +1586,9 @@ void testNodeImplicitConversions(){
 }
 #endif
 
-void testNodeConversions() {
-	Node b = Node(true);
-	log(typeName(b.kind));
-	check(b.value.longy == 1);
-	check(b.kind == bools);
-	check(b == True);
-	Node a = Node(1);
-	check(a.kind == longs);
-	check(a.value.longy = 1);
-	Node a0 = Node(10l);
-	check(a0.kind == longs);
-	check(a0.value.longy = 1);
-	Node a1 = Node(1.1);
-	check_eq(a1.kind, reals);
-	check(a1.kind == reals);
-	check(a1.value.real = 1.1);
-	Node a2 = Node(1.2f);
-	check(a2.kind == reals);
-	check(a2.value.real = 1.2f);
-	Node as = Node('a');
-	check(as.kind == strings);
-	check(as.value.string == 'a');
-}
-
 void testCurrent() { // move to tests() once OK
-	testNodeConversions();
+	testMarkMulti();
+
 	testWasmMemoryIntegrity();
 	operator_list = List(operator_list0);
 	check(operator_list.has("+"));
