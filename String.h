@@ -18,13 +18,17 @@
 
 #include <cstdlib>
 #include <cstdio> // printf
+
 #endif
 
 
-typedef const unsigned char* wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
+typedef const unsigned char *wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
 class String;
-template<class S> class List;
-extern String& EMPTY_STRING;
+
+template<class S>
+class List;
+
+extern String &EMPTY_STRING;
 //What 'char' and 'wchar_t' represent are completely ambiguous.
 //You might think that they represent a "character", but depending on the encoding, that might not be true.
 //typedef wchar_t character;// overloaded term that can mean many things:
@@ -45,7 +49,9 @@ enum sizeMeasure {
 };
 
 void reverse(char *str, int len);
-codepoint decode_unicode_character(char *utf8bytes,int* len=0);
+
+codepoint decode_unicode_character(char *utf8bytes, int *len = 0);
+
 //decode_codepoint
 char *itoa0(long num, int base);
 
@@ -98,6 +104,7 @@ typedef chars chars;
 #define error(msg) error1(msg,__FILE__,__LINE__)
 
 extern void error1(chars message, chars file = 0, int line = 0);
+
 //void error1(String message, chars file = 0, int line = 0);
 extern void info(chars);
 
@@ -119,7 +126,7 @@ String str(char *string);
 
 String s(chars &s);
 
-bool eq(chars dest, chars src, int length=-1);
+bool eq(chars dest, chars src, int length = -1);
 
 void strcpy2(char *dest, chars src);
 
@@ -168,11 +175,11 @@ class String {
 #endif
 
 private:
-	codepoint *codepoints=0;// extract on demand from data
+	codepoint *codepoints = 0;// extract on demand from data
 	int codepoint_count = -1;
 
 public:
-	bool shared_reference= false;// length terminated substrings!
+	bool shared_reference = false;// length terminated substrings!
 
 	char *data{};
 	int length = -1;
@@ -191,7 +198,7 @@ public:
 //#ifndef WASM
 ////	Error while importing "env"."_Znwm": unknown import.
 	void *operator new(size_t size) {
-		return static_cast<String *>(calloc(sizeof(String), size+1));// WOW THAT WORKS!!!
+		return static_cast<String *>(calloc(sizeof(String), size + 1));// WOW THAT WORKS!!!
 	}
 //#endif
 
@@ -199,12 +206,12 @@ public:
 
 //	~String()=default;
 
-	explicit String(char* datas,int len, bool share) {
-		data=datas;
-		length=len;
-		shared_reference=share;
-		if(!share){
-			data = (char *)alloc(sizeof(char), length+1);// including \0
+	explicit String(char *datas, int len, bool share) {
+		data = datas;
+		length = len;
+		shared_reference = share;
+		if (!share) {
+			data = (char *) alloc(sizeof(char), length + 1);// including \0
 			strcpy2(data, datas, length);
 			data[length] = 0;
 		}
@@ -216,24 +223,24 @@ public:
 			data = 0;//SUBTLE BUGS if setting data=""; data=empty_string;
 			return;
 		}
-		data = (char*)(alloc(sizeof(char), 2));
+		data = (char *) (alloc(sizeof(char), 2));
 		data[0] = byte_character;
 		data[1] = 0;
 		length = 1;
 	}
 
 //	explicit
-	String(const char string[],bool copy=false/*true*/) {
+	String(const char string[], bool copy = false/*true*/) {
 //		data = const_cast<char *>(string);// todo heap may disappear, use copy!
 		length = strlen0(string);
 		if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
 		else {
-			if(copy){
-			data = (char*)(alloc(sizeof(char), length + 1));
-			strcpy2(data, string, length);
-			} else{
+			if (copy) {
+				data = (char *) (alloc(sizeof(char), length + 1));
+				strcpy2(data, string, length);
+			} else {
 				shared_reference = true;
-				data=(char*)string;
+				data = (char *) string;
 			}
 		}
 	}
@@ -241,9 +248,9 @@ public:
 	explicit
 	String(wasm_string s) {
 		shared_reference = true;
-		short length_bytes=1;// LEB128 length encoding header
-		length=s[0];
-		if(length<0 or length>=128)
+		short length_bytes = 1;// LEB128 length encoding header
+		length = s[0];
+		if (length < 0 or length >= 128)
 			todo("decode full LEB128");
 		data = (char *) s + length_bytes;
 	}
@@ -263,7 +270,7 @@ public:
 
 
 	explicit String(char16_t utf16char) {
-		data = (char*)(calloc(sizeof(char16_t), 2));
+		data = (char *) (calloc(sizeof(char16_t), 2));
 		encode_unicode_character(data, utf16char);
 		length = len(data);// at most 2 bytes
 	}
@@ -275,13 +282,13 @@ public:
 //	}
 
 	explicit String(char32_t utf32char) {// conflicts with int
-		data = (char*)(calloc(sizeof(char32_t), 2));
+		data = (char *) (calloc(sizeof(char32_t), 2));
 		encode_unicode_character(data, utf32char);
 		length = len(data);// at most 4 bytes
 	}
 
 	explicit String(wchar_t wideChar) {
-		data = (char*)(calloc(sizeof(wchar_t), 2));
+		data = (char *) (calloc(sizeof(wchar_t), 2));
 		encode_unicode_character(data, wideChar);
 		length = len(data);
 	}
@@ -296,7 +303,7 @@ public:
 		while (length < max_length) {
 			real = (real - long(real)) * 10;
 			if (int(real) == 0)break;// todo 0.30303
-			append(int(real) + '0' );// = '0'+1,2,3
+			append(int(real) + '0');// = '0'+1,2,3
 		}
 	}
 
@@ -308,8 +315,8 @@ public:
 
 
 	codepoint codepointAt(int i) {
-		if(!codepoints)extractCodepoints();
-		if(i>codepoint_count)
+		if (!codepoints)extractCodepoints();
+		if (i > codepoint_count)
 			error("index > codepoint count");
 		return codepoints[i];
 	}
@@ -357,12 +364,12 @@ public:
 //	operator std::string() const { return "Hi"; }
 
 // excluding to
-	String& substring(int from, int to = -1, bool ref= true/*false*/) { // excluding to
-		if(from<0 or from==0 and to==length)return *this;
+	String &substring(int from, int to = -1, bool ref = true/*false*/) { // excluding to
+		if (from < 0 or from == 0 and to == length)return *this;
 		if (to < 0 or to > length)to = length;
 		if (to <= from)return EMPTY_STRING;
 		int len = to - from;
-		auto* neu = new String(data + from, len, ref);
+		auto *neu = new String(data + from, len, ref);
 		return *neu;
 	}
 
@@ -379,13 +386,13 @@ public:
 
 
 	String &append(char c) {
-		if (!data)data = (char*)(alloc(sizeof(char), 2));
+		if (!data)data = (char *) (alloc(sizeof(char), 2));
 		if (data + length + 1 == (char *) current) {// just append recent
 			data[length++] = c;
 			data[length] = 0;
 			current += 2;
 		} else {
-			auto *neu = (char*)(alloc(sizeof(char), length + 5));
+			auto *neu = (char *) (alloc(sizeof(char), length + 5));
 			if (data)strcpy2(neu, data, length);
 			neu[length++] = c;
 			data = neu;
@@ -497,10 +504,10 @@ public:
 		return this;
 	}
 
-	String& operator+(String c) {
+	String &operator+(String c) {
 		if (c.length <= 0)
 			return *this;
-		auto *neu = (char*)alloc(sizeof(char), length + c.length + 1);
+		auto *neu = (char *) alloc(sizeof(char), length + c.length + 1);
 #ifdef cstring
 		if (data)strcpy(neu, data);
 		if (c.data)strcpy(neu + length, c.data);
@@ -510,7 +517,7 @@ public:
 #endif
 		neu[length + c.length] = 0;
 //		log(neu);
-		String* ok=new String(neu);
+		String *ok = new String(neu);
 		ok->length = length + c.length;
 		return *ok;
 	}
@@ -583,18 +590,18 @@ public:
 	}
 
 	bool operator==(chars c) {
-		return length != 0 && data && eq(data, c,shared_reference? length:-1);
+		return length != 0 && data && eq(data, c, shared_reference ? length : -1);
 	}
 
 	bool operator==(char *c) {
-		return length != 0 && data && eq(data, c, shared_reference? length:-1);
+		return length != 0 && data && eq(data, c, shared_reference ? length : -1);
 	}
 
 
 	bool operator!=(String &s) {// const
 		if (this->empty())return !s.empty();
 		if (s.empty())return !this->empty();
-		return !eq(data, s.data,shared_reference? length:-1);
+		return !eq(data, s.data, shared_reference ? length : -1);
 	}
 
 //	bool operator==(const String other ) {
@@ -604,19 +611,19 @@ public:
 	bool operator==(String &s) {// const
 		if (this->empty())return s.empty();
 		if (s.empty())return this->empty();
-		return eq(data, s.data,shared_reference? length:-1);
+		return eq(data, s.data, shared_reference ? length : -1);
 	}
 
 	bool operator==(String *s) {// const
 		if (this->empty() and not s)return true;
 		if (this->empty())return s->empty();
 		if (s->empty())return this->empty();
-		return eq(data, s->data,shared_reference? length:-1);
+		return eq(data, s->data, shared_reference ? length : -1);
 	}
 
 	bool operator==(char *c) const {
 		if (!this)return false;// how lol e.g. me.children[0].name => nil.name
-		return eq(data, c,shared_reference? length:-1);
+		return eq(data, c, shared_reference ? length : -1);
 	}
 
 	bool operator!=(char *c) {
@@ -627,26 +634,29 @@ public:
 #define min(a, b) (a < b ? a : b)
 
 	bool operator>(String other) {
-		for (int i = 0; i < min(length,other.length); ++i) {
-			if(data[i]<other.data[i])return false;
+		for (int i = 0; i < min(length, other.length); ++i) {
+			if (data[i] < other.data[i])return false;
 		}
 		return length >= other.length;
 	}
+
 	bool operator>=(String other) {
-		for (int i = 0; i < min(length,other.length); ++i) {
-			if(data[i]<other.data[i])return false;
+		for (int i = 0; i < min(length, other.length); ++i) {
+			if (data[i] < other.data[i])return false;
 		}
 		return length >= other.length;
 	}
+
 	bool operator<=(String other) {
-		for (int i = 0; i < min(length,other.length); ++i) {
-			if(data[i]>other.data[i])return false;
+		for (int i = 0; i < min(length, other.length); ++i) {
+			if (data[i] > other.data[i])return false;
 		}
 		return length <= other.length;
 	}
+
 	bool operator<(String other) {
-		for (int i = 0; i < min(length,other.length); ++i) {
-			if(data[i]>other.data[i])return false;
+		for (int i = 0; i < min(length, other.length); ++i) {
+			if (data[i] > other.data[i])return false;
 		}
 		return length <= other.length;
 	}
@@ -700,9 +710,10 @@ public:
 			return *this;
 		}
 	}
+
 	String replace(chars string, String with) {// first only!
 		return replace(string, with.data);
-		}
+	}
 
 	String times(short i) {
 		if (i < 0)
@@ -746,16 +757,18 @@ public:
 	String format(char *string) {
 		return this->replace("%s", string);
 	}
+
 //	int in(List<chars> liste);
 	int in(chars array[]) {// array NEEDS to be 0 terminated!!!!
 		int i = 0;
 		while (array[i]) {
-			if (eq(array[i],data))
+			if (eq(array[i], data))
 				return i + 1;
 			i++;
 		}
 		return 0;
 	}
+
 	// 0 = NO, 1 = yes at #1
 	int in(String array[]) {// array NEEDS to be 0 terminated!!!!
 		int i = 0;
@@ -790,9 +803,11 @@ public:
 	void operator delete(void *) {}
 
 	~SyntaxError() = default;
+
 	void *operator new(size_t size) {
-		return static_cast<String *>(calloc(sizeof(SyntaxError), size+1));// WOW THAT WORKS!!!
+		return static_cast<String *>(calloc(sizeof(SyntaxError), size + 1));// WOW THAT WORKS!!!
 	}
+
 	explicit SyntaxError(String &error) {
 		this->data = error.data;
 	}
@@ -823,12 +838,17 @@ extern String EMPTY;// = String('\0');
 void log(String *s);
 
 void log(chars s);
+
 //#endif
 //unsigned  == unsigned int!
 inline short utf8_byte_count(char c);
+
 short utf8_byte_count(codepoint c);
-bool empty(String& s);
-bool empty(String* s);
+
+bool empty(String &s);
+
+bool empty(String *s);
+
 bool empty(chars s);
 
 #include "Map.h"
