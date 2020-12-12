@@ -908,20 +908,11 @@ void printf(Node &) {
 
 
 Node &Node::setType(Type type) {
-	logs("S");
 	if (value.data and (type == groups or type == objects))
 		return *this;
-	logs("S");
-
 	if (kind == nils and not value.data)
 		return *this;
-	logs("S");
-
 	this->kind = type;
-	logs("S");
-	logs(typeName(type));
-	logs("-------------------");
-
 //	if(empty(name) and debug){
 //		if(type==objects)name = object_name;
 //		if(type==groups)name = groups_name;
