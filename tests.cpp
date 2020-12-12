@@ -1159,7 +1159,21 @@ void testConcatenationBorderCases() {
 }
 
 void testConcatenation() {
-	assert_equals(Node("1", "2", 0) + Node("3"_s), Node("1", "2", "3", 0));
+	Node node1 = Node("1", "2", "3", 0);
+	check(node1.length==3);
+	check(node1.last()=="3");
+	node1=node1 + Node("4"_s);
+	check(node1.length==4);
+	check(node1.last()=="4");
+
+	assert_equals(node1, Node("1", "2", "3", "4", 0));
+	Node first = Node(1, 2, 0);
+	check_eq(first.length,2);
+	check_eq(first.kind,objects);
+	Node node = first + Node(3);
+	check_eq(node.length,3);
+	check(node.last()==3);
+
 	assert_equals(Node(1, 2, 0) + Node(3), Node(1, 2, 3, 0));
 	assert_equals(Node(1, 2, 0) + Node(3, 4, 0), Node(1, 2, 3, 4, 0));
 	assert_equals(Node("1", "2", 0) + Node("3", "4", 0), Node("1", "2", "3", "4", 0));
@@ -1332,7 +1346,7 @@ void testNodeBasics() {
 	check(a.name == "a");
 	check(a == "a");
 	Node b = Node("c");
-	a.addRaw(b);
+	a.add(b);
 	check_eq(a.length , 1);
 	check(a.children);
 	Node *b2 = b.clone();
@@ -1349,8 +1363,11 @@ void testNodeBasics() {
 	check_eq(a.length , 2);
 	check(a.has("d"));
 	check(a["d"] == "e");
-
-	a.add(b);// why?
+	Node &d=a.children[a.length-1];
+	check(d.length==0);
+	check(d=="e");
+	check(d.kind==keyNode);
+	a.addSmart(b);// why?
 }
 
 void tests() {
@@ -1362,7 +1379,6 @@ void tests() {
 	testStringReferenceReuse();
 	testWasmString();
 	testTruthiness();
-	testIndex();
 	testMarkSimple();
 	testConcatenation();
 	testMarkMulti();
@@ -1419,6 +1435,7 @@ void tests() {
 	testConcatenationBorderCases();
 	testCall();
 	testNewlineLists();
+	testIndex();
 
 	assert_is("[a b c]#2", "b");
 	assert_is("one plus two times three", 7);
