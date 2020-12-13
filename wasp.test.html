@@ -36,10 +36,6 @@
         }
     }
     function index(){}// for cmd+o (find symbol)
-    function memmove(d,s,nr){
-        raise("who calls this??")
-        while(--nr>=0) buffer[d+nr]=buffer[s+nr];// todo: 1. DO IT IN WASM! 2. OK??
-    }
 
     // This is googles recommended way of loading WebAssembly.
     // try {
@@ -51,7 +47,6 @@
             env: {
                 // if compiled without Angle:
                 Backtrace,
-                memmove,
                 raise: x => {throw new Error(string(x))},
                 printf: x => console.log(string(x)),// not quite!
                 puts: x => console.log(string(x)),// todo

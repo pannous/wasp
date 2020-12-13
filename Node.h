@@ -219,7 +219,7 @@ public:
 
 
 	explicit Node(chars name) {
-		this->name = String(name);
+		this->name = *new String(name);
 //		type = strings NAH;// unless otherwise specified!
 	}
 
