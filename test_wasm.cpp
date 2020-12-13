@@ -335,6 +335,15 @@ void testWasmMemoryIntegrity() {
 void testRecentRandomBugs() {
 //		testGraphQlQuery();
 
+	check(operator_list.has("+"));
+	check(not(bool) Node("x"));
+	check(false == (bool) Node("x"));
+	check(Node("x") == false);
+	assert_is("x", Node(false));// passes now but not later!!
+
+	assert_is("x", false);// passes now but not later!!
+	assert_is("y", false);
+	assert_is("x", false);
 	assert(eval("ç='☺'") == "☺");// fails later => bad pointer?
 	assert(eval("(2+1)==(4-1)") == 1);
 	assert(eval("3==2+1") == 1);
@@ -400,15 +409,15 @@ void wasm_todos() {
 
 
 //#include "wasm_merger.h"
-void testMergeWabt(){
+void testMergeWabt() {
 //	merge_files({"test-lld-wasm/main.wasm", "test-lld-wasm/lib.wasm"});
 //	wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
 //	wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
 //	Module *merged = merge_wasm(main, module);
 //	save_wasm(merged);
 //	int ok=run_wasm(merged);
-	int ok=run_wasm("a.wasm");
-	check(ok==42);
+//	int ok=run_wasm("a.wasm");
+//	check(ok==42);
 }
 
 void testWasmRuntimeExtension() {
@@ -422,17 +431,18 @@ void testWasmRuntimeExtension() {
 }
 
 //testMerge
-void testWasmModuleExtension(){
+void testWasmModuleExtension() {
 #ifndef RUNTIME_ONLY
+	functionSignatures.clear();
 	Node charged = analyze(parse("test:=42"));
-	Code lib = emit(charged,0,"lib_main");
+	Code lib = emit(charged, 0, "lib_main");
 	lib.save("lib.wasm");
 	Module module = read_wasm("lib.wasm");
 	charged = analyze(parse("test"));
-	Code main = emit(charged,&module);
+	Code main = emit(charged, &module);
 	main.save("main.wasm");
 	Module prog = read_wasm("main.wasm");
-	Code merged= merge_wasm(module, prog);
+	Code merged = merge_wasm(module, prog);
 	merged.save("merged.wasm");
 	read_wasm("merged.wasm");
 	int ok = merged.run();

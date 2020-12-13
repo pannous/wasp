@@ -36,21 +36,20 @@ typedef uint8_t byt;
 //https://en.wikipedia.org/wiki/LEB128
 // little endian 257 = 0x81 (001) + 0x02 (256)
 Code &unsignedLEB128(long n) {
-	Code buffer;
-//	Code* buffer=new Code(); // IF RETURNING Code&
+	Code *buffer = new Code(); // IF RETURNING Code&
 	do {
 		byt byte = n & 0x7f;
 		n = n >> 7;
 		if (n != 0) {
 			byte |= 0x80;// continuation bit
 		}
-		buffer.add(byte);
+		buffer->add(byte);
 	} while (n != 0);
-	return buffer;
+	return *buffer;
 }
 
 Code &signedLEB128(long value) {
-	Code buffer;
+	Code *buffer = new Code();
 	int more = 1;
 	bool negative = (value < 0);
 	long val = value;
@@ -73,9 +72,9 @@ Code &signedLEB128(long value) {
 		else {
 			byte |= 0x80;// continuation bit:  set high order bit of byte;
 		}
-		buffer.add(byte); //		emit byte;
+		buffer->add(byte); //		emit byte;
 	}
-	return buffer;
+	return *buffer;
 }
 // https://webassembly.github.io/spec/core/binary/conventions.html#binary-vec
 // Vectors are encoded with their length followed by their element sequence
