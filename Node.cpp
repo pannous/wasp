@@ -168,8 +168,8 @@ Node &Node::operator[](char c) {
 	return (*this)[String(c)];
 }
 
-int capacity = 100;// todo !!! lol lists>100 elements;)
-int maxNodes = 10000;
+int capacity = 100;// TODO !!! lol lists>100 elements;)
+int maxNodes = 10000;// TODO !!!
 int lastChild = 1;
 
 
