@@ -16,7 +16,7 @@ Node &result = *new Node();
 
 //#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
 #define check(test) if(test){log("\nOK check passes: ");printf("%s",#test);}else{ \
-printf("\nNOT PASSING: "); log(#test);log("\n");printf(__FILE__); printf(":%d\n",__LINE__); \
+printf("\nNOT PASSING: "); log(#test);log("\n");printf("%s:%d\n",__FILE__,__LINE__); \
 exit(0);}
 
 #undef assert // assert.h:92 not as good!
@@ -1416,25 +1416,29 @@ void testNodeBasics() {
 	check(a.name == "a");
 	check(a == "a");
 	Node b = Node("c");
+	check_eq(b.name, "c");
+
 	a.add(b);
-	check_eq(a.length , 1);
+	check_eq(a.length, 1);
 	check(a.children);
 	Node *b2 = b.clone();
-	check(b==b2);
-	check_eq(b , a.children[0]);
+	check(b == b2);
+	check_eq(b, a.children[0]);
 
 //	a["b"] = "c";
-	check_eq(b , a.children[0]);
+	check_eq(b, a.children[0]);
+	check_eq(b.name, "c");// wow, worked before, corrupted memory!!
+	check_eq(a.children[0].name, "c");
 	check(a.has("c"));
 	check(b == a.has("c"));
 
 //	a["b"] = "c";
 	a["d"] = "e";
-	check_eq(a.length , 2);
+	check_eq(a.length, 2);
 	check(a.has("d"));
 	check(a["d"] == "e");
-	Node &d=a.children[a.length-1];
-	check(d.length==0);
+	Node &d = a.children[a.length - 1];
+	check(d.length == 0);
 	check(d=="e");
 	check(d.kind==keyNode);
 	a.addSmart(b);// why?
@@ -1587,14 +1591,16 @@ void testNodeImplicitConversions(){
 #endif
 
 void testCurrent() { // move to tests() once OK
+#ifndef WASM
 	testWasmRuntimeExtension();
 	exit(1);
 	testWasmModuleExtension();
-	testMarkMulti();
+#endif
+//	testMarkMulti();
 
 	testWasmMemoryIntegrity();
 //	operator_list = List(operator_list0);
-	testRecentRandomBugs();
+//	testRecentRandomBugs();
 	tests();// make sure all still ok before changes
 	testAllWasm();
 	testAngle();

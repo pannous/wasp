@@ -28,17 +28,20 @@ void free(void*){/*lol*/}
 
 
 void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
-	void* last = current;
-	current += size * 2 + 1 ;//greedy
-	if(memory_size and (long)current>=memory_size/2){
+	void *last = current;
+	current += size * 2 + 1;//greedy
+	if (memory_size and (long) current >= memory_size) {
+#ifndef WASI
 		logi((int)last);
 		logi((int)memory);
 		logi((int)current);
 		logi((int)heap_offset);
 		logi(memory_size);
 		current=(char*)heap_offset;// circle through memory
-//		error("OUT OF MEMORY");
-//		panic();
+		error("OUT OF MEMORY");
+		panic();
+#endif
+		last = current = (char *) heap_offset;// reset HACK todo!
 	}
 	return last;
 }
@@ -166,11 +169,6 @@ void *alloc(int size, int num) {
 
 #ifdef WASM
 
-
-void panic(){
-	char* x=0;
-	x[-1]=2;// Bus error: 10
-}
 
 void *calloc(int size, int num) {// clean ('0') alloc
 	char *mem =(char *) malloc(size * num);
