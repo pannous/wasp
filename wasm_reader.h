@@ -29,5 +29,5 @@ public:
 	Code local_names;
 	Code function_names;
 };
-Module read_wasm(char const *file);
+Module read_wasm(chars file);
 
