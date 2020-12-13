@@ -467,7 +467,11 @@ void testAllWasm() {
 	// constant things may be evaluated by compiler!
 	testWasmModuleExtension();
 	testWasmRuntimeExtension();
-
+#ifdef RUNTIME_ONLY
+	logs("RUNTIME_ONLY");
+	logs("NO WASM emission...");
+	return;
+#endif
 //	testMerge();
 //	exit(0);
 //	testRefactor();
