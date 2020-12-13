@@ -11,7 +11,6 @@ Module *read_wasm(bytes data, int size, const char *filename);
 Module* readWasm(char const *file);
 Module* refactor_wasm(Module *module, chars old_name, chars new_name);
 void save_wasm(Module *module, chars file="out.wasm");
-Module* merge_wasm(Module *base, Module *module);
 void remove_function(Module *module, chars fun);
 
 

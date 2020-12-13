@@ -93,8 +93,9 @@ Code &signedLEB128(long value) {
 Code encodeVector(Code data) {
 //	return data.vector();
 	if (data.encoded)return data;
-//	Code code = unsignedLEB128(data.length) + flatten(data);
-	Code code = Code((byte) data.length) + data;
+	Code code = unsignedLEB128(data.length);
+	code = code + data;
+//	Code code = Code((byte) data.length) + data;
 	code.encoded = true;
 	return code;
 }
