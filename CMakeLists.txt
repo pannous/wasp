@@ -9,7 +9,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
-set(RUNTIME_ONLY 1) # no Angle eval emit etc!
+#set(RUNTIME_ONLY 1) # no Angle eval emit etc!
 set(DEBUG 1)
 #set(RELEASE 1)
 
@@ -50,9 +50,12 @@ include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/
 # ^^ fixes <cmath> mac errors!
 
 # enable:
+ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
+ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
 # disable:
+ADD_COMPILE_FLAG("-Wno-error=#warnings")
 ADD_COMPILE_FLAG("-Wno-writable-strings") # allow conversion from string literal to 'char *'
 ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
 ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
@@ -66,14 +69,19 @@ else()
     ADD_COMPILE_FLAG("-w") # hide warnings
     ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # -mmacosx-version-min=11.0
     ADD_COMPILE_FLAG(" -Os -Oz ") # size should be ok? -O1 removes symbol names https://bugs.llvm.org/show_bug.cgi?id=45602 !
-endif()
+endif ()
 
 ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
 
-set(SOURCE_FILES String.cpp Node.cpp Map.cpp Wasp.cpp  Angle.cpp wasm_helpers.cpp) # COMMON FOR ALL
-if(!RUNTIME_ONLY)
-    set(SOURCE_FILES ${SOURCE_FILES} Angle.cpp Code.cpp wasm_emitter.cpp wasm_reader.cpp)
-endif()
+set(SOURCE_FILES String.cpp Node.cpp Map.cpp Wasp.cpp Angle.cpp wasm_helpers.cpp) # COMMON FOR ALL
+if (!RUNTIME_ONLY)
+    message(NOT RUNTIME_ONLY)
+
+    set(SOURCE_FILES ${SOURCE_FILES} Angle.cpp Code.cpp wasm_emitter.cpp wasm_reader.cpp wasm_merger.cpp wasm_merger.h)
+endif ()
+
+#    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
+set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_console.cpp)
 
 
 if (WASM) # OR WASI)
@@ -163,7 +171,6 @@ elseif (VM) # NORMAL:
     #    ADD_COMPILE_DEFINITIONS(WASM_ENABLE_FAST_INTERP)
     #    ADD_COMPILE_FLAG("-w -Oz") # maximal optimization, CANT DEBUG!
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
-    set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_micro.cpp wasm_merger.cpp wasm_merger.h)
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
 
     if (APPLE)
@@ -192,11 +199,6 @@ elseif (WABT) # NORMAL:
     include(wabt/cmake_install.cmake)
 
     add_subdirectory(wabt)
-    set(SOURCE_FILES
-            Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
-            wasm_helpers.cpp wasm_emitter.cpp wasm_reader.cpp wasm_runner_wabt.cpp wasm_merger_wabt.cpp Code.cpp)
-    #    wasm_runner_console.cpp
-    #     wasm_runner_wabt.cpp  error: call to implicitly-deleted copy constructor WHY???
     add_executable(angle ${SOURCE_FILES})
     target_include_directories(angle PUBLIC wabt/)
     target_include_directories(angle PUBLIC wabt/src/)
@@ -208,12 +210,8 @@ elseif (WASM3) # NORMAL:
     message(WASM3 VM)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
     include(wasm3/cmake_install.cmake)
-
+    set(SOURCE_FILES ${SOURCE_FILES} asm_runner_wasm3.cpp)
     add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)
-    set(SOURCE_FILES
-            Angle.cpp Wasp.cpp String.cpp Node.cpp ErrorHandler.cpp Backtrace.cpp NodeTypes.h
-            wasm_helpers.cpp wasm_emitter.cpp wasm_runner_wasm3.cpp
-            smart_types.cpp wasm_reader.cpp)
     add_executable(angle ${SOURCE_FILES})
     target_include_directories(angle PUBLIC wasm3/source/)
     target_link_libraries(angle PRIVATE m3)
@@ -224,7 +222,7 @@ else () # NORMAL:
 
     # just for Backtrace.cpp :
     #    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")
-    #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
+
     #smart_types.cpp wasm_runner3.h NodeTypes.h wasm_merger.cpp
     add_executable(angle ${SOURCE_FILES})
     TARGET_LINK_LIBRARIES(angle curl)
