@@ -657,12 +657,12 @@ private:
 	Node& expression(bool stop_at_space) {
 		Node node = symbol();
 		if (lookahead_ambiguity())
-			return node;
+			return *node.clone();
 		// {a:1 b:2} vs { x = add 1 2 }
-		Node expressionas = Node();
+		Node expressionas;
 		expressionas.kind = expressions;
 		expressionas.add(node);
-		if (stop_at_space and ch == ' ')return expressionas;
+		if (stop_at_space and ch == ' ')return *expressionas.clone();
 		white();
 		while (ch and (is_identifier(ch) or isalnum(ch) or is_operator(ch))) {
 			node = symbol();// including operators `=` ...
@@ -673,8 +673,8 @@ private:
 		}
 //		expressions.name=map(children.name)
 		if (expressionas.length > 1)
-			return expressionas;
-		else return node;
+			return *expressionas.clone();
+		else return *node.clone();
 	}
 
 	// Parse true, false, null, Infinity, NaN

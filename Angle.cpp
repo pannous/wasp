@@ -228,7 +228,10 @@ Node eval(String code) {
 	else
 #endif
 #ifndef RUNTIME_ONLY
-		return emit(analyze(parse(code))).run();// int -> Node todo: int* -> Node*
+	{
+		int result = emit(analyze(parse(code))).run();
+		return Node(result);
+	}
 #else
 		return parse(code).evaluate();
 #endif
@@ -882,8 +885,8 @@ Node emit(String code) {
 	Node charged = analyze(data);
 	Code binary = emit(charged);
 //	code.link(wasp) more beautiful with multiple memory sections
-	Node node=binary.run();
-	return node;
+	int result = binary.run();
+	return Node(result);
 #endif
 }
 
