@@ -27,23 +27,32 @@ class Code{
 public:
 
 	bytes data=0;
-	int length=0;
-	int start=0;// internal reader pointer
-	bool encoded= false;// first byte = size of vector
+	int length = 0;
+	int start = 0;// internal reader pointer
+	bool encoded = false;// first byte = size of vector
 
-	Code(){}
-	Code(bytes a, int len){
+	Code() {}
+
+	Code(bytes a, int len) {
 //		 todo : memcopy, else stack value is LOST
-		data=a;
-		length=len;
+		data = a;
+		length = len;
 	}
 
-	Code(chars string,bool size_header=true,bool null_terminated=false) {
+	Code(int nr) {// ambiguous: (un)signedLEB128 or int32 !!
+		push(nr, false);
+	}
+
+	Code(long nr) {
+		push(nr, false);
+	}
+
+	Code(chars string, bool size_header = true, bool null_terminated = false) {
 		long len = (long) strlen0(string);
-		if(null_terminated)len++;
-		if(size_header){ push(len); }
-		push((bytes)string, len);
-		if(null_terminated)push((byte )0);
+		if (null_terminated)len++;
+		if (size_header) { push(len); }
+		push((bytes) string, len);
+		if (null_terminated)push((byte) 0);
 		// wasm strings start with their length and do NOT end with 0 !! :(
 	}
 
