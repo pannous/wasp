@@ -9,12 +9,12 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
-#set(RUNTIME_ONLY 1) # no Angle eval emit etc!
+set(RUNTIME_ONLY 1) # no Angle eval emit etc!
 set(DEBUG 1)
 #set(RELEASE 1)
 
-#set(WASM 1)
-#set(WASI 1)
+set(WASM 1)
+set(WASI 1)
 
 # TO EXECUTE wasm:
 #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
@@ -22,7 +22,9 @@ set(DEBUG 1)
 #set(WASM3 1) # wasm_runner_wasm3.cpp
 
 if (WASM)
-    ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
+    if (!WASI)
+        ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
+    endif ()
 endif ()
 
 if(WASI)
@@ -50,7 +52,9 @@ include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/
 # ^^ fixes <cmath> mac errors!
 
 # enable:
-ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+if (!WASM)
+    ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+endif ()
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
@@ -81,8 +85,9 @@ else ()
 endif ()
 
 #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
-set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_console.cpp)
-
+if (!WASM)
+    set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_console.cpp)
+endif ()
 
 if (WASM) # OR WASI)
     message(WASM)
@@ -123,6 +128,8 @@ if (WASM) # OR WASI)
     endif()
     if(RELEASE)
         ADD_COMPILE_FLAG("-Oz -flto -Qn -Ws,--lto-O3,-O4,--gc-sections") # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
+        ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
+        #       ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
     endif()
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasm ALL DEPENDS wasp.wasm)
