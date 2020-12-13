@@ -19,7 +19,7 @@ Node &result = *new Node();
 printf("\nNOT PASSING: "); log(#test);log("\n");printf(__FILE__); printf(":%d\n",__LINE__); \
 exit(0);}
 
-
+#undef assert // assert.h:92 not as good!
 #define assert(condition) try{\
    if((condition)==0)error("assert FAILED");else printf("\nassert OK: %s\n",#condition);\
    }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
@@ -1351,17 +1351,17 @@ void testNodeConversions() {
 	check(b == True);
 	Node a = Node(1);
 	check(a.kind == longs);
-	check(a.value.longy = 1);
+	check(a.value.longy == 1);
 	Node a0 = Node(10l);
 	check(a0.kind == longs);
-	check(a0.value.longy = 1);
+	check(a0.value.longy == 1);
 	Node a1 = Node(1.1);
 	check_eq(a1.kind, reals);
 	check(a1.kind == reals);
-	check(a1.value.real = 1.1);
+	check(a1.value.real == 1.1);
 	Node a2 = Node(1.2f);
 	check(a2.kind == reals);
-	check(a2.value.real = 1.2f);
+	check(a2.value.real == 1.2f);
 	Node as = Node('a');
 	check(as.kind == strings);
 	check(as.value.string == 'a');

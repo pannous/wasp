@@ -311,8 +311,8 @@ void testWasmMemoryIntegrity() {
 	if (!memory_size) {
 		error("NO MEMORY");
 	}
-	printf("MEMORY start at %d\n", memory);
-	printf("current start at %d\n", current);
+	printf("MEMORY start at %ld\n", (long) memory);
+	printf("current start at %ld\n", (long) current);
 //	Bus error: 10  if i > memory_size
 // Fails at 100000, works at 100001 WHERE IS THIS SET?
 //	int start=125608;
