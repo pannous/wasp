@@ -300,8 +300,8 @@ Code emitValue(Node node, String context) {
 			code.addByte((byte) f32_auto);
 			code.push(ieee754(node.value.real), 4);
 			break;
-		case reference:
-		case identifier: {
+//		case identifier:
+		case reference: {
 			int local_index = locals[context].position(node.name);
 			if (local_index < 0)error("UNKNOWN symbol "s + node.name + " in context " + context);
 			code.addByte(get_local);
@@ -507,20 +507,6 @@ Code emitCall(Node &fun, String context) {
 //	code.addByte(nop);// padding for potential relocation
 	last_type = functionSignatures[fun.name].return_type;
 	return code;
-}
-
-Code emitDeclaration2(Node fun, Node &body) {
-	// OLD SHIT
-	if (empty(fun.name)) {
-		fun = body[0].flat();
-	}
-
-	if (empty(fun.name))
-		error("NO SYMBOL NAME FOR declaration");
-
-	if (body.has(":="))
-		body = body.from(":=");
-//		error("parser error :=");
 }
 
 Code emitDeclaration(Node fun, Node &body) {
@@ -890,6 +876,7 @@ Code nameSection() {
 //}
 
 Code eventSection() {
+	return Code();
 }
 
 /*
