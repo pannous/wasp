@@ -64,7 +64,13 @@ Node NegInfinity = Node("-Infinity");
 Node NaN = Node("NaN");
 
 void initSymbols() {
+#ifdef WASI
+	return;
+#elif  WASM
 	if(True.kind==bools)error("Wasm DOES init symbols!?");
+#else
+	return; // no need outside WASM
+#endif
 	NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 //	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 //	Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
