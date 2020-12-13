@@ -230,7 +230,7 @@ public:
 	}
 
 //	explicit
-	String(const char string[], bool copy = false/*true*/) {
+	String(const char string[], bool copy = true/*false AFTER all is tested, for efficiency*/) {
 //		data = const_cast<char *>(string);// todo heap may disappear, use copy!
 		length = strlen0(string);
 		if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
@@ -364,7 +364,7 @@ public:
 //	operator std::string() const { return "Hi"; }
 
 // excluding to
-	String &substring(int from, int to = -1, bool ref = true/*false*/) { // excluding to
+	String &substring(int from, int to = -1, bool ref = false /* true after all is tested*/) { // excluding to
 		if (from < 0 or from == 0 and to == length)return *this;
 		if (to < 0 or to > length)to = length;
 		if (to <= from)return EMPTY_STRING;
