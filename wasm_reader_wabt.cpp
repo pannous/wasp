@@ -161,14 +161,6 @@ void remove_function(Module *module, chars fun){
 	}
 }
 
-#include "wasm_merger_wabt.h"
-Module* merge_wasm(Module *base, Module *module) {
-	for (wabt::Func *f : module->funcs){
-		remove_import(base, f->name.c_str());
-		base->funcs.push_back(f);
-	}
-	return base;
-}
 
 void write_module(Module *module, chars file=0) {
 //	string_view filename = module->loc.filename;

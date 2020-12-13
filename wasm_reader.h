@@ -20,14 +20,18 @@ public:
 	Code relocate_section;
 	List<Code> custom_sections;// all remaining
 
-	int type_count;
-	int code_count;
-	int import_count;
-	int func_count;// code_count + import_count
-	int export_count;
+	int type_count = 0;
+	int import_count = 0;
+	int func_count = 0;// code_count + import_count
+	int table_count = 0;
+	int export_count = 0;
+	int global_count = 0;
+	int code_count = 0;
+	int data_count = 0;
 	// name section:
 	Code local_names;
 	Code function_names;
+	int start_index;
 };
 Module read_wasm(chars file);
 

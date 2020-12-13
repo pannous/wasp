@@ -424,9 +424,13 @@ void testWasmRuntimeExtension() {
 #ifndef RUNTIME_ONLY
 	Module runtime = read_wasm("wasp.wasm");
 	Node charged = analyze(parse("teste:=42"));
-	Code lib = emit(charged, &runtime, "main");
-	lib.save("main.wasm");
-	lib.run();
+	Code lib = emit(charged, &runtime, "maine");
+	lib.save("main.wasm");// partial wasm!
+	Module main = read_wasm("main.wasm");
+	Code code = merge_wasm(runtime, main);
+	code.save("merged.wasm");
+	read_wasm("merged.wasm");
+	code.run();
 #endif
 }
 
@@ -476,7 +480,7 @@ void testAllWasm() {
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
 	testWasmModuleExtension();
-//	testWasmRuntimeExtension();
+	testWasmRuntimeExtension();
 #ifdef RUNTIME_ONLY
 	logs("RUNTIME_ONLY");
 	logs("NO WASM emission...");
