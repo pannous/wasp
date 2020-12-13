@@ -42,12 +42,13 @@ Section typ() {
 
 int unsignedLEB128() {
 	int n = 0;
+	short shift = 0;
 	do {
 		byte b = code[pos++];
-		n = n << 7;
-		n = n ^ (b & 0x7f);
+		n = n | ((b & 0x7f) << shift);
 		if ((b & 0x80) == 0)
 			break;
+		shift += 7;
 	} while (n != 0);
 	return n;
 }
@@ -55,11 +56,12 @@ int unsignedLEB128() {
 // DANGER: modifies the start reader position of code, but not it's data!
 int unsignedLEB128(Code& byt) {
 	int n = 0;
+	short shift = 0;
 	do {
 		byte b = byt[byt.start++];
-		n = n << 7;
-		n = n ^ (b & 0x7f);
+		n = n | ((b & 0x7f) << shift);
 		if ((b & 0x80) == 0)break;
+		shift += 7;
 	} while (n != 0);
 	return n;
 }
@@ -263,7 +265,7 @@ void consumeSections() {
 	}
 }
 
-Module read_wasm(char const *file) {
+Module read_wasm(chars file) {
 	module = *new Module();
 	pos = 0;
 	printf("parsing: %s\n", file);
