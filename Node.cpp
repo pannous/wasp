@@ -169,7 +169,7 @@ Node &Node::operator[](char c) {
 }
 
 int capacity = 100;// todo !!! lol lists>100 elements;)
-int maxNodes = 1000;
+int maxNodes = 10000;
 int lastChild = 1;
 
 
@@ -510,7 +510,6 @@ Node& Node::add(Node &node) {
 
 // todo remove redundant addSmart LOL!
 void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
-	if (!node->name)return;// cursed
 	if (node->isNil() and empty(node->name) and node->kind != longs)
 		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
 	node->parent = this;
@@ -525,7 +524,6 @@ void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
 			child.parent = this;
 		if (kind != groups) kind = node->kind; // todo: keep kind if … ?
 	} else {
-
 		add(node);
 	}
 // todo a{x}{y z} => a{x,{y z}} BAD
@@ -537,8 +535,6 @@ void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
 
 // todo remove redundant addSmart LOL!
 void Node::addSmart(Node node) {// merge?
-
-	if (!node.name)return;// cursed
 	if (polish_notation and node.length > 0) {
 		if (empty(name))
 			name = node[0].name;
@@ -565,8 +561,6 @@ void Node::addSmart(Node node) {// merge?
 //			last().add(node);
 //		return;
 //	}
-
-
 	if (last().kind == reference or last().kind == keyNode or (empty(name) and kind != expressions))// last().kind==reference)
 		last().addSmart(&node);
 	else
@@ -671,7 +665,6 @@ Node *Node::has(String s, bool searchMeta, short searchDepth) const {
 }
 
 Node &Node::last() {
-
 	return length > 0 ? children[length - 1] : *this;
 }
 
