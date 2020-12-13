@@ -1587,6 +1587,7 @@ void testNodeImplicitConversions(){
 #endif
 
 void testCurrent() { // move to tests() once OK
+	read_wasm("wasp.wasm");
 	testMarkMulti();
 
 	testWasmMemoryIntegrity();
