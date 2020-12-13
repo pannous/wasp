@@ -1354,7 +1354,7 @@ void testNodeConversions() {
 	check(a.value.longy == 1);
 	Node a0 = Node(10l);
 	check(a0.kind == longs);
-	check(a0.value.longy == 1);
+	check(a0.value.longy == 10);
 	Node a1 = Node(1.1);
 	check_eq(a1.kind, reals);
 	check(a1.kind == reals);
@@ -1590,17 +1590,8 @@ void testCurrent() { // move to tests() once OK
 	testMarkMulti();
 
 	testWasmMemoryIntegrity();
-	operator_list = List(operator_list0);
-	check(operator_list.has("+"));
-	check(not(bool) Node("x"));
-	check(false == (bool) Node("x"));
-	check(Node("x") == false);
-	assert_is("x", Node(false));// passes now but not later!!
-
-	assert_is("x", false);// passes now but not later!!
-	assert_is("y", false);
-	assert_is("x", false);
-
+//	operator_list = List(operator_list0);
+	testRecentRandomBugs();
 	tests();// make sure all still ok before changes
 	testAllWasm();
 	testAngle();
