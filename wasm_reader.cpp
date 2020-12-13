@@ -5,13 +5,17 @@
 #include "stdio.h"
 #include "wasm_reader.h"
 
+// https://webassembly.github.io/spec/core/binary/modules.html#sections
+
+// compare with wasm-objdump -h
+
 typedef unsigned char *bytes;
 int pos = 0;
 int size = 0;
 byte *code;
 Module module;
 
-void parseFunctionNames(Code& code);
+void parseFunctionNames(Code &code);
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
@@ -95,17 +99,26 @@ void consumeTypeSection() {
 }
 
 void consumeStartSection() {
-	int start_index = unsignedLEB128();
-}
-void consumeTableSection(){
-	module.table_data = vec();
+	module.start_index = unsignedLEB128();
+	printf("start: #%d \n", module.start_index);
 }
 
-void consumeMemorySection(){
-	module.memory_data=vec();// todo ?
+void consumeTableSection() {
+	module.table_data = vec();
+	module.table_count = unsignedLEB128(module.table_data);
+	printf("tables: %d \n", module.table_count);
 }
-void consumeGlobalSection(){
-	module.globals_data=vec();// todo
+
+void consumeMemorySection() {
+	module.memory_data = vec();// todo ?
+//	module.memory_count = unsignedLEB128(module.memory_data);  always 1 in MVP
+	printf("memory_data: %d\n", module.memory_data.length);
+}
+
+void consumeGlobalSection() {
+	module.globals_data = vec();// todo
+	module.global_count = unsignedLEB128(module.globals_data);
+	printf("globals: %d\n", module.global_count);
 }
 
 String name(Code& wstring) {
@@ -161,6 +174,8 @@ void consumeRelocateSection(Code& data) {
 
 void consumeDataSection() {
 	module.data_section = vec();
+	module.data_count = unsignedLEB128(module.data_section);
+	printf("data sections: %d \n", module.data_count);
 }
 
 void consumeCustomSection() {
@@ -205,7 +220,7 @@ void consumeExportSection() {
 void consumeImportSection() {
 	Code imports_vector = vec();
 	int importCount = unsignedLEB128(imports_vector);
-	printf("imports %d\n", importCount);
+	printf("imports: %d\n", importCount);
 	module.import_count = importCount;
 	module.import_data = imports_vector.rest();
 }
@@ -268,6 +283,7 @@ void consumeSections() {
 Module read_wasm(chars file) {
 	module = *new Module();
 	pos = 0;
+	printf("--------------------------\n");
 	printf("parsing: %s\n", file);
 	size = fileSize(file);
 	bytes buffer = (bytes) alloc(1, size);// do not free
