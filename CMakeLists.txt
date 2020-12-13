@@ -74,9 +74,9 @@ endif ()
 ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
 
 set(SOURCE_FILES String.cpp Node.cpp Map.cpp Wasp.cpp Angle.cpp wasm_helpers.cpp) # COMMON FOR ALL
-if (!RUNTIME_ONLY)
+if (RUNTIME_ONLY)
+else ()
     message(NOT RUNTIME_ONLY)
-
     set(SOURCE_FILES ${SOURCE_FILES} Angle.cpp Code.cpp wasm_emitter.cpp wasm_reader.cpp wasm_merger.cpp wasm_merger.h)
 endif ()
 
