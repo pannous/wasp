@@ -175,7 +175,7 @@ Node &Node::operator[](char c) {
 }
 
 int capacity = 40;// TODO !!! lol lists>100 elements;)
-int maxNodes = 4000;// TODO !!!
+int maxNodes = 8000;// TODO !!!
 int lastChild = 1;
 
 
@@ -470,7 +470,7 @@ void Node::remove(Node &node) {
 }
 
 Node& Node::add(Node *node) {
-	if ((long) node > memory_size)
+	if ((long) node > MEMORY_SIZE)
 		error("node Out of Memory");
 	if (kind == longs or kind == reals)
 		error("can't modify primitives, only their references a=7 a.nice=yes");
@@ -853,7 +853,7 @@ Node &Node::flat() {
 	if (length == 0 and kind == keyNode and empty(name) and value.node)return *value.node;
 	if (length == 1 and value.node == &children[0])// todo remove redundancy
 		return *value.node;
-	if (length == 1 and (long) children < memory_size and not value.data and empty(name)) {
+	if (length == 1 and (long) children < MEMORY_SIZE and not value.data and empty(name)) {
 		children[0].parent = parent;
 		return children[0].flat();
 	}

@@ -29,18 +29,20 @@ void free(void*){/*lol*/}
 
 void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	void *last = current;
-	current += size * 2 + 1;//greedy
-	if (memory_size and (long) current >= memory_size) {
+	current += size;
+	if (MEMORY_SIZE and (long) current >= MEMORY_SIZE) {
 #ifndef WASI
+		logi(sizeof(Node));
+		logi(sizeof(String));
 		logi((int) last);
 		logi((int) memory);
 		logi((int) current);
-		logi((int) heap_offset);
-		logi(memory_size);
+		logi((int) HEAP_OFFSET);
+		logi(MEMORY_SIZE);
 //		error("OUT OF MEMORY");
-//		panic();
+		panic();
 #endif
-		last = current = (char *) (4 * heap_offset);// reset HACK todo!
+		last = current = (char *) (4 * HEAP_OFFSET);// reset HACK todo!
 	}
 	return last;
 }
@@ -328,9 +330,9 @@ void memcpy0(bytes dest, bytes source, int i) {
 		dest[i] = source[i];
 }
 void memcpy0(char *destination, char *source, size_t num) {
-	if ((long) destination + num >= memory_size)return;
+	if ((long) destination + num >= MEMORY_SIZE)return;
 //		panic();
-	if ((long) source + num >= memory_size)return;
+	if ((long) source + num >= MEMORY_SIZE)return;
 //		panic();
 	if (num < 0)return;
 //		panic();
