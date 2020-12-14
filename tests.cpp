@@ -16,21 +16,21 @@ Node &result = *new Node();
 
 //#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
 #define check(test) if(test){log("\nOK check passes: ");printf("%s",#test);}else{ \
-printf("\nNOT PASSING: "); log(#test);log("\n");printf("%s:%d\n",__FILE__,__LINE__); \
-exit(0);}
+printf("\nNOT PASSING: "); log(#test);printf("%s:%d\n",__FILE__,__LINE__); \
+exit(42);}
 
 #undef assert // assert.h:92 not as good!
 #define assert(condition) try{\
-   if((condition)==0)error("assert FAILED");else printf("\nassert OK: %s\n",#condition);\
-   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(0);}
+   if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
+   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(42);}
 
 
-//#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+//#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(42);}
+//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(42);}
+//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(42);}
 
-#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-//#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
+#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(42);}
+//#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(42);}
 #define check_eq assert_equals
 
 
@@ -192,8 +192,8 @@ Node assert_parsesx(chars mark) {
 	}
 	return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
-//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(0);}
+//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(42);}
+#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(42);}
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
 
@@ -203,7 +203,7 @@ Node assert_parsesx(chars mark) {
     bool ok=assert_isx(mark,result);\
     if(ok)printf("PASSED %s==%s\n",#mark,#result);\
     else{printf("FAILED %s==%s\n",#mark,#result);\
-    printf("%s:%d\n",__FILE__,__LINE__);exit(0);}\
+    printf("%s:%d\n",__FILE__,__LINE__);exit(42);}\
 }
 
 
@@ -312,6 +312,7 @@ void testDiv() {
 
 void checkNil() {
 	check(NIL.isNil());
+	check(nil_name == "nil");// WASM
 	if (NIL.name.data != nil_name)
 		assert_equals(NIL.name.data, nil_name);
 	check(NIL.name.data == nil_name);
@@ -342,6 +343,9 @@ void testMarkAsMap() {
 	Node marked = parse(source);
 	Node &node1 = marked["a"];
 	assert(node1 == "HIO");
+	check(compare["a"] == "HIO");
+	check(marked["a"] == "HIO");
+	assert(node1 == compare["a"]);
 	assert(marked["a"] == compare["a"]);
 	assert(marked["b"] == compare["b"]);
 	assert(compare == marked);
@@ -1243,10 +1247,13 @@ void testConcatenation() {
 	assert_equals(Node(1) + Node(2.4), Node(3.4));
 	assert_equals(Node(1.0) + Node(2), Node(3.0));
 	assert_equals(Node(1) + Node("a"_s), Node("1a"));
-	assert_equals(Node("1"_s) + Node(2), Node("12"));
-	assert_equals(Node("a"_s) + Node(2.2), Node("a2.2"));
+
 	skip(
-	// "3" is type unknown => it is treated as NIL and not added!
+			Node bug = Node("1"_s) + Node(2);
+			// AMBIGUOUS: "1" + 2 == ["1" 2] ?
+			assert_equals(Node("1"_s) + Node(2), Node("12"));
+			assert_equals(Node("a"_s) + Node(2.2), Node("a2.2"));
+			// "3" is type unknown => it is treated as NIL and not added!
 			assert_equals(Node("1", "2", 0) + Node("3"), Node("1", "2", "3", 0));// can't work ^^
 	)
 }
