@@ -135,7 +135,7 @@ bool assert_isx(char *mark, Node expect) {
 		if (left != expect)
 //			breakpoint_helper
 			if (left != expect)// Redundant for Breakpoint ;)
-				printf("FAILED %s≠%s\n", left.name.data, expect.name.data);
+				printf("FAILED %s ≠ %s\n", left.name.data, expect.name.data);
 		return left == expect;
 	} catch (SyntaxError *err) {
 		printf("\nERROR IN TEST\n");
