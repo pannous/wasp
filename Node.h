@@ -85,7 +85,7 @@ union Value {
 
 class Node {
 public:
-	String name = empty_name;// nil_name;
+	String *name = &empty_name;// nil_name;
 	Value value;// value.node and children/next are NOT REDUNDANT  label(for:password):'Passwort'
 	Type kind = unknown;
 	int length = 0;// children
@@ -151,7 +151,7 @@ public:
 		value.chary = c;
 		kind = codepoints;
 		// todo ^^ keep!
-		value.string = String(c);
+		value.string = &String(c);
 		kind = strings;
 
 	}
@@ -249,7 +249,7 @@ public:
 //		else if (atof(s)) { value.real = atoi(s); }
 		else {
 			kind = strings;
-			value.string = s;
+			value.string = &s;
 			if (name == empty_name)name = s;
 		}
 	}
@@ -263,7 +263,7 @@ public:
 	explicit
 	Node(codepoint c) {
 		name = String(c);
-		value.string = name;
+		value.string = &name;
 		kind = strings;
 	}
 
@@ -290,13 +290,13 @@ public:
 				kind = reference;
 				break;
 			case stringa:
-				value.string = String(&memoryChars[payload]);
+				value.string = new String(&memoryChars[payload]);
 				name = value.string;
 				kind = strings;
 				break;
 			case codes:
 			case utf8char:
-				value.string = String((wchar_t) payload);
+				value.string = &String((wchar_t) payload);
 				name = value.string;
 				kind = strings;
 				break;

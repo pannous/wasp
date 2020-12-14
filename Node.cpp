@@ -92,7 +92,7 @@ Node &Node::operator=(int i) {
 }
 
 Node &Node::operator=(chars c) {
-	value.string = String(c);
+	value.string = &String(c);
 	kind = strings;
 	if (name == empty_name)name = value.string;
 	return *this;
@@ -231,7 +231,7 @@ Node &Node::set(String string, Node *node) {
 }
 
 //Node::Node(chars string) {
-//	value.string = String(string);
+//	value.string = &String(string);
 //	type = strings;
 //}
 
