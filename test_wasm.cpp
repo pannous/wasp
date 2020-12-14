@@ -308,16 +308,16 @@ void testWasmMemoryIntegrity() {
 	return;
 #endif
 
-	if (!memory_size) {
+	if (!MEMORY_SIZE) {
 		error("NO MEMORY");
 	}
 	printf("MEMORY start at %ld\n", (long) memory);
 	printf("current start at %ld\n", (long) current);
-//	Bus error: 10  if i > memory_size
+//	Bus error: 10  if i > MEMORY_SIZE
 // Fails at 100000, works at 100001 WHERE IS THIS SET?
 //	int start=125608;
-	int start = heap_offset * 2;// out of bounds table access CORRUPTION!
-	int end = memory_size / 4; // /4 because 1 int = 4 bytes
+	int start = HEAP_OFFSET * 2;// out of bounds table access CORRUPTION!
+	int end = MEMORY_SIZE / 4; // /4 because 1 int = 4 bytes
 	for (int i = start; i < end; ++i) {
 		int tmp = memory[i];
 //		memory[i] = memory[i]+1;

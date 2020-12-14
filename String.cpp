@@ -96,8 +96,9 @@ bool eq(chars dest, chars src, int length) {
 int strlen0(chars x) {
 	if (!x)return 0;
 	int l = 0;
-	if ((long) x > memory_size) {
+	if ((long) x > MEMORY_SIZE) {
 		logs(x);
+		logi((int) (long) x);// 0x1000000 16777216
 		error("corrupt string");
 	}
 	while (l < MAX_STRING_LENGTH and *x++)l++;

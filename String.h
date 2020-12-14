@@ -163,7 +163,9 @@ extern char *empty_string;// = "";
 chars typeName(Type t);
 
 //char null_value[]={0};// todo make sure it's immutable!!
+
 class String {
+// sizeof(Node) == 20 == 5 * 4 int(*)
 
 #ifdef WASM
 	//#define size_t unsigned number
@@ -681,7 +683,7 @@ public:
 
 	int indexOf(chars string) {
 		int l = strlen0(string);
-		if ((long) data + l > memory_size)
+		if ((long) data + l > MEMORY_SIZE)
 			error("corrupt string");
 		for (int i = 0; i <= length - l; i++) {
 			bool ok = true;

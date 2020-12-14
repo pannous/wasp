@@ -34,30 +34,30 @@ exit(0);}
 #define check_eq assert_equals
 
 bool assert_equals_x(String a, String b, char *context = "") {
-	if (a == b) printf("OK %s==%s in %s\n", a.data, b.data, context);
-	else printf("\nFAILED assert_equals!\n %s should be %s in %s\n"s, a.data, b.data, context);
+	if (a == b) printf("OK %s==%s %s\n", a.data, b.data, context);
+	else printf("\nFAILED assert_equals!\n %s should be %s %s\n"s, a.data, b.data, context);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
 	if (a.name != b)
-		printf("\nFAILED assert_equals! %s should be %s in %s\n"s, a.name, b, context);
-	else printf("OK %s==%s in %s\n", a.name.data, b, context);
+		printf("\nFAILED assert_equals! %s should be %s %s\n"s, a.name, b, context);
+	else printf("OK %s==%s %s\n", a.name.data, b, context);
 
 	return a == b;
 }
 
 bool assert_equals_x(Node a, double b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %f should be %f in %s\n"s, a.value.real, b, context);
-//	else printf("OK %f==%f in %s\n"s % a.value.real % b % context);
+	if (a != Node(b))printf("\nFAILED assert_equals! %f should be %f %s\n"s, a.value.real, b, context);
+//	else printf("OK %f==%f %s\n"s % a.value.real % b % context);
 	else printf("OK %f==%f\n", a.value.real, b);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, long b, char *context = "") {
-	if (!(a == b))printf("\nFAILED assert_equals! %s should be %d in %s\n"s, a.name, b, context);
-//	else printf("OK %d==%d in %s\n"s % a.value.longy % b % context);// Uninitialised value was created by a stack allocation
-	else printf("OK %ld==%ld in %s\n", a.value.longy, b, context);
+	if (!(a == b))printf("\nFAILED assert_equals! %s should be %d %s\n"s, a.name, b, context);
+//	else printf("OK %d==%d %s\n"s % a.value.longy % b % context);// Uninitialised value was created by a stack allocation
+	else printf("OK %ld==%ld %s\n", a.value.longy, b, context);
 	return a == b;
 }
 
@@ -65,9 +65,9 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 	String &name = a.name;
 	bool ok = name == b or a == b; //  b == name or  !(name != b and b != a.value.string;)
 	if (ok)
-		printf("OK %s==%s in %s\n", name.data, b.data, context);
+		printf("OK %s==%s %s\n", name.data, b.data, context);
 	else
-		printf("\nFAILED assert_equals! %s should be %s in %s\n"s, name.data, b, context);
+		printf("\nFAILED assert_equals! %s should be %s %s\n"s, name.data, b, context);
 	return ok;
 }
 
@@ -76,22 +76,22 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 //	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
 	if (a == b) {
 		if (a.name and b.name)
-			printf("OK %s==%s in %s\n", a.name.data, b.name.data, context);
+			printf("OK %s==%s %s\n", a.name.data, b.name.data, context);
 	} else
-		printf("\nFAILED assert_equals! %s should be %s in %s\n"s, a, b, context);
+		printf("\nFAILED assert_equals! %s should be %s %s\n"s, a, b, context);
 	return a == b;
 }
 
 //bool assert_equals(chars a, chars b, char *context = "") {
 //	if (a != b)// err
-//		printf("F\nAILED assert_equals! %s should be %s in %s\n"s % a % b % context);
-//	else printf("OK %s==%s in %s\n"s % a % b % context);
+//		printf("F\nAILED assert_equals! %s should be %s %s\n"s % a % b % context);
+//	else printf("OK %s==%s %s\n"s % a % b % context);
 //	return a == b;
 //}
 bool assert_equals_x(long a, long b, char *context) {
-	if (a != b)log("\nFAILED assert_equals! %d should be %d in %s\n"s % a % b % context);
-//	else printf("OK %d==%d in %s\n"s % a % b % context);
-	printf("OK %ld==%ld in %s\n", a, b, context);
+	if (a != b)log("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
+//	else printf("OK %d==%d %s\n"s % a % b % context);
+	printf("OK %ld==%ld %s\n", a, b, context);
 	return a == b;
 }
 
@@ -100,8 +100,8 @@ inline float abs_(float x) noexcept { return x > 0 ? x : -x; }
 bool assert_equals_x(float a, float b, char *context = "") {
 	float epsilon = abs_(a + b) / 100000.;// 𝕚𝚤:=-1
 	bool ok = a == b or abs_(a - b) <= epsilon;
-	if (!ok)log("\nFAILED assert_equals!\n %f should be %f in %s\n"s % a % b % context);
-	else log("OK %f==%f in %s\n"s % a % b % context);
+	if (!ok)log("\nFAILED assert_equals!\n %f should be %f %s\n"s % a % b % context);
+	else log("OK %f==%f %s\n"s % a % b % context);
 	return ok;
 }
 
@@ -1198,12 +1198,21 @@ void testConcatenation() {
 	Node node1234 = node1.merge(other);
 //	Node node1234=node1.merge(Node("4"));
 //	Node node1234=node1.merge(new Node("4"));
-	node1.add(new Node("4"));
+	Node *four = new Node("4");
+	node1.add(four);
 //	node1=node1 + Node("4");
 	check_eq(node1.length, 4);
 	check(node1.last() == "4");
+//	check(&node1234.last() == four); not true, copied!
+	check(node1234.last() == four);
+	check(*four == "4");
+	node1234.log();
 
 	check_eq(node1234.length, 4);
+
+	node1234.children[node1234.length - 2].log();
+	node1234.children[node1234.length - 1].log();
+	node1234.last().log();
 	check(node1234.last() == "4");
 
 	assert_equals(node1, Node("1", "2", "3", "4", 0));
