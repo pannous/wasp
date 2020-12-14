@@ -811,7 +811,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		if (right.value.data) {// and ...
 			left.kind = right.kind; // there are certainly things lost here!?!
 			left.value.data = right.value.data;// todo failed copy assignment: length=0!!!
-			if (right.kind == strings)left.value.string.length = right.value.string.length;// DONT WORKAROUND BUGS!!
+			if (right.kind == strings)left.value.string->length = right.value.string->length;// DONT WORKAROUND BUGS!!
 		} else
 			left.value.node = &right;
 		return left;
