@@ -32,16 +32,15 @@ void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	current += size * 2 + 1;//greedy
 	if (memory_size and (long) current >= memory_size) {
 #ifndef WASI
-		logi((int)last);
-		logi((int)memory);
-		logi((int)current);
-		logi((int)heap_offset);
+		logi((int) last);
+		logi((int) memory);
+		logi((int) current);
+		logi((int) heap_offset);
 		logi(memory_size);
-		current=(char*)heap_offset;// circle through memory
-		error("OUT OF MEMORY");
-		panic();
+//		error("OUT OF MEMORY");
+//		panic();
 #endif
-		last = current = (char *) heap_offset;// reset HACK todo!
+		last = current = (char *) (4 * heap_offset);// reset HACK todo!
 	}
 	return last;
 }
