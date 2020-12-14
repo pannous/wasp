@@ -200,7 +200,7 @@ public:
 //#ifndef WASM
 ////	Error while importing "env"."_Znwm": unknown import.
 	void *operator new(size_t size) {
-		return static_cast<String *>(calloc(sizeof(String), size + 1));// WOW THAT WORKS!!!
+		return static_cast<String *>(calloc(size, 1));// WOW THAT WORKS!!!
 	}
 //#endif
 
@@ -814,7 +814,7 @@ public:
 	~SyntaxError() = default;
 
 	void *operator new(size_t size) {
-		return static_cast<String *>(calloc(sizeof(SyntaxError), size + 1));// WOW THAT WORKS!!!
+		return static_cast<String *>(calloc(size, 1));// WOW THAT WORKS!!!
 	}
 
 	explicit SyntaxError(String &error) {
