@@ -30,6 +30,8 @@ void free(void*){/*lol*/}
 void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	void *last = current;
 	current += size;
+//	if(size>1000)
+//		error("TOO BIG LOL");
 	if (MEMORY_SIZE and (long) current >= MEMORY_SIZE) {
 #ifndef WASI
 		logi(sizeof(Node));// 64
@@ -40,9 +42,9 @@ void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 		logi((int) current);
 		logi((int) HEAP_OFFSET);
 		logi(MEMORY_SIZE);
-//		error("OUT OF MEMORY");
-		panic();
+//		error("OUT OF MEMORY");// needs malloc :(
 #endif
+		panic();
 		last = current = (char *) (4 * HEAP_OFFSET);// reset HACK todo!
 	}
 	return last;
