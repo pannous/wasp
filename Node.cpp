@@ -67,10 +67,16 @@ void initSymbols() {
 #ifdef WASI
 	return;
 #elif  WASM
-	if(True.kind==bools)error("Wasm DOES init symbols!?");
+	if (True.kind == bools)error("Wasm DOES init symbols!?");
 #else
 	return; // no need outside WASM
 #endif
+	nil_name = "nil";
+	empty_name = "";
+	object_name = "{…}";
+	groups_name = "(…)";
+	patterns_name = "[…]";
+	EMPTY = String('\0');
 	NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 //	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 //	Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
@@ -179,7 +185,7 @@ Node &Node::operator[](char c) {
 	return (*this)[String(c)];
 }
 
-int capacity = 40;// TODO !!! lol lists>100 elements;)
+int capacity = 100;// TODO !!! lol lists>100 elements;)
 int maxNodes = 8000;// TODO !!!
 int lastChild = 1;
 
@@ -266,7 +272,7 @@ bool Node::operator==(bool other) {
 }
 
 bool Node::operator==(char other) {
-	return kind == strings and value.string == String(other);
+	return kind == strings and *value.string == String(other);
 }
 
 bool Node::operator==(chars other) {
@@ -315,6 +321,8 @@ bool Node::operator==(const Node &other) {
 
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
+	trace("uu");
+
 	if (this->kind == errors)return other.kind == errors;
 	if (other.kind == errors)return this->kind == errors;
 
@@ -333,14 +341,22 @@ bool Node::operator==(Node &other) {
 
 	auto a1 = isNil();
 	auto a2 = other.isNil();
-	if (isNil() and other.isNil())
+	if (isNil() and other.isNil()) {
+		trace("NILS!");
 		return true;
+	}
+
 	if (kind != strings and other.kind != strings and isEmpty() and other.isEmpty())
 		// todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
 		return true;
+	trace("2");
+
 	if (name == NIL.name.data or name == False.name.data or name == "")
-		if (other.name == NIL.name.data or other.name == False.name.data or other.name == "")
+		if (other.name == NIL.name.data or other.name == False.name.data or other.name == "") {
+			trace("NILS!!");
 			return true;// TODO: SHOULD already BE SAME by engine!
+		}
+
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// reference ~= its value
 	if (kind == keyNode and this->value.node and *this->value.node == other)return true;// todo again?
@@ -351,11 +367,18 @@ bool Node::operator==(Node &other) {
 		return true; // weak criterum for dangling unknowns!! TODO ok??
 	if (not typesCompatible(*this, other))
 		return false;
+
 //	CompileError: WebAssembly.Module(): Compiling function #53:"Node::operator==(Node&)" failed: expected 1 elements on the stack for fallthru to @3, found 0 @+5465
 //	or (other != NIL and other != False) or
 
-	if (kind == strings)
-		return value.string == other.value.string or value.string == other.name;// !? match by name??
+	if (kind == strings) {
+		trace("JJJ");
+		::log(name);
+		::log(value.string);
+		::log(this->value.string);
+		::log(other.value.string);
+		return *value.string == *other.value.string or *value.string == other.name or name == other.value.string;// !? match by name??
+	}
 
 
 	if (length != other.length)
@@ -369,19 +392,17 @@ bool Node::operator==(Node &other) {
 		if (field != val and !empty(field.name))
 			val = other[field.name];
 		if (field != val) {
-			if ((field.kind != keyNode and field.kind != nils) or !field.value.node){
-				logs("CHILD MISMATCH");
+			if ((field.kind != keyNode and field.kind != nils) or !field.value.node) {
+				trace("CHILD MISMATCH");
 				return false;
 			}
 			Node deep = *field.value.node;
-			if(deep != val){
-				logs("CHILD MISMATCH");
+			if(deep != val) {
+				trace("CHILD MISMATCH");
 				return false;
 			}
 		}
 	}
-
-
 	if (name == other.name)
 		return true;
 	return false;
