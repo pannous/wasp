@@ -47,7 +47,12 @@
             env: {
                 // if compiled without Angle:
                 Backtrace,
-                raise: x => {throw new Error(string(x))},
+                panic: x => {
+                    throw new Error("panic;)")
+                },
+                raise: x => {
+                    throw new Error(string(x))
+                },
                 printf: x => console.log(string(x)),// not quite!
                 puts: x => console.log(string(x)),// todo
                 putchar: x => console.log(x),// todo

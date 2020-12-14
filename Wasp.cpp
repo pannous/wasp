@@ -15,11 +15,11 @@
 unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(malloc(1000000));
 char* __heap_base=(char*)memory;
 //unsigned char* __heap_base=0;
-char *memoryChars=(char*)memory;
-//int heap_offset=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
-//#define heap_offset 65536
-//int memory_size=1048576-heap_offset; // todo set in CMake !
-char *current = (char *) heap_offset;
+char *memoryChars = (char *) memory;
+//int HEAP_OFFSET=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
+//#define HEAP_OFFSET 65536
+//int memory_size=1048576-HEAP_OFFSET; // todo set in CMake !
+char *current = (char *) HEAP_OFFSET;
 
 #endif
 
