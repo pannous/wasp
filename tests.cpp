@@ -33,10 +33,15 @@ exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(0);}
 #define check_eq assert_equals
 
+
 bool assert_equals_x(String a, String b, char *context = "") {
 	if (a == b) printf("OK %s==%s %s\n", a.data, b.data, context);
 	else printf("\nFAILED assert_equals!\n %s should be %s %s\n"s, a.data, b.data, context);
 	return a == b;
+}
+
+bool assert_equals_x(String *a, String b, char *context = "") {
+	return assert_equals_x(*a, b, context);
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
@@ -88,12 +93,19 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 //	else printf("OK %s==%s %s\n"s % a % b % context);
 //	return a == b;
 //}
-bool assert_equals_x(long a, long b, char *context) {
+
+bool assert_equals_x(long a, long b, char *context = "") {
 	if (a != b)log("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
-//	else printf("OK %d==%d %s\n"s % a % b % context);
 	printf("OK %ld==%ld %s\n", a, b, context);
 	return a == b;
 }
+
+bool assert_equals_x(int a, int b, char *context = "") {
+	if (a != b)log("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
+	printf("OK %d==%d %s\n", a, b, context);
+	return a == b;
+}
+
 
 inline float abs_(float x) noexcept { return x > 0 ? x : -x; }
 
@@ -159,6 +171,7 @@ bool assert_isx(char *mark, double expect) {
 bool assert_isx(char *mark, bool expect) {
 	return assert_isx(mark, Node(expect));
 }
+
 
 Node assert_parsesx(chars mark) {
 	try {
@@ -343,7 +356,7 @@ void testMarkSimpleAssign() {
 void testMarkSimple() {
 	log("testMarkSimple");
 	Node a = assert_parses("{aa:3}");
-	assert_equals(a.value.longy, 3);
+	assert_equals(a.value.longy, (long) 3);
 	assert_equals(a, long(3));
 	assert(a == 3);
 	assert(a.kind == longs or a.kind == keyNode and a.value.node->kind == longs);
@@ -363,7 +376,7 @@ void testMarkSimple() {
 //	assert(Mark::parse("3.1") == 3.1f);// todo epsilon
 	Node node = parse("'hi'");
 	check(node.kind == strings);
-	check(node.value.string == "hi");
+	check(*node.value.string == "hi");
 	check(node == "hi");
 	assert(parse("'hi'") == "hi");
 	assert(parse("3") == 3);
@@ -1373,7 +1386,7 @@ void testNodeConversions() {
 	check(a2.value.real == 1.2f);
 	Node as = Node('a');
 	check(as.kind == strings);
-	check(as.value.string == 'a');
+	check(*as.value.string == 'a');
 }
 
 

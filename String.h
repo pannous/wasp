@@ -600,6 +600,13 @@ public:
 	}
 
 
+	bool operator==(String *c) const {
+		if (!c)return this->empty();
+		if (this->empty())return not c or c->empty();
+		return eq(data, c->data, shared_reference ? length : -1);
+	}
+
+
 	bool operator!=(String &s) {// const
 		if (this->empty())return !s.empty();
 		if (s.empty())return !this->empty();
