@@ -14,7 +14,7 @@ set(DEBUG 1)
 #set(RELEASE 1)
 
 set(WASM 1)
-set(WASI 1)
+#set(WASI 1)
 
 # TO EXECUTE wasm:
 #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
