@@ -92,9 +92,9 @@ Node &Node::operator=(int i) {
 }
 
 Node &Node::operator=(chars c) {
-	value.string = &String(c);
+	value.string = new String(c);
 	kind = strings;
-	if (name == empty_name)name = value.string;
+	if (name == empty_name)name = *value.string;
 	return *this;
 }
 
@@ -108,6 +108,11 @@ Node &Node::operator[](int i) {
 Node &Nodec::operator[](int i) const {
 	if (i >= length) error(String("out of range index[] ") + i + " >= length " + length);
 	return children[i];
+}
+
+Node &Node::operator[](String *s) {
+	if (!s)return NIL;
+	return this->operator[](s->data);
 }
 
 //Node &Node::operator[](String s) {
@@ -179,7 +184,7 @@ int maxNodes = 8000;// TODO !!!
 int lastChild = 1;
 
 
-Node *all = 0;// = (Node *)calloc(sizeof(Node), capacity * maxNodes);
+//Node *all = 0;// = (Node *)calloc(sizeof(Node), capacity * maxNodes);
 
 
 bool typesCompatible(Node &one, Node &other) {
@@ -194,10 +199,10 @@ bool typesCompatible(Node &one, Node &other) {
 // super wasteful, for debug
 Node &Node::set(String string, Node *node) {
 //	if (!children)children = static_cast<Node *>(alloc(capacity));
-	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
+//	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
 
 	if (!children) {
-		children = &all[capacity * lastChild++];
+		children = (Node *) calloc(sizeof(Node), capacity);
 		if (name == nil_name)name = object_name;
 	}
 	if (length >= capacity / 2)todo("GROW children");
@@ -265,7 +270,7 @@ bool Node::operator==(char other) {
 }
 
 bool Node::operator==(chars other) {
-	if (kind == strings and eq(value.string.data, other, value.string.shared_reference ? value.string.length : -1))return true;
+	if (kind == strings and eq(value.string->data, other, value.string->shared_reference ? value.string->length : -1))return true;
 	if (eq(name.data, other, name.shared_reference ? name.length : -1))return true;// todo really name==other?
 	if (kind == keyNode and value.node and *value.node == other)return true;
 	return false;
@@ -277,7 +282,7 @@ bool Node::operator==(int other) {
 		return true;
 	if (kind == bools)return other == value.longy;
 	if (kind == keyNode and value.node and *value.node == other)return true;
-	if (kind == strings and atoi0(value.string) == other)return true;
+	if (kind == strings and atoi0(value.string->data) == other)return true;
 	if (atoi0(name) == other)return true;
 	if (kind == objects and length == 1)return last() == other;
 //	if (type == objects)return value.node->numbere()==other;// WTF
@@ -423,9 +428,9 @@ Node Node::operator+(Node other) {
 	if (kind == strings and other.kind == longs)
 		return Node(value.string + other.value.longy);
 	if (kind == strings and other.kind == reals)
-		return Node(value.string + other.value.real);
+		return Node(*value.string + other.value.real);
 	if (kind == strings and other.kind == strings)
-		return Node(value.string + other.value.string);
+		return Node(*value.string + other.value.string);
 	if (kind == longs and other.kind == longs)
 		return Node(value.longy + other.value.longy);
 	if (kind == reals and other.kind == longs)
@@ -482,8 +487,7 @@ Node& Node::add(Node *node) {
 	}
 	if (lastChild >= maxNodes)
 		error("Out of global Memory");
-	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
-	if (!children) children = &all[capacity * lastChild++];
+	if (!children) children = (Node *) calloc(sizeof(Node), capacity);
 	if (length > 0) children[length - 1].next = &children[length];
 	node->parent = this;
 	children[length] = *node; // invokes memcpy
@@ -715,7 +719,7 @@ String Node::serializeValue(bool deep) const {
 		case reference:
 			return val.data ? val.node->name : "ø";
 		case symbol:
-			return val.string;
+			return *val.string;
 		case bools:
 			return val.longy > 0 ? "true" : "false";
 		case arrays:

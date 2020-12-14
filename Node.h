@@ -60,9 +60,10 @@ void printf(Node &);
 
 //class String;
 union Value {
-//	Node node;//  incomplete type
-	Node *node = 0;// todo DANGER, can be lost :( !! CANT be
-//	Node **children = 0; //todo DANGER node and children/next are NOT REDUNDANT! (a:b c:d) == a(value=b next=c(value=d))
+//	sizeof(Value)==8 (long)
+	Node *node = 0;// todo DANGER, pointer can be lost :(   // todo same as child
+//	Node *child = 0; //todo DANGER child and next are NOT REDUNDANT! (a:b c:d) == a(value=b next=c(value=d))
+//	Node **children = 0;
 	String *string;// todo: wasm_chars*
 	void *data;// any bytes
 	long longy;
@@ -84,8 +85,9 @@ union Value {
 
 
 class Node {
+	// sizeof(Node) == 64 (20 for name,
 public:
-	String *name = &empty_name;// nil_name;
+	String name = empty_name;// nil_name;
 	Value value;// value.node and children/next are NOT REDUNDANT  label(for:password):'Passwort'
 	Type kind = unknown;
 	int length = 0;// children
@@ -151,7 +153,7 @@ public:
 		value.chary = c;
 		kind = codepoints;
 		// todo ^^ keep!
-		value.string = &String(c);
+		value.string = new String(c);
 		kind = strings;
 
 	}
@@ -291,13 +293,13 @@ public:
 				break;
 			case stringa:
 				value.string = new String(&memoryChars[payload]);
-				name = value.string;
+				name = *value.string;
 				kind = strings;
 				break;
 			case codes:
 			case utf8char:
-				value.string = &String((wchar_t) payload);
-				name = value.string;
+				value.string = new String((wchar_t) payload);
+				name = *value.string;
 				kind = strings;
 				break;
 			default:
@@ -402,7 +404,7 @@ public:
 
 	String string() const {
 		if (kind == strings)
-			return value.string;
+			return *value.string;
 		return name;
 		error((char*)(String("WRONG TYPE ") + String(kind)));
 	}
@@ -415,8 +417,9 @@ public:
 	Node &operator[](char c);
 
 	Node &operator[](chars s);
-//	Node &operator[](String s);
 
+//	Node &operator[](String s);
+	Node &operator[](String *s);
 
 //	Node &operator[](String s) const;
 
@@ -531,9 +534,10 @@ public:
 
 	explicit operator float() const { return value.real; }
 
-	explicit operator String() const { return value.string; }
+	explicit operator String() const { return *value.string; }
 
-	explicit operator char *() const { return value.string.data; }// or name()
+	explicit operator char *() const { return kind == strings ? value.string->data : name.data; }// todo: unsafe BS
+
 	Node &last();
 
 //	bool empty();// same:
