@@ -185,7 +185,7 @@ Node &Node::operator[](char c) {
 	return (*this)[String(c)];
 }
 
-int capacity = 100;// TODO !!! lol lists>100 elements;)
+int capacity = 20;// TODO !!! lol lists>100 elements;)
 int maxNodes = 8000;// TODO !!!
 int lastChild = 1;
 
@@ -321,8 +321,6 @@ bool Node::operator==(const Node &other) {
 
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
-	trace("uu");
-
 	if (this->kind == errors)return other.kind == errors;
 	if (other.kind == errors)return this->kind == errors;
 
