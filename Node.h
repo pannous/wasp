@@ -63,7 +63,7 @@ union Value {
 //	Node node;//  incomplete type
 	Node *node = 0;// todo DANGER, can be lost :( !! CANT be
 //	Node **children = 0; //todo DANGER node and children/next are NOT REDUNDANT! (a:b c:d) == a(value=b next=c(value=d))
-	String string;// todo: wasm_chars*
+	String *string;// todo: wasm_chars*
 	void *data;// any bytes
 	long longy;
 	codepoint chary;

@@ -22,8 +22,8 @@ set(WASM 1)
 #set(WASM3 1) # wasm_runner_wasm3.cpp
 
 if (WASM)
+    ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
     if (!WASI)
-        ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
     endif ()
 endif ()
 
@@ -114,19 +114,19 @@ if (WASM) # OR WASI)
     #-lwasmer
     ADD_COMPILE_FLAG("-Wl,--entry=main,--demangle,--allow-undefined,--no-check-features,-t") # wasm-ld flags forwarded from clang
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
-    add_definitions(-Dheap_offset=65536)
-#--import-memory        Import memory from the environment
-    ADD_COMPILE_FLAG("-Wl,--initial-memory=1179648") # stack size plus some
-    add_definitions(-Dmemory_size=1179648)
-    ADD_COMPILE_FLAG("-Wl,-z,stack-size=1048576") # 1MB*10  pointers will START from high and go lower!
-#    ADD_COMPILE_FLAG("-Wl,-z,heap-size=1048576") # 1MB*10
+    add_definitions(-DHEAP_OFFSET=65536)
+    #--import-memory        Import memory from the environment
+    ADD_COMPILE_FLAG("-Wl,--initial-memory=11796480") # stack size plus some
+    add_definitions(-DMEMORY_SIZE=11796480)
+    ADD_COMPILE_FLAG("-Wl,-z,stack-size=10485760") # 1MB*10  pointers will START from high and go lower!
+    #    ADD_COMPILE_FLAG("-Wl,-z,heap-size=1048576") # 1MB*10
     #    ADD_COMPILE_FLAG("-Wl,-z,stack-size=1073741824") # Set maximum stack size to 1GB / 8MiB 1073741824
     #    -flto \ # Add metadata for link-time optimizations
-    if(DEBUG)
+    if (DEBUG)
         ADD_COMPILE_FLAG("-Wl,-t,--verbose,--export-table") # ,-O0  VERBOSE!
-    #    ADD_COMPILE_FLAG("-Wl,--emit-relocs")
-    endif()
-    if(RELEASE)
+        #    ADD_COMPILE_FLAG("-Wl,--emit-relocs")
+    endif ()
+    if (RELEASE)
         ADD_COMPILE_FLAG("-Oz -flto -Qn -Ws,--lto-O3,-O4,--gc-sections") # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
         ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
         #       ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")

@@ -22,15 +22,15 @@ extern "C" char *memoryChars;
 //#define memory_size 10485760
 
 #ifndef WASM
-#define memory_size 1844674407370955200 //(2**64)/10
-#define heap_offset 0
+#define MEMORY_SIZE 1844674407370955200 //(2**64)/10
+#define HEAP_OFFSET 0
 //#define memory 0
 //#define current 0
 #endif
 
 
 extern "C" /*unsigned */ char *current;// memory + heap_offset
-void panic();//
+extern "C" void panic();//
 #ifndef WASM_ENABLE_INTERP
 extern "C"
 #endif
@@ -38,7 +38,7 @@ int raise(chars error);// conflicts with signal.h
 //extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
 
-extern "C" void logs (chars);// ,int len=-1 /*auto*/);
+extern "C" void logs(chars);// ,int len=-1 /*auto*/);
 extern "C" void logc(char c);
 extern "C" void logi(int i);
 extern "C" void log_f32(float f);
