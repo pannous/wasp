@@ -1417,11 +1417,12 @@ void testNodeBasics() {
 	check(a == "a");
 	Node b = Node("c");
 	check_eq(b.name, "c");
-
-	a.add(b);
+	a.add(b.clone());
+	check_eq(b.name, "c");// wow, worked before, corrupted memory!!
 	check_eq(a.length, 1);
 	check(a.children);
 	Node *b2 = b.clone();
+	check_eq(b.name, "c");// wow, worked before, corrupted memory!!
 	check(b == b2);
 	check_eq(b, a.children[0]);
 
