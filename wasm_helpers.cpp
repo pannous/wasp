@@ -32,8 +32,9 @@ void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	current += size;
 	if (MEMORY_SIZE and (long) current >= MEMORY_SIZE) {
 #ifndef WASI
-		logi(sizeof(Node));
-		logi(sizeof(String));
+		logi(sizeof(Node));// 64
+		logi(sizeof(String));// 20
+		logi(sizeof(Value));// 8 long
 		logi((int) last);
 		logi((int) memory);
 		logi((int) current);
