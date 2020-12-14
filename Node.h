@@ -123,7 +123,7 @@ public:
 //	}
 
 	void *operator new(size_t size) {
-		return (Node *)(calloc(sizeof(Node), size));// WOW THAT WORKS!!!
+		return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
 	}
 
 	void operator delete(void *a) {
