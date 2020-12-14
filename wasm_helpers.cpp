@@ -265,7 +265,7 @@ void error1(chars message, chars file, int line) {
 //	Backtrace(2);
 //#endif
 	if (file)
-		printf("\n%s:%d\n", file, line);
+		printf("%s:%d", file, line);
 	raise(message);
 	panic();
 //	err(error);
@@ -441,3 +441,7 @@ void panic() {
 }
 
 #endif
+
+void trace(chars x) {
+	log(x);
+}
