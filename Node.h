@@ -326,6 +326,8 @@ public:
 		// todo ...
 		Node *copy = new Node();
 		*copy = *this;
+//		if(kind==strings)
+//			copy->value.string = value.string;
 //		copy->name = name;
 //		copy->kind = kind;
 //		copy->value = value;// value.clone
