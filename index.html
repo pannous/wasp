@@ -1,1 +1,106 @@
-./wasp.test.html
+<!--<script src="wasp.js"></script>-->
+<script type="text/javascript">
+    var buffer;
+
+    function string(pointer, length = -1, format = 'utf8') {
+        if (length <= 0) { // auto length
+            while (buffer[pointer + ++length]) ;
+        }
+        //console.log("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
+        if (typeof (TextDecoder) != 'undefined') {// WEB, text-encoding, Node 11
+            const utf8_decoder = new TextDecoder('utf8');
+            let decoder = format == 'utf8' ? utf8_decoder : utf16denoder
+            let arr = new Uint8Array(buffer.subarray(pointer, pointer + length));
+            return decoder.decode(arr)
+        } else { // fallback
+            buf = Buffer.from(memory.buffer) // Node only!
+            buf = buf.slice(pointer, pointer + length)
+            s = buf.toString(format)// utf8 or 'utf16le'
+            return s
+        }
+    }
+
+    var stdout = '';
+    write = function (s) {
+        stdout += s;
+        for (var i; -1 !== (i = stdout.indexOf('\n')); stdout = stdout.slice(i + 1))
+            console.log(stdout.slice(0, i));
+    };
+
+    let Backtrace = function (print = 1) {
+        try {
+            throw new Error()
+        } catch (ex) {
+            //trimStack(ex, 1)
+            if (print) console.error(ex); else return trimStack(ex)
+        }
+    }
+
+    function index() {
+    }// for cmd+o (find symbol)
+
+    // This is googles recommended way of loading WebAssembly.
+    // try {
+    // const response = await fetch('wasp.wasm')
+    let min_memory_size = 65536 / 64 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
+    let memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
+    let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: memory_size});
+    imports = {
+        env: {
+            // if compiled without Angle:
+            Backtrace,
+            panic: x => {
+                throw new Error("panic")
+            },
+            raise: x => {
+                throw new Error(string(x))
+            },
+            printf: x => console.log(string(x)),// not quite!
+            puts: x => console.log(string(x)),// todo
+            putchar: x => console.log(x),// todo
+            log: x => console.log(string(x)),
+            logi: x => console.log(x),
+            logs: x => console.log(string(x)),
+
+            // logc:x=>console.log(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
+            logc: x => write(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
+        },
+        wasi_unstable: {
+            // wasi_snapshot_preview1:{
+            ok: x => console.log("OK"),
+            proc_exit: x => {
+                throw "exit"
+            },//exit(x),
+            fd_write: (a, b, c, d) => {
+                console.log(a, b, c, d, string(1024 + buffer[b]));
+                return -1
+            },
+            args_sizes_get: _ => 0,
+            args_get: _ => 0,
+            fd_close: _ => 0,
+            fd_fdstat_get: x => 0,
+            fd_seek: x => 0,
+        }
+    }
+    // const module = new WebAssembly.Module(buffer);
+    //const module = await WebAssembly.compileStreaming(fetch('wasp.wasm'));
+    // const instance = await WebAssembly.instantiate(module,});
+    WebAssembly.instantiateStreaming(fetch('wasp.wasm'), imports).then(obj => {
+            instance = obj.instance
+            exports = instance.exports
+            memory = exports.memory || exports._memory || memory
+            buffer = new Uint8Array(memory.buffer, 0, memory.length);
+            main = exports.main || exports._start
+            if (main) {
+                console.log("got main")
+                result = main()
+            } else result = instance.exports//show what we've got
+            console.log(result);
+            //alert(result)
+        }
+    )
+    // } catch (error) {
+    //     console.log(error)
+    //     console.log("\n RUN as\n sudo python3 -m http.server")
+    // }
+</script>%
