@@ -73,7 +73,12 @@ int run_wasm(bytes buffer, int buf_size) {
 	wabt::Features wabt_features;
 	wabt::ReadBinaryOptions options(wabt_features, 0, kReadDebugNames, kStopOnFirstError, kFailOnCustomSectionError);
 	wabt::Errors errors;
-	CHECK_RESULT(ReadBinaryInterp(buffer, buf_size, options, &errors, &module_desc));
+	const wabt::Result &result1 = ReadBinaryInterp(buffer, buf_size, options, &errors, &module_desc);
+	if (Failed(result1)) {
+		printf("FAILED ReadBinaryInterp\n");
+		for (auto e : errors)
+			printf("%s", e.message.data());
+	}
 	auto module = wabt::interp::Module::New(store, module_desc);
 	RefVec imports;
 #if WASI
@@ -82,7 +87,7 @@ int run_wasm(bytes buffer, int buf_size) {
 #endif
 	BindImports(module.get(), imports, store);
 
-	RefPtr<Trap> trap;
+	RefPtr <Trap> trap;
 	Instance::Ptr instance = Instance::Instantiate(store, module.ref(), imports, &trap);
 	if (trap) {
 		printf("\nERROR in module\n");

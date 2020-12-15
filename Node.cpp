@@ -7,11 +7,12 @@
 
 #ifndef WASM
 
-#include <cstdarg>
 #include <stdio.h>
-#include <stdarg.h> // va_list
 
 #endif
+
+#include <cstdarg>
+//#include <stdarg.h> // va_list OK in WASM!!
 
 bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing

@@ -14,8 +14,8 @@ int pos = 0;
 int size = 0;
 byte *code;
 Module module;
+extern Map<String, int> functionIndices;
 
-void parseFunctionNames(Code &code);
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
@@ -58,7 +58,7 @@ int unsignedLEB128() {
 }
 
 // DANGER: modifies the start reader position of code, but not it's data!
-int unsignedLEB128(Code& byt) {
+int unsignedLEB128(Code &byt) {
 	int n = 0;
 	short shift = 0;
 	do {
@@ -66,7 +66,7 @@ int unsignedLEB128(Code& byt) {
 		n = n | ((b & 0x7f) << shift);
 		if ((b & 0x80) == 0)break;
 		shift += 7;
-	} while (n != 0);
+	} while (n != 0 and byt.start < byt.length);
 	return n;
 }
 
@@ -82,13 +82,38 @@ Code vec() {
 	return Code(code + from, pos - from);
 }
 
-Code vec(Code& data, bool consume= true) {
+Code vec(Code &data, bool consume = true) {
 	int len = unsignedLEB128(data);
-	Code code1 = Code(data.data+data.start, len);
-	if(consume) data.start += len;
-	else data.start-=1;// undo len read
+	Code code1 = Code(data.data + data.start, len);
+	if (consume) data.start += len;
+	else data.start -= 1;// undo len read
 	return code1;
 }
+
+String &name(Code &wstring) {
+	int len = unsignedLEB128(wstring);
+	String *string = new String((char *) wstring.data + wstring.start, len, true);
+	wstring.start += len;// advance internally
+	if (len > 40)log(string);
+	return *string;
+}
+
+
+void parseFunctionNames(Code &payload, bool imports = false) {
+	int function_count = unsignedLEB128(payload);
+	int index = -1;
+	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
+		if (imports)
+			index++;
+		else
+			index = unsignedLEB128(payload);
+		if (imports) name(payload);// module
+		String name1 = name(payload);
+//		print(name1.clone());
+		functionIndices[name1] = index;
+	}
+}
+
 
 void consumeTypeSection() {
 	Code type_vector = vec();
@@ -121,14 +146,7 @@ void consumeGlobalSection() {
 	printf("globals: %d\n", module.global_count);
 }
 
-String name(Code& wstring) {
-	int len = unsignedLEB128(wstring);
-	const String &string = String((char *) wstring.data + wstring.start, len, true);
-	wstring.start += len;// advance internally
-	return string;
-}
-
-void consumeNameSection(Code& data) {
+void consumeNameSection(Code &data) {
 	printf("names: …\n");
 	module.name_data = data.clone();
 	while (data.start < data.length) {
@@ -152,22 +170,15 @@ void consumeNameSection(Code& data) {
 	}
 }
 
-void parseFunctionNames(Code& payload) {
-	int function_count = unsignedLEB128(payload);
-	for (int i = 0; i < function_count; ++i) {
-		int index = unsignedLEB128(payload);
-		String name1 = name(payload);
-	}
-}
 
 // https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
-void consumeLinkingSection(Code& data) {
+void consumeLinkingSection(Code &data) {
 	printf("linking: …\n");
 	module.linking_section = data;
 //	int version = unsignedLEB128(data);
 }
 
-void consumeRelocateSection(Code& data) {
+void consumeRelocateSection(Code &data) {
 	printf("relocate: …\n");
 	module.relocate_section = data;
 }
@@ -186,7 +197,7 @@ void consumeCustomSection() {
 	else if (type == "linking")consumeLinkingSection(payload);
 	else if (type == "relocate")consumeRelocateSection(payload);
 	else {
-		pos = size;// force finish
+//		pos = size;// force finish
 //		error("consumeCustomSection not implementated for "s + type);
 	}
 	module.custom_sections.add(customSectionDatas);// raw
@@ -219,6 +230,7 @@ void consumeExportSection() {
 
 void consumeImportSection() {
 	Code imports_vector = vec();
+	parseFunctionNames(imports_vector.clone(), true);
 	int importCount = unsignedLEB128(imports_vector);
 	printf("imports: %d\n", importCount);
 	module.import_count = importCount;
@@ -292,7 +304,8 @@ Module read_wasm(chars file) {
 	consume(4, reinterpret_cast<byte *>(magicModuleHeader));
 	consume(4, reinterpret_cast<byte *>(moduleVersion));
 	consumeSections();
-	module.func_count = module.import_count + module.code_count;
+	module.total_func_count = module.import_count + module.code_count;
 	return module;
 }
+
 #undef pointerr

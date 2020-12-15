@@ -17,6 +17,7 @@ class Signature;
 
 //extern Map<String, Valtype> return_types;// redundant with functionSignatures todo: remove
 extern Map<String, Signature> functionSignatures;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
+extern Map<String, int> functionIndices;
 extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals; // access from Angle!
 
 Code &emit(Node root_ast, Module* runtime0=0, String _start="main");
