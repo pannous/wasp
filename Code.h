@@ -39,7 +39,13 @@ public:
 		length = len;
 	}
 
-	Code(int nr) {// ambiguous: (un)signedLEB128 or int32 !!
+	Code(byte byte) {
+		data = (bytes) alloc(1, 1);
+		data[0] = byte;
+		length = 1;
+	}
+
+	Code(int nr) {// ambiguous: byte (un)signedLEB128 or int32 !!
 		push(nr, false);
 	}
 
@@ -62,11 +68,6 @@ public:
 //		length = 1;
 //	}
 
-	Code(byte byte){
-		data = static_cast<bytes>(alloc(sizeof(char),1));
-		data[0] = byte;
-		length = 1;
-	}
 	/*Code(bytes datas, int from, int to*//*exclusive*//*) {
 		// AMBIGUOUS: from offset on DATA?
 		if(from<0 or to<0 or from>=to)
@@ -323,7 +324,7 @@ enum Opcodes {
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 enum Section {
 	// with the exception of custom, these Sections must appear in the following order:
-	custom = 0,
+	custom = (byte) 0,
 	type = 1,
 	import = 2,
 	functypes = 3,
