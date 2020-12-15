@@ -93,9 +93,9 @@ Code merge_wasm(Module lib, Module main) {
 	            + mergeTypeSection(lib, main)
 	            + mergeImportSection(lib, main) // needed for correct functypes
 	            + mergeFuncTypeSection(lib, main)
-	            + mergeTableSection(lib, main)
+	            //	            + mergeTableSection(lib, main)
 	            + mergeMemorySection(lib, main)
-	            //	            + mergeGlobalSection(lib, main)
+	            + mergeGlobalSection(lib, main)
 	            + mergeExportSection(lib, main)
 	            + mergeCodeSection(lib, main)
 	            + mergeDataSection(lib, main)

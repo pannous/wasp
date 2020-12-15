@@ -283,14 +283,6 @@ class Node;
 //#import "Node.cpp"
 
 
-#ifndef WASM
-#undef log // expanded from macro 'log' tgmath.h:245:25:
-
-void log(long i) {
-	printf("%li", i);
-}
-
-#endif
 
 
 
@@ -307,14 +299,6 @@ void log(long i) {
 //}
 //#endif
 
-void log(String s) {
-#ifdef WASM
-	log((chars)s.data);
-#else
-	if(s.data)
-	printf("%s\n", s.data);
-#endif
-}
 
 //#endif //NETBASE_STRING_CPP
 
@@ -419,25 +403,6 @@ String patterns_name = "[…]";
 String EMPTY = String('\0');
 
 #pragma clang diagnostic pop
-
-
-void log(String *s) {
-	if (s->shared_reference)s = s->clone();// add \0 !!
-#ifdef WASM
-	if(s)log(s->data);
-#else
-	printf("%s\n", s->data);
-#endif
-}
-
-#ifndef WASM
-
-void log(chars s) {
-	printf("%s\n", s);
-}
-
-#endif
-
 
 bool String::empty() const {//this==0 in testMarkMulti!
 //#ifdef WASM
@@ -595,3 +560,28 @@ bool empty(String &s) { return s.empty(); }
 bool empty(String *s) { return not s or s->empty(); }
 
 bool empty(chars s) { return not s or strlen0(s) == 0; }
+
+#undef log // expanded from macro 'log' tgmath.h:245:25:
+
+
+void log(chars s) {
+	logs(s);
+}
+
+void log(String *s) {
+	if (s->shared_reference)s = s->clone();// add \0 !!
+	if (s)logs(s->data);
+}
+
+void log(String s) {
+	log(&s);
+}
+
+void log(long i) {
+	logi(i);
+}
+
+void log(int i) {
+	logi(i);
+}
+
