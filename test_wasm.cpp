@@ -422,6 +422,7 @@ void testMergeWabt() {
 
 void testWasmRuntimeExtension() {
 #ifndef RUNTIME_ONLY
+	functionIndices.setDefault(-1);
 	Module runtime = read_wasm("wasp.wasm");
 	Node charged = analyze(parse("teste:=42"));
 	Code lib = emit(charged, &runtime, "maine");
@@ -430,7 +431,9 @@ void testWasmRuntimeExtension() {
 	Code code = merge_wasm(runtime, main);
 	code.save("merged.wasm");
 	read_wasm("merged.wasm");
-	code.run();
+	int result = code.run();
+	check_eq(result, 42);
+
 #endif
 }
 
