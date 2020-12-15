@@ -404,7 +404,7 @@ public:
 	}
 
 	String clone() {
-		return String(this->data);
+		return *new String(this->data, this->length, false);
 	}
 
 
@@ -575,16 +575,16 @@ public:
 
 
 	bool operator==(char16_t c) {
-		return this == String(c);
+		return this->operator==(String(c));
 	}
 
 //	check(U'牛' == "牛"s );// owh wow it works reversed
 	bool operator==(char32_t c) {
-		return this == String(c);
+		return this->operator==(String(c));
 	}
 
 	bool operator==(wchar_t c) {
-		return this == String(c);
+		return this->operator==(String(c));
 	}
 
 	bool operator==(char c) {

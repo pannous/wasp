@@ -157,6 +157,7 @@ public:
 		Node result = valueNode(); // <<
 		white();
 		if (ch && ch != -1) {
+			printf("UNEXPECTED CHAR %c", ch);
 			error("Expect end of input");
 			result = ERROR;
 		}

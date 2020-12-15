@@ -88,19 +88,19 @@ Code mergeLinkingSection(Module lib, Module main) {
 }
 
 Code merge_wasm(Module lib, Module main) {
-	total_functions = lib.func_count + main.func_count;
+	total_functions = lib.total_func_count + main.total_func_count;
 	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4)
 	            + mergeTypeSection(lib, main)
 	            + mergeImportSection(lib, main) // needed for correct functypes
 	            + mergeFuncTypeSection(lib, main)
 	            + mergeTableSection(lib, main)
 	            + mergeMemorySection(lib, main)
-	            + mergeGlobalSection(lib, main)
+	            //	            + mergeGlobalSection(lib, main)
 	            + mergeExportSection(lib, main)
 	            + mergeCodeSection(lib, main)
 	            + mergeDataSection(lib, main)
-	//	            + mergeLinkingSection(lib, main)
-	//	            + mergeNameSection(lib, main)
+	            //	            + mergeLinkingSection(lib, main)
+	            + mergeNameSection(lib, main)
 //	            + mergeCustomSections(lib, main)
 	;
 	return code.clone();
