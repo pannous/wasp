@@ -1100,10 +1100,15 @@ void testParentBUG() {
 
 void testAsserts() {
 	assert_equals(11, 11);
+	assert_equals(11.1f, 11.1f);
+//	assert_equals(11.1l, 11.1);
 	assert_equals((float) 11., (float) 11.);
 //	assert_equals((double)11., (double )11.);
 	assert_equals("a", "a");
 	assert_equals("a"_s, "a"_s);
+	assert_equals("a"_s, "a");
+	assert_equals(Node("a"), Node("a"));
+	assert_equals(Node(1), Node(1));
 }
 
 void testStringConcatenation() {
@@ -1475,8 +1480,8 @@ void testNodeBasics() {
 }
 
 void tests() {
-	testString();
 	testAsserts();
+	testString();
 	testNodeName();
 	testStringConcatenation();
 	testNodeBasics();
