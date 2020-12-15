@@ -1,5 +1,8 @@
 <!--<script src="wasp.js"></script>-->
 <script type="text/javascript">
+    let WASM_FILE = 'merged.wasm'
+    // let WASM_FILE='wasp.wasm'
+
     var buffer;
 
     function string(pointer, length = -1, format = 'utf8') {
@@ -85,17 +88,17 @@
     // const module = new WebAssembly.Module(buffer);
     //const module = await WebAssembly.compileStreaming(fetch('wasp.wasm'));
     // const instance = await WebAssembly.instantiate(module,});
-    WebAssembly.instantiateStreaming(fetch('wasp.wasm'), imports).then(obj => {
-            instance = obj.instance
-            exports = instance.exports
-            memory = exports.memory || exports._memory || memory
-            buffer = new Uint8Array(memory.buffer, 0, memory.length);
-            main = exports.main || exports._start
-            if (main) {
-                console.log("got main")
-                result = main()
-            } else result = instance.exports//show what we've got
-            console.log(result);
+    WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(obj => {
+        instance = obj.instance
+        exports = instance.exports
+        memory = exports.memory || exports._memory || memory
+        buffer = new Uint8Array(memory.buffer, 0, memory.length);
+        main = exports.main || exports._start
+        if (main) {
+            console.log("got main")
+            result = main()
+        } else result = instance.exports//show what we've got
+        console.log(result);
             //alert(result)
         }
     )
