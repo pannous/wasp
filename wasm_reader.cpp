@@ -105,12 +105,13 @@ void parseFunctionNames(Code &payload) {
 	int index = -1;
 	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
 		index = unsignedLEB128(payload);
-		String *name1 = name(payload).clone();// needs to be 0-terminated now
-		if (name1->length > 0)
-			functionIndices[*name1] = index;
+		String *func = name(payload).clone();// needs to be 0-terminated now
+		if (func->length > 0)
+			functionIndices[*func] = index;
 		else
 			functionIndices["func_"s + index] = index;
 	}
+//	  (import "env" "log_chars" (func (;0;) $logs (type 0)))  import names != internal names
 }
 
 
@@ -139,19 +140,19 @@ void consumeStartSection() {
 
 void consumeTableSection() {
 	module.table_data = vec();
-	module.table_count = unsignedLEB128(module.table_data);
+	module.table_count = 1;// unsignedLEB128(module.table_data);
 	printf("tables: %d \n", module.table_count);
 }
 
 void consumeMemorySection() {
 	module.memory_data = vec();// todo ?
-//	module.memory_count = unsignedLEB128(module.memory_data);  always 1 in MVP
+//	module.memory_count = 1;//unsignedLEB128(module.memory_data);  always 1 in MVP
 	printf("memory_data: %d\n", module.memory_data.length);
 }
 
 void consumeGlobalSection() {
 	module.globals_data = vec();// todo
-	module.global_count = unsignedLEB128(module.globals_data);
+	module.global_count = unsignedLEB128(module.globals_data); // NO SUCH THING!?
 	printf("globals: %d\n", module.global_count);
 }
 
@@ -194,7 +195,7 @@ void consumeRelocateSection(Code &data) {
 
 void consumeDataSection() {
 	module.data_section = vec();
-	module.data_count = unsignedLEB128(module.data_section);
+//	module.data_count = unsignedLEB128(module.data_section);
 	printf("data sections: %d \n", module.data_count);
 }
 
