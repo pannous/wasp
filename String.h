@@ -70,6 +70,8 @@ void encode_unicode_character(char *buffer, wchar_t ucs_character);
 
 #ifndef WASM
 
+void log(int i);
+
 void log(long i);
 
 #endif
@@ -843,6 +845,8 @@ extern String EMPTY;// = String('\0');
 //String operator "" _(chars c, unsigned long );
 //String operator "" _s(chars c, unsigned long );
 void log(String *s);
+
+void log(String s);
 
 void log(chars s);
 
