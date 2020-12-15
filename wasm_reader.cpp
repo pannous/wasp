@@ -209,8 +209,9 @@ void consumeCustomSection() {
 	else {
 //		pos = size;// force finish
 //		error("consumeCustomSection not implementated for "s + type);
+		customSectionDatas.start = 0;// reset
+		module.custom_sections.add(customSectionDatas);// raw
 	}
-	module.custom_sections.add(customSectionDatas);// raw
 }
 
 // connect func/code indices to type indices
