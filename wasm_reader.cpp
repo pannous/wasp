@@ -20,6 +20,7 @@ extern Map<String, int> functionIndices;
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
 #define check(test) if(test){log("\nOK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+#define check_eq(α, β) if((α)!=(β)){printf("%s != %s : ",#α,#β);log(α);printf("!=");log(β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
@@ -63,8 +64,6 @@ int unsignedLEB128(Code &byt) {
 	short shift = 0;
 	do {
 		byte b = byt.data[byt.start++];
-//		if(b==0xff or b==0x80)
-//			n=n+1-1;
 		n = n | (((long) (b & 0x7f)) << shift);
 		if ((b & 0x80) == 0)break;
 		shift += 7;
@@ -96,26 +95,34 @@ String &name(Code &wstring) {
 	int len = unsignedLEB128(wstring);
 	String *string = new String((char *) wstring.data + wstring.start, len, true);
 	wstring.start += len;// advance internally
-	if (len > 40)log(string);
+//	if (len > 40)log(string);
 	return *string;
 }
 
 
-void parseFunctionNames(Code &payload, bool imports = false) {
+void parseFunctionNames(Code &payload) {
 	int function_count = unsignedLEB128(payload);
 	int index = -1;
 	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
-		if (imports)
-			index++;
+		index = unsignedLEB128(payload);
+		String *name1 = name(payload).clone();// needs to be 0-terminated now
+		if (name1->length > 0)
+			functionIndices[*name1] = index;
 		else
-			index = unsignedLEB128(payload);
-		if (imports) name(payload);// module
-		String name1 = name(payload);
-//		print(name1);//.clone());
-		functionIndices[name1] = index;
+			functionIndices["func_"s + index] = index;
 	}
 }
 
+
+void parseImportNames(Code &payload) {
+	for (int i = 0; i < module.import_count and payload.start < payload.length; ++i) {
+		String mod = name(payload);// module
+		String *name1 = name(payload).clone();// needs to be 0-terminated now
+		int type = unsignedLEB128(payload);
+		int index = unsignedLEB128(payload);
+//		log(name1);
+	}
+}
 
 void consumeTypeSection() {
 	Code type_vector = vec();
@@ -232,11 +239,11 @@ void consumeExportSection() {
 
 void consumeImportSection() {
 	Code imports_vector = vec();
-	parseFunctionNames(imports_vector.clone(), true);
 	int importCount = unsignedLEB128(imports_vector);
-	printf("imports: %d\n", importCount);
 	module.import_count = importCount;
 	module.import_data = imports_vector.rest();
+	parseImportNames(imports_vector);
+	printf("imports: %d\n", importCount);
 }
 
 

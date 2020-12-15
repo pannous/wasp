@@ -11,14 +11,14 @@
 #include "Map.h"
 
 bool recursive = true;// whats that?
-List<String> declaredSymbols;// todo: buildup by preparsing
+List<String> declaredSymbols;// todo: buildup by preparsing, link with functionIndices?
 
 
 // functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
 chars control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
 
 
-class Arg{
+class Arg {
 public:
 	String function;
 	String name;
