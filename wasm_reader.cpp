@@ -49,11 +49,11 @@ int unsignedLEB128() {
 	short shift = 0;
 	do {
 		byte b = code[pos++];
-		n = n | ((b & 0x7f) << shift);
+		n = n | (((int) (b & 0x7f)) << shift);
 		if ((b & 0x80) == 0)
 			break;
 		shift += 7;
-	} while (n != 0);
+	} while (pos < size);
 	return n;
 }
 
@@ -62,11 +62,13 @@ int unsignedLEB128(Code &byt) {
 	int n = 0;
 	short shift = 0;
 	do {
-		byte b = byt[byt.start++];
-		n = n | ((b & 0x7f) << shift);
+		byte b = byt.data[byt.start++];
+//		if(b==0xff or b==0x80)
+//			n=n+1-1;
+		n = n | (((long) (b & 0x7f)) << shift);
 		if ((b & 0x80) == 0)break;
 		shift += 7;
-	} while (n != 0 and byt.start < byt.length);
+	} while (byt.start < byt.length);
 	return n;
 }
 
@@ -109,7 +111,7 @@ void parseFunctionNames(Code &payload, bool imports = false) {
 			index = unsignedLEB128(payload);
 		if (imports) name(payload);// module
 		String name1 = name(payload);
-//		print(name1.clone());
+//		print(name1);//.clone());
 		functionIndices[name1] = index;
 	}
 }
