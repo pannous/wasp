@@ -146,7 +146,7 @@ void consumeTableSection() {
 
 void consumeMemorySection() {
 	module.memory_data = vec();// todo ?
-//	module.memory_count = 1;//unsignedLEB128(module.memory_data);  always 1 in MVP
+//	module.memory_count = unsignedLEB128(module.memory_data);//  always 1 in MVP
 	printf("memory_data: %d\n", module.memory_data.length);
 }
 
