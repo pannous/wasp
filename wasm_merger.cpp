@@ -63,13 +63,16 @@ Code mergeCodeSection(Module lib, Module main) {
 }
 
 Code mergeCustomSections(Module lib, Module main) {
-	Code list = *new Code();
+	Code list;// = *new Code((byte)custom);
+	Code header = Code((byte) custom);
 	for (Code &sec: lib.custom_sections) {
 		Code more = encodeVector(sec);
+		list.add(header);
 		list.add(more);
 	}
 	for (Code sec: main.custom_sections) {
 		Code more = encodeVector(sec);
+		list.add(header);
 		list.add(more);
 	}
 	return list;
@@ -104,7 +107,7 @@ Code merge_wasm(Module lib, Module main) {
 	            + mergeDataSection(lib, main)
 	            //	            + mergeLinkingSection(lib, main)
 	            + mergeNameSection(lib, main)
-//	            + mergeCustomSections(lib, main)
+	            + mergeCustomSections(lib, main)
 	;
 	return code.clone();
 }
