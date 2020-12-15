@@ -422,10 +422,11 @@ String EMPTY = String('\0');
 
 
 void log(String *s) {
+	if (s->shared_reference)s = s->clone();// add \0 !!
 #ifdef WASM
 	if(s)log(s->data);
 #else
-	printf("%s",s->data);
+	printf("%s\n", s->data);
 #endif
 }
 
