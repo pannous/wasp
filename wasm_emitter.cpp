@@ -860,8 +860,8 @@ Code nameSection() {
 //	localNameMap = localNameMap + exampleNames;
 
 	auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
-	auto functionNames = Code(function_names) + encodeVector(Code(functionIndices.size() - runtime_offset) + nameMap);
-	auto localNames = Code(local_names) + encodeVector(Code(functionIndices.size() - runtime_offset) + localNameMap);
+	auto functionNames = Code(function_names) + encodeVector(Code(function_count) + nameMap);
+	auto localNames = Code(local_names) + encodeVector(Code(function_count) + localNameMap);
 
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
 //	The name section should appear only once in a module, and only after the data section.
@@ -911,7 +911,7 @@ Code linkingSection() {
 	return createSection(custom, encodeVector(Code("linking") + Code(version) + subsections));
 }
 
-Code dwarfSection(){
+Code dwarfSection() {
 	return createSection(custom, encodeVector(Code("external_debug_info") + Code("main.dwarf")));
 }
 
@@ -965,9 +965,13 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 
 	if (runtime0) {
 		runtime = *runtime0;// else filled with 0's
-		runtime_offset = functionIndices.size();
+		runtime_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
 		import_count = 0;
 		builtin_count = 0;
+		if (runtime.total_func_count != functionIndices.size()) {
+			printf("%d != %d\n", runtime.total_func_count, functionIndices.size());
+			error("runtime.total_func_count !=  functionIndices.size()");
+		}
 	} else {
 		runtime = *new Module();// all zero
 		runtime_offset = 0;
@@ -1000,13 +1004,13 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	            + funcTypeSection1 // signatures
 	            + exportSection1
 	            + codeSection1 // depends on importSection, yields data for funcTypeSection!
-	//			+ dataSection()
-	//			+ linkingSection()
-//	            + nameSection()
+	            //			+ dataSection()
+	            //			+ linkingSection()
+	            + nameSection()
 //	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
 	;
 	code.debug();
-	if(runtime0)functionSignatures.clear(); // cleanup after NAJA
+	if (runtime0)functionSignatures.clear(); // cleanup after NAJA
 	return code.clone();
 }

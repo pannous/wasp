@@ -14,6 +14,10 @@
 
 typedef const char *chars;
 typedef unsigned char *bytes;
+#ifndef MEMORY_SIZE
+#define MEMORY_SIZE 11796480
+#endif
+
 extern "C" unsigned int *memory;// =0; always, BUT heap_offset/current is higher from beginning!
 extern "C" char *memoryChars;
 //extern "C" int __heap_base; ==

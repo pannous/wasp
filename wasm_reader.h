@@ -22,7 +22,7 @@ public:
 
 	int type_count = 0;
 	int import_count = 0;
-	int func_count = 0;// code_count + import_count
+	int total_func_count = 0;// code_count + import_count
 	int table_count = 0;
 	int export_count = 0;
 	int global_count = 0;

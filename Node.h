@@ -6,7 +6,8 @@
 #include "String.h"
 #include "smart_types.h"
 //#import  "String.h" // FFS
-#include <stdarg.h> // va_list OK IN WASM???
+//#include <stdarg.h> // va_list OK IN WASM???
+#include <cstdarg> // va_list ok in wasm even without wasi!
 
 typedef char const *chars;
 typedef unsigned char byte;//!
