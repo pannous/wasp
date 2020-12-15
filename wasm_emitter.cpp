@@ -970,6 +970,8 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		builtin_count = 0;
 		if (runtime.total_func_count != functionIndices.size()) {
 			printf("%d != %d\n", runtime.total_func_count, functionIndices.size());
+			log(functionIndices.keys[functionIndices.size() - 1]);
+			log(functionIndices.keys[functionIndices.size() - 2]);
 			error("runtime.total_func_count !=  functionIndices.size()");
 		}
 	} else {
