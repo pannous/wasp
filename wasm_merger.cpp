@@ -22,7 +22,8 @@ Code mergeFuncTypeSection(Module lib, Module main) { // signatures
 
 Code mergeTableSection(Module lib, Module main) {
 	if (lib.table_count == 0 and main.table_count == 0)return Code();
-	return createSection(table, Code(lib.table_count + main.table_count) + lib.table_data + main.table_data);
+//	Code(lib.table_count + main.table_count) +
+	return createSection(table, lib.table_data + main.table_data);
 }
 
 Code mergeMemorySection(Module lib, Module main) {
@@ -37,7 +38,8 @@ Code mergeMemorySection(Module lib, Module main) {
 
 Code mergeGlobalSection(Module lib, Module main) {
 	if (lib.global_count == 0 and main.global_count == 0)return Code();
-	return createSection(global, Code(lib.global_count + main.global_count) + lib.globals_data + main.globals_data);
+//	Code(lib.global_count + main.global_count)
+	return createSection(global, lib.globals_data + main.globals_data);
 }
 
 Code mergeExportSection(Module lib, Module main) {
@@ -46,7 +48,8 @@ Code mergeExportSection(Module lib, Module main) {
 
 Code mergeDataSection(Module lib, Module main) {
 	if (lib.data_count == 0 and main.data_count == 0)return Code();
-	return createSection(data_section, Code(lib.data_count + main.data_count) + lib.data_section + main.data_section);
+//	Code(lib.data_count + main.data_count) + no such thing
+	return createSection(data_section, lib.data_section + main.data_section);
 }
 
 
@@ -93,14 +96,14 @@ Code merge_wasm(Module lib, Module main) {
 	            + mergeTypeSection(lib, main)
 	            + mergeImportSection(lib, main) // needed for correct functypes
 	            + mergeFuncTypeSection(lib, main)
-	            //	            + mergeTableSection(lib, main)
+	            + mergeTableSection(lib, main)
 	            + mergeMemorySection(lib, main)
 	            + mergeGlobalSection(lib, main)
 	            + mergeExportSection(lib, main)
 	            + mergeCodeSection(lib, main)
 	            + mergeDataSection(lib, main)
-	            //	            + mergeLinkingSection(lib, main)
-	            + mergeNameSection(lib, main)
+	//	            + mergeLinkingSection(lib, main)
+//	            + mergeNameSection(lib, main)
 //	            + mergeCustomSections(lib, main)
 	;
 	return code.clone();
