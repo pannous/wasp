@@ -27,8 +27,8 @@ Code mergeTableSection(Module lib, Module main) {
 }
 
 Code mergeMemorySection(Module lib, Module main) {
-	if (lib.memory_data.length > 0)
-		return createSection(memory_section, Code(1) + lib.memory_data);// + main.memory_data)); ONLY 1 memory section right now!
+	if (lib.memory_data.length > 0) // Code(1) +
+		return createSection(memory_section, lib.memory_data);// + main.memory_data)); ONLY 1 memory section right now!
 	if (main.memory_data.length > 0)
 		return createSection(memory_section, Code(1) + main.memory_data);// + main.memory_data)); ONLY 1 memory section right now!
 	else
@@ -77,7 +77,7 @@ Code mergeCustomSections(Module lib, Module main) {
 
 
 Code mergeNameSection(Module lib, Module main) {
-	return createSection(custom, lib.name_data + main.name_data);// blindly blend and append moduleName + functionNames …
+	return createSection(custom, Code("name") + lib.name_data + main.name_data);// blindly blend and append moduleName + functionNames …
 	auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
 	auto functionNames = Code(function_names) + encodeVector(Code(total_functions) + lib.function_names + main.function_names);
 	auto localNames = Code(local_names) + encodeVector(Code(total_functions) + lib.local_names + main.local_names);
@@ -102,8 +102,8 @@ Code merge_wasm(Module lib, Module main) {
 	            + mergeExportSection(lib, main)
 	            + mergeCodeSection(lib, main)
 	            + mergeDataSection(lib, main)
-	//	            + mergeLinkingSection(lib, main)
-//	            + mergeNameSection(lib, main)
+	            //	            + mergeLinkingSection(lib, main)
+	            + mergeNameSection(lib, main)
 //	            + mergeCustomSections(lib, main)
 	;
 	return code.clone();
