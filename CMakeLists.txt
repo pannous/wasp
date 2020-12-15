@@ -9,17 +9,19 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
-set(RUNTIME_ONLY 1) # no Angle eval emit etc!
+#set(RUNTIME_ONLY 1) # no Angle eval emit merge etc!
 set(DEBUG 1)
 #set(RELEASE 1)
 
-set(WASM 1)
+#set(WASM 1)
 #set(WASI 1)
 
-# TO EXECUTE wasm:
-#set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
-#set(WABT 1) #  wasm_runner_wabt.cpp
-#set(WASM3 1) # wasm_runner_wasm3.cpp
+if (!WASM)
+    # TO EXECUTE wasm:
+    #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
+    #set(WABT 1) #  wasm_runner_wabt.cpp
+    set(WASM3 1) # wasm_runner_wasm3.cpp
+endif ()
 
 if (WASM)
     ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
@@ -75,7 +77,6 @@ else()
     ADD_COMPILE_FLAG(" -Os -Oz ") # size should be ok? -O1 removes symbol names https://bugs.llvm.org/show_bug.cgi?id=45602 !
 endif ()
 
-ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
 
 set(SOURCE_FILES String.cpp Node.cpp Map.cpp Wasp.cpp Angle.cpp wasm_helpers.cpp) # COMMON FOR ALL
 if (RUNTIME_ONLY)
@@ -85,9 +86,9 @@ else ()
 endif ()
 
 #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
-if (!WASM)
+#if (!WASM)
     set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_console.cpp)
-endif ()
+#endif ()
 
 if (WASM) # OR WASI)
     message(WASM)
@@ -144,8 +145,9 @@ elseif (WASI)
     #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
-elseif (VM) # NORMAL:
-    if ($ENV{WASI})
+elseif (VM) # wasm-micro-vm:
+    if (WASI)
+        message(WASI and wasm-micro-vm no good!?)
         return()
     endif ()
     message("USING INTERNAL WASM MICRO RUNTIME TO DEBUG")
@@ -204,20 +206,19 @@ elseif (WABT) # NORMAL:
     ADD_COMPILE_DEFINITIONS(WABT)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
     include(wabt/cmake_install.cmake)
-
     add_subdirectory(wabt)
+    set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_wabt.cpp)
     add_executable(angle ${SOURCE_FILES})
     target_include_directories(angle PUBLIC wabt/)
     target_include_directories(angle PUBLIC wabt/src/)
     target_include_directories(angle PUBLIC wabt/src/interp)
     target_link_libraries(angle PRIVATE libwabt) # libwabt.a 20 MB only for local stuff!
     add_custom_target(BuildWabtc ALL DEPENDS angle) #.exe
-
 elseif (WASM3) # NORMAL:
     message(WASM3 VM)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
     include(wasm3/cmake_install.cmake)
-    set(SOURCE_FILES ${SOURCE_FILES} asm_runner_wasm3.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_wasm3.cpp)
     add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)
     add_executable(angle ${SOURCE_FILES})
     target_include_directories(angle PUBLIC wasm3/source/)
@@ -226,6 +227,7 @@ elseif (WASM3) # NORMAL:
 else () # NORMAL:
     message(NO WASM "${WASM}")
     ADD_COMPILE_FLAG("-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer  -shared-libasan ") # NOT FOR WASM
+    #    ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
 
     # just for Backtrace.cpp :
     #    ADD_COMPILE_FLAG("-g -rdynamic -Wl,--no-as-needed -ldl")

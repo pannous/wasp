@@ -1,7 +1,6 @@
 //
 // Created by me on 08.12.20.
 //
-
 #include "Code.h"
 
 bytes magicModuleHeader = new byte[]{0x00, 0x61, 0x73, 0x6d};
