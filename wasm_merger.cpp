@@ -27,6 +27,12 @@ Code mergeTableSection(Module lib, Module main) {
 }
 
 Code mergeMemorySection(Module lib, Module main) {
+//	𝚕𝚒𝚖𝚒𝚝𝚜::=|𝟶𝚡𝟶𝟶  𝑛:𝚞𝟹𝟸 𝟶𝚡𝟶𝟷  𝑛:𝚞𝟹𝟸  𝑚:𝚞𝟹𝟸⇒⇒{𝗆𝗂𝗇 𝑛,𝗆𝖺𝗑 𝜖}{𝗆𝗂𝗇 𝑛,𝗆𝖺𝗑 𝑚}
+	byte min_only=0x00;
+//	byte min_and_max=0x01;
+	return createSection(memory_section,Code(min_only)+Code((int)MEMORY_SIZE));
+
+
 	if (lib.memory_data.length > 0) // Code(1) +
 		return createSection(memory_section, lib.memory_data);// + main.memory_data)); ONLY 1 memory section right now!
 	if (main.memory_data.length > 0)

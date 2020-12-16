@@ -277,7 +277,8 @@ bool Node::operator==(char other) {
 }
 
 bool Node::operator==(chars other) {
-	if (kind == strings and eq(value.string->data, other, value.string->shared_reference ? value.string->length : -1))return true;
+	if (kind == strings and value.data)
+		if(eq(value.string->data, other, value.string->shared_reference ? value.string->length : -1)) return true;
 	if (eq(name.data, other, name.shared_reference ? name.length : -1))return true;// todo really name==other?
 	if (kind == keyNode and value.node and *value.node == other)return true;
 	return false;
