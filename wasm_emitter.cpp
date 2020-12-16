@@ -282,7 +282,7 @@ Code emitValue(Node node, String context) {
 		case bools:
 //		case ints:
 			code.addByte((byte) i32_auto);
-			code.push(node.value.longy);
+			code.push(node.value.longy);// LEB encoded!
 			last_type = i32t;
 //				code.opcode(ieee754(node.value.longy),4);
 			break;

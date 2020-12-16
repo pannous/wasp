@@ -8,25 +8,34 @@
 #ifndef WASP_CODE_H
 #define WASP_CODE_H
 typedef unsigned char byte;
-typedef const char* chars;
-typedef byte* bytes;
+typedef const char *chars;
+typedef byte *bytes;
+
 class Code;
+
 int run_wasm(bytes wasm_bytes, int len);
+
 int run_wasm(chars wasm_path);
 
 extern bytes magicModuleHeader;
 extern bytes moduleVersion;
 
 bytes concat(bytes a, bytes b, int len_a, int len_b);
-bytes concat(bytes a, char b,int len);
+
+bytes concat(bytes a, char b, int len);
+
 bytes concat(char section, bytes a, int len_a);
+
 Code encodeVector(Code data);
+
 Code &unsignedLEB128(long n);
+
 Code &signedLEB128(long value);
-class Code{
+
+class Code {
 public:
 
-	bytes data=0;
+	bytes data = 0;
 	int length = 0;
 	int start = 0;// internal reader pointer
 	bool encoded = false;// first byte = size of vector
@@ -45,12 +54,24 @@ public:
 		length = 1;
 	}
 
-	Code(int nr) {// ambiguous: byte (un)signedLEB128 or int32 !!
-		push(nr, false);
+	Code(int nr, bool LEB = true) {// ambiguous: byte (un)signedLEB128 or int32 !!
+		if (LEB) {
+			push(nr, false, LEB);
+		} else {
+			data = new byte[4];
+			*(int *) data = nr;
+			length = 4;
+		}
 	}
 
-	Code(long nr) {
-		push(nr, false);
+	Code(long nr, bool LEB = true) {
+		if (LEB) {
+			push(nr, false, LEB);
+		} else {
+			data = new byte[8];
+			*(long *) data = nr;
+			length = 8;
+		}
 	}
 
 	Code(chars string, bool size_header = true, bool null_terminated = false) {
@@ -80,111 +101,125 @@ public:
 	}*/
 
 	Code(char section, Code code) {
-		data = concat(section, code.data,code.length);
-		length = code.length+1;
+		data = concat(section, code.data, code.length);
+		length = code.length + 1;
 	}
 
 	Code(char section, bytes dat, int len) {
 		data = concat(section, dat, len);
-		length=len+1;
+		length = len + 1;
 	}
 
-	Code operator +(Code more){
+	Code operator+(Code more) {
 		return this->push(more);
 	}
-	Code operator +(char more){
+
+	Code operator+(char more) {
 		return this->push(more);
 	}
-	Code operator +(byte more){
+
+	Code operator+(byte more) {
 		return this->push(more);
 	}
-	bool operator==(Code& other){
-		if(length!=other.length)
+
+	bool operator==(Code &other) {
+		if (length != other.length)
 			return false;
-		if(data==other.data)return true;// same pointer shortcut
+		if (data == other.data)return true;// same pointer shortcut
 		for (int i = 0; i < length; ++i) {
-			if(data[i]!=other.data[i])
+			if (data[i] != other.data[i])
 				return false;
 		}
 		return true;
 	}
 
-	operator bytes(){return data;}// implicit cast yay
-	Code& push(Code more) {
-		data = concat(data, more.data,length,more.length);
+	operator bytes() { return data; }// implicit cast yay
+	Code &push(Code more) {
+		data = concat(data, more.data, length, more.length);
 		length = length + more.length;
 		return *this;
 	}
 
-	Code& addType(short type) {
-		data = concat(data, type,length);
+	Code &addType(short type) {
+		data = concat(data, type, length);
 		length++;
 		return *this;
 	}
 
-	Code& addByte(byte opcode) {
-		data = concat(data, opcode,length);
+	Code &addByte(byte opcode) {
+		data = concat(data, opcode, length);
 		length++;
 		return *this;
 	}
 
-	Code& add(Code& more){
-		if(more.length>0)
+	Code &add(Code &more) {
+		if (more.length > 0)
 			push(more);
 		return *this;
 	}
 
-	Code& add(byte opcode) {
-		data = concat(data, opcode,length);
+	Code &add(byte opcode) {
+		data = concat(data, opcode, length);
 		length++;
 		return *this;
 	}
 
-	Code& push(char opcode) {
-		data = concat(data, opcode,length);
-		length++;
-		return *this;
-	}
-	Code& push(unsigned char opcode) {
-		data = concat(data, opcode,length);
-		length++;
-		return *this;
-	}
-	Code& push(short opcode) {
-		data = concat(data, opcode,length);
+	Code &push(char opcode) {
+		data = concat(data, opcode, length);
 		length++;
 		return *this;
 	}
 
-	Code& push(long nr, bool sign= true) {
+	Code &push(unsigned char opcode) {
+		data = concat(data, opcode, length);
+		length++;
+		return *this;
+	}
+
+	Code &push(short opcode) {
+		data = concat(data, opcode, length);
+		length++;
+		return *this;
+	}
+
+//	All integers are encoded using the LEB128 variable-length integer encoding!  LEB=false should ONLY occur in custom data section!
+	Code &push(long nr, bool sign = true, bool LEB = true) {
 		Code val;
-		if(sign)
-			val = signedLEB128(nr);
-		else
-			val = unsignedLEB128(nr);
-		int l = val.length;
-		data = concat(data, val.data, length, l);
-		length+= l;
+		if (LEB) {
+			if (sign)
+				val = signedLEB128(nr);
+			else
+				val = unsignedLEB128(nr);
+			int l = val.length;
+			data = concat(data, val.data, length, l);
+			length += l;
+		} else {
+			data = new byte[8];
+			*(long *) data = nr;
+			length = 8;
+		}
 		return *this;
 	}
-	Code& push(bytes more,int len) {
-		data = concat(data, more,length,len);
+
+	Code &push(bytes more, int len) {
+		data = concat(data, more, length, len);
 		length = length + len;
 		return *this;
 	}
 
 	Code &clone() {
-		Code* copy = new Code();
+		Code *copy = new Code();
 		*copy = *this;
 		return *copy;
 	}
 
 	void debug() {
-		for (int i = 0; i < length; i++)printf("%s%02x",i%4==0?" 0x":"", data[i]);
+		for (int i = 0; i < length; i++)printf("%s%02x", i % 4 == 0 ? " 0x" : "", data[i]);
 		printf("\n");
 		save();
 	}
-	void save(char* file_name="test.wasm"){
+
+	void save(char *file_name = "test.wasm") {
 #ifndef WASM
 		FILE* file=fopen(file_name,"wb");
 		fwrite(data, length, 1, file);
@@ -192,7 +227,7 @@ public:
 #endif
 	}
 
-	int run(){
+	int run() {
 		return run_wasm(data, length);
 	}
 
@@ -202,14 +237,13 @@ public:
 //		code.encoded = true;
 //		return code;
 //	}
-	Code rest(int start0=-1) {
-		if(start0<0)start0=start;
-		return Code(data+start0, length-start0);
+	Code rest(int start0 = -1) {
+		if (start0 < 0)start0 = start;
+		return Code(data + start0, length - start0);
 //		return Code(data, start, length);
 
 	}
 };
-
 
 
 // https://webassembly.github.io/spec/core/binary/types.html
@@ -255,7 +289,7 @@ enum Opcodes {
 	tee_local = 0x22,// set and leave on stack
 
 	i32_store_8 = 0x3a,
-	i32_auto = (byte)0x41,
+	i32_auto = (byte) 0x41,
 	i32_const = 0x41,
 	i64_auto = 0x42,
 	i64_const = 0x42,
@@ -354,10 +388,12 @@ public:
 	int size() {
 		return types.size();
 	}
-	Signature import(){
+
+	Signature import() {
 		is_import = true;
 		return *this;
 	}
+
 	Signature add(Valtype t) {
 		types.insert_or_assign(types.size(), t);
 		return *this;
@@ -369,12 +405,15 @@ public:
 		return *this;
 	}
 
-	bool is_handled=false;
+	bool is_handled = false;
 };
 
 String sectionName(Section section);
-Code createSection(Section sectionType, Code data) ;
-Code& unsignedLEB128(long n);
-Code& signedLEB128(long value);
+
+Code createSection(Section sectionType, Code data);
+
+Code &unsignedLEB128(long n);
+
+Code &signedLEB128(long value);
 
 #endif //WASP_CODE_H

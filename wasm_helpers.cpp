@@ -49,29 +49,6 @@ void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	}
 	return last;
 }
-//void log(chars s) {
-//	logs(s);
-//}
-void log(chars s) {
-#ifndef MY_WASM
-	printf(s);
-	printf("\n");
-#else
-	logs(s);
-//	while(*s)logc(*s++);
-//	logc('\n');
-#endif
-}
-
-void log(char c) {
-	logc(c);
-}
-void log(int i) {
-	logi(i);
-}
-void log(long c) {
-	logi((int)c);
-}
 void println(String s){
 	print(s);
 	logc('\n');
@@ -239,16 +216,6 @@ void _cxa_throw() {
 
 #ifndef WASM
 
-//int square(int n){
-//	return n * n;
-//}
-void logi(int l) {
-	printf("%d\n", l);
-}
-
-void log_f32(float l) {
-	printf("%f\n", l);
-}
 
 //#import "Backtrace.cpp"
 //#include "ErrorHandler.h"
@@ -359,28 +326,6 @@ typedef struct wasi_buffer {
 	const void *buf;
 	size_t buf_len;
 } wasi_buffer;
-
-#ifndef MY_WASM
-void logs(chars s) { // works in wasmer and wasmtime!
-#ifndef WASM
-	printf("%s\n", s);
-	return; // this should ONLY be called in wasm context!
-#endif
-	while (*s) {
-		logc(*s);
-		s++;
-	}
-	return;
-//#ifdef WASI
-//	printf(s);
-//#else // fake WASI … OR use wasmx import logs
-	size_t len = strlen0(s);
-	wasi_buffer buf = {s, len};
-	size_t out;
-	fd_write(1, &buf, len, &out);
-//#endif
-}
-#endif
 
 
 #ifdef WASI
