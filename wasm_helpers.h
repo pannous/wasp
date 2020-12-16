@@ -14,9 +14,7 @@
 
 typedef const char *chars;
 typedef unsigned char *bytes;
-#ifndef MEMORY_SIZE
-#define MEMORY_SIZE 11796480
-#endif
+
 
 extern "C" unsigned int *memory;// =0; always, BUT heap_offset/current is higher from beginning!
 extern "C" char *memoryChars;
@@ -25,11 +23,13 @@ extern "C" char *memoryChars;
 //extern "C" int memory_size; // via CMake  todo ?
 //#define memory_size 10485760
 
-#ifndef WASM
+#ifndef MEMORY_SIZE
+#ifdef WASM
+#define MEMORY_SIZE 11796480
+#else
 #define MEMORY_SIZE 1844674407370955200 //(2**64)/10
+#endif
 #define HEAP_OFFSET 0
-//#define memory 0
-//#define current 0
 #endif
 
 
