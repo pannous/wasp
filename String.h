@@ -368,13 +368,14 @@ public:
 //	operator std::string() const { return "Hi"; }
 
 // excluding to
-	String &substring(int from, int to = -1, bool ref = false /* true after all is tested*/) { // excluding to
+	String substring(int from, int to = -1, bool ref = false /* true after all is tested*/) { // excluding to
 		if (from < 0 or from == 0 and to == length)return *this;
 		if (to < 0 or to > length)to = length;
 		if (to <= from)return EMPTY_STRING;
 		int len = to - from;
-		auto *neu = new String(data + from, len, ref);
-		return *neu;
+		return String(data + from, len, ref);
+//		auto *neu = new String(data + from, len, ref);
+//		return *neu;
 	}
 
 	int len(chars data) {
@@ -405,16 +406,16 @@ public:
 		return *this;
 	}
 
-	String *clone() {
-		return new String(this->data, this->length, false);
+	String clone() {
+		return *new String(this->data, this->length, false);
 	}
 
 
-	String &operator%(String &c) {
+	String operator%(String &c) {
 		if (!contains("%s"))
 			return *this + c;
-		String *b = this->clone();
-		String &d = b->replace("%s", c);
+		String b = this->clone();
+		String d = b.replace("%s", c);
 		return d;
 	}
 
@@ -422,8 +423,8 @@ public:
 		if (!c)return *this;
 		if (!contains("%s"))
 			return *this + c;
-		String *b = this->clone();
-		String &d = b->replace("%s", *c);
+		String b = this->clone();
+		String d = b.replace("%s", *c);
 		return d;
 	}
 
@@ -431,8 +432,8 @@ public:
 	String &operator%(Node &c) {
 		if (!contains("%s"))
 			return *this + toString(c);
-		String *b = this->clone();
-		String &d = b->replace("%s", toString(c));
+		String b = this->clone();
+		String d = b.replace("%s", toString(c));
 		return d;
 	}
 
