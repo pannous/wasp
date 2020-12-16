@@ -173,6 +173,7 @@ void *memset(void *ptr, int value, size_t num) {
 }
 
 #ifdef WASM
+
 // new operator for ALL objects
 void *operator new[](size_t size) { // stack
 	char *use = current;
@@ -359,7 +360,8 @@ void exit0(){
 //}
 #endif
 
-#ifdef RUNTIME_ONLY
+//#ifdef RUNTIME_ONLY
+#if defined(RUNTIME_ONLY) || defined(WASM)
 int read_wasm(chars wasm_path){return -1;};
 int run_wasm(chars wasm_path){return -1;};
 int run_wasm(bytes data,int size){return -1;}

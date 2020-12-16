@@ -46,10 +46,6 @@ char *empty_string = "";
 
 
 #else
-#pragma message "using wasm imports"
-//void printf(chars s){
-//	while(*s)logc(*s++);
-//}
 #endif
 
 class String;
@@ -395,12 +391,22 @@ chars typeName(Type t) {
 	}
 }
 
+#ifndef WASM
+//relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
 String nil_name = "nil";
 String empty_name = "";
 String object_name = "{…}";
 String groups_name = "(…)";
 String patterns_name = "[…]";
 String EMPTY = String('\0');
+#else
+String nil_name;
+String empty_name;
+String object_name;
+String groups_name;
+String patterns_name;
+String EMPTY;
+#endif
 
 #pragma clang diagnostic pop
 
@@ -410,7 +416,7 @@ bool String::empty() const {//this==0 in testMarkMulti!
 //		error("CORRUPT String pointer");
 ////		return true;
 //#endif
-	if(this == 0)return true;
+	if (this == 0)return true;
 	return length == 0 || !data || data[0] == 0 || data == object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
 }
@@ -593,6 +599,7 @@ void log(char c) {
 
 #ifndef MY_WASM
 
+//#pragma message "using wasm imports"
 void logs(chars c) {
 	printf("%s", c);
 }
