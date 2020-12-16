@@ -85,6 +85,9 @@ print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
 void printf(chars format, long i, long j) {
 	print(String(format).replace("%d", String(i)).replace("%d", String(j)));
 }
+void printf(chars format, int i, int j) {
+	print(String(format).replace("%d", String(i)).replace("%d", String(j)));
+}
 
 void printf(chars format, double i, double j) {
 	print(String(format).replace("%f", String(i)).replace("%f", String(j)));

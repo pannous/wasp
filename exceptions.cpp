@@ -2,6 +2,7 @@
 //
 // Created by me on 20.10.20.
 // https://monoinfinito.wordpress.com/2013/02/19/c-exceptions-under-the-hood-3-an-abi-to-appease-the-linker/
+// Wasm cpp exception ABI shim
 //
 
 //#include <stdio.h>
@@ -10,9 +11,17 @@
 //#include <typeinfo>
 
 namespace __cxxabiv1 {
-    struct __class_type_info {
-        virtual void foo() {}
-    } ti;
+	struct __vmi_class_type_info {
+		virtual void foo() {}
+	} vmiClassTypeInfo;
+
+	struct __pointer_type_info {
+		virtual void foo() {}
+	} pointerTypeInfo;
+
+	struct __class_type_info {
+		virtual void foo() {}
+	} classTypeInfo;
 }
 //class type_info {
 //public:
