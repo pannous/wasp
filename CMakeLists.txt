@@ -8,26 +8,27 @@ set(CMAKE_SYSROOT "")
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
-set(RUNTIME_ONLY 1) # no Angle eval emit merge etc!
-#set(DEBUG 1)
-set(RELEASE 1)
+#set(RUNTIME_ONLY 1) # no Angle eval emit merge etc!
+set(DEBUG 1)
+#set(RELEASE 1)
 
 #set(WASM 1)
 #set(WASI 1)
 
-if (!WASM)
-if (!RUNTIME_ONLY)
-    # TO EXECUTE wasm:
-    #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
-    #set(WABT 1) #  wasm_runner_wabt.cpp
-#    set(WASM3 1) # wasm_runner_wasm3.cpp
-#    set(WASMX 1)
-endif ()
+if (NOT WASM)
+    if (NOT RUNTIME_ONLY)
+        # TO EXECUTE wasm:
+        #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
+        #set(WABT 1) #  wasm_runner_wabt.cpp
+        #set(WASM3 1) # wasm_runner_wasm3.cpp
+        set(WASMX 1)
+        MESSAGE(WASMX)
+    endif ()
 endif ()
 
 if (WASM)
     ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
-    if (!WASI)
+    if (NOT WASI)
     endif ()
 endif ()
 
@@ -56,7 +57,7 @@ include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/
 # ^^ fixes <cmath> mac errors!
 
 # enable:
-if (!WASM)
+if (NOT WASM)
     ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
 endif ()
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
