@@ -29,7 +29,7 @@ bytes concat(char a, bytes b, int len) {
 	return c;
 }
 
-
+typedef unsigned char uint8_t;
 typedef uint8_t byt;
 
 //https://en.wikipedia.org/wiki/LEB128
@@ -43,7 +43,7 @@ Code &unsignedLEB128(long n) {
 			byte |= 0x80;// continuation bit
 		}
 		buffer->add(byte);
-	} while (n != 0);
+	} while (n > 0);
 	return *buffer;
 }
 
@@ -102,18 +102,30 @@ Code encodeVector(Code data) {
 
 String sectionName(Section section){
 	switch (section) {
-		case type: return "type";
-		case functypes: return "func";
-		case table: return "table";
-		case import: return "import";
-		case custom: return "custom";
-		case global: return "global";
-		case element: return "element";
-		case exports: return "exports";
-		case code_section: return "code";
-		case data_section: return "data";
-		case start_section: return "start";
-		case memory_section: return "memory";
+		case type:
+			return "type";
+		case table:
+			return "table";
+		case functypes:
+			return "func";
+		case import:
+			return "import";
+		case custom:
+			return "custom";
+		case global:
+			return "global";
+		case element:
+			return "element";
+		case exports:
+			return "exports";
+		case code_section:
+			return "code";
+		case data_section:
+			return "data";
+		case start_section:
+			return "start";
+		case memory_section:
+			return "memory";
 		default:
 			error("INVALID SECTION #%d\nprevious section must have been corrupted\n"s % section);
 	}

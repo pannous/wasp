@@ -1222,8 +1222,10 @@ void handler(int sig) {
 //	True.value.number = 1;
 //}
 
+#ifndef RUNTIME_ONLY
 #import "tests.cpp"
 
+#endif
 
 Node run(String source) {
 	return emit(source);
@@ -1297,9 +1299,9 @@ int main(int argp, char **argv) {
 		log(args);
 		current += strlen0(args)+1;
 #endif
-//		tests();
+
+#ifndef RUNTIME_ONLY
 		testCurrent();
-#ifndef WASM
 #endif
 		return 42;
 	} catch (Exception e) {

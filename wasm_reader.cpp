@@ -2,7 +2,10 @@
 // Created by me on 27.11.20.
 //
 #include "Code.h"
+#ifndef WASM
 #include "stdio.h"
+
+#endif
 #include "wasm_reader.h"
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
@@ -250,12 +253,14 @@ void consumeImportSection() {
 
 
 int fileSize(char const *file) {
+#ifndef WASM
 	FILE *ptr;
 	ptr = fopen(file, "rb");  // r for read, b for binary
 	if (!ptr)error("File not found "s + file);
 	fseek(ptr, 0L, SEEK_END);
 	int sz = ftell(ptr);
 	return sz;
+#endif
 }
 
 void consumeSections() {
@@ -307,6 +312,7 @@ Module read_wasm(chars file) {
 	module = *new Module();
 	pos = 0;
 	printf("--------------------------\n");
+#ifndef WASM
 	printf("parsing: %s\n", file);
 	size = fileSize(file);
 	bytes buffer = (bytes) alloc(1, size);// do not free
@@ -316,6 +322,7 @@ Module read_wasm(chars file) {
 	consume(4, reinterpret_cast<byte *>(moduleVersion));
 	consumeSections();
 	module.total_func_count = module.import_count + module.code_count;
+#endif
 	return module;
 }
 
