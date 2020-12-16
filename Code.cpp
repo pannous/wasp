@@ -119,5 +119,5 @@ String sectionName(Section section){
 	}
 }
 Code createSection(Section sectionType, Code data) {
-	return Code(sectionType, encodeVector(data));
+	return Code((char) sectionType, encodeVector(data));
 }

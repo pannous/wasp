@@ -429,7 +429,7 @@ public:
 	}
 
 
-	String &operator%(Node &c) {
+	String operator%(Node &c) {
 		if (!contains("%s"))
 			return *this + toString(c);
 		String b = this->clone();
