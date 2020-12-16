@@ -1626,6 +1626,7 @@ void testNodeImplicitConversions(){
 #endif
 
 void testCurrent() { // move to tests() once OK
+	testMarkMultiDeep();
 #ifndef WASM
 	testWasmRuntimeExtension();
 //	exit(1);
