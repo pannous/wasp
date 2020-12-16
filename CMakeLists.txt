@@ -9,8 +9,8 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 set(RUNTIME_ONLY 1) # no Angle eval emit merge etc!
-#set(DEBUG 1)
-set(RELEASE 1)
+set(DEBUG 1)
+#set(RELEASE 1)
 
 #set(WASM 1)
 #set(WASI 1)
@@ -229,7 +229,9 @@ elseif (WASM3) # NORMAL:
     add_custom_target(BuildWasm3 ALL DEPENDS angle) #.exe
 else () # NORMAL:
     message(NO WASM "${WASM}")
-    ADD_COMPILE_FLAG("-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer  -shared-libasan ") # NOT FOR WASM
+#    ADD_COMPILE_FLAG("-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer  -shared-libasan ") # NOT FOR WASM
+    ADD_COMPILE_FLAG("-fsanitize=address") # NOT FOR WASM
+
     #    ADD_COMPILE_FLAG("-std=c++2a") #  -stdlib=libc++
 
     # just for Backtrace.cpp :

@@ -278,40 +278,7 @@ void reverse(char *str, int len) {
 
 class Node;
 
-//String object_name = "<object>";
 
-//#import "Node.cpp"
-
-
-
-
-
-//void log(Node &node) {
-//	Node node2 = node;
-//	log(node2);
-//}
-
-
-//#ifndef WASM
-//#include  <string>
-//void log(std::string s) {
-//	printf("%s\n", s.data());
-//}
-//#endif
-
-
-//#endif //NETBASE_STRING_CPP
-
-#pragma clang diagnostic ignored "-Wuser-defined-literals"
-//#pragma clang diagnostic ignored "-Wliteral-suffix"
-
-//String operator "" s(chars c, size_t) {
-//	return String(c);// "bla"s  literal operator suffixes not preceded by ‘_’ are reserved for future standardization
-//}
-
-//String operator "" _s(chars c, int x) {// invalid literal operator parameter type 'int', did you mean 'unsigned number'
-//	return String(c);
-//}
 String operator "" _s(chars c, unsigned long t) {// function signature contains illegal type WHYY??
 	return String(c);
 }
@@ -403,6 +370,8 @@ String patterns_name = "[…]";
 String EMPTY = String('\0');
 
 #pragma clang diagnostic pop
+
+
 
 bool String::empty() const {//this==0 in testMarkMulti!
 //#ifdef WASM
@@ -561,7 +530,6 @@ bool empty(String *s) { return not s or s->empty(); }
 
 bool empty(chars s) { return not s or strlen0(s) == 0; }
 
-#undef log // expanded from macro 'log' tgmath.h:245:25:
 
 
 void log(chars s) {
