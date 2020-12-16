@@ -105,9 +105,9 @@ void parseFunctionNames(Code &payload) {
 	int index = -1;
 	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
 		index = unsignedLEB128(payload);
-		String *func = name(payload).clone();// needs to be 0-terminated now
-		if (func->length > 0)
-			functionIndices[*func] = index;
+		String func = name(payload).clone();// needs to be 0-terminated now
+		if (func.length > 0)
+			functionIndices[func] = index;
 		else
 			functionIndices["func_"s + index] = index;
 	}
@@ -118,7 +118,7 @@ void parseFunctionNames(Code &payload) {
 void parseImportNames(Code &payload) {
 	for (int i = 0; i < module.import_count and payload.start < payload.length; ++i) {
 		String mod = name(payload);// module
-		String *name1 = name(payload).clone();// needs to be 0-terminated now
+		String name1 = name(payload).clone();// needs to be 0-terminated now
 		int type = unsignedLEB128(payload);
 		int index = unsignedLEB128(payload);
 //		log(name1);

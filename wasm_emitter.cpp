@@ -701,7 +701,9 @@ Code typeSection() {
 		typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
 		signature.is_handled = true;
 		int param_count = signature.size();
-		Code td = {0x60 /*const type form*/, param_count};
+//		Code td = {0x60 /*const type form*/, param_count};
+		Code td = Code(0x60) + Code(param_count);
+
 		for (int i = 0; i < param_count; ++i) {
 			td = td + Code(signature.types[i]);
 		}
@@ -713,7 +715,7 @@ Code typeSection() {
 		}
 		type_data = type_data + td;
 	}
-	return Code(type, encodeVector(Code(typeCount) + type_data)).clone();
+	return Code((char) type, encodeVector(Code(typeCount) + type_data)).clone();
 }
 
 Code importSection() {
