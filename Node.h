@@ -6,8 +6,7 @@
 #include "String.h"
 #include "smart_types.h"
 //#import  "String.h" // FFS
-//#include <stdarg.h> // va_list OK IN WASM???
-#include <cstdarg> // va_list ok in wasm even without wasi!
+#include <stdarg.h> // va_list OK IN WASM???
 
 typedef char const *chars;
 typedef unsigned char byte;//!
@@ -124,7 +123,7 @@ public:
 //	}
 
 	void *operator new(size_t size) {
-		return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
+		return (Node *)(calloc(size,1));// WOW THAT WORKS!!!
 	}
 
 	void operator delete(void *a) {
