@@ -9,7 +9,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
 #set(RUNTIME_ONLY 1) # no Angle eval emit merge etc!
-set(VERBOSE 1)
+#set(VERBOSE 1)
 #set(DEBUG 1) # SET via Preferences… Build->CMake->Profiles
 #set(RELEASE 1)
 
@@ -34,6 +34,8 @@ endif ()
 
 if (WASM)
     ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
+    ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY)
+    #    ADD_COMPILE_DEFINITIONS(NO_TESTS)
     if (NOT WASI)
     endif ()
 endif ()
@@ -62,10 +64,10 @@ ENDFUNCTION()
 include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
 # ^^ fixes <cmath> mac errors!
 
-ADD_COMPILE_FLAG(" -g") # DEBUG
 ADD_COMPILE_FLAG("-fno-inline")
 
 if (NOT RELEASE)
+    ADD_COMPILE_FLAG(" -g3") # DEBUG
     if (NOT WASM)
         ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
     endif ()
@@ -92,7 +94,7 @@ endif ()
 #else ()
 if (RELEASE)
     ADD_COMPILE_FLAG("-w") # hide warnings
-    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # -mmacosx-version-min=11.0
+    #    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # -mmacosx-version-min=11.0
     if (NOT WASM)
         ADD_COMPILE_FLAG("-Os -Oz") # NO WASM GENERATED wth. size should be ok? -O1 removes symbol names https://bugs.llvm.org/show_bug.cgi?id=45602 !
     endif ()
@@ -148,8 +150,16 @@ if (WASM) # OR WASI)
         #    ADD_COMPILE_FLAG("-Wl,--emit-relocs")
     endif ()
     if (RELEASE)
-        #        ADD_COMPILE_FLAG("-Wl,--export-all")
+        #                ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized [parse exception: duplicate export name (at 0:4689)]
         #        ADD_COMPILE_FLAG("-O0")
+
+        # No support for creating shared libraries. The spec for shared libraries in WebAssembly is still in flux
+        # https://github.com/rust-lang/rust/issues/60231#issuecomment-654645065
+        #        ADD_COMPILE_FLAG("-Wl,--shared")
+        #relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
+        ADD_COMPILE_FLAG("-fPIC") # does
+
+        ADD_COMPILE_FLAG("-Wl,--compress-relocations,--strip-debug") # incompatible with output debug information. Please pass --strip-debug
         set(SOURCE_FILES ${SOURCE_FILES} exceptions.cpp)
         #        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
         ADD_COMPILE_FLAG("-Oz -Qn -Ws,--lto-O3,-O4,--gc-sections") # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
@@ -159,6 +169,8 @@ if (WASM) # OR WASI)
         endif ()
     endif ()
     add_executable(wasp.wasm ${SOURCE_FILES}) # REMOVES unused functions
+    target_link_options(wasp.wasm PUBLIC --shared)
+    #    target_link_options(wasp.wasm PUBLIC --strip-debug)
     add_custom_target(BuildWasm ALL DEPENDS wasp.wasm)
 elseif (WASI)
     message(WASI)
