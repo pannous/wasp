@@ -7,12 +7,11 @@
 
 #ifndef WASM
 
+#include <cstdarg>
 #include <stdio.h>
+#include <stdarg.h> // va_list
 
 #endif
-
-#include <cstdarg>
-//#include <stdarg.h> // va_list OK in WASM!!
 
 bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
@@ -186,7 +185,7 @@ Node &Node::operator[](char c) {
 	return (*this)[String(c)];
 }
 
-int capacity = 30;// TODO !!! lol lists>100 elements;)
+int capacity = 40;// TODO !!! lol lists>100 elements;)
 int maxNodes = 8000;// TODO !!!
 int lastChild = 1;
 
@@ -277,8 +276,7 @@ bool Node::operator==(char other) {
 }
 
 bool Node::operator==(chars other) {
-	if (kind == strings and value.data)
-		if(eq(value.string->data, other, value.string->shared_reference ? value.string->length : -1)) return true;
+	if (kind == strings and eq(value.string->data, other, value.string->shared_reference ? value.string->length : -1))return true;
 	if (eq(name.data, other, name.shared_reference ? name.length : -1))return true;// todo really name==other?
 	if (kind == keyNode and value.node and *value.node == other)return true;
 	return false;

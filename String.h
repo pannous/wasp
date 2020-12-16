@@ -70,8 +70,6 @@ void encode_unicode_character(char *buffer, wchar_t ucs_character);
 
 #ifndef WASM
 
-void log(int i);
-
 void log(long i);
 
 #endif
@@ -405,16 +403,16 @@ public:
 		return *this;
 	}
 
-	String *clone() {
+	String* clone() {
 		return new String(this->data, this->length, false);
 	}
 
 
-	String &operator%(String &c) {
+	String& operator%(String &c) {
 		if (!contains("%s"))
 			return *this + c;
-		String *b = this->clone();
-		String &d = b->replace("%s", c);
+		String* b = this->clone();
+		String& d = b->replace("%s", c);
 		return d;
 	}
 
@@ -422,17 +420,17 @@ public:
 		if (!c)return *this;
 		if (!contains("%s"))
 			return *this + c;
-		String *b = this->clone();
-		String &d = b->replace("%s", *c);
+		String* b = this->clone();
+		String& d = b->replace("%s", *c);
 		return d;
 	}
 
 
-	String &operator%(Node &c) {
+	String& operator%(Node &c) {
 		if (!contains("%s"))
 			return *this + toString(c);
-		String *b = this->clone();
-		String &d = b->replace("%s", toString(c));
+		String* b = this->clone();
+		String& d = b->replace("%s", toString(c));
 		return d;
 	}
 
@@ -710,7 +708,7 @@ public:
 		return indexOf(string) >= 0;
 	}
 
-	String &replace(chars string, chars with) {// first only!
+	String& replace(chars string, chars with) {// first only!
 		int i = this->indexOf(string);
 		if (i >= 0) {
 			unsigned int from = i + strlen0(string);
@@ -720,7 +718,7 @@ public:
 		}
 	}
 
-	String &replace(chars string, String with) {// first only!
+	String& replace(chars string, String with) {// first only!
 		return replace(string, with.data);
 	}
 
@@ -845,8 +843,6 @@ extern String EMPTY;// = String('\0');
 //String operator "" _(chars c, unsigned long );
 //String operator "" _s(chars c, unsigned long );
 void log(String *s);
-
-void log(String s);
 
 void log(chars s);
 
