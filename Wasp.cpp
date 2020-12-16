@@ -1286,6 +1286,9 @@ int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
 #endif
 	try {
+		logi(42);
+		log("Hello "_s + "WASM");
+
 #ifdef WASM
 		initSymbols();
 //		String args(current);
@@ -1294,7 +1297,6 @@ int main(int argp, char **argv) {
 		log(args);
 		current += strlen0(args)+1;
 #endif
-		log("Hello "_s + "WASM");
 //		tests();
 		testCurrent();
 #ifndef WASM
