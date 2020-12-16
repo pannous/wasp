@@ -45,7 +45,7 @@ int raise(chars error);// conflicts with signal.h
 extern "C" void logs(chars);// ,int len=-1 /*auto*/);
 extern "C" void logc(char c);
 extern "C" void logi(int i);
-extern "C" void log_f32(float f);
+extern "C" void logf32(float f);
 extern "C" int square(int n);// test wasm
 extern "C" int squaref(int n);// test wasm
 extern int sqrt1(int a);
@@ -99,7 +99,7 @@ void printf(chars format, chars i, chars j, int l);
 void printf(chars format, chars i, chars j, chars l);
 void printf(chars format, chars i, chars j, chars k, int l);
 #endif
-void * memset ( void * ptr, int value, size_t num );
+extern "C" void * memset ( void * ptr, int value, size_t num );
 void* calloc(int i,int num=1);// different from complicated alloc.h type!
 void free(void*);
 //int rand();

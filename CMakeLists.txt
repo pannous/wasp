@@ -8,19 +8,21 @@ set(CMAKE_SYSROOT "")
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
-ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
-#set(RUNTIME_ONLY 1) # no Angle eval emit merge etc!
-set(DEBUG 1)
-#set(RELEASE 1)
+set(RUNTIME_ONLY 1) # no Angle eval emit merge etc!
+#set(DEBUG 1)
+set(RELEASE 1)
 
 #set(WASM 1)
 #set(WASI 1)
 
 if (!WASM)
+if (!RUNTIME_ONLY)
     # TO EXECUTE wasm:
     #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
     #set(WABT 1) #  wasm_runner_wabt.cpp
-    set(WASM3 1) # wasm_runner_wasm3.cpp
+#    set(WASM3 1) # wasm_runner_wasm3.cpp
+#    set(WASMX 1)
+endif ()
 endif ()
 
 if (WASM)
@@ -77,6 +79,7 @@ else()
     ADD_COMPILE_FLAG(" -Os -Oz ") # size should be ok? -O1 removes symbol names https://bugs.llvm.org/show_bug.cgi?id=45602 !
 endif ()
 
+ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
 
 set(SOURCE_FILES String.cpp Node.cpp Map.cpp Wasp.cpp Angle.cpp wasm_helpers.cpp) # COMMON FOR ALL
 if (RUNTIME_ONLY)
@@ -86,9 +89,9 @@ else ()
 endif ()
 
 #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
-#if (!WASM)
+if(WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} wasm_runner_console.cpp)
-#endif ()
+endif ()
 
 if (WASM) # OR WASI)
     message(WASM)
