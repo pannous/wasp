@@ -27,9 +27,10 @@ typedef chars chars;
 //extern "C" int isalnum(int _c);
 
 #ifdef WASM
-#warning COMPILING TO WASM
+// message in CMAKE!
+//#warning COMPILING TO WASM
 #else
-#warning COMPILING TO APPLE
+//#warning COMPILING TO APPLE
 #endif
 
 
