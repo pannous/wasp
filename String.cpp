@@ -569,8 +569,8 @@ void log(chars s) {
 }
 
 void log(String *s) {
-	if (s->shared_reference)s = s->clone();// add \0 !!
-	if (s)logs(s->data);
+	if (s->shared_reference)logs(s->clone());// add \0 !!
+	else if (s)logs(s->data);
 }
 
 void log(String s) {
