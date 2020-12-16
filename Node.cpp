@@ -717,7 +717,7 @@ String Node::serializeValue(bool deep) const {
 	Value val = value;
 	switch (kind) {
 		case strings:
-			return "\""s + val.string + "\"";
+			return val.data ? "\""s + val.string + "\"" : "";
 //		case ints:
 		case longs:
 			return itoa(val.longy);
