@@ -592,17 +592,25 @@ void log(char c) {
 
 
 #ifndef MY_WASM
+
 void logs(chars c) {
-	printf("%s",c);
+	printf("%s", c);
 }
+
 void logi(int i) {
-	printf("%d",i);
+	printf("%d", i);
 }
+
 void logc(char c) {
 	printf("%c", c);
 }
+
+void logx(int i) {
+	printf("%x", i);
+}
+
 //#undef logf  // doesn't help math
-void logf32 (float l) {
+void logf32(float l) {
 	printf("%f\n", l);
 }
 
