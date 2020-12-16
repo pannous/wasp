@@ -44,13 +44,15 @@ int raise(chars error);// conflicts with signal.h
 
 extern "C" void logs(chars);// ,int len=-1 /*auto*/);
 extern "C" void logc(char c);
+extern "C" void logx(int i);// hex
 extern "C" void logi(int i);
 extern "C" void logf32(float f);
 extern "C" int square(int n);// test wasm
 extern "C" int squaref(int n);// test wasm
 extern int sqrt1(int a);
+
 //void printf(int);
-void* alloc(int size,int num);
+void *alloc(int size, int num);
 
 
 
@@ -89,6 +91,7 @@ void printf(chars, chars);
 //void print(chars format, int i);
 void printf(char const *format, int i);
 void printf(char const *format, chars,int);
+void printf(chars format, int,int);
 void printf(chars format, long i, long);
 
 void printf(chars format, double i, double j);
