@@ -9,7 +9,7 @@
 int total_functions = -1;
 
 Code mergeTypeSection(Module lib, Module main) {
-	return Code(type, encodeVector(Code(lib.type_count + main.type_count) + lib.type_data + main.type_data));
+	return createSection(type, encodeVector(Code(lib.type_count + main.type_count) + lib.type_data + main.type_data));
 }
 
 Code mergeImportSection(Module lib, Module main) {
