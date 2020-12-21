@@ -56,7 +56,8 @@ Code mergeExportSection(Module lib, Module main) {
 }
 
 Code mergeDataSection(Module lib, Module main) {
-	if (lib.data_count == 0 and main.data_count == 0)return Code();
+	if (lib.data_section.length == 0 and main.data_section.length == 0)return Code();
+//	if (lib.data_count == 0 and main.data_count == 0)return Code();
 //	Code(lib.data_count + main.data_count) + no such thing
 	return createSection(data_section, lib.data_section + main.data_section);
 }
