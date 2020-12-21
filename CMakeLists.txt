@@ -34,8 +34,8 @@ endif ()
 
 if (WASM)
     ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
-    ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY)
-    #    ADD_COMPILE_DEFINITIONS(NO_TESTS)
+    ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY) # != NO_TESTS
+
     if (NOT WASI)
     endif ()
 endif ()
@@ -141,29 +141,37 @@ if (WASM) # OR WASI)
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
     #--import-memory        Import memory from the environment
     add_definitions(-DHEAP_OFFSET=65536)
-    add_definitions(-DMEMORY_SIZE=11796480)
-    ADD_COMPILE_FLAG("-Wl,--initial-memory=11796480") # stack size plus some
-    ADD_COMPILE_FLAG("-Wl,-z,stack-size=10485760") # 1MB*10  pointers will START from high and go lower!
+    add_definitions(-DMEMORY_SIZE=117964800)
+    ADD_COMPILE_FLAG("-Wl,--initial-memory=117964800") # stack size plus some
+    ADD_COMPILE_FLAG("-Wl,-z,stack-size=104857600") # 1MB*10  pointers will START from high and go lower!
     ADD_COMPILE_FLAG("-Qn") # no producer metadata
     if (DEBUG)
         ADD_COMPILE_FLAG("-Wl,-t,--verbose,--export-table") # ,-O0  VERBOSE!
         #    ADD_COMPILE_FLAG("-Wl,--emit-relocs")
     endif ()
     if (RELEASE)
-        #                ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized [parse exception: duplicate export name (at 0:4689)]
-        #        ADD_COMPILE_FLAG("-O0")
+        ADD_COMPILE_DEFINITIONS(NO_TESTS)
+        #         ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized => [parse exception: duplicate export name (at 0:4689)]
+        ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
+        #        ADD_COMPILE_FLAG("-Wl,--export-dynamic") #       Put symbols in the dynamic symbol table
+        ADD_COMPILE_FLAG("-v")
+        #        ADD_COMPILE_FLAG("-Wl,-vvv")
+        #        ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
+        #          --reproduce=<value>    Dump linker invocation and input files for debugging
 
         # No support for creating shared libraries. The spec for shared libraries in WebAssembly is still in flux
         # https://github.com/rust-lang/rust/issues/60231#issuecomment-654645065
         #        ADD_COMPILE_FLAG("-Wl,--shared")
+        #        ADD_COMPILE_FLAG("-Wl,--pie") #  position independent executable, does it help? NO
         #relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
-        ADD_COMPILE_FLAG("-fPIC") # does
+        #        ADD_COMPILE_FLAG("-fPIC") # does not help
 
         ADD_COMPILE_FLAG("-Wl,--compress-relocations,--strip-debug") # incompatible with output debug information. Please pass --strip-debug
         set(SOURCE_FILES ${SOURCE_FILES} exceptions.cpp)
         #        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
+        #        --no-validation   --debug
         ADD_COMPILE_FLAG("-Oz -Qn -Ws,--lto-O3,-O4,--gc-sections") # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
-        #        ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
+        ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
         if (EMCC)
             ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
         endif ()
