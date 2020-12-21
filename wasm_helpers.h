@@ -25,7 +25,7 @@ extern "C" char *memoryChars;
 
 #ifndef MEMORY_SIZE
 #ifdef WASM
-#define MEMORY_SIZE 11796480
+#define MEMORY_SIZE 117964800 // todo: usually via CMAKE!?
 #else
 #define MEMORY_SIZE 1844674407370955200 //(2**64)/10
 #endif
