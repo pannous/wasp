@@ -1222,9 +1222,8 @@ void handler(int sig) {
 //	True.value.number = 1;
 //}
 
-#ifndef RUNTIME_ONLY
+#ifndef NO_TESTS // RUNTIME_ONLY
 #import "tests.cpp"
-
 #endif
 
 Node run(String source) {
@@ -1300,7 +1299,7 @@ int main(int argp, char **argv) {
 		current += strlen0(args)+1;
 #endif
 
-#ifndef RUNTIME_ONLY
+#ifndef NO_TESTS // RUNTIME_ONLY
 		testCurrent();
 #endif
 		return 42;

@@ -427,7 +427,7 @@ void testWasmRuntimeExtension() {
 	Node charged = analyze(parse("teste:=42"));
 	Code lib = emit(charged, &runtime, "maine");
 	lib.save("main.wasm");// partial wasm!
-	Module main = read_wasm("main.wasm");
+	Module main;// = read_wasm("main.wasm");
 	Code code = merge_wasm(runtime, main);
 	code.save("merged.wasm");
 	read_wasm("merged.wasm");
