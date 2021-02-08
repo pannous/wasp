@@ -13,9 +13,8 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 #set(VERBOSE 1)
 #set(DEBUG 1) # SET via Preferences… Build->CMake->Profiles
 #set(RELEASE 1)
-
 #set(WASM 1)
-set(WASI 1)
+#set(WASI 1)
 
 if (RELEASE)
     MESSAGE(RELEASE)
@@ -26,18 +25,16 @@ if (NOT WASM)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm:
         #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
-        #set(WABT 1) #  wasm_runner_wabt.cpp
-        #set(WASM3 1) # wasm_runner_wasm3.cpp
-        set(wasmx 1)
-        MESSAGE(wasmx)
+        #        set(WABT 1) #  wasm_runner_wabt.cpp
+        set(WASM3 1) # wasm_runner_wasm3.cpp
+        #        set(wasmx 1)
     endif ()
 endif ()
 
 if (WASM)
-    ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
     ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY) # != NO_TESTS
-
     if (NOT WASI)
+        ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
     endif ()
 endif ()
 
@@ -111,6 +108,11 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp source/Code.cpp source/wasm_emitter.cpp source/wasm_reader.cpp source/wasm_merger.cpp source/wasm_merger.h)
 endif ()
 
+if (NOT WASM)
+    ADD_COMPILE_DEFINITIONS(_Backtrace_)
+    set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
+endif ()
+
 #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
 if (wasmx)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
@@ -118,16 +120,12 @@ endif ()
 
 if (WASM) # OR WASI)
     message(WASM)
-    SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
     ADD_COMPILE_DEFINITIONS(WASM)
+    #    set(CMAKE_SYSROOT "") // via -DCMAKE_TOOLCHAIN_FILE=wasm.toolchain.cmake
     if (WASI)
         ADD_COMPILE_DEFINITIONS(WASI) # same as -DWASI=1
-        SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
-        set(CMAKE_SYSROOT "")
         set(CMAKE_ISYSROOT "")
         ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
-        ADD_COMPILE_FLAG("--sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot")
-        ADD_COMPILE_FLAG("-isysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot")
     else ()
         ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
         ADD_COMPILE_FLAG("-nostdlib -march=wasm") #-v
@@ -263,7 +261,7 @@ elseif (wabt)
     target_include_directories(angle PUBLIC wabt/src/interp)
     target_link_libraries(angle PRIVATE libwabt) # libwabt.a 20 MB only for local stuff!
     #    add_custom_target(BuildWabtc ALL DEPENDS angle) #.exe
-elseif (wasm3)
+elseif (WASM3)
     message(wasm3 VM)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
     include(wasm3/cmake_install.cmake)
