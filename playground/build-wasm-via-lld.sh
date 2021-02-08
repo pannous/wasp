@@ -9,9 +9,9 @@ echo build wasm
 # export CPPFLAGS="-I/usr/local/opt/llvm/include"
 #export C_INCLUDE_PATH="/usr/include/:/usr/lib/x86_64-linux-gnu/glib-2.0/include/"
 #for x in `ls -d /usr/include/*/`;do export C_INCLUDE_PATH="$C_INCLUDE_PATH:$x";done
-clang=/opt/wasm/wasi-sdk-11.0/bin/clang
+clang=/opt/wasm/wasi-sdk/bin/clang
 export BINARYEN=/opt/wasm/binaryen/
-export CPATH=/opt/wasm/swift-wasm/usr/share/wasi-sysroot/include/
+export CPATH=/opt/wasm/wasi-sdk/share/wasi-sysroot/include/
 
 # clang-10: error: cannot specify -o when generating multiple output files
 
