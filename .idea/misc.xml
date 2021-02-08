@@ -4,6 +4,7 @@
   <component name="CidrRootsConfiguration">
     <sourceRoots>
       <file path="$PROJECT_DIR$" />
+      <file path="$PROJECT_DIR$/source" />
     </sourceRoots>
     <libraryRoots>
       <file path="$PROJECT_DIR$/wabt/src" />
