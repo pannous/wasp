@@ -72,10 +72,10 @@ The Wasp syntax was influenced by [Mark](https://github.com/henry-luo/mark)
 ## Wasp Data Model
 
 Wasp has a very simple and fully-typed data model. 
-## [Documentation](../wiki/)
+## [Documentation](../../wiki/)
 
-- [Syntax specification](../wiki/syntax)
-- [Data model and API specification](../wiki/data)
+- [Syntax specification](/wiki/syntax)
+- [Data model and API specification](wiki/data)
 - [FAQ](../wiki/FAQ)
 - [Examples](../wiki/Examples)
 
