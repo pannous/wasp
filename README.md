@@ -74,10 +74,10 @@ The Wasp syntax was influenced by [Mark](https://github.com/henry-luo/mark)
 Wasp has a very simple and fully-typed data model. 
 ## [Documentation](../../wiki/)
 
-- [Syntax specification](/wiki/syntax)
-- [Data model and API specification](wiki/data)
-- [FAQ](../wiki/FAQ)
-- [Examples](../wiki/Examples)
+- [Syntax specification](https://github.com/pannous/wasp/wiki/syntax)
+- [Data model and API specification](https://github.com/pannous/wasp/wiki/data)
+- [FAQ](https://github.com/pannous/wasp/wiki/FAQ)
+- [Examples](https://github.com/pannous/wasp/wiki/Examples)
 
 ## Differences to original Mark:
 objects are created left of the bracket, so
