@@ -21,16 +21,16 @@ For example, a HTML registration form:
 ```
 Can be represented in Wasp as:
 ```text
-form{                                  // object type-name 'form'
+form{                                 
   //comment                          
-  div{ class:"form-group"               // nested Wasp object
-    label{ for:email                  // object with property 'for'
-      "Email address:"                  // text needs to be quoted
+  div{ class:"form-group"             
+    label{ for:email                  
+      "Email address:"                
     }
-    input{ type:email id:email}     // object without any contents
+    input{ type:email id:email}     
   }
-  button{ class:['btn' 'btn-info']      // property with complex values
-    'Submit'                            // text quoted with single quote
+  button{ class:['btn' 'btn-info']  
+    'Submit'                        
   }
 }
 ```
