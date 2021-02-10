@@ -44,7 +44,10 @@ tests/
 xwabt
 /wabt/
 /m3/
+/cmake-build-debug/
+/cmake-build-default/
 /cmake-build-release/
+/cmake-build-wasm/
 /cmake-build-wasm-release/
 /Testing/Temporary/
 /wabt/
