@@ -41,4 +41,10 @@ libSystem.B.dylib
 t.c
 test.angle.data
 tests/
-x
+xwabt
+/wabt/
+/m3/
+/cmake-build-release/
+/cmake-build-wasm-release/
+/Testing/Temporary/
+/wabt/

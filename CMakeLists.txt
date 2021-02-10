@@ -1,10 +1,5 @@
-set(CMAKE_SYSROOT "")
-#SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
-
 cmake_minimum_required(VERSION 3.16)
 project(wasp)
-
-
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
@@ -16,41 +11,35 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 #set(WASM 1)
 #set(WASI 1)
 
-if (RELEASE)
-    MESSAGE(RELEASE)
-    set(RUNTIME_ONLY 1)
-endif ()
-
-if (NOT WASM)
-    if (NOT RUNTIME_ONLY)
-        # TO EXECUTE wasm:
-        #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
-        #        set(WABT 1) #  wasm_runner_wabt.cpp
-        set(WASM3 1) # wasm_runner_wasm3.cpp
-        #        set(wasmx 1)
-    endif ()
-endif ()
 
 if (WASM)
-    ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY) # != NO_TESTS
+    ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (NOT WASI)
         ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
     endif ()
 endif ()
 
-if (WASI)
-    set(WASM 1)
-    set(WASI 1)
+if (NOT WASM)
+    #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
+    # ^^ fixes <cmath> mac errors!
+    ADD_COMPILE_DEFINITIONS(_Backtrace_)
+    set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
+    if (NOT RUNTIME_ONLY)
+        # TO EXECUTE wasm:
+        #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
+        set(WABT 1) #  wasm_runner_wabt.cpp
+        #        set(WASM3 1) # wasm_runner_wasm3.cpp
+        #        set(wasmx 1)
+    endif ()
+endif ()
+
+
+if (RELEASE)
+    MESSAGE(RELEASE)
+    set(RUNTIME_ONLY 1)
 endif ()
 
 set(CMAKE_CXX_STANDARD 20)
-
-#set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
-#set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
-
-if (RUNTIME_ONLY)
-    ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY)
-endif ()
 
 
 FUNCTION(ADD_COMPILE_FLAG value)
@@ -60,12 +49,9 @@ FUNCTION(ADD_COMPILE_FLAG value)
     ENDFOREACH (variable)
 ENDFUNCTION()
 
-include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
-# ^^ fixes <cmath> mac errors!
-
-ADD_COMPILE_FLAG("-fno-inline")
 
 if (NOT RELEASE)
+    ADD_COMPILE_FLAG("-fno-inline")
     ADD_COMPILE_FLAG(" -g3") # DEBUG
     if (NOT WASM)
         ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
@@ -84,7 +70,6 @@ if (NOT RELEASE)
     ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
 endif ()
 
-
 if (VERBOSE)
     ADD_COMPILE_FLAG("-v") # DEBUG lld
 endif ()
@@ -93,7 +78,6 @@ endif ()
 #else ()
 if (RELEASE)
     ADD_COMPILE_FLAG("-w") # hide warnings
-    #    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # -mmacosx-version-min=11.0
     if (NOT WASM)
         ADD_COMPILE_FLAG("-Os -Oz") # NO WASM GENERATED wth. size should be ok? -O1 removes symbol names https://bugs.llvm.org/show_bug.cgi?id=45602 !
     endif ()
@@ -101,20 +85,20 @@ endif ()
 
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
 
-set(SOURCE_FILES source/String.cpp source/Node.cpp source/Map.cpp source/Wasp.cpp source/Angle.cpp source/wasm_helpers.cpp) # COMMON FOR ALL
+#target_include_directories(angle PUBLIC source)
+
+# COMMON FOR ALL
+set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Wasp.cpp source/Angle.cpp source/wasm_helpers.cpp)
+
 if (RUNTIME_ONLY)
+    ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY)
 else ()
     message(NOT RUNTIME_ONLY)
     set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp source/Code.cpp source/wasm_emitter.cpp source/wasm_reader.cpp source/wasm_merger.cpp source/wasm_merger.h)
 endif ()
 
-if (NOT WASM)
-    ADD_COMPILE_DEFINITIONS(_Backtrace_)
-    set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
-endif ()
-
 #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
-if (wasmx)
+if (WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
 endif ()
 
@@ -188,9 +172,9 @@ if (WASM) # OR WASI)
 elseif (WASI)
     message(WASI)
     ADD_COMPILE_DEFINITIONS(WASI) # same as -DWASI=1
+    #    only works with wasm.toolchain.cmake
     SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
-    set(CMAKE_SYSROOT "")
     ADD_COMPILE_FLAG("--sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot")
     #  ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
     #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
@@ -248,9 +232,9 @@ elseif (VM) # wasm-micro-vm:
             ${WAMR_ROOT_DIR}/core/shared/mem-alloc
             #            VERSUS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
             )
-elseif (wabt)
-    message(wabt)
-    ADD_COMPILE_DEFINITIONS(wabt)
+elseif (WABT)
+    message(WABT)
+    ADD_COMPILE_DEFINITIONS(WABT)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
     include(wabt/cmake_install.cmake)
     add_subdirectory(wabt)
@@ -282,5 +266,6 @@ else () # NORMAL:
     #    add_custom_target(BuildWasp ALL DEPENDS angle)
 endif ()
 
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY out)
+#set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 set(CMAKE_SUPPRESS_REGENERATION)
