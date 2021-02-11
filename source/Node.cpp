@@ -780,7 +780,7 @@ String Node::serialize() const {
 			wasp += " ";
 		}
 	}
-	if (this->length > 0) {
+	if (this->length >= 0) {
 		if (not this->grouper) {
 			if (this->kind == groups)wasp += "(";
 			if (this->kind == objects)wasp += "{";
