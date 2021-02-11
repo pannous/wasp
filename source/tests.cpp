@@ -1633,6 +1633,8 @@ void testNodeImplicitConversions(){
 #endif
 
 void testCurrent() { // move to tests() once OK
+	assert_is("[] or 1", true);
+
 	testMarkMultiDeep();
 #ifndef WASM
 //	testWasmModuleExtension();

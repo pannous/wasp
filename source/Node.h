@@ -511,7 +511,7 @@ public:
 			if (!empty(node.name)) {
 				printf("%s", node.name.data);
 				printf(" ");
-			}
+			} else printf("{…} ");// overview
 		}
 		printf("]");
 		printf("\n");
