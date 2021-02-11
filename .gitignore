@@ -51,3 +51,4 @@ xwabt
 /cmake-build-wasm-release/
 /Testing/Temporary/
 /wabt/
+/wabt/

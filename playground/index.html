@@ -42,15 +42,17 @@
         let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
         imports = {
             env: {
-                raise: x => {throw new Error(string(x))},
+                raise: x => {
+                    throw new Error(string(x))
+                },
                 printf: x => console.log(string(x)),
                 log: x => console.log(x),// todo
                 logi: x => console.log(x),
                 // logc:x=>console.log(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
                 logc: x => write(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
             },
+            wasi_snapshot_preview1: {},
             wasi_unstable: {
-                // wasi_snapshot_preview1:{
                 ok: x => console.log("OK"),
                 proc_exit: x => process.exit(x),
                 fd_write: (a, b, c, d) => {
