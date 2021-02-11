@@ -120,8 +120,8 @@ void free(void*);
 //int rand();
 //proc_exit, environ_get, environ_sizes_get
 
-//extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_unstable"), import_name("proc_exit"))); // wasmtime ++
-extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_snapshot_preview1"), import_name("proc_exit")));// wasmer WTF
+extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_unstable"), import_name("proc_exit"))); // wasmtime ++
+//extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_snapshot_preview1"), import_name("proc_exit")));// wasmer WTF
 
 extern "C" int raise(chars);
 //extern "C" void exit(int code);
