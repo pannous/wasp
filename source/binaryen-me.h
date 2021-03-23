@@ -2911,14 +2911,14 @@ typedef struct CExpressionRunner *ExpressionRunner;
 
 typedef uint32_t ExpressionRunnerFlags;
 
-// By default, just evaluate the expression, i.e. all we want to know is whether
+// By default, just interpret the expression, i.e. all we want to know is whether
 // it computes down to a concrete value, where it is not necessary to preserve
 // side effects like those of a `local.tee`.
 _API ExpressionRunnerFlags ExpressionRunnerFlagsDefault();
 
 // Be very caul to preserve any side effects. For example, if we are
 // intending to replace the expression with a constant afterwards, even if we
-// can technically evaluate down to a constant, we still cannot replace the
+// can technically interpret down to a constant, we still cannot replace the
 // expression if it also sets a local, which must be preserved in this scenario
 // so subsequent code keeps functioning.
 _API ExpressionRunnerFlags ExpressionRunnerFlagsPreserveSideeffects();

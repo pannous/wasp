@@ -1,14 +1,12 @@
 #pragma once
 #ifndef WASM
-
 #include <cstring>
-
 #endif
 
 #include "wasm_runner.h"
+#include "wasm_reader.h"
 #include "Map.h"
 #include "Code.h"
-#include "wasm_reader.h"
 
 typedef const unsigned char *wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
 typedef unsigned char *bytes;

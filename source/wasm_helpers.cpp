@@ -83,6 +83,9 @@ void printf(chars format, chars i, chars j, chars l){
 print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
 }
 void printf(chars format, long i, long j) {
+	if(contains(format,"%ld"))
+	print(String(format).replace("%ld", String(i)).replace("%ld", String(j)));
+	else
 	print(String(format).replace("%d", String(i)).replace("%d", String(j)));
 }
 void printf(chars format, int i, int j) {

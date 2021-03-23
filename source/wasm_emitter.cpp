@@ -204,6 +204,14 @@ byte opcodes(chars s, byte kind = 0) {
 		if (eq(s, "<="))return f32_le;
 	}
 	if (eq(s, "√"))return f32_sqrt; // forces i32->f32
+
+	// todo : peek 65536 as float directly via opcode
+	if (eq(s, "peek"))return i64_load;  // memory.peek memory.get memory.read
+	if (eq(s, "poke"))return i64_store; // memory.poke memory.set memory.write
+
+	// todo : set_local,  global_get ...
+	if (eq(s, "$"))return get_local; // $0 $1 ...
+
 	printf("unknown operator %s\n", s);
 //		error("invalid operator");
 	return 0;

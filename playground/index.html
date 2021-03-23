@@ -36,7 +36,6 @@
             if (print) console.error(ex); else return trimStack(ex)
         }
     }
-    // This is googles recommended way of loading WebAssembly.
     // try {
         let memory_size = 65536
         let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
@@ -45,7 +44,7 @@
                 raise: x => {
                     throw new Error(string(x))
                 },
-                printf: x => console.log(string(x)),
+                printf: x => process.stdout.write(string(x)),// no newline
                 log: x => console.log(x),// todo
                 logi: x => console.log(x),
                 // logc:x=>console.log(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
@@ -56,7 +55,7 @@
                 ok: x => console.log("OK"),
                 proc_exit: x => process.exit(x),
                 fd_write: (a, b, c, d) => {
-                    console.log(a, b, c, d, string(1024 + buffer[b]));
+                    process.stdout.write(a, b, c, d, string(1024 + buffer[b]));
                     return -1
                 },
                 args_sizes_get: _ => 0,
@@ -66,19 +65,20 @@
                 fd_seek: x => 0,
             }
         }
-        // const module = new WebAssembly.Module(buffer);
-        //const module = await WebAssembly.compileStreaming(fetch('wasp.wasm'));
-        // const instance = await WebAssembly.instantiate(module,});
-        WebAssembly.instantiateStreaming(fetch(wasm_file), imports).then(obj => {
-                instance = obj.instance
-                exports = instance.exports
-                memory = exports.memory || exports._memory || memory
-                buffer = new Uint8Array(memory.buffer, 0, memory.length);
-                main = exports.main || exports._start
-                if (main){
-                    console.log("got main")
-                    result = main()
-                }
+    //const module = await WebAssembly.compileStreaming(fetch('wasp.wasm'));
+    // const module = new WebAssembly.Module(buffer);
+    // const instance = await WebAssembly.instantiate(module,imports);
+    // This is googles recommended way of loading WebAssembly.
+    WebAssembly.instantiateStreaming(fetch(wasm_file), imports).then(obj => {
+            instance = obj.instance
+            exports = instance.exports
+            memory = exports.memory || exports._memory || memory
+            buffer = new Uint8Array(memory.buffer, 0, memory.length);
+            main = exports.main || exports._start
+            if (main) {
+                console.log("got main")
+                result = main()
+            }
                 else result = instance.exports//show what we've got
                 console.log(result);
                 //alert(result)
