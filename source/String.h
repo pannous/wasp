@@ -864,4 +864,6 @@ bool empty(String *s);
 
 bool empty(chars s);
 
+bool contains(chars str, chars match);
+
 #include "Map.h"

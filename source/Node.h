@@ -448,7 +448,7 @@ public:
 
 	Node &set(String string, Node *node);
 
-	Node evaluate(bool expectOperator = false);
+	Node interpret(bool expectOperator = false);
 
 	Node insert(Node &node, int at = -1);// non-modifying
 

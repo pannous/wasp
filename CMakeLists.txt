@@ -94,7 +94,8 @@ if (RUNTIME_ONLY)
     ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY)
 else ()
     message(NOT RUNTIME_ONLY)
-    set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp source/Code.cpp source/wasm_emitter.cpp source/wasm_reader.cpp source/wasm_merger.cpp source/wasm_merger.h)
+    set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp source/Code.cpp source/wasm_emitter.cpp source/wasm_reader.cpp source/wasm_merger.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/Interpret.cpp)
 endif ()
 
 #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
