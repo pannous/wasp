@@ -572,23 +572,38 @@ bool empty(String *s) { return not s or s->empty(); }
 
 bool empty(chars s) { return not s or strlen0(s) == 0; }
 
+bool contains(chars str, chars match) {
+	int l = strlen0(match);
+	for (int i = 0; str[i] != 0; i++) {
+		bool ok = true;
+		for (int j = 0; j < l; j++) {
+			if (str[i + j] != match[j]) {
+				ok = false;
+				break;
+			}
+		}
+		if (ok)return true;
+	}
+	return false;
+}
+
 #undef log // expanded from macro 'log' tgmath.h:245:25:
 
 
 void log(chars s) {
 	logs(s);
+#ifndef WASM    // console.log adds newline
 	logs("\n");
+#endif
 }
 
 void log(String *s) {
-	if (s->shared_reference)logs(s->clone());// add \0 !!
-	else if (s)logs(s->data);
-	logc('\n');
+	if (s->shared_reference)log(s->clone());// add \0 !!
+	else if (s)log(s->data);
 }
 
 void log(String s) {
 	log(&s);
-	logc('\n');
 }
 
 void log(long i) {

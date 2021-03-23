@@ -6,6 +6,11 @@
 //#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 #define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
 
+
+void test_get_local() {
+	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
+}
+
 void testWasmFunctionDefiniton() {
 //	assert_is("add1 x:=x+1;add1 3", (long) 4);
 
@@ -516,6 +521,7 @@ void testAllWasm() {
 
 // TRUE TESTS:
 	testWasmFunctionDefiniton();
+	test_get_local();
 	testWasmFunctionCalls();
 	testFloatOperators();
 	testWasmLogicUnary();

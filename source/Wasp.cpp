@@ -10,6 +10,11 @@
 #include "wasm_emitter.h"
 #include "wasm_runner.h"
 
+#ifndef RUNTIME_ONLY
+
+#include "Interpret.h"
+
+#endif
 
 #ifdef WASM
 // NEEDS TO BE IN Wasp because __wasm_call_ctors !
@@ -33,7 +38,7 @@ char *current = (char *) HEAP_OFFSET;
 chars operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "||", "|", "&&", "&", "and",
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
                           "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
-                          "from", 0, 0, 0, 0}; // "while" ...
+                          "from", "peek", "poke", "#", "$", 0, 0, 0, 0}; // "while" ...
 //∧  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
 // ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
 #ifdef WASI
@@ -143,7 +148,11 @@ public:
 	static Node eval(String source) { // return by value ok, rarely used and stable
 		Node parsed = parse(source);
 		parsed.log();
-		return parsed.evaluate();
+#ifndef RUNTIME_ONLY
+		return parsed.interpret();
+#else
+		return parsed;
+#endif
 	}
 
 
@@ -1079,6 +1088,7 @@ private:
 					break;
 				}
 				case U'：':
+				case U'≝':
 				case U'≔': // ≕ =:
 				case ':':
 					if (next == '=') { // f x:=2x
@@ -1092,6 +1102,7 @@ private:
 					}
 					// FALLTHROUGH:
 				case U'＝':
+				case U'﹦':
 				case '=': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
@@ -1281,7 +1292,7 @@ struct Exception {
 //	virtual ~ERR() = default;
 //};
 char newline = '\n';
-#ifndef _main_
+//#ifndef _main_
 #define __MAIN__
 
 // called AFTER __wasm_call_ctors() !!!
@@ -1322,14 +1333,11 @@ int main(int argp, char **argv) {
 	return -1;
 }
 
-#endif
+//#endif
 
 #ifndef WASI
-//extern "C" int main() {
-//	return -42;
-//	 wtf
-//}
-extern "C" void _start() { // for wasm-ld
-	main(0, 0);
+//extern "C" void _start() { // for wasm-ld
+extern "C" int _start() {
+	return main(0, 0);
 }
 #endif
