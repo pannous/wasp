@@ -18,3 +18,8 @@ Node emit(String code);//  wasp -> code -> wasm  // to debug currently same as:
 Node run(String source);// wasp -> code -> wasm() -> data
 //extern Map<String, Signature> functionSignatures;
 
+Node constants(Node n);
+
+bool isFunction(Node &op);
+
+bool isFunction(String op);

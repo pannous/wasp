@@ -1329,6 +1329,10 @@ void testIndex() {
 	assert_is("a of {a:1 b:2}", 1)
 	assert_is("a in {a:1 b:2}", 1)
 	assert_is("{a:1 b:2}[a]", 1)
+	assert_is("{a:1 b:2}.b", 2)
+	assert_is("b of {a:1 b:2}", 2)
+	assert_is("b in {a:1 b:2}", 2)
+	assert_is("{a:1 b:2}[b]", 2)
 }
 
 // can be removed because noone touches List.sort algorithm!
@@ -1651,6 +1655,8 @@ void testCurrent() { // move to tests() once OK
 	testAngle();
 	todos();// those not passing yet (skip)
 	tests();// make sure all still ok after changes
+	printf("OK %ld==%ld", 2l, 2l);
+	check(contains("OK %ld==%ld", "%ld"));
 	log("CURRENT TESTS PASSED");
 }
 
