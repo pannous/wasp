@@ -347,6 +347,16 @@ enum Opcodes {
 	f32_mul = 0x94,
 	f32_div = 0x95,
 
+	local_get = 0x20,
+	local_set = 0x21,
+	local_tee = 0x22,
+	global_get = 0x23,
+	global_set = 0x24,
+
+// todo : peek 65536 as float directly via opcode
+	i64_load = 0x29, // memory.peek memory.get memory.read
+	i64_store = 0x37, // memory.poke memory.set memory.write
+
 	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
 	f32_convert_i32_s = 0xB2,
 
