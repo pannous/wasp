@@ -18,6 +18,7 @@ enum Type {
 	symbol, // one / plus / Jesus
 	operators, // or just symbol?
 	expressions, // one plus one
+	assignment, // x = 1 // really?? needs own TYPE?
 	declaration, // x:=1
 	strings,
 	codepoints,

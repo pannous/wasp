@@ -24,7 +24,7 @@ String start = "main";
 Valtype last_type = voids;// autocast if not int
 //Map<String, Valtype> return_types;
 //Map<int, List<String>> locals;
-Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
+
 Map<String, Signature> functionSignatures;
 //Map<int, Map<int, String>> locals;
 Map<String, int> functionIndices;
@@ -250,6 +250,7 @@ enum NodTypes {
 	printStatement,
 	variableDeclaration,
 	variableAssignment,
+	functionDeclaration,
 	whileStatement,
 	ifStatement,
 	callStatement,
@@ -325,15 +326,72 @@ Code emitValue(Node node, String context) {
 	return code;
 }
 
-Code emitWhile(Node &node, String context);
-
-Code emitIf(Node &node, String context);
-
-Code emitCall(Node &node, String context);
-
-Code emitDeclaration(Node fun, Node &body);
-
-Code emitExpression(Node *nodes, String context);
+Code emitOperator(Node node, String context) {
+	Code code;
+	String &name = node.name;
+	int index = functionIndices.position(name);
+	if (name == "then")return emitIf(*node.parent, context);// pure if handled before
+	if (name == ":=") // todo or ... !
+		return emitDeclaration(node, node.first());
+	if (name == "=") // todo or ... !
+		return emitSetter(node, node.first(), context);
+	if (node.length < 1 and not node.value.node and not node.next) {
+		node.log();
+		error("missing args for operator "s + name);
+	} else if (node.length == 1) {
+//				if(name.in(function_list)) SHOULDN'T HAPPEN!
+//				error("unexpected unary operator: "s + name);
+		Node arg = node.children[0];
+		const Code &arg_code = emitExpression(arg, context);// should ALWAYS just be value, right?
+		code.push(arg_code);// might be empty ok
+	} else if (node.length == 2) {
+		Node lhs = node.children[0];//["lhs"];
+		Node rhs = node.children[1];//["rhs"];
+		const Code &lhs_code = emitExpression(lhs, context);
+		const Code &rhs_code = emitExpression(rhs, context);
+		code.push(lhs_code);// might be empty ok
+		code.push(rhs_code);// might be empty ok
+	} else if (node.length > 2) {// todo: n-ary? ∑? is just a function!
+		error("Too many args for operator "s + name);
+	} else if (node.next) { // todo really? handle ungrouped HERE? just hiding bugs?
+		const Code &arg_code = emitExpression(*node.next, context);
+		code.push(arg_code);// might be empty ok
+	} else if (node.value.node) {
+		const Code &arg_code = emitExpression(*node.value.node, context);
+		code.push(arg_code);
+	}
+	if (index >= 0) {// FUNCTION CALL
+		log("OPERATOR FUNCTION CALL: %s\n"s % name);
+//				for (Node arg : node) {
+//					emitExpression(arg,context);
+//				};
+		code.addByte(function);
+		code.addByte((index));// ok till index>127?
+		return code;
+	}
+	byte opcode = opcodes(name, last_type);
+	if (opcode == f32_sqrt and last_type == i32t) {
+		code.addByte(f32_convert_i32_s);// i32->f32
+		code.addByte(f32_sqrt);
+		code.addByte(i32_trunc_f32_s);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
+//				last_type = f32t; todo: try upgrade type 2 + √2 -> float
+	} else if (opcode == f32_eqz) { // hack for missing f32_eqz
+//				0.0 + code.addByte(f32_eq);
+		code.addByte(i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
+		code.addByte(i32_eqz);
+		last_type = i32t;// bool'ish
+	} else if (opcode > 0)
+		code.addByte(opcode);
+	else {
+		error("unknown opcode / call / symbol: "s + name);
+	}
+	if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or
+	    opcode == i32_mul)
+		last_type = i32t;
+	if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt)
+		last_type = i32t;// bool'ish
+	return code;
+}
 
 Code emitExpression(Node &node, String context/*="main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
@@ -353,7 +411,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		code.addByte(0);// todo: LAST local?
 		return code;
 	}
-	if (node.kind == call or (node.kind == reference or node.kind == groups) and functionIndices.has(name))
+	if ((node.kind == call or node.kind == reference or node.kind == groups) and functionIndices.has(name))
 		return emitCall(node, context);
 
 	switch (node.kind) {
@@ -368,70 +426,12 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		case call:
 			return emitCall(node, context);
 			break;
-		case operators: {
-			if (name == "then")return emitIf(*node.parent, context);// pure if handled before
-			if (name == ":=")
-				return emitDeclaration(node, node.first());
-//			return emitDeclaration(node.children[0], node.children[1]);
-			if (node.length < 1) {
-				node.log();
-				error("missing args for operator "s + name);
-			} else if (node.length == 1) {
-//				if(name.in(function_list)) SHOULDN'T HAPPEN!
-//				error("unexpected unary operator: "s + name);
-				Node arg = node.children[0];
-				const Code &arg_code = emitExpression(arg, context);// should ALWAYS just be value, right?
-				code.push(arg_code);// might be empty ok
-			} else if (node.length == 2) {
-				Node lhs = node.children[0];//["lhs"];
-				Node rhs = node.children[1];//["rhs"];
-				const Code &lhs_code = emitExpression(lhs, context);
-				const Code &rhs_code = emitExpression(rhs, context);
-				code.push(lhs_code);// might be empty ok
-				code.push(rhs_code);// might be empty ok
-			} else if (node.length > 2) {// todo: n-ary? ∑? is just a function!
-				error("Too many args for operator "s + name);
-			}
-			if (index >= 0) {// FUNCTION CALL
-				log("OPERATOR FUNCTION CALL: %s\n"s % name);
-//				for (Node arg : node) {
-//					emitExpression(arg,context);
-//				};
-				code.addByte(function);
-				code.addByte((index));// ok till index>127?
-				break;
-			}
-			byte opcode = opcodes(name, last_type);
-			if (opcode == f32_sqrt and last_type == i32t) {
-				code.addByte(f32_convert_i32_s);// i32->f32
-				code.addByte(f32_sqrt);
-				code.addByte(i32_trunc_f32_s);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
-//				last_type = f32t; todo: try upgrade type 2 + √2 -> float
-				break;
-
-			}
-			if (opcode == f32_eqz) { // hack for missing f32_eqz
-//				0.0 + code.addByte(f32_eq);
-				code.addByte(i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
-				code.addByte(i32_eqz);
-				last_type = i32t;// bool'ish
-				break;
-			} else if (opcode > 0)
-				code.addByte(opcode);
-			else {
-				error("unknown opcode / call / symbol: "s + name);
-			}
-			if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or
-			    opcode == i32_mul)
-				last_type = i32t;
-			if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt)
-				last_type = i32t;// bool'ish
-		}
-			break;
+		case operators:
+			return emitOperator(node, context);
 		case declaration:
-//			return emitDeclaration(node.children[0], node.children[1]);
 			return emitDeclaration(node, node.first());
-			break;
+		case assignment:
+			return emitSetter(node, node.first(), context);
 		case nils:
 		case longs:
 		case reals:
@@ -444,6 +444,9 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 //			Map<int, String>
 			List<String> &current_local_names = locals[context];
 			int local_index = current_local_names.position(name);// defined in block header
+			if (name.startsWith("$")) {
+				local_index = atoi(name.substring(1));
+			}
 			if (local_index < 0) { // collected before, so can't be setter here
 				if (functionCodes.has(name))
 					return emitCall(node, context);
@@ -518,6 +521,7 @@ Code emitCall(Node &fun, String context) {
 }
 
 Code emitDeclaration(Node fun, Node &body) {
+	// todo: x := 7 vs x := y*y
 	if (not functionIndices.has(fun.name)) {
 		functionIndices[fun.name] = functionIndices.size();
 	} else {
@@ -527,6 +531,23 @@ Code emitDeclaration(Node fun, Node &body) {
 	functionCodes[fun.name] = emitBlock(body, fun.name);
 	last_type = voids;// todo reference to new symbol x = (y:=z)
 	return Code();// empty
+}
+
+
+Code emitSetter(Node node, Node &value, String context) {
+	List<String> &current = locals[context];
+	String &variable = node.name;
+	if (!current.has(variable)) {
+		current.add(variable);
+		error("variable missed by parser! "_s + variable);
+	}
+	int local_index = current.position(variable);
+	Code setter;
+	Code value1 = emitValue(value, context);
+	setter.add(value1);
+	setter.add(set_local);
+	setter.add(local_index);
+	return setter;
 }
 
 
