@@ -560,7 +560,7 @@ void testAllWasm() {
 //	testMerge();
 //	testRefactor();
 
-	testWasmVariables0();
+//	testWasmVariables0();
 
 	testRecentRandomBugs();
 // TRUE TESTS:
