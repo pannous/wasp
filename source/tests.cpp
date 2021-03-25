@@ -1637,17 +1637,15 @@ void testNodeImplicitConversions(){
 #endif
 
 void testCurrent() { // move to tests() once OK
-	assert_is("[] or 1", true);
+	testAllWasm();
 
-	testMarkMultiDeep();
 #ifndef WASM
 //	testWasmModuleExtension();
 //	testWasmRuntimeExtension();
 //	exit(1);
 #endif
-//	testMarkMulti();
-
 	testWasmMemoryIntegrity();
+
 //	operator_list = List(operator_list0);
 //	testRecentRandomBugs();
 	tests();// make sure all still ok before changes

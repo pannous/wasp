@@ -1087,22 +1087,12 @@ private:
 					current.add(id);
 					break;
 				}
-				case U'：':
 				case U'≝':
 				case U'≔': // ≕ =:
-				case ':':
-					if (next == '=') { // f x:=2x
-						Node *op = new Node(":=");
-						current.add(op->setType(operators));
-						current.setType(expressions);
-//						current.setType(declaration); // later!
-						proceed();
-						proceed();
-						break;
-					}
-					// FALLTHROUGH:
 				case U'＝':
 				case U'﹦':
+				case U'：':
+				case ':':
 				case '=': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
@@ -1110,6 +1100,8 @@ private:
 					if (is_operator(previous))
 						add_raw = true;// == *=
 					Node op = any_operator();// extend *= ...
+					if (op.name != ":")
+						add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
 					if (op.name.length > 1)
 						add_raw = true;
 					if (add_raw) {

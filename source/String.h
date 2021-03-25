@@ -800,6 +800,8 @@ public:
 	codepoint *begin();
 
 	codepoint *end();
+
+	bool startsWith(chars string);
 };
 
 

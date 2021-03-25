@@ -35,15 +35,18 @@ wabt::Result do_square(Thread &thread, const Values &params, Values &results, Tr
 
 wabt::Result do_logi(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
 	printf("%d\n", params.front().Get<int>());
+	return wabt::Result::Ok;
 };
 
 wabt::Result do_logf(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
-	printf("%d\n", params.front().Get<float>());
+	printf("%f\n", params.front().Get<float>());
+	return wabt::Result::Ok;
 };
 
 wabt::Result do_sqrt(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
 	int x = params.front().Get<int>();
 	results.front() = wabt::interp::Value::Make((int) root(x));
+	return wabt::Result::Ok;
 };
 
 
