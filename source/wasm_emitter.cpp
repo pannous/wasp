@@ -509,7 +509,8 @@ Code emitExpression(Node *nodes, String context) {
 Code emitCall(Node &fun, String context) {
 	Code code;
 	int index = functionIndices[fun.name];
-	if (index < 0) error("MISSING import/declaration for function %s\n"s % fun.name);
+	if (index < 0)
+		error("MISSING import/declaration for function %s\n"s % fun.name);
 	for (Node arg : fun) {
 		code.push(emitExpression(arg, context));
 	};
