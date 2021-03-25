@@ -326,6 +326,7 @@ public:
 
 	Node &first() {
 		if (length > 0)return children[0];
+		if (kind == operators)return *next;// todo remove hack
 		return *this;
 //		error("No such element");
 //		return ERROR;
