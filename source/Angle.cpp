@@ -126,7 +126,9 @@ List<chars> suffixOperators = {"…++", "…--", "⁻¹", "⁰", "¹", "²", "³
 List<chars> setter_operators = {"="};
 List<chars> constructor_operators = {":"};
 List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
+List<chars> function_operators = {":="};// todo:
 List<chars> declaration_operators = {":=", "="};
+
 // ... todo maybe unify variable symbles with function symbols at angle level and differentiate only when emitting code?
 // x=7
 // double:=it*2  // variable of type 'block' ?
@@ -140,6 +142,7 @@ List<chars> declaration_operators;
 //no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
 #endif
 
+Node &groupFunctions(Node &expression0);
 Node &groupDeclarations(Node &expression0) {
 	Node &expression = *expression0.clone();
 	for (Node &node : expression) {
@@ -154,6 +157,9 @@ Node &groupDeclarations(Node &expression0) {
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
 
+			if (function_operators.has(node.name))
+				declaredFunctions.add(name);
+
 			Node *body = analyze(rest).clone();
 			Node *decl = new Node(name);//node.name+":={…}");
 			decl->setType(declaration);
@@ -167,8 +173,7 @@ Node &groupDeclarations(Node &expression0) {
 					locals["main"].add(name);// todo : proper calling context!
 				decl->setType(assignment);
 				return *decl;
-			} else // todo: also if assigning a block closure double=x::x*2
-				declaredFunctions.add(name);
+			}
 
 			List<Arg> args = extractFunctionArgs(name, modifiers);
 #ifndef RUNTIME_ONLY
@@ -270,7 +275,8 @@ Node &groupFunctions(Node &expression0) {
 		if (node.name == "if") // kinda functor
 			return groupIf(expression0.from("if"));
 		if (isFunction(node)) // todo: may need preparsing of declarations!
-			node.kind = call;
+			if (isFunction(node)) // todo: may need preparsing of declarations!
+				node.kind = call;
 		if (node.kind != call)
 			continue;
 		if (node.length > 0) {
@@ -518,6 +524,7 @@ Node emit(String code) {
 	return data;
 #else
 	data.log();
+	globals.clear();
 	locals.clear();
 	locals.setDefault(List<String>());
 	declaredFunctions.clear();
