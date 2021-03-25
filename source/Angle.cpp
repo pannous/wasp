@@ -279,7 +279,7 @@ Node &groupFunctions(Node &expression0) {
 		}
 //		else found function call!
 		int maxArity = 1;// todo
-		int minArity = 0;
+		int minArity = 1;
 		Node rest;
 		if (expression[i + 1].kind == groups) {// f(x) todo f (x) (y) (z)
 //	todo		expression[i+1].length>=minArity
