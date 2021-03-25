@@ -257,8 +257,8 @@ void testWasmLogicPrimitives() {
 void testWasmVariables0() {
 //	  (func $i (type 0) (result i32)  i32.const 123 return)  NO LOL
 //	assert_emit("i=123;i", 123);
-	assert_emit("i=123;i+1", 124);
 	assert_emit("i:=123;i+1", 124);
+	assert_emit("i=123;i+1", 124);
 //	assert_error("i:=123;i++", "i is a closure, can't be incremented");
 
 	assert_emit("i=123;i", 123);
