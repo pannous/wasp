@@ -10,6 +10,9 @@ public:
 	static Node &analyze(Node code);
 };
 
+extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
+extern Map<String /* implicit indices 0,1,2,… */, Node * /* compile-time modifiers/values? */> globals; // access from Angle!
+
 //List<String> collectOperators(Node &expression);// test/debug only
 Node parse(String code);// wasp -> data  // this is the pure Wasp part
 Node analyze(Node data);// wasp -> code  // build ast via operators

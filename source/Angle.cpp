@@ -11,7 +11,12 @@
 #include "Map.h"
 #include "wasm_runner.h"
 
-List<String> declaredSymbols;// todo: move to parser, buildup by preparsing, link with functionIndices?
+List<String> declaredFunctions;
+//List<String> declaredFunctions;
+
+Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
+Map<String /* implicit indices 0,1,2,… */, Node * /* compile-time modifiers/values? */> globals; // access from Angle!
+
 
 // functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
 chars control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
@@ -35,12 +40,12 @@ Node constants(Node n) {
 
 bool isFunction(Node &op) {
 	if (op.kind == declaration)return false;
-	if (declaredSymbols.has(op.name))return true;
+	if (declaredFunctions.has(op.name))return true;
 	return op.name.in(function_list);
 }
 
 bool isFunction(String op) {
-	if (declaredSymbols.has(op))return true;
+	if (declaredFunctions.has(op))return true;
 	return op.in(function_list);// or op.in(functor_list); if
 }
 
@@ -114,8 +119,18 @@ chars ras[] = {"=", "?:", "+=", "++:", 0};
 #ifndef WASM
 List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++:", 0};// a=b=1 == a=(b=1) => a=1
 List<chars> prefixOperators = {"not", "!", "√", "-…", "--…", "++…", "+…", "~", "*…", "&…", "sizeof", "new", "delete[]"};
-List<chars> suffixOperators = {"…++", "…--", "⁻¹", "⁰", "¹", "²", "³", "…%", "﹪", "％", "٪", "‰"};// ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
-List<chars> declaration_operators = {":="};
+List<chars> suffixOperators = {"…++", "…--", "⁻¹", "⁰", "¹", "²", "³", "…%", "﹪", "％", "٪", "‰"};
+// ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
+
+// handled different than other operators, because … they affect the namespace context
+List<chars> setter_operators = {"="};
+List<chars> constructor_operators = {":"};
+List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
+List<chars> declaration_operators = {":=", "="};
+// ... todo maybe unify variable symbles with function symbols at angle level and differentiate only when emitting code?
+// x=7
+// double:=it*2  // variable of type 'block' ?
+
 #else
 // TODO!
 List<chars> rightAssociatives;
@@ -125,7 +140,6 @@ List<chars> declaration_operators;
 //no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
 #endif
 
-// a + b c + d
 Node &groupDeclarations(Node &expression0) {
 	Node &expression = *expression0.clone();
 	for (Node &node : expression) {
@@ -134,9 +148,28 @@ Node &groupDeclarations(Node &expression0) {
 			Node modifiers = expression.to(node);// including public… :(
 			Node rest = expression.from(node);
 			String name = extractFunctionName(modifiers);
+
 			if (isFunction(name))
-				error("Symbol already declared: "s + name);
-			declaredSymbols.add(name);
+				error("Symbol already declared as function: "s + name);
+//			if (isImmutable(name))
+//				error("Symbol declared as constant or immutable: "s + name);
+
+			Node *body = analyze(rest).clone();
+			Node *decl = new Node(name);//node.name+":={…}");
+			decl->setType(declaration);
+			decl->metas().add(modifiers);
+			decl->add(body);// addChildren makes emitting harder
+
+			if (setter_operators.has(node.name)) {
+				if (modifiers.has("global"))
+					globals.insert_or_assign(name, body);
+				else
+					locals["main"].add(name);// todo : proper calling context!
+				decl->setType(assignment);
+				return *decl;
+			} else // todo: also if assigning a block closure double=x::x*2
+				declaredFunctions.add(name);
+
 			List<Arg> args = extractFunctionArgs(name, modifiers);
 #ifndef RUNTIME_ONLY
 			Signature &signature = functionSignatures[name];// use Default
@@ -148,12 +181,6 @@ Node &groupDeclarations(Node &expression0) {
 				signature.add(i32t);
 			signature.returns(i32t);// todo what if not lol
 #endif
-			Node *body = analyze(rest).clone();
-			Node *decl = new Node(name);//node.name+":={…}");
-			decl->setType(declaration);
-			decl->metas().add(modifiers);
-//			decl->add(symbol);
-			decl->add(body);// addChildren makes emitting harder
 			return *decl;
 		}
 	}
@@ -165,6 +192,14 @@ bool hasFunction(Node &n) {
 		if (isFunction(child))
 			return true;
 	}
+	return false;
+}
+
+
+bool isVariable(String name, Node context0) {
+	if (globals.has(name))return true;
+	String context = "main";// context0.name;// todo find/store proper enclosing context of expression
+	if (locals[context].has(name))return true;
 	return false;
 }
 
@@ -209,10 +244,10 @@ Node &groupOperators(Node &expression0) {
 				expression.replace(i - 1, i + 1, node);// replace ALL REST
 				expression.remove(i, -1);
 			} else {
-#ifndef RUNTIME_ONLY
+//#ifndef RUNTIME_ONLY
 				if (node.name == "=" and prev.kind == reference)
 					locals["main"].add(prev.name);
-#endif
+//#endif
 				node.add(prev);
 				node.add(next);
 				expression.replace(i - 1, i + 1, node);
@@ -472,7 +507,9 @@ Node analyze2(Node data) {
 	return grouped;
 }
 
+String debug_code;
 Node emit(String code) {
+	debug_code = code;// global so we see when debugging
 	Node data = parse(code);
 #ifdef RUNTIME_ONLY
 #ifdef INTERPRETER
@@ -483,7 +520,7 @@ Node emit(String code) {
 	data.log();
 	locals.clear();
 	locals.setDefault(List<String>());
-	declaredSymbols.clear();
+	declaredFunctions.clear();
 	functionSignatures.clear();
 	functionSignatures.setDefault(Signature());
 	locals.insert_or_assign("main", List<String>());
@@ -501,7 +538,7 @@ float function_precedence = 1000;
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
 chars function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
-                         "logx", "logc", "id", 0};// MUST END WITH 0, else BUG
+                         "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0, 0};// MUST END WITH 0, else BUG
 chars functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
 
 float precedence(Node &operater) {
@@ -574,17 +611,24 @@ float precedence(String name) {
 	if (name.in(function_list))// f 1 > f 2
 		return 8;// 1000;// function calls outmost operation todo? add 3*square 4+1
 
-	if (eq(name, "⇒"))return 9;// todo
-	if (eq(name, "=>"))return 9;// todo:
-	if (eq(name, "="))return 10;
 	if (eq(name, "≠"))return 10;
-	if (eq(name, "!="))return 10;
-	if (eq(name, ":="))return 11;
 	if (eq(name, "equals"))return 10;
 	if (eq(name, "equal"))return 10;
-	if (eq(name, "else"))return 11.09;
-	if (eq(name, "then"))return 11.15;
+	if (eq(name, "!="))return 10;
+
+	if (eq(name, "⇒"))return 11; // lambdas
+	if (eq(name, "=>"))return 11;
+	if (eq(name, "::"))return 11;// todo lambda symbol? square = x :: x*x
+	if (eq(name, "::="))return 11;// todo all
+
+//	if (eq(name, ":"))return 12;// construction
+	if (eq(name, "="))return 12;// declaration
+	if (eq(name, ":="))return 13;
+
+	if (eq(name, "else"))return 13.09;
+	if (eq(name, "then"))return 13.15;
 	if (eq(name, "if"))return 100;
+	if (eq(name, "while"))return 101;
 	if (name.in(functor_list))// f 1 > f 2
 		return function_precedence;// if, while, ... statements calls outmost operation todo? add 3*square 4+1
 	return 0;// no precedence

@@ -211,7 +211,7 @@ elseif (VM) # wasm-micro-vm:
     # Build as X86_32 by default in 32-bit platform
     #    set (WAMR_BUILD_TARGET "X86_32")
     #    ADD_COMPILE_DEFINITIONS(WASM_ENABLE_FAST_INTERP)
-    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -w -g -O0")#debug
+    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
 
     if (APPLE)
@@ -236,7 +236,7 @@ elseif (VM) # wasm-micro-vm:
 elseif (WABT)
     message(WABT)
     ADD_COMPILE_DEFINITIONS(WABT)
-    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
+    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     include(wabt/cmake_install.cmake)
     add_subdirectory(wabt)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wabt.cpp)
@@ -248,7 +248,7 @@ elseif (WABT)
     #    add_custom_target(BuildWabtc ALL DEPENDS angle) #.exe
 elseif (WASM3)
     message(wasm3 VM)
-    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -w")
+    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     include(wasm3/cmake_install.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp)
     add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)

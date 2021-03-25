@@ -7,6 +7,8 @@
 #define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
 
 
+void testWasmStuff();
+
 void test_get_local() {
 	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
 }
@@ -252,8 +254,38 @@ void testWasmLogicPrimitives() {
 }
 
 
-void testWasmLogicUnaryVariables() {
+void testWasmVariables0() {
+//	  (func $i (type 0) (result i32)  i32.const 123 return)  NO LOL
+//	assert_emit("i=123;i", 123);
+	assert_emit("i=123;i+1", 124);
+	assert_emit("i:=123;i+1", 124);
+//	assert_error("i:=123;i++", "i is a closure, can't be incremented");
 
+	assert_emit("i=123;i", 123);
+	assert_emit("i=1;i", 1);
+	assert_emit("i=false;i", false);
+	assert_emit("i=true;i", true);
+	assert_emit("i=0;i", 0);
+	assert_emit("i:=true;i", true);
+	assert_emit("i=true;i", true);
+	skip(
+			assert_emit("i=ø;i", nullptr);
+			assert_emit("i=0.0;i", 0.0);
+			assert_emit("i=123.4;i", 123.4);// main returning int
+	)
+}
+
+
+void testWasmLogicUnaryVariables() {
+	assert_emit("i=0.0; not i", true);
+	assert_emit("i=ø; not i", true);
+	assert_emit("i=false; not i", true);
+	assert_emit("i=0; not i", true);
+	assert_emit("i=true; not i", false);
+	assert_emit("i=1; not i", false);
+	assert_emit("i=123; not i", false);
+
+	assert_emit("i=2;i++", 3);
 }
 
 void testWasmLogicUnary() {
@@ -305,13 +337,20 @@ void testWasmLogic() {
 }
 
 void testWasmIf() {
-	assert_emit("if(condition=2,then=3,else=4)", 3); // this is what happens under the hood (?)
 	assert_emit("if 2 : 3 else 4", 3);
 	assert_emit("if 2 then 3 else 4", 3);
 	assert_emit("if(2,3,4)", 3);
 	assert_emit("if({2},{3},{4})", 3);
-	assert_emit("if(condition=2,then=3)", 3);
 	assert_emit("if(2){3}{4}", 3);
+	skip(
+			assert_emit("if(condition=2,then=3)", 3);
+			assert_emit("if(condition=2,then=3,else=4)", 3); // this is what happens under the hood (?)
+	)
+}
+
+void testWasmWhile() {
+	assert_emit("i=1;i++", 2);
+	assert_emit("i=1;while(i<9)i++;i+1", 10);
 }
 
 
@@ -346,7 +385,6 @@ void testWasmMemoryIntegrity() {
 
 void testRecentRandomBugs() {
 //		testGraphQlQuery();
-
 	check(operator_list.has("+"));
 	check(not(bool) Node("x"));
 	check(false == (bool) Node("x"));
@@ -401,6 +439,7 @@ void testRecentRandomBugs() {
 void wasm_todos() {
 	assert_emit(("42.1"), 42.1) // main returns int, should be pointer to value!
 	skip(
+			assert_emit("i=0.0;i", 0.0);
 			testsFailingInWasm();
 			assert_emit("0.0", (long) 0);// can't emit float yet
 			assert_emit(("x*=14"), 1)
@@ -487,6 +526,24 @@ void testMergeRelocate() {
 #endif
 }
 
+
+// random stuff todo: put in proper tests
+void testWasmStuff() {
+	assert_emit("double x := x * 2 ; double(4)", 8)
+//	assert_emit("double := it * 2 ; double(4)", 8)
+	read_wasm("main.wasm");
+	assert_emit("-42", -42)
+	assert_emit("x=41;x+1", 42)
+	assert_emit("x=40;y=2;x+y", 42)
+	assert_emit("id(4*42) > id 2+3", 1)
+	assert_emit("double := it * 2 ; double(4)", 8)
+	assert_emit("double:=it*2; double 3", 6)
+	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
+	assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)
+	assert_emit("add1 x:=x+1;add1 3", (long) 4);
+}
+
+
 void testAllWasm() {
 	testWasmMemoryIntegrity();
 	// todo: reuse all tests via
@@ -499,33 +556,25 @@ void testAllWasm() {
 	logs("NO WASM emission...");
 	return;
 #endif
-//	testMerge();
-//	exit(0);
-//	testRefactor();
-	assert_emit("double x := x * 2 ; double(4)", 8)
-//	assert_emit("double := it * 2 ; double(4)", 8)
-
-	read_wasm("main.wasm");
-	assert_emit("-42", -42)
-	assert_emit("x=41;x+1", 42)
-	assert_emit("x=40;y=2;x+y", 42)
-	assert_emit("id(4*42) > id 2+3", 1)
-	assert_emit("double := it * 2 ; double(4)", 8)
-	assert_emit("double:=it*2; double 3", 6)
-	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
-	assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)
-	assert_emit("add1 x:=x+1;add1 3", (long) 4);
-
-//	testRecentRandomBugs();
 //	run_wasm("../t.wasm");
+//	testMerge();
+//	testRefactor();
 
+	testWasmVariables0();
+
+	testRecentRandomBugs();
 // TRUE TESTS:
+	testWasmStuff();
 	testWasmFunctionDefiniton();
 	test_get_local();
 	testWasmFunctionCalls();
 	testFloatOperators();
 	testWasmLogicUnary();
+	testWasmVariables0();
+	testWasmLogicUnaryVariables();
 	testConstReturn();
+	testWasmIf();
+	testWasmWhile();
 	testWasmLogic();
 	testWasmLogicPrimitives();
 	testMathOperators();

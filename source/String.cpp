@@ -386,6 +386,8 @@ chars typeName(Type t) {
 			return "function";
 		case declaration:
 			return "declaration";
+		case assignment:
+			return "assignment";
 		case errors:
 			return "error";
 		default:
@@ -545,6 +547,10 @@ codepoint *String::extractCodepoints(bool again) {
 	}
 	return codepoints;
 
+}
+
+bool String::startsWith(chars string) {
+	return indexOf(string) == 0;
 }
 
 String EMPTY_STRING0 = "";
