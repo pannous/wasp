@@ -1,19 +1,14 @@
 //#pragma once
-
-#include "Wasp.h"
-#include "wasm_helpers.h"
-#include "String.h" // variable has incomplete type
 #include "Node.h"
+#include "Wasp.h"
+#include "String.h" // variable has incomplete type
 #include "Backtrace.h" // header ok in WASM
-
-//#import "String.cpp" // import against mangling in wasm (vs include)
+#include "wasm_helpers.h"
 #include "wasm_emitter.h"
 #include "wasm_runner.h"
 
 #ifndef RUNTIME_ONLY
-
 #include "Interpret.h"
-
 #endif
 
 #ifdef WASM
@@ -26,7 +21,6 @@ char *memoryChars = (char *) memory;
 //#define HEAP_OFFSET 65536
 //int memory_size=1048576-HEAP_OFFSET; // todo set in CMake !
 char *current = (char *) HEAP_OFFSET;
-
 #endif
 
 #ifndef WASM
@@ -35,7 +29,10 @@ char *current = (char *) HEAP_OFFSET;
 #include "ErrorHandler.h"
 
 #endif
-chars operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "||", "|", "&&", "&", "and",
+
+bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as expressions operator  WHY would we keep it again??
+
+chars operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "or", "|", "and", "&", "and",
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
                           "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
                           "from", "peek", "poke", "#", "$", 0, 0, 0, 0}; // "while" ...
@@ -46,7 +43,6 @@ List<chars> operator_list;
 #else
 List<chars> operator_list(operator_list0);
 #endif
-
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
 	if (ch == '#')return false;// size/count/length
@@ -58,7 +54,7 @@ bool is_identifier(codepoint ch) {
 	if (ch == '-')return false;// todo
 	if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
 	return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$';// ch<0: UNICODE
-//		not((ch != '_' && ch != '$') && (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z'));
+//		not((ch != '_' and ch != '$') and (ch < 'a' or ch > 'z') and (ch < 'A' or ch > 'Z'));
 };
 
 
@@ -166,7 +162,7 @@ public:
 		proceed();// at=0
 		Node result = valueNode(); // <<
 		white();
-		if (ch && ch != -1) {
+		if (ch and ch != -1) {
 			printf("UNEXPECTED CHAR %c", ch);
 			error("Expect end of input");
 			result = ERROR;
@@ -271,7 +267,7 @@ private:
 			return ch;
 		}
 		// If a c parameter is provided, verify that it matches the current character.
-		if (c && c != ch) {
+		if (c and c != ch) {
 			error(s("Expected '") + c + "' instead of " + renderChar(ch));
 		}
 		// Get the next character. When there are no more characters, return the empty string.
@@ -290,7 +286,7 @@ private:
 		if (at + width >= text.length)next = 0;
 		else next = decode_unicode_character(text.data + at + width);
 //		point = text.data + at;
-		if (ch == '\n' || (ch == '\r' && next != '\n')) {
+		if (ch == '\n' or (ch == '\r' and next != '\n')) {
 			lineNumber++;
 			columnStart = at;
 		}
@@ -311,9 +307,9 @@ private:
 		// subsequent characters can contain ANYTHING
 		while (proceed() and is_identifier(ch) or isDigit(ch))key += ch;
 		// subsequent characters can contain digits
-//		while (proceed() &&
-//		       (('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ('0' <= ch && ch <= '9') || ch == '_' ||
-//		        ch == '$' || ch < 0 /* UTF */ || ch == '.' || ch == '-')) {
+//		while (proceed() and
+//		       (('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ('0' <= ch and ch <= '9') or ch == '_' or
+//		        ch == '$' or ch < 0 /* UTF */ or ch == '.' or ch == '-')) {
 //			 '.' and '-' are commonly used in html and xml names, but not valid JS name chars
 //			key += ch;
 //		}
@@ -327,7 +323,7 @@ private:
 		auto string = String("");
 		int number0, base = 10;
 		if (ch == '+')warn("unnecessary + sign or missing whitespace 1 +1 == [1 1]");
-		if (ch == '-' || ch == '+') {
+		if (ch == '-' or ch == '+') {
 			sign = ch;
 			proceed(ch);
 		}
@@ -350,24 +346,24 @@ private:
 //			string += ch;
 //			proceed();
 //		} else {
-		while (ch >= '0' && ch <= '9') {
+		while (ch >= '0' and ch <= '9') {
 			string += ch;
 			proceed();
 		}
 		if (ch == '.') {
 			string += '.';
-			while (proceed() && ch >= '0' && ch <= '9') {
+			while (proceed() and ch >= '0' and ch <= '9') {
 				string += ch;
 			}
 		}
-		if (ch == 'e' || ch == 'E') {
+		if (ch == 'e' or ch == 'E') {
 			string += ch;
 			proceed();
-			if (ch == '-' || ch == '+') {
+			if (ch == '-' or ch == '+') {
 				string += ch;
 				proceed();
 			}
-			while (ch >= '0' && ch <= '9') {
+			while (ch >= '0' and ch <= '9') {
 				string += ch;
 				proceed();
 			}
@@ -416,9 +412,9 @@ private:
 		String string;
 
 		// when parsing for string values, we must look for ' or " and \ characters.
-		if (ch == '"' || ch == '\'') {
+		if (ch == '"' or ch == '\'') {
 			delim = ch;
-			if (next == delim && text[at + 1] == delim) { // got tripple quote
+			if (next == delim and text[at + 1] == delim) { // got tripple quote
 				triple = true;
 				proceed();
 				proceed();
@@ -429,7 +425,7 @@ private:
 					if (!triple) { // end of string
 						return Node(string);
 						return Node(text.substring(start, at - 2));
-					} else if (ch == delim && next == delim) { // end of tripple quoted text
+					} else if (ch == delim and next == delim) { // end of tripple quoted text
 						proceed();
 						proceed();
 						return Node(text.substring(start, at - 2));
@@ -485,7 +481,7 @@ private:
 		}
 		do {
 			proceed();
-			if (ch == '\n' || ch == '\r') {
+			if (ch == '\n' or ch == '\r') {
 				proceed();
 				return;
 			}
@@ -550,8 +546,8 @@ private:
 			if (ch == '/') {
 				if (not comment()) return; // else loop on
 //				auto ws = {' ', '\t', '\r', '\n'};
-// || ch == '\r' || ch == '\n' NEWLINE IS NOT A WHITE LOL, it has semantics
-			} else if (ch == ' ' || ch == '\t') {
+// or ch == '\r' or ch == '\n' NEWLINE IS NOT A WHITE LOL, it has semantics
+			} else if (ch == ' ' or ch == '\t') {
 				proceed();
 			} else
 				return;
@@ -559,7 +555,7 @@ private:
 	};
 
 	bool isNameStart(char i) {
-		return i > 'a' && i < 'Z';
+		return i > 'a' and i < 'Z';
 	}
 
 	bool token(String token) {
@@ -636,7 +632,7 @@ private:
 	}
 
 	Node symbol() {
-		if (ch >= '0' && ch <= '9')return numbero();
+		if (ch >= '0' and ch <= '9')return numbero();
 		if (is_operator(ch))return any_operator();
 		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
 		error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) + String((char) text[at + 2]));
@@ -808,7 +804,7 @@ private:
 		}
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
 		lookup64[32] = lookup64[9] = lookup64[13] = lookup64[10] = 64;
-		for (auto i = 0; i < 128; i++) { if (33 <= i && i <= 117) lookup85[i] = i - 33; }
+		for (auto i = 0; i < 128; i++) { if (33 <= i and i <= 117) lookup85[i] = i - 33; }
 // ' ', \t', '\r', '\n' spaces also allowed in base85 stream
 		lookup85[32] = lookup85[9] = lookup85[13] = lookup85[10] = 85;
 
@@ -895,7 +891,7 @@ private:
 			at = end + 1;
 			proceed();  // skip '}'
 			// check length
-			if ((pad && (p + pad) % 4 != 0) || (!pad && p % 4 == 1)) {
+			if ((pad and (p + pad) % 4 != 0) or (!pad and p % 4 == 1)) {
 				error("Invalid base64 stream length");
 			}
 
@@ -932,9 +928,9 @@ private:
 		val.parent = &key;// todo bug: might get lost!
 		bool deep_copy = empty(val.name) or !debug or key.kind == reference and empty(val.name);
 		if (debug) {
-			deep_copy = deep_copy || val.kind == Type::longs and val.name == itoa(val.value.longy);
-			deep_copy = deep_copy || val.kind == Type::bools and (val.name == "True" or val.name == "False");
-			deep_copy = deep_copy || val.kind == Type::reals and val.name == ftoa(val.value.real);
+			deep_copy = deep_copy or val.kind == Type::longs and val.name == itoa(val.value.longy);
+			deep_copy = deep_copy or val.kind == Type::bools and (val.name == "True" or val.name == "False");
+			deep_copy = deep_copy or val.kind == Type::reals and val.name == ftoa(val.value.real);
 		} // shit just for debug labels. might remove!!
 // last part to preserve {deep{a:3,b:4,c:{d:'hi'}}} != {deep{a:3,b:4,c:'hi'}}
 
@@ -1071,10 +1067,10 @@ private:
 				case '`': {
 					if (previous == '\\')continue;// escape
 					bool matches = close == ch;
-					matches = matches || close == u'‘' && ch == u'’';
-					matches = matches || close == u'’' && ch == u'‘';
-					matches = matches || close == u'“' && ch == u'”';
-					matches = matches || close == u'”' && ch == u'“';
+					matches = matches or (close == u'‘' and ch == u'’');
+					matches = matches or (close == u'’' and ch == u'‘');
+					matches = matches or (close == u'“' and ch == u'”');
+					matches = matches or (close == u'”' and ch == u'“');
 					if (!matches) { // open string
 						if (current.last().kind == expressions)
 							current.last().addSmart(string(ch));
@@ -1100,7 +1096,7 @@ private:
 					if (is_operator(previous))
 						add_raw = true;// == *=
 					Node op = any_operator();// extend *= ...
-					if (op.name != ":")
+					if (not(op.name == ":" or (data_mode and op.name == "=")))
 						add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
 					if (op.name.length > 1)
 						add_raw = true;

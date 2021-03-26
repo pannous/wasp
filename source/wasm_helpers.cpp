@@ -434,3 +434,8 @@ void logf32(float l) {
 }
 
 #endif
+
+#ifdef RUNTIME_ONLY
+#include "Interpret.h"
+Module read_wasm(chars file){}
+#endif

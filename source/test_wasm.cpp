@@ -275,6 +275,9 @@ void testWasmVariables0() {
 	)
 }
 
+void testWasmIncrement() {
+	assert_emit("i=2;i++", 3);
+}
 
 void testWasmLogicUnaryVariables() {
 	assert_emit("i=0.0; not i", true);
@@ -284,8 +287,6 @@ void testWasmLogicUnaryVariables() {
 	assert_emit("i=true; not i", false);
 	assert_emit("i=1; not i", false);
 	assert_emit("i=123; not i", false);
-
-	assert_emit("i=2;i++", 3);
 }
 
 void testWasmLogicUnary() {
@@ -547,25 +548,31 @@ void testWasmStuff() {
 
 
 void testAllWasm() {
-	testWasmMemoryIntegrity();
-//	assert_emit("i:=123;i+1", 124); // i ARITY 1 <<
+	data_mode = false;
 
-//	assert_emit("x=41;if x>1 then 2 else 3", 2)
-	// todo: reuse all tests via
-	//	interpret = false;
-	// constant things may be evaluated by compiler!
-//	testWasmModuleExtension();
-//	testWasmRuntimeExtension();
+	testWasmMemoryIntegrity();
 #ifdef RUNTIME_ONLY
 	logs("RUNTIME_ONLY");
 	logs("NO WASM emission...");
 	return;
 #endif
+
+	skip(
+			testWasmWhile();
+			testWasmModuleExtension();
+			testWasmRuntimeExtension();
+	)
+
+	// todo: reuse all tests via
+	//	interpret = false;
+	// constant things may be evaluated by compiler!
+
 //	run_wasm("../t.wasm");
 //	testMerge();
 //	testRefactor();
 
-//	testWasmVariables0();
+	testWasmVariables0();
+//	testWasmIncrement
 
 	testRecentRandomBugs();
 // TRUE TESTS:
@@ -578,7 +585,6 @@ void testAllWasm() {
 	testWasmLogicUnaryVariables();
 	testConstReturn();
 	testWasmIf();
-	testWasmWhile();
 	testWasmLogic();
 	testWasmLogicPrimitives();
 	testMathOperators();
@@ -592,4 +598,5 @@ void testAllWasm() {
 			wasm_todos();
 			testWasmLogicOnObjects();
 	)
+	data_mode = true;// allow
 }
