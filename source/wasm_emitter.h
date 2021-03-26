@@ -39,3 +39,5 @@ Code emitSetter(Node node, Node &value, String context);
 
 //Code emitExpression(Node *nodes, String context);
 Code emitExpression(Node &node, String context/*="main"*/);
+
+Valtype mapTypeToWasm(Node n);

@@ -1637,6 +1637,7 @@ void testNodeImplicitConversions(){
 #endif
 
 void testCurrent() { // move to tests() once OK
+	testParams();
 	testAllWasm();
 
 #ifndef WASM

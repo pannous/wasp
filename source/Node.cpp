@@ -754,6 +754,7 @@ String Node::serializeValue(bool deep) const {
 			return name;
 		case declaration:
 		case expressions:
+		case assignment:
 		case unknown:
 			return "?";
 		default:
