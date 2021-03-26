@@ -15,6 +15,8 @@ List<String> declaredFunctions;
 //List<String> declaredFunctions;
 
 Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
+Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
+
 Map<String /* implicit indices 0,1,2,… */, Node * /* compile-time modifiers/values? */> globals; // access from Angle!
 
 
@@ -38,17 +40,17 @@ Node constants(Node n) {
 	return n;
 }
 
-bool isFunction(Node &op) {
-	if (op.kind == declaration)return false;
-	if (declaredFunctions.has(op.name))return true;
-	return op.name.in(function_list);
-}
 
 bool isFunction(String op) {
 	if (declaredFunctions.has(op))return true;
+	if (functionSignatures.has(op))return true;// pre registered signatures
 	return op.in(function_list);// or op.in(functor_list); if
 }
 
+bool isFunction(Node &op) {
+	if (op.kind == declaration)return false;
+	return isFunction(op.name);
+}
 
 #include "Interpret.h"
 
@@ -127,7 +129,7 @@ List<chars> setter_operators = {"="};
 List<chars> constructor_operators = {":"};
 List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
 List<chars> function_operators = {":="};// todo:
-List<chars> declaration_operators = {":=", "="};
+List<chars> declaration_operators = {":=", "="}; // , ":" NOT! if 1 : 2 else 3
 
 // ... todo maybe unify variable symbles with function symbols at angle level and differentiate only when emitting code?
 // x=7
@@ -143,10 +145,19 @@ List<chars> declaration_operators;
 #endif
 
 Node &groupFunctions(Node &expression0);
-Node &groupDeclarations(Node &expression0) {
+
+Node &groupDeclarations(Node &expression0, const char *context) {
 	Node &expression = *expression0.clone();
 	for (Node &node : expression) {
-		if (node.kind == declaration or declaration_operators.has(node.name)) {
+		String &op = node.name;
+		if (node.kind == reference) {// only constructors here!
+			if (not locals[context].has(op)) {
+				locals[context].add(op);// todo : proper calling context!
+				localTypes[context].add(mapTypeToWasm(node));
+			}
+			continue;
+		}
+		if (node.kind == declaration or declaration_operators.has(op)) {
 			// todo: public export function jaja (a:num …) := …
 			Node modifiers = expression.to(node);// including public… :(
 			Node rest = expression.from(node);
@@ -157,8 +168,10 @@ Node &groupDeclarations(Node &expression0) {
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
 
-			if (function_operators.has(node.name))
+			if (function_operators.has(op)) {
 				declaredFunctions.add(name);
+//				functionIndices[name]=functionIndices.size(); don't need an index yet!
+			}
 
 			Node *body = analyze(rest).clone();
 			Node *decl = new Node(name);//node.name+":={…}");
@@ -166,11 +179,18 @@ Node &groupDeclarations(Node &expression0) {
 			decl->metas().add(modifiers);
 			decl->add(body);// addChildren makes emitting harder
 
-			if (setter_operators.has(node.name)) {
+			if (setter_operators.has(op) or constructor_operators.has(op)) {
 				if (modifiers.has("global"))
 					globals.insert_or_assign(name, body);
-				else
-					locals["main"].add(name);// todo : proper calling context!
+				else {
+					if (not locals[context].has(name)) {
+						locals[context].add(name);// todo : proper calling context!
+						localTypes[context].add(mapTypeToWasm(*body));
+					} else {
+						int i = locals[context].position(name);
+						localTypes[context][i] = mapTypeToWasm(*body);// update type! todo: check if cast'able!
+					}
+				}
 				decl->setType(assignment);
 				return *decl;
 			}
@@ -178,12 +198,16 @@ Node &groupDeclarations(Node &expression0) {
 			List<Arg> args = extractFunctionArgs(name, modifiers);
 #ifndef RUNTIME_ONLY
 			Signature &signature = functionSignatures[name];// use Default
+
 			for (Arg arg: args) {
 				locals[name].add(arg.name);
-				signature.add(int32);
+				localTypes[name].add(int32);
+				signature.add(int32);// todo: arg type, or pointer
 			}
-			if (signature.size() == 0 and rest.has("it", false, 100))
-				signature.add(i32t);
+			if (signature.size() == 0 and locals[name].size() == 0 and rest.has("it", false, 100)) {
+				localTypes[name].add(int32);
+				signature.add(int32);// todo
+			}
 			signature.returns(i32t);// todo what if not lol
 #endif
 			return *decl;
@@ -275,20 +299,22 @@ Node &groupFunctions(Node &expression0) {
 		if (node.name == "if") // kinda functor
 			return groupIf(expression0.from("if"));
 		if (isFunction(node)) // todo: may need preparsing of declarations!
-			if (isFunction(node)) // todo: may need preparsing of declarations!
-				node.kind = call;
+			node.kind = call;// <- there we go!
 		if (node.kind != call)
 			continue;
+
 		if (node.length > 0) {
 			expression.replace(i, i, groupOperators(node));
 			continue;// already done HOW??
 		}
 //		else found function call!
-		int maxArity = 1;// todo
-		int minArity = 1;
+
+		int minArity = functionSignatures[node.name].size();// todo: default args!
+		int maxArity = functionSignatures[node.name].size();
 		Node rest;
-		if (expression[i + 1].kind == groups) {// f(x) todo f (x) (y) (z)
-//	todo		expression[i+1].length>=minArity
+		if (expression[i + 1].kind == groups) {// f(x)
+			// todo f (x) (y) (z)
+			// todo expression[i+1].length>=minArity
 			rest = expression[i + 1];
 			if (rest.length > 1)rest.setType(expressions);
 			Node args = analyze(rest);
@@ -307,14 +333,17 @@ Node &groupFunctions(Node &expression0) {
 			rest = rest.first();
 		// per-function precedence does NOT really increase readability or bug safety
 		if (rest.value.data) {
-			maxArity--;
+			maxArity--;// ?
 			minArity--;
 		}
-		if (rest.length < maxArity)
+		if (rest.length < minArity)
 			error("missing arguments for function %s, currying not yet supported"s % node.name);
 		else if (rest.length == 0 and minArity > 0)
 			error("missing arguments for function %s, or to pass function pointer use func keyword"s % node.name);
-		else if (rest.length >= maxArity) {
+		else if (rest.first().kind == operators) { // random() + 1 == random + 1
+			// keep whole expression for later analysis in groupOperators!
+			return expression;
+		} else if (rest.length >= maxArity) {
 			Node args = analyze(rest);// todo: could contain another call!
 			node.add(args);
 			if (rest.kind == groups)
@@ -490,7 +519,7 @@ Node analyze(Node data) {
 		}
 		return grouped;
 	}
-	Node &groupedDeclarations = groupDeclarations(data);
+	Node &groupedDeclarations = groupDeclarations(data, "main");
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
 	Node &grouped = groupOperators(groupedFunctions);
 	return grouped;
@@ -514,6 +543,22 @@ Node analyze2(Node data) {
 }
 
 String debug_code;
+
+void preRegisterSignatures() {
+	// ORDER MATTERS: will be used for functionIndices later!
+
+	// imports
+	functionSignatures["logi"] = Signature().add(i32t).import();
+	functionSignatures["logf"] = Signature().add(f32t).import();
+	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
+
+	functionSignatures["main"] = Signature().returns(i32t);;
+
+	// builtins
+	functionSignatures["nop"] = Signature().builtin();
+	functionSignatures["id"] = Signature().add(i32t).returns(i32t).builtin();
+}
+
 Node emit(String code) {
 	debug_code = code;// global so we see when debugging
 	Node data = parse(code);
@@ -527,10 +572,13 @@ Node emit(String code) {
 	globals.clear();
 	locals.clear();
 	locals.setDefault(List<String>());
+	localTypes.clear();
+	localTypes.setDefault(List<Valtype>());
 	declaredFunctions.clear();
 	functionSignatures.clear();
 	functionSignatures.setDefault(Signature());
 	locals.insert_or_assign("main", List<String>());
+	preRegisterSignatures();// todo: reduntant to emitter
 	Node charged = analyze(data);
 	Code binary = emit(charged);
 //	code.link(wasp) more beautiful with multiple memory sections

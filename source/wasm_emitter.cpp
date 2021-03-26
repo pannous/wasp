@@ -48,103 +48,24 @@ void todo(char *message = "") {
 
 
 
+Valtype mapTypeToWasm(Node n) {
+	if (n.kind == bools)return int32;
+	if (n.kind == nils)return voids;// mapped to int32 later: ø=0
+	if (n.kind == reals)return float32;// float64; todo why 32???
+	if (n.kind == longs)return int32;// int64; todo
+	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
+	if (n.kind == assignment)return mapTypeToWasm(n.first());// todo
+	if (n.kind == operators) return mapTypeToWasm(n.first());// todo
+	if (n.kind == expressions)return mapTypeToWasm(n.first());// todo analyze expressions WHERE? remove HACK!
+	n.log();
+	error("Missing map for type in mapTypeToWasm");
+	return none;
+}
 
-//
-//class Nod{
+//class Bytes {
 //public:
-//	Nod(Block &alternate, ExpressionNod &args, Block &consequent, ExpressionNod &expression,
-//	    ExpressionNod &initializer, String &name, Block &nodes, String &typeName, String &value)
-//			: alternate(alternate), args(args), consequent(consequent), expression(expression),
-//			  initializer(initializer), name(name), nodes(nodes), type_name(typeName), value(value) {
-//
-//	}
-//
-//	Nod(Block *alternate, ExpressionNod *args, Block *consequent, ExpressionNod *expression,
-//	    ExpressionNod *initializer, String *name, Block *nodes, String *typeName, String *value)
-//	: alternate(*alternate), args(*args), consequent(*consequent), expression(*expression),
-//	initializer(*initializer), name(*name), nodes(*nodes), type_name(*typeName), value(*value) {
-//
-//	}
-//	Nod():Nod(0,0,0,0,0,0,0,0,0){}
-//
-//	String type_name;
-//	int type;
-//
-//	String& value;// variable name or operator "+" …
-//	ExpressionNod& expression;
-//	ExpressionNod& initializer;
-//	String& name;
-//	ExpressionNod& args;
-//	Block& nodes;
-//	Block& consequent;
-//	Block& alternate;
-//	int index;// for args
-//	Block *begin() const{
-//		todo();
-//		return &nodes;
-//	}
-//	Nod *end() const{
-//		todo();
-//		return 0;
-//	}
-//
-//	Nod& operator[](int i){
-//		todo();
-//		return *this;
-//	}
+//	int length;
 //};
-//class ExpressionNod : public Nod{
-//public:
-//	ExpressionNod() {}
-//
-//	ExpressionNod& operator[](int i){
-//		todo();
-//		return *this;
-//	}
-//};
-//
-//class Block : public Nod{
-//public:
-//	Block() {}
-//	Block& operator[](int i){
-//		todo();
-//		return *this;
-//	}
-//};
-//
-//class ProcStatementNod : public Nod{
-//public:
-//	ProcStatementNod() {}
-//	ProcStatementNod& operator[](int i){
-//		todo();
-//		return *this;
-//	}
-//};
-
-//#include <iostream>
-
-class Bytes {
-public:
-	int length;
-//	int length(){
-//		return 1;
-//	}
-};
-
-// nonsense, we already have bytes!?
-//uint8_t uint8Array( std::initializer_list<Code> list ){
-//	int total = 0;
-//	for(Code more:list){total+=more.length;}
-//	uint8_t all[total];
-//int current = 0;
-//for(Code more:list){
-//	for (int i=0;i<more.length;i++){
-//all[current++]=more.data[i];
-//	}
-//	}
-//}
-
-
 
 //bytes
 Code signedLEB128(int i);
@@ -277,7 +198,7 @@ Code emitBlock(Node node, String functionContext);
 
 
 //Map<int, String>
-List<String> collect_locals(Node node, String string);
+List<String> collect_locals(Node node, String context);
 
 
 Code emitValue(Node node, String context) {
@@ -398,8 +319,9 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 	Code code;
 	String &name = node.name;
 	int index = functionIndices.position(name);
-	if (index >= 0 and not locals.has(name))
-		locals[name] = List<String>();
+//	if (index >= 0 and not locals[context].has(name))
+//		error("locals should be analyzed in parser");
+//		locals[name] = List<String>();
 //	locals[index]= Map<int, String>();
 
 	if (name == "if")
@@ -523,11 +445,14 @@ Code emitCall(Node &fun, String context) {
 
 Code emitDeclaration(Node fun, Node &body) {
 	// todo: x := 7 vs x := y*y
+	//
 	if (not functionIndices.has(fun.name)) {
-		functionIndices[fun.name] = functionIndices.size();
-	} else {
-		error("redeclaration of symbol: "s + fun.name);
+		error("Declarations need to be registered before in the parser so they can be called from main code!");
+//		functionIndices[fun.name] = functionIndices.size();
 	}
+//	else {
+//		error("redeclaration of symbol: "s + fun.name);
+//	}
 	Signature &signature = functionSignatures[fun.name];
 	functionCodes[fun.name] = emitBlock(body, fun.name);
 	last_type = voids;// todo reference to new symbol x = (y:=z)
@@ -545,6 +470,8 @@ Code emitSetter(Node node, Node &value, String context) {
 	int local_index = current.position(variable);
 	Code setter;
 	Code value1 = emitValue(value, context);
+	localTypes[context][local_index] = mapTypeToWasm(value);
+//	variableTypes
 	setter.add(value1);
 	setter.add(set_local);
 	setter.add(local_index);
@@ -668,7 +595,7 @@ Code emitBlock(Node node, String context) {
 //	Code(code_data,sizeof(code_data)); // todo : memcopy, else stack value is LOST
 	Code block;
 //	Map<int, String>
-	collect_locals(node, context);// DONE IN analyze
+//	collect_locals(node, context);// DONE IN analyze
 //	int locals_count = current_local_names.size();
 //	locals[context] = current_local_names;
 	int locals_count = locals[context].size();
@@ -679,8 +606,11 @@ Code emitBlock(Node node, String context) {
 		warn("locals consumed by arguments"); // ok in  double := it * 2; => double(it){it*2}
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; ++i) {
+		Valtype valtype = localTypes[context][i];
 		block.addByte(i + 1);// index
-		block.addByte(i32t);// type todo
+		if (valtype == none or valtype == voids)
+			valtype = int32;
+		block.addByte(valtype);
 	}
 
 	Code inner_code_data = emitExpression(node, context);
@@ -704,15 +634,15 @@ Code emitBlock(Node node, String context) {
 }
 
 //Map<int, String>
-List<String> collect_locals(Node node, String string) {
-	List<String> &current_locals = locals[string]; // no, because there might be gaps(unnamed locals!)
+// todo: why can't they be all found in parser?
+List<String> collect_locals(Node node, String context) {
+	List<String> &current_locals = locals[context]; // no, because there might be gaps(unnamed locals!)
 	for (Node n : node) {
-		bool add = false;
-		if (n.kind == longs and atoi0(n.name) != n.value.longy)add = true;
-		if (n.kind == longs and not empty(n.name) and not atoi0(n.name))add = true;
-		if (n.kind == reference and not functionIndices.has(n.name))add = true;
-		if (add and not current_locals.has(n.name))
+		Valtype type = mapTypeToWasm(n);
+		if (type != none and not current_locals.has(n.name)) {
 			current_locals.add(n.name);
+			localTypes[context].add(type);
+		}
 	}
 	return current_locals;
 }
@@ -768,10 +698,15 @@ int function_count;// minus import_count  (together : functionIndices.size() )
 Code codeSection(Node root) {
 	// the code section contains vectors of functions
 	// index needs to be known before emitting code, so call $i works
+	int new_count = declaredFunctions.size();
+	for (auto declared : declaredFunctions) {
+		if (not functionIndices.has(declared))
+			functionIndices[declared] = functionIndices.size();
+	}
 	int index_size = functionIndices.size();
-	if (import_count + builtin_count + 1 + runtime_offset != index_size) {
+	if (import_count + builtin_count + 1 /*main*/ + new_count + runtime_offset != index_size) {
 		log(functionIndices);
-		error("inconsistent function_count %d + %d + %d + main != %d"s % import_count % builtin_count % runtime_offset % index_size);
+		error("inconsistent function_count %d + %d + %d + %d + main != %d"s % import_count % builtin_count % new_count % runtime_offset % index_size);
 	}
 // https://pengowray.github.io/wasm-ops/
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
@@ -962,29 +897,17 @@ Code dwarfSection() {
  */
 
 void add_builtins() {
-	int previous_signatures = functionSignatures.size(); // found via analyze()
-
-	// imports
-	functionSignatures["logi"] = Signature().add(i32t).import();
-	functionSignatures["logf"] = Signature().add(f32t).import();
-	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
-//	functionSignatures["sqrt"] = Signature().add(i32t).returns(i32t).import();
-	import_count = functionSignatures.size() - previous_signatures;
-
-	functionIndices["logi"] = functionIndices.size();// import!
-	functionIndices["logf"] = functionIndices.size();// import!
-	functionIndices["square"] = functionIndices.size();// import!
-//	functionIndices["√"] = functionIndices.size();
-
-	// builtins
-	functionSignatures["nop"] = Signature();
-	functionSignatures["id"] = Signature().add(i32t).returns(i32t);
-
-	if (!functionIndices.has("nop"))functionIndices["nop"] = functionIndices.size();
-	if (!functionIndices.has("id"))functionIndices["id"] = functionIndices.size();
-	// order matters, main now comes AFTER builtins!
-
-	builtin_count = functionSignatures.size() - import_count - previous_signatures;//  - runtime_offset;
+	import_count = 0;
+	builtin_count = 0;
+	for (auto sig : functionSignatures) {
+		if (functionSignatures[sig].is_import)
+			import_count++;
+		else if (functionSignatures[sig].is_builtin)
+			builtin_count++;
+		else continue; // register others later! why? start etc
+		if (not functionIndices.has(sig))
+			functionIndices[sig] = functionIndices.size();// import!
+	}
 }
 
 Code &emit(Node root_ast, Module *runtime0, String _start) {
