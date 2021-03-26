@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Node.h"
+#include "Code.h"
 
 //#include "Map.h"
 // The Angle language is a semantic layer on top of Wasp data format
@@ -10,7 +11,10 @@ public:
 	static Node &analyze(Node code);
 };
 
+extern List<String> declaredFunctions;
 extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
+extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
+
 extern Map<String /* implicit indices 0,1,2,… */, Node * /* compile-time modifiers/values? */> globals; // access from Angle!
 
 //List<String> collectOperators(Node &expression);// test/debug only

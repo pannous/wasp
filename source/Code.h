@@ -249,15 +249,20 @@ public:
 // https://webassembly.github.io/spec/core/binary/types.html
 // https://webassembly.github.io/spec/core/binary/values.html
 enum Valtype {
-	i32t = 0x7f,
-	f32t = 0x7d,
-	i64t = 0x7E,
-	f64t = 0x7C,
 	int32 = 0x7f,
+	i32t = 0x7f,
+
 	float32 = 0x7d,
+	f32t = 0x7d,
+
 	int64 = 0x7E,
+	i64t = 0x7E,
+
 	float64 = 0x7C,
+	f64t = 0x7C,
+
 	none = 0x40,
+	pointer = int32, // internal
 	voids = 0x00, // internal only for return type
 };
 
@@ -394,6 +399,8 @@ public:
 	Map<int, Valtype> types;
 	Valtype return_type = voids;
 	bool is_import = false; // not serialized in functype section, but in import section wt
+	bool is_builtin = false;
+	bool is_handled = false;
 
 	int size() {
 		return types.size();
@@ -403,6 +410,12 @@ public:
 		is_import = true;
 		return *this;
 	}
+
+	Signature builtin() {
+		is_builtin = true;
+		return *this;
+	}
+
 
 	Signature add(Valtype t) {
 		types.insert_or_assign(types.size(), t);
@@ -415,7 +428,6 @@ public:
 		return *this;
 	}
 
-	bool is_handled = false;
 };
 
 String sectionName(Section section);
