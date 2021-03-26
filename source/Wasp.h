@@ -10,6 +10,8 @@ bool is_operator(codepoint ch);// todo: next?
 //extern String operator_list[];// resolve xor->operator ... semantic wasp parser really?
 extern List<chars> operator_list;
 
+extern bool data_mode;// todo! auto
+
 extern float function_precedence;
 
 float precedence(String name);
