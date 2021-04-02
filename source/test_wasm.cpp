@@ -577,8 +577,11 @@ void testAllWasm() {
 //	testMergeWabt();
 //	testRefactor();
 //	testMergeRelocate();
+	assert_emit("square 3", 9);
+	assert_emit("id (3+3)", (long) 6);
+
 	testWasmModuleExtension();
-	exit(21);
+//	exit(21);
 //	testWasmIncrement
 
 	testRecentRandomBugs();
