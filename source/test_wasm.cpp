@@ -495,17 +495,23 @@ void testWasmModuleExtension() {
 #ifndef RUNTIME_ONLY
 	functionSignatures.clear();
 	Node charged = analyze(parse("test:=42"));
-	Code lib = emit(charged, 0, "lib_main");
+	Code lib = emit(charged, 0, nil);// no main
+//	Code lib = emit(charged, 0, "lib_main");
 	lib.save("lib.wasm");
 	Module module = read_wasm("lib.wasm");
-	charged = analyze(parse("test"));
-	Code main = emit(charged, &module);
-	main.save("main.wasm");
+
+	declaredFunctions.clear();// <-- only newly declared functions (that nead a Code block later), others via functionIndex …
+
+	charged = analyze(parse("test"));// call test() from lib
+	Code main = emit(charged, &module, "main");
+	main.save("main.wasm");// this is NOT a valid wasm module, because all the indices are offset to the lib!
+	// we don NOT wan't to add 10000 imports here, so that the indices match, do we?
+
 	Module prog = read_wasm("main.wasm");
 	Code merged = merge_wasm(module, prog);
 	merged.save("merged.wasm");
 	read_wasm("merged.wasm");
-	int ok = merged.run();
+	int ok = merged.run();// why is wabt so SLOOOOW now??
 //	int ok = main.run();
 	check(ok == 42);
 #endif
@@ -568,10 +574,11 @@ void testAllWasm() {
 	// constant things may be evaluated by compiler!
 
 //	run_wasm("../t.wasm");
-//	testMerge();
+//	testMergeWabt();
 //	testRefactor();
-
-	testWasmVariables0();
+//	testMergeRelocate();
+	testWasmModuleExtension();
+	exit(21);
 //	testWasmIncrement
 
 	testRecentRandomBugs();
@@ -592,8 +599,8 @@ void testAllWasm() {
 	testComparisonPrimitives();
 	testComparisonMath();
 	testComparisonId();
+	testWasmVariables0();
 	skip(
-			testWasmVariables0();
 			testWasmRuntimeExtension();
 			wasm_todos();
 			testWasmLogicOnObjects();
