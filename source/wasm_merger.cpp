@@ -27,14 +27,14 @@ Code mergeTableSection(Module lib, Module main) {
 }
 
 Code mergeMemorySection(Module lib, Module main) {
+//	if(import_section.has(memory)) return Code();
 //	𝚕𝚒𝚖𝚒𝚝𝚜::=|𝟶𝚡𝟶𝟶  𝑛:𝚞𝟹𝟸 𝟶𝚡𝟶𝟷  𝑛:𝚞𝟹𝟸  𝑚:𝚞𝟹𝟸⇒⇒{𝗆𝗂𝗇 𝑛,𝗆𝖺𝗑 𝜖}{𝗆𝗂𝗇 𝑛,𝗆𝖺𝗑 𝑚}
 	byte min_only = 0x00;
 //	byte min_and_max=0x01;
 	unsigned int pages = (unsigned int) (MEMORY_SIZE / 65536);
 	if (pages > 65536 / 4)pages = 65536 / 4;// /2 to be safe with unsigned
 	const Code &memory_data = Code(1) + Code(min_only) + Code((int) pages);
-	return createSection(memory_section, memory_data);
-
+	return createSection(memory_section, memory_data);// ignore lib/main
 
 	if (lib.memory_data.length > 0) // Code(1) +
 		return createSection(memory_section, lib.memory_data);// + main.memory_data)); ONLY 1 memory section right now!
@@ -42,7 +42,6 @@ Code mergeMemorySection(Module lib, Module main) {
 		return createSection(memory_section, Code(1) + main.memory_data);// + main.memory_data)); ONLY 1 memory section right now!
 	else
 		return Code();
-
 }
 
 Code mergeGlobalSection(Module lib, Module main) {
@@ -91,11 +90,16 @@ Code mergeCustomSections(Module lib, Module main) {
 
 Code mergeNameSection(Module lib, Module main) {
 	// blindly blend and append moduleName + functionNames …
-	return createSection(custom_section, Code("name") + lib.name_data + main.name_data);
+	return createSection(custom_section, Code("name") + lib.name_data);
+//	return createSection(custom_section, Code("name") + lib.name_data + main.name_data);
 
-	auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
-	auto functionNames = Code(function_names) + encodeVector(Code(total_functions) + lib.function_names + main.function_names);
-	auto localNames = Code(local_names) + encodeVector(Code(total_functions) + lib.local_names + main.local_names);
+	auto moduleName = Code(module_name) + encodeVector(Code("merged_wasp"));
+	auto functionNames = Code(function_names) + encodeVector(Code(lib.total_func_count) + lib.function_names);
+	auto localNames = Code(local_names) + encodeVector(Code(lib.total_func_count) + lib.local_names);
+//	auto functionNames = Code(function_names) + encodeVector(Code(main.total_func_count) + main.function_names);
+//	auto localNames = Code(local_names) + encodeVector(Code(main.total_func_count) +  main.local_names);
+//	auto functionNames = Code(function_names) + encodeVector(Code(total_functions) + lib.function_names + main.function_names);
+//	auto localNames = Code(local_names) + encodeVector(Code(total_functions) + lib.local_names + main.local_names);
 	const Code &nameSectionData = encodeVector(Code("name") + moduleName + functionNames + localNames);
 	auto nameSection = createSection(custom_section, nameSectionData); // auto encodeVector AGAIN!
 	return nameSection.clone();;
