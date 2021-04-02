@@ -313,6 +313,7 @@ Node &groupFunctions(Node &expression0) {
 //		else found function call!
 		if (not functionSignatures.has(name))
 			error("missing import for function "s + name);
+		functionSignatures[name].is_used = true;
 
 		int minArity = functionSignatures[name].size();// todo: default args!
 		int maxArity = functionSignatures[name].size();

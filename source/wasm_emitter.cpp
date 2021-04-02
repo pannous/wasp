@@ -658,6 +658,9 @@ Code typeSection() {
 	// the type section is a vector of function types
 	int typeCount = 0;
 	Code type_data;
+
+	log(functionIndices);
+
 	for (String fun : functionSignatures) {
 		if (!fun) {
 //			log(functionIndices);
@@ -667,12 +670,17 @@ Code typeSection() {
 			continue;
 		}
 		Signature &signature = functionSignatures[fun];
-		if (not signature.emit) {
+		if (not signature.emit /*export/declarations*/ and not signature.is_used /*imports*/) {
 			trace("not signature.emit => skipping unused type for "s + fun);
 			continue;
 		}
+
 		if (signature.is_handled)
 			continue;
+		if (not functionIndices.has(fun))
+			functionIndices[fun] = functionIndices.size();// declared (imports and builtins before)
+//			error("function %s should be registered in functionIndices by now"s % fun);
+
 		typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
 		signature.is_handled = true;
 		int param_count = signature.size();
@@ -693,38 +701,38 @@ Code typeSection() {
 	return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();
 }
 
-int imports_used = 0;
-
 Code importSection() {
-	if (imports_used == 0) {
-		warn("no imports used! (?)");
-		return Code();
-	}
+
 	if (runtime_offset) {
 		printf("imports currently not supported\n");
 		import_count = 0;
 		return Code();
 	}
 	// the import section is a vector of imported functions
-// todo: remove hardcoded!
 	Code imports;
-	if (functionSignatures["logi"].is_used)
+	import_count = 0;
+	if (functionSignatures["logi"].is_used and ++import_count)
 		imports = imports + encodeString("env") + encodeString("logi").addByte(func_export).addType(typeMap["logi"]);
-	if (functionSignatures["logf"].is_used)
+	if (functionSignatures["logf"].is_used and ++import_count)
 		imports = imports + encodeString("env") + encodeString("logf").addByte(func_export).addType(typeMap["logf"]);
-	if (functionSignatures["square"].is_used)
+	if (functionSignatures["square"].is_used and ++import_count)
 		imports = imports + encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
 	if (imports.length == 0)return Code();
 	auto importSection = createSection(import_section, Code(import_count) + imports);// + sqrt_ii
 	return importSection.clone();
 }
 
-int function_count;// minus import_count  (together : functionIndices.size() )
+//int function_count;// misleading name: declared functions minus import_count  (together : functionIndices.size() )
+//int new_count;
+int function_block_count;
+
 //int builtins_used=0;
 Code codeSection(Node root) {
 	// the code section contains vectors of functions
 	// index needs to be known before emitting code, so call $i works
-	int new_count = declaredFunctions.size();
+	int new_count;
+
+	new_count = declaredFunctions.size();
 	for (auto declared : declaredFunctions) {
 		print("declared function: "s + declared);
 		if (!declared)error("empty function name (how?)");
@@ -751,13 +759,12 @@ Code codeSection(Node root) {
 		if (functionSignatures["nop"].is_used)
 			code_blocks = code_blocks + encodeVector(Code(code_data_nop, sizeof(code_data_nop)));
 		if (functionSignatures["id"].is_used)
-			code_blocks = code_blocks + encodeVector(Code(code_data_id, sizeof(code_data_nop)));
+			code_blocks = code_blocks + encodeVector(Code(code_data_id, sizeof(code_data_id)));
 	}
 
-	Code main_block = emitBlock(root, start);
+	Code main_block = emitBlock(root, start);// after imports and builtins
 
 	if (start) {
-		functionSignatures[start].emit = true;
 		code_blocks = code_blocks + encodeVector(main_block);
 	} else {
 		if (main_block.length > 3)
@@ -768,20 +775,16 @@ Code codeSection(Node root) {
 		Code &func = functionCodes[fun];
 		code_blocks = code_blocks + encodeVector(func);
 	}
+	builtin_count = 0;
 	if (functionSignatures["nop"].is_used) builtin_count++;// used
 	if (functionSignatures["id"].is_used) builtin_count++;// used
 
-	bool has_main = start and functionIndices.has(start);
-	function_count = builtin_count + has_main /*main*/ + functionCodes.size();
 	check(new_count == functionCodes.size());
 
-//	check(function_count == function_count2);
-//	if (runtime_offset + import_count + function_count != index_size) {
-////		log(functionCodes.keys);
-//		log(functionIndices);
-//		error("inconsistent function_count %d + %d + %d != %d "s % runtime_offset % import_count % function_count % index_size);
-//	}
-	auto codeSection = createSection(code_section, Code(function_count) + code_blocks);
+	bool has_main = start and functionIndices.has(start);
+	function_block_count = has_main /*main*/ + builtin_count + functionCodes.size();
+
+	auto codeSection = createSection(code_section, Code(function_block_count) + code_blocks);
 	return codeSection.clone();
 }
 
@@ -806,9 +809,9 @@ Code funcTypeSection() {// depends on codeSection, but must appear earlier in wa
 	// funcType_count = function_count EXCLUDING imports, they encode their type inline!
 	// the function section is a vector of type indices that indicate the type of each function in the code section
 
-	Code types_of_functions = Code(function_count);//  = Code(types_data, sizeof(types_data));
+	Code types_of_functions = Code(function_block_count);//  = Code(types_data, sizeof(types_data));
 //	order matters in functionType section! must be same as in functionIndices
-	for (int i = 0; i < function_count; ++i) {
+	for (int i = 0; i < function_block_count; ++i) {
 		//	import section types separate WTF wasm
 		int index = i + import_count + runtime_offset;
 		String *fun = functionIndices.lookup(index);
@@ -943,17 +946,21 @@ Code dwarfSection() {
     tail-call
  */
 
+// see preRegisterSignatures
 void add_builtins() {
 	import_count = 0;
 	builtin_count = 0;
-	for (auto sig : functionSignatures) {
-		if (functionSignatures[sig].is_import)
+	for (auto sig : functionSignatures) {// imports first
+		if (functionSignatures[sig].is_import and functionSignatures[sig].is_used) {
+			functionIndices[sig] = functionIndices.size();
 			import_count++;
-		else if (functionSignatures[sig].is_builtin)
+		}
+	}
+	for (auto sig : functionSignatures) {// now builtins
+		if (functionSignatures[sig].is_builtin and functionSignatures[sig].is_used) {
+			functionIndices[sig] = functionIndices.size();
 			builtin_count++;
-		else continue; // register others later! why? start etc
-		if (not functionIndices.has(sig))
-			functionIndices[sig] = functionIndices.size();// import!
+		}
 	}
 }
 
@@ -986,14 +993,15 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 //		functionSignatures.clear(); BEFORE analyze(), not after!
 		add_builtins();
 	}
-	if (!functionIndices.has(start)) {
-		if (start) functionIndices[start] = functionIndices.size();// AFTER collecting imports!!
-	} else
-		error("start already declared: "s + start);
-	if (start) {
+	if (start) {// now AFTER imports and builtins
 		functionSignatures[start] = Signature().returns(i32t);
 		functionSignatures[start].emit = true;
+		if (!functionIndices.has(start))
+			functionIndices[start] = functionIndices.size();// AFTER collecting imports!!
+		else
+			error("start already declared: "s + start);
 	}
+
 	functionCodes.clear();
 	locals.setDefault(List<String>());
 
@@ -1002,9 +1010,9 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	auto memoryImport = encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
 	auto customSection = createSection(custom_section, encodeVector(Code("custom123") + Code("random custom section data")));
 	Code typeSection1 = typeSection();// types can be defined in analyze(), not in code declaration
+	Code importSection1 = importSection();// needs type indices
 	Code codeSection1 = codeSection(root_ast);
-	Code importSection1 = importSection();
-	Code funcTypeSection1 = funcTypeSection();// signatures depends on codeSection, but must come before it!!
+	Code funcTypeSection1 = funcTypeSection();// signatures depends on codeSection, but must come before it in wasm
 	Code exportSection1 = exportSection();// depends on codeSection, but must come before it!!
 	Code code = Code(magicModuleHeader, 4)
 	            + Code(moduleVersion, 4)
