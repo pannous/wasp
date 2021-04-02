@@ -168,7 +168,7 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
 
-			if (function_operators.has(op)) {
+			if (name and function_operators.has(op)) {
 				declaredFunctions.add(name);
 //				functionIndices[name]=functionIndices.size(); don't need an index yet!
 			}
@@ -198,6 +198,8 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 			List<Arg> args = extractFunctionArgs(name, modifiers);
 #ifndef RUNTIME_ONLY
 			Signature &signature = functionSignatures[name];// use Default
+//			signature.is_used=true;// maybe
+			signature.emit = true;// all are 'export'
 
 			for (Arg arg: args) {
 				locals[name].add(arg.name);
@@ -296,7 +298,8 @@ Node &groupFunctions(Node &expression0) {
 	for (int i = 0; i < expression.length; ++i) {
 //	for (int i = expression.length; i>0; --i) {
 		Node &node = expression.children[i];
-		if (node.name == "if") // kinda functor
+		String &name = node.name;
+		if (name == "if") // kinda functor
 			return groupIf(expression0.from("if"));
 		if (isFunction(node)) // todo: may need preparsing of declarations!
 			node.kind = call;// <- there we go!
@@ -308,9 +311,11 @@ Node &groupFunctions(Node &expression0) {
 			continue;// already done HOW??
 		}
 //		else found function call!
+		if (not functionSignatures.has(name))
+			error("missing import for function "s + name);
 
-		int minArity = functionSignatures[node.name].size();// todo: default args!
-		int maxArity = functionSignatures[node.name].size();
+		int minArity = functionSignatures[name].size();// todo: default args!
+		int maxArity = functionSignatures[name].size();
 		Node rest;
 		if (expression[i + 1].kind == groups) {// f(x)
 			// todo f (x) (y) (z)
@@ -337,9 +342,9 @@ Node &groupFunctions(Node &expression0) {
 			minArity--;
 		}
 		if (rest.length < minArity)
-			error("missing arguments for function %s, currying not yet supported"s % node.name);
+			error("missing arguments for function %s, currying not yet supported"s % name);
 		else if (rest.length == 0 and minArity > 0)
-			error("missing arguments for function %s, or to pass function pointer use func keyword"s % node.name);
+			error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
 		else if (rest.first().kind == operators) { // random() + 1 == random + 1
 			// keep whole expression for later analysis in groupOperators!
 			return expression;
@@ -503,7 +508,10 @@ Node &groupIf(Node n) {
 
 Node analyze(Node data) {
 #ifndef RUNTIME_ONLY
+	locals.setDefault(List<String>());
+	localTypes.setDefault(List<Valtype>());
 	functionSignatures.setDefault(Signature());
+
 #endif
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	if (data.kind == keyNode) {

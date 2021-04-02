@@ -18,7 +18,7 @@
 
 #endif
 
-#define MAXI 1000
+#define MAP_ALLOCATION_RESERVED_COUNT 1000 // todo! dynamic grow maps (ugly name cuz ugly impl)
 
 
 template<class S>
@@ -122,7 +122,7 @@ template<class S>
 class List {
 	int _size = 0;
 public:
-	S *items = (S *) calloc(sizeof(S), MAXI);
+	S *items = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
 
 	List() {}
 
@@ -138,7 +138,7 @@ public:
 	}
 
 	List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
-		while (args[_size] and _size < MAXI) {
+		while (args[_size] and _size < MAP_ALLOCATION_RESERVED_COUNT) {
 			items[_size] = args[_size];
 			_size++;
 		}
@@ -234,7 +234,7 @@ public:
 	}
 
 	void clear() {
-		items = (S *) calloc(sizeof(S), MAXI);
+		items = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
 		_size = 0;
 	}
 };
@@ -244,8 +244,8 @@ template<class S, class T>
 class Map {
 	int _size = 0;
 public:
-	S *keys = (S *) calloc(sizeof(S), MAXI);
-	T *values = (T *) calloc(sizeof(T), MAXI);
+	S *keys = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
+	T *values = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
 
 	S *lookup(T t) {
 		for (int i = 0; (values[i] or keys[i]) and i < _size; i++)
@@ -327,8 +327,8 @@ public:
 	void clear() {
 		free(keys);
 		free(values);
-		keys = (S *) calloc(sizeof(T), MAXI);
-		values = (T *) calloc(sizeof(T), MAXI);
+		keys = (S *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
+		values = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
 		_size = 0;
 	}
 
