@@ -107,6 +107,8 @@ String &name(Code &wstring) {
 
 
 void parseFunctionNames(Code &payload) {
+	functionIndices.setDefault(-1);
+	log(functionIndices);// what we got so far?
 	int function_count = unsignedLEB128(payload);
 	int index = -1;
 	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {

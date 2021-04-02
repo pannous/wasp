@@ -400,7 +400,7 @@ public:
 	Valtype return_type = voids;
 	bool is_import = false; // not serialized in functype section, but in import section wt
 	bool is_builtin = false;
-	bool is_handled = false;
+	bool is_handled = false; // already emitted (e.g. as runtime)
 
 	int size() {
 		return types.size();
@@ -428,6 +428,8 @@ public:
 		return *this;
 	}
 
+	bool is_used = false;// called
+	bool emit = false;// only those types/functions that are declared (export) or used in call
 };
 
 String sectionName(Section section);

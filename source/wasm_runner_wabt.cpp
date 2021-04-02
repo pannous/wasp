@@ -81,6 +81,8 @@ int run_wasm(bytes buffer, int buf_size) {
 		printf("FAILED ReadBinaryInterp\n");
 		for (auto e : errors)
 			printf("%s", e.message.data());
+//		printf("This HANGS the IDE. Todo: why?\n");
+		return -1;
 	}
 	auto module = wabt::interp::Module::New(store, module_desc);
 	RefVec imports;
