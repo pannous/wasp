@@ -439,7 +439,10 @@ Code emitCall(Node &fun, String context) {
 	code.addByte(function);
 	code.addByte(index);// ok till index>127, then use unsignedLEB128
 //	code.addByte(nop);// padding for potential relocation
-	last_type = functionSignatures[fun.name].return_type;
+	Signature &signature = functionSignatures[fun.name];
+	signature.is_used = true;
+	signature.emit = true;
+	last_type = signature.return_type;
 	return code;
 }
 
@@ -454,6 +457,7 @@ Code emitDeclaration(Node fun, Node &body) {
 //		error("redeclaration of symbol: "s + fun.name);
 //	}
 	Signature &signature = functionSignatures[fun.name];
+	signature.emit = true;// all are 'export' for now. also set in analyze!
 	functionCodes[fun.name] = emitBlock(body, fun.name);
 	last_type = voids;// todo reference to new symbol x = (y:=z)
 	return Code();// empty
@@ -650,12 +654,23 @@ List<String> collect_locals(Node node, String context) {
 
 Code typeSection() {
 	// Function types are vectors of parameters and return types. Currently
-	// optimise TODO - some of the procs might have the same type signature
+	// TODO optimise - some of the procs might have the same type signature
 	// the type section is a vector of function types
 	int typeCount = 0;
 	Code type_data;
-	for (String fun :functionSignatures) {
+	for (String fun : functionSignatures) {
+		if (!fun) {
+//			log(functionIndices);
+//			log(functionSignatures);
+			warn("empty function creep functionSignatures[ø]");
+//			error("empty function creep functionSignatures[ø]");
+			continue;
+		}
 		Signature &signature = functionSignatures[fun];
+		if (not signature.emit) {
+			trace("not signature.emit => skipping unused type for "s + fun);
+			continue;
+		}
 		if (signature.is_handled)
 			continue;
 		typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
@@ -678,7 +693,13 @@ Code typeSection() {
 	return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();
 }
 
+int imports_used = 0;
+
 Code importSection() {
+	if (imports_used == 0) {
+		warn("no imports used! (?)");
+		return Code();
+	}
 	if (runtime_offset) {
 		printf("imports currently not supported\n");
 		import_count = 0;
@@ -686,28 +707,37 @@ Code importSection() {
 	}
 	// the import section is a vector of imported functions
 // todo: remove hardcoded!
-	Code logi_iv = encodeString("env") + encodeString("logi").addByte(func_export).addType(typeMap["logi"]);
-	Code logf_fv = encodeString("env") + encodeString("logf").addByte(func_export).addType(typeMap["logf"]);
-	Code square_ii = encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
-//	Code sqrt_ii = encodeString("env") + encodeString("√").addByte(func_export).addType(typeMap["√"]); builtin wasm anyways!!
-	auto importSection = createSection(import_section, Code(import_count) + logi_iv + logf_fv + square_ii);// + sqrt_ii
+	Code imports;
+	if (functionSignatures["logi"].is_used)
+		imports = imports + encodeString("env") + encodeString("logi").addByte(func_export).addType(typeMap["logi"]);
+	if (functionSignatures["logf"].is_used)
+		imports = imports + encodeString("env") + encodeString("logf").addByte(func_export).addType(typeMap["logf"]);
+	if (functionSignatures["square"].is_used)
+		imports = imports + encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
+	if (imports.length == 0)return Code();
+	auto importSection = createSection(import_section, Code(import_count) + imports);// + sqrt_ii
 	return importSection.clone();
 }
 
 int function_count;// minus import_count  (together : functionIndices.size() )
+//int builtins_used=0;
 Code codeSection(Node root) {
 	// the code section contains vectors of functions
 	// index needs to be known before emitting code, so call $i works
 	int new_count = declaredFunctions.size();
 	for (auto declared : declaredFunctions) {
-		if (not functionIndices.has(declared))
+		print("declared function: "s + declared);
+		if (!declared)error("empty function name (how?)");
+		if (not functionIndices.has(declared))// used or not!
 			functionIndices[declared] = functionIndices.size();
 	}
-	int index_size = functionIndices.size();
-	if (import_count + builtin_count + 1 /*main*/ + new_count + runtime_offset != index_size) {
-		log(functionIndices);
-		error("inconsistent function_count %d + %d + %d + %d + main != %d"s % import_count % builtin_count % new_count % runtime_offset % index_size);
-	}
+//	int index_size = functionIndices.size();
+//	bool has_main = start and (declaredFunctions.has(start) or functionIndices.has(start));
+//	if (import_count + builtin_count + has_main + new_count + runtime_offset != index_size) {
+//		log(functionIndices);
+//		String message = "inconsistent function_count %d import + %d builtin + %d new + %d runtime + %d main != %d"s;
+// 		error(message % import_count % builtin_count % new_count % runtime_offset % has_main % index_size);
+//	}
 // https://pengowray.github.io/wasm-ops/
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
 	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
@@ -715,30 +745,42 @@ Code codeSection(Node root) {
 	byte code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block, end_block};// NOP
 //	byte code_data_logi_21[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};
 //	byte code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
-
-	Code main_block = emitBlock(root, start);
 	Code code_blocks;
 	if (runtime.code_count == 0) {
-		Code nop_block = Code(code_data_nop, sizeof(code_data_nop));
-		Code id_block = Code(code_data_id, sizeof(code_data_id));
 		// order matters, in functionType section!
-		code_blocks = code_blocks + encodeVector(nop_block) + encodeVector(id_block);
-	} else builtin_count = 0;
+		if (functionSignatures["nop"].is_used)
+			code_blocks = code_blocks + encodeVector(Code(code_data_nop, sizeof(code_data_nop)));
+		if (functionSignatures["id"].is_used)
+			code_blocks = code_blocks + encodeVector(Code(code_data_id, sizeof(code_data_nop)));
+	}
 
-	code_blocks = code_blocks + encodeVector(main_block);
+	Code main_block = emitBlock(root, start);
+
+	if (start) {
+		functionSignatures[start].emit = true;
+		code_blocks = code_blocks + encodeVector(main_block);
+	} else {
+		if (main_block.length > 3)
+			error("no start function name given. null instead of 'main', can't assign block");
+		else warn("no start block (ok)");
+	}
 	for (String fun : functionCodes) {// MAIN block extra ^^^
 		Code &func = functionCodes[fun];
 		code_blocks = code_blocks + encodeVector(func);
 	}
-	index_size = functionIndices.size();
+	if (functionSignatures["nop"].is_used) builtin_count++;// used
+	if (functionSignatures["id"].is_used) builtin_count++;// used
 
-	function_count = builtin_count + 1 /*main*/ + functionCodes.size();
+	bool has_main = start and functionIndices.has(start);
+	function_count = builtin_count + has_main /*main*/ + functionCodes.size();
+	check(new_count == functionCodes.size());
 
-	if (runtime_offset + import_count + function_count != index_size) {
-//		log(functionCodes.keys);
-		log(functionIndices);
-		error("inconsistent function_count %d + %d + %d != %d "s % runtime_offset % import_count % function_count % index_size);
-	}
+//	check(function_count == function_count2);
+//	if (runtime_offset + import_count + function_count != index_size) {
+////		log(functionCodes.keys);
+//		log(functionIndices);
+//		error("inconsistent function_count %d + %d + %d != %d "s % runtime_offset % import_count % function_count % index_size);
+//	}
 	auto codeSection = createSection(code_section, Code(function_count) + code_blocks);
 	return codeSection.clone();
 }
@@ -747,8 +789,13 @@ short exports_count = 1;
 
 Code exportSection() {
 // the export section is a vector of exported functions etc
-	int main_offset = functionIndices[start];
+	if (!start)
+		return createSection(export_section, Code(0));
+	int main_offset = 0;
+	if (functionIndices.has(start))
+		main_offset = functionIndices[start];
 	Code exportsData = encodeVector(Code(exports_count) + encodeString(start) + (byte) func_export + Code(main_offset));
+
 	auto exportSection = createSection(export_section, exportsData);
 	return exportSection;
 }
@@ -925,9 +972,10 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		import_count = 0;
 		builtin_count = 0;
 		if (runtime.total_func_count != functionIndices.size()) {
+			log(functionIndices);
+//			log(functionIndices.keys[functionIndices.size() - 1]);
+//			log(functionIndices.keys[functionIndices.size() - 2]);
 			printf("%d != %d\n", runtime.total_func_count, functionIndices.size());
-			log(functionIndices.keys[functionIndices.size() - 1]);
-			log(functionIndices.keys[functionIndices.size() - 2]);
 			error("runtime.total_func_count !=  functionIndices.size()");
 		}
 	} else {
@@ -939,10 +987,13 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		add_builtins();
 	}
 	if (!functionIndices.has(start)) {
-		functionIndices[start] = functionIndices.size();// AFTER collecting imports!!
+		if (start) functionIndices[start] = functionIndices.size();// AFTER collecting imports!!
 	} else
 		error("start already declared: "s + start);
-	functionSignatures[start] = Signature().returns(i32t);
+	if (start) {
+		functionSignatures[start] = Signature().returns(i32t);
+		functionSignatures[start].emit = true;
+	}
 	functionCodes.clear();
 	locals.setDefault(List<String>());
 

@@ -122,7 +122,8 @@ extern "C" unsigned int *memory = 0;// dummies, remove!
 extern "C" /*unsigned */ char *current = 0;// dummies, remove!
 extern bool throwing;// false for error tests etc
 int raise(chars error) {
-	if (throwing) throw error;
+	if (throwing)
+		throw error;
 	return -1;
 }
 
@@ -236,7 +237,7 @@ void error1(chars message, chars file, int line) {
 	Backtrace(2);
 #endif
 	if (file)
-		printf("\n%s:%d", file, line);\
+		printf("\n%s:%d\n", file, line);\
     raise(message);
 	panic();
 //	err(error);
@@ -405,7 +406,7 @@ void panic() {
 #endif
 
 void trace(chars x) {
-	log(x);
+	warn(x);
 }
 
 

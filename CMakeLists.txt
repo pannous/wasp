@@ -26,9 +26,9 @@ if (NOT WASM)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm:
-        #set(VM 1) #  wasm-micro-runtime => wasm_runner_micro.cpp
-        set(WABT 1) #  wasm_runner_wabt.cpp
-        #        set(WASM3 1) # wasm_runner_wasm3.cpp
+        #        set(VM 1) # NOT Mac M1 Arm64 ready!  wasm-micro-runtime => wasm_runner_micro.cpp
+        #        set(WABT 1) # SLOOOW on Mac M1!  wasm_runner_wabt.cpp
+        set(WASM3 1) # wasm_runner_wasm3.cpp
         #        set(wasmx 1)
     endif ()
 endif ()
