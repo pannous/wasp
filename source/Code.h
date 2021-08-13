@@ -266,6 +266,7 @@ enum Valtype {
 	voids = 0x00, // internal only for return type
 };
 
+
 // https://webassembly.github.io/spec/core/binary/types.html#binary-blocktype
 enum Blocktype {
 	void_block = 0x40
@@ -395,7 +396,7 @@ enum nameSubSectionTypes {
 
 class Signature {
 public:
-	String function;// could be reused by multiple, but useful to debug
+	String function = "";// could be reused by multiple, but useful to debug
 	Map<int, Valtype> types;
 	Valtype return_type = voids;
 	bool is_import = false; // not serialized in functype section, but in import section wt

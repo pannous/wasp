@@ -268,7 +268,6 @@ bool Node::operator==(Node *other) {
 }
 
 bool Node::operator==(bool other) {
-	logs("ewrerwrew");
 	return other == this->operator bool();
 }
 
@@ -372,7 +371,6 @@ bool Node::operator==(Node &other) {
 //	or (other != NIL and other != False) or
 
 	if (kind == strings) {
-		trace("JJJ");
 		::log(name);
 		::log(value.string);
 		::log(this->value.string);

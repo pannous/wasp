@@ -88,10 +88,14 @@ class String;
 
 void print(String);
 
+void print(const Node);
+
 void println(String);
 
 void log(String *s);
-//int isalnum ( int c );
+
+//extern __inline int isalnum ( int c );
+int isalnum0(int c);
 
 #ifdef WASM
 #ifndef WASI
@@ -157,6 +161,6 @@ int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
 int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
 #endif
 
-int isalnum(int c);
+//int isalnum(int c);
 
 void trace(chars x);
