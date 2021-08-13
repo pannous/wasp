@@ -109,10 +109,10 @@ void printf(chars format, void* value) {
 #endif
 
 }
-int isalnum (int c){
-	return c>='0' and c<='9' or c>='a' and c<='z' or c>='A' and c <= 'Z';// todo lol
-}
 #endif
+int isalnum0(int c) {
+	return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z');// todo lol
+}
 //#define __cxa_allocate_exception 1
 //#define __cxa_throw 1
 //#include <typeinfo>       // operator typeid
@@ -438,5 +438,5 @@ void logf32(float l) {
 
 #ifdef RUNTIME_ONLY
 #include "Interpret.h"
-Module read_wasm(chars file){}
+Module read_wasm(chars file){return *new Module();}
 #endif

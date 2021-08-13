@@ -43,6 +43,24 @@ wabt::Result do_logf(Thread &thread, const Values &params, Values &results, Trap
 	return wabt::Result::Ok;
 };
 
+wabt::Result do_exit(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
+	exit(0);
+}
+
+
+wabt::Result do_logs(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
+	Ref ref = params.front().Get<Ref>();
+	char *x = (char *) (void *) params.data();
+	printf("%s\n", x);
+	return wabt::Result::Ok;
+};
+
+
+wabt::Result do_raise(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
+	do_logs(thread, params, results, trap);
+	exit(0);
+}
+
 wabt::Result do_sqrt(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
 	int x = params.front().Get<int>();
 	results.front() = wabt::interp::Value::Make((int) root(x));
@@ -59,6 +77,11 @@ void BindImports(Module *module, std::vector<Ref> &imports, Store &store) {
 		if (import.type.name == "square")imports.push_back(HostFunc::New(store, func_type, do_square).ref());
 		else if (import.type.name == "logi")imports.push_back(HostFunc::New(store, func_type, do_logi).ref());
 		else if (import.type.name == "logf")imports.push_back(HostFunc::New(store, func_type, do_logf).ref());
+		else if (import.type.name == "logs")imports.push_back(HostFunc::New(store, func_type, do_logs).ref());
+		else if (import.type.name == "printf")imports.push_back(HostFunc::New(store, func_type, do_logs).ref());
+		else if (import.type.name == "proc_exit")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
+		else if (import.type.name == "panic")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
+		else if (import.type.name == "raise")imports.push_back(HostFunc::New(store, func_type, do_raise).ref());
 		else if (import.type.name == "√")imports.push_back(HostFunc::New(store, func_type, do_sqrt).ref());
 		else imports.push_back(Ref::Null);
 		// By default, just push an null reference. This won't resolve, and instantiation will fail.
@@ -102,7 +125,7 @@ int run_wasm(bytes buffer, int buf_size) {
 
 	for (wabt::interp::ExportDesc export_ : module_desc.exports) {
 		if (export_.type.type->kind != wabt::ExternalKind::Func) continue;
-		if (export_.type.name != "main") continue;
+		if (export_.type.name != "main" and export_.type.name != "maine") continue;
 		auto *func_type = wabt::cast<wabt::interp::FuncType>(export_.type.type.get());
 		if (func_type->params.empty()) {
 			RefVec funcs = instance->funcs();
