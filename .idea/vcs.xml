@@ -5,6 +5,7 @@
     <mapping directory="$PROJECT_DIR$/test-lld-wasm" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/wabt" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/wasm-micro-runtime" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/wasm-micro-runtime.me" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/wasm3" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/wiki" vcs="Git" />
   </component>

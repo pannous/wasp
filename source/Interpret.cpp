@@ -85,7 +85,8 @@ Node If(Node n) {
 	Node condit = condition.interpret();
 	bool condition_fulfilled = (bool) condit;
 	if (condition.kind == reals or condition.kind == longs)
-		condition_fulfilled = (!condition.name or empty(condition.name)) and condition.value.data or condition.name != "0";
+		condition_fulfilled =
+				((!condition.name or empty(condition.name)) and condition.value.data) or condition.name != "0";
 	else if (condition.value.data and condition.kind == objects) // or ...
 		error("If statements need a space after colon");
 	if (condition_fulfilled) {
@@ -207,10 +208,13 @@ Node matchPattern(Node object, Node pattern0) {
 }
 
 Node Node::apply_op(Node left, Node op0, Node right) {
-//	printf("apply_op\n");
-//	left.log();
-//	op0.log();
-//	right.log();
+
+	if (debug) {
+		trace("apply_op\n");
+		left.log();
+		op0.log();
+		right.log();
+	}
 //	if(right.length==0 and op0.param){
 //		warn("using param for args");
 //		right = *op0.param;
@@ -219,7 +223,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	if (!isFunction(op)) // 1 + square 2  => "1+" kept dangling
 		left = left.interpret(false);
 	bool lazy = (op == "or") and (bool) left;
-	lazy = lazy || (op == "and") and not(bool) left;
+	lazy = lazy || (op == "and" and not(bool) left);
 	lazy = lazy || (op == "#");// length and index
 	lazy = lazy || (op == "if");
 	lazy = lazy || (op == "while");
@@ -310,9 +314,11 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 `if 1 then 0 else 2 == 0`
 `1 and 0 or 2 == 2`  !!!
 */
-	if (op == "or" or op == "||" or op == "&") {
-		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (!left.isEmpty() and left != NIL and left != False)return left;
+	if (op == "or" or op == "||") {
+		::print("YA OR!!");
+		if (left.kind == bools) return left.value.longy == 1 ? True : right;
+//		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());// eek no!!
+		if (!left.isEmpty() and left != NIL and left != False) return left;
 		return right;
 	}
 

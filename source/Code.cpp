@@ -134,3 +134,18 @@ String sectionName(Section section) {
 Code createSection(Section sectionType, Code data) {
 	return Code((char) sectionType, encodeVector(data));
 }
+
+
+Valtype mapTypeToWasm(Node n) {
+	if (n.kind == bools)return int32;
+	if (n.kind == nils)return voids;// mapped to int32 later: ø=0
+	if (n.kind == reals)return float32;// float64; todo why 32???
+	if (n.kind == longs)return int32;// int64; todo
+	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
+	if (n.kind == assignment)return mapTypeToWasm(n.first());// todo
+	if (n.kind == operators) return mapTypeToWasm(n.first());// todo
+	if (n.kind == expressions)return mapTypeToWasm(n.first());// todo analyze expressions WHERE? remove HACK!
+	n.log();
+	error("Missing map for type in mapTypeToWasm");
+	return none;
+}
