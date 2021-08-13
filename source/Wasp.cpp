@@ -86,7 +86,7 @@ bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
 	if (ch > 0x80)
 		return false;// utf NOT enough: ç. can still be a reference!
 	if (is_identifier(ch)) return false;
-	if (isalnum(ch)) return false;// ANY UTF 8
+	if (isalnum0(ch)) return false;// ANY UTF 8
 	return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
 }
 
@@ -147,7 +147,8 @@ public:
 #ifndef RUNTIME_ONLY
 		return parsed.interpret();
 #else
-		return parsed;
+		error("RUNTIME_ONLY, no interpret!");
+		return parsed;// DANGER!!
 #endif
 	}
 
@@ -671,7 +672,7 @@ private:
 		expressionas.add(node);
 		if (stop_at_space and ch == ' ')return *expressionas.clone();
 		white();
-		while (ch and (is_identifier(ch) or isalnum(ch) or is_operator(ch))) {
+		while (ch and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
 			node = symbol();// including operators `=` ...
 			if (is_known_functor(node))
 				node.kind = operators;
@@ -1223,9 +1224,7 @@ void handler(int sig) {
 //}
 
 #ifndef NO_TESTS // RUNTIME_ONLY
-
 #import "tests.cpp"
-
 #endif
 
 Node run(String source) {

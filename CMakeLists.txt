@@ -4,13 +4,18 @@ project(wasp)
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # If <variable> is already set as a normal or cache variable, then the command does nothing!!
-#set(RUNTIME_ONLY 1) # no Angle eval emit merge etc!
+set(RUNTIME_ONLY 0) # no Angle eval emit merge etc!
 #set(VERBOSE 1)
-#set(DEBUG 1) # SET via Preferences… Build->CMake->Profiles
+set(DEBUG 1) # SET via Preferences… Build->CMake->Profiles
 #set(RELEASE 1)
 #set(WASM 1)
 #set(WASI 1)
+if (DEBUG)
+    MESSAGE("DEBUG!")
+    ADD_COMPILE_DEFINITIONS(DEBUG)
+endif ()
 
+#ADD_COMPILE_DEFINITIONS(NO_TESTS) # CAREFUL: most unused functions get optimized away
 
 if (WASM)
     ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY) # no wasm reader != NO_TESTS
@@ -26,10 +31,10 @@ if (NOT WASM)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm:
-        #        set(VM 1) # NOT Mac M1 Arm64 ready!  wasm-micro-runtime => wasm_runner_micro.cpp
-#                set(WABT 1) # SLOOOW on Mac M1!  wasm_runner_wabt.cpp
-        set(WASM3 1) # wasm_runner_wasm3.cpp
-        #        set(wasmx 1)
+        #                set(MICRO 1) # NOT Mac M1 Arm64 ready!  wasm-micro-runtime => wasm_runner_micro.cpp
+        #                set(WABT 1) # SLOOOW on Mac M1!  wasm_runner_wabt.cpp
+        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+        #        set(wasmx 1)	// doesn't work: cannot insert imports or function types!
     endif ()
 endif ()
 
@@ -48,7 +53,8 @@ FUNCTION(ADD_COMPILE_FLAG value)
         SET(${variable} "${${variable}} ${value}" PARENT_SCOPE)
     ENDFOREACH (variable)
 ENDFUNCTION()
-
+ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
+ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
 
 if (NOT RELEASE)
     ADD_COMPILE_FLAG("-fno-inline")
@@ -136,13 +142,16 @@ if (WASM) # OR WASI)
     ADD_COMPILE_FLAG("-Wl,-z,stack-size=104857600") # 1MB*10  pointers will START from high and go lower!
     ADD_COMPILE_FLAG("-Qn") # no producer metadata
     if (VERBOSE)
-        ADD_COMPILE_FLAG("-Wl,-t,--verbose,--export-table") # ,-O0  VERBOSE!
+        ADD_COMPILE_FLAG("-Wl,-t,--verbose,--export-table -O0") # ,-O0  VERBOSE!
         #    ADD_COMPILE_FLAG("-Wl,--emit-relocs")
     endif ()
+    if (DEBUG)
+        #        ADD_COMPILE_FLAG("-O0")
+    endif ()
+    ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
+    ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
     if (RELEASE)
         ADD_COMPILE_DEFINITIONS(NO_TESTS)
-        #         ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized => [parse exception: duplicate export name (at 0:4689)]
-        ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
         #        ADD_COMPILE_FLAG("-Wl,--export-dynamic") #       Put symbols in the dynamic symbol table
         ADD_COMPILE_FLAG("-v")
         #        ADD_COMPILE_FLAG("-Wl,-vvv")
@@ -166,9 +175,8 @@ if (WASM) # OR WASI)
             ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
         endif ()
     endif ()
-    add_executable(wasp.wasm ${SOURCE_FILES}) # REMOVES unused functions
-    target_link_options(wasp.wasm PUBLIC --shared)
-    #    target_link_options(wasp.wasm PUBLIC --strip-debug)
+    #    add_library(wasp.wasm SHARED ${SOURCE_FILES}) #
+    add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
     add_custom_target(BuildWasm ALL DEPENDS wasp.wasm)
 elseif (WASI)
     message(WASI)
@@ -181,12 +189,16 @@ elseif (WASI)
     #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
-elseif (VM) # wasm-micro-vm:
+elseif (MICRO) # wasm-micro-vm:
     if (WASI)
         message(WASI and wasm-micro-vm no good!?)
         return()
     endif ()
-    message("USING INTERNAL WASM MICRO RUNTIME TO DEBUG")
+
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_micro.cpp)
+
+    message("USING INTERNAL WASM MICRO RUNTIME TO DEBUG (not Mac M1 ready!!)")
+    #    quit()
     ADD_COMPILE_DEFINITIONS(WASM_ENABLE_INTERP)
     set(WAMR_BUILD_INTERP 1)
     SET(WAMR_ROOT_DIR wasm-micro-runtime)
@@ -199,7 +211,8 @@ elseif (VM) # wasm-micro-vm:
     set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
     set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
-    set(WAMR_BUILD_TARGET "X86_64")
+    #    set(WAMR_BUILD_TARGET "X86_64")
+    set(WAMR_BUILD_TARGET "AARCH64")
     set(WAMR_BUILD_LIBC_BUILTIN 1)
 
     ################  wasm-micro-runtime  ################

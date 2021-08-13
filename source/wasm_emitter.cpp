@@ -1,6 +1,6 @@
 //https://blog.sentry.io/2020/08/11/the-pain-of-debugging-webassembly
 //https://github.com/mdn/webassembly-examples/tree/master/understanding-text-format
-// BASED ON https://github.com/ColinEberhardt/chasm/blob/master/src/emitter.ts
+// https://github.com/ColinEberhardt/chasm/blob/master/src/emitter.ts
 // https://github.com/ColinEberhardt/chasm/blob/master/src/encoding.ts
 // https://pengowray.github.io/wasm-ops/
 #include "Wasp.h"
@@ -25,8 +25,8 @@ Valtype last_type = voids;// autocast if not int
 //Map<String, Valtype> return_types;
 //Map<int, List<String>> locals;
 
-Map<String, Signature> functionSignatures;
 //Map<int, Map<int, String>> locals;
+//List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 Map<String, int> functionIndices;
 Map<String, Code> functionCodes;
 Map<String, int> typeMap;
@@ -48,19 +48,6 @@ void todo(char *message = "") {
 
 
 
-Valtype mapTypeToWasm(Node n) {
-	if (n.kind == bools)return int32;
-	if (n.kind == nils)return voids;// mapped to int32 later: ø=0
-	if (n.kind == reals)return float32;// float64; todo why 32???
-	if (n.kind == longs)return int32;// int64; todo
-	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
-	if (n.kind == assignment)return mapTypeToWasm(n.first());// todo
-	if (n.kind == operators) return mapTypeToWasm(n.first());// todo
-	if (n.kind == expressions)return mapTypeToWasm(n.first());// todo analyze expressions WHERE? remove HACK!
-	n.log();
-	error("Missing map for type in mapTypeToWasm");
-	return none;
-}
 
 //class Bytes {
 //public:
@@ -333,7 +320,8 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		code.addByte(0);// todo: LAST local?
 		return code;
 	}
-	if ((node.kind == call or node.kind == reference or node.kind == groups) and functionIndices.has(name))
+	//	or node.kind == groups ??? NO!
+	if ((node.kind == call or node.kind == reference) and functionIndices.has(name))
 		return emitCall(node, context);
 
 	switch (node.kind) {
@@ -367,7 +355,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			List<String> &current_local_names = locals[context];
 			int local_index = current_local_names.position(name);// defined in block header
 			if (name.startsWith("$")) {
-				local_index = atoi(name.substring(1));
+				local_index = atoi0(name.substring(1));
 			}
 			if (local_index < 0) { // collected before, so can't be setter here
 				if (functionCodes.has(name))
@@ -665,7 +653,8 @@ Code typeSection() {
 		if (!fun) {
 //			log(functionIndices);
 //			log(functionSignatures);
-			warn("empty function creep functionSignatures[ø]");
+			breakpoint_helper
+			warn("empty functionSignatures[ø] because context=start=''");
 //			error("empty function creep functionSignatures[ø]");
 			continue;
 		}
@@ -704,6 +693,7 @@ Code typeSection() {
 Code importSection() {
 
 	if (runtime_offset) {
+		breakpoint_helper
 		printf("imports currently not supported\n");
 		import_count = 0;
 		return Code();
@@ -978,28 +968,35 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		runtime_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
 		import_count = 0;
 		builtin_count = 0;
-		if (runtime.total_func_count != functionIndices.size()) {
+		int newly_pre_registered = 0;//declaredFunctions.size();
+
+		if (runtime.total_func_count + newly_pre_registered != functionIndices.size()) {
+			log(functionSignatures.size());
+			log("\n");//newline);
 			log(functionIndices);
-//			log(functionIndices.keys[functionIndices.size() - 1]);
-//			log(functionIndices.keys[functionIndices.size() - 2]);
-			printf("%d != %d\n", runtime.total_func_count, functionIndices.size());
 			error("runtime.total_func_count !=  functionIndices.size()");
+//			warn("runtime.total_func_count !=  functionIndices.size()");
 		}
 	} else {
 		runtime = *new Module();// all zero
 		runtime_offset = 0;
 		typeMap.clear();
-		functionIndices.clear();
+		functionIndices.clear();// ok preregistered functions are in functionSignatures
 //		functionSignatures.clear(); BEFORE analyze(), not after!
 		add_builtins();
 	}
 	if (start) {// now AFTER imports and builtins
+		printf("start: %s\n", start.data);
 		functionSignatures[start] = Signature().returns(i32t);
 		functionSignatures[start].emit = true;
 		if (!functionIndices.has(start))
 			functionIndices[start] = functionIndices.size();// AFTER collecting imports!!
 		else
-			error("start already declared: "s + start);
+			error("start already declared: "s + start + " with index " + functionIndices[start]);
+	} else {
+//		functionSignatures["_default_context_"] = Signature();
+//		start = "_default_context_";//_default_context_
+//		start = "";
 	}
 
 	functionCodes.clear();

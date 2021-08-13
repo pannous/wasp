@@ -45,7 +45,7 @@ RETURN VALUE: 42
 
 
 //int32_t is just int
-int intToStr(int x, char *str, int str_len, int digit) {}// wavm can call char* ! no JS restrictions!!
+//int intToStr(int x, char *str, int str_len, int digit) {}// wavm can call char* ! no JS restrictions!!
 
 int get_pow(int x, int y) {
 	return x * y;
@@ -68,15 +68,15 @@ static NativeSymbol native_symbols[] =
 				{
 						"get_pow",            // the name of WASM function name
 						           (void *) get_pow,            // the native function pointer
-						                             "(ii)i",            // the function prototype signature, avoid to use i32
-						                                     NULL,                // attachment is NULL
-						                                           false
+						                            "(ii)i",            // the function prototype signature, avoid to use i32
+						                                    NULL,                // attachment is NULL
+						                                          false
 				},
-				{       "square",  (void *) square,  "(i)i", NULL, false},
-				{       "√",       (void *) sqrt1,   "(i)i", NULL, false},
-				{       "logi",    (void *) logi,    "(i)",  NULL, false},
-				{       "log_f32", (void *) log_f32, "(f)",  NULL, false},
-				{       "logf",    (void *) log_f32, "(f)",  NULL, false},
+				{       "square",  (void *) square, "(i)i", NULL, false},
+				{       "√",       (void *) sqrt1,  "(i)i", NULL, false},
+				{       "logi",    (void *) logi,   "(i)",  NULL, false},
+				{       "log_f32", (void *) logf32, "(f)",  NULL, false},
+				{       "logf",    (void *) logf32, "(f)",  NULL, false},
 		};
 
 wasm_trap_t *hello_callback(const wasm_val_t args[], wasm_val_t results[]) {
@@ -128,19 +128,18 @@ int main2(int argc, char *argv_main[]) {
 	wasm_instance_exports(instance, &exports);
 	const wasm_func_t *run_func = wasm_extern_as_func(exports.data[0]);
 	wasm_func_call(run_func, NULL, NULL);
-
+	return 0;
 }
 
-int init_vm(RuntimeInitArgs init_args, NativeSymbol *native_symbols, int symbol_count) {
-//	static bool done;
-//	if(done){
-//		printf("\nWARNING: init_vm was already called before, CAN'T LOAD NEW native_symbols\n");
-//		return 0;// ONLY ONCE!!
-//	}
-//	else{
-	printf("INITIALIZING WASM VM\n");
-//		done=true;
-//	}
+void init_vm(RuntimeInitArgs init_args, NativeSymbol *native_symbols, int symbol_count) {
+	static bool done;
+	if (done) {
+		printf("\nWARNING: init_vm was already called before, CAN'T LOAD NEW native_symbols\n");
+		return;// ONLY ONCE!!
+	} else {
+		printf("INITIALIZING WASM VM\n");
+		done = true;
+	}
 
 	static char global_heap_buf[512 * 1024];
 	init_args.mem_alloc_type = Alloc_With_Pool;
@@ -151,10 +150,10 @@ int init_vm(RuntimeInitArgs init_args, NativeSymbol *native_symbols, int symbol_
 	init_args.n_native_symbols = symbol_count / sizeof(NativeSymbol);
 	init_args.native_module_name = "env";
 	init_args.native_symbols = native_symbols;
-	init_args.native_raw_functions = RAW; // false;// true;// use WASM_ENABLE_RAW_NATIVES 1
+//	init_args.native_raw_functions = RAW; // false;// true;// use WASM_ENABLE_RAW_NATIVES 1
 
 	if (!wasm_runtime_full_init(&init_args))
-		return fail("Init runtime environment FAILED.\n");
+		fail("Init runtime environment FAILED.\n");
 }
 
 int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
@@ -272,6 +271,7 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 =
 		printf("\nERROR\n");
 		printf("%s", err);
 	}
+	return 1;
 }
 
 
@@ -287,13 +287,14 @@ int run_wasm(chars wasm_path) {
 			fail("Open wasm app file [%s] FAILED.\n", wasm_path);
 			exit(-1);
 		}
-		run_wasm(buffer, buf_size, &init_args);
+		return run_wasm(buffer, buf_size, &init_args);
 
 
 	} catch (chars err) {
 		printf("\nERROR\n");
 		printf("%s", err);
 	}
+	return -1;
 }
 
 int run_wasm(bytes buffer, int buf_size) {
@@ -306,4 +307,5 @@ int main3(int argc, char *argv_main[]) {
 //		run_wasm((chars)argv_main[1]);
 //	else
 //		run_wasm();
+	return 0;
 }

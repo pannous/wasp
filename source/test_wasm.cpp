@@ -474,13 +474,18 @@ void testMergeWabt() {
 //	check(ok==42);
 }
 
-void testWasmRuntimeExtension() {
+
+void testWasmRuntimeExtensionMock() {
 #ifndef RUNTIME_ONLY
 	functionIndices.setDefault(-1);
-	Module runtime = read_wasm("wasp.wasm");
-	Node charged = analyze(parse("teste:=42"));
-	Code lib = emit(charged, &runtime, "maine");
-	lib.save("main.wasm");// partial wasm!
+	Module runtime = read_wasm("lib.wasm");// test:=42
+	Signature mock;// todo read Signature from wasm!?
+	functionSignatures.insert_or_assign("test", mock.returns(int32));
+	check(functionSignatures["test"].return_type == int32);
+	Node charged = analyze(parse("test"));
+	check(functionSignatures["test"].return_type == int32);
+	Code calling = emit(charged, &runtime, "main");
+	calling.save("main.wasm");// partial wasm!
 	Module main = read_wasm("main.wasm");
 	Code code = merge_wasm(runtime, main);
 	code.save("merged.wasm");
@@ -490,6 +495,7 @@ void testWasmRuntimeExtension() {
 #endif
 }
 
+
 //testMerge
 void testWasmModuleExtension() {
 #ifndef RUNTIME_ONLY
@@ -498,22 +504,45 @@ void testWasmModuleExtension() {
 	Code lib = emit(charged, 0, nil);// no main
 //	Code lib = emit(charged, 0, "lib_main");
 	lib.save("lib.wasm");
+
 	Module module = read_wasm("lib.wasm");
-
 	declaredFunctions.clear();// <-- only newly declared functions (that nead a Code block later), others via functionIndex …
-
 	charged = analyze(parse("test"));// call test() from lib
 	Code main = emit(charged, &module, "main");
+//	int ok1 = main.run();// todo: why not merge_wasm on emit? module data is all there? yeah but not in parsed Code … form
+//	check(ok1==42);
 	main.save("main.wasm");// this is NOT a valid wasm module, because all the indices are offset to the lib!
-	// we don NOT wan't to add 10000 imports here, so that the indices match, do we?
 
+	// we do NOT wan't to add 10000 imports here, so that the indices match, do we?
+	functionSignatures.clear();
 	Module prog = read_wasm("main.wasm");
 	Code merged = merge_wasm(module, prog);
 	merged.save("merged.wasm");
 	read_wasm("merged.wasm");
 	int ok = merged.run();// why is wabt so SLOOOOW now??
 //	int ok = main.run();
-	check(ok == 42);
+	assert_equals(ok, 42);
+#endif
+}
+
+void testWasmRuntimeExtension() {
+	//testWasmRuntimeExtensionMock();
+
+#ifndef RUNTIME_ONLY
+	functionIndices.clear();
+	functionSignatures.clear();
+	functionIndices.setDefault(-1);
+	Module runtime = read_wasm("libwasp.wasm");
+	Node charged = analyze(parse("teste:=42;teste"));
+	Code lib = emit(charged, &runtime, "maine");
+	lib.save("main.wasm");// partial wasm!
+	functionIndices.clear();// no longer needed
+	Module main = read_wasm("main.wasm");
+	Code code = merge_wasm(runtime, main);
+	code.save("merged.wasm");
+	read_wasm("merged.wasm");
+	int result = code.run();
+	check_eq(result, 42);
 #endif
 }
 
@@ -565,9 +594,9 @@ void testAllWasm() {
 
 	skip(
 			testWasmWhile();
-			testWasmModuleExtension();
-			testWasmRuntimeExtension();
 	)
+	testWasmModuleExtension();
+	testWasmRuntimeExtension();
 
 	// todo: reuse all tests via
 	//	interpret = false;
@@ -577,8 +606,6 @@ void testAllWasm() {
 //	testMergeWabt();
 //	testRefactor();
 //	testMergeRelocate();
-	assert_emit("square 3", 9);
-	assert_emit("id (3+3)", (long) 6);
 
 	testWasmModuleExtension();
 //	exit(21);
@@ -604,6 +631,7 @@ void testAllWasm() {
 	testComparisonId();
 	testWasmVariables0();
 	skip(
+			testWasmModuleExtension();
 			testWasmRuntimeExtension();
 			wasm_todos();
 			testWasmLogicOnObjects();

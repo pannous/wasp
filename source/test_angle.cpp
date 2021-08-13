@@ -4,6 +4,7 @@
 
 #include "Wasp.h" // parse
 #include "Angle.h" // analyze
+#include "Node.h"
 
 #define assert_ast(α, β) if (!assert_equals_x(analyze(parse(α)),parse(β))){printf("%s != %s",#α,#β);backtrace_line();}
 #define assert_eval(α, β) if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
@@ -306,8 +307,15 @@ void nl() {
 //Prescedence typo for Precedence
 void testLogicPrecedence() {
 	check(precedence("and") > 1);
-
-
+	check(precedence("and") < precedence("or"));
+	assert_is("true", true);
+	assert_is("false", false);
+	Node ok = parse("true or true");
+//	const Node &ja = ok.interpret();// Undefined symbols if not compiled with Interpret.cpp
+//	print(ja);
+	assert_is("true or true", true);
+	assert_is("true or false", true);
+	assert_is("true and false", false);
 	assert_is("true or true and false", true);
 	assert_is("true or false and true", true);
 	assert_is("true or false and false", true);

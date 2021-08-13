@@ -146,7 +146,16 @@ chars ftoa(float num);
 class Error {
 public:
 	char *message;
-//	Error(String *string) {
+
+	Error() {
+		message = "error";
+	}
+
+	Error(char *string) {
+		message = string;
+	}
+//		Error(String *string) {
+//		member access into incomplete type 'String'
 //		message = string->data;
 //	}
 };
