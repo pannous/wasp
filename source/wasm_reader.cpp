@@ -21,6 +21,7 @@ int size = 0;
 byte *code;
 Module module;
 extern Map<String, int> functionIndices;
+//extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
@@ -113,8 +114,18 @@ void parseFunctionNames(Code &payload) {
 	int index = -1;
 	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
 		index = unsignedLEB128(payload);
+		if (i != index)// in partial main.wasm
+			warn("index out of order "s + i + " <> " + " index");// doesn't happen
 		String func = name(payload).clone();// needs to be 0-terminated now
+		if (functionIndices[func] >= 0) {
+			if (functionIndices[func] == index)
+				continue; // identical match, lib parsed twice without cleaning functionIndices!?
+			warn("function already has an index: "s + func + " " + functionIndices[func] + " " + index +
+			     " ... renaming!");
+			func = func + "_func_" + index;// hack ok to avoid duplicates
+		}
 		if (func.length > 0)
+//			functionIndices.insert_or_assign(func, index);
 			functionIndices[func] = index;
 		else
 			functionIndices["func_"s + index] = index;
@@ -133,6 +144,7 @@ void parseImportNames(Code &payload) {
 	}
 }
 
+// todo: we need to parse this for automatic import
 void consumeTypeSection() {
 	Code type_vector = vec();
 	int typeCount = unsignedLEB128(type_vector);
@@ -321,6 +333,7 @@ void consumeSections() {
 	}
 }
 
+#ifndef RUNTIME_ONLY
 Module read_wasm(chars file) {
 	module = *new Module();
 	pos = 0;
@@ -339,4 +352,5 @@ Module read_wasm(chars file) {
 	return module;
 }
 
+#endif
 #undef pointerr

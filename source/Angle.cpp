@@ -13,6 +13,7 @@
 
 List<String> declaredFunctions;
 //List<String> declaredFunctions;
+Map<String, Signature> functionSignatures;
 
 Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
@@ -140,7 +141,10 @@ List<chars> declaration_operators = {":=", "="}; // , ":" NOT! if 1 : 2 else 3
 List<chars> rightAssociatives;
 List<chars> prefixOperators;
 List<chars> suffixOperators;
+List<chars> setter_operators;
 List<chars> declaration_operators;
+List<chars> function_operators;
+List<chars> constructor_operators;
 //no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
 #endif
 
@@ -153,7 +157,9 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 		if (node.kind == reference) {// only constructors here!
 			if (not locals[context].has(op)) {
 				locals[context].add(op);// todo : proper calling context!
+#ifndef RUNTIME_ONLY
 				localTypes[context].add(mapTypeToWasm(node));
+#endif
 			}
 			continue;
 		}
@@ -167,6 +173,7 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 				error("Symbol already declared as function: "s + name);
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
+
 
 			if (name and function_operators.has(op)) {
 				declaredFunctions.add(name);
@@ -183,6 +190,7 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 				if (modifiers.has("global"))
 					globals.insert_or_assign(name, body);
 				else {
+#ifndef RUNTIME_ONLY
 					if (not locals[context].has(name)) {
 						locals[context].add(name);// todo : proper calling context!
 						localTypes[context].add(mapTypeToWasm(*body));
@@ -190,6 +198,7 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 						int i = locals[context].position(name);
 						localTypes[context][i] = mapTypeToWasm(*body);// update type! todo: check if cast'able!
 					}
+#endif
 				}
 				decl->setType(assignment);
 				return *decl;
@@ -211,6 +220,8 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 				signature.add(int32);// todo
 			}
 			signature.returns(i32t);// todo what if not lol
+			if (signature.return_type != int32)
+				error("BUG");
 #endif
 			return *decl;
 		}
@@ -512,7 +523,6 @@ Node analyze(Node data) {
 	locals.setDefault(List<String>());
 	localTypes.setDefault(List<Valtype>());
 	functionSignatures.setDefault(Signature());
-
 #endif
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	if (data.kind == keyNode) {
@@ -669,6 +679,7 @@ float precedence(String name) {
 	if (eq(name, "xor"))return 7.2;
 	if (eq(name, "or"))return 7.2;
 	if (eq(name, "||"))return 7.2;
+//	if (eq(name, "|"))return 7.2;// todo pipe special
 
 	if (eq(name, ":"))return 7.5;// todo:
 
@@ -693,6 +704,8 @@ float precedence(String name) {
 	if (eq(name, "then"))return 13.15;
 	if (eq(name, "if"))return 100;
 	if (eq(name, "while"))return 101;
+//	if (eq(name, "once"))return 101;
+//	if (eq(name, "go"))return 101;
 	if (name.in(functor_list))// f 1 > f 2
 		return function_precedence;// if, while, ... statements calls outmost operation todo? add 3*square 4+1
 	return 0;// no precedence

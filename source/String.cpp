@@ -603,6 +603,10 @@ void log(chars s) {
 #endif
 }
 
+void print(const Node node) {
+	print(node.string());
+}
+
 void log(String *s) {
 	if (s->shared_reference)log(s->clone());// add \0 !!
 	else if (s)log(s->data);
