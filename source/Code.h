@@ -243,6 +243,10 @@ public:
 //		return Code(data, start, length);
 
 	}
+
+	void addInt(int i) {
+		push((long) i);
+	}
 };
 
 
