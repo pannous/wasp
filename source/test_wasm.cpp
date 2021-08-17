@@ -532,9 +532,11 @@ void testWasmRuntimeExtension() {
 	functionIndices.clear();
 	functionSignatures.clear();
 	functionIndices.setDefault(-1);
-	Module runtime = read_wasm("libwasp.wasm");
-	Node charged = analyze(parse("teste:=42;teste"));
-	Code lib = emit(charged, &runtime, "maine");
+	Module runtime = read_wasm("wasp.wasm");
+//	Node charged = analyze(parse("teste:=42;teste"));
+// keep functionIndices!
+	Node charged = analyze(parse("ok"));
+	Code lib = emit(charged, &runtime, "starte");
 	lib.save("main.wasm");// partial wasm!
 	functionIndices.clear();// no longer needed
 	Module main = read_wasm("main.wasm");

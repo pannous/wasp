@@ -1191,8 +1191,11 @@ float precedence(char group) {
 	return 999;
 }
 
+int ok() {
+	return 42;
+}
 
-void ok() {
+void not_ok() {
 	error1("WHAAA");
 }
 

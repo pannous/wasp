@@ -257,12 +257,35 @@ void consumeCodeSection() {
 	printf("code length: %d\n", module.code_data.length);
 }
 
+
+#include <cxxabi.h>
+
+String demangle(String &fun) {
+	int status;
+	String *real_name = new String(abi::__cxa_demangle(fun.data, 0, 0, &status));
+	if (status != 0)return fun;// not demangled (e.g. "memory")
+//	String ok = *real_name;
+	String ok = real_name->substring(0, real_name->indexOf(
+			'(')).clone();// todo: use type string somehow? info(char const*) …
+	return ok;
+}
+
 void consumeExportSection() {
 	Code exports_vector = vec();
 	int exportCount = unsignedLEB128(exports_vector);
 	printf("export_section: %d\n", exportCount);
 	module.export_count = exportCount;
 	module.export_data = exports_vector.rest();
+	Code &payload = module.export_data;
+	for (int i = 0; i < exportCount; i++) {
+		String func = name(payload).clone();
+		func = demangle(func);//
+		int type = unsignedLEB128(payload);
+		int index = unsignedLEB128(payload);
+		if (type == 0/*func*/ and not functionIndices.has(func)) {
+			functionIndices[func] = index;
+		}
+	}
 }
 
 void consumeImportSection() {
