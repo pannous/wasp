@@ -425,8 +425,8 @@ Code emitCall(Node &fun, String context) {
 		code.push(emitExpression(arg, context));
 	};
 	code.addByte(function);
-	code.addByte(index);// ok till index>127, then use unsignedLEB128
-//	code.addByte(nop);// padding for potential relocation
+	code.addInt(index);
+	code.addByte(nop);// padding for potential relocation
 	Signature &signature = functionSignatures[fun.name];
 	signature.is_used = true;
 	signature.emit = true;
@@ -971,11 +971,10 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		int newly_pre_registered = 0;//declaredFunctions.size();
 
 		if (runtime.total_func_count + newly_pre_registered != functionIndices.size()) {
-			log(functionSignatures.size());
-			log("\n");//newline);
+//			log(functionSignatures.size());
 			log(functionIndices);
-			error("runtime.total_func_count !=  functionIndices.size()");
-//			warn("runtime.total_func_count !=  functionIndices.size()");
+//			error("runtime.total_func_count !=  functionIndices.size(): "s + runtime.total_func_count +" !="+ functionIndices.size());
+			warn("runtime.total_func_count !=  functionIndices.size()");
 		}
 	} else {
 		runtime = *new Module();// all zero
@@ -990,7 +989,8 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		functionSignatures[start] = Signature().returns(i32t);
 		functionSignatures[start].emit = true;
 		if (!functionIndices.has(start))
-			functionIndices[start] = functionIndices.size();// AFTER collecting imports!!
+			functionIndices[start] = runtime_offset ? runtime_offset + declaredFunctions.size()
+			                                        : functionIndices.size();// AFTER collecting imports!!
 		else
 			error("start already declared: "s + start + " with index " + functionIndices[start]);
 	} else {
