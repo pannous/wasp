@@ -152,7 +152,12 @@ public:
 		return *this;
 	}
 
-	Code &add(Code &more) {
+//	Code &add(Code &more) {
+//		if (more.length > 0)
+//			push(more);
+//		return *this;
+//	}
+	Code &add(Code more) {
 		if (more.length > 0)
 			push(more);
 		return *this;
@@ -265,16 +270,17 @@ enum Valtype {
 	float64 = 0x7C,
 	f64t = 0x7C,
 
-	none = 0x40,
 	pointer = int32, // internal
-	voids = 0x00, // internal only for return type
+	none = 0x40, // ===
+	void_block = 0x40, // VERSUS:
+	voids = 0x00, // DANGER!=void_block  internal only for return type
 };
 
 
 // https://webassembly.github.io/spec/core/binary/types.html#binary-blocktype
-enum Blocktype {
-	void_block = 0x40
-};
+//enum Blocktype { // same as Valuetype
+//	void_block = 0x40
+//};
 
 // https://webassembly.github.io/spec/core/binary/instructions.html
 // https://pengowray.github.io/wasm-ops/

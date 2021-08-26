@@ -161,6 +161,7 @@ Node *Node::begin() const {
 }
 
 Node *Node::end() const {
+	if (children != 0 and length == 0)return children + 1;
 	return children + length;
 }
 
@@ -264,6 +265,7 @@ bool Node::operator==(String other) {
 }
 
 bool Node::operator==(Node *other) {
+	if (other == 0)return isNil();
 	return *this == *other;
 }
 
@@ -578,7 +580,8 @@ void Node::addSmart(Node node) {// merge?
 	// a{x:1} != a {x:1} but {x:1} becomes child of a
 	// a{x:1} == a:{x:1} ?
 	if (last().kind == operators) {
-		add(node);
+		// danger 1+2 grouped later but while(i>7) as child
+		last().add(node);
 		return;
 	}
 	// f (x) == f(x) ~= f x
@@ -929,12 +932,23 @@ int Node::lastIndex(String &string, int start) {
 	return -1;// throw "not found"
 }
 
+int Node::lastIndex(Node *node, int start) {
+	if (start <= 0)start = length;
+	for (int i = start; i >= 0; --i) {
+		if (children[i] == node)
+			return i;
+	}
+	return -1;// throw "not found"
+}
+
+// inclusive from…to
 void Node::replace(int from, int to, Node *node) {
 	children[from] = *node;
 	int i = 0;
+	if (to < from)error("Node::replace from>to : "s + from + ">" + to);
 	while (to + i++ <= length)
 		children[from + i] = children[to + i];// ok if beyond length
-	length = length - (to - from);
+	length = length - (to - from);//  + 1 if not inclusive;
 }
 
 // INCLUDING to: [a b c d].remove(1,2)==[a d]

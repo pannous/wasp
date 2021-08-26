@@ -1641,10 +1641,11 @@ void testCurrent() { // move to tests() once OK
 	testWasmMemoryIntegrity();
 #ifndef WASM
 //	testWasmModuleExtension();
-	testWasmRuntimeExtension();
+//	testWasmRuntimeExtension();
+	testWasmWhile();
 	exit(1);
 #endif
-	testAllWasm();
+//	testAllWasm();
 
 //	operator_list = List(operator_list0);
 //	testRecentRandomBugs();
