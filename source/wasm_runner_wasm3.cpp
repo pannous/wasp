@@ -81,10 +81,13 @@ int test_wasm3(const uint8_t *prog, int len) {
 		mod.link_optional<square>("*", "square");
 		mod.link_optional<logf32>("*", "logf");// danger logf is cuda function!
 		mod.link_optional<logi>("*", "logi");// danger logf is cuda function!
-		mod.link_optional<logi>("*", "logs");
+
+		mod.link_optional<logi>("*", "logs");// todo: replace FAKE DUMMY with adhoc circle implementation
+//		mod.link_optional<logs>("*", "logs");// added m3_type_to_sig in wasm3_cpp.h !
+
 		mod.link_optional<panic>("*", "panic");
-		wasm3::function main_fn = runtime.find_function("_start");
-//		wasm3::function main_fn = runtime.find_function("main");
+//		wasm3::function main_fn = runtime.find_function("_start");
+		wasm3::function main_fn = runtime.find_function("main");
 		auto res = main_fn.call<int>();
 		return res;
 

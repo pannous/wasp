@@ -1192,7 +1192,7 @@ float precedence(char group) {
 }
 
 int ok() {
-	return 42;
+	return 43;
 }
 
 void not_ok() {
@@ -1286,6 +1286,7 @@ char newline = '\n';
 #define __MAIN__
 
 // called AFTER __wasm_call_ctors() !!!
+#ifndef RUNTIME_ONLY
 int main(int argp, char **argv) {
 #ifdef ErrorHandler
 	register_global_signal_exception_handler();
@@ -1323,11 +1324,14 @@ int main(int argp, char **argv) {
 	return -1;
 }
 
-//#endif
+#endif
 
 #ifndef WASI
-//extern "C" void _start() { // for wasm-ld
-extern "C" int _start() {
-	return main(0, 0);
+//#ifndef RUNTIME_ONLY
+//extern int main(int argp, char **argv);
+extern "C" int _start() { // for wasm-ld
+	return -42;// wasm-ld dummy should not be called
+//	return main(0, 0);
 }
+//#endif
 #endif
