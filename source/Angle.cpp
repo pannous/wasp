@@ -602,12 +602,16 @@ Node analyze(Node data) {
 	if (data.kind == keyNode) {
 		data.value.node = analyze(*data.value.node).clone();
 	}
-	if (data.kind == groups or data.kind == objects or data.kind == operators) {
+	if (data.kind == groups or data.kind == objects or data.kind == operators /*already grouped?*/) {
 		Node grouped = *data.clone();
 		grouped.children = 0;
 		grouped.length = 0;
 		for (Node &child: data) {
-			if (data.kind == operators)child.setType(expressions);// hack here
+			if (data.kind == operators) {
+				child.setType(expressions);// hack here
+				if (functionSignatures.has(data.name))
+					functionSignatures[data.name].is_used = true;
+			}
 			child = analyze(child);// REPLACE with their ast? NO! todo
 			grouped.add(child);
 		}

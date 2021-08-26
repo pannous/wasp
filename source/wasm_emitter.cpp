@@ -302,7 +302,7 @@ Code emitOperator(Node node, String context) {
 	} else if (opcode > 0)
 		code.addByte(opcode);
 	else {
-		error("unknown opcode / call / symbol: "s + name);
+		error("unknown opcode / call / symbol: "s + name + " : " + index);
 	}
 	if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or
 	    opcode == i32_mul)

@@ -1640,17 +1640,16 @@ void testNodeImplicitConversions(){
 void testCurrent() { // move to tests() once OK
 	testWasmMemoryIntegrity();
 #ifndef WASM
-//	testWasmModuleExtension();
-//	testWasmRuntimeExtension();
+	testWasmModuleExtension();
+	testWasmRuntimeExtension();
 	testWasmWhile();
-	exit(1);
 #endif
 //	testAllWasm();
 
 //	operator_list = List(operator_list0);
 //	testRecentRandomBugs();
 	tests();// make sure all still ok before changes
-	testAllWasm();
+//	testAllWasm();
 	todos();// those not passing yet (skip)
 	tests();// make sure all still ok after changes
 	printf("OK %ld==%ld", 2l, 2l);
