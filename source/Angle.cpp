@@ -11,6 +11,8 @@
 #include "Map.h"
 #include "wasm_runner.h"
 
+Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
+
 List<String> declaredFunctions;
 //List<String> declaredFunctions;
 Map<String, Signature> functionSignatures;
@@ -122,7 +124,9 @@ chars ras[] = {"=", "?:", "+=", "++:", 0};
 #ifndef WASM
 List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++:", 0};// a=b=1 == a=(b=1) => a=1
 List<chars> prefixOperators = {"not", "!", "√", "-…", "--…", "++…", "+…", "~", "*…", "&…", "sizeof", "new", "delete[]"};
-List<chars> suffixOperators = {"…++", "…--", "⁻¹", "⁰", "¹", "²", "³", "…%", "﹪", "％", "٪", "‰"};
+List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", "¹", "²", "³", "…%", "％", "﹪", "٪",
+                               "‰"};// modulo % ≠ ％ percent
+// todo: norm all those unicode variants first!
 // ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
 
 // handled different than other operators, because … they affect the namespace context
@@ -247,7 +251,8 @@ bool isVariable(String name, Node context0) {
 
 Node &groupOperators(Node &expression0) {
 	Node &expression = *expression0.clone();// modified in place!
-	if (expression.name == "if")return expression;// analyzed before!
+	if (analyzed.has(expression0.hash()))return expression;
+	analyzed.insert_or_assign(expression0.hash(), 1);
 	List<String> operators = collectOperators(expression);
 	String last = "";
 	int last_position = 0;
@@ -286,10 +291,10 @@ Node &groupOperators(Node &expression0) {
 				expression.replace(i - 1, i + 1, node);// replace ALL REST
 				expression.remove(i, -1);
 			} else {
-//#ifndef RUNTIME_ONLY
+				//#ifndef RUNTIME_ONLY
 				if (node.name == "=" and prev.kind == reference)
 					locals["main"].add(prev.name);
-//#endif
+				//#endif
 				node.add(prev);
 				node.add(next);
 				expression.replace(i - 1, i + 1, node);
@@ -303,6 +308,8 @@ Node &groupOperators(Node &expression0) {
 
 Node &groupIf(Node n);
 
+Node &groupWhile(Node n);
+
 Node &groupFunctions(Node &expression0) {
 	if (expression0.kind == declaration)return expression0;// handled before
 	Node &expression = *expression0.clone();
@@ -311,7 +318,23 @@ Node &groupFunctions(Node &expression0) {
 		Node &node = expression.children[i];
 		String &name = node.name;
 		if (name == "if") // kinda functor
-			return groupIf(expression0.from("if"));
+		{
+			Node iff = groupIf(expression0.from("if"));
+			int j = expression.lastIndex(iff.last().next) - 1;
+			if (j > i)expression.replace(i, j, iff);// todo figure out if a>b c d e == if(a>b)then c else d; e boundary
+		}
+		if (name == "while") {
+			if (node.length == 2) {
+				node[0] = analyze(node[0].setType(expressions));
+				node[1] = analyze(node[1].setType(expressions));
+				continue;// all good (right?)
+			}
+			Node iff = groupWhile(expression0.from("while"));
+			Node &last = iff.last();
+			Node *next = last.next;
+			int j = expression.lastIndex(next) - 1;
+			if (j > i)expression.replace(i, j, iff);
+		}
 		if (isFunction(node)) // todo: may need preparsing of declarations!
 			node.kind = call;// <- there we go!
 		if (node.kind != call)
@@ -435,6 +458,57 @@ Node groupOperators2(Node &expression) {
 	return expression;// no op
 }
 
+// todo: un-adhoc this!
+Node &groupWhile(Node n) {
+	if (n.length == 0 and !n.value.data)
+		error("no if condition given");
+	if (n.length == 1 and !n.value.data)
+		error("no if block given");
+
+	Node &condition = n.children[0];
+	Node then;
+	Node *next; // outside while(){} !
+	if (n.length == 0) then = n.values();
+	if (n.length > 0) then = n[1];
+	if (n.length >= 2 and !n.value.data) {
+//		return n; // all good!
+		condition = n[0];
+		then = n[1];
+		next = &n[2];
+	}
+	if (n.has("do")) {
+		condition = n.to("do");
+		then = n.from("do");
+	}
+
+	if (condition.value.data and !condition.next)
+		then = condition.values();
+
+	// todo: UNMESS how?
+	if (n.has(":") /*before else: */) {
+		condition = n.to(":");
+		then = n.from(":");
+	} else if (condition.has(":")) {// as child
+		then = condition.from(":");
+	}
+	if (then.has("do"))
+		then = n.from("do");
+
+	Node *whilo = new Node("while");// regroup cleanly
+	Node &ef = *whilo;
+	ef.kind = expressions;
+	//	ef.kind = ifStatement;
+	if (condition.length > 0)condition.setType(expressions);// so far treated as group!
+	if (then.length > 0)then.setType(expressions);
+	ef.add(analyze(condition).clone());
+	ef.add(analyze(then).clone());
+//	ef.children[1] = analyze(then);
+	ef.length = 2;
+	ef.next = next;// todo all border cases!
+//	ef["condition"] = analyze(condition);
+//	ef["then"] = analyze(then);
+	return ef;
+}
 
 Node &groupIf(Node n) {
 	if (n.length == 0 and !n.value.data)
@@ -528,11 +602,12 @@ Node analyze(Node data) {
 	if (data.kind == keyNode) {
 		data.value.node = analyze(*data.value.node).clone();
 	}
-	if (data.kind == groups or data.kind == objects) {
+	if (data.kind == groups or data.kind == objects or data.kind == operators) {
 		Node grouped = *data.clone();
 		grouped.children = 0;
 		grouped.length = 0;
 		for (Node &child: data) {
+			if (data.kind == operators)child.setType(expressions);// hack here
 			child = analyze(child);// REPLACE with their ast? NO! todo
 			grouped.add(child);
 		}
@@ -598,6 +673,7 @@ Node emit(String code) {
 	functionSignatures.setDefault(Signature());
 	locals.insert_or_assign("main", List<String>());
 	preRegisterSignatures();// todo: reduntant to emitter
+	analyzed.clear();// todo move much into outer analyze function!
 	Node charged = analyze(data);
 	Code binary = emit(charged);
 //	code.link(wasp) more beautiful with multiple memory sections
@@ -612,7 +688,8 @@ float function_precedence = 1000;
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
 chars function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
-                         "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0, 0};// MUST END WITH 0, else BUG
+                         "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
+                         0};// MUST END WITH 0, else BUG
 chars functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
 
 float precedence(Node &operater) {
@@ -622,7 +699,8 @@ float precedence(Node &operater) {
 	if (operater.kind == reals)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (operater.kind == longs)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (operater.kind == strings)return 0;// and empty(name)
-	if (operater.kind == groups or operater.kind == patterns) return precedence("if") * 0.999;// needs to be smaller than functor/function calls
+	if (operater.kind == groups or operater.kind == patterns)
+		return precedence("if") * 0.999;// needs to be smaller than functor/function calls
 	if (operater.name.in(function_list))return 999;// function call todo: remove here
 	return precedence(name);
 }

@@ -326,6 +326,7 @@ public:
 
 	Node &first() {
 		if (length > 0)return children[0];
+		if (children)return children[0]; // hack for missing length!
 		if (kind == operators)return *next;// todo remove hack
 		return *this;
 //		error("No such element");
@@ -335,6 +336,9 @@ public:
 //	if you do not declare a copy constructor, the compiler gives you one implicitly.
 //	Node( Node& other ){// copy constructor!!
 
+	long hash() {// danger on clone/copy!
+		return (long) (void *) this;
+	}
 
 	Node *clone(bool childs = true) {// const cast?
 		if (this == &NIL)return this;
@@ -594,7 +598,9 @@ public:
 
 	bool isSetter();
 
-	int lastIndex(String &string, int start);
+	int lastIndex(String &string, int start = 0);
+
+	int lastIndex(Node *node, int start = 0);
 
 	int index(String &string, int start = 0, bool reverse = false);
 
