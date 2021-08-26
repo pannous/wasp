@@ -246,6 +246,8 @@ void consumeFuncTypeSection() {
 	module.code_count = unsignedLEB128(type_vector);// import type indices are part of import struct!
 	printf("signatures: %d\n", module.code_count);
 	module.functype_data = type_vector.rest();
+//	functionSignatures[]=  <<< map c++ types to wasp types??
+//	functionIndices.position()
 }
 
 void consumeCodeSection() {
@@ -307,6 +309,7 @@ int fileSize(char const *file) {
 	int sz = ftell(ptr);
 	return sz;
 #endif
+	return 0;
 }
 
 void consumeSections() {
