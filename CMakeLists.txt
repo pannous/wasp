@@ -120,7 +120,7 @@ if (WASM) # OR WASI)
     else ()
         ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
         ADD_COMPILE_FLAG("-nostdlib -march=wasm") #-v
-#        ADD_LINK_OPTIONS("--no-entry")
+        #        ADD_LINK_OPTIONS("--no-entry")
     endif ()
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem ... -Oz -c ") # BREAKS BUILD! ???
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan ")
@@ -130,7 +130,7 @@ if (WASM) # OR WASI)
     #    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const
 
     # AVOID   -search_paths_first BUG! : if ( NOT WASM ) in Darwin.cmake (homebrew) or /Applications/CLion.app/Contents/bin/cmake/...
-#    OR  remove from CMAKE_CXX_LINK_FLAGS how
+    #    OR  remove from CMAKE_CXX_LINK_FLAGS how
     #-lwasmer --entry=main,
 
     ADD_COMPILE_FLAG("-Wl,--demangle,--allow-undefined,--no-check-features") # wasm-ld flags forwarded from clang
@@ -275,7 +275,11 @@ else () # NORMAL:
         ADD_COMPILE_FLAG("-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer  -shared-libasan ") # NOT FOR WASM
         #    ADD_COMPILE_FLAG("-rdynamic -Wl,--no-as-needed -ldl") # just for backtrace
     endif ()
-    add_executable(angle ${SOURCE_FILES})
+    if (RELEASE)
+        add_library(angle SHARED ${SOURCE_FILES})
+    else ()
+        add_executable(angle ${SOURCE_FILES})
+    endif ()
     #    TARGET_LINK_LIBRARIES(angle curl)
     #    add_custom_target(BuildWasp ALL DEPENDS angle)
 endif ()

@@ -531,12 +531,16 @@ void testWasmRuntimeExtension() {
 #ifndef RUNTIME_ONLY
 	functionIndices.clear();
 	functionSignatures.clear();
+
 	functionIndices.setDefault(-1);
+//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
+	functionSignatures.insert_or_assign("logi", Signature().add(int32).returns(voids));
+	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// scaffold until parsed
 	Module runtime = read_wasm("wasp.wasm");
 //	Node charged = analyze(parse("teste:=42;teste"));
 // keep functionIndices!
 	Node charged = analyze(parse("ok"));
-	Code lib = emit(charged, &runtime, "starte");
+	Code lib = emit(charged, &runtime, "main");
 	lib.save("main.wasm");// partial wasm!
 	functionIndices.clear();// no longer needed
 	Module main = read_wasm("main.wasm");
@@ -544,7 +548,7 @@ void testWasmRuntimeExtension() {
 	code.save("merged.wasm");
 	read_wasm("merged.wasm");
 	int result = code.run();
-	check_eq(result, 42);
+	check_eq(result, 43);
 #endif
 }
 
