@@ -121,6 +121,7 @@ byte opcodes(chars s, byte kind = 0) {
 	if (eq(s, "$"))return get_local; // $0 $1 ...
 
 	printf("unknown operator %s\n", s);
+	breakpoint_helper
 //		error("invalid operator");
 	return 0;
 }
@@ -204,7 +205,7 @@ Code emitValue(Node node, String context) {
 //				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case longs:
-			// todo: ints!!!
+			// todo: ints vs longs!!!
 			last_type = i32t;
 //			if(call_extern)
 			code.addByte((byte) i32_const);
@@ -228,6 +229,10 @@ Code emitValue(Node node, String context) {
 //			case binaryExpression:
 //				code.opcode(binaryOpcode[node.value]);
 //				break;
+		case operators:
+			warn("operators should never be emitted as values");
+			return emitExpression(node, context);
+			break;
 		default:
 			error("emitValue unknown type: "s + typeName(node.kind));
 	}
@@ -288,6 +293,12 @@ Code emitOperator(Node node, String context) {
 		code.addByte(i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
 		code.addByte(i32_eqz);
 		last_type = i32t;// bool'ish
+	} else if (name == "++") {
+		Node increased = Node("+").setType(operators);
+		increased.add(node.first());
+		increased.add(new Node(1));
+//		emitExpression(increased,context);
+		code.add(emitSetter(node.first(), increased, context));
 	} else if (opcode > 0)
 		code.addByte(opcode);
 	else {
@@ -383,29 +394,58 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 	return code;
 }
 
+
 Code emitWhile(Node &node, String context) {
 	Code code;
+	Node condition = node[0];
+	Node then = node[1];
+	code.addByte(loop);
+	code.addByte(none);// type:void_block
+//	code.addByte(int32);// type OR typeidx!?
+	code = code + emitExpression(condition, context);// condition
+	code.addByte(if_i);
+	code.addByte(none);// type:void_block
+//	code.addByte(int32);
+	code = code + emitExpression(then, context);// BODY
+	code.addByte(br);
+	code.addByte(1);
+	code.addByte(end_block);// end if condition then action
+	code.addByte(end_block);// end while loop
+	// type should fall through
+//	int block_value= 0;// todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
+//	code.addByte(block_value);
+	return code;
+}
+
+// wasm loop…br_if is like do{}while(condition), so we have to rework while(condition){}
+Code emitWhile2(Node &node, String context) {
+	Code code;
 	// outer block
-	code.addByte(block);
-	code.addByte(void_block);
+//	code.addByte(block);
+//	code.addByte(void_block);
 	// inner loop
 	code.addByte(loop);
-	code.addByte(void_block);
+	code.addByte(none);// void_block
 	// compute the while expression
-	emitExpression(node[0], context);// node.value.node or
+	code.add(emitExpression(node[0], context));// node.value.node or
+//	code.add(emitExpression(node["condition"], context));// node.value.node or
 	code.addByte(i32_eqz);
 	// br_if $label0
 	code.addByte(br_if);
 	code.addByte(1);
 //			code.push(signedLEB128(1));
 	// the nested logic
-	emitExpression(node[1], context);// BODY
+	code.add(emitExpression(node[1], context));// BODY
+//	code.add(emitExpression(node["then"], context));// BODY
 	// br $label1
-	code.addByte(br);
-	code.addByte(0);
+//	code.addByte(br);
+//	code.addByte(0);
 //				code.push(signedLEB128(0));
 	code.addByte(end_block); // end loop
-	code.addByte(end_block); // end block
+	code.addByte(get_local);
+	int block_value = 0;// todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
+	code.addByte(block_value);
+//	code.addByte(end_block); // end block
 	return code;
 }
 
@@ -447,7 +487,7 @@ Code emitDeclaration(Node fun, Node &body) {
 	Signature &signature = functionSignatures[fun.name];
 	signature.emit = true;// all are 'export' for now. also set in analyze!
 	functionCodes[fun.name] = emitBlock(body, fun.name);
-	last_type = voids;// todo reference to new symbol x = (y:=z)
+//	last_type = voids;// todo reference to new symbol x = (y:=z)
 	return Code();// empty
 }
 
@@ -462,10 +502,13 @@ Code emitSetter(Node node, Node &value, String context) {
 	int local_index = current.position(variable);
 	Code setter;
 	Code value1 = emitValue(value, context);
-	localTypes[context][local_index] = mapTypeToWasm(value);
+	last_type = mapTypeToWasm(value);
+	localTypes[context][local_index] = last_type;
 //	variableTypes
 	setter.add(value1);
 	setter.add(set_local);
+	setter.add(local_index);
+	setter.add(get_local);// make value available
 	setter.add(local_index);
 	return setter;
 }
@@ -476,10 +519,7 @@ Code emitIf(Node &node, String context) {
 	Node *condition = node[0].value.node;
 //	Node &condition = node["condition"];
 	code = code + emitExpression(condition, context);
-	if (last_type != int32) {
-		last_type = int32;
-		printf("todo\n");
-	}
+
 	code.addByte(if_i);
 	code.addByte(int32);
 	Node *then = node[1].value.node;
@@ -491,6 +531,10 @@ Code emitIf(Node &node, String context) {
 		code = code + emitExpression(otherwise, context);
 	}
 	code.addByte(end_block);
+	if (last_type != int32) {
+		last_type = int32;
+		printf("todo\n");
+	}
 	return code;
 }
 
@@ -582,6 +626,7 @@ Code signedLEB128(int n) {
 
 
 Code emitBlock(Node node, String context) {
+//	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	Code(code_data,sizeof(code_data)); // todo : memcopy, else stack value is LOST
@@ -590,6 +635,8 @@ Code emitBlock(Node node, String context) {
 //	collect_locals(node, context);// DONE IN analyze
 //	int locals_count = current_local_names.size();
 //	locals[context] = current_local_names;
+
+//	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0, used after while(){} etc) !!!
 	int locals_count = locals[context].size();
 	int argument_count = functionSignatures[context].size();
 	if (locals_count >= argument_count)
@@ -615,7 +662,7 @@ Code emitBlock(Node node, String context) {
 		if (returns == Valtype::i32t and last_type == Valtype::f32t)
 			block.addByte(i32_trunc_f32_s);
 		if (returns == Valtype::i32t and last_type == Valtype::voids)
-			block.addByte(i32_const).addByte(0);// hack? return 0/false by default. ok? see python!
+			block.addByte(i32_const).addInt(-999);// hack? return 0/false by default. ok? see python!
 //		if(returns==Valtype::f32)…
 	}
 
