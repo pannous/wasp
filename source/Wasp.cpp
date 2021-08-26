@@ -1016,7 +1016,8 @@ private:
 						breakpoint_helper
 						warn("Ambiguous reading a {x} => Did you mean a{x} or a:{x} or a , {x}");
 					}
-					bool asListItem = lastNonWhite == ',' or lastNonWhite == ';' or previous == ' ' and lastNonWhite != ':';
+					bool asListItem =
+							lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
 					proceed();
 					Node object = valueNode('}', &current.last()).setType(Type::objects);
 					if (asListItem)
@@ -1047,7 +1048,7 @@ private:
 				case '-':
 				case '+':
 				case '.':
-					if (isDigit(next) and previous == ' ' or previous == 0)
+					if ((isDigit(next) and previous == ' ') or previous == 0)
 						current.addSmart(numbero());// (2+2) != (2 +2) !!!
 					else {
 						Node *op = any_operator().clone();
@@ -1156,7 +1157,8 @@ private:
 					Node node = expression(close == ' ');//word();
 					if (precedence(node) and ch != ':') {
 						node.kind = operators;
-						current.kind = expressions;
+						if (node.name != "while" and node.name != "if")
+							current.kind = expressions;
 					}
 					if (node.length > 1 and addFlat) {
 						for (Node arg:node)current.add(arg);

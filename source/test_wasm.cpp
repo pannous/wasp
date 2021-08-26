@@ -350,8 +350,10 @@ void testWasmIf() {
 }
 
 void testWasmWhile() {
-	assert_emit("i=1;i++", 2);
-	assert_emit("i=1;while(i<9)i++;i+1", 10);
+//	assert_emit("i=1;i++", 2);
+	assert_emit("i=1;while(i<9){i++};i+1", 10);
+//	assert_emit("i=1;while(i<9)i++;i+1", 10);
+//	assert_emit("i=1;while i<9:i++;i+1", 10);
 }
 
 
@@ -501,8 +503,8 @@ void testWasmModuleExtension() {
 #ifndef RUNTIME_ONLY
 	functionSignatures.clear();
 	Node charged = analyze(parse("test:=42"));
-	Code lib = emit(charged, 0, nil);// no main
-//	Code lib = emit(charged, 0, "lib_main");
+//	Code lib = emit(charged, 0, nil);// no main
+	Code lib = emit(charged, 0, "lib_main");
 	lib.save("lib.wasm");
 
 	Module module = read_wasm("lib.wasm");
@@ -539,7 +541,7 @@ void testWasmRuntimeExtension() {
 	Module runtime = read_wasm("wasp.wasm");
 //	Node charged = analyze(parse("teste:=42;teste"));
 // keep functionIndices!
-	Node charged = analyze(parse("ok"));
+	Node charged = analyze(parse("ok+1"));
 	Code lib = emit(charged, &runtime, "main");
 	lib.save("main.wasm");// partial wasm!
 	functionIndices.clear();// no longer needed
@@ -548,7 +550,7 @@ void testWasmRuntimeExtension() {
 	code.save("merged.wasm");
 	read_wasm("merged.wasm");
 	int result = code.run();
-	check_eq(result, 43);
+	check_eq(result, 44);
 #endif
 }
 
@@ -598,8 +600,8 @@ void testAllWasm() {
 	return;
 #endif
 
+	testWasmWhile();
 	skip(
-			testWasmWhile();
 	)
 	testWasmModuleExtension();
 	testWasmRuntimeExtension();
@@ -613,7 +615,6 @@ void testAllWasm() {
 //	testRefactor();
 //	testMergeRelocate();
 
-	testWasmModuleExtension();
 //	exit(21);
 //	testWasmIncrement
 
