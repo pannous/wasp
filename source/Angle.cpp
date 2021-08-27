@@ -541,7 +541,7 @@ Node &groupIf(Node n) {
 	}
 	Node otherwise;
 	if (n.has("else"))
-		otherwise = n["else"];
+		otherwise = n["else"].values();
 	if (then.has("then"))
 		then = n.from("then");
 	if (then.has("else")) {
@@ -563,8 +563,8 @@ Node &groupIf(Node n) {
 //	ef[0] = groupOperators(condition);
 //	ef[1] = groupOperators(then);
 //	ef[2] = groupOperators(otherwise);
-//	Node &node = ef["else"];// debug
-	Node &node = ef[2];// debug
+	Node &node = ef["else"];// debug
+//	Node &node = ef[2];// debug
 	return ef;
 	return *ef.clone();
 //
