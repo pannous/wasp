@@ -281,12 +281,12 @@ void testWasmIncrement() {
 
 void testWasmLogicUnaryVariables() {
 	assert_emit("i=0.0; not i", true);
-	assert_emit("i=ø; not i", true);
 	assert_emit("i=false; not i", true);
 	assert_emit("i=0; not i", true);
 	assert_emit("i=true; not i", false);
 	assert_emit("i=1; not i", false);
 	assert_emit("i=123; not i", false);
+	assert_emit("i=ø; not i", true);
 }
 
 void testWasmLogicUnary() {
@@ -592,7 +592,10 @@ void testWasmStuff() {
 
 void testAllWasm() {
 	data_mode = false;
-
+	assert_emit("i=ø; not i", true);
+//	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)// ok
+	assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)// not ok
+//	exit(0);
 	testWasmMemoryIntegrity();
 #ifdef RUNTIME_ONLY
 	logs("RUNTIME_ONLY");
@@ -601,8 +604,6 @@ void testAllWasm() {
 #endif
 
 	testWasmWhile();
-	skip(
-	)
 	testWasmModuleExtension();
 	testWasmRuntimeExtension();
 

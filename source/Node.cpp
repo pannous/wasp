@@ -579,9 +579,10 @@ void Node::addSmart(Node node) {// merge?
 	}
 	// a{x:1} != a {x:1} but {x:1} becomes child of a
 	// a{x:1} == a:{x:1} ?
-	if (last().kind == operators) {
+	Node &letzt = last();
+	if (letzt.kind == operators) {
 		// danger 1+2 grouped later but while(i>7) as child
-		last().add(node);
+		letzt.add(node);
 		return;
 	}
 	// f (x) == f(x) ~= f x
@@ -594,8 +595,9 @@ void Node::addSmart(Node node) {// merge?
 //			last().add(node);
 //		return;
 //	}
-	if (last().kind == reference or last().kind == keyNode or (empty(name) and kind != expressions))// last().kind==reference)
-		last().addSmart(&node);
+	if (letzt.kind == reference or letzt.kind == keyNode or
+	    (empty(name) and kind != expressions))// last().kind==reference)
+		letzt.addSmart(&node);
 	else
 		addSmart(&node);
 }
@@ -900,6 +902,7 @@ Node Node::values() {
 	if (kind == strings)return Node(value.string);
 	if (kind == bools)return value.data ? True : False;
 	if (kind == keyNode)return *value.node;
+	if (length == 1 and not value.data) return children[0];// todo: reaaaly?
 	Node &val = clone()->setName("");
 //	val.children = 0;
 	return val;
