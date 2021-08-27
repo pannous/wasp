@@ -527,7 +527,8 @@ Code emitIf(Node &node, String context) {
 	code = code + emitExpression(then, context);// BODY
 	if (node.length == 3) {
 		code.addByte(elsa);
-		Node *otherwise = node[2].value.node;//->clone();
+		Node otherwise = node["else"];//->clone();
+//		Node *otherwise = node[2].value.node;//->clone();
 		code = code + emitExpression(otherwise, context);
 	}
 	code.addByte(end_block);
@@ -662,7 +663,7 @@ Code emitBlock(Node node, String context) {
 		if (returns == Valtype::i32t and last_type == Valtype::f32t)
 			block.addByte(i32_trunc_f32_s);
 		if (returns == Valtype::i32t and last_type == Valtype::voids)
-			block.addByte(i32_const).addInt(-999);// hack? return 0/false by default. ok? see python!
+			block.addByte(i32_const).addInt(0);//-999);// hack? return 0/false by default. ok? see python!
 //		if(returns==Valtype::f32)…
 	}
 
