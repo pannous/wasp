@@ -600,8 +600,6 @@ void testAllWasm() {
 #endif
 
 	testWasmWhile();
-	testWasmModuleExtension();
-	testWasmRuntimeExtension();
 
 	// todo: reuse all tests via
 	//	interpret = false;
@@ -634,6 +632,8 @@ void testAllWasm() {
 	testComparisonMath();
 	testComparisonId();
 	testWasmVariables0();
+	testWasmModuleExtension();
+	testWasmRuntimeExtension();
 	skip(
 			testWasmModuleExtension();
 			testWasmRuntimeExtension();
