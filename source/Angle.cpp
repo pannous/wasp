@@ -184,6 +184,10 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 //				functionIndices[name]=functionIndices.size(); don't need an index yet!
 			}
 
+			Signature &signature = functionSignatures[name];// use Default
+			signature.emit = true;// all are 'export'
+			//			signature.is_used=true;// maybe
+
 			Node *body = analyze(rest).clone();
 			Node *decl = new Node(name);//node.name+":={…}");
 			decl->setType(declaration);
@@ -210,9 +214,6 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 
 			List<Arg> args = extractFunctionArgs(name, modifiers);
 #ifndef RUNTIME_ONLY
-			Signature &signature = functionSignatures[name];// use Default
-//			signature.is_used=true;// maybe
-			signature.emit = true;// all are 'export'
 
 			for (Arg arg: args) {
 				locals[name].add(arg.name);
@@ -249,6 +250,7 @@ bool isVariable(String name, Node context0) {
 	return false;
 }
 
+// outer analysis 3 + 3  ≠ inner analysis +(3,3)
 Node &groupOperators(Node &expression0) {
 	Node &expression = *expression0.clone();// modified in place!
 	if (analyzed.has(expression0.hash()))return expression;
@@ -337,20 +339,26 @@ Node &groupFunctions(Node &expression0) {
 		}
 		if (isFunction(node)) // todo: may need preparsing of declarations!
 			node.kind = call;// <- there we go!
+
 		if (node.kind != call)
 			continue;
 
-		if (node.length > 0) {
-			expression.replace(i, i, groupOperators(node));
-			continue;// already done HOW??
-		}
-//		else found function call!
 		if (not functionSignatures.has(name))
 			error("missing import for function "s + name);
 		functionSignatures[name].is_used = true;
 
+
 		int minArity = functionSignatures[name].size();// todo: default args!
 		int maxArity = functionSignatures[name].size();
+
+
+		if (node.length > 0) {
+//			if minArity == …
+			Node ok = node.flat(); //  perpetual problem: f(1,2,3) vs f([1,2,3]) !!
+			node = analyze(ok);
+			continue;// already done how
+		}
+
 		Node rest;
 		if (expression[i + 1].kind == groups) {// f(x)
 			// todo f (x) (y) (z)
@@ -560,11 +568,14 @@ Node &groupIf(Node n) {
 	ef["condition"] = analyze(condition);
 	ef["then"] = analyze(then);
 	ef["else"] = analyze(otherwise);
-//	ef[0] = groupOperators(condition);
-//	ef[1] = groupOperators(then);
-//	ef[2] = groupOperators(otherwise);
-	Node &node = ef["else"];// debug
-//	Node &node = ef[2];// debug
+//	condition = analyze(condition);
+//	then = analyze(then);
+//	otherwise = analyze(otherwise);
+//	ef.add(condition); breaks even with clone() why??
+//	ef.add(then);
+//	ef.add(otherwise);
+//	Node &node = ef["else"];// debug
+	Node &node = ef[2];// debug
 	return ef;
 	return *ef.clone();
 //
@@ -602,16 +613,25 @@ Node analyze(Node data) {
 	if (data.kind == keyNode) {
 		data.value.node = analyze(*data.value.node).clone();
 	}
-	if (data.kind == groups or data.kind == objects or data.kind == operators /*already grouped?*/) {
+//	bool  data.kind == operators
+
+	if (data.kind == operators or data.kind == call) {
+		Node grouped = groupOperators(data);// outer analysis id(3+3) => id(+(3,3))
+		for (Node &child: grouped) {// inner analysis while(i<3){i++}
+			if (child.kind == groups or child.kind == objects) child.setType(expressions);
+			const Node &analyze1 = analyze(child);
+			child = analyze1;// REPLACE with their ast? NO! todo
+		}
+		if (functionSignatures.has(data.name))
+			functionSignatures[data.name].is_used = true;
+		return grouped;
+	}
+
+	if (data.kind == groups or data.kind == objects) {
 		Node grouped = *data.clone();
 		grouped.children = 0;
 		grouped.length = 0;
 		for (Node &child: data) {
-			if (data.kind == operators) {
-				child.setType(expressions);// hack here
-				if (functionSignatures.has(data.name))
-					functionSignatures[data.name].is_used = true;
-			}
 			child = analyze(child);// REPLACE with their ast? NO! todo
 			grouped.add(child);
 		}

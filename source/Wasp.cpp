@@ -1172,7 +1172,7 @@ private:
 
 		bool keepBlock = close == '}';
 		Node &result = current.flat();
-		return result;
+		return *result.clone();
 	};
 //	int $parent{};
 };
@@ -1323,7 +1323,7 @@ int main(int argp, char **argv) {
 		printf("%s", err->data);
 	}
 //	usleep(1000000000);
-	return -1;
+	return EXIT_FAILURE;
 }
 
 #endif

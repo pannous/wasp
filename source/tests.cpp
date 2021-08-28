@@ -15,20 +15,20 @@ Node &result = *new Node();
 //#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
 #define check(test) if(test){log("\nOK check passes: ");printf("%s\n",#test);}else{ \
 printf("\nNOT PASSING: "); log(#test);printf("%s:%d\n",__FILE__,__LINE__); \
-exit(42);}
+exit(EXIT_FAILURE);}
 
 #undef assert // assert.h:92 not as good!
 #define assert(condition) try{\
    if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
-   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(42);}
+   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(EXIT_FAILURE);}
 
 
-//#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(42);}
-//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(42);}
-//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(42);}
+//#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(EXIT_FAILURE);}
+//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(EXIT_FAILURE);}
+//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(EXIT_FAILURE);}
 
-#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(42);}
-//#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(42);}
+#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+//#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(EXIT_FAILURE);}
 #define check_eq assert_equals
 
 
@@ -43,26 +43,57 @@ bool assert_equals_x(String *a, String b, char *context = "") {
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
-	if (a.name != b)
-		printf("\nFAILED assert_equals! %s should be %s %s\n"s, a.name, b, context);
+	if (a.name != b)printf("\nFAILED assert_equals! %s should be %s %s\n"s, a.name, b, context);
 	else printf("OK %s==%s %s\n", a.name.data, b, context);
-
 	return a == b;
 }
 
-bool assert_equals_x(Node a, double b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %f should be %f %s\n"s, a.value.real, b, context);
-//	else printf("OK %f==%f %s\n"s % a.value.real % b % context);
+
+bool assert_equals_x(Node a, const char *b, char *context = "") {
+	if (a.name != b)printf("\nFAILED assert_equals! %s should be %s %s\n"s, a.name, b, context);
+	else printf("OK %s==%s %s\n", a.name.data, b, context);
+	return a == b;
+}
+
+
+bool assert_equals_x(Node a, int b, char *context = "") {
+	if (a != Node(b))printf("\nFAILED assert_equals! %d should be %d %s\n"s, a.value.longy, b, context);
+	else printf("OK %ld==%d\n", a.value.longy, b);
+	return a == b;
+}
+
+// WTF why is char* unexplicitly cast to bool!?!
+bool assert_equals_x(Node a, bool b, char *context = "") {
+	if (a != Node(b))printf("\nFAILED assert_equals! %d should be %d %s\n"s, a.value.longy, b, context);
+	else printf("OK %ld==%d\n", a.value.longy, b);
+	return a == b;
+}
+
+bool assert_equals_x(Node &a, double b, char *context = "") {
+	if (a != Node(b))printf("\nFAILED assert_equals! %f should be %f %s\n"s, a.value.longy, b, context);
 	else printf("OK %f==%f\n", a.value.real, b);
 	return a == b;
 }
 
-bool assert_equals_x(Node &a, long b, char *context = "") {
-	if (!(a == b))printf("\nFAILED assert_equals! %s should be %d %s\n"s, a.name, b, context);
-//	else printf("OK %d==%d %s\n"s % a.value.longy % b % context);// Uninitialised value was created by a stack allocation
+bool assert_equals_x(Node a, double b, char *context = "") {
+	if (a != Node(b))printf("\nFAILED assert_equals! %f should be %f %s\n"s, a.value.longy, b, context);
+	else printf("OK %f==%f\n", a.value.real, b);
+	return a == b;
+}
+
+//bool assert_equals_x(Node &a, long b, char *context = "") {
+//	if (!(a == b))printf("\nFAILED assert_equals! %s should be %d %s\n"s, a.name, b, context);
+//	else printf("OK %ld==%ld %s\n", a.value.longy, b, context);
+//	return a == b;
+//}
+
+
+bool assert_equals_x(Node a, long b, char *context = "") {
+	if (!(a == b))printf("\nFAILED assert_equals! %s %d should be %d %s\n"s, a.name, a.value.longy, b, context);
 	else printf("OK %ld==%ld %s\n", a.value.longy, b, context);
 	return a == b;
 }
+
 
 bool assert_equals_x(Node a, String b, char *context = "") {
 	String &name = a.name;
@@ -190,8 +221,8 @@ Node assert_parsesx(chars mark) {
 	}
 	return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
-//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(42);}
-#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(42);}
+//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(EXIT_FAILURE);}
+#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(EXIT_FAILURE);}
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
 
@@ -201,7 +232,7 @@ Node assert_parsesx(chars mark) {
     bool ok=assert_isx(mark,result);\
     if(ok)printf("PASSED %s==%s\n",#mark,#result);\
     else{printf("FAILED %s==%s\n",#mark,#result);\
-    printf("%s:%d\n",__FILE__,__LINE__);exit(42);}\
+    printf("%s:%d\n",__FILE__,__LINE__);exit(EXIT_FAILURE);}\
 }
 
 
@@ -543,8 +574,7 @@ void testMarkMulti() {
 }
 
 void testMarkMulti2() {
-	chars source = "a:'HIO' b:3  d:{}";
-	assert_parses(source);
+	assert_parses("a:'HIO' b:3  d:{}");
 	assert(result["b"] == 3);
 }
 
@@ -1643,8 +1673,12 @@ void testCurrent() { // move to tests() once OK
 //	testWasmModuleExtension();
 //	testWasmRuntimeExtension();
 #endif
-	testAllWasm();
+	assert_emit("i=ø; not i", true);
+	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)// ok
+	assert_emit("id(3*452)==452*3", 1)
+	assert_emit("if(2,3,4)", 3);// sick border case
 
+//	testAllWasm();
 //	operator_list = List(operator_list0);
 //	testRecentRandomBugs();
 	tests();// make sure all still ok before changes
