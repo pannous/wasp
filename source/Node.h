@@ -458,9 +458,8 @@ public:
 	Node insert(Node &node, int at = -1);// non-modifying
 
 
-//	Node &add(Node node);
+	//	Node &add(Node node);  call to member function 'add' is ambiguous
 	Node &add(Node *node);
-
 	Node &add(Node &node);
 
 //	void addSmart(Node &node);// modifying

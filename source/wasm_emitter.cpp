@@ -299,9 +299,10 @@ Code emitOperator(Node node, String context) {
 		increased.add(new Node(1));
 //		emitExpression(increased,context);
 		code.add(emitSetter(node.first(), increased, context));
-	} else if (opcode > 0)
+	} else if (opcode > 0) {
 		code.addByte(opcode);
-	else {
+		if (last_type == 0)last_type = i32t;
+	} else {
 		error("unknown opcode / call / symbol: "s + name + " : " + index);
 	}
 	if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or
@@ -312,6 +313,8 @@ Code emitOperator(Node node, String context) {
 	return code;
 }
 
+//	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0 after args, used for 'it'  after while(){} etc) !!!
+int last_local = 0;
 Code emitExpression(Node &node, String context/*="main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	Code code;
@@ -328,7 +331,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		return emitWhile(node, context);
 	if (name == "it") {
 		code.addByte(get_local);
-		code.addByte(0);// todo: LAST local?
+		code.addByte(last_local);
 		return code;
 	}
 	//	or node.kind == groups ??? NO!
@@ -516,19 +519,19 @@ Code emitSetter(Node node, Node &value, String context) {
 
 Code emitIf(Node &node, String context) {
 	Code code;
-	Node *condition = node[0].value.node;
+	Node condition = node[0].values();
 //	Node &condition = node["condition"];
 	code = code + emitExpression(condition, context);
 
 	code.addByte(if_i);
 	code.addByte(int32);
-	Node *then = node[1].value.node;
+	Node then = node[1].values();
 //	Node &then = node["then"];
 	code = code + emitExpression(then, context);// BODY
 	if (node.length == 3) {
 		code.addByte(elsa);
-		Node otherwise = node["else"];//->clone();
-//		Node *otherwise = node[2].value.node;//->clone();
+//		Node otherwise = node["else"];//->clone();
+		Node otherwise = node[2].values();
 		code = code + emitExpression(otherwise, context);
 	}
 	code.addByte(end_block);
@@ -638,6 +641,7 @@ Code emitBlock(Node node, String context) {
 //	locals[context] = current_local_names;
 
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0, used after while(){} etc) !!!
+	last_local = 0;
 	int locals_count = locals[context].size();
 	int argument_count = functionSignatures[context].size();
 	if (locals_count >= argument_count)
