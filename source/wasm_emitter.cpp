@@ -391,6 +391,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			}
 		}
 			break;
+		case keyNode: // todo i=ø
 		default:
 			error("unhandled node type: "s + typeName(node.kind));
 	}

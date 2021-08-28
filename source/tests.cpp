@@ -125,13 +125,13 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 
 bool assert_equals_x(long a, long b, char *context = "") {
 	if (a != b)log("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
-	printf("OK %ld==%ld %s\n", a, b, context);
+	else printf("OK %ld==%ld %s\n", a, b, context);
 	return a == b;
 }
 
 bool assert_equals_x(int a, int b, char *context = "") {
 	if (a != b)log("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
-	printf("OK %d==%d %s\n", a, b, context);
+	else printf("OK %d==%d %s\n", a, b, context);
 	return a == b;
 }
 
@@ -1673,10 +1673,16 @@ void testCurrent() { // move to tests() once OK
 //	testWasmModuleExtension();
 //	testWasmRuntimeExtension();
 #endif
-	assert_emit("i=ø; not i", true);
-	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)// ok
-	assert_emit("id(3*452)==452*3", 1)
-	assert_emit("if(2,3,4)", 3);// sick border case
+	skip(
+			assert_emit("i=ø; not i", true);
+	)
+	assert_emit("x=41;if x>1 then 2 else 3", 2)
+	assert_emit("i=1;while(i<9){i++};i+1", 10);
+//	assert_emit("i=1;while(i<9){i++};i+1", 10);
+//
+//	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)// ok
+//	assert_emit("id(3*452)==452*3", 1)
+//	assert_emit("if(2,3,4)", 3);// sick border case
 
 //	testAllWasm();
 //	operator_list = List(operator_list0);
