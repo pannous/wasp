@@ -99,7 +99,7 @@ class Node {
 	// sizeof(Node) == 64 (20 for name,
 public:
 	String name = empty_name;// nil_name;
-	Value value;// value.node and children/next are NOT REDUNDANT  label(for:password):'Passwort'
+	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 
 
 //	Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
@@ -327,7 +327,7 @@ public:
 	Node &first() {
 		if (length > 0)return children[0];
 		if (children)return children[0]; // hack for missing length!
-		if (kind == operators)return *next;// todo remove hack
+		if (kind == operators and next)return *next;// todo remove hack
 		return *this;
 //		error("No such element");
 //		return ERROR;

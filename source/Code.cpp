@@ -145,6 +145,7 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == assignment)return mapTypeToWasm(n.first());// todo
 	if (n.kind == operators) return mapTypeToWasm(n.first());// todo
 	if (n.kind == expressions)return mapTypeToWasm(n.first());// todo analyze expressions WHERE? remove HACK!
+	if (n.kind == call)error("node.kind==call is not a wasm type, maybe get signature?");
 	n.log();
 	error("Missing map for type in mapTypeToWasm");
 	return none;
