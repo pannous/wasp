@@ -105,9 +105,11 @@ Node &Node::operator=(chars c) {
 	return *this;
 }
 
+// getter only / can't set unknown fields
 Node &Node::operator[](int i) {
-	if (i >= length)
+	if (i >= length) {
 		error(String("out of range index[] ") + i + " >= length " + length);
+	}
 	// todo: allow insertion of unknown indices? prefered method: not
 	return children[i];
 }
@@ -119,7 +121,7 @@ Node &Nodec::operator[](int i) const {
 
 Node &Node::operator[](String *s) {
 	if (!s)return NIL;
-	return this->operator[](s->data);
+	return operator[](s->data);
 }
 
 //Node &Node::operator[](String s) {
@@ -180,7 +182,7 @@ Node &Node::merge(Node &other) {
 	return neu;
 }// non-modifying
 Node &Node::merge(Node *other) {
-	return this->merge(*other);
+	return merge(*other);
 }
 
 Node &Node::operator[](char c) {
@@ -252,11 +254,12 @@ bool Node::operator==(String other) {
 //	return (*this == other.data); // todo unify/simplify
 	if (this == 0)return other.empty();
 //	if (kind == objects or kind == keyNode)objects={…} NOT have value!  return *value.node == other or value.string == other;
-	if (kind == keyNode) return other == name or value.node and *value.node == other;// todo: a=3 a=="a" ??? really?
-	if (kind == longs) return other == itoa(value.longy);// "3" == 3   php style ARE YOU SURE? ;) only if otherwise consistent!
+	if (kind == keyNode) return other == name or (value.node and *value.node == other);// todo: a=3 a=="a" ??? really?
+	if (kind == longs)
+		return other == itoa(value.longy);// "3" == 3   php style ARE YOU SURE? ;) only if otherwise consistent!
 	if (kind == reals) return other == ftoa(value.real);// parseFloat(other)==value.real
 
-	if (kind == reference) return other == name or value.node and *value.node == other;
+	if (kind == reference) return other == name or (value.node and *value.node == other);
 	if (kind == unknown) return other == name;
 	if (kind == operators) return other == name;
 	if (kind == strings)
@@ -270,7 +273,7 @@ bool Node::operator==(Node *other) {
 }
 
 bool Node::operator==(bool other) {
-	return other == this->operator bool();
+	return other == operator bool();
 }
 
 bool Node::operator==(char other) {
@@ -324,8 +327,8 @@ bool Node::operator==(const Node &other) {
 
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
-	if (this->kind == errors)return other.kind == errors;
-	if (other.kind == errors)return this->kind == errors;
+	if (kind == errors)return other.kind == errors;
+	if (other.kind == errors)return kind == errors;
 
 	if (this == &other)return true;// same pointer!
 
@@ -360,7 +363,7 @@ bool Node::operator==(Node &other) {
 
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// reference ~= its value
-	if (kind == keyNode and this->value.node and *this->value.node == other)return true;// todo again?
+	if (kind == keyNode and value.node and *value.node == other)return true;// todo again?
 	if (kind == nils and other.kind == longs)return other.value.longy == 0;
 	if (other.kind == nils and kind == longs)return value.longy == 0;
 
@@ -375,9 +378,10 @@ bool Node::operator==(Node &other) {
 	if (kind == strings) {
 		::log(name);
 		::log(value.string);
-		::log(this->value.string);
+		::log(value.string);
 		::log(other.value.string);
-		return *value.string == *other.value.string or *value.string == other.name or name == other.value.string;// !? match by name??
+		return *value.string == *other.value.string or *value.string == other.name or
+		       name == other.value.string;// !? match by name??
 	}
 
 
@@ -465,7 +469,7 @@ Node Node::operator+(Node other) {
 //	if(type==floats and other.type==strings)
 //		return Node(value.real + other.value.string);
 	if (kind == objects)
-		return this->merge(other);
+		return merge(other);
 	if (other.kind == objects)
 		return other.insert(*this, 0);
 	error(str("Operator + not supported for node types %s and %s") % typeName(kind) % typeName(other.kind));
@@ -495,6 +499,11 @@ void Node::remove(Node &node) {
 	}
 }
 
+//  call to member function 'add' is ambiguous
+//Node &Node::add(Node node) {
+//	return add(&node);
+//}
+
 Node &Node::add(Node *node) {
 	if ((long) node > MEMORY_SIZE)
 		error("node Out of Memory");
@@ -517,6 +526,7 @@ Node &Node::add(Node *node) {
 }
 
 Node &Node::add(Node &node) {
+	if (&node == 0)return *this;
 	return add(&node);
 }
 
@@ -607,7 +617,7 @@ Node Node::insert(Node &node, int at) {
 	if (length == 0)return node;//  todo: rescue value,name?
 	while (at < 0)at = length + at;
 	if (at >= length - 1) {
-		Node *clon = this->clone();
+		Node *clon = clone();
 		clon->add(node);
 		return *clon;
 	}
@@ -713,7 +723,8 @@ bool Node::isEmpty() {// not required here: empty(name)
 
 // todo : [x y]+[z] = [x y z] BUT z isNil() ??  Node("z").kind==unknown ! empty references ARE NIL OR NOT?? x==nil?
 bool Node::isNil() const { // required here: empty(name)
-	return this == &NIL or kind == nils or ((kind == keyNode or kind == unknown or empty(name)) and length == 0 and value.data == nullptr);
+	return this == &NIL or kind == nils or
+	       ((kind == keyNode or kind == unknown or empty(name)) and length == 0 and value.data == nullptr);
 }
 
 String Node::serializeValue(bool deep) const {
@@ -761,14 +772,15 @@ String Node::serializeValue(bool deep) const {
 		case unknown:
 			return "?";
 		default:
-			error("MISSING CASE");
+			breakpoint_helper
+			error("MISSING CASE for "s + kind + " " + typeName(kind));
 			return "MISSING CASE";
 	}
 }
 
 String Node::serialize() const {
 	String wasp = "";
-	if (not polish_notation or this->length == 0) {
+	if (not polish_notation or length == 0) {
 		if (not empty(name)) wasp += name;
 		String serializedValue = serializeValue();
 		if (kind == strings and name and (empty(name) or name == value.string))
@@ -777,18 +789,19 @@ String Node::serialize() const {
 			return serializedValue;// no "3":3
 		if (kind == reals)// and name and (empty(name) or name==itoa(value.longy)))
 			return serializedValue;// no "3":3.14
-		if (serializedValue and this->value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
+		if (serializedValue and value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
 		    !eq(serializedValue, "?")) {
 			wasp += ":";
 			wasp += serializedValue;
 			wasp += " ";
 		}
 	}
-	if (this->length >= 0) {
-		if (not this->grouper) {
-			if (this->kind == groups)wasp += "(";
-			if (this->kind == objects)wasp += "{";
-			if (this->kind == patterns)wasp += "[";
+	if (length >= 0) {
+		if (not grouper) {
+			if (kind == groups)wasp += "(";
+			else if (kind == objects)wasp += "{";
+			else if (kind == patterns)wasp += "[";
+			else if (length > 0) wasp += "(";// default
 		}
 		if (polish_notation and not empty(name))wasp += name;
 		int i = 0;
@@ -797,23 +810,24 @@ String Node::serialize() const {
 			wasp += " ";
 			wasp += node.serialize();
 		}
-		if (not this->grouper) {
-			if (this->kind == groups)wasp += ")";
-			if (this->kind == objects)wasp += "}";
-			if (this->kind == patterns)wasp += "]";
+		if (not grouper) {
+			if (kind == groups)wasp += ")";
+			else if (kind == objects)wasp += "}";
+			else if (kind == patterns)wasp += "]";
+			else if (length > 0) wasp += ")";// default
 		}
 	}
 	return wasp;
-//	return empty(name)? this->string() : name;
+//	return empty(name)? string() : name;
 //	return empty(node.name)? node.string() : node.name;
 }
 
 chars Node::toString() {
-	return this->serialize();
+	return serialize();
 }
 
 chars Node::toString() const {
-	return this->serialize();
+	return serialize();
 }
 
 String toString(Node &node) {
@@ -821,7 +835,7 @@ String toString(Node &node) {
 }
 
 void Node::print() {
-	printf("%s", this->serialize().data);
+	printf("%s", serialize().data);
 }
 
 Node &Node::setValue(Value v) {
@@ -879,15 +893,23 @@ Node Node::to(Node match) {
 
 //	Node& flatten(Node &current){
 Node &Node::flat() {
-	if (kind == call)return *this->clone();
+//	if (kind == call)return *this;//->clone();
 	if (length == 0 and kind == keyNode and empty(name) and value.node)return *value.node;
-	if (length == 1 and value.node == &children[0])// todo remove redundancy
-		return *value.node;
-	if (length == 1 and (long) children < MEMORY_SIZE and not value.data and empty(name)) {
-		children[0].parent = parent;
-		return children[0].flat();
+	if (length == 1) {
+		Node &child = children[0];
+		if (value.node == &child)// todo remove redundancy
+			return *value.node;
+		if ((long) children < MEMORY_SIZE and not value.data and empty(name)) {
+			child.parent = parent;
+			return child.flat();
+		}
+		if (child.length > 0 and not child.value.data and empty(child.name)) {
+			children = child.children;
+			length = child.length;
+			return *this;
+		}
 	}
-	return *this->clone();
+	return *this;//->clone();
 }
 
 Node &Node::setName(char *name0) {
@@ -914,7 +936,7 @@ bool Node::isSetter() {
 	// todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
 	if (kind == longs)// || kind==reals || kind==bools||kind==strings)
 		return not atoi0(name);// todo WTF hack
-	return kind == reference and value.data or length > 0;// i:4
+	return (kind == reference and value.data) or length > 0;// i:4
 }
 
 int Node::index(String &string, int start, bool reverse) {
@@ -997,7 +1019,7 @@ Node &Node::setType(Type type) {
 		return *this;
 	if (kind == nils and not value.data)
 		return *this;
-	this->kind = type;
+	kind = type;
 //	if(empty(name) and debug){
 //		if(type==objects)name = object_name;
 //		if(type==groups)name = groups_name;
