@@ -16,7 +16,7 @@ enum Type {
 	keyNode, // key with value
 	reference, // variable identifier name x
 	symbol, // one / plus / Jesus
-	operators, // or just symbol?
+	operators, // TODO: semantic types don't belong here! they interfere with internal structural types keyNode etc!!
 	expressions, // one plus one
 	assignment, // x = 1 // really?? needs own TYPE?
 	declaration, // x:=1
