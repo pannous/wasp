@@ -134,7 +134,7 @@ List<chars> setter_operators = {"="};
 List<chars> constructor_operators = {":"};
 List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
 List<chars> function_operators = {":="};// todo:
-List<chars> declaration_operators = {":=", "="}; // , ":" NOT! if 1 : 2 else 3
+List<chars> declaration_operators = {":=", "="}; //  i:=it*2  vs i=1  OK?  NOT ":"! if 1 : 2 else 3
 
 // ... todo maybe unify variable symbles with function symbols at angle level and differentiate only when emitting code?
 // x=7
@@ -166,15 +166,26 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 #endif
 			}
 			continue;
-		}
+		}// todo danger, references i=1 … could fall through to here:
 		if (node.kind == declaration or declaration_operators.has(op)) {
 			// todo: public export function jaja (a:num …) := …
 			Node modifiers = expression.to(node);// including public… :(
 			Node rest = expression.from(node);
 			String name = extractFunctionName(modifiers);
 
+//			todo i=1 vs i:=it*2  ok ?
+			if (op == "=") {
+//			if(modifiers.first().kind==reference){
+				warn("symbol is reference declaration: "s + name);
+				Node &ref = modifiers.first();
+				ref.value.node = analyze(rest).clone();
+				return ref;
+			}
+
 			if (isFunction(name))
 				error("Symbol already declared as function: "s + name);
+			if (locals.has(name))
+				error("Symbol already declared as variable: "s + name);
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
 
@@ -211,7 +222,6 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 				decl->setType(assignment);
 				return *decl;
 			}
-
 			List<Arg> args = extractFunctionArgs(name, modifiers);
 #ifndef RUNTIME_ONLY
 
@@ -339,7 +349,6 @@ Node &groupFunctions(Node &expression0) {
 		}
 		if (isFunction(node)) // todo: may need preparsing of declarations!
 			node.kind = call;// <- there we go!
-
 		if (node.kind != call)
 			continue;
 
@@ -610,7 +619,7 @@ Node analyze(Node data) {
 	functionSignatures.setDefault(Signature());
 #endif
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
-	if (data.kind == keyNode) {
+	if (data.kind == keyNode and data.value.node /* i=ø has no node */) {
 		data.value.node = analyze(*data.value.node).clone();
 	}
 //	bool  data.kind == operators
