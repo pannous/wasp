@@ -405,8 +405,8 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 
 Code emitWhile(Node &node, String context) {
 	Code code;
-	Node condition = node[0];
-	Node then = node[1];
+	Node condition = node[0].values();
+	Node then = node[1].values();
 	code.addByte(loop);
 	code.addByte(none);// type:void_block
 //	code.addByte(int32);// type OR typeidx!?
