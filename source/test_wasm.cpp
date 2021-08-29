@@ -350,8 +350,8 @@ void testWasmIf() {
 }
 
 void testWasmWhile() {
-//	assert_emit("i=1;i++", 2);
 	assert_emit("i=1;while(i<9){i++};i+1", 10);
+//	assert_emit("i=1;i++", 2);
 //	assert_emit("i=1;while(i<9)i++;i+1", 10);
 //	assert_emit("i=1;while i<9:i++;i+1", 10);
 }
