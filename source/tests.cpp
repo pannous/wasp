@@ -1676,6 +1676,7 @@ void testCurrent() { // move to tests() once OK
 	skip(
 			assert_emit("i=ø; not i", true);
 	)
+//	assert_emit("i=1;while(i<9)i++;i+1", 10);// needs valueNode conceptual overhaul?
 	assert_emit("x=41;if x>1 then 2 else 3", 2)
 	assert_emit("i=1;while(i<9){i++};i+1", 10);
 //	assert_emit("i=1;while(i<9){i++};i+1", 10);

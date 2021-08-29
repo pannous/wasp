@@ -336,16 +336,25 @@ Node &groupFunctions(Node &expression0) {
 			if (j > i)expression.replace(i, j, iff);// todo figure out if a>b c d e == if(a>b)then c else d; e boundary
 		}
 		if (name == "while") {
+			// todo: move into groupWhile
 			if (node.length == 2) {
 				node[0] = analyze(node[0].setType(expressions));
 				node[1] = analyze(node[1].setType(expressions));
 				continue;// all good (right?)
 			}
-			Node iff = groupWhile(expression0.from("while"));
-			Node &last = iff.last();
-			Node *next = last.next;
-			int j = expression.lastIndex(next) - 1;
-			if (j > i)expression.replace(i, j, iff);
+			if (node.length == 1) {// while()… or …while()
+				node[0] = analyze(node[0].setType(expressions).flat());
+				Node then = expression0.from("while");
+				node.add(analyze(then.setType(expressions).flat()).clone());
+				expression.remove(i + 1, i + then.length - 1);
+				continue;
+			} else {
+				Node iff = groupWhile(expression0.from("while"));
+				Node &last = iff.last();
+				Node *next = last.next;
+				int j = expression.lastIndex(next) - 1;
+				if (j > i)expression.replace(i, j, iff);
+			}
 		}
 		if (isFunction(node)) // todo: may need preparsing of declarations!
 			node.kind = call;// <- there we go!
@@ -486,30 +495,37 @@ Node &groupWhile(Node n) {
 	Node then;
 	Node *next; // outside while(){} !
 	if (n.length == 0) then = n.values();
+	if (n.length == 1) {
+		if (n.next)
+			then = *n.next;
+			//		else if(previous)
+//			then = previous
+		else
+			error("missing block for while statement");// should be in parser/analyzer or carry over code pointer!
+	}
 	if (n.length > 0) then = n[1];
 	if (n.length >= 2 and !n.value.data) {
 //		return n; // all good!
 		condition = n[0];
 		then = n[1];
-		next = &n[2];
-	}
-	if (n.has("do")) {
-		condition = n.to("do");
-		then = n.from("do");
 	}
 
-	if (condition.value.data and !condition.next)
-		then = condition.values();
-
-	// todo: UNMESS how?
+	// todo: UNMESS how? UNMESS by applying operator ":" first a/r grouping in valueNode
 	if (n.has(":") /*before else: */) {
 		condition = n.to(":");
 		then = n.from(":");
 	} else if (condition.has(":")) {// as child
 		then = condition.from(":");
 	}
+	if (n.has("do")) {
+		condition = n.to("do");
+		then = n.from("do");
+	}
 	if (then.has("do"))
 		then = n.from("do");
+
+	if (condition.value.data and !condition.next)
+		then = condition.values();
 
 	Node *whilo = new Node("while");// regroup cleanly
 	Node &ef = *whilo;
@@ -517,13 +533,13 @@ Node &groupWhile(Node n) {
 	//	ef.kind = ifStatement;
 	if (condition.length > 0)condition.setType(expressions);// so far treated as group!
 	if (then.length > 0)then.setType(expressions);
-	ef.add(analyze(condition).clone());
-	ef.add(analyze(then).clone());
-//	ef.children[1] = analyze(then);
-	ef.length = 2;
-	ef.next = next;// todo all border cases!
-//	ef["condition"] = analyze(condition);
-//	ef["then"] = analyze(then);
+//	ef.add(analyze(condition).clone());
+//	ef.add(analyze(then).clone());
+//	ef.length = 2;
+	ef["condition"] = analyze(condition);
+	ef["then"] = analyze(then);
+	Node condition1 = ef[0].values();// debug
+	Node then1 = ef[1].values();
 	return ef;
 }
 
