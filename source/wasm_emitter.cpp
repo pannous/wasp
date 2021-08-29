@@ -222,8 +222,12 @@ Code emitValue(Node node, String context) {
 		case reference: {
 			int local_index = locals[context].position(node.name);
 			if (local_index < 0)error("UNKNOWN symbol "s + node.name + " in context " + context);
-			code.addByte(get_local);
-			code.addByte(local_index);
+			if (node.value.node) {
+				code.add(emitSetter(node, *node.value.node, context));
+			} else {
+				code.addByte(get_local);
+				code.addByte(local_index);
+			}
 		}
 			break;
 //			case binaryExpression:
@@ -504,10 +508,11 @@ Code emitSetter(Node node, Node &value, String context) {
 		error("variable missed by parser! "_s + variable);
 	}
 	int local_index = current.position(variable);
-	Code setter;
-	Code value1 = emitValue(value, context);
 	last_type = mapTypeToWasm(value);
 	localTypes[context][local_index] = last_type;
+
+	Code setter;
+	Code value1 = emitValue(value, context);
 //	variableTypes
 	setter.add(value1);
 	setter.add(set_local);
@@ -1043,7 +1048,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		functionSignatures[start].emit = true;
 		if (!functionIndices.has(start))
 			functionIndices[start] = runtime_offset ? runtime_offset + declaredFunctions.size()
-			                                        : functionIndices.size();// AFTER collecting imports!!
+			                                        : functionIndices.size();  // AFTER collecting imports!!
 		else
 			error("start already declared: "s + start + " with index " + functionIndices[start]);
 	} else {
