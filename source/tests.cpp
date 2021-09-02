@@ -1673,8 +1673,8 @@ void testCurrent() { // move to tests() once OK
 //	testWasmModuleExtension();
 //	testWasmRuntimeExtension();
 #endif
-	skip(
-	)
+	assert_emit("double := it * 2 ; double(4)", 8)
+	testWasmRuntimeExtension();
 //	operator_list = List(operator_list0);
 	testRecentRandomBugs();
 	tests();// make sure all still ok before changes
