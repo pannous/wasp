@@ -125,6 +125,7 @@ if (WASM) # OR WASI)
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem ... -Oz -c ") # BREAKS BUILD! ???
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan ")
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
+
     #    ADD_COMPILE_FLAG("-fno-builtin")
     #    ADD_COMPILE_FLAG("-nostdlib -fno-builtin") # use our OWN memcpy (and printf?)
     #    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const
@@ -150,6 +151,7 @@ if (WASM) # OR WASI)
     endif ()
     ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
     ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
+    ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # keep name section?
     if (RELEASE)
         ADD_COMPILE_DEFINITIONS(NO_TESTS)
         #        ADD_COMPILE_FLAG("-Wl,--export-dynamic") #       Put symbols in the dynamic symbol table
