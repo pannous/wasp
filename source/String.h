@@ -811,6 +811,10 @@ public:
 	codepoint *end();
 
 	bool startsWith(chars string);
+
+	bool endsWith(const char *string);
+
+	String to(const char *string);
 };
 
 

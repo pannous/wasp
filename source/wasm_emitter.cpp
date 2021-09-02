@@ -323,7 +323,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	Code code;
 	String &name = node.name;
-	int index = functionIndices.position(name);
+//	int index = functionIndices.position(name);
 //	if (index >= 0 and not locals[context].has(name))
 //		error("locals should be analyzed in parser");
 //		locals[name] = List<String>();
@@ -815,7 +815,7 @@ Code codeSection(Node root) {
 	if (start) {
 		code_blocks = code_blocks + encodeVector(main_block);
 	} else {
-		if (main_block.length > 3)
+		if (main_block.length > 4)
 			error("no start function name given. null instead of 'main', can't assign block");
 		else warn("no start block (ok)");
 	}

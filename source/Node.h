@@ -327,8 +327,9 @@ public:
 	Node &first() {
 		if (length > 0)return children[0];
 		if (children)return children[0]; // hack for missing length!
+		if (kind == assignment and value.node)return *value.node;// todo sure??, could be direct type!?
 		if (kind == operators and next)return *next;// todo remove hack
-		return *this;
+		return *this;// (x)==x   danger: loops
 //		error("No such element");
 //		return ERROR;
 	}

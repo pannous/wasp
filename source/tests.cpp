@@ -1674,20 +1674,9 @@ void testCurrent() { // move to tests() once OK
 //	testWasmRuntimeExtension();
 #endif
 	skip(
-			assert_emit("i=ø; not i", true);
 	)
-//	assert_emit("i=1;while(i<9)i++;i+1", 10);// needs valueNode conceptual overhaul?
-	assert_emit("x=41;if x>1 then 2 else 3", 2)
-	assert_emit("i=1;while(i<9){i++};i+1", 10);
-//	assert_emit("i=1;while(i<9){i++};i+1", 10);
-//
-//	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)// ok
-//	assert_emit("id(3*452)==452*3", 1)
-//	assert_emit("if(2,3,4)", 3);// sick border case
-
-//	testAllWasm();
 //	operator_list = List(operator_list0);
-//	testRecentRandomBugs();
+	testRecentRandomBugs();
 	tests();// make sure all still ok before changes
 	testAllWasm();
 	todos();// those not passing yet (skip)
