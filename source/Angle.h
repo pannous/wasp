@@ -2,6 +2,7 @@
 
 #include "Node.h"
 #include "Code.h"
+#include "wasm_reader.h"
 
 //#include "Map.h"
 // The Angle language is a semantic layer on top of Wasp data format

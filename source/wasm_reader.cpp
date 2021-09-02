@@ -114,8 +114,10 @@ void parseFunctionNames(Code &payload) {
 	int index = -1;
 	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
 		index = unsignedLEB128(payload);
+		if (index < 0 or index > 100000)
+			error("broken index"s + index);
 		if (i != index)// in partial main.wasm
-			warn("index out of order "s + i + " <> " + " index");// doesn't happen
+			warn("index out of order "s + i + " <> " + index);// doesn't happen
 		String func = name(payload).clone();// needs to be 0-terminated now
 		if (functionIndices[func] >= 0) {
 			if (functionIndices[func] == index)
@@ -128,8 +130,12 @@ void parseFunctionNames(Code &payload) {
 //			functionIndices.insert_or_assign(func, index);
 			functionIndices[func] = index;
 		else
+//			functionIndices.insert_or_assign("func_"s + index, index);
 			functionIndices["func_"s + index] = index;
 	}
+//	for (int i = function_count; i < module.total_func_count; i++)
+//		functionIndices.insert_or_assign("unnamed_func_"s + i, i);
+
 //	  (import "env" "log_chars" (func (;0;) $logs (type 0)))  import names != internal names
 }
 
@@ -281,11 +287,14 @@ void consumeExportSection() {
 	Code &payload = module.export_data;
 	for (int i = 0; i < exportCount; i++) {
 		String func = name(payload).clone();
+		if (func == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
 		func = demangle(func);//
 		int type = unsignedLEB128(payload);
 		int index = unsignedLEB128(payload);
+		if (index < 0 or index > 100000)error("corrupt index "s + index);
 		if (type == 0/*func*/ and not functionIndices.has(func)) {
 			functionIndices[func] = index;
+//			functionSignatures[func] = … library functions currently hardcoded
 		}
 	}
 }

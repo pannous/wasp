@@ -698,6 +698,8 @@ List<String> collect_locals(Node node, String context) {
 }
 
 
+int last_index = -1;
+
 Code typeSection() {
 	// Function types are vectors of parameters and return types. Currently
 	// TODO optimise - some of the procs might have the same type signature
@@ -725,7 +727,7 @@ Code typeSection() {
 		if (signature.is_handled)
 			continue;
 		if (not functionIndices.has(fun))
-			functionIndices[fun] = functionIndices.size();// declared (imports and builtins before)
+			functionIndices[fun] = ++last_index;
 //			error("function %s should be registered in functionIndices by now"s % fun);
 
 		typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
@@ -785,7 +787,7 @@ Code codeSection(Node root) {
 		print("declared function: "s + declared);
 		if (!declared)error("empty function name (how?)");
 		if (not functionIndices.has(declared))// used or not!
-			functionIndices[declared] = functionIndices.size();
+			functionIndices[declared] = ++last_index;// functionIndices.size();
 	}
 //	int index_size = functionIndices.size();
 //	bool has_main = start and (declaredFunctions.has(start) or functionIndices.has(start));
@@ -827,10 +829,12 @@ Code codeSection(Node root) {
 	if (functionSignatures["nop"].is_used) builtin_count++;// used
 	if (functionSignatures["id"].is_used) builtin_count++;// used
 
-	check(new_count == functionCodes.size());
-
 	bool has_main = start and functionIndices.has(start);
-	function_block_count = has_main /*main*/ + builtin_count + functionCodes.size();
+
+	int function_codes = functionCodes.size();
+//	check(new_count == function_codes);
+
+	function_block_count = has_main /*main*/ + builtin_count + function_codes;
 
 	auto codeSection = createSection(code_section, Code(function_block_count) + code_blocks);
 	return codeSection.clone();
@@ -890,11 +894,11 @@ Code nameSection() {
 //	check(symbols["logi"]==0);
 //	check(symbols["√"]==3);// "\e2\88\9a"
 //	nameMap =  Code((byte) 0) + Code("logi");
-	int total_func_count = functionIndices.size();// imports + function_count, all receive names
+	int total_func_count = last_index + 1;// functionIndices.size();// imports + function_count, all receive names
 	for (int index = runtime_offset; index < total_func_count; index++) {
 		// danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
-		String &name = functionIndices.keys[index];
-		nameMap = nameMap + Code(index) + Code(name);
+		String *name = functionIndices.lookup(index);
+		nameMap = nameMap + Code(index) + Code(*name);
 	}
 
 //	auto functionNames = Code(function_names) + encodeVector(Code(1) + Code((byte) 0) + Code("logi"));
@@ -904,15 +908,18 @@ Code nameSection() {
 // localMapEntry = (index nrLocals 00? string )
 
 	Code localNameMap;
-	for (String key : functionIndices) {
+	for (int index = runtime_offset; index <= last_index; index++) {
+//	for (String key : functionIndices) {
 //		if (key != start)continue;
-		int function_index = functionIndices[key];
-		if (function_index < runtime_offset)continue;
+//		int function_index = functionIndices[key];
+//		if (function_index < runtime_offset)continue;
+		String *key = functionIndices.lookup(index);
+		if (!key or key->empty())continue;
 		List<String> localNames = locals[key];// including arguments
 		int local_count = localNames.size();
-		localNameMap = localNameMap + Code(function_index) + Code(local_count); /*???*/
+		if (local_count == 0)continue;
+		localNameMap = localNameMap + Code(index) + Code(local_count); /*???*/
 		for (int i = 0; i < localNames.size(); ++i) {
-//		String local_name = "test_"s+key+"#"+local_count;
 			String local_name = localNames[i];
 			localNameMap = localNameMap + Code(i) + Code(local_name);
 		}
@@ -926,7 +933,7 @@ Code nameSection() {
 //	localNameMap = localNameMap + exampleNames;
 
 	auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
-	auto functionNames = Code(function_names) + encodeVector(Code(total_func_count) + nameMap);
+	auto functionNames = Code(function_names) + encodeVector(Code(last_index - runtime_offset + 1) + nameMap);
 	auto localNames = Code(local_names) + encodeVector(Code(total_func_count) + localNameMap);
 
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
@@ -1000,13 +1007,13 @@ void add_builtins() {
 	builtin_count = 0;
 	for (auto sig : functionSignatures) {// imports first
 		if (functionSignatures[sig].is_import and functionSignatures[sig].is_used) {
-			functionIndices[sig] = functionIndices.size();
+			functionIndices[sig] = ++last_index;// functionIndices.size();
 			import_count++;
 		}
 	}
 	for (auto sig : functionSignatures) {// now builtins
 		if (functionSignatures[sig].is_builtin and functionSignatures[sig].is_used) {
-			functionIndices[sig] = functionIndices.size();
+			functionIndices[sig] = ++last_index;// functionIndices.size();
 			builtin_count++;
 		}
 	}
@@ -1020,21 +1027,15 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	functionIndices.setDefault(-1);
 	functionCodes.setDefault(Code());
 	functionSignatures.setDefault(Signature());
-
 	if (runtime0) {
 		runtime = *runtime0;// else filled with 0's
 		runtime_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
 		import_count = 0;
 		builtin_count = 0;
 		int newly_pre_registered = 0;//declaredFunctions.size();
-
-		if (runtime.total_func_count + newly_pre_registered != functionIndices.size()) {
-//			log(functionSignatures.size());
-			log(functionIndices);
-//			error("runtime.total_func_count !=  functionIndices.size(): "s + runtime.total_func_count +" !="+ functionIndices.size());
-			warn("runtime.total_func_count !=  functionIndices.size()");
-		}
+		last_index = runtime_offset - 1;
 	} else {
+		last_index = -1;
 		runtime = *new Module();// all zero
 		runtime_offset = 0;
 		typeMap.clear();
@@ -1047,8 +1048,8 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		functionSignatures[start] = Signature().returns(i32t);
 		functionSignatures[start].emit = true;
 		if (!functionIndices.has(start))
-			functionIndices[start] = runtime_offset ? runtime_offset + declaredFunctions.size()
-			                                        : functionIndices.size();  // AFTER collecting imports!!
+			functionIndices[start] = ++last_index;
+//			functionIndices[start] =runtime_offset ? runtime_offset + declaredFunctions.size() :  ++last_index;// functionIndices.size();  // AFTER collecting imports!!
 		else
 			error("start already declared: "s + start + " with index " + functionIndices[start]);
 	} else {
