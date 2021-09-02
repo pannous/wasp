@@ -679,6 +679,7 @@ Node analyze(Node data) {
 	return grouped;
 }
 
+
 Node analyze2(Node data) {
 	if (data.kind == reference and data.length == 0)return data;
 	if (data.kind == expressions or data.kind == declaration) {
@@ -695,6 +696,7 @@ Node analyze2(Node data) {
 	grouped.log();
 	return grouped;
 }
+
 
 String debug_code;
 
