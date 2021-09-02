@@ -94,12 +94,15 @@ bool eq(chars dest, chars src, int length) {
 int strlen0(chars x) {
 	if (!x)return 0;
 	int l = 0;
-	if ((long) x > MEMORY_SIZE) {
+	if ((long) x >= MEMORY_SIZE || (long) x == 0x200000000) {
 		logs(x);
 		logi((int) (long) x);// 0x1000000 16777216
 		error("corrupt string");
 	}
-	while (l < MAX_STRING_LENGTH and *x++)l++;
+	if ((long) x == 0x1ffffffff || (long) x >= 0xffffffff00000000 ||
+	    ((long) x >= 0x100000000 and (long) x <= 0x100100000))
+		return false;// todo: valgrind debug corruption, usually because of not enough memory
+	while (l < MAX_STRING_LENGTH and (long) x < MEMORY_SIZE - 1 and *x++)l++;
 	return l;
 }
 
@@ -424,7 +427,10 @@ bool String::empty() const {//this==0 in testMarkMulti!
 ////		return true;
 //#endif
 	if (this == 0)return true;
-	return length == 0 || !data || data[0] == 0 || data == object_name.data;
+	if ((long) data == 0x1ffffffff || (long) data >= 0xffffffff00000000 ||
+	    ((long) data >= 0x100000000 and (long) data <= 0x100100000))
+		return false;// todo: valgrind debug corruption, usually because of not enough memory
+	return length == 0 || !data || (long) data > MEMORY_SIZE || data[0] == 0 || data == object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
 }
 
