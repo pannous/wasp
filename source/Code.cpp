@@ -142,10 +142,12 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == reals)return float32;// float64; todo why 32???
 	if (n.kind == longs)return int32;// int64; todo
 	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
-	if (n.kind == assignment)return mapTypeToWasm(n.first());// todo
-	if (n.kind == operators) return mapTypeToWasm(n.first());// todo
-	if (n.kind == expressions)return mapTypeToWasm(n.first());// todo analyze expressions WHERE? remove HACK!
-	if (n.kind == call)error("node.kind==call is not a wasm type, maybe get signature?");
+	Node &first = n.first();
+	if (first == n)first = NIL;// avoid loops
+	if (n.kind == assignment)return mapTypeToWasm(first);// todo
+	if (n.kind == operators) return mapTypeToWasm(first);// todo
+	if (n.kind == expressions)return mapTypeToWasm(first);// todo analyze expressions WHERE? remove HACK!
+	if (n.kind == call)error("first.kind==call is not a wasm type, maybe get signature?");
 	n.log();
 	error("Missing map for type in mapTypeToWasm");
 	return none;

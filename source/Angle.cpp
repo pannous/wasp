@@ -103,8 +103,11 @@ String extractFunctionName(Node &node) {
 List<String> collectOperators(Node &expression) {
 	List<String> operators;
 	for (Node &op : expression) {
+		if (not op.name)continue;
 		if (operator_list.has(op.name))
 //			if (op.name.in(operator_list))
+			operators.add(op.name);
+		else if (op.name.endsWith("="))// += etc
 			operators.add(op.name);
 //		if (op.name.in(function_list))
 //			operators.add(op.name);
@@ -304,11 +307,19 @@ Node &groupOperators(Node &expression0) {
 				expression.remove(i, -1);
 			} else {
 				//#ifndef RUNTIME_ONLY
-				if (node.name == "=" and prev.kind == reference)
+				if (node.name.endsWith("=") and prev.kind == reference)
 					locals["main"].add(prev.name);
 				//#endif
 				node.add(prev);
 				node.add(next);
+				if (op.length > 1 and op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and
+				    op[0] != '>' and op.endsWith("=")) {// += etc
+					node.name = String(op.data[0]);
+					Node *setter = prev.clone();
+					setter->setType(assignment);
+					setter->value.node = node.clone();
+					node = *setter;
+				}
 				expression.replace(i - 1, i + 1, node);
 			}
 		}
@@ -724,6 +735,7 @@ Node emit(String code) {
 	preRegisterSignatures();// todo: reduntant to emitter
 	analyzed.clear();// todo move much into outer analyze function!
 	Node charged = analyze(data);
+	charged.log();
 	Code binary = emit(charged);
 //	code.link(wasp) more beautiful with multiple memory sections
 	int result = binary.run();

@@ -388,8 +388,8 @@ void testWasmMemoryIntegrity() {
 	}
 }
 
-void testRecentRandomBugs() {
-//		testGraphQlQuery();
+void testOldRandomBugs() {
+	//		testGraphQlQuery();
 	check(operator_list.has("+"));
 	check(not(bool) Node("x"));
 	check(false == (bool) Node("x"));
@@ -410,8 +410,8 @@ void testRecentRandomBugs() {
 	check(node[0]["x"] == 40)
 
 
-//0 , 1 , 1 , 2 , 3 , 5 , 8 , 13 , 21 , 34 , 55 , 89 , 144
-//	assert_emit("fib(it-1)",3);
+	//0 , 1 , 1 , 2 , 3 , 5 , 8 , 13 , 21 , 34 , 55 , 89 , 144
+	//	assert_emit("fib(it-1)",3);
 	assert_emit("if 4>1 then 2 else 3", 2)
 
 	assert_emit("double := it * 2 ; double(4)", 8)
@@ -421,7 +421,7 @@ void testRecentRandomBugs() {
 	assert_emit("1+2 + square 3+4", (long) 52);
 
 	assert_emit("4*5 + square 2*3", (long) 56);
-//	assert_emit("id 3*42> id 2*3", 1)
+	//	assert_emit("id 3*42> id 2*3", 1)
 	assert_emit("x:=41;if x>1 then 2 else 3", 2)
 	assert_emit("x=41;if x>1 then 2 else 3", 2)
 	assert_emit("x:41;if x>1 then 2 else 3", 2)
@@ -430,32 +430,14 @@ void testRecentRandomBugs() {
 
 	assert_emit("x:41;x+1", 42)
 
-//	exit(1);
-//	const Node &node1 = parse("x:40;x++;x+1");
-//	check(node.length==3)
-//	check(node[0]["x"]==40)
-//	exit(1);
+	//	exit(1);
+	//	const Node &node1 = parse("x:40;x++;x+1");
+	//	check(node.length==3)
+	//	check(node[0]["x"]==40)
+	//	exit(1);
 	assert_emit("3 + √9", (long) 6);
 	assert_emit("square 3", 9);
 	assert_emit("-42", -42)
-}
-
-
-//testWasmControlFlow
-void wasm_todos() {
-	assert_emit(("42.1"), 42.1) // main returns int, should be pointer to value!
-	skip(
-			testWasmVariables0();
-			assert_emit("i=0.0;i", 0.0);
-			testsFailingInWasm();
-			assert_emit("0.0", (long) 0);// can't emit float yet
-			assert_emit(("x*=14"), 1)
-			assert_emit(("x=15;x>=14"), 1)
-//			Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1`
-			assert_emit("id 3*42 > id 2*3", 1)
-			assert_emit("square 3*42 > square 2*3", 1)
-			assert_emit("double:=it*2; double 3*42 > double 2*3", 1)
-	)
 }
 
 //void testRefactor(){
@@ -506,7 +488,7 @@ void testWasmModuleExtension() {
 	functionSignatures.clear();
 	Node charged = analyze(parse("test:=42"));
 //	Code lib = emit(charged, 0, nil);// no main
-	Code lib = emit(charged, 0, "lib_main");
+	Code lib = emit(charged, 0, 0);// "lib_main");
 	lib.save("lib.wasm");
 
 	Module module = read_wasm("lib.wasm");
@@ -592,6 +574,32 @@ void testWasmStuff() {
 }
 
 
+void testRecentRandomBugs() {
+	skip(
+			assert_emit("i=ø; not i", true);
+	)
+}
+
+
+//testWasmControlFlow
+void wasm_todos() {
+	assert_emit(("x=3;x*=3"), 9)
+	skip(
+			assert_emit(("42.1"), 42.1) // main returns int, should be pointer to value!
+			testWasmVariables0();
+			assert_emit("i=0.0;i", 0.0);
+			assert_emit("i=ø; not i", true);
+			//			testsFailingInWasm();
+			assert_emit("0.0", (long) 0);// can't emit float yet
+
+			assert_emit(("x=15;x>=14"), 1)
+			//			Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1`
+			assert_emit("id 3*42 > id 2*3", 1)
+			assert_emit("square 3*42 > square 2*3", 1)
+			assert_emit("double:=it*2; double 3*42 > double 2*3", 1)
+	)
+}
+
 void testAllWasm() {
 	data_mode = false;
 	testWasmMemoryIntegrity();
@@ -600,9 +608,11 @@ void testAllWasm() {
 	logs("NO WASM emission...");
 	return;
 #endif
+	assert_emit("i=1;while(i<9){i++};i+1", 10);
+	assert_emit("452==452", 1);
 
+	wasm_todos();
 	testWasmWhile();
-
 	// todo: reuse all tests via
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
@@ -615,8 +625,9 @@ void testAllWasm() {
 //	exit(21);
 //	testWasmIncrement
 
-	testRecentRandomBugs();
 // TRUE TESTS:
+	testRecentRandomBugs();
+	testOldRandomBugs();
 	testWasmStuff();
 	testWasmFunctionDefiniton();
 	test_get_local();
@@ -637,10 +648,8 @@ void testAllWasm() {
 	testWasmModuleExtension();
 	testWasmRuntimeExtension();
 	skip(
-			testWasmModuleExtension();
-			testWasmRuntimeExtension();
-			wasm_todos();
 			testWasmLogicOnObjects();
+			wasm_todos();
 	)
 	data_mode = true;// allow
 }

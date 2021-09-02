@@ -86,6 +86,8 @@ bool eq(chars dest, chars src, int length) {
 			return false;
 		i++;
 	}
+	if (length > 0 and src[i] and not dest[i])// reference strings must be ≠0 for whole length
+		return false;
 	return true;
 }
 
@@ -551,6 +553,15 @@ codepoint *String::extractCodepoints(bool again) {
 
 bool String::startsWith(chars string) {
 	return indexOf(string) == 0;
+}
+
+bool String::endsWith(const char *string) {
+	int len1 = len(string);
+	return len1 <= length and eq(data + length - len1, string, len1);
+}
+
+String String::to(const char *string) {
+	return substring(0, indexOf(string), true);
 }
 
 String EMPTY_STRING0 = "";
