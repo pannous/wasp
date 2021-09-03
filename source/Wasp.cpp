@@ -1193,8 +1193,18 @@ float precedence(char group) {
 	return 999;
 }
 
+
+// test functions to check wasm->runtime interaction
 int ok() {
-	return 43;
+	return 42;
+}
+
+int oki(int i) {
+	return 42 + i;
+}
+
+float okf(float f) {
+	return 42 + f;
 }
 
 void not_ok() {
