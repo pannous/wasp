@@ -264,7 +264,7 @@ enum Valtype {
 	float32 = 0x7d,
 	f32t = 0x7d,
 
-	int64 = 0x7E,
+	int64 = 0x7E, // signed or unsigned? we don't care
 	i64t = 0x7E,
 
 	float64 = 0x7C,
@@ -274,6 +274,9 @@ enum Valtype {
 	none = 0x40, // ===
 	void_block = 0x40, // VERSUS:
 	voids = 0x00, // DANGER!=void_block  internal only for return type
+	// INTERNAL TYPES ONLY:
+	charp = pointer,
+	node = pointer,
 };
 
 
@@ -410,7 +413,8 @@ public:
 	Map<int, Valtype> types;
 	Valtype return_type = voids;
 	bool is_import = false; // not serialized in functype section, but in import section wt
-	bool is_builtin = false;
+	bool is_runtime = false;
+	bool is_builtin = false;// hard coded functions, tests only? todo remove
 	bool is_handled = false; // already emitted (e.g. as runtime)
 	bool is_used = false;// called
 	bool emit = false;// only those types/functions that are declared (export) or used in call
@@ -429,6 +433,10 @@ public:
 		return *this;
 	}
 
+	Signature runtime() {
+		is_runtime = true;
+		return *this;
+	}
 
 	Signature add(Valtype t) {
 		types.insert_or_assign(types.size(), t);
@@ -440,6 +448,7 @@ public:
 //		return_types[name] = valtype;
 		return *this;
 	}
+
 
 };
 
