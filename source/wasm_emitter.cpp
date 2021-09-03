@@ -1,4 +1,5 @@
 //https://blog.sentry.io/2020/08/11/the-pain-of-debugging-webassembly
+//https://developer.mozilla.org/en-US/docs/WebAssembly/Understanding_the_text_format
 //https://github.com/mdn/webassembly-examples/tree/master/understanding-text-format
 // https://github.com/ColinEberhardt/chasm/blob/master/src/emitter.ts
 // https://github.com/ColinEberhardt/chasm/blob/master/src/encoding.ts
@@ -17,6 +18,12 @@
 int runtime_offset = 0; // imports + funcs
 int import_count = 0;
 short builtin_count = 0;// function_offset - import_count - runtime_offset;
+
+//bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
+char *data;// any data to be stored to wasm: values of variables, strings, nodes etc
+int last_data_index = 0;// position to write more data = end + length of data section
+Map<String *, long> stringIndices; // wasm pointers to strings within wasm data
+//Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
 Module runtime;
 String start = "main";
@@ -239,6 +246,25 @@ Code emitValue(Node node, String context) {
 			warn("operators should never be emitted as values");
 			return emitExpression(node, context);
 			break;
+		case strings: {
+			// append string (as char*) to data section and access via stringIndex
+			int stringIndex = last_data_index;
+			String *string = node.value.string;
+			if (stringIndices.has(string))
+				stringIndex = stringIndices[string];
+			else {
+//				Code lens(string->length);// we follow the standard wasm abi to encode string as LEB-lenght + data:
+//				strcpy2(data + last_data_index, (char*)lens.data, lens.length);
+//				last_data_index += lens.length;// unsignedLEB128 encoded length of string
+				strcpy2(data + last_data_index, string->data, string->length);
+				data[last_data_index + string->length] = 0;
+				// we add an extra 0, unlike normal wasm abi, because we have space in data section
+				last_data_index += string->length + 1;
+			}
+			return Code(i32_const) + Code(stringIndex);// just a pointer
+//			return Code(stringIndex).addInt(string->length);// pointer + length
+		}
+			break;
 		default:
 			error("emitValue unknown type: "s + typeName(node.kind));
 	}
@@ -321,6 +347,7 @@ Code emitOperator(Node node, String context) {
 
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0 after args, used for 'it'  after while(){} etc) !!!
 int last_local = 0;
+
 Code emitExpression(Node &node, String context/*="main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	Code code;
@@ -654,7 +681,8 @@ Code signedLEB128(int n) {
 
 Code emitBlock(Node node, String context) {
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
-//	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
+//	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};
+// 0x00 == unreachable as block header !?
 //	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	Code(code_data,sizeof(code_data)); // todo : memcopy, else stack value is LOST
 	Code block;
@@ -679,6 +707,10 @@ Code emitBlock(Node node, String context) {
 			valtype = int32;
 		block.addByte(valtype);
 	}
+	// todo block.addByte(i+1) // index seems to be wrong: i==NUMBER of locals of type xyz ??
+//	013b74: 01 7f                      | local[0] type=i32
+//	013b76: 02 7f                      | local[1..2] type=i32
+//	013b78: 03 7f                      | local[3..5] type=i32
 
 	Code inner_code_data = emitExpression(node, context);
 	Valtype x = last_type;
@@ -783,7 +815,8 @@ Code importSection() {
 	if (functionSignatures["logf"].is_used and ++import_count)
 		imports = imports + encodeString("env") + encodeString("logf").addByte(func_export).addType(typeMap["logf"]);
 	if (functionSignatures["square"].is_used and ++import_count)
-		imports = imports + encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
+		imports =
+				imports + encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
 	if (imports.length == 0)return Code();
 	auto importSection = createSection(import_section, Code(import_count) + imports);// + sqrt_ii
 	return importSection.clone();
@@ -817,7 +850,8 @@ Code codeSection(Node root) {
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
 	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
 	byte code_data_nop[] = {0/*locals_count*/, end_block};// NOP
-	byte code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block, end_block};// NOP
+	byte code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block,
+	                       end_block};// NOP
 //	byte code_data_logi_21[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};
 //	byte code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 	Code code_blocks;
@@ -868,6 +902,27 @@ Code exportSection() {
 	return exportSection;
 }
 
+Code dataSection() {
+//	Contents of section Data:
+//	0000042: 0100 4100 0b02 4869                      ..A...Hi
+//https://webassembly.github.io/spec/core/syntax/modules.html#syntax-datamode
+	Code datas;
+	if (last_data_index == 0)return datas;//empty
+
+	//Contents of section Data:
+//0013b83: 0005 00 41 8108 0b fd1d 63 6f72 7275 7074  ...A.....corrupt
+//	datas.addByte(00); WHY does module have extra 0x00 and 5 data sections???
+
+	datas.addByte(01);// one memory initialization / data segment
+	datas.addByte(00);// memory id always 0
+	datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
+	datas.addInt(0x100000);// actual offset in memory todo: module offset + module data length
+	datas.addByte(0x0b);// mode: active?
+	datas.addByte(last_data_index); // size of data
+	const Code &actual_data = Code((bytes) data, last_data_index);
+	datas.add(actual_data);// now comes the actual data  encodeVector()? nah manual here!
+	return createSection(data_section, encodeVector(datas));// size added via actual_data
+}
 
 // Signatures
 Code funcTypeSection() {// depends on codeSection, but must appear earlier in wasm
@@ -964,10 +1019,15 @@ Code eventSection() {
  *  There are currently two ways in which function indices are stored in the code section:
     Immediate argument of the call instruction (calling a function)
     Immediate argument of the i32.const instruction (taking the address of a function).
-    The immediate argument of all such instructions are stored as padded LEB128 such that they can be rewritten without altering the size of the code section. !
-    For each such instruction a R_WASM_FUNCTION_INDEX_LEB or R_WASM_TABLE_INDEX_SLEB reloc entry is generated pointing to the offset of the immediate within the code section.
+    The immediate argument of all such instructions are stored as padded LEB128 such that they can be rewritten
+    without altering the size of the code section. !
+    For each such instruction a R_WASM_FUNCTION_INDEX_LEB or R_WASM_TABLE_INDEX_SLEB reloc entry is generated
+    pointing to the offset of the immediate within the code section.
 
-    R_WASM_FUNCTION_INDEX_LEB relocations may fail to be processed, in which case linking fails. This occurs if there is a weakly-undefined function symbol, in which case there is no legal value that can be written as the target of any call instruction. The frontend must generate calls to undefined weak symbols via a call_indirect instruction.
+    R_WASM_FUNCTION_INDEX_LEB relocations may fail to be processed, in which case linking fails.
+    This occurs if there is a weakly-undefined function symbol, in which case there is no legal value that can be
+    written as the target of any call instruction. The frontend must generate calls to undefined weak symbols
+    via a call_indirect instruction.
 */
 Code linkingSection() {
 //	https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
@@ -1031,7 +1091,8 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	start = _start;
 	typeMap.setDefault(-1);
 	typeMap.clear();
-
+	data = (char *) malloc(MAX_DATA_LENGTH);
+	last_data_index = 0;
 	functionIndices.setDefault(-1);
 	functionCodes.setDefault(Code());
 	functionSignatures.setDefault(Signature());
@@ -1040,6 +1101,9 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		runtime_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
 		import_count = 0;
 		builtin_count = 0;
+		last_data_index = runtime.data_segments.length;// insert after module data!
+		// todo: either write last_data_index DIRECTLY after module data and increase count of module data,
+		// or increase memory offset for second data section! (AND increase index nontheless?)
 		int newly_pre_registered = 0;//declaredFunctions.size();
 		last_index = runtime_offset - 1;
 	} else {
@@ -1071,8 +1135,10 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
 	auto memorySection = createSection(memory_section, encodeVector(Code(2)));
-	auto memoryImport = encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
-	auto customSection = createSection(custom_section, encodeVector(Code("custom123") + Code("random custom section data")));
+	auto memoryImport =
+			encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
+	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
+	auto customSection = createSection(custom_section, customSectionvector);
 	Code typeSection1 = typeSection();// types can be defined in analyze(), not in code declaration
 	Code importSection1 = importSection();// needs type indices
 	Code codeSection1 = codeSection(root_ast);
@@ -1085,13 +1151,14 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	            + funcTypeSection1 // signatures
 	            + exportSection1
 	            + codeSection1 // depends on importSection, yields data for funcTypeSection!
-	            //			+ dataSection()
+	            + dataSection()
 	            //			+ linkingSection()
 	            + nameSection()
 //	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
 	;
 	code.debug();
+	free(data);// written to wasm code ok
 	if (runtime0)functionSignatures.clear(); // cleanup after NAJA
 	return code.clone();
 }
