@@ -142,6 +142,7 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == reals)return float32;// float64; todo why 32???
 	if (n.kind == longs)return int32;// int64; todo
 	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
+	if (n.kind == strings)return string;// special internal Valtype, represented as i32 index to data / pointer!
 	Node &first = n.first();
 	if (first == n)first = NIL;// avoid loops
 	if (n.kind == assignment)return mapTypeToWasm(first);// todo
@@ -149,6 +150,6 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == expressions)return mapTypeToWasm(first);// todo analyze expressions WHERE? remove HACK!
 	if (n.kind == call)error("first.kind==call is not a wasm type, maybe get signature?");
 	n.log();
-	error("Missing map for type in mapTypeToWasm");
+	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
 	return none;
 }

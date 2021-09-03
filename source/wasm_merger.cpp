@@ -55,10 +55,18 @@ Code mergeExportSection(Module lib, Module main) {
 }
 
 Code mergeDataSection(Module lib, Module main) {
-	if (lib.data_section.length == 0 and main.data_section.length == 0)return Code();
-//	if (lib.data_count == 0 and main.data_count == 0)return Code();
-//	Code(lib.data_count + main.data_count) + no such thing
-	return createSection(data_section, lib.data_section + main.data_section);
+//	if (lib.data_section.length == 0 and main.data_section.length == 0)return Code();
+	if (lib.data_segments_count == 0 and main.data_segments_count == 0)return Code();
+//	Code(lib.data_segments_count + main.data_segments_count) + no such thing
+//	return createSection(data_section, lib.data_section + main.data_section);
+//	return Code(lib.data_section)+ Code(main.data_section);// 000004c: error: multiple Data sections
+//	return createSection(data_section, Code(lib.data_segments_count + main.data_segments_count)+ lib.data_section+ main.data_section);// mergeExportSection style
+	Code datas;
+	datas.addByte(lib.data_segments_count +
+	              main.data_segments_count);// one memory initialization active todo: increase when merging!
+	datas.add(lib.data_segments);// now comes the actual data
+	datas.add(main.data_segments);
+	return createSection(data_section, encodeVector(datas));
 }
 
 
