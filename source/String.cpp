@@ -570,6 +570,22 @@ String String::to(const char *string) {
 	return substring(0, indexOf(string), true);
 }
 
+List<String> String::split(const char *string) {
+	List<String> parts;
+	int len1 = len(string);
+	int start = 0;
+	for (int i = 0; i < length; i++) {
+		if (eq(data + i, string, len1)) {
+			const String &part = String(data + start, i - start, !debug);
+			parts.add(part);
+			start = i + len1;
+		}
+	}
+	const String &rest = String(data + start, -1, true);
+	parts.add(rest);
+	return parts;
+}
+
 String EMPTY_STRING0 = "";
 String &EMPTY_STRING = EMPTY_STRING0;
 
