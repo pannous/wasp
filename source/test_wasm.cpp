@@ -516,9 +516,12 @@ int runtime_emit(String prog) {
 	functionIndices.clear();
 	functionSignatures.clear();
 	functionIndices.setDefault(-1);
+	functionSignatures.setDefault(Signature());
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 	functionSignatures.insert_or_assign("logi", Signature().add(int32).returns(voids));
 	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// scaffold until parsed
+	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));// scaffold until parsed
+	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));// scaffold until parsed
 	Module runtime = read_wasm("wasp.wasm");
 	Node charged = analyze(parse(prog));
 	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
@@ -541,8 +544,15 @@ int runtime_emit(String prog) {
 void testWasmRuntimeExtension() {
 	assert_run("ok+1", 43);
 	assert_run("oki(1)", 43);
+	functionSignatures["okf"].returns(float32);
 	assert_run("okf(1)", 43);
+	assert_run("atoi0('123')", 123);// result parsed?
 
+	skip(
+			assert_run("'123'", 123);// result printed and parsed?
+			assert_run("strlen0('123')", 3);
+			assert_run("printf('123')", 123);// result parsed?
+	)
 	skip( // if not compiled as RUNTIME_ONLY library:
 			check(functionSignatures.has("tests"))
 			assert_run("tests", 42);
