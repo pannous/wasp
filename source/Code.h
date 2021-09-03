@@ -390,8 +390,10 @@ enum Opcodes {
 	i64_load = 0x29, // memory.peek memory.get memory.read
 	i64_store = 0x37, // memory.poke memory.set memory.write
 
+	f32_cast_to_i32_s = 0xa8,
 	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
-	f32_convert_i32_s = 0xB2,
+	f32_convert_i32_s = 0xB2,// convert FROM i32
+	i32_cast_to_f32_s = 0xB2,
 
 	i32_reinterpret_f32 = 0xbc, // f32->i32 bit wise reinterpret != cast/trunc/convert
 	f32_reinterpret_i32 = 0xBE, // i32->f32
