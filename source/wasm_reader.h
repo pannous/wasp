@@ -17,7 +17,8 @@ public:
 	Code table_data;
 
 	Code name_data;
-	Code data_section;
+//	Code data_section;// data_segments with header: data_segments_count + memory_id + i32.const + offset + 0x0b?
+	Code data_segments;// data_section without header ^^ (actual data) todo BUT memory_id + i32.const + offset + 0x0b is HEADER PER SEGMENT!
 	Code linking_section;
 	Code relocate_section;
 	List<Code> custom_sections;// all remaining
@@ -30,7 +31,7 @@ public:
 	int export_count = 0;
 	int global_count = 0;
 	int code_count = 0;
-	int data_count = 0;
+	int data_segments_count = 0; // ≠ data_section.length   ALL MUST BE IN the one Data section!
 	// name section:
 	Code element_section;// todo?
 	Code local_names;

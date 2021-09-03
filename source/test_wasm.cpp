@@ -544,8 +544,9 @@ int runtime_emit(String prog) {
 void testWasmRuntimeExtension() {
 	assert_run("ok+1", 43);
 	assert_run("oki(1)", 43);
-	functionSignatures["okf"].returns(float32);
+//	functionSignatures["okf"].returns(float32);
 	assert_run("okf(1)", 43);
+	functionSignatures["atoi0"].returns(int32);
 	assert_run("atoi0('123')", 123);// result parsed?
 
 	skip(

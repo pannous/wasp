@@ -108,6 +108,7 @@ int strlen0(chars x) {
 
 // or cstring
 //#ifndef cstring
+// needs manual 0 termination, or copy with length + 1
 void strcpy2(char *dest, chars src, int length) {// =-1
 	if (!dest || !src)
 		return;
