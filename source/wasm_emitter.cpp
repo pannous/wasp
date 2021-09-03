@@ -189,6 +189,8 @@ Code emitBlock(Node node, String functionContext);
 List<String> collect_locals(Node node, String context);
 
 
+Code cast(Valtype from, Valtype to);
+
 Code emitValue(Node node, String context) {
 	Code code;
 	switch (node.kind) {
@@ -466,20 +468,35 @@ Code emitExpression(Node *nodes, String context) {
 
 Code emitCall(Node &fun, String context) {
 	Code code;
+	Signature &signature = functionSignatures[fun.name];
 	int index = functionIndices[fun.name];
 	if (index < 0)
 		error("MISSING import/declaration for function %s\n"s % fun.name);
+	int i = 0;
 	for (Node arg : fun) {
 		code.push(emitExpression(arg, context));
+		Valtype argType = mapTypeToWasm(arg);
+		Valtype &sigType = signature.types[i];
+		if (sigType != argType)
+			code.push(cast(argType, sigType));
+
 	};
 	code.addByte(function);
 	code.addInt(index);
 	code.addByte(nop);// padding for potential relocation
-	Signature &signature = functionSignatures[fun.name];
 	signature.is_used = true;
 	signature.emit = true;
 	last_type = signature.return_type;
 	return code;
+}
+
+Code cast(Valtype from, Valtype to) {
+	Code casted;
+	if (from == i32t and to == float32) casted.addByte(i32_cast_to_f32_s);
+	else if (from == float32 and to == i32t) casted.addByte(f32_cast_to_i32_s);
+	else
+		error("missing cast map "s + from + " -> " + to);
+	return casted;
 }
 
 Code emitDeclaration(Node fun, Node &body) {
