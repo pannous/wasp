@@ -257,6 +257,12 @@ public:
 
 // https://webassembly.github.io/spec/core/binary/types.html
 // https://webassembly.github.io/spec/core/binary/values.html
+// Wasp/angle has four different types:
+// 1. wasm Valtype
+// 2. node.kind:Type
+// 3. Any<Node and
+// 4. some c++ types String List etc
+// the last three can be added as special internal values to Valtype, outside the wasm spec
 enum Valtype {
 	int32 = 0x7f,
 	i32t = 0x7f,
@@ -274,9 +280,17 @@ enum Valtype {
 	none = 0x40, // ===
 	void_block = 0x40, // VERSUS:
 	voids = 0x00, // DANGER!=void_block  internal only for return type
-	// INTERNAL TYPES ONLY:
+
+	// SPECIAL INTERNAL TYPES ONLY, not part of spec but they ARE represented through c++=>wasm types (int32?) :
+	// enums with the same value can NOT be distinguished thereafter!!! :(
+	// todo Signatures need a real Type, not a Valtype!
 	charp = pointer,
+	codepoint32 = int32,
 	node = pointer,
+	string = pointer, // enough??
+	value = 0xA1,
+	todoe = 0xF0, // todo
+	ignore = 0xFF, // truely internal, should not be exposed! e.g. Arg
 };
 
 
