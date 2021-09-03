@@ -15,20 +15,20 @@ Node &result = *new Node();
 //#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
 #define check(test) if(test){log("\nOK check passes: ");printf("%s\n",#test);}else{ \
 printf("\nNOT PASSING: "); log(#test);printf("%s:%d\n",__FILE__,__LINE__); \
-exit(EXIT_FAILURE);}
+exit(1);}
 
 #undef assert // assert.h:92 not as good!
 #define assert(condition) try{\
    if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
-   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(EXIT_FAILURE);}
+   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(1);}
 
 
-//#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(EXIT_FAILURE);}
-//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(EXIT_FAILURE);}
-//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(EXIT_FAILURE);}
+//#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
+//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
+//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-//#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(EXIT_FAILURE);}
+//#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(1);}
 #define check_eq assert_equals
 
 
@@ -58,14 +58,14 @@ bool assert_equals_x(Node a, const char *b, char *context = "") {
 
 bool assert_equals_x(Node a, int b, char *context = "") {
 	if (a != Node(b))printf("\nFAILED assert_equals! %d should be %d %s\n"s, a.value.longy, b, context);
-	else printf("OK %ld==%d\n", a.value.longy, b);
+	else printf("OK %ld==%ld\n", a.value.longy, (long) b);
 	return a == b;
 }
 
 // WTF why is char* unexplicitly cast to bool!?!
 bool assert_equals_x(Node a, bool b, char *context = "") {
 	if (a != Node(b))printf("\nFAILED assert_equals! %d should be %d %s\n"s, a.value.longy, b, context);
-	else printf("OK %ld==%d\n", a.value.longy, b);
+	else printf("OK %ld==%ld\n", a.value.longy, (long) b);
 	return a == b;
 }
 
@@ -221,8 +221,8 @@ Node assert_parsesx(chars mark) {
 	}
 	return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
-//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(EXIT_FAILURE);}
-#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(EXIT_FAILURE);}
+//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(1);}
+#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(1);}
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
 
@@ -232,7 +232,7 @@ Node assert_parsesx(chars mark) {
     bool ok=assert_isx(mark,result);\
     if(ok)printf("PASSED %s==%s\n",#mark,#result);\
     else{printf("FAILED %s==%s\n",#mark,#result);\
-    printf("%s:%d\n",__FILE__,__LINE__);exit(EXIT_FAILURE);}\
+    printf("%s:%d\n",__FILE__,__LINE__);exit(1);}\
 }
 
 

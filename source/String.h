@@ -379,7 +379,8 @@ public:
 // excluding to
 	String substring(int from, int to = -1, bool ref = false /* true after all is tested*/) { // excluding to
 		if (from < 0 or (from == 0 and (to == length or to < 0))) return *this;
-		if (to < 0 or to > length) to = length;
+		if (to < 0) to = length + to + 1;// -2 : skip last character
+		if (to > length or to < -length) to = length;
 		if (to <= from) return EMPTY_STRING;
 		if (from >= length) return EMPTY_STRING;
 		int len = to - from;
@@ -815,6 +816,8 @@ public:
 	bool endsWith(const char *string);
 
 	String to(const char *string);
+
+	List<String> split(const char *string);
 };
 
 
