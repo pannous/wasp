@@ -27,7 +27,7 @@ typedef enum smartType {
 	byter = 0xB, // unsigned char* with length ... ?
 	codes = 0xC,  // direct wasm code! interpreted inline OR:
 //	code=0xC,  // angle code tree
-	data = 0xD, // angle node tree
+	datas = 0xD, // angle node tree
 	error_spo = 0xE,
 	sint28 = 0xF,// negatives
 } smartType;
