@@ -405,8 +405,10 @@ void panic() {
 
 #endif
 
+bool tracing = false;
 void trace(chars x) {
-	warn(x);
+	if (tracing)
+		warn(x);
 }
 
 

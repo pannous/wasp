@@ -319,7 +319,8 @@ void consumeExportSection() {
 				signature.add(mapArgToValtype(arg));
 			}
 			// todo get return types from funcTypes (don't need funcTypeIndex for exports)
-			functionSignatures[func] = signature; // … library functions currently hardcoded
+			if (!functionSignatures.has(func))
+				functionSignatures[func] = signature; // … library functions currently hardcoded
 		}
 	}
 }
