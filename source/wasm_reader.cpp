@@ -223,9 +223,16 @@ void consumeRelocateSection(Code &data) {
 }
 
 void consumeDataSection() {
-	module.data_section = vec();
-//	module.data_count = unsignedLEB128(module.data_section);
-	printf("data sections: %d \n", module.data_count);
+	Code datas = vec();
+//	module.data_section = datas.clone();
+	module.data_segments_count = unsignedLEB128(datas);
+//	short memory_id= unsignedLEB128(datas);
+//	unsignedLEB128(datas);// skip i32.const opcode
+//	long offset = unsignedLEB128(datas);
+//	unsignedLEB128(datas);// skip '0b' whatever that is
+	module.data_segments = datas;// whereever the start may be now
+	printf("data sections: %d \n", module.data_segments_count);
+//	printf("data section offset: %ld \n", offset);
 }
 
 void consumeElementSection() {

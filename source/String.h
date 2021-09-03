@@ -7,6 +7,7 @@
 #include "NodeTypes.h"
 
 #define MAX_STRING_LENGTH 10000
+#define MAX_DATA_LENGTH 0x1000000
 
 //#include "Map.h" recursive include error Node.h:60:9: error: field has incomplete type 'String'
 

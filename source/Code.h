@@ -249,8 +249,9 @@ public:
 
 	}
 
-	void addInt(int i) {
+	Code addInt(int i) {
 		push((long) i);
+		return *this;
 	}
 };
 
