@@ -279,7 +279,9 @@ List<String> demangle_args(String &fun) {
 	String *real_name = new String(abi::__cxa_demangle(fun.data, 0, 0, &status));
 	if (status != 0)return args;
 	if (!real_name or !real_name->contains("("))return args;
-	String brace = real_name->substring(real_name->indexOf('(') + 1, -2);//.clone();
+	String brace = real_name->substring(real_name->indexOf('(') + 1, real_name->indexOf(')'));//.clone();
+	if (brace.contains("("))
+		return args;// function pointers not supported yet "List<String>::sort(bool (*)(String&, String&))"
 	args = brace.split(", ");
 	return args;
 }
@@ -313,6 +315,7 @@ void consumeExportSection() {
 			functionIndices[func] = index;
 			Signature &signature = Signature().runtime().returns(int32);
 			for (String arg:args) {
+				if (arg.empty())continue;
 				signature.add(mapArgToValtype(arg));
 			}
 			// todo get return types from funcTypes (don't need funcTypeIndex for exports)
@@ -321,19 +324,42 @@ void consumeExportSection() {
 	}
 }
 
+// four different types:
+// 1. wasm Valtype
+// 2. node.kind:Type
+// 3. Any<Node and
+// 4. some c++ types String List etc
+// the last three can be added as special internal values to Valtype, outside the wasm spec
 Valtype mapArgToValtype(String arg) {
 //	if(arg=="const char*")return Valtype::charp;
 	if (arg.empty() or arg == "" or arg == " ") return Valtype::voids;
-	else if (arg == "char const*")return Valtype::charp;
+	else if (arg == "char const*")return Valtype::charp;// pointer with special semantics
 	else if (arg == "char const*&")return Valtype::charp;// todo ?
+	else if (arg == "char const**")return Valtype::pointer;
 	else if (arg == "char*")return Valtype::charp;
-	else if (arg == "Node")return Valtype::node;
+	else if (arg == "short")
+		return Valtype::int32;// careful c++ ABI overflow? should be fine since wasm doesnt have short
 	else if (arg == "int")return Valtype::int32;
+	else if (arg == "int*")return Valtype::pointer;
+	else if (arg == "void*")return Valtype::pointer;
 	else if (arg == "long")return Valtype::int64;
 	else if (arg == "unsigned long")return Valtype::int64;
 	else if (arg == "float")return Valtype::float32;
 	else if (arg == "bool")return Valtype::int32;
+	else if (arg == "char")return Valtype::int32;// c++ char < angle codepoint ok
+	else if (arg == "wchar_t")return Valtype::codepoint32;// angle codepoint ok
+	else if (arg == "char32_t")return Valtype::codepoint32;// angle codepoint ok
 	else if (arg == "Type")return Valtype::int32;// enum
+	else if (arg == "Valtype")return Valtype::int32;// enum
+	else if (arg == "String")return Valtype::string;
+	else if (arg == "String&")return Valtype::string;// todo: how does c++ handle refs?
+	else if (arg == "Node*")return Valtype::pointer;
+	else if (arg == "Node&")return Valtype::node;// pointer? todo: how does c++ handle refs?
+	else if (arg == "Node")return Valtype::node;
+	else if (arg == "Value")return Valtype::value;
+	else if (arg == "Arg")return Valtype::ignore; // truely internal, should not be exposed! e.g. Arg
+	else if (arg == "Signature")return Valtype::ignore;
+	else if (arg == "List<String>")return Valtype::todoe;
 	else
 		error("unmapped c++ argument type "s + arg.clone() + " !");
 	return i32t;
