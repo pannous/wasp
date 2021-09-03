@@ -830,12 +830,8 @@ Code codeSection(Node root) {
 	if (functionSignatures["id"].is_used) builtin_count++;// used
 
 	bool has_main = start and functionIndices.has(start);
-
 	int function_codes = functionCodes.size();
-//	check(new_count == function_codes);
-
 	function_block_count = has_main /*main*/ + builtin_count + function_codes;
-
 	auto codeSection = createSection(code_section, Code(function_block_count) + code_blocks);
 	return codeSection.clone();
 }
@@ -891,9 +887,7 @@ Code functionSection() {
 // todo : convert library references to named imports!
 Code nameSection() {
 	Code nameMap;
-//	check(symbols["logi"]==0);
-//	check(symbols["√"]==3);// "\e2\88\9a"
-//	nameMap =  Code((byte) 0) + Code("logi");
+
 	int total_func_count = last_index + 1;// functionIndices.size();// imports + function_count, all receive names
 	for (int index = runtime_offset; index < total_func_count; index++) {
 		// danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
@@ -909,10 +903,6 @@ Code nameSection() {
 
 	Code localNameMap;
 	for (int index = runtime_offset; index <= last_index; index++) {
-//	for (String key : functionIndices) {
-//		if (key != start)continue;
-//		int function_index = functionIndices[key];
-//		if (function_index < runtime_offset)continue;
 		String *key = functionIndices.lookup(index);
 		if (!key or key->empty())continue;
 		List<String> localNames = locals[key];// including arguments
@@ -925,6 +915,7 @@ Code nameSection() {
 		}
 //		error: expected local name count (1) <= local count (0) FOR FUNCTION ...
 	}
+
 //	localNameMap = localNameMap + Code((byte) 0) + Code((byte) 1) + Code((byte) 0) + Code((byte) 0);// 1 unnamed local
 //	localNameMap = localNameMap + Code((byte) 4) + Code((byte) 0);// no locals for function4
 //	Code exampleNames= Code((byte) 5) /*function index*/ + Code((byte) 1) /*count*/ + Code((byte) 0) /*l.nr*/ + Code("var1");

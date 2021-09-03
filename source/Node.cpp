@@ -16,7 +16,12 @@
 
 bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
-bool debug = true;
+
+#ifdef RUNTIME_ONLY
+bool debug = false;
+#else
+bool debug = true;// clone sub-strings instead of sharing etc
+#endif
 
 //#include <cmath>
 //#include <tgmath.h> // sqrt macro

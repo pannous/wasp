@@ -10,6 +10,7 @@
 #endif
 
 #include "wasm_reader.h"
+#include "wasm_emitter.h"
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 
@@ -23,6 +24,8 @@ Module module;
 extern Map<String, int> functionIndices;
 //extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 
+
+Valtype mapArgToValtype(String arg);
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
@@ -268,6 +271,19 @@ void consumeCodeSection() {
 
 #include <cxxabi.h>
 
+// we can reconstruct arguments from demangled exports or retained wast names
+// _Z2eqPKcS0_i =>  func $eq_char_const*__char_const*__int_ <= eq(char const*, char const*, int)
+List<String> demangle_args(String &fun) {
+	List<String> args;
+	int status;
+	String *real_name = new String(abi::__cxa_demangle(fun.data, 0, 0, &status));
+	if (status != 0)return args;
+	if (!real_name or !real_name->contains("("))return args;
+	String brace = real_name->substring(real_name->indexOf('(') + 1, -2);//.clone();
+	args = brace.split(", ");
+	return args;
+}
+
 String demangle(String &fun) {
 	int status;
 	String *real_name = new String(abi::__cxa_demangle(fun.data, 0, 0, &status));
@@ -286,17 +302,41 @@ void consumeExportSection() {
 	module.export_data = exports_vector.rest();
 	Code &payload = module.export_data;
 	for (int i = 0; i < exportCount; i++) {
-		String func = name(payload).clone();
-		if (func == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
-		func = demangle(func);//
+		String func0 = name(payload).clone();
+		if (func0 == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
+		List<String> args = demangle_args(func0);
+		String func = demangle(func0);//
 		int type = unsignedLEB128(payload);
 		int index = unsignedLEB128(payload);
 		if (index < 0 or index > 100000)error("corrupt index "s + index);
 		if (type == 0/*func*/ and not functionIndices.has(func)) {
 			functionIndices[func] = index;
-//			functionSignatures[func] = … library functions currently hardcoded
+			Signature &signature = Signature().runtime().returns(int32);
+			for (String arg:args) {
+				signature.add(mapArgToValtype(arg));
+			}
+			// todo get return types from funcTypes (don't need funcTypeIndex for exports)
+			functionSignatures[func] = signature; // … library functions currently hardcoded
 		}
 	}
+}
+
+Valtype mapArgToValtype(String arg) {
+//	if(arg=="const char*")return Valtype::charp;
+	if (arg.empty() or arg == "" or arg == " ") return Valtype::voids;
+	else if (arg == "char const*")return Valtype::charp;
+	else if (arg == "char const*&")return Valtype::charp;// todo ?
+	else if (arg == "char*")return Valtype::charp;
+	else if (arg == "Node")return Valtype::node;
+	else if (arg == "int")return Valtype::int32;
+	else if (arg == "long")return Valtype::int64;
+	else if (arg == "unsigned long")return Valtype::int64;
+	else if (arg == "float")return Valtype::float32;
+	else if (arg == "bool")return Valtype::int32;
+	else if (arg == "Type")return Valtype::int32;// enum
+	else
+		error("unmapped c++ argument type "s + arg.clone() + " !");
+	return i32t;
 }
 
 void consumeImportSection() {
@@ -369,6 +409,7 @@ void consumeSections() {
 }
 
 #ifndef RUNTIME_ONLY
+
 Module read_wasm(chars file) {
 	module = *new Module();
 	pos = 0;

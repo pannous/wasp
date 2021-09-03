@@ -512,33 +512,15 @@ void testWasmModuleExtension() {
 #endif
 }
 
-void testWasmRuntimeExtension() {
-	//testWasmRuntimeExtensionMock();
-	skip(
-			log("CAN'T!")
-	)
-//	return;
-#ifndef RUNTIME_ONLY
+int runtime_emit(String prog) {
 	functionIndices.clear();
 	functionSignatures.clear();
-
 	functionIndices.setDefault(-1);
-//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
+	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 	functionSignatures.insert_or_assign("logi", Signature().add(int32).returns(voids));
 	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// scaffold until parsed
 	Module runtime = read_wasm("wasp.wasm");
-	logs("\nruntime.total_func_count\n");
-	logi(runtime.total_func_count);
-	logs("\nruntime.import_count\n");
-	logi(runtime.import_count);
-	logs("\nfunctionIndices.size()\n");
-	logi(functionIndices.size());
-	logs("\n");
-	if (functionIndices.size() < runtime.total_func_count)
-		warn("missing functionIndices: library compiled / optimized without name section");
-//	Node charged = analyze(parse("testo:=42;testo"));
-// keep functionIndices!
-	Node charged = analyze(parse("ok+1"));
+	Node charged = analyze(parse(prog));
 	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
 	lib.save("main.wasm");// partial wasm!
 	functionIndices.clear();// no longer needed
@@ -547,8 +529,24 @@ void testWasmRuntimeExtension() {
 	code.save("merged.wasm");
 	read_wasm("merged.wasm");
 	int result = code.run();
-	check_eq(result, 44);
+	return result;
+}
+
+#ifndef RUNTIME_ONLY
+#define assert_run(a, b) check_eq(runtime_emit(a),b);
+#else
+#define assert_run(a,b) skip(a)
 #endif
+
+void testWasmRuntimeExtension() {
+	assert_run("ok+1", 43);
+	assert_run("oki(1)", 43);
+	assert_run("okf(1)", 43);
+
+	skip( // if not compiled as RUNTIME_ONLY library:
+			check(functionSignatures.has("tests"))
+			assert_run("tests", 42);
+	)
 }
 
 
