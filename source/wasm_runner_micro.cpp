@@ -77,6 +77,7 @@ static NativeSymbol native_symbols[] =
 				{       "logi",    (void *) logi,   "(i)",  NULL, false},
 				{       "log_f32", (void *) logf32, "(f)",  NULL, false},
 				{       "logf",    (void *) logf32, "(f)",  NULL, false},
+				{       "logs",    (void *) logs,   "(i)",  NULL, false},
 		};
 
 wasm_trap_t *hello_callback(const wasm_val_t args[], wasm_val_t results[]) {
