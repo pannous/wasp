@@ -336,6 +336,13 @@ Node &groupWhile(Node n);
 Node &groupFunctions(Node &expression0) {
 	if (expression0.kind == declaration)return expression0;// handled before
 	Node &expression = *expression0.clone();
+	if (isFunction(expression0)) {
+		expression0.setType(call);
+		if (not functionSignatures.has(expression0.name))
+			error("missing import for function "s + expression0.name);
+//		if (not expression0.value.node and arity>0)error("missing args");
+		functionSignatures[expression0.name].is_used = true;
+	}
 	for (int i = 0; i < expression.length; ++i) {
 //	for (int i = expression.length; i>0; --i) {
 		Node &node = expression.children[i];
@@ -706,6 +713,7 @@ void preRegisterSignatures() {
 	// imports
 	functionSignatures["logi"] = Signature().add(i32t).import();
 	functionSignatures["logf"] = Signature().add(f32t).import();
+	functionSignatures["logs"] = Signature().add(charp).import();
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 
 	functionSignatures["main"] = Signature().returns(i32t);;

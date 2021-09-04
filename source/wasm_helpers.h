@@ -52,6 +52,7 @@ extern "C" void logs(chars);// ,int len=-1 /*auto*/);
 extern "C" void logc(char c);
 extern "C" void logx(int i);// hex
 extern "C" void logi(int i);
+extern "C" void logp(long char_pointer);
 extern "C" void logf32(float f);
 extern "C" int square(int n);// test wasm
 extern "C" int squaref(int n);// test wasm
