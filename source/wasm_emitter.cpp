@@ -21,7 +21,7 @@ short builtin_count = 0;// function_offset - import_count - runtime_offset;
 
 //bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
 char *data;// any data to be stored to wasm: values of variables, strings, nodes etc
-int last_data_index = 0;// position to write more data = end + length of data section
+int last_data_index;// position to write more data = end + length of data section
 Map<String *, long> stringIndices; // wasm pointers to strings within wasm data
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
@@ -29,9 +29,17 @@ Module runtime;
 String start = "main";
 
 Valtype last_type = voids;// autocast if not int
+
+enum MemoryHandling {
+	import_memory,
+	export_memory,
+	internal_memory,
+	no_memory,
+};
+MemoryHandling memoryHandling = export_memory;// import_memory;
+
 //Map<String, Valtype> return_types;
 //Map<int, List<String>> locals;
-
 //Map<int, Map<int, String>> locals;
 //List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 Map<String, int> functionIndices;
@@ -775,6 +783,8 @@ Code typeSection() {
 
 		if (signature.is_handled)
 			continue;
+//		if(signature.is_import) // types in import section!
+//			continue;
 		if (not functionIndices.has(fun))
 			functionIndices[fun] = ++last_index;
 //			error("function %s should be registered in functionIndices by now"s % fun);
@@ -812,11 +822,17 @@ Code importSection() {
 	import_count = 0;
 	if (functionSignatures["logi"].is_used and ++import_count)
 		imports = imports + encodeString("env") + encodeString("logi").addByte(func_export).addType(typeMap["logi"]);
+	if (functionSignatures["logs"].is_used and ++import_count)
+		imports = imports + encodeString("env") + encodeString("logs").addByte(func_export).addType(typeMap["logs"]);
 	if (functionSignatures["logf"].is_used and ++import_count)
 		imports = imports + encodeString("env") + encodeString("logf").addByte(func_export).addType(typeMap["logf"]);
 	if (functionSignatures["square"].is_used and ++import_count)
 		imports =
 				imports + encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
+	if (memoryHandling == import_memory) {
+		imports = imports + encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 +
+		          (byte) 0x01;;
+	}
 	if (imports.length == 0)return Code();
 	auto importSection = createSection(import_section, Code(import_count) + imports);// + sqrt_ii
 	return importSection.clone();
@@ -851,7 +867,7 @@ Code codeSection(Node root) {
 	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
 	byte code_data_nop[] = {0/*locals_count*/, end_block};// NOP
 	byte code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block,
-	                       end_block};// NOP
+	                       end_block}; // NOP
 //	byte code_data_logi_21[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};
 //	byte code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
 	Code code_blocks;
@@ -891,18 +907,25 @@ short exports_count = 1;
 
 Code exportSection() {
 // the export section is a vector of exported functions etc
-	if (!start)
+	if (!start)// todo : allow arbirtrary exports, or export all
 		return createSection(export_section, Code(0));
 	int main_offset = 0;
 	if (functionIndices.has(start))
 		main_offset = functionIndices[start];
-	Code exportsData = encodeVector(Code(exports_count) + encodeString(start) + (byte) func_export + Code(main_offset));
+	Code memoryExport;// empty by default
+	if (memoryHandling == export_memory) {
+		exports_count++;
+		memoryExport = encodeString("memory") + (byte) mem_export + Code(0);
+//code = code + createSection(export_section, encodeVector(Code(exports_count) + memoryExport));
+	}
+	Code exportsData = encodeVector(
+			Code(exports_count) + encodeString(start) + (byte) func_export + Code(main_offset) + memoryExport);
 
 	auto exportSection = createSection(export_section, exportsData);
 	return exportSection;
 }
 
-Code dataSection() {
+Code dataSection() { // needs memory section too!
 //	Contents of section Data:
 //	0000042: 0100 4100 0b02 4869                      ..A...Hi
 //https://webassembly.github.io/spec/core/syntax/modules.html#syntax-datamode
@@ -916,7 +939,8 @@ Code dataSection() {
 	datas.addByte(01);// one memory initialization / data segment
 	datas.addByte(00);// memory id always 0
 	datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
-	datas.addInt(0x100000);// actual offset in memory todo: module offset + module data length
+	datas.addInt(
+			0x0);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
 	datas.addByte(0x0b);// mode: active?
 	datas.addByte(last_data_index); // size of data
 	const Code &actual_data = Code((bytes) data, last_data_index);
@@ -961,10 +985,13 @@ Code nameSection() {
 	Code nameMap;
 
 	int total_func_count = last_index + 1;// functionIndices.size();// imports + function_count, all receive names
+	int usedNames = 0;
 	for (int index = runtime_offset; index < total_func_count; index++) {
 		// danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
 		String *name = functionIndices.lookup(index);
+		if (functionSignatures[*name].is_import)continue;
 		nameMap = nameMap + Code(index) + Code(*name);
+		usedNames += 1;
 	}
 
 //	auto functionNames = Code(function_names) + encodeVector(Code(1) + Code((byte) 0) + Code("logi"));
@@ -974,12 +1001,14 @@ Code nameSection() {
 // localMapEntry = (index nrLocals 00? string )
 
 	Code localNameMap;
+	int usedLocals = 0;
 	for (int index = runtime_offset; index <= last_index; index++) {
 		String *key = functionIndices.lookup(index);
 		if (!key or key->empty())continue;
 		List<String> localNames = locals[key];// including arguments
 		int local_count = localNames.size();
 		if (local_count == 0)continue;
+		usedLocals++;
 		localNameMap = localNameMap + Code(index) + Code(local_count); /*???*/
 		for (int i = 0; i < localNames.size(); ++i) {
 			String local_name = localNames[i];
@@ -996,8 +1025,8 @@ Code nameSection() {
 //	localNameMap = localNameMap + exampleNames;
 
 	auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
-	auto functionNames = Code(function_names) + encodeVector(Code(last_index - runtime_offset + 1) + nameMap);
-	auto localNames = Code(local_names) + encodeVector(Code(total_func_count) + localNameMap);
+	auto functionNames = Code(function_names) + encodeVector(Code(usedNames) + nameMap);
+	auto localNames = Code(local_names) + encodeVector(Code(usedLocals) + localNameMap);
 
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
 //	The name section should appear only once in a module, and only after the data section.
@@ -1087,6 +1116,16 @@ void add_builtins() {
 	}
 }
 
+Code memorySection() {
+	if (memoryHandling == import_memory or memoryHandling == no_memory) return Code();// handled elsewhere
+
+	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
+	int pages = 1;//54kb each
+	auto code = createSection(memory_section, encodeVector(Code(1) + Code(0x00) + Code(pages)));
+	return code;
+}
+
+
 Code &emit(Node root_ast, Module *runtime0, String _start) {
 	start = _start;
 	typeMap.setDefault(-1);
@@ -1133,22 +1172,20 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	functionCodes.clear();
 	locals.setDefault(List<String>());
 
-	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
-	auto memorySection = createSection(memory_section, encodeVector(Code(2)));
-	auto memoryImport =
-			encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 + (byte) 0x01;
 	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
 	auto customSection = createSection(custom_section, customSectionvector);
 	Code typeSection1 = typeSection();// types can be defined in analyze(), not in code declaration
 	Code importSection1 = importSection();// needs type indices
 	Code codeSection1 = codeSection(root_ast);
 	Code funcTypeSection1 = funcTypeSection();// signatures depends on codeSection, but must come before it in wasm
+	Code memorySection1 = memorySection();
 	Code exportSection1 = exportSection();// depends on codeSection, but must come before it!!
 	Code code = Code(magicModuleHeader, 4)
 	            + Code(moduleVersion, 4)
 	            + typeSection1
 	            + importSection1
 	            + funcTypeSection1 // signatures
+	            + memorySection1 // Wasm MVP can only define one memory per module WHERE?
 	            + exportSection1
 	            + codeSection1 // depends on importSection, yields data for funcTypeSection!
 	            + dataSection()
