@@ -423,6 +423,10 @@ void logi(int i) {
 	printf("%d", i);
 }
 
+void logp(long char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<logs>("*", "logs")
+	printf("%s", (char *) char_pointer);
+}
+
 void logc(char c) {
 	printf("%c", c);
 }
