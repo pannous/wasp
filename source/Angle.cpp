@@ -45,6 +45,7 @@ Node constants(Node n) {
 
 
 bool isFunction(String op) {
+	if (op.empty())return false;
 	if (declaredFunctions.has(op))return true;
 	if (functionSignatures.has(op))return true;// pre registered signatures
 	return op.in(function_list);// or op.in(functor_list); if
@@ -335,7 +336,6 @@ Node &groupWhile(Node n);
 
 Node &groupFunctions(Node &expression0) {
 	if (expression0.kind == declaration)return expression0;// handled before
-	Node &expression = *expression0.clone();
 	if (isFunction(expression0)) {
 		expression0.setType(call);
 		if (not functionSignatures.has(expression0.name))
@@ -343,6 +343,7 @@ Node &groupFunctions(Node &expression0) {
 //		if (not expression0.value.node and arity>0)error("missing args");
 		functionSignatures[expression0.name].is_used = true;
 	}
+	Node &expression = *expression0.clone();
 	for (int i = 0; i < expression.length; ++i) {
 //	for (int i = expression.length; i>0; --i) {
 		Node &node = expression.children[i];
@@ -670,7 +671,11 @@ Node analyze(Node data) {
 		return grouped;
 	}
 
-	if (data.kind == groups or data.kind == objects) {
+	Node &groupedDeclarations = groupDeclarations(data, "main");
+	Node &groupedFunctions = groupFunctions(groupedDeclarations);
+	Node &grouped = groupOperators(groupedFunctions);
+	data = grouped;// temp hack
+	if (data.kind == groups or data.kind == objects) {// children analyzed individually, not as expression WHY?
 		Node grouped = *data.clone();
 		grouped.children = 0;
 		grouped.length = 0;
@@ -680,9 +685,6 @@ Node analyze(Node data) {
 		}
 		return grouped;
 	}
-	Node &groupedDeclarations = groupDeclarations(data, "main");
-	Node &groupedFunctions = groupFunctions(groupedDeclarations);
-	Node &grouped = groupOperators(groupedFunctions);
 	return grouped;
 }
 

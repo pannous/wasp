@@ -281,6 +281,7 @@ public:
 
 	// currently same as map[key]=value
 	int insert_or_assign(S key, T value) {
+		// todo:  key==nil / key.empty (String::) should not be allowed!
 		int found = position(key);
 		if (found >= 0) {
 			values[found] = value;
@@ -348,7 +349,7 @@ public:
 		return &keys[_size];
 	}
 
-	bool has(S s) {
+	bool has(S s) {// todo has(nil) / has(String::empty) should be false
 		return position(s) >= 0;
 	}
 //	void log() {

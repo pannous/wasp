@@ -1675,8 +1675,9 @@ void testCurrent() { // move to tests() once OK
 #endif
 //	assert_run("okf(1)", 43);
 //	assert_run("43", 43);
+	assert_run("ok+1", 43);
 //	assert_run("oki(1)", 43);
-	assert_emit("logs('123')", 123);// via import not via wasp!
+//	assert_emit("logs('123'+'456');", 123);// via import not via wasp!
 //assert_emit("double := it * 2 ; double(4)", 8)
 //	check(Valtype::charp!=Valtype::pointer)
 	testWasmRuntimeExtension();
