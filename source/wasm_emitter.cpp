@@ -935,12 +935,13 @@ Code dataSection() { // needs memory section too!
 	//Contents of section Data:
 //0013b83: 0005 00 41 8108 0b fd1d 63 6f72 7275 7074  ...A.....corrupt
 //	datas.addByte(00); WHY does module have extra 0x00 and 5 data sections???
-
+//	datas.addByte(00); // it seems heading 0's get jumped over until #segments >0 :
 	datas.addByte(01);// one memory initialization / data segment
 	datas.addByte(00);// memory id always 0
+
 	datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
-	datas.addInt(
-			0x0);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
+	datas.addInt(0x0 +
+	             runtime.data_segments.length);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
 	datas.addByte(0x0b);// mode: active?
 	datas.addByte(last_data_index); // size of data
 	const Code &actual_data = Code((bytes) data, last_data_index);
