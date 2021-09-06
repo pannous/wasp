@@ -2,6 +2,7 @@
 // Created by me on 08.12.20.
 //
 #include "Code.h"
+#include "Interpret.h"
 
 bytes magicModuleHeader = new byte[]{0x00, 0x61, 0x73, 0x6d};
 bytes moduleVersion = new byte[]{0x01, 0x00, 0x00, 0x00};
@@ -143,12 +144,14 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == longs)return int32;// int64; todo
 	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
 	if (n.kind == strings)return string;// special internal Valtype, represented as i32 index to data / pointer!
-	Node &first = n.first();
+	Node first = n.first();
 	if (first == n)first = NIL;// avoid loops
 	if (n.kind == assignment)return mapTypeToWasm(first);// todo
-	if (n.kind == operators) return mapTypeToWasm(first);// todo
+	if (n.kind == operators)
+		return mapTypeToWasm(first);// todo
 	if (n.kind == expressions)return mapTypeToWasm(first);// todo analyze expressions WHERE? remove HACK!
-	if (n.kind == call)error("first.kind==call is not a wasm type, maybe get signature?");
+	if (n.kind == call)
+		return functionSignatures[n.name].return_type;// error("first.kind==call is not a wasm type, maybe get signature?");
 	n.log();
 	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
 	return none;
