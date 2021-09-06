@@ -230,7 +230,7 @@ void consumeDataSection() {
 //	unsignedLEB128(datas);// skip i32.const opcode
 //	long offset = unsignedLEB128(datas);
 //	unsignedLEB128(datas);// skip '0b' whatever that is
-	module.data_segments = datas;// whereever the start may be now
+	module.data_segments = datas.rest();// whereever the start may be now
 	printf("data sections: %d \n", module.data_segments_count);
 //	printf("data section offset: %ld \n", offset);
 }
