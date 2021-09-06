@@ -256,7 +256,7 @@ Code emitValue(Node node, String context) {
 			break;
 		case strings: {
 			// append string (as char*) to data section and access via stringIndex
-			int stringIndex = last_data_index;
+			int stringIndex = last_data_index + runtime.data_segments.length;// uh, todo?
 			String *string = node.value.string;
 			if (stringIndices.has(string))
 				stringIndex = stringIndices[string];
@@ -1136,11 +1136,12 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	functionCodes.setDefault(Code());
 	functionSignatures.setDefault(Signature());
 	if (runtime0) {
+		memoryHandling = no_memory;// done by runtime?
 		runtime = *runtime0;// else filled with 0's
 		runtime_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
 		import_count = 0;
 		builtin_count = 0;
-		last_data_index = runtime.data_segments.length;// insert after module data!
+//		last_data_index = runtime.data_segments.length;// insert after module data!
 		// todo: either write last_data_index DIRECTLY after module data and increase count of module data,
 		// or increase memory offset for second data section! (AND increase index nontheless?)
 		int newly_pre_registered = 0;//declaredFunctions.size();

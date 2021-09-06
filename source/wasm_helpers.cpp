@@ -416,6 +416,7 @@ void trace(chars x) {
 
 //#pragma message "using wasm imports"
 void logs(chars c) {
+//	if(from wasm)result=c
 	printf("%s", c);
 }
 
