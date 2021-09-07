@@ -323,7 +323,7 @@ void consumeExportSection() {
 		if (type == 0/*func*/ and not functionIndices.has(func)) {
 			functionIndices[func0] = index;// mangled
 			functionIndices[func] = index;// demangled
-			Signature &signature = Signature().runtime().returns(int32);
+			Signature &signature = Signature().runtime().returns(int32);// todo: hard code all returns? or get HOW?
 			for (String arg:args) {
 				if (arg.empty())continue;
 				signature.add(mapArgToValtype(arg));
@@ -348,8 +348,8 @@ Valtype mapArgToValtype(String arg) {
 	if (arg.empty() or arg == "" or arg == " ") return Valtype::voids;
 	else if (arg == "char const*")return Valtype::charp;// pointer with special semantics
 	else if (arg == "char const*&")return Valtype::charp;// todo ?
-	else if (arg == "char const**")return Valtype::pointer;
 	else if (arg == "char*")return Valtype::charp;
+	else if (arg == "char const**")return Valtype::pointer;
 	else if (arg == "short")
 		return Valtype::int32;// careful c++ ABI overflow? should be fine since wasm doesnt have short
 	else if (arg == "int")return Valtype::int32;
@@ -369,10 +369,12 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "Node*")return Valtype::pointer;
 	else if (arg == "Node&")return Valtype::node;// pointer? todo: how does c++ handle refs?
 	else if (arg == "Node")return Valtype::node;
-	else if (arg == "Value")return Valtype::value;
+		// todo:
+	else if (arg == "List<String>")return Valtype::todoe;
+		// ignore internal types:
+	else if (arg == "Value")return Valtype::ignore;//value;
 	else if (arg == "Arg")return Valtype::ignore; // truely internal, should not be exposed! e.g. Arg
 	else if (arg == "Signature")return Valtype::ignore;
-	else if (arg == "List<String>")return Valtype::todoe;
 	else
 		error("unmapped c++ argument type "s + arg.clone() + " !");
 	return i32t;
