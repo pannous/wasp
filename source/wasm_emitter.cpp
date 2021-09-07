@@ -206,6 +206,8 @@ List<String> collect_locals(Node node, String context);
 
 Code cast(Valtype from, Valtype to);
 
+Code emitStringOp(Node op, String context);
+
 Code emitValue(Node node, String context) {
 	Code code;
 	switch (node.kind) {
@@ -255,22 +257,23 @@ Code emitValue(Node node, String context) {
 			return emitExpression(node, context);
 			break;
 		case strings: {
-			// append string (as char*) to data section and access via stringIndex
+			// append pString (as char*) to data section and access via stringIndex
 			int stringIndex = last_data_index + runtime.data_segments.length;// uh, todo?
-			String *string = node.value.string;
-			if (stringIndices.has(string))
-				stringIndex = stringIndices[string];
+			String *pString = node.value.string;
+			if (stringIndices.has(pString))
+				stringIndex = stringIndices[pString];
 			else {
-//				Code lens(string->length);// we follow the standard wasm abi to encode string as LEB-lenght + data:
+//				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
 //				strcpy2(data + last_data_index, (char*)lens.data, lens.length);
-//				last_data_index += lens.length;// unsignedLEB128 encoded length of string
-				strcpy2(data + last_data_index, string->data, string->length);
-				data[last_data_index + string->length] = 0;
+//				last_data_index += lens.length;// unsignedLEB128 encoded length of pString
+				strcpy2(data + last_data_index, pString->data, pString->length);
+				data[last_data_index + pString->length] = 0;
 				// we add an extra 0, unlike normal wasm abi, because we have space in data section
-				last_data_index += string->length + 1;
+				last_data_index += pString->length + 1;
 			}
+			last_type = string;//
 			return Code(i32_const) + Code(stringIndex);// just a pointer
-//			return Code(stringIndex).addInt(string->length);// pointer + length
+//			return Code(stringIndex).addInt(pString->length);// pointer + length
 		}
 			break;
 		default:
@@ -323,7 +326,8 @@ Code emitOperator(Node node, String context) {
 		return code;
 	}
 	byte opcode = opcodes(name, last_type);
-	if (opcode == f32_sqrt and last_type == i32t) {
+	if (last_type == string)code.add(emitStringOp(node, String()));
+	else if (opcode == f32_sqrt and last_type == i32t) {
 		code.addByte(f32_convert_i32_s);// i32->f32
 		code.addByte(f32_sqrt);
 		code.addByte(i32_trunc_f32_s);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
@@ -351,6 +355,19 @@ Code emitOperator(Node node, String context) {
 	if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt)
 		last_type = i32t;// bool'ish
 	return code;
+}
+
+Code emitStringOp(Node op, String context) {
+//	Code stringOp;
+	if (op == "+") {
+		op = Node("concat");//demangled on readWasm, but careful, other signatures might overwrite desired one
+
+//		op = Node("_Z6concatPKcS0_");//concat c++ mangled export:
+//		op = Node("concat_char_const*__char_const*_");// wat name if not stripped in lib release build
+		return emitCall(op, context);
+//		stringOp.addByte();
+	} else todo("string op not implemented"s + op.name);
+	return Code();
 }
 
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0 after args, used for 'it'  after while(){} etc) !!!

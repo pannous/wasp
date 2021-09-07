@@ -547,14 +547,17 @@ void testWasmRuntimeExtension() {
 //	functionSignatures["okf"].returns(float32);
 	assert_run("okf(1)", 43);
 	functionSignatures["atoi0"].returns(int32);
-//	assert_run("printf('123')", 123);// result parsed?
-	assert_run("atoi0('123')", 123);// result parsed?
+//	assert_run("printf('123')", 123);
+	assert_run("strlen0('123')", 3);
+	assert_run("atoi0('123')", 123);
+	assert_run("atoi0('123000')+atoi0('456')", 123456);
+	assert_run("atoi0('123'+'456')", 123456);
+
 
 	skip(
-			assert_run("atoi0('123')", 123);// result parsed?
+			assert_run("atoi0('123')", 123);
 			assert_run("'123'", 123);// result printed and parsed?
-			assert_run("strlen0('123')", 3);
-			assert_run("printf('123')", 123);// result parsed?
+			assert_run("printf('123')", 123);// result printed and parsed?
 	)
 	skip( // if not compiled as RUNTIME_ONLY library:
 			check(functionSignatures.has("tests"))
@@ -632,6 +635,8 @@ void testAllWasm() {
 	logs("NO WASM emission...");
 	return;
 #endif
+	assert_run("atoi0('123'+'456')", 123456);
+
 	assert_emit("i=1;while(i<9){i++};i+1", 10);
 	assert_emit("452==452", 1);
 
