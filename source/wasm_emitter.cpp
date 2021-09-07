@@ -326,7 +326,8 @@ Code emitOperator(Node node, String context) {
 		return code;
 	}
 	byte opcode = opcodes(name, last_type);
-	if (last_type == string)code.add(emitStringOp(node, String()));
+	if (last_type == string)
+		code.add(emitStringOp(node, String()));
 	else if (opcode == f32_sqrt and last_type == i32t) {
 		code.addByte(f32_convert_i32_s);// i32->f32
 		code.addByte(f32_sqrt);
@@ -341,16 +342,17 @@ Code emitOperator(Node node, String context) {
 		Node increased = Node("+").setType(operators);
 		increased.add(node.first());
 		increased.add(new Node(1));
-//		emitExpression(increased,context);
+		//		emitExpression(increased,context);
 		code.add(emitSetter(node.first(), increased, context));
+	} else if (opcode > 0xC0) {
+		error("internal opcode not handled"s + opcode);
 	} else if (opcode > 0) {
 		code.addByte(opcode);
 		if (last_type == 0)last_type = i32t;
 	} else {
 		error("unknown opcode / call / symbol: "s + name + " : " + index);
 	}
-	if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or
-	    opcode == i32_mul)
+	if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or opcode == i32_mul)
 		last_type = i32t;
 	if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt)
 		last_type = i32t;// bool'ish
@@ -361,7 +363,8 @@ Code emitStringOp(Node op, String context) {
 //	Code stringOp;
 	if (op == "+") {
 		op = Node("concat");//demangled on readWasm, but careful, other signatures might overwrite desired one
-
+		last_type = string;
+		functionSignatures["concat"].returns(charp);// hack
 //		op = Node("_Z6concatPKcS0_");//concat c++ mangled export:
 //		op = Node("concat_char_const*__char_const*_");// wat name if not stripped in lib release build
 		return emitCall(op, context);
@@ -525,13 +528,13 @@ Code emitCall(Node &fun, String context) {
 	if (index < 0)
 		error("MISSING import/declaration for function %s\n"s % fun.name);
 	int i = 0;
+	// args may have already been emitted, e.g. "A"+"B" concat
 	for (Node arg : fun) {
 		code.push(emitExpression(arg, context));
 		Valtype argType = mapTypeToWasm(arg);
 		Valtype &sigType = signature.types[i];
 		if (sigType != argType)
 			code.push(cast(argType, sigType));
-
 	};
 	code.addByte(function);
 	code.addInt(index);
@@ -797,7 +800,8 @@ Code typeSection() {
 			trace("not signature.emit => skipping unused type for "s + fun);
 			continue;
 		}
-
+		if (signature.is_runtime)
+			continue;
 		if (signature.is_handled)
 			continue;
 //		if(signature.is_import) // types in import section!
