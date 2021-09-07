@@ -723,6 +723,12 @@ void preRegisterSignatures() {
 	// builtins
 	functionSignatures["nop"] = Signature().builtin();
 	functionSignatures["id"] = Signature().add(i32t).returns(i32t).builtin();
+
+	// library
+	functionSignatures["atoi"] = Signature().add(charp).returns(i32t).runtime();
+	functionSignatures["atoi0"] = Signature().add(charp).returns(i32t).runtime();
+//	functionSignatures["concat"] = Signature().add(string).add(string).returns(string).runtime();// chars to be precise
+	functionSignatures["concat"] = Signature().add(charp).add(charp).returns(charp).runtime();// chars to be precise
 }
 
 Node emit(String code) {
