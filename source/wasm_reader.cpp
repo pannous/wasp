@@ -313,13 +313,16 @@ void consumeExportSection() {
 	for (int i = 0; i < exportCount; i++) {
 		String func0 = name(payload).clone();
 		if (func0 == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
+		if (func0 == "_Z6concatPKcS0_")
+			debug = 1;
 		List<String> args = demangle_args(func0);
 		String func = demangle(func0);//
 		int type = unsignedLEB128(payload);
 		int index = unsignedLEB128(payload);
 		if (index < 0 or index > 100000)error("corrupt index "s + index);
 		if (type == 0/*func*/ and not functionIndices.has(func)) {
-			functionIndices[func] = index;
+			functionIndices[func0] = index;// mangled
+			functionIndices[func] = index;// demangled
 			Signature &signature = Signature().runtime().returns(int32);
 			for (String arg:args) {
 				if (arg.empty())continue;
@@ -328,6 +331,8 @@ void consumeExportSection() {
 			// todo get return types from funcTypes (don't need funcTypeIndex for exports)
 			if (!functionSignatures.has(func))
 				functionSignatures[func] = signature; // … library functions currently hardcoded
+			if (!functionSignatures.has(func0))
+				functionSignatures[func0] = signature;
 		}
 	}
 }

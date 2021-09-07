@@ -1675,6 +1675,8 @@ void testCurrent() { // move to tests() once OK
 #endif
 //	assert_run("okf(1)", 43);
 //	assert_run("43", 43);
+	assert_run("atoi0('123'+'456')", 123456);
+
 	assert_run("ok+1", 43);
 //	assert_run("oki(1)", 43);
 //	assert_emit("logs('123'+'456');", 123);// via import not via wasp!
