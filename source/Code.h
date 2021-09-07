@@ -277,7 +277,6 @@ enum Valtype {
 	float64 = 0x7C,
 	f64t = 0x7C,
 
-	pointer = int32, // internal
 	none = 0x40, // ===
 	void_block = 0x40, // VERSUS:
 	voids = 0x00, // DANGER!=void_block  internal only for return type
@@ -285,13 +284,14 @@ enum Valtype {
 	// SPECIAL INTERNAL TYPES ONLY, not part of spec but they ARE represented through c++=>wasm types (int32?) :
 	// enums with the same value can NOT be distinguished thereafter!!! :(
 	// todo Signatures need a real Type, not a Valtype!
-	charp = pointer,
+	pointer = int32,// 0xFF, // internal
 	codepoint32 = int32,
 	node = pointer,
-	string = pointer, // enough??
-	value = 0xA1,
+	charp = 0xC0, // vs
+	string = 0xC0,// use charp?  pointer, // enough no!??
+//	value = 0xA1,// wrapped node Value, used as parameter? extract and remove! / ignore
 	todoe = 0xF0, // todo
-	ignore = 0xFF, // truely internal, should not be exposed! e.g. Arg
+	ignore = 0xAA, // truely internal, should not be exposed! e.g. Arg
 };
 
 
