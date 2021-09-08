@@ -724,9 +724,8 @@ void preRegisterSignatures() {
 	functionSignatures["nop"] = Signature().builtin();
 	functionSignatures["id"] = Signature().add(i32t).returns(i32t).builtin();
 
-	// library
-	functionSignatures["atoi"] = Signature().add(charp).returns(i32t).runtime();
-	functionSignatures["atoi0"] = Signature().add(charp).returns(i32t).runtime();
+	// library signatures are parsed in consumeExportSection() via demangle
+	// BUT their return type is not part of name, so it needs to be hardcoded, if ≠ int32:
 //	functionSignatures["concat"] = Signature().add(string).add(string).returns(string).runtime();// chars to be precise
 	functionSignatures["concat"] = Signature().add(charp).add(charp).returns(charp).runtime();// chars to be precise
 }
