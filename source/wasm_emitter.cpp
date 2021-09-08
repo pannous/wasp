@@ -242,6 +242,7 @@ Code emitValue(Node node, String context) {
 			int local_index = locals[context].position(node.name);
 			if (local_index < 0)error("UNKNOWN symbol "s + node.name + " in context " + context);
 			if (node.value.node) {
+				// todo HOLUP! x:41 is a reference? then *node.value.node makes no sense!!!
 				code.add(emitSetter(node, *node.value.node, context));
 			} else {
 				code.addByte(get_local);
@@ -275,7 +276,6 @@ Code emitValue(Node node, String context) {
 			return Code(i32_const) + Code(stringIndex);// just a pointer
 //			return Code(stringIndex).addInt(pString->length);// pointer + length
 		}
-			break;
 		default:
 			error("emitValue unknown type: "s + typeName(node.kind));
 	}
@@ -452,6 +452,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		case keyNode: // todo i=ø
 			if (not isVariableName(name))
 				todo("proper keyNode emission");
+			else node.kind = reference;// todo?
 		case reference: {
 //			Map<int, String>
 			List<String> &current_local_names = locals[context];
@@ -573,6 +574,7 @@ Code emitCall(Node &fun, String context) {
 
 Code cast(Valtype from, Valtype to) {
 	Code casted;
+	if (from == i32t and to == charp)return casted;// assume i32 is a pointer here. todo?
 	if (from == i32t and to == float32) casted.addByte(i32_cast_to_f32_s);
 	else if (from == float32 and to == i32t) casted.addByte(f32_cast_to_i32_s);
 	else
@@ -787,7 +789,7 @@ Code emitBlock(Node node, String context) {
 }
 
 //Map<int, String>
-// todo: why can't they be all found in parser?
+// todo: why can't they be all found in parser? 2021/9/4 : they can ;)
 List<String> collect_locals(Node node, String context) {
 	List<String> &current_locals = locals[context]; // no, because there might be gaps(unnamed locals!)
 	for (Node n : node) {
@@ -931,7 +933,7 @@ Code codeSection(Node root) {
 	if (start) {
 		code_blocks = code_blocks + encodeVector(main_block);
 	} else {
-		if (main_block.length > 4)
+		if (main_block.length > 5)
 			error("no start function name given. null instead of 'main', can't assign block");
 		else warn("no start block (ok)");
 	}
@@ -1053,7 +1055,7 @@ Code nameSection() {
 	for (int index = runtime_offset; index <= last_index; index++) {
 		String *key = functionIndices.lookup(index);
 		if (!key or key->empty())continue;
-		List<String> localNames = locals[key];// including arguments
+		List<String> localNames = locals[*key];// including arguments
 		int local_count = localNames.size();
 		if (local_count == 0)continue;
 		usedLocals++;

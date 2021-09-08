@@ -542,6 +542,7 @@ int runtime_emit(String prog) {
 #endif
 
 void testWasmRuntimeExtension() {
+//	functionSignatures["ok"].returns(int32);
 	assert_run("ok+1", 43);
 	assert_run("oki(1)", 43);
 //	functionSignatures["okf"].returns(float32);
@@ -553,6 +554,28 @@ void testWasmRuntimeExtension() {
 	assert_run("atoi0('123000')+atoi0('456')", 123456);
 	assert_run("atoi0('123'+'456')", 123456);
 
+	//	assert_run("okf(1)", 43);
+	//	assert_run("43", 43);
+	//	assert_run("logs 'hello' 'world'", "hello world");
+	//	assert_run("hello world", "hello world");// unresolved symbol printed as is
+
+	//	assert_run("'123'='123'", true);// parsed as keyNode a:b !?!? todo!
+	//	assert_run("'123' = '123'", true);
+	assert_run("ok+1", 43);
+	assert_run("atoi0('123'+'456')", 123456);
+	assert_run("'123' == '123'", true);
+	assert_run("'123' is '123'", true);
+	assert_run("'123' equals '123'", true);
+	assert_run("x='123';x is '123'", true);
+	//	assert_run("string('123') equals '123'", true); // string() makes no sense in angle:
+	//	assert_run("'123' equals string('123')", true);//  it is internally already a string whenever needed
+	//	assert_run("atoi0(str('123'))", 123);
+	//	assert_run("atoi0(string('123'))", 123);
+
+	//	assert_run("oki(1)", 43);
+	//	assert_emit("logs('123'+'456');", 123);// via import not via wasp!
+	//assert_emit("double := it * 2 ; double(4)", 8)
+	//	check(Valtype::charp!=Valtype::pointer)
 
 	skip(
 			assert_run("atoi0('123')", 123);
@@ -635,7 +658,6 @@ void testAllWasm() {
 	logs("NO WASM emission...");
 	return;
 #endif
-	assert_run("atoi0('123'+'456')", 123456);
 
 	assert_emit("i=1;while(i<9){i++};i+1", 10);
 	assert_emit("452==452", 1);

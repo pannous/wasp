@@ -163,7 +163,7 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 	for (Node &node : expression) {
 		String &op = node.name;
 		if (node.kind == reference) {// only constructors here!
-			if (not locals[context].has(op)) {
+			if (not locals[context].has(op) and not isFunction(node)) {
 				locals[context].add(op);// todo : proper calling context!
 #ifndef RUNTIME_ONLY
 				localTypes[context].add(mapTypeToWasm(node));
