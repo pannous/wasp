@@ -941,7 +941,9 @@ bool Node::isSetter() {
 	// todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
 	if (kind == longs)// || kind==reals || kind==bools||kind==strings)
 		return not atoi0(name);// todo WTF hack
-	return (kind == reference and value.data) or length > 0;// i:4
+	if (kind == keyNode and value.data) return true;
+	if (kind == reference and value.data) return true;
+	return length > 0;// i:4
 }
 
 int Node::index(String &string, int start, bool reverse) {
