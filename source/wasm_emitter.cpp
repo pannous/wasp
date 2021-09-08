@@ -369,12 +369,36 @@ Code emitStringOp(Node op, String context) {
 //		op = Node("concat_char_const*__char_const*_");// wat name if not stripped in lib release build
 		return emitCall(op, context);
 //		stringOp.addByte();
+	} else if (op == "=" or op == "==" or op == "is" or op == "equals") {
+		op = Node("eq");//  careful : various signatures
+		last_type = string;
+		return Code(i32_const) + Code(-1) + emitCall(op, context);// third param required!
+	} else if (op == "#") {
+		op = Node("getChar");//  careful : various signatures
+		return emitCall(op, context);
 	} else todo("string op not implemented"s + op.name);
 	return Code();
 }
 
+// starting with 0!
+//inline haha you can't inline wasm
+char getChar(chars string, int nr) {
+	int len = strlen0(string);
+	if (nr < 1)error("#index starts with 1, use [] if you want 0 indexing");
+	if (nr > len)error("index out of bounds %i>%i "s % nr % len);
+	return string[nr - 1 % len];
+}
+
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0 after args, used for 'it'  after while(){} etc) !!!
 int last_local = 0;
+
+int ord(codepoint c) {
+	return (int) c;
+}
+
+bool isVariableName(String name) {
+	return ord(name[0]) >= 'a';// todo
+}
 
 Code emitExpression(Node &node, String context/*="main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
@@ -425,11 +449,14 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			if (not node.isSetter() || node.value.longy == 0) // todo 0
 				return emitValue(node, context);
 //			else FALLTHROUGH!
+		case keyNode: // todo i=ø
+			if (not isVariableName(name))
+				todo("proper keyNode emission");
 		case reference: {
 //			Map<int, String>
 			List<String> &current_local_names = locals[context];
 			int local_index = current_local_names.position(name);// defined in block header
-			if (name.startsWith("$")) {
+			if (name.startsWith("$")) {// wasm style $0 = first arg
 				local_index = atoi0(name.substring(1));
 			}
 			if (local_index < 0) { // collected before, so can't be setter here
@@ -452,7 +479,6 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			}
 		}
 			break;
-		case keyNode: // todo i=ø
 		default:
 			error("unhandled node type: "s + typeName(node.kind));
 	}

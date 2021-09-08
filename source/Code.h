@@ -56,7 +56,8 @@ public:
 
 	Code(int nr, bool LEB = true) {// ambiguous: byte (un)signedLEB128 or int32 !!
 		if (LEB) {
-			push(nr, false, LEB);
+//			push(nr, false, LEB);
+			push(nr, nr < 0, LEB);
 		} else {
 			data = new byte[4];
 			*(int *) data = nr;
@@ -284,7 +285,8 @@ enum Valtype {
 	// SPECIAL INTERNAL TYPES ONLY, not part of spec but they ARE represented through c++=>wasm types (int32?) :
 	// enums with the same value can NOT be distinguished thereafter!!! :(
 	// todo Signatures need a real Type, not a Valtype!
-	pointer = int32,// 0xFF, // internal
+	//	https://github.com/pannous/angle/wiki/smart-pointer
+	pointer = int32,// 0xF0, // internal
 	codepoint32 = int32,
 	node = pointer,
 	charp = 0xC0, // vs
