@@ -129,6 +129,8 @@ String str(char *string);
 
 String s(chars &s);
 
+//int ord(codepoint c);// identity!
+
 bool eq(chars dest, chars src, int length = -1);
 
 void strcpy2(char *dest, chars src);

@@ -258,7 +258,7 @@ public:
 		if (identifier) {
 //			if(check_reference and not symbol)...
 			name = s;
-			kind = reference;
+			kind = reference;// kind must be concretized once value type is known!
 		}
 //		else if (atoi(s) and s == itoa0(atoi(s))) {
 //			value.number = atoi(s);

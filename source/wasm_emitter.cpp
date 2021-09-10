@@ -276,6 +276,8 @@ Code emitValue(Node node, String context) {
 			return Code(i32_const) + Code(stringIndex);// just a pointer
 //			return Code(stringIndex).addInt(pString->length);// pointer + length
 		}
+		case keyNode:
+			return emitValue(*node.value.node, context);// assume it is called from right context after isSetter!?
 		default:
 			error("emitValue unknown type: "s + typeName(node.kind));
 	}
@@ -392,12 +394,9 @@ char getChar(chars string, int nr) {
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0 after args, used for 'it'  after while(){} etc) !!!
 int last_local = 0;
 
-int ord(codepoint c) {
-	return (int) c;
-}
 
 bool isVariableName(String name) {
-	return ord(name[0]) >= 'a';// todo
+	return name[0] >= 'a';// todo
 }
 
 Code emitExpression(Node &node, String context/*="main"*/) { // expression, node or BODY (list)
@@ -446,13 +445,13 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		case reals:
 		case bools:
 		case strings:
-			if (not node.isSetter() || node.value.longy == 0) // todo 0
+			if (not node.isSetter() || node.value.longy == 0) // todo 0  x="x" '123'="123" redundancy bites us here
 				return emitValue(node, context);
-//			else FALLTHROUGH!
+//			else FALLTHROUGH to set x="123"!
 		case keyNode: // todo i=ø
 			if (not isVariableName(name))
 				todo("proper keyNode emission");
-			else node.kind = reference;// todo?
+			// else:
 		case reference: {
 //			Map<int, String>
 			List<String> &current_local_names = locals[context];
@@ -473,6 +472,8 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			if (node.isSetter()) { //SET
 				code = code + emitValue(node, context); // done above!
 				code.addByte(set_local);
+				code.addByte(local_index);
+				code.addByte(get_local);// make value available // todo: skip repeated get's / only when needed
 				code.addByte(local_index);
 			} else {// GET
 				code.addByte(get_local);
@@ -748,6 +749,7 @@ Code emitBlock(Node node, String context) {
 //	locals[context] = current_local_names;
 
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0, used after while(){} etc) !!!
+// todo: locals must ALWAYS be collected in analyze step, emitExpression is too late!
 	last_local = 0;
 	int locals_count = locals[context].size();
 	int argument_count = functionSignatures[context].size();
@@ -811,9 +813,7 @@ Code typeSection() {
 	// the type section is a vector of function types
 	int typeCount = 0;
 	Code type_data;
-
-	log(functionIndices);
-
+//	log(functionIndices);
 	for (String fun : functionSignatures) {
 		if (!fun) {
 //			log(functionIndices);
@@ -952,9 +952,9 @@ Code codeSection(Node root) {
 	return codeSection.clone();
 }
 
-short exports_count = 1;
 
 Code exportSection() {
+	short exports_count = 1;// main
 // the export section is a vector of exported functions etc
 	if (!start)// todo : allow arbirtrary exports, or export all
 		return createSection(export_section, Code(0));
