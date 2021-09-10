@@ -122,6 +122,11 @@ extern "C" unsigned int *memory = 0;// dummies, remove!
 extern "C" /*unsigned */ char *current = 0;// dummies, remove!
 extern bool throwing;// false for error tests etc
 int raise(chars error) {
+//#ifdef WASM3
+	Backtrace();
+	print(error);
+	exit(EXIT_FAILURE);
+//#endif
 	if (throwing)
 		throw error;
 	return -1;

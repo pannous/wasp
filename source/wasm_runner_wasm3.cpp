@@ -67,8 +67,7 @@ int64_t WASM_EXPORT test_memcpy0(void) {
 }
 
 int test_wasm3(const uint8_t *prog, int len) {
-	std::cout << "Loading WebAssembly..." << std::endl;
-
+//	std::cout << "Loading WebAssembly..." << std::endl;
 	try {
 		wasm3::environment env;
 		wasm3::module mod = env.parse_module(prog, len);
@@ -83,8 +82,8 @@ int test_wasm3(const uint8_t *prog, int len) {
 		mod.link_optional<logi>("*", "logi");// danger logf is cuda function!
 		mod.link_optional<logs>("*", "logs");// todo: replace FAKE DUMMY with adhoc circle implementation
 //		mod.link_optional<logp>("*", "logs");// added m3_type_to_sig in wasm3_cpp.h !
-
 		mod.link_optional<panic>("*", "panic");
+		mod.link_optional<raise>("*", "raise");
 //		wasm3::function main_fn = runtime.find_function("_start");
 		wasm3::function main_fn = runtime.find_function("main");
 		auto res = main_fn.call<int>();

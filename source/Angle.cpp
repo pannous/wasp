@@ -158,7 +158,7 @@ List<chars> constructor_operators;
 
 Node &groupFunctions(Node &expression0);
 bool isVariable(Node &node) {
-	return node.parent == 0 and not node.name.empty() and node.name[0] >= 'a';// todo;
+	return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'a';// todo;
 }
 
 Node &groupDeclarations(Node &expression0, const char *context) {
@@ -657,20 +657,18 @@ Node analyze(Node data) {
 	functionSignatures.setDefault(Signature());
 #endif
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
-	if (data.kind == keyNode and data.value.node /* i=ø has no node */) {
+	Type type = data.kind;
+	if (type == keyNode and data.value.node /* i=ø has no node */) {
 		data.value.node = analyze(*data.value.node).clone();
 	}
-	if ((data.kind == longs or data.kind == strings or data.kind == reals or data.kind == bools
-	     or data.kind == codepoints
-	     or data.kind == arrays
-	     or data.kind == buffers
-	    ) and isVariable(data)) {
+	if (type == longs or type == strings or type == reals or type == bools or type == codepoints or type == arrays or
+	    type == buffers) {
 		String context = "main";
-		if (!locals[context].has(data.name))
+		if (isVariable(data) and not locals[context].has(data.name))
 			locals[context].add(data.name);// need to pre-register before emitBlock!
 	}
 
-	if (data.kind == operators or data.kind == call) {
+	if (type == operators or type == call) {
 		Node grouped = groupOperators(data);// outer analysis id(3+3) => id(+(3,3))
 		for (Node &child: grouped) {// inner analysis while(i<3){i++}
 			if (child.kind == groups or child.kind == objects) child.setType(expressions);
@@ -686,7 +684,7 @@ Node analyze(Node data) {
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
 	Node &grouped = groupOperators(groupedFunctions);
 	data = grouped;// temp hack
-	if (data.kind == groups or data.kind == objects) {// children analyzed individually, not as expression WHY?
+	if (type == groups or type == objects) {// children analyzed individually, not as expression WHY?
 		Node grouped = *data.clone();
 		grouped.children = 0;
 		grouped.length = 0;

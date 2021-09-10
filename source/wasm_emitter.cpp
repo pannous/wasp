@@ -138,7 +138,7 @@ byte opcodes(chars s, byte kind = 0) {
 	// todo : set_local,  global_get ...
 	if (eq(s, "$"))return get_local; // $0 $1 ...
 
-	printf("unknown operator %s\n", s);
+	printf("unknown operator %s\n", s);// can still be matched as function etc, e.g. 'a'+'b' is 'ab'
 	breakpoint_helper
 //		error("invalid operator");
 	return 0;
@@ -469,6 +469,8 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				if (!node.isSetter())
 					error("UNKNOWN local symbol "s + name + " in context " + context);
 				else {
+					error("local symbol "s + name.trim() + " in " + context +
+					      " should have been registered in analyze()!");
 					current_local_names.add(name);// ad hoc x=42
 					local_index = current_local_names.size() - 1;
 				}
@@ -765,7 +767,7 @@ Code emitBlock(Node node, String context) {
 	for (int i = 0; i < locals_count; ++i) {
 		Valtype valtype = localTypes[context][i];
 		block.addByte(i + 1);// index
-		if (valtype == none or valtype == voids)
+		if (valtype == none or valtype == voids or valtype == charp)
 			valtype = int32;
 		block.addByte(valtype);
 	}
@@ -865,8 +867,8 @@ Code typeSection() {
 Code importSection() {
 
 	if (runtime_offset) {
-		breakpoint_helper
-		printf("imports currently not supported\n");
+//		breakpoint_helper
+//		printf("imports currently not supported\n");
 		import_count = 0;
 		return Code();
 	}
@@ -1210,7 +1212,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		add_builtins();
 	}
 	if (start) {// now AFTER imports and builtins
-		printf("start: %s\n", start.data);
+//		printf("start: %s\n", start.data);
 		functionSignatures[start] = Signature().returns(i32t);
 		functionSignatures[start].emit = true;
 		if (!functionIndices.has(start))
