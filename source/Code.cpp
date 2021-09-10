@@ -147,11 +147,11 @@ Valtype mapTypeToWasm(Node n) {
 	Node first = n.first();
 	if (first == n)first = NIL;// avoid loops
 	if (n.kind == assignment)return mapTypeToWasm(first);// todo
-	if (n.kind == operators)
-		return mapTypeToWasm(first);// todo
+	if (n.kind == operators)return mapTypeToWasm(first);// todo
 	if (n.kind == expressions)return mapTypeToWasm(first);// todo analyze expressions WHERE? remove HACK!
 	if (n.kind == call)
 		return functionSignatures[n.name].return_type;// error("first.kind==call is not a wasm type, maybe get signature?");
+	if (n.kind == keyNode and n.value.data)return mapTypeToWasm(*n.value.node);
 	n.log();
 	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
 	return none;
