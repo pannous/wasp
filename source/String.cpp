@@ -68,6 +68,10 @@ class String;
 #endif
 //#define cstring
 
+
+//int ord(codepoint c);// identity!
+//	return (int) c;
+
 bool eq(chars dest, chars src, int length) {
 	if (!dest || !src)
 		return false;

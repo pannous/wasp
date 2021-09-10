@@ -157,12 +157,15 @@ List<chars> constructor_operators;
 #endif
 
 Node &groupFunctions(Node &expression0);
+bool isVariable(Node &node) {
+	return node.parent == 0 and not node.name.empty() and node.name[0] >= 'a';// todo;
+}
 
 Node &groupDeclarations(Node &expression0, const char *context) {
 	Node &expression = *expression0.clone();
 	for (Node &node : expression) {
 		String &op = node.name;
-		if (node.kind == reference) {// only constructors here!
+		if (node.kind == reference or (node.kind == keyNode and isVariable(node))) {// only constructors here!
 			if (not locals[context].has(op) and not isFunction(node)) {
 				locals[context].add(op);// todo : proper calling context!
 #ifndef RUNTIME_ONLY
@@ -257,7 +260,7 @@ bool hasFunction(Node &n) {
 }
 
 
-bool isVariable(String name, Node context0) {
+bool isVariable(String name, String context0) {
 	if (globals.has(name))return true;
 	String context = "main";// context0.name;// todo find/store proper enclosing context of expression
 	if (locals[context].has(name))return true;
@@ -657,7 +660,15 @@ Node analyze(Node data) {
 	if (data.kind == keyNode and data.value.node /* i=ø has no node */) {
 		data.value.node = analyze(*data.value.node).clone();
 	}
-//	bool  data.kind == operators
+	if ((data.kind == longs or data.kind == strings or data.kind == reals or data.kind == bools
+	     or data.kind == codepoints
+	     or data.kind == arrays
+	     or data.kind == buffers
+	    ) and isVariable(data)) {
+		String context = "main";
+		if (!locals[context].has(data.name))
+			locals[context].add(data.name);// need to pre-register before emitBlock!
+	}
 
 	if (data.kind == operators or data.kind == call) {
 		Node grouped = groupOperators(data);// outer analysis id(3+3) => id(+(3,3))

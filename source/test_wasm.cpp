@@ -513,6 +513,8 @@ void testWasmModuleExtension() {
 }
 
 int runtime_emit(String prog) {
+	locals.clear();
+	localTypes.clear();
 	functionIndices.clear();
 	functionSignatures.clear();
 	functionIndices.setDefault(-1);
