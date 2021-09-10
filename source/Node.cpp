@@ -909,6 +909,7 @@ Node &Node::flat() {
 			return child.flat();
 		}
 		if (child.length > 0 and not child.value.data and empty(child.name)) {
+			child.children[0].parent = this;
 			children = child.children;
 			length = child.length;
 			return *this;
@@ -936,12 +937,16 @@ Node Node::values() {
 }
 
 bool Node::isSetter() {
+	// todo BAD HEURISTIC!!
 	// todo properly via expression i=1 == (set i 1)
 	// todo proper constructor i:1 == (construct i (1))
 	// todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
-	if (kind == longs)// || kind==reals || kind==bools||kind==strings)
+	if (kind == longs || kind == reals)// || kind==bools)
 		return not atoi0(name);// todo WTF hack
 	if (kind == keyNode and value.data) return true;
+	if (kind == strings and name == value.string) return false;  // todo x="x" '123'="123" redundancy bites us here
+	if (kind == strings and value.data)
+		return true;
 	if (kind == reference and value.data) return true;
 	return length > 0;// i:4
 }
