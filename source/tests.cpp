@@ -1673,6 +1673,15 @@ void testCurrent() { // move to tests() once OK
 //	testWasmModuleExtension();
 //	testWasmRuntimeExtension();
 #endif
+//assert_emit("x='123'", "123");
+//assert_run("x='123'", 123);
+	testMarkMultiDeep();
+	assert_run("x='123';x is '123'", true);
+
+	assert_emit("x:43", 43);
+	assert_run("ok+1", 43);
+//	exit(0);
+
 	testWasmRuntimeExtension();
 //	operator_list = List(operator_list0);
 	testRecentRandomBugs();
