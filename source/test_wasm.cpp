@@ -521,9 +521,11 @@ int runtime_emit(String prog) {
 	functionSignatures.setDefault(Signature());
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 	functionSignatures.insert_or_assign("logi", Signature().add(int32).returns(voids));
+	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
 	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// scaffold until parsed
 	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));// scaffold until parsed
 	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));// scaffold until parsed
+	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));// scaffold until parsed
 	Module runtime = read_wasm("wasp.wasm");
 	Node charged = analyze(parse(prog));
 	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
@@ -545,16 +547,27 @@ int runtime_emit(String prog) {
 
 void testWasmRuntimeExtension() {
 //	functionSignatures["ok"].returns(int32);
+	assert_run("x='123';x + '4' is '1234'", true);
 	assert_run("ok+1", 43);
 	assert_run("oki(1)", 43);
+//	assert_run("not_ok",-1);// error
+
 //	functionSignatures["okf"].returns(float32);
 	assert_run("okf(1)", 43);
+	assert_run("okf(1.0)", 43);
+	assert_run("42.5", 42);// truncation ≠ proper rounding!
+	assert_run("okf5(1.5)", 43);
 	functionSignatures["atoi0"].returns(int32);
 //	assert_run("printf('123')", 123);
 	assert_run("strlen0('123')", 3);
 	assert_run("atoi0('123')", 123);
 	assert_run("atoi0('123000')+atoi0('456')", 123456);
 	assert_run("atoi0('123'+'456')", 123456);
+	assert_run("x='123';x is '123'", true);
+	assert_run("x=123;x + 4 is 127", true);
+	assert_emit("x:43", 43);
+	assert_run("x:43", 43);
+	assert_run("ok+1", 43);
 
 	//	assert_run("okf(1)", 43);
 	//	assert_run("43", 43);

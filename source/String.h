@@ -821,6 +821,8 @@ public:
 	String to(const char *string);
 
 	List<String> split(const char *string);
+
+	String trim();
 };
 
 

@@ -1203,6 +1203,9 @@ void testString() {
 	printf("%s", x.data);
 	check(x == "hi ja ok");
 	check("hi %s ok"s % "ja" == "hi ja ok");
+
+	check_eq(atoi("123x"), 123);// can crash!?!
+	check_eq(" a b c  \n"s.trim(), "a b c");
 	testStringConcatenation();
 }
 
@@ -1676,13 +1679,6 @@ void testCurrent() { // move to tests() once OK
 //assert_emit("x='123'", "123");
 //assert_run("x='123'", 123);
 	testMarkMultiDeep();
-	assert_run("x='123';x is '123'", true);
-	assert_run("x=123;x + 4 is 127", true);
-//assert_run("x='123';x + '4' is '1234'", true);
-//	exit(0);
-
-	assert_emit("x:43", 43);
-	assert_run("ok+1", 43);
 
 	testWasmRuntimeExtension();
 //	operator_list = List(operator_list0);

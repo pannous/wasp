@@ -591,6 +591,14 @@ List<String> String::split(const char *string) {
 	return parts;
 }
 
+String String::trim() {
+	int start = 0;
+	while (start < length and (data[start] == ' ' or data[start] == '\t'))start++;
+	int end = length - 1;
+	while (0 <= end and (data[end] == ' ' or data[end] == '\n'))end--;
+	return String(data + start, end - start, true);// share ok?
+}
+
 String EMPTY_STRING0 = "";
 String &EMPTY_STRING = EMPTY_STRING0;
 
