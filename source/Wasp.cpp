@@ -927,11 +927,15 @@ private:
 		    empty(val.name))
 			val = val.last();// singleton
 		val.parent = &key;// todo bug: might get lost!
-		bool deep_copy = empty(val.name) or !debug or key.kind == reference and empty(val.name);
-		if (debug) {
-			deep_copy = deep_copy or val.kind == Type::longs and val.name == itoa(val.value.longy);
-			deep_copy = deep_copy or val.kind == Type::bools and (val.name == "True" or val.name == "False");
-			deep_copy = deep_copy or val.kind == Type::reals and val.name == ftoa(val.value.real);
+		bool deep_copy = empty(val.name) or !debug or (key.kind == reference and empty(val.name));
+		if (debug) {// todo make sure all works even with nested nodes! x="123" (node 'x' (child value='123')) vs (node 'x' value="123")
+			deep_copy = deep_copy or (val.kind == Type::longs and val.name == itoa(val.value.longy));
+			deep_copy = deep_copy or (val.kind == Type::reals and val.name == ftoa(val.value.real));
+			deep_copy = deep_copy or (val.kind == Type::bools and
+			                          (val.name == "True" or val.name == "False"));// todo why check name?
+//			if(val.kind == Type::strings)
+//				debug = 1;
+//			deep_copy = deep_copy or (val.kind == Type::strings and not val.name.empty() and key.kind==reference); and ... ?
 		} // shit just for debug labels. might remove!!
 // last part to preserve {deep{a:3,b:4,c:{d:'hi'}}} != {deep{a:3,b:4,c:'hi'}}
 
@@ -1019,7 +1023,7 @@ private:
 					bool asListItem =
 							lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
 					proceed();
-					Node object = valueNode('}', &current.last()).setType(Type::objects);
+					Node object = valueNode('}', parent ? parent : &current.last()).setType(Type::objects);
 					if (asListItem)
 						current.add(object);
 					else
