@@ -839,6 +839,9 @@ float precedence(String name) {
 	if (eq(name, "≤"))return 6.5;
 	if (eq(name, "≈"))return 6.5;
 	if (eq(name, "=="))return 6.6;
+	if (eq(name, "eq"))return 6.6;
+	if (eq(name, "equals"))return 6.6;
+	if (eq(name, "is"))return 6.6; // careful, could be :=
 
 	if (eq(name, "and"))return 7.1;
 	if (eq(name, "&&"))return 7.1;
@@ -866,6 +869,7 @@ float precedence(String name) {
 //	if (eq(name, ":"))return 12;// construction
 	if (eq(name, "="))return 12;// declaration
 	if (eq(name, ":="))return 13;
+	if (eq(name, "is"))return 13;// careful, could be == (6.6)
 
 	if (eq(name, "else"))return 13.09;
 	if (eq(name, "then"))return 13.15;
