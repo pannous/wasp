@@ -136,7 +136,7 @@ public:
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
 	static Node parse(String source) {
-		printf("Parsing %s\n", source.data);
+		printf("Parsing: %s\n", source.data);
 		return Wasp().read(source);
 	}
 
@@ -1211,6 +1211,11 @@ float okf(float f) {
 	return 42 + f;
 }
 
+float okf5(float f) {
+	return 41.5 + f;
+}
+
+
 void not_ok() {
 	error1("WHAAA");
 }
@@ -1257,7 +1262,7 @@ Node parse(String source) {
 	// 1. top level objects are not constructed True
 	// 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
 
-	printf("Parsing %s\n", source.data);
+	printf("Parsing: %s\n", source.data);
 	if (!source.data)return NIL;
 	return Wasp().read(source);
 }
