@@ -15,7 +15,7 @@
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 
 // compare with wasm-objdump -h
-
+bool debug_reader = false;
 typedef unsigned char *bytes;
 int pos = 0;
 int size = 0;
@@ -27,10 +27,10 @@ extern Map<String, int> functionIndices;
 
 Valtype mapArgToValtype(String arg);
 
-#define consume(len, match) if(!consume_x(code,&pos,len,match)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
+#define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
-#define check(test) if(test){log("\nOK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-#define check_eq(α, β) if((α)!=(β)){printf("%s != %s : ",#α,#β);log(α);printf("!=");log(β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define check(test) if(test){log("\nOK check passes: ");log(#test);}else{if(debug_reader)printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+#define check_eq(α, β) if((α)!=(β)){if(debug_reader)printf("%s != %s : ",#α,#β);log(α);if(debug_reader)printf("!=");log(β);if(debug_reader)printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
@@ -158,35 +158,35 @@ void consumeTypeSection() {
 	Code type_vector = vec();
 	int typeCount = unsignedLEB128(type_vector);
 	module.type_count = typeCount;
-	printf("types: %d\n", module.type_count);
+	if (debug_reader)printf("types: %d\n", module.type_count);
 	module.type_data = type_vector.rest();
 }
 
 void consumeStartSection() {
 	module.start_index = unsignedLEB128();
-	printf("start: #%d \n", module.start_index);
+	if (debug_reader)printf("start: #%d \n", module.start_index);
 }
 
 void consumeTableSection() {
 	module.table_data = vec();
 	module.table_count = 1;// unsignedLEB128(module.table_data);
-	printf("tables: %d \n", module.table_count);
+	if (debug_reader)printf("tables: %d \n", module.table_count);
 }
 
 void consumeMemorySection() {
 	module.memory_data = vec();// todo ?
 //	module.memory_count = unsignedLEB128(module.memory_data);//  always 1 in MVP
-	printf("memory_data: %d\n", module.memory_data.length);
+	if (debug_reader)printf("memory_data: %d\n", module.memory_data.length);
 }
 
 void consumeGlobalSection() {
 	module.globals_data = vec();// todo
 	module.global_count = unsignedLEB128(module.globals_data); // NO SUCH THING!?
-	printf("globals: %d\n", module.global_count);
+	if (debug_reader)printf("globals: %d\n", module.global_count);
 }
 
 void consumeNameSection(Code &data) {
-	printf("names: …\n");
+	if (debug_reader)printf("names: …\n");
 	module.name_data = data.clone();
 	while (data.start < data.length) {
 		int type = unsignedLEB128(data);
@@ -212,13 +212,13 @@ void consumeNameSection(Code &data) {
 
 // https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
 void consumeLinkingSection(Code &data) {
-	printf("linking: …\n");
+	if (debug_reader)printf("linking: …\n");
 	module.linking_section = data;
 //	int version = unsignedLEB128(data);
 }
 
 void consumeRelocateSection(Code &data) {
-	printf("relocate: …\n");
+	if (debug_reader)printf("relocate: …\n");
 	module.relocate_section = data;
 }
 
@@ -231,14 +231,14 @@ void consumeDataSection() {
 //	long offset = unsignedLEB128(datas);
 //	unsignedLEB128(datas);// skip '0b' whatever that is
 	module.data_segments = datas.rest();// whereever the start may be now
-	printf("data sections: %d \n", module.data_segments_count);
-//	printf("data section offset: %ld \n", offset);
+	if (debug_reader)printf("data sections: %d \n", module.data_segments_count);
+//	if(debug_reader)printf("data section offset: %ld \n", offset);
 }
 
 void consumeElementSection() {
 	module.element_section = vec();
-//	printf("element section (!?)");
-	printf("element sections: %d \n", module.element_section.length);
+//	if(debug_reader)printf("element section (!?)");
+	if (debug_reader)printf("element sections: %d \n", module.element_section.length);
 }
 
 void consumeCustomSection() {
@@ -260,7 +260,7 @@ void consumeCustomSection() {
 void consumeFuncTypeSection() {
 	Code type_vector = vec();
 	module.code_count = unsignedLEB128(type_vector);// import type indices are part of import struct!
-	printf("signatures: %d\n", module.code_count);
+	if (debug_reader)printf("signatures: %d\n", module.code_count);
 	module.functype_data = type_vector.rest();
 //	functionSignatures[]=  <<< map c++ types to wasp types??
 //	functionIndices.position()
@@ -269,10 +269,10 @@ void consumeFuncTypeSection() {
 void consumeCodeSection() {
 	Code codes_vector = vec();
 	int codeCount = unsignedLEB128(codes_vector);
-	printf("codes: %d\n", codeCount);
+	if (debug_reader)printf("codes: %d\n", codeCount);
 	if (module.code_count != codeCount)error("missing code/signatures");
 	module.code_data = codes_vector.rest();
-	printf("code length: %d\n", module.code_data.length);
+	if (debug_reader)printf("code length: %d\n", module.code_data.length);
 }
 
 
@@ -306,7 +306,7 @@ String demangle(String &fun) {
 void consumeExportSection() {
 	Code exports_vector = vec();
 	int exportCount = unsignedLEB128(exports_vector);
-	printf("export_section: %d\n", exportCount);
+	if (debug_reader)printf("export_section: %d\n", exportCount);
 	module.export_count = exportCount;
 	module.export_data = exports_vector.rest();
 	Code &payload = module.export_data;
@@ -386,7 +386,7 @@ void consumeImportSection() {
 	module.import_count = importCount;
 	module.import_data = imports_vector.rest();
 	parseImportNames(imports_vector);
-	printf("imports: %d\n", importCount);
+	if (debug_reader)printf("imports: %d\n", importCount);
 }
 
 
@@ -443,7 +443,7 @@ void consumeSections() {
 				consumeCustomSection(); // => consumeNameSection()
 				break;
 			default:
-				printf("Invalid section %d at pos %d %x\n", section, pos, pos);
+				if (debug_reader)printf("Invalid section %d at pos %d %x\n", section, pos, pos);
 				error("not implemented: "s + sectionName(section));
 		}
 	}
@@ -454,9 +454,9 @@ void consumeSections() {
 Module read_wasm(chars file) {
 	module = *new Module();
 	pos = 0;
-	printf("--------------------------\n");
+	if (debug_reader)printf("--------------------------\n");
 #ifndef WASM
-	printf("parsing: %s\n", file);
+	if (debug_reader)printf("parsing: %s\n", file);
 	size = fileSize(file);
 	bytes buffer = (bytes) alloc(1, size);// do not free
 	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));

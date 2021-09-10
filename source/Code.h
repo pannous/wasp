@@ -220,8 +220,8 @@ public:
 	}
 
 	void debug() {
-		for (int i = 0; i < length; i++)printf("%s%02x", i % 4 == 0 ? " 0x" : "", data[i]);
-		printf("\n");
+//		for (int i = 0; i < length; i++)printf("%s%02x", i % 4 == 0 ? " 0x" : "", data[i]);
+//		printf("\n");
 		save();
 	}
 
@@ -374,7 +374,7 @@ enum Opcodes {
 	f32_ceil = 0x8D,
 	f32_floor = 0x8E,
 	f32_trunc = 0x8F,
-	f32_round = 0x90,
+	f32_round = 0x90,// truncation ≠ proper rounding!
 	f32_nearest = 0x90,
 
 	f32_sqrt = 0x91,
@@ -393,7 +393,7 @@ enum Opcodes {
 	i64_load = 0x29, // memory.peek memory.get memory.read
 	i64_store = 0x37, // memory.poke memory.set memory.write
 
-	f32_cast_to_i32_s = 0xa8,
+	f32_cast_to_i32_s = 0xa8,// truncation ≠ proper rounding (f32_round = 0x90)!
 	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
 	f32_convert_i32_s = 0xB2,// convert FROM i32
 	i32_cast_to_f32_s = 0xB2,
