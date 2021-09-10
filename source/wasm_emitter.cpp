@@ -97,6 +97,9 @@ byte opcodes(chars s, byte kind = 0) {
 		if (eq(s, "/"))return i32_div;
 		if (eq(s, "%"))return i32_rem;
 		if (eq(s, "=="))return i32_eq;
+		if (eq(s, "eq"))return i32_eq;
+		if (eq(s, "equals"))return i32_eq;
+		if (eq(s, "is"))return i32_eq;// careful could be declaration := !
 		if (eq(s, "!="))return i32_ne;
 		if (eq(s, ">"))return i32_gt;
 		if (eq(s, "<"))return i32_lt;
@@ -245,7 +248,7 @@ Code emitValue(Node node, String context) {
 				// todo HOLUP! x:41 is a reference? then *node.value.node makes no sense!!!
 				code.add(emitSetter(node, *node.value.node, context));
 			} else {
-				code.addByte(get_local);
+				code.addByte(get_local);// todo skip repeats
 				code.addByte(local_index);
 			}
 		}
@@ -261,7 +264,8 @@ Code emitValue(Node node, String context) {
 			// append pString (as char*) to data section and access via stringIndex
 			int stringIndex = last_data_index + runtime.data_segments.length;// uh, todo?
 			String *pString = node.value.string;
-			if (stringIndices.has(pString))
+			if (stringIndices.has(
+					pString))// todo: reuse same strings even if different pointer, aor make same pointer before
 				stringIndex = stringIndices[pString];
 			else {
 //				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
@@ -476,7 +480,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				code.addByte(get_local);// make value available // todo: skip repeated get's / only when needed
 				code.addByte(local_index);
 			} else {// GET
-				code.addByte(get_local);
+				code.addByte(get_local);// todo: skip repeats
 				code.addByte(local_index);
 			}
 		}
@@ -537,7 +541,7 @@ Code emitWhile2(Node &node, String context) {
 	code.addByte(end_block); // end loop
 	code.addByte(get_local);
 	int block_value = 0;// todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
-	code.addByte(block_value);
+	code.addByte(block_value);// todo: skip if last value is result
 //	code.addByte(end_block); // end block
 	return code;
 }
@@ -619,7 +623,7 @@ Code emitSetter(Node node, Node &value, String context) {
 	setter.add(set_local);
 	setter.add(local_index);
 	setter.add(get_local);// make value available
-	setter.add(local_index);
+	setter.add(local_index);// todo skip repeats
 	return setter;
 }
 
