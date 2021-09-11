@@ -241,10 +241,9 @@ void error1(chars message, chars file, int line) {
 #ifdef _Backtrace_
 	Backtrace(2);
 #endif
-	if (file)
-		printf("\n%s:%d\n", file, line);\
+	if (file)printf("\n%s:%d\n", file, line);\
     raise(message);
-	panic();
+	panic();// not reached
 //	err(error);
 }
 
