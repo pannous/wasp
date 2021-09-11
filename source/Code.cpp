@@ -152,6 +152,7 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == call)
 		return functionSignatures[n.name].return_type;// error("first.kind==call is not a wasm type, maybe get signature?");
 	if (n.kind == keyNode and n.value.data)return mapTypeToWasm(*n.value.node);
+	if (n.kind == keyNode and not n.value.data)return array;
 	n.log();
 	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
 	return none;

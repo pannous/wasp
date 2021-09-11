@@ -254,6 +254,13 @@ public:
 		push((long) i);
 		return *this;
 	}
+
+	Code addConst(long i) {
+		add(0x41 /*i32_const*/);
+		push(i);
+		return *this;
+	}
+
 };
 
 
@@ -289,6 +296,7 @@ enum Valtype {
 	pointer = int32,// 0xF0, // internal
 	codepoint32 = int32,
 	node = pointer,
+	array = 13,
 	charp = 0xC0, // vs
 	string = 0xC0,// use charp?  pointer, // enough no!??
 //	value = 0xA1,// wrapped node Value, used as parameter? extract and remove! / ignore
@@ -324,7 +332,12 @@ enum Opcodes {
 	set_local = 0x21,// set and pop
 	tee_local = 0x22,// set and leave on stack
 
-	i32_store_8 = 0x3a,
+	i32_load = 0x28,// load word from i32 address
+	i32_store = 0x36,// store word at i32 address
+//	i32_store_int32= 0x36,
+//	i32_store_word= 0x36,
+//	i32_store_8 = 0x3a,
+//	i32_store_byte = 0x3a,// store byte at i32 address
 	i32_auto = (byte) 0x41,
 	i32_const = 0x41,
 	i64_auto = 0x42,

@@ -6,7 +6,7 @@
 #define MARK_NODETYPES_H
 
 // Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
-enum Type {
+enum Type {// todo: merge Node.kind with Node.class(?)
 // plurals because of namespace clash
 	// TODO add subtypes of Class:Node Variable:Node etc ^^^
 	nils = 0,
@@ -30,6 +30,7 @@ enum Type {
 	bools,
 	errors, // internal wasp error, NOT to be used in Angle!
 	call,
+	classe, // as Java class,  primitive int vs Node(kind==int) == boxed Int
 	unknown = 20 //7
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
