@@ -138,7 +138,7 @@ byte opcodes(chars s, byte kind = 0) {
 	// todo : set_local,  global_get ...
 	if (eq(s, "$"))return get_local; // $0 $1 ...
 
-	printf("unknown operator %s\n", s);// can still be matched as function etc, e.g. 'a'+'b' is 'ab'
+	printf("unknown or non-primitive operator %s\n", s);// can still be matched as function etc, e.g. 'a'+'b' is 'ab'
 	breakpoint_helper
 //		error("invalid operator");
 	return 0;
@@ -210,6 +210,39 @@ List<String> collect_locals(Node node, String context);
 Code cast(Valtype from, Valtype to);
 
 Code emitStringOp(Node op, String context);
+
+Code emitIndexWrite(Node op, String context) {
+	int base = 1024;
+	int size = 4;
+	int offset = op["offset"].value.longy * size;
+	int value = op["value"].value.longy;
+	Code store;
+	store.addConst(base + offset);
+	store.addConst(value);
+	store.add(i32_store);
+	store.add(0x02);// alignment (?)
+	store.add(0x00);// ?
+	return store;
+/*  000101: 41 94 08                   | i32.const 1044
+	000104: 41 06                      | i32.const 6
+    000106: 36 02 00                   | i32.store 2 0 */
+}
+
+
+Code emitIndexRead(Node op, String context) {
+	int base = 1024;
+	int size = 4;
+	int offset = op["offset"].value.longy * size;
+	Code load;
+	load.addConst(base + offset);
+	load.add(i32_load);
+	load.add(0x02);// alignment (?)
+	load.add(0x00);// ?
+	return load;
+	//	i32.const 1028
+	//	i32.const 3
+	//	i32.load
+}
 
 Code emitValue(Node node, String context) {
 	Code code;
@@ -485,6 +518,14 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				code.addByte(get_local);// todo: skip repeats
 				code.addByte(local_index);
 			}
+		}
+			break;
+		case patterns: // x=[];x[1]=2;x[1]==>2
+		{
+			if (node.parent->kind == declaration)
+				emitIndexWrite(node, context);
+			else
+				emitIndexRead(node, context);
 		}
 			break;
 		default:
@@ -767,7 +808,7 @@ Code emitBlock(Node node, String context) {
 	for (int i = 0; i < locals_count; ++i) {
 		Valtype valtype = localTypes[context][i];
 		block.addByte(i + 1);// index
-		if (valtype == none or valtype == voids or valtype == charp)
+		if (valtype == none or valtype == voids or valtype == charp or valtype == array)
 			valtype = int32;
 		block.addByte(valtype);
 	}
@@ -796,6 +837,7 @@ Code emitBlock(Node node, String context) {
 	return block;
 }
 
+/*
 //Map<int, String>
 // todo: why can't they be all found in parser? 2021/9/4 : they can ;)
 List<String> collect_locals(Node node, String context) {
@@ -809,6 +851,7 @@ List<String> collect_locals(Node node, String context) {
 	}
 	return current_locals;
 }
+*/
 
 
 int last_index = -1;

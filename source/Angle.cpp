@@ -445,6 +445,7 @@ Node &groupFunctions(Node &expression0) {
 }
 
 
+/*
 Node groupOperators2(Node &expression) {
 	if (expression.name == "if")return groupIf(expression);
 	if (expression.kind == operators and expression.length > 1)
@@ -505,6 +506,7 @@ Node groupOperators2(Node &expression) {
 	}
 	return expression;// no op
 }
+*/
 
 // todo: un-adhoc this!
 Node &groupWhile(Node n) {
@@ -548,6 +550,16 @@ Node &groupWhile(Node n) {
 
 	if (condition.value.data and !condition.next)
 		then = condition.values();
+	if (condition.kind == reference) {
+		// find better condition todo HOW TO UNMESS??
+		for (Node &child: n) {
+			if (child.kind == groups or child.kind == objects) {// while x y z {}
+				condition = n.to(child);
+				then = child;
+				break;
+			}
+		}
+	}
 
 	Node *whilo = new Node("while");// regroup cleanly
 	Node &ef = *whilo;
