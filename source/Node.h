@@ -103,21 +103,20 @@ public:
 
 
 //	Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
-	Type kind = unknown;
-//	Node type;
-
-	int length = 0;// children
-//	int count = 0;// use param.length for arguments / param
-
-	// TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
-//	Node &parent=NIL;
-//	Node &param=NIL;
-
+	Type kind = unknown;// todo: merge with Node.type/class ? :
+	Node *type = 0;
 	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
 	Node *children = nullptr;// LIST, not link. block body content
 	Node *next = 0; // in children list
 	char grouper = 0;// ";" ","
+
+	// TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
+	//	Node &parent=NIL;
+	//	Node &param=NIL;
+
+	int length = 0;// children
+	//	int count = 0;// use param.length for arguments / param
 
 	// a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms
 //	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
@@ -527,7 +526,6 @@ public:
 
 	Node apply_op(Node left, Node op0, Node right);
 
-	Node &setType(Type type);
 
 	long numbere() {
 		return kind == longs or kind == bools ? value.longy : value.real;// danger
@@ -611,6 +609,18 @@ public:
 	void remove(int at, int to);
 
 	Node &metas();
+
+	Node &setType(Type type);
+
+	Node &setType(const char *string) {// setClass
+		type = &Node(string).setType(classe);
+		return *this;
+	}
+
+	Node &setType(Node *_type) {
+		type = &_type->setType(classe);
+		return *this;
+	}
 };
 
 typedef const Node Nodec;

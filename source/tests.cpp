@@ -1613,6 +1613,7 @@ void testBUG() {// move to tests() once done!
 
 void todos() {
 	skip(
+			testSignificantWhitespace();
 			testAngle();// fails in WASM why?
 
 			assert_parses("ç='☺'");
@@ -1670,6 +1671,19 @@ void testNodeImplicitConversions(){
 }
 #endif
 
+void testSignificantWhitespace() {
+
+	//1 + 1 ≠ 1 +1 == [1 1]
+	assert(eval("1 + 1 == 2"));
+	assert_is("1 +1", parse("[1 1]"));
+	assert(eval("1 +1 == [1 1]"));
+	assert(eval("1 +1 ≠ 1 + 1"));
+}
+
+void testUnits() {
+	assert_is("1 m + 1km", Node(1001).setType("m"));
+}
+
 void testCurrent() { // move to tests() once OK
 //	testWasmMemoryIntegrity();
 #ifndef WASM
@@ -1677,7 +1691,18 @@ void testCurrent() { // move to tests() once OK
 //	testWasmRuntimeExtension();
 #endif
 //assert_emit("x='123'", "123");
-//assert_run("x='123'", 123);
+//testUnits();
+	assert_run("pixel=[];pixel[1]=15;pixel[1]", 15);
+//assert_run("pixel=100 ints;pixel[1]=15;pixel[1]", 15);
+
+	assert_run("i=0;w=800;h=800;while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
+
+	assert_run("x={a:3,b:4,c:{d:true}};x.a", 3);
+	assert_run("x={a:3,b:true};x.b", 1);
+	assert_run("x={a:3,b:4,c:{d:true}};x.c.d", 1);
+//assert_run("x={a:3,b:'ok',c:{d:true}};x.b", "ok");
+	assert_run("x={a:3,b:'ok',c:{d:5}};x.c.d", 5);//deep
+
 	testMarkMultiDeep();
 
 	testWasmRuntimeExtension();
