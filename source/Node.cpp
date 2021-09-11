@@ -1039,3 +1039,4 @@ Node &Node::setType(Type type) {
 //	}
 	return *this;
 }
+
