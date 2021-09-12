@@ -698,10 +698,10 @@ Node *Node::has(String s, bool searchMeta, short searchDepth) const {
 	}
 	if (s == name.data)
 		return const_cast<Node *>(this);
-	if (meta and searchMeta and searchDepth == 0) {// todo: dont search leaves when searchDepth-->0
-		Node *found = meta->has(s);
-		if (found)return found;
-	}
+//	if (meta and searchMeta and searchDepth == 0) {// todo: dont search leaves when searchDepth-->0
+//		Node *found = meta->has(s);
+//		if (found)return found;
+//	}
 
 
 	if (searchDepth > 0) {
@@ -1004,11 +1004,13 @@ void Node::replace(int from, int to, Node &node) {
 	replace(from, to, &node);
 }
 
-Node &Node::metas() {
-	if (!meta)meta = new Node();
-	meta->setType(patterns);// naja!
-	return *meta;
-}
+//Node &Node::metas() {
+//	if (!meta) {
+//		meta = new Node();
+//		meta->setType(patterns);// naja!
+//	}
+//	return *meta;
+//}
 
 void log(Node &n) {
 	n.log();
