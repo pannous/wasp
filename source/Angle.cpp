@@ -135,7 +135,7 @@ List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", "¹
 
 // handled different than other operators, because … they affect the namespace context
 List<chars> setter_operators = {"="};
-List<chars> constructor_operators = {":"};
+List<chars> key_pair_operators = {":"};
 List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
 List<chars> function_operators = {":="};// todo:
 List<chars> declaration_operators = {":=", "="}; //  i:=it*2  vs i=1  OK?  NOT ":"! if 1 : 2 else 3
@@ -152,7 +152,7 @@ List<chars> suffixOperators;
 List<chars> setter_operators;
 List<chars> declaration_operators;
 List<chars> function_operators;
-List<chars> constructor_operators;
+List<chars> key_pair_operators;
 //no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
 #endif
 
@@ -191,8 +191,8 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 
 			if (isFunction(name))
 				error("Symbol already declared as function: "s + name);
-			if (locals.has(name))
-				error("Symbol already declared as variable: "s + name);
+			//			if (locals[context].has(name)) // todo double := it * 2 ; double(4)
+//				error("Symbol already declared as variable: "s + name);
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
 
@@ -206,13 +206,14 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 			signature.emit = true;// all are 'export'
 			//			signature.is_used=true;// maybe
 
-			Node *body = analyze(rest).clone();
 			Node *decl = new Node(name);//node.name+":={…}");
 			decl->setType(declaration);
-			decl->metas().add(modifiers);
-			decl->add(body);// addChildren makes emitting harder
+			//			decl->metas().add(modifiers);// mutable x=7  todo: either reactivate meta or add type mutable?
 
-			if (setter_operators.has(op) or constructor_operators.has(op)) {
+			// todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
+			if (setter_operators.has(op) or key_pair_operators.has(op)) {
+				Node *body = analyze(rest, name).clone();//
+				decl->add(body);// addChildren makes emitting harder
 				if (modifiers.has("global"))
 					globals.insert_or_assign(name, body);
 				else {
@@ -245,6 +246,8 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 			if (signature.return_type != int32)
 				error("BUG");
 #endif
+			Node *body = analyze(rest, name).clone();
+			decl->add(body);
 			return *decl;
 		}
 	}
@@ -662,7 +665,7 @@ Node &groupIf(Node n) {
 }
 
 
-Node analyze(Node data) {
+Node analyze(Node data, String context) {
 #ifndef RUNTIME_ONLY
 	locals.setDefault(List<String>());
 	localTypes.setDefault(List<Valtype>());
@@ -670,12 +673,13 @@ Node analyze(Node data) {
 #endif
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	Type type = data.kind;
-	if (type == keyNode and data.value.node /* i=ø has no node */) {
-		data.value.node = analyze(*data.value.node).clone();
+	if (type == keyNode) {
+		locals[context].add(data.name);// need to pre-register before emitBlock!
+		if (data.value.node /* i=ø has no node */)
+			data.value.node = analyze(*data.value.node).clone();
 	}
 	if (type == longs or type == strings or type == reals or type == bools or type == codepoints or type == arrays or
 	    type == buffers) {
-		String context = "main";
 		if (isVariable(data) and not locals[context].has(data.name))
 			locals[context].add(data.name);// need to pre-register before emitBlock!
 	}
@@ -692,7 +696,7 @@ Node analyze(Node data) {
 		return grouped;
 	}
 
-	Node &groupedDeclarations = groupDeclarations(data, "main");
+	Node &groupedDeclarations = groupDeclarations(data, context);
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
 	Node &grouped = groupOperators(groupedFunctions);
 	data = grouped;// temp hack
