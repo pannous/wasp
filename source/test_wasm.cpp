@@ -622,6 +622,71 @@ void testMergeRelocate() {
 }
 
 
+void testStringIndices() {
+	assert_run("'world'#2", 'o');
+	assert_run("'world'[1]", 'o');
+	skip( // todo move angle syntax to test_angle
+			assert_run("char #1 in 'world'", 'o');
+			assert_run("char 1 in 'world'", 'o');
+			assert_run("2nd char in 'world'", 'o');
+			assert_run("2nd byte in 'world'", 'o');
+	)
+
+	assert_run("hello='world';hello#1", 'w');
+	assert_run("hello='world';hello#2", 'o');
+	Node setter1 = analyze(parse("pixel#1=15"));
+	check(setter1.kind == patterns);
+	Node getter1 = analyze(parse("pixel#1"));
+	check(getter1.kind == patterns);
+	//	assert_run("pixel=100 int(s);pixel#1=15;pixel#1", 15);
+	assert_run("hello='world';hello#1='W';hello#1", 'W');// diadic ternary operator
+	assert_run("hello='world';hello[0]='W';hello[0]", 'W');// diadic ternary operator
+
+	//	assert_run("hello='world';hello#1='W';hello", "World");
+
+	exit(0);
+
+}
+
+void testArrayIndices() {
+
+	assert_is("[1 2 3]#2", 2);// node based (non-primitive) interpretation
+
+	//
+	//	Node empty_array = parse("pixel=[]");
+	//	check(empty_array.kind==patterns);
+	//
+	//	Node construct = analyze(parse("pixel=[]"));
+	//	check(construct["rhs"].kind == patterns or construct.length==1 and construct.first().kind==patterns);
+	//	emit("pixel=[]");
+	//	exit(0);
+
+	Node setter1 = analyze(parse("pixel#1=15"));
+	check(setter1.kind == patterns);
+	Node getter1 = analyze(parse("pixel#1"));
+	check(getter1.kind == patterns);
+	//	assert_run("pixel=100 int(s);pixel#1=15;pixel#1", 15);
+	assert_run("pixel array;pixel#1=15;pixel#1", 15);// diadic ternary operator
+
+	exit(0);
+	Node setter = analyze(parse("pixel[1]=15"));
+	check(setter.kind == patterns);
+	Node getter = analyze(parse("pixel[1]"));
+	check(getter.kind == patterns);
+	assert_run("pixel=[];pixel[1]=15;pixel[1]", 15);
+
+	//assert_run("pixel=100 ints;pixel[1]=15;pixel[1]", 15);
+
+	assert_run("i=0;w=800;h=800;while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
+
+	assert_run("x={a:3,b:4,c:{d:true}};x.a", 3);
+	assert_run("x={a:3,b:true};x.b", 1);
+	assert_run("x={a:3,b:4,c:{d:true}};x.c.d", 1);
+	//assert_run("x={a:3,b:'ok',c:{d:true}};x.b", "ok");
+	assert_run("x={a:3,b:'ok',c:{d:5}};x.c.d", 5);//deep
+}
+
+
 // random stuff todo: put in proper tests
 void testWasmStuff() {
 	assert_emit("double x := x * 2 ; double(4)", 8)

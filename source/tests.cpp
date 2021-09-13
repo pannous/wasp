@@ -760,7 +760,7 @@ void testLogic() {
 
 // use the bool() function to determine if a value is truthy or falsy.
 void testTruthiness() {
-	const Node &node = parse("true");
+	Node node = parse("true");
 //	log("TRUE:");
 	nl();
 	log(node.name);
@@ -1400,21 +1400,21 @@ void testSort2() {
 void testRemove() {
 	Node result = parse("a b c d");
 	result.remove(1, 2);
-	const Node &replaced = parse("a d");
+	Node replaced = parse("a d");
 	check(result == replaced);
 }
 
 void testRemove2() {
 	Node result = parse("a b c d");
 	result.remove(2, 10);
-	const Node &replaced = parse("a b");
+	Node replaced = parse("a b");
 	check(result == replaced);
 }
 
 void testReplace() {
 	Node result = parse("a b c d");
 	result.replace(1, 2, new Node("x"));
-	const Node &replaced = parse("a x d");
+	Node replaced = parse("a x d");
 	check(result == replaced);
 }
 
@@ -1684,31 +1684,6 @@ void testUnits() {
 	assert_is("1 m + 1km", Node(1001).setType("m"));
 }
 
-void testArrayIndices() {
-
-	//	const Node &empty_array = parse("pixel=[]");
-	//	check(empty_array.kind==patterns);
-	emit("pixel=[]");
-	exit(0);
-	const Node &setter = analyze(parse("pixel[1]=15"));
-	check(setter.kind == patterns);
-	const Node &getter = analyze(parse("pixel[1]"));
-	check(getter.kind == patterns);
-
-
-	//	assert_equals(empty_array
-	assert_run("pixel=[];pixel[1]=15;pixel[1]", 15);
-	//assert_run("pixel=100 ints;pixel[1]=15;pixel[1]", 15);
-
-	assert_run("i=0;w=800;h=800;while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
-
-	assert_run("x={a:3,b:4,c:{d:true}};x.a", 3);
-	assert_run("x={a:3,b:true};x.b", 1);
-	assert_run("x={a:3,b:4,c:{d:true}};x.c.d", 1);
-	//assert_run("x={a:3,b:'ok',c:{d:true}};x.b", "ok");
-	assert_run("x={a:3,b:'ok',c:{d:5}};x.c.d", 5);//deep
-}
-
 void testCurrent() { // move to tests() once OK
 //	testWasmMemoryIntegrity();
 #ifndef WASM
@@ -1716,8 +1691,9 @@ void testCurrent() { // move to tests() once OK
 //	testWasmRuntimeExtension();
 #endif
 //assert_emit("x='123'", "123");
+	testStringIndices();
+//	testArrayIndices();
 //testUnits();
-//testArrayIndices();
 	testMarkMultiDeep();
 
 	testWasmRuntimeExtension();
