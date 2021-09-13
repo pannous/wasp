@@ -332,6 +332,8 @@ enum Opcodes {
 	set_local = 0x21,// set and pop
 	tee_local = 0x22,// set and leave on stack
 
+	i8_load = 0x2d, //== 𝟶𝚡𝟸𝙳, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
+	i16_load = 0x2f, //== 𝟶𝚡𝟸𝙳, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
 	i32_load = 0x28,// load word from i32 address
 	i32_store = 0x36,// store word at i32 address
 //	i32_store_int32= 0x36,
