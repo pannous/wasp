@@ -359,6 +359,16 @@ public:
 
 void log(Map<String, int> map);
 
+template<class S, class T>
+void log(Map<S, T> map) {
+	printf("Map (size: %d)\n", map.size());
+	for (int i = 0; i < map.size(); ++i)
+		printf("%s: %ld\n", map.keys[i]->data, map.values[i]);
+}
+//void log(Map<S, T> map);
+
+void log(List<String>);
+
 //int String::in(List<chars> list){
 //	for(chars word : list){
 //		if(eq(data,word))return list.position(word);
