@@ -104,7 +104,7 @@ public:
 
 //	Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
 	Type kind = unknown;// todo: merge with Node.type/class ? :
-//	Node *type = 0;
+//	Node *type = 0;// variable/reference type or object class?
 //	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
 	Node *children = nullptr;// LIST, not link. block body content

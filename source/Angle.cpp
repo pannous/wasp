@@ -234,6 +234,8 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 #ifndef RUNTIME_ONLY
 
 			for (Arg arg: args) {
+				if (locals[name].has(arg.name))
+					error("duplicate argument name: "s + arg.name);
 				locals[name].add(arg.name);
 				localTypes[name].add(int32);
 				signature.add(int32);// todo: arg type, or pointer
@@ -271,7 +273,7 @@ bool isVariable(String name, String context0) {
 }
 
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
-Node &groupOperators(Node &expression0) {
+Node &groupOperators(Node &expression0, String context = "main") {
 	Node &expression = *expression0.clone();// modified in place!
 	if (analyzed.has(expression0.hash()))return expression;
 	analyzed.insert_or_assign(expression0.hash(), 1);
@@ -315,7 +317,7 @@ Node &groupOperators(Node &expression0) {
 			} else {
 				//#ifndef RUNTIME_ONLY
 				if (node.name.endsWith("=") and prev.kind == reference)
-					locals["main"].add(prev.name);
+					locals[context].add(prev.name);
 				//#endif
 				node.add(prev);
 				node.add(next);
@@ -673,19 +675,20 @@ Node analyze(Node data, String context) {
 #endif
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	Type type = data.kind;
+	List<String> &localContext = locals[context];
 	if (type == keyNode) {
-		locals[context].add(data.name);// need to pre-register before emitBlock!
+		if (not localContext.has(data.name)) localContext.add(data.name);
 		if (data.value.node /* i=ø has no node */)
 			data.value.node = analyze(*data.value.node).clone();
 	}
 	if (type == longs or type == strings or type == reals or type == bools or type == codepoints or type == arrays or
 	    type == buffers) {
-		if (isVariable(data) and not locals[context].has(data.name))
-			locals[context].add(data.name);// need to pre-register before emitBlock!
+		if (isVariable(data) and not localContext.has(data.name))
+			localContext.add(data.name);// need to pre-register before emitBlock!
 	}
 
 	if (type == operators or type == call) {
-		Node grouped = groupOperators(data);// outer analysis id(3+3) => id(+(3,3))
+		Node grouped = groupOperators(data, context);// outer analysis id(3+3) => id(+(3,3))
 		for (Node &child: grouped) {// inner analysis while(i<3){i++}
 			if (child.kind == groups or child.kind == objects) child.setType(expressions);
 			const Node &analyze1 = analyze(child);
@@ -698,7 +701,7 @@ Node analyze(Node data, String context) {
 
 	Node &groupedDeclarations = groupDeclarations(data, context);
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
-	Node &grouped = groupOperators(groupedFunctions);
+	Node &grouped = groupOperators(groupedFunctions, context);
 	data = grouped;// temp hack
 	if (type == groups or type == objects) {// children analyzed individually, not as expression WHY?
 		Node grouped = *data.clone();

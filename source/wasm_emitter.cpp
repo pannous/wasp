@@ -21,8 +21,9 @@ short builtin_count = 0;// function_offset - import_count - runtime_offset;
 
 //bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
 char *data;// any data to be stored to wasm: values of variables, strings, nodes etc
-int last_data_index;// position to write more data = end + length of data section
-Map<String *, long> stringIndices; // wasm pointers to strings within wasm data
+int data_index_end;// position to write more data = end + length of data section
+Map<String *, long> stringIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
+Map<String, long> references;
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
 Module runtime;
@@ -211,6 +212,15 @@ Code cast(Valtype from, Valtype to);
 
 Code emitStringOp(Node op, String context);
 
+bool isAssignable(Node node, Node *type = 0) {
+	//todo
+	//	if(node.metas().has("constant") or node.metas().has("immutable")) // …
+	//		return false;
+	//	if(type and type!=node.type)
+	//		return false;
+	return true;
+}
+
 Code emitIndexWrite(Node op, String context) {
 	int base = 1024;
 	int size = 4;
@@ -230,12 +240,38 @@ Code emitIndexWrite(Node op, String context) {
 
 
 Code emitIndexRead(Node op, String context) {
-	int base = 1024;
+	int base = runtime.data_segments.length;// uh, todo?
+
+//	int base = 1024;
 	int size = 4;
-	int offset = op["offset"].value.longy * size;
+	// todo:
+//	if(op[0].kind==strings)
+	size = 1;
+	if (op.length < 2)error("operator # needs two arguments: reference and position");
+	Node &array = op[0];// also String: byte array or codepoint array todo
+	if (array.kind == reference or array.kind == keyNode) {
+		String ref = array.name;
+		if (not references.has(ref))
+			error("reference not declared as array type: "s + ref);
+		base += references[ref];
+	} else if (array.kind == strings) {
+		log("stringIndices");
+		log(stringIndices);
+		printf("%s\n", array.value.string->data);
+		printf("%p\n", &array.value.string);
+		printf("%p\n", array.value.string);
+		base += stringIndices[array.value.string];
+	}
+	int offset = (long) op[1];
+	if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
+	if (op.name == "#") offset--;
+//	if(offset>op[0].length)error("index out of bounds! %d > %d in %s (%s)"s % offset % ); // todo: get string size, array length etc
 	Code load;
-	load.addConst(base + offset);
-	load.add(i32_load);
+	load.addConst(base + offset * size);
+	if (size == 1)load.add(i8_load);
+	if (size == 2)load.add(i16_load);
+	if (size == 4)load.add(i32_load);
+	if (size == 8)load.add(i64_load);
 	load.add(0x02);// alignment (?)
 	load.add(0x00);// ?
 	return load;
@@ -246,6 +282,7 @@ Code emitIndexRead(Node op, String context) {
 
 Code emitValue(Node node, String context) {
 	Code code;
+	String &name = node.name;
 	switch (node.kind) {
 		case nils:// also 0, false
 //			code.opcode((byte)i64_auto);// nil is pointer
@@ -275,8 +312,8 @@ Code emitValue(Node node, String context) {
 			break;
 //		case identifier:
 		case reference: {
-			int local_index = locals[context].position(node.name);
-			if (local_index < 0)error("UNKNOWN symbol "s + node.name + " in context " + context);
+			int local_index = locals[context].position(name);
+			if (local_index < 0)error("UNKNOWN symbol "s + name + " in context " + context);
 			if (node.value.node) {
 				// todo HOLUP! x:41 is a reference? then *node.value.node makes no sense!!!
 				code.add(emitSetter(node, *node.value.node, context));
@@ -295,19 +332,29 @@ Code emitValue(Node node, String context) {
 			break;
 		case strings: {
 			// append pString (as char*) to data section and access via stringIndex
-			int stringIndex = last_data_index + runtime.data_segments.length;// uh, todo?
+			int stringIndex = data_index_end + runtime.data_segments.length;// uh, todo?
 			String *pString = node.value.string;
 			if (stringIndices.has(
-					pString))// todo: reuse same strings even if different pointer, aor make same pointer before
+					pString)) // todo: reuse same strings even if different pointer, aor make same pointer before
 				stringIndex = stringIndices[pString];
 			else {
+				stringIndices.insert_or_assign(pString, data_index_end);
 //				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
-//				strcpy2(data + last_data_index, (char*)lens.data, lens.length);
-//				last_data_index += lens.length;// unsignedLEB128 encoded length of pString
-				strcpy2(data + last_data_index, pString->data, pString->length);
-				data[last_data_index + pString->length] = 0;
+//				strcpy2(data + data_index_end, (char*)lens.data, lens.length);
+//				data_index_end += lens.length;// unsignedLEB128 encoded length of pString
+				strcpy2(data + data_index_end, pString->data, pString->length);
+				data[data_index_end + pString->length] = 0;
+				if (references.has(name)) {
+					if (not isAssignable(node))
+						error("can't reassign reference "s + name);
+					else
+						trace("reassigning reference "s + name + " to " + node.value.string);
+				}
+				if (node.parent and (node.parent->kind == reference or
+				                     node.parent->kind == keyNode))// todo move up! todo keyNode bad criterion!!
+					references.insert_or_assign(node.parent->name, data_index_end);// safe ref to string
 				// we add an extra 0, unlike normal wasm abi, because we have space in data section
-				last_data_index += pString->length + 1;
+				data_index_end += pString->length + 1;
 			}
 			last_type = string;//
 			return Code(i32_const) + Code(stringIndex);// just a pointer
@@ -320,6 +367,7 @@ Code emitValue(Node node, String context) {
 	}
 	return code;
 }
+
 
 Code emitOperator(Node node, String context) {
 	Code code;
@@ -383,6 +431,11 @@ Code emitOperator(Node node, String context) {
 		increased.add(new Node(1));
 		//		emitExpression(increased,context);
 		code.add(emitSetter(node.first(), increased, context));
+	} else if (name == "#") {// index operator
+		if (node.parent and node.parent->name == "=")// setter!
+			return emitIndexWrite(node[0], context);// todo
+		else
+			return emitIndexRead(node, context);
 	} else if (opcode > 0xC0) {
 		error("internal opcode not handled"s + opcode);
 	} else if (opcode > 0) {
@@ -523,9 +576,9 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		case patterns: // x=[];x[1]=2;x[1]==>2
 		{
 			if (node.parent->kind == declaration)
-				emitIndexWrite(node, context);
+				return emitIndexWrite(node, context);
 			else
-				emitIndexRead(node, context);
+				return emitIndexRead(node, context);
 		}
 			break;
 		default:
@@ -799,6 +852,8 @@ Code emitBlock(Node node, String context) {
 // todo: locals must ALWAYS be collected in analyze step, emitExpression is too late!
 	last_local = 0;
 	int locals_count = locals[context].size();
+	trace("found %d locals for %s"s % locals_count % context);
+	log(locals[context]);
 	int argument_count = functionSignatures[context].size();
 	if (locals_count >= argument_count)
 		locals_count = locals_count - argument_count;
@@ -1028,7 +1083,7 @@ Code dataSection() { // needs memory section too!
 //	0000042: 0100 4100 0b02 4869                      ..A...Hi
 //https://webassembly.github.io/spec/core/syntax/modules.html#syntax-datamode
 	Code datas;
-	if (last_data_index == 0)return datas;//empty
+	if (data_index_end == 0)return datas;//empty
 
 	//Contents of section Data:
 //0013b83: 0005 00 41 8108 0b fd1d 63 6f72 7275 7074  ...A.....corrupt
@@ -1041,8 +1096,8 @@ Code dataSection() { // needs memory section too!
 	datas.addInt(0x0 +
 	             runtime.data_segments.length);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
 	datas.addByte(0x0b);// mode: active?
-	datas.addByte(last_data_index); // size of data
-	const Code &actual_data = Code((bytes) data, last_data_index);
+	datas.addByte(data_index_end); // size of data
+	const Code &actual_data = Code((bytes) data, data_index_end);
 	datas.add(actual_data);// now comes the actual data  encodeVector()? nah manual here!
 	return createSection(data_section, encodeVector(datas));// size added via actual_data
 }
@@ -1230,7 +1285,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	typeMap.setDefault(-1);
 	typeMap.clear();
 	data = (char *) malloc(MAX_DATA_LENGTH);
-	last_data_index = 0;
+	data_index_end = 0;
 	functionIndices.setDefault(-1);
 	functionCodes.setDefault(Code());
 	functionSignatures.setDefault(Signature());
@@ -1240,8 +1295,8 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		runtime_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
 		import_count = 0;
 		builtin_count = 0;
-//		last_data_index = runtime.data_segments.length;// insert after module data!
-		// todo: either write last_data_index DIRECTLY after module data and increase count of module data,
+//		data_index_end = runtime.data_segments.length;// insert after module data!
+		// todo: either write data_index_end DIRECTLY after module data and increase count of module data,
 		// or increase memory offset for second data section! (AND increase index nontheless?)
 		int newly_pre_registered = 0;//declaredFunctions.size();
 		last_index = runtime_offset - 1;
