@@ -117,7 +117,7 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 
 	if (length > 1)
 		if (kind == operators or precedence(*this))
-			return apply_op(NIL, *this, this->clone()->setType(objects).setName(empty_name));
+			return apply_op(NIL, *this, this->clone()->setType(objects, false).setName(empty_name));
 
 	if (length == 2 and children[1].kind == expressions) {
 		length = 1;
@@ -200,12 +200,23 @@ Node do_call(Node left, Node op0, Node right) {
 
 Node matchPattern(Node object, Node pattern0) {
 //	[1 2 3]#1 == 1 == [1 2 3][0]
-	Node pattern = pattern0.interpret(); // [1 2 3][3-2]==2
+	Node pattern = pattern0;
+	if (pattern0.kind == expressions)
+		pattern = pattern0.interpret(); // [1 2 3][3-2]==2
+	if (object.isNil())return pattern;
 	if (pattern.kind == longs)return object[(int) pattern.numbere()];
 	if (pattern.kind == strings)return object[pattern.value.string];
-// todo proper matches, references...
+	if (pattern.kind == reference and pattern.isEmpty())
+		return object[pattern.name];
+	if (pattern.kind == patterns) {
+		if (pattern.isEmpty())return object; // empty pattern returns object ok?
+		return matchPattern(object, pattern.first());
+	}
+	// todo: by name ok?
+	todo("proper matches, referenceIndices... in matchPattern");
 	return object[pattern.name];
 }
+
 
 Node Node::apply_op(Node left, Node op0, Node right) {
 
@@ -234,9 +245,6 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 	if (isFunction(op))
 		return do_call(left, op0, right);
-
-	if (op0.kind == patterns)
-		return matchPattern(left, op0);
 
 	if (op == ".") {
 		return matchPattern(left, right);
@@ -316,6 +324,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 */
 	if (op == "or" or op == "||") {
 		::print("YA OR!!");
+		if (left.isEmpty())return right;
 		if (left.kind == bools) return left.value.longy == 1 ? True : right;
 //		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());// eek no!!
 		if (!left.isEmpty() and left != NIL and left != False) return left;
@@ -419,6 +428,13 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 //		kind=Type::function; // functor same concept, different arguments
 		// careful, functions take arguments, functors take bodies if(1,2,3)!=if{1}{2}{3}
 	}
+	if (op0.kind == patterns and op0.isEmpty())// pattern can come from left or right!
+		return left.isEmpty() ? right : left;
+	if (op0.kind == patterns)// pattern can come from left or right!
+		return matchPattern(left, op0);
+	if (right.kind == patterns)
+		return matchPattern(op0, right);
+
 	todo("operator “%s” NOT defined for types %s and %s "s % op % typeName(left.kind) % typeName(right.kind));
 	return NIL;
 //	log("NO builtin operator "+op0+" calling…")

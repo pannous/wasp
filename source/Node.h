@@ -58,6 +58,8 @@ extern Node NaN;// = Node("NaN");
 
 void log(Node &);
 
+void log(const Node &);
+
 void log(Node *);
 
 void printf(Node &);
@@ -71,7 +73,7 @@ union Value {
 	String *string;// todo: wasm_chars*
 	void *data;// any bytes
 	long longy;
-	codepoint chary;
+//	codepoint chary;// use longy
 
 //	float real;
 	double real;
@@ -165,7 +167,7 @@ public:
 	explicit
 	Node(char c) {
 		name = String(c);
-		value.chary = c;
+		value.longy = c;
 		kind = codepoints;
 		// todo ^^ keep!
 		value.string = new String(c);
@@ -376,7 +378,7 @@ public:
 //	}
 
 //	Node &operator=(Node& n);
-//	 DOESN'T work like this: references are always set via internal reference mechanism, this is for value copy!
+//	 DOESN'T work like this: referenceIndices are always set via internal reference mechanism, this is for value copy!
 //	Node& operator=(Node& val){
 //		if(name and kind==nils){
 //			this->kind = reference;
@@ -610,7 +612,7 @@ public:
 
 	Node &metas();
 
-	Node &setType(Type type);
+	Node &setType(Type type, bool check = true);
 
 	Node &setType(const char *string) {// setClass
 //		type = &Node(string).setType(classe);

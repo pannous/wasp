@@ -24,6 +24,7 @@ Node analyze(Node data, String context = "main");// wasp -> code  // build ast v
 Node eval(String code);// wasp -> code -> data   // interpreter mode vs:
 Node emit(String code);//  wasp -> code -> wasm  // to debug currently same as:
 Node run(String source);// wasp -> code -> wasm() -> data
+int runtime_emit(String prog);// wasp -> code + runtime -> wasm (via emit)
 //extern Map<String, Signature> functionSignatures;
 
 Node constants(Node n);

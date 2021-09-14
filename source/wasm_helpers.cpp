@@ -123,7 +123,7 @@ extern "C" /*unsigned */ char *current = 0;// dummies, remove!
 extern bool throwing;// false for error tests etc
 int raise(chars error) {
 //#ifdef WASM3
-	Backtrace();
+	Backtrace(3);
 	print(error);
 	exit(EXIT_FAILURE);
 //#endif
@@ -239,7 +239,7 @@ void _cxa_throw() {
 
 void error1(chars message, chars file, int line) {
 #ifdef _Backtrace_
-	Backtrace(2);
+//	Backtrace(2);// later, in raise
 #endif
 	if (file)printf("\n%s:%d\n", file, line);\
     raise(message);
