@@ -144,12 +144,15 @@ void parseFunctionNames(Code &payload) {
 
 
 void parseImportNames(Code &payload) {
+	trace("Imports:");
 	for (int i = 0; i < module.import_count and payload.start < payload.length; ++i) {
 		String mod = name(payload);// module
 		String name1 = name(payload).clone();// needs to be 0-terminated now
 		int type = unsignedLEB128(payload);
 		int index = unsignedLEB128(payload);
-//		log(name1);
+		trace(name1);
+		functionIndices[name1] = index;
+		functionSignatures[name1].import().runtime().handled();//.functionType(type);//.runtime()
 	}
 }
 

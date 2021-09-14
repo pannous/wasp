@@ -1703,9 +1703,10 @@ void testUnits() {
 }
 
 void testCurrent() { // move to tests() once OK
+	assert_run("logs('ok');", 0);// almost ok
+	assert_emit("logs('ok');", 0);// ok
 	assert_emit("'goody';(1 4 3)#2", 4);
 	assert_emit("(1 4 3)#2", 4);
-	assert_run("logs('ok');", 0);
 	assert_run("print('ok');(1 4 3)#2", 4);
 //	testWasmMemoryIntegrity();
 #ifndef WASM
