@@ -410,7 +410,8 @@ Node &groupFunctions(Node &expression0) {
 			// todo f (x) (y) (z)
 			// todo expression[i+1].length>=minArity
 			rest = expression[i + 1];
-			if (rest.length > 1)rest.setType(expressions);
+			if (rest.length > 1)
+				rest.setType(expressions);
 			Node args = analyze(rest);
 			node.add(args);
 			expression.remove(i + 1, i + 1);
@@ -692,7 +693,8 @@ Node analyze(Node data, String context) {
 	if (type == operators or type == call or isFunction(data)) {
 		Node grouped = groupOperators(data, context);// outer analysis id(3+3) => id(+(3,3))
 		for (Node &child: grouped) {// inner analysis while(i<3){i++}
-			if (child.kind == groups or child.kind == objects) child.setType(expressions);
+//			if (child.kind == groups or child.kind == objects)// what if applying to real list though ?f([1,2,3])
+//				child.setType(expressions);
 			const Node &analyze1 = analyze(child);
 			child = analyze1;// REPLACE with their ast? NO! todo
 		}

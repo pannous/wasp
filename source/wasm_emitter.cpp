@@ -23,6 +23,7 @@ short builtin_count = 0;// function_offset - import_count - runtime_offset;
 //bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
 char *data;// any data to be stored to wasm: values of variables, strings, nodes etc
 int data_index_end;// position to write more data = end + length of data section
+int last_data = 0;// last pointer outside stack
 Map<String *, long> stringIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 Map<String, long> referenceIndices;
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
@@ -221,13 +222,14 @@ Code emitArray(Node &node, String context) {
 	int pointer = data_index_end;
 	for (Node &child:node) {
 		// todo: smart pointers?
-		code.add(Code(emitData(child, context), false));// pointers in flat i32/i64 format!
+		emitData(child, context);// pointers in flat i32/i64 format!
 	}
 	String ref = node.name;
 	if (node.name.empty() and node.parent) {
 		ref = node.parent->name;
 	}
 	referenceIndices.insert_or_assign(ref, pointer);
+	last_data = pointer;
 	return code.addConst(pointer);// once written to data section, we also want to use it immediately
 }
 
@@ -265,6 +267,11 @@ Code emitIndexPattern(Node pattern, String context) {
 	if (pattern.length != 1 and pattern.kind != longs)error("exactly one pattern expected in emitIndexPattern");
 	int base = runtime.data_segments.length;// uh, todo?
 	int size = 1;// todo char, codepoint, int , pointer …
+	if (last_type == string)size = 1;// chars for now vs codepoint!
+	if (last_type == int32)size = 4;
+	if (last_type == int64)size = 8;
+	if (last_type == float32)size = 4;
+	if (last_type == float64)size = 8;
 	int offset = (long) pattern.first().value.longy;
 	if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
 	Code load;
@@ -278,14 +285,17 @@ Code emitIndexPattern(Node pattern, String context) {
 	return load;
 }
 
+// todo: merge these:
 Code emitIndexRead(Node op, String context) {
 	int base = runtime.data_segments.length;// uh, todo?
-
-//	int base = 1024;
 	int size = 4;
-	// todo:
-//	if(op[0].kind==strings)
 	size = 1;
+//	if(op[0].kind==strings) todo?
+	if (last_type == string)size = 1;// chars for now vs codepoint!
+	if (last_type == int32)size = 4;
+	if (last_type == int64)size = 8;
+	if (last_type == float32)size = 4;
+	if (last_type == float64)size = 8;
 	if (op.length < 2)
 		error("operator # needs two arguments: node/array/reference and position");
 	Node &array = op[0];// also String: byte array or codepoint array todo
@@ -296,7 +306,8 @@ Code emitIndexRead(Node op, String context) {
 		base += referenceIndices[ref];
 	} else if (array.kind == strings) {
 		base += stringIndices[array.value.string];
-	}
+	} else
+		base += last_data;// todo: pray!
 	int offset = (long) op[1];
 	if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
 	if (op.name == "#") offset--;
@@ -331,22 +342,27 @@ long emitData(Node node, String context) {
 //			if(leb)
 //			Code &leb128 = signedLEB128(node.value.longy);
 //			data_index_end+=leb128.length
-//			if (node.value.longy > 0xF0000000)
-//				error("true long big ints currently not supported");
-			*(long *) (data + data_index_end) = node.value.longy;
-			data_index_end += 8;
+			if (node.value.longy > 0xF0000000) {
+				error("true long big ints currently not supported");
+				*(long *) (data + data_index_end) = node.value.longy;
+				data_index_end += 8;
+				last_type = i64t;
+			}
+			*(int *) (data + data_index_end) = node.value.longy;
+			data_index_end += 4;
+			last_type = int32;
 			break;
 		case reals:
 //			bytes varInt = ieee754(node.value.real);
 			*(double *) (data + data_index_end) = node.value.real;
 			data_index_end += 8;
+			last_type = float64;
 			break;
 		case reference:
 			if (referenceIndices.has(node.name)) {
 				error("can't save unknown reference pointer "s + name);
 			} else
-				todo("reference");
-
+				todo("emitData reference");
 			break;
 		case strings: {
 			int stringIndex = data_index_end + runtime.data_segments.length;// uh, todo?
@@ -364,8 +380,14 @@ long emitData(Node node, String context) {
 				// we add an extra 0, unlike normal wasm abi, because we have space in data section
 				data_index_end += pString->length + 1;
 			}
+			last_type = string;
 			break;
 		}
+		case objects:
+		case groups:
+			emitArray(node, context);
+			// keep last_type from last child, later if mixed types, last_type=ref or smarty
+			break;
 		case keyNode:
 		case patterns:
 		default:
@@ -375,6 +397,7 @@ long emitData(Node node, String context) {
 }
 
 // put value on stack (vs emitData)
+// todo: last_type not enough if operator left≠right, e.g. ['a']#1  2.3 == 4 ?
 Code emitValue(Node node, String context) {
 	Code code;
 	String &name = node.name;
@@ -542,7 +565,8 @@ Code emitOperator(Node node, String context) {
 		error("internal opcode not handled"s + opcode);
 	} else if (opcode > 0) {
 		code.addByte(opcode);
-		if (last_type == 0)last_type = i32t;
+		if (last_type == 0)
+			last_type = i32t;
 	} else {
 		error("unknown opcode / call / symbol: "s + name + " : " + index);
 	}
@@ -861,8 +885,8 @@ Code emitIf(Node &node, String context) {
 	}
 	code.addByte(end_block);
 	if (last_type != int32) {
+		todo("cast to int32 / smarty?");
 		last_type = int32;
-		printf("todo\n");
 	}
 	return code;
 }
@@ -1399,6 +1423,7 @@ Code memorySection() {
 
 
 Code &emit(Node root_ast, Module *runtime0, String _start) {
+	if (root_ast.kind == objects)root_ast.kind = expressions;
 	start = _start;
 	typeMap.setDefault(-1);
 	typeMap.clear();
