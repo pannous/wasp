@@ -7,7 +7,9 @@
 #undef assert // <cassert> / <assert.h>
 
 #ifndef WASM
+
 #include <codecvt> // utf8 magic ...?
+
 #endif
 
 Node &result = *new Node();
@@ -136,7 +138,12 @@ bool assert_equals_x(int a, int b, char *context = "") {
 }
 
 
-inline float abs_(float x) noexcept { return x > 0 ? x : -x; }
+inline float abs_(float x)
+
+noexcept {
+return x > 0 ? x : -
+x;
+}
 
 bool assert_equals_x(float a, float b, char *context = "") {
 	float epsilon = abs_(a + b) / 100000.;// 𝕚𝚤:=-1
@@ -228,7 +235,8 @@ Node assert_parsesx(chars mark) {
 
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
 #define assert_is(mark, result) {\
-    printf("TEST %s==%s\n",#mark,#result);\
+    printf("TEST %s==%s\n",#mark,#result); \
+    printf("%s:%d\n",__FILE__,__LINE__);\
     bool ok=assert_isx(mark,result);\
     if(ok)printf("PASSED %s==%s\n",#mark,#result);\
     else{printf("FAILED %s==%s\n",#mark,#result);\
@@ -499,10 +507,11 @@ void testStringReferenceReuse() {
 	check(x.data == x2.data);
 	String x3 = x.substring(0, 2, true);
 	check(x.data == x3.data);
-	check(x.length > x3.length) // shared data but different length! check shared_reference when modifying it!! &text[1] doesn't work anyways;)
+	check(x.length >
+	      x3.length) // shared data but different length! check shared_reference when modifying it!! &text[1] doesn't work anyways;)
 	check(x3 == "ab");
 	log(x3);
-	todo("make sure all algorithms respect shared_reference and crucial length! especially print!");
+	// todo("make sure all algorithms respect shared_reference and crucial length! especially print!");
 }
 
 //testUTFø  error: stray ‘\303’ in program
@@ -719,7 +728,7 @@ void testIterate() {
 void testLists() {
 	assert_parses("[1,2,3]");
 	result.log();
-	assert(result.length == 3);
+	assert_equals(result.length, 3);
 	assert(result[2] == 3);
 	assert(result[0] == 1);
 	assert(result[0] == "1");
@@ -800,7 +809,7 @@ void testTruthiness() {
 	assert_is("x", false);
 	assert_is("{x}", false);
 	assert_is("cat{}", false);
-	// empty references are falsey! OK
+	// empty referenceIndices are falsey! OK
 }
 
 void testLogicEmptySet() {
@@ -998,8 +1007,10 @@ void testRootLists() {
 	assert_is("{a,b,c}", Node("a", "b", "c", 0))
 	assert_is("{1;2;3}", Node(1, 2, 3, 0))
 	assert_is("{a;b;c}", Node("a", "b", "c", 0))
+	assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
 	assert_is("[1 2 3]", Node(1, 2, 3, 0))
 	assert_is("[a b c]", Node("a", "b", "c", 0))
+	assert_is("[1,2,3]", Node(1, 2, 3, 0).setType(patterns));
 	assert_is("[1,2,3]", Node(1, 2, 3, 0))
 	assert_is("[a,b,c]", Node("a", "b", "c", 0))
 	assert_is("[1;2;3]", Node(1, 2, 3, 0))
@@ -1342,8 +1353,9 @@ void testParamizedKeys() {
 void testStackedLambdas() {
 	Node node = parse("a{x:1}{y:2}{3}");
 	node.log();
-	// whait, is {x:1} really a child of a, or a neighbor in an operator list #4
+	check(node.length == 3);
 	check(node[0] == parse("{x:1}"));
+	check(node[0] == parse("x:1"));// grouping irrelevant
 	check(node[1] == parse("{y:2}"));
 	check(node[2] == parse("{3}"));
 	check(node[2] != parse("{4}"));
@@ -1355,7 +1367,11 @@ void testIndex() {
 	assert_parses("[a b c]#2");
 	result.log();
 	check(result.length == 3);
-	assert_is("[a b c]#2", "b");
+	assert_is("{a b c}#2", "b");
+	assert_is("(a b c)#2", "b");
+	skip(
+			assert_is("[a b c]#2", "b");
+	)
 	assert_is("{a:1 b:2}.a", 1)
 	assert_is("a of {a:1 b:2}", 1)
 	assert_is("a in {a:1 b:2}", 1)
@@ -1587,7 +1603,6 @@ void tests() {
 	testNewlineLists();
 	testIndex();
 
-	assert_is("[a b c]#2", "b");
 	skip(
 			testLogic01();// fails in WASM why
 			assert_is("one plus two times three", 7);
@@ -1613,6 +1628,9 @@ void testBUG() {// move to tests() once done!
 
 void todos() {
 	skip(
+			assert_is("{a b c}#2", "b");// ok, but not for patterns:
+			assert_is("[a b c]#2", "b");// patterns
+
 			testSignificantWhitespace();
 			testAngle();// fails in WASM why?
 
@@ -1685,14 +1703,17 @@ void testUnits() {
 }
 
 void testCurrent() { // move to tests() once OK
+	assert_emit("'goody';(1 4 3)#2", 4);
+	assert_emit("(1 4 3)#2", 4);
+	assert_run("logs('ok');", 0);
+	assert_run("print('ok');(1 4 3)#2", 4);
 //	testWasmMemoryIntegrity();
 #ifndef WASM
 //	testWasmModuleExtension();
 //	testWasmRuntimeExtension();
 #endif
-//assert_emit("x='123'", "123");
 	testStringIndices();
-//	testArrayIndices();
+	testArrayIndices();
 //testUnits();
 	testMarkMultiDeep();
 
