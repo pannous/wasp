@@ -250,8 +250,9 @@ public:
 
 	}
 
-	Code addInt(int i) {
-		push((long) i);
+	// as LEB!
+	Code addInt(int i, bool leb = true) {
+		push((long) i, true, leb);
 		return *this;
 	}
 
@@ -455,6 +456,11 @@ public:
 
 	int size() {
 		return types.size();
+	}
+
+	Signature handled() {
+		is_handled = true;
+		return *this;
 	}
 
 	Signature import() {
