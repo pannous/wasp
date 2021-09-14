@@ -668,7 +668,8 @@ private:
 			return *node.clone();
 		// {a:1 b:2} vs { x = add 1 2 }
 		Node expressionas;
-		expressionas.kind = expressions;
+		// set kind = expressions only if it contains operator, otherwise keep it as list!!!
+//		expressionas.kind = expressions;
 		expressionas.add(node);
 		if (stop_at_space and ch == ' ')return *expressionas.clone();
 		white();
@@ -1046,6 +1047,7 @@ private:
 					Node group = Node().setType(Type::groups);
 					Node groupValue = valueNode(')', &current.last());
 					group.addSmart(groupValue);
+					if (groupValue.kind == objects)group = groupValue.setType(groups);// flatten hack
 					current.addSmart(group);
 					break;
 				}// lists handled by ' '!
@@ -1171,7 +1173,7 @@ private:
 					}
 					if (node.length > 1 and addFlat) {
 						for (Node arg:node)current.add(arg);
-						current.kind = expressions;
+						current.kind = node.kind;// was: expressions
 					} else {
 						current.add(&node);
 					}
