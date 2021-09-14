@@ -23,6 +23,7 @@ short builtin_count = 0;// function_offset - import_count - runtime_offset;
 //bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
 char *data;// any data to be stored to wasm: values of variables, strings, nodes etc
 int data_index_end;// position to write more data = end + length of data section
+int data_index_start = 0;
 int last_data = 0;// last pointer outside stack
 Map<String *, long> stringIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 Map<String, long> referenceIndices;
@@ -217,6 +218,8 @@ Code emitStringOp(Node op, String context);
 
 Code emitValue(Node node, String context);
 
+Valtype fixValtype(Valtype &valtype);
+
 Code emitArray(Node &node, String context) {
 	let code = Code();
 	int pointer = data_index_end;
@@ -393,6 +396,7 @@ long emitData(Node node, String context) {
 		default:
 			error("emitData unknown type: "s + typeName(node.kind));
 	}
+	last_data = last_pointer;
 	return last_pointer;
 }
 
@@ -639,7 +643,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		return code;
 	}
 	//	or node.kind == groups ??? NO!
-	if ((node.kind == call or node.kind == reference) and functionIndices.has(name))
+	if ((node.kind == call or node.kind == reference or node.kind == operators) and functionIndices.has(name))
 		return emitCall(node, context);
 
 	switch (node.kind) {
@@ -793,6 +797,9 @@ Code emitExpression(Node *nodes, String context) {
 
 Code emitCall(Node &fun, String context) {
 	Code code;
+	if (not functionSignatures.has(fun.name) or not functionIndices.has(fun.name))
+		error("unknown function "s + fun.name);// checked before, remove
+
 	Signature &signature = functionSignatures[fun.name];
 	int index = functionIndices[fun.name];
 	if (index < 0)
@@ -807,7 +814,7 @@ Code emitCall(Node &fun, String context) {
 			code.push(cast(argType, sigType));
 	};
 	code.addByte(function);
-	code.addInt(index);
+	code.addInt(index);// as LEB!
 	code.addByte(nop);// padding for potential relocation
 	signature.is_used = true;
 	signature.emit = true;
@@ -1091,21 +1098,26 @@ Code typeSection() {
 		Code td = Code(0x60) + Code(param_count);
 
 		for (int i = 0; i < param_count; ++i) {
-			td = td + Code(signature.types[i]);
+			td = td + Code(fixValtype(signature.types[i]));
 		}
 		Valtype &ret = functionSignatures[fun].return_type;
 		if (ret == voids) {
 			td.addByte(0);
 		} else {
-			td.addByte(1/*return count*/).addByte(ret);
+			td.addByte(1/*return count*/).addByte(fixValtype(ret));
 		}
 		type_data = type_data + td;
 	}
 	return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();
 }
 
-Code importSection() {
+Valtype fixValtype(Valtype &valtype) {
+	if (valtype == charp) return int32;
+	if (valtype > 0xC0)error("exposed internal Valtype");
+	return valtype;
+}
 
+Code importSection() {
 	if (runtime_offset) {
 //		breakpoint_helper
 //		printf("imports currently not supported\n");
@@ -1399,7 +1411,8 @@ void add_builtins() {
 	import_count = 0;
 	builtin_count = 0;
 	for (auto sig : functionSignatures) {// imports first
-		if (functionSignatures[sig].is_import and functionSignatures[sig].is_used) {
+		Signature &signature = functionSignatures[sig];
+		if (signature.is_import and signature.is_used) {
 			functionIndices[sig] = ++last_index;// functionIndices.size();
 			import_count++;
 		}
@@ -1431,7 +1444,6 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	data_index_end = 0;
 	functionIndices.setDefault(-1);
 	functionCodes.setDefault(Code());
-	functionSignatures.setDefault(Signature());
 	if (runtime0) {
 		memoryHandling = no_memory;// done by runtime?
 		runtime = *runtime0;// else filled with 0's
@@ -1449,7 +1461,6 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		runtime_offset = 0;
 		typeMap.clear();
 		functionIndices.clear();// ok preregistered functions are in functionSignatures
-//		functionSignatures.clear(); BEFORE analyze(), not after!
 		add_builtins();
 	}
 	if (start) {// now AFTER imports and builtins
