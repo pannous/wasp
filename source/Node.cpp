@@ -29,10 +29,15 @@ bool debug = true;// clone sub-strings instead of sharing etc
 #include "NodeTypes.h"
 
 
-void todo(chars error) {
-	breakpoint_helper
-	warn(str("TODO ") + error);
-}
+
+//void todo(chars error) {
+//	breakpoint_helper
+//#ifdef DEBUG
+//	error("TODO "s + error);
+//#else
+//	warn(str("TODO ") + error);
+//#endif
+//}
 
 //
 //String operator "" s(chars c, size_t){
@@ -513,7 +518,7 @@ Node &Node::add(Node *node) {
 	if ((long) node > MEMORY_SIZE)
 		error("node Out of Memory");
 	if (kind == longs or kind == reals)
-		error("can't modify primitives, only their references a=7 a.nice=yes");
+		error("can't modify primitives, only their referenceIndices a=7 a.nice=yes");
 	if (length >= capacity - 1) {
 		logi(length);
 		logi(capacity);
@@ -555,7 +560,7 @@ Node &Node::add(Node &node) {
 //}
 
 
-// todo remove redundant addSmart LOL!
+// todo remove redundant addSmart LOL!, and or merge with flat()
 void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
 	if (node->isNil() and empty(node->name) and node->kind != longs)
 		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
@@ -563,7 +568,8 @@ void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
 	if (node->length == 1 and flatten and empty(node->name))
 		node = &node->last();
 
-	if (not children and (node->kind == objects or node->kind == groups or node->kind == patterns) and
+	//  or node->kind == patterns  DON'T flatten patterns!
+	if (not children and (node->kind == objects or node->kind == groups) and
 	    empty(node->name)) {
 		children = node->children;
 		length = node->length;
@@ -595,9 +601,10 @@ void Node::addSmart(Node node) {// merge?
 	// a{x:1} != a {x:1} but {x:1} becomes child of a
 	// a{x:1} == a:{x:1} ?
 	Node &letzt = last();
+	// NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
 	if (letzt.kind == operators) {
 		// danger 1+2 grouped later but while(i>7) as child
-		letzt.add(node);
+		letzt.add(node);// as meta?
 		return;
 	}
 	// f (x) == f(x) ~= f x
@@ -610,11 +617,12 @@ void Node::addSmart(Node node) {// merge?
 //			last().add(node);
 //		return;
 //	}
-	if (letzt.kind == reference or letzt.kind == keyNode or
-	    (empty(name) and kind != expressions))// last().kind==reference)
+	if (letzt.kind == reference or letzt.kind == keyNode)
+		letzt.addSmart(&node);
+	else if (empty(name) and kind != expressions and kind != groups)// last().kind==reference)
 		letzt.addSmart(&node);
 	else
-		addSmart(&node);
+		add(&node);// don't loop to addSmart lol
 }
 
 //non-modifying
@@ -726,7 +734,7 @@ bool Node::isEmpty() {// not required here: empty(name)
 	return (length == 0 and value.longy == 0) or isNil();
 }
 
-// todo : [x y]+[z] = [x y z] BUT z isNil() ??  Node("z").kind==unknown ! empty references ARE NIL OR NOT?? x==nil?
+// todo : [x y]+[z] = [x y z] BUT z isNil() ??  Node("z").kind==unknown ! empty referenceIndices ARE NIL OR NOT?? x==nil?
 bool Node::isNil() const { // required here: empty(name)
 	return this == &NIL or kind == nils or
 	       ((kind == keyNode or kind == unknown or empty(name)) and length == 0 and value.data == nullptr);
@@ -899,9 +907,12 @@ Node Node::to(Node match) {
 //	Node& flatten(Node &current){
 Node &Node::flat() {
 //	if (kind == call)return *this;//->clone();
+	if (kind == patterns)return *this;// never flatten patterns x=[] "hi"[1] …
 	if (length == 0 and kind == keyNode and empty(name) and value.node)return *value.node;
 	if (length == 1) {
 		Node &child = children[0];
+		if (child.kind == patterns and kind != groups)// huh?
+			return *this;// never flatten patterns x=[] "hi"[1] …
 		if (value.node == &child)// todo remove redundancy
 			return *value.node;
 		if ((long) children < MEMORY_SIZE and not value.data and empty(name)) {
@@ -1016,6 +1027,10 @@ void log(Node &n) {
 	n.log();
 }
 
+void log(const Node &n0) {
+	log((Node &) n0);
+}
+
 
 void log(Node *n0) {
 	if (!n0)return;
@@ -1028,7 +1043,14 @@ void printf(Node &) {
 }
 
 
-Node &Node::setType(Type type) {
+Node &Node::setType(Type type, bool check) {
+	if (kind == type)return *this;
+	if (kind == groups and type == expressions)check = false;
+	if (check) {
+		if (kind != unknown and kind != objects and
+		    kind != strings)// strings is default type after construction, ok to keep it in name
+			error("Node already has semantic type "s + typeName(kind) + "! Can't change to " + typeName(type));
+	}
 	if (value.data and (type == groups or type == objects))
 		return *this;
 	if (kind == nils and not value.data)

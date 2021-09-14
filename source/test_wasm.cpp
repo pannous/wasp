@@ -40,7 +40,7 @@ void testWasmFunctionDefiniton() {
 }
 
 void testWasmFunctionCalls() {
-
+	assert_emit("logs 'ok'", (long) 0);
 	assert_emit("id (3+3)", (long) 6);
 	assert_emit("square 3", 9);
 	assert_emit("id 123", (long) 123);
@@ -512,35 +512,10 @@ void testWasmModuleExtension() {
 #endif
 }
 
-int runtime_emit(String prog) {
-	locals.clear();
-	localTypes.clear();
-	functionIndices.clear();
-	functionSignatures.clear();
-	functionIndices.setDefault(-1);
-	functionSignatures.setDefault(Signature());
-	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
-	functionSignatures.insert_or_assign("logi", Signature().add(int32).returns(voids));
-	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
-	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// scaffold until parsed
-	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));// scaffold until parsed
-	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));// scaffold until parsed
-	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));// scaffold until parsed
-	Module runtime = read_wasm("wasp.wasm");
-	Node charged = analyze(parse(prog));
-	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
-	lib.save("main.wasm");// partial wasm!
-	functionIndices.clear();// no longer needed
-	Module main = read_wasm("main.wasm");
-	Code code = merge_wasm(runtime, main);
-	code.save("merged.wasm");
-	read_wasm("merged.wasm");
-	int result = code.run();
-	return result;
-}
 
 #ifndef RUNTIME_ONLY
-#define assert_run(a, b) check_eq(runtime_emit(a),b);
+// use assert_emit if runtime is not needed!! much easier to debug
+#define assert_run(mark, result) printf("\n%s:%d\n",__FILE__,__LINE__);check_eq(runtime_emit(mark),result);
 #else
 #define assert_run(a,b) skip(a)
 #endif
@@ -588,7 +563,7 @@ void testWasmRuntimeExtension() {
 	//	assert_run("atoi0(string('123'))", 123);
 
 	//	assert_run("oki(1)", 43);
-	//	assert_emit("logs('123'+'456');", 123);// via import not via wasp!
+	//	assert_emit("logs('123'+'456');", 123456);// via import not via wasp!
 	//assert_emit("double := it * 2 ; double(4)", 8)
 	//	check(Valtype::charp!=Valtype::pointer)
 
@@ -623,36 +598,40 @@ void testMergeRelocate() {
 
 
 void testStringIndices() {
-	assert_run("'world'#2", 'o');
-	assert_run("'world'[1]", 'o');
+	//	assert_emit("'world'[1]", 'o');
+	assert_emit("'world'#2", 'o');
 	skip( // todo move angle syntax to test_angle
-			assert_run("char #1 in 'world'", 'o');
-			assert_run("char 1 in 'world'", 'o');
-			assert_run("2nd char in 'world'", 'o');
-			assert_run("2nd byte in 'world'", 'o');
+			assert_emit("char #1 in 'world'", 'o');
+			assert_emit("char 1 in 'world'", 'o');
+			assert_emit("2nd char in 'world'", 'o');
+			assert_emit("2nd byte in 'world'", 'o');
 	)
 
-	assert_run("hello='world';hello#1", 'w');
-	assert_run("hello='world';hello#2", 'o');
-	Node setter1 = analyze(parse("pixel#1=15"));
-	check(setter1.kind == patterns);
-	Node getter1 = analyze(parse("pixel#1"));
-	check(getter1.kind == patterns);
-	//	assert_run("pixel=100 int(s);pixel#1=15;pixel#1", 15);
-	assert_run("hello='world';hello#1='W';hello#1", 'W');// diadic ternary operator
-	assert_run("hello='world';hello[0]='W';hello[0]", 'W');// diadic ternary operator
-
-	//	assert_run("hello='world';hello#1='W';hello", "World");
-
-	exit(0);
-
+	assert_emit("hello='world';hello#1", 'w');
+	assert_emit("hello='world';hello#2", 'o');
+	//	assert_emit("pixel=100 int(s);pixel#1=15;pixel#1", 15);
+	skip(
+			assert_emit("hello='world';hello#1='W';hello#1", 'W');// diadic ternary operator
+			assert_emit("hello='world';hello[0]='W';hello[0]", 'W');// diadic ternary operator
+	)
+	//	assert_emit("hello='world';hello#1='W';hello", "World");
+	//	exit(0);
 }
 
 void testArrayIndices() {
+	assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
+	assert_is("[1 2 3]", Node(1, 2, 3, 0))
+	assert_is("(1 4 3)#2", 4);// check node based (non-primitive) interpretation first
+	assert_emit("logs('ok');", 0);
+	assert_emit("print('ok');(1 4 3)#2", 4);
+	assert_emit("{1 4 3}#2", 4);
+	assert_emit("(1 4 3)[1]", 4);
+	assert_emit("{1 4 3}[1]", 4);
+	skip(
+			assert_is("[1 2 3]#2", 2);// check node based (non-primitive) interpretation first
+			assert_emit("[1 4 3]#2", 4);
 
-	assert_is("[1 2 3]#2", 2);// node based (non-primitive) interpretation
-
-	//
+	)
 	//	Node empty_array = parse("pixel=[]");
 	//	check(empty_array.kind==patterns);
 	//
@@ -662,28 +641,25 @@ void testArrayIndices() {
 	//	exit(0);
 
 	Node setter1 = analyze(parse("pixel#1=15"));
-	check(setter1.kind == patterns);
+	//	check(setter1.kind == operators or setter1.kind==declaration);
 	Node getter1 = analyze(parse("pixel#1"));
-	check(getter1.kind == patterns);
-	//	assert_run("pixel=100 int(s);pixel#1=15;pixel#1", 15);
-	assert_run("pixel array;pixel#1=15;pixel#1", 15);// diadic ternary operator
+	//	check(getter1.kind == operators);
+	//	assert_emit("pixel=100 int(s);pixel#1=15;pixel#1", 15);
+	assert_emit("pixel=[];pixel#1=15;pixel#1", 15);// diadic ternary operator
+	//	assert_emit("pixel array;pixel#1=15;pixel#1", 15);// diadic ternary operator
 
-	exit(0);
 	Node setter = analyze(parse("pixel[1]=15"));
 	check(setter.kind == patterns);
 	Node getter = analyze(parse("pixel[1]"));
 	check(getter.kind == patterns);
-	assert_run("pixel=[];pixel[1]=15;pixel[1]", 15);
-
-	//assert_run("pixel=100 ints;pixel[1]=15;pixel[1]", 15);
-
-	assert_run("i=0;w=800;h=800;while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
-
-	assert_run("x={a:3,b:4,c:{d:true}};x.a", 3);
-	assert_run("x={a:3,b:true};x.b", 1);
-	assert_run("x={a:3,b:4,c:{d:true}};x.c.d", 1);
-	//assert_run("x={a:3,b:'ok',c:{d:true}};x.b", "ok");
-	assert_run("x={a:3,b:'ok',c:{d:5}};x.c.d", 5);//deep
+	assert_emit("pixel=[];pixel[1]=15;pixel[1]", 15);
+	//assert_emit("pixel=100 ints;pixel[1]=15;pixel[1]", 15);
+	assert_emit("i=0;w=800;h=800;while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
+	assert_emit("x={a:3,b:4,c:{d:true}};x.a", 3);
+	assert_emit("x={a:3,b:true};x.b", 1);
+	assert_emit("x={a:3,b:4,c:{d:true}};x.c.d", 1);
+	//assert_emit("x={a:3,b:'ok',c:{d:true}};x.b", "ok");
+	assert_emit("x={a:3,b:'ok',c:{d:5}};x.c.d", 5);//deep
 }
 
 
@@ -739,6 +715,7 @@ void testAllWasm() {
 	return;
 #endif
 
+	assert_emit("'hello';(1 2 3 4);10", 10);
 	assert_emit("i=1;while(i<9){i++};i+1", 10);
 	assert_emit("452==452", 1);
 
