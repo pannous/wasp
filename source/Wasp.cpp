@@ -306,7 +306,7 @@ private:
 		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
 		auto key = String(ch);
 		// subsequent characters can contain ANYTHING
-		while (proceed() and is_identifier(ch) or isDigit(ch))key += ch;
+		while ((proceed() and is_identifier(ch)) or isDigit(ch))key += ch;
 		// subsequent characters can contain digits
 //		while (proceed() and
 //		       (('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ('0' <= ch and ch <= '9') or ch == '_' or
@@ -626,7 +626,7 @@ private:
 		if (symbol == "ø")return NIL;// nil not added to lists
 //		if (node.name.in(operator_list))
 		if (operator_list.has(symbol))
-			node.setType(operators); // later: in angle!? NO! HERE: a xor {} != a xxx{}
+			node.setType(operators, false); // later: in angle!? NO! HERE: a xor {} != a xxx{}
 //		log("resolve NOT FOUND");
 //		log(symbol);
 		return node;
@@ -781,10 +781,6 @@ private:
 		error("Expecting ]");
 		return ERROR;
 	};
-
-	char charCodeAt(int base64) {
-		return 'x';
-	}
 
 	// {: 00aacc :} base64 values todo: USE
 	Node binary() {
@@ -962,7 +958,7 @@ private:
 		// wait, this should be part of case ' ', no?
 		//						a of {a:1 b:2}
 		return previous == ' ' and current.last().kind != operators and current.last().kind != call and
-		       (!parent or parent and parent->last().kind != operators and parent->last().kind != call) and
+		       (!parent or (parent and parent->last().kind != operators and parent->last().kind != call)) and
 		       lastNonWhite != ':' and lastNonWhite != '=' and lastNonWhite != ',' and lastNonWhite != ';' and
 		       lastNonWhite != '{' and lastNonWhite != '(' and lastNonWhite != '[' and
 		       lastNonWhite != '}' and lastNonWhite != ']' and lastNonWhite != ')';
@@ -1023,7 +1019,10 @@ private:
 					bool asListItem =
 							lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
 					proceed();
-					Node object = valueNode('}', parent ? parent : &current.last()).setType(Type::objects);
+					Node object = Node().setType(Type::objects);
+					Node objectValue = valueNode('}', parent ? parent : &current.last());
+					object.addSmart(objectValue);
+//					object = object.flat();
 					if (asListItem)
 						current.add(object);
 					else
@@ -1033,14 +1032,20 @@ private:
 				case U'［': // FULLWIDTH ｛ ｢ ｣
 				case '[': {
 					proceed();
-					Node pattern = valueNode(']', &current.last()).setType(Type::patterns);
-					current.add(pattern);
+					Node pattern = Node().setType(Type::patterns);
+					Node patternValue = valueNode(']', &current.last());
+					pattern.add(patternValue);
+					if (patternValue.kind == expressions or patternValue.kind == groups)
+						pattern = patternValue.setType(patterns, false);
+					current.addSmart(pattern);// a[b] ≠ (a b)
 					break;
 				}
 				case '(': {
 					// checkAmbiguousBlock? x (1) == x(1) or [x 1] ?? todo too bad!!!
 					proceed();
-					Node group = valueNode(')', &current.last()).setType(Type::groups);
+					Node group = Node().setType(Type::groups);
+					Node groupValue = valueNode(')', &current.last());
+					group.addSmart(groupValue);
 					current.addSmart(group);
 					break;
 				}// lists handled by ' '!
@@ -1203,7 +1208,7 @@ int ok() {
 	return 42;
 }
 
-int oki(int i) {
+int oki(int i) {// used in wasm runtime test
 	return 42 + i;
 }
 

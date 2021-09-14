@@ -2,6 +2,8 @@
 #include "Angle.h"
 #include "Map.h" // list
 
+#define let auto
+
 //static
 extern chars function_list[];
 

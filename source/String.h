@@ -105,6 +105,7 @@ typedef chars chars;
 //void* alloc(number size);// wasm | linux
 
 #define error(msg) error1(msg,__FILE__,__LINE__)
+#define todo(msg) error1(msg,__FILE__,__LINE__)
 
 extern void error1(chars message, chars file = 0, int line = 0);
 
