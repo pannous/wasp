@@ -393,7 +393,7 @@ chars typeName(Type t) {
 		case unknown :
 			return "unknown";
 		case call:
-			return "function";
+			return "call";// function
 		case declaration:
 			return "declaration";
 		case assignment:

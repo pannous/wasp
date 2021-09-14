@@ -57,6 +57,7 @@ bool isFunction(Node &op) {
 }
 
 #include "Interpret.h"
+#include "wasm_merger.h"
 
 #ifndef RUNTIME_ONLY
 #endif
@@ -173,7 +174,7 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 #endif
 			}
 			continue;
-		}// todo danger, references i=1 … could fall through to here:
+		}// todo danger, referenceIndices i=1 … could fall through to here:
 		if (node.kind == declaration or declaration_operators.has(op)) {
 			// todo: public export function jaja (a:num …) := …
 			Node modifiers = expression.to(node);// including public… :(
@@ -345,7 +346,7 @@ Node &groupWhile(Node n);
 Node &groupFunctions(Node &expression0) {
 	if (expression0.kind == declaration)return expression0;// handled before
 	if (isFunction(expression0)) {
-		expression0.setType(call);
+		expression0.setType(call, false);
 		if (not functionSignatures.has(expression0.name))
 			error("missing import for function "s + expression0.name);
 //		if (not expression0.value.node and arity>0)error("missing args");
@@ -365,7 +366,7 @@ Node &groupFunctions(Node &expression0) {
 		if (name == "while") {
 			// todo: move into groupWhile
 			if (node.length == 2) {
-				node[0] = analyze(node[0].setType(expressions));
+				node[0] = analyze(node[0].setType(expressions));// what if it is raw data though??
 				node[1] = analyze(node[1].setType(expressions));
 				continue;// all good (right?)
 			}
@@ -405,7 +406,7 @@ Node &groupFunctions(Node &expression0) {
 		}
 
 		Node rest;
-		if (expression[i + 1].kind == groups) {// f(x)
+		if (i + 1 < expression.length and expression[i + 1].kind == groups) {// f(x)
 			// todo f (x) (y) (z)
 			// todo expression[i+1].length>=minArity
 			rest = expression[i + 1];
@@ -685,9 +686,10 @@ Node analyze(Node data, String context) {
 	    type == buffers) {
 		if (isVariable(data) and not localContext.has(data.name))
 			localContext.add(data.name);// need to pre-register before emitBlock!
+		return data;// nothing to be analyzed!
 	}
 
-	if (type == operators or type == call) {
+	if (type == operators or type == call or isFunction(data)) {
 		Node grouped = groupOperators(data, context);// outer analysis id(3+3) => id(+(3,3))
 		for (Node &child: grouped) {// inner analysis while(i<3){i++}
 			if (child.kind == groups or child.kind == objects) child.setType(expressions);
@@ -740,6 +742,16 @@ String debug_code;
 void preRegisterSignatures() {
 	// ORDER MATTERS: will be used for functionIndices later!
 
+	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
+	functionSignatures.insert_or_assign("logi", Signature().add(int32).returns(voids));
+	functionSignatures.insert_or_assign("logf", Signature().add(float32).returns(voids));
+	functionSignatures.insert_or_assign("logi", Signature().add(charp).returns(voids));
+	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
+	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// scaffold until parsed
+	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));// scaffold until parsed
+	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));// scaffold until parsed
+	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));// scaffold until parsed
+	// todo: long + double !
 	// imports
 	functionSignatures["logi"] = Signature().add(i32t).import();
 	functionSignatures["logf"] = Signature().add(f32t).import();
@@ -758,6 +770,29 @@ void preRegisterSignatures() {
 	functionSignatures["concat"] = Signature().add(charp).add(charp).returns(charp).runtime();// chars to be precise
 }
 
+
+int runtime_emit(String prog) {
+	locals.clear();
+	localTypes.clear();
+	functionIndices.clear();
+	functionSignatures.clear();
+	functionIndices.setDefault(-1);
+	functionSignatures.setDefault(Signature());
+	preRegisterSignatures();
+	Module runtime = read_wasm("wasp.wasm");
+	Node charged = analyze(parse(prog));
+	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
+	lib.save("main.wasm");// partial wasm!
+	functionIndices.clear();// no longer needed
+	Module main = read_wasm("main.wasm");
+	Code code = merge_wasm(runtime, main);
+	code.save("merged.wasm");
+	read_wasm("merged.wasm");
+	int result = code.run();// todo parse stdout string as node and merge with emit() !
+	return result;
+}
+
+// todo dedup runtime_emit!
 Node emit(String code) {
 	debug_code = code;// global so we see when debugging
 	Node data = parse(code);
@@ -777,7 +812,7 @@ Node emit(String code) {
 	functionSignatures.clear();
 	functionSignatures.setDefault(Signature());
 	locals.insert_or_assign("main", List<String>());
-	preRegisterSignatures();// todo: reduntant to emitter
+	preRegisterSignatures();// todo: reduntant to emitter and wasm_reader
 	analyzed.clear();// todo move much into outer analyze function!
 	Node charged = analyze(data);
 	charged.log();
@@ -793,7 +828,8 @@ float function_precedence = 1000;
 
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-chars function_list[] = {"square", "log", "puts", "print", "printf", "println", "logi", "logf", "log_f32", "logi64",
+chars function_list[] = {"square", "log", "puts", "print", "printf", "println", "logs", "logi", "logf", "log_f32",
+                         "logi64",
                          "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
                          0};// MUST END WITH 0, else BUG
 chars functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
@@ -801,13 +837,16 @@ chars functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
 float precedence(Node &operater) {
 	String &name = operater.name;
 //	if (operater == NIL)return 0; error prone
-	if (empty(name))return 0;// no precedence
 	if (operater.kind == reals)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (operater.kind == longs)return 0;//;1000;// implicit multiplication HAS to be done elsewhere!
 	if (operater.kind == strings)return 0;// and empty(name)
-	if (operater.kind == groups or operater.kind == patterns)
-		return precedence("if") * 0.999;// needs to be smaller than functor/function calls
+
+	// todo: make live easier by making patterns only operators if data on the left
+	if (operater.kind == patterns) return 98;// precedence("if") * 0.98
+	//	todo why do groups have precedence again?
+//	if (operater.kind == groups) return 99;// needs to be smaller than functor/function calls
 	if (operater.name.in(function_list))return 999;// function call todo: remove here
+	if (empty(name))return 0;// no precedence
 	return precedence(name);
 }
 

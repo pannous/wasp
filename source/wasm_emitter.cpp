@@ -4,6 +4,7 @@
 // https://github.com/ColinEberhardt/chasm/blob/master/src/emitter.ts
 // https://github.com/ColinEberhardt/chasm/blob/master/src/encoding.ts
 // https://pengowray.github.io/wasm-ops/
+#include <cmath> // pow
 #include "Wasp.h"
 #include "String.h"
 #include "Map.h"
@@ -23,7 +24,7 @@ short builtin_count = 0;// function_offset - import_count - runtime_offset;
 char *data;// any data to be stored to wasm: values of variables, strings, nodes etc
 int data_index_end;// position to write more data = end + length of data section
 Map<String *, long> stringIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
-Map<String, long> references;
+Map<String, long> referenceIndices;
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
 Module runtime;
@@ -53,9 +54,9 @@ Code Call(char *symbol);//Node* args
 //Code& unsignedLEB128(int);
 //Code& flatten(byter);
 //Code& flatten (Code& data);
-void todo(char *message = "") {
-	printf("TODO %s\n", message);
-}
+//void todo1(char *message = "") {
+//	printf("TODO %s\n", message);
+//}
 
 //typedef int number;
 //typedef char byte;
@@ -75,6 +76,7 @@ Code signedLEB128(int i);
 
 Code encodeString(char *String);
 
+long emitData(Node node, String context);
 //typedef Code any;
 //typedef Bytes any;
 
@@ -212,6 +214,24 @@ Code cast(Valtype from, Valtype to);
 
 Code emitStringOp(Node op, String context);
 
+Code emitValue(Node node, String context);
+
+Code emitArray(Node &node, String context) {
+	let code = Code();
+	int pointer = data_index_end;
+	for (Node &child:node) {
+		// todo: smart pointers?
+		code.add(Code(emitData(child, context), false));// pointers in flat i32/i64 format!
+	}
+	String ref = node.name;
+	if (node.name.empty() and node.parent) {
+		ref = node.parent->name;
+	}
+	referenceIndices.insert_or_assign(ref, pointer);
+	return code.addConst(pointer);// once written to data section, we also want to use it immediately
+}
+
+
 bool isAssignable(Node node, Node *type = 0) {
 	//todo
 	//	if(node.metas().has("constant") or node.metas().has("immutable")) // …
@@ -239,6 +259,25 @@ Code emitIndexWrite(Node op, String context) {
 }
 
 
+// assumes value is on top of stack
+Code emitIndexPattern(Node pattern, String context) {
+	if (pattern.kind != patterns and pattern.kind != longs)error("pattern expected in emitIndexPattern");
+	if (pattern.length != 1 and pattern.kind != longs)error("exactly one pattern expected in emitIndexPattern");
+	int base = runtime.data_segments.length;// uh, todo?
+	int size = 1;// todo char, codepoint, int , pointer …
+	int offset = (long) pattern.first().value.longy;
+	if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
+	Code load;
+	load.addConst(base + offset * size);
+	if (size == 1)load.add(i8_load);
+	if (size == 2)load.add(i16_load);
+	if (size == 4)load.add(i32_load);
+	if (size == 8)load.add(i64_load);
+	load.add(0x02);// alignment (?)
+	load.add(0x00);// ?
+	return load;
+}
+
 Code emitIndexRead(Node op, String context) {
 	int base = runtime.data_segments.length;// uh, todo?
 
@@ -247,19 +286,15 @@ Code emitIndexRead(Node op, String context) {
 	// todo:
 //	if(op[0].kind==strings)
 	size = 1;
-	if (op.length < 2)error("operator # needs two arguments: reference and position");
+	if (op.length < 2)
+		error("operator # needs two arguments: node/array/reference and position");
 	Node &array = op[0];// also String: byte array or codepoint array todo
 	if (array.kind == reference or array.kind == keyNode) {
 		String ref = array.name;
-		if (not references.has(ref))
+		if (not referenceIndices.has(ref))
 			error("reference not declared as array type: "s + ref);
-		base += references[ref];
+		base += referenceIndices[ref];
 	} else if (array.kind == strings) {
-		log("stringIndices");
-		log(stringIndices);
-		printf("%s\n", array.value.string->data);
-		printf("%p\n", &array.value.string);
-		printf("%p\n", array.value.string);
 		base += stringIndices[array.value.string];
 	}
 	int offset = (long) op[1];
@@ -280,12 +315,71 @@ Code emitIndexRead(Node op, String context) {
 	//	i32.load
 }
 
+// write data to data segment (vs emitValue on stack)
+// returns pointer
+long emitData(Node node, String context) {
+	String &name = node.name;
+	int last_pointer = data_index_end;
+	switch (node.kind) {
+		case nils:// also 0, false
+		case bools:
+//			error("reuse constants for nil/true/false");
+		case longs:
+			// todo: add header?
+			// todo: wasteful? but compare to boxed values NOT wasteful!
+			// todo: add smart-pointer header?
+//			if(leb)
+//			Code &leb128 = signedLEB128(node.value.longy);
+//			data_index_end+=leb128.length
+//			if (node.value.longy > 0xF0000000)
+//				error("true long big ints currently not supported");
+			*(long *) (data + data_index_end) = node.value.longy;
+			data_index_end += 8;
+			break;
+		case reals:
+//			bytes varInt = ieee754(node.value.real);
+			*(double *) (data + data_index_end) = node.value.real;
+			data_index_end += 8;
+			break;
+		case reference:
+			if (referenceIndices.has(node.name)) {
+				error("can't save unknown reference pointer "s + name);
+			} else
+				todo("reference");
+
+			break;
+		case strings: {
+			int stringIndex = data_index_end + runtime.data_segments.length;// uh, todo?
+			String *pString = node.value.string;
+			if (stringIndices.has(
+					pString)) // todo: reuse same strings even if different pointer, aor make same pointer before
+				stringIndex = stringIndices[pString];
+			else {
+				stringIndices.insert_or_assign(pString, data_index_end);
+				//				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
+				//				strcpy2(data + data_index_end, (char*)lens.data, lens.length);
+				//				data_index_end += lens.length;// unsignedLEB128 encoded length of pString
+				strcpy2(data + data_index_end, pString->data, pString->length);
+				data[data_index_end + pString->length] = 0;
+				// we add an extra 0, unlike normal wasm abi, because we have space in data section
+				data_index_end += pString->length + 1;
+			}
+			break;
+		}
+		case keyNode:
+		case patterns:
+		default:
+			error("emitData unknown type: "s + typeName(node.kind));
+	}
+	return last_pointer;
+}
+
+// put value on stack (vs emitData)
 Code emitValue(Node node, String context) {
 	Code code;
 	String &name = node.name;
 	switch (node.kind) {
 		case nils:// also 0, false
-//			code.opcode((byte)i64_auto);// nil is pointer
 			code.addByte((byte) i32_auto);// nil is pointer
 			code.push((long) 0);
 			break;
@@ -294,16 +388,12 @@ Code emitValue(Node node, String context) {
 			code.addByte((byte) i32_auto);
 			code.push(node.value.longy);// LEB encoded!
 			last_type = i32t;
-//				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case longs:
 			// todo: ints vs longs!!!
 			last_type = i32t;
-//			if(call_extern)
 			code.addByte((byte) i32_const);
-//			code.opcode((byte)i64_auto);
 			code.push(node.value.longy);
-//				code.opcode(ieee754(node.value.longy),4);
 			break;
 		case reals:
 			last_type = f32t;// auto cast return!
@@ -329,7 +419,6 @@ Code emitValue(Node node, String context) {
 		case operators:
 			warn("operators should never be emitted as values");
 			return emitExpression(node, context);
-			break;
 		case strings: {
 			// append pString (as char*) to data section and access via stringIndex
 			int stringIndex = data_index_end + runtime.data_segments.length;// uh, todo?
@@ -344,7 +433,7 @@ Code emitValue(Node node, String context) {
 //				data_index_end += lens.length;// unsignedLEB128 encoded length of pString
 				strcpy2(data + data_index_end, pString->data, pString->length);
 				data[data_index_end + pString->length] = 0;
-				if (references.has(name)) {
+				if (referenceIndices.has(name)) {
 					if (not isAssignable(node))
 						error("can't reassign reference "s + name);
 					else
@@ -352,16 +441,29 @@ Code emitValue(Node node, String context) {
 				}
 				if (node.parent and (node.parent->kind == reference or
 				                     node.parent->kind == keyNode))// todo move up! todo keyNode bad criterion!!
-					references.insert_or_assign(node.parent->name, data_index_end);// safe ref to string
+					referenceIndices.insert_or_assign(node.parent->name, data_index_end);// safe ref to string
 				// we add an extra 0, unlike normal wasm abi, because we have space in data section
 				data_index_end += pString->length + 1;
 			}
 			last_type = string;//
-			return Code(i32_const) + Code(stringIndex);// just a pointer
+			code = Code(i32_const) + Code(stringIndex);// just a pointer
+			if (node.length > 0) {
+				if (node.length > 1)error("only 1 pattern allowed");
+				Node &pattern = node.first();
+				if (pattern.kind != patterns and pattern.kind != longs)
+					error("only patterns allowed on string");
+				code.add(emitIndexPattern(pattern, context));
+			}
+			return code;
 //			return Code(stringIndex).addInt(pString->length);// pointer + length
 		}
 		case keyNode:
-			return emitValue(*node.value.node, context);// assume it is called from right context after isSetter!?
+			return emitValue(*node.value.node,
+			                 context);// todo: make sure it is called from right context (after isSetter …)
+		case patterns:
+			return emitIndexPattern(node, context);// todo: make sure to have something indexable on stack!
+		case expressions:
+//			error("expressions should not be put on stack (yet) (maybe serialize later)")
 		default:
 			error("emitValue unknown type: "s + typeName(node.kind));
 	}
@@ -404,12 +506,12 @@ Code emitOperator(Node node, String context) {
 		code.push(arg_code);
 	}
 	if (index >= 0) {// FUNCTION CALL
-		log("OPERATOR FUNCTION CALL: %s\n"s % name);
+		log("OPERATOR / FUNCTION CALL: %s\n"s % name);
 //				for (Node arg : node) {
 //					emitExpression(arg,context);
 //				};
 		code.addByte(function);
-		code.addByte((index));// ok till index>127?
+		code.add(index);
 		return code;
 	}
 	byte opcode = opcodes(name, last_type);
@@ -465,10 +567,14 @@ Code emitStringOp(Node op, String context) {
 		op = Node("eq");//  careful : various signatures
 		last_type = string;
 		return Code(i32_const) + Code(-1) + emitCall(op, context);// third param required!
-	} else if (op == "#") {
+	} else if (op == "#") {// todo: all different index / pattern matches
 		op = Node("getChar");//  careful : various signatures
 		return emitCall(op, context);
-	} else todo("string op not implemented"s + op.name);
+	} else if (op == "logs" or op == "puts" or op == "print") {// should be handled before, but if not print anyways
+		op = Node("logs");
+		return emitCall(op, context);
+	} else
+		todo("string op not implemented: "s + op.name);
 	return Code();
 }
 
@@ -513,9 +619,11 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		return emitCall(node, context);
 
 	switch (node.kind) {
+		case groups: // todo: true list vs list of expressions
+			if (node.length > 0 and node.first().kind != expressions) {
+				return Code().addConst(emitData(node, context));// pointer in const format!
+			}
 		case expressions:
-		case groups:
-		case objects:
 			for (Node child : node) {
 				const Code &expression = emitExpression(child, context);
 				code.push(expression);
@@ -550,13 +658,12 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				local_index = atoi0(name.substring(1));
 			}
 			if (local_index < 0) { // collected before, so can't be setter here
-				if (functionCodes.has(name))
+				if (functionCodes.has(name) or functionSignatures.has(name))
 					return emitCall(node, context);
-				if (!node.isSetter())
+				else if (!node.isSetter())
 					error("UNKNOWN local symbol "s + name + " in context " + context);
 				else {
-					error("local symbol "s + name.trim() + " in " + context +
-					      " should have been registered in analyze()!");
+					error("local symbol "s + name.trim() + " in " + context + " should be registered in analyze()!");
 					current_local_names.add(name);// ad hoc x=42
 					local_index = current_local_names.size() - 1;
 				}
@@ -575,11 +682,22 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			break;
 		case patterns: // x=[];x[1]=2;x[1]==>2
 		{
-			if (node.parent->kind == declaration)
-				return emitIndexWrite(node, context);
+			if (not node.parent or node.parent->kind == groups)
+				return emitArray(node, context);
+			else if (node.parent->kind == declaration)
+				return emitIndexWrite(*node.parent, context);
 			else
-				return emitIndexRead(node, context);
+				return emitIndexRead(*node.parent, context);
 		}
+//		case groups: todo: true list vs list of expressions
+		case objects:
+		case arrays:
+		case buffers:
+//for (Node child : node) {
+//	const Code &expression = emitExpression(child, context);
+//	code.push(expression);
+//};
+			return emitArray(node, context);
 			break;
 		default:
 			error("unhandled node type: "s + typeName(node.kind));
@@ -1134,7 +1252,7 @@ Code functionSection() {
 	return funcTypeSection();// (misnomer) vs codeSection() !
 }
 
-// todo : convert library references to named imports!
+// todo : convert library referenceIndices to named imports!
 Code nameSection() {
 	Code nameMap;
 
