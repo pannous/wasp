@@ -1047,7 +1047,8 @@ private:
 					Node group = Node().setType(Type::groups);
 					Node groupValue = valueNode(')', &current.last());
 					group.addSmart(groupValue);
-					if (groupValue.kind == objects)group = groupValue.setType(groups);// flatten hack
+					if (groupValue.kind == objects)
+						group = groupValue.setType(groups);// flatten hack
 					current.addSmart(group);
 					break;
 				}// lists handled by ' '!

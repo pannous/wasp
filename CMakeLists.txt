@@ -7,7 +7,8 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 set(RUNTIME_ONLY 0) # no Angle eval emit merge etc!
 #set(VERBOSE 1)
 set(DEBUG 1) # SET via Preferences… Build->CMake->Profiles
-set(DEBUG_WASM3 0)
+#set(DEBUG_WASM3 1)
+ADD_COMPILE_DEFINITIONS(DEBUG_WASM3)
 #set(RELEASE 1)
 #set(WASM 1)
 #set(WASI 1)
