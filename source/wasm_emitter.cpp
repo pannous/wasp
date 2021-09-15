@@ -396,8 +396,8 @@ long emitData(Node node, String context) {
 		}
 		case objects:
 		case groups:
-			emitArray(node, context);
 			// keep last_type from last child, later if mixed types, last_type=ref or smarty
+			emitArray(node, context);
 			break;
 		case keyNode:
 		case patterns:
