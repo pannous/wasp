@@ -690,7 +690,9 @@ Node analyze(Node data, String context) {
 		return data;// nothing to be analyzed!
 	}
 
-	if (type == operators or type == call or isFunction(data)) {
+	bool is_function = isFunction(data);
+	if (type == operators or type == call or is_function) {
+		if (is_function)data.kind = call;
 		Node grouped = groupOperators(data, context);// outer analysis id(3+3) => id(+(3,3))
 		for (Node &child: grouped) {// inner analysis while(i<3){i++}
 //			if (child.kind == groups or child.kind == objects)// what if applying to real list though ?f([1,2,3])
@@ -761,6 +763,8 @@ void preRegisterSignatures() {
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 	functionSignatures["main"] = Signature().returns(i32t);;
 	functionSignatures["print"] = functionSignatures["logs"];// todo: for now, later it needs to distinguish types!!
+	functionSignatures["init_graphics"].import().returns(pointer);// surface
+	functionSignatures["requestAnimationFrame"].import().returns(voids);// paint surface
 
 	// builtins
 	functionSignatures["nop"] = Signature().builtin();
@@ -817,6 +821,7 @@ Node emit(String code) {
 	locals.insert_or_assign("main", List<String>());
 	preRegisterSignatures();// todo: reduntant to emitter and wasm_reader
 	analyzed.clear();// todo move much into outer analyze function!
+//	if(data.kind==groups)data.kind=expressions;// force top level!
 	Node charged = analyze(data);
 	charged.log();
 	Code binary = emit(charged);
