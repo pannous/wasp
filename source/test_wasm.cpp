@@ -3,8 +3,8 @@
 #include "wasm_reader.h"
 #include "wasm_merger.h"
 
-//#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
-#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
+#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+//#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
 
 
 void testWasmStuff();
@@ -599,12 +599,15 @@ void testMergeRelocate() {
 
 void testStringIndices() {
 	//	assert_emit("'world'[1]", 'o');
+	assert_emit("'world'#1", 'w');
 	assert_emit("'world'#2", 'o');
+	assert_emit("'world'#3", 'r');
 	skip( // todo move angle syntax to test_angle
 			assert_emit("char #1 in 'world'", 'o');
 			assert_emit("char 1 in 'world'", 'o');
 			assert_emit("2nd char in 'world'", 'o');
 			assert_emit("2nd byte in 'world'", 'o');
+			assert_emit("'world'#-1", 'd');
 	)
 
 	assert_emit("hello='world';hello#1", 'w');
@@ -623,14 +626,16 @@ void testArrayIndices() {
 	assert_is("[1 2 3]", Node(1, 2, 3, 0))
 	assert_is("(1 4 3)#2", 4);// check node based (non-primitive) interpretation first
 	assert_emit("logs('ok');", 0);
-	assert_emit("print('ok');(1 4 3)#2", 4);
 	assert_emit("{1 4 3}#2", 4);
-	assert_emit("(1 4 3)[1]", 4);
+	assert_emit("x={1 4 3};x#2", 4);
 	assert_emit("{1 4 3}[1]", 4);
+	assert_emit("(1 4 3)[1]", 4);
+	assert_emit("logs('ok');(1 4 3)#2", 4);
 	skip(
+			assert_throws("(1 4 3)#0", 4);
+			assert_emit("(1 4 3)#4", 4);// todo THROW!
 			assert_is("[1 2 3]#2", 2);// check node based (non-primitive) interpretation first
 			assert_emit("[1 4 3]#2", 4);
-
 	)
 	//	Node empty_array = parse("pixel=[]");
 	//	check(empty_array.kind==patterns);

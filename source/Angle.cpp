@@ -757,10 +757,10 @@ void preRegisterSignatures() {
 	// imports
 	functionSignatures["logi"] = Signature().add(i32t).import();
 	functionSignatures["logf"] = Signature().add(f32t).import();
-	functionSignatures["logs"] = Signature().add(charp).import();
+	functionSignatures["logs"] = Signature().add(charp).returns(voids).import();
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
-
 	functionSignatures["main"] = Signature().returns(i32t);;
+	functionSignatures["print"] = functionSignatures["logs"];// todo: for now, later it needs to distinguish types!!
 
 	// builtins
 	functionSignatures["nop"] = Signature().builtin();
@@ -782,6 +782,7 @@ int runtime_emit(String prog) {
 	functionSignatures.setDefault(Signature());
 	preRegisterSignatures();
 	Module runtime = read_wasm("wasp.wasm");
+//	functionIndices["print"]=functionIndices["logs"]  print default is print(Node), KEEP IT!!
 	Node charged = analyze(parse(prog));
 	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
 	lib.save("main.wasm");// partial wasm!

@@ -32,6 +32,7 @@ Map<String, long> referenceIndices;
 Module runtime;
 String start = "main";
 
+Valtype rhs_type = voids;// autocast if not int
 Valtype last_type = voids;// autocast if not int
 
 enum MemoryHandling {
@@ -277,6 +278,8 @@ Code emitIndexPattern(Node pattern, String context) {
 	if (last_type == float64)size = 8;
 	int offset = (long) pattern.first().value.longy;
 	if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
+//	if (offset > array_length)error("operator # out of bounds %d>%d"s % offset % array_length);
+
 	Code load;
 	load.addConst(base + offset * size);
 	if (size == 1)load.add(i8_load);
@@ -288,12 +291,14 @@ Code emitIndexPattern(Node pattern, String context) {
 	return load;
 }
 
-// todo: merge these:
+// todo: merge emitIndexPattern with :
 Code emitIndexRead(Node op, String context) {
 	int base = runtime.data_segments.length;// uh, todo?
 	int size = 4;
 	size = 1;
 //	if(op[0].kind==strings) todo?
+	last_type = rhs_type;
+	if (last_type == charp)size = 1;// chars for now vs codepoint!
 	if (last_type == string)size = 1;// chars for now vs codepoint!
 	if (last_type == int32)size = 4;
 	if (last_type == int64)size = 8;
@@ -304,6 +309,7 @@ Code emitIndexRead(Node op, String context) {
 	Node &array = op[0];// also String: byte array or codepoint array todo
 	if (array.kind == reference or array.kind == keyNode) {
 		String ref = array.name;
+//		last_type=array.data_kind;
 		if (not referenceIndices.has(ref))
 			error("reference not declared as array type: "s + ref);
 		base += referenceIndices[ref];
@@ -472,7 +478,7 @@ Code emitValue(Node node, String context) {
 				// we add an extra 0, unlike normal wasm abi, because we have space in data section
 				data_index_end += pString->length + 1;
 			}
-			last_type = string;//
+			last_type = charp;//
 			code = Code(i32_const) + Code(stringIndex);// just a pointer
 			if (node.length > 0) {
 				if (node.length > 1)error("only 1 pattern allowed");
@@ -520,6 +526,7 @@ Code emitOperator(Node node, String context) {
 		Node lhs = node.children[0];//["lhs"];
 		Node rhs = node.children[1];//["rhs"];
 		const Code &lhs_code = emitExpression(lhs, context);
+		rhs_type = last_type;
 		const Code &rhs_code = emitExpression(rhs, context);
 		code.push(lhs_code);// might be empty ok
 		code.push(rhs_code);// might be empty ok
@@ -646,10 +653,14 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 	if ((node.kind == call or node.kind == reference or node.kind == operators) and functionIndices.has(name))
 		return emitCall(node, context);
 
+	Node &first = node.first();
 	switch (node.kind) {
-		case groups: // todo: true list vs list of expressions
-			if (node.length > 0 and node.first().kind != expressions) {
+		case objects:
+		case groups:
+			// todo: all cases of true list vs list of expressions
+			if (node.length > 0 and (first.kind == longs or first.kind == strings)) {
 				return Code().addConst(emitData(node, context));// pointer in const format!
+//				return emitArray(node, context);
 			}
 		case expressions:
 			for (Node child : node) {
@@ -663,9 +674,9 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		case operators:
 			return emitOperator(node, context);
 		case declaration:
-			return emitDeclaration(node, node.first());
+			return emitDeclaration(node, first);
 		case assignment:
-			return emitSetter(node, node.first(), context);
+			return emitSetter(node, first, context);
 		case nils:
 		case longs:
 		case reals:
@@ -710,15 +721,15 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			break;
 		case patterns: // x=[];x[1]=2;x[1]==>2
 		{
-			if (not node.parent or node.parent->kind == groups)
+			if (not node.parent)// todo: when is pattern not an operator? wrong: or node.parent->kind == groups)
 				return emitArray(node, context);
 			else if (node.parent->kind == declaration)
 				return emitIndexWrite(*node.parent, context);
 			else
-				return emitIndexRead(*node.parent, context);
+				return emitIndexPattern(node, context);// make sure array is on stack!
 		}
 //		case groups: todo: true list vs list of expressions
-		case objects:
+//		case objects:
 		case arrays:
 		case buffers:
 //for (Node child : node) {
