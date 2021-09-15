@@ -277,12 +277,13 @@ bool isVariable(String name, String context0) {
 Node &groupOperators(Node &expression0, String context = "main") {
 	Node &expression = *expression0.clone();// modified in place!
 	if (analyzed.has(expression0.hash()))return expression;
+//	if(expression0.name=="if")return expression;// hack
 	analyzed.insert_or_assign(expression0.hash(), 1);
 	List<String> operators = collectOperators(expression);
 	String last = "";
 	int last_position = 0;
 	for (String &op : operators) {
-		if (op != last)last_position = 0;
+		if (op != last) last_position = 0;
 		bool fromRight = rightAssociatives.has(op) or isFunction(op);
 		fromRight = fromRight || prefixOperators.has(op); // !√!-1 == !(√(!(-1)))
 		int i = expression.index(op, last_position, fromRight);
@@ -290,7 +291,7 @@ Node &groupOperators(Node &expression0, String context = "main") {
 			i = expression.index(op, last_position, fromRight);// try again for debug
 			expression0.log();
 			expression.log();
-			error("operator missing "s + op);
+			error("operator missing: "s + op);
 		}
 		Node &node = expression.children[i];
 		if (node.length)continue;// already processed
@@ -821,7 +822,7 @@ Node emit(String code) {
 	locals.insert_or_assign("main", List<String>());
 	preRegisterSignatures();// todo: reduntant to emitter and wasm_reader
 	analyzed.clear();// todo move much into outer analyze function!
-//	if(data.kind==groups)data.kind=expressions;// force top level!
+	//	if(data.kind==groups) data.kind=expressions;// force top level expressions! todo: only if analyze recursive !
 	Node charged = analyze(data);
 	charged.log();
 	Code binary = emit(charged);
