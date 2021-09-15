@@ -1142,7 +1142,8 @@ Code importSection() {
 	Code imports;
 	import_count = 0;
 	for (String fun : functionSignatures) {
-		if (functionSignatures[fun].is_used) {
+		Signature &signature = functionSignatures[fun];
+		if (signature.is_used and not signature.is_builtin) {
 			++import_count;
 			imports = imports + encodeString("env") + encodeString(fun).addByte(func_export).addType(typeMap[fun]);
 		}
