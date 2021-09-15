@@ -233,6 +233,8 @@ Code emitArray(Node &node, String context) {
 		ref = node.parent->name;
 	}
 	referenceIndices.insert_or_assign(ref, pointer);
+	emitData(Node(0), context);// terminate list with 0.
+	// todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
 	last_data = pointer;
 	return code.addConst(pointer);// once written to data section, we also want to use it immediately
 }
@@ -402,6 +404,7 @@ long emitData(Node node, String context) {
 		default:
 			error("emitData unknown type: "s + typeName(node.kind));
 	}
+	// todo: ambiguity emit("1;'a'") => result is pointer to [1,'a'] or 'a' ? should be 'a', but why?
 	last_data = last_pointer;
 	return last_pointer;
 }
@@ -1138,15 +1141,22 @@ Code importSection() {
 	// the import section is a vector of imported functions
 	Code imports;
 	import_count = 0;
-	if (functionSignatures["logi"].is_used and ++import_count)
-		imports = imports + encodeString("env") + encodeString("logi").addByte(func_export).addType(typeMap["logi"]);
-	if (functionSignatures["logs"].is_used and ++import_count)
-		imports = imports + encodeString("env") + encodeString("logs").addByte(func_export).addType(typeMap["logs"]);
-	if (functionSignatures["logf"].is_used and ++import_count)
-		imports = imports + encodeString("env") + encodeString("logf").addByte(func_export).addType(typeMap["logf"]);
-	if (functionSignatures["square"].is_used and ++import_count)
-		imports =
-				imports + encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
+	for (String fun : functionSignatures) {
+		if (functionSignatures[fun].is_used) {
+			++import_count;
+			imports = imports + encodeString("env") + encodeString(fun).addByte(func_export).addType(typeMap[fun]);
+		}
+	}
+
+//	if (functionSignatures["logi"].is_used and ++import_count)
+//		imports = imports + encodeString("env") + encodeString("logi").addByte(func_export).addType(typeMap["logi"]);
+//	if (functionSignatures["logs"].is_used and ++import_count)
+//		imports = imports + encodeString("env") + encodeString("logs").addByte(func_export).addType(typeMap["logs"]);
+//	if (functionSignatures["logf"].is_used and ++import_count)
+//		imports = imports + encodeString("env") + encodeString("logf").addByte(func_export).addType(typeMap["logf"]);
+//	if (functionSignatures["square"].is_used and ++import_count)
+//		imports =
+//				imports + encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
 	if (memoryHandling == import_memory) {
 		imports = imports + encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 +
 		          (byte) 0x01;;

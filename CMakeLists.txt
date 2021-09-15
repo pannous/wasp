@@ -3,15 +3,19 @@ project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
-# If <variable> is already set as a normal or cache variable, then the command does nothing!!
-set(RUNTIME_ONLY 0) # no Angle eval emit merge etc!
-#set(VERBOSE 1)
-set(DEBUG 1) # SET via Preferences… Build->CMake->Profiles
-#set(DEBUG_WASM3 1)
-ADD_COMPILE_DEFINITIONS(DEBUG_WASM3)
-#set(RELEASE 1)
+# If <variable> is already set as a normal or cache variable, then the command does nothing!! HUH?
+
+# SET these configurations via Preferences… Build->CMake->Profiles
+# force set these only for urgent debugging,
+#set(RUNTIME_ONLY 0) # no Angle eval emit merge etc!
+##set(VERBOSE 1)
+#set(DEBUG 1)
+#set(RELEASE 0)
 #set(WASM 1)
 #set(WASI 1)
+# ^^ UNSET, or better don't set manually at all!
+
+ADD_COMPILE_DEFINITIONS(DEBUG_WASM3)
 if (DEBUG)
     MESSAGE("DEBUG!")
     ADD_COMPILE_DEFINITIONS(DEBUG)
@@ -264,14 +268,18 @@ elseif (WABT)
     target_link_libraries(angle PRIVATE libwabt) # libwabt.a 20 MB only for local stuff!
     #    add_custom_target(BuildWabtc ALL DEPENDS angle) #.exe
 elseif (WASM3)
+    find_package(SDL2 REQUIRED)
+    include_directories(${SDL2_INCLUDE_DIRS})
     message(wasm3 VM)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     include(wasm3/cmake_install.cmake)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp source/Paint.cpp)
     add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)
-    add_executable(angle ${SOURCE_FILES})
-    target_include_directories(angle PUBLIC wasm3/source)
-    target_link_libraries(angle PRIVATE m3)
+    add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+    target_include_directories(${PROJECT_NAME} PUBLIC wasm3/source)
+    target_link_libraries(${PROJECT_NAME} PRIVATE m3)
+    target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
+    #    target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
     #    add_custom_target(BuildWasm3 ALL DEPENDS angle) #.exe
 else () # NORMAL:
     message(NO WASM "${WASM}")
