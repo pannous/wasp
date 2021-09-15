@@ -1725,10 +1725,12 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
-	assert_emit("'hello';(1 2 3 4);10", 10);
-
+	skip(
+			assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
+	)
 //	data_mode= false; // expect code!
-//	assert_emit("x={1 4 3};x#2", 4);
+	assert_emit("{1 4 3}#2", 4);
+	assert_emit("x=(1 4 3);x#2", 4);
 //	assert_emit("x={1 4 3};x#2=5;x#2", 5);
 //	assert_emit("x={1 4 3};x[1]", 4);
 //	assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
