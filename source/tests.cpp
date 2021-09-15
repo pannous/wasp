@@ -425,7 +425,6 @@ void testMarkSimple() {
 
 
 void testUTFinCPP() {
-
 	char32_t wc[] = U"zß水🍌"; // or
 //	char32_t wc2[] = "z\u00df\u6c34\U0001f34c";/* */ Initializing wide char array with non-wide string literal
 	auto wc2 = "z\u00df\u6c34\U0001f34c";
@@ -440,11 +439,11 @@ void testUTFinCPP() {
 
 #ifndef WASM
 	std::string x = "0☺2√";
-	// 2009 :  std::string is a complete joke if you're looking for Unicode suppor
+	// 2009 :  std::string is a complete joke if you're looking for Unicode support
 	auto smile0 = x[1];
 	char16_t smile1 = x[1];
 	char32_t smile = x[1];
-	check(smile == smile1);
+//	check(smile == smile1);
 #endif
 //	wstring_convert<codecvt_utf8<char32_t>, char32_t> cv;
 //	auto str32 = cv.from_bytes(str);
@@ -457,13 +456,13 @@ void testUTFinCPP() {
 //		char[10] a='☹';// NOPE
 	char *a = "☹"; // OK
 	byte *b = reinterpret_cast<byte *>(a);
-//	a[0] = {char} -30 '\xe2'
-//	a[1] = {char} -104 '\x98'
-//	a[2] = {char} -71 '\xb9'
-//	b[0] = {byte} 226 '\xe2'
-//	b[1] = {byte} 152 '\x98'
-//	b[2] = {byte} 185 '\xb9'
-//	b[3] = {byte} 0 '\0'
+	check_eq(a[0], (char) -30); // '\xe2'
+	check_eq(a[1], (char) -104); // '\x98'
+	check_eq(a[2], (char) -71); // '\xb9'
+	check_eq(b[0], (byte) 226); // '\xe2'
+	check_eq(b[1], (byte) 152); // '\x98'
+	check_eq(b[2], (byte) 185); // '\xb9'
+	check_eq(b[3], (byte) 0); // '\0'
 }
 
 void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
@@ -525,7 +524,7 @@ void testUTF() {
 	check(!is_operator(U'🥲'))
 	check(not is_operator(U'ç'));
 	check(is_operator(U'='));
-//	testUTFinCPP();
+	testUTFinCPP();
 //	check(x[1]=="牛");
 	check("a牛c"s.codepointAt(1) == U'牛');
 	String x = "a牛c";
@@ -1538,6 +1537,7 @@ void testNodeBasics() {
 }
 
 void tests() {
+	data_mode = true;// expect data unless explicit code
 	testAsserts();
 	testString();
 	testNodeName();
@@ -1620,6 +1620,15 @@ void tests() {
 }
 
 
+void testArrayIndices() {
+	assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
+	assert_is("[1 2 3]", Node(1, 2, 3, 0))
+	assert_is("(1 4 3)#2", 4);//
+	assert_is("x=(1 4 3);x#2", 4);
+	assert_is("x=(1 4 3);x#2=5;x#2", 5);
+}
+
+
 void testBUG() {// move to tests() once done!
 	testUTF();// fails sometimes => bad pointer!?
 	testParentBUG();
@@ -1652,6 +1661,7 @@ void todos() {
 }
 
 #include "Wasp.h" // is_operator
+#include "Paint.h"
 
 //int dump_nr = 1;
 //void dumpMemory(){
@@ -1702,26 +1712,42 @@ void testUnits() {
 	assert_is("1 m + 1km", Node(1001).setType("m"));
 }
 
+void testPaint() {
+	init_graphics();
+	while (1)requestAnimationFrame();
+}
+
+void testPaintWasm() {
+//	char* wasm_paint_routine="surface=init_graphics();i=0;while(i<100000)surface[i]=0;";
+	char *wasm_paint_routine = "init_graphics(); while (1) requestAnimationFrame()";
+	assert_emit(wasm_paint_routine, 0);
+	while (1)requestAnimationFrame();// help a little
+}
+
 void testCurrent() { // move to tests() once OK
-	assert_emit("{1 4 3}[1]", 4);
-	assert_emit("(1 4 3)[1]", 4);
-	assert_emit("hello='world';hello#1", 'w');
-	assert_emit("(1 4 3)#2", 4);
-	assert_emit("logs('ok');(1 4 3)#2", 4);
-	assert_run("logs('ok');(1 4 3)#2", 4);
+	assert_emit("'hello';(1 2 3 4);10", 10);
+
+//	data_mode= false; // expect code!
+//	assert_emit("x={1 4 3};x#2", 4);
+//	assert_emit("x={1 4 3};x#2=5;x#2", 5);
+//	assert_emit("x={1 4 3};x[1]", 4);
+//	assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
+//	testPaintWasm();
+
 //	testWasmMemoryIntegrity();
 #ifndef WASM
 //	testWasmModuleExtension();
 //	testWasmRuntimeExtension();
 #endif
-	testStringIndices();
-	testArrayIndices();
+//testPaint();
+//	testStringIndicesWasm();
+//	testArrayIndicesWasm();
 //testUnits();
-	testMarkMultiDeep();
+//	testMarkMultiDeep();
 
-	testWasmRuntimeExtension();
+//	testWasmRuntimeExtension();
 //	operator_list = List(operator_list0);
-	testRecentRandomBugs();
+//	testRecentRandomBugs();
 	tests();// make sure all still ok before changes
 	testAllWasm();
 	todos();// those not passing yet (skip)
