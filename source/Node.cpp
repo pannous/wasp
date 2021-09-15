@@ -602,7 +602,7 @@ void Node::addSmart(Node node) {// merge?
 	// a{x:1} == a:{x:1} ?
 	Node &letzt = last();
 	// NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
-	if (letzt.kind == operators) {
+	if (letzt.kind == operators and letzt.length == 0) {
 		// danger 1+2 grouped later but while(i>7) as child
 		letzt.add(node);// as meta?
 		return;
