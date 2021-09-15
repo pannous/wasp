@@ -810,7 +810,8 @@ String Node::serialize() const {
 		}
 	}
 	if (length >= 0) {
-		if (not grouper) {
+		// skip single element braces: a == (a)
+		if (not grouper and (length != 1 or kind == patterns)) {
 			if (kind == groups)wasp += "(";
 			else if (kind == objects)wasp += "{";
 			else if (kind == patterns)wasp += "[";
@@ -823,7 +824,7 @@ String Node::serialize() const {
 			wasp += " ";
 			wasp += node.serialize();
 		}
-		if (not grouper) {
+		if (not grouper and (length != 1 or kind == patterns)) {
 			if (kind == groups)wasp += ")";
 			else if (kind == objects)wasp += "}";
 			else if (kind == patterns)wasp += "]";

@@ -597,7 +597,7 @@ void testMergeRelocate() {
 }
 
 
-void testStringIndices() {
+void testStringIndicesWasm() {
 	//	assert_emit("'world'[1]", 'o');
 	assert_emit("'world'#1", 'w');
 	assert_emit("'world'#2", 'o');
@@ -621,10 +621,9 @@ void testStringIndices() {
 	//	exit(0);
 }
 
-void testArrayIndices() {
-	assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
-	assert_is("[1 2 3]", Node(1, 2, 3, 0))
-	assert_is("(1 4 3)#2", 4);// check node based (non-primitive) interpretation first
+void testArrayIndicesWasm() {
+//	testArrayIndices(); //	check node based (non-primitive) interpretation first
+
 	assert_emit("logs('ok');", 0);
 	assert_emit("{1 4 3}#2", 4);
 	assert_emit("x={1 4 3};x#2", 4);
@@ -645,21 +644,19 @@ void testArrayIndices() {
 	//	emit("pixel=[]");
 	//	exit(0);
 
-	Node setter1 = analyze(parse("pixel#1=15"));
-	//	check(setter1.kind == operators or setter1.kind==declaration);
-	Node getter1 = analyze(parse("pixel#1"));
-	//	check(getter1.kind == operators);
-	//	assert_emit("pixel=100 int(s);pixel#1=15;pixel#1", 15);
-	assert_emit("pixel=[];pixel#1=15;pixel#1", 15);// diadic ternary operator
+//	assert_emit("pixel=();pixel#1=15;pixel#1", 15);// diadic ternary operator
 	//	assert_emit("pixel array;pixel#1=15;pixel#1", 15);// diadic ternary operator
 
-	Node setter = analyze(parse("pixel[1]=15"));
-	check(setter.kind == patterns);
-	Node getter = analyze(parse("pixel[1]"));
-	check(getter.kind == patterns);
-	assert_emit("pixel=[];pixel[1]=15;pixel[1]", 15);
+	skip(
+			Node setter = analyze(parse("pixel[1]=15"));
+			check(setter.kind == patterns);
+			Node getter = analyze(parse("pixel[1]"));
+			check(getter.kind == patterns);
+			assert_emit("pixel=[];pixel[1]=15;pixel[1]", 15);
+	)
+
 	//assert_emit("pixel=100 ints;pixel[1]=15;pixel[1]", 15);
-	assert_emit("i=0;w=800;h=800;while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
+	assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
 	assert_emit("x={a:3,b:4,c:{d:true}};x.a", 3);
 	assert_emit("x={a:3,b:true};x.b", 1);
 	assert_emit("x={a:3,b:4,c:{d:true}};x.c.d", 1);

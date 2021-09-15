@@ -8,6 +8,7 @@
 #include "wasm3_cpp.h"
 #include "wasm_helpers.h"
 #include "String.h"
+#include "Paint.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -85,6 +86,9 @@ int test_wasm3(const uint8_t *prog, int len) {
 //		mod.link_optional<logp>("*", "logs");// added m3_type_to_sig in wasm3_cpp.h !
 		mod.link_optional<panic>("*", "panic");
 		mod.link_optional<raise>("*", "raise");
+		mod.link_optional<init_graphics>("*", "init_graphics");// returns pointer to surface
+		mod.link_optional<init_graphics>("*", "requestAnimationFrame");// returns pointer to surface
+
 //		wasm3::function main_fn = runtime.find_function("_start");
 		wasm3::function main_fn = runtime.find_function("main");
 		auto res = main_fn.call<int>();
