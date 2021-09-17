@@ -279,8 +279,7 @@ void consumeCodeSection() {
 }
 
 
-#include <cxxabi.h>
-
+#include <cxxabi.h> // for abi::__cxa_demangle
 // we can reconstruct arguments from demangled exports or retained wast names
 // _Z2eqPKcS0_i =>  func $eq_char_const*__char_const*__int_ <= eq(char const*, char const*, int)
 List<String> demangle_args(String &fun) {
