@@ -540,7 +540,7 @@ Code emitOperator(Node node, String context) {
 	} else if (node.next) { // todo really? handle ungrouped HERE? just hiding bugs?
 		const Code &arg_code = emitExpression(*node.next, context);
 		code.push(arg_code);// might be empty ok
-	} else if (node.value.node) {
+	} else if (node.value.node and node.kind == keyNode) {// todo: serialize?
 		const Code &arg_code = emitExpression(*node.value.node, context);
 		code.push(arg_code);
 	}

@@ -1725,21 +1725,8 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
-	skip(
-			assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
-	)
-	assert_emit("x:41;if x>1 then 2 else 3", 2)
-	assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)
-	/*
-	  double const bug:
-	      local.get $x
-		  i32.const 1
-		  i32.sub
-		  i32.const 1
-		  AND
-		  call $fib missing!
-		  => bad analysis!
-		  */
+	assert(eval("(2+1)==(4-1)") == 1);
+	assert_emit("x=123;x is 123", true);// ok
 
 //	data_mode= false; // expect code!
 	assert_emit("{1 4 3}#2", 4);
@@ -1754,9 +1741,9 @@ void testCurrent() { // move to tests() once OK
 //	testWasmModuleExtension();
 //	testWasmRuntimeExtension();
 #endif
-//testPaint();
-//	testStringIndicesWasm();
-//	testArrayIndicesWasm();
+	testPaint();
+	testStringIndicesWasm();
+	testArrayIndicesWasm();
 //testUnits();
 //	testMarkMultiDeep();
 

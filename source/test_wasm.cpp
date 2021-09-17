@@ -513,18 +513,23 @@ void testWasmModuleExtension() {
 }
 
 
-#ifndef RUNTIME_ONLY
+#ifndef
+RUNTIME_ONLY
 // use assert_emit if runtime is not needed!! much easier to debug
-#define assert_run(mark, result) printf("\n%s:%d\n",__FILE__,__LINE__);check_eq(runtime_emit(mark),result);
+#define
+assert_run(mark, result) printf("\n%s:%d\n", __FILE__, __LINE__);check_eq(runtime_emit(mark), result);
 #else
-#define assert_run(a,b) skip(a)
+#define
+assert_run(a, b) skip(a)
 #endif
 
 void testWasmRuntimeExtension() {
 //	functionSignatures["ok"].returns(int32);
-	assert_run("x='123';x + '4' is '1234'", true);
-	assert_run("ok+1", 43);
-	assert_run("oki(1)", 43);
+//	assert_emit("x='123';x + '4' is '1234'", true);// unknown function concat: needs runtime
+assert_run("'123' + '4' is '1234'", true);// ok
+//	assert_run("x='123';x + '4' is '1234'", true);// not ok
+assert_run("ok+1", 43);
+assert_run("oki(1)", 43);
 //	assert_run("not_ok",-1);// error
 
 //	functionSignatures["okf"].returns(float32);
@@ -598,15 +603,22 @@ void testMergeRelocate() {
 
 
 void testStringIndicesWasm() {
-	//	assert_emit("'world'[1]", 'o');
-	assert_emit("'world'#1", 'w');
-	assert_emit("'world'#2", 'o');
-	assert_emit("'world'#3", 'r');
-	skip( // todo move angle syntax to test_angle
-			assert_emit("char #1 in 'world'", 'o');
-			assert_emit("char 1 in 'world'", 'o');
-			assert_emit("2nd char in 'world'", 'o');
-			assert_emit("2nd byte in 'world'", 'o');
+assert_run("x='123';x=='123'", true);// ok
+assert_run("x='123';x is '123'", true);// ok
+assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
+assert_run("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
+assert_run("'123' + '4' is '1234'", true);// ok
+assert_run("x='123';x + '4' is '1234'", true);// ok
+
+//	assert_emit("'world'[1]", 'o');
+assert_emit("'world'#1", 'w');
+assert_emit("'world'#2", 'o');
+assert_emit("'world'#3", 'r');
+skip( // todo move angle syntax to test_angle
+assert_emit("char #1 in 'world'", 'o');
+assert_emit("char 1 in 'world'", 'o');
+assert_emit("2nd char in 'world'", 'o');
+assert_emit("2nd byte in 'world'", 'o');
 			assert_emit("'world'#-1", 'd');
 	)
 

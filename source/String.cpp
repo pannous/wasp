@@ -399,7 +399,7 @@ chars typeName(Type t) {
 		case assignment:
 			return "assignment";
 		case errors:
-			return "error";
+				return "error";
 		default:
 			error(str("MISSING Type name mapping ") + t);
 			return "ERROR";
