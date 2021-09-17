@@ -162,7 +162,8 @@ public:
 	}
 
 	S &operator[](short index) {
-		if (index < 0 or index > _size)error("index out of range : %d > %d"s % index % _size);
+		if (index < 0 or index > _size)
+			error("index out of range : %d > %d"s % index % _size);
 		return items[index];
 	}
 

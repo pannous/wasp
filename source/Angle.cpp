@@ -160,11 +160,14 @@ List<chars> key_pair_operators;
 Node &groupFunctions(Node &expression);
 
 bool isVariable(Node &node) {
+	if (node.kind != reference and node.kind != keyNode and !node.isSetter())
+		return false;
+	if (node.kind == strings)return false;
 	return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'a';// todo;
 }
 
-Node &groupDeclarations(Node &expression0, const char *context) {
-	Node &expression = *expression0.clone();
+Node &groupDeclarations(Node &expression, const char *context) {
+//	Node &expression = *expression0.clone();// debug
 	for (Node &node : expression) {
 		String &op = node.name;
 		if (node.kind == reference or (node.kind == keyNode and isVariable(node))) {// only constructors here!
@@ -182,14 +185,16 @@ Node &groupDeclarations(Node &expression0, const char *context) {
 			Node rest = expression.from(node);
 			String name = extractFunctionName(modifiers);
 
-//			todo i=1 vs i:=it*2  ok ?
-			if (op == "=") {
-//			if(modifiers.first().kind==reference){
-				warn("symbol is reference declaration: "s + name);
-				Node &ref = modifiers.first();
-				ref.value.node = analyze(rest).clone();
-				return ref;
-			}
+////			todo i=1 vs i:=it*2  ok ?
+			if (op == "=") continue; // handle assignment via groupOperators !
+//			{// can't this be handled in operators???
+////			if(modifiers.first().kind==reference){
+//				warn("symbol is reference declaration: "s + name);
+//				Node& ref = *analyze(modifiers).clone();
+////				modifiers.first()
+//				ref.value.node = analyze(rest).clone();
+//				return ref;
+//			}
 
 			if (isFunction(name))
 				error("Symbol already declared as function: "s + name);
@@ -321,7 +326,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 			} else {
 				//#ifndef RUNTIME_ONLY
 				if (node.name.endsWith("=") and prev.kind == reference)// todo can remove hack?
-					locals[context].add(prev.name);
+					if (!locals[context].has(prev.name)) locals[context].add(prev.name);
 				//#endif
 				node.add(prev);
 				node.add(next);
