@@ -1060,6 +1060,7 @@ void printf(Node &) {
 Node &Node::setType(Type type, bool check) {
 	if (kind == type)return *this;
 	if (kind == groups and type == expressions)check = false;
+	if (kind == declaration and type == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
 	if (check) {
 		if (kind != unknown and kind != objects and
 		    kind != strings)// strings is default type after construction, ok to keep it in name

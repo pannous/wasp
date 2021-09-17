@@ -18,8 +18,8 @@ enum Type {// todo: merge Node.kind with Node.class(?)
 	symbol, // one / plus / Jesus
 	operators, // TODO: semantic types don't belong here! they interfere with internal structural types keyNode etc!!
 	expressions, // one plus one
-	assignment, // x = 1 // really?? needs own TYPE?
 	declaration, // x:=1
+	assignment, // x = 1 // really?? needs own TYPE?
 	strings,
 	codepoints,
 	arrays, // Node[] vs any[]? vs
