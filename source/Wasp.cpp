@@ -14,7 +14,7 @@
 #ifdef WASM
 // NEEDS TO BE IN Wasp because __wasm_call_ctors !
 //unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(malloc(1000000));
-char* __heap_base=(char*)memory;
+char *__heap_base = (char *) memory;
 //unsigned char* __heap_base=0;
 char *memoryChars = (char *) memory;
 //int HEAP_OFFSET=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
@@ -1144,24 +1144,25 @@ private:
 					// closing ' ' handled above
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
 					if (current.grouper != ch) {// and current.length > 1
-						if (current.length > 1) {// x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
-							Node neu;// wrap
+						// x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
+						if (current.length > 1) {
+							Node neu;// wrap x,y => ( (x y) ; … )
 							neu.kind = groups;
 							neu.parent = parent;
 							//						neu.grouper = ch;
 							neu.add(current);
 							current = neu;
-							current.grouper = ch;
-							char closer = ch;// need to keep troughout loop!
-							int i = 0;
-							//						closing(ch, closer) and not closing(ch, close) and ch!='}' and ch!=')' and ch!=']' and ch!=0
-							while (ch == closer) {
-								proceed();
-								Node element = valueNode(closer);// todo stop copying!
-								current.add(element.clone());
-							}
-							break;
 						}
+						current.grouper = ch;
+						char closer = ch;// need to keep troughout loop!
+						int i = 0;
+						//						closing(ch, closer) and not closing(ch, close) and ch!='}' and ch!=')' and ch!=']' and ch!=0
+						while (ch == closer) {
+							proceed();
+							Node element = valueNode(closer);// todo stop copying!
+							current.add(element.clone());
+						}
+						break;
 					}
 					// else fallthough!
 					current.grouper = ch;
