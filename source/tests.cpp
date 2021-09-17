@@ -1728,6 +1728,7 @@ void testCurrent() { // move to tests() once OK
 	skip(
 			assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
 	)
+	assert_emit("x:41;if x>1 then 2 else 3", 2)
 	assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)
 	/*
 	  double const bug:
@@ -1743,7 +1744,6 @@ void testCurrent() { // move to tests() once OK
 //	data_mode= false; // expect code!
 	assert_emit("{1 4 3}#2", 4);
 	assert_emit("x=(1 4 3);x#2", 4);
-	assert_emit("x:41;if x>1 then 2 else 3", 2)
 //	assert_emit("x={1 4 3};x#2=5;x#2", 5);
 //	assert_emit("x={1 4 3};x[1]", 4);
 //	assert_emit("x={1 4 3};x[1]=5;x[1]", 5);

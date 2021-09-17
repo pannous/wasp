@@ -103,7 +103,6 @@ public:
 	String name = empty_name;// nil_name;
 	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 
-
 //	Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
 	Type kind = unknown;// todo: merge with Node.type/class ? :
 //	Node *type = 0;// variable/reference type or object class?
@@ -112,6 +111,7 @@ public:
 	Node *children = nullptr;// LIST, not link. block body content
 	Node *next = 0; // in children list
 	char grouper = 0;// ";" ","
+	long _hash = 0;// set by hash(); should copy! on *x=node / clone()
 
 	// TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
 	//	Node &parent=NIL;
@@ -322,8 +322,13 @@ public:
 			default:
 				error("unknown type");
 		}
-
 	}
+
+	long hash() {// todo could conflict on memory reuse, random would be better, but much more expensive!
+		if (not _hash) _hash = random();// (long) (void *) this;
+		return _hash;
+	}
+
 
 	Node &first() {
 		if (length > 0)return children[0];
@@ -338,27 +343,14 @@ public:
 //	if you do not declare a copy constructor, the compiler gives you one implicitly.
 //	Node( Node& other ){// copy constructor!!
 
-	long hash() {// danger on clone/copy!
-		return (long) (void *) this;
-	}
-
 	Node *clone(bool childs = true) {// const cast?
 		if (this == &NIL)return this;
 		if (this == &True)return this;
 		if (this == &False)return this;
 		// todo ...
 		Node *copy = new Node();
-		*copy = *this;
-//		if(kind==strings)
-//			copy->value.string = value.string;
-//		copy->name = name;
-//		copy->kind = kind;
-//		copy->value = value;// value.clone
-//		copy->grouper = grouper;
-//		if(meta)copy->meta = meta->clone();
-//		if(parent)copy->parent = parent;//->clone(); DEFAULT: assume exact copy is desired
-//		if(next)copy->next = next;//->clone();
-//
+		*copy = *this;// ok copies all values
+
 // Todo: deep cloning whole tree? definitely clone children
 		if (childs) {
 			if (kind == keyNode and value.data)

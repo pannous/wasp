@@ -157,7 +157,8 @@ List<chars> key_pair_operators;
 //no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
 #endif
 
-Node &groupFunctions(Node &expression0);
+Node &groupFunctions(Node &expression);
+
 bool isVariable(Node &node) {
 	return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'a';// todo;
 }
@@ -274,11 +275,12 @@ bool isVariable(String name, String context0) {
 }
 
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
-Node &groupOperators(Node &expression0, String context = "main") {
-	Node &expression = *expression0.clone();// modified in place!
-	if (analyzed.has(expression0.hash()))return expression;
+Node &groupOperators(Node &expression, String context = "main") {
+	if (analyzed.has(expression.hash()))
+		return expression;
+//	analyzed.insert_or_assign(expression.hash(), 1);
+//	Node &expression = *expression0.clone();// modified in place!
 //	if(expression0.name=="if")return expression;// hack
-	analyzed.insert_or_assign(expression0.hash(), 1);
 	List<String> operators = collectOperators(expression);
 	String last = "";
 	int last_position = 0;
@@ -289,7 +291,6 @@ Node &groupOperators(Node &expression0, String context = "main") {
 		int i = expression.index(op, last_position, fromRight);
 		if (i < 0) {
 			i = expression.index(op, last_position, fromRight);// try again for debug
-			expression0.log();
 			expression.log();
 			error("operator missing: "s + op);
 		}
@@ -340,29 +341,91 @@ Node &groupOperators(Node &expression0, String context = "main") {
 	return expression;
 }
 
-Node &groupIf(Node n);
+Node &groupIf(Node n) {
+	if (n.length == 0 and !n.value.data)
+		error("no if condition given");
+	if (n.length == 1 and !n.value.data)
+		error("no if block given");
+	Node &condition = n.children[0];
+	Node then;
+	if (n.length > 0)then = n[1];
+	if (n.length == 0) then = n.values();
+	if (n.has("then")) {
+		condition = n.to("then");
+		then = n.from("then");
+	}
+
+	if (condition.value.data and !condition.next)
+		then = condition.values();
+	if (condition.next and condition.next->name == "else")
+		then = condition.values();
+
+	// todo: UNMESS how?
+	if (n.has(":") /*before else: */) {
+		condition = n.to(":");
+		if (condition.has("else"))
+			condition = condition.to("else");// shouldn't happen?
+		then = n.from(":");
+	} else if (condition.has(":")) {// as child
+		then = condition.from(":");
+		//		condition = condition.interpret();// compile time evaluation?!
+	}
+	Node otherwise;
+	if (n.has("else"))
+		otherwise = n["else"].values();
+	if (then.has("then"))
+		then = n.from("then");
+	if (then.has("else")) {
+		otherwise = then.from("else");
+		then = then.to("else");
+	}
+	if (n.length == 3 and otherwise.isEmpty())
+		otherwise = n[2];
+	Node *eff = new Node("if");
+	Node &ef = *eff;
+	ef.kind = expressions;
+	//	ef.kind = ifStatement;
+	if (condition.length > 0)condition.setType(expressions);// so far treated as group!
+	if (then.length > 0)then.setType(expressions);
+	if (otherwise.length > 0)otherwise.setType(expressions);
+	ef["condition"] = analyze(condition);
+	ef["then"] = analyze(then);
+	ef["else"] = analyze(otherwise);
+	//	condition = analyze(condition);
+	//	then = analyze(then);
+	//	otherwise = analyze(otherwise);
+	//	ef.add(condition); breaks even with clone() why??
+	//	ef.add(then);
+	//	ef.add(otherwise);
+//	Node &node = ef["then"];// debug
+	Node &node = ef[2];// debug
+	analyzed[ef.hash()] = true;
+	return ef;
+}
 
 Node &groupWhile(Node n);
 
-Node &groupFunctions(Node &expression0) {
-	if (expression0.kind == declaration)return expression0;// handled before
-	if (isFunction(expression0)) {
-		expression0.setType(call, false);
-		if (not functionSignatures.has(expression0.name))
-			error("missing import for function "s + expression0.name);
-//		if (not expression0.value.node and arity>0)error("missing args");
-		functionSignatures[expression0.name].is_used = true;
+Node &groupFunctions(Node &expression) {
+	if (expression.kind == declaration)return expression;// handled before
+	if (isFunction(expression)) {
+		expression.setType(call, false);
+		if (not functionSignatures.has(expression.name))
+			error("missing import for function "s + expression.name);
+//		if (not expression.value.node and arity>0)error("missing args");
+		functionSignatures[expression.name].is_used = true;
 	}
-	Node &expression = *expression0.clone();
+//	Node &expression = *expression.clone();
 	for (int i = 0; i < expression.length; ++i) {
 //	for (int i = expression.length; i>0; --i) {
 		Node &node = expression.children[i];
 		String &name = node.name;
 		if (name == "if") // kinda functor
 		{
-			Node iff = groupIf(expression0.from("if"));
+			Node &iff = groupIf(expression.from("if"));
 			int j = expression.lastIndex(iff.last().next) - 1;
+			if (i == 0 and j == expression.length - 1)return iff;
 			if (j > i)expression.replace(i, j, iff);// todo figure out if a>b c d e == if(a>b)then c else d; e boundary
+			continue;
 		}
 		if (name == "while") {
 			// todo: move into groupWhile
@@ -373,12 +436,12 @@ Node &groupFunctions(Node &expression0) {
 			}
 			if (node.length == 1) {// while()… or …while()
 				node[0] = analyze(node[0].setType(expressions).flat());
-				Node then = expression0.from("while");
+				Node then = expression.from("while");
 				node.add(analyze(then.setType(expressions).flat()).clone());
 				expression.remove(i + 1, i + then.length - 1);
 				continue;
 			} else {
-				Node iff = groupWhile(expression0.from("while"));
+				Node iff = groupWhile(expression.from("while"));
 				Node &last = iff.last();
 				Node *next = last.next;
 				int j = expression.lastIndex(next) - 1;
@@ -585,102 +648,19 @@ Node &groupWhile(Node n) {
 	return ef;
 }
 
-Node &groupIf(Node n) {
-	if (n.length == 0 and !n.value.data)
-		error("no if condition given");
-	if (n.length == 1 and !n.value.data)
-		error("no if block given");
-	Node &condition = n.children[0];
-	Node then;
-	if (n.length > 0)then = n[1];
-	if (n.length == 0) then = n.values();
-	if (n.has("then")) {
-		condition = n.to("then");
-		then = n.from("then");
-	}
-
-	if (condition.value.data and !condition.next)
-		then = condition.values();
-	if (condition.next and condition.next->name == "else")
-		then = condition.values();
-
-	// todo: UNMESS how?
-	if (n.has(":") /*before else: */) {
-		condition = n.to(":");
-		if (condition.has("else"))
-			condition = condition.to("else");// shouldn't happen?
-		then = n.from(":");
-	} else if (condition.has(":")) {// as child
-		then = condition.from(":");
-//		condition = condition.interpret();// compile time evaluation?!
-	}
-	Node otherwise;
-	if (n.has("else"))
-		otherwise = n["else"].values();
-	if (then.has("then"))
-		then = n.from("then");
-	if (then.has("else")) {
-		otherwise = then.from("else");
-		then = then.to("else");
-	}
-	if (n.length == 3 and otherwise.isEmpty())
-		otherwise = n[2];
-	Node *eff = new Node("if");
-	Node &ef = *eff;
-	ef.kind = expressions;
-//	ef.kind = ifStatement;
-	if (condition.length > 0)condition.setType(expressions);// so far treated as group!
-	if (then.length > 0)then.setType(expressions);
-	if (otherwise.length > 0)otherwise.setType(expressions);
-	ef["condition"] = analyze(condition);
-	ef["then"] = analyze(then);
-	ef["else"] = analyze(otherwise);
-//	condition = analyze(condition);
-//	then = analyze(then);
-//	otherwise = analyze(otherwise);
-//	ef.add(condition); breaks even with clone() why??
-//	ef.add(then);
-//	ef.add(otherwise);
-//	Node &node = ef["else"];// debug
-	Node &node = ef[2];// debug
-	return ef;
-	return *ef.clone();
-//
-//	Node condit = condition.interpret();
-//	bool condition_fulfilled = (bool) condit;
-//	if (condition.kind == reals or condition.kind == longs)
-//		condition_fulfilled = empty(condition.name) and condition.value.data or condition.name != "0";
-//	else if (condition.value.data and condition.kind == objects) // or ...
-//		error("If statements need a space after colon");
-//	if (condition_fulfilled) {
-//		if (then.name == "then") {
-//			if (then.value.data or then.children) // then={} as arg
-//				return eval(then.values());
-//			return eval(n[2]);
-//		}
-//		return eval(then);
-//	} else {
-//		if (n.has("else"))
-//			return eval(n.from("else"));
-//		if (n.length == 3 and not n.has(":"))
-//			return eval(n[2]);// else
-//		else
-//			return False;
-//	}
-}
-
 
 Node analyze(Node data, String context) {
-#ifndef RUNTIME_ONLY
-	locals.setDefault(List<String>());
-	localTypes.setDefault(List<Valtype>());
-	functionSignatures.setDefault(Signature());
-#endif
+//	long hash = data.hash();
+//	if (analyzed.has(hash))
+//		return data;
+//	analyzed.insert_or_assign(data.hash(), 1);
+
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	Type type = data.kind;
 	List<String> &localContext = locals[context];
 	if (type == keyNode) {
-		if (not localContext.has(data.name)) localContext.add(data.name);
+		if (not localContext.has(data.name))
+			localContext.add(data.name);
 		if (data.value.node /* i=ø has no node */)
 			data.value.node = analyze(*data.value.node).clone();
 	}
@@ -709,14 +689,15 @@ Node analyze(Node data, String context) {
 	Node &groupedDeclarations = groupDeclarations(data, context);
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
 	Node &grouped = groupOperators(groupedFunctions, context);
+	if (analyzed[grouped.hash()])return grouped;// done!
 	data = grouped;// temp hack
 	if (type == groups or type == objects) {// children analyzed individually, not as expression WHY?
-		Node grouped = *data.clone();
-		grouped.children = 0;
-		grouped.length = 0;
+//		Node grouped = *data.clone();
+//		grouped.children = 0;
+//		grouped.length = 0;
 		for (Node &child: data) {
-			child = analyze(child);// REPLACE with their ast? NO! todo
-			grouped.add(child);
+			child = analyze(child);// REPLACE with their ast? NO! why not? todo?
+//			grouped.add(child);
 		}
 		return grouped;
 	}
@@ -822,6 +803,7 @@ Node emit(String code) {
 	locals.insert_or_assign("main", List<String>());
 	preRegisterSignatures();// todo: reduntant to emitter and wasm_reader
 	analyzed.clear();// todo move much into outer analyze function!
+	analyzed.setDefault(0);
 	//	if(data.kind==groups) data.kind=expressions;// force top level expressions! todo: only if analyze recursive !
 	Node charged = analyze(data);
 	charged.log();
