@@ -297,6 +297,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 		Node &node = expression.children[i];
 		if (node.length)continue;// already processed
 		Node &next = expression.children[i + 1];
+		next = analyze(next);
 		if (prefixOperators.has(node.name)) {// {++x
 			node.add(next);
 			expression.replace(i, i + 1, node);
@@ -319,7 +320,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 				expression.remove(i, -1);
 			} else {
 				//#ifndef RUNTIME_ONLY
-				if (node.name.endsWith("=") and prev.kind == reference)
+				if (node.name.endsWith("=") and prev.kind == reference)// todo can remove hack?
 					locals[context].add(prev.name);
 				//#endif
 				node.add(prev);
@@ -650,10 +651,9 @@ Node &groupWhile(Node n) {
 
 
 Node analyze(Node data, String context) {
-//	long hash = data.hash();
-//	if (analyzed.has(hash))
-//		return data;
-//	analyzed.insert_or_assign(data.hash(), 1);
+	long hash = data.hash();
+	if (analyzed.has(hash))
+		return data;
 
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	Type type = data.kind;
@@ -690,16 +690,11 @@ Node analyze(Node data, String context) {
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
 	Node &grouped = groupOperators(groupedFunctions, context);
 	if (analyzed[grouped.hash()])return grouped;// done!
-	data = grouped;// temp hack
+	analyzed.insert_or_assign(grouped.hash(), 1);
 	if (type == groups or type == objects) {// children analyzed individually, not as expression WHY?
-//		Node grouped = *data.clone();
-//		grouped.children = 0;
-//		grouped.length = 0;
-		for (Node &child: data) {
-			child = analyze(child);// REPLACE with their ast? NO! why not? todo?
-//			grouped.add(child);
+		for (Node &child: grouped) {
+			child = analyze(child);// REPLACE ref with their ast ok?
 		}
-		return grouped;
 	}
 	return grouped;
 }

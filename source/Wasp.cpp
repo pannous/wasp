@@ -1107,7 +1107,8 @@ private:
 				case '=': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
-					bool add_raw = current.kind == expressions or key.kind == expressions or (current.last().kind == groups and current.length > 1);
+					bool add_raw = current.kind == expressions or key.kind == expressions or
+					               (current.last().kind == groups and current.length > 1);
 					if (is_operator(previous))
 						add_raw = true;// == *=
 					Node op = any_operator();// extend *= ...
@@ -1115,9 +1116,11 @@ private:
 						add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
 					if (op.name.length > 1)
 						add_raw = true;
+					if (current.kind == expressions)
+						add_raw = true;
 					if (add_raw) {
 						current.add(op.setType(operators)).setType(expressions);
-						continue;
+//						continue; noo why continue??
 					}
 					Node &val = *valueNode(' ', &key).clone();// applies to WHOLE expression
 					if (add_raw) {  // complex expressions are not simple maps
