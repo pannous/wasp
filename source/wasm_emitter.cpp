@@ -263,21 +263,65 @@ bool isAssignable(Node node, Node *type = 0) {
 	return true;
 }
 
-Code emitIndexWrite(Node op, String context) {
-	int base = 1024;
-	int size = 4;
-	int offset = op["offset"].value.longy * size;
-	int value = op["value"].value.longy;
+int currentStackItemSize() {
+	int size = 1;// todo char, codepoint, int , pointer …
+	if (last_type == string)size = 1;// chars for now vs codepoint!
+//	if (last_type == int16)size = 2;
+	if (last_type == int32)size = 4;
+	if (last_type == int64)size = 8;
+	if (last_type == float32)size = 4;
+	if (last_type == float64)size = 8;
+	return size;
+}
+
+Code emitIndexWrite(int offset, Node value0, String context) {
+	int base = runtime.data_segments.length;// uh, todo?
+	int size = currentStackItemSize();
+	int value = value0.value.longy;
+	if (value0.kind == strings)//todo stringcopy? currently just one char "abc"#2=B
+		value = value0.value.string->charAt(0);
+	else if (value0.kind != longs)// todooo so many cases!
+		value = emitData(value0, context);// pointer
+
 	Code store;
-	store.addConst(base + offset);
+	// calculated offset of 0 ususally points to ~6 bytes after Contents of section Data header 0100 4100 0b08
+	store.addConst(base + offset * size);
 	store.addConst(value);
-	store.add(i32_store);
-	store.add(0x02);// alignment (?)
-	store.add(0x00);// ?
+	if (size == 1)store.add(i8_store);
+	if (size == 2)store.add(i16_store);
+	if (size == 4)store.add(i32_store);
+	if (size == 8)store.add(i64_store);
+	//	The static address offset is added to the dynamic address operand
+	store.add(size > 2 ? 0x02 : 0);// alignment (?)
+	store.add(0);// extra offset (why, wasm?)
+
 	return store;
 /*  000101: 41 94 08                   | i32.const 1044
 	000104: 41 06                      | i32.const 6
     000106: 36 02 00                   | i32.store 2 0 */
+}
+
+
+// "hi"[0]="H"
+Code emitIndexWrite(Node op, String context) {// todo offset - 1 when called via #!
+	return emitIndexWrite(op["offset"].value.longy, op["value"], context);
+}
+
+// "hi"#1="H"
+Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
+	List<String> &current = locals[context];
+	String &variable = ref.name;
+	if (!current.has(variable)) {
+		current.add(variable);
+		error("variable missed by parser! "_s + variable);
+	}
+	int local_index = current.position(variable);
+	last_type = mapTypeToWasm(value);
+	localTypes[context][local_index] = last_type;
+	Code code;
+	code = code + emitValue(value, context);
+	code = code + emitIndexWrite(offset.value.longy - 1, value, context);
+	return code;
 }
 
 
@@ -286,12 +330,7 @@ Code emitIndexPattern(Node pattern, String context) {
 	if (pattern.kind != patterns and pattern.kind != longs)error("pattern expected in emitIndexPattern");
 	if (pattern.length != 1 and pattern.kind != longs)error("exactly one pattern expected in emitIndexPattern");
 	int base = runtime.data_segments.length;// uh, todo?
-	int size = 1;// todo char, codepoint, int , pointer …
-	if (last_type == string)size = 1;// chars for now vs codepoint!
-	if (last_type == int32)size = 4;
-	if (last_type == int64)size = 8;
-	if (last_type == float32)size = 4;
-	if (last_type == float64)size = 8;
+	int size = currentStackItemSize();
 	int offset = (long) pattern.first().value.longy;
 	if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
 //	if (offset > array_length)error("operator # out of bounds %d>%d"s % offset % array_length);
@@ -879,6 +918,10 @@ Code emitDeclaration(Node fun, Node &body) {
 
 
 Code emitSetter(Node node, Node &value, String context) {
+	if (node.first().name == "#") {// x#y=z
+		return emitPatternSetter(node.first().first(), node.first().last(), node.last(), context);
+	}
+	if (node.name == "=") return emitSetter(node[0], node[1], context);
 	List<String> &current = locals[context];
 	String &variable = node.name;
 	if (!current.has(variable)) {
@@ -1037,8 +1080,8 @@ Code emitBlock(Node node, String context) {
 	else
 		warn("locals consumed by arguments"); // ok in  double := it * 2; => double(it){it*2}
 	block.addByte(locals_count);
-	for (int i = 0; i < locals_count; ++i) {
-		Valtype valtype = localTypes[context][i];
+	for (int i = 0; i < locals_count; i++) {
+		Valtype valtype = int32; // todo: fill these: localTypes[context][i];
 		block.addByte(i + 1);// index
 		if (valtype == none or valtype == voids or valtype == charp or valtype == array)
 			valtype = int32;
