@@ -1023,7 +1023,7 @@ private:
 					Node object = Node().setType(Type::objects);
 					Node objectValue = valueNode('}', parent ? parent : &current.last());
 					object.addSmart(objectValue);
-//					object = object.flat();
+					object = object.flat();
 					if (asListItem)
 						current.add(object);
 					else
