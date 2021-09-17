@@ -1727,9 +1727,6 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
-	Node node1 = Node("1", 0, 0);
-	check(node1 == node1.flat());
-	assert_is("[1,2,3]", Node(1, 2, 3, 0))
 	skip(
 			parse("x='abcde';x#4='y';x#4");
 			check(result.length ==
