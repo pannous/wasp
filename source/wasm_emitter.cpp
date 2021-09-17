@@ -221,7 +221,19 @@ Code emitValue(Node node, String context);
 
 Valtype fixValtype(Valtype &valtype);
 
-bool isProperList(Node &node);
+// pure data ready to be emitted
+bool isProperList(Node &node) {
+	if (node.kind != groups and node.kind != objects) return false;
+	if (node.length < 1) return false;
+	for (Node child: node) {
+		if (child.kind != longs and child.kind != strings)// todo … evaluate?
+			return false;
+		if (child.isSetter())
+			return false;
+	}
+	return true;
+}
+
 
 Code emitArray(Node &node, String context) {
 	let code = Code();
@@ -666,7 +678,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			if (node.length > 0 and isProperList(node)) {
 				return Code().addConst(emitData(node, context));// pointer in const format!
 //				return emitArray(node, context);
-			}
+			}// else fallthough:
 		case expressions:
 			for (Node child : node) {
 				const Code &expression = emitExpression(child, context);
@@ -747,16 +759,6 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			error("unhandled node type: "s + typeName(node.kind));
 	}
 	return code;
-}
-
-// pure data ready to be emitted
-bool isProperList(Node &node) {
-	if (node.kind != groups and node.kind != objects) return false;
-	if (node.length < 1) return false;
-	for (Node child: node)
-		if (child.kind != longs and child.kind != strings)// todo … evaluate?
-			return false;
-	return true;
 }
 
 
