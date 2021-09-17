@@ -1469,6 +1469,9 @@ void testWasmString() {
 }
 
 void testGroupCascade() {
+	result = parse("x='abcde';x#4='y';x#4");
+	check(result.length == 3);
+
 	Node result = parse("{ a b c, d e f; g h i , j k l \n "
 	                    "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2}"
 	                    "{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
@@ -1727,12 +1730,9 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
-	skip(
-			parse("x='abcde';x#4='y';x#4");
-			check(result.length ==
-			      3); // ;x#4='y'; should already be grouped! easy !? thing is, (= x 'a') is represented as x(value:'a')
-			assert_emit("x='abcde';x#4='y';x#4", 'y');
-	)
+	assert_emit("x:43", 43);
+	assert_emit("x=40;y=2;x+y", 42)
+	assert_emit("x='abcde';x#4='y';x#4", 'y');
 	assert_emit("{1 4 3}#2", 4);
 	assert_emit("x=123;x is 123", true);// ok
 	assert(eval("(2+1)==(4-1)") == 1);

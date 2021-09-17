@@ -336,10 +336,16 @@ enum Opcodes {
 	i8_load = 0x2d, //== 𝟶𝚡𝟸𝙳, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
 	i16_load = 0x2f, //== 𝟶𝚡𝟸𝙳, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
 	i32_load = 0x28,// load word from i32 address
+
 	i32_store = 0x36,// store word at i32 address
-//	i32_store_int32= 0x36,
-//	i32_store_word= 0x36,
-//	i32_store_8 = 0x3a,
+	// todo : peek 65536 as float directly via opcode
+	i64_load = 0x29, // memory.peek memory.get memory.read
+	i64_store = 0x37, // memory.poke memory.set memory.write
+	i32_store_8 = 0x3A,
+	i32_store_16 = 0x3B,
+	i8_store = 0x3A,
+	i16_store = 0x3B,
+
 //	i32_store_byte = 0x3a,// store byte at i32 address
 	i32_auto = (byte) 0x41,
 	i32_const = 0x41,
@@ -404,10 +410,6 @@ enum Opcodes {
 	local_tee = 0x22,
 	global_get = 0x23,
 	global_set = 0x24,
-
-// todo : peek 65536 as float directly via opcode
-	i64_load = 0x29, // memory.peek memory.get memory.read
-	i64_store = 0x37, // memory.poke memory.set memory.write
 
 	f32_cast_to_i32_s = 0xa8,// truncation ≠ proper rounding (f32_round = 0x90)!
 	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
