@@ -331,7 +331,7 @@ Code emitIndexRead(Node op, String context) {
 	if (size == 2)load.add(i16_load);
 	if (size == 4)load.add(i32_load);
 	if (size == 8)load.add(i64_load);
-	load.add(0x02);// alignment (?)
+	load.add(size > 2 ? 0x02 : 0);// alignment (?)
 	load.add(0x00);// ?
 	return load;
 	//	i32.const 1028

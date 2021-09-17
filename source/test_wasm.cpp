@@ -513,14 +513,11 @@ void testWasmModuleExtension() {
 }
 
 
-#ifndef
-RUNTIME_ONLY
+#ifndef RUNTIME_ONLY
 // use assert_emit if runtime is not needed!! much easier to debug
-#define
-assert_run(mark, result) printf("\n%s:%d\n", __FILE__, __LINE__);check_eq(runtime_emit(mark), result);
+#define assert_run(mark, result) printf("\n%s:%d\n", __FILE__, __LINE__);check_eq(runtime_emit(mark), result);
 #else
-#define
-assert_run(a, b) skip(a)
+#define assert_run(a, b) skip(a)
 #endif
 
 void testWasmRuntimeExtension() {
@@ -603,17 +600,20 @@ void testMergeRelocate() {
 
 
 void testStringIndicesWasm() {
-assert_run("x='123';x=='123'", true);// ok
-assert_run("x='123';x is '123'", true);// ok
-assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
-assert_run("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
-assert_run("'123' + '4' is '1234'", true);// ok
-assert_run("x='123';x + '4' is '1234'", true);// ok
+	assert_emit("'abcde'#4", 'd');//
+	assert_emit("x='abcde';x#4", 'd');//
+	assert_emit("x='abcde';x#4='x';x#4", 'x');
+	assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
+	assert_run("x='123';x=='123'", true);// ok
+	assert_run("x='123';x is '123'", true);// ok
+	assert_run("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
+	assert_run("'123' + '4' is '1234'", true);// ok
+	assert_run("x='123';x + '4' is '1234'", true);// ok
 
 //	assert_emit("'world'[1]", 'o');
-assert_emit("'world'#1", 'w');
-assert_emit("'world'#2", 'o');
-assert_emit("'world'#3", 'r');
+	assert_emit("'world'#1", 'w');
+	assert_emit("'world'#2", 'o');
+	assert_emit("'world'#3", 'r');
 skip( // todo move angle syntax to test_angle
 assert_emit("char #1 in 'world'", 'o');
 assert_emit("char 1 in 'world'", 'o');

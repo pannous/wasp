@@ -1725,6 +1725,17 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
+	assert_emit("id(3*452)==452*3", 1)
+	assert_emit("452*3==id(3*452)", 1)
+	assert_emit("452*3==id 3*452", 1)
+
+	skip(
+			assert_emit("x='abcde';x#4='y';x#4", 'y');
+			parse("x='abcde';x#4='y';x#4");
+			check(result.length ==
+			      3); // ;x#4='y'; should already be grouped! easy !? thing is, (= x 'a') is represented as x(value:'a')
+	)
+
 	assert(eval("(2+1)==(4-1)") == 1);
 	assert_emit("x=123;x is 123", true);// ok
 
@@ -1741,9 +1752,9 @@ void testCurrent() { // move to tests() once OK
 //	testWasmModuleExtension();
 //	testWasmRuntimeExtension();
 #endif
-	testPaint();
-	testStringIndicesWasm();
-	testArrayIndicesWasm();
+//	testPaint();
+//	testStringIndicesWasm();
+//	testArrayIndicesWasm();
 //testUnits();
 //	testMarkMultiDeep();
 
