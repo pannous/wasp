@@ -179,6 +179,8 @@ Node *Node::end() const {
 
 // non-modifying
 Node &Node::merge(Node &other) {
+	if (kind == objects or kind == groups)
+		if (length == 0)return other;// ()+x == x
 	if (other.isNil()) {
 		return *this;
 	}
@@ -210,7 +212,8 @@ int lastChild = 1;
 bool typesCompatible(Node &one, Node &other) {
 	if (one.kind == other.kind)return true;
 	if (one.kind == objects or one.kind == groups or one.kind == patterns or one.kind == expressions)
-		return other.kind == objects or other.kind == groups or other.kind == patterns or other.kind == expressions;
+		return other.kind == objects or other.kind == groups or other.kind == patterns or other.kind == expressions or
+		       other.kind == unknown;
 	if (one.kind != keyNode and other.kind != keyNode) return false;
 	return false;
 }
@@ -306,7 +309,8 @@ bool Node::operator==(int other) {
 	if (kind == keyNode and value.node and *value.node == other)return true;
 	if (kind == strings and atoi0(value.string->data) == other)return true;
 	if (atoi0(name) == other)return true;
-	if (kind == objects and length == 1)return last() == other;
+	if (length == 1 and (kind == objects or kind == groups or kind == patterns))
+		return last() == other;
 //	if (type == objects)return value.node->numbere()==other;// WTF
 	return false;
 }
@@ -337,6 +341,7 @@ bool Node::operator==(const Node &other) {
 
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
+//	other = other.flat();// todo this.flat() too!
 	if (kind == errors)return other.kind == errors;
 	if (other.kind == errors)return kind == errors;
 
@@ -363,7 +368,6 @@ bool Node::operator==(Node &other) {
 	if (kind != strings and other.kind != strings and isEmpty() and other.isEmpty())
 		// todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
 		return true;
-	trace("2");
 
 	if (name == NIL.name.data or name == False.name.data or name == "")
 		if (other.name == NIL.name.data or other.name == False.name.data or other.name == "") {
@@ -379,6 +383,14 @@ bool Node::operator==(Node &other) {
 
 	if (other.kind == unknown and name == other.name)
 		return true; // weak criterum for dangling unknowns!! TODO ok??
+
+	if ((kind == groups or kind == objects) and length == 1 and children[0] == other)
+		return true; // (x)==x
+
+	/*Node flattened=this->flat();// too expensive? but we want (x)=x ! other way: if kind==group and length==1
+	if(flattened.hash()!=hash() and flattened==other)
+		return true;*/
+
 	if (not typesCompatible(*this, other))
 		return false;
 
@@ -402,6 +414,7 @@ bool Node::operator==(Node &other) {
 	// if ... compare fields independent of type object {}, group [] ()
 	for (int i = 0; i < length; i++) {
 		Node &field = children[i];
+		field = field.flat();// [(1),2,3] == [1,2,3]
 		Node &val = other.children[i];
 		if (field != val and !empty(field.name))
 			val = other[field.name];
@@ -478,7 +491,7 @@ Node Node::operator+(Node other) {
 		return Node(String(value.longy) + other.value.string);
 //	if(type==floats and other.type==strings)
 //		return Node(value.real + other.value.string);
-	if (kind == objects)
+	if (kind == objects or kind == groups /*or kind == patterns*/)
 		return merge(other);
 	if (other.kind == objects)
 		return other.insert(*this, 0);
