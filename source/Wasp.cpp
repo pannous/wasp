@@ -32,7 +32,8 @@ char *current = (char *) HEAP_OFFSET;
 
 bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as expressions operator  WHY would we keep it again??
 
-chars operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "or", "|", "and", "&", "and",
+chars operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "or", "|",
+                          "and", "&", "and",
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
                           "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
                           "from", "peek", "poke", "#", "$", 0, 0, 0, 0}; // "while" ...
@@ -43,6 +44,7 @@ List<chars> operator_list;
 #else
 List<chars> operator_list(operator_list0);
 #endif
+
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
 	if (ch == '#')return false;// size/count/length
@@ -636,7 +638,8 @@ private:
 		if (ch >= '0' and ch <= '9')return numbero();
 		if (is_operator(ch))return any_operator();
 		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
-		error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) + String((char) text[at + 2]));
+		error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
+		      String((char) text[at + 2]));
 		return NIL;
 	}
 
@@ -1140,24 +1143,27 @@ private:
 					}
 					// closing ' ' handled above
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
-					if (current.grouper != ch and current.length > 1) {
-						Node neu;// wrap
-						neu.kind = groups;
-						neu.parent = parent;
-//						neu.grouper = ch;
-						neu.add(current);
-						current = neu;
-						current.grouper = ch;
-						char closer = ch;// need to keep troughout loop!
-						int i = 0;
-//						closing(ch, closer) and not closing(ch, close) and ch!='}' and ch!=')' and ch!=']' and ch!=0
-						while (ch == closer) {
-							proceed();
-							Node element = valueNode(closer);// todo stop copying!
-							current.add(element.clone());
+					if (current.grouper != ch) {// and current.length > 1
+						if (current.length > 1) {// x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
+							Node neu;// wrap
+							neu.kind = groups;
+							neu.parent = parent;
+							//						neu.grouper = ch;
+							neu.add(current);
+							current = neu;
+							current.grouper = ch;
+							char closer = ch;// need to keep troughout loop!
+							int i = 0;
+							//						closing(ch, closer) and not closing(ch, close) and ch!='}' and ch!=')' and ch!=']' and ch!=0
+							while (ch == closer) {
+								proceed();
+								Node element = valueNode(closer);// todo stop copying!
+								current.add(element.clone());
+							}
+							break;
 						}
-						break;
-					}// else fallthough!
+					}
+					// else fallthough!
 					current.grouper = ch;
 				}
 				case ' ': // possibly significant whitespace not consumed by white()
@@ -1188,7 +1194,9 @@ private:
 
 		bool keepBlock = close == '}';
 		Node &result = current.flat();
-		return *result.clone();
+		return *result.
+
+				clone();
 	};
 //	int $parent{};
 };
@@ -1260,7 +1268,9 @@ void handler(int sig) {
 //}
 
 #ifndef NO_TESTS // RUNTIME_ONLY
+
 #import "tests.cpp"
+
 #endif
 
 Node run(String source) {
