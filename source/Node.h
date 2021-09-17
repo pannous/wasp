@@ -324,8 +324,9 @@ public:
 		}
 	}
 
-	long hash() {// todo could conflict on memory reuse, random would be better, but much more expensive!
-		if (not _hash) _hash = random();// (long) (void *) this;
+	long hash() {
+		static int _object_count = 1;
+		if (not _hash) _hash = _object_count++;// random();//  expensive! //  (long) (void *) this; could conflict on memory reuse
 		return _hash;
 	}
 

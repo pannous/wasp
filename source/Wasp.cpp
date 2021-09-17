@@ -669,14 +669,15 @@ private:
 		// {a:1 b:2} vs { x = add 1 2 }
 		Node expressionas;
 		// set kind = expressions only if it contains operator, otherwise keep it as list!!!
-//		expressionas.kind = expressions;
 		expressionas.add(node);
 		if (stop_at_space and ch == ' ')return *expressionas.clone();
 		white();
 		while (ch and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
 			node = symbol();// including operators `=` ...
-			if (is_known_functor(node))
+			if (is_known_functor(node)) {
 				node.kind = operators;
+				expressionas.kind = expressions;
+			}
 			expressionas.add(&node);
 			white();
 		}

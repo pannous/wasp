@@ -758,15 +758,26 @@ void preRegisterSignatures() {
 	functionSignatures["concat"] = Signature().add(charp).add(charp).returns(charp).runtime();// chars to be precise
 }
 
+void clearContext() {
+	globals.clear();
+	locals.clear();
+	locals.setDefault(List<String>());
+	localTypes.clear();
+	localTypes.setDefault(List<Valtype>());
+	declaredFunctions.clear();
+	functionSignatures.clear();
+	functionSignatures.setDefault(Signature());
+	locals.insert_or_assign("main", List<String>());
+	preRegisterSignatures();// todo: reduntant to emitter and wasm_reader
+	analyzed.clear();// todo move much into outer analyze function!
+	analyzed.setDefault(0);
+	//	if(data.kind==groups) data.kind=expressions;// force top level expressions! todo: only if analyze recursive !
+}
 
 int runtime_emit(String prog) {
-	locals.clear();
-	localTypes.clear();
+	clearContext();
 	functionIndices.clear();
-	functionSignatures.clear();
 	functionIndices.setDefault(-1);
-	functionSignatures.setDefault(Signature());
-	preRegisterSignatures();
 	Module runtime = read_wasm("wasp.wasm");
 //	functionIndices["print"]=functionIndices["logs"]  print default is print(Node), KEEP IT!!
 	Node charged = analyze(parse(prog));
@@ -792,19 +803,7 @@ Node emit(String code) {
 	return data;
 #else
 	data.log();
-	globals.clear();
-	locals.clear();
-	locals.setDefault(List<String>());
-	localTypes.clear();
-	localTypes.setDefault(List<Valtype>());
-	declaredFunctions.clear();
-	functionSignatures.clear();
-	functionSignatures.setDefault(Signature());
-	locals.insert_or_assign("main", List<String>());
-	preRegisterSignatures();// todo: reduntant to emitter and wasm_reader
-	analyzed.clear();// todo move much into outer analyze function!
-	analyzed.setDefault(0);
-	//	if(data.kind==groups) data.kind=expressions;// force top level expressions! todo: only if analyze recursive !
+	clearContext();
 	Node charged = analyze(data);
 	charged.log();
 	Code binary = emit(charged);
@@ -886,9 +885,15 @@ float precedence(String name) {
 	if (eq(name, "≤"))return 6.5;
 	if (eq(name, "≈"))return 6.5;
 	if (eq(name, "=="))return 6.6;
+	if (eq(name, "is"))return 6.6; // careful, use 'be' for := assignment
 	if (eq(name, "eq"))return 6.6;
 	if (eq(name, "equals"))return 6.6;
-	if (eq(name, "is"))return 6.6; // careful, could be :=
+	if (eq(name, "is not"))return 6.6;// ambiguity: a == !b vs a != b
+	if (eq(name, "isnt"))return 6.6;
+	if (eq(name, "isn't"))return 6.6;
+	if (eq(name, "equal"))return 10;
+	if (eq(name, "≠"))return 10;
+	if (eq(name, "!="))return 10;
 
 	if (eq(name, "and"))return 7.1;
 	if (eq(name, "&&"))return 7.1;
@@ -903,10 +908,6 @@ float precedence(String name) {
 	if (name.in(function_list))// f 1 > f 2
 		return 8;// 1000;// function calls outmost operation todo? add 3*square 4+1
 
-	if (eq(name, "≠"))return 10;
-	if (eq(name, "equals"))return 10;
-	if (eq(name, "equal"))return 10;
-	if (eq(name, "!="))return 10;
 
 	if (eq(name, "⇒"))return 11; // lambdas
 	if (eq(name, "=>"))return 11;
@@ -916,7 +917,8 @@ float precedence(String name) {
 //	if (eq(name, ":"))return 12;// construction
 	if (eq(name, "="))return 12;// declaration
 	if (eq(name, ":="))return 13;
-	if (eq(name, "is"))return 13;// careful, could be == (6.6)
+	if (eq(name, "be"))return 13;// counterpart 'is' for ==
+//	if (eq(name, "is"))return 13;// careful, could be == (6.6)
 
 	if (eq(name, "else"))return 13.09;
 	if (eq(name, "then"))return 13.15;
