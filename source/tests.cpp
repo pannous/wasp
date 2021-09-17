@@ -730,7 +730,9 @@ void testLists() {
 	assert_equals(result.length, 3);
 	assert(result[2] == 3);
 	assert(result[0] == 1);
-	assert(result[0] == "1");
+	skip(
+			assert(result[0] == "1");// autocast
+	)
 //	assert_is("[1,2,3]",1);
 }
 
@@ -1009,8 +1011,8 @@ void testRootLists() {
 	assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
 	assert_is("[1 2 3]", Node(1, 2, 3, 0))
 	assert_is("[a b c]", Node("a", "b", "c", 0))
-	assert_is("[1,2,3]", Node(1, 2, 3, 0).setType(patterns));
 	assert_is("[1,2,3]", Node(1, 2, 3, 0))
+	assert_is("[1,2,3]", Node(1, 2, 3, 0).setType(patterns));
 	assert_is("[a,b,c]", Node("a", "b", "c", 0))
 	assert_is("[1;2;3]", Node(1, 2, 3, 0))
 	assert_is("[a;b;c]", Node("a", "b", "c", 0))
@@ -1725,22 +1727,20 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
-	assert_emit("id(3*452)==452*3", 1)
-	assert_emit("452*3==id(3*452)", 1)
-	assert_emit("452*3==id 3*452", 1)
-
+	Node node1 = Node("1", 0, 0);
+	check(node1 == node1.flat());
+	assert_is("[1,2,3]", Node(1, 2, 3, 0))
 	skip(
-			assert_emit("x='abcde';x#4='y';x#4", 'y');
 			parse("x='abcde';x#4='y';x#4");
 			check(result.length ==
 			      3); // ;x#4='y'; should already be grouped! easy !? thing is, (= x 'a') is represented as x(value:'a')
+			assert_emit("x='abcde';x#4='y';x#4", 'y');
 	)
-
-	assert(eval("(2+1)==(4-1)") == 1);
+	assert_emit("{1 4 3}#2", 4);
 	assert_emit("x=123;x is 123", true);// ok
+	assert(eval("(2+1)==(4-1)") == 1);
 
 //	data_mode= false; // expect code!
-	assert_emit("{1 4 3}#2", 4);
 	assert_emit("x=(1 4 3);x#2", 4);
 //	assert_emit("x={1 4 3};x#2=5;x#2", 5);
 //	assert_emit("x={1 4 3};x[1]", 4);
