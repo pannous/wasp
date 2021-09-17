@@ -23,7 +23,7 @@ enum Type {// todo: merge Node.kind with Node.class(?)
 	strings,
 	codepoints,
 	arrays, // Node[] vs any[]? vs
-	buffers, // int[]
+	buffers = 30, // int[]
 	reals,
 	longs, // the signature of parameters/variables is independent!
 //	ints, // use longy field, but in wasm longs are pointers!
