@@ -130,7 +130,7 @@ chars ras[] = {"=", "?:", "+=", "++:", 0};
 List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++:", 0};// a=b=1 == a=(b=1) => a=1
 List<chars> prefixOperators = {"not", "!", "√", "-…", "--…", "++…", "+…", "~", "*…", "&…", "sizeof", "new", "delete[]"};
 List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", "¹", "²", "³", "…%", "％", "﹪", "٪",
-                               "‰"};// modulo % ≠ ％ percent
+							   "‰"};// modulo % ≠ ％ percent
 // todo: norm all those unicode variants first!
 // ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
 
@@ -436,18 +436,18 @@ Node &groupFunctions(Node &expressiona) {
 		if (name == "while") {
 			// todo: move into groupWhile
 			if (node.length == 2) {
-				node[0] = analyze(node[0].setType(expression));// what if it is raw data though??
-				node[1] = analyze(node[1].setType(expression));
-				continue;// all good (right?)
+				node[0] = analyze(node[0]);
+				node[1] = analyze(node[1]);
+				continue;// all good
 			}
 			if (node.length == 1) {// while()… or …while()
-				node[0] = analyze(node[0].setType(expression).flat());
+				node[0] = analyze(node[0]);
 				Node then = expressiona.from("while");
 				node.add(analyze(then.setType(expression, false).flat()).clone());
 				expressiona.remove(i + 1, i + then.length - 1);
 				continue;
 			} else {
-				Node iff = groupWhile(expressiona.from("while"));
+				Node &iff = groupWhile(expressiona.from("while"));
 				Node &last = iff.last();
 				Node *next = last.next;
 				int j = expressiona.lastIndex(next) - 1;
@@ -474,7 +474,7 @@ Node &groupFunctions(Node &expressiona) {
 			node = analyze(ok);
 			continue;// already done how
 		}
-
+		if (minArity == 0)continue;
 		Node rest;
 		if (i + 1 < expressiona.length and expressiona[i + 1].kind == groups) {// f(x)
 			// todo f (x) (y) (z)
@@ -640,10 +640,10 @@ Node &groupWhile(Node n) {
 
 	Node *whilo = new Node("while");// regroup cleanly
 	Node &ef = *whilo;
-	ef.kind = expression;
+	ef.kind = expression;// todo no longer functor?
 	//	ef.kind = ifStatement;
-	if (condition.length > 0)condition.setType(expression);// so far treated as group!
-	if (then.length > 0)then.setType(expression);
+	//	if (condition.length > 0)condition.setType(expression);// so far treated as group! todo: expression should be ok even if it's group!
+//	if (then.length > 0)then.setType(expression);// NO! it CAN BE A GROUP!, e.g. while(i++){log(1);log(2);}
 //	ef.add(analyze(condition).clone());
 //	ef.add(analyze(then).clone());
 //	ef.length = 2;
@@ -651,6 +651,7 @@ Node &groupWhile(Node n) {
 	ef["then"] = analyze(then);
 	Node condition1 = ef[0].values();// debug
 	Node then1 = ef[1].values();
+	analyzed[ef.hash()] = 1;
 	return ef;
 }
 
@@ -663,6 +664,10 @@ Node analyze(Node code, String context) {
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	Type type = code.kind;
 	List<String> &localContext = locals[context];
+	if (type == functor) {
+		if (code.name == "while")return groupWhile(code);
+		if (code.name == "if")return groupIf(code);
+	}
 	if (type == keyNode) {
 		if (not localContext.has(code.name))
 			localContext.add(code.name);
@@ -729,9 +734,9 @@ void preRegisterSignatures() {
 	// ORDER MATTERS: will be used for functionIndices later!
 
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
-	functionSignatures.insert_or_assign("logi", Signature().add(int32).returns(voids));
-	functionSignatures.insert_or_assign("logf", Signature().add(float32).returns(voids));
-	functionSignatures.insert_or_assign("logi", Signature().add(charp).returns(voids));
+	functionSignatures.insert_or_assign("logi", Signature().import().add(int32).returns(voids));
+	functionSignatures.insert_or_assign("logf", Signature().import().add(float32).returns(voids));
+	functionSignatures.insert_or_assign("logs", Signature().import().add(charp).returns(voids));
 	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
 	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// scaffold until parsed
 	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));// scaffold until parsed
@@ -739,15 +744,13 @@ void preRegisterSignatures() {
 	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));// scaffold until parsed
 	// todo: long + double !
 	// imports
-	functionSignatures["logi"] = Signature().add(i32t).import();
-	functionSignatures["logf"] = Signature().add(f32t).import();
-	functionSignatures["logs"] = Signature().add(charp).returns(voids).import();
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 	functionSignatures["main"] = Signature().returns(i32t);;
 	functionSignatures["print"] = functionSignatures["logs"];// todo: for now, later it needs to distinguish types!!
-	functionSignatures["init_graphics"].import().returns(pointer);// surface
 	functionSignatures["requestAnimationFrame"].import().returns(voids);// paint surface
-
+	functionSignatures.insert_or_assign("init_graphics", Signature().import().returns(pointer));// surface
+//	functionSignatures["init_graphics"].import().returns(pointer);// BUUUUG!
+//	if(functionSignatures["init_graphics"].return_type!=pointer)error("WWWAAA");
 	// builtins
 	functionSignatures["nop"] = Signature().builtin();
 	functionSignatures["id"] = Signature().add(i32t).returns(i32t).builtin();
@@ -768,7 +771,6 @@ void clearContext() {
 	functionSignatures.clear();
 	functionSignatures.setDefault(Signature());
 	locals.insert_or_assign("main", List<String>());
-	preRegisterSignatures();// todo: reduntant to emitter and wasm_reader
 	analyzed.clear();// todo move much into outer analyze function!
 	analyzed.setDefault(0);
 	//	if(data.kind==groups) data.kind=expression;// force top level expression! todo: only if analyze recursive !
@@ -779,6 +781,7 @@ int runtime_emit(String prog) {
 	functionIndices.clear();
 	functionIndices.setDefault(-1);
 	Module runtime = read_wasm("wasp.wasm");
+	preRegisterSignatures();
 //	functionIndices["print"]=functionIndices["logs"]  print default is print(Node), KEEP IT!!
 	Node charged = analyze(parse(prog));
 	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
@@ -804,6 +807,7 @@ Node emit(String code) {
 #else
 	data.log();
 	clearContext();
+	preRegisterSignatures();
 	Node charged = analyze(data);
 	charged.log();
 	Code binary = emit(charged);

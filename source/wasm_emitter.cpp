@@ -284,8 +284,19 @@ Code emitIndexWrite(int offset, Node value0, String context) {
 		value = emitData(value0, context);// pointer
 
 	Code store;
+	if (offset < 0) {
+//		error("negative offset in array access");
+// hack to calculate offset on stack!
+		if (size > 1) {
+			store.addConst(size);
+			store.add(i32_mul);// offset * size
+			store.addConst(base);
+			store.add(i32_add);// offset * size + base
+		}
+	} else {
+		store.addConst(offset * size);
+	}
 	// calculated offset of 0 ususally points to ~6 bytes after Contents of section Data header 0100 4100 0b08
-	store.addConst(base + offset * size);
 	store.addConst(value);
 	if (size == 1)store.add(i8_store);
 	if (size == 2)store.add(i16_store);
@@ -294,6 +305,7 @@ Code emitIndexWrite(int offset, Node value0, String context) {
 	//	The static address offset is added to the dynamic address operand
 	store.add(size > 2 ? 0x02 : 0);// alignment (?)
 	store.add(0);// extra offset (why, wasm?)
+//	store.add(base);// extra offset (why, wasm?)
 
 	return store;
 /*  000101: 41 94 08                   | i32.const 1044
@@ -320,7 +332,11 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 	localTypes[context][local_index] = last_type;
 	Code code;
 	code = code + emitValue(value, context);
-	code = code + emitIndexWrite(offset.value.longy - 1, value, context);
+	if (offset.kind == reference)
+		code = code + emitValue(offset, context);
+	if (offset.kind == longs)
+		code = code.addConst(offset.value.longy - 1);
+	code = code + emitIndexWrite(-1, value, context);
 	return code;
 }
 
@@ -553,6 +569,8 @@ Code emitValue(Node node, String context) {
 			return emitIndexPattern(node, context);// todo: make sure to have something indexable on stack!
 		case expression:
 //			error("expression should not be put on stack (yet) (maybe serialize later)")
+		case call:
+			return emitCall(node, context);// yep should give a value ok
 		default:
 			error("emitValue unknown type: "s + typeName(node.kind));
 	}

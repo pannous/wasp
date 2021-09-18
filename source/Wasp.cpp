@@ -981,6 +981,10 @@ private:
 		return false;
 	}
 
+	bool isFunctor(Node &node) {
+		return node.name.in(functor_list);
+	}
+
 // ":" is short binding a b:c d == a (b:c) d
 // "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
@@ -1181,8 +1185,9 @@ private:
 					Node node = expressione(close == ' ');//word();
 					if (precedence(node) and ch != ':') {
 						node.kind = operators;
-						if (node.name != "while" and node.name != "if")
-							current.kind = expression;
+						if (isFunctor(node))
+							node.kind = functor;// todo: earlier
+						else current.kind = expression;
 					}
 					if (node.length > 1 and addFlat) {
 						for (Node arg:node)current.add(arg);
