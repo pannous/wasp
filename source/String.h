@@ -728,6 +728,10 @@ public:
 		return indexOf(string) >= 0;
 	}
 
+	bool contains(char chr) {
+		return indexOf(chr) >= 0;
+	}
+
 	String &replace(chars string, chars with) {// first only!
 		int i = this->indexOf(string);
 		if (i >= 0) {
