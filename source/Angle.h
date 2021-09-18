@@ -20,7 +20,7 @@ extern Map<String /* implicit indices 0,1,2,… */, Node * /* compile-time modif
 
 //List<String> collectOperators(Node &expression);// test/debug only
 Node parse(String code);// wasp -> data  // this is the pure Wasp part
-Node analyze(Node data, String context = "main");// wasp -> code  // build ast via operators
+Node analyze(Node code, String context = "main");// wasp -> code  // build ast via operators
 Node eval(String code);// wasp -> code -> data   // interpreter mode vs:
 Node emit(String code);//  wasp -> code -> wasm  // to debug currently same as:
 Node run(String source);// wasp -> code -> wasm() -> data

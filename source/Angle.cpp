@@ -334,7 +334,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 				    op[0] != '>' and op.endsWith("=")) {// += etc
 					node.name = String(op.data[0]);
 					Node *setter = prev.clone();
-					setter->setType(assignment);
+//					setter->setType(assignment); //
 					setter->value.node = node.clone();
 					node = *setter;
 				}
@@ -443,7 +443,7 @@ Node &groupFunctions(Node &expressiona) {
 			if (node.length == 1) {// while()… or …while()
 				node[0] = analyze(node[0].setType(expression).flat());
 				Node then = expressiona.from("while");
-				node.add(analyze(then.setType(expression).flat()).clone());
+				node.add(analyze(then.setType(expression, false).flat()).clone());
 				expressiona.remove(i + 1, i + then.length - 1);
 				continue;
 			} else {
@@ -655,43 +655,43 @@ Node &groupWhile(Node n) {
 }
 
 
-Node analyze(Node data, String context) {
-	long hash = data.hash();
+Node analyze(Node code, String context) {
+	long hash = code.hash();
 	if (analyzed.has(hash))
-		return data;
+		return code;
 
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
-	Type type = data.kind;
+	Type type = code.kind;
 	List<String> &localContext = locals[context];
 	if (type == keyNode) {
-		if (not localContext.has(data.name))
-			localContext.add(data.name);
-		if (data.value.node /* i=ø has no node */)
-			data.value.node = analyze(*data.value.node).clone();
+		if (not localContext.has(code.name))
+			localContext.add(code.name);
+		if (code.value.node /* i=ø has no node */)
+			code.value.node = analyze(*code.value.node).clone();
 	}
 	if (type == longs or type == strings or type == reals or type == bools or type == codepoints or type == arrays or
 	    type == buffers) {
-		if (isVariable(data) and not localContext.has(data.name))
-			localContext.add(data.name);// need to pre-register before emitBlock!
-		return data;// nothing to be analyzed!
+		if (isVariable(code) and not localContext.has(code.name))
+			localContext.add(code.name);// need to pre-register before emitBlock!
+		return code;// nothing to be analyzed!
 	}
 
-	bool is_function = isFunction(data);
+	bool is_function = isFunction(code);
 	if (type == operators or type == call or is_function) {
-		if (is_function)data.kind = call;
-		Node grouped = groupOperators(data, context);// outer analysis id(3+3) => id(+(3,3))
+		if (is_function)code.kind = call;
+		Node grouped = groupOperators(code, context);// outer analysis id(3+3) => id(+(3,3))
 		for (Node &child: grouped) {// inner analysis while(i<3){i++}
 //			if (child.kind == groups or child.kind == objects)// what if applying to real list though ?f([1,2,3])
 //				child.setType(expression);
 			const Node &analyze1 = analyze(child);
 			child = analyze1;// REPLACE with their ast? NO! todo
 		}
-		if (functionSignatures.has(data.name))
-			functionSignatures[data.name].is_used = true;
+		if (functionSignatures.has(code.name))
+			functionSignatures[code.name].is_used = true;
 		return grouped;
 	}
 
-	Node &groupedDeclarations = groupDeclarations(data, context);
+	Node &groupedDeclarations = groupDeclarations(code, context);
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
 	Node &grouped = groupOperators(groupedFunctions, context);
 	if (analyzed[grouped.hash()])return grouped;// done!
