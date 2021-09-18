@@ -696,6 +696,8 @@ public:
 
 	// internal usage
 	char operator[](int i) {
+		if (!data or i < 0 or i > length)
+			return 0;// -1? todo: throw?
 		return data[i];
 	}
 	// expensive
