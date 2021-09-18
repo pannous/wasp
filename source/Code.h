@@ -336,8 +336,9 @@ enum Opcodes {
 	i8_load = 0x2d, //== 𝟶𝚡𝟸𝙳, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
 	i16_load = 0x2f, //== 𝟶𝚡𝟸𝙳, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
 	i32_load = 0x28,// load word from i32 address
-
+	f32_load = 0x2A,
 	i32_store = 0x36,// store word at i32 address
+	f32_store = 0x38,
 	// todo : peek 65536 as float directly via opcode
 	i64_load = 0x29, // memory.peek memory.get memory.read
 	i64_store = 0x37, // memory.poke memory.set memory.write
@@ -415,6 +416,7 @@ enum Opcodes {
 	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
 	f32_convert_i32_s = 0xB2,// convert FROM i32
 	i32_cast_to_f32_s = 0xB2,
+	f32_from_int32 = 0xB2,
 
 	i32_reinterpret_f32 = 0xbc, // f32->i32 bit wise reinterpret != cast/trunc/convert
 	f32_reinterpret_i32 = 0xBE, // i32->f32

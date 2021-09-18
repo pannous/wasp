@@ -32,11 +32,13 @@ char *current = (char *) HEAP_OFFSET;
 
 bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
 
-chars operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "or", "|",
-                          "and", "&", "and", "to", "…", "...", "..<" /*range*/,
-                          "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
-                          "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
-                          "from", "peek", "poke", "#", "$", 0, 0, 0, 0}; // "while" ...
+chars operator_list0[] = {"+", "-",
+                          "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠", "not",
+                          "|",
+                          "and", "or", "&", "++", "--", "to", "xor", "be", "…", "...", "..<" /*range*/,
+                          "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "×", "⋅", "⋆", "÷",
+                          "^", "√", "∈", "∉", "⊂", "⊃", "in", "of",
+                          "from", "floor", "round", "ceil", "peek", "poke", "#", "$", 0, 0, 0, 0}; // "while" ...
 //∧  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
 // ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
 #ifdef WASI
@@ -372,8 +374,10 @@ private:
 			}
 		}
 
-		if (string.contains("."))
-			return Node(atof0(string.data));
+		if (string.contains(".")) {
+			if (sign == '-') return Node(-atof0(string.data));
+			else return Node(atof0(string.data));
+		}
 		if (sign == '-') {
 			number0 = -atoi0(string.data);
 		} else {
@@ -985,6 +989,15 @@ private:
 		return node.name.in(functor_list);
 	}
 
+	bool is_grouper(codepoint previous) {
+		codepoint *point = grouper_list;
+		do {
+			if (previous == *point)
+				return true;
+		} while (*point++);
+		return false;
+	}
+
 // ":" is short binding a b:c d == a (b:c) d
 // "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
@@ -1069,8 +1082,10 @@ private:
 				case '-':
 				case '+':
 				case '.':
-					if ((isDigit(next) and previous == ' ') or previous == 0)
+					if (isDigit(next) and (previous == 0 or is_grouper(previous) or is_operator(previous)))
 						current.addSmart(numbero());// (2+2) != (2 +2) !!!
+					else if (ch == '-' and next == '.')
+						current.addSmart(numbero()); // -.9 -0.9 border case :(
 					else {
 						Node *op = any_operator().clone();
 						current.add(op);

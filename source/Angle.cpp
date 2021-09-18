@@ -102,25 +102,6 @@ String extractFunctionName(Node &node) {
 // todo "=" ":" handled differently?
 
 
-List<String> collectOperators(Node &expression) {
-	List<String> operators;
-	for (Node &op : expression) {
-		if (not op.name)continue;
-		if (operator_list.has(op.name))
-//			if (op.name.in(operator_list))
-			operators.add(op.name);
-		else if (op.name.endsWith("="))// += etc
-			operators.add(op.name);
-//		if (op.name.in(function_list))
-//			operators.add(op.name);
-//		if (op.name.in(functor_list))
-//			operators.add(op.name);
-	}
-	auto by_precedence = [](String &a, String &b) { return precedence(a) > precedence(b); };
-//	auto by_precedence = [](String &a) { return -precedence(a); };
-	operators.sort(by_precedence);
-	return operators;
-}
 
 //https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
 //List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
@@ -128,8 +109,8 @@ chars ras[] = {"=", "?:", "+=", "++:", 0};
 //List<chars> rightAssociatives = List(ras);
 #ifndef WASM
 List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++:", 0};// a=b=1 == a=(b=1) => a=1
-List<chars> prefixOperators = {"not", "!", "√", "-…", "--…", "++…", "+…", "~", "*…", "&…", "sizeof", "new", "delete[]"};
-List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", "¹", "²", "³", "…%", "％", "﹪", "٪",
+List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…", "+…"/*useless!*/, "~…", "*…", "&…", "sizeof", "new", "delete[]"};
+List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³","ⁿ", "…%", "％", "﹪", "٪",
 							   "‰"};// modulo % ≠ ％ percent
 // todo: norm all those unicode variants first!
 // ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
@@ -156,6 +137,31 @@ List<chars> function_operators;
 List<chars> key_pair_operators;
 //no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
 #endif
+
+
+List<String> collectOperators(Node &expression) {
+	List<String> operators;
+	for (Node &op : expression) {
+		if (not op.name)continue;
+		if (operator_list.has(op.name))
+			//			if (op.name.in(operator_list))
+			operators.add(op.name);
+		else if (op.name.endsWith("="))// += etc
+			operators.add(op.name);
+		else if (prefixOperators.has(op.name))
+			operators.add(op.name);
+		else if (suffixOperators.has(op.name))
+			operators.add(op.name);
+		//		if (op.name.in(function_list))
+		//			operators.add(op.name);
+		//		if (op.name.in(functor_list))
+		//			operators.add(op.name);
+	}
+	auto by_precedence = [](String &a, String &b) { return precedence(a) > precedence(b); };
+	//	auto by_precedence = [](String &a) { return -precedence(a); };
+	operators.sort(by_precedence);
+	return operators;
+}
 
 Node &groupFunctions(Node &expressiona);
 
@@ -286,6 +292,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 //	analyzed.insert_or_assign(expression.hash(), 1);
 //	Node &expression = *expression0.clone();// modified in place!
 //	if(expression0.name=="if")return expression;// hack
+	List<String> &localContext = locals[context];
 	List<String> operators = collectOperators(expression);
 	String last = "";
 	int last_position = 0;
@@ -303,16 +310,18 @@ Node &groupOperators(Node &expression, String context = "main") {
 		if (node.length)continue;// already processed
 		Node &next = expression.children[i + 1];
 		next = analyze(next);
-		if (prefixOperators.has(node.name)) {// {++x
+		String &name = node.name;
+		if (prefixOperators.has(name)) {// {++x
 			node.add(next);
 			expression.replace(i, i + 1, node);
 		} else {
 			Node &prev = expression.children[i - 1];
-			if (suffixOperators.has(node.name)) { // x²
+			if (suffixOperators.has(name)) { // x²
+				if (name == "ⁿ")functionSignatures["powf"].is_used = true;
 				if (i < 1)error("suffix operator misses left side");
 				node.add(prev);
 				expression.replace(i - 1, i, node);
-			} else if (node.name.in(function_list)) {// handled above!
+			} else if (name.in(function_list)) {// handled above!
 				while (i++ < node.length)
 					node.add(expression.children[i]);
 				expression.replace(i, node.length, node);
@@ -325,14 +334,14 @@ Node &groupOperators(Node &expression, String context = "main") {
 				expression.remove(i, -1);
 			} else {
 				//#ifndef RUNTIME_ONLY
-				if (node.name.endsWith("=") and prev.kind == reference)// todo can remove hack?
-					if (!locals[context].has(prev.name)) locals[context].add(prev.name);
+				if (name.endsWith("=") and prev.kind == reference)// todo can remove hack?
+					if (!localContext.has(prev.name)) localContext.add(prev.name);
 				//#endif
 				node.add(prev);
 				node.add(next);
 				if (op.length > 1 and op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and
 				    op[0] != '>' and op.endsWith("=")) {// += etc
-					node.name = String(op.data[0]);
+					name = String(op.data[0]);
 					Node *setter = prev.clone();
 //					setter->setType(assignment); //
 					setter->value.node = node.clone();
@@ -596,6 +605,7 @@ Node analyze(Node code, String context) {
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	Type type = code.kind;
 	List<String> &localContext = locals[context];
+	if (localContext.size() == 0)localContext.add("result");
 	if (type == functor) {
 		if (code.name == "while")return groupWhile(code);
 		if (code.name == "if")return groupIf(code);
@@ -606,9 +616,8 @@ Node analyze(Node code, String context) {
 		if (code.value.node /* i=ø has no node */)
 			code.value.node = analyze(*code.value.node).clone();
 	}
-	if (type == longs or type == strings or type == reals or type == bools or type == codepoints or type == arrays or
-	    type == buffers) {
-		if (isVariable(code) and not localContext.has(code.name))
+	if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers) {
+		if (isVariable(code) and not localContext.has(code.name)) // or type == codepoints …
 			localContext.add(code.name);// need to pre-register before emitBlock!
 		return code;// nothing to be analyzed!
 	}
@@ -668,6 +677,10 @@ void preRegisterSignatures() {
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 	functionSignatures.insert_or_assign("logi", Signature().import().add(int32).returns(voids));
 	functionSignatures.insert_or_assign("logf", Signature().import().add(float32).returns(voids));
+	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));
+//	functionSignatures.insert_or_assign("powl", Signature().import().add(int64).returns(int64));
+	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
+	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
 	functionSignatures.insert_or_assign("logs", Signature().import().add(charp).returns(voids));
 	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
 	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// scaffold until parsed
@@ -759,6 +772,8 @@ chars function_list[] = {"square", "log", "puts", "print", "printf", "println", 
                          "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
                          0};// MUST END WITH 0, else BUG
 chars functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
+codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0, 0, 0};
+
 
 float precedence(Node &operater) {
 	String &name = operater.name;
