@@ -958,6 +958,7 @@ Code emitCall(Node &fun, String context) {
 
 Code cast(Valtype from, Valtype to) {
 	Code casted;
+	if (from == array and to == charp)return casted;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
 	if (from == i32t and to == charp)return casted;// assume i32 is a pointer here. todo?
 	if (from == i32t and to == float32) casted.addByte(i32_cast_to_f32_s);
 	else if (from == float32 and to == i32t) casted.addByte(f32_cast_to_i32_s);
