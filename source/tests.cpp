@@ -1730,23 +1730,8 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
-	assert_emit("logs('ok');(1 4 3)#2", 4);
-	assert_emit("x={1 2 3}; x#2=4;x#1=1;x#2", 4);
-	assert_emit("x:43", 43);
-	assert_emit("x=40;y=2;x+y", 42)
-	assert_emit("x='abcde';x#4='y';x#4", 'y');
-	assert_emit("x={1 4 3}; x#2", 4);
-	assert_emit("x=(1 4 3); x#2", 4);
-	assert_emit("(1 4 3)#2", 4);
-	assert_emit("logs  \"ok\"; (1 4 3)#2", 4);
-	assert_emit("{1 4 3}#2", 4);
-	assert_emit("x=123;x is 123", true);// ok
-	assert(eval("(2+1)==(4-1)") == 1);
-
-//	data_mode= false; // expect code!
-	assert_emit("x=(1 4 3);x#2", 4);
-//	assert_emit("x={1 4 3};x#2=5;x#2", 5);
-//	assert_emit("x={1 4 3};x[1]", 4);
+	assert_emit("x=3;x*=3", 9)
+	assert_emit("x={1 4 3};x[1]", 4);
 //	assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
 //	testPaintWasm();
 
