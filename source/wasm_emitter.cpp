@@ -823,6 +823,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			if (local_index < 0) { // collected before, so can't be setter here
 				if (functionCodes.has(name) or functionSignatures.has(name))
 					return emitCall(node, context);
+				else if (name == "π") return emitValue(Node(3.1415926535897), current);
 				else if (!node.isSetter())
 					error("UNKNOWN local symbol "s + name + " in context " + context);
 				else {

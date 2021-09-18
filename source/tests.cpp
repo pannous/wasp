@@ -1720,6 +1720,12 @@ void testUnits() {
 void testRoundFloorCeiling() {
 	assert_emit("n=3;2ⁿ", 8);
 	assert_emit("3²", 9);
+	assert_emit("n=3.0;2.0ⁿ", 8);
+	assert_emit("3.0²", 9);
+	assert_emit("π", 3/*.1415926535897*/);
+	assert_emit("π*1000000", 3141592/*6535897*/);
+
+	assert_emit("π²", 9.869604401089358 /*π*π*/);
 
 	assert_emit("n=3;2ⁿ", 8);
 	assert_emit("i=-9;-i", 9);
