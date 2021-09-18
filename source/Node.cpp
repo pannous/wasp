@@ -211,8 +211,8 @@ int lastChild = 1;
 
 bool typesCompatible(Node &one, Node &other) {
 	if (one.kind == other.kind)return true;
-	if (one.kind == objects or one.kind == groups or one.kind == patterns or one.kind == expressions)
-		return other.kind == objects or other.kind == groups or other.kind == patterns or other.kind == expressions or
+	if (one.kind == objects or one.kind == groups or one.kind == patterns or one.kind == expression)
+		return other.kind == objects or other.kind == groups or other.kind == patterns or other.kind == expression or
 		       other.kind == unknown;
 	if (one.kind != keyNode and other.kind != keyNode) return false;
 	return false;
@@ -632,7 +632,7 @@ void Node::addSmart(Node node) {// merge?
 //	}
 	if (letzt.kind == reference or letzt.kind == keyNode)
 		letzt.addSmart(&node);
-	else if (empty(name) and kind != expressions and kind != groups)// last().kind==reference)
+	else if (empty(name) and kind != expression and kind != groups)// last().kind==reference)
 		letzt.addSmart(&node);
 	else
 		add(&node);// don't loop to addSmart lol
@@ -793,7 +793,7 @@ String Node::serializeValue(bool deep) const {
 		case operators:
 			return name;
 		case declaration:
-		case expressions:
+		case expression:
 		case assignment:
 		case unknown:
 			return "?";
@@ -1059,7 +1059,7 @@ void printf(Node &) {
 
 Node &Node::setType(Type type, bool check) {
 	if (kind == type)return *this;
-	if (kind == groups and type == expressions)check = false;
+	if (kind == groups and type == expression)check = false;
 	if (kind == declaration and type == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
 	if (check) {
 		if (kind != unknown and kind != objects and
