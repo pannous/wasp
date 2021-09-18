@@ -1773,10 +1773,10 @@ void testCurrent() { // move to tests() once OK
 //	if(signature.return_type!=pointer)error("WWWAAAUUUU");
 //	if(functionSignatures["init_graphics"].return_type!=pointer)error("WWWAAA");
 
-	testRoundFloorCeiling();
+//	testRoundFloorCeiling();
 //    	subtract(other complex) := re -= other.re; im -= other.im
 // := is terminated by \n, not by ;!
-	exit(0);
+//	exit(0);
 //	assert_emit("x=3;x*=3", 9)
 //	assert_emit("x={1 4 3};x[1]", 4);
 //	assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
