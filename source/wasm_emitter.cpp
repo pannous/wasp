@@ -32,7 +32,7 @@ Map<String, long> referenceIndices;
 Module runtime;
 String start = "main";
 
-Valtype rhs_type = voids;// autocast if not int
+Valtype lhs_type = voids;// autocast if not int
 Valtype last_type = voids;// autocast if not int
 
 enum MemoryHandling {
@@ -135,7 +135,27 @@ byte opcodes(chars s, byte kind = 0) {
 		if (eq(s, "<"))return f32_lt;
 		if (eq(s, "<="))return f32_le;
 	}
-	if (eq(s, "√"))return f32_sqrt; // forces i32->f32
+
+	// the following functions force i32->f32
+	if (eq(s, "√"))return f32_sqrt;
+	if (eq(s, "sqrt"))return f32_sqrt;
+	if (eq(s, "root"))return f32_sqrt;// conflicts with user keywords!
+//	if (eq(s, "sqare root"))return f32_sqrt;
+
+// rarely used and only clutters the namespace :(
+// lol "⌊3.7⌋" is cursed and is transformed into \n\t or something in wasm and IDE!
+	if (eq(s, "⌊"))return f32_floor;
+	if (eq(s, "floor"))return f32_floor;// conflicts with user keywords!
+	if (eq(s, "⌋"))return f32_floor;// vs trunc towards 0?
+//if (eq(s, "round … down"))return f32_floor;
+
+	if (eq(s, "⌈"))return f32_ceil;
+	if (eq(s, "ceil"))return f32_ceil;
+	if (eq(s, "⌉"))return f32_ceil;
+
+	if (eq(s, "⌊"))return f32_nearest;
+	if (eq(s, "round"))return f32_nearest;// conflicts with user keywords!
+	if (eq(s, "⌋"))return f32_nearest;
 
 	// todo : peek 65536 as float directly via opcode
 	if (eq(s, "peek"))return i64_load;  // memory.peek memory.get memory.read
@@ -144,7 +164,8 @@ byte opcodes(chars s, byte kind = 0) {
 	// todo : set_local,  global_get ...
 	if (eq(s, "$"))return get_local; // $0 $1 ...
 
-	printf("unknown or non-primitive operator %s\n", s);// can still be matched as function etc, e.g. 'a'+'b' is 'ab'
+	trace("unknown or non-primitive operator %s\n"s %
+	      String(s));// can still be matched as function etc, e.g. 'a'+'b' is 'ab'
 	breakpoint_helper
 //		error("invalid operator");
 	return 0;
@@ -368,7 +389,7 @@ Code emitIndexRead(Node op, String context) {
 	int size = 4;
 	size = 1;
 //	if(op[0].kind==strings) todo?
-	last_type = rhs_type;
+	last_type = lhs_type;
 	if (last_type == charp)size = 1;// chars for now vs codepoint!
 	if (last_type == string)size = 1;// chars for now vs codepoint!
 	if (last_type == int32)size = 4;
@@ -600,7 +621,7 @@ Code emitOperator(Node node, String context) {
 		Node lhs = node.children[0];//["lhs"];
 		Node rhs = node.children[1];//["rhs"];
 		const Code &lhs_code = emitExpression(lhs, context);
-		rhs_type = last_type;
+		lhs_type = last_type;
 		const Code &rhs_code = emitExpression(rhs, context);
 		code.push(lhs_code);// might be empty ok
 		code.push(rhs_code);// might be empty ok
@@ -652,6 +673,34 @@ Code emitOperator(Node node, String context) {
 		code.addByte(opcode);
 		if (last_type == 0)
 			last_type = i32t;
+	} else if (name == "²") {
+//		error("this should be handled universally in analyse: x² => x*x no matter what!");
+		// BUT non-lazy calling twice? x² => x * result
+		code.add(tee_local);// neeeeds result local
+		code.add(0);// careful, overwrites result OR SOMETHING ELSE!
+		code.add(get_local);
+		code.add(0);
+		if (last_type == float32)
+			code.add(f32_mul);
+		else
+			code.add(i32_mul);
+	} else if (name == "ⁿ") {
+		if (node.length == 1) {
+			code.add(emitValue(node.first().values(), context));
+			if (last_type != float32)code.add(f32_from_int32);
+		}
+		if (node.length <= 1) {// use stack
+			code.add(get_local);
+			if (locals[context].has("n"))
+				code.addInt(locals[context].position("n"));
+			else
+				code.addInt(0);// last result / last_index / locals[context].size() -1
+			if (last_type != float32)code.add(f32_from_int32);
+		}
+		code.add(emitCall(*new Node("powf"), context));
+//		else
+//			code.add(emitCall(*new Node("powi"), context));
+
 	} else {
 		error("unknown opcode / call / symbol: "s + name + " : " + index);
 	}
@@ -659,7 +708,8 @@ Code emitOperator(Node node, String context) {
 		last_type = i32t;
 	if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt)
 		last_type = i32t;// bool'ish
-	return code;
+	return
+			code;
 }
 
 Code emitStringOp(Node op, String context) {
@@ -783,9 +833,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			}
 			if (node.isSetter()) { //SET
 				code = code + emitValue(node, context); // done above!
-				code.addByte(set_local);
-				code.addByte(local_index);
-				code.addByte(get_local);// make value available // todo: skip repeated get's / only when needed
+				code.addByte(tee_local);// set and get/keep
 				code.addByte(local_index);
 			} else {// GET
 				code.addByte(get_local);// todo: skip repeats
@@ -954,10 +1002,8 @@ Code emitSetter(Node node, Node &value, String context) {
 	Code value1 = emitValue(value, context);
 //	variableTypes
 	setter.add(value1);
-	setter.add(set_local);
+	setter.add(tee_local);
 	setter.add(local_index);
-	setter.add(get_local);// make value available
-	setter.add(local_index);// todo skip repeats
 	return setter;
 }
 
@@ -1394,7 +1440,7 @@ Code nameSection() {
 	for (int index = runtime_offset; index < total_func_count; index++) {
 		// danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
 		String *name = functionIndices.lookup(index);
-		if (functionSignatures[*name].is_import)continue;
+		if (functionSignatures[*name].is_import and runtime_offset > 0)continue;
 		nameMap = nameMap + Code(index) + Code(*name);
 		usedNames += 1;
 	}
@@ -1580,9 +1626,9 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 
 	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
 	auto customSection = createSection(custom_section, customSectionvector);
-	Code typeSection1 = typeSection();// types can be defined in analyze(), not in code declaration
+	Code typeSection1 = typeSection();// types must be defined in analyze(), not in code declaration
 	Code importSection1 = importSection();// needs type indices
-	Code codeSection1 = codeSection(root_ast);
+	Code codeSection1 = codeSection(root_ast); // needs functionSignatures and functionIndices prefilled!! :(
 	Code funcTypeSection1 = funcTypeSection();// signatures depends on codeSection, but must come before it in wasm
 	Code memorySection1 = memorySection();
 	Code exportSection1 = exportSection();// depends on codeSection, but must come before it!!

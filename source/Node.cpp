@@ -615,7 +615,8 @@ void Node::addSmart(Node node) {// merge?
 	// a{x:1} == a:{x:1} ?
 	Node &letzt = last();
 	// NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
-	if (letzt.kind == operators and letzt.length == 0) {
+	//	only prefixOperators
+	if (letzt.kind == functor and letzt.length == 0) {
 		// danger 1+2 grouped later but while(i>7) as child
 		letzt.add(node);// as meta?
 		return;
@@ -970,7 +971,7 @@ bool Node::isSetter() {
 	// todo proper constructor i:1 == (construct i (1))
 	// todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
 	if (kind == longs || kind == reals)// || kind==bools)
-		return not atoi0(name);// todo WTF hack
+		return not atoi0(name) and not name.contains('.');// todo WTF hack
 	if (kind == keyNode and value.data) return true;
 	if (kind == strings and name == value.string) return false;  // todo x="x" '123'="123" redundancy bites us here
 	if (kind == strings and value.data)
