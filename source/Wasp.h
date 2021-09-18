@@ -7,6 +7,7 @@
 //static
 extern chars function_list[];
 extern chars functor_list[];// takes blocks … parse differently?
+extern codepoint grouper_list[];
 extern List<chars> operator_list;
 
 Node parse(String source);// wasp -> data
