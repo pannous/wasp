@@ -1042,7 +1042,8 @@ private:
 					pattern.add(patternValue);
 					if (patternValue.kind == expression or patternValue.kind == groups)
 						pattern = patternValue.setType(patterns, false);
-					current.addSmart(pattern);// a[b] ≠ (a b)
+					current.add(pattern);// a[b] ≠ (a b)
+//					current.addSmart(pattern);// a[b] ≠ (a b) always preserve pattern (?)
 					break;
 				}
 				case '(': {
