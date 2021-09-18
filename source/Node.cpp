@@ -630,12 +630,12 @@ void Node::addSmart(Node node) {// merge?
 //			last().add(node);
 //		return;
 //	}
-	if (letzt.kind == reference or letzt.kind == keyNode)
-		letzt.addSmart(&node);
-	else if (empty(name) and kind != expression and kind != groups)// last().kind==reference)
-		letzt.addSmart(&node);
-	else
-		add(&node);// don't loop to addSmart lol
+if (letzt.kind == reference or letzt.kind == keyNode or letzt.name == "while" /*todo: functors, but not operators?*/)
+	letzt.addSmart(&node);
+else if (empty(name) and kind != expression and kind != groups)// last().kind==reference)
+	letzt.addSmart(&node);
+else
+	add(&node);// don't loop to addSmart lol
 }
 
 //non-modifying
@@ -753,6 +753,7 @@ bool Node::isNil() const { // required here: empty(name)
 	       ((kind == keyNode or kind == unknown or empty(name)) and length == 0 and value.data == nullptr);
 }
 
+// todo hide : use serialize() for true deep walk
 String Node::serializeValue(bool deep) const {
 	String wasp = "";
 	Value val = value;
@@ -791,6 +792,8 @@ String Node::serializeValue(bool deep) const {
 		case call:
 			return "!";//"{…}";
 		case operators:
+			return name;
+		case functor:
 			return name;
 		case declaration:
 		case expression:

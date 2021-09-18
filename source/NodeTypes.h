@@ -17,6 +17,7 @@ enum Type {// todo: merge Node.kind with Node.class(?)
 	reference, // variable identifier name x
 	symbol, // one / plus / Jesus
 	operators, // TODO: semantic types don't belong here! they interfere with internal structural types keyNode etc!!
+	functor, // while(xyz){abc} takes 1?/2/3 blocks if {condition} {then} {else}
 	expression, // one plus one
 	declaration, // x:=1
 	assignment, // x = 1 // really?? needs own TYPE?
