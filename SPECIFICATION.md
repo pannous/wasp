@@ -24,12 +24,12 @@ With very few axioms and primitives:
 * `:` pair : turn two nodes into a pair, `a:3` (hashed+symbolic). almost identical to:
 * `=` value : turn two nodes into a variable pair, `a=3`
 * `,` list : turn two nodes into a list. Append if one is a list. 'cons' in lisp
-* `;` list : end expressions/statements, list inside a block. if 1 : 0 ;
+* `;` list : end expression/statements, list inside a block. if 1 : 0 ;
 * `.` `#` `of` `in` `'s` selection: garden of house == house.garden == house's garden xs.1 xs#1
 * `|` pipe/then : output of last command as input for next command. `ls ~ | sort`
 * ` ` space acts as comma/concatenator in lists (a b c) == (a,b,c) == a->b->c
-* ` ` newline, dedent: acts as comma in lists or closing 'bracket' if matching block start
-usual math operators `add` `plus` `times` `power` `^` … and logical `and` `or` `xor` `not`
+* ` ` newline, dedent: acts as comma in lists or closing 'bracket' if matching block start usual math
+  operators `add` `plus` `times` `power` `^` … and logical `and` `or` `xor` `not`
 
 Question: substraction|concatenation|range  hair-color vs a-b vs 2001-2020
 

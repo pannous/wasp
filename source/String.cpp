@@ -372,7 +372,7 @@ chars typeName(Type t) {
 			return "symbol";
 		case operators:
 			return "operator";
-		case expressions:
+		case expression:
 			return "expression";
 		case strings:
 			return "string";

@@ -638,11 +638,15 @@ assert_emit("2nd byte in 'world'", 'o');
 
 void testArrayIndicesWasm() {
 //	testArrayIndices(); //	check node based (non-primitive) interpretation first
-
+	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
+	assert_emit("logs('ok');(1 4 3)#2", 4);
 	assert_emit("logs('ok');", 0);
 	assert_emit("{1 4 3}#2", 4);
+
 	assert_emit("x={1 4 3};x#2", 4);
+	assert_emit("logs('ok');(1 4 3)#2", 4);
 	assert_emit("{1 4 3}[1]", 4);
+	assert_emit("logs('ok');(1 4 3)#2", 4);
 	assert_emit("(1 4 3)[1]", 4);
 	assert_emit("logs('ok');(1 4 3)#2", 4);
 	skip(
