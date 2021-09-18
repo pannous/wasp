@@ -1723,15 +1723,24 @@ void testPaint() {
 }
 
 void testPaintWasm() {
-//	char* wasm_paint_routine="surface=init_graphics();i=0;while(i<100000)surface[i]=0;";
-	char *wasm_paint_routine = "init_graphics(); while (1) requestAnimationFrame()";
-	assert_emit(wasm_paint_routine, 0);
+//	assert_emit("i=0;j=0;while(i<10000){i++;j++};j",10000)
+//	char *wasm_paint_routine = "surface=init_graphics();surface#1=0;surface#3=0;surface#4=0;surface#5=0";
+	char *wasm_paint_routine = "surface=init_graphics();i=10;while(i<10000){i++;surface#i=0;}";// todo : access true  c memory from wasm!
+//char *wasm_paint_routine = "surface=init_graphics;while(1) 1+1";
+//char *wasm_paint_routine = "init_graphics(); while(1){requestAnimationFrame()}";// SDL bugs a bit
+	assert_emit(wasm_paint_routine, 10);
 	while (1)requestAnimationFrame();// help a little
 }
 
 void testCurrent() { // move to tests() once OK
-	assert_emit("x=3;x*=3", 9)
-	assert_emit("x={1 4 3};x[1]", 4);
+//	assert_emit("i=0;while(i++ <10001);i",10000)// parsed wrongly! while(  <( ++ i 10001) i)
+//	functionSignatures.setDefault(Signature());
+//	Signature &signature = functionSignatures["init_graphics"].import().returns(pointer);// surface
+//	if(signature.return_type!=pointer)error("WWWAAAUUUU");
+//	if(functionSignatures["init_graphics"].return_type!=pointer)error("WWWAAA");
+
+//	assert_emit("x=3;x*=3", 9)
+//	assert_emit("x={1 4 3};x[1]", 4);
 //	assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
 //	testPaintWasm();
 

@@ -399,7 +399,9 @@ chars typeName(Type t) {
 		case assignment:
 			return "assignment";
 		case errors:
-				return "error";
+			return "error";
+		case functor:
+			return "functor";
 		default:
 			error(str("MISSING Type name mapping ") + t);
 			return "ERROR";
@@ -471,7 +473,8 @@ codepoint decode_unicode_character(char *text, int *len) {
 		return (text[0] & 0b00001111) << 12 | (text[0 + 1] & 0b00111111) << 6 | (text[0 + 2] & 0b00111111);
 	} else {
 //		if(len)*len=4; // 4 byte code point
-		return (text[0] & 0b00000111) << 18 | (text[0 + 1] & 0b00111111) << 12 | (text[0 + 2] & 0b00111111) << 6 | (text[0 + 3] & 0b00111111);
+		return (text[0] & 0b00000111) << 18 | (text[0 + 1] & 0b00111111) << 12 | (text[0 + 2] & 0b00111111) << 6 |
+		       (text[0 + 3] & 0b00111111);
 	}
 }
 
