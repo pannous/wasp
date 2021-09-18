@@ -157,7 +157,7 @@ List<chars> key_pair_operators;
 //no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
 #endif
 
-Node &groupFunctions(Node &expression);
+Node &groupFunctions(Node &expressiona);
 
 bool isVariable(Node &node) {
 	if (node.kind != reference and node.kind != keyNode and !node.isSetter())
@@ -389,11 +389,11 @@ Node &groupIf(Node n) {
 		otherwise = n[2];
 	Node *eff = new Node("if");
 	Node &ef = *eff;
-	ef.kind = expressions;
+	ef.kind = expression;
 	//	ef.kind = ifStatement;
-	if (condition.length > 0)condition.setType(expressions);// so far treated as group!
-	if (then.length > 0)then.setType(expressions);
-	if (otherwise.length > 0)otherwise.setType(expressions);
+	if (condition.length > 0)condition.setType(expression);// so far treated as group!
+	if (then.length > 0)then.setType(expression);
+	if (otherwise.length > 0)otherwise.setType(expression);
 	ef["condition"] = analyze(condition);
 	ef["then"] = analyze(then);
 	ef["else"] = analyze(otherwise);
@@ -411,47 +411,47 @@ Node &groupIf(Node n) {
 
 Node &groupWhile(Node n);
 
-Node &groupFunctions(Node &expression) {
-	if (expression.kind == declaration)return expression;// handled before
-	if (isFunction(expression)) {
-		expression.setType(call, false);
-		if (not functionSignatures.has(expression.name))
-			error("missing import for function "s + expression.name);
-//		if (not expression.value.node and arity>0)error("missing args");
-		functionSignatures[expression.name].is_used = true;
+Node &groupFunctions(Node &expressiona) {
+	if (expressiona.kind == declaration)return expressiona;// handled before
+	if (isFunction(expressiona)) {
+		expressiona.setType(call, false);
+		if (not functionSignatures.has(expressiona.name))
+			error("missing import for function "s + expressiona.name);
+//		if (not expressiona.value.node and arity>0)error("missing args");
+		functionSignatures[expressiona.name].is_used = true;
 	}
-//	Node &expression = *expression.clone();
-	for (int i = 0; i < expression.length; ++i) {
-//	for (int i = expression.length; i>0; --i) {
-		Node &node = expression.children[i];
+//	Node &expressiona = *expressiona.clone();
+	for (int i = 0; i < expressiona.length; ++i) {
+//	for (int i = expressiona.length; i>0; --i) {
+		Node &node = expressiona.children[i];
 		String &name = node.name;
 		if (name == "if") // kinda functor
 		{
-			Node &iff = groupIf(expression.from("if"));
-			int j = expression.lastIndex(iff.last().next) - 1;
-			if (i == 0 and j == expression.length - 1)return iff;
-			if (j > i)expression.replace(i, j, iff);// todo figure out if a>b c d e == if(a>b)then c else d; e boundary
+			Node &iff = groupIf(expressiona.from("if"));
+			int j = expressiona.lastIndex(iff.last().next) - 1;
+			if (i == 0 and j == expressiona.length - 1)return iff;
+			if (j > i)expressiona.replace(i, j, iff);// todo figure out if a>b c d e == if(a>b)then c else d; e boundary
 			continue;
 		}
 		if (name == "while") {
 			// todo: move into groupWhile
 			if (node.length == 2) {
-				node[0] = analyze(node[0].setType(expressions));// what if it is raw data though??
-				node[1] = analyze(node[1].setType(expressions));
+				node[0] = analyze(node[0].setType(expression));// what if it is raw data though??
+				node[1] = analyze(node[1].setType(expression));
 				continue;// all good (right?)
 			}
 			if (node.length == 1) {// while()… or …while()
-				node[0] = analyze(node[0].setType(expressions).flat());
-				Node then = expression.from("while");
-				node.add(analyze(then.setType(expressions).flat()).clone());
-				expression.remove(i + 1, i + then.length - 1);
+				node[0] = analyze(node[0].setType(expression).flat());
+				Node then = expressiona.from("while");
+				node.add(analyze(then.setType(expression).flat()).clone());
+				expressiona.remove(i + 1, i + then.length - 1);
 				continue;
 			} else {
-				Node iff = groupWhile(expression.from("while"));
+				Node iff = groupWhile(expressiona.from("while"));
 				Node &last = iff.last();
 				Node *next = last.next;
-				int j = expression.lastIndex(next) - 1;
-				if (j > i)expression.replace(i, j, iff);
+				int j = expressiona.lastIndex(next) - 1;
+				if (j > i)expressiona.replace(i, j, iff);
 			}
 		}
 		if (isFunction(node)) // todo: may need preparsing of declarations!
@@ -476,22 +476,22 @@ Node &groupFunctions(Node &expression) {
 		}
 
 		Node rest;
-		if (i + 1 < expression.length and expression[i + 1].kind == groups) {// f(x)
+		if (i + 1 < expressiona.length and expressiona[i + 1].kind == groups) {// f(x)
 			// todo f (x) (y) (z)
-			// todo expression[i+1].length>=minArity
-			rest = expression[i + 1];
+			// todo expressiona[i+1].length>=minArity
+			rest = expressiona[i + 1];
 			if (rest.length > 1)
-				rest.setType(expressions);
+				rest.setType(expression);
 			Node args = analyze(rest);
 			node.add(args);
-			expression.remove(i + 1, i + 1);
+			expressiona.remove(i + 1, i + 1);
 			continue;
 		}
-		rest = expression.from(i + 1);
+		rest = expressiona.from(i + 1);
 		if (rest.length > 1)
-			rest.setType(expressions);// SUUURE?
+			rest.setType(expression);// SUUURE?
 		if (rest.kind == groups)// and rest.has(operator))
-			rest.setType(expressions);// todo f(1,2) vs f(1+2)
+			rest.setType(expression);// todo f(1,2) vs f(1+2)
 		if (hasFunction(rest) and rest.first().kind != groups)
 			error("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
 		if (rest.first().kind == groups)
@@ -506,19 +506,19 @@ Node &groupFunctions(Node &expression) {
 		else if (rest.length == 0 and minArity > 0)
 			error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
 		else if (rest.first().kind == operators) { // random() + 1 == random + 1
-			// keep whole expression for later analysis in groupOperators!
-			return expression;
+			// keep whole expressiona for later analysis in groupOperators!
+			return expressiona;
 		} else if (rest.length >= maxArity) {
 			Node args = analyze(rest);// todo: could contain another call!
 			node.add(args);
 			if (rest.kind == groups)
-				expression.remove(i + 1, i + 1);
+				expressiona.remove(i + 1, i + 1);
 			else
-				expression.remove(i + 1, i + rest.length);
+				expressiona.remove(i + 1, i + rest.length);
 		} else
 			error("???");
 	}
-	return expression;
+	return expressiona;
 }
 
 
@@ -640,10 +640,10 @@ Node &groupWhile(Node n) {
 
 	Node *whilo = new Node("while");// regroup cleanly
 	Node &ef = *whilo;
-	ef.kind = expressions;
+	ef.kind = expression;
 	//	ef.kind = ifStatement;
-	if (condition.length > 0)condition.setType(expressions);// so far treated as group!
-	if (then.length > 0)then.setType(expressions);
+	if (condition.length > 0)condition.setType(expression);// so far treated as group!
+	if (then.length > 0)then.setType(expression);
 //	ef.add(analyze(condition).clone());
 //	ef.add(analyze(then).clone());
 //	ef.length = 2;
@@ -682,7 +682,7 @@ Node analyze(Node data, String context) {
 		Node grouped = groupOperators(data, context);// outer analysis id(3+3) => id(+(3,3))
 		for (Node &child: grouped) {// inner analysis while(i<3){i++}
 //			if (child.kind == groups or child.kind == objects)// what if applying to real list though ?f([1,2,3])
-//				child.setType(expressions);
+//				child.setType(expression);
 			const Node &analyze1 = analyze(child);
 			child = analyze1;// REPLACE with their ast? NO! todo
 		}
@@ -707,7 +707,7 @@ Node analyze(Node data, String context) {
 
 Node analyze2(Node data) {
 	if (data.kind == reference and data.length == 0)return data;
-	if (data.kind == expressions or data.kind == declaration) {
+	if (data.kind == expression or data.kind == declaration) {
 		return groupOperators(data);
 	} else // or data.kind==groups or
 		warn("REPLACE with their ast?");
@@ -771,7 +771,7 @@ void clearContext() {
 	preRegisterSignatures();// todo: reduntant to emitter and wasm_reader
 	analyzed.clear();// todo move much into outer analyze function!
 	analyzed.setDefault(0);
-	//	if(data.kind==groups) data.kind=expressions;// force top level expressions! todo: only if analyze recursive !
+	//	if(data.kind==groups) data.kind=expression;// force top level expression! todo: only if analyze recursive !
 }
 
 int runtime_emit(String prog) {
@@ -876,7 +876,11 @@ float precedence(String name) {
 	if (eq(name, "%"))return 6.1;
 	if (eq(name, "rem"))return 6.1;
 	if (eq(name, "modulo"))return 6.1;
-
+	if (eq(name, "upto"))return 6.3;// range
+	if (eq(name, "…"))return 6.3;
+	if (eq(name, "..."))return 6.3;
+	if (eq(name, ".."))return 6.3;
+	if (eq(name, "..<"))return 6.3;
 	if (eq(name, "<"))return 6.5;
 	if (eq(name, "<="))return 6.5;
 	if (eq(name, ">="))return 6.5;
