@@ -6,11 +6,13 @@
 
 //static
 extern chars function_list[];
+extern chars functor_list[];// takes blocks … parse differently?
+extern List<chars> operator_list;
 
 Node parse(String source);// wasp -> data
 bool is_operator(codepoint ch);// todo: next?
 //extern String operator_list[];// resolve xor->operator ... semantic wasp parser really?
-extern List<chars> operator_list;
+//extern List<chars> functor_list;
 
 extern bool data_mode;// stupid Intermediate solution to get html{color=blue} and while{color=blue} todo! auto
 
