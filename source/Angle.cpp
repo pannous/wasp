@@ -443,19 +443,17 @@ Node &groupFunctions(Node &expressiona) {
 			if (node.length == 1) {// while()… or …while()
 				node[0] = analyze(node[0]);
 				Node then = expressiona.from("while");
-				node.add(analyze(then.setType(expression, false).flat()).clone());
+				node.add(analyze(then).clone());
 				expressiona.remove(i + 1, i + then.length - 1);
 				continue;
 			} else {
-				Node &iff = groupWhile(expressiona.from("while"));
-				Node &last = iff.last();
-				Node *next = last.next;
-				int j = expressiona.lastIndex(next) - 1;
+				Node &iff = groupWhile(expressiona.from("while"));// todo: sketchy!
+				int j = expressiona.lastIndex(iff.last().next) - 1;// huh?
 				if (j > i)expressiona.replace(i, j, iff);
 			}
 		}
-		if (isFunction(node)) // todo: may need preparsing of declarations!
-			node.kind = call;// <- there we go!
+		if (isFunction(node)) // needs preparsing of declarations!
+			node.kind = call;
 		if (node.kind != call)
 			continue;
 
@@ -467,11 +465,9 @@ Node &groupFunctions(Node &expressiona) {
 		int minArity = functionSignatures[name].size();// todo: default args!
 		int maxArity = functionSignatures[name].size();
 
-
 		if (node.length > 0) {
 //			if minArity == …
-			Node ok = node.flat(); //  perpetual problem: f(1,2,3) vs f([1,2,3]) !!
-			node = analyze(ok);
+			node = analyze(node.flat());//  f(1,2,3) vs f([1,2,3]) ?
 			continue;// already done how
 		}
 		if (minArity == 0)continue;
@@ -520,70 +516,6 @@ Node &groupFunctions(Node &expressiona) {
 	}
 	return expressiona;
 }
-
-
-/*
-Node groupOperators2(Node &expression) {
-	if (expression.name == "if")return groupIf(expression);
-	if (expression.kind == operators and expression.length > 1)
-		return expression;// already done (RIGHT!?)
-	if (expression.kind == call and expression.meta and expression.meta->has("analyzed"))
-		return expression;// already grouped
-	if (expression.length == 0)return expression;
-	if (expression.kind == longs)return expression;
-	if (expression.length == 1)
-		if (expression.kind != call)
-			return groupOperators(expression.children[0]); // Nothing to be grouped
-	expression.log();
-	Node lhs;
-	for (Node &fun : expression) {
-		int isFunc = fun.name.in(function_list);
-		int isControl = fun.name.in(control_flows);
-		if ((isControl or isFunc) and fun.length == 0) { // todo: op.length>0 means already has body?
-			if (isFunc) fun.kind = call;
-			if (!fun.children) {
-				Node *n = &fun;
-				if (n->next and n->next->kind == groups)
-					fun.addSmart(n->next); //f(x,y)+1
-				else
-					while ((n = n->next)) // f x+1
-						fun.add(n);
-			}
-			if (!fun.meta)fun.meta = new Node("analyzed");
-			Node &flat = fun.flat();
-			Node *right = groupOperators(flat).clone();// applied on children
-			if (lhs.isEmpty())return *right;
-			lhs.addSmart(right);
-			return groupOperators(lhs);
-		} else lhs.addSmart(fun);
-	}
-
-	// todo : left associativity! 3-2-1==(3-2)-1==0 NOT 3-(2-1)==2
-	//	left associativity is called Right-to-left in C++ https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence !!
-	// extra : chained comparison a < b < c is  (a < b) and (b < c), not equivalent to either (a < b) < c or a < (b < c)
-	for (String operator_name : operator_list) {
-		for (Node &op : expression) {
-			if (op.name == operator_name) {
-				if (op.kind == operators and op.length > 1)
-					continue;
-				Node lhs = expression.to(op);
-				Node rhs = expression.from(op);
-				op["lhs"] = groupOperators(lhs);
-				op["rhs"] = groupOperators(rhs);
-				if (op.children[0].next != &op.children[1])error("WOOT");
-				if (expression.kind == call) {// f 3*3 => f(*(3 3))
-					expression.children = op.clone();
-					expression.length = 1;
-					return expression;
-				}
-				// should NOT MODIFY original AST, because iterate by value, right?
-				return op;// (a op c) => op(a c)
-			}
-		}
-	}
-	return expression;// no op
-}
-*/
 
 // todo: un-adhoc this!
 Node &groupWhile(Node n) {
