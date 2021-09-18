@@ -30,10 +30,10 @@ char *current = (char *) HEAP_OFFSET;
 
 #endif
 
-bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as expressions operator  WHY would we keep it again??
+bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
 
 chars operator_list0[] = {":=", "else", "then", "be", "is", "equal", "equals", "==", "!=", "≠", "xor", "or", "or", "|",
-                          "and", "&", "and",
+                          "and", "&", "and", "to", "…", "...", "..<" /*range*/,
                           "not", "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "+", "-",
                           "*", "×", "⋅", "⋆", "/", "÷", "^", "√", "++", "--", "∈", "∉", "⊂", "⊃", "in", "of",
                           "from", "peek", "poke", "#", "$", 0, 0, 0, 0}; // "while" ...
@@ -543,7 +543,7 @@ private:
 	// Parse whitespace and comments.
 	void white() {
 		// Note that we're detecting comments by only a single / character.
-		// This works since regular expressions are not valid JSON(5), but this will
+		// This works since regular expression are not valid JSON(5), but this will
 		// break if there are other valid values that begin with a / character!
 		while (ch) {
 			if (ch == '/') {
@@ -665,13 +665,13 @@ private:
 		else return false;
 	}
 
-	Node &expression(bool stop_at_space) {
+	Node &expressione(bool stop_at_space) {
 		Node node = symbol();
 		if (lookahead_ambiguity())
 			return *node.clone();
 		// {a:1 b:2} vs { x = add 1 2 }
 		Node expressionas;
-		// set kind = expressions only if it contains operator, otherwise keep it as list!!!
+		// set kind = expression only if it contains operator, otherwise keep it as list!!!
 		expressionas.add(node);
 		if (stop_at_space and ch == ' ')return *expressionas.clone();
 		white();
@@ -679,12 +679,12 @@ private:
 			node = symbol();// including operators `=` ...
 			if (is_known_functor(node)) {
 				node.kind = operators;
-				expressionas.kind = expressions;
+				expressionas.kind = expression;
 			}
 			expressionas.add(&node);
 			white();
 		}
-//		expressions.name=map(children.name)
+//		expression.name=map(children.name)
 		if (expressionas.length > 1)
 			return *expressionas.clone();
 		else return *node.clone();
@@ -1040,7 +1040,7 @@ private:
 					Node pattern = Node().setType(Type::patterns);
 					Node patternValue = valueNode(']', &current.last());
 					pattern.add(patternValue);
-					if (patternValue.kind == expressions or patternValue.kind == groups)
+					if (patternValue.kind == expression or patternValue.kind == groups)
 						pattern = patternValue.setType(patterns, false);
 					current.addSmart(pattern);// a[b] ≠ (a b)
 					break;
@@ -1069,7 +1069,7 @@ private:
 					else {
 						Node *op = any_operator().clone();
 						current.add(op);
-						current.kind = expressions;
+						current.kind = expression;
 					}
 					break;
 				case '/':
@@ -1090,7 +1090,7 @@ private:
 					matches = matches or (close == u'“' and ch == u'”');
 					matches = matches or (close == u'”' and ch == u'“');
 					if (!matches) { // open string
-						if (current.last().kind == expressions)
+						if (current.last().kind == expression)
 							current.last().addSmart(string(ch));
 						else
 							current.add(string(ch).clone());
@@ -1110,7 +1110,7 @@ private:
 				case '=': {
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
-					bool add_raw = current.kind == expressions or key.kind == expressions or
+					bool add_raw = current.kind == expression or key.kind == expression or
 					               (current.last().kind == groups and current.length > 1);
 					if (is_operator(previous))
 						add_raw = true;// == *=
@@ -1119,14 +1119,14 @@ private:
 						add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
 					if (op.name.length > 1)
 						add_raw = true;
-					if (current.kind == expressions)
+					if (current.kind == expression)
 						add_raw = true;
 					if (add_raw) {
-						current.add(op.setType(operators)).setType(expressions);
+						current.add(op.setType(operators)).setType(expression);
 //						continue; noo why continue??
 					}
 					Node &val = *valueNode(' ', &key).clone();// applies to WHOLE expression
-					if (add_raw) {  // complex expressions are not simple maps
+					if (add_raw) {  // complex expression are not simple maps
 						current.add(val);
 					} else {
 						setField(key, val);
@@ -1145,7 +1145,7 @@ private:
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
 					if (current.grouper != ch) {// and current.length > 1
 						// x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
-						if (current.length > 1) {
+						if (current.length > 1 or current.kind == expression) {
 							Node neu;// wrap x,y => ( (x y) ; … )
 							neu.kind = groups;
 							neu.parent = parent;
@@ -1177,15 +1177,15 @@ private:
 					// a:b c != a:(b c)
 					// {a} ; b c vs {a} b c vs {a} + c
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
-					Node node = expression(close == ' ');//word();
+					Node node = expressione(close == ' ');//word();
 					if (precedence(node) and ch != ':') {
 						node.kind = operators;
 						if (node.name != "while" and node.name != "if")
-							current.kind = expressions;
+							current.kind = expression;
 					}
 					if (node.length > 1 and addFlat) {
 						for (Node arg:node)current.add(arg);
-						current.kind = node.kind;// was: expressions
+						current.kind = node.kind;// was: expression
 					} else {
 						current.add(&node);
 					}
@@ -1293,7 +1293,7 @@ Node parse(String source) {
 // Mark/wasp has clean syntax with FULLY-TYPED data model (like JSON or even better)
 // Mark/wasp is generic and EXTENSIBLE (like XML or even better)
 // Mark/wasp has built-in MIXED CONTENT support (like HTML5 or even better)
-// Mark/wasp supports HIGH-ORDER COMPOSITION (like S-expressions or even better)
+// Mark/wasp supports HIGH-ORDER COMPOSITION (like S-expression or even better)
 
 
 

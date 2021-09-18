@@ -206,7 +206,7 @@ BINARYEN_API BinaryenFeatures BinaryenFeatureAll(void);
 //
 // Expressions are also allocated inside modules, and freed with the module.
 // They are not created by Add* methods, since they are not added directly on
-// the module, instead, they are arguments to other expressions (and then they
+// the module, instead, they are arguments to other expression (and then they
 // are the children of that AST node), or to a function (and then they are the
 // body of that function).
 //
@@ -251,10 +251,10 @@ BINARYEN_API struct BinaryenLiteral BinaryenLiteralFloat64Bits(int64_t x);
 
 // Expressions
 //
-// Some expressions have a BinaryenOp, which is the more
+// Some expression have a BinaryenOp, which is the more
 // specific operation/opcode.
 //
-// Some expressions have optional parameters, like Return may not
+// Some expression have optional parameters, like Return may not
 // return a value. You can supply a NULL pointer in those cases.
 //
 // For more information, see wasm.h
@@ -1291,7 +1291,7 @@ BINARYEN_API const char *BinaryenBlockGetName(BinaryenExpressionRef expr);
 // Sets the name (label) of a `block` expression.
 BINARYEN_API void BinaryenBlockSetName(BinaryenExpressionRef expr,
                                        const char *name);
-// Gets the number of child expressions of a `block` expression.
+// Gets the number of child expression of a `block` expression.
 BINARYEN_API BinaryenIndex
 BinaryenBlockGetNumChildren(BinaryenExpressionRef expr);
 // Gets the child expression at the specified index of a `block` expression.
@@ -2938,7 +2938,7 @@ ExpressionRunnerCreate(BinaryenModuleRef module,
                        BinaryenIndex maxDepth,
                        BinaryenIndex maxLoopIterations);
 
-// Sets a known local value to use. Order matters if expressions have side
+// Sets a known local value to use. Order matters if expression have side
 // effects. For example, if the expression also sets a local, this side effect
 // will also happen (not affected by any flags). Returns `true` if the
 // expression actually evaluates to a constant.
@@ -2946,7 +2946,7 @@ BINARYEN_API int ExpressionRunnerSetLocalValue(ExpressionRunnerRef runner,
                                                BinaryenIndex index,
                                                BinaryenExpressionRef value);
 
-// Sets a known global value to use. Order matters if expressions have side
+// Sets a known global value to use. Order matters if expression have side
 // effects. For example, if the expression also sets a local, this side effect
 // will also happen (not affected by any flags). Returns `true` if the
 // expression actually evaluates to a constant.
