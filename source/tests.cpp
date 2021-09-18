@@ -1717,6 +1717,34 @@ void testUnits() {
 	assert_is("1 m + 1km", Node(1001).setType("m"));
 }
 
+void testRoundFloorCeiling() {
+	assert_emit("n=3;2ⁿ", 8);
+	assert_emit("3²", 9);
+
+	assert_emit("n=3;2ⁿ", 8);
+	assert_emit("i=-9;-i", 9);
+	assert_emit("i=-9;√-i", -3);
+	assert_emit("-√9", -3);
+	assert_emit(".1 + .9", 1);
+	assert_emit("-.1 + -.9", -1);
+	assert_emit("√9", 3);
+	//	assert_emit("√-9 is -3i", -3);// if «use complex numbers»
+	assert_emit(".1", 0);
+	assert_emit("ceil 3.7", 4);
+	assert_emit("floor 3.7", 3);// todo: only if «use math» namespace
+	assert_emit("ceiling 3.7", 4);// todo: only if «use math» namespace
+	assert_emit("round 3.7", 4);
+	assert_emit("i=3.7;.3+i", 4);// floor
+	// lol "⌊3.7⌋" is cursed and is transformed into \n\t or something in wasm and IDE!
+//	assert_emit("⌊3.7", 3);// floor
+//	assert_emit("⌊3.7⌋", 3);// floor
+//	assert_emit("3.7⌋", 3);// floor
+//	//assert_emit("i=3.7;.3 + ⌊i", 3);// floor
+//	//assert_emit("i=3.7;.3+⌊i⌋", 3);// floor
+//	assert_emit("i=3.7;.3+i⌋", 3);// floor
+//	assert_emit("i=3.7;.3+ floor i", 3);// floor
+}
+
 void testPaint() {
 	init_graphics();
 	while (1)requestAnimationFrame();
@@ -1739,11 +1767,15 @@ void testCurrent() { // move to tests() once OK
 //	if(signature.return_type!=pointer)error("WWWAAAUUUU");
 //	if(functionSignatures["init_graphics"].return_type!=pointer)error("WWWAAA");
 
+	testRoundFloorCeiling();
+//    	subtract(other complex) := re -= other.re; im -= other.im
+// := is terminated by \n, not by ;!
+	exit(0);
 //	assert_emit("x=3;x*=3", 9)
 //	assert_emit("x={1 4 3};x[1]", 4);
 //	assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
 //	testPaintWasm();
-
+//	exit(0);
 //	testWasmMemoryIntegrity();
 #ifndef WASM
 	//	testWasmModuleExtension();
