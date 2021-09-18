@@ -57,7 +57,7 @@ The Wasp syntax was influenced by [Mark](https://github.com/henry-luo/mark)
 - It has **clean syntax** with **fully-type** data model *(like JSON or even better)*
 - It is **generic** and **extensible** *(like XML or even better)*
 - It has built-in **mixed content** support *(like HTML5 or even better)*
-- It supports **high-order** composition *(like S-expressions or even better)*
+- It supports **high-order** composition *(like S-expression or even better)*
 
 |                        | Wasp/[Mark](https://github.com/henry-luo/mark)                           | JSON     | HTML | XML                            | S-expr                             | YAML                                  |
 | ---------------------- | ------------------------------ | -------- | ---- | ------------------------------ | ---------------------------------- | ------------------------------------- |

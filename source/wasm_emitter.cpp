@@ -551,8 +551,8 @@ Code emitValue(Node node, String context) {
 			                 context);// todo: make sure it is called from right context (after isSetter …)
 		case patterns:
 			return emitIndexPattern(node, context);// todo: make sure to have something indexable on stack!
-		case expressions:
-//			error("expressions should not be put on stack (yet) (maybe serialize later)")
+		case expression:
+//			error("expression should not be put on stack (yet) (maybe serialize later)")
 		default:
 			error("emitValue unknown type: "s + typeName(node.kind));
 	}
@@ -713,12 +713,12 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 	switch (node.kind) {
 		case objects:
 		case groups:
-			// todo: all cases of true list vs list of expressions
+			// todo: all cases of true list vs list of expression
 			if (node.length > 0 and isProperList(node)) {
 				return Code().addConst(emitData(node, context));// pointer in const format!
 //				return emitArray(node, context);
 			}// else fallthough:
-		case expressions:
+		case expression:
 			for (Node child : node) {
 				const Code &expression = emitExpression(child, context);
 				code.push(expression);
@@ -784,7 +784,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			else
 				return emitIndexPattern(node, context);// make sure array is on stack!
 		}
-//		case groups: todo: true list vs list of expressions
+//		case groups: todo: true list vs list of expression
 //		case objects:
 		case arrays:
 		case buffers:
@@ -1515,7 +1515,7 @@ Code memorySection() {
 
 
 Code &emit(Node root_ast, Module *runtime0, String _start) {
-	if (root_ast.kind == objects)root_ast.kind = expressions;
+	if (root_ast.kind == objects)root_ast.kind = expression;
 	start = _start;
 	typeMap.setDefault(-1);
 	typeMap.clear();

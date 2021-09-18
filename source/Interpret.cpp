@@ -119,7 +119,7 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 		if (kind == operators or precedence(*this))
 			return apply_op(NIL, *this, this->clone()->setType(objects, false).setName(empty_name));
 
-	if (length == 2 and children[1].kind == expressions) {
+	if (length == 2 and children[1].kind == expression) {
 		length = 1;
 		return this->merge(children[1]).interpret();// stop hacking
 	}
@@ -201,7 +201,7 @@ Node do_call(Node left, Node op0, Node right) {
 Node matchPattern(Node object, Node pattern0) {
 //	[1 2 3]#1 == 1 == [1 2 3][0]
 	Node pattern = pattern0;
-	if (pattern0.kind == expressions)
+	if (pattern0.kind == expression)
 		pattern = pattern0.interpret(); // [1 2 3][3-2]==2
 	if (object.isNil())return pattern;
 	if (pattern.kind == longs)return object[(int) pattern.numbere()];
