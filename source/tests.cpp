@@ -1768,7 +1768,7 @@ void testPaintWasm() {
 
 void testCurrent() { // move to tests() once OK
 	assert_emit("π", 3);
-	exit(0);
+//	exit(0);
 //	assert_emit("i=0;while(i++ <10001);i",10000)// parsed wrongly! while(  <( ++ i 10001) i)
 //	functionSignatures.setDefault(Signature());
 //	Signature &signature = functionSignatures["init_graphics"].import().returns(pointer);// surface
