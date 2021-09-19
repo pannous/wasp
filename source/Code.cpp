@@ -143,7 +143,7 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == reals)return float32;// float64; todo why 32???
 	if (n.kind == longs)return int32;// int64; todo
 	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
-	if (n.kind == strings)return string;// special internal Valtype, represented as i32 index to data / pointer!
+	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
 	Node first = n.first();
 	if (first == n)first = NIL;// avoid loops
 	if (n.kind == assignment)return mapTypeToWasm(first);// todo
@@ -152,9 +152,30 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == call)
 		return functionSignatures[n.name].return_type;// error("first.kind==call is not a wasm type, maybe get signature?");
 	if (n.kind == keyNode and n.value.data)return mapTypeToWasm(*n.value.node);
-	if (n.kind == keyNode and not n.value.data)return array;
+//	if (n.kind == keyNode and not n.value.data)return array;
 	if (n.kind == groups)return array;// uh todo?
 	n.log();
 	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
 	return none;
+}
+
+
+chars typeName(Valtype t) {
+	switch (t) {
+		case Valtype::i32t:
+			return "i32";
+		case Valtype::float32:
+			return "f32";
+		case Valtype::array:
+			return "array";
+		case Valtype::charp:
+			return "char*";
+		case Valtype::voids:
+			return "void";
+		case Valtype::none:
+			return "void_block";
+		default:
+			error("missing name for Valtype");
+	}
+	return 0;
 }

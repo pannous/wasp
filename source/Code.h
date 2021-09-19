@@ -297,13 +297,16 @@ enum Valtype {
 	pointer = int32,// 0xF0, // internal
 	codepoint32 = int32,
 	node = pointer,
-	array = 13,
+//	array = 13,
+	array = 0xAA,
 	charp = 0xC0, // vs
-	string = 0xC0,// use charp?  pointer, // enough no!??
+	stringp = 0xC0,// use charp?  pointer, // enough no!??
 //	value = 0xA1,// wrapped node Value, used as parameter? extract and remove! / ignore
 	todoe = 0xF0, // todo
-	ignore = 0xAA, // truely internal, should not be exposed! e.g. Arg
+	ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
 };
+
+chars typeName(Valtype t);
 
 
 // https://webassembly.github.io/spec/core/binary/types.html#binary-blocktype
