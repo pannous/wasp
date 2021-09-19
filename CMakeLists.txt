@@ -7,12 +7,28 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 # SET these configurations via Preferences… Build->CMake->Profiles
 # force set these only for urgent debugging,
-#set(RUNTIME_ONLY 0) # no Angle eval emit merge etc!
+#set(RUNTIME_ONLY 0) # no Angle eval emit merge etc! ≠ NO_TESTS
 ##set(VERBOSE 1)
 #set(DEBUG 1)
 #set(RELEASE 0)
 #set(WASM 1)
-#set(WASI 1)
+
+set(WEBAPP 1) # compile with WebView for electron like standalone apps.
+# V8 has wasm, so no m3 needed in release. can we even debug through V8??
+# interestingly if we have a native app we don't need our wasp.wasm runtime because it's c++ compiled into app.
+# but we would need a million bindings and calls, also we would LEAVE OUR SANDBOX,
+# so definately ship wasp.wasm runtime in release!
+if (WEBAPP)
+    ADD_COMPILE_DEFINITIONS(WEBAPP)
+    SET(WASM 0)
+    set(WASI 0)
+    SET(RUNTIME_ONLY 0) # we can emit to V8, right??
+endif ()
+if (WASM)
+    SET(WASM3 0)
+    REMOVE_DEFINITIONS(WASM3)
+    SET(WEBAPP 0) # just be sure
+endif ()
 # ^^ UNSET, or better don't set manually at all!
 
 #ADD_COMPILE_DEFINITIONS(DEBUG_WASM3)
@@ -34,12 +50,13 @@ endif ()
 if (NOT WASM)
     #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
     # ^^ fixes <cmath> mac errors!
+    MESSAGE("NOT WASMMMMM")
     ADD_COMPILE_DEFINITIONS(_Backtrace_)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm:
         #                set(MICRO 1) # NOT Mac M1 Arm64 ready!  wasm-micro-runtime => wasm_runner_micro.cpp
-        #                set(WABT 1) # SLOOOW on Mac M1!  wasm_runner_wabt.cpp
+        #                set(WABT 1) # SLOW on Mac M1!  wasm_runner_wabt.cpp
         set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #        set(wasmx 1)	// doesn't work: cannot insert imports or function types!
     endif ()
@@ -116,13 +133,22 @@ if (WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
 endif ()
 
+if (WEBAPP)
+endif ()
+
+#
+# END OF GENERAL CONFIGURATION
+#
+# DIFFERENT TARGETS :
+#
 if (WASM) # OR WASI)
     message(WASM)
     ADD_COMPILE_DEFINITIONS(WASM)
     #    set(CMAKE_SYSROOT "") // via -DCMAKE_TOOLCHAIN_FILE=wasm.toolchain.cmake
     if (WASI)
         ADD_COMPILE_DEFINITIONS(WASI) # same as -DWASI=1
-        set(CMAKE_ISYSROOT "")
+        set(CMAKE_ISYSROOT "") # typo? =>
+        set(CMAKE_SYSROOT "")
         ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
     else ()
         ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
@@ -180,7 +206,7 @@ if (WASM) # OR WASI)
         #        --no-validation   --debug
         ADD_COMPILE_FLAG("-Oz -Qn -Ws,--lto-O3,-O4,--gc-sections") # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
         ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
-        if (EMCC)
+        if (EMCC) # emscripten
             ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
         endif ()
     endif ()
@@ -267,11 +293,16 @@ elseif (WABT)
     target_include_directories(angle PUBLIC wabt/src)
     target_include_directories(angle PUBLIC wabt/src/interp)
     target_link_libraries(angle PRIVATE libwabt) # libwabt.a 20 MB only for local stuff!
-    #    add_custom_target(BuildWabtc ALL DEPENDS angle) #.exe
+    #    add_custom_target(Build_Wabt ALL DEPENDS angle) #.exe
+elseif (WEBAPP)
+    include(source/WebView.cmake)
+    set(SOURCE_FILES ${SOURCE_FILES} source/WebView.cpp)
+    add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+    target_link_libraries(${PROJECT_NAME} PUBLIC webview)
 elseif (WASM3)
+    MESSAGE(wasm3 VM)
     find_package(SDL2 REQUIRED)
     include_directories(${SDL2_INCLUDE_DIRS})
-    message(wasm3 VM)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     include(wasm3/cmake_install.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp source/Paint.cpp source/types/Number.cpp source/types/Number.h)

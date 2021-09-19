@@ -1369,7 +1369,12 @@ int main(int argp, char **argv) {
 		log(args);
 		current += strlen0(args)+1;
 #endif
-
+#ifdef WEBAPP
+		log("\nWEBAPP!");
+		// handing over to V8, we need to call testCurrent() from there!
+//		startApp();
+		init_graphics();
+#endif
 #ifndef NO_TESTS // RUNTIME_ONLY
 		testCurrent();
 #endif
