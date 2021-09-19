@@ -499,6 +499,15 @@ long emitData(Node node, String context) {
 	return last_pointer;
 }
 
+Code emitGlobal(Node node) {
+	Code code;
+	int i = globals.position(node.name);
+	code.addByte(global_get);
+	code.addByte(i);
+	last_type = globalTypes.values[i];
+	return code;
+}
+
 // put value on stack (vs emitData)
 // todo: last_type not enough if operator left≠right, e.g. ['a']#1  2.3 == 4 ?
 Code emitValue(Node node, String context) {
@@ -823,6 +832,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			if (local_index < 0) { // collected before, so can't be setter here
 				if (functionCodes.has(name) or functionSignatures.has(name))
 					return emitCall(node, context);
+				else if (globals.has(name)) return emitGlobal(node);
 				else if (name == "π") return emitValue(Node(3.1415926535897), current);
 				else if (!node.isSetter())
 					error("UNKNOWN local symbol "s + name + " in context " + context);
@@ -1377,6 +1387,56 @@ Code exportSection() {
 	return exportSection;
 }
 
+int global_import_count = 0;
+int global_user_count = 0;
+
+Code globalSection() {
+	// global imports purely in IMPORT section
+	// user global index += global_import_count !
+	//referenced through global indices, starting with the smallest index not referencing a global import.
+	global_user_count = globals.count();
+	Code globalsList;
+	globalsList.add(global_user_count);
+	/* example:
+	globalsList.addByte(0x01);// global_user_count
+	globalsList.addByte(int32);// value type of expression
+	globalsList.addByte(0x00);// mutable?
+	globalsList.addConst(9); // complicated initialization blocks allowed!!
+	globalsList.addByte(end_block);
+	*/
+	last_type = int32;
+	for (int i = 0; i < global_user_count; i++) {
+		String global_name = globals.keys[i];
+		Node *global_node = globals.values[i];
+		if (not global_node) {
+			warn("missing init for global "s + global_name);
+			global_node = new Node();// dummy
+		}
+		if ((*global_node)["import"])continue;
+//		Type type = global_node->kind;
+		Valtype valtype = mapTypeToWasm(*global_node);
+		globalTypes.insert_or_assign(global_name, valtype);
+		globalsList.addByte(valtype);
+		globalsList.addByte(0x00);// mutable?
+		globalsList.add(emitExpression(global_node, "global"));// todo names in global context!?
+		globalsList.addByte(end_block);
+		/*
+		switch (type) {
+			case longs:
+				globalsList.addConst(global_node->value.longy);
+				break;
+			case reals:
+				globalsList.addConst(global_node->value.real);
+				break;
+			default:
+				error("Missing globals export for type "s + typeName(type));
+		}
+				*/
+	}
+	auto globalSection = createSection(global_section, globalsList);
+	return globalSection;
+}
+
 Code dataSection() { // needs memory section too!
 //	Contents of section Data:
 //	0000042: 0100 4100 0b02 4869                      ..A...Hi
@@ -1630,16 +1690,19 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 	auto customSection = createSection(custom_section, customSectionvector);
 	Code typeSection1 = typeSection();// types must be defined in analyze(), not in code declaration
 	Code importSection1 = importSection();// needs type indices
+	Code globalSection1 = globalSection();//
 	Code codeSection1 = codeSection(root_ast); // needs functionSignatures and functionIndices prefilled!! :(
 	Code funcTypeSection1 = funcTypeSection();// signatures depends on codeSection, but must come before it in wasm
 	Code memorySection1 = memorySection();
 	Code exportSection1 = exportSection();// depends on codeSection, but must come before it!!
+
 	Code code = Code(magicModuleHeader, 4)
 	            + Code(moduleVersion, 4)
 	            + typeSection1
 	            + importSection1
 	            + funcTypeSection1 // signatures
 	            + memorySection1 // Wasm MVP can only define one memory per module WHERE?
+	            + globalSection1
 	            + exportSection1
 	            + codeSection1 // depends on importSection, yields data for funcTypeSection!
 	            + dataSection()
