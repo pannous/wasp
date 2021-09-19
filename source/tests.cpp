@@ -1765,9 +1765,8 @@ void testPaintWasm() {
 	assert_emit(wasm_paint_routine, 10);
 	while (1)requestAnimationFrame();// help a little
 }
-
 void testCurrent() { // move to tests() once OK
-	assert_emit("π", 3);
+	assert_emit("id (3+3)", (long) 6);
 //	exit(0);
 //	assert_emit("i=0;while(i++ <10001);i",10000)// parsed wrongly! while(  <( ++ i 10001) i)
 //	functionSignatures.setDefault(Signature());

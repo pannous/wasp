@@ -631,12 +631,13 @@ void Node::addSmart(Node node) {// merge?
 //			last().add(node);
 //		return;
 //	}
-if (letzt.kind == reference or letzt.kind == keyNode or letzt.name == "while" /*todo: functors, but not operators?*/)
-	letzt.addSmart(&node);
-else if (empty(name) and kind != expression and kind != groups)// last().kind==reference)
-	letzt.addSmart(&node);
-else
-	add(&node);// don't loop to addSmart lol
+	if (letzt.kind == reference or letzt.kind == keyNode or
+	    letzt.name == "while" /*todo: functors, but not operators?*/)
+		letzt.addSmart(&node);
+	else if (empty(name) and kind != expression and kind != groups)// last().kind==reference)
+		letzt.addSmart(&node);
+	else
+		add(&node);// don't loop to addSmart lol
 }
 
 //non-modifying
@@ -1083,3 +1084,56 @@ Node &Node::setType(Type type, bool check) {
 	return *this;
 }
 
+
+//String
+chars typeName(Type t) {
+	switch (t) {
+		case objects:
+			return "object";
+		case groups:
+			return "group";
+		case patterns:
+			return "pattern";
+		case keyNode:
+			return "node";
+		case reference:
+			return "reference";
+		case symbol:
+			return "symbol";
+		case operators:
+			return "operator";
+		case expression:
+			return "expression";
+		case strings:
+			return "string";
+		case arrays:
+			return "array";
+		case buffers:
+			return "buffer";
+		case reals:
+			return "float";
+		case longs:
+			return "number";
+			//		case ints:
+			//			return "int";
+		case bools:
+			return "bool";
+		case nils:
+			return "nil";
+		case unknown :
+			return "unknown";
+		case call:
+			return "call";// function
+		case declaration:
+			return "declaration";
+		case assignment:
+			return "assignment";
+		case errors:
+			return "error";
+		case functor:
+			return "functor";
+		default:
+			error(str("MISSING Type name mapping ") + t);
+			return "ERROR";
+	}
+}
