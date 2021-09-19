@@ -9,6 +9,9 @@
 
 void testWasmStuff();
 
+void testGlobals() {
+	assert_emit("π", 3);
+}
 
 void test_get_local() {
 	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
@@ -354,7 +357,6 @@ void testWasmIf() {
 }
 
 void testWasmWhile() {
-//	assert_emit("i=1;i++", 2);
 	assert_emit("i=1;while i<9:i++;i+1", 10);
 	assert_emit("i=1;while(i<9){i++};i+1", 10);
 	skip(
@@ -647,8 +649,8 @@ void testObjectPropertiesWasm() {
 void testArrayIndicesWasm() {
 //	testArrayIndices(); //	check node based (non-primitive) interpretation first
 	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
-	assert_emit("logs('ok');(1 4 3)#2", 4);
 	assert_emit("logs('ok');", 0);
+	assert_emit("logs('ok');(1 4 3)#2", 4);
 	assert_emit("{1 4 3}#2", 4);
 
 	assert_emit("x={1 4 3};x#2", 4);
@@ -740,9 +742,7 @@ void testAllWasm() {
 //	return;
 #endif
 
-	assert_emit("i=1;while(i<9){i++};i+1", 10);
-	assert_emit("452==452", 1);
-
+	testGlobals();
 	wasm_todos();
 	testWasmWhile();
 	skip(testObjectPropertiesWasm();)
