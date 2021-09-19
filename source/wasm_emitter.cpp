@@ -286,7 +286,8 @@ bool isAssignable(Node node, Node *type = 0) {
 
 int currentStackItemSize() {
 	int size = 1;// todo char, codepoint, int , pointer …
-	if (last_type == string)size = 1;// chars for now vs codepoint!
+	if (last_type == charp)size = 1;// chars for now vs codepoint!
+	if (last_type == stringp)size = 1;// chars for now vs pointer!
 //	if (last_type == int16)size = 2;
 	if (last_type == int32)size = 4;
 	if (last_type == int64)size = 8;
@@ -391,7 +392,7 @@ Code emitIndexRead(Node op, String context) {
 //	if(op[0].kind==strings) todo?
 	last_type = lhs_type;
 	if (last_type == charp)size = 1;// chars for now vs codepoint!
-	if (last_type == string)size = 1;// chars for now vs codepoint!
+	if (last_type == stringp)size = 1;// chars for now vs codepoint!
 	if (last_type == int32)size = 4;
 	if (last_type == int64)size = 8;
 	if (last_type == float32)size = 4;
@@ -481,7 +482,7 @@ long emitData(Node node, String context) {
 				// we add an extra 0, unlike normal wasm abi, because we have space in data section
 				data_index_end += pString->length + 1;
 			}
-			last_type = string;
+			last_type = stringp;
 			break;
 		}
 		case objects:
@@ -636,9 +637,9 @@ Code emitOperator(Node node, String context) {
 		code.push(rhs_code);// might be empty ok
 	} else if (node.length > 2) {// todo: n-ary? ∑? is just a function!
 		error("Too many args for operator "s + name);
-	} else if (node.next) { // todo really? handle ungrouped HERE? just hiding bugs?
-		const Code &arg_code = emitExpression(*node.next, context);
-		code.push(arg_code);// might be empty ok
+//	} else if (node.next) { // todo really? handle ungrouped HERE? just hiding bugs?
+//		const Code &arg_code = emitExpression(*node.next, context);
+//		code.push(arg_code);// might be empty ok
 	} else if (node.value.node and node.kind == keyNode) {// todo: serialize?
 		const Code &arg_code = emitExpression(*node.value.node, context);
 		code.push(arg_code);
@@ -653,7 +654,7 @@ Code emitOperator(Node node, String context) {
 		return code;
 	}
 	byte opcode = opcodes(name, last_type);
-	if (last_type == string)
+	if (last_type == stringp)
 		code.add(emitStringOp(node, String()));
 	else if (opcode == f32_sqrt and last_type == i32t) {
 		code.addByte(f32_convert_i32_s);// i32->f32
@@ -725,7 +726,7 @@ Code emitStringOp(Node op, String context) {
 //	Code stringOp;
 	if (op == "+") {
 		op = Node("concat");//demangled on readWasm, but careful, other signatures might overwrite desired one
-		last_type = string;
+		last_type = stringp;
 		functionSignatures["concat"].returns(charp);// hack
 //		op = Node("_Z6concatPKcS0_");//concat c++ mangled export:
 //		op = Node("concat_char_const*__char_const*_");// wat name if not stripped in lib release build
@@ -733,7 +734,7 @@ Code emitStringOp(Node op, String context) {
 //		stringOp.addByte();
 	} else if (op == "=" or op == "==" or op == "is" or op == "equals") {
 		op = Node("eq");//  careful : various signatures
-		last_type = string;
+		last_type = stringp;
 		return Code(i32_const) + Code(-1) + emitCall(op, context);// third param required!
 	} else if (op == "#") {// todo: all different index / pattern matches
 		op = Node("getChar");//  careful : various signatures
@@ -952,7 +953,8 @@ Code emitCall(Node &fun, String context) {
 	// args may have already been emitted, e.g. "A"+"B" concat
 	for (Node arg : fun) {
 		code.push(emitExpression(arg, context));
-		Valtype argType = mapTypeToWasm(arg);
+//		Valtype argType = mapTypeToWasm(arg); // todo ((+ 1 2)) needs deep analysis, or:
+		Valtype argType = last_type;// evaluated expression smarter than node arg!
 		Valtype &sigType = signature.types[i];
 		if (sigType != argType)
 			code.push(cast(argType, sigType));
@@ -973,7 +975,7 @@ Code cast(Valtype from, Valtype to) {
 	if (from == i32t and to == float32) casted.addByte(i32_cast_to_f32_s);
 	else if (from == float32 and to == i32t) casted.addByte(f32_cast_to_i32_s);
 	else
-		error("missing cast map "s + from + " -> " + to);
+		error("missing cast map "s + from + " -> " + to + " : " + typeName(from) + "=>" + typeName(to));
 	return casted;
 }
 

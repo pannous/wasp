@@ -7,6 +7,7 @@
 #include "NodeTypes.h"
 #include "wasm_helpers.h"
 #include "Map.h"
+#include "Code.h"
 
 #ifndef WASM
 //#include <string.h> // strcpy
@@ -355,58 +356,6 @@ String s(chars &s) {
 }
 
 
-//String
-chars typeName(Type t) {
-	switch (t) {
-		case objects:
-			return "object";
-		case groups:
-			return "group";
-		case patterns:
-			return "pattern";
-		case keyNode:
-			return "node";
-		case reference:
-			return "reference";
-		case symbol:
-			return "symbol";
-		case operators:
-			return "operator";
-		case expression:
-			return "expression";
-		case strings:
-			return "string";
-		case arrays:
-			return "array";
-		case buffers:
-			return "buffer";
-		case reals:
-			return "float";
-		case longs:
-			return "number";
-//		case ints:
-//			return "int";
-		case bools:
-			return "bool";
-		case nils:
-			return "nil";
-		case unknown :
-			return "unknown";
-		case call:
-			return "call";// function
-		case declaration:
-			return "declaration";
-		case assignment:
-			return "assignment";
-		case errors:
-			return "error";
-		case functor:
-			return "functor";
-		default:
-			error(str("MISSING Type name mapping ") + t);
-			return "ERROR";
-	}
-}
 
 #ifndef WASM
 //relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC

@@ -53,6 +53,7 @@ bool isFunction(String op) {
 }
 
 bool isFunction(Node &op) {
+	if (op.kind == strings)return false;
 	if (op.kind == declaration)return false;
 	return isFunction(op.name);
 }
@@ -317,6 +318,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 			expression.replace(i, i + 1, node);
 		} else {
 			Node &prev = expression.children[i - 1];
+			prev = analyze(prev);
 			if (suffixOperators.has(name)) { // x²
 				if (name == "ⁿ")functionSignatures["powf"].is_used = true;
 				if (i < 1)error("suffix operator misses left side");
@@ -696,10 +698,15 @@ void preRegisterSignatures() {
 	functionSignatures["requestAnimationFrame"].import().returns(voids);// paint surface
 	functionSignatures.insert_or_assign("init_graphics", Signature().import().returns(pointer));// surface
 //	functionSignatures["init_graphics"].import().returns(pointer);// BUUUUG!
+
+	// TODO!!!
+	// functionSignatures[ ] access is BROKEN!!! use functionSignatures.insert_or_assign so long!
+
 //	if(functionSignatures["init_graphics"].return_type!=pointer)error("WWWAAA");
 	// builtins
 	functionSignatures["nop"] = Signature().builtin();
-	functionSignatures["id"] = Signature().add(i32t).returns(i32t).builtin();
+//	functionSignatures["id"] = Signature().add(i32t).returns(i32t).builtin();
+	functionSignatures.insert_or_assign("id", Signature().add(i32t).returns(i32t).builtin());
 
 	// library signatures are parsed in consumeExportSection() via demangle
 	// BUT their return type is not part of name, so it needs to be hardcoded, if ≠ int32:
