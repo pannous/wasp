@@ -16,7 +16,9 @@ extern List<String> declaredFunctions;
 extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 
-extern Map<String /* implicit indices 0,1,2,… */, Node * /* compile-time modifiers/values? */> globals; // access from Angle!
+extern Map<String, Node * /* modifiers/values/init expressions*/> globals; // access from Angle!
+extern Map<String /*name*/, Valtype> globalTypes;
+
 
 //List<String> collectOperators(Node &expression);// test/debug only
 Node parse(String code);// wasp -> data  // this is the pure Wasp part

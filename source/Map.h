@@ -276,6 +276,10 @@ public:
 		return -1;
 	}
 
+	int count() {
+		return _size;
+	}
+
 	int size() {
 		return _size;
 	}
