@@ -20,7 +20,8 @@ Map<String, Signature> functionSignatures;
 Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 
-Map<String /* implicit indices 0,1,2,… */, Node * /* compile-time modifiers/values? */> globals; // access from Angle!
+Map<String, Node * /* modifiers/values/init expressions! */> globals; // access from Angle!
+Map<String /*name*/, Valtype> globalTypes;
 
 
 // functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
@@ -673,7 +674,7 @@ String debug_code;
 
 void preRegisterSignatures() {
 	// ORDER MATTERS: will be used for functionIndices later!
-
+	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 	functionSignatures.insert_or_assign("logi", Signature().import().add(int32).returns(voids));
 	functionSignatures.insert_or_assign("logf", Signature().import().add(float32).returns(voids));
