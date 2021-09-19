@@ -1,11 +1,11 @@
 # 🐝 Wasp = Wasm-Lisp
 
- **[Wasp]** is a new unified notation for both markup/object data and code.  
+ **[Wasp](/wiki)** is a new unified notation for both markup/object data and code.  
  Wasp is the foundation layer of the higher order programming language [angle](https://github.com/pannous/angle).
  
 «Data is Code and Code is Data»
 
-## Wasp Syntax
+## [Wasp Syntax](/wiki)
 
 For example, a HTML registration form:
 
