@@ -1057,8 +1057,8 @@ void log(Node *n0) {
 	log(n);
 }
 
-void printf(Node &) {
-	log("void printf(Node&);");
+void printf(Node &n) {
+	print((const Node) n);
 }
 
 

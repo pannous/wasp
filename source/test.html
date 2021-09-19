@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<body onclick='test().then(_=>terminate0())' style='height: 1000px;'>
+<a href='https://www.yay.com/' id='target'>YAY</a>
+<a href='https://wasm-feature-detect.surma.technology/'>WASM test</a>
+<p onclick='home()'>home</p>
+<p onclick='test()'>test</p>
+<p onclick='boom()'>boom</p>
+<p onclick='exit()'>exit</p>
+<p onclick='terminate()' style="background:gray;width:500px;height:500px">terminate</p>
+<script src="more.js">/*not allowed to load local resource*/</script>
+<script> // errors here fail silently :(
+function terminate0() {
+    console.log("terminate0 disabled: enable by removing 0");
+}
+
+function print(...x) {
+    logs(...x);// to stdout and window title!
+    console.log(...x);
+}
+
+function boom() {
+    print('boom')
+    target.innerHTML += " CONTENTS";// WORKS (only iff there is 1 id='target' !!)
+}
+
+// onmousemove
+window.onload = function () {
+    // document.body.innerText = `hello, ${navigator.userAgent}`;
+};
+
+// logs('hello').then(res=>print('noop res', res))
+// add(1, 2).then(function(res) {print('add res', res);});
+// window.location.href='https://www.yay.com/' // works
+
+// target.innerHTML+="JA!"
+// document.on('click','#target',function(){alert("click!!");});// document.on is not a function
+</script>
+
+<p id="message">OKKK22</p>
+<script type="text/javascript">
+    ignore = x => x
+    nop = x => ignore(x)
+
+    let memory_size = 100// pages à __kb  65536 // 4GB!
+    let memoryBase = 1024 * 16
+    let table_size = 294
+
+    async function wasmx(code) {
+        try {
+            let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
+            let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
+            let imports = {
+                env: {
+                    memory,
+                    table,
+                    ext_memcpy: nop,
+                    sum: (x, y) => x + y,
+                }
+            };
+            logs("STARTING WASM!");
+            let module = await WebAssembly.compile(code)// global
+            // instance = await WebAssembly.instantiate(module, imports, memory).catch(ex => console.error(trimStack(ex)) || quit())
+            //const module = await WebAssembly.compileStreaming(fetch('program.wasm'));
+            const instance = await WebAssembly.instantiate(module, imports, memory);
+            //const { instance } = await WebAssembly.instantiateStreaming(fetch('program.wasm'));
+            print("Exports: ", instance.exports);//show what we've got
+            if (instance.exports.main) {
+                result = instance.exports.main()
+                print("GOT RESULT!");
+                print(result)
+            } else {
+                print("NO MAIN!");
+            }
+        } catch (error) {
+            print('COMPILE ERROR', error.message)
+        }
+    }
+</script>
+</body>
+
