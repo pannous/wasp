@@ -4,6 +4,8 @@
 
 #define _Backtrace_ 1
 
+int addr2line(const char *fname, void *pVoid);
+
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -40,7 +42,11 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 				demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
 			name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
 			unsigned long offset = (char *) callstack[i] - (char *) info.dli_saddr;
-			snprintf(buf, sizeof(buf), "%-3d %s + %zd\n", i, name, offset);
+			int line_nr = addr2line(info.dli_fname, info.dli_saddr);
+			snprintf(buf, sizeof(buf), "%-3d %s + %zd @ %p \n", i, name, offset,
+			         info.dli_saddr);// or dli_fbase for function!
+//			snprintf(buf, sizeof(buf), "%s:%d \n", info.dli_fname, line_nr);// or dli_fbase for function!
+
 			free(demangled);
 
 		} else {
@@ -59,6 +65,10 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 	printf("%s\n", cStr);
 //	printf("/me/dev/script/wasm/wasp/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
 	return String(trace_buf.str().data());
+}
+
+int addr2line(const char *fname, void *pVoid) {
+	return 42;
 }
 
 
