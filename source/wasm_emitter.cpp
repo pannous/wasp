@@ -845,11 +845,14 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			}
 			if (node.isSetter()) { //SET
 				code = code + emitValue(node, context); // done above!
+//				todo: convert if wrong type
 				code.addByte(tee_local);// set and get/keep
 				code.addByte(local_index);
+				last_type = localTypes[context][local_index];
 			} else {// GET
 				code.addByte(get_local);// todo: skip repeats
 				code.addByte(local_index);
+				last_type = localTypes[context][local_index];
 			}
 		}
 			break;
@@ -1149,6 +1152,7 @@ Code emitBlock(Node node, String context) {
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0, used after while(){} etc) !!!
 // todo: locals must ALWAYS be collected in analyze step, emitExpression is too late!
 	last_local = 0;
+	last_type = int32;
 	int locals_count = locals[context].size();
 	trace("found %d locals for %s"s % locals_count % context);
 	log(locals[context]);
@@ -1159,7 +1163,7 @@ Code emitBlock(Node node, String context) {
 		warn("locals consumed by arguments"); // ok in  double := it * 2; => double(it){it*2}
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; i++) {
-		Valtype valtype = int32; // todo: fill these: localTypes[context][i];
+		Valtype valtype = localTypes[context][i];
 		block.addByte(i + 1);// index
 		if (valtype == none or valtype == voids or valtype == charp or valtype == array)
 			valtype = int32;
@@ -1647,8 +1651,10 @@ Code memorySection() {
 Code &emit(Node root_ast, Module *runtime0, String _start) {
 	if (root_ast.kind == objects)root_ast.kind = expression;
 	start = _start;
+	functionCodes.clear();
 	typeMap.setDefault(-1);
 	typeMap.clear();
+	locals.setDefault(List<String>());
 	data = (char *) malloc(MAX_DATA_LENGTH);
 	data_index_end = 0;
 	functionIndices.setDefault(-1);
@@ -1688,8 +1694,6 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 //		start = "";
 	}
 
-	functionCodes.clear();
-	locals.setDefault(List<String>());
 
 	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
 	auto customSection = createSection(custom_section, customSectionvector);
