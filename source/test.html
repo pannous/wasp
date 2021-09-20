@@ -69,11 +69,14 @@ window.onload = function () {
                 result = instance.exports.main()
                 print("GOT RESULT!");
                 print(result)
+                wasm_done(result);
             } else {
                 print("NO MAIN!");
+                wasm_error("NO MAIN!");
             }
         } catch (error) {
             print('COMPILE ERROR', error.message)
+            wasm_error(error.message);
         }
     }
 </script>
