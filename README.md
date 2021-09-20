@@ -39,20 +39,7 @@ form{
 
 [Angle](https://github.com/pannous/angle) is a new Programming Language using Wasp as data format, "Lisp with Hashes"
 
-In Lisp to create an object like foo:{bar:3} you have to resort to ugly reader macros like `#S(foo :bar 3)` 
-
-Wasp is a modern programming language and 'post-lisp' data format, fixing the shortcomings of JSON (no comments, verbose quoted keys…) , ECMA (breaking JS semantics) and [Lisp](https://github.com/google/schism) (maps second order citizens).  
-
-The big difference to Lisp is that everything is map based, lists are flat maps like in JS : ['a','b'] == {0:'a' 1:'b'}.
-
-This gives an universal exceptionless object data type, just like lists in lisp.
-
-What do Lisp, ECMA and Wasm have in common anyway?
-Unbeknownst to many, thanks to closures and ECMA Objects, modern JavaScript is getting ever closser to the original idea of Lisp:
-
-The Wasp syntax was influenced by [Mark](https://github.com/henry-luo/mark)
-
- **Wasp**, is a new unified notation for both object and markup data. The notation is a superset of what can be represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very clean syntax and simple data model.
+**Wasp**, is a new unified notation for both object and markup data. The notation is a superset of what can be represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very clean syntax and simple data model.
 
 - It has **clean syntax** with **fully-type** data model *(like JSON or even better)*
 - It is **generic** and **extensible** *(like XML or even better)*
