@@ -491,9 +491,11 @@ void testWasmRuntimeExtensionMock() {
 
 //testMerge
 void testWasmModuleExtension() {
+	printf("testWasmModuleExtension");
 #ifndef RUNTIME_ONLY
 	functionSignatures.clear();
 	Node charged = analyze(parse("test:=42"));
+	breakpoint_helper
 //	Code lib = emit(charged, 0, nil);// no main
 	Code lib = emit(charged, 0, 0);// "lib_main");
 	lib.save("lib.wasm");
@@ -547,7 +549,9 @@ void testWasmRuntimeExtension() {
 	assert_run("atoi0('123000')+atoi0('456')", 123456);
 	assert_run("atoi0('123'+'456')", 123456);
 	assert_run("x='123';x is '123'", true);
+	// works with ./wasp but breaks in webapp
 	assert_run("x=123;x + 4 is 127", true);
+	// works with ./wasp but breaks now:
 	assert_emit("x:43", 43);
 	assert_run("x:43", 43);
 	assert_run("ok+1", 43);
