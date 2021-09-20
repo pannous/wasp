@@ -100,5 +100,3 @@ The later 'polish-notation' (or sexp/lisp-notation with braces) can be used via 
 div{ class:"form-group" } vs div(class="form-group") vs div{ class:{"form-group"}} ?
 Should be [identical](identities) under most circumstances
 
-[[Todos]]
-* replace wasm-micro-runtime: The codebase is cancer
