@@ -65,10 +65,14 @@ fib := if it<2 : 0 else fib(it-1) + fib it - 2
 ```
 
 Angle runs as wasm file inside browsers an as small lambdas in edge computing.
-Angle programms which dont make use of the standard api can be extremely small <1kb,  
-just like handwritten wast but with much more comfort.
+**Compiled** Angle programms which dont make use of the standard api can be extremely small <1kb, just like handwritten [wast](https://www.richinfante.com/2020/01/03/webassembly-examples) but with much more comfort.
 
-The native Wasp/Angle binary contains a small **WebView** connector making use of the host's browser component (Edge or WebKit).
+Wasp and Angle are **free of dependencies** (other than gcc, if the (wasm) runtime is to be compiled from scratch).
+Only some optional features can make use of external dependencies:
+
+* The natives runtimes can be configured to ship with a JIT wasm runtime (wasm3, wasmer, wasm-micro-runtime) 
+
+* The **native** Wasp/Angle binary contains a small **WebView** connector making use of the host's browser component (Edge or WebKit).
 Since the Angle language can be compiled from wasm to wasm, this gives a whole self sufficient programming environment in less than 200kb,  
 with similar power to [electron](https://www.electronjs.org/) and QT. 
 
