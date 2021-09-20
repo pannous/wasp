@@ -1769,7 +1769,7 @@ void testCurrent() { // move to tests() once OK
 	testWasmLogicNegated();
 	testWasmLogic();
 	testWasmRuntimeExtension();
-//	testWasmModuleExtension();
+	//	testWasmModuleExtension(); 🚀🤘☘
 	testFloatOperators();
 	assert_emit("3+3", (int) 6);
 	assert_run("x='123';x=='123'", true);// ok
