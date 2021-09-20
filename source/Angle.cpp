@@ -161,7 +161,6 @@ List<String> collectOperators(Node &expression) {
 		//			operators.add(op.name);
 	}
 	auto by_precedence = [](String &a, String &b) { return precedence(a) > precedence(b); };
-	//	auto by_precedence = [](String &a) { return -precedence(a); };
 	operators.sort(by_precedence);
 	return operators;
 }
