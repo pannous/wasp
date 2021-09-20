@@ -726,7 +726,7 @@ Code emitOperator(Node node, String context) {
 	}
 	if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or opcode == i32_mul)
 		last_type = i32t;
-	if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt)
+	if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt or opcode == f32_ge or opcode == f32_le)
 		last_type = i32t;// bool'ish
 	return
 			code;
