@@ -37,6 +37,9 @@ Code &signedLEB128(long value);
 
 class Code {
 public:
+	virtual ~Code() {
+		data = 0;
+	}
 
 	bytes data = 0;
 	int length = 0;
@@ -378,6 +381,8 @@ enum Opcodes {
 	f32_auto = 0x43,
 
 	i32_eqz = 0x45, // use for not!
+	negate = 0x45,
+	not_truty = 0x45,
 	i32_eq = 0x46,
 	i32_ne = 0x47,
 	i32_lt = 0x48,
