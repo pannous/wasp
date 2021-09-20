@@ -992,7 +992,7 @@ int Node::index(String &string, int start, bool reverse) {
 
 int Node::lastIndex(String &string, int start) {
 	if (start <= 0)start = length;
-	for (int i = start; i >= 0; --i) {
+	for (int i = start - 1; i >= 0; i--) {
 		if (children[i].name == string)
 			return i;
 	}

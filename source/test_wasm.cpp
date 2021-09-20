@@ -355,7 +355,7 @@ void testWasmLogicOnObjects() {
 
 void testWasmLogic() {
 	skip(
-// should be easy to do, but do we really want this?
+	// should be easy to do, but do we really want this?
 			assert_emit("true true and", true);
 			assert_emit("false true and", false);
 			assert_emit("false false and ", false);
@@ -376,7 +376,9 @@ void testWasmLogic() {
 	assert_emit("false or false", false);
 	assert_emit("true or false", true);
 	assert_emit("true or true", true);
+}
 
+void testWasmLogicNegated() {
 	assert_emit("not true and not true", not true);
 	assert_emit("not true and not false", not true);
 	assert_emit("not false and not true", not true);
