@@ -469,6 +469,14 @@ enum nameSubSectionTypes {
 	local_names = 2,
 };
 
+//localContextTypes is messy
+class Local {
+	String name = "";// could be reused by multiple, but useful to debug
+	short position = 0;
+	Valtype type;
+	Node descriptor;
+};
+
 class Signature {
 public:
 	String function = "";// could be reused by multiple, but useful to debug

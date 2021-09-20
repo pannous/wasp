@@ -1766,6 +1766,10 @@ void testPaintWasm() {
 	while (1)requestAnimationFrame();// help a little
 }
 void testCurrent() { // move to tests() once OK
+	assert_emit("i=1.0;i", 1.0);
+	assert_emit("i=3;i", 3);
+	assert_emit("i=1.0;i", 1.0);
+
 	assert_emit("3+3", (int) 6);
 	assert_run("x='123';x=='123'", true);// ok
 

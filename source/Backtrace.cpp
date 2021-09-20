@@ -60,3 +60,29 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 //	printf("/me/dev/script/wasm/wasp/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
 	return String(trace_buf.str().data());
 }
+
+
+
+// with line numbers only on linux /
+/*
+#include <sys/prctl.h>
+void print_trace() {
+	char pid_buf[30];
+	sprintf(pid_buf, "%d", getpid());
+	char name_buf[512];
+	name_buf[readlink("/proc/self/exe", name_buf, 511)]=0;
+	auto PR_SET_PTRACER=1;
+	int PR_SET_PTRACER_ANY=1;
+	prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, 0, 0, 0);
+	int child_pid = fork();
+	if (!child_pid) {
+		dup2(2,1); // redirect output to stderr - edit: unnecessary?
+		execl("/usr/bin/gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt", name_buf, pid_buf, NULL);
+		abort(); */
+/* If gdb failed to start *//*
+
+	} else {
+		waitpid(child_pid,NULL,0);
+	}
+}
+*/

@@ -74,9 +74,11 @@ window.onload = function () {
                 wasi_unstable: {proc_exit: terminate},
                 env: {
                     memory,
+                    square: x => x * x, // usually native wasm, better test with 'double'!
                     logs: log,
                     logi: log,
                     logc: log,
+                    logf: log,
                     printf: log,
                     puts: log,
                     putchar: log,
