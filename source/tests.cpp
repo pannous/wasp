@@ -1766,6 +1766,9 @@ void testPaintWasm() {
 	while (1)requestAnimationFrame();// help a little
 }
 void testCurrent() { // move to tests() once OK
+//	assert_emit("i=8;i=i/2;i", 4);// make sure i stays a-float
+//	assert_emit("i=1.0;i=3;i=i/2;i=i*4", 6.0);// make sure i stays a-float
+	assert_emit("i=123.4;i", 123);// main returning int
 	assert_emit("i=1.0;i", 1.0);
 	assert_emit("i=3;i", 3);
 	assert_emit("i=1.0;i", 1.0);
