@@ -202,7 +202,7 @@ Node &Node::operator[](char c) {
 }
 
 int capacity = 30;// TODO !!! lol lists>100 elements;)
-int maxNodes = 8000;// TODO !!!
+int maxNodes = 800;// TODO !!!
 int lastChild = 1;
 
 

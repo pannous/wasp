@@ -96,15 +96,16 @@ window.onload = function () {
                     sum: (x, y) => x + y,
                 }
             };
-            log("STARTING WASM!");
+            // log("STARTING WASM!");
             let module = await WebAssembly.compile(code)// global
             // instance = await WebAssembly.instantiate(module, imports, memory).catch(ex => console.error(trimStack(ex)) || quit())
             //const module = await WebAssembly.compileStreaming(fetch('program.wasm'));
             const instance = await WebAssembly.instantiate(module, imports, memory);
             //const { instance } = await WebAssembly.instantiateStreaming(fetch('program.wasm'));
-            print("Exports: ", instance.exports);//show what we've got
+            // print("Exports: ", instance.exports);//show what we've got
             if (instance.exports.main) {
                 result = instance.exports.main()
+                print(result)
                 wasm_done(result);
             } else {
                 wasm_error("NO MAIN!");

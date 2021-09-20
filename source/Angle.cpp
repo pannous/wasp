@@ -519,7 +519,8 @@ Node &groupFunctions(Node &expressiona) {
 		if (rest.kind == groups)// and rest.has(operator))
 			rest.setType(expression);// todo f(1,2) vs f(1+2)
 		if (hasFunction(rest) and rest.first().kind != groups)
-			error("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
+			if (name != "id")// stupid but true id(x)+id(y)==id(x+id(y))
+				error("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
 		if (rest.first().kind == groups)
 			rest = rest.first();
 		// per-function precedence does NOT really increase readability or bug safety
@@ -647,7 +648,7 @@ Node analyze(Node node, String context) {
 		if (isVariable(node) and not localContext.has(node.name)) {
 			// or type == codepoints …
 			localContext.add(node.name);// need to pre-register before emitBlock!
-			localContextTypes.add(mapTypeToWasm(*node.value.node));
+			localContextTypes.add(mapTypeToWasm(node));
 		}
 		return node;// nothing to be analyzed!
 	}
@@ -771,6 +772,7 @@ int runtime_emit(String prog) {
 	code.save("merged.wasm");
 	read_wasm("merged.wasm");
 	int result = code.run();// todo parse stdout string as node and merge with emit() !
+	clearContext();
 	return result;
 }
 
