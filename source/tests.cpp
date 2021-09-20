@@ -445,8 +445,8 @@ void testUTFinCPP() {
 	char32_t smile = x[1];
 //	check(smile == smile1);
 #endif
-//	wstring_convert<codecvt_utf8<char32_t>, char32_t> cv;
-//	auto str32 = cv.from_bytes(str);
+//	wstring_convert<codecvt_utf8<char32_t>, char32_t> wasm_condition;
+//	auto str32 = wasm_condition.from_bytes(str);
 	char16_t character = u'牛';
 	char32_t hanzi = U'牛';
 	wchar_t word = L'牛';

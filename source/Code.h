@@ -13,6 +13,9 @@ typedef byte *bytes;
 
 class Code;
 
+// Different environments offer different run_wasm implementations:
+// wasm JIT runtimes: wasm3, wasm-micro-runtime, wabt, V8 via webview:
+// wasmer via console, node/browser via import, webview  …
 int run_wasm(bytes wasm_bytes, int len);
 
 int run_wasm(chars wasm_path);
