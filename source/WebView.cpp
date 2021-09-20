@@ -1,24 +1,10 @@
 #include <webview.h>
 #include <iostream>
 #include <sstream>
+#include <thread>
 // 104234 bytes if compiled with -Oz
 // todo: remove std::string from webview.h for much smaller size?
 
-#include <condition_variable>
-#include <thread>
-#include <chrono>
-//#include<pthread.h> c way?
-//pthread_t wait_for_wasm[2];
-
-std::condition_variable wasm_condition;
-//https://en.cppreference.com/w/cpp/thread/condition_variable
-std::mutex wasm_result_mutex;
-//	https://www.cplusplus.com/reference/mutex/mutex/
-// Even if the shared variable is atomic, it must be modified under the mutex
-
-#include <stdatomic.h>
-
-int wasm_error_code = -1;
 
 class Wait {
 public:
@@ -37,39 +23,17 @@ public:
 	}
 
 	int result() {
-		int r;
-		pthread_mutex_lock(&m_mutex);
-		r = m_result;
-		pthread_mutex_unlock(&m_mutex);
-		return r;
+		return m_result;
 	}
 
 private:
-	atomic_int m_result = -3;
+	int m_result = -1;
 	pthread_mutex_t m_mutex;
 	pthread_cond_t m_cond;
 	bool m_done;
 };
 
 static Wait waiter;
-
-void wasm_done(int wasm_result0) {
-	waiter.done(wasm_result0);
-	{
-		std::lock_guard<std::mutex> lk(wasm_result_mutex);
-		wasm_error_code = 0;
-	}
-//	std::cerr << "Notifying ...\n";
-	wasm_condition.notify_all();//
-}
-
-void wasm_error(std::string s) {
-	waiter.done(-2);
-	{
-		std::lock_guard<std::mutex> lk(wasm_result_mutex);
-		wasm_error_code = -1;
-	}
-}
 
 webview::webview w(true, nullptr);// global for lambdas
 std::string testWebview(std::string s);
@@ -137,12 +101,12 @@ int init_graphics() {
 		const std::string &string = webview::json_parse(s, "", 0);
 		int result0 = std::stoi(string);
 		printf("wasm_done  result = %d \n", result0);
-		wasm_done(result0);
+		waiter.done(result0);
 		return s;
 	});
 	w.bind("wasm_error", [](std::string s) -> std::string {
 		printf("wasm_error %s \n", s.data());
-		wasm_error(webview::json_parse(s, "", 0));
+		waiter.done(-1);
 		return s;
 	});
 	w.bind("terminate", [](std::string s) -> std::string {
@@ -236,18 +200,9 @@ int run_wasm_sync(unsigned char *bytes, int length) {
 		ss << std::hex << std::showbase << ((int) bytes[i]) << ", ";
 	}
 	ss << "]);wasmx(code);";
-	std::string wasm = ss.str();
-	w.eval(wasm);
-//	sleep(2);// lets the sub-thread wait but returns immediately WTF!?! I see why people hate c
-//	waiter.wait();
-	{
-		std::unique_lock<std::mutex> lk(wasm_result_mutex);
-		std::cerr << "Waiting... \n";
-//		wasm_condition.wait(lk, [] { return wasm_error_code >= 0; });
-		wasm_condition.wait(lk);
-		std::cerr << "...finished waiting. result = " << waiter.result();
-//		printf("finished Waiting  result = %d \n", wasm_result);
-	}
+	w.eval(ss.str());
+	waiter.wait();
+
 	// 3. feed natively how? BBQ OMG JIT wasm LLInt (low level interpreter)
 	// irrelevant / unprofessional? https://www.youtube.com/watch?v=1v4wPoMskfo
 	// https://webkit.org/blog/9329
