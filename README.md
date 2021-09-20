@@ -65,7 +65,7 @@ fib := if it<2 : 0 else fib(it-1) + fib it - 2
 ```
 
 Angle runs as wasm file inside browsers an as small lambdas in edge computing.
-**Compiled** Angle programms which dont make use of the standard api can be extremely small <1kb, just like handwritten [wast](https://www.richinfante.com/2020/01/03/webassembly-examples) but with much more comfort.
+Angle programms **compiled to wasm**, which dont make use of the standard api can be extremely small <1kb, just like handwritten [wast](https://www.richinfante.com/2020/01/03/webassembly-examples) but with much more comfort.
 
 Wasp and Angle are **free of dependencies** (other than gcc, if the (wasm) runtime is to be compiled from scratch).
 Only some optional features can make use of external dependencies:
