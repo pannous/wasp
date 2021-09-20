@@ -111,9 +111,10 @@ chars ras[] = {"=", "?:", "+=", "++:", 0};
 //List<chars> rightAssociatives = List(ras);
 #ifndef WASM
 List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++:", 0};// a=b=1 == a=(b=1) => a=1
-List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…", "+…"/*useless!*/, "~…", "*…", "&…", "sizeof", "new", "delete[]"};
-List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³","ⁿ", "…%", "％", "﹪", "٪",
-							   "‰"};// modulo % ≠ ％ percent
+List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…", "+…"/*useless!*/, "~…", "*…", "&…",
+                               "sizeof", "new", "delete[]"};
+List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", "％", "﹪", "٪",
+                               "‰"};// modulo % ≠ ％ percent
 // todo: norm all those unicode variants first!
 // ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
 
@@ -174,15 +175,28 @@ bool isVariable(Node &node) {
 	return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'a';// todo;
 }
 
+bool isPrimitive(Node node) {
+	Type type = node.kind;
+	if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
+		return true;
+	return false;
+}
+
+
 Node &groupDeclarations(Node &expression, const char *context) {
 //	Node &expression = *expression0.clone();// debug
 	for (Node &node : expression) {
 		String &op = node.name;
+		if (isPrimitive(node) and node.isSetter()) {
+			locals[context].add(op);// todo : proper calling context!
+			localTypes[context].add(mapTypeToWasm(node));// uh we have no type for pure references :(
+			continue;
+		}
 		if (node.kind == reference or (node.kind == keyNode and isVariable(node))) {// only constructors here!
 			if (not locals[context].has(op) and not isFunction(node)) {
-				locals[context].add(op);// todo : proper calling context!
 #ifndef RUNTIME_ONLY
-				localTypes[context].add(mapTypeToWasm(node));
+				locals[context].add(op);// todo : proper calling context!
+				localTypes[context].add(mapTypeToWasm(node));// uh we have no type for pure references :(
 #endif
 			}
 			continue;
@@ -256,6 +270,7 @@ Node &groupDeclarations(Node &expression, const char *context) {
 				signature.add(int32);// todo: arg type, or pointer
 			}
 			if (signature.size() == 0 and locals[name].size() == 0 and rest.has("it", false, 100)) {
+				locals[name].add("it");
 				localTypes[name].add(int32);
 				signature.add(int32);// todo
 			}
@@ -291,10 +306,8 @@ bool isVariable(String name, String context0) {
 Node &groupOperators(Node &expression, String context = "main") {
 	if (analyzed.has(expression.hash()))
 		return expression;
-//	analyzed.insert_or_assign(expression.hash(), 1);
-//	Node &expression = *expression0.clone();// modified in place!
-//	if(expression0.name=="if")return expression;// hack
-	List<String> &localContext = locals[context];
+	List<String> &localContext = locals[context];// todo: merge into Local object! :
+	List<Valtype> &localContextTypes = localTypes[context];
 	List<String> operators = collectOperators(expression);
 	String last = "";
 	int last_position = 0;
@@ -338,7 +351,10 @@ Node &groupOperators(Node &expression, String context = "main") {
 			} else {
 				//#ifndef RUNTIME_ONLY
 				if (name.endsWith("=") and prev.kind == reference)// todo can remove hack?
-					if (!localContext.has(prev.name)) localContext.add(prev.name);
+					if (!localContext.has(prev.name)) {
+						localContext.add(prev.name);
+						localContextTypes.add(mapTypeToWasm(*node.value.node));
+					}
 				//#endif
 				node.add(prev);
 				node.add(next);
@@ -422,6 +438,8 @@ Node &groupIf(Node n) {
 }
 
 Node &groupWhile(Node n);
+
+bool isPrimitive(Node node);
 
 Node &groupFunctions(Node &expressiona) {
 	if (expressiona.kind == declaration)return expressiona;// handled before
@@ -600,47 +618,56 @@ Node &groupWhile(Node n) {
 }
 
 
-Node analyze(Node code, String context) {
-	long hash = code.hash();
+Node analyze(Node node, String context) {
+	long hash = node.hash();
 	if (analyzed.has(hash))
-		return code;
+		return node;
 
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
-	Type type = code.kind;
+	Type type = node.kind;
 	List<String> &localContext = locals[context];
-	if (localContext.size() == 0)localContext.add("result");
+	List<Valtype> &localContextTypes = localTypes[context];
+//	if (localContext.size() == 0){
+//		localContext.add("result");// nice idea but NEEDS smartis:
+//		localContextTypes.add(int32);// UNKNOWN / could be anything!!
+//	}
 	if (type == functor) {
-		if (code.name == "while")return groupWhile(code);
-		if (code.name == "if")return groupIf(code);
+		if (node.name == "while")return groupWhile(node);
+		if (node.name == "if")return groupIf(node);
 	}
 	if (type == keyNode) {
-		if (not localContext.has(code.name))
-			localContext.add(code.name);
-		if (code.value.node /* i=ø has no node */)
-			code.value.node = analyze(*code.value.node).clone();
+		if (not localContext.has(node.name)) {
+			localContext.add(node.name);
+			localContextTypes.add(mapTypeToWasm(*node.value.node));
+		}
+		if (node.value.node /* i=ø has no node */)
+			node.value.node = analyze(*node.value.node).clone();
 	}
-	if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers) {
-		if (isVariable(code) and not localContext.has(code.name)) // or type == codepoints …
-			localContext.add(code.name);// need to pre-register before emitBlock!
-		return code;// nothing to be analyzed!
+	if (isPrimitive(node)) {
+		if (isVariable(node) and not localContext.has(node.name)) {
+			// or type == codepoints …
+			localContext.add(node.name);// need to pre-register before emitBlock!
+			localContextTypes.add(mapTypeToWasm(*node.value.node));
+		}
+		return node;// nothing to be analyzed!
 	}
 
-	bool is_function = isFunction(code);
+	bool is_function = isFunction(node);
 	if (type == operators or type == call or is_function) {
-		if (is_function)code.kind = call;
-		Node grouped = groupOperators(code, context);// outer analysis id(3+3) => id(+(3,3))
+		if (is_function)node.kind = call;
+		Node grouped = groupOperators(node, context);// outer analysis id(3+3) => id(+(3,3))
 		for (Node &child: grouped) {// inner analysis while(i<3){i++}
 //			if (child.kind == groups or child.kind == objects)// what if applying to real list though ?f([1,2,3])
 //				child.setType(expression);
 			const Node &analyze1 = analyze(child);
 			child = analyze1;// REPLACE with their ast? NO! todo
 		}
-		if (functionSignatures.has(code.name))
-			functionSignatures[code.name].is_used = true;
+		if (functionSignatures.has(node.name))
+			functionSignatures[node.name].is_used = true;
 		return grouped;
 	}
 
-	Node &groupedDeclarations = groupDeclarations(code, context);
+	Node &groupedDeclarations = groupDeclarations(node, context);
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
 	Node &grouped = groupOperators(groupedFunctions, context);
 	if (analyzed[grouped.hash()])return grouped;// done!
@@ -723,7 +750,6 @@ void clearContext() {
 	declaredFunctions.clear();
 	functionSignatures.clear();
 	functionSignatures.setDefault(Signature());
-	locals.insert_or_assign("main", List<String>());
 	analyzed.clear();// todo move much into outer analyze function!
 	analyzed.setDefault(0);
 	//	if(data.kind==groups) data.kind=expression;// force top level expression! todo: only if analyze recursive !
