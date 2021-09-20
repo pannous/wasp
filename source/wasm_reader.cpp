@@ -473,3 +473,4 @@ Module read_wasm(chars file) {
 
 #endif
 #undef pointerr
+

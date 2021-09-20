@@ -6,6 +6,13 @@
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 //#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
 
+#ifndef RUNTIME_ONLY
+// use assert_emit if runtime is not needed!! much easier to debug
+#define assert_run(mark, result) printf("\n%s:%d\n", __FILE__, __LINE__);check_eq(runtime_emit(mark), result);
+#else
+#define assert_run(a, b) skip(a)
+#endif
+
 
 void testWasmStuff();
 
@@ -92,9 +99,17 @@ void testFloatOperators() {
 	assert_emit(("3.0+3.0*3.0"), 12)
 	assert_emit(("3.1>3.0"), true)
 	assert_emit(("2.1<3.0"), true)
+	assert_emit("i=123.4;i", 123);// main returning int
+	assert_emit("i=1.0;i", 1.0);
+	assert_emit("i=3;i", 3);
+	assert_emit("i=1.0;i", 1.0);
+
+	assert_emit(("2.1<=3.0"), true)
+
 	skip(
+			assert_emit("i=8;i=i/2;i", 4);// make sure i stays a-float
+			assert_emit("i=1.0;i=3;i=i/2;i=i*4", 6.0);// make sure i stays a-float
 			"BUG IN WASM?? should work!?"
-			assert_emit(("2.1<=3.0"), true)
 			assert_emit(("3.1>=3.0"), true)
 	)
 
@@ -188,8 +203,13 @@ void testComparisonId() {
 
 void testComparisonIdPrecedence() {
 	// may be evaluated by compiler!
-	assert_emit("id 3*42 > id 2*3", 1)
-	assert_emit("id 3*1< id 2*3", 1)
+	skip(
+//	Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1`
+			assert_emit("id 3*42 > id 2*3", 1)
+			assert_emit("id 3*1< id 2*3", 1)
+	)
+	assert_emit("id(3*42)> id 2*3", 1)
+	assert_emit("id(3*1)< id 2*3", 1)
 	assert_emit("id 3*452==452*3", 1)
 	assert_emit(("id 3*42≥2*3"), 1)
 	assert_emit(("id 3*2≥2*3"), 1)
@@ -266,7 +286,6 @@ void testWasmVariables0() {
 //	assert_emit("i=123;i", 123);
 	assert_emit("i:=123;i+1", 124);
 	assert_emit("i=123;i+1", 124);
-//	assert_error("i:=123;i++", "i is a closure, can't be incremented");
 
 	assert_emit("i=123;i", 123);
 	assert_emit("i=1;i", 1);
@@ -285,6 +304,10 @@ void testWasmVariables0() {
 
 void testWasmIncrement() {
 	assert_emit("i=2;i++", 3);
+	skip(
+			assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
+//				assert_error("i:=123;i++", "i is a closure, can't be incremented");
+	)
 }
 
 void testWasmLogicUnaryVariables() {
@@ -309,14 +332,16 @@ void testWasmLogicUnary() {
 }
 
 void testWasmLogicOnObjects() {
-	assert_emit("not 'a'", false);
-	assert_emit("not {a:2}", false);
-	assert_emit("not {a:0}", false);// maybe
+	assert_run("not 'a'", false);
+	assert_run("not {a:2}", false);
+	skip(
+			assert_run("not {a:0}", false);// maybe
+	)
 
-	assert_emit("not ()", true);
-	assert_emit("not {}", true);
-	assert_emit("not []", true);
-	assert_emit("not ({[ø]})", true); // might skip :)
+	assert_run("not ()", true);
+	assert_run("not {}", true);
+	assert_run("not []", true);
+	assert_run("not ({[ø]})", true); // might skip :)
 
 }
 
@@ -380,7 +405,7 @@ void testWasmMemoryIntegrity() {
 // Fails at 100000, works at 100001 WHERE IS THIS SET?
 //	int start=125608;
 	int start = HEAP_OFFSET * 2;// out of bounds table access CORRUPTION!
-	int end = MEMORY_SIZE / 4; // /4 because 1 int = 4 bytes
+	long end = MEMORY_SIZE / 4; // /4 because 1 int = 4 bytes
 	for (int i = start; i < end; ++i) {
 		int tmp = memory[i];
 //		memory[i] = memory[i]+1;
@@ -474,10 +499,8 @@ void testWasmRuntimeExtensionMock() {
 	Module runtime = read_wasm("lib.wasm");// test:=42
 	Signature mock;// todo read Signature from wasm!?
 	functionSignatures.insert_or_assign("test", mock.returns(int32));
-	check(functionSignatures["test"].return_type == int32);
 	Node charged = analyze(parse("test"));
-	check(functionSignatures["test"].return_type == int32);
-	Code calling = emit(charged, &runtime, "main");
+	Code calling = emit(charged, &runtime, "maine");
 	calling.save("main.wasm");// partial wasm!
 	Module main = read_wasm("main.wasm");
 	Code code = merge_wasm(runtime, main);
@@ -521,14 +544,14 @@ void testWasmModuleExtension() {
 }
 
 
-#ifndef RUNTIME_ONLY
-// use assert_emit if runtime is not needed!! much easier to debug
-#define assert_run(mark, result) printf("\n%s:%d\n", __FILE__, __LINE__);check_eq(runtime_emit(mark), result);
-#else
-#define assert_run(a, b) skip(a)
-#endif
-
 void testWasmRuntimeExtension() {
+	assert_run("x=123;x + 4 is 127", true);
+	assert_run("atoi0('123'+'456')", 123456);
+	assert_run("'123' is '123'", true);
+	assert_emit("x:43", 43);
+	assert_run("x:43", 43);
+	assert_run("ok+1", 43);
+
 //	functionSignatures["ok"].returns(int32);
 //	assert_emit("x='123';x + '4' is '1234'", true);// unknown function concat: needs runtime
 	assert_run("'123' + '4' is '1234'", true);// ok
@@ -548,13 +571,9 @@ void testWasmRuntimeExtension() {
 	assert_run("atoi0('123')", 123);
 	assert_run("atoi0('123000')+atoi0('456')", 123456);
 	assert_run("atoi0('123'+'456')", 123456);
-	assert_run("x='123';x is '123'", true);
 	// works with ./wasp but breaks in webapp
-	assert_run("x=123;x + 4 is 127", true);
+//	assert_run("x=123;x + 4 is 127", true);
 	// works with ./wasp but breaks now:
-	assert_emit("x:43", 43);
-	assert_run("x:43", 43);
-	assert_run("ok+1", 43);
 
 	//	assert_run("okf(1)", 43);
 	//	assert_run("43", 43);
@@ -564,7 +583,6 @@ void testWasmRuntimeExtension() {
 	//	assert_run("'123'='123'", true);// parsed as keyNode a:b !?!? todo!
 	//	assert_run("'123' = '123'", true);
 	assert_run("ok+1", 43);
-	assert_run("atoi0('123'+'456')", 123456);
 	assert_run("'123' == '123'", true);
 	assert_run("'123' is '123'", true);
 	assert_run("'123' equals '123'", true);
@@ -690,9 +708,7 @@ void testArrayIndicesWasm() {
 	)
 
 	//assert_emit("pixel=100 ints;pixel[1]=15;pixel[1]", 15);
-	skip(
-			assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
-	)
+
 }
 
 
@@ -728,6 +744,7 @@ void wasm_todos() {
 	assert_emit("0.0", (long) 0);// can't emit float yet
 	assert_emit(("x=15;x>=14"), 1)
 	skip(
+			assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
 			assert_emit("i=1.0;i", 1.0);// works first time but not later in code :(
 			assert_emit("i=0.0;i", 0.0);//
 
@@ -748,6 +765,7 @@ void testAllWasm() {
 	logs("NO WASM emission...");
 //	return;
 #endif
+//testWasmLogicOnObjects();
 
 	testGlobals();
 	wasm_todos();
@@ -763,9 +781,10 @@ void testAllWasm() {
 //	testMergeRelocate();
 
 //	exit(21);
-//	testWasmIncrement
+	testWasmIncrement();
 
 // TRUE TESTS:
+	testComparisonIdPrecedence();
 	testRecentRandomBugs();
 	testOldRandomBugs();
 	testWasmStuff();
@@ -787,9 +806,9 @@ void testAllWasm() {
 	testWasmVariables0();
 	testWasmModuleExtension();
 	testWasmRuntimeExtension();
+	wasm_todos();
 	skip(
-			testWasmLogicOnObjects();
-			wasm_todos();
+			testWasmRuntimeExtensionMock();
 	)
 	data_mode = true;// allow
 }
