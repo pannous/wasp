@@ -37,7 +37,36 @@ form{
 
 # Angle Language
 
-[Angle](https://github.com/pannous/angle) is a new Programming Language using Wasp as data format, "Lisp with Hashes"
+[Angle](https://github.com/pannous/wasp/wiki/angle) is a new Programming Language using Wasp as data format, "Lisp with Hashes"
+
+Hello World in Angle is  
+`"Hello World"`  
+
+The deep formal reason why this is a valid program is that the last object in a block is its return value  
+and the last result in the root block of the main file is printed.
+
+Fibonacci in Angle is
+```
+fibonacci number = if number<2 : 0 else fibonacci(number - 1) + fibonacci it - 2
+```
+
+Note how number simulataneously acts as type and variable name.  
+Note how the unique argument `number` can be accessed via `it` keyword and brackets are optional
+
+[Auto typed](type-inference) fibonacci in Angle is
+```
+fib := if it<2 : 0 else fib(it-1) + fib it - 2
+```
+
+
+## [Documentation](https://github.com/pannous/wasp/wiki/)
+- [Features](https://github.com/pannous/wasp/wiki/features)
+- [Inventions](https://github.com/pannous/wasp/wiki/Inventions)
+- [Examples](https://github.com/pannous/wasp/wiki/Examples)
+
+
+## Wasp Data Model
+
 
 **Wasp**, is a new unified notation for both object and markup data. The notation is a superset of what can be represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very clean syntax and simple data model.
 
@@ -56,13 +85,11 @@ form{
 | Wide adoption          | not yet | yes| yes | yes | limited                            | limited                               |
 
 
-## Wasp Data Model
-
-Wasp has a very simple and fully-typed data model. 
+Wasp has a simple and fully-typed data model. 
 ## [Documentation](https://github.com/pannous/wasp/wiki/)
 
 - [Syntax specification](https://github.com/pannous/wasp/wiki/syntax)
-- [Data model and API specification](https://github.com/pannous/wasp/wiki/data)
+- [Data model](https://github.com/pannous/wasp/wiki/data)
 - [FAQ](https://github.com/pannous/wasp/wiki/FAQ)
 - [Examples](https://github.com/pannous/wasp/wiki/Examples)
 
