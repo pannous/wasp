@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include <stdatomic.h>
 // 104234 bytes if compiled with -Oz
 // todo: remove std::string from webview.h for much smaller size?
 
@@ -23,17 +24,23 @@ public:
 	}
 
 	int result() {
-		return m_result;
+		int r;
+		pthread_mutex_lock(&m_mutex);
+		r = m_result;
+		m_done = false;// restart / allow another wait
+		pthread_mutex_unlock(&m_mutex);
+		return r;
 	}
 
 private:
-	int m_result = -1;
+	atomic_int m_result = -3;
 	pthread_mutex_t m_mutex;
 	pthread_cond_t m_cond;
 	bool m_done;
 };
 
-static Wait waiter;
+//static
+Wait waiter;
 
 webview::webview w(true, nullptr);// global for lambdas
 std::string testWebview(std::string s);
