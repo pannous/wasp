@@ -8,14 +8,14 @@
 <p onclick='boom()'>boom</p>
 <p onclick='exit()'>exit</p>
 <p onclick='terminate()' style="background:gray;width:500px;height:500px">terminate</p>
-<script src="more.js">/*not allowed to load local resource*/</script>
+<!--    <script src="more.js">/*not allowed to load local resource*/</script>-->
 <script> // errors here fail silently :(
 function terminate0() {
     console.log("terminate0 disabled: enable by removing 0");
 }
 
 function print(...x) {
-    logs(...x);// to stdout and window title!
+    log(...x);// to stdout and window title!
     console.log(...x);
 }
 
@@ -24,20 +24,12 @@ function boom() {
     target.innerHTML += " CONTENTS";// WORKS (only iff there is 1 id='target' !!)
 }
 
-// onmousemove
 window.onload = function () {
-    // document.body.innerText = `hello, ${navigator.userAgent}`;
+    test()
 };
-
-// logs('hello').then(res=>print('noop res', res))
-// add(1, 2).then(function(res) {print('add res', res);});
-// window.location.href='https://www.yay.com/' // works
-
-// target.innerHTML+="JA!"
-// document.on('click','#target',function(){alert("click!!");});// document.on is not a function
 </script>
 
-<p id="message">OKKK22</p>
+<p id="message">RUNNING WASM TESTS</p>
 <script type="text/javascript">
     ignore = x => x
     nop = x => ignore(x)
@@ -46,19 +38,63 @@ window.onload = function () {
     let memoryBase = 1024 * 16
     let table_size = 294
 
+    function loadBytes(byte_start, len) {
+        print("TODO loadBytes")
+        return new Uint8Array(start);
+    }
+
+    function trimStack(x) {
+        return x
+    }
+
+    let backtrace = function (print = 1) {
+        try {
+            throw new Error()
+        } catch (ex) {
+            if (print) console.error(trimStack(ex, 1)); else return trimStack(ex)
+        }
+    }
+
+    function raise(msg) {
+        print(msg)
+        exit(0)
+    }
+
+    let memset = function (ptr, value, num) {
+        memory[ptr] = value// ?
+        log('todo("memset")', ptr, value, num)
+        raise("memset should be part of wasp!?!")
+    }
+
     async function wasmx(code) {
         try {
             let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
             let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
             let imports = {
+                wasi_unstable: {proc_exit: terminate},
                 env: {
+                    memory,
+                    logs: log,
+                    logi: log,
+                    logc: log,
+                    printf: log,
+                    puts: log,
+                    putchar: log,
+                    panic: terminate,
+                    raise,
+                    memset,
+                    _ZSt9terminatev: terminate,
+                    __cxa_begin_catch: nop,
+                    _Z4emit4NodeP6Module6String: nop,
+                    _Z10merge_wasm6ModuleS_: nop,
+                    _Z8run_wasmPhi: (bytes, len) => wasmx(loadBytes(bytes, len)),// full circle yay!
                     memory,
                     table,
                     ext_memcpy: nop,
                     sum: (x, y) => x + y,
                 }
             };
-            logs("STARTING WASM!");
+            log("STARTING WASM!");
             let module = await WebAssembly.compile(code)// global
             // instance = await WebAssembly.instantiate(module, imports, memory).catch(ex => console.error(trimStack(ex)) || quit())
             //const module = await WebAssembly.compileStreaming(fetch('program.wasm'));
@@ -67,11 +103,8 @@ window.onload = function () {
             print("Exports: ", instance.exports);//show what we've got
             if (instance.exports.main) {
                 result = instance.exports.main()
-                print("GOT RESULT!");
-                print(result)
                 wasm_done(result);
             } else {
-                print("NO MAIN!");
                 wasm_error("NO MAIN!");
             }
         } catch (error) {
