@@ -677,11 +677,10 @@ Code emitOperator(Node node, String context) {
 		code.addByte(i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
 		code.addByte(i32_eqz);
 		last_type = i32t;// bool'ish
-	} else if (name == "++") {
-		Node increased = Node("+").setType(operators);
+	} else if (name == "++" or name == "--") {
+		Node increased = Node(name[0]).setType(operators);
 		increased.add(node.first());
 		increased.add(new Node(1));
-		//		emitExpression(increased,context);
 		code.add(emitSetter(node.first(), increased, context));
 	} else if (name == "#") {// index operator
 		if (node.parent and node.parent->name == "=")// setter!
