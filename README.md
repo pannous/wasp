@@ -37,7 +37,8 @@ form{
 
 # Angle Language
 
-[Angle](https://github.com/pannous/wasp/wiki/angle) is a new Programming Language using Wasp as data format, "Lisp with Hashes"
+[Angle](https://github.com/pannous/wasp/wiki/angle) is a new Programming Language using Wasp as data format,  
+"Lisp with Hashes" and optional braces.
 
 Hello World in Angle is  
 `"Hello World"`  
@@ -53,13 +54,14 @@ fibonacci number = if number<2 : 0 else fibonacci(number - 1) + fibonacci it - 2
 Note how number simulataneously acts as type and variable name.  
 Note how the unique argument `number` can be accessed via `it` keyword and brackets are optional
 
-[Auto typed](type-inference) fibonacci in Angle is
+[Auto typed](https://github.com/pannous/wasp/wiki/type-inference) fibonacci in Angle is
 ```
 fib := if it<2 : 0 else fib(it-1) + fib it - 2
 ```
 
 
 ## [Documentation](https://github.com/pannous/wasp/wiki/)
+- [Syntax specification](https://github.com/pannous/wasp/wiki/syntax)
 - [Features](https://github.com/pannous/wasp/wiki/features)
 - [Inventions](https://github.com/pannous/wasp/wiki/Inventions)
 - [Examples](https://github.com/pannous/wasp/wiki/Examples)
@@ -88,7 +90,6 @@ fib := if it<2 : 0 else fib(it-1) + fib it - 2
 Wasp has a simple and fully-typed data model. 
 ## [Documentation](https://github.com/pannous/wasp/wiki/)
 
-- [Syntax specification](https://github.com/pannous/wasp/wiki/syntax)
 - [Data model](https://github.com/pannous/wasp/wiki/data)
 - [FAQ](https://github.com/pannous/wasp/wiki/FAQ)
 - [Examples](https://github.com/pannous/wasp/wiki/Examples)
