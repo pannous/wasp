@@ -1766,7 +1766,7 @@ void testPaintWasm() {
 	while (1)requestAnimationFrame();// help a little
 }
 void testCurrent() { // move to tests() once OK
-
+	testWasmLogic();
 	testWasmRuntimeExtension();
 //	testWasmModuleExtension();
 	testFloatOperators();
