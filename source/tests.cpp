@@ -1766,7 +1766,6 @@ void testPaintWasm() {
 	while (1)requestAnimationFrame();// help a little
 }
 void testCurrent() { // move to tests() once OK
-	assert_emit(("2.1<=3.0"), true)
 	testWasmLogicNegated();
 	testWasmLogic();
 	testWasmRuntimeExtension();
