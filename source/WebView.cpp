@@ -81,6 +81,17 @@ void bind(char *name, char *(*func)(char *)) {
 	});
 }
 
+void splitLog(const std::string s) {
+	w.set_title(s);
+	int index = 0;
+	std::string item;
+	while (index < 100) {
+		item = webview::json_parse(s, "", index++);
+		std::cout << item << std::endl;
+		if (item.length() == 0)break;
+	}
+}
+
 int init_graphics() {
 	printf("\nWebView!\n");
 
@@ -139,16 +150,12 @@ int init_graphics() {
 		return s;
 	});// works, with
 	w.bind("alert", [](std::string s) -> std::string {
-		if (not s.find(",")) // keep [x,y]
-			s = webview::json_parse(s, "", 0);// [x] => x
-		w.set_title(s);
-		std::cout << s << std::endl;
+		splitLog(s);
 		return s;
 	});// no native popup?
 	// why does alert('a') print 'a' alert(1) print 1, even though lambda type is string?
-	w.bind("logs", [](std::string s) -> std::string {
-		w.set_title(s);
-		std::cout << s << std::endl;
+	w.bind("log", [](std::string s) -> std::string {
+		splitLog(s);
 		return s;
 	});
 	w.bind("add", [](std::string s) -> std::string {
@@ -156,7 +163,6 @@ int init_graphics() {
 		auto b = std::stoi(webview::json_parse(s, "", 1));
 		return std::to_string(a + b);
 	});
-
 	// printf("%s",w.return("{'test':'value'}"));// json_parse_c()?
 	// w.on_message() private but interesting… !
 	// [[config preferences] setValue:@YES forKey:@"developerExtrasEnabled"]
