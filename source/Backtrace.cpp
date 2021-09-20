@@ -30,6 +30,7 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 		// skip __libc_start_main _start
 //		printf("%s\n", symbols[i]);
 		Dl_info info;
+		chars name;
 		if (dladdr(callstack[i], &info) && info.dli_sname) {
 			char *demangled = NULL;
 			int status = -1;
@@ -37,15 +38,18 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 				printf("%s\n", info.dli_fname);
 			if (info.dli_sname[0] == '_')
 				demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
-			auto name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
+			name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
 			unsigned long offset = (char *) callstack[i] - (char *) info.dli_saddr;
 			snprintf(buf, sizeof(buf), "%-3d %s + %zd\n", i, name, offset);
 			free(demangled);
+
 		} else {
 			snprintf(buf, sizeof(buf), "%-3d %*p %s\n",
 			         i, int(2 + sizeof(void *) * 2), callstack[i], symbols[i]);
 		}
 		trace_buf << buf;
+		if (eq(name, "testCurrent()"))
+			break;
 	}
 	free(symbols);
 	if (nFrames == nMaxFrames)

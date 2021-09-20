@@ -1293,12 +1293,14 @@ Code importSection() {
 //	if (functionSignatures["square"].is_used and ++import_count)
 //		imports =
 //				imports + encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
+	int extra_mem = 0;
 	if (memoryHandling == import_memory) {
+		extra_mem = 1;// add to import_section but not to functions:import_count
 		imports = imports + encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 +
 		          (byte) 0x01;;
 	}
 	if (imports.length == 0)return Code();
-	auto importSection = createSection(import_section, Code(import_count) + imports);// + sqrt_ii
+	auto importSection = createSection(import_section, Code(import_count + extra_mem) + imports);// + sqrt_ii
 	return importSection.clone();
 }
 
@@ -1663,6 +1665,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		int newly_pre_registered = 0;//declaredFunctions.size();
 		last_index = runtime_offset - 1;
 	} else {
+		memoryHandling = import_memory;
 		last_index = -1;
 		runtime = *new Module();// all zero
 		runtime_offset = 0;

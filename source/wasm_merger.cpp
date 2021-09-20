@@ -46,8 +46,8 @@ Code mergeMemorySection(Module lib, Module main) {
 
 Code mergeGlobalSection(Module lib, Module main) {
 	if (lib.global_count == 0 and main.global_count == 0)return Code();
-//	Code(lib.global_count + main.global_count)
-	return createSection(global_section, lib.globals_data + main.globals_data);
+	Code mergedGlobals = Code(lib.global_count + main.global_count) + lib.globals_data++ + main.globals_data++;
+	return createSection(global_section, mergedGlobals);
 }
 
 Code mergeExportSection(Module lib, Module main) {

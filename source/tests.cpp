@@ -1766,15 +1766,16 @@ void testPaintWasm() {
 	while (1)requestAnimationFrame();// help a little
 }
 void testCurrent() { // move to tests() once OK
+	assert_emit("3+3", (int) 6);
+	assert_run("x='123';x=='123'", true);// ok
+
 //	Node result = emit("3*3");
 //	printf("!result:", result);
 //	print(result);
 //	Node eval1 = eval("2+2");
 //	printf(eval1);
-	assert_emit("3+3", (int) 6);
 	assert_emit("3*3", (int) 9);
-//	assert_emit("id (3+3)", (long) 6);
-	return;
+	assert_emit("id (3+3)", (long) 6);
 
 //	exit(0);
 //	assert_emit("i=0;while(i++ <10001);i",10000)// parsed wrongly! while(  <( ++ i 10001) i)
