@@ -37,8 +37,8 @@ form{
 
 The wasp runtime is available as
 * native **binary** for Mac, Linux and Windows
-* small standalone **webassembly** file (~100kb), including
-* wasm **compiler** in wasm:
+* small standalone **webassembly** file (~50kb), with or without  
+* a wasm **compiler** (~100kb) in wasm:
 
 # Angle Language
 
