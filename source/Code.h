@@ -114,6 +114,23 @@ public:
 		length = len + 1;
 	}
 
+
+	Code operator++() {
+		if (length == 0)return Code();
+//		start++;
+		data++;
+		length--;
+		return *this;
+	}
+
+	Code operator++(int postfix) {
+		if (postfix == 0)postfix = 1;
+		if (length < postfix)return Code();
+		data += postfix;
+		length -= postfix;
+		return *this;
+	}
+
 	Code operator+(Code more) {
 		return this->push(more);
 	}
