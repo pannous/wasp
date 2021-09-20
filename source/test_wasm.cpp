@@ -87,6 +87,14 @@ void testMathPrimitives() {
 	assert_emit("-42", -42)
 	assert_emit(("2000000000"), 2000000000)
 	assert_emit(("-2000000000"), -2000000000)
+
+	assert_emit("x=3;x*=3", 9)
+	assert_emit("'hello';(1 2 3 4);10", 10);
+	assert_emit("i=ø; not i", true);
+	assert_emit("0.0", (long) 0);// can't emit float yet
+	assert_emit(("x=15;x>=14"), 1)
+	assert_emit("i=1.0;i", 1.0);// works first time but not later in code :(
+	assert_emit("i=0.0;i", 0.0);//
 }
 
 void testFloatOperators() {
@@ -368,6 +376,38 @@ void testWasmLogic() {
 	assert_emit("false or false", false);
 	assert_emit("true or false", true);
 	assert_emit("true or true", true);
+
+	assert_emit("not true and not true", not true);
+	assert_emit("not true and not false", not true);
+	assert_emit("not false and not true", not true);
+	assert_emit("not false and not false", not false);
+	assert_emit("not false or not true and not true", not false);// == not false or (not true)
+
+	assert_emit("not true xor not false", not false);
+	assert_emit("not false xor not true", not false);
+	assert_emit("not true xor not true", not true);
+	assert_emit("not false xor not false", not true);
+	assert_emit("not true or not false", not false);
+	assert_emit("not true or not true", not true);
+	assert_emit("not false or not true", not false);
+	assert_emit("not false or not false", not false);
+}
+
+void testWasmLogicCombined() {
+	assert_emit("3<1 and 3<1", 3 < 1);
+	assert_emit("3<1 and 9>8", 3 < 1);
+	assert_emit("9>8 and 3<1", 3 < 1);
+	assert_emit("9>8 and 9>8", 9 > 8);
+	assert_emit("9>8 or 3<1 and 3<1", 9 > 8);// == 9>8 or (3<1)
+
+	assert_emit("3<1 xor 9>8", 9 > 8);
+	assert_emit("9>8 xor 3<1", 9 > 8);
+	assert_emit("3<1 xor 3<1", 3 < 1);
+	assert_emit("9>8 xor 9>8", 3 < 1);
+	assert_emit("3<1 or 9>8", 9 > 8);
+	assert_emit("3<1 or 3<1", 3 < 1);
+	assert_emit("9>8 or 3<1", 9 > 8);
+	assert_emit("9>8 or 9>8", 9 > 8);
 }
 
 void testWasmIf() {
@@ -385,6 +425,7 @@ void testWasmIf() {
 void testWasmWhile() {
 	assert_emit("i=1;while i<9:i++;i+1", 10);
 	assert_emit("i=1;while(i<9){i++};i+1", 10);
+	assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
 	skip(
 			assert_emit("i=1;while(i<9)i++;i+1", 10);// needs valueNode conceptual overhaul
 	)
@@ -738,22 +779,17 @@ void testRecentRandomBugs() {
 
 //testWasmControlFlow
 void wasm_todos() {
-	assert_emit("x=3;x*=3", 9)
-	assert_emit("'hello';(1 2 3 4);10", 10);
-	assert_emit("i=ø; not i", true);
-	assert_emit("0.0", (long) 0);// can't emit float yet
-	assert_emit(("x=15;x>=14"), 1)
 	skip(
 			assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
-			assert_emit("i=1.0;i", 1.0);// works first time but not later in code :(
-			assert_emit("i=0.0;i", 0.0);//
 
 			assert_emit(("42.1"), 42.1) // main returns int, should be pointer to value!
-			testWasmVariables0();
+
 			//			Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1`
 			assert_emit("id 3*42 > id 2*3", 1)
 			assert_emit("square 3*42 > square 2*3", 1)
 			assert_emit("double:=it*2; double 3*42 > double 2*3", 1)
+	// is there a situation where a COMPARISON is ambivalent?
+	// sleep ( time > 8pm ) and shower ≠ sleep time > ( 8pm and true)
 	)
 }
 
@@ -765,12 +801,14 @@ void testAllWasm() {
 	logs("NO WASM emission...");
 //	return;
 #endif
-//testWasmLogicOnObjects();
 
 	testGlobals();
 	wasm_todos();
 	testWasmWhile();
-	skip(testObjectPropertiesWasm();)
+	skip(
+			testWasmLogicOnObjects();
+			testObjectPropertiesWasm();
+	)
 	// todo: reuse all tests via
 	//	interpret = false;
 	// constant things may be evaluated by compiler!
@@ -806,6 +844,7 @@ void testAllWasm() {
 	testWasmVariables0();
 	testWasmModuleExtension();
 	testWasmRuntimeExtension();
+	testWasmVariables0();
 	wasm_todos();
 	skip(
 			testWasmRuntimeExtensionMock();
