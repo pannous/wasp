@@ -91,7 +91,9 @@ long emitData(Node node, String context);
 
 
 // https://pengowray.github.io/wasm-ops/
-byte opcodes(chars s, byte kind = 0) {
+byte opcodes(chars s, Valtype kind, Valtype previous = none) {
+	//	previous is lhs in binops!
+
 //	if(eq(s,"$1="))return set_local;
 //	if (eq(s, "=$1"))return get_local;
 //	if (eq(s, "=$1"))return tee_local;
@@ -100,7 +102,8 @@ byte opcodes(chars s, byte kind = 0) {
 		if (eq(s, "+"))return i32_add;
 		if (eq(s, "-"))return i32_sub;
 		if (eq(s, "*"))return i32_mul;
-		if (eq(s, "/"))return i32_div;
+		if (eq(s, "/"))
+			return i32_div;
 		if (eq(s, "%"))return i32_rem;
 		if (eq(s, "=="))return i32_eq;
 		if (eq(s, "eq"))return i32_eq;
@@ -128,7 +131,8 @@ byte opcodes(chars s, byte kind = 0) {
 		if (eq(s, "+"))return f32_add;
 		if (eq(s, "-"))return f32_sub;
 		if (eq(s, "*"))return f32_mul;
-		if (eq(s, "/"))return f32_div;
+		if (eq(s, "/"))
+			return f32_div;
 		if (eq(s, "=="))return f32_eq;
 		if (eq(s, ">"))return f32_gt;
 		if (eq(s, ">="))return f32_ge;
@@ -241,6 +245,8 @@ Code emitStringOp(Node op, String context);
 Code emitValue(Node node, String context);
 
 Valtype fixValtype(Valtype &valtype);
+
+Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 
 // pure data ready to be emitted
 bool isProperList(Node &node) {
@@ -612,6 +618,7 @@ Code emitValue(Node node, String context) {
 Code emitOperator(Node node, String context) {
 	Code code;
 	String &name = node.name;
+	lhs_type = none;// safe to reset?
 	int index = functionIndices.position(name);
 	if (name == "then")return emitIf(*node.parent, context);// pure if handled before
 	if (name == ":=") // todo or ... !
@@ -633,8 +640,12 @@ Code emitOperator(Node node, String context) {
 		const Code &lhs_code = emitExpression(lhs, context);
 		lhs_type = last_type;
 		const Code &rhs_code = emitExpression(rhs, context);
+		Valtype rhs_type = last_type;
+		Valtype commonType = needsUpgrade(lhs_type, rhs_type, name);// 3.1 + 3 => 6.1 etc
 		code.push(lhs_code);// might be empty ok
+		code.add(cast(lhs_type, commonType));
 		code.push(rhs_code);// might be empty ok
+		code.add(cast(rhs_type, commonType));
 	} else if (node.length > 2) {// todo: n-ary? ∑? is just a function!
 		error("Too many args for operator "s + name);
 //	} else if (node.next) { // todo really? handle ungrouped HERE? just hiding bugs?
@@ -653,7 +664,7 @@ Code emitOperator(Node node, String context) {
 		code.add(index);
 		return code;
 	}
-	byte opcode = opcodes(name, last_type);
+	byte opcode = opcodes(name, last_type, lhs_type);
 	if (last_type == stringp)
 		code.add(emitStringOp(node, String()));
 	else if (opcode == f32_sqrt and last_type == i32t) {
@@ -720,6 +731,12 @@ Code emitOperator(Node node, String context) {
 		last_type = i32t;// bool'ish
 	return
 			code;
+}
+
+Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string) {
+	if (lhs == float64 or rhs == float64)return float64;
+	if (lhs == float32 or rhs == float32)return float32;
+	return none;
 }
 
 Code emitStringOp(Node op, String context) {
@@ -845,6 +862,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			}
 			if (node.isSetter()) { //SET
 				code = code + emitValue(node, context); // done above!
+				code.add(cast(last_type, localTypes[context][local_index]));
 //				todo: convert if wrong type
 				code.addByte(tee_local);// set and get/keep
 				code.addByte(local_index);
@@ -973,11 +991,18 @@ Code emitCall(Node &fun, String context) {
 
 Code cast(Valtype from, Valtype to) {
 	Code casted;
+	if (to == none)return casted;// no cast needed magic VERSUS wasm drop!!!
+	if (from == to)return casted;// nop
 	if (from == array and to == charp)return casted;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
 	if (from == i32t and to == charp)return casted;// assume i32 is a pointer here. todo?
-	if (from == i32t and to == float32) casted.addByte(i32_cast_to_f32_s);
-	else if (from == float32 and to == i32t) casted.addByte(f32_cast_to_i32_s);
-	else
+	if (from == 0 and to == i32t)return casted;// nil or false ok as int? otherwise add const 0!
+	if (from == i32t and to == float32) {
+		casted.addByte(i32_cast_to_f32_s);
+		last_type = float32;
+	} else if (from == float32 and to == i32t) {
+		casted.addByte(f32_cast_to_i32_s);
+		last_type = int32;
+	} else
 		error("missing cast map "s + from + " -> " + to + " : " + typeName(from) + "=>" + typeName(to));
 	return casted;
 }
@@ -1013,14 +1038,16 @@ Code emitSetter(Node node, Node &value, String context) {
 	}
 	int local_index = current.position(variable);
 	last_type = mapTypeToWasm(value);
-	localTypes[context][local_index] = last_type;
+	//	localTypes[context][local_index] = last_type; NO! the type doesn't change: example: float x=7
 
 	Code setter;
 	Code value1 = emitValue(value, context);
 //	variableTypes
 	setter.add(value1);
+	setter.add(cast(last_type, localTypes[context][local_index]));
 	setter.add(tee_local);
 	setter.add(local_index);
+	last_type = localTypes[context][local_index];// still the type of the local, not of the value. example: float x=7
 	return setter;
 }
 
