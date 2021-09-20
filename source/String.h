@@ -574,12 +574,14 @@ public:
 	}
 
 	String operator++() {
+		if (length <= 0)return "";
 		this->data++;// self modifying ok?
 		length--;
 		return *this;
 	}
 
 	String operator++(int postfix) {//
+		if (length <= 0)return "";
 		this->data += 1 + postfix;// self modifying ok?
 		length -= 1 + postfix;
 		return *this;
