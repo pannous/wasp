@@ -35,6 +35,11 @@ form{
 }
 ```
 
+The wasp runtime is available as
+* native **binary** for Mac, Linux and Windows
+* small standalone **webassembly** file (~100kb), including
+* wasm **compiler** in wasm:
+
 # Angle Language
 
 [Angle](https://github.com/pannous/wasp/wiki/angle) is a new Programming Language using Wasp as data format,  
@@ -58,6 +63,16 @@ Note how the unique argument `number` can be accessed via `it` keyword and brack
 ```
 fib := if it<2 : 0 else fib(it-1) + fib it - 2
 ```
+
+Angle runs as wasm file inside browsers an as small lambdas in edge computing.
+Angle programms which dont make use of the standard api can be extremely small <1kb,  
+just like handwritten wast but with much more comfort.
+
+The native Wasp/Angle binary contains a small **WebView** connector making use of the host's browser component (Edge or WebKit).
+Since the Angle language can be compiled from wasm to wasm, this gives a whole self sufficient programming environment in less than 200kb,  
+with similar power to [electron](https://www.electronjs.org/) and QT. 
+
+Until a smart way is found to write directly to the WebViews canvas, angle ships with a low overhead **[graphics](https://github.com/pannous/wasp/wiki/graphics)** adapter (using SDL) for fast fullscreen painting. 
 
 
 ## [Documentation](https://github.com/pannous/wasp/wiki/)
