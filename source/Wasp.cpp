@@ -8,7 +8,9 @@
 #include "wasm_runner.h"
 
 #ifndef RUNTIME_ONLY
+
 #include "Interpret.h"
+
 #endif
 
 #ifdef WASM
@@ -1093,11 +1095,6 @@ private:
 						current.kind = expression;
 					}
 					break;
-				case '/':
-					if (next == '/' or next == '*') {
-						comment();
-						break;
-					}
 				case '"':
 				case '\'': /* don't use modifiers ` ˋ ˎ */
 				case u'«': // «…»
@@ -1194,6 +1191,12 @@ private:
 					white();
 					break;
 				}
+				case '/':
+					if (ch == '/' and (next == '/' or next == '*')) {
+						comment();
+						warn("comment should have been handled before!?");
+						continue;
+					}// else fall through to default … expressione
 				default: {
 					// a:b c != a:(b c)
 					// {a} ; b c vs {a} b c vs {a} + c
@@ -1353,6 +1356,7 @@ char newline = '\n';
 
 // called AFTER __wasm_call_ctors() !!!
 #ifndef RUNTIME_ONLY
+
 int main(int argp, char **argv) {
 #ifdef ErrorHandler
 	register_global_signal_exception_handler();
