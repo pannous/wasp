@@ -4,6 +4,13 @@
 
 class Module {
 public:
+	virtual ~Module() {
+		type_data = Code();
+//		free(type_data);
+//		free(type_data.data);
+	}
+
+public:
 	String name;
 
 	// unparsed (just the vector data and its length)
