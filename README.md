@@ -1,4 +1,4 @@
-# 🐝 Wasp : new Wasm Programming 
+# 🐝 Wasp : Wasm Programming Language  
 
  **[Wasp](https://github.com/pannous/wasp/wiki)** is a new unified notation for both markup/object data and code.  
  Wasp is the foundation layer of the higher order programming language [angle](https://github.com/pannous/angle).
