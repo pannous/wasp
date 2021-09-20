@@ -1766,14 +1766,10 @@ void testPaintWasm() {
 	while (1)requestAnimationFrame();// help a little
 }
 void testCurrent() { // move to tests() once OK
-//	testWasmModuleExtension();
-//	assert_emit("i=8;i=i/2;i", 4);// make sure i stays a-float
-//	assert_emit("i=1.0;i=3;i=i/2;i=i*4", 6.0);// make sure i stays a-float
-	assert_emit("i=123.4;i", 123);// main returning int
-	assert_emit("i=1.0;i", 1.0);
-	assert_emit("i=3;i", 3);
-	assert_emit("i=1.0;i", 1.0);
 
+	testWasmRuntimeExtension();
+//	testWasmModuleExtension();
+	testFloatOperators();
 	assert_emit("3+3", (int) 6);
 	assert_run("x='123';x=='123'", true);// ok
 
@@ -1807,17 +1803,18 @@ void testCurrent() { // move to tests() once OK
 	//	testWasmRuntimeExtension();
 #endif
 //	testPaint();
-	testArrayIndicesWasm();
-	testStringIndicesWasm();
+
 //testUnits();
 //	testMarkMultiDeep();
 
 //	testWasmRuntimeExtension();
 //	operator_list = List(operator_list0);
-//	testRecentRandomBugs();
+	testRecentRandomBugs();
 	tests();// make sure all still ok before changes
-	testAllWasm();
 	todos();// those not passing yet (skip)
+	testAllWasm();
+	testArrayIndicesWasm();
+	testStringIndicesWasm();
 	tests();// make sure all still ok after changes
 	printf("OK %ld==%ld", 2l, 2l);
 	check(contains("OK %ld==%ld", "%ld"));
