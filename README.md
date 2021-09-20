@@ -59,7 +59,7 @@ The Wasp syntax was influenced by [Mark](https://github.com/henry-luo/mark)
 - It has built-in **mixed content** support *(like HTML5 or even better)*
 - It supports **high-order** composition *(like S-expression or even better)*
 
-|                        | Wasp/[Mark](https://github.com/henry-luo/mark)                           | JSON     | HTML | XML                            | S-expr                             | YAML                                  |
+|                        | [Wasp](https://github.com/pannous/wasp/wiki)/[Mark](https://github.com/henry-luo/mark)                           | JSON     | HTML | XML                            | S-expr                             | YAML                                  |
 | ---------------------- | ------------------------------ | -------- | ---- | ------------------------------ | ---------------------------------- | ------------------------------------- |
 | Clean syntax           | yes | yes| no   | yes | yes| yes|
 | Fully-typed            | yes | yes| no   | no| yes| yes |
@@ -72,31 +72,12 @@ The Wasp syntax was influenced by [Mark](https://github.com/henry-luo/mark)
 ## Wasp Data Model
 
 Wasp has a very simple and fully-typed data model. 
-## [Documentation](../../wiki/)
+## [Documentation](https://github.com/pannous/wasp/wiki/)
 
 - [Syntax specification](https://github.com/pannous/wasp/wiki/syntax)
 - [Data model and API specification](https://github.com/pannous/wasp/wiki/data)
 - [FAQ](https://github.com/pannous/wasp/wiki/FAQ)
 - [Examples](https://github.com/pannous/wasp/wiki/Examples)
 
-## Differences to original Mark:
-objects are created left of the bracket, so
-`{html {body}}` in Mark is `html{body}` in Wasp / Angle.
 
-Assignment and object creation
-```
-foo{bar:3}  #object creation
-foo:{bar:3} #property assignment (nested objects)
-foo={bar:3} #variable assignment (of calling context)
-```
-
-Difference between Wasp and [Mark Notation](https://github.com/henry-luo/mark) :
-Wasp  has the object/node type on the left side of braces:
-Wasp: `html{ div{'hello world'}}` vs
-Mark: `{html {div 'hello world'}}`
-
-The later 'polish-notation' (or sexp/lisp-notation with braces) can be used via compile flag (#pragma?).
-
-div{ class:"form-group" } vs div(class="form-group") vs div{ class:{"form-group"}} ?
-Should be [identical](identities) under most circumstances
 
