@@ -275,9 +275,10 @@ void testWasmVariables0() {
 	assert_emit("i=0;i", 0);
 	assert_emit("i:=true;i", true);
 	assert_emit("i=true;i", true);
+	assert_emit("i=123.4;i", 123);// main returning int
 	skip(
-			assert_emit("i=ø;i", nullptr);
 			assert_emit("i=0.0;i", 0.0);
+			assert_emit("i=ø;i", nullptr);
 			assert_emit("i=123.4;i", 123.4);// main returning int
 	)
 }
@@ -528,10 +529,10 @@ void testWasmModuleExtension() {
 void testWasmRuntimeExtension() {
 //	functionSignatures["ok"].returns(int32);
 //	assert_emit("x='123';x + '4' is '1234'", true);// unknown function concat: needs runtime
-assert_run("'123' + '4' is '1234'", true);// ok
+	assert_run("'123' + '4' is '1234'", true);// ok
 //	assert_run("x='123';x + '4' is '1234'", true);// not ok
-assert_run("ok+1", 43);
-assert_run("oki(1)", 43);
+	assert_run("ok+1", 43);
+	assert_run("oki(1)", 43);
 //	assert_run("not_ok",-1);// error
 
 //	functionSignatures["okf"].returns(float32);
@@ -619,11 +620,11 @@ void testStringIndicesWasm() {
 	assert_emit("'world'#1", 'w');
 	assert_emit("'world'#2", 'o');
 	assert_emit("'world'#3", 'r');
-skip( // todo move angle syntax to test_angle
-assert_emit("char #1 in 'world'", 'o');
-assert_emit("char 1 in 'world'", 'o');
-assert_emit("2nd char in 'world'", 'o');
-assert_emit("2nd byte in 'world'", 'o');
+	skip( // todo move angle syntax to test_angle
+			assert_emit("char #1 in 'world'", 'o');
+			assert_emit("char 1 in 'world'", 'o');
+			assert_emit("2nd char in 'world'", 'o');
+			assert_emit("2nd byte in 'world'", 'o');
 			assert_emit("'world'#-1", 'd');
 	)
 
