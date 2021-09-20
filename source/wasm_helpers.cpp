@@ -288,6 +288,7 @@ void printf(int i) {
 	printf("%d", i);
 }
 
+
 #ifdef WASI
 String Backtrace(int skip, int skipEnd){
 	return "Backtrace: TODO";
