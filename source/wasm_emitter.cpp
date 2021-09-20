@@ -38,10 +38,10 @@ Valtype last_type = voids;// autocast if not int
 enum MemoryHandling {
 	import_memory,
 	export_memory,
-	internal_memory,
+	internal_memory,// declare but don't export
 	no_memory,
 };
-MemoryHandling memoryHandling = export_memory;// import_memory;
+MemoryHandling memoryHandling = export_memory; // import_memory not with mergeMemorySections!
 
 //Map<String, Valtype> return_types;
 //Map<int, List<String>> locals;
@@ -995,6 +995,7 @@ Code cast(Valtype from, Valtype to) {
 	if (from == to)return casted;// nop
 	if (from == array and to == charp)return casted;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
 	if (from == i32t and to == charp)return casted;// assume i32 is a pointer here. todo?
+	if (from == charp and to == i32t)return casted;// assume i32 is a pointer here. todo?
 	if (from == 0 and to == i32t)return casted;// nil or false ok as int? otherwise add const 0!
 	if (from == i32t and to == float32) {
 		casted.addByte(i32_cast_to_f32_s);
@@ -1698,7 +1699,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		int newly_pre_registered = 0;//declaredFunctions.size();
 		last_index = runtime_offset - 1;
 	} else {
-		memoryHandling = import_memory;
+		memoryHandling = internal_memory; //   //import_memory;
 		last_index = -1;
 		runtime = *new Module();// all zero
 		runtime_offset = 0;
