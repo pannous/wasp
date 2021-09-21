@@ -361,17 +361,22 @@ Node &groupOperators(Node &expression, String context = "main") {
 				node.add(prev);
 				node.add(next);
 
-				if (name == "::=")globals[prev.name] = &next;// don't forget to emit next as init expression!
-
-				// Complicated way to express *= += -= … self assignments
-				if (op.length > 1 and op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and
-				    op[0] != '>' and op.endsWith("=")) {// += etc
-					name = String(op.data[0]);
-					Node *setter = prev.clone();
+				if (name == "::=") {
+					if (prev.kind != reference)error("only references can be assigned global (::=)"s + prev.name);
+//					if(locals[context].has(prev.name))error("global already known as local "s +prev.name);// let's see what happens;)
+					if (globals.has(prev.name))error("global already set "s + prev.name);// todo reassign ok if …
+//					globals[prev.name] = &next;// don't forget to emit next as init expression!
+					globals[prev.name] = next.clone();// don't forget to emit next as init expression!
+					// globalTypes[] set in globalSection, after emitExpression
+				} else if (op.length > 1 and op.endsWith("="))
+					// Complicated way to express *= += -= … self assignments
+					if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and op[0] != '>') {// += etc
+						name = String(op.data[0]);
+						Node *setter = prev.clone();
 //					setter->setType(assignment); //
-					setter->value.node = node.clone();
-					node = *setter;
-				}
+						setter->value.node = node.clone();
+						node = *setter;
+					}
 				expression.replace(i - 1, i + 1, node);
 			}
 		}
