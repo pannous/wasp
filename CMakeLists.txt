@@ -13,6 +13,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 #set(RELEASE 0)
 #set(WASM 1)
 
+
 set(WEBAPP 1) # compile with WebView for electron like standalone apps.
 # V8 has wasm, so no m3 needed in release. can we even debug through V8??
 # interestingly if we have a native app we don't need our wasp.wasm runtime because it's c++ compiled into app.
@@ -27,6 +28,8 @@ endif ()
 if (WASM)
     SET(WASM3 0)
     REMOVE_DEFINITIONS(WASM3)
+    #    referenceTypes bulkMemory works in FF
+    #    ADD_COMPILE_FLAG("-O0 -s WASM_BIGINT") should work in WebKit but we only use standard MVP features for now!
     SET(WEBAPP 0) # just be sure
 endif ()
 # ^^ UNSET, or better don't set manually at all!
@@ -36,6 +39,12 @@ endif ()
 if (DEBUG)
     MESSAGE("DEBUG!")
     ADD_COMPILE_DEFINITIONS(DEBUG)
+    SET(GCC_GENERATE_DEBUGGING_SYMBOLS YES)
+    SET(GCC_DEBUGGING_SYMBOLS full)
+    SET(DEBUG_INFORMATION_FORMAT dwarf-with-dsym)
+    SET(DWARF_DSYM_FILE_NAME "$(TARGET_NAME).dSYM")
+    SET(DWARF_DSYM_FOLDER_PATH "$(CONFIGURATION_BUILD_DIR)/dSyms")
+    SET(DEPLOYMENT_POSTPROCESSING YES)
 endif ()
 
 #ADD_COMPILE_DEFINITIONS(NO_TESTS) # CAREFUL: most unused functions get optimized away
@@ -66,6 +75,10 @@ endif ()
 if (RELEASE)
     MESSAGE(RELEASE)
     set(RUNTIME_ONLY 1)
+    SET(COPY_PHASE_STRIP YES)
+    SET(STRIP_INSTALLED_PRODUCT YES)
+    SET(STRIP_STYLE all)
+    SET(SEPARATE_STRIP YES)
 endif ()
 
 set(CMAKE_CXX_STANDARD 20)

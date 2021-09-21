@@ -2,9 +2,15 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
-#include <stdatomic.h>
+//#include <stdatomic.h>
 // 104234 bytes if compiled with -Oz
 // todo: remove std::string from webview.h for much smaller size?
+#include "Paint.h"
+
+/* supported in WebKit:
+✔️	multiValue
+✔️	mutableGlobals
+ */
 
 
 class Wait {
@@ -33,7 +39,8 @@ public:
 	}
 
 private:
-	atomic_int m_result = -3;
+//	atomic_int
+	int m_result = -1;
 	pthread_mutex_t m_mutex;
 	pthread_cond_t m_cond;
 	bool m_done;
@@ -66,7 +73,7 @@ char *page = "file:///Users/me/wasp/source/test.html";
 // todo: best way for compile time loading of pages?
 // char* page=
 // #include "index.html"
-const char *home = page ? page : "https://wasm-feature-detect.surma.technology/";
+const char *home = "https://wasm-feature-detect.surma.technology/";
 
 
 // bind any function to the webview, should also work for wasm/wasp functions, no?

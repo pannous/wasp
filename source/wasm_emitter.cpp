@@ -621,10 +621,14 @@ Code emitOperator(Node node, String context) {
 	lhs_type = none;// safe to reset?
 	int index = functionIndices.position(name);
 	if (name == "then")return emitIf(*node.parent, context);// pure if handled before
-	if (name == ":=") // todo or ... !
+	if (name == ":=")
 		return emitDeclaration(node, node.first());
-	if (name == "=") // todo or ... !
+	if (name == "=")
 		return emitSetter(node, node.first(), context);
+	if (name == "::=") {
+		return emitGlobal(name);
+		return code;// globals assignment already handled before, in analyze
+	}
 	if (node.length < 1 and not node.value.node and not node.next) {
 		node.log();
 		error("missing args for operator "s + name);
@@ -1418,8 +1422,17 @@ Code exportSection() {
 		memoryExport = encodeString("memory") + (byte) mem_export + Code(0);
 //code = code + createSection(export_section, encodeVector(Code(exports_count) + memoryExport));
 	}
+	Code globalExports;
+	for (int i = 0; i < globals.size(); i++) {
+		String &name = globals.keys[i];
+		Code globalExport = encodeString(name) + (byte) global_export + Code(i);
+		globalExports.add(globalExport);
+		exports_count++;
+	}
+
 	Code exportsData = encodeVector(
-			Code(exports_count) + encodeString(start) + (byte) func_export + Code(main_offset) + memoryExport);
+			Code(exports_count) + encodeString(start) + (byte) func_export + Code(main_offset) + memoryExport +
+			globalExports);
 
 	auto exportSection = createSection(export_section, exportsData);
 	return exportSection;
@@ -1456,6 +1469,7 @@ Code globalSection() {
 		globalTypes.insert_or_assign(global_name, valtype);
 		globalsList.addByte(valtype);
 		globalsList.addByte(0x00);// mutable?
+		// expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
 		globalsList.add(emitExpression(global_node, "global"));// todo names in global context!?
 		globalsList.addByte(end_block);
 		/*
