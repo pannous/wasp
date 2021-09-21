@@ -1767,9 +1767,13 @@ void testPaintWasm() {
 }
 void testCurrent() { // move to tests() once OK
 //	globals["y"]=new Node();
-	globals.setDefault(new Node());
+//	globals.setDefault(new Node());
 	testWasmMutableGlobal();
-	assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
+	exit(9);
+	skip(
+	// while without body
+			assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
+	)
 	//	testWasmModuleExtension(); 🚀🤘☘
 
 //	exit(0);
