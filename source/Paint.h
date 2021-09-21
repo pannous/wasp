@@ -1,6 +1,6 @@
 //SDL_Surface *surface;
 //int* init_graphics(int width=0, int height=0);// returns pointer to RGBA surface
-void *init_graphics();// returns pointer to RGBA surface
+int init_graphics();// returns wasm data offset: pointer to RGBA surface
 void requestAnimationFrame();// call from wasp once surface is updated!
 //void paint=requestAnimationFrame
 

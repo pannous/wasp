@@ -123,7 +123,8 @@ List<chars> setter_operators = {"="};
 List<chars> key_pair_operators = {":"};
 List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
 List<chars> function_operators = {":="};// todo:
-List<chars> declaration_operators = {":=", "="}; //  i:=it*2  vs i=1  OK?  NOT ":"! if 1 : 2 else 3
+List<chars> declaration_operators = {":=", "=",
+                                     "::=" /*until global keyword*/}; //  i:=it*2  vs i=1  OK?  NOT ":"! if 1 : 2 else 3
 
 // ... todo maybe unify variable symbles with function symbols at angle level and differentiate only when emitting code?
 // x=7
@@ -208,6 +209,7 @@ Node &groupDeclarations(Node &expression, const char *context) {
 
 ////			todo i=1 vs i:=it*2  ok ?
 			if (op == "=") continue; // handle assignment via groupOperators !
+			if (op == "::=") continue; // handle globals assignment via groupOperators !
 //			{// can't this be handled in operators???
 ////			if(modifiers.first().kind==reference){
 //				warn("symbol is reference declaration: "s + name);
@@ -347,9 +349,10 @@ Node &groupOperators(Node &expression, String context = "main") {
 				node.add(args);
 				expression.replace(i - 1, i + 1, node);// replace ALL REST
 				expression.remove(i, -1);
+
 			} else {
 				//#ifndef RUNTIME_ONLY
-				if (name.endsWith("=") and prev.kind == reference)// todo can remove hack?
+				if (name.endsWith("=") and not name.startsWith("::") and prev.kind == reference)// todo can remove hack?
 					if (!localContext.has(prev.name)) {
 						localContext.add(prev.name);
 						localContextTypes.add(mapTypeToWasm(*node.value.node));
@@ -357,6 +360,10 @@ Node &groupOperators(Node &expression, String context = "main") {
 				//#endif
 				node.add(prev);
 				node.add(next);
+
+				if (name == "::=")globals[prev.name] = &next;// don't forget to emit next as init expression!
+
+				// Complicated way to express *= += -= … self assignments
 				if (op.length > 1 and op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and
 				    op[0] != '>' and op.endsWith("=")) {// += etc
 					name = String(op.data[0]);
@@ -743,6 +750,7 @@ void preRegisterSignatures() {
 
 void clearContext() {
 	globals.clear();
+	globals.setDefault(new Node());
 	locals.clear();
 	locals.setDefault(List<String>());
 	localTypes.clear();
@@ -902,12 +910,12 @@ float precedence(String name) {
 	if (eq(name, "⇒"))return 11; // lambdas
 	if (eq(name, "=>"))return 11;
 	if (eq(name, "::"))return 11;// todo lambda symbol? square = x :: x*x
-	if (eq(name, "::="))return 11;// todo all
 
 //	if (eq(name, ":"))return 12;// construction
 	if (eq(name, "="))return 12;// declaration
 	if (eq(name, ":="))return 13;
 	if (eq(name, "be"))return 13;// counterpart 'is' for ==
+	if (eq(name, "::="))return 14; // globals setter
 //	if (eq(name, "is"))return 13;// careful, could be == (6.6)
 
 	if (eq(name, "else"))return 13.09;
