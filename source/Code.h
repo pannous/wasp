@@ -472,6 +472,7 @@ enum nameSubSectionTypes {
 	module_name = 0,
 	function_names = 1,
 	local_names = 2,
+	global_names = 7,
 };
 
 //localContextTypes is messy
