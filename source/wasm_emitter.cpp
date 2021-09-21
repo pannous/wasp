@@ -1427,8 +1427,8 @@ Code exportSection() {
 	for (int i = 0; i < globals.size(); i++) {
 		String &name = globals.keys[i];
 		Code globalExport = encodeString(name) + (byte) global_export + Code(i);
-//		globalExports.add(globalExport); // todo << NOW
-//		exports_count++;
+		globalExports.add(globalExport); // todo << NOW
+		exports_count++;
 	}
 
 	Code exportsData = encodeVector(
@@ -1469,7 +1469,7 @@ Code globalSection() {
 		Valtype valtype = mapTypeToWasm(*global_node);
 		globalTypes.insert_or_assign(global_name, valtype);
 		globalsList.addByte(valtype);
-		globalsList.addByte(0x00);// mutable?
+		globalsList.addByte(0x01);// mutable todo: default? not π ;)
 		// expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
 		const Code &globalInit = emitExpression(global_node, "global");
 		globalsList.add(globalInit);// todo names in global context!?
@@ -1584,6 +1584,13 @@ Code nameSection() {
 //		error: expected local name count (1) <= local count (0) FOR FUNCTION ...
 	}
 
+	Code globalNameMap;
+	int usedGlobals = globals.count();// currently all
+	for (int i = 0; i < globals.count(); i++) {
+		String &globalName = globals.keys[i];
+		globalNameMap = globalNameMap + Code(i) + Code(globalName);
+	}
+
 //	localNameMap = localNameMap + Code((byte) 0) + Code((byte) 1) + Code((byte) 0) + Code((byte) 0);// 1 unnamed local
 //	localNameMap = localNameMap + Code((byte) 4) + Code((byte) 0);// no locals for function4
 //	Code exampleNames= Code((byte) 5) /*function index*/ + Code((byte) 1) /*count*/ + Code((byte) 0) /*l.nr*/ + Code("var1");
@@ -1594,10 +1601,11 @@ Code nameSection() {
 	auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
 	auto functionNames = Code(function_names) + encodeVector(Code(usedNames) + nameMap);
 	auto localNames = Code(local_names) + encodeVector(Code(usedLocals) + localNameMap);
+	auto globalNames = Code(global_names) + encodeVector(Code(usedGlobals) + globalNameMap);
 
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
 //	The name section should appear only once in a module, and only after the data section.
-	const Code &nameSectionData = encodeVector(Code("name") + moduleName + functionNames + localNames);
+	const Code &nameSectionData = encodeVector(Code("name") + moduleName + functionNames + localNames + globalNames);
 	// global names are part of global section, as should be
 	auto nameSection = createSection(custom_section, nameSectionData); // auto encodeVector AGAIN!
 	nameSection.debug();
