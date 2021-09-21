@@ -506,9 +506,12 @@ long emitData(Node node, String context) {
 	return last_pointer;
 }
 
-Code emitGlobal(Node node) {
+Code emitGetGlobal(Node node /* context : global ;) */) {
 	Code code;
-	int i = globals.position(node.name);
+	String &name = node.first().name;
+	int i = globals.position(name);
+	if (i < 0)error("cant find global with name "s + name);
+	if (i > globals.size())error("invalid index for global with name "s + name);
 	code.addByte(global_get);
 	code.addByte(i);
 	last_type = globalTypes.values[i];
@@ -625,10 +628,8 @@ Code emitOperator(Node node, String context) {
 		return emitDeclaration(node, node.first());
 	if (name == "=")
 		return emitSetter(node, node.first(), context);
-	if (name == "::=") {
-		return emitGlobal(name);
-		return code;// globals assignment already handled before, in analyze
-	}
+	if (name == "::=")
+		return emitGetGlobal(node); // globals ASSIGNMENT already handled in analyze / globalSection()
 	if (node.length < 1 and not node.value.node and not node.next) {
 		node.log();
 		error("missing args for operator "s + name);
@@ -732,8 +733,7 @@ Code emitOperator(Node node, String context) {
 		last_type = i32t;
 	if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt or opcode == f32_ge or opcode == f32_le)
 		last_type = i32t;// bool'ish
-	return
-			code;
+	return code;
 }
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string) {
@@ -821,7 +821,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			}// else fallthough:
 		case expression:
 			for (Node child : node) {
-				const Code &expression = emitExpression(child, context);
+				Code expression = emitExpression(child, context);
 				code.push(expression);
 			};
 			break;
@@ -856,8 +856,9 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			if (local_index < 0) { // collected before, so can't be setter here
 				if (functionCodes.has(name) or functionSignatures.has(name))
 					return emitCall(node, context);
-				else if (globals.has(name)) return emitGlobal(node);
-				else if (name == "π") return emitValue(Node(3.1415926535897), current);
+				else if (globals.has(name)) return emitGetGlobal(node);
+				else if (name == "π") // if not provided as global
+					return emitValue(Node(3.1415926535897), current);
 				else if (!node.isSetter())
 					error("UNKNOWN local symbol "s + name + " in context " + context);
 				else {
@@ -1426,8 +1427,8 @@ Code exportSection() {
 	for (int i = 0; i < globals.size(); i++) {
 		String &name = globals.keys[i];
 		Code globalExport = encodeString(name) + (byte) global_export + Code(i);
-		globalExports.add(globalExport);
-		exports_count++;
+//		globalExports.add(globalExport); // todo << NOW
+//		exports_count++;
 	}
 
 	Code exportsData = encodeVector(
@@ -1470,7 +1471,8 @@ Code globalSection() {
 		globalsList.addByte(valtype);
 		globalsList.addByte(0x00);// mutable?
 		// expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
-		globalsList.add(emitExpression(global_node, "global"));// todo names in global context!?
+		const Code &globalInit = emitExpression(global_node, "global");
+		globalsList.add(globalInit);// todo names in global context!?
 		globalsList.addByte(end_block);
 		/*
 		switch (type) {
@@ -1596,6 +1598,7 @@ Code nameSection() {
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
 //	The name section should appear only once in a module, and only after the data section.
 	const Code &nameSectionData = encodeVector(Code("name") + moduleName + functionNames + localNames);
+	// global names are part of global section, as should be
 	auto nameSection = createSection(custom_section, nameSectionData); // auto encodeVector AGAIN!
 	nameSection.debug();
 	return nameSection.clone();
