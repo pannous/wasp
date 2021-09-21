@@ -797,11 +797,13 @@ void wasm_todos() {
 
 void testWasmMutableGlobal() {
 //	assert_emit("$k=7",7);// ruby style, conflicts with templates `hi $name`
-	assert_emit("k::=7", 7);// variable not visually marked as global, not as good as:
-	assert_emit("global k=7", 7);// python style, as always the best
-	assert_emit("global k=7", 7);//  currently all globals are exported
-	assert_emit("export k=7", 7);//  all exports are globals, naturally.
-	assert_emit("export f:=7", 7);//  exports can be functions too.
+	assert_emit("k::=7", 7);// global variable not visually marked as global, not as good as:
+	skip(
+			assert_emit("global k=7", 7);// python style, as always the best
+			assert_emit("global k=7", 7);//  currently all globals are exported
+			assert_emit("export k=7", 7);//  all exports are globals, naturally.
+			assert_emit("export f:=7", 7);//  exports can be functions too.
+	)
 	// remember that the concepts of functions and properties shall be IDENTICAL to the USER!
 	// this does not impede the above, as global exports are not properties, but something to keep in mind
 }
