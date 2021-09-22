@@ -32,11 +32,15 @@ class List;
 extern String &EMPTY_STRING;
 //What 'char' and 'wchar_t' represent are completely ambiguous.
 //You might think that they represent a "character", but depending on the encoding, that might not be true.
+//typedef byte char;// overloaded term that can mean many things but throws a compiler warning
+// TODO IS IT SAFE IF WE USE char as synonym for grapheme, but we just return codepoints and ignore modifiers? we can return a¨ as  ä!!
+// character in the real world is LESS ambivalent then in the UTF world! on the other hand a new term like icon/grapheme cant hurt
 //typedef wchar_t character;// overloaded term that can mean many things:
 typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
 //class Codepoint{ char32_t nr; };// to avoid wrong autocast codepoint x=string[i]
 //typedef char* grapheme;// sequence of one or more code points that are displayed as a single 'character' ä may be two code points a¨, or one ä
 typedef String grapheme;// sequence of one or more code points that are displayed as a single 'character' ☀️=☀+_ e2 98 80 + ef b8 8f
+//typedef String grapheme;// usually codepoint + color or something. no need yet? boycott idea?
 //typedef graphics glyph; image, usually stored in a font (which is a collection of glyphs), used to represent graphemes
 //https://stackoverflow.com/questions/27331819/whats-the-difference-between-a-character-a-code-point-a-glyph-and-a-grapheme
 // '\uD83D\uDC0A' UTF-16 code units expressing a single code point (U+1F40A)  char(0x1F40A) == '🐊'
