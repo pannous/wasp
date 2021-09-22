@@ -9,7 +9,7 @@
 
 #endif //WASP_SMART_TYPES_H
 
-// 32 bit i32 as [[smart pointer]]s with first hex as type
+// 32 bit i32 as [[smart pointer]]s with first hex (4bit) as type
 // smartType4bit
 typedef enum smartType {
 	int28 = 0x0,
@@ -20,7 +20,7 @@ typedef enum smartType {
 	symbola = 0x4,
 	json5 = 0x5,
 	int60p = 0x6, // pointer to
-	septet = 0x7,
+	septet = 0x7, // 7 hexes à 4 bit
 	utf8char = 0x8, // UTF24 Unicode
 	stringa = 0x9, // may start with 0x10 ... 0x1F
 	any = 0xA, // angle pointer/object => i64 pointer : 32bit type + 32bit pointer indirect or in linear memory!

@@ -326,7 +326,10 @@ enum Valtype {
 	stringp = 0xC0,// use charp?  pointer, // enough no!??
 //	value = 0xA1,// wrapped node Value, used as parameter? extract and remove! / ignore
 	todoe = 0xF0, // todo
+	externalPointer = 0xFE,
 	ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
+	smarti32 = 0xF3,// see smartType
+	smarti64 = 0xF6,
 };
 
 chars typeName(Valtype t);
@@ -475,12 +478,24 @@ enum nameSubSectionTypes {
 	global_names = 7,
 };
 
+typedef enum constancy {
+	defaulty,
+	mutabley,
+	constanty,
+	finaly,
+} Constancy;
+
 //localContextTypes is messy
-class Local {
+class Variable {
 	String name = "";// could be reused by multiple, but useful to debug
-	short position = 0;
-	Valtype type;
-	Node descriptor;
+	short position = 0;// in context / in global
+	Valtype kind;
+	Node type;
+	Constancy constancy;
+	bool global;
+	Node context;
+	List<Node> modifiers; // public static const … should translate into fields but keep for extra etc?
+	Node descriptor;// ?
 };
 
 class Signature {

@@ -1716,41 +1716,6 @@ void testSignificantWhitespace() {
 void testUnits() {
 	assert_is("1 m + 1km", Node(1001).setType("m"));
 }
-
-void testRoundFloorCeiling() {
-	assert_emit("n=3;2ⁿ", 8);
-	assert_emit("3²", 9);
-	assert_emit("n=3.0;2.0ⁿ", 8);
-	assert_emit("3.0²", 9);
-	assert_emit("π", 3/*.1415926535897*/);
-	assert_emit("π*1000000", 3141592/*6535897*/);
-
-	assert_emit("π²", 9.869604401089358 /*π*π*/);
-
-	assert_emit("n=3;2ⁿ", 8);
-	assert_emit("i=-9;-i", 9);
-	assert_emit("i=-9;√-i", -3);
-	assert_emit("-√9", -3);
-	assert_emit(".1 + .9", 1);
-	assert_emit("-.1 + -.9", -1);
-	assert_emit("√9", 3);
-	//	assert_emit("√-9 is -3i", -3);// if «use complex numbers»
-	assert_emit(".1", 0);
-	assert_emit("ceil 3.7", 4);
-	assert_emit("floor 3.7", 3);// todo: only if «use math» namespace
-	assert_emit("ceiling 3.7", 4);// todo: only if «use math» namespace
-	assert_emit("round 3.7", 4);
-	assert_emit("i=3.7;.3+i", 4);// floor
-	// lol "⌊3.7⌋" is cursed and is transformed into \n\t or something in wasm and IDE!
-//	assert_emit("⌊3.7", 3);// floor
-//	assert_emit("⌊3.7⌋", 3);// floor
-//	assert_emit("3.7⌋", 3);// floor
-//	//assert_emit("i=3.7;.3 + ⌊i", 3);// floor
-//	//assert_emit("i=3.7;.3+⌊i⌋", 3);// floor
-//	assert_emit("i=3.7;.3+i⌋", 3);// floor
-//	assert_emit("i=3.7;.3+ floor i", 3);// floor
-}
-
 void testPaint() {
 	init_graphics();
 	while (1)requestAnimationFrame();
@@ -1768,6 +1733,9 @@ void testPaintWasm() {
 void testCurrent() { // move to tests() once OK
 //	globals["y"]=new Node();
 //	globals.setDefault(new Node());
+	testSquareExpWasm();
+	testRoundFloorCeiling();
+
 	testWasmMutableGlobal();
 	exit(9);
 	skip(
