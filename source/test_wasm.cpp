@@ -779,6 +779,45 @@ void testRecentRandomBugs() {
 }
 
 
+void testSquareExpWasm() {
+	assert_emit("n=3;2ⁿ", 8);
+	assert_emit("3²", 9);
+	assert_emit("n=3.0;2.0ⁿ", 8);
+	assert_emit("3.0²", 9);
+	assert_emit("π", 3/*.1415926535897*/);
+	assert_emit("π*1000000", 3141592/*6535897*/);
+
+	assert_emit("π²", 9.869604401089358 /*π*π*/);
+
+	assert_emit("n=3;2ⁿ", 8);
+	assert_emit("i=-9;-i", 9);
+	assert_emit("i=-9;√-i", -3);
+	assert_emit("-√9", -3);
+	assert_emit(".1 + .9", 1);
+	assert_emit("-.1 + -.9", -1);
+	assert_emit("√9", 3);
+	//	assert_emit("√-9 is -3i", -3);// if «use complex numbers»
+	assert_emit(".1", 0);
+}
+
+void testRoundFloorCeiling() {
+
+	assert_emit("ceil 3.7", 4);
+	assert_emit("floor 3.7", 3);// todo: only if «use math» namespace
+	assert_emit("ceiling 3.7", 4);// todo: only if «use math» namespace
+	assert_emit("round 3.7", 4);
+	assert_emit("i=3.7;.3+i", 4);// floor
+	// lol "⌊3.7⌋" is cursed and is transformed into \n\t or something in wasm and IDE!
+	//	assert_emit("⌊3.7", 3);// floor
+	//	assert_emit("⌊3.7⌋", 3);// floor
+	//	assert_emit("3.7⌋", 3);// floor
+	//	//assert_emit("i=3.7;.3 + ⌊i", 3);// floor
+	//	//assert_emit("i=3.7;.3+⌊i⌋", 3);// floor
+	//	assert_emit("i=3.7;.3+i⌋", 3);// floor
+	//	assert_emit("i=3.7;.3+ floor i", 3);// floor
+}
+
+
 //testWasmControlFlow
 void wasm_todos() {
 	skip(
@@ -800,9 +839,40 @@ void testWasmMutableGlobal() {
 	assert_emit("k::=7", 7);// global variable not visually marked as global, not as good as:
 	skip(
 			assert_emit("global k=7", 7);// python style, as always the best
-			assert_emit("global k=7", 7);//  currently all globals are exported
+			assert_emit("global.k=7", 7);//  currently all globals are exported
+			assert_emit("global k:=7", 7);//  global or function?
+			assert_emit("export k=7", 7);//  all exports are globals, naturally.
 			assert_emit("export k=7", 7);//  all exports are globals, naturally.
 			assert_emit("export f:=7", 7);//  exports can be functions too.
+			assert_emit("global export k=7", 7);//  todo warn("redundant keyword global: all exports are globals")
+			assert_emit("global int k=7", 7);// python style, as always the best
+			assert_emit("global int k:=7", 7);//  global or function?
+			assert_emit("export int k=7", 7);//  all exports are globals, naturally.
+			assert_emit("export int k=7", 7);//  all exports are globals, naturally.
+			assert_emit("export int f:=7", 7);//  exports can be functions too.
+			assert_emit("global int k", 0);// todo error without init value?
+			assert_emit("export int k", 0);//
+
+			assert_emit("import int k", 7);//  all imports are globals, naturally.
+			assert_emit("import const int k", 7);//  all imports are globals, naturally.
+			assert_emit("import mutable int k", 7);//  all imports are globals, naturally.
+
+			assert_emit("import int k=7", 7);//  import with initializer
+			assert_emit("import const int k=7", 7);//  import with initializer
+			assert_emit("import mutable int k=7", 7);//  import with initializer
+
+			assert_emit("import int k=7.1", 7);//  import with cast initializer
+			assert_emit("import const int k=7.1", 7);//  import with cast initializer
+			assert_emit("import mutable int k=7.1", 7);//  import with cast initializer
+
+			assert_emit("import k=7", 7);//  import with inferred type
+			assert_emit("import const k=7", 7);//  import with inferred type
+			assert_emit("import mutable k=7", 7);//  import with inferred type
+
+			assert_emit("global int k", 7);//   all globals without value are imports??
+			assert_emit("global const int k", 7);//   all globals without value are imports??
+			assert_emit("global mutable int k", 7);//   all globals without value are imports??
+			assert_emit("global mut int k", 7);//   all globals without value are imports??
 	)
 	// remember that the concepts of functions and properties shall be IDENTICAL to the USER!
 	// this does not impede the above, as global exports are not properties, but something to keep in mind
@@ -816,6 +886,8 @@ void testAllWasm() {
 	logs("NO WASM emission...");
 //	return;
 #endif
+	testSquareExpWasm();
+	testRoundFloorCeiling();
 	testWasmLogicCombined();
 	testGlobals();
 	wasm_todos();
