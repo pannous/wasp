@@ -97,6 +97,19 @@ union Value {
 };
 
 
+struct TypedValue {
+	Type type;// 1 byte!
+	//	Kind kind;
+	//	ValueKind kind;
+//	Node* type; forseeing? but:
+	Value value;// node can have its own type
+};
+
+struct TypedNode {
+	Node *type;
+	Node *node;
+};
+
 class Node {
 	// sizeof(Node) == 64 (20 for name,
 public:

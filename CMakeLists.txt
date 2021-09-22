@@ -92,6 +92,8 @@ FUNCTION(ADD_COMPILE_FLAG value)
 ENDFUNCTION()
 ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
 ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
+ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it needs for the declared range of possible values.
+# makes TypedValue 1+8 bytes, doesn't help for multi-value (int32 int64)
 
 if (NOT RELEASE)
     ADD_COMPILE_FLAG("-fno-inline")
