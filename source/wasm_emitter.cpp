@@ -123,6 +123,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 
 	if (kind == 0 or kind == i32t) { // INT32
 		if (eq(s, "+"))return i32_add;
+//		if (eq(s, "-") and previous==none)return sign_flip; *-1
 		if (eq(s, "-"))return i32_sub;
 		if (eq(s, "*"))return i32_mul;
 		if (eq(s, "/"))
