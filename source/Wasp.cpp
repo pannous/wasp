@@ -1355,8 +1355,12 @@ char newline = '\n';
 #define __MAIN__
 
 // called AFTER __wasm_call_ctors() !!!
-#ifndef RUNTIME_ONLY
+//#ifndef RUNTIME_ONLY
+//Undefined symbols for architecture arm64:
+//"_main", referenced from:
+//implicit entry/start for main executable
 
+// wasmer etc DO accept float/double return, just not from main!
 int main(int argp, char **argv) {
 #ifdef ErrorHandler
 	register_global_signal_exception_handler();
@@ -1396,10 +1400,10 @@ int main(int argp, char **argv) {
 		printf("%s", err->data);
 	}
 //	usleep(1000000000);
-	return EXIT_FAILURE;
+	return 1; //EXIT_FAILURE;
 }
 
-#endif
+//#endif
 
 #ifndef WASI
 //#ifndef RUNTIME_ONLY
