@@ -348,6 +348,7 @@ void consumeExportSection() {
 Valtype mapArgToValtype(String arg) {
 //	if(arg=="const char*")return Valtype::charp;
 	if (arg.empty() or arg == "" or arg == " ") return Valtype::voids;
+	else if (arg == "unsigned char*")return Valtype::charp;// pointer with special semantics
 	else if (arg == "char const*")return Valtype::charp;// pointer with special semantics
 	else if (arg == "char const*&")return Valtype::charp;// todo ?
 	else if (arg == "char*")return Valtype::charp;
@@ -358,6 +359,7 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "int*")return Valtype::pointer;
 	else if (arg == "void*")return Valtype::pointer;
 	else if (arg == "long")return Valtype::int64;
+	else if (arg == "double")return Valtype::float64;
 	else if (arg == "unsigned long")return Valtype::int64;
 	else if (arg == "float")return Valtype::float32;
 	else if (arg == "bool")return Valtype::int32;
@@ -366,6 +368,7 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "char32_t")return Valtype::codepoint32;// angle codepoint ok
 	else if (arg == "Type")return Valtype::int32;// enum
 	else if (arg == "Valtype")return Valtype::int32;// enum
+	else if (arg == "String*")return Valtype::todoe;// todo !DIFFERENT
 	else if (arg == "String")return Valtype::stringp;
 	else if (arg == "String&")return Valtype::stringp;// todo: how does c++ handle refs?
 	else if (arg == "Node*")return Valtype::pointer;
@@ -373,12 +376,17 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "Node")return Valtype::node;
 		// todo:
 	else if (arg == "List<String>")return Valtype::todoe;
+	else if (arg == "List<Valtype>")return Valtype::todoe;
+//	else if (arg == "List< …
 		// ignore internal types:
 	else if (arg == "Value")return Valtype::ignore;//value;
 	else if (arg == "Arg")return Valtype::ignore; // truely internal, should not be exposed! e.g. Arg
 	else if (arg == "Signature")return Valtype::ignore;
+
 	else
-		error("unmapped c++ argument type "s + arg.clone() + " !");
+//		error("unmapped c++ argument type "s + arg.clone().data + " !");
+		fprintf(stderr, "unmapped c++ argument type %s\n", arg.data);
+//	std::err <<
 	return i32t;
 }
 
