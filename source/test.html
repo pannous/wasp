@@ -76,6 +76,8 @@ window.onload = function () {
                     memory,
                     square: x => x * x, // usually native wasm, better test with 'double'!
                     pow: Math.pow,
+                    _Z3powdd: Math.pow,
+                    _ZdlPv: nop,//operator delete(void*) lol
                     logs: log,
                     logi: log,
                     logc: log,
