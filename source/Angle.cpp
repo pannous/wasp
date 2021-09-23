@@ -114,14 +114,22 @@ String extractFunctionName(Node &node) {
 
 //https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
 //List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
-chars ras[] = {"=", "?:", "+=", "++:", 0};
+//chars ras[] = {"=", "?:", "+=", "++", 0};
 //List<chars> rightAssociatives = List(ras);
 #ifndef WASM
-List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++:", 0};// a=b=1 == a=(b=1) => a=1
-List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…", "+…"/*useless!*/, "~…", "*…", "&…",
-                               "sizeof", "new", "delete[]"};
-List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", "％", "﹪", "٪",
+List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++…", 0};// a=b=1 == a=(b=1) => a=1
+// still needs to check a-b vs -i !!
+List<chars> prefixOperators = {"not", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/ "~", "&",
+                               "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
+List<chars> suffixOperators = {"++", "--", "++", "--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "%", "％", "﹪", "٪",
                                "‰"};// modulo % ≠ ％ percent
+//List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…"/*, "+…" /*useless!*/, "~…", "*…", "&…",
+//							  "sizeof", "new", "delete[]"};
+//List<chars> suffixOperators = { "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", "％", "﹪", "٪",
+//							   "‰"};// modulo % ≠ ％ percent
+
+
+List<chars> infixOperators = operator_list;
 // todo: norm all those unicode variants first!
 // ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
 
@@ -161,8 +169,13 @@ List<String> collectOperators(Node &expression) {
 			operators.add(op.name);
 		else if (prefixOperators.has(op.name))
 			operators.add(op.name);
+//		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
+//		else if (prefixOperators.has(op.name+"…"))// and IS_PREFIX
+//			operators.add(op.name+"…");
 		else if (suffixOperators.has(op.name))
 			operators.add(op.name);
+//else if (suffixOperators.has(op.name+"…"))
+//	operators.add(op.name);
 		//		if (op.name.in(function_list))
 		//			operators.add(op.name);
 		//		if (op.name.in(functor_list))
@@ -314,6 +327,8 @@ bool isVariable(String name, String context0) {
 	return false;
 }
 
+bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
+
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
 Node &groupOperators(Node &expression, String context = "main") {
 	if (analyzed.has(expression.hash()))
@@ -338,11 +353,17 @@ Node &groupOperators(Node &expression, String context = "main") {
 		Node &next = expression.children[i + 1];
 		next = analyze(next);
 		String &name = node.name;
-		if (prefixOperators.has(name)) {// {++x
+		Node &prev = expression.children[i - 1];
+		if (i == 0)prev = NIL;
+		if (isPrefixOperation(node, prev, next)) {// ++x -i
+			node.kind = Type::operators;// todo should have been parsed as such!
 			node.add(next);
+			if (node == "-") {
+				node.add(new Node(-1));
+				node.name = "*";
+			} // -i = i*(-1)
 			expression.replace(i, i + 1, node);
 		} else {
-			Node &prev = expression.children[i - 1];
 			prev = analyze(prev);
 			if (suffixOperators.has(name)) { // x²
 
@@ -400,6 +421,22 @@ Node &groupOperators(Node &expression, String context = "main") {
 		last = op;
 	}
 	return expression;
+}
+
+// √π -i ++j !true … not delete(x)
+bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
+	if (prefixOperators.has(node.name)) {
+//		if (infixOperators.has(node.name) or suffixOperators.has(node.name)) {
+		if (lhs.kind == reference)return false; // i++
+		if (isPrimitive(lhs))return false; // 3 -1
+		if (lhs.isEmpty() or lhs.kind == operators)
+			return true;
+		// todo -i vs a-b !
+		return false;
+//		}
+		return true;
+	}
+	return false;
 }
 
 Node &groupIf(Node n) {
