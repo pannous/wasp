@@ -35,6 +35,13 @@ public:
 	Node modifiers;
 };
 
+Valtype mapType(Node &n) {
+#ifdef RUNTIME_ONLY
+	return int32;
+#else
+	return mapTypeToWasm(n);
+#endif
+}
 
 Node constants(Node n) {
 	if (eq(n.name, "not"))return True;// not () == True; hack for missing param todo: careful!
@@ -188,15 +195,19 @@ Node &groupDeclarations(Node &expression, const char *context) {
 	for (Node &node : expression) {
 		String &op = node.name;
 		if (isPrimitive(node) and node.isSetter()) {
+			if (globals.has(op)) {
+				warn("Cant set globals yet!");
+				continue;
+			}
 			locals[context].add(op);// todo : proper calling context!
-			localTypes[context].add(mapTypeToWasm(node));// uh we have no type for pure references :(
+			localTypes[context].add(mapType(node));// uh we have no type for pure references :(
 			continue;
 		}
 		if (node.kind == reference or (node.kind == keyNode and isVariable(node))) {// only constructors here!
-			if (not locals[context].has(op) and not isFunction(node)) {
+			if (not globals.has(op) and not locals[context].has(op) and not isFunction(node)) {
 #ifndef RUNTIME_ONLY
 				locals[context].add(op);// todo : proper calling context!
-				localTypes[context].add(mapTypeToWasm(node));// uh we have no type for pure references :(
+				localTypes[context].add(mapType(node));// uh we have no type for pure references :(
 #endif
 			}
 			continue;
@@ -250,10 +261,10 @@ Node &groupDeclarations(Node &expression, const char *context) {
 #ifndef RUNTIME_ONLY
 					if (not locals[context].has(name)) {
 						locals[context].add(name);// todo : proper calling context!
-						localTypes[context].add(mapTypeToWasm(*body));
+						localTypes[context].add(mapType(*body));
 					} else {
 						int i = locals[context].position(name);
-						localTypes[context][i] = mapTypeToWasm(*body);// update type! todo: check if cast'able!
+						localTypes[context][i] = mapType(*body);// update type! todo: check if cast'able!
 					}
 #endif
 				}
@@ -334,9 +345,14 @@ Node &groupOperators(Node &expression, String context = "main") {
 			Node &prev = expression.children[i - 1];
 			prev = analyze(prev);
 			if (suffixOperators.has(name)) { // x²
-				if (name == "ⁿ")functionSignatures["powf"].is_used = true;
+
+				if (name == "ⁿ")functionSignatures["pow"].is_used = true;
 				if (i < 1)error("suffix operator misses left side");
 				node.add(prev);
+				if (name == "²") {
+					node.add(prev);
+					node.name = "*"; // x² => x*x
+				}
 				expression.replace(i - 1, i, node);
 			} else if (name.in(function_list)) {// handled above!
 				while (i++ < node.length)
@@ -355,7 +371,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 				if (name.endsWith("=") and not name.startsWith("::") and prev.kind == reference)// todo can remove hack?
 					if (!localContext.has(prev.name)) {
 						localContext.add(prev.name);
-						localContextTypes.add(mapTypeToWasm(*node.value.node));
+						localContextTypes.add(mapType(*node.value.node));
 					}
 				//#endif
 				node.add(prev);
@@ -650,7 +666,7 @@ Node analyze(Node node, String context) {
 	if (type == keyNode) {
 		if (not localContext.has(node.name)) {
 			localContext.add(node.name);
-			localContextTypes.add(mapTypeToWasm(*node.value.node));
+			localContextTypes.add(mapType(*node.value.node));
 		}
 		if (node.value.node /* i=ø has no node */)
 			node.value.node = analyze(*node.value.node).clone();
@@ -659,7 +675,7 @@ Node analyze(Node node, String context) {
 		if (isVariable(node) and not localContext.has(node.name)) {
 			// or type == codepoints …
 			localContext.add(node.name);// need to pre-register before emitBlock!
-			localContextTypes.add(mapTypeToWasm(node));
+			localContextTypes.add(mapType(node));
 		}
 		return node;// nothing to be analyzed!
 	}
@@ -719,7 +735,8 @@ void preRegisterSignatures() {
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 	functionSignatures.insert_or_assign("logi", Signature().import().add(int32).returns(voids));
 	functionSignatures.insert_or_assign("logf", Signature().import().add(float32).returns(voids));
-	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));
+//	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));
+	functionSignatures.insert_or_assign("pow", Signature().import().add(float64).add(float64).returns(float64));
 //	functionSignatures.insert_or_assign("powl", Signature().import().add(int64).returns(int64));
 	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
 	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
@@ -769,6 +786,10 @@ void clearContext() {
 }
 
 int runtime_emit(String prog) {
+#ifdef RUNTIME_ONLY
+	printf("emit wasm not built into release runtime");
+	return -1;
+#endif
 	clearContext();
 	functionIndices.clear();
 	functionIndices.setDefault(-1);
@@ -933,25 +954,3 @@ float precedence(String name) {
 		return function_precedence;// if, while, ... statements calls outmost operation todo? add 3*square 4+1
 	return 0;// no precedence
 }
-
-
-int main4(int argp, char **argv) {
-#ifdef register_global_signal_exception_handler
-	register_global_signal_exception_handler();
-#endif
-	try {
-		Node("hello");
-		return 42;
-	} catch (chars err) {
-		printf("\nERROR\n");
-		printf("%s", err);
-	} catch (String err) {
-		printf("\nERROR\n");
-		printf("%s", err.data);
-	} catch (SyntaxError *err) {
-		printf("\nERROR\n");
-		printf("%s", err->data);
-	}
-	return -1;
-}
-

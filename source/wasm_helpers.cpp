@@ -14,7 +14,6 @@
 #include "String.h"
 #include "Backtrace.h"
 #include "Code.h"
-//#define size_t int
 //extern unsigned int *memory;
 
 //#ifdef WASI
@@ -453,3 +452,8 @@ void logf32(float l) {
 #include "Interpret.h"
 Module read_wasm(chars file){return *new Module();}
 #endif
+
+
+float powr(double x, double y) {
+	return pow(x, y);
+}
