@@ -52,6 +52,29 @@ Map<String, Code> functionCodes;
 Map<String, int> typeMap;
 
 
+Valtype mapTypeToWasm(Node n) {
+	if (n.kind == bools)return int32;
+	if (n.kind == nils)return voids;// mapped to int32 later: ø=0
+	if (n.kind == reals)return float32;// float64; todo why 32???
+	if (n.kind == longs)return int32;// int64; todo
+	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
+	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
+	Node first = n.first();
+	if (first == n)first = NIL;// avoid loops
+	if (n.kind == assignment)return mapTypeToWasm(first);// todo
+	if (n.kind == operators)return mapTypeToWasm(first);// todo
+	if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
+	if (n.kind == call)
+		return functionSignatures[n.name].return_type;// error("first.kind==call is not a wasm type, maybe get signature?");
+	if (n.kind == keyNode and n.value.data)return mapTypeToWasm(*n.value.node);
+	//	if (n.kind == keyNode and not n.value.data)return array;
+	if (n.kind == groups)return array;// uh todo?
+	n.log();
+	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
+	return none;
+}
+
+
 Code Call(char *symbol);//Node* args
 
 //Code& unsignedLEB128(int);
@@ -705,24 +728,23 @@ Code emitOperator(Node node, String context) {
 		code.add(0);// careful, overwrites result OR SOMETHING ELSE!
 		code.add(get_local);
 		code.add(0);
-		if (last_type == float32)
-			code.add(f32_mul);
-		else
-			code.add(i32_mul);
+		code.add(opcodes("*", last_type));
 	} else if (name == "ⁿ") {
 		if (node.length == 1) {
-			code.add(emitValue(node.first().values(), context));
-			if (last_type != float32)code.add(f32_from_int32);
+//			bug: already emitted!
+//			code.add(emitValue(node.first().values(), context));
+//			if (last_type != float32)code.add(f32_from_int32);
+			code.add(cast(last_type, float64));
 		}
 		if (node.length <= 1) {// use stack
 			code.add(get_local);
+			int local_index = 0;// last result / last_index / locals[context].size() -1
 			if (locals[context].has("n"))
-				code.addInt(locals[context].position("n"));
-			else
-				code.addInt(0);// last result / last_index / locals[context].size() -1
-			if (last_type != float32)code.add(f32_from_int32);
+				local_index = locals[context].position("n");
+			code.addInt(local_index);
+			code.add(cast(localTypes[context][local_index], float64));
 		}
-		code.add(emitCall(*new Node("powf"), context));
+		code.add(emitCall(*new Node("pow"), context));
 //		else
 //			code.add(emitCall(*new Node("powi"), context));
 
@@ -858,7 +880,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 					return emitCall(node, context);
 				else if (globals.has(name)) return emitGetGlobal(node);
 				else if (name == "π") // if not provided as global
-					return emitValue(Node(3.1415926535897), current);
+					return emitValue(Node(3.141592653589793), current);
 				else if (!node.isSetter())
 					error("UNKNOWN local symbol "s + name + " in context " + context);
 				else {
@@ -997,22 +1019,46 @@ Code emitCall(Node &fun, String context) {
 }
 
 Code cast(Valtype from, Valtype to) {
-	Code casted;
-	if (to == none)return casted;// no cast needed magic VERSUS wasm drop!!!
-	if (from == to)return casted;// nop
-	if (from == array and to == charp)return casted;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
-	if (from == i32t and to == charp)return casted;// assume i32 is a pointer here. todo?
-	if (from == charp and to == i32t)return casted;// assume i32 is a pointer here. todo?
-	if (from == 0 and to == i32t)return casted;// nil or false ok as int? otherwise add const 0!
-	if (from == i32t and to == float32) {
-		casted.addByte(i32_cast_to_f32_s);
-		last_type = float32;
-	} else if (from == float32 and to == i32t) {
-		casted.addByte(f32_cast_to_i32_s);
-		last_type = int32;
-	} else
-		error("missing cast map "s + from + " -> " + to + " : " + typeName(from) + "=>" + typeName(to));
-	return casted;
+	Code nop;
+	if (to == none)return nop;// no cast needed magic VERSUS wasm drop!!!
+	if (from == to)return nop;// nop
+	last_type = to;
+	if (from == array and to == charp)return nop;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
+	if (from == i32t and to == charp)return nop;// assume i32 is a pointer here. todo?
+	if (from == charp and to == i32t)return nop;// assume i32 is a pointer here. todo?
+	if (from == 0 and to == i32t)return nop;// nil or false ok as int? otherwise add const 0!
+	if (from == float32 and to == float64)return Code(f64_from_f32);
+	if (from == float32 and to == i32t) return Code(f32_cast_to_i32_s);
+	if (from == i32t and to == float32)return Code(i32_cast_to_f32_s);
+//	if (from == i32t and to == float64)return Code(i32_cast_to_f64_s);
+	if (from == i64 and to == i32) return Code(i𝟥𝟤_𝗐𝗋𝖺𝗉_𝗂𝟨𝟦);
+	if (from == f32 and to == i32) return Code(i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗌);
+//	if(from==f32u and to==i32)	return Code(i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗎);
+	if (from == f64 and to == i32) return Code(i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗌);
+//	if(from==f64u and to==i32)	return Code(i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗎);
+	if (from == i32 and to == i64) return Code(i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗌);
+//	if(from==i32u and to==i64)	return Code(i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗎);
+	if (from == f32 and to == i64) return Code(i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗌);
+//	if(from==f32u and to==i64)	return Code(i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗎);
+	if (from == f64 and to == i64) return Code(i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗌);
+//	if(from==f64u and to==i64)	return Code(i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗎);
+	if (from == i32 and to == f32) return Code(f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗌);
+//	if(from==i32u and to==f32)	return Code(f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗎);
+	if (from == f64 and to == f32) return Code(f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌);
+//	if(from==f64u and to==f32)	return Code(f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗎);
+	if (from == f64 and to == f32) return Code(f𝟥𝟤_𝖽𝖾𝗆𝗈𝗍𝖾_𝖿𝟨𝟦);
+	if (from == i32 and to == f64) return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗌);
+//	if(from==i32u and to==f64)	return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗎);
+	if (from == f64 and to == f64) return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌);
+//	if(from==f64u and to==f64)	return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗎);
+	if (from == f32 and to == f64) return Code(f𝟨𝟦_𝗉𝗋𝗈𝗆𝗈𝗍𝖾_𝖿𝟥𝟤);
+//	if(from==f32 and to==i32)	return Code(i𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟥𝟤);
+//	if(from==f64 and to==i64)	return Code(i𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟨𝟦);
+//	if(from==i32 and to==f32)	return Code(f𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟥𝟤);
+//	if(from==i64 and to==f64)	return Code(f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦);
+
+	error("missing cast map "s + from + " -> " + to + " : " + typeName(from) + "=>" + typeName(to));
+	return nop;
 }
 
 Code emitDeclaration(Node fun, Node &body) {
@@ -1212,15 +1258,14 @@ Code emitBlock(Node node, String context) {
 	Code inner_code_data = emitExpression(node, context);
 	Valtype x = last_type;
 	block.push(inner_code_data);
-	Valtype returns = functionSignatures[context].return_type;// switch back to return_types[context] for block?
-	if (returns != last_type) {
-		if (returns == Valtype::voids and last_type != Valtype::voids)
+	Valtype return_type = functionSignatures[context].return_type;// switch back to return_types[context] for block?
+	if (return_type != last_type) {
+		if (return_type == Valtype::voids and last_type != Valtype::voids)
 			block.addByte(drop);
-		if (returns == Valtype::i32t and last_type == Valtype::f32t)
-			block.addByte(i32_trunc_f32_s);
-		if (returns == Valtype::i32t and last_type == Valtype::voids)
+		else if (return_type == Valtype::i32t and last_type == Valtype::voids)
 			block.addByte(i32_const).addInt(0);//-999);// hack? return 0/false by default. ok? see python!
-//		if(returns==Valtype::f32)…
+		else
+			block.add(cast(last_type, return_type));
 	}
 
 //if not return_block
@@ -1469,7 +1514,7 @@ Code globalSection() {
 		Valtype valtype = mapTypeToWasm(*global_node);
 		globalTypes.insert_or_assign(global_name, valtype);
 		globalsList.addByte(valtype);
-		globalsList.addByte(0x01);// mutable todo: default? not π ;)
+		globalsList.addByte(0);// 1:mutable todo: default? not π ;)
 		// expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
 		const Code &globalInit = emitExpression(global_node, "global");
 		globalsList.add(globalInit);// todo names in global context!?

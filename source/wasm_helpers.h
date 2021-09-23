@@ -9,7 +9,7 @@
 
 #else
 #define size_t unsigned long
-//#define size_t unsigned int error: 'operator new' takes type size_t ('unsigned long') as first parameter
+//#define size_t unsigned int // error: 'operator new' takes type size_t ('unsigned long') as first parameter
 #endif
 
 typedef const char *chars;
@@ -55,10 +55,20 @@ extern "C" void logx(int i);// hex
 extern "C" void logi(int i);
 extern "C" void logp(long char_pointer);
 extern "C" void logf32(float f);
-extern "C" int square(int n);// test wasm
-extern "C" int squaref(int n);// test wasm
+//extern "C" double pow(double x, double y);// todo: merge pow.wasm lib (7kb!!)
+extern "C" long squarel(long n);// test wasm, otherwise use x² => x*x in analyze!
+extern "C" double square(double n);// test wasm
 extern int sqrt1(int a);
 
+#include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
+//number powl(number a, long b){// optimized for longs!
+//	long c=a;
+//	while (b-->0)c=c*a;
+//	return c;
+//}
+//bl	0x100003f6c ; symbol stub for: _pow
+
+//extern float powf(float x, float y);
 //void printf(int);
 void *alloc(int size, int num);
 

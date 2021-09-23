@@ -187,7 +187,8 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 Node do_call(Node left, Node op0, Node right) {
 	String op = op0.name;
 	if (op == "id")return right;// identity
-	if (op == "square")return Node(square(right.numbere()));
+//	if (op == "square")return Node(square(right.numbere()));
+	if (op == "square")return Node(right.numbere() * right.numbere());// don't test
 	if (op == "√")return Node(sqrt1(right.numbere()));
 	if (op == "printf") {
 		log(right);
