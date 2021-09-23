@@ -780,14 +780,25 @@ void testRecentRandomBugs() {
 
 
 void testSquareExpWasm() {
+	let π = 3.141592653589793;
 	assert_emit("n=3;2ⁿ", 8);
 	assert_emit("3²", 9);
 	assert_emit("n=3.0;2.0ⁿ", 8);
 	assert_emit("3.0²", 9);
+	assert_emit("√100²", 100);
+	assert_emit("√ π ²", π);
+	assert_emit("√π ²", π);
+	assert_emit("√ π²", π);
+	assert_emit("√π²", π);
+	// todo smart pointer return from main for floats!
+	skip(
+	)
 	assert_emit("π", 3/*.1415926535897*/);
+	assert_emit("π*1000000.", 3141592/*6535897*/);
+	assert_emit("π ²", 9.869604401089358 /*π*π*/);
 	assert_emit("π*1000000", 3141592/*6535897*/);
-
 	assert_emit("π²", 9.869604401089358 /*π*π*/);
+
 
 	assert_emit("n=3;2ⁿ", 8);
 	assert_emit("i=-9;-i", 9);

@@ -141,8 +141,8 @@ bool assert_equals_x(int a, int b, char *context = "") {
 inline float abs_(float x)
 
 noexcept {
-return x > 0 ? x : -
-x;
+	return x > 0 ? x : -
+			x;
 }
 
 bool assert_equals_x(float a, float b, char *context = "") {
@@ -1716,6 +1716,7 @@ void testSignificantWhitespace() {
 void testUnits() {
 	assert_is("1 m + 1km", Node(1001).setType("m"));
 }
+
 void testPaint() {
 	init_graphics();
 	while (1)requestAnimationFrame();
@@ -1730,9 +1731,14 @@ void testPaintWasm() {
 	assert_emit(wasm_paint_routine, 10);
 	while (1)requestAnimationFrame();// help a little
 }
+
 void testCurrent() { // move to tests() once OK
 //	globals["y"]=new Node();
 //	globals.setDefault(new Node());
+	let π = 3;
+	assert_emit("√ π ²", π);
+	assert_emit("√π²", π);
+	check(pow(3, 3) == 27);
 	testSquareExpWasm();
 	testRoundFloorCeiling();
 

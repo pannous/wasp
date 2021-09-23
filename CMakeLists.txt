@@ -10,11 +10,12 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 #set(RUNTIME_ONLY 0) # no Angle eval emit merge etc! ≠ NO_TESTS
 ##set(VERBOSE 1)
 #set(DEBUG 1)
-#set(RELEASE 0)
-#set(WASM 1)
+#set(RELEASE 0) # no tests
+#set(WASM 1) # no WebView, duh
 
-
-set(WEBAPP 1) # compile with WebView for electron like standalone apps.
+if (NOT WASM)
+    set(WEBAPP 1) # compile with WebView for electron like standalone apps.
+endif ()
 # V8 has wasm, so no m3 needed in release. can we even debug through V8??
 # interestingly if we have a native app we don't need our wasp.wasm runtime because it's c++ compiled into app.
 # but we would need a million bindings and calls, also we would LEAVE OUR SANDBOX,
@@ -225,9 +226,25 @@ if (WASM) # OR WASI)
             ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
         endif ()
     endif ()
-    #    add_library(wasp.wasm SHARED ${SOURCE_FILES}) #
-    add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
+    add_library(wasp.wasm SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
+    #        add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
+    #    ADD_CUSTOM_COMMAND(
+    #            TARGET wasp.wasm
+    #            COMMAND cp libwasp.wasm.so wasp.wasm
+    #            DEPENDS wasp.wasm)
+    ADD_CUSTOM_COMMAND(
+            TARGET wasp.wasm
+            COMMAND cp libwasp.wasm.so wasp.wasm
+            DEPENDS libwasp.wasm.so)
     add_custom_target(BuildWasm ALL DEPENDS wasp.wasm)
+    ADD_CUSTOM_COMMAND(
+            TARGET BuildWasm
+            COMMAND cp libwasp.wasm.so wasp.wasm
+            DEPENDS wasp.wasm)
+    ADD_CUSTOM_COMMAND(
+            TARGET BuildWasm
+            COMMAND cp libwasp.wasm.so wasp.wasm
+            DEPENDS libwasp.wasm.so)
 elseif (WASI)
     message(WASI)
     ADD_COMPILE_DEFINITIONS(WASI) # same as -DWASI=1
