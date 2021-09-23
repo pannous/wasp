@@ -40,7 +40,7 @@ chars operator_list0[] = {"+", "-",
                           "and", "or", "&", "++", "--", "to", "xor", "be", "…", "...", "..<" /*range*/,
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "×", "⋅", "⋆", "÷",
                           "^", "√", "∈", "∉", "⊂", "⊃", "in", "of",
-                          "from", "floor", "round", "ceil", "peek", "poke", "#", "$", 0, 0, 0, 0}; // "while" ...
+                          "from", "#", "$", "ceil", "floor", "round", 0, 0, 0, 0}; // "while" ...
 //∧  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
 // ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
 #ifdef WASI
@@ -602,7 +602,7 @@ private:
 	}
 
 
-	Node resolve(Node node) {
+	Node &resolve(Node &node) {
 		String &symbol = node.name;
 		if (symbol == "false")return False;
 		if (symbol == "False")return False;
@@ -644,7 +644,7 @@ private:
 		if (ch >= '0' and ch <= '9')return numbero();
 		if (is_operator(ch))
 			return any_operator();
-		if (is_identifier(ch)) return resolve(Node(identifier(), true));// or op
+		if (is_identifier(ch))return resolve(*new Node(identifier(), true));// or op
 		error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
 		      String((char) text[at + 2]));
 		return NIL;
@@ -669,6 +669,7 @@ private:
 
 	bool is_known_functor(Node node) {
 		if (precedence(node))return true;
+//		else if (functor_list.has(node.name))return true;
 		else return false;
 	}
 
@@ -680,14 +681,12 @@ private:
 		Node expressionas;
 		// set kind = expression only if it contains operator, otherwise keep it as list!!!
 		expressionas.add(node);
+		if (node.kind == operators)expressionas.kind = expression;
 		if (stop_at_space and ch == ' ')return *expressionas.clone();
 		white();
 		while (ch and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
 			node = symbol();// including operators `=` ...
-			if (is_known_functor(node)) {
-				node.kind = operators;
-				expressionas.kind = expression;
-			}
+			if (node.kind == operators)expressionas.kind = expression;
 			expressionas.add(&node);
 			white();
 		}
@@ -1202,8 +1201,9 @@ private:
 					// {a} ; b c vs {a} b c vs {a} + c
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
 					Node node = expressione(close == ' ');//word();
-					if (precedence(node) and ch != ':') {
+					if (precedence(node) or operator_list.has(node.name))
 						node.kind = operators;
+					if (node.kind == operators and ch != ':') {
 						if (isFunctor(node))
 							node.kind = functor;// todo: earlier
 						else current.kind = expression;
