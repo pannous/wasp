@@ -593,7 +593,7 @@ Node &groupFunctions(Node &expressiona) {
 			minArity--;
 		}
 		if (rest.length < minArity)
-			error("missing arguments for function %s, currying not yet supported"s % name);
+			error("missing arguments for function %s, defaults and currying not yet supported"s % name);
 		else if (rest.length == 0 and minArity > 0)
 			error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
 		else if (rest.first().kind == operators) { // random() + 1 == random + 1
@@ -768,6 +768,7 @@ String debug_code;
 
 void preRegisterSignatures() {
 	// ORDER MATTERS: will be used for functionIndices later!
+	// read_wasm doesn't have return types!
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 	functionSignatures.insert_or_assign("logi", Signature().import().add(int32).returns(voids));
@@ -779,10 +780,14 @@ void preRegisterSignatures() {
 	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
 	functionSignatures.insert_or_assign("logs", Signature().import().add(charp).returns(voids));
 	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
-	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// scaffold until parsed
-	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));// scaffold until parsed
-	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));// scaffold until parsed
-	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));// scaffold until parsed
+	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// todo why not rely on read_wasm again?
+	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));
+	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(
+			float32));// read_wasm doesn't have return types!
+	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
+//	functionSignatures.insert_or_assign("render", Signature().add(node).add(pointer).returns(none));
+	functionSignatures.insert_or_assign("render", Signature().runtime().add(node).returns(int32));
+//functionSignatures.insert_or_assign("render", Signature().add(node).add(pointer).returns(int32));
 	// todo: long + double !
 	// imports
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
