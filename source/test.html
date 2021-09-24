@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- opened by WebView.cpp -->
 <html>
 <body onclick='test().then(_=>terminate0())' style='height: 1000px;'>
 <a href='https://www.yay.com/' id='target'>YAY</a>
@@ -7,11 +8,33 @@
 <p onclick='test()'>test</p>
 <p onclick='boom()'>boom</p>
 <p onclick='exit()'>exit</p>
+<p onclick='server()'>server</p>
 <p onclick='terminate()' style="background:gray;width:500px;height:500px">terminate</p>
+<textarea id="code_input">v3^2</textarea>
+<br/>
+<!--application/wasp-->
+<!--accept="*/*"-->
+<input id="input_file" onselect="readFile()" type="file"/>
+<button onclick="run(code_input.value)">RUN</button>
+<button onclick="results.value=''">CLEAR</button>
+<br/>
+<textarea id="results" placeholder="press run to compile and see result">
+</textarea>
+
+
 <!--    <script src="more.js">/*not allowed to load local resource*/</script>-->
 <script> // errors here fail silently :(
 function terminate0() {
     console.log("terminate0 disabled: enable by removing 0");
+}
+
+function readFile() {
+    const file = input_file.files[0]
+    const reader = new FileReader
+    reader.addEventListener('load', () => {
+        results.innerHTML = reader.result
+    })
+    reader.readAsText(file, 'UTF-8')
 }
 
 function print(...x) {
@@ -109,6 +132,7 @@ window.onload = function () {
             if (instance.exports.main) {
                 result = instance.exports.main()
                 print(result)
+                results.value = result;
                 wasm_done(result);
             } else {
                 wasm_error("NO MAIN!");
