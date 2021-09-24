@@ -903,3 +903,12 @@ bool empty(chars s);
 bool contains(chars str, chars match);
 
 #include "Map.h"
+
+
+#ifdef WEBAPP
+
+#include <sstream>
+
+void render(Node &node, std::stringstream *html = 0);
+
+#endif

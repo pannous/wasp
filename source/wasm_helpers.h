@@ -43,9 +43,13 @@ extern "C" char *memoryChars;
 extern "C" /*unsigned */ char *current;// memory + heap_offset
 extern "C" void panic();//
 #ifndef WASM_ENABLE_INTERP
-extern "C"
+#ifndef SDL
+//extern "C" // conflicts with signal.h
 #endif
-int raise(chars error);// conflicts with signal.h
+#endif
+
+int raise(chars error); // conflicts with signal.h if 'extern'
+
 //extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
 
@@ -55,12 +59,12 @@ extern "C" void logx(int i);// hex
 extern "C" void logi(int i);
 extern "C" void logp(long char_pointer);
 extern "C" void logf32(float f);
-//extern "C" double pow(double x, double y);// todo: merge pow.wasm lib (7kb!!)
+extern "C" double pow(double x, double y);// todo: merge pow.wasm lib (7kb!!)
 extern "C" long squarel(long n);// test wasm, otherwise use x² => x*x in analyze!
 extern "C" double square(double n);// test wasm
 extern int sqrt1(int a);
 
-#include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
+//#include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
 //number powl(number a, long b){// optimized for longs!
 //	long c=a;
 //	while (b-->0)c=c*a;

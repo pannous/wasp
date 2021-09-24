@@ -6,12 +6,35 @@
 // 104234 bytes if compiled with -Oz
 // todo: remove std::string from webview.h for much smaller size?
 #include "Paint.h"
+#include "Node.h"
 
 /* supported in WebKit:
 ✔️	multiValue
 ✔️	mutableGlobals
  */
 
+// lsappinfo  shows
+/*
+75) "wasp" ASN:0x0-0x5fa5fa:
+    bundleID=[ NULL ]
+    bundle path="/Users/me/dev/apps/wasp/cmake-build-default/wasp"
+
+ 77) "wasp Web Content" ASN:0x0-0x5fc5fc:
+    bundleID="com.apple.WebKit.WebContent"
+    bundle path="/System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc"
+    executable path="/System/Library/Frameworks/WebKit.framework/Versions/A/XPCServices/com.apple.WebKit.WebContent.xpc/Contents/MacOS/com.apple.WebKit.WebContent"
+    pid = 9863 !cgsConnection !signalled type="UIElement" flavor=3 Version="16611.3.10.1.6" fileType="XPC!" creator="????" Arch=ARM64 sandboxed
+
+defaults write com.apple.WebKit.WebContent WebKitDeveloperExtras -bool true
+
+ [macOS] Private API usage -> REJECTION
+ The commit introducing clipboard access uses private APIs for its macOS implementation.
+ This can result in App Review REJECTION for apps submitted to the Mac App Store. We should try to find another way to do this without using private APIs.
+
+ * */
+
+// Call `gtk_window_fullscreen`, convert window to `C.GtkWindow` pointer.
+//C.gtk_window_fullscreen((*C.GtkWindow)(window))
 
 class Wait {
 public:
@@ -58,6 +81,24 @@ void render(std::string html) {
 	w.navigate("data:text/html," + html);
 }
 
+// this is useless because it can't be called from wasm, only from native code.
+// unless the native code parses wasp and holds the Node anyref which can then be handed over by wasm!!!
+// this wouldn't work in the browser, but browsers could have their own render()!
+// how to get Nodes from native <> linear memory?
+// WebView has no shared access to js `memory` object
+void render(Node &node, std::stringstream *html) {
+	if (not html)html = new std::stringstream();
+	if (node.kind != strings)
+		*html << "<" << node.name << ">";
+	else *html << "<" << node.value.string << ">";
+	for (Node &child : node) {
+		render(child, html);
+	}
+	if (node.kind != strings)
+		*html << "</" << node.name << ">";
+	printf("HTML:\n%s\n", html->str().data());
+	w.navigate("data:text/html," + html->str());
+}
 //char *page=0;// use inline html, else go straight to page todo: file:// URLs?
 // char *page="test";// doesn't
 //char *page="data:text/html,test";// OK!
