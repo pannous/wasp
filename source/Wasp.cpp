@@ -28,6 +28,7 @@ char *current = (char *) HEAP_OFFSET;
 #ifndef WASM
 
 #include <cctype>
+#include <thread>
 #include "ErrorHandler.h"
 
 #endif
@@ -1296,6 +1297,7 @@ void handler(int sig) {
 #ifndef NO_TESTS // RUNTIME_ONLY
 
 #import "tests.cpp"
+#include "WebServer.hpp"
 
 #endif
 
@@ -1360,15 +1362,60 @@ char newline = '\n';
 //"_main", referenced from:
 //implicit entry/start for main executable
 
+Node &compile(String &file) {
+
+}
+
+
+int run_wasm_file(chars file) {
+	FILE *ptr;
+	ptr = fopen(file, "rb");  // r for read, b for binary
+	if (!ptr)error("File not found "s + file);
+	fseek(ptr, 0L, SEEK_END);
+	int sz = ftell(ptr);
+	unsigned char buffer[sz];
+	fread(buffer, sizeof(buffer), 1, ptr); // read 10 bytes to our buffer
+	return run_wasm(buffer, sz);
+}
+
+void usage() {
+	print("wasp is a new compiler and programming language");
+	print("wasp [repl]            open interactive programming environment");
+	print("wasp <file.wasp>       compile wasp to wasm or native and execute");
+	print("wasp <file.wasm>       compile wasm to native and execute");
+	print("wasp help              see https://github.com/pannous/wasp/wiki");
+	print("wasp tests             ");
+
+}
+
 // wasmer etc DO accept float/double return, just not from main!
 int main(int argp, char **argv) {
 #ifdef ErrorHandler
 	register_global_signal_exception_handler();
 #endif
 	try {
-		log("Hello "_s + "WASM ");
-		logi(42);
-
+		log("Hello Wasp 🐝");
+		if (argp >= 1) {
+			String arg = argv[0];
+			if (arg.endsWith(".wasp"))
+				compile(arg);
+			if (arg.endsWith(".wasm"))
+				run_wasm_file(arg);
+			if (arg == "test" or arg == "tests")
+				testCurrent();
+			if (arg == "app" or arg == "start" or arg == "webview" or arg == "browser" or arg == "run" or
+			    arg == "repl") {
+//				start_server(9999);
+				init_graphics();
+			}
+			if (arg.contains("serv"))
+				start_server(9999);
+			if (arg.contains("help"))
+				print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
+//			return 42;
+		} else {
+			usage();
+		}
 #ifdef WASM
 		initSymbols();
 //		String args(current);
@@ -1380,10 +1427,12 @@ int main(int argp, char **argv) {
 #ifdef WEBAPP
 		log("\nWEBAPP!");
 		// handing over to V8, we need to call testCurrent() from there!
-//		startApp();
-		init_graphics();
+		std::thread go(start_server, 9999);
+		init_graphics(); // startApp();
+//		start_server(9999);
 #endif
 #ifndef NO_TESTS // RUNTIME_ONLY
+
 		testCurrent();
 #endif
 		return 42;
@@ -1414,3 +1463,5 @@ extern "C" int _start() { // for wasm-ld
 }
 //#endif
 #endif
+
+

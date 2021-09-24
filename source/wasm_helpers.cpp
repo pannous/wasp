@@ -124,7 +124,8 @@ int raise(chars error) {
 //#ifdef WASM3
 	Backtrace(3);
 	print(error);
-	exit(EXIT_FAILURE);
+	if (throwing)
+		exit(EXIT_FAILURE);
 //#endif
 	if (throwing)
 		throw error;
@@ -242,8 +243,7 @@ void error1(chars message, chars file, int line) {
 #endif
 	if (file)printf("\n%s:%d\n", file, line);\
     raise(message);
-	panic();// not reached
-//	err(error);
+	if (throwing) panic();// not reached
 }
 
 void newline() {

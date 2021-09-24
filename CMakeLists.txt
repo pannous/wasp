@@ -174,11 +174,9 @@ if (WASM) # OR WASI)
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem ... -Oz -c ") # BREAKS BUILD! ???
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan ")
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
-
+    #    ADD_COMPILE_FLAG("-nostdlib") # use our OWN memcpy (and printf?)
     #    ADD_COMPILE_FLAG("-fno-builtin")
-    #    ADD_COMPILE_FLAG("-nostdlib -fno-builtin") # use our OWN memcpy (and printf?)
     #    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const
-
     # AVOID   -search_paths_first BUG! : if ( NOT WASM ) in Darwin.cmake (homebrew) or /Applications/CLion.app/Contents/bin/cmake/...
     #    OR  remove from CMAKE_CXX_LINK_FLAGS how
     #-lwasmer --entry=main,
@@ -215,7 +213,6 @@ if (WASM) # OR WASI)
         #        ADD_COMPILE_FLAG("-Wl,--pie") #  position independent executable, does it help? NO
         #relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
         #        ADD_COMPILE_FLAG("-fPIC") # does not help
-
         ADD_COMPILE_FLAG("-Wl,--compress-relocations,--strip-debug") # incompatible with output debug information. Please pass --strip-debug
         set(SOURCE_FILES ${SOURCE_FILES} source/exceptions.cpp)
         #        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
@@ -226,26 +223,10 @@ if (WASM) # OR WASI)
             ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
         endif ()
     endif ()
-    add_library(wasp.wasm SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
-    #        add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
-    #    ADD_CUSTOM_COMMAND(
-    #            TARGET wasp.wasm
-    #            COMMAND cp libwasp.wasm.so wasp.wasm
-    #            DEPENDS wasp.wasm)
-    ADD_CUSTOM_COMMAND(
-            TARGET wasp.wasm
-            COMMAND cp libwasp.wasm.so wasp.wasm
-            DEPENDS libwasp.wasm.so)
-    add_custom_target(BuildWasm ALL DEPENDS wasp.wasm)
-    ADD_CUSTOM_COMMAND(
-            TARGET BuildWasm
-            COMMAND cp libwasp.wasm.so wasp.wasm
-            DEPENDS wasp.wasm)
-    ADD_CUSTOM_COMMAND(
-            TARGET BuildWasm
-            COMMAND cp libwasp.wasm.so wasp.wasm
-            DEPENDS libwasp.wasm.so)
+    #    add_library(wasp.wasm SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
+    add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
 elseif (WASI)
+    #    TODO "System is unknown to cmake"
     message(WASI)
     ADD_COMPILE_DEFINITIONS(WASI) # same as -DWASI=1
     #    only works with wasm.toolchain.cmake
@@ -314,6 +295,7 @@ elseif (MICRO) # wasm-micro-vm:
             #            VERSUS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
             )
 elseif (WABT)
+    #    System is unknown to cmake why?
     message(WABT)
     ADD_COMPILE_DEFINITIONS(WABT)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
@@ -328,7 +310,7 @@ elseif (WABT)
     #    add_custom_target(Build_Wabt ALL DEPENDS angle) #.exe
 elseif (WEBAPP)
     include(source/WebView.cmake)
-    set(SOURCE_FILES ${SOURCE_FILES} source/WebView.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/WebView.cpp source/WebServer.cpp)
     add_executable(${PROJECT_NAME} ${SOURCE_FILES})
     target_link_libraries(${PROJECT_NAME} PUBLIC webview)
 elseif (WASM3)

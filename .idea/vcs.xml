@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/playground/test-lld-wasm" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/source/_deps/webview-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/test-lld-wasm" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/wabt" vcs="Git" />

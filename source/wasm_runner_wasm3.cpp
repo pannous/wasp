@@ -109,17 +109,6 @@ int test_wasm3(const uint8_t *prog, int len) {
 	}
 }
 
-int run_wasm_file(chars file) {
-	FILE *ptr;
-	ptr = fopen(file, "rb");  // r for read, b for binary
-	if (!ptr)error("File not found "s + file);
-	fseek(ptr, 0L, SEEK_END);
-	int sz = ftell(ptr);
-	unsigned char buffer[sz];
-	fread(buffer, sizeof(buffer), 1, ptr); // read 10 bytes to our buffer
-	return test_wasm3((const uint8_t *) buffer, sz);
-}
-
 int run_wasm(bytes wasm_bytes, int len) {
 //	test_wasm3(test_prog_wasm, test_prog_wasm_len);
 	return test_wasm3((const uint8_t *) wasm_bytes, len);
