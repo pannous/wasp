@@ -1057,6 +1057,8 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==f64 and to==i64)	return Code(i𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟨𝟦);
 //	if(from==i32 and to==f32)	return Code(f𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟥𝟤);
 //	if(from==i64 and to==f64)	return Code(f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦);
+	if (from == void_block and to == i32)
+		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
 
 	error("missing cast map "s + from + " -> " + to + " : " + typeName(from) + "=>" + typeName(to));
 	return nop;
