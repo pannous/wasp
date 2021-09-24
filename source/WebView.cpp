@@ -7,6 +7,8 @@
 // todo: remove std::string from webview.h for much smaller size?
 #include "Paint.h"
 #include "Node.h"
+#include "Angle.h"
+#include "WebServer.hpp"
 
 /* supported in WebKit:
 ✔️	multiValue
@@ -148,15 +150,26 @@ int init_graphics() {
 	w.init("alert('js injected into every page')");
 	w.set_size(480 * 4, 320 * 4, WEBVIEW_HINT_NONE);// default
 	w.set_size(480, 320, WEBVIEW_HINT_MIN);// minimum size, also: MAX, FIXED
+	w.bind("run", [](std::string s) -> std::string {
+		throwing = false;
+		const std::string &code = webview::json_parse(s, "", 0);
+		printf("RUN: %s", code.data());
+		std::thread compile(emit, String(code.data()));
+		compile.detach();
+		return "compiling…";// will run wasm HERE and print result
+	});
 	w.bind("exit", [](std::string s) -> std::string {
 		printf("EXIT");
 		exit(0);
+	});
+	w.bind("server", [](std::string s) -> std::string {
+		std::thread teste(start_server, 9999);
+		teste.detach();
 		return s;
 	});
 	w.bind("close", [](std::string s) -> std::string {
 		w.terminate();
 		exit(0);
-		return s;
 	});
 	w.bind("destroy", [](std::string s) -> std::string {
 		w.terminate();
