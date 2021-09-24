@@ -4,3 +4,6 @@
 [submodule "wasm-micro-runtime"]
 	path = wasm-micro-runtime
 	url = ./wasm-micro-runtime
+[submodule "wiki"]
+	path = wiki
+	url = ./wiki

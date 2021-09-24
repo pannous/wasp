@@ -40,6 +40,7 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 				printf("%s\n", info.dli_fname);
 			if (info.dli_sname[0] == '_')
 				demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
+			if (contains(demangled, "decltype"))break;
 			name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
 			unsigned long offset = (char *) callstack[i] - (char *) info.dli_saddr;
 			int line_nr = addr2line(info.dli_fname, info.dli_saddr);

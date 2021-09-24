@@ -4,6 +4,8 @@
 #include "Code.h"
 #include "wasm_reader.h"
 
+extern bool throwing;
+
 //#include "Map.h"
 // The Angle language is a semantic layer on top of Wasp data format
 // It is operator driven https://github.com/pannous/angle/wiki/

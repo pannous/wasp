@@ -22,9 +22,9 @@ int exec(char *command) {
 }
 
 int run_wasm(char *wasm_path = "test.wasm") {
-	char *command = "wasmx test.wasm";
-	system(command);
-	int ok = exec(command);
+	String command = "wasmx ";
+	system(command + wasm_path);
+	int ok = exec(command + wasm_path);
 	return ok;
 }
 
