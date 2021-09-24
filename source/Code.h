@@ -328,7 +328,7 @@ enum Valtype {
 	//	https://github.com/pannous/angle/wiki/smart-pointer
 	pointer = int32,// 0xF0, // internal
 	codepoint32 = int32,
-	node = pointer,
+	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
 //	array = 13,
 	array = 0xAA,
 	charp = 0xC0, // vs
@@ -349,8 +349,8 @@ chars typeName(Valtype t);
 //	void_block = 0x40
 //};
 
-// https://webassembly.github.io/spec/core/binary/instructions.html
-// https://pengowray.github.io/wasm-ops/
+// https://pengowray.github.io/wasm-ops/ <<< table
+// https://webassembly.github.io/spec/core/binary/instructions.html <<< list (chrome)
 // USE wasm-objdump -d  to see function disassembled:
 enum Opcodes {
 //	start = 0x00,
@@ -446,11 +446,31 @@ enum Opcodes {
 	f32_mul = 0x94,
 	f32_div = 0x95,
 
+	f𝟨𝟦_𝖺𝖻𝗌 = 0x99,
+	f𝟨𝟦_𝗇𝖾𝗀 = 0x9a,
+	f𝟨𝟦_𝖼𝖾𝗂𝗅 = 0x9b,
+	f𝟨𝟦_𝖿𝗅𝗈𝗈𝗋 = 0x9c,
+	f𝟨𝟦_𝗍𝗋𝗎𝗇𝖼 = 0x9d,
+	f𝟨𝟦_𝗇𝖾𝖺𝗋𝖾𝗌𝗍 = 0x9e,
+	f𝟨𝟦_𝗌𝗊𝗋𝗍 = 0x9f,
+	f𝟨𝟦_𝖺𝖽𝖽 = 0xA0,
+	f𝟨𝟦_𝗌𝗎𝖻 = 0xa1,
+	f𝟨𝟦_𝗆𝗎𝗅 = 0xa2,
+	f𝟨𝟦_𝖽𝗂𝗏 = 0xa3,
+	f𝟨𝟦_𝗆𝗂𝗇 = 0xa4,
+	f𝟨𝟦_𝗆𝖺𝗑 = 0xa5,
+	f𝟨𝟦_𝖼𝗈𝗉𝗒𝗌𝗂𝗀𝗇 = 0xa6,
+
 	local_get = 0x20,
 	local_set = 0x21,
 	local_tee = 0x22,
 	global_get = 0x23,
 	global_set = 0x24,
+
+	//	 Anyref/externref≠funcref tables, Table.get and Table.set (for Anyref only).
+//	Support for making Anyrefs from Funcrefs is out of scope
+	table_get = 0x25,
+	table_set = 0x26,
 
 	f32_cast_to_i32_s = 0xa8,// truncation ≠ proper rounding (f32_round = 0x90)!
 	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
@@ -490,6 +510,45 @@ enum Opcodes {
 	f𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟥𝟤 = 0xBE,
 	f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦 = 0xBF,
 
+	//	signExtensions
+	i32_extend8_s = 0xC0,
+	i32_extend16_s = 0xC1,
+	i64_extend8_s = 0xC2,
+	i64_extend16_s = 0xC3,
+	i64_extend32_s = 0xC4,
+//	i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗌 = 0xAC, WHAT IS THE DIFFERENCE?
+// i64.extend_s/i32 sign-extends an i32 value to i64, whereas
+// i64.extend32_s sign-extends an i64 value to i64
+
+//referenceTypes
+	ref_null = 0xD0,
+	ref_is_null = 0xD1,
+	ref_func = 0xD2, // 0xd2 varuint32 0x0b Returns a reference to function $funcidx
+
+// saturated truncation  saturatedFloatToInt
+//i32_trunc_sat_f32_s=0xFC00,
+//i32_trunc_sat_f32_u=0xFC01,
+//i32_trunc_sat_f64_s=0xFC02,
+//i32_trunc_sat_f64_u=0xFC03,
+//i64_trunc_sat_f32_s=0xFC04,
+//i64_trunc_sat_f32_u=0xFC05,
+//i64_trunc_sat_f64_s=0xFC06,
+//i64_trunc_sat_f64_u=0xFC07,
+
+// bulkMemory
+	memory_init = 0xFC08,
+	data_drop = 0xFC09,
+	memory_copy = 0xFC0a,
+	memory_fill = 0xFC0b,
+	table_init = 0xFC0c,
+	elem_drop = 0xFC0d,
+	table_copy = 0xFC0e,
+	table_grow = 0xFC0f,
+	table_size = 0xFC10,
+	table_fill = 0xFC11,
+
+// SIMD
+	simd____ = 0xFD,
 };
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections

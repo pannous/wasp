@@ -77,7 +77,6 @@ window.onload = function () {
                     square: x => x * x, // usually native wasm, better test with 'double'!
                     pow: Math.pow,
                     _Z3powdd: Math.pow,
-                    _ZdlPv: nop,//operator delete(void*) lol
                     logs: log,
                     logi: log,
                     logc: log,
@@ -90,6 +89,7 @@ window.onload = function () {
                     memset,
                     _ZSt9terminatev: terminate,
                     __cxa_begin_catch: nop,
+                    _ZdlPv: nop,//operator delete(void*) lol
                     _Z4emit4NodeP6Module6String: nop,
                     _Z10merge_wasm6ModuleS_: nop,
                     _Z8run_wasmPhi: (bytes, len) => wasmx(loadBytes(bytes, len)),// full circle yay!
