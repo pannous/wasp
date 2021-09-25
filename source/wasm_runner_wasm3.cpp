@@ -70,6 +70,15 @@ int64_t WASM_EXPORT test_memcpy0(void) {
 	return x;
 }
 
+double pow2(double x, double y) {// why this crutch? maybe conflicting pow's in all those xyz_math.h
+	return pow(x, y);
+}
+
+// todo: remove this useless test function
+int square2(int a) {
+	return a * a;
+}
+
 int test_wasm3(const uint8_t *prog, int len) {
 //	std::cout << "Loading WebAssembly..." << std::endl;
 	try {
@@ -81,8 +90,8 @@ int test_wasm3(const uint8_t *prog, int len) {
 		mod.link_optional<sum>("*", "sum");
 		mod.link_optional<ext_memcpy0>("*", "ext_memcpy0");
 		mod.link_optional<sqrt1>("*", "√");
-		mod.link_optional<square>("*", "square");
-		mod.link_optional<pow>("*", "pow");
+		mod.link_optional<square2>("*", "square");
+		mod.link_optional<pow2>("*", "pow");
 		mod.link_optional<logf32>("*", "logf");// danger logf is cuda function!
 		mod.link_optional<logi>("*", "logi");// danger logf is cuda function!
 		mod.link_optional<logs>("*", "logs");// todo: replace FAKE DUMMY with adhoc circle implementation

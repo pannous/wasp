@@ -9,15 +9,16 @@
 
 typedef enum number_type {
 	boolean,
+//	byte,:
 	int8,// unsigned
-	int16,
-	int32,
+//	int16,// unsigned?
+	int32,// signed
 	int32u,// unsigned
 	int64,
 	leb128,
 	float32,
 	float64,
-	floaty,
+//	floaty,
 } number_type;
 
 
