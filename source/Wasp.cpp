@@ -1362,12 +1362,7 @@ char newline = '\n';
 //"_main", referenced from:
 //implicit entry/start for main executable
 
-Node &compile(String &file) {
-
-}
-
-
-int run_wasm_file(chars file) {
+String load(String file) {
 	FILE *ptr;
 	ptr = fopen(file, "rb");  // r for read, b for binary
 	if (!ptr)error("File not found "s + file);
@@ -1375,7 +1370,19 @@ int run_wasm_file(chars file) {
 	int sz = ftell(ptr);
 	unsigned char buffer[sz];
 	fread(buffer, sizeof(buffer), 1, ptr); // read 10 bytes to our buffer
-	return run_wasm(buffer, sz);
+	const String &binary = String(buffer);
+	check(binary.length == sz);
+	return binary;
+}
+
+Node compile(String file) {
+	String code = load(file);
+	return emit(code);
+}
+
+int run_wasm_file(chars file) {
+	let buffer = load(String(file));
+	return run_wasm((bytes) buffer.data, buffer.length);
 }
 
 void usage() {
@@ -1408,8 +1415,10 @@ int main(int argp, char **argv) {
 //				start_server(9999);
 				init_graphics();
 			}
+#ifdef SERVER
 			if (arg.contains("serv"))
 				start_server(9999);
+#endif
 			if (arg.contains("help"))
 				print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
 //			return 42;

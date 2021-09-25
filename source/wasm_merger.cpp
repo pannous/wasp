@@ -6,11 +6,7 @@
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 
-#include <math.h>
 
-double pow(double x, double y);
-
-float powf(float x, float y);
 
 int total_functions = -1;
 

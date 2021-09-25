@@ -96,9 +96,15 @@ void cleanUp() {
 	SDL_Quit();
 }
 
-void *init_graphics() {
+struct Size {
+	int width;
+	int height;
+};
+
+// returns length of array
+int init_graphics() {
 	init_sdl();
-	return (int *) surface->pixels;
+	return surface->w * surface->h * 4; //  (int *) surface->pixels;
 }
 //int* init_graphics(int width, int height){
 //	if(width>0)SCREEN_WIDTH=width;
