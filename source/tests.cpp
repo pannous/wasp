@@ -1736,9 +1736,10 @@ void testCurrent() { // move to tests() once OK
 //	globals["y"]=new Node();
 //	globals.setDefault(new Node());
 //  assert_emit("fac:= it<=0 ? 0 : it * fac it-1; fac(5)",5*4*3*2*1);
-	return;// let the webview show!
+//	return;// let the webview show!
 	assert_emit("fac:= if it<=0 : 1 else it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
-	assert_run("render html{'test'}", 4);
+
+//	assert_run("render html{'test'}", 4);
 
 	assert_run("x=123;x + 4 is 127", true);
 	assert_emit("i=3;i++", 4);

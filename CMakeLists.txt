@@ -14,7 +14,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 #set(WASM 1) # no WebView, duh
 
 if (NOT WASM)
-    set(WEBAPP 1) # compile with WebView for electron like standalone apps.
+#    set(WEBAPP 1) # compile with WebView for electron like standalone apps.
 endif ()
 # V8 has wasm, so no m3 needed in release. can we even debug through V8??
 # interestingly if we have a native app we don't need our wasp.wasm runtime because it's c++ compiled into app.
@@ -92,12 +92,14 @@ FUNCTION(ADD_COMPILE_FLAG value)
     ENDFOREACH (variable)
 ENDFUNCTION()
 ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
+ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
 ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
 ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it needs for the declared range of possible values.
 # makes TypedValue 1+8 bytes, doesn't help for multi-value (int32 int64)
 
 if (NOT RELEASE)
     ADD_COMPILE_FLAG("-fno-inline")
+
     ADD_COMPILE_FLAG(" -g3") # DEBUG
     if (NOT WASM)
         ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
