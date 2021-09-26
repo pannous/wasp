@@ -101,7 +101,7 @@ struct Size {
 	int height;
 };
 
-// returns length of array
+// returns image.data.length (of RGBA array)
 int init_graphics() {
 	init_sdl();
 	return surface->w * surface->h * 4; //  (int *) surface->pixels;
