@@ -453,7 +453,15 @@ void logf32(float l) {
 Module read_wasm(chars file){return *new Module();}
 #endif
 
-
-float powr(double x, double y) {
-	return pow(x, y);
+// todo: INLINE into wasm code how? just use wasp runtime and wasm-gc wasm-opt to tree shake ok
+long powi(int a, int b) {
+	int res = a;
+	while (b-- > 1)
+		res *= a;
+	return res;
 }
+//number powl(number a, long b){// optimized for longs!
+//	long c=a;
+//	while (b-->0)c=c*a;
+//	return c;
+//}

@@ -484,7 +484,7 @@ enum Opcodes {
 	i32_reinterpret_f32 = 0xbc, // f32->i32 bit wise reinterpret != cast/trunc/convert
 	f32_reinterpret_i32 = 0xBE, // i32->f32
 
-	i𝟥𝟤_𝗐𝗋𝖺𝗉_𝗂𝟨𝟦 = 0xA8,
+	i𝟥𝟤_𝗐𝗋𝖺𝗉_𝗂𝟨𝟦 = 0xA7,
 	i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗌 = 0xA8,
 	i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗎 = 0xA9,
 	i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗌 = 0xAA,
