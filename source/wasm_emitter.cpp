@@ -114,6 +114,7 @@ long emitData(Node node, String context);
 
 
 // https://pengowray.github.io/wasm-ops/
+// values outside WASM ABI: 0=unknown/handled internally
 byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	//	previous is lhs in binops!
 
@@ -143,12 +144,25 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 
 		if (eq(s, "&"))return i32_and;
 		if (eq(s, "&&"))return i32_and;
+
 		if (eq(s, "and"))return i32_and;
+		if (eq(s, "∧"))return i32_and;// ∧≠^ looks like  but
+		if (eq(s, "⋀"))return i32_and;
+		if (eq(s, "^"))return 0;// POWER handled on higher level
+
 		if (eq(s, "or"))return i32_or;
-		if (eq(s, "xor"))return i32_xor;
-		if (eq(s, "not"))return i32_eqz;
+		if (eq(s, "∨"))return i32_or;// looks like 'v' but isn't
+		if (eq(s, "⋁"))return i32_or;
 		if (eq(s, "||"))return i32_or;
-		if (eq(s, "|"))return i32_or;
+		if (eq(s, "|"))return i32_or;// todo: pipe is different!
+
+		if (eq(s, "xor"))return i32_xor;
+		if (eq(s, "^|"))return i32_xor;//always bitwise todo: truty 0x0101 xor 0x1010 !?
+		if (eq(s, "⊻"))return i32_xor;
+
+		if (eq(s, "not"))return i32_eqz; // HACK: no such thing!
+		if (eq(s, "¬"))return i32_eqz;
+
 	} else {
 
 		if (eq(s, "not"))return f32_eqz; // HACK: no such thing!
@@ -684,6 +698,9 @@ Code emitOperator(Node node, String context) {
 		const Code &arg_code = emitExpression(*node.value.node, context);
 		code.push(arg_code);
 	}
+	/*
+	 * PARAMETERS of operators (but not functions) are now on the STACK!!
+	 * */
 	if (index >= 0) {// FUNCTION CALL
 		log("OPERATOR / FUNCTION CALL: %s\n"s % name);
 //				for (Node arg : node) {
@@ -730,12 +747,12 @@ Code emitOperator(Node node, String context) {
 		code.add(get_local);
 		code.add(0);
 		code.add(opcodes("*", last_type));
+	} else if (name == "**" or name == "to the" or name == "^" or name == "^^") {
+		if (last_type == int32) code.add(emitCall(*new Node("powi"), context));
+		else code.add(emitCall(*new Node("pow"), context));
 	} else if (name == "ⁿ") {
 		if (node.length == 1) {
-//			bug: already emitted!
-//			code.add(emitValue(node.first().values(), context));
-//			if (last_type != float32)code.add(f32_from_int32);
-			code.add(cast(last_type, float64));
+			code.add(cast(last_type, float64));// todo all casts should be auto-cast (in emitCall) now, right?
 		}
 		if (node.length <= 1) {// use stack
 			code.add(get_local);
@@ -743,7 +760,7 @@ Code emitOperator(Node node, String context) {
 			if (locals[context].has("n"))
 				local_index = locals[context].position("n");
 			code.addInt(local_index);
-			code.add(cast(localTypes[context][local_index], float64));
+			code.add(cast(localTypes[context][local_index], float64));// todo all casts should be auto-cast now, right?
 		}
 		code.add(emitCall(*new Node("pow"), context));
 //		else
@@ -810,6 +827,7 @@ bool isVariableName(String name) {
 	return name[0] >= 'a';// todo
 }
 
+// also init expressions of globals!
 Code emitExpression(Node &node, String context/*="main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	Code code;
@@ -1020,7 +1038,7 @@ Code emitCall(Node &fun, String context) {
 }
 
 Code cast(Valtype from, Valtype to) {
-	Code nop;
+	Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
 	if (to == none)return nop;// no cast needed magic VERSUS wasm drop!!!
 	if (from == to)return nop;// nop
 	last_type = to;
@@ -1059,8 +1077,7 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==i64 and to==f64)	return Code(f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦);
 	if (from == void_block and to == i32)
 		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
-
-	error("missing cast map "s + from + " -> " + to + " : " + typeName(from) + "=>" + typeName(to));
+	error("incompatible types "s + typeName(from) + " => " + typeName(to));
 	return nop;
 }
 

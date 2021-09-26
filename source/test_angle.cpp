@@ -316,11 +316,16 @@ void testLogicPrecedence() {
 	assert_is("true or true", true);
 	assert_is("true or false", true);
 	assert_is("true and false", false);
+	assert_is("1 ⋁ 1 ∧ 0", 1);
+	assert_is("1 ⋁ 0 ∧ 1", 1);
+	assert_is("1 ⋁ 0 ∧ 0", 1);
+	assert_is("0 ⋁ 1 ∧ 0", 0);
+	assert_is("0 ⋁ 0 ∧ 1", 0);
 	assert_is("true or true and false", true);
 	assert_is("true or false and true", true);
 	assert_is("true or false and false", true);
 	assert_is("false or true and false", false);
-	assert_is("false or true and false", false);
+	assert_is("false or false and true", false);
 }
 
 
