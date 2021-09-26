@@ -330,6 +330,7 @@ bool isVariable(String name, String context0) {
 bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
 
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
+// maybe todo: normOperators step (in angle, not wasp!)  3**2 => 3^2
 Node &groupOperators(Node &expression, String context = "main") {
 	if (analyzed.has(expression.hash()))
 		return expression;
@@ -355,6 +356,14 @@ Node &groupOperators(Node &expression, String context = "main") {
 		String &name = node.name;
 		Node &prev = expression.children[i - 1];
 		if (i == 0)prev = NIL;
+		if (name == "**")warn("The power operator in angle is simply '^' : 3^2=9.");// todo: alias warning mechanism
+		if (name == "^^")warn("The power operator in angle is simply '^' : 3^2=9. Also note that 1 xor 1 = 0");
+		if (name == "||")warn("The disjunction operator in angle is simply 'or' : 1 or 0 = 1");
+		if (name == "&&")warn("The conjunction operator in angle is simply 'and' : 1 and 1 = 1");
+		if (name == "^" or name == "^^" or name == "**") {// todo NORM operators earlier!
+			functionSignatures["pow"].is_used = true;
+			functionSignatures["powi"].is_used = true;
+		}
 		if (isPrefixOperation(node, prev, next)) {// ++x -i
 			node.kind = Type::operators;// todo should have been parsed as such!
 			node.add(next);
@@ -366,7 +375,6 @@ Node &groupOperators(Node &expression, String context = "main") {
 		} else {
 			prev = analyze(prev);
 			if (suffixOperators.has(name)) { // x²
-
 				if (name == "ⁿ")functionSignatures["pow"].is_used = true;
 				if (i < 1)error("suffix operator misses left side");
 				node.add(prev);
@@ -775,8 +783,8 @@ void preRegisterSignatures() {
 	functionSignatures.insert_or_assign("logf", Signature().import().add(float32).returns(voids));
 //	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));
 	functionSignatures.insert_or_assign("pow", Signature().import().add(float64).add(float64).returns(float64));
-//	functionSignatures.insert_or_assign("powl", Signature().import().add(int64).returns(int64));
 	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
+	//	functionSignatures.insert_or_assign("powl", Signature().import().add(int64).add(int64).returns(int64));
 	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
 	functionSignatures.insert_or_assign("logs", Signature().import().add(charp).returns(voids));
 	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
@@ -914,18 +922,16 @@ float precedence(String name) {
 
 	if (eq(name, "not"))return 1;
 	if (eq(name, "¬"))return 1;
-	if (eq(name, "-..."))return 1;
+	if (eq(name, "-…"))return 1;// unary operators are immediate, no need for prescidence
 	if (eq(name, "!"))return 1;
 	if (eq(name, "√"))return 1;// !√1 √!-1
 	if (eq(name, "#"))return 3;// count
 	if (eq(name, "++"))return 3;
 //	if (eq(node.name, "+"))return 3;//
 	if (eq(name, "--"))return 3;
-	if (eq(name, "-…"))return 3;// 1 + -x
 
 	if (eq(name, "/"))return 4.9;
 	if (eq(name, "÷"))return 4.9;
-
 
 	if (eq(name, "times"))return 5;
 	if (eq(name, "*"))return 5;
@@ -941,8 +947,8 @@ float precedence(String name) {
 	if (eq(name, "upto"))return 6.3;// range
 	if (eq(name, "…"))return 6.3;
 	if (eq(name, "..."))return 6.3;
-	if (eq(name, ".."))return 6.3;
-	if (eq(name, "..<"))return 6.3;
+	if (eq(name, ".."))return 6.3;// excluding range
+	if (eq(name, "..<"))return 6.3;// excluding range
 	if (eq(name, "<"))return 6.5;
 	if (eq(name, "<="))return 6.5;
 	if (eq(name, ">="))return 6.5;
@@ -964,9 +970,17 @@ float precedence(String name) {
 	if (eq(name, "and"))return 7.1;
 	if (eq(name, "&&"))return 7.1;
 	if (eq(name, "&"))return 7.1;
+	if (eq(name, "^"))return 7.1;
+	if (eq(name, "⋀"))return 7.1;
+
 	if (eq(name, "xor"))return 7.2;
+	if (eq(name, "^|"))return 7.2;
+	if (eq(name, "⊻"))return 7.2;
+
 	if (eq(name, "or"))return 7.2;
 	if (eq(name, "||"))return 7.2;
+	if (eq(name, "∨"))return 7.2;
+	if (eq(name, "⋁"))return 7.2;
 //	if (eq(name, "|"))return 7.2;// todo pipe special
 
 	if (eq(name, ":"))return 7.5;// todo:

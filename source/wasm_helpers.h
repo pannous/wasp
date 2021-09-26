@@ -64,6 +64,8 @@ extern "C" long squarel(long n);// test wasm, otherwise use x² => x*x in analyz
 extern "C" double square(double n);// test wasm
 extern int sqrt1(int a);
 
+long powi(int a, int b);// short harder
+
 //extern "C" double pow2(double x, double y);
 //extern "C"
 //double pow(double x, double y);// todo: merge pow.wasm lib (7kb!!)
@@ -71,11 +73,6 @@ extern int sqrt1(int a);
 //float pow(double x, double y);// todo: merge pow.wasm lib (7kb!!)
 
 #include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
-//number powl(number a, long b){// optimized for longs!
-//	long c=a;
-//	while (b-->0)c=c*a;
-//	return c;
-//}
 //bl	0x100003f6c ; symbol stub for: _pow
 
 //extern float powf(float x, float y);

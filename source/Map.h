@@ -161,6 +161,17 @@ public:
 		return items[_size - 1];
 	}
 
+	// list after 1 element
+	List &&operator++() {
+		return List(items + 1);
+	}
+
+	// list FROM index, e.g. [1,2,3]>>1 == [2, 3]
+	List &&operator>>(short index) {
+		return List(items + index);
+	}
+
+
 	S &operator[](short index) {
 		if (index < 0 or index > _size)
 			error("index out of range : %d > %d"s % index % _size);
@@ -304,7 +315,8 @@ public:
 		int position1 = position(key);
 		if (position1 < 0) {
 			if (use_default) {
-				insert_or_assign(key, defaulty);// prepare assignment a[b]=c  BAD because unknown symbols will be added!!
+				insert_or_assign(key,
+				                 defaulty);// prepare assignment a[b]=c  BAD because unknown symbols will be added!!
 				return values[_size - 1];// MUST USE map.has(x) instead of map[x] otherwise it is created!!
 //				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
 			} else {

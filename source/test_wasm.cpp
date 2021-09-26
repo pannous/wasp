@@ -376,6 +376,31 @@ void testWasmLogic() {
 	assert_emit("false or false", false);
 	assert_emit("true or false", true);
 	assert_emit("true or true", true);
+
+
+	assert_emit("¬ 1", 0);
+//	assert_emit("¬ 0", 1);
+
+	assert_emit("0 ⋁ 0", 0);
+	assert_emit("0 ⋁ 1", 1);
+	assert_emit("1 ⋁ 0", 1);
+	assert_emit("1 ⋁ 1", 1);
+
+	assert_emit("0 ⊻ 0", 0);
+	assert_emit("0 ⊻ 1", 1);
+	assert_emit("1 ⊻ 0", 1);
+	assert_emit("1 ⊻ 1", 0);
+
+	assert_emit("1 ∧ 1", 1);
+	assert_emit("1 ∧ 0", 0);
+	assert_emit("0 ∧ 1", 0);
+	assert_emit("0 ∧ 0", 0);
+
+	assert_emit("1 ⋁ 1 ∧ 0", 1);
+	assert_emit("1 ⋁ 0 ∧ 1", 1);
+	assert_emit("1 ⋁ 0 ∧ 0", 1);
+	assert_emit("0 ⋁ 1 ∧ 0", 0);
+	assert_emit("0 ⋁ 0 ∧ 1", 0);
 }
 
 void testWasmLogicNegated() {

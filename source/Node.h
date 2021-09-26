@@ -125,12 +125,16 @@ public:
 	Node *next = 0; // in children list
 	char grouper = 0;// ";" ","
 	long _hash = 0;// set by hash(); should copy! on *x=node / clone()
+	int length = 0;// children
+#ifdef DEBUG
+	//	int lineNumber;
+		String* line;// debug! EXPENSIVE for non ast nodes!
+#endif
 
 	// TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
 	//	Node &parent=NIL;
 	//	Node &param=NIL;
 
-	int length = 0;// children
 	//	int count = 0;// use param.length for arguments / param
 
 	// a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms

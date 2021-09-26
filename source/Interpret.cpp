@@ -291,9 +291,10 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 //	if(!is_KNOWN_operator(op0))return call(left, op0, right);
 
-	if (op == "|") {
+	if (op == "|") {// bitwise or OR pipe!
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (left.kind == longs and right.kind == longs) return Node((long) (left.value.longy | right.value.longy));
+		todo("PIPE a|b");
 		// pipe todo
 	}
 
@@ -304,7 +305,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		return Node(left.value.longy & right.value.longy);
 	}
 
-	if (op == "xor" or op == "^|") {
+	if (op == "xor" or op == "^|" or op == "⊻") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (left.kind == bools or right.kind == bools) {
 			return left.value.longy ^ right.value.longy ? True : False;
@@ -312,7 +313,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		return Node(left.value.longy ^ right.value.longy);
 	}
 
-	if (op == "and" or op == "&&") {
+	if (op == "and" or op == "&&" or op == "∧" or op == "⋀") {
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (left.kind == bools or right.kind == bools) return left.value.data and right.value.data ? True : False;
 		if (left.value.longy)return right;
@@ -323,7 +324,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 `if 1 then 0 else 2 == 0`
 `1 and 0 or 2 == 2`  !!!
 */
-	if (op == "or" or op == "||") {
+	if (op == "or" or op == "||" or op == "∨" or op == "⋁") {
 		::print("YA OR!!");
 		if (left.isEmpty())return right;
 		if (left.kind == bools) return left.value.longy == 1 ? True : right;
