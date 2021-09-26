@@ -166,6 +166,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	} else {
 
 		if (eq(s, "not"))return f32_eqz; // HACK: no such thing!
+		if (eq(s, "¬"))return f32_eqz; // HACK: no such thing!
 		if (eq(s, "+"))return f32_add;
 		if (eq(s, "-"))return f32_sub;
 		if (eq(s, "*"))return f32_mul;
@@ -799,7 +800,7 @@ Code emitStringOp(Node op, String context) {
 	} else if (op == "#") {// todo: all different index / pattern matches
 		op = Node("getChar");//  careful : various signatures
 		return emitCall(op, context);
-	} else if (op == "not") {// todo: all different index / pattern matches
+	} else if (op == "not" or op == "¬") {// todo: all different index / pattern matches
 		op = Node("empty");//  careful : various signatures
 		return emitCall(op, context).add(i32_eqz);
 	} else if (op == "logs" or op == "puts" or op == "print") {// should be handled before, but if not print anyways
