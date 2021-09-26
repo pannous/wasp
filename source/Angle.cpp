@@ -119,7 +119,7 @@ String extractFunctionName(Node &node) {
 #ifndef WASM
 List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++…", 0};// a=b=1 == a=(b=1) => a=1
 // still needs to check a-b vs -i !!
-List<chars> prefixOperators = {"not", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/ "~", "&",
+List<chars> prefixOperators = {"not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/ "~", "&",
                                "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
 List<chars> suffixOperators = {"++", "--", "++", "--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "%", "％", "﹪", "٪",
                                "‰"};// modulo % ≠ ％ percent
@@ -925,6 +925,10 @@ float precedence(String name) {
 	if (eq(name, "-…"))return 1;// unary operators are immediate, no need for prescidence
 	if (eq(name, "!"))return 1;
 	if (eq(name, "√"))return 1;// !√1 √!-1
+	if (eq(name, "^"))return 2;// todo: ambiguity? 2^3+1 vs 2^(x+1)
+	if (eq(name, "**"))return 2;//
+	if (eq(name, "^^"))return 2;// how did it work without??
+
 	if (eq(name, "#"))return 3;// count
 	if (eq(name, "++"))return 3;
 //	if (eq(node.name, "+"))return 3;//
@@ -970,8 +974,9 @@ float precedence(String name) {
 	if (eq(name, "and"))return 7.1;
 	if (eq(name, "&&"))return 7.1;
 	if (eq(name, "&"))return 7.1;
-	if (eq(name, "^"))return 7.1;
+	if (eq(name, "∧"))return 7.1;
 	if (eq(name, "⋀"))return 7.1;
+
 
 	if (eq(name, "xor"))return 7.2;
 	if (eq(name, "^|"))return 7.2;
