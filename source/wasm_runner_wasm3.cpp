@@ -14,10 +14,6 @@
 
 //extern int ext_memcpy0(void*, const void*, size_t);
 
-long powi(int a, int b) {
-	return powl(a, b);
-}
-
 int sum(int a, int b) {
 	return a + b;
 }
@@ -92,6 +88,7 @@ int test_wasm3(const uint8_t *prog, int len) {
 		mod.link_optional<sqrt1>("*", "√");
 		mod.link_optional<square2>("*", "square");
 		mod.link_optional<pow2>("*", "pow");
+		mod.link_optional<powi>("*", "powi");
 		mod.link_optional<logf32>("*", "logf");// danger logf is cuda function!
 		mod.link_optional<logi>("*", "logi");// danger logf is cuda function!
 		mod.link_optional<logs>("*", "logs");// todo: replace FAKE DUMMY with adhoc circle implementation

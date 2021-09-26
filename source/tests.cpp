@@ -766,6 +766,25 @@ void testLogic() {
 	assert_is("false and false", false);
 
 	assert_is("not false", true);
+
+
+	assert_is("¬ 1", 0);
+	assert_is("¬ 0", 1);
+
+	assert_is("0 ⋁ 0", 0);
+	assert_is("0 ⋁ 1", 1);
+	assert_is("1 ⋁ 0", 1);
+	assert_is("1 ⋁ 1", 1);
+
+	assert_is("0 ⊻ 0", 0);
+	assert_is("0 ⊻ 1", 1);
+	assert_is("1 ⊻ 0", 1);
+	assert_is("1 ⊻ 1", 0);
+
+//	assert_is("1 ∧ 1", 1);
+	assert_is("1 ∧ 0", 0);
+	assert_is("0 ∧ 1", 0);
+	assert_is("0 ∧ 0", 0);
 }
 
 // use the bool() function to determine if a value is truthy or falsy.
@@ -1733,12 +1752,26 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
+	skip(
+			assert_is("1 ∧ 1", 1);
+			assert_emit("¬ 0", 1);
+
+	)
 //	globals["y"]=new Node();
 //	globals.setDefault(new Node());
 //  assert_emit("fac:= it<=0 ? 0 : it * fac it-1; fac(5)",5*4*3*2*1);
 //	return;// let the webview show!
-	assert_emit("fac:= if it<=0 : 1 else it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
+	testWasmLogic();
+	assert_emit("3^2", 9);
+	assert_emit("3^^2", 9);
+	assert_emit("3**2", 9);
+	assert_emit("i=3;i^2", 9);
+	assert_emit("1⋀1", true);
+	assert_emit("0⋁1", true);
 
+
+	assert_emit("fac:= if it<=0 : 1 else it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
+//	testPaintWasm();
 //	assert_run("render html{'test'}", 4);
 
 	assert_run("x=123;x + 4 is 127", true);
