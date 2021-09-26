@@ -379,7 +379,7 @@ void testWasmLogic() {
 
 
 	assert_emit("¬ 1", 0);
-//	assert_emit("¬ 0", 1);
+	assert_emit("¬ 0", 1);
 
 	assert_emit("0 ⋁ 0", 0);
 	assert_emit("0 ⋁ 1", 1);
@@ -401,6 +401,7 @@ void testWasmLogic() {
 	assert_emit("1 ⋁ 0 ∧ 0", 1);
 	assert_emit("0 ⋁ 1 ∧ 0", 0);
 	assert_emit("0 ⋁ 0 ∧ 1", 0);
+	assert_emit("¬ (0 ⋁ 0 ∧ 1)", 1);
 }
 
 void testWasmLogicNegated() {

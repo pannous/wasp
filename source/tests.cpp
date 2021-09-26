@@ -1752,10 +1752,9 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
+	// todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
+	assert_is("1 ∧ 1", 1);
 	skip(
-			assert_is("1 ∧ 1", 1);
-			assert_emit("¬ 0", 1);
-
 	)
 //	globals["y"]=new Node();
 //	globals.setDefault(new Node());
