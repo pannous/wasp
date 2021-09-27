@@ -49,8 +49,23 @@ void testWasmFunctionDefiniton() {
 			assert_emit("fib:=it<2 or fib(it-1)+fib(it-2);fib(4)", 5)
 			assert_emit("fib:=it<2 then 1 else fib(it-1)+fib(it-2);fib(4)", 5)
 	)
-	assert_emit("fac:= it<=0 ? 0 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
+}
 
+
+void testWasmTernary() {
+	assert_emit("2>1?3:4", 3);
+	assert_emit("1>0?3:4", 3);
+	assert_emit("2<1?3:4", 4);
+	assert_emit("1<0?3:4", 4);
+	assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
+}
+
+void testLazyEvaluation() {
+//	if lazy_operators.has(op) and … not numeric? …
+	//	if op==or emitIf(not lhs,then:rhs)
+	//	if op==or emitIf(lhs,else:rhs)
+	//	if op==and emitIf(lhs,then:rhs)
+	assert_emit("fac:= it<=0 or it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);// requires lazy evaluation
 }
 
 void testWasmFunctionCalls() {
@@ -99,6 +114,8 @@ void testMathPrimitives() {
 	assert_emit(("x=15;x>=14"), 1)
 	assert_emit("i=1.0;i", 1.0);// works first time but not later in code :(
 	assert_emit("i=0.0;i", 0.0);//
+	assert_is("3*-1", -3);
+	assert_emit("3*-1", -3);
 }
 
 void testFloatOperators() {
