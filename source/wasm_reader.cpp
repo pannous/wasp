@@ -378,11 +378,12 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "List<String>")return Valtype::todoe;
 	else if (arg == "List<Valtype>")return Valtype::todoe;
 //	else if (arg == "List< …
-		// ignore internal types:
+
+		// IGNORE INTERNAL TYPES:
 	else if (arg == "Value")return Valtype::ignore;//value;
 	else if (arg == "Arg")return Valtype::ignore; // truely internal, should not be exposed! e.g. Arg
 	else if (arg == "Signature")return Valtype::ignore;
-
+	else if (arg == "Code const&")return Valtype::ignore;
 	else
 //		error("unmapped c++ argument type "s + arg.clone().data + " !");
 		fprintf(stderr, "unmapped c++ argument type %s\n", arg.data);
