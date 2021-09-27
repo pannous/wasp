@@ -121,7 +121,7 @@ List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++…", 0};// a=b=
 // still needs to check a-b vs -i !!
 List<chars> prefixOperators = {"not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/ "~", "&",
                                "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
-List<chars> suffixOperators = {"++", "--", "++", "--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "%", "％", "﹪", "٪",
+List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "%", "％", "﹪", "٪",
                                "‰"};// modulo % ≠ ％ percent
 //List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…"/*, "+…" /*useless!*/, "~…", "*…", "&…",
 //							  "sizeof", "new", "delete[]"};
@@ -468,11 +468,27 @@ Node &groupOperators(Node &expression, String context = "main") {
 
 			} else {
 				//#ifndef RUNTIME_ONLY
-				if (name.endsWith("=") and not name.startsWith("::") and prev.kind == reference)// todo can remove hack?
+				if (name.endsWith("=") and not name.startsWith("::") and
+				    prev.kind == reference) {// todo can remove hack?
+					// ways to set type:
+					/*
+					 * int x
+					 * x:int
+					 * x=7  needs pre-evaluation of rest!!!
+					 * */
 					if (!localContext.has(prev.name)) {
+						Valtype valtype = mapType(*node.value.node);
 						localContext.add(prev.name);
-						localContextTypes.add(mapType(*node.value.node));
+						localContextTypes.add(valtype);
+					} else {
+						// variable is known but not typed yet
+						int position = localContext.position(prev.name);
+//						if (valtype)
+//							localContextTypes[position] = valtype;// set IF POSSIBLE
+//						else
+						localContextTypes[position] = mapType(next);// TODO  pre-evaluation of rest!!!
 					}
+				}
 				//#endif
 				node.add(prev);
 				node.add(next);

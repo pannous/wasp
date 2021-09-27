@@ -576,6 +576,11 @@ bool empty(String *s) { return not s or s->empty(); }
 
 bool empty(chars s) { return not s or strlen0(s) == 0; }
 
+bool empty(char s) {
+	return not s or s == ' ' or s == '\n' or s == '\t';
+}
+
+
 bool contains(chars str, chars match) {
 	int l = strlen0(match);
 	for (int i = 0; str[i] != 0; i++) {
