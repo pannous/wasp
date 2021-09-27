@@ -1760,13 +1760,11 @@ void testCurrent() { // move to tests() once OK
 			assert_throws("ceiling 3.7");
 
 	)
+	testWasmTernary();
 //	testPaintWasm();
 //	return;// let the webview show!
 //	testPaintWasm();
 //	assert_run("render html{'test'}", 4);
-
-	assert_is("3*-1", -3);
-	assert_emit("3*-1", -3);
 
 //	assert_emit("i=-9;√ -i", 3);
 //	assert_emit("i=-9;√-i", 3);
