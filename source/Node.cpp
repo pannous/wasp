@@ -1064,6 +1064,7 @@ void printf(Node &n) {
 
 Node &Node::setType(Type type, bool check) {
 	if (kind == type)return *this;
+	if (kind == operators and type == expression)return *this;
 	if (kind == groups and type == expression)check = false;
 	if (kind == declaration and type == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
 	if (check) {

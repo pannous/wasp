@@ -157,6 +157,75 @@ List<chars> key_pair_operators;
 //no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
 #endif
 
+Node &groupIf(Node n) {
+	if (n.length == 0 and !n.value.data)
+		error("no if condition given");
+	if (n.length == 1 and !n.value.data)
+		error("no if block given");
+	Node &condition = n.children[0];
+	Node then;
+	if (n.length > 0)then = n[1];
+	if (n.length == 0) then = n.values();
+	if (n.has("then")) {
+		condition = n.to("then");
+		then = n.from("then");
+	}
+
+	if (condition.value.data and !condition.next)
+		then = condition.values();
+	if (condition.next and condition.next->name == "else")
+		then = condition.values();
+
+	// todo: UNMESS how?
+	if (n.has(":") /*before else: */) {
+		condition = n.to(":");
+		if (condition.has("else"))
+			condition = condition.to("else");// shouldn't happen?
+		if (then.length == 0)
+			then = n.from(":");
+	} else if (condition.has(":")) {// as child
+		then = condition.from(":");
+		//		condition = condition.interpret();// compile time evaluation?!
+	}
+	Node otherwise;
+	if (n.has("else"))
+		otherwise = n["else"].values();
+	if (then.has("then"))
+		then = n.from("then");
+	if (then.has("else")) {
+		otherwise = then.from("else");
+		then = then.to("else");
+	}
+	if (then.name == ":") {
+		if (then.length > 1)
+			otherwise = then[1];
+		if (then.length > 2)
+			error("too many clauses for if?");
+		then = then.first();
+	}
+	if (n.length == 3 and otherwise.isEmpty())
+		otherwise = n[2];
+	Node *eff = new Node("if");
+	Node &ef = *eff;
+	ef.kind = expression;
+	//	ef.kind = ifStatement;
+	if (condition.length > 0)condition.setType(expression);// so far treated as group!
+	if (then.length > 0)then.setType(expression);
+	if (otherwise.length > 0)otherwise.setType(expression);
+	ef["condition"] = analyze(condition);
+	ef["then"] = analyze(then);
+	ef["else"] = analyze(otherwise);
+	//	condition = analyze(condition);
+	//	then = analyze(then);
+	//	otherwise = analyze(otherwise);
+	//	ef.add(condition); breaks even with clone() why??
+	//	ef.add(then);
+	//	ef.add(otherwise);
+	//	Node &node = ef["then"];// debug
+	Node &node = ef[2];// debug
+	analyzed[ef.hash()] = true;
+	return ef;
+}
 
 List<String> collectOperators(Node &expression) {
 	List<String> operators;
@@ -424,6 +493,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 						setter->value.node = node.clone();
 						node = *setter;
 					}
+				if (node.name == "?")node = groupIf(node);
 				expression.replace(i - 1, i + 1, node);
 			}
 		}
@@ -449,67 +519,6 @@ bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
 	return false;
 }
 
-Node &groupIf(Node n) {
-	if (n.length == 0 and !n.value.data)
-		error("no if condition given");
-	if (n.length == 1 and !n.value.data)
-		error("no if block given");
-	Node &condition = n.children[0];
-	Node then;
-	if (n.length > 0)then = n[1];
-	if (n.length == 0) then = n.values();
-	if (n.has("then")) {
-		condition = n.to("then");
-		then = n.from("then");
-	}
-
-	if (condition.value.data and !condition.next)
-		then = condition.values();
-	if (condition.next and condition.next->name == "else")
-		then = condition.values();
-
-	// todo: UNMESS how?
-	if (n.has(":") /*before else: */) {
-		condition = n.to(":");
-		if (condition.has("else"))
-			condition = condition.to("else");// shouldn't happen?
-		then = n.from(":");
-	} else if (condition.has(":")) {// as child
-		then = condition.from(":");
-		//		condition = condition.interpret();// compile time evaluation?!
-	}
-	Node otherwise;
-	if (n.has("else"))
-		otherwise = n["else"].values();
-	if (then.has("then"))
-		then = n.from("then");
-	if (then.has("else")) {
-		otherwise = then.from("else");
-		then = then.to("else");
-	}
-	if (n.length == 3 and otherwise.isEmpty())
-		otherwise = n[2];
-	Node *eff = new Node("if");
-	Node &ef = *eff;
-	ef.kind = expression;
-	//	ef.kind = ifStatement;
-	if (condition.length > 0)condition.setType(expression);// so far treated as group!
-	if (then.length > 0)then.setType(expression);
-	if (otherwise.length > 0)otherwise.setType(expression);
-	ef["condition"] = analyze(condition);
-	ef["then"] = analyze(then);
-	ef["else"] = analyze(otherwise);
-	//	condition = analyze(condition);
-	//	then = analyze(then);
-	//	otherwise = analyze(otherwise);
-	//	ef.add(condition); breaks even with clone() why??
-	//	ef.add(then);
-	//	ef.add(otherwise);
-//	Node &node = ef["then"];// debug
-	Node &node = ef[2];// debug
-	analyzed[ef.hash()] = true;
-	return ef;
-}
 
 Node &groupWhile(Node n);
 
@@ -893,7 +902,7 @@ chars function_list[] = {"square", "log", "puts", "print", "printf", "println", 
                          "logi64",
                          "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
                          0};// MUST END WITH 0, else BUG
-chars functor_list[] = {"if", "while", "go", "?", "do", "until", 0};// MUST END WITH 0, else BUG
+chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
 codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0, 0, 0};
 
 
@@ -992,6 +1001,7 @@ float precedence(String name) {
 //	if (eq(name, "|"))return 7.2;// todo pipe special
 
 	if (eq(name, ":"))return 7.5;// todo:
+	if (eq(name, "?"))return 7.6;
 
 	if (name.in(function_list))// f 1 > f 2
 		return 8;// 1000;// function calls outmost operation todo? add 3*square 4+1
