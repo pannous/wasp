@@ -1133,6 +1133,7 @@ Code emitSetter(Node node, Node &value, String context) {
 
 Code emitIf(Node &node, String context) {
 	Code code;
+	//	 gets rid of operator, we MAY want .flat() ?
 	Node condition = node[0].values();
 //	Node &condition = node["condition"];
 	code = code + emitExpression(condition, context);
