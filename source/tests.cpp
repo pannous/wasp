@@ -1758,8 +1758,15 @@ void testCurrent() { // move to tests() once OK
 			globals.setDefault(new Node());
 			globals["y"] = new Node();
 			assert_throws("ceiling 3.7");
-
+			assert_is("i=3;i--", 2);// todo bring variables to interpreter
+			assert_is("i=3.7;.3+i", 4);// todo bring variables to interpreter
 	)
+	assert_emit("i=3;i--", 2);
+
+	assert_emit("i=3.70001;.3+i", 4);// todo use long against these bugs!! <<<
+
+	assert_emit("i=3.71;.3+i", 4);// todo use long against these bugs!! <<<
+	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
 	assert_is("4-1", 3);//
 	testWasmTernary();
 //	testPaintWasm();

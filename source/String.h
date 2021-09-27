@@ -900,6 +900,8 @@ bool empty(String *s);
 
 bool empty(chars s);
 
+bool empty(char s);// todo: rename whitespace (and braces??)
+
 bool contains(chars str, chars match);
 
 #include "Map.h"
