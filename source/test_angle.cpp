@@ -259,12 +259,17 @@ void testIfGt() {
 	)
 }
 
-void testSwitch() {
-//	todo if(1>0) ... innocent groups
-	assert_is("{a:1 b:2}[a]", 1)
+
+void testSwitchEvaluation() {
 	assert_is("{a:1+1 b:2}(a)", 2)
 	assert_is("x=a;{a:1 b:2}(x)", 1)
 	// functor switch(x,xs)=xs[x] or xs[default]
+}
+
+void testSwitch() {
+//	todo if(1>0) ... innocent groups
+	assert_is("{a:1 b:2}[a]", 1)
+	assert_is("{a:1 b:2}[b]", 2)
 }
 
 /*

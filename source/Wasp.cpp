@@ -599,6 +599,8 @@ private:
 		proceed();
 		// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
 		while ((ch < 0 or is_operator(ch)) and (previous != '=' or ch == '=')) {// utf8 √ …
+			if (ch == '-')
+				break;// no combinations with -  √- *- etc
 			node.name += ch;
 			proceed();
 		}
@@ -645,7 +647,7 @@ private:
 	}
 
 	Node symbol() {
-		if (ch >= '0' and ch <= '9')return numbero();
+		if ((ch >= '0' and ch <= '9') or (ch == '-' and next >= '0' and next <= '9'))return numbero();
 		if (is_operator(ch))
 			return any_operator();
 		if (is_identifier(ch))return resolve(*new Node(identifier(), true));// or op

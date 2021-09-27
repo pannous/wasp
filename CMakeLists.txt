@@ -12,6 +12,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 #set(DEBUG 1)
 #set(RELEASE 0) # no tests
 #set(WASM 1) # no WebView, duh
+#ADD_COMPILE_DEFINITIONS(DEBUG_WASM3)
 
 if (NOT WASM)
 #    set(WEBAPP 1) # compile with WebView for electron like standalone apps.
@@ -32,10 +33,9 @@ if (WASM)
     #    referenceTypes bulkMemory works in FF
     #    ADD_COMPILE_FLAG("-O0 -s WASM_BIGINT") should work in WebKit but we only use standard MVP features for now!
     SET(WEBAPP 0) # just be sure
+    # ^^ UNSET, or better don't set manually at all!
 endif ()
-# ^^ UNSET, or better don't set manually at all!
 
-#ADD_COMPILE_DEFINITIONS(DEBUG_WASM3)
 
 if (DEBUG)
     MESSAGE("DEBUG!")
@@ -60,7 +60,6 @@ endif ()
 if (NOT WASM)
     #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
     # ^^ fixes <cmath> mac errors!
-    MESSAGE("NOT WASMMMMM")
     ADD_COMPILE_DEFINITIONS(_Backtrace_)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     if (NOT RUNTIME_ONLY)
