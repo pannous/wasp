@@ -345,6 +345,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 		fromRight = fromRight || prefixOperators.has(op); // !√!-1 == !(√(!(-1)))
 		int i = expression.index(op, last_position, fromRight);
 		if (i < 0) {
+			if (op == "-")
+				continue;// ok -1 part of number
 			i = expression.index(op, last_position, fromRight);// try again for debug
 			expression.log();
 			error("operator missing: "s + op);
@@ -707,6 +709,7 @@ Node analyze(Node node, String context) {
 	if (type == functor) {
 		if (node.name == "while")return groupWhile(node);
 		if (node.name == "if")return groupIf(node);
+		if (node.name == "?")return groupIf(node);
 	}
 	if (type == keyNode) {
 		if (not localContext.has(node.name)) {
@@ -890,7 +893,7 @@ chars function_list[] = {"square", "log", "puts", "print", "printf", "println", 
                          "logi64",
                          "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
                          0};// MUST END WITH 0, else BUG
-chars functor_list[] = {"if", "while", 0};// MUST END WITH 0, else BUG
+chars functor_list[] = {"if", "while", "go", "?", "do", "until", 0};// MUST END WITH 0, else BUG
 codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0, 0, 0};
 
 
