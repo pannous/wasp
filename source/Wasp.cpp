@@ -647,7 +647,10 @@ private:
 	}
 
 	Node symbol() {
-		if ((ch >= '0' and ch <= '9') or (ch == '-' and next >= '0' and next <= '9'))return numbero();
+		if (isDigit(ch))
+			return numbero();
+		if (ch == '-' and isDigit(next) and not isDigit(previous)) // -1 but not 2-1 !
+			return numbero();
 		if (is_operator(ch))
 			return any_operator();
 		if (is_identifier(ch))return resolve(*new Node(identifier(), true));// or op
@@ -931,8 +934,8 @@ private:
 		}
 	};
 
-	bool isDigit(char next) {
-		return next >= '0' and next <= '9';
+	bool isDigit(char c) {
+		return c >= '0' and c <= '9';
 	}
 
 	Node &setField(Node &key, Node &val) { // a:{b}
