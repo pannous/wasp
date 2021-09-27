@@ -3,6 +3,8 @@
 #include "wasm_reader.h"
 #include "wasm_merger.h"
 
+#define assert_throws(αα)  printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);try{emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line();}catch(...){};
+
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 //#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
 
@@ -47,6 +49,8 @@ void testWasmFunctionDefiniton() {
 			assert_emit("fib:=it<2 or fib(it-1)+fib(it-2);fib(4)", 5)
 			assert_emit("fib:=it<2 then 1 else fib(it-1)+fib(it-2);fib(4)", 5)
 	)
+	assert_emit("fac:= it<=0 ? 0 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
+
 }
 
 void testWasmFunctionCalls() {
@@ -144,14 +148,27 @@ void testMathOperators() {
 	assert_emit(("3+3*3>3*3*3"), false)
 	assert_emit(("3+3+3<3+3*3"), true)
 	assert_emit(("3*3*3>3+3*3"), true)
-//	assert_emit(("3⁰"),1);
-//	assert_emit(("3¹"),3);
-//	assert_emit(("3²"),9);
-//	assert_emit(("3³"),27);
-//	assert_emit(("3⁴"),9*9);
+	assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
+	assert_emit("fac:= if it<=0 : 1 else it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
+
+	assert_run("x=123;x + 4 is 127", true);
+	assert_emit("i=3;i++", 4);
+	assert_emit("i=1;while i<9:i++;i+1", 10);
+	assert_emit("ceil 3.7", 4);
+	assert_emit("- √9", -3);
+	assert_emit("i=-9;-i", 9);
+	assert_emit("√ π ²", 3);
+	assert_emit(("3¹"), 3);
+	assert_emit(("3²"), 9);
 	skip(
-			assert_emit(("42^2"), 1764) NO SUCH PRIMITIVE
+			assert_emit(("3⁰"), 1);// get UNITY of set (1->e auto cast ok?)
+			assert_emit(("3³"), 27);// define inside wasp!
+			assert_emit(("3⁴"), 9 * 9);
 	)
+
+	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
+
+	assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
 }
 
 void testComparisonMath() {
@@ -447,6 +464,10 @@ void testWasmIf() {
 			assert_emit("if(2,3,4)", 3); // bad border case EXC_BAD_ACCESS because not anayized!
 			assert_emit("if(condition=2,then=3)", 3);
 			assert_emit("if(condition=2,then=3,else=4)", 3); // this is what happens under the hood (?)
+			assert_emit("fib:=it<2 then 1 else fib(it-1)+fib(it-2);fib(4)", 5)
+			assert_emit("fib:=it<2 and it or fib(it-1)+fib(it-2);fib(7)", 13)
+			assert_emit("fib:=it<2 then it or fib(it-1)+fib(it-2);fib(7)", 13)
+			assert_emit("fib:=it<2 or fib(it-1)+fib(it-2);fib(4)", 5)
 	)
 }
 
@@ -916,6 +937,17 @@ void testWasmMutableGlobal() {
 	// this does not impede the above, as global exports are not properties, but something to keep in mind
 }
 
+void testCustomOperators() {
+	assert_emit(("suffix operator ⁰ := 1; 3⁰"), 1);// get UNITY of set (1->e auto cast ok?)
+	assert_emit(("suffix ⁰ := 1; 3⁰"), 1);// get UNITY of set (1->e auto cast ok?)
+	assert_emit(("suffix operator ³ := it*it*it; 3³"), 27);// define inside wasp!
+	assert_emit(("suffix operator ³ := it*it*it; .5³"), 1 / 8);
+	assert_emit(("suffix ³ := it*it*it; 3³"), 27);// define inside wasp!
+
+//	assert_emit(("alias to the third = ³"),1);
+//	assert_emit(("3⁴"),9*9);
+}
+
 void testAllWasm() {
 	data_mode = false;
 	testWasmMemoryIntegrity();
@@ -924,6 +956,7 @@ void testAllWasm() {
 	logs("NO WASM emission...");
 //	return;
 #endif
+	testWasmFunctionDefiniton();
 	testSquareExpWasm();
 	testRoundFloorCeiling();
 	testWasmLogicCombined();
@@ -934,14 +967,6 @@ void testAllWasm() {
 			testWasmLogicOnObjects();
 			testObjectPropertiesWasm();
 	)
-	// todo: reuse all tests via
-	//	interpret = false;
-	// constant things may be evaluated by compiler!
-
-//	run_wasm("../t.wasm");
-//	testMergeWabt();
-//	testRefactor();
-//	testMergeRelocate();
 
 //	exit(21);
 	testWasmIncrement();
@@ -962,6 +987,7 @@ void testAllWasm() {
 	testWasmLogicPrimitives();
 	testConstReturn();
 	testWasmIf();
+	testCustomOperators();
 	testMathOperators();
 	testMathPrimitives();
 	testComparisonPrimitives();
