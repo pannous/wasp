@@ -178,14 +178,15 @@ void testMathOperators() {
 	assert_emit("- √9", -3);
 	assert_emit("i=-9;-i", 9);
 	assert_emit("√ π ²", 3);
-	assert_emit(("3¹"), 3);
 	assert_emit(("3²"), 9);
 	skip(
 			assert_emit(("3⁰"), 1);// get UNITY of set (1->e auto cast ok?)
+			assert_emit(("3¹"), 3);
 			assert_emit(("3³"), 27);// define inside wasp!
 			assert_emit(("3⁴"), 9 * 9);
 	)
 
+	assert_emit("i=3.70001;.3+i", 4);// todo use long against these bugs!! <<<
 	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
 
 	assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
@@ -969,6 +970,8 @@ void testCustomOperators() {
 }
 
 void testAllWasm() {
+	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
+
 	data_mode = false;
 	testWasmMemoryIntegrity();
 #ifdef RUNTIME_ONLY
@@ -984,6 +987,7 @@ void testAllWasm() {
 	wasm_todos();
 	testWasmWhile();
 	skip(
+			testCustomOperators();
 			testWasmLogicOnObjects();
 			testObjectPropertiesWasm();
 	)
@@ -1007,7 +1011,6 @@ void testAllWasm() {
 	testWasmLogicPrimitives();
 	testConstReturn();
 	testWasmIf();
-	testCustomOperators();
 	testMathOperators();
 	testMathPrimitives();
 	testComparisonPrimitives();
