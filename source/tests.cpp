@@ -141,8 +141,8 @@ bool assert_equals_x(int a, int b, char *context = "") {
 inline float abs_(float x)
 
 noexcept {
-	return x > 0 ? x : -
-			x;
+return x > 0 ? x : -
+x;
 }
 
 bool assert_equals_x(float a, float b, char *context = "") {
@@ -781,7 +781,7 @@ void testLogic() {
 	assert_is("1 ⊻ 0", 1);
 	assert_is("1 ⊻ 1", 0);
 
-//	assert_is("1 ∧ 1", 1);
+	assert_is("1 ∧ 1", 1);
 	assert_is("1 ∧ 0", 0);
 	assert_is("0 ∧ 1", 0);
 	assert_is("0 ∧ 0", 0);
@@ -1753,53 +1753,40 @@ void testPaintWasm() {
 
 void testCurrent() { // move to tests() once OK
 	// todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
-	assert_is("1 ∧ 1", 1);
-	skip(
+	skip( // todo soon
+			assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
+			globals.setDefault(new Node());
+			globals["y"] = new Node();
+			assert_throws("ceiling 3.7");
+
 	)
-//	globals["y"]=new Node();
-//	globals.setDefault(new Node());
-//  assert_emit("fac:= it<=0 ? 0 : it * fac it-1; fac(5)",5*4*3*2*1);
+//	testPaintWasm();
 //	return;// let the webview show!
-	testWasmLogic();
-	assert_emit("3^2", 9);
-	assert_emit("3^^2", 9);
-	assert_emit("3**2", 9);
-	assert_emit("i=3;i^2", 9);
-	assert_emit("1⋀1", true);
-	assert_emit("0⋁1", true);
-
-
-	assert_emit("fac:= if it<=0 : 1 else it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
 //	testPaintWasm();
 //	assert_run("render html{'test'}", 4);
 
-	assert_run("x=123;x + 4 is 127", true);
-	assert_emit("i=3;i++", 4);
-	assert_emit("i=1;while i<9:i++;i+1", 10);
-	assert_emit("ceil 3.7", 4);
-	assert_emit("- √9", -3);
-	let π = 3;
+	assert_is("3*-1", -3);
+	assert_emit("3*-1", -3);
+
+//	assert_emit("i=-9;√ -i", 3);
+//	assert_emit("i=-9;√-i", 3);
 	skip(
-			assert_emit("1 -3 - square 3+4", (long) -51);
-			assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
+			assert_emit("1 -3 - square 3+4", (long) -51);// warn?
 
 			assert_emit("xyz 3.7", 4); // todo SHOULD THROW unknown symbol!
-			assert_emit("ceiling 3.7", 4);
 
-			//		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
-			assert_emit("i=-9;√ -i", 3);
+	//		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
 	)
-	assert_emit("i=-9;-i", 9);
-	assert_emit("√ π ²", π);
 	skip(
 	//todo dissect operators!  π² COULD be symbol on its own so two path check!
-			assert_emit("√π²", π);
+			assert_emit("√π²", 3);
 			assert_emit("i=-9;√-i", 3);
 			assert_emit("- √9", -3);
 	)
 	check(pow(3, 3) == 27);
 	testSquareExpWasm();
 	testRoundFloorCeiling();
+	testSwitch();
 
 	testWasmMutableGlobal();
 //	exit(9);
@@ -1818,11 +1805,6 @@ void testCurrent() { // move to tests() once OK
 //	testRoundFloorCeiling();
 //    	subtract(other complex) := re -= other.re; im -= other.im
 // := is terminated by \n, not by ;!
-//	exit(0);
-//	assert_emit("x=3;x*=3", 9)
-//	assert_emit("x={1 4 3};x[1]", 4);
-//	assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
-//	testPaintWasm();
 //	exit(0);
 //	testWasmMemoryIntegrity();
 #ifndef WASM

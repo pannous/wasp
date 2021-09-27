@@ -751,6 +751,10 @@ Code emitOperator(Node node, String context) {
 	} else if (name == "**" or name == "to the" or name == "^" or name == "^^") {
 		if (last_type == int32) code.add(emitCall(*new Node("powi"), context));
 		else code.add(emitCall(*new Node("pow"), context));
+	} else if (name.startsWith("-")) {
+		code.add(i32_sub);
+	} else if (name == "?") {
+		emitIf(node, context);
 	} else if (name == "ⁿ") {
 		if (node.length == 1) {
 			code.add(cast(last_type, float64));// todo all casts should be auto-cast (in emitCall) now, right?
