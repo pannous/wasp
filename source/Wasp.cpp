@@ -39,12 +39,12 @@ chars operator_list0[] = {"+", "-",
                           "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠", "not",
                           "¬",
                           "|",
-                          "and", "or", "&", "++", "--", "to", "xor", "be", "…", "...", "..<" /*range*/,
-                          "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "³", "⁴", "×", "⋅", "⋆", "÷",
+                          "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...", "..<" /*range*/,
+                          "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻", 0, 0, 0,
                           0}; // "while" ...
-// todo ∨ ~ v ~ versus!
+// todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
 //  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
 // ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
 #ifdef WASI
