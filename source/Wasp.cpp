@@ -599,7 +599,7 @@ private:
 		proceed();
 		// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
 		while ((ch < 0 or is_operator(ch)) and (previous != '=' or ch == '=')) {// utf8 √ …
-			if (ch == '-')
+			if (ch == '-' and previous != '-')
 				break;// no combinations with -  √- *- etc
 			node.name += ch;
 			proceed();
@@ -649,7 +649,7 @@ private:
 	Node symbol() {
 		if (isDigit(ch))
 			return numbero();
-		if (ch == '-' and isDigit(next) and not isDigit(previous)) // -1 but not 2-1 !
+		if (ch == '-' and isDigit(next) and (empty(previous) or is_operator(previous))) // -1 √-1 but not 2-1 x-1!
 			return numbero();
 		if (is_operator(ch))
 			return any_operator();
