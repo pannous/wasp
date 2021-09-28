@@ -1757,7 +1757,7 @@ void print_timestamp() {
 #include <sys/time.h>
 
 void testPaintWasm() {
-	return;
+//	return;
 	assert_emit("maxi=3840*2160;maxi", 3840 * 2160);
 	assert_emit("i=0;j=0;k='hi';while(i<10){i++;j++;k#i=65};logs(k);i+j;k[1]", 65)
 	print_timestamp();
@@ -1784,12 +1784,16 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
+	assert_emit("maxi=3840*2160;maxi", 3840 * 2160);
+
 //	testPaintWasm();
 //	exit(0);
+	assert_emit("k='hi';k#1=65;k#2", 'i')
+
 	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
 
 	assert_emit("i=1;k='hi';k#i", 'h')
-
+//	testPaintWasm();
 	testWasmMemoryIntegrity();
 	testIndexWasm();
 //	assert_emit("i=-9;√-i", 3);
