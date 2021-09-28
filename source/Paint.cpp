@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include <stdio.h>
 #include "Paint.h"
+#include "wasm_helpers.h"
 
 SDL_Surface *surface;
 SDL_Window *window;
@@ -85,7 +86,7 @@ void init_sdl() {
 	surface = SDL_GetWindowSurface(window);// SDL_GetVideoSurface();
 	pitch = surface->pitch;
 	surface_fill_random();
-	requestAnimationFrame();
+	requestAnimationFrame(-1);
 }
 
 void cleanUp() {
@@ -102,9 +103,9 @@ struct Size {
 };
 
 // returns image.data.length (of RGBA array)
-int init_graphics() {
+long init_graphics() {
 	init_sdl();
-	return surface->w * surface->h * 4; //  (int *) surface->pixels;
+	return (long) surface;// surface->w * surface->h * 4; //  (int *) surface->pixels;
 }
 //int* init_graphics(int width, int height){
 //	if(width>0)SCREEN_WIDTH=width;
@@ -132,12 +133,18 @@ void checkInput() {
 	}
 }
 
-void requestAnimationFrame() {// ready to paint!
+int requestAnimationFrame(int wasm_offset) {// ready to paint!
 //	if changed
+//	char *wasm_memory=0;//getWasmMemory();
+	int nr_bytes = surface->w * surface->h * 4;
+	// if nr_bytes changed: skip frame!
+	if (wasm_memory and wasm_offset >= 0)
+		memcpy(surface->pixels, ((char *) wasm_memory + wasm_offset), nr_bytes);
 	SDL_UpdateWindowSurface(window);
 	SDL_PumpEvents();
 	checkInput();
 	state = SDL_GetKeyboardState(NULL);
+	return nr_bytes;// number of bytes required for next frame todo return struct!
 #ifdef DEBUG
 	if (state[SDL_SCANCODE_RETURN]||state[SDL_SCANCODE_ESCAPE]) exit(0);
 #endif

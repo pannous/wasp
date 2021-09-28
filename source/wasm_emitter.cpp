@@ -414,6 +414,8 @@ Code emitIndexPattern(Node pattern, String context) {
 	if (pattern.length != 1 and pattern.kind != longs)error("exactly one pattern expected in emitIndexPattern");
 	int base = runtime.data_segments.length;// uh, todo?
 	int size = currentStackItemSize();
+
+
 	int offset = (long) pattern.first().value.longy;
 	if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
 //	if (offset > array_length)error("operator # out of bounds %d>%d"s % offset % array_length);
@@ -455,12 +457,31 @@ Code emitIndexRead(Node op, String context) {
 		base += stringIndices[array.value.string];
 	} else
 		base += last_data;// todo: pray!
-	int offset = (long) op[1];
-	if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
-	if (op.name == "#") offset--;
-//	if(offset>op[0].length)error("index out of bounds! %d > %d in %s (%s)"s % offset % ); // todo: get string size, array length etc
+
 	Code load;
-	load.addConst(base + offset * size);
+	Node &pattern = op[1];
+	if (pattern.kind == reference) {
+		load.add(emitExpression(pattern, context));
+		if (last_type != i32t)error("#index must be of int type");
+		// todo IF it is INT index!
+		load.addConst(base);
+		load.add(i32_add);
+		if (op.name == "#") {
+			load.addConst(1);
+			load.add(i32_sub);
+		}
+		if (size > 0) {
+			load.addConst(size);
+			load.add(i32_mul);
+		}
+	} else if (pattern.kind == longs) {
+		int offset = (long) pattern;
+		if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
+		if (op.name == "#") offset--;
+		//	if(offset>op[0].length)error("index out of bounds! %d > %d in %s (%s)"s % offset % ); // todo: get string size, array length etc
+		load.addConst(base + offset * size);
+	} else
+		error("operator # todo");
 	if (size == 1)load.add(i8_load);
 	if (size == 2)load.add(i16_load);
 	if (size == 4)load.add(i32_load);

@@ -297,6 +297,18 @@ public:
 // 4. some c++ types String List etc
 // the last three can be added as special internal values to Valtype, outside the wasm spec
 enum Valtype {
+	voids = 0x00, // DANGER!=void_block  internal only for return type
+
+	void_block = 0x40,
+	none = 0x40,
+
+	// extensions
+	anyref = 0x6f,// was conceptually an namewise merged into
+	externref = 0x6f,
+	funcref = 0x70,
+	func = 0x60,
+
+
 	int32 = 0x7f,
 	i32t = 0x7f,
 	i32 = 0x7f,
@@ -317,10 +329,6 @@ enum Valtype {
 	float64 = 0x7C,
 	f64t = 0x7C,
 	f64 = 0x7C,
-
-	none = 0x40, // ===
-	void_block = 0x40, // VERSUS:
-	voids = 0x00, // DANGER!=void_block  internal only for return type
 
 	// SPECIAL INTERNAL TYPES ONLY, not part of spec but they ARE represented through c++=>wasm types (int32?) :
 	// enums with the same value can NOT be distinguished thereafter!!! :(
@@ -523,7 +531,7 @@ enum Opcodes {
 //referenceTypes
 	ref_null = 0xD0,
 	ref_is_null = 0xD1,
-	ref_func = 0xD2, // 0xd2 varuint32 0x0b Returns a reference to function $funcidx
+	ref_func = 0xD2, // 0xd2 varuint32 0x0b Returns a funcref reference to function $funcidx
 
 // saturated truncation  saturatedFloatToInt
 //i32_trunc_sat_f32_s=0xFC00,
@@ -565,7 +573,10 @@ enum Section {
 	start_section = 8,
 	element_section = 9,
 	code_section = 10, // 0x0a
-	data_section = 11
+	data_section = 11,
+	// extensions:
+	datacount = 12,
+	tag_section = 13
 };
 
 enum nameSubSectionTypes {
