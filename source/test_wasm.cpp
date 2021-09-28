@@ -3,7 +3,7 @@
 #include "wasm_reader.h"
 #include "wasm_merger.h"
 
-#define assert_throws(αα)  printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);try{emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line();}catch(...){};
+#define assert_throws(αα)  printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);try{emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line();}catch(chars){}catch(String*){}catch(...){};
 
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 //#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
@@ -170,6 +170,18 @@ void testMathOperators() {
 	assert_emit(("3*3*3>3+3*3"), true)
 	assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
 	assert_emit("fac:= if it<=0 : 1 else it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
+
+
+	assert_emit("i=3;i*-1", -3);
+	assert_is("3*-1", -3);
+	assert_emit("3*-1", -3);
+	assert_emit("-√9", -3);
+
+	assert_emit("i=3.70001;.3+i", 4);// todo use long against these bugs!! <<<
+
+	assert_emit("i=3.71;.3+i", 4);// todo use long against these bugs!! <<<
+	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
+	assert_is("4-1", 3);//
 
 	assert_run("x=123;x + 4 is 127", true);
 	assert_emit("i=3;i++", 4);
@@ -781,6 +793,8 @@ void testObjectPropertiesWasm() {
 }
 
 void testArrayIndicesWasm() {
+	assert_throws("surface=(1,2,3);i=1;k#i=4;k#i")// no such k!
+
 //	testArrayIndices(); //	check node based (non-primitive) interpretation first
 	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
 	assert_emit("logs('ok');", 0);
@@ -793,12 +807,15 @@ void testArrayIndicesWasm() {
 	assert_emit("logs('ok');(1 4 3)#2", 4);
 	assert_emit("(1 4 3)[1]", 4);
 	assert_emit("logs('ok');(1 4 3)#2", 4);
+	assert_throws("(1 4 3)#0");
 	skip(
-			assert_throws("(1 4 3)#0", 4);
-			assert_emit("(1 4 3)#4", 4);// todo THROW!
-			assert_is("[1 2 3]#2", 2);// check node based (non-primitive) interpretation first
+	// todo patterns as lists
 			assert_emit("[1 4 3]#2", 4);
+			assert_is("[1 2 3]#2", 2);// check node based (non-primitive) interpretation first
+			assert_throws("(1 4 3)#4", 4);// todo THROW!
 	)
+
+
 	//	Node empty_array = parse("pixel=[]");
 	//	check(empty_array.kind==patterns);
 	//
@@ -807,18 +824,15 @@ void testArrayIndicesWasm() {
 	//	emit("pixel=[]");
 	//	exit(0);
 
-//	assert_emit("pixel=();pixel#1=15;pixel#1", 15);// diadic ternary operator
-	//	assert_emit("pixel array;pixel#1=15;pixel#1", 15);// diadic ternary operator
 
 	skip(
-			Node setter = analyze(parse("pixel[1]=15"));
-			check(setter.kind == patterns);
-			Node getter = analyze(parse("pixel[1]"));
-			check(getter.kind == patterns);
+	// todo create empty array
 			assert_emit("pixel=[];pixel[1]=15;pixel[1]", 15);
+			assert_emit("pixel=();pixel#1=15;pixel#1", 15);// diadic ternary operator
+			assert_emit("pixel array;pixel#1=15;pixel#1", 15);// diadic ternary operator
+			assert_emit("pixel=100 ints;pixel[1]=15;pixel[1]", 15);
 	)
 
-	//assert_emit("pixel=100 ints;pixel[1]=15;pixel[1]", 15);
 
 }
 
@@ -969,6 +983,18 @@ void testCustomOperators() {
 //	assert_emit(("3⁴"),9*9);
 }
 
+void testIndexWasm() {
+	assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?!
+	assert_emit("i=1;k='hi';k[i]", 'i')
+	//	assert_throws("i=0;k='hi';k#i")// todo internal boundary checks? nah, later ;) done by VM:
+	// WASM3 error: [trap] out of bounds memory accessmemory size: 65536; access offset: 4294967295
+	assert_emit("k='hi';k#1=97;k#1", 'a')
+	assert_emit("k='hi';k#1='a';k#1", 'a')
+	assert_emit("k='hi';i=1;k#i=97;k#i", 'a')
+	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
+	assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+}
+
 void testAllWasm() {
 	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
 
@@ -979,6 +1005,10 @@ void testAllWasm() {
 	logs("NO WASM emission...");
 //	return;
 #endif
+	skip(
+			testIndexWasm();
+	)
+
 	testWasmFunctionDefiniton();
 	testSquareExpWasm();
 	testRoundFloorCeiling();
