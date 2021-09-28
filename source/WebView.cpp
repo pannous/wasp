@@ -249,9 +249,9 @@ int init_graphics() {
 }
 
 
-void requestAnimationFrame() {
-	// copy wasp data to canvas
-}
+//int requestAnimationFrame(int wasm_offset) {
+// copy wasp data to canvas
+//}
 
 void run_wasm_async(unsigned char *bytes, int length) {
 	std::stringstream ss;
