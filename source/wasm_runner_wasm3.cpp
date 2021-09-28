@@ -74,15 +74,15 @@ double pow2(double x, double y) {// why this crutch? maybe conflicting pow's in 
 int square2(int a) {
 	return a * a;
 }
-
+void *wasm_memory;
 int test_wasm3(const uint8_t *prog, int len) {
 //	std::cout << "Loading WebAssembly..." << std::endl;
 	try {
 		wasm3::environment env;
 		wasm3::module mod = env.parse_module(prog, len);
-
 		wasm3::runtime runtime = env.new_runtime(1024);
 		runtime.load(mod);
+		wasm_memory = runtime.getMemory();
 
 		mod.link_optional<sum>("*", "sum");
 		mod.link_optional<ext_memcpy0>("*", "ext_memcpy0");
