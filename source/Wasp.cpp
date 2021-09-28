@@ -599,6 +599,8 @@ private:
 		proceed();
 		// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
 		while ((ch < 0 or is_operator(ch)) and (previous != '=' or ch == '=')) {// utf8 √ …
+			if (ch != '-' and previous == '-')
+				break;// no combinations with - : -√
 			if (ch == '-' and previous != '-')
 				break;// no combinations with -  √- *- etc
 			node.name += ch;

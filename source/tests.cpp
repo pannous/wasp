@@ -9,6 +9,7 @@
 #ifndef WASM
 
 #include <codecvt> // utf8 magic ...?
+#include <libc.h>
 
 #endif
 
@@ -1741,17 +1742,41 @@ void testPaint() {
 	while (1)requestAnimationFrame(-1);
 }
 
-void testPaintWasm() {
-	assert_emit("i=1;k='hi';k#i", 'h')
-	exit(0);
-	assert_throws("i=0;k='hi';k#i")
-	assert_emit("k='hi';k#i=65;k#i", 'b')
 
-	assert_emit("i=0;j=0;k='hi';while(i<10){i++;j++;k#i=65};logs(k);i+j", 10000)
+void print_timestamp() {
+	time_t rawtime;
+	struct tm *timeinfo;
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	char buffer[30];
+	strftime(buffer, 30, "%G/%m/%d-%H:%M:%S.%ffff", timeinfo);
+	puts(buffer);
+//	return reinterpret_cast<char *>(buffer);
+}
+
+#include <sys/time.h>
+
+void testPaintWasm() {
+	return;
+	assert_emit("maxi=3840*2160;maxi", 3840 * 2160);
+	assert_emit("i=0;j=0;k='hi';while(i<10){i++;j++;k#i=65};logs(k);i+j;k[1]", 65)
+	print_timestamp();
+//	struct timeval start, stop;
+	struct timeval stop, start;
+	gettimeofday(&start, NULL);
+	// todo: let compiler compute constant expressions like 1024*65536/4
+//	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
+//	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
+//	sleep(10);
+//	print_timestamp();
+	//do stuff
+	gettimeofday(&stop, NULL);
+	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+//	exit(0);
 //	char *wasm_paint_routine = "surface=init_graphics();surface#1=0;surface#3=0;surface#4=0;surface#5=0";
 //char *wasm_paint_routine = "surface=init_graphics();i=10;while(i<10000){i++;surface#i=0;}";// todo : access true  c memory from wasm!
-//char *wasm_paint_routine = "init_graphics();surface=(1,2,3);i=10;while(i<10000){i=i+1;surface#i=0;};i";
-	char *wasm_paint_routine = "init_graphics();10";
+	char *wasm_paint_routine = "maxi=3840*2160;init_graphics();surface=(1,2,3);i=10000;while(i<maxi){i++;surface#i=22528;};10";// 88
+//	char *wasm_paint_routine = "init_graphics();10";
 //char *wasm_paint_routine = "surface=init_graphics;while(1) 1+1";
 //char *wasm_paint_routine = "init_graphics(); while(1){requestAnimationFrame()}";// SDL bugs a bit
 	assert_emit(wasm_paint_routine, 10);
@@ -1759,28 +1784,28 @@ void testPaintWasm() {
 }
 
 void testCurrent() { // move to tests() once OK
-	testPaintWasm();
+//	testPaintWasm();
+//	exit(0);
+	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
+
+	assert_emit("i=1;k='hi';k#i", 'h')
+
+	testWasmMemoryIntegrity();
+	testIndexWasm();
+//	assert_emit("i=-9;√-i", 3);
 //	assert_emit("logs('hello')",0);
 //	assert_emit("print('hello')",0);
 	// todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
+	assert_emit("x={1 4 3};x#2=5;x[1]", 5);
+//	assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
 	skip( // todo soon
-			assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
 			globals.setDefault(new Node());
 			globals["y"] = new Node();
 			assert_throws("ceiling 3.7");
 			assert_is("i=3;i--", 2);// todo bring variables to interpreter
 			assert_is("i=3.7;.3+i", 4);// todo bring variables to interpreter
-			assert_is("i=3;i*-1", -3);
+			assert_is("i=3;i*-1", -3);// todo bring variables to interpreter
 	)
-	assert_emit("i=3;i*-1", -3);
-	assert_is("3*-1", -3);
-	assert_emit("3*-1", -3);
-
-	assert_emit("i=3.70001;.3+i", 4);// todo use long against these bugs!! <<<
-
-	assert_emit("i=3.71;.3+i", 4);// todo use long against these bugs!! <<<
-	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
-	assert_is("4-1", 3);//
 	testWasmTernary();
 //	testPaintWasm();
 //	return;// let the webview show!
@@ -1799,8 +1824,6 @@ void testCurrent() { // move to tests() once OK
 	skip(
 	//todo dissect operators!  π² COULD be symbol on its own so two path check!
 			assert_emit("√π²", 3);
-			assert_emit("i=-9;√-i", 3);
-			assert_emit("- √9", -3);
 	)
 	check(pow(3, 3) == 27);
 	testSquareExpWasm();
