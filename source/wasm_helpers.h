@@ -15,6 +15,12 @@
 typedef const char *chars;
 typedef unsigned char *bytes;
 
+// there are two aspects of wasm memory: the internal memory starting at 0 and the external c-pointer *wasm_memory if the VM provides it
+// worse there is the native_runtime which may hold the wasm_runtime running in the VM!
+
+extern "C" void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
+
+// TODO: let the native_runtime mess with wasm_memory DIRECTLY?
 
 // todo : depends on clang_options! Sometimes it is needed sometimes it can't be there
 #ifndef WASM
@@ -62,8 +68,8 @@ extern "C" void logf32(float f);
 
 extern "C" long squarel(long n);// test wasm, otherwise use x² => x*x in analyze!
 extern "C" double square(double n);// test wasm
-extern int sqrt1(int a);
 
+extern int sqrt1(int a);
 long powi(int a, int b);// short harder
 
 //extern "C" double pow2(double x, double y);

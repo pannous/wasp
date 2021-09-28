@@ -130,6 +130,7 @@ String sectionName(Section section) {
 		default:
 			error("INVALID SECTION #%d\nprevious section must have been corrupted\n"s % section);
 	}
+	return "ERROR";
 }
 
 Code createSection(Section sectionType, Code data) {

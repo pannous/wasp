@@ -1738,20 +1738,30 @@ void testUnits() {
 
 void testPaint() {
 	init_graphics();
-	while (1)requestAnimationFrame();
+	while (1)requestAnimationFrame(-1);
 }
 
 void testPaintWasm() {
-//	assert_emit("i=0;j=0;while(i<10000){i++;j++};j",10000)
+	assert_emit("i=1;k='hi';k#i", 'h')
+	exit(0);
+	assert_throws("i=0;k='hi';k#i")
+	assert_emit("k='hi';k#i=65;k#i", 'b')
+
+	assert_emit("i=0;j=0;k='hi';while(i<10){i++;j++;k#i=65};logs(k);i+j", 10000)
 //	char *wasm_paint_routine = "surface=init_graphics();surface#1=0;surface#3=0;surface#4=0;surface#5=0";
-	char *wasm_paint_routine = "surface=init_graphics();i=10;while(i<10000){i++;surface#i=0;}";// todo : access true  c memory from wasm!
+//char *wasm_paint_routine = "surface=init_graphics();i=10;while(i<10000){i++;surface#i=0;}";// todo : access true  c memory from wasm!
+//char *wasm_paint_routine = "init_graphics();surface=(1,2,3);i=10;while(i<10000){i=i+1;surface#i=0;};i";
+	char *wasm_paint_routine = "init_graphics();10";
 //char *wasm_paint_routine = "surface=init_graphics;while(1) 1+1";
 //char *wasm_paint_routine = "init_graphics(); while(1){requestAnimationFrame()}";// SDL bugs a bit
 	assert_emit(wasm_paint_routine, 10);
-	while (1)requestAnimationFrame();// help a little
+	while (1)requestAnimationFrame(0);// help a little
 }
 
 void testCurrent() { // move to tests() once OK
+	testPaintWasm();
+//	assert_emit("logs('hello')",0);
+//	assert_emit("print('hello')",0);
 	// todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
 	skip( // todo soon
 			assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
@@ -1760,8 +1770,11 @@ void testCurrent() { // move to tests() once OK
 			assert_throws("ceiling 3.7");
 			assert_is("i=3;i--", 2);// todo bring variables to interpreter
 			assert_is("i=3.7;.3+i", 4);// todo bring variables to interpreter
+			assert_is("i=3;i*-1", -3);
 	)
-	assert_emit("i=3;i--", 2);
+	assert_emit("i=3;i*-1", -3);
+	assert_is("3*-1", -3);
+	assert_emit("3*-1", -3);
 
 	assert_emit("i=3.70001;.3+i", 4);// todo use long against these bugs!! <<<
 
