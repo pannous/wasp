@@ -23,7 +23,7 @@ short builtin_count = 0;// function_offset - import_count - runtime_offset;
 //bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
 char *data;// any data to be stored to wasm: values of variables, strings, nodes etc
 int data_index_end;// position to write more data = end + length of data section
-int data_index_start = 0;
+//int data_index_start = 0;
 int last_data = 0;// last pointer outside stack
 Map<String *, long> stringIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 Map<String, long> referenceIndices;
@@ -330,18 +330,48 @@ bool isAssignable(Node node, Node *type = 0) {
 }
 
 int currentStackItemSize() {
-	int size = 1;// todo char, codepoint, int , pointer …
-	if (last_type == charp)size = 1;// chars for now vs codepoint!
-	if (last_type == stringp)size = 1;// chars for now vs pointer!
-//	if (last_type == int16)size = 2;
-	if (last_type == int32)size = 4;
-	if (last_type == int64)size = 8;
-	if (last_type == float32)size = 4;
-	if (last_type == float64)size = 8;
-	return size;
+	if (last_type == charp)return 1;// chars for now vs codepoint!
+	if (last_type == stringp)return 1;// chars for now vs pointer!
+	//	if (last_type == int16)return 2;
+	if (last_type == int32)return 4;
+	if (last_type == int64)return 8;
+	if (last_type == float32)return 4;
+	if (last_type == float64)return 8;
+	error("unknown size for stack item");
+	return 1;
 }
 
-Code emitIndexWrite(int offset, Node value0, String context) {
+Code emitOffset(Node offset_pattern, bool sharp, String context, int size, int base) {
+	Code code;
+	if (offset_pattern.kind == reference) {
+		code.add(emitExpression(offset_pattern, context));
+		if (last_type != i32t)
+			error("index must be of int type");
+		if (base > 0) {
+			code.addConst(base);
+			code.add(i32_add);
+		}
+		if (sharp) {
+			code.addConst(1);
+			code.add(i32_sub);
+		}
+		if (size > 1) {
+			code.addConst(size);
+			code.add(i32_mul);
+		}
+	} else if (offset_pattern.kind == longs) {
+		int offset = (long) offset_pattern.value.longy;
+		if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
+		if (sharp) offset--;
+		//	if(offset_pattern>op[0].length)error("index out of bounds! %d > %d in %s (%s)"s % offset_pattern % ); // todo: get string size, array length etc
+		code.addConst(base + offset * size);
+	} else
+		error("index operator todo");
+	return code;
+	// calculated offset_pattern of 0 ususally points to ~6 bytes after Contents of section Data header 0100 4100 0b08
+}
+
+Code emitIndexWrite(Node offset, Node value0, String context) {
 	int base = runtime.data_segments.length;// uh, todo?
 	int size = currentStackItemSize();
 	int value = value0.value.longy;
@@ -351,19 +381,7 @@ Code emitIndexWrite(int offset, Node value0, String context) {
 		value = emitData(value0, context);// pointer
 
 	Code store;
-	if (offset < 0) {
-//		error("negative offset in array access");
-// hack to calculate offset on stack!
-		if (size > 1) {
-			store.addConst(size);
-			store.add(i32_mul);// offset * size
-			store.addConst(base);
-			store.add(i32_add);// offset * size + base
-		}
-	} else {
-		store.addConst(offset * size);
-	}
-	// calculated offset of 0 ususally points to ~6 bytes after Contents of section Data header 0100 4100 0b08
+	store = store + emitOffset(offset, true, context, size, base);
 	store.addConst(value);
 	if (size == 1)store.add(i8_store);
 	if (size == 2)store.add(i16_store);
@@ -383,7 +401,7 @@ Code emitIndexWrite(int offset, Node value0, String context) {
 
 // "hi"[0]="H"
 Code emitIndexWrite(Node op, String context) {// todo offset - 1 when called via #!
-	return emitIndexWrite(op["offset"].value.longy, op["value"], context);
+	return emitIndexWrite(op["offset"], op["value"], context);
 }
 
 // "hi"#1="H"
@@ -398,30 +416,24 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 	last_type = mapTypeToWasm(value);
 	localTypes[context][local_index] = last_type;
 	Code code;
-	code = code + emitValue(value, context);
-	if (offset.kind == reference)
-		code = code + emitValue(offset, context);
-	if (offset.kind == longs)
-		code = code.addConst(offset.value.longy - 1);
-	code = code + emitIndexWrite(-1, value, context);
+//	code = code + emitValue(value, context);
+//	if (offset.kind == reference)
+//		code = code + emitValue(offset, context);
+//	if (offset.kind == longs)
+//		code = code.addConst(offset.value.longy - 1);
+	code = code + emitIndexWrite(offset, value, context);
 	return code;
 }
 
 
 // assumes value is on top of stack
-Code emitIndexPattern(Node pattern, String context) {
-	if (pattern.kind != patterns and pattern.kind != longs)error("pattern expected in emitIndexPattern");
-	if (pattern.length != 1 and pattern.kind != longs)error("exactly one pattern expected in emitIndexPattern");
+Code emitIndexPattern(Node op, String context) {
+	if (op.kind != patterns and op.kind != longs)error("op expected in emitIndexPattern");
+	if (op.length != 1 and op.kind != longs)error("exactly one op expected in emitIndexPattern");
 	int base = runtime.data_segments.length;// uh, todo?
 	int size = currentStackItemSize();
-
-
-	int offset = (long) pattern.first().value.longy;
-	if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
-//	if (offset > array_length)error("operator # out of bounds %d>%d"s % offset % array_length);
-
-	Code load;
-	load.addConst(base + offset * size);
+	Node &pattern = op.first();
+	Code load = emitOffset(pattern, op.name == "#", context, size, base);
 	if (size == 1)load.add(i8_load);
 	if (size == 2)load.add(i16_load);
 	if (size == 4)load.add(i32_load);
@@ -431,8 +443,14 @@ Code emitIndexPattern(Node pattern, String context) {
 	return load;
 }
 
-// todo: merge emitIndexPattern with :
+// todo: merge
+// emitIndexPattern assumes value is on top of stack
+// emitIndexRead puts value/ref  on top of stack
 Code emitIndexRead(Node op, String context) {
+	if (op.length < 2)
+		error("index operator needs two arguments: node/array/reference and position");
+	Node &array = op[0];// also String: byte array or codepoint array todo
+	Node &pattern = op[1];
 	int base = runtime.data_segments.length;// uh, todo?
 	int size = 4;
 	size = 1;
@@ -444,44 +462,20 @@ Code emitIndexRead(Node op, String context) {
 	if (last_type == int64)size = 8;
 	if (last_type == float32)size = 4;
 	if (last_type == float64)size = 8;
-	if (op.length < 2)
-		error("operator # needs two arguments: node/array/reference and position");
-	Node &array = op[0];// also String: byte array or codepoint array todo
 	if (array.kind == reference or array.kind == keyNode) {
 		String ref = array.name;
 //		last_type=array.data_kind;
-		if (not referenceIndices.has(ref))
+		if (referenceIndices.has(ref))
+			base += referenceIndices[ref];
+		else
 			error("reference not declared as array type: "s + ref);
-		base += referenceIndices[ref];
 	} else if (array.kind == strings) {
 		base += stringIndices[array.value.string];
 	} else
 		base += last_data;// todo: pray!
 
-	Code load;
-	Node &pattern = op[1];
-	if (pattern.kind == reference) {
-		load.add(emitExpression(pattern, context));
-		if (last_type != i32t)error("#index must be of int type");
-		// todo IF it is INT index!
-		load.addConst(base);
-		load.add(i32_add);
-		if (op.name == "#") {
-			load.addConst(1);
-			load.add(i32_sub);
-		}
-		if (size > 0) {
-			load.addConst(size);
-			load.add(i32_mul);
-		}
-	} else if (pattern.kind == longs) {
-		int offset = (long) pattern;
-		if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
-		if (op.name == "#") offset--;
-		//	if(offset>op[0].length)error("index out of bounds! %d > %d in %s (%s)"s % offset % ); // todo: get string size, array length etc
-		load.addConst(base + offset * size);
-	} else
-		error("operator # todo");
+	Code load = emitOffset(pattern, op.name == "#", context, size, base);
+
 	if (size == 1)load.add(i8_load);
 	if (size == 2)load.add(i16_load);
 	if (size == 4)load.add(i32_load);
@@ -653,7 +647,7 @@ Code emitValue(Node node, String context) {
 			last_type = charp;//
 			code = Code(i32_const) + Code(stringIndex);// just a pointer
 			if (node.length > 0) {
-				if (node.length > 1)error("only 1 pattern allowed");
+				if (node.length > 1)error("only 1 op allowed");
 				Node &pattern = node.first();
 				if (pattern.kind != patterns and pattern.kind != longs)
 					error("only patterns allowed on string");
@@ -822,10 +816,10 @@ Code emitStringOp(Node op, String context) {
 		op = Node("eq");//  careful : various signatures
 		last_type = stringp;
 		return Code(i32_const) + Code(-1) + emitCall(op, context);// third param required!
-	} else if (op == "#") {// todo: all different index / pattern matches
+	} else if (op == "#") {// todo: all different index / op matches
 		op = Node("getChar");//  careful : various signatures
 		return emitCall(op, context);
-	} else if (op == "not" or op == "¬") {// todo: all different index / pattern matches
+	} else if (op == "not" or op == "¬") {// todo: all different index / op matches
 		op = Node("empty");//  careful : various signatures
 		return emitCall(op, context).add(i32_eqz);
 	} else if (op == "logs" or op == "puts" or op == "print") {// should be handled before, but if not print anyways
@@ -950,7 +944,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			break;
 		case patterns: // x=[];x[1]=2;x[1]==>2
 		{
-			if (not node.parent)// todo: when is pattern not an operator? wrong: or node.parent->kind == groups)
+			if (not node.parent)// todo: when is op not an operator? wrong: or node.parent->kind == groups)
 				return emitArray(node, context);
 			else if (node.parent->kind == declaration)
 				return emitIndexWrite(*node.parent, context);
@@ -1789,7 +1783,8 @@ Code memorySection() {
 	if (memoryHandling == import_memory or memoryHandling == no_memory) return Code();// handled elsewhere
 
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
-	int pages = 1;//54kb each
+//	int pages = 1024;// 64kb each  makes VM slower!
+	int pages = 1;//  traps while(i<65336/4)k#i=0
 	auto code = createSection(memory_section, encodeVector(Code(1) + Code(0x00) + Code(pages)));
 	return code;
 }
@@ -1798,12 +1793,16 @@ Code memorySection() {
 Code &emit(Node root_ast, Module *runtime0, String _start) {
 	if (root_ast.kind == objects)root_ast.kind = expression;
 	start = _start;
+//	clear();// todo
+	stringIndices.clear();
+	referenceIndices.clear();
 	functionCodes.clear();
 	typeMap.setDefault(-1);
 	typeMap.clear();
 	locals.setDefault(List<String>());
 	data = (char *) malloc(MAX_DATA_LENGTH);
 	data_index_end = 0;
+	last_data = 0;
 	functionIndices.setDefault(-1);
 	functionCodes.setDefault(Code());
 	if (runtime0) {

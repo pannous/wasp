@@ -120,12 +120,16 @@ int isalnum0(int c) {
 extern "C" unsigned int *memory = 0;// dummies, remove!
 extern "C" /*unsigned */ char *current = 0;// dummies, remove!
 extern bool throwing;// false for error tests etc
+//extern bool panicing;// false for error tests etc
+
 int raise(chars error) {
 //#ifdef WASM3
 	Backtrace(3);
 	print(error);
-	if (throwing)
-		exit(EXIT_FAILURE);
+#ifdef WASM
+	exit(EXIT_FAILURE);
+#endif
+//	if (!throwing)
 //#endif
 	if (throwing)
 		throw error;
