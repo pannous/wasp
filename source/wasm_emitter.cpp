@@ -374,15 +374,22 @@ Code emitOffset(Node offset_pattern, bool sharp, String context, int size, int b
 Code emitIndexWrite(Node offset, Node value0, String context) {
 	int base = runtime.data_segments.length;// uh, todo?
 	int size = currentStackItemSize();
+	Valtype targetType = last_type;
+
 	int value = value0.value.longy;
 	if (value0.kind == strings)//todo stringcopy? currently just one char "abc"#2=B
 		value = value0.value.string->charAt(0);
 	else if (value0.kind != longs)// todooo so many cases!
 		value = emitData(value0, context);// pointer
 
+//		localTypes[context]
+	Valtype valType = last_type;
 	Code store;
 	store = store + emitOffset(offset, true, context, size, base);
 	store.addConst(value);
+//	if(size==1 and valType==int32)store.add(i32)
+//	store.add(cast(valType, targetType));
+
 	if (size == 1)store.add(i8_store);
 	if (size == 2)store.add(i16_store);
 	if (size == 4)store.add(i32_store);
@@ -413,14 +420,10 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 		error("variable missed by parser! "_s + variable);
 	}
 	int local_index = current.position(variable);
-	last_type = mapTypeToWasm(value);
-	localTypes[context][local_index] = last_type;
+	last_type = localTypes[context][local_index];
+//	last_type = mapTypeToWasm(value);
+//	localTypes[context][local_index] = last_type;// DONT change type of array lol
 	Code code;
-//	code = code + emitValue(value, context);
-//	if (offset.kind == reference)
-//		code = code + emitValue(offset, context);
-//	if (offset.kind == longs)
-//		code = code.addConst(offset.value.longy - 1);
 	code = code + emitIndexWrite(offset, value, context);
 	return code;
 }
@@ -661,7 +664,10 @@ Code emitValue(Node node, String context) {
 			                 context);// todo: make sure it is called from right context (after isSetter …)
 		case patterns:
 			return emitIndexPattern(node, context);// todo: make sure to have something indexable on stack!
-		case expression:
+		case expression: {
+			Node values = node.values();
+			return emitExpression(values, context);
+		}
 //			error("expression should not be put on stack (yet) (maybe serialize later)")
 		case call:
 			return emitCall(node, context);// yep should give a value ok
@@ -881,10 +887,13 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 //				return emitArray(node, context);
 			}// else fallthough:
 		case expression:
-			for (Node child : node) {
-				Code expression = emitExpression(child, context);
-				code.push(expression);
-			};
+			if (not name.empty())
+				code.add(emitSetter(node, node, context));
+			else
+				for (Node child : node) {
+					Code expression = emitExpression(child, context);
+					code.push(expression);
+				};
 			break;
 		case call:
 			return emitCall(node, context);
