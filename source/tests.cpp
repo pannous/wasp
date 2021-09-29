@@ -1757,29 +1757,32 @@ void print_timestamp() {
 #include <sys/time.h>
 
 void testPaintWasm() {
-	assert_emit("maxi=3840*2160;maxi", 3840 * 2160);
-	assert_emit("i=0;j=0;k='hi';while(i<10){i++;j++;k#i=65};logs(k);i+j;k[1]", 65)
 	print_timestamp();
 //	struct timeval start, stop;
 	struct timeval stop, start;
 	gettimeofday(&start, NULL);
 	// todo: let compiler compute constant expressions like 1024*65536/4
 //	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
-//	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
+
+//out of bounds memory access if only one Memory page!
+	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
+	// wow, SLOWER in wasm-micro-runtime HOW!?
 //	sleep(10);
-//	print_timestamp();
+	print_timestamp();
 	//do stuff
 
 //	exit(0);
 //	char *wasm_paint_routine = "surface=init_graphics();surface#1=0;surface#3=0;surface#4=0;surface#5=0";
 //char *wasm_paint_routine = "surface=init_graphics();i=10;while(i<10000){i++;surface#i=0;}";// todo : access true  c memory from wasm!
-	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=255;};0";
+//	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=255;};0";
+//	assert_emit(wasm_paint_routine, 0);
 	gettimeofday(&stop, NULL);
-	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
+//	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+	exit(0);
 //	char *wasm_paint_routine = "init_graphics();10";
 //char *wasm_paint_routine = "surface=init_graphics;while(1) 1+1";
 //char *wasm_paint_routine = "init_graphics(); while(1){requestAnimationFrame()}";// SDL bugs a bit
-	assert_emit(wasm_paint_routine, 0);
 	while (1)requestAnimationFrame(0);// help a little
 }
 
@@ -1824,6 +1827,11 @@ void testSerialize() {
 }
 
 void testCurrent() { // move to tests() once OK
+//	testPaintWasm();
+	testIndexWasm();
+	testStringIndicesWasm();
+	testArrayIndicesWasm();
+
 	assert_run("42", 42);// WASM module instantiate failed: allocate memory failed
 	assert_emit("x=123;x + 4 is 127", true);
 	assert_emit("square 3", 9);
@@ -1833,7 +1841,6 @@ void testCurrent() { // move to tests() once OK
 
 	assert_emit("maxi=3840*2160;maxi", 3840 * 2160);
 	testSerialize();
-//	testPaintWasm();
 //	exit(0);
 //	testPaintWasm();
 	testWasmMemoryIntegrity();
