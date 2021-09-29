@@ -63,24 +63,31 @@ long get_pow2x(wasm_exec_env_t grr, long x, long y) {
 	return x * y;
 }
 
+// f:float F:double i:int I:long no comma in arg list pow :: (FF)F
 static NativeSymbol native_symbols[] =
 		{        // WAVM can call f(float) f(char*)! No JS restrictions!!
 				{
 						"get_pow",            // the name of WASM function name
 						           (void *) get_pow,            // the native function pointer
 						                            "(ii)i",            // the function prototype signature, avoid to use i32
-						                                    NULL,                // attachment is NULL
-						                                          false
+						                                     NULL,                // attachment is NULL
+						                                           false
 				},
-				{       "square",  (void *) square, "(i)i", NULL, false},
-				{       "√",       (void *) sqrt1,  "(i)i", NULL, false},
-				{       "logi",    (void *) logi,   "(i)",  NULL, false},
-				{       "log_f32", (void *) logf32, "(f)",  NULL, false},
-				{       "logf",    (void *) logf32, "(f)",  NULL, false},
-				{       "logs",    (void *) logs,   "(i)",  NULL, false},
+				{       "square",  (void *) squari, "(i)i",  NULL, false},
+				{       "√",       (void *) sqrt1,  "(i)i",  NULL, false},
+				{       "logi",    (void *) logi,   "(i)",   NULL, false},
+				{       "log_f32", (void *) logf32, "(f)",   NULL, false},
+				{       "logf",    (void *) logf32, "(f)",   NULL, false},
+				{       "logs",    (void *) logs,   "(i)",   NULL, false},
+				{       "pow",     (void *) powd,   "(FF)F", NULL, false},
+				{       "powf",    (void *) powf,   "(ff)f", NULL, false},
+				{       "powi",    (void *) powi,   "(ii)I", NULL, false},
 		};
 
-wasm_trap_t *hello_callback(const wasm_val_t args[], wasm_val_t results[]) {
+//wasm_trap_t *
+//wasm_func_callback_t hello_callback() {
+//wasm_func_callback_t hello_callback(const wasm_val_vec_t args[], wasm_val_vec_t results[]) {
+wasm_trap_t *hello_callback(const wasm_val_vec_t args[], wasm_val_vec_t results[]) {
 	printf("Calling back...\n");
 	printf("> Hello World!\n");
 	return NULL;
@@ -123,8 +130,11 @@ int main2(int argc, char *argv_main[]) {
 	wasm_functype_t *hello_type = wasm_functype_new_0_0();
 	wasm_func_t *hello_func = wasm_func_new(store, hello_type, hello_callback);
 	const wasm_extern_t *imports[] = {wasm_func_as_extern(hello_func)};
+//	const wasm_extern_vec_t *imports;// = {wasm_func_as_extern(hello_func)};
+//const wasm_extern_vec_t imports[] = {wasm_func_as_extern(hello_func)};
+
 	wasm_module_t *module2 = wasm_module_new(store, &binary);
-	wasm_instance_t *instance = wasm_instance_new(store, module2, imports, NULL);
+	wasm_instance_t *instance = wasm_instance_new(store, module2, (wasm_extern_vec_t *) imports, NULL);
 	wasm_extern_vec_t exports;
 	wasm_instance_exports(instance, &exports);
 	const wasm_func_t *run_func = wasm_extern_as_func(exports.data[0]);
@@ -135,8 +145,9 @@ int main2(int argc, char *argv_main[]) {
 void init_vm(RuntimeInitArgs init_args, NativeSymbol *native_symbols, int symbol_count) {
 	static bool done;
 	if (done) {
-		printf("\nWARNING: init_vm was already called before, CAN'T LOAD NEW native_symbols\n");
-		return;// ONLY ONCE!!
+//		printf("\nWARNING: init_vm was already called before");
+//		printf(" CAN'T LOAD NEW native_symbols\n");// 2021/9 why not?
+//		return;// ONLY ONCE!!
 	} else {
 		printf("INITIALIZING WASM VM\n");
 		done = true;
@@ -163,6 +174,8 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 =
 			static RuntimeInitArgs init_args;
 			memset(&init_args, 0, sizeof(RuntimeInitArgs));
 			init_vm(init_args, native_symbols, sizeof(native_symbols));// DANGER sizeof only works for []
+		} else {
+			warn("VM already init_vm'ed!");
 		}
 
 		char error_buf[128];

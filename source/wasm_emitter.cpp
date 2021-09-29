@@ -395,7 +395,7 @@ Code emitIndexWrite(Node offset, Node value0, String context) {
 	if (size == 4)store.add(i32_store);
 	if (size == 8)store.add(i64_store);
 	//	The static address offset is added to the dynamic address operand
-	store.add(size > 2 ? 0x02 : 0);// alignment (?)
+	store.add(size > 2 ? 0x02 : 0);// alignment (?) "alignment must not be larger than natural" size > 2 ? 0x02 :
 	store.add(0);// extra offset (why, wasm?)
 //	store.add(base);// extra offset (why, wasm?)
 
@@ -441,7 +441,7 @@ Code emitIndexPattern(Node op, String context) {
 	if (size == 2)load.add(i16_load);
 	if (size == 4)load.add(i32_load);
 	if (size == 8)load.add(i64_load);
-	load.add(0x02);// alignment (?)
+	load.add(size > 2 ? 0x02 : 0);// alignment (?)
 	load.add(0x00);// ?
 	return load;
 }
@@ -1828,7 +1828,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		int newly_pre_registered = 0;//declaredFunctions.size();
 		last_index = runtime_offset - 1;
 	} else {
-		memoryHandling = internal_memory; //   //import_memory;
+		memoryHandling = import_memory; //  internal_memory; // error in micro-runtime
 		last_index = -1;
 		runtime = *new Module();// all zero
 		runtime_offset = 0;
