@@ -20,6 +20,7 @@
 //#include <stdio.h> // printf
 //#endif
 
+void *wasm_memory = 0;// c pointer of VM, NOT memory inside wasm module
 
 #ifdef WASM
 
@@ -121,6 +122,11 @@ extern "C" unsigned int *memory = 0;// dummies, remove!
 extern "C" /*unsigned */ char *current = 0;// dummies, remove!
 extern bool throwing;// false for error tests etc
 //extern bool panicing;// false for error tests etc
+
+
+double powd(double x, double y) {// why this crutch? maybe conflicting pow's in all those xyz_math.h
+	return pow(x, y);
+}
 
 int raise(chars error) {
 //#ifdef WASM3
@@ -274,7 +280,7 @@ void warning(chars warning) {
 }
 
 
-int square(int a) {
+int squari(int a) {
 	return a * a;
 }
 

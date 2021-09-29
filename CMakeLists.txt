@@ -15,6 +15,12 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 #ADD_COMPILE_DEFINITIONS(DEBUG_WASM3)
 
 if (NOT WASM)
+#    if (SDL)
+find_package(SDL2 REQUIRED)
+ADD_COMPILE_DEFINITIONS(SDL)
+include_directories(${SDL2_INCLUDE_DIRS})
+set(SOURCE_FILES ${SOURCE_FILES} source/Paint.cpp) # if SDL
+#    endif ()
 #    set(WEBAPP 1) # compile with WebView for electron like standalone apps.
 endif ()
 # V8 has wasm, so no m3 needed in release. can we even debug through V8??
@@ -28,7 +34,7 @@ if (WEBAPP)
     SET(RUNTIME_ONLY 0) # we can emit to V8, right??
 endif ()
 if (WASM)
-    SET(WASM3 0)
+    SET(WASM3 0) # No wasm-VM inside wasm
     REMOVE_DEFINITIONS(WASM3)
     #    referenceTypes bulkMemory works in FF
     #    ADD_COMPILE_FLAG("-O0 -s WASM_BIGINT") should work in WebKit but we only use standard MVP features for now!
@@ -64,9 +70,9 @@ if (NOT WASM)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm:
-        #                set(MICRO 1) # NOT Mac M1 Arm64 ready!  wasm-micro-runtime => wasm_runner_micro.cpp
+        set(MICRO 1) # NOT Mac M1 Arm64 ready!  should be AARCH64 NOW! wasm-micro-runtime => wasm_runner_micro.cpp
         #                set(WABT 1) # SLOW on Mac M1!  wasm_runner_wabt.cpp
-        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+        #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #        set(wasmx 1)	// doesn't work: cannot insert imports or function types!
     endif ()
 endif ()
@@ -236,8 +242,8 @@ elseif (WASI)
     ADD_COMPILE_FLAG("--sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot")
     #  ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
     #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
-    add_executable(wasp.wasm ${SOURCE_FILES})
-    add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
+    add_executable(${PROJECT_NAME}.wasm ${SOURCE_FILES})
+    add_custom_target(BuildWasi ALL DEPENDS ${PROJECT_NAME}.wasm)
 elseif (MICRO) # wasm-micro-vm:
     if (WASI)
         message(WASI and wasm-micro-vm no good!?)
@@ -274,16 +280,17 @@ elseif (MICRO) # wasm-micro-vm:
     #    set (WAMR_BUILD_TARGET "X86_32")
     #    ADD_COMPILE_DEFINITIONS(WASM_ENABLE_FAST_INTERP)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
-    add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
+    add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
 
     if (APPLE)
-        target_link_libraries(wasp vmlib -ldl -lpthread) # -lm
+        target_link_libraries(${PROJECT_NAME} vmlib -ldl -lpthread) # -lm
     else ()
-        target_link_libraries(wasp vmlib -ldl -lpthread -lrt)
+        target_link_libraries(${PROJECT_NAME} vmlib -ldl -lpthread -lrt)
     endif ()
+    target_link_libraries(${PROJECT_NAME} SDL2::SDL2)
 
-    add_custom_target(BuildEmitter ALL DEPENDS wasp) #.exe
-    target_include_directories(wasp PUBLIC
+    #    add_custom_target(BuildEmitter ALL DEPENDS ${PROJECT_NAME}) #.exe
+    target_include_directories(${PROJECT_NAME} PUBLIC
             ${WAMR_ROOT_DIR}/core/iwasm/interpreter/
             ${WAMR_ROOT_DIR}/include
             ${WAMR_ROOT_DIR}/core/iwasm/
@@ -316,12 +323,9 @@ elseif (WEBAPP)
     target_link_libraries(${PROJECT_NAME} PUBLIC webview)
 elseif (WASM3)
     MESSAGE(wasm3 VM)
-    find_package(SDL2 REQUIRED)
-    ADD_COMPILE_DEFINITIONS(SDL)
-    include_directories(${SDL2_INCLUDE_DIRS})
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     include(wasm3/cmake_install.cmake)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp source/Paint.cpp source/types/Number.cpp source/types/Number.h)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp source/types/Number.cpp source/types/Number.h)
     add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)
     add_executable(${PROJECT_NAME} ${SOURCE_FILES})
     target_include_directories(${PROJECT_NAME} PUBLIC wasm3/source)
