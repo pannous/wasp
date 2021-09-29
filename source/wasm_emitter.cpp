@@ -417,7 +417,7 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 	String &variable = ref.name;
 	if (!current.has(variable)) {
 		current.add(variable);
-		error("variable missed by parser! "_s + variable);
+		error("!! Variable missed by analyzer: "_s + variable);
 	}
 	int local_index = current.position(variable);
 	last_type = localTypes[context][local_index];
@@ -524,10 +524,12 @@ long emitData(Node node, String context) {
 			last_type = float64;
 			break;
 		case reference:
-			if (referenceIndices.has(node.name)) {
+			if (locals[current].has(node.name))
+				error("locals dont belong in emitData!");
+			else if (referenceIndices.has(node.name))
+				todo("emitData reference makes no sense? "s + node.name);
+			else
 				error("can't save unknown reference pointer "s + name);
-			} else
-				todo("emitData reference");
 			break;
 		case strings: {
 			int stringIndex = data_index_end + runtime.data_segments.length;// uh, todo?
@@ -1286,7 +1288,7 @@ Code emitBlock(Node node, String context) {
 	last_type = int32;
 	int locals_count = locals[context].size();
 	trace("found %d locals for %s"s % locals_count % context);
-	log(locals[context]);
+//	log(locals[context]);
 	int argument_count = functionSignatures[context].size();
 	if (locals_count >= argument_count)
 		locals_count = locals_count - argument_count;
@@ -1792,8 +1794,8 @@ Code memorySection() {
 	if (memoryHandling == import_memory or memoryHandling == no_memory) return Code();// handled elsewhere
 
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
-//	int pages = 1024;// 64kb each  makes VM slower!
-	int pages = 1;//  traps while(i<65336/4)k#i=0
+	int pages = 1024;// 64kb each  makes VM slower?
+//	int pages = 1;//  traps while(i<65336/4)k#i=0
 	auto code = createSection(memory_section, encodeVector(Code(1) + Code(0x00) + Code(pages)));
 	return code;
 }

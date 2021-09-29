@@ -738,6 +738,7 @@ public:
 		return indexOf(chr) >= 0;
 	}
 
+
 	String &replace(chars string, chars with) {// first only!
 		int i = this->indexOf(string);
 		if (i >= 0) {
@@ -750,6 +751,15 @@ public:
 
 	String &replace(chars string, String with) {// first only!
 		return replace(string, with.data);
+	}
+
+
+	String &replaceAll(String part, String with) {
+		String &done = *this;
+		if (with.contains(part))todo("incremental replaceAll");
+		while (done.contains(part))
+			done = done.replace(part, with);
+		return done;
 	}
 
 	String times(short i) {
