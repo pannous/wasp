@@ -1824,6 +1824,9 @@ void testSerialize() {
 }
 
 void testCurrent() { // move to tests() once OK
+	assert_run("42", 42);// WASM module instantiate failed: allocate memory failed
+	assert_emit("x=123;x + 4 is 127", true);
+	assert_emit("square 3", 9);
 	assert_emit("42", 42);
 	assert_emit("-42", -42);
 //	return;
