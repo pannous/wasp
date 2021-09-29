@@ -647,6 +647,7 @@ void testWasmModuleExtension() {
 	printf("testWasmModuleExtension");
 #ifndef RUNTIME_ONLY
 	functionSignatures.clear();
+//	memoryHandling=0;
 	Node charged = analyze(parse("test:=42"));
 	breakpoint_helper
 //	Code lib = emit(charged, 0, nil);// no main
@@ -1068,11 +1069,11 @@ void testAllWasm() {
 	testComparisonMath();
 	testComparisonId();
 	testWasmVariables0();
-	testWasmRuntimeExtension();
 	testWasmVariables0();
 	wasm_todos();
+	testWasmRuntimeExtension();
 	skip(
-			testWasmModuleExtension();
+			testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
 			testWasmRuntimeExtensionMock();
 	)
 //	data_mode = true;// allow

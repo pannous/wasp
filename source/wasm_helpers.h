@@ -100,6 +100,8 @@ void *alloc(int size, int num);
 
 void warn(chars);
 
+extern void error1(chars message, chars file = 0, int line = 0);
+
 void error(chars);
 
 //void log(char c);
