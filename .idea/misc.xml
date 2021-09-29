@@ -15,7 +15,6 @@
       <file path="$PROJECT_DIR$/js" />
       <file path="$PROJECT_DIR$/wabt" />
       <file path="$PROJECT_DIR$/wabt/third_party" />
-      <file path="$PROJECT_DIR$/wasm-micro-runtime" />
     </excludeRoots>
   </component>
   <component name="JavaScriptSettings">
