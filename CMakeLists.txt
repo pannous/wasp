@@ -4,35 +4,27 @@ project(wasp)
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
 LINK_DIRECTORIES(lib)
+LINK_DIRECTORIES(Frameworks)
 LINK_DIRECTORIES(/usr/local/lib)
 
-# If <variable> is already set as a normal or cache variable, then the command does nothing!! HUH?
-
 # SET these configurations via Preferences… Build->CMake->Profiles
-# force set these only for urgent debugging,
+# MANUALLY force set these only for urgent debugging,
 #set(RUNTIME_ONLY 0) # no Angle eval emit merge etc! ≠ NO_TESTS
-##set(VERBOSE 1)
+#set(VERBOSE 1)
 #set(DEBUG 1)
 #set(RELEASE 0) # no tests
-#set(SDL 1)
-#set(WEBAPP 1) # compile with WebView for electron like standalone apps.
+#set(SDL 1) # Graphics
+#set(WEBAPP 1) # WebView for electron like standalone apps.
 #set(WASM 1) # no WebView, duh
-#ADD_COMPILE_DEFINITIONS(DEBUG_WASM3)
+
+#ADD_COMPILE_DEFINITIONS(DEBUG_WASM3) # WASM3 best for development!
+# If <variable> is already set as a normal or cache variable, then the command does nothing!! HUH?
 
 
-if (NOT WASM)
-    if (SDL)
-        find_package(SDL2 REQUIRED)
-        ADD_COMPILE_DEFINITIONS(SDL)
-        remove_definitions(SERVER)
-        include_directories(${SDL2_INCLUDE_DIRS})
-        set(SOURCE_FILES ${SOURCE_FILES} source/Paint.cpp) # if SDL
-    endif ()
-endif ()
 # V8 has wasm, so no m3 needed in release. can we even debug through V8??
 # interestingly if we have a native app we don't need our wasp.wasm runtime because it's c++ compiled into app.
 # but we would need a million bindings and calls, also we would LEAVE OUR SANDBOX,
-# so definately ship wasp.wasm runtime in release!
+# so definitely ship wasp.wasm runtime in release!
 if (WEBAPP)
     ADD_COMPILE_DEFINITIONS(WEBAPP)
     SET(WASM 0)
@@ -42,7 +34,7 @@ endif ()
 if (WASM)
     SET(WASM3 0) # No wasm-VM inside wasm
     REMOVE_DEFINITIONS(WASM3)
-    #    referenceTypes bulkMemory works in FF
+    #    multi-value referenceTypes bulkMemory works in FF
     #    ADD_COMPILE_FLAG("-O0 -s WASM_BIGINT") should work in WebKit but we only use standard MVP features for now!
     SET(WEBAPP 0) # just be sure
     SET(SDL 0)
@@ -61,7 +53,7 @@ if (DEBUG)
     SET(DEPLOYMENT_POSTPROCESSING YES)
 endif ()
 
-#ADD_COMPILE_DEFINITIONS(NO_TESTS) # CAREFUL: most unused functions get optimized away
+#ADD_COMPILE_DEFINITIONS(NO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
 
 if (WASM)
     ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY) # no wasm reader != NO_TESTS
@@ -78,12 +70,12 @@ if (NOT WASM)
     if (NOT RUNTIME_ONLY)
         if (NOT WEBAPP)
             # TO EXECUTE wasm:
-            #        set(MICRO 1) # NOT Mac M1 Arm64 ready!  should be AARCH64 NOW! wasm-micro-runtime => wasm_runner_micro.cpp
-            #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+            #            SET(WASMTIME 1) # FASTEST!
             #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
-            #                    set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
-            #        set(wasmx 1)	// doesn't work: cannot insert imports or function types!
-            SET(WASMTIME 1)
+            #            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+            #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp
+            #            set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
+            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         endif ()
     endif ()
 endif ()
@@ -98,7 +90,14 @@ if (RELEASE)
     SET(SEPARATE_STRIP YES)
 endif ()
 
-set(CMAKE_CXX_STANDARD 20)
+
+if (SDL)
+    find_package(SDL2 REQUIRED)
+    ADD_COMPILE_DEFINITIONS(SDL)
+    remove_definitions(SERVER)
+    include_directories(${SDL2_INCLUDE_DIRS})
+    set(SOURCE_FILES ${SOURCE_FILES} source/Paint.cpp) # if SDL
+endif ()
 
 
 FUNCTION(ADD_COMPILE_FLAG value)
@@ -107,6 +106,9 @@ FUNCTION(ADD_COMPILE_FLAG value)
         SET(${variable} "${${variable}} ${value}" PARENT_SCOPE)
     ENDFOREACH (variable)
 ENDFUNCTION()
+
+set(CMAKE_CXX_STANDARD 20)
+
 ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
 ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
 ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
@@ -149,10 +151,6 @@ endif ()
 
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
 
-include_directories(/usr/local/lib)
-
-#target_include_directories(wasp PUBLIC source)
-
 # COMMON FOR ALL
 set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Wasp.cpp source/Angle.cpp source/wasm_helpers.cpp)
 
@@ -164,13 +162,6 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} source/Interpret.cpp)
 endif ()
 
-#    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
-if (WASMX)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
-endif ()
-
-if (WEBAPP)
-endif ()
 
 #
 # END OF GENERAL CONFIGURATION
@@ -318,7 +309,6 @@ elseif (MICRO) # wasm-micro-vm:
             #            VERSUS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
             )
 elseif (WABT)
-    #    System is unknown to cmake why?
     message(WABT)
     ADD_COMPILE_DEFINITIONS(WABT)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
@@ -326,29 +316,19 @@ elseif (WABT)
     #    add_subdirectory(wabt)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wabt.cpp)
     add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC wabt)
-    target_include_directories(wasp PUBLIC wabt/src)
-    target_include_directories(wasp PUBLIC wabt/src/interp)
-    #    target_link_libraries(wasp PRIVATE libwabt)
-    #    target_link_libraries(wasp PRIVATE libwasm.dylib) # libwabt.a 20 MB only for local stuff!
-    #    todo add other library path then : !!!
-    #    /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/
-    #    find_path(/usr/local/lib)
-    #    find_path(lib)
-    target_link_libraries(wasp PRIVATE wasm)
-    #    libwabt is called libwasm.dylib DANGER!
-    #    add_custom_target(Build_Wabt ALL DEPENDS angle) #.exe
+    target_include_directories(wasp PUBLIC Frameworks/wabt)
+    target_include_directories(wasp PUBLIC Frameworks/wabt/src)
+    target_include_directories(wasp PUBLIC Frameworks/wabt/src/interp)
+    target_link_libraries(wasp PRIVATE wasm)     #    libwabt is called libwasm.dylib DANGER!
 elseif (WASMER)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmer_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC wasmer-c-api)
-    #    add_subdirectory(wasmer-c-api) does not contain a CMakeLists.txt file
-    #    todo currently needs manual copying of wasmer/target/release/libwasmer.dylib to /usr/local/lib/
+    target_include_directories(wasp PUBLIC Frameworks/wasmer-c-api)
     target_link_libraries(wasp PRIVATE wasmer)
 elseif (WASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC wasmtime-c-api/include/)
+    target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
     target_link_libraries(wasp PRIVATE wasmtime)
 elseif (WEBAPP)
     include(source/WebView.cmake)
@@ -369,6 +349,10 @@ elseif (WASM3)
     endif ()
     #    target_link_libraries(wasp ${SDL2_LIBRARIES})
     #    add_custom_target(BuildWasm3 ALL DEPENDS angle) #.exe
+    #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
+elseif (WASMX)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
+    add_executable(wasp ${SOURCE_FILES})
 else () # NORMAL:
     message(NO WASM "${WASM}")
     if (DEBUG)
