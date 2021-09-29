@@ -1831,17 +1831,17 @@ void testWasmSpeed() {
 	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
 //	assert_emit("i=0;k='hi';while(i<16){i++;k#i=65};k[1]", 65)// still slow, but < 1s
 	//	70 ms PURE C -O3   123 ms  PURE C -O1  475 ms in PURE C without optimization
-	// 141 ms wasmtime very fast (similar to wasmer?)
-	// 150 ms WASMER VERY FAST!
-	// 546 ms in WebKit
+	//  141 ms wasmtime very fast (similar to wasmer?)
+	//  150 ms WASMER VERY FAST!
+	//  546 ms in WebKit
 	//	465 - 602 - 1364 - 3511 ms in wasm3  VERY inconsistent, but ok, it's an interpreter!
-	// 1000-3000 ms in wasm-micro-runtime :( // wow, SLOWER HOW!?
+	//	1687 ms wasmx (node.js)
+	//  1000-3000 ms in wasm-micro-runtime :( MESSES with system clock! // wow, SLOWER HOW!?
 //	so we can never draw 4k by hand wow. but why? only GPU can do more than 20 frames per second
 //	sleep(1);
 	gettimeofday(&stop, NULL);
 	time(&e);
 
-	// wasm-micro-runtime MESSES with system clock! (maybe fork!?)
 	printf("took %ld sec\n", e - s);
 	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
 
