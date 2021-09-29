@@ -3,6 +3,9 @@ project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
+LINK_DIRECTORIES(lib)
+LINK_DIRECTORIES(/usr/local/lib)
+
 # If <variable> is already set as a normal or cache variable, then the command does nothing!! HUH?
 
 # SET these configurations via Preferences… Build->CMake->Profiles
@@ -76,11 +79,11 @@ if (NOT WASM)
         if (NOT WEBAPP)
             # TO EXECUTE wasm:
             #        set(MICRO 1) # NOT Mac M1 Arm64 ready!  should be AARCH64 NOW! wasm-micro-runtime => wasm_runner_micro.cpp
-            #        set(WABT 1) # SLOW on Mac M1!  wasm_runner_wabt.cpp
             #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
-            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
-
+            #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+            #                    set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
             #        set(wasmx 1)	// doesn't work: cannot insert imports or function types!
+            SET(WASMTIME 1)
         endif ()
     endif ()
 endif ()
@@ -146,7 +149,9 @@ endif ()
 
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
 
-#target_include_directories(angle PUBLIC source)
+include_directories(/usr/local/lib)
+
+#target_include_directories(wasp PUBLIC source)
 
 # COMMON FOR ALL
 set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Wasp.cpp source/Angle.cpp source/wasm_helpers.cpp)
@@ -250,8 +255,8 @@ elseif (WASI)
     ADD_COMPILE_FLAG("--sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot")
     #  ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
     #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
-    add_executable(${PROJECT_NAME}.wasm ${SOURCE_FILES})
-    add_custom_target(BuildWasi ALL DEPENDS ${PROJECT_NAME}.wasm)
+    add_executable(wasp.wasm ${SOURCE_FILES})
+    add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
 elseif (MICRO) # wasm-micro-vm:
     if (WASI)
         message(WASI and wasm-micro-vm no good!?)
@@ -289,18 +294,18 @@ elseif (MICRO) # wasm-micro-vm:
     #    ADD_COMPILE_DEFINITIONS(WASM_ENABLE_FAST_INTERP)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
 
-    add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
+    add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
     if (APPLE)
-        target_link_libraries(${PROJECT_NAME} vmlib -ldl -lpthread) # -lm
+        target_link_libraries(wasp vmlib -ldl -lpthread) # -lm
     else ()
-        target_link_libraries(${PROJECT_NAME} vmlib -ldl -lpthread -lrt)
+        target_link_libraries(wasp vmlib -ldl -lpthread -lrt)
     endif ()
     if (SDL)
-        target_link_libraries(${PROJECT_NAME} SDL2::SDL2)
+        target_link_libraries(wasp SDL2::SDL2)
     endif ()
 
-    #    add_custom_target(BuildEmitter ALL DEPENDS ${PROJECT_NAME}) #.exe
-    target_include_directories(${PROJECT_NAME} PUBLIC
+    #    add_custom_target(BuildEmitter ALL DEPENDS wasp) #.exe
+    target_include_directories(wasp PUBLIC
             ${WAMR_ROOT_DIR}/core/iwasm/interpreter/
             ${WAMR_ROOT_DIR}/include
             ${WAMR_ROOT_DIR}/core/iwasm/
@@ -317,40 +322,52 @@ elseif (WABT)
     message(WABT)
     ADD_COMPILE_DEFINITIONS(WABT)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
-    include(wabt/cmake_install.cmake)
-    add_subdirectory(wabt)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wabt.cpp source/wasmer_runner.cpp source/wasmer_runner.h)
-    add_executable(angle ${SOURCE_FILES})
-    target_include_directories(angle PUBLIC wabt)
-    target_include_directories(angle PUBLIC wabt/src)
-    target_include_directories(angle PUBLIC wabt/src/interp)
-    target_link_libraries(angle PRIVATE libwabt) # libwabt.a 20 MB only for local stuff!
+    #    include(wabt/cmake_install.cmake)
+    #    add_subdirectory(wabt)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wabt.cpp)
+    add_executable(wasp ${SOURCE_FILES})
+    target_include_directories(wasp PUBLIC wabt)
+    target_include_directories(wasp PUBLIC wabt/src)
+    target_include_directories(wasp PUBLIC wabt/src/interp)
+    #    target_link_libraries(wasp PRIVATE libwabt)
+    #    target_link_libraries(wasp PRIVATE libwasm.dylib) # libwabt.a 20 MB only for local stuff!
+    #    todo add other library path then : !!!
+    #    /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/
+    #    find_path(/usr/local/lib)
+    #    find_path(lib)
+    target_link_libraries(wasp PRIVATE wasm)
+    #    libwabt is called libwasm.dylib DANGER!
     #    add_custom_target(Build_Wabt ALL DEPENDS angle) #.exe
 elseif (WASMER)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmer_runner.cpp)
-    add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-    target_include_directories(${PROJECT_NAME} PUBLIC wasmer-c-api)
+    add_executable(wasp ${SOURCE_FILES})
+    target_include_directories(wasp PUBLIC wasmer-c-api)
     #    add_subdirectory(wasmer-c-api) does not contain a CMakeLists.txt file
     #    todo currently needs manual copying of wasmer/target/release/libwasmer.dylib to /usr/local/lib/
-    target_link_libraries(${PROJECT_NAME} PRIVATE wasmer)
+    target_link_libraries(wasp PRIVATE wasmer)
+elseif (WASMTIME)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
+    add_executable(wasp ${SOURCE_FILES})
+    target_include_directories(wasp PUBLIC wasmtime-c-api/include/)
+    target_link_libraries(wasp PRIVATE wasmtime)
 elseif (WEBAPP)
     include(source/WebView.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/WebView.cpp source/WebServer.cpp)
-    add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-    target_link_libraries(${PROJECT_NAME} PUBLIC webview)
+    add_executable(wasp ${SOURCE_FILES})
+    target_link_libraries(wasp PUBLIC webview)
 elseif (WASM3)
     MESSAGE(wasm3 VM)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     include(wasm3/cmake_install.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp source/types/Number.cpp source/types/Number.h)
     add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)
-    add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-    target_include_directories(${PROJECT_NAME} PUBLIC wasm3/source)
-    target_link_libraries(${PROJECT_NAME} PRIVATE m3)
+    add_executable(wasp ${SOURCE_FILES})
+    target_include_directories(wasp PUBLIC wasm3/source)
+    target_link_libraries(wasp PRIVATE m3)
     if (SDL)
-        target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
+        target_link_libraries(wasp PRIVATE SDL2::SDL2)
     endif ()
-    #    target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
+    #    target_link_libraries(wasp ${SDL2_LIBRARIES})
     #    add_custom_target(BuildWasm3 ALL DEPENDS angle) #.exe
 else () # NORMAL:
     message(NO WASM "${WASM}")
@@ -359,11 +376,11 @@ else () # NORMAL:
         #    ADD_COMPILE_FLAG("-rdynamic -Wl,--no-as-needed -ldl") # just for backtrace
     endif ()
     if (RELEASE)
-        add_library(angle SHARED ${SOURCE_FILES})
+        add_library(wasp SHARED ${SOURCE_FILES})
     else ()
-        add_executable(angle ${SOURCE_FILES})
+        add_executable(wasp ${SOURCE_FILES})
     endif ()
-    #    TARGET_LINK_LIBRARIES(angle curl)
+    #    TARGET_LINK_LIBRARIES(wasp curl)
     #    add_custom_target(BuildWasp ALL DEPENDS angle)
 endif ()
 
