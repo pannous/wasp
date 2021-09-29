@@ -55,7 +55,7 @@ extern "C" void panic();//
 #endif
 
 int raise(chars error); // conflicts with signal.h if 'extern'
-
+int squari(int a);// stupid test remove
 //extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
 
@@ -65,6 +65,8 @@ extern "C" void logx(int i);// hex
 extern "C" void logi(int i);
 extern "C" void logp(long char_pointer);
 extern "C" void logf32(float f);
+
+double powd(double x, double y);
 
 extern "C" long squarel(long n);// test wasm, otherwise use x² => x*x in analyze!
 extern "C" double square(double n);// test wasm
