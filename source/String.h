@@ -111,7 +111,7 @@ typedef chars chars;
 #define error(msg) error1(msg,__FILE__,__LINE__)
 #define todo(msg) error1(msg,__FILE__,__LINE__)
 
-extern void error1(chars message, chars file = 0, int line = 0);
+//extern void error1(chars message, chars file = 0, int line = 0);
 
 //void error1(String message, chars file = 0, int line = 0);
 extern void info(chars);

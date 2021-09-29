@@ -11,17 +11,20 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 ##set(VERBOSE 1)
 #set(DEBUG 1)
 #set(RELEASE 0) # no tests
+#set(SDL 1)
+#set(WEBAPP 1) # compile with WebView for electron like standalone apps.
 #set(WASM 1) # no WebView, duh
 #ADD_COMPILE_DEFINITIONS(DEBUG_WASM3)
 
+
 if (NOT WASM)
-#    if (SDL)
-find_package(SDL2 REQUIRED)
-ADD_COMPILE_DEFINITIONS(SDL)
-include_directories(${SDL2_INCLUDE_DIRS})
-set(SOURCE_FILES ${SOURCE_FILES} source/Paint.cpp) # if SDL
-#    endif ()
-#    set(WEBAPP 1) # compile with WebView for electron like standalone apps.
+    if (SDL)
+        find_package(SDL2 REQUIRED)
+        ADD_COMPILE_DEFINITIONS(SDL)
+        remove_definitions(SERVER)
+        include_directories(${SDL2_INCLUDE_DIRS})
+        set(SOURCE_FILES ${SOURCE_FILES} source/Paint.cpp) # if SDL
+    endif ()
 endif ()
 # V8 has wasm, so no m3 needed in release. can we even debug through V8??
 # interestingly if we have a native app we don't need our wasp.wasm runtime because it's c++ compiled into app.
@@ -39,6 +42,7 @@ if (WASM)
     #    referenceTypes bulkMemory works in FF
     #    ADD_COMPILE_FLAG("-O0 -s WASM_BIGINT") should work in WebKit but we only use standard MVP features for now!
     SET(WEBAPP 0) # just be sure
+    SET(SDL 0)
     # ^^ UNSET, or better don't set manually at all!
 endif ()
 
@@ -69,11 +73,15 @@ if (NOT WASM)
     ADD_COMPILE_DEFINITIONS(_Backtrace_)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     if (NOT RUNTIME_ONLY)
-        # TO EXECUTE wasm:
-        set(MICRO 1) # NOT Mac M1 Arm64 ready!  should be AARCH64 NOW! wasm-micro-runtime => wasm_runner_micro.cpp
-        #                set(WABT 1) # SLOW on Mac M1!  wasm_runner_wabt.cpp
-        #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
-        #        set(wasmx 1)	// doesn't work: cannot insert imports or function types!
+        if (NOT WEBAPP)
+            # TO EXECUTE wasm:
+            #        set(MICRO 1) # NOT Mac M1 Arm64 ready!  should be AARCH64 NOW! wasm-micro-runtime => wasm_runner_micro.cpp
+            #        set(WABT 1) # SLOW on Mac M1!  wasm_runner_wabt.cpp
+            #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+
+            #        set(wasmx 1)	// doesn't work: cannot insert imports or function types!
+        endif ()
     endif ()
 endif ()
 
@@ -280,14 +288,16 @@ elseif (MICRO) # wasm-micro-vm:
     #    set (WAMR_BUILD_TARGET "X86_32")
     #    ADD_COMPILE_DEFINITIONS(WASM_ENABLE_FAST_INTERP)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
-    add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
 
+    add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
     if (APPLE)
         target_link_libraries(${PROJECT_NAME} vmlib -ldl -lpthread) # -lm
     else ()
         target_link_libraries(${PROJECT_NAME} vmlib -ldl -lpthread -lrt)
     endif ()
-    target_link_libraries(${PROJECT_NAME} SDL2::SDL2)
+    if (SDL)
+        target_link_libraries(${PROJECT_NAME} SDL2::SDL2)
+    endif ()
 
     #    add_custom_target(BuildEmitter ALL DEPENDS ${PROJECT_NAME}) #.exe
     target_include_directories(${PROJECT_NAME} PUBLIC
@@ -309,13 +319,20 @@ elseif (WABT)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     include(wabt/cmake_install.cmake)
     add_subdirectory(wabt)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wabt.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wabt.cpp source/wasmer_runner.cpp source/wasmer_runner.h)
     add_executable(angle ${SOURCE_FILES})
     target_include_directories(angle PUBLIC wabt)
     target_include_directories(angle PUBLIC wabt/src)
     target_include_directories(angle PUBLIC wabt/src/interp)
     target_link_libraries(angle PRIVATE libwabt) # libwabt.a 20 MB only for local stuff!
     #    add_custom_target(Build_Wabt ALL DEPENDS angle) #.exe
+elseif (WASMER)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasmer_runner.cpp)
+    add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+    target_include_directories(${PROJECT_NAME} PUBLIC wasmer-c-api)
+    #    add_subdirectory(wasmer-c-api) does not contain a CMakeLists.txt file
+    #    todo currently needs manual copying of wasmer/target/release/libwasmer.dylib to /usr/local/lib/
+    target_link_libraries(${PROJECT_NAME} PRIVATE wasmer)
 elseif (WEBAPP)
     include(source/WebView.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/WebView.cpp source/WebServer.cpp)
@@ -330,7 +347,9 @@ elseif (WASM3)
     add_executable(${PROJECT_NAME} ${SOURCE_FILES})
     target_include_directories(${PROJECT_NAME} PUBLIC wasm3/source)
     target_link_libraries(${PROJECT_NAME} PRIVATE m3)
-    target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
+    if (SDL)
+        target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
+    endif ()
     #    target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
     #    add_custom_target(BuildWasm3 ALL DEPENDS angle) #.exe
 else () # NORMAL:

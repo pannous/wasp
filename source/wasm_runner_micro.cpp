@@ -95,8 +95,9 @@ static NativeSymbol native_symbols[] =
 				{       "powf",              (void *) powf,          "(ff)f", NULL, false},
 				{       "powi",              (void *) powi,          "(ii)I", NULL, false},
 				{       "__cxa_begin_catch", (void *) powi,          "(*)i",  NULL, false},
+#ifdef SDL
 				{       "init_graphics",     (void *) init_graphics, "()I",   NULL, false},
-
+#endif
 		};
 
 //wasm_trap_t *
