@@ -65,26 +65,37 @@ long get_pow2x(wasm_exec_env_t grr, long x, long y) {
 }
 
 // f:float F:double i:int I:long no comma in arg list pow :: (FF)F
+
+// https://github.com/bytecodealliance/wasm-micro-runtime/blob/main/doc/export_native_api.md
+/*
+'i': i32
+'I': i64
+'f': f32
+'F': f64
+'*': a buffer address in WASM application
+'~': the byte length of WASM buffer as referred by preceding argument "*". It must follow after '*'
+'$': a string in WASM application
+*/
 static NativeSymbol native_symbols[] =
 		{        // WAVM can call f(float) f(char*)! No JS restrictions!!
 				{
 						"get_pow",            // the name of WASM function name
-						           (void *) get_pow,            // the native function pointer
-						                            "(ii)i",            // the function prototype signature, avoid to use i32
-						                                     NULL,                // attachment is NULL
-						                                           false
+						                     (void *) get_pow,            // the native function pointer
+						                                             "(ii)i",            // the function prototype signature, avoid to use i32
+						                                                      NULL,                // attachment is NULL
+						                                                            false
 				},
-				{       "square",  (void *) squari, "(i)i",  NULL, false},
-				{       "√",       (void *) sqrt1,  "(i)i",  NULL, false},
-				{       "logi",    (void *) logi,   "(i)",   NULL, false},
-				{       "log_f32", (void *) logf32, "(f)",   NULL, false},
-				{       "logf",    (void *) logf32, "(f)",   NULL, false},
-				{       "logs",    (void *) logs,   "(i)",   NULL, false},
-				{       "pow",     (void *) powd,   "(FF)F", NULL, false},
-				{       "powf",    (void *) powf,   "(ff)f", NULL, false},
-				{       "powi",    (void *) powi,   "(ii)I", NULL, false},
-				{       "__cxa_begin_catch", (void *) powi, "(*)i", NULL, false},
-				{       "init_graphics", (void *) init_graphics, "()I", NULL, false},
+				{       "square",            (void *) squari,        "(i)i",  NULL, false},
+				{       "√",                 (void *) sqrt1,         "(i)i",  NULL, false},
+				{       "logi",              (void *) logi,          "(i)",   NULL, false},
+				{       "log_f32",           (void *) logf32,        "(f)",   NULL, false},
+				{       "logf",              (void *) logf32,        "(f)",   NULL, false},
+				{       "logs",              (void *) logs,          "(i)",   NULL, false},
+				{       "pow",               (void *) powd,          "(FF)F", NULL, false},
+				{       "powf",              (void *) powf,          "(ff)f", NULL, false},
+				{       "powi",              (void *) powi,          "(ii)I", NULL, false},
+				{       "__cxa_begin_catch", (void *) powi,          "(*)i",  NULL, false},
+				{       "init_graphics",     (void *) init_graphics, "()I",   NULL, false},
 
 		};
 
@@ -156,12 +167,12 @@ void init_vm(RuntimeInitArgs init_args, NativeSymbol *native_symbols, int symbol
 		printf("INITIALIZING WASM VM\n");
 		done = true;
 	}
-
-	static char global_heap_buf[512 * 1024];
-	//	init_args.mem_alloc_type = Alloc_With_Pool;
 	init_args.mem_alloc_type = Alloc_With_System_Allocator;// works with runtime!
-	init_args.mem_alloc_option.pool.heap_buf = global_heap_buf;
-	init_args.mem_alloc_option.pool.heap_size = sizeof(global_heap_buf);
+
+//	static char global_heap_buf[512 * 1024];// what is this?
+	//	init_args.mem_alloc_type = Alloc_With_Pool;
+//	init_args.mem_alloc_option.pool.heap_buf = global_heap_buf;
+//	init_args.mem_alloc_option.pool.heap_size = sizeof(global_heap_buf);
 
 	// Native symbols need below registration phase
 	init_args.n_native_symbols = symbol_count / sizeof(NativeSymbol);
@@ -193,16 +204,6 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 =
 		char *native_buffer = NULL;
 		uint32_t wasm_buffer = 0;
 
-		// https://github.com/bytecodealliance/wasm-micro-runtime/blob/main/doc/export_native_api.md
-		/*
-		'i': i32
-		'I': i64
-		'f': f32
-		'F': f64
-		'*': a buffer address in WASM application
-		'~': the byte length of WASM buffer as referred by preceding argument "*". It must follow after '*'
-		'$': a string in WASM application
-	*/
 
 		module = wasm_runtime_load(buffer, buf_size, error_buf, sizeof(error_buf));
 		if (!module) {
