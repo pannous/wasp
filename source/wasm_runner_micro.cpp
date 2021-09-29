@@ -21,6 +21,7 @@
 
 #include "bh_read_file.h"
 #include "bh_getopt.h"
+#include "Paint.h"
 
 //void logi(int x);
 uint8_t buffer0[] = {// test program
@@ -82,6 +83,9 @@ static NativeSymbol native_symbols[] =
 				{       "pow",     (void *) powd,   "(FF)F", NULL, false},
 				{       "powf",    (void *) powf,   "(ff)f", NULL, false},
 				{       "powi",    (void *) powi,   "(ii)I", NULL, false},
+				{       "__cxa_begin_catch", (void *) powi, "(*)i", NULL, false},
+				{       "init_graphics", (void *) init_graphics, "()I", NULL, false},
+
 		};
 
 //wasm_trap_t *
@@ -154,7 +158,8 @@ void init_vm(RuntimeInitArgs init_args, NativeSymbol *native_symbols, int symbol
 	}
 
 	static char global_heap_buf[512 * 1024];
-	init_args.mem_alloc_type = Alloc_With_Pool;
+	//	init_args.mem_alloc_type = Alloc_With_Pool;
+	init_args.mem_alloc_type = Alloc_With_System_Allocator;// works with runtime!
 	init_args.mem_alloc_option.pool.heap_buf = global_heap_buf;
 	init_args.mem_alloc_option.pool.heap_size = sizeof(global_heap_buf);
 
