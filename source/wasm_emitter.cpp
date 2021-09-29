@@ -1432,8 +1432,9 @@ Code importSection() {
 	int extra_mem = 0;
 	if (memoryHandling == import_memory) {
 		extra_mem = 1;// add to import_section but not to functions:import_count
+		int init_page_count = 1024; // 64kb each, 65336 pages max
 		imports = imports + encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 +
-		          (byte) 0x01;;
+		          Code(init_page_count);
 	}
 	if (imports.length == 0)return Code();
 	auto importSection = createSection(import_section, Code(import_count + extra_mem) + imports);// + sqrt_ii
@@ -1794,7 +1795,7 @@ Code memorySection() {
 	if (memoryHandling == import_memory or memoryHandling == no_memory) return Code();// handled elsewhere
 
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
-	int pages = 1024;// 64kb each  makes VM slower?
+	int pages = 1024 * 10;// 64kb each, 65336 pages max. makes VM slower?
 //	int pages = 1;//  traps while(i<65336/4)k#i=0
 	auto code = createSection(memory_section, encodeVector(Code(1) + Code(0x00) + Code(pages)));
 	return code;
