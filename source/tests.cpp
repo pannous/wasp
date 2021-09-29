@@ -1738,8 +1738,10 @@ void testUnits() {
 }
 
 void testPaint() {
+	#ifdef SDL
 	init_graphics();
 	while (1)requestAnimationFrame(-1);
+#endif
 }
 
 
@@ -1757,33 +1759,24 @@ void print_timestamp() {
 #include <sys/time.h>
 
 void testPaintWasm() {
-	print_timestamp();
-//	struct timeval start, stop;
 	struct timeval stop, start;
 	gettimeofday(&start, NULL);
 	// todo: let compiler compute constant expressions like 1024*65536/4
 //	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
-
 //out of bounds memory access if only one Memory page!
 	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
 	// wow, SLOWER in wasm-micro-runtime HOW!?
-//	sleep(10);
-	print_timestamp();
-	//do stuff
-
 //	exit(0);
-//	char *wasm_paint_routine = "surface=init_graphics();surface#1=0;surface#3=0;surface#4=0;surface#5=0";
-//char *wasm_paint_routine = "surface=init_graphics();i=10;while(i<10000){i++;surface#i=0;}";// todo : access true  c memory from wasm!
 //	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=255;};0";
 //	assert_emit(wasm_paint_routine, 0);
 	gettimeofday(&stop, NULL);
-	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
-//	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+//	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
+	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
 	exit(0);
-//	char *wasm_paint_routine = "init_graphics();10";
-//char *wasm_paint_routine = "surface=init_graphics;while(1) 1+1";
 //char *wasm_paint_routine = "init_graphics(); while(1){requestAnimationFrame()}";// SDL bugs a bit
+#ifdef SDL
 	while (1)requestAnimationFrame(0);// help a little
+#endif
 }
 
 // for better readability, not (yet) semantic
@@ -1826,18 +1819,50 @@ void testSerialize() {
 	assertSerialize(input);
 }
 
+
+void testWasmSpeed() {
+	struct timeval stop, start;
+	gettimeofday(&start, NULL);
+	time_t s, e;
+	time(&s);
+	// todo: let compiler compute constant expressions like 1024*65536/4
+	//out of bounds memory access if only one Memory page!
+	//	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
+	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
+//	assert_emit("i=0;k='hi';while(i<16){i++;k#i=65};k[1]", 65)// still slow, but < 1s
+	//	70 ms PURE C -O3   123 ms  PURE C -O1
+	// 150 ms WASMER VERY FAST!!
+	//	475 ms in PURE C!! so we can never draw 4k by hand wow. but why??
+	// 546 ms in WebKit
+	//	465 - 602 - 1364 - 3511 ms in wasm3  VERY inconsistent, but ok, it's an interpreter!
+	// 1000-3000 ms in wasm-micro-runtime :( // wow, SLOWER HOW!?
+//	sleep(1);
+	gettimeofday(&stop, NULL);
+	time(&e);
+
+	// wasm-micro-runtime MESSES with system clock! (maybe fork!?)
+	printf("took %ld sec\n", e - s);
+	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+
+	exit(0);
+}
+
 void testCurrent() { // move to tests() once OK
+	testWasmSpeed();
 //	testPaintWasm();
+	assert_emit("42", 42);// WASM module instantiate failed: allocate memory failed
+	assert_emit("-42", -42);
+//	assert_run not compatible with Wasmer, don't ask why, we don't know;)
+//	assert_run("42", 42);// WASM module instantiate failed: allocate memory failed
+	assert_emit("x=123;x + 4 is 127", true);
+	assert_emit("square 3", 9);
+//	return;
+
 	testIndexWasm();
+//	testWasmModuleExtension();
 	testStringIndicesWasm();
 	testArrayIndicesWasm();
 
-	assert_run("42", 42);// WASM module instantiate failed: allocate memory failed
-	assert_emit("x=123;x + 4 is 127", true);
-	assert_emit("square 3", 9);
-	assert_emit("42", 42);
-	assert_emit("-42", -42);
-//	return;
 
 	assert_emit("maxi=3840*2160;maxi", 3840 * 2160);
 	testSerialize();

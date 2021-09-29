@@ -84,7 +84,7 @@ int test_wasm3(const uint8_t *prog, int len) {
 		mod.link_optional<ext_memcpy0>("*", "ext_memcpy0");
 		mod.link_optional<sqrt1>("*", "√");
 		mod.link_optional<square2>("*", "square");
-		mod.link_optional<pow2>("*", "pow");
+		mod.link_optional<powd>("*", "pow");
 		mod.link_optional<powi>("*", "powi");
 		mod.link_optional<logf32>("*", "logf");// danger logf is cuda function!
 		mod.link_optional<logi>("*", "logi");// danger logf is cuda function!
@@ -93,9 +93,10 @@ int test_wasm3(const uint8_t *prog, int len) {
 //		mod.link_optional<logp>("*", "logs");// added m3_type_to_sig in wasm3_cpp.h !
 		mod.link_optional<panic>("*", "panic");
 		mod.link_optional<raise>("*", "raise");
+#ifdef SDL
 		mod.link_optional<init_graphics>("*", "init_graphics");// returns pointer to surface
-		mod.link_optional<init_graphics>("*", "requestAnimationFrame");// returns pointer to surface
-
+		mod.link_optional<requestAnimationFrame>("*", "requestAnimationFrame");// returns pointer to surface
+#endif
 //		wasm3::function main_fn = runtime.find_function("_start");
 		wasm3::function main_fn = runtime.find_function("main");
 		auto res = main_fn.call<int>();
