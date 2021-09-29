@@ -475,3 +475,10 @@ long powi(int a, int b) {
 //	while (b-->0)c=c*a;
 //	return c;
 //}
+
+//#ifndef SDL
+//#ifndef WEBAPP
+//long init_graphics();
+//int requestAnimationFrame(int wasm_offset){return -1;};
+//#endif
+//#endif

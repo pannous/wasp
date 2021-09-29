@@ -10,6 +10,10 @@
 #include "Angle.h"
 #include "WebServer.hpp"
 
+int requestAnimationFrame(int wasm_offset) {
+	return 0;
+}
+
 /* supported in WebKit:
 ✔️	multiValue
 ✔️	mutableGlobals
@@ -142,7 +146,7 @@ void splitLog(const std::string s) {
 	}
 }
 
-int init_graphics() {
+long init_graphics() {
 	printf("\nWebView!\n");
 
 	// add [w] to closure to make it local

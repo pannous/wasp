@@ -1829,7 +1829,8 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		int newly_pre_registered = 0;//declaredFunctions.size();
 		last_index = runtime_offset - 1;
 	} else {
-		memoryHandling = import_memory; //  internal_memory; // error in micro-runtime
+//		memoryHandling = import_memory; // works for micro-runtime
+		memoryHandling = internal_memory; // works for wasm3
 		last_index = -1;
 		runtime = *new Module();// all zero
 		runtime_offset = 0;
