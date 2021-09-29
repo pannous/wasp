@@ -66,15 +66,11 @@ int64_t WASM_EXPORT test_memcpy0(void) {
 	return x;
 }
 
-double pow2(double x, double y) {// why this crutch? maybe conflicting pow's in all those xyz_math.h
-	return pow(x, y);
-}
 
 // todo: remove this useless test function
 int square2(int a) {
 	return a * a;
 }
-void *wasm_memory;
 int test_wasm3(const uint8_t *prog, int len) {
 //	std::cout << "Loading WebAssembly..." << std::endl;
 	try {
