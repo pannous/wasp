@@ -1770,29 +1770,65 @@ void testPaintWasm() {
 //	sleep(10);
 //	print_timestamp();
 	//do stuff
-	gettimeofday(&stop, NULL);
-	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+
 //	exit(0);
 //	char *wasm_paint_routine = "surface=init_graphics();surface#1=0;surface#3=0;surface#4=0;surface#5=0";
 //char *wasm_paint_routine = "surface=init_graphics();i=10;while(i<10000){i++;surface#i=0;}";// todo : access true  c memory from wasm!
-	char *wasm_paint_routine = "maxi=3840*2160;init_graphics();surface=(1,2,3);i=10000;while(i<maxi){i++;surface#i=22528;};10";// 88
+	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=255;};0";
+	gettimeofday(&stop, NULL);
+	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
 //	char *wasm_paint_routine = "init_graphics();10";
 //char *wasm_paint_routine = "surface=init_graphics;while(1) 1+1";
 //char *wasm_paint_routine = "init_graphics(); while(1){requestAnimationFrame()}";// SDL bugs a bit
-	assert_emit(wasm_paint_routine, 10);
+	assert_emit(wasm_paint_routine, 0);
 	while (1)requestAnimationFrame(0);// help a little
+}
+
+// for better readability, not (yet) semantic
+String normSerialization(String input) {
+	input = input.replaceAll("; ", ";");
+	input = input.replaceAll(" ;", ";");
+	input = input.replaceAll("( ", "(");
+	//	input=input.replaceAll("((", "(");// NO!
+	//	input=input.replaceAll("))", ")");
+	input = input.replaceAll(":", "=");// danger!
+	input = input.replaceAll(" ", "");// VERY danger! (1 2 3) 123
+	return input;
+}
+
+void assertSerialize(const char *input) {
+	Node parsed = parse(input);
+	const String &serialized = parsed.serialize();
+	Node parsed2 = parse(serialized);
+	bool equalsX = assert_equals_x(parsed, parsed2);
+	if (!equalsX) {
+		print(parsed);
+		print("≠");
+		print(parsed2);
+
+		print("----------------");
+		print(input);
+		print("≠");
+		print(serialized);
+		print("----------------");
+		print(normSerialization(input));
+		print("≠");
+		print(normSerialization(serialized));
+		error("Serialization Error");
+	}
+}
+
+void testSerialize() {
+	const char *input = "green=256*255";
+//	const char *input = "blue=255;green=256*255;maxi=3840*2160/2;init_graphics();surface=(1,2,3);i=10000;while(i<maxi){i++;surface#i=blue;};10";
+	assertSerialize(input);
 }
 
 void testCurrent() { // move to tests() once OK
 	assert_emit("maxi=3840*2160;maxi", 3840 * 2160);
-
-//	testPaintWasm();
+	testSerialize();
+	testPaintWasm();
 //	exit(0);
-	assert_emit("k='hi';k#1=65;k#2", 'i')
-
-	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
-
-	assert_emit("i=1;k='hi';k#i", 'h')
 //	testPaintWasm();
 	testWasmMemoryIntegrity();
 	testIndexWasm();

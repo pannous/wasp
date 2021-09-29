@@ -828,6 +828,7 @@ String Node::serialize() const {
 		}
 	}
 	if (length >= 0) {
+		if (kind == expression and not name.empty())wasp += ":";
 		// skip single element braces: a == (a)
 		if (not grouper and (length != 1 or kind == patterns)) {
 			if (kind == groups)wasp += "(";

@@ -119,6 +119,10 @@ void testMathPrimitives() {
 	assert_emit("i=0.0;i", 0.0);//
 	assert_is("3*-1", -3);
 	assert_emit("3*-1", -3);
+
+	assert_emit("maxi=3840*2160", 3840 * 2160);
+	assert_emit("maxi=3840*2160;maxi", 3840 * 2160);
+	assert_emit("blue=255;green=256*255;", 256 * 255);
 }
 
 void testFloatOperators() {
@@ -993,6 +997,10 @@ void testIndexWasm() {
 	assert_emit("k='hi';i=1;k#i=97;k#i", 'a')
 	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
 	assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+
+	assert_emit("k='hi';k#1=65;k#2", 'i')
+	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
+	assert_emit("i=2;k='hio';k#i", 'i')
 }
 
 void testAllWasm() {

@@ -725,6 +725,8 @@ Node analyze(Node node, String context) {
 
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	Type type = node.kind;
+	String &name = node.name;
+
 	List<String> &localContext = locals[context];
 	List<Valtype> &localContextTypes = localTypes[context];
 //	if (localContext.size() == 0){
@@ -732,22 +734,26 @@ Node analyze(Node node, String context) {
 //		localContextTypes.add(int32);// UNKNOWN / could be anything!!
 //	}
 	if (type == functor) {
-		if (node.name == "while")return groupWhile(node);
-		if (node.name == "if")return groupIf(node);
-		if (node.name == "?")return groupIf(node);
+		if (name == "while")return groupWhile(node);
+		if (name == "if")return groupIf(node);
+		if (name == "?")return groupIf(node);
+	}
+	if ((type == expression and not name.empty())) {
+		localContext.add(name);
+		localContextTypes.add(int32);//  todo deep type analysis x = π * fun() % 4
 	}
 	if (type == keyNode) {
-		if (not localContext.has(node.name)) {
-			localContext.add(node.name);
+		if (not localContext.has(name)) {
+			localContext.add(name);
 			localContextTypes.add(mapType(*node.value.node));
 		}
 		if (node.value.node /* i=ø has no node */)
 			node.value.node = analyze(*node.value.node).clone();
 	}
 	if (isPrimitive(node)) {
-		if (isVariable(node) and not localContext.has(node.name)) {
+		if (isVariable(node) and not localContext.has(name)) {
 			// or type == codepoints …
-			localContext.add(node.name);// need to pre-register before emitBlock!
+			localContext.add(name);// need to pre-register before emitBlock!
 			localContextTypes.add(mapType(node));
 		}
 		return node;// nothing to be analyzed!
@@ -763,8 +769,8 @@ Node analyze(Node node, String context) {
 			const Node &analyze1 = analyze(child);
 			child = analyze1;// REPLACE with their ast? NO! todo
 		}
-		if (functionSignatures.has(node.name))
-			functionSignatures[node.name].is_used = true;
+		if (functionSignatures.has(name))
+			functionSignatures[name].is_used = true;
 		return grouped;
 	}
 
