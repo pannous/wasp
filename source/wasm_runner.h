@@ -14,9 +14,9 @@ int run_wasm(char *wasm_path = "test.wasm");
 
 #ifdef WABT
 
-#include "ir.h" // Intermediate representation
+//#include "ir.h" // Intermediate representation
 
-int run_wasm(wabt::Module *module);
+//int run_wasm(wabt::Module *module);
 
 #endif
 #undef Module
