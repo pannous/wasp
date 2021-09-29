@@ -112,6 +112,7 @@ void testMathPrimitives() {
 
 	assert_emit("x=3;x*=3", 9)
 	assert_emit("'hello';(1 2 3 4);10", 10);
+	data_mode = false;
 	assert_emit("i=ø; not i", true);
 	assert_emit("0.0", (long) 0);// can't emit float yet
 	assert_emit(("x=15;x>=14"), 1)
@@ -376,10 +377,12 @@ void testWasmLogicUnaryVariables() {
 	assert_emit("i=0.0; not i", true);
 	assert_emit("i=false; not i", true);
 	assert_emit("i=0; not i", true);
+	data_mode = false;//todo remove crutch
 	assert_emit("i=true; not i", false);
+	assert_emit("i=ø; not i", true);
+	data_mode = true;
 	assert_emit("i=1; not i", false);
 	assert_emit("i=123; not i", false);
-	assert_emit("i=ø; not i", true);
 }
 
 void testWasmLogicUnary() {
@@ -759,6 +762,14 @@ void testStringIndicesWasm() {
 	assert_emit("'abcde'#4", 'd');//
 	assert_emit("x='abcde';x#4", 'd');//
 	assert_emit("x='abcde';x#4='x';x#4", 'x');
+
+	assert_emit("x='abcde';x#4='x';x#4", 'x');
+	assert_emit("x='abcde';x#4='x';x#5", 'e');
+
+	assert_emit("x='abcde';x#4='x';x[3]", 'x');
+	assert_emit("x='abcde';x#4='x';x[4]", 'e');
+	assert_emit("i=0;x='abcde';x#4='x';x[4]", 'e');
+
 	assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
 	assert_run("x='123';x=='123'", true);// ok
 	assert_run("x='123';x is '123'", true);// ok
@@ -801,6 +812,7 @@ void testArrayIndicesWasm() {
 	assert_throws("surface=(1,2,3);i=1;k#i=4;k#i")// no such k!
 
 //	testArrayIndices(); //	check node based (non-primitive) interpretation first
+	data_mode = true;// todo remove hack
 	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
 	assert_emit("logs('ok');", 0);
 	assert_emit("logs('ok');(1 4 3)#2", 4);
@@ -1007,7 +1019,7 @@ void testIndexWasm() {
 void testAllWasm() {
 	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
 
-	data_mode = false;
+//	data_mode = false;
 	testWasmMemoryIntegrity();
 #ifdef RUNTIME_ONLY
 	logs("RUNTIME_ONLY");
@@ -1015,9 +1027,10 @@ void testAllWasm() {
 //	return;
 #endif
 	skip(
-			testIndexWasm();
+			testIndexWasm();// breaks on second run WHY?
 	)
 
+	testStringIndicesWasm();
 	testWasmFunctionDefiniton();
 	testSquareExpWasm();
 	testRoundFloorCeiling();
@@ -1033,7 +1046,6 @@ void testAllWasm() {
 
 //	exit(21);
 	testWasmIncrement();
-
 // TRUE TESTS:
 	testComparisonIdPrecedence();
 	testRecentRandomBugs();
@@ -1063,5 +1075,5 @@ void testAllWasm() {
 			testWasmModuleExtension();
 			testWasmRuntimeExtensionMock();
 	)
-	data_mode = true;// allow
+//	data_mode = true;// allow
 }
