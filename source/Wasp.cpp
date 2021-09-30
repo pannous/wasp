@@ -1427,7 +1427,7 @@ int main(int argp, char **argv) {
 			if (arg == "app" or arg == "start" or arg == "webview" or arg == "browser" or arg == "run" or
 			    arg == "repl") {
 //				start_server(9999);
-#ifdef SDL
+#ifdef GRAFIX
 				init_graphics();
 #else
 				print("wasp compiled without sdl/webview");
@@ -1451,17 +1451,16 @@ int main(int argp, char **argv) {
 		log(args);
 		current += strlen0(args)+1;
 #endif
+#ifdef SERVER
+		//		start_server(9999);
+				std::thread go(start_server, 9999);
+#endif
 #ifdef WEBAPP
 		log("\nWEBAPP!");
 		// handing over to V8, we need to call testCurrent() from there!
-#ifdef SERVER
-//		start_server(9999);
-		std::thread go(start_server, 9999);
-#endif
 		init_graphics(); // startApp();
 #endif
 #ifndef NO_TESTS // RUNTIME_ONLY
-
 		testCurrent();
 #endif
 		return 42;

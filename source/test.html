@@ -99,6 +99,11 @@ window.onload = function () {
                     memory,
                     square: x => x * x, // usually native wasm, better test with 'double'!
                     pow: Math.pow,
+                    powi: (a, b) => {
+                        res = a;
+                        while (b-- > 1) res *= a;
+                        return BigInt(res);
+                    },
                     _Z3powdd: Math.pow,
                     logs: log,
                     logi: log,
