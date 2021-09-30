@@ -1632,7 +1632,7 @@ Code funcTypeSection() {// depends on codeSection, but must appear earlier in wa
 			if (typeIndex < 0) {
 				if (runtime_offset == 0) // todo else ASSUME all handled correctly before
 					error("missing typeMap for function %s index %d "s % fun % i);
-			} else
+			} else // just an implicit list funcId->typeIndex
 				types_of_functions.push((byte) typeIndex);
 		}
 	}
