@@ -137,26 +137,6 @@ typedef struct wasm_byte_vec_t2 {
 	size_t size_of_elem;
 } wasm_byte_vec_t2;
 
-int main2(int argc, char *argv_main[]) {
-// ALTERNATIVE mechanism:
-// running under mode 0 , yeah zero = old shit
-	wasm_byte_vec_t binary = {170, (wasm_byte_t *) buffer0, 170, 1};
-	wasm_engine_t *engine = wasm_engine_new();
-	wasm_store_t *store = wasm_store_new(engine);
-	wasm_functype_t *hello_type = wasm_functype_new_0_0();
-	wasm_func_t *hello_func = wasm_func_new(store, hello_type, hello_callback);
-	const wasm_extern_t *imports[] = {wasm_func_as_extern(hello_func)};
-//	const wasm_extern_vec_t *imports;// = {wasm_func_as_extern(hello_func)};
-//const wasm_extern_vec_t imports[] = {wasm_func_as_extern(hello_func)};
-
-	wasm_module_t *module2 = wasm_module_new(store, &binary);
-	wasm_instance_t *instance = wasm_instance_new(store, module2, (wasm_extern_vec_t *) imports, NULL);
-	wasm_extern_vec_t exports;
-	wasm_instance_exports(instance, &exports);
-	const wasm_func_t *run_func = wasm_extern_as_func(exports.data[0]);
-	wasm_func_call(run_func, NULL, NULL);
-	return 0;
-}
 
 void init_vm(RuntimeInitArgs init_args, NativeSymbol *native_symbols, int symbol_count) {
 	static bool done;
@@ -320,13 +300,4 @@ int run_wasm(chars wasm_path) {
 
 int run_wasm(bytes buffer, int buf_size) {
 	return run_wasm(reinterpret_cast<const uint8 *>(buffer), buf_size, 0);
-}
-
-int main3(int argc, char *argv_main[]) {
-	run_wasm(buffer0, sizeof(buffer0));//, 0);
-//	if (argc > 1)
-//		run_wasm((chars)argv_main[1]);
-//	else
-//		run_wasm();
-	return 0;
 }

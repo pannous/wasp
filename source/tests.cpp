@@ -1851,7 +1851,11 @@ void testWasmSpeed() {
 }
 
 void testCurrent() { // move to tests() once OK
+	assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
+
 //	testWasmSpeed();
+//	read_wasm("main.wasm"); wrong format
+
 	assert_emit("n=3;2ⁿ", 8);
 	assert_emit("square 3", 9);
 //	assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
