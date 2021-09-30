@@ -142,18 +142,48 @@ void parseFunctionNames(Code &payload) {
 //	  (import "env" "log_chars" (func (;0;) $logs (type 0)))  import names != internal names
 }
 
+//Map<int, Signature> funcTypes;
+List<Signature> funcTypes;// implicit index
 
+// not part of name section wtf
 void parseImportNames(Code &payload) {
 	trace("Imports:");
 	for (int i = 0; i < module.import_count and payload.start < payload.length; ++i) {
 		String mod = name(payload);// module
 		String name1 = name(payload).clone();// needs to be 0-terminated now
+		int huh = unsignedLEB128(payload);
 		int type = unsignedLEB128(payload);
-		int index = unsignedLEB128(payload);
 		trace(name1);
-		functionIndices[name1] = index;
-		functionSignatures[name1].import().runtime().handled();//.functionType(type);//.runtime()
+		Signature &signature = funcTypes[type];
+		functionIndices[name1] = i;
+		functionSignatures[name1] = signature;// overwrites any preregistered signatures OK cause correct!?
+		functionSignatures[name1].import().runtime().handled();//.functionType(huh);//.runtime()
+		module.import_names.add(name1);
 	}
+	module.signatures = functionSignatures;
+}
+
+
+void parse_functype_data(Code &payload) {
+	for (int i = 0; i < module.type_count and payload.start < payload.length; ++i) {
+		Signature sic;
+		int typ = unsignedLEB128(payload);// implicit?
+		if (typ != func)continue;
+		int param_count = unsignedLEB128(payload);
+		for (int j = 0; j < param_count; j++) {
+			Valtype argt = (Valtype) unsignedLEB128(payload);
+			sic.add(argt);
+		}
+		int returnc = unsignedLEB128(payload);
+		if (returnc) {
+			Valtype rt = (Valtype) unsignedLEB128(payload);
+			sic.returns(rt);
+		} else sic.returns(none);
+//		funcTypes.insert_or_assign(i,sic);
+		funcTypes.add(sic);
+	}
+	//	functionSignatures[]=  <<< map c++ types to wasp types??
+	//	functionIndices.position()
 }
 
 // todo: we need to parse this for automatic import
@@ -163,6 +193,8 @@ void consumeTypeSection() {
 	module.type_count = typeCount;
 	if (debug_reader)printf("types: %d\n", module.type_count);
 	module.type_data = type_vector.rest();
+	parse_functype_data(module.type_data);
+
 }
 
 void consumeStartSection() {
@@ -259,14 +291,13 @@ void consumeCustomSection() {
 	}
 }
 
+
 // connect func/code indices to type indices
 void consumeFuncTypeSection() {
 	Code type_vector = vec();
 	module.code_count = unsignedLEB128(type_vector);// import type indices are part of import struct!
 	if (debug_reader)printf("signatures: %d\n", module.code_count);
 	module.functype_data = type_vector.rest();
-//	functionSignatures[]=  <<< map c++ types to wasp types??
-//	functionIndices.position()
 }
 
 void consumeCodeSection() {
@@ -280,6 +311,7 @@ void consumeCodeSection() {
 
 
 #include <cxxabi.h> // for abi::__cxa_demangle
+
 // we can reconstruct arguments from demangled exports or retained wast names
 // _Z2eqPKcS0_i =>  func $eq_char_const*__char_const*__int_ <= eq(char const*, char const*, int)
 List<String> demangle_args(String &fun) {
@@ -462,22 +494,26 @@ void consumeSections() {
 
 #ifndef RUNTIME_ONLY
 
-Module read_wasm(chars file) {
+
+Module read_wasm(bytes buffer, int size0) {
 	module = *new Module();
 	pos = 0;
-	if (debug_reader)printf("--------------------------\n");
-#ifndef WASM
-	if (debug_reader)printf("parsing: %s\n", file);
-	size = fileSize(file);
-	bytes buffer = (bytes) alloc(1, size);// do not free
-	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
 	code = buffer;
+	size = size0;
 	consume(4, reinterpret_cast<byte *>(magicModuleHeader));
 	consume(4, reinterpret_cast<byte *>(moduleVersion));
 	consumeSections();
 	module.total_func_count = module.import_count + module.code_count;
-#endif
 	return module;
+}
+
+Module read_wasm(chars file) {
+	if (debug_reader)printf("--------------------------\n");
+	if (debug_reader)printf("parsing: %s\n", file);
+	size = fileSize(file);
+	bytes buffer = (bytes) alloc(1, size);// do not free
+	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
+	return read_wasm(buffer, size);
 }
 
 #endif

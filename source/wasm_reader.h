@@ -44,7 +44,11 @@ public:
 	Code local_names;
 	Code function_names;
 	int start_index;
+	List<String> import_names;
+	Map<String, Signature> signatures;
 };
+
+Module read_wasm(bytes buffer, int size);
 
 Module read_wasm(chars file);
 

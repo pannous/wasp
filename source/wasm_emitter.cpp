@@ -1380,7 +1380,7 @@ Code typeSection() {
 		signature.is_handled = true;
 		int param_count = signature.size();
 //		Code td = {0x60 /*const type form*/, param_count};
-		Code td = Code(0x60) + Code(param_count);
+		Code td = Code(func) + Code(param_count);
 
 		for (int i = 0; i < param_count; ++i) {
 			td = td + Code(fixValtype(signature.types[i]));

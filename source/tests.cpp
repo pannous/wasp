@@ -1563,6 +1563,8 @@ void testNodeBasics() {
 
 void tests() {
 	data_mode = true;// expect data unless explicit code
+	testSwitch();
+	testWasmMutableGlobal();
 	testAsserts();
 	testString();
 	testNodeName();
@@ -1849,14 +1851,18 @@ void testWasmSpeed() {
 }
 
 void testCurrent() { // move to tests() once OK
-	assert_emit("42", 42);// WASM module instantiate failed: allocate memory failed
-	testWasmSpeed();
-//	testPaintWasm();
-	assert_emit("-42", -42);
-//	assert_run not compatible with Wasmer, don't ask why, we don't know;)
-//	assert_run("42", 42);// WASM module instantiate failed: allocate memory failed
-	assert_emit("x=123;x + 4 is 127", true);
 	assert_emit("square 3", 9);
+//	assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
+	skip(
+			assert_emit("i=-9;√-i", 3);
+			assert_emit("i=-9;√ -i", 3);
+	)
+	assert_run("42", 42);// WASM module instantiate failed: allocate memory failed
+	assert_emit("42", 42);// WASM module instantiate failed: allocate memory failed
+//	testWasmSpeed();
+//	testPaintWasm();
+//	assert_run not compatible with Wasmer, don't ask why, we don't know;)
+	assert_emit("x=123;x + 4 is 127", true);
 //	return;
 
 	testIndexWasm();
@@ -1891,27 +1897,12 @@ void testCurrent() { // move to tests() once OK
 //	testPaintWasm();
 //	assert_run("render html{'test'}", 4);
 
-//	assert_emit("i=-9;√ -i", 3);
-//	assert_emit("i=-9;√-i", 3);
 	skip(
 			assert_emit("1 -3 - square 3+4", (long) -51);// warn?
-
 			assert_emit("xyz 3.7", 4); // todo SHOULD THROW unknown symbol!
-
 	//		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
-	)
-	skip(
 	//todo dissect operators!  π² COULD be symbol on its own so two path check!
 			assert_emit("√π²", 3);
-	)
-	check(pow(3, 3) == 27);
-	testSquareExpWasm();
-	testRoundFloorCeiling();
-	testSwitch();
-
-	testWasmMutableGlobal();
-//	exit(9);
-	skip(
 	// while without body
 			assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
 	)
@@ -1943,8 +1934,6 @@ void testCurrent() { // move to tests() once OK
 	tests();// make sure all still ok before changes
 	todos();// those not passing yet (skip)
 	testAllWasm();
-	testArrayIndicesWasm();
-	testStringIndicesWasm();
 	tests();// make sure all still ok after changes
 	printf("OK %ld==%ld", 2l, 2l);
 	check(contains("OK %ld==%ld", "%ld"));
