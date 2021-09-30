@@ -1852,6 +1852,7 @@ void testWasmSpeed() {
 
 void testCurrent() { // move to tests() once OK
 //	testWasmSpeed();
+	assert_emit("n=3;2ⁿ", 8);
 	assert_emit("square 3", 9);
 //	assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
 	skip(
