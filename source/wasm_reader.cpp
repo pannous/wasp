@@ -144,6 +144,18 @@ void parseFunctionNames(Code &payload) {
 
 //Map<int, Signature> funcTypes;
 List<Signature> funcTypes;// implicit index
+void parseFuncTypeSection(Code &payload) {
+	// we don't know here if i32 is pointer … so we may have to refine later
+	for (int i = 0; i < module.code_count and payload.start < payload.length; ++i) {
+		int typ = unsignedLEB128(payload);// implicit?
+		String *fun = functionIndices.lookup(i);
+		if (!fun)continue;
+//			error("no name for function "s+i);
+		Signature &s = funcTypes[typ];
+		Signature &sic = functionSignatures[*fun];
+		functionSignatures[*fun] = s;
+	}
+}
 
 // not part of name section wtf
 void parseImportNames(Code &payload) {
@@ -164,7 +176,7 @@ void parseImportNames(Code &payload) {
 }
 
 
-void parse_functype_data(Code &payload) {
+void parse_type_data(Code &payload) {
 	for (int i = 0; i < module.type_count and payload.start < payload.length; ++i) {
 		Signature sic;
 		int typ = unsignedLEB128(payload);// implicit?
@@ -193,7 +205,7 @@ void consumeTypeSection() {
 	module.type_count = typeCount;
 	if (debug_reader)printf("types: %d\n", module.type_count);
 	module.type_data = type_vector.rest();
-	parse_functype_data(module.type_data);
+	parse_type_data(module.type_data);
 
 }
 
@@ -504,6 +516,7 @@ Module read_wasm(bytes buffer, int size0) {
 	consume(4, reinterpret_cast<byte *>(moduleVersion));
 	consumeSections();
 	module.total_func_count = module.import_count + module.code_count;
+	parseFuncTypeSection(module.functype_data);// only after we have the name, so we can connect functionSignatures!
 	return module;
 }
 
