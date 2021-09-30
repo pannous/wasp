@@ -1833,10 +1833,10 @@ void testWasmSpeed() {
 	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
 //	assert_emit("i=0;k='hi';while(i<16){i++;k#i=65};k[1]", 65)// still slow, but < 1s
 	//	70 ms PURE C -O3   123 ms  PURE C -O1  475 ms in PURE C without optimization
-	//  141 ms wasmtime very fast (similar to wasmer?)
-	//  150 ms WASMER VERY FAST!
-	//  546 ms in WebKit
-	//	465 - 602 - 1364 - 3511 ms in wasm3  VERY inconsistent, but ok, it's an interpreter!
+	//  141 ms wasmtime very fast (similar to wasmer)
+	//  150 ms wasmer very fast!
+	//  546 ms in WebKit (todo: test V8/WebView2!)
+	//	465 - 3511 ms in WASM3  VERY inconsistent, but ok, it's an interpreter!
 	//	1687 ms wasmx (node.js)
 	//  1000-3000 ms in wasm-micro-runtime :( MESSES with system clock! // wow, SLOWER HOW!?
 //	so we can never draw 4k by hand wow. but why? only GPU can do more than 20 frames per second
@@ -1851,6 +1851,7 @@ void testWasmSpeed() {
 }
 
 void testCurrent() { // move to tests() once OK
+//	testWasmSpeed();
 	assert_emit("square 3", 9);
 //	assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
 	skip(
@@ -1859,7 +1860,6 @@ void testCurrent() { // move to tests() once OK
 	)
 	assert_run("42", 42);// WASM module instantiate failed: allocate memory failed
 	assert_emit("42", 42);// WASM module instantiate failed: allocate memory failed
-//	testWasmSpeed();
 //	testPaintWasm();
 //	assert_run not compatible with Wasmer, don't ask why, we don't know;)
 	assert_emit("x=123;x + 4 is 127", true);

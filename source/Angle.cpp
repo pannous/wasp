@@ -814,6 +814,9 @@ void preRegisterSignatures() {
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 
+	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));
+	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
+
 	if (functionSignatures.has("logs"))
 		return;// already imported runtime!
 
@@ -828,9 +831,7 @@ void preRegisterSignatures() {
 	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
 	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// todo why not rely on read_wasm again?
 	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));
-	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(
-			float32));// read_wasm doesn't have return types!
-	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
+
 //	functionSignatures.insert_or_assign("render", Signature().add(node).add(pointer).returns(none));
 	functionSignatures.insert_or_assign("render", Signature().runtime().add(node).returns(int32));
 //functionSignatures.insert_or_assign("render", Signature().add(node).add(pointer).returns(int32));
