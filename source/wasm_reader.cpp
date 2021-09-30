@@ -148,7 +148,7 @@ void parseFuncTypeSection(Code &payload) {
 	// we don't know here if i32 is pointer … so we may have to refine later
 	for (int i = 0; i < module.code_count and payload.start < payload.length; ++i) {
 		int typ = unsignedLEB128(payload);// implicit?
-		String *fun = functionIndices.lookup(i);
+		String *fun = functionIndices.lookup(i + module.import_count);
 		if (!fun)continue;
 //			error("no name for function "s+i);
 		Signature &s = funcTypes[typ];
@@ -186,16 +186,14 @@ void parse_type_data(Code &payload) {
 			Valtype argt = (Valtype) unsignedLEB128(payload);
 			sic.add(argt);
 		}
-		int returnc = unsignedLEB128(payload);
-		if (returnc) {
+		int return_count = unsignedLEB128(payload);
+		if (return_count) {// todo: multi-value
 			Valtype rt = (Valtype) unsignedLEB128(payload);
 			sic.returns(rt);
-		} else sic.returns(none);
-//		funcTypes.insert_or_assign(i,sic);
+		} else
+			sic.returns(none);
 		funcTypes.add(sic);
 	}
-	//	functionSignatures[]=  <<< map c++ types to wasp types??
-	//	functionIndices.position()
 }
 
 // todo: we need to parse this for automatic import
@@ -512,6 +510,7 @@ Module read_wasm(bytes buffer, int size0) {
 	pos = 0;
 	code = buffer;
 	size = size0;
+	funcTypes.clear();
 	consume(4, reinterpret_cast<byte *>(magicModuleHeader));
 	consume(4, reinterpret_cast<byte *>(moduleVersion));
 	consumeSections();

@@ -208,7 +208,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	if (eq(s, "$"))return get_local; // $0 $1 ...
 
 	trace("unknown or non-primitive operator %s\n"s %
-	      String(s));// can still be matched as function etc, e.g. 'a'+'b' is 'ab'
+	      String(s)); // can still be matched as function etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
 	breakpoint_helper
 //		error("invalid operator");
 	return 0;

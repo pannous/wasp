@@ -55,6 +55,14 @@ wrap(powd) {
 	return NULL;
 }
 
+wrap(powf) {
+	float n = args[0].of.f32;
+	float x = args[1].of.f32;
+	results[0].of.f32 = powf(n, x);
+	return NULL;
+}
+
+
 wrap(logs) {
 	int n = args[0].of.i32;
 	if (wasm_memory)
@@ -100,6 +108,7 @@ wasm_wrap *link_import(String name) {
 	if (name == "__cxa_begin_catch") return &wrap_nop;
 	if (name == "_ZdlPv") return &wrap_nop;// delete
 	if (name == "_Z3powdd") return &wrap_powd;
+	if (name == "pow") return &wrap_powd;
 	if (name == "_ZSt9terminatev") return &wrap_exit;
 	if (name == "proc_exit") return &wrap_exit;
 	if (name == "panic") return &wrap_exit;
