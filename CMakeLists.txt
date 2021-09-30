@@ -3,9 +3,10 @@ project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 
-LINK_DIRECTORIES(lib)
+#LINK_DIRECTORIES(lib)
 LINK_DIRECTORIES(Frameworks)
 LINK_DIRECTORIES(/usr/local/lib)
+LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
 
 # SET these configurations via Preferences… Build->CMake->Profiles
 # MANUALLY force set these only for urgent debugging,
@@ -70,8 +71,9 @@ if (NOT WASM)
     if (NOT RUNTIME_ONLY)
         if (NOT WEBAPP)
             # TO EXECUTE wasm:
-            #            https://github.com/WebAssembly/wasm-c-api <<<< WAMR == MICRO ???
-            SET(WASMTIME 1) # FASTEST!
+            # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
+            SET(V8 1)
+            #            SET(WASMTIME 1) # FASTEST!
             #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
             #            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
             #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp
@@ -354,6 +356,12 @@ elseif (WASM3)
 elseif (WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
     add_executable(wasp ${SOURCE_FILES})
+elseif (V8)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_v8.cpp)
+    add_executable(wasp ${SOURCE_FILES})
+    target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
+    target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/v8/include/)
+    target_link_libraries(wasp PRIVATE v8 v8_libplatform wasm)
 else () # NORMAL:
     message(NO WASM "${WASM}")
     if (DEBUG)
