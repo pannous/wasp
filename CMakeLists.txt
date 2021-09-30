@@ -15,45 +15,9 @@ LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
 #set(DEBUG 1)
 #set(RELEASE 0) # no tests
 #set(SDL 1) # Graphics
-#set(WEBAPP 1) # WebView for electron like standalone apps.
 #set(WASM 1) # no WebView, duh
 
 #ADD_COMPILE_DEFINITIONS(DEBUG_WASM3) # WASM3 best for development!
-# If <variable> is already set as a normal or cache variable, then the command does nothing!! HUH?
-
-
-# V8 has wasm, so no m3 needed in release. can we even debug through V8??
-# interestingly if we have a native app we don't need our wasp.wasm runtime because it's c++ compiled into app.
-# but we would need a million bindings and calls, also we would LEAVE OUR SANDBOX,
-# so definitely ship wasp.wasm runtime in release!
-if (WEBAPP)
-    ADD_COMPILE_DEFINITIONS(WEBAPP)
-    SET(WASM 0)
-    set(WASI 0)
-    SET(RUNTIME_ONLY 0) # we can emit to V8, right??
-endif ()
-if (WASM)
-    SET(WASM3 0) # No wasm-VM inside wasm
-    REMOVE_DEFINITIONS(WASM3)
-    #    multi-value referenceTypes bulkMemory works in FF
-    #    ADD_COMPILE_FLAG("-O0 -s WASM_BIGINT") should work in WebKit but we only use standard MVP features for now!
-    SET(WEBAPP 0) # just be sure
-    SET(SDL 0)
-    # ^^ UNSET, or better don't set manually at all!
-endif ()
-
-
-if (DEBUG)
-    MESSAGE("DEBUG!")
-    ADD_COMPILE_DEFINITIONS(DEBUG)
-    SET(GCC_GENERATE_DEBUGGING_SYMBOLS YES)
-    SET(GCC_DEBUGGING_SYMBOLS full)
-    SET(DEBUG_INFORMATION_FORMAT dwarf-with-dsym)
-    SET(DWARF_DSYM_FILE_NAME "$(TARGET_NAME).dSYM")
-    SET(DWARF_DSYM_FOLDER_PATH "$(CONFIGURATION_BUILD_DIR)/dSyms")
-    SET(DEPLOYMENT_POSTPROCESSING YES)
-endif ()
-
 #ADD_COMPILE_DEFINITIONS(NO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
 
 if (WASM)
@@ -69,17 +33,16 @@ if (NOT WASM)
     ADD_COMPILE_DEFINITIONS(_Backtrace_)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     if (NOT RUNTIME_ONLY)
-        if (NOT WEBAPP)
             # TO EXECUTE wasm:
             # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
-            SET(V8 1)
+            #            SET(V8 1)
             #            SET(WASMTIME 1) # FASTEST!
             #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
             #            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
             #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp
             #            set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
             #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-        endif ()
+            set(WEBAPP 1) # WebView for electron like standalone apps.
     endif ()
 endif ()
 
@@ -94,7 +57,30 @@ if (RELEASE)
 endif ()
 
 
+# V8 has wasm, so no m3 needed in release. can we even debug through V8??
+# interestingly if we have a native app we don't need our wasp.wasm runtime because it's c++ compiled into app.
+# but we would need a million bindings and calls, also we would LEAVE OUR SANDBOX,
+# so definitely ship wasp.wasm runtime in release!
+
+if (WEBAPP)
+    ADD_COMPILE_DEFINITIONS(WEBAPP)
+    ADD_COMPILE_DEFINITIONS(GRAFIX)
+    SET(WASM 0)
+    set(WASI 0)
+    SET(RUNTIME_ONLY 0) # we can emit to V8, right??
+endif ()
+if (WASM)
+    SET(WASM3 0) # No wasm-VM inside wasm
+    REMOVE_DEFINITIONS(WASM3)
+    #    multi-value referenceTypes bulkMemory works in FF
+    #    ADD_COMPILE_FLAG("-O0 -s WASM_BIGINT") should work in WebKit but we only use standard MVP features for now!
+    SET(WEBAPP 0) # just be sure
+    SET(SDL 0)
+    # ^^ UNSET, or better don't set manually at all!
+endif ()
+
 if (SDL)
+    ADD_COMPILE_DEFINITIONS(GRAFIX)
     find_package(SDL2 REQUIRED)
     ADD_COMPILE_DEFINITIONS(SDL)
     remove_definitions(SERVER)
@@ -117,6 +103,18 @@ ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
 ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
 ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it needs for the declared range of possible values.
 # makes TypedValue 1+8 bytes, doesn't help for multi-value (int32 int64)
+
+
+if (DEBUG)
+    MESSAGE("DEBUG!")
+    ADD_COMPILE_DEFINITIONS(DEBUG)
+    SET(GCC_GENERATE_DEBUGGING_SYMBOLS YES)
+    SET(GCC_DEBUGGING_SYMBOLS full)
+    SET(DEBUG_INFORMATION_FORMAT dwarf-with-dsym)
+    SET(DWARF_DSYM_FILE_NAME "$(TARGET_NAME).dSYM")
+    SET(DWARF_DSYM_FOLDER_PATH "$(CONFIGURATION_BUILD_DIR)/dSyms")
+    SET(DEPLOYMENT_POSTPROCESSING YES)
+endif ()
 
 if (NOT RELEASE)
     ADD_COMPILE_FLAG("-fno-inline")
