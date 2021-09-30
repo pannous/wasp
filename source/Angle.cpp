@@ -813,6 +813,10 @@ void preRegisterSignatures() {
 	// read_wasm doesn't have return types!
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
+
+	if (functionSignatures.has("logs"))
+		return;// already imported runtime!
+
 	functionSignatures.insert_or_assign("logi", Signature().import().add(int32).returns(voids));
 	functionSignatures.insert_or_assign("logf", Signature().import().add(float32).returns(voids));
 //	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));

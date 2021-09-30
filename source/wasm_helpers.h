@@ -19,6 +19,7 @@ typedef unsigned char *bytes;
 // worse there is the native_runtime which may hold the wasm_runtime running in the VM!
 
 extern "C" void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
+//extern "C" char *wasm_memory_chars;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
 
 // TODO: let the native_runtime mess with wasm_memory DIRECTLY?
 

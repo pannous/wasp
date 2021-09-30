@@ -182,10 +182,10 @@ void testMathOperators() {
 	assert_emit("3*-1", -3);
 	assert_emit("-√9", -3);
 
-	assert_emit("i=3.70001;.3+i", 4);// todo use long against these bugs!! <<<
+	assert_emit("i=3.70001;.3+i", 4);
 
-	assert_emit("i=3.71;.3+i", 4);// todo use long against these bugs!! <<<
-	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
+	assert_emit("i=3.71;.3+i", 4);
+	assert_emit("i=3.7;.3+i", 4);
 	assert_is("4-1", 3);//
 
 	assert_run("x=123;x + 4 is 127", true);
@@ -203,8 +203,8 @@ void testMathOperators() {
 			assert_emit(("3⁴"), 9 * 9);
 	)
 
-	assert_emit("i=3.70001;.3+i", 4);// todo use long against these bugs!! <<<
-	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
+	assert_emit("i=3.70001;.3+i", 4);
+	assert_emit("i=3.7;.3+i", 4);
 
 	assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
 }
@@ -1018,7 +1018,6 @@ void testIndexWasm() {
 }
 
 void testAllWasm() {
-	assert_emit("i=3.7;.3+i", 4);// todo use long against these bugs!! <<<
 
 //	data_mode = false;
 	testWasmMemoryIntegrity();
@@ -1031,6 +1030,7 @@ void testAllWasm() {
 			testIndexWasm();// breaks on second run WHY?
 	)
 
+	testArrayIndicesWasm();
 	testStringIndicesWasm();
 	testWasmFunctionDefiniton();
 	testSquareExpWasm();
@@ -1070,6 +1070,8 @@ void testAllWasm() {
 	testComparisonId();
 	testWasmVariables0();
 	testWasmVariables0();
+	testSquareExpWasm();
+	testRoundFloorCeiling();
 	wasm_todos();
 	testWasmRuntimeExtension();
 	skip(

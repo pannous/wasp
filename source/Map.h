@@ -173,7 +173,7 @@ public:
 
 
 	S &operator[](short index) {
-		if (index < 0 or index > _size)
+		if (index < 0 or index > _size) /* and not auto_grow*/
 			error("index out of range : %d > %d"s % index % _size);
 		return items[index];
 	}

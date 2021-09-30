@@ -70,12 +70,13 @@ if (NOT WASM)
     if (NOT RUNTIME_ONLY)
         if (NOT WEBAPP)
             # TO EXECUTE wasm:
-            #            SET(WASMTIME 1) # FASTEST!
+            #            https://github.com/WebAssembly/wasm-c-api <<<< WAMR == MICRO ???
+            SET(WASMTIME 1) # FASTEST!
             #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
             #            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
             #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp
             #            set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
-            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
+            #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         endif ()
     endif ()
 endif ()
