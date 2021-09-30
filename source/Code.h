@@ -300,7 +300,7 @@ enum Valtype {
 	voids = 0x00, // DANGER!=void_block  internal only for return type
 
 	void_block = 0x40,
-	none = 0x40,
+	none = 0x40, // NOT voids!!!
 
 	// extensions
 	anyref = 0x6f,// was conceptually an namewise merged into
@@ -653,7 +653,19 @@ public:
 		return *this;
 	}
 
-
+	String format() {
+		String f;
+		f += this->function;
+		f += "(";
+		for (auto type:this->types) {
+//			f += type;
+			f += typeName(this->types[type]);
+			f += ",";
+		}
+		f += ")";
+		f += typeName(this->return_type);
+		return f;
+	}
 };
 
 String sectionName(Section section);
