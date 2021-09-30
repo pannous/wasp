@@ -71,9 +71,9 @@ if (NOT WASM)
         if (NOT WEBAPP)
             # TO EXECUTE wasm:
             #            https://github.com/WebAssembly/wasm-c-api <<<< WAMR == MICRO ???
-            SET(WASMTIME 1) # FASTEST!
+#            SET(WASMTIME 1) # FASTEST!
             #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
-            #            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
             #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp
             #            set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
             #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
@@ -339,11 +339,11 @@ elseif (WEBAPP)
 elseif (WASM3)
     MESSAGE(wasm3 VM)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
-    include(wasm3/cmake_install.cmake)
+    include(Frameworks/wasm3/cmake_install.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp source/types/Number.cpp source/types/Number.h)
-    add_subdirectory(wasm3/source ${CMAKE_BINARY_DIR}/m3)
+    add_subdirectory(Frameworks/wasm3/source ${CMAKE_BINARY_DIR}/m3)
     add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC wasm3/source)
+    target_include_directories(wasp PUBLIC Frameworks/wasm3/source)
     target_link_libraries(wasp PRIVATE m3)
     if (SDL)
         target_link_libraries(wasp PRIVATE SDL2::SDL2)
