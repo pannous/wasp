@@ -180,8 +180,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	}
 
 	// the following functions force i32->f32
-	if (eq(s, "√"))
-		return f32_sqrt;
+	if (eq(s, "√"))return f32_sqrt;
 	if (eq(s, "sqrt"))return f32_sqrt;
 	if (eq(s, "root"))return f32_sqrt;// conflicts with user keywords!
 //	if (eq(s, "sqare root"))return f32_sqrt;
@@ -780,9 +779,12 @@ Code emitOperator(Node node, String context) {
 		code.add(0);
 		code.add(opcodes("*", last_type));
 	} else if (name == "**" or name == "to the" or name == "^" or name == "^^") {
+//		if(last_value==0)code.addConst(1);
+//		if(last_value==1)return code;
 		if (last_type == int32) code.add(emitCall(*new Node("powi"), context));
-		if (last_type == f32) code.add(emitCall(*new Node("powf"), context));
-		else code.add(emitCall(*new Node("pow"), context));
+		else if (last_type == f32) code.add(emitCall(*new Node("powf"), context));
+		else if (last_type == f64) code.add(emitCall(*new Node("pow"), context));
+		else code.add(emitCall(*new Node("powi"), context));
 	} else if (name.startsWith("-")) {
 		code.add(i32_sub);
 	} else if (name == "?") {
@@ -1663,6 +1665,7 @@ Code nameSection() {
 	for (int index = runtime_offset; index < total_func_count; index++) {
 		// danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
 		String *name = functionIndices.lookup(index);
+		if (not name)continue;// todo: no name bug (not enough mem?)
 		if (functionSignatures[*name].is_import and runtime_offset > 0)continue;
 		nameMap = nameMap + Code(index) + Code(*name);
 		usedNames += 1;
@@ -1889,7 +1892,9 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 //	 + customSection
 	;
 	code.debug();
+#ifndef WEBAPP
 	free(data);// written to wasm code ok
+#endif
 	if (runtime0)functionSignatures.clear(); // cleanup after NAJA
 	return code.clone();
 }
