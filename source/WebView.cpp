@@ -10,9 +10,6 @@
 #include "Angle.h"
 #include "WebServer.hpp"
 
-int requestAnimationFrame(int wasm_offset) {
-	return 0;
-}
 
 /* supported in WebKit:
 ✔️	multiValue
@@ -265,6 +262,11 @@ void run_wasm_async(unsigned char *bytes, int length) {
 	w.eval(ss.str());
 }
 
+
+int requestAnimationFrame(int wasm_offset) {
+	w.eval("paintWasmToCanvas()");// data coming from wasm
+	return 0;
+}
 
 // forced synchronous
 int run_wasm_sync(unsigned char *bytes, int length) {

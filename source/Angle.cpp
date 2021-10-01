@@ -434,6 +434,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 		if (name == "^" or name == "^^" or name == "**") {// todo NORM operators earlier!
 			functionSignatures["pow"].is_used = true;
 			functionSignatures["powi"].is_used = true;
+			functionSignatures["powf"].is_used = true;
 		}
 		if (isPrefixOperation(node, prev, next)) {// ++x -i
 			node.kind = Type::operators;// todo should have been parsed as such!
@@ -823,8 +824,8 @@ void preRegisterSignatures() {
 
 	functionSignatures.insert_or_assign("logi", Signature().import().add(int32).returns(voids));
 	functionSignatures.insert_or_assign("logf", Signature().import().add(float32).returns(voids));
-//	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));
 	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
+	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));
 	//	functionSignatures.insert_or_assign("powl", Signature().import().add(int64).add(int64).returns(int64));
 	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
 	functionSignatures.insert_or_assign("logs", Signature().import().add(charp).returns(voids));

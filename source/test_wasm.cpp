@@ -1075,6 +1075,7 @@ void testAllWasm() {
 	testSquareExpWasm();
 	testRoundFloorCeiling();
 	wasm_todos();
+	testWasmTernary();
 	testWasmRuntimeExtension();
 	skip(
 			testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
