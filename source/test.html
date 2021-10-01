@@ -9,8 +9,8 @@
 <p onclick='boom()'>boom</p>
 <p onclick='exit()'>exit</p>
 <p onclick='server()'>server</p>
-<p onclick='terminate()' style="background:gray;width:500px;height:500px">terminate</p>
-<textarea id="code_input">v3^2</textarea>
+<p onclick='terminate()' style="background:gray;width:100px;height:100px">terminate</p>
+<textarea id="code_input">√3^2</textarea>
 <br/>
 <!--application/wasp-->
 <!--accept="*/*"-->
@@ -18,12 +18,46 @@
 <button onclick="run(code_input.value)">RUN</button>
 <button onclick="results.value=''">CLEAR</button>
 <br/>
-<textarea id="results" placeholder="press run to compile and see result">
+<textarea cols="80" id="results" placeholder="press run to compile and see result" rows="8">
 </textarea>
+<canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
 
 
 <!--    <script src="more.js">/*not allowed to load local resource*/</script>-->
 <script> // errors here fail silently :(
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+    canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+    WIDTH = canvas.width;
+    HEIGHT = canvas.height;
+    imageData = ctx.createImageData(WIDTH, HEIGHT);
+    // clearScreen();
+    // window.requestAnimationFrame(loop);
+}
+
+function loop() {
+    paint()
+    window.requestAnimationFrame(loop);
+}
+
+
+function paint() {
+    let data = imageData.data
+    for (var i = 0; i < data.length; i += 4) {
+        data[i] = Math.random() * 255 // red
+        data[i + 1] = Math.random() * 255 // green
+        data[i + 2] = Math.random() * 255 // blue
+        // data[i+3]     = Math.random()*255
+        data[i + 3] = 255 // else transparent!!!
+    }
+    ctx.putImageData(imageData, 0.5, 0.5);
+}
+
+resizeCanvas();
+
 function terminate0() {
     console.log("terminate0 disabled: enable by removing 0");
 }
@@ -32,7 +66,7 @@ function readFile() {
     const file = input_file.files[0]
     const reader = new FileReader
     reader.addEventListener('load', () => {
-        results.innerHTML = reader.result
+        code_input.innerHTML = reader.result
     })
     reader.readAsText(file, 'UTF-8')
 }
@@ -40,6 +74,7 @@ function readFile() {
 function print(...x) {
     log(...x);// to stdout and window title!
     console.log(...x);
+    results.value += x
 }
 
 function boom() {
@@ -57,9 +92,11 @@ window.onload = function () {
     ignore = x => x
     nop = x => ignore(x)
 
-    let memory_size = 1024// pages à __kb  65536 // 4GB!
-    let memoryBase = 1024 * 16
-    let table_size = 294
+    let memory_size = 1024// pages à 64kb // 4GB!
+    // let memoryBase = 1024 * 16
+    // let table_size = 294
+
+    let memory = new WebAssembly.Memory({initial: memory_size, maximum: 65336});
 
     function loadBytes(byte_start, len) {
         print("TODO loadBytes")
@@ -88,15 +125,29 @@ window.onload = function () {
         log('todo("memset")', ptr, value, num)
         raise("memset should be part of wasp!?!")
     }
+    let paintWasmToCanvas = (offset = 0) => {
+        // paint()
+        let len = canvas.width * canvas.height * 4
+        data = new Uint8Array(memory.buffer, offset, len + offset);
+        // data = new Uint8Array(memory.buffer, 0, memory.buffer.byteLength);
+        // imageData.data.set(new Uint8ClampedArray(memory.buffer, 0,10000 ));// memory.length));
+        for (var i = 0; i < data.length; i += 4) {
+            // data[i] = Math.random() * 255
+            data[i + 3] = 255;//Math.random() * 255
+        }
+        imageData.data.set(data);
+        ctx.putImageData(imageData, 0, 0);
+    }
 
     async function wasmx(code) {
         try {
-            let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
-            let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
+            // let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
             let imports = {
                 wasi_unstable: {proc_exit: terminate},
                 env: {
                     memory,
+                    // table,
+                    init_graphics: nop, // canvas init'ed by default
                     square: x => x * x, // usually native wasm, better test with 'double'!
                     pow: Math.pow,
                     powi: (a, b) => {
@@ -115,14 +166,13 @@ window.onload = function () {
                     panic: terminate,
                     raise,
                     memset,
+                    requestAnimationFrame: paintWasmToCanvas,
                     _ZSt9terminatev: terminate,
                     __cxa_begin_catch: nop,
                     _ZdlPv: nop,//operator delete(void*) lol
                     _Z4emit4NodeP6Module6String: nop,
                     _Z10merge_wasm6ModuleS_: nop,
                     _Z8run_wasmPhi: (bytes, len) => wasmx(loadBytes(bytes, len)),// full circle yay!
-                    memory,
-                    table,
                     ext_memcpy: nop,
                     sum: (x, y) => x + y,
                 }
@@ -132,12 +182,13 @@ window.onload = function () {
             // instance = await WebAssembly.instantiate(module, imports, memory).catch(ex => console.error(trimStack(ex)) || quit())
             //const module = await WebAssembly.compileStreaming(fetch('program.wasm'));
             const instance = await WebAssembly.instantiate(module, imports, memory);
+            memory = instance.memory || module.memory || instance.exports.memory || memory
             //const { instance } = await WebAssembly.instantiateStreaming(fetch('program.wasm'));
             // print("Exports: ", instance.exports);//show what we've got
             if (instance.exports.main) {
                 result = instance.exports.main()
                 print(result)
-                results.value = result;
+                results.value += result;
                 wasm_done(result);
             } else {
                 wasm_error("NO MAIN!");
@@ -148,5 +199,15 @@ window.onload = function () {
         }
     }
 </script>
+
+<style>
+    html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+</style>
 </body>
 
