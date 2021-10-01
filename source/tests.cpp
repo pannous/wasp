@@ -1852,7 +1852,10 @@ void testWasmSpeed() {
 }
 
 void testCurrent() { // move to tests() once OK
+	assert_emit("3^2", 9);
+	assert_emit("3^1", 3);
 	assert_emit("√3^2", 3);
+	assert_emit("√3^0", 1);
 	return;
 	testPaintWasm();
 //	testWasmSpeed();
