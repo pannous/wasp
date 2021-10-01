@@ -48,7 +48,9 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 			         info.dli_saddr);// or dli_fbase for function!
 //			snprintf(buf, sizeof(buf), "%s:%d \n", info.dli_fname, line_nr);// or dli_fbase for function!
 
+#ifndef WEBAPP
 			free(demangled);
+#endif
 
 		} else {
 			snprintf(buf, sizeof(buf), "%-3d %*p %s\n",
@@ -58,7 +60,9 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 		if (eq(name, "testCurrent()"))
 			break;
 	}
+#ifndef WEBAPP
 	free(symbols);
+#endif
 	if (nFrames == nMaxFrames)
 		trace_buf << "[truncated]\n";
 	auto string = trace_buf.str();
