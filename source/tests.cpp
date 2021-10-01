@@ -1766,17 +1766,17 @@ void testPaintWasm() {
 	// todo: let compiler compute constant expressions like 1024*65536/4
 //	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
 //out of bounds memory access if only one Memory page!
-	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
+//	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};requestAnimationFrame()", 0)// still slow, but < 1s
 	// wow, SLOWER in wasm-micro-runtime HOW!?
 //	exit(0);
-//	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=255;};0";
-//	assert_emit(wasm_paint_routine, 0);
+	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=i;};requestAnimationFrame()";
+	emit(wasm_paint_routine);
 	gettimeofday(&stop, NULL);
 //	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
 	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
-	exit(0);
+//	exit(0);
 //char *wasm_paint_routine = "init_graphics(); while(1){requestAnimationFrame()}";// SDL bugs a bit
-#ifdef SDL
+#ifdef GRAFIX
 	while (1)requestAnimationFrame(0);// help a little
 #endif
 }
@@ -1851,6 +1851,8 @@ void testWasmSpeed() {
 }
 
 void testCurrent() { // move to tests() once OK
+	testPaintWasm();
+	return;
 	assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
 
 //	testWasmSpeed();

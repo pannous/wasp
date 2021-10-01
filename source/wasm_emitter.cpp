@@ -41,7 +41,7 @@ enum MemoryHandling {
 	internal_memory,// declare but don't export
 	no_memory,
 };
-MemoryHandling memoryHandling = export_memory; // import_memory not with mergeMemorySections!
+MemoryHandling memoryHandling;// set later = export_memory; // import_memory not with mergeMemorySections!
 
 //Map<String, Valtype> return_types;
 //Map<int, List<String>> locals;
@@ -376,17 +376,24 @@ Code emitIndexWrite(Node offset, Node value0, String context) {
 	int size = currentStackItemSize();
 	Valtype targetType = last_type;
 
-	int value = value0.value.longy;
-	if (value0.kind == strings)//todo stringcopy? currently just one char "abc"#2=B
-		value = value0.value.string->charAt(0);
-	else if (value0.kind != longs)// todooo so many cases!
-		value = emitData(value0, context);// pointer
 
-//		localTypes[context]
+	//		localTypes[context]
 	Valtype valType = last_type;
 	Code store;
 	store = store + emitOffset(offset, true, context, size, base);
-	store.addConst(value);
+
+	if (value0.kind == strings)//todo stringcopy? currently just one char "abc"#2=B
+		store.addConst(value0.value.string->charAt(0));
+	else
+		store = store + emitValue(value0, context);
+//	else
+//		if (value0.kind == reference)
+//			store.addConst(value0.value.longy);
+////	if (value0.kind != longs)// todooo so many cases!
+////		value = emitData(value0, context);// pointer
+//	else if (value0.kind == longs)// todooo so many cases!
+//		store.addConst(value0.value.longy);
+
 //	if(size==1 and valType==int32)store.add(i32)
 //	store.add(cast(valType, targetType));
 
@@ -524,10 +531,10 @@ long emitData(Node node, String context) {
 			last_type = float64;
 			break;
 		case reference:
-			if (locals[current].has(node.name))
+			if (locals[current].has(name))
 				error("locals dont belong in emitData!");
-			else if (referenceIndices.has(node.name))
-				todo("emitData reference makes no sense? "s + node.name);
+			else if (referenceIndices.has(name))
+				todo("emitData reference makes no sense? "s + name);
 			else
 				error("can't save unknown reference pointer "s + name);
 			break;
@@ -1793,10 +1800,9 @@ void add_builtins() {
 
 Code memorySection() {
 	if (memoryHandling == import_memory or memoryHandling == no_memory) return Code();// handled elsewhere
-
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
-	int pages = 1024 * 10;// 64kb each, 65336 pages max. makes VM slower?
 //	int pages = 1;//  traps while(i<65336/4)k#i=0
+	int pages = 1024 * 10;// 64kb each, 65336 pages max. makes VM slower?
 	auto code = createSection(memory_section, encodeVector(Code(1) + Code(0x00) + Code(pages)));
 	return code;
 }
@@ -1829,8 +1835,9 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		int newly_pre_registered = 0;//declaredFunctions.size();
 		last_index = runtime_offset - 1;
 	} else {
+		memoryHandling = export_memory;
 //		memoryHandling = import_memory; // works for micro-runtime
-		memoryHandling = internal_memory; // works for wasm3
+//		memoryHandling = internal_memory; // works for wasm3
 		last_index = -1;
 		runtime = *new Module();// all zero
 		runtime_offset = 0;
