@@ -1,6 +1,8 @@
-<!doctype html>
-<!-- opened by WebView.cpp -->
 <html>
+<head>
+    <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
+</head>
+<!-- opened by WebView.cpp -->
 <body onclick='test().then(_=>terminate0())' style='height: 1000px;'>
 <a href='https://www.yay.com/' id='target'>YAY</a>
 <a href='https://wasm-feature-detect.surma.technology/'>WASM test</a>
@@ -74,7 +76,7 @@ function readFile() {
 function print(...x) {
     log(...x);// to stdout and window title!
     console.log(...x);
-    results.value += x
+    results.value += x + "\n"
 }
 
 function boom() {
@@ -150,6 +152,7 @@ window.onload = function () {
                     init_graphics: nop, // canvas init'ed by default
                     square: x => x * x, // usually native wasm, better test with 'double'!
                     pow: Math.pow,
+                    powf: Math.pow,
                     powi: (a, b) => {
                         res = a;
                         while (b-- > 1) res *= a;
@@ -188,7 +191,6 @@ window.onload = function () {
             if (instance.exports.main) {
                 result = instance.exports.main()
                 print(result)
-                results.value += result;
                 wasm_done(result);
             } else {
                 wasm_error("NO MAIN!");
