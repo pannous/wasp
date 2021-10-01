@@ -3,7 +3,8 @@
     <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
 </head>
 <!-- opened by WebView.cpp -->
-<body onclick='test().then(_=>terminate0())' style='height: 1000px;'>
+<!--onclick='test().then(_=>terminate0())' -->
+<body style='height: 1000px;'>
 <a href='https://www.yay.com/' id='target'>YAY</a>
 <a href='https://wasm-feature-detect.surma.technology/'>WASM test</a>
 <p onclick='home()'>home</p>
@@ -12,7 +13,8 @@
 <p onclick='exit()'>exit</p>
 <p onclick='server()'>server</p>
 <p onclick='terminate()' style="background:gray;width:100px;height:100px">terminate</p>
-<textarea id="code_input">√3^2</textarea>
+<!--    onkeypress-->
+<textarea id="code_input" onkeyup="run(value)">√3^2</textarea>
 <br/>
 <!--application/wasp-->
 <!--accept="*/*"-->

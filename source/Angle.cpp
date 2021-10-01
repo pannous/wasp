@@ -818,14 +818,14 @@ void preRegisterSignatures() {
 	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("pow", Signature().import().add(float64).add(float64).returns(float64));
+	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
+	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));
 
-	if (functionSignatures.has("logs"))
-		return;// already imported runtime!
+//	if (functionSignatures.has("logs"))
+//		return;// already imported runtime!
 
 	functionSignatures.insert_or_assign("logi", Signature().import().add(int32).returns(voids));
 	functionSignatures.insert_or_assign("logf", Signature().import().add(float32).returns(voids));
-	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
-	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));
 	//	functionSignatures.insert_or_assign("powl", Signature().import().add(int64).add(int64).returns(int64));
 	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
 	functionSignatures.insert_or_assign("logs", Signature().import().add(charp).returns(voids));
