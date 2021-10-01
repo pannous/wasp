@@ -1769,8 +1769,9 @@ void testPaintWasm() {
 //	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};requestAnimationFrame()", 0)// still slow, but < 1s
 	// wow, SLOWER in wasm-micro-runtime HOW!?
 //	exit(0);
-	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=i;};requestAnimationFrame()";
+	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=i*(10-√i);};";
 	emit(wasm_paint_routine);
+	requestAnimationFrame(0);
 	gettimeofday(&stop, NULL);
 //	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
 	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
@@ -1851,41 +1852,20 @@ void testWasmSpeed() {
 }
 
 void testCurrent() { // move to tests() once OK
-	testPaintWasm();
+	assert_emit("√3^2", 3);
 	return;
-	assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
-
+	testPaintWasm();
 //	testWasmSpeed();
-//	read_wasm("main.wasm"); wrong format
+
 
 	assert_emit("n=3;2ⁿ", 8);
-	assert_emit("square 3", 9);
-//	assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
 	skip(
 			assert_emit("i=-9;√-i", 3);
 			assert_emit("i=-9;√ -i", 3);
 	)
-	assert_run("42", 42);// WASM module instantiate failed: allocate memory failed
-	assert_emit("42", 42);// WASM module instantiate failed: allocate memory failed
-//	testPaintWasm();
 //	assert_run not compatible with Wasmer, don't ask why, we don't know;)
-	assert_emit("x=123;x + 4 is 127", true);
-//	return;
-
-	testIndexWasm();
-//	testWasmModuleExtension();
-	testStringIndicesWasm();
-	testArrayIndicesWasm();
-
-
-	assert_emit("maxi=3840*2160;maxi", 3840 * 2160);
 	testSerialize();
-//	exit(0);
-//	testPaintWasm();
-	testWasmMemoryIntegrity();
-	testIndexWasm();
-//	assert_emit("i=-9;√-i", 3);
-//	assert_emit("logs('hello')",0);
+	assert_emit("i=-9;√-i", 3);
 //	assert_emit("print('hello')",0);
 	// todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
 	assert_emit("x={1 4 3};x#2=5;x[1]", 5);
@@ -1898,10 +1878,7 @@ void testCurrent() { // move to tests() once OK
 			assert_is("i=3.7;.3+i", 4);// todo bring variables to interpreter
 			assert_is("i=3;i*-1", -3);// todo bring variables to interpreter
 	)
-	testWasmTernary();
-//	testPaintWasm();
 //	return;// let the webview show!
-//	testPaintWasm();
 //	assert_run("render html{'test'}", 4);
 
 	skip(
@@ -1913,7 +1890,6 @@ void testCurrent() { // move to tests() once OK
 	// while without body
 			assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
 	)
-	//	testWasmModuleExtension(); 🚀🤘☘
 
 //	exit(0);
 //	functionSignatures.setDefault(Signature());
@@ -1924,18 +1900,7 @@ void testCurrent() { // move to tests() once OK
 //	testRoundFloorCeiling();
 //    	subtract(other complex) := re -= other.re; im -= other.im
 // := is terminated by \n, not by ;!
-//	exit(0);
-//	testWasmMemoryIntegrity();
-#ifndef WASM
-	//	testWasmModuleExtension();
-	//	testWasmRuntimeExtension();
-#endif
-//	testPaint();
 
-//testUnits();
-//	testMarkMultiDeep();
-
-//	testWasmRuntimeExtension();
 //	operator_list = List(operator_list0);
 	testRecentRandomBugs();
 	tests();// make sure all still ok before changes

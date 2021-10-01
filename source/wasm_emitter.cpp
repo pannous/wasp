@@ -180,7 +180,8 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	}
 
 	// the following functions force i32->f32
-	if (eq(s, "√"))return f32_sqrt;
+	if (eq(s, "√"))
+		return f32_sqrt;
 	if (eq(s, "sqrt"))return f32_sqrt;
 	if (eq(s, "root"))return f32_sqrt;// conflicts with user keywords!
 //	if (eq(s, "sqare root"))return f32_sqrt;
@@ -720,6 +721,7 @@ Code emitOperator(Node node, String context) {
 		code.add(cast(lhs_type, commonType));
 		code.push(rhs_code);// might be empty ok
 		code.add(cast(rhs_type, commonType));
+		last_type = commonType;
 	} else if (node.length > 2) {// todo: n-ary? ∑? is just a function!
 		error("Too many args for operator "s + name);
 //	} else if (node.next) { // todo really? handle ungrouped HERE? just hiding bugs?
@@ -744,11 +746,10 @@ Code emitOperator(Node node, String context) {
 	byte opcode = opcodes(name, last_type, lhs_type);
 	if (last_type == stringp)
 		code.add(emitStringOp(node, String()));
-	else if (opcode == f32_sqrt and last_type == i32t) {
-		code.addByte(f32_convert_i32_s);// i32->f32
+	else if (opcode == f32_sqrt) {
+		code.add(cast(last_type, f32));
 		code.addByte(f32_sqrt);
-		code.addByte(i32_trunc_f32_s);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
-//				last_type = f32t; todo: try upgrade type 2 + √2 -> float
+		last_type = f32t;
 	} else if (opcode == f32_eqz) { // hack for missing f32_eqz
 //				0.0 + code.addByte(f32_eq);
 		code.addByte(i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
@@ -780,6 +781,7 @@ Code emitOperator(Node node, String context) {
 		code.add(opcodes("*", last_type));
 	} else if (name == "**" or name == "to the" or name == "^" or name == "^^") {
 		if (last_type == int32) code.add(emitCall(*new Node("powi"), context));
+		if (last_type == f32) code.add(emitCall(*new Node("powf"), context));
 		else code.add(emitCall(*new Node("pow"), context));
 	} else if (name.startsWith("-")) {
 		code.add(i32_sub);
