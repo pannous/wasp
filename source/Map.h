@@ -343,8 +343,8 @@ public:
 	}
 
 	void clear() {
-		free(keys);
-		free(values);
+//		free(keys);// todo  (interrupted by signal 6: SIGABRT) in WebApp why?
+//		free(values);
 		keys = (S *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
 		values = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
 		_size = 0;
