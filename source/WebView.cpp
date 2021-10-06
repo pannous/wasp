@@ -250,7 +250,7 @@ long init_graphics() {
 }
 
 
-//int requestAnimationFrame(int wasm_offset) {
+//int paint(int wasm_offset) {
 // copy wasp data to canvas
 //}
 
@@ -263,7 +263,7 @@ void run_wasm_async(unsigned char *bytes, int length) {
 }
 
 
-int requestAnimationFrame(int wasm_offset) {
+int paint(int wasm_offset) {
 	w.eval("paintWasmToCanvas()");// data coming from wasm
 	return 0;
 }

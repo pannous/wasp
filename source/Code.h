@@ -438,6 +438,7 @@ enum Opcodes {
 	i32_or = 0x72,
 	i32_xor = 0x73,
 
+	// beginning of float opcodes
 	f32_abs = 0x8B,
 	f32_neg = 0x8C,
 
@@ -451,7 +452,7 @@ enum Opcodes {
 	f32_sqrt = 0x91,
 	f32_add = 0x92,
 	f32_sub = 0x93,
-	f32_mul = 0x94,
+	f32_mul = 0x94,// f32.mul
 	f32_div = 0x95,
 
 	f𝟨𝟦_𝖺𝖻𝗌 = 0x99,
