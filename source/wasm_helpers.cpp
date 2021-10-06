@@ -132,8 +132,9 @@ int raise(chars error) {
 //#ifdef WASM3
 	Backtrace(3);
 	print(error);
+	if (throwing)
+		exit(EXIT_FAILURE);
 #ifdef WASM
-	exit(EXIT_FAILURE);
 #endif
 //	if (!throwing)
 //#endif
@@ -479,6 +480,6 @@ long powi(int a, int b) {
 //#ifndef SDL
 //#ifndef WEBAPP
 //long init_graphics();
-//int requestAnimationFrame(int wasm_offset){return -1;};
+//int paint(int wasm_offset){return -1;};
 //#endif
 //#endif

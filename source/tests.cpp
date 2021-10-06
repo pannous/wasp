@@ -138,17 +138,24 @@ bool assert_equals_x(int a, int b, char *context = "") {
 	return a == b;
 }
 
+// there is NO i32_abs in wasm, only f32_abs
+int abs_i(int x) {
+	return x > 0 ? x : -x;
+}
 
-inline float abs_(float x)
+// native to wasm
+inline float abs_f(float x) noexcept {
+	return x > 0 ? x : -x;
+}
 
-noexcept {
-return x > 0 ? x : -
-x;
+bool similar(float a, float b) {
+	float epsilon = abs_f(a + b) / 1000000.;// percentual ++
+	bool ok = a == b or abs_f(a - b) <= epsilon;
+	return ok;
 }
 
 bool assert_equals_x(float a, float b, char *context = "") {
-	float epsilon = abs_(a + b) / 100000.;// 𝕚𝚤:=-1
-	bool ok = a == b or abs_(a - b) <= epsilon;
+	auto ok = similar(a, b);
 	if (!ok)log("\nFAILED assert_equals!\n %f should be %f %s\n"s % a % b % context);
 	else log("OK %f==%f %s\n"s % a % b % context);
 	return ok;
@@ -1561,9 +1568,31 @@ void testNodeBasics() {
 	a.addSmart(b);// why?
 }
 
+void testLogicOperators() {
+	assert_is("¬ 1", 0);
+	assert_is("¬ 0", 1);
+
+	assert_is("0 ⋁ 0", 0);
+	assert_is("0 ⋁ 1", 1);
+	assert_is("1 ⋁ 0", 1);
+	assert_is("1 ⋁ 1", 1);
+
+	assert_is("0 ⊻ 0", 0);
+	assert_is("0 ⊻ 1", 1);
+	assert_is("1 ⊻ 0", 1);
+	assert_is("1 ⊻ 1", 0);
+
+	assert_is("1 ∧ 1", 1);
+	assert_is("1 ∧ 0", 0);
+	assert_is("0 ∧ 1", 0);
+	assert_is("0 ∧ 0", 0);
+}
+
+
 void tests() {
 	data_mode = true;// expect data unless explicit code
 	testSwitch();
+	testLogicOperators();
 	testWasmMutableGlobal();
 	testAsserts();
 	testString();
@@ -1742,7 +1771,7 @@ void testUnits() {
 void testPaint() {
 	#ifdef SDL
 	init_graphics();
-	while (1)requestAnimationFrame(-1);
+	while (1)paint(-1);
 #endif
 }
 
@@ -1766,19 +1795,19 @@ void testPaintWasm() {
 	// todo: let compiler compute constant expressions like 1024*65536/4
 //	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
 //out of bounds memory access if only one Memory page!
-//	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};requestAnimationFrame()", 0)// still slow, but < 1s
+//	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0)// still slow, but < 1s
 	// wow, SLOWER in wasm-micro-runtime HOW!?
 //	exit(0);
 	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=i*(10-√i);};";
 	emit(wasm_paint_routine);
-	requestAnimationFrame(0);
+	paint(0);
 	gettimeofday(&stop, NULL);
 //	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
 	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
 //	exit(0);
-//char *wasm_paint_routine = "init_graphics(); while(1){requestAnimationFrame()}";// SDL bugs a bit
+//char *wasm_paint_routine = "init_graphics(); while(1){paint()}";// SDL bugs a bit
 #ifdef GRAFIX
-	while (1)requestAnimationFrame(0);// help a little
+	while (1)paint(0);// help a little
 #endif
 }
 
@@ -1852,10 +1881,7 @@ void testWasmSpeed() {
 }
 
 void testCurrent() { // move to tests() once OK
-	assert_emit("3^2", 9);
-	assert_emit("3^1", 3);
-	assert_emit("√3^2", 3);
-	assert_emit("√3^0", 1);
+
 	return;
 	testPaintWasm();
 //	testWasmSpeed();
