@@ -122,13 +122,12 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 //	if (eq(s, "=$1"))return get_local;
 //	if (eq(s, "=$1"))return tee_local;
 
-	if (kind == 0 or kind == i32t) { // INT32
+	if (kind == voids or kind == void_block or kind == i32t) { // INT32
 		if (eq(s, "+"))return i32_add;
 //		if (eq(s, "-") and previous==none)return sign_flip; *-1
 		if (eq(s, "-"))return i32_sub;
 		if (eq(s, "*"))return i32_mul;
-		if (eq(s, "/"))
-			return i32_div;
+		if (eq(s, "/"))return i32_div;
 		if (eq(s, "%"))return i32_rem;
 		if (eq(s, "=="))return i32_eq;
 		if (eq(s, "eq"))return i32_eq;
@@ -146,32 +145,30 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "&&"))return i32_and;
 
 		if (eq(s, "and"))return i32_and;
-		if (eq(s, "∧"))return i32_and;// ∧≠^ looks like  but
 		if (eq(s, "⋀"))return i32_and;
+		if (eq(s, "∧"))return i32_and;// ∧≠^ potence looks like
 		if (eq(s, "^"))return 0;// POWER handled on higher level
 
 		if (eq(s, "or"))return i32_or;
 		if (eq(s, "∨"))return i32_or;// looks like 'v' but isn't
 		if (eq(s, "⋁"))return i32_or;
-		if (eq(s, "||"))return i32_or;
+		if (eq(s, "||"))return i32_or; // ≠ norm ‖
 		if (eq(s, "|"))return i32_or;// todo: pipe is different!
 
 		if (eq(s, "xor"))return i32_xor;
-		if (eq(s, "^|"))return i32_xor;//always bitwise todo: truty 0x0101 xor 0x1010 !?
+		if (eq(s, "^|"))return i32_xor;//always bitwise todo: truthy 0x0101 xor 0x1010 !?
 		if (eq(s, "⊻"))return i32_xor;
 
 		if (eq(s, "not"))return i32_eqz; // HACK: no such thing!
 		if (eq(s, "¬"))return i32_eqz;
 
 	} else {
-
 		if (eq(s, "not"))return f32_eqz; // HACK: no such thing!
 		if (eq(s, "¬"))return f32_eqz; // HACK: no such thing!
 		if (eq(s, "+"))return f32_add;
 		if (eq(s, "-"))return f32_sub;
 		if (eq(s, "*"))return f32_mul;
-		if (eq(s, "/"))
-			return f32_div;
+		if (eq(s, "/"))return f32_div;
 		if (eq(s, "=="))return f32_eq;
 		if (eq(s, ">"))return f32_gt;
 		if (eq(s, ">="))return f32_ge;
@@ -184,6 +181,11 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	if (eq(s, "sqrt"))return f32_sqrt;
 	if (eq(s, "root"))return f32_sqrt;// conflicts with user keywords!
 //	if (eq(s, "sqare root"))return f32_sqrt;
+
+	if (eq(s, "abs"))return f32_abs;// there is NO i32_abs
+	if (eq(s, "‖"))return f32_abs;// ║  primitive norm operator ≠ || or
+	if (eq(s, "║"))return f32_abs;// 10000000 comparisons for a char never encountered. Todo: 0 cost hash
+
 
 // rarely used and only clutters the namespace :(
 // lol "⌊3.7⌋" is cursed and is transformed into \n\t or something in wasm and IDE!
@@ -669,8 +671,9 @@ Code emitValue(Node node, String context) {
 //			return Code(stringIndex).addInt(pString->length);// pointer + length
 		}
 		case keyNode:
-			return emitValue(*node.value.node,
-			                 context);// todo: make sure it is called from right context (after isSetter …)
+			if (node.value.node)
+				return emitValue(*node.value.node,
+				                 context);// todo: make sure it is called from right context (after isSetter …)
 		case patterns:
 			return emitIndexPattern(node, context);// todo: make sure to have something indexable on stack!
 		case expression: {
@@ -743,10 +746,14 @@ Code emitOperator(Node node, String context) {
 		return code;
 	}
 	byte opcode = opcodes(name, last_type, lhs_type);
+	if (opcode >= 0x8b and opcode <= 0x98) // float ops
+		code.add(cast(last_type, f32));
+	if (opcode >= 0x99 and opcode <= 0xA6) // double ops
+		code.add(cast(last_type, f64));
+
 	if (last_type == stringp)
 		code.add(emitStringOp(node, String()));
 	else if (opcode == f32_sqrt) {
-		code.add(cast(last_type, f32));
 		code.addByte(f32_sqrt);
 		last_type = f32t;
 	} else if (opcode == f32_eqz) { // hack for missing f32_eqz
@@ -1119,7 +1126,7 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==i64 and to==f64)	return Code(f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦);
 	if (from == void_block and to == i32)
 		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
-	error("incompatible types "s + typeName(from) + " => " + typeName(to));
+//	error("incompatible types "s + typeName(from) + " => " + typeName(to));
 	return nop;
 }
 
