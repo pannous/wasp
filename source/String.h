@@ -520,10 +520,14 @@ public:
 		return this;
 	}
 
-
-	String *operator+(wchar_t c) {
+	String &operator+(codepoint c) {
 		append(c);
-		return this;
+		return *this;
+	}
+
+	String &operator+(wchar_t c) {
+		append(c);
+		return *this;
 	}
 
 	String &operator+(String c) {

@@ -291,6 +291,9 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 //	if(!is_KNOWN_operator(op0))return call(left, op0, right);
 
+	if (op == "‖") {
+		return Node(abs((long) left));
+	}
 	if (op == "|") {// bitwise or OR pipe!
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
 		if (left.kind == longs and right.kind == longs) return Node((long) (left.value.longy | right.value.longy));
@@ -337,7 +340,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		return left == right ? True : False;
 	}
 
-	if (op == "!=" or op == "^=" or op == "≠" or op == "is not") {
+	if (op == "!=" or op == "=/" or op == "^=" or op == "≠" or op == "is not" or op == "isn't" or op == "isn't") {
 		return left != right ? True : False;
 	}
 	if (op == "<" or op == "less" or op == "lt") {

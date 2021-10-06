@@ -35,14 +35,18 @@ char *current = (char *) HEAP_OFFSET;
 
 bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
 
+// predicates in of on from to
 chars operator_list0[] = {"+", "-",
                           "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠", "not",
                           "¬",
                           "|",
                           "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...", "..<" /*range*/,
+                          "upto",
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
-                          "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "^^", "^", "**",
-                          "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻", 0, 0, 0,
+                          "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
+                          "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
+                          "‖", "abs",/*"norm",*/
+                          0, 0, 0,
                           0}; // "while" ...
 // todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
 //  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
@@ -1011,6 +1015,49 @@ private:
 		return false;
 	}
 
+	codepoint closingBracket(codepoint bracket) {
+		switch (bracket) {
+			case '\x0E':
+				return '\x0F'; // Shift Out close='\x0F' Shift In
+			case u'⸨':
+				return u'⸩';
+			case u'﹛':
+				return u'﹜';
+			case u'｛':
+				return u'｝';//  ︷
+			case u'﹝':
+				return u'﹞';// ︸
+			case u'〔':
+				return u'〕';
+			case u'〘':
+				return u'〙';
+			case u'〚':
+				return u'〛';
+			case u'〖':
+				return u'〗';
+			case u'【':
+				return u'】';
+			case u'『':
+				return u'』';
+			case u'「':
+				return u'」';
+			case u'｢':
+				return u'｣';
+			case u'《':
+				return u'》';
+			case u'〈':
+				return u'〉';
+			case u'⁅':
+				return u'⁆';
+			case '{':
+				return u'}';
+			default:
+				error("unknown bracket "s + bracket);
+		}
+
+		return 0;
+	}
+
 // ":" is short binding a b:c d == a (b:c) d
 // "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
@@ -1036,8 +1083,8 @@ private:
 				proceed();
 				continue;
 			}
-			if (ch == close) { // (…) {…} «…» ...
-				if (ch == '}' or ch == ']' or ch == ')')
+			if (ch == close) { // (…) {…} «…» ... “‘ part of string
+				if (ch == '}' or ch == ']' or ch == ')' or ch == u'»' or ch == u'‖')
 					proceed();
 				break;
 			}
@@ -1048,8 +1095,14 @@ private:
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 //				https://en.wikipedia.org/wiki/ASCII#Character_set
 				case '\x0E': // Shift Out close='\x0F' Shift In
-				case u'⸨': // '⸩'
+					// ︷
+					// ︸﹛﹜｛｝﹝﹞〔〕〘〙〚〛〖〗【】『』「」｢｣《》〈〉〈〉⁅⁆ «»
+					// ︵  ﴾ ﴿ ﹙ ﹚ （ ） ⁽ ⁾  ⸨⸩ see grouper_list
+					// ︶
+				case u'﹛': // ﹜
+				case u'｛': // ｝
 				case '{': {
+					let bracket = ch;
 					if (checkAmbiguousBlock(current, parent)) {
 						log(pointer());
 						breakpoint_helper
@@ -1059,7 +1112,7 @@ private:
 							lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
 					proceed();
 					Node object = Node().setType(Type::objects);
-					Node objectValue = valueNode('}', parent ? parent : &current.last());
+					Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &current.last());
 					object.addSmart(objectValue);
 					object = object.flat();
 					if (asListItem)
@@ -1068,7 +1121,9 @@ private:
 						current.addSmart(object);
 					break;
 				}
-				case U'［': // FULLWIDTH ｛ ｢ ｣
+				case u'﹝': // ﹞
+				case u'〔': // 〕
+				case U'［': // ］ FULLWIDTH
 				case '[': {
 					proceed();
 					Node pattern = Node().setType(Type::patterns);
@@ -1080,6 +1135,7 @@ private:
 //					current.addSmart(pattern);// a[b] ≠ (a b) always preserve pattern (?)
 					break;
 				}
+				case u'⸨': // '⸩'
 				case '(': {
 					// checkAmbiguousBlock? x (1) == x(1) or [x 1] ?? todo too bad!!!
 					proceed();
@@ -1248,6 +1304,7 @@ float precedence(char group) {
 	if (group == '}')return 1;
 	if (group == ']')return 1;
 	if (group == ')')return 1;
+
 	if (0 < group and group < 0x20)return 1.5;
 	if (group == '\n')return 2;
 	if (group == ';')return 3;

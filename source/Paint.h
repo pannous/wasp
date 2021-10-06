@@ -7,9 +7,9 @@ long init_graphics();// returns data offset OUTSIDE wasm: pointer to RGBA surfac
  * param : wasm_offset to copy wasm data to surface,
  * returns: required bytes for next frame (w*h*4)
  * */
-int requestAnimationFrame(int wasm_offset);
+int paint(int wasm_offset);
 
-//void paint=requestAnimationFrame
+//void paint=paint
 
 /*
  *
