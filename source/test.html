@@ -39,7 +39,7 @@ function resizeCanvas() {
     HEIGHT = canvas.height;
     imageData = ctx.createImageData(WIDTH, HEIGHT);
     // clearScreen();
-    // window.requestAnimationFrame(loop);
+    // window.paint(loop);
 }
 
 function loop() {
@@ -171,6 +171,7 @@ window.onload = function () {
                     panic: terminate,
                     raise,
                     memset,
+                    paint: paintWasmToCanvas,
                     requestAnimationFrame: paintWasmToCanvas,
                     _ZSt9terminatev: terminate,
                     __cxa_begin_catch: nop,

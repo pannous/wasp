@@ -119,7 +119,8 @@ String extractFunctionName(Node &node) {
 #ifndef WASM
 List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++…", 0};// a=b=1 == a=(b=1) => a=1
 // still needs to check a-b vs -i !!
-List<chars> prefixOperators = {"not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/ "~", "&",
+List<chars> prefixOperators = {"abs",/*norm*/ "‖", "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
+                               "~", "&",
                                "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
 List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "%", "％", "﹪", "٪",
                                "‰"};// modulo % ≠ ％ percent
@@ -398,6 +399,8 @@ bool isVariable(String name, String context0) {
 
 bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
 
+String &checkCanonicalName(String &name);
+
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
 // maybe todo: normOperators step (in angle, not wasp!)  3**2 => 3^2
 Node &groupOperators(Node &expression, String context = "main") {
@@ -427,10 +430,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 		String &name = node.name;
 		Node &prev = expression.children[i - 1];
 		if (i == 0)prev = NIL;
-		if (name == "**")warn("The power operator in angle is simply '^' : 3^2=9.");// todo: alias warning mechanism
-		if (name == "^^")warn("The power operator in angle is simply '^' : 3^2=9. Also note that 1 xor 1 = 0");
-		if (name == "||")warn("The disjunction operator in angle is simply 'or' : 1 or 0 = 1");
-		if (name == "&&")warn("The conjunction operator in angle is simply 'and' : 1 and 1 = 1");
+		name = checkCanonicalName(name);
 		if (name == "^" or name == "^^" or name == "**") {// todo NORM operators earlier!
 			functionSignatures["pow"].is_used = true;
 			functionSignatures["powi"].is_used = true;
@@ -447,7 +447,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 		} else {
 			prev = analyze(prev);
 			if (suffixOperators.has(name)) { // x²
-				if (name == "ⁿ")functionSignatures["pow"].is_used = true;
+				if (name == "ⁿ") functionSignatures["pow"].is_used = true;
 				if (i < 1)error("suffix operator misses left side");
 				node.add(prev);
 				if (name == "²") {
@@ -518,6 +518,14 @@ Node &groupOperators(Node &expression, String context = "main") {
 		last = op;
 	}
 	return expression;
+}
+
+String &checkCanonicalName(String &name) {
+	if (name == "**")warn("The power operator in angle is simply '^' : 3^2=9.");// todo: alias warning mechanism
+	if (name == "^^")warn("The power operator in angle is simply '^' : 3^2=9. Also note that 1 xor 1 = 0");
+	if (name == "||")warn("The disjunction operator in angle is simply 'or' : 1 or 0 = 1");
+	if (name == "&&")warn("The conjunction operator in angle is simply 'and' : 1 and 1 = 1");
+	return name;
 }
 
 // √π -i ++j !true … not delete(x)
@@ -746,7 +754,8 @@ Node analyze(Node node, String context) {
 	if (type == keyNode) {
 		if (not localContext.has(name)) {
 			localContext.add(name);
-			localContextTypes.add(mapType(*node.value.node));
+			if (node.value.node)
+				localContextTypes.add(mapType(*node.value.node));
 		}
 		if (node.value.node /* i=ø has no node */)
 			node.value.node = analyze(*node.value.node).clone();
@@ -841,7 +850,7 @@ void preRegisterSignatures() {
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 	functionSignatures["main"] = Signature().returns(i32t);;
 	functionSignatures["print"] = functionSignatures["logs"];// todo: for now, later it needs to distinguish types!!
-	functionSignatures["requestAnimationFrame"].import().returns(voids);// paint surface
+	functionSignatures["paint"].import().returns(voids);// paint surface
 	functionSignatures.insert_or_assign("init_graphics", Signature().import().returns(pointer));// surface
 //	functionSignatures["init_graphics"].import().returns(pointer);// BUUUUG!
 
@@ -926,12 +935,19 @@ float function_precedence = 1000;
 
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-chars function_list[] = {"square", "log", "puts", "print", "printf", "println", "logs", "logi", "logf", "log_f32",
+chars function_list[] = {"abs", "norm", "square", "root", "log", "puts", "print", "printf", "println", "logs", "logi",
+                         "logf", "log_f32",
                          "logi64",
                          "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
                          0};// MUST END WITH 0, else BUG
 chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
 codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0, 0, 0};
+// () ﴾ ﴿ ﹙﹚（ ） ⁽ ⁾  ⸨ ⸩
+// {} ﹛﹜｛｝    ﹝﹞〔〕〘〙  ‖…‖
+// [] 〚〛〖〗【】『』「」｢｣ ⁅⁆
+// «» 《》〈〉〈〉
+// ︷ ︵ ﹁ ﹃ ︹ ︻ ︽
+// ︸ ︶ ﹂ ﹄ ︺ ︼ ︾
 
 
 float precedence(Node &operater) {
@@ -1034,6 +1050,8 @@ float precedence(String name) {
 	if (name.in(function_list))// f 1 > f 2
 		return 8;// 1000;// function calls outmost operation todo? add 3*square 4+1
 
+	if (eq(name, "abs"))return 8;
+	if (eq(name, "‖"))return 10; // norms / abs
 
 	if (eq(name, "⇒"))return 11; // lambdas
 	if (eq(name, "=>"))return 11;

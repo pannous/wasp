@@ -86,7 +86,7 @@ void init_sdl() {
 	surface = SDL_GetWindowSurface(window);// SDL_GetVideoSurface();
 	pitch = surface->pitch;
 	surface_fill_random();
-	requestAnimationFrame(-1);
+	paint(-1);
 }
 
 void cleanUp() {
@@ -133,7 +133,7 @@ void checkInput() {
 	}
 }
 
-int requestAnimationFrame(int wasm_offset) {// ready to paint!
+int paint(int wasm_offset) {// ready to paint!
 //	if changed
 //	char *wasm_memory=0;//getWasmMemory();
 	int nr_bytes = surface->w * surface->h * 4;

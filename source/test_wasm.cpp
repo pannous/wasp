@@ -160,6 +160,14 @@ void testFloatOperators() {
 
 void testMathOperators() {
 //	assert_emit(("42 2 *"), 84)
+	assert_emit("- -3", 3);
+	assert_emit("‖-3‖", 3);
+	assert_emit("‖-3‖+1", 4);
+//	assert_emit("-3‖", 3);
+	assert_emit("3^2", 9);
+	assert_emit("3^1", 3);
+	assert_emit("√3^2", 3);
+	assert_emit("√3^0", 1);
 	assert_equals(eval("7%5"), 2)
 	assert_equals(eval("42/2"), 21)
 	assert_emit(("42/2"), 21)
