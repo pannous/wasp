@@ -5,11 +5,11 @@
 
 #include "Wasp.h"
 #include "Angle.h"
-#import "wasm_helpers.h" // IMPORT so that they don't get mangled!
 #include "Node.h"
-#include "wasm_emitter.h"
+#include "Util.h"
 #include "Map.h"
-#include "wasm_runner.h"
+#import "wasm_helpers.h" // IMPORT so that they don't get mangled!
+#include "wasm_emitter.h"
 
 Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
@@ -119,6 +119,7 @@ String extractFunctionName(Node &node) {
 #ifndef WASM
 List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++…", 0};// a=b=1 == a=(b=1) => a=1
 
+
 // still needs to check a-b vs -i !!
 List<chars> prefixOperators = {"abs",/*norm*/  "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
                                "~", "&", "$",
@@ -130,15 +131,6 @@ List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"
 //List<chars> suffixOperators = { "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", "％", "﹪", "٪",
 //							   "‰"};// modulo % ≠ ％ percent
 
-List<chars> circumfixOperators = {"‖", 0};
-
-codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0, 0, 0};
-// () ﴾ ﴿ ﹙﹚（ ） ⁽ ⁾  ⸨ ⸩
-// {} ﹛﹜｛｝    ﹝﹞〔〕〘〙  ‖…‖
-// [] 〚〛〖〗【】『』「」｢｣ ⁅⁆
-// «» 《》〈〉〈〉
-// ︷ ︵ ﹁ ﹃ ︹ ︻ ︽
-// ︸ ︶ ﹂ ﹄ ︺ ︼ ︾
 
 
 List<chars> infixOperators = operator_list;
@@ -400,12 +392,6 @@ bool hasFunction(Node &n) {
 	return false;
 }
 
-
-bool isCircumFlexOperator(Node &node) {
-	return circumfixOperators.has(node.name);
-	return node.name == "‖";
-}
-
 bool isVariable(String name, String context0) {
 	if (globals.has(name))return true;
 	String context = "main";// context0.name;// todo find/store proper enclosing context of expression
@@ -441,9 +427,26 @@ Node &groupOperators(Node &expression, String context = "main") {
 		}
 		Node &node = expression.children[i];
 		if (node.length)continue;// already processed
+
+//		if(node.name=="‖") {
+		if (contains(circumfixOperators, op.codepointAt(0)) or
+		    contains(opening_special_brackets, op.codepointAt(0))) {
+			//			continue;// grouped in valueNode!
+			node.kind = Type::operators;// todo should have been parsed as such!
+			auto close = String(closingBracket(op.codepointAt(0)));// todo group in valueNode!
+			auto to = expression.index(close, i + 1);
+			Node rest = expression.from(i + 1).to(close);
+			auto rest1 = analyze(rest, context);
+			node.add(rest1);
+			expression.replace(i, to, node);
+			continue;
+		}
+
+
 		Node &next = expression.children[i + 1];
 		next = analyze(next);
 		String &name = node.name;
+		check(name == op);
 		Node &prev = expression.children[i - 1];
 		if (i == 0)prev = NIL;
 		name = checkCanonicalName(name);
@@ -452,7 +455,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 			functionSignatures["powi"].is_used = true;
 			functionSignatures["powf"].is_used = true;
 		}
-		if (isPrefixOperation(node, prev, next) or isCircumFlexOperator(node)) {// ++x -i
+		if (isPrefixOperation(node, prev, next)) {// ++x -i
 			node.kind = Type::operators;// todo should have been parsed as such!
 			node.add(next);
 			if (node == "-") {
@@ -981,6 +984,11 @@ float precedence(String name) {
 	// like c++ here HIGHER up == lower value == more important
 //	switch (node.name) nope
 //		name = operater.value.string;// NO strings are not automatic operators lol WTF
+
+
+	if (eq(name, "abs"))return 0.08;
+	if (eq(name, "‖"))return 0.10; // norms / abs
+
 	if (eq(name, "."))return 0.5;
 	if (eq(name, "of"))return 0.6;
 	if (eq(name, "in"))return 0.7;
@@ -1060,8 +1068,6 @@ float precedence(String name) {
 	if (name.in(function_list))// f 1 > f 2
 		return 8;// 1000;// function calls outmost operation todo? add 3*square 4+1
 
-	if (eq(name, "abs"))return 8;
-	if (eq(name, "‖"))return 10; // norms / abs
 
 	if (eq(name, "⇒"))return 11; // lambdas
 	if (eq(name, "=>"))return 11;

@@ -41,12 +41,27 @@ char *current = (char *) HEAP_OFFSET;
 
 bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
 
+
+//List<codepoint>
+//List<chars> circumfixOperators/*Left*/ = {"‖", 0};
+codepoint circumfixOperators[] = {u'‖', 0};
+codepoint opening_special_brackets[] = {u'(', u'﴾', u'﹙', u'（', u'⁽', u'⸨', u'{', u'﹛', u'｛', u'﹝', u'〔', u'〘',
+                                        u'[', u'〚', u'〖', u'【', u'『', u'「', u'｢', u'⁅', u'«', u'《', u'〈',
+                                        u'︷', u'︵', u'﹁', u'﹃', u'︹', u'︻', u'︽', 0};
+codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0, 0, 0};
+// () ﴾ ﴿ ﹙﹚（ ） ⁽ ⁾  ⸨ ⸩
+// {} ﹛﹜｛｝    ﹝﹞〔〕〘〙  ‖…‖
+// [] 〚〛〖〗【】『』「」｢｣ ⁅⁆
+// «» 《》〈〉〈〉
+// ︷ ︵ ﹁ ﹃ ︹ ︻ ︽
+// ︸ ︶ ﹂ ﹄ ︺ ︼ ︾
+
+
 // predicates in of on from to
-chars operator_list0[] = {"+", "-",
-                          "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠", "not",
-                          "¬",
-                          "|",
-                          "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...", "..<" /*range*/,
+chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠",
+                          "not",
+                          "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...",
+                          "..<" /*range*/,
                           "upto", "use", "include", "require", "import", "module",
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
@@ -62,6 +77,74 @@ List<chars> operator_list;
 #else
 List<chars> operator_list(operator_list0);
 #endif
+
+
+// list HAS TO BE 0 terminated! Dangerous C!! ;)
+template<class S>
+bool contains(S list[], S match) {
+	S *elem = list;
+	do {
+		if (match == *elem)
+			return true;
+	} while (*elem++);
+	return false;
+}
+
+
+codepoint closingBracket(codepoint bracket) {
+	switch (bracket) {
+		case '\x0E':
+			return '\x0F'; // Shift Out close='\x0F' Shift In
+		case u'‖':
+			return u'‖';
+		case u'⸨':
+			return u'⸩';
+		case u'﹛':
+			return u'﹜';
+		case u'｛':
+			return u'｝';//  ︷
+		case u'﹝':
+			return u'﹞';// ︸
+		case u'〔':
+			return u'〕';
+		case u'〘':
+			return u'〙';
+		case u'〚':
+			return u'〛';
+		case u'〖':
+			return u'〗';
+		case u'【':
+			return u'】';
+		case u'『':
+			return u'』';
+		case u'「':
+			return u'」';
+		case u'｢':
+			return u'｣';
+		case u'《':
+			return u'》';
+		case u'〈':
+			return u'〉';
+		case u'⁅':
+			return u'⁆';
+		case '{':
+			return u'}';
+		case '(':
+			return u')';
+		case '[':
+			return u']';
+		case u'‘':
+			return u'’';
+		case u'«':
+			return u'»';
+		case u'“':
+			return u'”';
+		default:
+			error("unknown bracket "s + bracket);
+	}
+
+	return 0;
+}
 
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
@@ -342,7 +425,8 @@ private:
 		auto sign = '\n';
 		auto string = String("");
 		int number0, base = 10;
-		if (ch == '+')warn("unnecessary + sign or missing whitespace 1 +1 == [1 1]");
+		if (ch == '+' and not is_operator(previous))
+			warn("unnecessary + sign or missing whitespace 1 +1 == [1 1]");
 		if (ch == '-' or ch == '+') {
 			sign = ch;
 			proceed(ch);
@@ -606,7 +690,11 @@ private:
 		Node node = Node(ch);
 		node.setType(operators);// todo ++
 		proceed();
-		// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
+		if (ch == '=' or ch == previous)// allow *= += ++ -- **  …
+			node.name += ch;
+		// NO OTHER COMBINATIONS for now!
+
+		/*// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
 		while ((ch < 0 or is_operator(ch)) and (previous != '=' or ch == '=')) {// utf8 √ …
 			if (ch != '-' and previous == '-')
 				break;// no combinations with - : -√
@@ -614,7 +702,7 @@ private:
 				break;// no combinations with -  √- *- etc
 			node.name += ch;
 			proceed();
-		}
+		}*/
 		return node;
 	}
 
@@ -993,7 +1081,7 @@ private:
 		       lastNonWhite != ':' and lastNonWhite != '=' and lastNonWhite != ',' and lastNonWhite != ';' and
 		       lastNonWhite != '{' and lastNonWhite != '(' and lastNonWhite != '[' and
 		       lastNonWhite != '}' and lastNonWhite != ']' and lastNonWhite != ')';
-
+		//todo simplify: and not is_grouper(lastNonWhite)
 	}
 
 	bool skipBorders(char ch) {// {\n} == {}
@@ -1011,57 +1099,16 @@ private:
 		return node.name.in(functor_list);
 	}
 
-	bool is_grouper(codepoint previous) {
-		codepoint *point = grouper_list;
+	bool is_grouper(codepoint bracket) {
+		return contains(grouper_list, bracket);
+		/*codepoint *grouper = grouper_list;
 		do {
-			if (previous == *point)
+			if (bracket == *grouper)
 				return true;
-		} while (*point++);
-		return false;
+		} while (*grouper++);
+		return false;*/
 	}
 
-	codepoint closingBracket(codepoint bracket) {
-		switch (bracket) {
-			case '\x0E':
-				return '\x0F'; // Shift Out close='\x0F' Shift In
-			case u'⸨':
-				return u'⸩';
-			case u'﹛':
-				return u'﹜';
-			case u'｛':
-				return u'｝';//  ︷
-			case u'﹝':
-				return u'﹞';// ︸
-			case u'〔':
-				return u'〕';
-			case u'〘':
-				return u'〙';
-			case u'〚':
-				return u'〛';
-			case u'〖':
-				return u'〗';
-			case u'【':
-				return u'】';
-			case u'『':
-				return u'』';
-			case u'「':
-				return u'」';
-			case u'｢':
-				return u'｣';
-			case u'《':
-				return u'》';
-			case u'〈':
-				return u'〉';
-			case u'⁅':
-				return u'⁆';
-			case '{':
-				return u'}';
-			default:
-				error("unknown bracket "s + bracket);
-		}
-
-		return 0;
-	}
 
 // ":" is short binding a b:c d == a (b:c) d
 // "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
@@ -1094,6 +1141,19 @@ private:
 					proceed();
 				break;
 			}
+
+//			circumfixOperators.has(String(ch)) or
+			if (contains(opening_special_brackets, ch)) {
+				// overloadable grouping operators, but not builtin (){}[]
+				let grouper = ch;
+				auto group = valueNode(closingBracket(ch));
+				group.grouper = grouper;
+				current.add(group);
+				// ︷
+				// ︸﹛﹜｛｝﹝﹞〔〕〘〙〚〛〖〗【】『』「」｢｣《》〈〉〈〉⁅⁆ «»
+				// ︵  ﴾ ﴿ ﹙ ﹚ （ ） ⁽ ⁾  ⸨⸩ see grouper_list
+				// ︶
+			}
 			if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
 				break;
 			}// inner match ok
@@ -1101,10 +1161,6 @@ private:
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 //				https://en.wikipedia.org/wiki/ASCII#Character_set
 				case '\x0E': // Shift Out close='\x0F' Shift In
-					// ︷
-					// ︸﹛﹜｛｝﹝﹞〔〕〘〙〚〛〖〗【】『』「」｢｣《》〈〉〈〉⁅⁆ «»
-					// ︵  ﴾ ﴿ ﹙ ﹚ （ ） ⁽ ⁾  ⸨⸩ see grouper_list
-					// ︶
 				case u'﹛': // ﹜
 				case u'｛': // ｝
 				case '{': {

@@ -125,7 +125,7 @@ public:
 	Node *parent = nullptr;
 	Node *children = nullptr;// LIST, not link. block body content
 	Node *next = 0; // in children list
-	char grouper = 0;// ";" ","
+	char grouper = 0;// ";" "," // todo rename to separator and add grouper for «…» ! OR via type Group("«…»")
 	long _hash = 0;// set by hash(); should copy! on *x=node / clone()
 	int length = 0;// children
 #ifdef DEBUG
