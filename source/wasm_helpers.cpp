@@ -120,8 +120,6 @@ int isalnum0(int c) {
 #ifndef WASI
 extern "C" unsigned int *memory = 0;// dummies, remove!
 extern "C" /*unsigned */ char *current = 0;// dummies, remove!
-extern bool throwing;// false for error tests etc
-//extern bool panicing;// false for error tests etc
 
 
 double powd(double x, double y) {// why this crutch? maybe conflicting pow's in all those xyz_math.h
@@ -132,7 +130,7 @@ int raise(chars error) {
 //#ifdef WASM3
 	Backtrace(3);
 	print(error);
-	if (throwing)
+	if (panicking)
 		exit(EXIT_FAILURE);
 #ifdef WASM
 #endif
@@ -254,7 +252,7 @@ void error1(chars message, chars file, int line) {
 #endif
 	if (file)printf("\n%s:%d\n", file, line);\
     raise(message);
-	if (throwing) panic();// not reached
+	if (panicking) panic();// not reached
 }
 
 void newline() {

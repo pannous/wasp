@@ -155,6 +155,7 @@ long init_graphics() {
 		throwing = false;
 		const std::string &code = webview::json_parse(s, "", 0);
 		printf("RUN: %s", code.data());
+		panicking = false;
 		std::thread compile(emit, String(code.data()));
 		compile.detach();
 		return "compiling…";// will run wasm HERE and print result
