@@ -16,9 +16,8 @@
 Node &result = *new Node();
 
 //#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
-#define check(test) if(test){log("\nOK check passes: ");printf("%s\n",#test);}else{ \
-printf("\nNOT PASSING: "); log(#test);printf("%s:%d\n",__FILE__,__LINE__); \
-exit(1);}
+
+// todo assert_is ≠ assert_run == assert_emit_with_wasm_runtime!
 
 #undef assert // assert.h:92 not as good!
 #define assert(condition) try{\
@@ -610,6 +609,8 @@ void testAddField() {
 }
 
 void testErrors() {
+	// use assert_throws
+	assert_throws("0/0");
 #if defined(WASI) || defined(WASM)
 	skip("can't catch ERROR in wasm")
 	return;
@@ -1880,8 +1881,34 @@ void testWasmSpeed() {
 	exit(0);
 }
 
-void testCurrent() { // move to tests() once OK
+void testImport() {
+	assert_is("import fourty_two", 42);
+	assert_is("include fourty_two", 42);
+	assert_is("require fourty_two", 42);
+	assert_is("import fourty_two;ft*2", 42 * 2);
+	assert_is("include fourty_two;ft*2", 42 * 2);
+	assert_is("require fourty_two;ft*2", 42 * 2);
+}
 
+[[maybe_used]]
+[[nodiscard("replace generates a new string to be consumed!")]]
+__attribute__((__warn_unused_result__))
+int testNodiscard() {
+	return 54;
+}
+
+void testCurrent() { // move to tests() once OK
+	clearContext();
+	testNodiscard();
+	testImportWasm();
+	logi(testNodiscard());
+//	testImport();
+
+	assert_emit("1- -3", 4);
+	assert_emit("1 - -3", 4);
+	assert_emit("1 - - 3", 4);
+	assert_throws("1--3");// should throw, variable missed by parser! 1 OK'ish
+//	assert_emit("1--3", 4);// should throw, variable missed by parser! 1 OK'ish
 	return;
 	testPaintWasm();
 //	testWasmSpeed();

@@ -1,11 +1,17 @@
 //#pragma once
 #include "Node.h"
 #include "Wasp.h"
+#include "Util.h"
 #include "String.h" // variable has incomplete type
 #include "Backtrace.h" // header ok in WASM
 #include "wasm_helpers.h"
 #include "wasm_emitter.h"
 #include "wasm_runner.h"
+
+// get home dir :
+/*#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>*/
 
 #ifndef RUNTIME_ONLY
 
@@ -41,7 +47,7 @@ chars operator_list0[] = {"+", "-",
                           "¬",
                           "|",
                           "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...", "..<" /*range*/,
-                          "upto",
+                          "upto", "use", "include", "require", "import", "module",
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
@@ -188,6 +194,8 @@ public:
 
 
 	static char *readFile(chars filename) {
+		if (!filename)error("no filename given");
+		if (!filename)return "";
 #ifndef WASM
 		FILE *f = fopen(filename, "rt");
 		if (!f)error("FILE NOT FOUND "_s + filename);
@@ -203,9 +211,17 @@ public:
 #endif
 	}
 
-	static Node parseFile(chars filename) {
-//		const char filename=replace(filename0,"~","/Users/me")
-		return Wasp::parse(readFile(filename));
+	static Node parseFile(String filename) {
+		String found = findFile(filename);
+		if (not found)error("file not found "s + filename);
+		else info("found "s + found);
+		if (found.endsWith("wasm")) {// handle in analysis, not in valueNode
+//			read_wasm(found);
+			auto import = Node("import").setType(operators);
+			import.add(new Node(found));
+			return import;
+		}
+		return Wasp::parse(readFile(found));
 	}
 
 private:
@@ -313,22 +329,12 @@ private:
 	// Parse an identifier.
 	String identifier() {
 		// identifiers must start with a letter, _ or $.
-		if (!is_identifier(ch)) {
-			error("Unexpected identifier character "s + renderChar(ch));
-		}
-
-		// To keep it simple, Mark identifiers do not support Unicode "letters", as in JS; if needed, use quoted syntax
-		auto key = String(ch);
+		if (!is_identifier(ch)) error("Unexpected identifier character "s + renderChar(ch));
+		int start = at;
+		int stop = at;
 		// subsequent characters can contain ANYTHING
-		while ((proceed() and is_identifier(ch)) or isDigit(ch))key += ch;
-		// subsequent characters can contain digits
-//		while (proceed() and
-//		       (('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ('0' <= ch and ch <= '9') or ch == '_' or
-//		        ch == '$' or ch < 0 /* UTF */ or ch == '.' or ch == '-')) {
-//			 '.' and '-' are commonly used in html and xml names, but not valid JS name chars
-//			key += ch;
-//		}
-		key += '\0';// 0x00;
+		while ((proceed() and is_identifier(ch)) or isDigit(ch))stop++;//  key += ch;
+		String key = String(text.data + start, stop - start + 1, !debug);
 		return key;
 	};
 
@@ -1064,6 +1070,7 @@ private:
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
+// reason for strange name import instead of parse is better IDE findability, todo rename to parseNode()?
 	Node &valueNode(codepoint close = 0, Node *parent = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
 		Node current;
@@ -1272,6 +1279,9 @@ private:
 					// {a} ; b c vs {a} b c vs {a} + c
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
 					Node node = expressione(close == ' ');//word();
+					if (node.first().name == "include" or node.first().name == "import") {// import IF not in data mode
+						node = parseFile(node.last().name);
+					}
 					if (precedence(node) or operator_list.has(node.name))
 						node.kind = operators;
 					if (node.kind == operators and ch != ':') {
