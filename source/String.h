@@ -632,6 +632,10 @@ public:
 		return eq(data, c->data, shared_reference ? length : -1);
 	}
 
+	String &operator||(String &s) {// const
+		if (this->empty())return s;
+		return *this;
+	}
 
 	bool operator!=(String &s) {// const
 		if (this->empty())return !s.empty();
@@ -742,7 +746,8 @@ public:
 		return indexOf(chr) >= 0;
 	}
 
-
+	[[nodiscard]]
+	__attribute__((__warn_unused_result__))
 	String &replace(chars string, chars with) {// first only!
 		int i = this->indexOf(string);
 		if (i >= 0) {
@@ -753,11 +758,14 @@ public:
 		}
 	}
 
+	[[nodiscard("replace generates a new string to be consumed!")]]
+	__attribute__((__warn_unused_result__))
 	String &replace(chars string, String with) {// first only!
 		return replace(string, with.data);
 	}
 
-
+	[[nodiscard]]
+	__attribute__((__warn_unused_result__))
 	String &replaceAll(String part, String with) {
 		String &done = *this;
 		if (with.contains(part))todo("incremental replaceAll");

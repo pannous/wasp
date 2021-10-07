@@ -3,7 +3,9 @@
 #include "wasm_reader.h"
 #include "wasm_merger.h"
 
-#define assert_throws(αα)  printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);try{emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line();}catch(chars){}catch(String*){}catch(...){};
+#define assert_throws(αα)  printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);bool old=panicking;try{ \
+panicking=false;emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line(); \
+}catch(chars){}catch(String*){}catch(...){};panicking=old;
 
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 //#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
@@ -161,6 +163,7 @@ void testFloatOperators() {
 void testMathOperators() {
 //	assert_emit(("42 2 *"), 84)
 	assert_emit("- -3", 3);
+
 	assert_emit("‖-3‖", 3);
 	assert_emit("‖-3‖+1", 4);
 //	assert_emit("-3‖", 3);
@@ -1025,6 +1028,18 @@ void testIndexWasm() {
 	assert_emit("k='hi';k#1=65;k#2", 'i')
 	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
 	assert_emit("i=2;k='hio';k#i", 'i')
+}
+
+
+void testImportWasm() {
+//	Code fourty_two=emit(analyze(parse("ft=42")));
+//	fourty_two.save("fourty_two.wasm");
+	assert_emit("import fourty_two", 42);
+	assert_emit("include fourty_two", 42);
+	assert_emit("require fourty_two", 42);
+	assert_emit("import fourty_two;ft*2", 42 * 2);
+	assert_emit("include fourty_two;ft*2", 42 * 2);
+	assert_emit("require fourty_two;ft*2", 42 * 2);
 }
 
 void testAllWasm() {

@@ -98,9 +98,6 @@ ENDFUNCTION()
 
 set(CMAKE_CXX_STANDARD 20)
 
-ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
-ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
-ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
 ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it needs for the declared range of possible values.
 # makes TypedValue 1+8 bytes, doesn't help for multi-value (int32 int64)
 
@@ -116,6 +113,7 @@ if (DEBUG)
     SET(DEPLOYMENT_POSTPROCESSING YES)
 endif ()
 
+
 if (NOT RELEASE)
     ADD_COMPILE_FLAG("-fno-inline")
 
@@ -124,10 +122,15 @@ if (NOT RELEASE)
         ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
     endif ()
     # enable:
+    ADD_COMPILE_FLAG("-Wall")
     ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
     ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
     ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
+    ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
     # disable:
+    ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
+    ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
+    ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
     ADD_COMPILE_FLAG("-Wno-error=#warnings")
     ADD_COMPILE_FLAG("-Wno-writable-strings") # allow conversion from string literal to 'char *'
     ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
@@ -144,7 +147,7 @@ endif ()
 #if (DEBUG)
 #else ()
 if (RELEASE)
-    ADD_COMPILE_FLAG("-w") # hide warnings
+    #    ADD_COMPILE_FLAG("-w") # hide warnings
     if (NOT WASM)
         ADD_COMPILE_FLAG("-Os -Oz") # NO WASM GENERATED wth. size should be ok? -O1 removes symbol names https://bugs.llvm.org/show_bug.cgi?id=45602 !
     endif ()
@@ -153,7 +156,7 @@ endif ()
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
 
 # COMMON FOR ALL
-set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Wasp.cpp source/Angle.cpp source/wasm_helpers.cpp)
+set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Wasp.cpp source/Angle.cpp source/wasm_helpers.cpp source/Util.cpp)
 
 if (RUNTIME_ONLY)
     ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY)
@@ -355,7 +358,7 @@ elseif (WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
     add_executable(wasp ${SOURCE_FILES})
 elseif (V8)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_v8.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_v8.cpp source/Util.cpp source/Util.h)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/v8/include/)
