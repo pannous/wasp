@@ -8,3 +8,10 @@ bool fileExists(String filename);
 
 String findFile(String filename);// empty() if not found
 //char *findFile(char* filename);// 0 if not found
+
+template<class S>
+bool contains(List<S> list, S match);
+
+template<class S>
+// list HAS TO BE 0 terminated! Dangerous C!! ;)
+bool contains(S list[], S match);
