@@ -30,3 +30,20 @@ String findFile(String filename) {
 	if (not filename.contains("/"))filename = findFile("samples/"s + filename) || filename;
 	return fileExists(filename) ? filename : "";
 }
+
+template<class S>
+bool contains(List<S> list, S match) {
+	return list.has(match);
+}
+
+
+template<class S>
+// list HAS TO BE 0 terminated! Dangerous C!! ;)
+bool contains(S list[], S match) {
+	S *elem = list;
+	do {
+		if (match == *elem)
+			return true;
+	} while (*elem++);
+	return false;
+}
