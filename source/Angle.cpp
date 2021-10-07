@@ -118,9 +118,10 @@ String extractFunctionName(Node &node) {
 //List<chars> rightAssociatives = List(ras);
 #ifndef WASM
 List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++…", 0};// a=b=1 == a=(b=1) => a=1
+
 // still needs to check a-b vs -i !!
-List<chars> prefixOperators = {"abs",/*norm*/ "‖", "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
-                               "~", "&",
+List<chars> prefixOperators = {"abs",/*norm*/  "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
+                               "~", "&", "$",
                                "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
 List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "%", "％", "﹪", "٪",
                                "‰"};// modulo % ≠ ％ percent
@@ -128,6 +129,16 @@ List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"
 //							  "sizeof", "new", "delete[]"};
 //List<chars> suffixOperators = { "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", "％", "﹪", "٪",
 //							   "‰"};// modulo % ≠ ％ percent
+
+List<chars> circumfixOperators = {"‖", 0};
+
+codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0, 0, 0};
+// () ﴾ ﴿ ﹙﹚（ ） ⁽ ⁾  ⸨ ⸩
+// {} ﹛﹜｛｝    ﹝﹞〔〕〘〙  ‖…‖
+// [] 〚〛〖〗【】『』「」｢｣ ⁅⁆
+// «» 《》〈〉〈〉
+// ︷ ︵ ﹁ ﹃ ︹ ︻ ︽
+// ︸ ︶ ﹂ ﹄ ︺ ︼ ︾
 
 
 List<chars> infixOperators = operator_list;
@@ -390,6 +401,11 @@ bool hasFunction(Node &n) {
 }
 
 
+bool isCircumFlexOperator(Node &node) {
+	return circumfixOperators.has(node.name);
+	return node.name == "‖";
+}
+
 bool isVariable(String name, String context0) {
 	if (globals.has(name))return true;
 	String context = "main";// context0.name;// todo find/store proper enclosing context of expression
@@ -417,8 +433,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 		fromRight = fromRight || prefixOperators.has(op); // !√!-1 == !(√(!(-1)))
 		int i = expression.index(op, last_position, fromRight);
 		if (i < 0) {
-			if (op == "-")
-				continue;// ok -1 part of number
+			if (op == "-" or op == "‖")
+				continue;// ok -1 part of number, ‖3‖ closing
 			i = expression.index(op, last_position, fromRight);// try again for debug
 			expression.log();
 			error("operator missing: "s + op);
@@ -436,7 +452,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 			functionSignatures["powi"].is_used = true;
 			functionSignatures["powf"].is_used = true;
 		}
-		if (isPrefixOperation(node, prev, next)) {// ++x -i
+		if (isPrefixOperation(node, prev, next) or isCircumFlexOperator(node)) {// ++x -i
 			node.kind = Type::operators;// todo should have been parsed as such!
 			node.add(next);
 			if (node == "-") {
@@ -527,6 +543,7 @@ String &checkCanonicalName(String &name) {
 	if (name == "&&")warn("The conjunction operator in angle is simply 'and' : 1 and 1 = 1");
 	return name;
 }
+
 
 // √π -i ++j !true … not delete(x)
 bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
@@ -941,13 +958,6 @@ chars function_list[] = {"abs", "norm", "square", "root", "log", "puts", "print"
                          "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
                          0};// MUST END WITH 0, else BUG
 chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
-codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0, 0, 0};
-// () ﴾ ﴿ ﹙﹚（ ） ⁽ ⁾  ⸨ ⸩
-// {} ﹛﹜｛｝    ﹝﹞〔〕〘〙  ‖…‖
-// [] 〚〛〖〗【】『』「」｢｣ ⁅⁆
-// «» 《》〈〉〈〉
-// ︷ ︵ ﹁ ﹃ ︹ ︻ ︽
-// ︸ ︶ ﹂ ﹄ ︺ ︼ ︾
 
 
 float precedence(Node &operater) {
