@@ -18,7 +18,9 @@ typedef unsigned char byte;//!
 #define min(a, b) (a < b ? a : b)
 
 extern bool debug;
-extern bool throwing;
+extern bool throwing;// false for error tests etc
+extern bool panicking;// false for error tests, webview, etc
+
 extern bool polish_notation;
 
 //extern unsigned char __heap_base;
