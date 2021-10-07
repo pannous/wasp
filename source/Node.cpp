@@ -169,6 +169,7 @@ Node &Node::operator[](chars s) {
 //for (Node &child : liste) { // DOES effect liste
 //for (Node child : liste) { // Does NOT effect liste
 Node *Node::begin() const {
+	if (length <= 0)return 0;
 	return children;
 }
 

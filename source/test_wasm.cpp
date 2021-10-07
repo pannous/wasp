@@ -163,9 +163,14 @@ void testFloatOperators() {
 void testMathOperators() {
 //	assert_emit(("42 2 *"), 84)
 	assert_emit("- -3", 3);
+	assert_emit("1- -3", 4);
+	assert_emit("1 - -3", 4);
+	assert_emit("1 - - 3", 4);
+	assert_throws("1--3");// should throw, variable missed by parser! 1 OK'ish
+	//	assert_emit("1--3", 4);// should throw, variable missed by parser! 1 OK'ish
 
 	assert_emit("‖-3‖", 3);
-	assert_emit("‖-3‖+1", 4);
+//	assert_emit("‖-3‖+1", 4);
 //	assert_emit("-3‖", 3);
 	assert_emit("3^2", 9);
 	assert_emit("3^1", 3);
@@ -1034,10 +1039,10 @@ void testIndexWasm() {
 void testImportWasm() {
 //	Code fourty_two=emit(analyze(parse("ft=42")));
 //	fourty_two.save("fourty_two.wasm");
+	assert_emit("import fourty_two;ft*2", 42 * 2);
 	assert_emit("import fourty_two", 42);
 	assert_emit("include fourty_two", 42);
 	assert_emit("require fourty_two", 42);
-	assert_emit("import fourty_two;ft*2", 42 * 2);
 	assert_emit("include fourty_two;ft*2", 42 * 2);
 	assert_emit("require fourty_two;ft*2", 42 * 2);
 }

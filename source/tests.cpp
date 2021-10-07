@@ -1570,8 +1570,8 @@ void testNodeBasics() {
 }
 
 void testLogicOperators() {
-	assert_is("¬ 1", 0);
 	assert_is("¬ 0", 1);
+	assert_is("¬ 1", 0);
 
 	assert_is("0 ⋁ 0", 0);
 	assert_is("0 ⋁ 1", 1);
@@ -1898,19 +1898,30 @@ int testNodiscard() {
 }
 
 void testCurrent() { // move to tests() once OK
+	skip(
+			assert_emit("‖-3‖+1", 4);
+			assert_emit("√9*-‖-3‖/3", -3);
+			assert_emit("√9*‖-3‖/-3", -3);
+			assert_emit("√9*-‖-3‖/-3", 3);
+			assert_emit("1-‖-3‖-1", -3);
+			assert_emit("-‖-3‖", -3);
+	)
+	assert_emit("‖-3‖", 3);
+	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
+	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
+	assert_emit("3 + √9", (long) 6);
+	assert_run("x='123';x=='123'", true);// ok
+	assert_parses("{ç:☺}");
+	assert(result["ç"] == "☺");
 	clearContext();
 	testNodiscard();
-	testImportWasm();
+//	testImportWasm();
 	logi(testNodiscard());
 //	testImport();
+	assert_is("¬ 0", 1);
 
-	assert_emit("1- -3", 4);
-	assert_emit("1 - -3", 4);
-	assert_emit("1 - - 3", 4);
-	assert_throws("1--3");// should throw, variable missed by parser! 1 OK'ish
-//	assert_emit("1--3", 4);// should throw, variable missed by parser! 1 OK'ish
-	return;
-	testPaintWasm();
+//	return;
+//	testPaintWasm();
 //	testWasmSpeed();
 
 
@@ -1918,10 +1929,10 @@ void testCurrent() { // move to tests() once OK
 	skip(
 			assert_emit("i=-9;√-i", 3);
 			assert_emit("i=-9;√ -i", 3);
+			assert_emit("i=-9;√-i", 3);
 	)
 //	assert_run not compatible with Wasmer, don't ask why, we don't know;)
 	testSerialize();
-	assert_emit("i=-9;√-i", 3);
 //	assert_emit("print('hello')",0);
 	// todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
 	assert_emit("x={1 4 3};x#2=5;x[1]", 5);

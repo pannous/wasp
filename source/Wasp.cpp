@@ -96,11 +96,11 @@ bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
 	if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
 	if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
 	if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
-
-	if (ch == u'√')return true;// 0x221A redundant
+	if (ch == u'¬')return true;
 	if (ch == u'＝')return true;
-	if (ch == u'≠')return true;
 	if (ch == u'#')return true;
+	if (operator_list.has(String(ch)))
+		return true;
 
 //		if(ch=='=') return false;// internal treatment
 	if (ch > 0x80)
@@ -331,10 +331,9 @@ private:
 		// identifiers must start with a letter, _ or $.
 		if (!is_identifier(ch)) error("Unexpected identifier character "s + renderChar(ch));
 		int start = at;
-		int stop = at;
 		// subsequent characters can contain ANYTHING
-		while ((proceed() and is_identifier(ch)) or isDigit(ch))stop++;//  key += ch;
-		String key = String(text.data + start, stop - start + 1, !debug);
+		while ((proceed() and is_identifier(ch)) or isDigit(ch));
+		String key = String(text.data + start, at - start, !debug);
 		return key;
 	};
 
@@ -1279,8 +1278,16 @@ private:
 					// {a} ; b c vs {a} b c vs {a} + c
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
 					Node node = expressione(close == ' ');//word();
-					if (node.first().name == "include" or node.first().name == "import") {// import IF not in data mode
-						node = parseFile(node.last().name);
+					// todo:
+//					Node import=node.find(["import","include","require"]);
+//					if(import)node.replace(import,-1,…)
+					if (node.first().name == "include" or node.first().name == "import" or
+					    node.first().name == "require") {
+						// import IF not in data mode
+						if (not node.name.empty())
+							node = parseFile(node.values().first().name);// todo
+						else
+							node = parseFile(node.last().name);
 					}
 					if (precedence(node) or operator_list.has(node.name))
 						node.kind = operators;
@@ -1525,10 +1532,10 @@ int main(int argp, char **argv) {
 #ifdef WEBAPP
 		log("\nWEBAPP!");
 		// handing over to V8, we need to call testCurrent() from there!
-		init_graphics(); // startApp();
+		init_graphics(); //
 #endif
 #ifndef NO_TESTS // RUNTIME_ONLY
-		testCurrent();
+		testCurrent();// needs init_graphics in WEBAPP to run wasm!
 #endif
 		return 42;
 	} catch (Exception e) {
