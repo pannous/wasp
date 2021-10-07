@@ -16,7 +16,7 @@
 
 bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
-
+bool panicking = true;
 #ifdef RUNTIME_ONLY
 bool debug = false;
 #else

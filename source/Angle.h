@@ -14,6 +14,7 @@ public:
 	static Node &analyze(Node code);
 };
 
+void clearContext();
 extern List<String> declaredFunctions;
 extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
