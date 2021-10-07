@@ -356,7 +356,6 @@ String s(chars &s) {
 }
 
 
-
 #ifndef WASM
 //relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
 String nil_name = "nil";
@@ -483,9 +482,14 @@ inline short utf8_byte_count(char c0) {
 }
 
 // utf8_byte_count on the first byte of a codepoint represented as utf8 is fine, however AUTO-CASTING U'√' to char is NOT fine!
-short utf8_byte_count(codepoint c) {
-	if (c == 0)return 1;
-	return String(c).length;
+short utf8_byte_count(codepoint ucs_character) {
+	if (ucs_character <= 0x7F) return 1;
+	if (ucs_character <= 0x7FF) return 2;
+	if (ucs_character <= 0xFFFF) return 3;
+	if (ucs_character <= 0x1FFFFF) return 4;
+	if (ucs_character <= 0x3FFFFFF) return 5;
+// if (ucs_character <= 0x7FFFFFFF)
+	return 6;
 }
 
 //List<codepoint> split_by_codepoint(String input) {

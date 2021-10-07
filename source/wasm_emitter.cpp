@@ -207,7 +207,8 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	if (eq(s, "poke"))return i64_store; // memory.poke memory.set memory.write
 
 	// todo : set_local,  global_get ...
-	if (eq(s, "$"))return get_local; // $0 $1 ...
+	if (eq(s, "$"))
+		return get_local; // $0 $1 ...
 
 	trace("unknown or non-primitive operator %s\n"s %
 	      String(s)); // can still be matched as function etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
@@ -693,7 +694,7 @@ Code emitValue(Node node, String context) {
 Code emitOperator(Node node, String context) {
 	Code code;
 	String &name = node.name;
-	lhs_type = none;// safe to reset?
+//	lhs_type = none;// safe to reset? no
 	int index = functionIndices.position(name);
 	if (name == "then")return emitIf(*node.parent, context);// pure if handled before
 	if (name == ":=")
@@ -705,17 +706,19 @@ Code emitOperator(Node node, String context) {
 	if (node.length < 1 and not node.value.node and not node.next) {
 		node.log();
 		error("missing args for operator "s + name);
-	} else if (node.length == 1) {
+	} else if (node.length == 1) {// todo : some ops need value AFTER opcode, e.g. get_local!
 //				if(name.in(function_list)) SHOULDN'T HAPPEN!
 //				error("unexpected unary operator: "s + name);
 		Node arg = node.children[0];
 		const Code &arg_code = emitExpression(arg, context);// should ALWAYS just be value, right?
+		lhs_type = last_type;
 		code.push(arg_code);// might be empty ok
 	} else if (node.length == 2) {
 		Node lhs = node.children[0];//["lhs"];
 		Node rhs = node.children[1];//["rhs"];
 		const Code &lhs_code = emitExpression(lhs, context);
-		lhs_type = last_type;
+//		if(last_type!=void_block)
+		lhs_type = last_type;// needs to be visible to array index [1,2,3]#1
 		const Code &rhs_code = emitExpression(rhs, context);
 		Valtype rhs_type = last_type;
 		Valtype commonType = needsUpgrade(lhs_type, rhs_type, name);// 3.1 + 3 => 6.1 etc
@@ -723,7 +726,9 @@ Code emitOperator(Node node, String context) {
 		code.add(cast(lhs_type, commonType));
 		code.push(rhs_code);// might be empty ok
 		code.add(cast(rhs_type, commonType));
-		last_type = commonType;
+		if (commonType != void_block)
+			last_type = commonType;
+		else last_type = rhs_type;
 	} else if (node.length > 2) {// todo: n-ary? ∑? is just a function!
 		error("Too many args for operator "s + name);
 //	} else if (node.next) { // todo really? handle ungrouped HERE? just hiding bugs?
@@ -746,10 +751,12 @@ Code emitOperator(Node node, String context) {
 		return code;
 	}
 	byte opcode = opcodes(name, last_type, lhs_type);
-	if (opcode >= 0x8b and opcode <= 0x98) // float ops
-		code.add(cast(last_type, f32));
-	if (opcode >= 0x99 and opcode <= 0xA6) // double ops
-		code.add(cast(last_type, f64));
+	if (opcode >= 0x8b and opcode <= 0x98 and
+	    (last_type == int32 or last_type == int64 or last_type == float64 or last_type == void_block))
+		code.add(cast(last_type, f32));// float ops
+	if (opcode >= 0x99 and opcode <= 0xA6 and
+	    (last_type == int32 or last_type == int64 or last_type == float32 or last_type == void_block))
+		code.add(cast(last_type, f64)); // double ops
 
 	if (last_type == stringp)
 		code.add(emitStringOp(node, String()));
@@ -815,6 +822,11 @@ Code emitOperator(Node node, String context) {
 	} else {
 		error("unknown opcode / call / symbol: "s + name + " : " + index);
 	}
+
+	if (opcode == get_local and node.length == 1) {// arg AFTER op (not as const!)
+		code.push(node.first().value.longy);
+	}
+
 	if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or opcode == i32_mul)
 		last_type = i32t;
 	if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt or opcode == f32_ge or opcode == f32_le)
@@ -1087,10 +1099,10 @@ Code emitCall(Node &fun, String context) {
 }
 
 Code cast(Valtype from, Valtype to) {
+	last_type = to;// danger: hides last_type in caller!
 	Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
 	if (to == none)return nop;// no cast needed magic VERSUS wasm drop!!!
 	if (from == to)return nop;// nop
-	last_type = to;
 	if (from == array and to == charp)return nop;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
 	if (from == i32t and to == charp)return nop;// assume i32 is a pointer here. todo?
 	if (from == charp and to == i32t)return nop;// assume i32 is a pointer here. todo?
@@ -1124,9 +1136,10 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==f64 and to==i64)	return Code(i𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟨𝟦);
 //	if(from==i32 and to==f32)	return Code(f𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟥𝟤);
 //	if(from==i64 and to==f64)	return Code(f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦);
-	if (from == void_block and to == i32)
-		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
-//	error("incompatible types "s + typeName(from) + " => " + typeName(to));
+	if (from == void_block)return nop;// todo: pray
+//	if (from == void_block and to == i32)
+//		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
+	error("incompatible types "s + typeName(from) + " => " + typeName(to));
 	return nop;
 }
 
@@ -1329,6 +1342,7 @@ Code emitBlock(Node node, String context) {
 	Valtype x = last_type;
 	block.push(inner_code_data);
 	Valtype return_type = functionSignatures[context].return_type;// switch back to return_types[context] for block?
+	auto type0 = last_type;
 	if (return_type != last_type) {
 		if (return_type == Valtype::voids and last_type != Valtype::voids)
 			block.addByte(drop);
