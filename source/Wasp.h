@@ -7,7 +7,12 @@
 //static
 extern chars function_list[];
 extern chars functor_list[];// takes blocks … parse differently?
+
+// todo: do we really need three lists for similar concepts?
 extern codepoint grouper_list[];
+extern codepoint opening_special_brackets[];
+extern codepoint circumfixOperators[];
+
 extern List<chars> operator_list;
 
 Node parse(String source);// wasp -> data
@@ -29,3 +34,4 @@ float precedence(Node &operater);
 
 float precedence(char group); // special: don't mix
 //Node emit(String code);// moved to angle
+codepoint closingBracket(codepoint bracket);
