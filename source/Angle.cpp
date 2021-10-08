@@ -445,11 +445,9 @@ Node &groupOperators(Node &expression, String context = "main") {
 
 		Node &next = expression.children[i + 1];
 		next = analyze(next);
-		String &name = node.name;
-		check(name == op);
 		Node &prev = expression.children[i - 1];
 		if (i == 0)prev = NIL;
-		name = checkCanonicalName(name);
+		String &name = checkCanonicalName(op);
 		if (name == "^" or name == "^^" or name == "**") {// todo NORM operators earlier!
 			functionSignatures["pow"].is_used = true;
 			functionSignatures["powi"].is_used = true;
@@ -488,25 +486,24 @@ Node &groupOperators(Node &expression, String context = "main") {
 
 			} else {
 				//#ifndef RUNTIME_ONLY
+				// ways to set type:
+				/*
+				 * int x
+				 * x:int
+				 * x=7  needs pre-evaluation of rest!!!
+				 * */
 				if (name.endsWith("=") and not name.startsWith("::") and
 				    prev.kind == reference) {// todo can remove hack?
-					// ways to set type:
-					/*
-					 * int x
-					 * x:int
-					 * x=7  needs pre-evaluation of rest!!!
-					 * */
+					// x=7 and x*=7
 					if (!localContext.has(prev.name)) {
-						Valtype valtype = mapType(*node.value.node);
+						if (name.startsWith("="))error("self modifier on unknown reference "s + prev.name);
+						Valtype valtype = mapType(*node.value.node);//
 						localContext.add(prev.name);
 						localContextTypes.add(valtype);
 					} else {
 						// variable is known but not typed yet
 						int position = localContext.position(prev.name);
-//						if (valtype)
-//							localContextTypes[position] = valtype;// set IF POSSIBLE
-//						else
-						localContextTypes[position] = mapType(next);// TODO  pre-evaluation of rest!!!
+						localContextTypes[position] = mapType(next);// TODO  pre-evaluation of rest!!! keep old type?
 					}
 				}
 				//#endif
@@ -522,8 +519,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 					// globalTypes[] set in globalSection, after emitExpression
 				} else if (op.length > 1 and op.endsWith("="))
 					// Complicated way to express *= += -= … self assignments
-					if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and op[0] != '>') {// += etc
-						name = String(op.data[0]);
+					if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and op[0] != '>') {// *= += etc
+						node.name = String(op.data[0]);
 						Node *setter = prev.clone();
 //					setter->setType(assignment); //
 						setter->value.node = node.clone();
