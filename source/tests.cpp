@@ -1897,20 +1897,13 @@ int testNodiscard() {
 	return 54;
 }
 
+void testWaspInitializationIntegrity() {
+	check(not contains(operator_list0, "‖"))// it's a grouper!
+}
+
 void testCurrent() { // move to tests() once OK'
-	assert_emit("‖1‖-1", 0);
-	assert_emit("1-‖-3‖-1", -3);
-	assert_emit("√9*-‖-3‖/3", -3);
-	assert_emit("√9*‖-3‖/-3", -3);
-	assert_emit("√9*-‖-3‖/-3", 3);
-
-	assert_emit("i=3;i*=3", (long) 9);
-	assert_emit("i=3;i+=3", (long) 6);
-	assert_emit("i=3;i-=3", (long) 0);
-	assert_emit("i=3;i/=3", (long) 1);
-	assert_emit("i=3^1;i^=3", (long) 27);
-//	assert_emit("i=3;i√=3", (long) ∛3);
-
+	testWaspInitializationIntegrity();
+	testNorm();
 	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
 	skip(
 			assert_throws("i*=3");// well:

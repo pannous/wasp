@@ -428,9 +428,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 		Node &node = expression.children[i];
 		if (node.length)continue;// already processed
 
-//		if(node.name=="‖") {
-		if (contains(circumfixOperators, op.codepointAt(0)) or
-		    contains(opening_special_brackets, op.codepointAt(0))) {
+		if (contains(opening_special_brackets, op.codepointAt(0))) {
 			//			continue;// grouped in valueNode!
 			node.kind = Type::operators;// todo should have been parsed as such!
 			auto close = String(closingBracket(op.codepointAt(0)));// todo group in valueNode!
