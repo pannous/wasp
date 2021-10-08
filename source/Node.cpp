@@ -837,7 +837,7 @@ String Node::serialize() const {
 			else if (kind == patterns)wasp += "[";
 			else if (length > 0) wasp += "(";// default
 		}
-		if (polish_notation and not empty(name))wasp += name;
+		if (polish_notation and not empty(name)) wasp += name;
 		int i = 0;
 		for (Node &node : *this) {
 			if (separator and i++ > 0) wasp += separator;// DANGER + " " fucks up + chain pointer!
@@ -850,6 +850,7 @@ String Node::serialize() const {
 			else if (kind == patterns)wasp += "]";
 			else if (length > 0) wasp += ")";// default
 		}
+		if (eq(name, "‖")) wasp += name;
 	}
 	return wasp;
 //	return empty(name)? string() : name;
