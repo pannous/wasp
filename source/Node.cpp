@@ -831,7 +831,7 @@ String Node::serialize() const {
 	if (length >= 0) {
 		if (kind == expression and not name.empty())wasp += ":";
 		// skip single element braces: a == (a)
-		if (not grouper and (length != 1 or kind == patterns)) {
+		if (not separator and (length != 1 or kind == patterns)) {
 			if (kind == groups)wasp += "(";
 			else if (kind == objects)wasp += "{";
 			else if (kind == patterns)wasp += "[";
@@ -840,11 +840,11 @@ String Node::serialize() const {
 		if (polish_notation and not empty(name))wasp += name;
 		int i = 0;
 		for (Node &node : *this) {
-			if (grouper and i++ > 0) wasp += grouper;// DANGER + " " fucks up + chain pointer!
+			if (separator and i++ > 0) wasp += separator;// DANGER + " " fucks up + chain pointer!
 			wasp += " ";
 			wasp += node.serialize();
 		}
-		if (not grouper and (length != 1 or kind == patterns)) {
+		if (not separator and (length != 1 or kind == patterns)) {
 			if (kind == groups)wasp += ")";
 			else if (kind == objects)wasp += "}";
 			else if (kind == patterns)wasp += "]";

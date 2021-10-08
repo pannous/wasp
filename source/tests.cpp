@@ -1898,6 +1898,12 @@ int testNodiscard() {
 }
 
 void testCurrent() { // move to tests() once OK'
+	assert_emit("‖1‖-1", 0);
+	assert_emit("1-‖-3‖-1", -3);
+	assert_emit("√9*-‖-3‖/3", -3);
+	assert_emit("√9*‖-3‖/-3", -3);
+	assert_emit("√9*-‖-3‖/-3", 3);
+
 	assert_emit("i=3;i*=3", (long) 9);
 	assert_emit("i=3;i+=3", (long) 6);
 	assert_emit("i=3;i-=3", (long) 0);
@@ -1907,16 +1913,12 @@ void testCurrent() { // move to tests() once OK'
 
 	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
 	skip(
+			assert_throws("i*=3");// well:
+			assert_emit("i*=3", (long) 0);
 
 			assert_emit("⅓ ≈ .3333333 ", 1);
 			assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
 
-			assert_emit("‖-3‖+1", 4);
-			assert_emit("-‖-3‖", -3);
-			assert_emit("1-‖-3‖-1", -3);
-			assert_emit("√9*-‖-3‖/3", -3);
-			assert_emit("√9*‖-3‖/-3", -3);
-			assert_emit("√9*-‖-3‖/-3", 3);
 	)
 	assert_emit("‖-3‖", 3);
 	assert_emit("add1 x:=$0+1;add1 3", (long) 4);

@@ -170,8 +170,8 @@ void testMathOperators() {
 	//	assert_emit("1--3", 4);// should throw, variable missed by parser! 1 OK'ish
 
 	assert_emit("‖-3‖", 3);
-//	assert_emit("‖-3‖+1", 4);
-//	assert_emit("-3‖", 3);
+	assert_emit("-‖-3‖", -3);
+	assert_emit("‖-3‖+1", 4);
 	assert_emit("3^2", 9);
 	assert_emit("3^1", 3);
 	assert_emit("√3^2", 3);
