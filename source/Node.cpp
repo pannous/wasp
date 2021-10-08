@@ -1088,6 +1088,13 @@ Node &Node::setType(Type type, bool check) {
 	return *this;
 }
 
+List<String> &Node::toList() {
+	List<String> &values = *new List<String>();
+	for (Node &child: *this)
+		values.add(child.name);
+	return values;
+}
+
 
 //String
 chars typeName(Type t) {

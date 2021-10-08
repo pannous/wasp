@@ -623,7 +623,7 @@ void testErrors() {
 	ln -s /Users/me/dev/apps/wasp/samples /Users/me/dev/apps/wasp/cmake-build-default/ #out/
   */
 	breakpoint_helper
-	Node node = Wasp::parseFile("samples/errors.wasp");
+	Node node = /*Wasp::*/parseFile("samples/errors.wasp");
 	throwing = true;
 }
 
@@ -649,7 +649,7 @@ void testAllSamples() {
 // ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/out wtf
 	for (const auto &file : files("samples/")) {
 		if (!String(file.path().string().data()).contains("error"))
-			Mark::Wasp::parseFile(file.path().string().data());
+			Mark::/*Wasp::*/parseFile(file.path().string().data());
 	}
 }
 #endif
@@ -657,7 +657,7 @@ void testAllSamples() {
 #endif
 
 void testSample() {
-	Node node = Wasp::parseFile("samples/comments.wasp");
+	Node node = /*Wasp::*/parseFile("samples/comments.wasp");
 }
 
 void testNewlineLists() {
@@ -666,7 +666,7 @@ void testNewlineLists() {
 }
 
 void testKitchensink() {
-	Node node = Wasp::parseFile("samples/kitchensink.wasp");
+	Node node = /*Wasp::*/parseFile("samples/kitchensink.wasp");
 	node.log();
 	assert(node['a'] == "classical json");
 	assert(node['b'] == "quotes optional");

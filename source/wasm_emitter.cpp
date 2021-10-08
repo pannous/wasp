@@ -32,12 +32,26 @@ Map<String, long> referenceIndices;
 Map<String,List<String>> aliases;
 Map<long/*hash*/,String> hash_to_normed_alias;
 
-void load_aliases(){
+bool aliases_loaded = false;
+void load_aliases() {
 //	Wasp::
-	parseFile("aliases.wasp");
+	aliases.setDefault(List<String>());
+	hash_to_normed_alias.setDefault(String());
+	data_mode = true;
+	auto list = parseFile("aliases.wasp");
+	for (auto key: list) {
+		auto normed = key.name;
+		aliases[normed] = key.toList();
+		for (auto alias:key) {
+			auto variant = alias.name;
+			hash_to_normed_alias[variant.hash()] = normed;
+		}
+	}
+	aliases_loaded = true;
 }
 
 String normOperator(String alias){
+	if (not aliases_loaded)load_aliases();
 	auto hash = alias.hash();
 	if(not hash_to_normed_alias.has(hash))
 		return alias;// or NIL : no alias
@@ -1090,13 +1104,14 @@ Code emitExpression(Node *nodes, String context) {
 
 Code emitCall(Node &fun, String context) {
 	Code code;
-	if (not functionSignatures.has(fun.name) or not functionIndices.has(fun.name))
-		error("unknown function "s + fun.name);// checked before, remove
+	auto name = fun.name;
+	if (not functionSignatures.has(name) or not functionIndices.has(name))
+		error("unknown function "s + name + " (" + normOperator(name) + ")");// checked before, remove
 
-	Signature &signature = functionSignatures[fun.name];
-	int index = functionIndices[fun.name];
+	Signature &signature = functionSignatures[name];
+	int index = functionIndices[name];
 	if (index < 0)
-		error("MISSING import/declaration for function %s\n"s % fun.name);
+		error("MISSING import/declaration for function %s\n"s % name);
 	int i = 0;
 	// args may have already been emitted, e.g. "A"+"B" concat
 	for (Node arg : fun) {

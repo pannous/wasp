@@ -15,3 +15,5 @@ bool contains(List<S> list, S match);
 template<class S>
 // list HAS TO BE 0 terminated! Dangerous C!! ;)
 bool contains(S list[], S match);
+
+unsigned int wordHash(const char *str, int max_chars = 20);
