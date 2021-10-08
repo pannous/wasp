@@ -47,3 +47,41 @@ bool contains(S list[], S match) {
 	} while (*elem++);
 	return false;
 }
+
+short normChar(char c) {// 0..36 damn ;)
+	if (c == '\n')return 0;
+	if (c >= '0' and c <= '9') return c - '0' + 26;
+	if (c >= 'a' and c <= 'z') return c - 'a' + 1;// NOT 0!!!
+	if (c >= 'A' and c <= 'Z') return c - 'A' + 1;// NOT 0!!!
+	switch (c) {
+		case '"':
+		case '\'':
+		case '!':
+		case '(':
+		case '#':
+		case '$':
+		case '+':
+		case ' ':
+		case '_':
+		case '-':
+			return 0;
+		default:
+			return c;// for asian etc!
+	}
+}
+
+unsigned int wordHash(const char *str, int max_chars) { // unsigned
+	if (!str) return 0;
+	int maxNodes = 100000;
+	char c;
+	unsigned int hash = 5381, hash2 = 7; // long
+	while (max_chars-- > 0 and (c = *str++)) {
+		hash2 = hash2 * 31 + (short) (c);
+		int next = normChar(c);//a_b-c==AbC
+		if (next == 0)continue;
+		hash = hash * 33 + next;// ((hash << 5) + hash
+		hash = hash % maxNodes;
+	}
+	if (hash == 0)return hash2;
+	return hash;
+}

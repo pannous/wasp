@@ -8,6 +8,7 @@
 #include "wasm_helpers.h"
 #include "Map.h"
 #include "Code.h"
+#include "Util.h"
 
 #ifndef WASM
 //#include <string.h> // strcpy
@@ -556,7 +557,8 @@ String String::trim() {
 }
 
 long String::hash() {
-	return (long)data;// only conflict: shared substring(0,i);
+	return wordHash(data, min(length, 20));
+//	return (long)data;// only conflict: shared substring(0,i);
 }
 
 String EMPTY_STRING0 = "";

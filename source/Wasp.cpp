@@ -398,8 +398,10 @@ private:
 			lineNumber++;
 			columnStart = at;
 		}
-		if (previous == '\n' or previous == 0)
-			line = text.substring(columnStart, text.indexOf('\n', columnStart));
+		if (previous == '\n' or previous == 0) {
+			auto to = text.indexOf('\n', at);
+			line = text.substring(at, to);
+		}
 		return ch;
 	};
 
@@ -576,12 +578,12 @@ private:
 		// Skip an inline comment, assuming this is one. The current character should
 		// be the second / character in the // pair that begins this inline comment.
 		// To finish the inline comment, we look for a newline or the end of the text.
-		if (ch != '/') {
+		if (ch != '/' and ch != '#') {
 			error("Not an inline comment");
 		}
 		do {
 			proceed();
-			if (ch == '\n' or ch == '\r') {
+			if (ch == '\r' or ch == '\n' or ch == 0) {
 				proceed();
 				return;
 			}
@@ -613,13 +615,15 @@ private:
 
 	// Parse a comment
 	bool comment() {
-
 		// Skip a comment, whether inline or block-level, assuming this is one.
-		// Comments always begin with a / character.
+		// Comments always begin with a # or / character.
 		char preserveLast = lastNonWhite;
-		if (ch != '/') {
-			error("Not a comment");
+		if (ch == '#') {
+			inlineComment();
+			previous = lastNonWhite = preserveLast;
+			return true;
 		}
+		if (ch != '/') error("Not a comment");
 		if (next == '/') {
 			proceed('/');
 			inlineComment();
@@ -1322,6 +1326,11 @@ private:
 					white();
 					break;
 				}
+				case '#':
+					if (next == ' ') {
+						comment();
+						continue;
+					}
 				case '/':
 					if (ch == '/' and (next == '/' or next == '*')) {
 						comment();
@@ -1620,8 +1629,6 @@ extern "C" int _start() { // for wasm-ld
 }
 //#endif
 #endif
-
-
 
 
 //static
