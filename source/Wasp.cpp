@@ -67,7 +67,7 @@ chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "i
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
-                          "‖", "abs",/*"norm",*/
+                          "abs", "‖",/*"norm",*/
                           0, 0, 0,
                           0}; // "while" ...
 // todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
@@ -751,7 +751,8 @@ private:
 	Node symbol() {
 		if (isDigit(ch))
 			return numbero();
-		if (ch == '-' and isDigit(next) and (empty(previous) or is_operator(previous))) // -1 √-1 but not 2-1 x-1!
+		if (ch == '-' and isDigit(next) and previous != u'‖' and
+		    (empty(previous) or is_operator(previous))) // -1 √-1 but not 2-1 x-1!
 			return numbero();
 		if (is_operator(ch))
 			return any_operator();
@@ -1104,11 +1105,11 @@ private:
 
 	bool is_grouper(codepoint bracket) {
 		return contains(grouper_list, bracket);
-		/*codepoint *grouper = grouper_list;
+		/*codepoint *separator = grouper_list;
 		do {
-			if (bracket == *grouper)
+			if (bracket == *separator)
 				return true;
-		} while (*grouper++);
+		} while (*separator++);
 		return false;*/
 	}
 
@@ -1151,7 +1152,9 @@ private:
 				let grouper = ch;
 				proceed();
 				auto group = valueNode(closingBracket(grouper));
-				group.grouper = grouper;
+				group.setType(groups, false);
+//				group.metas().add(type("group")["field"]=grouper)
+//				group.type = type("group")["field"]=grouper;
 				current.add(group);
 				// ︷
 				// ︸﹛﹜｛｝﹝﹞〔〕〘〙〚〛〖〗【】『』「」｢｣《》〈〉〈〉⁅⁆ «»
@@ -1297,17 +1300,17 @@ private:
 					}
 					// closing ' ' handled above
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
-					if (current.grouper != ch) {// and current.length > 1
+					if (current.separator != ch) {// and current.length > 1
 						// x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
 						if (current.length > 1 or current.kind == expression) {
 							Node neu;// wrap x,y => ( (x y) ; … )
 							neu.kind = groups;
 							neu.parent = parent;
-							//						neu.grouper = ch;
+							//						neu.separator = ch;
 							neu.add(current);
 							current = neu;
 						}
-						current.grouper = ch;
+						current.separator = ch;
 						char closer = ch;// need to keep troughout loop!
 						int i = 0;
 						//						closing(ch, closer) and not closing(ch, close) and ch!='}' and ch!=')' and ch!=']' and ch!=0
@@ -1319,7 +1322,7 @@ private:
 						break;
 					}
 					// else fallthough!
-					current.grouper = ch;
+					current.separator = ch;
 				}
 				case ' ': // possibly significant whitespace not consumed by white()
 				{

@@ -492,8 +492,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 				 * x:int
 				 * x=7  needs pre-evaluation of rest!!!
 				 * */
-				if (name.endsWith("=") and not name.startsWith("::") and
-				    prev.kind == reference) {// todo can remove hack?
+				if (name.endsWith("=") and not name.startsWith("::") and prev.kind == reference) {
+					// todo can remove hack?
 					// x=7 and x*=7
 					if (!localContext.has(prev.name)) {
 						if (name.startsWith("="))error("self modifier on unknown reference "s + prev.name);
@@ -551,12 +551,9 @@ bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
 //		if (infixOperators.has(node.name) or suffixOperators.has(node.name)) {
 		if (lhs.kind == reference)return false; // i++
 		if (isPrimitive(lhs))return false; // 3 -1
-		if (lhs.isEmpty() or lhs.kind == operators)
+		if ((lhs.isEmpty() or lhs.kind == operators) and lhs.name != "‖")
 			return true;
-		// todo -i vs a-b !
 		return false;
-//		}
-		return true;
 	}
 	return false;
 }
