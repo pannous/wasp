@@ -44,12 +44,16 @@ bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as exp
 
 //List<codepoint>
 //List<chars> circumfixOperators/*Left*/ = {"‖", 0};
-codepoint circumfixOperators[] = {u'‖', 0};
+//codepoint circumfixOperators[] = {u'‖', 0};
 // minus common ones u'(', u'{', u'[',
-codepoint opening_special_brackets[] = {u'﴾', u'﹙', u'（', u'⁽', u'⸨', u'﹛', u'｛', u'﹝', u'〔', u'〘',
+codepoint opening_special_brackets[] = {u'‖', u'﴾', u'﹙', u'（', u'⁽', u'⸨', u'﹛', u'｛', u'﹝', u'〔', u'〘',
                                         u'〚', u'〖', u'【', u'『', u'「', u'｢', u'⁅', u'«', u'《', u'〈',
                                         u'︷', u'︵', u'﹁', u'﹃', u'︹', u'︻', u'︽', 0};
-codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0, 0, 0};
+//codepoint closing_special_brackets[] = {}
+codepoint separator_list[] = {' ', ';', ':', '\n', '\t', 0};
+// todo:
+//codepoint grouper_list[] = {'(', ')', '{', '}', '[', ']', u'«', u'»', 0, };
+codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0};
 // () ﴾ ﴿ ﹙﹚（ ） ⁽ ⁾  ⸨ ⸩
 // {} ﹛﹜｛｝    ﹝﹞〔〕〘〙  ‖…‖
 // [] 〚〛〖〗【】『』「」｢｣ ⁅⁆
@@ -59,6 +63,8 @@ codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', 
 
 
 // predicates in of on from to
+// todo split keywords into binops and prefix functors
+// "‖" acts as GROUP, not as operator (when parsing)
 chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠",
                           "not",
                           "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...",
@@ -67,7 +73,7 @@ chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "i
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
-                          "abs", "‖",/*"norm",*/
+                          "abs", /*"norm",*/
                           0, 0, 0,
                           0}; // "while" ...
 // todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
@@ -785,7 +791,7 @@ private:
 		else return false;
 	}
 
-	Node &expressione(bool stop_at_space) {
+	Node &expressione(codepoint closer) {
 		Node node = symbol();
 		if (lookahead_ambiguity())
 			return *node.clone();
@@ -793,10 +799,11 @@ private:
 		Node expressionas;
 		// set kind = expression only if it contains operator, otherwise keep it as list!!!
 		expressionas.add(node);
-		if (node.kind == operators)expressionas.kind = expression;
-		if (stop_at_space and ch == ' ')return *expressionas.clone();
+		if (node.kind == operators) expressionas.kind = expression;
+		if (closer == ' ' and ch == ' ')// stop_at_space, keep it for further analysis (?)
+			return *expressionas.clone();
 		white();
-		while (ch and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
+		while (ch and ch != closer and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
 			node = symbol();// including operators `=` ...
 			if (node.kind == operators)expressionas.kind = expression;
 			expressionas.add(&node);
@@ -1103,14 +1110,9 @@ private:
 		return node.name.in(functor_list);
 	}
 
+	// todo ill-conceived separator
 	bool is_grouper(codepoint bracket) {
-		return contains(grouper_list, bracket);
-		/*codepoint *separator = grouper_list;
-		do {
-			if (bracket == *separator)
-				return true;
-		} while (*separator++);
-		return false;*/
+		return contains(separator_list, bracket) or contains(grouper_list, bracket);
 	}
 
 
@@ -1141,19 +1143,21 @@ private:
 				continue;
 			}
 			if (ch == close) { // (…) {…} «…» ... “‘ part of string
-				if (ch == '}' or ch == ']' or ch == ')' or ch == u'»' or ch == u'‖')
+				if (ch == 0 or ch == ' ' or ch == '\n' or ch == '\t' or ch == ';' or
+				    ch == ',');  // keep ';' ',' ' ' for further analysis (?)
+				else
 					proceed();
 				break;
 			}
 
-//			circumfixOperators.has(String(ch)) or
 			if (contains(opening_special_brackets, ch)) {
 				// overloadable grouping operators, but not builtin (){}[]
 				let grouper = ch;
 				proceed();
-				auto group = valueNode(closingBracket(grouper));
-				group.setType(groups, false);
-//				group.metas().add(type("group")["field"]=grouper)
+				auto body = valueNode(closingBracket(grouper));
+				Node group(grouper);
+				group.setType(operators, false);// name==« (without »)
+				group.add(body);
 //				group.type = type("group")["field"]=grouper;
 				current.add(group);
 				// ︷
@@ -1224,9 +1228,10 @@ private:
 				case '-':
 				case '+':
 				case '.':
-					if (isDigit(next) and (previous == 0 or is_grouper(previous) or is_operator(previous)))
+					if (isDigit(next) and
+					    (previous == 0 or contains(separator_list, previous) or is_operator(previous)))
 						current.addSmart(numbero());// (2+2) != (2 +2) !!!
-					else if (ch == '-' and next == '.')
+					else if (ch == '-' and next == '.')// todo bad criterion 1-.9 is BINOP!
 						current.addSmart(numbero()); // -.9 -0.9 border case :(
 					else {
 						Node *op = any_operator().clone();
@@ -1340,7 +1345,7 @@ private:
 					// a:b c != a:(b c)
 					// {a} ; b c vs {a} b c vs {a} + c
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
-					Node node = expressione(close == ' ');//word();
+					Node node = expressione(close);//word();
 					// todo:
 //					Node import=node.find(["import","include","require"]);
 //					if(import)node.replace(import,-1,…)
