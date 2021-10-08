@@ -301,19 +301,6 @@ public:
 #endif
 	}
 
-	static Node parseFile(String filename) {
-		String found = findFile(filename);
-		if (not found)error("file not found "s + filename);
-		else info("found "s + found);
-		if (found.endsWith("wasm")) {// handle in analysis, not in valueNode
-//			read_wasm(found);
-			auto import = Node("import").setType(operators);
-			import.add(new Node(found));
-			return import;
-		}
-		return Wasp::parse(readFile(found));
-	}
-
 private:
 	char escapee(char c) {
 		switch (c) {
@@ -1635,3 +1622,18 @@ extern "C" int _start() { // for wasm-ld
 #endif
 
 
+
+
+//static
+Node parseFile(String filename) {
+	String found = findFile(filename);
+	if (not found)error("file not found "s + filename);
+	else info("found "s + found);
+	if (found.endsWith("wasm")) {// handle in analysis, not in valueNode
+		//			read_wasm(found);
+		auto import = Node("import").setType(operators);
+		import.add(new Node(found));
+		return import;
+	}
+	return Wasp::parse(Wasp::readFile(found));
+}
