@@ -1130,6 +1130,7 @@ void testAllWasm() {
 	testMathOperators();
 	testMathPrimitives();
 	testSelfModifying();
+	testNorm();
 	testComparisonPrimitives();
 	testComparisonMath();
 	testComparisonId();
