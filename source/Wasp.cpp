@@ -45,8 +45,9 @@ bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as exp
 //List<codepoint>
 //List<chars> circumfixOperators/*Left*/ = {"‖", 0};
 codepoint circumfixOperators[] = {u'‖', 0};
-codepoint opening_special_brackets[] = {u'(', u'﴾', u'﹙', u'（', u'⁽', u'⸨', u'{', u'﹛', u'｛', u'﹝', u'〔', u'〘',
-                                        u'[', u'〚', u'〖', u'【', u'『', u'「', u'｢', u'⁅', u'«', u'《', u'〈',
+// minus common ones u'(', u'{', u'[',
+codepoint opening_special_brackets[] = {u'﴾', u'﹙', u'（', u'⁽', u'⸨', u'﹛', u'｛', u'﹝', u'〔', u'〘',
+                                        u'〚', u'〖', u'【', u'『', u'「', u'｢', u'⁅', u'«', u'《', u'〈',
                                         u'︷', u'︵', u'﹁', u'﹃', u'︹', u'︻', u'︽', 0};
 codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0, 0, 0};
 // () ﴾ ﴿ ﹙﹚（ ） ⁽ ⁾  ⸨ ⸩
@@ -690,8 +691,10 @@ private:
 		Node node = Node(ch);
 		node.setType(operators);// todo ++
 		proceed();
-		if (ch == '=' or ch == previous)// allow *= += ++ -- **  …
+		while (ch == '=' or ch == previous) {// allow *= += ++ -- **  …
 			node.name += ch;
+			proceed();
+		}
 		// NO OTHER COMBINATIONS for now!
 
 		/*// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
@@ -1146,7 +1149,8 @@ private:
 			if (contains(opening_special_brackets, ch)) {
 				// overloadable grouping operators, but not builtin (){}[]
 				let grouper = ch;
-				auto group = valueNode(closingBracket(ch));
+				proceed();
+				auto group = valueNode(closingBracket(grouper));
 				group.grouper = grouper;
 				current.add(group);
 				// ︷
