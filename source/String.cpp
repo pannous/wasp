@@ -555,6 +555,10 @@ String String::trim() {
 	return String(data + start, end - start, true);// share ok?
 }
 
+long String::hash() {
+	return (long)data;// only conflict: shared substring(0,i);
+}
+
 String EMPTY_STRING0 = "";
 String &EMPTY_STRING = EMPTY_STRING0;
 
