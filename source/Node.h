@@ -638,6 +638,8 @@ public:
 //		type = &_type->setType(classe);
 		return *this;
 	}
+
+	List<String> &toList();
 };
 
 typedef const Node Nodec;

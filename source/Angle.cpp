@@ -56,7 +56,11 @@ bool isFunction(String op) {
 	if (op.empty())return false;
 	if (declaredFunctions.has(op))return true;
 	if (functionSignatures.has(op))return true;// pre registered signatures
-	return op.in(function_list);// or op.in(functor_list); if
+	if (op.in(function_list))
+		return true;
+//	if(op.in(functor_list))
+//		return true;
+	return false;
 }
 
 bool isFunction(Node &op) {
@@ -948,7 +952,7 @@ float function_precedence = 1000;
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
 chars function_list[] = {"abs", "norm", "square", "root", "log", "puts", "print", "printf", "println", "logs", "logi",
-                         "logf", "log_f32",
+                         "logf", "log_f32", "similar",
                          "logi64",
                          "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
                          0};// MUST END WITH 0, else BUG
