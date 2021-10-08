@@ -1770,7 +1770,7 @@ void testUnits() {
 }
 
 void testPaint() {
-	#ifdef SDL
+#ifdef SDL
 	init_graphics();
 	while (1)paint(-1);
 #endif
@@ -1897,15 +1897,27 @@ int testNodiscard() {
 	return 54;
 }
 
-void testCurrent() { // move to tests() once OK
-//	skip(
-	assert_emit("‖-3‖+1", 4);
-	assert_emit("-‖-3‖", -3);
-	assert_emit("1-‖-3‖-1", -3);
-	assert_emit("√9*-‖-3‖/3", -3);
-	assert_emit("√9*‖-3‖/-3", -3);
-	assert_emit("√9*-‖-3‖/-3", 3);
-//	)
+void testCurrent() { // move to tests() once OK'
+	assert_emit("i=3;i*=3", (long) 9);
+	assert_emit("i=3;i+=3", (long) 6);
+	assert_emit("i=3;i-=3", (long) 0);
+	assert_emit("i=3;i/=3", (long) 1);
+	assert_emit("i=3^1;i^=3", (long) 27);
+//	assert_emit("i=3;i√=3", (long) ∛3);
+
+	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
+	skip(
+
+			assert_emit("⅓ ≈ .3333333 ", 1);
+			assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
+
+			assert_emit("‖-3‖+1", 4);
+			assert_emit("-‖-3‖", -3);
+			assert_emit("1-‖-3‖-1", -3);
+			assert_emit("√9*-‖-3‖/3", -3);
+			assert_emit("√9*‖-3‖/-3", -3);
+			assert_emit("√9*-‖-3‖/-3", 3);
+	)
 	assert_emit("‖-3‖", 3);
 	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
 	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
@@ -1951,10 +1963,10 @@ void testCurrent() { // move to tests() once OK
 	skip(
 			assert_emit("1 -3 - square 3+4", (long) -51);// warn?
 			assert_emit("xyz 3.7", 4); // todo SHOULD THROW unknown symbol!
-	//		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
-	//todo dissect operators!  π² COULD be symbol on its own so two path check!
+			//		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
+			//todo dissect operators!  π² COULD be symbol on its own so two path check!
 			assert_emit("√π²", 3);
-	// while without body
+			// while without body
 			assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
 	)
 
