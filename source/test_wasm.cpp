@@ -160,6 +160,27 @@ void testFloatOperators() {
 	assert_emit(("3.0*3.0*3.0>3.0+3.0*3.0"), true)
 }
 
+void testNorm() {
+
+	assert_emit("‖-3‖", 3);
+	assert_emit("‖3‖-1", 2);
+	assert_emit("‖-3‖/3", 1);
+	assert_emit("‖-3‖/-3", -1);
+	assert_emit("‖3‖/-3", -1);
+	assert_emit("-‖3‖/-3", 1);
+	assert_emit("-‖-3‖/3", -1);
+	assert_emit("-‖-3‖/-3", 1);
+	skip( // todo : real BUG:
+			assert_emit("1-‖3‖/-3", 2);
+			assert_emit("1-‖-3‖/3", 0);
+			assert_emit("1-‖-3‖/-3", 2);
+			assert_emit("1-‖-3‖-1", -3);
+			assert_emit("√9*-‖-3‖/3", -3);
+			assert_emit("√9*‖-3‖/-3", -3);
+			assert_emit("√9*-‖-3‖/-3", 3);
+	)
+
+}
 void testMathOperators() {
 //	assert_emit(("42 2 *"), 84)
 	assert_emit("- -3", 3);
@@ -399,6 +420,19 @@ void testWasmLogicUnaryVariables() {
 	data_mode = true;
 	assert_emit("i=1; not i", false);
 	assert_emit("i=123; not i", false);
+}
+
+void testSelfModifying() {
+	assert_emit("i=3;i*=3", (long) 9);
+	assert_emit("i=3;i+=3", (long) 6);
+	assert_emit("i=3;i-=3", (long) 0);
+	assert_emit("i=3;i/=3", (long) 1);
+	assert_emit("i=3^1;i^=3", (long) 27);
+	//	assert_emit("i=3;i√=3", (long) ∛3);
+	skip(
+			assert_throws("i*=3");// well:
+			assert_emit("i*=3", (long) 0);
+	)
 }
 
 void testWasmLogicUnary() {
@@ -1095,6 +1129,7 @@ void testAllWasm() {
 	testWasmIf();
 	testMathOperators();
 	testMathPrimitives();
+	testSelfModifying();
 	testComparisonPrimitives();
 	testComparisonMath();
 	testComparisonId();

@@ -8,10 +8,8 @@
 extern chars function_list[];
 extern chars functor_list[];// takes blocks … parse differently?
 
-// todo: do we really need three lists for similar concepts?
 extern codepoint grouper_list[];
-extern codepoint opening_special_brackets[];
-extern codepoint circumfixOperators[];
+extern codepoint opening_special_brackets[];// circumfixOperators «…»
 
 extern List<chars> operator_list;
 
