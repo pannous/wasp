@@ -29,10 +29,11 @@ Map<String *, long> stringIndices; // wasm pointers to strings within wasm data 
 Map<String, long> referenceIndices;
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
-Map<String,List<String>> aliases;
-Map<long/*hash*/,String> hash_to_normed_alias;
+Map<String, List<String>> aliases;
+Map<long/*hash*/, String> hash_to_normed_alias;
 
 bool aliases_loaded = false;
+
 void load_aliases() {
 //	Wasp::
 	aliases.setDefault(List<String>());
@@ -50,10 +51,10 @@ void load_aliases() {
 	aliases_loaded = true;
 }
 
-String normOperator(String alias){
+String normOperator(String alias) {
 	if (not aliases_loaded)load_aliases();
 	auto hash = alias.hash();
-	if(not hash_to_normed_alias.has(hash))
+	if (not hash_to_normed_alias.has(hash))
 		return alias;// or NIL : no alias
 	auto normed = hash_to_normed_alias[hash];
 	return normed;
@@ -806,10 +807,10 @@ Code emitOperator(Node node, String context) {
 	} else if (name == "#") {// index operator
 		if (node.parent and node.parent->name == "=")// setter!
 			return emitIndexWrite(node[0], context);// todo
-			else
-				return emitIndexRead(node, context);
+		else
+			return emitIndexRead(node, context);
 	} else if (isFunction(name) or isFunction(normOperator(name))) {
-		emitCall(node,context);
+		emitCall(node, context);
 	} else if (opcode > 0xC0) {
 		error("internal opcode not handled"s + opcode);
 	} else if (opcode > 0) {
@@ -1105,8 +1106,12 @@ Code emitExpression(Node *nodes, String context) {
 Code emitCall(Node &fun, String context) {
 	Code code;
 	auto name = fun.name;
-	if (not functionSignatures.has(name) or not functionIndices.has(name))
-		error("unknown function "s + name + " (" + normOperator(name) + ")");// checked before, remove
+	if (not functionSignatures.has(name) or not functionIndices.has(name)) {
+		auto normed = normOperator(name);
+		if (not functionSignatures.has(normed) or not functionIndices.has(normed))
+			error("unknown function "s + name + " (" + normed + ")");// checked before, remove
+		else name = normed;
+	}
 
 	Signature &signature = functionSignatures[name];
 	int index = functionIndices[name];
