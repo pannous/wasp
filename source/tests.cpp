@@ -1903,23 +1903,15 @@ void testWaspInitializationIntegrity() {
 
 void testCurrent() { // move to tests() once OK'
 	testWaspInitializationIntegrity();
-	testNorm();
-	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
+	assert_emit("⅓:=1/3;⅓ ≈ .3333333 ", 1);
+
 	skip(
 			assert_throws("i*=3");// well:
 			assert_emit("i*=3", (long) 0);
 
-			assert_emit("⅓ ≈ .3333333 ", 1);
 			assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
 
 	)
-	assert_emit("‖-3‖", 3);
-	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
-	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
-	assert_emit("3 + √9", (long) 6);
-	assert_run("x='123';x=='123'", true);// ok
-	assert_parses("{ç:☺}");
-	assert(result["ç"] == "☺");
 	clearContext();
 	testNodiscard();
 //	testImportWasm();

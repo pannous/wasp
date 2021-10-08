@@ -29,6 +29,22 @@ Map<String *, long> stringIndices; // wasm pointers to strings within wasm data 
 Map<String, long> referenceIndices;
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
+Map<String,List<String>> aliases;
+Map<long/*hash*/,String> hash_to_normed_alias;
+
+void load_aliases(){
+//	Wasp::
+	parseFile("aliases.wasp");
+}
+
+String normOperator(String alias){
+	auto hash = alias.hash();
+	if(not hash_to_normed_alias.has(hash))
+		return alias;// or NIL : no alias
+	auto normed = hash_to_normed_alias[hash];
+	return normed;
+}
+
 Module runtime;
 String start = "main";
 
@@ -776,8 +792,10 @@ Code emitOperator(Node node, String context) {
 	} else if (name == "#") {// index operator
 		if (node.parent and node.parent->name == "=")// setter!
 			return emitIndexWrite(node[0], context);// todo
-		else
-			return emitIndexRead(node, context);
+			else
+				return emitIndexRead(node, context);
+	} else if (isFunction(name) or isFunction(normOperator(name))) {
+		emitCall(node,context);
 	} else if (opcode > 0xC0) {
 		error("internal opcode not handled"s + opcode);
 	} else if (opcode > 0) {

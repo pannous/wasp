@@ -33,3 +33,5 @@ float precedence(Node &operater);
 float precedence(char group); // special: don't mix
 //Node emit(String code);// moved to angle
 codepoint closingBracket(codepoint bracket);
+
+Node parseFile(String filename);

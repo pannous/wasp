@@ -858,6 +858,8 @@ public:
 	List<String> split(const char *string);
 
 	String trim();
+
+	long hash();
 };
 
 
