@@ -85,3 +85,22 @@ unsigned int wordHash(const char *str, int max_chars) { // unsigned
 	if (hash == 0)return hash2;
 	return hash;
 }
+
+
+char *readFile(chars filename) {
+	if (!filename)error("no filename given");
+	if (!filename)return 0;
+#ifndef WASM
+	FILE *f = fopen(filename, "rt");
+	if (!f)error("FILE NOT FOUND "_s + filename);
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+	char *s = (char *) (alloc(fsize, 2));
+	fread(s, 1, fsize, f);
+	fclose(f);
+	return s;
+#else
+	return 0;
+#endif
+}

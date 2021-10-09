@@ -758,6 +758,7 @@ bool Node::isNil() const { // required here: empty(name)
 
 // todo hide : use serialize() for true deep walk
 String Node::serializeValue(bool deep) const {
+	if (!this)return "";
 	String wasp = "";
 	Value val = value;
 	switch (kind) {

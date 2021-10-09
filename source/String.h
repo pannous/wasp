@@ -792,7 +792,7 @@ public:
 
 //	MUST BE explicit, otherwise String("abc") != "abc"  : char* comparison hence false
 //	explicit cast
-	operator char *() const { return data; }
+	operator char *() const { return this ? data : 0; }
 
 //	operator codepoint *() { return extractCodepoints(); }
 

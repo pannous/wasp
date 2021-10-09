@@ -283,24 +283,6 @@ public:
 	}
 
 
-	static char *readFile(chars filename) {
-		if (!filename)error("no filename given");
-		if (!filename)return "";
-#ifndef WASM
-		FILE *f = fopen(filename, "rt");
-		if (!f)error("FILE NOT FOUND "_s + filename);
-		fseek(f, 0, SEEK_END);
-		long fsize = ftell(f);
-		fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-		char *s = (char *) (alloc(fsize, 2));
-		fread(s, 1, fsize, f);
-		fclose(f);
-		return s;
-#else
-		return 0;
-#endif
-	}
-
 private:
 	char escapee(char c) {
 		switch (c) {
@@ -1278,7 +1260,16 @@ private:
 						current.add(op.setType(operators)).setType(expression);
 //						continue; noo why continue??
 					}
-					Node &val = *valueNode(' ', &key).clone();// applies to WHOLE expression
+
+					/*if (checkAmbiguousBlock2(current, parent)) {
+						log(pointer());
+						breakpoint_helper
+						warn("Ambiguous reading a: b c => Did you mean a:b,c or a:(b c)");
+					}*/
+					char closer;// significant whitespace:
+					if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
+					else closer = ' ';// immediate a:b c == (a:b),c
+					Node &val = *valueNode(closer, &key).clone();// applies to WHOLE expression
 					if (add_raw) {  // complex expression are not simple maps
 						current.add(val);
 					} else {
@@ -1372,9 +1363,7 @@ private:
 
 		bool keepBlock = close == '}';
 		Node &result = current.flat();
-		return *result.
-
-				clone();
+		return *result.clone();
 	};
 //	int $parent{};
 };
@@ -1642,5 +1631,5 @@ Node parseFile(String filename) {
 		import.add(new Node(found));
 		return import;
 	}
-	return Wasp::parse(Wasp::readFile(found));
+	return parse(readFile(found));
 }
