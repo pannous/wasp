@@ -926,6 +926,8 @@ int runtime_emit(String prog) {
 
 // todo dedup runtime_emit!
 Node emit(String code) {
+	if (code.endsWith(".wasp"))
+		code = readFile(findFile(code));
 	debug_code = code;// global so we see when debugging
 	Node data = parse(code);
 #ifdef RUNTIME_ONLY
@@ -976,12 +978,8 @@ float precedence(Node &operater) {
 }
 
 
+// like c++ here HIGHER up == lower value == more important
 float precedence(String name) {
-	// like c++ here HIGHER up == lower value == more important
-//	switch (node.name) nope
-//		name = operater.value.string;// NO strings are not automatic operators lol WTF
-
-
 	if (eq(name, "abs"))return 0.08;
 	if (eq(name, "‖"))return 0.10; // norms / abs
 
