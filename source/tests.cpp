@@ -1901,11 +1901,23 @@ void testWaspInitializationIntegrity() {
 	check(not contains(operator_list0, "‖"))// it's a grouper!
 }
 
+void testColonLists() {
+	auto parsed = parse("a: b c d");
+	check(parsed.length == 3);
+	check(parsed[1] == "c");
+	check(parsed.name == "a");
+}
+
 void testCurrent() { // move to tests() once OK'
 	testWaspInitializationIntegrity();
-	assert_emit("⅓:=1/3;⅓ ≈ .3333333 ", 1);
-
+//	data_mode = false;
+//	testColonLists();
+//	data_mode = true;
+	testColonLists();
+	testGraphParams();
 	skip(
+			run("circle.wasp");
+			assert_emit("use math;⅓ ≈ .3333333 ", 1);
 			assert_throws("i*=3");// well:
 			assert_emit("i*=3", (long) 0);
 
