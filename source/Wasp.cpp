@@ -86,22 +86,32 @@ List<chars> operator_list(operator_list0);
 #endif
 
 
-// list HAS TO BE 0 terminated! Dangerous C!! ;)
-template<class S>
-bool contains(S list[], S match) {
-	S *elem = list;
-	do {
-		if (match == *elem)
-			return true;
-	} while (*elem++);
-	return false;
+//	bool is_identifier(char ch) {
+bool is_identifier(codepoint ch) {
+	if (ch == '#')return false;// size/count/length
+	if (ch == '=')return false;
+	if (ch == ':')return false;
+	if (ch == ' ')return false;
+	if (ch == ';')return false;
+	if (ch == '.')return false;
+	if (ch == '-')return false;// todo
+	if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
+	return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$';// ch<0: UNICODE
+	//		not((ch != '_' and ch != '$') and (ch < 'a' or ch > 'z') and (ch < 'A' or ch > 'Z'));
+};
+
+
+bool is_bracket(char ch) {
+	return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
 }
 
 
 codepoint closingBracket(codepoint bracket) {
 	switch (bracket) {
 		case '\x0E':
-			return '\x0F'; // Shift Out close='\x0F' Shift In
+			return '\x0F'; // Shift In closes Shift Out??
+		case '\x0F':
+			return '\x0E'; // Shift Out closes '\x0F' Shift In
 		case u'‖':
 			return u'‖';
 		case u'⸨':
@@ -153,36 +163,18 @@ codepoint closingBracket(codepoint bracket) {
 	return 0;
 }
 
-//	bool is_identifier(char ch) {
-bool is_identifier(codepoint ch) {
-	if (ch == '#')return false;// size/count/length
-	if (ch == '=')return false;
-	if (ch == ':')return false;
-	if (ch == ' ')return false;
-	if (ch == ';')return false;
-	if (ch == '.')return false;
-	if (ch == '-')return false;// todo
-	if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
-	return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$';// ch<0: UNICODE
-//		not((ch != '_' and ch != '$') and (ch < 'a' or ch > 'z') and (ch < 'A' or ch > 'Z'));
-};
-
-
-bool is_bracket(char ch) {
-	return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
-}
 
 //	List<String> operators; // reuse functions!
 //	if(is_grapheme_modifier(ch))error("multi codepoint graphemes not");
 // everything that is not an is_identifier is treated as operator/symbol/identifier?
 // NEEDs complete codepoint, not just leading char because	☺ == e2 98 ba  √ == e2 88 9a
 bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
-//	0x0086	134	<control>: START OF SELECTED AREA	†
+	//	0x0086	134	<control>: START OF SELECTED AREA	†
 	if (ch == U'∞')return false;// or can it be made as operator!?
 	if (ch == U'⅓')return false;// numbers are implicit operators 3y = 3*y
 	if (ch == U'∅')return false;// Explicitly because it is part of the operator range 0x2200 - 0x2319
-//		0x20D0	8400	COMBINING LEFT HARPOON ABOVE	⃐
-//		0x2300	8960	DIAMETER SIGN	⌀
+	//		0x20D0	8400	COMBINING LEFT HARPOON ABOVE	⃐
+	//		0x2300	8960	DIAMETER SIGN	⌀
 	if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
 	if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
 	if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
@@ -192,7 +184,7 @@ bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
 	if (operator_list.has(String(ch)))
 		return true;
 
-//		if(ch=='=') return false;// internal treatment
+	//		if(ch=='=') return false;// internal treatment
 	if (ch > 0x80)
 		return false;// utf NOT enough: ç. can still be a reference!
 	if (is_identifier(ch)) return false;
@@ -201,14 +193,14 @@ bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
 }
 
 
-bool closing(char ch, char closer) {
-	if (ch == closer)return true;
-	if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
-//				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
-		return true;
-	}// outer match unresolved so far
-	if (precedence(ch) <= precedence(closer))
-		return true;
+// list HAS TO BE 0 terminated! Dangerous C!! ;)
+template<class S>
+bool contains(S list[], S match) {
+	S *elem = list;
+	do {
+		if (match == *elem)
+			return true;
+	} while (*elem++);
 	return false;
 }
 
@@ -232,8 +224,42 @@ class Wasp {
 	int lineNumber{};    // The current line number
 	int columnStart{};    // The index of column start char
 
-//	Node obj = Node();
-//	obj.
+	int indentation_level = 0;
+	const char INDENT = 0x0F; // 	SI 	␏ 	^O 		Shift In
+	const char DEDENT = 0x0E; //  SO 	␎ 	^N 		Shift Out
+
+	int indentation() {
+		float i = 0;
+		int spaces_per_tab = 4;
+		while (ch == '\t') i++;
+		if (ch == ' ')err("ambiguous indentation, mixing tabs and spaces");
+		while (ch == ' ') i = i + 1 / spaces_per_tab;
+		if (ch == '\t')err("ambiguous indentation, mixing tabs and spaces");
+		return ceil(i);
+	}
+
+// Ascii control for indent/dedent: perfect!
+////0x0E 	SO 	␎ 	^N 		Shift Out
+////0x0F 	SI 	␏ 	^O 		Shift In
+//	0x1C 	S4 	FS 	␜ 	^\ 		File Separator
+//	0x1D 	S5 	GS 	␝ 	^] 		Group Separator
+//	0x1E 	S6 	RS 	␞ 	^^[k] 		Record Separator
+//	0x1F 	S7 	US 	␟ 	^_ 		Unit Separator
+	bool closing(char ch, char closer) {
+		if (ch == INDENT)return false;// quite the opposite
+
+		if (ch == closer)return true;
+		if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
+			//				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
+			return true;
+		}// outer match unresolved so far
+		if (ch == DEDENT and not(closer == '}' or closer == ']' or closer == ')'))
+			return true;
+
+		if (precedence(ch) <= precedence(closer))
+			return true;
+		return false;
+	}
 
 public:
 
@@ -351,6 +377,7 @@ private:
 		return ch;
 	}
 
+
 	char proceed(char c = 0) {
 		if (not ch and at >= 0) {
 			warn("end of code");
@@ -358,7 +385,7 @@ private:
 		}
 		// If a c parameter is provided, verify that it matches the current character.
 		if (c and c != ch) {
-			error(s("Expected '") + c + "' instead of " + renderChar(ch));
+			err(s("Expected '") + c + "' instead of " + renderChar(ch));
 		}
 		// Get the next character. When there are no more characters, return the empty string.
 		previous = ch;
@@ -379,6 +406,10 @@ private:
 		if (ch == '\n' or (ch == '\r' and next != '\n')) {
 			lineNumber++;
 			columnStart = at;
+			int new_indentation_level = indentation();
+			if (new_indentation_level > indentation_level)previous = INDENT;
+			if (new_indentation_level < indentation_level)previous = DEDENT;
+			indentation_level = new_indentation_level;
 		}
 		if (previous == '\n' or previous == 0) {
 			auto to = text.indexOf('\n', at);
@@ -390,7 +421,7 @@ private:
 	// Parse an identifier.
 	String identifier() {
 		// identifiers must start with a letter, _ or $.
-		if (!is_identifier(ch)) error("Unexpected identifier character "s + renderChar(ch));
+		if (!is_identifier(ch)) err("Unexpected identifier character "s + renderChar(ch));
 		int start = at;
 		// subsequent characters can contain ANYTHING
 		while ((proceed() and is_identifier(ch)) or isDigit(ch));
@@ -398,11 +429,30 @@ private:
 		return key;
 	};
 
+	Node hexadecimal_number() {
+		if (ch == '0')proceed();
+		if (ch == 'x' or ch == 'X')proceed();
+		int val = 0;
+		while (true) {
+			if (ch >= '0' and ch <= '9') val = val * 16 + (ch - '0');
+			else if (ch >= 'a' and ch <= 'f') val = val * 16 + (ch - 'a' + 10);
+			else if (ch >= 'A' and ch <= 'F') val = val * 16 + (ch - 'A' + 10);
+			else break;
+			proceed();
+		}
+		return Node(val);
+	}
+
 	// Parse a number value.
 	Node numbero() {
 		auto sign = '\n';
 		auto string = String("");
 		int number0, base = 10;
+		if (ch == '0' and (next == 'x' or next == 'X'))return hexadecimal_number();// base=16;
+		if (ch == '0' and (next == 'o' or next == 'O')) {
+			todo("octal");
+			base = 8;
+		} // todo
 		if (ch == '+' and not is_operator(previous))
 			warn("unnecessary + sign or missing whitespace 1 +1 == [1 1]");
 		if (ch == '-' or ch == '+') {
@@ -551,7 +601,7 @@ private:
 				}
 			}
 		}
-		error("Bad string");
+		err("Bad string");
 		return NIL;
 	};
 
@@ -561,7 +611,7 @@ private:
 		// be the second / character in the // pair that begins this inline comment.
 		// To finish the inline comment, we look for a newline or the end of the text.
 		if (ch != '/' and ch != '#') {
-			error("Not an inline comment");
+			err("Not an inline comment");
 		}
 		do {
 			proceed();
@@ -579,7 +629,7 @@ private:
 		// To finish the block comment, we look for an ending */ pair of characters,
 		// but we also watch for the end of text before the comment is terminated.
 		if (ch != '*') {
-			error("Not a block comment");
+			err("Not a block comment");
 		}
 		do {
 			proceed();
@@ -592,7 +642,7 @@ private:
 			}
 		} while (ch);
 
-		error("Unterminated block comment");
+		err("Unterminated block comment");
 	};
 
 	// Parse a comment
@@ -605,7 +655,7 @@ private:
 			previous = lastNonWhite = preserveLast;
 			return true;
 		}
-		if (ch != '/') error("Not a comment");
+		if (ch != '/') err("Not a comment");
 		if (next == '/') {
 			proceed('/');
 			inlineComment();
@@ -728,9 +778,11 @@ private:
 	}
 
 	Node symbol() {
+		if (ch == '.' or previous == '.')
+			debug = 1;
 		if (isDigit(ch))
 			return numbero();
-		if (ch == '-' and isDigit(next) and previous != u'‖' and
+		if ((ch == '-' or ch == '.') and isDigit(next) and previous != u'‖' and
 		    (empty(previous) or is_operator(previous))) // -1 √-1 but not 2-1 x-1!
 			return numbero();
 		if (is_operator(ch))
@@ -881,7 +933,7 @@ private:
 				white();
 			}
 		}
-		error("Expecting ]");
+		err("Expecting ]");
 		return ERROR;
 	};
 
@@ -899,8 +951,8 @@ private:
 		for (auto i = 0; i < 64; i++) {
 			char charCode = text.charCodeAt(i);
 			if (charCode < 0) // never true: charCode > 128 or
-				error(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
-			lookup64[charCode] = i;
+				err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
+			lookup64[(short) charCode] = i;// todo: what is this?
 		}
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
 		lookup64[32] = lookup64[9] = lookup64[13] = lookup64[10] = 64;
@@ -914,14 +966,14 @@ private:
 			at++;  // skip '~'
 			// code based on https://github.com/noseglid/base85/blob/master/lib/base85.js
 			auto end = text.indexOf('}', at + 1);  // scan binary end
-			if (end < 0) { error("Missing ascii85 end delimiter"); }
+			if (end < 0) { err("Missing ascii85 end delimiter"); }
 
 			// first run decodes into base85 int values, and skip the spaces
 			auto p = 0;
 			byte base[end - at + 3];  // 3 extra bytes of padding
 			while (at < end) {
-				auto code = lookup85[text.charCodeAt(at)];  // console.log('bin: ', next, code);
-				if (code > 85) { error("Invalid ascii85 character"); }
+				auto code = lookup85[(short) text.charCodeAt(at)];  // console.log('bin: ', next, code);
+				if (code > 85) { err("Invalid ascii85 character"); }
 				if (code < 85) { base[p++] = code; }
 				// else skip spaces
 				at++;
@@ -929,7 +981,7 @@ private:
 			at = end + 2;
 			proceed();  // skip '~}'
 			// check length
-			if (p % 5 == 1) { error("Invalid ascii85 stream length"); }
+			if (p % 5 == 1) { err("Invalid ascii85 stream length"); }
 
 			// second run decodes into actual binary data
 			auto dataLength = p, padding = (dataLength % 5 == 0) ? 0 : 5 - dataLength % 5;
@@ -966,7 +1018,7 @@ private:
 		} else { // base64
 			// code based on https://github.com/niklasvh/base64-arraybuffer
 			auto end = text.indexOf('}', at), bufEnd = end, pad = 0;  // scan binary end
-			if (end < 0) { error("Missing base64 end delimiter"); }
+			if (end < 0) { err("Missing base64 end delimiter"); }
 			// strip optional padding
 			if (text[bufEnd - 1] == '=') { // 1st padding
 				bufEnd--;
@@ -982,8 +1034,8 @@ private:
 			byte base[bufEnd - at];
 			auto p = 0;
 			while (at < bufEnd) {
-				auto code = lookup64[text.charCodeAt(at)];  // console.log('bin: ', next, code);
-				if (code > 64) { error("Invalid base64 character"); }
+				auto code = lookup64[(short) text.charCodeAt(at)];  // console.log('bin: ', next, code);
+				if (code > 64) { err("Invalid base64 character"); }
 				if (code < 64) { base[p++] = code; }
 				// else skip spaces
 				at++;
@@ -992,7 +1044,7 @@ private:
 			proceed();  // skip '}'
 			// check length
 			if ((pad and (p + pad) % 4 != 0) or (!pad and p % 4 == 1)) {
-				error("Invalid base64 stream length");
+				err("Invalid base64 stream length");
 			}
 
 			// second run decodes into actual binary data
@@ -1107,7 +1159,7 @@ private:
 #endif
 		auto length = text.length;
 		int start = at;
-		loop:
+//		loop:
 		white();// insignificant whitespace HERE
 		while (ch and at <= length) {
 //			white()  significant whitespace   1+1 != 1 +1 = [1 1]
@@ -1197,9 +1249,9 @@ private:
 				case ')':
 				case ']':
 //					break loop;// not in c++
-					error("wrong closing bracket");
+					err("wrong closing bracket");
+//				case '+': // todo WHO writes +1 ?
 				case '-':
-				case '+':
 				case '.':
 					if (isDigit(next) and
 					    (previous == 0 or contains(separator_list, previous) or is_operator(previous)))
@@ -1267,6 +1319,8 @@ private:
 						warn("Ambiguous reading a: b c => Did you mean a:b,c or a:(b c)");
 					}*/
 					char closer;// significant whitespace:
+					if (ch == '\n') closer = ';';// a: b c == a:(b c) newline or whatever!
+
 					if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
 					else closer = ' ';// immediate a:b c == (a:b),c
 					Node &val = *valueNode(closer, &key).clone();// applies to WHOLE expression
@@ -1381,7 +1435,7 @@ float precedence(char group) {
 	if (group == ',')return 4;
 	if (group == ' ')return 5;
 	if (group == '_')return 6;
-//error("unknown precedence for symbol: "s+group);
+//	error("unknown precedence for symbol: "s+group);
 	return 999;
 }
 
@@ -1526,6 +1580,28 @@ int run_wasm_file(chars file) {
 	return run_wasm((bytes) buffer.data, buffer.length);
 }
 
+
+//static
+Node parseFile(String filename) {
+	String found = findFile(filename);
+	if (not found)error("file not found "s + filename);
+	else info("found "s + found);
+	if (found.endsWith("wast") or found.endsWith("wat")) {
+		system("wast2wasm "s + found);
+		found = found.replace("wast", "wasm");
+	}
+	if (found.endsWith("wasm")) {// handle in analysis, not in valueNode
+		//			read_wasm(found);
+		auto import = Node("import").setType(operators);
+		import.add(new Node(found));
+		return import;
+	}
+	if (found.endsWith("wasp"))
+		return parse(readFile(found));
+	error("Unknown extension "s + filename);
+	return NIL;
+}
+
 void usage() {
 	print("wasp is a new compiler and programming language");
 	print("wasp [repl]            open interactive programming environment");
@@ -1619,17 +1695,3 @@ extern "C" int _start() { // for wasm-ld
 //#endif
 #endif
 
-
-//static
-Node parseFile(String filename) {
-	String found = findFile(filename);
-	if (not found)error("file not found "s + filename);
-	else info("found "s + found);
-	if (found.endsWith("wasm")) {// handle in analysis, not in valueNode
-		//			read_wasm(found);
-		auto import = Node("import").setType(operators);
-		import.add(new Node(found));
-		return import;
-	}
-	return parse(readFile(found));
-}

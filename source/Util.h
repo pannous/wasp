@@ -19,3 +19,5 @@ bool contains(S list[], S match);
 unsigned int wordHash(const char *str, int max_chars = 20);
 
 char *readFile(chars filename);// 0 = err
+
+bool similar(float a, float b);
