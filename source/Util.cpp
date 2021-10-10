@@ -104,3 +104,23 @@ char *readFile(chars filename) {
 	return 0;
 #endif
 }
+
+
+// there is NO i32_abs in wasm, only f32_abs
+int abs_i(int x) {
+	return x > 0 ? x : -x;
+}
+
+// native to wasm
+inline float abs_f(float x)
+
+noexcept {
+return x > 0 ? x : -
+x;
+}
+
+bool similar(float a, float b) {
+	float epsilon = abs_f(a + b) / 1000000.;// percentual ++
+	bool ok = a == b or abs_f(a - b) <= epsilon;
+	return ok;
+}
