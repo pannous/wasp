@@ -84,6 +84,7 @@ int test_wasm3(const uint8_t *prog, int len) {
 		mod.link_optional<ext_memcpy0>("*", "ext_memcpy0");
 		mod.link_optional<sqrt1>("*", "√");
 		mod.link_optional<square2>("*", "square");
+		mod.link_optional<powf>("*", "powf");
 		mod.link_optional<powd>("*", "pow");
 		mod.link_optional<powi>("*", "powi");
 		mod.link_optional<logf32>("*", "logf");// danger logf is cuda function!

@@ -3,257 +3,77 @@
 #include "Angle.h"
 #include "String.h"
 #include "Map.h"
-
-#undef assert // <cassert> / <assert.h>
-
-#ifndef WASM
-
-#include <codecvt> // utf8 magic ...?
-#include <libc.h>
-
-#endif
-
-Node &result = *new Node();
-
-//#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
-
-// todo assert_is ≠ assert_run == assert_emit_with_wasm_runtime!
-
-#undef assert // assert.h:92 not as good!
-#define assert(condition) try{\
-   if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
-   }catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(1);}
-
-
-//#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
-//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
-//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
-
-#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-//#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(1);}
-#define check_eq assert_equals
-
-
-bool assert_equals_x(String a, String b, char *context = "") {
-	if (a == b) printf("OK %s==%s %s\n", a.data, b.data, context);
-	else printf("\nFAILED assert_equals!\n %s should be %s %s\n"s, a.data, b.data, context);
-	return a == b;
-}
-
-bool assert_equals_x(String *a, String b, char *context = "") {
-	return assert_equals_x(*a, b, context);
-}
-
-bool assert_equals_x(Node &a, char *b, char *context = "") {
-	if (a.name != b)printf("\nFAILED assert_equals! %s should be %s %s\n"s, a.name, b, context);
-	else printf("OK %s==%s %s\n", a.name.data, b, context);
-	return a == b;
-}
-
-
-bool assert_equals_x(Node a, const char *b, char *context = "") {
-	if (a.name != b)printf("\nFAILED assert_equals! %s should be %s %s\n"s, a.name, b, context);
-	else printf("OK %s==%s %s\n", a.name.data, b, context);
-	return a == b;
-}
-
-
-bool assert_equals_x(Node a, int b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %d should be %d %s\n"s, a.value.longy, b, context);
-	else printf("OK %ld==%ld\n", a.value.longy, (long) b);
-	return a == b;
-}
-
-// WTF why is char* unexplicitly cast to bool!?!
-bool assert_equals_x(Node a, bool b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %d should be %d %s\n"s, a.value.longy, b, context);
-	else printf("OK %ld==%ld\n", a.value.longy, (long) b);
-	return a == b;
-}
-
-bool assert_equals_x(Node &a, double b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %f should be %f %s\n"s, a.value.longy, b, context);
-	else printf("OK %f==%f\n", a.value.real, b);
-	return a == b;
-}
-
-bool assert_equals_x(Node a, double b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %f should be %f %s\n"s, a.value.longy, b, context);
-	else printf("OK %f==%f\n", a.value.real, b);
-	return a == b;
-}
-
-//bool assert_equals_x(Node &a, long b, char *context = "") {
-//	if (!(a == b))printf("\nFAILED assert_equals! %s should be %d %s\n"s, a.name, b, context);
-//	else printf("OK %ld==%ld %s\n", a.value.longy, b, context);
-//	return a == b;
-//}
-
-
-bool assert_equals_x(Node a, long b, char *context = "") {
-	if (!(a == b))printf("\nFAILED assert_equals! %s %d should be %d %s\n"s, a.name, a.value.longy, b, context);
-	else printf("OK %ld==%ld %s\n", a.value.longy, b, context);
-	return a == b;
-}
-
-
-bool assert_equals_x(Node a, String b, char *context = "") {
-	String &name = a.name;
-	bool ok = name == b or a == b; //  b == name or  !(name != b and b != a.value.string;)
-	if (ok)
-		printf("OK %s==%s %s\n", name.data, b.data, context);
-	else
-		printf("\nFAILED assert_equals! %s should be %s %s\n"s, name.data, b, context);
-	return ok;
-}
-
-
-bool assert_equals_x(Node a, Node b, char *context = "") {
-//	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
-	if (a == b) {
-		if (a.name and b.name)
-			printf("OK %s==%s %s\n", a.name.data, b.name.data, context);
-	} else
-		printf("\nFAILED assert_equals! %s should be %s %s\n"s, a, b, context);
-	return a == b;
-}
-
-//bool assert_equals(chars a, chars b, char *context = "") {
-//	if (a != b)// err
-//		printf("F\nAILED assert_equals! %s should be %s %s\n"s % a % b % context);
-//	else printf("OK %s==%s %s\n"s % a % b % context);
-//	return a == b;
-//}
-
-bool assert_equals_x(long a, long b, char *context = "") {
-	if (a != b)log("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
-	else printf("OK %ld==%ld %s\n", a, b, context);
-	return a == b;
-}
-
-bool assert_equals_x(int a, int b, char *context = "") {
-	if (a != b)log("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
-	else printf("OK %d==%d %s\n", a, b, context);
-	return a == b;
-}
-
-// there is NO i32_abs in wasm, only f32_abs
-int abs_i(int x) {
-	return x > 0 ? x : -x;
-}
-
-// native to wasm
-inline float abs_f(float x) noexcept {
-	return x > 0 ? x : -x;
-}
-
-bool similar(float a, float b) {
-	float epsilon = abs_f(a + b) / 1000000.;// percentual ++
-	bool ok = a == b or abs_f(a - b) <= epsilon;
-	return ok;
-}
-
-bool assert_equals_x(float a, float b, char *context = "") {
-	auto ok = similar(a, b);
-	if (!ok)log("\nFAILED assert_equals!\n %f should be %f %s\n"s % a % b % context);
-	else log("OK %f==%f %s\n"s % a % b % context);
-	return ok;
-}
-
-//# DEFINES CAN MESS WITH LOCALS!! so use α, β
-#define assert_equals(α, β) if (!assert_equals_x(α,β)){printf("%s != %s",#α,#β);backtrace_line();}
-
-//bool assert_isx(char *mark, Node expect);
-//bool assert_isx(char *mark, chars expect);
-
-bool assert_isx(char *mark, Node expect) {
-	try {
-		Node left = Wasp::eval(mark);
-		if (left.kind == reals or expect.kind == reals)
-			return assert_equals_x(left.floate(), expect.floate(), mark);
-		if (left.kind == longs or expect.kind == longs) {
-			long b = expect.numbere();
-			return assert_equals_x(left.numbere(), b, mark);
-		}
-		if (left != expect)
-//			breakpoint_helper
-			if (left != expect)// Redundant for Breakpoint ;)
-				printf("FAILED %s ≠ %s\n", left.name.data, expect.name.data);
-		return left == expect;
-	} catch (SyntaxError *err) {
-		printf("\nERROR IN TEST\n");
-		printf("%s", err->data);
-	} catch (String *err) {
-		printf("\nERROR IN TEST\n");
-		printf("%s", err->data);
-	} catch (chars err) {
-		printf("\nERROR IN TEST\n");
-		printf("%s\n", err);
-	} catch (...) {
-		raise("\nERROR IN TEST (no further data):\n");
-	}
-	return false;
-}
-
-bool assert_isx(char *mark, chars expect) {
-	return assert_isx(mark, Node(expect));// explicit conversion ok!
-}
-
-bool assert_isx(char *mark, int expect) {
-	return assert_isx(mark, Node(expect));// explicit conversion ok!
-}
-
-bool assert_isx(char *mark, long expect) {
-	return assert_isx(mark, Node(expect));// explicit conversion ok!
-}
-
-bool assert_isx(char *mark, double expect) {
-	return assert_isx(mark, Node(expect));// explicit conversion ok!
-}
-
-bool assert_isx(char *mark, bool expect) {
-	return assert_isx(mark, Node(expect));
-}
-
-
-Node assert_parsesx(chars mark) {
-	try {
-		result = parse(mark);
-		log(result);
-		return result;
-	} catch (chars err) {
-		printf("\nTEST FAILED WITH ERROR\n");
-		printf("%s\n", err);
-	} catch (String &err) {
-		printf("\nTEST FAILED WITH ERRORs\n");
-		printf("%s\n", err.data);
-	} catch (SyntaxError &err) {
-		printf("\nTEST FAILED WITH SyntaxError\n");
-		printf("%s\n", err.data);
-	} catch (...) {
-		printf("\nTEST FAILED WITH UNKNOWN ERROR (maybe POINTER String*)? \n");
-	}
-	return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
-}
-//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(1);}
-#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(1);}
-#define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
-
-
-// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
-#define assert_is(mark, result) {\
-    printf("TEST %s==%s\n",#mark,#result); \
-    printf("%s:%d\n",__FILE__,__LINE__);\
-    bool ok=assert_isx(mark,result);\
-    if(ok)printf("PASSED %s==%s\n",#mark,#result);\
-    else{printf("FAILED %s==%s\n",#mark,#result);\
-    printf("%s:%d\n",__FILE__,__LINE__);exit(1);}\
-}
+#include "tests.h"
 
 
 #include "test_angle.cpp"
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
+
+
+//[[maybe_used]]
+[[nodiscard("replace generates a new string to be consumed!")]]
+//__attribute__((__warn_unused_result__))
+int testNodiscard() {
+	return 54;
+}
+
+
+void testSerialize() {
+	const char *input = "green=256*255";
+	//	const char *input = "blue=255;green=256*255;maxi=3840*2160/2;init_graphics();surface=(1,2,3);i=10000;while(i<maxi){i++;surface#i=blue;};10";
+	assertSerialize(input);
+}
+
+
+void testWasmSpeed() {
+	struct timeval stop, start;
+	gettimeofday(&start, NULL);
+	time_t s, e;
+	time(&s);
+	// todo: let compiler compute constant expressions like 1024*65536/4
+	//out of bounds memory access if only one Memory page!
+	//	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
+	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
+	//	assert_emit("i=0;k='hi';while(i<16){i++;k#i=65};k[1]", 65)// still slow, but < 1s
+	//	70 ms PURE C -O3   123 ms  PURE C -O1  475 ms in PURE C without optimization
+	//  141 ms wasmtime very fast (similar to wasmer)
+	//  150 ms wasmer very fast!
+	//  546 ms in WebKit (todo: test V8/WebView2!)
+	//	465 - 3511 ms in WASM3  VERY inconsistent, but ok, it's an interpreter!
+	//	1687 ms wasmx (node.js)
+	//  1000-3000 ms in wasm-micro-runtime :( MESSES with system clock! // wow, SLOWER HOW!?
+	//	so we can never draw 4k by hand wow. but why? only GPU can do more than 20 frames per second
+	//	sleep(1);
+	gettimeofday(&stop, NULL);
+	time(&e);
+
+	printf("took %ld sec\n", e - s);
+	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+
+	exit(0);
+}
+
+void testImport() {
+	assert_is("import fourty_two", 42);
+	assert_is("include fourty_two", 42);
+	assert_is("require fourty_two", 42);
+	assert_is("import fourty_two;ft*2", 42 * 2);
+	assert_is("include fourty_two;ft*2", 42 * 2);
+	assert_is("require fourty_two;ft*2", 42 * 2);
+}
+
+void testWaspInitializationIntegrity() {
+	check(not contains(operator_list0, "‖"))// it's a grouper!
+}
+
+void testColonLists() {
+	auto parsed = parse("a: b c d");
+	check(parsed.length == 3);
+	check(parsed[1] == "c");
+	check(parsed.name == "a");
+}
+
 
 void testModernCpp() {
 	auto αα = 1. * 2;
@@ -265,6 +85,7 @@ void testDeepCopyBug() {
 	assert_parses(source);
 	check(result["d"] == 123);
 }
+
 
 void testDeepCopyDebugBugBug() {
 	testDeepCopyBug();
@@ -289,14 +110,11 @@ void testDeepCopyDebugBugBug2() {
 }
 
 
-void testEmitter() {
-#ifndef RUNTIME_ONLY
-	Node node = Node(42);
-	Code &code = emit(node);
-	int result = code.run();
-	check(result == 42);
-#endif
+void testHex() {
+	assert_is("0xFF", 255);
+	assert_is("0x100", 256);
 }
+
 
 void testNetBase() {
 	warn("NETBASE OFFLINE");
@@ -1135,7 +953,11 @@ void testNodeName() {
 
 void testIndentAsBlock() {
 	assert_is("a\n\tb", "a{b}")
-}
+// 0x0E 	SO 	␎ 	^N 		Shift Out
+// 0x0F 	SI 	␏ 	^O 		Shift In
+	//	indent/dedent  0xF03B looks like pause!?   0xF032…  it does, what's going on CLion? Using STSong!
+	//	https://fontawesome.com/v4.7/icon/outdent looks more like it, also matching context  OK in font PingFang HK?
+}// 􀖯􀉶𠿜🕻🗠🂿	𝄉
 
 void testParentContext() {
 	chars source = "{a:'HIO' d:{} b:3 c:ø}";
@@ -1592,6 +1414,9 @@ void testLogicOperators() {
 
 void tests() {
 	data_mode = true;// expect data unless explicit code
+	//	testNodiscard();// works NOW!
+	testWaspInitializationIntegrity();
+	logi(testNodiscard());
 	testSwitch();
 	testLogicOperators();
 	testWasmMutableGlobal();
@@ -1618,6 +1443,7 @@ void tests() {
 	testForEach();
 	testString();
 	testEmpty();
+	testHex();
 	testDiv();
 	testRoot();
 	testLogicPrecedence();
@@ -1791,6 +1617,7 @@ void print_timestamp() {
 #include <sys/time.h>
 
 void testPaintWasm() {
+#ifdef GRAFIX
 	struct timeval stop, start;
 	gettimeofday(&start, NULL);
 	// todo: let compiler compute constant expressions like 1024*65536/4
@@ -1807,115 +1634,58 @@ void testPaintWasm() {
 	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
 //	exit(0);
 //char *wasm_paint_routine = "init_graphics(); while(1){paint()}";// SDL bugs a bit
-#ifdef GRAFIX
 	while (1)paint(0);// help a little
 #endif
 }
 
-// for better readability, not (yet) semantic
-String normSerialization(String input) {
-	input = input.replaceAll("; ", ";");
-	input = input.replaceAll(" ;", ";");
-	input = input.replaceAll("( ", "(");
-	//	input=input.replaceAll("((", "(");// NO!
-	//	input=input.replaceAll("))", ")");
-	input = input.replaceAll(":", "=");// danger!
-	input = input.replaceAll(" ", "");// VERY danger! (1 2 3) 123
-	return input;
+void testDedent() {
+	auto indented = R"(
+a:
+ b
+ c
+d
+e
+	)";
+	auto groups = parse(indented);
+//	auto groups = parse("a:\n b\n c\nd\ne\n");
+	check(groups.length == 3);// a(),d,e
+	auto parsed = groups.first();
+	check(parsed.length == 2);
+	check(parsed[1] == "c");
+	check(parsed.name == "a");
 }
 
-void assertSerialize(const char *input) {
-	Node parsed = parse(input);
-	const String &serialized = parsed.serialize();
-	Node parsed2 = parse(serialized);
-	bool equalsX = assert_equals_x(parsed, parsed2);
-	if (!equalsX) {
-		print(parsed);
-		print("≠");
-		print(parsed2);
+void testEmptyLineGrouping() {
+	auto indented = R"(
+a:
+ b
+ c
 
-		print("----------------");
-		print(input);
-		print("≠");
-		print(serialized);
-		print("----------------");
-		print(normSerialization(input));
-		print("≠");
-		print(normSerialization(serialized));
-		error("Serialization Error");
-	}
-}
-
-void testSerialize() {
-	const char *input = "green=256*255";
-//	const char *input = "blue=255;green=256*255;maxi=3840*2160/2;init_graphics();surface=(1,2,3);i=10000;while(i<maxi){i++;surface#i=blue;};10";
-	assertSerialize(input);
-}
-
-
-void testWasmSpeed() {
-	struct timeval stop, start;
-	gettimeofday(&start, NULL);
-	time_t s, e;
-	time(&s);
-	// todo: let compiler compute constant expressions like 1024*65536/4
-	//out of bounds memory access if only one Memory page!
-	//	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
-	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
-//	assert_emit("i=0;k='hi';while(i<16){i++;k#i=65};k[1]", 65)// still slow, but < 1s
-	//	70 ms PURE C -O3   123 ms  PURE C -O1  475 ms in PURE C without optimization
-	//  141 ms wasmtime very fast (similar to wasmer)
-	//  150 ms wasmer very fast!
-	//  546 ms in WebKit (todo: test V8/WebView2!)
-	//	465 - 3511 ms in WASM3  VERY inconsistent, but ok, it's an interpreter!
-	//	1687 ms wasmx (node.js)
-	//  1000-3000 ms in wasm-micro-runtime :( MESSES with system clock! // wow, SLOWER HOW!?
-//	so we can never draw 4k by hand wow. but why? only GPU can do more than 20 frames per second
-//	sleep(1);
-	gettimeofday(&stop, NULL);
-	time(&e);
-
-	printf("took %ld sec\n", e - s);
-	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
-
-	exit(0);
-}
-
-void testImport() {
-	assert_is("import fourty_two", 42);
-	assert_is("include fourty_two", 42);
-	assert_is("require fourty_two", 42);
-	assert_is("import fourty_two;ft*2", 42 * 2);
-	assert_is("include fourty_two;ft*2", 42 * 2);
-	assert_is("require fourty_two;ft*2", 42 * 2);
-}
-
-[[maybe_used]]
-[[nodiscard("replace generates a new string to be consumed!")]]
-__attribute__((__warn_unused_result__))
-int testNodiscard() {
-	return 54;
-}
-
-void testWaspInitializationIntegrity() {
-	check(not contains(operator_list0, "‖"))// it's a grouper!
-}
-
-void testColonLists() {
-	auto parsed = parse("a: b c d");
-	check(parsed.length == 3);
+d
+e
+	)";
+	auto groups = parse(indented);
+//	auto groups = parse("a:\n b\n c\n\nd\ne\n");
+	check(groups.length == 3);// a(),d,e
+	auto parsed = groups.first();
+	check(parsed.length == 2);
 	check(parsed[1] == "c");
 	check(parsed.name == "a");
 }
 
 void testCurrent() { // move to tests() once OK'
-	testWaspInitializationIntegrity();
-//	data_mode = false;
-//	testColonLists();
-//	data_mode = true;
-	testColonLists();
-	testGraphParams();
+	assert_emit(".1 + .9", 1);
+	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
+	assert_emit("n=3;2ⁿ", 8);
 	skip(
+
+			testDedent();
+			testEmptyLineGrouping();
+			testColonLists();
+			testGraphParams();
+			assert_emit("i=-9;√-i", 3);
+			assert_emit("i=-9;√ -i", 3);
+			assert_emit("i=-9;√-i", 3);
 			run("circle.wasp");
 			assert_emit("use math;⅓ ≈ .3333333 ", 1);
 			assert_throws("i*=3");// well:
@@ -1925,18 +1695,10 @@ void testCurrent() { // move to tests() once OK'
 
 	)
 	clearContext();
-	testNodiscard();
+
 //	testImportWasm();
-	logi(testNodiscard());
 //	testImport();
-	assert_is("¬ 0", 1);
 
-//	return;
-//	testPaintWasm();
-//	testWasmSpeed();
-
-
-	assert_emit("n=3;2ⁿ", 8);
 	skip(
 			assert_emit("i=-9;√-i", 3);
 			assert_emit("i=-9;√ -i", 3);

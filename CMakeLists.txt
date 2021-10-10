@@ -36,13 +36,13 @@ if (NOT WASM)
             # TO EXECUTE wasm:
             # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
             #            SET(V8 1)
-            #            SET(WASMTIME 1) # FASTEST!
+            #                        SET(WASMTIME 1) # FASTEST!
             #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
-            #            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
-            #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp
+            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+            #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
             #            set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
             #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-            set(WEBAPP 1) # WebView for electron like standalone apps.
+            #            set(WEBAPP 1) # WebView for electron like standalone apps.
     endif ()
 endif ()
 
@@ -129,6 +129,9 @@ if (NOT RELEASE)
     ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
     # disable:
     ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
+    ADD_COMPILE_FLAG("-Wno-unused-function")
+    ADD_COMPILE_FLAG("-Wno-unused-variable")
+    ADD_COMPILE_FLAG("-Wno-unused-private-field")
     ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
     ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
     ADD_COMPILE_FLAG("-Wno-error=#warnings")
