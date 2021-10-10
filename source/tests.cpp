@@ -1319,8 +1319,8 @@ void testWasmString() {
 }
 
 void testGroupCascade() {
-	result = parse("x='abcde';x#4='y';x#4");
-	check(result.length == 3);
+//	result = parse("x='abcde';x#4='y';x#4");
+//	check(result.length == 3);
 
 	Node result = parse("{ a b c, d e f; g h i , j k l \n "
 	                    "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2}"
@@ -1418,7 +1418,6 @@ void tests() {
 	testWaspInitializationIntegrity();
 	logi(testNodiscard());
 	testSwitch();
-	testLogicOperators();
 	testWasmMutableGlobal();
 	testAsserts();
 	testString();
@@ -1464,7 +1463,6 @@ void tests() {
 	testRoots();
 	testForEach();
 	testLengthOperator();
-	testLogic();
 	testLogicEmptySet();
 	testDeepCopyDebugBugBug();
 	testDeepCopyDebugBugBug2();
@@ -1485,15 +1483,16 @@ void tests() {
 	testCall();
 	testNewlineLists();
 	testIndex();
-
+	testLogic01();// fails in WASM why
+	testMathExtra(); // fails in WASM
+	testRecentRandomBugs();
+	testGroupCascade();
+	testLogic();
+	testLogicOperators();
+	assert_is("one plus two times three", 7);
 	skip(
-			testLogic01();// fails in WASM why
-			assert_is("one plus two times three", 7);
-			testMathExtra(); // fails in WASM
 
 			testKitchensink();
-			testRecentRandomBugs();
-			testGroupCascade();
 	)
 #ifdef APPLE
 	testAllSamples();
@@ -1648,11 +1647,14 @@ e
 	)";
 	auto groups = parse(indented);
 //	auto groups = parse("a:\n b\n c\nd\ne\n");
+	log(groups.serialize());
+	log(groups.length);
 	check(groups.length == 3);// a(),d,e
 	auto parsed = groups.first();
 	check(parsed.length == 2);
-	check(parsed[1] == "c");
 	check(parsed.name == "a");
+	log(parsed[1]);
+	check(parsed[1].name == "c");
 }
 
 void testEmptyLineGrouping() {
@@ -1674,12 +1676,13 @@ e
 }
 
 void testCurrent() { // move to tests() once OK'
-	assert_emit(".1 + .9", 1);
-	assert_emit("add1 x:=$0+1;add1 3", (long) 4);
-	assert_emit("n=3;2ⁿ", 8);
+	testGroupCascade();
+	testNewlineLists();
+	assert_parses("{ç:☺}");
+	assert(result["ç"] == "☺");
+	testDedent();
 	skip(
 
-			testDedent();
 			testEmptyLineGrouping();
 			testColonLists();
 			testGraphParams();
