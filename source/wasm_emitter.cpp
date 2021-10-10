@@ -52,7 +52,7 @@ void load_aliases() {
 }
 
 String normOperator(String alias) {
-	if (not aliases_loaded)load_aliases();
+//	if (not aliases_loaded)load_aliases();
 	auto hash = alias.hash();
 	if (not hash_to_normed_alias.has(hash))
 		return alias;// or NIL : no alias
@@ -241,8 +241,8 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	if (eq(s, "$"))
 		return get_local; // $0 $1 ...
 
-	trace("unknown or non-primitive operator %s\n"s %
-	      String(s)); // can still be matched as function etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
+	trace("unknown or non-primitive operator %s\n"s % String(s));
+	// can still be matched as function etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
 	breakpoint_helper
 //		error("invalid operator");
 	return 0;

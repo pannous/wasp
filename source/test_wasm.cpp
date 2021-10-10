@@ -3,9 +3,9 @@
 #include "wasm_reader.h"
 #include "wasm_merger.h"
 
-#define assert_throws(αα)  printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);bool old=panicking;try{ \
+#define assert_throws(αα)  {printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);bool old=panicking;try{ \
 panicking=false;emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line(); \
-}catch(chars){}catch(String*){}catch(...){};panicking=old;
+}catch(chars){}catch(String*){}catch(...){};panicking=old;}
 
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 //#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
@@ -19,6 +19,17 @@ panicking=false;emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_li
 
 
 void testWasmStuff();
+
+
+void testEmitter() {
+#ifndef RUNTIME_ONLY
+	Node node = Node(42);
+	Code &code = emit(node);
+	int result = code.run();
+	check(result == 42);
+#endif
+}
+
 
 void testGlobals() {
 	assert_emit("π", 3);
@@ -1081,6 +1092,10 @@ void testImportWasm() {
 	assert_emit("require fourty_two;ft*2", 42 * 2);
 }
 
+void testMathLibrary() {
+//		assert_emit("use math;√π²", 3);
+}
+
 void testAllWasm() {
 
 //	data_mode = false;
@@ -1093,7 +1108,8 @@ void testAllWasm() {
 	skip(
 			testIndexWasm();// breaks on second run WHY?
 	)
-
+	testEmitter();
+	testMathLibrary();
 	testArrayIndicesWasm();
 	testStringIndicesWasm();
 	testWasmFunctionDefiniton();
