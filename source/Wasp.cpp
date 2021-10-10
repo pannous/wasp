@@ -13,6 +13,10 @@
 #include <sys/types.h>
 #include <pwd.h>*/
 
+
+//#define err(m) printf("\n%s:%d\n",__FILE__,__LINE__);err1(m)
+#define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m);
+
 #ifndef RUNTIME_ONLY
 
 #include "Interpret.h"
@@ -65,6 +69,7 @@ codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', 
 // predicates in of on from to
 // todo split keywords into binops and prefix functors
 // "‖" acts as GROUP, not as operator (when parsing)
+chars import_keywords[] = {"use", "require", "import", "include", 0};
 chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠",
                           "not",
                           "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...",
@@ -227,14 +232,46 @@ class Wasp {
 	int indentation_level = 0;
 	const char INDENT = 0x0F; // 	SI 	␏ 	^O 		Shift In
 	const char DEDENT = 0x0E; //  SO 	␎ 	^N 		Shift Out
-
+	//	indent 􀋵 (increase.indent) ☞ 𒋰 𒐂 ˆ ˃
 	int indentation() {
+		float tabs = 0;
+		int spaces_per_tab = 4;
+		int offset = at;
+		if (text[offset] == '\n' or text[offset] == '\r')offset++;
+		while (text[offset] == '\t') {
+			tabs++;
+			offset++;
+		}
+		if (tabs > 0 and text[offset] == ' ')err("ambiguous indentation, mixing tabs and spaces");
+		while (text[offset] == ' ') {
+			tabs = tabs + 1. / spaces_per_tab;
+			offset++;
+		}
+		if (tabs > 0 and text[offset] == '\t')err("ambiguous indentation, mixing tabs and spaces");
+//		while(next==' ' or next=='\t')proceed();// but keep last ch as INDENT!
+		if (text[offset] == '\n')
+			return indentation_level; // careful empty lines if next indentation == last one : just hangover spacer!
+		if (text[offset] == 0)return 0; // no more indentation.
+		return ceil(tabs);
+	}
+
+	int indentation_EVIL() {
+		// proceed() gets rid of all semantic spacing a b => ab
 		float i = 0;
 		int spaces_per_tab = 4;
-		while (ch == '\t') i++;
-		if (ch == ' ')err("ambiguous indentation, mixing tabs and spaces");
-		while (ch == ' ') i = i + 1 / spaces_per_tab;
-		if (ch == '\t')err("ambiguous indentation, mixing tabs and spaces");
+		while (ch == '\t') {
+			i++;
+			proceed();
+		}
+		if (i > 0 and ch == ' ')err("ambiguous indentation, mixing tabs and spaces");
+		while (ch == ' ') {
+			i = i + 1. / spaces_per_tab;
+			proceed();
+		}
+		if (i > 0 and ch == '\t')err("ambiguous indentation, mixing tabs and spaces");
+		if (ch == '\n')
+			return indentation_level; // careful empty lines if next indentation == last one : just hangover spacer!
+		if (ch == 0)return 0; // no more indentation.
 		return ceil(i);
 	}
 
@@ -246,15 +283,18 @@ class Wasp {
 //	0x1E 	S6 	RS 	␞ 	^^[k] 		Record Separator
 //	0x1F 	S7 	US 	␟ 	^_ 		Unit Separator
 	bool closing(char ch, char closer) {
-		if (ch == INDENT)return false;// quite the opposite
-
-		if (ch == closer)return true;
+		if (ch == closer)
+			return true;
+		if (precedence(ch) <= precedence(closer))
+			return true;
+		if (ch == INDENT)
+			return false;// quite the opposite
+		if (ch == DEDENT and not(closer == '}' or closer == ']' or closer == ')'))
+			return true;
 		if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
 			//				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
 			return true;
 		}// outer match unresolved so far
-		if (ch == DEDENT and not(closer == '}' or closer == ']' or closer == ')'))
-			return true;
 
 		if (precedence(ch) <= precedence(closer))
 			return true;
@@ -296,10 +336,10 @@ public:
 		lineNumber = 1;
 		ch = 0;
 		text = source;
-		proceed();// at=0
+		while (empty(ch) and (ch or at < 0))proceed();// at=0
 		Node result = valueNode(); // <<
 		white();
-		if (ch and ch != -1) {
+		if (ch and ch != -1 and ch != DEDENT) {
 			printf("UNEXPECTED CHAR %c", ch);
 			error("Expect end of input");
 			result = ERROR;
@@ -349,7 +389,7 @@ private:
 		return msg;
 	}
 
-	String err(String m) {
+	String err1(String m) {
 		// Call error when something is wrong.
 		// todo: Still to read can scan to end of line
 		String msg = m;
@@ -378,6 +418,7 @@ private:
 	}
 
 
+	// one char at a time, NO JUMPING OVER ' ' here!
 	char proceed(char c = 0) {
 		if (not ch and at >= 0) {
 			warn("end of code");
@@ -405,13 +446,16 @@ private:
 //		point = text.data + at;
 		if (ch == '\n' or (ch == '\r' and next != '\n')) {
 			lineNumber++;
-			columnStart = at;
+			columnStart = at;// including indent
 			int new_indentation_level = indentation();
-			if (new_indentation_level > indentation_level)previous = INDENT;
-			if (new_indentation_level < indentation_level)previous = DEDENT;
+			if (new_indentation_level > indentation_level)
+				ch = INDENT;
+			if (new_indentation_level < indentation_level)
+				ch = DEDENT;
 			indentation_level = new_indentation_level;
+//			at = columnStart;// restore to be sure todo remove
 		}
-		if (previous == '\n' or previous == 0) {
+		if (previous == '\n' or previous == INDENT or previous == DEDENT or previous == 0) {
 			auto to = text.indexOf('\n', at);
 			line = text.substring(at, to);
 		}
@@ -425,7 +469,9 @@ private:
 		int start = at;
 		// subsequent characters can contain ANYTHING
 		while ((proceed() and is_identifier(ch)) or isDigit(ch));
-		String key = String(text.data + start, at - start, !debug);
+		int to = at;
+		while (to > 0 and empty(text[to - 1]))to--;
+		String key = String(text.data + start, to - start, !debug);
 		return key;
 	};
 
@@ -681,8 +727,7 @@ private:
 		while (ch) {
 			if (ch == '/') {
 				if (not comment()) return; // else loop on
-//				auto ws = {' ', '\t', '\r', '\n'};
-// or ch == '\r' or ch == '\n' NEWLINE IS NOT A WHITE LOL, it has semantics
+				// NEWLINE IS NOT A WHITE , it has semantics
 			} else if (ch == ' ' or ch == '\t') {
 				proceed();
 			} else
@@ -825,7 +870,7 @@ private:
 		// set kind = expression only if it contains operator, otherwise keep it as list!!!
 		expressionas.add(node);
 		if (node.kind == operators) expressionas.kind = expression;
-		if (closer == ' ' and ch == ' ')// stop_at_space, keep it for further analysis (?)
+		if (closing(ch, closer))// stop_at_space, keep it for further analysis (?)
 			return *expressionas.clone();
 		white();
 		while (ch and ch != closer and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
@@ -1168,8 +1213,8 @@ private:
 				continue;
 			}
 			if (ch == close) { // (…) {…} «…» ... “‘ part of string
-				if (ch == 0 or ch == ' ' or ch == '\n' or ch == '\t' or ch == ';' or
-				    ch == ',');  // keep ';' ',' ' ' for further analysis (?)
+				if (ch == 0 or ch == ' ' or ch == '\n' or ch == '\t' or ch == ';' or ch == ',');
+					// keep ';' ',' ' ' for further analysis (?)   ch == 0x0E or ?
 				else
 					proceed();
 				break;
@@ -1320,8 +1365,11 @@ private:
 					}*/
 					char closer;// significant whitespace:
 					if (ch == '\n') closer = ';';// a: b c == a:(b c) newline or whatever!
-
-					if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
+					else if (ch == INDENT) {
+						closer = DEDENT;
+						proceed();
+						white();
+					} else if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
 					else closer = ' ';// immediate a:b c == (a:b),c
 					Node &val = *valueNode(closer, &key).clone();// applies to WHOLE expression
 					if (add_raw) {  // complex expression are not simple maps
@@ -1333,15 +1381,23 @@ private:
 				}
 				case '\n': // groupCascade
 				case '\t': // only in tables
-				case ';': // indent 􀋵  ☞ 𒋰 𒐂 ˆ ˃
+				case ';': //
 				case ',': {
 					if (skipBorders(ch)) {
 						proceed();
 						continue;
 					}
+					if (precedence(ch) > precedence(current.separator)) {
+						current.separator = ch;
+						proceed();// currRAgeous!
+						continue;
+					}
+					log("?"s + line);
+					if (precedence(ch) <= precedence(current.separator))
+						log("??"s + line);
 					// closing ' ' handled above
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
-					if (current.separator != ch) {// and current.length > 1
+					if (current.separator != 0 and current.separator != ch) {// and current.length > 1
 						// x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
 						if (current.length > 1 or current.kind == expression) {
 							Node neu;// wrap x,y => ( (x y) ; … )
@@ -1353,18 +1409,17 @@ private:
 						}
 						current.separator = ch;
 						char closer = ch;// need to keep troughout loop!
-						int i = 0;
-						//						closing(ch, closer) and not closing(ch, close) and ch!='}' and ch!=')' and ch!=']' and ch!=0
-						while (ch == closer) {
-							proceed();
+						proceed();
+						do {
 							Node element = valueNode(closer);// todo stop copying!
 							current.add(element.clone());
-						}
+						} while (not closing(ch, closer));
 						break;
 					}
 					// else fallthough!
 					current.separator = ch;
 				}
+				case 0x0F: // indent
 				case ' ': // possibly significant whitespace not consumed by white()
 				{
 					proceed();
@@ -1389,9 +1444,8 @@ private:
 					Node node = expressione(close);//word();
 					// todo:
 //					Node import=node.find(["import","include","require"]);
-//					if(import)node.replace(import,-1,…)
-					if (node.first().name == "include" or node.first().name == "import" or
-					    node.first().name == "require") {
+//					    node.first().name == "require"
+					if (contains(import_keywords, (chars) node.first().name.data)) {
 						// import IF not in data mode
 						if (not node.name.empty())
 							node = parseFile(node.values().first().name);// todo
@@ -1409,7 +1463,7 @@ private:
 						for (Node arg:node)current.add(arg);
 						current.kind = node.kind;// was: expression
 					} else {
-						current.add(&node);
+						current.add(&node.flat());
 					}
 				}
 			}
@@ -1428,7 +1482,8 @@ float precedence(char group) {
 	if (group == '}')return 1;
 	if (group == ']')return 1;
 	if (group == ')')return 1;
-
+	if (group == 0x0E or group == 0x0F)
+		return 1.1;
 	if (0 < group and group < 0x20)return 1.5;
 	if (group == '\n')return 2;
 	if (group == ';')return 3;
