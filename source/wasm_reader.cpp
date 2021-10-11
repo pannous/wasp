@@ -29,8 +29,6 @@ Valtype mapArgToValtype(String arg);
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
-#define check(test) if(test){log("\nOK check passes: ");log(#test);}else{if(debug_reader)printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-#define check_eq(α, β) if((α)!=(β)){if(debug_reader)printf("%s != %s : ",#α,#β);log(α);if(debug_reader)printf("!=");log(β);if(debug_reader)printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {

@@ -14,8 +14,6 @@
 //#include "wasm_runner.h"
 #include "wasm_reader.h"
 
-#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-
 int runtime_offset = 0; // imports + funcs
 int import_count = 0;
 short builtin_count = 0;// function_offset - import_count - runtime_offset;
