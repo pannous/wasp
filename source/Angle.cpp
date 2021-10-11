@@ -427,7 +427,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 		if (op == "-…") op = "-";// precedence hack
 		if (op != last) last_position = 0;
 		bool fromRight = rightAssociatives.has(op) or isFunction(op);
-		fromRight = fromRight || prefixOperators.has(op); // !√!-1 == !(√(!(-1)))
+		fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
 		int i = expression.index(op, last_position, fromRight);
 		if (i < 0) {
 			if (op == "-" or op == "‖")
@@ -464,11 +464,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 		}
 		if (isPrefixOperation(node, prev, next)) {// ++x -i
 			node.kind = Type::operators;// todo should have been parsed as such!
+			node.add(new Node(0));//  -i => -(0 i)
 			node.add(next);
-			if (node == "-") {
-				node.add(new Node(-1));
-				node.name = "*";
-			} // -i = i*(-1)
 			expression.replace(i, i + 1, node);
 		} else {
 			prev = analyze(prev);
@@ -560,6 +557,7 @@ bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
 //		if (infixOperators.has(node.name) or suffixOperators.has(node.name)) {
 		if (lhs.kind == reference)return false; // i++
 		if (isPrimitive(lhs))return false; // 3 -1
+		if (lhs.kind == operators) return lhs.length == 0;
 		if ((lhs.isEmpty() or lhs.kind == operators) and lhs.name != "‖")
 			return true;
 		return false;
