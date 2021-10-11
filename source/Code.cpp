@@ -138,13 +138,16 @@ Code createSection(Section sectionType, Code data) {
 }
 
 
-
 chars typeName(Valtype t) {
 	switch (t) {
 		case Valtype::i32t:
 			return "i32";
+		case Valtype::i64:
+			return "i64";
 		case Valtype::float32:
 			return "f32";
+		case Valtype::float64:
+			return "f64";
 		case Valtype::array:
 			return "array";
 		case Valtype::charp:
@@ -154,7 +157,7 @@ chars typeName(Valtype t) {
 		case Valtype::none:
 			return "void_block";
 		default:
-			error("missing name for Valtype");
+			error("missing name for Valtype "s + t);
 	}
 	return 0;
 }

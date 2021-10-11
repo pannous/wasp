@@ -337,6 +337,7 @@ List<String> demangle_args(String &fun) {
 
 String demangle(String &fun) {
 	int status;
+	if (fun.empty())return "";
 	String *real_name = new String(abi::__cxa_demangle(fun.data, 0, 0, &status));
 	if (status != 0)return fun;// not demangled (e.g. "memory")
 //	String ok = *real_name;
