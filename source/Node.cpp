@@ -831,12 +831,13 @@ String Node::serialize() const {
 	}
 	if (length >= 0) {
 		if (kind == expression and not name.empty())wasp += ":";
-		// skip single element braces: a == (a)
-		if (not separator and (length != 1 or kind == patterns)) {
-			if (kind == groups)wasp += "(";
+		if ((length != 1 or kind == patterns or kind == objects)) {
+			// skip single element braces: a == (a)
+			if (kind == groups and not separator)
+				wasp += "(";
 			else if (kind == objects)wasp += "{";
 			else if (kind == patterns)wasp += "[";
-			else if (length > 0) wasp += "(";// default
+			else if (length > 0 and not separator) wasp += "(";// default
 		}
 		if (polish_notation and not empty(name)) wasp += name;
 		int i = 0;
@@ -845,11 +846,11 @@ String Node::serialize() const {
 			wasp += " ";
 			wasp += node.serialize();
 		}
-		if (not separator and (length != 1 or kind == patterns)) {
-			if (kind == groups)wasp += ")";
+		if (length != 1 or kind == patterns or kind == objects) {
+			if (kind == groups and not separator)wasp += ")";
 			else if (kind == objects)wasp += "}";
 			else if (kind == patterns)wasp += "]";
-			else if (length > 0) wasp += ")";// default
+			else if (length > 0 and not separator) wasp += ")";// default
 		}
 		if (eq(name, "‖")) wasp += name;
 	}
