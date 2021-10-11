@@ -120,6 +120,7 @@ x;
 }
 
 bool similar(float a, float b) {
+	if (a == b)return true;
 	float epsilon = abs_f(a + b) / 1000000.;// percentual ++
 	bool ok = a == b or abs_f(a - b) <= epsilon;
 	return ok;

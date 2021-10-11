@@ -504,7 +504,8 @@ public:
 		if (name.data)
 			printf("name:%s", name.data);
 		printf(" length:%d", length);
-		printf(" type: %s", typeName(kind));
+		if (kind < unknown)
+			printf(" type: %s", typeName(kind));
 		const String &string1 = serializeValue(false);
 		printf(" value: %s\n\n", string1.data);// NEEDS "%s", otherwise HACKABLE
 //			printf("name:%s ", name.data);
