@@ -535,6 +535,9 @@ void Node::remove(Node &node) {
 Node &Node::add(Node *node) {
 	if ((long) node > MEMORY_SIZE)
 		error("node Out of Memory");
+	if (!node)return *this;
+	if (node->kind == groups and node->length == 0 and node->name.empty())
+		return *this;
 	if (kind == longs or kind == reals)
 		error("can't modify primitives, only their referenceIndices a=7 a.nice=yes");
 	if (length >= capacity - 1) {

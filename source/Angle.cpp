@@ -464,7 +464,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 		}
 		if (isPrefixOperation(node, prev, next)) {// ++x -i
 			node.kind = Type::operators;// todo should have been parsed as such!
-			node.add(new Node(0));//  -i => -(0 i)
+			if (op == "-")//  -i => -(0 i)
+				node.add(new Node(0));
 			node.add(next);
 			expression.replace(i, i + 1, node);
 		} else {
