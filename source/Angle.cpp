@@ -121,7 +121,7 @@ String extractFunctionName(Node &node) {
 //chars ras[] = {"=", "?:", "+=", "++", 0};
 //List<chars> rightAssociatives = List(ras);
 #ifndef WASM
-List<chars> rightAssociatives = List<chars>{"=", "?:", "+=", "++…", 0};// a=b=1 == a=(b=1) => a=1
+List<chars> rightAssociatives = List<chars>{"=", "?:", "-…", "+=", "++…", 0};// a=b=1 == a=(b=1) => a=1
 
 
 // still needs to check a-b vs -i !!
@@ -237,19 +237,24 @@ Node &groupIf(Node n) {
 
 List<String> collectOperators(Node &expression) {
 	List<String> operators;
+	String previous;
 	for (Node &op : expression) {
 		if (not op.name)continue;
-		if (operator_list.has(op.name))
-			//			if (op.name.in(operator_list))
+		if (op.name.endsWith("="))// += etc
 			operators.add(op.name);
-		else if (op.name.endsWith("="))// += etc
-			operators.add(op.name);
-		else if (prefixOperators.has(op.name))
-			operators.add(op.name);
+		else if (prefixOperators.has(op.name)) {
+			if (op.name == "-" and is_operator(previous.codepointAt(0)))
+				operators.add(op.name + "…");//  -2*7 ≠ 1-(2*7)!
+			else
+				operators.add(op.name);
+		}
 //		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
 //		else if (prefixOperators.has(op.name+"…"))// and IS_PREFIX
 //			operators.add(op.name+"…");
 		else if (suffixOperators.has(op.name))
+			operators.add(op.name);
+		else if (operator_list.has(op.name))
+			//			if (op.name.in(operator_list))
 			operators.add(op.name);
 //else if (suffixOperators.has(op.name+"…"))
 //	operators.add(op.name);
@@ -257,6 +262,7 @@ List<String> collectOperators(Node &expression) {
 		//			operators.add(op.name);
 		//		if (op.name.in(functor_list))
 		//			operators.add(op.name);
+		previous = op.name;
 	}
 	auto by_precedence = [](String &a, String &b) { return precedence(a) > precedence(b); };
 	operators.sort(by_precedence);
@@ -418,6 +424,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 	String last = "";
 	int last_position = 0;
 	for (String &op : operators) {
+		if (op == "-…") op = "-";// precedence hack
 		if (op != last) last_position = 0;
 		bool fromRight = rightAssociatives.has(op) or isFunction(op);
 		fromRight = fromRight || prefixOperators.has(op); // !√!-1 == !(√(!(-1)))
@@ -667,7 +674,7 @@ Node &groupFunctions(Node &expressiona) {
 			else
 				expressiona.remove(i + 1, i + rest.length);
 		} else
-			error("???");
+			todo("missing arity match case");
 	}
 	return expressiona;
 }
@@ -812,25 +819,6 @@ Node analyze(Node node, String context) {
 	}
 	return grouped;
 }
-
-
-Node analyze2(Node data) {
-	if (data.kind == reference and data.length == 0)return data;
-	if (data.kind == expression or data.kind == declaration) {
-		return groupOperators(data);
-	} else // or data.kind==groups or
-		warn("REPLACE with their ast?");
-	Node grouped = *data.clone();
-	grouped.children = 0;
-	grouped.length = 0;
-	for (Node &child: data) {
-		child = analyze(child);// REPLACE with their ast? NO! todo
-		grouped.add(child);
-	}
-	grouped.log();
-	return grouped;
-}
-
 
 String debug_code;
 

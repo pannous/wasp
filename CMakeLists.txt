@@ -36,7 +36,7 @@ if (NOT WASM)
             # TO EXECUTE wasm:
             # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
             #            SET(V8 1)
-            #                        SET(WASMTIME 1) # FASTEST!
+#                                    SET(WASMTIME 1) # FASTEST!
             #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
             set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
             #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
@@ -78,7 +78,9 @@ if (WASM)
     SET(SDL 0)
     # ^^ UNSET, or better don't set manually at all!
 endif ()
-
+if (WASMTIME)
+    ADD_COMPILE_DEFINITIONS(WASMTIME)
+endif ()
 if (SDL)
     ADD_COMPILE_DEFINITIONS(GRAFIX)
     find_package(SDL2 REQUIRED)
