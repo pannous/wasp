@@ -111,6 +111,10 @@ bool is_bracket(char ch) {
 }
 
 
+// ︷
+// ︸﹛﹜｛｝﹝﹞〔〕〘〙〚〛〖〗【】『』「」｢｣《》〈〉〈〉⁅⁆ «»
+// ︵  ﴾ ﴿ ﹙ ﹚ （ ） ⁽ ⁾  ⸨⸩ see grouper_list
+// ︶
 codepoint closingBracket(codepoint bracket) {
 	switch (bracket) {
 		case '\x0E':
@@ -230,8 +234,9 @@ class Wasp {
 	int columnStart{};    // The index of column start char
 
 	int indentation_level = 0;
-	const char INDENT = 0x0F; // 	SI 	␏ 	^O 		Shift In
-	const char DEDENT = 0x0E; //  SO 	␎ 	^N 		Shift Out
+#define INDENT 0x0F // 	SI 	␏ 	^O 		Shift In
+#define DEDENT 0x0E //  SO 	␎ 	^N 		Shift Out
+
 	//	indent 􀋵 (increase.indent) ☞ 𒋰 𒐂 ˆ ˃
 	int indentation() {
 		float tabs = 0;
@@ -449,9 +454,10 @@ private:
 			lineNumber++;
 			columnStart = at;// including indent
 			int new_indentation_level = indentation();
-			if (new_indentation_level > indentation_level and not is_grouper(previous) and previous != '"')
-				ch = INDENT;
-			if (new_indentation_level < indentation_level and not is_grouper(previous) and previous != '"')
+			if ((lastNonWhite == ':' or not is_grouper(lastNonWhite)) and previous != '"')
+				if (new_indentation_level > indentation_level)
+					ch = INDENT;
+			if (new_indentation_level < indentation_level)
 				ch = DEDENT;
 			indentation_level = new_indentation_level;
 			//			at = columnStart;// restore to be sure todo remove
@@ -1221,7 +1227,7 @@ private:
 				else // drop brackets
 					proceed(); // what else??
 				break;
-			}
+			}// todo: merge <>
 			if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
 				break;
 			}// inner match ok
@@ -1237,10 +1243,6 @@ private:
 //				group.type = type("group")["field"]=grouper;
 				current.add(group);
 				continue;
-				// ︷
-				// ︸﹛﹜｛｝﹝﹞〔〕〘〙〚〛〖〗【】『』「」｢｣《》〈〉〈〉⁅⁆ «»
-				// ︵  ﴾ ﴿ ﹙ ﹚ （ ） ⁽ ⁾  ⸨⸩ see grouper_list
-				// ︶
 			}
 			switch (ch) {
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
@@ -1297,7 +1299,7 @@ private:
 				}// lists handled by ' '!
 				case '}':
 				case ')':
-				case ']':
+				case ']':// ..
 //					break loop;// not in c++
 					err("wrong closing bracket");
 //				case '+': // todo WHO writes +1 ?
@@ -1319,7 +1321,7 @@ private:
 				case u'«': // «…»
 				case u'‘':// ‘𝚗𝚊𝚖𝚎’
 				case u'“':// “…” Character too large for enclosing character literal type
-				case '`': {
+				case '`': {// strings and templates
 					if (previous == '\\')continue;// escape
 					bool matches = close == ch;
 					matches = matches or (close == u'‘' and ch == u'’');
@@ -1344,7 +1346,7 @@ private:
 				case U'﹦':
 				case U'：':
 				case ':':
-				case '=': {
+				case '=': { // assignments, declarations and map key-value-pairs
 					// todo {a b c:d} vs {a:b c:d}
 					Node &key = current.last();
 					bool add_raw = current.kind == expression or key.kind == expression or
@@ -1365,6 +1367,8 @@ private:
 					if (ch == '\n') closer = ';';// a: b c == a:(b c) newline or whatever!
 					else if (ch == INDENT) {
 						closer = DEDENT;
+						if (not current.separator)
+							current.separator = '\n';// because!
 						proceed();
 						white();
 					} else if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
@@ -1377,15 +1381,16 @@ private:
 					}
 					break;
 				}
-				case 0x0F: // indent
-				{
+				case INDENT: {
 					proceed();
 					if (current.separator == ',') {
 						warn("indent block within list");
 						ch = '\n';// we assume it was not desired;)
 					} else {
 						Node element = valueNode(DEDENT);// todo stop copying!
-						current.add(element.flat());
+						current.addSmart(element.flat());
+						if (not current.separator)
+							current.separator = '\n';// because
 						continue;
 					}
 				}

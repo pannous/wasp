@@ -275,7 +275,7 @@ public:
 
 	int position(S s) {
 		for (int i = 0; i < _size; i++) //  or keys[i]!=0
-			if (s == keys[i])
+			if (keys[i] == s)
 				return i;
 		return -1;
 	}
