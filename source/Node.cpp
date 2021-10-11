@@ -27,6 +27,7 @@ bool debug = true;// clone sub-strings instead of sharing etc
 //#include <tgmath.h> // sqrt macro
 #include "String.h"
 #include "NodeTypes.h"
+#include "Util.h"
 
 
 
@@ -145,7 +146,7 @@ Node &Node::operator[](chars s) {
 // ^^ DON'T DO THAT! a:{b:{c:'hi'}} => a["b"] must be c, not "hi"
 	if (found)return *found;
 	if (name == s) {// me.me == me ? really? let's see if it's a stupid idea…
-		if (kind == objects and value.node)
+		if (kind == keyNode and value.node)
 			return *value.node;
 		return (Node &) *this;
 	}
@@ -157,7 +158,8 @@ Node &Node::operator[](chars s) {
 	neu.parent = (Node *) this;
 	neu.length = 0;
 	neu.children = 0;
-	if (neu.value.node) return *neu.value.node;
+	if (neu.value.node)
+		return *neu.value.node;
 	else return neu;
 }
 
@@ -324,7 +326,7 @@ bool Node::operator==(long other) {
 
 bool Node::operator==(double other) {
 	if (kind == keyNode and value.node and value.node->value.real == other)return true;
-	return (kind == reals and value.real == other) or
+	return (kind == reals and similar(value.real, other)) or
 	       //			(kind == reals and (float )value.real == (float)other) or // lost precision
 	       (kind == longs and value.longy == other) or
 	       (kind == bools and value.longy == other);
@@ -708,7 +710,7 @@ co_yield 	yield-expression (C++20)
 // Node* OK? else Node&
 Node *Node::has(String s, bool searchMeta, short searchDepth) const {
 	if (searchDepth < 0)return 0;
-	if ((kind == objects or kind == keyNode) and value.node and s == value.node->name)
+	if ((kind == keyNode) and value.node and s == value.node->name)
 		return value.node;
 	for (int i = 0; i < length; i++) {
 		Node &entry = children[i];
@@ -816,6 +818,9 @@ String Node::serialize() const {
 	if (not polish_notation or length == 0) {
 		if (not empty(name)) wasp += name;
 		String serializedValue = serializeValue();
+		if (kind == longs or kind == reals)
+			if (not atoi(name) /*and name!="0"*/)
+				return ""s + name + ":" + serializedValue;
 		if (kind == strings and name and (empty(name) or name == value.string))
 			return serializedValue;// no text:"text", just "text"
 		if (kind == longs and name and (empty(name) or name == itoa(value.longy)))
@@ -831,7 +836,7 @@ String Node::serialize() const {
 	}
 	if (length >= 0) {
 		if (kind == expression and not name.empty())wasp += ":";
-		if ((length != 1 or kind == patterns or kind == objects)) {
+		if ((length > 1 or kind == patterns or kind == objects)) {
 			// skip single element braces: a == (a)
 			if (kind == groups and not separator)
 				wasp += "(";
@@ -846,7 +851,7 @@ String Node::serialize() const {
 			wasp += " ";
 			wasp += node.serialize();
 		}
-		if (length != 1 or kind == patterns or kind == objects) {
+		if (length > 1 or kind == patterns or kind == objects) {
 			if (kind == groups and not separator)wasp += ")";
 			else if (kind == objects)wasp += "}";
 			else if (kind == patterns)wasp += "]";
@@ -1145,6 +1150,8 @@ chars typeName(Type t) {
 			return "error";
 		case functor:
 			return "functor";
+//		case 255:
+//			return "data";
 		default:
 			error(str("MISSING Type name mapping ") + t);
 			return "ERROR";
