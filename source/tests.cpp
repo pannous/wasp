@@ -26,6 +26,47 @@ void testSerialize() {
 }
 
 
+void testDedent2() {
+	auto indented = R"(
+a:
+  b
+  c
+d
+e
+	)";
+	auto groups = parse(indented);
+	//	auto groups = parse("a:\n b\n c\nd\ne\n");
+	log(groups.serialize());
+	log(groups.length);
+	check(groups.length == 3);// a(),d,e
+	auto parsed = groups.first();
+	check(parsed.name == "a");
+	check(parsed.length == 2);
+	log(parsed[1]);
+	check(parsed[1].name == "c");
+}
+
+void testDedent() {
+	auto indented = R"(
+a
+  b
+  c
+d
+e
+	)";
+	auto groups = parse(indented);
+	//	auto groups = parse("a:\n b\n c\nd\ne\n");
+	log(groups.serialize());
+	log(groups.length);
+	check(groups.length == 3);// a(),d,e
+	auto parsed = groups.first();
+	check(parsed.name == "a");
+	check(parsed.length == 2);
+	log(parsed[1]);
+	check(parsed[1].name == "c");
+}
+
+
 void testWasmSpeed() {
 	struct timeval stop, start;
 	gettimeofday(&start, NULL);
@@ -1479,6 +1520,12 @@ void tests() {
 	testMarkSimple();
 	testMarkMulti();
 	testMarkMulti2();
+	testDedent2();
+	testDedent();
+	testGroupCascade0();
+	testGraphQlQuery();
+	testGroupCascade();
+	testNewlineLists();
 	testStackedLambdas();
 	testRootLists();
 	testIterate();
@@ -1685,51 +1732,11 @@ void testPaintWasm() {
 }
 
 
-void testDedent2() {
-	auto indented = R"(
-a:
-  b
-  c
-d
-e
-	)";
-	auto groups = parse(indented);
-	//	auto groups = parse("a:\n b\n c\nd\ne\n");
-	log(groups.serialize());
-	log(groups.length);
-	check(groups.length == 3);// a(),d,e
-	auto parsed = groups.first();
-	check(parsed.name == "a");
-	check(parsed.length == 2);
-	log(parsed[1]);
-	check(parsed[1].name == "c");
-}
-
-void testDedent() {
-	auto indented = R"(
-a
-  b
-  c
-d
-e
-	)";
-	auto groups = parse(indented);
-//	auto groups = parse("a:\n b\n c\nd\ne\n");
-	log(groups.serialize());
-	log(groups.length);
-	check(groups.length == 3);// a(),d,e
-	auto parsed = groups.first();
-	check(parsed.name == "a");
-	check(parsed.length == 2);
-	log(parsed[1]);
-	check(parsed[1].name == "c");
-}
-
 void testEmptyLineGrouping() {
 	auto indented = R"(
 a:
- b
- c
+  b
+  c
 
 d
 e
@@ -1745,32 +1752,14 @@ e
 
 // 2021-10 : 40 sec for Wasm3
 void testCurrent() {
-	testDedent2();
-	testDedent();
-	testGroupCascade0();
-	assert_emit("logs('ok');(1 4 3)#2", 4);
-	assert_emit("‖-3‖", 3);
-	assert_emit("√100²", 100);
-	assert_emit("logs('ok');", 0);
-// move to tests() once OK'
-	testGraphQlQuery();
-	testGroupCascade();
-	testNewlineLists();
-	assert_parses("{ç:☺}");
-	assert(result["ç"] == "☺");
+	assert_emit("1 -3 - square 3+4", (long) -51);// warn?
+	assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
 	skip(
 
-			testEmptyLineGrouping();
-			testColonLists();
-			testGraphParams();
-			assert_emit("i=-9;√-i", 3);
-			assert_emit("i=-9;√ -i", 3);
-			assert_emit("i=-9;√-i", 3);
 			run("circle.wasp");
 			assert_emit("use math;⅓ ≈ .3333333 ", 1);
 			assert_throws("i*=3");// well:
 			assert_emit("i*=3", (long) 0);
-
 			assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
 
 	)
@@ -1779,11 +1768,8 @@ void testCurrent() {
 //	testImportWasm();
 //	testImport();
 
-	skip(
-			assert_emit("i=-9;√-i", 3);
-			assert_emit("i=-9;√ -i", 3);
-			assert_emit("i=-9;√-i", 3);
-	)
+	assert_emit("i=-9;√-i", 3);
+	assert_emit("i=-9;√ -i", 3);
 //	assert_run not compatible with Wasmer, don't ask why, we don't know;)
 	testSerialize();
 //	assert_emit("print('hello')",0);
@@ -1802,13 +1788,10 @@ void testCurrent() {
 //	assert_run("render html{'test'}", 4);
 
 	skip(
-			assert_emit("1 -3 - square 3+4", (long) -51);// warn?
 			assert_emit("xyz 3.7", 4); // todo SHOULD THROW unknown symbol!
-			//		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
-			//todo dissect operators!  π² COULD be symbol on its own so two path check!
-			assert_emit("√π²", 3);
-			// while without body
-			assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
+	//		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
+	//todo dissect operators!  π² COULD be symbol on its own so two path check!
+	// while without body
 	)
 
 //	exit(0);
@@ -1822,6 +1805,10 @@ void testCurrent() {
 // := is terminated by \n, not by ;!
 
 //	operator_list = List(operator_list0);
+
+	testEmptyLineGrouping();
+	testColonLists();
+	testGraphParams();
 	testRecentRandomBugs();
 	tests();// make sure all still ok before changes
 	todos();// those not passing yet (skip)
