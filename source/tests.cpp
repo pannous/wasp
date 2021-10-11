@@ -1522,6 +1522,7 @@ void tests() {
 	data_mode = true;// expect data unless explicit code
 	//	testNodiscard();// works NOW!
 	logi(testNodiscard());
+	testEmptyLineGrouping();
 	testWaspInitializationIntegrity();
 	testRoundFloorCeiling();
 	testSwitch();
@@ -1756,11 +1757,13 @@ void testPaintWasm() {
 
 // 2021-10 : 40 sec for Wasm3
 void testCurrent() {
-
+	clearContext();
 	//	assert_run("render html{'test'}", 4);
 	skip(
 			assert_emit("1 - 3 - square 3+4", (long) -51);// OK!
 			assert_emit("1 -3 - square 3+4", (long) -51);// warn "mixing math op with list items (1, -3 … ) !
+			assert_emit("1 - - 3", 4);// -1 uh ok?  warn "what are you doning?"
+
 			testWasmMutableGlobal();
 			// while without body
 			assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
@@ -1770,7 +1773,6 @@ void testCurrent() {
 			assert_emit("i*=3", (long) 0);
 			assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
 	)
-	clearContext();
 //	testImportWasm();
 //	testImport();
 	testSerialize();

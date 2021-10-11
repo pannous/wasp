@@ -836,8 +836,11 @@ private:
 			debug = 1;
 		if (isDigit(ch))
 			return numbero();
-		if ((ch == '-' or ch == '.') and isDigit(next) and previous != u'‖' and
-		    (empty(previous) or is_operator(previous))) // -1 √-1 but not 2-1 x-1!
+		if (ch == '.' and (isDigit(next)))
+			return numbero();
+		// todo simplify?
+		if (ch == '-' and (isDigit(next) or next == '.') and previous != u'‖' and
+		    (empty(previous) or is_operator(previous) or next == '.')) // -1 √-1 but not 2-1 x-1!
 			return numbero();
 		if (is_operator(ch))
 			return any_operator();
