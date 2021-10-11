@@ -235,7 +235,7 @@ class Wasp {
 	//	indent 􀋵 (increase.indent) ☞ 𒋰 𒐂 ˆ ˃
 	int indentation() {
 		float tabs = 0;
-		int spaces_per_tab = 4;
+		int spaces_per_tab = 2;
 		int offset = at;
 		if (text[offset] == '\n' or text[offset] == '\r')offset++;
 		while (text[offset] == '\t') {
@@ -252,7 +252,7 @@ class Wasp {
 		if (text[offset] == '\n')
 			return indentation_level; // careful empty lines if next indentation == last one : just hangover spacer!
 		if (text[offset] == 0)return 0; // no more indentation.
-		return ceil(tabs);
+		return floor(tabs);
 	}
 
 	int indentation_EVIL() {
@@ -447,13 +447,15 @@ private:
 		if (ch == '\n' or (ch == '\r' and next != '\n')) {
 			lineNumber++;
 			columnStart = at;// including indent
-			int new_indentation_level = indentation();
-			if (new_indentation_level > indentation_level)
-				ch = INDENT;
-			if (new_indentation_level < indentation_level)
-				ch = DEDENT;
-			indentation_level = new_indentation_level;
-//			at = columnStart;// restore to be sure todo remove
+			if (not is_grouper(previous)) {
+				int new_indentation_level = indentation();
+				if (new_indentation_level > indentation_level)
+					ch = INDENT;
+				if (new_indentation_level < indentation_level)
+					ch = DEDENT;
+				indentation_level = new_indentation_level;
+				//			at = columnStart;// restore to be sure todo remove
+			}
 		}
 		if (previous == '\n' or previous == INDENT or previous == DEDENT or previous == 0) {
 			auto to = text.indexOf('\n', at);
@@ -869,10 +871,11 @@ private:
 		Node expressionas;
 		// set kind = expression only if it contains operator, otherwise keep it as list!!!
 		expressionas.add(node);
-		if (node.kind == operators) expressionas.kind = expression;
+		if (node.kind == operators) expressionas.kind = expression;//
 		if (closing(ch, closer))// stop_at_space, keep it for further analysis (?)
 			return *expressionas.clone();
 		white();
+		if (node.kind != operators) expressionas.kind = groups;
 		while (ch and ch != closer and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
 			node = symbol();// including operators `=` ...
 			if (node.kind == operators)expressionas.kind = expression;
@@ -1213,12 +1216,15 @@ private:
 				continue;
 			}
 			if (ch == close) { // (…) {…} «…» ... “‘ part of string
-				if (ch == 0 or ch == ' ' or ch == '\n' or ch == '\t' or ch == ';' or ch == ',');
-					// keep ';' ',' ' ' for further analysis (?)   ch == 0x0E or ?
-				else
-					proceed();
+				if (ch == 0 or /*ch == 0x0E or*/ ch == ' ' or ch == '\n' or ch == '\t' or ch == ';' or ch == ',');
+					// keep ';' ',' ' ' for further analysis (?)
+				else // drop brackets
+					proceed(); // what else??
 				break;
 			}
+			if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
+				break;
+			}// inner match ok
 
 			if (contains(opening_special_brackets, ch)) {
 				// overloadable grouping operators, but not builtin (){}[]
@@ -1235,9 +1241,6 @@ private:
 				// ︵  ﴾ ﴿ ﹙ ﹚ （ ） ⁽ ⁾  ⸨⸩ see grouper_list
 				// ︶
 			}
-			if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
-				break;
-			}// inner match ok
 			switch (ch) {
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 //				https://en.wikipedia.org/wiki/ASCII#Character_set
@@ -1254,10 +1257,11 @@ private:
 					bool asListItem =
 							lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
 					proceed();
-					Node object = Node().setType(Type::objects);
+					Node object = Node();
 					Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &current.last());
 					object.addSmart(objectValue);
-					object = object.flat();
+					object = object.flat().setType(Type::objects, false);
+					object.separator = objectValue.separator;
 					if (asListItem)
 						current.add(object);
 					else
@@ -1379,6 +1383,30 @@ private:
 					}
 					break;
 				}
+				case 0x0F: // indent
+				{
+					/*
+					 * a:
+					 *  b
+					 *  c
+					 *  => a:(b c)
+					 *  a b:
+					 *   c d
+					 *   => (a b):(c d)
+					 * what to do with this:
+					 *  { a , d
+ e}
+					 { ( a , d ) : e }
+					 * */
+					if (current.separator == ',') {
+						warn("indent block within list");
+						ch = '\n';// we assume it was not desired;)
+					}
+					proceed();
+					Node element = valueNode(DEDENT);// todo stop copying!
+					current.add(element.flat());
+					continue;
+				}
 				case '\n': // groupCascade
 				case '\t': // only in tables
 				case ';': //
@@ -1387,41 +1415,33 @@ private:
 						proceed();
 						continue;
 					}
-					if (precedence(ch) > precedence(current.separator)) {
-						current.separator = ch;
-						proceed();// currRAgeous!
-						continue;
-					}
-					log("?"s + line);
-					if (precedence(ch) <= precedence(current.separator))
-						log("??"s + line);
-					// closing ' ' handled above
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
-					if (current.separator != 0 and current.separator != ch) {// and current.length > 1
+					if (current.separator != ch) {// and current.length > 1
 						// x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
 						if (current.length > 1 or current.kind == expression) {
 							Node neu;// wrap x,y => ( (x y) ; … )
-							neu.kind = groups;
+							neu.kind = current.kind;// or groups;
 							neu.parent = parent;
-							//						neu.separator = ch;
+							neu.separator = ch;
 							neu.add(current);
 							current = neu;
-						}
-						current.separator = ch;
+						} else
+							current.separator = ch;
 						char closer = ch;// need to keep troughout loop!
-						proceed();
-						do {
+						while (ch == closer) {// same separator a , b , c
+							proceed();
 							Node element = valueNode(closer);// todo stop copying!
-							current.add(element.clone());
-						} while (not closing(ch, closer));
+							current.add(element.flat());
+						}
 						break;
 					}
 					// else fallthough!
 					current.separator = ch;
 				}
-				case 0x0F: // indent
 				case ' ': // possibly significant whitespace not consumed by white()
 				{
+					if (not current.separator)
+						current.separator = ch;
 					proceed();
 					white();
 					break;
@@ -1468,12 +1488,9 @@ private:
 				}
 			}
 		}
-
-		bool keepBlock = close == '}';
 		Node &result = current.flat();
 		return *result.clone();
 	};
-//	int $parent{};
 };
 
 

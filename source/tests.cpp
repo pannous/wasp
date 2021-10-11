@@ -1318,14 +1318,57 @@ void testWasmString() {
 	check(y == "abc"s);
 }
 
-void testGroupCascade() {
-//	result = parse("x='abcde';x#4='y';x#4");
-//	check(result.length == 3);
+void testGroupCascade0() {
+	result = parse("x='abcde';x#4='y';x#4");
+	check(result.length == 3);
+}
 
-	Node result = parse("{ a b c, d e f; g h i , j k l \n "
-	                    "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2}"
-	                    "{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
-	                    "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
+void testGroupCascade1() {
+	Node result0 = parse("a b; c d");
+	check(result0.length == 2);
+	check(result0[1].length == 2);
+	Node result = parse("{ a b c, d e f }");
+	Node result1 = parse("a b c, d e f ");
+	assert_equals(result1, result);
+	Node result2 = parse("a b c; d e f ");
+	assert_equals(result2, result1);
+	assert_equals(result2, result);
+	Node result3 = parse("a,b,c;d,e,f");
+	assert_equals(result3, result2);
+	assert_equals(result3, result1);
+	assert_equals(result3, result);
+	Node result4 = parse("a, b ,c; d,e , f ");
+	assert_equals(result4, result3);
+	assert_equals(result4, result2);
+	assert_equals(result4, result1);
+	assert_equals(result4, result);
+}
+
+void testGroupCascade2() {
+	result = parse("{ a b , c d ; e f , g h }");
+	Node result1 = parse("{ a b , c d \n e f , g h }");
+	log(result1.serialize());
+	assert_equals(result1, result);
+	Node result2 = parse("a b ; c d \n e f , g h ");
+	assert_equals(result1, result2);
+	assert_equals(result2, result);
+}
+
+void testSuperfluousIndentation() {
+	result = parse("a{\n  b,c}");
+	Node result1 = parse("a{b,c}");
+	check(result1 == result);
+}
+
+void testGroupCascade() {
+	testGroupCascade2();
+	testGroupCascade0();
+	testGroupCascade1();
+
+	result = parse("{ a b c, d e f; g h i , j k l \n "
+	               "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2}"
+	               "{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
+	               "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
 	result.log();
 	check(result.kind == groups);// objects because {}!
 	check(result.first().kind == groups);
@@ -1334,10 +1377,10 @@ void testGroupCascade() {
 	check(result[0].length == 2) // a…  and a2…  with significant newline
 	check(result[0][0].length == 2)// a b c, d e f  and  g h i , j k l
 	check(result[0][0][0].length == 2)// a b c  and  d e f
-	check(result[0][0] == Node("a b c, d e f; g h i , j k l"));// significant newline!
-	check(result[0][1] == Node("a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2"));// significant newline!
+	check(result[0][0] == parse("a b c, d e f; g h i , j k l"));// significant newline!
+	check(result[0][1] == parse("a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2"));// significant newline!
 	check(result[0][0][0][0].length == 3)// a b c
-	check(result[0][0][0][0] == Node("a b c"));
+	check(result[0][0][0][0] == parse("a b c"));
 	check(result[0][0][0][0][0] == "a");
 	check(result[0][0][0][0][1] == "b");
 	check(result[0][0][0][0][2] == "c");
@@ -1345,9 +1388,12 @@ void testGroupCascade() {
 	check(result[0][0][0][1][1] == "e");
 	check(result[0][0][0][1][2] == "f");
 	check(result[1][1][0][1][2] == "f4");
+//	skip(// important goal
 	Node reparse = parse(result.serialize());
+	log(reparse.serialize());
+	tracing = true;
 	check(result == reparse);
-
+//			)
 }
 
 void testNodeBasics() {
@@ -1420,6 +1466,7 @@ void tests() {
 	testSwitch();
 	testWasmMutableGlobal();
 	testAsserts();
+	testSuperfluousIndentation();
 	testString();
 	testNodeName();
 	testStringConcatenation();
