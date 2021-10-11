@@ -1684,9 +1684,30 @@ void testPaintWasm() {
 #endif
 }
 
-void testDedent() {
+
+void testDedent2() {
 	auto indented = R"(
 a:
+  b
+  c
+d
+e
+	)";
+	auto groups = parse(indented);
+	//	auto groups = parse("a:\n b\n c\nd\ne\n");
+	log(groups.serialize());
+	log(groups.length);
+	check(groups.length == 3);// a(),d,e
+	auto parsed = groups.first();
+	check(parsed.name == "a");
+	check(parsed.length == 2);
+	log(parsed[1]);
+	check(parsed[1].name == "c");
+}
+
+void testDedent() {
+	auto indented = R"(
+a
   b
   c
 d
@@ -1722,10 +1743,14 @@ e
 	check(parsed.name == "a");
 }
 
+// 2021-10 : 40 sec for Wasm3
 void testCurrent() {
+	testDedent2();
+	testDedent();
+	testGroupCascade0();
+	assert_emit("logs('ok');(1 4 3)#2", 4);
 	assert_emit("‖-3‖", 3);
 	assert_emit("√100²", 100);
-	assert_emit("logs('ok');(1 4 3)#2", 4);
 	assert_emit("logs('ok');", 0);
 // move to tests() once OK'
 	testGraphQlQuery();
@@ -1734,7 +1759,6 @@ void testCurrent() {
 	assert_parses("{ç:☺}");
 	assert(result["ç"] == "☺");
 	skip(
-			testDedent();
 
 			testEmptyLineGrouping();
 			testColonLists();

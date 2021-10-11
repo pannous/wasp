@@ -344,7 +344,8 @@ Code emitArray(Node &node, String context) {
 	if (node.name.empty() and node.parent) {
 		ref = node.parent->name;
 	}
-	referenceIndices.insert_or_assign(ref, pointer);
+	if (not node.name.empty())
+		referenceIndices.insert_or_assign(ref, pointer);
 	emitData(Node(0), context);// terminate list with 0.
 	// todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
 	last_data = pointer;
