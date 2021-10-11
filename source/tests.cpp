@@ -11,6 +11,25 @@
 #include "test_wasm.cpp"
 
 
+void testEmptyLineGrouping() {
+	auto indented = R"(
+a:
+  b
+  c
+
+d
+e
+	)";
+	auto groups = parse(indented);
+	//	auto groups = parse("a:\n b\n c\n\nd\ne\n");
+	check(groups.length == 3);// a(),d,e
+	auto parsed = groups.first();
+	check(parsed.length == 2);
+	check(parsed[1] == "c");
+	check(parsed.name == "a");
+}
+
+
 //[[maybe_used]]
 [[nodiscard("replace generates a new string to be consumed!")]]
 //__attribute__((__warn_unused_result__))
@@ -1502,13 +1521,16 @@ void testLogicOperators() {
 void tests() {
 	data_mode = true;// expect data unless explicit code
 	//	testNodiscard();// works NOW!
-	testWaspInitializationIntegrity();
 	logi(testNodiscard());
+	testWaspInitializationIntegrity();
+	testRoundFloorCeiling();
 	testSwitch();
-	testWasmMutableGlobal();
 	testAsserts();
 	testSuperfluousIndentation();
 	testString();
+	testEmptyLineGrouping();
+	testColonLists();
+	testGraphParams();
 	testNodeName();
 	testStringConcatenation();
 	testNodeBasics();
@@ -1732,83 +1754,47 @@ void testPaintWasm() {
 }
 
 
-void testEmptyLineGrouping() {
-	auto indented = R"(
-a:
-  b
-  c
-
-d
-e
-	)";
-	auto groups = parse(indented);
-//	auto groups = parse("a:\n b\n c\n\nd\ne\n");
-	check(groups.length == 3);// a(),d,e
-	auto parsed = groups.first();
-	check(parsed.length == 2);
-	check(parsed[1] == "c");
-	check(parsed.name == "a");
-}
-
 // 2021-10 : 40 sec for Wasm3
 void testCurrent() {
-	assert_emit("1 -3 - square 3+4", (long) -51);// warn?
-	assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
-	skip(
 
+	//	assert_run("render html{'test'}", 4);
+	skip(
+			assert_emit("1 - 3 - square 3+4", (long) -51);// OK!
+			assert_emit("1 -3 - square 3+4", (long) -51);// warn "mixing math op with list items (1, -3 … ) !
+			testWasmMutableGlobal();
+			// while without body
+			assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
 			run("circle.wasp");
 			assert_emit("use math;⅓ ≈ .3333333 ", 1);
 			assert_throws("i*=3");// well:
 			assert_emit("i*=3", (long) 0);
 			assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
-
 	)
 	clearContext();
-
 //	testImportWasm();
 //	testImport();
-
-	assert_emit("i=-9;√-i", 3);
-	assert_emit("i=-9;√ -i", 3);
-//	assert_run not compatible with Wasmer, don't ask why, we don't know;)
 	testSerialize();
-//	assert_emit("print('hello')",0);
-	// todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
-	assert_emit("x={1 4 3};x#2=5;x[1]", 5);
-//	assert_emit("x={1 4 3};x[1]=5;x[1]", 5);
+
 	skip( // todo soon
 			globals.setDefault(new Node());
 			globals["y"] = new Node();
+			// todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
 			assert_throws("ceiling 3.7");
 			assert_is("i=3;i--", 2);// todo bring variables to interpreter
 			assert_is("i=3.7;.3+i", 4);// todo bring variables to interpreter
 			assert_is("i=3;i*-1", -3);// todo bring variables to interpreter
-	)
-//	return;// let the webview show!
-//	assert_run("render html{'test'}", 4);
-
-	skip(
-			assert_emit("xyz 3.7", 4); // todo SHOULD THROW unknown symbol!
-	//		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
-	//todo dissect operators!  π² COULD be symbol on its own so two path check!
-	// while without body
-	)
-
-//	exit(0);
-//	functionSignatures.setDefault(Signature());
-//	Signature &signature = functionSignatures["init_graphics"].import().returns(pointer);// surface
-//	if(signature.return_type!=pointer)error("WWWAAAUUUU");
-//	if(functionSignatures["init_graphics"].return_type!=pointer)error("WWWAAA");
-
-//	testRoundFloorCeiling();
+			// default bug!
 //    	subtract(other complex) := re -= other.re; im -= other.im
 // := is terminated by \n, not by ;!
+			functionSignatures.setDefault(Signature());
+			Signature &signature = functionSignatures["init_graphics"].import().returns(pointer);// surface
+			if (signature.return_type != pointer)error("WWWAAAUUUU");
+			if (functionSignatures["init_graphics"].return_type != pointer)error("WWWAAA");
+			assert_throws("xyz 3.7"); // todo SHOULD THROW unknown symbol!
+	)
 
-//	operator_list = List(operator_list0);
-
-	testEmptyLineGrouping();
-	testColonLists();
-	testGraphParams();
+//	return;// let the webview show!
+//	exit(0);
 	testRecentRandomBugs();
 	tests();// make sure all still ok before changes
 	todos();// those not passing yet (skip)
