@@ -165,7 +165,7 @@ public:
 	}
 
 	void operator delete(void *a) {
-		printf("DELETING");
+		todo("delete Node");
 	}
 //	~Node()= default; // destructor
 //	virtual ~Node() = default;

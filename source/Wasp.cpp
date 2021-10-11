@@ -475,7 +475,9 @@ private:
 		if (!is_identifier(ch)) err("Unexpected identifier character "s + renderChar(ch));
 		int start = at;
 		// subsequent characters can contain ANYTHING
-		while ((proceed() and is_identifier(ch)) or isDigit(ch));
+		while ((proceed() and is_identifier(ch)) or isDigit(ch))
+			if (is_operator(ch))
+				break;
 		int to = at;
 		while (to > 0 and empty(text[to - 1]))to--;
 		String key = String(text.data + start, to - start, !debug);
@@ -1519,7 +1521,7 @@ float okf5(float f) {
 
 
 void not_ok() {
-	error1("WHAAA");
+	error1("");// assert_throws test
 }
 
 #ifdef BACKTRACE
