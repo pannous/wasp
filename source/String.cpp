@@ -586,7 +586,7 @@ bool empty(String *s) { return not s or s->empty(); }
 
 bool empty(chars s) { return not s or strlen0(s) == 0; }
 
-bool empty(char s) {
+bool empty(codepoint s) {
 	return 0 <= s and s <= ' ';// not s or s == ' ' or s == '\n' or s == '\t' or s==0x0F or s==0x0E;
 }
 

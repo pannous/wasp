@@ -525,11 +525,13 @@ public:
 		return *this;
 	}
 
+	// todo self-modifying lol
 	String &operator+(wchar_t c) {
 		append(c);
 		return *this;
 	}
 
+	[[nodiscard]]
 	String &operator+(String c) {
 		if (c.length <= 0)
 			return *this;
@@ -924,7 +926,7 @@ bool empty(String *s);
 
 bool empty(chars s);
 
-bool empty(char s);// todo: rename whitespace (and braces??)
+bool empty(codepoint s);// todo: rename whitespace (and braces??)
 
 bool contains(chars str, chars match);
 

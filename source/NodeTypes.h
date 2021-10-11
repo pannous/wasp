@@ -24,7 +24,7 @@ enum Type {// todo: merge Node.kind with Node.class(?)
 	strings,
 	codepoints,
 	arrays, // Node[] vs any[]? vs
-	buffers = 30, // int[]
+	buffers, // int[]
 	reals,
 	longs, // the signature of parameters/variables is independent!
 //	ints, // use longy field, but in wasm longs are pointers!
@@ -32,7 +32,7 @@ enum Type {// todo: merge Node.kind with Node.class(?)
 	errors, // internal wasp error, NOT to be used in Angle!
 	call,
 	classe, // as Java class,  primitive int vs Node(kind==int) == boxed Int
-	unknown = 20 //7
+	unknown //7
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 #endif //MARK_NODETYPES_H

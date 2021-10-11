@@ -54,10 +54,10 @@ codepoint opening_special_brackets[] = {u'‖', u'﴾', u'﹙', u'（', u'⁽', 
                                         u'〚', u'〖', u'【', u'『', u'「', u'｢', u'⁅', u'«', u'《', u'〈',
                                         u'︷', u'︵', u'﹁', u'﹃', u'︹', u'︻', u'︽', 0};
 //codepoint closing_special_brackets[] = {}
-codepoint separator_list[] = {' ', ';', ':', '\n', '\t', 0};
+codepoint separator_list[] = {' ', ',', ';', ':', '\n', '\t', 0};
 // todo:
 //codepoint grouper_list[] = {'(', ')', '{', '}', '[', ']', u'«', u'»', 0, };
-codepoint grouper_list[] = {' ', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0};
+codepoint grouper_list[] = {' ', ',', ';', ':', '\n', '\t', '(', ')', '{', '}', '[', ']', u'«', u'»', 0};
 // () ﴾ ﴿ ﹙﹚（ ） ⁽ ⁾  ⸨ ⸩
 // {} ﹛﹜｛｝    ﹝﹞〔〕〘〙  ‖…‖
 // [] 〚〛〖〗【】『』「」｢｣ ⁅⁆
@@ -336,7 +336,8 @@ public:
 		lineNumber = 1;
 		ch = 0;
 		text = source;
-		while (empty(ch) and (ch or at < 0))proceed();// at=0
+		while (empty(ch) and (ch or at < 0))
+			proceed();// at=0
 		Node result = valueNode(); // <<
 		white();
 		if (ch and ch != -1 and ch != DEDENT) {
@@ -447,15 +448,13 @@ private:
 		if (ch == '\n' or (ch == '\r' and next != '\n')) {
 			lineNumber++;
 			columnStart = at;// including indent
-			if (not is_grouper(previous)) {
-				int new_indentation_level = indentation();
-				if (new_indentation_level > indentation_level)
-					ch = INDENT;
-				if (new_indentation_level < indentation_level)
-					ch = DEDENT;
-				indentation_level = new_indentation_level;
-				//			at = columnStart;// restore to be sure todo remove
-			}
+			int new_indentation_level = indentation();
+			if (new_indentation_level > indentation_level and not is_grouper(previous) and previous != '"')
+				ch = INDENT;
+			if (new_indentation_level < indentation_level and not is_grouper(previous) and previous != '"')
+				ch = DEDENT;
+			indentation_level = new_indentation_level;
+			//			at = columnStart;// restore to be sure todo remove
 		}
 		if (previous == '\n' or previous == INDENT or previous == DEDENT or previous == 0) {
 			auto to = text.indexOf('\n', at);
@@ -1169,6 +1168,7 @@ private:
 	}
 
 	bool skipBorders(char ch) {// {\n} == {}
+		if (next == 0)return true;
 		if (lastNonWhite == ':')return true;
 		if (lastNonWhite == '{' or next == '}')return true;// todo: nextNonWhite
 		if (lastNonWhite == '(' or next == ')')return true;
@@ -1236,6 +1236,7 @@ private:
 				group.add(body);
 //				group.type = type("group")["field"]=grouper;
 				current.add(group);
+				continue;
 				// ︷
 				// ︸﹛﹜｛｝﹝﹞〔〕〘〙〚〛〖〗【】『』「」｢｣《》〈〉〈〉⁅⁆ «»
 				// ︵  ﴾ ﴿ ﹙ ﹚ （ ） ⁽ ⁾  ⸨⸩ see grouper_list
@@ -1359,14 +1360,7 @@ private:
 						add_raw = true;
 					if (add_raw) {
 						current.add(op.setType(operators)).setType(expression);
-//						continue; noo why continue??
 					}
-
-					/*if (checkAmbiguousBlock2(current, parent)) {
-						log(pointer());
-						breakpoint_helper
-						warn("Ambiguous reading a: b c => Did you mean a:b,c or a:(b c)");
-					}*/
 					char closer;// significant whitespace:
 					if (ch == '\n') closer = ';';// a: b c == a:(b c) newline or whatever!
 					else if (ch == INDENT) {
@@ -1385,27 +1379,15 @@ private:
 				}
 				case 0x0F: // indent
 				{
-					/*
-					 * a:
-					 *  b
-					 *  c
-					 *  => a:(b c)
-					 *  a b:
-					 *   c d
-					 *   => (a b):(c d)
-					 * what to do with this:
-					 *  { a , d
- e}
-					 { ( a , d ) : e }
-					 * */
+					proceed();
 					if (current.separator == ',') {
 						warn("indent block within list");
 						ch = '\n';// we assume it was not desired;)
+					} else {
+						Node element = valueNode(DEDENT);// todo stop copying!
+						current.add(element.flat());
+						continue;
 					}
-					proceed();
-					Node element = valueNode(DEDENT);// todo stop copying!
-					current.add(element.flat());
-					continue;
 				}
 				case '\n': // groupCascade
 				case '\t': // only in tables
@@ -1420,7 +1402,8 @@ private:
 						// x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
 						if (current.length > 1 or current.kind == expression) {
 							Node neu;// wrap x,y => ( (x y) ; … )
-							neu.kind = current.kind;// or groups;
+//							neu.kind = current.kind;// or groups;
+							neu.kind = groups;
 							neu.parent = parent;
 							neu.separator = ch;
 							neu.add(current);

@@ -711,7 +711,6 @@ void testLogicEmptySet() {
 	assert_is("1 xor []", true);
 	assert_is("[] xor []", false);
 	assert_is("1 xor 1", false);
-
 }
 
 void testLogic01() {
@@ -786,9 +785,13 @@ void testGraphQlQuery() {
 	data.log();
 	Node &hero = data["hero"];
 	hero.log();
+	Node &height = data["hero"]["height"];
+	height.log();
 	Node &id = hero["id"];
 	id.log();
 	assert(id == "R2-D2");
+	assert(height == 5.6430448);
+//	assert(height==5.643);
 	Node &friends = result["data"]["hero"]["friends"];
 	assert(friends[0]["name"] == "Luke Skywalker");
 //todo	assert(result["hero"] == result["data"]["hero"]);
@@ -1390,7 +1393,6 @@ void testGroupCascade() {
 	check(result[1][1][0][1][2] == "f4");
 	Node reparse = parse(result.serialize());
 	log(reparse.serialize());
-	tracing = true;
 	check(result == reparse);
 }
 
@@ -1720,13 +1722,19 @@ e
 	check(parsed.name == "a");
 }
 
-void testCurrent() { // move to tests() once OK'
+void testCurrent() {
+	assert_emit("‖-3‖", 3);
+	assert_emit("√100²", 100);
+	assert_emit("logs('ok');(1 4 3)#2", 4);
+	assert_emit("logs('ok');", 0);
+// move to tests() once OK'
+	testGraphQlQuery();
 	testGroupCascade();
 	testNewlineLists();
 	assert_parses("{ç:☺}");
 	assert(result["ç"] == "☺");
-	testDedent();
 	skip(
+			testDedent();
 
 			testEmptyLineGrouping();
 			testColonLists();
