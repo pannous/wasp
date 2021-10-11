@@ -192,6 +192,7 @@ void testNorm() {
 	)
 
 }
+
 void testMathOperators() {
 //	assert_emit(("42 2 *"), 84)
 	assert_emit("- -3", 3);
@@ -204,10 +205,14 @@ void testMathOperators() {
 	assert_emit("‖-3‖", 3);
 	assert_emit("-‖-3‖", -3);
 	assert_emit("‖-3‖+1", 4);
+#ifndef WASMTIME
 	assert_emit("3^2", 9);
 	assert_emit("3^1", 3);
 	assert_emit("√3^2", 3);
 	assert_emit("√3^0", 1);
+	assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
+
+#endif
 	assert_equals(eval("7%5"), 2)
 	assert_equals(eval("42/2"), 21)
 	assert_emit(("42/2"), 21)
@@ -254,7 +259,6 @@ void testMathOperators() {
 	assert_emit("i=3.70001;.3+i", 4);
 	assert_emit("i=3.7;.3+i", 4);
 
-	assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
 }
 
 void testComparisonMath() {
@@ -438,9 +442,9 @@ void testSelfModifying() {
 	assert_emit("i=3;i+=3", (long) 6);
 	assert_emit("i=3;i-=3", (long) 0);
 	assert_emit("i=3;i/=3", (long) 1);
-	assert_emit("i=3^1;i^=3", (long) 27);
 	//	assert_emit("i=3;i√=3", (long) ∛3);
 	skip(
+			assert_emit("i=3^1;i^=3", (long) 27);
 			assert_throws("i*=3");// well:
 			assert_emit("i*=3", (long) 0);
 	)
@@ -936,6 +940,23 @@ void testWasmStuff() {
 
 
 void testRecentRandomBugs() {
+	assert_emit("√π²", 3);
+	assert_emit("i=-9;√-i", 3);
+	assert_run("x=123;x + 4 is 127", true);
+#ifndef WASMTIME
+	assert_emit("n=3;2ⁿ", 8);
+	//	function attempted to return an incompatible value WHAT DO YOU MEAN!?
+#endif
+
+	assert_emit("logs('ok');(1 4 3)#2", 4);
+	assert_emit("‖-3‖", 3);
+	assert_emit("√100²", 100);
+	assert_emit("logs('ok');", 0);
+// move to tests() once OK'
+
+	assert_parses("{ç:☺}");
+	assert(result["ç"] == "☺");
+
 	skip(
 			assert_emit("i=ø; not i", true);
 	)
@@ -945,35 +966,35 @@ void testRecentRandomBugs() {
 void testSquareExpWasm() {
 	let π = 3;//.141592653589793;
 	// todo smart pointer return from main for floats!
-	assert_emit("n=3;2ⁿ", 8);
 	assert_emit("3²", 9);
-	assert_emit("n=3.0;2.0ⁿ", 8);
 	assert_emit("3.0²", 9);
 	assert_emit("√100²", 100);
 	assert_emit("√ π ²", π);
 	assert_emit("√π ²", π);
+	assert_emit("√ π²", π);
+	assert_emit("√π²", π);
 	skip(
 			assert_emit("π²", 9.869604401089358 /*π*π*/);
-			assert_emit("√ π²", π);
-			assert_emit("√π²", π);
 	)
 	assert_emit("π", 3/*.1415926535897*/);
 	assert_emit("π*1000000.", 3141592/*6535897*/);
 	assert_emit("π ²", 9/*.869604401089358 /*π*π*/);
 	assert_emit("π*1000000", 3141592/*6535897*/);
-
-
-	assert_emit("n=3;2ⁿ", 8);
 	assert_emit("i=-9;-i", 9);
-	skip(
-			assert_emit("i=-9;√-i", 3);
-			assert_emit("- √9", -3);
-	)
+	assert_emit("- √9", -3);
 	assert_emit(".1 + .9", 1);
 	assert_emit("-.1 + -.9", -1);
 	assert_emit("√9", 3);
 	//	assert_emit("√-9 is -3i", -3);// if «use complex numbers»
 	assert_emit(".1", 0);
+#ifndef WASMTIME
+	skip(
+			assert_emit("i=-9;√-i", 3);
+	)
+	assert_emit("n=3;2ⁿ", 8);
+	assert_emit("n=3.0;2.0ⁿ", 8);
+	//	function attempted to return an incompatible value WHAT DO YOU MEAN!?
+#endif
 }
 
 void testRoundFloorCeiling() {

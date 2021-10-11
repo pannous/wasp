@@ -79,7 +79,9 @@ void initSymbols() {
 #ifdef WASI
 	return;
 #elif  WASM
-	if (True.kind == bools)error("Wasm DOES init symbols!?");
+//	__wasm_call_ctors();??
+	if (True.kind == bools)
+		; // error("Wasm DOES init symbols!?");
 #else
 	return; // no need outside WASM
 #endif
@@ -374,7 +376,7 @@ bool Node::operator==(Node &other) {
 
 	if (name == NIL.name.data or name == False.name.data or name == "")
 		if (other.name == NIL.name.data or other.name == False.name.data or other.name == "") {
-			trace("NILS!!");
+			trace("NILS!");
 			return true;// TODO: SHOULD already BE SAME by engine!
 		}
 

@@ -55,6 +55,13 @@ wrap(powd) {
 	return NULL;
 }
 
+wrap(powi) {
+	double n = args[0].of.f64;
+	double x = args[1].of.f64;
+	results[0].of.i64 = powi(n, x);
+	return NULL;
+}
+
 wrap(powf) {
 	float n = args[0].of.f32;
 	float x = args[1].of.f32;
@@ -73,6 +80,12 @@ wrap(logs) {
 wrap(logi) {
 	int i = args[0].of.i32;
 	printf("%d", i);
+	return NULL;
+}
+
+wrap(logf) {
+	float f = args[0].of.f32;
+	printf("%f", f);
 	return NULL;
 }
 
@@ -109,6 +122,8 @@ wasm_wrap *link_import(String name) {
 	if (name == "_ZdlPv") return &wrap_nop;// delete
 	if (name == "_Z3powdd") return &wrap_powd;
 	if (name == "pow") return &wrap_powd;
+	if (name == "powi") return &wrap_powi;
+	if (name == "powf") return &wrap_powf;
 	if (name == "_ZSt9terminatev") return &wrap_exit;
 	if (name == "proc_exit") return &wrap_exit;
 	if (name == "panic") return &wrap_exit;
@@ -117,7 +132,10 @@ wasm_wrap *link_import(String name) {
 	if (name == "memset") return &wrap_memset;
 
 	if (name == "printf") return &wrap_logs;
+
+
 	if (name == "puts") return &wrap_logs;
+	if (name == "logf") return &wrap_logf;
 	if (name == "logs") return &wrap_logs;
 	if (name == "logi") return &wrap_logi;
 	if (name == "logc") return &wrap_logc;
@@ -222,6 +240,14 @@ const wasm_functype_t *funcType(Signature &signature) {
 	}
 	if (param_count == 1) {
 		switch (signature.types[0]) {
+			case float32:
+				switch (signature.return_type) {
+					case none:
+					case voids:
+						return wasm_functype_new_1_0(f);
+					default:
+						break;
+				}
 			case charp:
 			case int32:
 				switch (signature.return_type) {
@@ -241,6 +267,10 @@ const wasm_functype_t *funcType(Signature &signature) {
 		switch (signature.return_type) {
 			case int32:
 				return wasm_functype_new_2_1(i, i, i); // printf(i32,i32)i32
+			case int64:
+				return wasm_functype_new_2_1(i, i, I);// powi
+			case float32:
+				return wasm_functype_new_2_1(f, f, f);
 			case float64:
 				return wasm_functype_new_2_1(F, F, F); // powd(f64,f64)f64
 			default:
