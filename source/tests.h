@@ -108,8 +108,13 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 	if (a == b) {
 		if (a.name and b.name)
 			printf("OK %s==%s %s\n", a.name.data, b.name.data, context);
+		else
+			printf("OK %s == %s   %s\n", a.serialize().data, b.serialize().data, context);
+
 	} else
 		printf("\nFAILED assert_equals! %s should be %s %s\n"s, a, b, context);
+	printf("%s != %s\n", a.serialize().data, b.serialize().data);
+
 	return a == b;
 }
 
@@ -264,4 +269,13 @@ void assertSerialize(const char *input) {
 		print(normSerialization(serialized));
 		error("Serialization Error");
 	}
+}
+
+
+bool tracing = false;
+
+//bool tracing = true;
+void trace(chars x) {
+	if (tracing)
+		warn(x);
 }
