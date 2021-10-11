@@ -1370,8 +1370,8 @@ void testGroupCascade() {
 	               "{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
 	               "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
 	result.log();
-	check(result.kind == groups);// objects because {}!
-	check(result.first().kind == groups);
+	check(result.kind == groups);// ( {} {} ) because 2 {}!
+	check(result.first().kind == objects);// { a b c … }
 	check(result.first().first().kind == groups);// or expression if x is op
 	check(result.length == 2)// {…} and {and}
 	check(result[0].length == 2) // a…  and a2…  with significant newline
@@ -1388,12 +1388,10 @@ void testGroupCascade() {
 	check(result[0][0][0][1][1] == "e");
 	check(result[0][0][0][1][2] == "f");
 	check(result[1][1][0][1][2] == "f4");
-//	skip(// important goal
 	Node reparse = parse(result.serialize());
 	log(reparse.serialize());
 	tracing = true;
 	check(result == reparse);
-//			)
 }
 
 void testNodeBasics() {
@@ -1687,8 +1685,8 @@ void testPaintWasm() {
 void testDedent() {
 	auto indented = R"(
 a:
- b
- c
+  b
+  c
 d
 e
 	)";
@@ -1698,8 +1696,8 @@ e
 	log(groups.length);
 	check(groups.length == 3);// a(),d,e
 	auto parsed = groups.first();
-	check(parsed.length == 2);
 	check(parsed.name == "a");
+	check(parsed.length == 2);
 	log(parsed[1]);
 	check(parsed[1].name == "c");
 }
