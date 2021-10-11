@@ -196,9 +196,10 @@ void testNorm() {
 void testMathOperators() {
 //	assert_emit(("42 2 *"), 84)
 	assert_emit("- -3", 3);
+	assert_emit("1 - 3 - square 3+4", (long) -51);// OK!
 	assert_emit("1- -3", 4);
 	assert_emit("1 - -3", 4);
-	assert_emit("1 - - 3", 4);
+	assert_emit("1 - - 3", 4);// uh ok?
 	assert_throws("1--3");// should throw, variable missed by parser! 1 OK'ish
 	//	assert_emit("1--3", 4);// should throw, variable missed by parser! 1 OK'ish
 
@@ -1033,43 +1034,41 @@ void wasm_todos() {
 void testWasmMutableGlobal() {
 //	assert_emit("$k=7",7);// ruby style, conflicts with templates `hi $name`
 	assert_emit("k::=7", 7);// global variable not visually marked as global, not as good as:
-	skip(
-			assert_emit("global k=7", 7);// python style, as always the best
-			assert_emit("global.k=7", 7);//  currently all globals are exported
-			assert_emit("global k:=7", 7);//  global or function?
-			assert_emit("export k=7", 7);//  all exports are globals, naturally.
-			assert_emit("export k=7", 7);//  all exports are globals, naturally.
-			assert_emit("export f:=7", 7);//  exports can be functions too.
-			assert_emit("global export k=7", 7);//  todo warn("redundant keyword global: all exports are globals")
-			assert_emit("global int k=7", 7);// python style, as always the best
-			assert_emit("global int k:=7", 7);//  global or function?
-			assert_emit("export int k=7", 7);//  all exports are globals, naturally.
-			assert_emit("export int k=7", 7);//  all exports are globals, naturally.
-			assert_emit("export int f:=7", 7);//  exports can be functions too.
-			assert_emit("global int k", 0);// todo error without init value?
-			assert_emit("export int k", 0);//
+	assert_emit("global k=7", 7);// python style, as always the best
+	assert_emit("global.k=7", 7);//  currently all globals are exported
+	assert_emit("global k:=7", 7);//  global or function?
+	assert_emit("export k=7", 7);//  all exports are globals, naturally.
+	assert_emit("export k=7", 7);//  all exports are globals, naturally.
+	assert_emit("export f:=7", 7);//  exports can be functions too.
+	assert_emit("global export k=7", 7);//  todo warn("redundant keyword global: all exports are globals")
+	assert_emit("global int k=7", 7);// python style, as always the best
+	assert_emit("global int k:=7", 7);//  global or function?
+	assert_emit("export int k=7", 7);//  all exports are globals, naturally.
+	assert_emit("export int k=7", 7);//  all exports are globals, naturally.
+	assert_emit("export int f:=7", 7);//  exports can be functions too.
+	assert_emit("global int k", 0);// todo error without init value?
+	assert_emit("export int k", 0);//
 
-			assert_emit("import int k", 7);//  all imports are globals, naturally.
-			assert_emit("import const int k", 7);//  all imports are globals, naturally.
-			assert_emit("import mutable int k", 7);//  all imports are globals, naturally.
+	assert_emit("import int k", 7);//  all imports are globals, naturally.
+	assert_emit("import const int k", 7);//  all imports are globals, naturally.
+	assert_emit("import mutable int k", 7);//  all imports are globals, naturally.
 
-			assert_emit("import int k=7", 7);//  import with initializer
-			assert_emit("import const int k=7", 7);//  import with initializer
-			assert_emit("import mutable int k=7", 7);//  import with initializer
+	assert_emit("import int k=7", 7);//  import with initializer
+	assert_emit("import const int k=7", 7);//  import with initializer
+	assert_emit("import mutable int k=7", 7);//  import with initializer
 
-			assert_emit("import int k=7.1", 7);//  import with cast initializer
-			assert_emit("import const int k=7.1", 7);//  import with cast initializer
-			assert_emit("import mutable int k=7.1", 7);//  import with cast initializer
+	assert_emit("import int k=7.1", 7);//  import with cast initializer
+	assert_emit("import const int k=7.1", 7);//  import with cast initializer
+	assert_emit("import mutable int k=7.1", 7);//  import with cast initializer
 
-			assert_emit("import k=7", 7);//  import with inferred type
-			assert_emit("import const k=7", 7);//  import with inferred type
-			assert_emit("import mutable k=7", 7);//  import with inferred type
+	assert_emit("import k=7", 7);//  import with inferred type
+	assert_emit("import const k=7", 7);//  import with inferred type
+	assert_emit("import mutable k=7", 7);//  import with inferred type
 
-			assert_emit("global int k", 7);//   all globals without value are imports??
-			assert_emit("global const int k", 7);//   all globals without value are imports??
-			assert_emit("global mutable int k", 7);//   all globals without value are imports??
-			assert_emit("global mut int k", 7);//   all globals without value are imports??
-	)
+	assert_emit("global int k", 7);//   all globals without value are imports??
+	assert_emit("global const int k", 7);//   all globals without value are imports??
+	assert_emit("global mutable int k", 7);//   all globals without value are imports??
+	assert_emit("global mut int k", 7);//   all globals without value are imports??
 	// remember that the concepts of functions and properties shall be IDENTICAL to the USER!
 	// this does not impede the above, as global exports are not properties, but something to keep in mind
 }
@@ -1114,6 +1113,8 @@ void testImportWasm() {
 }
 
 void testMathLibrary() {
+	assert_emit("i=-9;√-i", 3);
+	assert_emit("i=-9;√ -i", 3);
 //		assert_emit("use math;√π²", 3);
 }
 
@@ -1127,6 +1128,9 @@ void testAllWasm() {
 //	return;
 #endif
 	skip(
+	//	assert_run not compatible with Wasmer, don't ask why, we don't know;)
+			testCustomOperators();
+			testWasmMutableGlobal();
 			testIndexWasm();// breaks on second run WHY?
 	)
 	testEmitter();
