@@ -945,6 +945,7 @@ void testWasmStuff() {
 
 
 void testRecentRandomBugs() {
+	assert_emit("width=height=400;height", 400);
 	assert_emit("√π²", 3);
 	assert_emit("i=-9;√-i", 3);
 	assert_run("x=123;x + 4 is 127", true);

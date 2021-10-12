@@ -213,6 +213,15 @@ bool contains(S list[], S match) {
 	return false;
 }
 
+bool contains(chars list[], chars match) {
+	chars *elem = list;
+	do {
+		if (eq(match, *elem))
+			return true;
+	} while (*elem++);
+	return false;
+}
+
 String &text = EMPTY;
 
 class Wasp {
@@ -671,7 +680,7 @@ private:
 		do {
 			proceed();
 			if (ch == '\r' or ch == '\n' or ch == 0) {
-				proceed();
+//				proceed();
 				return;
 			}
 		} while (ch);
@@ -832,8 +841,6 @@ private:
 	}
 
 	Node symbol() {
-		if (ch == '.' or previous == '.')
-			debug = 1;
 		if (isDigit(ch))
 			return numbero();
 		if (ch == '.' and (isDigit(next)))
@@ -1460,10 +1467,14 @@ private:
 //					    node.first().name == "require"
 					if (contains(import_keywords, (chars) node.first().name.data)) {
 						// import IF not in data mode
-						if (not node.name.empty())
-							node = parseFile(node.values().first().name);// todo
-						else
+						if (current.first() == "from") {
+							node = parseFile(current[1].name);
+						} else if (not node.name.empty()) {
+							node = parseFile(node.values().first().name);
+						}// todo
+						else {
 							node = parseFile(node.last().name);
+						}
 					}
 					if (precedence(node) or operator_list.has(node.name))
 						node.kind = operators;
@@ -1652,7 +1663,7 @@ Node parseFile(String filename) {
 	if (not found)error("file not found "s + filename);
 	else info("found "s + found);
 	if (found.endsWith("wast") or found.endsWith("wat")) {
-		system("wast2wasm "s + found);
+		system("/usr/local/bin/wat2wasm "s + found);
 		found = found.replace("wast", "wasm");
 	}
 	if (found.endsWith("wasm")) {// handle in analysis, not in valueNode
