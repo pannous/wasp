@@ -251,7 +251,11 @@ void error1(chars message, chars file, int line) {
 //	Backtrace(2);// later, in raise
 #endif
 	if (file)printf("\n%s:%d\n", file, line);\
-    raise(message);
+
+	Backtrace(2);
+	printf("%s", message);
+	if (file)printf("\n%s:%d\n", file, line);
+	if (throwing) raise(message);
 	if (panicking) panic();// not reached
 }
 
@@ -409,7 +413,8 @@ int run_wasm(bytes data,int size){}
 
 void panic() {
 #ifndef WASM
-	raise("panic");
+	exit(1);
+//	raise("panic");
 #else
 	char* x=0;
 	x[-1]=2;// Bus error: 10

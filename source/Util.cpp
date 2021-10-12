@@ -9,7 +9,7 @@
 //bool fileExists(char* filename) {
 
 bool fileExists(String filename) {
-	log("checking "s + filename);
+	trace("checking fileExists "s + filename);
 	if (filename.empty())return false;
 	return access(filename.data, F_OK) == 0;
 }

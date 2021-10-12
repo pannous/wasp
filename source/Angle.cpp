@@ -239,30 +239,33 @@ List<String> collectOperators(Node &expression) {
 	List<String> operators;
 	String previous;
 	for (Node &op : expression) {
-		if (not op.name)continue;
-		if (op.name.endsWith("="))// += etc
-			operators.add(op.name);
-		else if (prefixOperators.has(op.name)) {
-			if (op.name == "-" and is_operator(previous.codepointAt(0)))
-				operators.add(op.name + "…");//  -2*7 ≠ 1-(2*7)!
+		String &name = op.name;
+		if (not name)continue;
+		if (name.endsWith("="))// += etc
+			operators.add(name);
+		else if (prefixOperators.has(name)) {
+			if (name == "-" and is_operator(previous.codepointAt(0)))
+				operators.add(name + "…");//  -2*7 ≠ 1-(2*7)!
 			else
-				operators.add(op.name);
+				operators.add(name);
 		}
 //		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
 //		else if (prefixOperators.has(op.name+"…"))// and IS_PREFIX
 //			operators.add(op.name+"…");
-		else if (suffixOperators.has(op.name))
-			operators.add(op.name);
-		else if (operator_list.has(op.name))
+		else if (suffixOperators.has(name))
+			operators.add(name);
+		else if (operator_list.has(name))
 			//			if (op.name.in(operator_list))
-			operators.add(op.name);
+			operators.add(name);
 //else if (suffixOperators.has(op.name+"…"))
 //	operators.add(op.name);
 		//		if (op.name.in(function_list))
 		//			operators.add(op.name);
 		//		if (op.name.in(functor_list))
 		//			operators.add(op.name);
-		previous = op.name;
+		previous = name;
+		if (contains(import_keywords, (chars) name.data))
+			break;
 	}
 	auto by_precedence = [](String &a, String &b) { return precedence(a) > precedence(b); };
 	operators.sort(by_precedence);
@@ -425,6 +428,10 @@ Node &groupOperators(Node &expression, String context = "main") {
 	int last_position = 0;
 	for (String &op : operators) {
 		if (op == "-…") op = "-";// precedence hack
+		if (op == "import") {
+			warn(expression.serialize());
+			return NIL;
+		}
 		if (op != last) last_position = 0;
 		bool fromRight = rightAssociatives.has(op) or isFunction(op);
 		fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
@@ -457,12 +464,14 @@ Node &groupOperators(Node &expression, String context = "main") {
 		Node &prev = expression.children[i - 1];
 		if (i == 0)prev = NIL;
 		String &name = checkCanonicalName(op);
+
 		if (name == "^" or name == "^^" or name == "**") {// todo NORM operators earlier!
 			functionSignatures["pow"].is_used = true;
 			functionSignatures["powi"].is_used = true;
 			functionSignatures["powf"].is_used = true;
 		}
 		if (isPrefixOperation(node, prev, next)) {// ++x -i
+			isPrefixOperation(node, prev, next);
 			node.kind = Type::operators;// todo should have been parsed as such!
 			if (op == "-")//  -i => -(0 i)
 				node.add(new Node(0));
@@ -479,6 +488,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 					node.name = "*"; // x² => x*x
 				}
 				expression.replace(i - 1, i, node);
+				i--;
 			} else if (name.in(function_list)) {// handled above!
 				while (i++ < node.length)
 					node.add(expression.children[i]);
@@ -795,12 +805,14 @@ Node analyze(Node node, String context) {
 	if (type == operators or type == call or is_function) {
 		if (is_function)node.kind = call;
 		Node grouped = groupOperators(node, context);// outer analysis id(3+3) => id(+(3,3))
-		for (Node &child: grouped) {// inner analysis while(i<3){i++}
+		if (grouped.length > 0)
+			for (Node &child: grouped) {// inner analysis while(i<3){i++}
+				if (&child == 0)continue;
 //			if (child.kind == groups or child.kind == objects)// what if applying to real list though ?f([1,2,3])
 //				child.setType(expression);
-			const Node &analyze1 = analyze(child);
-			child = analyze1;// REPLACE with their ast? NO! todo
-		}
+				const Node &analyze1 = analyze(child);
+				child = analyze1;// REPLACE with their ast? NO! todo
+			}
 		if (functionSignatures.has(name))
 			functionSignatures[name].is_used = true;
 		return grouped;
