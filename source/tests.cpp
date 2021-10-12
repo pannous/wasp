@@ -11,6 +11,14 @@
 #include "test_wasm.cpp"
 
 
+void testComments() {
+	let c = "from wasp import * # to silence python warnings;)\n y/* yeah! */=0 // really";
+	result = parse(c);
+	check(result.length == 2);
+	check(result[0].length == 4);
+	check(result[1].length == 3);
+}
+
 void testEmptyLineGrouping() {
 	auto indented = R"(
 a:
@@ -596,6 +604,10 @@ void testDeepLists() {
 
 void testIterate() {
 //	parse("(1 2 3)");
+	Node empty;
+	bool nothing = true;
+	for (Node &child :empty)nothing = false;
+	check(nothing);
 	Node liste = parse("{1 2 3}");
 	liste.log();
 	for (Node &child : liste) {
@@ -1519,9 +1531,8 @@ void testLogicOperators() {
 
 
 void tests() {
-	data_mode = true;// expect data unless explicit code
-	//	testNodiscard();// works NOW!
-	logi(testNodiscard());
+//	data_mode = true;// expect data unless explicit code
+	testComments();
 	testEmptyLineGrouping();
 	testWaspInitializationIntegrity();
 	testRoundFloorCeiling();
@@ -1547,6 +1558,8 @@ void tests() {
 	testDedent();
 	testGroupCascade0();
 	testGraphQlQuery();
+	//	testNodiscard();// works NOW!
+	logi(testNodiscard());
 	testGroupCascade();
 	testNewlineLists();
 	testStackedLambdas();
@@ -1755,9 +1768,13 @@ void testPaintWasm() {
 }
 
 
+
 // 2021-10 : 40 sec for Wasm3
 void testCurrent() {
 	clearContext();
+	assert_emit("x=y=0;width=height=400\n"
+	            "while y++<height and x++<width: nop;y", 400);
+	run("circle.wasp");
 	//	assert_run("render html{'test'}", 4);
 	skip(
 			assert_emit("1 - 3 - square 3+4", (long) -51);// OK!
@@ -1767,7 +1784,6 @@ void testCurrent() {
 			testWasmMutableGlobal();
 			// while without body
 			assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
-			run("circle.wasp");
 			assert_emit("use math;⅓ ≈ .3333333 ", 1);
 			assert_throws("i*=3");// well:
 			assert_emit("i*=3", (long) 0);
