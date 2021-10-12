@@ -446,6 +446,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 		Node &node = expression.children[i];
 		if (node.length)continue;// already processed
 
+/*
 		if (contains(opening_special_brackets, op.codepointAt(0))) {
 			//			continue;// grouped in valueNode!
 			node.kind = Type::operators;// todo should have been parsed as such!
@@ -457,7 +458,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 			expression.replace(i, to, node);
 			continue;
 		}
-
+*/
 
 		Node &next = expression.children[i + 1];
 		next = analyze(next);
@@ -471,15 +472,17 @@ Node &groupOperators(Node &expression, String context = "main") {
 			functionSignatures["powf"].is_used = true;
 		}
 		if (isPrefixOperation(node, prev, next)) {// ++x -i
+			// PREFIX Operators
 			isPrefixOperation(node, prev, next);
 			node.kind = Type::operators;// todo should have been parsed as such!
 			if (op == "-")//  -i => -(0 i)
-				node.add(new Node(0));
+				node.add(new Node(0));// todo: use f64.neg
 			node.add(next);
 			expression.replace(i, i + 1, node);
 		} else {
 			prev = analyze(prev);
 			if (suffixOperators.has(name)) { // x²
+				// SUFFIX Operators
 				if (name == "ⁿ") functionSignatures["pow"].is_used = true;
 				if (i < 1)error("suffix operator misses left side");
 				node.add(prev);
@@ -487,6 +490,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 					node.add(prev);
 					node.name = "*"; // x² => x*x
 				}
+//				analyzed.insert_or_assign(node.hash(), true);
 				expression.replace(i - 1, i, node);
 				i--;
 			} else if (name.in(function_list)) {// handled above!
@@ -613,8 +617,9 @@ Node &groupFunctions(Node &expressiona) {
 			if (node.length == 1) {// while()… or …while()
 				node[0] = analyze(node[0]);
 				Node then = expressiona.from("while");
+				int remaining = then.length;
 				node.add(analyze(then).clone());
-				expressiona.remove(i + 1, i + then.length - 1);
+				expressiona.remove(i + 1, i + remaining);
 				continue;
 			} else {
 				Node &iff = groupWhile(expressiona.from("while"));// todo: sketchy!
