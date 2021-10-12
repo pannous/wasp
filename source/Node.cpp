@@ -819,12 +819,13 @@ String Node::serializeValue(bool deep) const {
 }
 
 String Node::serialize() const {
+	if (not this)return "";
 	String wasp = "";
 	if (not polish_notation or length == 0) {
 		if (not empty(name)) wasp += name;
 		String serializedValue = serializeValue();
 		if (kind == longs or kind == reals)
-			if (not atoi(name) /*and name!="0"*/)
+			if (not atoi(name) and name and name.data and name.data[0] != '0')
 				return ""s + name + ":" + serializedValue;
 		if (kind == strings and name and (empty(name) or name == value.string))
 			return serializedValue;// no text:"text", just "text"
@@ -851,11 +852,12 @@ String Node::serialize() const {
 		}
 		if (polish_notation and not empty(name)) wasp += name;
 		int i = 0;
-		for (Node &node : *this) {
-			if (separator and i++ > 0) wasp += separator;// DANGER + " " fucks up + chain pointer!
-			wasp += " ";
-			wasp += node.serialize();
-		}
+		if (length > 0)
+			for (Node &node : *this) {
+				if (separator and i++ > 0) wasp += separator;// DANGER + " " fucks up + chain pointer!
+				wasp += " ";
+				wasp += node.serialize();
+			}
 		if (length > 1 or kind == patterns or kind == objects) {
 			if (kind == groups and not separator)wasp += ")";
 			else if (kind == objects)wasp += "}";

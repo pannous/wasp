@@ -646,6 +646,14 @@ Code emitValue(Node node, String context) {
 			break;
 //		case identifier:
 		case reference: {
+			if (name == "malloc") {
+				code.addConst(last_data);
+				int size = 10;
+				if (node.next)
+					size = node.next->numbere();
+				last_data += size;// uh we don't want to write 10MB 0 to data section!
+				break;
+			}
 			int local_index = locals[context].position(name);
 			if (local_index < 0)error("UNKNOWN symbol "s + name + " in context " + context);
 			if (node.value.node) {
@@ -978,7 +986,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 //			else FALLTHROUGH to set x="123"!
 		case keyNode: // todo i=ø
 			if (not isVariableName(name))
-				todo("proper keyNode emission");
+				todo("proper keyNode emission "s + node.serialize());
 			// else:
 		case reference: {
 //			Map<int, String>
@@ -1002,7 +1010,10 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				}
 			}
 			if (node.isSetter()) { //SET
-				code = code + emitValue(node, context); // done above!
+				if (node.kind == keyNode)
+					code = code + emitExpression(*node.value.node, context); // done above!
+				else
+					code = code + emitValue(node, context); // done above!
 				code.add(cast(last_type, localTypes[context][local_index]));
 //				todo: convert if wrong type
 				code.addByte(tee_local);// set and get/keep
