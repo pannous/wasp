@@ -18,6 +18,8 @@ template<class S>
 // list HAS TO BE 0 terminated! Dangerous C!! ;)
 bool contains(S list[], S match);
 
+bool contains(chars list[], chars match);
+
 unsigned int wordHash(const char *str, int max_chars = 20);
 
 char *readFile(chars filename);// 0 = err
