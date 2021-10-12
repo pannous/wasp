@@ -550,7 +550,7 @@ List<String> String::split(const char *string) {
 
 String String::trim() {
 	int start = 0;
-	while (start < length and (data[start] == ' ' or data[start] == '\t'))start++;
+	while (start < length and (data[start] == ' ' or data[start] == '\t' or data[start] == '\n'))start++;
 	int end = length - 1;
 	while (0 <= end and (data[end] == ' ' or data[end] == '\n'))end--;
 	return String(data + start, end - start, true);// share ok?

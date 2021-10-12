@@ -585,9 +585,8 @@ void testWasmWhile() {
 	assert_emit("i=1;while i<9:i++;i+1", 10);
 	assert_emit("i=1;while(i<9){i++};i+1", 10);
 	assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
-	skip(
-			assert_emit("i=1;while(i<9)i++;i+1", 10);// needs valueNode conceptual overhaul
-	)
+	assert_emit("i=1;while(i<9)i++;i+1", 10);
+	assert_emit("x=y=0;width=height=400\n\t            \"while y++<height and x++<width: nop;y\", 400);", 400);
 }
 
 
