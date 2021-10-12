@@ -1772,8 +1772,15 @@ void testPaintWasm() {
 // 2021-10 : 40 sec for Wasm3
 void testCurrent() {
 	clearContext();
-	assert_emit("x=y=0;width=height=400\n"
-	            "while y++<height and x++<width: nop;y", 400);
+	assert_emit("i=1;while(i<9)i++;i+1", 10);
+	skip(
+	)
+
+	assert_equals("     \n   malloc"s.trim(), "malloc");
+	assert_equals("     \n   malloc     \n   "s.trim(), "malloc");
+	assert_equals("malloc     \n   "s.trim(), "malloc");
+
+	run("circle.wasp");
 	run("circle.wasp");
 	//	assert_run("render html{'test'}", 4);
 	skip(
