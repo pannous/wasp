@@ -808,7 +808,7 @@ Code emitOperator(Node node, String context) {
 		last_type = i32t;// bool'ish
 	} else if (name == "++" or name == "--") {
 		Node increased = Node(name[0]).setType(operators);
-		increased.add(node.first());
+//		increased.add(node.first()); // already emitted via lhs!
 		increased.add(new Node(1));
 		code.add(emitSetter(node.first(), increased, context));
 	} else if (name == "#") {// index operator
