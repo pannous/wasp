@@ -255,8 +255,8 @@ void error1(chars message, chars file, int line) {
 	Backtrace(2);
 	printf("%s", message);
 	if (file)printf("\n%s:%d\n", file, line);
-	if (throwing) raise(message);
 	if (panicking) panic();// not reached
+	if (throwing) raise(message);
 }
 
 void newline() {

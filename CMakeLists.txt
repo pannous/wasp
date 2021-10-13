@@ -42,7 +42,7 @@ if (NOT WASM)
             #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
             #            set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
             #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-            #            set(WEBAPP 1) # WebView for electron like standalone apps.
+#                        set(WEBAPP 1) # WebView for electron like standalone apps.
     endif ()
 endif ()
 
