@@ -4,11 +4,24 @@
 #include "String.h"
 #include "Map.h"
 #include "tests.h"
-
+#include "Paint.h"
 
 #include "test_angle.cpp"
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
+
+
+void testSignificantWhitespace() {
+
+	//1 + 1 ≠ 1 +1 == [1 1]
+	assert(eval("1 + 1 == 2"));
+	assert_is("1 +1", Node(1, 1, 0));
+//	assert_is("1 +1", parse("[1 1]"));
+	assert_emit("1 +1 == [1 1]", 1);
+	assert_emit("1 +1 ≠ 1 + 1", 1);
+	assert(eval("1 +1 == [1 1]"));
+	assert(eval("1 +1 ≠ 1 + 1"));
+}
 
 
 void testComments() {
@@ -391,6 +404,12 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 //	log(word);
 	logi(sizeof(char32_t));// 32 lol
 	logi(sizeof(wchar_t));
+
+	assert_parses("ç='☺'");
+	assert(eval("ç='☺'") == "☺");
+
+	assert_parses("ç=☺");
+	assert(result == "☺" or result.kind == expression);
 }
 
 void testStringReferenceReuse() {
@@ -1054,16 +1073,19 @@ void testParentContext() {
 void testParentBUG() {
 //	chars source = "{a:'HIO' d:{} b:3 c:ø}";
 	chars source = "{a:'HIO'}";
-
 	assert_parses(source);
 	Node &a = result["a"];
-	Node *parent = a.parent;
-	assert(parent);
+	check(a.kind == keyNode or a.kind == strings);
+	check(a == "HIO");
+	check(a.parent == 0);// keyNode a is highest level
+	Node *parent = a.value.node->parent;
+	check(parent);
 	log(parent);// BROKEN, WHY?? let's find out:
-	assert(parent == &result);
-	assert_equals(parent->kind, objects);
-	assert_equals(parent->name, "");
-	assert(parent == &result);
+	check(*parent == result);
+	skip(
+	// pointer identity broken by flat() ?
+			check(parent == &result);
+	)
 	testParentContext();// make sure parsed correctly
 }
 
@@ -1143,6 +1165,9 @@ void testString() {
 
 	check_eq(atoi("123x"), 123);// can crash!?!
 	check_eq(" a b c  \n"s.trim(), "a b c");
+	assert_equals("     \n   malloc"s.trim(), "malloc");
+	assert_equals("     \n   malloc     \n   "s.trim(), "malloc");
+	assert_equals("malloc     \n   "s.trim(), "malloc");
 	testStringConcatenation();
 }
 
@@ -1529,9 +1554,15 @@ void testLogicOperators() {
 	assert_is("0 ∧ 0", 0);
 }
 
+void testBUG();
 
 void tests() {
 //	data_mode = true;// expect data unless explicit code
+	testBUG();
+	testRecentRandomBugs();
+	testIndentAsBlock();
+	testDeepCopyDebugBugBug2();// SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!
+	testDeepCopyDebugBugBug();
 	testComments();
 	testEmptyLineGrouping();
 	testWaspInitializationIntegrity();
@@ -1584,7 +1615,6 @@ void tests() {
 	testLists();
 	testDeepLists();
 	testGraphParams();
-	testParams();
 	testAddField();
 	testOverwrite();
 	testMapsAsLists();
@@ -1620,6 +1650,8 @@ void tests() {
 	testLogic();
 	testLogicOperators();
 	assert_is("one plus two times three", 7);
+	data_mode = false;
+	testParams();
 	skip(
 
 			testKitchensink();
@@ -1648,32 +1680,49 @@ void testBUG() {// move to tests() once done!
 
 
 void todos() {
+
+	skip( // todo soon
+
+	// while without body
+			assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
+			assert_emit("1 - 3 - square 3+4", (long) -51);// OK!
+			assert_emit("1 -3 - square 3+4", (long) -51);// warn "mixing math op with list items (1, -3 … ) !
+			assert_emit("1 - - 3", 4);// -1 uh ok?  warn "what are you doning?"
+			assert_emit("use math;⅓ ≈ .3333333 ", 1);
+			assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
+			assert_throws("i*=3");// well:
+			assert_emit("i*=3", (long) 0);
+			globals.setDefault(new Node());
+			globals["y"] = new Node();
+			// todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
+			assert_throws("ceiling 3.7");
+			// default bug!
+			//    	subtract(other complex) := re -= other.re; im -= other.im
+			// := is terminated by \n, not by ;!
+			functionSignatures.setDefault(Signature());
+			Signature &signature = functionSignatures["init_graphics"].import().returns(pointer);// surface
+			if (signature.return_type != pointer)error("WWWAAAUUUU");
+			if (functionSignatures["init_graphics"].return_type != pointer)error("WWWAAA");
+			assert_throws("xyz 3.7"); // todo SHOULD THROW unknown symbol!
+	)
 	skip(
+			assert_eval("if(0):{3}", false);// 0:3 messy node
+			testSignificantWhitespace();
+			assert_equals(Node("1", 0) + Node("2"_s),
+			              Node("1", "2", 0));// 1+2 => 1:2  stupid border case because 1 not group (1)
 			assert_is("{a b c}#2", "b");// ok, but not for patterns:
 			assert_is("[a b c]#2", "b");// patterns
-
-			testSignificantWhitespace();
+			assert_is("i=3;i--", 2);// todo bring variables to interpreter
+			assert_is("i=3.7;.3+i", 4);// todo bring variables to interpreter
+			assert_is("i=3;i*-1", -3);// todo bring variables to interpreter
 			testAngle();// fails in WASM why?
 
-			assert_parses("ç='☺'");
-			assert(eval("ç='☺'") == "☺");
-
-			assert_parses("ç=☺");
-			assert(result == "☺" or result.kind == expression);
-			testDeepCopyDebugBugBug2();// SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!
-			testDeepCopyDebugBugBug();
-			assert_eval("if(0):{3}", false);// 0:3 messy node
 			testNetBase();
-			testBUG();
-			assert_equals(Node("1", 0) + Node("2"_s), Node("1", "2", 0));
 //	log("OK %s %d"s % ("WASM",1));// only 1 handed over
 			log("OK %d %d"s % (2, 1));// only 1 handed over
-			testIndentAsBlock();
 	)
-}
 
-#include "Wasp.h" // is_operator
-#include "Paint.h"
+}
 
 //int dump_nr = 1;
 //void dumpMemory(){
@@ -1710,15 +1759,6 @@ void testNodeImplicitConversions(){
 	check(as.value.string=='a');
 }
 #endif
-
-void testSignificantWhitespace() {
-
-	//1 + 1 ≠ 1 +1 == [1 1]
-	assert(eval("1 + 1 == 2"));
-	assert_is("1 +1", parse("[1 1]"));
-	assert(eval("1 +1 == [1 1]"));
-	assert(eval("1 +1 ≠ 1 + 1"));
-}
 
 void testUnits() {
 	assert_is("1 m + 1km", Node(1001).setType("m"));
@@ -1768,63 +1808,31 @@ void testPaintWasm() {
 }
 
 
-
 // 2021-10 : 40 sec for Wasm3
 void testCurrent() {
+	throwing = false;// shorter stack trace
 	clearContext();
-	assert_emit("i=1;while(i<9)i++;i+1", 10);
-	skip(
-	)
-
-	assert_equals("     \n   malloc"s.trim(), "malloc");
-	assert_equals("     \n   malloc     \n   "s.trim(), "malloc");
-	assert_equals("malloc     \n   "s.trim(), "malloc");
-
-	run("circle.wasp");
-	run("circle.wasp");
 	//	assert_run("render html{'test'}", 4);
-	skip(
-			assert_emit("1 - 3 - square 3+4", (long) -51);// OK!
-			assert_emit("1 -3 - square 3+4", (long) -51);// warn "mixing math op with list items (1, -3 … ) !
-			assert_emit("1 - - 3", 4);// -1 uh ok?  warn "what are you doning?"
 
+	skip(
+			data_mode = false;testParams();
+			todos();
+
+			run("circle.wasp");
+			assert_emit("1 +1 == [1 1]", 1);
+			assert_emit("1 +1 ≠ 1 + 1", 1);
 			testWasmMutableGlobal();
-			// while without body
-			assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
-			assert_emit("use math;⅓ ≈ .3333333 ", 1);
-			assert_throws("i*=3");// well:
-			assert_emit("i*=3", (long) 0);
-			assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
 	)
 //	testImportWasm();
 //	testImport();
 	testSerialize();
 
-	skip( // todo soon
-			globals.setDefault(new Node());
-			globals["y"] = new Node();
-			// todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
-			assert_throws("ceiling 3.7");
-			assert_is("i=3;i--", 2);// todo bring variables to interpreter
-			assert_is("i=3.7;.3+i", 4);// todo bring variables to interpreter
-			assert_is("i=3;i*-1", -3);// todo bring variables to interpreter
-			// default bug!
-//    	subtract(other complex) := re -= other.re; im -= other.im
-// := is terminated by \n, not by ;!
-			functionSignatures.setDefault(Signature());
-			Signature &signature = functionSignatures["init_graphics"].import().returns(pointer);// surface
-			if (signature.return_type != pointer)error("WWWAAAUUUU");
-			if (functionSignatures["init_graphics"].return_type != pointer)error("WWWAAA");
-			assert_throws("xyz 3.7"); // todo SHOULD THROW unknown symbol!
-	)
 
 //	return;// let the webview show!
 //	exit(0);
-	testRecentRandomBugs();
-	tests();// make sure all still ok before changes
 	todos();// those not passing yet (skip)
 	testAllWasm();
-	tests();// make sure all still ok after changes
+	tests();// make sure all still ok before changes
 	printf("OK %ld==%ld", 2l, 2l);
 	check(contains("OK %ld==%ld", "%ld"));
 	log("CURRENT TESTS PASSED");

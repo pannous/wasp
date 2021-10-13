@@ -4,7 +4,7 @@
 #include "wasm_merger.h"
 
 #define assert_throws(αα)  {printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);bool old=panicking;try{ \
-panicking=false;emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line(); \
+panicking=false;throwing=true;emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line(); \
 }catch(chars){}catch(String*){}catch(...){};panicking=old;}
 
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
@@ -586,7 +586,8 @@ void testWasmWhile() {
 	assert_emit("i=1;while(i<9){i++};i+1", 10);
 	assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
 	assert_emit("i=1;while(i<9)i++;i+1", 10);
-	assert_emit("x=y=0;width=height=400\n\t            \"while y++<height and x++<width: nop;y\", 400);", 400);
+	assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
+	assert_emit("i=1;while(i<9)i++;i+1", 10);
 }
 
 

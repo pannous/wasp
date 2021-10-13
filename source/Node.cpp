@@ -79,9 +79,9 @@ void initSymbols() {
 #ifdef WASI
 	return;
 #elif  WASM
-//	__wasm_call_ctors();??
-	if (True.kind == bools)
-		; // error("Wasm DOES init symbols!?");
+	//	__wasm_call_ctors();??
+		if (True.kind == bools)
+			; // error("Wasm DOES init symbols!?");
 #else
 	return; // no need outside WASM
 #endif
@@ -496,7 +496,7 @@ Node Node::operator+(Node other) {
 		return Node(String(value.longy) + other.value.string);
 //	if(type==floats and other.type==strings)
 //		return Node(value.real + other.value.string);
-	if (kind == objects or kind == groups /*or kind == patterns*/)
+	if (kind == unknown or kind == objects or kind == groups /*or kind == patterns*/)
 		return merge(other);
 	if (other.kind == objects)
 		return other.insert(*this, 0);
