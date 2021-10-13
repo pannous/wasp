@@ -1809,9 +1809,15 @@ void testPaintWasm() {
 
 // 2021-10 : 40 sec for Wasm3
 void testCurrent() {
-	throwing = false;// shorter stack trace
+//	throwing = false;// shorter stack trace
+//	throwing = true;//
+	panicking = true;
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	char *wasm_paint_routine = "surface=(1,2);i=0;while(i<10){i++;surface#i=i*(10-√i);};";
+	emit(wasm_paint_routine);
+//	exit(1);
+//	testPaintWasm();
 	testMarkSimpleAssign();
 	//	assert_run("render html{'test'}", 4);
 	skip(
