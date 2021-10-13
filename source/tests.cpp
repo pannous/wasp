@@ -295,6 +295,7 @@ void testMarkAsMap() {
 }
 
 void testMarkSimpleAssign() {
+	data_mode = true; // else [ a , = , 3 ]
 	assert_parses("a=3");
 	Node &a = result["a"];
 	assert(a == 3);
@@ -991,7 +992,6 @@ void testRoots() {
 
 void testParams() {
 //	assert_equals(parse("f(x)=x*x").param->first(),"x");
-
 	Node body = assert_parses("body(style='blue'){a(link)}");
 	assert(body["style"] == "blue");
 
@@ -1650,10 +1650,9 @@ void tests() {
 	testLogic();
 	testLogicOperators();
 	assert_is("one plus two times three", 7);
-	data_mode = false;
+	data_mode = true;
 	testParams();
 	skip(
-
 			testKitchensink();
 	)
 #ifdef APPLE
@@ -1811,13 +1810,12 @@ void testPaintWasm() {
 // 2021-10 : 40 sec for Wasm3
 void testCurrent() {
 	throwing = false;// shorter stack trace
+//	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	testMarkSimpleAssign();
 	//	assert_run("render html{'test'}", 4);
-
 	skip(
 			data_mode = false;testParams();
-			todos();
-
 			run("circle.wasp");
 			assert_emit("1 +1 == [1 1]", 1);
 			assert_emit("1 +1 ≠ 1 + 1", 1);
@@ -1826,15 +1824,11 @@ void testCurrent() {
 //	testImportWasm();
 //	testImport();
 	testSerialize();
-
-
-//	return;// let the webview show!
 //	exit(0);
+	//	return;// let the webview show!
 	todos();// those not passing yet (skip)
 	testAllWasm();
 	tests();// make sure all still ok before changes
-	printf("OK %ld==%ld", 2l, 2l);
-	check(contains("OK %ld==%ld", "%ld"));
 	log("CURRENT TESTS PASSED");
 }
 
