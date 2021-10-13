@@ -419,16 +419,9 @@ Code emitIndexWrite(Node offset, Node value0, String context) {
 		store.addConst(value0.value.string->charAt(0));
 	else
 		store = store + emitValue(value0, context);
-//	else
-//		if (value0.kind == reference)
-//			store.addConst(value0.value.longy);
-////	if (value0.kind != longs)// todooo so many cases!
-////		value = emitData(value0, context);// pointer
-//	else if (value0.kind == longs)// todooo so many cases!
-//		store.addConst(value0.value.longy);
-
-//	if(size==1 and valType==int32)store.add(i32)
+//	store.add(cast(last_type, valType));
 //	store.add(cast(valType, targetType));
+store.add(cast(last_type, targetType));
 
 	if (size == 1)store.add(i8_store);
 	if (size == 2)store.add(i16_store);
