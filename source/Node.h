@@ -288,7 +288,8 @@ public:
 //			}
 //		else if (atof(s)) { value.real = atoi(s); }
 		else {
-			kind = strings;
+			kind = unknown;
+//			kind = strings;
 			value.string = new String(s.data, s.length, true);// todo COPY AGAIN!?
 			if (name == empty_name)name = s;
 		}

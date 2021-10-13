@@ -616,7 +616,7 @@ Node &groupFunctions(Node &expressiona) {
 			}
 			if (node.length == 1) {// while()… or …while()
 				node[0] = analyze(node[0]);
-				Node then = expressiona.from("while");
+				Node then = expressiona.from("while");// todo: to closer!?
 				int remaining = then.length;
 				node.add(analyze(then).clone());
 				expressiona.remove(i + 1, i + remaining);
@@ -844,6 +844,7 @@ void preRegisterSignatures() {
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 
+	functionSignatures.insert_or_assign("malloc", Signature().add(int64).returns(int64));
 	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("pow", Signature().import().add(float64).add(float64).returns(float64));
