@@ -553,7 +553,7 @@ String String::trim() {
 	while (start < length and (data[start] == ' ' or data[start] == '\t' or data[start] == '\n'))start++;
 	int end = length - 1;
 	while (0 <= end and (data[end] == ' ' or data[end] == '\n'))end--;
-	return String(data + start, end - start, true);// share ok?
+	return String(data + start, end - start + 1, true);// share ok?
 }
 
 long String::hash() {
