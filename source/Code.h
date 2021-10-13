@@ -297,22 +297,21 @@ public:
 // 4. some c++ types String List etc
 // the last three can be added as special internal values to Valtype, outside the wasm spec
 enum Valtype {
-	voids = 0x00, // DANGER!=void_block  internal only for return type
+voids = 0x00, // DANGER!=void_block  internal only for return type
 
-	void_block = 0x40,
-	none = 0x40, // NOT voids!!!
+void_block = 0x40,
+none = 0x40, // NOT voids!!!
 
-	// extensions
-	anyref = 0x6f,// was conceptually an namewise merged into
-	externref = 0x6f,
-	funcref = 0x70,
-	func = 0x60,
+// extensions
+anyref = 0x6f,// was conceptually an namewise merged into externref
+externref = 0x6f, // -0x11
+funcref = 0x70, // -0x10
+func = 0x60,
 
-
-	int32 = 0x7f,
-	i32t = 0x7f,
-	i32 = 0x7f,
-	i32s = 0x7f,
+int32 = 0x7f,
+i32t = 0x7f,
+i32 = 0x7f,
+i32s = 0x7f,
 //	i32u = 0x7f,// todo ignore!
 
 	float32 = 0x7d,
@@ -329,6 +328,7 @@ enum Valtype {
 	float64 = 0x7C,
 	f64t = 0x7C,
 	f64 = 0x7C,
+
 
 	// SPECIAL INTERNAL TYPES ONLY, not part of spec but they ARE represented through c++=>wasm types (int32?) :
 	// enums with the same value can NOT be distinguished thereafter!!! :(
@@ -360,7 +360,7 @@ chars typeName(Valtype t);
 // https://pengowray.github.io/wasm-ops/ <<< table
 // https://webassembly.github.io/spec/core/binary/instructions.html <<< list (chrome)
 // USE wasm-objdump -d  to see function disassembled:
-enum Opcodes {
+	enum Opcodes {
 //	start = 0x00,
 	start_function = 0x00,
 //	unreachable = 0x00,
@@ -369,15 +369,45 @@ enum Opcodes {
 	loop = 0x03,
 	if_i = 0x04,// precede by i32 result, follow by i32_type (7f)
 	elsa = 0x05,
+
+	// EXTENSIONS:
+	try_ = 0x06,
+	catch_ = 0x07,
+	throw_ = 0x08,
+	rethrow_ = 0x09,
+	br_on_exn_ = 0x0A, // branch on exception
+
+	end_block = 0x0b, //11
 	br = 0x0c,
 	br_if = 0x0d,
-	end_block = 0x0b, //11
 	return_block = 0x0f,
 	function = 0x10,
+
+	// EXTENSIONS:
+	call_ref = 0x14,
+	return_call_ref = 0x15,
+	func_bind = 0x16,// (type $t) 	$t : u32
+	let_local = 0x17, // 	let <bt> <locals> 	bt : blocktype, locals : (as in functions)
+
 	drop = 0x1a, // pop stack
+	select_if = 0x1B, // a?b:c ternary todo: use!
+	select_t = 0x1C, // extension … ?
+
+	local_get = 0x20,
+	local_set = 0x21,
+	local_tee = 0x22,
+	// aliases:
 	get_local = 0x20,// get to stack
 	set_local = 0x21,// set and pop
 	tee_local = 0x22,// set and leave on stack
+
+	global_get = 0x23,
+	global_set = 0x24,
+
+	//	 Anyref/externref≠funcref tables, Table.get and Table.set (for Anyref only).
+	//	Support for making Anyrefs from Funcrefs is out of scope
+	table_get = 0x25,
+	table_set = 0x26,
 
 	i8_load = 0x2d, //== 𝟶𝚡𝟸𝙳, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
 	i16_load = 0x2f, //== 𝟶𝚡𝟸𝙳, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
@@ -470,17 +500,6 @@ enum Opcodes {
 	f𝟨𝟦_𝗆𝖺𝗑 = 0xa5,
 	f𝟨𝟦_𝖼𝗈𝗉𝗒𝗌𝗂𝗀𝗇 = 0xa6,
 
-	local_get = 0x20,
-	local_set = 0x21,
-	local_tee = 0x22,
-	global_get = 0x23,
-	global_set = 0x24,
-
-	//	 Anyref/externref≠funcref tables, Table.get and Table.set (for Anyref only).
-//	Support for making Anyrefs from Funcrefs is out of scope
-	table_get = 0x25,
-	table_set = 0x26,
-
 	f32_cast_to_i32_s = 0xa8,// truncation ≠ proper rounding (f32_round = 0x90)!
 	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
 	f32_convert_i32_s = 0xB2,// convert FROM i32
@@ -530,9 +549,15 @@ enum Opcodes {
 // i64.extend32_s sign-extends an i64 value to i64
 
 //referenceTypes
+//https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
 	ref_null = 0xD0,
 	ref_is_null = 0xD1,
 	ref_func = 0xD2, // 0xd2 varuint32 0x0b Returns a funcref reference to function $funcidx
+//	ref_null=-0x14,// 	(ref null ht) 	$t : heaptype  -0x10:func -0x11:extern i >= 0 :	i
+//	ref_typed=-0x15,// 	(ref ht) 	$t : heaptype
+	ref_as_non_null = 0xd3,// 	ref.as_non_null
+	br_on_null = 0xd4, //	br_on_null $l 	$l : u32
+	br_on_non_null = 0xd6,// 	br_on_non_null $l 	$l : u32
 
 // saturated truncation  saturatedFloatToInt
 //i32_trunc_sat_f32_s=0xFC00,
