@@ -161,6 +161,16 @@ window.onload = function () {
                         return BigInt(res);
                     },
                     _Z3powdd: Math.pow,
+                    _Z5tracePKc:nop,
+                    atoi:x=>parseInt(x),
+                    fopen:nop,// WASI
+                    fseek:nop,
+                    ftell:nop,
+                    fread:nop,
+                    system:nop,
+                    access:nop,
+                    _Z11testCurrentv:test,
+                    _Z5raisePKc:log,
                     logs: log,
                     logi: log,
                     logc: log,
