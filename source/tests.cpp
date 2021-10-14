@@ -1808,13 +1808,14 @@ void testPaintWasm() {
 
 
 // 2021-10 : 40 sec for Wasm3
+// 2021-10 : 10 sec in Webapp!
 void testCurrent() {
 //	throwing = false;// shorter stack trace
 //	throwing = true;//
 	panicking = true;
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_emit("-‖3‖/-3", 1);
+	testNorm2();
 //	run( "wasp.wasm");
 	char *wasm_paint_routine = "surface=(1,2);i=0;while(i<10){i++;surface#i=i*(10-√i);};";
 	emit(wasm_paint_routine);
@@ -1822,7 +1823,6 @@ void testCurrent() {
 //	testPaintWasm();
 	//	assert_run("render html{'test'}", 4);
 	skip(
-			assert_emit("-‖-3‖/-3", 1);
 
 			data_mode = false;testParams();
 			run("circle.wasp");
