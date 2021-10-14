@@ -33,21 +33,8 @@ wabt::Result do_square(Thread &thread, const Values &params, Values &results, Tr
 	return wabt::Result::Ok;
 };
 
-wabt::Result do_pow(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
-	float x = params.front().Get<float>();
-	float y = params.at(1).Get<float>();
-	results.front() = wabt::interp::Value::Make( pow( x,y));
-	return wabt::Result::Ok;
-};
-
-
 wabt::Result do_logi(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
 	printf("%d\n", params.front().Get<int>());
-	return wabt::Result::Ok;
-};
-
-wabt::Result do_logc(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
-	printf("%c\n", params.front().Get<int>());
 	return wabt::Result::Ok;
 };
 
@@ -65,11 +52,6 @@ wabt::Result do_logs(Thread &thread, const Values &params, Values &results, Trap
 	Ref ref = params.front().Get<Ref>();
 	char *x = (char *) (void *) params.data();
 	printf("%s\n", x);
-	return wabt::Result::Ok;
-};
-
-
-wabt::Result do_nop(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
 	return wabt::Result::Ok;
 };
 
@@ -93,21 +75,9 @@ void BindImports(Module *module, std::vector<Ref> &imports, Store &store) {
 	for (auto &&import : module->desc().imports) {
 		auto func_type = *wabt::cast<FuncType>(import.type.type.get());
 		if (import.type.name == "square")imports.push_back(HostFunc::New(store, func_type, do_square).ref());
-		else if (import.type.name == "__cxa_begin_catch")imports.push_back(HostFunc::New(store, func_type, do_nop).ref());
-		else if (import.type.name == "_ZSt9terminatev")imports.push_back(HostFunc::New(store, func_type, do_nop).ref());
-		else if (import.type.name == "_ZdlPv")imports.push_back(HostFunc::New(store, func_type, do_nop).ref());// delete
-		else if (import.type.name == "memset")imports.push_back(HostFunc::New(store, func_type, do_nop).ref());// TODO!?!
-
-		else if (import.type.name == "pow")imports.push_back(HostFunc::New(store, func_type, do_pow).ref());
-		else if (import.type.name == "_Z3powdd")imports.push_back(HostFunc::New(store, func_type, do_pow).ref());
-
-
 		else if (import.type.name == "logi")imports.push_back(HostFunc::New(store, func_type, do_logi).ref());
-		else if (import.type.name == "logc")imports.push_back(HostFunc::New(store, func_type, do_logc).ref());
-		else if (import.type.name == "putchar")imports.push_back(HostFunc::New(store, func_type, do_logc).ref());
 		else if (import.type.name == "logf")imports.push_back(HostFunc::New(store, func_type, do_logf).ref());
 		else if (import.type.name == "logs")imports.push_back(HostFunc::New(store, func_type, do_logs).ref());
-		else if (import.type.name == "puts")imports.push_back(HostFunc::New(store, func_type, do_logs).ref());
 		else if (import.type.name == "printf")imports.push_back(HostFunc::New(store, func_type, do_logs).ref());
 		else if (import.type.name == "proc_exit")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
 		else if (import.type.name == "panic")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());

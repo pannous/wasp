@@ -29,6 +29,8 @@ Valtype mapArgToValtype(String arg);
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
 
+#define check(test) if(test){log("\nOK check passes: ");log(#test);}else{if(debug_reader)printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+#define check_eq(α, β) if((α)!=(β)){if(debug_reader)printf("%s != %s : ",#α,#β);log(α);if(debug_reader)printf("!=");log(β);if(debug_reader)printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
@@ -337,7 +339,6 @@ List<String> demangle_args(String &fun) {
 
 String demangle(String &fun) {
 	int status;
-	if (fun.empty())return "";
 	String *real_name = new String(abi::__cxa_demangle(fun.data, 0, 0, &status));
 	if (status != 0)return fun;// not demangled (e.g. "memory")
 //	String ok = *real_name;
@@ -393,7 +394,6 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "char const*")return Valtype::charp;// pointer with special semantics
 	else if (arg == "char const*&")return Valtype::charp;// todo ?
 	else if (arg == "char*")return Valtype::charp;
-	else if (arg == "char32_t*")return Valtype::charp;
 	else if (arg == "char const**")return Valtype::pointer;
 	else if (arg == "short")
 		return Valtype::int32;// careful c++ ABI overflow? should be fine since wasm doesnt have short

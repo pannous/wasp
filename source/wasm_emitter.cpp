@@ -14,6 +14,8 @@
 //#include "wasm_runner.h"
 #include "wasm_reader.h"
 
+#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+
 int runtime_offset = 0; // imports + funcs
 int import_count = 0;
 short builtin_count = 0;// function_offset - import_count - runtime_offset;
@@ -239,9 +241,9 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	if (eq(s, "$"))
 		return get_local; // $0 $1 ...
 
-//	trace("unknown or non-primitive operator %s\n"s % String(s));
+	trace("unknown or non-primitive operator %s\n"s % String(s));
 	// can still be matched as function etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
-//	breakpoint_helper
+	breakpoint_helper
 //		error("invalid operator");
 	return 0;
 }
@@ -344,8 +346,7 @@ Code emitArray(Node &node, String context) {
 	if (node.name.empty() and node.parent) {
 		ref = node.parent->name;
 	}
-	if (not node.name.empty())
-		referenceIndices.insert_or_assign(ref, pointer);
+	referenceIndices.insert_or_assign(ref, pointer);
 	emitData(Node(0), context);// terminate list with 0.
 	// todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
 	last_data = pointer;
@@ -419,9 +420,16 @@ Code emitIndexWrite(Node offset, Node value0, String context) {
 		store.addConst(value0.value.string->charAt(0));
 	else
 		store = store + emitValue(value0, context);
-//	store.add(cast(last_type, valType));
+//	else
+//		if (value0.kind == reference)
+//			store.addConst(value0.value.longy);
+////	if (value0.kind != longs)// todooo so many cases!
+////		value = emitData(value0, context);// pointer
+//	else if (value0.kind == longs)// todooo so many cases!
+//		store.addConst(value0.value.longy);
+
+//	if(size==1 and valType==int32)store.add(i32)
 //	store.add(cast(valType, targetType));
-store.add(cast(last_type, targetType));
 
 	if (size == 1)store.add(i8_store);
 	if (size == 2)store.add(i16_store);
@@ -639,14 +647,6 @@ Code emitValue(Node node, String context) {
 			break;
 //		case identifier:
 		case reference: {
-			if (name == "malloc") {
-				code.addConst(last_data);
-				int size = 10;
-				if (node.next)
-					size = node.next->numbere();
-				last_data += size;// uh we don't want to write 10MB 0 to data section!
-				break;
-			}
 			int local_index = locals[context].position(name);
 			if (local_index < 0)error("UNKNOWN symbol "s + name + " in context " + context);
 			if (node.value.node) {
@@ -801,7 +801,7 @@ Code emitOperator(Node node, String context) {
 		last_type = i32t;// bool'ish
 	} else if (name == "++" or name == "--") {
 		Node increased = Node(name[0]).setType(operators);
-//		increased.add(node.first()); // already emitted via lhs!
+		increased.add(node.first());
 		increased.add(new Node(1));
 		code.add(emitSetter(node.first(), increased, context));
 	} else if (name == "#") {// index operator
@@ -979,7 +979,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 //			else FALLTHROUGH to set x="123"!
 		case keyNode: // todo i=ø
 			if (not isVariableName(name))
-				todo("proper keyNode emission "s + node.serialize());
+				todo("proper keyNode emission");
 			// else:
 		case reference: {
 //			Map<int, String>
@@ -1003,10 +1003,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				}
 			}
 			if (node.isSetter()) { //SET
-				if (node.kind == keyNode)
-					code = code + emitExpression(*node.value.node, context); // done above!
-				else
-					code = code + emitValue(node, context); // done above!
+				code = code + emitValue(node, context); // done above!
 				code.add(cast(last_type, localTypes[context][local_index]));
 //				todo: convert if wrong type
 				code.addByte(tee_local);// set and get/keep
@@ -1903,9 +1900,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		last_index = runtime_offset - 1;
 	} else {
 		memoryHandling = export_memory;
-//#ifdef IMPORT_MEMORY
 //		memoryHandling = import_memory; // works for micro-runtime
-//#endif
 //		memoryHandling = internal_memory; // works for wasm3
 		last_index = -1;
 		runtime = *new Module();// all zero
