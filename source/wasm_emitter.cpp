@@ -1903,7 +1903,9 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		last_index = runtime_offset - 1;
 	} else {
 		memoryHandling = export_memory;
+//#ifdef IMPORT_MEMORY
 //		memoryHandling = import_memory; // works for micro-runtime
+//#endif
 //		memoryHandling = internal_memory; // works for wasm3
 		last_index = -1;
 		runtime = *new Module();// all zero

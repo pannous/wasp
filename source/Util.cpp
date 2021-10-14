@@ -87,7 +87,7 @@ unsigned int wordHash(const char *str, int max_chars) { // unsigned
 }
 
 
-char *readFile(chars filename) {
+char *readFile(chars filename, int* size_out) {
 	if (!filename)error("no filename given");
 	if (!filename)return 0;
 #ifndef WASM
@@ -95,6 +95,7 @@ char *readFile(chars filename) {
 	if (!f)error("FILE NOT FOUND "_s + filename);
 	fseek(f, 0, SEEK_END);
 	long fsize = ftell(f);
+	if(size_out)*size_out = fsize;
 	fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
 	char *s = (char *) (alloc(fsize, 2));
 	fread(s, 1, fsize, f);

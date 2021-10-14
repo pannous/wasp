@@ -585,6 +585,8 @@ Node &groupWhile(Node n);
 
 bool isPrimitive(Node node);
 
+void fileSize(String filename);
+
 Node &groupFunctions(Node &expressiona) {
 	if (expressiona.kind == declaration)return expressiona;// handled before
 	if (isFunction(expressiona)) {
@@ -893,6 +895,8 @@ void preRegisterSignatures() {
 void clearContext() {
 	globals.clear();
 	globals.setDefault(new Node());
+	functionIndices.clear();
+	functionIndices.setDefault(-1);
 	locals.clear();
 	locals.setDefault(List<String>());
 	localTypes.clear();
@@ -931,6 +935,11 @@ int runtime_emit(String prog) {
 
 // todo dedup runtime_emit!
 Node emit(String code) {
+	if (code.endsWith(".wasm")){
+		auto filename = findFile(code);
+		return Node(run_wasm(filename));
+	}
+	
 	if (code.endsWith(".wasp"))
 		code = readFile(findFile(code));
 	debug_code = code;// global so we see when debugging
@@ -951,6 +960,10 @@ Node emit(String code) {
 	int result = binary.run();
 	return Node(result);
 #endif
+}
+
+void fileSize(String filename) {
+	readFile(filename);
 }
 
 
