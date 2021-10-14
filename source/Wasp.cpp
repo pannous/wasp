@@ -851,6 +851,10 @@ private:
 		if ((ch == '-' or ch == '+') and (isDigit(next) or next == '.') and previous != u'‖' and
 		    (empty(previous) or is_operator(previous) or next == '.')) // -1 √-1 but not 2-1 x-1!
 			return numbero();
+		if (ch == u'‖') {
+			proceed();// todo: better ;)
+			return (*new Node("‖")).add(valueNode(u'‖')).setType(operators, false);
+		}
 		if (is_operator(ch))
 			return any_operator();
 		if (is_identifier(ch))return resolve(*new Node(identifier(), true));// or op

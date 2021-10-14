@@ -172,26 +172,26 @@ void testFloatOperators() {
 	assert_emit(("3.0*3.0*3.0>3.0+3.0*3.0"), true)
 }
 
-void testNorm() {
+void testNorm2() {
+	assert_emit("1-‖3‖/-3", 2);
+	assert_emit("1-‖-3‖/3", 0);
+	assert_emit("1-‖-3‖/-3", 2);
+	assert_emit("1-‖-3‖-1", -3);
+	assert_emit("√9*-‖-3‖/3", -3);
+	assert_emit("√9*‖-3‖/-3", -3);
+	assert_emit("√9*-‖-3‖/-3", 3);
+}
 
+void testNorm() {
+	testNorm2();
 	assert_emit("‖-3‖", 3);
 	assert_emit("‖3‖-1", 2);
 	assert_emit("‖-3‖/3", 1);
 	assert_emit("‖-3‖/-3", -1);
 	assert_emit("‖3‖/-3", -1);
 	assert_emit("-‖-3‖/3", -1);
-	skip( // todo : real BUG:
-			assert_emit("-‖-3‖/-3", 1);
-			assert_emit("-‖3‖/-3", 1);
-			assert_emit("1-‖3‖/-3", 2);
-			assert_emit("1-‖-3‖/3", 0);
-			assert_emit("1-‖-3‖/-3", 2);
-			assert_emit("1-‖-3‖-1", -3);
-			assert_emit("√9*-‖-3‖/3", -3);
-			assert_emit("√9*‖-3‖/-3", -3);
-			assert_emit("√9*-‖-3‖/-3", 3);
-	)
-
+	assert_emit("-‖-3‖/-3", 1);
+	assert_emit("-‖3‖/-3", 1);
 }
 
 void testMathOperators() {
