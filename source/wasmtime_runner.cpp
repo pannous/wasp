@@ -209,6 +209,8 @@ int run_wasm(unsigned char *data, int size) {
 
 	wasmtime_extern_t run;
 	bool ok = wasmtime_instance_export_get(context, &instance, "main", 4, &run);
+	if(!ok)	ok = wasmtime_instance_export_get(context, &instance, "_start", 6, &run);
+	if(!ok)	ok = wasmtime_instance_export_get(context, &instance, "testCurrent", 11, &run);
 	assert(ok);
 	assert(run.kind == WASMTIME_EXTERN_FUNC);
 	wasmtime_val_t results;

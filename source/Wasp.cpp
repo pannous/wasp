@@ -12,7 +12,7 @@
 /*#include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>*/
-
+#include "stdio.h" // FILE
 
 //#define err(m) printf("\n%s:%d\n",__FILE__,__LINE__);err1(m)
 #define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m);
@@ -54,6 +54,7 @@ codepoint opening_special_brackets[] = {u'‖', u'﴾', u'﹙', u'（', u'⁽', 
                                         u'〚', u'〖', u'【', u'『', u'「', u'｢', u'⁅', u'«', u'《', u'〈',
                                         u'︷', u'︵', u'﹁', u'﹃', u'︹', u'︻', u'︽', 0};
 //codepoint closing_special_brackets[] = {}
+
 codepoint separator_list[] = {' ', ',', ';', ':', '\n', '\t', 0};
 // todo:
 //codepoint grouper_list[] = {'(', ')', '{', '}', '[', ']', u'«', u'»', 0, };
@@ -1766,7 +1767,7 @@ int main(int argp, char **argv) {
 //#ifndef RUNTIME_ONLY
 //extern int main(int argp, char **argv);
 extern "C" int _start() { // for wasm-ld
-	return -42;// wasm-ld dummy should not be called
+	return -42;// wasm-ld dummy should not be called, ok to test run_wasm("wasp.wasm")
 //	return main(0, 0);
 }
 //#endif

@@ -106,7 +106,7 @@ e
 	check(parsed[1].name == "c");
 }
 
-
+/*
 void testWasmSpeed() {
 	struct timeval stop, start;
 	gettimeofday(&start, NULL);
@@ -133,7 +133,7 @@ void testWasmSpeed() {
 	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
 
 	exit(0);
-}
+}*/
 
 void testImport() {
 	assert_is("import fourty_two", 42);
@@ -1771,7 +1771,7 @@ void testPaint() {
 }
 
 
-void print_timestamp() {
+/*void print_timestamp() {
 	time_t rawtime;
 	struct tm *timeinfo;
 	time(&rawtime);
@@ -1780,7 +1780,7 @@ void print_timestamp() {
 	strftime(buffer, 30, "%G/%m/%d-%H:%M:%S.%ffff", timeinfo);
 	puts(buffer);
 //	return reinterpret_cast<char *>(buffer);
-}
+}*/
 
 #include <sys/time.h>
 
@@ -1814,6 +1814,16 @@ void testCurrent() {
 	panicking = true;
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	assert_run("'123' is '123'", true);
+	testWasmModuleExtension();
+	exit(12);
+
+	assert_run("'123'+'456'", 123456);
+//	assert_run("atoi0('123'+'456')", 123456);
+//	assert_run("x=123;x + 4 is 127", true);
+//	assert_run("43",43);
+	testWasmRuntimeExtension();
+//	run( "wasp.wasm");
 	char *wasm_paint_routine = "surface=(1,2);i=0;while(i<10){i++;surface#i=i*(10-√i);};";
 	emit(wasm_paint_routine);
 //	exit(1);
