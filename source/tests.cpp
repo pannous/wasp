@@ -1814,22 +1814,14 @@ void testCurrent() {
 	panicking = true;
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_run("'123' is '123'", true);
-	assert_run("atoi0('123'+'456')", 123456);
-	testWasmModuleExtension();
-
-//	assert_run("x=123;x + 4 is 127", true);
-//	assert_run("43",43);
-	testWasmRuntimeExtension();
+	assert_emit("-‖3‖/-3", 1);
 //	run( "wasp.wasm");
 	char *wasm_paint_routine = "surface=(1,2);i=0;while(i<10){i++;surface#i=i*(10-√i);};";
 	emit(wasm_paint_routine);
 //	exit(1);
 //	testPaintWasm();
-	testMarkSimpleAssign();
 	//	assert_run("render html{'test'}", 4);
 	skip(
-			assert_emit("-‖3‖/-3", 1);
 			assert_emit("-‖-3‖/-3", 1);
 
 			data_mode = false;testParams();
