@@ -346,7 +346,8 @@ Code emitArray(Node &node, String context) {
 	if (node.name.empty() and node.parent) {
 		ref = node.parent->name;
 	}
-	referenceIndices.insert_or_assign(ref, pointer);
+	if (not node.name.empty())
+		referenceIndices.insert_or_assign(ref, pointer);
 	emitData(Node(0), context);// terminate list with 0.
 	// todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
 	last_data = pointer;
@@ -420,16 +421,9 @@ Code emitIndexWrite(Node offset, Node value0, String context) {
 		store.addConst(value0.value.string->charAt(0));
 	else
 		store = store + emitValue(value0, context);
-//	else
-//		if (value0.kind == reference)
-//			store.addConst(value0.value.longy);
-////	if (value0.kind != longs)// todooo so many cases!
-////		value = emitData(value0, context);// pointer
-//	else if (value0.kind == longs)// todooo so many cases!
-//		store.addConst(value0.value.longy);
-
-//	if(size==1 and valType==int32)store.add(i32)
+//	store.add(cast(last_type, valType));
 //	store.add(cast(valType, targetType));
+	store.add(cast(last_type, targetType));
 
 	if (size == 1)store.add(i8_store);
 	if (size == 2)store.add(i16_store);
@@ -801,7 +795,7 @@ Code emitOperator(Node node, String context) {
 		last_type = i32t;// bool'ish
 	} else if (name == "++" or name == "--") {
 		Node increased = Node(name[0]).setType(operators);
-		increased.add(node.first());
+//		increased.add(node.first());
 		increased.add(new Node(1));
 		code.add(emitSetter(node.first(), increased, context));
 	} else if (name == "#") {// index operator
@@ -1003,7 +997,10 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				}
 			}
 			if (node.isSetter()) { //SET
-				code = code + emitValue(node, context); // done above!
+				if (node.kind == keyNode)
+					code = code + emitExpression(*node.value.node, context); // done above!
+				else
+					code = code + emitValue(node, context); // done above!
 				code.add(cast(last_type, localTypes[context][local_index]));
 //				todo: convert if wrong type
 				code.addByte(tee_local);// set and get/keep
@@ -1900,7 +1897,9 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		last_index = runtime_offset - 1;
 	} else {
 		memoryHandling = export_memory;
+//#ifdef IMPORT_MEMORY
 //		memoryHandling = import_memory; // works for micro-runtime
+//#endif
 //		memoryHandling = internal_memory; // works for wasm3
 		last_index = -1;
 		runtime = *new Module();// all zero

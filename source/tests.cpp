@@ -1829,6 +1829,9 @@ void testCurrent() {
 	testMarkSimpleAssign();
 	//	assert_run("render html{'test'}", 4);
 	skip(
+			assert_emit("-‖3‖/-3", 1);
+			assert_emit("-‖-3‖/-3", 1);
+
 			data_mode = false;testParams();
 			run("circle.wasp");
 			assert_emit("1 +1 == [1 1]", 1);
