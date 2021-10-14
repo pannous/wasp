@@ -33,22 +33,19 @@ if (NOT WASM)
     ADD_COMPILE_DEFINITIONS(_Backtrace_)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     if (NOT RUNTIME_ONLY)
-        # TO EXECUTE wasm:
-        # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
-        #            SET(V8 1)
-#        SET(WASMTIME 1) # FASTEST!
-        #                        set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
-#                    set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp, fast engine startup!
-                                set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
-        #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
-        #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-        #                        set(WEBAPP 1) # WebView for electron like standalone apps.
+            # TO EXECUTE wasm:
+            # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
+            #            SET(V8 1)
+            #                        SET(WASMTIME 1) # FASTEST!
+            #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+            #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
+            #            set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
+            #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
+            #            set(WEBAPP 1) # WebView for electron like standalone apps.
     endif ()
 endif ()
 
-if(WASMTIME)
-    ADD_COMPILE_DEFINITIONS(IMPORT_MEMORY)
-endif()
 
 if (RELEASE)
     MESSAGE(RELEASE)
@@ -81,9 +78,7 @@ if (WASM)
     SET(SDL 0)
     # ^^ UNSET, or better don't set manually at all!
 endif ()
-if (WASMTIME)
-    ADD_COMPILE_DEFINITIONS(WASMTIME)
-endif ()
+
 if (SDL)
     ADD_COMPILE_DEFINITIONS(GRAFIX)
     find_package(SDL2 REQUIRED)
