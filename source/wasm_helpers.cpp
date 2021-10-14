@@ -14,7 +14,6 @@
 #include "String.h"
 #include "Backtrace.h"
 #include "Code.h"
-#include "Util.h"
 //extern unsigned int *memory;
 
 //#ifdef WASI
@@ -252,12 +251,8 @@ void error1(chars message, chars file, int line) {
 //	Backtrace(2);// later, in raise
 #endif
 	if (file)printf("\n%s:%d\n", file, line);\
-
-	Backtrace(2);
-	printf("%s", message);
-	if (file)printf("\n%s:%d\n", file, line);
+    raise(message);
 	if (panicking) panic();// not reached
-	if (throwing) raise(message);
 }
 
 void newline() {
@@ -414,8 +409,7 @@ int run_wasm(bytes data,int size){}
 
 void panic() {
 #ifndef WASM
-	exit(1);
-//	raise("panic");
+	raise("panic");
 #else
 	char* x=0;
 	x[-1]=2;// Bus error: 10
@@ -423,6 +417,14 @@ void panic() {
 }
 
 #endif
+
+bool tracing = false;
+
+//bool tracing = true;
+void trace(chars x) {
+	if (tracing)
+		warn(x);
+}
 
 
 #ifndef MY_WASM
@@ -480,10 +482,3 @@ long powi(int a, int b) {
 //int paint(int wasm_offset){return -1;};
 //#endif
 //#endif
-
-int run_wasm(char *wasm_path){
-	auto filename = findFile(wasm_path);
-	int fileSize;
-	auto path = readFile(filename, &fileSize);
-	return run_wasm((bytes)path,fileSize);
-}
