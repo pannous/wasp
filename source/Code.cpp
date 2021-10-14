@@ -8,7 +8,7 @@ bytes magicModuleHeader = new byte[]{0x00, 0x61, 0x73, 0x6d};
 bytes moduleVersion = new byte[]{0x01, 0x00, 0x00, 0x00};
 
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
-	bytes c = new unsigned char[len_a + len_b];// why+4 ?? else heap-buffer-overflow
+	bytes c = new unsigned char[len_a + len_b + 4];// why+4 ?? else heap-buffer-overflow
 	memcpy0(c, a, len_a);
 	memcpy0(c + len_a, b, len_b);
 //	c[len_a + len_b + 1] = 0;// hwhy?

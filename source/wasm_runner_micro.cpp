@@ -258,7 +258,7 @@ int run_wasm(const uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 =
 //			            wasm_runtime_get_exception(module_inst));
 //		}
 
-		cleanup:
+//		cleanup:
 //		done = false;
 		if (exec_env) wasm_runtime_destroy_exec_env(exec_env);
 		if (module_inst) {
