@@ -1816,9 +1816,9 @@ void testCurrent() {
 	clearContext();
 	assert_run("'123' is '123'", true);
 	testWasmModuleExtension();
+	assert_run("'123'+'456'", 123456);
 	exit(12);
 
-	assert_run("'123'+'456'", 123456);
 //	assert_run("atoi0('123'+'456')", 123456);
 //	assert_run("x=123;x + 4 is 127", true);
 //	assert_run("43",43);
