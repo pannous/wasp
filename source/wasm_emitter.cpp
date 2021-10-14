@@ -63,7 +63,7 @@ String normOperator(String alias) {
 Module runtime;
 String start = "main";
 
-Valtype lhs_type = voids;// autocast if not int
+Valtype arg_type = voids;// autocast if not int
 Valtype last_type = voids;// autocast if not int
 
 enum MemoryHandling {
@@ -206,7 +206,8 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "<"))return f32_lt;
 		if (eq(s, "<="))return f32_le;
 	}
-
+	if (eq(s, "-…"))return f32_neg;
+	if (eq(s, "negate"))return f32_neg;
 	// the following functions force i32->f32
 	if (eq(s, "√"))return f32_sqrt;
 	if (eq(s, "sqrt"))return f32_sqrt;
@@ -493,7 +494,7 @@ Code emitIndexRead(Node op, String context) {
 	int size = 4;
 	size = 1;
 //	if(op[0].kind==strings) todo?
-	last_type = lhs_type;
+	last_type = arg_type;
 	if (last_type == charp)size = 1;// chars for now vs codepoint!
 	if (last_type == stringp)size = 1;// chars for now vs codepoint!
 	if (last_type == int32)size = 4;
@@ -719,7 +720,7 @@ Code emitValue(Node node, String context) {
 Code emitOperator(Node node, String context) {
 	Code code;
 	String &name = node.name;
-//	lhs_type = none;// safe to reset? no
+//	arg_type = none;// safe to reset? no
 	int index = functionIndices.position(name);
 	if (name == "then")return emitIf(*node.parent, context);// pure if handled before
 	if (name == ":=")
@@ -736,14 +737,14 @@ Code emitOperator(Node node, String context) {
 //				error("unexpected unary operator: "s + name);
 		Node arg = node.children[0];
 		const Code &arg_code = emitExpression(arg, context);// should ALWAYS just be value, right?
-		lhs_type = last_type;
+		arg_type = last_type;
 		code.push(arg_code);// might be empty ok
 	} else if (node.length == 2) {
 		Node lhs = node.children[0];//["lhs"];
 		Node rhs = node.children[1];//["rhs"];
 		const Code &lhs_code = emitExpression(lhs, context);
-//		if(last_type!=void_block)
-		lhs_type = last_type;// needs to be visible to array index [1,2,3]#1
+		Valtype lhs_type = last_type;
+		arg_type = last_type;// needs to be visible to array index [1,2,3]#1 gets FUCKED up in rhs operations!!
 		const Code &rhs_code = emitExpression(rhs, context);
 		Valtype rhs_type = last_type;
 		Valtype commonType = needsUpgrade(lhs_type, rhs_type, name);// 3.1 + 3 => 6.1 etc
@@ -775,7 +776,7 @@ Code emitOperator(Node node, String context) {
 		code.add(index);
 		return code;
 	}
-	byte opcode = opcodes(name, last_type, lhs_type);
+	byte opcode = opcodes(name, last_type, arg_type);
 	if (opcode >= 0x8b and opcode <= 0x98 and
 	    (last_type == int32 or last_type == int64 or last_type == float64 or last_type == void_block))
 		code.add(cast(last_type, f32));// float ops
@@ -948,7 +949,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		case expression:
 			if (not name.empty())
 				code.add(emitSetter(node, node, context));
-			else
+			else if (node.length > 0)
 				for (Node child : node) {
 					Code expression = emitExpression(child, context);
 					code.push(expression);
