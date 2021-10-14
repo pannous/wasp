@@ -38,8 +38,8 @@ extern "C" char *memoryChars;
 #define MEMORY_SIZE 117964800 // todo: usually via CMAKE!?
 #else
 //#define MEMORY_SIZE 0x1999999999999a00  // 1844674407370955200 //(2**64)/10
-#define MEMORY_SIZE 0x2000000000000000  // ~ (2**64)/10
-//#define MEMORY_SIZE 0x20000000000  // not enough!
+//#define MEMORY_SIZE 0x2000000000000000  // ~ (2**64)/10
+#define MEMORY_SIZE 0x20000000000  // not enough!
 //#define MEMORY_SIZE 0x200000000  // not enough!
 
 #endif
@@ -160,7 +160,7 @@ void free(void*);
 extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_unstable"), import_name("proc_exit"))); // wasmtime ++
 //extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_snapshot_preview1"), import_name("proc_exit")));// wasmer WTF
 
-//extern "C" int raise(chars);
+extern "C" int raise(chars);
 //extern "C" void exit(int code);
 //extern "C" void exit(int fd) __attribute__((__noreturn__));
 
