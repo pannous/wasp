@@ -853,8 +853,8 @@ void testStringIndicesWasm() {
 	assert_emit("'world'#2", 'o');
 	assert_emit("'world'#3", 'r');
 	skip( // todo move angle syntax to test_angle
-			assert_emit("char #1 in 'world'", 'o');
-			assert_emit("char 1 in 'world'", 'o');
+			assert_emit("char #1 in 'world'", 'w');
+			assert_emit("char 1 in 'world'", 'w');
 			assert_emit("2nd char in 'world'", 'o');
 			assert_emit("2nd byte in 'world'", 'o');
 			assert_emit("'world'#-1", 'd');
