@@ -14,6 +14,7 @@
 #include "String.h"
 #include "Backtrace.h"
 #include "Code.h"
+#include "Util.h"
 //extern unsigned int *memory;
 
 //#ifdef WASI
@@ -479,3 +480,10 @@ long powi(int a, int b) {
 //int paint(int wasm_offset){return -1;};
 //#endif
 //#endif
+
+int run_wasm(char *wasm_path){
+	auto filename = findFile(wasm_path);
+	int fileSize;
+	auto path = readFile(filename, &fileSize);
+	return run_wasm((bytes)path,fileSize);
+}
