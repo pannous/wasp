@@ -439,8 +439,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 		fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
 		int i = expression.index(op, last_position, fromRight);
 		if (i < 0) {
-			if (op == "-" or op == "‖")
-				continue;// ok -1 part of number, ‖3‖ closing
+			if (op == "-" or op == "‖") //  or op=="?"
+				continue;// ok -1 part of number, ‖3‖ closing ?=>if
 			i = expression.index(op, last_position, fromRight);// try again for debug
 			expression.log();
 			error("operator missing: "s + op);
@@ -549,7 +549,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 						setter->value.node = node.clone();
 						node = *setter;
 					}
-				if (node.name == "?")node = groupIf(node);
+				if (node.name == "?")
+					node = groupIf(node);// consumes prev and next
 				expression.replace(i - 1, i + 1, node);
 			}
 		}

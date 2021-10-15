@@ -80,6 +80,7 @@ chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "i
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
                           "abs", /* "norm", "‖" acts as GROUP, not as operator (when parsing) */
+                          // norm ‖…‖ quite complicated for parser! ‖x‖ := √∑xᵢ²
                           0, 0, 0,
                           0}; // "while" ...
 // todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
@@ -358,6 +359,7 @@ public:
 		white();
 		if (ch and ch != -1 and ch != DEDENT) {
 			printf("UNEXPECTED CHAR %c", ch);
+			pointer();
 			error("Expect end of input");
 			result = ERROR;
 		}
@@ -402,7 +404,8 @@ private:
 //				s("IN CODE:\n");
 		msg = msg + " at position " + at + " in line " + lineNumber + " column " + columnNumber + "\n";
 		msg = msg + line + "\n";
-		msg = msg + (s(" ").times(columnNumber - 1)) + "^\n";
+		msg = msg + (s(" ").times(columnNumber - 1)) + "^";
+		print(msg);
 		return msg;
 	}
 
