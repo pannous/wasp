@@ -720,6 +720,8 @@ Code emitValue(Node node, String context) {
 Code emitOperator(Node node, String context) {
 	Code code;
 	String &name = node.name;
+	if (node.length == 0 and name == "=")
+		return code;// BUG
 //	arg_type = none;// safe to reset? no
 	int index = functionIndices.position(name);
 	if (name == "then")return emitIf(*node.parent, context);// pure if handled before

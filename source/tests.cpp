@@ -1813,12 +1813,25 @@ void testCurrent() {
 //	throwing = false;// shorter stack trace
 //	throwing = true;//
 	panicking = true;
-//	data_mode = false; // a=b => a,=,b before analysis
+	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	testNorm2();
+	assert_emit("f=4;‖-3‖<f", 1);
+	assert_emit("i=1;(5-3)>i", 1);
+	assert_emit("i=1;‖-3‖>i", 1);
+	assert_emit("i=1;‖-3‖<i", 0);
+	assert_emit("f=4;‖-3‖>f", 0);
+	assert_emit("i=1;x=‖-3‖>i", 1);
+	assert_emit("f=4;x=‖-3‖<f", 1);
+	assert_emit("i=1;x=‖-3‖<i", 0);
+	assert_emit("f=4;x=‖-3‖>f", 0);
+
 //	run( "wasp.wasm");
-	char *wasm_paint_routine = "surface=(1,2);i=0;while(i<10){i++;surface#i=i*(10-√i);};";
-	emit(wasm_paint_routine);
+//assert_emit("i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",22);
+////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
+//char *wasm_paint_routine = "c=99;r=99;surface=(1,2);i=0;while(i<1000000){i++;x=i%w;y=i/h;surface#i=‖(x-c)^2+(y-c)^2‖<r};paint";
+////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
+//	emit(wasm_paint_routine);
+//	return;
 //	exit(1);
 //	testPaintWasm();
 	//	assert_run("render html{'test'}", 4);
