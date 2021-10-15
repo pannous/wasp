@@ -1828,10 +1828,10 @@ void testCurrent() {
 //(x-c)^2+(y-c)^2
 //	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
 ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
-	char *wasm_paint_routine = "w=4096/32;c=70;r=50;surface=(1,2);i=0;"
-	                           "while(i<1000000){"
-	                           "i++;x=i%w;y=i/(w*16);surface#i=((x-c)^2+(y-c)^2 < r^2)?0:255"
-	                           "};paint";
+char *wasm_paint_routine = "w=1920;c=200;r=100;surface=(1,2);i=0;"
+                           "while(i<1000000){"
+                           "i++;x=i%w;y=i/w;surface#i=((x-c)^2+(y-c)^2 < r^2)?0x44aa88:0xffeedd"
+                           "};paint";
 ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
 	assert_emit(wasm_paint_routine, 0);
 	return;
