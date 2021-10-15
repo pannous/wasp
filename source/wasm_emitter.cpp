@@ -133,7 +133,11 @@ Code signedLEB128(int i);
 
 Code encodeString(char *String);
 
-long emitData(Node node, String context);
+
+// write data to DATA SEGMENT (vs emitValue on stack)
+// MAY return i32.const(pointer)
+Code emitData(Node node, String context);
+
 //typedef Code any;
 //typedef Bytes any;
 
@@ -192,6 +196,46 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 
 		if (eq(s, "not"))return i32_eqz; // HACK: no such thing!
 		if (eq(s, "¬"))return i32_eqz;
+
+	} else if (kind == i64t) { // INT32
+		if (eq(s, "+"))return i64_𝖺𝖽𝖽;
+		//		if (eq(s, "-") and previous==none)return sign_flip; *-1
+		if (eq(s, "-"))return i64_𝗌𝗎𝖻;
+		if (eq(s, "*"))return i64_𝗆𝗎𝗅;
+		if (eq(s, "/"))return i64_𝖽𝗂𝗏_𝗌;
+		if (eq(s, "%"))return i64_𝗋𝖾𝗆_𝗌;
+		if (eq(s, "=="))return i64_𝖾𝗊;
+		if (eq(s, "eq"))return i64_𝖾𝗊;
+		if (eq(s, "equals"))return i64_𝖾𝗊;
+		if (eq(s, "is"))return i64_𝖾𝗊;// careful could be declaration := !
+		if (eq(s, "!="))return i64_𝗇𝖾;
+		if (eq(s, ">"))return i64_𝗀𝗍_𝗌;
+		if (eq(s, "<"))return i64_𝗅𝗍_𝗌;
+		if (eq(s, ">="))return i64_𝗀𝖾_𝗌;
+		if (eq(s, "<="))return i64_𝗅𝖾_𝗌;
+		if (eq(s, "≥"))return i64_𝗀𝖾_𝗌;
+		if (eq(s, "≤"))return i64_𝗅𝖾_𝗌;
+
+		if (eq(s, "&"))return i64_𝖺𝗇𝖽;
+		if (eq(s, "&&"))return i64_𝖺𝗇𝖽;
+
+		if (eq(s, "and"))return i64_𝖺𝗇𝖽;
+		if (eq(s, "⋀"))return i64_𝖺𝗇𝖽;
+		if (eq(s, "∧"))return i64_𝖺𝗇𝖽;// ∧≠^ potence looks like
+		if (eq(s, "^"))return 0;// POWER handled on higher level
+
+		if (eq(s, "or"))return i64_𝗈𝗋;
+		if (eq(s, "∨"))return i64_𝗈𝗋;// looks like 'v' but isn't
+		if (eq(s, "⋁"))return i64_𝗈𝗋;
+		if (eq(s, "||"))return i64_𝗈𝗋; // ≠ norm ‖
+		if (eq(s, "|"))return i64_𝗈𝗋;// todo: pipe is different!
+
+		if (eq(s, "xor"))return i64_𝗑𝗈𝗋;
+		if (eq(s, "^|"))return i64_𝗑𝗈𝗋;//always bitwise todo: truthy 0x0101 xor 0x1010 !?
+		if (eq(s, "⊻"))return i64_𝗑𝗈𝗋;
+
+		if (eq(s, "not"))return i64_eqz; // HACK: no such thing!
+		if (eq(s, "¬"))return i64_eqz;
 
 	} else {
 		if (eq(s, "not"))return f32_eqz; // HACK: no such thing!
@@ -341,7 +385,7 @@ Code emitArray(Node &node, String context) {
 	int pointer = data_index_end;
 	for (Node &child:node) {
 		// todo: smart pointers?
-		emitData(child, context);// pointers in flat i32/i64 format!
+		code.add(emitData(child, context));// pointers in flat i32/i64 format!
 	}
 	String ref = node.name;
 	if (node.name.empty() and node.parent) {
@@ -349,10 +393,10 @@ Code emitArray(Node &node, String context) {
 	}
 	if (not node.name.empty())
 		referenceIndices.insert_or_assign(ref, pointer);
-	emitData(Node(0), context);// terminate list with 0.
+	return emitData(Node(0), context);// terminate list with 0.
 	// todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
-	last_data = pointer;
-	return code.addConst(pointer);// once written to data section, we also want to use it immediately
+//	last_data = pointer;
+//	return code.addConst(pointer);// once written to data section, we also want to use it immediately
 }
 
 
@@ -370,10 +414,11 @@ int currentStackItemSize() {
 	if (last_type == stringp)return 1;// chars for now vs pointer!
 	//	if (last_type == int16)return 2;
 	if (last_type == int32)return 4;
+	if (last_type == array)return 4;// pointer todo!
 	if (last_type == int64)return 8;
 	if (last_type == float32)return 4;
 	if (last_type == float64)return 8;
-	error("unknown size for stack item");
+	error("unknown size for stack item "s + typeName(last_type));
 	return 1;
 }
 
@@ -527,10 +572,11 @@ Code emitIndexRead(Node op, String context) {
 	//	i32.load
 }
 
-// write data to data segment (vs emitValue on stack)
-// returns pointer
-long emitData(Node node, String context) {
+// write data to DATA SEGMENT (vs emitValue on stack)
+// MAY return const(pointer)
+Code emitData(Node node, String context) {
 	String &name = node.name;
+	Code code;// POINTER to DATA SEGMENT
 	int last_pointer = data_index_end;
 	switch (node.kind) {
 		case nils:// also 0, false
@@ -589,7 +635,7 @@ long emitData(Node node, String context) {
 		case objects:
 		case groups:
 			// keep last_type from last child, later if mixed types, last_type=ref or smarty
-			emitArray(node, context);
+			return emitArray(node, context);
 			break;
 		case keyNode:
 		case patterns:
@@ -598,7 +644,7 @@ long emitData(Node node, String context) {
 	}
 	// todo: ambiguity emit("1;'a'") => result is pointer to [1,'a'] or 'a' ? should be 'a', but why?
 	last_data = last_pointer;
-	return last_pointer;
+	return code.addConst(last_pointer);
 }
 
 Code emitGetGlobal(Node node /* context : global ;) */) {
@@ -710,6 +756,8 @@ Code emitValue(Node node, String context) {
 //			error("expression should not be put on stack (yet) (maybe serialize later)")
 		case call:
 			return emitCall(node, context);// yep should give a value ok
+		case groups:
+			return emitData(node, context);
 		default:
 			error("emitValue unknown type: "s + typeName(node.kind));
 	}
@@ -945,7 +993,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		case groups:
 			// todo: all cases of true list vs list of expression
 			if (node.length > 0 and isProperList(node)) {
-				return Code().addConst(emitData(node, context));// pointer in const format!
+				return emitData(node, context);// pointer in const format!
 //				return emitArray(node, context);
 			}// else fallthough:
 		case expression:
@@ -1174,7 +1222,9 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==f64 and to==i64)	return Code(i𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟨𝟦);
 //	if(from==i32 and to==f32)	return Code(f𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟥𝟤);
 //	if(from==i64 and to==f64)	return Code(f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦);
+	if (from == i64 and to == f32) return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌).addByte(f32_from_f64);
 	if (from == void_block)return nop;// todo: pray
+	if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
 	error("incompatible types "s + typeName(from) + " => " + typeName(to));
@@ -1366,7 +1416,8 @@ Code emitBlock(Node node, String context) {
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; i++) {
 		Valtype valtype = localTypes[context][i];
-		block.addByte(i + 1);// index
+//		block.addByte(i + 1);// index
+		block.addByte(1);// count! todo: group by type nah
 		if (valtype == none or valtype == voids or valtype == charp or valtype == array)
 			valtype = int32;
 		block.addByte(valtype);
