@@ -11,6 +11,12 @@
 #include "test_wasm.cpp"
 
 
+void testModulo() {
+	assert_emit("10007%10000", 7);
+	assert_emit("i=10007;x=i%10000", 7);
+}
+
+
 void testSignificantWhitespace() {
 
 	//1 + 1 ≠ 1 +1 == [1 1]
@@ -1806,7 +1812,6 @@ void testPaintWasm() {
 #endif
 }
 
-
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp!
 void testCurrent() {
@@ -1815,13 +1820,17 @@ void testCurrent() {
 	panicking = true;
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	testModulo();
 	testWasmTernary();
+//	assert_emit("(√((x-c)^2+(y-c)^2)<r?0:255)");
 //	run( "wasp.wasm");
+//(√((x-c)^2+(y-c)^2)<r?0:255)
+//(x-c)^2+(y-c)^2
 //	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
 ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
-	char *wasm_paint_routine = "w=1000;h=1000;c=99;r=1000;surface=(1,2);i=0;"
+	char *wasm_paint_routine = "w=4096/32;c=70;r=50;surface=(1,2);i=0;"
 	                           "while(i<1000000){"
-	                           "i++;x=i%w;y=i/h;surface#i=(√((x-c)^2+(y-c)^2)<r?0:255)"
+	                           "i++;x=i%w;y=i/(w*16);surface#i=((x-c)^2+(y-c)^2 < r^2)?0:255"
 	                           "};paint";
 ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
 	assert_emit(wasm_paint_routine, 0);

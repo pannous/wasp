@@ -128,7 +128,8 @@ List<chars> rightAssociatives = List<chars>{"=", "?:", "-…", "+=", "++…", 0}
 List<chars> prefixOperators = {"abs",/*norm*/  "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
                                "~", "&", "$",
                                "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
-List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "%", "％", "﹪", "٪",
+List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", /* 23% vs 7%5 */ "％",
+                               "﹪", "٪",
                                "‰"};// modulo % ≠ ％ percent
 //List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…"/*, "+…" /*useless!*/, "~…", "*…", "&…",
 //							  "sizeof", "new", "delete[]"};

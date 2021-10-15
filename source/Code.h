@@ -466,9 +466,9 @@ chars typeName(Valtype t);
 		f64_eq = 0x61,
 		f64_ne = 0x62, // !=
 	f64_lt = 0x63,
-	f64_gt = 0x64,
-	f64_le = 0x65,
-	f64_ge = 0x66,
+		f64_gt = 0x64,
+		f64_le = 0x65,
+		f64_ge = 0x66,
 
 		i32_add = 0x6A,
 		i32_sub = 0x6B,
@@ -476,6 +476,7 @@ chars typeName(Valtype t);
 		i32_div = 0x6D,
 		i32_rem = 0x6F, // 5%4=1
 		i32_modulo = 0x6F,
+		i32_rem_u = 0x70,
 
 		i32_and = 0x71,
 		i32_or = 0x72,
