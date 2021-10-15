@@ -1815,28 +1815,22 @@ void testCurrent() {
 	panicking = true;
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_emit("f=4;‖-3‖<f", 1);
-	assert_emit("i=1;(5-3)>i", 1);
-	assert_emit("i=1;‖-3‖>i", 1);
-	assert_emit("i=1;‖-3‖<i", 0);
-	assert_emit("f=4;‖-3‖>f", 0);
-	assert_emit("i=1;x=‖-3‖>i", 1);
-	assert_emit("f=4;x=‖-3‖<f", 1);
-	assert_emit("i=1;x=‖-3‖<i", 0);
-	assert_emit("f=4;x=‖-3‖>f", 0);
-
+	testWasmTernary();
 //	run( "wasp.wasm");
-//assert_emit("i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",22);
+//	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
 ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
-//char *wasm_paint_routine = "c=99;r=99;surface=(1,2);i=0;while(i<1000000){i++;x=i%w;y=i/h;surface#i=‖(x-c)^2+(y-c)^2‖<r};paint";
+	char *wasm_paint_routine = "w=1000;h=1000;c=99;r=1000;surface=(1,2);i=0;"
+	                           "while(i<1000000){"
+	                           "i++;x=i%w;y=i/h;surface#i=(√((x-c)^2+(y-c)^2)<r?0:255)"
+	                           "};paint";
 ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
-//	emit(wasm_paint_routine);
-//	return;
+	assert_emit(wasm_paint_routine, 0);
+	return;
 //	exit(1);
 //	testPaintWasm();
 	//	assert_run("render html{'test'}", 4);
 	skip(
-
+			assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
 			data_mode = false;testParams();
 			run("circle.wasp");
 			assert_emit("1 +1 == [1 1]", 1);

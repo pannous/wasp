@@ -71,8 +71,10 @@ void testWasmTernary() {
 	assert_emit("1>0?3:4", 3);
 	assert_emit("2<1?3:4", 4);
 	assert_emit("1<0?3:4", 4);
+//	assert_emit("(1<2)?10:255", 255);
+	assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
+	assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
 	skip(
-			assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
 	// What seems to be the problem?
 	)
 }
@@ -180,6 +182,15 @@ void testNorm2() {
 	assert_emit("√9*-‖-3‖/3", -3);
 	assert_emit("√9*‖-3‖/-3", -3);
 	assert_emit("√9*-‖-3‖/-3", 3);
+	assert_emit("f=4;‖-3‖<f", 1);
+	assert_emit("i=1;(5-3)>i", 1);
+	assert_emit("i=1;‖-3‖>i", 1);
+	assert_emit("i=1;‖-3‖<i", 0);
+	assert_emit("f=4;‖-3‖>f", 0);
+	assert_emit("i=1;x=‖-3‖>i", 1);
+	assert_emit("f=4;x=‖-3‖<f", 1);
+	assert_emit("i=1;x=‖-3‖<i", 0);
+	assert_emit("f=4;x=‖-3‖>f", 0);
 }
 
 void testNorm() {
