@@ -69,8 +69,8 @@ codepoint grouper_list[] = {' ', ',', ';', ':', '\n', '\t', '(', ')', '{', '}', 
 
 // predicates in of on from to
 // todo split keywords into binops and prefix functors
-// "‖" acts as GROUP, not as operator (when parsing)
 chars import_keywords[] = {"use", "require", "import", "include", 0};
+// todo aliases need NOT be in this list:
 chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠",
                           "not",
                           "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...",
@@ -79,7 +79,7 @@ chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "i
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
-                          "abs", /*"norm",*/
+                          "abs", /* "norm", "‖" acts as GROUP, not as operator (when parsing) */
                           0, 0, 0,
                           0}; // "while" ...
 // todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
@@ -1466,24 +1466,22 @@ private:
 				default: {
 					// a:b c != a:(b c)
 					// {a} ; b c vs {a} b c vs {a} + c
+					// todo: what a flimsy criterion:
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
 					Node node = expressione(close);//word();
-					// todo:
-//					Node import=node.find(["import","include","require"]);
-//					    node.first().name == "require"
 					if (contains(import_keywords, (chars) node.first().name.data)) {
 						// import IF not in data mode
-						if (current.first() == "from") {
+						if (current.first() == "from")
 							node = parseFile(current[1].name);
-						} else if (not node.name.empty()) {
-							node = parseFile(node.values().first().name);
-						}// todo
-						else {
-							node = parseFile(node.last().name);
-						}
+						else if (not node.name.empty())
+							node = parseFile(node.values().first().name);// todo
+						else node = parseFile(node.last().name);
 					}
-					if (precedence(node) or operator_list.has(node.name))
+					if (precedence(node) or operator_list.has(node.name)) {
 						node.kind = operators;
+//						if(not isPrefixOperation(node))
+//						if(not contains(prefixOperators,node))
+					}
 					if (node.kind == operators and ch != ':') {
 						if (isFunctor(node))
 							node.kind = functor;// todo: earlier
@@ -1493,7 +1491,10 @@ private:
 						for (Node arg:node)current.add(arg);
 						current.kind = node.kind;// was: expression
 					} else {
-						current.add(&node.flat());
+						if (current.last().kind == operators)
+							current.addSmart(&node.flat());
+						else
+							current.add(&node.flat());
 					}
 				}
 			}
