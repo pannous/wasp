@@ -999,7 +999,7 @@ bool Node::isSetter() {
 	return length > 0;// i:4
 }
 
-int Node::index(String &string, int start, bool reverse) {
+int Node::index(String string, int start, bool reverse) {
 	if (reverse)return lastIndex(string, start);
 	for (int i = start; i < length; ++i) {
 		if (children[i].name == string)

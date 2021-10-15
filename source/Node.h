@@ -619,7 +619,7 @@ public:
 
 	int lastIndex(Node *node, int start = 0);
 
-	int index(String &string, int start = 0, bool reverse = false);
+	int index(String string, int start = 0, bool reverse = false);
 
 	void replace(int from, int to, Node &node);
 

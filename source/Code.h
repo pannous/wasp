@@ -433,50 +433,88 @@ chars typeName(Valtype t);
 	i32_eqz = 0x45, // use for not!
 	negate = 0x45,
 	not_truty = 0x45,
-	i32_eq = 0x46,
-	i32_ne = 0x47,
-	i32_lt = 0x48,
-	i32_gt = 0x4A,
-	i32_le = 0x4C,
-	i32_ge = 0x4E,
+		i32_eq = 0x46,
+		i32_ne = 0x47,
+		i32_lt = 0x48,
+		i32_gt = 0x4A,
+		i32_le = 0x4C,
+		i32_ge = 0x4E,
 
-	i64_eqz = 0x50,
-	f32_eqz = 0x50, // HACK: no such thing!
+		i64_eqz = 0x50,
+		f32_eqz = 0x50, // HACK: no such thing!
 
-	f32_eq = 0x5b,
-	f32_ne = 0x5c, // !=
-	f32_lt = 0x5d,
-	f32_gt = 0x5e,
-	f32_le = 0x5f,
-	f32_ge = 0x60,
 
-	f64_eq = 0x61,
-	f64_ne = 0x62, // !=
+		i64_𝖾𝗊𝗓 = 0x50,
+		i64_𝖾𝗊 = 0x51,
+		i64_𝗇𝖾 = 0x52,
+		i64_𝗅𝗍_𝗌 = 0x53,
+		i64_𝗅𝗍_𝗎 = 0x54,
+		i64_𝗀𝗍_𝗌 = 0x55,
+		i64_𝗀𝗍_𝗎 = 0x56,
+		i64_𝗅𝖾_𝗌 = 0x57,
+		i64_𝗅𝖾_𝗎 = 0x58,
+		i64_𝗀𝖾_𝗌 = 0x59,
+		i64_𝗀𝖾_𝗎 = 0x5a,
+
+		f32_eq = 0x5b,
+		f32_ne = 0x5c, // !=
+		f32_lt = 0x5d,
+		f32_gt = 0x5e,
+		f32_le = 0x5f,
+		f32_ge = 0x60,
+
+		f64_eq = 0x61,
+		f64_ne = 0x62, // !=
 	f64_lt = 0x63,
 	f64_gt = 0x64,
 	f64_le = 0x65,
 	f64_ge = 0x66,
 
-	i32_add = 0x6A,
-	i32_sub = 0x6B,
-	i32_mul = 0x6C,
-	i32_div = 0x6D,
-	i32_rem = 0x6F, // 5%4=1
-	i32_modulo = 0x6F,
+		i32_add = 0x6A,
+		i32_sub = 0x6B,
+		i32_mul = 0x6C,
+		i32_div = 0x6D,
+		i32_rem = 0x6F, // 5%4=1
+		i32_modulo = 0x6F,
 
-	i32_and = 0x71,
-	i32_or = 0x72,
-	i32_xor = 0x73,
+		i32_and = 0x71,
+		i32_or = 0x72,
+		i32_xor = 0x73,
+		i32_shl = 0x74,
+		i32_shr_s = 0x75,
+		i32_shr_u = 0x76,
+		i32_rotl = 0x77,
+		i32_rotr = 0x78,
 
-	// beginning of float opcodes
-	f32_abs = 0x8B,
-	f32_neg = 0x8C,
+		//	⚠ warning: funny UTF characters ahead! todo: replace 𝖼 => c etc?
+		i64_𝖼𝗅𝗓 = 0x79,
+		i64_𝖼𝗍𝗓 = 0x7A,
+		i64_𝗉𝗈𝗉𝖼𝗇𝗍 = 0x7B,
+		i64_𝖺𝖽𝖽 = 0x7C,
+		i64_𝗌𝗎𝖻 = 0x7D,
+		i64_𝗆𝗎𝗅 = 0x7E,
+		i64_𝖽𝗂𝗏_𝗌 = 0x7F,
+		i64_𝖽𝗂𝗏_𝗎 = 0x80,
+		i64_𝗋𝖾𝗆_𝗌 = 0x81,
+		i64_𝗋𝖾𝗆_𝗎 = 0x82,
+		i64_𝖺𝗇𝖽 = 0x83,
+		i64_𝗈𝗋 = 0x84,
+		i64_𝗑𝗈𝗋 = 0x85,
+		i64_𝗌𝗁𝗅 = 0x86,
+		i64_𝗌𝗁𝗋_𝗌 = 0x87,
+		i64_𝗌𝗁𝗋_𝗎 = 0x88,
+		i64_𝗋𝗈𝗍𝗅 = 0x89,
+		i64_𝗋𝗈𝗍𝗋 = 0x8A,
 
-	// todo : difference : ???
-	f32_ceil = 0x8D,
-	f32_floor = 0x8E,
-	f32_trunc = 0x8F,
-	f32_round = 0x90,// truncation ≠ proper rounding!
+		// beginning of float opcodes
+		f32_abs = 0x8B,
+		f32_neg = 0x8C,
+
+		// todo : difference : ???
+		f32_ceil = 0x8D,
+		f32_floor = 0x8E,
+		f32_trunc = 0x8F,
+		f32_round = 0x90,// truncation ≠ proper rounding!
 	f32_nearest = 0x90,
 
 	f32_sqrt = 0x91,
@@ -537,6 +575,7 @@ chars typeName(Valtype t);
 	i𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟨𝟦 = 0xBD,
 	f𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟥𝟤 = 0xBE,
 	f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦 = 0xBF,
+	f32_from_f64 = f𝟥𝟤_𝖽𝖾𝗆𝗈𝗍𝖾_𝖿𝟨𝟦,
 
 	//	signExtensions
 	i32_extend8_s = 0xC0,
