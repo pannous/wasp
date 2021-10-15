@@ -1225,6 +1225,7 @@ Code cast(Valtype from, Valtype to) {
 	if (from == i64 and to == f32) return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌).addByte(f32_from_f64);
 	if (from == void_block)return nop;// todo: pray
 	if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
+	if (from == i64 and to == array)return Code(i𝟥𝟤_𝗐𝗋𝖺𝗉_𝗂𝟨𝟦);;// pray / assume i32 is a pointer here. todo!
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
 	error("incompatible types "s + typeName(from) + " => " + typeName(to));
