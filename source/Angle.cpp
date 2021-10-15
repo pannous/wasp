@@ -285,6 +285,8 @@ bool isPrimitive(Node node) {
 	Type type = node.kind;
 	if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
 		return true;
+	if (type == codepoints)// todo ...?
+		return true;
 	return false;
 }
 
@@ -801,7 +803,6 @@ Node analyze(Node node, String context) {
 	}
 	if (isPrimitive(node)) {
 		if (isVariable(node) and not localContext.has(name)) {
-			// or type == codepoints …
 			localContext.add(name);// need to pre-register before emitBlock!
 			localContextTypes.add(mapType(node));
 		}
@@ -809,31 +810,30 @@ Node analyze(Node node, String context) {
 	}
 
 	bool is_function = isFunction(node);
+	//todo merge/clean
 	if (type == operators or type == call or is_function) {
 		if (is_function)node.kind = call;
 		Node grouped = groupOperators(node, context);// outer analysis id(3+3) => id(+(3,3))
 		if (grouped.length > 0)
 			for (Node &child: grouped) {// inner analysis while(i<3){i++}
 				if (&child == 0)continue;
-//			if (child.kind == groups or child.kind == objects)// what if applying to real list though ?f([1,2,3])
-//				child.setType(expression);
-				const Node &analyze1 = analyze(child);
-				child = analyze1;// REPLACE with their ast? NO! todo
+				child = analyze(child);// REPLACE with their ast
 			}
 		if (functionSignatures.has(name))
 			functionSignatures[name].is_used = true;
 		return grouped;
 	}
-
 	Node &groupedDeclarations = groupDeclarations(node, context);
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
 	Node &grouped = groupOperators(groupedFunctions, context);
 	if (analyzed[grouped.hash()])return grouped;// done!
 	analyzed.insert_or_assign(grouped.hash(), 1);
-	if (type == groups or type == objects) {// children analyzed individually, not as expression WHY?
-		for (Node &child: grouped) {
-			child = analyze(child);// REPLACE ref with their ast ok?
-		}
+	if (type == groups or type == objects or
+	    type == expression) {// children analyzed individually, not as expression WHY?
+		if (grouped.length > 0)
+			for (Node &child: grouped) {
+				child = analyze(child);// REPLACE ref with their ast ok?
+			}
 	}
 	return grouped;
 }

@@ -192,6 +192,10 @@ void testNorm() {
 	assert_emit("-‖-3‖/3", -1);
 	assert_emit("-‖-3‖/-3", 1);
 	assert_emit("-‖3‖/-3", 1);
+	assert_emit("‖-3‖>1", 1);
+	assert_emit("‖-3‖<4", 1);
+	assert_emit("‖-3‖<1", 0);
+	assert_emit("‖-3‖>4", 0);
 }
 
 void testMathOperators() {
