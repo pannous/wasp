@@ -848,7 +848,8 @@ String Node::serialize() const {
 				wasp += "(";
 			else if (kind == objects)wasp += "{";
 			else if (kind == patterns)wasp += "[";
-			else if (length > 0 and not separator) wasp += "(";// default
+			else if (length > 0 and not separator)
+				wasp += "(";// default
 		}
 		if (polish_notation and not empty(name)) wasp += name;
 		int i = 0;
