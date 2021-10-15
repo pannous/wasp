@@ -73,16 +73,17 @@ chars import_keywords[] = {"use", "require", "import", "include", 0};
 // todo aliases need NOT be in this list:
 chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠",
                           "not",
-                          "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...",
+                          "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...", "%", "mod",
+                          "modulo",
                           "..<" /*range*/,
                           "upto", "use", "include", "require", "import", "module",
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
                           "abs", /* "norm", "‖" acts as GROUP, not as operator (when parsing) */
-                          // norm ‖…‖ quite complicated for parser! ‖x‖ := √∑xᵢ²
-                          0, 0, 0,
-                          0}; // "while" ...
+		// norm ‖…‖ quite complicated for parser! ‖x‖ := √∑xᵢ²
+		                  0, 0, 0,
+		                  0}; // "while" ...
 // todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
 //  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
 // ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
