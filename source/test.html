@@ -37,6 +37,7 @@ function resizeCanvas() {
     canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
     WIDTH = canvas.width;
     HEIGHT = canvas.height;
+    log(WIDTH, HEIGHT);
     imageData = ctx.createImageData(WIDTH, HEIGHT);
     // clearScreen();
     // window.paint(loop);
