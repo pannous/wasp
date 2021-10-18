@@ -22,6 +22,8 @@ bool contains(chars list[], chars match);
 
 unsigned int wordHash(const char *str, int max_chars = 20);
 
-char *readFile(chars filename,int* size_out=0);// 0 = err
+char *readFile(chars filename, int *size_out = 0);// 0 = err
 
 bool similar(float a, float b);
+
+extern double pi;

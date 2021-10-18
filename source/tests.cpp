@@ -1812,6 +1812,22 @@ void testPaintWasm() {
 #endif
 }
 
+void test_sin() {
+	assert_equals(sin(0), 0);
+	assert_equals(sin(pi / 2), 1);
+	assert_equals(sin(-pi / 2), -1);
+	assert_equals(sin(pi), 0);
+	assert_equals(sin(2 * pi), 0);
+	assert_equals(sin(3 * pi / 2), -1);
+
+	assert_equals(cos(-pi / 2 + 0), 0);
+	assert_equals(cos(0), 1);
+	assert_equals(cos(-pi / 2 + pi), 0);
+	assert_equals(cos(-pi / 2 + 2 * pi), 0);
+	assert_equals(cos(pi), -1);
+	assert_equals(cos(-pi), -1);
+}
+
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp!
 void testCurrent() {
@@ -1820,6 +1836,11 @@ void testCurrent() {
 	panicking = true;
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	testMergeWabt();
+	exit(1);
+	assert_emit("use sin;sin π/2", 1);
+	assert_emit("use sin;sin π", 0);
+	test_sin();
 	testModulo();
 	testWasmTernary();
 //	assert_emit("(√((x-c)^2+(y-c)^2)<r?0:255)");
@@ -1828,10 +1849,11 @@ void testCurrent() {
 //(x-c)^2+(y-c)^2
 //	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
 ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
-char *wasm_paint_routine = "w=1920;c=200;r=100;surface=(1,2);i=0;"
-                           "while(i<1000000){"
-                           "i++;x=i%w;y=i/w;surface#i=((x-c)^2+(y-c)^2 < r^2)?0x44aa88:0xffeedd"
-                           "};paint";
+	char *wasm_paint_routine = "w=1920;c=500;r=100;surface=(1,2);i=0;"
+	                           "while(i<1000000){"
+	                           "i++;x=i%w;y=i/w;surface#i=(x-c)^2+(y-c)^2"
+	                           "};paint";
+//((x-c)^2+(y-c)^2 < r^2)?0x44aa88:0xffeedd
 ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
 	assert_emit(wasm_paint_routine, 0);
 	return;
