@@ -89,6 +89,7 @@ Code vec() {
 	int len = siz();
 	consume(len, 0);
 	return Code(code, from, pos);
+
 }
 
 Code consumeTypeSection() {
@@ -143,7 +144,7 @@ static void ParseOptions(int argc, char **argv); // wasm-link.cc
 //	str_vec.erase(std::remove(str_vec.begin(), str_vec.end(), element), str_vec.end());
 //}
 
-void remove_import(Module *module, chars fun) {
+void remove_import(wabt::Module *module, chars fun) {
 	std::vector<Import *> &imports = module->imports;
 	for (wabt::Import *import : imports) {
 		if (import->field_name == fun)
@@ -151,7 +152,7 @@ void remove_import(Module *module, chars fun) {
 	}
 }
 
-void remove_function(Module *module, chars fun) {
+void remove_function(wabt::Module *module, chars fun) {
 	std::vector<Func *> &funcs = module->funcs;
 	for (wabt::Func *func : funcs) {
 		if (func->name == fun) {
@@ -161,10 +162,10 @@ void remove_function(Module *module, chars fun) {
 }
 
 
-void write_module(Module *module, chars file = 0) {
+void write_module(wabt::Module *module, chars file = 0) {
 //	string_view filename = module->loc.filename;
 	std::string filename = module->loc.filename.to_string();
-	if (fileempty(name)) filename = "out.wasm";
+//	if (fileempty(name)) filename = "out.wasm";
 	if (file)filename = file;
 //	FileStream *stream = new FileStream(filename);
 	MemoryStream *stream = new MemoryStream();// MoveDataImpl not implemented for FileStream
@@ -179,11 +180,11 @@ void write_module(Module *module, chars file = 0) {
 	stream->WriteToFile(filename);
 }
 
-void save_wasm(Module *module, chars file) {
+void save_wasm(wabt::Module *module, chars file) {
 	write_module(module, file);
 }
 
-Module *refactor_wasm(Module *module, chars old_name, chars new_name) {
+wabt::Module *refactor_wasm(wabt::Module *module, chars old_name, chars new_name) {
 	if (eq(old_name, new_name)) {
 		warn("refactor_wasm: old and new name are the same");
 		return 0;
@@ -202,14 +203,14 @@ Module *refactor_wasm(Module *module, chars old_name, chars new_name) {
 }
 
 
-Module *read_wasm(bytes data, int size, const char *filename = "<binary>") {
+wabt::Module *read_wasm(bytes data, int size, const char *filename = "<binary>") {
 	Features features;
 	features.EnableAll();
 	ReadBinaryOptions options;
 	options.features = features;
 	options.read_debug_names = 1;
 	Errors errors;
-	Module *module = new Module();
+	wabt::Module *module = new wabt::Module();
 	wabt::ReadBinaryIr(filename, data, size, options, &errors, module);
 	for (wabt::Func *f : module->funcs) {
 		printf("%s\n", f->name.data());
@@ -250,16 +251,28 @@ int readWat(const char *infile) {
 }
 
 
-Module *readWasm(char const *file) {
+wabt::Module *readWasm(char const *file) {
 //	readWat(file);
 	printf("parsing: %s\n", file);
 	int size = fileSize(file);
 	if (size <= 0)error("File not found "s + file);
 	unsigned char buffer[size];
 	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
-	Module *module = read_wasm(buffer, size, file);
+	wabt::Module *module = read_wasm(buffer, size, file);
 	check(module->loc.filename == file);
 	return module;
+}
+
+Code merge_wasm(::Module lib, ::Module main) {
+	printf("merge_wasm WABT! dummy");
+}
+
+::Module read_wasm(bytes buffer, int size0) {
+	printf("read_wasm WABT! dummy");
+}
+
+::Module read_wasm(char const *) {
+	printf("read_wasm WABT! dummy");
 }
 
 #undef pointerr

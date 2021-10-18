@@ -19,18 +19,18 @@
  * limitations under the License.
  */
 
-#include "src/wasm-link.h"
+#include "wasm-link.h"
 
 #include <memory>
 #include <vector>
 
-#include "src/binary-reader.h"
-#include "src/binding-hash.h"
-#include "src/binary-writer.h"
-#include "src/leb128.h"
-#include "src/option-parser.h"
-#include "src/stream.h"
-#include "src/binary-reader-linker.h"
+#include "binary-reader.h"
+#include "binding-hash.h"
+#include "binary-writer.h"
+#include "leb128.h"
+#include "option-parser.h"
+#include "stream.h"
+#include "binary-reader-linker.h"
 
 #define FIRST_KNOWN_SECTION BinarySection::Type
 //#define LOG_DEBUG(fmt, ...) if (s_debug) s_log_stream->Writef(fmt, __VA_ARGS__);
@@ -83,7 +83,7 @@ LinkerInputBinary::LinkerInputBinary(const char *filename, const std::vector<uin
 		  table_elem_count(0) {}
 
 bool LinkerInputBinary::IsFunctionImport(Index index) {
-	assert(IsValidFunctionIndex(index));
+//	assert(IsValidFunctionIndex(index));
 	return index < function_imports.size();
 }
 
@@ -140,18 +140,29 @@ static void ApplyRelocation(const Section *section, const Reloc *r) {
 	Index cur_value = 0, new_value = 0;
 	ReadU32Leb128(section_data + r->offset, section_data + section_size, &cur_value);
 
-	switch (r->type_section) {
-		case RelocType::FuncIndexLEB:
+	switch (r->type) {
+		case RelocType::FuncIndexLEB: {
 			new_value = binary->RelocateFuncIndex(cur_value);
+			// if calls are padded
+			short nop_offset = r->offset + 1;
+			while (section_data[nop_offset] == 0x80)
+				*(section_data + nop_offset++) = 0x01;// NOP the rest!
+			*(section_data + nop_offset) = 0x01;// ONE MORE NOP to delete the old value
+			// else CHECK SIZE!
+			WriteU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
+		}
 			break;
 		case RelocType::TypeIndexLEB:
 			new_value = binary->RelocateTypeIndex(cur_value);
+			WriteFixedU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
 			break;
 		case RelocType::TableIndexSLEB:
 			new_value = cur_value + binary->table_index_offset;
+			WriteFixedU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
 			break;
 		case RelocType::GlobalIndexLEB:
 			new_value = binary->RelocateGlobalIndex(cur_value);
+			WriteFixedU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
 			break;
 		case RelocType::TableIndexI32:
 		case RelocType::MemoryAddressLEB:
@@ -159,7 +170,8 @@ static void ApplyRelocation(const Section *section, const Reloc *r) {
 		case RelocType::MemoryAddressI32:
 		case RelocType::FunctionOffsetI32:
 		case RelocType::SectionOffsetI32:
-		case RelocType::EventIndexLEB:
+//		case RelocType::FuncIndexLEB:
+//				case RelocType::EventIndexLEB:
 		case RelocType::MemoryAddressRelSLEB:
 		case RelocType::TableIndexRelSLEB:
 		case RelocType::GlobalIndexI32:
@@ -172,10 +184,10 @@ static void ApplyRelocation(const Section *section, const Reloc *r) {
 		case RelocType::TableNumberLEB:
 		case RelocType::MemoryAddressTLSSLEB:
 		case RelocType::MemoryAddressTLSI32:
-			WABT_FATAL("unhandled relocation type: %s\n", GetRelocTypeName(r->type_section));
+			WABT_FATAL("unhandled relocation type: %s\n", GetRelocTypeName(r->type));
+			// uh much to do!
 	}
-
-	WriteFixedU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
+// THIS Write only makes sense for LEB types!
 }
 
 // https://github.com/hyperledger-labs/solang/commit/7bb623bc864106c70b209aa8ec4dfe15ac262b68
@@ -254,14 +266,16 @@ private:
 
 	MemoryStream stream_;
 	std::vector<std::unique_ptr<LinkerInputBinary>> inputs_;
-	ssize_t current_section_payload_offset_ = 0;
+	ssize_t current_payload_offset_ = 0;
+
+	Section *getSection(std::unique_ptr<LinkerInputBinary> &uniquePtr, BinarySection section);
 };
 
 void Linker::WriteSectionPayload(Section *sec) {
-	assert(current_section_payload_offset_ != -1);
+	assert(current_payload_offset_ != -1);
 
 	sec->output_payload_offset =
-			stream_.offset() - current_section_payload_offset_;
+			stream_.offset() - current_payload_offset_;
 
 	uint8_t *payload = &sec->binary->data[sec->payload_offset];
 	stream_.WriteData(payload, sec->payload_size, "section content");
@@ -270,8 +284,8 @@ void Linker::WriteSectionPayload(Section *sec) {
 Linker::Fixup Linker::WriteUnknownSize() {
 	Offset fixup_offset = stream_.offset();
 	WriteFixedU32Leb128(&stream_, 0, "unknown size");
-	current_section_payload_offset_ = stream_.offset();
-	return std::make_pair(fixup_offset, current_section_payload_offset_);
+	current_payload_offset_ = stream_.offset();
+	return std::make_pair(fixup_offset, current_payload_offset_);
 }
 
 void Linker::FixupSize(Fixup fixup) {
@@ -302,14 +316,14 @@ void Linker::WriteTableSection(const SectionPtrVector &sections) {
 void Linker::WriteExportSection() {
 	Index total_exports = 0;
 	for (const std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
-		total_exports += binary->export_section.size();
+		total_exports += binary->exports.size();
 	}
 
 	Fixup fixup = WriteUnknownSize();
 	WriteU32Leb128(&stream_, total_exports, "export count");
 
 	for (const std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
-		for (const Export &export_ : binary->export_section) {
+		for (const Export &export_ : binary->exports) {
 			WriteStr(&stream_, export_.name, "export name");
 			stream_.WriteU8Enum(export_.kind, "export kind");
 			Index index = export_.index;
@@ -343,7 +357,7 @@ void Linker::WriteElemSection(const SectionPtrVector &sections) {
 	WriteOpcode(&stream_, Opcode::End);
 	WriteU32Leb128(&stream_, total_elem_count, "num elements");
 
-	current_section_payload_offset_ = stream_.offset();
+	current_payload_offset_ = stream_.offset();
 
 	for (Section *section : sections) {
 		ApplyRelocations(section);
@@ -380,7 +394,7 @@ void Linker::WriteGlobalImport(const GlobalImport &import) {
 	WriteStr(&stream_, import.module_name, "import module name");
 	WriteStr(&stream_, import.name, "import field name");
 	stream_.WriteU8Enum(ExternalKind::Global, "import kind");
-	WriteType(&stream_, import.type_section);
+	WriteType(&stream_, import.type);
 	stream_.WriteU8(import.mutable_, "global mutability");
 }
 
@@ -480,7 +494,7 @@ void Linker::WriteNamesSection() {
 	}
 
 	stream_.WriteU8Enum(BinarySection::Custom, "section code");
-	Fixup fixup_section = WriteUnknownSize();
+	Fixup fixup = WriteUnknownSize();
 	WriteStr(&stream_, "name", "custom section name");
 
 	stream_.WriteU8Enum(NameSectionSubsection::Function, "subsection code");
@@ -513,7 +527,7 @@ void Linker::WriteNamesSection() {
 	}
 
 	FixupSize(fixup_subsection);
-	FixupSize(fixup_section);
+	FixupSize(fixup);
 }
 
 void Linker::WriteLinkingSection(uint32_t data_size, uint32_t data_alignment) {
@@ -554,7 +568,7 @@ bool Linker::WriteCombinedSection(BinarySection section_code, const SectionPtrVe
 	}
 
 	stream_.WriteU8Enum(section_code, "section code");
-	current_section_payload_offset_ = -1;
+	current_payload_offset_ = -1;
 
 	switch (section_code) {
 		case BinarySection::Import:
@@ -585,7 +599,7 @@ bool Linker::WriteCombinedSection(BinarySection section_code, const SectionPtrVe
 			// Write section to stream.
 			WriteU32Leb128(&stream_, total_size, "section size");
 			WriteU32Leb128(&stream_, total_count, "element count");
-			current_section_payload_offset_ = stream_.offset();
+			current_payload_offset_ = stream_.offset();
 			for (Section *sec : sections) {
 				ApplyRelocations(sec);
 				WriteSectionPayload(sec);
@@ -618,7 +632,7 @@ void Linker::ResolveSymbols() {
 	std::vector<FuncInfo> func_list;
 
 	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-		for (const Export &export_ : binary->export_section) {
+		for (const Export &export_ : binary->exports) {
 			export_list.emplace_back(&export_, binary.get());
 			// TODO(sbc): Handle duplicate names.
 			export_map.emplace(export_.name, Binding(export_list.size() - 1));
@@ -629,10 +643,10 @@ void Linker::ResolveSymbols() {
 				func_list.emplace_back(&func, binary.get());
 			}
 		}
-//		for (int i = 0; i < binary->debug_names.size(); ++i) {
-//			std::string &name = binary->debug_names[i];
-//			func_map.emplace(name, i);
-//		}
+		for (int i = 0; i < binary->debug_names.size(); ++i) {
+			std::string &name = binary->debug_names[i];
+			func_map.emplace(name, i);
+		}
 	}
 
 	// Iterate through all imported functions resolving them against exported
@@ -646,12 +660,20 @@ void Linker::ResolveSymbols() {
 				// We found the symbol exported by another module.
 				const ExportInfo &export_info = export_list[export_index];
 
-				// TODO(sbc): verify the foriegn function has the correct signature.
+				// TODO(sbc): verify the foreign function has the correct signature.
 				import.active = false;
 				import.foreign_binary = export_info.binary;
 				import.foreign_index = export_info.export_->index;
 				binary->active_function_imports--;
-
+				printf("LINKED export to import: %s\n", import.name.data());
+				binary->sections;
+				Section *section = getSection(binary, BinarySection::Code);
+				Reloc reloc(wabt::RelocType::FuncIndexLEB, 4, 1);
+//				Reloc reloc(wabt::RelocType::FunctionOffsetI32, 0, 0);
+// todo: calculate after all: CalculateRelocOffsets(), THEN :
+//				reloc->offset = binary->function_index_offset;
+//if(section)
+				section->relocations.push_back(reloc);
 			} else {
 				// link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
 				Index func_index = func_map.FindIndex(import.name);
@@ -660,6 +682,7 @@ void Linker::ResolveSymbols() {
 				import.foreign_binary = funcInfo.binary;
 				import.foreign_index = funcInfo.func->index;
 				binary->active_function_imports--;
+				printf("LINKED unexported function to import: %s\n", import.name.data());
 			}
 //			if (export_index == kInvalidIndex) {
 //				if (!s_relocatable)
@@ -782,13 +805,20 @@ void Linker::DumpRelocOffsets() {
 Result Linker::PerformLink() {
 	CalculateRelocOffsets();
 	ResolveSymbols();
-	CalculateRelocOffsets();
+	CalculateRelocOffsets();// again: might be negative if import is removed!
 	DumpRelocOffsets();
 	WriteBinary();
 	if (Failed(stream_.WriteToFile(outfile))) {
 		WABT_FATAL("error writing linked output to file\n");
 	}
 	return Result::Ok;
+}
+
+Section *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, BinarySection section) {
+	for (std::unique_ptr<Section> &sec : binary->sections) {
+		if (sec->section_code == section)return sec.get();
+	}
+	return nullptr;
 }
 
 int merge_files(std::vector<std::string> infiles) {

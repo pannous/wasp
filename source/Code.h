@@ -37,6 +37,12 @@ Code &signedLEB128(long value);
 
 class Code {
 public:
+	Code(byte *data0, int from, int pos) {
+		data = data0;
+		start = from;
+//		pos=???
+	}
+
 	virtual ~Code() {
 		data = 0;
 	}
