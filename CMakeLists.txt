@@ -16,6 +16,14 @@ LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
 #set(RELEASE 0) # no tests
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh
+set(WABT_MERGE 1) # not the whole WABT though
+if (WABT_MERGE)
+    set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt/src/ ./source/wasm_merger_wabt.cpp ./source/wasm_reader_wabt.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt_merge/binary-reader-linker.cc)
+else ()
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp source/wasm_merger.cpp)
+endif ()
+
 
 #ADD_COMPILE_DEFINITIONS(DEBUG_WASM3) # WASM3 best for development!
 #ADD_COMPILE_DEFINITIONS(NO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
@@ -33,19 +41,18 @@ if (NOT WASM)
     ADD_COMPILE_DEFINITIONS(_Backtrace_)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     if (NOT RUNTIME_ONLY)
-            # TO EXECUTE wasm:
-            # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
-            #            SET(V8 1)
-            #                        SET(WASMTIME 1) # FASTEST!
-            #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
-#            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
-            #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
-            #            set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
-            #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-            set(WEBAPP 1) # WebView for electron like standalone apps.
+        # TO EXECUTE wasm:
+        # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
+        #            SET(V8 1)
+        #                        SET(WASMTIME 1) # FASTEST!
+        #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+        #            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+        #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
+        #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
+        #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
+        set(WEBAPP 1) # WebView for electron like standalone apps.
     endif ()
 endif ()
-
 
 
 if (RELEASE)
@@ -166,7 +173,7 @@ if (RUNTIME_ONLY)
     ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY)
 else ()
     message(NOT RUNTIME_ONLY)
-    set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp source/Code.cpp source/wasm_emitter.cpp source/wasm_reader.cpp source/wasm_merger.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp source/Code.cpp source/wasm_emitter.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/Interpret.cpp)
 endif ()
 
@@ -381,6 +388,20 @@ else () # NORMAL:
     #    TARGET_LINK_LIBRARIES(wasp curl)
     #    add_custom_target(BuildWasp ALL DEPENDS angle)
 endif ()
+
+
+if (NOT WASM)
+    if (WABT_MERGE)
+        target_include_directories(wasp PUBLIC Frameworks/wabt)
+        target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt/src)
+        target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt_merge/)
+        target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt_merge/tools)
+        target_link_libraries(wasp PRIVATE wasm)     #    libwabt is called libwasm.dylib DANGER!
+
+        #    target_include_directories(wasp PUBLIC Frameworks/wabt/src/interp)
+    endif ()
+endif ()
+
 
 #set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build

@@ -7,7 +7,7 @@
 #include "wasm_helpers.h"
 #include "wasm_emitter.h"
 #include "wasm_runner.h"
-
+void testCurrent();
 // get home dir :
 /*#include <unistd.h>
 #include <sys/types.h>

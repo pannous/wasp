@@ -8,17 +8,17 @@
 #include "ir.h"
 #include "wasm_emitter.h"
 
-using wabt::Module;
+//using wabt::Module;
 
-Module *read_wasm(bytes data, int size, const char *filename);
+wabt::Module *read_wasm(bytes data, int size, const char *filename);
 
-Module *readWasm(char const *file);
+wabt::Module *readWasm(char const *file);
 
-Module *refactor_wasm(Module *module, chars old_name, chars new_name);
+wabt::Module *refactor_wasm(wabt::Module *module, chars old_name, chars new_name);
 
-void save_wasm(Module *module, chars file = "out.wasm");
+void save_wasm(wabt::Module *module, chars file = "out.wasm");
 
-void remove_function(Module *module, chars fun);
+void remove_function(wabt::Module *module, chars fun);
 
 
 #endif //WASP_WASM_READER_WABT_H

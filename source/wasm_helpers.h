@@ -8,7 +8,7 @@
 #include <cstddef> // size_t
 
 #else
-#define size_t unsigned long
+//#define size_t unsigned long
 //#define size_t unsigned int // error: 'operator new' takes type size_t ('unsigned long') as first parameter
 #endif
 
@@ -55,7 +55,13 @@ extern "C" void panic();//
 #endif
 #endif
 
+#ifndef WASM
+
 int raise(chars error); // conflicts with signal.h if 'extern'
+#else
+extern int raise(chars error); // conflicts with signal.h if 'extern'
+#endif
+
 int squari(int a);// stupid test remove
 //extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
@@ -160,7 +166,6 @@ void free(void*);
 extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_unstable"), import_name("proc_exit"))); // wasmtime ++
 //extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_snapshot_preview1"), import_name("proc_exit")));// wasmer WTF
 
-extern "C" int raise(chars);
 //extern "C" void exit(int code);
 //extern "C" void exit(int fd) __attribute__((__noreturn__));
 
