@@ -940,7 +940,8 @@ int runtime_emit(String prog) {
 }
 
 // todo dedup runtime_emit!
-Node emit(String code, ParseOptions options) {
+//Node emit(String code, ParseOptions options) {
+Node emit(String code) {
 //	if (code.endsWith(".wasm")){
 //		auto filename = findFile(code);
 //		return Node(run_wasm(filename));
@@ -961,10 +962,10 @@ Node emit(String code, ParseOptions options) {
 	Node charged = analyze(data);
 	charged.log();
 	Code binary;
-	if (options & no_main) // todo: lib_main!
-		binary = emit(charged, 0, 0);
-	else
-		binary = emit(charged);
+//	if (options & no_main) // todo: lib_main!
+//		binary = emit(charged, 0, 0);
+//	else
+	binary = emit(charged);
 //	code.link(wasp) more beautiful with multiple memory sections
 	int result = binary.run();
 	return Node(result);
