@@ -8,6 +8,8 @@
 #include <wasm.h>
 #include <wasmtime.h>
 
+#define WASMTIME
+
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap);
 
 const wasm_functype_t *funcType(Signature &signature);

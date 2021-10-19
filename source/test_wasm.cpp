@@ -72,7 +72,9 @@ void testWasmTernary() {
 	assert_emit("2<1?3:4", 4);
 	assert_emit("1<0?3:4", 4);
 //	assert_emit("(1<2)?10:255", 255);
+#ifndef WASMTIME
 	assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
+#endif
 	assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
 	skip(
 	// What seems to be the problem?
