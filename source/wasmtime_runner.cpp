@@ -62,6 +62,12 @@ wrap(powf) {
 	return NULL;
 }
 
+wrap(powi) {
+	int n = args[0].of.i32;
+	int x = args[1].of.i32;
+	results[0].of.i32 = powi(n, x);
+	return NULL;
+}
 
 wrap(logs) {
 	int n = args[0].of.i32;
@@ -109,6 +115,9 @@ wasm_wrap *link_import(String name) {
 	if (name == "_ZdlPv") return &wrap_nop;// delete
 	if (name == "_Z3powdd") return &wrap_powd;
 	if (name == "pow") return &wrap_powd;
+	if (name == "powf") return &wrap_powf;
+	if (name == "powi") return &wrap_powi;
+
 	if (name == "_ZSt9terminatev") return &wrap_exit;
 	if (name == "proc_exit") return &wrap_exit;
 	if (name == "panic") return &wrap_exit;
@@ -241,6 +250,10 @@ const wasm_functype_t *funcType(Signature &signature) {
 		switch (signature.return_type) {
 			case int32:
 				return wasm_functype_new_2_1(i, i, i); // printf(i32,i32)i32
+			case int64:
+				return wasm_functype_new_2_1(i, i, I);
+			case float32:
+				return wasm_functype_new_2_1(f, f, f);
 			case float64:
 				return wasm_functype_new_2_1(F, F, F); // powd(f64,f64)f64
 			default:
