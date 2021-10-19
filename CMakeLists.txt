@@ -16,7 +16,7 @@ LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
 #set(RELEASE 0) # no tests
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh
-set(WABT_MERGE 0) # not the whole WABT though
+#set(WABT_MERGE 0) # not the whole WABT though
 if (WABT_MERGE)
     set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt/src/ ./source/wasm_merger_wabt.cpp ./source/wasm_reader_wabt.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt_merge/binary-reader-linker.cc)
@@ -44,9 +44,9 @@ if (NOT WASM)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         #            SET(V8 1)
-        #                        SET(WASMTIME 1) # FASTEST!
+        SET(WASMTIME 1) # FASTEST!
         #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
-        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+        #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
