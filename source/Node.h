@@ -100,7 +100,7 @@ union Value {
 
 
 struct TypedValue {
-	Type type;// 1 byte!
+	::Type type;// 1 byte!
 	//	Kind kind;
 	//	ValueKind kind;
 //	Node* type; forseeing? but:
@@ -119,7 +119,7 @@ public:
 	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 
 //	Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
-	Type kind = unknown;// todo: merge with Node.type/class ? :
+	::Type kind = unknown;// todo: merge with Node.type/class ? :
 //	Node *type = 0;// variable/reference type or object class?
 //	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
@@ -629,7 +629,7 @@ public:
 
 	Node &metas();
 
-	Node &setType(Type type, bool check = true);
+	Node &setType(::Type type, bool check = true);
 
 	Node &setType(const char *string) {// setClass
 //		type = &Node(string).setType(classe);
