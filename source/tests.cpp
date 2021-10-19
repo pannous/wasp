@@ -1841,7 +1841,7 @@ void testCurrent() {
 //	throwing = true;//
 	panicking = true;
 	data_mode = false; // a=b => a,=,b before analysis
-	data_mode = true;
+//	data_mode = true;
 	assert_emit("not ø", true);
 	assert_emit("logs('ok');(1 4 3)#2", 4);
 
@@ -1869,7 +1869,7 @@ void testCurrent() {
 //	assert_emit(wasm_paint_routine, 0);
 //	return;
 //	exit(1);
-	testPaintWasm();
+//	testPaintWasm();
 	//	assert_run("render html{'test'}", 4);
 	skip(
 			assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!

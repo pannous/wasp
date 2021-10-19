@@ -1197,6 +1197,7 @@ Code cast(Valtype from, Valtype to) {
 	Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
 	if (to == none)return nop;// no cast needed magic VERSUS wasm drop!!!
 	if (from == to)return nop;// nop
+
 	if (from == array and to == charp)return nop;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
 	if (from == i32t and to == charp)return nop;// assume i32 is a pointer here. todo?
 	if (from == charp and to == i32t)return nop;// assume i32 is a pointer here. todo?
@@ -1232,7 +1233,9 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==i64 and to==f64)	return Code(f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦);
 	if (from == i64 and to == f32) return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌).addByte(f32_from_f64);
 	if (from == void_block)return nop;// todo: pray
+	if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
 	if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
+	if (from == f32 and to == array)return nop;// pray / assume f32 is a pointer here. LOL NO todo!
 	if (from == i64 and to == array)return Code(i𝟥𝟤_𝗐𝗋𝖺𝗉_𝗂𝟨𝟦);;// pray / assume i32 is a pointer here. todo!
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
