@@ -112,6 +112,16 @@ int strlen0(chars x) {
 	return l;
 }
 
+// INCORRECT! use decode_unicode_character(str, &len) !
+//size_t utf8_strlen(chars utf8bytes) {
+//	size_t len = 0;
+//	for (chars p = utf8bytes; *p; ++p)
+//		if ((*p & 0xc0) != 0x80)
+//			++len;
+//	return len;
+//}
+
+
 // or cstring
 //#ifndef cstring
 // needs manual 0 termination, or copy with length + 1
@@ -137,6 +147,79 @@ void strcpy2(char *dest, chars src) {
 
 //#endif
 
+
+/*		(*p) - 0x11052 // …
+ *
+Some start with 1…9 missing 0
+ 0x278A	10122	DINGBAT NEGATIVE CIRCLED SANS-SERIF DIGIT ONE	➊
+ 0x2780	10112	DINGBAT CIRCLED SANS-SERIF DIGIT ONE	➀
+ 0x2776	10102	DINGBAT NEGATIVE CIRCLED DIGIT ONE	❶
+ 0x2488	9352	DIGIT ONE FULL STOP	⒈   1.st ≠ 1!
+0x2474	9332	PARENTHESIZED DIGIT ONE	⑴
+ 0x2460	9312	CIRCLED DIGIT ONE	①
+ 𑁒	11052	BRAHMI NUMBER ONE
+  𐄇	10107	AEGEAN NUMBER ONE
+ 𐋪 	102EA	COPTIC EPACT NUMBER TEN
+ 𐡘	67672	𐡘	10858	IMPERIAL ARAMAIC NUMBER ONE
+ 𐤖	67862	𐤖	10916	PHOENICIAN NUMBER ONE
+ 0x1372	4978	ETHIOPIC NUMBER TEN	፲
+ 0x2469	9321	CIRCLED NUMBER TEN	⑩
+ 𐌠	66336	𐌠	10320	OLD ITALIC NUMERAL ONE
+0x3021	12321	HANGZHOU NUMERAL ONE	〡
+0x2170	8560	SMALL ROMAN NUMERAL ONE	ⅰ
+0x2160	8544	ROMAN NUMERAL ONE	Ⅰ
+𝍠	119648	𝍠	1D360	COUNTING ROD UNIT DIGIT ONE
+ 𐋡	66273	𐋡	102E1	COPTIC EPACT DIGIT ONE
+8160	𐩀	10A40	KHAROSHTHI DIGIT ONE ... only to 4 !
+
+ some start with 0…9 !
+ 0xFF10	65296	FULLWIDTH DIGIT ZERO	０
+𝟶	120822	𝟶	1D7F6	MATHEMATICAL MONOSPACE DIGIT ZERO
+𝟬	120812	𝟬	1D7EC	MATHEMATICAL SANS-SERIF BOLD DIGIT ZERO
+𝟢	120802	𝟢	1D7E2	MATHEMATICAL SANS-SERIF DIGIT ZERO
+ 𝟘	120792	𝟘	1D7D8	MATHEMATICAL DOUBLE-STRUCK DIGIT ZERO
+ 𝟎	120782	𝟎	1D7CE	MATHEMATICAL BOLD DIGIT ZERO
+ 𑁦	69734	𑁦	11066	BRAHMI DIGIT ZERO
+ 0x1810	6160	MONGOLIAN DIGIT ZERO	᠐
+ 0x17E0	6112	KHMER DIGIT ZERO	០
+ 0x1040	4160	MYANMAR DIGIT ZERO	၀
+ 0x0F20	3872	TIBETAN DIGIT ZERO	༠
+ 0x0ED0	3792	LAO DIGIT ZERO	໐
+ 0x0E50	3664	THAI DIGIT ZERO	๐
+ 0x0CE6	3302	KANNADA DIGIT ZERO	೦
+ 0x0C66	3174	TELUGU DIGIT ZERO	౦
+ 0x0BE7	3047	TAMIL DIGIT ONE	௧
+ 0x0B66	2918	ORIYA DIGIT ZERO	୦
+ 0x0AE6	2790	GUJARATI DIGIT ZERO	૦
+ 0x09E6	2534	BENGALI DIGIT ZERO	০
+ 0x0966	2406	DEVANAGARI DIGIT ZERO	०
+ 0x06F0	1776	EXTENDED ARABIC-INDIC DIGIT ZERO	۰
+ 0x0660	1632	ARABIC-INDIC DIGIT ZERO	٠
+ */
+// todo
+int zeros[] = {0x1D7F6, 0x1D7EC, 0x1D7E2, 0x1D7D8, 0x1D7CE, 0x11066, 0x1810, 0x17E0, 0x1040, 0x0F20, 0x0ED0, 0x0E50,
+               0x0CE6, 0x0C66, 0x0BE7, 0x0B66, 0x0AE6, 0x09E6, 0x0966, 0x06F0, 0x0660, 0};
+int ones[] = {0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 0x102EA, 0x10858, 0x10916, 0x10320,
+              0x1D360, 0x102E1, 0x3021, 0x2170, 0x2160, 0x1372, 0x2469, 0};
+
+int atoi0(codepoint c) {
+	int offset = -1;
+	while (zeros[++offset]) {
+		int k = zeros[offset];
+		short n = c - k;
+		if (n >= 0 and n <= 9)
+			return n;
+	}
+	offset = -1;
+	while (ones[++offset]) {
+		int k = ones[offset];
+		short n = c - k + 1;
+		if (n >= 1 and n <= 9)// most dont have #10
+			return n;
+	}
+	return -1;
+}
+
 int atoi0(chars p) {
 	if (!p)return 0;
 	while (*p == '+')p++;
@@ -147,11 +230,19 @@ int atoi0(chars p) {
 	}
 	int k = 0;
 	while (*p) {
-		int n = (*p) - '0';
+		int n;
+		if (*p > 0x7F or *p < 0) {
+			// some utf8
+			short len;
+			n = atoi0(decode_unicode_character(p, &len));
+			p += len;
+		} else {
+			n = (*p) - '0';
+			p++;
+		}
 		if (n < 0 or n > 9)
 			return k;
 		k = (k << 3) + (k << 1) + n;
-		p++;
 	}
 	return sig * k;
 }
@@ -402,26 +493,18 @@ codepoint *String::end() {
 }
 
 
-size_t utf8_strlen(char *utf8bytes) {
-	size_t len = 0;
-	for (chars p = utf8bytes; *p; ++p)
-		if ((*p & 0xc0) != 0x80)
-			++len;
-	return len;
-}
-
-codepoint decode_unicode_character(char *text, int *len) {
+codepoint decode_unicode_character(chars text, short *len) {
 	if ((text[0] & 0b10000000) == 0) {
-//		if(len)*len=1; // 1 byte code point, ASCII
+		if (len)*len = 1; // 1 byte code point, ASCII
 		return (text[0] & 0b01111111);
 	} else if ((text[0] & 0b11100000) == 0b11000000) {
-//		if(len)*len=2; // 2 byte code point
+		if (len)*len = 2; // 2 byte code point
 		return (text[0] & 0b00011111) << 6 | (text[0 + 1] & 0b00111111);
 	} else if ((text[0] & 0b11110000) == 0b11100000) {
-//		if(len)*len=3; // 3 byte code point
+		if (len)*len = 3; // 3 byte code point
 		return (text[0] & 0b00001111) << 12 | (text[0 + 1] & 0b00111111) << 6 | (text[0 + 2] & 0b00111111);
 	} else {
-//		if(len)*len=4; // 4 byte code point
+		if (len)*len = 4; // 4 byte code point
 		return (text[0] & 0b00000111) << 18 | (text[0 + 1] & 0b00111111) << 12 | (text[0 + 2] & 0b00111111) << 6 |
 		       (text[0 + 3] & 0b00111111);
 	}
@@ -511,8 +594,8 @@ codepoint *String::extractCodepoints(bool again) {
 	codepoint_count = 0;
 	codepoints = (codepoint *) calloc(length, sizeof(codepoint));
 	for (int i = 0; i < length;) {
-		short count = utf8_byte_count(data[i]);
-		codepoints[codepoint_count++] = decode_unicode_character(&data[i]);
+		short count;// = utf8_byte_count(data[i]);
+		codepoints[codepoint_count++] = decode_unicode_character(&data[i], &count);
 		i += count;
 	}
 	return codepoints;

@@ -1245,7 +1245,7 @@ Code emitDeclaration(Node fun, Node &body) {
 	Signature &signature = functionSignatures[fun.name];
 	signature.emit = true;// all are 'export' for now. also set in analyze!
 	functionCodes[fun.name] = emitBlock(body, fun.name);
-//	last_type = voids;// todo reference to new symbol x = (y:=z)
+	last_type = none;// todo reference to new symbol x = (y:=z)
 	return Code();// empty
 }
 
@@ -1405,7 +1405,7 @@ Code emitBlock(Node node, String context) {
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0, used after while(){} etc) !!!
 // todo: locals must ALWAYS be collected in analyze step, emitExpression is too late!
 	last_local = 0;
-	last_type = int32;
+	last_type = none;//int32;
 	int locals_count = locals[context].size();
 	trace("found %d locals for %s"s % locals_count % context);
 //	log(locals[context]);
@@ -1429,10 +1429,11 @@ Code emitBlock(Node node, String context) {
 //	013b78: 03 7f                      | local[3..5] type=i32
 
 	Code inner_code_data = emitExpression(node, context);
-	Valtype x = last_type;
+//	if (inner_code_data.length == 0)
+//		return Code();// Drop empty functions!? too late: typeSection already done! todo?
 	block.push(inner_code_data);
 	Valtype return_type = functionSignatures[context].return_type;// switch back to return_types[context] for block?
-	auto type0 = last_type;
+	if (last_type == none) last_type = voids;
 	if (return_type != last_type) {
 		if (return_type == Valtype::voids and last_type != Valtype::voids)
 			block.addByte(drop);
@@ -1607,7 +1608,10 @@ Code codeSection(Node root) {
 	Code main_block = emitBlock(root, start);// after imports and builtins
 
 	if (start) {
-		code_blocks = code_blocks + encodeVector(main_block);
+		if (main_block.length == 0)
+			functionSignatures[start].is_used = false;
+		else
+			code_blocks = code_blocks + encodeVector(main_block);
 	} else {
 		if (main_block.length > 5)
 			error("no start function name given. null instead of 'main', can't assign block");
@@ -1676,7 +1680,7 @@ Code globalSection() {
 	globalsList.addConst(9); // complicated initialization blocks allowed!!
 	globalsList.addByte(end_block);
 	*/
-	last_type = int32;
+//	last_type = int32;
 	for (int i = 0; i < global_user_count; i++) {
 		String global_name = globals.keys[i];
 		Node *global_node = globals.values[i];
@@ -1707,6 +1711,7 @@ Code globalSection() {
 		}
 				*/
 	}
+	last_type = none; // don't leak!
 	auto globalSection = createSection(global_section, globalsList);
 	return globalSection;
 }
