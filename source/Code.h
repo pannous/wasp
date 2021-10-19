@@ -438,8 +438,8 @@ chars typeName(Valtype t);
 	f32_auto = 0x43,
 
 	i32_eqz = 0x45, // use for not!
-	negate = 0x45,
-	not_truty = 0x45,
+//	negate = 0x45,
+//	not_truty = 0x45,
 		i32_eq = 0x46,
 		i32_ne = 0x47,
 		i32_lt = 0x48,

@@ -398,6 +398,7 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "char const*")return Valtype::charp;// pointer with special semantics
 	else if (arg == "char const*&")return Valtype::charp;// todo ?
 	else if (arg == "char*")return Valtype::charp;
+	else if (arg == "char32_t*")return Valtype::charp;// huh? why now?
 	else if (arg == "char const**")return Valtype::pointer;
 	else if (arg == "short")
 		return Valtype::int32;// careful c++ ABI overflow? should be fine since wasm doesnt have short

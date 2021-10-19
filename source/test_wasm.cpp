@@ -694,24 +694,26 @@ void testOldRandomBugs() {
 //	check(module->funcs.front()->name == "_start");
 //}
 
-
+#ifdef WABT_MERGE
 #include "wasm_merger.h"
-#include "wasm_reader_wabt.h"
-#include "../Frameworks/wabt/src/ir.h"
 #include "wasm_merger_wabt.h"
+//#include "../Frameworks/wabt/src/ir.h"
+#endif
 
 void testMergeWabt() {
-//	merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
-	merge_files({"./samples/main.wasm", "./samples/lib.wasm"});
-//	wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
-//	wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
-//	refactor_wasm(module, "b", "neu");
-//	remove_function(module, "f");
-//	Module *merged = merge_wasm2(main, module);
-//	save_wasm(merged);
-//	int ok=run_wasm(merged);
-//	int ok=run_wasm("a.wasm");
-//	check(ok==42);
+#ifdef WABT_MERGE
+	//	merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
+		merge_files({"./samples/main.wasm", "./samples/lib.wasm"});
+	//	wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
+	//	wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
+	//	refactor_wasm(module, "b", "neu");
+	//	remove_function(module, "f");
+	//	Module *merged = merge_wasm2(main, module);
+	//	save_wasm(merged);
+	//	int ok=run_wasm(merged);
+	//	int ok=run_wasm("a.wasm");
+	//	check(ok==42);
+#endif
 }
 
 
