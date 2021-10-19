@@ -194,7 +194,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "^|"))return i32_xor;//always bitwise todo: truthy 0x0101 xor 0x1010 !?
 		if (eq(s, "⊻"))return i32_xor;
 
-		if (eq(s, "not"))return i32_eqz; // HACK: no such thing!
+		if (eq(s, "not"))return i32_eqz; // no such thing as i32_not, but the same if you think about it
 		if (eq(s, "¬"))return i32_eqz;
 
 	} else if (kind == i64t) { // INT32
@@ -234,7 +234,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "^|"))return i64_𝗑𝗈𝗋;//always bitwise todo: truthy 0x0101 xor 0x1010 !?
 		if (eq(s, "⊻"))return i64_𝗑𝗈𝗋;
 
-		if (eq(s, "not"))return i64_eqz; // HACK: no such thing!
+		if (eq(s, "not"))return i64_eqz;
 		if (eq(s, "¬"))return i64_eqz;
 
 	} else {
@@ -393,7 +393,9 @@ Code emitArray(Node &node, String context) {
 	}
 	if (not node.name.empty())
 		referenceIndices.insert_or_assign(ref, pointer);
-	return emitData(Node(0), context);// terminate list with 0.
+	emitData(Node(0), context);// terminate list with 0.
+	last_data = pointer;
+	return code;// pointer
 	// todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
 //	last_data = pointer;
 //	return code.addConst(pointer);// once written to data section, we also want to use it immediately
@@ -634,6 +636,7 @@ Code emitData(Node node, String context) {
 		}
 		case objects:
 		case groups:
+			// todo hold up: log("ok") should not emit an array of group(string(ok)) !?
 			// keep last_type from last child, later if mixed types, last_type=ref or smarty
 			return emitArray(node, context);
 			break;
@@ -860,7 +863,7 @@ Code emitOperator(Node node, String context) {
 		error("internal opcode not handled"s + opcode);
 	} else if (opcode > 0) {
 		code.addByte(opcode);
-		if (last_type == 0)
+		if (last_type == none or last_type == voids)
 			last_type = i32t;
 	} else if (name == "²") {
 //		error("this should be handled universally in analyse: x² => x*x no matter what!");
@@ -941,7 +944,7 @@ Code emitStringOp(Node op, String context) {
 		op = Node("getChar");//  careful : various signatures
 		return emitCall(op, context);
 	} else if (op == "not" or op == "¬") {// todo: all different index / op matches
-		op = Node("empty");//  careful : various signatures
+		op = Node("empty");//  careful : various signatures for falsey falsy truthy
 		return emitCall(op, context).add(i32_eqz);
 	} else if (op == "logs" or op == "puts" or op == "print") {// should be handled before, but if not print anyways
 		op = Node("logs");
