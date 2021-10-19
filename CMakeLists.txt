@@ -43,14 +43,14 @@ if (NOT WASM)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
-        #            SET(V8 1)
-        SET(WASMTIME 1) # FASTEST!
-        #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+        #        SET(V8 1)
+        #        SET(WASMTIME 1) # FASTEST!
+        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-        #                set(WEBAPP 1) # WebView for electron like standalone apps.
+        #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
     endif ()
 endif ()
 
@@ -342,6 +342,7 @@ elseif (WASMER)
     target_include_directories(wasp PUBLIC Frameworks/wasmer-c-api)
     target_link_libraries(wasp PRIVATE wasmer)
 elseif (WASMTIME)
+    #    add_compile_definitions(WASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
