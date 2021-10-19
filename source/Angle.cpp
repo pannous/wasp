@@ -431,7 +431,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 	int last_position = 0;
 	for (String &op : operators) {
 		if (op == "-…") op = "-";// precedence hack
-		if (op == "import") {
+		if (op == "include") {
 			warn(expression.serialize());
 			return NIL;
 		}
@@ -936,12 +936,11 @@ int runtime_emit(String prog) {
 }
 
 // todo dedup runtime_emit!
-Node emit(String code) {
+Node emit(String code, ParseOptions options) {
 //	if (code.endsWith(".wasm")){
 //		auto filename = findFile(code);
 //		return Node(run_wasm(filename));
 //	}
-//
 	if (code.endsWith(".wasp"))
 		code = readFile(findFile(code));
 	debug_code = code;// global so we see when debugging
@@ -957,7 +956,11 @@ Node emit(String code) {
 	preRegisterSignatures();
 	Node charged = analyze(data);
 	charged.log();
-	Code binary = emit(charged);
+	Code binary;
+	if (options & no_main) // todo: lib_main!
+		binary = emit(charged, 0, 0);
+	else
+		binary = emit(charged);
 //	code.link(wasp) more beautiful with multiple memory sections
 	int result = binary.run();
 	return Node(result);

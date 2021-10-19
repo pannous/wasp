@@ -1836,6 +1836,7 @@ void testCurrent() {
 	panicking = true;
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	assert_equals(atoi0("١٢٣"), 123);
 	testMergeWabt();
 	exit(1);
 	assert_emit("use sin;sin π/2", 1);
@@ -1858,7 +1859,7 @@ void testCurrent() {
 	assert_emit(wasm_paint_routine, 0);
 	return;
 //	exit(1);
-//	testPaintWasm();
+	testPaintWasm();
 	//	assert_run("render html{'test'}", 4);
 	skip(
 			assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
