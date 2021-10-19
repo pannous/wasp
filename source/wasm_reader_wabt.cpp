@@ -64,7 +64,7 @@ int unsignedLEB128() {
 		byte b = code[pos++];
 		n = n << 7;
 		n = n ^ (b & 0x7f);
-		if (b & 0x80 == 0)break;
+		if ((b & 0x80) == 0)break;
 	} while (n != 0);
 	return n;
 }
@@ -223,7 +223,7 @@ int readWat(const char *infile) {
 	std::vector<uint8_t> file_data;
 	Result result = ReadFile(s_infile, &file_data);
 	pointerr<WastLexer> lexer = WastLexer::CreateBufferLexer(s_infile, file_data.data(), file_data.size());
-	if (Failed(result)) WABT_FATAL("unable to read file: %s\n", s_infile);
+	if (Failed(result)) WABT_FATAL("unable to read file: %s\n", s_infile.data());
 
 	Errors errors;
 	pointerr<wabt::Module> module;
@@ -248,6 +248,7 @@ int readWat(const char *infile) {
 	}
 	auto line_finder = lexer->MakeLineFinder();
 	FormatErrorsToFile(errors, Location::Type::Text, line_finder.get());
+	return 0;
 }
 
 
@@ -265,14 +266,18 @@ wabt::Module *readWasm(char const *file) {
 
 Code merge_wasm(::Module lib, ::Module main) {
 	printf("merge_wasm WABT! dummy");
+	return Code();
 }
 
 ::Module read_wasm(bytes buffer, int size0) {
 	printf("read_wasm WABT! dummy");
+	return ::Module();
+
 }
 
 ::Module read_wasm(char const *) {
 	printf("read_wasm WABT! dummy");
+	return ::Module();
 }
 
 #undef pointerr

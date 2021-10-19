@@ -4,10 +4,9 @@
 
 #ifndef MARK_NODETYPES_H
 #define MARK_NODETYPES_H
-
 // Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
 enum Type {// todo: merge Node.kind with Node.class(?)
-// plurals because of namespace clash
+	// plurals because of namespace clash
 	// TODO add subtypes of Class:Node Variable:Node etc ^^^
 	nils = 0,
 	objects, // {…} block data with children closures
@@ -27,7 +26,7 @@ enum Type {// todo: merge Node.kind with Node.class(?)
 	buffers, // int[]
 	reals,
 	longs, // the signature of parameters/variables is independent!
-//	ints, // use longy field, but in wasm longs are pointers!
+	//	ints, // use longy field, but in wasm longs are pointers!
 	bools,
 	errors, // internal wasp error, NOT to be used in Angle!
 	call,
@@ -36,3 +35,4 @@ enum Type {// todo: merge Node.kind with Node.class(?)
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 #endif //MARK_NODETYPES_H
+

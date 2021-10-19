@@ -7,6 +7,7 @@
 #include "wasm_helpers.h"
 #include "wasm_emitter.h"
 #include "wasm_runner.h"
+
 void testCurrent();
 // get home dir :
 /*#include <unistd.h>
@@ -69,7 +70,7 @@ codepoint grouper_list[] = {' ', ',', ';', ':', '\n', '\t', '(', ')', '{', '}', 
 
 // predicates in of on from to
 // todo split keywords into binops and prefix functors
-chars import_keywords[] = {"use", "require", "import", "include", 0};
+chars import_keywords[] = {"use", "require", "import", "include", "using", 0};
 // todo aliases need NOT be in this list:
 chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠",
                           "not",
@@ -225,9 +226,10 @@ bool contains(chars list[], chars match) {
 	return false;
 }
 
-String &text = EMPTY;
 
 class Wasp {
+
+	String text = EMPTY;
 
 	int at = -1;//{};            // The index of the current character PLUS ONE todo
 
@@ -326,17 +328,21 @@ public:
 //	Mark(String source) {
 //		this->text = source;
 //	}
+	Wasp() : lineNumber(0) {
+		at = -1;
+	}
 
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
-	static Node parse(String source) {
+// YUCK static magically applies to new() objects too!?!
+	Node parse(String source) {
 		printf("Parsing: %s\n", source.data);
-		return Wasp().read(source);
+		return read(source);
 	}
 
 	// see 'apply' for operator eval
 	static Node eval(String source) { // return by value ok, rarely used and stable
-		Node parsed = parse(source);
+		Node parsed = Wasp().parse(source);
 		parsed.log();
 #ifndef RUNTIME_ONLY
 		return parsed.interpret();
@@ -1473,7 +1479,7 @@ private:
 					// todo: what a flimsy criterion:
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
 					Node node = expressione(close);//word();
-					if (contains(import_keywords, (chars) node.first().name.data)) {
+					if (contains(import_keywords, (chars) node.first().name.data)) { //  use, include, require …
 						// import IF not in data mode
 						if (current.first() == "from")
 							node = parseFile(current[1].name);
@@ -1649,12 +1655,14 @@ String load(String file) {
 	ptr = fopen(file, "rb");  // r for read, b for binary
 	if (!ptr)error("File not found "s + file);
 	fseek(ptr, 0L, SEEK_END);
-	int sz = ftell(ptr);
-	unsigned char buffer[sz];
-	fread(buffer, sizeof(buffer), 1, ptr); // read 10 bytes to our buffer
-	const String &binary = String(buffer);
-	check(binary.length == sz);
-	return binary;
+	int size = ftell(ptr);
+	unsigned char buffer[size];
+	fseek(ptr, 0L, SEEK_SET);
+	int ok = fread(buffer, sizeof(buffer), size, ptr);
+	if (!ok)error("Empty file or error reading "s + file);
+	String *binary = new String((char *) buffer, size, false);
+	assert_equals(binary->length, size);
+	return *binary;
 }
 
 Node compile(String file) {
@@ -1676,21 +1684,29 @@ Node parseFile(String filename) {
 	if (found.endsWith("wast") or found.endsWith("wat")) {
 		system("/usr/local/bin/wat2wasm "s + found);
 		found = found.replace("wast", "wasm");
+		// and use it:
 	}
 	if (found.endsWith("wasm")) {// handle in analysis, not in valueNode
 		//			read_wasm(found);
-		auto import = Node("import").setType(operators);
+		auto import = Node("include").setType(operators);
 		import.add(new Node(found));
 		return import;
-	}
-	if (found.endsWith("wasp"))
-		return parse(readFile(found));
-	error("Unknown extension "s + filename);
+	} else if (found.endsWith("wasp"))
+		return Wasp().parse(readFile(found));
+	else if (not found.contains(".")) {
+		found = findFile(filename + ".wasp");
+		if (found)return parseFile(filename + ".wasp");
+		found = findFile(filename + ".wasm");
+		if (found)return parseFile(filename + ".wasm");
+		else
+			error("Can't find module "s + filename);
+	} else
+		error("Unknown extension in file "s + filename);
 	return NIL;
 }
 
 void usage() {
-	print("wasp is a new compiler and programming language");
+	print("wasp is a new compiled programming language");
 	print("wasp [repl]            open interactive programming environment");
 	print("wasp <file.wasp>       compile wasp to wasm or native and execute");
 	print("wasp <file.wasm>       compile wasm to native and execute");
@@ -1706,10 +1722,11 @@ int main(int argp, char **argv) {
 #endif
 	try {
 		log("Hello Wasp 🐝");
-		if (argp >= 1) {
-			String arg = argv[0];
-			if (arg.endsWith(".wasp"))
-				compile(arg);
+		if (argp >= 2) {
+			String arg = argv[1];
+			if (arg.endsWith(".wasp")) {
+				return compile(arg).value.longy;
+			}
 			if (arg.endsWith(".wasm"))
 				run_wasm_file(arg);
 			if (arg == "test" or arg == "tests")

@@ -46,11 +46,11 @@ if (NOT WASM)
         #            SET(V8 1)
         #                        SET(WASMTIME 1) # FASTEST!
         #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
-        #            set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-        set(WEBAPP 1) # WebView for electron like standalone apps.
+        #                set(WEBAPP 1) # WebView for electron like standalone apps.
     endif ()
 endif ()
 
@@ -76,6 +76,7 @@ if (WEBAPP)
     SET(WASM 0)
     set(WASI 0)
     SET(RUNTIME_ONLY 0) # we can emit to V8, right??
+    set(SOURCE_FILES ${SOURCE_FILES} source/ErrorHandler.cpp) # no SIGSEGV mac popup
 endif ()
 if (WASM)
     SET(WASM3 0) # No wasm-VM inside wasm
@@ -369,7 +370,7 @@ elseif (WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
     add_executable(wasp ${SOURCE_FILES})
 elseif (V8)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_v8.cpp source/Util.cpp source/Util.h)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_v8.cpp source/Util.cpp source/Util.h source/wasm_patcher.cpp source/wasm_patcher.h)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/v8/include/)

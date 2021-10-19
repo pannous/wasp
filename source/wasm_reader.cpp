@@ -81,6 +81,10 @@ int unsignedLEB128(Code &byt) {
 	return n;
 }
 
+int consumeByte(Code &byt) {
+	return byt.data[byt.start++];
+}
+
 int siz() {
 	return unsignedLEB128();
 }
@@ -531,3 +535,5 @@ Module read_wasm(chars file) {
 #endif
 #undef pointerr
 
+
+#import "wasm_patcher.cpp"

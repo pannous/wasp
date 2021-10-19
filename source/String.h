@@ -55,7 +55,7 @@ enum sizeMeasure {
 
 void reverse(char *str, int len);
 
-codepoint decode_unicode_character(char *utf8bytes, int *len = 0);
+codepoint decode_unicode_character(chars utf8bytes, short *len = 0);
 
 //decode_codepoint
 char *itoa0(long num, int base);
@@ -64,7 +64,9 @@ char *itoa0(long num);
 
 char *itoa(long num);
 
-int atoi0(chars __nptr);
+int atoi0(codepoint c);
+
+int atoi0(chars str);
 
 double atof0(chars string);
 
@@ -168,7 +170,7 @@ public:
 //	}
 };
 
-class IndexOutOfBounds : Error {
+class IndexOutOfBounds : ::Error {
 public:
 //	IndexOutOfBounds(String *string1) : Error(string1){}
 	IndexOutOfBounds(char *data, int i) : Error() {}
@@ -179,7 +181,7 @@ extern char *empty_string;// = "";
 //duplicate symbol '_empty_string'
 
 //String
-chars typeName(Type t);
+chars typeName(::Type t);
 
 //char null_value[]={0};// todo make sure it's immutable!!
 
@@ -277,7 +279,7 @@ public:
 	}
 
 //		String operator+(Type e){
-	explicit String(Type type) : String(typeName(type)) {}// lil hack to get String of specific enums
+	explicit String(::Type type) : String(typeName(type)) {}// lil hack to get String of specific enums
 
 	explicit String(int integer) {
 		data = itoa(integer);// wasm function signature contains illegal type WHYYYY
