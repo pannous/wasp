@@ -328,9 +328,9 @@ public:
 //	Mark(String source) {
 //		this->text = source;
 //	}
-	Wasp() : lineNumber(0) {
-		at = -1;
-	}
+//	Wasp() : lineNumber(0) {
+//		at = -1;
+//	}
 
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
@@ -1150,7 +1150,8 @@ private:
 		}
 	};
 
-	bool isDigit(char c) {
+	bool isDigit(codepoint c) {
+//		return atoi0(c)!=-1;
 		return c >= '0' and c <= '9';
 	}
 
