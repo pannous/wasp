@@ -16,7 +16,7 @@ LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
 #set(RELEASE 0) # no tests
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh
-set(WABT_MERGE 1) # not the whole WABT though
+set(WABT_MERGE 0) # not the whole WABT though
 if (WABT_MERGE)
     set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt/src/ ./source/wasm_merger_wabt.cpp ./source/wasm_reader_wabt.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt_merge/binary-reader-linker.cc)

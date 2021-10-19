@@ -1841,6 +1841,10 @@ void testCurrent() {
 //	throwing = true;//
 	panicking = true;
 	data_mode = false; // a=b => a,=,b before analysis
+	data_mode = true;
+	assert_emit("not ø", true);
+	assert_emit("logs('ok');(1 4 3)#2", 4);
+
 	clearContext();
 	assert_equals(atoi0("١٢٣"), 123);
 //	testMergeWabt();
@@ -1862,8 +1866,8 @@ void testCurrent() {
 	                           "};paint";
 //((x-c)^2+(y-c)^2 < r^2)?0x44aa88:0xffeedd
 ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
-	assert_emit(wasm_paint_routine, 0);
-	return;
+//	assert_emit(wasm_paint_routine, 0);
+//	return;
 //	exit(1);
 	testPaintWasm();
 	//	assert_run("render html{'test'}", 4);
