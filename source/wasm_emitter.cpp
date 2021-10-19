@@ -879,8 +879,13 @@ Code emitOperator(Node node, String context) {
 		else code.add(emitCall(*new Node("powi"), context));
 	} else if (name.startsWith("-")) {
 		code.add(i32_sub);
+	} else if (name == "%") {// int cases handled above
+		if (last_type == float32)
+			return code.add(emitCall(Node("modulo_float").setType(call), context));// mod_f
+		else
+			return code.add(emitCall(Node("modulo_double").setType(call), context));// mod_d
 	} else if (name == "?") {
-		emitIf(node, context);
+		return emitIf(node, context);
 	} else if (name == "ⁿ") {
 		if (node.length == 1) {
 			code.add(cast(last_type, float64));// todo all casts should be auto-cast (in emitCall) now, right?
@@ -1592,17 +1597,35 @@ Code codeSection(Node root) {
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
 	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
 	byte code_data_nop[] = {0/*locals_count*/, end_block};// NOP
-	byte code_data_id[] = {1/*locals_count*/, 1/*WTF? first local has type: */, i32t, get_local, 0, return_block,
+	byte code_data_id[] = {1/*locals_count*/, 1/*one local has type: */, i32t, get_local, 0, return_block,
 	                       end_block}; // NOP
-//	byte code_data_logi_21[] = {0/*locals_count*/,i32_const,48,function,0 /*logi*/,i32_auto,21,return_block,end_block};
-//	byte code_data[] = {0x00, 0x41, 0x2A, 0x0F, 0x0B,0x01, 0x05, 0x00, 0x41, 0x2A, 0x0F, 0x0B};
+
+	byte code_modulo_float[] = {1 /*locals declarations*/, 2 /*two of type*/, float32,
+	                            0x20, 0x00, 0x20, 0x00, 0x20, 0x01, 0x95, 0x8f, 0x20, 0x01, 0x94, 0x93, 0x0b};
+	byte code_modulo_double[] = {1 /*locals declarations*/, 2 /*two of type*/, float64,
+	                             0x20, 0x00, //                     | local.get 0
+	                             0x20, 0x00, //                     | local.get 0
+	                             0x20, 0x01, //                     | local.get 1
+	                             0xa3,       //                     | f64.div
+	                             0x9d,       //                     | f64.trunc
+	                             0x20, 0x01, //                     | local.get 1
+	                             0xa2,       //                     | f64.mul
+	                             0xa1,       //                     | f64.sub
+	                             0x0b        //                     | end
+	};
 	Code code_blocks;
+
 	if (runtime.code_count == 0) {
 		// order matters, in functionType section!
 		if (functionSignatures["nop"].is_used)
 			code_blocks = code_blocks + encodeVector(Code(code_data_nop, sizeof(code_data_nop)));
 		if (functionSignatures["id"].is_used)
 			code_blocks = code_blocks + encodeVector(Code(code_data_id, sizeof(code_data_id)));
+		if (functionSignatures["modulo_float"].is_used)
+			code_blocks = code_blocks + encodeVector(Code(code_modulo_float, sizeof(code_modulo_float)));
+		if (functionSignatures["modulo_double"].is_used) {
+			code_blocks = code_blocks + encodeVector(Code(code_modulo_double, sizeof(code_modulo_double)));
+		}
 	}
 
 	Code main_block = emitBlock(root, start);// after imports and builtins
@@ -1622,8 +1645,10 @@ Code codeSection(Node root) {
 		code_blocks = code_blocks + encodeVector(func);
 	}
 	builtin_count = 0;
-	if (functionSignatures["nop"].is_used) builtin_count++;// used
-	if (functionSignatures["id"].is_used) builtin_count++;// used
+	for (auto name: functionSignatures) {
+		Signature &signature = functionSignatures[name];
+		if (signature.is_builtin and signature.is_used) builtin_count++;
+	}
 
 	bool has_main = start and functionIndices.has(start);
 	int function_codes = functionCodes.size();

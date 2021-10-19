@@ -431,6 +431,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 	int last_position = 0;
 	for (String &op : operators) {
 		if (op == "-…") op = "-";// precedence hack
+		if (op == "%")functionSignatures["modulo_double"].is_used = true;
+		if (op == "%")functionSignatures["modulo_float"].is_used = true;
 		if (op == "include") {
 			warn(expression.serialize());
 			return NIL;
@@ -872,6 +874,8 @@ void preRegisterSignatures() {
 //functionSignatures.insert_or_assign("render", Signature().add(node).add(pointer).returns(int32));
 	// todo: long + double !
 	// imports
+	functionSignatures["modulo_float"] = Signature().builtin().add(float32).add(float32).returns(float32);
+	functionSignatures["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 	functionSignatures["main"] = Signature().returns(i32t);;
 	functionSignatures["print"] = functionSignatures["logs"];// todo: for now, later it needs to distinguish types!!

@@ -12,8 +12,14 @@
 
 
 void testModulo() {
+	assert_equals(mod_d(10007.0, 10000.0), 7)
 	assert_emit("10007%10000", 7);
+	assert_emit("10007.0%10000", 7);
+	assert_emit("10007.0%10000.0", 7);
+	assert_emit("10007%10000.0", 7);
 	assert_emit("i=10007;x=i%10000", 7);
+	assert_emit("i=10007.0;x=i%10000.0", 7);
+	assert_emit("i=10007.1;x=i%10000.1", 7);
 }
 
 
@@ -1837,10 +1843,10 @@ void testCurrent() {
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
 	assert_equals(atoi0("١٢٣"), 123);
-	testMergeWabt();
-	exit(1);
-	assert_emit("use sin;sin π/2", 1);
-	assert_emit("use sin;sin π", 0);
+//	testMergeWabt();
+//	exit(1);
+//	assert_emit("use sin;sin π/2", 1);
+//	assert_emit("use sin;sin π", 0);
 	test_sin();
 	testModulo();
 	testWasmTernary();
