@@ -550,11 +550,8 @@ private:
 			return NaN;
 		}
 
-//		if (ch == '0') {
-//			string += ch;
-//			proceed();
-//		} else {
-		while (ch >= '0' and ch <= '9') {
+		while (atoi0(ch) >= 0) { // -1 if not
+			//	ch >= '0' and ch <= '9'
 			string += ch;
 			proceed();
 		}
@@ -571,7 +568,8 @@ private:
 				string += ch;
 				proceed();
 			}
-			while (ch >= '0' and ch <= '9') {
+			while (atoi0(ch)) {
+				//				ch >= '0' and ch <= '9'
 				string += ch;
 				proceed();
 			}
@@ -586,7 +584,6 @@ private:
 		} else {
 			number0 = +atoi0(string.data);
 		}
-
 //		if (!isFinite(number)) {
 //			error("Bad number");
 //		} else {
@@ -905,6 +902,8 @@ private:
 		// set kind = expression only if it contains operator, otherwise keep it as list!!!
 		expressionas.add(node);
 		if (node.kind == operators) expressionas.kind = expression;//
+//		if (contains(import_keywords,node.name))
+//			closer =0;// get rest of line;
 		if (closing(ch, closer))// stop_at_space, keep it for further analysis (?)
 			return *expressionas.clone();
 		white();
@@ -1151,8 +1150,8 @@ private:
 	};
 
 	bool isDigit(codepoint c) {
-//		return atoi0(c)!=-1;
-		return c >= '0' and c <= '9';
+		return atoi0(c) != -1;
+//		return c >= '0' and c <= '9';
 	}
 
 	Node &setField(Node &key, Node &val) { // a:{b}
@@ -1484,9 +1483,11 @@ private:
 						// import IF not in data mode
 						if (current.first() == "from")
 							node = parseFile(current[1].name);
-						else if (not node.name.empty())
-							node = parseFile(node.values().first().name);// todo
-						else node = parseFile(node.last().name);
+						else if (node.empty())
+							node = symbol();
+						else
+							node = parseFile(node.last().name);
+//							node = parseFile(node.values().first().name);// todo
 					}
 					if (precedence(node) or operator_list.has(node.name)) {
 						node.kind = operators;
