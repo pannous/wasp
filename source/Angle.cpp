@@ -946,10 +946,8 @@ Node emit(String code) {
 //		auto filename = findFile(code);
 //		return Node(run_wasm(filename));
 //	}
-	if (code.endsWith(".wasp"))
-		code = readFile(findFile(code));
-	debug_code = code;// global so we see when debugging
 	Node data = parse(code);
+	debug_code = code;// global so we see when debugging
 #ifdef RUNTIME_ONLY
 #ifdef INTERPRETER
 	return data.interpret();

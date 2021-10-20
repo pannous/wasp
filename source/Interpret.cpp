@@ -137,7 +137,7 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 		if (p == 0 and node.kind == reference)unknown_symbols.add(node);
 	}
 	if (max == 0) {
-		if (!empty(name) or length > 1) {
+		if (!name.empty() or length > 1) {
 			breakpoint_helper // ok need not always have known operators
 			info(String("Info: No operator in : ") + serialize());
 			if (unknown_symbols.length > 0 and expectOperator)

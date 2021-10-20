@@ -531,10 +531,10 @@ public:
 		for (int i = 0; i < min(length, 10); i++) {
 			Node &node = children[i];
 //			if(check(node))
-			if (!empty(node.name)) {
-				printf("%s", node.name.data);
-				printf(" ");
-			} else printf("{…} ");// overview
+if (!node.name.empty()) {
+	printf("%s", node.name.data);
+	printf(" ");
+} else printf("{…} ");// overview
 		}
 		printf("]");
 		printf("\n");

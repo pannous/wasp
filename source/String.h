@@ -880,6 +880,7 @@ public:
 class SyntaxError : String {
 public:
 	char *data;
+	char *file;
 	int lineNumber;
 	int columnNumber;
 	int at;
