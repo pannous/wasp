@@ -1849,6 +1849,22 @@ void testPaintWasm() {
 #endif
 }
 
+void testPrimitiveTypes() {
+	assert_emit("double 2", 2);
+	assert_emit("float 2", 2);
+	assert_emit("int 2", 2);
+	assert_emit("long 2", 2);
+	assert_emit("(float 2, int 4.3)  == 2,4", 1);
+
+	assert_emit("float 2, int 4.3  == 2,4", 1);//  PRECEDENCE needs to be in valueNode :(
+	//	float  2, ( int ==( 4.3 2)), 4
+}
+
+void testNodesInWasm() {
+	assert_emit("{b:c}", parse("{b:c}"));
+	assert_emit("a{b:c}", parse("a{b:c}"));
+}
+
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp!
 void testCurrent() {
@@ -1856,7 +1872,11 @@ void testCurrent() {
 //	throwing = false;// shorter stack trace
 //	panicking = true;//
 //	data_mode = false; // a=b => a,=,b before analysis
-	assert_emit("require sin;sin π/2", 1);
+
+//testNodesInWasm();
+//testPrimitiveTypes();
+
+//	assert_emit("require sin;sin π/2", 1);
 //assert_emit("include sin;sin π/2", 1);
 //assert_emit("use sin;sin π/2", 1);
 //	assert_emit("use sin;sin π", 0);
@@ -1864,9 +1884,9 @@ void testCurrent() {
 //	exit(1);
 //	assert_emit("(√((x-c)^2+(y-c)^2)<r?0:255)");
 //	run( "wasp.wasm");
-	return;
+//	return;
 //	exit(1);
-	testPaintWasm();
+//	testPaintWasm();
 	//	assert_run("render html{'test'}", 4);
 	skip(
 			assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!

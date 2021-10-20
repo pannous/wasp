@@ -204,6 +204,7 @@ int ones[] = {0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 
 
 int atoi0(codepoint c) {
 	int offset = -1;
+	if (c >= '0' and c <= '9')return c - '0';
 	while (zeros[++offset]) {
 		int k = zeros[offset];
 		short n = c - k;
