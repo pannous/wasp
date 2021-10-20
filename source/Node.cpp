@@ -106,7 +106,7 @@ void initSymbols() {
 Node &Node::operator=(int i) {
 	value.longy = i;
 	kind = longs;
-	if (empty(name) or name.isNumber())
+	if (name.empty() or name.isNumber())
 		name = String(itoa(i));
 	return *this;
 }
@@ -610,7 +610,7 @@ void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
 // todo remove redundant addSmart LOL!
 void Node::addSmart(Node node) {// merge?
 	if (polish_notation and node.length > 0) {
-		if (empty(name))
+		if (name.empty())
 			name = node[0].name;
 		else
 			parent->add(node);// REALLY?
@@ -642,7 +642,7 @@ void Node::addSmart(Node node) {// merge?
 	if (letzt.kind == reference or letzt.kind == keyNode or
 	    letzt.name == "while" /*todo: functors, but not operators?*/)
 		letzt.addSmart(&node);
-	else if (empty(name) and kind != expression and kind != groups)// last().kind==reference)
+	else if (name.empty() and kind != expression and kind != groups)// last().kind==reference)
 		letzt.addSmart(&node);
 	else
 		add(&node);// don't loop to addSmart lol
@@ -753,14 +753,14 @@ Node &Node::last() {
 //	return isEmpty();
 //}
 
-bool Node::isEmpty() {// not required here: empty(name)
+bool Node::isEmpty() {// not required here: name.empty()
 	return (length == 0 and value.longy == 0) or isNil();
 }
 
 // todo : [x y]+[z] = [x y z] BUT z isNil() ??  Node("z").kind==unknown ! empty referenceIndices ARE NIL OR NOT?? x==nil?
-bool Node::isNil() const { // required here: empty(name)
+bool Node::isNil() const { // required here: name.empty()
 	return this == &NIL or kind == nils or
-	       ((kind == keyNode or kind == unknown or empty(name)) and length == 0 and value.data == nullptr);
+	       ((kind == keyNode or kind == unknown or name.empty()) and length == 0 and value.data == nullptr);
 }
 
 // todo hide : use serialize() for true deep walk
@@ -822,16 +822,16 @@ String Node::serialize() const {
 	if (not this)return "";
 	String wasp = "";
 	if (not polish_notation or length == 0) {
-		if (not empty(name)) wasp += name;
+		if (not name.empty()) wasp += name;
 		String serializedValue = serializeValue();
 		if (kind == longs or kind == reals)
 			if (not atoi(name) and name and name.data and name.data[0] != '0')
 				return ""s + name + ":" + serializedValue;
-		if (kind == strings and name and (empty(name) or name == value.string))
+		if (kind == strings and name and (name.empty() or name == value.string))
 			return serializedValue;// no text:"text", just "text"
-		if (kind == longs and name and (empty(name) or name == itoa(value.longy)))
+		if (kind == longs and name and (name.empty() or name == itoa(value.longy)))
 			return serializedValue;// no "3":3
-		if (kind == reals)// and name and (empty(name) or name==itoa(value.longy)))
+		if (kind == reals)// and name and (name.empty() or name==itoa(value.longy)))
 			return serializedValue;// no "3":3.14
 		if (serializedValue and value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
 		    !eq(serializedValue, "?")) {
@@ -851,7 +851,7 @@ String Node::serialize() const {
 			else if (length > 0 and not separator)
 				wasp += "(";// default
 		}
-		if (polish_notation and not empty(name)) wasp += name;
+		if (polish_notation and not name.empty()) wasp += name;
 		int i = 0;
 		if (length > 0)
 			for (Node &node : *this) {
@@ -868,7 +868,7 @@ String Node::serialize() const {
 		if (eq(name, "‖")) wasp += name;
 	}
 	return wasp;
-//	return empty(name)? string() : name;
+//	return name.empty()? string() : name;
 //	return empty(node.name)? node.string() : node.name;
 }
 
@@ -945,14 +945,14 @@ Node Node::to(Node match) {
 Node &Node::flat() {
 //	if (kind == call)return *this;//->clone();
 	if (kind == patterns)return *this;// never flatten patterns x=[] "hi"[1] …
-	if (length == 0 and kind == keyNode and empty(name) and value.node)return *value.node;
+	if (length == 0 and kind == keyNode and name.empty() and value.node)return *value.node;
 	if (length == 1) {
 		Node &child = children[0];
 		if (child.kind == patterns and kind != groups)// huh?
 			return *this;// never flatten patterns x=[] "hi"[1] …
 		if (value.node == &child)// todo remove redundancy
 			return *value.node;
-		if ((long) children < MEMORY_SIZE and not value.data and empty(name)) {
+		if ((long) children < MEMORY_SIZE and not value.data and name.empty()) {
 			child.parent = parent;
 			return child.flat();
 		}
@@ -1095,7 +1095,7 @@ Node &Node::setType(Type type, bool check) {
 	if (kind == nils and not value.data)
 		return *this;
 	kind = type;
-//	if(empty(name) and debug){
+//	if(name.empty() and debug){
 //		if(type==objects)name = object_name;
 //		if(type==groups)name = groups_name;
 //		if(type==patterns)name = patterns_name;
@@ -1108,6 +1108,11 @@ List<String> &Node::toList() {
 	for (Node &child: *this)
 		values.add(child.name);
 	return values;
+}
+
+bool Node::empty() {
+	// we don't care about name here
+	return length == 0 and value.data == 0;
 }
 
 

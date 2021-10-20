@@ -642,6 +642,8 @@ public:
 	}
 
 	List<String> &toList();
+
+	bool empty();
 };
 
 typedef const Node Nodec;
