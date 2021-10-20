@@ -421,7 +421,7 @@ bool Node::operator==(Node &other) {
 		Node &field = children[i];
 		field = field.flat();// [(1),2,3] == [1,2,3]
 		Node &val = other.children[i];
-		if (field != val and !empty(field.name))
+		if (field != val and !field.name.empty())
 			val = other[field.name];
 		if (field != val) {
 			if ((field.kind != keyNode and field.kind != nils) or !field.value.node) {
@@ -541,7 +541,8 @@ Node &Node::add(Node *node) {
 	if (kind == longs or kind == reals)
 		error("can't modify primitives, only their referenceIndices a=7 a.nice=yes");
 	if (length >= capacity - 1) {
-		logi(length);
+		logi(length + 1);
+		logs(">=");
 		logi(capacity);
 		logs(name);
 		error("Out of node Memory");
@@ -583,15 +584,15 @@ Node &Node::add(Node &node) {
 
 // todo remove redundant addSmart LOL!, and or merge with flat()
 void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
-	if (node->isNil() and empty(node->name) and node->kind != longs)
+	if (node->isNil() and ::empty(node->name) and node->kind != longs)
 		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
 	node->parent = this;
-	if (node->length == 1 and flatten and empty(node->name))
+	if (node->length == 1 and flatten and ::empty(node->name))
 		node = &node->last();
 
 	//  or node->kind == patterns  DON'T flatten patterns!
 	if (not children and (node->kind == objects or node->kind == groups) and
-	    empty(node->name)) {
+	    ::empty(node->name)) {
 		children = node->children;
 		length = node->length;
 		for (Node &child:*this)
@@ -956,7 +957,7 @@ Node &Node::flat() {
 			child.parent = parent;
 			return child.flat();
 		}
-		if (child.length > 0 and not child.value.data and empty(child.name)) {
+		if (child.length > 0 and not child.value.data and child.name.empty()) {
 			child.children[0].parent = this;
 			children = child.children;
 			length = child.length;

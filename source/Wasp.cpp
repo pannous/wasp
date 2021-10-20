@@ -230,7 +230,7 @@ bool contains(chars list[], chars match) {
 class Wasp {
 
 	String text = EMPTY;
-
+	String file = EMPTY; // possible source
 	int at = -1;//{};            // The index of the current character PLUS ONE todo
 
 	char lastNonWhite = 0;
@@ -353,7 +353,12 @@ public:
 	}
 
 
+	// todo: flatten the parse->parse->read branch!!
 	Node &read(String source) {
+		if (source.endsWith(".wasp") and not source.contains("\n")) {
+			setFile(source);
+			source = readFile(findFile(source));
+		}
 		if (source.empty()) return const_cast<Node &>(NIL);
 		columnStart = 0;
 		at = -1;
@@ -374,6 +379,11 @@ public:
 		return *result.clone();
 	}
 
+
+	Wasp &setFile(String string) {
+		file = string;
+		return *this;
+	}
 
 private:
 	char escapee(char c) {
@@ -412,6 +422,9 @@ private:
 		msg = msg + " at position " + at + " in line " + lineNumber + " column " + columnNumber + "\n";
 		msg = msg + line + "\n";
 		msg = msg + (s(" ").times(columnNumber - 1)) + "^";
+		if (not file.empty()) {
+			msg = msg + "\n" + file + ":" + lineNumber;
+		}
 		print(msg);
 		return msg;
 	}
@@ -427,6 +440,7 @@ private:
 		error->at = at;
 		error->lineNumber = lineNumber;
 		error->columnNumber = at - columnStart;
+		error->file = file.data;
 		if (throwing)
 			raise(msg);
 		else
@@ -568,7 +582,7 @@ private:
 				string += ch;
 				proceed();
 			}
-			while (atoi0(ch)) {
+			while (atoi0(ch) != -1) {
 				//				ch >= '0' and ch <= '9'
 				string += ch;
 				proceed();
@@ -1150,8 +1164,7 @@ private:
 	};
 
 	bool isDigit(codepoint c) {
-		return atoi0(c) != -1;
-//		return c >= '0' and c <= '9';
+		return (c >= '0' and c <= '9') or atoi0(c) != -1;
 	}
 
 	Node &setField(Node &key, Node &val) { // a:{b}
@@ -1483,9 +1496,10 @@ private:
 						// import IF not in data mode
 						if (current.first() == "from")
 							node = parseFile(current[1].name);
-						else if (node.empty())
-							node = symbol();
-						else
+						else if (node.empty()) {
+							white();
+							node = parseFile(identifier());
+						} else
 							node = parseFile(node.last().name);
 //							node = parseFile(node.values().first().name);// todo
 					}
@@ -1602,6 +1616,7 @@ Node parse(String source) {
 	// 1. top level objects are not constructed True
 	// 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
 
+
 	printf("Parsing: %s\n", source.data);
 	if (!source.data)return NIL;
 	return Wasp().read(source);
@@ -1694,7 +1709,7 @@ Node parseFile(String filename) {
 		import.add(new Node(found));
 		return import;
 	} else if (found.endsWith("wasp"))
-		return Wasp().parse(readFile(found));
+		return Wasp().setFile(found).parse(readFile(found));
 	else if (not found.contains(".")) {
 		found = findFile(filename + ".wasp");
 		if (found)return parseFile(filename + ".wasp");
