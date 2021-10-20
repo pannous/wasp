@@ -10,6 +10,23 @@
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
 
+// One of the few tests which can be removed because who will ever change the sin routine?
+void test_sin() {
+	assert_equals(sin(0), 0);
+	assert_equals(sin(pi / 2), 1);
+	assert_equals(sin(-pi / 2), -1);
+	assert_equals(sin(pi), 0);
+	assert_equals(sin(2 * pi), 0);
+	assert_equals(sin(3 * pi / 2), -1);
+
+	assert_equals(cos(-pi / 2 + 0), 0);
+	assert_equals(cos(0), 1);
+	assert_equals(cos(-pi / 2 + pi), 0);
+	assert_equals(cos(-pi / 2 + 2 * pi), 0);
+	assert_equals(cos(pi), -1);
+	assert_equals(cos(-pi), -1);
+}
+
 
 void testModulo() {
 	assert_equals(mod_d(10007.0, 10000.0), 7)
@@ -1174,13 +1191,13 @@ void testString() {
 	printf("%s", x.data);
 	check(x == "hi ja ok");
 	check("hi %s ok"s % "ja" == "hi ja ok");
-
-	check_eq(atoi("123x"), 123);// can crash!?!
+	assert_is("١٢٣", 123);
+	assert_equals(atoi0("١٢٣"), 123);
+	check_eq(atoi("123"), 123);// can crash!?!
 	check_eq(" a b c  \n"s.trim(), "a b c");
 	assert_equals("     \n   malloc"s.trim(), "malloc");
 	assert_equals("     \n   malloc     \n   "s.trim(), "malloc");
 	assert_equals("malloc     \n   "s.trim(), "malloc");
-	testStringConcatenation();
 }
 
 
@@ -1571,6 +1588,8 @@ void testBUG();
 void tests() {
 //	data_mode = true;// expect data unless explicit code
 	testBUG();
+	test_sin();
+	testModulo();
 	testRecentRandomBugs();
 	testIndentAsBlock();
 	testDeepCopyDebugBugBug2();// SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!
@@ -1806,56 +1825,7 @@ void testPaintWasm() {
 //	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0)// still slow, but < 1s
 	// wow, SLOWER in wasm-micro-runtime HOW!?
 //	exit(0);
-	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=i*(10-√i);};";
-	emit(wasm_paint_routine);
-	paint(0);
-	gettimeofday(&stop, NULL);
-//	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
-	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
-//	exit(0);
-//char *wasm_paint_routine = "init_graphics(); while(1){paint()}";// SDL bugs a bit
-	while (1)paint(0);// help a little
-#endif
-}
 
-void test_sin() {
-	assert_equals(sin(0), 0);
-	assert_equals(sin(pi / 2), 1);
-	assert_equals(sin(-pi / 2), -1);
-	assert_equals(sin(pi), 0);
-	assert_equals(sin(2 * pi), 0);
-	assert_equals(sin(3 * pi / 2), -1);
-
-	assert_equals(cos(-pi / 2 + 0), 0);
-	assert_equals(cos(0), 1);
-	assert_equals(cos(-pi / 2 + pi), 0);
-	assert_equals(cos(-pi / 2 + 2 * pi), 0);
-	assert_equals(cos(pi), -1);
-	assert_equals(cos(-pi), -1);
-}
-
-// 2021-10 : 40 sec for Wasm3
-// 2021-10 : 10 sec in Webapp!
-void testCurrent() {
-//	throwing = false;// shorter stack trace
-//	throwing = true;//
-	panicking = true;
-	data_mode = false; // a=b => a,=,b before analysis
-//	data_mode = true;
-	assert_emit("not ø", true);
-	assert_emit("logs('ok');(1 4 3)#2", 4);
-
-	clearContext();
-	assert_equals(atoi0("١٢٣"), 123);
-//	testMergeWabt();
-//	exit(1);
-//	assert_emit("use sin;sin π/2", 1);
-//	assert_emit("use sin;sin π", 0);
-	test_sin();
-	testModulo();
-	testWasmTernary();
-//	assert_emit("(√((x-c)^2+(y-c)^2)<r?0:255)");
-//	run( "wasp.wasm");
 //(√((x-c)^2+(y-c)^2)<r?0:255)
 //(x-c)^2+(y-c)^2
 //	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
@@ -1865,11 +1835,38 @@ void testCurrent() {
 	                           "i++;x=i%w;y=i/w;surface#i=(x-c)^2+(y-c)^2"
 	                           "};paint";
 //((x-c)^2+(y-c)^2 < r^2)?0x44aa88:0xffeedd
-////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
-//	assert_emit(wasm_paint_routine, 0);
-//	return;
+//char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
+//assert_emit(wasm_paint_routine, 0);
+//	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=i*(10-√i);};";
+	emit(wasm_paint_routine);
+//	paint(0);
+	gettimeofday(&stop, NULL);
+//	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
+	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+//	exit(0);
+//char *wasm_paint_routine = "init_graphics(); while(1){paint()}";// SDL bugs a bit
+	while (1)paint(0);// help a little
+#endif
+}
+
+// 2021-10 : 40 sec for Wasm3
+// 2021-10 : 10 sec in Webapp!
+void testCurrent() {
+	clearContext();
+//	throwing = false;// shorter stack trace
+//	panicking = true;//
+//	data_mode = false; // a=b => a,=,b before analysis
+	assert_emit("require sin;sin π/2", 1);
+//assert_emit("include sin;sin π/2", 1);
+//assert_emit("use sin;sin π/2", 1);
+//	assert_emit("use sin;sin π", 0);
+//	testMergeWabt();
 //	exit(1);
-//	testPaintWasm();
+//	assert_emit("(√((x-c)^2+(y-c)^2)<r?0:255)");
+//	run( "wasp.wasm");
+	return;
+//	exit(1);
+	testPaintWasm();
 	//	assert_run("render html{'test'}", 4);
 	skip(
 			assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!

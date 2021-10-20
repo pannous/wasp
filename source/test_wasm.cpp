@@ -81,6 +81,7 @@ void testWasmTernary() {
 	)
 }
 
+
 void testLazyEvaluation() {
 //	if lazy_operators.has(op) and … not numeric? …
 	//	if op==or emitIf(not lhs,then:rhs)
@@ -1209,6 +1210,7 @@ void testAllWasm() {
 	testComparisonId();
 	testWasmVariables0();
 	testWasmVariables0();
+	testWasmTernary();
 	testSquareExpWasm();
 	testRoundFloorCeiling();
 	wasm_todos();

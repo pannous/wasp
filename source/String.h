@@ -57,6 +57,8 @@ void reverse(char *str, int len);
 
 codepoint decode_unicode_character(chars utf8bytes, short *len = 0);
 
+short utf8_byte_count(codepoint c);
+
 //decode_codepoint
 char *itoa0(long num, int base);
 
@@ -304,10 +306,12 @@ public:
 //		length = len(data);
 //	}
 
+// char32_t same as codepoint!
 	explicit String(char32_t utf32char) {// conflicts with int
-		data = (char *) (calloc(sizeof(char32_t), 2));
+		data = (char *) (calloc(sizeof(char32_t), utf8_byte_count(utf32char) + 1));
 		encode_unicode_character(data, utf32char);
 		length = len(data);// at most 4 bytes
+		data[length] = 0;// be sure
 	}
 
 	explicit String(wchar_t wideChar) {
@@ -411,19 +415,20 @@ public:
 	}
 
 
-	String &append(char c) {
-		if (!data)data = (char *) (alloc(sizeof(char), 2));
-		if (data + length + 1 == (char *) current) {// just append recent
-			data[length++] = c;
-			data[length] = 0;
-			current += 2;
+	String &append(codepoint c) {
+		auto byteCount = utf8_byte_count(c);
+		if (!data) {
+			data = (char *) (alloc(sizeof(char), byteCount + 1));
+		} else if (data + length + 1 == (char *) current) {// just append recent
+			current += byteCount + 1;
 		} else {
-			auto *neu = (char *) (alloc(sizeof(char), length + 5));
+			auto *neu = (char *) (alloc(sizeof(char), length + 5));// we need 4 bytes because *(int*)…=c
 			if (data)strcpy2(neu, data, length);
-			neu[length++] = c;
 			data = neu;
-			data[length] = 0;
 		}
+		encode_unicode_character(data + length, c);
+		length += byteCount;
+		data[length] = 0;
 		return *this;
 	}
 
@@ -517,7 +522,12 @@ public:
 	}
 
 //	 DANGER string + ' ' + " " yields NONSENSE!!!
-	String *operator+=(char c) {
+//	String *operator+=(char c) {
+//		append(c);
+//		return this;
+//	}
+
+	String *operator+=(codepoint c) {
 		append(c);
 		return this;
 	}
@@ -920,7 +930,6 @@ void log(chars s);
 //unsigned  == unsigned int!
 inline short utf8_byte_count(char c);
 
-short utf8_byte_count(codepoint c);
 
 bool empty(String &s);
 
