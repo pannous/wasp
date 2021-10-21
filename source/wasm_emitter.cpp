@@ -1004,7 +1004,7 @@ int last_local = 0;
 
 
 bool isVariableName(String name) {
-	return name[0] >= 'a';// todo
+	return name[0] >= 'A';// todo
 }
 
 // also init expressions of globals!
