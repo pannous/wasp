@@ -346,7 +346,7 @@ chars concat(chars a, chars b) {
 //#define pow(val,exp)
 chars ftoa0(float num, int base = 10, int precision = 4) {/*significant digits*/
 	int p = 1000;//pow(base,precision);
-	char *f = (char *) concat(concat(itoa0(int(num), base), "."), itoa0(int((num - (long) num) * p), base));
+	char *f = (char *) concat(concat(itoa0(int(num), base), "."), itoa0(abs(int((num - (long) num) * p)), base));
 	int len = strlen0(f);// cut trailing 0 : 1.1000 -> 1.1
 	for (int i = 1; i < len; ++i) {
 		if (f[len - i] == '0')f[len - i] = 0;
