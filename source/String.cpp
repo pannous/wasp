@@ -245,6 +245,8 @@ int atoi0(chars p) {
 			return k;
 		k = (k << 3) + (k << 1) + n;
 	}
+	if (*p == 'e' or *p == 'E')
+		k *= powf(10, atoi0(++p));// we need float for 1/100. …
 	return sig * k;
 }
 
@@ -269,11 +271,14 @@ double atof0(chars string) {
 	if (*string)
 		string++;
 	while (*string) {
+		if (*string == 'e' or *string == 'E')
+			return result * powf(10, atoi0(++string));
 		if (*string < '0' || *string > '9') return result;
 		divisor *= 10.0;
 		result += (double) (*string - '0') / divisor;
 		string++;
 	}
+
 	return result * multiplier;
 }
 
