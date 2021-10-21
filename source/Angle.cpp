@@ -291,6 +291,54 @@ bool isPrimitive(Node node) {
 	return false;
 }
 
+const Node Long("Long");//.setType(type);
+const Node Double("Double");//.setType(type);
+Map<String, Node> types;
+
+void initTypes() {
+	types.add("int", Long);// until we really need it
+	types.add("long", Long);
+	types.add("double", Double);
+	types.add("float", Double);
+	for (auto name:types)
+		types[name].setType(classe);
+}
+
+Node &groupTypes(Node &expression, const char *context) {
+	if (types.size() == 0)initTypes();
+	for (int i = 0; i < expression.length; i++) {
+		Node &node = expression.children[i];
+//	for (Node &node : expression) {
+		if (types.has(node.name)) {
+			static Node typeDummy;// todo: remove how?
+			Node &typed = typeDummy;
+			if (node.next and not is_operator(node.next->name[0])) {
+				typed = *node.next;
+			} else if (i < expression.length - 1 and not is_operator(expression.children[i + 1].name[0])) {
+				typed = expression.children[i + 1];
+			} else if (i > 1) {
+				typed = expression.children[i - 1];
+			} else {
+				error("Type without object");// may be ok
+				typed = NIL;
+			}
+//			if (operator_list.has(typed.name))
+//				continue; // 3.3 as int …
+			auto aType = &types[node.name];
+
+			if (typed.name == "as") { // danger edge cases!
+				expression.remove(i - 1, i);
+				expression.children[i - 2].type = aType;// todo bug, should be same as
+				typed = expression.children[i - 2];
+			} else {
+				expression.remove(i, i);
+			}
+			typed.type = aType;// ref ok because types can't be deleted ... rIgHt?
+		}
+	}
+//	if(isPrimitive(expression)
+	return expression.flat(); // (1) => 1
+}
 
 Node &groupDeclarations(Node &expression, const char *context) {
 //	Node &expression = *expression0.clone();// debug
@@ -435,7 +483,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 		if (op == "%")functionSignatures["modulo_float"].is_used = true;
 		if (op == "include") {
 			warn(expression.serialize());
-			return NIL;
+			expression.clear();
+			return expression;
 		}
 		if (op != last) last_position = 0;
 		bool fromRight = rightAssociatives.has(op) or isFunction(op);
@@ -827,7 +876,9 @@ Node analyze(Node node, String context) {
 			functionSignatures[name].is_used = true;
 		return grouped;
 	}
-	Node &groupedDeclarations = groupDeclarations(node, context);
+
+	Node &groupedTypes = groupTypes(node, context);
+	Node &groupedDeclarations = groupDeclarations(groupedTypes, context);
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
 	Node &grouped = groupOperators(groupedFunctions, context);
 	if (analyzed[grouped.hash()])return grouped;// done!
