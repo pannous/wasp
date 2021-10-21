@@ -295,6 +295,15 @@ public:
 		return _size;
 	}
 
+	int add(S key, T value) {
+		int found = position(key);
+		if (found >= 0) error("DOUPLICATE KEY: "s + key);
+		keys[_size] = key;
+		values[_size] = value;
+		_size++;
+		return _size;
+	}
+
 	// currently same as map[key]=value
 	int insert_or_assign(S key, T value) {
 		// todo:  key==nil / key.empty (String::) should not be allowed!
