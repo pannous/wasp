@@ -279,7 +279,7 @@ bool isVariable(Node &node) {
 	if (node.kind != reference and node.kind != keyNode and !node.isSetter())
 		return false;
 	if (node.kind == strings)return false;
-	return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'a';// todo;
+	return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'A';// todo;
 }
 
 bool isPrimitive(Node node) {
@@ -306,6 +306,23 @@ void initTypes() {
 
 Node &groupTypes(Node &expression, const char *context) {
 	if (types.size() == 0)initTypes();
+	if (types.has(expression.name)) {// double \n x,y,z  extra case :(
+		if (expression.length > 0) {
+			for (Node &typed:expression) {
+				typed.setType(&types[expression.name]);
+				if (not locals[context].has(typed.name)) {
+					locals[context].add(typed.name);
+					localTypes[context].add(mapType(typed));
+				}
+			}
+			expression.name = 0;// hack
+		}
+//		else if(expression.next){
+//			expression=*expression.next;
+//		}
+		else
+			error("dangling type "s + expression.name);
+	}
 	for (int i = 0; i < expression.length; i++) {
 		Node &node = expression.children[i];
 //	for (Node &node : expression) {
@@ -333,9 +350,10 @@ Node &groupTypes(Node &expression, const char *context) {
 			} else {
 				expression.remove(i, i);
 			}
-			while (typed.kind == reference and typed.length == 0) {
+			while (isPrimitive(typed) or
+			       (typed.kind == reference and typed.length == 0)) {// BAD criterion for next!
 				typed.type = aType;// ref ok because types can't be deleted ... rIgHt?
-				if (!isPrimitive(typed) and not locals[context].has(typed.name)) {
+				if ((typed.kind == reference or typed.isSetter()) and not locals[context].has(typed.name)) {
 					locals[context].add(typed.name);// todo : proper calling context!
 					localTypes[context].add(mapType(typed));
 				}
@@ -590,7 +608,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 					} else {
 						// variable is known but not typed yet
 						int position = localContext.position(prev.name);
-						localContextTypes[position] = mapType(next);// TODO  pre-evaluation of rest!!! keep old type?
+						localContextTypes[position] = mapType(
+								next);// TODO  pre-evaluation of rest!!! keep old type?
 					}
 				}
 				//#endif
@@ -606,7 +625,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 					// globalTypes[] set in globalSection, after emitExpression
 				} else if (op.length > 1 and op.endsWith("="))
 					// Complicated way to express *= += -= … self assignments
-					if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and op[0] != '>') {// *= += etc
+					if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and
+					    op[0] != '>') {// *= += etc
 						node.name = String(op.data[0]);
 						Node *setter = prev.clone();
 //					setter->setType(assignment); //
@@ -674,7 +694,8 @@ Node &groupFunctions(Node &expressiona) {
 			Node &iff = groupIf(node);
 			int j = expressiona.lastIndex(iff.last().next) - 1;
 			if (i == 0 and j == expressiona.length - 1)return iff;
-			if (j > i)expressiona.replace(i, j, iff);// todo figure out if a>b c d e == if(a>b)then c else d; e boundary
+			if (j > i)
+				expressiona.replace(i, j, iff);// todo figure out if a>b c d e == if(a>b)then c else d; e boundary
 			continue;
 		}
 		if (name == "while") {
@@ -871,6 +892,7 @@ Node analyze(Node node, String context) {
 		if (isVariable(node) and not localContext.has(name)) {
 			localContext.add(name);// need to pre-register before emitBlock!
 			localContextTypes.add(mapType(node));
+			check(localContext.position(name) >= 0);
 		}
 		return node;// nothing to be analyzed!
 	}
@@ -891,6 +913,7 @@ Node analyze(Node node, String context) {
 	}
 
 	Node &groupedTypes = groupTypes(node, context);
+	if (isPrimitive(node)) return node;
 	Node &groupedDeclarations = groupDeclarations(groupedTypes, context);
 	Node &groupedFunctions = groupFunctions(groupedDeclarations);
 	Node &grouped = groupOperators(groupedFunctions, context);
@@ -1043,7 +1066,8 @@ float function_precedence = 1000;
 
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-chars function_list[] = {"abs", "norm", "square", "root", "log", "puts", "print", "printf", "println", "logs", "logi",
+chars function_list[] = {"abs", "norm", "square", "root", "log", "puts", "print", "printf", "println", "logs",
+                         "logi",
                          "logf", "log_f32", "similar",
                          "logi64",
                          "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
