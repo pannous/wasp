@@ -249,6 +249,13 @@ public:
 		items = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
 		_size = 0;
 	}
+
+	void remove(S &item) {
+		auto pos = position(item);
+		if (pos < 0)return;
+		memcpy(items + pos, items + pos + 1, _size - pos);
+		_size--;
+	}
 };
 
 // don't use template! just use int-map

@@ -10,6 +10,21 @@
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
 
+
+void testPrimitiveTypes() {
+	assert_emit("double 2", 2);
+	assert_emit("float 2", 2);
+	assert_emit("int 2", 2);
+	assert_emit("long 2", 2);
+	assert_emit("4.3 as int + 4.7 as int", 8);
+	skip(
+			assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
+			assert_emit("(float 2, int 4.3)  == 2,4", 1);//  PRECEDENCE needs to be in valueNode :(
+			assert_emit("float 2, int 4.3  == 2,4", 1);//  PRECEDENCE needs to be in valueNode :(
+	//	float  2, ( int ==( 4.3 2)), 4
+	)
+}
+
 // One of the few tests which can be removed because who will ever change the sin routine?
 void test_sin() {
 	assert_equals(sin(0), 0);
@@ -1589,6 +1604,7 @@ void testBUG();
 void tests() {
 //	data_mode = true;// expect data unless explicit code
 	testBUG();
+	testPrimitiveTypes();
 	test_sin();
 	testModulo();
 	testRecentRandomBugs();
@@ -1850,18 +1866,6 @@ void testPaintWasm() {
 #endif
 }
 
-void testPrimitiveTypes() {
-	assert_emit("double 2", 2);
-	assert_emit("float 2", 2);
-	assert_emit("int 2", 2);
-	assert_emit("long 2", 2);
-	skip(
-			assert_emit("(float 2, int 4.3)  == 2,4", 1);//  PRECEDENCE needs to be in valueNode :(
-			assert_emit("float 2, int 4.3  == 2,4", 1);//  PRECEDENCE needs to be in valueNode :(
-	//	float  2, ( int ==( 4.3 2)), 4
-	)
-}
-
 void testNodesInWasm() {
 	assert_emit("{b:c}", parse("{b:c}"));
 	assert_emit("a{b:c}", parse("a{b:c}"));
@@ -1871,27 +1875,22 @@ void testNodesInWasm() {
 // 2021-10 : 10 sec in Webapp!
 void testCurrent() {
 	clearContext();
+
 //	throwing = false;// shorter stack trace
 //	panicking = true;//
 //	data_mode = false; // a=b => a,=,b before analysis
-
+	assert_emit("double x,y,z", 1);
 //testNodesInWasm();
-	assert_emit("4.3 as int + 4.7 as int", 8);
-
-	assert_emit("(2,4) == (2,4)", 1);
 	skip(
+			assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
 			assert_emit("2,4 == 2,4", 1);
 			assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
 			assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
 	)
 
-//assert_emit("(float 2, int 4.3)  == 2,4", 1);
-	testPrimitiveTypes();
 
-//	assert_emit("require sin;sin π/2", 1);
-//assert_emit("include sin;sin π/2", 1);
-//assert_emit("use sin;sin π/2", 1);
-//	assert_emit("use sin;sin π", 0);
+	assert_emit("use sin;sin π/2", 1);
+	assert_emit("use sin;sin π", 0);
 //	testMergeWabt();
 //	exit(1);
 //	assert_emit("(√((x-c)^2+(y-c)^2)<r?0:255)");
