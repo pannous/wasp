@@ -825,7 +825,7 @@ private:
 	}
 
 
-	Node &resolve(Node &node) {
+	const Node &resolve(Node &node) {
 		String &symbol = node.name;
 		if (symbol == "false")return False;
 		if (symbol == "False")return False;
