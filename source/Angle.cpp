@@ -333,11 +333,19 @@ Node &groupTypes(Node &expression, const char *context) {
 			} else {
 				expression.remove(i, i);
 			}
-
-			typed.type = aType;// ref ok because types can't be deleted ... rIgHt?
-			if (!isPrimitive(typed) and not locals[context].has(typed.name)) {
-				locals[context].add(typed.name);// todo : proper calling context!
-				localTypes[context].add(mapType(typed));
+			while (typed.kind == reference and typed.length == 0) {
+				typed.type = aType;// ref ok because types can't be deleted ... rIgHt?
+				if (!isPrimitive(typed) and not locals[context].has(typed.name)) {
+					locals[context].add(typed.name);// todo : proper calling context!
+					localTypes[context].add(mapType(typed));
+				}
+				// HACK for double x,y,z => z.type=Double !
+				// danger: hops across bounderies! (double x) {y … }
+				if (typed.next) typed = *typed.next;
+				else if (expression.next) {
+					typed = *expression.next;
+					expression.next = 0;// MEGA HACK
+				} else break;
 			}
 		}
 	}
