@@ -84,6 +84,11 @@ Map<String, int> typeMap;
 
 
 Valtype mapTypeToWasm(Node n) {
+	if (n == Double)return float64;
+	if (n == Long)return i64;
+	// int is not a true angle type, just an alias for long.
+	// todo: but what about interactions with other APIs? add explicit i32 !
+	// todo: in fact hide most of this under 'number' magic umbrella
 	if (n.kind == bools)return int32;
 	if (n.kind == nils)return voids;// mapped to int32 later: ø=0
 	if (n.kind == reals)return float32;// float64; todo why 32???
@@ -106,6 +111,7 @@ Valtype mapTypeToWasm(Node n) {
 }
 
 
+[[nodiscard]]
 Code Call(char *symbol);//Node* args
 
 //Code& unsignedLEB128(int);
@@ -129,13 +135,16 @@ Code Call(char *symbol);//Node* args
 //};
 
 //bytes
+[[nodiscard]]
 Code signedLEB128(int i);
 
+[[nodiscard]]
 Code encodeString(char *String);
 
 
 // write data to DATA SEGMENT (vs emitValue on stack)
 // MAY return i32.const(pointer)
+[[nodiscard]]
 Code emitData(Node node, String context);
 
 //typedef Code any;
@@ -311,6 +320,7 @@ typedef unsigned char byte;
 
 
 // https://webassembly.github.io/spec/core/binary/modules.html#code-section
+[[nodiscard]]
 Code encodeLocal(long count, Valtype type) {
 	return unsignedLEB128(count).addByte(type);
 }
@@ -346,6 +356,7 @@ bytes ieee754(float num) {
 }
 //Code emitExpression (Node* nodes);
 
+[[nodiscard]]
 Code emitBlock(Node node, String functionContext);
 
 //Code emitExpression(Node *node)__attribute__((warn_unused_result));
@@ -356,10 +367,16 @@ Code emitBlock(Node node, String functionContext);
 List<String> collect_locals(Node node, String context);
 
 
+[[nodiscard]]
 Code cast(Valtype from, Valtype to);
 
+[[nodiscard]]
+Code cast(const Node &from, Node &to);
+
+[[nodiscard]]
 Code emitStringOp(Node op, String context);
 
+[[nodiscard]]
 Code emitValue(Node node, String context);
 
 Valtype fixValtype(Valtype &valtype);
@@ -380,6 +397,7 @@ bool isProperList(Node &node) {
 }
 
 
+[[nodiscard]]
 Code emitArray(Node &node, String context) {
 	let code = Code();
 	int pointer = data_index_end;
@@ -424,6 +442,7 @@ int currentStackItemSize() {
 	return 1;
 }
 
+[[nodiscard]]
 Code emitOffset(Node offset_pattern, bool sharp, String context, int size, int base) {
 	Code code;
 	if (offset_pattern.kind == reference) {
@@ -454,6 +473,7 @@ Code emitOffset(Node offset_pattern, bool sharp, String context, int size, int b
 	// calculated offset_pattern of 0 ususally points to ~6 bytes after Contents of section Data header 0100 4100 0b08
 }
 
+[[nodiscard]]
 Code emitIndexWrite(Node offset, Node value0, String context) {
 	int base = runtime.data_segments.length;// uh, todo?
 	int size = currentStackItemSize();
@@ -490,11 +510,13 @@ Code emitIndexWrite(Node offset, Node value0, String context) {
 
 
 // "hi"[0]="H"
+[[nodiscard]]
 Code emitIndexWrite(Node op, String context) {// todo offset - 1 when called via #!
 	return emitIndexWrite(op["offset"], op["value"], context);
 }
 
 // "hi"#1="H"
+[[nodiscard]]
 Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 	List<String> &current = locals[context];
 	String &variable = ref.name;
@@ -513,6 +535,7 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 
 
 // assumes value is on top of stack
+[[nodiscard]]
 Code emitIndexPattern(Node op, String context) {
 	if (op.kind != patterns and op.kind != longs)error("op expected in emitIndexPattern");
 	if (op.length != 1 and op.kind != longs)error("exactly one op expected in emitIndexPattern");
@@ -532,6 +555,7 @@ Code emitIndexPattern(Node op, String context) {
 // todo: merge
 // emitIndexPattern assumes value is on top of stack
 // emitIndexRead puts value/ref  on top of stack
+[[nodiscard]]
 Code emitIndexRead(Node op, String context) {
 	if (op.length < 2)
 		error("index operator needs two arguments: node/array/reference and position");
@@ -576,6 +600,7 @@ Code emitIndexRead(Node op, String context) {
 
 // write data to DATA SEGMENT (vs emitValue on stack)
 // MAY return const(pointer)
+[[nodiscard]]
 Code emitData(Node node, String context) {
 	String &name = node.name;
 	Code code;// POINTER to DATA SEGMENT
@@ -650,6 +675,7 @@ Code emitData(Node node, String context) {
 	return code.addConst(last_pointer);
 }
 
+[[nodiscard]]
 Code emitGetGlobal(Node node /* context : global ;) */) {
 	Code code;
 	String &name = node.first().name;
@@ -664,6 +690,7 @@ Code emitGetGlobal(Node node /* context : global ;) */) {
 
 // put value on stack (vs emitData)
 // todo: last_type not enough if operator left≠right, e.g. ['a']#1  2.3 == 4 ?
+[[nodiscard]]
 Code emitValue(Node node, String context) {
 	Code code;
 	String &name = node.name;
@@ -764,10 +791,14 @@ Code emitValue(Node node, String context) {
 		default:
 			error("emitValue unknown type: "s + typeName(node.kind));
 	}
+	if (node.type) {
+		code.add(cast(node, *node.type));
+	}
 	return code;
 }
 
 
+[[nodiscard]]
 Code emitOperator(Node node, String context) {
 	Code code;
 	String &name = node.name;
@@ -808,6 +839,7 @@ Code emitOperator(Node node, String context) {
 		if (commonType != void_block)
 			last_type = commonType;
 		else last_type = rhs_type;
+
 	} else if (node.length > 2) {// todo: n-ary? ∑? is just a function!
 		error("Too many args for operator "s + name);
 //	} else if (node.next) { // todo really? handle ungrouped HERE? just hiding bugs?
@@ -831,10 +863,10 @@ Code emitOperator(Node node, String context) {
 	}
 	byte opcode = opcodes(name, last_type, arg_type);
 	if (opcode >= 0x8b and opcode <= 0x98 and
-	    (last_type == int32 or last_type == int64 or last_type == float64 or last_type == void_block))
+			(last_type == int32 or last_type == int64 or last_type == float64 or last_type == void_block))
 		code.add(cast(last_type, f32));// float ops
 	if (opcode >= 0x99 and opcode <= 0xA6 and
-	    (last_type == int32 or last_type == int64 or last_type == float32 or last_type == void_block))
+			(last_type == int32 or last_type == int64 or last_type == float32 or last_type == void_block))
 		code.add(cast(last_type, f64)); // double ops
 
 	if (last_type == stringp)
@@ -882,6 +914,9 @@ Code emitOperator(Node node, String context) {
 		else code.add(emitCall(*new Node("powi"), context));
 	} else if (name.startsWith("-")) {
 		code.add(i32_sub);
+	} else if (name == "as") {
+		code.add(emitCall(*new Node("cast"), context));
+
 	} else if (name == "%") {// int cases handled above
 		if (last_type == float32)
 			return code.add(emitCall(Node("modulo_float").setType(call), context));// mod_f
@@ -926,6 +961,7 @@ Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string) {
 	return none;
 }
 
+[[nodiscard]]
 Code emitStringOp(Node op, String context) {
 //	Code stringOp;
 	if (op == "+") {
@@ -972,6 +1008,8 @@ bool isVariableName(String name) {
 }
 
 // also init expressions of globals!
+[[nodiscard]]
+[[nodiscard]]
 Code emitExpression(Node &node, String context/*="main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	Code code;
@@ -1097,7 +1135,8 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 	return code;
 }
 
-
+[[nodiscard]]
+[[nodiscard]]
 Code emitWhile(Node &node, String context) {
 	Code code;
 	Node condition = node[0].values();
@@ -1121,6 +1160,7 @@ Code emitWhile(Node &node, String context) {
 }
 
 // wasm loop…br_if is like do{}while(condition), so we have to rework while(condition){}
+[[nodiscard]]
 Code emitWhile2(Node &node, String context) {
 	Code code;
 	// outer block
@@ -1152,13 +1192,16 @@ Code emitWhile2(Node &node, String context) {
 	return code;
 }
 
-
+[[nodiscard]]
+[[nodiscard]]
 Code emitExpression(Node *nodes, String context) {
 	if (!nodes)return Code();
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
 	return emitExpression(*nodes, context);
 }
 
+[[nodiscard]]
+[[nodiscard]]
 Code emitCall(Node &fun, String context) {
 	Code code;
 	auto name = fun.name;
@@ -1192,6 +1235,8 @@ Code emitCall(Node &fun, String context) {
 	return code;
 }
 
+[[nodiscard]]
+[[nodiscard]]
 Code cast(Valtype from, Valtype to) {
 	last_type = to;// danger: hides last_type in caller!
 	Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
@@ -1243,6 +1288,20 @@ Code cast(Valtype from, Valtype to) {
 	return nop;
 }
 
+// casting in our case also means construction! (x, y) as point == point(x,y)
+[[nodiscard]]
+[[nodiscard]]
+Code cast(const Node &from, Node &to) {
+	if (to == Long)return cast(mapTypeToWasm(from), i64);
+	if (to == Double)return cast(mapTypeToWasm(from), f64);
+	Node calle("call");
+	calle.add(from);
+	calle.add(to);
+	return emitCall(calle, "");// todo context?
+}
+
+[[nodiscard]]
+[[nodiscard]]
 Code emitDeclaration(Node fun, Node &body) {
 	// todo: x := 7 vs x := y*y
 	//
@@ -1261,6 +1320,7 @@ Code emitDeclaration(Node fun, Node &body) {
 }
 
 
+[[nodiscard]]
 Code emitSetter(Node node, Node &value, String context) {
 	if (node.first().name == "#") {// x#y=z
 		return emitPatternSetter(node.first().first(), node.first().last(), node.last(), context);
@@ -1288,6 +1348,7 @@ Code emitSetter(Node node, Node &value, String context) {
 }
 
 
+[[nodiscard]]
 Code emitIf(Node &node, String context) {
 	Code code;
 	//	 gets rid of operator, we MAY want .flat() ?
@@ -1315,6 +1376,7 @@ Code emitIf(Node &node, String context) {
 }
 
 /*
+[[nodiscard]]
 Code emitIf_OLD(Node &node) {
 	Code code;
 //	case ifStatement:
@@ -1366,6 +1428,7 @@ Code emitIf_OLD(Node &node) {
 }
 */
 
+[[nodiscard]]
 Code Call(char *symbol) {//},Node* args=0) {
 	Code code;
 	code.addByte(function);
@@ -1376,6 +1439,7 @@ Code Call(char *symbol) {//},Node* args=0) {
 	return Code();
 }
 
+[[nodiscard]]
 Code encodeString(char *str) {
 	size_t len = strlen0(str);
 	Code code = Code(len, (bytes) str, len);
@@ -1383,6 +1447,7 @@ Code encodeString(char *str) {
 };
 
 //bytes
+[[nodiscard]]
 Code signedLEB128(int n) {
 	Code result;
 	while (true) {
@@ -1401,6 +1466,7 @@ Code signedLEB128(int n) {
 }
 
 
+[[nodiscard]]
 Code emitBlock(Node node, String context) {
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};
@@ -1479,6 +1545,7 @@ List<String> collect_locals(Node node, String context) {
 
 int last_index = -1;
 
+[[nodiscard]]
 Code typeSection() {
 	// Function types are vectors of parameters and return types. Currently
 	// TODO optimise - some of the procs might have the same type signature
@@ -1536,6 +1603,7 @@ Valtype fixValtype(Valtype &valtype) {
 	return valtype;
 }
 
+[[nodiscard]]
 Code importSection() {
 	if (runtime_offset) {
 //		breakpoint_helper
@@ -1568,7 +1636,7 @@ Code importSection() {
 		extra_mem = 1;// add to import_section but not to functions:import_count
 		int init_page_count = 1024; // 64kb each, 65336 pages max
 		imports = imports + encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 +
-		          Code(init_page_count);
+				Code(init_page_count);
 	}
 	if (imports.length == 0)return Code();
 	auto importSection = createSection(import_section, Code(import_count + extra_mem) + imports);// + sqrt_ii
@@ -1580,6 +1648,7 @@ Code importSection() {
 int function_block_count;
 
 //int builtins_used=0;
+[[nodiscard]]
 Code codeSection(Node root) {
 	// the code section contains vectors of functions
 	// index needs to be known before emitting code, so call $i works
@@ -1663,7 +1732,8 @@ Code codeSection(Node root) {
 	return codeSection.clone();
 }
 
-
+[[nodiscard]]
+[[nodiscard]]
 Code exportSection() {
 	short exports_count = 1;// main
 // the export section is a vector of exported functions etc
@@ -1697,6 +1767,7 @@ Code exportSection() {
 int global_import_count = 0;
 int global_user_count = 0;
 
+[[nodiscard]]
 Code globalSection() {
 	// global imports purely in IMPORT section
 	// user global index += global_import_count !
@@ -1747,6 +1818,7 @@ Code globalSection() {
 	return globalSection;
 }
 
+[[nodiscard]]
 Code dataSection() { // needs memory section too!
 //	Contents of section Data:
 //	0000042: 0100 4100 0b02 4869                      ..A...Hi
@@ -1763,7 +1835,7 @@ Code dataSection() { // needs memory section too!
 
 	datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
 	datas.addInt(0x0 +
-	             runtime.data_segments.length);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
+			             runtime.data_segments.length);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
 	datas.addByte(0x0b);// mode: active?
 	datas.addByte(data_index_end); // size of data
 	const Code &actual_data = Code((bytes) data, data_index_end);
@@ -1772,6 +1844,7 @@ Code dataSection() { // needs memory section too!
 }
 
 // Signatures
+[[nodiscard]]
 Code funcTypeSection() {// depends on codeSection, but must appear earlier in wasm
 	// funcType_count = function_count EXCLUDING imports, they encode their type inline!
 	// the function section is a vector of type indices that indicate the type of each function in the code section
@@ -1799,11 +1872,13 @@ Code funcTypeSection() {// depends on codeSection, but must appear earlier in wa
 	return funcSection.clone();
 }
 
+[[nodiscard]]
 Code functionSection() {
 	return funcTypeSection();// (misnomer) vs codeSection() !
 }
 
 // todo : convert library referenceIndices to named imports!
+[[nodiscard]]
 Code nameSection() {
 	Code nameMap;
 
@@ -1873,6 +1948,7 @@ Code nameSection() {
 //	return Code();
 //}
 
+[[nodiscard]]
 Code eventSection() {
 	return Code();
 }
@@ -1891,6 +1967,7 @@ Code eventSection() {
     written as the target of any call instruction. The frontend must generate calls to undefined weak symbols
     via a call_indirect instruction.
 */
+[[nodiscard]]
 Code linkingSection() {
 //	https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
 	short version = 2;
@@ -1914,6 +1991,7 @@ Code linkingSection() {
 	return createSection(custom_section, encodeVector(Code("linking") + Code(version) + subsections));
 }
 
+[[nodiscard]]
 Code dwarfSection() {
 	return createSection(custom_section, encodeVector(Code("external_debug_info") + Code("main.dwarf")));
 }
@@ -1950,6 +2028,7 @@ void add_builtins() {
 	}
 }
 
+[[nodiscard]]
 Code memorySection() {
 	if (memoryHandling == import_memory or memoryHandling == no_memory) return Code();// handled elsewhere
 	/* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
@@ -1960,6 +2039,7 @@ Code memorySection() {
 }
 
 
+[[nodiscard]]
 Code &emit(Node root_ast, Module *runtime0, String _start) {
 	if (root_ast.kind == objects)root_ast.kind = expression;
 	start = _start;
