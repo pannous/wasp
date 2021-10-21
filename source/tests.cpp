@@ -1887,13 +1887,18 @@ void testCurrent() {
 			assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
 			assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
 	)
+	assert_emit("8.33333333332248946124e-03", 0);
+	assert_emit("8.33333333332248946124e+01", 83);
 //	assert_emit("S1  = -1.6666", -1);
 //	assert_emit("double S1  = -1.6666", -1);
+//	assert_emit("double\n"
+//	            "\tS1  = -1.6666", -1);
 	assert_emit("double\n"
-	            "\tS1  = -1.6666", -1);
+	            "\tS1  = -1.66666666666666324348e01, /* 0xBFC55555, 0x55555549 */\n"
+	            "\tS2  =  8.33333333332248946124e03, /* 0x3F811111, 0x1110F8A6 */\n\nS1", -16);
 	assert_emit("double\n"
-	            "\tS1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */\n"
-	            "\tS2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */\n", 0);
+	            "\tS1  = -1.66666666666666324348e01, /* 0xBFC55555, 0x55555549 */\n"
+	            "\tS2  =  8.33333333332248946124e01, /* 0x3F811111, 0x1110F8A6 */\n\nS2", 83);
 	assert_emit("use sin;sin π/2", 1);
 	assert_emit("use sin;sin π", 0);
 //	testMergeWabt();
