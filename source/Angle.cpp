@@ -333,17 +333,41 @@ Node &groupTypes(Node &expression, const char *context) {
 			} else {
 				expression.remove(i, i);
 			}
+
 			typed.type = aType;// ref ok because types can't be deleted ... rIgHt?
+			if (!isPrimitive(typed) and not locals[context].has(typed.name)) {
+				locals[context].add(typed.name);// todo : proper calling context!
+				localTypes[context].add(mapType(typed));
+			}
 		}
 	}
 //	if(isPrimitive(expression)
 	return expression.flat(); // (1) => 1
 }
 
+Node &groupSetter(String name, Node &body, String context) {
+	Node *decl = new Node(name);//node.name+":={…}");
+	decl->setType(assignment);
+	decl->add(body);// addChildren makes emitting harder
+	if (not locals[context].has(name)) {
+		locals[context].add(name);// todo : proper calling context!
+		localTypes[context].add(mapType(body));
+	} else {
+		int i = locals[context].position(name);
+		localTypes[context][i] = mapType(body);// update type! todo: check if cast'able!
+	}
+	return *decl;
+}
+
 Node &groupDeclarations(Node &expression, const char *context) {
 //	Node &expression = *expression0.clone();// debug
 	for (Node &node : expression) {
 		String &op = node.name;
+		if (node.length == 3 and types.has(node.first().name) and
+		    node.last().kind == objects) {// c style double sin() {}
+			node = groupTypes(node, context);
+			node.kind = declaration;
+		}
 		if (isPrimitive(node) and node.isSetter()) {
 			if (globals.has(op)) {
 				warn("Cant set globals yet!");
@@ -351,7 +375,10 @@ Node &groupDeclarations(Node &expression, const char *context) {
 			}
 			locals[context].add(op);// todo : proper calling context!
 			localTypes[context].add(mapType(node));// uh we have no type for pure references :(
-			continue;
+			if (node.length >= 2)
+				info("c-style function?");
+			else
+				continue;
 		}
 		if (node.kind == reference or (node.kind == keyNode and isVariable(node))) {// only constructors here!
 			if (not globals.has(op) and not locals[context].has(op) and not isFunction(node)) {
@@ -364,66 +391,44 @@ Node &groupDeclarations(Node &expression, const char *context) {
 		}// todo danger, referenceIndices i=1 … could fall through to here:
 		if (node.kind == declaration or declaration_operators.has(op)) {
 			// todo: public export function jaja (a:num …) := …
-			Node modifiers = expression.to(node);// including public… :(
-			Node rest = expression.from(node);
-			String name = extractFunctionName(modifiers);
+			Node left = expression.to(node);// including public… + ARGS! :(
+			Node rest = expression.from(node); // body
+			String name = extractFunctionName(left);
+			if (node.length ==
+			    2) {// // C style: double sin(x) {…} todo: fragile criterion!! also why is body not child of sin??
+				name = node.first().name;
+				left = node.first().first();// ARGS
+				rest = node.last();
+				locals[context].remove(name);// not a variable!
+			}
 
 ////			todo i=1 vs i:=it*2  ok ?
 			if (op == "=") continue; // handle assignment via groupOperators !
 			if (op == "::=") continue; // handle globals assignment via groupOperators !
-//			{// can't this be handled in operators???
-////			if(modifiers.first().kind==reference){
-//				warn("symbol is reference declaration: "s + name);
-//				Node& ref = *analyze(modifiers).clone();
-////				modifiers.first()
-//				ref.value.node = analyze(rest).clone();
-//				return ref;
-//			}
 
 			if (isFunction(name))
 				error("Symbol already declared as function: "s + name);
-			//			if (locals[context].has(name)) // todo double := it * 2 ; double(4)
+			// if (locals[context].has(name)) // todo double := it * 2 ; double(4)
 //				error("Symbol already declared as variable: "s + name);
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
 
-
-			if (name and function_operators.has(op)) {
+			if (name and (function_operators.has(op) or node.length == 2))
 				declaredFunctions.add(name);
-//				functionIndices[name]=functionIndices.size(); don't need an index yet!
-			}
 
 			Signature &signature = functionSignatures[name];// use Default
 			signature.emit = true;// all are 'export'
-			//			signature.is_used=true;// maybe
-
-			Node *decl = new Node(name);//node.name+":={…}");
-			decl->setType(declaration);
-			//			decl->metas().add(modifiers);// mutable x=7  todo: either reactivate meta or add type mutable?
+			// decl->metas().add(left);// mutable x=7  todo: either reactivate meta or add type mutable?
+			Node body = analyze(rest, name);
 
 			// todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
 			if (setter_operators.has(op) or key_pair_operators.has(op)) {
-				Node *body = analyze(rest, name).clone();//
-				decl->add(body);// addChildren makes emitting harder
-				if (modifiers.has("global"))
-					globals.insert_or_assign(name, body);
-				else {
-#ifndef RUNTIME_ONLY
-					if (not locals[context].has(name)) {
-						locals[context].add(name);// todo : proper calling context!
-						localTypes[context].add(mapType(*body));
-					} else {
-						int i = locals[context].position(name);
-						localTypes[context][i] = mapType(*body);// update type! todo: check if cast'able!
-					}
-#endif
-				}
-				decl->setType(assignment);
-				return *decl;
+				if (left.has("global"))
+					globals.insert_or_assign(name, body.clone());
+				return groupSetter(name, body, String());
 			}
-			List<Arg> args = extractFunctionArgs(name, modifiers);
-#ifndef RUNTIME_ONLY
 
+			List<Arg> args = extractFunctionArgs(name, left);
 			for (Arg arg: args) {
 				if (locals[name].has(arg.name))
 					error("duplicate argument name: "s + arg.name);
@@ -436,13 +441,12 @@ Node &groupDeclarations(Node &expression, const char *context) {
 				localTypes[name].add(int32);
 				signature.add(int32);// todo
 			}
-			signature.returns(i32t);// todo what if not lol
-			if (signature.return_type != int32)
-				error("BUG");
-#endif
-			Node *body = analyze(rest, name).clone();
-			decl->add(body);
-			return *decl;
+			auto valtype = mapType(left);// or i32t
+			signature.returns(valtype);
+			Node &decl = *new Node(name);//node.name+":={…}");
+			decl.setType(declaration);
+			decl.add(body);
+			return decl;
 		}
 	}
 	return expression;
@@ -658,7 +662,8 @@ Node &groupFunctions(Node &expressiona) {
 		String &name = node.name;
 		if (name == "if") // kinda functor
 		{
-			Node &iff = groupIf(expressiona.from("if"));
+			node.add(expressiona.from("if"));// as condition
+			Node &iff = groupIf(node);
 			int j = expressiona.lastIndex(iff.last().next) - 1;
 			if (i == 0 and j == expressiona.length - 1)return iff;
 			if (j > i)expressiona.replace(i, j, iff);// todo figure out if a>b c d e == if(a>b)then c else d; e boundary
