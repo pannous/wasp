@@ -45,3 +45,11 @@ Node constants(Node n);
 bool isFunction(Node &op);
 
 bool isFunction(String op);
+
+// types
+extern const Node Double;//.setType(type);
+extern const Node Long;//.setType(type);
+// int is not a true angle type, just an alias for long.
+// todo: but what about interactions with other APIs? add explicit i32 !
+// todo: in fact hide most of this under 'number' magic umbrella
+extern Map<String, Node> types;

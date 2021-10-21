@@ -62,7 +62,8 @@ bool debug = true;// clone sub-strings instead of sharing etc
 //const Node NegInfinity = Node("-Infinity");
 //const Node NaN = Node("NaN");
 
-Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
+// must never be used in non-const references!
+const Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
 Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
@@ -91,7 +92,7 @@ void initSymbols() {
 	groups_name = "(…)";
 	patterns_name = "[…]";
 	EMPTY = String('\0');
-	NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
+	((Node) NIL) = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 //	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 //	Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
 //	Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
@@ -133,7 +134,7 @@ Node &Nodec::operator[](int i) const {
 }
 
 Node &Node::operator[](String *s) {
-	if (!s)return NIL;
+	if (!s)return *new Node();// NIL.copy();
 	return operator[](s->data);
 }
 
@@ -532,7 +533,7 @@ void Node::remove(Node &node) {
 //	return add(&node);
 //}
 
-Node &Node::add(Node *node) {
+Node &Node::add(const Node *node) {
 	if ((long) node > MEMORY_SIZE)
 		error("node Out of Memory");
 	if (!node)return *this;
@@ -551,13 +552,13 @@ Node &Node::add(Node *node) {
 		error("Out of global Memory");
 	if (!children) children = (Node *) calloc(sizeof(Node), capacity);
 	if (length > 0) children[length - 1].next = &children[length];
-	node->parent = this;
+	((Node *) node)->parent = this;// not const lol. allow to set and ignore NIL.parent
 	children[length] = *node; // invokes memcpy
 	length++;
 	return *this;
 }
 
-Node &Node::add(Node &node) {
+Node &Node::add(const Node &node) {
 	if (&node == 0)return *this;
 	return add(&node);
 }
@@ -1114,6 +1115,14 @@ List<String> &Node::toList() {
 bool Node::empty() {
 	// we don't care about name here
 	return length == 0 and value.data == 0;
+}
+
+void Node::clear() {
+	next = 0;
+	length = 0;
+	children[0] = 0;
+	if (kind == keyNode)error("can't clear keyNode(?)");
+	value.data = 0;
 }
 
 

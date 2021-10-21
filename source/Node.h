@@ -50,9 +50,9 @@ class Node;
 //extern const Node NaN;// = Node("NaN");
 //
 
+extern const Node NIL;
 extern Node True;
 extern Node False;
-extern Node NIL;
 extern Node ERROR;
 extern Node Infinity;// = Node("Infinity");
 extern Node NegInfinity;// = Node("Infinity");
@@ -120,7 +120,7 @@ public:
 
 //	Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
 	::Type kind = unknown;// todo: merge with Node.type/class ? :
-//	Node *type = 0;// variable/reference type or object class?
+	Node *type = 0;// variable/reference type or object class?
 //	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
 	Node *children = nullptr;// LIST, not link. block body content
@@ -477,8 +477,9 @@ public:
 
 
 	//	Node &add(Node node);  call to member function 'add' is ambiguous
-	Node &add(Node *node);
-	Node &add(Node &node);
+	Node &add(const Node *node);
+
+	Node &add(const Node &node);
 
 //	void addSmart(Node &node);// modifying
 	void addSmart(Node node);
@@ -644,6 +645,8 @@ if (!node.name.empty()) {
 	List<String> &toList();
 
 	bool empty();
+
+	void clear();
 };
 
 typedef const Node Nodec;
