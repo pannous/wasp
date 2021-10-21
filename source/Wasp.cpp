@@ -571,7 +571,7 @@ private:
 		}
 		if (ch == '.') {
 			string += '.';
-			while (proceed() and ch >= '0' and ch <= '9') {
+			while (proceed() and atoi0(ch) >= 0) {
 				string += ch;
 			}
 		}
@@ -878,7 +878,8 @@ private:
 		}
 		if (is_operator(ch))
 			return any_operator();
-		if (is_identifier(ch))return resolve(*new Node(identifier(), true));// or op
+		if (is_identifier(ch))
+			return resolve(*new Node(identifier(), true));// or op
 		error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
 		      String((char) text[at + 2]));
 		return NIL;
