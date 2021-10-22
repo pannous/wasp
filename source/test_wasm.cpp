@@ -372,6 +372,10 @@ void testComparisonIdPrecedence() {
 }
 
 void testComparisonPrimitives() {
+	assert_emit("8.33333333332248946124e-03", 0);
+	assert_emit("8.33333333332248946124e+01", 83);
+	assert_emit("S1  = -1.6666", -1);
+	assert_emit("double S1  = -1.6666", -1);
 	// may be evaluated by compiler!
 	assert_emit(("42>2"), 1)
 	assert_emit(("1<2"), 1)
