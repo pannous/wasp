@@ -291,8 +291,10 @@ bool isPrimitive(Node node) {
 	return false;
 }
 
-const Node Long("Long");//.setType(type);
-const Node Double("Double");//.setType(type);
+const Node Long("Long", classe);
+const Node Double("Double", classe);//.setType(type);
+//const Node Double{.name="Double", .kind=classe};//.setType(type);
+//const Node Double{name:"Double", kind:classe};//.setType(type);
 Map<String, Node> types;
 
 void initTypes() {
@@ -304,86 +306,92 @@ void initTypes() {
 		types[name].setType(classe);
 }
 
+
+bool addLocal(const char *context, String name, Valtype valtype);
+
 Node &groupTypes(Node &expression, const char *context) {
 	if (types.size() == 0)initTypes();
 	if (types.has(expression.name)) {// double \n x,y,z  extra case :(
 		if (expression.length > 0) {
 			for (Node &typed:expression) {
 				typed.setType(&types[expression.name]);
-				if (not locals[context].has(typed.name)) {
-					locals[context].add(typed.name);
-					localTypes[context].add(mapType(typed));
-				}
+				addLocal(context, typed.name, mapType(typed));
 			}
 			expression.name = 0;// hack
-			return expression;
+			return expression.flat();
 		}
-//		else if(expression.next){
-//			expression=*expression.next;
-//		}
 		else
 			error("dangling type "s + expression.name);
+//		else if(expression.next){expression=*expression.next;}
 	}
 	for (int i = 0; i < expression.length; i++) {
 		Node &node = expression.children[i];
-//	for (Node &node : expression) {
-		if (types.has(node.name)) {
-			if (node.length > 0) {
-				node = groupTypes(node, context);// double (x,y,z)
-				continue;
-			}
-			static Node typeDummy;// todo: remove how?
-			Node &typed = typeDummy;
-			if (node.next and not is_operator(node.next->name[0])) {
-				typed = *node.next;
-			} else if (i < expression.length - 1 and not is_operator(expression.children[i + 1].name[0])) {
-				typed = expression.children[i + 1];
-			} else if (i > 1) {
-				typed = expression.children[i - 1];
-			} else {
-				error("Type without object");// may be ok
-				typed = NIL;
-			}
+		if (not types.has(node.name))continue;
+		if (node.length > 0) {
+			node = groupTypes(node, context);// double (x,y,z)
+			continue;
+		}
+		static Node typeDummy;// todo: remove how?
+		Node &typed = typeDummy;
+		if (node.next and not is_operator(node.next->name[0])) {
+			typed = *node.next;
+		} else if (i < expression.length - 1 and not is_operator(expression.children[i + 1].name[0])) {
+			typed = expression.children[i + 1];
+		} else if (i > 1) {
+			typed = expression.children[i - 1];
+		} else {
+			error("Type without object");// may be ok
+			typed = NIL;
+		}
 //			if (operator_list.has(typed.name))
 //				continue; // 3.3 as int …
-			auto aType = &types[node.name];
+		auto aType = &types[node.name];
 
-			if (typed.name == "as") { // danger edge cases!
-				expression.remove(i - 1, i);
-				expression.children[i - 2].type = aType;// todo bug, should be same as
-				typed = expression.children[i - 2];
-			} else {
-				expression.remove(i, i);
-			}
-			while (isPrimitive(typed) or
-			       (typed.kind == reference and typed.length == 0)) {// BAD criterion for next!
-				typed.type = aType;// ref ok because types can't be deleted ... rIgHt?
-				if ((typed.kind == reference or typed.isSetter()) and not locals[context].has(typed.name)) {
-					locals[context].add(typed.name);// todo : proper calling context!
-					localTypes[context].add(mapType(typed));
-				}
-				// HACK for double x,y,z => z.type=Double !
-				// danger: hops across bounderies! (double x) {y … }
-				if (typed.next) typed = *typed.next;
-				else if (expression.next) {
-					typed = *expression.next;
-					expression.next = 0;// MEGA HACK
-				} else break;
-			}
+		if (typed.name == "as") { // danger edge cases!
+			expression.remove(i - 1, i);
+			expression.children[i - 2].type = aType;// todo bug, should be same as
+			typed = expression.children[i - 2];
+			typed.type = aType;
+			continue;
+		} else {
+			expression.remove(i, i);
+		}
+		while (isPrimitive(typed) or
+		       (typed.kind == reference and typed.length == 0)) {// BAD criterion for next!
+			typed.type = aType;// ref ok because types can't be deleted ... rIgHt?
+			if (typed.kind == reference or typed.isSetter())
+				addLocal(context, typed.name, mapType(*aType));
+			// HACK for double x,y,z => z.type=Double !
+			// danger: hops across bounderies! (double x) {y … }
+			if (typed.next) typed = *typed.next;
+			else if (expression.next) {
+				typed = *expression.next;
+				expression.next = 0;// MEGA HACK
+			} else break;
 		}
 	}
 //	if(isPrimitive(expression)
 	return expression.flat(); // (1) => 1
 }
 
+bool addLocal(const char *context, String name, Valtype valtype) {
+	if (name.empty()) {
+		warn("empty reference in "s + context);
+		return true;// 'done' ;)
+	}
+	if (not locals[context].has(name)) {
+		locals[context].add(name);// todo : proper calling context!
+		localTypes[context].add(valtype);
+		return true;// added
+	}
+	return false;// already there
+}
+
 Node &groupSetter(String name, Node &body, String context) {
 	Node *decl = new Node(name);//node.name+":={…}");
 	decl->setType(assignment);
 	decl->add(body.clone());// addChildren makes emitting harder
-	if (not locals[context].has(name)) {
-		locals[context].add(name);// todo : proper calling context!
-		localTypes[context].add(mapType(body));
-	} else {
+	if (not addLocal(context, name, mapType(body))) {
 		int i = locals[context].position(name);
 		localTypes[context][i] = mapType(body);// update type! todo: check if cast'able!
 	}
@@ -391,7 +399,6 @@ Node &groupSetter(String name, Node &body, String context) {
 }
 
 Node &groupDeclarations(Node &expression, const char *context) {
-//	Node &expression = *expression0.clone();// debug
 	for (Node &node : expression) {
 		String &op = node.name;
 		if (node.length == 3 and types.has(node.first().name) and
@@ -404,20 +411,15 @@ Node &groupDeclarations(Node &expression, const char *context) {
 				warn("Cant set globals yet!");
 				continue;
 			}
-			locals[context].add(op);// todo : proper calling context!
-			localTypes[context].add(mapType(node));// uh we have no type for pure references :(
+			addLocal(context, op, mapType(node));
 			if (node.length >= 2)
 				info("c-style function?");
 			else
 				continue;
 		}
 		if (node.kind == reference or (node.kind == keyNode and isVariable(node))) {// only constructors here!
-			if (not globals.has(op) and not locals[context].has(op) and not isFunction(node)) {
-#ifndef RUNTIME_ONLY
-				locals[context].add(op);// todo : proper calling context!
-				localTypes[context].add(mapType(node));// uh we have no type for pure references :(
-#endif
-			}
+			if (not globals.has(op) and not isFunction(node))
+				addLocal(context, op, mapType(node));
 			continue;
 		}// todo danger, referenceIndices i=1 … could fall through to here:
 		if (node.kind == declaration or declaration_operators.has(op)) {
@@ -426,7 +428,7 @@ Node &groupDeclarations(Node &expression, const char *context) {
 			Node rest = expression.from(node); // body
 			String name = extractFunctionName(left);
 			if (node.length ==
-			    2) {// // C style: double sin(x) {…} todo: fragile criterion!! also why is body not child of sin??
+			    2) { // C style: double sin(x) {…} todo: fragile criterion!! also why is body not child of sin??
 				name = node.first().name;
 				left = node.first().first();// ARGS
 				rest = node.last();
@@ -450,28 +452,30 @@ Node &groupDeclarations(Node &expression, const char *context) {
 			Signature &signature = functionSignatures[name];// use Default
 			signature.emit = true;// all are 'export'
 			// decl->metas().add(left);// mutable x=7  todo: either reactivate meta or add type mutable?
-			Node body = analyze(rest, name);
 
 			// todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
 			if (setter_operators.has(op) or key_pair_operators.has(op)) {
+				Node body = analyze(rest, name);
 				if (left.has("global"))
 					globals.insert_or_assign(name, body.clone());
 				return groupSetter(name, body, String());
 			}
 
 			List<Arg> args = extractFunctionArgs(name, left);
+			List<String> &parameters = locals[name];// function context!
 			for (Arg arg: args) {
-				if (locals[name].has(arg.name))
+				if (parameters.has(arg.name))
 					error("duplicate argument name: "s + arg.name);
-				locals[name].add(arg.name);
+				parameters.add(arg.name);
 				localTypes[name].add(int32);
 				signature.add(int32);// todo: arg type, or pointer
 			}
-			if (signature.size() == 0 and locals[name].size() == 0 and rest.has("it", false, 100)) {
-				locals[name].add("it");
+			if (signature.size() == 0 and parameters.size() == 0 and rest.has("it", false, 100)) {
+				parameters.add("it");
 				localTypes[name].add(int32);
 				signature.add(int32);// todo
 			}
+			Node body = analyze(rest, name);// has to come after arg analysis!
 			auto valtype = mapType(left);// or i32t
 			signature.returns(valtype);
 			Node &decl = *new Node(name);//node.name+":={…}");
@@ -605,16 +609,13 @@ Node &groupOperators(Node &expression, String context = "main") {
 				if (name.endsWith("=") and not name.startsWith("::") and prev.kind == reference) {
 					// todo can remove hack?
 					// x=7 and x*=7
-					if (!localContext.has(prev.name)) {
-						if (name.startsWith("="))error("self modifier on unknown reference "s + prev.name);
-						Valtype valtype = mapType(*node.value.node);//
-						localContext.add(prev.name);
-						localContextTypes.add(valtype);
+					if (addLocal(context, prev.name, mapType(node))) {
+						if (name.startsWith("="))
+							error("self modifier on unknown reference "s + prev.name);
 					} else {
 						// variable is known but not typed yet
 						int position = localContext.position(prev.name);
-						localContextTypes[position] = mapType(
-								next);// TODO  pre-evaluation of rest!!! keep old type?
+						localContextTypes[position] = mapType(next);// TODO  pre-evaluation of rest!!! keep old type?
 					}
 				}
 				//#endif
@@ -695,8 +696,8 @@ Node &groupFunctions(Node &expressiona) {
 		String &name = node.name;
 		if (name == "if") // kinda functor
 		{
-			node.add(expressiona.from("if"));// as condition
-			Node &iff = groupIf(node);
+			auto args = expressiona.from("if");
+			Node &iff = groupIf(node.length > 0 ? node.add(args) : args);
 			int j = expressiona.lastIndex(iff.last().next) - 1;
 			if (i == 0 and j == expressiona.length - 1)return iff;
 			if (j > i)
@@ -881,24 +882,16 @@ Node analyze(Node node, String context) {
 		if (name == "?")return groupIf(node);
 	}
 	if ((type == expression and not name.empty())) {
-		localContext.add(name);
-		localContextTypes.add(int32);//  todo deep type analysis x = π * fun() % 4
+		addLocal(context, name, int32);//  todo deep type analysis x = π * fun() % 4
 	}
 	if (type == keyNode) {
-		if (not localContext.has(name)) {
-			localContext.add(name);
-			if (node.value.node)
-				localContextTypes.add(mapType(*node.value.node));
-		}
 		if (node.value.node /* i=ø has no node */)
 			node.value.node = analyze(*node.value.node).clone();
+		addLocal(context, name, node.value.node ? mapType(*node.value.node) : none);
 	}
 	if (isPrimitive(node)) {
-		if (isVariable(node) and not localContext.has(name)) {
-			localContext.add(name);// need to pre-register before emitBlock!
-			localContextTypes.add(mapType(node));
-			check(localContext.position(name) >= 0);
-		}
+		if (isVariable(node))
+			addLocal(context, name, mapType(node));
 		return node;// nothing to be analyzed!
 	}
 
