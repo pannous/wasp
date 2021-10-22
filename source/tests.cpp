@@ -16,13 +16,12 @@ void testPrimitiveTypes() {
 	assert_emit("float 2", 2);
 	assert_emit("int 2", 2);
 	assert_emit("long 2", 2);
-	assert_emit("4.3 as int + 4.7 as int", 8);
 	assert_emit("8.33333333332248946124e-03", 0);
 	assert_emit("8.33333333332248946124e+01", 83);
 	assert_emit("S1  = -1.6666", -1);
 	assert_emit("double S1  = -1.6666", -1);
-	assert_emit("double\n"
-	            "\tS1  = -1.6666", -1);
+//	assert_emit("double\n"
+//	            "\tS1  = -1.6666", -1);
 
 	assert_emit("double\n"
 	            "\tS1  = -1.66666666666666324348e01, /* 0xBFC55555, 0x55555549 */\n"
@@ -1617,6 +1616,7 @@ void testBUG();
 void tests() {
 //	data_mode = true;// expect data unless explicit code
 	testBUG();
+	testSerialize();
 	testPrimitiveTypes();
 	test_sin();
 	testModulo();
@@ -1639,7 +1639,7 @@ void tests() {
 	testStringConcatenation();
 	testNodeBasics();
 	testStringReferenceReuse();
-	testWasmString();
+	testWasmString();// with length as header
 	testTruthiness();
 	testNodeConversions();
 	testConcatenation();
@@ -1740,7 +1740,20 @@ void testBUG() {// move to tests() once done!
 
 
 void todos() {
-
+	skip(
+			assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
+			assert_emit("2,4 == 2,4", 1);
+			assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
+			assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
+	)
+	skip(
+			assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
+			data_mode = false;testParams();
+			run("circle.wasp");
+			assert_emit("1 +1 == [1 1]", 1);
+			assert_emit("1 +1 ≠ 1 + 1", 1);
+			testWasmMutableGlobal();
+	)
 	skip( // todo soon
 
 	// while without body
@@ -1884,45 +1897,61 @@ void testNodesInWasm() {
 	assert_emit("a{b:c}", parse("a{b:c}"));
 }
 
+
+void testSubGroupingIndent() {
+	result = parse("x{\ta\n\tb,c,\n\td;\n\te");
+	assert_equals(result.length, 3);
+	assert_equals(result.first(), "a");
+	assert_equals(result.last(), "e");
+}
+
+void testSubGrouping() {// dangling , should make '\n' not close
+//	result=parse("a\nb,c,\nd;e");
+	result = parse("a\nb,c,\nd;\ne");
+	assert_equals(result.length, 3);
+	assert_equals(result.first(), "a");
+	assert_equals(result.last(), "e");
+	testSubGroupingIndent();
+}
+
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp!
 void testCurrent() {
+	//	throwing = false;// shorter stack trace
+	//	panicking = true;//
+	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	data_mode = true;
+	assert_emit("double\n"
+	            "\tS1  = -1.6666", -1);
+	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
 
-//	throwing = false;// shorter stack trace
-//	panicking = true;//
-//	data_mode = false; // a=b => a,=,b before analysis
-//	assert_emit("double x,y,z", 1);
+
+	testWasmLogicUnaryVariables();
+	assert_emit("i=true; not i", false);
+	assert_emit("i=nil; not i", true);
+//	assert_emit("double\n"
+//				"\tS1  = -1.6666", -1);
+
+	assert_emit("4.3 as int + 4.7 as int", 8);
+	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
+	assert_emit("add1 x:=x+1;add1 3", (long) 4);
+
 //testNodesInWasm();
-	skip(
-			assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
-			assert_emit("2,4 == 2,4", 1);
-			assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
-			assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
-	)
+//testSubGrouping();
 
-
-	assert_emit("use sin;sin π/2", 1);
-	assert_emit("use sin;sin π", 0);
+//	assert_emit("use sin;sin π/2", 1);
+//	assert_emit("use sin;sin π", 0);
 //	testMergeWabt();
-//	exit(1);
-//	assert_emit("(√((x-c)^2+(y-c)^2)<r?0:255)");
 //	run( "wasp.wasm");
+//	testPaintWasm();
 //	return;
 //	exit(1);
-//	testPaintWasm();
+
 	//	assert_run("render html{'test'}", 4);
-	skip(
-			assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
-			data_mode = false;testParams();
-			run("circle.wasp");
-			assert_emit("1 +1 == [1 1]", 1);
-			assert_emit("1 +1 ≠ 1 + 1", 1);
-			testWasmMutableGlobal();
-	)
+
 //	testImportWasm();
 //	testImport();
-	testSerialize();
 //	exit(0);
 	//	return;// let the webview show!
 	todos();// those not passing yet (skip)
