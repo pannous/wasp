@@ -316,6 +316,7 @@ Node &groupTypes(Node &expression, const char *context) {
 				}
 			}
 			expression.name = 0;// hack
+			return expression;
 		}
 //		else if(expression.next){
 //			expression=*expression.next;
@@ -327,6 +328,10 @@ Node &groupTypes(Node &expression, const char *context) {
 		Node &node = expression.children[i];
 //	for (Node &node : expression) {
 		if (types.has(node.name)) {
+			if (node.length > 0) {
+				node = groupTypes(node, context);// double (x,y,z)
+				continue;
+			}
 			static Node typeDummy;// todo: remove how?
 			Node &typed = typeDummy;
 			if (node.next and not is_operator(node.next->name[0])) {
@@ -374,7 +379,7 @@ Node &groupTypes(Node &expression, const char *context) {
 Node &groupSetter(String name, Node &body, String context) {
 	Node *decl = new Node(name);//node.name+":={…}");
 	decl->setType(assignment);
-	decl->add(body);// addChildren makes emitting harder
+	decl->add(body.clone());// addChildren makes emitting harder
 	if (not locals[context].has(name)) {
 		locals[context].add(name);// todo : proper calling context!
 		localTypes[context].add(mapType(body));
@@ -471,7 +476,7 @@ Node &groupDeclarations(Node &expression, const char *context) {
 			signature.returns(valtype);
 			Node &decl = *new Node(name);//node.name+":={…}");
 			decl.setType(declaration);
-			decl.add(body);
+			decl.add(body.clone());
 			return decl;
 		}
 	}
