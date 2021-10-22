@@ -16,7 +16,7 @@ void testCurrent();
 #include "stdio.h" // FILE
 
 //#define err(m) printf("\n%s:%d\n",__FILE__,__LINE__);err1(m)
-#define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m);
+#define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m)
 
 #ifndef RUNTIME_ONLY
 
@@ -248,22 +248,39 @@ class Wasp {
 	int columnStart{};    // The index of column start char
 
 	int indentation_level = 0;
+	bool indentation_by_tabs = false;
 #define INDENT 0x0F // 	SI 	␏ 	^O 		Shift In
 #define DEDENT 0x0E //  SO 	␎ 	^N 		Shift Out
 
 	//	indent 􀋵 (increase.indent) ☞ 𒋰 𒐂 ˆ ˃
 	int indentation() {
+		if (is_grouper(lastNonWhite)) {
+			// todo: ignore indent in x{…} BUT keep and restore previous indent!
+		}
 		float tabs = 0;
 		int spaces_per_tab = 2;
 		int offset = at;
+		if (text[offset] == '\n' and text[offset + 1] == '\n') {
+//			// double newline dedent. really? why not keep track via indent?
+			print(position());
+//			if(text[offset+2] == '\n')
+//				return indentation_level--;// todo close ALL?
+//			else return indentation_level; //ignore simple newlines
+		}
 		if (text[offset] == '\n' or text[offset] == '\r')offset++;
 		while (text[offset] == '\t') {
+			if (indentation_level > 0 and not indentation_by_tabs)
+				proceed() ? err("mixing tabs and spaces for indentation") : 0;
+			indentation_by_tabs = true;
 			tabs++;
 			offset++;
 		}
 		if (tabs > 0 and text[offset] == ' ')
 			err("ambiguous indentation, mixing tabs and spaces");
 		while (text[offset] == ' ') {
+			if (indentation_level > 0 and indentation_by_tabs)
+				proceed() ? err("mixing tabs and spaces for indentation") : 0;
+			indentation_by_tabs = false;
 			tabs = tabs + 1. / spaces_per_tab;
 			offset++;
 		}
@@ -371,7 +388,7 @@ public:
 		white();
 		if (ch and ch != -1 and ch != DEDENT) {
 			printf("UNEXPECTED CHAR %c", ch);
-			pointer();
+			position();
 			error("Expect end of input");
 			result = ERROR;
 		}
@@ -415,7 +432,7 @@ private:
 		return chr == '\n' ? s("\\n") : String('\'') + chr + '\'';
 	};
 
-	String pointer() {
+	String position() {
 		auto columnNumber = at - columnStart;
 		String msg;
 //				s("IN CODE:\n");
@@ -433,7 +450,7 @@ private:
 		// Call error when something is wrong.
 		// todo: Still to read can scan to end of line
 		String msg = m;
-		msg += pointer();
+		msg += position();
 //		msg = msg + s(" of the Mark data. \nStill to read: \n") + text.substring(at - 1, at + 30) + "\n^^ ...";
 //		msg = msg + backtrace2();
 		auto error = new SyntaxError(msg);
@@ -1254,7 +1271,7 @@ private:
 				current.line=&line;
 #endif
 		auto length = text.length;
-		int start = at;
+		int start = at;// line, expression, group, … start
 //		loop:
 		white();// insignificant whitespace HERE
 		while (ch and at <= length) {
@@ -1295,7 +1312,7 @@ private:
 				case '{': {
 					let bracket = ch;
 					if (checkAmbiguousBlock(current, parent)) {
-						log(pointer());
+						log(position());
 						breakpoint_helper
 						warn("Ambiguous reading a {x} => Did you mean a{x} or a:{x} or a , {x}");
 					}

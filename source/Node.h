@@ -115,6 +115,7 @@ struct TypedNode {
 class Node {
 	// sizeof(Node) == 64 (20 for name,
 public:
+
 	String name = empty_name;// nil_name;
 	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 
@@ -205,8 +206,6 @@ public:
 	}
 
 	explicit Node(int nr) : Node((long) nr) {}
-
-
 	explicit Node(float nr) : Node((double) nr) {}
 
 // how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
@@ -263,6 +262,10 @@ public:
 //		type = strings NAH;// unless otherwise specified!
 	}
 
+	Node(String name, Type type) {
+		this->name = name;
+		this->kind = type;
+	}
 //	explicit Node(bool truth) {
 //		error("DONT USE CONSTRUCTION, USE ok?True:False"); // todo : can't we auto-cast?  Node &bool::operator(){return True;}
 //		if (this == &NIL)
