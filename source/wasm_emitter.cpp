@@ -22,11 +22,11 @@ short builtin_count = 0;// function_offset - import_count - runtime_offset;
 
 //bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
 char *data;// any data to be stored to wasm: values of variables, strings, nodes etc
-int data_index_end;// position to write more data = end + length of data section
 //int data_index_start = 0;
+int data_index_end = 0;// position to write more data = end + length of data section
 int last_data = 0;// last pointer outside stack
 Map<String *, long> stringIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
-Map<String, long> referenceIndices;
+Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
 Map<String, List<String>> aliases;
@@ -84,7 +84,8 @@ Map<String, int> typeMap;
 
 
 Valtype mapTypeToWasm(Node n) {
-	if (n == Double)return float64;
+	if (n == Double)
+		return float64;
 	if (n == Long)return i64;
 	// int is not a true angle type, just an alias for long.
 	// todo: but what about interactions with other APIs? add explicit i32 !
@@ -97,6 +98,7 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
 	Node first = n.first();
 	if (first == n)first = NIL;// avoid loops
+	if (n.kind == objects)return array;// todo
 	if (n.kind == assignment)return mapTypeToWasm(first);// todo
 	if (n.kind == operators)return mapTypeToWasm(first);// todo
 	if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
@@ -413,6 +415,7 @@ Code emitArray(Node &node, String context) {
 		referenceIndices.insert_or_assign(ref, pointer);
 	emitData(Node(0), context);// terminate list with 0.
 	last_data = pointer;
+//	last_type = array;
 	return code;// pointer
 	// todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
 //	last_data = pointer;
@@ -690,7 +693,7 @@ Code emitGetGlobal(Node node /* context : global ;) */) {
 
 // put value on stack (vs emitData)
 // todo: last_type not enough if operator left≠right, e.g. ['a']#1  2.3 == 4 ?
-[[nodiscard]]
+//[[nodiscard]]
 Code emitValue(Node node, String context) {
 	Code code;
 	String &name = node.name;
@@ -786,8 +789,9 @@ Code emitValue(Node node, String context) {
 //			error("expression should not be put on stack (yet) (maybe serialize later)")
 		case call:
 			return emitCall(node, context);// yep should give a value ok
-		case groups:
-			return emitData(node, context);
+		case groups: // (1 2 3)
+		case objects: // { 1 2 3}
+			return emitData(node, context);// todo: could be closure, node, … !!
 		default:
 			error("emitValue unknown type: "s + typeName(node.kind));
 	}
@@ -863,10 +867,10 @@ Code emitOperator(Node node, String context) {
 	}
 	byte opcode = opcodes(name, last_type, arg_type);
 	if (opcode >= 0x8b and opcode <= 0x98 and
-			(last_type == int32 or last_type == int64 or last_type == float64 or last_type == void_block))
+	    (last_type == int32 or last_type == int64 or last_type == float64 or last_type == void_block))
 		code.add(cast(last_type, f32));// float ops
 	if (opcode >= 0x99 and opcode <= 0xA6 and
-			(last_type == int32 or last_type == int64 or last_type == float32 or last_type == void_block))
+	    (last_type == int32 or last_type == int64 or last_type == float32 or last_type == void_block))
 		code.add(cast(last_type, f64)); // double ops
 
 	if (last_type == stringp)
@@ -956,7 +960,8 @@ Code emitOperator(Node node, String context) {
 }
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string) {
-	if (lhs == float64 or rhs == float64)return float64;
+	if (lhs == float64 or rhs == float64)
+		return float64;
 	if (lhs == float32 or rhs == float32)return float32;
 	return none;
 }
@@ -1073,6 +1078,10 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				todo("proper keyNode emission");
 			// else:
 		case reference: {
+			if (name.empty()) {
+//				error("empty reference!");
+				return Code();
+			}
 //			Map<int, String>
 			List<String> &current_local_names = locals[context];
 			int local_index = current_local_names.position(name);// defined in block header
@@ -1335,6 +1344,8 @@ Code emitSetter(Node node, Node &value, String context) {
 	int local_index = current.position(variable);
 	last_type = mapTypeToWasm(value);
 	//	localTypes[context][local_index] = last_type; NO! the type doesn't change: example: float x=7
+	if (last_type == array)
+		referenceIndices.insert_or_assign(variable, data_index_end);// WILL be last_data !
 
 	Code setter;
 	Code value1 = emitValue(value, context);
@@ -1636,7 +1647,7 @@ Code importSection() {
 		extra_mem = 1;// add to import_section but not to functions:import_count
 		int init_page_count = 1024; // 64kb each, 65336 pages max
 		imports = imports + encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 +
-				Code(init_page_count);
+		          Code(init_page_count);
 	}
 	if (imports.length == 0)return Code();
 	auto importSection = createSection(import_section, Code(import_count + extra_mem) + imports);// + sqrt_ii
@@ -1835,7 +1846,7 @@ Code dataSection() { // needs memory section too!
 
 	datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
 	datas.addInt(0x0 +
-			             runtime.data_segments.length);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
+	             runtime.data_segments.length);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
 	datas.addByte(0x0b);// mode: active?
 	datas.addByte(data_index_end); // size of data
 	const Code &actual_data = Code((bytes) data, data_index_end);

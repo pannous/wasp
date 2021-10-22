@@ -345,8 +345,13 @@ bool Node::operator==(const Node &other) {
 	return *this == (Node) other;
 }
 
+//bool Node::operator===(const Node &other) {
+//	return hash() == (Node) other.hash();
+//}
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
+	if (kind == classe or other.kind == classe)
+		return name == other.name;
 //	other = other.flat();// todo this.flat() too!
 	if (kind == errors)return other.kind == errors;
 	if (other.kind == errors)return kind == errors;
@@ -409,7 +414,7 @@ bool Node::operator==(Node &other) {
 		::log(value.string);
 		::log(other.value.string);
 		return *value.string == *other.value.string or *value.string == other.name or
-		       name == other.value.string;// !? match by name??
+				name == other.value.string;// !? match by name??
 	}
 
 
@@ -991,6 +996,7 @@ bool Node::isSetter() {
 	// todo properly via expression i=1 == (set i 1)
 	// todo proper constructor i:1 == (construct i (1))
 	// todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
+	if (kind == bools)return name != True.name and name != False.name;
 	if (kind == longs || kind == reals)// || kind==bools)
 		return not atoi0(name) and not name.contains('.');// todo WTF hack
 	if (kind == keyNode and value.data) return true;
