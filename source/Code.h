@@ -408,10 +408,11 @@ enum Opcodes {
 	select_t = 0x1C, // extension … ?
 
 	local_get = 0x20,
+	get_local = 0x20,// get to stack
+
 	local_set = 0x21,
 	local_tee = 0x22,
 	// aliases:
-	get_local = 0x20,// get to stack
 	set_local = 0x21,// set and pop
 	tee_local = 0x22,// set and leave on stack
 

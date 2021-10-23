@@ -23,6 +23,12 @@ void testPrimitiveTypes() {
 //	assert_emit("double\n"
 //	            "\tS1  = -1.6666", -1);
 
+	assert_emit("grow(double z):=z*2;grow 5", 10);
+	assert_emit("grow(z):=z*2;grow 5", 10);
+	assert_emit("int grow(double z):=z*2;grow 5", 10);
+	assert_emit("double grow(z):=z*2;grow 5", 10);
+	assert_emit("int grow(int z):=z*2;grow 5", 10);
+	assert_emit("double grow(int z):=z*2;grow 5", 10);
 	assert_emit("double\n"
 	            "\tS1  = -1.66666666666666324348e01, /* 0xBFC55555, 0x55555549 */\n"
 	            "\tS2  =  8.33333333332248946124e03, /* 0x3F811111, 0x1110F8A6 */\n\nS1", -16);
@@ -1919,31 +1925,25 @@ void testSubGrouping() {// dangling , should make '\n' not close
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
-	//	data_mode = false; // a=b => a,=,b before analysis
+//		data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_emit("grow(double z):=z*2;grow 5", 10);
-	assert_emit("grow(z):=z*2;grow 5", 10);
-	assert_emit("int grow(double z):=z*2;grow 5", 10);
-	assert_emit("double grow(z):=z*2;grow 5", 10);
-	assert_emit("int grow(int z):=z*2;grow 5", 10);
-	assert_emit("double grow(int z):=z*2;grow 5", 10);
+//	assert_emit("use sin;sin π/2", 1);
+//assert_emit("factorial:=it<2?1:it*factorial it-1;factorial 5", 120);
+//	assert_emit("factorial:=it<2?1:it*(factorial it-1);factorial 5", 120);
+	assert_emit("fac:= if it<=0 : 1 else it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
+//assert_emit("add1 x:=$0+1;add1 3", (long) 4);
+//	assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
 
-//	assert_emit("double\n\tS1  = -1.6666", -1);
-	assert_emit("use sin;sin π/2", 1);
 //	assert_emit("use sin;sin π", 0);
 //testNodesInWasm();
 //testSubGrouping();
 //	testMergeWabt();
 //	run( "wasp.wasm");
 //	testPaintWasm();
-//	return;
-//	exit(1);
-
 	//	assert_run("render html{'test'}", 4);
-
 //	testImportWasm();
 //	testImport();
-//	exit(0);
+//	exit(1);
 	//	return;// let the webview show!
 	todos();// those not passing yet (skip)
 	testAllWasm();
