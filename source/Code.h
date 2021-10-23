@@ -456,6 +456,8 @@ enum Opcodes {
 
 	i64_eqz = 0x50,
 	f32_eqz = 0x50, // HACK: no such thing!
+	f64_eqz = 0x50, // HACK: no such thing!
+
 	i64_eq = 0x51,
 	i64_ne = 0x52,
 	i64_lt_s = 0x53,

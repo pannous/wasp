@@ -218,7 +218,18 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 
 		if (eq(s, "not"))return i64_eqz;
 		if (eq(s, "¬"))return i64_eqz;
-
+	} else if (kind == f64t) {
+		if (eq(s, "not"))return f64_eqz; // HACK: no such thing!
+		if (eq(s, "¬"))return f64_eqz; // HACK: no such thing!
+		if (eq(s, "+"))return f64_add;
+		if (eq(s, "-"))return f64_sub;
+		if (eq(s, "*"))return f64_mul;
+		if (eq(s, "/"))return f64_div;
+		if (eq(s, "=="))return f64_eq;
+		if (eq(s, ">"))return f64_gt;
+		if (eq(s, ">="))return f64_ge;
+		if (eq(s, "<"))return f64_lt;
+		if (eq(s, "<="))return f64_le;
 	} else {
 		if (eq(s, "not"))return f32_eqz; // HACK: no such thing!
 		if (eq(s, "¬"))return f32_eqz; // HACK: no such thing!
@@ -1235,12 +1246,15 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==f64u and to==i64)	return Code(i64_trunc_𝖿𝟨𝟦_𝗎);
 	if (from == i32 and to == f32) return Code(f32_convert_i32_s);
 //	if(from==i32u and to==f32)	return Code(f32_convert_i32_𝗎);
-	if (from == f64 and to == f32) return Code(f32_convert_i64_s);
+	if (from == i64 and to == f32)
+		return Code(f32_convert_i64_s);
 //	if(from==f64u and to==f32)	return Code(f32_convert_i64_𝗎);
 	if (from == f64 and to == f32) return Code(f32_demote_f64);
-	if (from == i32 and to == f64) return Code(f64_convert_i32_s);
+	if (from == i32 and to == f64)
+		return Code(f64_convert_i32_s);
 //	if(from==i32u and to==f64)	return Code(f64_convert_i32_𝗎);
-	if (from == f64 and to == f64) return Code(f64_convert_i64_s);
+	if (from == i64 and to == f64)
+		return Code(f64_convert_i64_s);
 //	if(from==f64u and to==f64)	return Code(f64_convert_i64_𝗎);
 	if (from == f32 and to == f64) return Code(f64_promote_f32);
 //	if(from==f32 and to==i32)	return Code(i32_reinterpret_f32);
