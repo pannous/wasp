@@ -1,0 +1,18 @@
+# format:
+# alias: variant (,variant)* OR
+# $data_mode = true   << stupid pragma so a: b c == a:[b c]
+
+puts: ['¡', print, printf, writeLine, println, echo ]
+modulo: ['%', mod, mod_d]
+func: ['ƒ', function, fun, fn, def, defn, define /*!?!*/, to… ]
+sqrt: ['√', root, square_root]
+times: [ *, ×, ⋅, mul, multiply]
+plus: [+, add, ﹢, ＋, ⁺, ˖ ̟ ⁺ ᐩ ⁺ ₊ ∔ ⊕ ⊞ ﹢ ＋ 𒈦]
+similar: [~, ≈, ~~, circa, approximately] # <> ± ∓
+as: [ '|>', cast, convert, convert_to ]
+square: ²
+orthogonal: ⟂ ﬩ perpendicular
+sin: sinus
+cos: cosinus cosin
+
+# superscript signs bind higher! `x²⁺³ == x⁵` 
