@@ -83,7 +83,6 @@ Map<String, Code> functionCodes;
 Map<String, int> typeMap;
 
 
-
 [[nodiscard]]
 Code Call(char *symbol);//Node* args
 
@@ -140,140 +139,141 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 //	if (eq(s, "=$1"))return tee_local;
 
 	if (kind == voids or kind == void_block or kind == i32t) { // INT32
-		if (eq(s, "+"))return i32_add;
-//		if (eq(s, "-") and previous==none)return sign_flip; *-1
-		if (eq(s, "-"))return i32_sub;
-		if (eq(s, "*"))return i32_mul;
-		if (eq(s, "/"))return i32_div;
-		if (eq(s, "%"))return i32_rem;
-		if (eq(s, "=="))return i32_eq;
-		if (eq(s, "eq"))return i32_eq;
-		if (eq(s, "equals"))return i32_eq;
-		if (eq(s, "is"))return i32_eq;// careful could be declaration := !
-		if (eq(s, "!="))return i32_ne;
-		if (eq(s, ">"))return i32_gt;
-		if (eq(s, "<"))return i32_lt;
-		if (eq(s, ">="))return i32_ge;
-		if (eq(s, "<="))return i32_le;
-		if (eq(s, "≥"))return i32_ge;
-		if (eq(s, "≤"))return i32_le;
+		if (eq(s, "+"))return i32_add; // i32.add
+		//		if (eq(s, "-") and previous==none)return sign_flip; *-1
+		if (eq(s, "-"))return i32_sub; // i32.sub
+		if (eq(s, "*"))return i32_mul; // i32.mul
+		if (eq(s, "/"))return i32_div; // i32.div
+		if (eq(s, "%"))return i32_rem; // i32.rem
+		if (eq(s, "=="))return i32_eq; // i32.eq
+		if (eq(s, "eq"))return i32_eq; // i32.eq
+		if (eq(s, "equals"))return i32_eq; // i32.eq
+		if (eq(s, "is"))return i32_eq; // i32.eq // careful could be declaration := !
+		if (eq(s, "!="))return i32_ne; // i32.ne
+		if (eq(s, ">"))return i32_gt; // i32.gt
+		if (eq(s, "<"))return i32_lt; // i32.lt
+		if (eq(s, ">="))return i32_ge; // i32.ge
+		if (eq(s, "<="))return i32_le; // i32.le
+		if (eq(s, "≥"))return i32_ge; // i32.ge
+		if (eq(s, "≤"))return i32_le; // i32.le
 
-		if (eq(s, "&"))return i32_and;
-		if (eq(s, "&&"))return i32_and;
+		if (eq(s, "&"))return i32_and; // i32.and
+		if (eq(s, "&&"))return i32_and; // i32.and
 
-		if (eq(s, "and"))return i32_and;
-		if (eq(s, "⋀"))return i32_and;
-		if (eq(s, "∧"))return i32_and;// ∧≠^ potence looks like
+		if (eq(s, "and"))return i32_and; // i32.and
+		if (eq(s, "⋀"))return i32_and; // i32.and
+		if (eq(s, "∧"))return i32_and; // i32.and // ∧≠^ potence looks like
 		if (eq(s, "^"))return 0;// POWER handled on higher level
 
-		if (eq(s, "or"))return i32_or;
-		if (eq(s, "∨"))return i32_or;// looks like 'v' but isn't
-		if (eq(s, "⋁"))return i32_or;
-		if (eq(s, "||"))return i32_or; // ≠ norm ‖
-		if (eq(s, "|"))return i32_or;// todo: pipe is different!
+		if (eq(s, "or"))return i32_or; // i32.or
+		if (eq(s, "∨"))return i32_or; // i32.or // looks like 'v' but isn't
+		if (eq(s, "⋁"))return i32_or; // i32.or
+		if (eq(s, "||"))return i32_or; // i32.or  // ≠ norm ‖
+		if (eq(s, "|"))return i32_or; // i32.or // todo: pipe is different!
 
-		if (eq(s, "xor"))return i32_xor;
-		if (eq(s, "^|"))return i32_xor;//always bitwise todo: truthy 0x0101 xor 0x1010 !?
-		if (eq(s, "⊻"))return i32_xor;
+		if (eq(s, "xor"))return i32_xor; // i32.xor
+		if (eq(s, "^|"))return i32_xor; // i32.xor //always bitwise todo: truthy 0x0101 xor 0x1010 !?
+		if (eq(s, "⊻"))return i32_xor; // i32.xor
 
-		if (eq(s, "not"))return i32_eqz; // no such thing as i32_not, but the same if you think about it
-		if (eq(s, "¬"))return i32_eqz;
+		if (eq(s, "not"))return i32_eqz; // i32.eqz  // no such thing as i32_not, but the same if you think about it
+		if (eq(s, "¬"))return i32_eqz; // i32.eqz
 
 	} else if (kind == i64t) { // INT32
-		if (eq(s, "+"))return i64_add;
+		if (eq(s, "+"))return i64_add; // i64.add
 		//		if (eq(s, "-") and previous==none)return sign_flip; *-1
-		if (eq(s, "-"))return i64_sub;
-		if (eq(s, "*"))return i64_mul;
-		if (eq(s, "/"))return i64_di𝗏_s;
-		if (eq(s, "%"))return i64_rem_s;
-		if (eq(s, "=="))return i64_eq;
-		if (eq(s, "eq"))return i64_eq;
-		if (eq(s, "equals"))return i64_eq;
-		if (eq(s, "is"))return i64_eq;// careful could be declaration := !
-		if (eq(s, "!="))return i64_ne;
-		if (eq(s, ">"))return i64_gt_s;
-		if (eq(s, "<"))return i64_lt_s;
-		if (eq(s, ">="))return i64_ge_s;
-		if (eq(s, "<="))return i64_le_s;
-		if (eq(s, "≥"))return i64_ge_s;
-		if (eq(s, "≤"))return i64_le_s;
+		if (eq(s, "-"))return i64_sub; // i64.sub
+		if (eq(s, "*"))return i64_mul; // i64.mul
+		if (eq(s, "/"))return i64_di𝗏_s; // i64.di𝗏_s
+		if (eq(s, "%"))return i64_rem_s; // i64.rem_s
+		if (eq(s, "=="))return i64_eq; // i64.eq
+		if (eq(s, "eq"))return i64_eq; // i64.eq
+		if (eq(s, "equals"))return i64_eq; // i64.eq
+		if (eq(s, "is"))return i64_eq; // i64.eq // careful could be declaration := !
+		if (eq(s, "!="))return i64_ne; // i64.ne
+		if (eq(s, ">"))return i64_gt_s; // i64.gt_s
+		if (eq(s, "<"))return i64_lt_s; // i64.lt_s
+		if (eq(s, ">="))return i64_ge_s; // i64.ge_s
+		if (eq(s, "<="))return i64_le_s; // i64.le_s
+		if (eq(s, "≥"))return i64_ge_s; // i64.ge_s
+		if (eq(s, "≤"))return i64_le_s; // i64.le_s
 
-		if (eq(s, "&"))return i64_and;
-		if (eq(s, "&&"))return i64_and;
+		if (eq(s, "&"))return i64_and; // i64.and
+		if (eq(s, "&&"))return i64_and; // i64.and
 
-		if (eq(s, "and"))return i64_and;
-		if (eq(s, "⋀"))return i64_and;
-		if (eq(s, "∧"))return i64_and;// ∧≠^ potence looks like
+		if (eq(s, "and"))return i64_and; // i64.and
+		if (eq(s, "⋀"))return i64_and; // i64.and
+		if (eq(s, "∧"))return i64_and; // i64.and // ∧≠^ potence looks like
 		if (eq(s, "^"))return 0;// POWER handled on higher level
 
-		if (eq(s, "or"))return i64_or;
-		if (eq(s, "∨"))return i64_or;// looks like 'v' but isn't
-		if (eq(s, "⋁"))return i64_or;
-		if (eq(s, "||"))return i64_or; // ≠ norm ‖
-		if (eq(s, "|"))return i64_or;// todo: pipe is different!
+		if (eq(s, "or"))return i64_or; // i64.or
+		if (eq(s, "∨"))return i64_or; // i64.or // looks like 'v' but isn't
+		if (eq(s, "⋁"))return i64_or; // i64.or
+		if (eq(s, "||"))return i64_or; // i64.or  // ≠ norm ‖
+		if (eq(s, "|"))return i64_or; // i64.or // todo: pipe is different!
 
-		if (eq(s, "xor"))return i64_xor;
-		if (eq(s, "^|"))return i64_xor;//always bitwise todo: truthy 0x0101 xor 0x1010 !?
-		if (eq(s, "⊻"))return i64_xor;
+		if (eq(s, "xor"))return i64_xor; // i64.xor
+		if (eq(s, "^|"))return i64_xor; // i64.xor //always bitwise todo: truthy 0x0101 xor 0x1010 !?
+		if (eq(s, "⊻"))return i64_xor; // i64.xor
 
-		if (eq(s, "not"))return i64_eqz;
-		if (eq(s, "¬"))return i64_eqz;
+		if (eq(s, "not"))return i64_eqz; // i64.eqz
+		if (eq(s, "¬"))return i64_eqz; // i64.eqz
 	} else if (kind == f64t) {
-		if (eq(s, "not"))return f64_eqz; // HACK: no such thing!
-		if (eq(s, "¬"))return f64_eqz; // HACK: no such thing!
-		if (eq(s, "+"))return f64_add;
-		if (eq(s, "-"))return f64_sub;
-		if (eq(s, "*"))return f64_mul;
-		if (eq(s, "/"))return f64_div;
-		if (eq(s, "=="))return f64_eq;
-		if (eq(s, ">"))return f64_gt;
-		if (eq(s, ">="))return f64_ge;
-		if (eq(s, "<"))return f64_lt;
-		if (eq(s, "<="))return f64_le;
-	} else {
-		if (eq(s, "not"))return f32_eqz; // HACK: no such thing!
-		if (eq(s, "¬"))return f32_eqz; // HACK: no such thing!
-		if (eq(s, "+"))return f32_add;
-		if (eq(s, "-"))return f32_sub;
-		if (eq(s, "*"))return f32_mul;
-		if (eq(s, "/"))return f32_div;
-		if (eq(s, "=="))return f32_eq;
-		if (eq(s, ">"))return f32_gt;
-		if (eq(s, ">="))return f32_ge;
-		if (eq(s, "<"))return f32_lt;
-		if (eq(s, "<="))return f32_le;
+		if (eq(s, "not"))return f64_eqz; // f64.eqz  // HACK: no such thing!
+		if (eq(s, "¬"))return f64_eqz; // f64.eqz  // HACK: no such thing!
+		if (eq(s, "+"))return f64_add; // f64.add
+		if (eq(s, "-"))return f64_sub; // f64.sub
+		if (eq(s, "*"))return f64_mul; // f64.mul
+		if (eq(s, "/"))return f64_div; // f64.div
+		if (eq(s, "=="))return f64_eq; // f64.eq
+		if (eq(s, ">"))return f64_gt; // f64.gt
+		if (eq(s, ">="))return f64_ge; // f64.ge
+		if (eq(s, "<"))return f64_lt; // f64.lt
+		if (eq(s, "<="))return f64_le; // f64.le
+	} else if (kind == f32t) {
+		if (eq(s, "not"))return f32_eqz; // f32.eqz  // f32.eqz  // HACK: no such thing!
+		if (eq(s, "¬"))return f32_eqz; // f32.eqz  // HACK: no such thing!
+		if (eq(s, "+"))return f32_add; // f32.add
+		if (eq(s, "-"))return f32_sub; // f32.sub
+		if (eq(s, "*"))return f32_mul; // f32.mul
+		if (eq(s, "/"))return f32_div; // f32.div
+		if (eq(s, "=="))return f32_eq; // f32.eq
+		if (eq(s, ">"))return f32_gt; // f32.gt
+		if (eq(s, ">="))return f32_ge; // f32.ge
+		if (eq(s, "<"))return f32_lt; // f32.lt
+		if (eq(s, "<="))return f32_le; // f32.le
 	}
-	if (eq(s, "-…"))return f32_neg;
-	if (eq(s, "negate"))return f32_neg;
-	// the following functions force i32->f32
-	if (eq(s, "√"))return f32_sqrt;
-	if (eq(s, "sqrt"))return f32_sqrt;
-	if (eq(s, "root"))return f32_sqrt;// conflicts with user keywords!
-//	if (eq(s, "sqare root"))return f32_sqrt;
+	// string addition etc handled elsewhere!
+	if (eq(s, "-…"))return f32_neg; // f32.neg
+	if (eq(s, "negate"))return f32_neg; // f32.neg
+// the following functions force i32->f32
+	if (eq(s, "√"))return f32_sqrt; // f32.sqrt
+	if (eq(s, "sqrt"))return f32_sqrt; // f32.sqrt
+	if (eq(s, "root"))return f32_sqrt; // f32.sqrt // conflicts with user keywords!
+//	if (eq(s, "sqare root"))return f32_sqrt; // f32.sqrt
 
-	if (eq(s, "abs"))return f32_abs;// there is NO i32_abs
-	if (eq(s, "‖"))return f32_abs;// ║  primitive norm operator ≠ || or
-	if (eq(s, "║"))return f32_abs;// 10000000 comparisons for a char never encountered. Todo: 0 cost hash
+	if (eq(s, "abs"))return f32_abs; // f32.abs // there is NO i32_abs
+	if (eq(s, "‖"))return f32_abs; // f32.abs // ║  primitive norm operator ≠ || or
+	if (eq(s, "║"))return f32_abs; // f32.abs // 10000000 comparisons for a char never encountered. Todo: 0 cost hash
 
 
 // rarely used and only clutters the namespace :(
 // lol "⌊3.7⌋" is cursed and is transformed into \n\t or something in wasm and IDE!
-	if (eq(s, "⌊"))return f32_floor;
-	if (eq(s, "floor"))return f32_floor;// conflicts with user keywords!
-	if (eq(s, "⌋"))return f32_floor;// vs trunc towards 0?
-//if (eq(s, "round … down"))return f32_floor;
+	if (eq(s, "⌊"))return f32_floor; // f32.floor
+	if (eq(s, "floor"))return f32_floor; // f32.floor // conflicts with user keywords!
+	if (eq(s, "⌋"))return f32_floor; // f32.floor // vs trunc towards 0?
+//if (eq(s, "round … down"))return f32_floor; // f32.floor
 
-	if (eq(s, "⌈"))return f32_ceil;
-	if (eq(s, "ceil"))return f32_ceil;
-	if (eq(s, "⌉"))return f32_ceil;
+	if (eq(s, "⌈"))return f32_ceil; // f32.ceil
+	if (eq(s, "ceil"))return f32_ceil; // f32.ceil
+	if (eq(s, "⌉"))return f32_ceil; // f32.ceil
 
-	if (eq(s, "⌊"))return f32_nearest;
-	if (eq(s, "round"))return f32_nearest;// conflicts with user keywords!
-	if (eq(s, "⌋"))return f32_nearest;
+	if (eq(s, "⌊"))return f32_nearest; // f32.nearest
+	if (eq(s, "round"))return f32_nearest; // f32.nearest // conflicts with user keywords!
+	if (eq(s, "⌋"))return f32_nearest; // f32.nearest
 
-	// todo : peek 65536 as float directly via opcode
-	if (eq(s, "peek"))return i64_load;  // memory.peek memory.get memory.read
-	if (eq(s, "poke"))return i64_store; // memory.poke memory.set memory.write
+// todo : peek 65536 as float directly via opcode
+	if (eq(s, "peek"))return i64_load; // i64.load   // memory.peek memory.get memory.read
+	if (eq(s, "poke"))return i64_store; // i64.store  // memory.poke memory.set memory.write
 
 	// todo : set_local,  global_get ...
 	if (eq(s, "$"))
@@ -710,6 +710,7 @@ Code emitValue(Node node, String context) {
 			} else {
 				code.addByte(get_local);// todo skip repeats
 				code.addByte(local_index);
+
 			}
 		}
 			break;
@@ -838,11 +839,10 @@ Code emitOperator(Node node, String context) {
 		return code;
 	}
 	byte opcode = opcodes(name, last_type, arg_type);
-	if (opcode >= 0x8b and opcode <= 0x98 and
-	    (last_type == int32 or last_type == int64 or last_type == float64 or last_type == void_block))
+
+	if (opcode >= 0x8b and opcode <= 0x98)
 		code.add(cast(last_type, f32));// float ops
-	if (opcode >= 0x99 and opcode <= 0xA6 and
-	    (last_type == int32 or last_type == int64 or last_type == float32 or last_type == void_block))
+	if (opcode >= 0x99 and opcode <= 0xA6)
 		code.add(cast(last_type, f64)); // double ops
 
 	if (last_type == stringp)
@@ -873,6 +873,8 @@ Code emitOperator(Node node, String context) {
 		code.addByte(opcode);
 		if (last_type == none or last_type == voids)
 			last_type = i32t;
+		if (opcode >= 0x45 and opcode <= 0x78)
+			last_type = i32;// int ops (also f64.eqz …)
 	} else if (name == "²") {
 //		error("this should be handled universally in analyse: x² => x*x no matter what!");
 		// BUT non-lazy calling twice? x² => x * result
@@ -921,7 +923,10 @@ Code emitOperator(Node node, String context) {
 	}
 
 	if (opcode == get_local and node.length == 1) {// arg AFTER op (not as const!)
-		code.push(node.first().value.longy);
+		long last_local = node.first().value.longy;
+		code.push(last_local);
+		last_type = localTypes[context][last_local];
+
 	}
 
 	if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or opcode == i32_mul)
@@ -1004,6 +1009,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 	if (name == "it") {
 		code.addByte(get_local);
 		code.addByte(last_local);
+		last_type = localTypes[context][last_local];
 		return code;
 	}
 	//	or node.kind == groups ??? NO!
@@ -1342,23 +1348,22 @@ Code emitIf(Node &node, String context) {
 	Node condition = node[0].values();
 //	Node &condition = node["condition"];
 	code = code + emitExpression(condition, context);
-
+	code.add(cast(last_type, int32));
 	code.addByte(if_i);
-	code.addByte(int32);
 	Node then = node[1].values();
 //	Node &then = node["then"];
-	code = code + emitExpression(then, context);// BODY
+	auto then_block = emitExpression(then, context);
+	auto returnType = last_type;
+	code.addByte(returnType);// of then!
+	code = code + then_block;// BODY
 	if (node.length == 3) {
 		code.addByte(elsa);
 //		Node otherwise = node["else"];//->clone();
 		Node otherwise = node[2].values();
 		code = code + emitExpression(otherwise, context);
+		code.add(cast(last_type, returnType));
 	}
 	code.addByte(end_block);
-	if (last_type != int32) {
-		todo("cast to int32 / smarty?");
-		last_type = int32;
-	}
 	return code;
 }
 
