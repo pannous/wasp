@@ -326,7 +326,7 @@ public:
 				value.real = payload;// todo!
 				kind = reals;
 				break;
-			case any:
+			case anys:
 				*this = memory[payload];// todo
 				break;
 			case symbola:

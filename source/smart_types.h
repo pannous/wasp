@@ -23,7 +23,7 @@ typedef enum smartType {
 	septet = 0x7, // 7 hexes à 4 bit
 	utf8char = 0x8, // UTF24 Unicode
 	stringa = 0x9, // may start with 0x10 ... 0x1F
-	any = 0xA, // angle pointer/object => i64 pointer : 32bit type + 32bit pointer indirect or in linear memory!
+	anys = 0xA, // angle pointer/object => i64 pointer : 32bit type + 32bit pointer indirect or in linear memory!
 	byter = 0xB, // unsigned char* with length ... ?
 	codes = 0xC,  // direct wasm code! interpreted inline OR:
 //	code=0xC,  // angle code tree

@@ -17,6 +17,7 @@ List<String> declaredFunctions;
 //List<String> declaredFunctions;
 Map<String, Signature> functionSignatures;
 
+// todo : proper context!
 Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 
@@ -31,7 +32,9 @@ class Arg {
 public:
 	String function;
 	String name;
-	Valtype type;
+//	Valtype type;
+//	Valtype kind;
+	Node type;
 	Node modifiers;
 };
 
@@ -94,17 +97,27 @@ Node eval(String code) {
 
 }
 
-List<Arg> extractFunctionArgs(String function, Node &node) {
+List<Arg> extractFunctionArgs(String function, Node &params) {
+	//			left = analyze(left, name) NO, we don't want args to become variables!
 	List<Arg> args;
-	if (node.length > 1)
-		args.add({function, node.children[1].name, int32, node});
-	if (node.length > 2)
-		error("TODO args");
+	Node nextType = Double;
+	for (Node &arg : params) {
+		if (types.has(arg.name)) {
+			if (args.size() > 0 and not args.last().type)
+				args.last().type = types[arg.name];
+			else nextType = arg;
+		} else {
+			args.add({function, arg.name, arg.type ? *arg.type : nextType, params});
+		}
+	}
 	return args;
 }
 
 String extractFunctionName(Node &node) {
-	if (node.length > 1)return node.first().name;
+	if (not node.name.empty() and node.name != ":=")
+		return node.name;
+	if (node.length > 1)
+		return node.first().name;
 	// todo: public go home to family => go_home
 	return node.name;
 }
@@ -273,7 +286,7 @@ List<String> collectOperators(Node &expression) {
 	return operators;
 }
 
-Node &groupFunctions(Node &expressiona);
+Node &groupFunctions(Node &expressiona, String context);
 
 bool isVariable(Node &node) {
 	if (node.kind != reference and node.kind != keyNode and !node.isSetter())
@@ -310,18 +323,19 @@ void initTypes() {
 bool addLocal(const char *context, String name, Valtype valtype);
 
 Node &groupTypes(Node &expression, const char *context) {
+	// todo delete type declarations double x, but not double x=7
+	// todo if expression.length = 0 and first.length=0 and not next is operator return ø
 	if (types.size() == 0)initTypes();
 	if (types.has(expression.name)) {// double \n x,y,z  extra case :(
 		if (expression.length > 0) {
-			for (Node &typed:expression) {
+			for (Node &typed:expression) {// double \n x = 4
 				typed.setType(&types[expression.name]);
 				addLocal(context, typed.name, mapType(typed));
 			}
 			expression.name = 0;// hack
 			expression.kind = groups;
 			return expression.flat();
-		}
-		else
+		} else
 			error("dangling type "s + expression.name);
 //		else if(expression.next){expression=*expression.next;}
 	}
@@ -363,11 +377,13 @@ Node &groupTypes(Node &expression, const char *context) {
 			if (typed.kind == reference or typed.isSetter())
 				addLocal(context, typed.name, mapType(*aType));
 			// HACK for double x,y,z => z.type=Double !
-			// danger: hops across bounderies! (double x) {y … }
-			if (typed.next) typed = *typed.next;
+			if (i + 1 < expression.length)
+				typed = expression[++i];
+			else if (typed.next) typed = *typed.next;
 			else if (expression.next) {
+				// danger: hops across bounderies! (double x) {y … }
 				typed = *expression.next;
-				expression.next = 0;// MEGA HACK
+				expression.next = 0;// MEGA HACK to avoid loops
 			} else break;
 		}
 	}
@@ -381,9 +397,13 @@ bool addLocal(const char *context, String name, Valtype valtype) {
 		return true;// 'done' ;)
 	}
 	if (not locals[context].has(name)) {
-		locals[context].add(name);// todo : proper calling context!
+		locals[context].add(name);
 		localTypes[context].add(valtype);
 		return true;// added
+	} else {
+		auto oldType = typeName(localTypes[context][locals[context].position(name)]);
+		trace("local in context %s already known "s % s(context) + name + " with type " + oldType + " now " +
+		      typeName(valtype));
 	}
 	return false;// already there
 }
@@ -398,6 +418,8 @@ Node &groupSetter(String name, Node &body, String context) {
 	}
 	return *decl;
 }
+
+Node extractReturnTypes(Node decl, Node body);
 
 Node &groupDeclarations(Node &expression, const char *context) {
 	for (Node &node : expression) {
@@ -428,8 +450,8 @@ Node &groupDeclarations(Node &expression, const char *context) {
 			Node left = expression.to(node);// including public… + ARGS! :(
 			Node rest = expression.from(node); // body
 			String name = extractFunctionName(left);
-			if (node.length ==
-			    2) { // C style: double sin(x) {…} todo: fragile criterion!! also why is body not child of sin??
+			if (node.length == 2) {
+				// C style double sin(x) {…} todo: fragile criterion!! also why is body not child of sin??
 				name = node.first().name;
 				left = node.first().first();// ARGS
 				rest = node.last();
@@ -465,11 +487,10 @@ Node &groupDeclarations(Node &expression, const char *context) {
 			List<Arg> args = extractFunctionArgs(name, left);
 			List<String> &parameters = locals[name];// function context!
 			for (Arg arg: args) {
-				if (parameters.has(arg.name))
+				if (locals[name].has(arg.name))
 					error("duplicate argument name: "s + arg.name);
-				parameters.add(arg.name);
-				localTypes[name].add(int32);
-				signature.add(int32);// todo: arg type, or pointer
+				addLocal(name, arg.name, mapType(arg.type));
+				signature.add(arg.type);// todo: arg type, or pointer
 			}
 			if (signature.size() == 0 and parameters.size() == 0 and rest.has("it", false, 100)) {
 				parameters.add("it");
@@ -477,8 +498,8 @@ Node &groupDeclarations(Node &expression, const char *context) {
 				signature.add(int32);// todo
 			}
 			Node body = analyze(rest, name);// has to come after arg analysis!
-			auto valtype = mapType(left);// or i32t
-			signature.returns(valtype);
+			Node return_type = extractReturnTypes(left, body);
+			signature.returns(return_type);// explicit double sin(){} // todo other syntaxes+ multi
 			Node &decl = *new Node(name);//node.name+":={…}");
 			decl.setType(declaration);
 			decl.add(body.clone());
@@ -486,6 +507,10 @@ Node &groupDeclarations(Node &expression, const char *context) {
 		}
 	}
 	return expression;
+}
+
+Node extractReturnTypes(Node decl, Node body) {
+	return Double;// Long;// todo
 }
 
 bool hasFunction(Node &n) {
@@ -555,7 +580,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 */
 
 		Node &next = expression.children[i + 1];
-		next = analyze(next);
+		next = analyze(next, context);
 		Node &prev = expression.children[i - 1];
 		if (i == 0)prev = NIL;
 		String &name = checkCanonicalName(op);
@@ -574,7 +599,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 			node.add(next);
 			expression.replace(i, i + 1, node);
 		} else {
-			prev = analyze(prev);
+			prev = analyze(prev, context);
 			if (suffixOperators.has(name)) { // x²
 				// SUFFIX Operators
 				if (name == "ⁿ") functionSignatures["pow"].is_used = true;
@@ -593,7 +618,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 				expression.replace(i, node.length, node);
 			} else if (isFunction(next)) { // 3 + double 8
 				Node rest = expression.from(i + 1);
-				Node args = analyze(rest);
+				Node args = analyze(rest, context);
 				node.add(prev);
 				node.add(args);
 				expression.replace(i - 1, i + 1, node);// replace ALL REST
@@ -681,7 +706,7 @@ bool isPrimitive(Node node);
 
 void fileSize(String filename);
 
-Node &groupFunctions(Node &expressiona) {
+Node &groupFunctions(Node &expressiona, String context) {
 	if (expressiona.kind == declaration)return expressiona;// handled before
 	if (isFunction(expressiona)) {
 		expressiona.setType(call, false);
@@ -708,15 +733,15 @@ Node &groupFunctions(Node &expressiona) {
 		if (name == "while") {
 			// todo: move into groupWhile
 			if (node.length == 2) {
-				node[0] = analyze(node[0]);
-				node[1] = analyze(node[1]);
+				node[0] = analyze(node[0], context);
+				node[1] = analyze(node[1], context);
 				continue;// all good
 			}
 			if (node.length == 1) {// while()… or …while()
-				node[0] = analyze(node[0]);
+				node[0] = analyze(node[0], context);
 				Node then = expressiona.from("while");// todo: to closer!?
 				int remaining = then.length;
-				node.add(analyze(then).clone());
+				node.add(analyze(then, context).clone());
 				expressiona.remove(i + 1, i + remaining);
 				continue;
 			} else {
@@ -740,7 +765,7 @@ Node &groupFunctions(Node &expressiona) {
 
 		if (node.length > 0) {
 //			if minArity == …
-			node = analyze(node.flat());//  f(1,2,3) vs f([1,2,3]) ?
+			node = analyze(node.flat(), context);//  f(1,2,3) vs f([1,2,3]) ?
 			continue;// already done how
 		}
 		if (minArity == 0)continue;
@@ -751,7 +776,7 @@ Node &groupFunctions(Node &expressiona) {
 			rest = expressiona[i + 1];
 			if (rest.length > 1)
 				rest.setType(expression);
-			Node args = analyze(rest);
+			Node args = analyze(rest, context);
 			node.add(args);
 			expressiona.remove(i + 1, i + 1);
 			continue;
@@ -779,7 +804,7 @@ Node &groupFunctions(Node &expressiona) {
 			// keep whole expressiona for later analysis in groupOperators!
 			return expressiona;
 		} else if (rest.length >= maxArity) {
-			Node args = analyze(rest);// todo: could contain another call!
+			Node args = analyze(rest, context);// todo: could contain another call!
 			node.add(args);
 			if (rest.kind == groups)
 				expressiona.remove(i + 1, i + 1);
@@ -800,7 +825,6 @@ Node &groupWhile(Node n) {
 
 	Node &condition = n.children[0];
 	Node then;
-	Node *next; // outside while(){} !
 	if (n.length == 0) then = n.values();
 	if (n.length == 1) {
 		if (n.next)
@@ -855,8 +879,6 @@ Node &groupWhile(Node n) {
 //	ef.length = 2;
 	ef["condition"] = analyze(condition);
 	ef["then"] = analyze(then);
-	Node condition1 = ef[0].values();// debug
-	Node then1 = ef[1].values();
 	analyzed[ef.hash()] = 1;
 	return ef;
 }
@@ -914,7 +936,7 @@ Node analyze(Node node, String context) {
 	Node &groupedTypes = groupTypes(node, context);
 	if (isPrimitive(node)) return node;
 	Node &groupedDeclarations = groupDeclarations(groupedTypes, context);
-	Node &groupedFunctions = groupFunctions(groupedDeclarations);
+	Node &groupedFunctions = groupFunctions(groupedDeclarations, context);
 	Node &grouped = groupOperators(groupedFunctions, context);
 	if (analyzed[grouped.hash()])return grouped;// done!
 	analyzed.insert_or_assign(grouped.hash(), 1);
@@ -922,7 +944,7 @@ Node analyze(Node node, String context) {
 	    type == expression) {// children analyzed individually, not as expression WHY?
 		if (grouped.length > 0)
 			for (Node &child: grouped) {
-				child = analyze(child);// REPLACE ref with their ast ok?
+				child = analyze(child, context);// REPLACE ref with their ast ok?
 			}
 	}
 	return grouped;
