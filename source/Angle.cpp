@@ -318,6 +318,7 @@ Node &groupTypes(Node &expression, const char *context) {
 				addLocal(context, typed.name, mapType(typed));
 			}
 			expression.name = 0;// hack
+			expression.kind = groups;
 			return expression.flat();
 		}
 		else
