@@ -303,21 +303,21 @@ public:
 // 4. some c++ types String List etc
 // the last three can be added as special internal values to Valtype, outside the wasm spec
 enum Valtype {
-voids = 0x00, // DANGER!=void_block  internal only for return type
+	voids = 0x00, // DANGER!=void_block  internal only for return type
 
-void_block = 0x40,
-none = 0x40, // NOT voids!!!
+	void_block = 0x40,
+	none = 0x40, // NOT voids!!!
 
 // extensions
-anyref = 0x6f,// was conceptually an namewise merged into externref
-externref = 0x6f, // -0x11
-funcref = 0x70, // -0x10
-func = 0x60,
+	anyref = 0x6f,// was conceptually an namewise merged into externref
+	externref = 0x6f, // -0x11
+	funcref = 0x70, // -0x10
+	func = 0x60,
 
-int32 = 0x7f,
-i32t = 0x7f,
-i32 = 0x7f,
-i32s = 0x7f,
+	int32 = 0x7f,
+	i32t = 0x7f,
+	i32 = 0x7f,
+	i32s = 0x7f,
 //	i32u = 0x7f,// todo ignore!
 
 	float32 = 0x7d,
@@ -340,20 +340,27 @@ i32s = 0x7f,
 	// enums with the same value can NOT be distinguished thereafter!!! :(
 	// todo Signatures need a real Type, not a Valtype!
 	//	https://github.com/pannous/angle/wiki/smart-pointer
-	pointer = int32,// 0xF0, // internal
 	codepoint32 = int32,
+	pointer = int32,// 0xF0, // internal
 	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
-//	array = 13,
+//	node = 0xA0,
+	angle = 0xA0,//  angle object pointer/offset versus smarti vs anyref
+	any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
+//	unknown = any,
 	array = 0xAA,
 	charp = 0xC0, // vs
-	stringp = 0xC0,// use charp?  pointer, // enough no!??
+	stringp = 0xC0,// use charp?  pointer? enough?? no!??
 //	value = 0xA1,// wrapped node Value, used as parameter? extract and remove! / ignore
-	todoe = 0xF0, // todo
-	externalPointer = 0xFE,
+	todoe = 0xFE, // todo
+//	error_ = 0xE0, why propagate?
+//	pointer = 0xF0,
+//	externalPointer = 0xFE,
 	ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
-	smarti32 = 0xF3,// see smartType
-	smarti64 = 0xF6,
+//	smarti32 = 0xF3,// see smartType
+//	smarti64 = 0xF6,
 };
+
+Valtype mapTypeToWasm(Node n);
 
 chars typeName(Valtype t);
 
@@ -364,34 +371,34 @@ chars typeName(Valtype t);
 //};
 
 // https://pengowray.github.io/wasm-ops/ <<< table
-// https://webassembly.github.io/spec/core/binary/instructions.html <<< list (chrome)
+// https://webassembly.github.io/spec/core/binary/instrunctions.html <<< list (chrome)
 // USE wasm-objdump -d  to see function disassembled:
-	enum Opcodes {
+enum Opcodes {
 //	start = 0x00,
 	start_function = 0x00,
 //	unreachable = 0x00,
 	nop = 0x01, // useful for relocation padding call 1 -> call 10000000
-		block = 0x02,
-		loop = 0x03,
-		if_i = 0x04,// precede by i32 result, follow by i32_type (7f)
-		elsa = 0x05,
+	block = 0x02,
+	loop = 0x03,
+	if_i = 0x04,// precede by i32 result, follow by i32_type (7f)
+	elsa = 0x05,
 
-		// EXTENSIONS:
-		try_ = 0x06,
-		catch_ = 0x07,
-		throw_ = 0x08,
-		rethrow_ = 0x09,
-		call_ = 0x10,
-		br_on_exn_ = 0x0A, // branch on exception
+	// EXTENSIONS:
+	try_ = 0x06,
+	catch_ = 0x07,
+	throw_ = 0x08,
+	rethrow_ = 0x09,
+	call_ = 0x10,
+	br_on_exn_ = 0x0A, // branch on exception
 
-		end_block = 0x0b, //11
-		br = 0x0c,
-		br_if = 0x0d,
-		return_block = 0x0f,
-		function = 0x10,
+	end_block = 0x0b, //11
+	br = 0x0c,
+	br_if = 0x0d,
+	return_block = 0x0f,
+	function = 0x10,
 
-		// EXTENSIONS:
-		call_ref = 0x14,
+	// EXTENSIONS:
+	call_ref = 0x14,
 	return_call_ref = 0x15,
 	func_bind = 0x16,// (type $t) 	$t : u32
 	let_local = 0x17, // 	let <bt> <locals> 	bt : blocktype, locals : (as in functions)
@@ -416,8 +423,8 @@ chars typeName(Valtype t);
 	table_get = 0x25,
 	table_set = 0x26,
 
-	i8_load = 0x2d, //== 𝟶𝚡𝟸𝙳, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
-	i16_load = 0x2f, //== 𝟶𝚡𝟸𝙳, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
+	i8_load = 0x2d, //== 𝟶𝚡𝟸𝙳, i32.load8_u
+	i16_load = 0x2f, //== 𝟶𝚡𝟸𝙳, i32.load8_u
 	i32_load = 0x28,// load word from i32 address
 	f32_load = 0x2A,
 	i32_store = 0x36,// store word at i32 address
@@ -440,89 +447,86 @@ chars typeName(Valtype t);
 	i32_eqz = 0x45, // use for not!
 //	negate = 0x45,
 //	not_truty = 0x45,
-		i32_eq = 0x46,
-		i32_ne = 0x47,
-		i32_lt = 0x48,
-		i32_gt = 0x4A,
-		i32_le = 0x4C,
-		i32_ge = 0x4E,
+	i32_eq = 0x46,
+	i32_ne = 0x47,
+	i32_lt = 0x48,
+	i32_gt = 0x4A,
+	i32_le = 0x4C,
+	i32_ge = 0x4E,
 
-		i64_eqz = 0x50,
-		f32_eqz = 0x50, // HACK: no such thing!
+	i64_eqz = 0x50,
+	f32_eqz = 0x50, // HACK: no such thing!
+	i64_eq = 0x51,
+	i64_ne = 0x52,
+	i64_lt_s = 0x53,
+	i64_lt_u = 0x54,
+	i64_gt_s = 0x55,
+	i64_gt_u = 0x56,
+	i64_le_s = 0x57,
+	i64_le_u = 0x58,
+	i64_ge_s = 0x59,
+	i64_ge_u = 0x5a,
 
+	f32_eq = 0x5b,
+	f32_ne = 0x5c, // !=
+	f32_lt = 0x5d,
+	f32_gt = 0x5e,
+	f32_le = 0x5f,
+	f32_ge = 0x60,
 
-		i64_𝖾𝗊𝗓 = 0x50,
-		i64_𝖾𝗊 = 0x51,
-		i64_𝗇𝖾 = 0x52,
-		i64_𝗅𝗍_𝗌 = 0x53,
-		i64_𝗅𝗍_𝗎 = 0x54,
-		i64_𝗀𝗍_𝗌 = 0x55,
-		i64_𝗀𝗍_𝗎 = 0x56,
-		i64_𝗅𝖾_𝗌 = 0x57,
-		i64_𝗅𝖾_𝗎 = 0x58,
-		i64_𝗀𝖾_𝗌 = 0x59,
-		i64_𝗀𝖾_𝗎 = 0x5a,
-
-		f32_eq = 0x5b,
-		f32_ne = 0x5c, // !=
-		f32_lt = 0x5d,
-		f32_gt = 0x5e,
-		f32_le = 0x5f,
-		f32_ge = 0x60,
-
-		f64_eq = 0x61,
-		f64_ne = 0x62, // !=
+	f64_eq = 0x61,
+	f64_ne = 0x62, // !=
 	f64_lt = 0x63,
-		f64_gt = 0x64,
-		f64_le = 0x65,
-		f64_ge = 0x66,
+	f64_gt = 0x64,
+	f64_le = 0x65,
+	f64_ge = 0x66,
 
-		i32_add = 0x6A,
-		i32_sub = 0x6B,
-		i32_mul = 0x6C,
-		i32_div = 0x6D,
-		i32_rem = 0x6F, // 5%4=1
-		i32_modulo = 0x6F,
-		i32_rem_u = 0x70,
+	i32_add = 0x6A,
+	i32_sub = 0x6B,
+	i32_mul = 0x6C,
+	i32_div = 0x6D,
+	i32_rem = 0x6F, // 5%4=1
+	i32_modulo = 0x6F,
+	i32_rem_u = 0x70,
 
-		i32_and = 0x71,
-		i32_or = 0x72,
-		i32_xor = 0x73,
-		i32_shl = 0x74,
-		i32_shr_s = 0x75,
-		i32_shr_u = 0x76,
-		i32_rotl = 0x77,
-		i32_rotr = 0x78,
+	i32_and = 0x71,
+	i32_or = 0x72,
+	i32_xor = 0x73,
+	i32_shl = 0x74,
+	i32_shr_s = 0x75,
+	i32_shr_u = 0x76,
+	i32_rotl = 0x77,
+	i32_rotr = 0x78,
 
-		//	⚠ warning: funny UTF characters ahead! todo: replace 𝖼 => c etc?
-		i64_𝖼𝗅𝗓 = 0x79,
-		i64_𝖼𝗍𝗓 = 0x7A,
-		i64_𝗉𝗈𝗉𝖼𝗇𝗍 = 0x7B,
-		i64_𝖺𝖽𝖽 = 0x7C,
-		i64_𝗌𝗎𝖻 = 0x7D,
-		i64_𝗆𝗎𝗅 = 0x7E,
-		i64_𝖽𝗂𝗏_𝗌 = 0x7F,
-		i64_𝖽𝗂𝗏_𝗎 = 0x80,
-		i64_𝗋𝖾𝗆_𝗌 = 0x81,
-		i64_𝗋𝖾𝗆_𝗎 = 0x82,
-		i64_𝖺𝗇𝖽 = 0x83,
-		i64_𝗈𝗋 = 0x84,
-		i64_𝗑𝗈𝗋 = 0x85,
-		i64_𝗌𝗁𝗅 = 0x86,
-		i64_𝗌𝗁𝗋_𝗌 = 0x87,
-		i64_𝗌𝗁𝗋_𝗎 = 0x88,
-		i64_𝗋𝗈𝗍𝗅 = 0x89,
-		i64_𝗋𝗈𝗍𝗋 = 0x8A,
+	//	⚠ warning: funny UTF characters ahead! todo: replace c => c etc?
+	i64_clz = 0x79,
+	i64_ctz = 0x7A,
+	i64_popcnt = 0x7B,
+	i64_add = 0x7C,
+	i64_sub = 0x7D,
+	i64_mul = 0x7E,
+	i64_di𝗏_s = 0x7F,
+	i64_di𝗏_u = 0x80,
+	i64_rem_s = 0x81,
+	i64_rem_u = 0x82,
+	i64_and = 0x83,
+	i64_or = 0x84,
+	i64_𝗑or = 0x85,
+	i64_s𝗁l = 0x86,
+	i64_s𝗁r_s = 0x87,
+	i64_s𝗁r_u = 0x88,
+	i64_rotl = 0x89,
+	i64_rotr = 0x8A,
 
-		// beginning of float opcodes
-		f32_abs = 0x8B,
-		f32_neg = 0x8C,
+	// beginning of float opcodes
+	f32_abs = 0x8B,
+	f32_neg = 0x8C,
 
-		// todo : difference : ???
-		f32_ceil = 0x8D,
-		f32_floor = 0x8E,
-		f32_trunc = 0x8F,
-		f32_round = 0x90,// truncation ≠ proper rounding!
+	// todo : difference : ???
+	f32_ceil = 0x8D,
+	f32_floor = 0x8E,
+	f32_trunc = 0x8F,
+	f32_round = 0x90,// truncation ≠ proper rounding!
 	f32_nearest = 0x90,
 
 	f32_sqrt = 0x91,
@@ -531,59 +535,54 @@ chars typeName(Valtype t);
 	f32_mul = 0x94,// f32.mul
 	f32_div = 0x95,
 
-	f𝟨𝟦_𝖺𝖻𝗌 = 0x99,
-	f𝟨𝟦_𝗇𝖾𝗀 = 0x9a,
-	f𝟨𝟦_𝖼𝖾𝗂𝗅 = 0x9b,
-	f𝟨𝟦_𝖿𝗅𝗈𝗈𝗋 = 0x9c,
-	f𝟨𝟦_𝗍𝗋𝗎𝗇𝖼 = 0x9d,
-	f𝟨𝟦_𝗇𝖾𝖺𝗋𝖾𝗌𝗍 = 0x9e,
-	f𝟨𝟦_𝗌𝗊𝗋𝗍 = 0x9f,
-	f𝟨𝟦_𝖺𝖽𝖽 = 0xA0,
-	f𝟨𝟦_𝗌𝗎𝖻 = 0xa1,
-	f𝟨𝟦_𝗆𝗎𝗅 = 0xa2,
-	f𝟨𝟦_𝖽𝗂𝗏 = 0xa3,
-	f𝟨𝟦_𝗆𝗂𝗇 = 0xa4,
-	f𝟨𝟦_𝗆𝖺𝗑 = 0xa5,
-	f𝟨𝟦_𝖼𝗈𝗉𝗒𝗌𝗂𝗀𝗇 = 0xa6,
+	f64_abs = 0x99,
+	f64_neg = 0x9a,
+	f64_ceil = 0x9b,
+	f64_floor = 0x9c,
+	f64_trunc = 0x9d,
+	f64_nearest = 0x9e,
+	f64_sqrt = 0x9f,
+	f64_add = 0xA0,
+	f64_sub = 0xa1,
+	f64_mul = 0xa2,
+	f64_div = 0xa3,
+	f64_min = 0xa4,
+	f64_max = 0xa5,
+	f64_copysign = 0xa6,
 
 	f32_cast_to_i32_s = 0xa8,// truncation ≠ proper rounding (f32_round = 0x90)!
 	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
 	f32_convert_i32_s = 0xB2,// convert FROM i32
-	i32_cast_to_f32_s = 0xB2,
-//	i32_cast_to_f64_s =
 
-	f32_from_int32 = 0xB2,
+
+	i32_𝗐rap_i64 = 0xA7,
+	i32_trunc_f32_s = 0xA8,
+	i32_trunc_f32_u = 0xA9,
+	i32_trunc_f64_s = 0xAA,
+	i32_trunc_f64_u = 0xAB,
+	i64_e𝗑tend_i32_s = 0xAC,
+	i64_e𝗑tend_i32_u = 0xAD,
+	i64_trunc_f32_s = 0xAE,
+	i64_trunc_f32_u = 0xAF,
+	i64_trunc_f64_s = 0xB0,
+	i64_trunc_f64_u = 0xB1,
+	f32_convert32_s = 0xB2,
+	f32_convert32_u = 0xB3,
+	f32_convert64_s = 0xB4,
+	f32_convert64_u = 0xB5,
+	f32_demote_f64 = 0xB6,
+	f64_convert32_s = 0xB7,
+	f64_convert32_u = 0xB8,
+	f64_convert64_s = 0xB9,
+	f64_convert64_u = 0xBA,
 	f64_promote_f32 = 0xBB,
+	i32_reinterpret_f32 = 0xBC, // f32->i32 bit wise reinterpret != cast/trunc/convert
+	i64_reinterpret_f64 = 0xBD,
+	f32_reinterpret_i32 = 0xBE,// i32->f32
+	f64_reinterpret_i64 = 0xBF,
+	f32_from_f64 = f32_demote_f64,
 	f64_from_f32 = f64_promote_f32,
-	i32_reinterpret_f32 = 0xbc, // f32->i32 bit wise reinterpret != cast/trunc/convert
-	f32_reinterpret_i32 = 0xBE, // i32->f32
-
-	i𝟥𝟤_𝗐𝗋𝖺𝗉_𝗂𝟨𝟦 = 0xA7,
-	i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗌 = 0xA8,
-	i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗎 = 0xA9,
-	i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗌 = 0xAA,
-	i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗎 = 0xAB,
-	i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗌 = 0xAC,
-	i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗎 = 0xAD,
-	i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗌 = 0xAE,
-	i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗎 = 0xAF,
-	i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗌 = 0xB0,
-	i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗎 = 0xB1,
-	f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗌 = 0xB2,
-	f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗎 = 0xB3,
-	f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌 = 0xB4,
-	f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗎 = 0xB5,
-	f𝟥𝟤_𝖽𝖾𝗆𝗈𝗍𝖾_𝖿𝟨𝟦 = 0xB6,
-	f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗌 = 0xB7,
-	f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗎 = 0xB8,
-	f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌 = 0xB9,
-	f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗎 = 0xBA,
-	f𝟨𝟦_𝗉𝗋𝗈𝗆𝗈𝗍𝖾_𝖿𝟥𝟤 = 0xBB,
-	i𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟥𝟤 = 0xBC,
-	i𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟨𝟦 = 0xBD,
-	f𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟥𝟤 = 0xBE,
-	f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦 = 0xBF,
-	f32_from_f64 = f𝟥𝟤_𝖽𝖾𝗆𝗈𝗍𝖾_𝖿𝟨𝟦,
+	f32_from_int32 = 0xB2,
 
 	//	signExtensions
 	i32_extend8_s = 0xC0,
@@ -591,7 +590,7 @@ chars typeName(Valtype t);
 	i64_extend8_s = 0xC2,
 	i64_extend16_s = 0xC3,
 	i64_extend32_s = 0xC4,
-//	i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗌 = 0xAC, WHAT IS THE DIFFERENCE?
+//	i64_e𝗑tend_i32_s = 0xAC, WHAT IS THE DIFFERENCE?
 // i64.extend_s/i32 sign-extends an i32 value to i64, whereas
 // i64.extend32_s sign-extends an i64 value to i64
 
@@ -719,6 +718,19 @@ public:
 		types.insert_or_assign(types.size(), t);
 		return *this;
 	}
+
+	Signature add(Node type) {
+		types.insert_or_assign(types.size(), mapTypeToWasm(type));
+		return *this;
+	}
+
+
+	Signature &returns(Node type) {
+		// todo multi-value
+		return_type = mapTypeToWasm(type);
+		return *this;
+	}
+
 
 	Signature &returns(Valtype valtype) {
 		return_type = valtype;
