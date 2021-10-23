@@ -256,6 +256,11 @@ public:
 		memcpy(items + pos, items + pos + 1, _size - pos);
 		_size--;
 	}
+
+	S &last() {
+		if (_size < 1)error("empty list");
+		return items[_size - 1];
+	}
 };
 
 // don't use template! just use int-map
