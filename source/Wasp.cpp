@@ -262,7 +262,7 @@ class Wasp {
 		int offset = at;
 		if (text[offset] == '\n' and text[offset + 1] == '\n') {
 //			// double newline dedent. really? why not keep track via indent?
-			print(position());
+//			print(position());
 //			if(text[offset+2] == '\n')
 //				return indentation_level--;// todo close ALL?
 //			else return indentation_level; //ignore simple newlines
@@ -435,13 +435,10 @@ private:
 	String position() {
 		auto columnNumber = at - columnStart;
 		String msg;
-//				s("IN CODE:\n");
-		msg = msg + " at position " + at + " in line " + lineNumber + " column " + columnNumber + "\n";
+		msg = msg + " in line " + lineNumber + " column " + columnNumber + " (char#" + at + ")\n";
 		msg = msg + line + "\n";
 		msg = msg + (s(" ").times(columnNumber - 1)) + "^";
-		if (not file.empty()) {
-			msg = msg + "\n" + file + ":" + lineNumber;
-		}
+		if (not file.empty()) msg = msg + "\n" + file + ":" + lineNumber;
 		print(msg);
 		return msg;
 	}
