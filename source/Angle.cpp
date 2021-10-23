@@ -107,7 +107,8 @@ List<Arg> extractFunctionArgs(String function, Node &params) {
 				args.last().type = types[arg.name];
 			else nextType = arg;
 		} else {
-			args.add({function, arg.name, arg.type ? *arg.type : nextType, params});
+			if (arg.name != function)
+				args.add({function, arg.name, arg.type ? *arg.type : nextType, params});
 		}
 	}
 	return args;
@@ -494,9 +495,10 @@ Node &groupDeclarations(Node &expression, const char *context) {
 			}
 			if (signature.size() == 0 and parameters.size() == 0 and rest.has("it", false, 100)) {
 				parameters.add("it");
-				localTypes[name].add(int32);
-				signature.add(int32);// todo
+				localTypes[name].add(f64);
+				signature.add(f64);// todo: any / smarti! <<<
 			}
+
 			Node body = analyze(rest, name);// has to come after arg analysis!
 			Node return_type = extractReturnTypes(left, body);
 			signature.returns(return_type);// explicit double sin(){} // todo other syntaxes+ multi
