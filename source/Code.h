@@ -511,7 +511,7 @@ enum Opcodes {
 	i64_rem_u = 0x82,
 	i64_and = 0x83,
 	i64_or = 0x84,
-	i64_𝗑or = 0x85,
+	i64_xor = 0x85,
 	i64_s𝗁l = 0x86,
 	i64_s𝗁r_s = 0x87,
 	i64_s𝗁r_u = 0x88,
@@ -550,31 +550,27 @@ enum Opcodes {
 	f64_max = 0xa5,
 	f64_copysign = 0xa6,
 
-	f32_cast_to_i32_s = 0xa8,// truncation ≠ proper rounding (f32_round = 0x90)!
-	i32_trunc_f32_s = 0xa8, // cast/convert != reinterpret
-	f32_convert_i32_s = 0xB2,// convert FROM i32
 
-
-	i32_𝗐rap_i64 = 0xA7,
-	i32_trunc_f32_s = 0xA8,
+	i32_wrap_i64 = 0xA7,
+	i32_trunc_f32_s = 0xA8, // cast/convert != reinterpret
 	i32_trunc_f32_u = 0xA9,
 	i32_trunc_f64_s = 0xAA,
 	i32_trunc_f64_u = 0xAB,
-	i64_e𝗑tend_i32_s = 0xAC,
-	i64_e𝗑tend_i32_u = 0xAD,
+	i64_extend_i32_s = 0xAC,
+	i64_extend_i32_u = 0xAD,
 	i64_trunc_f32_s = 0xAE,
 	i64_trunc_f32_u = 0xAF,
 	i64_trunc_f64_s = 0xB0,
 	i64_trunc_f64_u = 0xB1,
-	f32_convert32_s = 0xB2,
-	f32_convert32_u = 0xB3,
-	f32_convert64_s = 0xB4,
-	f32_convert64_u = 0xB5,
+	f32_convert_i32_s = 0xB2,
+	f32_convert_i32_u = 0xB3,
+	f32_convert_i64_s = 0xB4,
+	f32_convert_i64_u = 0xB5,
 	f32_demote_f64 = 0xB6,
-	f64_convert32_s = 0xB7,
-	f64_convert32_u = 0xB8,
-	f64_convert64_s = 0xB9,
-	f64_convert64_u = 0xBA,
+	f64_convert_i32_s = 0xB7,
+	f64_convert_i32_u = 0xB8,
+	f64_convert_i64_s = 0xB9,
+	f64_convert_i64_u = 0xBA,
 	f64_promote_f32 = 0xBB,
 	i32_reinterpret_f32 = 0xBC, // f32->i32 bit wise reinterpret != cast/trunc/convert
 	i64_reinterpret_f64 = 0xBD,
@@ -583,6 +579,8 @@ enum Opcodes {
 	f32_from_f64 = f32_demote_f64,
 	f64_from_f32 = f64_promote_f32,
 	f32_from_int32 = 0xB2,
+	f32_cast_to_i32_s = 0xa8,// truncation ≠ proper rounding (f32_round = 0x90)!
+
 
 	//	signExtensions
 	i32_extend8_s = 0xC0,
@@ -590,7 +588,7 @@ enum Opcodes {
 	i64_extend8_s = 0xC2,
 	i64_extend16_s = 0xC3,
 	i64_extend32_s = 0xC4,
-//	i64_e𝗑tend_i32_s = 0xAC, WHAT IS THE DIFFERENCE?
+//	i64_extend_i32_s = 0xAC, WHAT IS THE DIFFERENCE?
 // i64.extend_s/i32 sign-extends an i32 value to i64, whereas
 // i64.extend32_s sign-extends an i64 value to i64
 

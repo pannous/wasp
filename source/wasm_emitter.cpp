@@ -180,41 +180,41 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "¬"))return i32_eqz;
 
 	} else if (kind == i64t) { // INT32
-		if (eq(s, "+"))return i64_𝖺𝖽𝖽;
+		if (eq(s, "+"))return i64_add;
 		//		if (eq(s, "-") and previous==none)return sign_flip; *-1
-		if (eq(s, "-"))return i64_𝗌𝗎𝖻;
-		if (eq(s, "*"))return i64_𝗆𝗎𝗅;
-		if (eq(s, "/"))return i64_𝖽𝗂𝗏_𝗌;
-		if (eq(s, "%"))return i64_𝗋𝖾𝗆_𝗌;
-		if (eq(s, "=="))return i64_𝖾𝗊;
-		if (eq(s, "eq"))return i64_𝖾𝗊;
-		if (eq(s, "equals"))return i64_𝖾𝗊;
-		if (eq(s, "is"))return i64_𝖾𝗊;// careful could be declaration := !
-		if (eq(s, "!="))return i64_𝗇𝖾;
-		if (eq(s, ">"))return i64_𝗀𝗍_𝗌;
-		if (eq(s, "<"))return i64_𝗅𝗍_𝗌;
-		if (eq(s, ">="))return i64_𝗀𝖾_𝗌;
-		if (eq(s, "<="))return i64_𝗅𝖾_𝗌;
-		if (eq(s, "≥"))return i64_𝗀𝖾_𝗌;
-		if (eq(s, "≤"))return i64_𝗅𝖾_𝗌;
+		if (eq(s, "-"))return i64_sub;
+		if (eq(s, "*"))return i64_mul;
+		if (eq(s, "/"))return i64_di𝗏_s;
+		if (eq(s, "%"))return i64_rem_s;
+		if (eq(s, "=="))return i64_eq;
+		if (eq(s, "eq"))return i64_eq;
+		if (eq(s, "equals"))return i64_eq;
+		if (eq(s, "is"))return i64_eq;// careful could be declaration := !
+		if (eq(s, "!="))return i64_ne;
+		if (eq(s, ">"))return i64_gt_s;
+		if (eq(s, "<"))return i64_lt_s;
+		if (eq(s, ">="))return i64_ge_s;
+		if (eq(s, "<="))return i64_le_s;
+		if (eq(s, "≥"))return i64_ge_s;
+		if (eq(s, "≤"))return i64_le_s;
 
-		if (eq(s, "&"))return i64_𝖺𝗇𝖽;
-		if (eq(s, "&&"))return i64_𝖺𝗇𝖽;
+		if (eq(s, "&"))return i64_and;
+		if (eq(s, "&&"))return i64_and;
 
-		if (eq(s, "and"))return i64_𝖺𝗇𝖽;
-		if (eq(s, "⋀"))return i64_𝖺𝗇𝖽;
-		if (eq(s, "∧"))return i64_𝖺𝗇𝖽;// ∧≠^ potence looks like
+		if (eq(s, "and"))return i64_and;
+		if (eq(s, "⋀"))return i64_and;
+		if (eq(s, "∧"))return i64_and;// ∧≠^ potence looks like
 		if (eq(s, "^"))return 0;// POWER handled on higher level
 
-		if (eq(s, "or"))return i64_𝗈𝗋;
-		if (eq(s, "∨"))return i64_𝗈𝗋;// looks like 'v' but isn't
-		if (eq(s, "⋁"))return i64_𝗈𝗋;
-		if (eq(s, "||"))return i64_𝗈𝗋; // ≠ norm ‖
-		if (eq(s, "|"))return i64_𝗈𝗋;// todo: pipe is different!
+		if (eq(s, "or"))return i64_or;
+		if (eq(s, "∨"))return i64_or;// looks like 'v' but isn't
+		if (eq(s, "⋁"))return i64_or;
+		if (eq(s, "||"))return i64_or; // ≠ norm ‖
+		if (eq(s, "|"))return i64_or;// todo: pipe is different!
 
-		if (eq(s, "xor"))return i64_𝗑𝗈𝗋;
-		if (eq(s, "^|"))return i64_𝗑𝗈𝗋;//always bitwise todo: truthy 0x0101 xor 0x1010 !?
-		if (eq(s, "⊻"))return i64_𝗑𝗈𝗋;
+		if (eq(s, "xor"))return i64_xor;
+		if (eq(s, "^|"))return i64_xor;//always bitwise todo: truthy 0x0101 xor 0x1010 !?
+		if (eq(s, "⊻"))return i64_xor;
 
 		if (eq(s, "not"))return i64_eqz;
 		if (eq(s, "¬"))return i64_eqz;
@@ -1220,39 +1220,39 @@ Code cast(Valtype from, Valtype to) {
 	if (from == 0 and to == i32t)return nop;// nil or false ok as int? otherwise add const 0!
 	if (from == float32 and to == float64)return Code(f64_from_f32);
 	if (from == float32 and to == i32t) return Code(f32_cast_to_i32_s);
-	if (from == i32t and to == float32)return Code(i32_cast_to_f32_s);
+	if (from == i32t and to == float32)return Code(f32_from_int32);
 //	if (from == i32t and to == float64)return Code(i32_cast_to_f64_s);
-	if (from == i64 and to == i32) return Code(i𝟥𝟤_𝗐𝗋𝖺𝗉_𝗂𝟨𝟦);
-	if (from == f32 and to == i32) return Code(i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗌);
-//	if(from==f32u and to==i32)	return Code(i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗎);
-	if (from == f64 and to == i32) return Code(i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗌);
-//	if(from==f64u and to==i32)	return Code(i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗎);
-	if (from == i32 and to == i64) return Code(i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗌);
-//	if(from==i32u and to==i64)	return Code(i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗎);
-	if (from == f32 and to == i64) return Code(i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗌);
-//	if(from==f32u and to==i64)	return Code(i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗎);
-	if (from == f64 and to == i64) return Code(i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗌);
-//	if(from==f64u and to==i64)	return Code(i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗎);
-	if (from == i32 and to == f32) return Code(f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗌);
-//	if(from==i32u and to==f32)	return Code(f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗎);
-	if (from == f64 and to == f32) return Code(f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌);
-//	if(from==f64u and to==f32)	return Code(f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗎);
-	if (from == f64 and to == f32) return Code(f𝟥𝟤_𝖽𝖾𝗆𝗈𝗍𝖾_𝖿𝟨𝟦);
-	if (from == i32 and to == f64) return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗌);
-//	if(from==i32u and to==f64)	return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗎);
-	if (from == f64 and to == f64) return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌);
-//	if(from==f64u and to==f64)	return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗎);
-	if (from == f32 and to == f64) return Code(f𝟨𝟦_𝗉𝗋𝗈𝗆𝗈𝗍𝖾_𝖿𝟥𝟤);
-//	if(from==f32 and to==i32)	return Code(i𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟥𝟤);
-//	if(from==f64 and to==i64)	return Code(i𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟨𝟦);
-//	if(from==i32 and to==f32)	return Code(f𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟥𝟤);
-//	if(from==i64 and to==f64)	return Code(f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦);
-	if (from == i64 and to == f32) return Code(f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌).addByte(f32_from_f64);
+	if (from == i64 and to == i32) return Code(i32_wrap_i64);
+	if (from == f32 and to == i32) return Code(i32_trunc_f32_s);
+//	if(from==f32u and to==i32)	return Code(i32_trunc_f32_𝗎);
+	if (from == f64 and to == i32) return Code(i32_trunc_f64_s);
+//	if(from==f64u and to==i32)	return Code(i32_trunc_𝖿𝟨𝟦_𝗎);
+	if (from == i32 and to == i64) return Code(i64_extend_i32_s);
+//	if(from==i32u and to==i64)	return Code(i64_extend_i32_𝗎);
+	if (from == f32 and to == i64) return Code(i64_trunc_f32_s);
+//	if(from==f32u and to==i64)	return Code(i64_trunc_f32_𝗎);
+	if (from == f64 and to == i64) return Code(i64_trunc_f64_s);
+//	if(from==f64u and to==i64)	return Code(i64_trunc_𝖿𝟨𝟦_𝗎);
+	if (from == i32 and to == f32) return Code(f32_convert_i32_s);
+//	if(from==i32u and to==f32)	return Code(f32_convert_i32_𝗎);
+	if (from == f64 and to == f32) return Code(f32_convert_i64_s);
+//	if(from==f64u and to==f32)	return Code(f32_convert_i64_𝗎);
+	if (from == f64 and to == f32) return Code(f32_demote_f64);
+	if (from == i32 and to == f64) return Code(f64_convert_i32_s);
+//	if(from==i32u and to==f64)	return Code(f64_convert_i32_𝗎);
+	if (from == f64 and to == f64) return Code(f64_convert_i64_s);
+//	if(from==f64u and to==f64)	return Code(f64_convert_i64_𝗎);
+	if (from == f32 and to == f64) return Code(f64_promote_f32);
+//	if(from==f32 and to==i32)	return Code(i32_reinterpret_f32);
+//	if(from==f64 and to==i64)	return Code(i64_reinterpret_𝖿𝟨𝟦);
+//	if(from==i32 and to==f32)	return Code(f32_reinterpret_i32);
+//	if(from==i64 and to==f64)	return Code(f64_reinterpret_i64);
+	if (from == i64 and to == f32) return Code(f64_convert_i64_s).addByte(f32_from_f64);
 	if (from == void_block)return nop;// todo: pray
 	if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
 	if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
 	if (from == f32 and to == array)return nop;// pray / assume f32 is a pointer here. LOL NO todo!
-	if (from == i64 and to == array)return Code(i𝟥𝟤_𝗐𝗋𝖺𝗉_𝗂𝟨𝟦);;// pray / assume i32 is a pointer here. todo!
+	if (from == i64 and to == array)return Code(i32_wrap_i64);;// pray / assume i32 is a pointer here. todo!
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
 	error("incompatible types "s + typeName(from) + " => " + typeName(to));
