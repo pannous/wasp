@@ -54,8 +54,11 @@ void testWasmFunctionDefiniton() {
 	assert_emit("grow:=it*2; grow 3", 6)
 	assert_emit("grow:=it*2; grow 3*4", 24)
 	assert_emit("grow:=it*2; grow(3*42) > grow 2*3", 1)
+	assert_emit("factorial:=it<2?1:it*factorial(it-1);factorial 5", 120);
+
 	//0 , 1 , 1 , 2 , 3 , 5 , 8 , 13 , 21 , 34 , 55 , 89 , 144
 	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
+	data_mode = false;
 	assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
 	skip(
 			assert_emit("fib:=it<2 and it or fib(it-1)+fib(it-2);fib(7)", 13)

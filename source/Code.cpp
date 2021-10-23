@@ -188,8 +188,8 @@ Valtype mapTypeToWasm(Node n) {
 	//	if (n.kind == keyNode and not n.value.data)return array;
 	if (n.kind == groups)return array;// uh todo?
 	n.log();
-	String context = "sin";
-	if (locals[context].has(n.name))return localTypes[context][locals[context].position(n.name)];
+//	String context = "sin";
+//	if (locals[context].has(n.name))return localTypes[context][locals[context].position(n.name)];
 	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
 	return none;
 }
