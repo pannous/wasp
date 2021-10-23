@@ -565,8 +565,7 @@ Code emitIndexRead(Node op, String context) {
 	Node &array = op[0];// also String: byte array or codepoint array todo
 	Node &pattern = op[1];
 	int base = runtime.data_segments.length;// uh, todo?
-	int size = 4;
-	size = 1;
+	int size = currentStackItemSize();
 //	if(op[0].kind==strings) todo?
 	last_type = arg_type;
 	if (last_type == charp)size = 1;// chars for now vs codepoint!
@@ -806,23 +805,14 @@ Code emitValue(Node node, String context) {
 Code emitOperator(Node node, String context) {
 	Code code;
 	String &name = node.name;
-	if (node.length == 0 and name == "=")
-		return code;// BUG
-//	arg_type = none;// safe to reset? no
+	if (node.length == 0 and name == "=") return code;// BUG
 	int index = functionIndices.position(name);
 	if (name == "then")return emitIf(*node.parent, context);// pure if handled before
-	if (name == ":=")
-		return emitDeclaration(node, node.first());
-	if (name == "=")
-		return emitSetter(node, node.first(), context);
-	if (name == "::=")
-		return emitGetGlobal(node); // globals ASSIGNMENT already handled in analyze / globalSection()
-	if (node.length < 1 and not node.value.node and not node.next) {
-		node.log();
-		error("missing args for operator "s + name);
-	} else if (node.length == 1) {// todo : some ops need value AFTER opcode, e.g. get_local!
-//				if(name.in(function_list)) SHOULDN'T HAPPEN!
-//				error("unexpected unary operator: "s + name);
+	if (name == ":=")return emitDeclaration(node, node.first());
+	if (name == "=")return emitSetter(node, node.first(), context);
+	if (name == "::=")return emitGetGlobal(node); // globals ASSIGNMENT already handled in analyze / globalSection()
+	if (node.length < 1 and not node.value.node and not node.next) error("missing args for operator "s + name);
+	else if (node.length == 1) {
 		Node arg = node.children[0];
 		const Code &arg_code = emitExpression(arg, context);// should ALWAYS just be value, right?
 		arg_type = last_type;
