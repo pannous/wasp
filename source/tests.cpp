@@ -1919,32 +1919,20 @@ void testSubGrouping() {// dangling , should make '\n' not close
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
+	//	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	data_mode = true;
-//	data_mode = false; // a=b => a,=,b before analysis
-	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
-	assert_emit("i=1;while(i<9)i++;i+1", 10);
+	assert_emit("grow(double z):=z*2;grow 5", 10);
+	assert_emit("grow(z):=z*2;grow 5", 10);
+	assert_emit("int grow(double z):=z*2;grow 5", 10);
+	assert_emit("double grow(z):=z*2;grow 5", 10);
+	assert_emit("int grow(int z):=z*2;grow 5", 10);
+	assert_emit("double grow(int z):=z*2;grow 5", 10);
 
-
-	assert_emit("double\n"
-	            "\tS1  = -1.6666", -1);
-
-
-	testWasmLogicUnaryVariables();
-	assert_emit("i=true; not i", false);
-	assert_emit("i=nil; not i", true);
-//	assert_emit("double\n"
-//				"\tS1  = -1.6666", -1);
-
-	assert_emit("4.3 as int + 4.7 as int", 8);
-	assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
-	assert_emit("add1 x:=x+1;add1 3", (long) 4);
-
+//	assert_emit("double\n\tS1  = -1.6666", -1);
+	assert_emit("use sin;sin π/2", 1);
+//	assert_emit("use sin;sin π", 0);
 //testNodesInWasm();
 //testSubGrouping();
-
-//	assert_emit("use sin;sin π/2", 1);
-//	assert_emit("use sin;sin π", 0);
 //	testMergeWabt();
 //	run( "wasp.wasm");
 //	testPaintWasm();

@@ -161,3 +161,35 @@ chars typeName(Valtype t) {
 	}
 	return 0;
 }
+
+
+Valtype mapTypeToWasm(Node n) {
+	if (n == Double)
+		return float64;
+	if (n == Long)return i64;
+	// int is not a true angle type, just an alias for long.
+	// todo: but what about interactions with other APIs? add explicit i32 !
+	// todo: in fact hide most of this under 'number' magic umbrella
+	if (n.kind == bools)return int32;
+	if (n.kind == nils)return voids;// mapped to int32 later: ø=0
+	if (n.kind == reals)return float32;// float64; todo why 32???
+	if (n.kind == longs)return int32;// int64; todo
+	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
+	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
+	Node first = n.first();
+	if (first == n)first = NIL;// avoid loops
+	if (n.kind == objects)return array;// todo
+	if (n.kind == assignment)return mapTypeToWasm(first);// todo
+	if (n.kind == operators)return mapTypeToWasm(first);// todo
+	if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
+	if (n.kind == call)
+		return functionSignatures[n.name].return_type;// error("first.kind==call is not a wasm type, maybe get signature?");
+	if (n.kind == keyNode and n.value.data)return mapTypeToWasm(*n.value.node);
+	//	if (n.kind == keyNode and not n.value.data)return array;
+	if (n.kind == groups)return array;// uh todo?
+	n.log();
+	String context = "sin";
+	if (locals[context].has(n.name))return localTypes[context][locals[context].position(n.name)];
+	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
+	return none;
+}

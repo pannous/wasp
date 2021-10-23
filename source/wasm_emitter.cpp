@@ -35,7 +35,6 @@ Map<long/*hash*/, String> hash_to_normed_alias;
 bool aliases_loaded = false;
 
 void load_aliases() {
-//	Wasp::
 	aliases.setDefault(List<String>());
 	hash_to_normed_alias.setDefault(String());
 	data_mode = true;
@@ -48,10 +47,11 @@ void load_aliases() {
 			hash_to_normed_alias[variant.hash()] = normed;
 		}
 	}
+//	check(hash_to_normed_alias["mod_d"s.hash()]=="mod"s);
 	aliases_loaded = true;
 }
 
-String normOperator(String alias) {
+String normOperator(String &alias) {
 //	if (not aliases_loaded)load_aliases();
 	auto hash = alias.hash();
 	if (not hash_to_normed_alias.has(hash))
@@ -82,35 +82,6 @@ Map<String, int> functionIndices;
 Map<String, Code> functionCodes;
 Map<String, int> typeMap;
 
-
-Valtype mapTypeToWasm(Node n) {
-	if (n == Double)
-		return float64;
-	if (n == Long)return i64;
-	// int is not a true angle type, just an alias for long.
-	// todo: but what about interactions with other APIs? add explicit i32 !
-	// todo: in fact hide most of this under 'number' magic umbrella
-	if (n.kind == bools)return int32;
-	if (n.kind == nils)return voids;// mapped to int32 later: ø=0
-	if (n.kind == reals)return float32;// float64; todo why 32???
-	if (n.kind == longs)return int32;// int64; todo
-	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
-	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
-	Node first = n.first();
-	if (first == n)first = NIL;// avoid loops
-	if (n.kind == objects)return array;// todo
-	if (n.kind == assignment)return mapTypeToWasm(first);// todo
-	if (n.kind == operators)return mapTypeToWasm(first);// todo
-	if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
-	if (n.kind == call)
-		return functionSignatures[n.name].return_type;// error("first.kind==call is not a wasm type, maybe get signature?");
-	if (n.kind == keyNode and n.value.data)return mapTypeToWasm(*n.value.node);
-	//	if (n.kind == keyNode and not n.value.data)return array;
-	if (n.kind == groups)return array;// uh todo?
-	n.log();
-	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
-	return none;
-}
 
 
 [[nodiscard]]
@@ -1084,9 +1055,11 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				else if (globals.has(name)) return emitGetGlobal(node);
 				else if (name == "π") // if not provided as global
 					return emitValue(Node(3.141592653589793), current);
-				else if (!node.isSetter())
-					error("UNKNOWN local symbol "s + name + " in context " + context);
-				else {
+				else if (!node.isSetter()) {
+					log(locals[context]);
+					if (not node.type)
+						error("UNKNOWN local symbol "s + name + " in context " + context);
+				} else {
 					error("local symbol "s + name.trim() + " in " + context + " should be registered in analyze()!");
 					current_local_names.add(name);// ad hoc x=42
 					local_index = current_local_names.size() - 1;
@@ -1200,7 +1173,6 @@ Code emitExpression(Node *nodes, String context) {
 }
 
 [[nodiscard]]
-[[nodiscard]]
 Code emitCall(Node &fun, String context) {
 	Code code;
 	auto name = fun.name;
@@ -1221,7 +1193,7 @@ Code emitCall(Node &fun, String context) {
 		code.push(emitExpression(arg, context));
 //		Valtype argType = mapTypeToWasm(arg); // todo ((+ 1 2)) needs deep analysis, or:
 		Valtype argType = last_type;// evaluated expression smarter than node arg!
-		Valtype &sigType = signature.types[i];
+		Valtype &sigType = signature.types[i++];
 		if (sigType != argType)
 			code.push(cast(argType, sigType));
 	};
