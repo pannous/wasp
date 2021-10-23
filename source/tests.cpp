@@ -1919,12 +1919,15 @@ void testSubGrouping() {// dangling , should make '\n' not close
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
-	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
 	data_mode = true;
+//	data_mode = false; // a=b => a,=,b before analysis
+	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
+	assert_emit("i=1;while(i<9)i++;i+1", 10);
+
+
 	assert_emit("double\n"
 	            "\tS1  = -1.6666", -1);
-	assert_emit("x={1 2 3}; x#2=4;x#2", 4);
 
 
 	testWasmLogicUnaryVariables();
