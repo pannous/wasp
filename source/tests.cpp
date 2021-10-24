@@ -1925,11 +1925,12 @@ void testSubGrouping() {// dangling , should make '\n' not close
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
-//		data_mode = false; // a=b => a,=,b before analysis
+	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
 //	assert_emit("use sin;sin π/2", 1);
 //assert_emit("factorial:=it<2?1:it*factorial it-1;factorial 5", 120);
 //	assert_emit("factorial:=it<2?1:it*(factorial it-1);factorial 5", 120);
+	assert_emit("i=3.70001;.3+i", 4);
 	assert_emit("fac:= if it<=0 : 1 else it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
 //assert_emit("add1 x:=$0+1;add1 3", (long) 4);
 //	assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)

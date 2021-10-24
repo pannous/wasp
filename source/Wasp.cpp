@@ -260,6 +260,8 @@ class Wasp {
 		float tabs = 0;
 		int spaces_per_tab = 2;
 		int offset = at;
+//		if(text[offset]==end_block) 0x0b / vertical tab
+//			return indentation_level-1;
 		if (text[offset] == '\n' and text[offset + 1] == '\n') {
 //			// double newline dedent. really? why not keep track via indent?
 //			print(position());
@@ -292,33 +294,21 @@ class Wasp {
 		return floor(tabs);
 	}
 
-	int indentation_EVIL() {
-		// proceed() gets rid of all semantic spacing a b => ab
-		float i = 0;
-		int spaces_per_tab = 4;
-		while (ch == '\t') {
-			i++;
-			proceed();
-		}
-		if (i > 0 and ch == ' ')err("ambiguous indentation, mixing tabs and spaces");
-		while (ch == ' ') {
-			i = i + 1. / spaces_per_tab;
-			proceed();
-		}
-		if (i > 0 and ch == '\t')err("ambiguous indentation, mixing tabs and spaces");
-		if (ch == '\n')
-			return indentation_level; // careful empty lines if next indentation == last one : just hangover spacer!
-		if (ch == 0)return 0; // no more indentation.
-		return ceil(i);
-	}
-
 // Ascii control for indent/dedent: perfect!
-////0x0E 	SO 	␎ 	^N 		Shift Out
-////0x0F 	SI 	␏ 	^O 		Shift In
+//  0x0B    VT  ␋     vertical tab => end_block
+//  0x0E 	SO 	␎ 	^N 		Shift Out
+//  0x0F 	SI 	␏ 	^O 		Shift In
 //	0x1C 	S4 	FS 	␜ 	^\ 		File Separator
 //	0x1D 	S5 	GS 	␝ 	^] 		Group Separator
 //	0x1E 	S6 	RS 	␞ 	^^[k] 		Record Separator
 //	0x1F 	S7 	US 	␟ 	^_ 		Unit Separator
+// ␙
+//0x2403	9219	SYMBOL FOR END OF TEXT	␃
+//0x2404	9220	SYMBOL FOR END OF TRANSMISSION	␄
+//0x2419	9241	SYMBOL FOR END OF MEDIUM	␙
+//0x241B	9243	SYMBOL FOR ESCAPE	␛
+// U+0085 <control-0085> (NEL: NEXT LINE) ␤ NewLine
+// ‘Language Tag character’ (U+E0001) + en-us …
 	bool closing(char ch, char closer) {
 		if (ch == closer)
 			return true;
