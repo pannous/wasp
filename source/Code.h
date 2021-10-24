@@ -388,7 +388,6 @@ enum Opcodes {
 	catch_ = 0x07,
 	throw_ = 0x08,
 	rethrow_ = 0x09,
-	call_ = 0x10,
 	br_on_exn_ = 0x0A, // branch on exception
 
 	end_block = 0x0b, //11
@@ -396,9 +395,13 @@ enum Opcodes {
 	br_if = 0x0d,
 	return_block = 0x0f,
 	function = 0x10,
+	call_ = 0x10,
+	call_indirect = 0x11,
 
 	// EXTENSIONS:
-	call_ref = 0x14,
+	return_call = 0x12,  // the tail-call version of call
+	return_call_indirect = 0x13, // the tail-call version of call_indirect
+	call_ref = 0x14, // [ts1 (ref $t)] -> [ts2] iff $t = [ts1] -> [ts2]
 	return_call_ref = 0x15,
 	func_bind = 0x16,// (type $t) 	$t : u32
 	let_local = 0x17, // 	let <bt> <locals> 	bt : blocktype, locals : (as in functions)

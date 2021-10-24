@@ -928,11 +928,8 @@ Code emitOperator(Node node, String context) {
 		last_type = localTypes[context][last_local];
 
 	}
-
-	if (opcode == i32_add or opcode == i32_modulo or opcode == i32_sub or opcode == i32_div or opcode == i32_mul)
-		last_type = i32t;
-	if (opcode == f32_eq or opcode == f32_gt or opcode == f32_lt or opcode == f32_ge or opcode == f32_le)
-		last_type = i32t;// bool'ish
+	if (opcode >= 0x45 and opcode <= 0x78)
+		last_type = i32;// int ops (also f64.eqz …)
 	return code;
 }
 
@@ -1333,10 +1330,11 @@ Code emitSetter(Node node, Node &value, String context) {
 	Code value1 = emitValue(value, context);
 //	variableTypes
 	setter.add(value1);
-	setter.add(cast(last_type, localTypes[context][local_index]));
+	auto valtype = localTypes[context][local_index];
+	setter.add(cast(last_type, valtype));
 	setter.add(tee_local);
 	setter.add(local_index);
-	last_type = localTypes[context][local_index];// still the type of the local, not of the value. example: float x=7
+	last_type = valtype;// still the type of the local, not of the value. example: float x=7
 	return setter;
 }
 
