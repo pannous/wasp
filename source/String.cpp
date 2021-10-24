@@ -456,7 +456,7 @@ String s(chars &s) {
 
 #ifndef WASM
 //relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
-String nil_name = "nil";
+String nil_name = "nil";// ␀ ø
 String empty_name = "";
 String object_name = "{…}";
 String groups_name = "(…)";

@@ -401,11 +401,14 @@ bool addLocal(const char *context, String name, Valtype valtype) {
 		locals[context].add(name);
 		localTypes[context].add(valtype);
 		return true;// added
-	} else {
+	}
+#if DEBUG
+	else {
 		auto oldType = typeName(localTypes[context][locals[context].position(name)]);
 		trace("local in context %s already known "s % s(context) + name + " with type " + oldType + " now " +
-		      typeName(valtype));
+			  typeName(valtype));
 	}
+#endif
 	return false;// already there
 }
 
@@ -494,8 +497,7 @@ Node &groupDeclarations(Node &expression, const char *context) {
 				signature.add(arg.type);// todo: arg type, or pointer
 			}
 			if (signature.size() == 0 and parameters.size() == 0 and rest.has("it", false, 100)) {
-				parameters.add("it");
-				localTypes[name].add(f64);
+				addLocal(name, "it", f64);
 				signature.add(f64);// todo: any / smarti! <<<
 			}
 
@@ -637,13 +639,15 @@ Node &groupOperators(Node &expression, String context = "main") {
 				if (name.endsWith("=") and not name.startsWith("::") and prev.kind == reference) {
 					// todo can remove hack?
 					// x=7 and x*=7
-					if (addLocal(context, prev.name, mapType(node))) {
+					if (addLocal(context, prev.name, mapType(next))) {
 						if (name.startsWith("="))
 							error("self modifier on unknown reference "s + prev.name);
 					} else {
-						// variable is known but not typed yet
+						// variable is known but not typed yet, or type again?
 						int position = localContext.position(prev.name);
-						localContextTypes[position] = mapType(next);// TODO  pre-evaluation of rest!!! keep old type?
+						if (localContextTypes[position] == int32)// todo default var i ???
+							localContextTypes[position] = mapType(
+									next);// TODO  pre-evaluation of rest!!! keep old type?
 					}
 				}
 				//#endif
@@ -895,12 +899,6 @@ Node analyze(Node node, String context) {
 	Type type = node.kind;
 	String &name = node.name;
 
-	List<String> &localContext = locals[context];
-	List<Valtype> &localContextTypes = localTypes[context];
-//	if (localContext.size() == 0){
-//		localContext.add("result");// nice idea but NEEDS smartis:
-//		localContextTypes.add(int32);// UNKNOWN / could be anything!!
-//	}
 	if (type == functor) {
 		if (name == "while")return groupWhile(node);
 		if (name == "if")return groupIf(node);
