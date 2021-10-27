@@ -10,6 +10,14 @@
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
 
+void testUpperLowerCase() {
+	chars string = "ÂÊÎÔÛ ÁÉÍÓÚ ÀÈÌÒÙ AÖU";
+	lowerCase(string, 0);
+	assert_equals(string, "âêîôû áéíóú àèìòù aöu");
+	chars string2 = (chars) u8"ÂÊÎÔÛ ÁÉÍÓÚ ÀÈÌÒÙ AÖU";
+	lowerCase(string2, 0);
+	assert_equals(string2, "âêîôû áéíóú àèìòù aöu");
+}
 
 void testPrimitiveTypes() {
 	assert_emit("double 2", 2);
@@ -1923,8 +1931,10 @@ void testCurrent() {
 	//	panicking = true;//
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-
+	functionSignatures["modulo_double"].builtin().add(float64).add(float64).returns(float64);
+	functionSignatures["modulo_double"].types[0];
 	assert_emit("use sin;sin π/2", 1);
+	testUpperLowerCase();
 
 //	assert_emit("use sin;sin π", 0);
 //testNodesInWasm();

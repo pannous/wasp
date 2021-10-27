@@ -166,7 +166,8 @@ chars typeName(Valtype t) {
 Valtype mapTypeToWasm(Node n) {
 	if (n == Double)
 		return float64;
-	if (n == Long)return i64;
+	if (n == Long)
+		return i64;
 	// int is not a true angle type, just an alias for long.
 	// todo: but what about interactions with other APIs? add explicit i32 !
 	// todo: in fact hide most of this under 'number' magic umbrella
