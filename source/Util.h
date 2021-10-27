@@ -26,6 +26,8 @@ char *readFile(chars filename, int *size_out = 0);// 0 = err
 
 bool similar(float a, float b);
 
+void lowerCase(chars string, int i);
+
 double mod_d(double x, double y);
 
 extern double pi;

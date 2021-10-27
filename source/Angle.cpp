@@ -96,11 +96,15 @@ Node eval(String code) {
 #endif
 
 }
-
+Node &groupTypes(Node &expression, const char *context);
 List<Arg> extractFunctionArgs(String function, Node &params) {
 	//			left = analyze(left, name) NO, we don't want args to become variables!
 	List<Arg> args;
 	Node nextType = Double;
+	if (params.length == 0) {
+		params = groupTypes(params, function);
+		args.add({function, params.name, params.type ? *params.type : nextType});
+	}
 	for (Node &arg : params) {
 		if (types.has(arg.name)) {
 			if (args.size() > 0 and not args.last().type)
@@ -336,9 +340,11 @@ Node &groupTypes(Node &expression, const char *context) {
 			expression.name = 0;// hack
 			expression.kind = groups;
 			return expression.flat();
+		} else if (expression.next) {
+			expression.next->type = expression.clone();
+			return *expression.next;
 		} else
 			error("dangling type "s + expression.name);
-//		else if(expression.next){expression=*expression.next;}
 	}
 	for (int i = 0; i < expression.length; i++) {
 		Node &node = expression.children[i];
@@ -397,6 +403,10 @@ bool addLocal(const char *context, String name, Valtype valtype) {
 		warn("empty reference in "s + context);
 		return true;// 'done' ;)
 	}
+	if (globals.has(name))
+		error(name + "already declared as global"s);
+	if (isFunction(name))
+		error(name + "already declared as function"s);
 	if (not locals[context].has(name)) {
 		locals[context].add(name);
 		localTypes[context].add(valtype);
@@ -983,7 +993,7 @@ void preRegisterSignatures() {
 	// todo: long + double !
 	// imports
 	functionSignatures["modulo_float"] = Signature().builtin().add(float32).add(float32).returns(float32);
-	functionSignatures["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
+	functionSignatures["modulo_double"].builtin().add(float64).add(float64).returns(float64);
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 	functionSignatures["main"] = Signature().returns(i32t);;
 	functionSignatures["print"] = functionSignatures["logs"];// todo: for now, later it needs to distinguish types!!
