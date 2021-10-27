@@ -698,32 +698,32 @@ public:
 		return types.size();
 	}
 
-	Signature handled() {
+	Signature &handled() {
 		is_handled = true;
 		return *this;
 	}
 
-	Signature import() {
+	Signature &import() {
 		is_import = true;
 		return *this;
 	}
 
-	Signature builtin() {
+	Signature &builtin() {
 		is_builtin = true;
 		return *this;
 	}
 
-	Signature runtime() {
+	Signature &runtime() {
 		is_runtime = true;
 		return *this;
 	}
 
-	Signature add(Valtype t) {
+	Signature &add(Valtype t) {
 		types.insert_or_assign(types.size(), t);
 		return *this;
 	}
 
-	Signature add(Node type) {
+	Signature &add(Node type) {
 		types.insert_or_assign(types.size(), mapTypeToWasm(type));
 		return *this;
 	}
