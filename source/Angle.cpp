@@ -645,9 +645,9 @@ Node &groupOperators(Node &expression, String context = "main") {
 					} else {
 						// variable is known but not typed yet, or type again?
 						int position = localContext.position(prev.name);
-						if (localContextTypes[position] == int32)// todo default var i ???
+						if (localContextTypes[position] == int32)// todo 'none' ? default `var i` is int32???
 							localContextTypes[position] = mapType(
-									next);// TODO  pre-evaluation of rest!!! keep old type?
+									next); // TODO  pre-evaluation of rest!!! keep old type?
 					}
 				}
 				//#endif

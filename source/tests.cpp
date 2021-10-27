@@ -1778,10 +1778,6 @@ void todos() {
 			// default bug!
 			//    	subtract(other complex) := re -= other.re; im -= other.im
 			// := is terminated by \n, not by ;!
-			functionSignatures.setDefault(Signature());
-			Signature &signature = functionSignatures["init_graphics"].import().returns(pointer);// surface
-			if (signature.return_type != pointer)error("WWWAAAUUUU");
-			if (functionSignatures["init_graphics"].return_type != pointer)error("WWWAAA");
 			assert_throws("xyz 3.7"); // todo SHOULD THROW unknown symbol!
 	)
 	skip(
@@ -1927,13 +1923,8 @@ void testCurrent() {
 	//	panicking = true;//
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-//	assert_emit("use sin;sin π/2", 1);
-//assert_emit("factorial:=it<2?1:it*factorial it-1;factorial 5", 120);
-//	assert_emit("factorial:=it<2?1:it*(factorial it-1);factorial 5", 120);
-	assert_emit("i=3.70001;.3+i", 4);
-	assert_emit("fac:= if it<=0 : 1 else it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
-//assert_emit("add1 x:=$0+1;add1 3", (long) 4);
-//	assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
+
+	assert_emit("use sin;sin π/2", 1);
 
 //	assert_emit("use sin;sin π", 0);
 //testNodesInWasm();

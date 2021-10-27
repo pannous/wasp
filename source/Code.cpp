@@ -187,6 +187,7 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == keyNode and n.value.data)return mapTypeToWasm(*n.value.node);
 	//	if (n.kind == keyNode and not n.value.data)return array;
 	if (n.kind == groups)return array;// uh todo?
+	if (n.kind == unknown) return int32;// blasphemy!
 	n.log();
 //	String context = "sin";
 //	if (locals[context].has(n.name))return localTypes[context][locals[context].position(n.name)];
