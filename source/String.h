@@ -874,6 +874,9 @@ public:
 	String trim();
 
 	long hash();
+
+	String &lower();
+//	void lower();
 };
 
 

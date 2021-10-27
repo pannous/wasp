@@ -636,6 +636,20 @@ long String::hash() {
 //	return (long)data;// only conflict: shared substring(0,i);
 }
 
+codepoint lower(codepoint c) {
+
+}
+
+[[modifying]]
+String &String::lower() {
+	lowerCase(data, length);
+	return *this;
+//	auto clone1 = clone();
+//	for (int i = 0; i < length; i++) {
+//		clone1.data[i]=::lower(clone1.data[i]);
+//	}
+}
+
 String EMPTY_STRING0 = "";
 String &EMPTY_STRING = EMPTY_STRING0;
 
