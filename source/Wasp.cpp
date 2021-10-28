@@ -1333,11 +1333,14 @@ private:
 					if (checkAmbiguousBlock(current, parent)) {
 						warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
 					}
+					if (type == patterns)asListItem = false;
 					proceed();
-					Node object = Node();
+					Node object = Node().setType(type);
 					Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &current.last());
 					object.addSmart(objectValue);
-					object = object.flat().setType(type, false);
+					if (type != patterns)
+						object = object.flat();
+					object.setType(type, false);
 					object.separator = objectValue.separator;
 					if (asListItem)
 						current.add(object);
@@ -1430,8 +1433,8 @@ private:
 					bool add_raw = current.kind == expression or key.kind == expression or
 					               (current.last().kind == groups and current.length > 1);
 					bool add_to_whole_expression = false; // a b : c => (a b):c  // todo: symbol :a !
-					if (previous == ' ' and (next == ' ' or next == '\n'))
-						add_to_whole_expression = true;
+					//					if (previous == ' ' and (next == ' ' or next == '\n')) and lastNonWhite !=':' …
+//						add_to_whole_expression = true;
 					if (is_operator(previous))
 						add_raw = true;// == *=
 
