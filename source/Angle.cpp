@@ -105,7 +105,8 @@ List<Arg> extractFunctionArgs(String function, Node &params) {
 	Node nextType = Double;
 	if (params.length == 0) {
 		params = groupTypes(params, function);
-		args.add({function, params.name, params.type ? *params.type : nextType});
+		if (params.name != function)
+			args.add({function, params.name, params.type ? *params.type : nextType});
 	}
 	for (Node &arg : params) {
 		if (types.has(arg.name)) {
