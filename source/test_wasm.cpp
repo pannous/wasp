@@ -732,21 +732,21 @@ void testMergeWabt() {
 
 
 void testWasmRuntimeExtensionMock() {
-#ifndef RUNTIME_ONLY
-	functionIndices.setDefault(-1);
-	Module runtime = read_wasm("lib.wasm");// test:=42
-	Signature mock;// todo read Signature from wasm!?
-	functionSignatures.insert_or_assign("test", mock.returns(int32));
-	Node charged = analyze(parse("test"));
-	Code calling = emit(charged, &runtime, "maine");
-	calling.save("main.wasm");// partial wasm!
-	Module main = read_wasm("main.wasm");
-	Code code = merge_wasm(runtime, main);
-	code.save("merged.wasm");
-	read_wasm("merged.wasm");
-	int result = code.run();
-	check_eq(result, 42);
-#endif
+//#ifndef RUNTIME_ONLY
+//	functionIndices.setDefault(-1);
+//	Module runtime = read_wasm("lib.wasm");// test:=42
+//	Signature mock;// todo read Signature from wasm!?
+//	functionSignatures.insert_or_assign("test", mock.returns(int32));
+//	Node charged = analyze(parse("test"));
+//	Code calling = emit(charged, &runtime, "maine");
+//	calling.save("main.wasm");// partial wasm!
+//	Module main = read_wasm("main.wasm");
+//	Code code = merge_wasm(runtime, main);
+//	code.save("merged.wasm");
+//	read_wasm("merged.wasm");
+//	int result = code.run();
+//	check_eq(result, 42);
+//#endif
 }
 
 
