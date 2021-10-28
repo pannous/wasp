@@ -96,7 +96,9 @@ Node eval(String code) {
 #endif
 
 }
+
 Node &groupTypes(Node &expression, const char *context);
+
 List<Arg> extractFunctionArgs(String function, Node &params) {
 	//			left = analyze(left, name) NO, we don't want args to become variables!
 	List<Arg> args;
@@ -412,13 +414,18 @@ bool addLocal(const char *context, String name, Valtype valtype) {
 		localTypes[context].add(valtype);
 		return true;// added
 	}
-#if DEBUG
+//#if DEBUG
 	else {
-		auto oldType = typeName(localTypes[context][locals[context].position(name)]);
-		trace("local in context %s already known "s % s(context) + name + " with type " + oldType + " now " +
-			  typeName(valtype));
+		auto position = locals[context].position(name);
+		auto oldType = localTypes[context][position];
+		if (oldType == none)
+			localTypes[context][position] = valtype;
+		else if (oldType != valtype and valtype != void_block and valtype != voids) // trace
+			warn("local in context %s already known "s % s(context) + name + " with type " + typeName(oldType) +
+			     " now " + typeName(valtype));
+		// ok, could be cast'able!
 	}
-#endif
+//#endif
 	return false;// already there
 }
 
@@ -456,7 +463,7 @@ Node &groupDeclarations(Node &expression, const char *context) {
 		}
 		if (node.kind == reference or (node.kind == keyNode and isVariable(node))) {// only constructors here!
 			if (not globals.has(op) and not isFunction(node))
-				addLocal(context, op, mapType(node));
+				addLocal(context, op, none);
 			continue;
 		}// todo danger, referenceIndices i=1 … could fall through to here:
 		if (node.kind == declaration or declaration_operators.has(op)) {

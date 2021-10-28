@@ -422,6 +422,7 @@ private:
 		return chr == '\n' ? s("\\n") : String('\'') + chr + '\'';
 	};
 
+	[[nodiscard]]
 	String position() {
 		auto columnNumber = at - columnStart;
 		String msg;
@@ -429,7 +430,7 @@ private:
 		msg = msg + line + "\n";
 		msg = msg + (s(" ").times(columnNumber - 1)) + "^";
 		if (not file.empty()) msg = msg + "\n" + file + ":" + lineNumber;
-		print(msg);
+//		print(msg);
 		return msg;
 	}
 
@@ -1241,6 +1242,27 @@ private:
 	}
 
 
+	Type getType(codepoint bracket) {
+		switch (bracket) {
+			//				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
+			//				https://en.wikipedia.org/wiki/ASCII#Character_set
+			case '\x0E': // Shift Out close='\x0F' Shift In
+			case u'﹛': // ﹜
+			case u'｛': // ｝
+			case '{':
+				return Type::objects;
+			case u'⸨': // '⸩'
+			case '(':
+				return Type::groups;
+			case u'﹝': // ﹞
+			case u'〔': // 〕
+			case U'［': // ］ FULLWIDTH
+			case '[':
+				return patterns;
+		}
+		err("unknown bracket type "s + bracket);
+	}
+
 // ":" is short binding a b:c d == a (b:c) d
 // "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
@@ -1293,23 +1315,29 @@ private:
 			switch (ch) {
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 //				https://en.wikipedia.org/wiki/ASCII#Character_set
+
+				case u'﹝': // ﹞
+				case u'〔': // 〕
+				case U'［': // ］ FULLWIDTH
+				case '[':
+				case u'⸨': // '⸩'
+				case '(':
 				case '\x0E': // Shift Out close='\x0F' Shift In
 				case u'﹛': // ﹜
 				case u'｛': // ｝
 				case '{': {
 					let bracket = ch;
-					if (checkAmbiguousBlock(current, parent)) {
-						log(position());
-						breakpoint_helper
-						warn("Ambiguous reading a {x} => Did you mean a{x} or a:{x} or a , {x}");
-					}
+					auto type = getType(bracket);
 					bool asListItem =
 							lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
+					if (checkAmbiguousBlock(current, parent)) {
+						warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
+					}
 					proceed();
 					Node object = Node();
 					Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &current.last());
 					object.addSmart(objectValue);
-					object = object.flat().setType(Type::objects, false);
+					object = object.flat().setType(type, false);
 					object.separator = objectValue.separator;
 					if (asListItem)
 						current.add(object);
@@ -1317,32 +1345,36 @@ private:
 						current.addSmart(object);
 					break;
 				}
-				case u'﹝': // ﹞
-				case u'〔': // 〕
-				case U'［': // ］ FULLWIDTH
-				case '[': {
-					proceed();
-					Node pattern = Node().setType(Type::patterns);
-					Node patternValue = valueNode(']', &current.last());
-					pattern.add(patternValue);
-					if (patternValue.kind == expression or patternValue.kind == groups)
-						pattern = patternValue.setType(patterns, false);
-					current.add(pattern);// a[b] ≠ (a b)
-//					current.addSmart(pattern);// a[b] ≠ (a b) always preserve pattern (?)
-					break;
-				}
-				case u'⸨': // '⸩'
-				case '(': {
-					// checkAmbiguousBlock? x (1) == x(1) or [x 1] ?? todo too bad!!!
-					proceed();
-					Node group = Node().setType(Type::groups);
-					Node groupValue = valueNode(')', &current.last());
-					group.addSmart(groupValue);
-					if (groupValue.kind == objects)
-						group = groupValue.setType(groups);// flatten hack
-					current.addSmart(group);
-					break;
-				}// lists handled by ' '!
+//					if (checkAmbiguousBlock(current, parent))
+//						warn(position() + "\nAmbiguous reading could mean a{x} or a:{x} or a , {x}");
+//					proceed();
+//					Node pattern = Node().setType(Type::patterns);
+//					Node patternValue = valueNode(']', &current.last());
+//					pattern.add(patternValue);
+//					if (patternValue.kind == expression or patternValue.kind == groups)
+//						pattern = patternValue.setType(patterns, false);
+//					current.add(pattern);// a[b] ≠ (a b)
+////					current.addSmart(pattern);// a[b] ≠ (a b) always preserve pattern (?)
+//					break;
+//				}
+//
+//					bool add_to_last = true;// a b(c) vs a b (c)
+//					if (checkAmbiguousBlock(current, parent)) {
+//						warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
+//						add_to_last = false;
+//					}
+//					proceed();
+//					Node group = Node().setType(Type::groups);
+//					Node groupValue = valueNode(')', &current.last());
+//					group.addSmart(groupValue);
+//					if (groupValue.kind == objects)
+//						group = groupValue.setType(groups);// flatten hack
+//					if (add_to_last)
+//						current.addSmart(group);
+//					else
+//						current.add(group);
+//					break;
+//			}// lists handled by ' '!
 				case '}':
 				case ')':
 				case ']':// ..
@@ -1397,8 +1429,13 @@ private:
 					Node &key = current.last();
 					bool add_raw = current.kind == expression or key.kind == expression or
 					               (current.last().kind == groups and current.length > 1);
+					bool add_to_whole_expression = false; // a b : c => (a b):c  // todo: symbol :a !
+					if (previous == ' ' and (next == ' ' or next == '\n'))
+						add_to_whole_expression = true;
 					if (is_operator(previous))
 						add_raw = true;// == *=
+
+					char prev = previous;// preserve
 					Node op = any_operator();// extend *= ...
 					if (not(op.name == ":" or (data_mode and op.name == "=")))
 						add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
@@ -1420,7 +1457,13 @@ private:
 					} else if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
 					else closer = ' ';// immediate a:b c == (a:b),c
 					Node &val = *valueNode(closer, &key).clone();// applies to WHOLE expression
-					if (add_raw) {  // complex expression are not simple maps
+					if (add_to_whole_expression and current.length > 1) {
+						if (current.value.node)todo("multi-body a:{b}{c}");
+						current.setType(Type::keyNode, false);// lose type group/expression etc ! ok?
+						// todo: might still be expression!
+//						object.setType(Type::valueExpression);
+						current.value.node = &val;
+					} else if (add_raw) {  // complex expression are not simple maps
 						current.add(val);
 					} else {
 						setField(key, val);
@@ -1530,9 +1573,13 @@ private:
 				}
 			}
 		}
+
 		Node &result = current.flat();
-		return *result.clone();
+		return *result.
+
+				clone();
 	};
+
 };
 
 
