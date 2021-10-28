@@ -832,7 +832,7 @@ String Node::serialize() const {
 		if (not name.empty()) wasp += name;
 		String serializedValue = serializeValue();
 		if (kind == longs or kind == reals)
-			if (not atoi(name) and name and name.data and name.data[0] != '0')
+			if (not atoi0(name) and name and name.data and name.data[0] != '0')
 				return ""s + name + ":" + serializedValue;
 		if (kind == strings and name and (name.empty() or name == value.string))
 			return serializedValue;// no text:"text", just "text"
