@@ -432,7 +432,7 @@ public:
 		return *this;
 	}
 
-	String clone() {
+	String &clone() {
 		return *new String(this->data, this->length, false);
 	}
 

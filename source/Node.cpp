@@ -351,7 +351,7 @@ bool Node::operator==(const Node &other) {
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
 	if (kind == classe or other.kind == classe)
-		return name.lower() == other.name;
+		return name.lower() == other.name.lower();
 //	other = other.flat();// todo this.flat() too!
 	if (kind == errors)return other.kind == errors;
 	if (other.kind == errors)return kind == errors;
