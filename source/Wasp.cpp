@@ -378,7 +378,7 @@ public:
 		white();
 		if (ch and ch != -1 and ch != DEDENT) {
 			printf("UNEXPECTED CHAR %c", ch);
-			position();
+			print(position());
 			error("Expect end of input");
 			result = ERROR;
 		}
@@ -1261,6 +1261,7 @@ private:
 				return patterns;
 		}
 		err("unknown bracket type "s + bracket);
+		return errors;
 	}
 
 // ":" is short binding a b:c d == a (b:c) d
@@ -1733,7 +1734,7 @@ String load(String file) {
 	int ok = fread(buffer, sizeof(buffer), size, ptr);
 	if (!ok)error("Empty file or error reading "s + file);
 	String *binary = new String((char *) buffer, size, false);
-	assert_equals(binary->length, size);
+//	assert_equals(binary->length, size);
 	return *binary;
 }
 

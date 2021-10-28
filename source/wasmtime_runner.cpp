@@ -113,13 +113,28 @@ wrap(todo) {
 
 
 wasm_wrap *link_import(String name) {
+
+	if (name == "__cxa_guard_acquire") return &wrap_nop;// todo!?
+	if (name == "__cxa_guard_release") return &wrap_nop;// todo!?
+//	if (name == "_Z8typeName7Valtype") return &wrap_nop;// todo!?
+//	if (name == "_Z8run_wasmPhi") return &wrap_nop;
+//	if (name == "_Z11testCurrentv") return &wrap_nop;// hmmm self test?
+
+	if (name == "fopen") return &wrap_nop;// todo!?
+	if (name == "fseek") return &wrap_nop;// todo!?
+	if (name == "ftell") return &wrap_nop;// todo!?
+	if (name == "fread") return &wrap_nop;// todo!?
+	if (name == "system") return &wrap_nop;// danger!
+
 	if (name == "__cxa_begin_catch") return &wrap_nop;
 	if (name == "_ZdlPv") return &wrap_nop;// delete
+
 	if (name == "_Z3powdd") return &wrap_powd;
 	if (name == "pow") return &wrap_powd;
 	if (name == "powf") return &wrap_powf;
 	if (name == "powi") return &wrap_powi;
 
+	if (name == "_Z5raisePKc") return &wrap_exit;
 	if (name == "_ZSt9terminatev") return &wrap_exit;
 	if (name == "proc_exit") return &wrap_exit;
 	if (name == "panic") return &wrap_exit;
@@ -263,6 +278,7 @@ const wasm_functype_t *funcType(Signature &signature) {
 		}
 	}
 	if (param_count == 3) return wasm_functype_new_3_1(i, i, i, i); //(char*,char*,i32,)i32 ;)
+	if (param_count == 4) return wasm_functype_new_4_1(i, i, i, i, i); //(char*,char*,i32,)i32 ;)
 	print(signature.format());
 	error("missing signature mapping"s + signature.format());
 	return 0;

@@ -31,3 +31,9 @@ void lowerCase(chars string, int i);
 double mod_d(double x, double y);
 
 extern double pi;
+
+bytes concat(bytes a, bytes b, int len_a, int len_b);
+
+bytes concat(bytes a, char b, int len);
+
+bytes concat(char section, bytes a, int len_a);

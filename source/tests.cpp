@@ -1955,6 +1955,7 @@ void testCurrent() {
 	//	panicking = true;//
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	assert_run("x='123';x=='123'", true);// ok
 	assert_emit("x='abcde';x#4='x';x[3]", 'x');
 	assert_emit("{1 4 3}[1]", 4);
 
