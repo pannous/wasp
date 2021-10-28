@@ -636,9 +636,6 @@ long String::hash() {
 //	return (long)data;// only conflict: shared substring(0,i);
 }
 
-codepoint lower(codepoint c) {
-
-}
 
 String &String::lower() {
 	String &clone1 = clone();

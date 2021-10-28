@@ -403,6 +403,7 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "short")
 		return Valtype::int32;// careful c++ ABI overflow? should be fine since wasm doesnt have short
 	else if (arg == "int")return Valtype::int32;
+	else if (arg == "unsigned char")return Valtype::int32;
 	else if (arg == "int*")return Valtype::pointer;
 	else if (arg == "void*")return Valtype::pointer;
 	else if (arg == "long")return Valtype::int64;
@@ -410,6 +411,7 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "unsigned long")return Valtype::int64;
 	else if (arg == "float")return Valtype::float32;
 	else if (arg == "bool")return Valtype::int32;
+	else if (arg == "short*")return Valtype::int32;
 	else if (arg == "char")return Valtype::int32;// c++ char < angle codepoint ok
 	else if (arg == "wchar_t")return Valtype::codepoint32;// angle codepoint ok
 	else if (arg == "char32_t")return Valtype::codepoint32;// angle codepoint ok
@@ -419,22 +421,26 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "String")return Valtype::stringp;
 	else if (arg == "String&")return Valtype::stringp;// todo: how does c++ handle refs?
 	else if (arg == "Node*")return Valtype::pointer;
-	else if (arg == "Node&")return Valtype::node;// pointer? todo: how does c++ handle refs?
 	else if (arg == "Node")return Valtype::node;
+	else if (arg == "Node&")return Valtype::node;// pointer? todo: how does c++ handle refs?
+	else if (arg == "Node const&")return Valtype::node;
 		// todo:
 	else if (arg == "List<String>")return Valtype::todoe;
 	else if (arg == "List<Valtype>")return Valtype::todoe;
 //	else if (arg == "List< …
 
 		// IGNORE INTERNAL TYPES:
-	else if (arg == "Value")return Valtype::ignore;//value;
+	else if (arg == "Map<String")return Valtype::ignore;
+	else if (arg == "int>")return Valtype::ignore;// parse bug ^^
+	else if (arg == "Code")return Valtype::ignore;
+	else if (arg == "Code&")return Valtype::ignore;
+	else if (arg == "Module")return Valtype::ignore;
+	else if (arg == "Value")return Valtype::ignore;
 	else if (arg == "Arg")return Valtype::ignore; // truely internal, should not be exposed! e.g. Arg
 	else if (arg == "Signature")return Valtype::ignore;
 	else if (arg == "Code const&")return Valtype::ignore;
 	else
-//		error("unmapped c++ argument type "s + arg.clone().data + " !");
-		fprintf(stderr, "unmapped c++ argument type %s\n", arg.data);
-//	std::err <<
+		printf("unmapped c++ argument type %s\n", arg.data);
 	return i32t;
 }
 

@@ -385,21 +385,21 @@ bool isProperList(Node &node) {
 Code emitArray(Node &node, String context) {
 	let code = Code();
 	int pointer = data_index_end;
-	for (Node &child:node) {
-		// todo: smart pointers?
-		code.add(emitData(child, context));// pointers in flat i32/i64 format!
-	}
-	String ref = node.name;
-	if (node.name.empty() and node.parent) {
-		ref = node.parent->name;
-	}
-	if (not node.name.empty())
-		referenceIndices.insert_or_assign(ref, pointer);
-	emitData(Node(0), context);// terminate list with 0.
-	last_data = pointer;
+for (Node &child:node) {
+// todo: smart pointers?
+code.add(emitData(child, context));// pointers in flat i32/i64 format!
+}
+String ref = node.name;
+if (node.name.empty() and node.parent) {
+ref = node.parent->name;
+}
+if (not node.name.empty())
+referenceIndices.insert_or_assign(ref, pointer);
+code.add(emitData(Node(0), context));// terminate list with 0.
+last_data = pointer;
 //	last_type = array;
-	return code;// pointer
-	// todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
+return code;// pointer
+// todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
 //	last_data = pointer;
 //	return code.addConst(pointer);// once written to data section, we also want to use it immediately
 }
