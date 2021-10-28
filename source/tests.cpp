@@ -17,6 +17,8 @@ void testUpperLowerCase() {
 	chars string2 = (chars) u8"ÂÊÎÔÛ ÁÉÍÓÚ ÀÈÌÒÙ AÖU";
 	lowerCase(string2, 0);
 	assert_equals(string2, "âêîôû áéíóú àèìòù aöu");
+	chars string3 = "ÂÊÎÔÛ ÁÉÍÓÚ ÀÈÌÒÙ AÖU";
+//	g_utf8_strup(string);
 }
 
 void testPrimitiveTypes() {
@@ -82,7 +84,28 @@ void testModulo() {
 
 
 void testSignificantWhitespace() {
-
+	result = parse("a b (c)");
+	check(result.length == 3);
+	result = parse("a b(c)");
+	check(result.length == 2 or result.length == 1);
+	result = parse("a b:c");
+	check(result.length == 2);// a , b:c
+	check(result.last().kind == keyNode);// a , b:c
+	result = parse("a b : c");
+	check(result.length == 1 or result.length == 2);// (a b):c
+	assert_equals(result.kind, keyNode);
+	data_mode = false;
+	result = parse("a b=c");
+	check(result.length == 4);// a b = c
+	log(result);
+	result = analyze(result);
+	log(result);
+	skip(
+			check(result.length == 1);// todo  todo => (a b)=c => =( (a b) c)
+			data_mode = true;// HTML MODE!
+			result = parse("a href=link.html");
+			check(result.length == 1);// a(b=c)
+	)
 	//1 + 1 ≠ 1 +1 == [1 1]
 	assert(eval("1 + 1 == 2"));
 	assert_is("1 +1", Node(1, 1, 0));
@@ -1630,6 +1653,7 @@ void testBUG();
 void tests() {
 //	data_mode = true;// expect data unless explicit code
 	testBUG();
+	testUpperLowerCase();
 	testSerialize();
 	testPrimitiveTypes();
 	test_sin();
@@ -1931,10 +1955,16 @@ void testCurrent() {
 	//	panicking = true;//
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	testSignificantWhitespace();
 	functionSignatures["modulo_double"].builtin().add(float64).add(float64).returns(float64);
 	functionSignatures["modulo_double"].types[0];
+	assert_emit("double sin(double x){\n"
+	            "\tdouble\n"
+	            "\tS1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */\n"
+	            "\tS2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */\n"
+	            "\tw = z*z;\n"
+	            "\tr = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6);}", 11);
 	assert_emit("use sin;sin π/2", 1);
-	testUpperLowerCase();
 
 //	assert_emit("use sin;sin π", 0);
 //testNodesInWasm();

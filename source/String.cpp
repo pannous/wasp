@@ -640,14 +640,10 @@ codepoint lower(codepoint c) {
 
 }
 
-[[modifying]]
 String &String::lower() {
-	lowerCase(data, length);
-	return *this;
-//	auto clone1 = clone();
-//	for (int i = 0; i < length; i++) {
-//		clone1.data[i]=::lower(clone1.data[i]);
-//	}
+	String &clone1 = clone();
+	lowerCase(clone1.data, length);
+	return clone1;
 }
 
 String EMPTY_STRING0 = "";

@@ -998,6 +998,8 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 //		error("locals should be analyzed in parser");
 //		locals[name] = List<String>();
 //	locals[index]= Map<int, String>();
+	if (node.kind == unknown and locals[context].has(node.name))
+		node.kind = reference;// todo clean fallback
 
 	if (name == "if")
 		return emitIf(node, context);

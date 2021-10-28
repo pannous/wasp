@@ -163,6 +163,7 @@ double cos(double x) {
 
 // todo: code licence?
 // IN PLACE replacement!
+// 11592 bytes lowerCase.wasm, UTF8 is HEAVY!
 void lowerCase(chars string, int length) {
 	if (!string || !*string) return;
 	unsigned char *aChar = 0;
