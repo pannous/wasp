@@ -423,6 +423,7 @@ int currentStackItemSize() {
 	if (last_type == int64)return 8;
 	if (last_type == float32)return 4;
 	if (last_type == float64)return 8;
+	if (last_type == void_block)return 4;// int32 pointer hack todo!
 	error("unknown size for stack item "s + typeName(last_type));
 	return 1;
 }
@@ -522,7 +523,7 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 // assumes value is on top of stack
 [[nodiscard]]
 Code emitIndexPattern(Node op, String context) {
-	if (op.kind != patterns and op.kind != longs)error("op expected in emitIndexPattern");
+	if (op.kind != patterns and op.kind != longs and op.kind != reference)error("op expected in emitIndexPattern");
 	if (op.length != 1 and op.kind != longs)error("exactly one op expected in emitIndexPattern");
 	int base = runtime.data_segments.length;// uh, todo?
 	int size = currentStackItemSize();
@@ -534,6 +535,8 @@ Code emitIndexPattern(Node op, String context) {
 	if (size == 8)load.add(i64_load);
 	load.add(size > 2 ? 0x02 : 0);// alignment (?)
 	load.add(0x00);// ?
+	if (size <= 4)last_type = int32;
+	else last_type = int64;
 	return load;
 }
 
@@ -576,6 +579,8 @@ Code emitIndexRead(Node op, String context) {
 	if (size == 8)load.add(i64_load);
 	load.add(size > 2 ? 0x02 : 0);// alignment (?)
 	load.add(0x00);// ?
+	if (size <= 4)last_type = int32;
+	else last_type = int64;
 	return load;
 	//	i32.const 1028
 	//	i32.const 3
@@ -707,10 +712,13 @@ Code emitValue(Node node, String context) {
 			if (node.value.node) {
 				// todo HOLUP! x:41 is a reference? then *node.value.node makes no sense!!!
 				code.add(emitSetter(node, *node.value.node, context));
+
 			} else {
 				code.addByte(get_local);// todo skip repeats
 				code.addByte(local_index);
-
+				if (node.length > 0) {
+					return emitIndexPattern(node, context);
+				}
 			}
 		}
 			break;

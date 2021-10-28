@@ -1257,7 +1257,7 @@ void testString() {
 	check("hi %s ok"s % "ja" == "hi ja ok");
 	assert_is("١٢٣", 123);
 	assert_equals(atoi0("١٢٣"), 123);
-	check_eq(atoi("123"), 123);// can crash!?!
+	check_eq(atoi0("123"), 123);// can crash!?!
 	check_eq(" a b c  \n"s.trim(), "a b c");
 	assert_equals("     \n   malloc"s.trim(), "malloc");
 	assert_equals("     \n   malloc     \n   "s.trim(), "malloc");
@@ -1955,16 +1955,17 @@ void testCurrent() {
 	//	panicking = true;//
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	testSignificantWhitespace();
-	functionSignatures["modulo_double"].builtin().add(float64).add(float64).returns(float64);
-	functionSignatures["modulo_double"].types[0];
-	assert_emit("double sin(double x){\n"
-	            "\tdouble\n"
-	            "\tS1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */\n"
-	            "\tS2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */\n"
-	            "\tw = z*z;\n"
-	            "\tr = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6);}", 11);
-	assert_emit("use sin;sin π/2", 1);
+	assert_emit("x='abcde';x#4='x';x[3]", 'x');
+	assert_emit("{1 4 3}[1]", 4);
+
+//	testSignificantWhitespace();
+//	assert_emit("double sin(double x){\n"
+//	            "\tdouble\n"
+//	            "\tS1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */\n"
+//	            "\tS2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */\n"
+//	            "\tw = z*z;\n"
+//	            "\tr = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6);}", 11);
+//	assert_emit("use sin;sin π/2", 1);
 
 //	assert_emit("use sin;sin π", 0);
 //testNodesInWasm();
