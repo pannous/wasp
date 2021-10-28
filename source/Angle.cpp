@@ -406,9 +406,9 @@ bool addLocal(const char *context, String name, Valtype valtype) {
 		return true;// 'done' ;)
 	}
 	if (globals.has(name))
-		error(name + "already declared as global"s);
+		error(name + " already declared as global"s);
 	if (isFunction(name))
-		error(name + "already declared as function"s);
+		error(name + " already declared as function"s);
 	if (not locals[context].has(name)) {
 		locals[context].add(name);
 		localTypes[context].add(valtype);

@@ -143,6 +143,7 @@ window.onload = function () {
         imageData.data.set(data);
         ctx.putImageData(imageData, 0, 0);
     }
+    identity = x => x
 
     async function wasmx(code) {
         try {
@@ -162,16 +163,36 @@ window.onload = function () {
                         return BigInt(res);
                     },
                     _Z3powdd: Math.pow,
-                    _Z5tracePKc:nop,
-                    atoi:x=>parseInt(x),
-                    fopen:nop,// WASI
-                    fseek:nop,
-                    ftell:nop,
-                    fread:nop,
-                    system:nop,
-                    access:nop,
-                    _Z11testCurrentv:test,
-                    _Z5raisePKc:log,
+                    // atoi:x=>parseInt(x),
+                    fopen: nop,// WASI
+                    fseek: nop,
+                    ftell: nop,
+                    fread: nop,
+                    system: nop,
+                    access: nop,
+                    _Z11testCurrentv: test,
+                    _Z5raisePKc: log,
+                    _Z5tracePKc: nop,
+                    _ZSt9terminatev: terminate,
+                    panic: terminate,
+                    raise,
+                    __cxa_begin_catch: nop,
+                    __cxa_atexit: log,
+                    __cxa_demangle: identity,
+                    __cxa_guard_acquire: nop,//!?
+                    __cxa_guard_release: nop,//
+
+                    // todo: remove in Code.h
+                    // _Z8typeName7Valtype:identity,
+                    // _Z13mapTypeToWasm4Node:nop,
+                    // _Z11sectionName7Section:nop,
+                    // _Z12encodeVector4Code:nop,// ???
+                    // _Z13createSection7Section4Code:nop,
+                    // _Z12signedLEB128l:nop,
+                    // _Z14unsignedLEB128l:nop,
+                    // _Z4emit4NodeP6Module6String: nop,
+                    // _Z10merge_wasm6ModuleS_: nop,
+
                     logs: log,
                     logi: log,
                     logc: log,
@@ -179,16 +200,11 @@ window.onload = function () {
                     printf: log,
                     puts: log,
                     putchar: log,
-                    panic: terminate,
-                    raise,
                     memset,
                     paint: paintWasmToCanvas,
                     requestAnimationFrame: paintWasmToCanvas,
-                    _ZSt9terminatev: terminate,
-                    __cxa_begin_catch: nop,
                     _ZdlPv: nop,//operator delete(void*) lol
-                    _Z4emit4NodeP6Module6String: nop,
-                    _Z10merge_wasm6ModuleS_: nop,
+
                     _Z8run_wasmPhi: (bytes, len) => wasmx(loadBytes(bytes, len)),// full circle yay!
                     ext_memcpy: nop,
                     sum: (x, y) => x + y,

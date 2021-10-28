@@ -11,6 +11,13 @@ typedef unsigned char byte;
 typedef const char *chars;
 typedef byte *bytes;
 
+// in Util.h but we cant import
+bytes concat(bytes a, bytes b, int len_a, int len_b);
+
+bytes concat(bytes a, char b, int len);
+
+bytes concat(char section, bytes a, int len_a);
+
 class Code;
 
 // Different environments offer different run_wasm implementations:
@@ -22,12 +29,6 @@ int run_wasm(chars wasm_path);
 
 extern bytes magicModuleHeader;
 extern bytes moduleVersion;
-
-bytes concat(bytes a, bytes b, int len_a, int len_b);
-
-bytes concat(bytes a, char b, int len);
-
-bytes concat(char section, bytes a, int len_a);
 
 Code encodeVector(Code data);
 
@@ -757,6 +758,8 @@ public:
 	}
 };
 
+#ifndef RUNTIME_ONLY
+
 String sectionName(::Section section);
 
 Code createSection(::Section sectionType, Code data);
@@ -764,5 +767,7 @@ Code createSection(::Section sectionType, Code data);
 Code &unsignedLEB128(long n);
 
 Code &signedLEB128(long value);
+
+#endif
 
 #endif //WASP_CODE_H
