@@ -284,9 +284,10 @@ void consumeDataSection() {
 	int data_offset = unsignedLEB128(datas);
 	unsignedLEB128(datas);// skip '0b' whatever that is
 	module.data_offset_end = data_offset + module.data_segments.length +100;//  datas.length;
+	// Todo ILL-DEFINED BEHAVIOUR! silent corruption if data_offset_end too small (why 100?)
+
 //	if (debug_reader)
-printf("data sections: %d from offsets %d to %d \n", module.data_segments_count, data_offset,
-module.data_offset_end);
+//printf("data sections: %d from offsets %d to %d \n", module.data_segments_count, data_offset,module.data_offset_end);
 //	if(debug_reader)printf("data section offset: %ld \n", offset);
 }
 
@@ -538,14 +539,14 @@ Module read_wasm(bytes buffer, int size0) {
 	module.total_func_count = module.import_count + module.code_count;
 	parseFuncTypeSection(module.functype_data);// only after we have the name, so we can connect functionSignatures!
 		return module;
-		}
+	}
 
-		Module read_wasm(chars file) {
+	Module read_wasm(chars file) {
 #if
-		WASM
-		return Module();
+	WASM
+	return Module();
 #else
-		if (debug_reader)printf("--------------------------\n");
+	if (debug_reader)printf("--------------------------\n");
 		if (debug_reader)printf("parsing: %s\n", file);
 		size = fileSize(file);
 		bytes buffer = (bytes) alloc(1, size);// do not free

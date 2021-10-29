@@ -8,8 +8,6 @@
 #include <wasm.h>
 #include <wasmtime.h>
 
-#define WASMTIME
-
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap);
 
 const wasm_functype_t *funcType(Signature &signature);
@@ -84,6 +82,18 @@ wrap(logi) {
 	return NULL;
 }
 
+wrap(logf) {
+	float f = args[0].of.f32;
+	printf("%f", f);
+	return NULL;
+}
+
+wrap(logd) {
+	float f = args[0].of.f64;
+	printf("%f", f);
+	return NULL;
+}
+
 wrap(logc) {
 	int i = args[0].of.i32;
 	printf("%c", i);
@@ -147,6 +157,7 @@ wasm_wrap *link_import(String name) {
 	if (name == "puts") return &wrap_logs;
 	if (name == "logs") return &wrap_logs;
 	if (name == "logi") return &wrap_logi;
+	if (name == "logf") return &wrap_logf;
 	if (name == "logc") return &wrap_logc;
 	if (name == "putchar") return &wrap_logc;// todo: remove duplicates!
 	if (name == "main") return &hello_callback;
