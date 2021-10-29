@@ -461,7 +461,7 @@ Code emitOffset(Node offset_pattern, bool sharp, String context, int size, int b
 
 [[nodiscard]]
 Code emitIndexWrite(Node offset, Node value0, String context) {
-	int base = runtime.data_segments.length;// uh, todo?
+	int base = runtime.data_offset_end;// uh, todo?
 	int size = currentStackItemSize();
 	Valtype targetType = last_type;
 
@@ -525,7 +525,7 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 Code emitIndexPattern(Node op, String context) {
 	if (op.kind != patterns and op.kind != longs and op.kind != reference)error("op expected in emitIndexPattern");
 	if (op.length != 1 and op.kind != longs)error("exactly one op expected in emitIndexPattern");
-	int base = runtime.data_segments.length;// uh, todo?
+	int base = runtime.data_offset_end;// uh, todo?
 	int size = currentStackItemSize();
 	Node &pattern = op.first();
 	Code load = emitOffset(pattern, op.name == "#", context, size, base);
@@ -549,7 +549,7 @@ Code emitIndexRead(Node op, String context) {
 		error("index operator needs two arguments: node/array/reference and position");
 	Node &array = op[0];// also String: byte array or codepoint array todo
 	Node &pattern = op[1];
-	int base = runtime.data_segments.length;// uh, todo?
+	int base = runtime.data_offset_end;// uh, todo?
 	int size = currentStackItemSize();
 //	if(op[0].kind==strings) todo?
 	last_type = arg_type;
@@ -630,7 +630,7 @@ Code emitData(Node node, String context) {
 				error("can't save unknown reference pointer "s + name);
 			break;
 		case strings: {
-			int stringIndex = data_index_end + runtime.data_segments.length;// uh, todo?
+			int stringIndex = data_index_end + runtime.data_offset_end;// uh, todo?
 			String *pString = node.value.string;
 			if (stringIndices.has(
 					pString)) // todo: reuse same strings even if different pointer, aor make same pointer before
@@ -730,7 +730,7 @@ Code emitValue(Node node, String context) {
 			return emitExpression(node, context);
 		case strings: {
 			// append pString (as char*) to data section and access via stringIndex
-			int stringIndex = data_index_end + runtime.data_segments.length;// uh, todo?
+			int stringIndex = data_index_end + runtime.data_offset_end;// uh, todo?
 			String *pString = node.value.string;
 			if (stringIndices.has(
 					pString)) // todo: reuse same strings even if different pointer, aor make same pointer before
@@ -1834,8 +1834,8 @@ Code dataSection() { // needs memory section too!
 	datas.addByte(00);// memory id always 0
 
 	datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
-	datas.addInt(0x0 +
-	             runtime.data_segments.length);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
+	datas.addInt(
+			runtime.data_offset_end);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
 	datas.addByte(0x0b);// mode: active?
 	datas.addByte(data_index_end); // size of data
 	const Code &actual_data = Code((bytes) data, data_index_end);
@@ -2061,7 +2061,7 @@ Code &emit(Node root_ast, Module *runtime0, String _start) {
 		runtime_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
 		import_count = 0;
 		builtin_count = 0;
-//		data_index_end = runtime.data_segments.length;// insert after module data!
+		//		data_index_end = runtime.data_offset_end;// insert after module data!
 		// todo: either write data_index_end DIRECTLY after module data and increase count of module data,
 		// or increase memory offset for second data section! (AND increase index nontheless?)
 		int newly_pre_registered = 0;//declaredFunctions.size();
