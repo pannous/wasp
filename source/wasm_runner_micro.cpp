@@ -82,20 +82,21 @@ static NativeSymbol native_symbols[] =
 						"get_pow",            // the name of WASM function name
 						                     (void *) get_pow,            // the native function pointer
 						                                             "(ii)i",            // the function prototype signature, avoid to use i32
-						                                                      NULL,                // attachment is NULL
-						                                                            false
+						NULL,                // attachment is NULL
+						false
 				},
-				{       "square",            (void *) squari,        "(i)i",  NULL, false},
-				{       "√",                 (void *) sqrt1,         "(i)i",  NULL, false},
-				{       "logi",              (void *) logi,          "(i)",   NULL, false},
-				{       "log_f32",           (void *) logf32,        "(f)",   NULL, false},
-				{       "logf",              (void *) logf32,        "(f)",   NULL, false},
-				{       "logs",              (void *) logs,          "(i)",   NULL, false},
-				{       "pow",               (void *) powd,          "(FF)F", NULL, false},
-				{       "powf",              (void *) powf,          "(ff)f", NULL, false},
-				{       "powi",              (void *) powi,          "(ii)I", NULL, false},
+				{"square", (void *) squari, "(i)i", NULL, false},
+				{"√", (void *) sqrt1, "(i)i", NULL, false},
+				{"logi", (void *) logi, "(i)", NULL, false},
+				{"log_f32", (void *) logf32, "(f)", NULL, false},
+				{"logf", (void *) logf32, "(f)", NULL, false},
+				{"logs", (void *) logs, "(i)", NULL, false},
+				{"pow", (void *) powd, "(FF)F", NULL, false},
+				{"powd", (void *) powd, "(FF)F", NULL, false},
+				{"powf", (void *) powf, "(ff)f", NULL, false},
+				{"powi", (void *) powi, "(ii)I", NULL, false},
 //				{       "powl",              (void *) powl,          "(II)I", NULL, false},
-				{       "__cxa_begin_catch", (void *) powi,          "(*)i",  NULL, false},
+				{"__cxa_begin_catch", (void *) powi, "(*)i", NULL, false},
 #ifdef SDL
 				{       "init_graphics",     (void *) init_graphics, "()I",   NULL, false},
 #endif

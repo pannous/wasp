@@ -1,5 +1,11 @@
 #include <stdio.h> // FILE
+
+#ifndef WASM
+
 #include <stdlib.h> // system
+
+#endif
+
 #include "String.h"
 
 typedef unsigned char *bytes;

@@ -66,7 +66,7 @@ char *itoa0(long num);
 
 char *itoa(long num);
 
-int atoi0(codepoint c);
+int atoi1(codepoint c);
 
 int atoi0(chars str);
 
