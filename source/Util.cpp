@@ -173,32 +173,12 @@ double cos(double x) {
 	return sin(x + pi / 2);// todo: eval compiler!
 }
 
-void lowerCase(chars string, int length) {
+void lowerCase(char *string, int length) {
 	if (!string || !*string) return;
-	unsigned char *aChar = 0;
-	unsigned char *p = (unsigned char *) string;
 	if (length <= 0)length = strlen0(string);
-	while (*p and length-- > 0) {
-		if ((*p >= 0x41) && (*p <= 0x5a)) /* US ASCII */
-			(*p) += 0x20;
-		else if (*p > 0xc0) {
-			aChar = p;
-			p++;
-			switch (*aChar) {
-				case 0xc3: /* Latin 1 */
-					if ((*p >= 0x80)
-					    && (*p <= 0x9e)
-					    && (*p != 0x97))
-						(*p) += 0x20; /* US ASCII shift */
-					break;
-				case 0xc4: /* Latin ext */
-					if (((*p >= 0x80)
-					     && (*p <= 0xb7)
-					     && (*p != 0xb0))
-					    && (!(*p % 2))) /* Even */
-						(*p)++; /* Next char is lwr */
-			}
-		}
+	while (length-- > 0) {
+		if (string[length] >= 'A' and string[length] <= 'A')
+			string[length] = string[length] + 32;
 	}
 }
 
@@ -1011,13 +991,13 @@ int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
 				p2 = pStr2Low;
 				strcpy2((char *) pStr1Low, s1);
 				strcpy2((char *) pStr2Low, s2);
-				lowerCase((chars) pStr1Low, 0);
-				lowerCase((chars) pStr2Low, 0);
+				lowerCase((char *) pStr1Low, 0);
+				lowerCase((char *) pStr2Low, 0);
 				for (; ztCount--; p1++, p2++) {
 					int iDiff = *p1 - *p2;
 					if (iDiff != 0 || !*p1 || !*p2) {
-						free(pStr1Low);
-						free(pStr2Low);
+//						free(pStr1Low);
+//						free(pStr2Low);
 						return iDiff;
 					}
 				}
