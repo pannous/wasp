@@ -1025,6 +1025,7 @@ void preRegisterSignatures() {
 }
 
 void clearContext() {
+#ifndef RUNTIME_ONLY
 	globals.clear();
 	globals.setDefault(new Node());
 	functionIndices.clear();
@@ -1039,6 +1040,7 @@ void clearContext() {
 	analyzed.clear();// todo move much into outer analyze function!
 	analyzed.setDefault(0);
 	//	if(data.kind==groups) data.kind=expression;// force top level expression! todo: only if analyze recursive !
+#endif
 }
 
 int runtime_emit(String prog) {

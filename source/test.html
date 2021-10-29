@@ -163,14 +163,19 @@ window.onload = function () {
                         return BigInt(res);
                     },
                     _Z3powdd: Math.pow,
-                    // atoi:x=>parseInt(x),
+                    atoi: x => parseInt(x),
+                    _Z13init_graphicsv: nop,
+                    _Z21requestAnimationFramev: nop,
+
                     fopen: nop,// WASI
                     fseek: nop,
                     ftell: nop,
                     fread: nop,
                     system: nop,
                     access: nop,
+
                     _Z11testCurrentv: test,
+
                     _Z5raisePKc: log,
                     _Z5tracePKc: nop,
                     _ZSt9terminatev: terminate,

@@ -18,7 +18,7 @@
 
 #endif
 
-#define MAP_ALLOCATION_RESERVED_COUNT 1024*8 // todo! dynamic grow maps (ugly name cuz ugly impl)
+#define MAP_ALLOCATION_RESERVED_COUNT 1024*8*2 // todo! dynamic grow maps (ugly name cuz ugly impl)
 
 
 template<class S>
