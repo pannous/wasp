@@ -39,6 +39,7 @@ extern "C" char *memoryChars;
 #else
 //#define MEMORY_SIZE 0x1999999999999a00  // 1844674407370955200 //(2**64)/10
 #define MEMORY_SIZE 0x2000000000000000  // ~ (2**64)/10
+#define WASM_MEMORY_SIZE 0x20000000000
 //#define MEMORY_SIZE 0x20000000000  // not enough!
 //#define MEMORY_SIZE 0x200000000  // not enough!
 

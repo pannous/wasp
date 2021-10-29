@@ -131,6 +131,7 @@ wasm_wrap *link_import(String name) {
 
 	if (name == "_Z3powdd") return &wrap_powd;
 	if (name == "pow") return &wrap_powd;
+	if (name == "powd") return &wrap_powd;
 	if (name == "powf") return &wrap_powf;
 	if (name == "powi") return &wrap_powi;
 
@@ -249,6 +250,8 @@ const wasm_functype_t *funcType(Signature &signature) {
 	if (param_count == 1) {
 		switch (signature.types[0]) {
 			case charp:
+			case f32:
+				return wasm_functype_new_1_0(f);
 			case int32:
 				switch (signature.return_type) {
 					case none:
