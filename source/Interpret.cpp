@@ -134,7 +134,8 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 		float p = precedence(node);
 		if (p > max) max = p;
 		if (p < min and p != 0) min = p;
-		if (p == 0 and node.kind == reference)unknown_symbols.add(node);
+		if (p == 0 and node.kind == reference)
+			unknown_symbols.add(node);
 	}
 	if (max == 0) {
 		if (!name.empty() or length > 1) {
