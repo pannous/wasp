@@ -922,7 +922,7 @@ Code emitOperator(Node node, String context) {
 			code.addInt(local_index);
 			code.add(cast(localTypes[context][local_index], float64));// todo all casts should be auto-cast now, right?
 		}
-		code.add(emitCall(*new Node("powd"), context));
+		code.add(emitCall(*new Node("pow"), context));
 //		else
 //			code.add(emitCall(*new Node("powi"), context));
 
