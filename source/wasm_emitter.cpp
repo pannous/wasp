@@ -281,7 +281,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 
 	trace("unknown or non-primitive operator %s\n"s % String(s));
 	// can still be matched as function etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
-	breakpoint_helper
+//	breakpoint_helper
 //		error("invalid operator");
 	return 0;
 }
@@ -922,7 +922,7 @@ Code emitOperator(Node node, String context) {
 			code.addInt(local_index);
 			code.add(cast(localTypes[context][local_index], float64));// todo all casts should be auto-cast now, right?
 		}
-		code.add(emitCall(*new Node("pow"), context));
+		code.add(emitCall(*new Node("powd"), context));
 //		else
 //			code.add(emitCall(*new Node("powi"), context));
 

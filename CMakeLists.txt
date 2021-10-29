@@ -37,9 +37,9 @@ if (NOT WASM)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         #        SET(V8 1)
-        #                SET(WASMTIME 1) # FASTEST!
+                        SET(WASMTIME 1) # FASTEST!
         #                set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
-        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+        #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
@@ -72,6 +72,7 @@ if (WEBAPP)
     set(SOURCE_FILES ${SOURCE_FILES} source/ErrorHandler.cpp) # no SIGSEGV mac popup
 endif ()
 if (WASM)
+    ADD_COMPILE_DEFINITIONS(WASM)
     SET(WASM3 0) # No wasm-VM inside wasm
     REMOVE_DEFINITIONS(WASM3)
     #    multi-value referenceTypes bulkMemory works in FF
@@ -345,18 +346,20 @@ elseif (WASMER)
     target_include_directories(wasp PUBLIC Frameworks/wasmer-c-api)
     target_link_libraries(wasp PRIVATE wasmer)
 elseif (WASMTIME)
-    #    add_compile_definitions(WASMTIME)
+    add_compile_definitions(WASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
     target_link_libraries(wasp PRIVATE wasmtime)
 elseif (WEBAPP)
+    add_compile_definitions(WEBAPP)
     include(source/WebView.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/WebView.cpp source/WebServer.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_link_libraries(wasp PUBLIC webview)
 elseif (WASM3)
     MESSAGE(wasm3 VM)
+    add_compile_definitions(WASM3)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     include(Frameworks/wasm3/cmake_install.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp source/types/Number.cpp source/types/Number.h)
