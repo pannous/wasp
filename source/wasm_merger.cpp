@@ -66,8 +66,8 @@ Code mergeDataSection(Module lib, Module main) {
 //	return Code(lib.data_section)+ Code(main.data_section);// 000004c: error: multiple Data sections
 //	return createSection(data_section, Code(lib.data_segments_count + main.data_segments_count)+ lib.data_section+ main.data_section);// mergeExportSection style
 	Code datas;
-	datas.addByte(lib.data_segments_count +
-	              main.data_segments_count);// one memory initialization active todo: increase when merging!
+	int new_length = lib.data_segments_count + main.data_segments_count;
+	datas.addByte(new_length);// one memory initialization active todo: increase when merging!
 	datas.add(lib.data_segments);// now comes the actual data
 	datas.add(main.data_segments);
 	return createSection(data_section, encodeVector(datas));

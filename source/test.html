@@ -153,9 +153,8 @@ window.onload = function () {
                 env: {
                     memory,
                     // table,
-                    init_graphics: nop, // canvas init'ed by default
-                    square: x => x * x, // usually native wasm, better test with 'double'!
-                    pow: Math.pow,
+                    square: x => x * x, // usually native wasm, better test with 'grow'!
+                    pow: Math.pow, // usually wasp lib, better test other function
                     powf: Math.pow,
                     powi: (a, b) => {
                         res = a;
@@ -164,8 +163,6 @@ window.onload = function () {
                     },
                     _Z3powdd: Math.pow,
                     atoi: x => parseInt(x),
-                    _Z13init_graphicsv: nop,
-                    _Z21requestAnimationFramev: nop,
 
                     fopen: nop,// WASI
                     fseek: nop,
@@ -178,6 +175,7 @@ window.onload = function () {
 
                     _Z5raisePKc: log,
                     _Z5tracePKc: nop,
+                    _ZdlPv: nop,//operator delete(void*) lol
                     _ZSt9terminatev: terminate,
                     panic: terminate,
                     raise,
@@ -186,17 +184,6 @@ window.onload = function () {
                     __cxa_demangle: identity,
                     __cxa_guard_acquire: nop,//!?
                     __cxa_guard_release: nop,//
-
-                    // todo: remove in Code.h
-                    // _Z8typeName7Valtype:identity,
-                    // _Z13mapTypeToWasm4Node:nop,
-                    // _Z11sectionName7Section:nop,
-                    // _Z12encodeVector4Code:nop,// ???
-                    // _Z13createSection7Section4Code:nop,
-                    // _Z12signedLEB128l:nop,
-                    // _Z14unsignedLEB128l:nop,
-                    // _Z4emit4NodeP6Module6String: nop,
-                    // _Z10merge_wasm6ModuleS_: nop,
 
                     logs: log,
                     logi: log,
@@ -207,9 +194,10 @@ window.onload = function () {
                     putchar: log,
                     memset,
                     paint: paintWasmToCanvas,
+                    init_graphics: nop, // canvas init'ed by default
                     requestAnimationFrame: paintWasmToCanvas,
-                    _ZdlPv: nop,//operator delete(void*) lol
-
+                    _Z21requestAnimationFramev: nop, // why sometimes mangled?
+                    _Z13init_graphicsv: nop,
                     _Z8run_wasmPhi: (bytes, len) => wasmx(loadBytes(bytes, len)),// full circle yay!
                     ext_memcpy: nop,
                     sum: (x, y) => x + y,
