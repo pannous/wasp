@@ -222,10 +222,6 @@ int atoi1(codepoint c) {
 }
 
 int atoi0(chars p) {
-//#if WASM
-//	return 123456;
-//#endif
-
 	if (!p)return 0;
 	while (*p == '+')p++;
 	short sig = 1;
