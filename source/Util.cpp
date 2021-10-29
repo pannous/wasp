@@ -4,17 +4,29 @@
 
 #include "String.h"
 #include "Util.h"
+
+#ifndef WASM
+// ok as wasi?
 #include "unistd.h"
+
+#endif
 
 //bool fileExists(char* filename) {
 
 bool fileExists(String filename) {
+#if RUNTIME_ONLY
+	return false;
+#else
 	trace("checking fileExists "s + filename);
 	if (filename.empty())return false;
 	return access(filename.data, F_OK) == 0;
+#endif
 }
 
 String findFile(String filename) {
+#if RUNTIME_ONLY
+	return "";
+#endif
 	if (filename.empty())return "";
 //	filename = filename.replace("~", getpwuid(getuid())->pw_dir /*homedir*/);
 	if (fileExists(filename))return filename;

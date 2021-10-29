@@ -198,11 +198,11 @@ Some start with 1…9 missing 0
  */
 // todo
 int zeros[] = {0x1D7F6, 0x1D7EC, 0x1D7E2, 0x1D7D8, 0x1D7CE, 0x11066, 0x1810, 0x17E0, 0x1040, 0x0F20, 0x0ED0, 0x0E50,
-               0x0CE6, 0x0C66, 0x0BE7, 0x0B66, 0x0AE6, 0x09E6, 0x0966, 0x06F0, 0x0660, 0};
+               0x0CE6, 0x0C66, 0x0BE7, 0x0B66, 0x0AE6, 0x09E6, 0x0966, 0x06F0, 0x0660, 0, 0};
 int ones[] = {0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 0x102EA, 0x10858, 0x10916, 0x10320,
-              0x1D360, 0x102E1, 0x3021, 0x2170, 0x2160, 0x1372, 0x2469, 0};
+              0x1D360, 0x102E1, 0x3021, 0x2170, 0x2160, 0x1372, 0x2469, 0, 0};
 
-int atoi0(codepoint c) {
+int atoi1(codepoint c) {
 	int offset = -1;
 	if (c >= '0' and c <= '9')return c - '0';
 	while (zeros[++offset]) {
@@ -222,6 +222,10 @@ int atoi0(codepoint c) {
 }
 
 int atoi0(chars p) {
+#if WASM
+	return 123456;
+#endif
+
 	if (!p)return 0;
 	while (*p == '+')p++;
 	short sig = 1;
@@ -235,7 +239,7 @@ int atoi0(chars p) {
 		if (*p > 0x7F or *p < 0) {
 			// some utf8
 			short len;
-			n = atoi0(decode_unicode_character(p, &len));
+			n = atoi1(decode_unicode_character(p, &len));
 			p += len;
 		} else {
 			n = (*p) - '0';

@@ -609,6 +609,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 
 		if (name == "^" or name == "^^" or name == "**") {// todo NORM operators earlier!
 			functionSignatures["pow"].is_used = true;
+			functionSignatures["powd"].is_used = true;
 			functionSignatures["powi"].is_used = true;
 			functionSignatures["powf"].is_used = true;
 		}
@@ -624,7 +625,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 			prev = analyze(prev, context);
 			if (suffixOperators.has(name)) { // x²
 				// SUFFIX Operators
-				if (name == "ⁿ") functionSignatures["pow"].is_used = true;
+				if (name == "ⁿ") functionSignatures["powd"].is_used = true;
 				if (i < 1)error("suffix operator misses left side");
 				node.add(prev);
 				if (name == "²") {
@@ -980,6 +981,7 @@ void preRegisterSignatures() {
 	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("pow", Signature().import().add(float64).add(float64).returns(float64));
+	functionSignatures.insert_or_assign("powd", Signature().import().add(float64).add(float64).returns(float64));
 	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
 	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));
 

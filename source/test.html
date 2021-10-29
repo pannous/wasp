@@ -126,7 +126,7 @@ window.onload = function () {
     }
 
     let memset = function (ptr, value, num) {
-        memory[ptr] = value// ?
+        memory[ptr] = value// todo SHOULD BE DONE INSIDE WASM!?
         log('todo("memset")', ptr, value, num)
         raise("memset should be part of wasp!?!")
     }

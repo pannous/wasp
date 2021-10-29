@@ -35,7 +35,7 @@ Code mergeMemorySection(Module lib, Module main) {
 //	𝚕𝚒𝚖𝚒𝚝𝚜::=|𝟶𝚡𝟶𝟶  𝑛:𝚞𝟹𝟸 𝟶𝚡𝟶𝟷  𝑛:𝚞𝟹𝟸  𝑚:𝚞𝟹𝟸⇒⇒{𝗆𝗂𝗇 𝑛,𝗆𝖺𝗑 𝜖}{𝗆𝗂𝗇 𝑛,𝗆𝖺𝗑 𝑚}
 	byte min_only = 0x00;
 //	byte min_and_max=0x01;
-	unsigned int pages = (unsigned int) (MEMORY_SIZE / 65536);
+	unsigned int pages = (unsigned int) (WASM_MEMORY_SIZE / 65536);
 	if (pages > 65536 / 4)pages = 65536 / 4;// /2 to be safe with unsigned
 	const Code &memory_data = Code(1) + Code(min_only) + Code((int) pages);
 	return createSection(memory_section, memory_data);// ignore lib/main
