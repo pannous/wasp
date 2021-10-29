@@ -786,7 +786,7 @@ void testWasmModuleExtension() {
 
 void testWasmRuntimeExtension() {
 	assert_run("x=123;x + 4 is 127", true);
-	assert_run("atoi1('123'+'456')", 123456);
+	assert_run("atoi0('123'+'456')", 123456);
 	assert_run("'123' is '123'", true);
 	assert_emit("x:43", 43);
 	assert_run("x:43", 43);
@@ -805,12 +805,12 @@ void testWasmRuntimeExtension() {
 	assert_run("okf(1.0)", 43);
 	assert_run("42.5", 42);// truncation ≠ proper rounding!
 	assert_run("okf5(1.5)", 43);
-	functionSignatures["atoi1"].returns(int32);
+	functionSignatures["atoi0"].returns(int32);
 //	assert_run("printf('123')", 123);
 	assert_run("strlen0('123')", 3);
-	assert_run("atoi1('123')", 123);
-	assert_run("atoi0('123000')+atoi1('456')", 123456);
-	assert_run("atoi1('123'+'456')", 123456);
+	assert_run("atoi0('123')", 123);
+	assert_run("atoi0('123000')+atoi0('456')", 123456);
+	assert_run("atoi0('123'+'456')", 123456);
 	// works with ./wasp but breaks in webapp
 //	assert_run("x=123;x + 4 is 127", true);
 	// works with ./wasp but breaks now:
@@ -829,8 +829,8 @@ void testWasmRuntimeExtension() {
 	assert_run("x='123';x is '123'", true);
 	//	assert_run("string('123') equals '123'", true); // string() makes no sense in angle:
 	//	assert_run("'123' equals string('123')", true);//  it is internally already a string whenever needed
-	//	assert_run("atoi1(str('123'))", 123);
-	//	assert_run("atoi1(string('123'))", 123);
+	//	assert_run("atoi0(str('123'))", 123);
+	//	assert_run("atoi0(string('123'))", 123);
 
 	//	assert_run("oki(1)", 43);
 	//	assert_emit("logs('123'+'456');", 123456);// via import not via wasp!
@@ -838,7 +838,7 @@ void testWasmRuntimeExtension() {
 	//	check(Valtype::charp!=Valtype::pointer)
 
 	skip(
-			assert_run("atoi1('123')", 123);
+			assert_run("atoi0('123')", 123);
 			assert_run("'123'", 123);// result printed and parsed?
 			assert_run("printf('123')", 123);// result printed and parsed?
 	)
