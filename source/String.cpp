@@ -591,7 +591,6 @@ codepoint *String::extractCodepoints(bool again) {
 		i += count;
 	}
 	return codepoints;
-
 }
 
 bool String::startsWith(chars string) {

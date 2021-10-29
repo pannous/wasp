@@ -10,22 +10,13 @@ LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
 
 # SET these configurations via Preferences… Build->CMake->Profiles
 # MANUALLY force set these only for urgent debugging,
-#set(RUNTIME_ONLY 0) # no Angle eval emit merge etc! ≠ NO_TESTS
+#set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
 #set(VERBOSE 1)
 #set(DEBUG 1)
 #set(RELEASE 0) # no tests
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh
 #set(WABT_MERGE 0) # not the whole WABT though
-if (WABT_MERGE)
-    set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt/src/ ./source/wasm_merger_wabt.cpp ./source/wasm_reader_wabt.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt_merge/binary-reader-linker.cc)
-else ()
-    if (NOT RUNTIME_ONLY)
-        set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp source/wasm_merger.cpp)
-    endif ()
-endif ()
-
 
 #ADD_COMPILE_DEFINITIONS(DEBUG_WASM3) # WASM3 best for development!
 #ADD_COMPILE_DEFINITIONS(NO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
@@ -47,7 +38,7 @@ if (NOT WASM)
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         #        SET(V8 1)
         #                SET(WASMTIME 1) # FASTEST!
-        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        #                set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
@@ -77,7 +68,7 @@ if (WEBAPP)
     ADD_COMPILE_DEFINITIONS(GRAFIX)
     SET(WASM 0)
     set(WASI 0)
-    SET(RUNTIME_ONLY 0) # we can emit to V8, right??
+    #    SET(RUNTIME_ONLY 1) # we can emit to V8, right??
     set(SOURCE_FILES ${SOURCE_FILES} source/ErrorHandler.cpp) # no SIGSEGV mac popup
 endif ()
 if (WASM)
@@ -133,7 +124,7 @@ if (NOT RELEASE)
         ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
     endif ()
     # enable:
-    ADD_COMPILE_FLAG("-Wall")
+    #    ADD_COMPILE_FLAG("-Wall")
     ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
     ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
     ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
@@ -170,14 +161,24 @@ endif ()
 ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
 
 # COMMON FOR ALL
-set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Wasp.cpp source/Angle.cpp source/wasm_helpers.cpp source/Util.cpp)
+set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Wasp.cpp source/wasm_helpers.cpp source/Util.cpp)
+
 
 if (RUNTIME_ONLY)
     ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY)
+    ADD_COMPILE_DEFINITIONS(NO_TESTS)
 else ()
     message("NOT RUNTIME_ONLY")
-    set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp source/Code.cpp source/wasm_emitter.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/Interpret.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/Code.cpp source/wasm_emitter.cpp)
+    if (WABT_MERGE)
+        set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt/src/ ./source/wasm_merger_wabt.cpp ./source/wasm_reader_wabt.cpp)
+        set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt_merge/binary-reader-linker.cc)
+    else ()
+        set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp source/wasm_merger.cpp)
+    endif ()
+
 endif ()
 
 
