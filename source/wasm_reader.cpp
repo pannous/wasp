@@ -542,8 +542,7 @@ Module read_wasm(bytes buffer, int size0) {
 	}
 
 	Module read_wasm(chars file) {
-#if
-	WASM
+#if    WASM
 	return Module();
 #else
 	if (debug_reader)printf("--------------------------\n");

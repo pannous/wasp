@@ -175,10 +175,11 @@ double cos(double x) {
 
 void lowerCase(char *string, int length) {
 	if (!string || !*string) return;
-	if (length <= 0)length = strlen0(string);
+	if (length <= 0)
+		length = strlen0(string);
 	while (length-- > 0) {
-		if (string[length] >= 'A' and string[length] <= 'A')
-			string[length] = string[length] + 32;
+		if (string[length] >= 'A' and string[length] <= 'Z')
+			string[length] += 32;
 	}
 }
 

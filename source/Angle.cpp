@@ -625,7 +625,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 			prev = analyze(prev, context);
 			if (suffixOperators.has(name)) { // x²
 				// SUFFIX Operators
-				if (name == "ⁿ") functionSignatures["powd"].is_used = true;
+				if (name == "ⁿ") functionSignatures["pow"].is_used = true;
 				if (i < 1)error("suffix operator misses left side");
 				node.add(prev);
 				if (name == "²") {
