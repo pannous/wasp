@@ -240,7 +240,10 @@ void _cxa_throw() {
 //#include <alloc.h>
 #endif
 
+#ifndef WASM
 #include <cstdio>
+
+#endif
 
 //NEEDED, else terminate called without an active exception?
 #endif

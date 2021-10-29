@@ -569,14 +569,14 @@ private:
 			return NaN;
 		}
 
-		while (atoi0(ch) >= 0) { // -1 if not
+		while (atoi1(ch) >= 0) { // -1 if not
 			//	ch >= '0' and ch <= '9'
 			string += ch;
 			proceed();
 		}
 		if (ch == '.') {
 			string += '.';
-			while (proceed() and atoi0(ch) >= 0) {
+			while (proceed() and atoi1(ch) >= 0) {
 				string += ch;
 			}
 		}
@@ -587,7 +587,7 @@ private:
 				string += ch;
 				proceed();
 			}
-			while (atoi0(ch) != -1) {
+			while (atoi1(ch) != -1) {
 				//				ch >= '0' and ch <= '9'
 				string += ch;
 				proceed();
@@ -1170,7 +1170,7 @@ private:
 	};
 
 	bool isDigit(codepoint c) {
-		return (c >= '0' and c <= '9') or atoi0(c) != -1;
+		return (c >= '0' and c <= '9') or atoi1(c) != -1;
 	}
 
 	Node &setField(Node &key, Node &val) { // a:{b}
@@ -1738,6 +1738,9 @@ char newline = '\n';
 //implicit entry/start for main executable
 
 String load(String file) {
+#if WASM
+	return "";
+#else
 	FILE *ptr;
 	ptr = fopen(file, "rb");  // r for read, b for binary
 	if (!ptr)error("File not found "s + file);
@@ -1750,6 +1753,7 @@ String load(String file) {
 	String *binary = new String((char *) buffer, size, false);
 //	assert_equals(binary->length, size);
 	return *binary;
+#endif
 }
 
 Node compile(String file) {
@@ -1778,7 +1782,9 @@ Node parseFile(String filename) {
 	if (not found)error("file not found "s + filename);
 	else info("found "s + found);
 	if (found.endsWith("wast") or found.endsWith("wat")) {
+#ifndef WASM
 		system("/usr/local/bin/wat2wasm "s + found);
+#endif
 		found = found.replace("wast", "wasm");
 		// and use it:
 	}

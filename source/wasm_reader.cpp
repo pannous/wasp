@@ -4,9 +4,7 @@
 #include "Code.h"
 
 #ifndef WASM
-
 #include "stdio.h"
-
 #endif
 
 #include "wasm_reader.h"
@@ -285,17 +283,17 @@ void consumeDataSection() {
 	unsignedLEB128(datas);// skip i32.const opcode
 	int data_offset = unsignedLEB128(datas);
 	unsignedLEB128(datas);// skip '0b' whatever that is
-	module.data_offset_end = data_offset + module.data_segments.length + 100;//  datas.length;
+	module.data_offset_end = data_offset + module.data_segments.length +100;//  datas.length;
 //	if (debug_reader)
-	printf("data sections: %d from offsets %d to %d \n", module.data_segments_count, data_offset,
-	       module.data_offset_end);
+printf("data sections: %d from offsets %d to %d \n", module.data_segments_count, data_offset,
+module.data_offset_end);
 //	if(debug_reader)printf("data section offset: %ld \n", offset);
 }
 
 void consumeElementSection() {
-	module.element_section = vec();
+module.element_section = vec();
 //	if(debug_reader)printf("element section (!?)");
-	if (debug_reader)printf("element sections: %d \n", module.element_section.length);
+if (debug_reader)printf("element sections: %d \n", module.element_section.length);
 }
 
 void consumeCustomSection() {
@@ -539,17 +537,22 @@ Module read_wasm(bytes buffer, int size0) {
 	consumeSections();
 	module.total_func_count = module.import_count + module.code_count;
 	parseFuncTypeSection(module.functype_data);// only after we have the name, so we can connect functionSignatures!
-	return module;
-}
+		return module;
+		}
 
-Module read_wasm(chars file) {
-	if (debug_reader)printf("--------------------------\n");
-	if (debug_reader)printf("parsing: %s\n", file);
-	size = fileSize(file);
-	bytes buffer = (bytes) alloc(1, size);// do not free
-	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
-	return read_wasm(buffer, size);
-}
+		Module read_wasm(chars file) {
+#if
+		WASM
+		return Module();
+#else
+		if (debug_reader)printf("--------------------------\n");
+		if (debug_reader)printf("parsing: %s\n", file);
+		size = fileSize(file);
+		bytes buffer = (bytes) alloc(1, size);// do not free
+		fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
+		return read_wasm(buffer, size);
+#endif
+		}
 
 #endif
 #undef pointerr
