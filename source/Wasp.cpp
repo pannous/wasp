@@ -1233,7 +1233,11 @@ private:
 	}
 
 	bool isFunctor(Node &node) {
+#if RUNTIME_ONLY
+		return false;
+#else
 		return node.name.in(functor_list);
+#endif
 	}
 
 	// todo ill-conceived separator
@@ -1555,11 +1559,13 @@ private:
 							node = parseFile(node.last().name);
 //							node = parseFile(node.values().first().name);// todo
 					}
+#ifndef RUNTIME_ONLY
 					if (precedence(node) or operator_list.has(node.name)) {
 						node.kind = operators;
 //						if(not isPrefixOperation(node))
 //						if(not contains(prefixOperators,node))
 					}
+#endif
 					if (node.kind == operators and ch != ':') {
 						if (isFunctor(node))
 							node.kind = functor;// todo: earlier
@@ -1654,15 +1660,23 @@ void handler(int sig) {
 //	True.value.number = 1;
 //}
 
-#ifndef NO_TESTS // RUNTIME_ONLY
+#ifndef NO_TESTS
+#ifndef RUNTIME_ONLY
 
 #import "tests.cpp"
 #include "WebServer.hpp"
 
 #endif
+#endif
 
+// todo: merge + cleanup all these eval parse run compile emit interpret
 Node run(String source) {
+#if RUNTIME_ONLY
+	error("RUNTIME_ONLY");
+	return NIL;
+#else
 	return emit(source);
+#endif
 }
 
 //static
@@ -1740,12 +1754,21 @@ String load(String file) {
 
 Node compile(String file) {
 	String code = load(file);
+#if RUNTIME_ONLY
+	return Node("Wasp compiled without emitter");
+#else
 	return emit(code);
+#endif
 }
 
 int run_wasm_file(chars file) {
 	let buffer = load(String(file));
+#if RUNTIME_ONLY
+	error("RUNTIME_ONLY");
+	return -1;
+#else
 	return run_wasm((bytes) buffer.data, buffer.length);
+#endif
 }
 
 
@@ -1802,8 +1825,10 @@ int main(int argp, char **argv) {
 			}
 			if (arg.endsWith(".wasm"))
 				run_wasm_file(arg);
+#ifndef NO_TESTS
 			if (arg == "test" or arg == "tests")
 				testCurrent();
+#endif
 			if (arg == "app" or arg == "start" or arg == "webview" or arg == "browser" or arg == "run" or
 			    arg == "repl") {
 //				start_server(9999);

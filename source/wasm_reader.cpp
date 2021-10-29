@@ -116,7 +116,7 @@ String &name(Code &wstring) {
 
 void parseFunctionNames(Code &payload) {
 	functionIndices.setDefault(-1);
-	log(functionIndices);// what we got so far?
+//	log(functionIndices);// what we got so far?
 	int function_count = unsignedLEB128(payload);
 	int index = -1;
 	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
@@ -126,24 +126,29 @@ void parseFunctionNames(Code &payload) {
 		if (i != index)// in partial main.wasm
 			warn("index out of order "s + i + " <> " + index);// doesn't happen
 		String func = name(payload).clone();// needs to be 0-terminated now
-		if (functionIndices[func] >= 0) {
+		if (functionIndices[func] > 0 and functionIndices[func] < function_count /*hack!*/) {
 			if (functionIndices[func] == index)
 				continue; // identical match, lib parsed twice without cleaning functionIndices!?
-			warn("function already has an index: "s + func + " " + functionIndices[func] + " " + index +
-			     " ... renaming!");
+			// export section ≠ name section (when overloading…)
+			trace("already has index: "s + func + " " + functionIndices[func] + "≠" + index);
+			continue;
 			func = func + "_func_" + index;// hack ok to avoid duplicates
+			func = func.clone();
 		}
 		if (func.length > 0)
 //			functionIndices.insert_or_assign(func, index);
 			functionIndices[func] = index;
-		else
-//			functionIndices.insert_or_assign("func_"s + index, index);
+		else {
+			error("function without name at index "s + index);// happens with unicode π(x) etc
+			//			warn
 			functionIndices["func_"s + index] = index;
+//			functionIndices.insert_or_assign("func_"s + index, index);
+		}
 	}
+//	  (import "env" "log_chars" (func (;0;) $logs (type 0)))  export / import names != internal names
 //	for (int i = function_count; i < module.total_func_count; i++)
 //		functionIndices.insert_or_assign("unnamed_func_"s + i, i);
 
-//	  (import "env" "log_chars" (func (;0;) $logs (type 0)))  import names != internal names
 }
 
 //Map<int, Signature> funcTypes;
@@ -421,6 +426,7 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "String")return Valtype::stringp;
 	else if (arg == "String&")return Valtype::stringp;// todo: how does c++ handle refs?
 	else if (arg == "Node*")return Valtype::pointer;
+	else if (arg == "char**")return Valtype::pointer;// to chars
 	else if (arg == "Node")return Valtype::node;
 	else if (arg == "Node&")return Valtype::node;// pointer? todo: how does c++ handle refs?
 	else if (arg == "Node const&")return Valtype::node;
@@ -435,6 +441,9 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "Code")return Valtype::ignore;
 	else if (arg == "Code&")return Valtype::ignore;
 	else if (arg == "Module")return Valtype::ignore;
+	else if (arg == "Section")return Valtype::ignore;
+	else if (arg == "Valtype&")return Valtype::ignore;
+	else if (arg == "Module const&")return Valtype::ignore;
 	else if (arg == "Value")return Valtype::ignore;
 	else if (arg == "Arg")return Valtype::ignore; // truely internal, should not be exposed! e.g. Arg
 	else if (arg == "Signature")return Valtype::ignore;

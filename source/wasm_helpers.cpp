@@ -482,3 +482,5 @@ long powi(int a, int b) {
 //int paint(int wasm_offset){return -1;};
 //#endif
 //#endif
+
+//#ifdef RUNTIME_ONLY
