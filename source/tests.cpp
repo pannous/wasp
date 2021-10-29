@@ -1967,13 +1967,9 @@ void testSubGrouping() {// dangling , should make '\n' not close
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
-	data_mode = true; // a=b => a{b}
-//	data_mode = false; // a=b => a,=,b before analysis
+//	data_mode = true; // a=b => a{b}
+	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_is("1+square(2+3)", 26)
-//	wasm_error ["Invalid data segment initialization: segment of 43960 bytes memory of 0 bytes, at offset 1024, segment is too big"]
-// can't run wasp.wasm debug
-
 //	testSignificantWhitespace();
 //	assert_emit("double sin(double x){\n"
 //	            "\tdouble\n"
