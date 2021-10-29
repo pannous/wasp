@@ -280,12 +280,15 @@ void consumeDataSection() {
 	Code datas = vec();
 //	module.data_section = datas.clone();
 	module.data_segments_count = unsignedLEB128(datas);
-//	short memory_id= unsignedLEB128(datas);
-//	unsignedLEB128(datas);// skip i32.const opcode
-//	long offset = unsignedLEB128(datas);
-//	unsignedLEB128(datas);// skip '0b' whatever that is
 	module.data_segments = datas.rest();// whereever the start may be now
-	if (debug_reader)printf("data sections: %d \n", module.data_segments_count);
+	short memory_id = unsignedLEB128(datas);
+	unsignedLEB128(datas);// skip i32.const opcode
+	int data_offset = unsignedLEB128(datas);
+	unsignedLEB128(datas);// skip '0b' whatever that is
+	module.data_offset_end = data_offset + module.data_segments.length + 100;//  datas.length;
+//	if (debug_reader)
+	printf("data sections: %d from offsets %d to %d \n", module.data_segments_count, data_offset,
+	       module.data_offset_end);
 //	if(debug_reader)printf("data section offset: %ld \n", offset);
 }
 
