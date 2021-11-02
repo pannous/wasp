@@ -46,6 +46,16 @@ Valtype mapType(Node &n) {
 #endif
 }
 
+
+Node &groupWhile(Node n);
+
+bool isPrimitive(Node node);
+
+void fileSize(String filename);
+
+bool isType(Node &node);
+
+
 Node constants(Node n) {
 	if (eq(n.name, "not"))return True;// not () == True; hack for missing param todo: careful!
 	if (eq(n.name, "one"))return Node(1);
@@ -192,16 +202,20 @@ Node &groupIf(Node n) {
 		error("no if condition given");
 	if (n.length == 1 and !n.value.data)
 		error("no if block given");
-	Node &condition = n.children[0];
+	Node &condition = n.first();
 	Node then;
 	if (n.length > 0)then = n[1];
 	if (n.length == 0) then = n.values();
+	if (n.kind == keyNode) {
+		condition = n.from(1);
+		then = *n.value.node;
+	}
 	if (n.has("then")) {
 		condition = n.to("then");
 		then = n.from("then");
 	}
 
-	if (condition.value.data and !condition.next)
+	if (condition.kind == keyNode and condition.value.data and !condition.next)
 		then = condition.values();
 	if (condition.next and condition.next->name == "else")
 		then = condition.values();
@@ -334,7 +348,7 @@ Node &groupTypes(Node &expression, const char *context) {
 	// todo delete type declarations double x, but not double x=7
 	// todo if expression.length = 0 and first.length=0 and not next is operator return ø
 	if (types.size() == 0)initTypes();
-	if (types.has(expression.name)) {// double \n x,y,z  extra case :(
+	if (isType(expression)) {// double \n x,y,z  extra case :(
 		if (expression.length > 0) {
 			for (Node &typed:expression) {// double \n x = 4
 				typed.setType(&types[expression.name]);
@@ -724,13 +738,6 @@ bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
 	return false;
 }
 
-
-Node &groupWhile(Node n);
-
-bool isPrimitive(Node node);
-
-void fileSize(String filename);
-
 Node &groupFunctions(Node &expressiona, String context) {
 	if (expressiona.kind == declaration)return expressiona;// handled before
 	if (isFunction(expressiona)) {
@@ -918,6 +925,7 @@ Node analyze(Node node, String context) {
 	Type type = node.kind;
 	String &name = node.name;
 
+
 	if (type == functor) {
 		if (name == "while")return groupWhile(node);
 		if (name == "if")return groupIf(node);
@@ -927,6 +935,18 @@ Node analyze(Node node, String context) {
 		addLocal(context, name, int32);//  todo deep type analysis x = π * fun() % 4
 	}
 	if (type == keyNode) {
+		if (node.length > 0) {
+			// (double x, y)  (while x) : y
+			auto first = node.first().first();
+			if (isType(first))
+				return groupTypes(node, context);
+			else if (first.name == "while")
+				return groupWhile(node);
+			else if (first.name == "if")
+				return groupIf(node);
+			else if (node.length > 1)
+				error("unknown key expression: "s + node.serialize());
+		}
 		if (node.value.node /* i=ø has no node */)
 			node.value.node = analyze(*node.value.node).clone();
 		addLocal(context, name, node.value.node ? mapType(*node.value.node) : none);
@@ -959,14 +979,18 @@ Node analyze(Node node, String context) {
 	Node &grouped = groupOperators(groupedFunctions, context);
 	if (analyzed[grouped.hash()])return grouped;// done!
 	analyzed.insert_or_assign(grouped.hash(), 1);
-	if (type == groups or type == objects or
-	    type == expression) {// children analyzed individually, not as expression WHY?
+	if (type == groups or type == objects or type == expression) {
+		// children analyzed individually, not as expression WHY?
 		if (grouped.length > 0)
 			for (Node &child: grouped) {
 				child = analyze(child, context);// REPLACE ref with their ast ok?
 			}
 	}
 	return grouped;
+}
+
+bool isType(Node &expression) {
+	return types.has(expression.name);
 }
 
 String debug_code;
