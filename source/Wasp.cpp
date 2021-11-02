@@ -1438,8 +1438,8 @@ private:
 					bool add_raw = current.kind == expression or key.kind == expression or
 					               (current.last().kind == groups and current.length > 1);
 					bool add_to_whole_expression = false; // a b : c => (a b):c  // todo: symbol :a !
-					//					if (previous == ' ' and (next == ' ' or next == '\n')) and lastNonWhite !=':' …
-//						add_to_whole_expression = true;
+					if (previous == ' ' and (next == ' ' or next == '\n'))// and lastNonWhite !=':' …
+						add_to_whole_expression = true;
 					if (is_operator(previous))
 						add_raw = true;// == *=
 
@@ -1465,7 +1465,7 @@ private:
 					} else if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
 					else closer = ' ';// immediate a:b c == (a:b),c
 					Node &val = *valueNode(closer, &key).clone();// applies to WHOLE expression
-					if (add_to_whole_expression and current.length > 1) {
+					if (add_to_whole_expression and current.length > 1 and not add_raw) {
 						if (current.value.node)todo("multi-body a:{b}{c}");
 						current.setType(Type::keyNode, false);// lose type group/expression etc ! ok?
 						// todo: might still be expression!
