@@ -1970,6 +1970,9 @@ void testCurrent() {
 //	data_mode = true; // a=b => a{b}
 	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	assert_emit("S1  = -1.6666", -1);
+	assert_emit("if 2 : 3 else 4", 3);
+
 //	testSignificantWhitespace();
 //	assert_emit("double sin(double x){\n"
 //	            "\tdouble\n"
