@@ -21,8 +21,8 @@ if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else prin
 
 
 //#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
-//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
-//#define check(test) if(test){log("OK check passes: ");log(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
+//#define check(test) if(test){log("OK check passes: ");put(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
+//#define check(test) if(test){log("OK check passes: ");put(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(1);}
@@ -241,10 +241,9 @@ String normSerialization(String input) {
 	input = input.replaceAll("; ", ";");
 	input = input.replaceAll(" ;", ";");
 	input = input.replaceAll("( ", "(");
-	//	input=input.replaceAll("((", "(");// NO!
-	//	input=input.replaceAll("))", ")");
+	input = input.replaceAll("  ", " ");
 	input = input.replaceAll(":", "=");// danger!
-	input = input.replaceAll(" ", "");// VERY danger! (1 2 3) 123
+//	input = input.replaceAll(" ", "");// VERY danger! (1 2 3) 123
 	return input;
 }
 

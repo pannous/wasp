@@ -443,7 +443,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 	todo("operator “%s” NOT defined for types %s and %s "s % op % typeName(left.kind) % typeName(right.kind));
 	return NIL;
-//	log("NO builtin operator "+op0+" calling…")
+//	put("NO builtin operator "+op0+" calling…")
 //	return call(left, op0, right);
 }
 

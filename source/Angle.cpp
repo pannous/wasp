@@ -119,7 +119,7 @@ List<Arg> extractFunctionArgs(String function, Node &params) {
 			args.add({function, params.name, params.type ? *params.type : nextType});
 	}
 	for (Node &arg : params) {
-		if (types.has(arg.name)) {
+		if (isType(arg)) {
 			if (args.size() > 0 and not args.last().type)
 				args.last().type = types[arg.name];
 			else nextType = arg;
@@ -365,7 +365,7 @@ Node &groupTypes(Node &expression, const char *context) {
 	}
 	for (int i = 0; i < expression.length; i++) {
 		Node &node = expression.children[i];
-		if (not types.has(node.name))continue;
+		if (not isType(node))continue;
 		if (node.length > 0) {
 			node = groupTypes(node, context);// double (x,y,z)
 			continue;
@@ -379,7 +379,11 @@ Node &groupTypes(Node &expression, const char *context) {
 		} else if (i > 1) {
 			typed = expression.children[i - 1];
 		} else {
-			error("Type without object");// may be ok
+#ifdef DEBUG
+			error("Type without object: "s + node.serialize() + "\n" + node.Line());// may be ok
+#else
+			error("Type without object: "s+node.serialize());// may be ok
+#endif
 			typed = NIL;
 		}
 //			if (operator_list.has(typed.name))
@@ -460,8 +464,8 @@ Node extractReturnTypes(Node decl, Node body);
 Node &groupDeclarations(Node &expression, const char *context) {
 	for (Node &node : expression) {
 		String &op = node.name;
-		if (node.length == 3 and types.has(node.first().name) and
-		    node.last().kind == objects) {// c style double sin() {}
+		if (node.length >= 2 and isType(node.first()) and
+		    (node.last().kind == objects or expression.last().kind == objects)) {// c style double sin() {}
 			node = groupTypes(node, context);
 			node.kind = declaration;
 		}
@@ -486,6 +490,8 @@ Node &groupDeclarations(Node &expression, const char *context) {
 			Node left = expression.to(node);// including public… + ARGS! :(
 			Node rest = expression.from(node); // body
 			String name = extractFunctionName(left);
+			if (left.length == 0 and not declaration_operators.has(node.name))
+				name = node.name;// todo: get rid of strange heuristics!
 			if (node.length == 2) {
 				// C style double sin(x) {…} todo: fragile criterion!! also why is body not child of sin??
 				name = node.first().name;
@@ -493,7 +499,6 @@ Node &groupDeclarations(Node &expression, const char *context) {
 				rest = node.last();
 				locals[context].remove(name);// not a variable!
 			}
-
 ////			todo i=1 vs i:=it*2  ok ?
 			if (op == "=") continue; // handle assignment via groupOperators !
 			if (op == "::=") continue; // handle globals assignment via groupOperators !
@@ -579,6 +584,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 	String last = "";
 	int last_position = 0;
 	for (String &op : operators) {
+		if (op == "-")
+			debug = true;
 		if (op == "-…") op = "-";// precedence hack
 		if (op == "%")functionSignatures["modulo_double"].is_used = true;
 		if (op == "%")functionSignatures["modulo_float"].is_used = true;
@@ -706,6 +713,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 					}
 				if (node.name == "?")
 					node = groupIf(node);// consumes prev and next
+//				analyzed.add(node.hash(), true);
 				expression.replace(i - 1, i + 1, node);
 			}
 		}
@@ -905,7 +913,7 @@ Node &groupWhile(Node n) {
 	ef.kind = expression;// todo no longer functor?
 	//	ef.kind = ifStatement;
 	//	if (condition.length > 0)condition.setType(expression);// so far treated as group! todo: expression should be ok even if it's group!
-//	if (then.length > 0)then.setType(expression);// NO! it CAN BE A GROUP!, e.g. while(i++){log(1);log(2);}
+//	if (then.length > 0)then.setType(expression);// NO! it CAN BE A GROUP!, e.g. while(i++){log(1);put(2);}
 //	ef.add(analyze(condition).clone());
 //	ef.add(analyze(then).clone());
 //	ef.length = 2;
@@ -1133,11 +1141,11 @@ float function_precedence = 1000;
 
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-chars function_list[] = {"abs", "norm", "square", "root", "log", "puts", "print", "printf", "println", "logs",
+chars function_list[] = {"abs", "norm", "square", "root", "put", "puts", "print", "printf", "println", "logs",
                          "logi",
                          "logf", "log_f32", "similar",
                          "logi64",
-                         "logx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
+                         "putx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
                          0};// MUST END WITH 0, else BUG
 chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
 

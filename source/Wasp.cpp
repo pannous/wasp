@@ -863,8 +863,8 @@ private:
 //		if (node.name.in(operator_list))
 		if (operator_list.has(symbol))
 			node.setType(operators, false); // later: in angle!? NO! HERE: a xor {} != a xxx{}
-//		log("resolve NOT FOUND");
-//		log(symbol);
+//		put("resolve NOT FOUND");
+//		put(symbol);
 		return node;
 	}
 
@@ -1072,7 +1072,7 @@ private:
 			auto p = 0;
 			byte base[end - at + 3];  // 3 extra bytes of padding
 			while (at < end) {
-				auto code = lookup85[(short) text.charCodeAt(at)];  // console.log('bin: ', next, code);
+				auto code = lookup85[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
 				if (code > 85) { err("Invalid ascii85 character"); }
 				if (code < 85) { base[p++] = code; }
 				// else skip spaces
@@ -1092,10 +1092,10 @@ private:
 			auto *bytes16 = reinterpret_cast<short *>(buffer);
 			int trail = dataLength - 4;//buffer.byteLength - 4;
 			base[p] = base[p + 1] = base[p + 2] = 84;  // 3 extra bytes of padding
-			// console.log('base85 byte length: ', buffer.byteLength);
+			// console.put('base85 byte length: ', buffer.byteLength);
 			for (auto i = 0, p = 0; i < dataLength; i += 5, p += 4) {
 				auto num = (((base[i] * 85 + base[i + 1]) * 85 + base[i + 2]) * 85 + base[i + 3]) * 85 + base[i + 4];
-				// console.log("set byte to val:", p, num, String.fromCodePoint(num >> 24), String.fromCodePoint((num >> 16) & 0xff),
+				// console.put("set byte to val:", p, num, String.fromCodePoint(num >> 24), String.fromCodePoint((num >> 16) & 0xff),
 				//	String.fromCodePoint((num >> 8) & 0xff), String.fromCodePoint(num & 0xff));
 				// write the uint32 value
 				if (p <= trail) { // bulk of bytes
@@ -1128,13 +1128,13 @@ private:
 					pad = 2;
 				}
 			}
-			// console.log('binary char length: ', bufEnd - at);
+			// console.put('binary char length: ', bufEnd - at);
 
 			// first run decodes into base64 int values, and skip the spaces
 			byte base[bufEnd - at];
 			auto p = 0;
 			while (at < bufEnd) {
-				auto code = lookup64[(short) text.charCodeAt(at)];  // console.log('bin: ', next, code);
+				auto code = lookup64[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
 				if (code > 64) { err("Invalid base64 character"); }
 				if (code < 64) { base[p++] = code; }
 				// else skip spaces
@@ -1152,7 +1152,7 @@ private:
 			int code1, code2, code3, code4 = 0;
 			int buffer[len];
 			auto *bytes = reinterpret_cast<byte *>(buffer);// views:
-			// console.log('binary length: ', len);
+			// console.put('binary length: ', len);
 			for (auto i = 0, p = 0; p < len; i += 4) {
 				code1 = base[i];
 				code2 = base[i + 1];
@@ -1163,7 +1163,7 @@ private:
 				bytes[p++] = ((code2 & 15) << 4) | (code3 >> 2);
 				bytes[p++] = ((code3 & 3) << 6) | (code4 & 63);
 			}
-			// console.log('binary decoded length:', p);
+			// console.put('binary decoded length:', p);
 //			buffer.encoding = "b64";
 			return Node(buffer);
 		}
@@ -1281,8 +1281,7 @@ private:
 		current.parent = parent;
 		current.setType(groups);// may be changed later, default (1 2)==1,2
 #ifdef DEBUG
-		//		current.lineNumber = lineNumber;
-				current.line=&line;
+		current.line = &line;
 #endif
 		auto length = text.length;
 		int start = at;// line, expression, group, … start
@@ -1341,6 +1340,10 @@ private:
 					if (type == patterns)asListItem = false;
 					proceed();
 					Node object = Node().setType(type);
+#ifdef DEBUG
+					object.line = &line;
+#endif
+					// wrap {x} … or todo: just don't flatten before?
 					Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &current.last());
 					object.addSmart(objectValue);
 					if (type != patterns)
@@ -1548,6 +1551,9 @@ private:
 					// todo: what a flimsy criterion:
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
 					Node node = expressione(close);//word();
+#ifdef DEBUG
+					node.line = &line;
+#endif
 					if (contains(import_keywords, (chars) node.first().name.data)) { //  use, include, require …
 						// import IF not in data mode
 						if (current.first() == "from")
@@ -1705,11 +1711,11 @@ class String;
 
 void print(String s) {
 	if (!s.shared_reference)
-		log(s.data);
+		put(s.data);
 	else {
 		char tmp = s.data[s.length];
 		s.data[s.length] = 0;// hack not thread-safe
-		log(s.data);
+		put(s.data);
 		s.data[s.length] = tmp;
 	}
 }
@@ -1823,7 +1829,7 @@ int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
 #endif
 	try {
-		log("Hello Wasp 🐝");
+		put("Hello Wasp 🐝");
 		if (argp >= 2) {
 			String arg = argv[1];
 			if (arg.endsWith(".wasp")) {
@@ -1859,7 +1865,7 @@ int main(int argp, char **argv) {
 //		String args(current);
 		String args((char*)alloc(1,1));// hack: written to by wasmx
 //		args.data[0] = '{';
-		log(args);
+		put(args);
 		current += strlen0(args)+1;
 #endif
 #ifdef SERVER
@@ -1867,7 +1873,7 @@ int main(int argp, char **argv) {
 				std::thread go(start_server, 9999);
 #endif
 #ifdef WEBAPP
-		log("\nWEBAPP!");
+		put("\nWEBAPP!");
 		// handing over to V8, we need to call testCurrent() from there!
 		init_graphics(); //
 #endif
