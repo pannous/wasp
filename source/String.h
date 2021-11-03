@@ -79,9 +79,9 @@ void encode_unicode_character(char *buffer, wchar_t ucs_character);
 
 #ifndef WASM
 
-void log(int i);
+void put(int i);
 
-void log(long i);
+void put(long i);
 
 #endif
 //void* calloc(int i);
@@ -152,6 +152,8 @@ int strlen0(chars x);
 
 //chars ftoa(float num, int base = 10, int precision = 4);
 chars ftoa0(float num, int base, int precision);
+
+chars ftoa2(float num, int significant_digits = 4);
 
 chars ftoa(float num);
 
@@ -556,7 +558,7 @@ public:
 		if (c.data)strcpy2(neu + length, c.data, c.length);
 #endif
 		neu[length + c.length] = 0;
-//		log(neu);
+//		put(neu);
 		String *ok = new String(neu);
 		ok->length = length + c.length;
 		return *ok;
@@ -928,7 +930,7 @@ void log(String *s);
 
 void log(String s);
 
-void log(chars s);
+void put(chars s);
 
 //#endif
 //unsigned  == unsigned int!

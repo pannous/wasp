@@ -12,7 +12,7 @@ LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
 # MANUALLY force set these only for urgent debugging,
 #set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
 #set(VERBOSE 1)
-#set(DEBUG 1)
+set(DEBUG 1)
 #set(RELEASE 0) # no tests
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh
@@ -24,7 +24,7 @@ LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
 if (WASM)
     ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (NOT WASI)
-        ADD_COMPILE_DEFINITIONS(MY_WASM) # use log() panic() ... !
+        ADD_COMPILE_DEFINITIONS(MY_WASM) # use put() panic() ... !
     endif ()
 endif ()
 
@@ -38,9 +38,9 @@ if (NOT WASM)
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         #        SET(V8 1)
         #                        SET(WASMTIME 1) # FASTEST!
-        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
-        #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
-        #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
+        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!

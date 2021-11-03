@@ -307,7 +307,7 @@ void testSmartTypes(){
 }
 */
 void nl() {
-	log("\n");
+	put("\n");
 }
 
 //Prescedence typo for Precedence
