@@ -80,17 +80,17 @@ static NativeSymbol native_symbols[] =
 		{        // WAVM can call f(float) f(char*)! No JS restrictions!!
 				{
 						"get_pow",            // the name of WASM function name
-						                     (void *) get_pow,            // the native function pointer
-						                                             "(ii)i",            // the function prototype signature, avoid to use i32
+						(void *) get_pow,            // the native function pointer
+						"(ii)i",            // the function prototype signature, avoid to use i32
 						NULL,                // attachment is NULL
 						false
 				},
 				{"square", (void *) squari, "(i)i", NULL, false},
 				{"√", (void *) sqrt1, "(i)i", NULL, false},
-				{"logi", (void *) logi, "(i)", NULL, false},
+				{"logi", (void *) puti, "(i)", NULL, false},
 				{"log_f32", (void *) logf32, "(f)", NULL, false},
 				{"logf", (void *) logf32, "(f)", NULL, false},
-				{"logs", (void *) logs, "(i)", NULL, false},
+				{"logs", (void *) puts, "(i)", NULL, false},
 				{"pow", (void *) powd, "(FF)F", NULL, false},
 				{"powd", (void *) powd, "(FF)F", NULL, false},
 				{"powf", (void *) powf, "(ff)f", NULL, false},

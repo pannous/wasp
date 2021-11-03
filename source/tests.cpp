@@ -53,6 +53,10 @@ void testPrimitiveTypes() {
 	assert_emit("double\n"
 	            "\tS1  = -1.66666666666666324348e01, /* 0xBFC55555, 0x55555549 */\n"
 	            "\tS2  =  8.33333333332248946124e01, /* 0x3F811111, 0x1110F8A6 */\n\nS2", 83);
+	assert_equals(ftoa2(8.33333333332248946124e-03), "8.333E-3");
+	assert_equals(ftoa(8.33333333332248946124e-03), "0.0083");
+	assert_emit("S1 = -1.66666666666666324348e-01;S1*100", -16);
+	assert_emit("S1 = 8.33333333332248946124e-03;S1*1000", 8);
 	skip(
 			assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
 			assert_emit("(float 2, int 4.3)  == 2,4", 1);//  PRECEDENCE needs to be in valueNode :(
@@ -99,9 +103,14 @@ void testSignificantWhitespace() {
 	result = parse("a b:c");
 	check(result.length == 2);// a , b:c
 	check(result.last().kind == keyNode);// a , b:c
+	result = parse("a: b c d");
+	check(result.length == 3);
+	check(result.name == "a"); // "a"(b c d), NOT ((a:b) c d)
+	check(result.kind == groups);// not keyNode!
 	result = parse("a b : c");
 	check(result.length == 1 or result.length == 2);// (a b):c
 	assert_equals(result.kind, keyNode);
+	let x = data_mode;
 	data_mode = false;
 	result = parse("a b=c");
 	check(result.length == 4);// a b = c
@@ -114,13 +123,16 @@ void testSignificantWhitespace() {
 			result = parse("a href=link.html");
 			check(result.length == 1);// a(b=c)
 	)
+	data_mode = x;
 	//1 + 1 ≠ 1 +1 == [1 1]
 	assert(eval("1 + 1 == 2"));
 	assert_is("1 +1", Node(1, 1, 0));
 //	assert_is("1 +1", parse("[1 1]"));
-	assert_emit("1 +1 == [1 1]", 1);
+	skip(
+			assert_emit("1 +1 == [1 1]", 1);
+			assert(eval("1 +1 == [1 1]"));
+	)
 	assert_emit("1 +1 ≠ 1 + 1", 1);
-	assert(eval("1 +1 == [1 1]"));
 	assert(eval("1 +1 ≠ 1 + 1"));
 }
 
@@ -178,7 +190,7 @@ e
 	auto groups = parse(indented);
 	//	auto groups = parse("a:\n b\n c\nd\ne\n");
 	log(groups.serialize());
-	log(groups.length);
+	put(groups.length);
 	check(groups.length == 3);// a(),d,e
 	auto parsed = groups.first();
 	check(parsed.name == "a");
@@ -198,7 +210,7 @@ e
 	auto groups = parse(indented);
 	//	auto groups = parse("a:\n b\n c\nd\ne\n");
 	log(groups.serialize());
-	log(groups.length);
+	put(groups.length);
 	check(groups.length == 3);// a(),d,e
 	auto parsed = groups.first();
 	check(parsed.name == "a");
@@ -302,9 +314,9 @@ void testNetBase() {
 	warn("NETBASE OFFLINE");
 	if (1 > 0)return;
 	chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
-//	log(url);
+//	put(url);
 	chars json = fetch(url);
-//	log(json);
+//	put(json);
 	Node result = parse(json);
 	Node results = result["results"];
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
@@ -403,7 +415,7 @@ void testMarkSimpleAssign() {
 }
 
 void testMarkSimple() {
-	log("testMarkSimple");
+	put("testMarkSimple");
 	Node a = assert_parses("{aa:3}");
 	assert_equals(a.value.longy, (long) 3);
 	assert_equals(a, long(3));
@@ -501,11 +513,11 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 	check(String("牛") == U'牛');
 	check(String("牛") == L'牛');
 	check(String("牛") == "牛");
-//	log(character);
-//	log(hanzi);
-//	log(word);
-	logi(sizeof(char32_t));// 32 lol
-	logi(sizeof(wchar_t));
+//	put(character);
+//	put(hanzi);
+//	put(word);
+	puti(sizeof(char32_t));// 32 lol
+	puti(sizeof(wchar_t));
 
 	assert_parses("ç='☺'");
 	assert(eval("ç='☺'") == "☺");
@@ -810,11 +822,11 @@ void testLogic() {
 // use the bool() function to determine if a value is truthy or falsy.
 void testTruthiness() {
 	Node node = parse("true");
-//	log("TRUE:");
+//	put("TRUE:");
 	nl();
 	log(node.name);
 	nl();
-	logi(node.value.longy);
+	puti(node.value.longy);
 	check(True.kind == bools);
 	check(True.name == "True");
 	check(True.value.longy == 1);
@@ -1496,7 +1508,7 @@ void testReplace() {
 
 void testNodeConversions() {
 	Node b = Node(true);
-	log(typeName(b.kind));
+	put(typeName(b.kind));
 	check(b.value.longy == 1);
 	check(b.kind == bools);
 	check(b == True);
@@ -1667,6 +1679,7 @@ void testBUG();
 void tests() {
 //	data_mode = true;// expect data unless explicit code
 	testBUG();
+	testSignificantWhitespace();
 	testUpperLowerCase();
 	testSerialize();
 	testPrimitiveTypes();
@@ -1703,7 +1716,7 @@ void tests() {
 	testGroupCascade0();
 	testGraphQlQuery();
 	//	testNodiscard();// works NOW!
-	logi(testNodiscard());
+	puti(testNodiscard());
 	testGroupCascade();
 	testNewlineLists();
 	testStackedLambdas();
@@ -1772,7 +1785,7 @@ void tests() {
 	testAllSamples();
 #endif
 	check(NIL.value.longy == 0);// should never be modified
-	log("ALL TESTS PASSED");
+	put("ALL TESTS PASSED");
 }
 
 
@@ -1826,9 +1839,9 @@ void todos() {
 			// := is terminated by \n, not by ;!
 			assert_throws("xyz 3.7"); // todo SHOULD THROW unknown symbol!
 	)
+	testSignificantWhitespace();
 	skip(
 			assert_eval("if(0):{3}", false);// 0:3 messy node
-			testSignificantWhitespace();
 			assert_equals(Node("1", 0) + Node("2"_s),
 			              Node("1", "2", 0));// 1+2 => 1:2  stupid border case because 1 not group (1)
 			assert_is("{a b c}#2", "b");// ok, but not for patterns:
@@ -1839,7 +1852,7 @@ void todos() {
 			testAngle();// fails in WASM why?
 
 			testNetBase();
-//	log("OK %s %d"s % ("WASM",1));// only 1 handed over
+//	put("OK %s %d"s % ("WASM",1));// only 1 handed over
 			log("OK %d %d"s % (2, 1));// only 1 handed over
 	)
 
@@ -1858,7 +1871,7 @@ void todos() {
 void testNodeImplicitConversions(){
 	// looks nice, but only causes trouble and is not necessary for our runtime!
 	Node b=true;
-	log(typeName(b.kind));
+	put(typeName(b.kind));
 	check(b.value.longy==1);
 	check(b.kind==bools);
 	check(b==True);
@@ -1922,9 +1935,9 @@ void testPaintWasm() {
 //	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
 ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
 	char *wasm_paint_routine = "w=1920;c=500;r=100;surface=(1,2);i=0;"
-	                           "while(i<1000000){"
-	                           "i++;x=i%w;y=i/w;surface#i=(x-c)^2+(y-c)^2"
-	                           "};paint";
+							   "while(i<1000000){"
+							   "i++;x=i%w;y=i/w;surface#i=(x-c)^2+(y-c)^2"
+							   "};paint";
 //((x-c)^2+(y-c)^2 < r^2)?0x44aa88:0xffeedd
 //char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
 //assert_emit(wasm_paint_routine, 0);
@@ -1967,22 +1980,27 @@ void testSubGrouping() {// dangling , should make '\n' not close
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
-//	data_mode = true; // a=b => a{b}
-	data_mode = false; // a=b => a,=,b before analysis
+	data_mode = true; // a=b => a{b}
+//	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_emit("S1  = -1.6666", -1);
-	assert_emit("if 2 : 3 else 4", 3);
 
-//	testSignificantWhitespace();
-//	assert_emit("double sin(double x){\n"
-//	            "\tdouble\n"
-//	            "\tS1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */\n"
-//	            "\tS2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */\n"
-//	            "\tw = z*z;\n"
-//	            "\tr = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6);}", 11);
+//	assert_emit("1 +1 == [1 1]", 1);
+
+	auto uff = "r = S2 + z*(S3 - z*S4) + z*w*(S5 + z*S6)";
+//auto uff = "r = S2 + z + z*w*(S5 + z*S6)";
+//	auto uff = "double sin(double x){\n\tz=1;\n"
+//	           "\tdouble\n"
+//	           "\tS1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */\n"
+//	           "\tS2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */\n"
+//	           "\tw = z*z;\n"
+//	           "\tr = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6);}";
+
+//	assertSerialize(uff);
+//	assert_emit(uff, 11);
 //	assert_emit("use sin;sin π/2", 1);
-
 //	assert_emit("use sin;sin π", 0);
+	assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)
+
 //testNodesInWasm();
 //testSubGrouping();
 //	testMergeWabt();
@@ -1996,7 +2014,7 @@ void testCurrent() {
 	todos();// those not passing yet (skip)
 	testAllWasm();
 	tests();// make sure all still ok before changes
-	log("CURRENT TESTS PASSED");
+	put("CURRENT TESTS PASSED");
 }
 
 // valgrind --track-origins=yes ./wasp

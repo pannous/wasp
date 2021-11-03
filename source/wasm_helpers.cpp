@@ -58,7 +58,7 @@ void println(String s){
 ////	while(*s)logc(*s++);
 //}
 void print(String s){
-		log(s.data);
+		put(s.data);
 //	logs(s.data,s.length)
 }
 void printf(chars format, int i) {
@@ -161,7 +161,7 @@ extern "C" double sqrt(double);
 
 //unsigned long __stack_chk_guard = 0xBAAAAAAD;
 //void __stack_chk_guard_setup(void) { __stack_chk_guard = 0xBAAAAAAD;/*provide some magic numbers*/ }
-//void __stack_chk_fail(void) { /*log("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
+//void __stack_chk_fail(void) { /*put("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
 
 
 void *alloc(int size, int num) {
@@ -204,7 +204,7 @@ void *operator new(size_t size) { // stack
 
 // WHY NOT WORKING WHEN IMPORTED? FUCKING MANGLING!
 // bus error == access out of scope, e.g. logc((void*)-1000)
-//void log(char* s) {
+//void put(char* s) {
 //#ifdef WASM
 //	while(*s)logc(*s++);
 //#else
@@ -212,7 +212,7 @@ void *operator new(size_t size) { // stack
 //#endif
 //}
 
-//void log(chars s) {
+//void put(chars s) {
 //#ifdef WASM
 //	while(*s)logc(*s++);
 //#else
@@ -222,11 +222,11 @@ void *operator new(size_t size) { // stack
 
 
 void _cxa_allocate_exception() {
-	log("_cxa_allocate_exception!");
+	put("_cxa_allocate_exception!");
 }
 
 void _cxa_throw() {
-	log("_cxa_throw");
+	put("_cxa_throw");
 	error("OUT OF MEMORY");
 }
 
@@ -286,7 +286,7 @@ int squari(int a) {
 	return a * a;
 }
 
-// wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and log()
+// wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and put()
 int sqrt1(int a) {
 #ifndef WASM
 //	return sqrt(a);
@@ -433,12 +433,13 @@ void trace(chars x) {
 #ifndef MY_WASM
 
 //#pragma message "using wasm imports"
-void logs(chars c) {
+int puts(chars c) {
 //	if(from wasm)result=c
 	printf("%s", c);
+	return 1;// stdio
 }
 
-void logi(int i) {
+void puti(int i) {
 	printf("%d", i);
 }
 
@@ -446,11 +447,11 @@ void logp(long char_pointer) {// workaround for m3, which can't link pointers:  
 	printf("%s", (char *) char_pointer);
 }
 
-void logc(char c) {
+void put_char(codepoint c) {
 	printf("%c", c);
 }
 
-void logx(int i) {
+void putx(int i) {
 	printf("%x", i);
 }
 

@@ -343,7 +343,7 @@ public:
 			} else {
 				error("MISSING KEY: "s + key);
 				printf("MISSING KEY: ");
-//				log(key);
+//				put(key);
 //				printf("%s",key);// todo unsafe!! can be int etc!
 				printf("\n");
 				return values[_size++];
@@ -390,8 +390,8 @@ public:
 	bool has(S s) {// todo has(nil) / has(String::empty) should be false
 		return position(s) >= 0;
 	}
-//	void log() {
-//		error("use log(map) instead of map(log");
+//	void put() {
+//		error("use log(map) instead of map(put");
 //	}
 };
 
@@ -403,7 +403,7 @@ void log(Map<S, T> map) {
 	for (int i = 0; i < map.size(); ++i)
 		printf("%s: %ld\n", map.keys[i]->data, map.values[i]);
 }
-//void log(Map<S, T> map);
+//void put(Map<S, T> map);
 
 void log(List<String>);
 

@@ -1,18 +1,37 @@
 # format:
-# alias: variant (,variant)* OR
-# $data_mode = true   << stupid pragma so a: b c == a:[b c]
+# alias : variant (,variant)* OR
+# lists need comma separation because operators could act on expression
 
-puts: ['¡', print, printf, writeLine, println, echo ]
-modulo: ['%', mod, mod_d]
-func: ['ƒ', function, func, defun, fun, fn, def, defn, define /*!?!*/, to… ]
-sqrt: ['√', root, square_root]
-times: [ *, ×, ⋅, mul, multiply]
-plus: [+, add, ﹢, ＋, ⁺, ˖ ̟ ⁺ ᐩ ⁺ ₊ ﹢ ＋ 𒈦] // ∔ ⊕ ⊞ 
-similar: [~, ≈, ~~, circa, approximately] # <> ± ∓
-as: [ '|>', cast, convert, convert_to ]
-square: ²
-orthogonal: ⟂ ﬩ perpendicular
-sin: sinus
-cos: cosinus cosin
+# In an operator hierarchie one could implement fine grained comparisons:
+# ~ => ≃ => ﹦
+:= : be, ≔, ≝,⩦,⭀,⥱   # ≕ <> set let var val ⪮ ⩷
+=: is, ﹦, ＝, ⁼  # used as defining AND as comparison!
+== : equals, ⩵, ≟, ≌, ≑, ≗, ≛, ≜,  equivalent, ≡, identical, ≣, ≙, ≍, ⩶, is_equal, equal, same, the same as     # even par
+~ : similar, ⋍, ≈,⩯,⩰, ≊, ≌, ~~, circa, approximately, around, like    #  about <> ± ∓
+!= : ≠, ≢, unequal, ≭, different, is_not, unlike, ≉, ≆, ≇, ≄ # separate from
+! : not, ¬
++= : increase ⩲ ⩱
+∊ : in, ∈, of, from, has, contains # vs ∉ ∋ ∍ ∌ item element ?
+. : get, ∋, ∍
+¡ : puts, print, printf, writeLine, println, echo
+% : modulo, mod, mod_d # regarding, with respect, in context
+ƒ : func, function, func, fun, fn, def, defun, defn, define /*!?!*/, to…
+√ : sqrt, root, square_root
+| : then, pipe
+* : times, ×, ⋅, mul, multiply
++ : plus, add, ﹢, ＋, ⁺, ˖ ̟ ⁺ ᐩ ⁺ ₊ ﹢ ＋ 𒈦 // ∔ ⊕ ⊞
+> : more, ≰, greater, bigger, larger, higher, longer # (…than)!
+< : less, ≱, lesser, smaller,lower,tinyer,shorter
+
+|> : as , cast, convert, convert_to
+
+# todo : move to math library:
+square : ²
+orthogonal : ⟂ ﬩ perpendicular
+inverse : ⁻¹ # ⅟ prefix
+sin : sine, sinus
+cos : cosinus cosin
+asin : arcsine
+acos : arccos
 
 # superscript signs bind higher! `x²⁺³ == x⁵` 

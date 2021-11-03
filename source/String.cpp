@@ -101,8 +101,8 @@ int strlen0(chars x) {
 	if (!x)return 0;
 	int l = 0;
 	if ((long) x >= MEMORY_SIZE || (long) x == 0x200000000) {
-		logs(x);
-		logi((int) (long) x);// 0x1000000 16777216
+		puts(x);
+		puti((int) (long) x);// 0x1000000 16777216
 		error("corrupt string");
 	}
 	if ((long) x == 0x1ffffffff || (long) x >= 0xffffffff00000000 ||
@@ -289,7 +289,7 @@ String toString(Node &node);
 
 
 char *itoa0(long num, int base = 10) {
-	// length 22 -> log(num)/2+2 for base 10
+	// length 22 -> put(num)/2+2 for base 10
 	char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
 //	int addr=(int)(long)str;
 //	if(addr<0 or addr>memory_size)
@@ -346,14 +346,52 @@ chars concat(chars a, chars b) {
 
 
 //#define pow(val,exp)
-chars ftoa0(float num, int base = 10, int precision = 4) {/*significant digits*/
-	int p = 1000;//pow(base,precision);
-	char *f = (char *) concat(concat(itoa0(int(num), base), "."), itoa0(abs(int((num - (long) num) * p)), base));
+chars ftoa0(float num, int base = 10, int digits_after_zero = 4) {/*significant_digits*/
+//	int p = powi(base,digits_after_zero+1);
+	auto remainder = abs(num) - abs(long(num));
+//	auto remainder = itoa0(abs(int((num - (long) num) * p)), base);
+	chars f = concat(itoa0(int(num), base), ".");
+//	significant_digits-=strlen(f)-1
+	while (digits_after_zero-- > 0) {
+		remainder *= base;
+		auto digit = itoa0(int(remainder), base);
+		remainder -= int(remainder);
+		f = concat(f, digit);
+	}
 	int len = strlen0(f);// cut trailing 0 : 1.1000 -> 1.1
 	for (int i = 1; i < len; ++i) {
-		if (f[len - i] == '0')f[len - i] = 0;
+		if (f[len - i] == '0') ((char *) f)[len - i] = 0;
 		else break;
 	}
+	return f;
+}
+
+
+// -123.4E-100\0
+chars ftoa2(float num, int significant_digits) {
+	int exp = 0;
+	while (num > 1 or num < -1) {
+		num /= 10;
+		exp++;
+	}
+	while (num < 1 and num > -1) {
+		num *= 10;
+		exp--;
+	}
+	char *f = static_cast<char *>(malloc(significant_digits + 8));// -123.4E-100\0
+	int pos = 0;
+	if (num < 0)f[pos++] = '-';
+	f[pos++] = '0' + int(num);
+	f[pos++] = '.';
+	while (significant_digits-- > 1) {
+		num -= int(num);
+		num *= 10;
+		f[pos++] = '0' + int(num);
+	}
+	while (pos > 0 and f[pos] == '0')f[pos--] = 0;
+	f[pos++] = 'E';
+//	strcpy2(&f[pos],"×10^");
+	strcpy2(&f[pos], itoa(exp));
 	return f;
 }
 
@@ -391,15 +429,15 @@ class Node;
 
 
 
-//void log(Node &node) {
+//void put(Node &node) {
 //	Node node2 = node;
-//	log(node2);
+//	put(node2);
 //}
 
 
 //#ifndef WASM
 //#include  <string>
-//void log(std::string s) {
+//void put(std::string s) {
 //	printf("%s\n", s.data());
 //}
 //#endif
@@ -684,13 +722,13 @@ bool contains(chars str, chars match) {
 	return false;
 }
 
-#undef log // expanded from macro 'log' tgmath.h:245:25:
+#undef log // expanded from macro 'put' tgmath.h:245:25:
 
 
-void log(chars s) {
-	logs(s);
-#ifndef WASM    // console.log adds newline
-	logs("\n");
+void put(chars s) {
+	puts(s);
+#ifndef WASM    // console.put adds newline
+	puts("\n");
 #endif
 }
 
@@ -700,23 +738,23 @@ void print(const Node node) {
 
 void log(String *s) {
 	if (s->shared_reference)log(s->clone());// add \0 !!
-	else if (s)log(s->data);
+	else if (s)put(s->data);
 }
 
 void log(String s) {
 	log(&s);
 }
 
-void log(long i) {
-	logi(i);
+void put(long i) {
+	puti(i);
 }
 
-void log(int i) {
-	logi(i);
+void put(int i) {
+	puti(i);
 }
 
 void log(char c) {
-	logc(c);
+	put_char(c);
 }
 
 

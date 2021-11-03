@@ -107,14 +107,14 @@ String &name(Code &wstring) {
 	int len = unsignedLEB128(wstring);
 	String *string = new String((char *) wstring.data + wstring.start, len, true);
 	wstring.start += len;// advance internally
-//	if (len > 40)log(string);
+//	if (len > 40)put(string);
 	return *string;
 }
 
 
 void parseFunctionNames(Code &payload) {
 	functionIndices.setDefault(-1);
-//	log(functionIndices);// what we got so far?
+//	put(functionIndices);// what we got so far?
 	int function_count = unsignedLEB128(payload);
 	int index = -1;
 	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
