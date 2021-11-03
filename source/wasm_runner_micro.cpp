@@ -87,10 +87,9 @@ static NativeSymbol native_symbols[] =
 				},
 				{"square", (void *) squari, "(i)i", NULL, false},
 				{"√", (void *) sqrt1, "(i)i", NULL, false},
-				{"logi", (void *) puti, "(i)", NULL, false},
-				{"log_f32", (void *) logf32, "(f)", NULL, false},
-				{"logf", (void *) logf32, "(f)", NULL, false},
-				{"logs", (void *) puts, "(i)", NULL, false},
+				{"puti", (void *) puti, "(i)", NULL, false},
+				{"putf", (void *) putf, "(f)", NULL, false},
+				{"puts", (void *) puts, "(i)", NULL, false},// pointer
 				{"pow", (void *) powd, "(FF)F", NULL, false},
 				{"powd", (void *) powd, "(FF)F", NULL, false},
 				{"powf", (void *) powf, "(ff)f", NULL, false},

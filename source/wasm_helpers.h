@@ -78,7 +78,7 @@ extern "C" void put_char(codepoint c);
 //extern "C" void put_char(char c);
 //extern "C" int putchar(int c);// stdio
 
-extern "C" void logf32(float f);
+extern "C" void putf(float f);
 
 double powd(double x, double y);
 
@@ -95,13 +95,12 @@ long powi(int a, int b);// short harder
 //#undef pow
 //float pow(double x, double y);// todo: merge pow.wasm lib (7kb!!)
 
-#include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
 //bl	0x100003f6c ; symbol stub for: _pow
 
 //extern float powf(float x, float y);
 //void printf(int);
 void *alloc(int size, int num);
-
+//inline _LIBCPP_INLINE_VISIBILITY float       pow(float __lcpp_x, float __lcpp_y) _NOEXCEPT;
 
 
 //extern unsigned int memory_size;
@@ -119,27 +118,15 @@ extern void error1(chars message, chars file = 0, int line = 0);
 
 void error(chars);
 
-//void put(char c);
-#undef log
-//extern "C" void put(chars s);
-//extern "C" void put(char*);
-
-//void    *alloc(size_t __size) __result_use_check __alloc_size(1);
-//char* alloc(number l);
-//void usleep(int l);
-//extern "C" void print (chars );// no \n newline
-//extern "C" void logs (chars );// can't work!
 class Node;
 
 class String;
 
 void print(String);
 
-void print(const Node);
+void print(String *s);
 
-void println(String);
-
-void log(String *s);
+void print(long i);
 
 //extern __inline int isalnum ( int c );
 int isalnum0(int c);
@@ -206,7 +193,5 @@ int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
 #else
 int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
 #endif
-
-//int isalnum(int c);
 
 void trace(chars x);

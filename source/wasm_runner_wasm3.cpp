@@ -87,12 +87,12 @@ int test_wasm3(const uint8_t *prog, int len) {
 		mod.link_optional<powf>("*", "powf");
 		mod.link_optional<powd>("*", "pow");
 		mod.link_optional<powi>("*", "powi");
-		mod.link_optional<logf32>("*", "logf");// danger logf is cuda function!
+		mod.link_optional<putf>("*", "logf");// danger logf is cuda function!
 		mod.link_optional<puti>("*", "logi");// danger logf is cuda function!
-		mod.link_optional<puts>("*", "logs");// todo: replace FAKE DUMMY with adhoc circle implementation
+		mod.link_optional<puts>("*", "puts");// todo: replace FAKE DUMMY with adhoc circle implementation
 		mod.link_optional<puts>("*", "puts");
 		mod.link_optional<puts>("*", "print");
-//		mod.link_optional<putp>("*", "logs");// added m3_type_to_sig in wasm3_cpp.h !
+//		mod.link_optional<putp>("*", "puts");// added m3_type_to_sig in wasm3_cpp.h !
 		mod.link_optional<panic>("*", "panic");
 		mod.link_optional<raise>("*", "raise");
 #ifdef SDL
