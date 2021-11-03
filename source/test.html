@@ -67,7 +67,7 @@ function terminate0() {
     console.log("terminate0 disabled: enable by removing 0");
 }
 
-function readFile() {
+function readFile() {// via classic html, not wasp
     const file = input_file.files[0]
     const reader = new FileReader
     reader.addEventListener('load', () => {
@@ -186,7 +186,7 @@ window.onload = function () {
                     __cxa_guard_acquire: nop,//!?
                     __cxa_guard_release: nop,//
 
-                    logs: log,
+                    puts: log,
                     logi: log,
                     logc: log,
                     logf: log,
@@ -204,7 +204,7 @@ window.onload = function () {
                     sum: (x, y) => x + y,
                 }
             };
-            // log("STARTING WASM!");
+            // put("STARTING WASM!");
             let module = await WebAssembly.compile(code)// global
             // instance = await WebAssembly.instantiate(module, imports, memory).catch(ex => console.error(trimStack(ex)) || quit())
             //const module = await WebAssembly.compileStreaming(fetch('program.wasm'));

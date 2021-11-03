@@ -150,6 +150,8 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "equals"))return i32_eq; // i32.eq
 		if (eq(s, "is"))return i32_eq; // i32.eq // careful could be declaration := !
 		if (eq(s, "!="))return i32_ne; // i32.ne
+		if (eq(s, "≠"))return i32_ne; // i32.ne
+
 		if (eq(s, ">"))return i32_gt; // i32.gt
 		if (eq(s, "<"))return i32_lt; // i32.lt
 		if (eq(s, ">="))return i32_ge; // i32.ge
@@ -190,6 +192,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "equals"))return i64_eq; // i64.eq
 		if (eq(s, "is"))return i64_eq; // i64.eq // careful could be declaration := !
 		if (eq(s, "!="))return i64_ne; // i64.ne
+		if (eq(s, "≠"))return i64_ne; // i64.ne
 		if (eq(s, ">"))return i64_gt_s; // i64.gt_s
 		if (eq(s, "<"))return i64_lt_s; // i64.lt_s
 		if (eq(s, ">="))return i64_ge_s; // i64.ge_s
@@ -217,9 +220,11 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 
 		if (eq(s, "not"))return i64_eqz; // i64.eqz
 		if (eq(s, "¬"))return i64_eqz; // i64.eqz
+		if (eq(s, "!"))return i64_eqz; // i64.eqz
 	} else if (kind == f64t) {
 		if (eq(s, "not"))return f64_eqz; // f64.eqz  // HACK: no such thing!
 		if (eq(s, "¬"))return f64_eqz; // f64.eqz  // HACK: no such thing!
+		if (eq(s, "!"))return f64_eqz; // f64.eqz  // HACK: no such thing!
 		if (eq(s, "+"))return f64_add; // f64.add
 		if (eq(s, "-"))return f64_sub; // f64.sub
 		if (eq(s, "*"))return f64_mul; // f64.mul
@@ -232,6 +237,8 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	} else if (kind == f32t) {
 		if (eq(s, "not"))return f32_eqz; // f32.eqz  // f32.eqz  // HACK: no such thing!
 		if (eq(s, "¬"))return f32_eqz; // f32.eqz  // HACK: no such thing!
+		if (eq(s, "!"))return f32_eqz; // f32.eqz  // HACK: no such thing!
+
 		if (eq(s, "+"))return f32_add; // f32.add
 		if (eq(s, "-"))return f32_sub; // f32.sub
 		if (eq(s, "*"))return f32_mul; // f32.mul
@@ -650,7 +657,7 @@ Code emitData(Node node, String context) {
 		}
 		case objects:
 		case groups:
-			// todo hold up: log("ok") should not emit an array of group(string(ok)) !?
+			// todo hold up: put("ok") should not emit an array of group(string(ok)) !?
 			// keep last_type from last child, later if mixed types, last_type=ref or smarty
 			return emitArray(node, context);
 			break;
@@ -1014,9 +1021,12 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 	if (name == "while")
 		return emitWhile(node, context);
 	if (name == "it") {
+		// todo when is it ok to just reuse the last value on stack!?
+//		if(last_type==none or last_type==voids){
 		code.addByte(get_local);
 		code.addByte(last_local);
 		last_type = localTypes[context][last_local];
+//		}
 		return code;
 	}
 	//	or node.kind == groups ??? NO!
@@ -1106,7 +1116,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			}
 		}
 			break;
-		case patterns: // x=[];x[1]=2;x[1]==>2
+		case patterns: // x=[];x[1]=2;x[1]==>2 but not [1,2] lists
 		{
 			if (not node.parent)// todo: when is op not an operator? wrong: or node.parent->kind == groups)
 				return emitArray(node, context);
@@ -1126,7 +1136,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			return emitArray(node, context);
 			break;
 		default:
-			error("unhandled node type: "s + typeName(node.kind));
+			error("unhandled node type «"s + node.name + "» : " + typeName(node.kind));
 	}
 	return code;
 }
@@ -1485,7 +1495,7 @@ Code emitBlock(Node node, String context) {
 	last_type = none;//int32;
 	int locals_count = locals[context].size();
 	trace("found %d locals for %s"s % locals_count % context);
-//	log(locals[context]);
+//	put(locals[context]);
 	int argument_count = functionSignatures[context].size();
 	if (locals_count >= argument_count)
 		locals_count = locals_count - argument_count;
@@ -1552,11 +1562,11 @@ Code typeSection() {
 	// the type section is a vector of function types
 	int typeCount = 0;
 	Code type_data;
-//	log(functionIndices);
+//	put(functionIndices);
 	for (String fun : functionSignatures) {
 		if (!fun) {
-//			log(functionIndices);
-//			log(functionSignatures);
+//			put(functionIndices);
+//			put(functionSignatures);
 			breakpoint_helper
 			warn("empty functionSignatures[ø] because context=start=''");
 //			error("empty function creep functionSignatures[ø]");
@@ -1664,7 +1674,7 @@ Code codeSection(Node root) {
 //	int index_size = functionIndices.size();
 //	bool has_main = start and (declaredFunctions.has(start) or functionIndices.has(start));
 //	if (import_count + builtin_count + has_main + new_count + runtime_offset != index_size) {
-//		log(functionIndices);
+//		put(functionIndices);
 //		String message = "inconsistent function_count %d import + %d builtin + %d new + %d runtime + %d main != %d"s;
 // 		error(message % import_count % builtin_count % new_count % runtime_offset % has_main % index_size);
 //	}

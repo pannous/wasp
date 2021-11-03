@@ -68,11 +68,16 @@ int squari(int a);// stupid test remove
 //extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
 
-extern "C" void logs(chars);// ,int len=-1 /*auto*/);
-extern "C" void logc(char c);
-extern "C" void logx(int i);// hex
-extern "C" void logi(int i);
-extern "C" void logp(long char_pointer);
+typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
+
+extern "C" int puts(const char *);// stdio
+extern "C" void putx(int i);// hex
+extern "C" void puti(int i);
+extern "C" void putp(long *char_pointer);
+extern "C" void put_char(codepoint c);
+//extern "C" void put_char(char c);
+//extern "C" int putchar(int c);// stdio
+
 extern "C" void logf32(float f);
 
 double powd(double x, double y);
@@ -81,6 +86,7 @@ extern "C" long squarel(long n);// test wasm, otherwise use x² => x*x in analyz
 extern "C" double square(double n);// test wasm
 
 extern int sqrt1(int a);
+
 long powi(int a, int b);// short harder
 
 //extern "C" double pow2(double x, double y);
@@ -113,10 +119,10 @@ extern void error1(chars message, chars file = 0, int line = 0);
 
 void error(chars);
 
-//void log(char c);
+//void put(char c);
 #undef log
-//extern "C" void log(chars s);
-//extern "C" void log(char*);
+//extern "C" void put(chars s);
+//extern "C" void put(char*);
 
 //void    *alloc(size_t __size) __result_use_check __alloc_size(1);
 //char* alloc(number l);

@@ -88,11 +88,11 @@ int test_wasm3(const uint8_t *prog, int len) {
 		mod.link_optional<powd>("*", "pow");
 		mod.link_optional<powi>("*", "powi");
 		mod.link_optional<logf32>("*", "logf");// danger logf is cuda function!
-		mod.link_optional<logi>("*", "logi");// danger logf is cuda function!
-		mod.link_optional<logs>("*", "logs");// todo: replace FAKE DUMMY with adhoc circle implementation
-		mod.link_optional<logs>("*", "puts");
-		mod.link_optional<logs>("*", "print");
-//		mod.link_optional<logp>("*", "logs");// added m3_type_to_sig in wasm3_cpp.h !
+		mod.link_optional<puti>("*", "logi");// danger logf is cuda function!
+		mod.link_optional<puts>("*", "logs");// todo: replace FAKE DUMMY with adhoc circle implementation
+		mod.link_optional<puts>("*", "puts");
+		mod.link_optional<puts>("*", "print");
+//		mod.link_optional<putp>("*", "logs");// added m3_type_to_sig in wasm3_cpp.h !
 		mod.link_optional<panic>("*", "panic");
 		mod.link_optional<raise>("*", "raise");
 #ifdef SDL
@@ -120,29 +120,29 @@ int run_wasm(bytes wasm_bytes, int len) {
 	return test_wasm3((const uint8_t *) wasm_bytes, len);
 }
 
-
-#ifdef WASM3
-Code readWasmW3(char const *file) {
-	result = ParseWatModule(lexer.get(), &module, &errors, &parse_wast_options);
-
-	if (Succeeded(result) && validate_wasm) {
-		ValidateOptions options(wabt_features);
-		result = ValidateModule(module.get(), &errors, options);
-	}
-
-	if (Succeeded(result)) {
-		MemoryStream stream(s_log_stream.get());
-		write_binary_options.features = wabt_features;
-		result = WriteBinaryModule(&stream, module.get(), write_binary_options);
-
-	IM3Environment environment=m3_NewEnvironment();
-	IM3Module module;
-	M3Result result = m3_ParseModule(environment, &module, buffer, sz);
-	printf("parsed: %s\n", result);
-	printf("Module: %s\n", module->name);
-//	M3Result  Module_AddFunction  (IM3Module io_module, u32 i_typeIndex, IM3ImportInfo i_importInfo)
-
-
-//	read(buffer, sz);
-}
-#endif
+//
+//#ifdef WASM3
+//Code readWasmW3(char const *file) {
+//	result = ParseWatModule(lexer.get(), &module, &errors, &parse_wast_options);
+//
+//	if (Succeeded(result) && validate_wasm) {
+//		ValidateOptions options(wabt_features);
+//		result = ValidateModule(module.get(), &errors, options);
+//	}
+//
+//	if (Succeeded(result)) {
+//		MemoryStream stream(s_log_stream.get());
+//		write_binary_options.features = wabt_features;
+//		result = WriteBinaryModule(&stream, module.get(), write_binary_options);
+//
+//	IM3Environment environment=m3_NewEnvironment();
+//	IM3Module module;
+//	M3Result result = m3_ParseModule(environment, &module, buffer, sz);
+//	printf("parsed: %s\n", result);
+//	printf("Module: %s\n", module->name);
+////	M3Result  Module_AddFunction  (IM3Module io_module, u32 i_typeIndex, IM3ImportInfo i_importInfo)
+//
+//
+////	read(buffer, sz);
+//}
+//#endif
