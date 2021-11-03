@@ -1,9 +1,11 @@
 # format:
-# alias : variant (,variant)* OR
+# alias : variant (,variant)*
 # lists need comma separation because operators could act on expression
 
-# In an operator hierarchie one could implement fine grained comparisons:
-# ~ => ≃ => ﹦
+# In an operator hierarchy one could implement fine grained comparisons:
+# ~ => ≃ => equivalent ≙  => ﹦ => identical ≡, exactly identical, ≣
+# also ternary a~b%c means a≙b wrt. c  (with respect to)
+
 := : be, ≔, ≝,⩦,⭀,⥱   # ≕ <> set let var val ⪮ ⩷
 =: is, ﹦, ＝, ⁼  # used as defining AND as comparison!
 == : equals, ⩵, ≟, ≌, ≑, ≗, ≛, ≜,  equivalent, ≡, identical, ≣, ≙, ≍, ⩶, is_equal, equal, same, the same as     # even par
@@ -20,12 +22,20 @@
 | : then, pipe
 * : times, ×, ⋅, mul, multiply
 + : plus, add, ﹢, ＋, ⁺, ˖ ̟ ⁺ ᐩ ⁺ ₊ ﹢ ＋ 𒈦 // ∔ ⊕ ⊞
+- : minus,−,﹣,－,⁻,₋,∸ neg, negative, hyphen  // hyphen  ;) negative only as prefix neg<>negate :(  -≠−!
 > : more, ≰, greater, bigger, larger, higher, longer # (…than)!
 < : less, ≱, lesser, smaller,lower,tinyer,shorter
 
-|> : as , cast, convert, convert_to
+|> : as, cast, convert, convert_to
 
 # todo : move to math library:
+log10: log₁₀, 10⌟, ⌞10
+log2: log₂, 2⌟, ⌞2
+ln: logₑ, ⌟,  ⌞
+lnₓ: logₓ, x⌟,  ⌞x
+
+infix ⌟ a b :=ln(a)/ln(b)
+
 square : ²
 orthogonal : ⟂ ﬩ perpendicular
 inverse : ⁻¹ # ⅟ prefix
@@ -33,5 +43,7 @@ sin : sine, sinus
 cos : cosinus cosin
 asin : arcsine
 acos : arccos
+∞ : infinity
+-∞ : minus infinity
 
-# superscript signs bind higher! `x²⁺³ == x⁵` 
+# superscript signs bind higher! `x²⁺³ == x⁵`

@@ -409,12 +409,12 @@ bool Node::operator==(Node &other) {
 //	or (other != NIL and other != False) or
 
 	if (kind == strings) {
-		::log(name);
-		::log(value.string);
-		::log(value.string);
-		::log(other.value.string);
+		::print(name);
+		::print(value.string);
+		::print(value.string);
+		::print(other.value.string);
 		return *value.string == *other.value.string or *value.string == other.name or
-				name == other.value.string;// !? match by name??
+		       name == other.value.string;// !? match by name??
 	}
 
 
@@ -538,23 +538,23 @@ void Node::remove(Node &node) {
 //	return add(&node);
 //}
 
-	Node &Node::add(const Node *node) {
+Node &Node::add(const Node *node) {
 	if ((long) node > MEMORY_SIZE)
-	error("node Out of Memory");
+		error("node Out of Memory");
 	if (!node)return *this;
 	if (node->kind == groups and node->length == 0 and node->name.empty())
-	return *this;
+		return *this;
 	if (kind == longs or kind == reals)
-	error("can't modify primitives, only their referenceIndices a=7 a.nice=yes");
+		error("can't modify primitives, only their referenceIndices a=7 a.nice=yes");
 	if (length >= capacity - 1) {
-	puti(length + 1);
-	puts(">=");
-	puti(capacity);
-	puts(name);
-	error("Out of node Memory");
+		puti(length + 1);
+		puts(">=");
+		puti(capacity);
+		puts(name);
+		error("Out of node Memory");
 	}
 	if (lastChild >= maxNodes)
-	error("Out of global Memory");
+		error("Out of global Memory");
 	if (!children) children = (Node *) calloc(sizeof(Node), capacity);
 	if (length > 0) children[length - 1].next = &children[length];
 	((Node *) node)->parent = this;// not const lol. allow to set and ignore NIL.parent
@@ -861,9 +861,9 @@ String Node::serialize() const {
 		if (polish_notation and not name.empty()) wasp += name;
 		int i = 0;
 		if (length > 0)
-		for (Node &node : *this) {
-		if (i++ > 0) wasp += separator? String(separator):" ";
-		wasp += node.serialize();
+			for (Node &node : *this) {
+				if (i++ > 0) wasp += separator ? String(separator) : " ";
+				wasp += node.serialize();
 			}
 		if (length > 1 or kind == patterns or kind == objects) {
 			if (kind == groups and not separator)wasp += ")";
@@ -1067,23 +1067,18 @@ void Node::replace(int from, int to, Node &node) {
 //	return *meta;
 //}
 
-void log(Node &n) {
-	n.log();
+void print(Node &n) {
+	n.print();
 }
 
-void log(const Node &n0) {
-	log((Node &) n0);
-}
+//void print(const Node &n0) {
+//	print(&n0);
+//}
 
 
-void log(Node *n0) {
+void print(Node *n0) {
 	if (!n0)return;
-	Node n = *n0;
-	log(n);
-}
-
-void printf(Node &n) {
-	print((const Node) n);
+	print(*n0);
 }
 
 
@@ -1120,9 +1115,9 @@ List<String> &Node::toList() {
 bool Node::empty() {
 	// we don't care about name here
 	return length == 0 and value.data == 0;
-	}
+}
 
-	void Node::clear() {
+void Node::clear() {
 	next = 0;
 	length = 0;
 	children[0] = 0;
@@ -1131,21 +1126,21 @@ bool Node::empty() {
 }
 
 String* Node::Line() {
-if (line)
-return line;
-if (parent)return parent->Line();
-return new String("<missing line information>");
+	if (line)
+		return line;
+	if (parent)return parent->Line();
+	return new String("<missing line information>");
 }
 
 
 //String
 chars typeName(Type t) {
-switch (t) {
-case objects:
-return "object";
-case groups:
-return "group";
-case patterns:
+	switch (t) {
+		case objects:
+			return "object";
+		case groups:
+			return "group";
+		case patterns:
 			return "pattern";
 		case keyNode:
 			return "node";

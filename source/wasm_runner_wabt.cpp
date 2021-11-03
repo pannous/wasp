@@ -33,12 +33,12 @@ wabt::Result do_square(Thread &thread, const Values &params, Values &results, Tr
 	return wabt::Result::Ok;
 };
 
-wabt::Result do_logi(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
+wabt::Result do_puti(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
 	printf("%d\n", params.front().Get<int>());
 	return wabt::Result::Ok;
 };
 
-wabt::Result do_logf(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
+wabt::Result do_putf(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
 	printf("%f\n", params.front().Get<float>());
 	return wabt::Result::Ok;
 };
@@ -48,7 +48,7 @@ wabt::Result do_exit(Thread &thread, const Values &params, Values &results, Trap
 }
 
 
-wabt::Result do_logs(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
+wabt::Result do_puts(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
 	Ref ref = params.front().Get<Ref>();
 	char *x = (char *) (void *) params.data();
 	printf("%s\n", x);
@@ -57,7 +57,7 @@ wabt::Result do_logs(Thread &thread, const Values &params, Values &results, Trap
 
 
 wabt::Result do_raise(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
-	do_logs(thread, params, results, trap);
+	do_puts(thread, params, results, trap);
 	exit(0);
 }
 
@@ -75,10 +75,10 @@ void BindImports(Module *module, std::vector<Ref> &imports, Store &store) {
 	for (auto &&import : module->desc().imports) {
 		auto func_type = *wabt::cast<FuncType>(import.type.type.get());
 		if (import.type.name == "square")imports.push_back(HostFunc::New(store, func_type, do_square).ref());
-		else if (import.type.name == "logi")imports.push_back(HostFunc::New(store, func_type, do_logi).ref());
-		else if (import.type.name == "logf")imports.push_back(HostFunc::New(store, func_type, do_logf).ref());
-		else if (import.type.name == "logs")imports.push_back(HostFunc::New(store, func_type, do_logs).ref());
-		else if (import.type.name == "printf")imports.push_back(HostFunc::New(store, func_type, do_logs).ref());
+		else if (import.type.name == "puti")imports.push_back(HostFunc::New(store, func_type, do_puti).ref());
+		else if (import.type.name == "putf")imports.push_back(HostFunc::New(store, func_type, do_putf).ref());
+		else if (import.type.name == "puts")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
+		else if (import.type.name == "print")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
 		else if (import.type.name == "proc_exit")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
 		else if (import.type.name == "panic")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
 		else if (import.type.name == "raise")imports.push_back(HostFunc::New(store, func_type, do_raise).ref());
