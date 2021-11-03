@@ -69,14 +69,14 @@ wrap(powi) {
 	return NULL;
 }
 
-wrap(logs) {
+wrap(puts) {
 	int n = args[0].of.i32;
 	if (wasm_memory)
 		printf("%s", &((char *) wasm_memory)[n]);
 	return NULL;
 }
 
-wrap(logi) {
+wrap(puti) {
 	int i = args[0].of.i32;
 	printf("%d", i);
 	return NULL;
@@ -94,7 +94,7 @@ wrap(logd) {
 	return NULL;
 }
 
-wrap(logc) {
+wrap(put_char) {
 	int i = args[0].of.i32;
 	printf("%c", i);
 	return NULL;

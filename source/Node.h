@@ -123,26 +123,28 @@ public:
 	::Type kind = unknown;// todo: merge with Node.type/class ? :
 	Node *type = 0;// variable/reference type or object class?
 //	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
-	Node *parent = nullptr;
-	Node *children = nullptr;// LIST, not link. block body content
-	Node *next = 0; // in children list
-	char separator = 0;// " " ";" ","
+Node *parent = nullptr;
+Node *children = nullptr;// LIST, not link. block body content
+Node *next = 0; // in children list
+char separator = 0;// " " ";" ","
 //	char grouper = 0;// "()", "{}", "[]" via kind!  «…» via type Group("«…»")
 
-	long _hash = 0;// set by hash(); should copy! on *x=node / clone()
-	int length = 0;// children
-#ifdef DEBUG
-	//	int lineNumber;
-		String* line;// debug! EXPENSIVE for non ast nodes!
+long _hash = 0;// set by hash(); should copy! on *x=node / clone()
+int length = 0;// children
+#ifdef
+DEBUG
+// int code_position; // hash to external map
+//	int lineNumber;
+String* line = 0;// debug! EXPENSIVE for non ast nodes!
 #endif
 
-	// TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
-	//	Node &parent=NIL;
-	//	Node &param=NIL;
+// TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
+//	Node &parent=NIL;
+//	Node &param=NIL;
 
-	//	int count = 0;// use param.length for arguments / param
+//	int count = 0;// use param.length for arguments / param
 
-	// a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms
+// a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms
 //	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
 
 	/* don't mix children with param, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
@@ -642,7 +644,7 @@ public:
 
 	Node &setType(Node *_type) {
 //		type = &_type->setType(classe);
-		return *this;
+	return *this;
 	}
 
 	List<String> &toList();
@@ -650,11 +652,13 @@ public:
 	bool empty();
 
 	void clear();
-};
 
-typedef const Node Nodec;
+	String* Line();
+	};
 
-void initSymbols();// wasm doesn't do it why!?
+	typedef const Node Nodec;
+
+	void initSymbols();// wasm doesn't do it why!?
 class [[maybe_unused]] BoolBridge {
 	bool _b;
 public:
