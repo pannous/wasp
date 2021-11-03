@@ -21,8 +21,8 @@ if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else prin
 
 
 //#define check(test) if(test){printf("OK check passes %s\n",#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
-//#define check(test) if(test){log("OK check passes: ");put(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
-//#define check(test) if(test){log("OK check passes: ");put(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
+//#define check(test) if(test){log("OK check passes: ");print(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
+//#define check(test) if(test){log("OK check passes: ");print(#test);}else{printf("NOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(1);}
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(1);}
@@ -126,13 +126,13 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 //}
 
 bool assert_equals_x(long a, long b, char *context = "") {
-	if (a != b)log("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
+	if (a != b)print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
 	else printf("OK %ld==%ld %s\n", a, b, context);
 	return a == b;
 }
 
 bool assert_equals_x(int a, int b, char *context = "") {
-	if (a != b)log("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
+	if (a != b)print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
 	else printf("OK %d==%d %s\n", a, b, context);
 	return a == b;
 }
@@ -140,8 +140,8 @@ bool assert_equals_x(int a, int b, char *context = "") {
 
 bool assert_equals_x(float a, float b, char *context = "") {
 	auto ok = similar(a, b);
-	if (!ok)log("\nFAILED assert_equals!\n %f should be %f %s\n"s % a % b % context);
-	else log("OK %f==%f %s\n"s % a % b % context);
+	if (!ok)print("\nFAILED assert_equals!\n %f should be %f %s\n"s % a % b % context);
+	else print("OK %f==%f %s\n"s % a % b % context);
 	return ok;
 }
 
@@ -204,7 +204,7 @@ bool assert_isx(char *mark, bool expect) {
 Node assert_parsesx(chars mark) {
 	try {
 		result = parse(mark);
-		log(result);
+		print(result);
 		return result;
 	} catch (chars err) {
 		printf("\nTEST FAILED WITH ERROR\n");

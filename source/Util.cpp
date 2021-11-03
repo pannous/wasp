@@ -2,6 +2,7 @@
 // Created by me on 07.10.21.
 //
 
+#include <cmath>
 #include "String.h"
 #include "Util.h"
 
@@ -134,7 +135,8 @@ noexcept {
 
 bool similar(float a, float b) {
 	if (a == b)return true;
-	float epsilon = abs_f(a + b) / 1000000.;// percentual ++
+	float epsilon = abs_f(a + b) / 10000.;// percentual ++
+	if (a == 0 or b == 0)epsilon = 1 / 1000.;
 	bool ok = a == b or abs_f(a - b) <= epsilon;
 	return ok;
 }
@@ -1037,3 +1039,32 @@ bytes concat(char a, bytes b, int len) {
 	memcpy0(c + 1, b, len);
 	return c;
 }
+
+float ln(float y) {// crappy!
+//	if(y==1)return 0;
+	float divisor, x, result;
+	int log2 = 0;
+	unsigned int v = y;
+	while (v >>= 1) {
+		log2++;
+	}
+//	log2 = msb((int)y); // See: https://stackoverflow.com/a/4970859/6630230
+	divisor = (float) (1 << log2);
+	if (divisor == 0)return -1 / 0.000000000001;// todo;) noexcept
+	x = y / divisor;    // normalized value between [1.0, 2.0]
+	result = -1.7417939 + (2.8212026 + (-1.4699568 + (0.44717955 - 0.056570851 * x) * x) * x) * x;
+	result += ((float) log2) * 0.69314718; // ln(2) = 0.69314718
+	return result;
+}
+
+float log(float y, float base) {
+	return ln(y) * ln(base);
+}
+//float log10(float y) noexcept{
+//	return ln(y)*2.302585092994046; // ln(10)
+//}
+//
+//
+//float log2(float y) noexcept{
+//	return ln(y)*0.69314718;
+//}
