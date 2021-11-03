@@ -94,14 +94,14 @@ void testLazyEvaluation() {
 }
 
 void testWasmFunctionCalls() {
-	assert_emit("logs 'ok'", (long) 0);
+	assert_emit("puts 'ok'", (long) 0);
 	assert_emit("id (3+3)", (long) 6);
 	assert_emit("square 3", 9);
 	assert_emit("id 123", (long) 123);
 	assert_is("id 3+3", 6);
-	assert_emit("logf 3.1", (long) 0);// auto return 0 if call returns void
-	assert_emit("logi 3", (long) 0);
-	assert_emit("logi 3+3", (long) 0);
+	assert_emit("putf 3.1", (long) 0);// auto return 0 if call returns void
+	assert_emit("puti 3", (long) 0);
+	assert_emit("puti 3+3", (long) 0);
 	assert_emit("4*5 + square 2*3", (long) 56);
 	assert_emit("id 3+3", (long) 6);
 	assert_emit("3 + square 3", (long) 12);
@@ -817,7 +817,7 @@ void testWasmRuntimeExtension() {
 
 	//	assert_run("okf(1)", 43);
 	//	assert_run("43", 43);
-	//	assert_run("logs 'hello' 'world'", "hello world");
+	//	assert_run("puts 'hello' 'world'", "hello world");
 	//	assert_run("hello world", "hello world");// unresolved symbol printed as is
 
 	//	assert_run("'123'='123'", true);// parsed as keyNode a:b !?!? todo!
@@ -833,7 +833,7 @@ void testWasmRuntimeExtension() {
 	//	assert_run("atoi0(string('123'))", 123);
 
 	//	assert_run("oki(1)", 43);
-	//	assert_emit("logs('123'+'456');", 123456);// via import not via wasp!
+	//	assert_emit("puts('123'+'456');", 123456);// via import not via wasp!
 	//assert_emit("grow := it * 2 ; grow(4)", 8)
 	//	check(Valtype::charp!=Valtype::pointer)
 
@@ -927,16 +927,16 @@ void testArrayIndicesWasm() {
 //	testArrayIndices(); //	check node based (non-primitive) interpretation first
 	data_mode = true;// todo remove hack
 	assert_emit("x={1 2 3}; x#3=4;x#3", 4);
-	assert_emit("logs('ok');", 0);
-	assert_emit("logs('ok');(1 4 3)#2", 4);
+	assert_emit("puts('ok');", 0);
+	assert_emit("puts('ok');(1 4 3)#2", 4);
 	assert_emit("{1 4 3}#2", 4);
 
 	assert_emit("x={1 4 3};x#2", 4);
-	assert_emit("logs('ok');(1 4 3)#2", 4);
+	assert_emit("puts('ok');(1 4 3)#2", 4);
 	assert_emit("{1 4 3}[1]", 4);
-	assert_emit("logs('ok');(1 4 3)#2", 4);
+	assert_emit("puts('ok');(1 4 3)#2", 4);
 	assert_emit("(1 4 3)[1]", 4);
-	assert_emit("logs('ok');(1 4 3)#2", 4);
+	assert_emit("puts('ok');(1 4 3)#2", 4);
 	assert_throws("(1 4 3)#0");
 	skip(
 	// todo patterns as lists
@@ -993,10 +993,10 @@ void testRecentRandomBugs() {
 	//	function attempted to return an incompatible value WHAT DO YOU MEAN!?
 #endif
 
-	assert_emit("logs('ok');(1 4 3)#2", 4);
+	assert_emit("puts('ok');(1 4 3)#2", 4);
 	assert_emit("‖-3‖", 3);
 	assert_emit("√100²", 100);
-	assert_emit("logs('ok');", 0);
+	assert_emit("puts('ok');", 0);
 // move to tests() once OK'
 
 	assert_parses("{ç:☺}");
@@ -1167,8 +1167,8 @@ void testAllWasm() {
 //	data_mode = false;
 	testWasmMemoryIntegrity();
 #ifdef RUNTIME_ONLY
-	logs("RUNTIME_ONLY");
-	logs("NO WASM emission...");
+	puts("RUNTIME_ONLY");
+	puts("NO WASM emission...");
 //	return;
 #endif
 	skip(

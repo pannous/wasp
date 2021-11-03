@@ -4,75 +4,34 @@
 //
 
 #include "String.h"
-#include "NodeTypes.h"
 #include "wasm_helpers.h"
 #include "Map.h"
 #include "Code.h"
 #include "Util.h"
+#include <math.h> // pow
 
 #ifndef WASM
-//#include <string.h> // strcpy
-//#include <cstring> // strcpy doesn't work!?
 #include <stdlib.h> // pulls in declaration of malloc, free
-//#include <math.h> // pow
-//#include "math.h"
-//#include <cmath>
 #endif
-
-//extern double pow(double x, double y);
-//extern "C" double pow(double x, double y);
-//extern "C" double sqrt(double __a);
 
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wstring-compare"
-//#define let auto
-//#define var auto
 
-
-//typedef void *any;
-typedef unsigned char byte;
-typedef chars chars;
-
-
-//extern "C" void logs(chars ,int len);
-//bool debug = true;
-//extern void *alloc (size_t __size);
-//extern void *alloc (int __size);
-char *empty_string = "";
 #ifndef WASM
 
 #include <cstdio>
 
-//#include <cstring>
-
-
 #else
 #endif
+
+
+typedef unsigned char byte;
+typedef chars chars;
 
 class String;
 
-
-
-//#include <stdio.h>
-//#include <string.h>
-#ifndef WASM
-
-#include <cstring> //strlen
-
-#else
-//#include "string.h"
-//size_t strlen(chars x){
-//	int l=0;
-//	while(x[0]&&l<100){x++;l++;}
-//	return l;
-//}
-#endif
-//#define cstring
-
-
-//int ord(codepoint c);// identity!
-//	return (int) c;
+char *empty_string = "";
 
 bool eq(chars dest, chars src, int length) {
 	if (!dest || !src)
@@ -112,17 +71,7 @@ int strlen0(chars x) {
 	return l;
 }
 
-// INCORRECT! use decode_unicode_character(str, &len) !
-//size_t utf8_strlen(chars utf8bytes) {
-//	size_t len = 0;
-//	for (chars p = utf8bytes; *p; ++p)
-//		if ((*p & 0xc0) != 0x80)
-//			++len;
-//	return len;
-//}
 
-
-// or cstring
 //#ifndef cstring
 // needs manual 0 termination, or copy with length + 1
 void strcpy2(char *dest, chars src, int length) {// =-1
@@ -148,7 +97,7 @@ void strcpy2(char *dest, chars src) {
 //#endif
 
 
-/*		(*p) - 0x11052 // …
+/*		UNICODE NUMERALS 𝟎=0 etc
  *
 Some start with 1…9 missing 0
  0x278A	10122	DINGBAT NEGATIVE CIRCLED SANS-SERIF DIGIT ONE	➊
@@ -171,7 +120,6 @@ Some start with 1…9 missing 0
 𝍠	119648	𝍠	1D360	COUNTING ROD UNIT DIGIT ONE
  𐋡	66273	𐋡	102E1	COPTIC EPACT DIGIT ONE
 8160	𐩀	10A40	KHAROSHTHI DIGIT ONE ... only to 4 !
-
  some start with 0…9 !
  0xFF10	65296	FULLWIDTH DIGIT ZERO	０
 𝟶	120822	𝟶	1D7F6	MATHEMATICAL MONOSPACE DIGIT ZERO
@@ -197,8 +145,10 @@ Some start with 1…9 missing 0
  0x0660	1632	ARABIC-INDIC DIGIT ZERO	٠
  */
 // todo 0x2080, 0x2070 subscript OPERATOR vs x²⁺³ == x⁵
+// unicode ranges 0...9
 int zeros[] = {0x1D7F6, 0x1D7EC, 0x1D7E2, 0x1D7D8, 0x1D7CE, 0x11066, 0x1810, 0x17E0, 0x1040, 0x0F20, 0x0ED0, 0x0E50,
                0x0CE6, 0x0C66, 0x0BE7, 0x0B66, 0x0AE6, 0x09E6, 0x0966, 0x06F0, 0x0660, 0, 0};
+// unicode ranges 1...9
 int ones[] = {0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 0x102EA, 0x10858, 0x10916, 0x10320,
               0x1D360, 0x102E1, 0x3021, 0x2170, 0x2160, 0x1372, 0x2469, 0, 0};
 
@@ -243,7 +193,7 @@ int atoi0(chars p) {
 	}
 
 	if (k > 0 and (*p == 'e' or *p == 'E'))
-		k *= powf(10, atoi0(++p));// we need float for E-10 == 1/10 …
+		k *= pow(10, atoi0(++p));// we need float for E-10 == 1/10 …
 	return sig * k;
 }
 
@@ -269,7 +219,7 @@ double atof0(chars string) {
 		string++;
 	while (*string) {
 		if (*string == 'e' or *string == 'E')
-			return result * powf(10, atoi0(++string));
+			return result * pow(10, atoi0(++string));
 		if (*string < '0' || *string > '9') return result;
 		divisor *= 10.0;
 		result += (double) (*string - '0') / divisor;
@@ -722,9 +672,6 @@ bool contains(chars str, chars match) {
 	return false;
 }
 
-#undef log // expanded from macro 'put' tgmath.h:245:25:
-
-
 void put(chars s) {
 	puts(s);
 #ifndef WASM    // console.put adds newline
@@ -736,25 +683,40 @@ void print(const Node node) {
 	print(node.string());
 }
 
-void log(String *s) {
-	if (s->shared_reference)log(s->clone());// add \0 !!
-	else if (s)put(s->data);
-}
-
-void log(String s) {
-	log(&s);
-}
-
-void put(long i) {
+void print(long i) {
 	puti(i);
 }
 
-void put(int i) {
-	puti(i);
-}
-
-void log(char c) {
+void print(char c) {
 	put_char(c);
 }
 
 
+void print(String *s) {
+	if (s->shared_reference)print(s->clone());// add \0 !!
+	else if (s)put(s->data);
+}
+
+#ifndef WASM
+
+void print(String s) {
+	if (!s.shared_reference)
+		put(s.data);
+	else {
+		char tmp = s.data[s.length];
+		s.data[s.length] = 0;// hack not thread-safe
+		put(s.data);
+		s.data[s.length] = tmp;
+	}
+}
+
+#else
+void print(String s){
+	put(s.data);
+//   puts(s.data,s.length);
+}
+
+//void print(String s) {
+//	print(&s);
+//}
+#endif

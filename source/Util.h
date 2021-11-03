@@ -1,10 +1,10 @@
 #include "String.h"
 
-//#define check_eq(α, β) if((α)!=(β)){if(debug_reader)printf("%s != %s : ",#α,#β);log(α); \
+//#define check_eq(α, β) if((α)!=(β)){if(debug_reader)printf("%s != %s : ",#α,#β);print(α); \
 if(debug_reader)printf("!=");put(β);if(debug_reader)printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 
 #define check(test) printf("CHECKING %s\n%s:%d\n",#test,__FILE__,__LINE__);\
-if(test){log("OK check passes: ");log(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 bool fileExists(String filename);
 
@@ -37,3 +37,14 @@ bytes concat(bytes a, bytes b, int len_a, int len_b);
 bytes concat(bytes a, char b, int len);
 
 bytes concat(char section, bytes a, int len_a);
+
+//float ln(float y);
+//float log(float y,float base=10);
+//#undef log2
+//#undef log10
+//float log2(float y)noexcept;
+//float log10(float y)noexcept;
+//double sin(double x);
+//double cos(double x);
+//double pow(double x, double y);
+//double floor(double x);

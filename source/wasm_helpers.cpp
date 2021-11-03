@@ -16,6 +16,9 @@
 #include "Code.h"
 //extern unsigned int *memory;
 
+#include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
+
+
 //#ifdef WASI
 //#include <stdio.h> // printf
 //#endif
@@ -34,14 +37,14 @@ void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 //		error("TOO BIG LOL");
 	if (MEMORY_SIZE and (long) current >= MEMORY_SIZE) {
 #ifndef WASI
-		logi(sizeof(Node));// 64
-		logi(sizeof(String));// 20
-		logi(sizeof(Value));// 8 long
-		logi((int) last);
-		logi((int) memory);
-		logi((int) current);
-		logi((int) HEAP_OFFSET);
-		logi(MEMORY_SIZE);
+		puti(sizeof(Node));// 64
+		puti(sizeof(String));// 20
+		puti(sizeof(Value));// 8 long
+		puti((int) last);
+		puti((int) memory);
+		puti((int) current);
+		puti((int) HEAP_OFFSET);
+		puti(MEMORY_SIZE);
 //		error("OUT OF MEMORY");// needs malloc :(
 #endif
 		panic();
@@ -51,16 +54,13 @@ void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 }
 void println(String s){
 	print(s);
-	logc('\n');
+	put_char('\n');
 }
 //void printf(chars s) {
-//	logs(s);
-////	while(*s)logc(*s++);
+//	puts(s);
+////	while(*s)put_char(*s++);
 //}
-void print(String s){
-		put(s.data);
-//	logs(s.data,s.length)
-}
+
 void printf(chars format, int i) {
 	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
@@ -161,7 +161,7 @@ extern "C" double sqrt(double);
 
 //unsigned long __stack_chk_guard = 0xBAAAAAAD;
 //void __stack_chk_guard_setup(void) { __stack_chk_guard = 0xBAAAAAAD;/*provide some magic numbers*/ }
-//void __stack_chk_fail(void) { /*put("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
+//void __stack_chk_fail(void) { /*print("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
 
 
 void *alloc(int size, int num) {
@@ -203,18 +203,18 @@ void *operator new(size_t size) { // stack
 #endif
 
 // WHY NOT WORKING WHEN IMPORTED? FUCKING MANGLING!
-// bus error == access out of scope, e.g. logc((void*)-1000)
-//void put(char* s) {
+// bus error == access out of scope, e.g. put_char((void*)-1000)
+//void print(char* s) {
 //#ifdef WASM
-//	while(*s)logc(*s++);
+//	while(*s)put_char(*s++);
 //#else
 //	printf("%s\n", s);
 //#endif
 //}
 
-//void put(chars s) {
+//void print(chars s) {
 //#ifdef WASM
-//	while(*s)logc(*s++);
+//	while(*s)put_char(*s++);
 //#else
 //	printf("%s\n", s);
 //#endif
@@ -222,11 +222,11 @@ void *operator new(size_t size) { // stack
 
 
 void _cxa_allocate_exception() {
-	put("_cxa_allocate_exception!");
+	print("_cxa_allocate_exception!");
 }
 
 void _cxa_throw() {
-	put("_cxa_throw");
+	print("_cxa_throw");
 	error("OUT OF MEMORY");
 }
 
@@ -286,7 +286,7 @@ int squari(int a) {
 	return a * a;
 }
 
-// wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and put()
+// wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and print()
 int sqrt1(int a) {
 #ifndef WASM
 //	return sqrt(a);
@@ -363,10 +363,10 @@ typedef struct wasi_buffer {
 
 #ifndef MY_WASM
 // String.cpp
-//extern "C" void logc(char c){
+//extern "C" void put_char(char c){
 //	printf("%c" , c);
 //}
-//extern "C" void logi(int i) {
+//extern "C" void puti(int i) {
 //	printf("%d", i);
 //}
 #endif
@@ -443,7 +443,7 @@ void puti(int i) {
 	printf("%d", i);
 }
 
-void logp(long char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<logs>("*", "logs")
+void putp(long char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
 	printf("%s", (char *) char_pointer);
 }
 
@@ -455,9 +455,8 @@ void putx(int i) {
 	printf("%x", i);
 }
 
-//#undef logf  // doesn't help math
-void logf32(float l) {
-	printf("%f\n", l);
+void putf(float f) {
+	printf("%f\n", f);
 }
 
 #endif
