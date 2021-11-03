@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <wasm.h>
 #include <wasmtime.h>
+#include "Util.h"
+#include <math.h>
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap);
 
@@ -58,7 +60,7 @@ wrap(powd) {
 wrap(powf) {
 	float n = args[0].of.f32;
 	float x = args[1].of.f32;
-	results[0].of.f32 = powf(n, x);
+	results[0].of.f32 = pow(n, x);
 	return NULL;
 }
 
@@ -82,7 +84,7 @@ wrap(puti) {
 	return NULL;
 }
 
-wrap(logf) {
+wrap(putf) {
 	float f = args[0].of.f32;
 	printf("%f", f);
 	return NULL;
@@ -153,13 +155,13 @@ wasm_wrap *link_import(String name) {
 	if (name == "square") return &wrap_square;
 	if (name == "memset") return &wrap_memset;
 
-	if (name == "printf") return &wrap_logs;
-	if (name == "puts") return &wrap_logs;
-	if (name == "logs") return &wrap_logs;
-	if (name == "logi") return &wrap_logi;
-	if (name == "logf") return &wrap_logf;
-	if (name == "logc") return &wrap_logc;
-	if (name == "putchar") return &wrap_logc;// todo: remove duplicates!
+	if (name == "printf") return &wrap_puts;
+	if (name == "puts") return &wrap_puts;
+	if (name == "puti") return &wrap_puti;
+	if (name == "putf") return &wrap_putf;
+	if (name == "putc") return &wrap_put_char;
+	if (name == "putchar") return &wrap_put_char;// todo: remove duplicates!
+	if (name == "put_char") return &wrap_put_char;// todo: remove duplicates!
 	if (name == "main") return &hello_callback;
 	error("unmapped import "s + name);
 	return 0;

@@ -192,7 +192,7 @@ Node do_call(Node left, Node op0, Node right) {
 	if (op == "square")return Node(right.numbere() * right.numbere());// don't test
 	if (op == "√")return Node(sqrt1(right.numbere()));
 	if (op == "printf") {
-		log(right);
+		print(right);
 		return right;
 	}
 
@@ -224,9 +224,9 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 	if (debug) {
 		trace("apply_op\n");
-		left.log();
-		op0.log();
-		right.log();
+		left.put();
+		op0.put();
+		right.put();
 	}
 //	if(right.length==0 and op0.param){
 //		warn("using param for args");

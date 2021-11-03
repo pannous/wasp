@@ -10,13 +10,13 @@
 //		printf("%s: %d\n", map.keys[i].data, map.values[i]);
 //}
 
-void log(Map<String, int> map) {
+void print(Map<String, int> map) {
 	printf("Map (size: %d)\n", map.size());
 	for (int i = 0; i < map.size(); ++i)
 		printf("%s: %d\n", map.keys[i].data, map.values[i]);
 }
 
-void log(List<String> list) {
+void print(List<String> list) {
 	for (String s:list) {
 		print(s);
 	}

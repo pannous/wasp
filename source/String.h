@@ -2,7 +2,6 @@
 //
 // Created by pannous on 19.12.19.
 //
-//#include <c++/v1/cstdlib>
 #include "wasm_helpers.h"
 #include "NodeTypes.h"
 
@@ -12,14 +11,8 @@
 //#include "Map.h" recursive include error Node.h:60:9: error: field has incomplete type 'String'
 
 #ifndef WASM
-//typedef long __int64_t;
-//typedef unsigned long __uint64_t;
-//typedef int __int32_t;
-//typedef unsigned int __uint32_t;
-
 #include <cstdlib>
 #include <cstdio> // printf
-
 #endif
 
 
@@ -30,10 +23,10 @@ template<class S>
 class List;
 
 extern String &EMPTY_STRING;
+
 //What 'char' and 'wchar_t' represent are completely ambiguous.
 //You might think that they represent a "character", but depending on the encoding, that might not be true.
 //typedef byte char;// overloaded term that can mean many things but throws a compiler warning
-// TODO IS IT SAFE IF WE USE char as synonym for grapheme, but we just return codepoints and ignore modifiers? we can return a¨ as  ä!!
 // character in the real world is LESS ambivalent then in the UTF world! on the other hand a new term like icon/grapheme cant hurt
 //typedef wchar_t character;// overloaded term that can mean many things:
 typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
@@ -41,7 +34,10 @@ typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units 
 //typedef char* grapheme;// sequence of one or more code points that are displayed as a single 'character' ä may be two code points a¨, or one ä
 typedef String grapheme;// sequence of one or more code points that are displayed as a single 'character' ☀️=☀+_ e2 98 80 + ef b8 8f
 //typedef String grapheme;// usually codepoint + color or something. no need yet? boycott idea?
-//typedef graphics glyph; image, usually stored in a font (which is a collection of glyphs), used to represent graphemes
+// TODO IS IT SAFE IF WE USE char IN WASP as synonym for codepoint, by merging graphemes and ignoring modifiers? we can return a¨ as  ä!!
+// color is than an invisible control character like in ascii
+
+//typedef Image glyph; image, usually stored in a font (which is a collection of glyphs), used to represent graphemes
 //https://stackoverflow.com/questions/27331819/whats-the-difference-between-a-character-a-code-point-a-glyph-and-a-grapheme
 // '\uD83D\uDC0A' UTF-16 code units expressing a single code point (U+1F40A)  char(0x1F40A) == '🐊'
 //https://github.com/foliojs/grapheme-breaker/blob/master/src/GraphemeBreaker.js
@@ -77,13 +73,6 @@ void todo(chars error);
 
 void encode_unicode_character(char *buffer, wchar_t ucs_character);
 
-#ifndef WASM
-
-void put(int i);
-
-void put(long i);
-
-#endif
 //void* calloc(int i);
 //extern "C" void* calloc(int size,int count);
 //extern "C" void* calloc(int size);
@@ -96,7 +85,6 @@ void put(long i);
 //	return mem;
 //}
 
-#pragma once // needs to be on top
 //#include "Node.h"
 
 //#ifndef WASP_STRING
@@ -926,11 +914,11 @@ extern String EMPTY;// = String('\0');
 //String operator "" s(chars c, unsigned long );// wasm function signature contains illegal type
 //String operator "" _(chars c, unsigned long );
 //String operator "" _s(chars c, unsigned long );
-void log(String *s);
+void print(String *s);
 
-void log(String s);
+void print(String s);
 
-void put(chars s);
+int puts(const char *);
 
 //#endif
 //unsigned  == unsigned int!

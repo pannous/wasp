@@ -10,6 +10,27 @@
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
 
+//void testLogarithmInRuntime(){
+//	float ℯ = 2.7182818284590;
+//	//	assert_equals(ln(0),-∞);
+//	assert_equals(log(100000),5.);
+//	assert_equals(log(10),1.);
+//	assert_equals(log(1),0.);
+//	assert_equals(ln(ℯ*ℯ),2.);
+//	assert_equals(ln(1),0.);
+//	assert_equals(ln(ℯ),1.);
+//}
+void testLogarithm() {
+	float ℯ = 2.7182818284590;
+	//	assert_equals(ln(0),-∞);
+	assert_emit("log(100000)", 5.);
+	assert_emit("log(10)", 1.);
+	assert_emit("log(1)", 0.);
+	assert_emit("ℯ = 2.7182818284590;ln(ℯ*ℯ)", 2.);
+	assert_emit("ln(1)", 0.);
+	assert_emit("ℯ = 2.7182818284590;ln(ℯ)", 1.);
+}
+
 void testUpperLowerCase() {
 	char string[] = "ABC";
 	lowerCase(string, 0);
@@ -53,8 +74,8 @@ void testPrimitiveTypes() {
 	assert_emit("double\n"
 	            "\tS1  = -1.66666666666666324348e01, /* 0xBFC55555, 0x55555549 */\n"
 	            "\tS2  =  8.33333333332248946124e01, /* 0x3F811111, 0x1110F8A6 */\n\nS2", 83);
-	assert_equals(ftoa2(8.33333333332248946124e-03), "8.333E-3");
 	assert_equals(ftoa(8.33333333332248946124e-03), "0.0083");
+//	assert_equals(ftoa2(8.33333333332248946124e-03), "8.333E-3");
 	assert_emit("S1 = -1.66666666666666324348e-01;S1*100", -16);
 	assert_emit("S1 = 8.33333333332248946124e-03;S1*1000", 8);
 	skip(
@@ -114,9 +135,9 @@ void testSignificantWhitespace() {
 	data_mode = false;
 	result = parse("a b=c");
 	check(result.length == 4);// a b = c
-	log(result);
+	print(result);
 	result = analyze(result);
-	log(result);
+	print(result);
 	skip(
 			check(result.length == 1);// todo  todo => (a b)=c => =( (a b) c)
 			data_mode = true;// HTML MODE!
@@ -173,9 +194,9 @@ int testNodiscard() {
 
 
 void testSerialize() {
-	const char *input = "green=256*255";
-	//	const char *input = "blue=255;green=256*255;maxi=3840*2160/2;init_graphics();surface=(1,2,3);i=10000;while(i<maxi){i++;surface#i=blue;};10";
-	assertSerialize(input);
+	const char *inprint = "green=256*255";
+	//	const char *inprint = "blue=255;green=256*255;maxi=3840*2160/2;init_graphics();surface=(1,2,3);i=10000;while(i<maxi){i++;surface#i=blue;};10";
+	assertSerialize(inprint);
 }
 
 
@@ -189,13 +210,13 @@ e
 	)";
 	auto groups = parse(indented);
 	//	auto groups = parse("a:\n b\n c\nd\ne\n");
-	log(groups.serialize());
-	put(groups.length);
+	print(groups.serialize());
+	print(groups.length);
 	check(groups.length == 3);// a(),d,e
 	auto parsed = groups.first();
 	check(parsed.name == "a");
 	check(parsed.length == 2);
-	log(parsed[1]);
+	print(parsed[1]);
 	check(parsed[1].name == "c");
 }
 
@@ -209,13 +230,13 @@ e
 	)";
 	auto groups = parse(indented);
 	//	auto groups = parse("a:\n b\n c\nd\ne\n");
-	log(groups.serialize());
-	put(groups.length);
+	print(groups.serialize());
+	print(groups.length);
 	check(groups.length == 3);// a(),d,e
 	auto parsed = groups.first();
 	check(parsed.name == "a");
 	check(parsed.length == 2);
-	log(parsed[1]);
+	print(parsed[1]);
 	check(parsed[1].name == "c");
 }
 
@@ -225,7 +246,7 @@ void testWasmSpeed() {
 	gettimeofday(&start, NULL);
 	time_t s, e;
 	time(&s);
-	// todo: let compiler compute constant expressions like 1024*65536/4
+	// todo: let compiler comprinte constant expressions like 1024*65536/4
 	//out of bounds memory access if only one Memory page!
 	//	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
 	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};k[1]", 65)// still slow, but < 1s
@@ -286,7 +307,7 @@ void testDeepCopyDebugBugBug() {
 	chars source = "{deep{a:3,b:4,c:{d:true}}}";
 	assert_parses(source);
 	check(result.name == "deep");
-	result.log();
+	result.print();
 	Node &c = result["deep"]['c'];
 	Node &node = c['d'];
 	assert_equals(node.value.longy, (long) 1);
@@ -314,9 +335,9 @@ void testNetBase() {
 	warn("NETBASE OFFLINE");
 	if (1 > 0)return;
 	chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
-//	put(url);
+//	print(url);
 	chars json = fetch(url);
-//	put(json);
+//	print(json);
 	Node result = parse(json);
 	Node results = result["results"];
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
@@ -340,7 +361,7 @@ void testNetBase() {
 void testDivDeep() {
 	Node div = parse("div{ span{ class:'bold' 'text'} br}");
 	Node &node = div["span"];
-	node.log();
+	node.print();
 	assert(div["span"].length == 2);
 	assert(div["span"]["class"] == "bold");
 }
@@ -349,7 +370,7 @@ void testDivMark() {
 	polish_notation = true;
 	Node div = parse("{div {span class:'bold' 'text'} {br}}");
 	Node &span = div["span"];
-	span.log();
+	span.print();
 	assert(span.length == 2);
 	assert(span["class"] == "bold");
 	polish_notation = false;
@@ -357,7 +378,7 @@ void testDivMark() {
 
 void testDiv() {
 	Node result = parse("div{ class:'bold' 'text'}");
-	result.log();
+	result.print();
 	assert(result.length == 2);
 	assert(result["class"] == "bold");
 	testDivDeep();
@@ -415,7 +436,7 @@ void testMarkSimpleAssign() {
 }
 
 void testMarkSimple() {
-	put("testMarkSimple");
+	print("testMarkSimple");
 	Node a = assert_parses("{aa:3}");
 	assert_equals(a.value.longy, (long) 3);
 	assert_equals(a, long(3));
@@ -513,11 +534,11 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 	check(String("牛") == U'牛');
 	check(String("牛") == L'牛');
 	check(String("牛") == "牛");
-//	put(character);
-//	put(hanzi);
-//	put(word);
-	puti(sizeof(char32_t));// 32 lol
-	puti(sizeof(wchar_t));
+//	print(character);
+//	print(hanzi);
+//	print(word);
+	print(sizeof(char32_t));// 32 lol
+	print(sizeof(wchar_t));
 
 	assert_parses("ç='☺'");
 	assert(eval("ç='☺'") == "☺");
@@ -535,7 +556,7 @@ void testStringReferenceReuse() {
 	check(x.length >
 	      x3.length) // shared data but different length! check shared_reference when modifying it!! &text[1] doesn't work anyways;)
 	check(x3 == "ab");
-	log(x3);
+	print(x3);
 	// todo("make sure all algorithms respect shared_reference and crucial length! especially print!");
 }
 
@@ -601,8 +622,8 @@ void testMarkMulti() {
 	chars source = "{a:'HIO' b:3}";
 	assert_parses(source);
 	Node &node = result['b'];
-	log(result['a']);
-	log(result['b']);
+	print(result['a']);
+	print(result['b']);
 	assert(result["b"] == 3);
 	assert(result['b'] == 3);
 }
@@ -686,7 +707,7 @@ void testNewlineLists() {
 
 void testKitchensink() {
 	Node node = /*Wasp::*/parseFile("samples/kitchensink.wasp");
-	node.log();
+	node.print();
 	assert(node['a'] == "classical json");
 	assert(node['b'] == "quotes optional");
 	assert(node['c'] == "commas optional");
@@ -742,7 +763,7 @@ void testIterate() {
 	for (Node &child :empty)nothing = false;
 	check(nothing);
 	Node liste = parse("{1 2 3}");
-	liste.log();
+	liste.print();
 	for (Node &child : liste) {
 		// SHOULD effect result
 		child.value.longy = child.value.longy + 10;
@@ -758,7 +779,7 @@ void testIterate() {
 
 void testLists() {
 	assert_parses("[1,2,3]");
-	result.log();
+	result.print();
 	assert_equals(result.length, 3);
 	assert(result[2] == 3);
 	assert(result[0] == 1);
@@ -822,11 +843,11 @@ void testLogic() {
 // use the bool() function to determine if a value is truthy or falsy.
 void testTruthiness() {
 	Node node = parse("true");
-//	put("TRUE:");
+//	print("TRUE:");
 	nl();
-	log(node.name);
+	print(node.name);
 	nl();
-	puti(node.value.longy);
+	print(node.value.longy);
 	check(True.kind == bools);
 	check(True.name == "True");
 	check(True.value.longy == 1);
@@ -985,15 +1006,15 @@ void testGraphQlQuery() {
 	                   "  }\n"
 	                   "}";
 	assert_parses(graphResult);
-	result.log();
+	result.print();
 	Node &data = result["data"];
-	data.log();
+	data.print();
 	Node &hero = data["hero"];
-	hero.log();
+	hero.print();
 	Node &height = data["hero"]["height"];
-	height.log();
+	height.print();
 	Node &id = hero["id"];
-	id.log();
+	id.print();
 	assert(id == "R2-D2");
 	assert(height == 5.6430448);
 //	assert(height==5.643);
@@ -1030,7 +1051,7 @@ void testGraphParams() {
 	assert_parses("{\n  empireHero: hero(episode: EMPIRE){\n    name\n  }\n"
 	              "  jediHero: hero(episode: JEDI){\n    name\n  }\n}");
 	Node &hero = result["empireHero"];
-	hero.log();
+	hero.print();
 	assert(hero["episode"] == "EMPIRE");
 	assert_parses("\nfragment comparisonFields on Character{\n"
 	              "  name\n  appearsIn\n  friends{\n    name\n  }\n }");
@@ -1169,9 +1190,9 @@ void testIndentAsBlock() {
 void testParentContext() {
 	chars source = "{a:'HIO' d:{} b:3 c:ø}";
 	assert_parses(source);
-	result.log();
+	result.print();
 	Node &a = result["a"];
-	a.log();
+	a.print();
 	assert_equals(a.kind, strings);
 	assert_equals(a.value.string, "HIO");
 	assert_equals(a.string(), "HIO");// keyNodes go to values!
@@ -1193,7 +1214,7 @@ void testParentBUG() {
 	check(a.parent == 0);// keyNode a is highest level
 	Node *parent = a.value.node->parent;
 	check(parent);
-	log(parent);// BROKEN, WHY?? let's find out:
+	print(parent);// BROKEN, WHY?? let's find out:
 	check(*parent == result);
 	skip(
 	// pointer identity broken by flat() ?
@@ -1348,13 +1369,13 @@ void testConcatenation() {
 //	check(&node1234.last() == four); not true, copied!
 	check(node1234.last() == four);
 	check(*four == "4");
-	node1234.log();
+	node1234.print();
 
 	check_eq(node1234.length, 4);
 
-	node1234.children[node1234.length - 2].log();
-	node1234.children[node1234.length - 1].log();
-	node1234.last().log();
+	node1234.children[node1234.length - 2].print();
+	node1234.children[node1234.length - 1].print();
+	node1234.last().print();
 	check(node1234.last() == "4");
 
 	assert_equals(node1, Node("1", "2", "3", "4", 0));
@@ -1389,7 +1410,7 @@ void testParamizedKeys() {
 
 // 0. parameters accessible
 	Node label0 = parse("label(for:password)");
-	label0.log();
+	label0.print();
 	Node &node = label0["for"];
 	assert_equals(node, "password");
 	assert_equals(label0["for"], "password");
@@ -1423,7 +1444,7 @@ void testParamizedKeys() {
 
 void testStackedLambdas() {
 	Node node = parse("a{x:1}{y:2}{3}");
-	node.log();
+	node.print();
 	check(node.length == 3);
 	check(node[0] == parse("{x:1}"));
 	check(node[0] == parse("x:1"));// grouping irrelevant
@@ -1436,7 +1457,7 @@ void testStackedLambdas() {
 
 void testIndex() {
 	assert_parses("[a b c]#2");
-	result.log();
+	result.print();
 	check(result.length == 3);
 	assert_is("{a b c}#2", "b");
 	assert_is("(a b c)#2", "b");
@@ -1508,7 +1529,7 @@ void testReplace() {
 
 void testNodeConversions() {
 	Node b = Node(true);
-	put(typeName(b.kind));
+	print(typeName(b.kind));
 	check(b.value.longy == 1);
 	check(b.kind == bools);
 	check(b == True);
@@ -1567,7 +1588,7 @@ void testGroupCascade1() {
 void testGroupCascade2() {
 	result = parse("{ a b , c d ; e f , g h }");
 	Node result1 = parse("{ a b , c d \n e f , g h }");
-	log(result1.serialize());
+	print(result1.serialize());
 	assert_equals(result1, result);
 	Node result2 = parse("a b ; c d \n e f , g h ");
 	assert_equals(result1, result2);
@@ -1581,35 +1602,36 @@ void testSuperfluousIndentation() {
 }
 
 void testGroupCascade() {
-	testGroupCascade2();
-	testGroupCascade0();
-	testGroupCascade1();
+//	testGroupCascade2();
+//	testGroupCascade0();
+//	testGroupCascade1();
 
 	result = parse("{ a b c, d e f; g h i , j k l \n "
 	               "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2}"
 	               "{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
 	               "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
-	result.log();
-	check(result.kind == groups);// ( {} {} ) because 2 {}!
-	check(result.first().kind == objects);// { a b c … }
-	check(result.first().first().kind == groups);// or expression if x is op
-	check(result.length == 2)// {…} and {and}
-	check(result[0].length == 2) // a…  and a2…  with significant newline
-	check(result[0][0].length == 2)// a b c, d e f  and  g h i , j k l
-	check(result[0][0][0].length == 2)// a b c  and  d e f
-	check(result[0][0] == parse("a b c, d e f; g h i , j k l"));// significant newline!
-	check(result[0][1] == parse("a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2"));// significant newline!
-	check(result[0][0][0][0].length == 3)// a b c
-	check(result[0][0][0][0] == parse("a b c"));
-	check(result[0][0][0][0][0] == "a");
-	check(result[0][0][0][0][1] == "b");
-	check(result[0][0][0][0][2] == "c");
-	check(result[0][0][0][1][0] == "d");
-	check(result[0][0][0][1][1] == "e");
-	check(result[0][0][0][1][2] == "f");
-	check(result[1][1][0][1][2] == "f4");
+	result.print();
+	assert_equals(result.kind, groups);// ( {} {} ) because 2 {}!
+	auto first = result.first();
+	assert_equals(first.kind, objects);// { a b c … }
+	assert_equals(first.first().kind, groups);// or expression if x is op
+	assert_equals(result.length, 2)// {…} and {and}
+	assert_equals(result[0].length, 2) // a…  and a2…  with significant newline
+	assert_equals(result[0][0].length, 2)// a b c, d e f  and  g h i , j k l
+	assert_equals(result[0][0][0].length, 2)// a b c  and  d e f
+	assert_equals(result[0][0], parse("a b c, d e f; g h i , j k l"));// significant newline!
+	assert_equals(result[0][1], parse("a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2"));// significant newline!
+	assert_equals(result[0][0][0][0].length, 3)// a b c
+	assert_equals(result[0][0][0][0], parse("a b c"));
+	assert_equals(result[0][0][0][0][0], "a");
+	assert_equals(result[0][0][0][0][1], "b");
+	assert_equals(result[0][0][0][0][2], "c");
+	assert_equals(result[0][0][0][1][0], "d");
+	assert_equals(result[0][0][0][1][1], "e");
+	assert_equals(result[0][0][0][1][2], "f");
+	assert_equals(result[1][1][0][1][2], "f4");
 	Node reparse = parse(result.serialize());
-	log(reparse.serialize());
+	print(reparse.serialize());
 	check(result == reparse);
 }
 
@@ -1716,7 +1738,7 @@ void tests() {
 	testGroupCascade0();
 	testGraphQlQuery();
 	//	testNodiscard();// works NOW!
-	puti(testNodiscard());
+	print(testNodiscard());
 	testGroupCascade();
 	testNewlineLists();
 	testStackedLambdas();
@@ -1785,7 +1807,7 @@ void tests() {
 	testAllSamples();
 #endif
 	check(NIL.value.longy == 0);// should never be modified
-	put("ALL TESTS PASSED");
+	print("ALL TESTS PASSED");
 }
 
 
@@ -1852,8 +1874,8 @@ void todos() {
 			testAngle();// fails in WASM why?
 
 			testNetBase();
-//	put("OK %s %d"s % ("WASM",1));// only 1 handed over
-			log("OK %d %d"s % (2, 1));// only 1 handed over
+//	print("OK %s %d"s % ("WASM",1));// only 1 handed over
+			print("OK %d %d"s % (2, 1));// only 1 handed over
 	)
 
 }
@@ -1871,7 +1893,7 @@ void todos() {
 void testNodeImplicitConversions(){
 	// looks nice, but only causes trouble and is not necessary for our runtime!
 	Node b=true;
-	put(typeName(b.kind));
+	print(typeName(b.kind));
 	check(b.value.longy==1);
 	check(b.kind==bools);
 	check(b==True);
@@ -1913,7 +1935,7 @@ void testPaint() {
 	timeinfo = localtime(&rawtime);
 	char buffer[30];
 	strftime(buffer, 30, "%G/%m/%d-%H:%M:%S.%ffff", timeinfo);
-	puts(buffer);
+	prints(buffer);
 //	return reinterpret_cast<char *>(buffer);
 }*/
 
@@ -1923,7 +1945,7 @@ void testPaintWasm() {
 #ifdef GRAFIX
 	struct timeval stop, start;
 	gettimeofday(&start, NULL);
-	// todo: let compiler compute constant expressions like 1024*65536/4
+	// todo: let compiler comprinte constant expressions like 1024*65536/4
 //	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
 //out of bounds memory access if only one Memory page!
 //	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0)// still slow, but < 1s
@@ -1983,10 +2005,12 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-
+//	testLogarithm();
+	testGroupCascade();
 //	assert_emit("1 +1 == [1 1]", 1);
 
-	auto uff = "r = S2 + z*(S3 - z*S4) + z*w*(S5 + z*S6)";
+//	auto uff = "r = S2 + z*(S3 - z*S4) + z*w*(S5 + z*S6)";
+	auto uff = "double sin(x){a}";
 //auto uff = "r = S2 + z + z*w*(S5 + z*S6)";
 //	auto uff = "double sin(double x){\n\tz=1;\n"
 //	           "\tdouble\n"
@@ -1999,7 +2023,6 @@ void testCurrent() {
 //	assert_emit(uff, 11);
 //	assert_emit("use sin;sin π/2", 1);
 //	assert_emit("use sin;sin π", 0);
-	assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)
 
 //testNodesInWasm();
 //testSubGrouping();
@@ -2014,7 +2037,7 @@ void testCurrent() {
 	todos();// those not passing yet (skip)
 	testAllWasm();
 	tests();// make sure all still ok before changes
-	put("CURRENT TESTS PASSED");
+	print("CURRENT TESTS PASSED");
 }
 
 // valgrind --track-origins=yes ./wasp

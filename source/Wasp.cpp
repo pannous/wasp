@@ -14,6 +14,7 @@ void testCurrent();
 #include <sys/types.h>
 #include <pwd.h>*/
 #include "stdio.h" // FILE
+#include <math.h>
 
 //#define err(m) printf("\n%s:%d\n",__FILE__,__LINE__);err1(m)
 #define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m)
@@ -72,12 +73,15 @@ codepoint grouper_list[] = {' ', ',', ';', ':', '\n', '\t', '(', ')', '{', '}', 
 // todo split keywords into binops and prefix functors
 chars import_keywords[] = {"use", "require", "import", "include", "using", 0};
 // todo aliases need NOT be in this list:
-chars operator_list0[] = {"+", "-", "*", "/", ":=", "else", "then" /*pipe*/ , "is", "equal", "equals", "==", "!=", "≠",
-                          "not",
-                          "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "…", "...", "%", "mod",
-                          "modulo",
-                          "..<" /*range*/,
-                          "upto", "use", "include", "require", "import", "module",
+// todo library functions need NOT be in this list (loaded when though?)
+// todo special UTF signs need NOT be in this list, as they are identified as operators via utf range
+chars operator_list0[] = {"+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
+                          "is", "equal", "equals", "==", "!=", "≠",
+                          "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":",
+                          "upto", "…", "...", "..<" /*range*/,
+                          "%", "mod", "modulo", "log10", "log₁₀", "log₂", "ln", "logₑ", "⌟", "2⌟", "10⌟", "⌞", "⌞2",
+                          "⌞10",
+                          "use", "include", "require", "import", "module",
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
@@ -350,7 +354,7 @@ public:
 	// see 'apply' for operator eval
 	static Node eval(String source) { // return by value ok, rarely used and stable
 		Node parsed = Wasp().parse(source);
-		parsed.log();
+		parsed.put();
 #ifndef RUNTIME_ONLY
 		return parsed.interpret();
 #else
@@ -1330,61 +1334,36 @@ private:
 				case u'﹛': // ﹜
 				case u'｛': // ｝
 				case '{': {
+					if (checkAmbiguousBlock(current, parent))
+						warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
 					let bracket = ch;
 					auto type = getType(bracket);
+
 					bool asListItem =
 							lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
-					if (checkAmbiguousBlock(current, parent)) {
-						warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
-					}
-					if (type == patterns)asListItem = false;
+					if (lastNonWhite == ')' and bracket == '{')// declare (){} as special syntax in wiki!
+						asListItem = false;// careful! using (1,2) {2,3} may yield hidden bug!
+					if (type == patterns)
+						asListItem = false;
+
 					proceed();
-					Node object = Node().setType(type);
+					// wrap {x} … or todo: just don't flatten before?
+					Node object = Node();
+					Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &current.last());
+					object.addSmart(objectValue);
+					object.setType(type, false);
+					if (type != patterns)
+						object = object.flat();
+					object.separator = objectValue.separator;
 #ifdef DEBUG
 					object.line = &line;
 #endif
-					// wrap {x} … or todo: just don't flatten before?
-					Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &current.last());
-					object.addSmart(objectValue);
-					if (type != patterns)
-						object = object.flat();
-					object.setType(type, false);
-					object.separator = objectValue.separator;
 					if (asListItem)
 						current.add(object);
 					else
 						current.addSmart(object);
 					break;
 				}
-//					if (checkAmbiguousBlock(current, parent))
-//						warn(position() + "\nAmbiguous reading could mean a{x} or a:{x} or a , {x}");
-//					proceed();
-//					Node pattern = Node().setType(Type::patterns);
-//					Node patternValue = valueNode(']', &current.last());
-//					pattern.add(patternValue);
-//					if (patternValue.kind == expression or patternValue.kind == groups)
-//						pattern = patternValue.setType(patterns, false);
-//					current.add(pattern);// a[b] ≠ (a b)
-////					current.addSmart(pattern);// a[b] ≠ (a b) always preserve pattern (?)
-//					break;
-//				}
-//
-//					bool add_to_last = true;// a b(c) vs a b (c)
-//					if (checkAmbiguousBlock(current, parent)) {
-//						warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
-//						add_to_last = false;
-//					}
-//					proceed();
-//					Node group = Node().setType(Type::groups);
-//					Node groupValue = valueNode(')', &current.last());
-//					group.addSmart(groupValue);
-//					if (groupValue.kind == objects)
-//						group = groupValue.setType(groups);// flatten hack
-//					if (add_to_last)
-//						current.addSmart(group);
-//					else
-//						current.add(group);
-//					break;
 //			}// lists handled by ' '!
 				case '}':
 				case ')':
@@ -1705,23 +1684,6 @@ Node parse(String source) {
 
 
 
-class String;
-
-#ifndef WASM
-
-void print(String s) {
-	if (!s.shared_reference)
-		put(s.data);
-	else {
-		char tmp = s.data[s.length];
-		s.data[s.length] = 0;// hack not thread-safe
-		put(s.data);
-		s.data[s.length] = tmp;
-	}
-}
-
-#endif
-
 struct Exception {
 };
 //wasm-ld: error: wasp.o: undefined symbol: vtable for __cxxabiv1::__class_type_info
@@ -1829,7 +1791,7 @@ int main(int argp, char **argv) {
 	register_global_signal_exception_handler();
 #endif
 	try {
-		put("Hello Wasp 🐝");
+		print("Hello Wasp 🐝");
 		if (argp >= 2) {
 			String arg = argv[1];
 			if (arg.endsWith(".wasp")) {
@@ -1865,7 +1827,7 @@ int main(int argp, char **argv) {
 //		String args(current);
 		String args((char*)alloc(1,1));// hack: written to by wasmx
 //		args.data[0] = '{';
-		put(args);
+		print(args);
 		current += strlen0(args)+1;
 #endif
 #ifdef SERVER

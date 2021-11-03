@@ -549,7 +549,7 @@ Code emitIndexPattern(Node op, String context) {
 
 // todo: merge
 // emitIndexPattern assumes value is on top of stack
-// emitIndexRead puts value/ref  on top of stack
+// emitIndexRead prints value/ref  on top of stack
 [[nodiscard]]
 Code emitIndexRead(Node op, String context) {
 	if (op.length < 2)
@@ -657,7 +657,7 @@ Code emitData(Node node, String context) {
 		}
 		case objects:
 		case groups:
-			// todo hold up: put("ok") should not emit an array of group(string(ok)) !?
+			// todo hold up: print("ok") should not emit an array of group(string(ok)) !?
 			// keep last_type from last child, later if mixed types, last_type=ref or smarty
 			return emitArray(node, context);
 			break;
@@ -684,7 +684,7 @@ Code emitGetGlobal(Node node /* context : global ;) */) {
 	return code;
 }
 
-// put value on stack (vs emitData)
+// print value on stack (vs emitData)
 // todo: last_type not enough if operator left≠right, e.g. ['a']#1  2.3 == 4 ?
 //[[nodiscard]]
 Code emitValue(Node node, String context) {
@@ -783,7 +783,7 @@ Code emitValue(Node node, String context) {
 			Node values = node.values();
 			return emitExpression(values, context);
 		}
-//			error("expression should not be put on stack (yet) (maybe serialize later)")
+//			error("expression should not be print on stack (yet) (maybe serialize later)")
 		case call:
 			return emitCall(node, context);// yep should give a value ok
 		case groups: // (1 2 3)
@@ -845,7 +845,7 @@ Code emitOperator(Node node, String context) {
 	 * PARAMETERS of operators (but not functions) are now on the STACK!!
 	 * */
 	if (index >= 0) {// FUNCTION CALL
-		log("OPERATOR / FUNCTION CALL: %s\n"s % name);
+		print("OPERATOR / FUNCTION CALL: %s\n"s % name);
 //				for (Node arg : node) {
 //					emitExpression(arg,context);
 //				};
@@ -958,6 +958,7 @@ Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string) {
 [[nodiscard]]
 Code emitStringOp(Node op, String context) {
 //	Code stringOp;
+//	op = normOperator(op.name);
 	if (op == "+") {
 		op = Node("concat");//demangled on readWasm, but careful, other signatures might overwrite desired one
 		last_type = stringp;
@@ -976,8 +977,8 @@ Code emitStringOp(Node op, String context) {
 	} else if (op == "not" or op == "¬") {// todo: all different index / op matches
 		op = Node("empty");//  careful : various signatures for falsey falsy truthy
 		return emitCall(op, context).add(i32_eqz);
-	} else if (op == "logs" or op == "puts" or op == "print") {// should be handled before, but if not print anyways
-		op = Node("logs");
+	} else if (op == "logs" or op == "prints" or op == "print") {// should be handled before, but if not print anyways
+		op = Node("puts");// todo: chars vs shared String& ?
 		return emitCall(op, context);
 	} else
 		todo("string op not implemented: "s + op.name);
@@ -1090,7 +1091,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				else if (name == "π") // if not provided as global
 					return emitValue(Node(3.141592653589793), current);
 				else if (!node.isSetter()) {
-					log(locals[context]);
+					print(locals[context]);
 					if (not node.type)
 						error("UNKNOWN local symbol "s + name + " in context " + context);
 				} else {
@@ -1175,7 +1176,7 @@ Code emitWhile2(Node &node, String context) {
 	// inner loop
 	code.addByte(loop);
 	code.addByte(none);// void_block
-	// compute the while expression
+	// comprinte the while expression
 	code.add(emitExpression(node[0], context));// node.value.node or
 //	code.add(emitExpression(node["condition"], context));// node.value.node or
 	code.addByte(i32_eqz);
@@ -1393,7 +1394,7 @@ Code emitIf_OLD(Node &node) {
 	// if block
 	code.addByte(block);
 	code.addByte(void_block);
-	// compute the if expression
+	// comprinte the if expression
 	Node *condition = node[0].value.node;
 //	Node *condition = node["condition"];//.value.node->clone();
 	emitExpression(condition,context);
@@ -1413,7 +1414,7 @@ Code emitIf_OLD(Node &node) {
 
 		// else block
 //			or if OR-IF YAY semantically beautiful if false {} or if 2>1 {}
-//			// compute the if expression (elsif) elif orif
+//			// comprinte the if expression (elsif) elif orif
 		code.addByte(block);
 		code.addByte(void_block);
 //
@@ -1495,7 +1496,7 @@ Code emitBlock(Node node, String context) {
 	last_type = none;//int32;
 	int locals_count = locals[context].size();
 	trace("found %d locals for %s"s % locals_count % context);
-//	put(locals[context]);
+//	print(locals[context]);
 	int argument_count = functionSignatures[context].size();
 	if (locals_count >= argument_count)
 		locals_count = locals_count - argument_count;
@@ -1562,11 +1563,11 @@ Code typeSection() {
 	// the type section is a vector of function types
 	int typeCount = 0;
 	Code type_data;
-//	put(functionIndices);
+//	print(functionIndices);
 	for (String fun : functionSignatures) {
 		if (!fun) {
-//			put(functionIndices);
-//			put(functionSignatures);
+//			print(functionIndices);
+//			print(functionSignatures);
 			breakpoint_helper
 			warn("empty functionSignatures[ø] because context=start=''");
 //			error("empty function creep functionSignatures[ø]");
@@ -1674,7 +1675,7 @@ Code codeSection(Node root) {
 //	int index_size = functionIndices.size();
 //	bool has_main = start and (declaredFunctions.has(start) or functionIndices.has(start));
 //	if (import_count + builtin_count + has_main + new_count + runtime_offset != index_size) {
-//		put(functionIndices);
+//		print(functionIndices);
 //		String message = "inconsistent function_count %d import + %d builtin + %d new + %d runtime + %d main != %d"s;
 // 		error(message % import_count % builtin_count % new_count % runtime_offset % has_main % index_size);
 //	}
@@ -1866,7 +1867,7 @@ Code funcTypeSection() {// depends on codeSection, but must appear earlier in wa
 		int index = i + import_count + runtime_offset;
 		String *fun = functionIndices.lookup(index);
 		if (!fun) {
-			log(functionIndices);
+			print(functionIndices);
 			error("missing typeMap for index "s + index);
 		} else {
 			int typeIndex = typeMap[*fun];

@@ -58,13 +58,11 @@ extern Node Infinity;// = Node("Infinity");
 extern Node NegInfinity;// = Node("Infinity");
 extern Node NaN;// = Node("NaN");
 
-void log(Node &);
+void print(Node &n);
 
-void log(const Node &);
+void print(Node *n0);
+//void print(const Node &);
 
-void log(Node *);
-
-void printf(Node &);
 
 //class String;
 union Value {
@@ -131,8 +129,7 @@ char separator = 0;// " " ";" ","
 
 long _hash = 0;// set by hash(); should copy! on *x=node / clone()
 int length = 0;// children
-#ifdef
-DEBUG
+#ifdef DEBUG
 // int code_position; // hash to external map
 //	int lineNumber;
 String* line = 0;// debug! EXPENSIVE for non ast nodes!
@@ -502,7 +499,7 @@ String* line = 0;// debug! EXPENSIVE for non ast nodes!
 	Node &merge(Node &other);// non-modifying
 	Node &merge(Node *other);
 
-	void log() {
+	void put() {
 		printf("Node ");
 		if (this == &NIL || kind == nils) {
 			printf("NIL\n");

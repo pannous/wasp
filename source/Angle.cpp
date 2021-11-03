@@ -602,7 +602,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 			if (op == "-" or op == "‖") //  or op=="?"
 				continue;// ok -1 part of number, ‖3‖ closing ?=>if
 			i = expression.index(op, last_position, fromRight);// try again for debug
-			expression.log();
+			expression.put();
 			error("operator missing: "s + op);
 		}
 		Node &node = expression.children[i];
@@ -795,7 +795,9 @@ Node &groupFunctions(Node &expressiona, String context) {
 		if (node.kind != call)
 			continue;
 
-		if (not functionSignatures.has(name))
+		if (not functionSignatures.has(name))// todo load lib!
+			error("missing import for function "s + name);
+		if (not functionSignatures.has(name))// todo load lib!
 			error("missing import for function "s + name);
 		functionSignatures[name].is_used = true;
 
@@ -826,9 +828,9 @@ Node &groupFunctions(Node &expressiona, String context) {
 			rest.setType(expression);// SUUURE?
 		if (rest.kind == groups)// and rest.has(operator))
 			rest.setType(expression);// todo f(1,2) vs f(1+2)
-		if (hasFunction(rest) and rest.first().kind != groups)
-			if (name != "id")// stupid but true id(x)+id(y)==id(x+id(y))
-				error("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
+//		if (hasFunction(rest) and rest.first().kind != groups)
+//			if (name != "id")// stupid but true id(x)+id(y)==id(x+id(y))
+//				error("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
 		if (rest.first().kind == groups)
 			rest = rest.first();
 		// per-function precedence does NOT really increase readability or bug safety
@@ -1020,11 +1022,11 @@ void preRegisterSignatures() {
 //	if (functionSignatures.has("logs"))
 //		return;// already imported runtime!
 
-	functionSignatures.insert_or_assign("logi", Signature().import().add(int32).returns(voids));
-	functionSignatures.insert_or_assign("logf", Signature().import().add(float32).returns(voids));
+	functionSignatures.insert_or_assign("puti", Signature().import().add(int32).returns(voids));
+	functionSignatures.insert_or_assign("putf", Signature().import().add(float32).returns(voids));
 	//	functionSignatures.insert_or_assign("powl", Signature().import().add(int64).add(int64).returns(int64));
 	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
-	functionSignatures.insert_or_assign("logs", Signature().import().add(charp).returns(voids));
+	functionSignatures.insert_or_assign("puts", Signature().import().add(charp).returns(voids));
 	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
 	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// todo why not rely on read_wasm again?
 	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));
@@ -1038,7 +1040,7 @@ void preRegisterSignatures() {
 	functionSignatures["modulo_double"].builtin().add(float64).add(float64).returns(float64);
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 	functionSignatures["main"] = Signature().returns(i32t);;
-	functionSignatures["print"] = functionSignatures["logs"];// todo: for now, later it needs to distinguish types!!
+	functionSignatures["print"] = functionSignatures["puts"];// todo: for now, later it needs to distinguish types!!
 	functionSignatures["paint"].import().returns(voids);// paint surface
 	functionSignatures.insert_or_assign("init_graphics", Signature().import().returns(pointer));// surface
 //	functionSignatures["init_graphics"].import().returns(pointer);// BUUUUG!
@@ -1116,11 +1118,11 @@ Node emit(String code) {
 #endif
 	return data;
 #else
-	data.log();
+	data.put();
 	clearContext();
 	preRegisterSignatures();
 	Node charged = analyze(data);
-	charged.log();
+	charged.put();
 	Code binary;
 //	if (options & no_main) // todo: lib_main!
 //		binary = emit(charged, 0, 0);
@@ -1141,11 +1143,9 @@ float function_precedence = 1000;
 
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-chars function_list[] = {"abs", "norm", "square", "root", "put", "puts", "print", "printf", "println", "logs",
-                         "logi",
-                         "logf", "log_f32", "similar",
-                         "logi64",
-                         "putx", "logc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
+chars function_list[] = {"abs", "norm", "square", "root", "put", "puts", "print", "printf", "println",
+                         "log", "ln", "log10", "log2", "similar",
+                         "putx", "putc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
                          0};// MUST END WITH 0, else BUG
 chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
 
