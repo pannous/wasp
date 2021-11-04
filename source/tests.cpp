@@ -115,6 +115,13 @@ void testModulo() {
 	assert_emit("i=10007.1;x=i%10000.1", 7);
 }
 
+void testRepresentations() {
+	result = parse("a{x:1}");
+	auto result2 = parse("a:{x:1}");
+	assert_equals(result.kind, reference);
+	assert_equals(result2.kind, key);
+//	a{x:1} ==
+}
 
 void testSignificantWhitespace() {
 	result = parse("a b (c)");
@@ -123,14 +130,14 @@ void testSignificantWhitespace() {
 	check(result.length == 2 or result.length == 1);
 	result = parse("a b:c");
 	check(result.length == 2);// a , b:c
-	check(result.last().kind == keyNode);// a , b:c
+	check(result.last().kind == key);// a , b:c
 	result = parse("a: b c d");
 	check(result.length == 3);
 	check(result.name == "a"); // "a"(b c d), NOT ((a:b) c d)
-	check(result.kind == groups);// not keyNode!
+	check(result.kind == groups);// not key!
 	result = parse("a b : c");
 	check(result.length == 1 or result.length == 2);// (a b):c
-	assert_equals(result.kind, keyNode);
+	assert_equals(result.kind, key);
 	let x = data_mode;
 	data_mode = false;
 	result = parse("a b=c");
@@ -441,7 +448,7 @@ void testMarkSimple() {
 	assert_equals(a.value.longy, (long) 3);
 	assert_equals(a, long(3));
 	assert(a == 3);
-	assert(a.kind == longs or a.kind == keyNode and a.value.node->kind == longs);
+	assert(a.kind == longs or a.kind == key and a.value.node->kind == longs);
 	assert(a.name == "aa"_s);
 //	assert(a3.name == "a"_s);// todo? cant
 
@@ -1200,7 +1207,7 @@ void testParentContext() {
 	assert(a == "HIO");
 //	assert_equals(a.name,"a" or"HIO");// keyNodes go to values!
 	skip(
-			assert_equals(a.kind, keyNode);
+			assert_equals(a.kind, key);
 			assert(a.name == "HIO");
 	)
 }
@@ -1210,9 +1217,9 @@ void testParentBUG() {
 	chars source = "{a:'HIO'}";
 	assert_parses(source);
 	Node &a = result["a"];
-	check(a.kind == keyNode or a.kind == strings);
+	check(a.kind == key or a.kind == strings);
 	check(a == "HIO");
-	check(a.parent == 0);// keyNode a is highest level
+	check(a.parent == 0);// key a is highest level
 	Node *parent = a.value.node->parent;
 	check(parent);
 	print(parent);// BROKEN, WHY?? let's find out:
@@ -1673,7 +1680,7 @@ void testNodeBasics() {
 	Node &d = a.children[a.length - 1];
 	check(d.length == 0);
 	check(d == "e");
-	check(d.kind == keyNode);
+	check(d.kind == key);
 	a.addSmart(b);// why?
 }
 
@@ -2007,9 +2014,10 @@ void testCurrent() {
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
 //	testLogarithm();
-	testLists();
-	testGroupCascade();
 //	assert_emit("1 +1 == [1 1]", 1);
+
+	result = parse("a b(c)");
+	check(result.length == 2 or result.length == 1);
 
 //	auto uff = "r = S2 + z*(S3 - z*S4) + z*w*(S5 + z*S6)";
 	auto uff = "double sin(x){a}";

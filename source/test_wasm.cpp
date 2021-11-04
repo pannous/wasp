@@ -820,7 +820,7 @@ void testWasmRuntimeExtension() {
 	//	assert_run("puts 'hello' 'world'", "hello world");
 	//	assert_run("hello world", "hello world");// unresolved symbol printed as is
 
-	//	assert_run("'123'='123'", true);// parsed as keyNode a:b !?!? todo!
+	//	assert_run("'123'='123'", true);// parsed as key a:b !?!? todo!
 	//	assert_run("'123' = '123'", true);
 	assert_run("ok+1", 43);
 	assert_run("'123' == '123'", true);
