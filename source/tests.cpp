@@ -781,6 +781,7 @@ void testLists() {
 	assert_parses("[1,2,3]");
 	result.print();
 	assert_equals(result.length, 3);
+	assert_equals(result.kind, patterns);
 	assert(result[2] == 3);
 	assert(result[0] == 1);
 	skip(
@@ -2006,6 +2007,7 @@ void testCurrent() {
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
 //	testLogarithm();
+	testLists();
 	testGroupCascade();
 //	assert_emit("1 +1 == [1 1]", 1);
 
