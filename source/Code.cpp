@@ -162,8 +162,8 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
 	if (n.kind == call)
 		return functionSignatures[n.name].return_type;// error("first.kind==call is not a wasm type, maybe get signature?");
-	if (n.kind == keyNode and n.value.data)return mapTypeToWasm(*n.value.node);
-	//	if (n.kind == keyNode and not n.value.data)return array;
+	if (n.kind == key and n.value.data)return mapTypeToWasm(*n.value.node);
+	//	if (n.kind == key and not n.value.data)return array;
 	if (n.kind == groups)return array;// uh todo?
 	if (n.kind == unknown) return int32;// blasphemy!
 	n.put();

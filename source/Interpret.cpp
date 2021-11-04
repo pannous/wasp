@@ -123,7 +123,7 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 		length = 1;
 		return this->merge(children[1]).interpret();// stop hacking
 	}
-//	if (type != expression and type != keyNode)
+//	if (type != expression and type != key)
 //		return *this;
 	float max = 0; // do{
 	float min = 999999;

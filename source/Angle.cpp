@@ -206,7 +206,7 @@ Node &groupIf(Node n) {
 	Node then;
 	if (n.length > 0)then = n[1];
 	if (n.length == 0) then = n.values();
-	if (n.kind == keyNode) {
+	if (n.kind == key) {
 		condition = n.from(1);
 		then = *n.value.node;
 	}
@@ -215,7 +215,7 @@ Node &groupIf(Node n) {
 		then = n.from("then");
 	}
 
-	if (condition.kind == keyNode and condition.value.data and !condition.next)
+	if (condition.kind == key and condition.value.data and !condition.next)
 		then = condition.values();
 	if (condition.next and condition.next->name == "else")
 		then = condition.values();
@@ -311,7 +311,7 @@ List<String> collectOperators(Node &expression) {
 Node &groupFunctions(Node &expressiona, String context);
 
 bool isVariable(Node &node) {
-	if (node.kind != reference and node.kind != keyNode and !node.isSetter())
+	if (node.kind != reference and node.kind != key and !node.isSetter())
 		return false;
 	if (node.kind == strings)return false;
 	return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'A';// todo;
@@ -480,7 +480,7 @@ Node &groupDeclarations(Node &expression, const char *context) {
 			else
 				continue;
 		}
-		if (node.kind == reference or (node.kind == keyNode and isVariable(node))) {// only constructors here!
+		if (node.kind == reference or (node.kind == key and isVariable(node))) {// only constructors here!
 			if (not globals.has(op) and not isFunction(node))
 				addLocal(context, op, none);
 			continue;
@@ -944,7 +944,7 @@ Node analyze(Node node, String context) {
 	if ((type == expression and not name.empty())) {
 		addLocal(context, name, int32);//  todo deep type analysis x = π * fun() % 4
 	}
-	if (type == keyNode) {
+	if (type == key) {
 		if (node.length > 0) {
 			// (double x, y)  (while x) : y
 			auto first = node.first().first();

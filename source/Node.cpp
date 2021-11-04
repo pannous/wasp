@@ -145,11 +145,11 @@ Node &Node::operator[](chars s) {
 		s++;
 		found = has(s);
 	}
-//	if (found and found->kind==keyNode and found->value.node)return *found->value.node;
+//	if (found and found->kind==key and found->value.node)return *found->value.node;
 // ^^ DON'T DO THAT! a:{b:{c:'hi'}} => a["b"] must be c, not "hi"
 	if (found)return *found;
 	if (name == s) {// me.me == me ? really? let's see if it's a stupid idea…
-		if (kind == keyNode and value.node)
+		if (kind == key and value.node)
 			return *value.node;
 		return (Node &) *this;
 	}
@@ -157,7 +157,7 @@ Node &Node::operator[](chars s) {
 		if (children[0].has(s))return children[0][s];
 
 	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
-	neu.kind = keyNode;//nils; // until ref is set! but neu never knows when its set!! :(
+	neu.kind = key;//nils; // until ref is set! but neu never knows when its set!! :(
 	neu.parent = (Node *) this;
 	neu.length = 0;
 	neu.children = 0;
@@ -220,7 +220,7 @@ bool typesCompatible(Node &one, Node &other) {
 	if (one.kind == objects or one.kind == groups or one.kind == patterns or one.kind == expression)
 		return other.kind == objects or other.kind == groups or other.kind == patterns or other.kind == expression or
 		       other.kind == unknown;
-	if (one.kind != keyNode and other.kind != keyNode) return false;
+	if (one.kind != key and other.kind != key) return false;
 	return false;
 }
 
@@ -248,7 +248,7 @@ Node &Node::set(String string, Node *node) {
 	entry.name = string;
 	if (!node) {
 //		entry.value.node=&entry;// HACK to set reference to self!
-		entry.kind = keyNode;
+		entry.kind = key;
 		entry.value.node = &children[capacity - length - 1];//  HACK to get key and value node dummy from children
 //		 todo: reduce capacity per node
 		entry.value.node->name = string;
@@ -272,8 +272,8 @@ Node &Node::set(String string, Node *node) {
 bool Node::operator==(String other) {
 //	return (*this == other.data); // todo unify/simplify
 	if (this == 0)return other.empty();
-//	if (kind == objects or kind == keyNode)objects={…} NOT have value!  return *value.node == other or value.string == other;
-	if (kind == keyNode) return other == name or (value.node and *value.node == other);// todo: a=3 a=="a" ??? really?
+//	if (kind == objects or kind == key)objects={…} NOT have value!  return *value.node == other or value.string == other;
+	if (kind == key) return other == name or (value.node and *value.node == other);// todo: a=3 a=="a" ??? really?
 	if (kind == longs)
 		return other == itoa(value.longy);// "3" == 3   php style ARE YOU SURE? ;) only if otherwise consistent!
 	if (kind == reals) return other == ftoa(value.real);// parseFloat(other)==value.real
@@ -303,7 +303,7 @@ bool Node::operator==(chars other) {
 	if (kind == strings and value.data)
 		if (eq(value.string->data, other, value.string->shared_reference ? value.string->length : -1)) return true;
 	if (eq(name.data, other, name.shared_reference ? name.length : -1))return true;// todo really name==other?
-	if (kind == keyNode and value.node and *value.node == other)return true;
+	if (kind == key and value.node and *value.node == other)return true;
 	return false;
 }
 
@@ -312,7 +312,7 @@ bool Node::operator==(int other) {
 	if ((kind == longs and value.longy == other) or (kind == reals and value.real == other))
 		return true;
 	if (kind == bools)return other == value.longy;
-	if (kind == keyNode and value.node and *value.node == other)return true;
+	if (kind == key and value.node and *value.node == other)return true;
 	if (kind == strings and atoi0(value.string->data) == other)return true;
 	if (atoi0(name) == other)return true;
 	if (length == 1 and (kind == objects or kind == groups or kind == patterns))
@@ -322,13 +322,13 @@ bool Node::operator==(int other) {
 }
 
 bool Node::operator==(long other) {
-	if (kind == keyNode and value.node and value.node->value.longy == other)return true;
+	if (kind == key and value.node and value.node->value.longy == other)return true;
 	return (kind == longs and value.longy == other) or (kind == reals and value.real == other) or
 	       (kind == bools and value.longy == other);
 }
 
 bool Node::operator==(double other) {
-	if (kind == keyNode and value.node and value.node->value.real == other)return true;
+	if (kind == key and value.node and value.node->value.real == other)return true;
 	return (kind == reals and similar(value.real, other)) or
 	       //			(kind == reals and (float )value.real == (float)other) or // lost precision
 	       (kind == longs and value.longy == other) or
@@ -336,7 +336,7 @@ bool Node::operator==(double other) {
 }
 
 bool Node::operator==(float other) {
-	if (kind == keyNode and value.node and value.node->value.real == other)return true;
+	if (kind == key and value.node and value.node->value.real == other)return true;
 	return (kind == reals and value.real == other) or
 	       (kind == longs and value.longy == other);
 }
@@ -388,7 +388,7 @@ bool Node::operator==(Node &other) {
 
 	if (value.node == &other)return true;// same value enough?
 	if (this == other.value.node)return true;// reference ~= its value
-	if (kind == keyNode and value.node and *value.node == other)return true;// todo again?
+	if (kind == key and value.node and *value.node == other)return true;// todo again?
 	if (kind == nils and other.kind == longs)return other.value.longy == 0;
 	if (other.kind == nils and kind == longs)return value.longy == 0;
 
@@ -430,7 +430,7 @@ bool Node::operator==(Node &other) {
 		if (field != val and !field.name.empty())
 			val = other[field.name];
 		if (field != val) {
-			if ((field.kind != keyNode and field.kind != nils) or !field.value.node) {
+			if ((field.kind != key and field.kind != nils) or !field.value.node) {
 				trace("CHILD MISMATCH");
 				return false;
 			}
@@ -588,6 +588,40 @@ Node &Node::add(const Node &node) {
 //}
 
 
+
+// todo remove redundant addSmart LOL!
+void Node::addSmart(Node node) {// merge?
+	if (polish_notation and node.length > 0) {
+		if (name.empty())
+			name = node[0].name;
+		else
+			parent->add(node);// REALLY?
+		//			todo("polish_notation how?");
+		Node args = node.from(node[0]);
+		add(args);
+		return;
+	}
+	// a{x:1} != a {x:1} but {x:1} becomes child of a
+	// a{x:1} == a:{x:1} ?
+	Node &letzt = last();
+	// NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
+	//	only prefixOperators
+	if (letzt.kind == functor and letzt.length == 0) {
+		// danger 1+2 grouped later but while(i>7) as child
+		letzt.add(node);// as meta?
+		return;
+	}
+	// f (x) == f(x) ~= f x
+
+	if (letzt.kind == reference or letzt.kind == key or
+	    letzt.name == "while" /*todo: functors, but not operators?*/)
+		letzt.addSmart(&node);
+	else if (name.empty() and kind != expression and kind != groups)// last().kind==reference)
+		letzt.addSmart(&node);
+	else
+		add(&node);// don't loop to addSmart lol
+}
+
 // todo remove redundant addSmart LOL!, and or merge with flat()
 void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
 	if (node->isNil() and ::empty(node->name) and node->kind != longs)
@@ -614,46 +648,6 @@ void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
 //	return addSmart(&node);
 //}
 
-// todo remove redundant addSmart LOL!
-void Node::addSmart(Node node) {// merge?
-	if (polish_notation and node.length > 0) {
-		if (name.empty())
-			name = node[0].name;
-		else
-			parent->add(node);// REALLY?
-//			todo("polish_notation how?");
-		Node args = node.from(node[0]);
-		add(args);
-		return;
-	}
-	// a{x:1} != a {x:1} but {x:1} becomes child of a
-	// a{x:1} == a:{x:1} ?
-	Node &letzt = last();
-	// NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
-	//	only prefixOperators
-	if (letzt.kind == functor and letzt.length == 0) {
-		// danger 1+2 grouped later but while(i>7) as child
-		letzt.add(node);// as meta?
-		return;
-	}
-	// f (x) == f(x) ~= f x
-//	if(last().kind == reference and node.kind==groups){
-//		if(!last().children){// todo: this is redundant to ...
-//			last().children = node.children;
-//			last().length = node.length;
-//		}
-//		else
-//			last().add(node);
-//		return;
-//	}
-	if (letzt.kind == reference or letzt.kind == keyNode or
-	    letzt.name == "while" /*todo: functors, but not operators?*/)
-		letzt.addSmart(&node);
-	else if (name.empty() and kind != expression and kind != groups)// last().kind==reference)
-		letzt.addSmart(&node);
-	else
-		add(&node);// don't loop to addSmart lol
-}
 
 //non-modifying
 Node Node::insert(Node &node, int at) {
@@ -722,12 +716,12 @@ co_yield 	yield-expression (C++20)
 // Node* OK? else Node&
 Node *Node::has(String s, bool searchMeta, short searchDepth) const {
 	if (searchDepth < 0)return 0;
-	if ((kind == keyNode) and value.node and s == value.node->name)
+	if ((kind == key) and value.node and s == value.node->name)
 		return value.node;
 	for (int i = 0; i < length; i++) {
 		Node &entry = children[i];
 		if (s == entry.name) {
-			if ((entry.kind == keyNode or entry.kind == nils) and entry.value.node)
+			if ((entry.kind == key or entry.kind == nils) and entry.value.node)
 				return entry.value.node;
 			else // danger overwrite a["b"]=c => a["b"].name == "c":
 				return &entry;
@@ -747,7 +741,7 @@ Node *Node::has(String s, bool searchMeta, short searchDepth) const {
 			Node *found = children[i].has(s, searchMeta, searchDepth--);
 			if (found)return found;
 		}
-		if (kind == keyNode)return value.node->has(s, searchMeta, searchDepth--);
+		if (kind == key)return value.node->has(s, searchMeta, searchDepth--);
 	}
 	return 0;// NIL
 }
@@ -767,7 +761,7 @@ bool Node::isEmpty() {// not required here: name.empty()
 // todo : [x y]+[z] = [x y z] BUT z isNil() ??  Node("z").kind==unknown ! empty referenceIndices ARE NIL OR NOT?? x==nil?
 bool Node::isNil() const { // required here: name.empty()
 	return this == &NIL or kind == nils or
-	       ((kind == keyNode or kind == unknown or name.empty()) and length == 0 and value.data == nullptr);
+	       ((kind == key or kind == unknown or name.empty()) and length == 0 and value.data == nullptr);
 }
 
 // todo hide : use serialize() for true deep walk
@@ -791,7 +785,7 @@ String Node::serializeValue(bool deep) const {
 			return deep ? "" : groups_name;
 		case patterns:
 			return deep ? "" : patterns_name;
-		case keyNode:
+		case key:
 			if (deep)
 				return val.node ? val.node->serialize() : "";// val.node->serialize();
 			else
@@ -951,7 +945,7 @@ Node Node::to(Node match) {
 Node &Node::flat() {
 //	if (kind == call)return *this;//->clone();
 	if (kind == patterns)return *this;// never flatten patterns x=[] "hi"[1] …
-	if (length == 0 and kind == keyNode and name.empty() and value.node)return *value.node;
+	if (length == 0 and kind == key and name.empty() and value.node)return *value.node;
 	if (length == 1) {
 		Node &child = children[0];
 		if (child.kind == patterns and kind != groups)// huh?
@@ -983,7 +977,7 @@ Node Node::values() {
 	if (kind == reals)return Node(value.real);
 	if (kind == strings)return Node(value.string);
 	if (kind == bools)return value.data ? True : False;
-	if (kind == keyNode)return *value.node;
+	if (kind == key)return *value.node;
 	if (length == 1 and not value.data) return children[0];// todo: reaaaly?
 	Node &val = clone()->setName("");
 //	val.children = 0;
@@ -998,7 +992,7 @@ bool Node::isSetter() {
 	if (kind == bools)return name != True.name and name != False.name;
 	if (kind == longs || kind == reals)// || kind==bools)
 		return not atoi0(name) and not name.contains('.');// todo WTF hack
-	if (kind == keyNode and value.data) return true;
+	if (kind == key and value.data) return true;
 	if (kind == strings and name == value.string) return false;  // todo x="x" '123'="123" redundancy bites us here
 	if (kind == strings and value.data)
 		return true;
@@ -1121,7 +1115,7 @@ void Node::clear() {
 	next = 0;
 	length = 0;
 	children[0] = 0;
-	if (kind == keyNode)error("can't clear keyNode(?)");
+	if (kind == key)error("can't clear key(?)");
 	value.data = 0;
 }
 
@@ -1142,7 +1136,7 @@ chars typeName(Type t) {
 			return "group";
 		case patterns:
 			return "pattern";
-		case keyNode:
+		case key:
 			return "node";
 		case reference:
 			return "reference";

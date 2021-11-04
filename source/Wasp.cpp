@@ -819,6 +819,9 @@ private:
 			node.name += ch;
 			proceed();
 		}
+		if (previous == '=' and ch == '>')
+			node.name += ch;// =>
+
 		// NO OTHER COMBINATIONS for now!
 
 		/*// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
@@ -1201,7 +1204,7 @@ private:
 			key.value = val.value;// direct copy value SURE?? what about meta data... ?
 			key.kind = val.kind;
 		} else {
-			key.kind = keyNode;
+			key.kind = Type::key;
 			if (!key.children and empty(val.name) and val.length > 1) { // deep copy why?
 				key.children = val.children;
 				key.length = val.length;
@@ -1364,6 +1367,7 @@ private:
 						current.add(object);
 					else
 						current.addSmart(object);
+//					current.addSmart(&object,flatten);
 					break;
 				}
 //			}// lists handled by ' '!
@@ -1375,6 +1379,10 @@ private:
 //				case '+': // todo WHO writes +1 ?
 				case '-':
 				case '.':
+					if (next == '>') {// -> => ⇨
+						next = u'⇨';
+						proceed();
+					}
 					if (isDigit(next) and
 					    (previous == 0 or contains(separator_list, previous) or is_operator(previous)))
 						current.addSmart(numbero());// (2+2) != (2 +2) !!!
@@ -1415,6 +1423,7 @@ private:
 				case U'＝':
 				case U'﹦':
 				case U'：':
+				case u'⇨':
 				case ':':
 				case '=': { // assignments, declarations and map key-value-pairs
 					// todo {a b c:d} vs {a:b c:d}
@@ -1451,7 +1460,7 @@ private:
 					Node &val = *valueNode(closer, &key).clone();// applies to WHOLE expression
 					if (add_to_whole_expression and current.length > 1 and not add_raw) {
 						if (current.value.node)todo("multi-body a:{b}{c}");
-						current.setType(Type::keyNode, false);// lose type group/expression etc ! ok?
+						current.setType(Type::key, false);// lose type group/expression etc ! ok?
 						// todo: might still be expression!
 //						object.setType(Type::valueExpression);
 						current.value.node = &val;
