@@ -31,9 +31,9 @@
 # todo : move to math library:
 log10: log₁₀, 10⌟, ⌞10
 log2: log₂, 2⌟, ⌞2
-ln: logₑ, ⌟,  ⌞
-lnₓ: logₓ, x⌟,  ⌞x
-
+lnₓ: logₓ, x⌟, x˅, ⌄x, ⌞x, logarithm_to_base_x
+ln: logₑ, ⌟,  ⌞, e⌟,  ⌞e, ⌟ℯ,  ⌞ℯ, ℯ˅, ⌄ℯ, natural_logarithm
+exp: ℯ, ℯ^,e^,euler
 infix ⌟ a b :=ln(a)/ln(b)
 
 square : ²
