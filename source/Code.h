@@ -408,7 +408,7 @@ enum Opcodes {
 	let_local = 0x17, // 	let <bt> <locals> 	bt : blocktype, locals : (as in functions)
 
 	drop = 0x1a, // pop stack
-	select_if = 0x1B, // a?b:c ternary todo: use!
+	select_if = 0x1B, // c?a:b ternary (condition 3rd arg!) todo: use!
 	select_t = 0x1C, // extension … ?
 
 	local_get = 0x20,

@@ -69,13 +69,11 @@ union Value {
 //	sizeof(Value)==8 (long)
 	Node *node = 0;// todo DANGER, pointer can be lost :(   // todo same as child
 //	Node *child = 0; //todo DANGER child and next are NOT REDUNDANT! (a:b c:d) == a(value=b next=c(value=d))
-//	Node **children = 0;
+//	Node **children = 0;// keep children separate for complex key nodes (a b c):(d e f)
 	String *string;// todo: wasm_chars*
 	void *data;// any bytes
 	long longy;
 //	codepoint chary;// use longy
-
-//	float real;
 	double real;
 
 	Value() {}// = default;
@@ -379,7 +377,7 @@ String* line = 0;// debug! EXPENSIVE for non ast nodes!
 
 // Todo: deep cloning whole tree? definitely clone children
 		if (childs) {
-			if (kind == keyNode and value.data)
+			if (kind == key and value.data)
 				copy->value.node = value.node->clone(false);
 			copy->children = 0;
 			copy->length = 0;
