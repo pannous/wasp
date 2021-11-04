@@ -1338,22 +1338,24 @@ private:
 						warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
 					let bracket = ch;
 					auto type = getType(bracket);
+					bool flatten = true;
 
 					bool asListItem =
 							lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
-					if (lastNonWhite == ')' and bracket == '{')// declare (){} as special syntax in wiki!
-						asListItem = false;// careful! using (1,2) {2,3} may yield hidden bug!
-					if (type == patterns)
+					if (type == patterns or (lastNonWhite == ')' and bracket == '{')) {
+						// declare (){} as special syntax in wiki!
+						// careful! using (1,2) {2,3} may yield hidden bug!
 						asListItem = false;
-
+						flatten = false;
+					}
 					proceed();
 					// wrap {x} … or todo: just don't flatten before?
 					Node object = Node();
 					Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &current.last());
 					object.addSmart(objectValue);
+//						object.add(objectValue);
+					if (flatten) object = object.flat();
 					object.setType(type, false);
-					if (type != patterns)
-						object = object.flat();
 					object.separator = objectValue.separator;
 #ifdef DEBUG
 					object.line = &line;
