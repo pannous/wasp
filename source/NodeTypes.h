@@ -12,10 +12,10 @@ enum Type {// todo: merge Node.kind with Node.class(?)
 	objects, // {…} block data with children closures
 	groups, // (…) meta params parameter attributes lists
 	patterns, // […] selectors matches, annotations! [public export extern] function mul(x,y){x*y}
-	keyNode, // key with value
+	key, // key with value
 	reference, // variable identifier name x
 	symbol, // one / plus / Jesus
-	operators, // TODO: semantic types don't belong here! they interfere with internal structural types keyNode etc!!
+	operators, // TODO: semantic types don't belong here! they interfere with internal structural types key etc!!
 	functor, // while(xyz){abc} takes 1?/2/3 blocks if {condition} {then} {else}
 	expression, // one plus one
 	declaration, // x:=1

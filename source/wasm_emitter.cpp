@@ -566,7 +566,7 @@ Code emitIndexRead(Node op, String context) {
 	if (last_type == int64)size = 8;
 	if (last_type == float32)size = 4;
 	if (last_type == float64)size = 8;
-	if (array.kind == reference or array.kind == keyNode) {
+	if (array.kind == reference or array.kind == key) {
 		String ref = array.name;
 //		last_type=array.data_kind;
 		if (referenceIndices.has(ref))
@@ -661,7 +661,7 @@ Code emitData(Node node, String context) {
 			// keep last_type from last child, later if mixed types, last_type=ref or smarty
 			return emitArray(node, context);
 			break;
-		case keyNode:
+		case key:
 		case patterns:
 		default:
 			error("emitData unknown type: "s + typeName(node.kind));
@@ -756,7 +756,7 @@ Code emitValue(Node node, String context) {
 						trace("reassigning reference "s + name + " to " + node.value.string);
 				}
 				if (node.parent and (node.parent->kind == reference or
-				                     node.parent->kind == keyNode))// todo move up! todo keyNode bad criterion!!
+				                     node.parent->kind == key))// todo move up! todo key bad criterion!!
 					referenceIndices.insert_or_assign(node.parent->name, data_index_end);// safe ref to string
 				// we add an extra 0, unlike normal wasm abi, because we have space in data section
 				data_index_end += pString->length + 1;
@@ -773,7 +773,7 @@ Code emitValue(Node node, String context) {
 			return code;
 //			return Code(stringIndex).addInt(pString->length);// pointer + length
 		}
-		case keyNode:
+		case key:
 			if (node.value.node)
 				return emitValue(*node.value.node,
 				                 context);// todo: make sure it is called from right context (after isSetter …)
@@ -837,7 +837,7 @@ Code emitOperator(Node node, String context) {
 //	} else if (node.next) { // todo really? handle ungrouped HERE? just hiding bugs?
 //		const Code &arg_code = emitExpression(*node.next, context);
 //		code.push(arg_code);// might be empty ok
-	} else if (node.value.node and node.kind == keyNode) {// todo: serialize?
+	} else if (node.value.node and node.kind == key) {// todo: serialize?
 		const Code &arg_code = emitExpression(*node.value.node, context);
 		code.push(arg_code);
 	}
@@ -1069,9 +1069,9 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			if (not node.isSetter() || node.value.longy == 0) // todo 0  x="x" '123'="123" redundancy bites us here
 				return emitValue(node, context);
 //			else FALLTHROUGH to set x="123"!
-		case keyNode: // todo i=ø
+		case key: // todo i=ø
 			if (not isVariableName(name))
-				todo("proper keyNode emission");
+				todo("proper key emission");
 			// else:
 		case reference: {
 			if (name.empty()) {
@@ -1101,7 +1101,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				}
 			}
 			if (node.isSetter()) { //SET
-				if (node.kind == keyNode)
+				if (node.kind == key)
 					code = code + emitExpression(*node.value.node, context); // done above!
 				else
 					code = code + emitValue(node, context); // done above!
