@@ -53,15 +53,15 @@ and the last result in the root block of the main file is printed.
 
 Fibonacci in Angle is
 ```
-fibonacci number = if number<2 : 0 else fibonacci(number - 1) + fibonacci it - 2
+fibonacci number = if number<2 : 1 else fibonacci(number - 1) + fibonacci it - 2
 ```
 
 Note how number simulataneously acts as type and variable name.  
-Note how the unique argument `number` can be accessed via `it` keyword and brackets are optional
+Note how the unique argument `number` can be accessed via `it` keyword and some brackets are optional
 
 [Auto typed](https://github.com/pannous/wasp/wiki/type-inference) fibonacci in Angle is
 ```
-fib := if it<2 : 0 else fib(it-1) + fib it - 2
+fib := if it<2 : 1 else fib(it-1) + fib it - 2
 ```
 
 Angle runs as wasm file inside browsers an as small lambdas in edge computing.
