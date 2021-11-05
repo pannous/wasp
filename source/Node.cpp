@@ -194,7 +194,7 @@ Node &Node::merge(Node &other) {
 	if (other.length == 0) {
 		neu.add(other);
 	}// else
-	for (Node &item:other) {
+	for (Node &item: other) {
 		neu.add(item);
 	}
 	return neu;
@@ -533,11 +533,6 @@ void Node::remove(Node &node) {
 	}
 }
 
-//  call to member function 'add' is ambiguous
-//Node &Node::add(Node node) {
-//	return add(&node);
-//}
-
 Node &Node::add(const Node *node) {
 	if ((long) node > MEMORY_SIZE)
 		error("node Out of Memory");
@@ -568,62 +563,42 @@ Node &Node::add(const Node &node) {
 	return add(&node);
 }
 
-//void Node::add(Node node) {
-//	add(&node);
-//}
-//
-//Node &Node::add(Node &node) {
-//	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
-//	if (length >= capacity - 1)
-//		error("Out of node Memory");
-//	if (lastChild >= maxNodes)
-//		error("Out of global Memory");
-//	if (!children) children = &all[capacity * lastChild++];
-//	if (length > 0)
-//		children[length - 1].next = &children[length];
-//	children[length] = node;
-////	children[length].parent = this;
-//	length++;
-//	return *this;
-//}
-
-
-
-// todo remove redundant addSmart LOL!
 void Node::addSmart(Node node) {// merge?
-	if (polish_notation and node.length > 0) {
+	addSmart(&node, false, true);
+}
+
+void Node::addSmart(Node *node, bool flatten, bool clutch) { // flatten AFTER construction!
+// todo cleanup clutch LOL!, and or merge with flat()
+	if (!node)return;
+	if (polish_notation and node->length > 0) {
 		if (name.empty())
-			name = node[0].name;
+			name = (*node)[0].name;
 		else
 			parent->add(node);// REALLY?
-		//			todo("polish_notation how?");
-		Node args = node.from(node[0]);
+		Node args = node->from(node[0]);
 		add(args);
 		return;
 	}
-	// a{x:1} != a {x:1} but {x:1} becomes child of a
-	// a{x:1} == a:{x:1} ?
-	Node &letzt = last();
-	// NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
-	//	only prefixOperators
-	if (letzt.kind == functor and letzt.length == 0) {
-		// danger 1+2 grouped later but while(i>7) as child
-		letzt.add(node);// as meta?
+	if (clutch) {
+		// a{x:1} != a {x:1} but {x:1} becomes child of a
+		// a{x:1} == a:{x:1} ?
+		Node &letzt = last();
+		// do NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
+		//	only prefixOperators
+		if (letzt.kind == functor and letzt.length == 0) {
+			letzt.add(node);
+			return;
+		}
+		// f (x) == f(x) ~= f x
+		if (letzt.kind == reference or letzt.kind == key or
+		    letzt.name == "while" /*todo: functors, but not operators?*/)
+			letzt.addSmart(node);
+		else if (name.empty() and kind != expression and kind != groups)// last().kind==reference)
+			letzt.addSmart(node);
+		else
+			add(node);// don't loop to addSmart lol
 		return;
 	}
-	// f (x) == f(x) ~= f x
-
-	if (letzt.kind == reference or letzt.kind == key or
-	    letzt.name == "while" /*todo: functors, but not operators?*/)
-		letzt.addSmart(&node);
-	else if (name.empty() and kind != expression and kind != groups)// last().kind==reference)
-		letzt.addSmart(&node);
-	else
-		add(&node);// don't loop to addSmart lol
-}
-
-// todo remove redundant addSmart LOL!, and or merge with flat()
-void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
 	if (node->isNil() and ::empty(node->name) and node->kind != longs)
 		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
 	node->parent = this;
@@ -635,19 +610,13 @@ void Node::addSmart(Node *node, bool flatten) { // flatten AFTER construction!
 	    ::empty(node->name)) {
 		children = node->children;
 		length = node->length;
-		for (Node &child:*this)
+		for (Node &child: *this)
 			child.parent = this;
 		if (kind != groups) kind = node->kind; // todo: keep kind if … ?
 	} else {
 		add(node);
 	}
-// todo a{x}{y z} => a{x,{y z}} BAD
 }
-
-//void Node::addSmart(Node &node) {
-//	return addSmart(&node);
-//}
-
 
 //non-modifying
 Node Node::insert(Node &node, int at) {
@@ -855,7 +824,7 @@ String Node::serialize() const {
 		if (polish_notation and not name.empty()) wasp += name;
 		int i = 0;
 		if (length > 0)
-			for (Node &node : *this) {
+			for (Node &node: *this) {
 				if (i++ > 0) wasp += separator ? String(separator) : " ";
 				wasp += node.serialize();
 			}
@@ -911,12 +880,12 @@ Node Node::from(int pos) {// inclusive
 Node Node::from(String match) {
 	Node lhs;
 	bool start = false;
-	for (Node child:*this) {
+	for (Node child: *this) {
 		if (start)lhs.add(&child);
 		if (child.name == match)start = true;
 	}
 	if (lhs.length == 0)
-		for (Node child:*this)
+		for (Node child: *this)
 			if (child.name == match)return child.values();
 	if (kind != call and kind != declaration)
 		lhs.kind = kind;
@@ -925,7 +894,7 @@ Node Node::from(String match) {
 
 Node Node::to(String match) {
 	Node rhs;
-	for (Node &child:*this) {
+	for (Node &child: *this) {
 		if (child.name == match)
 			break;
 		rhs.add(&child);
@@ -1119,7 +1088,7 @@ void Node::clear() {
 	value.data = 0;
 }
 
-String* Node::Line() {
+String *Node::Line() {
 	if (line)
 		return line;
 	if (parent)return parent->Line();

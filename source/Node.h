@@ -484,7 +484,7 @@ String* line = 0;// debug! EXPENSIVE for non ast nodes!
 //	void addSmart(Node &node);// modifying
 	void addSmart(Node node);
 
-	void addSmart(Node *node, bool flatten = true);
+	void addSmart(Node *node, bool flatten = true, bool clutch = false);
 
 	void remove(Node *node); // directly from children
 	void remove(Node &node); // via compare children
