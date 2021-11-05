@@ -2015,9 +2015,7 @@ void testCurrent() {
 	clearContext();
 //	testLogarithm();
 //	assert_emit("1 +1 == [1 1]", 1);
-
-	result = parse("a b(c)");
-	check(result.length == 2 or result.length == 1);
+	testSubGrouping();
 
 //	auto uff = "r = S2 + z*(S3 - z*S4) + z*w*(S5 + z*S6)";
 	auto uff = "double sin(x){a}";
