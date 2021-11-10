@@ -35,7 +35,7 @@ typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units 
 typedef String grapheme;// sequence of one or more code points that are displayed as a single 'character' ☀️=☀+_ e2 98 80 + ef b8 8f
 //typedef String grapheme;// usually codepoint + color or something. no need yet? boycott idea?
 // TODO IS IT SAFE IF WE USE char IN WASP as synonym for codepoint, by merging graphemes and ignoring modifiers? we can return a¨ as  ä!!
-// color is than an invisible control character like in ascii
+// ⚠ color is an invisible control character like in ascii ⚠️=⚠ + ef b8 8f
 
 //typedef Image glyph; image, usually stored in a font (which is a collection of glyphs), used to represent graphemes
 //https://stackoverflow.com/questions/27331819/whats-the-difference-between-a-character-a-code-point-a-glyph-and-a-grapheme
