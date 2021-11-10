@@ -25,7 +25,7 @@ extern Map<String, int> functionIndices;
 //extern Map<String /* implicit indices 0,1,2,… */, Node* /* compile-time modifiers/values? */> globals; // access from Angle!
 
 
-Code &emit(Node root_ast, Module *runtime0 = 0, String _start = "main");
+Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "main");
 
 // private, could be moved:
 Code emitWhile(Node &node, String context);

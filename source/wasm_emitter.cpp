@@ -348,7 +348,7 @@ bytes ieee754(float num) {
 //Code emitExpression (Node* nodes);
 
 [[nodiscard]]
-Code emitBlock(Node node, String functionContext);
+Code emitBlock(Node &node, String functionContext);
 
 //Code emitExpression(Node *node)__attribute__((warn_unused_result));
 //Code emitExpression(Node *node)__attribute__((error_unused_result));
@@ -362,7 +362,7 @@ List<String> collect_locals(Node node, String context);
 Code cast(Valtype from, Valtype to);
 
 [[nodiscard]]
-Code cast(const Node &from, Node &to);
+Code cast(Node &from, Node &to);
 
 [[nodiscard]]
 Code emitStringOp(Node op, String context);
@@ -686,7 +686,7 @@ Code emitGetGlobal(Node node /* context : global ;) */) {
 
 // print value on stack (vs emitData)
 // todo: last_type not enough if operator left≠right, e.g. ['a']#1  2.3 == 4 ?
-//[[nodiscard]]
+[[nodiscard]]
 Code emitValue(Node node, String context) {
 	Code code;
 	String &name = node.name;
@@ -780,7 +780,7 @@ Code emitValue(Node node, String context) {
 		case patterns:
 			return emitIndexPattern(node, context);// todo: make sure to have something indexable on stack!
 		case expression: {
-			Node values = node.values();
+			Node values = node.values();// remove setter part
 			return emitExpression(values, context);
 		}
 //			error("expression should not be print on stack (yet) (maybe serialize later)")
@@ -1003,7 +1003,6 @@ bool isVariableName(String name) {
 }
 
 // also init expressions of globals!
-[[nodiscard]]
 [[nodiscard]]
 Code emitExpression(Node &node, String context/*="main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
@@ -1299,8 +1298,7 @@ Code cast(Valtype from, Valtype to) {
 
 // casting in our case also means construction! (x, y) as point == point(x,y)
 [[nodiscard]]
-[[nodiscard]]
-Code cast(const Node &from, Node &to) {
+Code cast(Node &from, Node &to) {
 	if (to == Long)return cast(mapTypeToWasm(from), i64);
 	if (to == Double)return cast(mapTypeToWasm(from), f64);
 	Node calle("call");
@@ -1309,7 +1307,6 @@ Code cast(const Node &from, Node &to) {
 	return emitCall(calle, "");// todo context?
 }
 
-[[nodiscard]]
 [[nodiscard]]
 Code emitDeclaration(Node fun, Node &body) {
 	// todo: x := 7 vs x := y*y
@@ -1346,10 +1343,8 @@ Code emitSetter(Node node, Node &value, String context) {
 	//	localTypes[context][local_index] = last_type; NO! the type doesn't change: example: float x=7
 	if (last_type == array)
 		referenceIndices.insert_or_assign(variable, data_index_end);// WILL be last_data !
-
 	Code setter;
 	Code value1 = emitValue(value, context);
-//	variableTypes
 	setter.add(value1);
 	auto valtype = localTypes[context][local_index];
 	setter.add(cast(last_type, valtype));
@@ -1478,7 +1473,7 @@ Code signedLEB128(int n) {
 
 
 [[nodiscard]]
-Code emitBlock(Node node, String context) {
+Code emitBlock(Node &node, String context) {
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};
 // 0x00 == unreachable as block header !?
@@ -2051,7 +2046,7 @@ Code memorySection() {
 
 
 [[nodiscard]]
-Code &emit(Node root_ast, Module *runtime0, String _start) {
+Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	if (root_ast.kind == objects)root_ast.kind = expression;
 	start = _start;
 //	clear();// todo

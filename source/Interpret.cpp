@@ -224,9 +224,9 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
 	if (debug) {
 		trace("apply_op\n");
-		left.put();
-		op0.put();
-		right.put();
+		left.print();
+		op0.print();
+		right.print();
 	}
 //	if(right.length==0 and op0.param){
 //		warn("using param for args");

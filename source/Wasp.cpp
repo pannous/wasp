@@ -354,7 +354,7 @@ public:
 	// see 'apply' for operator eval
 	static Node eval(String source) { // return by value ok, rarely used and stable
 		Node parsed = Wasp().parse(source);
-		parsed.put();
+		parsed.print();
 #ifndef RUNTIME_ONLY
 		return parsed.interpret();
 #else
@@ -378,7 +378,7 @@ public:
 		text = source;
 		while (empty(ch) and (ch or at < 0))
 			proceed();// at=0
-		Node result = valueNode(); // <<
+		Node &result = valueNode(); // <<
 		white();
 		if (ch and ch != -1 and ch != DEDENT) {
 			printf("UNEXPECTED CHAR %c", ch);
@@ -387,7 +387,8 @@ public:
 			result = ERROR;
 		}
 		// Mark does not support the legacy JSON reviver function todo ??
-		return *result.clone();
+		return result;
+//		return *result.clone();
 	}
 
 
@@ -528,7 +529,7 @@ private:
 		return key;
 	};
 
-	Node hexadecimal_number() {
+	Node &hexadecimal_number() {
 		if (ch == '0')proceed();
 		if (ch == 'x' or ch == 'X')proceed();
 		int val = 0;
@@ -539,11 +540,11 @@ private:
 			else break;
 			proceed();
 		}
-		return Node(val);
+		return *new Node(val);
 	}
 
 	// Parse a number value.
-	Node numbero() {
+	Node &numbero() {
 		auto sign = '\n';
 		auto string = String("");
 		int number0, base = 10;
@@ -599,8 +600,8 @@ private:
 		}
 
 		if (string.contains(".")) {
-			if (sign == '-') return Node(-atof0(string.data));
-			else return Node(atof0(string.data));
+			if (sign == '-') return *new Node(-atof0(string.data));
+			else return *new Node(atof0(string.data));
 		}
 		if (sign == '-') {
 			number0 = -atoi0(string.data);
@@ -610,7 +611,7 @@ private:
 //		if (!isFinite(number)) {
 //			error("Bad number");
 //		} else {
-		return Node(number0); // {number0}; //wow cPP
+		return *new Node(number0); // {number0}; //wow cPP
 //		}
 	};
 
@@ -811,8 +812,8 @@ private:
 	};
 
 
-	Node any_operator() {
-		Node node = Node(ch);
+	Node &any_operator() {
+		Node &node = *new Node(ch);
 		node.setType(operators);// todo ++
 		proceed();
 		while (ch == '=' or ch == previous) {// allow *= += ++ -- **  …
@@ -837,7 +838,8 @@ private:
 	}
 
 
-	const Node &resolve(Node &node) {
+//	const
+	Node resolve(Node node) {
 		String &symbol = node.name;
 		if (symbol == "false")return False;
 		if (symbol == "False")return False;
@@ -875,7 +877,7 @@ private:
 		return node;
 	}
 
-	Node symbol() {
+	Node &symbol() {
 		if (isDigit(ch))
 			return numbero();
 		if (ch == '.' and (isDigit(next)))
@@ -891,10 +893,10 @@ private:
 		if (is_operator(ch))
 			return any_operator();
 		if (is_identifier(ch))
-			return resolve(*new Node(identifier(), true));// or op
+			return *resolve(Node(identifier(), true)).clone();// or op
 		error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
 		      String((char) text[at + 2]));
-		return NIL;
+		return (Node &) NIL;
 	}
 
 //	// {a:1 b:2} vs { x = add 1 2 }
@@ -921,18 +923,18 @@ private:
 	}
 
 	Node &expressione(codepoint closer) {
-		Node node = symbol();
+		Node &node = symbol();
 		if (lookahead_ambiguity())
-			return *node.clone();
+			return node;
 		// {a:1 b:2} vs { x = add 1 2 }
-		Node expressionas;
+		Node &expressionas = *new Node();
 		// set kind = expression only if it contains operator, otherwise keep it as list!!!
 		expressionas.add(node);
 		if (node.kind == operators) expressionas.kind = expression;//
 //		if (contains(import_keywords,node.name))
 //			closer =0;// get rest of line;
 		if (closing(ch, closer))// stop_at_space, keep it for further analysis (?)
-			return *expressionas.clone();
+			return expressionas;
 		white();
 		if (node.kind != operators) expressionas.kind = groups;
 		while (ch and ch != closer and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
@@ -943,8 +945,8 @@ private:
 		}
 //		expression.name=map(children.name)
 		if (expressionas.length > 1)
-			return *expressionas.clone();
-		else return *node.clone();
+			return expressionas;
+		else return node;
 	}
 
 	// Parse true, false, null, Infinity, NaN
@@ -1284,7 +1286,7 @@ private:
 // reason for strange name import instead of parse is better IDE findability, todo rename to parseNode()?
 	Node &valueNode(codepoint close = 0, Node *parent = 0) {
 		// A JSON value could be an object, an array, a string, a number, or a word.
-		Node current;
+		Node &current = *new Node();
 		current.parent = parent;
 		current.setType(groups);// may be changed later, default (1 2)==1,2
 #ifdef DEBUG
@@ -1457,7 +1459,7 @@ private:
 						white();
 					} else if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
 					else closer = ' ';// immediate a:b c == (a:b),c
-					Node &val = *valueNode(closer, &key).clone();// applies to WHOLE expression
+					Node &val = valueNode(closer, &key);// applies to WHOLE expression
 					if (add_to_whole_expression and current.length > 1 and not add_raw) {
 						if (current.value.node)todo("multi-body a:{b}{c}");
 						current.setType(Type::key, false);// lose type group/expression etc ! ok?
@@ -1579,11 +1581,7 @@ private:
 				}
 			}
 		}
-
-		Node &result = current.flat();
-		return *result.
-
-				clone();
+		return current.flat();
 	};
 
 };
@@ -1676,7 +1674,7 @@ Node run(String source) {
 }
 
 //static
-Node parse(String source) {
+Node &parse(String source) {
 	operator_list = List<chars>(operator_list0);// wasm hack
 	// WE HAVE A GENERAL PROBLEM:
 	// 1. top level objects are not constructed True
@@ -1684,7 +1682,7 @@ Node parse(String source) {
 
 
 	printf("Parsing: %s\n", source.data);
-	if (!source.data)return NIL;
+	if (!source.data)return (Node &) NIL;
 	return Wasp().read(source);
 }
 

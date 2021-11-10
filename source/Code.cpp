@@ -140,7 +140,7 @@ chars typeName(Valtype t) {
 }
 
 
-Valtype mapTypeToWasm(Node n) {
+Valtype mapTypeToWasm(Node &n) {
 	if (n == Double)
 		return float64;
 	if (n == Long)
@@ -154,21 +154,19 @@ Valtype mapTypeToWasm(Node n) {
 	if (n.kind == longs)return int32;// int64; todo
 	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
 	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
-	Node first = n.first();
-	if (first == n)first = NIL;// avoid loops
 	if (n.kind == objects)return array;// todo
-	if (n.kind == assignment)return mapTypeToWasm(first);// todo
-	if (n.kind == operators)return mapTypeToWasm(first);// todo
-	if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
 	if (n.kind == call)
 		return functionSignatures[n.name].return_type;// error("first.kind==call is not a wasm type, maybe get signature?");
-	if (n.kind == key and n.value.data)return mapTypeToWasm(*n.value.node);
+	if (n.kind == key and n.value.data) return mapTypeToWasm(*n.value.node);
 	//	if (n.kind == key and not n.value.data)return array;
 	if (n.kind == groups)return array;// uh todo?
 	if (n.kind == unknown) return int32;// blasphemy!
-	n.put();
-//	String context = "sin";
-//	if (locals[context].has(n.name))return localTypes[context][locals[context].position(n.name)];
+	Node first = n.first();
+	if (first == n)return int32;// array of sorts
+	if (n.kind == assignment)return mapTypeToWasm(first);// todo
+	if (n.kind == operators)return mapTypeToWasm(first);// todo
+	if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
+	n.print();
 	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
 	return none;
 }

@@ -361,7 +361,7 @@ enum Valtype {
 //	smarti64 = 0xF6,
 };
 
-Valtype mapTypeToWasm(Node n);
+Valtype mapTypeToWasm(Node &n);
 
 chars typeName(Valtype t);
 

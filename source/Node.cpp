@@ -259,7 +259,8 @@ Node &Node::set(String string, Node *node) {
 		entry = *node;// copy by value OK
 		entry.parent = this;
 	}
-	if (length > 0)children[length - 1].next = &entry;
+	if (length > 0)
+		children[length - 1].next = &entry;
 	length++;
 	return entry;
 }
@@ -426,9 +427,12 @@ bool Node::operator==(Node &other) {
 	for (int i = 0; i < length; i++) {
 		Node &field = children[i];
 		field = field.flat();// [(1),2,3] == [1,2,3]
-		Node &val = other.children[i];
-		if (field != val and !field.name.empty())
-			val = other[field.name];
+		Node val = other.children[i];
+		if (field != val and !field.name.empty()) {
+			auto otherField = other.has(field.name);
+			if (!otherField)return false;
+			else val = *otherField;
+		}
 		if (field != val) {
 			if ((field.kind != key and field.kind != nils) or !field.value.node) {
 				trace("CHILD MISMATCH");
@@ -853,9 +857,6 @@ String toString(Node &node) {
 	return node.serialize();
 }
 
-void Node::print() {
-	printf("%s", serialize().data);
-}
 
 Node &Node::setValue(Value v) {
 	value = v;
@@ -864,12 +865,12 @@ Node &Node::setValue(Value v) {
 
 
 // rest of node children split
-Node Node::from(Node match) {
+Node &Node::from(Node &match) {
 	return from(match.name);
 }
 
 
-Node Node::from(int pos) {// inclusive
+Node &Node::from(int pos) {// inclusive
 	Node lhs;
 	for (int i = pos; i < length; i++) {
 		lhs.add(children[i]);
@@ -877,8 +878,8 @@ Node Node::from(int pos) {// inclusive
 	return lhs.flat();
 }
 
-Node Node::from(String match) {
-	Node lhs;
+Node &Node::from(String match) {
+	Node lhs = *new Node();
 	bool start = false;
 	for (Node child: *this) {
 		if (start)lhs.add(&child);
@@ -892,8 +893,8 @@ Node Node::from(String match) {
 	return lhs.flat();
 }
 
-Node Node::to(String match) {
-	Node rhs;
+Node &Node::to(String match) {
+	Node rhs = *new Node();
 	for (Node &child: *this) {
 		if (child.name == match)
 			break;
@@ -906,7 +907,7 @@ Node Node::to(String match) {
 	return rhs.flat();
 }
 
-Node Node::to(Node match) {
+Node &Node::to(Node match) {
 	return to(match.name);
 }
 
@@ -941,10 +942,10 @@ Node &Node::setName(char *name0) {
 }
 
 // extract value from this (remove name)
-Node Node::values() {
-	if (kind == longs)return Node(value.longy);
-	if (kind == reals)return Node(value.real);
-	if (kind == strings)return Node(value.string);
+Node &Node::values() {
+	if (kind == longs)return *new Node(value.longy);
+	if (kind == reals)return *new Node(value.real);
+	if (kind == strings)return *new Node(value.string);
 	if (kind == bools)return value.data ? True : False;
 	if (kind == key)return *value.node;
 	if (length == 1 and not value.data) return children[0];// todo: reaaaly?
@@ -997,13 +998,19 @@ int Node::lastIndex(Node *node, int start) {
 }
 
 // inclusive from…to
+// ⚠️ DANGER! any references pointing to children become INVALID!
+[[modifying]]
 void Node::replace(int from, int to, Node *node) {
+	if (from < 0 or from >= length)error("Node::replace from<0 or from>=length");
 	children[from] = *node;
 	int i = 0;
 	if (to < from)error("Node::replace from>to : "s + from + ">" + to);
-	while (to + i++ <= length)
+	while (to + i++ <= length) {
 		children[from + i] = children[to + i];// ok if beyond length
+		children[from + i - 1].next = &children[from + i];
+	}
 	length = length - (to - from);//  + 1 if not inclusive;
+	if (length > 0)children[length - 1].next = 0;
 }
 
 // INCLUDING to: [a b c d].remove(1,2)==[a d]
