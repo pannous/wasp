@@ -49,7 +49,7 @@ Valtype mapType(Node &n) {
 
 Node &groupWhile(Node n);
 
-bool isPrimitive(Node node);
+bool isPrimitive(Node &node);
 
 void fileSize(String filename);
 
@@ -317,7 +317,7 @@ bool isVariable(Node &node) {
 	return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'A';// todo;
 }
 
-bool isPrimitive(Node node) {
+bool isPrimitive(Node &node) {
 	Type type = node.kind;
 	if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
 		return true;
@@ -538,12 +538,12 @@ Node &groupDeclarations(Node &expression, const char *context) {
 				signature.add(f64);// todo: any / smarti! <<<
 			}
 
-			Node body = analyze(rest, name);// has to come after arg analysis!
+			Node &body = analyze(rest, name);// has to come after arg analysis!
 			Node return_type = extractReturnTypes(left, body);
 			signature.returns(return_type);// explicit double sin(){} // todo other syntaxes+ multi
 			Node &decl = *new Node(name);//node.name+":={…}");
 			decl.setType(declaration);
-			decl.add(body.clone());
+			decl.add(body);
 			return decl;
 		}
 	}
@@ -602,29 +602,15 @@ Node &groupOperators(Node &expression, String context = "main") {
 			if (op == "-" or op == "‖") //  or op=="?"
 				continue;// ok -1 part of number, ‖3‖ closing ?=>if
 			i = expression.index(op, last_position, fromRight);// try again for debug
-			expression.put();
+			expression.print();
 			error("operator missing: "s + op);
 		}
-		Node &node = expression.children[i];
+		// we can't keep references here because expression.children will get mutated later via replace(…)
+		Node node = expression.children[i];
 		if (node.length)continue;// already processed
-
-/*
-		if (contains(opening_special_brackets, op.codepointAt(0))) {
-			//			continue;// grouped in valueNode!
-			node.kind = Type::operators;// todo should have been parsed as such!
-			auto close = String(closingBracket(op.codepointAt(0)));// todo group in valueNode!
-			auto to = expression.index(close, i + 1);
-			Node rest = expression.from(i + 1).to(close);
-			auto rest1 = analyze(rest, context);
-			node.add(rest1);
-			expression.replace(i, to, node);
-			continue;
-		}
-*/
-
-		Node &next = expression.children[i + 1];
+		Node next = expression.children[i + 1];
 		next = analyze(next, context);
-		Node &prev = expression.children[i - 1];
+		Node prev = expression.children[i - 1];
 		if (i == 0)prev = NIL;
 		String &name = checkCanonicalName(op);
 
@@ -661,8 +647,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 					node.add(expression.children[i]);
 				expression.replace(i, node.length, node);
 			} else if (isFunction(next)) { // 3 + double 8
-				Node rest = expression.from(i + 1);
-				Node args = analyze(rest, context);
+				Node &rest = expression.from(i + 1);
+				Node &args = analyze(rest, context);
 				node.add(prev);
 				node.add(args);
 				expression.replace(i - 1, i + 1, node);// replace ALL REST
@@ -824,7 +810,9 @@ Node &groupFunctions(Node &expressiona, String context) {
 			continue;
 		}
 		rest = expressiona.from(i + 1);
-		if (rest.length > 1)
+		auto arg_length = rest.length;
+
+		if (arg_length > 1)
 			rest.setType(expression);// SUUURE?
 		if (rest.kind == groups)// and rest.has(operator))
 			rest.setType(expression);// todo f(1,2) vs f(1+2)
@@ -838,20 +826,20 @@ Node &groupFunctions(Node &expressiona, String context) {
 			maxArity--;// ?
 			minArity--;
 		}
-		if (rest.length < minArity)
+		if (arg_length < minArity)
 			error("missing arguments for function %s, defaults and currying not yet supported"s % name);
-		else if (rest.length == 0 and minArity > 0)
+		else if (arg_length == 0 and minArity > 0)
 			error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
 		else if (rest.first().kind == operators) { // random() + 1 == random + 1
 			// keep whole expressiona for later analysis in groupOperators!
 			return expressiona;
-		} else if (rest.length >= maxArity) {
+		} else if (arg_length >= maxArity) {
 			Node args = analyze(rest, context);// todo: could contain another call!
 			node.add(args);
 			if (rest.kind == groups)
 				expressiona.remove(i + 1, i + 1);
 			else
-				expressiona.remove(i + 1, i + rest.length);
+				expressiona.remove(i + 1, i + arg_length);
 		} else
 			todo("missing arity match case");
 	}
@@ -926,7 +914,7 @@ Node &groupWhile(Node n) {
 }
 
 
-Node analyze(Node node, String context) {
+Node &analyze(Node &node, String context) {
 	long hash = node.hash();
 	if (analyzed.has(hash))
 		return node;
@@ -971,7 +959,7 @@ Node analyze(Node node, String context) {
 	//todo merge/clean
 	if (type == operators or type == call or is_function) {
 		if (is_function)node.kind = call;
-		Node grouped = groupOperators(node, context);// outer analysis id(3+3) => id(+(3,3))
+		Node &grouped = groupOperators(node, context);// outer analysis id(3+3) => id(+(3,3))
 		if (grouped.length > 0)
 			for (Node &child: grouped) {// inner analysis while(i<3){i++}
 				if (&child == 0)continue;
@@ -997,6 +985,7 @@ Node analyze(Node node, String context) {
 			}
 	}
 	return grouped;
+//	return *grouped.clone();// why?? where is leak?
 }
 
 bool isType(Node &expression) {
@@ -1118,11 +1107,11 @@ Node emit(String code) {
 #endif
 	return data;
 #else
-	data.put();
+	data.print();
 	clearContext();
 	preRegisterSignatures();
-	Node charged = analyze(data);
-	charged.put();
+	Node &charged = analyze(data);
+	charged.print();
 	Code binary;
 //	if (options & no_main) // todo: lib_main!
 //		binary = emit(charged, 0, 0);

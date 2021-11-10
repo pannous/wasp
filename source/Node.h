@@ -119,18 +119,18 @@ public:
 	::Type kind = unknown;// todo: merge with Node.type/class ? :
 	Node *type = 0;// variable/reference type or object class?
 //	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
-Node *parent = nullptr;
-Node *children = nullptr;// LIST, not link. block body content
-Node *next = 0; // in children list
-char separator = 0;// " " ";" ","
+	Node *parent = nullptr;
+	Node *children = nullptr;// LIST, not link. block body content
+	Node *next = 0; // in children list, redundant with children[i+1] => for debugging only
+	char separator = 0;// " " ";" ","
 //	char grouper = 0;// "()", "{}", "[]" via kind!  «…» via type Group("«…»")
 
-long _hash = 0;// set by hash(); should copy! on *x=node / clone()
-int length = 0;// children
+	long _hash = 0;// set by hash(); should copy! on *x=node / clone()
+	int length = 0;// children
 #ifdef DEBUG
 // int code_position; // hash to external map
 //	int lineNumber;
-String* line = 0;// debug! EXPENSIVE for non ast nodes!
+	String *line = 0;// debug! EXPENSIVE for non ast nodes!
 #endif
 
 // TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
@@ -203,6 +203,7 @@ String* line = 0;// debug! EXPENSIVE for non ast nodes!
 	}
 
 	explicit Node(int nr) : Node((long) nr) {}
+
 	explicit Node(float nr) : Node((double) nr) {}
 
 // how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
@@ -381,7 +382,7 @@ String* line = 0;// debug! EXPENSIVE for non ast nodes!
 				copy->value.node = value.node->clone(false);
 			copy->children = 0;
 			copy->length = 0;
-			if (length > 0)for (Node &n:*this) copy->add(n);// necessary, else children is the same pointer!
+			if (length > 0)for (Node &n: *this) copy->add(n);// necessary, else children is the same pointer!
 		}
 		return copy;
 	}
@@ -497,51 +498,32 @@ String* line = 0;// debug! EXPENSIVE for non ast nodes!
 	Node &merge(Node &other);// non-modifying
 	Node &merge(Node *other);
 
-	void put() {
-		printf("Node ");
-		if (this == &NIL || kind == nils) {
-			printf("NIL\n");
-			return;
+	void print(bool internal_representation = false) {
+		printf("%s\n", serialize().data);
+		if (internal_representation) {
+			printf("node{");
+			if (this == &NIL || kind == nils) {
+				printf("NIL\n");
+				return;
+			}
+			if (name.data)
+				printf("name:%s", name.data);
+			printf(" length:%d", length);
+			if (kind < unknown)
+				printf(" type:%s", typeName(kind));
+			const String &string1 = serializeValue(false);
+			printf(" value:%s\n", string1.data);// NEEDS "%s", otherwise HACKABLE
+			printf(" children:[");// flat, non-recursive
+			for (int i = 0; i < min(length, 10); i++) {
+				Node &node = children[i];
+				if (!node.name.empty()) {
+					printf("%s", node.name.data);
+					printf(" ");
+				} else printf("{…} ");// overview
+			}
+			printf("]");
+			printf("}\n");
 		}
-		if (name.data)
-			printf("name:%s", name.data);
-		printf(" length:%d", length);
-		if (kind < unknown)
-			printf(" type: %s", typeName(kind));
-		const String &string1 = serializeValue(false);
-		printf(" value: %s\n\n", string1.data);// NEEDS "%s", otherwise HACKABLE
-//			printf("name:%s ", name.data);
-//		printf("length:%i ", length);
-//		printf("type:%s ", typeName(type).data);
-//		printf("value:%s ", serializeValue());
-//		if (this == &True)
-//			printf("TRUE");
-//		if (this == &False)
-//			printf("FALSE");
-//		if (type == objects and value.data)
-//			printf(" value.name %s", value.string.data);// ???
-//		if (type == bools)
-//			printf(" value %s", value.number ? "TRUE" : "FALSE");
-//		if (type == strings)
-//			printf(" value %s", value.string.data);
-//		if (type == numbers)
-//			printf(" value %li", value.number);
-//		if (type == floats)
-//			printf(" value %f", value.real);
-		printf(" [");
-		for (int i = 0; i < min(length, 10); i++) {
-			Node &node = children[i];
-//			if(check(node))
-			if (!node.name.empty()) {
-				printf("%s", node.name.data);
-				printf(" ");
-			} else printf("{…} ");// overview
-		}
-		printf("]");
-//		printf("\n");
-//		const String &serialized = serialize();
-//		printf("%s", serialized.data);
-		printf("\n");
 	}
 
 	Node apply_op(Node left, Node op0, Node right);
@@ -595,24 +577,23 @@ String* line = 0;// debug! EXPENSIVE for non ast nodes!
 
 	String serializeValue(bool deep = true) const;
 
-	void print();
 
 	Node &setValue(Value v);
 
 
-	Node from(Node node);// exclusive
-	Node from(String match);
+	Node &from(Node &node);// exclusive
+	Node &from(String match);
 
-	Node from(int pos);
+	Node &from(int pos);
 
-	Node to(Node match);// exclusive
-	Node to(String match);
+	Node &to(Node match);// exclusive
+	Node &to(String match);
 
 	Node &flat();
 
 	Node &setName(char *name0);
 
-	Node values();
+	Node &values();
 
 	bool isSetter();
 
@@ -639,7 +620,7 @@ String* line = 0;// debug! EXPENSIVE for non ast nodes!
 
 	Node &setType(Node *_type) {
 //		type = &_type->setType(classe);
-	return *this;
+		return *this;
 	}
 
 	List<String> &toList();
@@ -648,12 +629,12 @@ String* line = 0;// debug! EXPENSIVE for non ast nodes!
 
 	void clear();
 
-	String* Line();
-	};
+	String *Line();
+};
 
-	typedef const Node Nodec;
+typedef const Node Nodec;
 
-	void initSymbols();// wasm doesn't do it why!?
+void initSymbols();// wasm doesn't do it why!?
 class [[maybe_unused]] BoolBridge {
 	bool _b;
 public:
