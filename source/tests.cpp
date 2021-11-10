@@ -1998,7 +1998,10 @@ void testSubGroupingIndent() {
 
 void testSubGrouping() {// dangling , should make '\n' not close
 //	result=parse("a\nb,c,\nd;e");
-	result = parse("a\nb,c,\nd;\ne");
+	result = parse("a\n"
+	               "b,c,\n"
+	               "d;\n"
+	               "e");
 	assert_equals(result.length, 3);
 	assert_equals(result.first(), "a");
 	assert_equals(result.last(), "e");
@@ -2015,10 +2018,16 @@ void testCurrent() {
 	clearContext();
 //	testLogarithm();
 //	assert_emit("1 +1 == [1 1]", 1);
-	testSubGrouping();
+//	testSubGrouping();
+	check(parse("false and false").length == 3);
+	assert_emit("false and false", false);
 
-//	auto uff = "r = S2 + z*(S3 - z*S4) + z*w*(S5 + z*S6)";
-	auto uff = "double sin(x){a}";
+	assert_emit("grow:=it*2; grow 3*4", 24)
+
+	auto uff = "r = 1 + 2*3 + 1";
+	assert_emit(uff, 8);
+//	auto uff = "r = 1 + 2*3 + 4";// DIFFERENT BUG EHHHW
+//	auto uff = "double sin(x){a}";
 //auto uff = "r = S2 + z + z*w*(S5 + z*S6)";
 //	auto uff = "double sin(double x){\n\tz=1;\n"
 //	           "\tdouble\n"
@@ -2028,7 +2037,7 @@ void testCurrent() {
 //	           "\tr = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6);}";
 
 //	assertSerialize(uff);
-//	assert_emit(uff, 11);
+
 //	assert_emit("use sin;sin π/2", 1);
 //	assert_emit("use sin;sin π", 0);
 
