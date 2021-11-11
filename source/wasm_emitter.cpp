@@ -42,7 +42,7 @@ void load_aliases() {
 	for (auto key: list) {
 		auto normed = key.name;
 		aliases[normed] = key.toList();
-		for (auto alias:key) {
+		for (auto alias: key) {
 			auto variant = alias.name;
 			hash_to_normed_alias[variant.hash()] = normed;
 		}
@@ -137,7 +137,8 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 //	if(eq(s,"$1="))return set_local;
 //	if (eq(s, "=$1"))return get_local;
 //	if (eq(s, "=$1"))return tee_local;
-
+	if (kind == unknown_type)
+		error("unknown type should be inferred by now");
 	if (kind == voids or kind == void_block or kind == i32t) { // INT32
 		if (eq(s, "+"))return i32_add; // i32.add
 		//		if (eq(s, "-") and previous==none)return sign_flip; *-1
@@ -345,6 +346,16 @@ bytes ieee754(float num) {
 	while (i--)flip[i] = data[i];// don't flip, just copy to malloc
 	return flip;
 }
+
+bytes ieee754(double num) {
+	char data[8];
+	double *hack = ((double *) data);
+	*hack = num;
+	byte *flip = static_cast<byte *>(alloc(1, 9));
+	short i = 8;
+	while (i--)flip[i] = data[i];// don't flip, just copy to malloc
+	return flip;
+}
 //Code emitExpression (Node* nodes);
 
 [[nodiscard]]
@@ -368,6 +379,7 @@ Code cast(Node &from, Node &to);
 Code emitStringOp(Node op, String context);
 
 [[nodiscard]]
+// ≠ emitData
 Code emitValue(Node node, String context);
 
 Valtype fixValtype(Valtype &valtype);
@@ -392,20 +404,20 @@ bool isProperList(Node &node) {
 Code emitArray(Node &node, String context) {
 	let code = Code();
 	int pointer = data_index_end;
-for (Node &child:node) {
+	for (Node &child: node) {
 // todo: smart pointers?
-code.add(emitData(child, context));// pointers in flat i32/i64 format!
-}
-String ref = node.name;
-if (node.name.empty() and node.parent) {
-ref = node.parent->name;
-}
-if (not node.name.empty())
-referenceIndices.insert_or_assign(ref, pointer);
-code.add(emitData(Node(0), context));// terminate list with 0.
-last_data = pointer;
+		code.add(emitData(child, context));// pointers in flat i32/i64 format!
+	}
+	String ref = node.name;
+	if (node.name.empty() and node.parent) {
+		ref = node.parent->name;
+	}
+	if (not node.name.empty())
+		referenceIndices.insert_or_assign(ref, pointer);
+	code.add(emitData(Node(0), context));// terminate list with 0.
+	last_data = pointer;
 //	last_type = array;
-return code;// pointer
+	return code;// pointer
 // todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
 //	last_data = pointer;
 //	return code.addConst(pointer);// once written to data section, we also want to use it immediately
@@ -707,10 +719,15 @@ Code emitValue(Node node, String context) {
 			code.addByte((byte) i32_const);
 			code.push(node.value.longy);
 			break;
+//		case floats:
+//			last_type = f32t;// auto cast return!
+//			code.addByte((byte) f32_const);
+//			code.push(ieee754((float)node.value.real), 4);
 		case reals:
-			last_type = f32t;// auto cast return!
-			code.addByte((byte) f32_auto);
-			code.push(ieee754(node.value.real), 4);
+			last_type = f64t;// auto cast return!
+			code.addByte((byte) f64_const);
+			code.push(ieee754(node.value.real), 8);
+//			code.push(ieee754(node.value.real), 8);
 			break;
 //		case identifier:
 		case reference: {
@@ -853,6 +870,8 @@ Code emitOperator(Node node, String context) {
 		code.add(index);
 		return code;
 	}
+	if (last_type == unknown_type)
+		internal_error("unknown type should be inferred by now:\n"s + node.serialize());
 	byte opcode = opcodes(name, last_type, arg_type);
 
 	if (opcode >= 0x8b and opcode <= 0x98)
@@ -907,6 +926,10 @@ Code emitOperator(Node node, String context) {
 		else code.add(emitCall(*new Node("powi"), context));
 	} else if (name.startsWith("-")) {
 		code.add(i32_sub);
+	} else if (name == "return") {
+		Valtype return_type = functionSignatures[context].return_type;
+		code.add(cast(last_type, return_type));
+		code.add(return_block);
 	} else if (name == "as") {
 		code.add(emitCall(*new Node("cast"), context));
 
@@ -1046,7 +1069,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			if (not name.empty())
 				code.add(emitSetter(node, node, context));
 			else if (node.length > 0)
-				for (Node child : node) {
+				for (Node child: node) {
 					Code expression = emitExpression(child, context);
 					code.push(expression);
 				};
@@ -1087,7 +1110,11 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				if (functionCodes.has(name) or functionSignatures.has(name))
 					return emitCall(node, context);
 				else if (globals.has(name)) return emitGetGlobal(node);
-				else if (name == "π") // if not provided as global
+				else if (name == "ℯ")
+					return emitValue(Node(2.7182818284590), current);
+				else if (name == "τ" or name == "tau") // if not provided as global
+					return emitValue(Node(6.283185307179586), current);
+				else if (name == "π" or name == "pi") // if not provided as global
 					return emitValue(Node(3.141592653589793), current);
 				else if (!node.isSetter()) {
 					print(locals[context]);
@@ -1104,7 +1131,10 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 					code = code + emitExpression(*node.value.node, context); // done above!
 				else
 					code = code + emitValue(node, context); // done above!
-				code.add(cast(last_type, localTypes[context][local_index]));
+				if (localTypes[context][local_index] == unknown_type)
+					localTypes[context][local_index] = last_type;
+				else
+					code.add(cast(last_type, localTypes[context][local_index]));
 //				todo: convert if wrong type
 				code.addByte(tee_local);// set and get/keep
 				code.addByte(local_index);
@@ -1223,7 +1253,7 @@ Code emitCall(Node &fun, String context) {
 		error("MISSING import/declaration for function %s\n"s % name);
 	int i = 0;
 	// args may have already been emitted, e.g. "A"+"B" concat
-	for (Node arg : fun) {
+	for (Node arg: fun) {
 		code.push(emitExpression(arg, context));
 //		Valtype argType = mapTypeToWasm(arg); // todo ((+ 1 2)) needs deep analysis, or:
 		Valtype argType = last_type;// evaluated expression smarter than node arg!
@@ -1245,7 +1275,7 @@ Code emitCall(Node &fun, String context) {
 Code cast(Valtype from, Valtype to) {
 	last_type = to;// danger: hides last_type in caller!
 	Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
-	if (to == none)return nop;// no cast needed magic VERSUS wasm drop!!!
+	if (to == none or to == unknown_type)return nop;// no cast needed magic VERSUS wasm drop!!!
 	if (from == to)return nop;// nop
 
 	if (from == array and to == charp)return nop;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
@@ -1286,6 +1316,7 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==i64 and to==f64)	return Code(f64_reinterpret_i64);
 	if (from == i64 and to == f32) return Code(f64_convert_i64_s).addByte(f32_from_f64);
 	if (from == void_block)return nop;// todo: pray
+	if (from == unknown_type)return nop;// todo: don't pray
 	if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
 	if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
 	if (from == f32 and to == array)return nop;// pray / assume f32 is a pointer here. LOL NO todo!
@@ -1312,7 +1343,8 @@ Code emitDeclaration(Node fun, Node &body) {
 	// todo: x := 7 vs x := y*y
 	//
 	if (not functionIndices.has(fun.name)) {
-		error("Declarations need to be registered before in the parser so they can be called from main code!");
+		error("Declaration %s need to be registered before in the parser so they can be called from main code!"s %
+		      fun.name);
 //		functionIndices[fun.name] = functionIndices.size();
 	}
 //	else {
@@ -1354,8 +1386,11 @@ Code emitSetter(Node node, Node &value, String context) {
 	return setter;
 }
 
+bool isPrimitive(Node &node);
 
-[[nodiscard]]
+Code zeroConst(Valtype valtype);
+
+//[[nodiscard]];
 Code emitIf(Node &node, String context) {
 	Code code;
 	//	 gets rid of operator, we MAY want .flat() ?
@@ -1370,14 +1405,42 @@ Code emitIf(Node &node, String context) {
 	auto returnType = last_type;
 	code.addByte(returnType);// of then!
 	code = code + then_block;// BODY
+	bool else_done = false;
 	if (node.length == 3) {
-		code.addByte(elsa);
 //		Node otherwise = node["else"];//->clone();
 		Node otherwise = node[2].values();
-		code = code + emitExpression(otherwise, context);
-		code.add(cast(last_type, returnType));
+		if (otherwise.length > 0 or isPrimitive(otherwise)) {
+			code.addByte(elsa);
+			code = code + emitExpression(otherwise, context);
+			code.add(cast(last_type, returnType));
+			else_done = true;
+		}
+	}
+	if (not else_done and returnType != none) {
+//		we NEED to return something in wasm! else: "type mismatch in if false branch"
+		code.addByte(elsa);
+		code.add(zeroConst(returnType));
 	}
 	code.addByte(end_block);
+	return code;
+}
+
+Code zeroConst(Valtype returnType) {
+	Code code;
+	if (returnType == int32)
+		code.addConst(0);
+	if (returnType == f32) {
+		code.add(f32_const);
+		code.push((bytes) malloc(4), 4);
+	}
+	if (returnType == f64) {
+		code.add(f64_const);
+		code.push((bytes) malloc(8), 8);
+	}
+	if (returnType == i64) {
+		code.add(i64_const);
+		code.push((bytes) malloc(8), 8);
+	}
 	return code;
 }
 
@@ -1497,21 +1560,27 @@ Code emitBlock(Node &node, String context) {
 		locals_count = locals_count - argument_count;
 	else
 		warn("locals consumed by arguments"); // ok in  double := it * 2; => double(it){it*2}
-	block.addByte(locals_count);
-	for (int i = 0; i < locals_count; i++) {
-		Valtype valtype = localTypes[context][i];
-//		block.addByte(i + 1);// index
-		block.addByte(1);// count! todo: group by type nah
-		if (valtype == none or valtype == voids or valtype == charp or valtype == array)
-			valtype = int32;
-		block.addByte(valtype);
-	}
+
 	// todo block.addByte(i+1) // index seems to be wrong: i==NUMBER of locals of type xyz ??
 //	013b74: 01 7f                      | local[0] type=i32
 //	013b76: 02 7f                      | local[1..2] type=i32
 //	013b78: 03 7f                      | local[3..5] type=i32
 
 	Code inner_code_data = emitExpression(node, context);
+
+	// locals can still be updated in emitExpression
+	block.addByte(locals_count);
+	for (int i = 0; i < locals_count; i++) {
+		Valtype valtype = localTypes[context][i];
+//		block.addByte(i + 1);// index
+		block.addByte(1);// count! todo: group by type nah
+		if (valtype == unknown_type)
+			internal_error("unknown type should be inferred by now for local "s + locals[context][i]);
+		if (valtype == none or valtype == voids or valtype == charp or valtype == array)
+			valtype = int32;
+		block.addByte(valtype);
+	}
+
 //	if (inner_code_data.length == 0)
 //		return Code();// Drop empty functions!? too late: typeSection already done! todo?
 	block.push(inner_code_data);
@@ -1559,7 +1628,7 @@ Code typeSection() {
 	int typeCount = 0;
 	Code type_data;
 //	print(functionIndices);
-	for (String fun : functionSignatures) {
+	for (String fun: functionSignatures) {
 		if (!fun) {
 //			print(functionIndices);
 //			print(functionSignatures);
@@ -1620,7 +1689,7 @@ Code importSection() {
 	// the import section is a vector of imported functions
 	Code imports;
 	import_count = 0;
-	for (String fun : functionSignatures) {
+	for (String fun: functionSignatures) {
 		Signature &signature = functionSignatures[fun];
 		if (signature.is_import and signature.is_used and not signature.is_builtin) {
 			++import_count;
@@ -1661,7 +1730,7 @@ Code codeSection(Node root) {
 	int new_count;
 
 	new_count = declaredFunctions.size();
-	for (auto declared : declaredFunctions) {
+	for (auto declared: declaredFunctions) {
 		print("declared function: "s + declared);
 		if (!declared)error("empty function name (how?)");
 		if (not functionIndices.has(declared))// used or not!
@@ -1721,7 +1790,7 @@ Code codeSection(Node root) {
 			error("no start function name given. null instead of 'main', can't assign block");
 		else warn("no start block (ok)");
 	}
-	for (String fun : functionCodes) {// MAIN block extra ^^^
+	for (String fun: functionCodes) {// MAIN block extra ^^^
 		Code &func = functionCodes[fun];
 		code_blocks = code_blocks + encodeVector(func);
 	}
@@ -2019,14 +2088,14 @@ Code dwarfSection() {
 void add_builtins() {
 	import_count = 0;
 	builtin_count = 0;
-	for (auto sig : functionSignatures) {// imports first
+	for (auto sig: functionSignatures) {// imports first
 		Signature &signature = functionSignatures[sig];
 		if (signature.is_import and signature.is_used) {
 			functionIndices[sig] = ++last_index;// functionIndices.size();
 			import_count++;
 		}
 	}
-	for (auto sig : functionSignatures) {// now builtins
+	for (auto sig: functionSignatures) {// now builtins
 		if (functionSignatures[sig].is_builtin and functionSignatures[sig].is_used) {
 			functionIndices[sig] = ++last_index;// functionIndices.size();
 			builtin_count++;
