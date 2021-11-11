@@ -455,6 +455,8 @@ enum Opcodes {
 	f64_const = 0x44,
 
 	i32_eqz = 0x45, // use for not!
+	f32_eqz = 0x45, // HACK: no such thing!
+
 //	negate = 0x45,
 //	not_truty = 0x45,
 	i32_eq = 0x46,
@@ -465,7 +467,6 @@ enum Opcodes {
 	i32_ge = 0x4E,
 
 	i64_eqz = 0x50,
-	f32_eqz = 0x50, // HACK: no such thing!
 	f64_eqz = 0x50, // HACK: no such thing!
 
 	i64_eq = 0x51,
