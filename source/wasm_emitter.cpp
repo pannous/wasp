@@ -1571,11 +1571,12 @@ Code emitBlock(Node &node, String context) {
 	// locals can still be updated in emitExpression
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; i++) {
+		auto name = locals[context][i];// add later to custom section, here only for debugging
 		Valtype valtype = localTypes[context][i];
 //		block.addByte(i + 1);// index
 		block.addByte(1);// count! todo: group by type nah
 		if (valtype == unknown_type)
-			internal_error("unknown type should be inferred by now for local "s + locals[context][i]);
+			internal_error("unknown type should be inferred by now for local "s + name);
 		if (valtype == none or valtype == voids or valtype == charp or valtype == array)
 			valtype = int32;
 		block.addByte(valtype);
