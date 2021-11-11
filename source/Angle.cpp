@@ -955,7 +955,7 @@ Node &analyze(Node &node, String context) {
 	}
 	if (type == key) {
 		if (node.value.node /* i=ø has no node */)
-			node.value.node = analyze(*node.value.node).clone();
+			node.value.node = analyze(*node.value.node, context).clone();
 		if (node.length > 0) {
 			// (double x, y)  (while x) : y
 			auto first = node.first().first();
