@@ -75,7 +75,7 @@ chars import_keywords[] = {"use", "require", "import", "include", "using", 0};
 // todo aliases need NOT be in this list:
 // todo library functions need NOT be in this list (loaded when though?)
 // todo special UTF signs need NOT be in this list, as they are identified as operators via utf range
-chars operator_list0[] = {"+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
+chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
                           "is", "equal", "equals", "==", "!=", "≠",
                           "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":",
                           "upto", "…", "...", "..<" /*range*/,
@@ -848,20 +848,22 @@ private:
 		if (symbol == "ƒ")return False;// ‽
 		if (symbol == "⊥")return False;//
 //		if (node.name == "𐄂")return False; ambiguous: multiplication 𐄂 + / check 𐄂
-//		if (node.name == "wrong")return False;
-//		if (node.name == "Wrong")return False;
+		if (symbol == "wrong")return False;
+		if (symbol == "Wrong")return False;
 		if (symbol == "⊤")return True; // + vs -
 		if (symbol == "true")return True;
 		if (symbol == "True")return True;
 		if (symbol == "yes")return True;
 		if (symbol == "Yes")return True;
+//		if (symbol == "correct")return True;
+//		if (symbol == "Correct")return True;
 		if (symbol == "✔")return True;
 		if (symbol == "✔\uefb88f")return True;// green ✔️ ~ ✔
 		if (symbol == "✔️")return True;
-		if (symbol == "🗸")return True;
 		if (symbol == "✓️")return True;
 		if (symbol == "☑")return True;
-		if (symbol == "🗹")return True;
+//		if (symbol == "🗸")return True;
+//		if (symbol == "🗹")return True;
 //		if (node.name == "Right")return True;// unless class!
 //		if (node.name == "right")return True;
 		if (symbol == "NIL")return NIL;

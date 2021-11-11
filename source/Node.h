@@ -175,6 +175,14 @@ public:
 	}
 
 
+	explicit Node(String *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
+		while (args[length] and length < MAX_DATA_LENGTH) {
+			children[length] = Node(args[length]);
+			length++;
+		}
+		kind = groups;
+	}
+
 	explicit Node(int buffer[]) {
 		value.data = buffer;
 		kind = buffers;
@@ -222,9 +230,11 @@ public:
 		va_end(args);
 	}
 
+
 	// why not auto null terminated on mac?
 	// vargs needs to be 0 terminated, otherwise pray!
-	explicit Node(char *a, char *b, ...) {
+	explicit
+	Node(char *a, char *b, ...) {
 		kind = objects;// groups list
 		add(Node(a).clone());
 		va_list args;

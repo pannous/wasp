@@ -100,6 +100,7 @@ typedef chars chars;
 #endif
 //void* alloc(number size);// wasm | linux
 
+#define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
 #define error(msg) error1(msg,__FILE__,__LINE__)
 #define todo(msg) error1(msg,__FILE__,__LINE__)
 
