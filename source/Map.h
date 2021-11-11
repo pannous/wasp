@@ -127,12 +127,13 @@ public:
 	List() {}
 
 	List(S first, ...) {
-		items[0] = first;
+//		items[0] = first;
 		va_list args;// WORKS WITHOUT WASI! with stdargs
 		va_start(args, first);
-		S *i = &first;
-		while (i) {
-			i = (S *) va_arg(args, S*);
+		S *item = &first;
+		while (item) {
+			items[_size++] = item;
+			item = (S *) va_arg(args, S*);
 		}
 		va_end(args);
 	}

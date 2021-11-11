@@ -133,6 +133,8 @@ chars typeName(Valtype t) {
 			return "void";
 		case Valtype::none:
 			return "void_block";
+		case Valtype::unknown_type:
+			return "unknown";// internal
 		default:
 			error("missing name for Valtype "s + t);
 	}
@@ -145,12 +147,16 @@ Valtype mapTypeToWasm(Node &n) {
 		return float64;
 	if (n == Long)
 		return i64;
+
+	//	if(n.type)…
+
 	// int is not a true angle type, just an alias for long.
 	// todo: but what about interactions with other APIs? add explicit i32 !
 	// todo: in fact hide most of this under 'number' magic umbrella
 	if (n.kind == bools)return int32;
 	if (n.kind == nils)return voids;// mapped to int32 later: ø=0
-	if (n.kind == reals)return float32;// float64; todo why 32???
+//	if (n.kind == reals)return float32;// float64; todo why 32???
+	if (n.kind == reals)return float64;
 	if (n.kind == longs)return int32;// int64; todo
 	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
 	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
