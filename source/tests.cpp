@@ -12,7 +12,6 @@
 
 void testSinus() {
 	assert_emit("double sin(double x){\n"
-	            //			"\tpi=3.1415926535897932384626433\n"
 	            "\tx = modulo_double(x,tau)\n"
 	            "\tdouble z = x*x\n"
 	            "\tdouble w = z*z\n"
@@ -27,6 +26,10 @@ void testSinus() {
 	            "\tdouble r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6)\n"
 	            "\treturn x + z*x*(S1 + z*r)\n"
 	            "};sin π/2", 1);// IT WORKS!!!
+	assert_emit("use sin;sin π/2", 1);
+	assert_emit("use sin;sin π", 0);
+	assert_emit("use sin;sin -π/2", -1);
+	assert_emit("use sin;sin 3*π/2", 1);
 }
 
 void testIteration() {
@@ -709,7 +712,7 @@ void testErrors() {
 
 void testForEach() {
 	int sum = 0;
-	for (Node &item : parse("1 2 3"))
+	for (Node &item: parse("1 2 3"))
 		sum += item.value.longy;
 	assert(sum == 6);
 }
@@ -799,16 +802,16 @@ void testIterate() {
 //	parse("(1 2 3)");
 	Node empty;
 	bool nothing = true;
-	for (Node &child :empty)nothing = false;
+	for (Node &child: empty)nothing = false;
 	check(nothing);
 	Node liste = parse("{1 2 3}");
 	liste.print();
-	for (Node &child : liste) {
+	for (Node &child: liste) {
 		// SHOULD effect result
 		child.value.longy = child.value.longy + 10;
 	}
 	check(liste[0].value.longy == 11)
-	for (Node child : liste) {
+	for (Node child: liste) {
 		// should NOT effect result
 		child.value.longy = child.value.longy + 1;
 	}
@@ -2048,30 +2051,14 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	assert_emit("if 2 : 3 else 4", 3);
 
 //	testLogarithm();
 //	assert_emit("1 +1 == [1 1]", 1);
 //	testSubGrouping();
-//	auto uff = "double sin(x){a}";
-//auto uff = "r = S2 + z + z*w*(S5 + z*S6)";
-//	auto uff = "double sin(double x){\n\tz=1;\n"
-//	           "\tdouble\n"
-//	           "\tS1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */\n"
-//	           "\tS2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */\n"
-//	           "\tw = z*z;\n"
-//	           "\tr = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6);}";
-//	assert_emit("x=2;\tz = x*x\n\tdouble w = z*z\n", 16)
-//	assert_emit("x=2;\tz = x*x\n\tw = z*z\n", 16)
-//	assert_emit("x=4;double sin:=it; if(x >= pi) return -sin(modulo_double(x,pi))\n", 0);
-//	assertSerialize(uff);
-//	assert_emit("grow x:=x*2;grow(4)", 8)
-//	assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
-//	assert_emit("fib:=if it<2 then return 1 else return fib(it-1)+fib(it-2);fib(7)", 13)
 
-
-	testSinus();
-	assert_emit("use sin;sin π/2", 1);
-//	assert_emit("use sin;sin π", 0);
+	testWasmLogicUnary();
+//	testSinus();
 
 //testNodesInWasm();
 //testSubGrouping();
