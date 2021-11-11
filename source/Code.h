@@ -304,6 +304,8 @@ public:
 // 4. some c++ types String List etc
 // the last three can be added as special internal values to Valtype, outside the wasm spec
 enum Valtype {
+	unknown_type = -1,
+
 	voids = 0x00, // DANGER!=void_block  internal only for return type
 
 	void_block = 0x40,
@@ -400,7 +402,7 @@ enum Opcodes {
 	call_indirect = 0x11,
 
 	// EXTENSIONS:
-	return_call = 0x12,  // the tail-call version of call
+	return_call = 0x12,  // the tail-call version of call ≠ return_block
 	return_call_indirect = 0x13, // the tail-call version of call_indirect
 	call_ref = 0x14, // [ts1 (ref $t)] -> [ts2] iff $t = [ts1] -> [ts2]
 	return_call_ref = 0x15,
@@ -448,6 +450,9 @@ enum Opcodes {
 	i64_auto = 0x42,
 	i64_const = 0x42,
 	f32_auto = 0x43,
+
+	f32_const = 0x43,
+	f64_const = 0x44,
 
 	i32_eqz = 0x45, // use for not!
 //	negate = 0x45,

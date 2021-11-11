@@ -792,6 +792,7 @@ String Node::serializeValue(bool deep) const {
 	}
 }
 
+// todo: (x)=>x when root
 String Node::serialize() const {
 	if (not this)return "";
 	String wasp = "";
@@ -802,11 +803,11 @@ String Node::serialize() const {
 			if (not atoi0(name) and name and name.data and name.data[0] != '0')
 				return ""s + name + ":" + serializedValue;
 		if (kind == strings and name and (name.empty() or name == value.string))
-			return serializedValue;// no text:"text", just "text"
+			return serializedValue;// not text:"text", just "text"
 		if (kind == longs and name and (name.empty() or name == itoa(value.longy)))
-			return serializedValue;// no "3":3
+			return serializedValue;// not "3":3
 		if (kind == reals)// and name and (name.empty() or name==itoa(value.longy)))
-			return serializedValue;// no "3":3.14
+			return serializedValue;// not "3":3.14
 		if (serializedValue and value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
 		    !eq(serializedValue, "?")) {
 			wasp += ":";
@@ -818,7 +819,7 @@ String Node::serialize() const {
 		if (kind == expression and not name.empty())wasp += ":";
 		if ((length > 1 or kind == patterns or kind == objects)) {
 			// skip single element braces: a == (a)
-			if (kind == groups and not separator)
+			if (kind == groups and (not separator or separator == ' '))
 				wasp += "(";
 			else if (kind == objects)wasp += "{";
 			else if (kind == patterns)wasp += "[";
@@ -833,7 +834,7 @@ String Node::serialize() const {
 				wasp += node.serialize();
 			}
 		if (length > 1 or kind == patterns or kind == objects) {
-			if (kind == groups and not separator)wasp += ")";
+			if (kind == groups and (not separator or separator == ' '))wasp += ")";
 			else if (kind == objects)wasp += "}";
 			else if (kind == patterns)wasp += "]";
 			else if (length > 0 and not separator) wasp += ")";// default
@@ -920,13 +921,21 @@ Node &Node::flat() {
 		Node &child = children[0];
 		if (child.kind == patterns and kind != groups)// huh?
 			return *this;// never flatten patterns x=[] "hi"[1] …
-		if (value.node == &child)// todo remove redundancy
+		if (value.node == &child and name.empty())// todo remove redundancy
 			return *value.node;
+		if (kind == key and name.empty()) {// (x):y => x:y
+			if (not child.value.node and child.kind == reference) {
+				child.value.node = value.node;
+				child.kind = key;
+			}
+			return child;
+		}
 		if ((long) children < MEMORY_SIZE and not value.data and name.empty()) {
 			child.parent = parent;
 			return child.flat();
 		}
 		if (child.length > 0 and not child.value.data and child.name.empty()) {
+			// double flatten ((x y))=>x y   todo: via recursion
 			child.children[0].parent = this;
 			children = child.children;
 			length = child.length;
@@ -1001,7 +1010,8 @@ int Node::lastIndex(Node *node, int start) {
 // ⚠️ DANGER! any references pointing to children become INVALID!
 [[modifying]]
 void Node::replace(int from, int to, Node *node) {
-	if (from < 0 or from >= length)error("Node::replace from<0 or from>=length");
+	if (from < 0 or from >= length)
+		error("Node::replace from<0 or from>=length");
 	children[from] = *node;
 	int i = 0;
 	if (to < from)error("Node::replace from>to : "s + from + ">" + to);
@@ -1019,8 +1029,11 @@ void Node::remove(int from, int to) {// including
 	if (to < from)to = from;
 	if (to >= length)to = length - 1;
 	int i = -1;
-	while (to + i++ < length)
+	while (to + ++i < length) {
 		children[from + i] = children[to + i + 1];// ok if beyond length
+		if (children[from + i].next)
+			children[from + i].next = children + from + 1;
+	}
 	length = length - (to - from) - 1;
 }
 
