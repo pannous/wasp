@@ -443,6 +443,7 @@ int currentStackItemSize() {
 	if (last_type == float32)return 4;
 	if (last_type == float64)return 8;
 	if (last_type == void_block)return 4;// int32 pointer hack todo!
+	if (last_type == unknown_type)return 4;
 	error("unknown size for stack item "s + typeName(last_type));
 	return 1;
 }
@@ -885,9 +886,14 @@ Code emitOperator(Node node, String context) {
 		code.addByte(f32_sqrt);
 		last_type = f32t;
 	} else if (opcode == f32_eqz) { // hack for missing f32_eqz
-//				0.0 + code.addByte(f32_eq);
-		code.addByte(i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
+		if (last_type == float32)
+			code.addByte(i32_reinterpret_f32);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
 		code.addByte(i32_eqz);
+		last_type = i32t;// bool'ish
+	} else if (opcode == f64_eqz) { // hack for missing f32_eqz
+		if (last_type == float64)
+			code.addByte(i64_reinterpret_f64);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
+		code.addByte(i64_eqz);
 		last_type = i32t;// bool'ish
 	} else if (name == "++" or name == "--") {
 		Node increased = Node(name[0]).setType(operators);
@@ -1576,7 +1582,8 @@ Code emitBlock(Node &node, String context) {
 //		block.addByte(i + 1);// index
 		block.addByte(1);// count! todo: group by type nah
 		if (valtype == unknown_type)
-			internal_error("unknown type should be inferred by now for local "s + name);
+			valtype = int32;
+// todo		internal_error("unknown type should be inferred by now for local "s + name);
 		if (valtype == none or valtype == voids or valtype == charp or valtype == array)
 			valtype = int32;
 		block.addByte(valtype);
