@@ -10,6 +10,25 @@
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
 
+void testSinus() {
+	assert_emit("double sin(double x){\n"
+	            //			"\tpi=3.1415926535897932384626433\n"
+	            "\tx = modulo_double(x,tau)\n"
+	            "\tdouble z = x*x\n"
+	            "\tdouble w = z*z\n"
+	            "\tS1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */\n"
+	            "\tS2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */\n"
+	            "\tS3  = -1.98412698298579493134e-04, /* 0xBF2A01A0, 0x19C161D5 */\n"
+	            "\tS4  =  2.75573137070700676789e-06, /* 0x3EC71DE3, 0x57B1FE7D */\n"
+	            "\tS5  = -2.50507602534068634195e-08, /* 0xBE5AE5E6, 0x8A2B9CEB */\n"
+	            "\tS6  =  1.58969099521155010221e-10  /* 0x3DE5D93A, 0x5ACFD57C */\n"
+	            "\ttau =  6.283185307179586 // 2π\n"
+	            "\tif(x >= pi) return -sin(modulo_double(x,pi))\n"
+	            "\tdouble r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6)\n"
+	            "\treturn x + z*x*(S1 + z*r)\n"
+	            "};sin π/2", 1);// IT WORKS!!!
+}
+
 void testIteration() {
 	List<String> args;
 	for (auto x: args)error("NO ITEM");
@@ -2041,30 +2060,16 @@ void testCurrent() {
 //	           "\tS2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */\n"
 //	           "\tw = z*z;\n"
 //	           "\tr = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6);}";
-	assert_emit("x=2;\tz = x*x\n\tdouble w = z*z\n", 16)
-	assert_emit("x=2;\tz = x*x\n\tw = z*z\n", 16)
-	assert_emit("x=4;double sin:=it; if(x >= pi) return -sin(modulo_double(x,pi))\n", 0);
+//	assert_emit("x=2;\tz = x*x\n\tdouble w = z*z\n", 16)
+//	assert_emit("x=2;\tz = x*x\n\tw = z*z\n", 16)
+//	assert_emit("x=4;double sin:=it; if(x >= pi) return -sin(modulo_double(x,pi))\n", 0);
 //	assertSerialize(uff);
 //	assert_emit("grow x:=x*2;grow(4)", 8)
 //	assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
 //	assert_emit("fib:=if it<2 then return 1 else return fib(it-1)+fib(it-2);fib(7)", 13)
 
-	assert_emit("double sin(double x){\n"
-	            //			"\tpi=3.1415926535897932384626433\n"
-	            "\tS1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */\n"
-	            "\tS2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */\n"
-	            "\tS3  = -1.98412698298579493134e-04, /* 0xBF2A01A0, 0x19C161D5 */\n"
-	            "\tS4  =  2.75573137070700676789e-06, /* 0x3EC71DE3, 0x57B1FE7D */\n"
-	            "\tS5  = -2.50507602534068634195e-08, /* 0xBE5AE5E6, 0x8A2B9CEB */\n"
-	            "\tS6  =  1.58969099521155010221e-10  /* 0x3DE5D93A, 0x5ACFD57C */\n"
-	            "\ttau =  6.283185307179586 // 2π\n"
-	            "\tx = modulo_double(x,tau)\n"
-	            "\tif(x >= pi) return -sin(modulo_double(x,pi))\n"
-	            "\tdouble z = x*x\n"
-	            "\tdouble w = z*z\n"
-	            "\tdouble r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6)\n"
-	            "\treturn x + z*x*(S1 + z*r)\n"
-	            "}", 0);
+
+	testSinus();
 	assert_emit("use sin;sin π/2", 1);
 //	assert_emit("use sin;sin π", 0);
 
