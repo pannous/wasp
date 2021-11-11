@@ -605,6 +605,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 	String last = "";
 	int last_position = 0;
 	for (String &op: operators) {
+		if (op == "else")continue;// handled in groupIf
 		if (op == "-")
 			debug = true;
 		if (op == "-…") op = "-";// precedence hack
