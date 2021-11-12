@@ -90,7 +90,7 @@ wrap(putf) {
 	return NULL;
 }
 
-wrap(logd) {
+wrap(putd) {
 	float f = args[0].of.f64;
 	printf("%f", f);
 	return NULL;
@@ -159,6 +159,7 @@ wasm_wrap *link_import(String name) {
 	if (name == "puts") return &wrap_puts;
 	if (name == "puti") return &wrap_puti;
 	if (name == "putf") return &wrap_putf;
+	if (name == "putd") return &wrap_putd;
 	if (name == "putc") return &wrap_put_char;
 	if (name == "putchar") return &wrap_put_char;// todo: remove duplicates!
 	if (name == "put_char") return &wrap_put_char;// todo: remove duplicates!
@@ -265,6 +266,16 @@ const wasm_functype_t *funcType(Signature &signature) {
 			case charp:
 			case f32:
 				return wasm_functype_new_1_0(f);
+			case f64:
+				switch (signature.return_type) {
+					case none:
+					case voids:
+						return wasm_functype_new_1_0(F);
+					case f64:
+						return wasm_functype_new_1_1(F, F);
+					default:
+						break;
+				}
 			case int32:
 				switch (signature.return_type) {
 					case none:

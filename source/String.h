@@ -30,6 +30,7 @@ extern String &EMPTY_STRING;
 // character in the real world is LESS ambivalent then in the UTF world! on the other hand a new term like icon/grapheme cant hurt
 //typedef wchar_t character;// overloaded term that can mean many things:
 typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
+//typedef codepoint operator_char;
 //class Codepoint{ char32_t nr; };// to avoid wrong autocast codepoint x=string[i]
 //typedef char* grapheme;// sequence of one or more code points that are displayed as a single 'character' ä may be two code points a¨, or one ä
 typedef String grapheme;// sequence of one or more code points that are displayed as a single 'character' ☀️=☀+_ e2 98 80 + ef b8 8f

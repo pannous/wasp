@@ -122,11 +122,13 @@ template<class S>
 class List {
 	int _size = 0;
 public:
-	S *items = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
+	S *items;
 
-	List() {}
+	List() {
+		items = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
+	}
 
-	List(S first, ...) {
+	List(S first, ...) : List() {
 //		items[0] = first;
 		va_list args;// WORKS WITHOUT WASI! with stdargs
 		va_start(args, first);
@@ -138,7 +140,7 @@ public:
 		va_end(args);
 	}
 
-	List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
+	List(S *args) : List() {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
 		while (args[_size] and _size < MAP_ALLOCATION_RESERVED_COUNT) {
 			items[_size] = args[_size];
 			_size++;
@@ -147,8 +149,8 @@ public:
 
 #ifndef WASM
 
-	List(const std::initializer_list<S> &_items) {
-		for (const S &s : _items) {
+	List(const std::initializer_list<S> &_items) : List() {
+		for (const S &s: _items) {
 			items[_size++] = s;
 		}
 	}
@@ -332,14 +334,19 @@ public:
 		}
 	}
 
-//	T *operator[](S key) {
+// MUST USE map.has(x) instead of map[x] otherwise it is created!!
+	// prepare assignment a[b]=c  BAD because unknown symbols will be added!!
 	T &operator[](S key) {// CREATING on access! use map.has(x) if not desired
 		int position1 = position(key);
 		if (position1 < 0) {
-			if (use_default) {
-				insert_or_assign(key,
-				                 defaulty);// prepare assignment a[b]=c  BAD because unknown symbols will be added!!
-				return values[_size - 1];// MUST USE map.has(x) instead of map[x] otherwise it is created!!
+			if (leave_blank) {
+				_size++;// values already contain blank T's so ok
+				return values[_size - 1];
+			} else if (use_default_constructor) {
+//				T* new_default=(T*)calloc(sizeof(T));// necessary for types with field, else all items share the same field!
+//				memcpy(new_default, defaulty, sizeof(T));// no, this would copy fields (e.g. pointers to same list)
+				insert_or_assign(key, *new T());
+				return values[_size - 1];
 //				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
 			} else {
 				error("MISSING KEY: "s + key);
@@ -372,12 +379,13 @@ public:
 		_size = 0;
 	}
 
-	bool use_default = false;
+	bool leave_blank = false;//true;
+	bool use_default_constructor = false;
 	T defaulty;
 
 	void setDefault(T d) {
 		defaulty = d;
-		use_default = true;
+		use_default_constructor = true;
 	}
 
 	S *begin() {
