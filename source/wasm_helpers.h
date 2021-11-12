@@ -72,8 +72,9 @@ typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units 
 
 extern "C" int puts(const char *);// stdio
 extern "C" void putx(int i);// hex
+extern "C" void putp(void *f);// pointer
 extern "C" void puti(int i);
-extern "C" void putp(long *char_pointer);
+//extern "C" void putp(long *char_pointer);
 extern "C" void put_char(codepoint c);
 //extern "C" void put_char(char c);
 //extern "C" int putchar(int c);// stdio

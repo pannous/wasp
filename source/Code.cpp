@@ -147,6 +147,8 @@ Valtype mapTypeToWasm(Node &n) {
 		return float64;
 	if (n == Long)
 		return i64;
+	if (functionSignatures.has(n.name))
+		return functionSignatures[n.name].return_type;
 
 	//	if(n.type)…
 

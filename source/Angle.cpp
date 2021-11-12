@@ -109,7 +109,7 @@ Node eval(String code) {
 
 Node &groupTypes(Node &expression, const char *context);
 
-List<Arg> extractFunctionArgs(String function, Node &params) {
+List<Arg> groupFunctionArgs(String function, Node &params) {
 	//			left = analyze(left, name) NO, we don't want args to become variables!
 	List<Arg> args;
 	Node nextType = Double;
@@ -308,7 +308,7 @@ List<String> collectOperators(Node &expression) {
 	return operators;
 }
 
-Node &groupFunctions(Node &expressiona, String context);
+Node &groupFunctionCalls(Node &expressiona, String context);
 
 bool isVariable(Node &node) {
 	if (node.kind != reference and node.kind != key and !node.isSetter())
@@ -481,7 +481,7 @@ Node &groupDeclarations(String &name, Node *return_type, Node modifieres, Node &
 		return groupSetter(name, body, String());
 	}
 
-	List<Arg> args = extractFunctionArgs(name, arguments);
+	List<Arg> args = groupFunctionArgs(name, arguments);
 	List<String> &parameters = locals[name];// function context!
 	for (Arg arg: args) {
 		if (empty(arg.name))
@@ -684,18 +684,19 @@ Node &groupOperators(Node &expression, String context = "main") {
 				 * x:int
 				 * x=7  needs pre-evaluation of rest!!!
 				 * */
+				auto var = prev.name;
 				if (name.endsWith("=") and not name.startsWith("::") and prev.kind == reference) {
 					// todo can remove hack?
 					// x=7 and x*=7
-					if (addLocal(context, prev.name, mapType(next))) {
-						if (name.startsWith("="))
-							error("self modifier on unknown reference "s + prev.name);
+					if (addLocal(context, var, mapType(next))) {
+						if (name.length > 1 and name.endsWith("=")) // x+=1 etc
+							error("self modifier on unknown reference "s + var);
 					} else {
 						// variable is known but not typed yet, or type again?
-						int position = localContext.position(prev.name);
-						if (localContextTypes[position] == int32)// todo 'none' ? default `var i` is int32???
-							localContextTypes[position] = mapType(
-									next); // TODO  pre-evaluation of rest!!! keep old type?
+						int position = localContext.position(var);
+						if (localContextTypes[position] == unknown_type)// todo 'none' ? default `var i` is int32???
+							localContextTypes[position] = mapType(next);
+						// TODO  pre-evaluation of rest!!! keep old type?
 					}
 				}
 				//#endif
@@ -703,16 +704,16 @@ Node &groupOperators(Node &expression, String context = "main") {
 				node.add(next);
 
 				if (name == "::=") {
-					if (prev.kind != reference)error("only references can be assigned global (::=)"s + prev.name);
+					if (prev.kind != reference)error("only references can be assigned global (::=)"s + var);
 //					if(locals[context].has(prev.name))error("global already known as local "s +prev.name);// let's see what happens;)
-					if (globals.has(prev.name))error("global already set "s + prev.name);// todo reassign ok if …
+					if (globals.has(var))error("global already set "s + var);// todo reassign ok if …
 //					globals[prev.name] = &next;// don't forget to emit next as init expression!
-					globals[prev.name] = next.clone();// don't forget to emit next as init expression!
+					globals[var] = next.clone();// don't forget to emit next as init expression!
 					// globalTypes[] set in globalSection, after emitExpression
 				} else if (op.length > 1 and op.endsWith("="))
 					// Complicated way to express *= += -= … self assignments
-					if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and
-					    op[0] != '>') {// *= += etc
+					if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and op[0] != '>') {
+						// *= += etc
 						node.name = String(op.data[0]);
 						Node *setter = prev.clone();
 //					setter->setType(assignment); //
@@ -754,7 +755,7 @@ bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
 	return false;
 }
 
-Node &groupFunctions(Node &expressiona, String context) {
+Node &groupFunctionCalls(Node &expressiona, String context) {
 	if (expressiona.kind == declaration)return expressiona;// handled before
 	if (isFunction(expressiona)) {
 		expressiona.setType(call, false);
@@ -832,11 +833,11 @@ Node &groupFunctions(Node &expressiona, String context) {
 			continue;
 		}
 		rest = expressiona.from(i + 1);
-		auto arg_length = rest.length;
-
+		int arg_length = rest.length;
+		if (rest.kind == reference and not arg_length) arg_length = 1;
 		if (arg_length > 1)
 			rest.setType(expression);// SUUURE?
-		if (rest.kind == groups)// and rest.has(operator))
+		if (rest.kind == groups or rest.kind == objects)// and rest.has(operator))
 			rest.setType(expression);// todo f(1,2) vs f(1+2)
 //		if (hasFunction(rest) and rest.first().kind != groups)
 //			if (name != "id")// stupid but true id(x)+id(y)==id(x+id(y))
@@ -852,18 +853,18 @@ Node &groupFunctions(Node &expressiona, String context) {
 			error("missing arguments for function %s, defaults and currying not yet supported"s % name);
 		else if (arg_length == 0 and minArity > 0)
 			error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
-		else if (rest.first().kind == operators) { // random() + 1 == random + 1
-			// keep whole expressiona for later analysis in groupOperators!
-			return expressiona;
-		} else if (arg_length >= maxArity) {
-			Node args = analyze(rest, context);// todo: could contain another call!
-			node.add(args);
-			if (rest.kind == groups)
-				expressiona.remove(i + 1, i + 1);
-			else
-				expressiona.remove(i + 1, i + arg_length);
-		} else
-			todo("missing arity match case");
+//		else if (rest.first().kind == operators) { // random() + 1 == random + 1
+//			// keep whole expressiona for later analysis in groupOperators!
+//			return expressiona;
+//		} else if (arg_length >= maxArity) {
+		Node &args = analyze(rest, context);// todo: could contain another call!
+		node.add(args);
+		if (rest.kind == groups)
+			expressiona.remove(i + 1, i + 1);
+		else
+			expressiona.remove(i + 1, i + arg_length);
+//		} else
+//			todo("missing arity match case");
 	}
 	return expressiona;
 }
@@ -995,7 +996,7 @@ Node &analyze(Node &node, String context) {
 	Node &groupedTypes = groupTypes(node, context);
 	if (isPrimitive(node)) return node;
 	Node &groupedDeclarations = groupDeclarations(groupedTypes, context);
-	Node &groupedFunctions = groupFunctions(groupedDeclarations, context);
+	Node &groupedFunctions = groupFunctionCalls(groupedDeclarations, context);
 	Node &grouped = groupOperators(groupedFunctions, context);
 	if (analyzed[grouped.hash()])return grouped;// done!
 	analyzed.insert_or_assign(grouped.hash(), 1);
@@ -1035,6 +1036,7 @@ void preRegisterSignatures() {
 
 	functionSignatures.insert_or_assign("puti", Signature().import().add(int32).returns(voids));
 	functionSignatures.insert_or_assign("putf", Signature().import().add(float32).returns(voids));
+	functionSignatures.insert_or_assign("putd", Signature().import().add(float64).returns(voids));
 	//	functionSignatures.insert_or_assign("powl", Signature().import().add(int64).add(int64).returns(int64));
 	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
 	functionSignatures.insert_or_assign("puts", Signature().import().add(charp).returns(voids));

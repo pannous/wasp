@@ -814,6 +814,7 @@ private:
 
 	Node &any_operator() {
 		Node &node = *new Node(ch);
+		node.value = 0;
 		node.setType(operators);// todo ++
 		proceed();
 		while (ch == '=' or ch == previous) {// allow *= += ++ -- **  …
@@ -1544,7 +1545,7 @@ private:
 					// {a} ; b c vs {a} b c vs {a} + c
 					// todo: what a flimsy criterion:
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
-					Node node = expressione(close);//word();
+					Node &node = expressione(close);//word();
 #ifdef DEBUG
 					node.line = &line;
 #endif
