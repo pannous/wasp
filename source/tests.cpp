@@ -21,15 +21,16 @@ void testSinus() {
 	            "\tS4  =  2.75573137070700676789e-06, /* 0x3EC71DE3, 0x57B1FE7D */\n"
 	            "\tS5  = -2.50507602534068634195e-08, /* 0xBE5AE5E6, 0x8A2B9CEB */\n"
 	            "\tS6  =  1.58969099521155010221e-10  /* 0x3DE5D93A, 0x5ACFD57C */\n"
-	            "\ttau =  6.283185307179586 // 2π\n"
+	            //	            "\ttau =  6.283185307179586 // 2π\n"
 	            "\tif(x >= pi) return -sin(modulo_double(x,pi))\n"
 	            "\tdouble r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6)\n"
 	            "\treturn x + z*x*(S1 + z*r)\n"
 	            "};sin π/2", 1);// IT WORKS!!!
 	assert_emit("use sin;sin π/2", 1);
 	assert_emit("use sin;sin π", 0);
+	assert_emit("use sin;sin 3*π/2", -1);
+	assert_emit("use sin;sin 2π", 0);
 	assert_emit("use sin;sin -π/2", -1);
-	assert_emit("use sin;sin 3*π/2", 1);
 }
 
 void testIteration() {
@@ -1589,9 +1590,10 @@ void testNodeConversions() {
 	Node a2 = Node(1.2f);
 	check(a2.kind == reals);
 	check(a2.value.real == 1.2f);
-	Node as = Node('a');
-	check(as.kind == strings);
-	check(*as.value.string == 'a');
+	Node as = Node('a', true);
+	check(as.kind == strings or as.kind == codepoints);
+	if (as.kind == strings) { check(*as.value.string == 'a'); }
+	if (as.kind == codepoints) check((codepoint) as.value.longy == 'a');
 }
 
 
@@ -1742,7 +1744,8 @@ void testLogicOperators() {
 void testBUG();
 
 void tests() {
-//	data_mode = true;// expect data unless explicit code
+	data_mode = true;// expect data unless explicit code
+	testSinus();
 	testBUG();
 	testSignificantWhitespace();
 	testUpperLowerCase();
@@ -2051,6 +2054,24 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+//	assert_emit("use sin;k=sin -π/2;putd k", 0);
+//	exit(1);
+	testNodeConversions();
+	assert_emit("i=1;i+=2;i+3", 6);
+	assert_emit("x=0", 0);
+	assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
+
+	assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
+
+	assert_emit("i=1;while i<9:i++;i+11", 20);
+
+	assert_emit("i=10007;x=i%10000", 7);
+
+	assert_emit("use sin;sin π/2", 1);
+	assert_emit("use sin;sin π", 0);
+	assert_emit("use sin;sin -π/2", -1);
+	assert_emit("use sin;sin 3*π/2", -1);
+	testSinus();
 	assert_emit("if 2 : 3 else 4", 3);
 
 //	testLogarithm();

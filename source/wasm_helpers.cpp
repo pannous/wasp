@@ -459,6 +459,9 @@ void putf(float f) {
 	printf("%f\n", f);
 }
 
+void putp(void *f) {
+	printf("%p\n", f);
+}
 #endif
 
 #ifdef RUNTIME_ONLY

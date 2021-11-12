@@ -192,14 +192,15 @@ public:
 	}
 
 	explicit
-	Node(char c) {
+	Node(char c, bool withValue = false) {
 		name = String(c);
-		value.longy = c;
-		kind = codepoints;
+		if (withValue) {
+			value.longy = c;
+			kind = codepoints;
+		}
 		// todo ^^ keep!
-		value.string = new String(c);
-		kind = strings;
-
+//		value.string = new String(c);
+//		kind = strings;
 	}
 
 	explicit
@@ -315,8 +316,10 @@ public:
 	explicit
 	Node(codepoint c) {
 		name = String(c);
-		value.string = &name;
-		kind = strings;
+		value.longy = c;
+		kind = codepoints;
+//		value.string = &name;// todo uh, no, and danger! change name=>change value? hell no!
+//		kind = strings;
 	}
 
 	explicit
