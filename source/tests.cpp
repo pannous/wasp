@@ -472,10 +472,17 @@ void testMarkAsMap() {
 }
 
 void testMarkSimpleAssign() {
-	data_mode = true; // else [ a , = , 3 ]
+//	data_mode = true; // else [ a , = , 3 ]
 	assert_parses("a=3");
-	Node &a = result["a"];
-	assert(a == 3);
+	if (data_mode == true) {
+		Node &a = result["a"];
+		assert(a == 3);
+	} else {
+		check(result.length == 3);// to be analyzed
+		result = analyze(result);
+		check(result.kind == operators or result.kind == expression);
+		check(result.length == 2 or result.length == 1);
+	}
 }
 
 void testMarkSimple() {
@@ -1170,6 +1177,8 @@ void testRoots() {
 
 void testParams() {
 //	assert_equals(parse("f(x)=x*x").param->first(),"x");
+	auto oldDataMode = data_mode;
+	data_mode = true;
 	Node body = assert_parses("body(style='blue'){a(link)}");
 	assert(body["style"] == "blue");
 
@@ -1189,6 +1198,7 @@ void testParams() {
 	assert(body2[".style"] == "blue");
 //	assert_parses("a(href='#'){'a link'}");
 //	assert_parses("(markdown link)[www]");
+	data_mode = oldDataMode;
 }
 
 
@@ -1743,119 +1753,6 @@ void testLogicOperators() {
 
 void testBUG();
 
-void tests() {
-	data_mode = true;// expect data unless explicit code
-	testSinus();
-	testBUG();
-	testSignificantWhitespace();
-	testUpperLowerCase();
-	testSerialize();
-	testPrimitiveTypes();
-	test_sin();
-	testModulo();
-	testRecentRandomBugs();
-	testIndentAsBlock();
-	testDeepCopyDebugBugBug2();// SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!
-	testDeepCopyDebugBugBug();
-	testComments();
-	testEmptyLineGrouping();
-	testWaspInitializationIntegrity();
-	testRoundFloorCeiling();
-	testSwitch();
-	testAsserts();
-	testSuperfluousIndentation();
-	testString();
-	testEmptyLineGrouping();
-	testColonLists();
-	testGraphParams();
-	testNodeName();
-	testStringConcatenation();
-	testNodeBasics();
-	testStringReferenceReuse();
-	testWasmString();// with length as header
-	testTruthiness();
-	testNodeConversions();
-	testConcatenation();
-	testMarkSimple();
-	testMarkMulti();
-	testMarkMulti2();
-	testDedent2();
-	testDedent();
-	testGroupCascade0();
-	testGraphQlQuery();
-	//	testNodiscard();// works NOW!
-	print(testNodiscard());
-	testGroupCascade();
-	testNewlineLists();
-	testStackedLambdas();
-	testRootLists();
-	testIterate();
-	testLists();
-	testMarkAsMap();
-	testEval();
-	testParamizedKeys();
-	testForEach();
-	testString();
-	testEmpty();
-	testHex();
-	testDiv();
-	testRoot();
-	testLogicPrecedence();
-	testRootFloat();
-	testCpp();
-//	testErrors();
-	testNilValues();
-
-	testLists();
-	testDeepLists();
-	testGraphParams();
-	testAddField();
-	testOverwrite();
-	testMapsAsLists();
-	testDidYouMeanAlias();
-	testNetBase();
-	testRoots();
-	testForEach();
-	testLengthOperator();
-	testLogicEmptySet();
-	testDeepCopyDebugBugBug();
-	testDeepCopyDebugBugBug2();
-	testMarkSimpleAssign();
-	testMarkMultiDeep();
-	testSort();
-	testSort1();
-	testSort2();
-	testReplace();
-	testRemove();
-	testRemove2();
-	testGraphQlQueryBug();
-	testGraphQlQuery();// fails sometimes => bad pointer!?
-	testGraphQlQuery2();
-	testUTF();// fails sometimes => bad pointer!?
-	testUnicode_UTF16_UTF32();
-	testConcatenationBorderCases();
-	testCall();
-	testNewlineLists();
-	testIndex();
-	testLogic01();// fails in WASM why
-	testMathExtra(); // fails in WASM
-	testRecentRandomBugs();
-	testGroupCascade();
-	testLogic();
-	testLogicOperators();
-	assert_is("one plus two times three", 7);
-	data_mode = true;
-	testParams();
-	skip(
-			testKitchensink();
-	)
-#ifdef APPLE
-	testAllSamples();
-#endif
-	check(NIL.value.longy == 0);// should never be modified
-	print("ALL TESTS PASSED");
-}
-
 
 void testArrayIndices() {
 	assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
@@ -1881,7 +1778,7 @@ void todos() {
 	)
 	skip(
 			assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
-			data_mode = false;testParams();
+			testParams();
 			run("circle.wasp");
 			assert_emit("1 +1 == [1 1]", 1);
 			assert_emit("1 +1 ≠ 1 + 1", 1);
@@ -2046,14 +1943,131 @@ void testSubGrouping() {// dangling , should make '\n' not close
 	testSubGroupingIndent();
 }
 
+
+void tests() {
+	testSinus();
+	testBUG();
+	testSignificantWhitespace();
+	testUpperLowerCase();
+	testSerialize();
+	testPrimitiveTypes();
+	test_sin();
+	testModulo();
+	testRecentRandomBugs();
+	testIndentAsBlock();
+	testDeepCopyDebugBugBug2();// SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!
+	testDeepCopyDebugBugBug();
+	testComments();
+	testEmptyLineGrouping();
+	testWaspInitializationIntegrity();
+	testRoundFloorCeiling();
+	testSwitch();
+	testAsserts();
+	testSuperfluousIndentation();
+	testString();
+	testEmptyLineGrouping();
+	testColonLists();
+	testGraphParams();
+	testNodeName();
+	testStringConcatenation();
+	testNodeBasics();
+	testStringReferenceReuse();
+	testWasmString();// with length as header
+	testTruthiness();
+	testNodeConversions();
+	testConcatenation();
+	testMarkSimple();
+	testMarkMulti();
+	testMarkMulti2();
+	testDedent2();
+	testDedent();
+	testGroupCascade0();
+	testGraphQlQuery();
+	//	testNodiscard();// works NOW!
+	print(testNodiscard());
+	testGroupCascade();
+	testNewlineLists();
+	testStackedLambdas();
+	testRootLists();
+	testIterate();
+	testLists();
+	testMarkAsMap();
+	testEval();
+	testParamizedKeys();
+	testForEach();
+	testString();
+	testEmpty();
+	testHex();
+	testDiv();
+	testRoot();
+	testLogicPrecedence();
+	testRootFloat();
+	testCpp();
+//	testErrors();
+	testNilValues();
+
+	testLists();
+	testDeepLists();
+	testGraphParams();
+	testAddField();
+	testOverwrite();
+	testMapsAsLists();
+	testDidYouMeanAlias();
+	testNetBase();
+	testRoots();
+	testForEach();
+	testLengthOperator();
+	testLogicEmptySet();
+	testDeepCopyDebugBugBug();
+	testDeepCopyDebugBugBug2();
+	testMarkSimpleAssign();
+	testMarkMultiDeep();
+	testSort();
+	testSort1();
+	testSort2();
+	testReplace();
+	testRemove();
+	testRemove2();
+	testGraphQlQueryBug();
+	testGraphQlQuery();// fails sometimes => bad pointer!?
+	testGraphQlQuery2();
+	testUTF();// fails sometimes => bad pointer!?
+	testUnicode_UTF16_UTF32();
+	testConcatenationBorderCases();
+	testCall();
+	testNewlineLists();
+	testIndex();
+	testLogic01();// fails in WASM why
+	testMathExtra(); // fails in WASM
+	testRecentRandomBugs();
+	testGroupCascade();
+	testLogic();
+	testLogicOperators();
+	assert_is("one plus two times three", 7);
+	testParams();
+	skip(
+			testKitchensink();
+	)
+#ifdef APPLE
+	testAllSamples();
+#endif
+	check(NIL.value.longy == 0);// should never be modified
+	print("ALL TESTS PASSED");
+}
+
+
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp!
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
-	data_mode = true; // a=b => a{b}
-//	data_mode = false; // a=b => a,=,b before analysis
+//	data_mode = true; // a=b => a{b}
+	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	testParams();
+	testMarkSimpleAssign();
+	assert_emit("x='abcde';x#4", 'd');//
+//	todo testParams(); with data_mode = false and analyze
 //	assert_emit("use sin;k=sin -π/2;putd k", 0);
 //	exit(1);
 //	testLogarithm();
