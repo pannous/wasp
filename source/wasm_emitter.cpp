@@ -580,10 +580,12 @@ Code emitIndexRead(Node op, String context) {
 	if (last_type == float32)size = 4;
 	if (last_type == float64)size = 8;
 	if (array.kind == reference or array.kind == key) {
-		String ref = array.name;
+		String &ref = array.name;
 //		last_type=array.data_kind;
-		if (referenceIndices.has(ref))
+		if (referenceIndices.has(ref))// also to strings
 			base += referenceIndices[ref];
+//		else if (stringIndices.has(&ref))
+//			base += referenceIndices[ref];
 		else
 			error("reference not declared as array type: "s + ref);
 	} else if (array.kind == strings) {
@@ -1388,7 +1390,7 @@ Code emitSetter(Node node, Node &value, String context) {
 		valtype = last_type;// todo : could have been done in analysis!
 		localTypes[context][local_index] = last_type;// NO! the type doesn't change: example: float x=7
 	}
-	if (last_type == array)
+	if (last_type == array or valtype == charp)
 		referenceIndices.insert_or_assign(variable, data_index_end);// WILL be last_data !
 	Code setter;
 //	auto values = value.values();
