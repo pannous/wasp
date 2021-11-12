@@ -1184,8 +1184,9 @@ Code emitWhile(Node &node, String context) {
 	Node condition = node[0].values();
 	Node then = node[1].values();
 	code.addByte(loop);
-	code.addByte(none);// type:void_block
-//	code.addByte(int32);// type OR typeidx!?
+	code.addByte(none);// type:void_block todo: I thought everything is an expression!?
+//	code.addByte(int32);// everything is an expression!
+
 	code = code + emitExpression(condition, context);// condition
 	code.addByte(if_i);
 	code.addByte(none);// type:void_block
@@ -1369,22 +1370,32 @@ Code emitSetter(Node node, Node &value, String context) {
 	if (node.first().name == "#") {// x#y=z
 		return emitPatternSetter(node.first().first(), node.first().last(), node.last(), context);
 	}
-	if (node.name == "=") return emitSetter(node[0], node[1], context);
+	if (node.name == "=") {
+		if (node.length != 2)error("assignment needs 2 arguments");
+		return emitSetter(node[0], node[1], context);
+	}
 	List<String> &current = locals[context];
 	String &variable = node.name;
 	if (!current.has(variable)) {
+		print(current);
 		current.add(variable);
-		error("variable missed by parser! "_s + variable);
+		error("variable %s in context %s missed by parser! "_s % variable % context);
 	}
 	int local_index = current.position(variable);
+	auto valtype = localTypes[context][local_index];
 	last_type = mapTypeToWasm(value);
-	//	localTypes[context][local_index] = last_type; NO! the type doesn't change: example: float x=7
+	if (valtype == unknown_type) {
+		valtype = last_type;// todo : could have been done in analysis!
+		localTypes[context][local_index] = last_type;// NO! the type doesn't change: example: float x=7
+	}
 	if (last_type == array)
 		referenceIndices.insert_or_assign(variable, data_index_end);// WILL be last_data !
 	Code setter;
-	Code value1 = emitValue(value, context);
+//	auto values = value.values();
+	if (value.hash() == node.hash())
+		value = node.values();
+	Code value1 = emitExpression(value, context);
 	setter.add(value1);
-	auto valtype = localTypes[context][local_index];
 	setter.add(cast(last_type, valtype));
 	setter.add(tee_local);
 	setter.add(local_index);

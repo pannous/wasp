@@ -387,8 +387,10 @@ bool Node::operator==(Node &other) {
 			return true;// TODO: SHOULD already BE SAME by engine!
 		}
 
-	if (value.node == &other)return true;// same value enough?
-	if (this == other.value.node)return true;// reference ~= its value
+	if (kind != operators and value.node == &other)
+		return true;// todo when is same value EVER enough??
+	if (kind != operators and this == other.value.node)
+		return true;// reference ~= its value
 	if (kind == key and value.node and *value.node == other)return true;// todo again?
 	if (kind == nils and other.kind == longs)return other.value.longy == 0;
 	if (other.kind == nils and kind == longs)return value.longy == 0;
@@ -872,7 +874,7 @@ Node &Node::from(Node &match) {
 
 
 Node &Node::from(int pos) {// inclusive
-	Node lhs;
+	Node &lhs = *new Node();
 	for (int i = pos; i < length; i++) {
 		lhs.add(children[i]);
 	}
@@ -955,6 +957,7 @@ Node &Node::values() {
 	if (kind == longs)return *new Node(value.longy);
 	if (kind == reals)return *new Node(value.real);
 	if (kind == strings)return *new Node(value.string);
+	if (kind == codepoints)return *new Node((codepoint) value.longy);
 	if (kind == bools)return value.data ? True : False;
 	if (kind == key)return *value.node;
 	if (length == 1 and not value.data) return children[0];// todo: reaaaly?
@@ -1068,6 +1071,7 @@ void print(Node *n0) {
 Node &Node::setType(Type type, bool check) {
 	if (kind == type)return *this;
 	if (kind == operators and type == expression)return *this;
+	if (kind == codepoints and type == operators)check = false;// and name==(codepoint)value.longy
 	if (kind == groups and type == expression)check = false;
 	if (kind == declaration and type == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
 	if (check) {
@@ -1163,6 +1167,8 @@ chars typeName(Type t) {
 			return "error";
 		case functor:
 			return "functor";
+		case codepoints:
+			return "codepoint";
 //		case 255:
 //			return "data";
 		default:
