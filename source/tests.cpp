@@ -2061,14 +2061,9 @@ void tests() {
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
-//	data_mode = true; // a=b => a{b}
-	data_mode = false; // a=b => a,=,b before analysis
+	data_mode = true; // a=b => a{b}
+//	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	testParams();
-	testMarkSimpleAssign();
-	assert_emit("x='abcde';x#4", 'd');//
-//	todo testParams(); with data_mode = false and analyze
-//	assert_emit("use sin;k=sin -π/2;putd k", 0);
 //	exit(1);
 //	testLogarithm();
 //	assert_emit("1 +1 == [1 1]", 1);
