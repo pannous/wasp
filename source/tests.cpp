@@ -2056,39 +2056,13 @@ void testCurrent() {
 	clearContext();
 //	assert_emit("use sin;k=sin -π/2;putd k", 0);
 //	exit(1);
-	testNodeConversions();
-	assert_emit("i=1;i+=2;i+3", 6);
-	assert_emit("x=0", 0);
-	assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
-
-	assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
-
-	assert_emit("i=1;while i<9:i++;i+11", 20);
-
-	assert_emit("i=10007;x=i%10000", 7);
-
-	assert_emit("use sin;sin π/2", 1);
-	assert_emit("use sin;sin π", 0);
-	assert_emit("use sin;sin -π/2", -1);
-	assert_emit("use sin;sin 3*π/2", -1);
-	testSinus();
-	assert_emit("if 2 : 3 else 4", 3);
-
 //	testLogarithm();
 //	assert_emit("1 +1 == [1 1]", 1);
 //	testSubGrouping();
-
-	testWasmLogicUnary();
-//	testSinus();
-
 //testNodesInWasm();
-//testSubGrouping();
 //	testMergeWabt();
-//	run( "wasp.wasm");
 //	testPaintWasm();
 	//	assert_run("render html{'test'}", 4);
-//	testImportWasm();
-//	testImport();
 //	exit(1);
 	//	return;// let the webview show!
 	todos();// those not passing yet (skip)
