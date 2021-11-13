@@ -6,13 +6,13 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
 #LINK_DIRECTORIES(lib)
 LINK_DIRECTORIES(Frameworks)
 LINK_DIRECTORIES(/usr/local/lib)
-LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
+#LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
 
 # SET these configurations via Preferences… Build->CMake->Profiles
 # MANUALLY force set these only for urgent debugging,
 #set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
 #set(VERBOSE 1)
-set(DEBUG 1)
+#set(DEBUG 1)
 #set(RELEASE 0) # no tests
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh
