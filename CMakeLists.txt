@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.10)
 project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
@@ -18,20 +18,20 @@ LINK_DIRECTORIES(/usr/local/lib)
 #set(WASM 1) # no WebView, duh
 #set(WABT_MERGE 0) # not the whole WABT though
 
-#ADD_COMPILE_DEFINITIONS(DEBUG_WASM3) # WASM3 best for development!
-#ADD_COMPILE_DEFINITIONS(NO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
+#ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
+#ADD_DEFINITIONS(-DNO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
 
 if (WASM)
-    ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY) # no wasm reader != NO_TESTS
+    ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (NOT WASI)
-        ADD_COMPILE_DEFINITIONS(MY_WASM) # use put() panic() ... !
+        ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
     endif ()
 endif ()
 
 if (NOT WASM)
     #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
     # ^^ fixes <cmath> mac errors!
-    ADD_COMPILE_DEFINITIONS(_Backtrace_)
+    ADD_DEFINITIONS(-D_Backtrace_)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm:
@@ -66,15 +66,15 @@ endif ()
 # so definitely ship wasp.wasm runtime in release!
 
 if (WEBAPP)
-    ADD_COMPILE_DEFINITIONS(WEBAPP)
-    ADD_COMPILE_DEFINITIONS(GRAFIX)
+    ADD_DEFINITIONS(-DWEBAPP)
+    ADD_DEFINITIONS(-DGRAFIX)
     SET(WASM 0)
     set(WASI 0)
     #    SET(RUNTIME_ONLY 1) # we can emit to V8, right??
     set(SOURCE_FILES ${SOURCE_FILES} source/ErrorHandler.cpp) # no SIGSEGV mac popup
 endif ()
 if (WASM)
-    ADD_COMPILE_DEFINITIONS(WASM)
+    ADD_DEFINITIONS(-DWASM)
     SET(WASM3 0) # No wasm-VM inside wasm
     REMOVE_DEFINITIONS(WASM3)
     #    multi-value referenceTypes bulkMemory works in FF
@@ -85,9 +85,9 @@ if (WASM)
 endif ()
 
 if (SDL)
-    ADD_COMPILE_DEFINITIONS(GRAFIX)
+    ADD_DEFINITIONS(-DGRAFIX)
     find_package(SDL2 REQUIRED)
-    ADD_COMPILE_DEFINITIONS(SDL)
+    ADD_DEFINITIONS(-DSDL)
     remove_definitions(SERVER)
     include_directories(${SDL2_INCLUDE_DIRS})
     set(SOURCE_FILES ${SOURCE_FILES} source/Paint.cpp) # if SDL
@@ -109,7 +109,7 @@ ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it need
 
 if (DEBUG)
     MESSAGE("DEBUG!")
-    ADD_COMPILE_DEFINITIONS(DEBUG)
+    ADD_DEFINITIONS(-DDEBUG)
     SET(GCC_GENERATE_DEBUGGING_SYMBOLS YES)
     SET(GCC_DEBUGGING_SYMBOLS full)
     SET(DEBUG_INFORMATION_FORMAT dwarf-with-dsym)
@@ -161,15 +161,15 @@ if (RELEASE)
     endif ()
 endif ()
 
-ADD_COMPILE_DEFINITIONS(NO_CPP_DEMANGLE)
+ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
 
 # COMMON FOR ALL
 set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Wasp.cpp source/wasm_helpers.cpp source/Util.cpp)
 
 
 if (RUNTIME_ONLY)
-    ADD_COMPILE_DEFINITIONS(RUNTIME_ONLY)
-    ADD_COMPILE_DEFINITIONS(NO_TESTS)
+    ADD_DEFINITIONS(-DRUNTIME_ONLY)
+    ADD_DEFINITIONS(-DNO_TESTS)
 else ()
     message("NOT RUNTIME_ONLY")
     set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp)
@@ -191,10 +191,10 @@ endif ()
 #
 if (WASM) # OR WASI)
     message(WASM)
-    ADD_COMPILE_DEFINITIONS(WASM)
+    ADD_DEFINITIONS(-DWASM)
     #    set(CMAKE_SYSROOT "") // via -DCMAKE_TOOLCHAIN_FILE=wasm.toolchain.cmake
     if (WASI)
-        ADD_COMPILE_DEFINITIONS(WASI) # same as -DWASI=1
+        ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
         set(CMAKE_ISYSROOT "") # typo? =>
         set(CMAKE_SYSROOT "")
         ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
@@ -232,7 +232,7 @@ if (WASM) # OR WASI)
     ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
     ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # keep name section?
     if (RELEASE)
-        ADD_COMPILE_DEFINITIONS(NO_TESTS)
+        ADD_DEFINITIONS(-DNO_TESTS)
         #        ADD_COMPILE_FLAG("-Wl,--export-dynamic") #       Put symbols in the dynamic symbol table
         ADD_COMPILE_FLAG("-v")
         #        ADD_COMPILE_FLAG("-Wl,-vvv")
@@ -260,7 +260,7 @@ if (WASM) # OR WASI)
 elseif (WASI)
     #    TODO "System is unknown to cmake"
     message(WASI)
-    ADD_COMPILE_DEFINITIONS(WASI) # same as -DWASI=1
+    ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
     #    only works with wasm.toolchain.cmake
     SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
@@ -279,7 +279,7 @@ elseif (MICRO) # wasm-micro-vm:
 
     message("USING INTERNAL WASM MICRO RUNTIME TO DEBUG (not Mac M1 ready!!)")
     #    quit()
-    ADD_COMPILE_DEFINITIONS(WASM_ENABLE_INTERP)
+    ADD_DEFINITIONS(-DWASM_ENABLE_INTERP)
     set(WAMR_BUILD_INTERP 1)
     SET(WAMR_ROOT_DIR wasm-micro-runtime)
     if (APPLE)
@@ -303,7 +303,7 @@ elseif (MICRO) # wasm-micro-vm:
     add_library(vmlib ${WAMR_RUNTIME_LIB_SOURCE})
     # Build as X86_32 by default in 32-bit platform
     #    set (WAMR_BUILD_TARGET "X86_32")
-    #    ADD_COMPILE_DEFINITIONS(WASM_ENABLE_FAST_INTERP)
+    #    ADD_DEFINITIONS(-DWASM_ENABLE_FAST_INTERP)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
 
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
@@ -331,7 +331,7 @@ elseif (MICRO) # wasm-micro-vm:
             )
 elseif (WABT)
     message(WABT)
-    ADD_COMPILE_DEFINITIONS(WABT)
+    ADD_DEFINITIONS(-DWABT)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     #    include(wabt/cmake_install.cmake)
     #    add_subdirectory(wabt)
@@ -347,20 +347,20 @@ elseif (WASMER)
     target_include_directories(wasp PUBLIC Frameworks/wasmer-c-api)
     target_link_libraries(wasp PRIVATE wasmer)
 elseif (WASMTIME)
-    add_compile_definitions(WASMTIME)
+    ADD_DEFINITIONS(-DWASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
     target_link_libraries(wasp PRIVATE wasmtime)
 elseif (WEBAPP)
-    add_compile_definitions(WEBAPP)
+    ADD_DEFINITIONS(-DWEBAPP)
     include(source/WebView.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/WebView.cpp source/WebServer.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_link_libraries(wasp PUBLIC webview)
 elseif (WASM3)
     MESSAGE(wasm3 VM)
-    add_compile_definitions(WASM3)
+    ADD_DEFINITIONS(-DWASM3)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     include(Frameworks/wasm3/cmake_install.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp source/types/Number.cpp source/types/Number.h)
