@@ -1,7 +1,6 @@
 #include "wasmtime.h"
 #include "wasm_reader.h"
 
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -751,18 +751,17 @@ public:
 
 	String format() {
 		String f;
-		f += this->function;
-		f += "(";
-		for (auto type:this->types) {
-#ifdef RELEASE
-			f += type;
-#else
-			f += typeName(this->types[type]);
-#endif
-			f += ",";
-		}
-		f += ")";
-		f += typeName(this->return_type);
+//#if RELEASE
+//#else
+//		f += this->function;
+//		f += "(";
+//		for (auto type:this->types) {
+//			f += typeName(this->types[type]);
+//			f += ",";
+//		}
+//		f += ")";
+//		f += typeName(this->return_type);
+//#endif
 		return f;
 	}
 };

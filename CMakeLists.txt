@@ -50,7 +50,9 @@ endif ()
 
 if (RELEASE)
     MESSAGE(RELEASE)
-    set(RUNTIME_ONLY 1)
+    set(RELEASE 1)
+#    set(RUNTIME_ONLY 1)
+    #    set(NO_TESTS 1)
     SET(COPY_PHASE_STRIP YES)
     SET(STRIP_INSTALLED_PRODUCT YES)
     SET(STRIP_STYLE all)
@@ -114,15 +116,16 @@ if (DEBUG)
     SET(DWARF_DSYM_FILE_NAME "$(TARGET_NAME).dSYM")
     SET(DWARF_DSYM_FOLDER_PATH "$(CONFIGURATION_BUILD_DIR)/dSyms")
     SET(DEPLOYMENT_POSTPROCESSING YES)
+    ADD_COMPILE_FLAG(" -g3") # DEBUG
 endif ()
 
 
-if (NOT RELEASE)
+if (NOT TRACE)
     ADD_COMPILE_FLAG("-fno-inline")
 
-    ADD_COMPILE_FLAG(" -g3") # DEBUG
     if (NOT WASM)
         ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+#        ADD_COMPILE_FLAG("-Wno-error=#warnings")
     endif ()
     # enable:
     #    ADD_COMPILE_FLAG("-Wall")
@@ -137,7 +140,6 @@ if (NOT RELEASE)
     ADD_COMPILE_FLAG("-Wno-unused-private-field")
     ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
     ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
-    ADD_COMPILE_FLAG("-Wno-error=#warnings")
     ADD_COMPILE_FLAG("-Wno-writable-strings") # allow conversion from string literal to 'char *'
     ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
     ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
@@ -181,7 +183,6 @@ else ()
     endif ()
 
 endif ()
-
 
 #
 # END OF GENERAL CONFIGURATION
