@@ -2057,7 +2057,7 @@ void tests() {
 
 
 // 2021-10 : 40 sec for Wasm3
-// 2021-10 : 10 sec in Webapp!
+// 2021-10 : 10 sec in Webapp / wasmtime
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
