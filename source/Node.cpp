@@ -547,13 +547,8 @@ Node &Node::add(const Node *node) {
 		return *this;
 	if (kind == longs or kind == reals)
 		error("can't modify primitives, only their referenceIndices a=7 a.nice=yes");
-	if (length >= capacity - 1) {
-		puti(length + 1);
-		puts(">=");
-		puti(capacity);
-		puts(name);
-		error("Out of node Memory");
-	}
+	if (length >= capacity - 1)
+		error("Out of node capacity "s + capacity + " in " + name);
 	if (lastChild >= maxNodes)
 		error("Out of global Memory");
 	if (!children) children = (Node *) calloc(sizeof(Node), capacity);
@@ -1113,9 +1108,10 @@ void Node::clear() {
 }
 
 String *Node::Line() {
-	if (line)
-		return line;
+#if DEBUG
+	if (line)return line;
 	if (parent)return parent->Line();
+#endif
 	return new String("<missing line information>");
 }
 
