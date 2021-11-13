@@ -754,8 +754,11 @@ public:
 		f += this->function;
 		f += "(";
 		for (auto type:this->types) {
-//			f += type;
+#ifdef RELEASE
+			f += type;
+#else
 			f += typeName(this->types[type]);
+#endif
 			f += ",";
 		}
 		f += ")";

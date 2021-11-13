@@ -1344,7 +1344,7 @@ private:
 				case '{': {
 					if (checkAmbiguousBlock(current, parent))
 						warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
-					let bracket = ch;
+					codepoint bracket = ch;
 					auto type = getType(bracket);
 					bool flatten = true;
 
@@ -1358,7 +1358,7 @@ private:
 					}
 					proceed();
 					// wrap {x} … or todo: just don't flatten before?
-					Node object = Node();
+					Node &object = *new Node();
 					Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &current.last());
 					object.addSmart(objectValue);
 //						object.add(objectValue);
