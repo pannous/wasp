@@ -301,8 +301,17 @@ void consumeCustomSection() {
 	Code customSectionDatas = vec();
 	String type = name(customSectionDatas);
 	Code payload = customSectionDatas.rest();
-	if (type == "names")consumeNameSection(payload);
-	else if (type == "linking")consumeLinkingSection(payload);
+	if (type == "names") consumeNameSection(payload);
+	else if (type == "target_features") todo("target_features detection not yet supported");
+//	https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md#target-features-section
+// 	atomics bulk-memory exception-handling multivalue mutable-globals nontrapping-fpoint sign-ext simd128 tail-call
+	else if (type == "linking") consumeLinkingSection(payload);
+		// see https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md
+	else if (type == "dylink.0") todo("dynamic linking not yet supported");
+		// see https://github.com/WebAssembly/tool-conventions/blob/main/DynamicLinking.md
+	else if (type.startsWith("reloc.")) consumeRelocateSection(payload);// e.g. "reloc.CODE"
+		// everything after the period is ignored and the specific target section is encoded in the reloc section itself.
+		// see https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md
 	else if (type == "relocate")consumeRelocateSection(payload);
 	else {
 //		pos = size;// force finish

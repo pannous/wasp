@@ -11,6 +11,8 @@
 #import "wasm_helpers.h" // IMPORT so that they don't get mangled!
 #include "wasm_emitter.h"
 
+List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ", 0};
+
 Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
 List<String> declaredFunctions;
@@ -45,6 +47,48 @@ Valtype mapType(Node &n) {
 	return mapTypeToWasm(n);
 #endif
 }
+
+
+Node getType(Node node) {
+	auto name = node.name;
+	bool vector = false;
+	if (name.endsWith("es")) { // addresses
+		// todo: cities …
+		name = name.substring(0, -3);
+		vector = true;
+	} else if (name.endsWith("s")) { // ints …
+		name = name.substring(0, -2);
+		vector = true;
+	}
+	Node typ;
+	if (types.has(name)) {
+		typ = types[name];
+		typ.kind = classe;
+	} else {
+		typ = Node(name);
+		typ.kind = classe;
+		types[name] = typ;
+	}
+	if (vector) {
+		// holup typ.kind = arrays needs to be applied to the typed object!
+		typ.kind = arrays;
+		typ.type = typ.clone();
+//		typ.kind=vectors; // ok, copy value
+	}
+	return typ;
+}
+
+bool isType(Node &expression) {
+	auto name = expression.name;
+	if (name == "puts" or name == "is" or name == "has" or name == "equals")return false;// todo …
+	if (name.endsWith("s")) { // numbers, persons …
+		auto cut = name.substring(0, -2);
+		return true;// todo and register?
+	}
+	return types.has(name);
+}
+
+String debug_code;
 
 
 Node &groupWhile(Node n, String string);
@@ -360,11 +404,16 @@ Node &groupTypes(Node &expression, const char *context) {
 		} else if (expression.next) {
 			expression.next->type = expression.clone();
 			return *expression.next;
-		} else
-			error("dangling type "s + expression.name);
+		} else if (expression.length == 0) {
+			return *getType(expression).clone();
+		} else {
+			//  type name as variable name!
+			expression.type = getType(expression).clone();
+		}
 	}
 	for (int i = 0; i < expression.length; i++) {
 		Node &node = expression.children[i];
+		if (not isType(node))continue;
 		if (not isType(node))continue;
 		if (node.length > 0) {
 			node = groupTypes(node, context);// double (x,y,z)
@@ -416,7 +465,6 @@ Node &groupTypes(Node &expression, const char *context) {
 	return expression.flat(); // (1) => 1
 }
 
-List<String> builtin_constants = {"pi", "π", "tau", "τ", "ℯ", 0};
 
 // return: done?
 bool addLocal(const char *context, String name, Valtype valtype) {
@@ -1010,12 +1058,6 @@ Node &analyze(Node &node, String context) {
 	return grouped;
 //	return *grouped.clone();// why?? where is leak?
 }
-
-bool isType(Node &expression) {
-	return types.has(expression.name);
-}
-
-String debug_code;
 
 void preRegisterSignatures() {
 	// ORDER MATTERS: will be used for functionIndices later!
