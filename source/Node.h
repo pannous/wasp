@@ -115,8 +115,7 @@ public:
 	String name = empty_name;// nil_name;
 	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 
-//	Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
-	::Type kind = unknown;// todo: merge with Node.type/class ? :
+	::Type kind = unknown;
 	Node *type = 0;// variable/reference type or object class?
 //	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
@@ -388,6 +387,7 @@ public:
 		// todo ...
 		Node *copy = new Node();
 		*copy = *this;// ok copies all values
+		copy->type = type;//
 
 // Todo: deep cloning whole tree? definitely clone children
 		if (childs) {

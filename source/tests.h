@@ -103,6 +103,7 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 }
 
 
+
 bool assert_equals_x(Node a, Node b, char *context = "") {
 	//	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
 	if (a == b) {
@@ -116,6 +117,17 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 	printf("%s != %s\n", a.serialize().data, b.serialize().data);
 
 	return a == b;
+}
+
+bool assert_equals_x(Node *a, const Node *b, char *context = "") {
+	if (!a)return !b;
+	return assert_equals_x(*a, *b, context);
+}
+
+bool assert_equals_x(Node *a, Node *b, char *context = "") {
+	if (!a)return !b;
+	if (!b)return !a;
+	return assert_equals_x(*a, *b, context);
 }
 
 //bool assert_equals(chars a, chars b, char *context = "") {

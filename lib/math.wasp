@@ -1,0 +1,102 @@
+∛:=todo "third root of" it
+∜:=todo "third root of" it
+π²:=π*π
+func similar a b {
+    	float epsilon = abs_f(a + b) / 1000000.;// percentual ++
+    	bool ok = a == b or abs_f(a - b) <= epsilon;
+    	return ok;
+}
+
+# 4√x == ∜x  ? ambiguous 4*√x :(
+# 4th√x == ∜x  ;)
+
+½:=1/2
+⅓:=1/3
+¼:=1/4
+¾:=3/4
+
+assert ½*2=1
+
+# careful x=½ but 2x ≠ 2½
+ƒ abs { it>0 ? it : -it }
+ƒ abs(x){ x>0?x:-x }
+abs x::int := x>0?x:-x
+
+class Complex is Number {
+	Number re=0 // usually in ℝ or ℕ or ℚ
+	Number im=1 // ï<ℂ 
+
+	real := re // locally / in context only!
+	imaginary := im 
+	imaginary component := im 
+	imaginary part := im*ï // ok?
+
+	Complex(number){re=it}
+	Complex(number,number){re=$0;im=$1}
+	# default clone := Complex(re,im)
+
+	operator +=(other complex) := re += other.re; im += other.im 
+	operator -=(other complex) := re -= other.re; im -= other.im 
+# ^^^ premature optimization: we get += for free :
+
+	// todo: distinguish inline modifying addition from
+	// outer non modifying addition  a+b == a.clone.add(b)
+	add(other number)  := Complex(re+other , im)
+	add(other complex) := Complex(re+other.re , im + other.im)
+
+	subtract(other complex) := re -= other.re; im -= other.im 
+	
+	multiply(other number)  := Complex(re*other; im*other)
+	multiply(other complex) := Complex(re*other.re - im*other.im; im*other.re + re*other.im)
+
+	square := re*re - im*im + 2*re*im
+	root := Complex(im/2d,d) where d=√(-½(re – √(re² + im²)))
+	norm := √(re*re + im*im)
+	complement := Complex(re,-im)
+	operator	̅ := complement
+	∊ℝ := imaginary is 0
+	∊ℕ := imaginary is 0 and real∊ℕ
+	∊ℚ := imaginary is 0 and real∊ℚ
+	
+	cast from number := Complex(number)
+	cast to ℝ² := (re,im)  // as 2d-vector
+	to add other complex inline { re+=other.re; im+=other.im}
+	# imaginary component := im // too verbose
+}
+
+alias ℂ = Complex
+ℂ:=Complex
+ι:=Complex()
+ɩ:=Complex()
+ï:=Complex(0,1) // explicit and clearest form, ï recognizable as ∊ ℝ² because of two dots
+the imaginary number := ï  
+
+// danger: confusing 3+ï imaginary component 1 with imaginary part ï !!
+the imaginary part of a complex number := its im × ï
+the imaginary component of a complex number := its im
+imaginary-part(complex) := complex.im × ï
+
+to add complex to another complex := Complex real#1 + real#2 , imaginary#1 + imaginary#2
+add(complex,complex) := Complex 1.re + 2.re , 1.im + 2.im
+
+assert 3ï*3 = 9ï
+assert 3ï*3ï = -9
+assert x=3+3ï; x + 4+4ï is 7+7ï
+assert i=3+3ï; i + 4+4ï is 7+7ï  // careful here: i as variable name
+assert im of 3+3ï is 3
+assert imaginary of 3+3ï is 3ï
+
+root of a complex number := im/2×d + d×ï where d=√(-½(re – √(re² + im²)))
+assert √-1=ï
+
+# operator ∊ is resolved as keyword 'in', so this is superfluous
+a complex is in class := { 
+			complex is a real rumber if imaginary is 0 // ∊ℝ
+			complex is a natural rumber if imaginary is 0 and real is in ℕ
+			complex is a rational rumber if imaginary is 0 and real is in ℚ
+}
+
+// challenge: rename re to real and make sure encapsulation always distinguishes real∊ℝ correctly
+
+
+# x86’s sin and cos instructions are slow and imprecise and are generally avoided these days anyway !
