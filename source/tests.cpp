@@ -10,6 +10,43 @@
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
 
+void testArrayS() {
+	auto node = analyze(parse("int"));
+//	assert_equals( node.type->kind, classe);
+	assert_equals(node.kind, classe);
+
+	auto node2 = analyze(parse("ints"));
+	assert_equals(node2.kind, arrays);// type: array<int>
+
+	node = parse("ints x");
+//	assert_equals( node.kind, reference);
+//	assert_equals( node.kind, arrays);
+	assert_equals(node.kind, groups);
+	assert_equals(node.type, &Double);
+}
+
+void testArrayInitialization() {// via Units
+	assert_emit("x : int[100]; x.length", 100)
+	assert_emit("x : u8 * 100; x.length", 100) // type times size operation!!
+	assert_emit("x : 100 * int; x.length", 100)
+	assert_emit("x : 100 * ints; x.length", 100)
+	assert_emit("x : 100 ints; x.length", 100) // implicit multiplication, no special case!
+	assert_emit("x : 100 int; x.length", 100)
+	assert_emit("x : 100 integers; x.length", 100)
+	assert_emit("x : 100 numbers; x.length", 100)
+	assert_emit("x is 100 times [0]; x.length", 100)
+	assert_emit("x is array of size 100; x.length", 100)
+	assert_emit("x is an 100 integer array; x.length", 100)
+	assert_emit("x is a 100 integer array; x.length", 100)
+	assert_emit("x is a 100 element array; x.length", 100)
+}
+
+void testArrayInitializationBasics() {// via Units
+	auto node = analyze(parse("x : 100 numbers"));
+	assert_equals(node.kind, arrays);
+	assert_equals(node.length, 100);
+}
+
 void testSinus() {
 	assert_emit("double sin(double x){\n"
 	            "\tx = modulo_double(x,tau)\n"
@@ -2064,7 +2101,11 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_parses("  if (!det) return null");
+//	assert_is("x=(1 4 3);x#2", 4);
+//	testArrayIndices();
+//	testArrayS();
+//	run("wavefront.wasp");
+//	assert_parses("  if (!det) return null");
 //	exit(1);
 //	testLogarithm();
 //	assert_emit("1 +1 == [1 1]", 1);

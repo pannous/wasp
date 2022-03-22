@@ -12,12 +12,13 @@
 ~ : similar, ⋍, ≈,⩯,⩰, ≊, ≌, ~~, circa, approximately, around, like    #  about <> ± ∓
 != : ≠, ≢, unequal, ≭, different, is_not, unlike, ≉, ≆, ≇, ≄ # separate from
 ! : not, ¬
-+= : increase ⩲ ⩱
++= : increase…by increment…by raise…by ⩲ ⩱
+++ : increase increment // raise grow
 ∊ : in, ∈, of, from, has, contains # vs ∉ ∋ ∍ ∌ item element ?
-. : get, ∋, ∍
-¡ : puts, print, printf, writeLine, println, echo
+. : get, ∋, ∍ // '#' as selector
+¡ : puts, print, printf, writeLine, println, echo // printf different!!
 % : modulo, mod, mod_d # regarding, with respect, in context
-ƒ : func, function, func, fun, fn, def, defun, defn, define /*!?!*/, to…
+ƒ : func, function, fun, fn, def, defun, defn, define /*!?!*/, to…
 √ : sqrt, root, square_root
 | : then, pipe
 * : times, ×, ⋅, mul, multiply
@@ -25,8 +26,8 @@
 - : minus,−,﹣,－,⁻,₋,∸ neg, negative, hyphen  // hyphen  ;) negative only as prefix neg<>negate :(  -≠−!
 > : more, ≰, greater, bigger, larger, higher, longer # (…than)!
 < : less, ≱, lesser, smaller,lower,tinyer,shorter
-
 |> : as, cast, convert, convert_to
+# : number_of,length,size,count  // as prefix
 
 # todo : move to math library:
 log10: log₁₀, 10⌟, ⌞10

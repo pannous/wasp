@@ -384,7 +384,7 @@ public:
 
 // excluding to
 	String substring(int from, int to = -1, bool ref = false /* true after all is tested*/) { // excluding to
-		if (from < 0 or (from == 0 and (to == length or to < 0))) return *this;
+		if (from < 0 or (from == 0 and (to == length or to == -1))) return *this;
 		if (to < 0) to = length + to + 1;// -2 : skip last character
 		if (to > length or to < -length) to = length;
 		if (to <= from) return EMPTY_STRING;

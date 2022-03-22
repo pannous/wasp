@@ -74,6 +74,7 @@ public:
 		} else {
 			data = new byte[4];
 			*(int *) data = nr;
+			*(int *) data = nr;
 			length = 4;
 		}
 	}
@@ -387,11 +388,12 @@ enum Opcodes {
 	elsa = 0x05,
 
 	// EXTENSIONS:
-	try_ = 0x06,
+	try_ = 0x06, // since Chrome 95
 	catch_ = 0x07,
 	throw_ = 0x08,
 	rethrow_ = 0x09,
 	br_on_exn_ = 0x0A, // branch on exception
+	delegate_ = 0x18,
 
 	end_block = 0x0b, //11
 	br = 0x0c,

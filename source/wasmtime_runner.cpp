@@ -155,6 +155,7 @@ wasm_wrap *link_import(String name) {
 	if (name == "memset") return &wrap_memset;
 
 	if (name == "printf") return &wrap_puts;
+	if (name == "print") return &wrap_puts;
 	if (name == "puts") return &wrap_puts;
 	if (name == "puti") return &wrap_puti;
 	if (name == "putf") return &wrap_putf;
