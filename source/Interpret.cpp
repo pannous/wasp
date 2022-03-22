@@ -41,72 +41,8 @@ Node While(Node n) {
 	return result;
 }
 
-// todo? UNIFY:
-// todo? a if b == if b : a
-// todo? a unless b == unless b : a
-// todo? a while b == while b : a
-// todo? a until b == until b : a
-Node If(Node n) {
-	if (n.length == 0)return If(n, n.values());
-	if (n.length == 0 and !n.value.data)
-		error("no if condition given");
-	if (n.length == 1 and !n.value.data)
-		error("no if block given");
-	Node &condition = n.children[0];
-	Node then = n[1];
-
-	if (n.has("then")) {
-		condition = n.to("then");
-		then = n.from("then");
-	}
-
-	if (condition.value.data and !condition.next)
-		then = condition.values();
-	if (condition.next and condition.next->name == "else")
-		then = condition.values();
-
-	// todo: UNMESS how?
-	if (n.has(":") /*before else: */) {
-		condition = n.to(":");
-		if (condition.has("else"))
-			condition = condition.to("else");// shouldn't happen?
-		then = n.from(":");
-	} else if (condition.has(":")) {// as child
-		then = condition.from(":");
-		condition = condition.interpret();
-	}
-	if (then.has("then"))
-		then = n.from("then");
-	if (then.has("else"))
-		then = then.to("else");
-//	if(condition.name=="condition")
-//		condition = condition.values();
-
-	Node condit = condition.interpret();
-	bool condition_fulfilled = (bool) condit;
-	if (condition.kind == reals or condition.kind == longs)
-		condition_fulfilled =
-				((!condition.name or empty(condition.name)) and condition.value.data) or condition.name != "0";
-	else if (condition.value.data and condition.kind == objects) // or ...
-		error("If statements need a space after colon");
-	if (condition_fulfilled) {
-		if (then.name == "then") {
-			if (then.value.data or then.children) // then={} as arg
-				return eval(then.values());
-			return eval(n[2]);
-		}
-		return eval(then);
-	} else {
-		if (n.has("else"))
-			return eval(n.from("else"));
-		if (n.length == 3 and not n.has(":"))
-			return eval(n[2]);// else
-		else
-			return False;
-	}
-}
-
 bool recursive = true;// whats that?
+
 Node Node::interpret(bool expectOperator /* = true*/) {
 	if (length == 0)return constants(*this);
 	if (length == 1) {
@@ -183,6 +119,71 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 	}
 //	};// while (max > 0);
 	return *this;
+}
+
+// todo? a if b == if b : a
+// todo? a unless b == unless b : a
+// todo? a while b == while b : a
+// todo? a until b == until b : a
+// todo? UNIFY:
+Node If(Node n) {
+	if (n.length == 0)return If(n, n.values());
+	if (n.length == 0 and !n.value.data)
+		error("no if condition given");
+	if (n.length == 1 and !n.value.data)
+		error("no if block given");
+	Node &condition = n.children[0];
+	Node then = n[1];
+
+	if (n.has("then")) {
+		condition = n.to("then");
+		then = n.from("then");
+	}
+
+	if (condition.value.data and !condition.next)
+		then = condition.values();
+	if (condition.next and condition.next->name == "else")
+		then = condition.values();
+
+	// todo: UNMESS how?
+	if (n.has(":") /*before else: */) {
+		condition = n.to(":");
+		if (condition.has("else"))
+			condition = condition.to("else");// shouldn't happen?
+		then = n.from(":");
+	} else if (condition.has(":")) {// as child
+		then = condition.from(":");
+		condition = condition.interpret();
+	}
+	if (then.has("then"))
+		then = n.from("then");
+	if (then.has("else"))
+		then = then.to("else");
+//	if(condition.name=="condition")
+//		condition = condition.values();
+
+	Node condit = condition.interpret();
+	bool condition_fulfilled = (bool) condit;
+	if (condition.kind == reals or condition.kind == longs)
+		condition_fulfilled =
+				((!condition.name or empty(condition.name)) and condition.value.data) or condition.name != "0";
+	else if (condition.value.data and condition.kind == objects) // or ...
+		error("If statements need a space after colon");
+	if (condition_fulfilled) {
+		if (then.name == "then") {
+			if (then.value.data or then.children) // then={} as arg
+				return eval(then.values());
+			return eval(n[2]);
+		}
+		return eval(then);
+	} else {
+		if (n.has("else"))
+			return eval(n.from("else"));
+		if (n.length == 3 and not n.has(":"))
+			return eval(n[2]);// else
+		else
+			return False;
+	}
 }
 
 Node do_call(Node left, Node op0, Node right) {
