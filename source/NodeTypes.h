@@ -22,7 +22,6 @@ enum Type {// todo: merge Node.kind with Node.class(?)
 	assignment, // x = 1 // really?? needs own TYPE?
 	strings,
 	codepoints,
-	arrays, // Node[] vs any[]? vs
 	buffers, // int[]
 	reals,
 	longs, // the signature of parameters/variables is independent!
@@ -30,7 +29,13 @@ enum Type {// todo: merge Node.kind with Node.class(?)
 	bools,
 	errors, // internal wasp error, NOT to be used in Angle!
 	call,
-	classe, // as Java class,  primitive int vs Node(kind==int) == boxed Int
+
+	// each class can be made into a typed list / vector int => int[] :
+	classe, // as Java class,  primitive int vs Node(kind==int) == boxed Int.
+	//	vectors     use kind=array type=Any
+//	vectors, // any[] vs Node[]  list of type class!  e.g.  numbers xs => xs.type=number(type=vectors)
+	arrays, // Node[] vs any[]  untyped array of Nodes. Unlike vector the node is NOT a class!
+
 	unknown //7
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
