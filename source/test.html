@@ -37,7 +37,7 @@ function resizeCanvas() {
     canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
     WIDTH = canvas.width;
     HEIGHT = canvas.height;
-    log(WIDTH, HEIGHT);
+    // log(WIDTH, HEIGHT);
     imageData = ctx.createImageData(WIDTH, HEIGHT);
     // clearScreen();
     // window.paint(loop);
@@ -186,7 +186,11 @@ window.onload = function () {
                     __cxa_guard_acquire: nop,//!?
                     __cxa_guard_release: nop,//
 
+                    put_char: log,
                     puts: log,
+                    puti: log,
+                    putf: log,
+                    putc: log,
                     logi: log,
                     logc: log,
                     logf: log,

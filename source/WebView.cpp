@@ -217,7 +217,7 @@ long init_graphics() {
 		return s;
 	});// no native popup?
 	// why does alert('a') print 'a' alert(1) print 1, even though lambda type is string?
-	w.bind("put", [](std::string s) -> std::string {
+	w.bind("log", [](std::string s) -> std::string {
 		splitLog(s);
 		return s;
 	});
