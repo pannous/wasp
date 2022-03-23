@@ -1817,6 +1817,10 @@ int main(int argp, char **argv) {
 #endif
 			if (arg == "app" or arg == "start" or arg == "webview" or arg == "browser" or arg == "run" or
 			    arg == "repl") {
+#ifndef WEBAPP
+				print("wasp needs to be compiled with WEBAPP support");
+				return -1;
+#endif
 //				start_server(9999);
 #ifdef GRAFIX
 				init_graphics();
@@ -1847,7 +1851,7 @@ int main(int argp, char **argv) {
 				std::thread go(start_server, 9999);
 #endif
 #ifdef WEBAPP
-		put("\nWEBAPP!");
+		print("\nWEBAPP!");
 		// handing over to V8, we need to call testCurrent() from there!
 		init_graphics(); //
 #endif
