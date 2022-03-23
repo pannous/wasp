@@ -81,6 +81,7 @@ Node getType(Node node) {
 bool isType(Node &expression) {
 	auto name = expression.name;
 	if (name == "puts" or name == "is" or name == "has" or name == "equals")return false;// todo …
+	// todo: whitelist known singular types?
 	if (name.endsWith("s")) { // numbers, persons …
 		auto cut = name.substring(0, -2);
 		return true;// todo and register?
