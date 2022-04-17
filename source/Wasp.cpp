@@ -1855,9 +1855,10 @@ int main(int argp, char **argv) {
 		// handing over to V8, we need to call testCurrent() from there!
 		init_graphics(); //
 #endif
-#ifndef NO_TESTS // RUNTIME_ONLY
-		testCurrent();// needs init_graphics in WEBAPP to run wasm!
-#endif
+// via arg
+//#ifndef NO_TESTS // RUNTIME_ONLY
+//		testCurrent();// needs init_graphics in WEBAPP to run wasm!
+//#endif
 		return 42;
 	} catch (Exception e) {
 		printf("\nException WOOW\n");
