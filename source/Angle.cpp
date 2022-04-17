@@ -1185,7 +1185,7 @@ Node emit(String code) {
 //	else
 	binary = emit(charged);
 //	code.link(wasp) more beautiful with multiple memory sections
-	int result = binary.run();
+	int result = binary.run();// check js console if no result
 	return Node(result);
 #endif
 }
