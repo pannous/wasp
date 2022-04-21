@@ -11,9 +11,10 @@ LINK_DIRECTORIES(/usr/local/lib)
 # SET these configurations via Preferences… Build->CMake->Profiles
 # MANUALLY force set these only for urgent debugging,
 #set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
+#set(RELEASE 0) # no tests todo VS:
+#set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
 #set(DEBUG 1)
-#set(RELEASE 0) # no tests
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh
 #set(WABT_MERGE 0) # not the whole WABT though
@@ -37,8 +38,8 @@ if (NOT WASM)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         #        SET(V8 1)
-        #        SET(WASMTIME 1) # FASTEST!
-        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        SET(WASMTIME 1) # FASTEST!
+        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
