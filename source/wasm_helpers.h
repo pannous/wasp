@@ -8,7 +8,7 @@
 #include <cstddef> // size_t
 
 #else
-//#define size_t unsigned long
+#define size_t unsigned long
 //#define size_t unsigned int // error: 'operator new' takes type size_t ('unsigned long') as first parameter
 #endif
 
@@ -149,13 +149,15 @@ void printf(chars format, chars i, chars j, int l);
 void printf(chars format, chars i, chars j, chars l);
 void printf(chars format, chars i, chars j, chars k, int l);
 #endif
+
+#ifdef WASM
 extern "C" void * memset ( void * ptr, int value, size_t num );
+#endif
 //#ifndef WASI
 // Provided by /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h:15:7:
 void *calloc(size_t __nmemb, size_t __size) __attribute__((__malloc__, __warn_unused_result__));
 //void* calloc(int i,int num=1);// different from complicated alloc.h type!
 //#endif
-void free(void*);
 //int rand();
 //proc_exit, environ_get, environ_sizes_get
 

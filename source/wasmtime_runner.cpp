@@ -9,6 +9,12 @@
 #include "Util.h"
 #include <math.h>
 
+#undef assert // assert.h:92 not as good!
+#define assert(condition) try{\
+if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
+}catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(1);}
+
+
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap);
 
 const wasm_functype_t *funcType(Signature &signature);
@@ -74,6 +80,8 @@ wrap(puts) {
 	int n = args[0].of.i32;
 	if (wasm_memory)
 		printf("%s", &((char *) wasm_memory)[n]);
+	else
+		printf("printf can't access null wasm_memory at %d (internal error!)", n);
 	return NULL;
 }
 
@@ -192,13 +200,28 @@ wasmtime_context_t *context;
 void init_wasmtime() {
 	engine = wasm_engine_new();
 	assert(engine != NULL);
-	store = wasmtime_store_new(engine, NULL, NULL);
+	void *some_meta_data;
+	store = wasmtime_store_new(engine, some_meta_data, NULL);
 	assert(store != NULL);
+//	wasmtime_context_get_data(context);// get some_meta_data
+
 	context = wasmtime_store_context(store);
 	done = 1;
 //	void free_wasmtime(){
 	//	wasmtime_store_delete(store);
 	//	wasm_engine_delete(engine);
+}
+
+void add_wasmtime_memory() {
+	wasm_limits_t limits = {
+			.min = 0,//100, SIGBUS / EXC_BAD_ACCESS if too small / out of bounds access (naturally)
+//			.max = 0x7FFFFFFF,//  assertion failed: … <= absolute_max
+	};
+	const wasm_memorytype_t *memtype = wasm_memorytype_new(&limits);
+	wasmtime_memory_t memory{.store_id=1, .index=0}; // filled later:
+	auto ok = wasmtime_memory_new(context, memtype, &memory);
+	uint8_t *memory_data = wasmtime_memory_data(context, &memory);
+	wasm_memory = memory_data;// todo: keep old?
 }
 
 int run_wasm(unsigned char *data, int size) {
@@ -231,9 +254,37 @@ int run_wasm(unsigned char *data, int size) {
 	if (error != NULL || trap != NULL) exit_with_error("failed to instantiate", error, trap);
 
 	wasmtime_extern_t run;
+	wasmtime_extern_t memory_export;
 	bool ok = wasmtime_instance_export_get(context, &instance, "main", 4, &run);
 	assert(ok);
 	assert(run.kind == WASMTIME_EXTERN_FUNC);
+
+	ok = wasmtime_instance_export_get(context, &instance, "memory", 6, &memory_export);
+	assert(ok);
+	assert(memory_export.kind == WASMTIME_EXTERN_MEMORY);
+	wasmtime_memory_t memory = memory_export.of.memory;
+	uint8_t *memory_data = wasmtime_memory_data(context, &memory);
+	if (memory_data)
+		wasm_memory = memory_data;
+	else
+		trace("wasm module exports no memory");
+
+//	wasmtime_memory_t memory(store_id:0/*store.id*/, 0);
+//wasmtime_store
+
+//	wasm_extern_vec_t exports;
+//	const wasm_instance_t* instance2= reinterpret_cast<const wasm_instance_t *>(&instance);
+//	wasm_instance_exports(instance2, &exports);
+//	size_t ix = 0;
+//	wasm_memory_t* memory = get_export_memory(&exports, ix++);// wrong api
+
+//	check(wasm_memory_size(memory) == 2);
+//	check(wasm_memory_data_size(memory) == 0x20000);
+//	check(wasm_memory_data(memory)[0] == 0);
+//	wasm_memory_data(memory);
+//	byte_t* memory_data=wasm_memory_data((wasm_memory_t*)&memory);
+
+
 	wasmtime_val_t results;
 	error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, 1, &trap);
 	if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);

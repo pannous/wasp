@@ -16,7 +16,6 @@
 #include "Code.h"
 //extern unsigned int *memory;
 
-#include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
 
 
 //#ifdef WASI
@@ -25,10 +24,14 @@
 
 void *wasm_memory = 0;// c pointer of VM, NOT memory inside wasm module
 
+#ifndef WASM
+
+#include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
+
+#endif
+
 #ifdef WASM
-
 void free(void*){/*lol*/}
-
 
 void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	void *last = current;
