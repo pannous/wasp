@@ -281,7 +281,7 @@ int run_wasm_sync(unsigned char *bytes, int length) {
 		ss << std::hex << std::showbase << ((int) bytes[i]) << ", ";
 	}
 	ss << "]);wasmx(code);";
-	w.eval(ss.str());
+	w.eval(ss.str());// hangs if …
 	waiter.wait();
 
 	// 3. feed natively how? BBQ OMG JIT wasm LLInt (low level interpreter)

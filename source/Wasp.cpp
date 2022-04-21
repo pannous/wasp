@@ -347,7 +347,7 @@ public:
 //    Node return_fuck(auto source,auto options) {
 // YUCK static magically applies to new() objects too!?!
 	Node parse(String source) {
-		printf("Parsing: %s\n", source.data);
+		printf("Parsing: \n%s\n", source.data);
 		return read(source);
 	}
 
@@ -1683,8 +1683,7 @@ Node &parse(String source) {
 	// 1. top level objects are not constructed True
 	// 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
 
-
-	printf("Parsing: %s\n", source.data);
+	printf("Parsing: \n%s\n", source.data);
 	if (!source.data)return (Node &) NIL;
 	return Wasp().read(source);
 }
