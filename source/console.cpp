@@ -67,9 +67,10 @@ char *version = "1.0";
 	while (true) {
 		getline(data);
 		code += data;
-		Node &result = parse(code);// safeMode only for web access
+//		Node &result = parse(code);// safeMode only for web access
+		Node result = eval(code);
 		printf(">>> ");
 //	result.interpret().print();
-//		result.eval().print();
+		result.print();
 	}
 }

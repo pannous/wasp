@@ -969,7 +969,7 @@ bool Node::isSetter() {
 	// todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
 	if (kind == bools)return name != True.name and name != False.name;
 	if (kind == longs || kind == reals)// || kind==bools)
-		return not atoi0(name) and not name.contains('.');// todo WTF hack
+		return not name.empty() and (not atoi0(name) and not name.contains('.'));// todo WTF hack
 	if (kind == key and value.data) return true;
 	if (kind == strings and name == value.string) return false;  // todo x="x" '123'="123" redundancy bites us here
 	if (kind == strings and value.data)
