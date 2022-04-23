@@ -2135,6 +2135,7 @@ Code memorySection() {
 	return code;
 }
 
+// todo: merge with clearContext()
 void prepareContext() {
 	stringIndices.clear();
 	referenceIndices.clear();

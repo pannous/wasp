@@ -22,6 +22,7 @@
 #include "stream.h"
 #include "validator.h"
 #include "wast-parser.h"
+#include "Util.h"
 
 
 typedef unsigned char *bytes;
@@ -32,97 +33,86 @@ static wabt::Features wabt_features;
 static bool validate_wasm = true;
 static bool dump_module = false;//debug
 
-
-#define consume(len, bytes) if(!consume_x(code,&pos,len,bytes)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
-
-#define check(test) if(test){log("OK check passes: ");printf("%s",(#test));}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-
 #define pointerr std::unique_ptr
 
-bool consume_x(byte *code, int *pos, int len, byte *bytes) {
-//	if(bytes)
-	int i = 0;
-	while (i < len) {
-		if (bytes and code[*pos] != bytes[i])
-			return false;
-		*pos = *pos + 1;
-		i++;
-	}
-	return true;
-}
+//
+//#define consume(len, bytes) if(!consume_x(code,&pos,len,bytes)){printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
+//
+//
+//
+//bool consume_x(byte *code, int *pos, int len, byte *bytes) {
+////	if(bytes)
+//	int i = 0;
+//	while (i < len) {
+//		if (bytes and code[*pos] != bytes[i])
+//			return false;
+//		*pos = *pos + 1;
+//		i++;
+//	}
+//	return true;
+//}
+//
+//int pos = 0;
+//byte *code;
 
-int pos = 0;
-byte *code;
+//byte typ() {
+//	return code[pos++];
+//}
+//
+//int unsignedLEB128() {
+//	int n = 0;
+//	do {
+//		byte b = code[pos++];
+//		n = n << 7;
+//		n = n ^ (b & 0x7f);
+//		if ((b & 0x80) == 0)break;
+//	} while (n != 0);
+//	return n;
+//}
+//
+//int unsignedLEB128(Code code) {
+//	int n = 0;
+//	do {
+//		byte b = code[code.start++];
+//		n = n << 7;
+//		n = n ^ (b & 0x7f);
+//		if ((b & 0x80) == 0)break;
+//	} while (n != 0);
+//	return n;
+//}
 
-byte typ() {
-	return code[pos++];
-}
+//int siz() {
+//	return unsignedLEB128();
+//}
 
-int unsignedLEB128() {
-	int n = 0;
-	do {
-		byte b = code[pos++];
-		n = n << 7;
-		n = n ^ (b & 0x7f);
-		if ((b & 0x80) == 0)break;
-	} while (n != 0);
-	return n;
-}
+//Code vec() {
+//	int from = pos;
+//	int len = siz();
+//	consume(len, 0);
+//	return Code(code, from, pos);
+//}
 
-int unsignedLEB128(Code code) {
-	int n = 0;
-	do {
-		byte b = code[code.start++];
-		n = n << 7;
-		n = n ^ (b & 0x7f);
-		if ((b & 0x80) == 0)break;
-	} while (n != 0);
-	return n;
-}
+//Code consumeTypeSection() {
+//	int from = pos;
+//	byte type = typ();
+//	Code type_vector = vec();
+//	int typeCount = unsignedLEB128(type_vector);
+//	printf("typeCount %d\n", typeCount);
+//	Code type_data = type_vector.rest();
+//	return Code(code, from, pos);
+////	return Code(type, encodeVector(Code(typeCount) + type_data));
+//}
 
-int siz() {
-	return unsignedLEB128();
-}
-
-Code vec() {
-	int from = pos;
-	int len = siz();
-	consume(len, 0);
-	return Code(code, from, pos);
-
-}
-
-Code consumeTypeSection() {
-	int from = pos;
-	byte type = typ();
-	Code type_vector = vec();
-	int typeCount = unsignedLEB128(type_vector);
-	printf("typeCount %d\n", typeCount);
-	Code type_data = type_vector.rest();
-	return Code(code, from, pos);
-//	return Code(type, encodeVector(Code(typeCount) + type_data));
-}
-
-Code read(byte *code0, int length) {
-	pos = 0;
-	int from = pos;
-	code = code0;
-	consume(4, reinterpret_cast<byte *>(magicModuleHeader));
-	consume(4, reinterpret_cast<byte *>(moduleVersion));
-	consumeTypeSection();
-//	consumeImportSection();
-	return Code(code, from, pos);
-}
-
-int fileSize(char const *file) {
-	FILE *ptr;
-	ptr = fopen(file, "rb");  // r for read, b for binary
-	if (!ptr)error("File not found "s + file);
-	fseek(ptr, 0L, SEEK_END);
-	int sz = ftell(ptr);
-	return sz;
-}
-
+//Code read(byte *code0, int length) {
+//	pos = 0;
+//	int from = pos;
+//	code = code0;
+//	consume(4, reinterpret_cast<byte *>(magicModuleHeader));
+//	consume(4, reinterpret_cast<byte *>(moduleVersion));
+//	consumeTypeSection();
+////	consumeImportSection();
+//	return Code(code, from, pos);
+//}
 
 using namespace wabt;
 
@@ -263,21 +253,20 @@ wabt::Module *readWasm(char const *file) {
 	check(module->loc.filename == file);
 	return module;
 }
-
-Code merge_wasm(::Module lib, ::Module main) {
-	printf("merge_wasm WABT! dummy");
-	return Code();
-}
-
-::Module read_wasm(bytes buffer, int size0) {
-	printf("read_wasm WABT! dummy");
-	return ::Module();
-
-}
-
-::Module read_wasm(char const *) {
-	printf("read_wasm WABT! dummy");
-	return ::Module();
-}
+//
+//Code merge_wasm(::Module lib, ::Module main) {
+//	printf("merge_wasm WABT! dummy");
+//	return Code();
+//}
+//
+//::Module read_wasm(bytes buffer, int size0) {
+//	printf("read_wasm WABT! dummy\n");
+//	return ::Module();
+//}
+//
+//::Module read_wasm(char const *) {
+//	printf("read_wasm WABT! dummy");
+//	return ::Module();
+//}
 
 #undef pointerr
