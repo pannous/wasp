@@ -229,7 +229,10 @@ public:
 		shared_reference = share;
 		if (!share) {
 			data = (char *) alloc(sizeof(char), length + 1);// including \0
-			strcpy2(data, datas, length);
+			if (length > 0)
+				memcpy(data, datas, length);
+			else
+				strcpy2(data, datas, length);
 			data[length] = 0;
 		}
 	}

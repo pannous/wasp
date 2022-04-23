@@ -132,7 +132,6 @@ wrap(todo) {
 
 
 wasm_wrap *link_import(String name) {
-
 	if (name == "__cxa_guard_acquire") return &wrap_nop;// todo!?
 	if (name == "__cxa_guard_release") return &wrap_nop;// todo!?
 //	if (name == "_Z8typeName7Valtype") return &wrap_nop;// todo!?

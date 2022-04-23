@@ -7,7 +7,6 @@
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 
 
-
 int total_functions = -1;
 
 Code mergeTypeSection(Module lib, Module main) {
@@ -75,7 +74,7 @@ Code mergeDataSection(Module lib, Module main) {
 
 
 Code relocate(Code &blocks) {
-	return blocks;// todo, maybe
+	return blocks;// todo, maybe see wasm_merger_wabt.cpp !
 }
 
 Code mergeCodeSection(Module lib, Module main) {
