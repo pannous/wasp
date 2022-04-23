@@ -1083,6 +1083,7 @@ void preRegisterSignatures() {
 	//	functionSignatures.insert_or_assign("powl", Signature().import().add(int64).add(int64).returns(int64));
 	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
 	functionSignatures.insert_or_assign("puts", Signature().import().add(charp).returns(voids));
+//	functionSignatures.insert_or_assign("puts", Signature().import().add(charp).returns(int32));
 	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
 	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// todo why not rely on read_wasm again?
 	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));
@@ -1161,7 +1162,7 @@ int runtime_emit(String prog) {
 
 // todo dedup runtime_emit!
 //Node emit(String code, ParseOptions options) {
-Node emit(String code) {
+Node emit(String code) {// emit and run!
 //	if (code.endsWith(".wasm")){
 //		auto filename = findFile(code);
 //		return Node(run_wasm(filename));

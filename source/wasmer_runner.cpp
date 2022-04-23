@@ -176,6 +176,28 @@ void print_externtype(const wasm_externtype_t *type) {
 	printf("\n");
 }
 
+
+void print_frame(wasm_frame_t *frame) {
+	printf("..");
+//	printf("> %p @ 0x%zx = %u.0x%zx\n",
+//	       wasm_frame_instance(frame),
+//	       wasm_frame_module_offset(frame),
+//	       wasm_frame_func_index(frame),
+//	       wasm_frame_func_offset(frame)
+//	);
+}
+
+void print_trace(wasm_trap_t *trap) {
+	printf("Printing trace...\n");
+	own wasm_frame_vec_t trace;
+	wasm_trap_trace(trap, &trace);
+	if (trace.size > 0) {
+		for (size_t i = 0; i < trace.size; ++i) {
+			print_frame(trace.data[i]);
+		}
+	}
+}
+
 int run_wasm(bytes wasm_bytes, int len) {
 	if (!done)init_wasmer();
 	wasm_byte_vec_t wasmBytes = {(size_t) len, (char *) wasm_bytes};
@@ -187,8 +209,16 @@ int run_wasm(bytes wasm_bytes, int len) {
 
 	wasm_extern_t *externs[] = {link_imports2(), link_global()};
 	wasm_extern_vec_t imports = WASM_ARRAY_VEC(externs);
-	wasm_instance_t *instance = wasm_instance_new(store, module, &imports, NULL);
-	if (!instance) error("> Error instantiating module!\n");
+	wasm_trap_t *trap;//=wasm_trap_new(store, (wasm_message_t*)"Error instantiating module!\n\0");
+	wasm_instance_t *instance = wasm_instance_new(store, module, &imports, &trap);
+	if (!instance) {
+		int i = wasmer_last_error_length();
+		char error_buffer[1000];
+		wasmer_last_error_message(error_buffer, i);
+		printf("%s\n", error_buffer);
+//		print_trace(trap);
+		error("Error instantiating module!\n");
+	}
 	wasm_extern_vec_t exports;
 	own wasm_exporttype_vec_t export_types;
 	wasm_module_exports(module, &export_types);
@@ -216,7 +246,7 @@ int run_wasm(bytes wasm_bytes, int len) {
 	if (wasm_func_call(sum_func, &args, &results)) error("> Error calling the `main` function!\n");
 
 	int32_t result = results_val[0].of.i32;
-	printf("!!!Result: %d\n", result);
+	printf("Wasmer Result: %d\n", result);
 
 	wasm_func_delete(sum_func);
 	wasm_module_delete(module);
