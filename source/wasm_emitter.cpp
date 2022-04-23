@@ -1098,7 +1098,8 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		case strings:
 			if (not node.isSetter() || node.value.longy == 0) // todo 0  x="x" '123'="123" redundancy bites us here
 				return emitValue(node, context);
-//			else FALLTHROUGH to set x="123"!
+			else
+				todo("FALLTHROUGH to set x=\"123\"!");
 		case key: // todo i=ø
 			if (not isVariableName(name))
 				todo("proper key emission");
@@ -2134,23 +2135,29 @@ Code memorySection() {
 	return code;
 }
 
-
-[[nodiscard]]
-Code &emit(Node &root_ast, Module *runtime0, String _start) {
-	if (root_ast.kind == objects)root_ast.kind = expression;
-	start = _start;
-//	clear();// todo
+void prepareContext() {
 	stringIndices.clear();
 	referenceIndices.clear();
 	functionCodes.clear();
 	typeMap.setDefault(-1);
 	typeMap.clear();
 	locals.setDefault(List<String>());
+	localTypes.setDefault(List<Valtype>());
 	data = (char *) malloc(MAX_DATA_LENGTH);
 	data_index_end = 0;
 	last_data = 0;
+//	analyzed.
 	functionIndices.setDefault(-1);
 	functionCodes.setDefault(Code());
+	functionSignatures.setDefault(Signature());
+}
+
+[[nodiscard]]
+Code &emit(Node &root_ast, Module *runtime0, String _start) {
+	if (root_ast.kind == objects)root_ast.kind = expression;
+	start = _start;
+//	clear();// todo
+	prepareContext();
 	if (runtime0) {
 		memoryHandling = no_memory;// done by runtime?
 		runtime = *runtime0;// else filled with 0's

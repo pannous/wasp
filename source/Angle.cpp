@@ -132,7 +132,8 @@ bool isFunction(Node &op) {
 
 #ifndef RUNTIME_ONLY
 #endif
-bool interpret = true; // todo
+bool interpret = false; // todo
+void prepareContext();
 
 Node eval(String code) {
 	Node parsed = parse(code);
@@ -145,6 +146,8 @@ Node eval(String code) {
 	else
 #endif
 	{
+		prepareContext();
+		analyzed.setDefault(false);
 		int result = emit(analyze(parsed)).run();
 		return Node(result);
 	}
