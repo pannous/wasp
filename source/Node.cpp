@@ -807,7 +807,8 @@ String Node::serialize() const {
 			return serializedValue;// not "3":3.14
 		if (serializedValue and value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
 		    !eq(serializedValue, "?")) {
-			wasp += ":";
+			if (not name.empty())
+				wasp += ":";
 			wasp += serializedValue;
 			wasp += " ";
 		}

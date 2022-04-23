@@ -920,7 +920,8 @@ void print(String *s);
 
 void print(String s);
 
-int puts(const char *);
+int puts(const char *);// int return needed for stdio compatibilty !
+//void puts(const char *);
 
 //#endif
 //unsigned  == unsigned int!

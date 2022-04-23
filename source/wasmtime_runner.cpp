@@ -79,9 +79,9 @@ wrap(powi) {
 wrap(puts) {
 	int n = args[0].of.i32;
 	if (wasm_memory)
-		printf("%s", &((char *) wasm_memory)[n]);
+		printf("%s\n", &((char *) wasm_memory)[n]);
 	else
-		printf("printf can't access null wasm_memory at %d (internal error!)", n);
+		printf("puts / printf can't access null wasm_memory at %d (internal error!)", n);
 	return NULL;
 }
 
