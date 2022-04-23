@@ -18,7 +18,7 @@ LINK_DIRECTORIES(/usr/local/lib)
 set(CONSOLE 1)
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh
-#set(WABT_MERGE 0) # not the whole WABT though
+set(WABT_MERGE 1) # not the whole WABT though, heavy
 
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
 #ADD_DEFINITIONS(-DNO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
@@ -187,6 +187,8 @@ else ()
     if (WABT_MERGE)
         set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt/src/ ./source/wasm_merger_wabt.cpp ./source/wasm_reader_wabt.cpp)
         set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt_merge/binary-reader-linker.cc)
+        set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp) # for meta
+        set(SOURCE_FILES ${SOURCE_FILES} source/wasm_merger.cpp) # for old mechanism
     else ()
         set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp source/wasm_merger.cpp)
     endif ()

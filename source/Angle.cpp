@@ -96,8 +96,6 @@ Node &groupWhile(Node n, String string);
 
 bool isPrimitive(Node &node);
 
-void fileSize(String filename);
-
 bool isType(Node &node);
 
 
@@ -1200,9 +1198,6 @@ Node emit(String code) {// emit and run!
 #endif
 }
 
-void fileSize(String filename) {
-	readFile(filename);
-}
 
 
 float function_precedence = 1000;

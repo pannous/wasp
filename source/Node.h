@@ -270,7 +270,7 @@ public:
 //		type = strings NAH;// unless otherwise specified!
 	}
 
-	Node(String name, Type type) {
+	Node(String name, ::Type type) {
 		this->name = name;
 		this->kind = type;
 	}
