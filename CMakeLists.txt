@@ -15,6 +15,7 @@ LINK_DIRECTORIES(/usr/local/lib)
 #set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
 #set(DEBUG 1)
+set(CONSOLE 1)
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh
 #set(WABT_MERGE 0) # not the whole WABT though
@@ -34,17 +35,18 @@ if (NOT WASM)
     # ^^ fixes <cmath> mac errors!
     ADD_DEFINITIONS(-D_Backtrace_)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         #        SET(V8 1)
-        SET(WASMTIME 1) # FASTEST!
+        #        SET(WASMTIME 1) # FASTEST!
         #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-        #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+        set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
     endif ()
 endif ()
 
@@ -104,6 +106,10 @@ ENDFUNCTION()
 
 set(CMAKE_CXX_STANDARD 20)
 
+if (CONSOLE)
+    ADD_COMPILE_FLAG("-lreadline")
+endif ()
+
 ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it needs for the declared range of possible values.
 # makes TypedValue 1+8 bytes, doesn't help for multi-value (int32 int64)
 
@@ -134,7 +140,9 @@ if (NOT TRACE)
     ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 #    ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
     ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
+
     # disable:
+    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
     ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
     ADD_COMPILE_FLAG("-Wno-unused-function")
     ADD_COMPILE_FLAG("-Wno-unused-variable")
