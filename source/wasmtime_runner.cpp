@@ -9,10 +9,10 @@
 #include "Util.h"
 #include <math.h>
 
-#undef assert // assert.h:92 not as good!
-#define assert(condition) try{\
-if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
-}catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(1);}
+//#undef assert // assert.h:92 not as good!
+//#define assert(condition) try{\
+//if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
+//}catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(1);}
 
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap);
@@ -256,12 +256,11 @@ int run_wasm(unsigned char *data, int size) {
 	wasmtime_extern_t run;
 	wasmtime_extern_t memory_export;
 	bool ok = wasmtime_instance_export_get(context, &instance, "main", 4, &run);
-	assert(ok);
-	assert(run.kind == WASMTIME_EXTERN_FUNC);
-
+//	assert(ok);
+//	assert(run.kind == WASMTIME_EXTERN_FUNC);
 	ok = wasmtime_instance_export_get(context, &instance, "memory", 6, &memory_export);
-	assert(ok);
-	assert(memory_export.kind == WASMTIME_EXTERN_MEMORY);
+//	assert(ok);
+//	assert(memory_export.kind == WASMTIME_EXTERN_MEMORY);
 	wasmtime_memory_t memory = memory_export.of.memory;
 	uint8_t *memory_data = wasmtime_memory_data(context, &memory);
 	if (memory_data)
