@@ -2101,6 +2101,7 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	print("OK?");
 //	assert_is("x=(1 4 3);x#2", 4);
 //	testArrayIndices();
 //	testArrayS();

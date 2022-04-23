@@ -7,17 +7,14 @@
 #include "wasm_helpers.h"
 #include "wasm_emitter.h"
 #include "wasm_runner.h"
+#include "console.h"
+#include "stdio.h" // FILE
+#include <math.h>
 
-void testCurrent();
 // get home dir :
 /*#include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>*/
-#include "stdio.h" // FILE
-#include <math.h>
-
-//#define err(m) printf("\n%s:%d\n",__FILE__,__LINE__);err1(m)
-#define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m)
 
 #ifndef RUNTIME_ONLY
 
@@ -44,6 +41,12 @@ char *current = (char *) HEAP_OFFSET;
 #include "ErrorHandler.h"
 
 #endif
+
+extern void info(chars);
+
+#define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m)
+
+void testCurrent();
 
 bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
 
@@ -347,7 +350,7 @@ public:
 //    Node return_fuck(auto source,auto options) {
 // YUCK static magically applies to new() objects too!?!
 	Node parse(String source) {
-		printf("Parsing: \n%s\n", source.data);
+		info("Parsing: \n%s\n"s % source.data);
 		return read(source);
 	}
 
@@ -1573,7 +1576,7 @@ private:
 						else current.kind = expression;
 					}
 					if (node.length > 1 and addFlat) {
-						for (Node arg:node)current.add(arg);
+						for (Node arg: node)current.add(arg);
 						current.kind = node.kind;// was: expression
 					} else {
 						if (current.last().kind == operators)
@@ -1683,8 +1686,8 @@ Node &parse(String source) {
 	// 1. top level objects are not constructed True
 	// 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
 
-	printf("Parsing: \n%s\n", source.data);
 	if (!source.data)return (Node &) NIL;
+	info("Parsing: \n%s\n"s % source.data);
 	return Wasp().read(source);
 }
 
@@ -1788,7 +1791,7 @@ Node parseFile(String filename) {
 
 void usage() {
 	print("wasp is a new compiled programming language");
-	print("wasp [repl]            open interactive programming environment");
+	print("wasp [repl/console]    open interactive programming environment");
 	print("wasp <file.wasp>       compile wasp to wasm or native and execute");
 	print("wasp <file.wasm>       compile wasm to native and execute");
 	print("wasp help              see https://github.com/pannous/wasp/wiki");
@@ -1814,8 +1817,10 @@ int main(int argp, char **argv) {
 			if (arg == "test" or arg == "tests")
 				testCurrent();
 #endif
-			if (arg == "app" or arg == "start" or arg == "webview" or arg == "browser" or arg == "run" or
-			    arg == "repl") {
+			if (arg == "repl" or arg == "console" or arg == "start" or arg == "run") {
+				console();
+			}
+			if (arg == "app" or arg == "webview" or arg == "browser") {
 #ifndef WEBAPP
 				print("wasp needs to be compiled with WEBAPP support");
 				return -1;

@@ -266,6 +266,7 @@ void newline() {
 }
 
 void info(chars msg) {
+	if (not debug)return;// todo finer levels!
 	printf("%s", msg);
 	newline();
 }
@@ -436,7 +437,12 @@ void trace(chars x) {
 #ifndef MY_WASM
 
 //#pragma message "using wasm imports"
-int puts(chars c) {
+//void puts(chars c) { // int return needed for stdio compatibilty !
+//	printf("%s", c);
+//}
+
+
+int puts(chars c) { // // int return needed for stdio compatibilty !
 //	if(from wasm)result=c
 	printf("%s", c);
 	return 1;// stdio
