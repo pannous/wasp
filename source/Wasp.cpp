@@ -1665,6 +1665,7 @@ void handler(int sig) {
 
 #import "tests.cpp"
 #include "WebServer.hpp"
+#include "wasm_merger_wabt.h"
 
 #endif
 #endif
@@ -1728,7 +1729,7 @@ String load(String file) {
 	if (!ptr)error("File not found "s + file);
 	fseek(ptr, 0L, SEEK_END);
 	int size = ftell(ptr);
-	unsigned char buffer[size];
+	unsigned char *buffer = (unsigned char *) malloc(size);
 	fseek(ptr, 0L, SEEK_SET);
 	int ok = fread(buffer, sizeof(buffer), size, ptr);
 	if (!ok)error("Empty file or error reading "s + file);
@@ -1800,19 +1801,21 @@ void usage() {
 }
 
 // wasmer etc DO accept float/double return, just not from main!
-int main(int argp, char **argv) {
+int main(int argc, char **argv) {
 #ifdef ErrorHandler
 	register_global_signal_exception_handler();
 #endif
 	try {
 		print("Hello Wasp 🐝");
-		if (argp >= 2) {
+		if (argc >= 2) {
 			String arg = argv[1];
 			if (arg.endsWith(".wasp")) {
 				return compile(arg).value.longy;
 			}
-			if (arg.endsWith(".wasm"))
-				run_wasm_file(arg);
+			if (arg.endsWith(".wasm")) {
+				if (argc >= 3)merge_files(--argc, ++argv);
+				else run_wasm_file(arg);
+			}
 #ifndef NO_TESTS
 			if (arg == "test" or arg == "tests")
 				testCurrent();
