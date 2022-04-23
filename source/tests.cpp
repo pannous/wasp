@@ -598,9 +598,11 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 	char16_t character = u'牛';
 	char32_t hanzi = U'牛';
 	wchar_t word = L'牛';
-	assert(eval("ç='☺'") == String(u'☺'));
-	assert(eval("ç='☺'") == String(L'☺'));
-	assert(eval("ç='☺'") == String(U'☺'));
+//	use_interpreter=true
+// todo: let wasm return strings!
+	assert(interpret("ç='☺'") == String(u'☺'));
+	assert(interpret("ç='☺'") == String(L'☺'));
+	assert(interpret("ç='☺'") == String(U'☺'));
 
 	check(String(u'牛') == "牛");
 	check(String(L'牛') == "牛");
@@ -628,7 +630,7 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 	print(sizeof(wchar_t));
 
 	assert_parses("ç='☺'");
-	assert(eval("ç='☺'") == "☺");
+	assert(interpret("ç='☺'") == "☺");
 
 	assert_parses("ç=☺");
 	assert(result == "☺" or result.kind == expression);
