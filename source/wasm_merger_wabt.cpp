@@ -893,6 +893,15 @@ int merge_files(std::vector<std::string> infiles) {
 	return ok != Result::Ok;
 }
 
+
+void merge_files(int argc, char **argv) {
+	std::vector<std::string> infiles;
+	while (argc-- > 0)
+		infiles.push_back(argv[argc]);
+	merge_files(infiles);
+}
+
+
 //#import "wasm_patcher.cpp"
 
 //
@@ -909,16 +918,17 @@ std::map<short, int> new_indices = {{0, 1},
                                     {1, 2}};
 //Map<short, int> new_indices = {{1, 2}};
 //Map<short, int> opcode_args = {
+// todo -1 everywhere can't be right
 std::map<short, int> opcode_args = {
-		{nop,                                 -1}, // useful for relocation padding call 1 -> call 10000000
-		{block,                               -1},
-		{loop,                                -1},
-		{if_i,                                -1},// precede by i32 result}, follow by i32_type {7f}
-		{elsa,                                -1},
+		{nop,                 -1}, // useful for relocation padding call 1 -> call 10000000
+		{block,               -1},
+		{loop,                -1},
+		{if_i,                -1},// precede by i32 result}, follow by i32_type {7f}
+		{elsa,                -1},
 
 		// EXTENSIONS:
-		{try_,                                -1},
-		{catch_,                              -1},
+		{try_,                -1},
+		{catch_,              -1},
 		{throw_,                              -1},
 		{rethrow_,                            -1},
 		{br_on_exn_,                          -1}, // branch on exception
@@ -935,213 +945,213 @@ std::map<short, int> opcode_args = {
 		{func_bind,                           -1},// {type $t} {$t : u32
 		{let_local,                           -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
 
-		{drop,                                -1}, // pop stack
-		{select_if,                           -1}, // a?b:c ternary todo: use!
-		{select_t,                            -1}, // extension … ?
+		{drop,                -1}, // pop stack
+		{select_if,           -1}, // a?b:c ternary todo: use!
+		{select_t,            -1}, // extension … ?
 
-		{local_get,                           -1},
-		{local_set,                           -1},
-		{local_tee,                           -1},
-		{get_local,                           -1},// get to stack
-		{set_local,                           -1},// set and pop
-		{tee_local,                           -1},// set and leave on stack
+		{local_get,           -1},
+		{local_set,           -1},
+		{local_tee,           -1},
+		{get_local,           -1},// get to stack
+		{set_local,           -1},// set and pop
+		{tee_local,           -1},// set and leave on stack
 
-		{global_get,                          -1},
-		{global_set,                          -1},
+		{global_get,          -1},
+		{global_set,          -1},
 
 		//{ Anyref/externref≠funcref tables}, Table.get and Table.set {for Anyref only}.
 		//{Support for making Anyrefs from Funcrefs is out of scope
-		{table_get,                           -1},
-		{table_set,                           -1},
+		{table_get,           -1},
+		{table_set,           -1},
 
-		{i8_load,                             -1}, //== 𝟶𝚡𝟸𝙳}, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
-		{i16_load,                            -1}, //== 𝟶𝚡𝟸𝙳}, 𝗂𝟥𝟤.𝗅𝗈𝖺𝖽𝟪_u
-		{i32_load,                            -1},// load word from i32 address
-		{f32_load,                            -1},
-		{i32_store,                           -1},// store word at i32 address
-		{f32_store,                           -1},
+		{i8_load,             -1}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i16_load,            -1}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i32_load,            -1},// load word from i32 address
+		{f32_load,            -1},
+		{i32_store,           -1},// store word at i32 address
+		{f32_store,           -1},
 		// todo : peek 65536 as float directly via opcode
-		{i64_load,                            -1}, // memory.peek memory.get memory.read
-		{i64_store,                           -1}, // memory.poke memory.set memory.write
-		{i32_store_8,                         -1},
-		{i32_store_16,                        -1},
-		{i8_store,                            -1},
-		{i16_store,                           -1},
+		{i64_load,            -1}, // memory.peek memory.get memory.read
+		{i64_store,           -1}, // memory.poke memory.set memory.write
+		{i32_store_8,         -1},
+		{i32_store_16,        -1},
+		{i8_store,            -1},
+		{i16_store,           -1},
 
 		//{i32_store_byte, -1},// store byte at i32 address
-		{i32_auto,                            -1},
-		{i32_const,                           -1},
-		{i64_auto,                            -1},
-		{i64_const,                           -1},
-		{f32_auto,                            -1},
+		{i32_auto,            -1},
+		{i32_const,           -1},
+		{i64_auto,            -1},
+		{i64_const,           -1},
+		{f32_auto,            -1},
 
-		{i32_eqz,                             -1}, // use for not!
-		{negate,                              -1},
-		{not_truty,                           -1},
-		{i32_eq,                              -1},
-		{i32_ne,                              -1},
-		{i32_lt,                              -1},
-		{i32_gt,                              -1},
-		{i32_le,                              -1},
-		{i32_ge,                              -1},
+		{i32_eqz,             -1}, // use for not!
+//		{negate,                              -1},
+//		{not_truty,                           -1},
+		{i32_eq,              -1},
+		{i32_ne,              -1},
+		{i32_lt,              -1},
+		{i32_gt,              -1},
+		{i32_le,              -1},
+		{i32_ge,              -1},
 
-		{i64_eqz,                             -1},
-		{f32_eqz,                             -1}, // HACK: no such thing!
+		{i64_eqz,             -1},
+		{f32_eqz,             -1}, // HACK: no such thing!
 
 
-		{i64_𝖾𝗊𝗓,                          -1},
-		{i64_𝖾𝗊,                            -1},
-		{i64_𝗇𝖾,                            -1},
-		{i64_𝗅𝗍_𝗌,                         -1},
-		{i64_𝗅𝗍_𝗎,                         -1},
-		{i64_𝗀𝗍_𝗌,                         -1},
-		{i64_𝗀𝗍_𝗎,                         -1},
-		{i64_𝗅𝖾_𝗌,                         -1},
-		{i64_𝗅𝖾_𝗎,                         -1},
-		{i64_𝗀𝖾_𝗌,                         -1},
-		{i64_𝗀𝖾_𝗎,                         -1},
+		{i64_eqz,             -1},
+		{i64_eq,              -1},
+		{i64_ne,              -1},
+		{i64_lt_s,            -1},
+		{i64_lt_u,            -1},
+		{i64_gt_s,            -1},
+		{i64_gt_u,            -1},
+		{i64_le_s,            -1},
+		{i64_le_u,            -1},
+		{i64_ge_s,            -1},
+		{i64_ge_u,            -1},
 
-		{f32_eq,                              -1},
-		{f32_ne,                              -1}, // !=
-		{f32_lt,                              -1},
-		{f32_gt,                              -1},
-		{f32_le,                              -1},
-		{f32_ge,                              -1},
+		{f32_eq,              -1},
+		{f32_ne,              -1}, // !=
+		{f32_lt,              -1},
+		{f32_gt,              -1},
+		{f32_le,              -1},
+		{f32_ge,              -1},
 
-		{f64_eq,                              -1},
-		{f64_ne,                              -1}, // !=
-		{f64_lt,                              -1},
-		{f64_gt,                              -1},
-		{f64_le,                              -1},
-		{f64_ge,                              -1},
+		{f64_eq,              -1},
+		{f64_ne,              -1}, // !=
+		{f64_lt,              -1},
+		{f64_gt,              -1},
+		{f64_le,              -1},
+		{f64_ge,              -1},
 
-		{i32_add,                             -1},
-		{i32_sub,                             -1},
-		{i32_mul,                             -1},
-		{i32_div,                             -1},
-		{i32_rem,                             -1}, // 5%4=1
-		{i32_modulo,                          -1},
-		{i32_rem_u,                           -1},
+		{i32_add,             -1},
+		{i32_sub,             -1},
+		{i32_mul,             -1},
+		{i32_div,             -1},
+		{i32_rem,             -1}, // 5%4=1
+		{i32_modulo,          -1},
+		{i32_rem_u,           -1},
 
-		{i32_and,                             -1},
-		{i32_or,                              -1},
-		{i32_xor,                             -1},
-		{i32_shl,                             -1},
-		{i32_shr_s,                           -1},
-		{i32_shr_u,                           -1},
-		{i32_rotl,                            -1},
-		{i32_rotr,                            -1},
+		{i32_and,             -1},
+		{i32_or,              -1},
+		{i32_xor,             -1},
+		{i32_shl,             -1},
+		{i32_shr_s,           -1},
+		{i32_shr_u,           -1},
+		{i32_rotl,            -1},
+		{i32_rotr,            -1},
 
-		//{⚠ warning: funny UTF characters ahead! todo: replace 𝖼 => c etc?
-		{i64_𝖼𝗅𝗓,                          -1},
-		{i64_𝖼𝗍𝗓,                          -1},
-		{i64_𝗉𝗈𝗉𝖼𝗇𝗍,                    -1},
-		{i64_𝖺𝖽𝖽,                          -1},
-		{i64_𝗌𝗎𝖻,                          -1},
-		{i64_𝗆𝗎𝗅,                          -1},
-		{i64_𝖽𝗂𝗏_𝗌,                       -1},
-		{i64_𝖽𝗂𝗏_𝗎,                       -1},
-		{i64_𝗋𝖾𝗆_𝗌,                       -1},
-		{i64_𝗋𝖾𝗆_𝗎,                       -1},
-		{i64_𝖺𝗇𝖽,                          -1},
-		{i64_𝗈𝗋,                            -1},
-		{i64_𝗑𝗈𝗋,                          -1},
-		{i64_𝗌𝗁𝗅,                          -1},
-		{i64_𝗌𝗁𝗋_𝗌,                       -1},
-		{i64_𝗌𝗁𝗋_𝗎,                       -1},
-		{i64_𝗋𝗈𝗍𝗅,                        -1},
-		{i64_𝗋𝗈𝗍𝗋,                        -1},
+		//{⚠ warning: funny UTF characters ahead! todo: replace c => c etc?
+		{i64_clz,             -1},
+		{i64_ctz,             -1},
+		{i64_popcnt,          -1},
+		{i64_add,             -1},
+		{i64_sub,             -1},
+		{i64_mul,             -1},
+//		{i64_div_s,                       -1},
+//		{i64_div_u,                       -1},
+		{i64_rem_s,           -1},
+		{i64_rem_u,           -1},
+		{i64_and,             -1},
+		{i64_or,              -1},
+		{i64_xor,             -1},
+		{i64_s𝗁l,            -1},
+		{i64_s𝗁r_s,          -1},
+		{i64_s𝗁r_u,          -1},
+		{i64_rotl,            -1},
+		{i64_rotr,            -1},
 
 		// beginning of float opcodes
-		{f32_abs,                             -1},
-		{f32_neg,                             -1},
+		{f32_abs,             -1},
+		{f32_neg,             -1},
 
 		// todo : difference : ???
-		{f32_ceil,                            -1},
-		{f32_floor,                           -1},
-		{f32_trunc,                           -1},
-		{f32_round,                           -1},// truncation ≠ proper rounding!
-		{f32_nearest,                         -1},
+		{f32_ceil,            -1},
+		{f32_floor,           -1},
+		{f32_trunc,           -1},
+		{f32_round,           -1},// truncation ≠ proper rounding!
+		{f32_nearest,         -1},
 
-		{f32_sqrt,                            -1},
-		{f32_add,                             -1},
-		{f32_sub,                             -1},
-		{f32_mul,                             -1},// f32.mul
-		{f32_div,                             -1},
+		{f32_sqrt,            -1},
+		{f32_add,             -1},
+		{f32_sub,             -1},
+		{f32_mul,             -1},// f32.mul
+		{f32_div,             -1},
 
-		{f𝟨𝟦_𝖺𝖻𝗌,                        -1},
-		{f𝟨𝟦_𝗇𝖾𝗀,                        -1},
-		{f𝟨𝟦_𝖼𝖾𝗂𝗅,                      -1},
-		{f𝟨𝟦_𝖿𝗅𝗈𝗈𝗋,                    -1},
-		{f𝟨𝟦_𝗍𝗋𝗎𝗇𝖼,                    -1},
-		{f𝟨𝟦_𝗇𝖾𝖺𝗋𝖾𝗌𝗍,                -1},
-		{f𝟨𝟦_𝗌𝗊𝗋𝗍,                      -1},
-		{f𝟨𝟦_𝖺𝖽𝖽,                        -1},
-		{f𝟨𝟦_𝗌𝗎𝖻,                        -1},
-		{f𝟨𝟦_𝗆𝗎𝗅,                        -1},
-		{f𝟨𝟦_𝖽𝗂𝗏,                        -1},
-		{f𝟨𝟦_𝗆𝗂𝗇,                        -1},
-		{f𝟨𝟦_𝗆𝖺𝗑,                        -1},
-		{f𝟨𝟦_𝖼𝗈𝗉𝗒𝗌𝗂𝗀𝗇,              -1},
+		{f64_abs,             -1},
+		{f64_neg,             -1},
+		{f64_ceil,            -1},
+		{f64_floor,           -1},
+		{f64_trunc,           -1},
+		{f64_nearest,         -1},
+		{f64_sqrt,            -1},
+		{f64_add,             -1},
+		{f64_sub,             -1},
+		{f64_mul,             -1},
+		{f64_div,             -1},
+		{f64_min,             -1},
+		{f64_max,             -1},
+		{f64_copysign,        -1},
 
-		{f32_cast_to_i32_s,                   -1},// truncation ≠ proper rounding {f32_round, -1}!
-		{i32_trunc_f32_s,                     -1}, // cast/convert != reinterpret
-		{f32_convert_i32_s,                   -1},// convert FROM i32
-		{i32_cast_to_f32_s,                   -1},
+		{f32_cast_to_i32_s,   -1},// truncation ≠ proper rounding {f32_round, -1}!
+		{i32_trunc_f32_s,     -1}, // cast/convert != reinterpret
+		{f32_convert_i32_s,   -1},// convert FROM i32
+//		{i32_cast_to_f32_s,                   -1},
 		//{i32_cast_to_f64_s =
 
-		{f32_from_int32,                      -1},
-		{f64_promote_f32,                     -1},
-		{f64_from_f32,                        f64_promote_f32},
-		{i32_reinterpret_f32,                 -1}, // f32->i32 bit wise reinterpret != cast/trunc/convert
-		{f32_reinterpret_i32,                 -1}, // i32->f32
+		{f32_from_int32,      -1},
+		{f64_promote_f32,     -1},
+		{f64_from_f32,        f64_promote_f32},
+		{i32_reinterpret_f32, -1}, // f32->i32 bit wise reinterpret != cast/trunc/convert
+		{f32_reinterpret_i32, -1}, // i32->f32
 
-		{i𝟥𝟤_𝗐𝗋𝖺𝗉_𝗂𝟨𝟦,               -1},
-		{i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗌,          -1},
-		{i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗎,          -1},
-		{i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗌,          -1},
-		{i𝟥𝟤_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗎,          -1},
-		{i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗌,        -1},
-		{i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗎,        -1},
-		{i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗌,          -1},
-		{i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟥𝟤_𝗎,          -1},
-		{i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗌,          -1},
-		{i𝟨𝟦_𝗍𝗋𝗎𝗇𝖼_𝖿𝟨𝟦_𝗎,          -1},
-		{f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗌,      -1},
-		{f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗎,      -1},
-		{f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌,      -1},
-		{f𝟥𝟤_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗎,      -1},
-		{f𝟥𝟤_𝖽𝖾𝗆𝗈𝗍𝖾_𝖿𝟨𝟦,           -1},
-		{f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗌,      -1},
-		{f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟥𝟤_𝗎,      -1},
-		{f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗌,      -1},
-		{f𝟨𝟦_𝖼𝗈𝗇𝗏𝖾𝗋𝗍_𝗂𝟨𝟦_𝗎,      -1},
-		{f𝟨𝟦_𝗉𝗋𝗈𝗆𝗈𝗍𝖾_𝖿𝟥𝟤,         -1},
-		{i𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟥𝟤, -1},
-		{i𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝖿𝟨𝟦, -1},
-		{f𝟥𝟤_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟥𝟤, -1},
-		{f𝟨𝟦_𝗋𝖾𝗂𝗇𝗍𝖾𝗋𝗉𝗋𝖾𝗍_𝗂𝟨𝟦, -1},
-		{f32_from_f64,                        f𝟥𝟤_𝖽𝖾𝗆𝗈𝗍𝖾_𝖿𝟨𝟦},
+		{i32_wrap_i64,        -1},
+		{i32_trunc_f32_s,     -1},
+		{i32_trunc_f32_u,     -1},
+		{i32_trunc_f64_s,     -1},
+		{i32_trunc_f64_u,     -1},
+		{i64_extend_i32_s,    -1},
+		{i64_extend_i32_u,    -1},
+		{i64_trunc_f32_s,     -1},
+		{i64_trunc_f32_u,     -1},
+		{i64_trunc_f64_s,     -1},
+		{i64_trunc_f64_u,     -1},
+		{f32_convert_i32_s,   -1},
+		{f32_convert_i32_u,   -1},
+		{f32_convert_i64_s,   -1},
+		{f32_convert_i64_u,   -1},
+		{f32_demote_f64,      -1},
+		{f64_convert_i32_s,   -1},
+		{f64_convert_i32_u,   -1},
+		{f64_convert_i64_s,   -1},
+		{f64_convert_i64_u,   -1},
+		{f64_promote_f32,     -1},
+		{i32_reinterpret_f32, -1},
+		{i64_reinterpret_f64, -1},
+		{f32_reinterpret_i32, -1},
+		{f64_reinterpret_i64, -1},
+		{f32_from_f64,        f32_demote_f64},
 
 		//{signExtensions
-		{i32_extend8_s,                       -1},
-		{i32_extend16_s,                      -1},
-		{i64_extend8_s,                       -1},
-		{i64_extend16_s,                      -1},
-		{i64_extend32_s,                      -1},
-		//{i𝟨𝟦_𝖾𝗑𝗍𝖾𝗇𝖽_𝗂𝟥𝟤_𝗌, -1}, WHAT IS THE DIFFERENCE?
+		{i32_extend8_s,       -1},
+		{i32_extend16_s,      -1},
+		{i64_extend8_s,       -1},
+		{i64_extend16_s,      -1},
+		{i64_extend32_s,      -1},
+		//{i64_extend_i32_s, -1}, WHAT IS THE DIFFERENCE?
 		// i64.extend_s/i32 sign-extends an i32 value to i64}, whereas
 		// i64.extend32_s sign-extends an i64 value to i64
 
 		//referenceTypes
 		//https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
-		{ref_null,                            -1},
-		{ref_is_null,                         -1},
-		{ref_func,                            -1}, // -1 varuint32 -1 Returns a funcref reference to function $funcidx
+		{ref_null,            -1},
+		{ref_is_null,         -1},
+		{ref_func,            -1}, // -1 varuint32 -1 Returns a funcref reference to function $funcidx
 		//{ref_null=--1},// {{ref null ht} {$t : heaptype  --1:func --1:extern i >= 0 :{i
 		//{ref_typed=--1},// {{ref ht} {$t : heaptype
-		{ref_as_non_null,                     -1},// {ref.as_non_null
-		{br_on_null,                          -1}, //{br_on_null $l {$l : u32
+		{ref_as_non_null,     -1},// {ref.as_non_null
+		{br_on_null,          -1}, //{br_on_null $l {$l : u32
 		{br_on_non_null,                      -1},// {br_on_non_null $l {$l : u32
 
 		// saturated truncation  saturatedFloatToInt
@@ -1167,10 +1177,6 @@ std::map<short, int> opcode_args = {
 		{table_fill,                          -1},
 };
 
-
-int consumeByte(Code &byt) {
-	return byt.data[byt.start++];
-}
 
 typedef unsigned char *bytes;
 

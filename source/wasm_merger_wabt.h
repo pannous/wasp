@@ -5,3 +5,5 @@
 #include <string>
 
 int merge_files(std::vector<std::string> infiles);
+
+void merge_files(int argc, char **argv);

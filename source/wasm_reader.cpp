@@ -9,6 +9,7 @@
 
 #include "wasm_reader.h"
 #include "wasm_emitter.h"
+#include "Util.h"
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 
@@ -26,10 +27,6 @@ extern Map<String, int> functionIndices;
 Valtype mapArgToValtype(String arg);
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
-
-#define check(test) if(test){log("\nOK check passes: ");log(#test);}else{if(debug_reader)printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-#define check_eq(α, β) if((α)!=(β)){if(debug_reader)printf("%s != %s : ",#α,#β);log(α);if(debug_reader)printf("!=");log(β);if(debug_reader)printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
 	if (*pos + len > size)
@@ -166,6 +163,8 @@ void parseFuncTypeSection(Code &payload) {
 
 // not part of name section wtf
 void parseImportNames(Code &payload) {
+	functionIndices.setDefault(-1);
+	functionSignatures.setDefault(Signature());
 	trace("Imports:");
 	for (int i = 0; i < module.import_count and payload.start < payload.length; ++i) {
 		String mod = name(payload);// module
@@ -474,18 +473,6 @@ void consumeImportSection() {
 }
 
 
-int fileSize(char const *file) {
-#ifndef WASM
-	FILE *ptr;
-	ptr = fopen(file, "rb");  // r for read, b for binary
-	if (!ptr)error("File not found "s + file);
-	fseek(ptr, 0L, SEEK_END);
-	int sz = ftell(ptr);
-	return sz;
-#endif
-	return 0;
-}
-
 void consumeSections() {
 	while (pos < size) {
 		Section section = typ();
@@ -547,8 +534,8 @@ Module read_wasm(bytes buffer, int size0) {
 	consumeSections();
 	module.total_func_count = module.import_count + module.code_count;
 	parseFuncTypeSection(module.functype_data);// only after we have the name, so we can connect functionSignatures!
-		return module;
-	}
+	return module;
+}
 
 	Module read_wasm(chars file) {
 #if    WASM
@@ -557,6 +544,7 @@ Module read_wasm(bytes buffer, int size0) {
 	if (debug_reader)printf("--------------------------\n");
 		if (debug_reader)printf("parsing: %s\n", file);
 		size = fileSize(file);
+		if (size <= 0)error("file not found: "s + file);
 		bytes buffer = (bytes) alloc(1, size);// do not free
 		fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
 		return read_wasm(buffer, size);
