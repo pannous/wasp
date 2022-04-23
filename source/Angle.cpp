@@ -132,8 +132,14 @@ bool isFunction(Node &op) {
 
 #ifndef RUNTIME_ONLY
 #endif
-bool interpret = false; // todo
+bool use_interpreter = false; // todo
 void prepareContext();
+
+Node interpret(String code) {
+	Node parsed = parse(code);
+	return parsed.interpret();
+}
+
 
 Node eval(String code) {
 	Node parsed = parse(code);
@@ -141,7 +147,7 @@ Node eval(String code) {
 	return parsed; // no interpret, no emit => pure data  todo: WARN
 #else
 #ifndef WASI
-	if (interpret)
+	if (use_interpreter)
 		return parsed.interpret();
 	else
 #endif
