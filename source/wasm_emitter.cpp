@@ -1098,8 +1098,8 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 		case strings:
 			if (not node.isSetter() || node.value.longy == 0) // todo 0  x="x" '123'="123" redundancy bites us here
 				return emitValue(node, context);
-			else
-				todo("FALLTHROUGH to set x=\"123\"!");
+//			else
+//				todo("FALLTHROUGH to set x=\"123\"!");
 		case key: // todo i=ø
 			if (not isVariableName(name))
 				todo("proper key emission");
