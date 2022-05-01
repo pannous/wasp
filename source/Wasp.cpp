@@ -11,6 +11,8 @@
 #include "stdio.h" // FILE
 #include <math.h>
 
+int SERVER_PORT = 1234;
+
 // get home dir :
 /*#include <unistd.h>
 #include <sys/types.h>
@@ -45,8 +47,6 @@ char *current = (char *) HEAP_OFFSET;
 extern void info(chars);
 
 #define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m)
-
-void testCurrent();
 
 bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
 
@@ -733,10 +733,10 @@ private:
 		}
 		do {
 			proceed();
-			while (ch == '*') {
-				proceed('*');
-				if (ch == '/') {
-					proceed('/');
+			if (ch == '*') {
+				proceed();
+				if (ch == '/' or ch == '#') {
+					proceed();
 					return;
 				}
 			}
@@ -751,7 +751,10 @@ private:
 		// Comments always begin with a # or / character.
 		char preserveLast = lastNonWhite;
 		if (ch == '#') {
-			inlineComment();
+			if (next == '*')
+				blockComment();
+			else
+				inlineComment();
 			previous = lastNonWhite = preserveLast;
 			return true;
 		}
@@ -1666,6 +1669,7 @@ void handler(int sig) {
 #import "tests.cpp"
 #include "WebServer.hpp"
 #include "wasm_merger_wabt.h"
+#include "WebApp.h"
 
 #endif
 #endif
@@ -1791,13 +1795,15 @@ Node parseFile(String filename) {
 }
 
 void usage() {
-	print("wasp is a new compiled programming language");
+	print("🐝 Wasp is a new compiled programming language");
 	print("wasp [repl/console]    open interactive programming environment");
 	print("wasp <file.wasp>       compile wasp to wasm or native and execute");
 	print("wasp <file.wasm>       compile wasm to native and execute");
+	print("wasp <file.html>       compile standalone webview app and execute");
+	print("wasp <files>           compile and link files into binary and execute");
+	print("wasp compile <files>   compile and link files into binary");
 	print("wasp help              see https://github.com/pannous/wasp/wiki");
 	print("wasp tests             ");
-
 }
 
 // wasmer etc DO accept float/double return, just not from main!
@@ -1806,16 +1812,37 @@ int main(int argc, char **argv) {
 	register_global_signal_exception_handler();
 #endif
 	try {
-		print("Hello Wasp 🐝");
-		if (argc >= 2) {
-			String arg = argv[1];
-			if (arg.endsWith(".wasp")) {
-				return compile(arg).value.longy;
-			}
-			if (arg.endsWith(".wasm")) {
-				if (argc >= 3)merge_files(--argc, ++argv);
-				else run_wasm_file(arg);
-			}
+		if (argc == 1) {
+			usage();
+			console();
+			return 42;
+		}// else
+		String arg = argv[1];
+		if (arg.endsWith(".html") or arg.endsWith(".htm")) {
+#ifdef WEBAPP
+//				start_server(SERVER_PORT);
+			std::thread go(start_server, SERVER_PORT);
+			arg = "http://localhost:"s + SERVER_PORT + "/" + arg;
+			print("Serving "s + arg);
+			open_webview(arg);
+//				arg.replaceMatch(".*\/", "http://localhost:SERVER_PORT/");
+#else
+			print("wasp compiled without webview");
+#endif
+		}
+		if (arg.endsWith(".wasp")) {
+			return compile(arg).value.longy;
+		}
+		if (arg.endsWith(".wasm")) {
+			if (argc >= 3)
+#ifdef WABT_MERGE
+				merge_files(--argc, ++argv);
+#else
+				todo("linking files needs compilation with WABT_MERGE");
+#endif
+			else
+				run_wasm_file(arg);
+		}
 #ifndef NO_TESTS
 			if (arg == "test" or arg == "tests")
 				testCurrent();
@@ -1836,15 +1863,15 @@ int main(int argc, char **argv) {
 #endif
 			}
 #ifdef SERVER
-			if (arg.contains("serv"))
-				start_server(9999);
+		if (arg=="server" or arg=="serv")
+			std::thread go(start_server, 9999);
+//				start_server(9999);
+#else
+		print("wasp compiled without server");
 #endif
-			if (arg.contains("help"))
-				print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
-//			return 42;
-		} else {
-			usage();
-		}
+
+		if (arg.contains("help"))
+			print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
 #ifdef WASM
 		initSymbols();
 //		String args(current);
@@ -1853,15 +1880,7 @@ int main(int argc, char **argv) {
 		print(args);
 		current += strlen0(args)+1;
 #endif
-#ifdef SERVER
-		//		start_server(9999);
-				std::thread go(start_server, 9999);
-#endif
-#ifdef WEBAPP
-		print("\nWEBAPP!");
-		// handing over to V8, we need to call testCurrent() from there!
-		init_graphics(); //
-#endif
+
 // via arg
 //#ifndef NO_TESTS // RUNTIME_ONLY
 //		testCurrent();// needs init_graphics in WEBAPP to run wasm!

@@ -80,8 +80,9 @@ std::string testWebview(std::string s);
 
 void testCurrent();
 
-void render(std::string html) {
-	w.navigate("data:text/html," + html);
+void render(String html) {
+	std::string data = html.data;
+	w.navigate("data:text/html," + data);
 }
 
 // this is useless because it can't be called from wasm, only from native code.
@@ -108,7 +109,11 @@ void render(Node &node, std::stringstream *html) {
 // char *page="https://wasm-feature-detect.surma.technology/";// referenceTypes supported in Safari but not in WebKit!?
 // char *page="file://index.html";// doesn't
 // char *page="file:///Users/me/index.html";// works, but how to get local file paths AT COMPILE TIME?? ok for debugging!
+#ifdef SERVER
+char *page = "http://localhost:8080/test.html";
+#else
 char *page = "file:///Users/me/wasp/source/test.html";
+#endif
 // char *page="data:text/html,<body onclick='close()'>test</body>";
 // char *page=page || "data:text/html,\n<html><body style='height:999px;' onclick='close()'>X</body></html>";// why not??
 // char *page="data:text/html, <!doctype html><html><body style='height: 1000px;' onclick='close()'>X</body></html>";// why not??
@@ -143,7 +148,13 @@ void splitLog(const std::string s) {
 	}
 }
 
-long init_graphics() {
+void navigate(String url) {
+	page = url;
+	w.navigate(page);
+}
+
+long open_webview(String url = "") {
+	if (!url.empty())page = url;
 	printf("\nWebView!\n");
 
 	// add [w] to closure to make it local
@@ -250,6 +261,9 @@ long init_graphics() {
 	return 0;
 }
 
+long init_graphics() {
+	open_webview();
+}
 
 //int paint(int wasm_offset) {
 // copy wasp data to canvas

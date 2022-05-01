@@ -1039,6 +1039,18 @@ bytes concat(bytes a, bytes b, int len_a, int len_b) {
 	return c;
 }
 
+chars concat(chars a, chars b) {
+//const char *concat(const char *a, const char *b) {
+	if (!b or b[0] == 0)return a;
+	int la = (int) strlen(a);
+	int lb = (int) strlen(b);
+	char *c = (char *) malloc((la + lb + 1) * sizeof(char));
+	strcpy(c, a);
+	strcpy(&c[la], b);
+	c[la + lb] = 0;
+	return c;
+}
+
 
 bytes concat(bytes a, char b, int len) {
 	bytes c = new unsigned char[len + 1];
