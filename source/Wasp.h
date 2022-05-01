@@ -4,6 +4,8 @@
 
 #define let auto
 
+void testCurrent();
+
 //static
 extern chars function_list[];
 extern chars functor_list[];// takes blocks … parse differently?

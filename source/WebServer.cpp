@@ -24,45 +24,19 @@
 #include "WebServer.hpp"
 #include "String.h"
 #include "Angle.h"
-#include "Paint.h"
+#include "Util.h"
 
-int SERVER_PORT; // set by start_server(port)
+int MAX_QUERY_LENGTH = 1000;
 
-int Parse_HTTP_Header(char *buffer, struct ReqInfo *reqinfo);
+bool allow_arbitrary_files = true;// full access to server_root but not above!
 
-int Get_Request(int conn, struct ReqInfo *reqinfo);
+char *server_root = "wax/";// todo!
 
-void InitReqInfo(struct ReqInfo *reqinfo);
-
-void FreeReqInfo(struct ReqInfo *reqinfo);
-
-int Return_Resource(int conn, int resource, struct ReqInfo *reqinfo);
-
-int Check_Resource(struct ReqInfo *reqinfo);
-
-int Return_Error_Msg(int conn, struct ReqInfo *reqinfo);
-
-int Output_HTTP_Headers(int conn, struct ReqInfo *reqinfo);
-
-int Service_Request(int conn);
-
-void Serve_Resource(ReqInfo reqinfo, int conn);// local file
-
-void Error_Quit(char const *msg);
-
-int Trim(char *buffer);
-
-int StrUpper(char *buffer);
-
-void CleanURL(char *buffer);
-
-ssize_t Readline(int sockd, void *vptr, size_t maxlen);
-
-//ssize_t Writeline (int sockd, const void *vptr, size_t n=-1);
-void Writeline(const char *s);// debug to server
-//void Writeline(std::string s);
-//ssize_t Writeline(int sockd, std::string s);
-ssize_t Writeline(int sockd, const char *vptr, size_t n = -1);
+static char index_html[100] = "index.html";
+//static char index_html[100] = "wasp.html";
+static char wasp_js[100] = "wasp.js";// wax
+static char wasp_css[100] = "wasp.css";
+static char favicon_ico[100] = "favicon.ico";
 
 
 /* Global macros/variables */
@@ -84,12 +58,6 @@ struct ReqInfo {
 	char *resource;
 	int status;
 };
-
-int MAX_QUERY_LENGTH = 1000;
-static char index_html[100] = "wasp.html";
-static char wasp_js[100] = "wasp.js";// wax
-static char wasp_css[100] = "wasp.css";
-static char favicon_ico[100] = "favicon.ico";
 
 pid_t pid;
 int listener, conn, closing = 0;
@@ -148,13 +116,14 @@ int Service_Request(int conn) {
 //	char *q = substr(reqinfo.resource, 1, -1);
 	char *q = String(reqinfo.resource).substring(1, -1);
 	// ::::::::::::::::::::::::::::::
-	printf("%s\n", reqinfo.resource);
-	if (not q or strlen(q) == 0 or q[0] == '?' or q[strlen(q) - 1] == '/'
-	    or contains(q, wasp_js) or contains(q, wasp_css) or contains(q, favicon_ico) or contains(q, index_html) or
-	    contains(q, "index.html"))
-		Serve_Resource(reqinfo, conn);
-	else
-		handle(q, conn); // <<<<<<< CENTRAL CALL
+	printf("reqinfo.resource %s\n", reqinfo.resource);
+//	if (not q or strlen(q) == 0 or q[0] == '?' or q[strlen(q) - 1] == '/'
+//	    or contains(q, wasp_js) or contains(q, wasp_css) or contains(q, favicon_ico) or contains(q, index_html) or
+//	    contains(q, "index.html"))
+//	if(contains(q,"eval"))
+//		handle(q, conn); // <<<<<<< CENTRAL CALL
+//	else
+	Serve_Resource(reqinfo, conn);
 	// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 	FreeReqInfo(&reqinfo);
 	return ok;
@@ -420,7 +389,7 @@ void InitReqInfo(struct ReqInfo *reqinfo) {
 	reqinfo->resource = NULL;
 	reqinfo->method = UNSUPPORTED;
 	reqinfo->status = 200;
-	reqinfo->type = (Req_Type) FULL;// SIMPLE, FULL
+	reqinfo->type = (Req_Type) SIMPLE;// SIMPLE, FULL
 }
 
 void FreeReqInfo(struct ReqInfo *reqinfo) {
@@ -450,19 +419,23 @@ int Return_Resource(int conn, int resource, struct ReqInfo *reqinfo) {
 int Check_Resource(struct ReqInfo *reqinfo) {
 	/* Resource name can contain urlencoded
    data, so clean it up just in case.  */
-	print("Serve_Resource "s + reqinfo->resource);
-	CleanURL(reqinfo->resource);
+	char *resource = reqinfo->resource;
+	print("Serve_Resource "s + resource);
+	CleanURL(resource);// todo security!?
 	/* Concatenate resource name to server root, and try to open */
-//	strcat(server_root, reqinfo->resource);// DONT allow arbitrary files
-	if (contains(reqinfo->resource, "wasp.js"))
+	if (contains(resource, wasp_js))
 		return open(wasp_js, O_RDONLY);
-	if (contains(reqinfo->resource, "wasp.css"))
+	if (contains(resource, wasp_css))
 		return open(wasp_css, O_RDONLY);
-	if (contains(reqinfo->resource, "favicon.ico"))
+	if (contains(resource, favicon_ico))
 		return open(favicon_ico, O_RDONLY);
-
-//	return open(string("./")+reqinfo->resource, O_RDONLY);
-	else
+	if (allow_arbitrary_files) {
+		if (eq(resource, "/"))resource = index_html;
+		if (resource[0] == '/')resource = (char *) concat(".", resource);// DONT allow arbitrary files
+		else resource = (char *) concat(server_root, resource);// DONT allow arbitrary files
+		print("Serve_Resource "s + resource);
+		return open(resource, O_RDONLY);
+	} else
 		return open(index_html, O_RDONLY);
 }
 
@@ -513,27 +486,30 @@ int Output_HTTP_Headers(int conn, struct ReqInfo *reqinfo) {
 void Serve_Resource(ReqInfo reqinfo, int conn) {
 	int resource = 0;
 	printf("Serve_Resource!!\n");
-	printf("%s", reqinfo.resource);
-	printf("%s", reqinfo.referer);
-	printf("%s", reqinfo.useragent);
+	printf("%s\n", reqinfo.resource);
+	printf("%s\n", reqinfo.referer);
+	printf("%s\n", reqinfo.useragent);
 	/* Check whether resource exists, whether we have permission
    to access it, and update status code accordingly.     */
+	bool bad = false;
 	if (reqinfo.status == 200)
 		if ((resource = Check_Resource(&reqinfo)) < 0) {
 			if (errno == EACCES)
 				reqinfo.status = 401;
 			else
 				reqinfo.status = 404;
+			bad = true;
 		}
 	/* Output HTTP response headers if we have a full request */
-//	if (reqinfo.type == FULL) done
+//	if (reqinfo.type == FULL)
 //		Output_HTTP_Headers(conn, &reqinfo);
+
 	/* Service the HTTP request */
-	if (Return_Resource(conn, resource, &reqinfo))
+	bad = Return_Resource(conn, resource, &reqinfo);
+	if (bad) {
+		Return_Error_Msg(conn, &reqinfo);
 		Error_Quit("Something wrong returning resource.");
-//		Return_Error_Msg(conn, &reqinfo);
-//	  else // all good!
-//
+	}
 	if (resource > 0)
 		if (close(resource) < 0)
 			Error_Quit("Error closing resource.");
@@ -573,12 +549,11 @@ void start_server(int port = SERVER_PORT) {
 		Error_Quit("Call to listen failed.");
 
 	printf("listening on %d port %d\n", INADDR_ANY, port);
-//	printf(" [debugging server doesn't work with xcode, use ./compile.sh ]");
 
 	/* Loop infinitely to accept and service connections */
 	while (1) {
 		/* Wait for connection */
-		// NOT with XCODE -> WEBSERV
+		// NOT debuggable with XCODE nor Clion :(
 		conn = accept(listener, NULL, NULL);
 		if (conn < 0)
 			Error_Quit("Error calling accept()! debugging not supported, are you debugging?");
