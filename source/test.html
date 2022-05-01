@@ -5,15 +5,15 @@
 <!-- opened by WebView.cpp -->
 <!--onclick='test().then(_=>terminate0())' -->
 <body style='height: 1000px;'>
-<a href='https://www.yay.com/' id='target'>YAY</a>
+<script src='webgl.js'></script><!--not allowed to access local resource--> <!-- start wasp in server mode!-->
+
+<!-- http://dataurl.net/#dataurlmaker -->
+
 <a href='https://wasm-feature-detect.surma.technology/'>WASM test</a>
-<p onclick='home()'>home</p>
 <p onclick='test()'>test</p>
-<p onclick='boom()'>boom</p>
 <p onclick='exit()'>exit</p>
 <p onclick='server()'>server</p>
 <p onclick='terminate()' style="background:gray;width:100px;height:100px">terminate</p>
-<!--    onkeypress-->
 <textarea id="code_input" onkeyup="run(value)">√3^2</textarea>
 <br/>
 <!--application/wasp-->
@@ -25,7 +25,6 @@
 <textarea cols="80" id="results" placeholder="press run to compile and see result" rows="8">
 </textarea>
 <canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
-
 
 <!--    <script src="more.js">/*not allowed to load local resource*/</script>-->
 <script> // errors here fail silently :(
@@ -82,13 +81,8 @@ function print(...x) {
     results.value += x + "\n"
 }
 
-function boom() {
-    print('boom')
-    target.innerHTML += " CONTENTS";// WORKS (only iff there is 1 id='target' !!)
-}
-
 window.onload = function () {
-    test()
+    // test()
 };
 </script>
 
@@ -196,6 +190,7 @@ window.onload = function () {
                     logf: log,
                     printf: log,
                     puts: log,
+                    logs: log,
                     putchar: log,
                     memset,
                     paint: paintWasmToCanvas,

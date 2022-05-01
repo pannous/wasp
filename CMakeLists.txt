@@ -15,13 +15,19 @@ LINK_DIRECTORIES(/usr/local/lib)
 #set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
 #set(DEBUG 1)
-set(CONSOLE 1)
+#set(CONSOLE 1)
+#ADD_DEFINITIONS(-DUSE_READLINE)
+
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh
-set(WABT_MERGE 1) # not the whole WABT though, heavy
+#set(WABT_MERGE 1) # not the whole WABT though, heavy
 
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
 #ADD_DEFINITIONS(-DNO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
+
+if (CONSOLE)
+    ADD_DEFINITIONS(-DCONSOLE)
+endif ()
 
 if (WASM)
     ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
@@ -40,8 +46,8 @@ if (NOT WASM)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         #        SET(V8 1)
-                SET(WASMTIME 1) # FASTEST!
-        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        #                SET(WASMTIME 1) # FASTEST!
+        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
@@ -366,7 +372,7 @@ elseif (WASMTIME)
 elseif (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
     include(source/WebView.cmake)
-    set(SOURCE_FILES ${SOURCE_FILES} source/WebView.cpp source/WebServer.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/WebApp.cpp source/WebServer.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_link_libraries(wasp PUBLIC webview)
 elseif (WASM3)
