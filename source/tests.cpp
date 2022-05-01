@@ -2103,8 +2103,7 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	print("OK?");
-	assert_emit("puts('ok');", 0);
+	assert_emit("1;1", 1);
 
 //	assert_is("x=(1 4 3);x#2", 4);
 //	testArrayIndices();
@@ -2115,7 +2114,7 @@ void testCurrent() {
 //	testLogarithm();
 //	assert_emit("1 +1 == [1 1]", 1);
 //	testSubGrouping();
-//testNodesInWasm();
+	//testNodesInWasm();
 //	testMergeWabt();
 //	testPaintWasm();
 	//	assert_run("render html{'test'}", 4);
