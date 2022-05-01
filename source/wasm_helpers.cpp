@@ -444,7 +444,7 @@ void trace(chars x) {
 
 int puts(chars c) { // // int return needed for stdio compatibilty !
 //	if(from wasm)result=c
-	printf("%s", c);
+	if (c)printf("%s", c);
 	return 1;// stdio
 }
 

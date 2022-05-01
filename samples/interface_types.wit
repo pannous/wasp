@@ -1,0 +1,5 @@
+record person {
+  name: string,
+  age: u32,
+}
+hello: function(who: person) -> string

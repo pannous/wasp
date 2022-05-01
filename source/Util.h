@@ -18,6 +18,8 @@ bool fileExists(String filename);
 String findFile(String filename);// empty() if not found
 //char *findFile(char* filename);// 0 if not found
 
+chars concat(chars a, chars b);
+
 template<class S>
 bool contains(List<S> list, S match);
 

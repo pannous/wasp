@@ -281,19 +281,6 @@ char *itoa(long num) {
 	return itoa0(num, 10);
 }
 
-chars concat(chars a, chars b) {
-//chars concat(char* a,char* b){// free manually!
-	if (!b)return a;
-	int la = (int) strlen0(a);
-	int lb = (int) strlen0(b);
-//	char c[la+lb];
-	char *c = (char *) alloc(sizeof(char), la + lb + 1);
-	strcpy2(c, a, -1);
-	strcpy2(&c[la], b, -1);
-	c[la + lb] = 0;
-	return c;
-}
-
 
 //#define pow(val,exp)
 chars ftoa0(float num, int base = 10, int digits_after_zero = 4) {/*significant_digits*/

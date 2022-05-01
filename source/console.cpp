@@ -12,7 +12,7 @@
 
 //#include "util.hpp"
 //#ifndef NO_READLINE
-#define USE_READLINE
+//#define USE_READLINE
 
 #include <readline/history.h> // libreadline-dev
 #include <readline/readline.h>
@@ -21,10 +21,15 @@
 //using namespace std;
 // static struct termios stored_settings;
 
+#define elif else if
+
 void showHelpMessage() {
-	printf("⚠️ The wasp console currently works by re-executing after each new entry. Be careful with destructive or external effects!");
-//	ps("AVAILABLE COMMANDS:");
-//	ps("help :h or ?");
+//	print("⚠️  The wasp console currently works by re-executing after each new entry.");
+//	print("⚠️  Be careful with destructive or external effects!");
+//	print("");
+	print("Detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
+	print("AVAILABLE COMMANDS:");
+	print("help :h or ? ; clean :c");
 }
 
 bool file_read_done = false;
@@ -33,7 +38,8 @@ void getline(char *buf) {
 	if (buf == 0) return; // end
 	int MAXLENGTH = 10000;
 	const char *PROMPT = "wasp> ";
-#ifdef USE_READLINE
+//#ifdef USE_READLINE
+#ifdef CONSOLE
 	if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
 	char *tmp = readline(PROMPT);
 	if (tmp == 0 or strlen(tmp) == 0) {
@@ -45,8 +51,9 @@ void getline(char *buf) {
 	buf[MAXLENGTH - 1] = '\0';
 	write_history(".wasp_history");
 #else
-
+	print("wasp compiled without console");
 #endif
+//#endif
 }
 
 //bool parse(string* data) {
@@ -55,9 +62,10 @@ static char *commandCode;
 
 char *version = "1.0";
 
+// Todo: web version?
 [[noreturn]] void console() {
 	printf("\nWasp version %s\n", version);
-
+	showHelpMessage();
 	char *data = (char *) malloc(10000);
 #ifdef signal
 	setjmp(try_context); //recovery point
@@ -66,11 +74,23 @@ char *version = "1.0";
 	String code;
 	while (true) {
 		getline(data);
-		code += data;
+		if (eq(data, "help") or eq(data, ":help") or eq(data, ":h") or eq(data, "?")) {
+			showHelpMessage();
+		} elif (eq(data, "clear") or eq(data, ":clear") or eq(data, ":c") or eq(data, "\\L")) {
+			code = "";
+		} elif (eq(data, "clean") or eq(data, ":clean") or eq(data, ":reset") or eq(data, "reset")) {
+			code = "";
+		} else if (eq(data, "test") or eq(data, ":test") or eq(data, "tests") or eq(data, ":tests") or eq(data, ":t")) {
+			testCurrent();
+		} else {
+			code += data;
+			code += ";\n";
 //		Node &result = parse(code);// safeMode only for web access
-		Node result = eval(code);
-		printf(">>> ");
+			Node result = eval(code);
+			printf(">>> ");
 //	result.interpret().print();
-		result.print();
+			result.print();
+			print("");
+		}
 	}
 }
