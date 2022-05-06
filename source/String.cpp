@@ -6,6 +6,7 @@
 #include "String.h"
 #include "wasm_helpers.h"
 #include "Map.h"
+#include "List.h"
 #include "Code.h"
 #include "Util.h"
 #include <math.h> // pow

@@ -63,10 +63,10 @@ Node getType(Node node) {
 	Node typ;
 	if (types.has(name)) {
 		typ = types[name];
-		typ.kind = classe;
+		typ.kind = clazz;
 	} else {
 		typ = Node(name);
-		typ.kind = classe;
+		typ.kind = clazz;
 		types[name] = typ;
 	}
 	if (vector) {
@@ -370,7 +370,7 @@ bool isVariable(Node &node) {
 }
 
 bool isPrimitive(Node &node) {
-	Type type = node.kind;
+	Kind type = node.kind;
 	if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
 		return true;
 	if (type == codepoints)// todo ...?
@@ -378,19 +378,21 @@ bool isPrimitive(Node &node) {
 	return false;
 }
 
-const Node Long("Long", classe);
-const Node Double("Double", classe);//.setType(type);
+const Node Long("Long", clazz);
+const Node Double("Double", clazz);//.setType(type);
 //const Node Double{.name="Double", .kind=classe};//.setType(type);
 //const Node Double{name:"Double", kind:classe};//.setType(type);
 Map<String, Node> types;
 
+// todo: see NodeTypes.h for overlap with numerical returntype integer …
 void initTypes() {
 	types.add("int", Long);// until we really need it
+	types.add("long", Long);
 	types.add("long", Long);
 	types.add("double", Double);
 	types.add("float", Double);
 	for (auto name: types)
-		types[name].setType(classe);
+		types[name].setType(clazz);
 }
 
 
@@ -701,7 +703,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 		if (isPrefixOperation(node, prev, next)) {// ++x -i
 			// PREFIX Operators
 			isPrefixOperation(node, prev, next);
-			node.kind = Type::operators;// todo should have been parsed as such!
+			node.kind = Kind::operators;// todo should have been parsed as such!
 			if (op == "-")//  -i => -(0 i)
 				node.add(new Node(0));// todo: use f64.neg
 			node.add(next);
@@ -999,7 +1001,7 @@ Node &analyze(Node &node, String context) {
 		return node;
 
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
-	Type type = node.kind;
+	Kind type = node.kind;
 	String &name = node.name;
 
 
@@ -1096,7 +1098,7 @@ void preRegisterSignatures() {
 	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));
 
 //	functionSignatures.insert_or_assign("render", Signature().add(node).add(pointer).returns(none));
-	functionSignatures.insert_or_assign("render", Signature().runtime().add(node).returns(int32));
+//	functionSignatures.insert_or_assign("render", Signature().runtime().add(node).returns(int32));
 //functionSignatures.insert_or_assign("render", Signature().add(node).add(pointer).returns(int32));
 	// todo: long + double !
 	// imports

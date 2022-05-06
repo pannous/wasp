@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <!--<script src="wasp.js"></script>-->
 <script type="text/javascript">
     var wasm_file='t.wasm'
@@ -37,34 +38,34 @@
         }
     }
     // try {
-        let memory_size = 65536
-        let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
-        imports = {
-            env: {
-                raise: x => {
-                    throw new Error(string(x))
-                },
-                printf: x => process.stdout.write(string(x)),// no newline
-                log: x => console.log(x),// todo
-                logi: x => console.log(x),
-                // logc:x=>console.log(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
-                logc: x => write(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
+    let memory_size = 65536
+    let memory = new WebAssembly.Memory({initial: memory_size, maximum: memory_size});
+    imports = {
+        env: {
+            raise: x => {
+                throw new Error(string(x))
             },
-            wasi_snapshot_preview1: {},
-            wasi_unstable: {
-                ok: x => console.log("OK"),
-                proc_exit: x => process.exit(x),
-                fd_write: (a, b, c, d) => {
-                    process.stdout.write(a, b, c, d, string(1024 + buffer[b]));
-                    return -1
-                },
-                args_sizes_get: _ => 0,
-                args_get: _ => 0,
-                fd_close: _ => 0,
-                fd_fdstat_get: x => 0,
-                fd_seek: x => 0,
-            }
+            printf: x => process.stdout.write(string(x)),// no newline
+            log: x => console.log(x),// todo
+            logi: x => console.log(x),
+            // logc:x=>console.log(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
+            logc: x => write(x > 0 ? String.fromCodePoint(x) : x ? "⛋" : "\n"),
+        },
+        wasi_snapshot_preview1: {},
+        wasi_unstable: {
+            ok: x => console.log("OK"),
+            proc_exit: x => process.exit(x),
+            fd_write: (a, b, c, d) => {
+                process.stdout.write(a, b, c, d, string(1024 + buffer[b]));
+                return -1
+            },
+            args_sizes_get: _ => 0,
+            args_get: _ => 0,
+            fd_close: _ => 0,
+            fd_fdstat_get: x => 0,
+            fd_seek: x => 0,
         }
+    }
     //const module = await WebAssembly.compileStreaming(fetch('wasp.wasm'));
     // const module = new WebAssembly.Module(buffer);
     // const instance = await WebAssembly.instantiate(module,imports);
@@ -78,12 +79,11 @@
             if (main) {
                 console.log("got main")
                 result = main()
-            }
-                else result = instance.exports//show what we've got
-                console.log(result);
-                //alert(result)
-            }
-        )
+            } else result = instance.exports//show what we've got
+            console.log(result);
+            //alert(result)
+        }
+    )
     // } catch (error) {
     //     console.log(error)
     //     console.log("\n RUN as\n sudo python3 -m http.server")

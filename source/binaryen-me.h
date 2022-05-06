@@ -92,53 +92,53 @@ typedef uint32_t Index;
 
 typedef uintptr_t Type;
 
-_API Type TypeNone(void);
+_API Kind TypeNone(void);
 
-_API Type TypeInt32(void);
+_API Kind TypeInt32(void);
 
-_API Type TypeInt64(void);
+_API Kind TypeInt64(void);
 
-_API Type TypeFloat32(void);
+_API Kind TypeFloat32(void);
 
-_API Type TypeFloat64(void);
+_API Kind TypeFloat64(void);
 
-_API Type TypeVec128(void);
+_API Kind TypeVec128(void);
 
-_API Type TypeFunc(void);
+_API Kind TypeFunc(void);
 
-_API Type TypeExtern(void);
+_API Kind TypeExtern(void);
 
-_API Type TypeExn(void);
+_API Kind TypeExn(void);
 
-_API Type TypeAny(void);
+_API Kind TypeAny(void);
 
-_API Type TypeEq(void);
+_API Kind TypeEq(void);
 
-_API Type TypeI31(void);
+_API Kind TypeI31(void);
 
-_API Type TypeUnreachable(void);
+_API Kind TypeUnreachable(void);
 // Not a real type. Used as the last parameter to Block to let
 // the API figure out the type instead of providing one.
-_API Type TypeAuto(void);
+_API Kind TypeAuto(void);
 
-_API Type TypeCreate(Type *valueTypes,
+_API Kind TypeCreate(Kind *valueTypes,
                      uint32_t numTypes);
 
-_API uint32_t TypeArity(Type t);
+_API uint32_t TypeArity(Kind t);
 
-_API void TypeExpand(Type t, Type *buf);
+_API void TypeExpand(Kind t, Kind *buf);
 
-WASM_DEPRECATED Type None(void);
+WASM_DEPRECATED Kind None(void);
 
-WASM_DEPRECATED Type Int32(void);
+WASM_DEPRECATED Kind Int32(void);
 
-WASM_DEPRECATED Type Int64(void);
+WASM_DEPRECATED Kind Int64(void);
 
-WASM_DEPRECATED Type Float32(void);
+WASM_DEPRECATED Kind Float32(void);
 
-WASM_DEPRECATED Type Float64(void);
+WASM_DEPRECATED Kind Float64(void);
 
-WASM_DEPRECATED Type Undefined(void);
+WASM_DEPRECATED Kind Undefined(void);
 
 // Expression ids (call to get the value of each; you can cache them)
 
@@ -952,7 +952,7 @@ Block(Module module,
       const char *name,
       Expression *children,
       Index numChildren,
-      Type type);
+      Kind type);
 // If: ifFalse can be NULL
 _API Expression If(Module module,
                    Expression condition,
@@ -984,30 +984,30 @@ _API Expression Call(Module module,
                      const char *target,
                      Expression *operands,
                      Index numOperands,
-                     Type returnType);
+                     Kind returnType);
 
 _API Expression
 CallIndirect(Module module,
              Expression target,
              Expression *operands,
              Index numOperands,
-             Type params,
-             Type results);
+             Kind params,
+             Kind results);
 
 _API Expression
 ReturnCall(Module module,
            const char *target,
            Expression *operands,
            Index numOperands,
-           Type returnType);
+           Kind returnType);
 
 _API Expression
 ReturnCallIndirect(Module module,
                    Expression target,
                    Expression *operands,
                    Index numOperands,
-                   Type params,
-                   Type results);
+                   Kind params,
+                   Kind results);
 
 // LocalGet: Note the 'type' parameter. It might seem redundant, since the
 //           local at that index must have a type. However, this API lets you
@@ -1025,7 +1025,7 @@ ReturnCallIndirect(Module module,
 //           for more details.
 _API Expression LocalGet(Module module,
                          Index index,
-                         Type type);
+                         Kind type);
 
 _API Expression LocalSet(
 		Module module, Index index, Expression value);
@@ -1033,11 +1033,11 @@ _API Expression LocalSet(
 _API Expression LocalTee(Module module,
                          Index index,
                          Expression value,
-                         Type type);
+                         Kind type);
 
 _API Expression GlobalGet(Module module,
                           const char *name,
-                          Type type);
+                          Kind type);
 
 _API Expression GlobalSet(
 		Module module, const char *name, Expression value);
@@ -1048,7 +1048,7 @@ _API Expression Load(Module module,
                      int8_t signed_,
                      uint32_t offset,
                      uint32_t align,
-                     Type type,
+                     Kind type,
                      Expression ptr);
 // Store: align can be 0, in which case it will be the natural alignment (equal
 // to bytes)
@@ -1058,7 +1058,7 @@ _API Expression Store(Module module,
                       uint32_t align,
                       Expression ptr,
                       Expression value,
-                      Type type);
+                      Kind type);
 
 _API Expression Const(Module module,
                       struct Literal value);
@@ -1077,7 +1077,7 @@ Select(Module module,
        Expression condition,
        Expression ifTrue,
        Expression ifFalse,
-       Type type);
+       Kind type);
 
 _API Expression Drop(Module module,
                      Expression value);
@@ -1099,7 +1099,7 @@ _API Expression
 AtomicLoad(Module module,
            uint32_t bytes,
            uint32_t offset,
-           Type type,
+           Kind type,
            Expression ptr);
 
 _API Expression
@@ -1108,7 +1108,7 @@ AtomicStore(Module module,
             uint32_t offset,
             Expression ptr,
             Expression value,
-            Type type);
+            Kind type);
 
 _API Expression
 AtomicRMW(Module module,
@@ -1117,7 +1117,7 @@ AtomicRMW(Module module,
           Index offset,
           Expression ptr,
           Expression value,
-          Type type);
+          Kind type);
 
 _API Expression
 AtomicCmpxchg(Module module,
@@ -1126,14 +1126,14 @@ AtomicCmpxchg(Module module,
               Expression ptr,
               Expression expected,
               Expression replacement,
-              Type type);
+              Kind type);
 
 _API Expression
 AtomicWait(Module module,
            Expression ptr,
            Expression expected,
            Expression timeout,
-           Type type);
+           Kind type);
 
 _API Expression
 AtomicNotify(Module module,
@@ -1203,14 +1203,14 @@ MemoryFill(Module module,
            Expression size);
 
 _API Expression Null(Module module,
-                     Type type);
+                     Kind type);
 
 _API Expression
 IsNull(Module module, Expression value);
 
 _API Expression Func(Module module,
                      const char *func,
-                     Type type);
+                     Kind type);
 
 _API Expression Eq(Module module,
                    Expression left,
@@ -1244,7 +1244,7 @@ _API Expression TupleExtract(
 		Module module, Expression tuple, Index index);
 
 _API Expression Pop(Module module,
-                    Type type);
+                    Kind type);
 
 _API Expression I31New(Module module,
                        Expression value);
@@ -1271,10 +1271,10 @@ _API Expression I31Get(Module module,
 _API ExpressionId
 ExpressionGetId(Expression expr);
 // Gets the type of the given expression.
-_API Type ExpressionGetType(Expression expr);
+_API Kind ExpressionGetType(Expression expr);
 // Sets the type of the given expression.
 _API void ExpressionSetType(Expression expr,
-                            Type type);
+                            Kind type);
 // Prints text format of the given expression to stdout.
 _API void ExpressionPrint(Expression expr);
 // Re-finalizes an expression after it has been modified.
@@ -1501,17 +1501,17 @@ _API int CallIndirectIsReturn(Expression expr);
 _API void CallIndirectSetReturn(Expression expr,
                                 int isReturn);
 // Gets the parameter types of the specified `call_indirect` expression.
-_API Type
+_API Kind
 CallIndirectGetParams(Expression expr);
 // Sets the parameter types of the specified `call_indirect` expression.
 _API void CallIndirectSetParams(Expression expr,
-                                Type params);
+                                Kind params);
 // Gets the result types of the specified `call_indirect` expression.
-_API Type
+_API Kind
 CallIndirectGetResults(Expression expr);
 // Sets the result types of the specified `call_indirect` expression.
 _API void CallIndirectSetResults(Expression expr,
-                                 Type params);
+                                 Kind params);
 
 // LocalGet
 
@@ -1638,10 +1638,10 @@ StoreGetValue(Expression expr);
 _API void StoreSetValue(Expression expr,
                         Expression valueExpr);
 // Gets the value type of a `store` expression.
-_API Type StoreGetValueType(Expression expr);
+_API Kind StoreGetValueType(Expression expr);
 // Sets the value type of a `store` expression.
 _API void StoreSetValueType(Expression expr,
-                            Type valueType);
+                            Kind valueType);
 
 // Const
 
@@ -1855,11 +1855,11 @@ _API void
 AtomicWaitSetTimeout(Expression expr,
                      Expression timeoutExpr);
 // Gets the expected type of an `memory.atomic.wait` expression.
-_API Type
+_API Kind
 AtomicWaitGetExpectedType(Expression expr);
 // Sets the expected type of an `memory.atomic.wait` expression.
 _API void AtomicWaitSetExpectedType(Expression expr,
-                                    Type expectedType);
+                                    Kind expectedType);
 
 // AtomicNotify
 
@@ -2294,9 +2294,9 @@ _(Function);
 _API Function
 AddFunction(Module module,
             const char *name,
-            Type params,
-            Type results,
-            Type *varTypes,
+            Kind params,
+            Kind results,
+            Kind *varTypes,
             Index numVarTypes,
             Expression body);
 // Gets a function erence by name.
@@ -2318,8 +2318,8 @@ _API void AddFunctionImport(Module module,
                             const char *internalName,
                             const char *externalModuleName,
                             const char *externalBaseName,
-                            Type params,
-                            Type results);
+                            Kind params,
+                            Kind results);
 
 _API void AddTableImport(Module module,
                          const char *internalName,
@@ -2336,7 +2336,7 @@ _API void AddGlobalImport(Module module,
                           const char *internalName,
                           const char *externalModuleName,
                           const char *externalBaseName,
-                          Type globalType,
+                          Kind globalType,
                           int mutable_);
 
 _API void AddEventImport(Module module,
@@ -2344,8 +2344,8 @@ _API void AddEventImport(Module module,
                          const char *externalModuleName,
                          const char *externalBaseName,
                          uint32_t attribute,
-                         Type params,
-                         Type results);
+                         Kind params,
+                         Kind results);
 
 // Exports
 
@@ -2381,7 +2381,7 @@ _(Global);
 
 _API Global AddGlobal(Module module,
                       const char *name,
-                      Type type,
+                      Kind type,
                       int8_t mutable_,
                       Expression init);
 // Gets a global erence by name.
@@ -2398,8 +2398,8 @@ _(Event);
 _API Event AddEvent(Module module,
                     const char *name,
                     uint32_t attribute,
-                    Type params,
-                    Type results);
+                    Kind params,
+                    Kind results);
 
 _API Event GetEvent(Module module,
                     const char *name);
@@ -2676,14 +2676,14 @@ ModuleGetDebugInfoFileName(Module module,
 _API const char *FunctionGetName(Function func);
 // Gets the type of the parameter at the specified index of the specified
 // `Function`.
-_API Type FunctionGetParams(Function func);
+_API Kind FunctionGetParams(Function func);
 // Gets the result type of the specified `Function`.
-_API Type FunctionGetResults(Function func);
+_API Kind FunctionGetResults(Function func);
 // Gets the number of additional locals within the specified `Function`.
 _API Index FunctionGetNumVars(Function func);
 // Gets the type of the additional local at the specified index within the
 // specified `Function`.
-_API Type FunctionGetVar(Function func,
+_API Kind FunctionGetVar(Function func,
                          Index index);
 // Gets the number of locals within the specified function. Includes parameters.
 _API Index
@@ -2733,7 +2733,7 @@ _API void FunctionSetDebugLocation(Function func,
 _API const char *GlobalGetName(Global global);
 // Gets the name of the `GlobalType` associated with the specified `Global`. May
 // be `NULL` if the signature is implicit.
-_API Type GlobalGetType(Global global);
+_API Kind GlobalGetType(Global global);
 // Returns true if the specified `Global` is mutable.
 _API int GlobalIsMutable(Global global);
 // Gets the initialization expression of the specified `Global`.
@@ -2749,9 +2749,9 @@ _API const char *EventGetName(Event event);
 // Gets the attribute of the specified `Event`.
 _API int EventGetAttribute(Event event);
 // Gets the parameters type of the specified `Event`.
-_API Type EventGetParams(Event event);
+_API Kind EventGetParams(Event event);
 // Gets the results type of the specified `Event`.
-_API Type EventGetResults(Event event);
+_API Kind EventGetResults(Event event);
 
 //
 // ========== Import Operations ==========

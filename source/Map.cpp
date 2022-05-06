@@ -15,9 +15,3 @@ void print(Map<String, int> map) {
 	for (int i = 0; i < map.size(); ++i)
 		printf("%s: %d\n", map.keys[i].data, map.values[i]);
 }
-
-void print(List<String> list) {
-	for (String s:list) {
-		print(s);
-	}
-}

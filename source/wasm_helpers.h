@@ -101,6 +101,8 @@ long powi(int a, int b);// short harder
 //extern float powf(float x, float y);
 //void printf(int);
 void *alloc(int size, int num);
+//void *calloc(int size, int num);// alloc cleared
+//void *calloc(size_t __count, size_t __size);// __result_use_check __alloc_size(1,2);
 //inline _LIBCPP_INLINE_VISIBILITY float       pow(float __lcpp_x, float __lcpp_y) _NOEXCEPT;
 
 
@@ -115,9 +117,9 @@ void *alloc(int size, int num);
 
 void warn(chars);
 
-extern void error1(chars message, chars file = 0, int line = 0);
+//extern void error1(chars message, chars file = 0, int line = 0);
 
-void error(chars);
+//void error(chars); macro
 
 class Node;
 
