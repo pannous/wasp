@@ -5,6 +5,7 @@
 
 #include "String.h"
 #include "smart_types.h"
+#include "NodeTypes.h"
 //#import  "String.h" // FFS
 //#ifndef WASI
 //SOMETIMES IT WORKS with WASI, sometimes it doesnt!? ./build-wasm.sh fails as of 2021/2
@@ -85,7 +86,7 @@ union Value {
 
 	Value(double r) { real = r; }
 
-	Value(String s) { string = &s; }
+//	Value(String s) { string = &s; }
 
 	Value(String &s) { string = &s; }
 
@@ -94,29 +95,30 @@ union Value {
 //	~Value() = default;
 };
 
-
-struct TypedValue {
-	::Type type;// 1 byte!
-	//	Kind kind;
-	//	ValueKind kind;
-//	Node* type; forseeing? but:
-	Value value;// node can have its own type
-};
-
-struct TypedNode {
-	Node *type;
-	Node *node;
-};
+//
+//struct TypedValue {
+//	Kind type;// 1 byte!
+//	//	Kind kind;
+//	//	ValueKind kind;
+////	Node* type; forseeing? but:
+//	Value value;// node can have its own type
+//};
+//
+//struct TypedNode {
+//	Node *type;
+//	Node *node;
+//};
 
 class Node {
 	// sizeof(Node) == 64 (20 for name,
+	short _node_header_ = 0xDADA; //
 public:
+//	::Kind kind = unknown;// improved from 'undefined' upon construction
+	Type kind = unknown;// improved from 'undefined' upon construction
+	Node *type = 0;// variable/reference type or object class?
 
 	String name = empty_name;// nil_name;
 	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
-
-	::Type kind = unknown;
-	Node *type = 0;// variable/reference type or object class?
 //	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
 	Node *children = nullptr;// LIST, not link. block body content
@@ -270,7 +272,7 @@ public:
 //		type = strings NAH;// unless otherwise specified!
 	}
 
-	Node(String name, ::Type type) {
+	Node(String name, ::Kind type) {
 		this->name = name;
 		this->kind = type;
 	}
@@ -370,8 +372,8 @@ public:
 	Node &first() {
 		if (length > 0)return children[0];
 		if (children)return children[0]; // hack for missing length!
-		if (kind == assignment and value.node)return *value.node;// todo sure??, could be direct type!?
-		if (kind == operators and next)return *next;// todo remove hack
+		if (kind.kind == assignment and value.node)return *value.node;// todo sure??, could be direct type!?
+		if (kind.kind == operators and next)return *next;// todo remove hack
 		return *this;// (x)==x   danger: loops
 //		error("No such element");
 //		return ERROR;
@@ -391,7 +393,7 @@ public:
 
 // Todo: deep cloning whole tree? definitely clone children
 		if (childs) {
-			if (kind == key and value.data)
+			if (kind.kind == key and value.data)
 				copy->value.node = value.node->clone(false);
 			copy->children = 0;
 			copy->length = 0;
@@ -458,7 +460,7 @@ public:
 
 
 	String string() const {
-		if (kind == strings)
+		if (kind.kind == strings)
 			return *value.string;
 		return name;
 		error((char *) (String("WRONG TYPE ") + String(kind)));
@@ -624,7 +626,7 @@ public:
 
 	Node &metas();
 
-	Node &setType(::Type type, bool check = true);
+	Node &setType(::Kind type, bool check = true);
 
 	Node &setType(const char *string) {// setClass
 //		type = &Node(string).setType(classe);

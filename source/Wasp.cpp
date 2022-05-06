@@ -1198,9 +1198,9 @@ private:
 		val.parent = &key;// todo bug: might get lost!
 		bool deep_copy = empty(val.name) or !debug or (key.kind == reference and empty(val.name));
 		if (debug) {// todo make sure all works even with nested nodes! x="123" (node 'x' (child value='123')) vs (node 'x' value="123")
-			deep_copy = deep_copy or (val.kind == Type::longs and val.name == itoa(val.value.longy));
-			deep_copy = deep_copy or (val.kind == Type::reals and val.name == ftoa(val.value.real));
-			deep_copy = deep_copy or (val.kind == Type::bools and
+			deep_copy = deep_copy or (val.kind == Kind::longs and val.name == itoa(val.value.longy));
+			deep_copy = deep_copy or (val.kind == Kind::reals and val.name == ftoa(val.value.real));
+			deep_copy = deep_copy or (val.kind == Kind::bools and
 			                          (val.name == "True" or val.name == "False"));// todo why check name?
 //			if(val.kind == Type::strings)
 //				debug = 1;
@@ -1215,7 +1215,7 @@ private:
 			key.value = val.value;// direct copy value SURE?? what about meta data... ?
 			key.kind = val.kind;
 		} else {
-			key.kind = Type::key;
+			key.kind = Kind::key;
 			if (!key.children and empty(val.name) and val.length > 1) { // deep copy why?
 				key.children = val.children;
 				key.length = val.length;
@@ -1264,7 +1264,7 @@ private:
 	}
 
 
-	Type getType(codepoint bracket) {
+	Kind getType(codepoint bracket) {
 		switch (bracket) {
 			//				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 			//				https://en.wikipedia.org/wiki/ASCII#Character_set
@@ -1272,10 +1272,10 @@ private:
 			case u'﹛': // ﹜
 			case u'｛': // ｝
 			case '{':
-				return Type::objects;
+				return Kind::objects;
 			case u'⸨': // '⸩'
 			case '(':
-				return Type::groups;
+				return Kind::groups;
 			case u'﹝': // ﹞
 			case u'〔': // 〕
 			case U'［': // ］ FULLWIDTH
@@ -1425,7 +1425,7 @@ private:
 						break;
 					}
 					Node id = Node(text.substring(start, at));
-					id.setType(Type::strings);// todo "3" could have be resolved as number? DONT do js magifuckery
+					id.setType(Kind::strings);// todo "3" could have be resolved as number? DONT do js magifuckery
 					current.add(id);
 					break;
 				}
@@ -1471,7 +1471,7 @@ private:
 					Node &val = valueNode(closer, &key);// applies to WHOLE expression
 					if (add_to_whole_expression and current.length > 1 and not add_raw) {
 						if (current.value.node)todo("multi-body a:{b}{c}");
-						current.setType(Type::key, false);// lose type group/expression etc ! ok?
+						current.setType(Kind::key, false);// lose type group/expression etc ! ok?
 						// todo: might still be expression!
 //						object.setType(Type::valueExpression);
 						current.value.node = &val;
