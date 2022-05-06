@@ -4,6 +4,11 @@
 //
 
 #include "String.h"
+#include "Map.h"
+#include "Node.h"
+#include <stdio.h>
+
+size_t strlen(const char *__s);
 
 #ifndef WASP_CODE_H
 #define WASP_CODE_H
@@ -90,7 +95,7 @@ public:
 	}
 
 	Code(chars string, bool size_header = true, bool null_terminated = false) {
-		long len = (long) strlen0(string);
+		long len = (long) strlen(string);
 		if (null_terminated)len++;
 		if (size_header) { push(len); }
 		push((bytes) string, len);
@@ -346,7 +351,7 @@ enum Valtype {
 	//	https://github.com/pannous/angle/wiki/smart-pointer
 	codepoint32 = int32,
 	pointer = int32,// 0xF0, // internal
-	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
+//	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
 //	node = 0xA0,
 	angle = 0xA0,//  angle object pointer/offset versus smarti vs anyref
 	any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
@@ -680,15 +685,15 @@ typedef enum constancy {
 
 //localContextTypes is messy
 class Variable {
-	String name = "";// could be reused by multiple, but useful to debug
+//	String* name = "";// could be reused by multiple, but useful to debug
 	short position = 0;// in context / in global
 	Valtype kind;
-	Node type;
+	Node *type;
 	Constancy constancy;
 	bool global;
-	Node context;
-	List<Node> modifiers; // public static const … should translate into fields but keep for extra etc?
-	Node descriptor;// ?
+	Node *context;
+//	List<Node*> modifiers; // public static const … should translate into fields but keep for extra etc?
+	Node *descriptor;// ?
 };
 
 class Signature {
