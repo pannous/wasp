@@ -13,7 +13,7 @@
 void testArrayS() {
 	auto node = analyze(parse("int"));
 //	assert_equals( node.type->kind, classe);
-	assert_equals(node.kind, classe);
+	assert_equals(node.kind, clazz);
 
 	auto node2 = analyze(parse("ints"));
 	assert_equals(node2.kind, arrays);// type: array<int>

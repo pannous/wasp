@@ -3,7 +3,8 @@
 // Created by pannous on 19.12.19.
 //
 #include "wasm_helpers.h"
-#include "NodeTypes.h"
+#include "Util.h"
+//#include "NodeTypes.h"
 
 #define MAX_STRING_LENGTH 10000
 #define MAX_DATA_LENGTH 0x1000000
@@ -11,12 +12,15 @@
 //#include "Map.h" recursive include error Node.h:60:9: error: field has incomplete type 'String'
 
 #ifndef WASM
+
 #include <cstdlib>
 #include <cstdio> // printf
+
 #endif
 
 
-typedef const unsigned char *wasm_string;// wasm strings start with their length and do NOT end with 0 !! :(
+typedef const unsigned char *wasm_string;// wasm strings start with their LEB encoded length and do NOT end with 0 !! :(
+
 class String;
 
 template<class S>
@@ -69,9 +73,6 @@ int atoi0(chars str);
 
 double atof0(chars string);
 
-
-void todo(chars error);
-
 void encode_unicode_character(char *buffer, wchar_t ucs_character);
 
 //void* calloc(int i);
@@ -101,22 +102,10 @@ typedef chars chars;
 #endif
 //void* alloc(number size);// wasm | linux
 
-#define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
-#define error(msg) error1(msg,__FILE__,__LINE__)
-#define todo(msg) error1(msg,__FILE__,__LINE__)
 
 //extern void error1(chars message, chars file = 0, int line = 0);
 
 //void error1(String message, chars file = 0, int line = 0);
-extern void info(chars);
-
-extern void warn(chars);
-
-void warn(String warning);
-
-extern void warning(chars);
-
-extern chars fetch(chars url);
 
 class String;
 
@@ -174,8 +163,6 @@ extern char *empty_string;// = "";
 
 //duplicate symbol '_empty_string'
 
-//String
-chars typeName(::Type t);
 
 //char null_value[]={0};// todo make sure it's immutable!!
 
@@ -276,7 +263,8 @@ public:
 	}
 
 //		String operator+(Type e){
-	explicit String(::Type type) : String(typeName(type)) {}// lil hack to get String of specific enums
+//	explicit String(::Kind type) : String(typeName(type)) {}// lil hack to get String of specific enums
+//	explicit String(Type type) : String(typeName(type)) {}// lil hack to get String of specific enums
 
 	explicit String(int integer) {
 		data = itoa(integer);// wasm function signature contains illegal type WHYYYY
@@ -940,8 +928,6 @@ bool empty(chars s);
 bool empty(codepoint s);// todo: rename whitespace (and braces??)
 
 bool contains(chars str, chars match);
-
-#include "Map.h"
 
 
 #ifdef WEBAPP

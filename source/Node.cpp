@@ -3,13 +3,17 @@
 //// Created by pannous on 30.09.19.
 ////
 //
+
 #include "Node.h"
+#include "List.h"
 
 #ifndef WASM
 
 #include <stdio.h>
 
 #endif
+
+#define error(msg) error1(msg,__FILE__,__LINE__)
 
 //#include <cstdarg>
 #include <stdarg.h> // va_list OK in WASM!!
@@ -252,7 +256,7 @@ Node &Node::set(String string, Node *node) {
 		entry.value.node = &children[capacity - length - 1];//  HACK to get key and value node dummy from children
 //		 todo: reduce capacity per node
 		entry.value.node->name = string;
-		entry.value.node->kind = Type::unknown;
+		entry.value.node->kind = Kind::unknown;
 		entry.value.node->parent = &entry;
 //		entry.value.node=Node();// dangling ref to be set
 	} else {
@@ -351,7 +355,7 @@ bool Node::operator==(const Node &other) {
 //}
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
-	if (kind == classe or other.kind == classe)
+	if (kind == clazz or other.kind == clazz)
 		return name.lower() == other.name.lower();
 //	other = other.flat();// todo this.flat() too!
 	if (kind == errors)return other.kind == errors;
@@ -1064,7 +1068,7 @@ void print(Node *n0) {
 }
 
 
-Node &Node::setType(Type type, bool check) {
+Node &Node::setType(Kind type, bool check) {
 	if (kind == type)return *this;
 	if (kind == operators and type == expression)return *this;
 	if (kind == codepoints and type == operators)check = false;// and name==(codepoint)value.longy
@@ -1118,7 +1122,7 @@ String *Node::Line() {
 
 
 //String
-chars typeName(Type t) {
+chars typeName(Kind t) {
 	switch (t) {
 		case objects:
 			return "object";
@@ -1169,7 +1173,13 @@ chars typeName(Type t) {
 //		case 255:
 //			return "data";
 		default:
-			error(str("MISSING Type name mapping ") + t);
+			error(str("MISSING Type Kind name mapping ") + t);
 			return "ERROR";
 	}
+}
+
+chars typeName(Type t) {
+	if (t.value < 0x1000)return typeName(t.kind);
+	if (t.value > 0x10000)return t.type->name;
+	error(str("MISSING Type name mapping ") + t.value);
 }

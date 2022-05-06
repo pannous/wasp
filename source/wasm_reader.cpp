@@ -432,14 +432,14 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "char32_t")return Valtype::codepoint32;// angle codepoint ok
 	else if (arg == "Type")return Valtype::int32;// enum
 	else if (arg == "Valtype")return Valtype::int32;// enum
-	else if (arg == "String*")return Valtype::todoe;// todo !DIFFERENT
-	else if (arg == "String")return Valtype::stringp;
+	else if (arg == "String*")return Valtype::stringp;
+	else if (arg == "String")return Valtype::stringp;// todo !DIFFERENT
 	else if (arg == "String&")return Valtype::stringp;// todo: how does c++ handle refs?
 	else if (arg == "Node*")return Valtype::pointer;
 	else if (arg == "char**")return Valtype::pointer;// to chars
-	else if (arg == "Node")return Valtype::node;
-	else if (arg == "Node&")return Valtype::node;// pointer? todo: how does c++ handle refs?
-	else if (arg == "Node const&")return Valtype::node;
+	else if (arg == "Node")return Valtype::pointer;
+	else if (arg == "Node&")return Valtype::pointer;// pointer? todo: how does c++ handle refs?
+	else if (arg == "Node const&")return Valtype::pointer;
 		// todo:
 	else if (arg == "List<String>")return Valtype::todoe;
 	else if (arg == "List<Valtype>")return Valtype::todoe;
