@@ -350,7 +350,7 @@ void Linker::WriteTableSection(const SectionPtrVector &sections) {
 
 	Fixup fixup = WriteUnknownSize();
 	WriteU32Leb128(&stream_, table_count, "table count");
-	WriteType(&stream_, Type::FuncRef);
+	WriteType(&stream_, Kind::FuncRef);
 	WriteU32Leb128(&stream_, flags, "table elem flags");
 	WriteU32Leb128(&stream_, elem_count, "table initial length");
 	WriteU32Leb128(&stream_, elem_count, "table max length");
