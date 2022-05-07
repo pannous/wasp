@@ -1182,4 +1182,5 @@ chars typeName(Type t) {
 	if (t.value < 0x1000)return typeName(t.kind);
 	if (t.value > 0x10000)return t.type->name;
 	error(str("MISSING Type name mapping ") + t.value);
+	return "ƒ";
 }

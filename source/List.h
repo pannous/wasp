@@ -165,8 +165,15 @@ public:
 		_size--;
 	}
 
+	S last(S defaulty) {
+		if (_size < 1)
+			return defaulty;
+		return items[_size - 1];
+	}
+
 	S &last() {
-		if (_size < 1)error("empty list");
+		if (_size < 1)
+			error("empty list");
 		return items[_size - 1];
 	}
 };

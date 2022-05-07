@@ -164,7 +164,7 @@ public:
 
 	int add(S key, T value) {
 		int found = position(key);
-		if (found >= 0) error("DOUPLICATE KEY: "s + key);
+		if (found >= 0) error("DUPLICATE KEY: "s + key);
 		keys[_size] = key;
 		values[_size] = value;
 		_size++;
