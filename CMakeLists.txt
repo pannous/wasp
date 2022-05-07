@@ -46,8 +46,8 @@ if (NOT WASM)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         #        SET(V8 1)
-        #                SET(WASMTIME 1) # FASTEST!
-        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        SET(WASMTIME 1) # FASTEST!
+        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
