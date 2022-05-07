@@ -2,10 +2,13 @@
 
 #ifdef WASI
 //#include <cstdio> // printf
-//#include </usr/local/Cellar/llvm/11.0.0/include/c++/v1/stdio.h> // printf
+//#include </usr/local/Cellar/llvm/11.0.0/include/c++/v1/stdio.h> // printf NO!
 #endif
 
 //#include <climits>
+#include <cstdlib> // OK in WASM!
+
+
 //
 // Created by pannous on 15.07.20.
 //
@@ -172,9 +175,12 @@ void *alloc(int size, int num) {
 }
 
 
+//#ifdef PURE_WASM
 #ifdef WASM
-
+// unmapped import calloc : header provided by stdlib.h but we need our own implementation!
 //void *calloc(int size, int num) {// clean ('0') alloc
+///opt/wasm/wasi-sdk/share/wasi-sysroot/include/stdlib.h
+// /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h redundant!
 void *calloc(size_t num, size_t size) //__attribute__((__malloc__, __warn_unused_result__))
 {
 	char *mem =(char *) malloc(size * num);

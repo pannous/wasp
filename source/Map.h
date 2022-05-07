@@ -5,6 +5,7 @@
 #ifndef WASP_MAP_H
 #define WASP_MAP_H
 
+#include <cstdlib> // OK in WASM!
 
 #include "String.h"
 //#include "Node.h"

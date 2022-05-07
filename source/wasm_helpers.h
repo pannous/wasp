@@ -3,12 +3,12 @@
 // Created by pannous on 15.07.20.
 //
 
+#include <cstddef> // size_t  FINE with wasm!
+
 #ifndef WASM
-
-#include <cstddef> // size_t
-
 #else
-#define size_t unsigned long
+//#ifdef PURE_WASM << unnecessary
+//#define size_t unsigned long
 //#define size_t unsigned int // error: 'operator new' takes type size_t ('unsigned long') as first parameter
 #endif
 
@@ -104,7 +104,12 @@ void *alloc(int size, int num);
 //void *calloc(int size, int num);// alloc cleared
 //void *calloc(size_t __count, size_t __size);// __result_use_check __alloc_size(1,2);
 //inline _LIBCPP_INLINE_VISIBILITY float       pow(float __lcpp_x, float __lcpp_y) _NOEXCEPT;
-
+// Provided by /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h:15:7:
+// Provided by /opt/wasm/wasi-sdk/share/wasi-sysroot//include/stdlib.h
+#ifdef PURE_WASM
+void *calloc(size_t __nmemb, size_t __size) __attribute__((__malloc__, __warn_unused_result__));
+//void* calloc(int i,int num=1);// different from complicated alloc.h type!
+#endif
 
 //extern unsigned int memory_size;
 //extern "C" int memory_size;// doesn't compile! :(
@@ -156,9 +161,6 @@ void printf(chars format, chars i, chars j, chars k, int l);
 extern "C" void * memset ( void * ptr, int value, size_t num );
 #endif
 //#ifndef WASI
-// Provided by /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h:15:7:
-void *calloc(size_t __nmemb, size_t __size) __attribute__((__malloc__, __warn_unused_result__));
-//void* calloc(int i,int num=1);// different from complicated alloc.h type!
 //#endif
 //int rand();
 //proc_exit, environ_get, environ_sizes_get

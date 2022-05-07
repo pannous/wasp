@@ -10,6 +10,8 @@
 //#ifndef WASI
 //SOMETIMES IT WORKS with WASI, sometimes it doesnt!? ./build-wasm.sh fails as of 2021/2
 #include <stdarg.h> // va_list OK IN WASM???
+#include <cstdlib> // OK in WASM!
+
 //#include <cstdarg> // va_list ok in wasm even without wasi!
 //#endif
 

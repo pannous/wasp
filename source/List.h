@@ -5,9 +5,7 @@
 #ifndef WASP_LIST_H
 #define WASP_LIST_H
 
-//
-// Created by me on 06.05.22.
-//
+#include <cstdlib> // OK in WASM!
 
 #define LIST_ALLOCATION_RESERVED_COUNT 100 // Todo!
 

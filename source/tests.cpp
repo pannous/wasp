@@ -1990,6 +1990,7 @@ void testSubGrouping() {// dangling , should make '\n' not close
 
 
 void tests() {
+	testNodeConversions();
 	testSinus();
 	testBUG();
 	testSignificantWhitespace();
@@ -2019,7 +2020,6 @@ void tests() {
 	testStringReferenceReuse();
 	testWasmString();// with length as header
 	testTruthiness();
-	testNodeConversions();
 	testConcatenation();
 	testMarkSimple();
 	testMarkMulti();
@@ -2104,6 +2104,8 @@ void tests() {
 
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp / wasmtime
+// 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm build via wasm-runtime
+
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
@@ -2111,9 +2113,7 @@ void testCurrent() {
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
 //	assert_emit("1;1", 1);
-	print("OK1");
 //	testMultiValue();
-	print("OK3");
 
 //	assert_is("x=(1 4 3);x#2", 4);
 //	testArrayIndices();
@@ -2130,9 +2130,9 @@ void testCurrent() {
 	//	assert_run("render html{'test'}", 4);
 //	exit(1);
 	//	return;// let the webview show!
+	tests();// make sure all still ok before changes
 	todos();// those not passing yet (skip)
 	testAllWasm();
-	tests();// make sure all still ok before changes
 	print("CURRENT TESTS PASSED");
 }
 

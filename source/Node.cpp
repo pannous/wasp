@@ -7,6 +7,11 @@
 #include "Node.h"
 #include "List.h"
 
+//#include <cstdarg>
+#include <stdarg.h> // va_list OK in WASM!!
+#include <cstdlib> // OK in WASM!
+
+
 #ifndef WASM
 
 #include <stdio.h>
@@ -15,8 +20,6 @@
 
 #define error(msg) error1(msg,__FILE__,__LINE__)
 
-//#include <cstdarg>
-#include <stdarg.h> // va_list OK in WASM!!
 
 bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
@@ -74,7 +77,7 @@ Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent
 //
 Node ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
 Node True = Node("True").setType(bools).setValue(true);
-Node False = Node("False").setType(bools);
+Node False = Node("False").setType(bools).setValue(false);
 
 Node Infinity = Node("Infinity");
 Node NegInfinity = Node("-Infinity");
