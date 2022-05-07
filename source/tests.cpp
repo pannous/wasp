@@ -1014,7 +1014,7 @@ void testLogicEmptySet() {
 	assert_is("1 or []", true);
 	assert_is("1 or 1", true);
 
-	assert_is("1 and 1", true);
+	assert_is("1 and 0", false);
 	assert_is("1 and []", false);
 	assert_is("[] and 1", false);
 	assert_is("[] and []", false);
@@ -1029,13 +1029,31 @@ void testLogicEmptySet() {
 	assert_is("1 xor 1", false);
 }
 
+
+void testLogicOperators() {
+	assert_is("¬ 0", 1);
+	assert_is("¬ 1", 0);
+
+	assert_is("0 ⋁ 0", 0);
+	assert_is("0 ⋁ 1", 1);
+	assert_is("1 ⋁ 0", 1);
+	assert_is("1 ⋁ 1", 1);
+
+	assert_is("0 ⊻ 0", 0);
+	assert_is("0 ⊻ 1", 1);
+	assert_is("1 ⊻ 0", 1);
+	assert_is("1 ⊻ 1", 0);
+
+	assert_is("1 ∧ 1", 1);
+	assert_is("1 ∧ 0", 0);
+	assert_is("0 ∧ 1", 0);
+	assert_is("0 ∧ 0", 0);
+}
+
+
 void testLogic01() {
-	assert_is("0 xor 1", true);
-	assert_is("1 xor 0", true);
-	assert_is("0 xor 0", false);
-	assert_is("1 xor 1", false);
-	assert_is("0 or 1", true);
 	assert_is("0 or 0", false);
+	assert_is("0 or 1", true);
 	assert_is("1 or 0", true);
 	assert_is("1 or 1", true);
 
@@ -1044,8 +1062,17 @@ void testLogic01() {
 	assert_is("0 and 1", false);
 	assert_is("0 and 0", false);
 
+	// eor either or
+	assert_is("0 xor 0", false);
+	assert_is("0 xor 1", true);
+	assert_is("1 xor 0", true);
+	assert_is("1 xor 1", false);
+
 	assert_is("not 0", true);
 	assert_is("not 1", false);
+}
+
+void testEqualities() {
 	assert_is("1≠2", True);
 	assert_is("1==2", False);
 	//	assert_is("1=2", False);
@@ -1055,7 +1082,6 @@ void testLogic01() {
 	assert_is("2==2", True);
 	assert_is("2!=2", False);
 }
-
 
 void testCpp() {
 //	esult of comparison of constant 3 with expression of type 'bool' is always true
@@ -1770,26 +1796,6 @@ void testNodeBasics() {
 	a.addSmart(b);// why?
 }
 
-void testLogicOperators() {
-	assert_is("¬ 0", 1);
-	assert_is("¬ 1", 0);
-
-	assert_is("0 ⋁ 0", 0);
-	assert_is("0 ⋁ 1", 1);
-	assert_is("1 ⋁ 0", 1);
-	assert_is("1 ⋁ 1", 1);
-
-	assert_is("0 ⊻ 0", 0);
-	assert_is("0 ⊻ 1", 1);
-	assert_is("1 ⊻ 0", 1);
-	assert_is("1 ⊻ 1", 0);
-
-	assert_is("1 ∧ 1", 1);
-	assert_is("1 ∧ 0", 0);
-	assert_is("0 ∧ 1", 0);
-	assert_is("0 ∧ 0", 0);
-}
-
 void testBUG();
 
 
@@ -2076,12 +2082,13 @@ void tests() {
 	testCall();
 	testNewlineLists();
 	testIndex();
-	testLogic01();// fails in WASM why
-	testMathExtra(); // fails in WASM
+	testLogic();
+	testLogic01();
+	testLogicOperators();
+	testEqualities();
+	testMathExtra();
 	testRecentRandomBugs();
 	testGroupCascade();
-	testLogic();
-	testLogicOperators();
 	assert_is("one plus two times three", 7);
 	testParams();
 	skip(
@@ -2103,7 +2110,10 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_emit("1;1", 1);
+//	assert_emit("1;1", 1);
+	print("OK1");
+//	testMultiValue();
+	print("OK3");
 
 //	assert_is("x=(1 4 3);x#2", 4);
 //	testArrayIndices();

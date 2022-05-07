@@ -6,9 +6,10 @@
 #include "String.h"
 #include "Map.h"
 #include "Node.h"
+#include "List.h"
 #include <stdio.h>
 
-size_t strlen(const char *__s);
+//size_t strlen(const char *__s);
 
 #ifndef WASP_CODE_H
 #define WASP_CODE_H
@@ -95,7 +96,7 @@ public:
 	}
 
 	Code(chars string, bool size_header = true, bool null_terminated = false) {
-		long len = (long) strlen(string);
+		long len = (long) strlen0(string);
 		if (null_terminated)len++;
 		if (size_header) { push(len); }
 		push((bytes) string, len);
@@ -699,8 +700,11 @@ class Variable {
 class Signature {
 public:
 	String function = "";// could be reused by multiple, but useful to debug
+// todo: add true Wasp Type Signature to wasm Valtype Signature
 	Map<int, Valtype> types;
-	Valtype return_type = voids;
+	List<Valtype> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
+	Node return_type;
+//	Valtype return_type = voids;
 	bool is_import = false; // not serialized in functype section, but in import section wt
 	bool is_runtime = false;
 	bool is_builtin = false;// hard coded functions, tests only? todo remove
@@ -744,15 +748,16 @@ public:
 
 
 	Signature &returns(Node type) {
-		// todo multi-value
-		return_type = mapTypeToWasm(type);
+		return_type = type;
+		if (type.kind != nils)// todo? type.kind!=undefined … ?
+			return_types.add(mapTypeToWasm(type));// value, should map to int32 unless unboxing long, float
 		return *this;
 	}
 
 
 	Signature &returns(Valtype valtype) {
-		return_type = valtype;
-//		return_types[name] = valtype;
+		if (valtype != voids and valtype != none)
+			return_types.add(valtype);
 		return *this;
 	}
 

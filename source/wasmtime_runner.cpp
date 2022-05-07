@@ -19,6 +19,15 @@ static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_t
 
 const wasm_functype_t *funcType(Signature &signature);
 
+// ⚠️  'fun' needs to be a Locally accessible symbol (via include, ...)
+#define wrap_any(fun) static wasm_trap_t *wrap_##fun( void *env,\
+wasmtime_caller_t *caller,\
+const wasmtime_val_t *args,\
+size_t nargs,\
+wasmtime_val_t *results,\
+size_t nresults\
+){ fun();return NULL;}
+
 #define wrap(fun) static wasm_trap_t *wrap_##fun( void *env,\
 wasmtime_caller_t *caller,\
 const wasmtime_val_t *args,\
@@ -47,7 +56,6 @@ static wasm_trap_t *hello_callback(
 //	results[0].kind.
 	return NULL;
 }
-
 
 wrap(square) {
 	int n = args[0].of.i32;
@@ -103,13 +111,21 @@ wrap(putd) {
 	return NULL;
 }
 
-wrap(put_char) {
+wrap(putc) {// put_char
 	int i = args[0].of.i32;
 	printf("%c", i);
 	return NULL;
 }
 
 wrap(nop) {
+	return NULL;
+}
+
+wrap(atoi) {
+	int n = args[0].of.i32;
+	auto a = (chars) ((char *) wasm_memory) + n;
+	int i = atoi0(a);
+	results[0].of.i32 = i;
 	return NULL;
 }
 
@@ -130,10 +146,22 @@ wrap(todo) {
 	return NULL;
 }
 
+void test_lambda() {
+	print("requestAnimationFrame lambda");
+};
+
+//wrap_any(requestAnimationFrame);
+wrap_any(test_lambda);
+
+#define wrap_fun(fun) [](void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t)->wasm_trap_t*{fun();return NULL;};
 
 wasm_wrap *link_import(String name) {
 	if (name == "__cxa_guard_acquire") return &wrap_nop;// todo!?
 	if (name == "__cxa_guard_release") return &wrap_nop;// todo!?
+	if (name == "_Z13init_graphicsv") return &wrap_nop;
+	if (name == "_Z21requestAnimationFramev") return wrap_fun(test_lambda);
+//	if (name == "_Z21requestAnimationFramev") return  wrap_fun(requestAnimationFrame);
+
 //	if (name == "_Z8typeName7Valtype") return &wrap_nop;// todo!?
 //	if (name == "_Z8run_wasmPhi") return &wrap_nop;
 //	if (name == "_Z11testCurrentv") return &wrap_nop;// hmmm self test?
@@ -152,9 +180,12 @@ wasm_wrap *link_import(String name) {
 	if (name == "powd") return &wrap_powd;
 	if (name == "powf") return &wrap_powf;
 	if (name == "powi") return &wrap_powi;
+	if (name == "atoi") return &wrap_atoi;
 
 	if (name == "_Z5raisePKc") return &wrap_exit;
 	if (name == "_ZSt9terminatev") return &wrap_exit;
+	if (name == "__cxa_atexit") return &wrap_exit;
+	if (name == "__cxa_demangle") return &wrap_nop;
 	if (name == "proc_exit") return &wrap_exit;
 	if (name == "panic") return &wrap_exit;
 	if (name == "raise") return &wrap_exit;
@@ -163,13 +194,16 @@ wasm_wrap *link_import(String name) {
 
 	if (name == "printf") return &wrap_puts;
 	if (name == "print") return &wrap_puts;
-	if (name == "puts") return &wrap_puts;
+	if (name == "logs") return &wrap_puts;
+	if (name == "logi") return &wrap_puti;
+	if (name == "logc") return &wrap_putc;
 	if (name == "puti") return &wrap_puti;
+	if (name == "puts") return &wrap_puts;
 	if (name == "putf") return &wrap_putf;
 	if (name == "putd") return &wrap_putd;
-	if (name == "putc") return &wrap_put_char;
-	if (name == "putchar") return &wrap_put_char;// todo: remove duplicates!
-	if (name == "put_char") return &wrap_put_char;// todo: remove duplicates!
+	if (name == "putc") return &wrap_putc;
+	if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
+	if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
 	if (name == "main") return &hello_callback;
 	error("unmapped import "s + name);
 	return 0;
@@ -299,8 +333,10 @@ const wasm_functype_t *funcType(Signature &signature) {
 	wasm_valtype_t *f = wasm_valtype_new(WASM_F32);
 	wasm_valtype_t *F = wasm_valtype_new(WASM_F64);
 	int param_count = signature.types.size();
+	// todo multi-value
+	auto returnType = signature.return_types.last(none);
 	if (param_count == 0) {
-		switch (signature.return_type) {
+		switch (returnType) {
 			case none:
 			case voids:
 				return wasm_functype_new_0_0();
@@ -316,7 +352,7 @@ const wasm_functype_t *funcType(Signature &signature) {
 			case f32:
 				return wasm_functype_new_1_0(f);
 			case f64:
-				switch (signature.return_type) {
+				switch (returnType) {
 					case none:
 					case voids:
 						return wasm_functype_new_1_0(F);
@@ -326,7 +362,7 @@ const wasm_functype_t *funcType(Signature &signature) {
 						break;
 				}
 			case int32:
-				switch (signature.return_type) {
+				switch (returnType) {
 					case none:
 					case voids:
 						return wasm_functype_new_1_0(i);
@@ -340,7 +376,7 @@ const wasm_functype_t *funcType(Signature &signature) {
 		}
 	}
 	if (param_count == 2) {
-		switch (signature.return_type) {
+		switch (returnType) {
 			case int32:
 				return wasm_functype_new_2_1(i, i, i); // printf(i32,i32)i32
 			case int64:
