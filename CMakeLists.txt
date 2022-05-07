@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(wasp)
 
-set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG
+set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
 #LINK_DIRECTORIES(lib)
 LINK_DIRECTORIES(Frameworks)
@@ -19,15 +19,16 @@ LINK_DIRECTORIES(/usr/local/lib)
 #ADD_DEFINITIONS(-DUSE_READLINE)
 
 #set(SDL 1) # Graphics
-#set(WASM 1) # no WebView, duh
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
+
+#set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
 
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
 #ADD_DEFINITIONS(-DNO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
 
-if (CONSOLE)
-    ADD_DEFINITIONS(-DCONSOLE)
-endif ()
+#if (CONSOLE)
+#    ADD_DEFINITIONS(-DCONSOLE)
+#endif ()
 
 if (WASM)
     ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
@@ -220,6 +221,8 @@ if (WASM) # OR WASI)
         ADD_COMPILE_FLAG("-nostdlib -march=wasm") #-v
         #        ADD_LINK_OPTIONS("--no-entry")
     endif ()
+    SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
+
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem ... -Oz -c ") # BREAKS BUILD! ???
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan ")
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
@@ -280,7 +283,7 @@ elseif (WASI)
     ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
     #    only works with wasm.toolchain.cmake
     SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
-    SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
+    SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
     ADD_COMPILE_FLAG("--sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot")
     #  ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
     #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(

@@ -9,11 +9,10 @@
 #include "List.h"
 #include "Code.h"
 #include "Util.h"
-#include <math.h> // pow
 
-#ifndef WASM
+//SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/) # also for WASM include!
 #include <stdlib.h> // pulls in declaration of malloc, free
-#endif
+#include <math.h> // pow
 
 
 #pragma clang diagnostic push
@@ -60,15 +59,15 @@ bool eq(chars dest, chars src, int length) {
 int strlen0(chars x) {
 	if (!x)return 0;
 	int l = 0;
-	if ((long) x >= MEMORY_SIZE || (long) x == 0x200000000) {
+	if ((long long) x >= MEMORY_SIZE || ((long long) x) == 0x200000000LL) {
 		puts(x);
 		puti((int) (long) x);// 0x1000000 16777216
 		error("corrupt string");
 	}
-	if ((long) x == 0x1ffffffff || (long) x >= 0xffffffff00000000 ||
-	    ((long) x >= 0x100000000 and (long) x <= 0x100100000))
+	if ((long long) x == 0x1ffffffffLL || (long long) x >= 0xffffffff00000000LL ||
+	    ((long long) x >= 0x100000000LL and (long long) x <= 0x100100000LL))
 		return false;// todo: valgrind debug corruption, usually because of not enough memory
-	while (l < MAX_STRING_LENGTH and (long) x < MEMORY_SIZE - 1 and *x++)l++;
+	while (l < MAX_STRING_LENGTH and (long long) x < MEMORY_SIZE - 1 and *x++)l++;
 	return l;
 }
 
@@ -287,6 +286,7 @@ char *itoa(long num) {
 chars ftoa0(float num, int base = 10, int digits_after_zero = 4) {/*significant_digits*/
 //	int p = powi(base,digits_after_zero+1);
 	auto remainder = abs(num) - abs(long(num));
+//	auto remainder = abs_f(num) - abs_l(long(num));
 //	auto remainder = itoa0(abs(int((num - (long) num) * p)), base);
 	chars f = concat(itoa0(int(num), base), ".");
 //	significant_digits-=strlen(f)-1
@@ -453,8 +453,8 @@ bool String::empty() const {//this==0 in testMarkMulti!
 ////		return true;
 //#endif
 	if (this == 0)return true;
-	if ((long) data == 0x1ffffffff || (long) data >= 0xffffffff00000000 ||
-	    ((long) data >= 0x100000000 and (long) data <= 0x100100000))
+	if ((long long) data == 0x1ffffffff || (long long) data >= 0xffffffff00000000 ||
+	    ((long long) data >= 0x100000000 and (long long) data <= 0x100100000))
 		return false;// todo: valgrind debug corruption, usually because of not enough memory
 	return length == 0 || !data || (long) data > MEMORY_SIZE || data[0] == 0 || data == object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO

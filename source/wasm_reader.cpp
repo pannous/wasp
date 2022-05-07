@@ -431,6 +431,8 @@ Valtype mapArgToValtype(String arg) {
 	else if (arg == "wchar_t")return Valtype::codepoint32;// angle codepoint ok
 	else if (arg == "char32_t")return Valtype::codepoint32;// angle codepoint ok
 	else if (arg == "Type")return Valtype::int32;// enum
+	else if (arg == "Kind")return Valtype::int32;// enum (short, ok)
+	else if (arg == "Code")return Valtype::ignore;
 	else if (arg == "Valtype")return Valtype::int32;// enum
 	else if (arg == "String*")return Valtype::stringp;
 	else if (arg == "String")return Valtype::stringp;// todo !DIFFERENT
@@ -443,6 +445,7 @@ Valtype mapArgToValtype(String arg) {
 		// todo:
 	else if (arg == "List<String>")return Valtype::todoe;
 	else if (arg == "List<Valtype>")return Valtype::todoe;
+	else if (arg == "std::is_arithmetic<int>::value")return Valtype::todoe;// WAT?? PURE_WASM should work without std!!
 //	else if (arg == "List< …
 
 		// IGNORE INTERNAL TYPES:

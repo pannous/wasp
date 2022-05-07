@@ -8,6 +8,8 @@
 #include "wasm_emitter.h"
 #include "wasm_runner.h"
 #include "console.h"
+
+//#include <cstdlib> // OK in WASM!
 #include "stdio.h" // FILE
 #include <math.h>
 

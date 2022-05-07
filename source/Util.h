@@ -58,6 +58,10 @@ bytes concat(bytes a, char b, int len);
 
 bytes concat(char section, bytes a, int len_a);
 
+//inline int abs_i(int x) noexcept;
+//inline long abs_l(long x) noexcept;
+//inline float abs_f(float x) noexcept;
+
 //float ln(float y);
 //float log(float y,float base=10);
 //#undef log2
