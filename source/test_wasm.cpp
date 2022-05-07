@@ -884,11 +884,11 @@ void testStringIndicesWasm() {
 	assert_emit("i=0;x='abcde';x#4='x';x[4]", 'e');
 
 	assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
-	assert_run("x='123';x=='123'", true);// ok
-	assert_run("x='123';x is '123'", true);// ok
-	assert_run("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
-	assert_run("'123' + '4' is '1234'", true);// ok
+//	assert_run("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
 	assert_run("x='123';x + '4' is '1234'", true);// ok
+//	assert_run("'123' + '4' is '1234'", true);// ok needs runtime for concat()
+//	assert_run("x='123';x=='123'", true);// ok needs runtime for eq()
+//	assert_run("x='123';x is '123'", true);// ok
 
 //	assert_emit("'world'[1]", 'o');
 	assert_emit("'world'#1", 'w');
@@ -1167,6 +1167,13 @@ void testMathLibrary() {
 	assert_emit("i=-9;√-i", 3);
 	assert_emit("i=-9;√ -i", 3);
 //		assert_emit("use math;√π²", 3);
+}
+
+void testMultiValue() {
+	assert_emit("1,2,3", Node(1, 2, 3, 0));
+	assert_emit("1;2;3", 3);
+	assert_emit("'OK'", "OK");
+//	assert_emit("'OK'", "OK");
 }
 
 void testAllWasm() {

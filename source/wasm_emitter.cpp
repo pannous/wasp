@@ -933,7 +933,8 @@ Code emitOperator(Node node, String context) {
 	} else if (name.startsWith("-")) {
 		code.add(i32_sub);
 	} else if (name == "return") {
-		Valtype return_type = functionSignatures[context].return_type;
+		// todo multi-value
+		Valtype return_type = functionSignatures[context].return_types.last();
 		code.add(cast(last_type, return_type));
 		code.add(return_block);
 	} else if (name == "as") {
@@ -1274,7 +1275,8 @@ Code emitCall(Node &fun, String context) {
 	code.addByte(nop);// padding for potential relocation
 	signature.is_used = true;
 	signature.emit = true;
-	last_type = signature.return_type;
+	// todo multi-value
+	last_type = signature.return_types.last(none);
 	return code;
 }
 
@@ -1604,7 +1606,9 @@ Code emitBlock(Node &node, String context) {
 //	if (inner_code_data.length == 0)
 //		return Code();// Drop empty functions!? too late: typeSection already done! todo?
 	block.push(inner_code_data);
-	Valtype return_type = functionSignatures[context].return_type;// switch back to return_types[context] for block?
+	// todo multi-value
+	Valtype return_type = functionSignatures[context].return_types.last();
+	// switch back to return_types[context] for block?
 	if (last_type == none) last_type = voids;
 	if (return_type != last_type) {
 		if (return_type == Valtype::voids and last_type != Valtype::voids)
@@ -1681,11 +1685,10 @@ Code typeSection() {
 		for (int i = 0; i < param_count; ++i) {
 			td = td + Code(fixValtype(signature.types[i]));
 		}
-		Valtype &ret = functionSignatures[fun].return_type;
-		if (ret == voids) {
-			td.addByte(0);
-		} else {
-			td.addByte(1/*return count*/).addByte(fixValtype(ret));
+//		Valtype &ret = functionSignatures[fun].return_type;
+		td.addByte(functionSignatures[fun].return_types.size());
+		for (Valtype ret: functionSignatures[fun].return_types) {
+			td.addByte(fixValtype(ret));
 		}
 		type_data = type_data + td;
 	}
@@ -1748,6 +1751,9 @@ Code codeSection(Node root) {
 	// the code section contains vectors of functions
 	// index needs to be known before emitting code, so call $i works
 	int new_count;
+
+	if (root.kind == objects)
+		root.kind = expression;// todo why hack?
 
 	new_count = declaredFunctions.size();
 	for (auto declared: declaredFunctions) {
@@ -2153,9 +2159,7 @@ void prepareContext() {
 
 [[nodiscard]]
 Code &emit(Node &root_ast, Module *runtime0, String _start) {
-	if (root_ast.kind == objects)root_ast.kind = expression;
 	start = _start;
-//	clear();// todo
 	prepareContext();
 	if (runtime0) {
 		memoryHandling = no_memory;// done by runtime?
