@@ -3,6 +3,8 @@
 //
 
 #include <cmath>
+#include <stdlib.h> // abs(int)
+
 #include "String.h"
 #include "Util.h"
 
@@ -133,25 +135,42 @@ char *readFile(chars filename, int *size_out) {
 #endif
 }
 
-
+// abs, floor from math.h should work with wasm, but isn't found in pure toolchain or sometimes breaks
 // there is NO i32_abs in wasm, only f32_abs
-int abs_i(int x) {
-	return x > 0 ? x : -x;
-}
+// but compiler should make use of /opt/wasm/wasi-sdk/share/wasi-sysroot/include/c++/v1/math.h !!
+//SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/) # also for WASM include!
+//#include <stdlib.h> // pulls in declaration of malloc, free
+//#include <math.h> // pow
 
-// native to wasm
-inline float abs_f(float x)
+//c++ compiler emits abs as:
+//local.get 0
+//i32.const 31
+//i32.shr_s
+//local.tee 0
+//i32.add
+//local.get 0
+//i32.xor
 
-noexcept {
-	return x > 0 ? x : -
-			x;
-}
+//inline int abs_i(int x) noexcept{
+//	return x > 0 ? x : -x;
+//}
+//inline long abs_l(long x) noexcept{
+//	return x > 0 ? x : -x;
+//}
+//// native to wasm
+//inline float abs_f(float x) noexcept {
+//	return x > 0 ? x : -x;
+//}
+//// native to wasm
+//inline float floor(float x) noexcept {
+//	x-(long)x;// todo!
+//}
 
 bool similar(float a, float b) {
 	if (a == b)return true;
-	float epsilon = abs_f(a + b) / 10000.;// percentual ++
+	float epsilon = abs(a + b) / 10000.;// percentual ++
 	if (a == 0 or b == 0)epsilon = 1 / 1000.;
-	bool ok = a == b or abs_f(a - b) <= epsilon;
+	bool ok = a == b or abs(a - b) <= epsilon;
 	return ok;
 }
 
@@ -1042,11 +1061,11 @@ bytes concat(bytes a, bytes b, int len_a, int len_b) {
 chars concat(chars a, chars b) {
 //const char *concat(const char *a, const char *b) {
 	if (!b or b[0] == 0)return a;
-	int la = (int) strlen(a);
-	int lb = (int) strlen(b);
+	int la = (int) strlen0(a);
+	int lb = (int) strlen0(b);
 	char *c = (char *) malloc((la + lb + 1) * sizeof(char));
-	strcpy(c, a);
-	strcpy(&c[la], b);
+	strcpy2(c, a);
+	strcpy2(&c[la], b);
 	c[la + lb] = 0;
 	return c;
 }
