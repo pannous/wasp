@@ -83,7 +83,7 @@ union Type {
 	*/
 	Type(Kind kind) {
 		this->kind = kind;
-		if (kind > 0x1000)error("erroneous or unsafe Type construction");
+		if ((int) kind > 0x1000)error("erroneous or unsafe Type construction");
 	}
 
 	operator Kind() const { return this->kind; }

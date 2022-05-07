@@ -388,7 +388,6 @@ Map<String, Node> types;
 void initTypes() {
 	types.add("int", Long);// until we really need it
 	types.add("long", Long);
-	types.add("long", Long);
 	types.add("double", Double);
 	types.add("float", Double);
 	for (auto name: types)
@@ -1145,6 +1144,8 @@ void clearContext() {
 #endif
 }
 
+// 2MB Debug runtime needs 3 seconds in wasmtime! :(
+// test with SMALL runtime!!
 int runtime_emit(String prog) {
 #ifdef RUNTIME_ONLY
 	printf("emit wasm not built into release runtime");

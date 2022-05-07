@@ -147,8 +147,11 @@ Valtype mapTypeToWasm(Node &n) {
 		return float64;
 	if (n == Long)
 		return i64;
-	if (functionSignatures.has(n.name))
-		return functionSignatures[n.name].return_type;
+	if (functionSignatures.has(n.name)) {
+//		breakpoint_helper
+//		todo(">>>");
+		return functionSignatures[n.name].return_types.last();// no ??
+	}
 
 	//	if(n.type)…
 
@@ -163,8 +166,10 @@ Valtype mapTypeToWasm(Node &n) {
 	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
 	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
 	if (n.kind == objects)return array;// todo
-	if (n.kind == call)
-		return functionSignatures[n.name].return_type;// error("first.kind==call is not a wasm type, maybe get signature?");
+	if (n.kind == call) {
+		// todo multi-value 2.  not a wasm type, maybe get signature?
+		return functionSignatures[n.name].return_types.last();
+	}
 	if (n.kind == key and n.value.data) return mapTypeToWasm(*n.value.node);
 	//	if (n.kind == key and not n.value.data)return array;
 	if (n.kind == groups)return array;// uh todo?
