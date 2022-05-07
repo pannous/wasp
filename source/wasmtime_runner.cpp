@@ -141,10 +141,30 @@ wrap(memset) {
 }
 
 
+wrap(calloc) {
+	todo("calloc");
+	return NULL;
+}
+
 wrap(todo) {
 	todo("this function should not be a wasm import, but part of the runtime!!");
 	return NULL;
 }
+
+wrap(absi) {
+//	todo("this function should not be a wasm import, but part of the runtime!!");
+	long i = args[0].of.i32;
+	results[0].of.i32 = i > 0 ? i : -1;
+	return NULL;
+}
+
+wrap(absf) {
+//	todo("this function should not be a wasm import, but part of the runtime!!");
+	double i = args[0].of.f32;
+	results[0].of.f32 = i > 0 ? i : -1;
+	return NULL;
+}
+
 
 void test_lambda() {
 	print("requestAnimationFrame lambda");
@@ -156,6 +176,13 @@ wrap_any(test_lambda);
 #define wrap_fun(fun) [](void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t)->wasm_trap_t*{fun();return NULL;};
 
 wasm_wrap *link_import(String name) {
+
+	if (name == "memset") return &wrap_todo;// should be provided by wasp!!
+	if (name == "calloc") return &wrap_todo;
+	if (name == "_Z5abs_ff") return &wrap_absf;// why??
+// todo get rid of these again!
+	if (name == "_Z7consolev") return &wrap_nop;
+
 	if (name == "__cxa_guard_acquire") return &wrap_nop;// todo!?
 	if (name == "__cxa_guard_release") return &wrap_nop;// todo!?
 	if (name == "_Z13init_graphicsv") return &wrap_nop;
@@ -190,7 +217,7 @@ wasm_wrap *link_import(String name) {
 	if (name == "panic") return &wrap_exit;
 	if (name == "raise") return &wrap_exit;
 	if (name == "square") return &wrap_square;
-	if (name == "memset") return &wrap_memset;
+
 
 	if (name == "printf") return &wrap_puts;
 	if (name == "print") return &wrap_puts;
@@ -272,7 +299,7 @@ int run_wasm(unsigned char *data, int size) {
 	wasmtime_extern_t imports[meta.import_count * 2];
 	int i = 0;
 	// LINK IMPORTS!
-	for (String import_name:meta.import_names) {
+	for (String import_name: meta.import_names) {
 		print(import_name);
 		wasmtime_extern_t import;
 		wasmtime_func_t link;
@@ -350,7 +377,15 @@ const wasm_functype_t *funcType(Signature &signature) {
 		switch (signature.types[0]) {
 			case charp:
 			case f32:
-				return wasm_functype_new_1_0(f);
+				switch (returnType) {
+					case none:
+					case voids:
+						return wasm_functype_new_1_0(f);
+					case f32:
+						return wasm_functype_new_1_1(f, f);
+					default:
+						break;
+				}
 			case f64:
 				switch (returnType) {
 					case none:

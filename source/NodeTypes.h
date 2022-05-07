@@ -66,8 +66,10 @@ enum Classes {
 
 typedef int Address;
 
+
 union Type {
-	int value; // one of:
+	// ⚠️ Kind is short, not int!
+	int value = 0; // one of:
 	Kind kind; // Node of this type
 //	Valtype valtype; // doesn't make sense here but try to avoid overlap with type enum for future compatibility?
 	Classes classe;// c_string etc

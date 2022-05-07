@@ -5,6 +5,7 @@
 #include "wasm_helpers.h"
 #include "Util.h"
 //#include "NodeTypes.h"
+#include <cstdlib> // OK in WASM!
 
 #define MAX_STRING_LENGTH 10000
 #define MAX_DATA_LENGTH 0x1000000
