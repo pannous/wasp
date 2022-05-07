@@ -787,6 +787,7 @@ void testWasmModuleExtension() {
 }
 
 
+// assert_run currently very slow 5 sec, used to be < .1 sec why??
 void testWasmRuntimeExtension() {
 	assert_run("x=123;x + 4 is 127", true);
 	assert_run("atoi0('123'+'456')", 123456);
@@ -1172,7 +1173,10 @@ void testMathLibrary() {
 void testMultiValue() {
 	assert_emit("1,2,3", Node(1, 2, 3, 0));
 	assert_emit("1;2;3", 3);
+	print("OK1");
 	assert_emit("'OK'", "OK");
+	print("OK3");
+
 //	assert_emit("'OK'", "OK");
 }
 
