@@ -14,7 +14,7 @@ LINK_DIRECTORIES(/usr/local/lib)
 #set(RELEASE 0) # no tests todo VS:
 #set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
-#set(DEBUG 1)
+set(DEBUG 1)
 #set(CONSOLE 1)
 #ADD_DEFINITIONS(-DUSE_READLINE)
 

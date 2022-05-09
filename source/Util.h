@@ -83,3 +83,4 @@ bool fileExists(String filename);
 
 String findFile(String filename);// empty() if not found
 //char *findFile(char* filename);// 0 if not found
+String load(String file);
