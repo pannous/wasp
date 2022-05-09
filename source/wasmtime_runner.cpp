@@ -209,9 +209,11 @@ wasm_wrap *link_import(String name) {
 	if (name == "powi") return &wrap_powi;
 	if (name == "atoi") return &wrap_atoi;
 
+	// todo: merge!
 	if (name == "_Z5raisePKc") return &wrap_exit;
 	if (name == "_ZSt9terminatev") return &wrap_exit;
 	if (name == "__cxa_atexit") return &wrap_exit;
+
 	if (name == "__cxa_demangle") return &wrap_nop;
 	if (name == "proc_exit") return &wrap_exit;
 	if (name == "panic") return &wrap_exit;
@@ -348,7 +350,16 @@ int run_wasm(unsigned char *data, int size) {
 	error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, 1, &trap);
 	if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);
 	int32_t result = results.of.i32;
-	printf("RESULT: %d\n", result);
+
+	// don't touch 0x80000000 sign bit
+	if (result & 0x10000000) { // todo negative numbers ;)
+		// smart pointers!
+		auto smart_pointer = result & 0x00FFFFFF;// data part
+		if ((result & 0xF0000000) == 0x10000000 /* and abi=wasp */ ) {
+			// smart pointer for string
+			printf("» %x %s\n", smart_pointer, ((char *) wasm_memory) + smart_pointer);
+		}
+	} else printf("RESULT: %d\n", result);
 
 	wasmtime_module_delete(module);
 	return result;

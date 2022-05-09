@@ -54,3 +54,4 @@ extern const Node Long;//.setType(type);
 // todo: but what about interactions with other APIs? add explicit i32 !
 // todo: in fact hide most of this under 'number' magic umbrella
 extern Map<String, Node> types;
+int run_wasm_file(chars file);
