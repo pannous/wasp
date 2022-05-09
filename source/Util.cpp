@@ -1113,3 +1113,23 @@ float log(float y, float base) {
 //float log2(float y) noexcept{
 //	return ln(y)*0.69314718;
 //}
+
+
+String load(String file) {
+#if WASM
+	return "";
+#else
+	FILE *ptr;
+	ptr = fopen(file, "rb");  // r for read, b for binary
+	if (!ptr)error("File not found "s + file);
+	fseek(ptr, 0L, SEEK_END);
+	int size = ftell(ptr);
+	unsigned char *buffer = (unsigned char *) malloc(size);
+	fseek(ptr, 0L, SEEK_SET);
+	int ok = fread(buffer, sizeof(buffer), size, ptr);
+	if (!ok)error("Empty file or error reading "s + file);
+	String *binary = new String((char *) buffer, size, false);
+//	assert_equals(binary->length, size);
+	return *binary;
+#endif
+}
