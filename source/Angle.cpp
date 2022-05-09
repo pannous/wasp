@@ -1068,6 +1068,19 @@ Node &analyze(Node &node, String context) {
 //	return *grouped.clone();// why?? where is leak?
 }
 
+
+int run_wasm_file(chars file) {
+	let buffer = load(String(file));
+#if RUNTIME_ONLY
+	error("RUNTIME_ONLY");
+	return -1;
+#else
+	prepareContext();
+	return run_wasm((bytes) buffer.data, buffer.length);
+#endif
+}
+
+
 void preRegisterSignatures() {
 	// ORDER MATTERS: will be used for functionIndices later!
 	// read_wasm doesn't have return types!
@@ -1197,6 +1210,17 @@ Node emit(String code) {// emit and run!
 	binary = emit(charged);
 //	code.link(wasp) more beautiful with multiple memory sections
 	int result = binary.run();// check js console if no result
+
+	// don't touch 0x80000000 sign bit
+	if (result & 0x10000000) { // todo negative numbers ;)
+		// smart pointers!
+		auto smart_pointer = result & 0x00FFFFFF;// data part
+		if ((result & 0xF0000000) == 0x10000000 /* and abi=wasp */ ) {
+			// smart pointer for string
+			return Node(((char *) wasm_memory) + smart_pointer);
+		}
+	}
+
 	return Node(result);
 #endif
 }

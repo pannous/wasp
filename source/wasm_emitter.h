@@ -40,3 +40,53 @@ Code emitSetter(Node node, Node &value, String context);
 
 //Code emitExpression(Node *nodes, String context);
 Code emitExpression(Node &node, String context/*="main"*/);
+
+
+[[nodiscard]]
+Code emitBlock(Node &node, String functionContext);
+
+//Code emitExpression(Node *node)__attribute__((warn_unused_result));
+//Code emitExpression(Node *node)__attribute__((error_unused_result));
+
+
+//Map<int, String>
+List<String> collect_locals(Node node, String context);
+
+
+[[nodiscard]]
+Code cast(Valtype from, Valtype to);
+
+[[nodiscard]]
+Code cast(Node &from, Node &to);
+
+[[nodiscard]]
+Code emitStringOp(Node op, String context);
+
+//bytes
+[[nodiscard]]
+Code signedLEB128(int i);
+
+[[nodiscard]]
+Code encodeString(char *String);
+
+[[nodiscard]]
+Code emitValue(Node node, String context);
+// ≠ emitData
+
+// write data to DATA SEGMENT (vs emitValue on stack)
+// MAY return i32.const(pointer)
+[[nodiscard]]
+Code emitData(Node node, String context);
+
+//typedef Code any;
+//typedef Bytes any;
+
+// class Code;
+
+// Code flatten (any arr[]) {
+// [].concat.apply([], arr);
+
+
+Valtype fixValtype(Valtype &valtype);
+
+Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);

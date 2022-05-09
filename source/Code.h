@@ -293,6 +293,12 @@ public:
 		return *this;
 	}
 
+	Code addConst32(unsigned int i) {
+		add(0x41 /*i32_const*/);
+		push(i, false, true);
+		return *this;
+	}
+
 	Code addConst(long i) {
 		add(0x41 /*i32_const*/);
 		push(i);
@@ -697,8 +703,20 @@ class Variable {
 	Node *descriptor;// ?
 };
 
+enum ABI {
+//	unknown,
+	erased = 0, // unknown type info erased
+	native = 0, // wasm/c
+	cpp, // _Z5abs_ff demangle
+	wasp,
+	wasp_smart_pointers, // compatible with lacking multi-value in wasm engine
+	meta, // types specified in custom meta section
+	meta_names, // types specified via naming convention square__int_as_int, square__float_as_float
+};
+
 class Signature {
 public:
+	ABI abi = wasp_smart_pointers;//erased;
 	String function = "";// could be reused by multiple, but useful to debug
 // todo: add true Wasp Type Signature to wasm Valtype Signature
 	Map<int, Valtype> types;

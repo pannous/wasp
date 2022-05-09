@@ -1726,41 +1726,12 @@ char newline = '\n';
 //"_main", referenced from:
 //implicit entry/start for main executable
 
-String load(String file) {
-#if WASM
-	return "";
-#else
-	FILE *ptr;
-	ptr = fopen(file, "rb");  // r for read, b for binary
-	if (!ptr)error("File not found "s + file);
-	fseek(ptr, 0L, SEEK_END);
-	int size = ftell(ptr);
-	unsigned char *buffer = (unsigned char *) malloc(size);
-	fseek(ptr, 0L, SEEK_SET);
-	int ok = fread(buffer, sizeof(buffer), size, ptr);
-	if (!ok)error("Empty file or error reading "s + file);
-	String *binary = new String((char *) buffer, size, false);
-//	assert_equals(binary->length, size);
-	return *binary;
-#endif
-}
-
 Node compile(String file) {
 	String code = load(file);
 #if RUNTIME_ONLY
 	return Node("Wasp compiled without emitter");
 #else
 	return emit(code);
-#endif
-}
-
-int run_wasm_file(chars file) {
-	let buffer = load(String(file));
-#if RUNTIME_ONLY
-	error("RUNTIME_ONLY");
-	return -1;
-#else
-	return run_wasm((bytes) buffer.data, buffer.length);
 #endif
 }
 
