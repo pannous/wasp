@@ -2112,6 +2112,8 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	assert_emit("'oki'", "oki");
+
 //	assert_emit("1;1", 1);
 //	testMultiValue();
 

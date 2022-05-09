@@ -63,6 +63,8 @@ String start = "main";
 
 Valtype arg_type = voids;// autocast if not int
 Valtype last_type = voids;// autocast if not int
+Type last_typo = Kind::unknown;
+Node *last_object = 0;
 
 enum MemoryHandling {
 	import_memory,
@@ -103,28 +105,6 @@ Code Call(char *symbol);//Node* args
 //public:
 //	int length;
 //};
-
-//bytes
-[[nodiscard]]
-Code signedLEB128(int i);
-
-[[nodiscard]]
-Code encodeString(char *String);
-
-
-// write data to DATA SEGMENT (vs emitValue on stack)
-// MAY return i32.const(pointer)
-[[nodiscard]]
-Code emitData(Node node, String context);
-
-//typedef Code any;
-//typedef Bytes any;
-
-// class Code;
-
-// Code flatten (any arr[]) {
-// [].concat.apply([], arr);
-
 
 
 // https://pengowray.github.io/wasm-ops/
@@ -355,34 +335,6 @@ bytes ieee754(double num) {
 	return flip;
 }
 //Code emitExpression (Node* nodes);
-
-[[nodiscard]]
-Code emitBlock(Node &node, String functionContext);
-
-//Code emitExpression(Node *node)__attribute__((warn_unused_result));
-//Code emitExpression(Node *node)__attribute__((error_unused_result));
-
-
-//Map<int, String>
-List<String> collect_locals(Node node, String context);
-
-
-[[nodiscard]]
-Code cast(Valtype from, Valtype to);
-
-[[nodiscard]]
-Code cast(Node &from, Node &to);
-
-[[nodiscard]]
-Code emitStringOp(Node op, String context);
-
-[[nodiscard]]
-// ≠ emitData
-Code emitValue(Node node, String context);
-
-Valtype fixValtype(Valtype &valtype);
-
-Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 
 // pure data ready to be emitted
 bool isProperList(Node &node) {
@@ -703,6 +655,9 @@ Code emitGetGlobal(Node node /* context : global ;) */) {
 Code emitValue(Node node, String context) {
 	Code code;
 	String &name = node.name;
+	last_typo = node.kind;// careful Kind::strings should map to Classes::c_string after emission!
+	last_object = &node;// careful, could be on stack!
+	// code.push(last_typo) only on return statement
 	switch (node.kind) {
 		case nils:// also 0, false
 			code.addByte((byte) i32_auto);// nil is pointer
@@ -813,6 +768,7 @@ Code emitValue(Node node, String context) {
 	if (node.type) {
 		code.add(cast(node, *node.type));
 	}
+	// code.push(last_typo) only on return statement
 	return code;
 }
 
@@ -1589,6 +1545,8 @@ Code emitBlock(Node &node, String context) {
 	Code inner_code_data = emitExpression(node, context);
 
 	// locals can still be updated in emitExpression
+
+	// 1. Emit block type header
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; i++) {
 		auto name = locals[context][i];// add later to custom section, here only for debugging
@@ -1603,12 +1561,26 @@ Code emitBlock(Node &node, String context) {
 		block.addByte(valtype);
 	}
 
-//	if (inner_code_data.length == 0)
-//		return Code();// Drop empty functions!? too late: typeSection already done! todo?
+	// 2. emit code
 	block.push(inner_code_data);
+
+	// 3. emit return fixtures
 	// todo multi-value
-	Valtype return_type = functionSignatures[context].return_types.last();
+	auto returnTypes = functionSignatures[context].return_types;
+	//	for(Valtype return_type: returnTypes) uh, casting should have happened before for  multi-value
+	Valtype return_type = returnTypes.last();
 	// switch back to return_types[context] for block?
+
+	auto abi = wasp_smart_pointers;// functionSignatures[context].abi;
+	if (abi == wasp_smart_pointers) {
+//		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
+//		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string
+		if (last_type == charp)block.addConst32(0x10000000).addByte(i32_or);// string
+//		if(last_type==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string
+
+//		if(last_type==angle)block.addByte(i32_or).addInt(0xA000000);//
+//		if(last_type==pointer)block.addByte(i32_or).addInt(0xF000000);//
+	}
 	if (last_type == none) last_type = voids;
 	if (return_type != last_type) {
 		if (return_type == Valtype::voids and last_type != Valtype::voids)
@@ -1618,6 +1590,10 @@ Code emitBlock(Node &node, String context) {
 		else
 			block.add(cast(last_type, return_type));
 	}
+
+//	if(context=="main" or (functionSignatures[context].abi==wasp and returnTypes.size()<2))
+//		block.addInt(last_typo);// should have been added to signature before, except for main!
+// make sure block has correct wasm type signature!
 
 //if not return_block
 	block.addByte(return_block);
