@@ -73,16 +73,16 @@ void BindImports(Module *module, std::vector<Ref> &imports, Store &store) {
 	bool hostPrint = true;//false;
 	// convoluted shit, I don't like it
 	for (auto &&import : module->desc().imports) {
-		auto func_type = *wabt::cast<FuncType>(import.type.type.get());
-		if (import.type.name == "square")imports.push_back(HostFunc::New(store, func_type, do_square).ref());
-		else if (import.type.name == "puti")imports.push_back(HostFunc::New(store, func_type, do_puti).ref());
-		else if (import.type.name == "putf")imports.push_back(HostFunc::New(store, func_type, do_putf).ref());
-		else if (import.type.name == "puts")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
-		else if (import.type.name == "print")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
-		else if (import.type.name == "proc_exit")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
-		else if (import.type.name == "panic")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
-		else if (import.type.name == "raise")imports.push_back(HostFunc::New(store, func_type, do_raise).ref());
-		else if (import.type.name == "√")imports.push_back(HostFunc::New(store, func_type, do_sqrt).ref());
+		auto func_type = *wabt::cast<FuncType>(import.clazz.clazz.get());
+		if (import.clazz.name == "square")imports.push_back(HostFunc::New(store, func_type, do_square).ref());
+		else if (import.clazz.name == "puti")imports.push_back(HostFunc::New(store, func_type, do_puti).ref());
+		else if (import.clazz.name == "putf")imports.push_back(HostFunc::New(store, func_type, do_putf).ref());
+		else if (import.clazz.name == "puts")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
+		else if (import.clazz.name == "print")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
+		else if (import.clazz.name == "proc_exit")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
+		else if (import.clazz.name == "panic")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
+		else if (import.clazz.name == "raise")imports.push_back(HostFunc::New(store, func_type, do_raise).ref());
+		else if (import.clazz.name == "√")imports.push_back(HostFunc::New(store, func_type, do_sqrt).ref());
 		else imports.push_back(Ref::Null);
 		// By default, just push an null reference. This won't resolve, and instantiation will fail.
 	}
@@ -124,9 +124,9 @@ int run_wasm(bytes buffer, int buf_size) {
 	}
 
 	for (wabt::interp::ExportDesc export_ : module_desc.exports) {
-		if (export_.type.type->kind != wabt::ExternalKind::Func) continue;
-		if (export_.type.name != "main" and export_.type.name != "maine") continue;
-		auto *func_type = wabt::cast<wabt::interp::FuncType>(export_.type.type.get());
+		if (export_.clazz.clazz->kind != wabt::ExternalKind::Func) continue;
+		if (export_.clazz.name != "main" and export_.clazz.name != "maine") continue;
+		auto *func_type = wabt::cast<wabt::interp::FuncType>(export_.clazz.clazz.get());
 		if (func_type->params.empty()) {
 			RefVec funcs = instance->funcs();
 			auto func = store.UnsafeGet<wabt::interp::Func>(funcs[export_.index]);

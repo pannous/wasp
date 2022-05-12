@@ -454,7 +454,7 @@ bool String::empty() const {//this==0 in testMarkMulti!
 //#endif
 	if (this == 0)return true;
 	if ((long long) data == 0x1ffffffff || (long long) data >= 0xffffffff00000000 ||
-	    ((long long) data >= 0x100000000 and (long long) data <= 0x100100000))
+	    ((long long) data >= 0x100000000LL and (long long) data <= 0x100100000))
 		return false;// todo: valgrind debug corruption, usually because of not enough memory
 	return length == 0 || !data || (long) data > MEMORY_SIZE || data[0] == 0 || data == object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO

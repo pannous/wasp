@@ -162,10 +162,11 @@ Valtype mapTypeToWasm(Node &n) {
 	if (n.kind == nils)return voids;// mapped to int32 later: ø=0
 //	if (n.kind == reals)return float32;// float64; todo why 32???
 	if (n.kind == reals)return float64;
-	if (n.kind == longs)return int32;// int64; todo
+	if (n.kind == longs)return int32;// int64; todo!!
 	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
 	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
 	if (n.kind == objects)return array;// todo
+//	if (n.kind.type == int_array)return array;// todo
 	if (n.kind == call) {
 		// todo multi-value 2.  not a wasm type, maybe get signature?
 		return functionSignatures[n.name].return_types.last();

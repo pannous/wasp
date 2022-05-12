@@ -282,7 +282,7 @@ void testSmartTypes(){
 	printf(">>>%s<<<", &memoryChars[0x1000]);
 	check(Node(0x90001000)==hi);
 
-	short typ=getSmartType(0x10000000);
+	short typ=getSmartType(string_header_32);
 	check(typ==0x1);
 	printf("%08x", u'√');// ok 0x221a
 	printf("%08x", U'√');// ok 0x221a

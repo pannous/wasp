@@ -173,7 +173,7 @@ static void ApplyRelocation(const Section *section, const Reloc *r) {
 	Index cur_value = 0, new_value = 0;
 	ReadU32Leb128(section_data + r->offset, section_data + section_size, &cur_value);
 
-	switch (r->type) {
+	switch (r->clazz) {
 		case RelocType::FuncIndexLEB: {
 			new_value = binary->RelocateFuncIndex(cur_value);
 			// if calls are padded
@@ -222,7 +222,7 @@ static void ApplyRelocation(const Section *section, const Reloc *r) {
 		case RelocType::MemoryAddressTLSSLEB:
 		case RelocType::MemoryAddressTLSI32:
 		case RelocType::TagIndexLEB:
-			WABT_FATAL("unhandled relocation type: %s\n", GetRelocTypeName(r->type));
+			WABT_FATAL("unhandled relocation type: %s\n", GetRelocTypeName(r->clazz));
 			// uh much to do!
 	}
 // THIS Write only makes sense for LEB types!
@@ -438,7 +438,7 @@ void Linker::WriteGlobalImport(const GlobalImport &import) {
 	WriteStr(&stream_, import.module_name, "import module name");
 	WriteStr(&stream_, import.name, "import field name");
 	stream_.WriteU8Enum(ExternalKind::Global, "import kind");
-	WriteType(&stream_, import.type);
+	WriteType(&stream_, import.clazz);
 	stream_.WriteU8(import.mutable_, "global mutability");
 }
 

@@ -376,6 +376,8 @@ bool Node::operator==(Node &other) {
 		return value.real == other.value.longy;
 	if (kind == bools or other.kind == bools) // 1 == true
 		return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
+//	if (kind.type == int_array and other.kind.type == int_array)
+//		return value.real == other.value.longy;
 
 	auto a1 = isNil();
 	auto a2 = other.isNil();
@@ -746,6 +748,17 @@ String Node::serializeValue(bool deep) const {
 	if (!this)return "";
 	String wasp = "";
 	Value val = value;
+//	switch (kind.type) {
+//		case int_array:
+//			wasp = "[";
+//			for (int i = 0; i < length; i++) {
+//				wasp=wasp+((int*)value.data)[i]+", ";
+//			}
+//			wasp += "]";
+//			return wasp;
+//		default:
+//			;// pass through
+//	}
 	switch (kind) {
 		case strings:
 			return val.data ? "\""s + val.string + "\"" : "";
@@ -784,6 +797,7 @@ String Node::serializeValue(bool deep) const {
 			return name;
 		case functor:
 			return name;
+
 		case declaration:
 		case expression:
 		case assignment:
@@ -1183,7 +1197,8 @@ chars typeName(Kind t) {
 
 chars typeName(Type t) {
 	if (t.value < 0x1000)return typeName(t.kind);
-	if (t.value > 0x10000)return t.type->name;
+	if (t.value == Primitive::int_array)return "int[]";
+	if (t.value > 0x10000)return t.clazz->name;
 	error(str("MISSING Type name mapping ") + t.value);
 	return "ƒ";
 }

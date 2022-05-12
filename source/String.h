@@ -167,6 +167,7 @@ extern char *empty_string;// = "";
 
 //char null_value[]={0};// todo make sure it's immutable!!
 
+// todo: make String struct-compatible with Node!?
 class String {
 // sizeof(Node) == 20 == 5 * 4 int(*)
 
@@ -184,10 +185,10 @@ private:
 	int codepoint_count = -1;
 
 public:
-	bool shared_reference = false;// length terminated substrings!
-
+	// memory layout different to chars with leb length header!
 	char *data{};
 	int length = -1;
+	bool shared_reference = false;// length terminated substrings!
 
 	String() {
 //		assert(null_value[0] == 0);
