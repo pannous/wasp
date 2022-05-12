@@ -323,12 +323,16 @@ int run_wasm(unsigned char *data, int size) {
 	ok = wasmtime_instance_export_get(context, &instance, "memory", 6, &memory_export);
 //	assert(ok);
 //	assert(memory_export.kind == WASMTIME_EXTERN_MEMORY);
-	wasmtime_memory_t memory = memory_export.of.memory;
-	uint8_t *memory_data = wasmtime_memory_data(context, &memory);
-	if (memory_data)
-		wasm_memory = memory_data;
-	else
-		trace("wasm module exports no memory");
+	if (ok) {
+		wasmtime_memory_t memory = memory_export.of.memory;
+		uint8_t *memory_data = wasmtime_memory_data(context, &memory);
+		if (memory_data)
+			wasm_memory = memory_data;
+		else
+			trace("wasm module exports no memory");
+	}
+//	else error("wasmtime_instance_export_get failed");
+
 
 //	wasmtime_memory_t memory(store_id:0/*store.id*/, 0);
 //wasmtime_store
@@ -350,13 +354,23 @@ int run_wasm(unsigned char *data, int size) {
 
 	wasmtime_val_t results;
 	wasmtime_func_t wasmtimeFunc = run.of.func;
+//	int nresults = wasm_func_result_arity(wasmFunc); // needs workaround in wasmtime
+	auto funcType = wasmtime_func_type(context, &wasmtimeFunc);
+	auto functypeResults = wasm_functype_results(funcType);
+	int nresults = functypeResults->size;
+	if (nresults > 1)
+		print("Using multi-value!");
 //	wasm_func_t* wasmFunc = (wasm_func_t*)&wasmtimeFunc;
-//	int nresults = wasm_func_result_arity(wasmFunc);
 //	nargs=wasm_func_param_arity if nargs>0 args =[…]
-	int nresults = 1;// todo how, wasmtime?
+//	int nresults = 1;// todo how, wasmtime?
 	error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, nresults, &trap);
 	if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);
 	int32_t result = results.of.i32;
+	if (nresults > 1) {
+		wasmtime_val_t results2 = *(&results + 1);
+		int32_t result2 = results2.of.i32;
+		printf("RESULT2: %d\n", result2);
+	}
 
 	// don't touch 0x80000000 sign bit
 	if (result & string_header_32) { // todo negative numbers ;)
