@@ -19,7 +19,7 @@ int import_count = 0;
 short builtin_count = 0;// function_offset - import_count - runtime_offset;
 
 //bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
-char *data;// any data to be stored to wasm: values of variables, strings, nodes etc
+char *data;// any data to be stored to wasm: values of variables, strings, nodes etc ( => memory in running app)
 //int data_index_start = 0;
 int data_index_end = 0;// position to write more data = end + length of data section
 int last_data = 0;// last pointer outside stack
@@ -349,11 +349,50 @@ bool isProperList(Node &node) {
 	return true;
 }
 
+void emitIntData(int i) {// append int to wasm data memory
+	*(int *) (data + data_index_end) = i;
+	data_index_end += 4;
+}
 
 [[nodiscard]]
-Code emitArray(Node &node, String context) {
+Code emitPrimitiveArray(Node &node, String context) {
 	let code = Code();
+	if (!(node.kind == buffers)) todo("arrays of type "s + typeName(node.kind));
+	emitIntData(array_header_32); // array header
+	int length = *(int *) node.value.data;// very fragile :(
+	emitIntData(length);
+//	emitIntData(array_header_32 | int_array << 4 | node.length);
+//	emitIntData(node.kind |  node.length); // save 4 bytes, rlly?
+	//	if pure_array:
+	int pointer = data_index_end; // return pure data
+	for (int i = 0; i < length; i++) {
+//			if (node.kind.type == int_array) {
+		int v = ((int *) node.value.data)[i];
+		emitIntData(v);
+	}
+	code.addConst32(pointer);
+	if (multi_return) {
+//		code.addConst32(array_header_32 | node.length);// combined smart pointer? nah
+//	code.addConst32(array_header_32);
+//	code.addConst32(node.length);
+	}
+	last_type = mapTypeToWasm(node);
+	return code;
+}
+
+[[nodiscard]]
+// todo emitPrimitiveArray vs just emitNode as it is (with child*)
+Code emitArray(Node &node, String context) {
+//	if (node.kind.type == int_array)
+	if (node.kind == buffers)
+		return emitPrimitiveArray(node, context);
+	let code = Code();
+//	code.addConst32(node.length);
 	int pointer = data_index_end;
+	emitIntData(array_header_32);
+	emitIntData(node.kind);
+	emitIntData(node.length);
+
 	for (Node &child: node) {
 // todo: smart pointers?
 		code.add(emitData(child, context));// pointers in flat i32/i64 format!
@@ -364,12 +403,10 @@ Code emitArray(Node &node, String context) {
 	}
 	if (not node.name.empty())
 		referenceIndices.insert_or_assign(ref, pointer);
-	code.add(emitData(Node(0), context));// terminate list with 0.
+//	code.add(emitData(Node(0), context));// terminate list with 0.
 	last_data = pointer;
-//	last_type = array;
+	last_type = array;
 	return code;// pointer
-// todo: emit length header! 100% neccessary for [2 1 0 1 2] and index bound checks
-//	last_data = pointer;
 //	return code.addConst(pointer);// once written to data section, we also want to use it immediately
 }
 
@@ -1575,9 +1612,13 @@ Code emitBlock(Node &node, String context) {
 	if (abi == wasp_smart_pointers) {
 //		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
 //		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string
-		if (last_type == charp)block.addConst32(0x10000000).addByte(i32_or);// string
+		if (last_typo.type == int_array)
+			block.addConst32(array_header_32).addByte(i32_or); // todo: other arrays
+		else if (last_type == charp)
+			block.addConst32(string_header_32).addByte(i32_or);// string
+		else if (last_type == array)
+			block.addConst32(array_header_32).addByte(i32_or);// native array (OF WHAT?)
 //		if(last_type==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string
-
 //		if(last_type==angle)block.addByte(i32_or).addInt(0xA000000);//
 //		if(last_type==pointer)block.addByte(i32_or).addInt(0xF000000);//
 	}
