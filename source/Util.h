@@ -20,7 +20,8 @@ if(debug_reader)printf("!=");put(β);if(debug_reader)printf("\n%s:%d\n",__FILE__
 
 
 #define check(test) printf("CHECKING %s\n%s:%d\n",#test,__FILE__,__LINE__); \
-if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+  if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+
 
 extern void info(chars);
 

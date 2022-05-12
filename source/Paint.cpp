@@ -118,7 +118,7 @@ void checkInput() {
 	SDL_Event test_event;
 	SDL_KeyboardEvent key;
 	while (SDL_PollEvent(&test_event)) {
-		switch (test_event.type) {
+		switch (test_event.clazz) {
 //			 case SDL_MOUSEMOTION:
 			case SDL_MOUSEBUTTONDOWN:
 				cleanUp();

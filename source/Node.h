@@ -111,16 +111,18 @@ union Value {
 //	Node *node;
 //};
 
+// The order of Type,Value is reverse to the Wasp ABI return tuple Value(int32), Type(int32)
 class Node {
 	// sizeof(Node) == 64 (20 for name,
 	short _node_header_ = 0xDADA; //
 public:
-//	::Kind kind = unknown;// improved from 'undefined' upon construction
-	Type kind = unknown;// improved from 'undefined' upon construction
+	::Kind kind = unknown;// improved from 'undefined' upon construction
+//	Type kind = unknown;// improved from 'undefined' upon construction
+	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
+
 	Node *type = 0;// variable/reference type or object class?
 
 	String name = empty_name;// nil_name;
-	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 //	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
 	Node *children = nullptr;// LIST, not link. block body content
@@ -219,8 +221,9 @@ public:
 	explicit Node(float nr) : Node((double) nr) {}
 
 // how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
-// Pass the number of arguments as the first variable
+// Pass the number of arguments as the first variable OR
 // Require the last variable argument to be null, zero or whatever
+// BOXED
 	explicit Node(int a, int b, ...) {
 		kind = objects;// groups list
 		add(Node(a).clone());
@@ -233,6 +236,27 @@ public:
 		}
 		va_end(args);
 	}
+
+// stupid little helper function to create ad-hoc arrays,
+// MUST NOT CONTAIN 0, as it is
+// 0 terminated!! MUST END WITH 0
+// Node(1,2,3,0) == [1,2,3]
+//	explicit Node(int a, int b, ...) {
+//		kind=buffers;//int_array;
+//		value.data= malloc(10*sizeof(int));
+//		((int*)value.data)[length++]=a;
+//		// ⚠️ don't abuse node length for array length !?! children[length-1] might CRASH!
+//		va_list args;// WORK WITHOUT WASI!!
+//		va_start(args, b);// needed to distinguish Node(int nr)
+//		int i = b;
+//		while (i) {
+//			((int*)value.data)[length++]=i;
+//			i = (int) va_arg(args, int);
+//			if(length%10==0)value.data= malloc(10*sizeof(int));
+//		}
+//		va_end(args);
+//		length=0;// no children! but where is length??
+//	}
 
 
 	// why not auto null terminated on mac?
@@ -374,8 +398,8 @@ public:
 	Node &first() {
 		if (length > 0)return children[0];
 		if (children)return children[0]; // hack for missing length!
-		if (kind.kind == assignment and value.node)return *value.node;// todo sure??, could be direct type!?
-		if (kind.kind == operators and next)return *next;// todo remove hack
+		if (kind == assignment and value.node)return *value.node;// todo sure??, could be direct type!?
+		if (kind == operators and next)return *next;// todo remove hack
 		return *this;// (x)==x   danger: loops
 //		error("No such element");
 //		return ERROR;
@@ -395,7 +419,7 @@ public:
 
 // Todo: deep cloning whole tree? definitely clone children
 		if (childs) {
-			if (kind.kind == key and value.data)
+			if (kind == key and value.data)
 				copy->value.node = value.node->clone(false);
 			copy->children = 0;
 			copy->length = 0;
@@ -462,7 +486,7 @@ public:
 
 
 	String string() const {
-		if (kind.kind == strings)
+		if (kind == strings)
 			return *value.string;
 		return name;
 		error((char *) (String("WRONG TYPE ") + String(kind)));
