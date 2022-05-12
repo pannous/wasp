@@ -14,6 +14,8 @@ Node &result = *new Node();
 
 // todo assert_is ≠ assert_run == assert_emit_with_wasm_runtime!
 
+#define check_eq assert_equals
+
 #undef assert // assert.h:92 not as good!
 #define assert(condition) try{\
 if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
@@ -26,7 +28,6 @@ if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else prin
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);exit(1);}
-#define check_eq assert_equals
 
 
 bool assert_equals_x(String a, String b, char *context = "") {

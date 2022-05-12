@@ -11,6 +11,8 @@
 #import "wasm_helpers.h" // IMPORT so that they don't get mangled!
 #include "wasm_emitter.h"
 
+bool multi_return = false;
+
 List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ", 0};
 
 Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
@@ -1183,6 +1185,37 @@ int runtime_emit(String prog) {
 	return result;
 }
 
+// smart pointers returned if ABI does not allow multi-return, as in int main(){}
+Node smartNode(int smartPointer32) {
+	auto result = smartPointer32;
+	auto smart_pointer = result & 0x00FFFFFF;// data part
+	if ((result & 0xF0000000) == array_header_32 /* and abi=wasp */ ) {
+		// smart pointer to smart array
+		int *index = ((int *) wasm_memory) + smart_pointer;
+		int kind = *index++;
+		if (kind == array_header_32)
+			kind = *index++;
+		int len = *index++; // todo: leb128 vector later
+		Node arr = Node();
+//		arr.kind.value = kind;
+		int pos = 0;
+		while (len-- > 0) {
+			auto val = index[pos++];
+			arr.add(new Node(val));
+		}
+		arr.kind = objects;
+//			check_eq(arr.length,len);
+//			check(arr.type=…
+		return arr;
+	}
+	if ((result & 0xF0000000) == string_header_32 /* and abi=wasp */ ) {
+		// smart pointer for string
+		return Node(((char *) wasm_memory) + smart_pointer);
+	}
+	error1("missing smart pointer type "s + typeName(Type(smartPointer32)));
+	return Node();
+}
+
 // todo dedup runtime_emit!
 //Node emit(String code, ParseOptions options) {
 Node emit(String code) {// emit and run!
@@ -1210,21 +1243,14 @@ Node emit(String code) {// emit and run!
 	binary = emit(charged);
 //	code.link(wasp) more beautiful with multiple memory sections
 	int result = binary.run();// check js console if no result
-
 	// don't touch 0x80000000 sign bit
-	if (result & 0x10000000) { // todo negative numbers ;)
-		// smart pointers!
-		auto smart_pointer = result & 0x00FFFFFF;// data part
-		if ((result & 0xF0000000) == 0x10000000 /* and abi=wasp */ ) {
-			// smart pointer for string
-			return Node(((char *) wasm_memory) + smart_pointer);
-		}
+	if (result & 0x70000000) { // todo negative numbers ;)
+		return smartNode(result);
 	}
 
 	return Node(result);
 #endif
 }
-
 
 
 float function_precedence = 1000;

@@ -295,6 +295,7 @@ public:
 
 	Code addConst32(unsigned int i) {
 		add(0x41 /*i32_const*/);
+		if (i > 0x80000000)push(-(long) i, false, true);// stupid sign bit hack
 		push(i, false, true);
 		return *this;
 	}

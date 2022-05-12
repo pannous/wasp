@@ -5,6 +5,7 @@
 #include "wasm_reader.h"
 
 extern bool throwing;
+extern bool multi_return;// use modern wasm ABI?
 
 //#include "Map.h"
 // The Angle language is a semantic layer on top of Wasp data format

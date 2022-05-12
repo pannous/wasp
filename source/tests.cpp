@@ -2112,9 +2112,10 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	assert_emit("1,3", Node(1, 3, 0));
 	assert_emit("'oki'", "oki");
-
-//	assert_emit("1;1", 1);
+	assert_emit("{a:1,b:'ok'}", parse("{a:1,b:'ok'}"));
+	assert_emit("1;3", 3);
 //	testMultiValue();
 
 //	assert_is("x=(1 4 3);x#2", 4);
