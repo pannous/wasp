@@ -346,16 +346,23 @@ int run_wasm(unsigned char *data, int size) {
 //	byte_t* memory_data=wasm_memory_data((wasm_memory_t*)&memory);
 
 
+
+
 	wasmtime_val_t results;
-	error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, 1, &trap);
+	wasmtime_func_t wasmtimeFunc = run.of.func;
+//	wasm_func_t* wasmFunc = (wasm_func_t*)&wasmtimeFunc;
+//	int nresults = wasm_func_result_arity(wasmFunc);
+//	nargs=wasm_func_param_arity if nargs>0 args =[…]
+	int nresults = 1;// todo how, wasmtime?
+	error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, nresults, &trap);
 	if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);
 	int32_t result = results.of.i32;
 
 	// don't touch 0x80000000 sign bit
-	if (result & 0x10000000) { // todo negative numbers ;)
+	if (result & string_header_32) { // todo negative numbers ;)
 		// smart pointers!
 		auto smart_pointer = result & 0x00FFFFFF;// data part
-		if ((result & 0xF0000000) == 0x10000000 /* and abi=wasp */ ) {
+		if ((result & 0xF0000000) == string_header_32 /* and abi=wasp */ ) {
 			// smart pointer for string
 			printf("» %x %s\n", smart_pointer, ((char *) wasm_memory) + smart_pointer);
 		}
