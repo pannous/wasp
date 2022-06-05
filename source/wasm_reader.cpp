@@ -12,7 +12,7 @@
 #include "Util.h"
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
-
+String sectionName(Section section);
 // compare with wasm-objdump -h
 bool debug_reader = false;
 typedef unsigned char *bytes;

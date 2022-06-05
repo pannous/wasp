@@ -3,11 +3,15 @@
 //
 
 #include "wasm_merger.h"
-
+#include "wasm_helpers.h"
+#include "Code.h"
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
+#define WASM_MEMORY_SIZE 0xF0000000
 
 
 int total_functions = -1;
+
+Code createSection(Section sectionType, Code data);
 
 Code mergeTypeSection(Module lib, Module main) {
 	return createSection(type_section,

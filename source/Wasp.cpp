@@ -1666,14 +1666,17 @@ void handler(int sig) {
 //}
 
 #ifndef NO_TESTS
-#ifndef RUNTIME_ONLY
 
 #import "tests.cpp"
+
+#endif
+
+#ifndef RUNTIME_ONLY
+
 #include "WebServer.hpp"
 #include "wasm_merger_wabt.h"
 #include "WebApp.h"
 
-#endif
 #endif
 
 // todo: merge + cleanup all these eval parse run compile emit interpret
@@ -1881,6 +1884,7 @@ int main(int argc, char **argv) {
 //#ifndef RUNTIME_ONLY
 //extern int main(int argp, char **argv);
 extern "C" int _start() { // for wasm-ld
+	initSymbols();
 	return -42;// wasm-ld dummy should not be called, ok to test run_wasm("wasp.wasm")
 //	return main(0, 0);
 }

@@ -84,12 +84,13 @@ Node NegInfinity = Node("-Infinity");
 Node NaN = Node("NaN");
 
 void initSymbols() {
+	print("initSymbols");
 #ifdef WASI
 	return;
 #elif  WASM
 	//	__wasm_call_ctors();??
 		if (True.kind == bools)
-			; // error("Wasm DOES init symbols!?");
+			error("Wasm DOES init symbols!?");
 #else
 	return; // no need outside WASM
 #endif
@@ -1201,4 +1202,9 @@ chars typeName(Type t) {
 	if (t.value > 0x10000)return t.clazz->name;
 	error(str("MISSING Type name mapping ") + t.value);
 	return "ƒ";
+}
+
+chars typeName(const Type *t) {
+	if (not t)return "ø undefined";
+	return typeName(*t);
 }
