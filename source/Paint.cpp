@@ -63,7 +63,7 @@ void surface_fill_random() {
 		for (int y = 0; y < SCREEN_HEIGHT; y++) {
 			//			unsigned int c=0x00FFFFFF;//rand ();
 //			0x001122FF;//rand ();
-			unsigned int c = rand();
+			unsigned int c = rand();// cstdlib › rand NOT a true random!
 			dot(x, y, c);
 		}
 	}

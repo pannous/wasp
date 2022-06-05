@@ -330,7 +330,8 @@ int run_wasm(unsigned char *data, int size) {
 			wasm_memory = memory_data;
 		else
 			trace("wasm module exports no memory");
-	}
+	} else trace("wasm module exports no memory");
+
 //	else error("wasmtime_instance_export_get failed");
 
 
@@ -360,6 +361,8 @@ int run_wasm(unsigned char *data, int size) {
 	int nresults = functypeResults->size;
 	if (nresults > 1)
 		print("Using multi-value!");
+//	else
+//		print("Using single-value (smart pointer)");
 //	wasm_func_t* wasmFunc = (wasm_func_t*)&wasmtimeFunc;
 //	nargs=wasm_func_param_arity if nargs>0 args =[…]
 //	int nresults = 1;// todo how, wasmtime?
@@ -368,8 +371,10 @@ int run_wasm(unsigned char *data, int size) {
 	int32_t result = results.of.i32;
 	if (nresults > 1) {
 		wasmtime_val_t results2 = *(&results + 1);
-		int32_t result2 = results2.of.i32;
-		printf("RESULT2: %d\n", result2);
+		Type type = results2.of.i32;
+		if (type >= undefined and type <= arrays)
+			printf("TYPE: %s\n", (chars) type);
+		else printf("Unknown type %d\n", (int) type);
 	}
 
 	// don't touch 0x80000000 sign bit
