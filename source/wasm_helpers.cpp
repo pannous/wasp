@@ -190,6 +190,13 @@ void *calloc(size_t num, size_t size) //__attribute__((__malloc__, __warn_unused
 //#endif
 	return mem;
 }
+
+extern "C" void * memset ( void * ptr, int value, size_t num ){
+	int* p=(int*) ptr;
+	while(num-->0)*p++=value;
+	return ptr;//?
+}
+
 #endif
 // WOW CALLED INTERNALLY FROM C!!
 //extern "C"

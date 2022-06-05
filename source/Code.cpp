@@ -110,11 +110,6 @@ String sectionName(Section section) {
 	return "ERROR";
 }
 
-Code createSection(Section sectionType, Code data) {
-	return Code((char) sectionType, encodeVector(data));
-}
-
-
 chars typeName(Valtype t) {
 	switch (t) {
 		case Valtype::i32t:
@@ -183,4 +178,8 @@ Valtype mapTypeToWasm(Node &n) {
 	n.print();
 	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
 	return none;
+}
+
+Code createSection(Section sectionType, Code data) {
+	return Code((char) sectionType, encodeVector(data));
 }

@@ -22,7 +22,7 @@ set(DEBUG 1)
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
 
 #set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
-
+#ADD_DEFINITIONS(-DMULTI_VALUE)
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
 #ADD_DEFINITIONS(-DNO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
 
@@ -185,12 +185,12 @@ set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cp
 
 if (RUNTIME_ONLY)
     ADD_DEFINITIONS(-DRUNTIME_ONLY)
-    ADD_DEFINITIONS(-DNO_TESTS)
 else ()
     message("NOT RUNTIME_ONLY")
+    set(SOURCE_FILES ${SOURCE_FILES} source/Code.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/Interpret.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/Code.cpp source/wasm_emitter.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_emitter.cpp)
     if (WABT_MERGE)
         set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt/src/ ./source/wasm_merger_wabt.cpp ./source/wasm_reader_wabt.cpp)
         set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt_merge/binary-reader-linker.cc)

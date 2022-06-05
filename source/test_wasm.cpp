@@ -997,7 +997,6 @@ void testRecentRandomBugs() {
 	//	function attempted to return an incompatible value WHAT DO YOU MEAN!?
 #endif
 
-	assert_emit("puts('ok');(1 4 3)#2", 4);
 	assert_emit("‖-3‖", 3);
 	assert_emit("√100²", 100);
 	assert_emit("puts('ok');", 0);
@@ -1172,13 +1171,11 @@ void testMathLibrary() {
 }
 
 void testMultiValue() {
+#ifdef MULTI_VALUE
 	assert_emit("1,2,3", Node(1, 2, 3, 0));
 	assert_emit("1;2;3", 3);
-	print("OK1");
+#endif
 	assert_emit("'OK'", "OK");
-	print("OK3");
-
-//	assert_emit("'OK'", "OK");
 }
 
 void testAllWasm() {

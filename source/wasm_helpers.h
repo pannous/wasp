@@ -36,8 +36,9 @@ extern "C" char *memoryChars;
 #ifndef MEMORY_SIZE
 #ifdef WASM
 #define MEMORY_SIZE 117964800 // todo: usually via CMAKE!?
+#define WASM_MEMORY_SIZE 0xF0000000
 #else
-#define WASM_MEMORY_SIZE 0x20000000000
+//#define WASM_MEMORY_SIZE 0x20000000000
 
 //#define MEMORY_SIZE 0x2000000000000000  // ~ (2**64)/10 // what for?
 #define MEMORY_SIZE 0x2000000000000
@@ -139,6 +140,8 @@ void print(long i);
 //extern __inline int isalnum ( int c );
 int isalnum0(int c);
 
+extern "C" void *memset(void *ptr, int value, size_t num);
+
 #ifdef WASM
 #ifndef WASI
 void printf(chars, chars);
@@ -157,9 +160,7 @@ void printf(chars format, chars i, chars j, chars l);
 void printf(chars format, chars i, chars j, chars k, int l);
 #endif
 
-#ifdef WASM
-extern "C" void * memset ( void * ptr, int value, size_t num );
-#endif
+//extern "C" void * memset ( void * ptr, int value, size_t num ); not extern!
 //#ifndef WASI
 //#endif
 //int rand();
