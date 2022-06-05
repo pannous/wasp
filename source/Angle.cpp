@@ -11,9 +11,12 @@
 #import "wasm_helpers.h" // IMPORT so that they don't get mangled!
 #include "wasm_emitter.h"
 
-bool multi_return = false;
+List<String> builtin_constants
+#ifndef WASM
+		= {"pi", "π", "tau", "τ", "euler", "ℯ", 0}
+#endif
+;
 
-List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ", 0};
 
 Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 

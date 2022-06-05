@@ -81,7 +81,7 @@ MemoryHandling memoryHandling;// set later = export_memory; // import_memory not
 Map<String, int> functionIndices;
 Map<String, Code> functionCodes;
 Map<String, int> typeMap;
-
+Code createSection(Section sectionType, Code data);
 
 [[nodiscard]]
 Code Call(char *symbol);//Node* args
@@ -123,7 +123,8 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "-"))return i32_sub; // i32.sub
 		if (eq(s, "*"))return i32_mul; // i32.mul
 		if (eq(s, "/"))return i32_div; // i32.div
-		if (eq(s, "%"))return i32_rem; // i32.rem
+		if (eq(s, "%"))
+			return i32_rem; // i32.rem
 		if (eq(s, "=="))return i32_eq; // i32.eq
 		if (eq(s, "eq"))return i32_eq; // i32.eq
 		if (eq(s, "equals"))return i32_eq; // i32.eq
@@ -370,12 +371,15 @@ Code emitPrimitiveArray(Node &node, String context) {
 		int v = ((int *) node.value.data)[i];
 		emitIntData(v);
 	}
+#ifdef MULTI_VALUE
+	// and RETURN
+		code.addConst32(array_header_32 | node.length);// combined smart pointer? nah
+	//	code.addConst32(node.length);
+	//	code.addConst32(array_header_32);
+#endif
+// the last element of the stack is what is returned if no MULTI_VALUE
+// the return statement makes drops superfluous and just takes as many elements from stack as needed (and ignores/drops the rest!)
 	code.addConst32(pointer);
-	if (multi_return) {
-//		code.addConst32(array_header_32 | node.length);// combined smart pointer? nah
-//	code.addConst32(array_header_32);
-//	code.addConst32(node.length);
-	}
 	last_type = mapTypeToWasm(node);
 	return code;
 }
@@ -1602,13 +1606,23 @@ Code emitBlock(Node &node, String context) {
 	block.push(inner_code_data);
 
 	// 3. emit return fixtures
+#if MULTI_VALUE
 	// todo multi-value
+	// todo: we want the type to be on the stack IN FRONT of the value, so functions are backwards compatible and only depend on the func_type signature
+	// todo: we need to conserve the last value in case of casting
+//if(last_object)
+//	block.addConst32(mapTypeToWasm(*last_object));
+//else
+	block.addConst32(last_typo.value);
+#endif
+
 	auto returnTypes = functionSignatures[context].return_types;
 	//	for(Valtype return_type: returnTypes) uh, casting should have happened before for  multi-value
 	Valtype return_type = returnTypes.last();
 	// switch back to return_types[context] for block?
 
 	auto abi = wasp_smart_pointers;// functionSignatures[context].abi;
+
 	if (abi == wasp_smart_pointers) {
 //		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
 //		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string
@@ -1636,7 +1650,12 @@ Code emitBlock(Node &node, String context) {
 //		block.addInt(last_typo);// should have been added to signature before, except for main!
 // make sure block has correct wasm type signature!
 
+//	var [type, data]=result // wasm order PRESERVED! no stack inversion!
+
+
 //if not return_block
+// the return statement makes drops superfluous and just takes as many elements from stack as needed (ggf multiple and ignores/drops the rest!)
+// to check if all parts of wasp are working flawlessly we may drop the return_block
 	block.addByte(return_block);
 	block.addByte(end_block);
 	return block;
@@ -2250,3 +2269,4 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	if (runtime0)functionSignatures.clear(); // cleanup after NAJA
 	return code.clone();
 }
+

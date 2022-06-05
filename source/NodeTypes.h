@@ -5,6 +5,11 @@
 #ifndef MARK_NODETYPES_H
 #define MARK_NODETYPES_H
 
+union Type;
+
+chars typeName(const Type *t);
+
+
 //#include "Util.h" // for error() :(
 //#include "Code.h"
 
@@ -122,7 +127,11 @@ union Type {
 		if ((int) kind > 0x1000)error("erroneous or unsafe Type construction");
 	}
 
+	operator int() const { return this->value; }
+
 	operator Kind() const { return this->kind; }
+
+	operator chars() const { return typeName(this); }
 
 	Type(Type *o) {
 		value = o->value;
@@ -172,7 +181,5 @@ enum Modifiers {
 
 #endif //MARK_NODETYPES_H
 
-
 chars typeName(::Kind t);
-
 chars typeName(::Type t);

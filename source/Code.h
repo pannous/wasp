@@ -799,9 +799,12 @@ public:
 
 #ifndef RUNTIME_ONLY
 
-String sectionName(::Section section);
+//String sectionName(::Section section);
+String sectionName(Section section);
 
-Code createSection(::Section sectionType, Code data);
+Code createSection(Section sectionType, Code data);
+
+//Code createSection(::Section sectionType, Code data);
 
 Code &unsignedLEB128(long n);
 
