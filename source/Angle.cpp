@@ -383,11 +383,11 @@ bool isPrimitive(Node &node) {
 	return false;
 }
 
+Map<String, Node> types;
 const Node Long("Long", clazz);
 const Node Double("Double", clazz);//.setType(type);
 //const Node Double{.name="Double", .kind=classe};//.setType(type);
 //const Node Double{name:"Double", kind:classe};//.setType(type);
-Map<String, Node> types;
 
 // todo: see NodeTypes.h for overlap with numerical returntype integer …
 void initTypes() {
@@ -1247,10 +1247,9 @@ Node emit(String code) {// emit and run!
 //	code.link(wasp) more beautiful with multiple memory sections
 	int result = binary.run();// check js console if no result
 	// don't touch 0x80000000 sign bit
-	if (result & 0x70000000) { // todo negative numbers ;)
+	if (result & 0x70000000 and not(result & 0x80000000 /*negative numbers*/)) {
 		return smartNode(result);
 	}
-
 	return Node(result);
 #endif
 }
