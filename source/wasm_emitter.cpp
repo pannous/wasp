@@ -25,6 +25,8 @@ int data_index_end = 0;// position to write more data = end + length of data sec
 int last_data = 0;// last pointer outside stack
 Map<String *, long> stringIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
+Map<String, Node> referenceMap; // lookup types…
+
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
 Map<String, List<String>> aliases;
@@ -393,6 +395,8 @@ Code emitArray(Node &node, String context) {
 	let code = Code();
 //	code.addConst32(node.length);
 	int pointer = data_index_end;
+
+//	todo: sync with emitOffset
 	emitIntData(array_header_32);
 	emitIntData(node.kind);
 	emitIntData(node.length);
@@ -405,8 +409,10 @@ Code emitArray(Node &node, String context) {
 	if (node.name.empty() and node.parent) {
 		ref = node.parent->name;
 	}
-	if (not node.name.empty())
+	if (not node.name.empty()) {
 		referenceIndices.insert_or_assign(ref, pointer);
+		referenceMap[ref] = node;
+	}
 //	code.add(emitData(Node(0), context));// terminate list with 0.
 	last_data = pointer;
 	last_type = array;
@@ -462,6 +468,8 @@ Code emitOffset(Node offset_pattern, bool sharp, String context, int size, int b
 		int offset = (long) offset_pattern.value.longy;
 		if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
 		if (sharp) offset--;
+		if (size > 1) base += 4/*int*/* 3;// header, kind, lenght // todo string headers too?
+
 		//	if(offset_pattern>op[0].length)error("index out of bounds! %d > %d in %s (%s)"s % offset_pattern % ); // todo: get string size, array length etc
 		code.addConst(base + offset * size);
 	} else
@@ -483,8 +491,10 @@ Code emitIndexWrite(Node offset, Node value0, String context) {
 	store = store + emitOffset(offset, true, context, size, base);
 
 	if (value0.kind == strings)//todo stringcopy? currently just one char "abc"#2=B
-		store.addConst(value0.value.string->charAt(0));
-	else
+	{
+		char c = value0.value.string->charAt(0);
+		store.addConst(c);
+	} else
 		store = store + emitValue(value0, context);
 //	store.add(cast(last_type, valType));
 //	store.add(cast(valType, targetType));
@@ -532,6 +542,7 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 
 
 // assumes value is on top of stack
+// todo merge with emitIndexRead !
 [[nodiscard]]
 Code emitIndexPattern(Node op, String context) {
 	if (op.kind != patterns and op.kind != longs and op.kind != reference)error("op expected in emitIndexPattern");
@@ -540,14 +551,26 @@ Code emitIndexPattern(Node op, String context) {
 	int size = currentStackItemSize();
 	Node &pattern = op.first();
 	Code load = emitOffset(pattern, op.name == "#", context, size, base);
-	if (size == 1)load.add(i8_load);
+	if (size == 1)load.add(i8_load);// i32.load8_u
 	if (size == 2)load.add(i16_load);
 	if (size == 4)load.add(i32_load);
 	if (size == 8)load.add(i64_load);
 	load.add(size > 2 ? 0x02 : 0);// alignment (?)
 	load.add(0x00);// ?
-	if (size <= 4)last_type = int32;
+
+
+	if (size == 1)last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
+	else if (size <= 4)last_type = int32;
 	else last_type = int64;
+//	if(op.kind==reference){
+//		Node &reference = referenceMap[op.name];
+//		if(reference.type){
+//			last_typo.clazz = reference.type;
+//		}else if(reference.kind==strings)
+//			last_typo=
+//			else
+//			last_typo=reference.kind;
+//	}
 	return load;
 }
 
@@ -579,6 +602,14 @@ Code emitIndexRead(Node op, String context) {
 //			base += referenceIndices[ref];
 		else
 			error("reference not declared as array type: "s + ref);
+//		if(referenceMap.has(ref)) {
+//			Node &reference = referenceMap[ref];
+//			if(reference.type)
+//			last_type = mapTypeToWasm(*reference.type);
+////			last_typo.clazz
+//		}
+//		else error("reference should be mapped");
+
 	} else if (array.kind == strings) {
 		base += stringIndices[array.value.string];
 	} else
@@ -592,7 +623,8 @@ Code emitIndexRead(Node op, String context) {
 	if (size == 8)load.add(i64_load);
 	load.add(size > 2 ? 0x02 : 0);// alignment (?)
 	load.add(0x00);// ?
-	if (size <= 4)last_type = int32;
+	if (size == 1)last_type = codepoint32;
+	else if (size <= 4)last_type = int32;
 	else last_type = int64;
 	return load;
 	//	i32.const 1028
@@ -769,9 +801,12 @@ Code emitValue(Node node, String context) {
 					else
 						trace("reassigning reference "s + name + " to " + node.value.string);
 				}
-				if (node.parent and (node.parent->kind == reference or
-				                     node.parent->kind == key))// todo move up! todo key bad criterion!!
+				if (node.parent and (node.parent->kind == reference or node.parent->kind == key)) {
+					// todo move up! todo key bad criterion!!
 					referenceIndices.insert_or_assign(node.parent->name, data_index_end);// safe ref to string
+					referenceMap.insert_or_assign(node.parent->name, node); // lookup types, array length …
+				}
+
 				// we add an extra 0, unlike normal wasm abi, because we have space in data section
 				data_index_end += pString->length + 1;
 			}
@@ -1143,7 +1178,8 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 //				todo: convert if wrong type
 				code.addByte(tee_local);// set and get/keep
 				code.addByte(local_index);
-				last_type = localTypes[context][local_index];
+				// todo KF 2022-6-5 last_type set by emitExpression (?)
+//				last_type = localTypes[context][local_index];
 			} else {// GET
 				code.addByte(get_local);// todo: skip repeats
 				code.addByte(local_index);
@@ -1274,6 +1310,7 @@ Code emitCall(Node &fun, String context) {
 	signature.emit = true;
 	// todo multi-value
 	last_type = signature.return_types.last(none);
+	last_typo.clazz = &signature.return_type;// todo dodgy!
 	return code;
 }
 
@@ -1388,8 +1425,10 @@ Code emitSetter(Node node, Node &value, String context) {
 		valtype = last_type;// todo : could have been done in analysis!
 		localTypes[context][local_index] = last_type;// NO! the type doesn't change: example: float x=7
 	}
-	if (last_type == array or valtype == charp)
+	if (last_type == array or valtype == charp) {
 		referenceIndices.insert_or_assign(variable, data_index_end);// WILL be last_data !
+		referenceMap[variable] = node; // lookup types, array length …
+	}
 	Code setter;
 //	auto values = value.values();
 	if (value.hash() == node.hash())
@@ -1620,6 +1659,7 @@ Code emitBlock(Node &node, String context) {
 	//	for(Valtype return_type: returnTypes) uh, casting should have happened before for  multi-value
 	Valtype return_type = returnTypes.last();
 	// switch back to return_types[context] for block?
+	bool needs_cast = return_type != last_type;
 
 	auto abi = wasp_smart_pointers;// functionSignatures[context].abi;
 
@@ -1628,16 +1668,21 @@ Code emitBlock(Node &node, String context) {
 //		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string
 		if (last_typo.type == int_array)
 			block.addConst32(array_header_32).addByte(i32_or); // todo: other arrays
-		else if (last_type == charp)
-			block.addConst32(string_header_32).addByte(i32_or);// string
-		else if (last_type == array)
+		else if (last_typo.kind == strings or last_typo.type == c_string) { // last_type == charp
+			block.addConst32(string_header_32);
+			block.addByte(i32_or);// string
+			needs_cast = false;
+		} else if (last_type == array)
 			block.addConst32(array_header_32).addByte(i32_or);// native array (OF WHAT?)
+		else if (last_typo.kind == reference) {
+//			todo("last_typo.type");
+		}
 //		if(last_type==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string
 //		if(last_type==angle)block.addByte(i32_or).addInt(0xA000000);//
 //		if(last_type==pointer)block.addByte(i32_or).addInt(0xF000000);//
 	}
 	if (last_type == none) last_type = voids;
-	if (return_type != last_type) {
+	if (needs_cast) {
 		if (return_type == Valtype::voids and last_type != Valtype::voids)
 			block.addByte(drop);
 		else if (return_type == Valtype::i32t and last_type == Valtype::voids)
