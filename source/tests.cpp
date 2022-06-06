@@ -2120,7 +2120,11 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_emit("10007%10000", 7);
+	assert_emit("- √9", -3);
+	assert_emit("10007.0%10000", 7);
+	assert_emit("'OK'", "OK");
+	assert_emit("x='abcde';x#4='x';x[3]", 'x');
+
 	testMultiValue();
 
 //	assert_emit("1,3", Node(1, 3, 0));
