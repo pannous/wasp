@@ -722,7 +722,7 @@ public:
 // todo: add true Wasp Type Signature to wasm Valtype Signature
 	Map<int, Valtype> types;
 	List<Valtype> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
-	Node return_type;
+	Node return_type{};
 //	Valtype return_type = voids;
 	bool is_import = false; // not serialized in functype section, but in import section wt
 	bool is_runtime = false;
