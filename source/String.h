@@ -70,7 +70,7 @@ char *itoa(long num);
 
 int atoi1(codepoint c);
 
-int atoi0(chars str);
+long atoi0(chars str);
 
 double atof0(chars string);
 
@@ -240,6 +240,7 @@ public:
 
 //	explicit
 	String(const char string[], bool copy = true/*false AFTER all is tested, for efficiency*/) {
+		// todo (maybe dont) mark data as to-free on destruction once copy = false AND bool malloced = true
 //		data = const_cast<char *>(string);// todo heap may disappear, use copy!
 		length = strlen0(string);
 		if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
@@ -468,10 +469,12 @@ public:
 		return this->replace("%d", itoa0(d));
 	}
 
-
 	String operator%(long d) {
-//		todo %l ??
-		return this->replace("%d", itoa0(d));
+//		todo %l %ld %lld ??
+		if (contains("%x"))
+			return this->replace("%x", hex(d));
+		else
+			return this->replace("%d", itoa0(d));
 	}
 
 	String operator%(double f) {

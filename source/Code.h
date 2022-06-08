@@ -29,9 +29,9 @@ class Code;
 // Different environments offer different run_wasm implementations:
 // wasm JIT runtimes: wasm3, wasm-micro-runtime, wabt, V8 via webview:
 // wasmer via console, node/browser via import, webview  …
-int run_wasm(bytes wasm_bytes, int len);
+long run_wasm(bytes wasm_bytes, int len);
 
-int run_wasm(chars wasm_path);
+long run_wasm(chars wasm_path);
 
 extern bytes magicModuleHeader;
 extern bytes moduleVersion;
@@ -270,7 +270,7 @@ public:
 #endif
 	}
 
-	int run() {
+	long run() {
 		return run_wasm(data, length);
 	}
 
@@ -301,7 +301,10 @@ public:
 	}
 
 	Code addConst(long i) {
-		add(0x41 /*i32_const*/);
+		if (i < 0x100000000 and i > -0x100000000)
+			add(0x41 /*i32_const*/);
+		else
+			add(0x42 /* i64_const */);
 		push(i);
 		return *this;
 	}
@@ -769,7 +772,10 @@ public:
 	Signature &returns(Node type) {
 		return_type = type;
 		if (type.kind != nils)// todo? type.kind!=undefined … ?
-			return_types.add(mapTypeToWasm(type));// value, should map to int32 unless unboxing long, float
+		{
+			Valtype valtype = mapTypeToWasm(type);
+			return_types.add(valtype);
+		}// value, should map to int32 unless unboxing long, float
 		return *this;
 	}
 

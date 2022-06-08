@@ -1133,3 +1133,18 @@ String load(String file) {
 	return *binary;
 #endif
 }
+
+String &hex(long d) {
+//	char* s= (char*) malloc(1+64/4);// 0x ?
+	char s[3 + 64 / 4];
+	sprintf(s, "0x%lx", d);
+	return *new String(s);// todo mark data as to-free
+}
+
+
+bool isSmartPointer(long d) {
+	return d & 0x7F00000000000000 and not(d & 0x8000000000000000 /*negative number*/);
+}
+
+Node smartValue(long smartPointer);
+
