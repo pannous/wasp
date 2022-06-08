@@ -157,8 +157,10 @@ Node eval(String code) {
 	{
 		prepareContext();
 		analyzed.setDefault(false);
-		int result = emit(analyze(parsed)).run();
-		return Node(result);
+		long results = emit(analyze(parsed)).run();
+		auto resultNode = smartNode(results);
+		printf("» %lx %s\n", results, resultNode.serialize().data);
+		return resultNode;
 	}
 #endif
 
@@ -1166,7 +1168,7 @@ void clearContext() {
 
 // 2MB Debug runtime needs 3 seconds in wasmtime! :(
 // test with SMALL runtime!!
-int runtime_emit(String prog) {
+Node runtime_emit(String prog) {
 #ifdef RUNTIME_ONLY
 	printf("emit wasm not built into release runtime");
 	return -1;
@@ -1185,9 +1187,9 @@ int runtime_emit(String prog) {
 	Code code = merge_wasm(runtime, main);
 	code.save("merged.wasm");
 	read_wasm("merged.wasm");
-	int result = code.run();// todo parse stdout string as node and merge with emit() !
+	long result = code.run();// todo parse stdout string as node and merge with emit() !
 	clearContext();
-	return result;
+	return smartNode(result);
 }
 
 // smart pointers returned if ABI does not allow multi-return, as in int main(){}
@@ -1196,6 +1198,12 @@ Node smartNode(long smartPointer64) {
 	if (!isSmartPointer(smartPointer64))
 		return Node(smartPointer64);
 	auto result = smartPointer64;
+	if (smartPointer64 & double_mask_64 and not((smartPointer64 & negative_mask_64) == negative_mask_64)) {
+		// todo rare cases, where doubles don't match 0x7F…
+		double val = *(double *) &smartPointer64;
+		return Node(val);
+	}
+
 	auto smart_pointer = result & 0xFFFFFFFF;// data part
 	long smart_type = result & 0xFFFFFFFF00000000;// type part
 	if (smart_type == array_header_64 /* and abi=wasp */ ) {
