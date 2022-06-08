@@ -173,7 +173,7 @@ int atoi1(codepoint c) {
 }
 
 // todo: 0 ambiguous "0" or "NaN"
-int atoi0(chars p) {
+long atoi0(chars p) {
 	if (!p)return 0;
 	while (*p == '+')p++;
 	short sig = 1;
@@ -181,9 +181,9 @@ int atoi0(chars p) {
 		sig = -1;
 		p++;
 	}
-	int k = 0;
+	long k = 0;
 	while (*p) {
-		int n;
+		long n;
 		short len;
 		n = atoi1(decode_unicode_character(p, &len));// inline!
 		p += len;

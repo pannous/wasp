@@ -87,7 +87,7 @@ bool assert_equals_x(Node a, double b, char *context = "") {
 
 
 bool assert_equals_x(Node a, long b, char *context = "") {
-	if (!(a == b))printf("\nFAILED assert_equals! %s %d should be %d %s\n"s, a.name, a.value.longy, b, context);
+	if (!(a == b))printf("\nFAILED assert_equals! %s %ld should be %ld %s\n"s, a.name, a.value.longy, b, context);
 	else printf("OK %ld==%ld %s\n", a.value.longy, b, context);
 	return a == b;
 }

@@ -552,7 +552,8 @@ private:
 	Node &numbero() {
 		auto sign = '\n';
 		auto string = String("");
-		int number0, base = 10;
+		short base = 10;
+		long number0;
 		if (ch == '0' and (next == 'x' or next == 'X'))return hexadecimal_number();// base=16;
 		if (ch == '0' and (next == 'o' or next == 'O')) {
 			todo("octal");
