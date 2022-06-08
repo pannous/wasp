@@ -85,3 +85,11 @@ bool fileExists(String filename);
 String findFile(String filename);// empty() if not found
 //char *findFile(char* filename);// 0 if not found
 String load(String file);
+
+String &hex(long d);
+
+bool isSmartPointer(long d);
+
+//Node smartValue(long smartPointer);
+Node smartNode(long smartPointer64);
+//String smartValue2(long smartPointer);
