@@ -286,7 +286,7 @@ void add_wasmtime_memory() {
 	wasm_memory = memory_data;// todo: keep old?
 }
 
-int run_wasm(unsigned char *data, int size) {
+long run_wasm(unsigned char *data, int size) {
 	if (!done)init_wasmtime();
 	wasmtime_error_t *error;
 	wasmtime_module_t *module = NULL;
@@ -368,7 +368,7 @@ int run_wasm(unsigned char *data, int size) {
 //	int nresults = 1;// todo how, wasmtime?
 	error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, nresults, &trap);
 	if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);
-	int32_t result = results.of.i32;
+	int64_t result = results.of.i64;
 	if (nresults > 1) {
 		wasmtime_val_t results2 = *(&results + 1);
 		Type type = results2.of.i32;
@@ -377,15 +377,9 @@ int run_wasm(unsigned char *data, int size) {
 		else printf("Unknown type %d\n", (int) type);
 	}
 
-	// don't touch 0x80000000 sign bit
-	if (result & string_header_32) { // todo negative numbers ;)
-		// smart pointers!
-		auto smart_pointer = result & 0x00FFFFFF;// data part
-		if ((result & 0xF0000000) == string_header_32 /* and abi=wasp */ ) {
-			// smart pointer for string
-			printf("» %x %s\n", smart_pointer, ((char *) wasm_memory) + smart_pointer);
-		}
-	} else printf("RESULT: %d\n", result);
+	if (isSmartPointer(result))
+		printf("» %llx %s\n", result, smartNode(result).serialize().data);
+	else printf("RESULT: %lld\n", result);
 
 	wasmtime_module_delete(module);
 	return result;

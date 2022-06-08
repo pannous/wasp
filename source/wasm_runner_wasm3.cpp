@@ -115,7 +115,7 @@ int test_wasm3(const uint8_t *prog, int len) {
 	}
 }
 
-int run_wasm(bytes wasm_bytes, int len) {
+long run_wasm(bytes wasm_bytes, int len) {
 //	test_wasm3(test_prog_wasm, test_prog_wasm_len);
 	return test_wasm3((const uint8_t *) wasm_bytes, len);
 }

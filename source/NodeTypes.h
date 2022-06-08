@@ -53,6 +53,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
 // unboxed primitive raw data (list is compatible with List though!)
 enum Primitive {
 	integer = 0x7f,  // todo: merge with Valtype.int32 = 0x7f
+	byte_char = 0xB0, // when indexing byte array. todo: maybe codepoint into UTF8!?
 	floats = 0x1010, // only useful for main(), otherwise we can return real floats or wrapped Node[reals]
 	array_start = 0xA000, // careful there are different kinds of arrays/lists/List/Node[lists]
 	list = 0xA100, // [len(int32), data*] compatible with List
@@ -94,6 +95,8 @@ enum Primitive {
 // for 32 bit smart pointers, as used in return of int main(){}
 	array_header_32 = 0x40000000,
 	string_header_32 = 0x10000000,
+	array_header_64 = 0x4000000000000000,
+	string_header_64 = 0x1000000000000000,
 };
 
 typedef int Address;

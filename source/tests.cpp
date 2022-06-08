@@ -1416,15 +1416,15 @@ void testString() {
 	printf("%s", x.data);
 	check(x == "hi ja ok");
 	check("hi %s ok"s % "ja" == "hi ja ok");
-	assert_is("١٢٣", 123);
-	assert_equals(atoi0("١٢٣"), 123);
-	check_eq(atoi0("123"), 123);// can crash!?!
-//	assert_equals( atoi1(u'₃'),3);// op
-	assert_equals(atoi0("0"), 0);
-	assert_equals(atoi0("x"), 0);// todo side channel?
-	assert_equals(atoi0("3"), 3);
 	assert_equals(atoi1('x'), -1);
 	assert_equals(atoi1('3'), 3);
+	assert_is("١٢٣", 123);
+	assert_equals(atoi0("١٢٣"), 123l);
+	check_eq(atoi0("123"), 123l);// can crash!?!
+//	assert_equals( atoi1(u'₃'),3);// op
+	assert_equals(atoi0("0"), 0l);
+	assert_equals(atoi0("x"), 0l);// todo side channel?
+	assert_equals(atoi0("3"), 3l);
 	check_eq(" a b c  \n"s.trim(), "a b c");
 	assert_equals("     \n   malloc"s.trim(), "malloc");
 	assert_equals("     \n   malloc     \n   "s.trim(), "malloc");
@@ -2113,17 +2113,18 @@ void tests() {
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp / wasmtime
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm build via wasm-runtime
-
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_emit("- √9", -3);
-	assert_emit("10007.0%10000", 7);
 	assert_emit("'OK'", "OK");
 	assert_emit("x='abcde';x#4='x';x[3]", 'x');
+	assert_emit(("2000000000000"), 2000000000000l)// auto long
+	assert_emit(("-2000000000000"), -2000000000000l)
+	assert_emit("- √9", -3);
+	assert_emit("10007.0%10000", 7);
 
 	testMultiValue();
 

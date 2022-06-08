@@ -1122,7 +1122,8 @@ void preRegisterSignatures() {
 	functionSignatures["modulo_float"] = Signature().builtin().add(float32).add(float32).returns(float32);
 	functionSignatures["modulo_double"].builtin().add(float64).add(float64).returns(float64);
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
-	functionSignatures["main"] = Signature().returns(i32t);;
+//	functionSignatures["main"] = Signature().returns(i32t);;
+	functionSignatures["main"] = Signature().returns(i64t); // ok in all modern environments~
 	functionSignatures["print"] = functionSignatures["puts"];// todo: for now, later it needs to distinguish types!!
 	functionSignatures["paint"].import().returns(voids);// paint surface
 	functionSignatures.insert_or_assign("init_graphics", Signature().import().returns(pointer));// surface
@@ -1156,6 +1157,7 @@ void clearContext() {
 	declaredFunctions.clear();
 	functionSignatures.clear();
 	functionSignatures.setDefault(Signature());
+	preRegisterSignatures();
 	analyzed.clear();// todo move much into outer analyze function!
 	analyzed.setDefault(0);
 	//	if(data.kind==groups) data.kind=expression;// force top level expression! todo: only if analyze recursive !
@@ -1189,7 +1191,42 @@ int runtime_emit(String prog) {
 }
 
 // smart pointers returned if ABI does not allow multi-return, as in int main(){}
-Node smartNode(int smartPointer32) {
+
+Node smartNode(long smartPointer64) {
+	if (!isSmartPointer(smartPointer64))
+		return Node(smartPointer64);
+	auto result = smartPointer64;
+	auto smart_pointer = result & 0xFFFFFFFF;// data part
+	long smart_type = result & 0xFFFFFFFF00000000;// type part
+	if (smart_type == array_header_64 /* and abi=wasp */ ) {
+		// smart pointer to smart array
+		int *index = ((int *) wasm_memory) + smart_pointer;
+		int kind = *index++;
+		if (kind == array_header_32)
+			kind = *index++;
+		int len = *index++; // todo: leb128 vector later
+		Node arr = Node();
+//		arr.kind.value = kind;
+		int pos = 0;
+		while (len-- > 0) {
+			auto val = index[pos++];
+			arr.add(new Node(val));
+		}
+		arr.kind = objects;
+//			check_eq(arr.length,len);
+//			check(arr.type=…
+		return arr;
+	}
+	if (smart_type == string_header_64) {
+		// smart pointer for string
+		return Node(((char *) wasm_memory) + smart_pointer);
+	}
+	breakpoint_helper
+	error1("missing smart pointer type %x"s % smart_type + " “" + typeName(Type(smart_type)) + "”");
+	return Node();
+}
+
+Node smartNode32(int smartPointer32) {
 	auto result = smartPointer32;
 	auto smart_pointer = result & 0x00FFFFFF;// data part
 	if ((result & 0xF0000000) == array_header_32 /* and abi=wasp */ ) {
@@ -1236,7 +1273,7 @@ Node emit(String code) {// emit and run!
 #else
 	data.print();
 	clearContext();
-	preRegisterSignatures();
+//	preRegisterSignatures();
 	Node &charged = analyze(data);
 	charged.print();
 	Code binary;
@@ -1245,12 +1282,8 @@ Node emit(String code) {// emit and run!
 //	else
 	binary = emit(charged);
 //	code.link(wasp) more beautiful with multiple memory sections
-	int result = binary.run();// check js console if no result
-	// don't touch 0x80000000 sign bit
-	if (result & 0x70000000 and not(result & 0x80000000 /*negative numbers*/)) {
-		return smartNode(result);
-	}
-	return Node(result);
+	long result = binary.run();// check js console if no result
+	return smartNode(result);
 #endif
 }
 
