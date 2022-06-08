@@ -8,9 +8,9 @@
 //#include <bh_platform.h>
 typedef unsigned char *bytes;
 
-int run_wasm(bytes buffer, int buf_size);
+long run_wasm(bytes buffer, int buf_size);
 
-int run_wasm(char *wasm_path = "test.wasm");
+long run_wasm(char *wasm_path = "test.wasm");
 
 #ifdef WABT
 

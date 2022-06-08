@@ -89,7 +89,7 @@ void BindImports(Module *module, std::vector<Ref> &imports, Store &store) {
 }
 
 // wabt has HORRIBLE api, but ok
-int run_wasm(bytes buffer, int buf_size) {
+long run_wasm(bytes buffer, int buf_size) {
 	Store store;
 	ModuleDesc module_desc;
 	bool kReadDebugNames = true;

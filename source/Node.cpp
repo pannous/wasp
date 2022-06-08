@@ -1142,6 +1142,8 @@ String *Node::Line() {
 //String
 chars typeName(Kind t) {
 	switch (t) {
+		case 0:
+			return "ø"; // unknown ?
 		case objects:
 			return "object";
 		case groups:

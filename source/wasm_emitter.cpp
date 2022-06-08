@@ -83,6 +83,7 @@ MemoryHandling memoryHandling;// set later = export_memory; // import_memory not
 Map<String, int> functionIndices;
 Map<String, Code> functionCodes;
 Map<String, int> typeMap;
+
 Code createSection(Section sectionType, Code data);
 
 [[nodiscard]]
@@ -559,7 +560,7 @@ Code emitIndexPattern(Node op, String context) {
 	load.add(0x00);// ?
 
 
-	if (size == 1)last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
+	if (size == 1)last_typo = byte_char;// last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
 	else if (size <= 4)last_type = int32;
 	else last_type = int64;
 //	if(op.kind==reference){
@@ -744,8 +745,13 @@ Code emitValue(Node node, String context) {
 			break;
 		case longs:
 			// todo: ints vs longs!!!
-			last_type = i32t;
-			code.addByte((byte) i32_const);
+			if (node.value.longy <= 0x10000000 and node.value.longy > -0x100000000) { // room for smart pointers
+				last_type = i32t;
+				code.addByte((byte) i32_const);
+			} else {
+				last_type = i64t;
+				code.addByte((byte) i64_const);
+			}
 			code.push(node.value.longy);
 			break;
 //		case floats:
@@ -1324,6 +1330,7 @@ Code cast(Valtype from, Valtype to) {
 
 	if (from == array and to == charp)return nop;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
 	if (from == i32t and to == charp)return nop;// assume i32 is a pointer here. todo?
+	if (from == charp and to == i64t) return Code(i64_extend_i32_s);
 	if (from == charp and to == i32t)return nop;// assume i32 is a pointer here. todo?
 	if (from == 0 and to == i32t)return nop;// nil or false ok as int? otherwise add const 0!
 	if (from == float32 and to == float64)return Code(f64_from_f32);
@@ -1636,8 +1643,10 @@ Code emitBlock(Node &node, String context) {
 		if (valtype == unknown_type)
 			valtype = int32;
 // todo		internal_error("unknown type should be inferred by now for local "s + name);
-		if (valtype == none or valtype == voids or valtype == charp or valtype == array)
+		if (valtype == none or valtype == voids)
 			valtype = int32;
+		if (valtype == charp or valtype == array)
+			valtype = int32; // int64? extend to smart pointer later!
 		block.addByte(valtype);
 	}
 
@@ -1666,15 +1675,15 @@ Code emitBlock(Node &node, String context) {
 	if (abi == wasp_smart_pointers) {
 //		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
 //		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string
-		if (last_typo.type == int_array)
-			block.addConst32(array_header_32).addByte(i32_or); // todo: other arrays
+		if (last_typo.type == int_array or last_type == array)
+			block.addConst(array_header_64).addByte(i64_or); // todo: other arrays
+//		block.addConst32(array_header_32).addByte(i32_or); // todo: other arrays
 		else if (last_typo.kind == strings or last_typo.type == c_string) { // last_type == charp
-			block.addConst32(string_header_32);
-			block.addByte(i32_or);// string
+			block.addConst(string_header_64).addByte(i64_or);
 			needs_cast = false;
-		} else if (last_type == array)
-			block.addConst32(array_header_32).addByte(i32_or);// native array (OF WHAT?)
-		else if (last_typo.kind == reference) {
+		} else if (last_typo.kind == reference) {
+//			if (last_type==charp)
+//				block.addConst(string_header_64).addByte(i64_or);
 //			todo("last_typo.type");
 		}
 //		if(last_type==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string
@@ -1687,6 +1696,8 @@ Code emitBlock(Node &node, String context) {
 			block.addByte(drop);
 		else if (return_type == Valtype::i32t and last_type == Valtype::voids)
 			block.addByte(i32_const).addInt(0);//-999);// hack? return 0/false by default. ok? see python!
+		else if (return_type == Valtype::i64t and last_type == Valtype::voids)
+			block.addByte(i64_const).addInt(0);//-999
 		else
 			block.add(cast(last_type, return_type));
 	}
@@ -1696,7 +1707,6 @@ Code emitBlock(Node &node, String context) {
 // make sure block has correct wasm type signature!
 
 //	var [type, data]=result // wasm order PRESERVED! no stack inversion!
-
 
 //if not return_block
 // the return statement makes drops superfluous and just takes as many elements from stack as needed (ggf multiple and ignores/drops the rest!)
@@ -1767,9 +1777,10 @@ Code typeSection() {
 			td = td + Code(fixValtype(signature.types[i]));
 		}
 //		Valtype &ret = functionSignatures[fun].return_type;
-		td.addByte(functionSignatures[fun].return_types.size());
-		for (Valtype ret: functionSignatures[fun].return_types) {
-			td.addByte(fixValtype(ret));
+		td.addByte(signature.return_types.size());
+		for (Valtype ret: signature.return_types) {
+			Valtype valtype = fixValtype(ret);
+			td.addByte(valtype);
 		}
 		type_data = type_data + td;
 	}
@@ -2268,7 +2279,7 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	}
 	if (start) {// now AFTER imports and builtins
 //		printf("start: %s\n", start.data);
-		functionSignatures[start] = Signature().returns(i32t);
+//		functionSignatures[start] = Signature().returns(i32t);
 		functionSignatures[start].emit = true;
 		if (!functionIndices.has(start))
 			functionIndices[start] = ++last_index;
