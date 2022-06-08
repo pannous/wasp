@@ -298,7 +298,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	}
 	if (op == "|") {// bitwise or OR pipe!
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-		if (left.kind == longs and right.kind == longs) return Node((long) (left.value.longy | right.value.longy));
+		if (left.kind == longs and right.kind == longs) return Node((long long) (left.value.longy | right.value.longy));
 		todo("PIPE a|b");
 		// pipe todo
 	}

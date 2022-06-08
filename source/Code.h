@@ -96,7 +96,7 @@ public:
 	}
 
 	Code(chars string, bool size_header = true, bool null_terminated = false) {
-		long len = (long) strlen0(string);
+		short len = strlen0(string);
 		if (null_terminated)len++;
 		if (size_header) { push(len); }
 		push((bytes) string, len);
@@ -226,7 +226,7 @@ public:
 	}
 
 //	All integers are encoded using the LEB128 variable-length integer encoding!  LEB=false should ONLY occur in custom data section!
-	Code &push(long nr, bool sign = true, bool LEB = true) {
+	Code &push(long long nr, bool sign = true, bool LEB = true) {
 		Code val;
 		if (LEB) {
 			if (sign)
@@ -242,6 +242,18 @@ public:
 			length = 8;
 		}
 		return *this;
+	}
+
+	Code &push(long nr, bool sign = true, bool LEB = true) {
+		return push((long long) nr, sign, LEB);
+	}
+
+	Code &push(int nr, bool sign = true, bool LEB = true) {
+		return push((long long) nr, sign, LEB);
+	}
+
+	Code &push(unsigned int nr, bool sign = true, bool LEB = true) {
+		return push((long long) nr, sign, LEB);
 	}
 
 	Code &push(bytes more, int len) {
@@ -301,7 +313,7 @@ public:
 		return *this;
 	}
 
-	Code addConst64(long i) {
+	Code addConst64(long long i) {
 //		if (i < 0x100000000 and i > -0x100000000)
 //			add(0x41 /*i32_const*/);
 //		else

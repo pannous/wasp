@@ -1,6 +1,14 @@
 #ifndef _Util_h_
 #define _Util_h_
 
+enum smart_pointer_masks {
+//	float_header_64 = 0x0020000000000000, not needed, use:
+	double_mask_64 = 0x7F00000000000000L,
+	smart_mask_64 = 0x00FF000000000000L,
+//	negative_mask_64 = 0x8000000000000000,
+	negative_mask_64 = 0xFF00000000000000L
+//	negative_long_mask_64 = 0xBFF0000000000000,
+};
 //#include "Map.h" // for List signature circular?
 
 #define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
@@ -88,8 +96,8 @@ String load(String file);
 
 String &hex(long d);
 
-bool isSmartPointer(long d);
+bool isSmartPointer(long long d);
 
 //Node smartValue(long smartPointer);
-Node smartNode(long smartPointer64);
+Node smartNode(long long smartPointer64);
 //String smartValue2(long smartPointer);
