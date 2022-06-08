@@ -75,7 +75,7 @@ union Value {
 //	Node **children = 0;// keep children separate for complex key nodes (a b c):(d e f)
 	String *string;// todo: wasm_chars*
 	void *data;// any bytes
-	long longy;
+	long long longy;
 //	codepoint chary;// use longy
 	double real;
 
@@ -216,7 +216,7 @@ public:
 //			name = String(itoa0(nr, 10)); // messes with setField contraction
 	}
 
-	explicit Node(int nr) : Node((long) nr) {}
+	explicit Node(int nr) : Node((long long) nr) {}
 
 	explicit Node(float nr) : Node((double) nr) {}
 
@@ -278,7 +278,14 @@ public:
 
 
 	explicit
-	Node(long nr) {
+	Node(long long nr) { // stupild
+		value.longy = nr;
+		kind = longs;
+		if (debug)name = String(itoa(nr)); // messes with setField contraction
+	}
+
+	explicit
+	Node(long nr) { // stupild
 		value.longy = nr;
 		kind = longs;
 		if (debug)name = String(itoa(nr)); // messes with setField contraction
@@ -570,7 +577,7 @@ public:
 	Node apply_op(Node left, Node op0, Node right);
 
 
-	long numbere() {
+	long long numbere() {
 		return kind == longs or kind == bools ? value.longy : value.real;// danger
 	}
 
