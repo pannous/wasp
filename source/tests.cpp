@@ -10,6 +10,23 @@
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
 
+void testFloatReturnThroughMain() {
+	double x = 0.0000001;// 3e...
+//	double x=1000000000.1;// 4...
+//	double x=-1000000000.1;// c1…
+//	double x=9999999999999999.99999999;// 43…
+//	double x=-9999999999999999.99999999;// c3…
+//	double x=1.1;// 3ff199999999999a
+//	double x=-1.1;// bff199999999999a
+	long y = *(long *) &x;
+	printf("%lx\n", y);
+	y = 0x00FF000000000000;// -> 0.000000 OK
+	x = *(double *) &y;
+	printf("%lf\n", x);
+	assert_emit(("-1.1"), -1.1)
+	assert_emit("10007.0%10000.0", 7);
+}
+
 void testArrayS() {
 	auto node = analyze(parse("int"));
 //	assert_equals( node.type->kind, classe);
@@ -2116,15 +2133,29 @@ void tests() {
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
+//	printf("%lx\n", -2000000000000);
+//	printf("%lx", -4615739258092021350);
+//	exit(1);
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+//	testFloatReturnThroughMain();
+//	assert_emit("x='abcde';x[3]", 'd');
+	assert_equals(eval("42.0/2.0"), 21)
+	assert_emit("42.0/2.0", 21);
+	assert_emit("42.0/2.0", 21.);
+	assert_emit("puts('ok');", 0);
+
+	assert_emit("x='abcde';x#4='x';x[3]", 'x');
+
+	assert_emit(("-2000000000000"), -2000000000000l)
+	assert_emit(("-1.1"), -1.1)
 	assert_emit("'OK'", "OK");
+	assert_emit("10007.0%10000.0", 7);
+	assert_emit("10007.0%10000", 7);
 	assert_emit("x='abcde';x#4='x';x[3]", 'x');
 	assert_emit(("2000000000000"), 2000000000000l)// auto long
-	assert_emit(("-2000000000000"), -2000000000000l)
 	assert_emit("- √9", -3);
-	assert_emit("10007.0%10000", 7);
 
 	testMultiValue();
 

@@ -38,7 +38,7 @@ Node interpret(String code);// wasp -> code -> data   // interpreter mode vs:
 //Node emit(String code, ParseOptions options = nix);//  doesn't work with std::thread compile(emit, String(code.data()))
 
 Node run(String source);// wasp -> code -> wasm() -> data
-int runtime_emit(String prog);// wasp -> code + runtime -> wasm (via emit)
+Node runtime_emit(String prog);// wasp -> code + runtime -> wasm (via emit)
 //extern Map<String, Signature> functionSignatures;
 
 Node constants(Node n);

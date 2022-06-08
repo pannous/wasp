@@ -184,7 +184,7 @@ public:
 		return *this;
 	}
 
-	Code &addByte(byte opcode) {
+	Code addByte(byte opcode) {
 		data = concat(data, opcode, length);
 		length++;
 		return *this;
@@ -293,18 +293,19 @@ public:
 		return *this;
 	}
 
-	Code addConst32(unsigned int i) {
+	Code addConst(unsigned int i) {
 		add(0x41 /*i32_const*/);
 		if (i > 0x80000000)push(-(long) i, false, true);// stupid sign bit hack
-		push(i, false, true);
+		else push(i, true, true);
+//		else push(i, false, true);
 		return *this;
 	}
 
-	Code addConst(long i) {
-		if (i < 0x100000000 and i > -0x100000000)
-			add(0x41 /*i32_const*/);
-		else
-			add(0x42 /* i64_const */);
+	Code addConst64(long i) {
+//		if (i < 0x100000000 and i > -0x100000000)
+//			add(0x41 /*i32_const*/);
+//		else
+		add(0x42 /* i64_const */);
 		push(i);
 		return *this;
 	}
