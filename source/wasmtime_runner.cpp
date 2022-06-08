@@ -376,11 +376,6 @@ long run_wasm(unsigned char *data, int size) {
 			printf("TYPE: %s\n", (chars) type);
 		else printf("Unknown type %d\n", (int) type);
 	}
-
-	if (isSmartPointer(result))
-		printf("» %llx %s\n", result, smartNode(result).serialize().data);
-	else printf("RESULT: %lld\n", result);
-
 	wasmtime_module_delete(module);
 	return result;
 }

@@ -95,8 +95,16 @@ enum Primitive {
 // for 32 bit smart pointers, as used in return of int main(){}
 	array_header_32 = 0x40000000,
 	string_header_32 = 0x10000000,
-	array_header_64 = 0x4000000000000000,
-	string_header_64 = 0x1000000000000000,
+	smart_mask_32 = 0x70000000,
+	negative_mask_32 = 0x80000000,
+	array_header_64 = 0x0040000000000000,
+	string_header_64 = 0x0010000000000000,
+//	float_header_64 = 0x0020000000000000, not needed, use:
+	double_mask_64 = 0x7F00000000000000,
+	smart_mask_64 = 0x00FF000000000000,
+//	negative_mask_64 = 0x8000000000000000,
+	negative_mask_64 = 0xFF00000000000000,
+//	negative_long_mask_64 = 0xBFF0000000000000,
 };
 
 typedef int Address;
