@@ -1136,14 +1136,18 @@ String load(String file) {
 }
 
 String &hex(long d) {
+#ifdef WASM
+	return * new String(itoa0(d));
+#else
 //	char* s= (char*) malloc(1+64/4);// 0x ?
 	char s[3 + 64 / 4];
 	sprintf(s, "0x%lx", d);
 	return *new String(s);// todo mark data as to-free
+#endif
 }
 
 
-bool isSmartPointer(long d) {
+bool isSmartPointer(long long d) {
 //	if((d&negative_mask_64)==negative_mask_64)return false;
 	if ((d & negative_mask_64) == negative_mask_64)return false;
 	if (d & double_mask_64)return true;

@@ -143,6 +143,11 @@ int isalnum0(int c);
 extern "C" void *memset(void *ptr, int value, size_t num);
 
 #ifdef WASM
+
+// long is 4 byte in Wasm/Windows WTH
+//typedef long long long  // WTH
+//#define long long long  // WTH
+
 #ifndef WASI
 void printf(chars, chars);
 //void print(chars format, int i);

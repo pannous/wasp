@@ -133,8 +133,8 @@ void testMathPrimitives() {
 			assert_emit(("2000000000"), 2000000000)// todo stupid smart pointers
 			assert_emit(("-2000000000"), -2000000000)
 	)
-	assert_emit(("2000000000000"), 2000000000000)// auto long
-	assert_emit(("-2000000000000"), -2000000000000)
+	assert_emit(("2000000000000"), (long) 2000000000000)// auto long
+	assert_emit(("-2000000000000"), (long) -2000000000000L)
 
 	assert_emit("x=3;x*=3", 9)
 	assert_emit("'hello';(1 2 3 4);10", 10);

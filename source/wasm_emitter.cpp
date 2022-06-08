@@ -735,7 +735,7 @@ Code emitValue(Node node, String context) {
 	switch (node.kind) {
 		case nils:// also 0, false
 			code.addByte((byte) i32_auto);// nil is pointer
-			code.push((long) 0);
+			code.push((short) 0);
 			break;
 		case bools:
 //		case ints:
