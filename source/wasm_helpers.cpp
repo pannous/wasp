@@ -67,6 +67,8 @@ void println(String s){
 ////	while(*s)put_char(*s++);
 //}
 
+// todo : just use WASI for printf (!?)
+
 void printf(chars format, int i) {
 	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
@@ -96,6 +98,10 @@ void printf(chars format, long i, long j) {
 }
 void printf(chars format, int i, int j) {
 	print(String(format).replace("%d", String(i)).replace("%d", String(j)));
+}
+
+void printf(chars format, double i) {
+	print(String(format).replace("%f", String(i)));
 }
 
 void printf(chars format, double i, double j) {

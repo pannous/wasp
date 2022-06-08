@@ -279,6 +279,11 @@ public:
 		length = len(data);
 	}
 
+	explicit String(long long number) {
+		data = itoa0(number);
+		length = len(data);
+	}
+
 
 	explicit String(char16_t utf16char) {
 		data = (char *) (calloc(sizeof(char16_t), 2));
@@ -466,15 +471,22 @@ public:
 	}
 
 	String operator%(int d) {
-		return this->replace("%d", itoa0(d));
+		if (contains("%d"))
+			return this->replace("%d", itoa0(d));
+		if (contains("%x"))
+			return this->replace("%x", hex(d));
+		error1("missing placeholder %d in string modulo operation s%d");
+		return "«ERROR»";
 	}
 
 	String operator%(long d) {
 //		todo %l %ld %lld ??
-		if (contains("%x"))
-			return this->replace("%x", hex(d));
-		else
+		if (contains("%d"))
 			return this->replace("%d", itoa0(d));
+		else if (contains("%x"))
+			return this->replace("%x", hex(d));
+		error1("missing placeholder %d in string modulo operation s%d");
+		return "«ERROR»";
 	}
 
 	String operator%(double f) {
@@ -570,8 +582,12 @@ public:
 		return this->operator+(String(i));
 	}
 
-	String operator+(long i) {
+	String operator+(long long i) {
 		return this->operator+(String(i));
+	}
+
+	String operator+(long i) {
+		return this->operator+(String((long long) i));
 	}
 
 	String operator+(char c) {

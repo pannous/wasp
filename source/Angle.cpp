@@ -1171,7 +1171,7 @@ void clearContext() {
 Node runtime_emit(String prog) {
 #ifdef RUNTIME_ONLY
 	printf("emit wasm not built into release runtime");
-	return -1;
+	return ERROR;
 #endif
 	clearContext();
 	functionIndices.clear();
@@ -1194,7 +1194,7 @@ Node runtime_emit(String prog) {
 
 // smart pointers returned if ABI does not allow multi-return, as in int main(){}
 
-Node smartNode(long smartPointer64) {
+Node smartNode(long long smartPointer64) {
 	if (!isSmartPointer(smartPointer64))
 		return Node(smartPointer64);
 	auto result = smartPointer64;
