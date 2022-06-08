@@ -11,6 +11,7 @@
 #ifndef WASM
 // ok as wasi?
 #include "unistd.h"
+#include "NodeTypes.h"
 
 #endif
 
@@ -1143,7 +1144,10 @@ String &hex(long d) {
 
 
 bool isSmartPointer(long d) {
-	return d & 0x7F00000000000000 and not(d & 0x8000000000000000 /*negative number*/);
+//	if((d&negative_mask_64)==negative_mask_64)return false;
+	if ((d & negative_mask_64) == negative_mask_64)return false;
+	if (d & double_mask_64)return true;
+	return d & smart_mask_64 and not(d & negative_mask_64);
 }
 
 Node smartValue(long smartPointer);

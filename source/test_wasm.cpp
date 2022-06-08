@@ -811,7 +811,7 @@ void testWasmRuntimeExtension() {
 //	functionSignatures["okf"].returns(float32);
 	assert_run("okf(1)", 43);
 	assert_run("okf(1.0)", 43);
-	assert_run("42.5", 42);// truncation ≠ proper rounding!
+	assert_run("42.5", 42.5);// truncation ≠ proper rounding!
 	assert_run("okf5(1.5)", 43);
 	functionSignatures["atoi0"].returns(int32);
 //	assert_run("printf('123')", 123);

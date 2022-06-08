@@ -382,7 +382,7 @@ Code emitPrimitiveArray(Node &node, String context) {
 #endif
 // the last element of the stack is what is returned if no MULTI_VALUE
 // the return statement makes drops superfluous and just takes as many elements from stack as needed (and ignores/drops the rest!)
-	code.addConst32(pointer);
+	code.addConst(pointer);
 	last_type = mapTypeToWasm(node);
 	return code;
 }
@@ -1676,15 +1676,21 @@ Code emitBlock(Node &node, String context) {
 //		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
 //		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string
 		if (last_typo.type == int_array or last_type == array)
-			block.addConst(array_header_64).addByte(i64_or); // todo: other arrays
+			block.addConst64(array_header_64).addByte(i64_or); // todo: other arrays
 //		block.addConst32(array_header_32).addByte(i32_or); // todo: other arrays
 		else if (last_typo.kind == strings or last_typo.type == c_string) { // last_type == charp
-			block.addConst(string_header_64).addByte(i64_or);
+			block.addByte(i64_extend_i32_u);
+			block.addConst64(string_header_64);
+			block.addByte(i64_or);
+			last_type = int64;
 			needs_cast = false;
 		} else if (last_typo.kind == reference) {
 //			if (last_type==charp)
 //				block.addConst(string_header_64).addByte(i64_or);
 //			todo("last_typo.type");
+		} else if (last_type == float64 and context == start) {
+			block.addByte(i64_reinterpret_f64);
+			last_type = int64;
 		}
 //		if(last_type==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string
 //		if(last_type==angle)block.addByte(i32_or).addInt(0xA000000);//
@@ -1695,9 +1701,9 @@ Code emitBlock(Node &node, String context) {
 		if (return_type == Valtype::voids and last_type != Valtype::voids)
 			block.addByte(drop);
 		else if (return_type == Valtype::i32t and last_type == Valtype::voids)
-			block.addByte(i32_const).addInt(0);//-999);// hack? return 0/false by default. ok? see python!
+			block.addConst(0);
 		else if (return_type == Valtype::i64t and last_type == Valtype::voids)
-			block.addByte(i64_const).addInt(0);//-999
+			block.addConst64(0);
 		else
 			block.add(cast(last_type, return_type));
 	}
