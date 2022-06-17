@@ -94,6 +94,11 @@ void initSymbols() {
 #else
 	return; // no need outside WASM
 #endif
+	nil_name = "nil";
+	empty_name = "";
+	object_name = "{…}";
+	groups_name = "(…)";
+	patterns_name = "[…]";
 	EMPTY = String('\0');
 	((Node) NIL) = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 //	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent

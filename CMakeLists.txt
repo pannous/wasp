@@ -44,10 +44,11 @@ if (NOT WASM)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
     if (NOT RUNTIME_ONLY)
-        # TO EXECUTE wasm inside wasp compile with wasm runtime (only for native wasp, not for wasp.wasm) :
+        # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
+        #        SET(V8 1)
         SET(WASMTIME 1) # FASTEST!
-        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps. SET(V8 1)
+        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
@@ -116,8 +117,6 @@ if (CONSOLE)
     ADD_COMPILE_FLAG("-lreadline")
 endif ()
 
-# Todo move /Users/me/dev/apps/wasp/ to /wasp/ on release of debug file
-#ADD_COMPILE_FLAG("-fdebug-prefix-map=/Users/me/dev/apps/wasp/=/") # GCC, BREAKS DEBUG! LLVM/Clang does not provide an equivalent option.
 ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it needs for the declared range of possible values.
 # makes TypedValue 1+8 bytes, doesn't help for multi-value (int32 int64)
 

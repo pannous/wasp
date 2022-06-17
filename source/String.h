@@ -27,7 +27,7 @@ class String;
 template<class S>
 class List;
 
-//extern String &EMPTY_STRING;
+extern String &EMPTY_STRING;
 
 //What 'char' and 'wchar_t' represent are completely ambiguous.
 //You might think that they represent a "character", but depending on the encoding, that might not be true.
@@ -386,8 +386,8 @@ public:
 		if (from < 0 or (from == 0 and (to == length or to == -1))) return *this;
 		if (to < 0) to = length + to + 1;// -2 : skip last character
 		if (to > length or to < -length) to = length;
-		if (to <= from) return "";//EMPTY_STRING;
-		if (from >= length) return "";//EMPTY_STRING;
+		if (to <= from) return EMPTY_STRING;
+		if (from >= length) return EMPTY_STRING;
 		int len = to - from;
 		return String(data + from, len, ref);
 //		auto *neu = new String(data + from, len, ref);
@@ -924,13 +924,15 @@ String operator ""_s(chars c, unsigned long);
 
 String operator ""s(chars c, unsigned long);
 
-// todo careful, defines are not compatible with == comparison and they may be allocated often!!
-#define nil_name "nil" // ␀ ø
-#define empty_name ""
-#define object_name "{…}"
-#define groups_name "(…)"
-#define patterns_name "[…]"
-//#define EMPTY String('\0')
+
+extern String UNEXPECT_END;// = "Unexpected end of input";
+extern String UNEXPECT_CHAR;// = "Unexpected character ";
+extern String empty_name;
+extern String nil_name;// = "nil";
+//extern String empty_name;// = "";
+extern String object_name;// = "{…}";
+extern String groups_name;// = "(…)";
+extern String patterns_name;// = "[…]";
 extern String EMPTY;// = String('\0');
 
 //String operator "" s(chars c, unsigned long );// wasm function signature contains illegal type

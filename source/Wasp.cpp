@@ -1214,9 +1214,9 @@ private:
 // last part to preserve {deep{a:3,b:4,c:{d:'hi'}}} != {deep{a:3,b:4,c:'hi'}}
 
 		if (val.value.longy and val.kind != objects and deep_copy) {
-//			if (&key == &NIL or key.isNil() or key == NIL or val.value.real == 6.4807)
-//				if (key.name == nil_name)
-//					warn("impossible");
+			if (&key == &NIL or key.isNil() or key == NIL or val.value.real == 6.4807)
+				if (key.name == nil_name)
+					warn("impossible");
 			key.value = val.value;// direct copy value SURE?? what about meta data... ?
 			key.kind = val.kind;
 		} else {
