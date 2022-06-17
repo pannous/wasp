@@ -80,7 +80,7 @@ enum Primitive {
 //	maps, // our custom Map object todo: remove?
 
 // 🔋 main type of all non-primitive objects
-	node = 0xD000, // address of a Node in linear memory
+	nodes = 0xD000, // address of a Node in linear memory
 //	data = 0xDADA, // address of a Node in linear memory
 //	dada = 0xDADA, // address of a Node in linear memory
 
