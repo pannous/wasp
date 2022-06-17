@@ -1205,7 +1205,7 @@ Node smartNode(long long smartPointer64) {
 	}
 
 	auto smart_pointer = result & 0xFFFFFFFF;// data part
-	long smart_type = result & 0xFFFFFFFF00000000;// type part
+	long long smart_type = result & 0xFFFFFFFF00000000;// type part
 	if (smart_type == array_header_64 /* and abi=wasp */ ) {
 		// smart pointer to smart array
 		int *index = ((int *) wasm_memory) + smart_pointer;
