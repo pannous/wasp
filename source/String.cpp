@@ -144,16 +144,16 @@ Some start with 1…9 missing 0
  0x06F0	1776	EXTENDED ARABIC-INDIC DIGIT ZERO	۰
  0x0660	1632	ARABIC-INDIC DIGIT ZERO	٠
  */
-// todo 0x2080, 0x2070 subscript OPERATOR vs x²⁺³ == x⁵
-// unicode ranges 0...9
-int zeros[] = {0x1D7F6, 0x1D7EC, 0x1D7E2, 0x1D7D8, 0x1D7CE, 0x11066, 0x1810, 0x17E0, 0x1040, 0x0F20, 0x0ED0, 0x0E50,
-               0x0CE6, 0x0C66, 0x0BE7, 0x0B66, 0x0AE6, 0x09E6, 0x0966, 0x06F0, 0x0660, 0, 0};
-// unicode ranges 1...9
-int ones[] = {0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 0x102EA, 0x10858, 0x10916, 0x10320,
-              0x1D360, 0x102E1, 0x3021, 0x2170, 0x2160, 0x1372, 0x2469, 0, 0};
-
 // unlike atoi0 returns -1 if not a digit!
 int atoi1(codepoint c) {
+// unicode ranges 0...9
+	static int zeros[] = {0x1D7F6, 0x1D7EC, 0x1D7E2, 0x1D7D8, 0x1D7CE, 0x11066, 0x1810, 0x17E0, 0x1040, 0x0F20, 0x0ED0,
+	                      0x0E50,
+	                      0x0CE6, 0x0C66, 0x0BE7, 0x0B66, 0x0AE6, 0x09E6, 0x0966, 0x06F0, 0x0660, 0, 0};
+// unicode ranges 1...9
+	int ones[] = {0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 0x102EA, 0x10858, 0x10916, 0x10320,
+	              0x1D360, 0x102E1, 0x3021, 0x2170, 0x2160, 0x1372, 0x2469, 0, 0};
+	// todo 0x2080, 0x2070 subscript OPERATOR vs x²⁺³ == x⁵
 	int offset = -1;
 	if (c >= '0' and c <= '9')return c - '0';
 	while (zeros[++offset]) {
@@ -429,20 +429,12 @@ String s(chars &s) {
 
 #ifndef WASM
 //relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
-String nil_name = "nil";// ␀ ø
-String empty_name = "";
-String object_name = "{…}";
-String groups_name = "(…)";
-String patterns_name = "[…]";
+__attribute__ ((visibility ("hidden")))
 String EMPTY = String('\0');
 #else
-String nil_name;
-String empty_name;
-String object_name;
-String groups_name;
-String patterns_name;
 String EMPTY;
 #endif
+
 
 #pragma clang diagnostic pop
 
@@ -456,7 +448,7 @@ bool String::empty() const {//this==0 in testMarkMulti!
 	if ((long long) data == 0x1ffffffff || (long long) data >= 0xffffffff00000000 ||
 	    ((long long) data >= 0x100000000LL and (long long) data <= 0x100100000))
 		return false;// todo: valgrind debug corruption, usually because of not enough memory
-	return length == 0 || !data || (long) data > MEMORY_SIZE || data[0] == 0 || data == object_name.data;
+	return length == 0 || !data || (long) data > MEMORY_SIZE || data[0] == 0; // || eq(data == object_name;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
 }
 
@@ -615,8 +607,8 @@ String &String::lower() {
 	return clone1;
 }
 
-String EMPTY_STRING0 = "";
-String &EMPTY_STRING = EMPTY_STRING0;
+//String EMPTY_STRING0 = "";
+//String &EMPTY_STRING = EMPTY_STRING0;
 
 void error1(String message, chars file, int line) {
 	error1(message.data, file, line);

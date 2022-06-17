@@ -269,8 +269,8 @@ void testSwitchEvaluation() {
 
 void testSwitch() {
 //	todo if(1>0) ... innocent groups
-	assert_is("{a:1 b:2}[a]", 1)
-	assert_is("{a:1 b:2}[b]", 2)
+	todo_emit(assert_is("{a:1 b:2}[a]", 1))
+	todo_emit(assert_is("{a:1 b:2}[b]", 2))
 }
 
 /*

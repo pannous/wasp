@@ -235,18 +235,21 @@ Node assert_parsesx(chars mark) {
 }
 //#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(1);}
 #define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(1);}
-#define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
+#define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
+#define todo_emit(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
+//printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
+
+bool ok;
 
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
-#define assert_is(mark, result) {\
+#define assert_is(mark, result) \
 printf("TEST %s==%s\n",#mark,#result); \
 printf("%s:%d\n",__FILE__,__LINE__);\
-bool ok=assert_isx(mark,result);\
+ok=assert_isx(mark,result);\
 if(ok)printf("PASSED %s==%s\n",#mark,#result);\
 else{printf("FAILED %s==%s\n",#mark,#result);\
-printf("%s:%d\n",__FILE__,__LINE__);exit(1);}\
-}
+printf("%s:%d\n",__FILE__,__LINE__);exit(1);}
 
 
 // for better readability, not (yet) semantic
