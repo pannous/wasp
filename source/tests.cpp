@@ -11,6 +11,7 @@
 #include "test_wasm.cpp"
 
 
+
 void testStupidLongLong() {
 	//	int a;
 //	long b;// 4 byte in wasm/windows grr
@@ -500,7 +501,10 @@ void testDiv() {
 
 void checkNil() {
 	check(NIL.isNil());
-	assert_equals(NIL.name.data, nil_name);
+	check(nil_name == "nil");// WASM
+	if (NIL.name.data != nil_name)
+		assert_equals(NIL.name.data, nil_name);
+	check(NIL.name.data == nil_name);
 	check(NIL.length == 0);
 	check(NIL.children == 0);
 	check(NIL.parent == 0);
@@ -1621,7 +1625,6 @@ void testIndex() {
 	check(result.length == 3);
 	assert_is("{a b c}#2", "b");
 	assert_is("(a b c)#2", "b");
-	assert_is("(a1 b2 c3)#2", "b2");
 	skip(
 			assert_is("[a b c]#2", "b");
 	)
@@ -2176,26 +2179,25 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-
 //	testFloatReturnThroughMain();
 //	assert_emit("x='abcde';x[3]", 'd');
-	assert_emit("1", 1);
-	assert_emit(("-2000000000000"), (long) -2000000000000l)
-	assert_emit("42.0/2.0", 21);
-	assert_emit("42.0/2.0", 21.);
-	assert_emit("puts('ok');", 0);
-	assert_equals(eval("42.0/2.0"), 21)
-
-	assert_emit("x='abcde';x#4='x';x[3]", 'x');
-
-	assert_emit(("-1.1"), -1.1)
-	assert_emit("'OK'", "OK");
-	assert_emit("10007.0%10000.0", 7);
-	assert_emit("10007.0%10000", 7);
-	assert_emit("x='abcde';x#4='x';x[3]", 'x');
-	assert_emit(("2000000000000"), (long) 2000000000000l)// auto long
-	assert_emit("- √9", -3);
-	assert_emit("puts('ok');", 0);
+//	assert_emit("1",1);
+//	assert_emit(("-2000000000000"), (long) -2000000000000l)
+//	assert_emit("42.0/2.0", 21);
+//	assert_emit("42.0/2.0", 21.);
+//	assert_emit("puts('ok');", 0);
+//	assert_equals(eval("42.0/2.0"), 21)
+//
+//	assert_emit("x='abcde';x#4='x';x[3]", 'x');
+//
+//	assert_emit(("-1.1"), -1.1)
+//	assert_emit("'OK'", "OK");
+//	assert_emit("10007.0%10000.0", 7);
+//	assert_emit("10007.0%10000", 7);
+//	assert_emit("x='abcde';x#4='x';x[3]", 'x');
+//	assert_emit(("2000000000000"), (long) 2000000000000l)// auto long
+//	assert_emit("- √9", -3);
+//
 //	testMultiValue();
 
 //	assert_emit("1,3", Node(1, 3, 0));
