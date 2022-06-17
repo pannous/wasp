@@ -865,8 +865,10 @@ Code emitOperator(Node node, String context) {
 	if (name == ":=")return emitDeclaration(node, node.first());
 	if (name == "=")return emitSetter(node, node.first(), context);
 	if (name == "::=")return emitGetGlobal(node); // globals ASSIGNMENT already handled in analyze / globalSection()
-	if (node.length < 1 and not node.value.node and not node.next) error("missing args for operator "s + name);
-	else if (node.length == 1) {
+	if (node.length < 1 and not node.value.node and not node.next) {
+		if (name == "not")return emitValue(True, context);
+		error("missing args for operator "s + name);
+	} else if (node.length == 1) {
 		Node arg = node.children[0];
 		const Code &arg_code = emitExpression(arg, context);// should ALWAYS just be value, right?
 		arg_type = last_type;
@@ -1165,9 +1167,9 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				else if (!node.isSetter()) {
 					print(locals[context]);
 					if (not node.type)
-						error("UNKNOWN local symbol "s + name + " in context " + context);
+						error("UNKNOWN local symbol ‘"s + name + "’ in context " + context);
 				} else {
-					error("local symbol "s + name.trim() + " in " + context + " should be registered in analyze()!");
+					error("local symbol ‘"s + name.trim() + "’ in " + context + " should be registered in analyze()!");
 					current_local_names.add(name);// ad hoc x=42
 					local_index = current_local_names.size() - 1;
 				}
@@ -1369,6 +1371,7 @@ Code cast(Valtype from, Valtype to) {
 	if (from == void_block)return nop;// todo: pray
 	if (from == unknown_type)return nop;// todo: don't pray
 	if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
+	if (from == array and to == i64)return nop;// pray / assume i32 is a pointer here. todo!
 	if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
 	if (from == f32 and to == array)return nop;// pray / assume f32 is a pointer here. LOL NO todo!
 	if (from == i64 and to == array)return Code(i32_wrap_i64);;// pray / assume i32 is a pointer here. todo!

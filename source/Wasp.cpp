@@ -14,7 +14,7 @@
 #include <math.h>
 
 int SERVER_PORT = 1234;
-
+bool eval_via_emit = true;
 // get home dir :
 /*#include <unistd.h>
 #include <sys/types.h>
@@ -358,6 +358,8 @@ public:
 
 	// see 'apply' for operator eval
 	static Node eval(String source) { // return by value ok, rarely used and stable
+		if (eval_via_emit)
+			return emit(source);
 		Node parsed = Wasp().parse(source);
 		parsed.print();
 #ifndef RUNTIME_ONLY
@@ -1212,9 +1214,9 @@ private:
 // last part to preserve {deep{a:3,b:4,c:{d:'hi'}}} != {deep{a:3,b:4,c:'hi'}}
 
 		if (val.value.longy and val.kind != objects and deep_copy) {
-			if (&key == &NIL or key.isNil() or key == NIL or val.value.real == 6.4807)
-				if (key.name == nil_name)
-					warn("impossible");
+//			if (&key == &NIL or key.isNil() or key == NIL or val.value.real == 6.4807)
+//				if (key.name == nil_name)
+//					warn("impossible");
 			key.value = val.value;// direct copy value SURE?? what about meta data... ?
 			key.kind = val.kind;
 		} else {
@@ -1618,9 +1620,9 @@ float precedence(char group) {
 
 
 // test functions to check wasm->runtime interaction
-int ok() {
-	return 42;
-}
+//int ok() {
+//	return 42;
+//}
 
 int oki(int i) {// used in wasm runtime test
 	return 42 + i;
