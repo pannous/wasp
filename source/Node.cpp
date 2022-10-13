@@ -1190,6 +1190,8 @@ chars typeName(Kind t) {
 			return "functor";
 		case codepoints:
 			return "codepoint";
+//		case 36:
+//			return "HUH??";
 //		case 255:
 //			return "data";
 		default:
