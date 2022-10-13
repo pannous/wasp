@@ -2027,18 +2027,25 @@ void testSubGroupingIndent() {
 	assert_equals(result.last(), "e");
 }
 
-void testSubGrouping() {// dangling , should make '\n' not close
+void testSubGrouping() {// todo dangling ',' should make '\n' not close
 //	result=parse("a\nb,c,\nd;e");
 	result = parse("a\n"
 	               "b,c,\n"
 	               "d;\n"
 	               "e");
-	assert_equals(result.length, 3);
+	assert_equals(result.length, 3);// b,c,d should be grouped as one because of dangling comma
 	assert_equals(result.first(), "a");
 	assert_equals(result.last(), "e");
-	testSubGroupingIndent();
 }
 
+
+void testSubGroupingFlatten() { // ok [a (b,c) d] should be flattened to a (b,c) d
+	result = parse("[a\nb,c\nd]");
+//	result=parse("a\nb,c\nd");// still wrapped!
+	assert_equals(result.length, 3);
+	assert_equals(result.first(), "a");
+	assert_equals(result.last(), "d");
+}
 
 void tests() {
 	testNodeConversions();
@@ -2060,6 +2067,9 @@ void tests() {
 	testRoundFloorCeiling();
 	testSwitch();
 	testAsserts();
+	testFloatReturnThroughMain();
+	testSmartReturn();
+	testMultiValue();
 	testSuperfluousIndentation();
 	testString();
 	testEmptyLineGrouping();
@@ -2164,61 +2174,34 @@ void tests() {
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
-//	printf("%lx\n", -2000000000000);
-//	printf("%lx", -4615739258092021350);
-//	exit(1);
-	assert_emit("i=-9;√-i", 3);
 
-//	print("OK");
-//	print("a %d c"s % 3);
-//	print("a %f c"s % 3.1);
-//	print("a %x c"s % 15);
-//	printf("a %d c\n", 3);
-//	printf("a %f c\n", 3.1);
-//	printf("a %x c\n", 15);
+	assert_emit("i=-9;√-i", 3);
 //	exit(1);
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-//	assert_is("one plus two times three", 7);
 
-//	testFloatReturnThroughMain();
-//	assert_emit("x='abcde';x[3]", 'd');
-//	assert_emit("1",1);
-//	assert_emit(("-2000000000000"), (long) -2000000000000l)
-//	assert_emit("42.0/2.0", 21);
-//	assert_emit("42.0/2.0", 21.);
-//	assert_emit("puts('ok');", 0);
-//	assert_equals(eval("42.0/2.0"), 21)
-//
-//	assert_emit("x='abcde';x#4='x';x[3]", 'x');
-//
-//	assert_emit(("-1.1"), -1.1)
-//	assert_emit("'OK'", "OK");
-//	assert_emit("10007.0%10000.0", 7);
-//	assert_emit("10007.0%10000", 7);
-//	assert_emit("x='abcde';x#4='x';x[3]", 'x');
-//	assert_emit(("2000000000000"), (long) 2000000000000l)// auto long
-//	assert_emit("- √9", -3);
-//
-//	testMultiValue();
-
-//	assert_emit("1,3", Node(1, 3, 0));
-//	exit(1);
-//	assert_emit("'oki'", "oki");
-//	assert_emit("{a:1,b:'ok'}", parse("{a:1,b:'ok'}"));
+// testPrint();// wasm ok?
+	//	testArrayIndicesWasm(); // << TODO again!?
+//	testLogarithm(); // 1. todo 2. auto import lib/math/log.wasm
+	assert_emit("'oki'", "oki");
+	assert_emit("1,3", Node(1, 3, 0));
 //	assert_emit("1;3", 3);
+//	assert_emit("{a:1,b:'ok'}", parse("{a:1,b:'ok'}"));
+
+//	assert_is("one plus two times three", 7);
+//	exit(1);
 //	testArrayInitialization();
-//	testMultiValue();
 //	assert_is("x=(1 4 3);x#2", 4);
 //	testArrayIndices();
 //	testArrayS();
 //	run("wavefront.wasp");
 //	assert_parses("  if (!det) return null");
 //	exit(1);
-//	testLogarithm();
 //	assert_emit("1 +1 == [1 1]", 1);
 //	testSubGrouping();
+	testSubGroupingFlatten();
+//	testSubGroupingIndent();
 	//testNodesInWasm();
 //	testMergeWabt();
 //	testPaintWasm();

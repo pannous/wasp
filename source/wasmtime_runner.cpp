@@ -63,6 +63,14 @@ wrap(square) {
 	return NULL;
 }
 
+
+wrap(log) {
+	double n = args[0].of.f64;
+	results[0].of.f64 = log(n);
+	return NULL;
+}
+
+
 wrap(powd) {
 	double n = args[0].of.f64;
 	double x = args[1].of.f64;
@@ -231,6 +239,7 @@ wasm_wrap *link_import(String name) {
 	if (name == "putf") return &wrap_putf;
 	if (name == "putd") return &wrap_putd;
 	if (name == "putc") return &wrap_putc;
+	if (name == "log") return &wrap_log;
 	if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
 	if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
 	if (name == "main") return &hello_callback;
