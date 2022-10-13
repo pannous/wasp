@@ -112,16 +112,17 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
 			printf("OK %s==%s %s\n", a.name.data, b.name.data, context);
 		else
 			printf("OK %s == %s   %s\n", a.serialize().data, b.serialize().data, context);
-
 	} else
 		printf("\nFAILED assert_equals! %s should be %s %s\n"s, a, b, context);
 	printf("%s != %s\n", a.serialize().data, b.serialize().data);
-
 	return a == b;
 }
 
 bool assert_equals_x(Node *a, const Node *b, char *context = "") {
-	if (!a)return !b;
+	if (!a) {
+		if (b)printf("\nFAILED assert_equals! NULL should be %s\n"s, b->serialize(), context);
+		return !b;
+	}
 	return assert_equals_x(*a, *b, context);
 }
 

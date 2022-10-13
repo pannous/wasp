@@ -118,8 +118,17 @@ void testConstReturn() {
 	assert_emit(("42"), 42)
 }
 
-void testPrint() {
+void testPrint() {// does wasm print? (visual control!!)
 	assert_emit(("print 42"), 42)
+	print("OK");
+	printf("%lx\n", -2000000000000);
+	printf("%lx", -4615739258092021350);
+	print("a %d c"s % 3);
+	print("a %f c"s % 3.1);
+	print("a %x c"s % 15);
+	printf("a %d c\n", 3);
+	printf("a %f c\n", 3.1);
+	printf("a %x c\n", 15);
 }
 
 void testMathPrimitives() {
@@ -1172,6 +1181,24 @@ void testMathLibrary() {
 	assert_emit("i=-9;√-i", 3);
 	assert_emit("i=-9;√ -i", 3);
 //		assert_emit("use math;√π²", 3);
+}
+
+void testSmartReturn() {
+	assert_emit("x='abcde';x[3]", 'd');
+	assert_emit("1", 1);
+	assert_emit(("-2000000000000"), (long) -2000000000000l)
+	assert_emit("42.0/2.0", 21);
+	assert_emit("42.0/2.0", 21.);
+	assert_emit("puts('ok');", 0);
+	assert_equals(eval("42.0/2.0"), 21)
+	assert_emit("x='abcde';x#4='x';x[3]", 'x');
+	assert_emit(("-1.1"), -1.1)
+	assert_emit("'OK'", "OK");
+	assert_emit("10007.0%10000.0", 7);
+	assert_emit("10007.0%10000", 7);
+	assert_emit("x='abcde';x#4='x';x[3]", 'x');
+	assert_emit(("2000000000000"), (long) 2000000000000l)// auto long
+	assert_emit("- √9", -3);
 }
 
 void testMultiValue() {
