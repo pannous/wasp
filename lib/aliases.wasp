@@ -6,7 +6,7 @@
 # ~ => ≃ => equivalent ≙  => ﹦ => identical ≡, exactly identical, ≣
 # also ternary a~b%c means a≙b wrt. c  (with respect to)
 
-:= : be, ≔, ≝,⩦,⭀,⥱   # ≕ <> set let var val ⪮ ⩷
+# := : be, ≔, ≝  # ⩦, ⭀,⥱   # ≕ <> set let var val ⪮ ⩷
 =: is, ﹦, ＝, ⁼  # used as defining AND as comparison!
 == : equals, ⩵, ≟, ≌, ≑, ≗, ≛, ≜,  equivalent, ≡, identical, ≣, ≙, ≍, ⩶, is_equal, equal, same, the same as     # even par
 ~ : similar, ⋍, ≈,⩯,⩰, ≊, ≌, ~~, circa, approximately, around, like    #  about <> ± ∓
