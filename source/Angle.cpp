@@ -83,9 +83,13 @@ Node getType(Node node) {
 	return typ;
 }
 
+
 bool isType(Node &expression) {
 	auto name = expression.name;
-	if (name == "puts" or name == "is" or name == "has" or name == "equals")return false;// todo …
+	// todo makes … verbs!
+	if (name == "puts" or name == "plus" or name == "minus" or name == "times" or name == "is" or name == "has" or name == "was" or name == "does" or
+	    name == "equals")
+		return false;// todo …
 	// todo: whitelist known singular types?
 	if (name.endsWith("s")) { // numbers, persons …
 		auto cut = name.substring(0, -2);
@@ -336,6 +340,7 @@ List<String> collectOperators(Node &expression) {
 	for (Node &op: expression) {
 		String &name = op.name;
 		if (not name)continue;
+//		name = normOperator(name);// times => * aliases
 		if (name.endsWith("="))// += etc
 			operators.add(name);
 		else if (prefixOperators.has(name)) {
@@ -429,7 +434,6 @@ Node &groupTypes(Node &expression, const char *context) {
 	}
 	for (int i = 0; i < expression.length; i++) {
 		Node &node = expression.children[i];
-		if (not isType(node))continue;
 		if (not isType(node))continue;
 		if (node.length > 0) {
 			node = groupTypes(node, context);// double (x,y,z)
