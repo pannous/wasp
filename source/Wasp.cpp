@@ -14,8 +14,8 @@
 #include <math.h>
 
 int SERVER_PORT = 1234;
-//bool eval_via_emit = false;// not all tests yet
-bool eval_via_emit = true;// << todo!
+bool eval_via_emit = false;// not all tests yet
+//bool eval_via_emit = true;// << todo!
 // get home dir :
 /*#include <unistd.h>
 #include <sys/types.h>
