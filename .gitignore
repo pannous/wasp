@@ -8,6 +8,7 @@ package-lock.json*
 npm-debug.log
 .DS_Store
 cmake-build-debug/
+xxx
 mark.bc
 mark.cpp.wasm
 mark.cpp.wasm.map
@@ -27,11 +28,7 @@ wasp.cbp
 *.wasm
 *.o
 *.dwarf
-cmake-build-default/
-cmake-build-wasm/old/
-cmake-build-wasm
-cmake-build-wasi/
-cmake-build-wasi-1/
+cmake-build-*
 old
 CNAME
 angle

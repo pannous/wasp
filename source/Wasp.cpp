@@ -14,7 +14,8 @@
 #include <math.h>
 
 int SERVER_PORT = 1234;
-bool eval_via_emit = true;
+//bool eval_via_emit = false;// not all tests yet
+bool eval_via_emit = true;// << todo!
 // get home dir :
 /*#include <unistd.h>
 #include <sys/types.h>
@@ -86,6 +87,7 @@ chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "th
                           "upto", "…", "...", "..<" /*range*/,
                           "%", "mod", "modulo", "log10", "log₁₀", "log₂", "ln", "logₑ", "⌟", "2⌟", "10⌟", "⌞", "⌞2",
                           "⌞10",
+                          "plus", "times", "add", "minus",// todo via aliases.wasp / SPO PSO verb matching
                           "use", "include", "require", "import", "module",
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
@@ -103,6 +105,51 @@ List<chars> operator_list;
 List<chars> operator_list(operator_list0);
 #endif
 
+
+Map<String, List<String>> aliases;
+Map<long/*hash*/, String *> hash_to_normed_alias;
+
+bool aliases_loaded = false;
+
+void load_aliases() {
+	aliases.setDefault(List<String>());
+	hash_to_normed_alias.setDefault(new String());
+	data_mode = true;
+	auto list = parseFile("aliases.wasp");
+	for (auto key: list) {
+		auto normed = key.name;
+		aliases[normed] = key.toList();
+		for (auto alias: key) {
+			auto variant = alias.name;
+			hash_to_normed_alias[variant.hash()] = &normed.clone();
+		}
+	}
+//	check(hash_to_normed_alias["mod_d"s.hash()]=="mod"s);
+	aliases_loaded = true;
+}
+
+typedef int32_t usize;
+typedef uint32_t u32;
+struct AssemblyScriptData {
+	usize mmInfo;// 	-20 	usize 	Memory manager info
+	usize gcInfo;// 	-16 	usize 	Garbage collector info
+	usize gcInfo2;// 	-12 	usize 	Garbage collector info
+	u32 rtId;// 	-8 	u32 	Unique id of the concrete class
+	u32 rtSize;// 	-4 	u32 	Size of the data following the header
+	void *payload;// 0 	Payload starts here
+} AssemblyScriptData;
+
+String &normOperator(String &alias) {
+	if (alias.empty())return alias;
+	if (not aliases_loaded)load_aliases();
+	auto hash = alias.hash();
+	if (not hash_to_normed_alias.has(hash))
+		return alias;// or NIL : no alias
+	auto normed = hash_to_normed_alias[hash];
+	if (not normed->empty() and alias != normed)
+		trace(alias + " operator normed to " + normed);
+	return *normed;
+}
 
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
@@ -1692,9 +1739,17 @@ Node run(String source) {
 #endif
 }
 
+void load_parser_initialization() {
+//	if(operator_list.size()==0)
+	operator_list = List<chars>(operator_list0);// wasm hack
+	load_aliases();
+}
+
 //static
 Node &parse(String source) {
-	operator_list = List<chars>(operator_list0);// wasm hack
+
+	if (operator_list.size() == 0)
+		load_parser_initialization();
 	// WE HAVE A GENERAL PROBLEM:
 	// 1. top level objects are not constructed True
 	// 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
