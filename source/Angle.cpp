@@ -918,7 +918,7 @@ Node &groupFunctionCalls(Node &expressiona, String context) {
 			minArity--;
 		}
 		if (arg_length < minArity)
-			error("missing arguments for function %s, defaults and currying not yet supported"s % name);
+			error("missing arguments for function %s, given %d < expected %d. defaults and currying not yet supported"s % name % arg_length % minArity);
 		else if (arg_length == 0 and minArity > 0)
 			error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
 //		else if (rest.first().kind == operators) { // random() + 1 == random + 1
@@ -1102,6 +1102,7 @@ void preRegisterSignatures() {
 	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("pow", Signature().import().add(float64).add(float64).returns(float64));
+	functionSignatures.insert_or_assign("log", Signature().import().add(float64).returns(float64));
 	functionSignatures.insert_or_assign("powd", Signature().import().add(float64).add(float64).returns(float64));
 	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
 	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));

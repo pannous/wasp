@@ -1742,7 +1742,7 @@ Node run(String source) {
 void load_parser_initialization() {
 //	if(operator_list.size()==0)
 	operator_list = List<chars>(operator_list0);// wasm hack
-	load_aliases();
+//	load_aliases();
 }
 
 //static
