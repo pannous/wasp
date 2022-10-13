@@ -37,3 +37,5 @@ float precedence(char group); // special: don't mix
 codepoint closingBracket(codepoint bracket);
 
 Node parseFile(String filename);
+
+String &normOperator(String &alias);

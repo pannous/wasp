@@ -29,36 +29,7 @@ Map<String, Node> referenceMap; // lookup types…
 
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
-Map<String, List<String>> aliases;
-Map<long/*hash*/, String> hash_to_normed_alias;
 
-bool aliases_loaded = false;
-
-void load_aliases() {
-	aliases.setDefault(List<String>());
-	hash_to_normed_alias.setDefault(String());
-	data_mode = true;
-	auto list = parseFile("aliases.wasp");
-	for (auto key: list) {
-		auto normed = key.name;
-		aliases[normed] = key.toList();
-		for (auto alias: key) {
-			auto variant = alias.name;
-			hash_to_normed_alias[variant.hash()] = normed;
-		}
-	}
-//	check(hash_to_normed_alias["mod_d"s.hash()]=="mod"s);
-	aliases_loaded = true;
-}
-
-String normOperator(String &alias) {
-//	if (not aliases_loaded)load_aliases();
-	auto hash = alias.hash();
-	if (not hash_to_normed_alias.has(hash))
-		return alias;// or NIL : no alias
-	auto normed = hash_to_normed_alias[hash];
-	return normed;
-}
 
 Module runtime;
 String start = "main";
@@ -269,9 +240,11 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	if (eq(s, "$"))
 		return get_local; // $0 $1 ...
 
+	if (eq(s, "%"))return 0;// handle later
+
+	breakpoint_helper
 	trace("unknown or non-primitive operator %s\n"s % String(s));
 	// can still be matched as function etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
-//	breakpoint_helper
 //		error("invalid operator");
 	return 0;
 }
@@ -859,6 +832,7 @@ Code emitValue(Node node, String context) {
 Code emitOperator(Node node, String context) {
 	Code code;
 	String &name = node.name;
+//	name = normOperator(name);
 	if (node.length == 0 and name == "=") return code;// BUG
 	int index = functionIndices.position(name);
 	if (name == "then")return emitIf(*node.parent, context);// pure if handled before
