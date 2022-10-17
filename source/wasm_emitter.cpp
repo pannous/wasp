@@ -2218,9 +2218,11 @@ Code memorySection() {
 void prepareContext() {
 	stringIndices.clear();
 	referenceIndices.clear();
+	referenceMap.clear();
 	functionCodes.clear();
 	typeMap.setDefault(-1);
 	typeMap.clear();
+	referenceMap.setDefault(Node());
 	locals.setDefault(List<String>());
 	localTypes.setDefault(List<Valtype>());
 	data = (char *) malloc(MAX_DATA_LENGTH);
