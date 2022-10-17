@@ -2049,7 +2049,8 @@ void testSubGroupingFlatten() { // ok [a (b,c) d] should be flattened to a (b,c)
 
 void tests() {
 	testNodeConversions();
-//	testSinus();
+	testArrayIndices();
+	testSinus();
 	testUpperLowerCase();
 	testSerialize();
 	skip(
@@ -2089,7 +2090,6 @@ void tests() {
 	testDedent();
 	testGroupCascade0();
 	testGraphQlQuery();
-	//	testNodiscard();// works NOW!
 	print(testNodiscard());
 	testGroupCascade();
 	testNewlineLists();
@@ -2109,7 +2109,6 @@ void tests() {
 	testLogicPrecedence();
 	testRootFloat();
 	testCpp();
-//	testErrors();
 	testNilValues();
 
 	testLists();
@@ -2153,6 +2152,7 @@ void tests() {
 	testSignificantWhitespace();
 
 	skip(
+			testErrors();// error: failed to call function   wasm trap: integer divide by zero
 			assert_is("one plus two times three", 7);
 			testMathExtra();// "one plus two times three"==7 used to work?
 			testKitchensink();
@@ -2174,8 +2174,6 @@ void tests() {
 void testCurrent() {
 	//	throwing = false;// shorter stack trace
 	//	panicking = true;//
-
-	assert_emit("i=-9;√-i", 3);
 //	exit(1);
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
