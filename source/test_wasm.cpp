@@ -671,13 +671,14 @@ void testOldRandomBugs() {
 	check(not(bool) Node("x"));
 	check(false == (bool) Node("x"));
 	check(Node("x") == false);
-	assert_is("x", Node(false));// passes now but not later!!
-
-	assert_is("x", false);// passes now but not later!!
-	assert_is("y", false);
-	assert_is("x", false);
+	assert_throws("x"); // UNKNOWN local symbol ‘x’ in context main  OK
+//	assert_is("x", Node(false));// passes now but not later!!
+//	assert_is("x", false);// passes now but not later!!
+//	assert_is("y", false);
+//	assert_is("x", false);
 	assert(interpret("ç='☺'") == "☺");// fails later => bad pointer?
-	assert(eval("(2+1)==(4-1)") == 1);
+	assert_is("(2+1)==(4-1)", true);
+	assert(eval("(2+1)==(4-1)") == 1);// suddenly passes !? not with above line commented out BUG <<<
 	assert(eval("3==2+1") == 1);
 	assert(eval("2+1==2+1") == 1);
 	assert_emit("square 3", 9);
