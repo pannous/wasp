@@ -260,7 +260,9 @@ static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_t
 	}
 	fprintf(stderr, "%.*s\n", (int) error_message.size, error_message.data);
 	wasm_byte_vec_delete(&error_message);
-	exit(1);
+
+	throw;// message; // let Wasp handle this!
+//	exit(1);
 }
 
 bool done = 0;
