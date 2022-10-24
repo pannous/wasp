@@ -309,7 +309,8 @@ long run_wasm(unsigned char *data, int size) {
 	wasmtime_instance_t instance;
 
 	Module meta = read_wasm(data, size);// wasmtime module* sucks so we read it ourselves!
-	wasmtime_extern_t imports[meta.import_count * 2];
+	int importCount = meta.import_count;
+	wasmtime_extern_t imports[1 + importCount * 2];
 	int i = 0;
 	// LINK IMPORTS!
 	for (String import_name: meta.import_names) {
@@ -323,7 +324,7 @@ long run_wasm(unsigned char *data, int size) {
 		imports[i++] = import;
 	}
 
-	error = wasmtime_instance_new(context, module, imports, meta.import_count, &instance, &trap);
+	error = wasmtime_instance_new(context, module, imports, importCount, &instance, &trap);
 	if (error != NULL || trap != NULL) exit_with_error("failed to instantiate", error, trap);
 
 	wasmtime_extern_t run;

@@ -567,7 +567,7 @@ public:
 #endif
 		neu[length + c.length] = 0;
 //		put(neu);
-		String *ok = new String(neu);
+		String *ok = new String(neu);// never to be freed => buffer overflow sometime?
 		ok->length = length + c.length;
 		return *ok;
 	}

@@ -316,7 +316,9 @@ void consumeCustomSection() {
 //		pos = size;// force finish
 //		error("consumeCustomSection not implementated for "s + type);
 		customSectionDatas.start = 0;// reset
-		module.custom_sections.add(customSectionDatas);// raw
+
+//		TODO REENABLE!! currently causes
+//		module.custom_sections.add(customSectionDatas);// raw
 	}
 }
 
