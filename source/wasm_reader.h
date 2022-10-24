@@ -50,6 +50,7 @@ public:
 	Map<String, Signature> signatures; // ⚠️ ≠ global functionSignatures   todo USE IT!
 //	int data_offset=0;// todo: read from data section! why not 0 ?
 	int data_offset_end;
+	bool needs_relocate = false;
 };
 
 Module read_wasm(bytes buffer, int size);

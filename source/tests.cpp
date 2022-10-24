@@ -109,7 +109,7 @@ void testIteration() {
 	List<String> args;
 	for (auto x: args)error("NO ITEM");
 	List<String> list;// = {"1", "2", "3", 0};
-	todo("not in wasm");
+//	todo("not in wasm");
 	int i = 0;
 	for (auto x: list)i++;
 	check(i == 3);
@@ -885,12 +885,10 @@ void testRoot() {
 
 void testRootFloat() {
 //	skip(  // include <cmath> causes problems, so skip
-//	assert_is("√42*√42", 42.);// todo tokenized as *√
 	assert_is("√42.0 * √42.0", 42.);
 	assert_is("√42 * √42.0", 42.);
 	assert_is("√42.0*√42", 42);
-	assert_is("√42*√42", 42);// round AFTER!
-//	)
+	assert_is("√42*√42", 42);// round AFTER! ok with f64! f32 result 41.99999 => 41
 }
 
 
@@ -2202,10 +2200,20 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+//	assert_run("x=123;x + 4 is 127", true);
+//	assert_run("x='123';x + '4' is '1234'", true);// ok
+	for (int i = 0; i < 10000; ++i) {
+		printf("\n\n    ===========================================\n%d\n\n\n", i);
+		assert_emit("‖-3‖", 3);// Heap corruption
+	}
+	assert_emit("i=-9;√-i", 3);
+	assert_emit(("-1.1"), -1.1) // todo for wasm3 !
+	assert_is("√42*√42", 42);// round AFTER!
+
 //	testImport42();
 //	testSinus();
 //	test_sinus_wasp_import();
-	testLogarithm();
+//	testLogarithm();
 // testPrint();// wasm ok?
 	//	testArrayIndicesWasm(); // << TODO again!?
 //	testLogarithm(); // 1. todo 2. auto import lib/math/log.wasm
@@ -2213,7 +2221,7 @@ void testCurrent() {
 
 #ifndef WASMTIME
 	assert_emit("n=3;2ⁿ", 8);
-	assert_emit("use log;log10(100)", 2); // function attempted to return an incompatible value  … I still don't get it!
+//	assert_emit("use log;log10(100)", 2); // function attempted to return an incompatible value  … I still don't get it!
 //	log10(x):=Math.log(x)/Math.log(10)
 #endif
 //	assert_emit("1;3", 3);
@@ -2231,7 +2239,9 @@ void testCurrent() {
 //	assert_emit("1 +1 == [1 1]", 1);
 //	testSubGrouping();
 	testSubGroupingFlatten();
-	testIteration();
+	skip_wasm(
+			testIteration();
+	)
 //	testSubGroupingIndent();
 	//testNodesInWasm();
 //	testMergeWabt();

@@ -1,4 +1,4 @@
-#pragma once
+//#pragma once
 //
 // Created by me on 20.10.20.
 // https://monoinfinito.wordpress.com/2013/02/19/c-exceptions-under-the-hood-3-an-abi-to-appease-the-linker/

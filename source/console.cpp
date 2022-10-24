@@ -36,10 +36,10 @@ bool file_read_done = false;
 
 void getline(char *buf) {
 	if (buf == 0) return; // end
-	int MAXLENGTH = 10000;
-	const char *PROMPT = "wasp> ";
 //#ifdef USE_READLINE
 #ifdef CONSOLE
+	int MAXLENGTH = 10000;
+	const char *PROMPT = "wasp> ";
 	if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
 	char *tmp = readline(PROMPT);
 	if (tmp == 0 or strlen(tmp) == 0) {
@@ -57,9 +57,10 @@ void getline(char *buf) {
 }
 
 //bool parse(string* data) {
+#ifdef CONSOLE
 static char *lastCommand;
 static char *commandCode;
-
+#endif
 char *version = "1.0";
 
 // Todo: web version?
