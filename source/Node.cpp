@@ -248,7 +248,7 @@ Node &Node::set(String string, Node *node) {
 	if (&entry == &NIL)
 		error("IMPOSSIBLE");
 	if (length > 0) {
-		Node &current = children[length - 1];
+//		Node &current = children[length - 1];
 //		current.next = &entry;// WE NEED TRIPLES cause objects can occur in many lists
 //		entry.previous=current;
 	}
@@ -280,7 +280,7 @@ Node &Node::set(String string, Node *node) {
 
 bool Node::operator==(String other) {
 //	return (*this == other.data); // todo unify/simplify
-	if (this == 0)return other.empty();
+//	if (this == 0)return other.empty();
 //	if (kind == objects or kind == key)objects={…} NOT have value!  return *value.node == other or value.string == other;
 	if (kind == key) return other == name or (value.node and *value.node == other);// todo: a=3 a=="a" ??? really?
 	if (kind == longs)
@@ -380,8 +380,8 @@ bool Node::operator==(Node &other) {
 //	if (kind.type == int_array and other.kind.type == int_array)
 //		return value.real == other.value.longy;
 
-	auto a1 = isNil();
-	auto a2 = other.isNil();
+//	auto a1 = isNil();
+//	auto a2 = other.isNil();
 	if (isNil() and other.isNil()) {
 		trace("NILS!");
 		return true;
@@ -570,7 +570,7 @@ Node &Node::add(const Node *node) {
 }
 
 Node &Node::add(const Node &node) {
-	if (&node == 0)return *this;
+//	if (&node == 0)return *this;
 	return add(&node);
 }
 
@@ -747,7 +747,7 @@ bool Node::isNil() const { // required here: name.empty()
 // todo hide : use serialize() for true deep walk
 String Node::serializeValue(bool deep) const {
 	if (!this)return "";
-	String wasp = "";
+//	String wasp = "";
 	Value val = value;
 //	switch (kind.type) {
 //		case int_array:

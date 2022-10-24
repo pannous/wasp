@@ -199,6 +199,9 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, ">="))return f64_ge; // f64.ge
 		if (eq(s, "<"))return f64_lt; // f64.lt
 		if (eq(s, "<="))return f64_le; // f64.le
+		if (eq(s, "√"))return f64_sqrt;
+		if (eq(s, "sqrt"))return f64_sqrt;
+		if (eq(s, "root"))return f64_sqrt;
 	} else if (kind == f32t) {
 		if (eq(s, "not"))return f32_eqz; // f32.eqz  // f32.eqz  // HACK: no such thing!
 		if (eq(s, "¬"))return f32_eqz; // f32.eqz  // HACK: no such thing!
@@ -214,13 +217,14 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "<"))return f32_lt; // f32.lt
 		if (eq(s, "<="))return f32_le; // f32.le
 	}
+	if (eq(s, "√"))return f64_sqrt; // else √42*√42=41.9999
+	if (eq(s, "√"))return f32_sqrt; // f32.sqrt
+	if (eq(s, "sqrt"))return f32_sqrt; // f32.sqrt
+	if (eq(s, "root"))return f32_sqrt; // f32.sqrt // conflicts with user keywords!
 	// string addition etc handled elsewhere!
 	if (eq(s, "-…"))return f32_neg; // f32.neg
 	if (eq(s, "negate"))return f32_neg; // f32.neg
 // the following functions force i32->f32
-	if (eq(s, "√"))return f32_sqrt; // f32.sqrt
-	if (eq(s, "sqrt"))return f32_sqrt; // f32.sqrt
-	if (eq(s, "root"))return f32_sqrt; // f32.sqrt // conflicts with user keywords!
 //	if (eq(s, "sqare root"))return f32_sqrt; // f32.sqrt
 
 	if (eq(s, "abs"))return f32_abs; // f32.abs // there is NO i32_abs
@@ -1677,7 +1681,8 @@ Code emitBlock(Node &node, String context) {
 //				block.addConst(string_header_64).addByte(i64_or);
 //			todo("last_typo.type");
 		} else if (last_type == float64 and context == start) {
-			block.addByte(i64_trunc_f64_s);
+//			block.addByte(i64_trunc_f64_s);
+			block.addByte(i64_reinterpret_f64);// hack smart pointers as main return: f64 has int range which is never hit
 			last_type = int64;
 		}
 //		if(last_type==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string
@@ -2288,8 +2293,10 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 //		start = "";
 	}
 
+	const Code customSectionvector;
+//	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
+	// ^^^ currently causes malloc_error WHY??
 
-	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
 	auto customSection = createSection(custom_section, customSectionvector);
 	Code typeSection1 = typeSection();// types must be defined in analyze(), not in code declaration
 	Code importSection1 = importSection();// needs type indices

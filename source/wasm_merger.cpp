@@ -7,8 +7,6 @@
 #include "Code.h"
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 #define WASM_MEMORY_SIZE 0xF0000000
-
-
 int total_functions = -1;
 
 Code createSection(Section sectionType, Code data);
@@ -77,15 +75,17 @@ Code mergeDataSection(Module lib, Module main) {
 }
 
 
-Code relocate(Code &blocks) {
+Code &relocate(Module &add, Module &base) {
+	if (not add.needs_relocate)return add.code_data;
 	todo("relocate, maybe see wasm_merger_wabt.cpp");
-	return blocks;//
+	return add.code_data;
 }
 
 Code mergeCodeSection(Module lib, Module main) {
 	int codes = lib.code_count + main.code_count;
-	Code relocated = relocate(lib.code_data);
-	return createSection(code_section, Code(codes) + relocated + main.code_data);
+	if (lib.needs_relocate)lib.code_data = relocate(lib, main);
+	if (main.needs_relocate)lib.code_data = relocate(main, lib);
+	return createSection(code_section, Code(codes) + lib.code_data + main.code_data);
 }
 
 Code mergeCustomSections(Module lib, Module main) {
@@ -125,7 +125,6 @@ Code mergeNameSection(Module lib, Module main) {
 Code mergeLinkingSection(Module lib, Module main) {
 	return encodeVector(lib.linking_section + main.linking_section);
 }
-
 Code merge_wasm(Module lib, Module main) {
 	total_functions = lib.total_func_count + main.total_func_count;
 	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4)

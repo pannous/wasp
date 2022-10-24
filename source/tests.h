@@ -32,7 +32,7 @@ if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else prin
 
 bool assert_equals_x(String a, String b, char *context = "") {
 	if (a == b) printf("OK %s==%s %s\n", a.data, b.data, context);
-	else printf("\nFAILED assert_equals!\n %s should be %s %s\n"s, a.data, b.data, context);
+	else printf("\nFAILED assert_equals!\n %s should be %s %s\n", a.data, b.data, context);
 	return a == b;
 }
 
@@ -41,40 +41,41 @@ bool assert_equals_x(String *a, String b, char *context = "") {
 }
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
-	if (a.name != b)printf("\nFAILED assert_equals! %s should be %s %s\n"s, a.name, b, context);
+	if (a.name != b)printf("\nFAILED assert_equals! %s should be %s %s\n", a.name.data ? a.name.data : "???", b, context);
 	else printf("OK %s==%s %s\n", a.name.data, b, context);
 	return a == b;
 }
 
 
 bool assert_equals_x(Node a, const char *b, char *context = "") {
-	if (a.name != b)printf("\nFAILED assert_equals! %s should be %s %s\n"s, a.name, b, context);
+	if (a.name != b)printf("\nFAILED assert_equals! %s should be %s %s\n", a.name.data, b, context);
 	else printf("OK %s==%s %s\n", a.name.data, b, context);
 	return a == b;
 }
 
 
 bool assert_equals_x(Node a, int b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %d should be %d %s\n"s, a.value.longy, b, context);
+	if (a != Node(b))printf("\nFAILED assert_equals! %lld should be %d %s\n", a.value.longy, b, context);
 	else printf("OK %lld==%d\n", a.value.longy, b);
 	return a == b;
 }
 
 // WTF why is char* unexplicitly cast to bool!?!
 bool assert_equals_x(Node a, bool b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %d should be %d %s\n"s, a.value.longy, b, context);
+	if (a != Node(b))printf("\nFAILED assert_equals! %lld should be %d %s\n", a.value.longy, b, context);
+
 	else printf("OK %lld==%d\n", a.value.longy, b);
 	return a == b;
 }
 
-bool assert_equals_x(Node &a, double b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %f should be %f %s\n"s, a.value.longy, b, context);
+bool assert_equals_x(Node &a, double b, char *context) {
+	if (a != Node(b))printf("\nFAILED assert_equals! %lld should be %f %s\n", a.value.longy, b, context);
 	else printf("OK %f==%f\n", a.value.real, b);
 	return a == b;
 }
 
 bool assert_equals_x(Node a, double b, char *context = "") {
-	if (a != Node(b))printf("\nFAILED assert_equals! %f should be %f %s\n"s, a.value.longy, b, context);
+	if (a != Node(b))printf("\nFAILED assert_equals! %lld should be %f %s\n", a.value.longy, b, context);
 	else printf("OK %f==%f\n", a.value.real, b);
 	return a == b;
 }
@@ -87,7 +88,7 @@ bool assert_equals_x(Node a, double b, char *context = "") {
 
 
 bool assert_equals_x(Node a, long b, char *context = "") {
-	if (!(a == b))printf("\nFAILED assert_equals! %s %ld should be %ld %s\n"s, a.name, a.value.longy, b, context);
+	if (!(a == b))printf("\nFAILED assert_equals! %s %lld should be %ld %s\n", a.name.data, a.value.longy, b, context);
 	else printf("OK %lld==%ld %s\n", a.value.longy, b, context);
 	return a == b;
 }
@@ -99,7 +100,7 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 	if (ok)
 		printf("OK %s==%s %s\n", name.data, b.data, context);
 	else
-		printf("\nFAILED assert_equals! %s should be %s %s\n"s, name.data, b, context);
+		printf("\nFAILED assert_equals! %s should be %s %s\n", name.data, b.data, context);
 	return ok;
 }
 
@@ -107,20 +108,19 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 
 bool assert_equals_x(Node a, Node b, char *context = "") {
 	//	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
+	char *as = a.serialize().data;
+	char *bs = b.serialize().data;
 	if (a == b) {
-		if (a.name and b.name)
-			printf("OK %s==%s %s\n", a.name.data, b.name.data, context);
-		else
-			printf("OK %s == %s   %s\n", a.serialize().data, b.serialize().data, context);
+		printf("OK %s == %s   %s\n", as, bs, context);
 	} else
-		printf("\nFAILED assert_equals! %s should be %s %s\n"s, a, b, context);
-	printf("%s != %s\n", a.serialize().data, b.serialize().data);
+		printf("\nFAILED assert_equals! %s should be %s %s\n", as, bs, context);
+	printf("%s != %s\n", as, bs);
 	return a == b;
 }
 
 bool assert_equals_x(Node *a, const Node *b, char *context = "") {
 	if (!a) {
-		if (b)printf("\nFAILED assert_equals! NULL should be %s\n"s, b->serialize(), context);
+		if (b)printf("\nFAILED assert_equals! NULL should be %s %s\n", b->serialize().data, context);
 		return !b;
 	}
 	return assert_equals_x(*a, *b, context);
@@ -239,6 +239,7 @@ Node assert_parsesx(chars mark) {
 
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 #define todo_emit(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
+#define skip_wasm(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
 //printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
 bool ok;

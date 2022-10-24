@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.10)
 project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
-
 LINK_DIRECTORIES(Frameworks)
 LINK_DIRECTORIES(Frameworks/lib)
 LINK_DIRECTORIES(/usr/local/lib)
@@ -31,9 +30,9 @@ if (NOT WASM)
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         #         SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :(
-        #        SET(WASMTIME 1) # FASTEST!
+        SET(WASMTIME 1) # FASTEST!
         #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
-        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+        #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
@@ -144,7 +143,7 @@ if (NOT TRACE)
     #    ADD_COMPILE_FLAG("-Wall")
     ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
     ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
-#    ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
+    #    ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
     ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 
     # disable:
@@ -199,6 +198,33 @@ else ()
         set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp source/wasm_merger.cpp)
     endif ()
 
+endif ()
+
+if (WASM)
+else ()
+    set(ASAN_OPTIONS verbosity=3)
+    #    add_compile_options(-Wall)
+    add_compile_options(-g)
+    add_compile_options(-Wno-missing-field-initializers)
+    add_compile_options(-Wformat=2)
+    add_compile_options(-Wpointer-arith)
+    add_compile_options(-m64)
+    add_compile_options(-D_LARGEFILE_SOURCE)
+    add_compile_options(-D_FILE_OFFSET_BITS=64)
+    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+    #   add_compile & add_link NEEDS TO BE IN SYNC!
+    #    add_compile_options(-fsanitize=address)
+    add_compile_options(-fno-stack-protector)
+    add_compile_options(-fno-omit-frame-pointer)
+    add_compile_options(-fsanitize=undefined)
+    add_compile_options(-fsanitize-recover=address)
+    #    add_link_options(-fsanitize=address)
+    add_link_options(-fno-omit-frame-pointer)
+    add_link_options(-fsanitize-recover=address)
+    add_link_options(-fsanitize=undefined)
+    add_link_options(-rdynamic)
+    add_link_options(-m64)
+    #,-fsanitize=address,-fsanitize-recover=address,-fsanitize=undefined,-D_GLIBCXX_USE_CXX11_ABI=0
 endif ()
 
 #
@@ -267,7 +293,8 @@ if (WASM) # OR WASI)
         set(SOURCE_FILES ${SOURCE_FILES} source/exceptions.cpp)
         #        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
         #        --no-validation   --debug
-        ADD_COMPILE_FLAG("-Oz -Qn -Ws,--lto-O3,-O4,--gc-sections") # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
+        ADD_COMPILE_FLAG("-Oz -Qn -Ws,-O4,--gc-sections") # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
+        # todo ^^       warning: unknown warning option '-Ws,--lto-O3,-O4,--gc-sections'  --lto-O3,
         ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
         if (EMCC) # emscripten
             ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
