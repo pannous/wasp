@@ -57,6 +57,7 @@ static wasm_trap_t *hello_callback(
 	return NULL;
 }
 
+// could be unified with wasmer via #define get(0,i32) args[0].data->of.i32 / args[0].of.i32
 wrap(square) {
 	int n = args[0].of.i32;
 	results[0].of.i32 = n * n;
@@ -184,7 +185,6 @@ wrap_any(test_lambda);
 #define wrap_fun(fun) [](void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t)->wasm_trap_t*{fun();return NULL;};
 
 wasm_wrap *link_import(String name) {
-
 	if (name == "memset") return &wrap_todo;// should be provided by wasp!!
 	if (name == "calloc") return &wrap_todo;
 	if (name == "_Z5abs_ff") return &wrap_absf;// why??
