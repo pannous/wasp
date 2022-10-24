@@ -28,7 +28,7 @@ Code &unsignedLEB128(long n) {
 Code &signedLEB128(long value) {
 	Code *buffer = new Code();
 	int more = 1;
-	bool negative = (value < 0);
+//	bool negative = (value < 0);
 	long val = value;
 /* the size in bits of the variable value, e.g., 64 if value's type is int64_t */
 //	size = no. of bits in signed integer;
@@ -130,6 +130,10 @@ chars typeName(Valtype t) {
 			return "void_block";
 		case Valtype::unknown_type:
 			return "unknown";// internal
+		case Valtype::ignore:
+			return "«ignore»";// or "" ;)
+		case Valtype::todoe:
+			return "«todo»";
 		default:
 			error("missing name for Valtype "s + t);
 	}

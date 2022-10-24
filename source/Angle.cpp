@@ -690,8 +690,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 			return *new Node();
 //			expression.clear();
 //			return expression;
-		} else
-			todo("ungrouped dangling operator");
+		}
+//		else todo("ungrouped dangling operator");
 	}
 
 	for (String &op: operators) {
@@ -1112,16 +1112,15 @@ int run_wasm_file(chars file) {
 
 void preRegisterSignatures() {
 	// ORDER MATTERS: will be used for functionIndices later!
-	// read_wasm doesn't have return types! todo WAT
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));// todo: if used
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
-
+// todo: remove all as they come via log.wasm etc
 	functionSignatures.insert_or_assign("malloc", Signature().add(int64).returns(int64));
 	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("pow", Signature().import().add(float64).add(float64).returns(float64));
-	functionSignatures.insert_or_assign("log", Signature().import().add(float32).returns(float32));
-//	functionSignatures.insert_or_assign("log", Signature().import().add(float64).returns(float64));
+//	functionSignatures.insert_or_assign("log", Signature().import().add(float32).returns(float32));
+	functionSignatures.insert_or_assign("log", Signature().import().add(float64).returns(float64));
 	functionSignatures.insert_or_assign("powd", Signature().import().add(float64).add(float64).returns(float64));
 	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
 	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));

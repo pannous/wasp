@@ -617,7 +617,7 @@ enum Opcodes {
 	f64_convert_i64_u = 0xBA,
 	f64_promote_f32 = 0xBB,
 	i32_reinterpret_f32 = 0xBC, // f32->i32 bit wise reinterpret != cast/trunc/convert
-	i64_reinterpret_f64 = 0xBD,
+	i64_reinterpret_f64 = 0xBD, // use to hack smart pointers as main return: f64 has int range which is never hit
 	f32_reinterpret_i32 = 0xBE,// i32->f32
 	f64_reinterpret_i64 = 0xBF,
 	f32_from_f64 = f32_demote_f64,
@@ -708,6 +708,7 @@ typedef enum constancy {
 } Constancy;
 
 //localContextTypes is messy
+/*
 class Variable {
 //	String* name = "";// could be reused by multiple, but useful to debug
 	short position = 0;// in context / in global
@@ -719,6 +720,7 @@ class Variable {
 //	List<Node*> modifiers; // public static const … should translate into fields but keep for extra etc?
 	Node *descriptor;// ?
 };
+*/
 
 enum ABI {
 //	unknown,
