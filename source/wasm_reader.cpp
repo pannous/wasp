@@ -378,6 +378,7 @@ void consumeExportSection() {
 	for (int i = 0; i < exportCount; i++) {
 		String func0 = name(payload).clone();
 		if (func0 == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
+//		if (func0=="_ZN6StringpLEPS_")continue;// bug!?
 		if (func0 == "_Z6concatPKcS0_")
 			debug = 1;
 		List<String> args = demangle_args(func0);
@@ -393,7 +394,11 @@ void consumeExportSection() {
 			Signature &wasm_signature = funcTypes[type];
 			Valtype returns = int32;
 			returns = mapTypeToWasm(wasm_signature.return_type);
-
+			if (returns != i32) {
+//				print("returns "s+ typeName(returns));
+				returns = int32; // for now! todo
+				// else 	assert_run("x='123';x + '4' is '1234'", true); // FAILS somehow!
+			}
 			Signature &signature = Signature().runtime().returns(returns);
 			// todo: use wasm_signature if demangling fails
 			for (String arg: args) {
