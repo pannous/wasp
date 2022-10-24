@@ -283,7 +283,6 @@ void testMathOperators() {
 	assert_emit("i=3.7;.3+i", 4);
 	assert_is("4-1", 3);//
 
-	assert_run("x=123;x + 4 is 127", true);
 	assert_emit("i=3;i++", 4);
 	assert_emit("i=1;while i<9:i++;i+1", 10);
 	assert_emit("ceil 3.7", 4);
@@ -899,11 +898,6 @@ void testStringIndicesWasm() {
 	assert_emit("i=0;x='abcde';x#4='x';x[4]", 'e');
 
 	assert_emit("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
-//	assert_run("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
-	assert_run("x='123';x + '4' is '1234'", true);// ok
-//	assert_run("'123' + '4' is '1234'", true);// ok needs runtime for concat()
-//	assert_run("x='123';x=='123'", true);// ok needs runtime for eq()
-//	assert_run("x='123';x is '123'", true);// ok
 
 //	assert_emit("'world'[1]", 'o');
 	assert_emit("'world'#1", 'w');
@@ -1213,6 +1207,16 @@ void testMultiValue() {
 	assert_emit("'OK'", "OK");
 }
 
+// may cause HEAP CORRUPTION! why??
+void testAssertRun() {
+	// all these have been tested with assert_emit before. now check that it works with runtime
+	assert_run("x='123';x is '123'", true);// ok
+	assert_run("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
+	assert_run("x='123';x + '4' is '1234'", true);// ok
+	assert_run("'123' + '4' is '1234'", true);// ok needs runtime for concat()
+	assert_run("x='123';x=='123'", true);// ok needs runtime for eq()
+}
+
 void testAllWasm() {
 
 //	data_mode = false;
@@ -1228,6 +1232,12 @@ void testAllWasm() {
 			testWasmMutableGlobal();
 			testIndexWasm();// breaks on second run WHY?
 	)
+
+	skip(
+			assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
+	)
+	assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
+
 	testEmitter();
 	testMathLibrary();
 	testStringIndicesWasm();
@@ -1278,6 +1288,7 @@ void testAllWasm() {
 	wasm_todos();
 	testWasmTernary();
 	testWasmRuntimeExtension();
+	testAssertRun();
 	skip(
 			testArrayIndicesWasm(); // << TODO again!?
 			testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
