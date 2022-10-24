@@ -867,6 +867,10 @@ void testEval3() {
 
 
 void testMathExtra() {
+	assert_is("15÷5", 3);
+	assert_emit("15÷5", 3);
+	assert_emit("3⋅5", 15);
+	assert_emit("3×5", 15);
 	assert_is("one plus two times three", 7);
 }
 
@@ -2201,10 +2205,7 @@ void testCurrent() {
 //	testImport42();
 //	testSinus();
 //	test_sinus_wasp_import();
-	assert_is("15÷5", 3);
-	assert_emit("15÷5", 3);
 	testLogarithm();
-
 // testPrint();// wasm ok?
 	//	testArrayIndicesWasm(); // << TODO again!?
 //	testLogarithm(); // 1. todo 2. auto import lib/math/log.wasm

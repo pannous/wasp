@@ -662,6 +662,9 @@ bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
 
 String &checkCanonicalName(String &name);
 
+List<Module> merge_modules;// from (automatic) import statements e.g. import math; use log; …
+Map<String, bool> module_done;
+
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
 // maybe todo: normOperators step (in angle, not wasp!)  3**2 => 3^2
 Node &groupOperators(Node &expression, String context = "main") {
@@ -672,6 +675,25 @@ Node &groupOperators(Node &expression, String context = "main") {
 	List<String> operators = collectOperators(expression);
 	String last = "";
 	int last_position = 0;
+
+	if (expression.kind == Kind::operators) {
+		if (expression.name == "include") {
+			warn(expression.serialize());
+			Node &file = expression.values();
+//			Node &file = expression.from(1);
+			// todo: properly merge, select appropriate functions …
+			if (not module_done.has(file.name)) {
+				Module import = read_wasm(file.name);
+				merge_modules.add(import);// merging binary wasm segments in emit
+				module_done.insert_or_assign(file.name, true);
+			}
+			return *new Node();
+//			expression.clear();
+//			return expression;
+		} else
+			todo("ungrouped dangling operator");
+	}
+
 	for (String &op: operators) {
 		if (op == "else")continue;// handled in groupIf
 		if (op == "-")
@@ -679,13 +701,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 		if (op == "-…") op = "-";// precedence hack
 		if (op == "%")functionSignatures["modulo_double"].is_used = true;
 		if (op == "%")functionSignatures["modulo_float"].is_used = true;
-		if (op == "include") {
-			warn(expression.serialize());
-			Node &file = expression.from(1);
-			read_wasm(file.name);
-			expression.clear();
-			return expression;
-		}
+		if (op == "include")todo("include again!?");
 		if (op != last) last_position = 0;
 		bool fromRight = rightAssociatives.has(op) or isFunction(op);
 		fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
@@ -1297,6 +1313,10 @@ Node emit(String code) {// emit and run!
 //		binary = emit(charged, 0, 0);
 //	else
 	binary = emit(charged);
+	for (Module &import: merge_modules) {
+		Module prog = read_wasm(binary.data, binary.length);
+		binary = merge_wasm(import, prog);
+	}
 //	code.link(wasp) more beautiful with multiple memory sections
 	long result = binary.run();// check js console if no result
 	return smartNode(result);

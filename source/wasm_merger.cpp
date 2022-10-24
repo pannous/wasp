@@ -78,12 +78,14 @@ Code mergeDataSection(Module lib, Module main) {
 
 
 Code relocate(Code &blocks) {
-	return blocks;// todo, maybe see wasm_merger_wabt.cpp !
+	todo("relocate, maybe see wasm_merger_wabt.cpp");
+	return blocks;//
 }
 
 Code mergeCodeSection(Module lib, Module main) {
 	int codes = lib.code_count + main.code_count;
-	return createSection(code_section, Code(codes) + lib.code_data + main.code_data); // relocate(
+	Code relocated = relocate(lib.code_data);
+	return createSection(code_section, Code(codes) + relocated + main.code_data);
 }
 
 Code mergeCustomSections(Module lib, Module main) {
