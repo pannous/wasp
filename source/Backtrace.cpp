@@ -27,7 +27,7 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 	char **symbols = backtrace_symbols(callstack, nFrames);
 
 	std::ostringstream trace_buf;
-	trace_buf << "Backtrace:\n";
+//	trace_buf << "Backtrace:\n";
 	for (int i = skip; i < nFrames - skipEnd; i++) {
 		// skip __libc_start_main _start
 //		printf("%s\n", symbols[i]);
