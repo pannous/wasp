@@ -51,9 +51,9 @@ String findFile(String filename) {
 //	filename = filename.replace("~", getpwuid(getuid())->pw_dir /*homedir*/);
 	if (fileExists(filename))return filename;
 	// todo: check wasm date, recompile if older than wasp / wast
-	if (fileExists(filename + ".wasp"))return filename + ".wasp"s;
-	if (fileExists(filename + ".wast"s))return filename + ".wast"s;
-	if (fileExists(filename + ".wasm"))return filename + ".wasm"s;
+	if (fileExists(filename + ".wasp"))return filename + ".wasp";
+	if (fileExists(filename + ".wast"))return filename + ".wast";
+	if (fileExists(filename + ".wasm"))return filename + ".wasm";
 
 	String project = ".";// todo module name(s)
 	if (not filename.contains("/"))filename = findFile(project + "/" + filename) || filename;

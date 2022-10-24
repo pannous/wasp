@@ -19,8 +19,7 @@ enum smart_pointer_masks {
 
 extern void error1(chars message, chars file = 0, int line = 0);
 
-//#define check_eq(α, β) if((α)!=(β)){if(debug_reader)printf("%s != %s : ",#α,#β);print(α); \
-if(debug_reader)printf("!=");put(β);if(debug_reader)printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+//#define check_eq(α, β) if((α)!=(β)){if(debug_reader)printf("%s != %s : ",#α,#β);print(α); if(debug_reader)printf("!=");put(β);if(debug_reader)printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 
 
 //#define check(test) if(test){log("\nOK check passes: ");log(#test);}else{if(debug_reader)printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
