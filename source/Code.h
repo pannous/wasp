@@ -596,15 +596,15 @@ enum Opcodes {
 
 
 	i32_wrap_i64 = 0xA7,
-	i32_trunc_f32_s = 0xA8, // cast/convert != reinterpret
-	i32_trunc_f32_u = 0xA9,
+	i32_trunc_f32_s = 0xA8, // cast/convert ( ≠ bitwise reinterpret )
+	i32_trunc_f32_u = 0xA9, // always use sign!
 	i32_trunc_f64_s = 0xAA,
 	i32_trunc_f64_u = 0xAB,
 	i64_extend_i32_s = 0xAC,
 	i64_extend_i32_u = 0xAD,
 	i64_trunc_f32_s = 0xAE,
 	i64_trunc_f32_u = 0xAF,
-	i64_trunc_f64_s = 0xB0,
+	i64_trunc_f64_s = 0xB0, // cast convert ( ≠ bitwise reinterpret )
 	i64_trunc_f64_u = 0xB1,
 	f32_convert_i32_s = 0xB2,
 	f32_convert_i32_u = 0xB3,
@@ -746,6 +746,9 @@ public:
 	bool is_handled = false; // already emitted (e.g. as runtime)
 	bool is_used = false;// called
 	bool emit = false;// only those types/functions that are declared (export) or used in call
+#ifdef DEBUG
+	String debug_name;
+#endif
 
 	int size() {
 		return types.size();
@@ -772,12 +775,21 @@ public:
 	}
 
 	Signature &add(Valtype t) {
+#ifdef DEBUG
+		debug_name += typeName(t);
+		debug_name += " ";
+#endif
 		types.insert_or_assign(types.size(), t);
 		return *this;
 	}
 
 	Signature &add(Node type) {
-		types.insert_or_assign(types.size(), mapTypeToWasm(type));
+		Valtype t = mapTypeToWasm(type);
+#ifdef DEBUG
+		debug_name += typeName(t);
+		debug_name += " ";
+#endif
+		types.insert_or_assign(types.size(), t);
 		return *this;
 	}
 
@@ -794,8 +806,13 @@ public:
 
 
 	Signature &returns(Valtype valtype) {
-		if (valtype != voids and valtype != none)
+		if (valtype != voids and valtype != none) {
+#ifdef DEBUG
+			debug_name += ": ";
+			debug_name += typeName(valtype);
+#endif
 			return_types.add(valtype);
+		}
 		return *this;
 	}
 

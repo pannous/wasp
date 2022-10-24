@@ -40,3 +40,6 @@ type summary add --summary-string "${var[0-8].name}" "Node *"
 # type format add -f Node[] Node*
 
 # ${addr} ${addr-file-or-load} ${ansi} ${current-pc-arrow} ${file} ${language} ${frame} ${function} ${line} ${module} ${process} ${script} ${svar} ${thread} ${target} ${var}"
+
+
+type summary add --summary-string "${var.function} ${var.debug_name} #${var.types._size}" Signature

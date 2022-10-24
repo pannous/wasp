@@ -125,6 +125,8 @@ public:
 	String name = empty_name;// nil_name;
 //	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
+	// todo rename and alias:
+	// lets lads lats lates: lets because a=b;c=d …; lads children; lats laterals; lates delayed evaluation
 	Node *children = nullptr;// LIST, not link. block body content
 	Node *next = 0; // in children list, redundant with children[i+1] => for debugging only
 	char separator = 0;// " " ";" ","

@@ -849,6 +849,7 @@ String Node::serialize() const {
 		if (polish_notation and not name.empty()) wasp += name;
 		int i = 0;
 		if (length > 0)
+			if (kind == operators) wasp += " ";
 			for (Node &node: *this) {
 				if (i++ > 0) wasp += separator ? String(separator) : " ";
 				wasp += node.serialize();

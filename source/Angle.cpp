@@ -681,6 +681,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 		if (op == "%")functionSignatures["modulo_float"].is_used = true;
 		if (op == "include") {
 			warn(expression.serialize());
+			Node &file = expression.from(1);
+			read_wasm(file.name);
 			expression.clear();
 			return expression;
 		}
@@ -1094,7 +1096,7 @@ int run_wasm_file(chars file) {
 
 void preRegisterSignatures() {
 	// ORDER MATTERS: will be used for functionIndices later!
-	// read_wasm doesn't have return types!
+	// read_wasm doesn't have return types! todo WAT
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));// todo: if used
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 
@@ -1102,7 +1104,8 @@ void preRegisterSignatures() {
 	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("pow", Signature().import().add(float64).add(float64).returns(float64));
-	functionSignatures.insert_or_assign("log", Signature().import().add(float64).returns(float64));
+	functionSignatures.insert_or_assign("log", Signature().import().add(float32).returns(float32));
+//	functionSignatures.insert_or_assign("log", Signature().import().add(float64).returns(float64));
 	functionSignatures.insert_or_assign("powd", Signature().import().add(float64).add(float64).returns(float64));
 	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
 	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));

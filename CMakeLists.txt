@@ -3,10 +3,9 @@ project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
-#LINK_DIRECTORIES(lib)
 LINK_DIRECTORIES(Frameworks)
+LINK_DIRECTORIES(Frameworks/lib)
 LINK_DIRECTORIES(/usr/local/lib)
-#LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/9.3.345.19/libexec/)
 
 # SET these configurations via Preferences… Build->CMake->Profiles
 # MANUALLY force set these only for urgent debugging,
@@ -14,7 +13,7 @@ LINK_DIRECTORIES(/usr/local/lib)
 #set(RELEASE 0) # no tests todo VS:
 #set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
-set(DEBUG 1)
+#set(DEBUG 1)
 #set(CONSOLE 1)
 #ADD_DEFINITIONS(-DUSE_READLINE)
 
@@ -26,10 +25,26 @@ set(DEBUG 1)
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
 #ADD_DEFINITIONS(-DNO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
 
-#if (CONSOLE)
-#    ADD_DEFINITIONS(-DCONSOLE)
-#endif ()
-
+if (NOT WASM)
+    if (NOT RUNTIME_ONLY)
+        # TO EXECUTE wasm:
+        # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
+        # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
+        #         SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :(
+        #        SET(WASMTIME 1) # FASTEST!
+        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+        #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
+        #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
+        #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
+        #                set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+    endif ()
+    #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
+    # ^^ fixes <cmath> mac errors!
+    ADD_DEFINITIONS(-D_Backtrace_)
+    set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
+endif () # else :
 if (WASM)
     ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (NOT WASI)
@@ -37,31 +52,15 @@ if (WASM)
     endif ()
 endif ()
 
-if (NOT WASM)
-    #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
-    # ^^ fixes <cmath> mac errors!
-    ADD_DEFINITIONS(-D_Backtrace_)
-    set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
-    if (NOT RUNTIME_ONLY)
-        # TO EXECUTE wasm:
-        # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
-        #        SET(V8 1)
-        SET(WASMTIME 1) # FASTEST!
-        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
-        #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
-        #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
-        #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
-        #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-        #        set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
-    endif ()
-endif ()
+#if (CONSOLE)
+#    ADD_DEFINITIONS(-DCONSOLE)
+#endif ()
 
 
 if (RELEASE)
     MESSAGE(RELEASE)
     set(RELEASE 1)
-#    set(RUNTIME_ONLY 1)
+    #    set(RUNTIME_ONLY 1)
     #    set(NO_TESTS 1)
     SET(COPY_PHASE_STRIP YES)
     SET(STRIP_INSTALLED_PRODUCT YES)

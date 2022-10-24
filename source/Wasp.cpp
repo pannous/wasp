@@ -88,7 +88,7 @@ chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "th
                           "%", "mod", "modulo", "log10", "log₁₀", "log₂", "ln", "logₑ", "⌟", "2⌟", "10⌟", "⌞", "⌞2",
                           "⌞10",
                           "plus", "times", "add", "minus",// todo via aliases.wasp / SPO PSO verb matching
-                          "use", "include", "require", "import", "module",
+                          "use", "using", "include", "require", "import", "module",
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
@@ -109,7 +109,8 @@ List<chars> operator_list(operator_list0);
 Map<String, List<String>> aliases;
 Map<long/*hash*/, String *> hash_to_normed_alias;
 
-bool aliases_loaded = false;
+//bool aliases_loaded = false;
+bool aliases_loaded = true;// DON't load aliases!
 
 void load_aliases() {
 	aliases.setDefault(List<String>());
@@ -800,8 +801,16 @@ private:
 	// Parse a comment
 	bool comment() {
 		// Skip a comment, whether inline or block-level, assuming this is one.
-		// Comments always begin with a # or / character.
 		char preserveLast = lastNonWhite;
+//		if (ch == ';' and next == ';') { // and mode = stupid wast comments   or columnStart==0
+//		    inlineComment();
+//			return true;
+//		}
+//		if (ch == '-' and next == '-') { // and mode = stupid applescript comments
+//		    inlineComment();
+//			return true;
+//		}
+		// Comments always begin with a # or / character.
 		if (ch == '#') {
 			if (next == '*')
 				blockComment();
@@ -1338,6 +1347,25 @@ private:
 		return errors;
 	}
 
+	Node &direct_include(Node &current, Node &node) {
+		// todo: this old c-style include is not really what we want.
+		// todo: instead handle `use / include / import / require` in Angle.cpp analyze!
+		// especially if file.name is lib.wasm ;)
+		// import IF not in data mode
+		String file;
+		if (current.first() == "from")
+			file = current[1].name;
+		else if (node.empty()) {
+			white();
+			file = (identifier());
+		} else
+			file = (node.last().name);
+//		node.values(). first().name
+		if (!file.empty()) // creates 'include' node for wasm …
+			node = parseFile(file);
+		return node;
+	}
+
 // ":" is short binding a b:c d == a (b:c) d
 // "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
@@ -1608,15 +1636,7 @@ private:
 					node.line = &line;
 #endif
 					if (contains(import_keywords, (chars) node.first().name.data)) { //  use, include, require …
-						// import IF not in data mode
-						if (current.first() == "from")
-							node = parseFile(current[1].name);
-						else if (node.empty()) {
-							white();
-							node = parseFile(identifier());
-						} else
-							node = parseFile(node.last().name);
-//							node = parseFile(node.values().first().name);// todo
+						node = direct_include(current, node);
 					}
 #ifndef RUNTIME_ONLY
 					if (precedence(node) or operator_list.has(node.name)) {
@@ -1801,7 +1821,8 @@ Node compile(String file) {
 Node parseFile(String filename) {
 	String found = findFile(filename);
 	if (not found)error("file not found "s + filename);
-	else info("found "s + found);
+	else
+		info("found "s + found);
 	if (found.endsWith("wast") or found.endsWith("wat")) {
 #ifndef WASM
 		system("/usr/local/bin/wat2wasm "s + found);
@@ -1809,7 +1830,7 @@ Node parseFile(String filename) {
 		found = found.replace("wast", "wasm");
 		// and use it:
 	}
-	if (found.endsWith("wasm")) {// handle in analysis, not in valueNode
+	if (found.endsWith("wasm")) {// handle in Angle.cpp analysis, not in valueNode
 		//			read_wasm(found);
 		auto import = Node("include").setType(operators);
 		import.add(new Node(found));
@@ -1830,14 +1851,21 @@ Node parseFile(String filename) {
 
 void usage() {
 	print("🐝 Wasp is a new compiled programming language");
-	print("wasp [repl/console]    open interactive programming environment");
-	print("wasp <file.wasp>       compile wasp to wasm or native and execute");
-	print("wasp <file.wasm>       compile wasm to native and execute");
-	print("wasp <file.html>       compile standalone webview app and execute");
+	print("wasp                   open interactive programming environment");// [repl/console]
+//	print("wasp <file.wasp>       compile wasp to wasm or native and execute");
+//	print("wasp <file.wasm>       compile wasm to native and execute");
+//	print("wasp <file.html>       compile standalone webview app and execute");// bundle all wasm
 	print("wasp <files>           compile and link files into binary and execute");
-	print("wasp compile <files>   compile and link files into binary");
+//	print("wasp compile <files>   compile and link files into binary");
+//	print("wasp test <files> 				");
+//	print("compile <files> 				");
+//	print("wasp combine <files> 				");// via combine
+//	print("wasp optimize <files>");// aka strip, via compile optimize(d)
+//	print("wasp remove <file> <functions>");// manually strip
+//	print("wasp rename <file> <function/global/module> <old> <new-name>");
+//	print("wasp move (really?) <files> 				");
 	print("wasp help              see https://github.com/pannous/wasp/wiki");
-	print("wasp tests             ");
+	print("wasp tests ");
 }
 
 // wasmer etc DO accept float/double return, just not from main!
@@ -1854,12 +1882,12 @@ int main(int argc, char **argv) {
 		String arg = argv[1];
 		if (arg.endsWith(".html") or arg.endsWith(".htm")) {
 #ifdef WEBAPP
-//				start_server(SERVER_PORT);
-			std::thread go(start_server, SERVER_PORT);
-			arg = "http://localhost:"s + SERVER_PORT + "/" + arg;
-			print("Serving "s + arg);
-			open_webview(arg);
-//				arg.replaceMatch(".*\/", "http://localhost:SERVER_PORT/");
+			//				start_server(SERVER_PORT);
+						std::thread go(start_server, SERVER_PORT);
+						arg = "http://localhost:"s + SERVER_PORT + "/" + arg;
+						print("Serving "s + arg);
+						open_webview(arg);
+			//				arg.replaceMatch(".*\/", "http://localhost:SERVER_PORT/");
 #else
 			print("wasp compiled without webview");
 #endif
@@ -1878,24 +1906,24 @@ int main(int argc, char **argv) {
 				run_wasm_file(arg);
 		}
 #ifndef NO_TESTS
-			if (arg == "test" or arg == "tests")
-				testCurrent();
+		if (arg == "test" or arg == "tests")
+			testCurrent();
 #endif
-			if (arg == "repl" or arg == "console" or arg == "start" or arg == "run") {
-				console();
-			}
-			if (arg == "app" or arg == "webview" or arg == "browser") {
+		if (arg == "repl" or arg == "console" or arg == "start" or arg == "run") {
+			console();
+		}
+		if (arg == "app" or arg == "webview" or arg == "browser") {
 #ifndef WEBAPP
-				print("wasp needs to be compiled with WEBAPP support");
-				return -1;
+			print("wasp needs to be compiled with WEBAPP support");
+			return -1;
 #endif
 //				start_server(9999);
 #ifdef GRAFIX
-				init_graphics();
+			init_graphics();
 #else
-				print("wasp compiled without sdl/webview");
+			print("wasp compiled without sdl/webview");
 #endif
-			}
+		}
 #ifdef SERVER
 		if (arg=="server" or arg=="serv")
 			std::thread go(start_server, 9999);
