@@ -46,7 +46,8 @@ public:
 	Code function_names;
 	int start_index;
 	List<String> import_names;
-	Map<String, Signature> signatures;
+	List<String> export_names;
+	Map<String, Signature> signatures; // ⚠️ ≠ global functionSignatures   todo USE IT!
 //	int data_offset=0;// todo: read from data section! why not 0 ?
 	int data_offset_end;
 };
