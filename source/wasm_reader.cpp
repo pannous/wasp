@@ -108,7 +108,8 @@ String &name(Code &wstring) {
 	return *string;
 }
 
-
+// todo: treat all functions (in library file) as exports if ExportSection is empty !?
+// that is: add their signatures to module …
 void parseFunctionNames(Code &payload) {
 	functionIndices.setDefault(-1);
 //	put(functionIndices);// what we got so far?
@@ -178,10 +179,10 @@ void parseImportNames(Code &payload) {
 		functionSignatures[name1].import().runtime().handled();//.functionType(huh);//.runtime()
 		module.import_names.add(name1);
 	}
-	module.signatures = functionSignatures;
+	module.signatures = functionSignatures; // todo merge into global functionSignatures, not the other way round!!
 }
 
-
+// Signatures to be consumed in export section
 void parse_type_data(Code &payload) {
 	for (int i = 0; i < module.type_count and payload.start < payload.length; ++i) {
 		Signature sic;
@@ -202,15 +203,14 @@ void parse_type_data(Code &payload) {
 	}
 }
 
-// todo: we need to parse this for automatic import
 void consumeTypeSection() {
 	Code type_vector = vec();
 	int typeCount = unsignedLEB128(type_vector);
 	module.type_count = typeCount;
 	if (debug_reader)printf("types: %d\n", module.type_count);
 	module.type_data = type_vector.rest();
+// todo: we need to parse this for automatic import and signatures
 	parse_type_data(module.type_data);
-
 }
 
 void consumeStartSection() {
@@ -329,6 +329,7 @@ void consumeFuncTypeSection() {
 	module.functype_data = type_vector.rest();
 }
 
+// todo: treat all functions (in library file) as exports if ExportSection is empty !?
 void consumeCodeSection() {
 	Code codes_vector = vec();
 	int codeCount = unsignedLEB128(codes_vector);
@@ -366,6 +367,7 @@ String demangle(String &fun) {
 	return ok;
 }
 
+// todo: treat all functions (in library file) as exports if ExportSection is empty !?
 void consumeExportSection() {
 	Code exports_vector = vec();
 	int exportCount = unsignedLEB128(exports_vector);
@@ -379,19 +381,25 @@ void consumeExportSection() {
 		if (func0 == "_Z6concatPKcS0_")
 			debug = 1;
 		List<String> args = demangle_args(func0);
-		String func = demangle(func0);//
+		String func = demangle(func0);// todo: use wasm_signature if demangling fails
+		module.export_names.add(func);
 		int type = unsignedLEB128(payload);
 		int index = unsignedLEB128(payload);
 		if (index < 0 or index > 100000)error("corrupt index "s + index);
 		if (type == 0/*func*/ and not functionIndices.has(func)) {
 			functionIndices[func0] = index;// mangled
 			functionIndices[func] = index;// demangled
-			Signature &signature = Signature().runtime().returns(int32);// todo: hard code all returns? or get HOW?
-			for (String arg:args) {
+
+			Signature &wasm_signature = funcTypes[type];
+			Valtype returns = int32;
+			returns = mapTypeToWasm(wasm_signature.return_type);
+
+			Signature &signature = Signature().runtime().returns(returns);
+			// todo: use wasm_signature if demangling fails
+			for (String arg: args) {
 				if (arg.empty())continue;
 				signature.add(mapArgToValtype(arg));
 			}
-			// todo get return types from funcTypes (don't need funcTypeIndex for exports)
 			if (!functionSignatures.has(func))
 				functionSignatures[func] = signature; // … library functions currently hardcoded
 			if (!functionSignatures.has(func0))
@@ -527,7 +535,7 @@ void consumeSections() {
 
 
 Module read_wasm(bytes buffer, int size0) {
-	module = *new Module();
+	module = *new Module(); // todo: make pure, not global!
 	pos = 0;
 	code = buffer;
 	size = size0;
@@ -557,5 +565,4 @@ Module read_wasm(bytes buffer, int size0) {
 #endif
 #undef pointerr
 
-
-#import "wasm_patcher.cpp"
+//#import "wasm_patcher.cpp"
