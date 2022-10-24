@@ -21,7 +21,7 @@
 ƒ : func, function, fun, fn, def, defun, defn, define /*!?!*/, to…
 √ : sqrt, root, square_root
 | : then, pipe
-* : times, ×, ⋅, mul, multiply
+* : times, ×, *, ∗, ⋅, ⋆, ✕, ×, mul, mult, multiply, prod, product # x
 + : plus, add, ﹢, ＋, ⁺, ˖ ̟ ⁺ ᐩ ⁺ ₊ ﹢ ＋ 𒈦 // ∔ ⊕ ⊞
 - : minus,−,﹣,－,⁻,₋,∸ neg, negative, hyphen  // hyphen  ;) negative only as prefix neg<>negate :(  -≠−!
 > : more, ≰, greater, bigger, larger, higher, longer # (…than)!

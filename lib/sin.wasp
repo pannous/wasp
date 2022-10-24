@@ -1,3 +1,9 @@
+# x86’s sin and cos instructions are slow and imprecise and are generally avoided these days anyway !
+
+# compiled to sin.wasm and automatically included whenever sin is referenced
+
+default module math
+
 double sin(double x){
 	S1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */
 	S2  =  8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */
@@ -7,9 +13,13 @@ double sin(double x){
 	S6  =  1.58969099521155010221e-10  /* 0x3DE5D93A, 0x5ACFD57C */
 	// tau =  6.283185307179586 // 2π builtin!
 	double x = modulo_double(x,tau)
-	if(x >= pi) return -sin(modulo_double(x,pi))
+	if(x >= pi) return -sin(modulo_double(x,pi)) // necessary ?
 	double z = x*x
 	double w = z*z
 	double r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6)
 	return x + z*x*(S1 + z*r)
+}
+
+double cos(double x){
+	return sin(x+1.5707963267948966);
 }
