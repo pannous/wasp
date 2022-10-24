@@ -26,6 +26,7 @@ Code &unsignedLEB128(long n) {
 }
 
 Code &signedLEB128(long value) {
+//	Code *buffer =(Code *) malloc(sizeof(Code));// new Code();
 	Code *buffer = new Code();
 	int more = 1;
 //	bool negative = (value < 0);
