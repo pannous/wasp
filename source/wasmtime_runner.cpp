@@ -197,6 +197,9 @@ wasm_wrap *link_import(String name) {
 	if (name == "_Z21requestAnimationFramev") return wrap_fun(test_lambda);
 //	if (name == "_Z21requestAnimationFramev") return  wrap_fun(requestAnimationFrame);
 
+
+// catch these with #ifdef s !!!
+	if (name == "_Z13run_wasm_filePKc") return &wrap_nop;// todo!?
 //	if (name == "_Z8typeName7Valtype") return &wrap_nop;// todo!?
 //	if (name == "_Z8run_wasmPhi") return &wrap_nop;
 //	if (name == "_Z11testCurrentv") return &wrap_nop;// hmmm self test?
