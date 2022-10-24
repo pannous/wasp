@@ -344,6 +344,7 @@ bool isProperList(Node &node) {
 void emitIntData(int i) {// append int to wasm data memory
 	*(int *) (data + data_index_end) = i;
 	data_index_end += 4;
+//	while (((long)(data + data_index_end)%16))data_index_end++;// type 'long', which requires 4 byte alignment DO IT BEFORE!
 }
 
 [[nodiscard]]
@@ -2243,6 +2244,7 @@ void prepareContext() {
 	locals.setDefault(List<String>());
 	localTypes.setDefault(List<Valtype>());
 	data = (char *) malloc(MAX_DATA_LENGTH);
+//	while (((long)data)%16)data++;// type 'long', which requires 4 byte alignment
 	data_index_end = 0;
 	last_data = 0;
 //	analyzed.
