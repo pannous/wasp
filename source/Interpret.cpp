@@ -397,7 +397,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 	}
 
 
-	if (op == "*" or op == "⋆" or op == "×" or op == "∗" or op == "times") {// ⊗
+	if (op == "*" or op == "⋅" or op == "×" or op == "✕" or op == "⋆" or op == "∗" or op == "times") {// ⊗
 		if (left.kind == strings) return Node(left.string().times(right.value.longy));
 		if (right.kind == strings) return Node(right.string().times(left.value.longy));
 		if (left.kind == reals and right.kind == reals) return Node(left.value.real * right.value.real);
