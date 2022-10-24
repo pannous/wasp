@@ -117,10 +117,6 @@ static void signal_segv(int signum, siginfo_t *info, void *ptr) {
 						 (unsigned number)ip - (unsigned number)dlinfo.dli_saddr,
 						 dlinfo.dli_fname);
 
-#ifndef NO_CPP_DEMANGLE
-			if (tmp)
-				free(tmp);
-#endif
 
 			if(dlinfo.dli_sname && !strcmp(dlinfo.dli_sname, "main"))
 				break;

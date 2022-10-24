@@ -1753,7 +1753,8 @@ Code typeSection() {
 		}
 		Signature &signature = functionSignatures[fun];
 		if (not signature.emit /*export/declarations*/ and not signature.is_used /*imports*/) {
-			trace("not signature.emit => skipping unused type for "s + fun);
+			trace("not signature.emit => skipping unused type for %s");
+			trace(fun);
 			continue;
 		}
 		if (signature.is_runtime)
@@ -2323,7 +2324,7 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	;
 	code.debug();
 #ifndef WEBAPP
-	free(data);// written to wasm code ok
+//	free(data);// written to wasm code ok
 #endif
 	if (runtime0)functionSignatures.clear(); // cleanup after NAJA
 	return code.clone();
