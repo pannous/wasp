@@ -217,12 +217,12 @@ else ()
     #    add_compile_options(-fsanitize=address) # currently crashes with AsanDie so don't use :(
     add_compile_options(-fno-stack-protector)
     add_compile_options(-fno-omit-frame-pointer)
-    add_compile_options(-fsanitize=undefined)
+#    add_compile_options(-fsanitize=undefined)
     add_compile_options(-fsanitize-recover=address)
     #    add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
     add_link_options(-fno-omit-frame-pointer)
     add_link_options(-fsanitize-recover=address)
-    add_link_options(-fsanitize=undefined)
+    #    add_link_options(-fsanitize=undefined)
     add_link_options(-rdynamic)
     add_link_options(-m64)
     #,-fsanitize=address,-fsanitize-recover=address,-fsanitize=undefined,-D_GLIBCXX_USE_CXX11_ABI=0
