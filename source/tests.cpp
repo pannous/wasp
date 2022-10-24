@@ -11,7 +11,6 @@
 #include "test_wasm.cpp"
 
 
-
 void testStupidLongLong() {
 	//	int a;
 //	long b;// 4 byte in wasm/windows grr
@@ -94,6 +93,11 @@ void testSinus() {
 	            "\tdouble r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6)\n"
 	            "\treturn x + z*x*(S1 + z*r)\n"
 	            "};sin π/2", 1);// IT WORKS!!!
+}
+
+void test_sinus_wasp_import() {
+	// using sin.wasp, not sin.wasm
+	// todo: compile and reuse sin.wasm if unmodified
 	assert_emit("use sin;sin π/2", 1);
 	assert_emit("use sin;sin π", 0);
 	assert_emit("use sin;sin 3*π/2", -1);
@@ -127,13 +131,29 @@ void testIteration() {
 //}
 void testLogarithm() {
 	float ℯ = 2.7182818284590;
-	//	assert_equals(ln(0),-∞);
-	assert_emit("log(100000)", 5.);
-	assert_emit("log(10)", 1.);
-	assert_emit("log(1)", 0.);
+	assert_emit("use log; log10(100)", 2.);
+	assert_emit("use math; log10(100)", 2.);
+	assert_emit("use math; 10⌞100", 2.);// read 10'er Logarithm
+	assert_emit("use math; 100⌟10", 2.);// read 100 lowered by 10's
+	assert_emit("use math; 10⌟100", 2.);
+	assert_emit("use math; ℯ⌟", 2.);
+	assert_emit("use math; ℯ⌟", 2.);
+	assert_emit("log10(100)", 2.); // requires pre-parsing lib and dictionary lookup
+	assert_emit("₁₀⌟100", 2.); // requires pre-parsing lib and dynamic operator-list extension OR 10⌟ as function name
+	assert_emit("10⌟100", 2.); // requires pre-parsing lib and dynamic operator-list extension OR 10⌟ as function name
+
+	assert_emit("use log;ℯ = 2.7182818284590;ln(ℯ)", 1.);
+	assert_emit("use log;ℯ = 2.7182818284590;ln(ℯ)", 1.);
 	assert_emit("ℯ = 2.7182818284590;ln(ℯ*ℯ)", 2.);
 	assert_emit("ln(1)", 0.);
-	assert_emit("ℯ = 2.7182818284590;ln(ℯ)", 1.);
+	assert_emit("log10(100000)", 5.);
+	assert_emit("log10(10)", 1.);
+	assert_emit("log(1)", 0.);
+	skip(
+			assert_equals(-ln(0), Infinity);
+			assert_equals(ln(0), -Infinity);
+			assert_emit("ln(ℯ)", 1.);
+	)
 }
 
 void testUpperLowerCase() {
@@ -381,7 +401,7 @@ void testWasmSpeed() {
 	exit(0);
 }*/
 
-void testImport() {
+void testImport42() {
 	assert_is("import fourty_two", 42);
 	assert_is("include fourty_two", 42);
 	assert_is("require fourty_two", 42);
@@ -860,13 +880,13 @@ void testRoot() {
 }
 
 void testRootFloat() {
-	skip(  // include <cmath> causes problems, so skip
+//	skip(  // include <cmath> causes problems, so skip
 //	assert_is("√42*√42", 42.);// todo tokenized as *√
-			assert_is("√42 * √42", 42.);
-//	assert_is("√42*√42", Node(42.,0 ));
-//	assert_is("√42*√42", 42);
-//	assert_is("√42*√42",42);// int rounding to 41 todo?
-	)
+	assert_is("√42.0 * √42.0", 42.);
+	assert_is("√42 * √42.0", 42.);
+	assert_is("√42.0*√42", 42);
+	assert_is("√42*√42", 42);// round AFTER!
+//	)
 }
 
 
@@ -2178,12 +2198,23 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+//	testImport42();
+//	testSinus();
+//	test_sinus_wasp_import();
+	assert_is("15÷5", 3);
+	assert_emit("15÷5", 3);
+	testLogarithm();
 
 // testPrint();// wasm ok?
 	//	testArrayIndicesWasm(); // << TODO again!?
 //	testLogarithm(); // 1. todo 2. auto import lib/math/log.wasm
-	assert_emit("'oki'", "oki");
-	assert_emit("1,3", Node(1, 3, 0));
+//	assert_emit("1,3", Node(1, 3, 0));
+
+#ifndef WASMTIME
+	assert_emit("n=3;2ⁿ", 8);
+	assert_emit("use log;log10(100)", 2); // function attempted to return an incompatible value  … I still don't get it!
+//	log10(x):=Math.log(x)/Math.log(10)
+#endif
 //	assert_emit("1;3", 3);
 //	assert_emit("{a:1,b:'ok'}", parse("{a:1,b:'ok'}"));
 
@@ -2199,6 +2230,7 @@ void testCurrent() {
 //	assert_emit("1 +1 == [1 1]", 1);
 //	testSubGrouping();
 	testSubGroupingFlatten();
+	testIteration();
 //	testSubGroupingIndent();
 	//testNodesInWasm();
 //	testMergeWabt();

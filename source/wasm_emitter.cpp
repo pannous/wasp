@@ -83,6 +83,8 @@ Code Call(char *symbol);//Node* args
 
 // https://pengowray.github.io/wasm-ops/
 // values outside WASM ABI: 0=unknown/handled internally
+// todo: norm operators before!
+// * ∗ ⋅ ⋆ ✕ ×  …
 byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 	//	previous is lhs in binops!
 
@@ -95,8 +97,17 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "+"))return i32_add; // i32.add
 		//		if (eq(s, "-") and previous==none)return sign_flip; *-1
 		if (eq(s, "-"))return i32_sub; // i32.sub
+
+		// todo: norm operators before!
 		if (eq(s, "*"))return i32_mul; // i32.mul
+		if (eq(s, "⋅"))return i32_mul; // i32.mul
+		if (eq(s, "⋆"))return i32_mul; // i32.mul
+		if (eq(s, "×"))return i32_mul; // i32.mul
+		if (eq(s, "✕"))return i32_mul; // i32.mul
+		if (eq(s, "∗"))return i32_mul; // i32.mul
+
 		if (eq(s, "/"))return i32_div; // i32.div
+		if (eq(s, "÷"))return i32_div; // i32.div
 		if (eq(s, "%"))
 			return i32_rem; // i32.rem
 		if (eq(s, "=="))return i32_eq; // i32.eq
@@ -1666,7 +1677,7 @@ Code emitBlock(Node &node, String context) {
 //				block.addConst(string_header_64).addByte(i64_or);
 //			todo("last_typo.type");
 		} else if (last_type == float64 and context == start) {
-			block.addByte(i64_reinterpret_f64);
+			block.addByte(i64_trunc_f64_s);
 			last_type = int64;
 		}
 //		if(last_type==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string

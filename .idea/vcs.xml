@@ -4,10 +4,8 @@
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Frameworks/wasm-c-api" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Frameworks/wasm3" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-default.x/_deps/webview-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/playground/test-lld-wasm" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/wasm-micro-runtime" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/wiki" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/xxx/_deps/webview-src" vcs="Git" />
   </component>
 </project>

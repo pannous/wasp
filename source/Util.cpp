@@ -42,6 +42,7 @@ int fileSize(char const *file) {
 
 
 String findFile(String filename) {
+	// todo: check dates and return freshest (last edit / updated)
 #if RUNTIME_ONLY
 	return "";
 #endif
@@ -52,12 +53,19 @@ String findFile(String filename) {
 	if (fileExists(filename + ".wasp"))return filename + ".wasp"s;
 	if (fileExists(filename + ".wast"s))return filename + ".wast"s;
 	if (fileExists(filename + ".wasm"))return filename + ".wasm"s;
-	//		if (not filename.contains("/"))filename = findFile(project + "/" + filename) || filename;
+
+	String project = ".";// todo module name(s)
+	if (not filename.contains("/"))filename = findFile(project + "/" + filename) || filename;
 	if (not filename.contains("/"))filename = findFile("lib/"s + filename) || filename;
 	if (not filename.contains("/"))filename = findFile("src/"s + filename) || filename;
+	if (not filename.contains("/"))filename = findFile("wasp/"s + filename) || filename;
 	if (not filename.contains("/"))filename = findFile("source/"s + filename) || filename;
 	if (not filename.contains("/"))filename = findFile("include/"s + filename) || filename;
+	if (not filename.contains("/"))filename = findFile("sample/"s + filename) || filename;
 	if (not filename.contains("/"))filename = findFile("samples/"s + filename) || filename;
+	if (not filename.contains("/"))filename = findFile("test/"s + filename) || filename;
+	if (not filename.contains("/"))filename = findFile("tests/"s + filename) || filename;
+
 	return fileExists(filename) ? filename : "";
 }
 

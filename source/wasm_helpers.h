@@ -5,6 +5,11 @@
 
 #include <cstddef> // size_t  FINE with wasm!
 
+typedef const char *chars;
+typedef unsigned char *bytes;
+
+extern void error1(chars message, chars file, int line);
+
 #ifndef WASM
 #else
 //#ifdef PURE_WASM << unnecessary
@@ -12,8 +17,6 @@
 //#define size_t unsigned int // error: 'operator new' takes type size_t ('unsigned long') as first parameter
 #endif
 
-typedef const char *chars;
-typedef unsigned char *bytes;
 
 // there are two aspects of wasm memory: the internal memory starting at 0 and the external c-pointer *wasm_memory if the VM provides it
 // worse there is the native_runtime which may hold the wasm_runtime running in the VM!

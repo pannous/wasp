@@ -103,7 +103,7 @@ int testV8() {
 	// Dispose the isolate and tear down V8.
 	isolate->Dispose();
 	v8::V8::Dispose();
-	v8::V8::ShutdownPlatform();
+//	v8::V8::ShutdownPlatform();
 	delete create_params.array_buffer_allocator;
 	return 0;
 }
@@ -356,10 +356,16 @@ int run_wasm(unsigned char *data, int size) {
 	printf("Instantiating module...\n");
 	//	wasm_trap_t x{};// incomplete type
 //	wTra
+
+	wasm_extern_vec_t imports = WASM_EMPTY_VEC;
+//	wasm_extern_t *externs[meta.import_count * 2];
+//	wasm_extern_t *externs[] = {link_imports2(), link_global()};
+//	linkImports(externs, meta);
+
 	own wasm_trap_t **traps = (wasm_trap_t **) malloc(1000);
 	traps[0] = (wasm_trap_t *) malloc(1000);
 	own wasm_trap_t *trap = traps[0];
-	own wasm_instance_t *instance = wasm_instance_new(store, module, 0, &trap);
+	own wasm_instance_t *instance = wasm_instance_new(store, module, &imports, &trap);
 	if (instance || !trap) printf("> Error instantiating module, expected trap!\n");
 	wasm_module_delete(module);
 

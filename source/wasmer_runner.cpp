@@ -3,9 +3,11 @@
 //
 
 #include <stdio.h>
+#include <cmath>
 #include "wasmer.h"
 #include "wasm_runner.h"
 #include "wasm_helpers.h"
+#include "wasm_reader.h"
 
 #define error(msg) error1(msg,__FILE__,__LINE__)
 
@@ -14,6 +16,214 @@
 bool done = 0;
 wasm_engine_t *engine;
 wasm_store_t *store;
+
+
+const wasm_functype_t *funcType(Signature &signature);
+
+typedef wasm_trap_t *(wasm_caller_t)(const wasm_val_vec_t *, wasm_val_vec_t *);
+
+typedef wasm_trap_t *(wasm_wrap)(const wasm_val_vec_t *, wasm_val_vec_t *);
+//typedef wasm_trap_t*(wasmtime_wrap)(void *, wasm_caller_t *, const wasm_val_t *, size_t, wasm_val_t *, size_t);
+
+// ⚠️  'fun' needs to be a Locally accessible symbol (via include, ...)
+#define wrap_any(fun) static wasm_trap_t *wrap_##fun( void *env,\
+wasm_caller_t *caller,\
+const wasm_val_t *args,\
+size_t nargs,\
+wasm_val_t *results,\
+size_t nresults\
+){ fun();return NULL;}
+
+#define wrap(fun) static wasm_trap_t *wrap_##fun(const wasm_val_vec_t *args, wasm_val_vec_t *results)
+
+// could be unified with wasmtime via getter defines get(0,i32) => args[0].data->of.i32 / args[0].of.i32
+wrap(square) {
+	int n = args[0].data->of.i32;
+	results->data->of.i32 = n * n;
+	return NULL;
+}
+
+
+wrap(log) {
+	double n = args[0].data->of.f64;
+	results[0].data->of.f64 = log(n);
+	return NULL;
+}
+
+
+wrap(powd) {
+	double n = args[0].data->of.f64;
+	double x = args[1].data->of.f64;
+	results[0].data->of.f64 = powd(n, x);
+	return NULL;
+}
+
+wrap(powf) {
+	float n = args[0].data->of.f32;
+	float x = args[1].data->of.f32;
+	results[0].data->of.f32 = pow(n, x);
+	return NULL;
+}
+
+wrap(powi) {
+	int n = args[0].data->of.i32;
+	int x = args[1].data->of.i32;
+	results[0].data->of.i32 = powi(n, x);
+	return NULL;
+}
+
+wrap(puts) {
+	int n = args[0].data->of.i32;
+	if (wasm_memory)
+		printf("%s\n", &((char *) wasm_memory)[n]);
+	else
+		printf("puts / printf can't access null wasm_memory at %d (internal error!)", n);
+	return NULL;
+}
+
+wrap(puti) {
+	int i = args[0].data->of.i32;
+	printf("%d", i);
+	return NULL;
+}
+
+wrap(putf) {
+	float f = args[0].data->of.f32;
+	printf("%f", f);
+	return NULL;
+}
+
+wrap(putd) {
+	float f = args[0].data->of.f64;
+	printf("%f", f);
+	return NULL;
+}
+
+wrap(putc) {// put_char
+	int i = args[0].data->of.i32;
+	printf("%c", i);
+	return NULL;
+}
+
+wrap(nop) {
+	return NULL;
+}
+
+wrap(atoi) {
+	int n = args[0].data->of.i32;
+	auto a = (chars) ((char *) wasm_memory) + n;
+	int i = atoi0(a);
+	results[0].data->of.i32 = i;
+	return NULL;
+}
+
+wrap(exit) {
+	printf("exit, lol");
+//	exit(42);
+	return NULL;
+}
+
+wrap(memset) {
+	todo("memset");
+	return NULL;
+}
+
+
+wrap(calloc) {
+	todo("calloc");
+	return NULL;
+}
+
+wrap(todo) {
+	todo("this function should not be a wasm import, but part of the runtime!!");
+	return NULL;
+}
+
+wrap(absi) {
+//	todo("this function should not be a wasm import, but part of the runtime!!");
+	long i = args[0].data->of.i32;
+	results[0].data->of.i32 = i > 0 ? i : -1;
+	return NULL;
+}
+
+wrap(absf) {
+//	todo("this function should not be a wasm import, but part of the runtime!!");
+	double i = args[0].data->of.f32;
+	results[0].data->of.f32 = i > 0 ? i : -1;
+	return NULL;
+}
+
+
+void test_lambda() {
+	print("requestAnimationFrame lambda");
+};
+
+//wrap_any(requestAnimationFrame);
+wrap_any(test_lambda);
+
+#define wrap_fun(fun) [](void *, wasm_caller_t *, const wasm_val_t *, size_t, wasm_val_t *, size_t)->wasm_trap_t*{fun();return NULL;};
+
+wasm_wrap *link_import(String name) {
+	if (name == "memset") return &wrap_todo;// should be provided by wasp!!
+	if (name == "calloc") return &wrap_todo;
+	if (name == "_Z5abs_ff") return &wrap_absf;// why??
+// todo get rid of these again!
+	if (name == "_Z7consolev") return &wrap_nop;
+
+	if (name == "__cxa_guard_acquire") return &wrap_nop;// todo!?
+	if (name == "__cxa_guard_release") return &wrap_nop;// todo!?
+	if (name == "_Z13init_graphicsv") return &wrap_nop;
+//	if (name == "_Z21requestAnimationFramev") return wrap_fun(test_lambda);
+//	if (name == "_Z21requestAnimationFramev") return  wrap_fun(requestAnimationFrame);
+
+//	if (name == "_Z8typeName7Valtype") return &wrap_nop;// todo!?
+//	if (name == "_Z8run_wasmPhi") return &wrap_nop;
+//	if (name == "_Z11testCurrentv") return &wrap_nop;// hmmm self test?
+
+	if (name == "fopen") return &wrap_nop;// todo!?
+	if (name == "fseek") return &wrap_nop;// todo!?
+	if (name == "ftell") return &wrap_nop;// todo!?
+	if (name == "fread") return &wrap_nop;// todo!?
+	if (name == "system") return &wrap_nop;// danger!
+
+	if (name == "__cxa_begin_catch") return &wrap_nop;
+	if (name == "_ZdlPv") return &wrap_nop;// delete
+
+	if (name == "_Z3powdd") return &wrap_powd;
+	if (name == "pow") return &wrap_powd;
+	if (name == "powd") return &wrap_powd;
+	if (name == "powf") return &wrap_powf;
+	if (name == "powi") return &wrap_powi;
+	if (name == "atoi") return &wrap_atoi;
+
+	// todo: merge!
+	if (name == "_Z5raisePKc") return &wrap_exit;
+	if (name == "_ZSt9terminatev") return &wrap_exit;
+	if (name == "__cxa_atexit") return &wrap_exit;
+
+	if (name == "__cxa_demangle") return &wrap_nop;
+	if (name == "proc_exit") return &wrap_exit;
+	if (name == "panic") return &wrap_exit;
+	if (name == "raise") return &wrap_exit;
+	if (name == "square") return &wrap_square;
+	if (name == "printf") return &wrap_puts;
+	if (name == "print") return &wrap_puts;
+	if (name == "logs") return &wrap_puts;
+	if (name == "logi") return &wrap_puti;
+	if (name == "logc") return &wrap_putc;
+	if (name == "puti") return &wrap_puti;
+	if (name == "puts") return &wrap_puts;
+	if (name == "putf") return &wrap_putf;
+	if (name == "putd") return &wrap_putd;
+	if (name == "putc") return &wrap_putc;
+	if (name == "log") return &wrap_log;
+	if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
+	if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
+//	if (name == "main") return &hello_callback;
+	error("unmapped import "s + name);
+	return 0;
+}
+
 
 // Print a Wasm value
 void wasm_val_print(wasm_val_t val) {
@@ -198,18 +408,61 @@ void print_trace(wasm_trap_t *trap) {
 	}
 }
 
-int run_wasm(bytes wasm_bytes, int len) {
+
+//void linkImports(wasmer_named_extern_t *externs, Module meta){
+void linkImports(wasm_extern_t **externs, Module meta) {
+	// LINK IMPORTS!
+	int i = 0;
+
+	for (String import_name: meta.import_names) {
+		Signature &signature = meta.signatures[import_name];
+		const wasm_functype_t *func_type = funcType(signature);
+		wasm_wrap *wrap = link_import(import_name);
+//		const wasm_func_callback_t callback=link_import(import_name);
+//		wasm_func_t link*=wasm_func_new(store, funcType(signature), link_import(import_name));
+//		wasm_func_t *import = wasm_func_new(store, func_type, wrap);
+		wasm_func_t *import = wasm_func_new(store, func_type, wrap);
+//		import.k ->kind = WASM_EXTERN_FUNC;
+//		import->of.import = link;
+		wasm_extern_t *ex = wasm_func_as_extern(import);
+		wasmer_named_extern_t *ex2;//=ex;
+
+		externs[i++] = ex;
+//		return wasm_func_as_extern(import);
+		print(import_name);
+//		wasm_func_t link*=wasm_func_new_with_env(store, funcType(signature), link_import(import_name), NULL, NULL);
+//		wasm_func_new(store, funcType(signature), link_import(import_name), NULL, NULL, &link);
+	}
+}
+
+wasm_func_t *findFunction(wasm_extern_vec_t exports, wasm_exporttype_vec_t export_types) {
+	for (int i = 0; i < exports.size; i++) {
+		wasm_func_t *exporte = wasm_extern_as_func(exports.data[i]);
+		print_name(wasm_exporttype_name(export_types.data[i]));
+		print_externtype(wasm_exporttype_type(export_types.data[i]));
+//		if(exporte.name=="main") // uh todo!?
+		if (exporte)return exporte;
+	}
+	error("> Failed to get the `main` function!\n");
+	return 0;
+}
+
+
+long run_wasm(bytes wasm_bytes, int len) {
 	if (!done)init_wasmer();
 	wasm_byte_vec_t wasmBytes = {(size_t) len, (char *) wasm_bytes};
 	wasm_module_t *module = wasm_module_new(store, &wasmBytes);
 	if (!module) error("> Error compiling module!\n");
 	wasm_byte_vec_delete(&wasmBytes);
-	//	wasm_extern_vec_t imports = WASM_EMPTY_VEC;
-//	wasm_extern_vec_t import_object = link_imports();
 
-	wasm_extern_t *externs[] = {link_imports2(), link_global()};
-	wasm_extern_vec_t imports = WASM_ARRAY_VEC(externs);
-	wasm_trap_t *trap;//=wasm_trap_new(store, (wasm_message_t*)"Error instantiating module!\n\0");
+	Module meta = read_wasm(wasm_bytes, len);// wasm module* sucks so we read it ourselves!
+
+	wasm_extern_vec_t imports = WASM_EMPTY_VEC;
+	wasm_extern_t *externs[meta.import_count * 2];
+//	wasm_extern_t *externs[] = {link_imports2(), link_global()};
+	linkImports(externs, meta);
+	wasm_extern_vec_new(&imports, meta.import_count * 2, externs);
+	wasm_trap_t *trap = 0;//wasm_trap_new(store, (wasm_message_t*)"Error instantiating module!\n\0");
 	wasm_instance_t *instance = wasm_instance_new(store, module, &imports, &trap);
 	if (!instance) {
 		int i = wasmer_last_error_length();
@@ -224,16 +477,9 @@ int run_wasm(bytes wasm_bytes, int len) {
 	wasm_module_exports(module, &export_types);
 	wasm_instance_exports(instance, &exports);
 	if (exports.size == 0) error("> Error accessing exports!\n");
-//	printf("Retrieving the `main` function...\n");
-	wasm_func_t *sum_func;
-	for (int i = 0; i < exports.size; i++) {
-		wasm_func_t *exporte = wasm_extern_as_func(exports.data[i]);
-		print_name(wasm_exporttype_name(export_types.data[i]));
-		print_externtype(wasm_exporttype_type(export_types.data[i]));
-//		if(exporte.name=="main")
-		if (exporte)
-			sum_func = exporte;
-	}
+
+	printf("Retrieving the `main` function...\n");
+	wasm_func_t *sum_func = findFunction(exports, export_types);
 	if (sum_func == NULL) error("> Failed to get the `main` function!\n");
 //	printf("Calling `sum` function...\n");
 //wasm_val_t args_val[2] = {WASM_I32_VAL(3), WASM_I32_VAL(4)};
@@ -245,7 +491,17 @@ int run_wasm(bytes wasm_bytes, int len) {
 	// wasmer is only good for calling utterly tested code, otherwise it gives ZERO info on what went wrong!
 	if (wasm_func_call(sum_func, &args, &results)) error("> Error calling the `main` function!\n");
 
-	int32_t result = results_val[0].of.i32;
+//	int nresults=1;//results_val
+//	int64_t result = results_val->of.i64;
+//	if (nresults > 1) {
+//		wasm_val_t results2 = *(&results + 1);
+//		Type type = results2->of.i32;
+//		if (type >= undefined and type <= arrays)
+//			printf("TYPE: %s\n", (chars) type);
+//		else printf("Unknown type %d\n", (int) type);
+//	}
+
+	int32_t result = results_val->of.i32;
 	printf("Wasmer Result: %d\n", result);
 
 	wasm_func_delete(sum_func);
@@ -255,4 +511,84 @@ int run_wasm(bytes wasm_bytes, int len) {
 //	wasm_store_delete(store);
 //	wasm_engine_delete(engine);
 	return result;
+}
+
+// same in wasmtime_runner.cpp … so far duplication ok
+const wasm_functype_t *funcType(Signature &signature) {
+	wasm_valtype_t *i = wasm_valtype_new(WASM_I32);
+	wasm_valtype_t *I = wasm_valtype_new(WASM_I64);
+	wasm_valtype_t *f = wasm_valtype_new(WASM_F32);
+	wasm_valtype_t *f1 = wasm_valtype_new(WASM_F32);
+	wasm_valtype_t *F = wasm_valtype_new(WASM_F64);
+	int param_count = signature.types.size();
+	// todo multi-value
+	auto returnType = signature.return_types.last(none);
+	if (param_count == 0) {
+		switch (returnType) {
+			case none:
+			case voids:
+				return wasm_functype_new_0_0();
+			case int32:
+				return wasm_functype_new_0_1(i);
+			default:
+				break;
+		}
+	}
+	if (param_count == 1) {
+		switch (signature.types[0]) {
+			case charp:
+			case f32:
+				switch (returnType) {
+					case none:
+					case voids:
+						return wasm_functype_new_1_0(f);
+					case f32:
+						return wasm_functype_new_1_1(f, f1);
+					default:
+						break;
+				}
+			case f64:
+				switch (returnType) {
+					case none:
+					case voids:
+						return wasm_functype_new_1_0(F);
+					case f64:
+						return wasm_functype_new_1_1(F, F);
+					default:
+						break;
+				}
+			case int32:
+				switch (returnType) {
+					case none:
+					case voids:
+						return wasm_functype_new_1_0(i);
+					case int32:
+						return wasm_functype_new_1_1(i, i);
+					default:
+						break;
+				}
+			default:
+				break;
+		}
+	}
+	if (param_count == 2) {
+		switch (returnType) {
+			case int32:
+				return wasm_functype_new_2_1(i, i, i); // printf(i32,i32)i32
+			case int64:
+				return wasm_functype_new_2_1(i, i, I);
+			case float32:
+				return wasm_functype_new_2_1(f, f, f);
+			case float64:
+				return wasm_functype_new_2_1(F, F, F); // powd(f64,f64)f64
+			default:
+				break;
+		}
+	}
+	// todo unhack!
+	if (param_count == 3) return wasm_functype_new_3_1(i, i, i, i); //(char*,char*,i32,)i32 ;)
+	if (param_count == 4) return wasm_functype_new_4_1(i, i, i, i, i); //(char*,char*,i32,)i32 ;)
+	print(signature.format());
+	error("missing signature mapping"s + signature.format());
+	return 0;
 }
