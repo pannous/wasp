@@ -14,8 +14,8 @@
 #include <math.h>
 
 int SERVER_PORT = 1234;
-//bool eval_via_emit = false;// not all tests yet
-bool eval_via_emit = true;// << todo!
+bool eval_via_emit = false;// not all tests yet
+//bool eval_via_emit = true;// << todo!  assert_is(…)
 // get home dir :
 /*#include <unistd.h>
 #include <sys/types.h>
@@ -958,7 +958,7 @@ private:
 			return numbero();
 		if (ch == u'‖') {
 			proceed();// todo: better ;)
-			return (*new Node("‖")).add(valueNode(u'‖')).setType(operators, false);
+			return (*new Node("‖")).add(valueNode(u'‖').clone()).setType(operators, false);
 		}
 		if (is_operator(ch))
 			return any_operator();
