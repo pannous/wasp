@@ -300,6 +300,7 @@ void add_wasmtime_memory() {
 	wasm_memory = memory_data;// todo: keep old?
 }
 
+
 long run_wasm(unsigned char *data, int size) {
 	if (!done)init_wasmtime();
 	wasmtime_error_t *error;
@@ -308,7 +309,7 @@ long run_wasm(unsigned char *data, int size) {
 	error = wasmtime_module_new(engine, (uint8_t *) data, size, &module);
 	if (error != NULL)exit_with_error("failed to compile module", error, NULL);
 
-	wasm_trap_t *trap = NULL;
+	wasm_trap_t *trap = NULL;// (wasm_trap_t *) malloc(10000); //wasm_trap_new((wasm_store_t *)store, NULL); //"Error?"
 	wasmtime_instance_t instance;
 
 	Module meta = read_wasm(data, size);// wasmtime module* sucks so we read it ourselves!
@@ -317,11 +318,14 @@ long run_wasm(unsigned char *data, int size) {
 	int i = 0;
 	// LINK IMPORTS!
 	for (String import_name: meta.import_names) {
+		if (import_name.empty())break;
 		print(import_name);
 		wasmtime_extern_t import;
 		wasmtime_func_t link;
 		Signature &signature = meta.signatures[import_name];
-		wasmtime_func_new(context, funcType(signature), link_import(import_name), NULL, NULL, &link);
+		const wasm_functype_t *type = funcType(signature);
+		wasm_wrap (*callback) = link_import(import_name);
+		wasmtime_func_new(context, type, callback, NULL, NULL, &link);
 		import.kind = WASMTIME_EXTERN_FUNC;
 		import.of.func = link;
 		imports[i++] = import;
