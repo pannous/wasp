@@ -202,34 +202,34 @@ endif ()
 
 if (WASM)
 else ()
-    set(ASAN_OPTIONS verbosity=3)
-    #    add_compile_options(-Wall)
-    add_compile_options(-g)
-    add_compile_options(-enable-coverage)
-    add_compile_options(-Wno-missing-field-initializers)
-    add_compile_options(-Wformat=2)
-    #    add_compile_options(-Wpointer-arith)
-    add_compile_options(-m64)
-    add_compile_options(-D_LARGEFILE_SOURCE)
-    add_compile_options(-D_FILE_OFFSET_BITS=64)
-    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
-
-    #    add_compile_options(-fsanitize=address) # currently crashes with AsanDie so don't use :(
-    add_compile_options(-fno-stack-protector)
-    add_compile_options(-fno-omit-frame-pointer)
-    add_compile_options(-fsanitize=undefined)
-    add_compile_options(-fsanitize-recover=address)
-    add_compile_options(-fsanitize-recover=address)
-
-    #   add_compile & add_link NEEDS TO BE IN SYNC!
-    #    add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
-    add_link_options(-fno-omit-frame-pointer)
-    add_link_options(-fsanitize-recover=address)
-    add_link_options(-fsanitize-recover=address)
-    add_link_options(-fsanitize=undefined)
-    add_link_options(-rdynamic)
-    add_link_options(-m64)
-    add_link_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+#    set(ASAN_OPTIONS verbosity=3)
+#    #    add_compile_options(-Wall)
+#    add_compile_options(-g)
+#    add_compile_options(-enable-coverage)
+#    add_compile_options(-Wno-missing-field-initializers)
+#    add_compile_options(-Wformat=2)
+#    #    add_compile_options(-Wpointer-arith)
+#    add_compile_options(-m64)
+#    add_compile_options(-D_LARGEFILE_SOURCE)
+#    add_compile_options(-D_FILE_OFFSET_BITS=64)
+#    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+#
+#    #    add_compile_options(-fsanitize=address) # currently crashes with AsanDie so don't use :(
+#    add_compile_options(-fno-stack-protector)
+#    add_compile_options(-fno-omit-frame-pointer)
+#    add_compile_options(-fsanitize=undefined)
+#    add_compile_options(-fsanitize-recover=address)
+#    add_compile_options(-fsanitize-recover=address)
+#
+#    #   add_compile & add_link NEEDS TO BE IN SYNC!
+#    #    add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
+#    add_link_options(-fno-omit-frame-pointer)
+#    add_link_options(-fsanitize-recover=address)
+#    add_link_options(-fsanitize-recover=address)
+#    add_link_options(-fsanitize=undefined)
+#    add_link_options(-rdynamic)
+#    add_link_options(-m64)
+#    add_link_options(-D_GLIBCXX_USE_CXX11_ABI=0)
 endif ()
 
 #

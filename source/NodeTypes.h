@@ -97,7 +97,7 @@ enum Primitive {
 	string_header_32 = 0x10000000,
 	smart_mask_32 = 0x70000000,
 	negative_mask_32 = 0x80000000,
-	array_header_64 = 0x0040000000000000,
+	array_header_64 = 0x0040000000000000,// why 0x004? because first 2 bits indicate doubles/ints!
 	string_header_64 = 0x0010000000000000,
 };
 

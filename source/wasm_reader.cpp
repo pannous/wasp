@@ -168,8 +168,8 @@ void parseImportNames(Code &payload) {
 	functionSignatures.setDefault(Signature());
 	trace("Imports:");
 	for (int i = 0; i < module.import_count and payload.start < payload.length; ++i) {
-		String mod = name(payload);// module
-		String name1 = name(payload).clone();// needs to be 0-terminated now
+		String &mod = name(payload);// module
+		String &name1 = name(payload);// needs to be 0-terminated now
 		int huh = unsignedLEB128(payload);
 		int type = unsignedLEB128(payload);
 		trace(name1);
@@ -397,14 +397,14 @@ void consumeExportSection() {
 			functionIndices[func0] = index;// mangled
 			functionIndices[func] = index;// demangled
 
-			Signature &wasm_signature = funcTypes[type];
+//			Signature &wasm_signature = funcTypes[type];
 			Valtype returns = int32;
-			returns = mapTypeToWasm(wasm_signature.return_type);
-			if (returns != i32) {
-//				print("returns "s+ typeName(returns));
-				returns = int32; // for now! todo
-				// else 	assert_run("x='123';x + '4' is '1234'", true); // FAILS somehow!
-			}
+//			returns = mapTypeToWasm(wasm_signature.return_type);
+//			if (returns != i32) {
+////				print("returns "s+ typeName(returns));
+//				returns = int32; // for now! todo
+//				// else 	assert_run("x='123';x + '4' is '1234'", true); // FAILS somehow!
+//			}
 			Signature &signature = Signature().runtime().returns(returns);
 			// todo: use wasm_signature if demangling fails
 			for (String arg: args) {

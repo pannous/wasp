@@ -361,8 +361,8 @@ public:
 	explicit
 	Node(spointer spo) {
 		smartType type = getSmartType(spo);
-		int payload = spo << 4 >> 4;
-		if (type != int28)payload = spo << 8 >> 8;
+		int payload = spo << 4 >> 4; // delete 4 bit type header
+//		if (type != int28 and type != float28 )payload = spo << 8 >> 8;
 		switch (type) {
 			case int28:
 			case sint28:
@@ -392,7 +392,7 @@ public:
 				kind = strings;
 				break;
 			default:
-				error("unknown type");
+				error("unknown or unimplemented smart type");
 		}
 	}
 

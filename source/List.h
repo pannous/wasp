@@ -183,6 +183,13 @@ public:
 			error("empty list");
 		return items[_size - 1];
 	}
+
+//	List<S>& clone() { // todo just create all return lists with new List() OR return List<> objects (no references) copy by value ok!!
+//		List &neu = *new List<S>();
+//		neu._size=_size;
+//		neu.items=items;
+//		return  neu;
+//	}
 };
 
 void print(List<String> list);
