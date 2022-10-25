@@ -347,21 +347,25 @@ void consumeCodeSection() {
 // we can reconstruct arguments from demangled exports or retained wast names
 // _Z2eqPKcS0_i =>  func $eq_char_const*__char_const*__int_ <= eq(char const*, char const*, int)
 List<String> demangle_args(String &fun) {
-	List<String> args;
 	int status;
-	String *real_name = new String(abi::__cxa_demangle(fun.data, 0, 0, &status));
-	if (status != 0)return args;
-	if (!real_name or !real_name->contains("("))return args;
-	String brace = real_name->substring(real_name->indexOf('(') + 1, real_name->indexOf(')'));//.clone();
+//	String *real_name = new
+	char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
+	if (status != 1 or string == 0)return 0;
+	String real_name = String(string);
+	if (status != 0)return 0;
+	if (!real_name or !real_name.contains("("))return 0;
+	String brace = real_name.substring(real_name.indexOf('(') + 1, real_name.indexOf(')'));//.clone();
 	if (brace.contains("("))
-		return args;// function pointers not supported yet "List<String>::sort(bool (*)(String&, String&))"
-	args = brace.split(", ");
-	return args;
+		return 0;// function pointers not supported yet "List<String>::sort(bool (*)(String&, String&))"
+	return brace.split(", ");
 }
 
 String demangle(String &fun) {
 	int status;
-	String *real_name = new String(abi::__cxa_demangle(fun.data, 0, 0, &status));
+	char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
+	if (status != 1 or string == 0)
+		return fun;
+	String *real_name = new String(string);
 	if (status != 0)return fun;// not demangled (e.g. "memory")
 //	String ok = *real_name;
 	String ok = real_name->substring(0, real_name->indexOf(
