@@ -280,9 +280,17 @@ void init_wasmtime() {
 	store = wasmtime_store_new(engine, some_meta_data, NULL);
 	assert(store != NULL);
 //	wasmtime_context_get_data(context);// get some_meta_data
-
 	context = wasmtime_store_context(store);
-	done = 1;
+	done = 1;// can we really reuse these or does it result in errors like:
+//	thread '<unnamed>' panicked at 'object used with the wrong store', /opt/wasm/wasmtime/crates/wasmtime/src/func.rs:682:9
+//	fatal runtime error: failed to initiate panic, error 5
+//  Process finished with exit code 134 (interrupted by signal 6: SIGABRT)
+
+// done = 0 doesn't help:
+//	UndefinedBehaviorSanitizer:DEADLYSIGNAL
+//	==59468==ERROR: UndefinedBehaviorSanitizer: BUS on unknown address (pc 0x00019e9b3b6c bp 0x00016f6f7940 sp 0x00016f6f7930 T1023049)
+//	==59468==The signal is caused by a UNKNOWN memory access.
+
 //	void free_wasmtime(){
 	//	wasmtime_store_delete(store);
 	//	wasm_engine_delete(engine);
@@ -336,6 +344,8 @@ long run_wasm(unsigned char *data, int size) {
 
 	wasmtime_extern_t run;
 	wasmtime_extern_t memory_export;
+	// WDYM?? 	thread '<unnamed>' panicked at 'index out of bounds: the len is 447 but the index is 4294967295'
+	// wasmtime::instance::Instance::_get_export::h5e31a076a79e322b
 	bool ok = wasmtime_instance_export_get(context, &instance, "main", 4, &run);
 //	assert(ok);
 //	assert(run.kind == WASMTIME_EXTERN_FUNC);
@@ -376,6 +386,7 @@ long run_wasm(unsigned char *data, int size) {
 	wasmtime_func_t wasmtimeFunc = run.of.func;
 //	int nresults = wasm_func_result_arity(wasmFunc); // needs workaround in wasmtime
 	auto funcType = wasmtime_func_type(context, &wasmtimeFunc);
+//	WDYM??? thread '<unnamed>' panicked at 'object used with the wrong store', /opt/wasm/wasmtime/crates/wasmtime/src/func.rs:682:9
 	auto functypeResults = wasm_functype_results(funcType);
 	int nresults = functypeResults->size;
 	if (nresults > 1)
