@@ -2206,9 +2206,8 @@ void testCurrent() {
 		printf("\n\n    ===========================================\n%d\n\n\n", i);
 //		printf("%s\n", (char*)0);// "(null)" ok
 //		assert_emit("i=-9;√-i", 3);// SIGKILL after about 3000 runs OK'ish ;)
-//		parse("‖-3‖");
-		assert_is("‖-3‖", 3);// Heap corruption after about 200 runs
-//		assert_emit("‖-3‖", 3);// Heap corruption after about 200 runs
+//		assert_emit("‖-3‖", 3);// Heap corruption after about 3000 runs OK'ish ;) 'fixed'
+		assert_run("‖-3‖", 3);// Heap corruption after about 10 runs
 	}
 	assert_emit("i=-9;√-i", 3);
 	assert_emit(("-1.1"), -1.1) // todo for wasm3 !
