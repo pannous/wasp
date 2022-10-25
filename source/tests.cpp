@@ -107,16 +107,20 @@ void test_sinus_wasp_import() {
 
 void testIteration() {
 	List<String> args;
-	for (auto x: args)error("NO ITEM");
-	List<String> list;// = {"1", "2", "3", 0};
-//	todo("not in wasm");
+	for (auto x: args)
+		error("NO ITEM, should'nt be reached");
+
+	List<String> list = {"1", "2", "3"};// wow initializer_list now terminate!
+//	List<String> list = {"1", "2", "3", 0};
 	int i = 0;
 	for (auto x: list)i++;
-	check(i == 3);
-	Node items = Node{"1", "2", "3", 0};
+	assert_equals(i, 3);
+
+	Node items = {"1", "2", "3"};
+//	Node items = Node{"1", "2", "3", 0};
 	i = 0;
 	for (auto x: list)i++;
-	check(i == 3);
+	assert_equals(i, 3);
 }
 
 //void testLogarithmInRuntime(){
@@ -2188,6 +2192,10 @@ void tests() {
 	print("ALL TESTS PASSED");
 }
 
+void testWrong0Termination() {
+	List<String> builtin_constants = {"pi", "π", 0};
+	assert_equals(builtin_constants.size(), 2);// todo
+}
 
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp / wasmtime
@@ -2200,9 +2208,14 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
+	skip(
+			testWrong0Termination();
+	)
+	assert_run("atoi0('123'+'456')", 123456);
+
 //	assert_run("x=123;x + 4 is 127", true);
 //	assert_run("x='123';x + '4' is '1234'", true);// ok
-	for (int i = 0; i < 1000000; ++i) {
+	for (int i = 0; i < 0; ++i) {
 		printf("\n\n    ===========================================\n%d\n\n\n", i);
 //		printf("%s\n", (char*)0);// "(null)" ok
 //		assert_emit("i=-9;√-i", 3);// SIGKILL after about 3000 runs OK'ish ;)

@@ -90,7 +90,10 @@ double powd(double x, double y);
 extern "C" long squarel(long n);// test wasm, otherwise use x² => x*x in analyze!
 extern "C" double square(double n);// test wasm
 
-extern int sqrt1(int a);
+#ifndef WASM
+
+extern double sqrt1(double a);// wasm
+#endif
 
 long powi(int a, int b);// short harder
 

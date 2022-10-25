@@ -53,12 +53,11 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 
 	if (length > 1)
 		if (kind == operators or precedence(*this)) {
-//			Node &right = this->clone()->setType(objects, false).setName(empty_name);
 			Node &right = this->values();
 			right.kind = expression;
 			right = right.interpret();
 			this->clear();
-			this->setType(operators);// restore
+			this->setType(operators, false);// restore
 			if (right == this)
 				error("no value for operator");
 			return apply_op(NIL, *this, right);
