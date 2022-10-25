@@ -310,11 +310,11 @@ int squari(int a) {
 }
 
 // wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and print()
-int sqrt1(int a) {
+double sqrt1(double a) {
 #ifndef WASM
-//	return sqrt(a);
+	return sqrt(a);
 #endif
-	todo("own sqrt");
+	todo("wasm has it's own sqrt");
 	return -1;
 }
 

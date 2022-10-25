@@ -14,8 +14,8 @@
 #include <math.h>
 
 int SERVER_PORT = 1234;
-bool eval_via_emit = false;// not all tests yet
-//bool eval_via_emit = true;// << todo!  assert_is(…)
+//bool eval_via_emit = false;// not all tests yet
+bool eval_via_emit = true;// << todo!  assert_is(…)
 // get home dir :
 /*#include <unistd.h>
 #include <sys/types.h>
@@ -1687,9 +1687,9 @@ float precedence(char group) {
 
 
 // test functions to check wasm->runtime interaction
-//int ok() {
-//	return 42;
-//}
+int oka() {
+	return 42;
+}
 
 int oki(int i) {// used in wasm runtime test
 	return 42 + i;
