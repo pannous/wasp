@@ -453,7 +453,7 @@ bool String::empty() const {//this==0 in testMarkMulti!
 ////		return true;
 //#endif
 	if (this == 0)return true;
-//	if ((long) this < 1000)return true;// zero page broken object hack
+	if ((long) this < 1000)return true;// zero page broken object hack
 	if ((long long) data == 0x1ffffffff || (long long) data >= 0xffffffff00000000 ||
 	    ((long long) data >= 0x100000000LL and (long long) data <= 0x100100000))
 		return false;// todo: valgrind debug corruption, usually because of not enough memory
