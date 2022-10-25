@@ -50,11 +50,12 @@ public:
 		va_end(args);
 	}
 
-	List(S *args) : List() {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
-		while (args[_size] and _size < LIST_ALLOCATION_RESERVED_COUNT) {
-			items[_size] = args[_size];
-			_size++;
-		}
+	List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
+		if (args == 0)return;
+		while (args[_size] and _size < LIST_ALLOCATION_RESERVED_COUNT)_size++;
+		items = (S *) calloc(sizeof(S), _size + 1);
+		int i = _size;
+		while (i-- > 0)items[i] = args[i];
 	}
 
 #ifndef WASM
