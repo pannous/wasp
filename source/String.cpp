@@ -586,14 +586,14 @@ List<String> String::split(const char *string) {
 	int start = 0;
 	for (int i = 0; i < length; i++) {
 		if (eq(data + i, string, len1)) {
-			const String &part = String(data + start, i - start, !debug);
-			parts.add(part);
+			String part = String(data + start, i - start, !debug);
+			parts.add(part);// copy by value, hopefully c++ optimizer is smart enough ;)
 			start = i + len1;
 		}
 	}
-	const String &rest = String(data + start, -1, true);
+	String rest = String(data + start, -1, true);
 	parts.add(rest);
-	return parts;
+	return parts;//.clone();  return by copy value ok (list items[] separate)
 }
 
 String String::trim() {
