@@ -406,6 +406,23 @@ public:
 	}
 
 
+	String &append(char *c, int byteCount = -1) {
+		if (byteCount < 0) byteCount = strlen0(c);
+		if (!data) {
+			data = (char *) (alloc(sizeof(char), byteCount + 1));
+		} else if (data + length + 1 == (char *) current) {// just append recent
+			current += byteCount + 1;
+		} else {
+			auto *neu = (char *) (alloc(sizeof(char), length + byteCount + 1));
+			if (data)strcpy2(neu, data, length);
+			data = neu;
+		}
+		strcpy2(data + length, c, byteCount);
+		length += byteCount;
+		data[length] = 0;
+		return *this;
+	}
+
 	String &append(codepoint c) {
 		auto byteCount = utf8_byte_count(c);
 		if (!data) {
@@ -509,25 +526,32 @@ public:
 //		return this->replace("%f", formated);
 //	}
 
+// ambiguous (with operand types 'String' and 'String&') yet x+=name converts to char* WHY???
+//	String *operator+=(String c) {
+//		this->data = (*this + c).data;
+//		this->length += c.length;
+//		return this;
+//	}
+
 	String *operator+=(String &c) {
-		this->data = (*this + c).data;
-		this->length += c.length;
+		append(c.data, c.length);
 		return this;
 	}
 
 	String *operator+=(String *c) {
-		this->data = (*this + c).data;
-		this->length += c->length;
+		if (c)append(c->data, c->length);
 		return this;
 	}
 
 	String *operator+=(char *c) {
-		while (c and c[0] && c++)append(c[-1]);
+		append(c);
+//		while (c and c[0])append(*(c++));
 		return this;
 	}
 
 	String *operator+=(chars c) {
-		while (c and c[0] && c++)append(c[-1]);
+		append((char *) c);
+//		while (c and c[0])append(*c++);
 		return this;
 	}
 

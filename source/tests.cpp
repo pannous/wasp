@@ -2202,11 +2202,14 @@ void testCurrent() {
 	clearContext();
 //	assert_run("x=123;x + 4 is 127", true);
 //	assert_run("x='123';x + '4' is '1234'", true);// ok
-//	for (int i = 0; i < 10000; ++i) {
-//		printf("\n\n    ===========================================\n%d\n\n\n", i);
+	for (int i = 0; i < 1000000; ++i) {
+		printf("\n\n    ===========================================\n%d\n\n\n", i);
+//		printf("%s\n", (char*)0);// "(null)" ok
 //		assert_emit("i=-9;√-i", 3);// SIGKILL after about 3000 runs OK'ish ;)
-////		assert_emit("‖-3‖", 3);// Heap corruption after about 200 runs
-//	}
+//		parse("‖-3‖");
+		assert_is("‖-3‖", 3);// Heap corruption after about 200 runs
+//		assert_emit("‖-3‖", 3);// Heap corruption after about 200 runs
+	}
 	assert_emit("i=-9;√-i", 3);
 	assert_emit(("-1.1"), -1.1) // todo for wasm3 !
 	assert_is("√42*√42", 42);// round AFTER!
