@@ -12,6 +12,13 @@
 #include <stdarg.h> // va_list OK IN WASM???
 #include <cstdlib> // OK in WASM!
 
+#ifndef WASM
+
+#include <initializer_list> // allow List x={1,2,3};
+
+#endif
+
+
 //#include <cstdarg> // va_list ok in wasm even without wasi!
 //#endif
 
@@ -260,6 +267,11 @@ public:
 //		length=0;// no children! but where is length??
 //	}
 
+	Node(const std::initializer_list<String> &_items) : Node() {
+		for (const String &s: _items) {
+			add(new Node(s));
+		}
+	}
 
 	// why not auto null terminated on mac?
 	// vargs needs to be 0 terminated, otherwise pray!
