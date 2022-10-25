@@ -851,6 +851,8 @@ String Node::serialize() const {
 		if (length > 0)
 			if (kind == operators) wasp += " ";
 			for (Node &node: *this) {
+				if (length == 0 || &node == 0)
+					break;// how on earth is that possible??
 				if (i++ > 0) wasp += separator ? String(separator) : " ";
 				wasp += node.serialize();
 			}
@@ -1126,7 +1128,8 @@ bool Node::empty() {
 void Node::clear() {
 	next = 0;
 	length = 0;
-	children[0] = 0;
+	children = 0;
+//	children[0] = 0; // messes with shared list!
 	if (kind == key)error("can't clear key(?)");
 	value.data = 0;
 }
