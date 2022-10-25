@@ -52,8 +52,17 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 	}
 
 	if (length > 1)
-		if (kind == operators or precedence(*this))
-			return apply_op(NIL, *this, this->clone()->setType(objects, false).setName(empty_name));
+		if (kind == operators or precedence(*this)) {
+//			Node &right = this->clone()->setType(objects, false).setName(empty_name);
+			Node &right = this->values();
+			right.kind = expression;
+			right = right.interpret();
+			this->clear();
+			this->setType(operators);// restore
+			if (right == this)
+				error("no value for operator");
+			return apply_op(NIL, *this, right);
+		}
 
 	if (length == 2 and children[1].kind == expression) {
 		length = 1;
@@ -294,7 +303,11 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 //	if(!is_KNOWN_operator(op0))return call(left, op0, right);
 
 	if (op == "‖") {
-		return Node(abs((long) left));
+		if (right.isEmpty() and left.kind == longs) return Node(abs(left.value.longy));
+		if (left.isEmpty() and right.kind == longs) return Node(abs(right.value.longy));
+		if (right.isEmpty() and left.kind == reals) return Node(abs(left.value.real));
+		if (left.isEmpty() and right.kind == reals) return Node(abs(right.value.real));
+		error("missing value for ‖");
 	}
 	if (op == "|") {// bitwise or OR pipe!
 		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
@@ -394,6 +407,9 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 		if (left.kind == longs and right.kind == reals) return Node(left.value.longy - right.value.real);
 		if (left.kind == reals and right.kind == longs) return Node(left.value.real - right.value.longy);
 		if (left.kind == longs and right.kind == longs) return Node(left.value.longy - right.value.longy);
+		// should be handled by nodeValue:
+		if (left.empty() and right.kind == reals) return Node(-right.value.real);//negation
+		if (left.empty() and right.kind == longs) return Node(-right.value.longy);//negation
 	}
 
 
