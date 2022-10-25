@@ -143,7 +143,7 @@ if (NOT TRACE)
     #    ADD_COMPILE_FLAG("-Wall")
     ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
     ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
-    #    ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
+    ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
     ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 
     # disable:
@@ -220,7 +220,8 @@ else ()
 #    add_compile_options(-fsanitize=undefined)
 #    add_compile_options(-fsanitize-recover=address)
 #    add_compile_options(-fsanitize-recover=address)
-#
+set(ASAN_OPTIONS=detect_stack_use_after_return=1) # unnecessary because -Wreturn-stack-address
+#add_compile_options(-fsanitize-address-use-after-return)
 #    #   add_compile & add_link NEEDS TO BE IN SYNC!
 #    #    add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
 #    add_link_options(-fno-omit-frame-pointer)

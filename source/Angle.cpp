@@ -11,6 +11,8 @@
 #import "wasm_helpers.h" // IMPORT so that they don't get mangled!
 #include "wasm_emitter.h"
 
+bool use_interpreter = false; // todo
+
 List<String> builtin_constants
 #ifndef WASM
 		= {"pi", "π", "tau", "τ", "euler", "ℯ", 0}
@@ -139,7 +141,6 @@ bool isFunction(Node &op) {
 
 #ifndef RUNTIME_ONLY
 #endif
-bool use_interpreter = false; // todo
 void prepareContext();
 
 Node interpret(String code) {
@@ -1114,7 +1115,9 @@ void preRegisterSignatures() {
 	// ORDER MATTERS: will be used for functionIndices later!
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));// todo: if used
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
-// todo: remove all as they come via log.wasm etc
+// todo: remove all as they come via wasp.wasm log.wasm etc
+	functionSignatures.insert_or_assign("atoi0", Signature().add(charp).returns(int32));// todo int64
+	functionSignatures.insert_or_assign("strlen0", Signature().add(charp).returns(int32));// todo int64
 	functionSignatures.insert_or_assign("malloc", Signature().add(int64).returns(int64));
 	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
@@ -1342,7 +1345,7 @@ float precedence(Node &operater) {
 	if (operater.kind == strings)return 0;// and empty(name)
 
 	// todo: make live easier by making patterns only operators if data on the left
-	if (operater.kind == patterns) return 98;// precedence("if") * 0.98
+	if (operater.kind == patterns and operater.parent) return 98;// precedence("if") * 0.98
 	//	todo why do groups have precedence again?
 //	if (operater.kind == groups) return 99;// needs to be smaller than functor/function calls
 	if (operater.name.in(function_list))return 999;// function call todo: remove here

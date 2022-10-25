@@ -363,14 +363,11 @@ List<String> demangle_args(String &fun) {
 String demangle(String &fun) {
 	int status;
 	char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
-	if (status != 1 or string == 0)
-		return fun;
-	String *real_name = new String(string);
-	if (status != 0)return fun;// not demangled (e.g. "memory")
-//	String ok = *real_name;
-	String ok = real_name->substring(0, real_name->indexOf(
-			'(')).clone();// todo: use type string somehow? info(char const*) …
-	return ok;
+	if (status < 0 or string == 0)
+		return fun;// not demangled (e.g. "memory")
+	String real_name = String(string); // temp
+	String ok = real_name.substring(0, real_name.indexOf('('));
+	return ok;// .clone(); unnecessary: return by value copy
 }
 
 // todo: treat all functions (in library file) as exports if ExportSection is empty !?
@@ -388,8 +385,8 @@ void consumeExportSection() {
 		if (func0 == "_Z6concatPKcS0_")
 			debug = 1;
 		List<String> args = demangle_args(func0);
-		String func = demangle(func0);// todo: use wasm_signature if demangling fails
-		module.export_names.add(func);
+		String func = demangle(func0);
+//		module.export_names.add(func.clone());// should be ok: item[_size]=value BUT IT IS NOT OK, corrupts memory later!!
 		int type = unsignedLEB128(payload);
 		int index = unsignedLEB128(payload);
 		if (index < 0 or index > 100000)error("corrupt index "s + index);
@@ -397,8 +394,10 @@ void consumeExportSection() {
 			functionIndices[func0] = index;// mangled
 			functionIndices[func] = index;// demangled
 
-//			Signature &wasm_signature = funcTypes[type];
 			Valtype returns = int32;
+			// todo: use wasm_signature if demangling fails
+			// todo: demangling doesn't yield return type, is wasm_signature ok?
+//			Signature &wasm_signature = funcTypes[type];
 //			returns = mapTypeToWasm(wasm_signature.return_type);
 //			if (returns != i32) {
 ////				print("returns "s+ typeName(returns));
