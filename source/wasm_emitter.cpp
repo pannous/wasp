@@ -55,7 +55,7 @@ Map<String, int> functionIndices;
 Map<String, Code> functionCodes;
 Map<String, int> typeMap;
 
-Code createSection(Section sectionType, Code data);
+Code createSection(Sections sectionType, Code data);
 
 [[nodiscard]]
 Code Call(char *symbol);//Node* args

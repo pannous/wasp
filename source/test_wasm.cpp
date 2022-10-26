@@ -732,8 +732,8 @@ void testOldRandomBugs() {
 
 void testMergeWabt() {
 #ifdef WABT_MERGE
-	//	merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
 		merge_files({"./samples/main.wasm", "./samples/lib.wasm"});
+	//	merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
 	//	wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
 	//	wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
 	//	refactor_wasm(module, "b", "neu");
