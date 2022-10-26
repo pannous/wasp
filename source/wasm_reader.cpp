@@ -12,7 +12,7 @@
 #include "Util.h"
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
-String sectionName(Section section);
+String sectionName(Sections section);
 // compare with wasm-objdump -h
 bool debug_reader = false;
 typedef unsigned char *bytes;
@@ -46,8 +46,8 @@ bool consume_x(byte *code, int *pos, int len, byte *bytes) {
 	return true;
 }
 
-Section typ() {
-	return (Section) code[pos++];
+Sections typ() {
+	return (Sections) code[pos++];
 }
 
 int unsignedLEB128() {
@@ -342,8 +342,8 @@ void consumeCodeSection() {
 }
 
 
+// todo ifdef CPP not WASM(?)
 #include <cxxabi.h> // for abi::__cxa_demangle
-
 // we can reconstruct arguments from demangled exports or retained wast names
 // _Z2eqPKcS0_i =>  func $eq_char_const*__char_const*__int_ <= eq(char const*, char const*, int)
 List<String> demangle_args(String &fun) {
@@ -360,6 +360,7 @@ List<String> demangle_args(String &fun) {
 	return brace.split(", ");
 }
 
+//#include <cxxabi.h>
 String demangle(String &fun) {
 	int status;
 	char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
@@ -497,7 +498,7 @@ void consumeImportSection() {
 
 void consumeSections() {
 	while (pos < size) {
-		Section section = typ();
+		Sections section = typ();
 		switch (section) {
 			case type_section:
 				consumeTypeSection();
