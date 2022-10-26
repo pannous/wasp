@@ -10,6 +10,20 @@
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
 
+void testLeaks() {
+//	int reruns=0;
+	int reruns = 100000;
+	for (int i = 0; i < reruns; ++i) {//
+		printf("\n\n    ===========================================\n%d\n\n\n", i);
+//		assert_emit("i=-9;√-i", 3);// SIGKILL after about 3000 runs OK'ish ;)
+		assert_run("i=-9;√-i", 3);// SIGKILL after … ?
+	}
+}
+
+void testWrong0Termination() {
+	List<String> builtin_constants = {"pi", "π", 0};
+	assert_equals(builtin_constants.size(), 2);// todo
+}
 
 void testStupidLongLong() {
 	//	int a;
@@ -2178,6 +2192,7 @@ void tests() {
 	testSignificantWhitespace();
 
 	skip(
+			testWrong0Termination();
 			testErrors();// error: failed to call function   wasm trap: integer divide by zero
 			assert_is("one plus two times three", 7);
 			testMathExtra();// "one plus two times three"==7 used to work?
@@ -2192,10 +2207,6 @@ void tests() {
 	print("ALL TESTS PASSED");
 }
 
-void testWrong0Termination() {
-	List<String> builtin_constants = {"pi", "π", 0};
-	assert_equals(builtin_constants.size(), 2);// todo
-}
 
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp / wasmtime
@@ -2208,24 +2219,11 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	skip(
-			testWrong0Termination();
-	)
-	assert_run("atoi0('123'+'456')", 123456);
-
-//	assert_run("x=123;x + 4 is 127", true);
-//	assert_run("x='123';x + '4' is '1234'", true);// ok
-	for (int i = 0; i < 0; ++i) {
-		printf("\n\n    ===========================================\n%d\n\n\n", i);
-//		printf("%s\n", (char*)0);// "(null)" ok
-//		assert_emit("i=-9;√-i", 3);// SIGKILL after about 3000 runs OK'ish ;)
-		assert_run("i=-9;√-i", 3);// SIGKILL after about 3000 runs OK'ish ;)
-//		assert_emit("‖-3‖", 3);// Heap corruption after about 3000 runs OK'ish ;) 'fixed'
-//		assert_run("‖-3‖", 3);// Heap corruption after about 10 runs
-	}
-	assert_emit("i=-9;√-i", 3);
-	assert_emit(("-1.1"), -1.1) // todo for wasm3 !
-	assert_is("√42*√42", 42);// round AFTER!
+	assert_equals(~0, 0);// what is ~0 ???
+	assert_equals(~1, 1);// what is ~1 ???
+	testLeaks();
+	testMergeRelocate();
+	testMergeWabt();
 
 //	testImport42();
 //	testSinus();

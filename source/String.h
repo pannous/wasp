@@ -19,6 +19,10 @@
 
 #endif
 
+#ifdef STD_STRING
+// defeats the purpose of using a lightweight unicode-aware String class
+#endif
+
 
 typedef const unsigned char *wasm_string;// wasm strings start with their LEB encoded length and do NOT end with 0 !! :(
 
@@ -211,6 +215,12 @@ public:
 	void operator delete(void *) {/*lol*/} // Todo ;)
 
 //	~String()=default;
+
+#ifdef STD_STRING
+	String(const std::string str):String(str.c_str){
+		// defeats the purpose of using a lightweight unicode-aware String class
+	}
+#endif
 
 	explicit String(char *datas, int len, bool share) {
 		data = datas;
@@ -911,10 +921,12 @@ public:
 
 	String trim();
 
-	long hash();
+	long hash() const;
 
 	String &lower();
+
 //	void lower();
+	void shift(int i);
 };
 
 
