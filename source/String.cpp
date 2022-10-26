@@ -604,7 +604,7 @@ String String::trim() {
 	return String(data + start, end - start + 1, true);// share ok?
 }
 
-long String::hash() {
+long String::hash() const {
 	return wordHash(data, min(length, 20));
 //	return (long)data;// only conflict: shared substring(0,i);
 }
@@ -614,6 +614,13 @@ String &String::lower() {
 	String &clone1 = clone();
 	lowerCase(clone1.data, length);
 	return clone1;
+}
+
+void String::shift(int i) {
+	while (length > 0 and i-- > 0) {
+		data++;
+		length--;
+	}
 }
 
 String EMPTY_STRING0 = "";

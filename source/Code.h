@@ -674,7 +674,7 @@ enum Opcodes {
 };
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
-enum Section {
+enum Sections {
 	// with the exception of custom, these Sections must appear in the following order:
 	custom_section = (byte) 0,
 	type_section = 1,
@@ -838,9 +838,9 @@ public:
 #ifndef RUNTIME_ONLY
 
 //String sectionName(::Section section);
-String sectionName(Section section);
+String sectionName(Sections section);
 
-Code createSection(Section sectionType, Code data);
+Code createSection(Sections sectionType, Code data);
 
 //Code createSection(::Section sectionType, Code data);
 

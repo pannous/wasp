@@ -108,11 +108,11 @@ public:
 		return true;
 	}
 
-	S *begin() {
+	S *begin() const {
 		return items;
 	}
 
-	S *end() {
+	S *end() const {
 		return &items[_size];
 	}
 
@@ -190,6 +190,9 @@ public:
 //		neu.items=items;
 //		return  neu;
 //	}
+	bool empty() const {
+		return _size == 0 or items == 0;
+	}
 };
 
 void print(List<String> list);

@@ -2,50 +2,54 @@
 // Created by me on 07.12.20.
 //
 
-#include "wasm_merger_wabt.h"
+#include "wasm_merger_own.h"
 
-/*
- * Copyright 2016 WebAssembly Community Group participants
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+#include "own_merge/binary.h"
+#include "own_merge/wasm-link.h"
+#include "own_merge/leb128.h"
+#include "own_merge/stream.h"
+#include "own_merge/type.h"
+#include "own_merge/binary-writer.h"
+#include "own_merge/binary-reader-linker.h"
+#include "own_merge/result.h" // todo remove
+#include "own_merge/binding-hash.h" // todo remove ?
 
+#include "Code.h"
+#include "wasm_reader.h"
+
+Code createSection(Sections sectionType, Code data);
+
+Code code(std::vector<uint8_t> vector1);
+
+using namespace wabt;
+using namespace wabt::link;
+//using wabt::link::LinkerInputBinary;
+//using wabt::link::Section;
+//using wabt::Reloc;
+//using wabt::RelocType;
+//using wabt::WriteU32Leb128Raw;
 
 typedef unsigned char byte;
 typedef const char *chars;
 typedef byte *bytes;
 
-#include "wasm-link.h"
 
-#include <memory>
-#include <vector>
+//String s(String s) {
+//	return String(s.data(),s.size());
+//}
+String &s(String &x) { return x; }
 
-#include "binary-reader.h"
-#include "binding-hash.h"
-#include "binary-writer.h"
-#include "leb128.h"
-#include "option-parser.h"
-#include "stream.h"
-#include "binary-reader-linker.h"
-#include "own_merge/stream.h"
+String s(String x) { return x; }
+
+
+//
+//String::String(const String str):String(str.data){
+//	// defeats the purpose of using a lightweight unicode-aware String class
+//}
 
 #define FIRST_KNOWN_SECTION BinarySection::Type
 //#define LOG_DEBUG(fmt, ...) if (s_debug) s_log_stream->Writef(fmt, __VA_ARGS__);
 #define LOG_DEBUG(fmt, ...) if (s_debug) printf(fmt, __VA_ARGS__);
-
-
-using namespace wabt;
-using namespace wabt::link;
 
 
 // DANGER: modifies the start reader position of code, but not it's data!
@@ -74,18 +78,21 @@ int unsignedLEB128(std::vector<byte> section_data, int length, int &start) {
 	return n;
 }
 
-static const char s_description[] =
-		R"(  link one or more wasm binary modules into a single binary module.
-  $ wasm-link m1.wasm m2.wasm -o out.wasm
-)";
+int unsignedLEB128(Code section_data, int length, int &start) {
+	int n = 0;
+	short shift = 0;
+	do {
+		byte b = section_data[start++];
+		n = n | (((long) (b & 0x7f)) << shift);
+		if ((b & 0x80) == 0)break;
+		shift += 7;
+	} while (start < length);
+	return n;
+}
 
 static bool s_debug = true;
-static bool s_relocatable = false; // final binary
-static const char *outfile = "a.wasm";
-static std::vector<std::string> s_infiles;
-static std::unique_ptr<FileStream> s_log_stream;
 
-Sections::Section()
+Section::Section()
 		: binary(nullptr),
 		  section_code(BinarySection::Invalid),
 		  size(0),
@@ -97,7 +104,7 @@ Sections::Section()
 	ZeroMemory(data);
 }
 
-Sections::~Section() {
+Section::~Section() {
 	if (section_code == BinarySection::Data) {
 		delete data.data_segments;
 	}
@@ -115,6 +122,7 @@ LinkerInputBinary::LinkerInputBinary(const char *filename, const std::vector<uin
 		  memory_page_count(0),
 		  memory_page_offset(0),
 		  table_elem_count(0) {}
+
 
 bool LinkerInputBinary::IsFunctionImport(Index index) {
 //	assert(IsValidFunctionIndex(index));
@@ -144,8 +152,7 @@ Index LinkerInputBinary::RelocateFuncIndex(Index function_index) {
 			LOG_DEBUG("reloc for disabled import. new index = %d + %d\n", function_index, offset);
 		} else {
 			Index new_index = import->relocated_function_index;
-			LOG_DEBUG("reloc for active import. old index = %d, new index = %d\n",
-			          function_index, new_index);
+			LOG_DEBUG("reloc for active import. old index = %d, new index = %d\n", function_index, new_index);
 			return new_index;
 		}
 	}
@@ -166,15 +173,15 @@ Index LinkerInputBinary::RelocateGlobalIndex(Index global_index) {
 	return global_index + offset;
 }
 
-static void ApplyRelocation(const Sections *section, const Reloc *r) {
+static void ApplyRelocation(const Section *section, const wabt::Reloc *r) {
 	LinkerInputBinary *binary = section->binary;
 	uint8_t *section_data = &binary->data[section->offset];
 	size_t section_size = section->size;
 
 	Index cur_value = 0, new_value = 0;
-	ReadU32Leb128(section_data + r->offset, section_data + section_size, &cur_value);
+	wabt::ReadU32Leb128(section_data + r->offset, section_data + section_size, &cur_value);
 
-	switch (r->clazz) {
+	switch (r->type) {
 		case RelocType::FuncIndexLEB: {
 			new_value = binary->RelocateFuncIndex(cur_value);
 			// if calls are padded
@@ -223,7 +230,7 @@ static void ApplyRelocation(const Sections *section, const Reloc *r) {
 		case RelocType::MemoryAddressTLSSLEB:
 		case RelocType::MemoryAddressTLSI32:
 		case RelocType::TagIndexLEB:
-			WABT_FATAL("unhandled relocation type: %s\n", GetRelocTypeName(r->clazz));
+			WABT_FATAL("unhandled relocation type: %s\n", GetRelocTypeName(r->type));
 			// uh much to do!
 	}
 // THIS Write only makes sense for LEB types!
@@ -232,7 +239,7 @@ static void ApplyRelocation(const Sections *section, const Reloc *r) {
 // https://github.com/hyperledger-labs/solang/commit/7bb623bc864106c70b209aa8ec4dfe15ac262b68
 // section is 5 (Memory for all relocations, even func-call! :( )
 // match meta_data_version {1 | 2 => (),
-static void ApplyRelocations(const Sections *section) {
+static void ApplyRelocations(const Section *section) {
 	if (section->relocations.size() <= 0) {
 		return;
 	}
@@ -253,7 +260,7 @@ public:
 
 	void AppendBinary(LinkerInputBinary *binary) { inputs_.emplace_back(binary); }
 
-	wabt::OutputBuffer PerformLink();
+	OutputBuffer PerformLink();
 
 	void CreateRelocs();
 
@@ -268,7 +275,7 @@ private:
 
 	void FixupSize(Fixup);
 
-	void WriteSectionPayload(Sections *sec);
+	void WriteSectionPayload(Section *sec);
 
 	void WriteTableSection(const SectionPtrVector &sections);
 
@@ -313,10 +320,10 @@ private:
 	std::vector<std::unique_ptr<LinkerInputBinary>> inputs_;
 	ssize_t current_payload_offset_ = 0;
 
-	Sections *getSection(std::unique_ptr<LinkerInputBinary> &uniquePtr, BinarySection section);
+	Section *getSection(std::unique_ptr<LinkerInputBinary> &uniquePtr, BinarySection section);
 };
 
-void Linker::WriteSectionPayload(Sections *sec) {
+void Linker::WriteSectionPayload(Section *sec) {
 	assert(current_payload_offset_ != -1);
 
 	sec->output_payload_offset =
@@ -345,13 +352,13 @@ void Linker::WriteTableSection(const SectionPtrVector &sections) {
 	uint32_t flags = WABT_BINARY_LIMITS_HAS_MAX_FLAG;
 	Index elem_count = 0;
 
-	for (Sections *section: sections) {
+	for (Section *section: sections) {
 		elem_count += section->binary->table_elem_count;
 	}
 
 	Fixup fixup = WriteUnknownSize();
 	WriteU32Leb128(&stream_, table_count, "table count");
-	WriteType(&stream_, Kind::FuncRef);
+	WriteType(&stream_, wabt::Type::FuncRef);
 	WriteU32Leb128(&stream_, flags, "table elem flags");
 	WriteU32Leb128(&stream_, elem_count, "table initial length");
 	WriteU32Leb128(&stream_, elem_count, "table max length");
@@ -360,16 +367,16 @@ void Linker::WriteTableSection(const SectionPtrVector &sections) {
 
 void Linker::WriteExportSection() {
 	Index total_exports = 0;
-	for (const std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
+	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		total_exports += binary->exports.size();
 	}
 
 	Fixup fixup = WriteUnknownSize();
 	WriteU32Leb128(&stream_, total_exports, "export count");
 
-	for (const std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
-		for (const Export &export_ : binary->exports) {
-			WriteStr(&stream_, export_.name, "export name");
+	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+		for (const Export &export_: binary->exports) {
+			WriteStr(&stream_, s(export_.name), "export name");
 			stream_.WriteU8Enum(export_.kind, "export kind");
 			Index index = export_.index;
 			switch (export_.kind) {
@@ -377,7 +384,7 @@ void Linker::WriteExportSection() {
 					index = binary->RelocateFuncIndex(index);
 					break;
 				default:
-//					WABT_FATAL("unsupport export type: %d %s\n", static_cast<int>(export_.kind), export_.name.data());
+//					WABT_FATAL("unsupport export type: %d %s\n", static_cast<int>(export_.kind), export_.name.data);
 					break;
 			}
 			WriteU32Leb128(&stream_, index, "export index");
@@ -391,7 +398,7 @@ void Linker::WriteElemSection(const SectionPtrVector &sections) {
 	Fixup fixup = WriteUnknownSize();
 
 	Index total_elem_count = 0;
-	for (Sections *section: sections) {
+	for (Section *section: sections) {
 		total_elem_count += section->binary->table_elem_count;
 	}
 
@@ -404,7 +411,7 @@ void Linker::WriteElemSection(const SectionPtrVector &sections) {
 
 	current_payload_offset_ = stream_.offset();
 
-	for (Sections *section: sections) {
+	for (Section *section: sections) {
 		ApplyRelocations(section);
 		WriteSectionPayload(section);
 	}
@@ -419,7 +426,7 @@ void Linker::WriteMemorySection(const SectionPtrVector &sections) {
 
 	Limits limits;
 	limits.has_max = true;
-	for (Sections *section: sections) {
+	for (Section *section: sections) {
 		limits.initial += section->data.initial;
 	}
 	limits.max = limits.initial;
@@ -439,14 +446,14 @@ void Linker::WriteGlobalImport(const GlobalImport &import) {
 	WriteStr(&stream_, import.module_name, "import module name");
 	WriteStr(&stream_, import.name, "import field name");
 	stream_.WriteU8Enum(ExternalKind::Global, "import kind");
-	WriteType(&stream_, import.clazz);
+	WriteType(&stream_, import.type);//, s("import type").data);
 	stream_.WriteU8(import.mutable_, "global mutability");
 }
 
 void Linker::WriteImportSection() {
 	Index num_imports = 0;
 	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-		for (const FunctionImport &import : binary->function_imports) {
+		for (const FunctionImport &import: binary->function_imports) {
 			if (import.active) {
 				num_imports++;
 			}
@@ -458,13 +465,13 @@ void Linker::WriteImportSection() {
 	WriteU32Leb128(&stream_, num_imports, "num imports");
 
 	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-		for (const FunctionImport &function_import : binary->function_imports) {
+		for (const FunctionImport &function_import: binary->function_imports) {
 			if (function_import.active) {
 				WriteFunctionImport(function_import, binary->type_index_offset);
 			}
 		}
 
-		for (const GlobalImport &global_import : binary->global_imports) {
+		for (const GlobalImport &global_import: binary->global_imports) {
 			WriteGlobalImport(global_import);
 		}
 	}
@@ -478,7 +485,7 @@ void Linker::WriteFunctionSection(const SectionPtrVector &sections,
 
 	WriteU32Leb128(&stream_, total_count, "function count");
 
-	for (Sections *sec: sections) {
+	for (Section *sec: sections) {
 		Index count = sec->count;
 		Offset input_offset = 0;
 		Index sig_index = 0;
@@ -510,7 +517,7 @@ void Linker::WriteDataSection(const SectionPtrVector &sections,
 	Fixup fixup = WriteUnknownSize();
 
 	WriteU32Leb128(&stream_, total_count, "data segment count");
-	for (const Sections *sec: sections) {
+	for (const Section *sec: sections) {
 		for (const DataSegment &segment: *sec->data.data_segments) {
 			WriteDataSegment(segment,
 			                 sec->binary->memory_page_offset * WABT_PAGE_SIZE);
@@ -522,7 +529,7 @@ void Linker::WriteDataSection(const SectionPtrVector &sections,
 
 void Linker::WriteNamesSection() {
 	Index total_count = 0;
-	for (const std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
+	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		for (size_t i = 0; i < binary->debug_names.size(); i++) {
 			if (binary->debug_names[i].empty()) {
 				continue;
@@ -540,14 +547,14 @@ void Linker::WriteNamesSection() {
 
 	stream_.WriteU8Enum(BinarySection::Custom, "section code");
 	Fixup fixup = WriteUnknownSize();
-	WriteStr(&stream_, "name", "custom section name");
+	WriteStr(&stream_, "name"s, "custom section name"s);
 
 	stream_.WriteU8Enum(NameSectionSubsection::Function, "subsection code");
 	Fixup fixup_subsection = WriteUnknownSize();
 	WriteU32Leb128(&stream_, total_count, "element count");
 
 	// Write import names.
-	for (const std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
+	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		for (size_t i = 0; i < binary->debug_names.size(); i++) {
 			if (binary->debug_names[i].empty() || !binary->IsFunctionImport(i)) {
 				continue;
@@ -561,7 +568,7 @@ void Linker::WriteNamesSection() {
 	}
 
 	// Write non-import names.
-	for (const std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
+	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		for (size_t i = 0; i < binary->debug_names.size(); i++) {
 			if (binary->debug_names[i].empty() || binary->IsFunctionImport(i)) {
 				continue;
@@ -579,7 +586,7 @@ void Linker::WriteLinkingSection(uint32_t data_size, uint32_t data_alignment) {
 	stream_.WriteU8Enum(BinarySection::Custom, "section code");
 	Fixup fixup = WriteUnknownSize();
 
-	WriteStr(&stream_, "linking", "linking section name");
+	WriteStr(&stream_, "linking"s, "linking section name"s);
 
 	if (data_size) {
 //    WriteU32Leb128(&stream_, LinkingEntryType::DataSize, "subsection code");
@@ -607,7 +614,7 @@ bool Linker::WriteCombinedSection(BinarySection section_code, const SectionPtrVe
 	Index total_size = 0;
 
 	// Sum section size and element count.
-	for (Sections *sec: sections) {
+	for (Section *sec: sections) {
 		total_size += sec->payload_size;
 		total_count += sec->count;
 	}
@@ -645,7 +652,7 @@ bool Linker::WriteCombinedSection(BinarySection section_code, const SectionPtrVe
 			WriteU32Leb128(&stream_, total_size, "section size");
 			WriteU32Leb128(&stream_, total_count, "element count");
 			current_payload_offset_ = stream_.offset();
-			for (Sections *sec: sections) {
+			for (Section *sec: sections) {
 				ApplyRelocations(sec);
 				WriteSectionPayload(sec);
 			}
@@ -677,19 +684,19 @@ void Linker::ResolveSymbols() {
 	std::vector<FuncInfo> func_list;
 
 	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-		for (const Export &export_ : binary->exports) {
+		for (const Export &export_: binary->exports) {
 			export_list.emplace_back(&export_, binary.get());
 			// TODO(sbc): Handle duplicate names.
 			export_map.emplace(export_.name, Binding(export_list.size() - 1));
 		}
-		for (const Func &func : binary->functions) {
+		for (const Func &func: binary->functions) {
 			if (not empty(func.name)) {
 				func_map.emplace(func.name, func.index);
 				func_list.emplace_back(&func, binary.get());
 			}
 		}
 		for (int i = 0; i < binary->debug_names.size(); ++i) {
-			std::string &name = binary->debug_names[i];
+			String &name = binary->debug_names[i];
 			func_map.emplace(name, i);
 		}
 	}
@@ -698,7 +705,7 @@ void Linker::ResolveSymbols() {
 	// ones.
 	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		for (FunctionImport &import: binary->function_imports) {
-			std::string name = import.name;
+			String name = import.name;
 			Index export_index = export_map.FindIndex(import.name);
 			if (export_index != kInvalidIndex) {
 
@@ -710,7 +717,7 @@ void Linker::ResolveSymbols() {
 				import.foreign_binary = export_info.binary;
 				import.foreign_index = export_info.export_->index;
 				binary->active_function_imports--;
-				printf("LINKED export to import: %s\n", import.name.data());
+				printf("LINKED export to import: %s\n", import.name.data);
 			} else {
 				// link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
 				Index func_index = func_map.FindIndex(import.name);
@@ -719,11 +726,11 @@ void Linker::ResolveSymbols() {
 				import.foreign_binary = funcInfo.binary;
 				import.foreign_index = funcInfo.func->index;
 				binary->active_function_imports--;
-				printf("LINKED unexported function to import: %s\n", import.name.data());
+				printf("LINKED unexported function to import: %s\n", import.name.data);
 			}
 //			if (export_index == kInvalidIndex) {
 //				if (!s_relocatable)
-//					WABT_FATAL("undefined symbol: %s\n", import.name.c_str());
+//					WABT_FATAL("undefined symbol: %s\n", import.name.data);
 //			}
 		}
 	}
@@ -738,7 +745,7 @@ void Linker::CalculateRelocOffsets() {
 	Index total_function_imports = 0;
 	Index total_global_imports = 0;
 
-	for (std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
+	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		// The imported_function_index_offset is the sum of all the function
 		// imports from objects that precede this one.  i.e. the current running
 		// total.
@@ -761,10 +768,10 @@ void Linker::CalculateRelocOffsets() {
 		total_global_imports += binary->global_imports.size();
 	}
 
-	for (std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
+	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		binary->table_index_offset = table_elem_count;
 		table_elem_count += binary->table_elem_count;
-		for (std::unique_ptr<Sections> &sec: binary->sections) {
+		for (std::unique_ptr<Section> &sec: binary->sections) {
 			switch (sec->section_code) {
 				case BinarySection::Type:
 					binary->type_index_offset = type_count;
@@ -793,9 +800,9 @@ void Linker::WriteBinary() {
 	// Find all the sections of each type.
 	SectionPtrVector sections[kBinarySectionCount];
 
-	for (std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
-		for (std::unique_ptr<Sections> &sec: binary->sections) {
-			Sections *section = sec.get();
+	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+		for (std::unique_ptr<Section> &sec: binary->sections) {
+			Section *section = sec.get();
 			int sectionCode = (int) sec->section_code;
 			SectionPtrVector &sec_list = sections[sectionCode];
 			sec_list.push_back(section);
@@ -814,16 +821,16 @@ void Linker::WriteBinary() {
 	WriteNamesSection();
 
 	/* Generate a new set of reloction sections */
-	if (s_relocatable) {
-		WriteLinkingSection(0, 0);
-		for (size_t i = (int) FIRST_KNOWN_SECTION; i < kBinarySectionCount; i++) {
-//			WriteRelocSection(static_cast<BinarySection>(i), sections[i]);
-		}
-	}
+//	if (s_relocatable) {
+//		WriteLinkingSection(0, 0);
+//		for (size_t i = (int) FIRST_KNOWN_SECTION; i < kBinarySectionCount; i++) {
+////			WriteRelocSection(static_cast<BinarySection>(i), sections[i]);
+//		}
+//	}
 }
 
 void Linker::DumpRelocOffsets() {
-	for (const std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
+	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		LOG_DEBUG("Relocation info for: %s\n", binary->filename);
 		LOG_DEBUG(" - type index offset       : %d\n", binary->type_index_offset);
 		LOG_DEBUG(" - mem page offset         : %d\n",
@@ -840,12 +847,12 @@ void Linker::DumpRelocOffsets() {
 }
 
 void Linker::CreateRelocs() {
-	for (std::unique_ptr<LinkerInputBinary> &binary : inputs_) {
+	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		//	binary->sections;
-		Sections *section = getSection(binary, BinarySection::Code);
+		Section *section = getSection(binary, BinarySection::Code);
 		if (!section)return;
 		auto relocs = PatchCodeSection(binary->data, binary->data.size(), section->offset + 1);
-		for (Reloc &reloc : relocs)
+		for (Reloc &reloc: relocs)
 			section->relocations.push_back(reloc);
 //		if(!section->data.data_segments)
 //			continue;
@@ -865,38 +872,42 @@ OutputBuffer Linker::PerformLink() {
 	CreateRelocs();
 	DumpRelocOffsets();
 	WriteBinary();
-	if (Failed(stream_.WriteToFile(outfile))) {
-		WABT_FATAL("error writing linked output to file\n");
-	}
-	return Result::Ok;
+//	call to deleted constructor of 'wabt::MemoryStream'
+//	 /Users/me/dev/apps/wasp/source/own_merge/stream.h:183:33: note: 'MemoryStream' has been explicitly marked deleted here
+//	WABT_DISALLOW_COPY_AND_ASSIGN(MemoryStream);
+// All of this will be completely unnecessary once C++17 comes with mandatory copy-elision comes around, so you can look forward to that.
+	return stream_.output_buffer();
 }
 
-Sections *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, BinarySection section) {
-	for (std::unique_ptr<Sections> &sec: binary->sections) {
+Section *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, BinarySection section) {
+	for (std::unique_ptr<Section> &sec: binary->sections) {
 		if (sec->section_code == section)return sec.get();
 	}
 	return nullptr;
 }
 
-int merge_files(std::vector<std::string> infiles) {
+Code merge_files(std::vector<String> infiles) {
 	Linker linker;
 	Result ok = Result::Ok;
-	for (const std::string &input_filename: infiles) {
+	for (const String &input_filename: infiles) {
 		std::vector<uint8_t> file_data;
-		ok = ReadFile(input_filename.c_str(), &file_data);
+//		ok = ReadFile(input_filename.data, &file_data);
 		if (!ok)continue;
-		auto binary = new LinkerInputBinary(input_filename.c_str(), file_data);
+		auto binary = new LinkerInputBinary(input_filename.data, file_data);
 		linker.AppendBinary(binary);
 		LinkOptions options = {NULL};
 		ReadBinaryLinker(binary, &options);
 	}
-	ok = linker.PerformLink();
-	return ok != Result::Ok;
+	return code(linker.PerformLink().data);
+}
+
+Code code(std::vector<uint8_t> vector1) {
+	return Code(vector1.data(), vector1.size());
 }
 
 
 void merge_files(int argc, char **argv) {
-	std::vector<std::string> infiles;
+	std::vector<String> infiles;
 	while (argc-- > 0)
 		infiles.push_back(argv[argc]);
 	merge_files(infiles);
@@ -930,21 +941,21 @@ std::map<short, int> opcode_args = {
 		// EXTENSIONS:
 		{try_,                -1},
 		{catch_,              -1},
-		{throw_,                              -1},
-		{rethrow_,                            -1},
-		{br_on_exn_,                          -1}, // branch on exception
+		{throw_,              -1},
+		{rethrow_,            -1},
+		{br_on_exn_,          -1}, // branch on exception
 
-		{end_block,                           -1}, //11
-		{br,                                  -1},
-		{br_if,                               -1},
-		{return_block,                        -1},
-		{function,                            -1},
+		{end_block,           -1}, //11
+		{br,                  -1},
+		{br_if,               -1},
+		{return_block,        -1},
+		{function,            -1},
 
 		// EXTENSIONS:
-		{call_ref,                            -1},
-		{return_call_ref,                     -1},
-		{func_bind,                           -1},// {type $t} {$t : u32
-		{let_local,                           -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
+		{call_ref,            -1},
+		{return_call_ref,     -1},
+		{func_bind,           -1},// {type $t} {$t : u32
+		{let_local,           -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
 
 		{drop,                -1}, // pop stack
 		{select_if,           -1}, // a?b:c ternary todo: use!
@@ -1057,9 +1068,9 @@ std::map<short, int> opcode_args = {
 		{i64_and,             -1},
 		{i64_or,              -1},
 		{i64_xor,             -1},
-		{i64_s𝗁l,            -1},
-		{i64_s𝗁r_s,          -1},
-		{i64_s𝗁r_u,          -1},
+		{i64_s𝗁l,             -1},
+		{i64_s𝗁r_s,           -1},
+		{i64_s𝗁r_u,           -1},
 		{i64_rotl,            -1},
 		{i64_rotr,            -1},
 
@@ -1153,7 +1164,7 @@ std::map<short, int> opcode_args = {
 		//{ref_typed=--1},// {{ref ht} {$t : heaptype
 		{ref_as_non_null,     -1},// {ref.as_non_null
 		{br_on_null,          -1}, //{br_on_null $l {$l : u32
-		{br_on_non_null,                      -1},// {br_on_non_null $l {$l : u32
+		{br_on_non_null,      -1},// {br_on_non_null $l {$l : u32
 
 		// saturated truncation  saturatedFloatToInt
 		//i32_trunc_sat_f32_s=-1},
@@ -1166,16 +1177,16 @@ std::map<short, int> opcode_args = {
 		//i64_trunc_sat_f64_u=-1},
 
 		// bulkMemory
-		{memory_init,                         -1},
-		{data_drop,                           -1},
-		{memory_copy,                         -1},
-		{memory_fill,                         -1},
-		{table_init,                          -1},
-		{elem_drop,                           -1},
-		{table_copy,                          -1},
-		{table_grow,                          -1},
-		{table_size,                          -1},
-		{table_fill,                          -1},
+		{memory_init,         -1},
+		{data_drop,           -1},
+		{memory_copy,         -1},
+		{memory_fill,         -1},
+		{table_init,          -1},
+		{elem_drop,           -1},
+		{table_copy,          -1},
+		{table_grow,          -1},
+		{table_size,          -1},
+		{table_fill,          -1},
 };
 
 
