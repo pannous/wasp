@@ -79,7 +79,7 @@ Code encodeVector(Code data) {
 }
 
 
-String sectionName(Section section) {
+String sectionName(Sections section) {
 	switch (section) {
 		case type_section:
 			return "type";
@@ -185,6 +185,6 @@ Valtype mapTypeToWasm(Node &n) {
 	return none;
 }
 
-Code createSection(Section sectionType, Code data) {
+Code createSection(Sections sectionType, Code data) {
 	return Code((char) sectionType, encodeVector(data));
 }
