@@ -95,6 +95,11 @@ public:
 		}
 	}
 
+	Code(char *datas, int size) {
+		data = (bytes) datas;
+		length = size;
+	}
+
 	Code(chars string, bool size_header = true, bool null_terminated = false) {
 		short len = strlen0(string);
 		if (null_terminated)len++;

@@ -742,7 +742,7 @@ void testMergeOwn() {
 	int size;
 	char *bytes = readFile("test/main.wasm", &size);
 	Code main(bytes, size);
-	bytes = readFile("test/lib.wasm");
+	bytes = readFile("test/lib.wasm", &size);
 	Code lib(bytes, size);
 	Code merged = merge_binaries(main, lib);
 	long i = merged.run();
