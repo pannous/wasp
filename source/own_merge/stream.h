@@ -66,9 +66,7 @@ namespace wabt {
 		               PrintChars = PrintChars::No);
 
 		template<typename T>
-		void WriteData(const std::vector<T> src,
-		               const char *desc,
-		               PrintChars print_chars = PrintChars::No) {
+		void WriteData(const std::vector<T> src, const char *desc, PrintChars print_chars = PrintChars::No) {
 			if (!src.empty()) {
 				WriteData(src.data(), src.size() * sizeof(T), desc, print_chars);
 			}
@@ -89,34 +87,24 @@ namespace wabt {
 
 		// Specified as uint32_t instead of uint8_t so we can check if the value
 		// given is in range before wrapping.
-		void WriteU8(uint32_t value,
-		             const char *desc = nullptr,
-		             PrintChars print_chars = PrintChars::No) {
+		void WriteU8(uint32_t value, const char *desc = nullptr, PrintChars print_chars = PrintChars::No) {
 			assert(value <= UINT8_MAX);
 			Write(static_cast<uint8_t>(value), desc, print_chars);
 		}
 
-		void WriteU32(uint32_t value,
-		              const char *desc = nullptr,
-		              PrintChars print_chars = PrintChars::No) {
+		void WriteU32(uint32_t value, const char *desc = nullptr, PrintChars print_chars = PrintChars::No) {
 			Write(value, desc, print_chars);
 		}
 
-		void WriteU64(uint64_t value,
-		              const char *desc = nullptr,
-		              PrintChars print_chars = PrintChars::No) {
+		void WriteU64(uint64_t value, const char *desc = nullptr, PrintChars print_chars = PrintChars::No) {
 			Write(value, desc, print_chars);
 		}
 
-		void WriteU128(v128 value,
-		               const char *desc = nullptr,
-		               PrintChars print_chars = PrintChars::No) {
+		void WriteU128(v128 value, const char *desc = nullptr, PrintChars print_chars = PrintChars::No) {
 			Write(value, desc, print_chars);
 		}
 
-		void WriteChar(char c,
-		               const char *desc = nullptr,
-		               PrintChars print_chars = PrintChars::No) {
+		void WriteChar(char c, const char *desc = nullptr, PrintChars print_chars = PrintChars::No) {
 			WriteU8(static_cast<unsigned char>(c), desc, print_chars);
 		}
 
@@ -139,13 +127,9 @@ namespace wabt {
 		virtual void Flush() {}
 
 	protected:
-		virtual Result WriteDataImpl(size_t offset,
-		                             const void *data,
-		                             size_t size) = 0;
+		virtual Result WriteDataImpl(size_t offset, const void *data, size_t size) = 0;
 
-		virtual Result MoveDataImpl(size_t dst_offset,
-		                            size_t src_offset,
-		                            size_t size) = 0;
+		virtual Result MoveDataImpl(size_t dst_offset, size_t src_offset, size_t size) = 0;
 
 		virtual Result TruncateImpl(size_t size) = 0;
 
@@ -171,6 +155,8 @@ namespace wabt {
 	struct OutputBuffer {
 		Result WriteToFile(String filename) const;
 
+		Result WriteToFile(char *filename) const;
+
 		void clear() { data.clear(); }
 
 		size_t size() const { return data.size(); }
@@ -180,7 +166,7 @@ namespace wabt {
 
 	class MemoryStream : public Stream {
 	public:
-//		WABT_DISALLOW_COPY_AND_ASSIGN(MemoryStream);
+		WABT_DISALLOW_COPY_AND_ASSIGN(MemoryStream);
 
 		explicit MemoryStream(Stream *log_stream = nullptr);
 
