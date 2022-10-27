@@ -61,10 +61,13 @@ public:
 
 	Code() {}
 
-	Code(bytes a, int len) {
-//		 todo : memcopy, else stack value is LOST
+	Code(bytes a, int len, bool needs_copy = true) {
 		data = a;
 		length = len;
+		if (needs_copy) {
+			data = static_cast<bytes>(malloc(length));
+			memcpy(data, a, length);
+		}
 	}
 
 	Code(byte byte) {
