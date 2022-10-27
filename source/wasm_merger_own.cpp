@@ -891,7 +891,7 @@ Code merge_files(std::vector<String> infiles) {
 	Result ok = Result::Ok;
 	for (const String &input_filename: infiles) {
 		std::vector<uint8_t> file_data;
-//		ok = ReadFile(input_filename.data, &file_data);
+		ok = ReadFile(input_filename.data, &file_data);
 		if (!ok)continue;
 		auto binary = new LinkerInputBinary(input_filename.data, file_data);
 		linker.AppendBinary(binary);
@@ -899,6 +899,26 @@ Code merge_files(std::vector<String> infiles) {
 		ReadBinaryLinker(binary, &options);
 	}
 	return code(linker.PerformLink().data);
+}
+
+
+Code merge_binaries(List<Code> binaries) {
+	Linker linker;
+	for (const Code &code: binaries) {
+		std::vector<uint8_t> file_data(*code.data, code.length);
+		auto binary = new LinkerInputBinary("<code>", file_data);
+		linker.AppendBinary(binary);
+		LinkOptions options = {NULL};
+		ReadBinaryLinker(binary, &options);
+	}
+	return code(linker.PerformLink().data);
+}
+
+Code merge_binaries(Code main, Code lib) {
+	List<Code> binaries;
+	binaries.add(main);
+	binaries.add(lib);
+	return merge_binaries(binaries);
 }
 
 Code code(std::vector<uint8_t> vector1) {
