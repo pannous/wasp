@@ -126,7 +126,7 @@ namespace wabt {
 
 			Result BinaryReaderLinker::OnReloc(RelocType type, Offset offset, Index index, uint32_t addend) {
 				if (offset + RELOC_SIZE > reloc_section_->size) {
-					WABT_FATAL("invalid relocation offset: %d\n", offset);
+					WABT_FATAL("invalid relocation offset: %zu\n", offset);
 				}
 				reloc_section_->relocations.emplace_back(type, offset, index, addend);
 				return Result::Ok;

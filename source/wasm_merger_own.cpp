@@ -186,13 +186,15 @@ static void ApplyRelocation(const Section *section, const wabt::Reloc *r) {
 			new_value = binary->RelocateFuncIndex(cur_value);
 			// if calls are padded
 			short nop_offset = r->offset + 1;
+			// todo : restore carefully
 			while (section_data[nop_offset] == 0x80) {
 				*(section_data + nop_offset++) = 0x01;// NOP the rest!
 			}
-//			*(section_data + nop_offset) = 0x01;
+//			*(section_data + nop_offset) = 0x01;// one more? NOPE!
 			int leb_length = nop_offset;
 			unsignedLEB128((bytes) section_data, section_size, leb_length);
-			while (leb_length-- > 0) *(section_data + nop_offset) = 0x01;// MORE NOPs to delete the old value
+			// todo : restore carefully
+//			while (leb_length-- > 0) *(section_data + nop_offset) = 0x01;// MORE NOPs to delete the old value
 
 			WriteU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
 		}
@@ -341,8 +343,7 @@ Linker::Fixup Linker::WriteUnknownSize() {
 }
 
 void Linker::FixupSize(Fixup fixup) {
-	WriteFixedU32Leb128At(&stream_, fixup.first, stream_.offset() - fixup.second,
-	                      "fixup size");
+	WriteFixedU32Leb128At(&stream_, fixup.first, stream_.offset() - fixup.second, "fixup size");
 }
 
 void Linker::WriteTableSection(const SectionPtrVector &sections) {
@@ -475,7 +476,6 @@ void Linker::WriteImportSection() {
 			WriteGlobalImport(global_import);
 		}
 	}
-
 	FixupSize(fixup);
 }
 
@@ -620,6 +620,7 @@ bool Linker::WriteCombinedSection(BinarySection section_code, const SectionPtrVe
 	}
 
 	stream_.WriteU8Enum(section_code, "section code");
+
 	current_payload_offset_ = -1;
 
 	switch (section_code) {
@@ -728,10 +729,10 @@ void Linker::ResolveSymbols() {
 				binary->active_function_imports--;
 				printf("LINKED unexported function to import: %s\n", import.name.data);
 			}
-//			if (export_index == kInvalidIndex) {
+			if (export_index == kInvalidIndex) {
 //				if (!s_relocatable)
-//					WABT_FATAL("undefined symbol: %s\n", import.name.data);
-//			}
+				WABT_FATAL("undefined symbol: %s\n", import.name.data);
+			}
 		}
 	}
 }
@@ -812,19 +813,17 @@ void Linker::WriteBinary() {
 	// Write the final binary.
 	stream_.WriteU32(WABT_BINARY_MAGIC, "WABT_BINARY_MAGIC");
 	stream_.WriteU32(WABT_BINARY_VERSION, "WABT_BINARY_VERSION");
-
 	// Write known sections first.
 	for (size_t i = (int) FIRST_KNOWN_SECTION; i < kBinarySectionCount; i++) {
 		WriteCombinedSection((BinarySection) i, sections[i]);
 	}
-
 	WriteNamesSection();
 
 	/* Generate a new set of reloction sections */
 //	if (s_relocatable) {
 //		WriteLinkingSection(0, 0);
 //		for (size_t i = (int) FIRST_KNOWN_SECTION; i < kBinarySectionCount; i++) {
-////			WriteRelocSection(static_cast<BinarySection>(i), sections[i]);
+//			WriteRelocSection(static_cast<BinarySection>(i), sections[i]);
 //		}
 //	}
 }
@@ -876,6 +875,7 @@ OutputBuffer Linker::PerformLink() {
 //	 /Users/me/dev/apps/wasp/source/own_merge/stream.h:183:33: note: 'MemoryStream' has been explicitly marked deleted here
 //	WABT_DISALLOW_COPY_AND_ASSIGN(MemoryStream);
 // All of this will be completely unnecessary once C++17 comes with mandatory copy-elision comes around, so you can look forward to that.
+//	stream_.WriteToFile("temp.wasm");
 	return stream_.output_buffer();
 }
 
@@ -911,7 +911,8 @@ Code merge_binaries(List<Code> binaries) {
 		LinkOptions options = {NULL};
 		ReadBinaryLinker(binary, &options);
 	}
-	return code(linker.PerformLink().data);
+	const OutputBuffer &out = linker.PerformLink();
+	return code(out.data);
 }
 
 Code merge_binaries(Code main, Code lib) {

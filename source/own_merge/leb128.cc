@@ -51,8 +51,7 @@ namespace wabt {
 	                             uint32_t value,
 	                             const char *desc) {
 		uint8_t data[MAX_U32_LEB128_BYTES];
-		Offset length =
-				WriteFixedU32Leb128Raw(data, data + MAX_U32_LEB128_BYTES, value);
+		Offset length = WriteFixedU32Leb128Raw(data, data + MAX_U32_LEB128_BYTES, value);
 		stream->WriteDataAt(offset, data, length, desc);
 		return length;
 	}

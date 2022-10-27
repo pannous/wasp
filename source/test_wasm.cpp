@@ -732,7 +732,7 @@ void testOldRandomBugs() {
 
 void testMergeWabt() {
 #ifdef WABT_MERGE
-	merge_files({"./samples/main.wasm", "./samples/lib.wasm"});
+	merge_files({"test/merge/main.wasm", "test/merge/lib.wasm"});
 #endif
 }
 
@@ -740,13 +740,14 @@ void testMergeOwn() {
 //	read_wasm()
 //#ifdef WABT_MERGE
 	int size;
-	char *bytes = readFile("test/main.wasm", &size);
+	char *bytes = readFile("test/merge/main.wasm", &size);
 	Code main(bytes, size);
-	bytes = readFile("test/lib.wasm", &size);
+	bytes = readFile("test/merge/lib.wasm", &size);
 	Code lib(bytes, size);
 	Code merged = merge_binaries(main, lib);
-	long i = merged.run();
-	assert_equals(i, 42l);
+	merged.save();
+	int i = merged.run();
+	assert_equals(i, 42);
 }
 
 void testMergeWabtByHand() {
@@ -888,8 +889,8 @@ void testMergeRelocate() {
 // doesn't work: cannot insert imports or function types!
 //	emit("test");
 //	merge_files({"test.wasm", "test-lld-wasm/lib.wasm"});
-	Module lib = read_wasm("test-lld-wasm/lib.wasm");
-	Module main = read_wasm("test-lld-wasm/main.wasm");
+	Module lib = read_wasm("test/merge/lib.wasm");
+	Module main = read_wasm("test/merge/main.wasm");
 //	Module main=read_wasm("test.wasm");
 //main.
 	Code merged = merge_wasm(lib, main);
