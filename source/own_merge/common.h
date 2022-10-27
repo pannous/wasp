@@ -31,6 +31,7 @@
 #include <vector>
 #include "type.h"
 #include "../String.h"
+#include "result.h"
 
 #define string_view String
 
@@ -39,7 +40,6 @@
 String &s(String &x);
 
 String s(String x);
-
 #define PRIzd "zu"
 
 #define WABT_UNREACHABLE abort()
@@ -114,6 +114,8 @@ String StringPrintf(const char *format, ...);
 #define PRIoffset PRIzx
 
 namespace wabt {
+	Result ReadFile(string_view filename, std::vector<uint8_t> *out_data);
+
 #if WABT_BIG_ENDIAN
 	inline void MemcpyEndianAware(void *dst, const void *src, size_t dsize, size_t ssize, size_t doff, size_t soff, size_t len) {
 	  memcpy(static_cast<char*>(dst) + (dsize) - (len) - (doff),

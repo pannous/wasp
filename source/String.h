@@ -998,9 +998,7 @@ bool contains(chars str, chars match);
 
 
 #ifdef WEBAPP
-
+// todo expensive!
 #include <sstream>
-
 void render(Node &node, std::stringstream *html = 0);
-
 #endif
