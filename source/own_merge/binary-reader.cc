@@ -249,7 +249,9 @@ namespace wabt {
 
 			WABT_SNPRINTF_ALLOCA(buffer, length, format);
 			Error error1(error_level, Location(state_.offset), buffer);
-			bool handled = delegate_->OnError(error1);
+			bool handled = false;
+//			error(buffer);
+//			bool handled = delegate_->OnError(error1);
 
 			if (!handled) {
 				// Not great to just print, but we don't want to eat the error either.

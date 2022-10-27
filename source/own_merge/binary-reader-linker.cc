@@ -120,14 +120,14 @@ namespace wabt {
 					return Result::Ok;
 				}
 
-//  WABT_FATAL("section not found: %d\n", static_cast<int>(section_code));
+				WABT_FATAL("section not found: %d\n", static_cast<int>(section_code));
 				return Result::Error;
 			}
 
 			Result BinaryReaderLinker::OnReloc(RelocType type, Offset offset, Index index, uint32_t addend) {
-				//  if (offset + RELOC_SIZE > reloc_section_->size) {
-//    WABT_FATAL("invalid relocation offset: %#" PRIoffset "\n", offset);
-//  }
+				if (offset + RELOC_SIZE > reloc_section_->size) {
+					WABT_FATAL("invalid relocation offset: %d\n", offset);
+				}
 				reloc_section_->relocations.emplace_back(type, offset, index, addend);
 				return Result::Ok;
 			}
