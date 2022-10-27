@@ -905,7 +905,7 @@ Code merge_files(std::vector<String> infiles) {
 Code merge_binaries(List<Code> binaries) {
 	Linker linker;
 	for (const Code &code: binaries) {
-		std::vector<uint8_t> file_data(*code.data, code.length);
+		std::vector<uint8_t> file_data(code.data, code.data + code.length);
 		auto binary = new LinkerInputBinary("<code>", file_data);
 		linker.AppendBinary(binary);
 		LinkOptions options = {NULL};
