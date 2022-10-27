@@ -732,18 +732,35 @@ void testOldRandomBugs() {
 
 void testMergeWabt() {
 #ifdef WABT_MERGE
-		merge_files({"./samples/main.wasm", "./samples/lib.wasm"});
-	//	merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
-	//	wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
-	//	wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
-	//	refactor_wasm(module, "b", "neu");
-	//	remove_function(module, "f");
-	//	Module *merged = merge_wasm2(main, module);
-	//	save_wasm(merged);
-	//	int ok=run_wasm(merged);
-	//	int ok=run_wasm("a.wasm");
-	//	check(ok==42);
+	merge_files({"./samples/main.wasm", "./samples/lib.wasm"});
 #endif
+}
+
+void testMergeOwn() {
+//	read_wasm()
+//#ifdef WABT_MERGE
+	int size;
+	char *bytes = readFile("test/main.wasm", &size);
+	Code main(bytes, size);
+	bytes = readFile("test/lib.wasm");
+	Code lib(bytes, size);
+	Code merged = merge_binaries(main, lib);
+	long i = merged.run();
+	assert_equals(i, 42l);
+}
+
+void testMergeWabtByHand() {
+//	merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
+//wasm
+//	wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
+//	wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
+//	refactor_wasm(module, "b", "neu");
+//	remove_function(module, "f");
+//	Module *merged = merge_wasm2(main, module);
+//	save_wasm(merged);
+//	int ok=run_wasm(merged);
+//	int ok=run_wasm("a.wasm");
+//	check(ok==42);
 }
 
 
@@ -786,7 +803,7 @@ void testWasmModuleExtension() {
 //	check(ok1==42);
 	main.save("main.wasm");// this is NOT a valid wasm module, because all the indices are offset to the lib!
 
-	// we do NOT wan't to add 10000 imports here, so that the indices match, do we?
+// we do NOT wan't to add 10000 imports here, so that the indices match, do we?
 	functionSignatures.clear();
 	Module prog = read_wasm("main.wasm");
 	Code merged = merge_wasm(module, prog);
@@ -829,30 +846,30 @@ void testWasmRuntimeExtension() {
 	assert_run("atoi0('123')", 123);
 	assert_run("atoi0('123000')+atoi0('456')", 123456);
 	assert_run("atoi0('123'+'456')", 123456);
-	// works with ./wasp but breaks in webapp
+// works with ./wasp but breaks in webapp
 //	assert_run("x=123;x + 4 is 127", true);
-	// works with ./wasp but breaks now:
+// works with ./wasp but breaks now:
 
-	//	assert_run("okf(1)", 43);
-	//	assert_run("43", 43);
-	//	assert_run("puts 'hello' 'world'", "hello world");
-	//	assert_run("hello world", "hello world");// unresolved symbol printed as is
+//	assert_run("okf(1)", 43);
+//	assert_run("43", 43);
+//	assert_run("puts 'hello' 'world'", "hello world");
+//	assert_run("hello world", "hello world");// unresolved symbol printed as is
 
-	//	assert_run("'123'='123'", true);// parsed as key a:b !?!? todo!
-	//	assert_run("'123' = '123'", true);
+//	assert_run("'123'='123'", true);// parsed as key a:b !?!? todo!
+//	assert_run("'123' = '123'", true);
 	assert_run("'123' == '123'", true);
 	assert_run("'123' is '123'", true);
 	assert_run("'123' equals '123'", true);
 	assert_run("x='123';x is '123'", true);
-	//	assert_run("string('123') equals '123'", true); // string() makes no sense in angle:
-	//	assert_run("'123' equals string('123')", true);//  it is internally already a string whenever needed
-	//	assert_run("atoi0(str('123'))", 123);
-	//	assert_run("atoi0(string('123'))", 123);
+//	assert_run("string('123') equals '123'", true); // string() makes no sense in angle:
+//	assert_run("'123' equals string('123')", true);//  it is internally already a string whenever needed
+//	assert_run("atoi0(str('123'))", 123);
+//	assert_run("atoi0(string('123'))", 123);
 
-	//	assert_run("oki(1)", 43);
-	//	assert_emit("puts('123'+'456');", 123456);// via import not via wasp!
-	//assert_emit("grow := it * 2 ; grow(4)", 8)
-	//	check(Valtype::charp!=Valtype::pointer)
+//	assert_run("oki(1)", 43);
+//	assert_emit("puts('123'+'456');", 123456);// via import not via wasp!
+//assert_emit("grow := it * 2 ; grow(4)", 8)
+//	check(Valtype::charp!=Valtype::pointer)
 
 	skip(
 			assert_run("atoi0('123')", 123);
@@ -868,7 +885,7 @@ void testWasmRuntimeExtension() {
 
 void testMergeRelocate() {
 #ifndef RUNTIME_ONLY
-	// doesn't work: cannot insert imports or function types!
+// doesn't work: cannot insert imports or function types!
 //	emit("test");
 //	merge_files({"test.wasm", "test-lld-wasm/lib.wasm"});
 	Module lib = read_wasm("test-lld-wasm/lib.wasm");
@@ -913,20 +930,20 @@ void testStringIndicesWasm() {
 
 	assert_emit("hello='world';hello#1", 'w');
 	assert_emit("hello='world';hello#2", 'o');
-	//	assert_emit("pixel=100 int(s);pixel#1=15;pixel#1", 15);
+//	assert_emit("pixel=100 int(s);pixel#1=15;pixel#1", 15);
 	skip(
 			assert_emit("hello='world';hello#1='W';hello#1", 'W');// diadic ternary operator
 			assert_emit("hello='world';hello[0]='W';hello[0]", 'W');// diadic ternary operator
 	)
-	//	assert_emit("hello='world';hello#1='W';hello", "World");
-	//	exit(0);
+//	assert_emit("hello='world';hello#1='W';hello", "World");
+//	exit(0);
 }
 
 void testObjectPropertiesWasm() {
 	assert_emit("x={a:3,b:4,c:{d:true}};x.a", 3);
 	assert_emit("x={a:3,b:true};x.b", 1);
 	assert_emit("x={a:3,b:4,c:{d:true}};x.c.d", 1);
-	//assert_emit("x={a:3,b:'ok',c:{d:true}};x.b", "ok");
+//assert_emit("x={a:3,b:'ok',c:{d:true}};x.b", "ok");
 	assert_emit("x={a:3,b:'ok',c:{d:5}};x.c.d", 5);//deep
 }
 
@@ -951,24 +968,24 @@ void testArrayIndicesWasm() {
 	assert_emit("puts('ok');(1 4 3)#2", 4);
 	assert_throws("(1 4 3)#0");
 	skip(
-	// todo patterns as lists
+// todo patterns as lists
 			assert_emit("[1 4 3]#2", 4);
 			assert_is("[1 2 3]#2", 2);// check node based (non-primitive) interpretation first
 			assert_throws("(1 4 3)#4", 4);// todo THROW!
 	)
 
 
-	//	Node empty_array = parse("pixel=[]");
-	//	check(empty_array.kind==patterns);
-	//
-	//	Node construct = analyze(parse("pixel=[]"));
-	//	check(construct["rhs"].kind == patterns or construct.length==1 and construct.first().kind==patterns);
-	//	emit("pixel=[]");
-	//	exit(0);
+//	Node empty_array = parse("pixel=[]");
+//	check(empty_array.kind==patterns);
+//
+//	Node construct = analyze(parse("pixel=[]"));
+//	check(construct["rhs"].kind == patterns or construct.length==1 and construct.first().kind==patterns);
+//	emit("pixel=[]");
+//	exit(0);
 
 
 	skip(
-	// todo create empty array
+// todo create empty array
 			assert_emit("pixel=[];pixel[1]=15;pixel[1]", 15);
 			assert_emit("pixel=();pixel#1=15;pixel#1", 15);// diadic ternary operator
 			assert_emit("pixel array;pixel#1=15;pixel#1", 15);// diadic ternary operator
@@ -1000,7 +1017,7 @@ void testRecentRandomBugs() {
 	assert_emit("√π²", 3);
 	assert_emit("i=-9;√-i", 3);
 	skip(
-	// MEMORY CORRUPTION somehow!
+// MEMORY CORRUPTION somehow!
 			assert_run("x=123;x + 4 is 127", true);
 	)
 #ifndef WASMTIME
@@ -1024,7 +1041,7 @@ void testRecentRandomBugs() {
 
 void testSquareExpWasm() {
 	let π = 3;//.141592653589793;
-	// todo smart pointer return from main for floats!
+// todo smart pointer return from main for floats!
 	assert_emit("3²", 9);
 	assert_emit("3.0²", 9);
 	assert_emit("√100²", 100);
@@ -1044,7 +1061,7 @@ void testSquareExpWasm() {
 	assert_emit(".1 + .9", 1);
 	assert_emit("-.1 + -.9", -1);
 	assert_emit("√9", 3);
-	//	assert_emit("√-9 is -3i", -3);// if «use complex numbers»
+//	assert_emit("√-9 is -3i", -3);// if «use complex numbers»
 	assert_emit(".1", 0);
 #ifndef WASMTIME
 	skip(
@@ -1062,14 +1079,14 @@ void testRoundFloorCeiling() {
 //	assert_emit("ceiling 3.7", 4);// todo: only if «use math» namespace
 	assert_emit("round 3.7", 4);
 //	assert_emit("i=3.7;.3+i", 4);// floor
-	// lol "⌊3.7⌋" is cursed and is transformed into \n\t or something in wasm and IDE!
-	//	assert_emit("⌊3.7", 3);// floor
-	//	assert_emit("⌊3.7⌋", 3);// floor
-	//	assert_emit("3.7⌋", 3);// floor
-	//	//assert_emit("i=3.7;.3 + ⌊i", 3);// floor
-	//	//assert_emit("i=3.7;.3+⌊i⌋", 3);// floor
-	//	assert_emit("i=3.7;.3+i⌋", 3);// floor
-	//	assert_emit("i=3.7;.3+ floor i", 3);// floor
+// lol "⌊3.7⌋" is cursed and is transformed into \n\t or something in wasm and IDE!
+//	assert_emit("⌊3.7", 3);// floor
+//	assert_emit("⌊3.7⌋", 3);// floor
+//	assert_emit("3.7⌋", 3);// floor
+//	//assert_emit("i=3.7;.3 + ⌊i", 3);// floor
+//	//assert_emit("i=3.7;.3+⌊i⌋", 3);// floor
+//	assert_emit("i=3.7;.3+i⌋", 3);// floor
+//	assert_emit("i=3.7;.3+ floor i", 3);// floor
 }
 
 
@@ -1089,8 +1106,8 @@ void wasm_todos() {
 			assert_emit("id 3*42 > id 2*3", 1)
 			assert_emit("square 3*42 > square 2*3", 1)
 			assert_emit("grow:=it*2; grow 3*42 > grow 2*3", 1)
-	// is there a situation where a COMPARISON is ambivalent?
-	// sleep ( time > 8pm ) and shower ≠ sleep time > ( 8pm and true)
+// is there a situation where a COMPARISON is ambivalent?
+// sleep ( time > 8pm ) and shower ≠ sleep time > ( 8pm and true)
 	)
 }
 
@@ -1132,8 +1149,8 @@ void testWasmMutableGlobal() {
 	assert_emit("global const int k", 7);//   all globals without value are imports??
 	assert_emit("global mutable int k", 7);//   all globals without value are imports??
 	assert_emit("global mut int k", 7);//   all globals without value are imports??
-	// remember that the concepts of functions and properties shall be IDENTICAL to the USER!
-	// this does not impede the above, as global exports are not properties, but something to keep in mind
+// remember that the concepts of functions and properties shall be IDENTICAL to the USER!
+// this does not impede the above, as global exports are not properties, but something to keep in mind
 }
 
 void testCustomOperators() {
@@ -1150,8 +1167,8 @@ void testCustomOperators() {
 void testIndexWasm() {
 	assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?!
 	assert_emit("i=1;k='hi';k[i]", 'i')
-	//	assert_throws("i=0;k='hi';k#i")// todo internal boundary checks? nah, later ;) done by VM:
-	// WASM3 error: [trap] out of bounds memory accessmemory size: 65536; access offset: 4294967295
+//	assert_throws("i=0;k='hi';k#i")// todo internal boundary checks? nah, later ;) done by VM:
+// WASM3 error: [trap] out of bounds memory accessmemory size: 65536; access offset: 4294967295
 	assert_emit("k='hi';k#1=97;k#1", 'a')
 	assert_emit("k='hi';k#1='a';k#1", 'a')
 	assert_emit("k='hi';i=1;k#i=97;k#i", 'a')
@@ -1209,7 +1226,7 @@ void testMultiValue() {
 
 // may cause HEAP CORRUPTION! why??
 void testAssertRun() {
-	// all these have been tested with assert_emit before. now check that it works with runtime
+// all these have been tested with assert_emit before. now check that it works with runtime
 	assert_run("x='123';x is '123'", true);// ok
 	assert_run("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
 	assert_run("x='123';x + '4' is '1234'", true);// ok
@@ -1224,10 +1241,10 @@ void testAllWasm() {
 #ifdef RUNTIME_ONLY
 	puts("RUNTIME_ONLY");
 	puts("NO WASM emission...");
-//	return;
+	//	return;
 #endif
 	skip(
-	//	assert_run not compatible with Wasmer, don't ask why, we don't know;)
+//	assert_run not compatible with Wasmer, don't ask why, we don't know;)
 			testCustomOperators();
 			testWasmMutableGlobal();
 			testIndexWasm();// breaks on second run WHY?
