@@ -78,9 +78,9 @@ namespace wabt {
 		virtual void OnSetState(const State *s) { state = s; }
 
 		/* Module */
-		virtual Result BeginModule(uint32_t version) = 0;
+		virtual Result BeginModule(uint32_t version) = 0;// { return Result::Ok; };
 
-		virtual Result EndModule() = 0;
+		virtual Result EndModule() = 0;//{ return Result::Ok; };
 
 		virtual Result BeginSection(Index section_index,
 		                            BinarySection section_type,
