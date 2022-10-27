@@ -11,12 +11,12 @@
 #include "test_wasm.cpp"
 
 void testLeaks() {
-//	int reruns=0;
-	int reruns = 100000;
+	int reruns = 0;
+//	int reruns = 100000;
 	for (int i = 0; i < reruns; ++i) {//
 		printf("\n\n    ===========================================\n%d\n\n\n", i);
-//		assert_emit("i=-9;√-i", 3);// SIGKILL after about 3000 runs OK'ish ;)
-		assert_run("i=-9;√-i", 3);// SIGKILL after … ?
+//		assert_emit("i=-9;√-i", 3);// SIGKILL after about 3000 emits OK'ish ;)
+		assert_run("i=-9;√-i", 3);// SIGKILL after about 120 runs … can be optimized ;)
 	}
 }
 
@@ -636,12 +636,14 @@ void testUTFinCPP() {
 	const char str1[9] = "عربى";
 
 #ifndef WASM
+#ifdef std
 	std::string x = "0☺2√";
 	// 2009 :  std::string is a complete joke if you're looking for Unicode support
 	auto smile0 = x[1];
 	char16_t smile1 = x[1];
 	char32_t smile = x[1];
 //	check(smile == smile1);
+#endif
 #endif
 //	wstring_convert<codecvt_utf8<char32_t>, char32_t> wasm_condition;
 //	auto str32 = wasm_condition.from_bytes(str);
@@ -2219,9 +2221,9 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_equals(~0, 0);// what is ~0 ???
-	assert_equals(~1, 1);// what is ~1 ???
+//	assert_equals(~0, 0);// what is ~0 ? bitwise negation, so -1 in this context!
 	testLeaks();
+	testMergeOwn();
 	testMergeRelocate();
 	testMergeWabt();
 
