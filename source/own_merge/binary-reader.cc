@@ -236,6 +236,7 @@ namespace wabt {
 				  state_(static_cast<const uint8_t *>(data), size),
 //				  logging_delegate_(options.log_stream, delegate),
 //				  delegate_(options.log_stream ? &logging_delegate_ : delegate),
+                  delegate_(delegate),
                   options_(options),
                   last_known_section_(BinarySection::Invalid) {
 			delegate->OnSetState(&state_);

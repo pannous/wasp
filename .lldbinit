@@ -1,3 +1,5 @@
+# command script import my_lldb.py
+
 settings set target.load-cwd-lldbinit true
 #  error: summary string parsing error in Xcode!
 # error: Invalid format character or name 'Node[]'.
@@ -22,7 +24,7 @@ type summary add --summary-string "${var.data%s}" String
 type summary add --summary-string "${var.function}.${var.name}:${var.type}" Arg
 
 type summary add --summary-string "${var.data}" Value
-type summary add --summary-string "${var.length}" Code
+type summary add --summary-string "${var.length} ${var.data[0-8]}" Code
 #type summary add --summary-string "${var.longy%B}" Value
 #type summary add --summary-string "name=${var.name} type=${var.kind} length=${var.length} value=${var.value}" Node
 # type summary add --summary-string "${var.name} #${var.length} ${var.kind} value:${var.value%B} children:${var.children%B} meta:${var.meta[0-1]}" Node
@@ -43,3 +45,8 @@ type summary add --summary-string "${var[0-8].name}" "Node *"
 
 
 type summary add --summary-string "${var.function} ${var.debug_name} #${var.types._size}" Signature
+
+type summary add --summary-string "${var%E}" wabt::Result
+type summary add --summary-string "${var.offset_}" wabt::Stream
+type summary add --summary-string "${var.offset_}" wabt::MemoryStream
+type summary add --summary-string "${var%s} ${var[0-8]}" bytes

@@ -29,8 +29,7 @@
 
 namespace wabt {
 
-	Stream::Stream(Stream *log_stream)
-			: offset_(0), result_(Result::Ok), log_stream_(log_stream) {}
+	Stream::Stream(Stream *log_stream) : offset_(0), result_(Result::Ok), log_stream_(log_stream) {}
 
 	void Stream::AddOffset(ssize_t delta) {
 		offset_ += delta;
@@ -132,10 +131,13 @@ namespace wabt {
 	}
 
 	Result OutputBuffer::WriteToFile(string_view filename) const {
-		String filename_str = filename.data;
-		FILE *file = fopen(filename_str.data, "wb");
+		return WriteToFile(filename.data);
+	}
+
+	Result OutputBuffer::WriteToFile(char *filename) const {
+		FILE *file = fopen(filename, "wb");
 		if (!file) {
-			ERROR("unable to open %s for writing\n", filename_str.data);
+			ERROR("unable to open %s for writing\n", filename);
 			return Result::Error;
 		}
 
@@ -146,21 +148,17 @@ namespace wabt {
 
 		ssize_t bytes = fwrite(data.data(), 1, data.size(), file);
 		if (bytes < 0 || static_cast<size_t>(bytes) != data.size()) {
-			ERROR("failed to write %" PRIzd " bytes to %s\n", data.size(),
-			      filename_str.data);
+			ERROR("failed to write %" PRIzd " bytes to %s\n", data.size(), filename);
 			fclose(file);
 			return Result::Error;
 		}
-
 		fclose(file);
 		return Result::Ok;
 	}
 
-	MemoryStream::MemoryStream(Stream *log_stream)
-			: Stream(log_stream), buf_(new OutputBuffer()) {}
+	MemoryStream::MemoryStream(Stream *log_stream) : Stream(log_stream), buf_(new OutputBuffer()) {}
 
-	MemoryStream::MemoryStream(std::unique_ptr<OutputBuffer> &&buf,
-	                           Stream *log_stream)
+	MemoryStream::MemoryStream(std::unique_ptr<OutputBuffer> &&buf, Stream *log_stream)
 			: Stream(log_stream), buf_(std::move(buf)) {}
 
 	std::unique_ptr<OutputBuffer> MemoryStream::ReleaseOutputBuffer() {
@@ -174,9 +172,7 @@ namespace wabt {
 			buf_.reset(new OutputBuffer());
 	}
 
-	Result MemoryStream::WriteDataImpl(size_t dst_offset,
-	                                   const void *src,
-	                                   size_t size) {
+	Result MemoryStream::WriteDataImpl(size_t dst_offset, const void *src, size_t size) {
 		if (size == 0) {
 			return Result::Ok;
 		}
