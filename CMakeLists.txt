@@ -18,7 +18,7 @@ LINK_DIRECTORIES(/usr/local/lib)
 
 #set(SDL 1) # Graphics
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
-
+set(INCLUDE_MERGER 1)
 #set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
 #ADD_DEFINITIONS(-DMULTI_VALUE)
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
@@ -45,22 +45,24 @@ if (NOT WASM)
     set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
 endif () # else :
 
-set(SOURCE_FILES ${SOURCE_FILES} source/wasm_merger_own.cpp)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/common.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-reader-linker.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-reader.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode-code-table.c)
-#set(SOURCE_FILES ${SOURCE_FILES} FILES_MATCHING PATTERN "source/own_merge/*.cc")
-#set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer-spec.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binding-hash.cc)
+if (INCLUDE_MERGER)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_merger_own.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/common.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-reader-linker.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-reader.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode-code-table.c)
+    #set(SOURCE_FILES ${SOURCE_FILES} FILES_MATCHING PATTERN "source/own_merge/*.cc")
+    #set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer-spec.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binding-hash.cc)
 set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/feature.cc)
 set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/leb128.cc)
 set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/stream.cc)
 set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode.cc)
 set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/utf8.cc)
 set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/ir.cc)
+endif ()
 
 
 if (WASM)
