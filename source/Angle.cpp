@@ -100,14 +100,6 @@ bool isType(Node &expression) {
 	return types.has(name);
 }
 
-String debug_code;
-
-
-Node &groupWhile(Node n, String string);
-
-bool isPrimitive(Node &node);
-
-bool isType(Node &node);
 
 
 Node constants(Node n) {
@@ -663,7 +655,8 @@ bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
 
 String &checkCanonicalName(String &name);
 
-List<Module> merge_modules;// from (automatic) import statements e.g. import math; use log; …
+//List<Module> merge_modules;// from (automatic) import statements e.g. import math; use log; …
+List<Code> merge_module_binaries;
 Map<String, bool> module_done;
 
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
@@ -684,8 +677,10 @@ Node &groupOperators(Node &expression, String context = "main") {
 //			Node &file = expression.from(1);
 			// todo: properly merge, select appropriate functions …
 			if (not module_done.has(file.name)) {
-				Module import = read_wasm(file.name);
-				merge_modules.add(import);// merging binary wasm segments in emit
+				Module import = read_wasm(file.name);// we need to read signatures!
+				const Code &code = read_code(file.name);// kinda redundant
+				merge_module_binaries.add(code);// via wabt
+//				merge_modules.add(import);// merging binary wasm segments in emit
 				module_done.insert_or_assign(file.name, true);
 			}
 			return *new Node();
@@ -1288,41 +1283,6 @@ Node smartNode32(int smartPointer32) {
 	}
 	error1("missing smart pointer type "s + typeName(Type(smartPointer32)));
 	return Node();
-}
-
-// todo dedup runtime_emit!
-//Node emit(String code, ParseOptions options) {
-Node emit(String code) {// emit and run!
-//	if (code.endsWith(".wasm")){
-//		auto filename = findFile(code);
-//		return Node(run_wasm(filename));
-//	}
-	Node data = parse(code);
-	debug_code = code;// global so we see when debugging
-#ifdef RUNTIME_ONLY
-#ifdef INTERPRETER
-	return data.interpret();
-#endif
-	return data;
-#else
-	data.print();
-	clearContext();
-//	preRegisterSignatures();
-	Node &charged = analyze(data);
-	charged.print();
-	Code binary;
-//	if (options & no_main) // todo: lib_main!
-//		binary = emit(charged, 0, 0);
-//	else
-	binary = emit(charged);
-	for (Module &import: merge_modules) {
-		Module prog = read_wasm(binary.data, binary.length);
-		binary = merge_wasm(import, prog);
-	}
-//	code.link(wasp) more beautiful with multiple memory sections
-	long result = binary.run();// check js console if no result
-	return smartNode(result);
-#endif
 }
 
 

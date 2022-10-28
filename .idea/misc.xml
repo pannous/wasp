@@ -15,9 +15,11 @@
       <file path="$PROJECT_DIR$/bak" />
       <file path="$PROJECT_DIR$/cmake-build-default.x" />
       <file path="$PROJECT_DIR$/js" />
+      <file path="$PROJECT_DIR$/source/own_merge" />
       <file path="$PROJECT_DIR$/wabt" />
       <file path="$PROJECT_DIR$/wabt/third_party" />
       <file path="$PROJECT_DIR$/wasm-micro-runtime" />
+      <file path="$PROJECT_DIR$/xxx" />
     </excludeRoots>
   </component>
   <component name="JavaScriptSettings">

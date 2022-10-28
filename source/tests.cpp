@@ -9,6 +9,12 @@
 #include "test_angle.cpp"
 #include "test_wast.cpp"
 #include "test_wasm.cpp"
+#include "wasm_runner.h"
+
+void testWasmRunner() {
+	int result = run_wasm2("test/test42.wasm");
+	assert_equals(result, 42);
+}
 
 void testLeaks() {
 	int reruns = 0;
@@ -2222,8 +2228,10 @@ void testCurrent() {
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
 //	assert_equals(~0, 0);// what is ~0 ? bitwise negation, so -1 in this context!
+	testWasmRunner();
 	testLeaks();
 	testMergeOwn();
+	testLogarithm();
 //	testMergeRelocate();
 	testMergeWabt();
 

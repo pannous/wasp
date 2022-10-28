@@ -211,21 +211,21 @@
 
 ;; Todo: better alias elsewhere? conflict with Console.log etc?
   (export "log10" (func $log10))
-  (export "_alias_log₁₀" (func $log10))
-  (export "_alias_₁₀⌞"   (func $log10))
-  (export "_alias_10⌞"   (func $log10))
-
-  (export "log2" (func $log2))
-  (export "_alias_log₂" (func $log2))
-  (export "_alias_₂⌞"   (func $log2))
-  (export "_alias_2⌞"   (func $log2))
-
   (export "ln" (func $ln))
-  (export "_alias_log" (func $ln)) ;; careful with Console.log … !
-  (export "_alias_ln" (func $ln))
-  (export "_alias_⌞"   (func $ln))
-  (export "_alias_ₑ⌞"   (func $ln))
-  (export "_alias_e⌞"   (func $ln))
+  ;;(export "_alias_log₁₀" (func $log10))
+  ;;(export "_alias_₁₀⌞"   (func $log10))
+  ;;(export "_alias_10⌞"   (func $log10))
+
+  ;;(export "log2" (func $log2))
+  ;;(export "_alias_log₂" (func $log2))
+  ;;(export "_alias_₂⌞"   (func $log2))
+  ;;(export "_alias_2⌞"   (func $log2))
+
+  ;;(export "_alias_log" (func $ln)) ;; careful with Console.log … !
+  ;;(export "_alias_ln" (func $ln))
+  ;;(export "_alias_⌞"   (func $ln))
+  ;;(export "_alias_ₑ⌞"   (func $ln))
+  ;;(export "_alias_e⌞"   (func $ln))
 
 
 )

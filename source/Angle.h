@@ -5,6 +5,7 @@
 #include "wasm_reader.h"
 
 extern bool throwing;
+extern List<Code> merge_module_binaries;
 
 //#include "Map.h"
 // The Angle language is a semantic layer on top of Wasp data format
@@ -15,12 +16,19 @@ public:
 };
 
 void clearContext();
+
 extern List<String> declaredFunctions;
 extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 
 extern Map<String, Node * /* modifiers/values/init expressions*/> globals; // access from Angle!
 extern Map<String /*name*/, Valtype> globalTypes;
+
+Node &groupWhile(Node n, String string);
+
+bool isPrimitive(Node &node);
+
+bool isType(Node &node);
 
 enum ParseOptions {
 	nix = 0,

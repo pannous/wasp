@@ -577,4 +577,11 @@ Module read_wasm(bytes buffer, int size0) {
 #endif
 #undef pointerr
 
+Code read_code(chars file) {
+	int size;
+	char *data = readFile(file, &size);
+	return Code(data, size, false);
+}
+
+
 //#import "wasm_patcher.cpp"
