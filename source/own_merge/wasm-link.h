@@ -121,6 +121,7 @@ namespace wabt {
 			bool IsInactiveFunctionImport(Index index);
 
 			const char *filename;
+			int delta;// previous function_count, offset all functions in this module if not mapped to specific import
 			std::vector<uint8_t> data;
 			std::vector<std::unique_ptr<Section>> sections;
 			std::vector<Export> exports;

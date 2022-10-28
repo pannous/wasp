@@ -23,9 +23,9 @@
 //#include "wasm_reader.h"
 #include "Code.h"
 
+typedef unsigned char *bytes;
 
-std::map<short, int> new_indices = {{0, 1},
-                                    {1, 2}};
+std::map<short, int> new_indices;// = {{0, 1}, {1, 2}};
 
 Code createSection(Sections sectionType, Code data);
 
@@ -46,7 +46,6 @@ using namespace wabt::link;
 String &s(String &x) { return x; }
 
 String s(String x) { return x; }
-
 
 //
 //String::String(const String str):String(str.data){
@@ -272,7 +271,7 @@ public:
 
 	void CreateRelocs();
 
-	std::vector<Reloc> PatchCodeSection(std::vector<byte> section_data, int length, size_t offset, size_t indexOffset);
+	std::vector<Reloc> PatchCodeSection(std::vector<byte> section_data, int length, size_t offset, size_t size, size_t indexOffset);
 
 	void PatchCodeSection(bytes section_data, int length, size_t i);
 
@@ -715,16 +714,16 @@ void Linker::ResolveSymbols() {
 			String name = import.name;
 			Index export_index = export_map.FindIndex(import.name);
 			if (export_index != kInvalidIndex) {
-
 				// We found the symbol exported by another module.
 				const ExportInfo &export_info = export_list[export_index];
-
 				// TODO(sbc): verify the foreign function has the correct signature.
 				import.active = false;
 				import.foreign_binary = export_info.binary;
 				import.foreign_index = export_info.export_->index;
 				import.relocated_function_index = export_index;
-				new_indices[import.foreign_index] = import.relocated_function_index;
+				Index old_index = import.sig_index;
+				new_indices[old_index] = export_index;
+//				new_indices[import.sig_index] = import.foreign_index;
 				binary->active_function_imports--;
 				printf("LINKED export to import: %s\n", import.name.data);
 			} else {
@@ -734,6 +733,7 @@ void Linker::ResolveSymbols() {
 				import.active = false;
 				import.foreign_binary = funcInfo.binary;
 				import.foreign_index = funcInfo.func->index;
+				new_indices[func_index] = export_index;
 				binary->active_function_imports--;
 				printf("LINKED unexported function to import: %s\n", import.name.data);
 			}
@@ -750,11 +750,14 @@ void Linker::CalculateRelocOffsets() {
 	Index type_count = 0;
 	Index global_count = 0;
 	Index function_count = 0;
+	Index my_function_count = 0;
 	Index table_elem_count = 0;
 	Index total_function_imports = 0;
 	Index total_global_imports = 0;
 
 	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+		binary->delta = my_function_count; // offset all functions if not mapped to import
+
 		// The imported_function_index_offset is the sum of all the function
 		// imports from objects that precede this one.  i.e. the current running
 		// total.
@@ -774,6 +777,8 @@ void Linker::CalculateRelocOffsets() {
 		memory_page_offset += binary->memory_page_count;
 		total_function_imports += binary->active_function_imports;
 		total_global_imports += binary->global_imports.size();
+		my_function_count += binary->active_function_imports;
+		my_function_count += binary->function_count;
 	}
 
 	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
@@ -855,8 +860,13 @@ void Linker::CreateRelocs() {
 		//	binary->sections;
 		Section *section = getSection(binary, BinarySection::Code);
 		if (!section)return;
-		Index indexOffset = binary->function_index_offset;
-		auto relocs = PatchCodeSection(binary->data, binary->data.size(), section->offset + 1, indexOffset);
+		Index indexOffset = binary->delta;
+//		Index i = section->count;
+		size_t size = section->size;
+		// todo create and pass correct view from here!
+		Code section_code(binary->data.data() + section->offset + 1, section->size);
+//		auto relocs = PatchCodeSection(section_code, indexOffset);
+		auto relocs = PatchCodeSection(binary->data, binary->data.size(), section->offset + 1, size, indexOffset);
 		for (Reloc &reloc: relocs)
 			section->relocations.push_back(reloc);
 //		if(!section->data.data_segments)
@@ -1201,27 +1211,28 @@ std::map<short, int> opcode_args = {
 		{table_fill,          -1},
 };
 
-
-typedef unsigned char *bytes;
-
-
-std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int length, size_t offset, size_t indexOffset) {
+std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int length, size_t offset, size_t size, size_t indexOffset) {
 	std::vector<Reloc> relocs;
 	//	int codeCount = unsignedLEB128(codes_vector);
 	//	Code code = vec(codes);
 	int start = offset;
-	int fun_length = unsignedLEB128(section_data, length, start);
+	int fun_length = unsignedLEB128(section_data, length, start); // length of ONE function
+//	size_t size = section_data.size()
+//	int fun_length = size; // // length of ALL function segment
 	byte b = section_data[start++];
-	assert(b == 0x00);// // beginning
-	while ((b = section_data[start++]) != 0x0b and start < length and start - offset < fun_length) {
+//	assert(b == 0x00);// // beginning
+//	while ((b = section_data[start++]) != 0x0b and start < length and start - offset < fun_length) { // STOP after function
+	while (start < length and start - offset < size) {// go over ALL functions! ignore 00
+		b = section_data[start++];
 		Opcodes op = (Opcodes) b;
 		if (op == call_) {
 			short nop_offset = start;
 			short index = unsignedLEB128(section_data, length, start);
+			int neu = index + indexOffset; // internally shifted
 			if (new_indices.contains(index)) {
-				int neu = index + indexOffset; // internally shifted
-				if (new_indices.contains(index))
-					neu = new_indices[index]; // mapped to other module's export
+				neu = new_indices[index]; // mapped to other module's export
+			}
+			if (index != neu) {
 				Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset - offset + 1, neu);
 				relocs.push_back(reloc);
 			}
