@@ -1,9 +1,9 @@
 [submodule "wasm3"]
-	path = wasm3
-	url = ./wasm3
+	path = Frameworks/wasm3
+	url =  Frameworks/wasm3
 [submodule "wasm-micro-runtime"]
-	path = wasm-micro-runtime
-	url = ./wasm-micro-runtime
+	path = Frameworks/wasm-micro-runtime
+	url =  Frameworks/wasm-micro-runtime
 [submodule "wiki"]
 	path = wiki
 	url = ./wiki

@@ -1201,13 +1201,13 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int 
 			}
 		} else if (op == i32_auto) {
 			int nr = unsignedLEB128(section_data, length, start);
-			printf("i32.const %d", nr);
+			printf("i32.const %d\n", nr);
 		} else {
 			int arg_bytes = opcode_args[op];
 			if (arg_bytes > 0)
 				start += arg_bytes;
 			if (arg_bytes < 0)
-				printf("UNKNOWN OPCODE ARGS %d", op);
+				printf("UNKNOWN OPCODE ARGS %x %d\n", op, op);
 		}
 	}
 	return relocs;
