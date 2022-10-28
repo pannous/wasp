@@ -1,3 +1,5 @@
+#pragma once
+extern Node &result;
 
 #undef assert // <cassert> / <assert.h>
 
@@ -7,8 +9,7 @@
 #include <libc.h>
 
 #endif
-
-Node &result = *new Node();
+//#include "Wasp.h"
 
 //#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
 
@@ -105,7 +106,6 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 }
 
 
-
 bool assert_equals_x(Node a, Node b, char *context = "") {
 	//	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
 	char *as = a.serialize().data;
@@ -167,7 +167,7 @@ bool assert_equals_x(float a, float b, char *context = "") {
 
 bool assert_isx(char *mark, Node expect) {
 	try {
-		Node left = Wasp::eval(mark);
+		Node left = eval(mark);
 		if (left.kind == reals or expect.kind == reals)
 			return assert_equals_x(left.floate(), expect.floate(), mark);
 		if (left.kind == longs or expect.kind == longs) {

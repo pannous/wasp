@@ -3,6 +3,7 @@
 #include "Map.h" // list
 
 #define let auto
+extern bool eval_via_emit;
 
 void testCurrent();
 

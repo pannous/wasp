@@ -1,22 +1,17 @@
 //
 // Created by me on 07.10.21.
 //
-
-#include <cmath>
+// #include <cmath>
 #include <stdlib.h> // abs(int)
-
-#include "String.h"
+// #include "String.h"
 #include "Util.h"
-
 #ifndef WASM
 // ok as wasi?
 #include "unistd.h"
 #include "NodeTypes.h"
-
 #endif
 
 //bool fileExists(char* filename) {
-
 bool fileExists(String filename) {
 #if RUNTIME_ONLY
 	return false;
@@ -26,7 +21,6 @@ bool fileExists(String filename) {
 	return access(filename.data, F_OK) == 0;
 #endif
 }
-
 
 int fileSize(char const *file) {
 #ifndef WASM
@@ -41,7 +35,6 @@ int fileSize(char const *file) {
 	return -1;// todo
 }
 
-
 String findFile(String filename) {
 	// todo: check dates and return freshest (last edit / updated)
 #if RUNTIME_ONLY
@@ -54,7 +47,6 @@ String findFile(String filename) {
 	if (fileExists(filename + ".wasp"))return filename + ".wasp";
 	if (fileExists(filename + ".wast"))return filename + ".wast";
 	if (fileExists(filename + ".wasm"))return filename + ".wasm";
-
 	String project = ".";// todo module name(s)
 	if (not filename.contains("/"))filename = findFile(project + "/" + filename) || filename;
 	if (not filename.contains("/"))filename = findFile("lib/"s + filename) || filename;
@@ -66,15 +58,12 @@ String findFile(String filename) {
 	if (not filename.contains("/"))filename = findFile("samples/"s + filename) || filename;
 	if (not filename.contains("/"))filename = findFile("test/"s + filename) || filename;
 	if (not filename.contains("/"))filename = findFile("tests/"s + filename) || filename;
-
 	return fileExists(filename) ? filename : "";
 }
-
 template<class S>
 bool contains(List<S> list, S match) {
 	return list.has(match);
 }
-
 
 template<class S>
 // list HAS TO BE 0 terminated! Dangerous C!! ;)
@@ -86,7 +75,6 @@ bool contains(S list[], S match) {
 	} while (*elem++);
 	return false;
 }
-
 short normChar(char c) {// 0..36 damn ;)
 	if (c == '\n')return 0;
 	if (c >= '0' and c <= '9') return c - '0' + 26;
@@ -108,7 +96,6 @@ short normChar(char c) {// 0..36 damn ;)
 			return c;// for asian etc!
 	}
 }
-
 unsigned int wordHash(const char *str, int max_chars) { // unsigned
 	if (!str) return 0;
 	int maxNodes = 100000;
@@ -124,7 +111,6 @@ unsigned int wordHash(const char *str, int max_chars) { // unsigned
 	if (hash == 0)return hash2;
 	return hash;
 }
-
 
 char *readFile(chars filename, int *size_out) {
 	if (!filename)error("no filename given");
@@ -144,15 +130,13 @@ char *readFile(chars filename, int *size_out) {
 	return 0;
 #endif
 }
-
 // abs, floor from math.h should work with wasm, but isn't found in pure toolchain or sometimes breaks
 // there is NO i32_abs in wasm, only f32_abs
 // but compiler should make use of /opt/wasm/wasi-sdk/share/wasi-sysroot/include/c++/v1/math.h !!
 //SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/) # also for WASM include!
 //#include <stdlib.h> // pulls in declaration of malloc, free
 //#include <math.h> // pow
-
-//c++ compiler emits abs as:
+// c++ compiler emits abs as:
 //local.get 0
 //i32.const 31
 //i32.shr_s
@@ -160,8 +144,7 @@ char *readFile(chars filename, int *size_out) {
 //i32.add
 //local.get 0
 //i32.xor
-
-//inline int abs_i(int x) noexcept{
+// inline int abs_i(int x) noexcept{
 //	return x > 0 ? x : -x;
 //}
 //inline long abs_l(long x) noexcept{
@@ -175,7 +158,6 @@ char *readFile(chars filename, int *size_out) {
 //inline float floor(float x) noexcept {
 //	x-(long)x;// todo!
 //}
-
 bool similar(float a, float b) {
 	if (a == b)return true;
 	float epsilon = abs(a + b) / 10000.;// percentual ++
@@ -183,40 +165,11 @@ bool similar(float a, float b) {
 	bool ok = a == b or abs(a - b) <= epsilon;
 	return ok;
 }
-
-
-double pi = 3.141592653589793;
-
-double mod_d(double x, double y) {
-	return x - trunc(x / y) * y;
-}
-
-double sin(double x) {
-	double tau = 6.283185307179586;// 2*pi
-	// double pi_fourth=0.7853981633974483;
-	double x2, r, x4;
-	double
-			S1 = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */
-	S2 = 8.33333333332248946124e-03, /* 0x3F811111, 0x1110F8A6 */
-	S3 = -1.98412698298579493134e-04, /* 0xBF2A01A0, 0x19C161D5 */
-	S4 = 2.75573137070700676789e-06, /* 0x3EC71DE3, 0x57B1FE7D */
-	S5 = -2.50507602534068634195e-08, /* 0xBE5AE5E6, 0x8A2B9CEB */
-	S6 = 1.58969099521155010221e-10; /* 0x3DE5D93A, 0x5ACFD57C */
-	x = mod_d(x, tau);
-//	 if(x<0) return -sin(-x);
-	if (x >= pi) return -sin(mod_d(x, pi));
-
-	// if(x%tau > pi) return -sin(x%tau);
-	x2 = x * x;
-	x4 = x2 * x2;
-	r = S2 + x2 * (S3 + x2 * S4) + x2 * x4 * (S5 + x2 * S6);
-	return x + x2 * x * (S1 + x2 * r);
-}
-
-double cos(double x) {
-	double pi_half = 1.5707963267948966;
-	return sin(x + pi / 2);// todo: eval compiler!
-}
+//
+//double pi = 3.141592653589793;
+//double mod_d(double x, double y) {
+//	return x - trunc(x / y) * y;
+//}
 
 void lowerCase(char *string, int length) {
 	if (!string || !*string) return;
@@ -227,7 +180,6 @@ void lowerCase(char *string, int length) {
 			string[length] += 32;
 	}
 }
-
 // todo: code licence?
 // IN PLACE replacement!
 // 11592 bytes lowerCase.wasm, UTF8 is HEAVY!
@@ -1027,7 +979,6 @@ int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
 	bytes pStr2Low = 0;
 	bytes p1 = 0;
 	bytes p2 = 0;
-
 	if (s1 && *s1 && s2 && *s2) {
 		pStr1Low = (bytes) calloc(strlen0(s1) + 1, sizeof(unsigned char));
 		if (pStr1Low) {
@@ -1059,7 +1010,6 @@ int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
 	return (-1);
 }
 
-
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
 	bytes c = new unsigned char[len_a + len_b + 4];// why+4 ?? else heap-buffer-overflow
 	memcpy0(c, a, len_a);
@@ -1067,7 +1017,6 @@ bytes concat(bytes a, bytes b, int len_a, int len_b) {
 	//	c[len_a + len_b + 1] = 0;// hwhy?
 	return c;
 }
-
 chars concat(chars a, chars b) {
 //const char *concat(const char *a, const char *b) {
 	if (!b or b[0] == 0)return a;
@@ -1080,21 +1029,18 @@ chars concat(chars a, chars b) {
 	return c;
 }
 
-
 bytes concat(bytes a, char b, int len) {
 	bytes c = new unsigned char[len + 1];
 	memcpy0(c, a, len);
 	c[len] = b;
 	return c;
 }
-
 bytes concat(char a, bytes b, int len) {
 	bytes c = new unsigned char[len + 1];
 	c[0] = a;
 	memcpy0(c + 1, b, len);
 	return c;
 }
-
 float ln(float y) {// crappy!
 //	if(y==1)return 0;
 	float divisor, x, result;
@@ -1111,7 +1057,6 @@ float ln(float y) {// crappy!
 	result += ((float) log2) * 0.69314718; // ln(2) = 0.69314718
 	return result;
 }
-
 float log(float y, float base) {
 	return ln(y) * ln(base);
 }
@@ -1123,7 +1068,6 @@ float log(float y, float base) {
 //float log2(float y) noexcept{
 //	return ln(y)*0.69314718;
 //}
-
 
 String load(String file) {
 #if WASM
@@ -1143,7 +1087,6 @@ String load(String file) {
 	return *binary;
 #endif
 }
-
 String &hex(long d) {
 #ifdef WASM
 	return * new String(itoa0(d));
@@ -1155,13 +1098,10 @@ String &hex(long d) {
 #endif
 }
 
-
 bool isSmartPointer(long long d) {
 //	if((d&negative_mask_64)==negative_mask_64)return false;
 	if ((d & negative_mask_64) == negative_mask_64)return false;
 	if (d & double_mask_64)return true;
 	return d & smart_mask_64 and not(d & negative_mask_64);
 }
-
 Node smartValue(long smartPointer);
-
