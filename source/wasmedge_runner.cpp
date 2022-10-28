@@ -70,10 +70,13 @@ long run_wasm(bytes buffer, int buf_size) {
 	WasmEdge_Value Params[1];
 	WasmEdge_Value Returns[1];
 	WasmEdge_String FuncName = WasmEdge_StringCreateByCString("test");
-	WasmEdge_Result Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName, Params, 0, Returns, 0);
-	if (WasmEdge_ResultOK(Res))printf("Get result: %d\n", WasmEdge_ValueGetI32(Returns[0]));
-	else printf("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
-	return Returns[0].Value;
+	WasmEdge_Result Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName, Params, 0, Returns, 1);
+	if (WasmEdge_ResultOK(Res)) {
+		int32_t value = WasmEdge_ValueGetI32(Returns[0]);
+		printf("Get result: %d\n", value);
+		return (int) value;
+	} else printf("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
+	return -1;
 }
 
 
