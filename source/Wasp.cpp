@@ -8,10 +8,19 @@
 #include "wasm_emitter.h"
 #include "wasm_runner.h"
 #include "console.h"
+//#include "tests.h"
 
 //#include <cstdlib> // OK in WASM!
 #include "stdio.h" // FILE
 #include <math.h>
+
+
+#ifndef RUNTIME_ONLY
+#include "WebServer.hpp"
+//#include "wasm_merger_wabt.h"
+#include "WebApp.h"
+#endif
+
 
 int SERVER_PORT = 1234;
 //bool eval_via_emit = false;// not all tests yet
@@ -1735,20 +1744,6 @@ void handler(int sig) {
 //	True.value.number = 1;
 //}
 
-#ifndef NO_TESTS
-
-#import "tests.cpp"
-
-#endif
-
-#ifndef RUNTIME_ONLY
-
-#include "WebServer.hpp"
-#include "wasm_merger_wabt.h"
-#include "WebApp.h"
-
-#endif
-
 // todo: merge + cleanup all these eval parse run compile emit interpret
 Node run(String source) {
 #if RUNTIME_ONLY
@@ -1867,6 +1862,7 @@ void usage() {
 	print("wasp help              see https://github.com/pannous/wasp/wiki");
 	print("wasp tests ");
 }
+
 
 // wasmer etc DO accept float/double return, just not from main!
 int main(int argc, char **argv) {
