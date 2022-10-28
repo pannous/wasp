@@ -742,12 +742,17 @@ void testMergeOwn() {
 	int size;
 	char *bytes = readFile("test/merge/main.wasm", &size);
 	Code main(bytes, size);
-	bytes = readFile("test/merge/lib.wasm", &size);
+//	bytes = readFile("test/merge/lib.wasm", &size);
+	bytes = readFile("test/merge/lib2.wasm", &size);
+//	bytes = readFile("wasp.wasm", &size);
 	Code lib(bytes, size);
+#ifdef INCLUDE_MERGER
 	Code merged = merge_binaries(main, lib);
 	merged.save();
 	int i = merged.run();
 	assert_equals(i, 42);
+//	exit(1);
+#endif
 }
 
 void testMergeWabtByHand() {

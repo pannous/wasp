@@ -155,6 +155,7 @@ extern "C" void *memset(void *ptr, int value, size_t num);
 //#define long long long  // WTH
 
 #ifndef WASI
+#ifdef WASM
 void printf(chars, chars);
 //void print(chars format, int i);
 void printf(char const *format, int i);
@@ -169,6 +170,8 @@ void printf(chars format, chars i, chars j);
 void printf(chars format, chars i, chars j, int l);
 void printf(chars format, chars i, chars j, chars l);
 void printf(chars format, chars i, chars j, chars k, int l);
+
+#endif
 #endif
 
 //extern "C" void * memset ( void * ptr, int value, size_t num ); not extern!
