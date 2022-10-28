@@ -30,7 +30,8 @@ if (NOT WASM)
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         #         SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :(
-        SET(WASMTIME 1) # FASTEST!
+        #        SET(WASMTIME 1) # FASTEST!
+        SET(WASMEDGE 1)
         #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
@@ -46,6 +47,7 @@ if (NOT WASM)
 endif () # else :
 
 if (INCLUDE_MERGER)
+    ADD_DEFINITIONS(-DINCLUDE_MERGER)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_merger_own.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/common.cc)
     set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary.cc)
@@ -412,12 +414,20 @@ elseif (WABT)
     target_include_directories(wasp PUBLIC Frameworks/wabt)
     target_include_directories(wasp PUBLIC Frameworks/wabt/src)
     target_include_directories(wasp PUBLIC Frameworks/wabt/src/interp)
-    target_link_libraries(wasp PRIVATE wasm)     #    libwabt is called libwasm.dylib DANGER!
+    target_link_libraries(wasp PRIVATE wasm)  # libwabt is called libwasm.dylib DANGER!
 elseif (WASMER)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmer_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmer-c-api)
     target_link_libraries(wasp PRIVATE wasmer)
+elseif (WASMEDGE)
+    MESSAGE("USING WASMEDGE")
+    ADD_DEFINITIONS(-DWASMEDGE)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasmedge_runner.cpp)
+    set(SOURCE_FILES source/wasmedge_runner.cpp ${SOURCE_FILES})
+    add_executable(wasp ${SOURCE_FILES})
+    target_include_directories(wasp PUBLIC Frameworks/wasmedge)
+    target_link_libraries(wasp PRIVATE wasmedge) # libwasmedge.dylib 88MB holy fuck!!
 elseif (WASMTIME)
     ADD_DEFINITIONS(-DWASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)

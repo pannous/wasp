@@ -70,6 +70,9 @@ public:
 		}
 	}
 
+	Code(char *datas, int size, bool needs_copy = true) : Code((bytes) datas, size, needs_copy) {}
+
+
 	Code(byte byte) {
 		data = (bytes) alloc(1, 1);
 		data[0] = byte;
@@ -96,11 +99,6 @@ public:
 			*(long *) data = nr;
 			length = 8;
 		}
-	}
-
-	Code(char *datas, int size) {
-		data = (bytes) datas;
-		length = size;
 	}
 
 	Code(chars string, bool size_header = true, bool null_terminated = false) {
@@ -284,6 +282,8 @@ public:
 
 	void save(char *file_name = "test.wasm") {
 #ifndef WASM
+		if(!String(file_name).endsWith(".wasm"))
+			file_name =(char *) concat(file_name, ".wasm");
 		FILE *file = fopen(file_name, "wb");
 		fwrite(data, length, 1, file);
 		fclose(file);
