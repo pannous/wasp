@@ -886,7 +886,7 @@ Section *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, BinarySe
 	return nullptr;
 }
 
-Code merge_files(std::vector<String> infiles) {
+Code merge_files(List<String> infiles) {
 	Linker linker;
 	Result ok = Result::Ok;
 	for (const String &input_filename: infiles) {
@@ -928,9 +928,9 @@ Code code(std::vector<uint8_t> vector1) {
 
 
 void merge_files(int argc, char **argv) {
-	std::vector<String> infiles;
+	List<String> infiles;
 	while (argc-- > 0)
-		infiles.push_back(argv[argc]);
+		infiles.add(argv[argc]);
 	merge_files(infiles);
 }
 
@@ -1233,13 +1233,13 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int 
 			}
 		} else if (op == i32_auto) {
 			int nr = unsignedLEB128(section_data, length, start);
-			printf("i32.const %d", nr);
+			printf("i32.const %d\n", nr);
 		} else {
 			int arg_bytes = opcode_args[op];
 			if (arg_bytes > 0)
 				start += arg_bytes;
 			if (arg_bytes < 0)
-				printf("UNKNOWN OPCODE ARGS %d", op);
+				printf("UNKNOWN OPCODE ARGS %x %d\n", op, op);
 		}
 	}
 	return relocs;

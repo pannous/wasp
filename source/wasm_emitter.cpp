@@ -13,6 +13,7 @@
 #include "wasm_helpers.h"
 //#include "wasm_runner.h"
 #include "wasm_reader.h"
+#include "wasm_merger.h"
 
 int runtime_offset = 0; // imports + funcs
 int import_count = 0;
@@ -2332,3 +2333,34 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	return code.clone();
 }
 
+
+// todo dedup runtime_emit!
+//Node emit(String code, ParseOptions options) {
+Node emit(String code) {// emit and run!
+//	if (code.endsWith(".wasm")){
+//		auto filename = findFile(code);
+//		return Node(run_wasm(filename));
+//	}
+	Node data = parse(code);
+#ifdef RUNTIME_ONLY
+#ifdef INTERPRETER
+	return data.interpret();
+#endif
+	return data;
+#endif
+	data.print();
+	clearContext();
+	Node &charged = analyze(data);
+	Code binary = emit(charged);// options & no_main ? 0 , 0
+	merge_module_binaries.add(binary);
+#ifdef INCLUDE_MERGER
+	Code out = merge_binaries(merge_module_binaries);
+	out.save();
+	long result = out.run();// check js console if no result
+	return smartNode(result);
+#else
+	if (merge_module_binaries.size()>0)
+		error("wasp compiled without binary merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
+	return ERROR;
+#endif
+}
