@@ -22,9 +22,9 @@ WasmEdge_Result ExternSquare(void *Data,
                              const WasmEdge_CallingFrameContext *CallFrameCxt,
                              const WasmEdge_Value *In, WasmEdge_Value *Out) {
 	// Function type: {externref, i32} -> {i32}
-	uint32_t (*Func)(uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
-	uint32_t C = Func(WasmEdge_ValueGetI32(In[1]));
-	Out[0] = WasmEdge_ValueGenI32(C);
+//	uint32_t (*Func)(uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
+//	uint32_t C = Func(WasmEdge_ValueGetI32(In[1]));
+//	Out[0] = WasmEdge_ValueGenI32(C);
 	return WasmEdge_Result_Success;
 }
 
@@ -34,9 +34,9 @@ WasmEdge_Result ExternAdd(void *Data,
                           const WasmEdge_CallingFrameContext *CallFrameCxt,
                           const WasmEdge_Value *In, WasmEdge_Value *Out) {
 	// Function type: {externref, i32, i32} -> {i32}
-	uint32_t (*Func)(uint32_t, uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
-	uint32_t C = Func(WasmEdge_ValueGetI32(In[1]), WasmEdge_ValueGetI32(In[2]));
-	Out[0] = WasmEdge_ValueGenI32(C);
+//	uint32_t (*Func)(uint32_t, uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
+//	uint32_t C = Func(WasmEdge_ValueGetI32(In[1]), WasmEdge_ValueGetI32(In[2]));
+//	Out[0] = WasmEdge_ValueGenI32(C);
 	return WasmEdge_Result_Success;
 }
 

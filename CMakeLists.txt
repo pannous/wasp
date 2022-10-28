@@ -22,7 +22,6 @@ set(INCLUDE_MERGER 1)
 #set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
 #ADD_DEFINITIONS(-DMULTI_VALUE)
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
-#ADD_DEFINITIONS(-DNO_TESTS) # CAREFUL: unused functions may get optimized away, see -Wl,export-all -Wl,no-gc…
 
 if (NOT WASM)
     if (NOT RUNTIME_ONLY)
@@ -45,6 +44,10 @@ if (NOT WASM)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
 endif () # else :
+
+if (NOT NO_TESTS)
+    set(SOURCE_FILES ${SOURCE_FILES} source/tests.cpp)
+endif ()
 
 if (INCLUDE_MERGER)
     ADD_DEFINITIONS(-DINCLUDE_MERGER)
@@ -83,7 +86,7 @@ if (RELEASE)
     MESSAGE(RELEASE)
     set(RELEASE 1)
     #    set(RUNTIME_ONLY 1)
-    #    set(NO_TESTS 1)
+    set(NO_TESTS 1)
     SET(COPY_PHASE_STRIP YES)
     SET(STRIP_INSTALLED_PRODUCT YES)
     SET(STRIP_STYLE all)

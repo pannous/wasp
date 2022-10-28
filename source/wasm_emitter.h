@@ -25,7 +25,6 @@ extern Map<String, int> functionIndices;
 //extern Map<String /* implicit indices 0,1,2,… */, Node* /* compile-time modifiers/values? */> globals; // access from Angle!
 
 
-Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "main");
 
 // private, could be moved:
 Code emitWhile(Node &node, String context);
@@ -90,3 +89,6 @@ Code emitData(Node node, String context);
 Valtype fixValtype(Valtype &valtype);
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
+
+Node emit(String code);//  wasp -> code -> wasm -> data
+Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "main");
