@@ -1,6 +1,12 @@
 #ifndef _Util_h_
 #define _Util_h_
 
+
+typedef unsigned char byte;
+typedef const char *chars;
+typedef byte *bytes;
+
+
 enum smart_pointer_masks {
 //	float_header_64 = 0x0020000000000000, not needed, use:
 	double_mask_64 = 0x7F00000000000000L,
@@ -99,4 +105,5 @@ bool isSmartPointer(long long d);
 
 //Node smartValue(long smartPointer);
 Node smartNode(long long smartPointer64);
+
 //String smartValue2(long smartPointer);
