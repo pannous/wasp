@@ -17,6 +17,16 @@
 #include "Code.h"
 #include "wasm_reader.h"
 
+#include <map>
+#include "Map.h"
+#include "wasm_patcher.h"
+//#include "wasm_reader.h"
+#include "Code.h"
+
+
+std::map<short, int> new_indices = {{0, 1},
+                                    {1, 2}};
+
 Code createSection(Sections sectionType, Code data);
 
 Code code(std::vector<uint8_t> vector1);
@@ -28,10 +38,6 @@ using namespace wabt::link;
 //using wabt::Reloc;
 //using wabt::RelocType;
 //using wabt::WriteU32Leb128Raw;
-
-typedef unsigned char byte;
-typedef const char *chars;
-typedef byte *bytes;
 
 
 //String s(String s) {
@@ -266,7 +272,7 @@ public:
 
 	void CreateRelocs();
 
-	std::vector<Reloc> PatchCodeSection(std::vector<byte> section_data, int length, size_t offset);
+	std::vector<Reloc> PatchCodeSection(std::vector<byte> section_data, int length, size_t offset, size_t indexOffset);
 
 	void PatchCodeSection(bytes section_data, int length, size_t i);
 
@@ -717,6 +723,8 @@ void Linker::ResolveSymbols() {
 				import.active = false;
 				import.foreign_binary = export_info.binary;
 				import.foreign_index = export_info.export_->index;
+				import.relocated_function_index = export_index;
+				new_indices[import.foreign_index] = import.relocated_function_index;
 				binary->active_function_imports--;
 				printf("LINKED export to import: %s\n", import.name.data);
 			} else {
@@ -754,13 +762,12 @@ void Linker::CalculateRelocOffsets() {
 		binary->imported_global_index_offset = total_global_imports;
 		binary->memory_page_offset = memory_page_offset;
 
-		size_t delta = 0;
+		size_t delta = 0;// number of functions removed for this binary ( imports linked )
 		for (size_t i = 0; i < binary->function_imports.size(); i++) {
 			if (!binary->function_imports[i].active) {
 				delta++;
 			} else {
-				binary->function_imports[i].relocated_function_index =
-						total_function_imports + i - delta;
+				binary->function_imports[i].relocated_function_index = total_function_imports + i - delta;
 			}
 		}
 
@@ -779,15 +786,13 @@ void Linker::CalculateRelocOffsets() {
 					type_count += sec->count;
 					break;
 				case BinarySection::Global:
-					binary->global_index_offset = total_global_imports -
-					                              sec->binary->global_imports.size() +
-					                              global_count;
+					binary->global_index_offset = total_global_imports - sec->binary->global_imports.size() + global_count;
 					global_count += sec->count;
 					break;
-				case BinarySection::Function:
-					binary->function_index_offset = total_function_imports -
-					                                sec->binary->function_imports.size() +
-					                                function_count;
+				case BinarySection::Function: {
+					Index new_offset = total_function_imports - sec->binary->function_imports.size() + function_count;
+					binary->function_index_offset = new_offset;
+				}
 					function_count += sec->count;
 					break;
 				default:
@@ -850,7 +855,8 @@ void Linker::CreateRelocs() {
 		//	binary->sections;
 		Section *section = getSection(binary, BinarySection::Code);
 		if (!section)return;
-		auto relocs = PatchCodeSection(binary->data, binary->data.size(), section->offset + 1);
+		Index indexOffset = binary->function_index_offset;
+		auto relocs = PatchCodeSection(binary->data, binary->data.size(), section->offset + 1, indexOffset);
 		for (Reloc &reloc: relocs)
 			section->relocations.push_back(reloc);
 //		if(!section->data.data_segments)
@@ -866,7 +872,7 @@ void Linker::CreateRelocs() {
 
 OutputBuffer Linker::PerformLink() {
 	CalculateRelocOffsets();
-	ResolveSymbols();
+	ResolveSymbols(); // LINK import to exports …  binary->active_function_imports--
 	CalculateRelocOffsets();// again: might be negative if import is removed!
 	CreateRelocs();
 	DumpRelocOffsets();
@@ -935,21 +941,6 @@ void merge_files(int argc, char **argv) {
 }
 
 
-//#import "wasm_patcher.cpp"
-
-//
-// Created by me on 19.10.21.
-//
-#include <map>
-#include "wasm_patcher.h"
-//#include "wasm_reader.h"
-
-#include "Map.h"
-#include "Code.h"
-
-std::map<short, int> new_indices = {{0, 1},
-                                    {1, 2}};
-//Map<short, int> new_indices = {{1, 2}};
 //Map<short, int> opcode_args = {
 // todo -1 everywhere can't be right
 std::map<short, int> opcode_args = {
@@ -1214,7 +1205,7 @@ std::map<short, int> opcode_args = {
 typedef unsigned char *bytes;
 
 
-std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int length, size_t offset) {
+std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int length, size_t offset, size_t indexOffset) {
 	std::vector<Reloc> relocs;
 	//	int codeCount = unsignedLEB128(codes_vector);
 	//	Code code = vec(codes);
@@ -1228,7 +1219,10 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int 
 			short nop_offset = start;
 			short index = unsignedLEB128(section_data, length, start);
 			if (new_indices.contains(index)) {
-				Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset - offset + 1, new_indices[index]);
+				int neu = index + indexOffset; // internally shifted
+				if (new_indices.contains(index))
+					neu = new_indices[index]; // mapped to other module's export
+				Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset - offset + 1, neu);
 				relocs.push_back(reloc);
 			}
 		} else if (op == i32_auto) {

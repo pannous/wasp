@@ -2,6 +2,7 @@
 #include "Wasp.h"
 #include "wasm_reader.h"
 #include "wasm_merger.h"
+#include "wasm_emitter.h"
 
 #define assert_throws(αα)  {printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);bool old=panicking;try{ \
 panicking=false;throwing=true;emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line(); \
