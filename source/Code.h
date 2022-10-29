@@ -403,7 +403,7 @@ enum Valtype {
 
 Valtype mapTypeToWasm(Node &n);
 
-chars typeName(Valtype t);
+chars typeName(Valtype t, bool fail= true);
 
 
 // https://webassembly.github.io/spec/core/binary/types.html#binary-blocktype
