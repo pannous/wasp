@@ -2232,7 +2232,7 @@ void testCurrent() {
 //	assert_equals(~0, 0);// what is ~0 ? bitwise negation, so -1 in this context!
 //	testWasmRunner();
 //	testLeaks();
-	testMergeOwn();
+//	testMergeOwn();
 	testLogarithm();
 //	testMergeRelocate();
 	testMergeWabt();

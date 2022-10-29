@@ -56,6 +56,269 @@ String s(String x) { return x; }
 //#define LOG_DEBUG(fmt, ...) if (s_debug) s_log_stream->Writef(fmt, __VA_ARGS__);
 #define LOG_DEBUG(fmt, ...) if (s_debug) printf(fmt, __VA_ARGS__);
 
+int leb = -2;// special marker for varlength leb argument ( i32.const … )
+int heaptype = -3;
+int u32 = 4;
+int block_index = leb;
+int i32_type = 4;
+// https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
+std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code (not the stack values! e.g. 4 bytes for f32.const )
+		{nop,                 0}, // useful for relocation padding call 1 -> call 10000000
+		{block,               leb},
+		{loop,                0},
+		{if_i,                0},// precede by i32 result}, follow by i32_type {7f}
+		{elsa,                0},
+		{return_block,                0},
+
+		// EXTENSIONS:
+		{try_,                -1},
+		{catch_,              -1},
+		{throw_,              -1},
+		{rethrow_,            -1},
+		{br_on_exn_,          -1}, // branch on exception
+
+		{end_block,           0}, //11
+		{br,                  block_index},
+		{br_if,               block_index},
+		{return_block,        -1},
+		{function,            -1},
+
+		// EXTENSIONS:
+		{call_ref,            u32},
+		{return_call_ref,     u32},
+		{func_bind,           u32},// {type $t} {$t : u32
+		{let_local,           -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
+
+		{drop,                0}, // pop stack
+		{select_if,           -1}, // a?b:c ternary todo: use!
+		{select_t,            -1}, // extension … ?
+
+		{local_get,           leb},
+		{local_set,           leb},
+		{local_tee,           leb},
+		{get_local,           leb},// get to stack
+		{set_local,           leb},// set and pop
+		{tee_local,           leb},// set and leave on stack
+
+		{global_get,          -1},
+		{global_set,          -1},
+
+		//{ Anyref/externref≠funcref tables}, Table.get and Table.set {for Anyref only}.
+		//{Support for making Anyrefs from Funcrefs is out of scope
+		{table_get,           -1},
+		{table_set,           -1},
+
+		{i8_load,             0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i16_load,            0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i32_load,            0},// load word from i32 address
+		{f32_load,            0},
+		{i32_store,           0},// store word at i32 address
+		{f32_store,           0},
+		// todo : peek 65536 as float directly via opcode
+		{i64_load,            0}, // memory.peek memory.get memory.read
+		{i64_store,           0}, // memory.poke memory.set memory.write
+		{i32_store_8,         0},
+		{i32_store_16,        0},
+		{i8_store,            0},
+		{i16_store,           0},
+
+		//{i32_store_byte, -1},// store byte at i32 address
+		{i32_auto,            leb},
+		{i32_const,           leb},
+		{i64_auto,            leb},
+		{i64_const,           leb},
+		{f32_auto,            4},
+		{f64_const,            8},
+
+		{i32_eqz,             0}, // use for not!
+//		{negate,                              -1},
+//		{not_truty,                           -1},
+		{i32_eq,              0},
+		{i32_ne,              0},
+		{i32_lt,              0},
+		{i32_gt,              0},
+		{i32_le,              0},
+		{i32_ge,              0},
+
+		{i64_eqz,             -1},
+		{f32_eqz,             -1}, // HACK: no such thing!
+
+
+		{i64_eqz,             0},
+		{i64_eq,              0},
+		{i64_ne,              0},
+		{i64_lt_s,            0},
+		{i64_lt_u,            0},
+		{i64_gt_s,            0},
+		{i64_gt_u,            0},
+		{i64_le_s,            0},
+		{i64_le_u,            0},
+		{i64_ge_s,            0},
+		{i64_ge_u,            0},
+
+		{f32_eq,              0},
+		{f32_ne,              0}, // !=
+		{f32_lt,              0},
+		{f32_gt,              0},
+		{f32_le,              0},
+		{f32_ge,              0},
+		{f64_eq,              0},
+		{f64_ne,              0}, // !=
+		{f64_lt,              0},
+		{f64_gt,              0},
+		{f64_le,              0},
+		{f64_ge,              0},
+
+		{i32_add,             0},
+		{i32_sub,             0},
+		{i32_mul,             0},
+		{i32_div,             0},
+		{i32_rem,             0}, // 5%4=1
+		{i32_modulo,          0},
+		{i32_rem_u,           0},
+		{i32_and,             0},
+		{i32_or,              0},
+		{i32_xor,             0},
+		{i32_shl,             0},
+		{i32_shr_s,           0},
+		{i32_shr_u,           0},
+		{i32_rotl,            0},
+		{i32_rotr,            0},
+
+		//{⚠ warning: funny UTF characters ahead! todo: replace c => c etc?
+		{i64_clz,             0},
+		{i64_ctz,             0},
+		{i64_popcnt,          0},
+		{i64_add,             0},
+		{i64_sub,             0},
+		{i64_mul,             0},
+//		{i64_div_s,           0},
+//		{i64_div_u,           0},
+		{i64_rem_s,           0},
+		{i64_rem_u,           0},
+		{i64_and,             0},
+		{i64_or,              0},
+		{i64_xor,             0},
+		{i64_s𝗁l,             0},
+		{i64_s𝗁r_s,           0},
+		{i64_s𝗁r_u,           0},
+		{i64_rotl,            0},
+		{i64_rotr,            0},
+
+		// beginning of float opcodes
+		// todo : difference : ???
+		{f32_abs,             0},
+		{f32_neg,             0},
+		{f32_ceil,            0},
+		{f32_floor,           0},
+		{f32_trunc,           0},
+		{f32_round,           0},// truncation ≠ proper rounding!
+		{f32_nearest,         0},
+
+		{f32_sqrt,            0},
+		{f32_add,             0},
+		{f32_sub,             0},
+		{f32_mul,             0},// f32.mul
+		{f32_div,             0},
+
+		{f64_abs,             0},
+		{f64_neg,             0},
+		{f64_ceil,            0},
+		{f64_floor,           0},
+		{f64_trunc,           0},
+		{f64_nearest,         0},
+		{f64_sqrt,            0},
+		{f64_add,             0},
+		{f64_sub,             0},
+		{f64_mul,             0},
+		{f64_div,             0},
+		{f64_min,             0},
+		{f64_max,             0},
+		{f64_copysign,        0},
+
+		{f32_cast_to_i32_s,   0},// truncation ≠ proper rounding {f32_round, -1}!
+		{i32_trunc_f32_s,     0}, // cast/convert != reinterpret
+		{f32_convert_i32_s,   0},// convert FROM i32
+//		{i32_cast_to_f32_s,                   -1},
+		//{i32_cast_to_f64_s =
+
+		{f32_from_int32,      0},
+		{f64_promote_f32,     0},
+		{f64_from_f32,        f64_promote_f32},
+		{i32_reinterpret_f32, 0}, // f32->i32 bit wise reinterpret != cast/trunc/convert
+		{f32_reinterpret_i32, 0}, // i32->f32
+
+		{i32_wrap_i64,        0},
+		{i32_trunc_f32_s,     0},
+		{i32_trunc_f32_u,     0},
+		{i32_trunc_f64_s,     0},
+		{i32_trunc_f64_u,     0},
+		{i64_extend_i32_s,    0},
+		{i64_extend_i32_u,    0},
+		{i64_trunc_f32_s,     0},
+		{i64_trunc_f32_u,     0},
+		{i64_trunc_f64_s,     0},
+		{i64_trunc_f64_u,     0},
+		{f32_convert_i32_s,   0},
+		{f32_convert_i32_u,   0},
+		{f32_convert_i64_s,   0},
+		{f32_convert_i64_u,   0},
+		{f32_demote_f64,      0},
+		{f64_convert_i32_s,   0},
+		{f64_convert_i32_u,   0},
+		{f64_convert_i64_s,   0},
+		{f64_convert_i64_u,   0},
+		{f64_promote_f32,     0},
+		{i32_reinterpret_f32, 0},
+		{i64_reinterpret_f64, 0},
+		{f32_reinterpret_i32, 0},
+		{f64_reinterpret_i64, 0},
+		{f32_from_f64,        f32_demote_f64},
+
+		//{signExtensions
+		{i32_extend8_s,       0},
+		{i32_extend16_s,      0},
+		{i64_extend8_s,       0},
+		{i64_extend16_s,      0},
+		{i64_extend32_s,      0},
+		//{i64_extend_i32_s, -1}, WHAT IS THE DIFFERENCE?
+		// i64.extend_s/i32 sign-extends an i32 value to i64}, whereas
+		// i64.extend32_s sign-extends an i64 value to i64
+
+		//referenceTypes
+		// https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
+		{ref_null,            0},
+		{ref_is_null,         0},
+		{ref_func,            leb}, // -1 varuint32 -1 Returns a funcref reference to function $funcidx
+		//{ref_null=--1},// {{ref null ht} {$t : heaptype  --1:func --1:extern i >= 0 :{i
+		//{ref_typed=--1},// {{ref ht} {$t : heaptype
+		{ref_as_non_null,     -1},// {ref.as_non_null
+		{br_on_null,          u32}, //{br_on_null $l {$l : u32
+		{br_on_non_null,      u32},// {br_on_non_null $l {$l : u32
+
+		// saturated truncation  saturatedFloatToInt
+		//i32_trunc_sat_f32_s=-1},
+		//i32_trunc_sat_f32_u=-1},
+		//i32_trunc_sat_f64_s=-1},
+		//i32_trunc_sat_f64_u=-1},
+		//i64_trunc_sat_f32_s=-1},
+		//i64_trunc_sat_f32_u=-1},
+		//i64_trunc_sat_f64_s=-1},
+		//i64_trunc_sat_f64_u=-1},
+
+		// bulkMemory
+		{memory_init,         -1},
+		{data_drop,           -1},
+		{memory_copy,         -1},
+		{memory_fill,         -1},
+		{table_init,          -1},
+		{elem_drop,           -1},
+		{table_copy,          -1},
+		{table_grow,          -1},
+		{table_size,          -1},
+		{table_fill,          -1},
+};
+
 
 // DANGER: modifies the start reader position of code, but not it's data!
 int unsignedLEB128(bytes section_data, int length, int &start) {
@@ -953,281 +1216,49 @@ void merge_files(int argc, char **argv) {
 
 //Map<short, int> opcode_args = {
 // todo -1 everywhere can't be right
-std::map<short, int> opcode_args = {
-		{nop,                 -1}, // useful for relocation padding call 1 -> call 10000000
-		{block,               -1},
-		{loop,                -1},
-		{if_i,                -1},// precede by i32 result}, follow by i32_type {7f}
-		{elsa,                -1},
-
-		// EXTENSIONS:
-		{try_,                -1},
-		{catch_,              -1},
-		{throw_,              -1},
-		{rethrow_,            -1},
-		{br_on_exn_,          -1}, // branch on exception
-
-		{end_block,           -1}, //11
-		{br,                  -1},
-		{br_if,               -1},
-		{return_block,        -1},
-		{function,            -1},
-
-		// EXTENSIONS:
-		{call_ref,            -1},
-		{return_call_ref,     -1},
-		{func_bind,           -1},// {type $t} {$t : u32
-		{let_local,           -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
-
-		{drop,                -1}, // pop stack
-		{select_if,           -1}, // a?b:c ternary todo: use!
-		{select_t,            -1}, // extension … ?
-
-		{local_get,           -1},
-		{local_set,           -1},
-		{local_tee,           -1},
-		{get_local,           -1},// get to stack
-		{set_local,           -1},// set and pop
-		{tee_local,           -1},// set and leave on stack
-
-		{global_get,          -1},
-		{global_set,          -1},
-
-		//{ Anyref/externref≠funcref tables}, Table.get and Table.set {for Anyref only}.
-		//{Support for making Anyrefs from Funcrefs is out of scope
-		{table_get,           -1},
-		{table_set,           -1},
-
-		{i8_load,             -1}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-		{i16_load,            -1}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-		{i32_load,            -1},// load word from i32 address
-		{f32_load,            -1},
-		{i32_store,           -1},// store word at i32 address
-		{f32_store,           -1},
-		// todo : peek 65536 as float directly via opcode
-		{i64_load,            -1}, // memory.peek memory.get memory.read
-		{i64_store,           -1}, // memory.poke memory.set memory.write
-		{i32_store_8,         -1},
-		{i32_store_16,        -1},
-		{i8_store,            -1},
-		{i16_store,           -1},
-
-		//{i32_store_byte, -1},// store byte at i32 address
-		{i32_auto,            -1},
-		{i32_const,           -1},
-		{i64_auto,            -1},
-		{i64_const,           -1},
-		{f32_auto,            -1},
-
-		{i32_eqz,             -1}, // use for not!
-//		{negate,                              -1},
-//		{not_truty,                           -1},
-		{i32_eq,              -1},
-		{i32_ne,              -1},
-		{i32_lt,              -1},
-		{i32_gt,              -1},
-		{i32_le,              -1},
-		{i32_ge,              -1},
-
-		{i64_eqz,             -1},
-		{f32_eqz,             -1}, // HACK: no such thing!
-
-
-		{i64_eqz,             -1},
-		{i64_eq,              -1},
-		{i64_ne,              -1},
-		{i64_lt_s,            -1},
-		{i64_lt_u,            -1},
-		{i64_gt_s,            -1},
-		{i64_gt_u,            -1},
-		{i64_le_s,            -1},
-		{i64_le_u,            -1},
-		{i64_ge_s,            -1},
-		{i64_ge_u,            -1},
-
-		{f32_eq,              -1},
-		{f32_ne,              -1}, // !=
-		{f32_lt,              -1},
-		{f32_gt,              -1},
-		{f32_le,              -1},
-		{f32_ge,              -1},
-
-		{f64_eq,              -1},
-		{f64_ne,              -1}, // !=
-		{f64_lt,              -1},
-		{f64_gt,              -1},
-		{f64_le,              -1},
-		{f64_ge,              -1},
-
-		{i32_add,             -1},
-		{i32_sub,             -1},
-		{i32_mul,             -1},
-		{i32_div,             -1},
-		{i32_rem,             -1}, // 5%4=1
-		{i32_modulo,          -1},
-		{i32_rem_u,           -1},
-
-		{i32_and,             -1},
-		{i32_or,              -1},
-		{i32_xor,             -1},
-		{i32_shl,             -1},
-		{i32_shr_s,           -1},
-		{i32_shr_u,           -1},
-		{i32_rotl,            -1},
-		{i32_rotr,            -1},
-
-		//{⚠ warning: funny UTF characters ahead! todo: replace c => c etc?
-		{i64_clz,             -1},
-		{i64_ctz,             -1},
-		{i64_popcnt,          -1},
-		{i64_add,             -1},
-		{i64_sub,             -1},
-		{i64_mul,             -1},
-//		{i64_div_s,                       -1},
-//		{i64_div_u,                       -1},
-		{i64_rem_s,           -1},
-		{i64_rem_u,           -1},
-		{i64_and,             -1},
-		{i64_or,              -1},
-		{i64_xor,             -1},
-		{i64_s𝗁l,             -1},
-		{i64_s𝗁r_s,           -1},
-		{i64_s𝗁r_u,           -1},
-		{i64_rotl,            -1},
-		{i64_rotr,            -1},
-
-		// beginning of float opcodes
-		{f32_abs,             -1},
-		{f32_neg,             -1},
-
-		// todo : difference : ???
-		{f32_ceil,            -1},
-		{f32_floor,           -1},
-		{f32_trunc,           -1},
-		{f32_round,           -1},// truncation ≠ proper rounding!
-		{f32_nearest,         -1},
-
-		{f32_sqrt,            -1},
-		{f32_add,             -1},
-		{f32_sub,             -1},
-		{f32_mul,             -1},// f32.mul
-		{f32_div,             -1},
-
-		{f64_abs,             -1},
-		{f64_neg,             -1},
-		{f64_ceil,            -1},
-		{f64_floor,           -1},
-		{f64_trunc,           -1},
-		{f64_nearest,         -1},
-		{f64_sqrt,            -1},
-		{f64_add,             -1},
-		{f64_sub,             -1},
-		{f64_mul,             -1},
-		{f64_div,             -1},
-		{f64_min,             -1},
-		{f64_max,             -1},
-		{f64_copysign,        -1},
-
-		{f32_cast_to_i32_s,   -1},// truncation ≠ proper rounding {f32_round, -1}!
-		{i32_trunc_f32_s,     -1}, // cast/convert != reinterpret
-		{f32_convert_i32_s,   -1},// convert FROM i32
-//		{i32_cast_to_f32_s,                   -1},
-		//{i32_cast_to_f64_s =
-
-		{f32_from_int32,      -1},
-		{f64_promote_f32,     -1},
-		{f64_from_f32,        f64_promote_f32},
-		{i32_reinterpret_f32, -1}, // f32->i32 bit wise reinterpret != cast/trunc/convert
-		{f32_reinterpret_i32, -1}, // i32->f32
-
-		{i32_wrap_i64,        -1},
-		{i32_trunc_f32_s,     -1},
-		{i32_trunc_f32_u,     -1},
-		{i32_trunc_f64_s,     -1},
-		{i32_trunc_f64_u,     -1},
-		{i64_extend_i32_s,    -1},
-		{i64_extend_i32_u,    -1},
-		{i64_trunc_f32_s,     -1},
-		{i64_trunc_f32_u,     -1},
-		{i64_trunc_f64_s,     -1},
-		{i64_trunc_f64_u,     -1},
-		{f32_convert_i32_s,   -1},
-		{f32_convert_i32_u,   -1},
-		{f32_convert_i64_s,   -1},
-		{f32_convert_i64_u,   -1},
-		{f32_demote_f64,      -1},
-		{f64_convert_i32_s,   -1},
-		{f64_convert_i32_u,   -1},
-		{f64_convert_i64_s,   -1},
-		{f64_convert_i64_u,   -1},
-		{f64_promote_f32,     -1},
-		{i32_reinterpret_f32, -1},
-		{i64_reinterpret_f64, -1},
-		{f32_reinterpret_i32, -1},
-		{f64_reinterpret_i64, -1},
-		{f32_from_f64,        f32_demote_f64},
-
-		//{signExtensions
-		{i32_extend8_s,       -1},
-		{i32_extend16_s,      -1},
-		{i64_extend8_s,       -1},
-		{i64_extend16_s,      -1},
-		{i64_extend32_s,      -1},
-		//{i64_extend_i32_s, -1}, WHAT IS THE DIFFERENCE?
-		// i64.extend_s/i32 sign-extends an i32 value to i64}, whereas
-		// i64.extend32_s sign-extends an i64 value to i64
-
-		//referenceTypes
-		//https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
-		{ref_null,            -1},
-		{ref_is_null,         -1},
-		{ref_func,            -1}, // -1 varuint32 -1 Returns a funcref reference to function $funcidx
-		//{ref_null=--1},// {{ref null ht} {$t : heaptype  --1:func --1:extern i >= 0 :{i
-		//{ref_typed=--1},// {{ref ht} {$t : heaptype
-		{ref_as_non_null,     -1},// {ref.as_non_null
-		{br_on_null,          -1}, //{br_on_null $l {$l : u32
-		{br_on_non_null,      -1},// {br_on_non_null $l {$l : u32
-
-		// saturated truncation  saturatedFloatToInt
-		//i32_trunc_sat_f32_s=-1},
-		//i32_trunc_sat_f32_u=-1},
-		//i32_trunc_sat_f64_s=-1},
-		//i32_trunc_sat_f64_u=-1},
-		//i64_trunc_sat_f32_s=-1},
-		//i64_trunc_sat_f32_u=-1},
-		//i64_trunc_sat_f64_s=-1},
-		//i64_trunc_sat_f64_u=-1},
-
-		// bulkMemory
-		{memory_init,         -1},
-		{data_drop,           -1},
-		{memory_copy,         -1},
-		{memory_fill,         -1},
-		{table_init,          -1},
-		{elem_drop,           -1},
-		{table_copy,          -1},
-		{table_grow,          -1},
-		{table_size,          -1},
-		{table_fill,          -1},
-};
+// positive numbers : argument bytes
+// positive numbers : -1 leb var-length
+#define memarg 8 //
+//enum opcode_arg_type{
+//	memarg
+//};
+// see ./wabt_merge/opcode.def
 
 std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int length, size_t offset, size_t size, size_t indexOffset) {
 	std::vector<Reloc> relocs;
-	//	int codeCount = unsignedLEB128(codes_vector);
 	//	Code code = vec(codes);
-	int start = offset;
-	int fun_length = unsignedLEB128(section_data, length, start); // length of ONE function
+	int current = offset;
 //	size_t size = section_data.size()
-//	int fun_length = size; // // length of ALL function segment
-	byte b = section_data[start++];
-//	assert(b == 0x00);// // beginning
+//	int	fun_count = unsignedLEB128(section_data, length, current); // length of ONE function
+	bool begin_function = true;
+	int fun_length=0;
+	int current_fun=0;
+	int fun_end=length;
 //	while ((b = section_data[start++]) != 0x0b and start < length and start - offset < fun_length) { // STOP after function
-	while (start < length and start - offset < size) {// go over ALL functions! ignore 00
-		b = section_data[start++];
+	while (current < length and current - offset < size) {// go over ALL functions! ignore 00
+		if (begin_function) {
+			begin_function= false;
+			fun_length = unsignedLEB128(section_data, length, current); // length of ONE function
+			printf("fun_length $%d : %d\n", current_fun, fun_length);
+			fun_end = current + fun_length ;
+			int locals = unsignedLEB128(section_data, length, current); // length of ONE function
+			printf("locals %d\n", locals);
+			current+=locals*2;// nr+type
+		}
+		byte  b = section_data[current++];
+		if (current >= fun_end){
+			begin_function= true;
+//			assert(b == 0x00);// beginning
+			current_fun++;
+			printf("begin_function %d\n",current_fun);
+			continue;
+//			current++;
+		}
 		Opcodes op = (Opcodes) b;
+		Opcode opcode=Opcode::FromCode(b);
 		if (op == call_) {
-			short nop_offset = start;
-			short index = unsignedLEB128(section_data, length, start);
+			short nop_offset = current;
+			short index = unsignedLEB128(section_data, length, current);
 			int neu = index + indexOffset; // internally shifted
 			if (new_indices.contains(index)) {
 				neu = new_indices[index]; // mapped to other module's export
@@ -1236,15 +1267,20 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int 
 				Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset - offset + 1, neu);
 				relocs.push_back(reloc);
 			}
-		} else if (op == i32_auto) {
-			int nr = unsignedLEB128(section_data, length, start);
-			printf("i32.const %d\n", nr);
+			printf("call $%d -> %d\n", index, neu);
 		} else {
 			int arg_bytes = opcode_args[op];
 			if (arg_bytes > 0)
-				start += arg_bytes;
-			if (arg_bytes < 0)
-				printf("UNKNOWN OPCODE ARGS %x %d\n", op, op);
+				current += arg_bytes;
+			if (arg_bytes == leb){
+				unsignedLEB128(section_data, length, current);// start passed as reference will be MODIFIED!!
+			} // auto variable argument(s)
+			else if (arg_bytes == -1) {
+				printf("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op,opcode.GetName(), arg_bytes);
+				error("");
+//				printf("UNKNOWN :");
+			}
+			printf("OPCODE 0x%x %d “%s” length: %d?\n", op, op,opcode.GetName(), arg_bytes);
 		}
 	}
 	return relocs;
