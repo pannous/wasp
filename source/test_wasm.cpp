@@ -19,6 +19,22 @@ panicking=false;throwing=true;emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα
 #endif
 
 
+void testMergeOwn() {
+//#ifdef WABT_MERGE
+	int size;
+	char *bytes = readFile("test/merge/main.wasm", &size);
+	Code main(bytes, size);
+	bytes = readFile("test/merge/lib2.wasm", &size);
+	Code lib(bytes, size);
+#ifdef INCLUDE_MERGER
+	Code merged = merge_binaries(main, lib);
+	merged.save();
+	int i = merged.run();
+	assert_equals(i, 42);
+//	exit(1);
+#endif
+}
+
 void testWasmStuff();
 
 
@@ -734,25 +750,6 @@ void testOldRandomBugs() {
 void testMergeWabt() {
 #ifdef WABT_MERGE
 	merge_files({"test/merge/main.wasm", "test/merge/lib.wasm"});
-#endif
-}
-
-void testMergeOwn() {
-//	read_wasm()
-//#ifdef WABT_MERGE
-	int size;
-	char *bytes = readFile("test/merge/main.wasm", &size);
-	Code main(bytes, size);
-//	bytes = readFile("test/merge/lib.wasm", &size);
-	bytes = readFile("test/merge/lib2.wasm", &size);
-//	bytes = readFile("wasp.wasm", &size);
-	Code lib(bytes, size);
-#ifdef INCLUDE_MERGER
-	Code merged = merge_binaries(main, lib);
-	merged.save();
-	int i = merged.run();
-	assert_equals(i, 42);
-//	exit(1);
 #endif
 }
 
