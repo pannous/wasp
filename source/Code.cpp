@@ -111,7 +111,7 @@ String sectionName(Sections section) {
 	return "ERROR";
 }
 
-chars typeName(Valtype t) {
+chars typeName(Valtype t, bool fail) {
 	switch (t) {
 		case Valtype::i32t:
 			return "i32";
@@ -136,6 +136,7 @@ chars typeName(Valtype t) {
 		case Valtype::todoe:
 			return "«todo»";
 		default:
+			if (fail)
 			error("missing name for Valtype "s + t);
 	}
 	return 0;
