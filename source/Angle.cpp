@@ -141,6 +141,7 @@ Node interpret(String code) {
 }
 
 
+// todo: merge with emit
 Node eval(String code) {
 	Node parsed = parse(code);
 #ifdef RUNTIME_ONLY
@@ -153,6 +154,7 @@ Node eval(String code) {
 #endif
 	{
 		prepareContext();
+		preRegisterSignatures();
 		analyzed.setDefault(false);
 		long results = emit(analyze(parsed)).run();
 		auto resultNode = smartNode(results);
@@ -891,7 +893,7 @@ Node &groupFunctionCalls(Node &expressiona, String context) {
 		Signature &signature = functionSignatures[name];
 		signature.is_used = true;
 //		signature.import();// todo remvoe hack
-//		check(signature.is_import)// BUG!! signature.is_import is LOST(false) for log10 HOW???
+//		check(signature.is_import)// BUG!! signature.is_import is LOST(false) for log10 HOW??? deep field sig.List lost on copy
 
 		int minArity = signature.size();// todo: default args!
 		int maxArity = signature.size();
@@ -1107,10 +1109,11 @@ int run_wasm_file(chars file) {
 
 
 void preRegisterSignatures() {
-	// ORDER MATTERS: will be used for functionIndices later!
+	// ORDER MATTERS: will be used for functionIndices later! todo: huh?
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));// todo: if used
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 // todo: remove all as they come via wasp.wasm log.wasm etc
+// OK to pass stack Signature(), because copy by value functionSignatures not refs
 	functionSignatures.insert_or_assign("log10", Signature().import().add(float64).returns(float64));
 	Signature &signature = functionSignatures["log10"];
 //	check(signature.is_import);
@@ -1146,11 +1149,15 @@ void preRegisterSignatures() {
 	// todo: long + double !
 	// imports
 	functionSignatures["modulo_float"] = Signature().builtin().add(float32).add(float32).returns(float32);
-	functionSignatures["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
+//	functionSignatures["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
+	functionSignatures.insert_or_assign("modulo_double", Signature().builtin().add(float64).add(float64).returns(float64));
 //	functionSignatures["square"] = Signature().add(i64).returns(i64).import();
-	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
+	functionSignatures.insert_or_assign("square", Signature().import().add(int32).returns(int32));
+//	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 //	functionSignatures["main"] = Signature().returns(i32t);;
-	functionSignatures["main"] = Signature().returns(i64t); // ok in all modern environments~
+//	functionSignatures["main"] = Signature().returns(i64t); // ok in all modern environments~
+//	functionSignatures.insert_or_assign("main", Signature().returns(i64t));
+	functionSignatures.insert_or_assign("main", Signature().returns(i32));
 	functionSignatures["print"] = functionSignatures["puts"];// todo: for now, later it needs to distinguish types!!
 	functionSignatures["paint"] = Signature().import().returns(voids);// paint surface
 	functionSignatures.insert_or_assign("init_graphics", Signature().import().returns(pointer));// surface

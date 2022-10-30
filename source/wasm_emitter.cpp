@@ -1681,7 +1681,7 @@ Code emitBlock(Node &node, String context) {
 			block.addConst64(string_header_64);
 			block.addByte(i64_or);
 			last_type = int64;
-			needs_cast = false;
+			needs_cast = return_type == i64;
 		} else if (last_typo.kind == reference) {
 //			if (last_type==charp)
 //				block.addConst(string_header_64).addByte(i64_or);
@@ -2236,6 +2236,7 @@ void prepareContext() {
 	referenceIndices.clear();
 	referenceMap.clear();
 	functionCodes.clear();
+//	functionSignatures.clear();// sure?
 	typeMap.setDefault(-1);
 	typeMap.clear();
 	referenceMap.setDefault(Node());
@@ -2249,6 +2250,7 @@ void prepareContext() {
 	functionIndices.setDefault(-1);
 	functionCodes.setDefault(Code());
 	functionSignatures.setDefault(Signature());
+//	preRegisterSignatures();
 }
 
 [[nodiscard]]

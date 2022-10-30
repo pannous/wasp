@@ -234,7 +234,7 @@ public:
 
 	bool leave_blank = false;//true;
 	bool use_default_constructor = false;
-	T defaulty;
+	[[maybe_unused]] T defaulty;
 
 	void setDefault(T d) {
 		defaulty = d;
