@@ -85,6 +85,7 @@ static NativeSymbol native_symbols[] =
 						NULL,                // attachment is NULL
 						false
 				},
+//				{"square", (void *) squarl, "(I)I", NULL, false},
 				{"square", (void *) squari, "(i)i", NULL, false},
 				{"√", (void *) sqrt1, "(i)i", NULL, false},
 				{"puti", (void *) puti, "(i)", NULL, false},

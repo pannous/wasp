@@ -18,8 +18,10 @@ LINK_DIRECTORIES(/usr/local/lib)
 
 #set(SDL 1) # Graphics
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
-set(INCLUDE_MERGER 1)
-#set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
+#set(INCLUDE_MERGER 1) # works with WASI
+set(INCLUDE_MERGER 0)
+set(WASI 0) # OK TO SET HERE
+#set(WASM XXX) SET VIA TOOLCHAIN ONLY!
 #ADD_DEFINITIONS(-DMULTI_VALUE)
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
 
@@ -71,6 +73,8 @@ endif ()
 
 
 if (WASM)
+    set(WASI 0) # increases size by factor 10!! 100873 Oct 14  2021 wasp.wasm => 1074221 Oct 30 19:06 wasp.wasm_10x_with_WASI
+    set(RUNTIME_ONLY 1)
     ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (NOT WASI)
         ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
@@ -208,7 +212,9 @@ set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cp
 
 
 if (RUNTIME_ONLY)
+    message("RUNTIME_ONLY!")
     ADD_DEFINITIONS(-DRUNTIME_ONLY)
+    set(INCLUDE_MERGER 0)
 else ()
     message("NOT RUNTIME_ONLY")
     set(SOURCE_FILES ${SOURCE_FILES} source/Code.cpp)
@@ -272,12 +278,13 @@ if (WASM) # OR WASI)
         set(CMAKE_ISYSROOT "") # typo? =>
         set(CMAKE_SYSROOT "")
         ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
+        SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include? NO!
     else ()
+        ADD_DEFINITIONS(-DPURE_WASM) # same as #ifdef WASM #ifndef WASI
         ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
         ADD_COMPILE_FLAG("-nostdlib -march=wasm") #-v
-        #        ADD_LINK_OPTIONS("--no-entry")
+        ADD_LINK_OPTIONS("-Wl,--no-entry") # if as library
     endif ()
-    SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
 
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem ... -Oz -c ") # BREAKS BUILD! ???
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan ")
@@ -325,7 +332,11 @@ if (WASM) # OR WASI)
         set(SOURCE_FILES ${SOURCE_FILES} source/exceptions.cpp)
         #        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
         #        --no-validation   --debug
-        ADD_COMPILE_FLAG("-Oz -Qn -Ws,-O4,--gc-sections") # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
+        ADD_COMPILE_FLAG("-Oz -Qn")
+        ADD_COMPILE_FLAG("-Wl,--gc-sections")
+        ADD_COMPILE_FLAG("-Wl,-O4")
+
+        # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
         # todo ^^       warning: unknown warning option '-Ws,--lto-O3,-O4,--gc-sections'  --lto-O3,
         ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
         if (EMCC) # emscripten

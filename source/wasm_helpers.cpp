@@ -34,6 +34,8 @@ void *wasm_memory = 0;// c pointer of VM, NOT memory inside wasm module
 #endif
 
 #ifdef WASM
+#ifndef WASI
+_LIBCPP_OVERRIDABLE_FUNC_VIS void  operator delete(void* __p) _NOEXCEPT;
 void free(void*){/*lol*/}
 
 void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
@@ -58,6 +60,9 @@ void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	}
 	return last;
 }
+#endif
+
+
 void println(String s){
 	print(s);
 	put_char('\n');
@@ -67,8 +72,18 @@ void println(String s){
 ////	while(*s)put_char(*s++);
 //}
 
-// todo : just use WASI for printf (!?)
 
+// todo : just use WASI for printf, OK but still needed for PURE_WASM without WASI
+void printf(chars format) {
+	print(String(format));
+}
+
+#ifdef WASI
+#endif
+extern "C"
+int printf(const char *__restrict format, ...){
+	print(format);// todo: all unsupported variants! modulo varargs?
+}
 
 void printf(chars format, uint32_t i) {
 	print(String(format) % (int) i);
@@ -77,6 +92,12 @@ void printf(chars format, uint32_t i) {
 
 void printf(chars format, int i) {
 	print(String(format) % i);
+}
+void printf(chars format, char c) {
+	print(String(format) % c);
+}
+void printf(char const *format, codepoint c){
+	print(String(format) % c);
 }
 
 #ifndef WASM
@@ -202,6 +223,7 @@ void *alloc(int size, int num) {
 
 //#ifdef PURE_WASM
 #ifdef WASM
+#ifndef WASI
 // unmapped import calloc : header provided by stdlib.h but we need our own implementation!
 //void *calloc(int size, int num) {// clean ('0') alloc
 ///opt/wasm/wasi-sdk/share/wasi-sysroot/include/stdlib.h
@@ -216,12 +238,13 @@ void *calloc(size_t num, size_t size) //__attribute__((__malloc__, __warn_unused
 	return mem;
 }
 
-extern "C" void * memset ( void * ptr, int value, size_t num ){
+void * memset ( void * ptr, int value, size_t num ){
 	int* p=(int*) ptr;
 	while(num-->0)*p++=value;
 	return ptr;//?
 }
 
+#endif
 #endif
 // WOW CALLED INTERNALLY FROM C!!
 //extern "C"
@@ -300,7 +323,7 @@ void error1(chars message, chars file, int line) {
 }
 
 void newline() {
-	printf("\n");
+	print("\n");
 }
 
 void info(chars msg) {
@@ -328,6 +351,10 @@ int squari(int a) {
 	return a * a;
 }
 
+// function attempted to return an incompatible value
+long squarl(long a) {
+	return a * a;
+}
 // wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and print()
 double sqrt1(double a) {
 #ifndef WASM
@@ -381,13 +408,10 @@ void memcpy0(char *destination, char *source, size_t num) {
 		destination[num] = source[num];
 	}
 }
-//void * memcpy (void * destination, const void * source, size_t num ){
-//	memcpy0((char *) destination, (char *) source, num);
-//}
 
 #ifdef WASM
 #ifndef WASI
-extern "C"
+//extern "C"
 void *memcpy(void *destination, const void *source, size_t num) {
 	memcpy0((char *) destination, (char *) source, num);
 	return destination;// yes?
@@ -471,13 +495,13 @@ void panic() {
 //	printf("%s", c);
 //}
 
-
+#ifndef WASI
 int puts(chars c) { // // int return needed for stdio compatibilty !
 //	if(from wasm)result=c
 	if (c)printf("%s", c);
 	return 1;// stdio
 }
-
+#endif
 void puti(int i) {
 	printf("%d", i);
 }
@@ -528,4 +552,12 @@ long powi(int a, int b) {
 //#endif
 //#endif
 
-//#ifdef RUNTIME_ONLY
+#ifdef RUNTIME_ONLY // No Angle.cpp!
+const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm compiled as 'RUNTIME_ONLY'";
+void clearContext(){}
+Node &analyze(Node &node, String context){return *new Node(RUNTIME_ONLY_ERROR);}
+Node eval(String code){return Node(RUNTIME_ONLY_ERROR);}
+Node interpret(String code){return Node(RUNTIME_ONLY_ERROR);}
+int run_wasm_file(chars file){error(RUNTIME_ONLY_ERROR);return -1;}
+void console(){error(RUNTIME_ONLY_ERROR);}
+#endif
