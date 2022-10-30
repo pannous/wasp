@@ -3,6 +3,8 @@
 // Created by pannous on 15.07.20.
 //
 
+// YOU NEED extern "C" to keep the name for UNIMPLEMENTED functions only
+
 #include <cstddef> // size_t  FINE with wasm!
 
 typedef const char *chars;
@@ -86,11 +88,12 @@ extern "C" void put_char(codepoint c);
 //extern "C" int putchar(int c);// stdio
 
 extern "C" void putf(float f);
+extern "C" int square(int n);// test wasm
 
 double powd(double x, double y);
 
-extern "C" long squarel(long n);// test wasm, otherwise use x² => x*x in analyze!
-extern "C" double square(double n);// test wasm
+long squarel(long n);// test wasm, otherwise use x² => x*x in analyze!
+double square_double(double n);// test wasm
 
 extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
 #ifndef WASM
@@ -116,7 +119,7 @@ void *alloc(int size, int num);
 // Provided by /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h:15:7:
 // Provided by /opt/wasm/wasi-sdk/share/wasi-sysroot//include/stdlib.h
 #ifdef PURE_WASM
-void *calloc(size_t __nmemb, size_t __size) __attribute__((__malloc__, __warn_unused_result__));
+//void *calloc(size_t __nmemb, size_t __size) __attribute__((__malloc__, __warn_unused_result__));
 //void* calloc(int i,int num=1);// different from complicated alloc.h type!
 #endif
 
@@ -158,8 +161,10 @@ extern "C" void *memset(void *ptr, int value, size_t num);
 
 #ifndef WASI
 #ifdef WASM
+//void printf(chars no_format);
+typedef unsigned int uint32_t;
 
-void printf(chars no_format);
+void printf(chars);
 
 void printf(chars, chars);
 
