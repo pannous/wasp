@@ -2210,8 +2210,16 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearContext();
-	assert_emit("10007%10000", 7);
+	assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
 //	assert_equals(~0, 0);// what is ~0 ? bitwise negation, so -1 in this context!
+
+//functionIndices
+// todo Signature BUGs may surely result from deep fields <<<
+//	Map<int, Valtype> types; // => S *keys !!!
+//	List<Valtype> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
+// todo Signature BUGs 1. repeated call to preRegisterSignatures() NECESSARY!!
+// todo Signature BUGs 2. signature.is_import is LOST(false) for log10
+
 //	testWasmRunner();
 //	testLeaks();
 //	testMergeOwn();

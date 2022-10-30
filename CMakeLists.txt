@@ -329,12 +329,12 @@ if (WASM) # OR WASI)
         #        ADD_COMPILE_FLAG("-fPIC") # does not help
         ADD_COMPILE_FLAG("-Wl,--compress-relocations,--strip-debug") # incompatible with output debug information. Please pass --strip-debug
         set(SOURCE_FILES ${SOURCE_FILES} source/exceptions.cpp)
-        #        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
+        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
         #        --no-validation   --debug
         ADD_COMPILE_FLAG("-Oz -Qn")
         ADD_COMPILE_FLAG("-Wl,--gc-sections")
         ADD_COMPILE_FLAG("-Wl,-O4")
-
+        ADD_COMPILE_FLAG("-O4")
         # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
         # todo ^^       warning: unknown warning option '-Ws,--lto-O3,-O4,--gc-sections'  --lto-O3,
         ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
