@@ -2209,9 +2209,7 @@ void testCurrent() {
 //	exit(1);
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
-#ifndef RUNTIME_ONLY
 	clearContext();
-#endif
 	assert_emit("10007%10000", 7);
 //	assert_equals(~0, 0);// what is ~0 ? bitwise negation, so -1 in this context!
 //	testWasmRunner();
