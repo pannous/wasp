@@ -57,7 +57,7 @@ bool assert_equals_x(Node a, const char *b, char *context = "") {
 
 bool assert_equals_x(Node a, int b, char *context = "") {
 	if (a != Node(b))printf("\nFAILED assert_equals! %lld should be %d %s\n", a.value.longy, b, context);
-	else if (a.kind == reals) printf("OK %f==%d\n", a.value.real, b);
+	else if (a.kind == reals) printf("OK %f==%f\n", a.value.real, (double )b);
 	else printf("OK %lld==%d\n", a.value.longy, b);
 	return a == b;
 }

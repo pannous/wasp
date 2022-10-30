@@ -30,8 +30,10 @@ void testLeaks() {
 }
 
 void testWrong0Termination() {
+#ifndef WASM
 	List<String> builtin_constants = {"pi", "π", 0};
 	assert_equals(builtin_constants.size(), 2);// todo
+#endif
 }
 
 void testStupidLongLong() {
@@ -135,13 +137,13 @@ void testIteration() {
 	for (auto x: args)
 		error("NO ITEM, should'nt be reached");
 
+#ifndef WASM
 	List<String> list = {"1", "2", "3"};// wow initializer_list now terminate!
 //	List<String> list = {"1", "2", "3", 0};
 	int i = 0;
 	for (auto x: list)i++;
 	assert_equals(i, 3);
 
-#ifndef WASM
 	Node items = {"1", "2", "3"};
 //	Node items = Node{"1", "2", "3", 0};
 	i = 0;
@@ -2207,7 +2209,10 @@ void testCurrent() {
 //	exit(1);
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
+#ifndef RUNTIME_ONLY
 	clearContext();
+#endif
+	assert_emit("10007%10000", 7);
 //	assert_equals(~0, 0);// what is ~0 ? bitwise negation, so -1 in this context!
 //	testWasmRunner();
 //	testLeaks();

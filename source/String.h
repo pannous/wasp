@@ -229,7 +229,7 @@ public:
 		if (!share) {
 			data = (char *) alloc(sizeof(char), length + 1);// including \0
 			if (length > 0)
-				memcpy(data, datas, length);
+				memcpy0(data, datas, length);
 			else
 				strcpy2(data, datas, length);
 			data[length] = 0;
@@ -494,6 +494,10 @@ public:
 	}
 
 	String operator%(char c) {
+		return this->replace("%c", String(c).data);
+	}
+
+	String operator%(codepoint c) {
 		return this->replace("%c", String(c).data);
 	}
 

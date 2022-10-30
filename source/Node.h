@@ -73,7 +73,6 @@ void print(Node &n);
 void print(Node *n0);
 //void print(const Node &);
 
-
 //class String;
 union Value {
 //	sizeof(Value)==8 (long)
@@ -267,11 +266,13 @@ public:
 //		length=0;// no children! but where is length??
 //	}
 
+#ifndef WASM
 	Node(const std::initializer_list<String> &_items) : Node() {
 		for (const String &s: _items) {
 			add(new Node(s));
 		}
 	}
+#endif
 
 	// why not auto null terminated on mac?
 	// vargs needs to be 0 terminated, otherwise pray!

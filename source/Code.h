@@ -66,7 +66,7 @@ public:
 		length = len;
 		if (needs_copy) {
 			data = static_cast<bytes>(malloc(length));
-			memcpy(data, a, length);
+			memcpy0(data, a, length);
 		}
 	}
 

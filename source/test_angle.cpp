@@ -16,7 +16,9 @@ void testFunctionParams() {
 }
 
 void testOperatorBinding() {
+#ifndef RUNTIME_ONLY
 	assert_ast("a and b", "and(a,b)");
+#endif
 }
 
 void testCall() {
@@ -312,8 +314,10 @@ void nl() {
 
 //Prescedence typo for Precedence
 void testLogicPrecedence() {
+#ifndef RUNTIME_ONLY
 	check(precedence("and") > 1);
 	check(precedence("and") < precedence("or"));
+#endif
 	assert_is("true", true);
 	assert_is("false", false);
 	Node ok = parse("true or true");
