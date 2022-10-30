@@ -69,14 +69,22 @@ void println(String s){
 
 // todo : just use WASI for printf (!?)
 
-void printf(chars format, int i) {
-	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
+
+void printf(chars format, uint32_t i) {
+	print(String(format) % (int) i);
 }
+
+
+void printf(chars format, int i) {
+	print(String(format) % i);
+}
+
 #ifndef WASM
 void printf(chars format, number i) {
 	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 }
 #endif
+
 void printf(chars format, chars value) {
 	print(String(format).replace("%s", value));
 }
@@ -90,18 +98,29 @@ void printf(chars format, chars i, chars j, int l){
 void printf(chars format, chars i, chars j, chars l){
 print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
 }
+
 void printf(chars format, long i, long j) {
-	if(contains(format,"%ld"))
-	print(String(format).replace("%ld", String(i)).replace("%ld", String(j)));
+	if (contains(format, "%ld"))
+		print(String(format).replace("%ld", String(i)).replace("%ld", String(j)));
 	else
-	print(String(format).replace("%d", String(i)).replace("%d", String(j)));
+		print(String(format).replace("%d", String(i)).replace("%d", String(j)));
 }
+
 void printf(chars format, int i, int j) {
 	print(String(format).replace("%d", String(i)).replace("%d", String(j)));
 }
 
-void printf(chars format, double i) {
-	print(String(format).replace("%f", String(i)));
+void printf(chars format, uint32_t i, uint32_t j) {
+	print(String(format).replace("%d", String((int) i)).replace("%d", String((int) j)));
+}
+
+
+void printf(chars format, double d) {
+	print(String(format) % d);
+}
+
+void printf(chars format, long l) {
+	print(String(format) % l);
 }
 
 void printf(chars format, double i, double j) {
@@ -109,7 +128,7 @@ void printf(chars format, double i, double j) {
 }
 
 void printf(chars format, chars val, int value) {
-	print(String(format).format((char*)val).format(value));
+	print(String(format).format((char *) val).format(value));
 }
 
 void printf(chars format, void* value) {
@@ -443,13 +462,6 @@ void panic() {
 }
 
 #endif
-
-bool tracing = false;
-//bool tracing = true;
-void trace(chars x) {
-	if (tracing)
-		warn(x);
-}
 
 
 #ifndef MY_WASM

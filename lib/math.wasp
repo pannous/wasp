@@ -22,6 +22,7 @@ operator × alias cross < multiply
 ∛:=it^(1/3)
 ∜:=it^(1/4)
 π²:=π*π
+
 func similar a b {
     	float epsilon = abs_f(a + b) / 1000000.;// percentual ++
     	bool ok = a == b or abs_f(a - b) <= epsilon;

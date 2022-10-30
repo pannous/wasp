@@ -80,47 +80,47 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 		{end_block,           0}, //11
 		{br,                  block_index},
 		{br_if,               block_index},
-		{return_block,        -1},
-		{function,            -1},
+		{return_block,    -1},
+		{function,        -1},
 
 		// EXTENSIONS:
-		{call_ref,            u32},
-		{return_call_ref,     u32},
-		{func_bind,           u32},// {type $t} {$t : u32
-		{let_local,           -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
+		{call_ref,        u32},
+		{return_call_ref, u32},
+		{func_bind,       u32},// {type $t} {$t : u32
+		{let_local,       -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
 
-		{drop,                0}, // pop stack
-		{select_if,           -1}, // a?b:c ternary todo: use!
-		{select_t,            -1}, // extension … ?
+		{drop,            0}, // pop stack
+		{select_if,       -1}, // a?b:c ternary todo: use!
+		{select_t,        -1}, // extension … ?
 
-		{local_get,           leb},
-		{local_set,           leb},
-		{local_tee,           leb},
-		{get_local,           leb},// get to stack
-		{set_local,           leb},// set and pop
-		{tee_local,           leb},// set and leave on stack
+		{local_get,       leb},
+		{local_set,       leb},
+		{local_tee,       leb},
+		{get_local,       leb},// get to stack
+		{set_local,       leb},// set and pop
+		{tee_local,       leb},// set and leave on stack
 
-		{global_get,          -1},
-		{global_set,          -1},
+		{global_get,      leb},
+		{global_set,      leb},
 
 		//{ Anyref/externref≠funcref tables}, Table.get and Table.set {for Anyref only}.
 		//{Support for making Anyrefs from Funcrefs is out of scope
-		{table_get,           -1},
-		{table_set,           -1},
+		{table_get,       -1},
+		{table_set,       -1},
 
-		{i8_load,             0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-		{i16_load,            0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-		{i32_load,            0},// load word from i32 address
-		{f32_load,            0},
-		{i32_store,           0},// store word at i32 address
-		{f32_store,           0},
+		{i8_load,         0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i16_load,        0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i32_load,        0},// load word from i32 address
+		{f32_load,        0},
+		{i32_store,       0},// store word at i32 address
+		{f32_store,       0},
 		// todo : peek 65536 as float directly via opcode
-		{i64_load,            0}, // memory.peek memory.get memory.read
-		{i64_store,           0}, // memory.poke memory.set memory.write
-		{i32_store_8,         0},
-		{i32_store_16,        0},
-		{i8_store,            0},
-		{i16_store,           0},
+		{i64_load,        0}, // memory.peek memory.get memory.read
+		{i64_store,       0}, // memory.poke memory.set memory.write
+		{i32_store_8,     0},
+		{i32_store_16,    0},
+		{i8_store,        0},
+		{i16_store,       0},
 
 		//{i32_store_byte, -1},// store byte at i32 address
 		{i32_auto,            leb},
@@ -1237,13 +1237,14 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int 
 //	while ((b = section_data[start++]) != 0x0b and start < length and start - offset < fun_length) { // STOP after function
 	while (current < length and current - offset < size) {// go over ALL functions! ignore 00
 		if (begin_function) {
-			begin_function= false;
+			begin_function = false;
 			fun_length = unsignedLEB128(section_data, length, current); // length of ONE function
-			printf("fun_length $%d : %d\n", current_fun, fun_length);
-			fun_end = current + fun_length ;
+//			printf("fun_length $%d : %d\n", current_fun, fun_length);
+			fun_end = current + fun_length;
 			int locals = unsignedLEB128(section_data, length, current); // length of ONE function
-			printf("locals %d\n", locals);
-			current+=locals*2;// nr+type
+			if (locals > 127)todo("locals>127?");
+//			printf("locals %d\n", locals);
+			current += locals * 2;// nr+type
 		}
 		byte  b = section_data[current++];
 		if (current >= fun_end){
@@ -1272,15 +1273,16 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int 
 			int arg_bytes = opcode_args[op];
 			if (arg_bytes > 0)
 				current += arg_bytes;
-			if (arg_bytes == leb){
+			if (arg_bytes == leb) {
 				unsignedLEB128(section_data, length, current);// start passed as reference will be MODIFIED!!
 			} // auto variable argument(s)
 			else if (arg_bytes == -1) {
-				printf("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op,opcode.GetName(), arg_bytes);
-				error("");
+				printf("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
+				error("UNKNOWN OPCODE");
 //				printf("UNKNOWN :");
 			}
-			printf("OPCODE 0x%x %d “%s” length: %d?\n", op, op,opcode.GetName(), arg_bytes);
+			if (tracing)
+				printf("OPCODE 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
 		}
 	}
 	return relocs;

@@ -20,17 +20,17 @@
 #include <functional>
 //#include <string>
 #include <vector>
+#include "../String.h"
 #include <unordered_map>
 
 #include "common.h"
-#include "../String.h"
 
 
 namespace std {
 	template<>
-	class hash<String> {
+	class hash<::String> {
 	public:
-		size_t operator()(const String &s) const {
+		size_t operator()(const ::String &s) const {
 			return s.hash();
 		}
 	};

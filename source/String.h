@@ -502,6 +502,14 @@ public:
 			return this->replace("%d", itoa0(d));
 		if (contains("%x"))
 			return this->replace("%x", hex(d));
+		if (contains("%i"))
+			return this->replace("%i", itoa0(d));
+		if (contains("%li"))
+			return this->replace("%li", itoa0(d));
+		if (contains("%l"))
+			return this->replace("%l", itoa0(d));
+		if (contains("%zu"))
+			return this->replace("%zu", itoa0(d));
 		error1("missing placeholder %d in string modulo operation s%d");
 		return "«ERROR»";
 	}

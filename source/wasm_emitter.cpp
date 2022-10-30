@@ -1669,8 +1669,12 @@ Code emitBlock(Node &node, String context) {
 	if (abi == wasp_smart_pointers) {
 //		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
 //		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string
-		if (last_typo.type == int_array or last_type == array)
+		if (last_typo.type == int_array or last_type == array) {
 			block.addConst64(array_header_64).addByte(i64_or); // todo: other arrays
+//			if (return_type==float64)
+//			block.addByte(f64_reinterpret_i64);// hack smart pointers as main return: f64 has int range which is never hit
+			last_type = int64;
+		}
 //		block.addConst32(array_header_32).addByte(i32_or); // todo: other arrays
 		else if (last_typo.kind == strings or last_typo.type == c_string) { // last_type == charp
 			block.addByte(i64_extend_i32_u);
