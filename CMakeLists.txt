@@ -76,6 +76,7 @@ if (WASM)
     set(RUNTIME_ONLY 1)
     ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (NOT WASI)
+        ADD_DEFINITIONS(-DPURE_WASM)
         ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
     endif ()
 endif ()
@@ -271,7 +272,7 @@ endif ()
 if (WASM) # OR WASI)
     message(WASM)
     ADD_DEFINITIONS(-DWASM)
-    #    set(CMAKE_SYSROOT "") // via -DCMAKE_TOOLCHAIN_FILE=wasm.toolchain.cmake
+    set(CMAKE_SYSROOT "") # via -DCMAKE_TOOLCHAIN_FILE=wasm.toolchain.cmake
     if (WASI)
         ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
         set(CMAKE_ISYSROOT "") # typo? =>
@@ -280,7 +281,7 @@ if (WASM) # OR WASI)
     else ()
         ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
         ADD_COMPILE_FLAG("-nostdlib -march=wasm") #-v
-        ADD_LINK_OPTIONS("--no-entry") # if as library
+        ADD_LINK_OPTIONS("-Wl,--no-entry") # if as library
     endif ()
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
 
