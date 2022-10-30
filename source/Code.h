@@ -7,8 +7,9 @@
 #include "Map.h"
 #include "Node.h"
 #include "List.h"
+#ifndef PURE_WASM
 #include <stdio.h>
-
+#endif
 //size_t strlen(const char *__s);
 
 #ifndef WASP_CODE_H

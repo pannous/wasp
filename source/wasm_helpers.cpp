@@ -541,4 +541,22 @@ long powi(int a, int b) {
 //#endif
 //#endif
 
-//#ifdef RUNTIME_ONLY
+#ifdef RUNTIME_ONLY // No Angle.cpp!
+const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm compiled as 'RUNTIME_ONLY'";
+
+void clearContext() {}
+
+Node &analyze(Node &node, String context) { return *new Node(RUNTIME_ONLY_ERROR); }
+
+Node eval(String code) { return Node(RUNTIME_ONLY_ERROR); }
+
+Node interpret(String code) { return Node(RUNTIME_ONLY_ERROR); }
+
+int run_wasm_file(chars file) {
+	error(RUNTIME_ONLY_ERROR);
+	return -1;
+}
+
+void console() { error(RUNTIME_ONLY_ERROR); }
+
+#endif
