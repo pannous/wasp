@@ -1147,6 +1147,7 @@ void preRegisterSignatures() {
 	// imports
 	functionSignatures["modulo_float"] = Signature().builtin().add(float32).add(float32).returns(float32);
 	functionSignatures["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
+//	functionSignatures["square"] = Signature().add(i64).returns(i64).import();
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 //	functionSignatures["main"] = Signature().returns(i32t);;
 	functionSignatures["main"] = Signature().returns(i64t); // ok in all modern environments~

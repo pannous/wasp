@@ -58,12 +58,11 @@ static wasm_trap_t *hello_callback(
 }
 
 // could be unified with wasmer via #define get(0,i32) args[0].data->of.i32 / args[0].of.i32
-wrap(square) {
+wrap(square) {// stupid basic test, wasm import => runtime linking, of cause not useful
 	int n = args[0].of.i32;
 	results[0].of.i32 = n * n;
 	return NULL;
 }
-
 
 wrap(log) {
 	double n = args[0].of.f64;
@@ -230,7 +229,6 @@ wasm_wrap *link_import(String name) {
 	if (name == "panic") return &wrap_exit;
 	if (name == "raise") return &wrap_exit;
 	if (name == "square") return &wrap_square;
-
 
 	if (name == "printf") return &wrap_puts;
 	if (name == "print") return &wrap_puts;
@@ -459,6 +457,16 @@ const wasm_functype_t *funcType(Signature &signature) {
 						return wasm_functype_new_1_0(i);
 					case int32:
 						return wasm_functype_new_1_1(i, i);
+					default:
+						break;
+				}
+			case int64:
+				switch (returnType) {
+					case none:
+					case voids:
+						return wasm_functype_new_1_0(I);
+					case int64:
+						return wasm_functype_new_1_1(I,I);
 					default:
 						break;
 				}
