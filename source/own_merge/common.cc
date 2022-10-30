@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <cerrno>
+#include <cstdarg>
 
 
 String StringPrintf(const char *format, ...) {
