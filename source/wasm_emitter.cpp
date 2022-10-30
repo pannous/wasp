@@ -1813,16 +1813,6 @@ Code importSection() {
 			imports = imports + encodeString("env") + encodeString(fun).addByte(func_export).addType(typeMap[fun]);
 		}
 	}
-
-//	if (functionSignatures["logi"].is_used and ++import_count)
-//		imports = imports + encodeString("env") + encodeString("logi").addByte(func_export).addType(typeMap["logi"]);
-//	if (functionSignatures["logs"].is_used and ++import_count)
-//		imports = imports + encodeString("env") + encodeString("logs").addByte(func_export).addType(typeMap["logs"]);
-//	if (functionSignatures["logf"].is_used and ++import_count)
-//		imports = imports + encodeString("env") + encodeString("logf").addByte(func_export).addType(typeMap["logf"]);
-//	if (functionSignatures["square"].is_used and ++import_count)
-//		imports =
-//				imports + encodeString("env") + encodeString("square").addByte(func_export).addType(typeMap["square"]);
 	int extra_mem = 0;
 	if (memoryHandling == import_memory) {
 		extra_mem = 1;// add to import_section but not to functions:import_count
@@ -1869,10 +1859,11 @@ Code codeSection(Node root) {
 	byte code_data_nop[] = {0/*locals_count*/, end_block};// NOP
 	byte code_data_id[] = {1/*locals_count*/, 1/*one local has type: */, i32t, get_local, 0, return_block,
 	                       end_block}; // NOP
+	byte code_square[] = {1/*locals_count*/, 1/*one local has type: */, f64t, get_local, 0, get_local, 0, f64_mul, return_block, end_block}; // NOP
 
 	byte code_modulo_float[] = {1 /*locals declarations*/, 2 /*two of type*/, float32,
 	                            0x20, 0x00, 0x20, 0x00, 0x20, 0x01, 0x95, 0x8f, 0x20, 0x01, 0x94, 0x93, 0x0b};
-	byte code_modulo_double[] = {1 /*locals declarations*/, 2 /*two of type*/, float64,
+	byte code_modulo_double[] = {1 /*locals variables*/, 2 /*two of type*/, float64,
 	                             0x20, 0x00, //                     | local.get 0
 	                             0x20, 0x00, //                     | local.get 0
 	                             0x20, 0x01, //                     | local.get 1
@@ -1889,6 +1880,8 @@ Code codeSection(Node root) {
 		// order matters, in functionType section!
 		if (functionSignatures["nop"].is_used)
 			code_blocks = code_blocks + encodeVector(Code(code_data_nop, sizeof(code_data_nop)));
+		if (functionSignatures["square"].is_used and functionSignatures["square"].is_builtin)// can also be linked via runtime/import!
+			code_blocks = code_blocks + encodeVector(Code(code_square, sizeof(code_square)));
 		if (functionSignatures["id"].is_used)
 			code_blocks = code_blocks + encodeVector(Code(code_data_id, sizeof(code_data_id)));
 		if (functionSignatures["modulo_float"].is_used)
@@ -2352,6 +2345,7 @@ Node emit(String code) {// emit and run!
 	clearContext();
 	Node &charged = analyze(data);
 	Code binary = emit(charged);// options & no_main ? 0 , 0
+	binary.save("raw.wasm");
 	merge_module_binaries.add(binary);
 #ifdef INCLUDE_MERGER
 	Code out = merge_binaries(merge_module_binaries);

@@ -15,8 +15,8 @@
 Node &result = *new Node();
 
 void testWasmRunner() {
-	int result = run_wasm2("test/test42.wasm");
-	assert_equals(result, 42);
+//	int result = run_wasm("test/test42.wasm");
+//	assert_equals(result, 42);
 }
 
 void testLeaks() {
@@ -158,6 +158,10 @@ void testIteration() {
 //}
 void testLogarithm() {
 	float ℯ = 2.7182818284590;
+	Signature &signature = Signature().import().add(float64).returns(float64);
+//	check(signature.is_import);
+	Signature &signature1 = functionSignatures["log10"];
+//	check(signature1.is_import);
 	assert_emit("use log; log10(100)", 2.);
 	assert_emit("use math; log10(100)", 2.);
 	assert_emit("use math; 10⌞100", 2.);// read 10'er Logarithm
