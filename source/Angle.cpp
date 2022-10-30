@@ -888,13 +888,13 @@ Node &groupFunctionCalls(Node &expressiona, String context) {
 
 		if (not functionSignatures.has(name))// todo load lib!
 			error("missing import for function "s + name);
-		if (not functionSignatures.has(name))// todo load lib!
-			error("missing import for function "s + name);
-		functionSignatures[name].is_used = true;
+		Signature &signature = functionSignatures[name];
+		signature.is_used = true;
+		signature.import();// todo remvoe hack
+		check(signature.is_import)// BUG!! signature.is_import is LOST(false) for log10 HOW???
 
-
-		int minArity = functionSignatures[name].size();// todo: default args!
-		int maxArity = functionSignatures[name].size();
+		int minArity = signature.size();// todo: default args!
+		int maxArity = signature.size();
 
 		if (node.length > 0) {
 //			if minArity == …
@@ -1111,11 +1111,14 @@ void preRegisterSignatures() {
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));// todo: if used
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 // todo: remove all as they come via wasp.wasm log.wasm etc
-	functionSignatures.insert_or_assign("atoi0", Signature().add(charp).returns(int32));// todo int64
-	functionSignatures.insert_or_assign("strlen0", Signature().add(charp).returns(int32));// todo int64
-	functionSignatures.insert_or_assign("malloc", Signature().add(int64).returns(int64));
-	functionSignatures.insert_or_assign("okf", Signature().add(float32).returns(float32));
-	functionSignatures.insert_or_assign("okf5", Signature().add(float32).returns(float32));
+	functionSignatures.insert_or_assign("log10", Signature().import().add(float64).returns(float64));
+	Signature &signature = functionSignatures["log10"];
+//	check(signature.is_import);
+	functionSignatures.insert_or_assign("atoi0", Signature().runtime().add(charp).returns(int32));// todo int64
+	functionSignatures.insert_or_assign("strlen0", Signature().runtime().add(charp).returns(int32));// todo int64
+	functionSignatures.insert_or_assign("malloc", Signature().runtime().add(int64).returns(int64));
+	functionSignatures.insert_or_assign("okf", Signature().runtime().add(float32).returns(float32));
+	functionSignatures.insert_or_assign("okf5", Signature().runtime().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("pow", Signature().import().add(float64).add(float64).returns(float64));
 //	functionSignatures.insert_or_assign("log", Signature().import().add(float32).returns(float32));
 	functionSignatures.insert_or_assign("log", Signature().import().add(float64).returns(float64));
@@ -1134,8 +1137,8 @@ void preRegisterSignatures() {
 	functionSignatures.insert_or_assign("puts", Signature().import().add(charp).returns(voids));
 //	functionSignatures.insert_or_assign("puts", Signature().import().add(charp).returns(int32));
 	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
-	functionSignatures.insert_or_assign("ok", Signature().returns(int32));// todo why not rely on read_wasm again?
-	functionSignatures.insert_or_assign("oki", Signature().add(int32).returns(int32));
+	functionSignatures.insert_or_assign("ok", Signature().runtime().returns(int32));// todo why not rely on read_wasm again?
+	functionSignatures.insert_or_assign("oki", Signature().runtime().add(int32).returns(int32));
 
 //	functionSignatures.insert_or_assign("render", Signature().add(node).add(pointer).returns(none));
 //	functionSignatures.insert_or_assign("render", Signature().runtime().add(node).returns(int32));
@@ -1143,12 +1146,12 @@ void preRegisterSignatures() {
 	// todo: long + double !
 	// imports
 	functionSignatures["modulo_float"] = Signature().builtin().add(float32).add(float32).returns(float32);
-	functionSignatures["modulo_double"].builtin().add(float64).add(float64).returns(float64);
+	functionSignatures["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
 	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 //	functionSignatures["main"] = Signature().returns(i32t);;
 	functionSignatures["main"] = Signature().returns(i64t); // ok in all modern environments~
 	functionSignatures["print"] = functionSignatures["puts"];// todo: for now, later it needs to distinguish types!!
-	functionSignatures["paint"].import().returns(voids);// paint surface
+	functionSignatures["paint"] = Signature().import().returns(voids);// paint surface
 	functionSignatures.insert_or_assign("init_graphics", Signature().import().returns(pointer));// surface
 //	functionSignatures["init_graphics"].import().returns(pointer);// BUUUUG!
 
