@@ -1170,7 +1170,7 @@ void testCustomOperators() {
 }
 
 void testIndexWasm() {
-	assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?!
+	assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
 	assert_emit("i=1;k='hi';k[i]", 'i')
 //	assert_throws("i=0;k='hi';k#i")// todo internal boundary checks? nah, later ;) done by VM:
 // WASM3 error: [trap] out of bounds memory accessmemory size: 65536; access offset: 4294967295
