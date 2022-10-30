@@ -5,9 +5,8 @@
 #ifndef WASP_LIST_H
 #define WASP_LIST_H
 
-#ifdef WASI
 #include <cstdlib> // OK in WASM!
-#endif
+
 #define LIST_ALLOCATION_RESERVED_COUNT 100 // Todo!
 
 #include "wasm_helpers.h"
