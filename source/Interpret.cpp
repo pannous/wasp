@@ -13,10 +13,10 @@
 
 
 Node eval(Node n) {
-#ifndef WASI
-	return n.interpret();
-#endif
+#ifdef WASI
 	return Node();
+#endif
+	return n.interpret();
 }
 
 Node If(Node condition, Node then) {
