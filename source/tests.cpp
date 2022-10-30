@@ -55,7 +55,9 @@ void testFloatReturnThroughMain() {
 //	double x=1.1;// 3ff199999999999a
 //	double x=-1.1;// bff199999999999a
 	long long y = *(long long *) &x;
+#ifndef WASM
 	printf("%llx\n", y);
+#endif
 	y = 0x00FF000000000000;// -> 0.000000 OK
 	x = *(double *) &y;
 	printf("%lf\n", x);
@@ -139,11 +141,13 @@ void testIteration() {
 	for (auto x: list)i++;
 	assert_equals(i, 3);
 
+#ifndef WASM
 	Node items = {"1", "2", "3"};
 //	Node items = Node{"1", "2", "3", 0};
 	i = 0;
 	for (auto x: list)i++;
 	assert_equals(i, 3);
+#endif
 }
 
 //void testLogarithmInRuntime(){
@@ -156,36 +160,7 @@ void testIteration() {
 //	assert_equals(ln(1),0.);
 //	assert_equals(ln(ℯ),1.);
 //}
-void testLogarithm() {
-	float ℯ = 2.7182818284590;
-	Signature &signature = Signature().import().add(float64).returns(float64);
-//	check(signature.is_import);
-	Signature &signature1 = functionSignatures["log10"];
-//	check(signature1.is_import);
-	assert_emit("use log; log10(100)", 2.);
-	assert_emit("use math; log10(100)", 2.);
-	assert_emit("use math; 10⌞100", 2.);// read 10'er Logarithm
-	assert_emit("use math; 100⌟10", 2.);// read 100 lowered by 10's
-	assert_emit("use math; 10⌟100", 2.);
-	assert_emit("use math; ℯ⌟", 2.);
-	assert_emit("use math; ℯ⌟", 2.);
-	assert_emit("log10(100)", 2.); // requires pre-parsing lib and dictionary lookup
-	assert_emit("₁₀⌟100", 2.); // requires pre-parsing lib and dynamic operator-list extension OR 10⌟ as function name
-	assert_emit("10⌟100", 2.); // requires pre-parsing lib and dynamic operator-list extension OR 10⌟ as function name
 
-	assert_emit("use log;ℯ = 2.7182818284590;ln(ℯ)", 1.);
-	assert_emit("use log;ℯ = 2.7182818284590;ln(ℯ)", 1.);
-	assert_emit("ℯ = 2.7182818284590;ln(ℯ*ℯ)", 2.);
-	assert_emit("ln(1)", 0.);
-	assert_emit("log10(100000)", 5.);
-	assert_emit("log10(10)", 1.);
-	assert_emit("log(1)", 0.);
-	skip(
-			assert_equals(-ln(0), Infinity);
-			assert_equals(ln(0), -Infinity);
-			assert_emit("ln(ℯ)", 1.);
-	)
-}
 
 void testUpperLowerCase() {
 	char string[] = "ABC";
@@ -2237,9 +2212,7 @@ void testCurrent() {
 //	testWasmRunner();
 //	testLeaks();
 //	testMergeOwn();
-	testLogarithm();
 //	testMergeRelocate();
-	testMergeWabt();
 
 //	testImport42();
 //	testSinus();

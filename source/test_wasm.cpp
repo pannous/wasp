@@ -753,6 +753,7 @@ void testMergeWabt() {
 #endif
 }
 
+
 void testMergeWabtByHand() {
 //	merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
 //wasm
@@ -1238,6 +1239,41 @@ void testAssertRun() {
 	assert_run("x='123';x=='123'", true);// ok needs runtime for eq()
 }
 
+
+void testLogarithm() {
+	assert_emit("use log; log10(100)", 2.);
+}
+
+void testLogarithm2() {
+	float ℯ = 2.7182818284590;
+	Signature &signature = Signature().import().add(float64).returns(float64);
+//	check(signature.is_import);
+	Signature &signature1 = functionSignatures["log10"];
+//	check(signature1.is_import);
+	assert_emit("use math; log10(100)", 2.);
+	assert_emit("use math; 10⌞100", 2.);// read 10'er Logarithm
+	assert_emit("use math; 100⌟10", 2.);// read 100 lowered by 10's
+	assert_emit("use math; 10⌟100", 2.);
+	assert_emit("use math; ℯ⌟", 2.);
+	assert_emit("use math; ℯ⌟", 2.);
+	assert_emit("log10(100)", 2.); // requires pre-parsing lib and dictionary lookup
+	assert_emit("₁₀⌟100", 2.); // requires pre-parsing lib and dynamic operator-list extension OR 10⌟ as function name
+	assert_emit("10⌟100", 2.); // requires pre-parsing lib and dynamic operator-list extension OR 10⌟ as function name
+
+	assert_emit("use log;ℯ = 2.7182818284590;ln(ℯ)", 1.);
+	assert_emit("use log;ℯ = 2.7182818284590;ln(ℯ)", 1.);
+	assert_emit("ℯ = 2.7182818284590;ln(ℯ*ℯ)", 2.);
+	assert_emit("ln(1)", 0.);
+	assert_emit("log10(100000)", 5.);
+	assert_emit("log10(10)", 1.);
+	assert_emit("log(1)", 0.);
+	skip(
+			assert_equals(-ln(0), Infinity);
+			assert_equals(ln(0), -Infinity);
+			assert_emit("ln(ℯ)", 1.);
+	)
+}
+
 void testAllWasm() {
 
 //	data_mode = false;
@@ -1248,17 +1284,19 @@ void testAllWasm() {
 	//	return;
 #endif
 	skip(
-//	assert_run not compatible with Wasmer, don't ask why, we don't know;)
+	//	assert_run not compatible with Wasmer, don't ask why, we don't know;)
 			testCustomOperators();
 			testWasmMutableGlobal();
-			testIndexWasm();// breaks on second run WHY?
-	)
-
-	skip(
 			assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
 	)
+	testIndexWasm();// breaks on second run WHY?
+	testIndexWasm();// breaks on second run WHY?
 	assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
-
+	testLogarithm();
+	testMergeOwn();
+	testMergeRelocate();
+	testMergeWabt();
+	testMergeWabtByHand();
 	testEmitter();
 	testMathLibrary();
 	testStringIndicesWasm();
@@ -1275,7 +1313,6 @@ void testAllWasm() {
 			testWasmLogicOnObjects();
 			testObjectPropertiesWasm();
 	)
-
 //	exit(21);
 	testWasmIncrement();
 // TRUE TESTS:

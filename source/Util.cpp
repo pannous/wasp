@@ -5,11 +5,22 @@
 #include <stdlib.h> // abs(int)
 // #include "String.h"
 #include "Util.h"
+
 #ifndef WASM
 // ok as wasi?
 #include "unistd.h"
 #include "NodeTypes.h"
 #endif
+
+
+bool tracing = false;
+
+//bool tracing = true;
+void trace(chars x) {
+	if (tracing)
+		warn(x);
+}
+
 
 //bool fileExists(char* filename) {
 bool fileExists(String filename) {
