@@ -1,6 +1,7 @@
 #ifndef _Util_h_
 #define _Util_h_
 
+extern bool tracing;
 
 typedef unsigned char byte;
 typedef const char *chars;

@@ -29,7 +29,7 @@ if (NOT WASM)
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         #         SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :(
-        SET(WASMTIME 1) # FASTEST!
+                SET(WASMTIME 1) # FASTEST!
         #        SET(WASMEDGE 1) todo smart multi-value returns
         #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
@@ -226,18 +226,18 @@ else ()
 
 endif ()
 
-if (WASM)
-else ()
-#    set(ASAN_OPTIONS verbosity=3)
-#    #    add_compile_options(-Wall)
-#    add_compile_options(-g)
-#    add_compile_options(-enable-coverage)
-#    add_compile_options(-Wno-missing-field-initializers)
-#    add_compile_options(-Wformat=2)
-#    #    add_compile_options(-Wpointer-arith)
-#    add_compile_options(-m64)
-#    add_compile_options(-D_LARGEFILE_SOURCE)
-#    add_compile_options(-D_FILE_OFFSET_BITS=64)
+if (NOT WASM)
+    MESSAGE("asan sanitize=address …")
+    #    set(ASAN_OPTIONS verbosity=3)
+    #    #    add_compile_options(-Wall)
+    #    add_compile_options(-g)
+    #    add_compile_options(-enable-coverage)
+    #    add_compile_options(-Wno-missing-field-initializers)
+    #    add_compile_options(-Wformat=2)
+    #    #    add_compile_options(-Wpointer-arith)
+    #    add_compile_options(-m64)
+    #    add_compile_options(-D_LARGEFILE_SOURCE)
+    #    add_compile_options(-D_FILE_OFFSET_BITS=64)
 #    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
 #
 #    #    add_compile_options(-fsanitize=address) # currently crashes with AsanDie so don't use :(
