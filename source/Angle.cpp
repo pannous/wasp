@@ -504,8 +504,8 @@ bool addLocal(const char *context, String name, Valtype valtype) {
 		if (oldType == none or oldType == unknown_type)
 			localTypes[context][position] = valtype;
 		else if (oldType != valtype and valtype != void_block and valtype != voids and valtype != unknown_type) // trace
-			warn("local in context %s already known "s % s(context) + name + " with type " + typeName(oldType) +
-			     " now " + typeName(valtype));
+			warn("local in context %s already known "s % s(context) + name +
+			     " with type " + typeName(oldType) + ", ignoring new type " + typeName(valtype));
 		// ok, could be cast'able!
 	}
 //#endif
@@ -890,8 +890,8 @@ Node &groupFunctionCalls(Node &expressiona, String context) {
 			error("missing import for function "s + name);
 		Signature &signature = functionSignatures[name];
 		signature.is_used = true;
-		signature.import();// todo remvoe hack
-		check(signature.is_import)// BUG!! signature.is_import is LOST(false) for log10 HOW???
+//		signature.import();// todo remvoe hack
+//		check(signature.is_import)// BUG!! signature.is_import is LOST(false) for log10 HOW???
 
 		int minArity = signature.size();// todo: default args!
 		int maxArity = signature.size();
