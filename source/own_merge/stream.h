@@ -25,6 +25,8 @@
 #include "result.h"
 #include "../String.h"
 
+#define ssize_t int
+
 namespace wabt {
 
 /* whether to display the ASCII characters in the debug output for
@@ -154,8 +156,6 @@ namespace wabt {
 
 	struct OutputBuffer {
 		Result WriteToFile(String filename) const;
-
-		Result WriteToFile(char *filename) const;
 
 		void clear() { data.clear(); }
 

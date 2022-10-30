@@ -23,10 +23,12 @@
 #define DUMP_OCTETS_PER_LINE 16
 #define DUMP_OCTETS_PER_GROUP 2
 
-#define ERROR0(msg) fprintf(stderr, "%s:%d: " msg, __FILE__, __LINE__)
-#define ERROR(fmt, ...) \
-  fprintf(stderr, "%s:%d: " fmt, __FILE__, __LINE__, __VA_ARGS__)
 
+#define ERROR0(msg) printf("%s:%d: " msg, __FILE__, __LINE__)
+#define ERROR(fmt, ...) printf("%s:%d: " fmt, __FILE__, __LINE__, __VA_ARGS__)
+
+//#define ERROR0(msg) fprintf(stderr, "%s:%d: " msg, __FILE__, __LINE__)
+//#define ERROR(fmt, ...) fprintf(stderr, "%s:%d: " fmt, __FILE__, __LINE__, __VA_ARGS__)
 namespace wabt {
 
 	Stream::Stream(Stream *log_stream) : offset_(0), result_(Result::Ok), log_stream_(log_stream) {}
@@ -131,30 +133,10 @@ namespace wabt {
 	}
 
 	Result OutputBuffer::WriteToFile(string_view filename) const {
-		return WriteToFile(filename.data);
+//		return WriteToFile(filename.data);
+		return Result::Error;
 	}
 
-	Result OutputBuffer::WriteToFile(char *filename) const {
-		FILE *file = fopen(filename, "wb");
-		if (!file) {
-			ERROR("unable to open %s for writing\n", filename);
-			return Result::Error;
-		}
-
-		if (data.empty()) {
-			fclose(file);
-			return Result::Ok;
-		}
-
-		ssize_t bytes = fwrite(data.data(), 1, data.size(), file);
-		if (bytes < 0 || static_cast<size_t>(bytes) != data.size()) {
-			ERROR("failed to write %" PRIzd " bytes to %s\n", data.size(), filename);
-			fclose(file);
-			return Result::Error;
-		}
-		fclose(file);
-		return Result::Ok;
-	}
 
 	MemoryStream::MemoryStream(Stream *log_stream) : Stream(log_stream), buf_(new OutputBuffer()) {}
 
@@ -212,104 +194,5 @@ namespace wabt {
 		return Result::Ok;
 	}
 
-
-//    FileStream::FileStream(string_view filename, Stream* log_stream)
-//            : Stream(log_stream), file_(nullptr), offset_(0), should_close_(false) {
-//      String filename_str = filename.data;
-
-	FileStream::FileStream(String filename_str, Stream *log_stream)
-			: Stream(log_stream), file_(nullptr), offset_(0), should_close_(false) {
-		file_ = fopen(filename_str.data, "wb");
-
-		// TODO(binji): this is pretty cheesy, should come up with a better API.
-		if (file_) {
-			should_close_ = true;
-		} else {
-			ERROR("fopen name=\"%s\" failed, errno=%d\n", filename_str.data, errno);
-		}
-	}
-
-	FileStream::FileStream(FILE *file, Stream *log_stream)
-			: Stream(log_stream), file_(file), offset_(0), should_close_(false) {}
-
-	FileStream::FileStream(FileStream &&other) {
-		*this = std::move(other);
-	}
-
-	FileStream &FileStream::operator=(FileStream &&other) {
-		file_ = other.file_;
-		offset_ = other.offset_;
-		should_close_ = other.should_close_;
-		other.file_ = nullptr;
-		other.offset_ = 0;
-		other.should_close_ = false;
-		return *this;
-	}
-
-	FileStream::~FileStream() {
-		// We don't want to close existing files (stdout/sterr, for example).
-		if (should_close_) {
-			fclose(file_);
-		}
-	}
-
-	void FileStream::Flush() {
-		if (file_) fflush(file_);
-	}
-
-	Result FileStream::WriteDataImpl(size_t at, const void *data, size_t size) {
-		if (!file_) {
-			return Result::Error;
-		}
-		if (size == 0) {
-			return Result::Ok;
-		}
-		if (at != offset_) {
-			if (fseek(file_, at, SEEK_SET) != 0) {
-				ERROR("fseek offset=%" PRIzd " failed, errno=%d\n", size, errno);
-				return Result::Error;
-			}
-			offset_ = at;
-		}
-		if (fwrite(data, size, 1, file_) != 1) {
-			ERROR("fwrite size=%" PRIzd " failed, errno=%d\n", size, errno);
-			return Result::Error;
-		}
-		offset_ += size;
-		return Result::Ok;
-	}
-
-	Result FileStream::MoveDataImpl(size_t dst_offset,
-	                                size_t src_offset,
-	                                size_t size) {
-		if (!file_) {
-			return Result::Error;
-		}
-		if (size == 0) {
-			return Result::Ok;
-		}
-		// TODO(binji): implement if needed.
-		ERROR0("FileStream::MoveDataImpl not implemented!\n");
-		return Result::Error;
-	}
-
-	Result FileStream::TruncateImpl(size_t size) {
-		if (!file_) {
-			return Result::Error;
-		}
-		// TODO(binji): implement if needed.
-		ERROR0("FileStream::TruncateImpl not implemented!\n");
-		return Result::Error;
-	}
-
-// static
-	std::unique_ptr<FileStream> FileStream::CreateStdout() {
-		return std::unique_ptr<FileStream>(new FileStream(stdout));
-	}
-
-// static
-	std::unique_ptr<FileStream> FileStream::CreateStderr() {
-		return std::unique_ptr<FileStream>(new FileStream(stderr));
-	}
 
 }  // namespace wabt

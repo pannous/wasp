@@ -3,6 +3,7 @@
 // Created by pannous on 15.07.20.
 //
 
+// todo WRAP ALL in  #ifdef WASM , move all other
 #include <cstddef> // size_t  FINE with wasm!
 
 typedef const char *chars;
@@ -27,8 +28,7 @@ extern "C" void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm
 // TODO: let the native_runtime mess with wasm_memory DIRECTLY?
 
 // todo : depends on clang_options! Sometimes it is needed sometimes it can't be there
-#ifndef WASM
-#endif
+
 extern "C" unsigned int *memory;// =0; always, BUT heap_offset/current is higher from beginning!
 extern "C" char *memoryChars;
 //extern "C" int __heap_base; ==
@@ -62,13 +62,13 @@ extern "C" void panic();//
 #endif
 
 #ifndef WASM
-
 int raise(chars error); // conflicts with signal.h if 'extern'
 #else
-extern int raise(chars error); // conflicts with signal.h if 'extern'
+extern "C" int raise(chars error); // conflicts with signal.h if 'extern'
 #endif
+int squari(int a);
+long squarl(long a);// stupid test basic wasm import => runtime linking   remove?
 
-int squari(int a);// stupid test remove
 //extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
 
@@ -82,19 +82,12 @@ extern "C" void puti(int i);
 extern "C" void put_char(codepoint c);
 //extern "C" void put_char(char c);
 //extern "C" int putchar(int c);// stdio
-
 extern "C" void putf(float f);
-
-double powd(double x, double y);
-
 extern "C" long squarel(long n);// test wasm, otherwise use x² => x*x in analyze!
 extern "C" double square(double n);// test wasm
 
-#ifndef WASM
-
-extern double sqrt1(double a);// wasm
-#endif
-
+double powd(double x, double y);
+extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
 long powi(int a, int b);// short harder
 
 //extern "C" double pow2(double x, double y);
@@ -107,14 +100,17 @@ long powi(int a, int b);// short harder
 
 //extern float powf(float x, float y);
 //void printf(int);
-void *alloc(int size, int num);
 //void *calloc(int size, int num);// alloc cleared
 //void *calloc(size_t __count, size_t __size);// __result_use_check __alloc_size(1,2);
 //inline _LIBCPP_INLINE_VISIBILITY float       pow(float __lcpp_x, float __lcpp_y) _NOEXCEPT;
 // Provided by /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h:15:7:
 // Provided by /opt/wasm/wasi-sdk/share/wasi-sysroot//include/stdlib.h
+void *alloc(int size, int num);
 #ifdef PURE_WASM
 void *calloc(size_t __nmemb, size_t __size) __attribute__((__malloc__, __warn_unused_result__));
+void *memcpy(void *destination, const void *source, size_t num);// asm ("memcpy");;
+_LIBCPP_OVERRIDABLE_FUNC_VIS void  operator delete(void* __p) _NOEXCEPT;
+//void	*calloc(size_t __count, size_t __size);
 //void* calloc(int i,int num=1);// different from complicated alloc.h type!
 #endif
 
@@ -146,20 +142,25 @@ void print(long i);
 //extern __inline int isalnum ( int c );
 int isalnum0(int c);
 
-extern "C" void *memset(void *ptr, int value, size_t num);
-
-#ifdef WASM
-
 // long is 4 byte in Wasm/Windows WTH
 //typedef long long long  // WTH
 //#define long long long  // WTH
 
-#ifndef WASI
 #ifdef WASM
+#ifndef WASI
+void* memset(void *ptr, int value, size_t num);
+
+//void printf(chars no_format);
+
+#ifdef WASI
+#endif
+extern "C"
+int printf(const char *__restrict, ...);
 
 void printf(chars, chars);
 
-//void print(chars format, int i);
+void printf(char const *format, char c);
+void printf(char const *format, codepoint c);
 void printf(char const *format, int i);
 
 void printf(char const *format, uint32_t i);
@@ -195,7 +196,9 @@ void printf(chars format, chars i, chars j, chars k, int l);
 //int rand();
 //proc_exit, environ_get, environ_sizes_get
 
+#ifndef WASI
 extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_unstable"), import_name("proc_exit"))); // wasmtime ++
+#endif
 //extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_snapshot_preview1"), import_name("proc_exit")));// wasmer WTF
 
 //extern "C" void exit(int code);
@@ -203,7 +206,6 @@ extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_un
 
 //void exit(int fd) __attribute__((import_module("wasi_snapshot_preview1"), import_name("exit")));
 
-#endif
 
 //#ifndef WASM
 #ifdef WASI
@@ -211,9 +213,7 @@ extern "C" int printf(chars s, ...);  //stdio
 #endif
 //extern "C" int printf(chars s, String c);  conflict
 
-
-extern "C"
-void *memcpy(void *destination, const void *source, size_t num);// asm ("memcpy");;
+//extern "C"
 //__attribute__((import_module("env"), import_name("memcpy")));;
 extern "C" void memcpy0(char *destination, char *source, size_t num);
 

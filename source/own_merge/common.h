@@ -19,7 +19,7 @@
 
 //#include <algorithm>
 //#include <cassert>
-//#include <cstdarg>
+#include <cstdarg>
 //#include <cstddef>
 //#include <cstdint>
 //#include <cstdio>
@@ -70,6 +70,7 @@ String StringPrintf(const char *format, ...);
   (static_cast<int32_t>(x) < 0 ? "-" : ""), std::abs(static_cast<int32_t>(x))
 
 #define WABT_DEFAULT_SNPRINTF_ALLOCA_BUFSIZE 128
+#ifndef WASM
 #define WABT_SNPRINTF_ALLOCA(buffer, len, format)                          \
   va_list args;                                                            \
   va_list args_copy;                                                       \
@@ -84,6 +85,13 @@ String StringPrintf(const char *format, ...);
     len = vsnprintf(buffer, len + 1, format, args_copy);              \
   }                                                                        \
   va_end(args_copy)
+#else
+#define WABT_SNPRINTF_ALLOCA(buffer, len, format) \
+          size_t len=0; char* buffer = (char*)malloc(WABT_DEFAULT_SNPRINTF_ALLOCA_BUFSIZE);
+#endif
+//len = vswprintf(buffer, len + 1, format, args_copy);              \
+
+
 
 #define WABT_ENUM_COUNT(name) \
   (static_cast<int>(name::Last) - static_cast<int>(name::First) + 1)
