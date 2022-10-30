@@ -1,17 +1,15 @@
 //#pragma once
+//
+// Created by pannous on 15.07.20.
+//
+
 
 #ifdef WASI
 //#include <cstdio> // printf
 //#include </usr/local/Cellar/llvm/11.0.0/include/c++/v1/stdio.h> // printf NO!
 #endif
 
-//#include <climits>
 #include <cstdlib> // OK in WASM!
-
-
-//
-// Created by pannous on 15.07.20.
-//
 
 #include "wasm_helpers.h"
 #include "String.h"
