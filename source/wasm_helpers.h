@@ -156,17 +156,32 @@ extern "C" void *memset(void *ptr, int value, size_t num);
 
 #ifndef WASI
 #ifdef WASM
+
 void printf(chars, chars);
+
 //void print(chars format, int i);
 void printf(char const *format, int i);
-void printf(char const *format, chars,int);
-void printf(chars format, int,int);
+
+void printf(char const *format, uint32_t i);
+
+void printf(char const *format, long l);
+
+void printf(char const *format, double d);
+
+void printf(char const *format, chars, int);
+
+void printf(chars format, int, int);
+
+void printf(chars format, uint32_t, uint32_t);
+
 void printf(chars format, long i, long);
 
 void printf(chars format, double i, double j);
 
 void printf(chars format, chars i);
+
 void printf(chars format, chars i, chars j);
+
 void printf(chars format, chars i, chars j, int l);
 void printf(chars format, chars i, chars j, chars l);
 void printf(chars format, chars i, chars j, chars k, int l);
@@ -190,7 +205,10 @@ extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_un
 
 #endif
 
+//#ifndef WASM
+#ifdef WASI
 extern "C" int printf(chars s, ...);  //stdio
+#endif
 //extern "C" int printf(chars s, String c);  conflict
 
 
