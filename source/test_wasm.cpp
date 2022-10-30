@@ -138,8 +138,8 @@ void testConstReturn() {
 void testPrint() {// does wasm print? (visual control!!)
 	assert_emit(("print 42"), 42)
 	print("OK");
-//	printf("%llx\n", -2000000000000ll);
-//	printf("%llx", -4615739258092021350ll);
+	printf("%llx\n", -2000000000000ll);
+	printf("%llx", -4615739258092021350ll);
 	print("a %d c"s % 3);
 	print("a %f c"s % 3.1);
 	print("a %x c"s % 15);

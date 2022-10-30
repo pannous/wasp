@@ -73,6 +73,7 @@ void print(Node &n);
 void print(Node *n0);
 //void print(const Node &);
 
+
 //class String;
 union Value {
 //	sizeof(Value)==8 (long)
