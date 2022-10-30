@@ -20,6 +20,13 @@
  ;; )
 
 
+  (func $log10 (param f64) (result f64)
+              local.get 0
+              call $ln
+              (f64.const 2.302585092994046)
+              f64.div
+   )
+
   (func $log (param f64) (result f64)
               local.get 0
               call $ln
@@ -29,13 +36,6 @@
               local.get 0
               call $ln
               (f64.const 0.6931471805599453)
-              f64.div
-   )
-
-  (func $log10 (param f64) (result f64)
-              local.get 0
-              call $ln
-              (f64.const 2.302585092994046)
               f64.div
    )
 
