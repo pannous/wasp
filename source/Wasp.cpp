@@ -540,7 +540,7 @@ private:
 			return ch;
 		}
 		// If a c parameter is provided, verify that it matches the current character.
-		if (c and c != ch) {
+		if (c and c != ch) { // todo: debug only / who cares?
 			err(s("Expected '") + c + "' instead of " + renderChar(ch));
 		}
 		// Get the next character. When there are no more characters, return the empty string.
@@ -790,12 +790,12 @@ private:
 		// the * character in the /* pair that begins this block comment.
 		// To finish the block comment, we look for an ending */ pair of characters,
 		// but we also watch for the end of text before the comment is terminated.
-		if (ch != '*') {
-			err("Not a block comment");
-		}
+//		if (ch != '*') {
+//			err("Not a block comment");
+//		}
 		do {
 			proceed();
-			if (ch == '*') {
+			if (ch == '*' or ch == '#') {
 				proceed();
 				if (ch == '/' or ch == '#') {
 					proceed();
@@ -821,7 +821,7 @@ private:
 //		}
 		// Comments always begin with a # or / character.
 		if (ch == '#') {
-			if (next == '*')
+			if (next == '*' or next == '#')
 				blockComment();
 			else
 				inlineComment();
@@ -834,7 +834,7 @@ private:
 			inlineComment();
 			previous = lastNonWhite = preserveLast;
 			return true;
-		} else if (next == '*') {
+		} else if (next == '*' or next == '#') {
 			proceed('/');
 			blockComment();
 			previous = lastNonWhite = preserveLast;
