@@ -11,7 +11,9 @@
 //#include "tests.h"
 
 //#include <cstdlib> // OK in WASM!
+#ifndef PURE_WASM
 #include "stdio.h" // FILE
+#endif
 #include <math.h>
 
 
