@@ -1156,8 +1156,8 @@ void preRegisterSignatures() {
 //	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
 //	functionSignatures["main"] = Signature().returns(i32t);;
 //	functionSignatures["main"] = Signature().returns(i64t); // ok in all modern environments~
-//	functionSignatures.insert_or_assign("main", Signature().returns(i64t));
-	functionSignatures.insert_or_assign("main", Signature().returns(i32));
+	functionSignatures.insert_or_assign("main", Signature().returns(i64));
+//	functionSignatures.insert_or_assign("main", Signature().returns(i32));
 	functionSignatures["print"] = functionSignatures["puts"];// todo: for now, later it needs to distinguish types!!
 	functionSignatures["paint"] = Signature().import().returns(voids);// paint surface
 	functionSignatures.insert_or_assign("init_graphics", Signature().import().returns(pointer));// surface
