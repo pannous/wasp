@@ -447,7 +447,7 @@ Code emitOffset(Node offset_pattern, bool sharp, String context, int size, int b
 			code.addConst(base);
 			code.add(i32_add);
 		}
-		if (sharp) {
+		if (sharp) {// todo remove if offset_pattern was static
 			code.addConst(1);
 			code.add(i32_sub);
 		}
@@ -550,7 +550,8 @@ Code emitIndexPattern(Node op, String context) {
 	load.add(0x00);// ?
 
 
-	if (size == 1)last_typo = byte_char;// last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
+	if (size == 1)
+		last_typo = byte_char;// last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
 	else if (size <= 4)last_type = int32;
 	else last_type = int64;
 //	if(op.kind==reference){
@@ -579,7 +580,7 @@ Code emitIndexRead(Node op, String context) {
 //	if(op[0].kind==strings) todo?
 	last_type = arg_type;
 	if (last_type == charp)size = 1;// chars for now vs codepoint!
-	if (last_type == stringp)size = 1;// chars for now vs codepoint!
+	if (last_type == stringp)size = 1;// chars for now vs codepoint! todo: via runtime String[]!
 	if (last_type == int32)size = 4;
 	if (last_type == int64)size = 8;
 	if (last_type == float32)size = 4;
@@ -614,7 +615,9 @@ Code emitIndexRead(Node op, String context) {
 	if (size == 8)load.add(i64_load);
 	load.add(size > 2 ? 0x02 : 0);// alignment (?)
 	load.add(0x00);// ?
-	if (size == 1)last_type = codepoint32;
+//	if (size == 1)last_type = codepoint32;// todo only if accessing codepoints, not when pointing into UTF8 byte!!
+	if (size == 1)
+		last_typo = byte_char;
 	else if (size <= 4)last_type = int32;
 	else last_type = int64;
 	return load;
