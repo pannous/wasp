@@ -24,13 +24,15 @@ set(INCLUDE_MERGER 0)
 #ADD_DEFINITIONS(-DMULTI_VALUE)
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
 
+# binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
+
 if (NOT WASM)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         #         SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :(
-                SET(WASMTIME 1) # FASTEST!
+        SET(WASMTIME 1) # FASTEST!
         #        SET(WASMEDGE 1) todo smart multi-value returns
         #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
