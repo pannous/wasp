@@ -22,7 +22,7 @@
 = : is, ﹦, ＝, ⁼  # used as defining AND as comparison!
 != : unequal, ≠, ≢, ≭, <>, ↮, different, isnt, is_not, unlike, ≉, ≆, ≇, ≄ # separate from
 == : equals, ⩵, ≟, ≌, ≑, ≗, ≛, ≜,  equivalent, ≡, identical, ≣, ≙, ≍, ⩶, is_equal, equal, same, the same as     # even par
-~ : similar, ⋍, ≈,⩯,⩰, ≊, ≌, ~~, circa, approximate, around, like    #  about <> ± ∓
+~ : like, similar, ⋍, ≈,⩯,⩰, ≊, ≌, ~~, circa, approximate, around,     #  about <> ± ∓
 ! : not, ¬
 += : increase…by increment…by raise…by ⩲ ⩱
 ++ : ⇈, increase increment // raise grow vs more >
@@ -41,11 +41,13 @@
 > : more, ≰, greater, bigger, larger, higher, longer # (…than)!
 < : less, ≱, lesser, smaller,lower,tinyer,shorter
 |> : as, cast, convert, convert_to
-=> : ⇒, ⇨, ->, →, to, into, upto, arrow, right
-<= : ←, ↤, ⇦, from, out_of, left
+|-> : ↦, from
+=> : ⇒, ⇨, ->, →, to, into, ->[], ↱, upto, arrow, right, pro, fore, forward
+<= : ←, ↤, ⇦, from, out_of, left, back, backward
 ↑ : up, ⇧
 ↓ : down, ⇩
 ⇆ : ⇄, ↔, vs, versus, oppose, opposite, compare, connect, see, to_and_fro
+↩ : ↵, ⏎, repeat, back, turn, return
 combining_arrows: ⃔ ⃕ ⃖ ⃗ ⃡  
 arrows : ͍ ͎ ͢  ⃔ ⃕ ⃖ ⃗ ⃡  ← ↑ → ↓ ↔ ↕ ↖ ↗ ↘ ↙ ↚ ↛ ↜ ↝ ↞ ↟ ↠ ↡ ↢ ↣ ↤ ↥ ↦ ↧ ↨ ↩ ↪ ↫ ↬ ↭ ↮ ↯ ↰ ↱ ↲ ↳ ↴ ↵ ↶ ↷ ↸ ↹ ↺ ⇄ ⇅ ⇆ ⇇ ⇈ ⇉ ⇊ ⇍ ⇎ ⇏ ⇐ ⇑ ⇒ ⇓ ⇔ ⇕ ⇖ ⇗ ⇘ ⇙ ⇚ ⇛ ⇜ ⇝ ⇞ ⇟ ⇠ ⇡ ⇢ ⇣ ⇤ b ⇦ ⇧ ⇨ ⇩ ⇪ ⇫ ⇬ ⇭ ⇮ ⇯ ⇰ ⇱ ⇲ ⇳ ⌁ ⌃ ⌄ ⌤ ⍇ ⍈ ⍐ ⍗ ⎋ ⽮ ￩ ￪ ￫ ￬
 arrow_left: ➔ ➘ ➙ ➚ ➛ ➜ ➝ ➞ ➟ ➠ ➡ ➢ ➣ ➤ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➴ ➵ ➶ ➷ ➸ ➹ ➺ ➻ ➼ ➽ ➾ 
