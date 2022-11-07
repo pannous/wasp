@@ -20,8 +20,6 @@ class Signature;
 //todo extern Map<String, Node> variableTypes;
 extern Map<String, Signature> functionSignatures;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
 extern Map<String, int> functionIndices;
-extern Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
-extern Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^
 
 //extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 //extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals; // access from Angle!
