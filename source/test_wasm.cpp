@@ -3,12 +3,13 @@
 #include "wasm_reader.h"
 #include "wasm_merger.h"
 #include "wasm_emitter.h"
+//#import "asserts.cpp"
 
 #define assert_throws(αα)  {printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);bool old=panicking;try{ \
 panicking=false;throwing=true;emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line(); \
 }catch(chars){}catch(String*){}catch(...){};panicking=old;}
 
-#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 //#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
 
 #ifndef RUNTIME_ONLY

@@ -2354,17 +2354,15 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 
 // todo dedup runtime_emit!
 //Node emit(String code, ParseOptions options) {
-Node emit(String code) {// emit and run!
+Code emit(String code) {// emit and run!
 //	if (code.endsWith(".wasm")){
 //		auto filename = findFile(code);
 //		return Node(run_wasm(filename));
 //	}
 	Node data = parse(code);
 #ifdef RUNTIME_ONLY
-#ifdef INTERPRETER
-	return data.interpret();
-#endif
-	return data;
+	warn("RUNTIME_ONLY cannot emit code")
+	return Code();
 #else
 	data.print();
 	clearContext();
@@ -2372,7 +2370,7 @@ Node emit(String code) {// emit and run!
 	Code binary = emit(charged);// options & no_main ? 0 , 0
 #ifndef INCLUDE_MERGER
 	Code out = binary;
-	if (merge_module_binaries.size()>0)
+	if (merge_module_binaries.size() > 0)
 		warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
 //	return ERROR;
 #else
@@ -2381,7 +2379,6 @@ Node emit(String code) {// emit and run!
 	merge_module_binaries.add(binary);
 	out.save();
 #endif
-	long result = out.run();// check js console if no result
-	return smartNode(result);
+	return out;
 #endif
 }

@@ -101,7 +101,6 @@ bool isType(Node &expression) {
 }
 
 
-
 Node constants(Node n) {
 	if (eq(n.name, "not"))return True;// not () == True; hack for missing param todo: careful!
 	if (eq(n.name, "one"))return Node(1);
@@ -133,6 +132,7 @@ bool isFunction(Node &op) {
 
 #ifndef RUNTIME_ONLY
 #endif
+
 void prepareContext();
 
 Node interpret(String code) {
@@ -140,9 +140,20 @@ Node interpret(String code) {
 	return parsed.interpret();
 }
 
+extern "C"
+Code *compile(String code) {
+	Node parsed = parse(code);
+	prepareContext();
+	preRegisterSignatures();
+	analyzed.setDefault(false);
+	Node &ast = analyze(parsed);
+	Code &binary = emit(ast);
+	return &binary;
+}
 
 // todo: merge with emit
 Node eval(String code) {
+	clearContext();
 	Node parsed = parse(code);
 #ifdef RUNTIME_ONLY
 	return parsed; // no interpret, no emit => pure data  todo: WARN
@@ -150,15 +161,15 @@ Node eval(String code) {
 #ifndef WASI
 	if (use_interpreter)
 		return parsed.interpret();
+
 	else
 #endif
 	{
-		prepareContext();
-		preRegisterSignatures();
-		analyzed.setDefault(false);
-		long results = emit(analyze(parsed)).run();
+		Code &binary = *compile(code);
+		long results = binary.run();
 		auto resultNode = smartNode(results);
-		print("» %lx %s\n"s % results % resultNode.serialize().data);
+//		print("» %l"s % results );
+		print("» %s"s % resultNode.serialize().data);
 		return resultNode;
 	}
 #endif
@@ -1020,6 +1031,10 @@ Node &groupWhile(Node n, String context) {
 	return ef;
 }
 
+//
+//extern "C" Node *analyze(Node &node){
+//	return &analyze(node, "main");
+//}
 
 Node &analyze(Node &node, String context) {
 	long hash = node.hash();

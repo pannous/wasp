@@ -93,5 +93,5 @@ Valtype fixValtype(Valtype &valtype);
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 
-Node emit(String code);//  wasp -> code -> wasm -> data
+Code emit(String code);//  wasp -> code -> wasm -> data
 Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "main");
