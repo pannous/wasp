@@ -137,8 +137,8 @@ void Error_Quit(char const *msg) {
 }
 
 /* Read a line from a socket */
-ssize_t Readline(int sockd, void *vptr, size_t maxlen) {
-	ssize_t n, rc;
+int Readline(int sockd, void *vptr, int maxlen) {
+	int n, rc;
 	char c, *buffer;
 
 	buffer = (char *) vptr;
@@ -176,13 +176,13 @@ void Writeline(String s) {
 }
 
 /* Write a line to a socket */
-ssize_t Writeline(int sockd, String &s) {
+int Writeline(int sockd, String &s) {
 	return Writeline(sockd, s.data, s.length);
 }
 
-ssize_t Writeline(int sockd, const char *vptr, size_t n) {
+int Writeline(int sockd, const char *vptr, int n) {
 	size_t nleft;
-	ssize_t nwritten;
+	int nwritten;
 	const char *buffer;
 	if (sockd == -1) {// debug
 		print(vptr);

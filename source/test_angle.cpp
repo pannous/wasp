@@ -6,6 +6,8 @@
 #include "Angle.h" // analyze
 #include "Node.h"
 #include "wasm_emitter.h"
+#import "asserts.cpp"
+#include "asserts.h"
 
 #define assert_ast(α, β) if (!assert_equals_x(analyze(parse(α)),parse(β))){printf("%s != %s",#α,#β);backtrace_line();}
 #define assert_eval(α, β) if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}

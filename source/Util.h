@@ -59,7 +59,8 @@ unsigned int wordHash(const char *str, int max_chars = 20);
 
 char *readFile(chars filename, int *size_out = 0);// 0 = err
 
-bool similar(float a, float b);
+//bool similar(float a, float b);
+bool similar(double a, double b);
 
 void lowerCase(char *string, int i);
 

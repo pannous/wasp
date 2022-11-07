@@ -55,8 +55,10 @@ public:
 		data = 0;
 	}
 
-	bytes data = 0;
+	int header = array_header_32;// todo: code_header_32 if extra fields are needed beyond standard
+	int kind = byte_char;
 	int length = 0;
+	bytes data = 0;
 	int start = 0;// internal reader pointer
 	bool encoded = false;// first byte = size of vector
 
