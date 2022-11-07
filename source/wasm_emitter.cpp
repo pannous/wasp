@@ -1682,7 +1682,7 @@ Code emitBlock(Node &node, String context) {
 
 	auto returnTypes = functionSignatures[context].return_types;
 	//	for(Valtype return_type: returnTypes) uh, casting should have happened before for  multi-value
-	Valtype return_type = returnTypes.last();
+	Valtype return_type = returnTypes.last(voids);
 	// switch back to return_types[context] for block?
 	bool needs_cast = return_type != last_type;
 
