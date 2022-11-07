@@ -10,6 +10,8 @@
 // ok as wasi?
 #include "unistd.h"
 #include "NodeTypes.h"
+#include "List.h"
+
 #endif
 
 
@@ -19,6 +21,103 @@ bool tracing = false;
 void trace(chars x) {
 	if (tracing)
 		warn(x);
+}
+
+
+template<class S>
+inline void swap(S *a, S *b) {
+	S c = *a;
+	*a = *b;
+	*b = c;
+}
+
+
+template<class S>
+void heapify(S arr[], int n, int i) {
+	int largest = i; // Initialize largest as root
+	int l = 2 * i + 1; // left = 2*i + 1
+	int r = 2 * i + 2; // right = 2*i + 2
+	// If left child is larger than root
+	if (l < n && arr[l] > arr[largest])
+		largest = l;
+	// If right child is larger than largest so far
+	if (r < n && arr[r] > arr[largest])
+		largest = r;
+	// If largest is not root
+	if (largest != i) {
+		swap(&arr[i], &arr[largest]);
+		// Recursively heapify the affected sub-tree
+		heapify(arr, n, largest);
+	}
+}
+
+template<class S>
+void heapify(S arr[], int n, int i, float (valuator)(S &)) {
+	int largest = i; // Initialize largest as root
+	int l = 2 * i + 1; // left = 2*i + 1
+	int r = 2 * i + 2; // right = 2*i + 2
+	// If left child is larger than root
+	if (l < n && valuator(arr[l]) > valuator(arr[largest]))
+		largest = l;
+	// If right child is larger than largest so far
+	if (r < n && valuator(arr[r]) > valuator(arr[largest]))
+		largest = r;
+	// If largest is not root
+	if (largest != i) {
+		swap(&arr[i], &arr[largest]);
+		// Recursively heapify the affected sub-tree
+		heapify(arr, n, largest, valuator);
+	}
+}
+
+
+template<class S>
+void heapify(S arr[], int n, int i, bool (comparator)(S &, S &)) {
+	int largest = i; // Initialize largest as root
+	int l = 2 * i + 1; // left = 2*i + 1
+	int r = 2 * i + 2; // right = 2*i + 2
+	if (l < n && comparator(arr[l], arr[largest]))
+		largest = l;
+	if (r < n && comparator(arr[r], arr[largest]))
+		largest = r;
+	if (largest != i) {
+		swap(&arr[i], &arr[largest]);
+		heapify(arr, n, largest, comparator);
+	}
+}
+
+
+template<class S>
+void heapSort(S arr[], int n) {
+	for (int i = n / 2 - 1; i >= 0; i--)
+		heapify(arr, n, i);
+	// One by one extract an element from heap
+	for (int i = n - 1; i > 0; i--) {
+		// Move current root to end
+		swap(&arr[0], &arr[i]);
+		// call max heapify on the reduced heap
+		heapify(arr, i, 0);
+	}
+}
+
+template<class S>
+void heapSort(S arr[], int n, float (valuator)(S &)) {
+	for (int i = n / 2 - 1; i >= 0; i--)
+		heapify(arr, n, i, valuator);
+	for (int i = n - 1; i > 0; i--) {
+		swap(&arr[0], &arr[i]);
+		heapify(arr, i, 0, valuator);
+	}
+}
+
+template<class S>
+void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
+	for (int i = n / 2 - 1; i >= 0; i--)
+		heapify(arr, n, i, comparator);
+	for (int i = n - 1; i > 0; i--) {
+		swap(&arr[0], &arr[i]);
+		heapify(arr, i, 0, comparator);
+	}
 }
 
 
@@ -50,7 +149,47 @@ int fileSize(char const *file) {
 	return -1;// todo
 }
 
+#if WASM && !WASI
+#else
+
+#include <sys/stat.h>
+#include <time.h>
+
+long file_last_modified(char *file) {
+	struct stat attr;
+	stat(file, &attr);
+	return attr.st_mtime;
+}
+
+float file_last_modified(String &file) {
+	struct stat attr;
+	stat(file, &attr);
+	return attr.st_mtime;
+}
+
+#endif
+
+//String findNewestFile(String filename) {
 String findFile(String filename) {
+#if RUNTIME_ONLY
+	return "";
+#endif
+	if (filename.empty())return "";
+	List<String> extensions = {"wasm", "wast", "wasp"};
+	List<String> folders = {"lib", "src", "wasp", "source", "include", "sample", "samples", "test", "tests"};
+	List<String> paths;
+	for (auto folder: folders)
+		for (auto extension: extensions) {
+			String &path = folder + "/" + filename + "." + extension;
+			if (fileExists(path))paths.add(path);
+		}
+	if (paths.empty())return "";
+	paths.sort(&file_last_modified);
+	return folders.last();
+}
+
+
+String findFile2(String filename) {
 	// todo: check dates and return freshest (last edit / updated)
 #if RUNTIME_ONLY
 	return "";
@@ -59,9 +198,9 @@ String findFile(String filename) {
 //	filename = filename.replace("~", getpwuid(getuid())->pw_dir /*homedir*/);
 	if (fileExists(filename))return filename;
 	// todo: check wasm date, recompile if older than wasp / wast
-	if (fileExists(filename + ".wasp"))return filename + ".wasp";
-	if (fileExists(filename + ".wast"))return filename + ".wast";
 	if (fileExists(filename + ".wasm"))return filename + ".wasm";
+	if (fileExists(filename + ".wast"))return filename + ".wast";
+	if (fileExists(filename + ".wasp"))return filename + ".wasp";
 	String project = ".";// todo module name(s)
 	if (not filename.contains("/"))filename = findFile(project + "/" + filename) || filename;
 	if (not filename.contains("/"))filename = findFile("lib/"s + filename) || filename;
@@ -75,6 +214,7 @@ String findFile(String filename) {
 	if (not filename.contains("/"))filename = findFile("tests/"s + filename) || filename;
 	return fileExists(filename) ? filename : "";
 }
+
 template<class S>
 bool contains(List<S> list, S match) {
 	return list.has(match);
@@ -90,6 +230,7 @@ bool contains(S list[], S match) {
 	} while (*elem++);
 	return false;
 }
+
 short normChar(char c) {// 0..36 damn ;)
 	if (c == '\n')return 0;
 	if (c >= '0' and c <= '9') return c - '0' + 26;
@@ -111,6 +252,7 @@ short normChar(char c) {// 0..36 damn ;)
 			return c;// for asian etc!
 	}
 }
+
 unsigned int wordHash(const char *str, int max_chars) { // unsigned
 	if (!str) return 0;
 	int maxNodes = 100000;
@@ -145,6 +287,7 @@ char *readFile(chars filename, int *size_out) {
 	return 0;
 #endif
 }
+
 // abs, floor from math.h should work with wasm, but isn't found in pure toolchain or sometimes breaks
 // there is NO i32_abs in wasm, only f32_abs
 // but compiler should make use of /opt/wasm/wasi-sdk/share/wasi-sysroot/include/c++/v1/math.h !!
@@ -1033,6 +1176,7 @@ bytes concat(bytes a, bytes b, int len_a, int len_b) {
 	//	c[len_a + len_b + 1] = 0;// hwhy?
 	return c;
 }
+
 chars concat(chars a, chars b) {
 //const char *concat(const char *a, const char *b) {
 	if (!b or b[0] == 0)return a;
@@ -1051,12 +1195,14 @@ bytes concat(bytes a, char b, int len) {
 	c[len] = b;
 	return c;
 }
+
 bytes concat(char a, bytes b, int len) {
 	bytes c = new unsigned char[len + 1];
 	c[0] = a;
 	memcpy0(c + 1, b, len);
 	return c;
 }
+
 float ln(float y) {// crappy!
 //	if(y==1)return 0;
 	float divisor, x, result;
@@ -1073,6 +1219,7 @@ float ln(float y) {// crappy!
 	result += ((float) log2) * 0.69314718; // ln(2) = 0.69314718
 	return result;
 }
+
 float log(float y, float base) {
 	return ln(y) * ln(base);
 }
@@ -1103,6 +1250,7 @@ String load(String file) {
 	return *binary;
 #endif
 }
+
 String &hex(long d) {
 #ifdef WASM
 	return * new String(itoa0(d));
@@ -1121,4 +1269,5 @@ bool isSmartPointer(long long d) {
 	if (d & double_mask_64)return true;
 	return d & smart_mask_64 and not(d & negative_mask_64);
 }
+
 Node smartValue(long smartPointer);
