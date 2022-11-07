@@ -24,7 +24,6 @@ Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via sim
 
 List<String> declaredFunctions;
 //List<String> declaredFunctions;
-Map<String, Signature> functionSignatures;// todo Signature copy by value is broken
 
 // todo : proper context!
 Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
@@ -891,6 +890,7 @@ Node &groupFunctionCalls(Node &expressiona, String context) {
 		if (not functionSignatures.has(name))// todo load lib!
 			error("missing import for function "s + name);
 		Signature &signature = functionSignatures[name];
+		signature.function = name;// debug
 		signature.is_used = true;
 //		signature.import();// todo remvoe hack
 //		check(signature.is_import)// BUG!! signature.is_import is LOST(false) for log10 HOW??? deep field sig.List lost on copy
@@ -1119,6 +1119,11 @@ void preRegisterSignatures() {
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 // todo: remove all as they come via wasp.wasm log.wasm etc
 // OK to pass stack Signature(), because copy by value functionSignatures not refs
+	if (functionSignatures.has("log10")) {
+		functionSignatures["log10"].import();// DIRTY HACK! REMOVE HIDES BUG!!!
+//		check(functionSignatures["log10"].is_import)
+		return;// don't overwrite is_handled status etc
+	}
 	functionSignatures.insert_or_assign("log10", Signature().import().add(float64).returns(float64));
 	functionSignatures.insert_or_assign("atoi0", Signature().runtime().add(charp).returns(int32));// todo int64
 	functionSignatures.insert_or_assign("strlen0", Signature().runtime().add(charp).returns(int32));// todo int64
