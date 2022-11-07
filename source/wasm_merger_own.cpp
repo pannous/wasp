@@ -534,7 +534,7 @@ public:
 
 	void CreateRelocs();
 
-	std::vector<Reloc> PatchCodeSection(std::vector<byte> section_data, int length, size_t offset, size_t size, size_t indexOffset);
+	std::vector<Reloc> PatchCodeSection(std::vector<byte> section_data, size_t offset, size_t size, size_t indexOffset, short import_boarder);
 
 	void PatchCodeSection(bytes section_data, int length, size_t i);
 
@@ -1129,7 +1129,7 @@ void Linker::CreateRelocs() {
 		// todo create and pass correct view from here!
 		Code section_code(binary->data.data() + section->offset + 1, section->size);
 //		auto relocs = PatchCodeSection(section_code, indexOffset);
-		auto relocs = PatchCodeSection(binary->data, binary->data.size(), section->offset + 1, size, indexOffset);
+		auto relocs = PatchCodeSection(binary->data, section->offset + 1, size, indexOffset, binary->imported_function_index_offset);
 		for (Reloc &reloc: relocs)
 			section->relocations.push_back(reloc);
 //		if(!section->data.data_segments)
@@ -1183,6 +1183,7 @@ Code merge_files(List<String> infiles) {
 
 Code merge_binaries(List<Code> binaries) {
 	Linker linker;
+	if (binaries.size() == 1)return binaries[0];
 	for (const Code &code: binaries) {
 		std::vector<uint8_t> file_data(code.data, code.data + code.length);
 		auto binary = new LinkerInputBinary("<code>", file_data);
@@ -1224,36 +1225,28 @@ void merge_files(int argc, char **argv) {
 //};
 // see ./wabt_merge/opcode.def
 
-std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int length, size_t offset, size_t size, size_t indexOffset) {
+std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, size_t offset, size_t size, size_t indexOffset, short import_boarder) {
 	std::vector<Reloc> relocs;
-	//	Code code = vec(codes);
+	int length = section_data.size();
 	int current = offset;
-//	size_t size = section_data.size()
-//	int	fun_count = unsignedLEB128(section_data, length, current); // length of ONE function
 	bool begin_function = true;
-	int fun_length=0;
-	int current_fun=0;
-	int fun_end=length;
-//	while ((b = section_data[start++]) != 0x0b and start < length and start - offset < fun_length) { // STOP after function
+	int fun_length = 0;
+	int current_fun = 0;
+	int fun_end = length;
 	while (current < length and current - offset < size) {// go over ALL functions! ignore 00
 		if (begin_function) {
 			begin_function = false;
 			fun_length = unsignedLEB128(section_data, length, current); // length of ONE function
-//			printf("fun_length $%d : %d\n", current_fun, fun_length);
 			fun_end = current + fun_length;
 			int locals = unsignedLEB128(section_data, length, current); // length of ONE function
-			if (locals > 127)todo("locals>127?");
-//			printf("locals %d\n", locals);
 			current += locals * 2;// nr+type
 		}
 		byte  b = section_data[current++];
 		if (current >= fun_end){
 			begin_function= true;
-//			assert(b == 0x00);// beginning
 			current_fun++;
 			printf("begin_function %d\n",current_fun);
 			continue;
-//			current++;
 		}
 		Opcodes op = (Opcodes) b;
 		Opcode opcode=Opcode::FromCode(b);
@@ -1263,7 +1256,8 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, int 
 			int neu = index + indexOffset; // internally shifted
 			if (new_indices.contains(index)) {
 				neu = new_indices[index]; // mapped to other module's export
-			}
+			} else if (index <= import_boarder)
+				neu = index; // keep old!
 			if (index != neu) {
 				Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset - offset + 1, neu);
 				relocs.push_back(reloc);
