@@ -109,3 +109,16 @@ bool isSmartPointer(long long d);
 Node smartNode(long long smartPointer64);
 
 //String smartValue2(long smartPointer);
+
+long file_last_modified(char *file);
+
+
+template<class S>
+void heapSort(S arr[], int n, bool (comparator)(S &, S &));
+
+template<class S>
+void heapSort(S arr[], int n, float (valuator)(S &));
+
+
+template<class S>
+void heapSort(S arr[], int n);
