@@ -1,3 +1,5 @@
+#include "Util.h"
+#include "List.h"
 #include "Node.h"
 #include "Wasp.h"
 #include "Angle.h"
@@ -5,7 +7,6 @@
 #include "Map.h"
 #include "tests.h"
 #include "Paint.h"
-#include "Util.h"
 
 #include "test_angle.cpp"
 #include "test_wast.cpp"
@@ -705,7 +706,7 @@ void testStringReferenceReuse() {
 	String x3 = x.substring(0, 2, true);
 	check(x.data == x3.data);
 	check(x.length >
-	      x3.length) // shared data but different length! check shared_reference when modifying it!! &text[1] doesn't work anyways;)
+			      x3.length) // shared data but different length! check shared_reference when modifying it!! &text[1] doesn't work anyways;)
 	check(x3 == "ab");
 	print(x3);
 	// todo("make sure all algorithms respect shared_reference and crucial length! especially print!");
@@ -1334,7 +1335,7 @@ void testParams() {
 	assert_parses("while(x<3){y:z}");
 	Node body2 = assert_parses("body(style='blue'){style:green}");// is that whole xml compatibility a good idea?
 	skip(assert(body2["style"] ==
-	            "green", 0));// body has prescedence over param, semantically param provide extra data to body
+			            "green", 0));// body has prescedence over param, semantically param provide extra data to body
 	assert(body2[".style"] == "blue");
 //	assert_parses("a(href='#'){'a link'}");
 //	assert_parses("(markdown link)[www]");
