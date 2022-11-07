@@ -257,7 +257,7 @@ namespace wabt {
 
 			Result BinaryReaderLinker::OnInitExprI32ConstExpr(Index index, uint32_t value) {
 				Section *sec = current_section_;
-				if (sec->section_code != BinarySection::Data) {
+				if (sec->section_code != BinarySection::Data or sec->data.data_segments->size() == 0) {
 					return Result::Ok;
 				}
 				DataSegment &segment = sec->data.data_segments->back();

@@ -27,8 +27,26 @@ template<class S, class T>
 class Map {
 	int _size = 0;
 public:
-	S *keys = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
-	T *values = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
+	S *keys;// = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
+	T *values;// = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
+
+	// unnecessary :
+	Map() {
+		keys = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
+		values = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
+	}
+
+//
+	Map(const Map &old) : keys(old.keys), values(old.values) {
+		_size = old._size;
+	}
+//
+//	Map &operator=(const Map &old){
+//		_size = old._size;
+//		keys = old.keys;
+//		values = old.values;
+//		return *this;
+//	}
 
 	S *lookup(T t) {
 		for (int i = 0; (values[i] or keys[i]) and i < _size; i++)
@@ -43,6 +61,7 @@ public:
 				return &values[i];
 		return 0;
 	}
+
 
 	int position(S s) {
 		for (int i = 0; i < _size; i++) //  or keys[i]!=0
@@ -135,7 +154,7 @@ public:
 		_size = 0;
 	}
 
-	bool leave_blank = false;//true;
+	bool leave_blank = false;//true BAD IDEA especially for pointers!
 	bool use_default_constructor = false;
 	[[maybe_unused]] T defaulty;
 
