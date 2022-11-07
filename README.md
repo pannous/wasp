@@ -1,4 +1,4 @@
-# 🐝 Wasp : Wasm Programming Language  
+# 🐝 Wasp : Wasm Programming Language
 
  **[Wasp](https://github.com/pannous/wasp/wiki)** is a new unified notation for both markup/object data and code.  
  Wasp is the foundation layer of the higher order programming language [angle](https://github.com/pannous/angle).
@@ -70,21 +70,24 @@ Angle programms **compiled to wasm**, which dont make use of the standard api ca
 Wasp and Angle are **free of dependencies** (other than gcc, if the (wasm) runtime is to be compiled from scratch).
 Only some optional features can make use of external dependencies:
 
-The natives runtimes can be configured to ship with a JIT wasm runtime (wasm3, wasmer, wasm-micro-runtime) 
+The natives runtimes can be configured to ship with a JIT wasm runtime (wasm3, wasmer, wasm-micro-runtime)
 
 The **native** Wasp/Angle binary contains a small **WebView** connector making use of the host's browser component (Edge or WebKit).
 Since the Angle language can be compiled from wasm to wasm, this gives a whole self sufficient programming environment in less than 200kb,  
-with similar power to [electron](https://www.electronjs.org/) and QT. 
+with similar power to [electron](https://www.electronjs.org/) and QT.
 
-Until a smart way is found to write directly to the WebViews canvas, angle ships with a low overhead **[graphics](https://github.com/pannous/wasp/wiki/graphics)** adapter (using SDL) for fast fullscreen painting. 
+Note: The full wasp_compiler.wasm is currently 2MB but can be shrunk back close to the 70kb of wasp_runtime.wasm once the lazy external references are removed
+again.
 
+Until a smart way is found to write directly to the WebViews canvas, angle ships with a low
+overhead **[graphics](https://github.com/pannous/wasp/wiki/graphics)** adapter (using SDL) for fast fullscreen painting in native wasp bundles.
 
 ## [Documentation](https://github.com/pannous/wasp/wiki/)
+
 - [Syntax specification](https://github.com/pannous/wasp/wiki/syntax)
 - [Features](https://github.com/pannous/wasp/wiki/features)
 - [Inventions](https://github.com/pannous/wasp/wiki/Inventions)
 - [Examples](https://github.com/pannous/wasp/wiki/Examples)
-
 
 ## Wasp Data Model
 

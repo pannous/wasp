@@ -29,7 +29,11 @@ bool fileExists(String filename) {
 #else
 	trace("checking fileExists "s + filename);
 	if (filename.empty())return false;
-	return access(filename.data, F_OK) == 0;
+#if WASM && !WASI
+	return false; // todo
+#else
+	return access(filename.data, 0 /*F_OK*/) == 0;
+#endif
 #endif
 }
 
@@ -169,11 +173,12 @@ char *readFile(chars filename, int *size_out) {
 //inline float floor(float x) noexcept {
 //	x-(long)x;// todo!
 //}
-bool similar(float a, float b) {
+bool similar(double a, double b) {
 	if (a == b)return true;
-	float epsilon = abs(a + b) / 10000.;// percentual ++
-	if (a == 0 or b == 0)epsilon = 1 / 1000.;
-	bool ok = a == b or abs(a - b) <= epsilon;
+	if (a == 0)return abs(b) < .0001;
+	if (b == 0)return abs(a) < .0001;
+	double epsilon = abs(a + b) / 10000.;// percentual ++ todo add 10^order parameter
+	bool ok = abs(a - b) <= epsilon;
 	return ok;
 }
 //
@@ -1103,8 +1108,9 @@ String &hex(long d) {
 	return * new String(itoa0(d));
 #else
 //	char* s= (char*) malloc(1+64/4);// 0x ?
-	char s[3 + 64 / 4];
-	sprintf(s, "0x%lx", d);
+	int size = 3 + 64 / 4;
+	char s[size];
+	snprintf(s, size, "0x%lx", d);
 	return *new String(s);// todo mark data as to-free
 #endif
 }
