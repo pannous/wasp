@@ -120,27 +120,28 @@ union Value {
 
 // The order of Type,Value is reverse to the Wasp ABI return tuple Value(int32), Type(int32)
 class Node {
+	// todo: sizeof(Node) can be reduced later by: shrinking header, merging type&kind, let *children own its length, make name String* offset
 	// sizeof(Node) == 64 (20 for name,
-	short _node_header_ = 0xDADA; //
+	//	short _node_header_ = 0xDADA; //
 public:
-	::Kind kind = unknown;// improved from 'undefined' upon construction
-//	Type kind = unknown;// improved from 'undefined' upon construction
-	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
-
+	int node_header = node_header_32;
 	Node *type = 0;// variable/reference type or object class?
+	::Kind kind = unknown;// improved from 'undefined' upon construction
+	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
+	int length = 0;// children
+	Node *children = nullptr;// LIST, not link. block body content
+//	Type kind = unknown;// improved from 'undefined' upon construction
 
 	String name = empty_name;// nil_name;
 //	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
 	Node *parent = nullptr;
 	// todo rename and alias:
 	// lets lads lats lates: lets because a=b;c=d …; lads children; lats laterals; lates delayed evaluation
-	Node *children = nullptr;// LIST, not link. block body content
 	Node *next = 0; // in children list, redundant with children[i+1] => for debugging only
 	char separator = 0;// " " ";" ","
 //	char grouper = 0;// "()", "{}", "[]" via kind!  «…» via type Group("«…»")
 
 	long _hash = 0;// set by hash(); should copy! on *x=node / clone()
-	int length = 0;// children
 #ifdef DEBUG
 // int code_position; // hash to external map
 //	int lineNumber;

@@ -21,8 +21,10 @@
 
 template<class S>
 class List {
-	int _size = 0;
 public:
+	int header = array_header_32;
+	int _type = 0;// reflection on template class S
+	int _size = 0;
 	S *items;
 
 	List() {
@@ -69,6 +71,10 @@ public:
 #endif
 
 	int size() { return _size; };
+
+	void setType(Type type) {
+		_type = type;
+	}
 
 	S &add(S s) {
 		items[_size++] = s;

@@ -1204,6 +1204,7 @@ void testMathLibrary() {
 }
 
 void testSmartReturn() {
+
 	assert_emit("x='abcde';x[3]", 'd');
 	assert_emit("1", 1);
 	assert_emit(("-2000000000000"), (long) -2000000000000l)
@@ -1289,6 +1290,8 @@ void testAllWasm() {
 			testWasmMutableGlobal();
 			assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
 	)
+	assert_emit("x=(1 4 3);x#2", 4);
+	assert_emit("x='abcde';x[3]", 'd');
 	testIndexWasm();// breaks on second run WHY?
 	testIndexWasm();// breaks on second run WHY?
 	assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier

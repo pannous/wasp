@@ -14,6 +14,8 @@
 //#include "wasm_runner.h"
 #include "wasm_reader.h"
 #include "wasm_merger.h"
+#include "asserts.h"
+#include "asserts.h"
 
 int runtime_offset = 0; // imports + funcs
 int import_count = 0;
@@ -26,6 +28,7 @@ int data_index_end = 0;// position to write more data = end + length of data sec
 int last_data = 0;// last pointer outside stack
 Map<String *, long> stringIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
+Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^
 Map<String, Node> referenceMap; // lookup types…
 
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
@@ -391,6 +394,7 @@ Code emitArray(Node &node, String context) {
 	emitIntData(array_header_32);
 	emitIntData(node.kind);
 	emitIntData(node.length);
+	assert_equals((long) data_index_end, (long) pointer + array_header_length);
 
 	for (Node &child: node) {
 // todo: smart pointers?
@@ -401,7 +405,9 @@ Code emitArray(Node &node, String context) {
 		ref = node.parent->name;
 	}
 	if (not node.name.empty()) {
+		// todo: consistently point to data or to wrapper 'object'?
 		referenceIndices.insert_or_assign(ref, pointer);
+		referenceDataIndices.insert_or_assign(ref, pointer + array_header_length);
 		referenceMap[ref] = node;
 	}
 //	code.add(emitData(Node(0), context));// terminate list with 0.
@@ -421,7 +427,7 @@ bool isAssignable(Node node, Node *type = 0) {
 	return true;
 }
 
-int currentStackItemSize() {
+int currentStackItemSize(Node array) {
 	if (last_type == charp)return 1;// chars for now vs codepoint!
 	if (last_type == stringp)return 1;// chars for now vs pointer!
 	//	if (last_type == int16)return 2;
@@ -436,17 +442,19 @@ int currentStackItemSize() {
 	return 1;
 }
 
+int headerOffset() {
+	return 4/*int*/* 3;// header, kind, lenght // todo string headers too?
+//	todo header_offset currently added ON WRITE to referenceIndices! OK!?
+}
+
 [[nodiscard]]
-Code emitOffset(Node offset_pattern, bool sharp, String context, int size, int base) {
+Code emitOffset(Node array, Node offset_pattern, bool sharp, String context, int size, int base) {
 	Code code;
 	if (offset_pattern.kind == reference) {
-		code.add(emitExpression(offset_pattern, context));
+		const Code &offset = emitExpression(offset_pattern, context);
+		code.add(offset);
 		if (last_type != i32t)
 			error("index must be of int type");
-		if (base > 0) {
-			code.addConst(base);
-			code.add(i32_add);
-		}
 		if (sharp) {// todo remove if offset_pattern was static
 			code.addConst(1);
 			code.add(i32_sub);
@@ -455,13 +463,21 @@ Code emitOffset(Node offset_pattern, bool sharp, String context, int size, int b
 			code.addConst(size);
 			code.add(i32_mul);
 		}
+		if (base > 0) { // after calculating offset!
+			code.addConst(base);
+			code.add(i32_add);
+		}
 	} else if (offset_pattern.kind == longs) {
 		int offset = (long) offset_pattern.value.longy;
 		if (offset < 1)error("operator # starts from 1, use [] for zero-indexing");
 		if (sharp) offset--;
-		if (size > 1) base += 4/*int*/* 3;// header, kind, lenght // todo string headers too?
 
-		//	if(offset_pattern>op[0].length)error("index out of bounds! %d > %d in %s (%s)"s % offset_pattern % ); // todo: get string size, array length etc
+		if (base <= 0)// base may already be provided :(
+			base += headerOffset();
+		// todo: get string size, array length etc 1. at compiletime or 2. at runtime
+		// todo: sanity checks 1. at compiletime or 2. at runtime
+		//	if(offset_pattern>op[0].length)e
+		//	rror("index out of bounds! %d > %d in %s (%s)"s % offset_pattern % );
 		code.addConst(base + offset * size);
 	} else
 		error("index operator todo");
@@ -470,16 +486,14 @@ Code emitOffset(Node offset_pattern, bool sharp, String context, int size, int b
 }
 
 [[nodiscard]]
-Code emitIndexWrite(Node offset, Node value0, String context) {
-	int base = runtime.data_offset_end;// uh, todo?
-	int size = currentStackItemSize();
+Code emitIndexWrite(Node array, int base, Node offset, Node value0, String context) {
+	int size = currentStackItemSize(array);
 	Valtype targetType = last_type;
-
 
 	//		localTypes[context]
 	Valtype valType = last_type;
 	Code store;
-	store = store + emitOffset(offset, true, context, size, base);
+	store = store + emitOffset(array, offset, true, context, size, base);
 
 	if (value0.kind == strings)//todo stringcopy? currently just one char "abc"#2=B
 	{
@@ -510,7 +524,7 @@ Code emitIndexWrite(Node offset, Node value0, String context) {
 // "hi"[0]="H"
 [[nodiscard]]
 Code emitIndexWrite(Node op, String context) {// todo offset - 1 when called via #!
-	return emitIndexWrite(op["offset"], op["value"], context);
+	return emitIndexWrite(op["array"], 0, op["offset"], op["value"], context);
 }
 
 // "hi"#1="H"
@@ -518,16 +532,16 @@ Code emitIndexWrite(Node op, String context) {// todo offset - 1 when called via
 Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 	List<String> &current = locals[context];
 	String &variable = ref.name;
+
 	if (!current.has(variable)) {
 		current.add(variable);
 		error("!! Variable missed by analyzer: "_s + variable);
-	}
+	}// else:
 	int local_index = current.position(variable);
 	last_type = localTypes[context][local_index];
+	int base = referenceDataIndices[variable];// todo?
 //	last_type = mapTypeToWasm(value);
-//	localTypes[context][local_index] = last_type;// DONT change type of array lol
-	Code code;
-	code = code + emitIndexWrite(offset, value, context);
+	Code code = emitIndexWrite(ref, base, offset, value, context);
 	return code;
 }
 
@@ -535,13 +549,13 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 // assumes value is on top of stack
 // todo merge with emitIndexRead !
 [[nodiscard]]
-Code emitIndexPattern(Node op, String context) {
+Code emitIndexPattern(Node array, Node op, String context) {
 	if (op.kind != patterns and op.kind != longs and op.kind != reference)error("op expected in emitIndexPattern");
 	if (op.length != 1 and op.kind != longs)error("exactly one op expected in emitIndexPattern");
 	int base = runtime.data_offset_end;// uh, todo?
-	int size = currentStackItemSize();
+	int size = currentStackItemSize(array);
 	Node &pattern = op.first();
-	Code load = emitOffset(pattern, op.name == "#", context, size, base);
+	Code load = emitOffset(array, pattern, op.name == "#", context, size, base);
 	if (size == 1)load.add(i8_load);// i32.load8_u
 	if (size == 2)load.add(i16_load);
 	if (size == 4)load.add(i32_load);
@@ -568,15 +582,15 @@ Code emitIndexPattern(Node op, String context) {
 
 // todo: merge
 // emitIndexPattern assumes value is on top of stack
-// emitIndexRead prints value/ref  on top of stack
+// emitIndexRead prints(??) value/ref  on top of stack
 [[nodiscard]]
 Code emitIndexRead(Node op, String context) {
 	if (op.length < 2)
 		error("index operator needs two arguments: node/array/reference and position");
 	Node &array = op[0];// also String: byte array or codepoint array todo
 	Node &pattern = op[1];
-	int base = runtime.data_offset_end;// uh, todo?
-	int size = currentStackItemSize();
+	int base = 0; // runtime.data_offset_end;// uh, todo?
+	int size = currentStackItemSize(array);
 //	if(op[0].kind==strings) todo?
 	last_type = arg_type;
 	if (last_type == charp)size = 1;// chars for now vs codepoint!
@@ -589,7 +603,7 @@ Code emitIndexRead(Node op, String context) {
 		String &ref = array.name;
 //		last_type=array.data_kind;
 		if (referenceIndices.has(ref))// also to strings
-			base += referenceIndices[ref];
+			base += referenceDataIndices[ref];
 //		else if (stringIndices.has(&ref))
 //			base += referenceIndices[ref];
 		else
@@ -607,7 +621,7 @@ Code emitIndexRead(Node op, String context) {
 	} else
 		base += last_data;// todo: pray!
 
-	Code load = emitOffset(pattern, op.name == "#", context, size, base);
+	Code load = emitOffset(array, pattern, op.name == "#", context, size, base);
 
 	if (size == 1)load.add(i8_load);
 	if (size == 2)load.add(i16_load);
@@ -769,7 +783,7 @@ Code emitValue(Node node, String context) {
 				code.addByte(get_local);// todo skip repeats
 				code.addByte(local_index);
 				if (node.length > 0) {
-					return emitIndexPattern(node, context);
+					return emitIndexPattern(Node(), node, context);
 				}
 			}
 		}
@@ -784,8 +798,7 @@ Code emitValue(Node node, String context) {
 			// append pString (as char*) to data section and access via stringIndex
 			int stringIndex = data_index_end + runtime.data_offset_end;// uh, todo?
 			String *pString = node.value.string;
-			if (stringIndices.has(
-					pString)) // todo: reuse same strings even if different pointer, aor make same pointer before
+			if (stringIndices.has(pString)) // todo: reuse same strings even if different pointer, aor make same pointer before
 				stringIndex = stringIndices[pString];
 			else {
 				stringIndices.insert_or_assign(pString, data_index_end);
@@ -802,7 +815,9 @@ Code emitValue(Node node, String context) {
 				}
 				if (node.parent and (node.parent->kind == reference or node.parent->kind == key)) {
 					// todo move up! todo key bad criterion!!
+					// todo: add header or copy WHOLE string object!
 					referenceIndices.insert_or_assign(node.parent->name, data_index_end);// safe ref to string
+					referenceDataIndices.insert_or_assign(node.parent->name, data_index_end);// safe ref to string
 					referenceMap.insert_or_assign(node.parent->name, node); // lookup types, array length …
 				}
 
@@ -816,7 +831,7 @@ Code emitValue(Node node, String context) {
 				Node &pattern = node.first();
 				if (pattern.kind != patterns and pattern.kind != longs)
 					error("only patterns allowed on string");
-				code.add(emitIndexPattern(pattern, context));
+				code.add(emitIndexPattern(Node(), pattern, context));
 			}
 			return code;
 //			return Code(stringIndex).addInt(pString->length);// pointer + length
@@ -826,7 +841,7 @@ Code emitValue(Node node, String context) {
 				return emitValue(*node.value.node,
 				                 context);// todo: make sure it is called from right context (after isSetter …)
 		case patterns:
-			return emitIndexPattern(node, context);// todo: make sure to have something indexable on stack!
+			return emitIndexPattern(Node(), node, context);// todo: make sure to have something indexable on stack!
 		case expression: {
 			Node values = node.values();// remove setter part
 			return emitExpression(values, context);
@@ -1196,7 +1211,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 			else if (node.parent->kind == declaration)
 				return emitIndexWrite(*node.parent, context);
 			else
-				return emitIndexPattern(node, context);// make sure array is on stack!
+				return emitIndexPattern(Node(), node, context);// make sure array is on stack!
 		}
 //		case groups: todo: true list vs list of expression
 //		case objects:
@@ -2237,6 +2252,7 @@ Code memorySection() {
 void prepareContext() {
 	stringIndices.clear();
 	referenceIndices.clear();
+	referenceDataIndices.clear();
 	referenceMap.clear();
 	functionCodes.clear();
 //	functionSignatures.clear();// sure?

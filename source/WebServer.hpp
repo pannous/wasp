@@ -34,11 +34,11 @@ int StrUpper(char *buffer);
 
 void CleanURL(char *buffer);
 
-ssize_t Readline(int sockd, void *vptr, size_t maxlen);
+int Readline(int sockd, void *vptr, int maxlen);
 
 //ssize_t Writeline (int sockd, const void *vptr, size_t n=-1);
 void Writeline(const char *s);// debug to server
 //void Writeline(std::string s);
 //ssize_t Writeline(int sockd, std::string s);
-ssize_t Writeline(int sockd, const char *vptr, size_t n = -1);
+int Writeline(int sockd, const char *vptr, int n = -1);
 
