@@ -763,6 +763,39 @@ public:
 	String debug_name;
 #endif
 
+
+	// these explicit constructions are needed when using types return_types as reference!
+	Signature() : return_types(*new List<Valtype>), types(*new Map<int, Valtype>) {}
+//	Signature(const Signature& old) : return_types(old.return_types), types(old.types) {}
+//	Signature(List<Valtype> &returnTypes, Map<int, Valtype> &types) : return_types(returnTypes), types(types) {}
+//	Signature &operator=(const Signature old){
+//		if (this == &old) return *this;
+//		return_types=old.return_types;
+//		types=old.types;
+//		// really neccessary??
+//		is_import  = old.is_import ;
+//		is_runtime = old.is_runtime;
+//		is_builtin = old.is_builtin;
+//		is_handled = old.is_handled;
+//		is_used  = old.is_used ;
+//		emit  = old.emit ;
+//		return *this;
+//	}
+
+//		Signature &operator=(const Signature &old){
+//		if (this == &old) return *this;
+//		return_types=old.return_types;
+//		types=old.types;
+//		// really neccessary??
+//		is_import  = old.is_import ;
+//		is_runtime = old.is_runtime;
+//		is_builtin = old.is_builtin;
+//		is_handled = old.is_handled;
+//		is_used  = old.is_used ;
+//		emit  = old.emit ;
+//		return *this;
+//	}
+
 	int size() {
 		return types.size();
 	}

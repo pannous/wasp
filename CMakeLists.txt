@@ -17,8 +17,7 @@ LINK_DIRECTORIES(/usr/local/lib)
 
 #set(SDL 1) # Graphics
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
-#set(INCLUDE_MERGER 1) # works with WASI
-set(INCLUDE_MERGER 0)
+#set(INCLUDE_MERGER 0)
 #set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
 #ADD_DEFINITIONS(-DMULTI_VALUE)
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
@@ -28,6 +27,7 @@ set(INCLUDE_MERGER 0)
 set(CONSOLE 1)
 if (NOT WASM)
     if (NOT RUNTIME_ONLY)
+        set(INCLUDE_MERGER 1) # works with WASI
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
@@ -50,6 +50,7 @@ endif () # else :
 
 
 if (INCLUDE_MERGER)
+    message(INCLUDE_MERGER)
     ADD_DEFINITIONS(-DINCLUDE_MERGER)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_merger_own.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/common.cc)

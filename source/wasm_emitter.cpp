@@ -2264,6 +2264,7 @@ void clearEmitterContext() {
 	referenceDataIndices.clear();
 	functionCodes.clear();
 	functionIndices.setDefault(-1);
+	functionIndices.clear();// ok preregistered functions are in functionSignatures
 	functionCodes.setDefault(Code());
 	typeMap.setDefault(-1);
 	typeMap.clear();
@@ -2277,7 +2278,6 @@ void clearEmitterContext() {
 [[nodiscard]]
 Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	start = _start;
-	clearEmitterContext();
 	if (runtime0) {
 		memoryHandling = no_memory;// done by runtime?
 		runtime = *runtime0;// else filled with 0's
@@ -2298,8 +2298,6 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 		last_index = -1;
 		runtime = *new Module();// all zero
 		runtime_offset = 0;
-		typeMap.clear();
-		functionIndices.clear();// ok preregistered functions are in functionSignatures
 		add_builtins();
 	}
 	if (start) {// now AFTER imports and builtins
@@ -2349,38 +2347,36 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 #ifndef WEBAPP
 //	free(data);// written to wasm code ok
 #endif
-	if (runtime0)functionSignatures.clear(); // cleanup after NAJA
+//	if (runtime0)
+//		functionSignatures.clear(); // cleanup after NAJA
 	return code.clone();
 }
+//
+//Code emit(String code){
+//	error("DEPRECATED");
+//	return 0;
+//}
 
 
-// todo dedup runtime_emit!
-//Node emit(String code, ParseOptions options) {
-Code emit(String code) {// emit and run!
-//	if (code.endsWith(".wasm")){
-//		auto filename = findFile(code);
-//		return Node(run_wasm(filename));
-//	}
-	Node data = parse(code);
-#ifdef RUNTIME_ONLY
-	warn("RUNTIME_ONLY cannot emit code")
-	return Code();
+//extern "C"
+Code *compile(String code) {
+	clearEmitterContext();
+	clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
+//	preRegisterSignatures();
+	check(functionSignatures["log10"].is_import)
+	Node parsed = parse(code);
+	check(functionSignatures["log10"].is_import)
+	Node &ast = analyze(parsed);
+	preRegisterSignatures();// todo remove after fixing Signature BUG!!
+	check(functionSignatures["log10"].is_import)
+	Code &binary = emit(ast);
+	binary.save("main.wasm");
+#ifdef INCLUDE_MERGER
+	merge_module_binaries.add(binary);
+	binary = merge_binaries(merge_module_binaries);
 #else
-	data.print();
-	clearAnalyzerContext();
-	Node &charged = analyze(data);
-	Code binary = emit(charged);// options & no_main ? 0 , 0
-#ifndef INCLUDE_MERGER
-	Code out = binary;
 	if (merge_module_binaries.size() > 0)
 		warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
-//	return ERROR;
-#else
-	Code out = merge_binaries(merge_module_binaries);
-	binary.save("raw.wasm");
-	merge_module_binaries.add(binary);
-	out.save();
 #endif
-	return out;
-#endif
+	return &binary;
 }

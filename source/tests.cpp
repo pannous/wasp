@@ -2035,7 +2035,7 @@ void testPaintWasm() {
 //char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
 //assert_emit(wasm_paint_routine, 0);
 //	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=i*(10-√i);};";
-	emit(wasm_paint_routine);
+	compile(wasm_paint_routine);
 //	paint(0);
 	gettimeofday(&stop, NULL);
 //	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
