@@ -1948,7 +1948,6 @@ void todos() {
 //	print("OK %s %d"s % ("WASM",1));// only 1 handed over
 			print("OK %d %d"s % (2, 1));// only 1 handed over
 	)
-
 }
 
 //int dump_nr = 1;
@@ -2210,8 +2209,9 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearAnalyzerContext();
-//	assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+	assert_is("(1 4 3)#2", 4);//
 	assert_emit("x='abcde';x[3]", 'd');
+	assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
 //	assert_emit("x='abcde';x[3]", 'd');
 
 //	assert_equals(~0, 0);// what is ~0 ? bitwise negation, so -1 in this context!

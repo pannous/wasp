@@ -14,8 +14,7 @@
 //#include "wasm_runner.h"
 #include "wasm_reader.h"
 #include "wasm_merger.h"
-#include "asserts.h"
-#include "asserts.h"
+//#include "asserts.h"
 
 int runtime_offset = 0; // imports + funcs
 int import_count = 0;
@@ -394,8 +393,7 @@ Code emitArray(Node &node, String context) {
 	emitIntData(array_header_32);
 	emitIntData(node.kind);
 	emitIntData(node.length);
-	assert_equals((long) data_index_end, (long) pointer + array_header_length);
-
+//	assert_equals((long) data_index_end, (long) pointer + array_header_length);
 	for (Node &child: node) {
 // todo: smart pointers?
 		code.add(emitData(child, context));// pointers in flat i32/i64 format!
@@ -442,9 +440,15 @@ int currentStackItemSize(Node array) {
 	return 1;
 }
 
-int headerOffset() {
-	return 4/*int*/* 3;// header, kind, lenght // todo string headers too?
-//	todo header_offset currently added ON WRITE to referenceIndices! OK!?
+int headerOffset(Node array) {
+	switch (array.kind) {
+		case arrays:
+			return array_header_length;
+		case groups:
+			return array_header_length;
+		default:
+			return 0;
+	}
 }
 
 [[nodiscard]]
@@ -473,7 +477,7 @@ Code emitOffset(Node array, Node offset_pattern, bool sharp, String context, int
 		if (sharp) offset--;
 
 		if (base <= 0)// base may already be provided :(
-			base += headerOffset();
+			base += headerOffset(array);
 		// todo: get string size, array length etc 1. at compiletime or 2. at runtime
 		// todo: sanity checks 1. at compiletime or 2. at runtime
 		//	if(offset_pattern>op[0].length)e
@@ -591,7 +595,7 @@ Code emitIndexRead(Node op, String context) {
 		error("index operator needs two arguments: node/array/reference and position");
 	Node &array = op[0];// also String: byte array or codepoint array todo
 	Node &pattern = op[1];
-	int base = 0; // runtime.data_offset_end;// uh, todo?
+	int base = 0;//headerOffset(array); // runtime.data_offset_end;// uh, todo?
 	int size = currentStackItemSize(array);
 //	if(op[0].kind==strings) todo?
 	last_type = arg_type;
