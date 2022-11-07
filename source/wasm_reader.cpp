@@ -537,7 +537,7 @@ void consumeSections() {
 				consumeCustomSection(); // => consumeNameSection()
 				break;
 			default:
-				if (debug_reader)printf("Invalid section %d at pos %d %x\n", section, pos, pos);
+				if (debug_reader)print("Invalid section %d at pos %d %x\n"s % section % pos % pos);
 				error("not implemented: "s + sectionName(section));
 		}
 	}
