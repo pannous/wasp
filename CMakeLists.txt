@@ -207,7 +207,7 @@ if (RELEASE)
     endif ()
 endif ()
 
-ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
+#ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
 
 # COMMON FOR ALL
 set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp source/Util.cpp)

@@ -415,21 +415,6 @@ public:
 		return read(source);
 	}
 
-	// see 'apply' for operator eval
-	static Node eval(String source) { // return by value ok, rarely used and stable
-		if (eval_via_emit)
-			return emit(source);
-		Node parsed = Wasp().parse(source);
-		parsed.print();
-#ifndef RUNTIME_ONLY
-		return parsed.interpret();
-#else
-		error("RUNTIME_ONLY, no interpret!");
-		return parsed;// DANGER!!
-#endif
-	}
-
-
 	// todo: flatten the parse->parse->read branch!!
 	Node &read(String source) {
 		if (source.endsWith(".wasp") and not source.contains("\n")) {
@@ -1746,16 +1731,6 @@ void handler(int sig) {
 //	True.value.number = 1;
 //}
 
-// todo: merge + cleanup all these eval parse run compile emit interpret
-Node run(String source) {
-#if RUNTIME_ONLY
-	error("RUNTIME_ONLY");
-	return NIL;
-#else
-	return emit(source);
-#endif
-}
-
 void load_parser_initialization() {
 //	if(operator_list.size()==0)
 	operator_list = List<chars>(operator_list0);// wasm hack
@@ -1803,16 +1778,6 @@ char newline = '\n';
 //Undefined symbols for architecture arm64:
 //"_main", referenced from:
 //implicit entry/start for main executable
-
-Node compile(String file) {
-	String code = load(file);
-#if RUNTIME_ONLY
-	return Node("Wasp compiled without emitter");
-#else
-	return emit(code);
-#endif
-}
-
 
 //static
 Node parseFile(String filename) {
@@ -1891,7 +1856,8 @@ int main(int argc, char **argv) {
 #endif
 		}
 		if (arg.endsWith(".wasp")) {
-			return compile(arg).value.longy;
+			String wasp_code = load(arg);
+			return eval(wasp_code).value.longy;
 		}
 		if (arg.endsWith(".wasm")) {
 			if (argc >= 3)
