@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src script-src 'self' 'unsafe-inline'  file://*"/> -->
+    <script src='wasp.js'></script>
+</head>
+<body>
+
+<div>
+    <h1>🐝 Wasp </h1>
+    <h2>A new programming language for wasm</h2>
+    <select>
+        <option>Examples</option>
+        <option>Hello World</option>
+        <option>Fibonnacci</option>
+        <option>Paint 2D</option>
+        <option>Scene 3D</option>
+    </select>
+    <br/>
+    <textarea id="code_input" onkeyup="run(value)">√3^2</textarea>
+    <br/>
+    <input id="input_file" onselect="readFile()" type="file"/>
+    <button onclick="run(code_input.value)">RUN</button>
+    <button onclick="results.value=''">CLEAR</button>
+    <br/>
+    <textarea cols="80" id="results" placeholder="press run to compile and see result" rows="8">
+</textarea>
+</div>
+<canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
+
+
+<style>
+    html, body {
+        width: 100%;
+        height: 100%;
+        /*margin: 0;
+        padding: 0;*/
+        overflow: hidden;
+    }
+</style>
+
+<script type="text/javascript">
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+</script>
+
+</body>
+

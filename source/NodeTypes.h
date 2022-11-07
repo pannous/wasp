@@ -93,13 +93,20 @@ enum Primitive {
 //	ffointer = 0xFF00, // pointer pointer
 //	ffointer_of_int32 = 0xFF7F, // int** etc
 // for 32 bit smart pointers, as used in return of int main(){}
-	array_header_32 = 0x40000000,
-	string_header_32 = 0x10000000,
+
+//	map_header_32 = USE NODE!
+	node_header_32 = 0xDADA0000,// more complex than array!
+	array_header_32 = 0x40000000,// compatible with List
+	string_header_32 = 0x10000000,// compatible with String
 	smart_mask_32 = 0x70000000,
 	negative_mask_32 = 0x80000000,
 	array_header_64 = 0x0040000000000000,// why 0x004? because first 2 bits indicate doubles/ints!
 	string_header_64 = 0x0010000000000000,
 };
+
+// 3 * sizeof(int32)  header, kind, length before *DATA !
+// sizeof(List) - sizeof(S*)
+#define array_header_length 12
 
 typedef int Address;
 
