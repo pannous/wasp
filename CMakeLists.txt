@@ -13,7 +13,6 @@ LINK_DIRECTORIES(/usr/local/lib)
 #set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
 #set(DEBUG 1)
-#set(CONSOLE 1)
 #ADD_DEFINITIONS(-DUSE_READLINE)
 
 #set(SDL 1) # Graphics
@@ -26,6 +25,7 @@ set(INCLUDE_MERGER 0)
 
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
 
+set(CONSOLE 1)
 if (NOT WASM)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm:
@@ -45,8 +45,9 @@ if (NOT WASM)
     # ^^ fixes <cmath> mac errors!
     ADD_DEFINITIONS(-D_Backtrace_)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
 endif () # else :
+
+
 
 if (NOT NO_TESTS)
     set(SOURCE_FILES ${SOURCE_FILES} source/tests.cpp)
@@ -82,11 +83,6 @@ if (WASM)
         ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
     endif ()
 endif ()
-
-#if (CONSOLE)
-#    ADD_DEFINITIONS(-DCONSOLE)
-#endif ()
-
 
 if (RELEASE)
     MESSAGE(RELEASE)
@@ -143,12 +139,15 @@ ENDFUNCTION()
 
 set(CMAKE_CXX_STANDARD 20)
 
-if (CONSOLE)
-    ADD_COMPILE_FLAG("-lreadline")
-endif ()
-
 ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it needs for the declared range of possible values.
 # makes TypedValue 1+8 bytes, doesn't help for multi-value (int32 int64)
+
+if (CONSOLE)
+    message(CONSOLE)
+    ADD_DEFINITIONS(-DCONSOLE)
+    ADD_COMPILE_FLAG("-lreadline")
+    set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
+endif ()
 
 
 if (DEBUG)
