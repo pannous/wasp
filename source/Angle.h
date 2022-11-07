@@ -39,6 +39,9 @@ enum ParseOptions {
 
 //List<String> collectOperators(Node &expression);// test/debug only
 Node &parse(String code);// wasp -> data  // this is the pure Wasp part
+
+//__attribute__((export_name("analyze")))
+extern "C" Code *compile(String code);// exposed to wasp.js
 Node &analyze(Node &node, String context = "main");// wasp -> node  // build ast via operators
 Node eval(String code);// interpret OR emit :
 Node interpret(String code);// wasp -> code -> data   // interpreter mode vs:

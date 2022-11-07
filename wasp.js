@@ -146,6 +146,7 @@ let imports = {// todo : reduce to absolute minium
         requestAnimationFrame: paintWasmToCanvas,
         _Z21requestAnimationFramev: nop, // why sometimes mangled?
         _Z13init_graphicsv: nop,
+        _Z7consolev: print, //huh?
         _Z8run_wasmPhi: (bytes, len) => wasmx(loadBytes(bytes, len)),// full circle yay!
         ext_memcpy: nop,
         sum: (x, y) => x + y,
@@ -162,17 +163,17 @@ async function load_wasp_runtime() {
 async function load_wasp_compiler() {
     const module = await WebAssembly.compileStreaming(fetch('wasp_compiler.wasm'));
     wasp_compiler = await WebAssembly.instantiate(module, imports, memory);
-    memory = instance.memory || module.memory || instance.exports.memory || memory
+    wasp_compiler_memory = wasp_compiler.memory || module.memory || wasp_compiler.exports.memory || memory
 }
 
 function compile(wasp_string) {
     let charged = wasp_compiler.exports.analyze(wasp_string);// Node &
     // let {length, type, binary} = load_wasp_compiler.exports.emit(charged);// todo multi-value c++
     let code = load_wasp_compiler.exports.emit(charged);// Code
-    let length = memory[code + 8]
-    let data = memory[code + 12]
+    let length = wasp_compiler_memory[code + 8]
+    let data = wasp_compiler_memory[code + 12]
     let offset = data;
-    let binary = new Uint8Array(memory.buffer, offset, length + offset);
+    let binary = new Uint8Array(wasp_compiler_memory.buffer, offset, length + offset);
     // data = new Uint8Array(memory.buffer, 0, memory.buffer.byteLength);
     return binary;
 }
