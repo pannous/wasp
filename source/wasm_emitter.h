@@ -91,5 +91,11 @@ Valtype fixValtype(Valtype &valtype);
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 
-Code emit(String code);//  wasp -> code -> wasm -> data
+//Code emit(String code);//  wasp -> code -> wasm -> data
 Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "main");
+
+//extern "C"
+Code *compile(String code);// exposed to wasp.js
+
+void clearEmitterContext();// BEFORE analyze!
+

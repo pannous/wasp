@@ -24,7 +24,7 @@ Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via sim
 
 List<String> declaredFunctions;
 //List<String> declaredFunctions;
-Map<String, Signature> functionSignatures;
+Map<String, Signature> functionSignatures;// todo Signature copy by value is broken
 
 // todo : proper context!
 Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
@@ -139,18 +139,9 @@ Node interpret(String code) {
 	return parsed.interpret();
 }
 
-extern "C"
-Code *compile(String code) {
-	Node parsed = parse(code);
-	clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
-	Node &ast = analyze(parsed);
-	Code &binary = emit(ast);
-	return &binary;
-}
 
 // todo: merge with emit
 Node eval(String code) {
-	clearAnalyzerContext();
 	Node parsed = parse(code);
 #ifdef RUNTIME_ONLY
 	return parsed; // no interpret, no emit => pure data  todo: WARN
@@ -163,6 +154,7 @@ Node eval(String code) {
 #endif
 	{
 		Code &binary = *compile(code);
+		binary.save();// to debug
 		long results = binary.run();
 		auto resultNode = smartNode(results);
 //		print("» %l"s % results );
@@ -1042,7 +1034,6 @@ Node &analyze(Node &node, String context) {
 	Kind type = node.kind;
 	String &name = node.name;
 
-
 	if (type == functor) {
 		if (name == "while")return groupWhile(node, context);
 		if (name == "if")return groupIf(node, context);
@@ -1120,14 +1111,15 @@ int run_wasm_file(chars file) {
 
 
 void preRegisterSignatures() {
+	// TODO!!!
+	// functionSignatures
+	// functionSignatures[ ] access is BROKEN!!! use functionSignatures.insert_or_assign so long!
 	// ORDER MATTERS: will be used for functionIndices later! todo: huh?
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));// todo: if used
 	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
 // todo: remove all as they come via wasp.wasm log.wasm etc
 // OK to pass stack Signature(), because copy by value functionSignatures not refs
 	functionSignatures.insert_or_assign("log10", Signature().import().add(float64).returns(float64));
-	Signature &signature = functionSignatures["log10"];
-//	check(signature.is_import);
 	functionSignatures.insert_or_assign("atoi0", Signature().runtime().add(charp).returns(int32));// todo int64
 	functionSignatures.insert_or_assign("strlen0", Signature().runtime().add(charp).returns(int32));// todo int64
 	functionSignatures.insert_or_assign("malloc", Signature().runtime().add(int64).returns(int64));
@@ -1202,11 +1194,12 @@ void clearAnalyzerContext() {
 	localTypes.clear();
 	localTypes.setDefault(List<Valtype>());
 	declaredFunctions.clear();
-	functionSignatures.clear();
 	functionSignatures.setDefault(Signature());
-	preRegisterSignatures();
 	analyzed.clear();// todo move much into outer analyze function!
 	analyzed.setDefault(0);
+	functionSignatures.clear();// always needs to be followed by
+	preRegisterSignatures();// BUG Signature wrong cpp file
+//	check(functionSignatures["log10"].is_import)
 	//	if(data.kind==groups) data.kind=expression;// force top level expression! todo: only if analyze recursive !
 #endif
 }
@@ -1219,6 +1212,7 @@ Node runtime_emit(String prog) {
 	return ERROR;
 #endif
 	clearAnalyzerContext();
+	clearEmitterContext();
 	Module runtime = read_wasm("wasp.wasm");
 //	functionIndices["print"]=functionIndices["logs"]  print default is print(Node), KEEP IT!!
 	Node charged = analyze(parse(prog));
