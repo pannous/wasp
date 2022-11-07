@@ -16,6 +16,8 @@
 #include "wasm_merger.h"
 //#include "asserts.h"
 
+Map<String, Signature> functionSignatures;// todo Signature copy by value is broken
+
 int runtime_offset = 0; // imports + funcs
 int import_count = 0;
 short builtin_count = 0;// function_offset - import_count - runtime_offset;
@@ -2369,6 +2371,7 @@ Code *compile(String code) {
 	Node &ast = analyze(parsed);
 	preRegisterSignatures();// todo remove after fixing Signature BUG!!
 	check(functionSignatures["log10"].is_import)
+	check(functionSignatures["log10"].is_used)
 	Code &binary = emit(ast);
 	binary.save("main.wasm");
 #ifdef INCLUDE_MERGER
