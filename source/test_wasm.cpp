@@ -41,7 +41,7 @@ void testWasmStuff();
 
 void testEmitter() {
 #ifndef RUNTIME_ONLY
-	clearContext();
+	clearAnalyzerContext();
 	Node node = Node(42);
 	Code &code = emit(node);
 	int result = code.run();
