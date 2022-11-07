@@ -2210,7 +2210,10 @@ void testCurrent() {
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
 	clearAnalyzerContext();
-	assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+//	assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+	assert_emit("x='abcde';x[3]", 'd');
+//	assert_emit("x='abcde';x[3]", 'd');
+
 //	assert_equals(~0, 0);// what is ~0 ? bitwise negation, so -1 in this context!
 
 //functionIndices
