@@ -133,7 +133,6 @@ bool isFunction(Node &op) {
 #ifndef RUNTIME_ONLY
 #endif
 
-void prepareContext();
 
 Node interpret(String code) {
 	Node parsed = parse(code);
@@ -143,9 +142,7 @@ Node interpret(String code) {
 extern "C"
 Code *compile(String code) {
 	Node parsed = parse(code);
-	prepareContext();
-	preRegisterSignatures();
-	analyzed.setDefault(false);
+	clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
 	Node &ast = analyze(parsed);
 	Code &binary = emit(ast);
 	return &binary;
@@ -153,7 +150,7 @@ Code *compile(String code) {
 
 // todo: merge with emit
 Node eval(String code) {
-	clearContext();
+	clearAnalyzerContext();
 	Node parsed = parse(code);
 #ifdef RUNTIME_ONLY
 	return parsed; // no interpret, no emit => pure data  todo: WARN
@@ -1117,7 +1114,6 @@ int run_wasm_file(chars file) {
 	error("RUNTIME_ONLY");
 	return -1;
 #else
-	prepareContext();
 	return run_wasm((bytes) buffer.data, buffer.length);
 #endif
 }
@@ -1193,14 +1189,14 @@ void preRegisterSignatures() {
 	functionSignatures["concat"] = Signature().add(charp).add(charp).returns(charp).runtime();// chars to be precise
 }
 
-void clearContext() {
+void clearAnalyzerContext() {
+//	needs to be outside analyze, because analyze is recursive
 #ifndef RUNTIME_ONLY
 	globals.clear();
 	globals.setDefault(new Node());
 	functionIndices.clear();
 	functionIndices.setDefault(-1);
-	referenceIndices.clear();
-	referenceDataIndices.clear();
+//	stringIndices.clear();
 	locals.clear();
 	locals.setDefault(List<String>());
 	localTypes.clear();
@@ -1222,11 +1218,8 @@ Node runtime_emit(String prog) {
 	printf("emit wasm not built into release runtime");
 	return ERROR;
 #endif
-	clearContext();
-	functionIndices.clear();
-	functionIndices.setDefault(-1);
+	clearAnalyzerContext();
 	Module runtime = read_wasm("wasp.wasm");
-	preRegisterSignatures();
 //	functionIndices["print"]=functionIndices["logs"]  print default is print(Node), KEEP IT!!
 	Node charged = analyze(parse(prog));
 	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
@@ -1237,7 +1230,7 @@ Node runtime_emit(String prog) {
 	code.save("merged.wasm");
 	read_wasm("merged.wasm");
 	long result = code.run();// todo parse stdout string as node and merge with emit() !
-	clearContext();
+	clearAnalyzerContext();
 	return smartNode(result);
 }
 

@@ -26,7 +26,7 @@ char *data;// any data to be stored to wasm: values of variables, strings, nodes
 //int data_index_start = 0;
 int data_index_end = 0;// position to write more data = end + length of data section
 int last_data = 0;// last pointer outside stack
-Map<String *, long> stringIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
+//Map<String *, long> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
 Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^
 Map<String, Node> referenceMap; // lookup types…
@@ -539,7 +539,9 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 	}// else:
 	int local_index = current.position(variable);
 	last_type = localTypes[context][local_index];
-	int base = referenceDataIndices[variable];// todo?
+	int base = 0;
+	if (referenceIndices.has(variable))
+		base=referenceDataIndices[variable];// todo?
 //	last_type = mapTypeToWasm(value);
 	Code code = emitIndexWrite(ref, base, offset, value, context);
 	return code;
@@ -617,7 +619,8 @@ Code emitIndexRead(Node op, String context) {
 //		else error("reference should be mapped");
 
 	} else if (array.kind == strings) {
-		base += stringIndices[array.value.string];
+		if (array.value.string)
+		base += referenceDataIndices[*array.value.string];
 	} else
 		base += last_data;// todo: pray!
 
@@ -684,19 +687,19 @@ Code emitData(Node node, String context) {
 			break;
 		case strings: {
 			int stringIndex = data_index_end + runtime.data_offset_end;// uh, todo?
-			String *pString = node.value.string;
-			if (stringIndices.has(
-					pString)) // todo: reuse same strings even if different pointer, aor make same pointer before
-				stringIndex = stringIndices[pString];
+			if (not node.value.string)error("empty node.value.string");
+			String string = *node.value.string;
+			if (string and referenceDataIndices.has(string)) // todo: reuse same strings even if different pointer, aor make same pointer before
+				stringIndex = referenceDataIndices[string];
 			else {
-				stringIndices.insert_or_assign(pString, data_index_end);
+				referenceDataIndices.insert_or_assign(string, data_index_end);
 				//				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
 				//				strcpy2(data + data_index_end, (char*)lens.data, lens.length);
 				//				data_index_end += lens.length;// unsignedLEB128 encoded length of pString
-				strcpy2(data + data_index_end, pString->data, pString->length);
-				data[data_index_end + pString->length] = 0;
+				strcpy2(data + data_index_end, string.data, string.length);
+				data[data_index_end + string.length] = 0;
 				// we add an extra 0, unlike normal wasm abi, because we have space in data section
-				data_index_end += pString->length + 1;
+				data_index_end += string.length + 1;
 			}
 			last_type = stringp;
 			break;
@@ -797,16 +800,17 @@ Code emitValue(Node node, String context) {
 		case strings: {
 			// append pString (as char*) to data section and access via stringIndex
 			int stringIndex = data_index_end + runtime.data_offset_end;// uh, todo?
-			String *pString = node.value.string;
-			if (stringIndices.has(pString)) // todo: reuse same strings even if different pointer, aor make same pointer before
-				stringIndex = stringIndices[pString];
+			if (!node.value.string)error("missing node.value.string");
+			String string = *node.value.string;
+			if (referenceDataIndices.has(string)) // todo: reuse same strings even if different pointer, aor make same pointer before
+				stringIndex = referenceDataIndices[string];
 			else {
-				stringIndices.insert_or_assign(pString, data_index_end);
+				referenceDataIndices.insert_or_assign(string, data_index_end);
 //				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
 //				strcpy2(data + data_index_end, (char*)lens.data, lens.length);
 //				data_index_end += lens.length;// unsignedLEB128 encoded length of pString
-				strcpy2(data + data_index_end, pString->data, pString->length);
-				data[data_index_end + pString->length] = 0;
+				strcpy2(data + data_index_end, string.data, string.length);
+				data[data_index_end + string.length] = 0;
 				if (referenceIndices.has(name)) {
 					if (not isAssignable(node))
 						error("can't reassign reference "s + name);
@@ -822,7 +826,7 @@ Code emitValue(Node node, String context) {
 				}
 
 				// we add an extra 0, unlike normal wasm abi, because we have space in data section
-				data_index_end += pString->length + 1;
+				data_index_end += string.length + 1;
 			}
 			last_type = charp;//
 			code = Code(i32_const) + Code(stringIndex);// just a pointer
@@ -2248,34 +2252,28 @@ Code memorySection() {
 	return code;
 }
 
-// todo: merge with clearContext()
-void prepareContext() {
-	stringIndices.clear();
+// todo: merge with
+void clearEmitterContext() {
+//	clearAnalyzerContext(); NO keep it at times!
+	referenceMap.clear();
 	referenceIndices.clear();
 	referenceDataIndices.clear();
-	referenceMap.clear();
 	functionCodes.clear();
-//	functionSignatures.clear();// sure?
+	functionIndices.setDefault(-1);
+	functionCodes.setDefault(Code());
 	typeMap.setDefault(-1);
 	typeMap.clear();
 	referenceMap.setDefault(Node());
-	locals.setDefault(List<String>());
-	localTypes.setDefault(List<Valtype>());
-	data = (char *) malloc(MAX_DATA_LENGTH);
-//	while (((long)data)%16)data++;// type 'long', which requires 4 byte alignment
 	data_index_end = 0;
 	last_data = 0;
-//	analyzed.
-	functionIndices.setDefault(-1);
-	functionCodes.setDefault(Code());
-	functionSignatures.setDefault(Signature());
-//	preRegisterSignatures();
+	data = (char *) malloc(MAX_DATA_LENGTH);
+//	while (((long)data)%16)data++;// type 'long', which requires 4 byte alignment
 }
 
 [[nodiscard]]
 Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	start = _start;
-	prepareContext();
+	clearEmitterContext();
 	if (runtime0) {
 		memoryHandling = no_memory;// done by runtime?
 		runtime = *runtime0;// else filled with 0's
@@ -2365,7 +2363,7 @@ Code emit(String code) {// emit and run!
 	return Code();
 #else
 	data.print();
-	clearContext();
+	clearAnalyzerContext();
 	Node &charged = analyze(data);
 	Code binary = emit(charged);// options & no_main ? 0 , 0
 #ifndef INCLUDE_MERGER
