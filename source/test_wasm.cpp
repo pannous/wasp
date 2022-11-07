@@ -6,7 +6,7 @@
 //#import "asserts.cpp"
 
 #define assert_throws(αα)  {printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);bool old=panicking;try{ \
-panicking=false;throwing=true;emit(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line(); \
+panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα);backtrace_line(); \
 }catch(chars){}catch(String*){}catch(...){};panicking=old;}
 
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
@@ -42,6 +42,7 @@ void testWasmStuff();
 void testEmitter() {
 #ifndef RUNTIME_ONLY
 	clearAnalyzerContext();
+	clearEmitterContext();
 	Node node = Node(42);
 	Code &code = emit(node);
 	int result = code.run();
@@ -793,7 +794,8 @@ void testWasmRuntimeExtensionMock() {
 void testWasmModuleExtension() {
 	printf("testWasmModuleExtension");
 #ifndef RUNTIME_ONLY
-	functionSignatures.clear();
+	clearAnalyzerContext();
+	clearEmitterContext();
 //	memoryHandling=0;
 	Node charged = analyze(parse("test:=42"));
 	breakpoint_helper
