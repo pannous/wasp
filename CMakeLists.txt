@@ -49,10 +49,6 @@ endif () # else :
 
 
 
-if (NOT NO_TESTS)
-    set(SOURCE_FILES ${SOURCE_FILES} source/tests.cpp)
-endif ()
-
 if (INCLUDE_MERGER)
     ADD_DEFINITIONS(-DINCLUDE_MERGER)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_merger_own.cpp)
@@ -209,8 +205,11 @@ endif ()
 #ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
 
 # COMMON FOR ALL
-set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp source/Util.cpp)
+set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp)
 
+if (NOT NO_TESTS)
+    set(SOURCE_FILES ${SOURCE_FILES} source/tests.cpp)
+endif ()
 
 if (RUNTIME_ONLY)
     message("RUNTIME_ONLY!")
