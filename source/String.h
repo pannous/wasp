@@ -4,6 +4,7 @@
 //
 #include "wasm_helpers.h"
 #include "Util.h"
+#include "NodeTypes.h"
 //#include "NodeTypes.h"
 #include <cstdlib> // OK in WASM!
 
@@ -183,17 +184,20 @@ class String {
 	//#include <alloc.h>
 #endif
 #endif
-
 private:
-	codepoint *codepoints = 0;// extract on demand from data
-	int codepoint_count = -1;
+	// memory layout different to chars with leb length header!
+	int header = string_header_32;// to identify string structures in memory
+public:
+	int codepoint_count = -1;// 'type' field in list, node and array_header, semi compatible
+	int length = -1;
+	char *data{};// UTF-8 sequence, unanalyzed
+	bool shared_reference = false;// length terminated substrings! copy on modify if shared views. // todo: move to header?
+	// todo is shared_reference sufficient for (im)mutable final const keywords?
+private:
+	codepoint *codepoints = 0;// extract on demand from data or via constructor
+	// todo add UTF-16 representation as codepoint union?
 
 public:
-	// memory layout different to chars with leb length header!
-	char *data{};
-	int length = -1;
-	bool shared_reference = false;// length terminated substrings!
-
 	String() {
 //		assert(null_value[0] == 0);
 //		data = 0;

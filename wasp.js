@@ -166,10 +166,19 @@ async function load_wasp_compiler() {
     wasp_compiler_memory = wasp_compiler.memory || module.memory || wasp_compiler.exports.memory || memory
 }
 
+function new_string(s) {// create full Wasp String object and return pointer
+    if (!s) return -1; // 0 MAKE SURE!
+    buffer.set(string_header, STACK++);
+    buffer.set(s.length, STACK++);
+    var uint8array = new TextEncoder("utf-8").encode(s);
+    // buf = new Uint8Array(buffer, current , s.length);
+    buffer.set(uint8array, current);
+    STACK += uint8array.length + 1;
+    return current;
+}
+
 function compile(wasp_string) {
-    let charged = wasp_compiler.exports.analyze(wasp_string);// Node &
-    // let {length, type, binary} = load_wasp_compiler.exports.emit(charged);// todo multi-value c++
-    let code = load_wasp_compiler.exports.emit(charged);// Code
+    let code = load_wasp_compiler.exports.compile(wasp_string);
     let length = wasp_compiler_memory[code + 8]
     let data = wasp_compiler_memory[code + 12]
     let offset = data;

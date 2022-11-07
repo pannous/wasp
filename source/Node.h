@@ -123,13 +123,13 @@ class Node {
 	// todo: sizeof(Node) can be reduced later by: shrinking header, merging type&kind, let *children own its length, make name String* offset
 	// sizeof(Node) == 64 (20 for name,
 	//	short _node_header_ = 0xDADA; //
-public:
 	int node_header = node_header_32;
+public:
 	Node *type = 0;// variable/reference type or object class?
-	::Kind kind = unknown;// improved from 'undefined' upon construction
-	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 	int length = 0;// children
 	Node *children = nullptr;// LIST, not link. block body content
+	::Kind kind = unknown;// improved from 'undefined' upon construction
+	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 //	Type kind = unknown;// improved from 'undefined' upon construction
 
 	String name = empty_name;// nil_name;

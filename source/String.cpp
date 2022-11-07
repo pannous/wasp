@@ -654,6 +654,8 @@ bool empty(codepoint s) {
 
 
 bool contains(chars str, chars match) {
+	if (!str)
+		return false;
 	int l = strlen0(match);
 	for (int i = 0; str[i] != 0; i++) {
 		bool ok = true;
