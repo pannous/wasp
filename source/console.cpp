@@ -37,7 +37,9 @@ bool file_read_done = false;
 void getline(char *buf) {
 	if (buf == 0) return; // end
 //#ifdef USE_READLINE
-#ifdef CONSOLE
+//#ifndef CONSOLE
+//	print("wasp compiled without console");
+//#else
 	int MAXLENGTH = 10000;
 	const char *PROMPT = "wasp> ";
 	if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
@@ -50,9 +52,7 @@ void getline(char *buf) {
 	strncpy(buf, tmp, MAXLENGTH);
 	buf[MAXLENGTH - 1] = '\0';
 	write_history(".wasp_history");
-#else
-	print("wasp compiled without console");
-#endif
+//#endif
 //#endif
 }
 

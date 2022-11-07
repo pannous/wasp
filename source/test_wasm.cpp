@@ -1205,7 +1205,6 @@ void testMathLibrary() {
 }
 
 void testSmartReturn() {
-
 	assert_emit("x='abcde';x[3]", 'd');
 	assert_emit("1", 1);
 	assert_emit(("-2000000000000"), (long) -2000000000000l)
