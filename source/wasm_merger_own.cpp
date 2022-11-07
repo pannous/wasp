@@ -1129,7 +1129,8 @@ void Linker::CreateRelocs() {
 		// todo create and pass correct view from here!
 		Code section_code(binary->data.data() + section->offset + 1, section->size);
 //		auto relocs = PatchCodeSection(section_code, indexOffset);
-		auto relocs = PatchCodeSection(binary->data, section->offset + 1, size, indexOffset, binary->imported_function_index_offset);
+		Index boarder = binary->imported_function_index_offset;
+		auto relocs = PatchCodeSection(binary->data, section->offset + 1, size, indexOffset, boarder);
 		for (Reloc &reloc: relocs)
 			section->relocations.push_back(reloc);
 //		if(!section->data.data_segments)
