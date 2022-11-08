@@ -165,6 +165,8 @@ public:
 	[[maybe_unused]] T defaulty;
 
 	void setDefault(T d) {
+		if (sizeof(T) > 8)
+			todo("careful! only use setDefault for value types without nested data!");
 		defaulty = d;
 		use_default = true;// we can't tell if defaulty is 'good' otherwise
 	}

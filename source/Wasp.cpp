@@ -124,7 +124,7 @@ Map<long/*hash*/, String *> hash_to_normed_alias;
 bool aliases_loaded = true;// DON't load aliases!
 
 void load_aliases() {
-	aliases.setDefault(List<String>());
+	aliases.setDefault(List<String>());// uff!?
 	hash_to_normed_alias.setDefault(new String());
 	data_mode = true;
 	auto list = parseFile("aliases.wasp");
@@ -139,17 +139,6 @@ void load_aliases() {
 //	check(hash_to_normed_alias["mod_d"s.hash()]=="mod"s);
 	aliases_loaded = true;
 }
-
-typedef int32_t usize;
-typedef uint32_t u32;
-struct AssemblyScriptData {
-	usize mmInfo;// 	-20 	usize 	Memory manager info
-	usize gcInfo;// 	-16 	usize 	Garbage collector info
-	usize gcInfo2;// 	-12 	usize 	Garbage collector info
-	u32 rtId;// 	-8 	u32 	Unique id of the concrete class
-	u32 rtSize;// 	-4 	u32 	Size of the data following the header
-	void *payload;// 0 	Payload starts here
-} AssemblyScriptData;
 
 String &normOperator(String &alias) {
 	if (alias.empty())return alias;
