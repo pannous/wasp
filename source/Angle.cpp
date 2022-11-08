@@ -111,6 +111,7 @@ Node constants(Node n) {
 
 bool isFunction(String op) {
 	if (op.empty())return false;
+	if (is_operator(op[0]))return false;
 	if (declaredFunctions.has(op))return true;
 	if (functions.has(op))return true;// pre registered signatures
 	if (op.in(function_list))
@@ -1176,16 +1177,13 @@ void preRegisterFunctions() {
 	functions["print"] = functions["puts"];// todo: for now, later it needs to distinguish types!!
 	functions["paint"].import().signature.returns(voids);// paint surface
 	functions["init_graphics"].import().signature.returns(pointer);// surface
-//	functions["init_graphics"].import().returns(pointer);// BUUUUG!
-//	if(functions["init_graphics"].return_type!=pointer)error("WWWAAA");
-	// builtins
+
+	// BUILTINS
 	functions["nop"].builtin();
-//	functions["id"] = Signature().add(i32t).returns(i32t).builtin();
 	functions["id"].builtin().signature.add(i32t).returns(i32t);
+	functions["concat"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
 	// library signatures are parsed in consumeExportSection() via demangle
 	// BUT their return type is not part of name, so it needs to be hardcoded, if ≠ int32:
-//	functions["concat"] = Signature().add(string).add(string).returns(string).runtime();// chars to be precise
-	functions["concat"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
 	fixFunctionNames();
 }
 
@@ -1193,20 +1191,14 @@ void clearAnalyzerContext() {
 //	needs to be outside analyze, because analyze is recursive
 #ifndef RUNTIME_ONLY
 	globals.clear();
-//	globals.setDefault(new Node());
 	functionIndices.clear();
-//	functionIndices.setDefault(-1);
+	functionIndices.setDefault(-1);
 	locals.clear();
-//	locals.setDefault(List<String>());
 	localTypes.clear();
-//	localTypes.setDefault(List<Valtype>());
 	declaredFunctions.clear();
 	analyzed.clear();// todo move much into outer analyze function!
-//	analyzed.setDefault(0);
 	functions.clear();// always needs to be followed by
 	preRegisterFunctions();// BUG Signature wrong cpp file
-//	check(functions["log10"].is_import)
-	//	if(data.kind==groups) data.kind=expression;// force top level expression! todo: only if analyze recursive !
 #endif
 }
 

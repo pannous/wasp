@@ -1171,7 +1171,7 @@ Code merge_files(List<String> infiles) {
 
 
 Code &merge_binaries(List<Code> binaries) {
-	opcode_args[global_get] = leb;
+//	opcode_args[global_get] = leb;
 	check(opcode_args[global_get] == leb) // todo what kind of dark bug is that???
 	Linker linker;
 	if (binaries.size() == 1)
