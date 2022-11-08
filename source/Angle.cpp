@@ -1187,16 +1187,16 @@ void clearAnalyzerContext() {
 //	needs to be outside analyze, because analyze is recursive
 #ifndef RUNTIME_ONLY
 	globals.clear();
-	globals.setDefault(new Node());
+//	globals.setDefault(new Node());
 	functionIndices.clear();
-	functionIndices.setDefault(-1);
+//	functionIndices.setDefault(-1);
 	locals.clear();
-	locals.setDefault(List<String>());
+//	locals.setDefault(List<String>());
 	localTypes.clear();
-	localTypes.setDefault(List<Valtype>());
+//	localTypes.setDefault(List<Valtype>());
 	declaredFunctions.clear();
 	analyzed.clear();// todo move much into outer analyze function!
-	analyzed.setDefault(0);
+//	analyzed.setDefault(0);
 	functions.clear();// always needs to be followed by
 	preRegisterSignatures();// BUG Signature wrong cpp file
 //	check(functions["log10"].is_import)
