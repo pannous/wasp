@@ -81,7 +81,7 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 		{br,              block_index},
 		{br_if,           block_index},
 		{return_block,    -1},
-		{call,            -1},
+		{function_call,   -1},
 
 		// EXTENSIONS:
 		{call_ref,        u32},
