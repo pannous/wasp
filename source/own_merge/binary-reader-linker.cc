@@ -257,7 +257,7 @@ namespace wabt {
 
 			Result BinaryReaderLinker::OnInitExprI32ConstExpr(Index index, uint32_t value) {
 				Section *sec = current_section_;
-				if (sec->section_code != BinarySection::Data or sec->data.data_segments->size() == 0) {
+				if (sec->section_code != BinarySection::Data or not sec->data.data_segments or sec->data.data_segments->size() == 0) {
 					return Result::Ok;
 				}
 				DataSegment &segment = sec->data.data_segments->back();
@@ -269,6 +269,7 @@ namespace wabt {
 			                                             const void *src_data,
 			                                             Address64 size) {
 				Section *sec = current_section_;
+				if (not sec->data.data_segments)return Result::Ok;// kf 2022
 				DataSegment &segment = sec->data.data_segments->back();
 				segment.data = static_cast<const uint8_t *>(src_data);
 				segment.size = size;

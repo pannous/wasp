@@ -8,7 +8,7 @@
 #endif
 
 #include "wasm_reader.h"
-#include "wasm_emitter.h"
+//#include "wasm_emitter.h"
 #include "Util.h"
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
@@ -20,7 +20,7 @@ int pos = 0;
 int size = 0;
 byte *code;
 Module module;
-extern Map<String, int> functionIndices;
+//extern Map<String, int> module.functionIndices;// todo: use function[String].index
 //extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 
 
@@ -111,8 +111,9 @@ String &name(Code &wstring) {
 // todo: treat all functions (in library file) as exports if ExportSection is empty !?
 // that is: add their signatures to module …
 void parseFunctionNames(Code &payload) {
-	functionIndices.setDefault(-1);
-//	put(functionIndices);// what we got so far?
+	module.functionIndices.setDefault(-1);
+	module.functions.setDefault(Function());
+//	put(module.functionIndices);// what we got so far?
 	int function_count = unsignedLEB128(payload);
 	int index = -1;
 	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
@@ -122,28 +123,31 @@ void parseFunctionNames(Code &payload) {
 		if (i != index)// in partial main.wasm
 			warn("index out of order "s + i + " <> " + index);// doesn't happen
 		String func = name(payload).clone();// needs to be 0-terminated now
-		if (functionIndices[func] > 0 and functionIndices[func] < function_count /*hack!*/) {
-			if (functionIndices[func] == index)
-				continue; // identical match, lib parsed twice without cleaning functionIndices!?
+		Function &function = module.functions[func];
+		function.index = index;
+		function.name = func;
+		if (module.functionIndices[func] > 0 and module.functionIndices[func] < function_count /*hack!*/) {
+			if (module.functionIndices[func] == index)
+				continue; // identical match, lib parsed twice without cleaning module.functionIndices!?
 			// export section ≠ name section (when overloading…)
-			trace("already has index: "s + func + " " + functionIndices[func] + "≠" + index);
+			trace("already has index: "s + func + " " + module.functionIndices[func] + "≠" + index);
 			continue;
 			func = func + "_func_" + index;// hack ok to avoid duplicates
 			func = func.clone();
 		}
 		if (func.length > 0)
-//			functionIndices.insert_or_assign(func, index);
-			functionIndices[func] = index;
+//			module.functionIndices.insert_or_assign(func, index);
+			module.functionIndices[func] = index;
 		else {
 			error("function without name at index "s + index);// happens with unicode π(x) etc
 			//			warn
-			functionIndices["func_"s + index] = index;
-//			functionIndices.insert_or_assign("func_"s + index, index);
+			module.functionIndices["func_"s + index] = index;
+//			module.functionIndices.insert_or_assign("func_"s + index, index);
 		}
 	}
 //	  (import "env" "log_chars" (func (;0;) $logs (type 0)))  export / import names != internal names
 //	for (int i = function_count; i < module.total_func_count; i++)
-//		functionIndices.insert_or_assign("unnamed_func_"s + i, i);
+//		module.functionIndices.insert_or_assign("unnamed_func_"s + i, i);
 
 }
 
@@ -153,19 +157,19 @@ void parseFuncTypeSection(Code &payload) {
 	// we don't know here if i32 is pointer … so we may have to refine later
 	for (int i = 0; i < module.code_count and payload.start < payload.length; ++i) {
 		int typ = unsignedLEB128(payload);// implicit?
-		String *fun = functionIndices.lookup(i + module.import_count);
+		String *fun = module.functionIndices.lookup(i + module.import_count);
 		if (!fun)continue;
 //			error("no name for function "s+i);
 		Signature &s = funcTypes[typ];
-		Signature &sic = functionSignatures[*fun];
-		functionSignatures[*fun] = s;
+		Function &function = module.functions[*fun];
+		function.signature.merge(s);
+		Signature &sic = getSignature(*fun);// todo merge global signatures later!
+		sic.merge(s);
 	}
 }
 
 // not part of name section wtf
 void parseImportNames(Code &payload) {
-	functionIndices.setDefault(-1);
-	functionSignatures.setDefault(Signature());
 	trace("Imports:");
 	for (int i = 0; i < module.import_count and payload.start < payload.length; ++i) {
 		String &mod = name(payload);// module
@@ -174,12 +178,13 @@ void parseImportNames(Code &payload) {
 		int type = unsignedLEB128(payload);
 		trace(name1);
 		Signature &signature = funcTypes[type];
-		functionIndices[name1] = i;
-		functionSignatures[name1] = signature;// overwrites any preregistered signatures OK cause correct!?
-		functionSignatures[name1].import().runtime().handled();//.functionType(huh);//.runtime()
+		module.functionIndices[name1] = i;
+		Signature &sic = getSignature(name1);
+		if (sic.return_types.empty()) sic.return_types = signature.return_types;// todo copy construktor OK??
+		if (sic.types.empty())sic.types = signature.types;
 		module.import_names.add(name1);
 	}
-	module.signatures = functionSignatures; // todo merge into global functionSignatures, not the other way round!!
+//	module.signatures = functionSignatures; // todo merge into global functionSignatures, not the other way round!!
 }
 
 // Signatures to be consumed in export section
@@ -381,41 +386,42 @@ void consumeExportSection() {
 	Code &payload = module.export_data;
 	for (int i = 0; i < exportCount; i++) {
 		String func0 = name(payload).clone();
+//		module.functions=Map<String,Function>();
 		if (func0 == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
 //		if (func0=="_ZN6StringpLEPS_")continue;// bug!?
 		if (func0 == "_Z6concatPKcS0_")
 			debug = 1;
 		List<String> args = demangle_args(func0);
 		String func = demangle(func0);
+		Function fun = module.functions[func];// demangled
+		Function fun0 = module.functions[func0];// mangled
+
 //		module.export_names.add(func.clone());// should be ok: item[_size]=value BUT IT IS NOT OK, corrupts memory later!!
 		int type = unsignedLEB128(payload);
 		int index = unsignedLEB128(payload);
 		if (index < 0 or index > 100000)error("corrupt index "s + index);
-		if (type == 0/*func*/ and not functionIndices.has(func)) {
-			functionIndices[func0] = index;// mangled
-			functionIndices[func] = index;// demangled
-
-			Valtype returns = int32;
-			// todo: use wasm_signature if demangling fails
-			// todo: demangling doesn't yield return type, is wasm_signature ok?
-//			Signature &wasm_signature = funcTypes[type];
-//			returns = mapTypeToWasm(wasm_signature.return_type);
-//			if (returns != i32) {
-////				print("returns "s+ typeName(returns));
+		module.functionIndices[func0] = index;// mangled
+		module.functionIndices[func] = index;// demangled
+		fun0.index = index;
+		fun.index = index;
+		fun.name = func;
+		fun0.name = func0;
+		// todo: demangling doesn't yield return type, is wasm_signature ok?
+		// todo: use wasm_signature if demangling fails
+		Signature &wasm_signature = funcTypes[type];
+		Valtype returns = mapTypeToWasm(wasm_signature.return_type);
+		if (i32 != returns) {
+			print("returns "s + typeName(returns));
 //				returns = int32; // for now! todo
 //				// else 	assert_run("x='123';x + '4' is '1234'", true); // FAILS somehow!
-//			}
-			Signature &signature = Signature().runtime().returns(returns);
-			// todo: use wasm_signature if demangling fails
-			for (String arg: args) {
-				if (arg.empty())continue;
-				signature.add(mapArgToValtype(arg));
-			}
-			if (!functionSignatures.has(func))
-				functionSignatures[func] = signature; // … library functions currently hardcoded
-			if (!functionSignatures.has(func0))
-				functionSignatures[func0] = signature;
 		}
+		fun.signature.returns(returns);
+		// todo: use wasm_signature if demangling fails
+		for (String arg: args) {
+			if (arg.empty())continue;
+			fun.signature.add(mapArgToValtype(arg));
+		}
+		fun0.signature = fun.signature;// todo copy by value ok?
 	}
 }
 
@@ -548,6 +554,7 @@ void consumeSections() {
 
 Module read_wasm(bytes buffer, int size0) {
 	module = *new Module(); // todo: make pure, not global!
+//	module.functions.use_default_constructor= true;// setDefault(Function());
 	pos = 0;
 	code = buffer;
 	size = size0;
@@ -577,10 +584,12 @@ Module read_wasm(bytes buffer, int size0) {
 #endif
 #undef pointerr
 
-Code read_code(chars file) {
+Code &read_code(chars file) {
 	int size;
 	char *data = readFile(file, &size);
-	return Code(data, size, false);
+	Code &cod = *new Code(data, size, false);
+	cod.name = String(file);
+	return cod;
 }
 
 

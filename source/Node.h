@@ -64,6 +64,7 @@ extern const Node NIL;
 extern Node True;
 extern Node False;
 extern Node ERROR;
+extern Node Ignore;
 extern Node Infinity;// = Node("Infinity");
 extern Node NegInfinity;// = Node("Infinity");
 extern Node NaN;// = Node("NaN");
@@ -709,3 +710,7 @@ public:
 
 	operator Node &() { return _b ? True : False; }
 };
+
+Node eval(Node n);
+
+Node eval(String n);

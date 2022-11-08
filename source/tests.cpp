@@ -300,7 +300,7 @@ void testSignificantWhitespace() {
 
 
 void testComments() {
-	let c = "from wasp import * # to silence python warnings;)\n y/* yeah! */=0 // really";
+	let c = "blah a b c # to silence python warnings;)\n y/* yeah! */=0 // really";
 	result = parse(c);
 	check(result.length == 2);
 	check(result[0].length == 4);
@@ -2209,8 +2209,14 @@ void testCurrent() {
 //	exit(1);
 	data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
-	clearAnalyzerContext();
-	testLogarithm();
+//	clearAnalyzerContext();
+	assert_emit("use log; log10(100)", 2.);
+	assert_run("'123' is '123'", true);
+	skip(
+			testMergeRelocate();
+	)
+
+//	testLogarithm();
 	assert_is("(1 4 3)#2", 4);//
 	assert_emit("x='abcde';x[3]", 'd');
 	assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)

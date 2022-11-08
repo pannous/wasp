@@ -45,15 +45,6 @@ Code &signedLEB128(long value);
 
 class Code {
 public:
-	Code(byte *data0, int from, int pos) {
-		data = data0;
-		start = from;
-//		pos=???
-	}
-
-	virtual ~Code() {
-		data = 0;
-	}
 
 	int header = array_header_32;// todo: code_header_32 if extra fields are needed beyond standard
 	int kind = byte_char;
@@ -61,6 +52,8 @@ public:
 	bytes data = 0;
 	int start = 0;// internal reader pointer
 	bool encoded = false;// first byte = size of vector
+	bool shared = true;// can't free data until all views are destroyed OR because this is a view on other's data!!
+	String name;// function or file
 
 	Code() {}
 
@@ -68,13 +61,20 @@ public:
 		data = a;
 		length = len;
 		if (needs_copy) {
+			shared = false; // free later
 			data = static_cast<bytes>(malloc(length));
 			memcpy(data, a, length);
 		}
 	}
 
-	Code(char *datas, int size, bool needs_copy = true) : Code((bytes) datas, size, needs_copy) {}
+	virtual ~Code() {
+//		if (!shared and data and length)// mechanism doesn't work
+//			free(data);// pointer being freed was not allocated
+		data = 0;
+	}
 
+	Code(char *datas, int size, bool needs_copy = true) : Code((bytes) datas, size, needs_copy) {}
+//	Code(byte *data0, int from, int pos, bool copy=false) : Code(data0,from,copy) {}
 
 	Code(byte byte) {
 		data = (bytes) alloc(1, 1);
@@ -88,6 +88,7 @@ public:
 			push(nr, nr < 0, LEB);
 		} else {
 			data = new byte[4];
+			shared = false;
 			*(int *) data = nr;
 			*(int *) data = nr;
 			length = 4;
@@ -99,6 +100,7 @@ public:
 			push(nr, false, LEB);
 		} else {
 			data = new byte[8];
+			shared = false;
 			*(long *) data = nr;
 			length = 8;
 		}
@@ -266,14 +268,22 @@ public:
 	}
 
 	Code &push(bytes more, int len) {
+		shared = false;
 		data = concat(data, more, length, len);
 		length = length + len;
 		return *this;
 	}
 
-	Code &clone() {
+	Code &clone(bool deep = true) {
 		Code *copy = new Code();
-		*copy = *this;
+//		*copy = *this;// DOESNT!
+		copy->data = data;
+		copy->length = length;
+		if (deep) {
+			copy->shared = false;
+			copy->data = static_cast<bytes>(malloc(length));
+			memcpy(copy->data, data, length);
+		} else shared = true;
 		return *copy;
 	}
 
@@ -284,6 +294,7 @@ public:
 	}
 
 	void save(char *file_name = "test.wasm") {
+		if (name.empty())name = file_name;
 #ifndef WASM
 		if(!String(file_name).endsWith(".wasm"))
 			file_name =(char *) concat(file_name, ".wasm");
@@ -305,9 +316,9 @@ public:
 //	}
 	Code rest(int start0 = -1) {
 		if (start0 < 0)start0 = start;
+		shared = true;// can't free until this is destroyed:
 		return Code(data + start0, length - start0);
 //		return Code(data, start, length);
-
 	}
 
 	// as LEB!
@@ -404,6 +415,9 @@ enum Valtype {
 //	smarti64 = 0xF6,
 };
 
+// in final stage of emit, keep original types as long as possible
+Valtype mapTypeToWasm(Type t);
+
 Valtype mapTypeToWasm(Node &n);
 
 chars typeName(Valtype t, bool fail= true);
@@ -439,7 +453,7 @@ enum Opcodes {
 	br = 0x0c,
 	br_if = 0x0d,
 	return_block = 0x0f,
-	function = 0x10,
+//	function = 0x10,
 	call_ = 0x10,
 	call_indirect = 0x11,
 
@@ -744,28 +758,30 @@ enum ABI {
 	meta_names, // types specified via naming convention square__int_as_int, square__float_as_float
 };
 
+class Function;
+
+// todo we have a problem:  is_handled applies to a specific function, not it's Signature potentially shared with OTHER functions!
 class Signature {
 public:
 	ABI abi = wasp_smart_pointers;//erased;
-	String function = "";// could be reused by multiple, but useful to debug
 // todo: add true Wasp Type Signature to wasm Valtype Signature
-	Map<int, Valtype> types;
-	List<Valtype> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
+	Map<int, Type> types;
+	List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
+//	Map<int, Valtype> types;
+//	List<Valtype> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
+
 	Node return_type{};
-//	Valtype return_type = voids;
-	bool is_import = false; // not serialized in functype section, but in import section wt
-	bool is_runtime = false;
-	bool is_builtin = false;// hard coded functions, tests only? todo remove
-	bool is_handled = false; // already emitted (e.g. as runtime)
-	bool is_used = false;// called
-	bool emit = false;// only those types/functions that are declared (export) or used in call
+	List<Function *> functions;// using this Signature; debug only?
+
+	// these explicit constructions are needed when using types return_types as reference!
+//	Signature() : return_types(*new List<Valtype>), types(*new Map<int, Valtype>) {}
+	Signature() : return_types(*new List<Type>), types(*new Map<int, Type>) {}
+
 #ifdef DEBUG
-	String debug_name;
+	String debug_name;// todo can .lldbinit call format() !?!
 #endif
 
 
-	// these explicit constructions are needed when using types return_types as reference!
-	Signature() : return_types(*new List<Valtype>), types(*new Map<int, Valtype>) {}
 //	Signature(const Signature& old) : return_types(old.return_types), types(old.types) {}
 //	Signature(List<Valtype> &returnTypes, Map<int, Valtype> &types) : return_types(returnTypes), types(types) {}
 //	Signature &operator=(const Signature old){
@@ -798,26 +814,6 @@ public:
 
 	int size() {
 		return types.size();
-	}
-
-	Signature &handled() {
-		is_handled = true;
-		return *this;
-	}
-
-	Signature &import() {
-		is_import = true;
-		return *this;
-	}
-
-	Signature &builtin() {
-		is_builtin = true;
-		return *this;
-	}
-
-	Signature &runtime() {
-		is_runtime = true;
-		return *this;
 	}
 
 	Signature &add(Valtype t) {
@@ -877,7 +873,50 @@ public:
 //#endif
 		return f;
 	}
+
+	void merge(Signature &s) {
+		if (return_types.empty()) return_types = s.return_types;// todo copy construktor OK??
+		if (types.empty())types = s.types;
+	}
 };
+
+
+class Function {
+public:
+	int index = -1;
+	String name;
+	String export_name;
+	Signature signature;
+
+	bool is_import = false; // not serialized in functype section, but in import section wt
+	bool is_runtime = false;
+	bool is_builtin = false;// hard coded functions, tests only? todo remove
+	bool is_handled = false; // already emitted (e.g. as runtime)
+	bool is_used = false;// called
+	//	Valtype return_type = voids;
+	bool emit = false;// only those types/functions that are declared (export) or used in call
+	Function &handled() {
+		is_handled = true;
+		return *this;
+	}
+
+	Function &import() {
+		is_import = true;
+		return *this;
+	}
+
+	Function &builtin() {
+		is_builtin = true;
+		return *this;
+	}
+
+	Function &runtime() {
+		is_runtime = true;
+		return *this;
+	}
+
+};
+
 
 #ifndef RUNTIME_ONLY
 
@@ -895,3 +934,5 @@ Code &signedLEB128(long value);
 #endif
 
 #endif //WASP_CODE_H
+
+Signature &getSignature(String name);
