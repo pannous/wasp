@@ -399,6 +399,9 @@ void consumeExportSection() {
 //		module.export_names.add(func.clone());// should be ok: item[_size]=value BUT IT IS NOT OK, corrupts memory later!!
 		int type = unsignedLEB128(payload);
 		int index = unsignedLEB128(payload);
+		if (type == 2 /*memory*/ or type == 3 /*global*/) {// todo !?
+			continue;
+		}
 		if (index < 0 or index > 100000)error("corrupt index "s + index);
 		module.functionIndices[func0] = index;// mangled
 		module.functionIndices[func] = index;// demangled
@@ -411,7 +414,7 @@ void consumeExportSection() {
 		Signature &wasm_signature = funcTypes[type];
 		Valtype returns = mapTypeToWasm(wasm_signature.return_type);
 		if (i32 != returns) {
-			print("returns "s + typeName(returns));
+//			print("returns "s + typeName(returns));
 //				returns = int32; // for now! todo
 //				// else 	assert_run("x='123';x + '4' is '1234'", true); // FAILS somehow!
 		}
