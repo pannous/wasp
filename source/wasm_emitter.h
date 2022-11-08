@@ -16,10 +16,13 @@ class String;
 
 class Signature;
 
+
 //extern Map<String, Valtype> return_types;// redundant with functionSignatures todo: remove
 //todo extern Map<String, Node> variableTypes;
-extern Map<String, Signature> functionSignatures;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
-extern Map<String, int> functionIndices;
+extern Map<String, int> functionIndices;// todo functions[].index
+//extern Map<String, Signature> functionSignatures;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
+extern Map<String, Function> functions;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
+Signature &getSignature(String name);
 
 //extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 //extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals; // access from Angle!
@@ -36,7 +39,7 @@ Code emitCall(Node &node, String context);
 
 Code emitDeclaration(Node fun, Node &body);
 
-Code emitSetter(Node node, Node &value, String context);
+Code emitSetter(Node &node, Node &value, String context);
 
 //Code emitExpression(Node *nodes, String context);
 Code emitExpression(Node &node, String context/*="main"*/);
@@ -70,7 +73,7 @@ Code signedLEB128(int i);
 Code encodeString(char *String);
 
 [[nodiscard]]
-Code emitValue(Node node, String context);
+Code emitValue(Node &node, String context);
 // ≠ emitData
 
 // write data to DATA SEGMENT (vs emitValue on stack)
@@ -87,7 +90,7 @@ Code emitData(Node node, String context);
 // [].concat.apply([], arr);
 
 
-Valtype fixValtype(Valtype &valtype);
+Valtype fixValtype(Valtype valtype);
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 
@@ -95,7 +98,6 @@ Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "main");
 
 //extern "C"
-Code *compile(String code);// exposed to wasp.js
+Code &compile(String code);// exposed to wasp.js
 
 void clearEmitterContext();// BEFORE analyze!
-

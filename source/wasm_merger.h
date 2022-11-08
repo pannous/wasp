@@ -10,7 +10,7 @@
 
 Code merge_wasm(Module lib, Module main);
 
-Code merge_binaries(List<Code> binaries);
+Code &merge_binaries(List<Code> binaries);
 
 Code merge_binaries(Code main, Code lib);
 

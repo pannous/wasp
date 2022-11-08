@@ -8,14 +8,20 @@
 //#include <vector>
 //#include <string>
 
-#include "Wasp.h"
+//#include "Wasp.h"
 
 //#include "util.hpp"
 //#ifndef NO_READLINE
 //#define USE_READLINE
 
+#undef Function
+
 #include <readline/history.h> // libreadline-dev
 #include <readline/readline.h>
+#include <cstdlib>
+#include "String.h"
+#include "Node.h"
+#include "tests.h"
 //#endif
 
 //using namespace std;
@@ -27,9 +33,9 @@ void showHelpMessage() {
 //	print("⚠️  The wasp console currently works by re-executing after each new entry.");
 //	print("⚠️  Be careful with destructive or external effects!");
 //	print("");
-	print("Detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
-	print("AVAILABLE COMMANDS:");
-	print("help :h or ? ; clean :c");
+	printf("Detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
+	printf("AVAILABLE COMMANDS:");
+	printf("help :h or ? ; clean :c");
 }
 
 bool file_read_done = false;

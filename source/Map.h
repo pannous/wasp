@@ -115,14 +115,17 @@ public:
 		int position1 = position(key);
 		if (position1 < 0) {
 			if (leave_blank) {
-				_size++;// values already contain blank T's so ok
-				return values[_size - 1];
-			} else if (use_default_constructor) {
-//				T* new_default=(T*)calloc(sizeof(T));// necessary for types with field, else all items share the same field!
-//				memcpy(new_default, defaulty, sizeof(T));// no, this would copy fields (e.g. pointers to same list)
-				insert_or_assign(key, *new T());
-				return values[_size - 1];
+				return values[_size++];// values already contain blank T's so ok
+			} else if (use_default and false) {
+				// todo remove after you understand that this is a bad idea … and don't come up with that idea again
+				T &t = values[_size++];
+//				memcpy(t, defaulty, sizeof(T));// BAD because this would copy fields (e.g. pointers to same list)
 //				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
+				return t;
+			} else if (use_constructor) {
+//				insert_or_assign(key, *new T());
+				insert_or_assign(key, T());// BAD because stack value? ok because copy by value? todo
+				return values[_size - 1];// increased above!
 			} else {
 				error("MISSING KEY: "s + key);
 				printf("MISSING KEY: ");
@@ -154,13 +157,16 @@ public:
 		_size = 0;
 	}
 
-	bool leave_blank = false;//true BAD IDEA especially for pointers!
-	bool use_default_constructor = false;
+//	bool leave_blank == use_malloc_constructor = true;// return reference to freshly nulled malloc data, same ^^
+	bool use_constructor = true;// *new T() makes sense for List of references but NOT for list of Data!!
+	bool leave_blank = false;//true would be VERY BAD IDEA especially for pointers! todo what is the point?
+	bool use_default = false;// no, this would copy fields (e.g. pointers to same list)  todo what is the point?
+
 	[[maybe_unused]] T defaulty;
 
 	void setDefault(T d) {
 		defaulty = d;
-		use_default_constructor = true;
+		use_default = true;// we can't tell if defaulty is 'good' otherwise
 	}
 
 	S *begin() {
@@ -174,9 +180,13 @@ public:
 	bool has(S s) {// todo has(nil) / has(String::empty) should be false
 		return position(s) >= 0;
 	}
+
 //	void put() {
 //		error("use log(map) instead of map(put");
 //	}
+	bool empty() {
+		return _size <= 0;
+	}
 };
 
 void print(Map<String, int> map);

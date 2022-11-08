@@ -77,4 +77,7 @@ acos : arccos
 ∞ : infinity
 -∞ : minus infinity
 
+Ƥ: probability, Ｐ
+
+
 # superscript signs bind higher! `x²⁺³ == x⁵`

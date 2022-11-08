@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wasm.h>
-#include <wasmtime.h>
+//#include <wasmtime.h>
 #include "Util.h"
 #include <math.h>
 
@@ -261,9 +261,8 @@ static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_t
 	}
 	fprintf(stderr, "%.*s\n", (int) error_message.size, error_message.data);
 	wasm_byte_vec_delete(&error_message);
-
-	throw;// message; // let Wasp handle this!
-//	exit(1);
+	// let Wasp handle this :
+	throw Error((char *) message);// todo copy sprintf error_message backtrace;
 }
 
 bool done = 0;
@@ -415,7 +414,8 @@ const wasm_functype_t *funcType(Signature &signature) {
 	wasm_valtype_t *F = wasm_valtype_new(WASM_F64);
 	int param_count = signature.types.size();
 	// todo multi-value
-	auto returnType = signature.return_types.last(none);
+	auto returnType0 = signature.return_types.last(none);
+	auto returnType = mapTypeToWasm(returnType0);
 	if (param_count == 0) {
 		switch (returnType) {
 			case none:
@@ -428,7 +428,9 @@ const wasm_functype_t *funcType(Signature &signature) {
 		}
 	}
 	if (param_count == 1) {
-		switch (signature.types[0]) {
+		Type &type = signature.types[0];
+		Valtype valtype = mapTypeToWasm(type);
+		switch (valtype) {
 			case charp:
 			case f32:
 				switch (returnType) {

@@ -16,7 +16,7 @@
 #include "wasm_merger.h"
 //#include "asserts.h"
 
-Map<String, Signature> functionSignatures;// todo Signature copy by value is broken
+//Map<String, Signature> functions;// todo Signature copy by value is broken
 
 int runtime_offset = 0; // imports + funcs
 int import_count = 0;
@@ -31,6 +31,7 @@ int last_data = 0;// last pointer outside stack
 Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
 Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^
 Map<String, Node> referenceMap; // lookup types…
+//Map<String, Signature> functions;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
 
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
@@ -57,6 +58,7 @@ MemoryHandling memoryHandling;// set later = export_memory; // import_memory not
 //Map<int, Map<int, String>> locals;
 //List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 Map<String, int> functionIndices;
+Map<String, Function> functions;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
 Map<String, Code> functionCodes;
 Map<String, int> typeMap;
 
@@ -742,10 +744,11 @@ Code emitGetGlobal(Node node /* context : global ;) */) {
 // print value on stack (vs emitData)
 // todo: last_type not enough if operator left≠right, e.g. ['a']#1  2.3 == 4 ?
 [[nodiscard]]
-Code emitValue(Node node, String context) {
+Code emitValue(Node &node, String context) {
 	Code code;
 	String &name = node.name;
-	last_typo = node.kind;// careful Kind::strings should map to Classes::c_string after emission!
+	if (node.value.node)
+		last_typo = node.kind;// careful Kind::strings should map to Classes::c_string after emission!
 	last_object = &node;// careful, could be on stack!
 	// code.push(last_typo) only on return statement
 	switch (node.kind) {
@@ -785,8 +788,9 @@ Code emitValue(Node node, String context) {
 			int local_index = locals[context].position(name);
 			if (local_index < 0)error("UNKNOWN symbol "s + name + " in context " + context);
 			if (node.value.node) {
+				Node &value = *node.value.node;
 				// todo HOLUP! x:41 is a reference? then *node.value.node makes no sense!!!
-				code.add(emitSetter(node, *node.value.node, context));
+				code.add(emitSetter(node, value, context));
 
 			} else {
 				code.addByte(get_local);// todo skip repeats
@@ -847,9 +851,10 @@ Code emitValue(Node node, String context) {
 //			return Code(stringIndex).addInt(pString->length);// pointer + length
 		}
 		case key:
-			if (node.value.node)
-				return emitValue(*node.value.node,
-				                 context);// todo: make sure it is called from right context (after isSetter …)
+			if (node.value.node) {
+				Node &value = *node.value.node;
+				return emitValue(value, context);// todo: make sure it is called from right context (after isSetter …)
+			}
 		case patterns:
 			return emitIndexPattern(Node(), node, context);// todo: make sure to have something indexable on stack!
 		case expression: {
@@ -920,13 +925,11 @@ Code emitOperator(Node node, String context) {
 	}
 	/*
 	 * PARAMETERS of operators (but not functions) are now on the STACK!!
+		no more need for (Node arg : node) emitExpression(arg,context);;
 	 * */
 	if (index >= 0) {// FUNCTION CALL
 		print("OPERATOR / FUNCTION CALL: %s\n"s % name);
-//				for (Node arg : node) {
-//					emitExpression(arg,context);
-//				};
-		code.addByte(function);
+		code.addByte(call);
 		code.add(index);
 		return code;
 	}
@@ -993,7 +996,8 @@ Code emitOperator(Node node, String context) {
 		code.add(i32_sub);
 	} else if (name == "return") {
 		// todo multi-value
-		Valtype return_type = functionSignatures[context].return_types.last();
+		List<Type> &returnTypes = functions[context].signature.return_types;
+		Valtype return_type = mapTypeToWasm(returnTypes.last());
 		code.add(cast(last_type, return_type));
 		code.add(return_block);
 	} else if (name == "as") {
@@ -1051,7 +1055,7 @@ Code emitStringOp(Node op, String context) {
 	if (op == "+") {
 		op = Node("concat");//demangled on readWasm, but careful, other signatures might overwrite desired one
 		last_type = stringp;
-		functionSignatures["concat"].returns(charp);// hack
+		functions["concat"].signature.returns(charp);// hack
 //		op = Node("_Z6concatPKcS0_");//concat c++ mangled export:
 //		op = Node("concat_char_const*__char_const*_");// wat name if not stripped in lib release build
 		return emitCall(op, context);
@@ -1174,15 +1178,15 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 				local_index = atoi0(name.substring(1));
 			}
 			if (local_index < 0) { // collected before, so can't be setter here
-				if (functionCodes.has(name) or functionSignatures.has(name))
+				if (functionCodes.has(name) or functions.has(name))
 					return emitCall(node, context);
 				else if (globals.has(name)) return emitGetGlobal(node);
 				else if (name == "ℯ")
-					return emitValue(Node(2.7182818284590), current);
+					return emitValue(*new Node(2.7182818284590), current);
 				else if (name == "τ" or name == "tau") // if not provided as global
-					return emitValue(Node(6.283185307179586), current);
+					return emitValue(*new Node(6.283185307179586), current);
 				else if (name == "π" or name == "pi") // if not provided as global
-					return emitValue(Node(3.141592653589793), current);
+					return emitValue(*new Node(3.141592653589793), current);
 				else if (!node.isSetter()) {
 					print(locals[context]);
 					if (not node.type)
@@ -1309,14 +1313,15 @@ Code emitExpression(Node *nodes, String context) {
 Code emitCall(Node &fun, String context) {
 	Code code;
 	auto name = fun.name;
-	if (not functionSignatures.has(name) or not functionIndices.has(name)) {
+	if (not functions.has(name) or not functionIndices.has(name)) {
 		auto normed = normOperator(name);
-		if (not functionSignatures.has(normed) or not functionIndices.has(normed))
+		if (not functions.has(normed) or not functionIndices.has(normed))
 			error("unknown function "s + name + " (" + normed + ")");// checked before, remove
 		else name = normed;
 	}
 
-	Signature &signature = functionSignatures[name];
+	Function &function = functions[name];
+	Signature &signature = function.signature;
 	int index = functionIndices[name];
 	if (index < 0)
 		error("MISSING import/declaration for function %s\n"s % name);
@@ -1326,17 +1331,18 @@ Code emitCall(Node &fun, String context) {
 		code.push(emitExpression(arg, context));
 //		Valtype argType = mapTypeToWasm(arg); // todo ((+ 1 2)) needs deep analysis, or:
 		Valtype argType = last_type;// evaluated expression smarter than node arg!
-		Valtype &sigType = signature.types[i++];
-		if (sigType != argType)
-			code.push(cast(argType, sigType));
+		Type &sigType = signature.types[i++];
+		Valtype valtype = mapTypeToWasm(sigType);
+		if (valtype != argType)
+			code.push(cast(argType, valtype));
 	};
-	code.addByte(function);
+	code.addByte(call);
 	code.addInt(index);// as LEB!
 	code.addByte(nop);// padding for potential relocation
-	signature.is_used = true;
-	signature.emit = true;
+	function.is_used = true;
+	function.emit = true;
 	// todo multi-value
-	last_type = signature.return_types.last(none);
+	last_type = mapTypeToWasm(signature.return_types.last(none));
 	last_typo.clazz = &signature.return_type;// todo dodgy!
 	return code;
 }
@@ -1423,8 +1429,9 @@ Code emitDeclaration(Node fun, Node &body) {
 //	else {
 //		error("redeclaration of symbol: "s + fun.name);
 //	}
-	Signature &signature = functionSignatures[fun.name];
-	signature.emit = true;// all are 'export' for now. also set in analyze!
+	Function &function = functions[fun.name];
+//	Signature &signature = function.signature;
+	function.emit = true;// all are 'export' for now. also set in analyze!
 	functionCodes[fun.name] = emitBlock(body, fun.name);
 	last_type = none;// todo reference to new symbol x = (y:=z)
 	return Code();// empty
@@ -1432,7 +1439,7 @@ Code emitDeclaration(Node fun, Node &body) {
 
 
 [[nodiscard]]
-Code emitSetter(Node node, Node &value, String context) {
+Code emitSetter(Node &node, Node &value, String context) {
 	if (node.first().name == "#") {// x#y=z
 		return emitPatternSetter(node.first().first(), node.first().last(), node.last(), context);
 	}
@@ -1585,7 +1592,7 @@ Code emitIf_OLD(Node &node) {
 [[nodiscard]]
 Code Call(char *symbol) {//},Node* args=0) {
 	Code code;
-	code.addByte(function);
+	code.addByte(call);
 	int i = functionIndices.position(symbol);
 	if (i < 0)error("UNKNOWN symbol "s + symbol);
 //	code.opcode(unsignedLEB128(i),8);
@@ -1640,7 +1647,7 @@ Code emitBlock(Node &node, String context) {
 	int locals_count = locals[context].size();
 	trace("found %d locals for %s"s % locals_count % context);
 //	print(locals[context]);
-	int argument_count = functionSignatures[context].size();
+	int argument_count = functions[context].signature.size();
 	if (locals_count >= argument_count)
 		locals_count = locals_count - argument_count;
 	else
@@ -1686,13 +1693,13 @@ Code emitBlock(Node &node, String context) {
 	block.addConst32(last_typo.value);
 #endif
 
-	auto returnTypes = functionSignatures[context].return_types;
+	auto returnTypes = functions[context].signature.return_types;
 	//	for(Valtype return_type: returnTypes) uh, casting should have happened before for  multi-value
-	Valtype return_type = returnTypes.last(voids);
+	Valtype return_type = mapTypeToWasm(returnTypes.last(voids));
 	// switch back to return_types[context] for block?
 	bool needs_cast = return_type != last_type;
 
-	auto abi = wasp_smart_pointers;// functionSignatures[context].abi;
+	auto abi = wasp_smart_pointers;// functions[context].abi;
 
 	if (abi == wasp_smart_pointers) {
 //		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
@@ -1735,7 +1742,7 @@ Code emitBlock(Node &node, String context) {
 			block.add(cast(last_type, return_type));
 	}
 
-//	if(context=="main" or (functionSignatures[context].abi==wasp and returnTypes.size()<2))
+//	if(context=="main" or (functions[context].abi==wasp and returnTypes.size()<2))
 //		block.addInt(last_typo);// should have been added to signature before, except for main!
 // make sure block has correct wasm type signature!
 
@@ -1776,44 +1783,45 @@ Code typeSection() {
 	int typeCount = 0;
 	Code type_data;
 //	print(functionIndices);
-	for (String fun: functionSignatures) {
+	for (String fun: functions) {
 		if (!fun) {
 //			print(functionIndices);
-//			print(functionSignatures);
+//			print(functions);
 			breakpoint_helper
-			warn("empty functionSignatures[ø] because context=start=''");
-//			error("empty function creep functionSignatures[ø]");
+			warn("empty functions[ø] because context=start=''");
+//			error("empty function creep functions[ø]");
 			continue;
 		}
-		Signature &signature = functionSignatures[fun];
-		if (not signature.emit /*export/declarations*/ and not signature.is_used /*imports*/) {
-			trace("not signature.emit => skipping unused type for %s");
+		Function &function = functions[fun];
+		Signature &signature = function.signature;
+		if (not function.emit /*export/declarations*/ and not function.is_used /*imports*/) {
+			trace("not function.emit => skipping unused type for %s");
 			trace(fun);
 			continue;
 		}
-		if (signature.is_runtime)
+		if (function.is_runtime)
 			continue;
-		if (signature.is_handled)
+		if (function.is_handled)
 			continue;
-//		if(signature.is_import) // types in import section!
+//		if(function.is_import) // types in import section!
 //			continue;
 		if (not functionIndices.has(fun))
 			functionIndices[fun] = ++last_index;
 //			error("function %s should be registered in functionIndices by now"s % fun);
 
 		typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
-		signature.is_handled = true;
+		function.is_handled = true;
 		int param_count = signature.size();
 //		Code td = {0x60 /*const type form*/, param_count};
 		Code td = Code(func) + Code(param_count);
 
 		for (int i = 0; i < param_count; ++i) {
-			td = td + Code(fixValtype(signature.types[i]));
+			td = td + Code(fixValtype(mapTypeToWasm(signature.types[i])));
 		}
-//		Valtype &ret = functionSignatures[fun].return_type;
+//		Valtype &ret = functions[fun].return_type;
 		td.addByte(signature.return_types.size());
-		for (Valtype ret: signature.return_types) {
-			Valtype valtype = fixValtype(ret);
+		for (Type ret: signature.return_types) {
+			Valtype valtype = fixValtype(mapTypeToWasm(ret));
 			td.addByte(valtype);
 		}
 		type_data = type_data + td;
@@ -1821,7 +1829,7 @@ Code typeSection() {
 	return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();
 }
 
-Valtype fixValtype(Valtype &valtype) {
+Valtype fixValtype(Valtype valtype) {
 	if (valtype == charp) return int32;
 	if (valtype > 0xC0)error("exposed internal Valtype");
 	return valtype;
@@ -1838,9 +1846,10 @@ Code importSection() {
 	// the import section is a vector of imported functions
 	Code imports;
 	import_count = 0;
-	for (String fun: functionSignatures) {
-		Signature &signature = functionSignatures[fun];
-		if (signature.is_import and signature.is_used and not signature.is_builtin) {
+	for (String fun: functions) {
+		Function &function = functions[fun];
+		Signature &signature = function.signature;
+		if (function.is_import and function.is_used and not function.is_builtin) {
 			++import_count;
 			imports = imports + encodeString("env") + encodeString(fun).addByte(func_export).addType(typeMap[fun]);
 		}
@@ -1910,15 +1919,15 @@ Code codeSection(Node root) {
 
 	if (runtime.code_count == 0) {
 		// order matters, in functionType section!
-		if (functionSignatures["nop"].is_used)
+		if (functions["nop"].is_used)
 			code_blocks = code_blocks + encodeVector(Code(code_data_nop, sizeof(code_data_nop)));
-		if (functionSignatures["square_double"].is_used and functionSignatures["square_double"].is_builtin)// can also be linked via runtime/import!
+		if (functions["square_double"].is_used and functions["square_double"].is_builtin)// can also be linked via runtime/import!
 			code_blocks = code_blocks + encodeVector(Code(code_square_d, sizeof(code_square_d)));
-		if (functionSignatures["id"].is_used)
+		if (functions["id"].is_used)
 			code_blocks = code_blocks + encodeVector(Code(code_data_id, sizeof(code_data_id)));
-		if (functionSignatures["modulo_float"].is_used)
+		if (functions["modulo_float"].is_used)
 			code_blocks = code_blocks + encodeVector(Code(code_modulo_float, sizeof(code_modulo_float)));
-		if (functionSignatures["modulo_double"].is_used) {
+		if (functions["modulo_double"].is_used) {
 			code_blocks = code_blocks + encodeVector(Code(code_modulo_double, sizeof(code_modulo_double)));
 		}
 	}
@@ -1927,7 +1936,7 @@ Code codeSection(Node root) {
 
 	if (start) {
 		if (main_block.length == 0)
-			functionSignatures[start].is_used = false;
+			functions[start].is_used = false;
 		else
 			code_blocks = code_blocks + encodeVector(main_block);
 	} else {
@@ -1940,9 +1949,9 @@ Code codeSection(Node root) {
 		code_blocks = code_blocks + encodeVector(func);
 	}
 	builtin_count = 0;
-	for (auto name: functionSignatures) {
-		Signature &signature = functionSignatures[name];
-		if (signature.is_builtin and signature.is_used) builtin_count++;
+	for (auto name: functions) {
+		Function &function = functions[name];
+		if (function.is_builtin and function.is_used) builtin_count++;
 	}
 
 	bool has_main = start and functionIndices.has(start);
@@ -2108,7 +2117,7 @@ Code nameSection() {
 		// danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
 		String *name = functionIndices.lookup(index);
 		if (not name)continue;// todo: no name bug (not enough mem?)
-		if (functionSignatures[*name].is_import and runtime_offset > 0)continue;
+		if (functions[*name].is_import and runtime_offset > 0)continue;
 		nameMap = nameMap + Code(index) + Code(*name);
 		usedNames += 1;
 	}
@@ -2233,15 +2242,15 @@ Code dwarfSection() {
 void add_builtins() {
 	import_count = 0;
 	builtin_count = 0;
-	for (auto sig: functionSignatures) {// imports first
-		Signature &signature = functionSignatures[sig];
-		if (signature.is_import and signature.is_used) {
+	for (auto sig: functions) {// imports first
+		Function &function = functions[sig];
+		if (function.is_import and function.is_used) {
 			functionIndices[sig] = ++last_index;// functionIndices.size();
 			import_count++;
 		}
 	}
-	for (auto sig: functionSignatures) {// now builtins
-		if (functionSignatures[sig].is_builtin and functionSignatures[sig].is_used) {
+	for (auto sig: functions) {// now builtins
+		if (functions[sig].is_builtin and functions[sig].is_used) {
 			functionIndices[sig] = ++last_index;// functionIndices.size();
 			builtin_count++;
 		}
@@ -2266,7 +2275,7 @@ void clearEmitterContext() {
 	referenceDataIndices.clear();
 	functionCodes.clear();
 	functionIndices.setDefault(-1);
-	functionIndices.clear();// ok preregistered functions are in functionSignatures
+	functionIndices.clear();// ok preregistered functions are in functions
 	functionCodes.setDefault(Code());
 	typeMap.setDefault(-1);
 	typeMap.clear();
@@ -2281,7 +2290,9 @@ void clearEmitterContext() {
 Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	start = _start;
 	if (runtime0) {
-		memoryHandling = no_memory;// done by runtime?
+//		memoryHandling = no_memory;// done by runtime?
+//		memoryHandling = export_memory;// try to combine? duplicate export name `memory` already defined
+		memoryHandling = import_memory;// works
 		runtime = *runtime0;// else filled with 0's
 		runtime_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
 		import_count = 0;
@@ -2304,15 +2315,15 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	}
 	if (start) {// now AFTER imports and builtins
 //		printf("start: %s\n", start.data);
-//		functionSignatures[start] = Signature().returns(i32t);
-		functionSignatures[start].emit = true;
+//		functions[start] = Signature().returns(i32t);
+		functions[start].emit = true;
 		if (!functionIndices.has(start))
 			functionIndices[start] = ++last_index;
 //			functionIndices[start] =runtime_offset ? runtime_offset + declaredFunctions.size() :  ++last_index;// functionIndices.size();  // AFTER collecting imports!!
 		else
 			error("start already declared: "s + start + " with index " + functionIndices[start]);
 	} else {
-//		functionSignatures["_default_context_"] = Signature();
+//		functions["_default_context_"] = Signature();
 //		start = "_default_context_";//_default_context_
 //		start = "";
 	}
@@ -2325,7 +2336,7 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	Code typeSection1 = typeSection();// types must be defined in analyze(), not in code declaration
 	Code importSection1 = importSection();// needs type indices
 	Code globalSection1 = globalSection();//
-	Code codeSection1 = codeSection(root_ast); // needs functionSignatures and functionIndices prefilled!! :(
+	Code codeSection1 = codeSection(root_ast); // needs functions and functionIndices prefilled!! :(
 	Code funcTypeSection1 = funcTypeSection();// signatures depends on codeSection, but must come before it in wasm
 	Code memorySection1 = memorySection();
 	Code exportSection1 = exportSection();// depends on codeSection, but must come before it!!
@@ -2350,7 +2361,7 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 //	free(data);// written to wasm code ok
 #endif
 //	if (runtime0)
-//		functionSignatures.clear(); // cleanup after NAJA
+//		functions.clear(); // cleanup after NAJA
 	return code.clone();
 }
 //
@@ -2361,25 +2372,30 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 
 
 //extern "C"
-Code *compile(String code) {
+Code &compile(String code) {
 	clearEmitterContext();
 	clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
 //	preRegisterSignatures();
-	check(functionSignatures["log10"].is_import)
 	Node parsed = parse(code);
-	check(functionSignatures["log10"].is_import)
 	Node &ast = analyze(parsed);
-	preRegisterSignatures();// todo remove after fixing Signature BUG!!
-	check(functionSignatures["log10"].is_import)
-	check(functionSignatures["log10"].is_used)
+//	preRegisterSignatures();// todo remove after fixing Signature BUG!!
+//	check(functions["log10"].is_import)
+//	check(functions["log10"].is_used)
 	Code &binary = emit(ast);
 	binary.save("main.wasm");
+
 #ifdef INCLUDE_MERGER
-	merge_module_binaries.add(binary);
-	binary = merge_binaries(merge_module_binaries);
+	if (merge_module_binaries.size() > 0) {
+		merge_module_binaries.add(binary);
+		return merge_binaries(merge_module_binaries);
+	}
 #else
 	if (merge_module_binaries.size() > 0)
 		warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
 #endif
-	return &binary;
+	return binary;
+}
+
+Signature &getSignature(String name) {
+	return functions[name].signature;
 }
