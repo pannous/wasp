@@ -98,6 +98,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 //	if(eq(s,"$1="))return set_local;
 //	if (eq(s, "=$1"))return get_local;
 //	if (eq(s, "=$1"))return tee_local;
+	if (eq(s, "return"))return return_block;
 	if (kind == unknown_type)
 		error("unknown type should be inferred by now");
 	if (kind == voids or kind == void_block or kind == i32t) { // INT32
@@ -888,6 +889,7 @@ Code emitOperator(Node node, String context) {
 	if (name == "then")return emitIf(*node.parent, context);// pure if handled before
 	if (name == ":=")return emitDeclaration(node, node.first());
 	if (name == "=")return emitSetter(node, node.first(), context);
+//	if (name=="#")XXX return emitIndexPattern(node[0], node[1], context); elsewhere (and emit(node)!
 	if (name == "::=")return emitGetGlobal(node); // globals ASSIGNMENT already handled in analyze / globalSection()
 	if (node.length < 1 and not node.value.node and not node.next) {
 		if (name == "not")return emitValue(True, context);
@@ -1797,9 +1799,14 @@ Code typeSection() {
 //			error("empty function creep functions[ø]");
 			continue;
 		}
-		if (is_operator(fun[0]))continue;// todo how did we get here?
-		if (fun == "=" or fun == "#")todo("how did we get here?");
-//		if (fun=="#")continue;// handled internally ⚠️ careful!
+		if (operator_list.has(fun)) {
+			continue;
+			todo("how did we get here?");
+		}
+		if (is_operator(fun[0])) {
+			todo("how did we get here?");
+			continue;
+		}// todo how did we get here?
 		Function &function = functions[fun];
 		Signature &signature = function.signature;
 		if (not function.emit /*export/declarations*/ and not function.is_used /*imports*/) {
@@ -1826,7 +1833,6 @@ Code typeSection() {
 		for (int i = 0; i < param_count; ++i) {
 			td = td + Code(fixValtype(mapTypeToWasm(signature.types[i])));
 		}
-//		Valtype &ret = functions[fun].return_type;
 		td.addByte(signature.return_types.size());
 		for (Type ret: signature.return_types) {
 			Valtype valtype = fixValtype(mapTypeToWasm(ret));
