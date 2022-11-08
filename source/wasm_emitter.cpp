@@ -2276,10 +2276,10 @@ void clearEmitterContext() {
 	functionCodes.clear();
 	functionIndices.setDefault(-1);
 	functionIndices.clear();// ok preregistered functions are in functions
-	functionCodes.setDefault(Code());
+//	functionCodes.setDefault(Code());
 	typeMap.setDefault(-1);
 	typeMap.clear();
-	referenceMap.setDefault(Node());
+//	referenceMap.setDefault(Node());
 	data_index_end = 0;
 	last_data = 0;
 	data = (char *) malloc(MAX_DATA_LENGTH);
