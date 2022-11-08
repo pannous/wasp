@@ -112,7 +112,7 @@ Node constants(Node n) {
 bool isFunction(String op) {
 	if (op.empty())return false;
 	if (declaredFunctions.has(op))return true;
-	if (functionSignatures.has(op))return true;// pre registered signatures
+	if (functions.has(op))return true;// pre registered signatures
 	if (op.in(function_list))
 		return true;
 //	if(op.in(functor_list))
@@ -152,7 +152,7 @@ Node eval(String code) {
 	else
 #endif
 	{
-		Code &binary = *compile(code);
+		Code &binary = compile(code);
 		binary.save();// to debug
 		long results = binary.run();
 		auto resultNode = smartNode(results);
@@ -531,9 +531,8 @@ Node &groupDeclarations(String &name, Node *return_type, Node modifieres, Node &
 	if (name and not function_operators.has(name))
 		declaredFunctions.add(name);
 
-	Signature &signature = functionSignatures[name];// use Default
-	signature.emit = true;// all are 'export'
-	// decl->metas().add(left);// mutable x=7  todo: either reactivate meta or add type mutable?
+	Function &function = functions[name];
+	function.emit = true;
 
 	// todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
 	if (setter_operators.has(name) or key_pair_operators.has(name)) {
@@ -545,6 +544,7 @@ Node &groupDeclarations(String &name, Node *return_type, Node modifieres, Node &
 
 	List<Arg> args = groupFunctionArgs(name, arguments);
 	List<String> &parameters = locals[name];// function context!
+	Signature &signature = function.signature;
 	for (Arg arg: args) {
 		if (empty(arg.name))
 			error("empty argument name");
@@ -658,6 +658,7 @@ String &checkCanonicalName(String &name);
 
 //List<Module> merge_modules;// from (automatic) import statements e.g. import math; use log; …
 List<Code> merge_module_binaries;
+//List<Code*> merge_module_binaries;
 Map<String, bool> module_done;
 
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
@@ -696,8 +697,8 @@ Node &groupOperators(Node &expression, String context = "main") {
 		if (op == "-")
 			debug = true;
 		if (op == "-…") op = "-";// precedence hack
-		if (op == "%")functionSignatures["modulo_double"].is_used = true;
-		if (op == "%")functionSignatures["modulo_float"].is_used = true;
+		if (op == "%")functions["modulo_double"].is_used = true;
+		if (op == "%")functions["modulo_float"].is_used = true;
 		if (op == "include")todo("include again!?");
 		if (op != last) last_position = 0;
 		bool fromRight = rightAssociatives.has(op) or isFunction(op);
@@ -720,10 +721,10 @@ Node &groupOperators(Node &expression, String context = "main") {
 		String &name = checkCanonicalName(op);
 
 		if (name == "^" or name == "^^" or name == "**") {// todo NORM operators earlier!
-			functionSignatures["pow"].is_used = true;
-			functionSignatures["powd"].is_used = true;
-			functionSignatures["powi"].is_used = true;
-			functionSignatures["powf"].is_used = true;
+			functions["pow"].is_used = true;
+			functions["powd"].is_used = true;
+			functions["powi"].is_used = true;
+			functions["powf"].is_used = true;
 		}
 		if (isPrefixOperation(node, prev, next)) {// ++x -i
 			// PREFIX Operators
@@ -737,7 +738,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 			prev = analyze(prev, context);
 			if (suffixOperators.has(name)) { // x²
 				// SUFFIX Operators
-				if (name == "ⁿ") functionSignatures["pow"].is_used = true;
+				if (name == "ⁿ") functions["pow"].is_used = true;
 				if (i < 1)error("suffix operator misses left side");
 				node.add(prev);
 				if (name == "²") {
@@ -842,10 +843,11 @@ Node &groupFunctionCalls(Node &expressiona, String context) {
 	if (expressiona.kind == declaration)return expressiona;// handled before
 	if (isFunction(expressiona)) {
 		expressiona.setType(call, false);
-		if (not functionSignatures.has(expressiona.name))
+		if (not functions.has(expressiona.name))
 			error("missing import for function "s + expressiona.name);
 //		if (not expressiona.value.node and arity>0)error("missing args");
-		functionSignatures[expressiona.name].is_used = true;
+		functions[expressiona.name].is_used = true;
+//		functions[expressiona.name].is_used = true;
 	}
 //	Node &expressiona = *expressiona.clone();
 	for (int i = 0; i < expressiona.length; ++i) {
@@ -887,13 +889,11 @@ Node &groupFunctionCalls(Node &expressiona, String context) {
 		if (node.kind != call)
 			continue;
 
-		if (not functionSignatures.has(name))// todo load lib!
+		if (not functions.has(name))// todo load lib!
 			error("missing import for function "s + name);
-		Signature &signature = functionSignatures[name];
-		signature.function = name;// debug
-		signature.is_used = true;
-//		signature.import();// todo remvoe hack
-//		check(signature.is_import)// BUG!! signature.is_import is LOST(false) for log10 HOW??? deep field sig.List lost on copy
+		Function &function = functions[name];
+		Signature &signature = function.signature;
+		function.is_used = true;
 
 		int minArity = signature.size();// todo: default args!
 		int maxArity = signature.size();
@@ -1075,8 +1075,7 @@ Node &analyze(Node &node, String context) {
 				if (&child == 0)continue;
 				child = analyze(child);// REPLACE with their ast
 			}
-		if (functionSignatures.has(name))
-			functionSignatures[name].is_used = true;
+		functions[name].is_used = true;
 		return grouped;
 	}
 
@@ -1111,79 +1110,77 @@ int run_wasm_file(chars file) {
 
 
 void preRegisterSignatures() {
+	functions.clear();
+//	functions.use_constructor=true;
+//	functions.setDefault(Function());
 	// TODO!!!
-	// functionSignatures
-	// functionSignatures[ ] access is BROKEN!!! use functionSignatures.insert_or_assign so long!
+	// functions
+	// functions[ ] access is BROKEN!!! use functions.insert_or_assign so long!
 	// ORDER MATTERS: will be used for functionIndices later! todo: huh?
 	globals.insert_or_assign("π", new Node(3.1415926535897932384626433));// todo: if used
-	//	functionSignatures.insert_or_assign("put", Signature().add(pointer).returns(voids));
+	//	functions.insert_or_assign("put", Signature().add(pointer).returns(voids));
 // todo: remove all as they come via wasp.wasm log.wasm etc
-// OK to pass stack Signature(), because copy by value functionSignatures not refs
-	if (functionSignatures.has("log10")) {
-		functionSignatures["log10"].import();// DIRTY HACK! REMOVE HIDES BUG!!!
-//		check(functionSignatures["log10"].is_import)
+// OK to pass stack Signature(), because copy by value functions not refs
+	if (functions.has("log10")) {
+//		functions["log10"].import();// DIRTY HACK! REMOVE HIDES BUG!!!
+		check(functions["log10"].is_import)
 		return;// don't overwrite is_handled status etc
 	}
-	functionSignatures.insert_or_assign("log10", Signature().import().add(float64).returns(float64));
-	functionSignatures.insert_or_assign("atoi0", Signature().runtime().add(charp).returns(int32));// todo int64
-	functionSignatures.insert_or_assign("strlen0", Signature().runtime().add(charp).returns(int32));// todo int64
-	functionSignatures.insert_or_assign("malloc", Signature().runtime().add(int64).returns(int64));
-	functionSignatures.insert_or_assign("okf", Signature().runtime().add(float32).returns(float32));
-	functionSignatures.insert_or_assign("okf5", Signature().runtime().add(float32).returns(float32));
-	functionSignatures.insert_or_assign("pow", Signature().import().add(float64).add(float64).returns(float64));
-//	functionSignatures.insert_or_assign("log", Signature().import().add(float32).returns(float32));
-	functionSignatures.insert_or_assign("log", Signature().import().add(float64).returns(float64));
-	functionSignatures.insert_or_assign("powd", Signature().import().add(float64).add(float64).returns(float64));
-	functionSignatures.insert_or_assign("powi", Signature().import().add(int32).add(int32).returns(int64));
-	functionSignatures.insert_or_assign("powf", Signature().import().add(float32).add(float32).returns(float32));
+	functions["log10"].import().signature.add(float64).returns(float64);
+	functions["atoi0"].runtime().signature.add(charp).returns(int32);// todo int64
+	functions["strlen0"].runtime().signature.add(charp).returns(int32);// todo int64
+	functions["malloc"].runtime().signature.add(int64).returns(int64);
+	functions["okf"].runtime().signature.add(float32).returns(float32);
+	functions["okf5"].runtime().signature.add(float32).returns(float32);
+	functions["pow"].import().signature.add(float64).add(float64).returns(float64);
+//	functions["signature.import().signature.add(float32).returns(float32));
+	functions["log"].import().signature.add(float64).returns(float64);
+	functions["powd"].import().signature.add(float64).add(float64).returns(float64);
+	functions["powi"].import().signature.add(int32).add(int32).returns(int64);
+	functions["powf"].import().signature.add(float32).add(float32).returns(float32);
 
-//	if (functionSignatures.has("logs"))
+//	if (functions.has("logs"))
 //		return;// already imported runtime!
 
-	functionSignatures.insert_or_assign("puti", Signature().import().add(int32).returns(voids));
-	functionSignatures.insert_or_assign("putf", Signature().import().add(float32).returns(voids));
-	functionSignatures.insert_or_assign("putd", Signature().import().add(float64).returns(voids));
-	//	functionSignatures.insert_or_assign("powl", Signature().import().add(int64).add(int64).returns(int64));
+	functions["puti"].import().signature.add(int32).returns(voids);
+	functions["putf"].import().signature.add(float32).returns(voids);
+	functions["putd"].import().signature.add(float64).returns(voids);
+	//	functions["powl"].import().signature.add(int64).add(int64).returns(int64));
 	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
-	functionSignatures.insert_or_assign("puts", Signature().import().add(charp).returns(voids));
-//	functionSignatures.insert_or_assign("puts", Signature().import().add(charp).returns(int32));
-	functionSignatures.insert_or_assign("not_ok", Signature().returns(voids));
-	functionSignatures.insert_or_assign("ok", Signature().runtime().returns(int32));// todo why not rely on read_wasm again?
-	functionSignatures.insert_or_assign("oki", Signature().runtime().add(int32).returns(int32));
+	functions["puts"].import().signature.add(charp).returns(voids);
+//	functions["puts"].import().signature.add(charp).returns(int32));
+	functions["not_ok"].signature.returns(voids);
+	functions["ok"].runtime().signature.returns(int32);// todo why not rely on read_wasm again?
+	functions["oki"].runtime().signature.add(int32).returns(int32);
 
-//	functionSignatures.insert_or_assign("render", Signature().add(node).add(pointer).returns(none));
-//	functionSignatures.insert_or_assign("render", Signature().runtime().add(node).returns(int32));
-//functionSignatures.insert_or_assign("render", Signature().add(node).add(pointer).returns(int32));
+//	functions["render"].add(node)signature..add(pointer).returns(none));
+//	functions["render"].runtime().signature.add(node).returns(int32));
+//functions["render"].add(node)signature..add(pointer).returns(int32));
 	// todo: long + double !
 	// imports
-	functionSignatures["modulo_float"] = Signature().builtin().add(float32).add(float32).returns(float32);
-//	functionSignatures["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
-	functionSignatures.insert_or_assign("modulo_double", Signature().builtin().add(float64).add(float64).returns(float64));
-//	functionSignatures["square"] = Signature().add(i64).returns(i64).import();
-	functionSignatures.insert_or_assign("square", Signature().import().add(int32).returns(int32));
-//	functionSignatures["square"] = Signature().add(i32t).returns(i32t).import();
-//	functionSignatures["main"] = Signature().returns(i32t);;
-//	functionSignatures["main"] = Signature().returns(i64t); // ok in all modern environments~
-	functionSignatures.insert_or_assign("main", Signature().returns(i64));
-//	functionSignatures.insert_or_assign("main", Signature().returns(i32));
-	functionSignatures["print"] = functionSignatures["puts"];// todo: for now, later it needs to distinguish types!!
-	functionSignatures["paint"] = Signature().import().returns(voids);// paint surface
-	functionSignatures.insert_or_assign("init_graphics", Signature().import().returns(pointer));// surface
-//	functionSignatures["init_graphics"].import().returns(pointer);// BUUUUG!
-
-	// TODO!!!
-	// functionSignatures[ ] access is BROKEN!!! use functionSignatures.insert_or_assign so long!
-
-//	if(functionSignatures["init_graphics"].return_type!=pointer)error("WWWAAA");
+	functions["modulo_float"].builtin().signature.add(float32).add(float32).returns(float32);
+//	functions["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
+	functions["modulo_double"].builtin().signature.add(float64).add(float64).returns(float64);
+//	functions["square"] = Signature().add(i64).returns(i64).import();
+	functions["square"].import().signature.add(int32).returns(int32);
+//	functions["square"] = Signature().add(i32t).returns(i32t).import();
+//	functions["main"] = Signature().returns(i32t);;
+//	functions["main"] = Signature().returns(i64t); // ok in all modern environments~
+	functions["main"].signature.returns(i64);
+//	functions["main"].returns(isignature.32));
+	functions["print"] = functions["puts"];// todo: for now, later it needs to distinguish types!!
+	functions["paint"].import().signature.returns(voids);// paint surface
+	functions["init_graphics"].import().signature.returns(pointer);// surface
+//	functions["init_graphics"].import().returns(pointer);// BUUUUG!
+//	if(functions["init_graphics"].return_type!=pointer)error("WWWAAA");
 	// builtins
-	functionSignatures["nop"] = Signature().builtin();
-//	functionSignatures["id"] = Signature().add(i32t).returns(i32t).builtin();
-	functionSignatures.insert_or_assign("id", Signature().add(i32t).returns(i32t).builtin());
-
+	functions["nop"].builtin();
+//	functions["id"] = Signature().add(i32t).returns(i32t).builtin();
+	functions["id"].builtin().signature.add(i32t).returns(i32t);
 	// library signatures are parsed in consumeExportSection() via demangle
 	// BUT their return type is not part of name, so it needs to be hardcoded, if ≠ int32:
-//	functionSignatures["concat"] = Signature().add(string).add(string).returns(string).runtime();// chars to be precise
-	functionSignatures["concat"] = Signature().add(charp).add(charp).returns(charp).runtime();// chars to be precise
+//	functions["concat"] = Signature().add(string).add(string).returns(string).runtime();// chars to be precise
+	functions["concat"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
 }
 
 void clearAnalyzerContext() {
@@ -1193,18 +1190,16 @@ void clearAnalyzerContext() {
 	globals.setDefault(new Node());
 	functionIndices.clear();
 	functionIndices.setDefault(-1);
-//	stringIndices.clear();
 	locals.clear();
 	locals.setDefault(List<String>());
 	localTypes.clear();
 	localTypes.setDefault(List<Valtype>());
 	declaredFunctions.clear();
-	functionSignatures.setDefault(Signature());
 	analyzed.clear();// todo move much into outer analyze function!
 	analyzed.setDefault(0);
-	functionSignatures.clear();// always needs to be followed by
+	functions.clear();// always needs to be followed by
 	preRegisterSignatures();// BUG Signature wrong cpp file
-//	check(functionSignatures["log10"].is_import)
+//	check(functions["log10"].is_import)
 	//	if(data.kind==groups) data.kind=expression;// force top level expression! todo: only if analyze recursive !
 #endif
 }

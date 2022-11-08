@@ -47,7 +47,9 @@ public:
 	int start_index;
 	List<String> import_names;
 	List<String> export_names;
-	Map<String, Signature> signatures; // ⚠️ ≠ global functionSignatures   todo USE IT!
+	Map<String, Signature> signatures;// also implicit index->Signature 0,1,2… ! before merging!
+	Map<String, Function> functions;
+	Map<String, int> functionIndices; // lookup PER MODULE!
 //	int data_offset=0;// todo: read from data section! why not 0 ?
 	int data_offset_end;
 	bool needs_relocate = false;
@@ -57,5 +59,5 @@ Module read_wasm(bytes buffer, int size);
 
 Module read_wasm(chars file);
 
-Code read_code(chars file);
+Code &read_code(chars file);
 

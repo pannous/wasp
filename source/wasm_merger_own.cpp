@@ -29,7 +29,7 @@ std::map<short, int> new_indices;// = {{0, 1}, {1, 2}};
 
 Code createSection(Sections sectionType, Code data);
 
-Code code(std::vector<uint8_t> vector1);
+Code &code(std::vector<uint8_t> vector1);
 
 using namespace wabt;
 using namespace wabt::link;
@@ -56,32 +56,32 @@ String s(String x) { return x; }
 //#define LOG_DEBUG(fmt, ...) if (s_debug) s_log_stream->Writef(fmt, __VA_ARGS__);
 #define LOG_DEBUG(fmt, ...) if (s_debug) printf(fmt, __VA_ARGS__);
 
-int leb = -2;// special marker for varlength leb argument ( i32.const … )
+const int leb = -2;// special marker for varlength leb argument ( i32.const … )
 int heaptype = -3;
 int u32 = 4;
 int block_index = leb;
 int i32_type = 4;
 // https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
 std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code (not the stack values! e.g. 4 bytes for f32.const )
-		{nop,                 0}, // useful for relocation padding call 1 -> call 10000000
-		{block,               leb},
-		{loop,                0},
-		{if_i,                0},// precede by i32 result}, follow by i32_type {7f}
-		{elsa,                0},
-		{return_block,                0},
+		{nop,             0}, // useful for relocation padding call 1 -> call 10000000
+		{block,           leb},
+		{loop,            0},
+		{if_i,            0},// precede by i32 result}, follow by i32_type {7f}
+		{elsa,            0},
+		{return_block,    0},
 
 		// EXTENSIONS:
-		{try_,                -1},
-		{catch_,              -1},
-		{throw_,              -1},
-		{rethrow_,            -1},
-		{br_on_exn_,          -1}, // branch on exception
+		{try_,            -1},
+		{catch_,          -1},
+		{throw_,          -1},
+		{rethrow_,        -1},
+		{br_on_exn_,      -1}, // branch on exception
 
-		{end_block,           0}, //11
-		{br,                  block_index},
-		{br_if,               block_index},
+		{end_block,       0}, //11
+		{br,              block_index},
+		{br_if,           block_index},
 		{return_block,    -1},
-		{function,        -1},
+		{call,            -1},
 
 		// EXTENSIONS:
 		{call_ref,        u32},
@@ -786,10 +786,11 @@ void Linker::WriteDataSection(const SectionPtrVector &sections,
 
 	WriteU32Leb128(&stream_, total_count, "data segment count");
 	for (const Section *sec: sections) {
-		for (const DataSegment &segment: *sec->data.data_segments) {
-			WriteDataSegment(segment,
-			                 sec->binary->memory_page_offset * WABT_PAGE_SIZE);
-		}
+		if (sec->data.data_segments)
+			for (const DataSegment &segment: *sec->data.data_segments) {
+				WriteDataSegment(segment,
+				                 sec->binary->memory_page_offset * WABT_PAGE_SIZE);
+			}
 	}
 
 	FixupSize(fixup);
@@ -1091,7 +1092,6 @@ void Linker::WriteBinary() {
 		WriteCombinedSection((BinarySection) i, sections[i]);
 	}
 	WriteNamesSection();
-
 	/* Generate a new set of reloction sections */
 //	if (s_relocatable) {
 //		WriteLinkingSection(0, 0);
@@ -1105,42 +1105,30 @@ void Linker::DumpRelocOffsets() {
 	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		LOG_DEBUG("Relocation info for: %s\n", binary->filename);
 		LOG_DEBUG(" - type index offset       : %d\n", binary->type_index_offset);
-		LOG_DEBUG(" - mem page offset         : %d\n",
-		          binary->memory_page_offset);
-		LOG_DEBUG(" - function index offset   : %d\n",
-		          binary->function_index_offset);
-		LOG_DEBUG(" - global index offset     : %d\n",
-		          binary->global_index_offset);
-		LOG_DEBUG(" - imported function offset: %d\n",
-		          binary->imported_function_index_offset);
-		LOG_DEBUG(" - imported global offset  : %d\n",
-		          binary->imported_global_index_offset);
+		LOG_DEBUG(" - mem page offset         : %d\n", binary->memory_page_offset);
+		LOG_DEBUG(" - function index offset   : %d\n", binary->function_index_offset);
+		LOG_DEBUG(" - global index offset     : %d\n", binary->global_index_offset);
+		LOG_DEBUG(" - imported function offset: %d\n", binary->imported_function_index_offset);
+		LOG_DEBUG(" - imported global offset  : %d\n", binary->imported_global_index_offset);
 	}
 }
 
 void Linker::CreateRelocs() {
 	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-		//	binary->sections;
 		Section *section = getSection(binary, BinarySection::Code);
 		if (!section)return;
 		Index indexOffset = binary->delta;
-//		Index i = section->count;
 		size_t size = section->size;
 		// todo create and pass correct view from here!
 		Code section_code(binary->data.data() + section->offset + 1, section->size);
-//		auto relocs = PatchCodeSection(section_code, indexOffset);
-		Index boarder = binary->imported_function_index_offset;
-		auto relocs = PatchCodeSection(binary->data, section->offset + 1, size, indexOffset, boarder);
+		Index border = binary->imported_function_index_offset;
+		auto relocs = PatchCodeSection(binary->data, section->offset + 1, size, indexOffset, border);
 		for (Reloc &reloc: relocs)
 			section->relocations.push_back(reloc);
 //		if(!section->data.data_segments)
 //			continue;
 //		for (const DataSegment &segment: *section->data.data_segments) {
-//			auto data = (bytes) segment.data;
-//			//		vector<Reloc> relocs=
-//			PatchCodeSection(data, section->payload_size, 0);
 //		}
-		//	//if(section)
 	}
 }
 
@@ -1182,18 +1170,23 @@ Code merge_files(List<String> infiles) {
 }
 
 
-Code merge_binaries(List<Code> binaries) {
+Code &merge_binaries(List<Code> binaries) {
+	opcode_args[global_get] = leb;
+	check(opcode_args[global_get] == leb) // todo what kind of dark bug is that???
 	Linker linker;
-	if (binaries.size() == 1)return binaries[0];
+	if (binaries.size() == 1)
+		return binaries.items[0].clone();
 	for (const Code &code: binaries) {
 		std::vector<uint8_t> file_data(code.data, code.data + code.length);
-		auto binary = new LinkerInputBinary("<code>", file_data);
+		const char *string = "<code>";
+		if (not code.name.empty()) string = code.name.data;
+		auto binary = new LinkerInputBinary(string, file_data);
 		linker.AppendBinary(binary);
 		LinkOptions options = {NULL};
 		ReadBinaryLinker(binary, &options);
 	}
 	const OutputBuffer &out = linker.PerformLink();
-	return code(out.data);
+	return code(out.data);// data already copied, no need to .clone();
 }
 
 Code merge_binaries(Code main, Code lib) {
@@ -1203,8 +1196,8 @@ Code merge_binaries(Code main, Code lib) {
 	return merge_binaries(binaries);
 }
 
-Code code(std::vector<uint8_t> vector1) {
-	return Code(vector1.data(), vector1.size());
+Code &code(std::vector<uint8_t> vector1) {
+	return *new Code(vector1.data(), vector1.size());
 }
 
 
@@ -1268,7 +1261,7 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, size
 			int arg_bytes = opcode_args[op];
 			if (arg_bytes > 0)
 				current += arg_bytes;
-			if (arg_bytes == leb) {
+			else if (arg_bytes == leb) {
 				unsignedLEB128(section_data, length, current);// start passed as reference will be MODIFIED!!
 			} // auto variable argument(s)
 			else if (arg_bytes == -1) {

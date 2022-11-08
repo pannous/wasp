@@ -137,21 +137,30 @@ chars typeName(Valtype t, bool fail) {
 			return "«todo»";
 		default:
 			if (fail)
-			error("missing name for Valtype "s + t);
+				error("missing name for Valtype "s + t);
 	}
 	return 0;
 }
 
+// in final stage of emit, keep original types as long as possible
+Valtype mapTypeToWasm(Type t) {
+	if (t.value < 0x100)
+		return (Valtype) t.value;
+	todo("mapTypeToWasm");
+	return Valtype::int32;
+}
 
 Valtype mapTypeToWasm(Node &n) {
 	if (n == Double)
 		return float64;
 	if (n == Long)
 		return i64;
-	if (functionSignatures.has(n.name)) {
+	if (not n.name.empty() and functions.has(n.name)) {
+		List<Type> &returnTypes = functions[n.name].signature.return_types;
 //		breakpoint_helper
 //		todo(">>>");
-		return functionSignatures[n.name].return_types.last();// no ??
+		const Type &type = returnTypes.last(Type(i32));
+		return (Valtype) type.value;// no ??
 	}
 
 	//	if(n.type)…
@@ -169,8 +178,11 @@ Valtype mapTypeToWasm(Node &n) {
 	if (n.kind == objects)return array;// todo
 //	if (n.kind.type == int_array)return array;// todo
 	if (n.kind == call) {
-		// todo multi-value 2.  not a wasm type, maybe get signature?
-		return functionSignatures[n.name].return_types.last();
+		List<Type> &returnTypes = functions[n.name].signature.return_types;
+		if (returnTypes.size() > 1)
+			todo("multi-value");
+		Type &type = returnTypes.last();
+		return (Valtype) type.value;
 	}
 	if (n.kind == key and n.value.data) return mapTypeToWasm(*n.value.node);
 	//	if (n.kind == key and not n.value.data)return array;

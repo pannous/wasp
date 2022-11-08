@@ -12,7 +12,7 @@ settings set target.load-cwd-lldbinit true
 # type summary add --inline-children -x ".*"  # DEFAULT properties for all objects!
 
 
-# type summary add --summary-string "#${var._size}" List
+type summary add --summary-string "#${var._size}" List
 # type summary add --summary-string "#${var._size} ${var.items[0-5]}" List<String>
 type summary add --summary-string "#${var._size} ${var.items%B}" List<String>
 
