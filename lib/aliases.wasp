@@ -19,6 +19,10 @@
 ###
 
 # := : be, ≔, ≝  # ⩦, ⭀,⥱   # ≕ <> set let var val ⪮ ⩷
+'//' : comment # stupid border cases ;)
+'[]' : index
+'#' : number # ℕ₁ based ≠ ℕ₀ based index can't be defined here ;)
+'#' : size, length, count # as PREFIX (and suffix?) but not as infix
 = : is, ﹦, ＝, ⁼  # used as defining AND as comparison!
 != : unequal, ≠, ≢, ≭, <>, ↮, different, isnt, is_not, unlike, ≉, ≆, ≇, ≄ # separate from
 == : equals, ⩵, ≟, ≌, ≑, ≗, ≛, ≜,  equivalent, ≡, identical, ≣, ≙, ≍, ⩶, is_equal, equal, same, the same as     # even par

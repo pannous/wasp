@@ -929,7 +929,7 @@ Code emitOperator(Node node, String context) {
 	 * */
 	if (index >= 0) {// FUNCTION CALL
 		print("OPERATOR / FUNCTION CALL: %s\n"s % name);
-		code.addByte(call);
+		code.addByte(function_call);
 		code.add(index);
 		return code;
 	}
@@ -1122,9 +1122,14 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 //		}
 		return code;
 	}
+//	if (name=="#"){
+//		Code c=emitExpression(node[0], context);
+//		return c+emitIndexPattern(node[0], node[1], context);// todo redundant somewhere!
+//	}
 	//	or node.kind == groups ??? NO!
-	if ((node.kind == call or node.kind == reference or node.kind == operators) and functionIndices.has(name))
-		return emitCall(node, context);
+	if (name != "#")
+		if ((node.kind == call or node.kind == reference or node.kind == operators) and functionIndices.has(name))
+			return emitCall(node, context);
 
 	Node &first = node.first();
 	switch (node.kind) {
@@ -1792,6 +1797,9 @@ Code typeSection() {
 //			error("empty function creep functions[ø]");
 			continue;
 		}
+		if (is_operator(fun[0]))continue;// todo how did we get here?
+		if (fun == "=" or fun == "#")todo("how did we get here?");
+//		if (fun=="#")continue;// handled internally ⚠️ careful!
 		Function &function = functions[fun];
 		Signature &signature = function.signature;
 		if (not function.emit /*export/declarations*/ and not function.is_used /*imports*/) {
@@ -2394,7 +2402,9 @@ Code &compile(String code) {
 #ifdef INCLUDE_MERGER
 	if (merge_module_binaries.size() > 0) {
 		merge_module_binaries.add(binary);
-		return merge_binaries(merge_module_binaries);
+		Code &merged = merge_binaries(merge_module_binaries);
+		merge_module_binaries.clear();
+		return merged;
 	}
 #else
 	if (merge_module_binaries.size() > 0)
