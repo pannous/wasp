@@ -1108,8 +1108,13 @@ int run_wasm_file(chars file) {
 #endif
 }
 
+void fixFunctionNames() {
+	for (String name: functions) {
+		functions[name].name = name;
+	}
+}
 
-void preRegisterSignatures() {
+void preRegisterFunctions() {
 	functions.clear();
 //	functions.use_constructor=true;
 //	functions.setDefault(Function());
@@ -1181,6 +1186,7 @@ void preRegisterSignatures() {
 	// BUT their return type is not part of name, so it needs to be hardcoded, if ≠ int32:
 //	functions["concat"] = Signature().add(string).add(string).returns(string).runtime();// chars to be precise
 	functions["concat"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
+	fixFunctionNames();
 }
 
 void clearAnalyzerContext() {
@@ -1198,7 +1204,7 @@ void clearAnalyzerContext() {
 	analyzed.clear();// todo move much into outer analyze function!
 //	analyzed.setDefault(0);
 	functions.clear();// always needs to be followed by
-	preRegisterSignatures();// BUG Signature wrong cpp file
+	preRegisterFunctions();// BUG Signature wrong cpp file
 //	check(functions["log10"].is_import)
 	//	if(data.kind==groups) data.kind=expression;// force top level expression! todo: only if analyze recursive !
 #endif

@@ -51,7 +51,7 @@ Node runtime_emit(String prog);// wasp -> code + runtime -> wasm (via emit)
 
 Node constants(Node n);
 
-void preRegisterSignatures();
+void preRegisterFunctions();
 
 bool isFunction(Node &op);
 
