@@ -78,7 +78,7 @@ Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent
 Node ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
 Node True = Node("True").setType(bools).setValue(true);
 Node False = Node("False").setType(bools).setValue(false);
-
+Node Ignore = Node("Ignore");
 Node Infinity = Node("Infinity");
 Node NegInfinity = Node("-Infinity");
 Node NaN = Node("NaN");
