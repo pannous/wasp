@@ -90,13 +90,13 @@ codepoint grouper_list[] = {' ', ',', ';', ':', '\n', '\t', '(', ')', '{', '}', 
 // todo split keywords into binops and prefix functors
 chars import_keywords[] = {"use", "require", "import", "include", "using", 0};
 // todo aliases need NOT be in this list:
-// todo library functions need NOT be in this list (loaded when though?)
+// todo library functions need NOT be in this list (loaded when though?) "log10", "log₁₀", "log₂", "ln", "logₑ",
 // todo special UTF signs need NOT be in this list, as they are identified as operators via utf range
 chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
-                          "is", "equal", "equals", "==", "!=", "≠",
+                          "is", "equal", "equals", "==", "!=", "≠", "#", "=",
                           "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":",
                           "upto", "…", "...", "..<" /*range*/,
-                          "%", "mod", "modulo", "log10", "log₁₀", "log₂", "ln", "logₑ", "⌟", "2⌟", "10⌟", "⌞", "⌞2",
+                          "%", "mod", "modulo", "⌟", "2⌟", "10⌟", "⌞", "⌞2",
                           "⌞10",
                           "plus", "times", "add", "minus",// todo via aliases.wasp / SPO PSO verb matching
                           "use", "using", "include", "require", "import", "module",
