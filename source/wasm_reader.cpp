@@ -152,7 +152,6 @@ void parseFunctionNames(Code &payload) {
 }
 
 //Map<int, Signature> funcTypes;
-List<Signature> funcTypes;// implicit index
 void parseFuncTypeSection(Code &payload) {
 	// we don't know here if i32 is pointer … so we may have to refine later
 	for (int i = 0; i < module.code_count and payload.start < payload.length; ++i) {
@@ -160,7 +159,7 @@ void parseFuncTypeSection(Code &payload) {
 		String *fun = module.functionIndices.lookup(i + module.import_count);
 		if (!fun)continue;
 //			error("no name for function "s+i);
-		Signature &s = funcTypes[typ];
+		Signature &s = module.funcTypes[typ];
 		Function &function = module.functions[*fun];
 		function.signature.merge(s);
 		Signature &sic = getSignature(*fun);// todo merge global signatures later!
@@ -169,7 +168,7 @@ void parseFuncTypeSection(Code &payload) {
 }
 
 // not part of name section wtf
-void parseImportNames(Code &payload) {
+void parseImportNames(Code &payload) {// and TYPES!
 	trace("Imports:");
 	for (int i = 0; i < module.import_count and payload.start < payload.length; ++i) {
 		String &mod = name(payload);// module
@@ -177,11 +176,14 @@ void parseImportNames(Code &payload) {
 		int huh = unsignedLEB128(payload);
 		int type = unsignedLEB128(payload);
 		trace(name1);
-		Signature &signature = funcTypes[type];
+		Signature &signature = module.funcTypes[type];
 		module.functionIndices[name1] = i;
+		module.functions[name1].signature.merge(signature);
 		Signature &sic = getSignature(name1);
-		if (sic.return_types.empty()) sic.return_types = signature.return_types;// todo copy construktor OK??
-		if (sic.types.empty())sic.types = signature.types;
+		if (sic.return_types.empty())
+			sic.return_types = signature.return_types;// todo copy construktor OK??
+		if (sic.types.empty())
+			sic.types = signature.types;
 		module.import_names.add(name1);
 	}
 //	module.signatures = functionSignatures; // todo merge into global functionSignatures, not the other way round!!
@@ -191,6 +193,7 @@ void parseImportNames(Code &payload) {
 void parse_type_data(Code &payload) {
 	for (int i = 0; i < module.type_count and payload.start < payload.length; ++i) {
 		Signature sic;
+		sic.type_index = i;
 		int typ = unsignedLEB128(payload);// implicit?
 		if (typ != func)continue;
 		int param_count = unsignedLEB128(payload);
@@ -204,7 +207,7 @@ void parse_type_data(Code &payload) {
 			sic.returns(rt);
 		} else
 			sic.returns(none);
-		funcTypes.add(sic);
+		module.funcTypes.add(sic);
 	}
 }
 
@@ -411,8 +414,9 @@ void consumeExportSection() {
 		fun0.name = func0;
 		// todo: demangling doesn't yield return type, is wasm_signature ok?
 		// todo: use wasm_signature if demangling fails
-		Signature &wasm_signature = funcTypes[type];
+		Signature &wasm_signature = module.funcTypes[type];
 		Valtype returns = mapTypeToWasm(wasm_signature.return_type);
+		if (wasm_signature.wasm_return_type == void_block)returns = void_block;
 		if (i32 != returns) {
 //			print("returns "s + typeName(returns));
 //				returns = int32; // for now! todo
@@ -555,17 +559,17 @@ void consumeSections() {
 #ifndef RUNTIME_ONLY
 
 
-Module read_wasm(bytes buffer, int size0) {
+Module &read_wasm(bytes buffer, int size0) {
 	module = *new Module(); // todo: make pure, not global!
 	pos = 0;
 	code = buffer;
 	size = size0;
-	funcTypes.clear();
 	consume(4, reinterpret_cast<byte *>(magicModuleHeader));
 	consume(4, reinterpret_cast<byte *>(moduleVersion));
 	consumeSections();
 	module.total_func_count = module.import_count + module.code_count;
 	parseFuncTypeSection(module.functype_data);// only after we have the name, so we can connect functionSignatures!
+	check(module.functions["puts"].signature.type_index >= 0);
 	return module;
 }
 

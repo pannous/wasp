@@ -96,14 +96,13 @@ chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "th
                           "is", "equal", "equals", "==", "!=", "≠", "#", "=",
                           "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":",
                           "upto", "…", "...", "..<" /*range*/,
-                          "%", "mod", "modulo", "⌟", "2⌟", "10⌟", "⌞", "⌞2",
-                          "⌞10",
+                          "%", "mod", "modulo", "⌟", "2⌟", "10⌟", "⌞", "⌞2", "⌞10",
                           "plus", "times", "add", "minus",// todo via aliases.wasp / SPO PSO verb matching
                           "use", "using", "include", "require", "import", "module",
                           "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
-                          "abs", /* "norm", "‖" acts as GROUP, not as operator (when parsing) */
+                          "abs" /* f64.abs! */, /* "norm", "‖" acts as GROUP, not as operator (when parsing) */
 		// norm ‖…‖ quite complicated for parser! ‖x‖ := √∑xᵢ²
 		                  0, 0, 0,
 		                  0}; // "while" ...
@@ -943,7 +942,8 @@ private:
 			return numbero();
 		if (ch == u'‖') {
 			proceed();// todo: better ;)
-			return (*new Node("‖")).add(valueNode(u'‖').clone()).setType(operators, false);
+//			return (*new Node("‖")).add(valueNode(u'‖').clone()).setType(operators, false);
+			return (*new Node("abs")).setType(Kind::call, false);
 		}
 		if (is_operator(ch))
 			return any_operator();
