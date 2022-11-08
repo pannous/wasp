@@ -157,10 +157,9 @@ Valtype mapTypeToWasm(Node &n) {
 		return i64;
 	if (not n.name.empty() and functions.has(n.name)) {
 		List<Type> &returnTypes = functions[n.name].signature.return_types;
-//		breakpoint_helper
-//		todo(">>>");
-		const Type &type = returnTypes.last(Type(i32));
-		return (Valtype) type.value;// no ??
+		if (returnTypes.empty())return voids;
+		Valtype valtype = mapTypeToWasm(returnTypes.last());
+		return valtype;
 	}
 
 	//	if(n.type)…
