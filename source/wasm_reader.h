@@ -47,6 +47,7 @@ public:
 	int start_index;
 	List<String> import_names;
 	List<String> export_names;
+	List<Signature> funcTypes;// implicit index
 	Map<String, Signature> signatures;// also implicit index->Signature 0,1,2… ! before merging!
 	Map<String, Function> functions;
 	Map<String, int> functionIndices; // lookup PER MODULE!
@@ -55,7 +56,7 @@ public:
 	bool needs_relocate = false;
 };
 
-Module read_wasm(bytes buffer, int size);
+Module &read_wasm(bytes buffer, int size);
 
 Module read_wasm(chars file);
 
