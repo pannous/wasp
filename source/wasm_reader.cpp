@@ -161,6 +161,7 @@ void parseFuncTypeSection(Code &payload) {
 //			error("no name for function "s+i);
 		Signature &s = module.funcTypes[typ];
 		Function &function = module.functions[*fun];
+		if (function.name.empty())function.name = *fun;// late!
 		function.signature.merge(s);
 		Signature &sic = getSignature(*fun);// todo merge global signatures later!
 		sic.merge(s);
@@ -179,11 +180,8 @@ void parseImportNames(Code &payload) {// and TYPES!
 		Signature &signature = module.funcTypes[type];
 		module.functionIndices[name1] = i;
 		module.functions[name1].signature.merge(signature);
-		Signature &sic = getSignature(name1);
-		if (sic.return_types.empty())
-			sic.return_types = signature.return_types;// todo copy construktor OK??
-		if (sic.types.empty())
-			sic.types = signature.types;
+		Signature &sic = getSignature(name1);// global!
+		sic.merge(signature);// todo : LATER!
 		module.import_names.add(name1);
 	}
 //	module.signatures = functionSignatures; // todo merge into global functionSignatures, not the other way round!!
@@ -569,7 +567,6 @@ Module &read_wasm(bytes buffer, int size0) {
 	consumeSections();
 	module.total_func_count = module.import_count + module.code_count;
 	parseFuncTypeSection(module.functype_data);// only after we have the name, so we can connect functionSignatures!
-	check(module.functions["puts"].signature.type_index >= 0);
 	return module;
 }
 
