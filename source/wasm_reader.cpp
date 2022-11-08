@@ -112,7 +112,7 @@ String &name(Code &wstring) {
 // that is: add their signatures to module …
 void parseFunctionNames(Code &payload) {
 	module.functionIndices.setDefault(-1);
-	module.functions.setDefault(Function());
+//	module.functions.setDefault(Function());
 //	put(module.functionIndices);// what we got so far?
 	int function_count = unsignedLEB128(payload);
 	int index = -1;
@@ -554,7 +554,6 @@ void consumeSections() {
 
 Module read_wasm(bytes buffer, int size0) {
 	module = *new Module(); // todo: make pure, not global!
-//	module.functions.use_default_constructor= true;// setDefault(Function());
 	pos = 0;
 	code = buffer;
 	size = size0;
