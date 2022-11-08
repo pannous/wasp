@@ -111,7 +111,7 @@ Node constants(Node n) {
 
 bool isFunction(String op) {
 	if (op.empty())return false;
-	if (is_operator(op[0]))return false;
+	if (operator_list.has(op))return false;
 	if (declaredFunctions.has(op))return true;
 	if (functions.has(op))return true;// pre registered signatures
 	if (op.in(function_list))
@@ -531,7 +531,10 @@ Node &groupDeclarations(String &name, Node *return_type, Node modifieres, Node &
 //	String &name = fun.name;
 	if (name and not function_operators.has(name))
 		declaredFunctions.add(name);
-
+//	silent_assert(not is_operator(name[0]));
+//	trace_assert(not is_operator(name[0]));
+	if (is_operator(name[0]))// todo ^^
+		todo("is_operator!");// remove if it doesn't happen
 	Function &function = functions[name];
 	function.emit = true;
 
