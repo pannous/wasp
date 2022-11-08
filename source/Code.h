@@ -453,7 +453,7 @@ enum Opcodes {
 	br = 0x0c,
 	br_if = 0x0d,
 	return_block = 0x0f,
-//	function = 0x10,
+	function_call = 0x10,
 	call_ = 0x10,
 	call_indirect = 0x11,
 

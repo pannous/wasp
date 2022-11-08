@@ -1336,7 +1336,7 @@ Code emitCall(Node &fun, String context) {
 		if (valtype != argType)
 			code.push(cast(argType, valtype));
 	};
-	code.addByte(call);
+	code.addByte(function_call);
 	code.addInt(index);// as LEB!
 	code.addByte(nop);// padding for potential relocation
 	function.is_used = true;
@@ -1592,7 +1592,7 @@ Code emitIf_OLD(Node &node) {
 [[nodiscard]]
 Code Call(char *symbol) {//},Node* args=0) {
 	Code code;
-	code.addByte(call);
+	code.addByte(function_call);
 	int i = functionIndices.position(symbol);
 	if (i < 0)error("UNKNOWN symbol "s + symbol);
 //	code.opcode(unsignedLEB128(i),8);
@@ -1885,7 +1885,7 @@ Code codeSection(Node root) {
 		print("declared function: "s + declared);
 		if (!declared)error("empty function name (how?)");
 		if (not functionIndices.has(declared))// used or not!
-			functionIndices[declared] = ++last_index;// functionIndices.size();
+			functionIndices[declared] = ++last_index;
 	}
 //	int index_size = functionIndices.size();
 //	bool has_main = start and (declaredFunctions.has(start) or functionIndices.has(start));
@@ -2111,7 +2111,7 @@ Code functionSection() {
 Code nameSection() {
 	Code nameMap;
 
-	int total_func_count = last_index + 1;// functionIndices.size();// imports + function_count, all receive names
+	int total_func_count = last_index + 1;// imports + function_count, all receive names
 	int usedNames = 0;
 	for (int index = runtime_offset; index < total_func_count; index++) {
 		// danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
@@ -2245,13 +2245,20 @@ void add_builtins() {
 	for (auto sig: functions) {// imports first
 		Function &function = functions[sig];
 		if (function.is_import and function.is_used) {
-			functionIndices[sig] = ++last_index;// functionIndices.size();
+			functionIndices[sig] = ++last_index;
+			if (function.index >= 0 and function.index != last_index)
+				error("function already has index %d ≠ %d"s % function.index % last_index);
+			function.index = last_index;
 			import_count++;
 		}
 	}
 	for (auto sig: functions) {// now builtins
-		if (functions[sig].is_builtin and functions[sig].is_used) {
-			functionIndices[sig] = ++last_index;// functionIndices.size();
+		Function &function = functions[sig];
+		if (function.is_builtin and function.is_used) {
+			functionIndices[sig] = ++last_index;
+			if (function.index >= 0 and function.index != last_index)
+				error("function already has index %d ≠ %d"s % function.index % last_index);
+			function.index = last_index;
 			builtin_count++;
 		}
 	}
@@ -2319,7 +2326,7 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 		functions[start].emit = true;
 		if (!functionIndices.has(start))
 			functionIndices[start] = ++last_index;
-//			functionIndices[start] =runtime_offset ? runtime_offset + declaredFunctions.size() :  ++last_index;// functionIndices.size();  // AFTER collecting imports!!
+//			functionIndices[start] =runtime_offset ? runtime_offset + declaredFunctions.size() :  ++last_index;  // AFTER collecting imports!!
 		else
 			error("start already declared: "s + start + " with index " + functionIndices[start]);
 	} else {
