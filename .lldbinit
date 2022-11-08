@@ -44,7 +44,8 @@ type summary add --summary-string "${var[0-8].name}" "Node *"
 # ${addr} ${addr-file-or-load} ${ansi} ${current-pc-arrow} ${file} ${language} ${frame} ${function} ${line} ${module} ${process} ${script} ${svar} ${thread} ${target} ${var}"
 
 
-type summary add Signature --summary-string "arg#:${var.types._size} ${var.types} ${var.return_type}"
+# ${var.types.values}
+type summary add Signature --summary-string "arg#:${var.types._size} ${var.return_type}"
 
 type summary add --summary-string "${var%E}" wabt::Result
 type summary add --summary-string "${var.offset_}" wabt::Stream
