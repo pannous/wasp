@@ -317,7 +317,7 @@ long run_wasm(unsigned char *data, int size) {
 	wasm_trap_t *trap = NULL;// (wasm_trap_t *) malloc(10000); //wasm_trap_new((wasm_store_t *)store, NULL); //"Error?"
 	wasmtime_instance_t instance;
 
-	Module meta = read_wasm(data, size);// wasmtime module* sucks so we read it ourselves!
+	Module &meta = read_wasm(data, size);// wasmtime module* sucks so we read it ourselves!
 	int importCount = meta.import_count;
 	wasmtime_extern_t imports[1 + importCount * 2];
 	int i = 0;
@@ -327,7 +327,8 @@ long run_wasm(unsigned char *data, int size) {
 		print(import_name);
 		wasmtime_extern_t import;
 		wasmtime_func_t link;
-		Signature &signature = meta.signatures[import_name];
+//		Signature &signature = meta.signatures[import_name];
+		Signature &signature = meta.functions[import_name].signature;
 		const wasm_functype_t *type = funcType(signature);
 		wasm_wrap (*callback) = link_import(import_name);
 		wasmtime_func_new(context, type, callback, NULL, NULL, &link);

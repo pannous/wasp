@@ -111,6 +111,7 @@ Node constants(Node n) {
 
 bool isFunction(String op) {
 	if (op.empty())return false;
+	if (op == "‖")return false;
 	if (operator_list.has(op))return false;
 	if (declaredFunctions.has(op))return true;
 	if (functions.has(op))return true;// pre registered signatures
@@ -1156,8 +1157,11 @@ void preRegisterFunctions() {
 	functions["putd"].import().signature.add(float64).returns(voids);
 	//	functions["powl"].import().signature.add(int64).add(int64).returns(int64));
 	//	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
-	functions["puts"].import().signature.add(charp).returns(voids);
-//	functions["puts"].import().signature.add(charp).returns(int32));
+	functions["puts"].import().signature.add(charp).returns(voids);// int32
+	functions["print"].import().signature.add(charp).returns(voids);
+
+// TESTS! not useful otherwise!
+	functions["square"].import().signature.add(int32).returns(int32);// test only!!
 	functions["not_ok"].signature.returns(voids);
 	functions["ok"].runtime().signature.returns(int32);// todo why not rely on read_wasm again?
 	functions["oki"].runtime().signature.add(int32).returns(int32);
@@ -1167,17 +1171,13 @@ void preRegisterFunctions() {
 //functions["render"].add(node)signature..add(pointer).returns(int32));
 	// todo: long + double !
 	// imports
+//	functions["abs"].builtin().signature.add(float64).add(float64).returns(float64); OPERATOR!
 	functions["modulo_float"].builtin().signature.add(float32).add(float32).returns(float32);
 //	functions["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
 	functions["modulo_double"].builtin().signature.add(float64).add(float64).returns(float64);
-//	functions["square"] = Signature().add(i64).returns(i64).import();
-	functions["square"].import().signature.add(int32).returns(int32);
-//	functions["square"] = Signature().add(i32t).returns(i32t).import();
-//	functions["main"] = Signature().returns(i32t);;
 //	functions["main"] = Signature().returns(i64t); // ok in all modern environments~
 	functions["main"].signature.returns(i64);
 //	functions["main"].returns(isignature.32));
-	functions["print"] = functions["puts"];// todo: for now, later it needs to distinguish types!!
 	functions["paint"].import().signature.returns(voids);// paint surface
 	functions["init_graphics"].import().signature.returns(pointer);// surface
 
@@ -1306,10 +1306,10 @@ float function_precedence = 1000;
 
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-chars function_list[] = {"abs", "norm", "square", "root", "put", "puts", "print", "printf", "println",
-                         "log", "ln", "log10", "log2", "similar",
-                         "putx", "putc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
-                         0};// MUST END WITH 0, else BUG
+chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "puts", "print", "printf", "println",
+                                                        "log", "ln", "log10", "log2", "similar",
+                                                        "putx", "putc", "id", "get", "set", "peek", "poke", "read", "write", 0, 0,
+                                                        0};// MUST END WITH 0, else BUG
 chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
 
 
