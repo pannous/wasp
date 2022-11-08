@@ -763,14 +763,15 @@ class Function;
 // todo we have a problem:  is_handled applies to a specific function, not it's Signature potentially shared with OTHER functions!
 class Signature {
 public:
+	int type_index = -1;// in type section ≠ function index!!
 	ABI abi = wasp_smart_pointers;//erased;
 // todo: add true Wasp Type Signature to wasm Valtype Signature
 	Map<int, Type> types;
 	List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
 //	Map<int, Valtype> types;
 //	List<Valtype> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
-
 	Node return_type{};
+	Valtype wasm_return_type;// debug only!
 	List<Function *> functions;// using this Signature; debug only?
 
 	// these explicit constructions are needed when using types return_types as reference!
@@ -838,6 +839,7 @@ public:
 
 	Signature &returns(Node type) {
 		return_type = type;
+		wasm_return_type = mapTypeToWasm(type);
 		if (type.kind != nils)// todo? type.kind!=undefined … ?
 		{
 			Valtype valtype = mapTypeToWasm(type);
@@ -855,6 +857,7 @@ public:
 #endif
 			return_types.add(valtype);
 		}
+		wasm_return_type = valtype;
 		return *this;
 	}
 
@@ -875,8 +878,11 @@ public:
 	}
 
 	void merge(Signature &s) {
-		if (return_types.empty()) return_types = s.return_types;// todo copy construktor OK??
-		if (types.empty())types = s.types;
+		if (type_index < 0)type_index = s.type_index;
+		if (return_types.empty())
+			return_types = s.return_types;// todo copy construktor OK??
+		if (types.empty())
+			types = s.types;
 	}
 };
 

@@ -210,6 +210,9 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "√"))return f64_sqrt;
 		if (eq(s, "sqrt"))return f64_sqrt;
 		if (eq(s, "root"))return f64_sqrt;
+		if (eq(s, "abs"))return f64_abs; // there is NO i32_abs
+		if (eq(s, "‖"))return f64_abs; // ║  primitive norm operator ≠ || or
+		if (eq(s, "║"))return f64_abs; // f32.abs // 10000000 comparisons for a char never encountered. Todo: 0 cost hash
 	} else if (kind == f32t) {
 		if (eq(s, "not"))return f32_eqz; // f32.eqz  // f32.eqz  // HACK: no such thing!
 		if (eq(s, "¬"))return f32_eqz; // f32.eqz  // HACK: no such thing!
@@ -886,6 +889,7 @@ Code emitOperator(Node node, String context) {
 //	name = normOperator(name);
 	if (node.length == 0 and name == "=") return code;// BUG
 	int index = functionIndices.position(name);
+	if (name == "‖")index = -1;// AHCK!
 	if (name == "then")return emitIf(*node.parent, context);// pure if handled before
 	if (name == ":=")return emitDeclaration(node, node.first());
 	if (name == "=")return emitSetter(node, node.first(), context);
@@ -1129,9 +1133,12 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 //		return c+emitIndexPattern(node[0], node[1], context);// todo redundant somewhere!
 //	}
 	//	or node.kind == groups ??? NO!
-	if (name != "#")
-		if ((node.kind == call or node.kind == reference or node.kind == operators) and functionIndices.has(name))
+
+	if ((node.kind == call or node.kind == reference or node.kind == operators) and functionIndices.has(name)) {
+		if (not isFunction(name));//				todo("how?");
+		else
 			return emitCall(node, context);
+	}
 
 	Node &first = node.first();
 	switch (node.kind) {
@@ -1785,8 +1792,8 @@ int last_index = -1;
 [[nodiscard]]
 Code typeSection() {
 	// Function types are vectors of parameters and return types. Currently
-	// TODO optimise - some of the procs might have the same type signature
 	// the type section is a vector of function types
+	// TODO optimise - some of the procs might have the same type signature
 	int typeCount = 0;
 	Code type_data;
 //	print(functionIndices);
@@ -1825,6 +1832,7 @@ Code typeSection() {
 //			error("function %s should be registered in functionIndices by now"s % fun);
 
 		typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
+		function.signature.type_index = typeMap[fun];// todo check old index? todo shared signatures!?!
 		function.is_handled = true;
 		int param_count = signature.size();
 //		Code td = {0x60 /*const type form*/, param_count};
