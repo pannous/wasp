@@ -1038,7 +1038,8 @@ void Node::replace(int from, int to, Node *node) {
 		error("Node::replace from<0 or from>=length");
 	children[from] = *node;
 	int i = 0;
-	if (to < from)error("Node::replace from>to : "s + from + ">" + to);
+	if (to < from)
+		error("Node::replace from>to : "s + from + ">" + to);
 	while (to + i++ <= length) {
 		children[from + i] = children[to + i];// ok if beyond length
 		children[from + i - 1].next = &children[from + i];
