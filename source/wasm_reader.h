@@ -58,7 +58,7 @@ public:
 
 Module &read_wasm(bytes buffer, int size);
 
-Module read_wasm(chars file);
+Module &read_wasm(chars file);
 
 Code &read_code(chars file);
 

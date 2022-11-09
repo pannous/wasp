@@ -25,8 +25,8 @@
 // don't use template! just use int-map
 template<class S, class T>
 class Map {
-	int _size = 0;
 public:
+	int _size = 0;
 	S *keys;// = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
 	T *values;// = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
 
