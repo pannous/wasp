@@ -1365,11 +1365,9 @@ Code emitCall(Node &fun, String context) {
 [[nodiscard]]
 [[nodiscard]]
 Code cast(Valtype from, Valtype to) {
-	if (from == 30)
-		return nop;// hide bug lol
 	last_type = to;// danger: hides last_type in caller!
 	Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
-	if (to == none or to == unknown_type)return nop;// no cast needed magic VERSUS wasm drop!!!
+	if (to == none or to == unknown_type or to == voids)return nop;// no cast needed magic VERSUS wasm drop!!!
 	if (from == to)return nop;// nop
 
 	if (from == array and to == charp)return nop;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2

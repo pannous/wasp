@@ -942,8 +942,8 @@ private:
 			return numbero();
 		if (ch == u'‖') {
 			proceed();// todo: better ;)
-//			return (*new Node("‖")).add(valueNode(u'‖').clone()).setType(operators, false);
-			return (*new Node("abs")).setType(Kind::call, false);
+			return (*new Node("‖")).add(valueNode(u'‖').clone()).setType(operators, false);
+//			return (*new Node("abs")).setType(Kind::call, false);
 		}
 		if (is_operator(ch))
 			return any_operator();
