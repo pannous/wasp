@@ -7,8 +7,11 @@
 #include "Map.h"
 #include "Node.h"
 #include "List.h"
+
 #ifndef PURE_WASM
+
 #include <stdio.h>
+
 #endif
 //size_t strlen(const char *__s);
 
@@ -296,8 +299,8 @@ public:
 	void save(char *file_name = "test.wasm") {
 		if (name.empty())name = file_name;
 #ifndef WASM
-		if(!String(file_name).endsWith(".wasm"))
-			file_name =(char *) concat(file_name, ".wasm");
+		if (!String(file_name).endsWith(".wasm"))
+			file_name = (char *) concat(file_name, ".wasm");
 		FILE *file = fopen(file_name, "wb");
 		fwrite(data, length, 1, file);
 		fclose(file);
@@ -359,8 +362,7 @@ enum Valtype {
 	unknown_type = -1,
 
 	voids = 0x00, // DANGER!=void_block  internal only for return type
-
-	void_block = 0x40,
+	void_block = 0x40, // ⚠️
 	none = 0x40, // NOT voids!!!
 
 // extensions
@@ -369,11 +371,11 @@ enum Valtype {
 	funcref = 0x70, // -0x10
 	func = 0x60,
 
-	int32 = 0x7f,
-	i32t = 0x7f,
-	i32 = 0x7f,
-	i32s = 0x7f,
-//	i32u = 0x7f,// todo ignore!
+
+	// ⚠️ strange order!
+	float64 = 0x7C,
+	f64t = 0x7C,
+	f64 = 0x7C,
 
 	float32 = 0x7d,
 	f32t = 0x7d,
@@ -386,14 +388,17 @@ enum Valtype {
 	i64 = 0x7E,
 	i64s = 0x7E,
 
-	float64 = 0x7C,
-	f64t = 0x7C,
-	f64 = 0x7C,
+	int32 = 0X7F,
+	i32t = 0x7f,
+	i32 = 0x7f,
+	i32s = 0x7f,
+//	i32u = 0x7f,// todo ignore!
 
 
 	// SPECIAL INTERNAL TYPES ONLY, not part of spec but they ARE represented through c++=>wasm types (int32?) :
 	// enums with the same value can NOT be distinguished thereafter!!! :(
 	// todo Signatures need a real Type, not a Valtype!
+	// todo use NodeTypes.h Type for this:
 	//	https://github.com/pannous/angle/wiki/smart-pointer
 	codepoint32 = int32,
 	pointer = int32,// 0xF0, // internal
@@ -420,7 +425,7 @@ Valtype mapTypeToWasm(Type t);
 
 Valtype mapTypeToWasm(Node &n);
 
-chars typeName(Valtype t, bool fail= true);
+chars typeName(Valtype t, bool fail = true);
 
 
 // https://webassembly.github.io/spec/core/binary/types.html#binary-blocktype
@@ -766,17 +771,15 @@ public:
 	int type_index = -1;// in type section ≠ function index!!
 	ABI abi = wasp_smart_pointers;//erased;
 // todo: add true Wasp Type Signature to wasm Valtype Signature
+	List<Function *> functions;// using this Signature; debug only?
 	Map<int, Type> types;
 	List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
-//	Map<int, Valtype> types;
-//	List<Valtype> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
-	Node return_type{};
+//	Type return_type{};// use return_types.last(default)
 	Valtype wasm_return_type;// debug only!
-	List<Function *> functions;// using this Signature; debug only?
 
 	// these explicit constructions are needed when using types return_types as reference!
 //	Signature() : return_types(*new List<Valtype>), types(*new Map<int, Valtype>) {}
-	Signature() : return_types(*new List<Type>), types(*new Map<int, Type>) {}
+//	Signature() : return_types(*new List<Type>), types(*new Map<int, Type>) {}
 
 #ifdef DEBUG
 	String debug_name;// todo can .lldbinit call format() !?!
@@ -836,28 +839,46 @@ public:
 		return *this;
 	}
 
+//
+//		Signature &returns(Node& type) {
+//		return_type = Type(type);
+//		wasm_return_type = mapTypeToWasm(type);
+//		if (type.kind != nils)// todo? type.kind!=undefined … ?
+//		{
+//			Valtype valtype = mapTypeToWasm(type);
+//			return_types.add(valtype);
+//		}// value, should map to int32 unless unboxing long, float
+//		return *this;
+//	}
 
-	Signature &returns(Node type) {
-		return_type = type;
+	Signature &returns(Type type) {
+//		return_type = type;
+		if (type.kind != nils and type.kind != undefined and type.kind != unknown) {
+			return_types.add(type);
+#ifdef DEBUG
+			debug_name += ": ";
+			debug_name += typeName(type);
+#endif
+		}
 		wasm_return_type = mapTypeToWasm(type);
-		if (type.kind != nils)// todo? type.kind!=undefined … ?
-		{
-			Valtype valtype = mapTypeToWasm(type);
-			return_types.add(valtype);
-		}// value, should map to int32 unless unboxing long, float
 		return *this;
 	}
 
-
 	Signature &returns(Valtype valtype) {
+		wasm_return_type = valtype;
 		if (valtype != voids and valtype != none) {
+			if (valtype == float64 or valtype == float32 or valtype == int32 or valtype == i64)
+				return_types.add(valtype);
+			else if (valtype == charp)
+				return_types.add(charp);// todo: move out of Valtype!
+			else
+				error("UNKNOWN Valtype mapping "s + typeName(valtype));
 #ifdef DEBUG
 			debug_name += ": ";
 			debug_name += typeName(valtype);
 #endif
-			return_types.add(valtype);
 		}
-		wasm_return_type = valtype;
+//		return_type = Type(valtype);// OVERLAP HAS TO BE OK!?!
 		return *this;
 	}
 
@@ -879,6 +900,8 @@ public:
 
 	void merge(Signature &s) {
 		if (type_index < 0)type_index = s.type_index;
+//		return_type = s.return_type;
+		wasm_return_type = s.wasm_return_type;
 		if (return_types.empty())
 			return_types = s.return_types;// todo copy construktor OK??
 		if (types.empty())
