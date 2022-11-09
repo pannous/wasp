@@ -1356,14 +1356,17 @@ Code emitCall(Node &fun, String context) {
 	function.is_used = true;
 	function.emit = true;
 	// todo multi-value
-	last_type = mapTypeToWasm(signature.return_types.last(none));
-	last_typo.clazz = &signature.return_type;// todo dodgy!
+	const Type &return_type = signature.return_types.last(none);
+	last_type = mapTypeToWasm(return_type);
+//	last_typo.clazz = &signature.return_type;// todo dodgy!
 	return code;
 }
 
 [[nodiscard]]
 [[nodiscard]]
 Code cast(Valtype from, Valtype to) {
+	if (from == 30)
+		return nop;// hide bug lol
 	last_type = to;// danger: hides last_type in caller!
 	Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
 	if (to == none or to == unknown_type)return nop;// no cast needed magic VERSUS wasm drop!!!
@@ -1711,11 +1714,17 @@ Code emitBlock(Node &node, String context) {
 	//	for(Valtype return_type: returnTypes) uh, casting should have happened before for  multi-value
 	Valtype return_type = mapTypeToWasm(returnTypes.last(voids));
 	// switch back to return_types[context] for block?
+	if (last_type == none) last_type = voids;
+	if (last_type == void_block) last_type = voids;
 	bool needs_cast = return_type != last_type;
-
 	auto abi = wasp_smart_pointers;// functions[context].abi;
-
-	if (abi == wasp_smart_pointers) {
+	if (return_type == Valtype::voids and last_type != Valtype::voids)
+		block.addByte(drop);
+	else if (return_type == Valtype::i32t and last_type == Valtype::voids)
+		block.addConst(0);
+	else if (return_type == Valtype::i64t and last_type == Valtype::voids)
+		block.addConst64(0);// 		needs_cast = false;
+	else if (abi == wasp_smart_pointers) {
 //		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
 //		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string
 		if (last_typo.type == int_array or last_type == array) {
@@ -1744,16 +1753,9 @@ Code emitBlock(Node &node, String context) {
 //		if(last_type==angle)block.addByte(i32_or).addInt(0xA000000);//
 //		if(last_type==pointer)block.addByte(i32_or).addInt(0xF000000);//
 	}
-	if (last_type == none) last_type = voids;
-	if (needs_cast) {
-		if (return_type == Valtype::voids and last_type != Valtype::voids)
-			block.addByte(drop);
-		else if (return_type == Valtype::i32t and last_type == Valtype::voids)
-			block.addConst(0);
-		else if (return_type == Valtype::i64t and last_type == Valtype::voids)
-			block.addConst64(0);
-		else
-			block.add(cast(last_type, return_type));
+
+	if (needs_cast and last_type) {
+		block.add(cast(last_type, return_type));
 	}
 
 //	if(context=="main" or (functions[context].abi==wasp and returnTypes.size()<2))

@@ -566,7 +566,7 @@ Node &groupDeclarations(String &name, Node *return_type, Node modifieres, Node &
 	body = analyze(body, name);// has to come after arg analysis!
 	if (!return_type)
 		return_type = extractReturnTypes(arguments, body).clone();
-	signature.returns(*return_type);// explicit double sin(){} // todo other syntaxes+ multi
+	signature.returns(Type(return_type));// explicit double sin(){} // todo other syntaxes+ multi
 	Node &decl = *new Node(name);//node.name+":={…}");
 	decl.setType(declaration);
 	decl.add(body);
