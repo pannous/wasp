@@ -1327,15 +1327,19 @@ Code emitExpression(Node *nodes, String context) {
 Code emitCall(Node &fun, String context) {
 	Code code;
 	auto name = fun.name;
-	if (not functions.has(name) or not functionIndices.has(name)) {
+	if (not functions.has(name)) {
 		auto normed = normOperator(name);
-		if (not functions.has(normed) or not functionIndices.has(normed))
+		if (not functions.has(normed))
 			error("unknown function "s + name + " (" + normed + ")");// checked before, remove
 		else name = normed;
 	}
 
 	Function &function = functions[name];
 	Signature &signature = function.signature;
+	if (not functionIndices.has(name)) {
+		warn("relying on function.index OK?");
+		functionIndices[name] = function.index;
+	}
 	int index = functionIndices[name];
 	if (index < 0)
 		error("MISSING import/declaration for function %s\n"s % name);
