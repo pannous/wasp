@@ -12,6 +12,7 @@
 #include "Util.h"
 #include "wasm_helpers.h"
 #include "NodeTypes.h"
+#include "ABI.h"
 
 #include <stdarg.h> // va_list OK IN WASM???
 //#include <cstdarg> // va_list ok in wasm even without wasi!
@@ -142,9 +143,10 @@ public:
 		items = (S *) calloc(sizeof(S), LIST_ALLOCATION_RESERVED_COUNT);
 	}
 
-	List(Array_header a) {
-		if (a.len == 0xA0000000)error1("double header");// todo: just shift by 4 bytes
-		_size = a.len;
+	List(Array_Header a) {
+		if (a.length == 0xA0000000)
+			error1("double header");// todo: just shift by 4 bytes
+		_size = a.length;
 		items = (S *) &a.data;// ok? copy data?
 //		todo("a.typ");
 	}

@@ -1221,3 +1221,7 @@ chars typeName(const Type *t) {
 Node &node(Type t, long value, char *name) {
 	return (*new Node(name)).setValue(value).setType(t, false);
 }
+
+Type::Type(const Node &o) {
+
+}
