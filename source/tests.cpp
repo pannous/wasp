@@ -2211,9 +2211,9 @@ void testCurrent() {
 //	data_mode = false; // a=b => a,=,b before analysis
 //	clearAnalyzerContext();
 	assert_emit("puts('ok');", 0);
+	testSinus();
 
 	assert_emit("‖-3‖", 3);
-	testSinus();
 	assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
 	assert_is("(1 4 3)#2", 4);//
 	assert_emit("use log; log10(100)", 2.);

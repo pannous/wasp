@@ -413,7 +413,7 @@ void consumeExportSection() {
 		// todo: demangling doesn't yield return type, is wasm_signature ok?
 		// todo: use wasm_signature if demangling fails
 		Signature &wasm_signature = module.funcTypes[type];
-		Valtype returns = mapTypeToWasm(wasm_signature.return_type);
+		Valtype returns = mapTypeToWasm(wasm_signature.return_types.last(Kind::undefined));
 		if (wasm_signature.wasm_return_type == void_block)returns = void_block;
 		if (i32 != returns) {
 //			print("returns "s + typeName(returns));
@@ -568,7 +568,6 @@ Module &read_wasm(bytes buffer, int size0) {
 	module.total_func_count = module.import_count + module.code_count;
 	parseFuncTypeSection(module.functype_data);// only after we have the name, so we can connect functionSignatures!
 	return module;
-
 }
 
 	Module read_wasm(chars file) {

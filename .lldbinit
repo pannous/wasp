@@ -45,10 +45,12 @@ type summary add --summary-string "${var[0-8].name}" "Node *"
 
 
 # ${var.types.values}  ${var.return_type}
-type summary add Signature --summary-string "@${var.type_index} arg#:${var.types._size} -> ${var.wasm_return_type}"
+#  
+type summary add Signature --summary-string "@${var.type_index} args#${var.types._size} ${var.debug_name} -> ${var.wasm_return_type}"
 
+type summary add --summary-string "${var%E} ${var%x} ${var%B}" Valtype
 type summary add --summary-string "${var%E}" wabt::Result
 type summary add --summary-string "${var.offset_}" wabt::Stream
 type summary add --summary-string "${var.offset_}" wabt::MemoryStream
 type summary add --summary-string "${var%s} ${var[0-8]}" bytes
-type summary add Function --summary-string "#${var.index} ${var.name} ${var.export_name} ${var.signature}  import:${var.is_import} used:${var.is_used} handled:${var.is_handled}"
+type summary add --summary-string "#${var.index} ${var.name} ${var.export_name} ${var.signature} Function  import:${var.is_import} used:${var.is_used} handled:${var.is_handled}"
