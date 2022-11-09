@@ -568,6 +568,7 @@ Module &read_wasm(bytes buffer, int size0) {
 	module.total_func_count = module.import_count + module.code_count;
 	parseFuncTypeSection(module.functype_data);// only after we have the name, so we can connect functionSignatures!
 	return module;
+
 }
 
 	Module read_wasm(chars file) {
