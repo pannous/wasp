@@ -1221,12 +1221,8 @@ Node runtime_emit(String prog) {
 		error1("wasp.wasm missing name section. get full debug runtime at https://github.com/pannous/wasp/releases/tag/release");
 	Function &function = runtime.functions["atoi0"];
 	check(function.index > 0);
-	functions = runtime.functions;
-//	for(auto fun : runtime.functions){
-//	}
-	check(functions["atoi0"].index > 0);
-	check(functions["concat"].index > 0);
-//	functionIndices["print"]=functionIndices["logs"]  print default is print(Node), KEEP IT!!
+	functions = runtime.functions;// todo too brutal!
+//	for(auto fun : runtime.functions){ }
 	Node charged = analyze(parse(prog));
 	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
 	lib.save("main.wasm");// partial wasm!
@@ -1237,6 +1233,7 @@ Node runtime_emit(String prog) {
 	read_wasm("merged.wasm");
 	long result = code.run();// todo parse stdout string as node and merge with emit() !
 	clearAnalyzerContext();
+	clearEmitterContext();
 	return smartNode(result);
 }
 
