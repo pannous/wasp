@@ -1214,7 +1214,18 @@ Node runtime_emit(String prog) {
 #endif
 	clearAnalyzerContext();
 	clearEmitterContext();
+	check(functions["atoi0"].is_runtime)
 	Module runtime = read_wasm("wasp.wasm");
+//	if(runtime.function_names.length<=0)
+	if (runtime.functions._size <= 0)
+		error1("wasp.wasm missing name section. get full debug runtime at https://github.com/pannous/wasp/releases/tag/release");
+	Function &function = runtime.functions["atoi0"];
+	check(function.index > 0);
+	functions = runtime.functions;
+//	for(auto fun : runtime.functions){
+//	}
+	check(functions["atoi0"].index > 0);
+	check(functions["concat"].index > 0);
 //	functionIndices["print"]=functionIndices["logs"]  print default is print(Node), KEEP IT!!
 	Node charged = analyze(parse(prog));
 	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib

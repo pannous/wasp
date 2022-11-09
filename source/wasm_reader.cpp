@@ -394,8 +394,10 @@ void consumeExportSection() {
 			debug = 1;
 		List<String> args = demangle_args(func0);
 		String func = demangle(func0);
-		Function fun = module.functions[func];// demangled
-		Function fun0 = module.functions[func0];// mangled
+		Function &fun = module.functions[func];// demangled
+		Function &fun0 = module.functions[func0];// mangled
+		fun.name = func;
+		fun0.name = func0;
 
 //		module.export_names.add(func.clone());// should be ok: item[_size]=value BUT IT IS NOT OK, corrupts memory later!!
 		int type = unsignedLEB128(payload);
@@ -408,8 +410,6 @@ void consumeExportSection() {
 		module.functionIndices[func] = index;// demangled
 		fun0.index = index;
 		fun.index = index;
-		fun.name = func;
-		fun0.name = func0;
 		// todo: demangling doesn't yield return type, is wasm_signature ok?
 		// todo: use wasm_signature if demangling fails
 		Signature &wasm_signature = module.funcTypes[type];
@@ -570,17 +570,17 @@ Module &read_wasm(bytes buffer, int size0) {
 	return module;
 }
 
-	Module read_wasm(chars file) {
+Module &read_wasm(chars file) {
 #if    WASM
 	return Module();
 #else
 	if (debug_reader)printf("--------------------------\n");
-		if (debug_reader)printf("parsing: %s\n", file);
-		size = fileSize(file);
-		if (size <= 0)error("file not found: "s + file);
-		bytes buffer = (bytes) alloc(1, size);// do not free
-		fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
-		return read_wasm(buffer, size);
+	if (debug_reader)printf("parsing: %s\n", file);
+	size = fileSize(file);
+	if (size <= 0)error("file not found: "s + file);
+	bytes buffer = (bytes) alloc(1, size);// do not free
+	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
+	return read_wasm(buffer, size);
 #endif
 		}
 
