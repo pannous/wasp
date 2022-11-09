@@ -136,8 +136,9 @@ chars typeName(Valtype t, bool fail) {
 		case Valtype::todoe:
 			return "«todo»";
 		default:
+//			if (t==30)return "BUG!";// hide bug lol
 			if (fail)
-				error("missing name for Valtype "s + t);
+				error("missing name for Valtype %x "s % t + t);
 	}
 	return 0;
 }

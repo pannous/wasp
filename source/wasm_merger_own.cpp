@@ -58,8 +58,8 @@ String s(String x) { return x; }
 
 const int leb = -2;// special marker for varlength leb argument ( i32.const … )
 int heaptype = -3;
-int u32 = 4;
 int block_index = leb;
+int u32_type = 4;
 int i32_type = 4;
 // https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
 std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code (not the stack values! e.g. 4 bytes for f32.const )
@@ -84,9 +84,9 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 		{function_call,   -1},
 
 		// EXTENSIONS:
-		{call_ref,        u32},
-		{return_call_ref, u32},
-		{func_bind,       u32},// {type $t} {$t : u32
+		{call_ref,        u32_type},
+		{return_call_ref, u32_type},
+		{func_bind,       u32_type},// {type $t} {$t : u32_type
 		{let_local,       -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
 
 		{drop,            0}, // pop stack
@@ -273,28 +273,28 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 		{i64_reinterpret_f64, 0},
 		{f32_reinterpret_i32, 0},
 		{f64_reinterpret_i64, 0},
-		{f32_from_f64,        f32_demote_f64},
+		{f32_from_f64,    f32_demote_f64},
 
 		//{signExtensions
-		{i32_extend8_s,       0},
-		{i32_extend16_s,      0},
-		{i64_extend8_s,       0},
-		{i64_extend16_s,      0},
-		{i64_extend32_s,      0},
+		{i32_extend8_s,   0},
+		{i32_extend16_s,  0},
+		{i64_extend8_s,   0},
+		{i64_extend16_s,  0},
+		{i64_extend32_s,  0},
 		//{i64_extend_i32_s, -1}, WHAT IS THE DIFFERENCE?
 		// i64.extend_s/i32 sign-extends an i32 value to i64}, whereas
 		// i64.extend32_s sign-extends an i64 value to i64
 
 		//referenceTypes
 		// https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
-		{ref_null,            0},
-		{ref_is_null,         0},
-		{ref_func,            leb}, // -1 varuint32 -1 Returns a funcref reference to function $funcidx
+		{ref_null,        0},
+		{ref_is_null,     0},
+		{ref_func,        leb}, // -1 varuint32 -1 Returns a funcref reference to function $funcidx
 		//{ref_null=--1},// {{ref null ht} {$t : heaptype  --1:func --1:extern i >= 0 :{i
 		//{ref_typed=--1},// {{ref ht} {$t : heaptype
-		{ref_as_non_null,     -1},// {ref.as_non_null
-		{br_on_null,          u32}, //{br_on_null $l {$l : u32
-		{br_on_non_null,      u32},// {br_on_non_null $l {$l : u32
+		{ref_as_non_null, -1},// {ref.as_non_null
+		{br_on_null,      u32_type}, //{br_on_null $l {$l : u32_type
+		{br_on_non_null,  u32_type},// {br_on_non_null $l {$l : u32_type
 
 		// saturated truncation  saturatedFloatToInt
 		//i32_trunc_sat_f32_s=-1},
@@ -307,14 +307,14 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 		//i64_trunc_sat_f64_u=-1},
 
 		// bulkMemory
-		{memory_init,         -1},
-		{data_drop,           -1},
-		{memory_copy,         -1},
-		{memory_fill,         -1},
-		{table_init,          -1},
-		{elem_drop,           -1},
-		{table_copy,          -1},
-		{table_grow,          -1},
+		{memory_init,     -1},
+		{data_drop,       -1},
+		{memory_copy,     -1},
+		{memory_fill,     -1},
+		{table_init,      -1},
+		{elem_drop,       -1},
+		{table_copy,      -1},
+		{table_grow,      -1},
 		{table_size,          -1},
 		{table_fill,          -1},
 };
