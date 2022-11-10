@@ -56,6 +56,7 @@ String s(String x) { return x; }
 //#define LOG_DEBUG(fmt, ...) if (s_debug) s_log_stream->Writef(fmt, __VA_ARGS__);
 #define LOG_DEBUG(fmt, ...) if (s_debug) printf(fmt, __VA_ARGS__);
 
+int unknown_opcode_length_TODO = -1;
 const int leb = -2;// special marker for varlength leb argument ( i32.const … )
 int heaptype = -3;
 int block_index = leb;
@@ -63,55 +64,56 @@ int u32_type = 4;
 int i32_type = 4;
 // https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
 std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code (not the stack values! e.g. 4 bytes for f32.const )
-		{nop,                 0}, // useful for relocation padding call 1 -> call 10000000
-		{block,               leb},
-		{loop,                0},
-		{if_i,                0},// precede by i32 result}, follow by i32_type {7f}
-		{elsa,                0},
-		{return_block,        0},
+		{nop,             0}, // useful for relocation padding call 1 -> call 10000000
+		{block,           leb},
+		{loop,            0},
+		{if_i,            0},// precede by i32 result}, follow by i32_type {7f}
+		{elsa,            0},
+		{return_block,    0},
 
 		// EXTENSIONS:
-		{try_,                -1},
-		{catch_,              -1},
-		{throw_,              -1},
-		{rethrow_,            -1},
-		{br_on_exn_,          -1}, // branch on exception
+		{try_,            block_index},
+		{catch_,          block_index},
+		{throw_,          block_index},
+		{rethrow_,        block_index},
+		{br_on_exn_,      block_index}, // branch on exception
 
-		{end_block,           0}, //11
-		{br,                  block_index},
-		{br_if,               block_index},
-		{return_block,        -1},
-		{function_call,       -1},
+		{end_block,       0}, //11
+		{br,              block_index},
+		{br_if,           block_index},
+		{br_table,        block_index},
+		{return_block,    block_index},
+		{function_call,   block_index},
 
 		// EXTENSIONS:
-		{call_ref,            u32_type},
-		{return_call_ref,     u32_type},
-		{func_bind,           u32_type},// {type $t} {$t : u32_type
-		{let_local,           -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
+		{call_ref,        u32_type},
+		{return_call_ref, u32_type},
+		{func_bind,       u32_type},// {type $t} {$t : u32_type
+		{let_local,       -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
 
-		{drop,                0}, // pop stack
-		{select_if,           -1}, // a?b:c ternary todo: use!
-		{select_t,            -1}, // extension … ?
+		{drop,            0}, // pop stack
+		{select_if,       2}, // a?b:c ternary todo: use!
+		{select_t,        1}, // extension … ?
 
-		{local_get,           leb},
-		{local_set,           leb},
-		{local_tee,           leb},
-		{get_local,           leb},// get to stack
-		{set_local,           leb},// set and pop
-		{tee_local,           leb},// set and leave on stack
+		{local_get,       leb},
+		{local_set,       leb},
+		{local_tee,       leb},
+		{get_local,       leb},// get to stack
+		{set_local,       leb},// set and pop
+		{tee_local,       leb},// set and leave on stack
 
-		{global_get,          leb},
-		{global_set,          leb},
+		{global_get,      leb},
+		{global_set,      leb},
 
 		//{ Anyref/externref≠funcref tables}, Table.get and Table.set {for Anyref only}.
 		//{Support for making Anyrefs from Funcrefs is out of scope
-		{table_get,           -1},
-		{table_set,           -1},
+		{table_get,       -1},
+		{table_set,       -1},
 
-		{i8_load,             0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-		{i16_load,            0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-		{i32_load,            0},// load word from i32 address
-		{f32_load,            0},
+		{i8_load,         0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i16_load,        0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i32_load,        0},// load word from i32 address
+		{f32_load,        0},
 		{i32_store,           0},// store word at i32 address
 		{f32_store,           0},
 		// todo : peek 65536 as float directly via opcode
@@ -120,48 +122,48 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 		{i32_store_8,         0},
 		{i32_store_16,        0},
 		{i8_store,            0},
-		{i16_store,           0},
+		{i16_store,       0},
 
 		//{i32_store_byte, -1},// store byte at i32 address
-		{i32_auto,            leb},
-		{i32_const,           leb},
-		{i64_auto,            leb},
-		{i64_const,           leb},
-		{f32_auto,            4},
-		{f64_const,           8},
+		{i32_auto,        leb},
+		{i32_const,       leb},
+		{i64_auto,        leb},
+		{i64_const,       leb},
+		{f32_auto,        4},
+		{f64_const,       8},
 
-		{i32_eqz,             0}, // use for not!
+		{i32_eqz,         0}, // use for not!
 //		{negate,                              -1},
 //		{not_truty,                           -1},
-		{i32_eq,              0},
-		{i32_ne,              0},
-		{i32_lt,              0},
-		{i32_gt,              0},
-		{i32_le,              0},
-		{i32_ge,              0},
+		{i32_eq,          0},
+		{i32_ne,          0},
+		{i32_lt,          0},
+		{i32_gt,          0},
+		{i32_le,          0},
+		{i32_ge,          0},
 
-		{i64_eqz,             -1},
-		{f32_eqz,             -1}, // HACK: no such thing!
+		{i64_eqz,         0},
+		{f32_eqz,         0}, // HACK: no such thing!
 
 
-		{i64_eqz,             0},
-		{i64_eq,              0},
-		{i64_ne,              0},
-		{i64_lt_s,            0},
-		{i64_lt_u,            0},
-		{i64_gt_s,            0},
-		{i64_gt_u,            0},
-		{i64_le_s,            0},
-		{i64_le_u,            0},
-		{i64_ge_s,            0},
-		{i64_ge_u,            0},
+		{i64_eqz,         0},
+		{i64_eq,          0},
+		{i64_ne,          0},
+		{i64_lt_s,        0},
+		{i64_lt_u,        0},
+		{i64_gt_s,        0},
+		{i64_gt_u,        0},
+		{i64_le_s,        0},
+		{i64_le_u,        0},
+		{i64_ge_s,        0},
+		{i64_ge_u,        0},
 
-		{f32_eq,              0},
-		{f32_ne,              0}, // !=
-		{f32_lt,              0},
-		{f32_gt,              0},
-		{f32_le,              0},
-		{f32_ge,              0},
+		{f32_eq,          0},
+		{f32_ne,          0}, // !=
+		{f32_lt,          0},
+		{f32_gt,          0},
+		{f32_le,          0},
+		{f32_ge,          0},
 		{f64_eq,              0},
 		{f64_ne,              0}, // !=
 		{f64_lt,              0},
@@ -650,7 +652,8 @@ void Linker::WriteExportSection() {
 			Index index = export_.index;
 			switch (export_.kind) {
 				case ExternalKind::Func:
-					index = binary->RelocateFuncIndex(index);
+					if (binary->needs_relocate)
+						index = binary->RelocateFuncIndex(index);
 					break;
 				default:
 //					WABT_FATAL("unsupport export type: %d %s\n", static_cast<int>(export_.kind), export_.name.data);
@@ -780,19 +783,15 @@ void Linker::WriteDataSegment(const DataSegment &segment, Address offset) {
 	stream_.WriteData(segment.data, segment.size, "segment data");
 }
 
-void Linker::WriteDataSection(const SectionPtrVector &sections,
-                              Index total_count) {
+void Linker::WriteDataSection(const SectionPtrVector &sections, Index total_count) {
 	Fixup fixup = WriteUnknownSize();
-
 	WriteU32Leb128(&stream_, total_count, "data segment count");
 	for (const Section *sec: sections) {
 		if (sec->data.data_segments)
 			for (const DataSegment &segment: *sec->data.data_segments) {
-				WriteDataSegment(segment,
-				                 sec->binary->memory_page_offset * WABT_PAGE_SIZE);
+				WriteDataSegment(segment, sec->binary->memory_page_offset * WABT_PAGE_SIZE);
 			}
 	}
-
 	FixupSize(fixup);
 }
 
@@ -947,29 +946,51 @@ struct FuncInfo {
 
 void Linker::ResolveSymbols() {
 	// Create hashmap of all exported symbols from all inputs.
-	BindingHash export_map;
-	BindingHash func_map;
 
+	// ⚠️ all indices in func_map go into the function CODE section (LATER offset by the import count!)
+	BindingHash func_map;
+	Map<String, int> name_map;// from debug section to
+	// ⚠️ all indices here map into into following LIST, not into wasm!! so TWO indirections!
+	BindingHash export_map;
 	std::vector<ExportInfo> export_list;
-	std::vector<FuncInfo> func_list;
+	std::vector<FuncInfo> func_list;// internal index identical to func_map index!!
+
 
 	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-		for (const Export &export_: binary->exports) {
+		printf("!!!!!!!!!!!   %s #%lu #%lu!!!!!!!!!!!\n", binary->filename, binary->functions.size(), binary->debug_names.size());
+
+		for (const Export &export_: binary->exports) {// todo: why not store index directly?
+
+//			printf("DEBUG export_.name %s, export_.index %d\n", export_.name.data, export_.index);
 			export_list.emplace_back(&export_, binary.get());
-			// TODO(sbc): Handle duplicate names.
+			// TODO Handle duplicate names.
 			export_map.emplace(export_.name, Binding(export_list.size() - 1));
 		}
-		for (const Func &func: binary->functions) {
+		for (const Func &func: binary->functions) {// only those with code, not imports
 			if (not empty(func.name)) {
+				printf("func.name %s, func.index %d\n", func.name.data, func.index);
+//				check(func_list.size()==func.index);
 				func_map.emplace(func.name, func.index);
-				func_list.emplace_back(&func, binary.get());
 			}
+			func_list.emplace_back(&func, binary.get());
 		}
-		for (int i = 0; i < binary->debug_names.size(); ++i) {
-			String &name = binary->debug_names[i];
-			func_map.emplace(name, i);
-		}
+		// wasp.wasm currently has no binary->debug_names (only exports!) so ignore for now
+//		for (int i = 0; i < binary->debug_names.size(); ++i) {
+//			String &name = binary->debug_names[i];
+//			printf("DEBUG func.name %s, func.index %d\n", name.data, i);
+//			int true_index = i - binary->function_index_offset;
+//			if (i < 0) {
+//				continue;// debug name of import doesn't matter here!
+//
+//			} else {
+//				Func &func1 = binary->functions[true_index];
+//				check(func1.index == i);
+//				func_map.emplace(name, i);
+//			}
+//		}
 	}
+	check(export_list[export_map.FindIndex("_Z5atoi0PKc")].export_->index == 18);// todo !!!
+
 	// Iterate through all imported functions resolving them against exported ones.
 	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		if (not binary->needs_relocate)continue;
@@ -979,26 +1000,34 @@ void Linker::ResolveSymbols() {
 			if (export_index != kInvalidIndex) {
 				// We found the symbol exported by another module.
 				const ExportInfo &export_info = export_list[export_index];
-				// TODO(sbc): verify the foreign function has the correct signature.
+				// TODO verify the foreign function has the correct signature.
+				Index new_index = export_info.export_->index;
 				import.active = false;
 				import.foreign_binary = export_info.binary;
-				import.foreign_index = export_info.export_->index;
+				import.foreign_index = new_index;
 				import.relocated_function_index = export_index;
 				Index old_index = import.sig_index;
-				new_indices[old_index] = export_index;
+				new_indices[old_index] = new_index;
 //				new_indices[import.sig_index] = import.foreign_index;
 				binary->active_function_imports--;
-				printf("LINKED export to import: %s\n", name.data);
+				printf("LINKED %s import #%d to export #%d relocated_function_index %d \n", name.data, old_index, new_index, export_index);
 			} else {
 				// link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
 				Index func_index = func_map.FindIndex(name);
 				if (func_index == kInvalidIndex) {
+					warn("delete unresolved import: "s + name);
+					import.active = false;// don'true
+					binary->active_function_imports--;
+					continue;
 					error("can't find undefined symbol: "s + name);
 				}
+				check(func_list[func_index].func);
 				FuncInfo &funcInfo = func_list[func_index];
 				import.active = false;
 				import.foreign_binary = funcInfo.binary;
-				import.foreign_index = funcInfo.func->index;
+				import.foreign_index = func_index;// todo or export_index?
+//
+//				import.foreign_index = funcInfo.func->index;
 				new_indices[func_index] = export_index;
 				binary->active_function_imports--;
 				printf("LINKED unexported function to import: %s\n", name.data);
@@ -1173,7 +1202,7 @@ Code merge_files(List<String> infiles) {
 
 
 Code &merge_binaries(List<Code> binaries) {
-	opcode_args[global_get] = leb;
+//	opcode_args[global_get] = leb;
 	check(opcode_args[global_get] == leb) // todo what kind of dark bug is that???
 	Linker linker;
 	if (binaries.size() == 1)
@@ -1183,10 +1212,16 @@ Code &merge_binaries(List<Code> binaries) {
 		const char *source = "<code>";
 		if (not code.name.empty()) source = code.name.data;
 		LinkerInputBinary *binary = new LinkerInputBinary(source, file_data);
-		linker.AppendBinary(binary);
+		printf("%s binary->functions.size() %lu\n", source, binary->functions.size());
 		LinkOptions options = {NULL, code.needs_relocate};
 		ReadBinaryLinker(binary, &options);
-		binary->needs_relocate = code.needs_relocate;
+		binary->needs_relocate = true;// code.needs_relocate;
+//		if (binary->filename == "main.wasm"s) {
+//			printf("currently no exports! they'd mess with library!\n");
+//			binary->exports.clear();
+//			check(binary->exports.size()==0);
+//		}
+		linker.AppendBinary(binary);
 	}
 	const OutputBuffer &out = linker.PerformLink();
 	return code(out.data);// data already copied, no need to .clone();
@@ -1272,8 +1307,8 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, size
 				error("UNKNOWN OPCODE");
 //				printf("UNKNOWN :");
 			}
-			if (tracing)
-				printf("OPCODE 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
+//			if (tracing)
+//				printf("OPCODE 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
 		}
 	}
 	return relocs;

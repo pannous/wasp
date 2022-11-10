@@ -1059,9 +1059,9 @@ Code emitStringOp(Node op, String context) {
 //	Code stringOp;
 //	op = normOperator(op.name);
 	if (op == "+") {
-		op = Node("concat");//demangled on readWasm, but careful, other signatures might overwrite desired one
+		op = Node("_Z6concatPKcS0_");//demangled on readWasm, but careful, other signatures might overwrite desired one
 		last_type = stringp;
-		functions["concat"].signature.returns(charp);// hack
+		functions["_Z6concatPKcS0_"].signature.returns(charp);// hack
 //		op = Node("_Z6concatPKcS0_");//concat c++ mangled export:
 //		op = Node("concat_char_const*__char_const*_");// wat name if not stripped in lib release build
 		return emitCall(op, context);
