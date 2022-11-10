@@ -171,6 +171,16 @@ public:
 		while (i-- > 0)items[i] = args[i];
 	}
 
+	List(S args) {// initiator list C style {x,y,z}
+		if (args == 0)return;
+		while (args[_size] and _size < LIST_ALLOCATION_RESERVED_COUNT)_size++;
+		int i = _size;
+		while (i-- > 0)items[i] = args[i];
+	}
+
+
+//	List(S args[]) {}
+
 #ifndef WASM
 
 	List(const std::initializer_list<S> &_items) : List() {

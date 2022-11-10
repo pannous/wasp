@@ -310,7 +310,6 @@ namespace wabt {
 
 		Result ReadBinaryLinker(LinkerInputBinary *input_info, LinkOptions *options) {
 			BinaryReaderLinker reader(input_info);
-
 			ReadBinaryOptions read_options;
 			read_options.read_debug_names = true;
 			read_options.fail_on_custom_section_error = false;

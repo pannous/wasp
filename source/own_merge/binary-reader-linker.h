@@ -30,6 +30,7 @@ namespace wabt {
 
 		struct LinkOptions {
 			Stream *log_stream;
+			bool needs_relocate = true;
 		};
 
 		Result ReadBinaryLinker(LinkerInputBinary *input_info, LinkOptions *options);

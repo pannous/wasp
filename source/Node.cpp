@@ -21,9 +21,9 @@
 #define error(msg) error1(msg,__FILE__,__LINE__)
 
 
-bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode  a(1)(2)==a{1 2}
+bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode (a 1 2)==a(1)(2)==a{1 2}
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
-bool panicking = true;
+bool panicking = false;// false for error tests, webview, etc
 #ifdef RUNTIME_ONLY
 bool debug = false;
 #else
@@ -1221,7 +1221,7 @@ chars typeName(const Type *t) {
 Node &node(Type t, long value, char *name) {
 	return (*new Node(name)).setValue(value).setType(t, false);
 }
-
-Type::Type(const Node &o) {
-
-}
+//
+//Type::Type(const Node &o) {
+//
+//}

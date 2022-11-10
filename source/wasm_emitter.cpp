@@ -58,7 +58,7 @@ MemoryHandling memoryHandling;// set later = export_memory; // import_memory not
 //Map<int, Map<int, String>> locals;
 //List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 Map<String, int> functionIndices;
-Map<String, Function> functions;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
+//List<Function> imports;// from libraries. todo: these are inside functions<> for now!
 Map<String, Code> functionCodes;
 Map<String, int> typeMap;
 
@@ -268,7 +268,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 
 	if (eq(s, "%"))return 0;// handle later
 
-	breakpoint_helper
+	if (tracing) breakpoint_helper
 	trace("unknown or non-primitive operator %s\n"s % String(s));
 	// can still be matched as function etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
 //		error("invalid operator");
@@ -553,7 +553,7 @@ Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
 	last_type = localTypes[context][local_index];
 	int base = 0;
 	if (referenceIndices.has(variable))
-		base=referenceDataIndices[variable];// todo?
+		base = referenceDataIndices[variable];// todo?
 //	last_type = mapTypeToWasm(value);
 	Code code = emitIndexWrite(ref, base, offset, value, context);
 	return code;
@@ -632,7 +632,7 @@ Code emitIndexRead(Node op, String context) {
 
 	} else if (array.kind == strings) {
 		if (array.value.string)
-		base += referenceDataIndices[*array.value.string];
+			base += referenceDataIndices[*array.value.string];
 	} else
 		base += last_data;// todo: pray!
 
@@ -1336,13 +1336,18 @@ Code emitCall(Node &fun, String context) {
 
 	Function &function = functions[name];
 	Signature &signature = function.signature;
-	if (not functionIndices.has(name)) {
-		warn("relying on function.index OK?");
-		functionIndices[name] = function.index;
+	int index = function.index;
+	if (functionIndices.has(name))
+		index = functionIndices[name];
+	else {
+//		breakpoint_helper
+//		warn("relying on function.index OK?");
+//		functionIndices[name] = function.index;
 	}
-	int index = functionIndices[name];
-	if (index < 0)
+	if (index < 0) {
+		warn("typeSection created before code Section. All imports must be known in advance!");
 		error("MISSING import/declaration for function %s\n"s % name);
+	}
 	int i = 0;
 	// args may have already been emitted, e.g. "A"+"B" concat
 	for (Node arg: fun) {
@@ -1793,6 +1798,7 @@ List<String> collect_locals(Node node, String context) {
 
 int last_index = -1;
 
+// typeSection created before code Section. All imports must be known in advance!
 [[nodiscard]]
 Code typeSection() {
 	// Function types are vectors of parameters and return types. Currently
@@ -1865,30 +1871,34 @@ Valtype fixValtype(Valtype valtype) {
 Code importSection() {
 	if (runtime_offset) {
 //		breakpoint_helper
-//		printf("imports currently not supported\n");
+		warn("runtime_offset & imports currently not supported\n");
 		import_count = 0;
 		return Code();
 	}
 	// the import section is a vector of imported functions
-	Code imports;
+	Code import_code;
 	import_count = 0;
+//	for (Function &fun: imports) {
+//		++import_count;
+//		import_code = import_code + encodeString("env") + encodeString(fun.name).addByte(func_export).addType(typeMap[fun.name]);
+//	}
 	for (String fun: functions) {
 		Function &function = functions[fun];
 		Signature &signature = function.signature;
 		if (function.is_import and function.is_used and not function.is_builtin) {
 			++import_count;
-			imports = imports + encodeString("env") + encodeString(fun).addByte(func_export).addType(typeMap[fun]);
+			import_code = import_code + encodeString("env") + encodeString(fun).addByte(func_export).addType(typeMap[fun]);
 		}
 	}
 	int extra_mem = 0;
 	if (memoryHandling == import_memory) {
 		extra_mem = 1;// add to import_section but not to functions:import_count
 		int init_page_count = 1024; // 64kb each, 65336 pages max
-		imports = imports + encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 +
-		          Code(init_page_count);
+		import_code = import_code + encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/+ (byte) 0x00 +
+		              Code(init_page_count);
 	}
-	if (imports.length == 0)return Code();
-	auto importSection = createSection(import_section, Code(import_count + extra_mem) + imports);// + sqrt_ii
+	if (import_code.length == 0)return Code();
+	auto importSection = createSection(import_section, Code(import_count + extra_mem) + import_code);// + sqrt_ii
 	return importSection.clone();
 }
 
@@ -2019,7 +2029,6 @@ Code exportSection() {
 	return exportSection;
 }
 
-int global_import_count = 0;
 int global_user_count = 0;
 
 [[nodiscard]]
@@ -2418,12 +2427,24 @@ Code &compile(String code) {
 	binary.save("main.wasm");
 
 #ifdef INCLUDE_MERGER
-	if (merge_module_binaries.size() > 0) {
+	if (libraries.size() > 0) {
+		binary.needs_relocate = true;
+		List<Code> merge_module_binaries;
+		for (Module *module: libraries) {
+			merge_module_binaries.add(module->code);
+			module->code.needs_relocate = module->needs_relocate;
+		}
 		merge_module_binaries.add(binary);
 		Code &merged = merge_binaries(merge_module_binaries);
 		merge_module_binaries.clear();
 		return merged;
 	}
+//	if (merge_module_binaries.size() > 0) {
+//		merge_module_binaries.add(binary);
+//		Code &merged = merge_binaries(merge_module_binaries);
+//		merge_module_binaries.clear();
+//		return merged;
+//	}
 #else
 	if (merge_module_binaries.size() > 0)
 		warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
