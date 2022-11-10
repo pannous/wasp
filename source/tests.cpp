@@ -2211,6 +2211,7 @@ void testCurrent() {
 //	data_mode = false; // a=b => a,=,b before analysis
 //	clearAnalyzerContext();
 //	assert_emit("3", 3);
+	testMergeOwn();
 	assert_run("atoi0('123'+'456')", 123456);
 	for (int i = 0; i < 100000; ++i) {
 //		assert_emit("maxi=3840*2160", 3840 * 2160);
