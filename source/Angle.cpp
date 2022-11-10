@@ -819,6 +819,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 Module &loadModule(String name) {
 	if (not module_done.has(name)) {
 		Module &import = read_wasm(name);// we need to read signatures!
+		import.code.name = name;
 		refineSignatures(import.functions);
 		module_done.insert_or_assign(name, true);
 		libraries.add(&import);
@@ -979,27 +980,33 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 			// ⚠️ this function now lives inside Module AND as import inside "main" functions list, with different wasm_index!
 			Function &import = module->functions.values[position];
 			functions[name].signature = import.signature;
+			functions[name].is_runtime = false;// because here it is an import!
 			functions[name].is_import = true;
 			functions[name].is_used = true;
 			//		imports.add(*import); redundant!
 			return &import;
 		}
 	}
-	if (searchAliases)
+	Function *function;
+	if (searchAliases) {
 		for (String alias: aliases(name)) {
-			Function *function = findLibraryFunction(alias, false);
-			if (function)return function;
+			function = findLibraryFunction(alias, false);
 		}
-	return 0;
+	}
+	return function;
 }
 
 List<String> aliases(String name) {
 	List<String> found;
 //	switch (name) // statement requires expression of integer type
+	if (name == "atoi") {
+		found.add("_Z5atoi0PKc");
+	}
 	if (name == "+") {
 		found.add("add");
 		found.add("plus");
 		found.add("concat");
+		found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
 	}
 	if (name == "=") {
 		found.add("is");
@@ -1241,6 +1248,7 @@ void preRegisterFunctions() {
 	functions["nop"].builtin();
 	functions["id"].builtin().signature.add(i32t).returns(i32t);
 	functions["concat"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
+	functions["_Z6concatPKcS0_"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
 	// library signatures are parsed in consumeExportSection() via demangle
 	// BUT their return type is not part of name, so it needs to be hardcoded, if ≠ int32:
 	fixFunctionNames();
@@ -1270,9 +1278,10 @@ Node runtime_emit(String prog) {
 #endif
 	libraries.clear();// todo reuse
 	Module &runtime = loadModule("wasp.wasm");
-	check(libraries.size() == 1)
+//	check(libraries.size() == 1)
 	runtime.needs_relocate = false;
 	Code code = compile(prog);// should use libraries!
+	code.save("merged.wasm");
 	long result = code.run();// todo parse stdout string as node and merge with emit() !
 	return smartNode(result);
 }
@@ -1305,16 +1314,17 @@ Node runtime_emit_old(String prog) {
 // reflection on wasp.wasm loses the original return type of functions
 // we may optimistically omit this since cast(int, charp) returns nop anyways
 void refineSignatures(Map<String, Function> &map) {
+	// hack on demand, i.e. in emitStringOp etc
 	// todo : create and read some custom wasm section!
 	//	(export "_Z6concatPKcS0_" (func 28))
 //  (export "_Z6concatPhS_ii" (func 210))
 //  (export "_Z6concatPhci" (func 212))
 //  (export "_Z6concatcPhi" (func 213))
-
-	if (map["concat"].signature.functions.size() > 1)
-		todo("create a NEW unshared Signature");
-	map["concat"].signature.return_types.clear();
-	map["concat"].signature.returns(charp);
+//	if (map["concat"].signature.functions.size() > 1)
+//	map["concat"].signature.return_types.clear();
+//	map["concat"].signature.returns(charp);
+//	map["_Z6concatPKcS0_"].signature.return_types.clear();
+//	map["_Z6concatPKcS0_"].signature.returns(charp);
 }
 
 

@@ -74,10 +74,10 @@ namespace wabt {
 				                Index item_index,
 				                String name) override;
 
-				Result OnElemSegmentFunctionIndexCount(Index index,
-				                                       Index count);// override;
+				Result OnElemSegmentFunctionIndexCount(Index index, Index count) override;
 
-				Result BeginDataSegment(Index index, Index memory_index);// override;
+				Result BeginDataSegment(Index index, Index memory_index, uint8_t flags) override;
+
 				Result OnDataSegmentData(Index index,
 				                         const void *data,
 				                         Address64 size) override;
@@ -226,10 +226,8 @@ namespace wabt {
 				return Result::Ok;
 			}
 
-			Result BinaryReaderLinker::OnElemSegmentFunctionIndexCount(Index index,
-			                                                           Index count) {
+			Result BinaryReaderLinker::OnElemSegmentFunctionIndexCount(Index index, Index count) {
 				Section *sec = current_section_;
-
 				/* Modify the payload to include only the actual function indexes */
 				size_t delta = state->offset - sec->payload_offset;
 				sec->payload_offset += delta;
@@ -244,7 +242,7 @@ namespace wabt {
 				return Result::Ok;
 			}
 
-			Result BinaryReaderLinker::BeginDataSegment(Index index, Index memory_index) {
+			Result BinaryReaderLinker::BeginDataSegment(Index index, Index memory_index, uint8_t options) {
 				Section *sec = current_section_;
 				if (!sec->data.data_segments) {
 					sec->data.data_segments = new std::vector<DataSegment>();
@@ -257,7 +255,8 @@ namespace wabt {
 
 			Result BinaryReaderLinker::OnInitExprI32ConstExpr(Index index, uint32_t value) {
 				Section *sec = current_section_;
-				if (sec->section_code != BinarySection::Data or not sec->data.data_segments or sec->data.data_segments->size() == 0) {
+				// kf  or not sec->data.data_segments or sec->data.data_segments->size() == 0 ±
+				if (sec->section_code != BinarySection::Data) {
 					return Result::Ok;
 				}
 				DataSegment &segment = sec->data.data_segments->back();
