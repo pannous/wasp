@@ -21,18 +21,14 @@ panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα
 
 
 void testMergeOwn() {
-//#ifdef WABT_MERGE
-	int size;
-	char *bytes = readFile("test/merge/main.wasm", &size);
-	Code main(bytes, size);
-	bytes = readFile("test/merge/lib2.wasm", &size);
-	Code lib(bytes, size);
 #ifdef INCLUDE_MERGER
-	Code merged = merge_binaries(main, lib);
+	Module &main = loadModule("test/merge/main2.wasm");
+	Module &lib = loadModule("test/merge/lib.wasm");
+	Code merged = merge_binaries(main.code, lib.code);
 	merged.save();
 	int i = merged.run();
 	assert_equals(i, 42);
-//	exit(1);
+	exit(1);
 #endif
 }
 

@@ -13,14 +13,16 @@
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 String sectionName(Sections section);
+
 // compare with wasm-objdump -h
 bool debug_reader = false;
 typedef unsigned char *bytes;
 int pos = 0;
 int size = 0;
 byte *code;
-Module module;
-//extern Map<String, int> module.functionIndices;// todo: use function[String].index
+//Module& module=*new Module();
+Module *module;
+//extern Map<String, int> module->functionIndices;// todo: use function[String].index
 //extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 
 
@@ -111,9 +113,9 @@ String &name(Code &wstring) {
 // todo: treat all functions (in library file) as exports if ExportSection is empty !?
 // that is: add their signatures to module …
 void parseFunctionNames(Code &payload) {
-	module.functionIndices.setDefault(-1);
-//	module.functions.setDefault(Function());
-//	put(module.functionIndices);// what we got so far?
+	module->functionIndices.setDefault(-1);
+//	module->functions.setDefault(Function());
+//	put(module->functionIndices);// what we got so far?
 	int function_count = unsignedLEB128(payload);
 	int index = -1;
 	for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
@@ -123,44 +125,44 @@ void parseFunctionNames(Code &payload) {
 		if (i != index)// in partial main.wasm
 			warn("index out of order "s + i + " <> " + index);// doesn't happen
 		String func = name(payload).clone();// needs to be 0-terminated now
-		Function &function = module.functions[func];
+		Function &function = module->functions[func];
 		function.index = index;
 		function.name = func;
-		if (module.functionIndices[func] > 0 and module.functionIndices[func] < function_count /*hack!*/) {
-			if (module.functionIndices[func] == index)
-				continue; // identical match, lib parsed twice without cleaning module.functionIndices!?
+		if (module->functionIndices[func] > 0 and module->functionIndices[func] < function_count /*hack!*/) {
+			if (module->functionIndices[func] == index)
+				continue; // identical match, lib parsed twice without cleaning module->functionIndices!?
 			// export section ≠ name section (when overloading…)
-			trace("already has index: "s + func + " " + module.functionIndices[func] + "≠" + index);
+			trace("already has index: "s + func + " " + module->functionIndices[func] + "≠" + index);
 			continue;
 			func = func + "_func_" + index;// hack ok to avoid duplicates
 			func = func.clone();
 		}
 		if (func.length > 0)
-//			module.functionIndices.insert_or_assign(func, index);
-			module.functionIndices[func] = index;
+//			module->functionIndices.insert_or_assign(func, index);
+			module->functionIndices[func] = index;
 		else {
 			error("function without name at index "s + index);// happens with unicode π(x) etc
 			//			warn
-			module.functionIndices["func_"s + index] = index;
-//			module.functionIndices.insert_or_assign("func_"s + index, index);
+			module->functionIndices["func_"s + index] = index;
+//			module->functionIndices.insert_or_assign("func_"s + index, index);
 		}
 	}
 //	  (import "env" "log_chars" (func (;0;) $logs (type 0)))  export / import names != internal names
-//	for (int i = function_count; i < module.total_func_count; i++)
-//		module.functionIndices.insert_or_assign("unnamed_func_"s + i, i);
+//	for (int i = function_count; i < module->total_func_count; i++)
+//		module->functionIndices.insert_or_assign("unnamed_func_"s + i, i);
 
 }
 
 //Map<int, Signature> funcTypes;
 void parseFuncTypeSection(Code &payload) {
 	// we don't know here if i32 is pointer … so we may have to refine later
-	for (int i = 0; i < module.code_count and payload.start < payload.length; ++i) {
+	for (int i = 0; i < module->code_count and payload.start < payload.length; ++i) {
 		int typ = unsignedLEB128(payload);// implicit?
-		String *fun = module.functionIndices.lookup(i + module.import_count);
+		String *fun = module->functionIndices.lookup(i + module->import_count);
 		if (!fun)continue;
 //			error("no name for function "s+i);
-		Signature &s = module.funcTypes[typ];
-		Function &function = module.functions[*fun];
+		Signature &s = module->funcTypes[typ];
+		Function &function = module->functions[*fun];
 		if (function.name.empty())function.name = *fun;// late!
 		function.signature.merge(s);
 		Signature &sic = getSignature(*fun);// todo merge global signatures later!
@@ -171,25 +173,25 @@ void parseFuncTypeSection(Code &payload) {
 // not part of name section wtf
 void parseImportNames(Code &payload) {// and TYPES!
 	trace("Imports:");
-	for (int i = 0; i < module.import_count and payload.start < payload.length; ++i) {
+	for (int i = 0; i < module->import_count and payload.start < payload.length; ++i) {
 		String &mod = name(payload);// module
 		String &name1 = name(payload);// needs to be 0-terminated now
 		int huh = unsignedLEB128(payload);
 		int type = unsignedLEB128(payload);
 		trace(name1);
-		Signature &signature = module.funcTypes[type];
-		module.functionIndices[name1] = i;
-		module.functions[name1].signature.merge(signature);
+		Signature &signature = module->funcTypes[type];
+		module->functionIndices[name1] = i;
+		module->functions[name1].signature.merge(signature);
 		Signature &sic = getSignature(name1);// global!
 		sic.merge(signature);// todo : LATER!
-		module.import_names.add(name1);
+		module->import_names.add(name1);
 	}
-//	module.signatures = functionSignatures; // todo merge into global functionSignatures, not the other way round!!
+//	module->signatures = functionSignatures; // todo merge into global functionSignatures, not the other way round!!
 }
 
 // Signatures to be consumed in export section
 void parse_type_data(Code &payload) {
-	for (int i = 0; i < module.type_count and payload.start < payload.length; ++i) {
+	for (int i = 0; i < module->type_count and payload.start < payload.length; ++i) {
 		Signature sic;
 		sic.type_index = i;
 		int typ = unsignedLEB128(payload);// implicit?
@@ -205,60 +207,60 @@ void parse_type_data(Code &payload) {
 			sic.returns(rt);
 		} else
 			sic.returns(none);
-		module.funcTypes.add(sic);
+		module->funcTypes.add(sic);
 	}
 }
 
 void consumeTypeSection() {
 	Code type_vector = vec();
 	int typeCount = unsignedLEB128(type_vector);
-	module.type_count = typeCount;
-	if (debug_reader)printf("types: %d\n", module.type_count);
-	module.type_data = type_vector.rest();
+	module->type_count = typeCount;
+	if (debug_reader)printf("types: %d\n", module->type_count);
+	module->type_data = type_vector.rest();
 // todo: we need to parse this for automatic import and signatures
-	parse_type_data(module.type_data);
+	parse_type_data(module->type_data);
 }
 
 void consumeStartSection() {
-	module.start_index = unsignedLEB128();
-	if (debug_reader)printf("start: #%d \n", module.start_index);
+	module->start_index = unsignedLEB128();
+	if (debug_reader)printf("start: #%d \n", module->start_index);
 }
 
 void consumeTableSection() {
-	module.table_data = vec();
-	module.table_count = 1;// unsignedLEB128(module.table_data);
-	if (debug_reader)printf("tables: %d \n", module.table_count);
+	module->table_data = vec();
+	module->table_count = 1;// unsignedLEB128(module->table_data);
+	if (debug_reader)printf("tables: %d \n", module->table_count);
 }
 
 void consumeMemorySection() {
-	module.memory_data = vec();// todo ?
-//	module.memory_count = unsignedLEB128(module.memory_data);//  always 1 in MVP
-	if (debug_reader)printf("memory_data: %d\n", module.memory_data.length);
+	module->memory_data = vec();// todo ?
+//	module->memory_count = unsignedLEB128(module->memory_data);//  always 1 in MVP
+	if (debug_reader)printf("memory_data: %d\n", module->memory_data.length);
 }
 
 void consumeGlobalSection() {
-	module.globals_data = vec();// todo
-	module.global_count = unsignedLEB128(module.globals_data); // NO SUCH THING!?
-	if (debug_reader)printf("globals: %d\n", module.global_count);
+	module->globals_data = vec();// todo
+	module->global_count = unsignedLEB128(module->globals_data); // NO SUCH THING!?
+	if (debug_reader)printf("globals: %d\n", module->global_count);
 }
 
 void consumeNameSection(Code &data) {
 	if (debug_reader)printf("names: …\n");
-	module.name_data = data.clone();
+	module->name_data = data.clone();
 	while (data.start < data.length) {
 		int type = unsignedLEB128(data);
 		Code payload = vec(data);// todo test!
 		switch (type) {
 			case module_name: {
-				module.name = name(payload);// wrapped in vector why?
+				module->name = name(payload);// wrapped in vector why?
 			}
 				break;
 			case function_names:
-				module.function_names = payload;
+				module->function_names = payload;
 				parseFunctionNames(payload.clone());
 				break;
 			case local_names:
-				module.local_names = payload;
+				module->local_names = payload;
 				break;
 			default:
 				error("INVALID NAME TYPE");
@@ -270,36 +272,36 @@ void consumeNameSection(Code &data) {
 // https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
 void consumeLinkingSection(Code &data) {
 	if (debug_reader)printf("linking: …\n");
-	module.linking_section = data;
+	module->linking_section = data;
 //	int version = unsignedLEB128(data);
 }
 
 void consumeRelocateSection(Code &data) {
 	if (debug_reader)printf("relocate: …\n");
-	module.relocate_section = data;
+	module->relocate_section = data;
 }
 
 void consumeDataSection() {
 	Code datas = vec();
-//	module.data_section = datas.clone();
-	module.data_segments_count = unsignedLEB128(datas);
-	module.data_segments = datas.rest();// whereever the start may be now
+//	module->data_section = datas.clone();
+	module->data_segments_count = unsignedLEB128(datas);
+	module->data_segments = datas.rest();// whereever the start may be now
 	short memory_id = unsignedLEB128(datas);
 	unsignedLEB128(datas);// skip i32.const opcode
 	int data_offset = unsignedLEB128(datas);
 	unsignedLEB128(datas);// skip '0b' whatever that is
-	module.data_offset_end = data_offset + module.data_segments.length +100;//  datas.length;
+	module->data_offset_end = data_offset + module->data_segments.length + 100;//  datas.length;
 	// Todo ILL-DEFINED BEHAVIOUR! silent corruption if data_offset_end too small (why 100?)
 
 //	if (debug_reader)
-//printf("data sections: %d from offsets %d to %d \n", module.data_segments_count, data_offset,module.data_offset_end);
+//printf("data sections: %d from offsets %d to %d \n", module->data_segments_count, data_offset,module->data_offset_end);
 //	if(debug_reader)printf("data section offset: %ld \n", offset);
 }
 
 void consumeElementSection() {
-module.element_section = vec();
+	module->element_section = vec();
 //	if(debug_reader)printf("element section (!?)");
-if (debug_reader)printf("element sections: %d \n", module.element_section.length);
+	if (debug_reader)printf("element sections: %d \n", module->element_section.length);
 }
 
 void consumeCustomSection() {
@@ -324,7 +326,7 @@ void consumeCustomSection() {
 		customSectionDatas.start = 0;// reset
 
 //		TODO REENABLE!! currently causes
-//		module.custom_sections.add(customSectionDatas);// raw
+//		module->custom_sections.add(customSectionDatas);// raw
 	}
 }
 
@@ -332,9 +334,9 @@ void consumeCustomSection() {
 // connect func/code indices to type indices
 void consumeFuncTypeSection() {
 	Code type_vector = vec();
-	module.code_count = unsignedLEB128(type_vector);// import type indices are part of import struct!
-	if (debug_reader)printf("signatures: %d\n", module.code_count);
-	module.functype_data = type_vector.rest();
+	module->code_count = unsignedLEB128(type_vector);// import type indices are part of import struct!
+	if (debug_reader)printf("signatures: %d\n", module->code_count);
+	module->functype_data = type_vector.rest();
 }
 
 // todo: treat all functions (in library file) as exports if ExportSection is empty !?
@@ -342,9 +344,9 @@ void consumeCodeSection() {
 	Code codes_vector = vec();
 	int codeCount = unsignedLEB128(codes_vector);
 	if (debug_reader)printf("codes: %d\n", codeCount);
-	if (module.code_count != codeCount)error("missing code/signatures");
-	module.code_data = codes_vector.rest();
-	if (debug_reader)printf("code length: %d\n", module.code_data.length);
+	if (module->code_count != codeCount)error("missing code/signatures");
+	module->code_data = codes_vector.rest();
+	if (debug_reader)printf("code length: %d\n", module->code_data.length);
 }
 
 
@@ -382,37 +384,37 @@ void consumeExportSection() {
 	Code exports_vector = vec();
 	int exportCount = unsignedLEB128(exports_vector);
 	if (debug_reader)printf("export_section: %d\n", exportCount);
-	module.export_count = exportCount;
-	module.export_data = exports_vector.rest();
-	Code &payload = module.export_data;
+	module->export_count = exportCount;
+	module->export_data = exports_vector.rest();
+	Code &payload = module->export_data;
 	for (int i = 0; i < exportCount; i++) {
 		String func0 = name(payload).clone();
-//		module.functions=Map<String,Function>();
+//		module->functions=Map<String,Function>();
 		if (func0 == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
 //		if (func0=="_ZN6StringpLEPS_")continue;// bug!?
 		if (func0 == "_Z6concatPKcS0_")
 			debug = 1;
 		List<String> args = demangle_args(func0);
 		String func = demangle(func0);
-		Function &fun = module.functions[func];// demangled
-		Function &fun0 = module.functions[func0];// mangled
+		Function &fun = module->functions[func];// demangled
+		Function &fun0 = module->functions[func0];// mangled
 		fun.name = func;
 		fun0.name = func0;
 
-//		module.export_names.add(func.clone());// should be ok: item[_size]=value BUT IT IS NOT OK, corrupts memory later!!
+//		module->export_names.add(func.clone());// should be ok: item[_size]=value BUT IT IS NOT OK, corrupts memory later!!
 		int type = unsignedLEB128(payload);
 		int index = unsignedLEB128(payload);
 		if (type == 2 /*memory*/ or type == 3 /*global*/) {// todo !?
 			continue;
 		}
 		if (index < 0 or index > 100000)error("corrupt index "s + index);
-		module.functionIndices[func0] = index;// mangled
-		module.functionIndices[func] = index;// demangled
+		module->functionIndices[func0] = index;// mangled
+		module->functionIndices[func] = index;// demangled
 		fun0.index = index;
 		fun.index = index;
 		// todo: demangling doesn't yield return type, is wasm_signature ok?
 		// todo: use wasm_signature if demangling fails
-		Signature &wasm_signature = module.funcTypes[type];
+		Signature &wasm_signature = module->funcTypes[type];
 		Valtype returns = mapTypeToWasm(wasm_signature.return_types.last(Kind::undefined));
 		if (wasm_signature.wasm_return_type == void_block)returns = void_block;
 		if (i32 != returns) {
@@ -500,8 +502,8 @@ Valtype mapArgToValtype(String arg) {
 void consumeImportSection() {
 	Code imports_vector = vec();
 	int importCount = unsignedLEB128(imports_vector);
-	module.import_count = importCount;
-	module.import_data = imports_vector.rest();
+	module->import_count = importCount;
+	module->import_data = imports_vector.rest();
 	parseImportNames(imports_vector);
 	if (debug_reader)printf("imports: %d\n", importCount);
 }
@@ -558,17 +560,17 @@ void consumeSections() {
 
 
 Module &read_wasm(bytes buffer, int size0) {
-	module = *new Module(); // todo: make pure, not global!
-	module.code = Code(buffer, size0, false);
+	module = new Module(); // todo: make pure, not global!
+	module->code = *new Code(buffer, size0, false);
 	pos = 0;
 	code = buffer;
 	size = size0;
 	consume(4, reinterpret_cast<byte *>(magicModuleHeader));
 	consume(4, reinterpret_cast<byte *>(moduleVersion));
 	consumeSections();
-	module.total_func_count = module.import_count + module.code_count;
-	parseFuncTypeSection(module.functype_data);// only after we have the name, so we can connect functionSignatures!
-	return module;
+	module->total_func_count = module->import_count + module->code_count;
+	parseFuncTypeSection(module->functype_data);// only after we have the name, so we can connect functionSignatures!
+	return *module;
 }
 
 Module &read_wasm(chars file) {
@@ -580,8 +582,10 @@ Module &read_wasm(chars file) {
 	size = fileSize(file);
 	if (size <= 0)error("file not found: "s + file);
 	bytes buffer = (bytes) alloc(1, size);// do not free
-	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
+	FILE *stream = fopen(file, "rb");
+	fread(buffer, sizeof(buffer), size, stream);
 	Module &wasm = read_wasm(buffer, size);
+	fclose(stream);
 	wasm.name = file;
 	return wasm;
 #endif
