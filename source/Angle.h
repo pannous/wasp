@@ -5,7 +5,10 @@
 #include "wasm_reader.h"
 
 extern bool throwing;
-extern List<Code> merge_module_binaries;
+extern List<Module *> libraries;// merged:
+//extern Map<String, Signature> functionSignatures;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
+//extern Map<String, Function> library_functions;// use as import (implicit and explicit)
+extern Map<String, Function> functions;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
 
 //#include "Map.h"
 // The Angle language is a semantic layer on top of Wasp data format
@@ -62,3 +65,13 @@ bool isFunction(String op);
 // todo: in fact hide most of this under 'number' magic umbrella
 extern Map<String, Node> types;// by name
 int run_wasm_file(chars file);
+
+bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
+
+String &checkCanonicalName(String &name);
+
+void refineSignatures(Map<String, Function> &map);
+
+Module &loadModule(String name);
+
+Function *findLibraryFunction(String name, bool searchAliases);

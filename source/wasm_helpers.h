@@ -10,6 +10,7 @@
 typedef const char *chars;
 typedef unsigned char *bytes;
 
+[[noreturn]]
 extern void error1(chars message, chars file, int line);
 
 #ifndef WASM

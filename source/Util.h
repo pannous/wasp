@@ -7,15 +7,6 @@ typedef unsigned char byte;
 typedef const char *chars;
 typedef byte *bytes;
 
-
-enum smart_pointer_masks {
-//	float_header_64 = 0x0020000000000000, not needed, use:
-	double_mask_64 = 0x7F00000000000000L,
-	smart_mask_64 = 0x00FF000000000000L,
-//	negative_mask_64 = 0x8000000000000000,
-	negative_mask_64 = 0xFF00000000000000L
-//	negative_long_mask_64 = 0xBFF0000000000000,
-};
 //#include "Map.h" // for List signature circular?
 
 #define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
@@ -24,6 +15,7 @@ enum smart_pointer_masks {
 //
 //void todo(chars error);
 
+[[noreturn]]
 extern void error1(chars message, chars file = 0, int line = 0);
 
 //#define check_eq(α, β) if((α)!=(β)){if(debug_reader)printf("%s != %s : ",#α,#β);print(α); if(debug_reader)printf("!=");put(β);if(debug_reader)printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
