@@ -955,16 +955,21 @@ void Linker::ResolveSymbols() {
 	std::vector<ExportInfo> export_list;
 	std::vector<FuncInfo> func_list;// internal index identical to func_map index!!
 
-
+// binary->functions not filled yet!
 	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-		printf("!!!!!!!!!!!   %s #%lu #%lu!!!!!!!!!!!\n", binary->filename, binary->functions.size(), binary->debug_names.size());
+		printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->filename, binary->debug_names.size());
 
+		int pos = 0;
 		for (const Export &export_: binary->exports) {// todo: why not store index directly?
-
-//			printf("DEBUG export_.name %s, export_.index %d\n", export_.name.data, export_.index);
+			pos++;
+			printf("DEBUG %s export_.name %s, export_.index %d\n", binary->filename, export_.name.data, export_.index);
 			export_list.emplace_back(&export_, binary.get());
+			if (export_map.FindIndex(export_.name) != kInvalidIndex) {
+				warn("Ignoring duplicate export name "s + export_.name);
+				binary->exports.erase(binary->exports.begin() + pos);
+			} else
+				export_map.emplace(export_.name, Binding(export_list.size() - 1));
 			// TODO Handle duplicate names.
-			export_map.emplace(export_.name, Binding(export_list.size() - 1));
 		}
 		for (const Func &func: binary->functions) {// only those with code, not imports
 			if (not empty(func.name)) {
@@ -989,7 +994,7 @@ void Linker::ResolveSymbols() {
 //			}
 //		}
 	}
-	check(export_list[export_map.FindIndex("_Z5atoi0PKc")].export_->index == 18);// todo !!!
+//	check(export_list[export_map.FindIndex("_Z5atoi0PKc")].export_->index == 18);// todo !!!
 
 	// Iterate through all imported functions resolving them against exported ones.
 	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
@@ -1015,9 +1020,11 @@ void Linker::ResolveSymbols() {
 				// link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
 				Index func_index = func_map.FindIndex(name);
 				if (func_index == kInvalidIndex) {
-					warn("delete unresolved import: "s + name);
+					warn("unresolved import: "s + name);
 					import.active = false;// don'true
 					binary->active_function_imports--;
+					continue;
+					warn("delete unresolved import: "s + name);
 					continue;
 					error("can't find undefined symbol: "s + name);
 				}
@@ -1212,10 +1219,9 @@ Code &merge_binaries(List<Code> binaries) {
 		const char *source = "<code>";
 		if (not code.name.empty()) source = code.name.data;
 		LinkerInputBinary *binary = new LinkerInputBinary(source, file_data);
-		printf("%s binary->functions.size() %lu\n", source, binary->functions.size());
+		binary->needs_relocate = true;// code.needs_relocate;
 		LinkOptions options = {NULL, code.needs_relocate};
 		ReadBinaryLinker(binary, &options);
-		binary->needs_relocate = true;// code.needs_relocate;
 //		if (binary->filename == "main.wasm"s) {
 //			printf("currently no exports! they'd mess with library!\n");
 //			binary->exports.clear();
