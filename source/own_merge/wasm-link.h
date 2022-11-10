@@ -125,9 +125,7 @@ namespace wabt {
 			std::vector<uint8_t> data;
 			std::vector<std::unique_ptr<Section>> sections;
 			std::vector<Export> exports;
-			std::vector<Func> functions;
-
-
+			std::vector<Func> functions;// only those with code, not imports:
 			std::vector<FunctionImport> function_imports;
 			Index active_function_imports;
 			std::vector<GlobalImport> global_imports;
