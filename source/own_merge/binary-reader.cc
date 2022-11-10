@@ -402,15 +402,12 @@ namespace wabt {
 			uint32_t str_len = 0;
 			CHECK_RESULT(ReadU32Leb128(&str_len, "string length"));
 
-			ERROR_UNLESS(state_.offset + str_len <= read_end_,
-			             "unable to read string: %s", desc);
+			ERROR_UNLESS(state_.offset + str_len <= read_end_, "unable to read string: %s", desc);
 
-			*out_str = string_view(
-					reinterpret_cast<const char *>(state_.data) + state_.offset, str_len);
+			*out_str = string_view(reinterpret_cast<const char *>(state_.data) + state_.offset, (int) str_len);
 			state_.offset += str_len;
 
-			ERROR_UNLESS(IsValidUtf8(out_str->data, out_str->length),
-			             "invalid utf-8 encoding: %s", desc);
+			ERROR_UNLESS(IsValidUtf8(out_str->data, out_str->length), "invalid utf-8 encoding: %s", desc);
 			return Result::Ok;
 		}
 
@@ -1865,14 +1862,11 @@ namespace wabt {
 								string_view function_name;
 
 								CHECK_RESULT(ReadIndex(&function_index, "name section: function index"));
-								ERROR_UNLESS(function_index != last_function_index,
-								             "name section: duplicate function name: %u", function_index);
-								ERROR_UNLESS(last_function_index == kInvalidIndex ||
-								             function_index > last_function_index,
+								ERROR_UNLESS(function_index != last_function_index, "name section: duplicate function name: %u", function_index);
+								ERROR_UNLESS(last_function_index == kInvalidIndex || function_index > last_function_index,
 								             "name section: function index out of order: %u", function_index);
 								last_function_index = function_index;
-								ERROR_UNLESS(function_index < NumTotalFuncs(),
-								             "name section: invalid function index: %" PRIindex, function_index);
+								ERROR_UNLESS(function_index < NumTotalFuncs(), "name section: invalid function index: %" PRIindex, function_index);
 								CHECK_RESULT(ReadStr(&function_name, "name section: function name"));
 								CALLBACK(OnFunctionName, function_index, function_name);
 							}
@@ -2847,16 +2841,13 @@ namespace wabt {
 			ERROR_UNLESS(magic == WABT_BINARY_MAGIC, "bad magic value");
 			uint32_t version = 0;
 			CHECK_RESULT(ReadU32(&version, "version"));
-			ERROR_UNLESS(version == WABT_BINARY_VERSION,
-			             "bad wasm file version: %#x (expected %#x)", version,
-			             WABT_BINARY_VERSION);
+			ERROR_UNLESS(version == WABT_BINARY_VERSION, "bad wasm file version: %#x (expected %#x)", version, WABT_BINARY_VERSION);
 
 			CALLBACK(BeginModule, version);
 			CHECK_RESULT(ReadSections());
 			// This is checked in ReadCodeSection, but it must be checked at the end too,
 			// in case the code section was omitted.
-			ERROR_UNLESS(num_function_signatures_ == num_function_bodies_,
-			             "function signature count != function body count");
+			ERROR_UNLESS(num_function_signatures_ == num_function_bodies_, "function signature count != function body count");
 			CALLBACK0(EndModule);
 
 			return Result::Ok;

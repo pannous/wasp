@@ -20,8 +20,7 @@ class Signature;
 //extern Map<String, Valtype> return_types;// redundant with functionSignatures todo: remove
 //todo extern Map<String, Node> variableTypes;
 extern Map<String, int> functionIndices;// todo functions[].index
-//extern Map<String, Signature> functionSignatures;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
-extern Map<String, Function> functions;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
+
 Signature &getSignature(String name);
 
 //extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports

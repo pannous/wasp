@@ -11,16 +11,24 @@ class Node;
 
 union Type;
 
-
-//	map_header_32 = USE NODE!
-#define node_header_32 0xDADA0000 // more complex than array!
-#define array_header_32 0x40000000 // compatible with List
+// todo move these to ABI.h once it is used:
+//	map_header_32 = USE Node!
+#define node_header_32   0x80000000 // more complex than array!
+#define array_header_32  0x40000000 // compatible with List
 #define string_header_32 0x10000000 // compatible with String
 #define smart_mask_32 0x70000000
 #define negative_mask_32 0x80000000
 #define array_header_64 0x0040000000000000 // why 0x004? because first 2 bits indicate doubles/ints!
 #define string_header_64 0x0010000000000000
 
+enum smart_pointer_masks {
+//	float_header_64 = 0x0020000000000000, not needed, use:
+	double_mask_64 = 0x7F00000000000000L,
+	smart_mask_64 = 0x00FF000000000000L,
+//	negative_mask_64 = 0x8000000000000000,
+	negative_mask_64 = 0xFF00000000000000L
+//	negative_long_mask_64 = 0xBFF0000000000000,
+};
 
 // 3 * sizeof(int32)  header, kind, length before *DATA !
 // sizeof(List) - sizeof(S*)
@@ -159,6 +167,7 @@ typedef int Address;
  * 0x10000 - string_header_32 pointer page: indirect types via address of describing Node{kind=clazz}
  * string_header_32 - 0xFFFFFFFF high page reserved (combinatorial types!) Todo e.g. person?[10] versus combinatorial primitive int[10]
  * */
+// for (wasm) function type signatures see Signature class!
 union Type {// todo string_header_64 make this union i64 ! is this desired??
 	/* this union is partitioned in the int space:
 	 0x0000 - Ill defined

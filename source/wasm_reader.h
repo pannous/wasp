@@ -15,6 +15,7 @@ public:
 	String name;
 
 	// unparsed (just the vector data and its length)
+	Code code;// the whole code unparsed, used in merge
 	Code type_data;
 	Code import_data;
 	Code export_data;
