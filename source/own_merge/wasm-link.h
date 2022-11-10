@@ -146,6 +146,7 @@ namespace wabt {
 			Index function_count = 0;
 
 			std::vector<String> debug_names;
+			bool needs_relocate;// keep runtime untouched!
 		};
 
 	}  // namespace link

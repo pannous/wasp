@@ -108,7 +108,6 @@ String sectionName(Sections section) {
 		default:
 			error("INVALID SECTION #%d\nprevious section must have been corrupted\n"s % section);
 	}
-	return "ERROR";
 }
 
 chars typeName(Valtype t, bool fail) {

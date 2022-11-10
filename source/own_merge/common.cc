@@ -39,7 +39,7 @@ String StringPrintf(const char *format, ...) {
 	va_end(args);
 	vsnprintf(buffer.data(), len, format, args_copy);
 	va_end(args_copy);
-	return String(buffer.data(), len - 1);
+	return String(buffer.data(), (int) len - 1);
 }
 
 namespace wabt {

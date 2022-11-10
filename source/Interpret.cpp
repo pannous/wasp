@@ -204,9 +204,8 @@ Node do_call(Node left, Node op0, Node right) {
 		print(right);
 		return right;
 	}
-
 	error("Unregistered function "s + op);
-	return ERROR;
+//	return ERROR;
 }
 
 Node matchPattern(Node object, Node pattern0) {

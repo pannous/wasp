@@ -252,6 +252,15 @@ public:
 		length = 1;
 	}
 
+	String(const char string[], int length0) {// todo signature for merger experimental!
+//		shared_reference= true;
+		length = length0;
+//		data =(char*) reinterpret_cast<const char *>(string);
+		data = (char *) (alloc(sizeof(char), length + 1));
+		memcpy(data, string, length);
+		data[length] = 0;
+	}
+
 //	explicit
 	String(const char string[], bool copy = true/*false AFTER all is tested, for efficiency*/) {
 		// todo (maybe dont) mark data as to-free on destruction once copy = false AND bool malloced = true
@@ -619,7 +628,7 @@ public:
 	}
 
 	String operator+(const char x[]) {
-		return this->operator+(String(x));
+		return this->operator+(String((char *) x));
 	}
 //	String operator+(float i) {
 //		return this->operator+(String(i));

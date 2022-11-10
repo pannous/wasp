@@ -296,14 +296,15 @@ void _cxa_throw() {
 //NEEDED, else terminate called without an active exception?
 #endif
 
-
+[[noreturn]]
 void error1(chars message, chars file, int line) {
 #ifdef _Backtrace_
 //	Backtrace(2);// later, in raise
 #endif
 	if (file)printf("\n%s:%d\n", file, line);\
-    raise(message);
-	if (panicking) panic();// not reached
+    if (panicking) panic();// not reached
+	raise(message);
+	throw message;// not reached
 }
 
 void newline() {

@@ -559,6 +559,7 @@ void consumeSections() {
 
 Module &read_wasm(bytes buffer, int size0) {
 	module = *new Module(); // todo: make pure, not global!
+	module.code = Code(buffer, size0, false);
 	pos = 0;
 	code = buffer;
 	size = size0;
@@ -571,7 +572,7 @@ Module &read_wasm(bytes buffer, int size0) {
 }
 
 Module &read_wasm(chars file) {
-#if    WASM
+#if WASM
 	return Module();
 #else
 	if (debug_reader)printf("--------------------------\n");
@@ -580,9 +581,11 @@ Module &read_wasm(chars file) {
 	if (size <= 0)error("file not found: "s + file);
 	bytes buffer = (bytes) alloc(1, size);// do not free
 	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
-	return read_wasm(buffer, size);
+	Module &wasm = read_wasm(buffer, size);
+	wasm.name = file;
+	return wasm;
 #endif
-		}
+}
 
 #endif
 #undef pointerr

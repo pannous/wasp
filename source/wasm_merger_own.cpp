@@ -63,64 +63,64 @@ int u32_type = 4;
 int i32_type = 4;
 // https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
 std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code (not the stack values! e.g. 4 bytes for f32.const )
-		{nop,             0}, // useful for relocation padding call 1 -> call 10000000
-		{block,           leb},
-		{loop,            0},
-		{if_i,            0},// precede by i32 result}, follow by i32_type {7f}
-		{elsa,            0},
-		{return_block,    0},
+		{nop,                 0}, // useful for relocation padding call 1 -> call 10000000
+		{block,               leb},
+		{loop,                0},
+		{if_i,                0},// precede by i32 result}, follow by i32_type {7f}
+		{elsa,                0},
+		{return_block,        0},
 
 		// EXTENSIONS:
-		{try_,            -1},
-		{catch_,          -1},
-		{throw_,          -1},
-		{rethrow_,        -1},
-		{br_on_exn_,      -1}, // branch on exception
+		{try_,                -1},
+		{catch_,              -1},
+		{throw_,              -1},
+		{rethrow_,            -1},
+		{br_on_exn_,          -1}, // branch on exception
 
-		{end_block,       0}, //11
-		{br,              block_index},
-		{br_if,           block_index},
-		{return_block,    -1},
-		{function_call,   -1},
+		{end_block,           0}, //11
+		{br,                  block_index},
+		{br_if,               block_index},
+		{return_block,        -1},
+		{function_call,       -1},
 
 		// EXTENSIONS:
-		{call_ref,        u32_type},
-		{return_call_ref, u32_type},
-		{func_bind,       u32_type},// {type $t} {$t : u32_type
-		{let_local,       -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
+		{call_ref,            u32_type},
+		{return_call_ref,     u32_type},
+		{func_bind,           u32_type},// {type $t} {$t : u32_type
+		{let_local,           -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
 
-		{drop,            0}, // pop stack
-		{select_if,       -1}, // a?b:c ternary todo: use!
-		{select_t,        -1}, // extension … ?
+		{drop,                0}, // pop stack
+		{select_if,           -1}, // a?b:c ternary todo: use!
+		{select_t,            -1}, // extension … ?
 
-		{local_get,       leb},
-		{local_set,       leb},
-		{local_tee,       leb},
-		{get_local,       leb},// get to stack
-		{set_local,       leb},// set and pop
-		{tee_local,       leb},// set and leave on stack
+		{local_get,           leb},
+		{local_set,           leb},
+		{local_tee,           leb},
+		{get_local,           leb},// get to stack
+		{set_local,           leb},// set and pop
+		{tee_local,           leb},// set and leave on stack
 
-		{global_get,      leb},
-		{global_set,      leb},
+		{global_get,          leb},
+		{global_set,          leb},
 
 		//{ Anyref/externref≠funcref tables}, Table.get and Table.set {for Anyref only}.
 		//{Support for making Anyrefs from Funcrefs is out of scope
-		{table_get,       -1},
-		{table_set,       -1},
+		{table_get,           -1},
+		{table_set,           -1},
 
-		{i8_load,         0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-		{i16_load,        0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-		{i32_load,        0},// load word from i32 address
-		{f32_load,        0},
-		{i32_store,       0},// store word at i32 address
-		{f32_store,       0},
+		{i8_load,             0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i16_load,            0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i32_load,            0},// load word from i32 address
+		{f32_load,            0},
+		{i32_store,           0},// store word at i32 address
+		{f32_store,           0},
 		// todo : peek 65536 as float directly via opcode
-		{i64_load,        0}, // memory.peek memory.get memory.read
-		{i64_store,       0}, // memory.poke memory.set memory.write
-		{i32_store_8,     0},
-		{i32_store_16,    0},
-		{i8_store,        0},
-		{i16_store,       0},
+		{i64_load,            0}, // memory.peek memory.get memory.read
+		{i64_store,           0}, // memory.poke memory.set memory.write
+		{i32_store_8,         0},
+		{i32_store_16,        0},
+		{i8_store,            0},
+		{i16_store,           0},
 
 		//{i32_store_byte, -1},// store byte at i32 address
 		{i32_auto,            leb},
@@ -128,7 +128,7 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 		{i64_auto,            leb},
 		{i64_const,           leb},
 		{f32_auto,            4},
-		{f64_const,            8},
+		{f64_const,           8},
 
 		{i32_eqz,             0}, // use for not!
 //		{negate,                              -1},
@@ -273,28 +273,28 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 		{i64_reinterpret_f64, 0},
 		{f32_reinterpret_i32, 0},
 		{f64_reinterpret_i64, 0},
-		{f32_from_f64,    f32_demote_f64},
+		{f32_from_f64,        f32_demote_f64},
 
 		//{signExtensions
-		{i32_extend8_s,   0},
-		{i32_extend16_s,  0},
-		{i64_extend8_s,   0},
-		{i64_extend16_s,  0},
-		{i64_extend32_s,  0},
+		{i32_extend8_s,       0},
+		{i32_extend16_s,      0},
+		{i64_extend8_s,       0},
+		{i64_extend16_s,      0},
+		{i64_extend32_s,      0},
 		//{i64_extend_i32_s, -1}, WHAT IS THE DIFFERENCE?
 		// i64.extend_s/i32 sign-extends an i32 value to i64}, whereas
 		// i64.extend32_s sign-extends an i64 value to i64
 
 		//referenceTypes
 		// https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
-		{ref_null,        0},
-		{ref_is_null,     0},
-		{ref_func,        leb}, // -1 varuint32 -1 Returns a funcref reference to function $funcidx
+		{ref_null,            0},
+		{ref_is_null,         0},
+		{ref_func,            leb}, // -1 varuint32 -1 Returns a funcref reference to function $funcidx
 		//{ref_null=--1},// {{ref null ht} {$t : heaptype  --1:func --1:extern i >= 0 :{i
 		//{ref_typed=--1},// {{ref ht} {$t : heaptype
-		{ref_as_non_null, -1},// {ref.as_non_null
-		{br_on_null,      u32_type}, //{br_on_null $l {$l : u32_type
-		{br_on_non_null,  u32_type},// {br_on_non_null $l {$l : u32_type
+		{ref_as_non_null,     -1},// {ref.as_non_null
+		{br_on_null,          u32_type}, //{br_on_null $l {$l : u32_type
+		{br_on_non_null,      u32_type},// {br_on_non_null $l {$l : u32_type
 
 		// saturated truncation  saturatedFloatToInt
 		//i32_trunc_sat_f32_s=-1},
@@ -307,14 +307,14 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 		//i64_trunc_sat_f64_u=-1},
 
 		// bulkMemory
-		{memory_init,     -1},
-		{data_drop,       -1},
-		{memory_copy,     -1},
-		{memory_fill,     -1},
-		{table_init,      -1},
-		{elem_drop,       -1},
-		{table_copy,      -1},
-		{table_grow,      -1},
+		{memory_init,         -1},
+		{data_drop,           -1},
+		{memory_copy,         -1},
+		{memory_fill,         -1},
+		{table_init,          -1},
+		{elem_drop,           -1},
+		{table_copy,          -1},
+		{table_grow,          -1},
 		{table_size,          -1},
 		{table_fill,          -1},
 };
@@ -970,13 +970,12 @@ void Linker::ResolveSymbols() {
 			func_map.emplace(name, i);
 		}
 	}
-
-	// Iterate through all imported functions resolving them against exported
-	// ones.
+	// Iterate through all imported functions resolving them against exported ones.
 	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+		if (not binary->needs_relocate)continue;
 		for (FunctionImport &import: binary->function_imports) {
-			String name = import.name;
-			Index export_index = export_map.FindIndex(import.name);
+			String &name = import.name;
+			Index export_index = export_map.FindIndex(name);
 			if (export_index != kInvalidIndex) {
 				// We found the symbol exported by another module.
 				const ExportInfo &export_info = export_list[export_index];
@@ -989,21 +988,20 @@ void Linker::ResolveSymbols() {
 				new_indices[old_index] = export_index;
 //				new_indices[import.sig_index] = import.foreign_index;
 				binary->active_function_imports--;
-				printf("LINKED export to import: %s\n", import.name.data);
+				printf("LINKED export to import: %s\n", name.data);
 			} else {
 				// link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
-				Index func_index = func_map.FindIndex(import.name);
+				Index func_index = func_map.FindIndex(name);
+				if (func_index == kInvalidIndex) {
+					error("can't find undefined symbol: "s + name);
+				}
 				FuncInfo &funcInfo = func_list[func_index];
 				import.active = false;
 				import.foreign_binary = funcInfo.binary;
 				import.foreign_index = funcInfo.func->index;
 				new_indices[func_index] = export_index;
 				binary->active_function_imports--;
-				printf("LINKED unexported function to import: %s\n", import.name.data);
-			}
-			if (export_index == kInvalidIndex) {
-//				if (!s_relocatable)
-				WABT_FATAL("undefined symbol: %s\n", import.name.data);
+				printf("LINKED unexported function to import: %s\n", name.data);
 			}
 		}
 	}
@@ -1115,6 +1113,10 @@ void Linker::DumpRelocOffsets() {
 
 void Linker::CreateRelocs() {
 	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+		if (not binary->needs_relocate) {
+			trace("Skipping CreateRelocs for library "s + binary->filename);
+			continue;
+		}
 		Section *section = getSection(binary, BinarySection::Code);
 		if (!section)return;
 		Index indexOffset = binary->delta;
@@ -1171,19 +1173,20 @@ Code merge_files(List<String> infiles) {
 
 
 Code &merge_binaries(List<Code> binaries) {
-//	opcode_args[global_get] = leb;
+	opcode_args[global_get] = leb;
 	check(opcode_args[global_get] == leb) // todo what kind of dark bug is that???
 	Linker linker;
 	if (binaries.size() == 1)
 		return binaries.items[0].clone();
 	for (const Code &code: binaries) {
 		std::vector<uint8_t> file_data(code.data, code.data + code.length);
-		const char *string = "<code>";
-		if (not code.name.empty()) string = code.name.data;
-		auto binary = new LinkerInputBinary(string, file_data);
+		const char *source = "<code>";
+		if (not code.name.empty()) source = code.name.data;
+		LinkerInputBinary *binary = new LinkerInputBinary(source, file_data);
 		linker.AppendBinary(binary);
-		LinkOptions options = {NULL};
+		LinkOptions options = {NULL, code.needs_relocate};
 		ReadBinaryLinker(binary, &options);
+		binary->needs_relocate = code.needs_relocate;
 	}
 	const OutputBuffer &out = linker.PerformLink();
 	return code(out.data);// data already copied, no need to .clone();
@@ -1235,15 +1238,15 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, size
 			int locals = unsignedLEB128(section_data, length, current); // length of ONE function
 			current += locals * 2;// nr+type
 		}
-		byte  b = section_data[current++];
-		if (current >= fun_end){
-			begin_function= true;
+		byte b = section_data[current++];
+		if (current >= fun_end) {
+			begin_function = true;
 			current_fun++;
-			printf("begin_function %d\n",current_fun);
+			printf("begin_function %d\n", current_fun);
 			continue;
 		}
 		Opcodes op = (Opcodes) b;
-		Opcode opcode=Opcode::FromCode(b);
+		Opcode opcode = Opcode::FromCode(b);
 		if (op == call_) {
 			short nop_offset = current;
 			short index = unsignedLEB128(section_data, length, current);
