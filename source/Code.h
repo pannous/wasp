@@ -56,8 +56,8 @@ public:
 	int start = 0;// internal reader pointer
 	bool encoded = false;// first byte = size of vector
 	bool shared = true;// can't free data until all views are destroyed OR because this is a view on other's data!!
+	bool needs_relocate = false;
 	String name;// function or file
-
 	Code() {}
 
 	Code(bytes a, int len, bool needs_copy = true) {
@@ -766,6 +766,7 @@ enum ABI {
 class Function;
 
 // todo we have a problem:  is_handled applies to a specific function, not it's Signature potentially shared with OTHER functions!
+// wasm function type signatures plus some…
 class Signature {
 public:
 	int type_index = -1;// in type section ≠ function index!!

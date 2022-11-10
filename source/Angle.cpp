@@ -19,6 +19,11 @@ List<String> builtin_constants
 #endif
 ;
 
+Map<String, Function> functions;// ONLY of main module! for funcs AND imports, serialized differently (inline for imports and extra functype section)
+//Map<String, Function> library_functions; see:
+List<Module *> libraries;// from (automatic) import statements e.g. import math; use log; …
+//List<Code*> merge_module_binaries;
+Map<String, bool> module_done;
 
 Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
@@ -109,7 +114,10 @@ Node constants(Node n) {
 }
 
 
+//Map<long, int> _isFunction; INEFFICIENT! // true not a 'type'
+// Hashmap _isFunction; // todo
 bool isFunction(String op) {
+//	if(_isFunction[op.hash()])return true;
 	if (op.empty())return false;
 	if (op == "‖")return false;
 	if (operator_list.has(op))return false;
@@ -117,6 +125,8 @@ bool isFunction(String op) {
 	if (functions.has(op))return true;// pre registered signatures
 	if (op.in(function_list))
 		return true;
+	if (findLibraryFunction(op, false))
+		return true;// linear lookup ok as long as #functions < 1000 ?
 //	if(op.in(functor_list))
 //		return true;
 	return false;
@@ -528,6 +538,8 @@ Node &groupSetter(String name, Node &body, String context) {
 
 Node extractReturnTypes(Node decl, Node body);
 
+List<String> aliases(String name);
+
 Node &groupDeclarations(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body) {
 //	String &name = fun.name;
 	if (name and not function_operators.has(name))
@@ -657,15 +669,6 @@ bool isVariable(String name, String context0) {
 	return false;
 }
 
-bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
-
-String &checkCanonicalName(String &name);
-
-//List<Module> merge_modules;// from (automatic) import statements e.g. import math; use log; …
-List<Code> merge_module_binaries;
-//List<Code*> merge_module_binaries;
-Map<String, bool> module_done;
-
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
 // maybe todo: normOperators step (in angle, not wasp!)  3**2 => 3^2
 Node &groupOperators(Node &expression, String context = "main") {
@@ -681,15 +684,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 		if (expression.name == "include") {
 			warn(expression.serialize());
 			Node &file = expression.values();
-//			Node &file = expression.from(1);
-			// todo: properly merge, select appropriate functions …
-			if (not module_done.has(file.name)) {
-				Module import = read_wasm(file.name);// we need to read signatures!
-				const Code &code = read_code(file.name);// kinda redundant
-				merge_module_binaries.add(code);// via wabt
-//				merge_modules.add(import);// merging binary wasm segments in emit
-				module_done.insert_or_assign(file.name, true);
-			}
+			loadModule(file.name);
 			return *new Node();
 //			expression.clear();
 //			return expression;
@@ -821,6 +816,20 @@ Node &groupOperators(Node &expression, String context = "main") {
 	return expression;
 }
 
+Module &loadModule(String name) {
+	if (not module_done.has(name)) {
+		Module &import = read_wasm(name);// we need to read signatures!
+		refineSignatures(import.functions);
+		module_done.insert_or_assign(name, true);
+		libraries.add(&import);
+		return import;
+	}
+	for (auto module: libraries)
+		if (module->name == name)
+			return *module;
+	error("Module not found "s + name);
+}
+
 String &checkCanonicalName(String &name) {
 	if (name == "**")warn("The power operator in angle is simply '^' : 3^2=9.");// todo: alias warning mechanism
 	if (name == "^^")warn("The power operator in angle is simply '^' : 3^2=9. Also note that 1 xor 1 = 0");
@@ -846,7 +855,8 @@ bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
 
 Node &groupFunctionCalls(Node &expressiona, String context) {
 	if (expressiona.kind == declaration)return expressiona;// handled before
-	if (isFunction(expressiona)) {
+	Function *import = findLibraryFunction(expressiona.name, false);
+	if (import or isFunction(expressiona)) {
 		expressiona.setType(call, false);
 		if (not functions.has(expressiona.name))
 			error("missing import for function "s + expressiona.name);
@@ -854,6 +864,7 @@ Node &groupFunctionCalls(Node &expressiona, String context) {
 		functions[expressiona.name].is_used = true;
 //		functions[expressiona.name].is_used = true;
 	}
+
 //	Node &expressiona = *expressiona.clone();
 	for (int i = 0; i < expressiona.length; ++i) {
 //	for (int i = expressiona.length; i>0; --i) {
@@ -956,6 +967,48 @@ Node &groupFunctionCalls(Node &expressiona, String context) {
 //			todo("missing arity match case");
 	}
 	return expressiona;
+}
+
+// todo: clarify registerAsImport side effect
+Function *findLibraryFunction(String name, bool searchAliases) {
+//	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
+	for (Module *module: libraries) {
+		// todo : multiple signatures! concat(bytes, chars, …) eq(…)
+		int position = module->functions.position(name);
+		if (position >= 0) {
+			// ⚠️ this function now lives inside Module AND as import inside "main" functions list, with different wasm_index!
+			Function &import = module->functions.values[position];
+			functions[name].signature = import.signature;
+			functions[name].is_import = true;
+			functions[name].is_used = true;
+			//		imports.add(*import); redundant!
+			return &import;
+		}
+	}
+	if (searchAliases)
+		for (String alias: aliases(name)) {
+			Function *function = findLibraryFunction(alias, false);
+			if (function)return function;
+		}
+	return 0;
+}
+
+List<String> aliases(String name) {
+	List<String> found;
+//	switch (name) // statement requires expression of integer type
+	if (name == "+") {
+		found.add("add");
+		found.add("plus");
+		found.add("concat");
+	}
+	if (name == "=") {
+		found.add("is");
+		found.add("be");
+	}
+	if (name == "#") {// todo
+		found.add("getChar");
+	}
+	return found;
 }
 
 // todo: un-adhoc this!
@@ -1073,7 +1126,10 @@ Node &analyze(Node &node, String context) {
 	bool is_function = isFunction(node);
 	//todo merge/clean
 	if (type == operators or type == call or is_function) {
-		if (is_function)node.kind = call;
+		Function *import = findLibraryFunction(node.name, true);// sets functions[name].is_import = true;
+		if (is_function and type != operators) {
+			node.kind = call;
+		}
 		Node &grouped = groupOperators(node, context);// outer analysis id(3+3) => id(+(3,3))
 		if (grouped.length > 0)
 			for (Node &child: grouped) {// inner analysis while(i<3){i++}
@@ -1205,24 +1261,33 @@ void clearAnalyzerContext() {
 #endif
 }
 
-// 2MB Debug runtime needs 3 seconds in wasmtime! :(
-// test with SMALL runtime!!
+
+// emit via library merge
 Node runtime_emit(String prog) {
+#ifdef RUNTIME_ONLY
+	printf("emit wasm not built into release runtime");
+	return ERROR;
+#endif
+	libraries.clear();// todo reuse
+	Module &runtime = loadModule("wasp.wasm");
+	check(libraries.size() == 1)
+	runtime.needs_relocate = false;
+	Code code = compile(prog);// should use libraries!
+	long result = code.run();// todo parse stdout string as node and merge with emit() !
+	return smartNode(result);
+}
+
+
+// 2MB Debug runtime needs 3 seconds in wasmtime! but wasp-runtime.wasm is only 70kb including export names!
+// test with SMALL runtime!!
+Node runtime_emit_old(String prog) {
 #ifdef RUNTIME_ONLY
 	printf("emit wasm not built into release runtime");
 	return ERROR;
 #endif
 	clearAnalyzerContext();
 	clearEmitterContext();
-	check(functions["atoi0"].is_runtime)
-	Module runtime = read_wasm("wasp.wasm");
-//	if(runtime.function_names.length<=0)
-	if (runtime.functions._size <= 0)
-		error1("wasp.wasm missing name section. get full debug runtime at https://github.com/pannous/wasp/releases/tag/release");
-	Function &function = runtime.functions["atoi0"];
-	check(function.index > 0);
-	functions = runtime.functions;// todo too brutal!
-//	for(auto fun : runtime.functions){ }
+	Module &runtime = loadModule("wasp.wasm");
 	Node charged = analyze(parse(prog));
 	Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
 	lib.save("main.wasm");// partial wasm!
@@ -1236,6 +1301,22 @@ Node runtime_emit(String prog) {
 	clearEmitterContext();
 	return smartNode(result);
 }
+
+// reflection on wasp.wasm loses the original return type of functions
+// we may optimistically omit this since cast(int, charp) returns nop anyways
+void refineSignatures(Map<String, Function> &map) {
+	// todo : create and read some custom wasm section!
+	//	(export "_Z6concatPKcS0_" (func 28))
+//  (export "_Z6concatPhS_ii" (func 210))
+//  (export "_Z6concatPhci" (func 212))
+//  (export "_Z6concatcPhi" (func 213))
+
+	if (map["concat"].signature.functions.size() > 1)
+		todo("create a NEW unshared Signature");
+	map["concat"].signature.return_types.clear();
+	map["concat"].signature.returns(charp);
+}
+
 
 // smart pointers returned if ABI does not allow multi-return, as in int main(){}
 

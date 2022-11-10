@@ -53,4 +53,8 @@ type summary add --summary-string "${var%E}" wabt::Result
 type summary add --summary-string "${var.offset_}" wabt::Stream
 type summary add --summary-string "${var.offset_}" wabt::MemoryStream
 type summary add --summary-string "${var%s} ${var[0-8]}" bytes
+
+type summary add --summary-string "#${var.index} ${var.name} ${var.export_name} ${var.signature} Function*  import:${var.is_import} used:${var.is_used} handled:${var.is_handled}"
+
+
 type summary add --summary-string "#${var.index} ${var.name} ${var.export_name} ${var.signature} Function  import:${var.is_import} used:${var.is_used} handled:${var.is_handled}"
