@@ -470,6 +470,8 @@ namespace wabt {
 
 		virtual Result OnDataSegmentCount(Index count) = 0;
 
+		virtual Result OnElemSegmentFunctionIndexCount(Index index, Index count) = 0;// kf 2022 added … for what?
+
 		virtual Result BeginDataSegment(Index index,
 		                                Index memory_index,
 		                                uint8_t flags) = 0;
