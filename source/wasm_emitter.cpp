@@ -2312,6 +2312,7 @@ Code memorySection() {
 // todo: merge with
 void clearEmitterContext() {
 //	clearAnalyzerContext(); NO keep it at times!
+
 	referenceMap.clear();
 	referenceIndices.clear();
 	referenceDataIndices.clear();
