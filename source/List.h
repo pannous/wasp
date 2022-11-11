@@ -131,6 +131,7 @@ void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
 }
 
 
+// In C++ References cannot be put into an array
 template<class S>
 class List {
 public:
@@ -138,6 +139,7 @@ public:
 	int _type = 0;// reflection on template class S
 	int _size = 0;
 	S *items;
+	int _max_size = LIST_ALLOCATION_RESERVED_COUNT;
 
 	List() {
 		items = (S *) calloc(sizeof(S), LIST_ALLOCATION_RESERVED_COUNT);
@@ -171,12 +173,12 @@ public:
 		while (i-- > 0)items[i] = args[i];
 	}
 
-	List(S args) {// initiator list C style {x,y,z}
-		if (args == 0)return;
-		while (args[_size] and _size < LIST_ALLOCATION_RESERVED_COUNT)_size++;
-		int i = _size;
-		while (i-- > 0)items[i] = args[i];
-	}
+//	List(S args) {// initiator list C style {x,y,z}
+//		if (args == 0)return;
+//		while (args[_size] and _size < LIST_ALLOCATION_RESERVED_COUNT)_size++;
+//		int i = _size;
+//		while (i-- > 0)items[i] = args[i];
+//	}
 
 
 //	List(S args[]) {}
@@ -199,20 +201,34 @@ public:
 		_type = type;
 	}
 
+	void grow() {
+		S *neu = (S *) malloc(sizeof(S) * _max_size * 2);
+		memcpy((void *) neu, (void *) items, _max_size);
+		for (int i = 0; i < size(); ++i) neu[i] = items[i];// doesn't help
+		todo("List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
+		items = neu;
+		_max_size *= 2;
+	}
+
 	S &add(S s) {
 		items[_size++] = s;
+		if (_size >= _max_size)grow();
 		return items[_size - 1];
 	}
 
+//	S &push_back(S s) {// vector compatible
+//		add(s)
+//	}
+
 	// list after 1 element
-	List &&operator++() {
-		return List(items + 1);
-	}
+//	List &&operator++() {
+//		return List(items + 1);
+//	}
 
 	// list FROM index, e.g. [1,2,3]>>1 == [2, 3]
-	List &&operator>>(short index) {
-		return List(items + index);
-	}
+//	List &&operator>>(short index) {
+//		return List(items + index);
+//	}
 
 
 	S &operator[](short index) {
@@ -225,6 +241,7 @@ public:
 		for (int i = 0; i < _size; ++i) {
 			if (items[i] == key)return items[i];
 		}
+		if (_size >= _max_size - 1)grow();
 		return items[_size++];// create new!
 	}
 

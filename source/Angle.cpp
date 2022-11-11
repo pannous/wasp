@@ -817,7 +817,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 }
 
 Module &loadModule(String name) {
-	if (not module_done.has(name)) {
+	if (libraries.empty() or not module_done.has(name)) {
 		Module &import = read_wasm(name);// we need to read signatures!
 		import.code.name = name;
 		refineSignatures(import.functions);
@@ -972,6 +972,7 @@ Node &groupFunctionCalls(Node &expressiona, String context) {
 
 // todo: clarify registerAsImport side effect
 Function *findLibraryFunction(String name, bool searchAliases) {
+	if (name.empty())return 0;
 //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
 	for (Module *module: libraries) {
 		// todo : multiple signatures! concat(bytes, chars, …) eq(…)
@@ -987,7 +988,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 			return &import;
 		}
 	}
-	Function *function;
+	Function *function = 0;
 	if (searchAliases) {
 		for (String alias: aliases(name)) {
 			function = findLibraryFunction(alias, false);
@@ -1257,6 +1258,9 @@ void preRegisterFunctions() {
 void clearAnalyzerContext() {
 //	needs to be outside analyze, because analyze is recursive
 #ifndef RUNTIME_ONLY
+	libraries.clear();// todo: keep runtime or keep as INACTIVE to save reparsing
+	module_done.clear();
+
 	globals.clear();
 	functionIndices.clear();
 	functionIndices.setDefault(-1);
