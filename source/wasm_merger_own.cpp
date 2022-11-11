@@ -593,6 +593,8 @@ private:
 	ssize_t current_payload_offset_ = 0;
 
 	Section *getSection(std::unique_ptr<LinkerInputBinary> &uniquePtr, BinarySection section);
+
+	List<Reloc> CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section);
 };
 
 void Linker::WriteSectionPayload(Section *sec) {
@@ -1155,12 +1157,7 @@ void Linker::CreateRelocs() {
 		}
 		Section *section = getSection(binary, BinarySection::Code);
 		if (!section)return;
-		Index indexOffset = binary->delta;
-		size_t size = section->size;
-		// todo create and pass correct view from here!
-		Code section_code(binary->data.data() + section->offset + 1, section->size);
-		Index border = binary->imported_function_index_offset;
-		auto relocs = PatchCodeSection(binary->data, section->offset + 1, size, indexOffset, border);
+		List<Reloc> relocs = CalculateRelocs(binary, section);
 		for (Reloc &reloc: relocs)
 			section->relocations.push_back(reloc);
 //		if(!section->data.data_segments)
@@ -1210,7 +1207,7 @@ Code merge_files(List<String> infiles) {
 
 Code &merge_binaries(List<Code> binaries) {
 //	opcode_args[global_get] = leb;
-	check(opcode_args[global_get] == leb) // todo what kind of dark bug is that???
+//	check(opcode_args[global_get] == leb) // todo what kind of dark bug is that???
 	Linker linker;
 	if (binaries.size() == 1)
 		return binaries.items[0].clone();
@@ -1319,6 +1316,74 @@ std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, size
 	}
 	return relocs;
 }
+
+
+List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section) {
+	List<Reloc> relocs;
+
+	std::vector<uint8_t> &section_data = binary->data;
+	Index indexOffset = binary->delta;
+	size_t size = section->size;
+	size_t offset = section->offset + 1;
+//	Code section_code(binary->data.data() + offset, section->size, false);
+	Index import_boarder = binary->imported_function_index_offset;
+	// todo
+//	DataSegment section_data = ;// *pSection->data.data_segments->data();
+	int length = section_data.size();
+	int current = offset;
+	bool begin_function = true;
+	int fun_length = 0;
+	int current_fun = 0;
+	int fun_end = length;
+	while (current < length and current - offset < size) {// go over ALL functions! ignore 00
+		if (begin_function) {
+			begin_function = false;
+			fun_length = unsignedLEB128(section_data, length, current); // length of ONE function
+			fun_end = current + fun_length;
+			int locals = unsignedLEB128(section_data, length, current); // length of ONE function
+			current += locals * 2;// nr+type
+		}
+		byte b = section_data[current++];
+		if (current >= fun_end) {
+			begin_function = true;
+			current_fun++;
+			printf("begin_function %d\n", current_fun);
+			continue;
+		}
+		Opcodes op = (Opcodes) b;
+		Opcode opcode = Opcode::FromCode(b);
+		if (op == call_) {
+			short nop_offset = current;
+			short index = unsignedLEB128(section_data, length, current);
+			int neu = index + indexOffset; // internally shifted
+			if (new_indices.contains(index)) {
+				neu = new_indices[index]; // mapped to other module's export
+			} else if (index <= import_boarder)
+				neu = index; // keep old!
+			if (index != neu) {
+				Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset - offset + 1, neu);
+				relocs.add(reloc);
+			}
+			printf("call $%d -> %d\n", index, neu);
+		} else {
+			int arg_bytes = opcode_args[op];
+			if (arg_bytes > 0)
+				current += arg_bytes;
+			else if (arg_bytes == leb) {
+				unsignedLEB128(section_data, length, current);// start passed as reference will be MODIFIED!!
+			} // auto variable argument(s)
+			else if (arg_bytes == -1) {
+				printf("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
+				error("UNKNOWN OPCODE");
+//				printf("UNKNOWN :");
+			}
+//			if (tracing)
+//				printf("OPCODE 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
+		}
+	}
+	return relocs;
+}
+
 
 void Linker::PatchCodeSection(bytes section_data, int length, size_t offset) {
 	//	int codeCount = unsignedLEB128(codes_vector);
