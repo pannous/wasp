@@ -25,7 +25,6 @@
 
 typedef unsigned char *bytes;
 
-std::map<short, int> new_indices;// = {{0, 1}, {1, 2}};
 
 Code createSection(Sections sectionType, Code data);
 
@@ -64,56 +63,56 @@ int u32_type = 4;
 int i32_type = 4;
 // https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
 std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code (not the stack values! e.g. 4 bytes for f32.const )
-		{nop,             0}, // useful for relocation padding call 1 -> call 10000000
-		{block,           leb},
-		{loop,            0},
-		{if_i,            0},// precede by i32 result}, follow by i32_type {7f}
-		{elsa,            0},
-		{return_block,    0},
+		{nop,                 0}, // useful for relocation padding call 1 -> call 10000000
+		{block,               leb},
+		{loop,                0},
+		{if_i,                0},// precede by i32 result}, follow by i32_type {7f}
+		{elsa,                0},
+		{return_block,        0},
 
 		// EXTENSIONS:
-		{try_,            block_index},
-		{catch_,          block_index},
-		{throw_,          block_index},
-		{rethrow_,        block_index},
-		{br_on_exn_,      block_index}, // branch on exception
+		{try_,                block_index},
+		{catch_,              block_index},
+		{throw_,              block_index},
+		{rethrow_,            block_index},
+		{br_on_exn_,          block_index}, // branch on exception
 
-		{end_block,       0}, //11
-		{br,              block_index},
-		{br_if,           block_index},
-		{br_table,        block_index},
-		{return_block,    block_index},
-		{function_call,   block_index},
+		{end_block,           0}, //11
+		{br,                  block_index},
+		{br_if,               block_index},
+		{br_table,            block_index},
+		{return_block,        block_index},
+		{function_call,       block_index},
 
 		// EXTENSIONS:
-		{call_ref,        u32_type},
-		{return_call_ref, u32_type},
-		{func_bind,       u32_type},// {type $t} {$t : u32_type
-		{let_local,       -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
+		{call_ref,            u32_type},
+		{return_call_ref,     u32_type},
+		{func_bind,           u32_type},// {type $t} {$t : u32_type
+		{let_local,           -1}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
 
-		{drop,            0}, // pop stack
-		{select_if,       2}, // a?b:c ternary todo: use!
-		{select_t,        1}, // extension … ?
+		{drop,                0}, // pop stack
+		{select_if,           2}, // a?b:c ternary todo: use!
+		{select_t,            1}, // extension … ?
 
-		{local_get,       leb},
-		{local_set,       leb},
-		{local_tee,       leb},
-		{get_local,       leb},// get to stack
-		{set_local,       leb},// set and pop
-		{tee_local,       leb},// set and leave on stack
+		{local_get,           leb},
+		{local_set,           leb},
+		{local_tee,           leb},
+		{get_local,           leb},// get to stack
+		{set_local,           leb},// set and pop
+		{tee_local,           leb},// set and leave on stack
 
-		{global_get,      leb},
-		{global_set,      leb},
+		{global_get,          leb},
+		{global_set,          leb},
 
 		//{ Anyref/externref≠funcref tables}, Table.get and Table.set {for Anyref only}.
 		//{Support for making Anyrefs from Funcrefs is out of scope
-		{table_get,       -1},
-		{table_set,       -1},
+		{table_get,           -1},
+		{table_set,           -1},
 
-		{i8_load,         0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-		{i16_load,        0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-		{i32_load,        0},// load word from i32 address
-		{f32_load,        0},
+		{i8_load,             0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i16_load,            0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+		{i32_load,            0},// load word from i32 address
+		{f32_load,            0},
 		{i32_store,           0},// store word at i32 address
 		{f32_store,           0},
 		// todo : peek 65536 as float directly via opcode
@@ -122,48 +121,48 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 		{i32_store_8,         0},
 		{i32_store_16,        0},
 		{i8_store,            0},
-		{i16_store,       0},
+		{i16_store,           0},
 
 		//{i32_store_byte, -1},// store byte at i32 address
-		{i32_auto,        leb},
-		{i32_const,       leb},
-		{i64_auto,        leb},
-		{i64_const,       leb},
-		{f32_auto,        4},
-		{f64_const,       8},
+		{i32_auto,            leb},
+		{i32_const,           leb},
+		{i64_auto,            leb},
+		{i64_const,           leb},
+		{f32_auto,            4},
+		{f64_const,           8},
 
-		{i32_eqz,         0}, // use for not!
+		{i32_eqz,             0}, // use for not!
 //		{negate,                              -1},
 //		{not_truty,                           -1},
-		{i32_eq,          0},
-		{i32_ne,          0},
-		{i32_lt,          0},
-		{i32_gt,          0},
-		{i32_le,          0},
-		{i32_ge,          0},
+		{i32_eq,              0},
+		{i32_ne,              0},
+		{i32_lt,              0},
+		{i32_gt,              0},
+		{i32_le,              0},
+		{i32_ge,              0},
 
-		{i64_eqz,         0},
-		{f32_eqz,         0}, // HACK: no such thing!
+		{i64_eqz,             0},
+		{f32_eqz,             0}, // HACK: no such thing!
 
 
-		{i64_eqz,         0},
-		{i64_eq,          0},
-		{i64_ne,          0},
-		{i64_lt_s,        0},
-		{i64_lt_u,        0},
-		{i64_gt_s,        0},
-		{i64_gt_u,        0},
-		{i64_le_s,        0},
-		{i64_le_u,        0},
-		{i64_ge_s,        0},
-		{i64_ge_u,        0},
+		{i64_eqz,             0},
+		{i64_eq,              0},
+		{i64_ne,              0},
+		{i64_lt_s,            0},
+		{i64_lt_u,            0},
+		{i64_gt_s,            0},
+		{i64_gt_u,            0},
+		{i64_le_s,            0},
+		{i64_le_u,            0},
+		{i64_ge_s,            0},
+		{i64_ge_u,            0},
 
-		{f32_eq,          0},
-		{f32_ne,          0}, // !=
-		{f32_lt,          0},
-		{f32_gt,          0},
-		{f32_le,          0},
-		{f32_ge,          0},
+		{f32_eq,              0},
+		{f32_ne,              0}, // !=
+		{f32_lt,              0},
+		{f32_gt,              0},
+		{f32_le,              0},
+		{f32_ge,              0},
 		{f64_eq,              0},
 		{f64_ne,              0}, // !=
 		{f64_lt,              0},
@@ -381,7 +380,7 @@ Section::~Section() {
 }
 
 LinkerInputBinary::LinkerInputBinary(const char *filename, const std::vector<uint8_t> &data)
-		: filename(filename),
+		: name(filename),
 		  data(data),
 		  active_function_imports(0),
 		  active_global_imports(0),
@@ -419,10 +418,10 @@ Index LinkerInputBinary::RelocateFuncIndex(Index function_index) {
 		if (!import->active) {
 			function_index = import->foreign_index;
 			offset = import->foreign_binary->function_index_offset;
-			LOG_DEBUG("reloc for disabled import. new index = %d + %d\n", function_index, offset);
+			LOG_DEBUG("reloc for disabled import %s : new index = %d + %d\n", import->name.data, function_index, offset);
 		} else {
 			Index new_index = import->relocated_function_index;
-			LOG_DEBUG("reloc for active import. old index = %d, new index = %d\n", function_index, new_index);
+			LOG_DEBUG("reloc for active import %s: old index = %d, new index = %d\n", import->name.data, function_index, new_index);
 			return new_index;
 		}
 	}
@@ -932,12 +931,6 @@ bool Linker::WriteCombinedSection(BinarySection section_code, const SectionPtrVe
 	return true;
 }
 
-struct ExportInfo {
-	ExportInfo(const Export *export_, LinkerInputBinary *binary) : export_(export_), binary(binary) {}
-
-	const Export *export_;
-	LinkerInputBinary *binary;
-};
 
 struct FuncInfo {
 	FuncInfo(const Func *export_, LinkerInputBinary *binary) : func(export_), binary(binary) {}
@@ -956,15 +949,16 @@ void Linker::ResolveSymbols() {
 	BindingHash export_map;
 	std::vector<ExportInfo> export_list;
 	std::vector<FuncInfo> func_list;// internal index identical to func_map index!!
+	std::vector<FuncInfo> import_list;//
 
 // binary->functions not filled yet!
 	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-		printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->filename, binary->debug_names.size());
+		printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
 
 		int pos = 0;
 		for (const Export &export_: binary->exports) {// todo: why not store index directly?
 			pos++;
-			printf("DEBUG %s export_.name %s, export_.index %d\n", binary->filename, export_.name.data, export_.index);
+			printf("%s export %s index %d\n", binary->name, export_.name.data, export_.index);
 			export_list.emplace_back(&export_, binary.get());
 			if (export_map.FindIndex(export_.name) != kInvalidIndex) {
 				warn("Ignoring duplicate export name "s + export_.name);
@@ -981,6 +975,7 @@ void Linker::ResolveSymbols() {
 			}
 			func_list.emplace_back(&func, binary.get());
 		}
+//		for (const Func &func: binary->function_imports
 		// wasp.wasm currently has no binary->debug_names (only exports!) so ignore for now
 //		for (int i = 0; i < binary->debug_names.size(); ++i) {
 //			String &name = binary->debug_names[i];
@@ -1003,41 +998,48 @@ void Linker::ResolveSymbols() {
 		if (not binary->needs_relocate)continue;
 		for (FunctionImport &import: binary->function_imports) {
 			String &name = import.name;
-			Index export_index = export_map.FindIndex(name);
-			if (export_index != kInvalidIndex) {
+			Index export_number = export_map.FindIndex(name);
+			if (export_number != kInvalidIndex) {
 				// We found the symbol exported by another module.
-				const ExportInfo &export_info = export_list[export_index];
+				ExportInfo &export_info = export_list[export_number];
 				// TODO verify the foreign function has the correct signature.
-				Index new_index = export_info.export_->index;
+				Index export_index = export_info.export_->index;
+				Func &exported = export_info.binary->functions[export_index];
+//				Index new_Index; // see RelocateFuncIndex(); ⚠️ WE CAN ONLY calculate the new index once ALL imports are collected!
+				Index old_index = import.sig_index;
 				import.active = false;
 				import.foreign_binary = export_info.binary;
-				import.foreign_index = new_index;
-				import.relocated_function_index = export_index;
-				Index old_index = import.sig_index;
-				new_indices[old_index] = new_index;
-//				new_indices[import.sig_index] = import.foreign_index;
+				import.foreign_index = export_index;
+				import.linked_function = &export_info;
+//				import.relocated_function_index = export_number; see RelocateFuncIndex()
 				binary->active_function_imports--;
-				printf("LINKED %s import #%d to export #%d relocated_function_index %d \n", name.data, old_index, new_index, export_index);
+				char *import_name = import.name;
+				char *export_name = exported.name;
+				printf("LINKED %s import #%d %s to export #%d %s relocated_function_index %d \n", name.data, old_index, import_name, export_index, export_name,
+				       export_number);
 			} else {
+				// todo all this is done in RelocateFuncIndex !
 				// link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
 				Index func_index = func_map.FindIndex(name);
 				if (func_index == kInvalidIndex) {
 					warn("unresolved import: "s + name);
-					import.active = false;// don'true
-					binary->active_function_imports--;
+//					import.active = false;// don'true
+//					binary->active_function_imports--;
+//					todo("")
+					warn("keep unresolved import in case it's used inside binary: "s + name);
+//					import.foreign_index =  binary.import_delta + import.sig_index;
+//					import.relocated_function_index =  binary.import_delta + import.sig_index;
+					// no need for complicated calculations, just count the active imports so far
 					continue;
 					warn("delete unresolved import: "s + name);
 					continue;
 					error("can't find undefined symbol: "s + name);
 				}
-				check(func_list[func_index].func);
+//				check(func_list[func_index].func);
 				FuncInfo &funcInfo = func_list[func_index];
 				import.active = false;
 				import.foreign_binary = funcInfo.binary;
-				import.foreign_index = func_index;// todo or export_index?
-//
-//				import.foreign_index = funcInfo.func->index;
-				new_indices[func_index] = export_index;
+				import.foreign_index = funcInfo.func->index;
 				binary->active_function_imports--;
 				printf("LINKED unexported function to import: %s\n", name.data);
 			}
@@ -1139,7 +1141,7 @@ void Linker::WriteBinary() {
 
 void Linker::DumpRelocOffsets() {
 	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-		LOG_DEBUG("Relocation info for: %s\n", binary->filename);
+		LOG_DEBUG("Relocation info for: %s\n", binary->name);
 		LOG_DEBUG(" - type index offset       : %d\n", binary->type_index_offset);
 		LOG_DEBUG(" - mem page offset         : %d\n", binary->memory_page_offset);
 		LOG_DEBUG(" - function index offset   : %d\n", binary->function_index_offset);
@@ -1152,7 +1154,7 @@ void Linker::DumpRelocOffsets() {
 void Linker::CreateRelocs() {
 	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		if (not binary->needs_relocate) {
-			trace("Skipping CreateRelocs for library "s + binary->filename);
+			trace("Skipping CreateRelocs for library "s + binary->name);
 			continue;
 		}
 		Section *section = getSection(binary, BinarySection::Code);
@@ -1174,11 +1176,6 @@ OutputBuffer Linker::PerformLink() {
 	CreateRelocs();
 	DumpRelocOffsets();
 	WriteBinary();
-//	call to deleted constructor of 'wabt::MemoryStream'
-//	 /Users/me/dev/apps/wasp/source/own_merge/stream.h:183:33: note: 'MemoryStream' has been explicitly marked deleted here
-//	WABT_DISALLOW_COPY_AND_ASSIGN(MemoryStream);
-// All of this will be completely unnecessary once C++17 comes with mandatory copy-elision comes around, so you can look forward to that.
-//	stream_.WriteToFile("temp.wasm");
 	return stream_.output_buffer();
 }
 
@@ -1187,6 +1184,113 @@ Section *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, BinarySe
 		if (sec->section_code == section)return sec.get();
 	}
 	return nullptr;
+}
+
+List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section) {
+	List<Reloc> relocs;
+	std::vector<uint8_t> &section_data = binary->data;// LATER plus section_offset todo shared Code view
+	size_t section_offset = section->offset + 1;// into binary data
+//	DataSegment section_data = ;// *pSection->data.data_segments->data();
+	Index binary_delta = binary->delta;
+	size_t section_size = section->size;
+//	Index import_border = binary->imported_function_index_offset;// todo for current binary or for ALL?
+	unsigned long old_import_border = binary->function_imports.size();
+	int length = section_data.size();
+	int current = section_offset;
+	bool begin_function = true;
+	int current_fun = 0;
+	String current_name = "?";
+	int fun_end = length;
+	while (current < length and current - section_offset < section_size) {// go over ALL functions! ignore 00
+		if (begin_function) {
+			begin_function = false;
+			current_name = binary->functions[current_fun].name;
+			int fun_length = unsignedLEB128(section_data, length, current);// length of ONE function
+			fun_end = current + fun_length;
+			int locals = unsignedLEB128(section_data, length, current);
+			printf("#%d %s.%s\n", current_fun, binary->name, current_name.data);
+			current += locals * 2;// nr+type
+		}
+		byte b = section_data[current++];
+		if (current >= fun_end) {
+			begin_function = true;
+			current_fun++;
+//			trace("begin_function %d\n", current_fun);
+			continue;
+		}
+		Opcodes op = (Opcodes) b;
+		Opcode opcode = Opcode::FromCode(b);
+		if (op == call_) {
+			short nop_offset = current;
+			short index = unsignedLEB128(section_data, length, current);
+			Index neu = binary->RelocateFuncIndex(index);
+			String function_name;
+			if (index < old_import_border) {
+				FunctionImport &anImport = binary->function_imports[index];
+				function_name = "IMPORT "s + anImport.name;
+//				anImport.linked_function;
+//				neu= anImport.foreign_index;// or anImport.sig_index + binary->import_delta;
+			} else {
+				Func &callee = binary->functions[index];
+				function_name = callee.name;
+//				neu = index + binary_delta;
+			}
+			if (index != neu) {
+				Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset - section_offset + 1, neu);
+				relocs.add(reloc);
+			}
+			printf("CALL %s %s calls %s $%d -> %d\n", binary->name, current_name.data, function_name.data, index, neu);
+		} else if (op == global_get) {
+			todo("reloc global_get");
+		} else if (op == global_set) {
+			todo("reloc global_get");
+		} else if (op >= i32_load and op <= i32_store_16) {
+			todo("reloc LOAD/STORE");
+		} else {
+			int arg_bytes = opcode_args[op];
+			if (arg_bytes > 0)
+				current += arg_bytes;
+			else if (arg_bytes == leb) {
+				unsignedLEB128(section_data, length, current);// start passed as reference will be MODIFIED!!
+			} // auto variable argument(s)
+			else if (arg_bytes == -1) {
+				printf("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
+				error("UNKNOWN OPCODE");
+			}
+//			if (tracing)
+//				printf("OPCODE 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
+		}
+	}
+	return relocs;
+}
+
+
+void Linker::PatchCodeSection(bytes section_data, int length, size_t offset) {
+	//	int codeCount = unsignedLEB128(codes_vector);
+	//	Code code = vec(codes);
+	int start = offset;
+	int fun_length = unsignedLEB128(section_data, length, start);
+	Opcodes op = (Opcodes) section_data[start++];
+	if (op == call_) {
+		short nop_offset = start;
+		short index = unsignedLEB128(section_data, length, start);
+//		if (new_indices.contains(index)) {
+////			Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset,new_indices[index] );
+//			while (section_data[nop_offset] == 0x80)
+//				*(section_data + nop_offset++) = 0x01;// NOP the rest!
+//			*(section_data + nop_offset) = 0x01;// ONE MORE NOP to delete the old value
+//			// else CHECK SIZE!
+//			WriteU32Leb128Raw(section_data + nop_offset, section_data + length, new_indices[index]);
+//		}
+	} else {
+		int arg_bytes = opcode_args[op];
+		start += arg_bytes;
+	}
+}
+
+
+Code &code(std::vector<uint8_t> vector1) {
+	return *new Code(vector1.data(), vector1.size());
 }
 
 Code merge_files(List<String> infiles) {
@@ -1237,11 +1341,6 @@ Code merge_binaries(Code main, Code lib) {
 	return merge_binaries(binaries);
 }
 
-Code &code(std::vector<uint8_t> vector1) {
-	return *new Code(vector1.data(), vector1.size());
-}
-
-
 void merge_files(int argc, char **argv) {
 	List<String> infiles;
 	while (argc-- > 0)
@@ -1249,162 +1348,3 @@ void merge_files(int argc, char **argv) {
 	merge_files(infiles);
 }
 
-
-//Map<short, int> opcode_args = {
-// todo -1 everywhere can't be right
-// positive numbers : argument bytes
-// positive numbers : -1 leb var-length
-#define memarg 8 //
-//enum opcode_arg_type{
-//	memarg
-//};
-// see ./wabt_merge/opcode.def
-
-std::vector<Reloc> Linker::PatchCodeSection(std::vector<byte> section_data, size_t offset, size_t size, size_t indexOffset, short import_boarder) {
-	std::vector<Reloc> relocs;
-	int length = section_data.size();
-	int current = offset;
-	bool begin_function = true;
-	int fun_length = 0;
-	int current_fun = 0;
-	int fun_end = length;
-	while (current < length and current - offset < size) {// go over ALL functions! ignore 00
-		if (begin_function) {
-			begin_function = false;
-			fun_length = unsignedLEB128(section_data, length, current); // length of ONE function
-			fun_end = current + fun_length;
-			int locals = unsignedLEB128(section_data, length, current); // length of ONE function
-			current += locals * 2;// nr+type
-		}
-		byte b = section_data[current++];
-		if (current >= fun_end) {
-			begin_function = true;
-			current_fun++;
-			printf("begin_function %d\n", current_fun);
-			continue;
-		}
-		Opcodes op = (Opcodes) b;
-		Opcode opcode = Opcode::FromCode(b);
-		if (op == call_) {
-			short nop_offset = current;
-			short index = unsignedLEB128(section_data, length, current);
-			int neu = index + indexOffset; // internally shifted
-			if (new_indices.contains(index)) {
-				neu = new_indices[index]; // mapped to other module's export
-			} else if (index <= import_boarder)
-				neu = index; // keep old!
-			if (index != neu) {
-				Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset - offset + 1, neu);
-				relocs.push_back(reloc);
-			}
-			printf("call $%d -> %d\n", index, neu);
-		} else {
-			int arg_bytes = opcode_args[op];
-			if (arg_bytes > 0)
-				current += arg_bytes;
-			else if (arg_bytes == leb) {
-				unsignedLEB128(section_data, length, current);// start passed as reference will be MODIFIED!!
-			} // auto variable argument(s)
-			else if (arg_bytes == -1) {
-				printf("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
-				error("UNKNOWN OPCODE");
-//				printf("UNKNOWN :");
-			}
-//			if (tracing)
-//				printf("OPCODE 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
-		}
-	}
-	return relocs;
-}
-
-
-List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section) {
-	List<Reloc> relocs;
-
-	std::vector<uint8_t> &section_data = binary->data;
-	Index indexOffset = binary->delta;
-	size_t size = section->size;
-	size_t offset = section->offset + 1;
-//	Code section_code(binary->data.data() + offset, section->size, false);
-	Index import_boarder = binary->imported_function_index_offset;
-	// todo
-//	DataSegment section_data = ;// *pSection->data.data_segments->data();
-	int length = section_data.size();
-	int current = offset;
-	bool begin_function = true;
-	int fun_length = 0;
-	int current_fun = 0;
-	int fun_end = length;
-	while (current < length and current - offset < size) {// go over ALL functions! ignore 00
-		if (begin_function) {
-			begin_function = false;
-			fun_length = unsignedLEB128(section_data, length, current); // length of ONE function
-			fun_end = current + fun_length;
-			int locals = unsignedLEB128(section_data, length, current); // length of ONE function
-			current += locals * 2;// nr+type
-		}
-		byte b = section_data[current++];
-		if (current >= fun_end) {
-			begin_function = true;
-			current_fun++;
-			printf("begin_function %d\n", current_fun);
-			continue;
-		}
-		Opcodes op = (Opcodes) b;
-		Opcode opcode = Opcode::FromCode(b);
-		if (op == call_) {
-			short nop_offset = current;
-			short index = unsignedLEB128(section_data, length, current);
-			int neu = index + indexOffset; // internally shifted
-			if (new_indices.contains(index)) {
-				neu = new_indices[index]; // mapped to other module's export
-			} else if (index <= import_boarder)
-				neu = index; // keep old!
-			if (index != neu) {
-				Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset - offset + 1, neu);
-				relocs.add(reloc);
-			}
-			printf("call $%d -> %d\n", index, neu);
-		} else {
-			int arg_bytes = opcode_args[op];
-			if (arg_bytes > 0)
-				current += arg_bytes;
-			else if (arg_bytes == leb) {
-				unsignedLEB128(section_data, length, current);// start passed as reference will be MODIFIED!!
-			} // auto variable argument(s)
-			else if (arg_bytes == -1) {
-				printf("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
-				error("UNKNOWN OPCODE");
-//				printf("UNKNOWN :");
-			}
-//			if (tracing)
-//				printf("OPCODE 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
-		}
-	}
-	return relocs;
-}
-
-
-void Linker::PatchCodeSection(bytes section_data, int length, size_t offset) {
-	//	int codeCount = unsignedLEB128(codes_vector);
-	//	Code code = vec(codes);
-	int start = offset;
-	int fun_length = unsignedLEB128(section_data, length, start);
-	Opcodes op = (Opcodes) section_data[start++];
-	if (op == call_) {
-		short nop_offset = start;
-		short index = unsignedLEB128(section_data, length, start);
-		if (new_indices.contains(index)) {
-//			Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset,new_indices[index] );
-			while (section_data[nop_offset] == 0x80)
-				*(section_data + nop_offset++) = 0x01;// NOP the rest!
-			*(section_data + nop_offset) = 0x01;// ONE MORE NOP to delete the old value
-			// else CHECK SIZE!
-			WriteU32Leb128Raw(section_data + nop_offset, section_data + length, new_indices[index]);
-		}
-	} else {
-		int arg_bytes = opcode_args[op];
-		start += arg_bytes;
-	}
-
-}

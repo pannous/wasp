@@ -29,6 +29,20 @@ namespace wabt {
 
 		class LinkerInputBinary;
 
+		struct Export {
+			ExternalKind kind;
+			String name;
+			Index index;
+		};
+
+
+		struct ExportInfo {
+			ExportInfo(const Export *export_, LinkerInputBinary *binary) : export_(export_), binary(binary) {}
+
+			const Export *export_;
+			LinkerInputBinary *binary;
+		};
+
 		struct FunctionImport {
 			String module_name;
 			String name;
@@ -37,6 +51,7 @@ namespace wabt {
 			Index relocated_function_index;
 			LinkerInputBinary *foreign_binary;
 			Index foreign_index;
+			ExportInfo *linked_function;
 		};
 
 		struct GlobalImport {
@@ -51,12 +66,6 @@ namespace wabt {
 			Address64 offset;
 			const uint8_t *data;
 			size_t size;
-		};
-
-		struct Export {
-			ExternalKind kind;
-			String name;
-			Index index;
 		};
 
 
@@ -106,6 +115,7 @@ namespace wabt {
 		public:
 			WABT_DISALLOW_COPY_AND_ASSIGN(LinkerInputBinary);
 
+
 			LinkerInputBinary(const char *filename, const std::vector<uint8_t> &data);
 
 			Index RelocateFuncIndex(Index findex);
@@ -120,8 +130,11 @@ namespace wabt {
 
 			bool IsInactiveFunctionImport(Index index);
 
-			const char *filename;
+			const char *name;
+
+			// ⚠️ # ALL IMPORTS of ALL modules plus all functions of all previous modules!
 			int delta;// previous function_count, offset all functions in this module if not mapped to specific import
+
 			std::vector<uint8_t> data;
 			std::vector<std::unique_ptr<Section>> sections;
 			std::vector<Export> exports;
@@ -132,8 +145,8 @@ namespace wabt {
 			Index active_global_imports;
 
 			Index type_index_offset;
-			Index function_index_offset;
-			Index imported_function_index_offset;
+			Index function_index_offset; // globally after merging, RIGHT??
+			Index imported_function_index_offset;// for current binary or for ALL?
 			Index global_index_offset = 0;
 			Index imported_global_index_offset;
 			Index table_index_offset;
