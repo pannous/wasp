@@ -1208,7 +1208,8 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 			int fun_length = unsignedLEB128(section_data, length, current);// length of ONE function
 			fun_end = current + fun_length;
 			int locals = unsignedLEB128(section_data, length, current);
-			printf("#%d %s.%s\n", current_fun, binary->name, current_name.data);
+			if (current_name.data)// else what is this #2 test/merge/main2.wasm :: (null)
+				printf("#%d %s :: %s (#%d)\n", current_fun, binary->name, current_name.data, locals);
 			current += locals * 2;// nr+type
 		}
 		byte b = section_data[current++];
@@ -1231,7 +1232,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 //				anImport.linked_function;
 //				neu= anImport.foreign_index;// or anImport.sig_index + binary->import_delta;
 			} else {
-				Func &callee = binary->functions[index];
+				Func &callee = binary->functions[index - binary->function_imports.size()];// old index + offset!
 				function_name = callee.name;
 //				neu = index + binary_delta;
 			}
