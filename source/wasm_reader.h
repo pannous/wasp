@@ -44,6 +44,7 @@ public:
 	// name section:
 	Code element_section;// todo?
 	Code local_names;
+	Code global_names;
 	Code function_names;
 	int start_index;
 	List<String> import_names;

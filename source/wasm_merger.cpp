@@ -12,13 +12,11 @@ int total_functions = -1;
 Code createSection(Sections sectionType, Code data);
 
 Code mergeTypeSection(Module lib, Module main) {
-	return createSection(type_section,
-	                     encodeVector(Code(lib.type_count + main.type_count) + lib.type_data + main.type_data));
+	return createSection(type_section, encodeVector(Code(lib.type_count + main.type_count) + lib.type_data + main.type_data));
 }
 
 Code mergeImportSection(Module lib, Module main) {
-	return createSection(import_section,
-	                     Code(lib.import_count + main.import_count) + lib.import_data + main.import_data);
+	return createSection(import_section, Code(lib.import_count + main.import_count) + lib.import_data + main.import_data);
 }
 
 Code mergeFuncTypeSection(Module lib, Module main) { // signatures

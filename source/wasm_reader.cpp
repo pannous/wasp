@@ -262,8 +262,11 @@ void consumeNameSection(Code &data) {
 			case local_names:
 				module->local_names = payload;
 				break;
+			case global_names:
+				module->global_names = payload;
+				break;
 			default:
-				error("INVALID NAME TYPE");
+				error("INVALID NAME TYPE "s + type);
 		}
 	}
 }
