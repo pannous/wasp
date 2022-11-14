@@ -85,16 +85,19 @@ namespace wabt {
 	Offset WriteU32Leb128Raw(uint8_t *dest, uint8_t *dest_end, uint32_t value) {
 		uint8_t data[MAX_U32_LEB128_BYTES];
 		Offset length = 0;
-		LEB128_LOOP_UNTIL(value == 0);
+		LEB128_LOOP_UNTIL(value == 0);// writes and increases length!
 		if (static_cast<Offset>(dest_end - dest) < length) {
 			return 0;
 		}
+		// why not write to dest directly in LEB128_LOOP_UNTIL ?
 		memcpy(dest, data, length);
 		return length;
 	}
 
+	// used in TypeIndexLEB why!?
 	Offset WriteFixedU32Leb128Raw(uint8_t *data, uint8_t *end, uint32_t value) {
-		if (end - data < MAX_U32_LEB128_BYTES) {
+		if (end - data < MAX_U32_LEB128_BYTES /* 5 */) {
+			error("end - data < MAX_U32_LEB128_BYTES");
 			return 0;
 		}
 		data[0] = (value & 0x7f) | 0x80;

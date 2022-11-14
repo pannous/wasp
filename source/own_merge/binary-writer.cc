@@ -1669,8 +1669,7 @@ namespace wabt {
 				BeginCustomSection(WABT_BINARY_SECTION_NAME);
 
 				if (!module_->name.empty()) {
-					WriteU32Leb128(stream_, NameSectionSubsection::Module,
-					               "module name type");
+					WriteU32Leb128(stream_, NameSectionSubsection::Module, "module name type");
 					BeginSubsection("module name subsection");
 					WriteDebugName(stream_, s(module_->name), "module name");
 					EndSubsection();
@@ -1703,10 +1702,8 @@ namespace wabt {
 				WriteNames<Table>(module_->tables, NameSectionSubsection::Table);
 				WriteNames<Memory>(module_->memories, NameSectionSubsection::Memory);
 				WriteNames<Global>(module_->globals, NameSectionSubsection::Global);
-				WriteNames<ElemSegment>(module_->elem_segments,
-				                        NameSectionSubsection::ElemSegment);
-				WriteNames<DataSegment>(module_->data_segments,
-				                        NameSectionSubsection::DataSegment);
+				WriteNames<ElemSegment>(module_->elem_segments, NameSectionSubsection::ElemSegment);
+				WriteNames<DataSegment>(module_->data_segments, NameSectionSubsection::DataSegment);
 
 				EndSection();
 			}
