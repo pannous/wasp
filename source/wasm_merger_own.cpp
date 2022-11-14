@@ -322,6 +322,7 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 
 
 // DANGER: modifies the start reader position of code, but not it's data!
+[[nodiscard]]
 int unsignedLEB128(bytes section_data, int length, int &start) {
 	int n = 0;
 	short shift = 0;
@@ -345,6 +346,12 @@ int unsignedLEB128(std::vector<byte> section_data, int length, int &start) {
 		shift += 7;
 	} while (start < length);
 	return n;
+}
+
+int unsignedLEB128(std::vector<byte> section_data, int length, int &start_reference, bool advance) {
+	if (advance)return unsignedLEB128(section_data, length, start_reference);
+	int start = start_reference;// value
+	return unsignedLEB128(section_data, length, start);// keep start_reference untouched!
 }
 
 int unsignedLEB128(Code section_data, int length, int &start) {
@@ -448,23 +455,13 @@ static void ApplyRelocation(const Section *section, const wabt::Reloc *r) {
 	size_t section_size = section->size;
 
 	Index cur_value = 0, new_value = 0;
-	wabt::ReadU32Leb128(section_data + r->offset, section_data + section_size, &cur_value);
+	int leb_bytes = wabt::ReadU32Leb128(section_data + r->offset, section_data + section_size, &cur_value);
 
 	switch (r->type) {
+		// todo INSERT if leb > old value for all types!
 		case RelocType::FuncIndexLEB: {
 			new_value = binary->RelocateFuncIndex(cur_value);
-			// if calls are padded
-			short nop_offset = r->offset + 1;
-			// todo : restore carefully
-			while (section_data[nop_offset] == 0x80) {
-				*(section_data + nop_offset++) = 0x01;// NOP the rest!
-			}
-//			*(section_data + nop_offset) = 0x01;// one more? NOPE!
-			int leb_length = nop_offset;
-			unsignedLEB128((bytes) section_data, section_size, leb_length);
-			// todo : restore carefully
-//			while (leb_length-- > 0) *(section_data + nop_offset) = 0x01;// MORE NOPs to delete the old value
-
+//			while (leb_bytes-->0) *(section_data + r->offset +leb_bytes ) = 0x01; // NOPs to delete the old value
 			WriteU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
 		}
 			break;
@@ -478,8 +475,12 @@ static void ApplyRelocation(const Section *section, const wabt::Reloc *r) {
 			break;
 		case RelocType::GlobalIndexLEB:
 			new_value = binary->RelocateGlobalIndex(cur_value);
-			WriteFixedU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
-			break;
+			// todo INSERT if leb > old value!?
+//			WriteFixedU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
+			WriteU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
+			break; // versus :
+		case RelocType::GlobalIndexI32:
+//			new_value = binary->RelocateGlobalIndex(cur_value);
 		case RelocType::TableIndexI32:
 		case RelocType::MemoryAddressLEB:
 		case RelocType::MemoryAddressSLEB:
@@ -490,7 +491,6 @@ static void ApplyRelocation(const Section *section, const wabt::Reloc *r) {
 //				case RelocType::EventIndexLEB:
 		case RelocType::MemoryAddressRelSLEB:
 		case RelocType::TableIndexRelSLEB:
-		case RelocType::GlobalIndexI32:
 		case RelocType::MemoryAddressLEB64:
 		case RelocType::MemoryAddressSLEB64:
 		case RelocType::MemoryAddressI64:
@@ -514,9 +514,7 @@ static void ApplyRelocations(const Section *section) {
 	if (section->relocations.size() <= 0) {
 		return;
 	}
-
 	LOG_DEBUG("ApplyRelocations: %s\n", GetSectionName(section->section_code));
-
 	// Perform relocations in-place.
 	for (const Reloc &reloc: section->relocations) {
 		ApplyRelocation(section, &reloc);
@@ -647,17 +645,20 @@ void Linker::WriteExportSection() {
 	WriteU32Leb128(&stream_, total_exports, "export count");
 
 	for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+		if (not binary->needs_relocate) {
+			warn("binary "s + binary->name + " marked as needs_relocate = false");
+			continue;
+		}
 		for (const Export &export_: binary->exports) {
 			WriteStr(&stream_, s(export_.name), "export name");
 			stream_.WriteU8Enum(export_.kind, "export kind");
 			Index index = export_.index;
 			switch (export_.kind) {
 				case ExternalKind::Func:
-					if (binary->needs_relocate)
-						index = binary->RelocateFuncIndex(index);
+					index = binary->RelocateFuncIndex(index);
 					break;
 				default:
-//					WABT_FATAL("unsupport export type: %d %s\n", static_cast<int>(export_.kind), export_.name.data);
+					WABT_FATAL("unsupport export type: %d %s\n", static_cast<int>(export_.kind), export_.name.data);
 					break;
 			}
 			WriteU32Leb128(&stream_, index, "export index");
@@ -914,7 +915,7 @@ bool Linker::WriteCombinedSection(BinarySection section_code, const SectionPtrVe
 		case BinarySection::Data:
 			WriteDataSection(sections, total_count);
 			break;
-		default: {
+		default: { // just append
 			// Total section size includes the element count leb128.
 			total_size += U32Leb128Length(total_count);
 
@@ -1186,16 +1187,17 @@ Section *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, BinarySe
 	return nullptr;
 }
 
+// relocs can either be provided as custom section, or inferred from the linker. todo: don't infer if provided
 List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section) {
 	List<Reloc> relocs;
-	std::vector<uint8_t> &section_data = binary->data;// LATER plus section_offset todo shared Code view
+	std::vector<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
 	size_t section_offset = section->offset + 1;// into binary data
 //	DataSegment section_data = ;// *pSection->data.data_segments->data();
 	Index binary_delta = binary->delta;
 	size_t section_size = section->size;
 //	Index import_border = binary->imported_function_index_offset;// todo for current binary or for ALL?
 	unsigned long old_import_border = binary->function_imports.size();
-	int length = section_data.size();
+	int length = binary_data.size();
 	int current = section_offset;
 	bool begin_function = true;
 	int current_fun = 0;
@@ -1205,14 +1207,14 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 		if (begin_function) {
 			begin_function = false;
 			current_name = binary->functions[current_fun].name;
-			int fun_length = unsignedLEB128(section_data, length, current);// length of ONE function
+			int fun_length = unsignedLEB128(binary_data, length, current, true);// length of ONE function
 			fun_end = current + fun_length;
-			int locals = unsignedLEB128(section_data, length, current);
+			int locals = unsignedLEB128(binary_data, length, current, true);
 			if (current_name.data)// else what is this #2 test/merge/main2.wasm :: (null)
 				printf("#%d %s :: %s (#%d)\n", current_fun, binary->name, current_name.data, locals);
 			current += locals * 2;// nr+type
 		}
-		byte b = section_data[current++];
+		byte b = binary_data[current++];
 		if (current >= fun_end) {
 			begin_function = true;
 			current_fun++;
@@ -1222,27 +1224,31 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 		Opcodes op = (Opcodes) b;
 		Opcode opcode = Opcode::FromCode(b);
 		if (op == call_) {
-			short nop_offset = current;
-			short index = unsignedLEB128(section_data, length, current);
+			short index = unsignedLEB128(binary_data, length, current, false);
 			Index neu = binary->RelocateFuncIndex(index);
+			if (index != neu) {
+				Reloc reloc(wabt::RelocType::FuncIndexLEB, current - section_offset + 1, neu);
+				relocs.add(reloc);
+			}
+#ifdef DEBUG
 			String function_name;
 			if (index < old_import_border) {
 				FunctionImport &anImport = binary->function_imports[index];
 				function_name = "IMPORT "s + anImport.name;
-//				anImport.linked_function;
-//				neu= anImport.foreign_index;// or anImport.sig_index + binary->import_delta;
 			} else {
 				Func &callee = binary->functions[index - binary->function_imports.size()];// old index + offset!
 				function_name = callee.name;
-//				neu = index + binary_delta;
-			}
-			if (index != neu) {
-				Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset - section_offset + 1, neu);
-				relocs.add(reloc);
 			}
 			printf("CALL %s %s calls %s $%d -> %d\n", binary->name, current_name.data, function_name.data, index, neu);
+#endif
 		} else if (op == global_get) {
-			todo("reloc global_get");
+			short index = unsignedLEB128(binary_data, length, current, false);
+			Index neu = index + binary->global_index_offset;
+//			Reloc reloc(wabt::RelocType::GlobalIndexI32, current - section_offset + 1, neu);
+//			relocs.add(reloc);
+			Reloc reloc2(wabt::RelocType::GlobalIndexLEB, current - section_offset + 1, neu);
+			relocs.add(reloc2);
+//			todo("reloc global_get");
 		} else if (op == global_set) {
 			todo("reloc global_get");
 		} else if (op >= i32_load and op <= i32_store_16) {
@@ -1252,7 +1258,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 			if (arg_bytes > 0)
 				current += arg_bytes;
 			else if (arg_bytes == leb) {
-				unsignedLEB128(section_data, length, current);// start passed as reference will be MODIFIED!!
+				unsignedLEB128(binary_data, length, current, true);// start passed as reference will be MODIFIED!!
 			} // auto variable argument(s)
 			else if (arg_bytes == -1) {
 				printf("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);

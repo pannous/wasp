@@ -30,19 +30,19 @@ namespace wabt {
 	struct WriteBinaryOptions {
 		WriteBinaryOptions() = default;
 
-		WriteBinaryOptions(const Features &features,
-		                   bool canonicalize_lebs,
-		                   bool relocatable,
-		                   bool write_debug_names)
-				: features(features),
-				  canonicalize_lebs(canonicalize_lebs),
-				  relocatable(relocatable),
-				  write_debug_names(write_debug_names) {}
+//		WriteBinaryOptions(const Features &features,
+//		                   bool canonicalize_lebs,
+//		                   bool relocatable,
+//		                   bool write_debug_names)
+//				: features(features),
+//				  canonicalize_lebs(canonicalize_lebs),
+//				  relocatable(relocatable),
+//				  write_debug_names(write_debug_names) {}
 
 		Features features;
 		bool canonicalize_lebs = true;
 		bool relocatable = false;
-		bool write_debug_names = false;
+		bool write_debug_names = true;
 	};
 
 	Result WriteBinaryModule(Stream *, const Module *, const WriteBinaryOptions &);
