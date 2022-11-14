@@ -154,7 +154,7 @@ void remove_function(wabt::Module *module, chars fun) {
 
 void write_module(wabt::Module *module, chars file = 0) {
 //	string_view filename = module->loc.filename;
-	std::string filename = module->loc.filename.to_string();
+	std::string filename = module->loc.name.to_string();
 //	if (fileempty(name)) filename = "out.wasm";
 	if (file)filename = file;
 //	FileStream *stream = new FileStream(filename);
@@ -187,7 +187,7 @@ wabt::Module *refactor_wasm(wabt::Module *module, chars old_name, chars new_name
 			f->name = new_name;
 //	const string_view out = "refactored_" + module->loc.filename;
 //	printf("%s",out.to_string().data());
-	module->loc.filename = "out.wasm";
+	module->loc.name = "out.wasm";
 	write_module(module);
 	return module;
 }
@@ -250,7 +250,7 @@ wabt::Module *readWasm(char const *file) {
 	unsigned char buffer[size];
 	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
 	wabt::Module *module = read_wasm(buffer, size, file);
-	check(module->loc.filename == file);
+	check(module->loc.name == file);
 	return module;
 }
 //
