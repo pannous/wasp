@@ -23,14 +23,14 @@ panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα
 
 void testMergeOwn() {
 #ifdef INCLUDE_MERGER
-	Module &main = loadModule("test/merge/main.wasm");
+	Module &main = loadModule("test/merge/main2.wasm");
 	Module &lib = loadModule("test/merge/lib3.wasm");
 	Code merged = merge_binaries(main.code, lib.code);
 //	Code merged = merge_binaries(lib.code,main.code);
 	merged.save();
 	int i = merged.run();
 	assert_equals(i, 42);
-//	exit(1);
+	exit(1);
 #endif
 }
 

@@ -2223,6 +2223,8 @@ void testCurrent() {
 //	data_mode = false; // a=b => a,=,b before analysis
 //	clearAnalyzerContext();
 //	assert_emit("3", 3);
+	testMergeOwn();
+	assert_run("'123' is '123'", true);
 	skip(
 			testListGrow();
 	)
@@ -2239,7 +2241,6 @@ void testCurrent() {
 	assert_is("(1 4 3)#2", 4);//
 	assert_emit("use log; log10(100)", 2.);
 	skip(
-			assert_run("'123' is '123'", true);
 			testMergeRelocate();
 	)
 
