@@ -657,6 +657,9 @@ void Linker::WriteExportSection() {
 				case ExternalKind::Func:
 					index = binary->RelocateFuncIndex(index);
 					break;
+				case ExternalKind::Global:
+					index = binary->RelocateFuncIndex(index);
+					break;
 				default:
 					WABT_FATAL("unsupport export type: %d %s\n", static_cast<int>(export_.kind), export_.name.data);
 					break;
@@ -1191,19 +1194,20 @@ Section *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, BinarySe
 List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section) {
 	List<Reloc> relocs;
 	std::vector<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
-	size_t section_offset = section->offset + 1;// into binary data
+	int length = binary_data.size();
+	size_t section_offset = section->offset;// into binary data
+	int current = section_offset;
+	int function_count = unsignedLEB128(binary_data, length, current, true);
 //	DataSegment section_data = ;// *pSection->data.data_segments->data();
 	Index binary_delta = binary->delta;
 	size_t section_size = section->size;
 //	Index import_border = binary->imported_function_index_offset;// todo for current binary or for ALL?
 	unsigned long old_import_border = binary->function_imports.size();
-	int length = binary_data.size();
-	int current = section_offset;
 	bool begin_function = true;
 	int current_fun = 0;
 	String current_name = "?";
 	int fun_end = length;
-	while (current < length and current - section_offset < section_size) {// go over ALL functions! ignore 00
+	while (current_fun < function_count && current < length and current - section_offset < section_size) {// go over ALL functions! ignore 00
 		if (begin_function) {
 			begin_function = false;
 			current_name = binary->functions[current_fun].name;
@@ -1217,6 +1221,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 		byte b = binary_data[current++];
 		if (current >= fun_end) {
 			begin_function = true;
+//			printf("B >>>>>>>>>>>>> %x <<<<<<<<<<<<<<  ", b);
 			current_fun++;
 //			trace("begin_function %d\n", current_fun);
 			continue;
