@@ -122,8 +122,6 @@ void parseFunctionNames(Code &payload) {
 		index = unsignedLEB128(payload);
 		if (index < 0 or index > 100000)
 			error("broken index"s + index);
-		if (i != index)// in partial main.wasm
-			warn("index out of order "s + i + " <> " + index);// doesn't happen
 		String func = name(payload).clone();// needs to be 0-terminated now
 		Function &function = module->functions[func];
 		function.index = index;
