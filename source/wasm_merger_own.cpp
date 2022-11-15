@@ -455,13 +455,14 @@ static void ApplyRelocation(const Section *section, const wabt::Reloc *r) {
 	size_t section_size = section->size;
 
 	Index cur_value = 0, new_value = 0;
+	// todo: what if value at reloc location is not LEB ? does this ever happen?
 	int leb_bytes = wabt::ReadU32Leb128(section_data + r->offset, section_data + section_size, &cur_value);
+	while (leb_bytes-- > 0) *(section_data + r->offset + leb_bytes) = 0x01; // NOPs to delete the old value
 
 	switch (r->type) {
-		// todo INSERT if leb > old value for all types!
+		// todo INSERT if leb > old value for all types!  we do have &binary->data as vector so it's easy!
 		case RelocType::FuncIndexLEB: {
 			new_value = binary->RelocateFuncIndex(cur_value);
-//			while (leb_bytes-->0) *(section_data + r->offset +leb_bytes ) = 0x01; // NOPs to delete the old value
 			WriteU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
 		}
 			break;
@@ -475,7 +476,6 @@ static void ApplyRelocation(const Section *section, const wabt::Reloc *r) {
 			break;
 		case RelocType::GlobalIndexLEB:
 			new_value = binary->RelocateGlobalIndex(cur_value);
-			// todo INSERT if leb > old value!?
 //			WriteFixedU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
 			WriteU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
 			break; // versus :
@@ -1241,7 +1241,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 			}
 			printf("CALL %s %s calls %s $%d -> %d\n", binary->name, current_name.data, function_name.data, index, neu);
 #endif
-		} else if (op == global_get) {
+		} else if (op == global_get || op == global_set) {
 			short index = unsignedLEB128(binary_data, length, current, false);
 			Index neu = index + binary->global_index_offset;
 //			Reloc reloc(wabt::RelocType::GlobalIndexI32, current - section_offset + 1, neu);
@@ -1249,8 +1249,8 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 			Reloc reloc2(wabt::RelocType::GlobalIndexLEB, current - section_offset + 1, neu);
 			relocs.add(reloc2);
 //			todo("reloc global_get");
-		} else if (op == global_set) {
-			todo("reloc global_get");
+//		} else if (op == global_set) {
+//			todo("reloc global_get");
 		} else if (op >= i32_load and op <= i32_store_16) {
 			todo("reloc LOAD/STORE");
 		} else {

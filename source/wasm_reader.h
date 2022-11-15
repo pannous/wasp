@@ -3,6 +3,15 @@
 #include "Code.h"
 #include "List.h"
 
+struct Global {
+	int index;
+	String name;
+	Valtype type;
+	bool is_mutable;
+	bool is_import;
+	bool is_export;
+};
+
 class Module {
 public:
 	virtual ~Module() {
@@ -47,6 +56,7 @@ public:
 	Code global_names;
 	Code function_names;
 	int start_index;
+	List<Global> globals;
 	List<String> import_names;
 	List<String> export_names;
 	List<Signature> funcTypes;// implicit index
