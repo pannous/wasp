@@ -102,7 +102,7 @@ Code vec(Code &data, bool consume = true) {
 	return code1;
 }
 
-String &name(Code &wstring) {
+String &name(Code &wstring) {// Shared string view, so don't worry about trailing extra chars
 	int len = unsignedLEB128(wstring);
 	String *string = new String((char *) wstring.data + wstring.start, len, true);
 	wstring.start += len;// advance internally
@@ -175,10 +175,16 @@ void parseImportNames(Code &payload) {// and TYPES!
 	trace("Imports:");
 	for (int i = 0; i < module->import_count and payload.start < payload.length; ++i) {
 		String &mod = name(payload);// module
-		String &name1 = name(payload);// needs to be 0-terminated now
-		int huh = unsignedLEB128(payload);
-		int type = unsignedLEB128(payload);
+		String &name1 = name(payload);// shared is NOT 0 terminated, needs to be 0-terminated now?
 		trace(name1);
+		int kind = unsignedLEB128(payload);// func, global, …
+		int type = unsignedLEB128(payload);// i32 … for globals
+		if (kind == 3 /*global import*/ ) {
+			bool is_mutable = unsignedLEB128(payload);
+			Global global{i, name1, (Valtype) type, is_mutable, true, false};
+			module->globals.add(global);
+			continue;
+		}
 		Signature &signature = module->funcTypes[type];
 		module->functionIndices[name1] = i;
 		module->functions[name1].signature.merge(signature);
