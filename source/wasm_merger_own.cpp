@@ -1221,7 +1221,6 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 		byte b = binary_data[current++];
 		if (current >= fun_end) {
 			begin_function = true;
-//			printf("B >>>>>>>>>>>>> %x <<<<<<<<<<<<<<  ", b);
 			current_fun++;
 //			trace("begin_function %d\n", current_fun);
 			continue;
@@ -1232,7 +1231,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 			short index = unsignedLEB128(binary_data, length, current, false);
 			Index neu = binary->RelocateFuncIndex(index);
 			if (index != neu) {
-				Reloc reloc(wabt::RelocType::FuncIndexLEB, current - section_offset + 1, neu);
+				Reloc reloc(wabt::RelocType::FuncIndexLEB, current - section_offset, neu);
 				relocs.add(reloc);
 			}
 #ifdef DEBUG
@@ -1249,9 +1248,9 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 		} else if (op == global_get || op == global_set) {
 			short index = unsignedLEB128(binary_data, length, current, false);
 			Index neu = index + binary->global_index_offset;
-//			Reloc reloc(wabt::RelocType::GlobalIndexI32, current - section_offset + 1, neu);
+//			Reloc reloc(wabt::RelocType::GlobalIndexI32, current - section_offset , neu);
 //			relocs.add(reloc);
-			Reloc reloc2(wabt::RelocType::GlobalIndexLEB, current - section_offset + 1, neu);
+			Reloc reloc2(wabt::RelocType::GlobalIndexLEB, current - section_offset, neu);
 			relocs.add(reloc2);
 //			todo("reloc global_get");
 //		} else if (op == global_set) {
