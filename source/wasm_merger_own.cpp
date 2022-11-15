@@ -1191,19 +1191,20 @@ Section *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, BinarySe
 List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section) {
 	List<Reloc> relocs;
 	std::vector<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
-	size_t section_offset = section->offset + 1;// into binary data
+	int length = binary_data.size();
+	size_t section_offset = section->offset;// into binary data
+	int current = section_offset;
+	int fun_count = unsignedLEB128(binary_data, length, current, true);// length of ONE function
 //	DataSegment section_data = ;// *pSection->data.data_segments->data();
 	Index binary_delta = binary->delta;
 	size_t section_size = section->size;
 //	Index import_border = binary->imported_function_index_offset;// todo for current binary or for ALL?
 	unsigned long old_import_border = binary->function_imports.size();
-	int length = binary_data.size();
-	int current = section_offset;
 	bool begin_function = true;
 	int current_fun = 0;
 	String current_name = "?";
 	int fun_end = length;
-	while (current < length and current - section_offset < section_size) {// go over ALL functions! ignore 00
+	while (current_fun < fun_count and current < length and current - section_offset < section_size) {// go over ALL functions! ignore 00
 		if (begin_function) {
 			begin_function = false;
 			current_name = binary->functions[current_fun].name;
@@ -1227,7 +1228,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 			short index = unsignedLEB128(binary_data, length, current, false);
 			Index neu = binary->RelocateFuncIndex(index);
 			if (index != neu) {
-				Reloc reloc(wabt::RelocType::FuncIndexLEB, current - section_offset + 1, neu);
+				Reloc reloc(wabt::RelocType::FuncIndexLEB, current - section_offset, neu);
 				relocs.add(reloc);
 			}
 #ifdef DEBUG
@@ -1244,9 +1245,9 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 		} else if (op == global_get || op == global_set) {
 			short index = unsignedLEB128(binary_data, length, current, false);
 			Index neu = index + binary->global_index_offset;
-//			Reloc reloc(wabt::RelocType::GlobalIndexI32, current - section_offset + 1, neu);
+//			Reloc reloc(wabt::RelocType::GlobalIndexI32, current - section_offset , neu);
 //			relocs.add(reloc);
-			Reloc reloc2(wabt::RelocType::GlobalIndexLEB, current - section_offset + 1, neu);
+			Reloc reloc2(wabt::RelocType::GlobalIndexLEB, current - section_offset, neu);
 			relocs.add(reloc2);
 //			todo("reloc global_get");
 //		} else if (op == global_set) {
