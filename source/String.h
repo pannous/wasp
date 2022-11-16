@@ -720,6 +720,14 @@ public:
 		return *this;
 	}
 
+//	bool operator!=(const String s) {// const
+//		return this != &s;
+//	}
+
+//	bool operator!=(String s) {// const
+//		return this != &s;
+//	}
+
 	bool operator!=(String &s) {// const
 		if (this->empty())return !s.empty();
 		if (s.empty())return !this->empty();
@@ -749,7 +757,7 @@ public:
 	}
 
 	bool operator!=(char *c) {
-		return eq(data, c);
+		return !eq(data, c);
 	}
 
 
@@ -996,6 +1004,8 @@ extern String EMPTY;// = String('\0');
 //String operator "" _(chars c, unsigned long );
 //String operator "" _s(chars c, unsigned long );
 void print(String *s);
+//void print(char *s);
+//void print(const char *s);
 
 void print(String s);
 
