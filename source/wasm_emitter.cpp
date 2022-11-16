@@ -2415,9 +2415,11 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 
 
 //extern "C"
-Code &compile(String code) {
-	clearEmitterContext();
-	clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
+Code &compile(String code, bool clean) {
+	if (clean) {
+		clearEmitterContext();
+		clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
+	}
 //	preRegisterSignatures();
 	Node parsed = parse(code);
 	Node &ast = analyze(parsed);

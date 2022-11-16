@@ -19,17 +19,31 @@ panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα
 #else
 #define assert_run(a, b) skip(a)
 #endif
+void testMergeGlobal() {
+	Module &main = loadModule("test/merge/main_global.wasm");
+	Module &lib = loadModule("test/merge/lib_global.wasm");
+	Code merged = merge_binaries(main.code, lib.code);
+	int i = merged.save().run();
+	assert_equals(i, 42);
+}
 
+void testMergeMemory() {
+	Module &main = loadModule("test/merge/main2.wasm");
+	Module &lib = loadModule("test/merge/lib_memory.wasm");
+	Code merged = merge_binaries(main.code, lib.code);
+	int i = merged.save().run();
+	assert_equals(i, 42);
+}
 
 void testMergeOwn() {
+//	testMergeGlobal();
+//	testMergeMemory();
 #ifdef INCLUDE_MERGER
 	Module &main = loadModule("test/merge/main2.wasm");
 	Module &lib = loadModule("test/merge/lib4.wasm");
-
 	Code merged = merge_binaries(main.code, lib.code);
 //	Code merged = merge_binaries(lib.code,main.code);
-	merged.save();
-	int i = merged.run();
+	int i = merged.save().run();
 	assert_equals(i, 42);
 	exit(1);
 #endif
