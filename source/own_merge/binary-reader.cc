@@ -211,7 +211,7 @@ namespace wabt {
 			TypeMutVector fields_;
 			std::vector<Index> target_depths_;
 			const ReadBinaryOptions &options_;
-			BinarySection last_known_section_ = BinarySection::Invalid;
+			SectionType last_known_section_ = SectionType::Invalid;
 			bool did_read_names_section_ = false;
 			bool reading_custom_section_ = false;
 			Index num_func_imports_ = 0;
@@ -238,7 +238,7 @@ namespace wabt {
 //				  delegate_(options.log_stream ? &logging_delegate_ : delegate),
                   delegate_(delegate),
                   options_(options),
-                  last_known_section_(BinarySection::Invalid) {
+                  last_known_section_(SectionType::Invalid) {
 			delegate->OnSetState(&state_);
 		}
 
@@ -2698,7 +2698,7 @@ namespace wabt {
 		Result BinaryReader::ReadSections() {
 			Result result = Result::Ok;
 			Index section_index = 0;
-			bool seen_section_code[static_cast<int>(BinarySection::Last) + 1] = {false};
+			bool seen_section_code[static_cast<int>(SectionType::Last) + 1] = {false};
 
 			for (; state_.offset < state_.size; ++section_index) {
 				uint8_t section_code;
@@ -2712,8 +2712,8 @@ namespace wabt {
 					return Result::Error;
 				}
 
-				BinarySection section = static_cast<BinarySection>(section_code);
-				if (section != BinarySection::Custom) {
+				SectionType section = static_cast<SectionType>(section_code);
+				if (section != SectionType::Custom) {
 					if (seen_section_code[section_code]) {
 						PrintError("multiple %s sections", GetSectionName(section));
 						return Result::Error;
@@ -2725,12 +2725,12 @@ namespace wabt {
 				             "invalid section size: extends past end");
 
 				ERROR_UNLESS(
-						last_known_section_ == BinarySection::Invalid ||
-						section == BinarySection::Custom ||
+						last_known_section_ == SectionType::Invalid ||
+						section == SectionType::Custom ||
 						GetSectionOrder(section) > GetSectionOrder(last_known_section_),
 						"section %s out of order", GetSectionName(section));
 
-				ERROR_UNLESS(!did_read_names_section_ || section == BinarySection::Custom,
+				ERROR_UNLESS(!did_read_names_section_ || section == SectionType::Custom,
 				             "%s section can not occur after Name section",
 				             GetSectionName(section));
 
@@ -2739,7 +2739,7 @@ namespace wabt {
 				bool stop_on_first_error = options_.stop_on_first_error;
 				Result section_result = Result::Error;
 				switch (section) {
-					case BinarySection::Custom:
+					case SectionType::Custom:
 						section_result = ReadCustomSection(section_index, section_size);
 						if (options_.fail_on_custom_section_error) {
 							result |= section_result;
@@ -2747,66 +2747,66 @@ namespace wabt {
 							stop_on_first_error = false;
 						}
 						break;
-					case BinarySection::Type:
+					case SectionType::Type:
 						section_result = ReadTypeSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Import:
+					case SectionType::Import:
 						section_result = ReadImportSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Function:
+					case SectionType::Function:
 						section_result = ReadFunctionSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Table:
+					case SectionType::Table:
 						section_result = ReadTableSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Memory:
+					case SectionType::Memory:
 						section_result = ReadMemorySection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Global:
+					case SectionType::Global:
 						section_result = ReadGlobalSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Export:
+					case SectionType::Export:
 						section_result = ReadExportSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Start:
+					case SectionType::Start:
 						section_result = ReadStartSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Elem:
+					case SectionType::Elem:
 						section_result = ReadElemSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Code:
+					case SectionType::Code:
 						section_result = ReadCodeSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Data:
+					case SectionType::Data:
 						section_result = ReadDataSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Tag:
+					case SectionType::Tag:
 						ERROR_UNLESS(options_.features.exceptions_enabled(),
 						             "invalid section code: %u",
 						             static_cast<unsigned int>(section));
 						section_result = ReadTagSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::DataCount:
+					case SectionType::DataCount:
 						ERROR_UNLESS(options_.features.bulk_memory_enabled(),
 						             "invalid section code: %u",
 						             static_cast<unsigned int>(section));
 						section_result = ReadDataCountSection(section_size);
 						result |= section_result;
 						break;
-					case BinarySection::Event:
-					case BinarySection::Invalid:
+					case SectionType::Event:
+					case SectionType::Invalid:
 						WABT_UNREACHABLE;
 				}
 
@@ -2827,7 +2827,7 @@ namespace wabt {
 					state_.offset = read_end_;
 				}
 
-				if (section != BinarySection::Custom) {
+				if (section != SectionType::Custom) {
 					last_known_section_ = section;
 				}
 			}

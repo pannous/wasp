@@ -83,7 +83,7 @@ namespace wabt {
 		virtual Result EndModule() = 0;//{ return Result::Ok; };
 
 		virtual Result BeginSection(Index section_index,
-		                            BinarySection section_type,
+		                            SectionType section_type,
 		                            Offset size) = 0;
 
 		/* Custom section */

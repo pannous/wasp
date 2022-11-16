@@ -65,8 +65,7 @@ namespace wabt {
 
 	void WriteFixedU32Leb128(Stream *stream, uint32_t value, const char *desc) {
 		uint8_t data[MAX_U32_LEB128_BYTES];
-		Offset length =
-				WriteFixedU32Leb128Raw(data, data + MAX_U32_LEB128_BYTES, value);
+		Offset length = WriteFixedU32Leb128Raw(data, data + MAX_U32_LEB128_BYTES, value);
 		stream->WriteData(data, length, desc);
 	}
 
@@ -87,7 +86,7 @@ namespace wabt {
 		Offset length = 0;
 		LEB128_LOOP_UNTIL(value == 0);// writes and increases length!
 		if (static_cast<Offset>(dest_end - dest) < length) {
-			return 0;
+			return 0;// safety to not write outside bounds
 		}
 		// why not write to dest directly in LEB128_LOOP_UNTIL ?
 		memcpy(dest, data, length);

@@ -90,12 +90,13 @@ namespace wabt {
 			LinkerInputBinary *binary;
 			std::vector<Reloc> relocations; /* The relocations for this section */
 
-			BinarySection section_code;
+			SectionType section_code;
 			size_t size;
 			size_t offset;
 
 			size_t payload_size;
 			size_t payload_offset;
+			size_t payload_increase;// after reloc LEB inserts
 
 			/* For known sections, the count of the number of elements in the section */
 			Index count;
@@ -124,6 +125,8 @@ namespace wabt {
 			Index RelocateFuncIndex(Index findex);
 
 			Index RelocateTypeIndex(Index index);
+
+			Index RelocateMemoryIndex(Index memory_index);
 
 			Index RelocateGlobalIndex(Index index);
 

@@ -395,11 +395,11 @@ namespace wabt {
 			                               Offset leb_size_guess,
 			                               const char *desc);
 
-			void BeginKnownSection(BinarySection section_code);
+			void BeginKnownSection(SectionType section_code);
 
 			void BeginCustomSection(const char *name);
 
-			void WriteSectionHeader(const char *desc, BinarySection section_code);
+			void WriteSectionHeader(const char *desc, SectionType section_code);
 
 			void EndSection();
 
@@ -471,7 +471,7 @@ namespace wabt {
 			Index section_count_ = 0;
 			size_t last_section_offset_ = 0;
 			size_t last_section_leb_size_guess_ = 0;
-			BinarySection last_section_type_ = BinarySection::Invalid;
+			SectionType last_section_type_ = SectionType::Invalid;
 			size_t last_section_payload_offset_ = 0;
 
 			size_t last_subsection_offset_ = 0;
@@ -561,7 +561,7 @@ namespace wabt {
 		}
 
 		void BinaryWriter::WriteSectionHeader(const char *desc,
-		                                      BinarySection section_code) {
+		                                      SectionType section_code) {
 			assert(last_section_leb_size_guess_ == 0);
 			WriteHeader(desc, PRINT_HEADER_NO_INDEX);
 			stream_->WriteU8Enum(section_code, "section code");
@@ -571,7 +571,7 @@ namespace wabt {
 			last_section_payload_offset_ = stream_->offset();
 		}
 
-		void BinaryWriter::BeginKnownSection(BinarySection section_code) {
+		void BinaryWriter::BeginKnownSection(SectionType section_code) {
 			char desc[100];
 //			snprintf(desc, sizeof(desc), "section \"%s\" (%u)", GetSectionName(section_code), static_cast<unsigned>(section_code));
 			WriteSectionHeader(desc, section_code);
@@ -580,7 +580,7 @@ namespace wabt {
 		void BinaryWriter::BeginCustomSection(const char *name) {
 			char desc[100];
 //			snprintf(desc, sizeof(desc), "section \"%s\"", name);
-			WriteSectionHeader(desc, BinarySection::Custom);
+			WriteSectionHeader(desc, SectionType::Custom);
 //			WriteStr(stream_, name, "custom section name", PrintChars::Yes);
 		}
 
@@ -1316,7 +1316,7 @@ namespace wabt {
 			}
 
 			if (module_->types.size()) {
-				BeginKnownSection(BinarySection::Type);
+				BeginKnownSection(SectionType::Type);
 				WriteU32Leb128(stream_, module_->types.size(), "num types");
 				for (size_t i = 0; i < module_->types.size(); ++i) {
 					const TypeEntry *type = module_->types[i];
@@ -1369,7 +1369,7 @@ namespace wabt {
 			}
 
 			if (module_->imports.size()) {
-				BeginKnownSection(BinarySection::Import);
+				BeginKnownSection(SectionType::Import);
 				WriteU32Leb128(stream_, module_->imports.size(), "num imports");
 
 				for (size_t i = 0; i < module_->imports.size(); ++i) {
@@ -1411,7 +1411,7 @@ namespace wabt {
 			assert(module_->funcs.size() >= module_->num_func_imports);
 			Index num_funcs = module_->funcs.size() - module_->num_func_imports;
 			if (num_funcs) {
-				BeginKnownSection(BinarySection::Function);
+				BeginKnownSection(SectionType::Function);
 				WriteU32Leb128(stream_, num_funcs, "num functions");
 
 				for (size_t i = 0; i < num_funcs; ++i) {
@@ -1426,7 +1426,7 @@ namespace wabt {
 			assert(module_->tables.size() >= module_->num_table_imports);
 			Index num_tables = module_->tables.size() - module_->num_table_imports;
 			if (num_tables) {
-				BeginKnownSection(BinarySection::Table);
+				BeginKnownSection(SectionType::Table);
 				WriteU32Leb128(stream_, num_tables, "num tables");
 				for (size_t i = 0; i < num_tables; ++i) {
 					const Table *table = module_->tables[i + module_->num_table_imports];
@@ -1439,7 +1439,7 @@ namespace wabt {
 			assert(module_->memories.size() >= module_->num_memory_imports);
 			Index num_memories = module_->memories.size() - module_->num_memory_imports;
 			if (num_memories) {
-				BeginKnownSection(BinarySection::Memory);
+				BeginKnownSection(SectionType::Memory);
 				WriteU32Leb128(stream_, num_memories, "num memories");
 				for (size_t i = 0; i < num_memories; ++i) {
 					const Memory *memory = module_->memories[i + module_->num_memory_imports];
@@ -1452,7 +1452,7 @@ namespace wabt {
 			assert(module_->tags.size() >= module_->num_tag_imports);
 			Index num_tags = module_->tags.size() - module_->num_tag_imports;
 			if (num_tags) {
-				BeginKnownSection(BinarySection::Tag);
+				BeginKnownSection(SectionType::Tag);
 				WriteU32Leb128(stream_, num_tags, "tag count");
 				for (size_t i = 0; i < num_tags; ++i) {
 					WriteHeader("tag", i);
@@ -1465,7 +1465,7 @@ namespace wabt {
 			assert(module_->globals.size() >= module_->num_global_imports);
 			Index num_globals = module_->globals.size() - module_->num_global_imports;
 			if (num_globals) {
-				BeginKnownSection(BinarySection::Global);
+				BeginKnownSection(SectionType::Global);
 				WriteU32Leb128(stream_, num_globals, "num globals");
 
 				for (size_t i = 0; i < num_globals; ++i) {
@@ -1477,7 +1477,7 @@ namespace wabt {
 			}
 
 			if (module_->exports.size()) {
-				BeginKnownSection(BinarySection::Export);
+				BeginKnownSection(SectionType::Export);
 				WriteU32Leb128(stream_, module_->exports.size(), "num exports");
 
 				for (const Export *export_: module_->exports) {
@@ -1517,14 +1517,14 @@ namespace wabt {
 			if (module_->starts.size()) {
 				Index start_func_index = module_->GetFuncIndex(*module_->starts[0]);
 				if (start_func_index != kInvalidIndex) {
-					BeginKnownSection(BinarySection::Start);
+					BeginKnownSection(SectionType::Start);
 					WriteU32Leb128(stream_, start_func_index, "start func index");
 					EndSection();
 				}
 			}
 
 			if (module_->elem_segments.size()) {
-				BeginKnownSection(BinarySection::Elem);
+				BeginKnownSection(SectionType::Elem);
 				WriteU32Leb128(stream_, module_->elem_segments.size(), "num elem segments");
 				for (size_t i = 0; i < module_->elem_segments.size(); ++i) {
 					ElemSegment *segment = module_->elem_segments[i];
@@ -1582,7 +1582,7 @@ namespace wabt {
 				// Keep track of the data count section offset so it can be removed if
 				// it isn't needed.
 				data_count_start_ = stream_->offset();
-				BeginKnownSection(BinarySection::DataCount);
+				BeginKnownSection(SectionType::DataCount);
 				WriteU32Leb128(stream_, module_->data_segments.size(), "data count");
 				EndSection();
 				data_count_end_ = stream_->offset();
@@ -1590,7 +1590,7 @@ namespace wabt {
 
 			if (num_funcs) {
 				code_start_ = stream_->offset();
-				BeginKnownSection(BinarySection::Code);
+				BeginKnownSection(SectionType::Code);
 				WriteU32Leb128(stream_, num_funcs, "num functions");
 
 				for (size_t i = 0; i < num_funcs; ++i) {
@@ -1626,7 +1626,7 @@ namespace wabt {
 					// only the Code section.  This limits the amount of fixing-up that we
 					// need to do.
 					assert(data_count_end_ == code_start_);
-					assert(last_section_type_ == BinarySection::Code);
+					assert(last_section_type_ == SectionType::Code);
 					stream_->MoveData(data_count_start_, data_count_end_, size);
 				}
 				stream_->Truncate(data_count_start_ + size);
@@ -1637,14 +1637,14 @@ namespace wabt {
 				// that might have captured it.
 				for (RelocSection &section: reloc_sections_) {
 					if (section.section_index == section_count_) {
-						assert(last_section_type_ == BinarySection::Code);
+						assert(last_section_type_ == SectionType::Code);
 						--section.section_index;
 					}
 				}
 			}
 
 			if (module_->data_segments.size()) {
-				BeginKnownSection(BinarySection::Data);
+				BeginKnownSection(SectionType::Data);
 				WriteU32Leb128(stream_, module_->data_segments.size(), "num data segments");
 				for (size_t i = 0; i < module_->data_segments.size(); ++i) {
 					const DataSegment *segment = module_->data_segments[i];

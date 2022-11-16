@@ -353,9 +353,10 @@ namespace wabt {
 		TableNumberLEB = 20,          // e.g. Immediate of table.get
 		MemoryAddressTLSSLEB = 21,    // Address64 relative to __tls_base
 		MemoryAddressTLSI32 = 22,     // Address64 relative to __tls_base
+		PatchCodeBlockSize = 23,     // size of one functions code block, increases after reloc LEB inserts
 
 		First = FuncIndexLEB,
-		Last = MemoryAddressTLSI32,
+		Last = PatchCodeBlockSize
 	};
 	static const int kRelocTypeCount = WABT_ENUM_COUNT(RelocType);
 
