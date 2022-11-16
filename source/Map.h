@@ -30,11 +30,20 @@ public:
 	S *keys;// = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
 	T *values;// = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
 
+	//	bool leave_blank == use_malloc_constructor = true;// return reference to freshly nulled malloc data, same ^^
+	bool use_constructor = true;// *new T() makes sense for List of references but NOT for list of Data!!
+	bool leave_blank = false;//true would be VERY BAD IDEA especially for pointers! todo what is the point?
+	bool use_default = false;// no, this would copy fields (e.g. pointers to same list)  todo what is the point?
+
+	[[maybe_unused]] T defaulty;
+
 	// unnecessary :
 	Map() {
 		keys = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
 		values = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
 	}
+
+	Map(T default0) : defaulty(default0) {}
 
 //
 	Map(const Map &old) : keys(old.keys), values(old.values) {
@@ -156,13 +165,6 @@ public:
 		values = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
 		_size = 0;
 	}
-
-//	bool leave_blank == use_malloc_constructor = true;// return reference to freshly nulled malloc data, same ^^
-	bool use_constructor = true;// *new T() makes sense for List of references but NOT for list of Data!!
-	bool leave_blank = false;//true would be VERY BAD IDEA especially for pointers! todo what is the point?
-	bool use_default = false;// no, this would copy fields (e.g. pointers to same list)  todo what is the point?
-
-	[[maybe_unused]] T defaulty;
 
 	void setDefault(T d) {
 		if (sizeof(T) > 8)
