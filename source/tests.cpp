@@ -2224,6 +2224,10 @@ void testCurrent() {
 //	clearAnalyzerContext();
 //	assert_emit("3", 3);
 	testMergeOwn();
+	assert_run("oka", 42);
+	assert_run("oki", 42);
+	assert_run("oki 1", 43);
+
 	assert_run("'123' is '123'", true);
 	skip(
 			testListGrow();

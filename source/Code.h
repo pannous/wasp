@@ -296,7 +296,7 @@ public:
 		save();
 	}
 
-	void save(char *file_name = "test.wasm") {
+	Code &save(char *file_name = "test.wasm") {
 		if (name.empty())name = file_name;
 #ifndef WASM
 		if (!String(file_name).endsWith(".wasm"))
@@ -305,6 +305,7 @@ public:
 		fwrite(data, length, 1, file);
 		fclose(file);
 #endif
+		return *this;
 	}
 
 	long run() {
