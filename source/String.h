@@ -760,7 +760,6 @@ public:
 		return !eq(data, c);
 	}
 
-
 #define min(a, b) (a < b ? a : b)
 
 	bool operator>(String other) {
