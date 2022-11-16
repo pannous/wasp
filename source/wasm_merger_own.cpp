@@ -749,7 +749,8 @@ void Linker::WriteImportSection() {
 		}
 
 		for (const GlobalImport &global_import: binary->global_imports) {
-			WriteGlobalImport(global_import);
+			if (global_import.active)
+				WriteGlobalImport(global_import);
 		}
 	}
 	FixupSize(fixup);
@@ -954,6 +955,7 @@ void Linker::ResolveSymbols() {
 //	BindingHash private_map;
 	Map<String, FuncInfo *> private_map;
 	std::vector<ExportInfo> export_list;
+	std::vector<ExportInfo> globals_export_list;
 	std::vector<FuncInfo> func_list;// internal index identical to func_map index!!
 	std::vector<FuncInfo> import_list;//
 
@@ -964,14 +966,21 @@ void Linker::ResolveSymbols() {
 		int pos = 0;
 		for (const Export &export_: binary->exports) {// todo: why not store index directly?
 			pos++;
-			printf("%s export %s index %d\n", binary->name, export_.name.data, export_.index);
-			export_list.emplace_back(&export_, binary.get());
+			printf("%s export kind %d '%s' index %d\n", binary->name, export_.kind, export_.name.data, export_.index);
+			if (export_.kind == wabt::ExternalKind::Global)
+				globals_export_list.emplace_back(&export_, binary.get());
+			else
+				export_list.emplace_back(&export_, binary.get());
 			if (export_map.FindIndex(export_.name) != kInvalidIndex) {
 				warn("Ignoring duplicate export name "s + export_.name);
-				binary->exports.erase(binary->exports.begin() + pos);
-			} else
-				export_map.emplace(export_.name, Binding(export_list.size() - 1));
-			// TODO Handle duplicate names.
+//				binary->exports.erase(binary->exports.begin() + pos);
+			} else {
+				if (export_.kind == wabt::ExternalKind::Global)
+					export_map.emplace(export_.name, Binding(globals_export_list.size() - 1));
+				else
+					export_map.emplace(export_.name, Binding(export_list.size() - 1));
+			}
+
 		}
 		for (const Func &func: binary->functions) {// only those with code, not imports
 			if (not empty(func.name)) {
@@ -982,7 +991,8 @@ void Linker::ResolveSymbols() {
 			}
 			func_list.emplace_back(&func, binary.get());
 		}
-//		for (const Func &func: binary->function_imports
+//		for (const Global &func: binary->globals) todo
+
 		// wasp.wasm currently has no binary->debug_names (only exports!) so ignore for now
 //		for (int i = 0; i < binary->debug_names.size(); ++i) {
 //			String &name = binary->debug_names[i];
@@ -1000,9 +1010,30 @@ void Linker::ResolveSymbols() {
 	}
 //	check(export_list[export_map.FindIndex("_Z5atoi0PKc")].export_->index == 18);// todo !!!
 
-	// Iterate through all imported functions resolving them against exported ones.
+	// Iterate through all imported globals and functions resolving them against exported ones.
 	for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
 		if (not binary->needs_relocate)continue;
+		for (GlobalImport &global_import: binary->global_imports) {
+			String &name = global_import.name;
+			Index export_number = export_map.FindIndex(name);
+			if (export_number == kInvalidIndex) {
+				printf("Ignoring unresolved global import %s\n", name.data);
+				continue;
+			}
+			ExportInfo &export_info = globals_export_list[export_number];
+			String export_name = export_info.export_->name;
+//			check(export_info.export_->kind == wabt::ExternalKind::Global);
+			Index export_index = export_info.export_->index;
+			printf("LINKING GLOBAL %s import #%d to export #%d %s \n", name.data, global_import.foreign_index, export_index, export_name.data);
+			global_import.active = false;
+			global_import.foreign_binary = export_info.binary;
+			global_import.foreign_index = export_index;
+//				import.linked_function = &export_info;
+//				import.relocated_function_index = export_number; see RelocateFuncIndex()
+			binary->active_global_imports--;
+		}
+
+
 		for (FunctionImport &import: binary->function_imports) {
 			String &name = import.name;
 			Index export_number = export_map.FindIndex(name);
@@ -1019,7 +1050,7 @@ void Linker::ResolveSymbols() {
 				import.foreign_index = export_index;
 				import.linked_function = &export_info;
 //				import.relocated_function_index = export_number; see RelocateFuncIndex()
-				binary->active_function_imports--;
+				binary->active_function_imports--;// never used!?
 				char *import_name = import.name;
 				char *export_name = exported.name;
 				printf("LINKED %s import #%d %s to export #%d %s relocated_function_index %d \n", name.data, old_index, import_name, export_index, export_name,
@@ -1252,11 +1283,13 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 #endif
 		} else if (op == global_get || op == global_set) {
 			short index = unsignedLEB128(binary_data, length, current, false);
-			Index neu = index + binary->global_index_offset;
+			Index neu = binary->RelocateGlobalIndex(index);
+			if (index != neu) {
+				Reloc reloc2(wabt::RelocType::GlobalIndexLEB, current - section_offset, neu);
+				relocs.add(reloc2);
+			}
 //			Reloc reloc(wabt::RelocType::GlobalIndexI32, current - section_offset , neu);
 //			relocs.add(reloc);
-			Reloc reloc2(wabt::RelocType::GlobalIndexLEB, current - section_offset, neu);
-			relocs.add(reloc2);
 //			todo("reloc global_get");
 //		} else if (op == global_set) {
 //			todo("reloc global_get");
