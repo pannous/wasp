@@ -18,11 +18,11 @@
 
 namespace wabt {
 
-	BinarySectionOrder GetSectionOrder(BinarySection sec) {
+	SectionTypeOrder GetSectionOrder(SectionType sec) {
 		switch (sec) {
 #define V(Name, name, code) \
-  case BinarySection::Name: \
-    return BinarySectionOrder::Name;
+  case SectionType::Name: \
+    return SectionTypeOrder::Name;
 			WABT_FOREACH_BINARY_SECTION(V)
 #undef V
 			default:
@@ -30,10 +30,10 @@ namespace wabt {
 		}
 	}
 
-	const char *GetSectionName(BinarySection sec) {
+	const char *GetSectionName(SectionType sec) {
 		switch (sec) {
 #define V(Name, name, code) \
-  case BinarySection::Name: \
+  case SectionType::Name: \
     return #Name;
 			WABT_FOREACH_BINARY_SECTION(V)
 #undef V

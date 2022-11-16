@@ -32,7 +32,7 @@ namespace wabt {
 		Result EndModule() override { return Result::Ok; }
 
 		Result BeginSection(Index section_index,
-		                    BinarySection section_type,
+		                    SectionType section_type,
 		                    Offset size) override {
 			return Result::Ok;
 		}
