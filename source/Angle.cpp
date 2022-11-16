@@ -164,7 +164,7 @@ Node eval(String code) {
 	else
 #endif
 	{
-		Code &binary = compile(code);
+		Code &binary = compile(code, true);
 		binary.save();// to debug
 		long results = binary.run();
 		auto resultNode = smartNode(results);
@@ -1284,7 +1284,7 @@ Node runtime_emit(String prog) {
 	Module &runtime = loadModule("wasp.wasm");
 //	check(libraries.size() == 1)
 	runtime.needs_relocate = false;
-	Code code = compile(prog);// should use libraries!
+	Code code = compile(prog, false);// should use libraries!
 	code.save("merged.wasm");
 	long result = code.run();// todo parse stdout string as node and merge with emit() !
 	return smartNode(result);
