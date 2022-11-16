@@ -22,8 +22,11 @@ extern void error1(chars message, chars file = 0, int line = 0);
 
 
 //#define check(test) if(test){log("\nOK check passes: ");log(#test);}else{if(debug_reader)printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-//#define check_eq(α, β) if((α)!=(β)){if(debug_reader)printf("%s != %s : ",#α,#β);log(α);if(debug_reader)printf("!=");log(β);if(debug_reader)printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+//if(debug_reader)
+//if(debug_reader)
+#define check_eq(α, β) if((α)!=(β)){printf("%s != %s : ",#α,#β);print(α);printf("!=");print(β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 
+//#define check_eq assert_equals // no
 
 #define check(test) printf("CHECKING %s\n%s:%d\n",#test,__FILE__,__LINE__); \
   if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}

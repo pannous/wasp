@@ -951,6 +951,8 @@ void Linker::ResolveSymbols() {
 	Map<String, int> name_map;// from debug section to
 	// ⚠️ all indices here map into into following LIST, not into wasm!! so TWO indirections!
 	BindingHash export_map;
+//	BindingHash private_map;
+	Map<String, FuncInfo *> private_map;
 	std::vector<ExportInfo> export_list;
 	std::vector<FuncInfo> func_list;// internal index identical to func_map index!!
 	std::vector<FuncInfo> import_list;//
@@ -976,6 +978,7 @@ void Linker::ResolveSymbols() {
 				printf("func.name %s, func.index %d\n", func.name.data, func.index);
 //				check(func_list.size()==func.index);
 				func_map.emplace(func.name, func.index);
+				private_map[String(func.name)] = new FuncInfo{&func, binary.get()};
 			}
 			func_list.emplace_back(&func, binary.get());
 		}
@@ -1040,7 +1043,9 @@ void Linker::ResolveSymbols() {
 					error("can't find undefined symbol: "s + name);
 				}
 //				check(func_list[func_index].func);
-				FuncInfo &funcInfo = func_list[func_index];
+				FuncInfo funcInfo = *private_map[name];
+//				FuncInfo &funcInfo = func_list[func_index];
+				check_eq(name, funcInfo.func->name.data);
 				import.active = false;
 				import.foreign_binary = funcInfo.binary;
 				import.foreign_index = funcInfo.func->index;
