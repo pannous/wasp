@@ -28,7 +28,7 @@ void testMergeGlobal() {
 }
 
 void testMergeMemory() {
-	Module &main = loadModule("test/merge/main2.wasm");
+	Module &main = loadModule("test/merge/main_memory.wasm");
 	Module &lib = loadModule("test/merge/lib_memory.wasm");
 	Code merged = merge_binaries(main.code, lib.code);
 	int i = merged.save().run();

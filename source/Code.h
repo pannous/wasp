@@ -145,6 +145,13 @@ public:
 		length = len + 1;
 	}
 
+	byte *begin() {
+		return data;
+	}
+
+	byte *end() {
+		return data + length;
+	}
 
 	Code operator++() {
 		if (length == 0)return Code();
@@ -968,3 +975,5 @@ Code &signedLEB128(long value);
 #endif //WASP_CODE_H
 
 Signature &getSignature(String name);
+
+short lebByteSize(long neu);

@@ -11,7 +11,7 @@ typedef byte *bytes;
 
 #define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
 #define error(msg) error1(msg,__FILE__,__LINE__)
-#define todo(msg) error1(msg,__FILE__,__LINE__)
+#define todo(msg) error1(str("TODO ") + msg,__FILE__,__LINE__)
 //
 //void todo(chars error);
 

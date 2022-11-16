@@ -38,7 +38,7 @@ namespace wabt {
 			public:
 				explicit BinaryReaderLinker(LinkerInputBinary *binary);
 
-				Result BeginSection(Index section_index, BinarySection section_type, Offset size) override;
+				Result BeginSection(Index section_index, SectionType section_type, Offset size) override;
 
 				Result OnImportFunc(Index import_index,
 				                    String module_name,
@@ -107,8 +107,8 @@ namespace wabt {
 			Result BinaryReaderLinker::OnRelocCount(Index count, Index section_code) {
 //                                        BinarySection section_code,
 //                                        String section_name) {
-				BinarySection section_code0 = (BinarySection) (int) section_code;
-				if (section_code == (int) BinarySection::Custom) {
+				SectionType section_code0 = (SectionType) (int) section_code;
+				if (section_code == (int) SectionType::Custom) {
 					WABT_FATAL("relocation for custom sections not yet supported\n");
 				}
 
@@ -190,7 +190,7 @@ namespace wabt {
 //  func_types_.push_back(func_type);
 			}
 
-			Result BinaryReaderLinker::BeginSection(Index section_index, BinarySection section_code,
+			Result BinaryReaderLinker::BeginSection(Index section_index, SectionType section_code,
 			                                        Offset size) {
 				Section *sec = new Section();
 				binary_->sections.emplace_back(sec);
@@ -200,8 +200,8 @@ namespace wabt {
 				sec->offset = state->offset;
 				sec->binary = binary_;
 
-				if (sec->section_code != BinarySection::Custom &&
-				    sec->section_code != BinarySection::Start) {
+				if (sec->section_code != SectionType::Custom &&
+				    sec->section_code != SectionType::Start) {
 					const uint8_t *start = &binary_->data[sec->offset];
 					// Must point to one-past-the-end, but we can't dereference end().
 					const uint8_t *end = &binary_->data.back() + 1;
@@ -256,7 +256,7 @@ namespace wabt {
 			Result BinaryReaderLinker::OnInitExprI32ConstExpr(Index index, uint32_t value) {
 				Section *sec = current_section_;
 				// kf  or not sec->data.data_segments or sec->data.data_segments->size() == 0 ±
-				if (sec->section_code != BinarySection::Data) {
+				if (sec->section_code != SectionType::Data) {
 					return Result::Ok;
 				}
 				DataSegment &segment = sec->data.data_segments->back();
@@ -268,7 +268,7 @@ namespace wabt {
 			                                             const void *src_data,
 			                                             Address64 size) {
 				Section *sec = current_section_;
-				if (not sec->data.data_segments)return Result::Ok;// kf 2022
+				if (not sec->data.data_segments)error("sec->data.data_segments not initialized");
 				DataSegment &segment = sec->data.data_segments->back();
 				segment.data = static_cast<const uint8_t *>(src_data);
 				segment.size = size;

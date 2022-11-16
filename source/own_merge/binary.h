@@ -194,7 +194,7 @@ private:
 namespace wabt {
 
 /* clang-format off */
-	enum class BinarySection {
+	enum class SectionType {
 		Invalid = ~0, // ~0 ??
 		Custom = 0,
 		Type = 1,
@@ -219,17 +219,17 @@ namespace wabt {
 		Last = Tag
 	};
 /* clang-format on */
-	static const int kBinarySectionCount = WABT_ENUM_COUNT(BinarySection);
+	static const int kBinarySectionCount = WABT_ENUM_COUNT(SectionType);
 
-	enum class BinarySectionOrder {
+	enum class SectionTypeOrder {
 #define V(Name, name, code) Name,
 		WABT_FOREACH_BINARY_SECTION(V)
 #undef V
 	};
 
-	BinarySectionOrder GetSectionOrder(BinarySection);
+	SectionTypeOrder GetSectionOrder(SectionType);
 
-	const char *GetSectionName(BinarySection);
+	const char *GetSectionName(SectionType);
 
 	enum class NameSectionSubsection {
 		Module = 0,
