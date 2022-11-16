@@ -59,6 +59,9 @@ namespace wabt {
 			String name;
 			wabt::Type type;
 			bool mutable_;
+			bool active = true;
+			LinkerInputBinary *foreign_binary;
+			int foreign_index;
 		};
 
 		struct DataSegment {
