@@ -15,7 +15,7 @@ panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα
 
 #ifndef RUNTIME_ONLY
 // use assert_emit if runtime is not needed!! much easier to debug
-#define assert_run(mark, result) printf("\n%s:%d\n", __FILE__, __LINE__);check_eq(runtime_emit(mark), result);
+#define assert_run(mark, result) printf("\n%s:%d\n", __FILE__, __LINE__);assert_equals_x(runtime_emit(mark), result);
 #else
 #define assert_run(a, b) skip(a)
 #endif

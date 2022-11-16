@@ -1454,7 +1454,7 @@ void testStringConcatenation() {
 	check_eq(huh.length, 2);
 	check_eq(huh[0], 'a');
 	check_eq(huh[1], '2');
-	check_eq(huh[2], 0);
+	check_eq(huh[2], (long) 0);
 	check(eq("a2", "a2"));
 	check(eq("a2", "a2", 3));
 

@@ -11,7 +11,7 @@ if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else prin
 
 // TODO silent asserts outside of tests!
 #define assert_equals(α, β) if (!assert_equals_x(α,β)){printf("%s != %s",#α,#β);backtrace_line();}
-#define check_eq assert_equals
+//#define check_eq assert_equals
 #define check_is assert_equals
 
 bool assert_equals_x(String a, String b, char *context = "");
