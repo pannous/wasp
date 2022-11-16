@@ -1245,7 +1245,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 				// todo when is MemoryAddressI32 … used??
 				Reloc reloc(wabt::RelocType::MemoryAddressLEB, current - section_offset, neu);
 				relocs.add(reloc);
-				short diff = lebByteSize(neu);// - lebByteSize(offset); nop all for now!
+				short diff = 0;// only NOPs now. later: cleaner solution, NOT HERE!. lebByteSize(neu) - lebByteSize(offset);// nop all for now!
 				Reloc patch_code_block_size{RelocType::PatchCodeBlockSize, (Index) fun_start - section_offset, (Index) diff};// add original fun_length later
 				relocs.add(patch_code_block_size);
 			}
@@ -1390,7 +1390,8 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
 			new_value = r->index + cur_value;
 			if (new_value >= 0x80 or new_value >= 80)
 				todo("'big' functions");// need to increase section->payload_size again!!
-//			data[section->offset + r->offset] = new_value;
+//			if(new_value!=cur_value) ALWAYS because it was NOP'ed!!
+			data[section->offset + r->offset] = new_value;
 			break;
 		case RelocType::FuncIndexLEB:
 			new_value = binary->RelocateFuncIndex(cur_value);
@@ -1413,23 +1414,27 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
 		case RelocType::MemoryAddressLEB: {
 			new_value = binary->RelocateMemoryIndex(cur_value);
 			if (lebByteSize(new_value) > lebByteSize(cur_value))
-				todo("grow big leb values");
-			data.insert(data.begin() + section->offset + r->offset, new_value);// this messes up the DATA section somehow!
-			std::vector<unsigned char> neu = lebVector(new_value);//  Code((long)new_value);
-			section->size += neu.size();
-			section->payload_size += neu.size();
+				if (*(section_start + r->offset + lebByteSize(cur_value) + 1) != nop)
+					todo("grow big leb values");// else OK, NOP'ED!
+			WriteU32Leb128Raw(section_start + r->offset, section_end, new_value);
+//			data.insert(data.begin() + section->offset + r->offset, new_value);// this messes up the DATA section somehow!
+//			std::vector<unsigned char> neu = lebVector(new_value);//  Code((long)new_value);
+//			section->size += neu.size();
+//			section->payload_size += neu.size();
 			break;
-			data.insert(data.begin() + section->offset + r->offset, neu.begin(), neu.end());
+//			data.insert(data.begin() + section->offset + r->offset, neu.begin(), neu.end());
 //            data[section->offset + r->offset] = new_value;
-//			WriteFixedU32Leb128Raw(section_start + r->offset, section_end, new_value);
 
 //			WriteU32Leb128At(stream_, r->offset, new_value, 0);// CANT do that now!
-			long offset = section->offset + r->offset;
+//			long offset = section->offset + r->offset;
 //			data.insert(data.begin() + offset, neu.begin(),neu.end());
 			break;
 		}
 		case RelocType::GlobalIndexLEB:
 			new_value = binary->RelocateGlobalIndex(cur_value);
+			if (lebByteSize(new_value) > lebByteSize(cur_value))
+				if (*(section_start + r->offset + lebByteSize(cur_value) + 1) != nop)
+					todo("grow big leb values");// else OK, NOP'ED!
 //			WriteFixedU32Leb128Raw(section_data + r->offset, section_data + section_size, new_value);
 			WriteU32Leb128Raw(section_start + r->offset, section_end, new_value);
 			break; // versus :
