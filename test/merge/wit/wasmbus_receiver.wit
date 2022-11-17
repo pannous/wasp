@@ -1,0 +1,6 @@
+// These are importing some common types that you see in the receive function signature. See the
+// actual code on Github if you are curious what these types look like
+use * from error-type
+use * from wasmbus-common
+
+receive: function(msg: message) -> expected<payload, rpc-error>

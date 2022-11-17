@@ -2,9 +2,6 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Frameworks/wasm-c-api" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/Frameworks/wasm3" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/wasm-micro-runtime" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/wiki" vcs="Git" />
   </component>
 </project>

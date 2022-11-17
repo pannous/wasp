@@ -19,6 +19,7 @@ panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",αα
 #else
 #define assert_run(a, b) skip(a)
 #endif
+
 void testMergeGlobal() {
 	Module &main = loadModule("test/merge/main_global.wasm");
 	Module &lib = loadModule("test/merge/lib_global.wasm");
@@ -35,6 +36,19 @@ void testMergeMemory() {
 	assert_equals(i, 42);
 }
 
+
+void testMergeRuntime() {
+	Module &runtime = loadModule("wasp.wasm");
+    runtime.needs_relocate = false;
+	Module &main = loadModule("test/merge/main_memory.wasm");
+    main.code.needs_relocate=true;
+    main.needs_relocate=true;
+	Code merged = merge_binaries(runtime.code, main.code);
+	int i = merged.save().run();
+	assert_equals(i, 42);
+}
+
+
 void testMergeOwn() {
 //	testMergeGlobal();
 	testMergeMemory();
@@ -45,7 +59,7 @@ void testMergeOwn() {
 //	Code merged = merge_binaries(lib.code,main.code);
 	int i = merged.save().run();
 	assert_equals(i, 42);
-	exit(1);
+//	exit(1);
 #endif
 }
 
@@ -1307,6 +1321,8 @@ void testLogarithm2() {
 			assert_emit("ln(ℯ)", 1.);
 	)
 }
+
+
 
 void testAllWasm() {
 
