@@ -1,0 +1,12 @@
+(use "typenames.witx")
+
+(module $lib
+  ;;; Linear memory to be accessed by WASI functions that need it.
+  (import "memory" (memory))
+
+  (@interface func (export "test")
+    (param $argv (@witx pointer (@witx pointer u8)))
+    (param $argv_buf (@witx pointer u8))
+    (result $error (expected (error $errno)))
+  )
+)

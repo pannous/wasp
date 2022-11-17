@@ -131,15 +131,16 @@ void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
 }
 
 
-// In C++ References cannot be put into an array
 template<class S>
 class List {
 public:
 	int header = array_header_32;
 	int _type = 0;// reflection on template class S
 	int _size = 0;
-	S *items;
-	int _max_size = LIST_ALLOCATION_RESERVED_COUNT;
+	S *items;// In C++ References cannot be put into an array, if you try you get
+    // List<int&> error: 'items' declared as a pointer to a reference of type
+
+    int _max_size = LIST_ALLOCATION_RESERVED_COUNT;// grow() by factor 2 internally on demand
 
 	List() {
 		items = (S *) calloc(sizeof(S), LIST_ALLOCATION_RESERVED_COUNT);
@@ -204,8 +205,9 @@ public:
 	void grow() {
 		S *neu = (S *) malloc(sizeof(S) * _max_size * 2);
 		memcpy((void *) neu, (void *) items, _max_size);
-		for (int i = 0; i < size(); ++i) neu[i] = items[i];// doesn't help
-		todo("List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
+//		for (int i = 0; i < size(); ++i) neu[i] = items[i];// doesn't help
+// 		todo
+        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
 		items = neu;
 		_max_size *= 2;
 	}
