@@ -3,26 +3,22 @@
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
   <component name="CidrRootsConfiguration">
     <sourceRoots>
-      <file path="$PROJECT_DIR$" />
       <file path="$PROJECT_DIR$/source" />
     </sourceRoots>
-    <libraryRoots>
-      <file path="$PROJECT_DIR$/m3" />
-      <file path="$PROJECT_DIR$/wabt/src" />
-    </libraryRoots>
     <excludeRoots>
+      <file path="$PROJECT_DIR$/.cmake" />
+      <file path="$PROJECT_DIR$/.github" />
+      <file path="$PROJECT_DIR$/.idea.bad" />
       <file path="$PROJECT_DIR$/Frameworks" />
-      <file path="$PROJECT_DIR$/bak" />
-      <file path="$PROJECT_DIR$/cmake-build-default.x" />
-      <file path="$PROJECT_DIR$/js" />
+      <file path="$PROJECT_DIR$/cmake-build-default" />
+      <file path="$PROJECT_DIR$/cmake-build-release" />
+      <file path="$PROJECT_DIR$/cmake-build-wasm" />
+      <file path="$PROJECT_DIR$/cmake-build-wasm-release" />
+      <file path="$PROJECT_DIR$/cmake-build-wasm-runtime" />
+      <file path="$PROJECT_DIR$/playground" />
       <file path="$PROJECT_DIR$/source/old" />
-      <file path="$PROJECT_DIR$/wabt" />
-      <file path="$PROJECT_DIR$/wabt/third_party" />
-      <file path="$PROJECT_DIR$/wasm-micro-runtime" />
+      <file path="$PROJECT_DIR$/test" />
       <file path="$PROJECT_DIR$/xxx" />
     </excludeRoots>
-  </component>
-  <component name="JavaScriptSettings">
-    <option name="languageLevel" value="ES6" />
   </component>
 </project>
