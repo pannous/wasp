@@ -15,6 +15,22 @@
 
 Node &result = *new Node();
 
+
+void testLebByteSize(){
+    check_eq(lebByteSize((long)0), 1)
+    short last = 0;
+//    for (long i = 0; i > -0x100000000000000; --i) {
+    for (long i = 0; i < 0x100000000000000; ++i) {
+//    for (unsigned long i = 0; i < 0x100000000000000; ++i) {
+        short size = lebByteSize(i);
+        if(size>last){
+            printf("%ld %lx %d\n", i, i, size);
+            last = size;
+            i=i*128-1;
+        }
+    }
+}
+
 // tested once, ok
 void testListGrow() {
 	String ok = "ok";
@@ -2223,6 +2239,8 @@ void testCurrent() {
 //	data_mode = false; // a=b => a,=,b before analysis
 //	clearAnalyzerContext();
 //	assert_emit("3", 3);
+//    testLebByteSize();
+	testMergeRuntime();
 	testMergeOwn();
 	assert_run("oka", 42);
 	assert_run("oki", 42);
@@ -2310,6 +2328,10 @@ void testCurrent() {
 	todos();// those not passing yet (skip)
 	testAllWasm();
 	print("CURRENT TESTS PASSED");
+}
+
+int test(){
+    return 42;// for wasm test
 }
 
 // valgrind --track-origins=yes ./wasp

@@ -56,7 +56,7 @@ public:
 	int start = 0;// internal reader pointer
 	bool encoded = false;// first byte = size of vector
 	bool shared = true;// can't free data until all views are destroyed OR because this is a view on other's data!!
-	bool needs_relocate = false;
+	bool needs_relocate = true; // unless specified
 	String name;// function or file
 	Code() {}
 
@@ -975,5 +975,36 @@ Code &signedLEB128(long value);
 #endif //WASP_CODE_H
 
 Signature &getSignature(String name);
+/*
+0 0 1
+128 80 2
+16384 4000 3
+2097152 200000 4
+268435456 10000000 5
+34359738368 800000000 6
+4398046511104 40000000000 7
+562949953421312 2000000000000 8
+36028797018963968 80000000000000 9
+ */
+short lebByteSize(unsigned long neu);// unsigned variants have delayed size increase by factor 2! ( 0x80 needs 2 bytes vs 0x40 signed!!)
 
+/*
+0 0 1
+64 40 2
+8192 2000 3
+1048576 100000 4
+134217728 8000000 5
+17179869184 400000000 6
+2199023255552 20000000000 7
+281474976710656 1000000000000 8
+36028797018963968 80000000000000 9
+-65 ffffffffffffffbf 2
+-8320 ffffffffffffdf80 3
+-1064960 ffffffffffefc000 4
+-136314880 fffffffff7e00000 5
+-17448304640 fffffffbf0000000 6
+-2233382993920 fffffdf800000000 7
+-285873023221760 fffefc0000000000 8
+-36591746972385280 ff7e000000000000 9
+ */
 short lebByteSize(long neu);
