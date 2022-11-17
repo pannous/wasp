@@ -130,6 +130,8 @@ namespace wabt {
 
 			Index RelocateGlobalIndex(Index index);
 
+            Index RelocateTable(Index findex);
+
 			bool IsValidFunctionIndex(Index index);
 
 			bool IsFunctionImport(Index index);
