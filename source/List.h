@@ -360,4 +360,36 @@ template<class S>
 bool contains(List<S> list, S match);
 
 
+// todo literally use Node for this
+enum ListBaseKind {
+    Empty,
+    LinkedListNode
+};
+
+template<typename T>
+struct ListBase {
+    explicit ListBase(ListBaseKind k) : _kind(k) {}
+
+    ListBaseKind _kind;
+};
+
+template<typename T>
+struct EmptyList : ListBase<T> {
+    EmptyList() : ListBase<T>(Empty) {}
+};
+
+template<typename T>
+struct ListNode : ListBase<T> {
+    ListNode(T const &t, ListBase<T> &next) :
+            ListBase<T>(ListBaseKind::LinkedListNode), _value(t), _next(next) {}
+
+    T _value;
+    ListBase<T> &_next;
+};
+
+template<typename T>
+struct LinkedList : ListNode<T> {
+};
+
+
 #endif //WASP_LIST_H

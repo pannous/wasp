@@ -457,7 +457,8 @@ Index LinkerInputBinary::RelocateGlobalIndex(Index global_index) {
 }
 
 Index LinkerInputBinary::RelocateTable(Index global_index) {
-    if (needs_relocate)todo("RelocateTable");
+    if (needs_relocate)
+        todo("RelocateTable");
     else return global_index;// shouldn't reach this anyways
 }
 
@@ -920,7 +921,9 @@ void Linker::ResolveSymbols() {
         for (const Export &export_: binary->exports) {// todo: why not store index directly?
             unsigned long nr_imports = binary->function_imports.size();
             pos++;
-            printf("%s export kind %d '%s' index %d\n", binary->name, export_.kind, export_.name.data, export_.index);
+            if (tracing)
+                printf("%s export kind %d '%s' index %d\n", binary->name, export_.kind, export_.name.data,
+                       export_.index);
             if (export_.kind == wabt::ExternalKind::Func) {
                 Func &func1 = binary->functions[nr_imports + export_.index];
                 if (not func1.name.data)func1.name = export_.name;
@@ -943,7 +946,8 @@ void Linker::ResolveSymbols() {
         }
         for (const Func &func: binary->functions) {// only those with code, not imports
             if (not empty(func.name)) {
-                printf("func.name %s, func.index %d\n", func.name.data, func.index);
+                if (tracing)
+                    printf("func.name %s, func.index %d\n", func.name.data, func.index);
 //				check(func_list.size()==func.index);
                 func_map.emplace(func.name, func.index);
                 private_map[String(func.name)] = new FuncInfo{&func, binary.get()};
@@ -1021,18 +1025,16 @@ void Linker::ResolveSymbols() {
                 // link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
                 Index func_index = func_map.FindIndex(name);
                 if (func_index == kInvalidIndex) {
-                    warn("unresolved import: "s + name);
+                    warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
+                    continue;
 //					import.active = false;// don'true
 //					binary->active_function_imports--;
 //					todo("")
-                    warn("keep unresolved import in case it's used inside binary: "s + name);
 //					import.foreign_index =  binary.import_delta + import.sig_index;
 //					import.relocated_function_index =  binary.import_delta + import.sig_index;
                     // no need for complicated calculations, just count the active imports so far
+                    warn("deleted unresolved import: "s + name);
                     continue;
-                    warn("delete unresolved import: "s + name);
-                    continue;
-                    error("can't find undefined symbol: "s + name);
                 }
 //				check(func_list[func_index].func);
                 FuncInfo funcInfo = *private_map[name];
@@ -1218,7 +1220,6 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
     String current_name = "?";
 
     Opcodes last_opcode;// to debug
-    bool deee = 0;
     int fun_start = 0;
     int fun_end = length;
     Reloc *patch_code_block_size;
@@ -1233,19 +1234,14 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
                                             true);// length of ONE function code block, but don't proceed yet
             fun_end = current + fun_length;
             int local_types = unsignedLEB128(binary_data, length, current, true);
-            if (local_types > 40) {
-                printf("suspiciously many local_types. parser out of sync? %d\n", local_types);
-                deee = 1;// too late
+            if (local_types > 40) {// todo: just warn after thoroughly tested
+                error("suspiciously many local_types. parser out of sync? %d\n"s % local_types);
             }// each type comes with a count e.g. (i32, 3) == 3 locals of type i32
             if (current_name.data)// else what is this #2 test/merge/main2.wasm :: (null)
                 printf("#%d -> #%d %s :: %s (#%d)\n", current_fun, real_function_index, binary->name, current_name.data,
                        local_types);
             else
                 printf("#%d -> #%d (#%d)\n", current_fun, real_function_index, local_types);
-//			if(current_fun==3)
-//                deee=1;
-//if(current_fun==5)
-//    exit(1);
             current += local_types * 2;// type + nr
         }
         byte b = binary_data[current++];
@@ -1274,7 +1270,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
                 Func &callee = binary->functions[index - binary->function_imports.size()];// old index + offset!
                 function_name = callee.name;
             }
-            printf("CALL %s %s calls %s $%d -> %d\n", binary->name, current_name.data, function_name.data, index, neu);
+            printf("CALL %s %s calls %s $%lu -> %d\n", binary->name, current_name.data, function_name.data, index, neu);
 #endif
         } else if (op == global_get || op == global_set) {
             short index = unsignedLEB128(binary_data, length, current, false);
@@ -1366,13 +1362,14 @@ Code merge_files(List<String> infiles) {
 }
 
 
-Code &merge_binaries(List<Code> binaries) {
+Code &merge_binaries(List<Code *> binaries) {
 //	opcode_args[global_get] = leb;
 //	check(opcode_args[global_get] == leb) // todo what kind of dark bug is that???
     Linker linker;
     if (binaries.size() == 1)
-        return binaries.items[0].clone();
-    for (const Code &code: binaries) {
+        return *binaries.items[0];
+    for (Code *codep: binaries) {
+        Code &code = *codep;
         std::vector<uint8_t> file_data(code.data, code.data + code.length);
         const char *source = "<code>";
         if (not code.name.empty()) source = code.name.data;
@@ -1391,10 +1388,10 @@ Code &merge_binaries(List<Code> binaries) {
     return code(out.data);// data already copied, no need to .clone();
 }
 
-Code merge_binaries(Code main, Code lib) {
-    List<Code> binaries;
-    binaries.add(main);
-    binaries.add(lib);
+Code &merge_binaries(Code &main, Code &lib) {
+    List<Code *> binaries;
+    binaries.add(&main);
+    binaries.add(&lib);
     return merge_binaries(binaries);
 }
 

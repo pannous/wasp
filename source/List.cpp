@@ -6,3 +6,4 @@ void print(List<String> list) {
 		print(s);
 	}
 }
+
