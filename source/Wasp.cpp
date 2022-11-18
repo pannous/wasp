@@ -55,6 +55,7 @@ char *current = (char *) HEAP_OFFSET;
 #include <cctype>
 #include <thread>
 #include "ErrorHandler.h"
+#include "Paint.h"
 
 #endif
 
@@ -1856,26 +1857,33 @@ int main(int argc, char **argv) {
 #else
 				todo("linking files needs compilation with WABT_MERGE");
 #endif
-			else
-				run_wasm_file(arg);
-		}
+            else
+                run_wasm_file(arg);
+        }
 #ifndef NO_TESTS
-		if (arg == "test" or arg == "tests")
-			testCurrent();
+        if (arg == "test" or arg == "tests")
+            testCurrent();
 #endif
-		if (arg == "repl" or arg == "console" or arg == "start" or arg == "run") {
-			console();
-		}
-		if (arg == "app" or arg == "webview" or arg == "browser") {
+        if (arg == "repl" or arg == "console" or arg == "start" or arg == "run") {
+            console();
+        }
+        if (arg == "2D" or arg == "2d" or arg == "SDL" or arg == "sdl") {
+#ifdef GRAFIX
+            init_graphics();
+#else
+            print("wasp compiled without sdl/webview");
+#endif
+        }
+        if (arg == "app" or arg == "webview" or arg == "browser") {
 #ifndef WEBAPP
-			print("wasp needs to be compiled with WEBAPP support");
-			return -1;
+            print("wasp needs to be compiled with WEBAPP support");
+            return -1;
 #endif
 //				start_server(9999);
 #ifdef GRAFIX
-			init_graphics();
+            init_graphics();
 #else
-			print("wasp compiled without sdl/webview");
+            print("wasp compiled without sdl/webview");
 #endif
 		}
 #ifdef SERVER

@@ -2431,17 +2431,15 @@ Code &compile(String code, bool clean) {
 
 #ifdef INCLUDE_MERGER
 	if (libraries.size() > 0) {
-		binary.needs_relocate = true;
-		List<Code> merge_module_binaries;
-		for (Module *module: libraries) {
-			merge_module_binaries.add(module->code);
-			module->code.needs_relocate = module->needs_relocate;
-		}
-		merge_module_binaries.add(binary);
-		Code &merged = merge_binaries(merge_module_binaries);
-		merge_module_binaries.clear();
-		return merged;
-	}
+        binary.needs_relocate = true;
+        List<Code *> merge_module_binaries;
+        for (Module *module: libraries)
+            merge_module_binaries.add(&module->code);
+        merge_module_binaries.add(&binary);
+        Code &merged = merge_binaries(merge_module_binaries);
+        merge_module_binaries.clear();
+        return merged;
+    }
 //	if (merge_module_binaries.size() > 0) {
 //		merge_module_binaries.add(binary);
 //		Code &merged = merge_binaries(merge_module_binaries);

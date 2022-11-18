@@ -118,12 +118,14 @@ if (WASM)
 endif ()
 
 if (SDL)
+    message("INCLUDE SDL")
     ADD_DEFINITIONS(-DGRAFIX)
     find_package(SDL2 REQUIRED)
     ADD_DEFINITIONS(-DSDL)
     remove_definitions(SERVER)
     include_directories(${SDL2_INCLUDE_DIRS})
     set(SOURCE_FILES ${SOURCE_FILES} source/Paint.cpp) # if SDL
+    #    add_executable(wasp.sdl ${SOURCE_FILES}) # same as add_library, with or without --export-all
 endif ()
 
 
@@ -274,6 +276,7 @@ if (WASM) # OR WASI)
     message(WASM)
     ADD_DEFINITIONS(-DWASM)
     set(CMAKE_SYSROOT "") # via -DCMAKE_TOOLCHAIN_FILE=wasm.toolchain.cmake
+    include(wasm.toolchain.cmake)
     if (WASI)
         ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
         set(CMAKE_ISYSROOT "") # typo? =>
