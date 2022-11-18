@@ -737,6 +737,7 @@ enum nameSubSectionTypes {
 	function_names = 1,
 	local_names = 2,
 	global_names = 7,
+    todo_idk = 9
 };
 
 typedef enum constancy {

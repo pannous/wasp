@@ -97,6 +97,6 @@ Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "main");
 
 //extern "C"
-Code &compile(String code, bool clean);// exposed to wasp.js
+Code &compile(String code, bool clean = true);// exposed to wasp.js
 
 void clearEmitterContext();// BEFORE analyze!
