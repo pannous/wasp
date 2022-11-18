@@ -39,10 +39,9 @@ void testMergeMemory() {
 
 void testMergeRuntime() {
 	Module &runtime = loadModule("wasp.wasm");
-    runtime.needs_relocate = false;
 	Module &main = loadModule("test/merge/main_memory.wasm");
-    main.code.needs_relocate=true;
-    main.needs_relocate=true;
+    main.code.needs_relocate = true;
+    runtime.code.needs_relocate = false;
 	Code merged = merge_binaries(runtime.code, main.code);
 	int i = merged.save().run();
 	assert_equals(i, 42);

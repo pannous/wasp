@@ -1283,9 +1283,9 @@ Node runtime_emit(String prog) {
 	libraries.clear();// todo reuse
 	Module &runtime = loadModule("wasp.wasm");
 //	check(libraries.size() == 1)
-	runtime.needs_relocate = false;
 	Code code = compile(prog, false);// should use libraries!
-	code.save("merged.wasm");
+    code.needs_relocate = false;
+    code.save("merged.wasm");
 	long result = code.run();// todo parse stdout string as node and merge with emit() !
 	return smartNode(result);
 }

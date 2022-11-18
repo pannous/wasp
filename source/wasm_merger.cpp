@@ -74,16 +74,16 @@ Code mergeDataSection(Module lib, Module main) {
 
 
 Code &relocate(Module &add, Module &base) {
-	if (not add.needs_relocate)return add.code_data;
+	if (not add.code.needs_relocate)return add.code_data;
 	todo("relocate, maybe see wasm_merger_wabt.cpp");
 	return add.code_data;
 }
 
 Code mergeCodeSection(Module lib, Module main) {
-	int codes = lib.code_count + main.code_count;
-	if (lib.needs_relocate)lib.code_data = relocate(lib, main);
-	if (main.needs_relocate)lib.code_data = relocate(main, lib);
-	return createSection(code_section, Code(codes) + lib.code_data + main.code_data);
+    int codes = lib.code_count + main.code_count;
+    if (lib.code.needs_relocate)lib.code_data = relocate(lib, main);
+    if (main.code.needs_relocate)lib.code_data = relocate(main, lib);
+    return createSection(code_section, Code(codes) + lib.code_data + main.code_data);
 }
 
 Code mergeCustomSections(Module lib, Module main) {
@@ -121,19 +121,20 @@ Code mergeNameSection(Module lib, Module main) {
 }
 
 Code mergeLinkingSection(Module lib, Module main) {
-	return encodeVector(lib.linking_section + main.linking_section);
+    return encodeVector(lib.linking_section + main.linking_section);
 }
-Code merge_wasm(Module lib, Module main) {
-	total_functions = lib.total_func_count + main.total_func_count;
-	Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4)
-	            + mergeTypeSection(lib, main)
-	            + mergeImportSection(lib, main) // needed for correct functypes_section
-	            + mergeFuncTypeSection(lib, main)
-	            + mergeTableSection(lib, main)
-	            + mergeMemorySection(lib, main)
-	            + mergeGlobalSection(lib, main)
-	            + mergeExportSection(lib, main)
-	            + mergeCodeSection(lib, main)
+
+Code &merge_wasm(Module lib, Module main) {
+    total_functions = lib.total_func_count + main.total_func_count;
+    Code code = Code(magicModuleHeader, 4) + Code(moduleVersion, 4)
+                + mergeTypeSection(lib, main)
+                + mergeImportSection(lib, main) // needed for correct functypes_section
+                + mergeFuncTypeSection(lib, main)
+                + mergeTableSection(lib, main)
+                + mergeMemorySection(lib, main)
+                + mergeGlobalSection(lib, main)
+                + mergeExportSection(lib, main)
+                + mergeCodeSection(lib, main)
 	            + mergeDataSection(lib, main)
 	            //	            + mergeLinkingSection(lib, main)
 	            + mergeNameSection(lib, main)
