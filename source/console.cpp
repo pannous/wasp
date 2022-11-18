@@ -1,28 +1,13 @@
-//#include <stdio.h>
-//#include <unistd.h>
-//#include <stdlib.h>
-//#include <ctype.h>
-//#include <termios.h>
-#include <string.h>
-//#include "String.h"
-//#include <vector>
-//#include <string>
-
-//#include "Wasp.h"
-
-//#include "util.hpp"
-//#ifndef NO_READLINE
-//#define USE_READLINE
-
 #undef Function
 
+#ifdef USE_READLINE
 #include <readline/history.h> // libreadline-dev
 #include <readline/readline.h>
 #include <cstdlib>
+#endif
 #include "String.h"
 #include "Node.h"
 #include "tests.h"
-//#endif
 
 //using namespace std;
 // static struct termios stored_settings;
@@ -42,12 +27,13 @@ bool file_read_done = false;
 
 void getline(char *buf) {
 	if (buf == 0) return; // end
-//#ifdef USE_READLINE
+//#ifdef USE_USE_READLINE
 //#ifndef CONSOLE
 //	print("wasp compiled without console");
 //#else
 	int MAXLENGTH = 10000;
 	const char *PROMPT = "wasp> ";
+#ifdef USE_READLINE
 	if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
 	char *tmp = readline(PROMPT);
 	if (tmp == 0 or strlen(tmp) == 0) {
@@ -58,8 +44,7 @@ void getline(char *buf) {
 	strncpy(buf, tmp, MAXLENGTH);
 	buf[MAXLENGTH - 1] = '\0';
 	write_history(".wasp_history");
-//#endif
-//#endif
+#endif
 }
 
 //bool parse(string* data) {

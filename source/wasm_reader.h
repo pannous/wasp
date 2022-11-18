@@ -65,7 +65,7 @@ public:
 	Map<String, int> functionIndices; // lookup PER MODULE!
 //	int data_offset=0;// todo: read from data section! why not 0 ?
 	int data_offset_end;
-	bool needs_relocate = true;// unless specified
+//	bool needs_relocate = true;// see Code
 };
 
 Module &read_wasm(bytes buffer, int size);

@@ -1,11 +1,5 @@
-#set (CMAKE_SYSTEM_NAME "Generic")
 set(CMAKE_SYSTEM_NAME wasm)
 set(CMAKE_SYSTEM_PROCESSOR wasm)
-
-# HOW TO SOLVE?
-#System is unknown to cmake, create:
-#Platform/wasm to use this system, please post your config file on discourse.cmake.org so it can be added to cmake
-#Your CMakeCache.txt file was copied to CopyOfCMakeCache.txt. Please post that file on discourse.cmake.org.
 
 set(SDK /opt/wasm/wasi-sdk/)
 set(CMAKE_C_COMPILER ${SDK}/bin/clang)
