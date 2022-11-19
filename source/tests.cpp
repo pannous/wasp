@@ -2341,8 +2341,8 @@ void testCurrent() {
     //	panicking = true;//
     data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
-    testMergeOwn();
     assert_run("oka", 42);
+    testMergeOwn();
     testWit();
 
     testSubGroupingFlatten();

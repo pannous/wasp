@@ -2349,16 +2349,17 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 //		int newly_pre_registered = 0;//declaredFunctions.size();
 		last_index = runtime_offset - 1;
 	} else {
-		memoryHandling = export_memory;
+//		memoryHandling = export_memory;
 //#ifdef IMPORT_MEMORY
 //		memoryHandling = import_memory; // works for micro-runtime
 //#endif
-//		memoryHandling = internal_memory; // works for wasm3
-		last_index = -1;
-		runtime = *new Module();// all zero
-		runtime_offset = 0;
-		add_builtins();
-	}
+        memoryHandling = internal_memory; // works for wasm3
+//        memoryHandling = no_memory;
+        last_index = -1;
+        runtime = *new Module();// all zero
+        runtime_offset = 0;
+        add_builtins();
+    }
 	if (start) {// now AFTER imports and builtins
 //		printf("start: %s\n", start.data);
 //		functions[start] = Signature().returns(i32t);
