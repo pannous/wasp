@@ -413,6 +413,31 @@ bool LinkerInputBinary::IsValidFunctionIndex(Index index) {
     return index < function_imports.size() + function_count;
 }
 
+Index LinkerInputBinary::RelocateGlobalIndex(Index global_index) {
+    Index offset;
+    if (global_index >= global_imports.size()) {
+        offset = global_index_offset;
+    } else {
+        GlobalImport &globalImport = global_imports[global_index];
+        if (!globalImport.active) {
+            int foreignIndex = globalImport.foreign_index;
+            offset = globalImport.foreign_binary->global_index_offset;
+            LOG_DEBUG("reloc for disabled global import %s : new index = %d + %d\n", globalImport.name.data,
+                      foreignIndex, offset);
+        } else {
+            Index new_index = globalImport.relocated_global_index;
+            if (global_index != new_index)
+                LOG_DEBUG("reloc for active global import %s: old index = %d, new index = %d\n", globalImport.name.data,
+                          global_index, new_index);
+            return new_index;
+
+        }
+
+        offset = imported_global_index_offset;
+    }
+    return global_index + offset;
+}
+
 Index LinkerInputBinary::RelocateFuncIndex(Index function_index) {
     Index offset;
     if (!IsFunctionImport(function_index)) {
@@ -424,7 +449,7 @@ Index LinkerInputBinary::RelocateFuncIndex(Index function_index) {
         FunctionImport *import = &function_imports[function_index];
         if (!import->active) {
             function_index = import->foreign_index;
-            offset = import->foreign_binary->function_index_offset;
+            offset = import->foreign_binary->function_index_offset;// todo function_index ADDED LATER to offset!
             LOG_DEBUG("reloc for disabled import %s : new index = %d + %d\n", import->name.data, function_index,
                       offset);
         } else {
@@ -444,16 +469,6 @@ Index LinkerInputBinary::RelocateTypeIndex(Index type_index) {
 
 Index LinkerInputBinary::RelocateMemoryIndex(Index memory_index) {
     return memory_index + memory_page_offset * 65536;
-}
-
-Index LinkerInputBinary::RelocateGlobalIndex(Index global_index) {
-    Index offset;
-    if (global_index >= global_imports.size()) {
-        offset = global_index_offset;
-    } else {
-        offset = imported_global_index_offset;
-    }
-    return global_index + offset;
 }
 
 Index LinkerInputBinary::RelocateTable(Index global_index) {
@@ -599,7 +614,7 @@ void Linker::WriteExportSection() {
                     index = binary->RelocateFuncIndex(index);
                     break;
                 case ExternalKind::Global:
-                    index = binary->RelocateFuncIndex(index);
+                    index = binary->RelocateGlobalIndex(index);
                     break;
                 case ExternalKind::Table:
                     index = binary->RelocateTable(index);
@@ -674,12 +689,10 @@ void Linker::WriteGlobalImport(const GlobalImport &import) {
 void Linker::WriteImportSection() {
     Index num_imports = 0;
     for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-        for (const FunctionImport &import: binary->function_imports) {
-            if (import.active) {
-                num_imports++;
-            }
-        }
-        num_imports += binary->global_imports.size();
+        for (const FunctionImport &import: binary->function_imports)
+            if (import.active) num_imports++;
+        for (const GlobalImport &globalImport: binary->global_imports)
+            if (globalImport.active) num_imports++;// function and global imports mixed!
     }
 
     Fixup fixup = WriteUnknownSize();
@@ -982,15 +995,12 @@ void Linker::ResolveSymbols() {
             }
             ExportInfo &export_info = globals_export_list[export_number];
             String export_name = export_info.export_->name;
-//			check(export_info.export_->kind == wabt::ExternalKind::Global);
             Index export_index = export_info.export_->index;
             printf("LINKING GLOBAL %s import #%d to export #%d %s \n", name.data, global_import.foreign_index,
                    export_index, export_name.data);
             global_import.active = false;
             global_import.foreign_binary = export_info.binary;
             global_import.foreign_index = export_index;
-//				import.linked_function = &export_info;
-//				import.relocated_function_index = export_number; see RelocateFuncIndex()
             binary->active_global_imports--;
         }
 
@@ -1016,8 +1026,7 @@ void Linker::ResolveSymbols() {
                 char *import_name = import.name;
                 char *export_name = exported.name;
                 printf("LINKED %s import #%d %s to export #%d %s relocated_function_index %d \n", name.data, old_index,
-                       import_name, export_index, export_name,
-                       export_number);
+                       import_name, export_index, export_name, export_number);
             } else {
                 // todo all this is done in RelocateFuncIndex !
                 // link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
@@ -1070,16 +1079,18 @@ void Linker::CalculateRelocOffsets() {
 
         size_t delta = 0;// number of functions removed for this binary ( imports linked )
         for (size_t i = 0; i < binary->function_imports.size(); i++) {
-            if (!binary->function_imports[i].active) {
-                delta++;
-            } else {
-                binary->function_imports[i].relocated_function_index = total_function_imports + i - delta;
-            }
+            if (!binary->function_imports[i].active) delta++;
+            else binary->function_imports[i].relocated_function_index = total_function_imports + i - delta;
+        }
+        int global_delta = 0;
+        for (size_t i = 0; i < binary->global_imports.size(); i++) {
+            if (!binary->global_imports[i].active) global_delta++;
+            else binary->global_imports[i].relocated_global_index = total_global_imports + i - global_delta;
         }
 
         memory_page_offset += binary->memory_page_count;
         total_function_imports += binary->active_function_imports;
-        total_global_imports += binary->global_imports.size();
+        total_global_imports += binary->active_global_imports;
         my_function_count += binary->active_function_imports;
         my_function_count += binary->function_count;
     }
@@ -1093,16 +1104,17 @@ void Linker::CalculateRelocOffsets() {
                     binary->type_index_offset = type_count;
                     type_count += sec->count;
                     break;
-                case SectionType::Global:
-                    binary->global_index_offset =
-                            total_global_imports - sec->binary->global_imports.size() + global_count;
+                case SectionType::Global: {
+                    unsigned long new_offset = total_global_imports - sec->binary->global_imports.size() + global_count;
+                    binary->global_index_offset = new_offset;
+                }
                     global_count += sec->count;
                     break;
                 case SectionType::Function: {
                     Index new_offset = total_function_imports - sec->binary->function_imports.size() + function_count;
                     binary->function_index_offset = new_offset;
-                }
                     function_count += sec->count;
+                }
                     break;
                 default:
                     break;
