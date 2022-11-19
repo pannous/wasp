@@ -177,25 +177,25 @@ class String {
 // sizeof(Node) == 20 == 5 * 4 int(*)
 
 #ifdef WASM
-	//#define size_t unsigned number
-	//	void* calloc(size_t s,int idk);
+    //#define size_t unsigned number
+    //	void* calloc(size_t s,int idk);
 #else
 #ifndef __APPLE__
-	//#include <alloc.h>
+    //#include <alloc.h>
 #endif
 #endif
 private:
-	// memory layout different to chars with leb length header!
-	int header = string_header_32;// to identify string structures in memory
+    // memory layout different to chars with leb length header!
+    static const int header = string_header_32;// to identify string structures in memory, CAN IT BE STATIC? (doubt!)
 public:
-	int codepoint_count = -1;// 'type' field in list, node and array_header, semi compatible
-	int length = -1;
-	char *data{};// UTF-8 sequence, unanalyzed
-	bool shared_reference = false;// length terminated substrings! copy on modify if shared views. // todo: move to header?
-	// todo is shared_reference sufficient for (im)mutable final const keywords?
+    int codepoint_count = -1;// 'type' field in list, node and array_header, semi compatible
+    int length = -1;
+    char *data{};// UTF-8 sequence, unanalyzed
+    bool shared_reference = false;// length terminated substrings! copy on modify if shared views. // todo: move to header?
+    // todo is shared_reference sufficient for (im)mutable final const keywords?
 private:
-	codepoint *codepoints = 0;// extract on demand from data or via constructor
-	// todo add UTF-16 representation as codepoint union?
+    codepoint *codepoints = 0;// extract on demand from data or via constructor
+    // todo add UTF-16 representation as codepoint union?
 
 public:
 	String() {
@@ -206,27 +206,29 @@ public:
 //		data =  {0};//null_value;
 //		data = (char *)calloc(1, 1);
 //		data = (char*)(calloc(1, 1));
-		length = 0;
-	}
+        length = 0;
+    }
 
 //#ifndef WASM
 ////	Error while importing "env"."_Znwm": unknown import.
-	void *operator new(size_t size) {
-		return static_cast<String *>(calloc(size, 1));// WOW THAT WORKS!!!
-	}
+    void *operator new(size_t size) {
+        return static_cast<String *>(calloc(size, 1));// WOW THAT WORKS!!!
+    }
 //#endif
 
-	void operator delete(void *) {/*lol*/} // Todo ;)
+    void operator delete(void *) {
+        check(header == string_header_32);
+        /*lol*/} // Todo ;)
 
 //	~String()=default;
 
 #ifdef STD_STRING
-	String(const std::string str):String(str.c_str){
-		// defeats the purpose of using a lightweight unicode-aware String class
-	}
+    String(const std::string str):String(str.c_str){
+        // defeats the purpose of using a lightweight unicode-aware String class
+    }
 #endif
 
-	explicit String(char *datas, int len, bool share) {
+    explicit String(char *datas, int len, bool share) {
 		data = datas;
 		length = len;
 		shared_reference = share;
@@ -751,25 +753,29 @@ public:
 		return eq(data, s->data, shared_reference ? length : -1);
 	}
 
-	bool operator==(char *c) const {
-		if (!this)return false;// how lol e.g. me.children[0].name => nil.name
-		return eq(data, c, shared_reference ? length : -1);
-	}
+    bool operator==(char *c) const {
+        if (!this)return false;// how lol e.g. me.children[0].name => nil.name
+        return eq(data, c, shared_reference ? length : -1);
+    }
 
-	bool operator!=(char *c) {
-		return !eq(data, c);
-	}
+    bool operator!=(char *c) {
+        return !eq(data, c);
+    }
+
+    bool operator!=(const String &c) {
+        return !eq(data, c.data);
+    }
 
 #define min(a, b) (a < b ? a : b)
 
-	bool operator>(String other) {
-		for (int i = 0; i < min(length, other.length); ++i) {
-			if (data[i] < other.data[i])return false;
-		}
-		return length >= other.length;
-	}
+    bool operator>(String other) {
+        for (int i = 0; i < min(length, other.length); ++i) {
+            if (data[i] < other.data[i])return false;
+        }
+        return length >= other.length;
+    }
 
-	bool operator>=(String other) {
+    bool operator>=(String other) {
 		for (int i = 0; i < min(length, other.length); ++i) {
 			if (data[i] < other.data[i])return false;
 		}

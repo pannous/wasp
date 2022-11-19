@@ -179,21 +179,24 @@ void test_lambda() {
 };
 
 //wrap_any(requestAnimationFrame);
-wrap_any(test_lambda);
+//wrap_any(test_lambda);
 
 #define wrap_fun(fun) [](void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t)->wasm_trap_t*{fun();return NULL;};
 
 wasm_wrap *link_import(String name) {
-	if (name == "memset") return &wrap_todo;// should be provided by wasp!!
-	if (name == "calloc") return &wrap_todo;
-	if (name == "_Z5abs_ff") return &wrap_absf;// why??
+    if (name == "absf") return &wrap_absf;// todo: remove
+    if (name == "absi") return &wrap_absi;
+    if (name == "todo") return &wrap_todo;
+    if (name == "memset") return &wrap_memset;// should be provided by wasp!!
+    if (name == "calloc") return &wrap_calloc;
+    if (name == "_Z5abs_ff") return &wrap_absf;// why??
 // todo get rid of these again!
-	if (name == "_Z7consolev") return &wrap_nop;
+    if (name == "_Z7consolev") return &wrap_nop;
 
-	if (name == "__cxa_guard_acquire") return &wrap_nop;// todo!?
-	if (name == "__cxa_guard_release") return &wrap_nop;// todo!?
-	if (name == "_Z13init_graphicsv") return &wrap_nop;
-	if (name == "_Z21requestAnimationFramev") return wrap_fun(test_lambda);
+    if (name == "__cxa_guard_acquire") return &wrap_nop;// todo!?
+    if (name == "__cxa_guard_release") return &wrap_nop;// todo!?
+    if (name == "_Z13init_graphicsv") return &wrap_nop;
+    if (name == "_Z21requestAnimationFramev") return wrap_fun(test_lambda);
 //	if (name == "_Z21requestAnimationFramev") return  wrap_fun(requestAnimationFrame);
 
 
@@ -273,7 +276,7 @@ wasmtime_context_t *context;
 void init_wasmtime() {
 	engine = wasm_engine_new();
 	assert(engine != NULL);
-	void *some_meta_data;
+    void *some_meta_data = 0;
 	store = wasmtime_store_new(engine, some_meta_data, NULL);
 	assert(store != NULL);
 //	wasmtime_context_get_data(context);// get some_meta_data
@@ -301,6 +304,7 @@ void add_wasmtime_memory() {
 	const wasm_memorytype_t *memtype = wasm_memorytype_new(&limits);
 	wasmtime_memory_t memory{.store_id=1, .index=0}; // filled later:
 	auto ok = wasmtime_memory_new(context, memtype, &memory);
+    if (!ok)error("wasmtime_memory_new failed");
 	uint8_t *memory_data = wasmtime_memory_data(context, &memory);
 	wasm_memory = memory_data;// todo: keep old?
 }

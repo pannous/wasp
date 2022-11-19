@@ -503,7 +503,7 @@ Code emitIndexWrite(Node array, int base, Node offset, Node value0, String conte
 	Valtype targetType = last_type;
 
 	//		localTypes[context]
-	Valtype valType = last_type;
+//	Valtype valType = last_type;
 	Code store;
 	store = store + emitOffset(array, offset, true, context, size, base);
 
@@ -703,19 +703,21 @@ Code emitData(Node node, String context) {
 			String string = *node.value.string;
 			if (string and referenceDataIndices.has(string)) // todo: reuse same strings even if different pointer, aor make same pointer before
 				stringIndex = referenceDataIndices[string];
-			else {
-				referenceDataIndices.insert_or_assign(string, data_index_end);
-				//				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
-				//				strcpy2(data + data_index_end, (char*)lens.data, lens.length);
-				//				data_index_end += lens.length;// unsignedLEB128 encoded length of pString
-				strcpy2(data + data_index_end, string.data, string.length);
-				data[data_index_end + string.length] = 0;
-				// we add an extra 0, unlike normal wasm abi, because we have space in data section
-				data_index_end += string.length + 1;
-			}
-			last_type = stringp;
-			break;
-		}
+            else {
+                referenceDataIndices.insert_or_assign(string, data_index_end);
+                //				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
+                //				strcpy2(data + data_index_end, (char*)lens.data, lens.length);
+                //				data_index_end += lens.length;// unsignedLEB128 encoded length of pString
+                strcpy2(data + data_index_end, string.data, string.length);
+                data[data_index_end + string.length] = 0;
+                // we add an extra 0, unlike normal wasm abi, because we have space in data section
+                data_index_end += string.length + 1;
+            }
+            if (I_know_what_I_am_doing)
+                last_data = stringIndex;
+            last_type = stringp;
+            break;
+        }
 		case objects:
 		case groups:
 			// todo hold up: print("ok") should not emit an array of group(string(ok)) !?
@@ -1686,21 +1688,22 @@ Code emitBlock(Node &node, String context) {
 
 	// locals can still be updated in emitExpression
 
-	// 1. Emit block type header
+    /// 1. Emit block type header
 	block.addByte(locals_count);
 	for (int i = 0; i < locals_count; i++) {
-		auto name = locals[context][i];// add later to custom section, here only for debugging
-		Valtype valtype = localTypes[context][i];
+        auto name = locals[context][i];// add later to custom section, here only for debugging
+        Valtype valtype = localTypes[context][i];
+        trace("local "s + name);
 //		block.addByte(i + 1);// index
-		block.addByte(1);// count! todo: group by type nah
-		if (valtype == unknown_type)
-			valtype = int32;
+        block.addByte(1);// count! todo: group by type nah
+        if (valtype == unknown_type)
+            valtype = int32;
 // todo		internal_error("unknown type should be inferred by now for local "s + name);
-		if (valtype == none or valtype == voids)
-			valtype = int32;
-		if (valtype == charp or valtype == array)
-			valtype = int32; // int64? extend to smart pointer later!
-		block.addByte(valtype);
+        if (valtype == none or valtype == voids)
+            valtype = int32;
+        if (valtype == charp or valtype == array)
+            valtype = int32; // int64? extend to smart pointer later!
+        block.addByte(valtype);
 	}
 
 	// 2. emit code
@@ -1884,7 +1887,7 @@ Code importSection() {
 //	}
 	for (String fun: functions) {
 		Function &function = functions[fun];
-		Signature &signature = function.signature;
+//		Signature &signature = function.signature;
 		if (function.is_import and function.is_used and not function.is_builtin) {
 			++import_count;
 			import_code = import_code + encodeString("env") + encodeString(fun).addByte(func_export).addType(typeMap[fun]);
@@ -1909,20 +1912,20 @@ int function_block_count;
 //int builtins_used=0;
 [[nodiscard]]
 Code codeSection(Node root) {
-	// the code section contains vectors of functions
-	// index needs to be known before emitting code, so call $i works
-	int new_count;
+    // the code section contains vectors of functions
+    // index needs to be known before emitting code, so call $i works
 
-	if (root.kind == objects)
-		root.kind = expression;// todo why hack?
+    if (root.kind == objects)
+        root.kind = expression;// todo why hack?
 
-	new_count = declaredFunctions.size();
-	for (auto declared: declaredFunctions) {
-		print("declared function: "s + declared);
-		if (!declared)error("empty function name (how?)");
-		if (not functionIndices.has(declared))// used or not!
-			functionIndices[declared] = ++last_index;
-	}
+//	int new_count;
+//	new_count = declaredFunctions.size();
+    for (auto declared: declaredFunctions) {
+        print("declared function: "s + declared);
+        if (!declared)error("empty function name (how?)");
+        if (not functionIndices.has(declared))// used or not!
+            functionIndices[declared] = ++last_index;
+    }
 //	int index_size = functionIndices.size();
 //	bool has_main = start and (declaredFunctions.has(start) or functionIndices.has(start));
 //	if (import_count + builtin_count + has_main + new_count + runtime_offset != index_size) {
@@ -1932,7 +1935,7 @@ Code codeSection(Node root) {
 //	}
 // https://pengowray.github.io/wasm-ops/
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
-	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
+//	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
 	byte code_data_nop[] = {0/*locals_count*/, end_block};// NOP
 	byte code_data_id[] = {1/*locals_count*/, 1/*one local has type: */, i32t, get_local, 0, return_block,
 	                       end_block}; // NOP
@@ -2342,8 +2345,8 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 		builtin_count = 0;
 		//		data_index_end = runtime.data_offset_end;// insert after module data!
 		// todo: either write data_index_end DIRECTLY after module data and increase count of module data,
-		// or increase memory offset for second data section! (AND increase index nontheless?)
-		int newly_pre_registered = 0;//declaredFunctions.size();
+        // or increase memory offset for second data section! (AND increase index nontheless?)
+//		int newly_pre_registered = 0;//declaredFunctions.size();
 		last_index = runtime_offset - 1;
 	} else {
 		memoryHandling = export_memory;
@@ -2447,8 +2450,8 @@ Code &compile(String code, bool clean) {
 //		return merged;
 //	}
 #else
-	if (merge_module_binaries.size() > 0)
-		warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
+    if (libraries.size() > 0)
+        warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
 #endif
 	return binary;
 }
