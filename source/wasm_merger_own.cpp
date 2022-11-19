@@ -1176,6 +1176,7 @@ void Linker::CreateRelocs() {
             trace("Skipping CreateRelocs for library "s + binary->name);
             continue;
         }
+
         Section *section = getSection(binary, SectionType::Code);
         if (!section)return;
         List<Reloc> relocs = CalculateRelocs(binary, section);
