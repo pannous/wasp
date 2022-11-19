@@ -34,14 +34,14 @@ bool isPrimitive(Node &node);
 bool isType(Node &node);
 
 enum ParseOptions {
-	nix = 0,
-	no_main = 1,
-	data_only = 2,
-	ignore_errors = 4,
+    nix = 0,
+    no_main = 1,
+    data_only = 2,
+    ignore_errors = 4,
 };
 
 //List<String> collectOperators(Node &expression);// test/debug only
-Node &parse(String code);// wasp -> data  // this is the pure Wasp part
+ParserOptions parse(String code, ParseOptions *);// wasp -> data  // this is the pure Wasp part
 
 //__attribute__((export_name("analyze")))
 Node &analyze(Node &node, String context = "main");// wasp -> node  // build ast via operators

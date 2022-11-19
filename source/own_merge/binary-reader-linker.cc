@@ -29,11 +29,6 @@ namespace wabt {
 
 		namespace {
 
-			void TODO(char *what = 0) {
-				printf("TODO");
-				if (what)printf("%s", what);
-			}
-
 			class BinaryReaderLinker : public BinaryReaderNop { // < BinaryReaderDelegate {
 			public:
 				explicit BinaryReaderLinker(LinkerInputBinary *binary);
@@ -108,9 +103,9 @@ namespace wabt {
 //                                        BinarySection section_code,
 //                                        String section_name) {
 				SectionType section_code0 = (SectionType) (int) section_code;
-				if (section_code == (int) SectionType::Custom) {
-					WABT_FATAL("relocation for custom sections not yet supported\n");
-				}
+				if (section_code0 == SectionType::Custom) {
+                    WABT_FATAL("relocation for custom sections not yet supported\n");
+                }
 
 				for (const std::unique_ptr<Section> &section: binary_->sections) {
 					if ((int) section->section_code != section_code) {

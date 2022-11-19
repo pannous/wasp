@@ -15,14 +15,13 @@
 #endif
 
 
-bool tracing = false;
-
+//bool tracing = false;
 //bool tracing = true;
-void trace(chars x) {
-	if (tracing)
-		warn(x);
+//#define trace // IGNORE AT COMPILE TIME (to not emit all those debug strings)
+void trace0(chars x) {
+    if (tracing)
+        warn(x);
 }
-
 
 //bool fileExists(char* filename) {
 bool fileExists(String filename) {
@@ -61,27 +60,29 @@ int fileSize(char const *file) {
 long file_last_modified(char *file) {
 	struct stat attr;
 	stat(file, &attr);
-	return attr.st_mtime;
+    return attr.st_mtime;
 }
 
 float file_last_modified(String &file) {
-	struct stat attr;
-	stat(file, &attr);
-	return attr.st_mtime;
+    struct stat attr;
+    stat(file, &attr);
+    return attr.st_mtime;
 }
 
 #endif
 
+template<class>
+class List;//<String>;
+
 //String findNewestFile(String filename) {
 String findFile(String filename) {
-#if RUNTIME_ONLY
-	return "";
-#endif
-	if (filename.empty())return "";
-	List<String> extensions = {"", ".wasm", ".wast", ".wasp"};
-	List<String> folders = {"lib", "src", "wasp", "source", "include", "sample", "samples", "test", "tests"};
-	List<String> paths;
-	if (filename.contains("/"))
+#if RUNTIME_ONLY or WASM
+    return "";
+#else
+    List<String> extensions = {"", ".wasm", ".wast", ".wasp"};
+    List<String> folders = {"lib", "src", "wasp", "source", "include", "sample", "samples", "test", "tests"};
+    List<String> paths;
+    if (filename.contains("/"))
 		for (auto extension: extensions) {
 			String &path = filename + extension;
 			if (fileExists(path)) paths.add(path);
@@ -97,6 +98,7 @@ String findFile(String filename) {
 	paths.sort(&file_last_modified);
 	String &best = paths.last();
 	return best;
+#endif
 }
 
 
@@ -154,25 +156,34 @@ short normChar(char c) {// 0..36 damn ;)
 		case '(':
 		case '#':
 		case '$':
-		case '+':
-		case ' ':
-		case '_':
-		case '-':
-			return 0;
-		default:
-			return c;// for asian etc!
-	}
+        case '+':
+        case ' ':
+        case '_':
+        case '-':
+            return 0;
+        default:
+            return c;// for asian etc!
+    }
+}
+
+// useless
+int ord(codepoint p) {
+    return p;
+}
+
+codepoint Char(int p) {
+    return p;
 }
 
 unsigned int wordHash(const char *str, int max_chars) { // unsigned
-	if (!str) return 0;
-	int maxNodes = 100000;
-	char c;
-	unsigned int hash = 5381, hash2 = 7; // long
-	while (max_chars-- > 0 and (c = *str++)) {
-		hash2 = hash2 * 31 + (short) (c);
-		int next = normChar(c);//a_b-c==AbC
-		if (next == 0)continue;
+    if (!str) return 0;
+    int maxNodes = 100000;
+    char c;
+    unsigned int hash = 5381, hash2 = 7; // long
+    while (max_chars-- > 0 and (c = *str++)) {
+        hash2 = hash2 * 31 + (short) (c);
+        int next = normChar(c);//a_b-c==AbC
+        if (next == 0)continue;
 		hash = hash * 33 + next;// ((hash << 5) + hash
 		hash = hash % maxNodes;
 	}
@@ -385,9 +396,23 @@ String &hex(long d) {
 
 bool isSmartPointer(long long d) {
 //	if((d&negative_mask_64)==negative_mask_64)return false;
-	if ((d & negative_mask_64) == negative_mask_64)return false;
-	if (d & double_mask_64)return true;
-	return d & smart_mask_64 and not(d & negative_mask_64);
+    if ((d & negative_mask_64) == negative_mask_64)return false;
+    if (d & double_mask_64)return true;
+    return d & smart_mask_64 and not(d & negative_mask_64);
 }
 
 Node smartValue(long smartPointer);
+
+
+#include <cxxabi.h>
+
+String demangle(String &fun) {
+    if (fun.length == 0)return "";
+    int status;
+    char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
+    if (status < 0 or string == 0)
+        return fun;// not demangled (e.g. "memory")
+    String real_name = String(string); // temp
+    String ok = real_name.substring(0, real_name.indexOf('('));
+    return ok;// .clone(); unnecessary: return by value copy
+}

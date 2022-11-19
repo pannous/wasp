@@ -67,16 +67,18 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
 	buffers, // int[]
 	//	ints, // use longy field, but in wasm longs are pointers!
 	bools,
-	errors, // internal wasp error, NOT to be used in Angle!
-	clazz,
+    errors, // internal wasp error, NOT to be used in Angle!
+    clazz,
 
-	// each class can be made into a typed list / vector int => int[] :, // as Java class,  primitive int vs Node(kind==int) == boxed Int.
-	//	vectors     use kind=array type=Any
+    // each class can be made into a typed list / vector int => int[] :, // as Java class,  primitive int vs Node(kind==int) == boxed Int.
+    //	vectors     use kind=array type=Any
 //	vectors, // any[] vs Node[]  list of type class!  e.g.  numbers xs => xs.type=number(type=vectors)
-	arrays, // Node[] vs any[]  untyped array of Nodes. Unlike vector the node is NOT a class! todo: see Classes
-	nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
-	reals = 0x7C, /*  ≠ float64, just hides bugs, these concepts should not be mixed */
-	longs = 0x7E, // the signature of parameters/variables is independent!
+    arrays, // Node[] vs any[]  untyped array of Nodes. Unlike vector the node is NOT a class! todo: see Classes
+    nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
+    reals = 0x7C, /*  ≠ float64, just hides bugs, these concepts should not be mixed */
+    longs = 0x7E, // the signature of parameters/variables is independent!
+    structs,
+    enums,
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 

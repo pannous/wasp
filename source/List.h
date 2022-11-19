@@ -188,8 +188,6 @@ public:
 
 	List(const std::initializer_list<S> &_items) : List() {
 		for (const S &s: _items) {
-			if (&s == 0) // todo doesn't work for String because {"a","b",0} => String(0)!
-				error1("initializer_lists DO NOT NEED 0 termination!");// break;
 			items[_size++] = s;
 		}
 	}

@@ -31,7 +31,15 @@ extern bool debug;
 extern bool throwing;// false for error tests etc
 extern bool panicking;// false for error tests, webview, etc
 
-extern bool polish_notation;
+// todo: wrap parser-options
+static bool use_polish_notation;// prefix notation, s-expression parser flag  (html (body)) vs html{body{}}
+
+struct ParserOptions { // not just for parser but also for serialize!!
+//    bool polish_notation= false;// prefix notation, s-expression parser flag  (html (body)) vs html{body{}}
+    bool use_tags = false;// <html> or generic list<abc> , "less than" requires space, a<b can still be resolved as 'smaller' in analyzer
+    bool kebab_case = false;// kebab-case means: parse "-" as hypen instead of minus, or 1900 - 2000AD (easy with units)
+};
+// a-b can still be resolved as minus in analyzer
 
 //extern unsigned char __heap_base;
 //unsigned int bump_pointer = &__heap_base;
@@ -409,26 +417,31 @@ public:
 				break;
 			default:
 				error("unknown or unimplemented smart type");
-		}
-	}
+        }
+    }
 
-	long hash() {
-		static int _object_count = 1;
+    long hash() {
+        static int _object_count = 1;
 //		if (not _hash) _hash = random();//  expensive?
-		if (not _hash)_hash = _object_count++;// //  (long) (void *) this; could conflict on memory reuse
-		return _hash;
-	}
+        if (not _hash)_hash = _object_count++;// //  (long) (void *) this; could conflict on memory reuse
+        return _hash;
+    }
 
+    Node *invoke(String function, Node *arguments) {
+        todo("dynamic dispatch");
+        // i32.const fun
+        // call_indirect(type,table)
+    }
 
-	Node &first() {
-		if (length > 0)return children[0];
-		if (children)return children[0]; // hack for missing length!
-		if (kind == assignment and value.node)return *value.node;// todo sure??, could be direct type!?
-		if (kind == operators and next)return *next;// todo remove hack
-		return *this;// (x)==x   danger: loops
+    Node &first() {
+        if (length > 0)return children[0];
+        if (children)return children[0]; // hack for missing length!
+        if (kind == assignment and value.node)return *value.node;// todo sure??, could be direct type!?
+        if (kind == operators and next)return *next;// todo remove hack
+        return *this;// (x)==x   danger: loops
 //		error("No such element");
 //		return ERROR;
-	}
+    }
 
 //	if you do not declare a copy constructor, the compiler gives you one implicitly.
 //	Node( Node& other ){// copy constructor!!

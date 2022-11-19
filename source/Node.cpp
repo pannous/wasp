@@ -20,8 +20,10 @@
 
 #define error(msg) error1(msg,__FILE__,__LINE__)
 
+// todo: wrap parser-options
+//bool use_polish_notation = false;// f(a,b) => (f a b) also : lisp mode (a 1 2)==a(1)(2)==a{1 2}
 
-bool polish_notation = false;// f(a,b) => (f a b) also : lisp mode (a 1 2)==a(1)(2)==a{1 2}
+
 bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
 bool panicking = false;// false for error tests, webview, etc
 #ifdef RUNTIME_ONLY
@@ -580,18 +582,18 @@ void Node::addSmart(Node node) {// merge?
 
 void Node::addSmart(Node *node, bool flatten, bool clutch) { // flatten AFTER construction!
 // todo cleanup clutch LOL!, and or merge with flat()
-	if (!node)return;
-	if (polish_notation and node->length > 0) {
-		if (name.empty())
-			name = (*node)[0].name;
-		else
-			parent->add(node);// REALLY?
-		Node args = node->from(node[0]);
-		add(args);
-		return;
-	}
-	if (clutch) {
-		// a{x:1} != a {x:1} but {x:1} becomes child of a
+    if (!node)return;
+    if (use_polish_notation and node->length > 0) {
+        if (name.empty())
+            name = (*node)[0].name;
+        else
+            parent->add(node);// REALLY?
+        Node args = node->from(node[0]);
+        add(args);
+        return;
+    }
+    if (clutch) {
+        // a{x:1} != a {x:1} but {x:1} becomes child of a
 		// a{x:1} == a:{x:1} ?
 		Node &letzt = last();
 		// do NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
@@ -815,17 +817,17 @@ String Node::serializeValue(bool deep) const {
 String Node::serialize() const {
 	if (not this)return "";
 	String wasp = "";
-	if (not polish_notation or length == 0) {
-		if (not name.empty()) wasp += name;
-		String serializedValue = serializeValue();
-		if (kind == longs or kind == reals)
-			if (not atoi0(name) and name and name.data and name.data[0] != '0')
-				return ""s + name + ":" + serializedValue;
-		if (kind == strings and name and (name.empty() or name == value.string))
-			return serializedValue;// not text:"text", just "text"
-		if (kind == longs and name and (name.empty() or name == itoa(value.longy)))
-			return serializedValue;// not "3":3
-		if (kind == reals)// and name and (name.empty() or name==itoa(value.longy)))
+    if (not use_polish_notation or length == 0) {
+        if (not name.empty()) wasp += name;
+        String serializedValue = serializeValue();
+        if (kind == longs or kind == reals)
+            if (not atoi0(name) and name and name.data and name.data[0] != '0')
+                return ""s + name + ":" + serializedValue;
+        if (kind == strings and name and (name.empty() or name == value.string))
+            return serializedValue;// not text:"text", just "text"
+        if (kind == longs and name and (name.empty() or name == itoa(value.longy)))
+            return serializedValue;// not "3":3
+        if (kind == reals)// and name and (name.empty() or name==itoa(value.longy)))
 			return serializedValue;// not "3":3.14
 		if (serializedValue and value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
 		    !eq(serializedValue, "?")) {
@@ -837,22 +839,22 @@ String Node::serialize() const {
 	}
 	if (length >= 0) {
 		if (kind == expression and not name.empty())wasp += ":";
-		if ((length > 1 or kind == patterns or kind == objects)) {
-			// skip single element braces: a == (a)
-			if (kind == groups and (not separator or separator == ' '))
-				wasp += "(";
-			else if (kind == objects)wasp += "{";
-			else if (kind == patterns)wasp += "[";
-			else if (length > 0 and not separator)
-				wasp += "(";// default
-		}
-		if (polish_notation and not name.empty()) wasp += name;
+        if ((length > 1 or kind == patterns or kind == objects)) {
+            // skip single element braces: a == (a)
+            if (kind == groups and (not separator or separator == ' '))
+                wasp += "(";
+            else if (kind == objects)wasp += "{";
+            else if (kind == patterns)wasp += "[";
+            else if (length > 0 and not separator)
+                wasp += "(";// default
+        }
+        if (use_polish_notation and not name.empty()) wasp += name;
 		int i = 0;
 		if (length > 0)
 			if (kind == operators) wasp += " ";
 			for (Node &node: *this) {
-				if (length == 0 || &node == 0)
-					break;// how on earth is that possible??
+                if (length == 0)
+                    break;// how on earth is that possible??
 				if (i++ > 0) wasp += separator ? String(separator) : " ";
 				wasp += node.serialize();
 			}
@@ -1215,13 +1217,20 @@ chars typeName(Type t) {
 
 chars typeName(const Type *t) {
 	if (not t)return "ø undefined";
-	return typeName(*t);
+    return typeName(*t);
 }
 
 Node &node(Type t, long value, char *name) {
-	return (*new Node(name)).setValue(value).setType(t, false);
+    return (*new Node(name)).setValue(value).setType(t, false);
 }
 //
 //Type::Type(const Node &o) {
 //
 //}
+
+
+int ord(Node &p) {
+    if (p.kind != codepoints)
+        p.invoke("ord", 0);// self
+    return p.value.longy;
+}

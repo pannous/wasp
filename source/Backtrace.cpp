@@ -34,22 +34,21 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 		Dl_info info;
 		chars name;
 		if (dladdr(callstack[i], &info) && info.dli_sname) {
-			char *demangled = NULL;
-			int status = -1;
-			if (i == skip)
-				printf("%s\n", info.dli_fname);
-			if (info.dli_sname[0] == '_')
-				demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
-			if (contains(demangled, "decltype"))break;
-			name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
-			unsigned long offset = (char *) callstack[i] - (char *) info.dli_saddr;
-			int line_nr = addr2line(info.dli_fname, info.dli_saddr);
-			snprintf(buf, sizeof(buf), "%-3d %s + %zd @ %p \n", i, name, offset,
-			         info.dli_saddr);// or dli_fbase for function!
-//			snprintf(buf, sizeof(buf), "%s:%d \n", info.dli_fname, line_nr);// or dli_fbase for function!
-		} else {
-			snprintf(buf, sizeof(buf), "%-3d %*p %s\n",
-			         i, int(2 + sizeof(void *) * 2), callstack[i], symbols[i]);
+            char *demangled = NULL;
+            int status = -1;
+            if (i == skip)
+                printf("%s\n", info.dli_fname);
+            if (info.dli_sname[0] == '_')
+                demangled = abi::__cxa_demangle(info.dli_sname, NULL, 0, &status);
+            if (contains(demangled, "decltype"))break;
+            name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
+            unsigned long offset = (char *) callstack[i] - (char *) info.dli_saddr;
+//			int line_nr = addr2line(info.dli_fname, info.dli_saddr);
+            snprintf(buf, sizeof(buf), "%-3d %s + %zd @ %p \n", i, name, offset,
+                     info.dli_saddr);// or dli_fbase for function!
+//			snprintf(buf, sizeof(buf), "%s:%d \n", info.dli_fname, line_nr); wasp:42  eXECutable makes no SenSe!
+        } else {
+            snprintf(buf, sizeof(buf), "%-3d %*p %s\n", i, int(2 + sizeof(void *) * 2), callstack[i], symbols[i]);
 		}
 		trace_buf << buf;
 		if (eq(name, "testCurrent()"))
