@@ -484,7 +484,7 @@ namespace wabt {
             case ExternalKind::Memory:
                 return "memory";
             default:
-                error("wrong ExternalKind #"s + (int) kind);
+//                error("wrong ExternalKind #"s + (int) kind);
                 return "<error_kind>";
         }
     }

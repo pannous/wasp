@@ -478,11 +478,6 @@ public:
 
     void ApplyRelocation(Section *section, const wabt::Reloc *r);
 
-    std::vector<Reloc> PatchCodeSection(std::vector<byte> section_data, size_t offset, size_t size, size_t indexOffset,
-                                        short import_boarder);
-
-    void PatchCodeSection(bytes section_data, int length, size_t i);
-
 private:
     typedef std::pair<Offset, Offset> Fixup;
 
@@ -1202,7 +1197,7 @@ Section *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, SectionT
     return nullptr;
 }
 
-// relocs can either be provided as custom section, or inferred from the linker. todo: don't infer if provided
+// relocs can either be provided as custom section, or inferred from the linker.
 List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section) {
     List<Reloc> relocs;
     std::vector<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
@@ -1322,29 +1317,6 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
     return relocs;
 }
 
-
-void Linker::PatchCodeSection(bytes section_data, int length, size_t offset) {
-    //	int codeCount = unsignedLEB128(codes_vector);
-    //	Code code = vec(codes);
-    int start = offset;
-//    int fun_length = unsignedLEB128(section_data, length, start);
-    Opcodes op = (Opcodes) section_data[start++];
-    if (op == call_) {
-//        short nop_offset = start;
-//        short index = unsignedLEB128(section_data, length, start);
-//		if (new_indices.contains(index)) {
-////			Reloc reloc(wabt::RelocType::FuncIndexLEB, nop_offset,new_indices[index] );
-//			while (section_data[nop_offset] == 0x80)
-//				*(section_data + nop_offset++) = 0x01;// NOP the rest!
-//			*(section_data + nop_offset) = 0x01;// ONE MORE NOP to delete the old value
-//			// else CHECK SIZE!
-//			WriteU32Leb128Raw(section_data + nop_offset, section_data + length, new_indices[index]);
-//		}
-    } else {
-        int arg_bytes = opcode_args[op];
-        start += arg_bytes;
-    }
-}
 
 
 Code &code(std::vector<uint8_t> bin) {

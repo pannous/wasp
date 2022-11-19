@@ -2339,16 +2339,11 @@ void tests() {
 void testCurrent() {
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
-//	exit(1);
     data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
-//	clearAnalyzerContext();
-//	assert_emit("3", 3);
-//    testLebByteSize();
-    testLebByteSize();
-    testWit();
     testMergeOwn();
     assert_run("oka", 42);
+    testWit();
 
     testSubGroupingFlatten();
     skip_wasm(
