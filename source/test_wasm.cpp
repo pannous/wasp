@@ -50,8 +50,8 @@ void testMergeRuntime() {
 
 void testMergeOwn() {
     testMergeGlobal();
-    testMergeMemory();
     exit(1);
+    testMergeMemory();
 #ifdef INCLUDE_MERGER
     Module &main = loadModule("test/merge/main2.wasm");
     Module &lib = loadModule("test/merge/lib4.wasm");

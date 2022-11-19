@@ -62,6 +62,7 @@ namespace wabt {
 			bool active = true;
 			LinkerInputBinary *foreign_binary;
 			int foreign_index;
+            int relocated_global_index;
 		};
 
 		struct DataSegment {
