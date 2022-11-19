@@ -911,10 +911,10 @@ void Linker::ResolveSymbols() {
 // binary->functions not filled yet!
     for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
         printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
+        unsigned long nr_imports = binary->function_imports.size();
 
 //        int pos = 0;
         for (const Export &_export: binary->exports) {// todo: why not store index directly?
-            unsigned long nr_imports = binary->function_imports.size();
 //            pos++;
             if (tracing)
                 printf("%s export kind %d '%s' index %d\n", binary->name, _export.kind, _export.name.data,
@@ -928,12 +928,12 @@ void Linker::ResolveSymbols() {
                 globals_export_list.emplace_back(&_export, binary.get());
                 export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
             } else if (_export.kind == ExternalKind::Func) {
-                Func &func = binary->functions[nr_imports + _export.index];
+                Func &func = binary->functions[_export.index - nr_imports];
                 unsigned long position = export_list.size();
                 export_list.emplace_back(&_export, binary.get());
                 if (not func.name.data)
                     func.name = _export.name;
-                if (!func.name.empty()) {
+                if (func.name.length > 0) {
                     export_map.emplace(func.name, Binding(position));
                     const String &demangled = demangle(func.name);
                     if (func.name != demangled)
@@ -1003,7 +1003,8 @@ void Linker::ResolveSymbols() {
                 ExportInfo &export_info = export_list[export_number];
                 // TODO verify the foreign function has the correct signature.
                 Index export_index = export_info.export_->index;
-                Func &exported = export_info.binary->functions[export_index];
+                int nr_imports = export_info.binary->function_imports.size();
+                Func &exported = export_info.binary->functions[export_index - nr_imports];
 //				Index new_Index; // see RelocateFuncIndex(); ⚠️ WE CAN ONLY calculate the new index once ALL imports are collected!
                 Index old_index = import.sig_index;
                 import.active = false;
