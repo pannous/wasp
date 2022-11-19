@@ -89,7 +89,7 @@ String StringPrintf(const char *format, ...);
 #define WABT_SNPRINTF_ALLOCA(buffer, len, format) \
           size_t len=0; char* buffer = (char*)malloc(WABT_DEFAULT_SNPRINTF_ALLOCA_BUFSIZE);
 #endif
-//len = vswprintf(buffer, len + 1, format, args_copy);              \
+//len = vswprintf(buffer, len + 1, format, args_copy);
 
 
 
@@ -461,37 +461,42 @@ namespace wabt {
 
 	enum {
 		WABT_USE_NATURAL_ALIGNMENT = 0xFFFFFFFFFFFFFFFF
-	};
+    };
 
 //	Result ReadFile(String filename, std::vector<uint8_t> *out_data);
 
-	void InitStdio();
+    void InitStdio();
 
 /* external kind */
 
-	extern const char *g_kind_name[];
+    extern const char *g_kind_name[];
 
-	static const char *GetKindName(ExternalKind kind) {
-		return static_cast<size_t>(kind) < kExternalKindCount
-		       ? g_kind_name[static_cast<size_t>(kind)]
-		       : "<error_kind>";
-	}
+    [[maybe_unused]] static const char *GetKindName(ExternalKind kind) {
+        switch (kind) {
+            case ExternalKind::Func:
+                return "func";
+            case ExternalKind::Tag:
+                return "tag";
+            case ExternalKind::Table:
+                return "table";
+            case ExternalKind::Global:
+                return "global";
+            case ExternalKind::Memory:
+                return "memory";
+            default:
+                error("wrong ExternalKind #"s + (int) kind);
+                return "<error_kind>";
+        }
+    }
 
 /* reloc */
 
-	extern const char *g_reloc_type_name[];
-
-	static const char *GetRelocTypeName(RelocType reloc) {
-		return static_cast<size_t>(reloc) < kRelocTypeCount
-		       ? g_reloc_type_name[static_cast<size_t>(reloc)]
-		       : "<error_reloc_type>";
-	}
 
 /* symbol */
-
-	static const char *GetSymbolTypeName(SymbolType type) {
-		switch (type) {
-			case SymbolType::Function:
+    [[maybe_unused]]
+    static const char *GetSymbolTypeName(SymbolType type) {
+        switch (type) {
+            case SymbolType::Function:
 				return "func";
 			case SymbolType::Global:
 				return "global";

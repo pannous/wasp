@@ -49,7 +49,7 @@ void testParse() {
 }
 
 void testWast() {
-	polish_notation = true;
-	testParse();
-	polish_notation = false;
+    use_polish_notation = true;
+    testParse();
+    use_polish_notation = false;
 }

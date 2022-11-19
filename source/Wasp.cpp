@@ -27,6 +27,8 @@
 int SERVER_PORT = 1234;
 //bool eval_via_emit = false;// not all tests yet
 bool eval_via_emit = true;// << todo!  assert_is(…)
+
+
 // get home dir :
 /*#include <unistd.h>
 #include <sys/types.h>
@@ -297,25 +299,28 @@ class Wasp {
 //	char* point = 0;            // The current character
 //	char next = 0; // set in proceed()
 
-	codepoint ch = 0;            // The current character
-	codepoint next = 0; // set in proceed()
-	codepoint previous = 0;
+    codepoint ch = 0;            // The current character
+    codepoint next = 0; // set in proceed()
+    codepoint previous = 0;
 
-	String line;
-	int lineNumber{};    // The current line number
-	int columnStart{};    // The index of column start char
+    String line;
+    int lineNumber{};    // The current line number
+    int columnStart{};    // The index of column start char
 
-	int indentation_level = 0;
-	bool indentation_by_tabs = false;
+    ParserOptions parserOptions;
+
+    int indentation_level = 0;
+    bool indentation_by_tabs = false;// not a compiler option but inferred from indentation!
+
 #define INDENT 0x0F // 	SI 	␏ 	^O 		Shift In
 #define DEDENT 0x0E //  SO 	␎ 	^N 		Shift Out
 
-	//	indent 􀋵 (increase.indent) ☞ 𒋰 𒐂 ˆ ˃
-	int indentation() {
-		if (is_grouper(lastNonWhite)) {
-			// todo: ignore indent in x{…} BUT keep and restore previous indent!
-		}
-		float tabs = 0;
+    //	indent 􀋵 (increase.indent) ☞ 𒋰 𒐂 ˆ ˃
+    int indentation() {
+        if (is_grouper(lastNonWhite)) {
+            // todo: ignore indent in x{…} BUT keep and restore previous indent!
+        }
+        float tabs = 0;
 		int spaces_per_tab = 2;
 		int offset = at;
 //		if(text[offset]==end_block) 0x0b / vertical tab
@@ -603,18 +608,20 @@ private:
 		}
 		// support for Infinity (could tweak to allow other words):
 		if (ch == 'I') {
-			const Node &ok = word();
-			return (sign == '-') ? NegInfinity : Infinity;
-		}
+//			const Node &ok =
+            word();
+            return (sign == '-') ? NegInfinity : Infinity;
+        }
 
 		// support for NaN
 		if (ch == 'N') {
-			const Node &ok = word();
+//			const Node &ok =
+            word();
 //			bool ok = word();
 //			if (!ok) { error('expected word to be NaN'); }
-			// ignore sign as -NaN also is NaN
-			return NaN;
-		}
+            // ignore sign as -NaN also is NaN
+            return NaN;
+        }
 
 		while (atoi1(ch) >= 0) { // -1 if not
 			//	ch >= '0' and ch <= '9'
@@ -648,111 +655,112 @@ private:
 		if (sign == '-') {
 			number0 = -atoi0(string.data);
 		} else {
-			number0 = +atoi0(string.data);
-		}
+            number0 = +atoi0(string.data);
+        }
 //		if (!isFinite(number)) {
 //			error("Bad number");
 //		} else {
-		return *new Node(number0); // {number0}; //wow cPP
+        if (base != 10)todo("base "s + base);
+        return *new Node(number0); // {number0}; //wow cPP
 //		}
-	};
+    };
 
-	int parseInt(char next, int base) {
-		return next - '0';
-	}
+    int parseInt(char next_digit, int base) {
+        return next_digit - '0';
+    }
 
-	String fromCharCode(long uffff) {// todo UTF
-		return String((char) (uffff));// itoa0(uffff);
-	}
+    String fromCharCode(long uffff) {// todo UTF
+        return String((char) (uffff));// itoa0(uffff);
+    }
 
-	Node string(char delim = '"') {
-		proceed();
-		int start = at;
-		while (ch and ch != delim and previous != '\\')
-			proceed();
+    Node string(char delim = '"') {
+        proceed();
+        int start = at;
+        while (ch and ch != delim and previous != '\\')
+            proceed();
 //		const String &substring = text.substring(start, at - 1);
-		String substring = text.substring(start, at);
-		proceed();
-		return Node(substring).setType(strings);// DONT do "3"==3 (here or ever)!
-	}
+        String substring = text.substring(start, at);
+        proceed();
+        return Node(substring).setType(strings);// DONT do "3"==3 (here or ever)!
+    }
 
-// Parse a string value.
-	Node string2(char delim = '"') {
-		auto hex = 0;
-		auto i = 0;
-		auto triple = false;
-		auto start = at;
-		String string;
+//// Parse a string value.
+//    [[maybe_unused]] Node string2(char delim = '"') {
+//		auto hex = 0;
+//		auto i = 0;
+//		auto triple = false;
+//		auto start = at;
+//		String string;
+//
+//		// when parsing for string values, we must look for ' or " and \ characters.
+//		if (ch == '"' or ch == '\'') {
+//			delim = ch;
+//			if (next == delim and text[at + 1] == delim) { // got tripple quote
+//				triple = true;
+//				proceed();
+//				proceed();
+//			}
+//			while (proceed()) {
+//				if (ch == delim) {
+//					proceed();
+//					if (!triple) { // end of string
+//						return Node(string);
+//						return Node(text.substring(start, at - 2));
+//					} else if (ch == delim and next == delim) { // end of tripple quoted text
+//						proceed();
+//						proceed();
+//						return Node(text.substring(start, at - 2));
+////						todo: escape
+//					} else {
+//						string += delim;
+//					}
+//					// continue
+//				}
+//				if (ch == '\\') { // escape sequence
+//					if (triple) { string += '\\'; } // treated as normal char
+//					else { // escape sequence
+//						proceed();
+//						if (ch == 'u') { // unicode escape sequence
+//							long uffff = 0; // unicode
+//							for (i = 0; i < 4; i += 1) {
+//								hex = parseInt(proceed(), 16);
+////								if (!isFinite(hex)) { break; }
+//								uffff = uffff * 16 + hex;
+//							}
+//							string = string + fromCharCode(uffff);
+//						} else if (ch == '\r') { // ignore the line-end, as defined in ES5
+//							if (next == '\n') {
+//								proceed();
+//							}
+//						} else if (escapee(ch)) {
+//							string += escapee(ch);
+//						} else {
+//							break;  // bad escape
+//						}
+//					}
+//				}
+//					// else if (ch == '\n') {
+//					// control characters like TAB and LF are invalid in JSON, but valid in Mark;
+//					// break;
+//					// }
+//				else { // normal char
+//					string += ch;
+//				}
+//			}
+//		}
+//		err("Bad string");
+//		return NIL;
+//	};
 
-		// when parsing for string values, we must look for ' or " and \ characters.
-		if (ch == '"' or ch == '\'') {
-			delim = ch;
-			if (next == delim and text[at + 1] == delim) { // got tripple quote
-				triple = true;
-				proceed();
-				proceed();
-			}
-			while (proceed()) {
-				if (ch == delim) {
-					proceed();
-					if (!triple) { // end of string
-						return Node(string);
-						return Node(text.substring(start, at - 2));
-					} else if (ch == delim and next == delim) { // end of tripple quoted text
-						proceed();
-						proceed();
-						return Node(text.substring(start, at - 2));
-//						todo: escape
-					} else {
-						string += delim;
-					}
-					// continue
-				}
-				if (ch == '\\') { // escape sequence
-					if (triple) { string += '\\'; } // treated as normal char
-					else { // escape sequence
-						proceed();
-						if (ch == 'u') { // unicode escape sequence
-							long uffff = 0; // unicode
-							for (i = 0; i < 4; i += 1) {
-								hex = parseInt(proceed(), 16);
-//								if (!isFinite(hex)) { break; }
-								uffff = uffff * 16 + hex;
-							}
-							string = string + fromCharCode(uffff);
-						} else if (ch == '\r') { // ignore the line-end, as defined in ES5
-							if (next == '\n') {
-								proceed();
-							}
-						} else if (escapee(ch)) {
-							string += escapee(ch);
-						} else {
-							break;  // bad escape
-						}
-					}
-				}
-					// else if (ch == '\n') {
-					// control characters like TAB and LF are invalid in JSON, but valid in Mark;
-					// break;
-					// }
-				else { // normal char
-					string += ch;
-				}
-			}
-		}
-		err("Bad string");
-		return NIL;
-	};
-
-	// Parse an inline comment
-	void inlineComment() {
-		// Skip an inline comment, assuming this is one. The current character should
-		// be the second / character in the // pair that begins this inline comment.
-		// To finish the inline comment, we look for a newline or the end of the text.
-		if (ch != '/' and ch != '#') {
-			err("Not an inline comment");
-		}
-		do {
+    // Parse an inline comment
+    void inlineComment() {
+        // Skip an inline comment, assuming this is one. The current character should
+        // be the second / character in the // pair that begins this inline comment.
+        // To finish the inline comment, we look for a newline or the end of the text.
+        if (ch != '/' and ch != '#') {
+            err("Not an inline comment");
+        }
+        do {
 			proceed();
 			if (ch == '\r' or ch == '\n' or ch == 0) {
 //				proceed();
@@ -839,9 +847,9 @@ private:
 		}
 	};
 
-	bool isNameStart(char i) {
-		return i > 'a' and i < 'Z';
-	}
+    static bool isNameStart(char i) {
+        return i > 'a' and i < 'Z';
+    }
 
 	bool token(String token) {
 		return ch == token[0] and suffix(++token);
@@ -893,17 +901,17 @@ private:
 
 
 //	const
-	Node resolve(Node node) {
-		String &symbol = node.name;
-		if (symbol == "false")return False;
-		if (symbol == "False")return False;
-		if (symbol == "no")return False;
-		if (symbol == "No")return False;
+    static Node resolve(Node node) {
+        String &symbol = node.name;
+        if (symbol == "false")return False;
+        if (symbol == "False")return False;
+        if (symbol == "no")return False;
+        if (symbol == "No")return False;
 //		if (symbol == "ƒ")return False;// ‽ ƒ is function shorthand!
-		if (symbol == "⊥")return False;//
+        if (symbol == "⊥")return False;//
 //		if (node.name == "𐄂")return False; ambiguous: multiplication 𐄂 + / check 𐄂
-		if (symbol == "wrong")return False;
-		if (symbol == "Wrong")return False;
+        if (symbol == "wrong")return False;
+        if (symbol == "Wrong")return False;
 		if (symbol == "⊤")return True; // + vs -
 		if (symbol == "true")return True;
 		if (symbol == "True")return True;
@@ -1354,27 +1362,28 @@ private:
 	}
 
 // ":" is short binding a b:c d == a (b:c) d
-// "=" is number-binding a b=c d == (a b)=(c d)   todo a=b c=d
+// "=" is long-binding a b=c d == (a b)=(c d)   todo a=b c=d
+// "-" is post binding operator (analyzed in angle) OR short-binding in kebab-case
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
 // reason for strange name import instead of parse is better IDE findability, todo rename to parseNode()?
-	Node &valueNode(codepoint close = 0, Node *parent = 0) {
-		// A JSON value could be an object, an array, a string, a number, or a word.
-		Node &current = *new Node();
-		current.parent = parent;
-		current.setType(groups);// may be changed later, default (1 2)==1,2
+    Node &valueNode(codepoint close = 0, Node *parent = 0) {
+        // A JSON value could be an object, an array, a string, a number, or a word.
+        Node &actual = *new Node();// current already used in super context
+        actual.parent = parent;
+        actual.setType(groups);// may be changed later, default (1 2)==1,2
 #ifdef DEBUG
-		current.line = &line;
+        actual.line = &line;
 #endif
-		auto length = text.length;
-		int start = at;// line, expression, group, … start
+        auto length = text.length;
+        int start = at;// line, expression, group, … start
 //		loop:
-		white();// insignificant whitespace HERE
-		while (ch and at <= length) {
+        white();// insignificant whitespace HERE
+        while (ch and at <= length) {
 //			white()  significant whitespace   1+1 != 1 +1 = [1 1]
-			if (previous == '\\') {// escape ANYTHING
+            if (previous == '\\') {// escape ANYTHING
 				proceed();
 				continue;
 			}
@@ -1398,7 +1407,7 @@ private:
 				group.setType(operators, false);// name==« (without »)
 				group.add(body);
 //				group.type = type("group")["field"]=grouper;
-				current.add(group);
+                actual.add(group);
 				continue;
 			}
 			switch (ch) {
@@ -1415,8 +1424,8 @@ private:
 				case u'﹛': // ﹜
 				case u'｛': // ｝
 				case '{': {
-					if (checkAmbiguousBlock(current, parent))
-						warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
+                    if (checkAmbiguousBlock(actual, parent))
+                        warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
 					codepoint bracket = ch;
 					auto type = getType(bracket);
 					bool flatten = true;
@@ -1431,8 +1440,8 @@ private:
 					}
 					proceed();
 					// wrap {x} … or todo: just don't flatten before?
-					Node &object = *new Node();
-					Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &current.last());
+                    Node &object = *new Node();
+                    Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &actual.last());
 					object.addSmart(objectValue);
 //						object.add(objectValue);
 					if (flatten) object = object.flat();
@@ -1442,9 +1451,9 @@ private:
 					object.line = &line;
 #endif
 					if (asListItem)
-						current.add(object);
+                        actual.add(object);
 					else
-						current.addSmart(object);
+                        actual.addSmart(object);
 //					current.addSmart(&object,flatten);
 					break;
 				}
@@ -1455,22 +1464,24 @@ private:
 //					break loop;// not in c++
 					err("wrong closing bracket");
 //				case '+': // todo WHO writes +1 ?
-				case '-':
-				case '.':
-					if (next == '>') {// -> => ⇨
-						next = u'⇨';
-						proceed();
-					}
-					if (isDigit(next) and
-					    (previous == 0 or contains(separator_list, previous) or is_operator(previous)))
-						current.addSmart(numbero());// (2+2) != (2 +2) !!!
-					else if (ch == '-' and next == '.')// todo bad criterion 1-.9 is BINOP!
-						current.addSmart(numbero()); // -.9 -0.9 border case :(
-					else {
-						Node *op = any_operator().clone();
-						current.add(op);
-						current.kind = expression;
-					}
+                case '-':
+                    if (parserOptions.kebab_case and isalpha(lastNonWhite))
+                        error("kebab case should be handled in identifier");
+                case '.':
+                    if (next == '>') {// -> => ⇨
+                        next = u'⇨';
+                        proceed();
+                    }
+                    if (isDigit(next) and
+                        (previous == 0 or contains(separator_list, previous) or is_operator(previous)))
+                        actual.addSmart(numbero());// (2+2) != (2 +2) !!!
+                    else if (ch == '-' and next == '.')// todo bad criterion 1-.9 is BINOP!
+                        actual.addSmart(numbero()); // -.9 -0.9 border case :(
+                    else {
+                        Node *op = any_operator().clone();
+                        actual.add(op);
+                        actual.kind = expression;
+                    }
 					break;
 				case '"':
 				case '\'': /* don't use modifiers ` ˋ ˎ */
@@ -1485,15 +1496,15 @@ private:
 					matches = matches or (close == u'“' and ch == u'”');
 					matches = matches or (close == u'”' and ch == u'“');
 					if (!matches) { // open string
-						if (current.last().kind == expression)
-							current.last().addSmart(string(ch));
-						else
-							current.add(string(ch).clone());
-						break;
-					}
+                        if (actual.last().kind == expression)
+                            actual.last().addSmart(string(ch));
+                        else
+                            actual.add(string(ch).clone());
+                        break;
+                    }
 					Node id = Node(text.substring(start, at));
 					id.setType(Kind::strings);// todo "3" could have be resolved as number? DONT do js magifuckery
-					current.add(id);
+                    actual.add(id);
 					break;
 				}
 				case U'≝':
@@ -1504,63 +1515,63 @@ private:
 				case u'⇨':
 				case ':':
 				case '=': { // assignments, declarations and map key-value-pairs
-					// todo {a b c:d} vs {a:b c:d}
-					Node &key = current.last();
-					bool add_raw = current.kind == expression or key.kind == expression or
-					               (current.last().kind == groups and current.length > 1);
-					bool add_to_whole_expression = false; // a b : c => (a b):c  // todo: symbol :a !
-					if (previous == ' ' and (next == ' ' or next == '\n'))// and lastNonWhite !=':' …
-						add_to_whole_expression = true;
-					if (is_operator(previous))
-						add_raw = true;// == *=
+                    // todo {a b c:d} vs {a:b c:d}
+                    Node &key = actual.last();
+                    bool add_raw = actual.kind == expression or key.kind == expression or
+                                   (actual.last().kind == groups and actual.length > 1);
+                    bool add_to_whole_expression = false; // a b : c => (a b):c  // todo: symbol :a !
+                    if (previous == ' ' and (next == ' ' or next == '\n'))// and lastNonWhite !=':' …
+                        add_to_whole_expression = true;
+                    if (is_operator(previous))
+                        add_raw = true;// == *=
 
-					char prev = previous;// preserve
-					Node op = any_operator();// extend *= ...
-					if (not(op.name == ":" or (data_mode and op.name == "=")))
-						add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
-					if (op.name.length > 1)
-						add_raw = true;
-					if (current.kind == expression)
-						add_raw = true;
-					if (add_raw) {
-						current.add(op.setType(operators)).setType(expression);
-					}
+//					char prev = previous;// preserve
+                    Node op = any_operator();// extend *= ...
+                    if (not(op.name == ":" or (data_mode and op.name == "=")))
+                        add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
+                    if (op.name.length > 1)
+                        add_raw = true;
+                    if (actual.kind == expression)
+                        add_raw = true;
+                    if (add_raw) {
+                        actual.add(op.setType(operators)).setType(expression);
+                    }
 					char closer;// significant whitespace:
-					if (ch == '\n') closer = ';';// a: b c == a:(b c) newline or whatever!
-					else if (ch == INDENT) {
-						closer = DEDENT;
-						if (not current.separator)
-							current.separator = '\n';// because!
-						proceed();
-						white();
-					} else if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
-					else closer = ' ';// immediate a:b c == (a:b),c
-					Node &val = valueNode(closer, &key);// applies to WHOLE expression
-					if (add_to_whole_expression and current.length > 1 and not add_raw) {
-						if (current.value.node)todo("multi-body a:{b}{c}");
-						current.setType(Kind::key, false);// lose type group/expression etc ! ok?
-						// todo: might still be expression!
+                    if (ch == '\n') closer = ';';// a: b c == a:(b c) newline or whatever!
+                    else if (ch == INDENT) {
+                        closer = DEDENT;
+                        if (not actual.separator)
+                            actual.separator = '\n';// because!
+                        proceed();
+                        white();
+                    } else if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
+                    else closer = ' ';// immediate a:b c == (a:b),c
+                    Node &val = valueNode(closer, &key);// applies to WHOLE expression
+                    if (add_to_whole_expression and actual.length > 1 and not add_raw) {
+                        if (actual.value.node)todo("multi-body a:{b}{c}");
+                        actual.setType(Kind::key, false);// lose type group/expression etc ! ok?
+                        // todo: might still be expression!
 //						object.setType(Type::valueExpression);
-						current.value.node = &val;
-					} else if (add_raw) {  // complex expression are not simple maps
-						current.add(val);
-					} else {
-						setField(key, val);
-					}
-					break;
-				}
+                        actual.value.node = &val;
+                    } else if (add_raw) {  // complex expression are not simple maps
+                        actual.add(val);
+                    } else {
+                        setField(key, val);
+                    }
+                    break;
+                }
 				case INDENT: {
 					proceed();
-					if (current.separator == ',') {
-						warn("indent block within list");
-						ch = '\n';// we assume it was not desired;)
-					} else {
-						Node element = valueNode(DEDENT);// todo stop copying!
-						current.addSmart(element.flat());
-						if (not current.separator)
-							current.separator = '\n';// because
-						continue;
-					}
+                    if (actual.separator == ',') {
+                        warn("indent block within list");
+                        ch = '\n';// we assume it was not desired;)
+                    } else {
+                        Node element = valueNode(DEDENT);// todo stop copying!
+                        actual.addSmart(element.flat());
+                        if (not actual.separator)
+                            actual.separator = '\n';// because
+                        continue;
+                    }
 				}
 				case '\n': // groupCascade
 				case '\t': // only in tables
@@ -1571,37 +1582,37 @@ private:
 						continue;
 					}
 					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
-					if (current.separator != ch) {// and current.length > 1
-						// x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
-						if (current.length > 1 or current.kind == expression) {
-							Node neu;// wrap x,y => ( (x y) ; … )
+                    if (actual.separator != ch) {// and current.length > 1
+                        // x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
+                        if (actual.length > 1 or actual.kind == expression) {
+                            Node neu;// wrap x,y => ( (x y) ; … )
 //							neu.kind = current.kind;// or groups;
-							neu.kind = groups;
-							neu.parent = parent;
-							neu.separator = ch;
-							neu.add(current);
-							current = neu;
-						} else
-							current.separator = ch;
+                            neu.kind = groups;
+                            neu.parent = parent;
+                            neu.separator = ch;
+                            neu.add(actual);
+                            actual = neu;
+                        } else
+                            actual.separator = ch;
 						char closer = ch;// need to keep troughout loop!
 						while (ch == closer) {// same separator a , b , c
 							proceed();
 							Node element = valueNode(closer);// todo stop copying!
-							current.add(element.flat());
+                            actual.add(element.flat());
 						}
 						break;
 					}
 					// else fallthough!
-					current.separator = ch;
+                    actual.separator = ch;
 				}
 				case ' ': // possibly significant whitespace not consumed by white()
-				{
-					if (not current.separator)
-						current.separator = ch;
-					proceed();
-					white();
-					break;
-				}
+                {
+                    if (not actual.separator)
+                        actual.separator = ch;
+                    proceed();
+                    white();
+                    break;
+                }
 				case '#':
 					if (next == ' ') {
 						comment();
@@ -1623,7 +1634,7 @@ private:
 					node.line = &line;
 #endif
 					if (contains(import_keywords, (chars) node.first().name.data)) { //  use, include, require …
-						node = direct_include(current, node);
+                        node = direct_include(actual, node);
 					}
 #ifndef RUNTIME_ONLY
 					if (precedence(node) or operator_list.has(node.name)) {
@@ -1633,23 +1644,23 @@ private:
 					}
 #endif
 					if (node.kind == operators and ch != ':') {
-						if (isFunctor(node))
-							node.kind = functor;// todo: earlier
-						else current.kind = expression;
+                        if (isFunctor(node))
+                            node.kind = functor;// todo: earlier
+                        else actual.kind = expression;
 					}
 					if (node.length > 1 and addFlat) {
-						for (Node arg: node)current.add(arg);
-						current.kind = node.kind;// was: expression
-					} else {
-						if (current.last().kind == operators)
-							current.addSmart(&node.flat());
-						else
-							current.add(&node.flat());
-					}
+                        for (Node arg: node)actual.add(arg);
+                        actual.kind = node.kind;// was: expression
+                    } else {
+                        if (actual.last().kind == operators)
+                            actual.addSmart(&node.flat());
+                        else
+                            actual.add(&node.flat());
+                    }
 				}
 			}
 		}
-		return current.flat();
+        return actual.flat();
 	};
 
 };
@@ -1728,18 +1739,19 @@ void load_parser_initialization() {
 //	load_aliases();
 }
 
+
 //static
-Node &parse(String source) {
+Node &parse(String source, ParserOptions *parserOptions) {
 
-	if (operator_list.size() == 0)
-		load_parser_initialization();
-	// WE HAVE A GENERAL PROBLEM:
-	// 1. top level objects are not constructed True
-	// 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
+    if (operator_list.size() == 0)
+        load_parser_initialization();
+    // WE HAVE A GENERAL PROBLEM:
+    // 1. top level objects are not constructed True
+    // 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
 
-	if (!source.data)return (Node &) NIL;
-	info("Parsing: \n%s\n"s % source.data);
-	return Wasp().read(source);
+    if (!source.data)return (Node &) NIL;
+    info("Parsing: \n%s\n"s % source.data);
+    return Wasp().read(source);
 }
 
 // Mark/wasp has clean syntax with FULLY-TYPED data model (like JSON or even better)

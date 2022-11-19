@@ -25,34 +25,35 @@
 
 namespace wabt {
 
-	enum class ErrorLevel {
-		Warning,
-		Error,
-	};
+    enum class ErrorLevel {
+        Warning,
+        Error,
+    };
 
-	static const char *GetErrorLevelName(ErrorLevel error_level) {
-		switch (error_level) {
-			case ErrorLevel::Warning:
-				return "warning";
-			case ErrorLevel::Error:
-				return "error";
-		}
-		WABT_UNREACHABLE;
-	}
+    [[maybe_unused]]
+    static const char *GetErrorLevelName(ErrorLevel error_level) {
+        switch (error_level) {
+            case ErrorLevel::Warning:
+                return "warning";
+            case ErrorLevel::Error:
+                return "error";
+        }
+        WABT_UNREACHABLE;
+    }
 
-	class Error {
-	public:
-		Error() : error_level(ErrorLevel::Error) {}
+    class Error {
+    public:
+        Error() : error_level(ErrorLevel::Error) {}
 
-		Error(ErrorLevel error_level, Location loc, String message)
-				: error_level(error_level), loc(loc), message(message.data) {}
+        Error(ErrorLevel error_level, Location loc, String message)
+                : error_level(error_level), loc(loc), message(message.data) {}
 
-		ErrorLevel error_level;
-		Location loc;
-		String message;
-	};
+        ErrorLevel error_level;
+        Location loc;
+        String message;
+    };
 
-	using Errors = std::vector<Error>;
+    using Errors = std::vector<Error>;
 
 }  // namespace wabt
 

@@ -13,7 +13,6 @@ LINK_DIRECTORIES(/usr/local/lib)
 #set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
 #set(DEBUG 1)
-#ADD_DEFINITIONS(-DUSE_READLINE)
 
 #set(SDL 1) # Graphics
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
@@ -24,8 +23,8 @@ LINK_DIRECTORIES(/usr/local/lib)
 
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
 
-set(CONSOLE 1)
 if (NOT WASM)
+    set(CONSOLE 1)
     if (NOT RUNTIME_ONLY)
         set(INCLUDE_MERGER 1) # works with WASI
         # TO EXECUTE wasm:
@@ -144,8 +143,11 @@ ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it need
 if (CONSOLE)
     message(CONSOLE)
     ADD_DEFINITIONS(-DCONSOLE)
-    ADD_COMPILE_FLAG("-lreadline")
+    #    ADD_COMPILE_FLAG("-lreadline")
     set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
+    #    find_package(Readline)
+    #    include_directories(${Readline_INCLUDE_DIR})
+    #    target_link_libraries(wasp  ${Readline_LIBRARY})
 endif ()
 
 
@@ -177,19 +179,22 @@ if (NOT TRACE)
     ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 
     # disable:
-    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
-    ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
-    ADD_COMPILE_FLAG("-Wno-unused-function")
-    ADD_COMPILE_FLAG("-Wno-unused-variable")
-    ADD_COMPILE_FLAG("-Wno-unused-private-field")
-    ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
-    ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
-    ADD_COMPILE_FLAG("-Wno-writable-strings") # allow conversion from string literal to 'char *'
-    ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
-    ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
-    ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
-    ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
-    ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
+    if (DEBUG)
+        add_compile_options(-Wall)
+        ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
+        ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
+        ADD_COMPILE_FLAG("-Wno-unused-function")
+        ADD_COMPILE_FLAG("-Wno-unused-variable")
+        ADD_COMPILE_FLAG("-Wno-unused-private-field")
+        ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
+        ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
+        ADD_COMPILE_FLAG("-Wno-writable-strings") # allow conversion from string literal to 'char *'
+        ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
+        ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
+        ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
+        ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
+        ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
+    endif ()
 endif ()
 
 if (VERBOSE)
@@ -237,9 +242,8 @@ endif ()
 
 if (NOT WASM)
     MESSAGE("asan sanitize=address …")
-    #    set(ASAN_OPTIONS verbosity=3)
-    #    #    add_compile_options(-Wall)
-    #    add_compile_options(-g)
+    set(ASAN_OPTIONS verbosity=3)
+    add_compile_options(-g)
     #    add_compile_options(-enable-coverage)
     #    add_compile_options(-Wno-missing-field-initializers)
     #    add_compile_options(-Wformat=2)
@@ -247,9 +251,9 @@ if (NOT WASM)
     #    add_compile_options(-m64)
     #    add_compile_options(-D_LARGEFILE_SOURCE)
     #    add_compile_options(-D_FILE_OFFSET_BITS=64)
-#    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
-#
-#    #    add_compile_options(-fsanitize=address) # currently crashes with AsanDie so don't use :(
+    #    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+    #
+    #    #    add_compile_options(-fsanitize=address) # currently crashes with AsanDie so don't use :(
 #    add_compile_options(-fno-stack-protector)
 #    add_compile_options(-fno-omit-frame-pointer)
 #    add_compile_options(-fsanitize=undefined)
@@ -299,6 +303,8 @@ if (WASM) # OR WASI)
     #    OR  remove from CMAKE_CXX_LINK_FLAGS how
     #-lwasmer --entry=main,
 
+    #  16ca2e: 10 9d 82 80 80 00          | call 285 <Map<String, List<String> >::operator[](String)>
+    # names in wasm name section are demangled in debug build, BUT exports stay mangled no matter what!
     ADD_COMPILE_FLAG("-Wl,--demangle,--allow-undefined,--no-check-features") # wasm-ld flags forwarded from clang
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
     #--import-memory        Import memory from the environment
@@ -367,7 +373,6 @@ elseif (MICRO) # wasm-micro-vm:
     endif ()
 
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_micro.cpp)
-
     message("USING INTERNAL WASM MICRO RUNTIME TO DEBUG (not Mac M1 ready!!)")
     #    quit()
     ADD_DEFINITIONS(-DWASM_ENABLE_INTERP)
@@ -477,7 +482,7 @@ elseif (WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
     add_executable(wasp ${SOURCE_FILES})
 elseif (V8)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_v8.cpp source/Util.cpp source/Util.h source/wasm_patcher.cpp source/wasm_patcher.h source/List.cpp source/List.h)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_v8.cpp source/Util.cpp source/Util.h source/wasm_patcher.cpp source/wasm_patcher.h source/List.cpp source/List.h source/WitReader.cpp source/WitReader.h)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/v8/include/)
@@ -513,5 +518,5 @@ endif ()
 
 
 #set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
-set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
-set(CMAKE_SUPPRESS_REGENERATION)
+#set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
+#set(CMAKE_SUPPRESS_REGENERATION)

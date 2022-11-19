@@ -97,11 +97,11 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 	}
 	Node *op = 0;
 	Node *inner = 0;// NIL;
-	Node *prev = 0;
+//	Node *prev = 0;
 	for (Node &n : *this) {
 		float p = precedence(n);
 		if (p == min and not inner) inner = &n;
-		else if (not inner) prev = &n;
+//		else if (not inner) prev = &n;
 		if (p == max and not op) {
 			op = &n;
 		} else if (op)
