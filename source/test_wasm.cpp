@@ -53,12 +53,12 @@ void testMergeOwn() {
 	testMergeMemory();
 #ifdef INCLUDE_MERGER
 	Module &main = loadModule("test/merge/main2.wasm");
-	Module &lib = loadModule("test/merge/lib4.wasm");
-	Code merged = merge_binaries(main.code, lib.code);
+    Module &lib = loadModule("test/merge/lib3.wasm");
+    Code merged = merge_binaries(main.code, lib.code);
 //	Code merged = merge_binaries(lib.code,main.code);
 	int i = merged.save().run();
 	assert_equals(i, 42);
-//	exit(1);
+    exit(1);
 #endif
 }
 
@@ -1096,32 +1096,32 @@ void testSquareExpWasm() {
 // todo smart pointer return from main for floats!
 	assert_emit("3²", 9);
 	assert_emit("3.0²", 9);
-	assert_emit("√100²", 100);
-	assert_emit("√ π ²", π);
-	assert_emit("√π ²", π);
-	assert_emit("√ π²", π);
-	assert_emit("√π²", π);
-	skip(
-			assert_emit("π²", 9.869604401089358 /*π*π*/);
-	)
-	assert_emit("π", 3/*.1415926535897*/);
-	assert_emit("π*1000000.", 3141592/*6535897*/);
-	assert_emit("π ²", 9/*.869604401089358 /*π*π*/);
-	assert_emit("π*1000000", 3141592/*6535897*/);
-	assert_emit("i=-9;-i", 9);
-	assert_emit("- √9", -3);
-	assert_emit(".1 + .9", 1);
-	assert_emit("-.1 + -.9", -1);
-	assert_emit("√9", 3);
+    assert_emit("√100²", 100);
+    assert_emit("√ π ²", π);
+    assert_emit("√π ²", π);
+    assert_emit("√ π²", π);
+    assert_emit("√π²", π);
+    skip(
+            assert_emit("π²", 9.869604401089358 /*π*π*/);
+    )
+    assert_emit("π", 3/*.1415926535897*/);
+    assert_emit("π*1000000.", 3141592/*6535897*/);
+    assert_emit("π ²", 9/*.869604401089358 π*π*/);
+    assert_emit("π*1000000", 3141592/*6535897*/);
+    assert_emit("i=-9;-i", 9);
+    assert_emit("- √9", -3);
+    assert_emit(".1 + .9", 1);
+    assert_emit("-.1 + -.9", -1);
+    assert_emit("√9", 3);
 //	assert_emit("√-9 is -3i", -3);// if «use complex numbers»
-	assert_emit(".1", 0);
+    assert_emit(".1", 0);
 #ifndef WASMTIME
-	skip(
-			assert_emit("i=-9;√-i", 3);
-		assert_emit("n=3;2ⁿ", 8);
-		assert_emit("n=3.0;2.0ⁿ", 8);
-	//	function attempted to return an incompatible value WHAT DO YOU MEAN!?
-	)
+    skip(
+            assert_emit("i=-9;√-i", 3);
+        assert_emit("n=3;2ⁿ", 8);
+        assert_emit("n=3.0;2.0ⁿ", 8);
+    //	function attempted to return an incompatible value WHAT DO YOU MEAN!?
+    )
 #endif
 }
 
@@ -1294,19 +1294,20 @@ void testLogarithm() {
 }
 
 void testLogarithm2() {
-	float ℯ = 2.7182818284590;
-	Signature &signature0 = functions["log10"].signature;
-//	check(signature1.is_import);
-	assert_emit("use math; log10(100)", 2.);
-	assert_emit("use math; 10⌞100", 2.);// read 10'er Logarithm
-	assert_emit("use math; 100⌟10", 2.);// read 100 lowered by 10's
-	assert_emit("use math; 10⌟100", 2.);
-	assert_emit("use math; ℯ⌟", 2.);
-	assert_emit("use math; ℯ⌟", 2.);
-	assert_emit("log10(100)", 2.); // requires pre-parsing lib and dictionary lookup
-	assert_emit("₁₀⌟100", 2.); // requires pre-parsing lib and dynamic operator-list extension OR 10⌟ as function name
-	assert_emit("10⌟100", 2.); // requires pre-parsing lib and dynamic operator-list extension OR 10⌟ as function name
+//	float ℯ = 2.7182818284590;
+    Function &function = functions["log10"];
+    check(function.is_import);
+    assert_emit("use math; log10(100)", 2.);
+    assert_emit("use math; 10⌞100", 2.);// read 10'er Logarithm
+    assert_emit("use math; 100⌟10", 2.);// read 100 lowered by 10's
+    assert_emit("use math; 10⌟100", 2.);
+    assert_emit("use math; ℯ⌟", 2.);
+    assert_emit("use math; ℯ⌟", 2.);
+    assert_emit("log10(100)", 2.); // requires pre-parsing lib and dictionary lookup
+    assert_emit("₁₀⌟100", 2.); // requires pre-parsing lib and dynamic operator-list extension OR 10⌟ as function name
+    assert_emit("10⌟100", 2.); // requires pre-parsing lib and dynamic operator-list extension OR 10⌟ as function name
 
+//    assert_equals(ln(e),abs(1))
 	assert_emit("use log;ℯ = 2.7182818284590;ln(ℯ)", 1.);
 	assert_emit("use log;ℯ = 2.7182818284590;ln(ℯ)", 1.);
 	assert_emit("ℯ = 2.7182818284590;ln(ℯ*ℯ)", 2.);

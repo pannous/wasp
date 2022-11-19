@@ -1,3 +1,4 @@
+#pragma once
 #include "String.h"
 #include "Angle.h"
 #include "Map.h" // list
@@ -16,7 +17,7 @@ extern codepoint opening_special_brackets[];// circumfixOperators «…»
 extern chars import_keywords[];
 extern List<chars> operator_list;
 
-Node &parse(String source);// wasp -> data
+Node &parse(String source, ParserOptions *parserOptions = 0);// wasp -> data
 bool is_operator(codepoint ch);// todo: next?
 //extern String operator_list[];// resolve xor->operator ... semantic wasp parser really?
 //extern List<chars> functor_list;

@@ -619,20 +619,20 @@ namespace wabt {
 		Index BinaryWriter::GetSymbolIndex(RelocType reloc_type, Index index) {
 			switch (reloc_type) {
 				case RelocType::FuncIndexLEB:
-					return symtab_.FunctionSymbolIndex(index);
-				case RelocType::TableNumberLEB:
-					return symtab_.TableSymbolIndex(index);
-				case RelocType::GlobalIndexLEB:
-					return symtab_.GlobalSymbolIndex(index);
-				case RelocType::TypeIndexLEB:
-					// Type indexes don't create entries in the symbol table; instead their
-					// index is used directly.
-					return index;
-				default:
-					fprintf(stderr, "warning: unsupported relocation type: %s\n",
-					        GetRelocTypeName(reloc_type));
-					return kInvalidIndex;
-			}
+                    return symtab_.FunctionSymbolIndex(index);
+                case RelocType::TableNumberLEB:
+                    return symtab_.TableSymbolIndex(index);
+                case RelocType::GlobalIndexLEB:
+                    return symtab_.GlobalSymbolIndex(index);
+                case RelocType::TypeIndexLEB:
+                    // Type indexes don't create entries in the symbol table; instead their
+                    // index is used directly.
+                    return index;
+                default:
+                    fprintf(stderr, "warning: unsupported relocation type: %d\n",
+                            reloc_type);// GetRelocTypeName(reloc_type));
+                    return kInvalidIndex;
+            }
 		}
 
 		void BinaryWriter::AddReloc(RelocType reloc_type, Index index) {
@@ -1203,19 +1203,19 @@ namespace wabt {
 						break;
 					case RelocType::FuncIndexLEB:
 					case RelocType::TableIndexSLEB:
-					case RelocType::TableIndexSLEB64:
-					case RelocType::TableIndexI32:
-					case RelocType::TableIndexI64:
-					case RelocType::TypeIndexLEB:
-					case RelocType::GlobalIndexLEB:
-					case RelocType::TagIndexLEB:
-					case RelocType::TableIndexRelSLEB:
-					case RelocType::TableNumberLEB:
-						break;
-					default:
-						fprintf(stderr, "warning: unsupported relocation type: %s\n",
-						        GetRelocTypeName(reloc.type));
-				}
+                    case RelocType::TableIndexSLEB64:
+                    case RelocType::TableIndexI32:
+                    case RelocType::TableIndexI64:
+                    case RelocType::TypeIndexLEB:
+                    case RelocType::GlobalIndexLEB:
+                    case RelocType::TagIndexLEB:
+                    case RelocType::TableIndexRelSLEB:
+                    case RelocType::TableNumberLEB:
+                        break;
+                    default:
+                        fprintf(stderr, "warning: unsupported relocation type: %d\n",
+                                reloc.type);// GetRelocTypeName(reloc.type));
+                }
 			}
 
 			EndSection();
@@ -1293,7 +1293,7 @@ namespace wabt {
 			WriteU32Leb128(stream_, type, "name subsection type");
 			BeginSubsection("name subsection");
 
-			char desc[100];
+//			char desc[100];
 			WriteU32Leb128(stream_, num_named_elems, "num names");
 			for (size_t i = 0; i < elems.size(); ++i) {
 				const T *elem = elems[i];
