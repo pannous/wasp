@@ -57,10 +57,10 @@ RM = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/me/dev/apps/wasp
+CMAKE_SOURCE_DIR = /Users/me/wasp
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/me/dev/apps/wasp
+CMAKE_BINARY_DIR = /Users/me/wasp
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/me/dev/apps/wasp/CMakeFiles /Users/me/dev/apps/wasp//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/me/wasp/CMakeFiles /Users/me/wasp//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/me/dev/apps/wasp/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/me/wasp/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -393,6 +393,318 @@ source/console.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/console.cpp.s
 .PHONY : source/console.cpp.s
 
+source/own_merge/binary-reader-linker.o: source/own_merge/binary-reader-linker.cc.o
+.PHONY : source/own_merge/binary-reader-linker.o
+
+# target to build an object file
+source/own_merge/binary-reader-linker.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary-reader-linker.cc.o
+.PHONY : source/own_merge/binary-reader-linker.cc.o
+
+source/own_merge/binary-reader-linker.i: source/own_merge/binary-reader-linker.cc.i
+.PHONY : source/own_merge/binary-reader-linker.i
+
+# target to preprocess a source file
+source/own_merge/binary-reader-linker.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary-reader-linker.cc.i
+.PHONY : source/own_merge/binary-reader-linker.cc.i
+
+source/own_merge/binary-reader-linker.s: source/own_merge/binary-reader-linker.cc.s
+.PHONY : source/own_merge/binary-reader-linker.s
+
+# target to generate assembly for a file
+source/own_merge/binary-reader-linker.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary-reader-linker.cc.s
+.PHONY : source/own_merge/binary-reader-linker.cc.s
+
+source/own_merge/binary-reader.o: source/own_merge/binary-reader.cc.o
+.PHONY : source/own_merge/binary-reader.o
+
+# target to build an object file
+source/own_merge/binary-reader.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary-reader.cc.o
+.PHONY : source/own_merge/binary-reader.cc.o
+
+source/own_merge/binary-reader.i: source/own_merge/binary-reader.cc.i
+.PHONY : source/own_merge/binary-reader.i
+
+# target to preprocess a source file
+source/own_merge/binary-reader.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary-reader.cc.i
+.PHONY : source/own_merge/binary-reader.cc.i
+
+source/own_merge/binary-reader.s: source/own_merge/binary-reader.cc.s
+.PHONY : source/own_merge/binary-reader.s
+
+# target to generate assembly for a file
+source/own_merge/binary-reader.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary-reader.cc.s
+.PHONY : source/own_merge/binary-reader.cc.s
+
+source/own_merge/binary-writer.o: source/own_merge/binary-writer.cc.o
+.PHONY : source/own_merge/binary-writer.o
+
+# target to build an object file
+source/own_merge/binary-writer.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary-writer.cc.o
+.PHONY : source/own_merge/binary-writer.cc.o
+
+source/own_merge/binary-writer.i: source/own_merge/binary-writer.cc.i
+.PHONY : source/own_merge/binary-writer.i
+
+# target to preprocess a source file
+source/own_merge/binary-writer.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary-writer.cc.i
+.PHONY : source/own_merge/binary-writer.cc.i
+
+source/own_merge/binary-writer.s: source/own_merge/binary-writer.cc.s
+.PHONY : source/own_merge/binary-writer.s
+
+# target to generate assembly for a file
+source/own_merge/binary-writer.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary-writer.cc.s
+.PHONY : source/own_merge/binary-writer.cc.s
+
+source/own_merge/binary.o: source/own_merge/binary.cc.o
+.PHONY : source/own_merge/binary.o
+
+# target to build an object file
+source/own_merge/binary.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary.cc.o
+.PHONY : source/own_merge/binary.cc.o
+
+source/own_merge/binary.i: source/own_merge/binary.cc.i
+.PHONY : source/own_merge/binary.i
+
+# target to preprocess a source file
+source/own_merge/binary.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary.cc.i
+.PHONY : source/own_merge/binary.cc.i
+
+source/own_merge/binary.s: source/own_merge/binary.cc.s
+.PHONY : source/own_merge/binary.s
+
+# target to generate assembly for a file
+source/own_merge/binary.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binary.cc.s
+.PHONY : source/own_merge/binary.cc.s
+
+source/own_merge/binding-hash.o: source/own_merge/binding-hash.cc.o
+.PHONY : source/own_merge/binding-hash.o
+
+# target to build an object file
+source/own_merge/binding-hash.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binding-hash.cc.o
+.PHONY : source/own_merge/binding-hash.cc.o
+
+source/own_merge/binding-hash.i: source/own_merge/binding-hash.cc.i
+.PHONY : source/own_merge/binding-hash.i
+
+# target to preprocess a source file
+source/own_merge/binding-hash.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binding-hash.cc.i
+.PHONY : source/own_merge/binding-hash.cc.i
+
+source/own_merge/binding-hash.s: source/own_merge/binding-hash.cc.s
+.PHONY : source/own_merge/binding-hash.s
+
+# target to generate assembly for a file
+source/own_merge/binding-hash.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/binding-hash.cc.s
+.PHONY : source/own_merge/binding-hash.cc.s
+
+source/own_merge/common.o: source/own_merge/common.cc.o
+.PHONY : source/own_merge/common.o
+
+# target to build an object file
+source/own_merge/common.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/common.cc.o
+.PHONY : source/own_merge/common.cc.o
+
+source/own_merge/common.i: source/own_merge/common.cc.i
+.PHONY : source/own_merge/common.i
+
+# target to preprocess a source file
+source/own_merge/common.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/common.cc.i
+.PHONY : source/own_merge/common.cc.i
+
+source/own_merge/common.s: source/own_merge/common.cc.s
+.PHONY : source/own_merge/common.s
+
+# target to generate assembly for a file
+source/own_merge/common.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/common.cc.s
+.PHONY : source/own_merge/common.cc.s
+
+source/own_merge/feature.o: source/own_merge/feature.cc.o
+.PHONY : source/own_merge/feature.o
+
+# target to build an object file
+source/own_merge/feature.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/feature.cc.o
+.PHONY : source/own_merge/feature.cc.o
+
+source/own_merge/feature.i: source/own_merge/feature.cc.i
+.PHONY : source/own_merge/feature.i
+
+# target to preprocess a source file
+source/own_merge/feature.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/feature.cc.i
+.PHONY : source/own_merge/feature.cc.i
+
+source/own_merge/feature.s: source/own_merge/feature.cc.s
+.PHONY : source/own_merge/feature.s
+
+# target to generate assembly for a file
+source/own_merge/feature.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/feature.cc.s
+.PHONY : source/own_merge/feature.cc.s
+
+source/own_merge/ir.o: source/own_merge/ir.cc.o
+.PHONY : source/own_merge/ir.o
+
+# target to build an object file
+source/own_merge/ir.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/ir.cc.o
+.PHONY : source/own_merge/ir.cc.o
+
+source/own_merge/ir.i: source/own_merge/ir.cc.i
+.PHONY : source/own_merge/ir.i
+
+# target to preprocess a source file
+source/own_merge/ir.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/ir.cc.i
+.PHONY : source/own_merge/ir.cc.i
+
+source/own_merge/ir.s: source/own_merge/ir.cc.s
+.PHONY : source/own_merge/ir.s
+
+# target to generate assembly for a file
+source/own_merge/ir.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/ir.cc.s
+.PHONY : source/own_merge/ir.cc.s
+
+source/own_merge/leb128.o: source/own_merge/leb128.cc.o
+.PHONY : source/own_merge/leb128.o
+
+# target to build an object file
+source/own_merge/leb128.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/leb128.cc.o
+.PHONY : source/own_merge/leb128.cc.o
+
+source/own_merge/leb128.i: source/own_merge/leb128.cc.i
+.PHONY : source/own_merge/leb128.i
+
+# target to preprocess a source file
+source/own_merge/leb128.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/leb128.cc.i
+.PHONY : source/own_merge/leb128.cc.i
+
+source/own_merge/leb128.s: source/own_merge/leb128.cc.s
+.PHONY : source/own_merge/leb128.s
+
+# target to generate assembly for a file
+source/own_merge/leb128.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/leb128.cc.s
+.PHONY : source/own_merge/leb128.cc.s
+
+source/own_merge/opcode-code-table.o: source/own_merge/opcode-code-table.c.o
+.PHONY : source/own_merge/opcode-code-table.o
+
+# target to build an object file
+source/own_merge/opcode-code-table.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/opcode-code-table.c.o
+.PHONY : source/own_merge/opcode-code-table.c.o
+
+source/own_merge/opcode-code-table.i: source/own_merge/opcode-code-table.c.i
+.PHONY : source/own_merge/opcode-code-table.i
+
+# target to preprocess a source file
+source/own_merge/opcode-code-table.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/opcode-code-table.c.i
+.PHONY : source/own_merge/opcode-code-table.c.i
+
+source/own_merge/opcode-code-table.s: source/own_merge/opcode-code-table.c.s
+.PHONY : source/own_merge/opcode-code-table.s
+
+# target to generate assembly for a file
+source/own_merge/opcode-code-table.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/opcode-code-table.c.s
+.PHONY : source/own_merge/opcode-code-table.c.s
+
+source/own_merge/opcode.o: source/own_merge/opcode.cc.o
+.PHONY : source/own_merge/opcode.o
+
+# target to build an object file
+source/own_merge/opcode.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/opcode.cc.o
+.PHONY : source/own_merge/opcode.cc.o
+
+source/own_merge/opcode.i: source/own_merge/opcode.cc.i
+.PHONY : source/own_merge/opcode.i
+
+# target to preprocess a source file
+source/own_merge/opcode.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/opcode.cc.i
+.PHONY : source/own_merge/opcode.cc.i
+
+source/own_merge/opcode.s: source/own_merge/opcode.cc.s
+.PHONY : source/own_merge/opcode.s
+
+# target to generate assembly for a file
+source/own_merge/opcode.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/opcode.cc.s
+.PHONY : source/own_merge/opcode.cc.s
+
+source/own_merge/stream.o: source/own_merge/stream.cc.o
+.PHONY : source/own_merge/stream.o
+
+# target to build an object file
+source/own_merge/stream.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/stream.cc.o
+.PHONY : source/own_merge/stream.cc.o
+
+source/own_merge/stream.i: source/own_merge/stream.cc.i
+.PHONY : source/own_merge/stream.i
+
+# target to preprocess a source file
+source/own_merge/stream.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/stream.cc.i
+.PHONY : source/own_merge/stream.cc.i
+
+source/own_merge/stream.s: source/own_merge/stream.cc.s
+.PHONY : source/own_merge/stream.s
+
+# target to generate assembly for a file
+source/own_merge/stream.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/stream.cc.s
+.PHONY : source/own_merge/stream.cc.s
+
+source/own_merge/utf8.o: source/own_merge/utf8.cc.o
+.PHONY : source/own_merge/utf8.o
+
+# target to build an object file
+source/own_merge/utf8.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/utf8.cc.o
+.PHONY : source/own_merge/utf8.cc.o
+
+source/own_merge/utf8.i: source/own_merge/utf8.cc.i
+.PHONY : source/own_merge/utf8.i
+
+# target to preprocess a source file
+source/own_merge/utf8.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/utf8.cc.i
+.PHONY : source/own_merge/utf8.cc.i
+
+source/own_merge/utf8.s: source/own_merge/utf8.cc.s
+.PHONY : source/own_merge/utf8.s
+
+# target to generate assembly for a file
+source/own_merge/utf8.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/utf8.cc.s
+.PHONY : source/own_merge/utf8.cc.s
+
 source/tests.o: source/tests.cpp.o
 .PHONY : source/tests.o
 
@@ -489,6 +801,30 @@ source/wasm_merger.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_merger.cpp.s
 .PHONY : source/wasm_merger.cpp.s
 
+source/wasm_merger_own.o: source/wasm_merger_own.cpp.o
+.PHONY : source/wasm_merger_own.o
+
+# target to build an object file
+source/wasm_merger_own.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_merger_own.cpp.o
+.PHONY : source/wasm_merger_own.cpp.o
+
+source/wasm_merger_own.i: source/wasm_merger_own.cpp.i
+.PHONY : source/wasm_merger_own.i
+
+# target to preprocess a source file
+source/wasm_merger_own.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_merger_own.cpp.i
+.PHONY : source/wasm_merger_own.cpp.i
+
+source/wasm_merger_own.s: source/wasm_merger_own.cpp.s
+.PHONY : source/wasm_merger_own.s
+
+# target to generate assembly for a file
+source/wasm_merger_own.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_merger_own.cpp.s
+.PHONY : source/wasm_merger_own.cpp.s
+
 source/wasm_reader.o: source/wasm_reader.cpp.o
 .PHONY : source/wasm_reader.o
 
@@ -579,6 +915,45 @@ help:
 	@echo "... source/console.o"
 	@echo "... source/console.i"
 	@echo "... source/console.s"
+	@echo "... source/own_merge/binary-reader-linker.o"
+	@echo "... source/own_merge/binary-reader-linker.i"
+	@echo "... source/own_merge/binary-reader-linker.s"
+	@echo "... source/own_merge/binary-reader.o"
+	@echo "... source/own_merge/binary-reader.i"
+	@echo "... source/own_merge/binary-reader.s"
+	@echo "... source/own_merge/binary-writer.o"
+	@echo "... source/own_merge/binary-writer.i"
+	@echo "... source/own_merge/binary-writer.s"
+	@echo "... source/own_merge/binary.o"
+	@echo "... source/own_merge/binary.i"
+	@echo "... source/own_merge/binary.s"
+	@echo "... source/own_merge/binding-hash.o"
+	@echo "... source/own_merge/binding-hash.i"
+	@echo "... source/own_merge/binding-hash.s"
+	@echo "... source/own_merge/common.o"
+	@echo "... source/own_merge/common.i"
+	@echo "... source/own_merge/common.s"
+	@echo "... source/own_merge/feature.o"
+	@echo "... source/own_merge/feature.i"
+	@echo "... source/own_merge/feature.s"
+	@echo "... source/own_merge/ir.o"
+	@echo "... source/own_merge/ir.i"
+	@echo "... source/own_merge/ir.s"
+	@echo "... source/own_merge/leb128.o"
+	@echo "... source/own_merge/leb128.i"
+	@echo "... source/own_merge/leb128.s"
+	@echo "... source/own_merge/opcode-code-table.o"
+	@echo "... source/own_merge/opcode-code-table.i"
+	@echo "... source/own_merge/opcode-code-table.s"
+	@echo "... source/own_merge/opcode.o"
+	@echo "... source/own_merge/opcode.i"
+	@echo "... source/own_merge/opcode.s"
+	@echo "... source/own_merge/stream.o"
+	@echo "... source/own_merge/stream.i"
+	@echo "... source/own_merge/stream.s"
+	@echo "... source/own_merge/utf8.o"
+	@echo "... source/own_merge/utf8.i"
+	@echo "... source/own_merge/utf8.s"
 	@echo "... source/tests.o"
 	@echo "... source/tests.i"
 	@echo "... source/tests.s"
@@ -591,6 +966,9 @@ help:
 	@echo "... source/wasm_merger.o"
 	@echo "... source/wasm_merger.i"
 	@echo "... source/wasm_merger.s"
+	@echo "... source/wasm_merger_own.o"
+	@echo "... source/wasm_merger_own.i"
+	@echo "... source/wasm_merger_own.s"
 	@echo "... source/wasm_reader.o"
 	@echo "... source/wasm_reader.i"
 	@echo "... source/wasm_reader.s"

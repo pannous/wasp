@@ -17,7 +17,7 @@
 #include "Code.h"
 //extern unsigned int *memory;
 
-
+short fourty_two = 42;// to test wasm global import
 
 //#ifdef WASI
 //#include <stdio.h> // printf
@@ -517,7 +517,7 @@ void putp(void *f) {
 
 #ifdef RUNTIME_ONLY
 #include "Interpret.h"
-Module read_wasm(chars file){return *new Module();}
+Module& read_wasm(chars file){return *new Module();}
 #endif
 
 // todo: INLINE into wasm code how? just use wasp runtime and wasm-gc wasm-opt to tree shake ok

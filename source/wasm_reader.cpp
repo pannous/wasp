@@ -172,19 +172,19 @@ void parseFuncTypeSection(Code &payload) {
 void parseImportNames(Code &payload) {// and TYPES!
 	trace("Imports:");
 	for (int i = 0; i < module->import_count and payload.start < payload.length; ++i) {
-		String &mod = name(payload);// module
-		String &name1 = name(payload);// shared is NOT 0 terminated, needs to be 0-terminated now?
-		trace(name1);
-		int kind = unsignedLEB128(payload);// func, global, …
-		int type = unsignedLEB128(payload);// i32 … for globals
-		if (kind == 3 /*global import*/ ) {
-			bool is_mutable = unsignedLEB128(payload);
-			Global global{i, name1, (Valtype) type, is_mutable, true, false};
-			module->globals.add(global);
-			continue;
-		}
-		Signature &signature = module->funcTypes[type];
-		module->functionIndices[name1] = i;
+        String &mod = name(payload);// module
+        String &name1 = name(payload);// shared is NOT 0 terminated, needs to be 0-terminated now?
+        trace("import %s"s % mod + "." + name1);
+        int kind = unsignedLEB128(payload);// func, global, …
+        int type = unsignedLEB128(payload);// i32 … for globals
+        if (kind == 3 /*global import*/ ) {
+            bool is_mutable = unsignedLEB128(payload);
+            Global global{i, name1, (Valtype) type, is_mutable, true, false};
+            module->globals.add(global);
+            continue;
+        }
+        Signature &signature = module->funcTypes[type];
+        module->functionIndices[name1] = i;
 		module->functions[name1].signature.merge(signature);
 		Signature &sic = getSignature(name1);// global!
 		sic.merge(signature);// todo : LATER!
@@ -289,16 +289,17 @@ void consumeRelocateSection(Code &data) {
 }
 
 void consumeDataSection() {
-	Code datas = vec();
+    Code datas = vec();
 //	module->data_section = datas.clone();
-	module->data_segments_count = unsignedLEB128(datas);
-	module->data_segments = datas.rest();// whereever the start may be now
-	short memory_id = unsignedLEB128(datas);
-	unsignedLEB128(datas);// skip i32.const opcode
-	int data_offset = unsignedLEB128(datas);
-	unsignedLEB128(datas);// skip '0b' whatever that is
-	module->data_offset_end = data_offset + module->data_segments.length + 100;//  datas.length;
-	// Todo ILL-DEFINED BEHAVIOUR! silent corruption if data_offset_end too small (why 100?)
+    module->data_segments_count = unsignedLEB128(datas);
+    module->data_segments = datas.rest();// whereever the start may be now
+//	short memory_id =
+    unsignedLEB128(datas);
+    unsignedLEB128(datas);// skip i32.const opcode
+    int data_offset = unsignedLEB128(datas);
+    unsignedLEB128(datas);// skip '0b' whatever that is
+    module->data_offset_end = data_offset + module->data_segments.length + 100;//  datas.length;
+    // Todo ILL-DEFINED BEHAVIOUR! silent corruption if data_offset_end too small (why 100?)
 
 //	if (debug_reader)
 //printf("data sections: %d from offsets %d to %d \n", module->data_segments_count, data_offset,module->data_offset_end);
@@ -375,16 +376,6 @@ List<String> demangle_args(String &fun) {
 	return brace.split(", ");
 }
 
-//#include <cxxabi.h>
-String demangle(String &fun) {
-	int status;
-	char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
-	if (status < 0 or string == 0)
-		return fun;// not demangled (e.g. "memory")
-	String real_name = String(string); // temp
-	String ok = real_name.substring(0, real_name.indexOf('('));
-	return ok;// .clone(); unnecessary: return by value copy
-}
 
 // todo: treat all functions (in library file) as exports if ExportSection is empty !?
 void consumeExportSection() {
@@ -582,7 +573,7 @@ Module &read_wasm(bytes buffer, int size0) {
 
 Module &read_wasm(chars file) {
 #if WASM
-	return Module();
+    return *new Module();
 #else
 	if (debug_reader)printf("--------------------------\n");
 	if (debug_reader)printf("parsing: %s\n", file);

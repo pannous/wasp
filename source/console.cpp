@@ -31,9 +31,9 @@ void getline(char *buf) {
 //#ifndef CONSOLE
 //	print("wasp compiled without console");
 //#else
+#ifdef USE_READLINE
 	int MAXLENGTH = 10000;
 	const char *PROMPT = "wasp> ";
-#ifdef USE_READLINE
 	if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
 	char *tmp = readline(PROMPT);
 	if (tmp == 0 or strlen(tmp) == 0) {
@@ -49,18 +49,18 @@ void getline(char *buf) {
 
 //bool parse(string* data) {
 #ifdef CONSOLE
-static char *lastCommand;
-static char *commandCode;
+//static char *lastCommand;
+//static char *commandCode;
 #endif
 char *version = "1.0";
 
 // Todo: web version?
 [[noreturn]] void console() {
-	printf("\nWasp version %s\n", version);
-	showHelpMessage();
-	char *data = (char *) malloc(10000);
+    printf("\nWasp version %s\n", version);
+    showHelpMessage();
+    char *data = (char *) malloc(10000);
 #ifdef signal
-	setjmp(try_context); //recovery point
+    setjmp(try_context); //recovery point
 #endif
 	debug = false;
 	String code;
@@ -78,8 +78,8 @@ char *version = "1.0";
 			code += data;
 			code += ";\n";
 //		Node &result = parse(code);// safeMode only for web access
-			Node result = eval(code);
-			printf(">>> ");
+            result = eval(code);
+            printf(">>> ");
 //	result.interpret().print();
 			result.print();
 			print("");

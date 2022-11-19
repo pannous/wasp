@@ -1984,19 +1984,19 @@ namespace wabt {
 					case RelocType::TableIndexSLEB:
 					case RelocType::TableIndexSLEB64:
 					case RelocType::TableIndexI32:
-					case RelocType::TableIndexI64:
-					case RelocType::TypeIndexLEB:
-					case RelocType::GlobalIndexLEB:
-					case RelocType::GlobalIndexI32:
-					case RelocType::TagIndexLEB:
-					case RelocType::TableIndexRelSLEB:
-					case RelocType::TableNumberLEB:
-						break;
+                    case RelocType::TableIndexI64:
+                    case RelocType::TypeIndexLEB:
+                    case RelocType::GlobalIndexLEB:
+                    case RelocType::GlobalIndexI32:
+                    case RelocType::TagIndexLEB:
+                    case RelocType::TableIndexRelSLEB:
+                    case RelocType::TableNumberLEB:
+                        break;
 
-					default:
-						PrintError("unknown reloc type: %s", GetRelocTypeName(type));
-						return Result::Error;
-				}
+                    default:
+                        PrintError("unknown reloc type: %d", type);//, GetRelocTypeName(type));
+                        return Result::Error;
+                }
 				CALLBACK(OnReloc, type, offset, index, addend);
 			}
 			CALLBACK0(EndRelocSection);
