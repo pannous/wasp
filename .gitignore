@@ -51,3 +51,12 @@ xwabt
 wasm-micro-runtime.me
 Frameworks
 playground/
+/.ninja_deps
+/.ninja_log
+/.wasp_history
+/build.ninja
+/favicon.ico
+/FindSDL.cmake
+/FindSDL2.cmake
+/.idea.bad/
+/.cmake/api/v1/reply/
