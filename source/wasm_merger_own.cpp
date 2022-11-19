@@ -601,10 +601,6 @@ void Linker::WriteExportSection() {
     WriteU32Leb128(&stream_, total_exports, "export count");
 
     for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-        if (not binary->needs_relocate) {
-            warn("binary "s + binary->name + " marked as needs_relocate = false");
-            continue;
-        }
         for (const Export &export_: binary->exports) {
             WriteStr(&stream_, s(export_.name), "export name");
             stream_.WriteU8Enum(export_.kind, "export kind");
