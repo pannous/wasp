@@ -49,15 +49,16 @@ void testMergeRuntime() {
 
 
 void testMergeOwn() {
-//	testMergeGlobal();
-	testMergeMemory();
+
 #ifdef INCLUDE_MERGER
-	Module &main = loadModule("test/merge/main2.wasm");
-    Module &lib = loadModule("test/merge/lib3.wasm");
+    Module &main = loadModule("test/merge/main.wasm");
+    Module &lib = loadModule("test/merge/lib2.wasm");
     Code merged = merge_binaries(main.code, lib.code);
 //	Code merged = merge_binaries(lib.code,main.code);
-	int i = merged.save().run();
-	assert_equals(i, 42);
+    int i = merged.save().run();
+    assert_equals(i, 42);
+    testMergeGlobal();
+    testMergeMemory();
     exit(1);
 #endif
 }
