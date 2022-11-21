@@ -71,6 +71,12 @@ class WitReader {
         return *func;
     }
 
+    void readModule(Node node) {
+        Node module = node[2];// node[1] == "$"
+        trace("\nwit module:");
+        trace(module);
+    }
+
     Node &analyzeWit(Node &node) {
 
         if (node.first().name == "func")
@@ -106,6 +112,9 @@ class WitReader {
             } else if (n.kind == groups) {
                 for (auto c: node)
                     analyzeWit(c);
+            } else if (n.name == "module") {
+                readModule(node);
+                break;
             } else
                 error("UNKNOWN wit entry: "s + n.serialize());
             if (keys)break;
