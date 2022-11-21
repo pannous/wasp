@@ -163,9 +163,13 @@ namespace wabt {
 			                                          String field_name,
 			                                          Index memory_index,
 			                                          const Limits *page_limits) {
-				WABT_FATAL("Linker does not support imported memories");
-				return Result::Error;
-			}
+                if (memory_index == 0)
+                    warn("try ignoring imported memories, hoping for memory_index 0 in other binary");
+                else
+                    WABT_FATAL("Linker does not support imported memories");
+//				return Result::Error;
+                return Result::Ok;
+            }
 
 			Result BinaryReaderLinker::OnFunctionCount(Index count) {
 				binary_->function_count = count;

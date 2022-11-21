@@ -18,22 +18,23 @@
 //bool tracing = false;
 //bool tracing = true;
 //#define trace // IGNORE AT COMPILE TIME (to not emit all those debug strings)
-void trace0(chars x) {
-    if (tracing)
-        warn(x);
-}
+//void trace0(chars x) {
+//    if (tracing)
+//        warn(x);
+//}
 
 //bool fileExists(char* filename) {
 bool fileExists(String filename) {
 #if RUNTIME_ONLY
-	return false;
+    return false;
 #else
-	trace("checking fileExists "s + filename);
-	if (filename.empty())return false;
+    trace("checking fileExists "s + filename);
+    if (filename.empty())return false;
+    if (isDir(filename))return false;// only true files here!
 #if WASM && !WASI
-	return false; // todo
+    return false; // todo
 #else
-	return access(filename.data, 0 /*F_OK*/) == 0;
+    return access(filename.data, 0 /*F_OK*/) == 0;
 #endif
 #endif
 }
@@ -74,24 +75,50 @@ float file_last_modified(String &file) {
 template<class>
 class List;//<String>;
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
+
+bool isDir(const char *name) {
+    DIR *directory = opendir(name);
+    if (directory != NULL) {
+        closedir(directory);
+        return true;
+    }
+    if (errno == ENOTDIR)
+        return false;
+    return false;// -1;
+}
+
 //String findNewestFile(String filename) {
-String findFile(String filename) {
+String findFile(String filename, String current_dir) {
+    if (fileExists(filename))return filename;
+    if (fileExists(current_dir + "/" + filename))return current_dir + "/" + filename;
 #if RUNTIME_ONLY or WASM
     return "";
 #else
-    List<String> extensions = {"", ".wasm", ".wast", ".wasp"};
+    List<String> extensions = {"", ".wit", ".wasm", ".wast", ".wasp", ".witx"};
     List<String> folders = {"lib", "src", "wasp", "source", "include", "sample", "samples", "test", "tests"};
     List<String> paths;
+    if (filename.contains("."))extensions = {""}; // don't do double extensions!
+    if (isDir(filename)) {
+        folders = {filename};
+        filename = "index";// todo main / lib
+    } else if (isDir(current_dir + "/" + filename)) {
+        folders = {filename};
+        filename = "index";// todo or main or lib or $filename
+    }
     if (filename.contains("/"))
-		for (auto extension: extensions) {
-			String &path = filename + extension;
-			if (fileExists(path)) paths.add(path);
-		}
-	else {
-		for (auto folder: folders)
-			for (auto extension: extensions) {
-				String &path = folder + "/" + filename + extension;
-				if (fileExists(path)) paths.add(path);
+        for (auto extension: extensions) {
+            String &path = filename + extension;
+            if (fileExists(path)) paths.add(path);
+        }
+    else {
+        for (auto folder: folders)
+            for (auto extension: extensions) {
+                String &path = current_dir + "/" + folder + "/" + filename + extension;
+                if (fileExists(path)) paths.add(path);
 			}
 	}
 	if (paths.empty())return "";
@@ -99,33 +126,6 @@ String findFile(String filename) {
 	String &best = paths.last();
 	return best;
 #endif
-}
-
-
-String findFile2(String filename) {
-	// todo: check dates and return freshest (last edit / updated)
-#if RUNTIME_ONLY
-	return "";
-#endif
-	if (filename.empty())return "";
-//	filename = filename.replace("~", getpwuid(getuid())->pw_dir /*homedir*/);
-	if (fileExists(filename))return filename;
-	// todo: check wasm date, recompile if older than wasp / wast
-	if (fileExists(filename + ".wasm"))return filename + ".wasm";
-	if (fileExists(filename + ".wast"))return filename + ".wast";
-	if (fileExists(filename + ".wasp"))return filename + ".wasp";
-	String project = ".";// todo module name(s)
-	if (not filename.contains("/"))filename = findFile(project + "/" + filename) || filename;
-	if (not filename.contains("/"))filename = findFile("lib/"s + filename) || filename;
-	if (not filename.contains("/"))filename = findFile("src/"s + filename) || filename;
-	if (not filename.contains("/"))filename = findFile("wasp/"s + filename) || filename;
-	if (not filename.contains("/"))filename = findFile("source/"s + filename) || filename;
-	if (not filename.contains("/"))filename = findFile("include/"s + filename) || filename;
-	if (not filename.contains("/"))filename = findFile("sample/"s + filename) || filename;
-	if (not filename.contains("/"))filename = findFile("samples/"s + filename) || filename;
-	if (not filename.contains("/"))filename = findFile("test/"s + filename) || filename;
-	if (not filename.contains("/"))filename = findFile("tests/"s + filename) || filename;
-	return fileExists(filename) ? filename : "";
 }
 
 template<class S>
@@ -301,11 +301,11 @@ int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
 }
 
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
-	bytes c = new unsigned char[len_a + len_b + 4];// why+4 ?? else heap-buffer-overflow
-	memcpy0(c, a, len_a);
-	memcpy0(c + len_a, b, len_b);
-	//	c[len_a + len_b + 1] = 0;// hwhy?
-	return c;
+    bytes c = new unsigned char[len_a + len_b + 4];// why+4 ?? else heap-buffer-overflow
+    memcpy1(c, a, len_a);
+    memcpy1(c + len_a, b, len_b);
+    //	c[len_a + len_b + 1] = 0;// hwhy?
+    return c;
 }
 
 chars concat(chars a, chars b) {
@@ -322,15 +322,15 @@ chars concat(chars a, chars b) {
 
 bytes concat(bytes a, char b, int len) {
 	bytes c = new unsigned char[len + 1];
-	memcpy0(c, a, len);
-	c[len] = b;
+    memcpy1(c, a, len);
+    c[len] = b;
 	return c;
 }
 
 bytes concat(char a, bytes b, int len) {
 	bytes c = new unsigned char[len + 1];
-	c[0] = a;
-	memcpy0(c + 1, b, len);
+    c[0] = a;
+    memcpy1(c + 1, b, len);
 	return c;
 }
 
@@ -415,4 +415,10 @@ String demangle(String &fun) {
     String real_name = String(string); // temp
     String ok = real_name.substring(0, real_name.indexOf('('));
     return ok;// .clone(); unnecessary: return by value copy
+}
+
+
+String extractPath(String file) {
+    if (!file.contains("/"))return "/";
+    return file.substring(0, file.lastIndexOf("/"));
 }
