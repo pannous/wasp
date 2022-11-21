@@ -9,28 +9,28 @@
 #import "asserts.cpp"
 #include "asserts.h"
 
-#define assert_ast(α, β) if (!assert_equals_x(analyze(parse(α)),parse(β))){printf("%s != %s",#α,#β);backtrace_line();}
+//#define assert_ast(α, β) if (!assert_equals_x(analyze(parse(α)),parse(β))){printf("%s != %s",#α,#β);backtrace_line();}
 #define assert_eval(α, β) if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 
 
 void testFunctionParams() {
 //	assert_equals(parse("f(x)=x*x").param->first(),"x");
-	assert_equals("f(x)=x*x;f(3)", "9");// functions => angle!
+    assert_equals("f(x)=x*x;f(3)", "9");// functions => angle!
 }
-
-void testOperatorBinding() {
-	assert_ast("a and b", "and(a,b)");
-}
+//
+//void testOperatorBinding() {
+//	assert_ast("a and b", "and(a,b)");
+//}
 
 void testCall() {
-	assert_is("square 3", 9)
-	assert_is("square(3)", 9)
+    assert_is("square 3", 9)
+    assert_is("square(3)", 9)
 //	functionSignatures["square"] = (*new Signature()).add(i32t).returns(i32t).import();
-	assert_is("square(1+2)", 9)
-	assert_is("square 1+2", 9)
+    assert_is("square(1+2)", 9)
+    assert_is("square 1+2", 9)
 //	preRegisterSignatures();
-	assert_is("1+square 2+3", 26)
-	assert_is("1 + square 1+2", 10)
+    assert_is("1+square 2+3", 26)
+    assert_is("1 + square 1+2", 10)
 	skip(
 	// interpreter broken lol
 			assert_is("1+square(2+3)", 26)
@@ -321,7 +321,7 @@ void testLogicPrecedence() {
 	check(precedence("and") < precedence("or"));
 	assert_is("true", true);
 	assert_is("false", false);
-	Node ok = parse("true or true");
+    Node ok = parse("true or true", "");
 //	const Node &ja = ok.interpret();// Undefined symbols if not compiled with Interpret.cpp
 //	print(ja);
 	assert_is("true or true", true);

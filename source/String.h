@@ -8,7 +8,7 @@
 //#include "NodeTypes.h"
 #include <cstdlib> // OK in WASM!
 
-#define MAX_STRING_LENGTH 10000
+#define MAX_STRING_LENGTH 100000
 #define MAX_DATA_LENGTH 0x1000000
 
 //#include "Map.h" recursive include error Node.h:60:9: error: field has incomplete type 'String'
@@ -397,12 +397,13 @@ public:
 		return data[position];
 	}
 
-	int indexOf(char c, int from = 0) {
-		for (int j = from; j < length and j < MAX_STRING_LENGTH; j++) {
-			if (data[j] == c)return j;
-		}
-		return -1;
-	}
+    int indexOf(char c, int from = 0, bool reverse = false) {
+        for (int j = from; j < length and j < MAX_STRING_LENGTH; j++) {
+            if (reverse and data[j] == c)return j;
+            if (!reverse and data[j] == c)return j;
+        }
+        return -1;
+    }
 
 //	operator std::string() const { return "Hi"; }
 
@@ -806,43 +807,49 @@ public:
 
 	// internal usage
 	char operator[](int i) {
-		if (!data or i < 0 or i > length)
-			return 0;// -1? todo: throw?
-		return data[i];
-	}
-	// expensive
+        if (!data or i < 0 or i > length)
+            return 0;// -1? todo: throw?
+        return data[i];
+    }
+    // expensive
 //	String operator[](int i);
 //	grapheme operator[](int i);
 
-	bool empty() const;
+    bool empty() const;
 
-	int indexOf(chars string) {
-		int l = strlen0(string);
-		if ((long) data + l > MEMORY_SIZE)
-			error("corrupt string");
-		for (int i = 0; i <= length - l; i++) {
-			bool ok = true;
-			for (int j = 0; j < l; j++) {
-				if (data[i + j] != string[j]) {
-					ok = false;
-					break;
-				}
-			}
-			if (ok)
-				return i;
-		}
-		return -1;//
-	}
 
-	bool contains(chars string) {
-		return indexOf(string) >= 0;
-	}
+    int indexOf(chars string, bool reverse = false) {
+        int l = strlen0(string);
+        if ((long) data + l > MEMORY_SIZE)
+            error("corrupt string");
+        for (int i = 0; i <= length - l; i++) {
+            bool ok = true;
+            int i0 = reverse ? length - i : i;
+            for (int j = 0; j < l; j++) {
+                if (data[i0 + j] != string[j]) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok)
+                return i;
+        }
+        return -1;//
+    }
 
-	bool contains(char chr) {
-		return indexOf(chr) >= 0;
-	}
+    int lastIndexOf(const char *string) {
+        return indexOf(string, true);
+    }
 
-	[[nodiscard]]
+    bool contains(chars string) {
+        return indexOf(string) >= 0;
+    }
+
+    bool contains(char chr) {
+        return indexOf(chr) >= 0;
+    }
+
+    [[nodiscard]]
 	__attribute__((__warn_unused_result__))
 	String &replace(chars string, chars with) {// first only!
 		int i = this->indexOf(string);
@@ -961,6 +968,7 @@ public:
 
 //	void lower();
 	void shift(int i);
+
 };
 
 
@@ -1009,6 +1017,8 @@ extern String EMPTY;// = String('\0');
 //String operator "" _(chars c, unsigned long );
 //String operator "" _s(chars c, unsigned long );
 void print(String *s);
+
+void print(char const *s);
 //void print(char *s);
 //void print(const char *s);
 

@@ -2351,9 +2351,9 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 	} else {
 //		memoryHandling = export_memory;
 //#ifdef IMPORT_MEMORY
-//		memoryHandling = import_memory; // works for micro-runtime
+        memoryHandling = import_memory; // works for micro-runtime
 //#endif
-        memoryHandling = internal_memory; // works for wasm3
+//        memoryHandling = internal_memory; // works for wasm3
 //        memoryHandling = no_memory;
         last_index = -1;
         runtime = *new Module();// all zero
@@ -2425,8 +2425,8 @@ Code &compile(String code, bool clean) {
 		clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
 	}
 //	preRegisterSignatures();
-	Node parsed = parse(code);
-	Node &ast = analyze(parsed);
+    Node parsed = parse(code, "");
+    Node &ast = analyze(parsed);
 //	preRegisterSignatures();// todo remove after fixing Signature BUG!!
 //	check(functions["log10"].is_import)
 //	check(functions["log10"].is_used)

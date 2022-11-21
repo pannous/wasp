@@ -17,15 +17,31 @@
 Node &result = *new Node();
 
 void testWit() {
-//    Node &wit = (new WitReader())->read("samples/test.wit");
-    Node &wit = (new WitReader())->read("samples/wit/typenames.wit");
-//    Node &wit = (new WitReader())->read("samples/wasi_unstable.wit");
-    check(wit.length > 0);
+    Node &wit = (new WitReader())->read("test/merge/index.wit");
+    wit = (new WitReader())->read("test/merge/example_dep/index.wit");
+    wit = (new WitReader())->read("samples/wit/typenames.wit");
+    wit = (new WitReader())->read("samples/wit/wasi_unstable.wit");
+//    check(wit.length > 0);
 }
+
+void testWitImport() {
+
+}
+
+void bindgen(Node &n) {
+
+}
+
+void testWitExport() {
+    const char *code = "struct point{x:int y:float}";
+    Node &node = parse(code, "");
+    bindgen(node);
+}
+
 
 void testStruct() {
     const char *code0 = "struct point{a:int b:int c:string}";
-    Node &node = parse(code0);
+    Node &node = parse(code0, "");
     assert_equals(node.kind, Kind::structs);
 //    const char *code = "struct point{a:int b:int c:string};x=point(1,2,'ok');x.b";
 // basal nodes act as structs
@@ -57,21 +73,6 @@ void testHypenVersusMinus() {
 void testKebabCase() {
     testHypenVersusMinus();
 }
-
-void bindgen(Node &n) {
-
-}
-
-void testWitImport() {
-
-}
-
-void testWitExport() {
-    const char *code = "struct point{x:int y:float}";
-    Node &node = parse(code);
-    bindgen(node);
-}
-
 
 
 /*
@@ -180,14 +181,14 @@ void testFloatReturnThroughMain() {
 }
 
 void testArrayS() {
-    auto node = analyze(parse("int"));
+    auto node = analyze(parse("int", ""));
 //	assert_equals( node.type->kind, classe);
     assert_equals(node.kind, clazz);
 
-    auto node2 = analyze(parse("ints"));
+    auto node2 = analyze(parse("ints", ""));
     assert_equals(node2.kind, arrays);// type: array<int>
 
-    node = parse("ints x");
+    node = parse("ints x", "");
 //	assert_equals( node.kind, reference);
 //	assert_equals( node.kind, arrays);
     assert_equals(node.kind, groups);
@@ -211,7 +212,7 @@ void testArrayInitialization() {// via Units
 }
 
 void testArrayInitializationBasics() {// via Units
-    auto node = analyze(parse("x : 100 numbers"));
+    auto node = analyze(parse("x : 100 numbers", ""));
     assert_equals(node.kind, arrays);
     assert_equals(node.length, 100);
 }
@@ -367,31 +368,31 @@ void testModulo() {
 }
 
 void testRepresentations() {
-    result = parse("a{x:1}");
-    auto result2 = parse("a:{x:1}");
+    result = parse("a{x:1}", "");
+    auto result2 = parse("a:{x:1}", "");
     assert_equals(result.kind, reference);
     assert_equals(result2.kind, key);
 //	a{x:1} ==
 }
 
 void testSignificantWhitespace() {
-    result = parse("a b (c)");
+    result = parse("a b (c)", "");
     check(result.length == 3);
-    result = parse("a b(c)");
+    result = parse("a b(c)", "");
     check(result.length == 2 or result.length == 1);
-    result = parse("a b:c");
+    result = parse("a b:c", "");
     check(result.length == 2);// a , b:c
     check(result.last().kind == key);// a , b:c
-    result = parse("a: b c d");
+    result = parse("a: b c d", "");
     check(result.length == 3);
     check(result.name == "a"); // "a"(b c d), NOT ((a:b) c d)
     check(result.kind == groups);// not key!
-    result = parse("a b : c");
+    result = parse("a b : c", "");
     check(result.length == 1 or result.length == 2);// (a b):c
     assert_equals(result.kind, key);
     let x = data_mode;
     data_mode = false;
-    result = parse("a b=c");
+    result = parse("a b=c", "");
     check(result.length == 4);// a b = c
     print(result);
     result = analyze(result);
@@ -399,7 +400,7 @@ void testSignificantWhitespace() {
     skip(
             check(result.length == 1);// todo  todo => (a b)=c => =( (a b) c)
             data_mode = true;// HTML MODE!
-            result = parse("a href=link.html");
+            result = parse("a href=link.html", "");
             check(result.length == 1);// a(b=c)
     )
     data_mode = x;
@@ -418,7 +419,7 @@ void testSignificantWhitespace() {
 
 void testComments() {
     let c = "blah a b c # to silence python warnings;)\n y/* yeah! */=0 // really";
-    result = parse(c);
+    result = parse(c, "");
     check(result.length == 2);
     check(result[0].length == 4);
     check(result[1].length == 3);
@@ -433,7 +434,7 @@ a:
 d
 e
 	)";
-    auto groups = parse(indented);
+    auto groups = parse(indented, "");
     //	auto groups = parse("a:\n b\n c\n\nd\ne\n");
     check(groups.length == 3);// a(),d,e
     auto parsed = groups.first();
@@ -466,7 +467,7 @@ a:
 d
 e
 	)";
-    auto groups = parse(indented);
+    auto groups = parse(indented, "");
     //	auto groups = parse("a:\n b\n c\nd\ne\n");
     print(groups.serialize());
     print(groups.length);
@@ -486,7 +487,7 @@ a
 d
 e
 	)";
-    auto groups = parse(indented);
+    auto groups = parse(indented, "");
     //	auto groups = parse("a:\n b\n c\nd\ne\n");
     print(groups.serialize());
     print(groups.length);
@@ -541,7 +542,7 @@ void testImport42() {
 //}
 
 void testColonLists() {
-    auto parsed = parse("a: b c d");
+    auto parsed = parse("a: b c d", "");
     check(parsed.length == 3);
     check(parsed[1] == "c");
     check(parsed.name == "a");
@@ -596,7 +597,7 @@ void testNetBase() {
 //	print(url);
     chars json = fetch(url);
 //	print(json);
-    Node result = parse(json);
+    Node result = parse(json, "");
     Node results = result["results"];
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
     Node Erde = results;
@@ -617,7 +618,7 @@ void testNetBase() {
 }
 
 void testDivDeep() {
-    Node div = parse("div{ span{ class:'bold' 'text'} br}");
+    Node div = parse("div{ span{ class:'bold' 'text'} br}", "");
     Node &node = div["span"];
     node.print();
     assert(div["span"].length == 2);
@@ -626,7 +627,7 @@ void testDivDeep() {
 
 void testDivMark() {
     use_polish_notation = true;
-    Node div = parse("{div {span class:'bold' 'text'} {br}}");
+    Node div = parse("{div {span class:'bold' 'text'} {br}}", "");
     Node &span = div["span"];
     span.print();
     assert(span.length == 2);
@@ -635,7 +636,7 @@ void testDivMark() {
 }
 
 void testDiv() {
-    Node result = parse("div{ class:'bold' 'text'}");
+    Node result = parse("div{ class:'bold' 'text'}", "");
     result.print();
     assert(result.length == 2);
     assert(result["class"] == "bold");
@@ -675,7 +676,7 @@ void testMarkAsMap() {
     Node &node = compare["a"];
     assert(node == "HIO");
     chars source = "{b:3 a:'HIO' c:3}";// d:{}
-    Node marked = parse(source);
+    Node marked = parse(source, "");
     Node &node1 = marked["a"];
     assert(node1 == "HIO");
     check(compare["a"] == "HIO");
@@ -717,16 +718,16 @@ void testMarkSimple() {
     assert(a["b"] == b);
     assert(a["b"] == 3);
 
-    assert(parse("3.") == 3.);
-    assert(parse("3.") == 3.f);
+    assert(parse("3.", "") == 3.);
+    assert(parse("3.", "") == 3.f);
 //	assert(Mark::parse("3.1") == 3.1); // todo epsilon 1/3≠0.33…
 //	assert(Mark::parse("3.1") == 3.1f);// todo epsilon
-    result = parse("'hi'");
+    result = parse("'hi'", "");
     check(result.kind == strings);
     check(*result.value.string == "hi");
     check(result == "hi");
-    assert(parse("'hi'") == "hi");
-    assert(parse("3") == 3);
+    assert(parse("'hi'", "") == "hi");
+    assert(parse("3", "") == 3);
 }
 
 
@@ -938,21 +939,21 @@ void testErrors() {
     return;
 #endif
     throwing = false;
-    result = parse("]");
+    result = parse("]", "");
     assert(result == ERROR);
 /*
 	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/out
 	ln -s /Users/me/dev/apps/wasp/samples /Users/me/dev/apps/wasp/cmake-build-default/ #out/
   */
     breakpoint_helper
-    result = /*Wasp::*/parseFile("samples/errors.wasp");
+    result = /*Wasp::*/parseFile("samples/errors.wasp", "");
     throwing = true;
 }
 
 
 void testForEach() {
     int sum = 0;
-    for (Node &item: parse("1 2 3"))
+    for (Node &item: parse("1 2 3", ""))
         sum += item.value.longy;
     assert(sum == 6);
 }
@@ -979,16 +980,16 @@ void testAllSamples() {
 #endif
 
 void testSample() {
-    result = /*Wasp::*/parseFile("samples/comments.wasp");
+    result = /*Wasp::*/parseFile("samples/comments.wasp", "");
 }
 
 void testNewlineLists() {
-    result = parse("  c: \"commas optional\"\n d: \"semicolons optional\"\n e: \"trailing comments\"");
+    result = parse("  c: \"commas optional\"\n d: \"semicolons optional\"\n e: \"trailing comments\"", "");
     assert(result['d'] == "semicolons optional");
 }
 
 void testKitchensink() {
-    result = /*Wasp::*/parseFile("samples/kitchensink.wasp");
+    result = /*Wasp::*/parseFile("samples/kitchensink.wasp", "");
     result.print();
     assert(result['a'] == "classical json");
     assert(result['b'] == "quotes optional");
@@ -1049,7 +1050,7 @@ void testIterate() {
         child = ERROR;
     }
     check(nothing);
-    Node liste = parse("{1 2 3}");
+    Node liste = parse("{1 2 3}", "");
     liste.print();
     for (Node &child: liste) {
         // SHOULD effect result
@@ -1130,7 +1131,7 @@ void testLogic() {
 
 // use the bool() function to determine if a value is truthy or falsy.
 void testTruthiness() {
-    result = parse("true");
+    result = parse("true", "");
 //	print("TRUE:");
     nl();
     print(result.name);
@@ -1456,7 +1457,7 @@ void testParams() {
     Node body = assert_parses("body(style='blue'){a(link)}");
     assert(body["style"] == "blue");
 
-    parse("a(x:1)");
+    parse("a(x:1)", "");
     assert_parses("a(x:1)");
     assert_parses("a(x=1)");
     assert_parses("a{y=1}");
@@ -1660,7 +1661,7 @@ void testConcatenationBorderCases() {
     assert_equals(Node(1, 0) + Node(3, 0), Node(1, 3, 0));// ok
     assert_equals(Node("1", 0, 0) + Node("2", 0, 0), Node("1", "2", 0));
 // Border cases: {1}==1;
-    assert_equals(parse("{1}"), parse("1"));
+    assert_equals(parse("{1}", ""), parse("1", ""));
 // Todo Edge case a=[] a+=1
     assert_equals(Node() + Node("1", 0, 0), Node("1", 0, 0));
     //  singleton {1}+2==1+2 = 12/3 should be {1,2}
@@ -1739,7 +1740,7 @@ void testParamizedKeys() {
 //	<label for="pwd">Password</label>
 
 // 0. parameters accessible
-    Node label0 = parse("label(for:password)");
+    Node label0 = parse("label(for:password)", "");
     label0.print();
     Node &node = label0["for"];
     assert_equals(node, "password");
@@ -1748,7 +1749,7 @@ void testParamizedKeys() {
 
 
 // 1. paramize keys: label{param=(for:password)}:"Text"
-    Node label1 = parse("label(for:password):'Passwort'");
+    Node label1 = parse("label(for:password):'Passwort'", "");
     label1.print();
     assert_equals(label1, "Passwort");
     assert_equals(label1["for"], "password");
@@ -1757,7 +1758,7 @@ void testParamizedKeys() {
 // 2. paramize values
 // TODO 1. move params of Passwort up to lable   OR 2. preserve Passwort as object in stead of making it string value of label!
     skip(
-            Node label2 = parse("label:'Passwort'(for:password)");
+            Node label2 = parse("label:'Passwort'(for:password)", "");
             check(label2 == "Passwort");
             assert_equals(label2, "Passwort");
             assert_equals(label2["for"], "password");
@@ -1768,21 +1769,21 @@ void testParamizedKeys() {
     skip(
 //	3. relative equivalence? todo not really
             assert_equals(label1, label2);
-            Node label3 = parse("label:{for:password 'Password'}");
+            Node label3 = parse("label:{for:password 'Password'}", "");
     )
 }
 
 void testStackedLambdas() {
-    result = parse("a{x:1}{y:2}{3}");
+    result = parse("a{x:1}{y:2}{3}", "");
     result.print();
     check(result.length == 3);
-    check(result[0] == parse("{x:1}"));
-    check(result[0] == parse("x:1"));// grouping irrelevant
-    check(result[1] == parse("{y:2}"));
-    check(result[2] == parse("{3}"));
-    check(result[2] != parse("{4}"));
+    check(result[0] == parse("{x:1}", ""));
+    check(result[0] == parse("x:1", ""));// grouping irrelevant
+    check(result[1] == parse("{y:2}", ""));
+    check(result[2] == parse("{3}", ""));
+    check(result[2] != parse("{4}", ""));
 
-    check(parse("a{x}{y z}") != parse("a{x,{y z}}"));
+    check(parse("a{x}{y z}", "") != parse("a{x,{y z}}", ""));
 }
 
 void testIndex() {
@@ -1838,23 +1839,23 @@ void testSort2() {
 }
 
 void testRemove() {
-    result = parse("a b c d");
+    result = parse("a b c d", "");
     result.remove(1, 2);
-    Node replaced = parse("a d");
+    Node replaced = parse("a d", "");
     check(result == replaced);
 }
 
 void testRemove2() {
-    result = parse("a b c d");
+    result = parse("a b c d", "");
     result.remove(2, 10);
-    Node replaced = parse("a b");
+    Node replaced = parse("a b", "");
     check(result == replaced);
 }
 
 void testReplace() {
-    result = parse("a b c d");
+    result = parse("a b c d", "");
     result.replace(1, 2, new Node("x"));
-    Node replaced = parse("a x d");
+    Node replaced = parse("a x d", "");
     check(result == replaced);
 }
 
@@ -1897,25 +1898,25 @@ void testWasmString() {
 }
 
 void testGroupCascade0() {
-    result = parse("x='abcde';x#4='y';x#4");
+    result = parse("x='abcde';x#4='y';x#4", "");
     check(result.length == 3);
 }
 
 void testGroupCascade1() {
-    Node result0 = parse("a b; c d");
+    Node result0 = parse("a b; c d", "");
     check(result0.length == 2);
     check(result0[1].length == 2);
-    result = parse("{ a b c, d e f }");
-    Node result1 = parse("a b c, d e f ");
+    result = parse("{ a b c, d e f }", "");
+    Node result1 = parse("a b c, d e f ", "");
     assert_equals(result1, result);
-    Node result2 = parse("a b c; d e f ");
+    Node result2 = parse("a b c; d e f ", "");
     assert_equals(result2, result1);
     assert_equals(result2, result);
-    Node result3 = parse("a,b,c;d,e,f");
+    Node result3 = parse("a,b,c;d,e,f", "");
     assert_equals(result3, result2);
     assert_equals(result3, result1);
     assert_equals(result3, result);
-    Node result4 = parse("a, b ,c; d,e , f ");
+    Node result4 = parse("a, b ,c; d,e , f ", "");
     assert_equals(result4, result3);
     assert_equals(result4, result2);
     assert_equals(result4, result1);
@@ -1923,18 +1924,18 @@ void testGroupCascade1() {
 }
 
 void testGroupCascade2() {
-    result = parse("{ a b , c d ; e f , g h }");
-    Node result1 = parse("{ a b , c d \n e f , g h }");
+    result = parse("{ a b , c d ; e f , g h }", "");
+    Node result1 = parse("{ a b , c d \n e f , g h }", "");
     print(result1.serialize());
     assert_equals(result1, result);
-    Node result2 = parse("a b ; c d \n e f , g h ");
+    Node result2 = parse("a b ; c d \n e f , g h ", "");
     assert_equals(result1, result2);
     assert_equals(result2, result);
 }
 
 void testSuperfluousIndentation() {
-    result = parse("a{\n  b,c}");
-    Node result1 = parse("a{b,c}");
+    result = parse("a{\n  b,c}", "");
+    Node result1 = parse("a{b,c}", "");
     check(result1 == result);
 }
 
@@ -1946,7 +1947,7 @@ void testGroupCascade() {
     result = parse("{ a b c, d e f; g h i , j k l \n "
                    "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2}"
                    "{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
-                   "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
+                   "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}", "");
     result.print();
     assert_equals(result.kind, groups);// ( {} {} ) because 2 {}!
     auto first = result.first();
@@ -1956,10 +1957,10 @@ void testGroupCascade() {
     assert_equals(result[0].length, 2) // a…  and a2…  with significant newline
     assert_equals(result[0][0].length, 2)// a b c, d e f  and  g h i , j k l
     assert_equals(result[0][0][0].length, 2)// a b c  and  d e f
-    assert_equals(result[0][0], parse("a b c, d e f; g h i , j k l"));// significant newline!
-    assert_equals(result[0][1], parse("a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2"));// significant newline!
+    assert_equals(result[0][0], parse("a b c, d e f; g h i , j k l", ""));// significant newline!
+    assert_equals(result[0][1], parse("a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2", ""));// significant newline!
     assert_equals(result[0][0][0][0].length, 3)// a b c
-    assert_equals(result[0][0][0][0], parse("a b c"));
+    assert_equals(result[0][0][0][0], parse("a b c", ""));
     assert_equals(result[0][0][0][0][0], "a");
     assert_equals(result[0][0][0][0][1], "b");
     assert_equals(result[0][0][0][0][2], "c");
@@ -1967,7 +1968,7 @@ void testGroupCascade() {
     assert_equals(result[0][0][0][1][1], "e");
     assert_equals(result[0][0][0][1][2], "f");
     assert_equals(result[1][1][0][1][2], "f4");
-    Node reparse = parse(result.serialize());
+    Node reparse = parse(result.serialize(), "");
     print(reparse.serialize());
     check(result == reparse);
 }
@@ -2180,13 +2181,13 @@ void testPaintWasm() {
 }
 
 void testNodesInWasm() {
-    assert_emit("{b:c}", parse("{b:c}"));
-    assert_emit("a{b:c}", parse("a{b:c}"));
+    assert_emit("{b:c}", parse("{b:c}", ""));
+    assert_emit("a{b:c}", parse("a{b:c}", ""));
 }
 
 
 void testSubGroupingIndent() {
-    result = parse("x{\ta\n\tb,c,\n\td;\n\te");
+    result = parse("x{\ta\n\tb,c,\n\td;\n\te", "");
     assert_equals(result.length, 3);
     assert_equals(result.first(), "a");
     assert_equals(result.last(), "e");
@@ -2197,7 +2198,7 @@ void testSubGrouping() {// todo dangling ',' should make '\n' not close
     result = parse("a\n"
                    "b,c,\n"
                    "d;\n"
-                   "e");
+                   "e", "");
     assert_equals(result.length, 3);// b,c,d should be grouped as one because of dangling comma
     assert_equals(result.first(), "a");
     assert_equals(result.last(), "e");
@@ -2205,7 +2206,7 @@ void testSubGrouping() {// todo dangling ',' should make '\n' not close
 
 
 void testSubGroupingFlatten() { // ok [a (b,c) d] should be flattened to a (b,c) d
-    result = parse("[a\nb,c\nd]");
+    result = parse("[a\nb,c\nd]", "");
 //	result=parse("a\nb,c\nd");// still wrapped!
     assert_equals(result.length, 3);
     assert_equals(result.first(), "a");
@@ -2341,9 +2342,9 @@ void testCurrent() {
     //	panicking = true;//
     data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
+    testWit();
     assert_run("oka", 42);
     testMergeOwn();
-    testWit();
 
     testSubGroupingFlatten();
     skip_wasm(
