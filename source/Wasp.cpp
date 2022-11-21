@@ -12,17 +12,23 @@
 
 //#include <cstdlib> // OK in WASM!
 #ifndef PURE_WASM
+
 #include "stdio.h" // FILE
+
 #endif
+
 #include <math.h>
 
 
 #ifndef RUNTIME_ONLY
+
 #include "WebServer.hpp"
 //#include "wasm_merger_wabt.h"
 #include "WebApp.h"
+
 #endif
 
+#include "WitReader.h"
 
 int SERVER_PORT = 1234;
 //bool eval_via_emit = false;// not all tests yet
@@ -65,7 +71,7 @@ extern void info(chars);
 
 #define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m)
 
-bool data_mode = true;// todo ooo! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
+bool data_mode = true;// todo ! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
 
 
 //List<codepoint>
@@ -107,9 +113,9 @@ chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "th
                           "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
                           "abs" /* f64.abs! */, /* "norm", "‖" acts as GROUP, not as operator (when parsing) */
-		// norm ‖…‖ quite complicated for parser! ‖x‖ := √∑xᵢ²
-		                  0, 0, 0,
-		                  0}; // "while" ...
+        // norm ‖…‖ quite complicated for parser! ‖x‖ := √∑xᵢ²
+                          0, 0, 0,
+                          0}; // "while" ...
 // todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
 //  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
 // ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
@@ -127,51 +133,51 @@ Map<long/*hash*/, String *> hash_to_normed_alias;
 bool aliases_loaded = true;// DON't load aliases!
 
 void load_aliases() {
-	aliases.setDefault(List<String>());// uff!?
-	hash_to_normed_alias.setDefault(new String());
-	data_mode = true;
-	auto list = parseFile("aliases.wasp");
-	for (auto key: list) {
-		auto normed = key.name;
-		aliases[normed] = key.toList();
-		for (auto alias: key) {
-			auto variant = alias.name;
-			hash_to_normed_alias[variant.hash()] = &normed.clone();
-		}
-	}
+    aliases.setDefault(List<String>());// uff!?
+    hash_to_normed_alias.setDefault(new String());
+    data_mode = true;
+    auto list = parseFile("aliases.wasp", "");
+    for (auto key: list) {
+        auto normed = key.name;
+        aliases[normed] = key.toList();
+        for (auto alias: key) {
+            auto variant = alias.name;
+            hash_to_normed_alias[variant.hash()] = &normed.clone();
+        }
+    }
 //	check(hash_to_normed_alias["mod_d"s.hash()]=="mod"s);
-	aliases_loaded = true;
+    aliases_loaded = true;
 }
 
 String &normOperator(String &alias) {
-	if (alias.empty())return alias;
-	if (not aliases_loaded)load_aliases();
-	auto hash = alias.hash();
-	if (not hash_to_normed_alias.has(hash))
-		return alias;// or NIL : no alias
-	auto normed = hash_to_normed_alias[hash];
-	if (not normed->empty() and alias != normed)
-		trace(alias + " operator normed to " + normed);
-	return *normed;
+    if (alias.empty())return alias;
+    if (not aliases_loaded)load_aliases();
+    auto hash = alias.hash();
+    if (not hash_to_normed_alias.has(hash))
+        return alias;// or NIL : no alias
+    auto normed = hash_to_normed_alias[hash];
+    if (not normed->empty() and alias != normed)
+        trace(alias + " operator normed to " + normed);
+    return *normed;
 }
 
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
-	if (ch == '#')return false;// size/count/length
-	if (ch == '=')return false;
-	if (ch == ':')return false;
-	if (ch == ' ')return false;
-	if (ch == ';')return false;
-	if (ch == '.')return false;
-	if (ch == '-')return false;// todo
-	if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
-	return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$';// ch<0: UNICODE
-	//		not((ch != '_' and ch != '$') and (ch < 'a' or ch > 'z') and (ch < 'A' or ch > 'Z'));
+    if (ch == '#')return false;// size/count/length
+    if (ch == '=')return false;
+    if (ch == ':')return false;
+    if (ch == ' ')return false;
+    if (ch == ';')return false;
+    if (ch == '.')return false;
+    if (ch == '-')return false;// todo
+    if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
+    return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$';// ch<0: UNICODE
+    //		not((ch != '_' and ch != '$') and (ch < 'a' or ch > 'z') and (ch < 'A' or ch > 'Z'));
 };
 
 
 bool is_bracket(char ch) {
-	return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
+    return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
 }
 
 
@@ -180,60 +186,62 @@ bool is_bracket(char ch) {
 // ︵  ﴾ ﴿ ﹙ ﹚ （ ） ⁽ ⁾  ⸨⸩ see grouper_list
 // ︶
 codepoint closingBracket(codepoint bracket) {
-	switch (bracket) {
-		case '\x0E':
-			return '\x0F'; // Shift In closes Shift Out??
-		case '\x0F':
-			return '\x0E'; // Shift Out closes '\x0F' Shift In
-		case u'‖':
-			return u'‖';
-		case u'⸨':
-			return u'⸩';
-		case u'﹛':
-			return u'﹜';
-		case u'｛':
-			return u'｝';//  ︷
-		case u'﹝':
-			return u'﹞';// ︸
-		case u'〔':
-			return u'〕';
-		case u'〘':
-			return u'〙';
-		case u'〚':
-			return u'〛';
-		case u'〖':
-			return u'〗';
-		case u'【':
-			return u'】';
-		case u'『':
-			return u'』';
-		case u'「':
-			return u'」';
-		case u'｢':
-			return u'｣';
-		case u'《':
-			return u'》';
-		case u'〈':
-			return u'〉';
-		case u'⁅':
-			return u'⁆';
-		case '{':
-			return u'}';
-		case '(':
-			return u')';
-		case '[':
-			return u']';
-		case u'‘':
-			return u'’';
-		case u'«':
-			return u'»';
-		case u'“':
-			return u'”';
-		default:
-			error("unknown bracket "s + bracket);
-	}
+    switch (bracket) {
+        case '<':
+            return '>'; // tags / generics
+        case '\x0E':
+            return '\x0F'; // Shift In closes Shift Out??
+        case '\x0F':
+            return '\x0E'; // Shift Out closes '\x0F' Shift In
+        case u'‖':
+            return u'‖';
+        case u'⸨':
+            return u'⸩';
+        case u'﹛':
+            return u'﹜';
+        case u'｛':
+            return u'｝';//  ︷
+        case u'﹝':
+            return u'﹞';// ︸
+        case u'〔':
+            return u'〕';
+        case u'〘':
+            return u'〙';
+        case u'〚':
+            return u'〛';
+        case u'〖':
+            return u'〗';
+        case u'【':
+            return u'】';
+        case u'『':
+            return u'』';
+        case u'「':
+            return u'」';
+        case u'｢':
+            return u'｣';
+        case u'《':
+            return u'》';
+        case u'〈':
+            return u'〉';
+        case u'⁅':
+            return u'⁆';
+        case '{':
+            return u'}';
+        case '(':
+            return u')';
+        case '[':
+            return u']';
+        case u'‘':
+            return u'’';
+        case u'«':
+            return u'»';
+        case u'“':
+            return u'”';
+        default:
+            error("unknown bracket "s + bracket);
+    }
 
-	return 0;
+    return 0;
 }
 
 
@@ -242,58 +250,58 @@ codepoint closingBracket(codepoint bracket) {
 // everything that is not an is_identifier is treated as operator/symbol/identifier?
 // NEEDs complete codepoint, not just leading char because	☺ == e2 98 ba  √ == e2 88 9a
 bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
-	//	0x0086	134	<control>: START OF SELECTED AREA	†
-	if (ch == U'∞')return false;// or can it be made as operator!?
-	if (ch == U'⅓')return false;// numbers are implicit operators 3y = 3*y
-	if (ch == U'∅')return false;// Explicitly because it is part of the operator range 0x2200 - 0x2319
-	//		0x20D0	8400	COMBINING LEFT HARPOON ABOVE	⃐
-	//		0x2300	8960	DIAMETER SIGN	⌀
-	if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
-	if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
-	if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
-	if (ch == u'¬')return true;
-	if (ch == u'＝')return true;
-	if (ch == u'#')return true;
-	if (operator_list.has(String(ch)))
-		return true;
+    //	0x0086	134	<control>: START OF SELECTED AREA	†
+    if (ch == U'∞')return false;// or can it be made as operator!?
+    if (ch == U'⅓')return false;// numbers are implicit operators 3y = 3*y
+    if (ch == U'∅')return false;// Explicitly because it is part of the operator range 0x2200 - 0x2319
+    //		0x20D0	8400	COMBINING LEFT HARPOON ABOVE	⃐
+    //		0x2300	8960	DIAMETER SIGN	⌀
+    if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
+    if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
+    if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
+    if (ch == u'¬')return true;
+    if (ch == u'＝')return true;
+    if (ch == u'#')return true;
+    if (operator_list.has(String(ch)))
+        return true;
 
-	//		if(ch=='=') return false;// internal treatment
-	if (ch > 0x80)
-		return false;// utf NOT enough: ç. can still be a reference!
-	if (is_identifier(ch)) return false;
-	if (isalnum0(ch)) return false;// ANY UTF 8
-	return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
+    //		if(ch=='=') return false;// internal treatment
+    if (ch > 0x80)
+        return false;// utf NOT enough: ç. can still be a reference!
+    if (is_identifier(ch)) return false;
+    if (isalnum0(ch)) return false;// ANY UTF 8
+    return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
 }
 
 
 // list HAS TO BE 0 terminated! Dangerous C!! ;)
 template<class S>
 bool contains(S list[], S match) {
-	S *elem = list;
-	do {
-		if (match == *elem)
-			return true;
-	} while (*elem++);
-	return false;
+    S *elem = list;
+    do {
+        if (match == *elem)
+            return true;
+    } while (*elem++);
+    return false;
 }
 
 bool contains(chars list[], chars match) {
-	chars *elem = list;
-	do {
-		if (eq(match, *elem))
-			return true;
-	} while (*elem++);
-	return false;
+    chars *elem = list;
+    do {
+        if (eq(match, *elem))
+            return true;
+    } while (*elem++);
+    return false;
 }
 
 
 class Wasp {
 
-	String text = EMPTY;
-	String file = EMPTY; // possible source
-	int at = -1;//{};            // The index of the current character PLUS ONE todo
+    String text = EMPTY;
+    String file = EMPTY; // possible source
+    int at = -1;//{};            // The index of the current character PLUS ONE todo
 
-	char lastNonWhite = 0;
+    char lastNonWhite = 0;
 //	char previous = 0;
 //	char ch = 0;            // The current character
 //	char* point = 0;            // The current character
@@ -321,41 +329,41 @@ class Wasp {
             // todo: ignore indent in x{…} BUT keep and restore previous indent!
         }
         float tabs = 0;
-		int spaces_per_tab = 2;
-		int offset = at;
+        int spaces_per_tab = 2;
+        int offset = at;
 //		if(text[offset]==end_block) 0x0b / vertical tab
 //			return indentation_level-1;
-		if (text[offset] == '\n' and text[offset + 1] == '\n') {
+        if (text[offset] == '\n' and text[offset + 1] == '\n') {
 //			// double newline dedent. really? why not keep track via indent?
 //			print(position());
 //			if(text[offset+2] == '\n')
 //				return indentation_level--;// todo close ALL?
 //			else return indentation_level; //ignore simple newlines
-		}
-		if (text[offset] == '\n' or text[offset] == '\r')offset++;
-		while (text[offset] == '\t') {
-			if (indentation_level > 0 and not indentation_by_tabs)
-				proceed() ? err("mixing tabs and spaces for indentation") : 0;
-			indentation_by_tabs = true;
-			tabs++;
-			offset++;
-		}
-		if (tabs > 0 and text[offset] == ' ')
-			err("ambiguous indentation, mixing tabs and spaces");
-		while (text[offset] == ' ') {
-			if (indentation_level > 0 and indentation_by_tabs)
-				proceed() ? err("mixing tabs and spaces for indentation") : 0;
-			indentation_by_tabs = false;
-			tabs = tabs + 1. / spaces_per_tab;
-			offset++;
-		}
-		if (tabs > 0 and text[offset] == '\t')err("ambiguous indentation, mixing tabs and spaces");
+        }
+        if (text[offset] == '\n' or text[offset] == '\r')offset++;
+        while (text[offset] == '\t') {
+            if (indentation_level > 0 and not indentation_by_tabs)
+                proceed() ? err("mixing tabs and spaces for indentation") : 0;
+            indentation_by_tabs = true;
+            tabs++;
+            offset++;
+        }
+        if (tabs > 0 and text[offset] == ' ')
+            err("ambiguous indentation, mixing tabs and spaces");
+        while (text[offset] == ' ') {
+            if (indentation_level > 0 and indentation_by_tabs)
+                proceed() ? err("mixing tabs and spaces for indentation") : 0;
+            indentation_by_tabs = false;
+            tabs = tabs + 1. / spaces_per_tab;
+            offset++;
+        }
+        if (tabs > 0 and text[offset] == '\t')err("ambiguous indentation, mixing tabs and spaces");
 //		while(next==' ' or next=='\t')proceed();// but keep last ch as INDENT!
-		if (text[offset] == '\n')
-			return indentation_level; // careful empty lines if next indentation == last one : just hangover spacer!
-		if (text[offset] == 0)return 0; // no more indentation.
-		return floor(tabs);
-	}
+        if (text[offset] == '\n')
+            return indentation_level; // careful empty lines if next indentation == last one : just hangover spacer!
+        if (text[offset] == 0)return 0; // no more indentation.
+        return floor(tabs);
+    }
 
 // Ascii control for indent/dedent: perfect!
 //  0x0B    VT  ␋     vertical tab => end_block
@@ -372,24 +380,24 @@ class Wasp {
 //0x241B	9243	SYMBOL FOR ESCAPE	␛
 // U+0085 <control-0085> (NEL: NEXT LINE) ␤ NewLine
 // ‘Language Tag character’ (U+E0001) + en-us …
-	bool closing(char ch, char closer) {
-		if (ch == closer)
-			return true;
-		if (precedence(ch) <= precedence(closer))
-			return true;
-		if (ch == INDENT)
-			return false;// quite the opposite
-		if (ch == DEDENT and not(closer == '}' or closer == ']' or closer == ')'))
-			return true;
-		if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
-			//				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
-			return true;
-		}// outer match unresolved so far
+    bool closing(char ch, char closer) {
+        if (ch == closer)
+            return true;
+        if (precedence(ch) <= precedence(closer))
+            return true;
+        if (ch == INDENT)
+            return false;// quite the opposite
+        if (ch == DEDENT and not(closer == '}' or closer == ']' or closer == ')'))
+            return true;
+        if (ch == '}' or ch == ']' or ch == ')') { // todo: ERROR if not opened before!
+            //				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
+            return true;
+        }// outer match unresolved so far
 
-		if (precedence(ch) <= precedence(closer))
-			return true;
-		return false;
-	}
+        if (precedence(ch) <= precedence(closer))
+            return true;
+        return false;
+    }
 
 public:
 
@@ -402,219 +410,225 @@ public:
 //		at = -1;
 //	}
 
+    void setParserOptions(ParserOptions p) {
+        this->parserOptions = p;
+    }
+
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
 // YUCK static magically applies to new() objects too!?!
-	Node parse(String source) {
-		info("Parsing: \n%s\n"s % source.data);
-		return read(source);
-	}
+    Node parse(String source) {
+        info("Parsing: \n%s\n"s % source.data);
+        return read(source);
+    }
 
-	// todo: flatten the parse->parse->read branch!!
-	Node &read(String source) {
-		if (source.endsWith(".wasp") and not source.contains("\n")) {
-			setFile(source);
-			source = readFile(findFile(source));
-		}
-		if (source.empty()) return const_cast<Node &>(NIL);
-		columnStart = 0;
-		at = -1;
-		lineNumber = 1;
-		ch = 0;
-		text = source;
-		while (empty(ch) and (ch or at < 0))
-			proceed();// at=0
-		Node &result = valueNode(); // <<
-		white();
-		if (ch and ch != -1 and ch != DEDENT) {
-			printf("UNEXPECTED CHAR %c", ch);
-			print(position());
-			error("Expect end of input");
-			result = ERROR;
-		}
-		// Mark does not support the legacy JSON reviver function todo ??
-		return result;
+    // todo: flatten the parse->parse->read branch!!
+    Node &read(String source) {
+        if ((source.endsWith(".wasp") or source.endsWith(".wit")) and not source.contains("\n")) {
+            setFile(source);
+            source = readFile(findFile(source, parserOptions.current_dir));
+        }
+        if (source.empty()) return const_cast<Node &>(NIL);
+        columnStart = 0;
+        at = -1;
+        lineNumber = 1;
+        ch = 0;
+        text = source;
+        while (empty(ch) and (ch or at < 0))
+            proceed();// at=0
+        Node &result = valueNode(); // <<
+        white();
+        if (ch and ch != -1 and ch != DEDENT) {
+            printf("UNEXPECTED CHAR %c", ch);
+            print(position());
+            error("Expect end of input");
+            result = ERROR;
+        }
+        // Mark does not support the legacy JSON reviver function todo ??
+        return result;
 //		return *result.clone();
-	}
+    }
 
 
-	Wasp &setFile(String string) {
-		file = string;
-		return *this;
-	}
+    Wasp &setFile(String file) {
+        this->file = file;
+        parserOptions.current_dir = extractPath(file);
+        return *this;
+    }
 
 private:
-	char escapee(char c) {
-		switch (c) {
-			case '"' :
-				return '"';        // this is needed as we allows single quote
-			case '\\':
-				return '\\';
-			case '/':
-				return '/';
-			case '\n':
-				return '\n';       // Replace escaped newlines in strings w/ empty string
-			case 'b':
-				return '\b';
-			case 'f':
-				return '\f';
-			case 'n':
-				return '\n';
-			case 'r':
-				return '\r';
-			case 't':
-				return '\t';
-			default:
-				return 0;
-		}
-	};
+    char escapee(char c) {
+        switch (c) {
+            case '"' :
+                return '"';        // this is needed as we allows single quote
+            case '\\':
+                return '\\';
+            case '/':
+                return '/';
+            case '\n':
+                return '\n';       // Replace escaped newlines in strings w/ empty string
+            case 'b':
+                return '\b';
+            case 'f':
+                return '\f';
+            case 'n':
+                return '\n';
+            case 'r':
+                return '\r';
+            case 't':
+                return '\t';
+            default:
+                return 0;
+        }
+    };
 
-	String renderChar(char chr) {
-		return chr == '\n' ? s("\\n") : String('\'') + chr + '\'';
-	};
+    String renderChar(char chr) {
+        return chr == '\n' ? s("\\n") : String('\'') + chr + '\'';
+    };
 
-	[[nodiscard]]
-	String position() {
-		auto columnNumber = at - columnStart;
-		String msg;
-		msg = msg + " in line " + lineNumber + " column " + columnNumber + " (char#" + at + ")\n";
-		msg = msg + line + "\n";
-		msg = msg + (s(" ").times(columnNumber - 1)) + "^";
-		if (not file.empty()) msg = msg + "\n" + file + ":" + lineNumber;
+    [[nodiscard]]
+    String position() {
+        auto columnNumber = at - columnStart;
+        String msg;
+        msg = msg + " in line " + lineNumber + " column " + columnNumber + " (char#" + at + ")\n";
+        msg = msg + line + "\n";
+        msg = msg + (s(" ").times(columnNumber - 1)) + "^";
+        if (not file.empty()) msg = msg + "\n" + file + ":" + lineNumber;
 //		print(msg);
-		return msg;
-	}
+        return msg;
+    }
 
-	String err1(String m) {
-		// Call error when something is wrong.
-		// todo: Still to read can scan to end of line
-		String msg = m;
-		msg += position();
+    String err1(String m) {
+        // Call error when something is wrong.
+        // todo: Still to read can scan to end of line
+        String msg = m;
+        msg += position();
 //		msg = msg + s(" of the Mark data. \nStill to read: \n") + text.substring(at - 1, at + 30) + "\n^^ ...";
 //		msg = msg + backtrace2();
-		auto error = new SyntaxError(msg);
-		error->at = at;
-		error->lineNumber = lineNumber;
-		error->columnNumber = at - columnStart;
-		error->file = file.data;
-		if (throwing)
-			raise(msg);
-		else
-			return msg;
-		return msg;
-	};
+        auto error = new SyntaxError(msg);
+        error->at = at;
+        error->lineNumber = lineNumber;
+        error->columnNumber = at - columnStart;
+        error->file = file.data;
+        if (throwing)
+            raise(msg);
+        else
+            return msg;
+        return msg;
+    };
 
-	String s(const char string[]) {
-		return {string};
-	}
+    String s(const char string[]) {
+        return {string};
+    }
 
-	char back() {
-		ch = previous;
-		at--;
-		return ch;
-	}
+    char back() {
+        ch = previous;
+        at--;
+        return ch;
+    }
 
 
-	// one char at a time, NO JUMPING OVER ' ' here!
-	char proceed(char c = 0) {
-		if (not ch and at >= 0) {
-			warn("end of code");
-			return ch;
-		}
-		// If a c parameter is provided, verify that it matches the current character.
-		if (c and c != ch) { // todo: debug only / who cares?
-			err(s("Expected '") + c + "' instead of " + renderChar(ch));
-		}
-		// Get the next character. When there are no more characters, return the empty string.
-		previous = ch;
-		if (ch != ' ' and ch != '\n' and ch != '\r' and ch != '\t')
-			lastNonWhite = ch;
-		short step = utf8_byte_count(previous);
-		at = at + step;
-		if (at >= text.length) {
-			ch = 0;
+    // one char at a time, NO JUMPING OVER ' ' here!
+    char proceed(char c = 0) {
+        if (not ch and at >= 0) {
+            warn("end of code");
+            return ch;
+        }
+        // If a c parameter is provided, verify that it matches the current character.
+        if (c and c != ch) { // todo: debug only / who cares?
+            err(s("Expected '") + c + "' instead of " + renderChar(ch));
+        }
+        // Get the next character. When there are no more characters, return the empty string.
+        previous = ch;
+        if (ch != ' ' and ch != '\n' and ch != '\r' and ch != '\t')
+            lastNonWhite = ch;
+        short step = utf8_byte_count(previous);
+        at = at + step;
+        if (at >= text.length) {
+            ch = 0;
 //			point = 0;
-			return -1;
-		}
-		ch = decode_unicode_character(text.data + at);// charAt(at);
-		short width = utf8_byte_count(ch);
-		if (at + width >= text.length)next = 0;
-		else next = decode_unicode_character(text.data + at + width);
+            return -1;
+        }
+        ch = decode_unicode_character(text.data + at);// charAt(at);
+        short width = utf8_byte_count(ch);
+        if (at + width >= text.length)next = 0;
+        else next = decode_unicode_character(text.data + at + width);
 //		point = text.data + at;
-		if (ch == '\n' or (ch == '\r' and next != '\n')) {
-			lineNumber++;
-			columnStart = at;// including indent
-			int new_indentation_level = indentation();
-			if ((lastNonWhite == ':' or not is_grouper(lastNonWhite)) and previous != '"')
-				if (new_indentation_level > indentation_level)
-					ch = INDENT;
-			if (new_indentation_level < indentation_level)
-				ch = DEDENT;
-			indentation_level = new_indentation_level;
-			//			at = columnStart;// restore to be sure todo remove
-		}
-		if (previous == '\n' or previous == INDENT or previous == DEDENT or previous == 0) {
-			auto to = text.indexOf('\n', at);
-			line = text.substring(at, to);
-		}
-		return ch;
-	};
+        if (ch == '\n' or (ch == '\r' and next != '\n')) {
+            lineNumber++;
+            columnStart = at;// including indent
+            int new_indentation_level = indentation();
+            if ((lastNonWhite == ':' or not is_grouper(lastNonWhite)) and previous != '"')
+                if (new_indentation_level > indentation_level)
+                    ch = INDENT;
+            if (new_indentation_level < indentation_level)
+                ch = DEDENT;
+            indentation_level = new_indentation_level;
+            //			at = columnStart;// restore to be sure todo remove
+        }
+        if (previous == '\n' or previous == INDENT or previous == DEDENT or previous == 0) {
+            auto to = text.indexOf('\n', at);
+            line = text.substring(at, to);
+        }
+        return ch;
+    };
 
-	// Parse an identifier.
-	String identifier() {
-		// identifiers must start with a letter, _ or $.
-		if (!is_identifier(ch)) err("Unexpected identifier character "s + renderChar(ch));
-		int start = at;
-		// subsequent characters can contain ANYTHING
-		while ((proceed() and is_identifier(ch)) or isDigit(ch))
-			if (is_operator(ch))
-				break;
-		int to = at;
-		while (to > 0 and empty(text[to - 1]))to--;
-		String key = String(text.data + start, to - start, !debug);
-		return key;
-	};
+    // Parse an identifier.
+    String identifier() {
+        // identifiers must start with a letter, _ or $.
+        if (!is_identifier(ch)) err("Unexpected identifier character "s + renderChar(ch));
+        int start = at;
+        bool kebab = parserOptions.kebab_case;
+        // subsequent characters can contain ANYTHING except operators
+        while ((proceed() and is_identifier(ch)) or isDigit(ch) or (kebab and ch == '-'))
+            if (is_operator(ch) and not(kebab and ch == '-'))
+                break;
+        int to = at;
+        while (to > 0 and empty(text[to - 1]))to--;
+        String key = String(text.data + start, to - start, !debug);
+        return key;
+    };
 
-	Node &hexadecimal_number() {
-		if (ch == '0')proceed();
-		if (ch == 'x' or ch == 'X')proceed();
-		int val = 0;
-		while (true) {
-			if (ch >= '0' and ch <= '9') val = val * 16 + (ch - '0');
-			else if (ch >= 'a' and ch <= 'f') val = val * 16 + (ch - 'a' + 10);
-			else if (ch >= 'A' and ch <= 'F') val = val * 16 + (ch - 'A' + 10);
-			else break;
-			proceed();
-		}
-		return *new Node(val);
-	}
+    Node &hexadecimal_number() {
+        if (ch == '0')proceed();
+        if (ch == 'x' or ch == 'X')proceed();
+        int val = 0;
+        while (true) {
+            if (ch >= '0' and ch <= '9') val = val * 16 + (ch - '0');
+            else if (ch >= 'a' and ch <= 'f') val = val * 16 + (ch - 'a' + 10);
+            else if (ch >= 'A' and ch <= 'F') val = val * 16 + (ch - 'A' + 10);
+            else break;
+            proceed();
+        }
+        return *new Node(val);
+    }
 
-	// Parse a number value.
-	Node &numbero() {
-		auto sign = '\n';
-		auto string = String("");
-		short base = 10;
-		long number0;
-		if (ch == '0' and (next == 'x' or next == 'X'))return hexadecimal_number();// base=16;
-		if (ch == '0' and (next == 'o' or next == 'O')) {
-			todo("octal");
-			base = 8;
-		} // todo
-		if (ch == '+' and not is_operator(previous))
-			warn("unnecessary + sign or missing whitespace 1 +1 == [1 1]");
-		if (ch == '-' or ch == '+') {
-			sign = ch;
-			proceed(ch);
-		}
-		// support for Infinity (could tweak to allow other words):
-		if (ch == 'I') {
+    // Parse a number value.
+    Node &numbero() {
+        auto sign = '\n';
+        auto string = String("");
+        short base = 10;
+        long number0;
+        if (ch == '0' and (next == 'x' or next == 'X'))return hexadecimal_number();// base=16;
+        if (ch == '0' and (next == 'o' or next == 'O')) {
+            todo("octal");
+            base = 8;
+        } // todo
+        if (ch == '+' and not is_operator(previous))
+            warn("unnecessary + sign or missing whitespace 1 +1 == [1 1]");
+        if (ch == '-' or ch == '+') {
+            sign = ch;
+            proceed(ch);
+        }
+        // support for Infinity (could tweak to allow other words):
+        if (ch == 'I') {
 //			const Node &ok =
             word();
             return (sign == '-') ? NegInfinity : Infinity;
         }
 
-		// support for NaN
-		if (ch == 'N') {
+        // support for NaN
+        if (ch == 'N') {
 //			const Node &ok =
             word();
 //			bool ok = word();
@@ -623,38 +637,38 @@ private:
             return NaN;
         }
 
-		while (atoi1(ch) >= 0) { // -1 if not
-			//	ch >= '0' and ch <= '9'
-			string += ch;
-			proceed();
-		}
-		if (ch == '.') {
-			string += '.';
-			while (proceed() and atoi1(ch) >= 0) {
-				string += ch;
-			}
-		}
-		if (ch == 'e' or ch == 'E') {
-			string += ch;
-			proceed();
-			if (ch == '-' or ch == '+') {
-				string += ch;
-				proceed();
-			}
-			while (atoi1(ch) != -1) {
-				//				ch >= '0' and ch <= '9'
-				string += ch;
-				proceed();
-			}
-		}
+        while (atoi1(ch) >= 0) { // -1 if not
+            //	ch >= '0' and ch <= '9'
+            string += ch;
+            proceed();
+        }
+        if (ch == '.') {
+            string += '.';
+            while (proceed() and atoi1(ch) >= 0) {
+                string += ch;
+            }
+        }
+        if (ch == 'e' or ch == 'E') {
+            string += ch;
+            proceed();
+            if (ch == '-' or ch == '+') {
+                string += ch;
+                proceed();
+            }
+            while (atoi1(ch) != -1) {
+                //				ch >= '0' and ch <= '9'
+                string += ch;
+                proceed();
+            }
+        }
 
-		if (string.contains(".")) {
-			if (sign == '-') return *new Node(-atof0(string.data));
-			else return *new Node(atof0(string.data));
-		}
-		if (sign == '-') {
-			number0 = -atoi0(string.data);
-		} else {
+        if (string.contains(".")) {
+            if (sign == '-') return *new Node(-atof0(string.data));
+            else return *new Node(atof0(string.data));
+        }
+        if (sign == '-') {
+            number0 = -atoi0(string.data);
+        } else {
             number0 = +atoi0(string.data);
         }
 //		if (!isFinite(number)) {
@@ -761,41 +775,40 @@ private:
             err("Not an inline comment");
         }
         do {
-			proceed();
-			if (ch == '\r' or ch == '\n' or ch == 0) {
+            proceed();
+            if (ch == '\r' or ch == '\n' or ch == 0) {
 //				proceed();
-				return;
-			}
-		} while (ch);
-	};
+                return;
+            }
+        } while (ch);
+    };
 
-	// Parse a block comment
-	void blockComment() {
-		// Skip a block comment, assuming this is one. The current character should be
-		// the * character in the /* pair that begins this block comment.
-		// To finish the block comment, we look for an ending */ pair of characters,
-		// but we also watch for the end of text before the comment is terminated.
+    // Parse a block comment
+    void blockComment() {
+        // Skip a block comment, assuming this is one. The current character should be
+        // the * character in the /* pair that begins this block comment.
+        // To finish the block comment, we look for an ending */ pair of characters,
+        // but we also watch for the end of text before the comment is terminated.
 //		if (ch != '*') {
 //			err("Not a block comment");
 //		}
-		do {
-			proceed();
-			if (ch == '*' or ch == '#') {
-				proceed();
-				if (ch == '/' or ch == '#') {
-					proceed();
-					return;
-				}
-			}
-		} while (ch);
+        do {
+            proceed();
+            if (ch == '*' or ch == '#') {
+                proceed();
+                if (ch == '/' or ch == '#') {
+                    proceed();
+                    return;
+                }
+            }
+        } while (ch);
+        err("Unterminated block comment");
+    };
 
-		err("Unterminated block comment");
-	};
-
-	// Parse a comment
-	bool comment() {
-		// Skip a comment, whether inline or block-level, assuming this is one.
-		char preserveLast = lastNonWhite;
+    // Parse a comment
+    bool comment() {
+        // Skip a comment, whether inline or block-level, assuming this is one.
+        char preserveLast = lastNonWhite;
 //		if (ch == ';' and next == ';') { // and mode = stupid wast comments   or columnStart==0
 //		    inlineComment();
 //			return true;
@@ -804,100 +817,100 @@ private:
 //		    inlineComment();
 //			return true;
 //		}
-		// Comments always begin with a # or / character.
-		if (ch == '#') {
-			if (next == '*' or next == '#')
-				blockComment();
-			else
-				inlineComment();
-			previous = lastNonWhite = preserveLast;
-			return true;
-		}
-		if (ch != '/') err("Not a comment");
-		if (next == '/') {
-			proceed('/');
-			inlineComment();
-			previous = lastNonWhite = preserveLast;
-			return true;
-		} else if (next == '*' or next == '#') {
-			proceed('/');
-			blockComment();
-			previous = lastNonWhite = preserveLast;
-			return true;
-		} else {
-			return false; // not a comment
-			// division handled elsewhere
+        // Comments always begin with a # or / character.
+        if (ch == '#') {
+            if (next == '*' or next == '#')
+                blockComment();
+            else
+                inlineComment();
+            previous = lastNonWhite = preserveLast;
+            return true;
+        }
+        if (ch != '/') err("Not a comment");
+        if (next == '/') {
+            proceed('/');
+            inlineComment();
+            previous = lastNonWhite = preserveLast;
+            return true;
+        } else if (next == '*' or next == '#') {
+            proceed('/');
+            blockComment();
+            previous = lastNonWhite = preserveLast;
+            return true;
+        } else {
+            return false; // not a comment
+            // division handled elsewhere
 //			error("Unrecognized comment");
-		}
-	};
+        }
+    };
 
-	// Parse whitespace and comments.
-	void white() {
-		// Note that we're detecting comments by only a single / character.
-		// This works since regular expression are not valid JSON(5), but this will
-		// break if there are other valid values that begin with a / character!
-		while (ch) {
-			if (ch == '/') {
-				if (not comment()) return; // else loop on
-				// NEWLINE IS NOT A WHITE , it has semantics
-			} else if (ch == ' ' or ch == '\t') {
-				proceed();
-			} else
-				return;
-		}
-	};
+    // Parse whitespace and comments.
+    void white() {
+        // Note that we're detecting comments by only a single / character.
+        // This works since regular expression are not valid JSON(5), but this will
+        // break if there are other valid values that begin with a / character!
+        while (ch) {
+            if (ch == '/') {
+                if (not comment()) return; // else loop on
+                // NEWLINE IS NOT A WHITE , it has semantics
+            } else if (ch == ' ' or ch == '\t') {
+                proceed();
+            } else
+                return;
+        }
+    };
 
     static bool isNameStart(char i) {
         return i > 'a' and i < 'Z';
     }
 
-	bool token(String token) {
-		return ch == token[0] and suffix(++token);
-	}
+    bool token(String token) {
+        return ch == token[0] and suffix(++token);
+    }
 
-	bool suffix(String suffix) {
-		auto len = suffix.length;
-		for (auto i = 0; i < len; i++) {
-			if (text[at + i] != suffix[i]) {
-				at += i + 1;
-				return false;
-			}
-		}
-		if (isNameStart(text[at + len])) {
-			at += len + 1;
-			return false;
-		}
-		ch = text[at + len];
-		at += len + 1;
-		return true;
-	};
+    bool suffix(String suffix) {
+        auto len = suffix.length;
+        for (auto i = 0; i < len; i++) {
+            if (text[at + i] != suffix[i]) {
+                at += i + 1;
+                return false;
+            }
+        }
+        if (isNameStart(text[at + len])) {
+            at += len + 1;
+            return false;
+        }
+        ch = text[at + len];
+        at += len + 1;
+        return true;
+    };
 
 
-	Node &any_operator() {
-		Node &node = *new Node(ch);
-		node.value = 0;
-		node.setType(operators);// todo ++
-		proceed();
-		while (ch == '=' or ch == previous) {// allow *= += ++ -- **  …
-			node.name += ch;
-			proceed();
-		}
-		if (previous == '=' and ch == '>')
-			node.name += ch;// =>
+    Node &any_operator() {
+        Node &node = *new Node(ch);
+        node.value = 0;
+        node.setType(operators);// todo ++
+        proceed();
+        while (ch == '=' or ch == previous) {// allow *= += ++ -- **  …
+            node.name += ch;
+            proceed();
+        }
+        if (previous == '=' and ch == '>')
+            node.name += ch;// =>
 
-		// NO OTHER COMBINATIONS for now!
+        // NO OTHER COMBINATIONS for now!
 
-		/*// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
-		while ((ch < 0 or is_operator(ch)) and (previous != '=' or ch == '=')) {// utf8 √ …
-			if (ch != '-' and previous == '-')
-				break;// no combinations with - : -√
-			if (ch == '-' and previous != '-')
-				break;// no combinations with -  √- *- etc
-			node.name += ch;
-			proceed();
-		}*/
-		return node;
-	}
+        /*// annoying extra logic: x=* is parsed (x = *) instead of (x =*)
+        while ((ch < 0 or is_operator(ch)) and (previous != '=' or ch == '=')) {// utf8 √ …
+            if (ch != '-' and previous == '-')
+                break;// no combinations with - : -√
+            if (ch == '-' and previous != '-')
+                break;// no combinations with -  √- *- etc
+            node.name += ch;
+            proceed();
+        }*/
+        return node;
+    }
 
 
 //	const
@@ -912,147 +925,147 @@ private:
 //		if (node.name == "𐄂")return False; ambiguous: multiplication 𐄂 + / check 𐄂
         if (symbol == "wrong")return False;
         if (symbol == "Wrong")return False;
-		if (symbol == "⊤")return True; // + vs -
-		if (symbol == "true")return True;
-		if (symbol == "True")return True;
-		if (symbol == "yes")return True;
-		if (symbol == "Yes")return True;
+        if (symbol == "⊤")return True; // + vs -
+        if (symbol == "true")return True;
+        if (symbol == "True")return True;
+        if (symbol == "yes")return True;
+        if (symbol == "Yes")return True;
 //		if (symbol == "correct")return True;
 //		if (symbol == "Correct")return True;
-		if (symbol == "✔")return True;
-		if (symbol == "✔\uefb88f")return True;// green ✔️ ~ ✔
-		if (symbol == "✔️")return True;
-		if (symbol == "✓️")return True;
-		if (symbol == "☑")return True;
+        if (symbol == "✔")return True;
+        if (symbol == "✔\uefb88f")return True;// green ✔️ ~ ✔
+        if (symbol == "✔️")return True;
+        if (symbol == "✓️")return True;
+        if (symbol == "☑")return True;
 //		if (symbol == "🗸")return True;
 //		if (symbol == "🗹")return True;
 //		if (node.name == "Right")return True;// unless class!
 //		if (node.name == "right")return True;
-		if (symbol == "NIL")return NIL;
-		if (symbol == "null")return NIL;
-		if (symbol == "nill")return NIL;
-		if (symbol == "nil")return NIL;
-		if (symbol == "ø")return NIL;// nil not added to lists
+        if (symbol == "NIL")return NIL;
+        if (symbol == "null")return NIL;
+        if (symbol == "nill")return NIL;
+        if (symbol == "nil")return NIL;
+        if (symbol == "ø")return NIL;// nil not added to lists
 //		if (node.name.in(operator_list))
-		if (operator_list.has(symbol))
-			node.setType(operators, false); // later: in angle!? NO! HERE: a xor {} != a xxx{}
+        if (operator_list.has(symbol))
+            node.setType(operators, false); // later: in angle!? NO! HERE: a xor {} != a xxx{}
 //		put("resolve NOT FOUND");
 //		put(symbol);
-		return node;
-	}
+        return node;
+    }
 
-	Node &symbol() {
-		if (isDigit(ch))
-			return numbero();
-		if (ch == '.' and (isDigit(next)))
-			return numbero();
-		// todo simplify?
-		if ((ch == '-' or ch == '+') and (isDigit(next) or next == '.') and previous != u'‖' and
-		    (empty(previous) or is_operator(previous) or next == '.')) // -1 √-1 but not 2-1 x-1!
-			return numbero();
-		if (ch == u'‖') {
-			proceed();// todo: better ;)
-			return (*new Node("‖")).add(valueNode(u'‖').clone()).setType(operators, false);
+    Node &symbol() {
+        if (isDigit(ch))
+            return numbero();
+        if (ch == '.' and (isDigit(next)))
+            return numbero();
+        // todo simplify?
+        if ((ch == '-' or ch == '+') and (isDigit(next) or next == '.') and previous != u'‖' and
+            (empty(previous) or is_operator(previous) or next == '.')) // -1 √-1 but not 2-1 x-1!
+            return numbero();
+        if (ch == u'‖') {
+            proceed();// todo: better ;)
+            return (*new Node("‖")).add(valueNode(u'‖').clone()).setType(operators, false);
 //			return (*new Node("abs")).setType(Kind::call, false);
-		}
-		if (is_operator(ch))
-			return any_operator();
-		if (is_identifier(ch))
-			return *resolve(Node(identifier(), true)).clone();// or op
-		error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
-		      String((char) text[at + 2]));
-		return (Node &) NIL;
-	}
+        }
+        if (is_operator(ch))
+            return any_operator();
+        if (is_identifier(ch))
+            return *resolve(Node(identifier(), true)).clone();// or op
+        error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
+              String((char) text[at + 2]));
+        return (Node &) NIL;
+    }
 
 //	// {a:1 b:2} vs { x = add 1 2 }
-	bool lookahead_ambiguity() {
-		int braces = 0;
-		int pos = at - 1;
-		while (pos < text.length and text[pos] != 0 and text[pos] != '\n' and braces >= 0) {
-			if (text[pos] == '{')braces++;
-			if (text[pos] == ',' and braces == 0)return true;// ambiguity
-			if (text[pos] == ':' and braces == 0)return true;// ambiguity
-			if (text[pos] == ';' and braces == 0)return true;// end of statement!
-			if (text[pos] == '=' and braces == 0)
-				return text[pos + 1] != '=' and text[pos - 1] != '=' and not is_operator(text[pos - 1]);// == != OK
-			if (text[pos] == '}')braces--;
-			pos++;
-		}
-		return false;// OK, no ambiguity
-	}
+    bool lookahead_ambiguity() {
+        int braces = 0;
+        int pos = at - 1;
+        while (pos < text.length and text[pos] != 0 and text[pos] != '\n' and braces >= 0) {
+            if (text[pos] == '{')braces++;
+            if (text[pos] == ',' and braces == 0)return true;// ambiguity
+            if (text[pos] == ':' and braces == 0)return true;// ambiguity
+            if (text[pos] == ';' and braces == 0)return true;// end of statement!
+            if (text[pos] == '=' and braces == 0)
+                return text[pos + 1] != '=' and text[pos - 1] != '=' and not is_operator(text[pos - 1]);// == != OK
+            if (text[pos] == '}')braces--;
+            pos++;
+        }
+        return false;// OK, no ambiguity
+    }
 
-	bool is_known_functor(Node node) {
-		if (precedence(node))return true;
+    bool is_known_functor(Node node) {
+        if (precedence(node))return true;
 //		else if (functor_list.has(node.name))return true;
-		else return false;
-	}
+        else return false;
+    }
 
-	Node &expressione(codepoint closer) {
-		Node &node = symbol();
-		if (lookahead_ambiguity())
-			return node;
-		// {a:1 b:2} vs { x = add 1 2 }
-		Node &expressionas = *new Node();
-		// set kind = expression only if it contains operator, otherwise keep it as list!!!
-		expressionas.add(node);
-		if (node.kind == operators) expressionas.kind = expression;//
+    Node &expressione(codepoint closer) {
+        Node &node = symbol();
+        if (lookahead_ambiguity())
+            return node;
+        // {a:1 b:2} vs { x = add 1 2 }
+        Node &expressionas = *new Node();
+        // set kind = expression only if it contains operator, otherwise keep it as list!!!
+        expressionas.add(node);
+        if (node.kind == operators) expressionas.kind = expression;//
 //		if (contains(import_keywords,node.name))
 //			closer =0;// get rest of line;
-		if (closing(ch, closer))// stop_at_space, keep it for further analysis (?)
-			return expressionas;
-		white();
-		if (node.kind != operators) expressionas.kind = groups;
-		while (ch and ch != closer and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
-			node = symbol();// including operators `=` ...
-			if (node.kind == operators)expressionas.kind = expression;
-			expressionas.add(&node);
-			white();
-		}
+        if (closing(ch, closer))// stop_at_space, keep it for further analysis (?)
+            return expressionas;
+        white();
+        if (node.kind != operators) expressionas.kind = groups;
+        while (ch and ch != closer and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
+            node = symbol();// including operators `=` ...
+            if (node.kind == operators)expressionas.kind = expression;
+            expressionas.add(&node);
+            white();
+        }
 //		expression.name=map(children.name)
-		if (expressionas.length > 1)
-			return expressionas;
-		else return node;
-	}
+        if (expressionas.length > 1)
+            return expressionas;
+        else return node;
+    }
 
-	// Parse true, false, null, Infinity, NaN
-	Node word() {
-		switch (ch) {
-			case 't':
-				if (token("true")) { return True; }
-				break;
-			case 'T':
-				if (token("True")) { return True; }
-				break;
-			case 'f':
-				if (token("false")) { return False; }
-				break;
-			case 'F':
-				if (token("False")) { return False; }
-				break;
-			case 'n':
-				if (token("nil")) { return False; }
-				if (token("nill")) { return False; }
-				if (token("null")) { return False; }
-				if (token("none")) { return False; }
-				break;
-			case 'N':
-				if (token("NaN")) { return NaN; }
-				if (token("Nil")) { return False; }
-				if (token("Nill")) { return False; }
-				if (token("Null")) { return False; }
-				if (token("None")) { return False; }
-				break;
-			case 'I':
-				if (token("Infinity")) { return Infinity; }
-				break;
-			default:
-				break;
-		}
-		if (token("one")) { return True; }
-		if (token("two")) { return Node(2); }
-		error("Unexpected character "s + renderChar(text.charAt(at - 1)));// throws, but WASM still needs:
-		return ERROR;
-	};
+    // Parse true, false, null, Infinity, NaN
+    Node word() {
+        switch (ch) {
+            case 't':
+                if (token("true")) { return True; }
+                break;
+            case 'T':
+                if (token("True")) { return True; }
+                break;
+            case 'f':
+                if (token("false")) { return False; }
+                break;
+            case 'F':
+                if (token("False")) { return False; }
+                break;
+            case 'n':
+                if (token("nil")) { return False; }
+                if (token("nill")) { return False; }
+                if (token("null")) { return False; }
+                if (token("none")) { return False; }
+                break;
+            case 'N':
+                if (token("NaN")) { return NaN; }
+                if (token("Nil")) { return False; }
+                if (token("Nill")) { return False; }
+                if (token("Null")) { return False; }
+                if (token("None")) { return False; }
+                break;
+            case 'I':
+                if (token("Infinity")) { return Infinity; }
+                break;
+            default:
+                break;
+        }
+        if (token("one")) { return True; }
+        if (token("two")) { return Node(2); }
+        error("Unexpected character "s + renderChar(text.charAt(at - 1)));// throws, but WASM still needs:
+        return ERROR;
+    };
 
 //	void pragma2(char prag = '\n') {// sende in wasp??
 //		auto level = 0;
@@ -1075,291 +1088,295 @@ private:
 
 //	value,  // Place holder for the value function.
 
-	// Parse an array
-	Node array() {
+    // Parse an array
+    Node array() {
 //		arr.type = arrays;
-		auto *array0 = static_cast<Node *>(alloc(sizeof(Node *), 100));// todo: GROW!
+        auto *array0 = static_cast<Node *>(alloc(sizeof(Node *), 100));// todo: GROW!
 //		arr.value.node = array0;
-		int len = 0;
-		proceed();  // skip the starting '['
-		white();
-		while (ch) {
-			if (ch == ']') {
-				proceed();
-				Node arr = Node(&array0);
-				arr.length = len;
-				return arr;   // Potentially empty array
-			}
-				// ES5 and Mark allow omitted elements in arrays, e.g. [,] and [,null]. JSON don't allow this.
+        int len = 0;
+        proceed();  // skip the starting '['
+        white();
+        while (ch) {
+            if (ch == ']') {
+                proceed();
+                Node arr = Node(&array0);
+                arr.length = len;
+                return arr;   // Potentially empty array
+            }
+                // ES5 and Mark allow omitted elements in arrays, e.g. [,] and [,null]. JSON don't allow this.
 //			if (ch == ',') {
 //				error("Missing array element");
 //			}
-			else {
-				Node val = valueNode();// copy by value!
-				array0[len++] = val;
+            else {
+                Node val = valueNode();// copy by value!
+                array0[len++] = val;
 //				array0.push(value());
-			}
-			white();
+            }
+            white();
 
-			// comma is optional in Mark
-			if (ch == ',') { //  or ch == ';' not in list
-				proceed();
-				white();
-			}
-		}
-		err("Expecting ]");
-		return ERROR;
-	};
+            // comma is optional in Mark
+            if (ch == ',') { //  or ch == ';' not in list
+                proceed();
+                white();
+            }
+        }
+        err("Expecting ]");
+        return ERROR;
+    };
 
-	// {: 00aacc :} base64 values todo: USE
-	Node binary() {
+    // {: 00aacc :} base64 values todo: USE
+    Node binary() {
 // Parse binary value
 // Use a lookup table to find the index.
-		byte lookup64[128];
-		byte lookup85[128];
+        byte lookup64[128];
+        byte lookup85[128];
 
-		for (auto i = 0; i < 128; i++) {
-			lookup64[i] = 65;
-			lookup85[i] = 86;
-		}
-		for (auto i = 0; i < 64; i++) {
-			char charCode = text.charCodeAt(i);
-			if (charCode < 0) // never true: charCode > 128 or
-				err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
-			lookup64[(short) charCode] = i;// todo: what is this?
-		}
+        for (auto i = 0; i < 128; i++) {
+            lookup64[i] = 65;
+            lookup85[i] = 86;
+        }
+        for (auto i = 0; i < 64; i++) {
+            char charCode = text.charCodeAt(i);
+            if (charCode < 0) // never true: charCode > 128 or
+                err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
+            lookup64[(short) charCode] = i;// todo: what is this?
+        }
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
-		lookup64[32] = lookup64[9] = lookup64[13] = lookup64[10] = 64;
-		for (auto i = 0; i < 128; i++) { if (33 <= i and i <= 117) lookup85[i] = i - 33; }
+        lookup64[32] = lookup64[9] = lookup64[13] = lookup64[10] = 64;
+        for (auto i = 0; i < 128; i++) { if (33 <= i and i <= 117) lookup85[i] = i - 33; }
 // ' ', \t', '\r', '\n' spaces also allowed in base85 stream
-		lookup85[32] = lookup85[9] = lookup85[13] = lookup85[10] = 85;
+        lookup85[32] = lookup85[9] = lookup85[13] = lookup85[10] = 85;
 
 
-		at++;  // skip the starting '{:'
-		if (next == '~') { // base85
-			at++;  // skip '~'
-			// code based on https://github.com/noseglid/base85/blob/master/lib/base85.js
-			auto end = text.indexOf('}', at + 1);  // scan binary end
-			if (end < 0) { err("Missing ascii85 end delimiter"); }
+        at++;  // skip the starting '{:'
+        if (next == '~') { // base85
+            at++;  // skip '~'
+            // code based on https://github.com/noseglid/base85/blob/master/lib/base85.js
+            auto end = text.indexOf('}', at + 1);  // scan binary end
+            if (end < 0) { err("Missing ascii85 end delimiter"); }
 
-			// first run decodes into base85 int values, and skip the spaces
-			auto p = 0;
-			byte base[end - at + 3];  // 3 extra bytes of padding
-			while (at < end) {
-				auto code = lookup85[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
-				if (code > 85) { err("Invalid ascii85 character"); }
-				if (code < 85) { base[p++] = code; }
-				// else skip spaces
-				at++;
-			}
-			at = end + 2;
-			proceed();  // skip '~}'
-			// check length
-			if (p % 5 == 1) { err("Invalid ascii85 stream length"); }
+            // first run decodes into base85 int values, and skip the spaces
+            auto p = 0;
+            byte base[end - at + 3];  // 3 extra bytes of padding
+            while (at < end) {
+                auto code = lookup85[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
+                if (code > 85) { err("Invalid ascii85 character"); }
+                if (code < 85) { base[p++] = code; }
+                // else skip spaces
+                at++;
+            }
+            at = end + 2;
+            proceed();  // skip '~}'
+            // check length
+            if (p % 5 == 1) { err("Invalid ascii85 stream length"); }
 
-			// second run decodes into actual binary data
-			auto dataLength = p, padding = (dataLength % 5 == 0) ? 0 : 5 - dataLength % 5;
-			int buffer[4 * dataLength / 5 - padding];
+            // second run decodes into actual binary data
+            auto dataLength = p, padding = (dataLength % 5 == 0) ? 0 : 5 - dataLength % 5;
+            int buffer[4 * dataLength / 5 - padding];
 //				bytes = new DataView(buffer),
-			int *bytes = buffer;// views:
-			auto *bytes8 = reinterpret_cast<byte *>(buffer);
-			auto *bytes16 = reinterpret_cast<short *>(buffer);
-			int trail = dataLength - 4;//buffer.byteLength - 4;
-			base[p] = base[p + 1] = base[p + 2] = 84;  // 3 extra bytes of padding
-			// console.put('base85 byte length: ', buffer.byteLength);
-			for (auto i = 0, p = 0; i < dataLength; i += 5, p += 4) {
-				auto num = (((base[i] * 85 + base[i + 1]) * 85 + base[i + 2]) * 85 + base[i + 3]) * 85 + base[i + 4];
-				// console.put("set byte to val:", p, num, String.fromCodePoint(num >> 24), String.fromCodePoint((num >> 16) & 0xff),
-				//	String.fromCodePoint((num >> 8) & 0xff), String.fromCodePoint(num & 0xff));
-				// write the uint32 value
-				if (p <= trail) { // bulk of bytes
-					bytes[p] = num; // big endian
-				} else { // trailing bytes
-					switch (padding) {
-						case 1:
-							bytes8[p + 2] = (num >> 8) & 0xff;  // fall through
-						case 2:
-							bytes16[p] = num >> 16;
-							break;
-						case 3:
-							bytes8[p] = num >> 24;
-						default:
-							break;
-					}
-				}
-			}
-			return Node(buffer);// {buffer};
-		} else { // base64
-			// code based on https://github.com/niklasvh/base64-arraybuffer
-			auto end = text.indexOf('}', at), bufEnd = end, pad = 0;  // scan binary end
-			if (end < 0) { err("Missing base64 end delimiter"); }
-			// strip optional padding
-			if (text[bufEnd - 1] == '=') { // 1st padding
-				bufEnd--;
-				pad = 1;
-				if (text[bufEnd - 1] == '=') { // 2nd padding
-					bufEnd--;
-					pad = 2;
-				}
-			}
-			// console.put('binary char length: ', bufEnd - at);
+            int *bytes = buffer;// views:
+            auto *bytes8 = reinterpret_cast<byte *>(buffer);
+            auto *bytes16 = reinterpret_cast<short *>(buffer);
+            int trail = dataLength - 4;//buffer.byteLength - 4;
+            base[p] = base[p + 1] = base[p + 2] = 84;  // 3 extra bytes of padding
+            // console.put('base85 byte length: ', buffer.byteLength);
+            for (auto i = 0, p = 0; i < dataLength; i += 5, p += 4) {
+                auto num = (((base[i] * 85 + base[i + 1]) * 85 + base[i + 2]) * 85 + base[i + 3]) * 85 + base[i + 4];
+                // console.put("set byte to val:", p, num, String.fromCodePoint(num >> 24), String.fromCodePoint((num >> 16) & 0xff),
+                //	String.fromCodePoint((num >> 8) & 0xff), String.fromCodePoint(num & 0xff));
+                // write the uint32 value
+                if (p <= trail) { // bulk of bytes
+                    bytes[p] = num; // big endian
+                } else { // trailing bytes
+                    switch (padding) {
+                        case 1:
+                            bytes8[p + 2] = (num >> 8) & 0xff;  // fall through
+                        case 2:
+                            bytes16[p] = num >> 16;
+                            break;
+                        case 3:
+                            bytes8[p] = num >> 24;
+                        default:
+                            break;
+                    }
+                }
+            }
+            return Node(buffer);// {buffer};
+        } else { // base64
+            // code based on https://github.com/niklasvh/base64-arraybuffer
+            auto end = text.indexOf('}', at), bufEnd = end, pad = 0;  // scan binary end
+            if (end < 0) { err("Missing base64 end delimiter"); }
+            // strip optional padding
+            if (text[bufEnd - 1] == '=') { // 1st padding
+                bufEnd--;
+                pad = 1;
+                if (text[bufEnd - 1] == '=') { // 2nd padding
+                    bufEnd--;
+                    pad = 2;
+                }
+            }
+            // console.put('binary char length: ', bufEnd - at);
 
-			// first run decodes into base64 int values, and skip the spaces
-			byte base[bufEnd - at];
-			auto p = 0;
-			while (at < bufEnd) {
-				auto code = lookup64[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
-				if (code > 64) { err("Invalid base64 character"); }
-				if (code < 64) { base[p++] = code; }
-				// else skip spaces
-				at++;
-			}
-			at = end + 1;
-			proceed();  // skip '}'
-			// check length
-			if ((pad and (p + pad) % 4 != 0) or (!pad and p % 4 == 1)) {
-				err("Invalid base64 stream length");
-			}
+            // first run decodes into base64 int values, and skip the spaces
+            byte base[bufEnd - at];
+            auto p = 0;
+            while (at < bufEnd) {
+                auto code = lookup64[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
+                if (code > 64) { err("Invalid base64 character"); }
+                if (code < 64) { base[p++] = code; }
+                // else skip spaces
+                at++;
+            }
+            at = end + 1;
+            proceed();  // skip '}'
+            // check length
+            if ((pad and (p + pad) % 4 != 0) or (!pad and p % 4 == 1)) {
+                err("Invalid base64 stream length");
+            }
 
-			// second run decodes into actual binary data
-			auto len = int(p * 0.75);
-			int code1, code2, code3, code4 = 0;
-			int buffer[len];
-			auto *bytes = reinterpret_cast<byte *>(buffer);// views:
-			// console.put('binary length: ', len);
-			for (auto i = 0, p = 0; p < len; i += 4) {
-				code1 = base[i];
-				code2 = base[i + 1];
-				code3 = base[i + 2];
-				code4 = base[i + 3];
-				bytes[p++] = (code1 << 2) | (code2 >> 4);
-				// extra undefined bytes casted into 0 by JS binary operator
-				bytes[p++] = ((code2 & 15) << 4) | (code3 >> 2);
-				bytes[p++] = ((code3 & 3) << 6) | (code4 & 63);
-			}
-			// console.put('binary decoded length:', p);
+            // second run decodes into actual binary data
+            auto len = int(p * 0.75);
+            int code1, code2, code3, code4 = 0;
+            int buffer[len];
+            auto *bytes = reinterpret_cast<byte *>(buffer);// views:
+            // console.put('binary length: ', len);
+            for (auto i = 0, p = 0; p < len; i += 4) {
+                code1 = base[i];
+                code2 = base[i + 1];
+                code3 = base[i + 2];
+                code4 = base[i + 3];
+                bytes[p++] = (code1 << 2) | (code2 >> 4);
+                // extra undefined bytes casted into 0 by JS binary operator
+                bytes[p++] = ((code2 & 15) << 4) | (code3 >> 2);
+                bytes[p++] = ((code3 & 3) << 6) | (code4 & 63);
+            }
+            // console.put('binary decoded length:', p);
 //			buffer.encoding = "b64";
-			return Node(buffer);
-		}
-	};
+            return Node(buffer);
+        }
+    };
 
-	bool isDigit(codepoint c) {
-		return (c >= '0' and c <= '9') or atoi1(c) != -1;
-	}
+    bool isDigit(codepoint c) {
+        return (c >= '0' and c <= '9') or atoi1(c) != -1;
+    }
 
-	Node &setField(Node &key, Node &val) { // a:{b}
-		if ((val.kind == groups or val.kind == patterns or val.kind == objects) and val.length == 1 and
-		    empty(val.name))
-			val = val.last();// singleton
-		val.parent = &key;// todo bug: might get lost!
-		bool deep_copy = empty(val.name) or !debug or (key.kind == reference and empty(val.name));
-		if (debug) {// todo make sure all works even with nested nodes! x="123" (node 'x' (child value='123')) vs (node 'x' value="123")
-			deep_copy = deep_copy or (val.kind == Kind::longs and val.name == itoa(val.value.longy));
-			deep_copy = deep_copy or (val.kind == Kind::reals and val.name == ftoa(val.value.real));
-			deep_copy = deep_copy or (val.kind == Kind::bools and
-			                          (val.name == "True" or val.name == "False"));// todo why check name?
+    Node &setField(Node &key, Node &val) { // a:{b}
+        if ((val.kind == groups or val.kind == patterns or val.kind == objects) and val.length == 1 and
+            empty(val.name))
+            val = val.last();// singleton
+        val.parent = &key;// todo bug: might get lost!
+        bool deep_copy = empty(val.name) or !debug or (key.kind == reference and empty(val.name));
+        if (debug) {// todo make sure all works even with nested nodes! x="123" (node 'x' (child value='123')) vs (node 'x' value="123")
+            deep_copy = deep_copy or (val.kind == Kind::longs and val.name == itoa(val.value.longy));
+            deep_copy = deep_copy or (val.kind == Kind::reals and val.name == ftoa(val.value.real));
+            deep_copy = deep_copy or (val.kind == Kind::bools and
+                                      (val.name == "True" or val.name == "False"));// todo why check name?
 //			if(val.kind == Type::strings)
 //				debug = 1;
 //			deep_copy = deep_copy or (val.kind == Type::strings and not val.name.empty() and key.kind==reference); and ... ?
-		} // shit just for debug labels. might remove!!
+        } // shit just for debug labels. might remove!!
 // last part to preserve {deep{a:3,b:4,c:{d:'hi'}}} != {deep{a:3,b:4,c:'hi'}}
 
-		if (val.value.longy and val.kind != objects and deep_copy) {
-			if (&key == &NIL or key.isNil() or key == NIL or val.value.real == 6.4807)
-				if (key.name == nil_name)
-					warn("impossible");
-			key.value = val.value;// direct copy value SURE?? what about meta data... ?
-			key.kind = val.kind;
-		} else {
-			key.kind = Kind::key;
-			if (!key.children and empty(val.name) and val.length > 1) { // deep copy why?
-				key.children = val.children;
-				key.length = val.length;
-				key.kind = val.kind;
-			} else if (!val.isNil())
-				key.value.node = &val;// clone?
-		}
-		return key;
-	}
+        if (val.value.longy and val.kind != objects and deep_copy) {
+            if (&key == &NIL or key.isNil() or key == NIL or val.value.real == 6.4807)
+                if (key.name == nil_name)
+                    warn("impossible");
+            key.value = val.value;// direct copy value SURE?? what about meta data... ?
+            key.kind = val.kind;
+        } else {
+            key.kind = Kind::key;
+            if (!key.children and empty(val.name) and val.length > 1) { // deep copy why?
+                key.children = val.children;
+                key.length = val.length;
+                key.kind = val.kind;
+            } else if (!val.isNil())
+                key.value.node = &val;// clone?
+        }
+        return key;
+    }
 
 
-	bool checkAmbiguousBlock(Node current, Node *parent) {
-		// wait, this should be part of case ' ', no?
-		//						a of {a:1 b:2}
-		return previous == ' ' and current.last().kind != operators and current.last().kind != call and
-		       (!parent or (parent and parent->last().kind != operators and parent->last().kind != call)) and
-		       lastNonWhite != ':' and lastNonWhite != '=' and lastNonWhite != ',' and lastNonWhite != ';' and
-		       lastNonWhite != '{' and lastNonWhite != '(' and lastNonWhite != '[' and
-		       lastNonWhite != '}' and lastNonWhite != ']' and lastNonWhite != ')';
-		//todo simplify: and not is_grouper(lastNonWhite)
-	}
+    bool checkAmbiguousBlock(Node current, Node *parent) {
+        // wait, this should be part of case ' ', no?
+        //						a of {a:1 b:2}
+        return previous == ' ' and current.last().kind != operators and current.last().kind != call and
+               (!parent or (parent and parent->last().kind != operators and parent->last().kind != call)) and
+               lastNonWhite != ':' and lastNonWhite != '=' and lastNonWhite != ',' and lastNonWhite != ';' and
+               lastNonWhite != '{' and lastNonWhite != '(' and lastNonWhite != '[' and
+               lastNonWhite != '}' and lastNonWhite != ']' and lastNonWhite != ')';
+        //todo simplify: and not is_grouper(lastNonWhite)
+    }
 
-	bool skipBorders(char ch) {// {\n} == {}
-		if (next == 0)return true;
-		if (lastNonWhite == ':')return true;
-		if (lastNonWhite == '{' or next == '}')return true;// todo: nextNonWhite
-		if (lastNonWhite == '(' or next == ')')return true;
-		if (lastNonWhite == '[' or next == ']')return true;
-		if (ch == ',' and next == ';')return true;// 1,2,3,; => 1,2,3;
-		if (ch == ',' and next == '\n')return true;// 1,2,3,\n => 1,2,3;
-		if (ch == ';' and next == '\n')return true;// 1,2,3,\n => 1,2,3;
-		return false;
-	}
+    bool skipBorders(char ch) {// {\n} == {}
+        if (next == 0)return true;
+        if (lastNonWhite == ':')return true;
+        if (lastNonWhite == '{' or next == '}')return true;// todo: nextNonWhite
+        if (lastNonWhite == '(' or next == ')')return true;
+        if (lastNonWhite == '[' or next == ']')return true;
+        if (ch == ',' and next == ';')return true;// 1,2,3,; => 1,2,3;
+        if (ch == ',' and next == '\n')return true;// 1,2,3,\n => 1,2,3;
+        if (ch == ';' and next == '\n')return true;// 1,2,3,\n => 1,2,3;
+        return false;
+    }
 
-	bool isFunctor(Node &node) {
+    bool isFunctor(Node &node) {
 #if RUNTIME_ONLY
-		return false;
+        return false;
 #else
-		return node.name.in(functor_list);
+        return node.name.in(functor_list);
 #endif
-	}
+    }
 
-	// todo ill-conceived separator
-	bool is_grouper(codepoint bracket) {
-		return contains(separator_list, bracket) or contains(grouper_list, bracket);
-	}
+    // todo ill-conceived separator
+    bool is_grouper(codepoint bracket) {
+        return contains(separator_list, bracket) or contains(grouper_list, bracket);
+    }
 
 
-	Kind getType(codepoint bracket) {
-		switch (bracket) {
-			//				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
-			//				https://en.wikipedia.org/wiki/ASCII#Character_set
-			case '\x0E': // Shift Out close='\x0F' Shift In
-			case u'﹛': // ﹜
-			case u'｛': // ｝
-			case '{':
-				return Kind::objects;
-			case u'⸨': // '⸩'
-			case '(':
-				return Kind::groups;
-			case u'﹝': // ﹞
-			case u'〔': // 〕
-			case U'［': // ］ FULLWIDTH
-			case '[':
-				return patterns;
-		}
-		err("unknown bracket type "s + bracket);
-		return errors;
-	}
+    Kind getType(codepoint bracket) {
+        switch (bracket) {
+            //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
+            //				https://en.wikipedia.org/wiki/ASCII#Character_set
+            case '\x0E': // Shift Out close='\x0F' Shift In
+            case u'﹛': // ﹜
+            case u'｛': // ｝
+            case '{':
+                return Kind::objects;
+            case u'⸨': // '⸩'
+            case '(':
+                return Kind::groups;
+            case u'﹝': // ﹞
+            case u'〔': // 〕
+            case U'［': // ］ FULLWIDTH
+            case '[':
+                return patterns;
+            case '<':
+                return generics;
+        }
+        err("unknown bracket type "s + bracket);
+        return errors;
+    }
 
-	Node &direct_include(Node &current, Node &node) {
-		// todo: this old c-style include is not really what we want.
-		// todo: instead handle `use / include / import / require` in Angle.cpp analyze!
-		// especially if file.name is lib.wasm ;)
-		// import IF not in data mode
-		String file;
-		if (current.first() == "from")
-			file = current[1].name;
-		else if (node.empty()) {
-			white();
-			file = (identifier());
-		} else
-			file = (node.last().name);
+    Node &direct_include(Node &current, Node &node) {
+        // todo: this old c-style include is not really what we want.
+        // todo: instead handle `use / include / import / require` in Angle.cpp analyze!
+        // especially if file.name is lib.wasm ;)
+        // import IF not in data mode
+        String lib;
+        if (current.first() == "from")
+            lib = current[1].name;
+        else if (node.empty()) {
+            white();
+            lib = (identifier());
+        } else
+            lib = (node.last().name);
 //		node.values(). first().name
-		if (!file.empty()) // creates 'include' node for wasm …
-			node = parseFile(file);
-		return node;
-	}
+        if (file.endsWith(".wit"))
+            lib = lib.replaceAll("-", "_");// stupid kebab case!
+        if (!lib.empty()) // creates 'include' node for wasm …
+            node = parseFile(lib, parserOptions.current_dir);
+        return node;
+    }
 
 // ":" is short binding a b:c d == a (b:c) d
 // "=" is long-binding a b=c d == (a b)=(c d)   todo a=b c=d
@@ -1384,87 +1401,111 @@ private:
         while (ch and at <= length) {
 //			white()  significant whitespace   1+1 != 1 +1 = [1 1]
             if (previous == '\\') {// escape ANYTHING
-				proceed();
-				continue;
-			}
-			if (ch == close) { // (…) {…} «…» ... “‘ part of string
-				if (ch == 0 or /*ch == 0x0E or*/ ch == ' ' or ch == '\n' or ch == '\t' or ch == ';' or ch == ',');
-					// keep ';' ',' ' ' for further analysis (?)
-				else // drop brackets
-					proceed(); // what else??
-				break;
-			}// todo: merge <>
-			if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
-				break;
-			}// inner match ok
+                proceed();
+                continue;
+            }
+            if (ch == close) { // (…) {…} «…» ... “‘ part of string
+                if (ch == 0 or /*ch == 0x0E or*/ ch == ' ' or ch == '\n' or ch == '\t' or ch == ';' or ch == ',');
+                    // keep ';' ',' ' ' for further analysis (?)
+                else // drop brackets
+                    proceed(); // what else??
+                break;
+            }// todo: merge <>
+            if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
+                break;
+            }// inner match ok
 
-			if (contains(opening_special_brackets, ch)) {
-				// overloadable grouping operators, but not builtin (){}[]
-				let grouper = ch;
-				proceed();
-				auto body = valueNode(closingBracket(grouper));
-				Node group(grouper);
-				group.setType(operators, false);// name==« (without »)
-				group.add(body);
+            if (contains(opening_special_brackets, ch)) {
+                // overloadable grouping operators, but not builtin (){}[]
+                let grouper = ch;
+                proceed();
+                auto body = valueNode(closingBracket(grouper));
+                Node group(grouper);
+                group.setType(operators, false);// name==« (without »)
+                group.add(body);
 //				group.type = type("group")["field"]=grouper;
                 actual.add(group);
-				continue;
-			}
-			switch (ch) {
+                continue;
+            }
+            switch (ch) {
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 //				https://en.wikipedia.org/wiki/ASCII#Character_set
-
-				case u'﹝': // ﹞
-				case u'〔': // 〕
-				case U'［': // ］ FULLWIDTH
-				case '[':
-				case u'⸨': // '⸩'
-				case '(':
-				case '\x0E': // Shift Out close='\x0F' Shift In
-				case u'﹛': // ﹜
-				case u'｛': // ｝
-				case '{': {
-                    if (checkAmbiguousBlock(actual, parent))
-                        warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
-					codepoint bracket = ch;
-					auto type = getType(bracket);
-					bool flatten = true;
-
-					bool asListItem =
-							lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
-					if (type == patterns or (lastNonWhite == ')' and bracket == '{')) {
-						// declare (){} as special syntax in wiki!
-						// careful! using (1,2) {2,3} may yield hidden bug!
-						asListItem = false;
-						flatten = false;
-					}
-					proceed();
-					// wrap {x} … or todo: just don't flatten before?
+                case '<':
+                    if (not(parserOptions.use_tags or parserOptions.use_generics) or
+                        (previous == ' ' and next == ' ')) {
+                        Node &op = any_operator();
+                        actual.add(op);
+                        actual.kind = expression;
+                    } else {
+                        if (next == '/')
+                            todo("closing </tags>");
+                    } //fall through:
+                case u'﹝': // ﹞
+                case u'〔': // 〕
+                case U'［': // ］ FULLWIDTH
+                case '[':
+                case u'⸨': // '⸩'
+                case '(':
+                case '\x0E': // Shift Out close='\x0F' Shift In
+                case u'﹛': // ﹜
+                case u'｛': // ｝
+                case '{': {
+                    codepoint bracket = ch;
+                    auto type = getType(bracket);
+                    bool flatten = true;
+                    bool addToLast = false;
+                    bool asListItem =
+                            lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
+                    if (checkAmbiguousBlock(actual, parent)) {
+                        if (parserOptions.space_brace) {
+                            addToLast = true;// a b {c}; => a b{c}
+                            asListItem = false;
+                        } else
+                            warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
+                    }
+                    if (type == patterns or (lastNonWhite == ')' and bracket == '{')) {
+                        // declare (){} as special syntax in wiki!
+                        // careful! using (1,2) {2,3} may yield hidden bug!
+                        asListItem = false;
+                        flatten = false;
+                    }
+                    proceed();
+                    // wrap {x} … or todo: just don't flatten before?
                     Node &object = *new Node();
                     Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &actual.last());
-					object.addSmart(objectValue);
+                    object.addSmart(objectValue);
 //						object.add(objectValue);
-					if (flatten) object = object.flat();
-					object.setType(type, false);
-					object.separator = objectValue.separator;
+                    if (flatten) object = object.flat();
+                    object.setType(type, false);
+                    object.separator = objectValue.separator;
 #ifdef DEBUG
-					object.line = &line;
+                    object.line = &line;
 #endif
-					if (asListItem)
+                    if (asListItem)
                         actual.add(object);
-					else
+                    else if (addToLast)
+                        actual.last().last().addSmart(object);
+                    else
                         actual.addSmart(object);
 //					current.addSmart(&object,flatten);
-					break;
-				}
+                    break;
+                }
 //			}// lists handled by ' '!
-				case '}':
-				case ')':
-				case ']':// ..
+                case '}':
+                case ')':
+                case ']':// ..
 //					break loop;// not in c++
-					err("wrong closing bracket");
+                    err("wrong closing bracket");
 //				case '+': // todo WHO writes +1 ?
                 case '-':
+                    if (parserOptions.arrow and next == '>') {
+                        proceed();
+                        proceed();
+                        Node &node = valueNode(' ');
+                        actual.last().addSmart(node);
+                        continue;
+                    }
+
                     if (parserOptions.kebab_case and isalpha(lastNonWhite))
                         error("kebab case should be handled in identifier");
                 case '.':
@@ -1482,39 +1523,39 @@ private:
                         actual.add(op);
                         actual.kind = expression;
                     }
-					break;
-				case '"':
-				case '\'': /* don't use modifiers ` ˋ ˎ */
-				case u'«': // «…»
-				case u'‘':// ‘𝚗𝚊𝚖𝚎’
-				case u'“':// “…” Character too large for enclosing character literal type
-				case '`': {// strings and templates
-					if (previous == '\\')continue;// escape
-					bool matches = close == ch;
-					matches = matches or (close == u'‘' and ch == u'’');
-					matches = matches or (close == u'’' and ch == u'‘');
-					matches = matches or (close == u'“' and ch == u'”');
-					matches = matches or (close == u'”' and ch == u'“');
-					if (!matches) { // open string
+                    break;
+                case '"':
+                case '\'': /* don't use modifiers ` ˋ ˎ */
+                case u'«': // «…»
+                case u'‘':// ‘𝚗𝚊𝚖𝚎’
+                case u'“':// “…” Character too large for enclosing character literal type
+                case '`': {// strings and templates
+                    if (previous == '\\')continue;// escape
+                    bool matches = close == ch;
+                    matches = matches or (close == u'‘' and ch == u'’');
+                    matches = matches or (close == u'’' and ch == u'‘');
+                    matches = matches or (close == u'“' and ch == u'”');
+                    matches = matches or (close == u'”' and ch == u'“');
+                    if (!matches) { // open string
                         if (actual.last().kind == expression)
                             actual.last().addSmart(string(ch));
                         else
                             actual.add(string(ch).clone());
                         break;
                     }
-					Node id = Node(text.substring(start, at));
-					id.setType(Kind::strings);// todo "3" could have be resolved as number? DONT do js magifuckery
+                    Node id = Node(text.substring(start, at));
+                    id.setType(Kind::strings);// todo "3" could have be resolved as number? DONT do js magifuckery
                     actual.add(id);
-					break;
-				}
-				case U'≝':
-				case U'≔': // ≕ =:
-				case U'＝':
-				case U'﹦':
-				case U'：':
-				case u'⇨':
-				case ':':
-				case '=': { // assignments, declarations and map key-value-pairs
+                    break;
+                }
+                case U'≝':
+                case U'≔': // ≕ =:
+                case U'＝':
+                case U'﹦':
+                case U'：':
+                case u'⇨':
+                case ':':
+                case '=': { // assignments, declarations and map key-value-pairs
                     // todo {a b c:d} vs {a:b c:d}
                     Node &key = actual.last();
                     bool add_raw = actual.kind == expression or key.kind == expression or
@@ -1536,7 +1577,7 @@ private:
                     if (add_raw) {
                         actual.add(op.setType(operators)).setType(expression);
                     }
-					char closer;// significant whitespace:
+                    char closer;// significant whitespace:
                     if (ch == '\n') closer = ';';// a: b c == a:(b c) newline or whatever!
                     else if (ch == INDENT) {
                         closer = DEDENT;
@@ -1560,8 +1601,8 @@ private:
                     }
                     break;
                 }
-				case INDENT: {
-					proceed();
+                case INDENT: {
+                    proceed();
                     if (actual.separator == ',') {
                         warn("indent block within list");
                         ch = '\n';// we assume it was not desired;)
@@ -1572,16 +1613,16 @@ private:
                             actual.separator = '\n';// because
                         continue;
                     }
-				}
-				case '\n': // groupCascade
-				case '\t': // only in tables
-				case ';': //
-				case ',': {
-					if (skipBorders(ch)) {
-						proceed();
-						continue;
-					}
-					// ambiguity? 1+2;3  => list (1+2);3 => list  ok!
+                }
+                case '\n': // groupCascade
+                case '\t': // only in tables
+                case ';': //
+                case ',': {
+                    if (skipBorders(ch)) {
+                        proceed();
+                        continue;
+                    }
+                    // ambiguity? 1+2;3  => list (1+2);3 => list  ok!
                     if (actual.separator != ch) {// and current.length > 1
                         // x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
                         if (actual.length > 1 or actual.kind == expression) {
@@ -1594,18 +1635,18 @@ private:
                             actual = neu;
                         } else
                             actual.separator = ch;
-						char closer = ch;// need to keep troughout loop!
-						while (ch == closer) {// same separator a , b , c
-							proceed();
-							Node element = valueNode(closer);// todo stop copying!
+                        char closer = ch;// need to keep troughout loop!
+                        while (ch == closer) {// same separator a , b , c
+                            proceed();
+                            Node element = valueNode(closer);// todo stop copying!
                             actual.add(element.flat());
-						}
-						break;
-					}
-					// else fallthough!
+                        }
+                        break;
+                    }
+                    // else fallthough!
                     actual.separator = ch;
-				}
-				case ' ': // possibly significant whitespace not consumed by white()
+                }
+                case ' ': // possibly significant whitespace not consumed by white()
                 {
                     if (not actual.separator)
                         actual.separator = ch;
@@ -1613,42 +1654,42 @@ private:
                     white();
                     break;
                 }
-				case '#':
-					if (next == ' ') {
-						comment();
-						continue;
-					}
-				case '/':
-					if (ch == '/' and (next == '/' or next == '*')) {
-						comment();
-						warn("comment should have been handled before!?");
-						continue;
-					}// else fall through to default … expressione
-				default: {
-					// a:b c != a:(b c)
-					// {a} ; b c vs {a} b c vs {a} + c
-					// todo: what a flimsy criterion:
-					bool addFlat = lastNonWhite != ';' and previous != '\n';
-					Node &node = expressione(close);//word();
+                case '#':
+                    if (next == ' ') {
+                        comment();
+                        continue;
+                    }
+                case '/':
+                    if (ch == '/' and (next == '/' or next == '*')) {
+                        comment();
+                        warn("comment should have been handled before!?");
+                        continue;
+                    }// else fall through to default … expressione
+                default: {
+                    // a:b c != a:(b c)
+                    // {a} ; b c vs {a} b c vs {a} + c
+                    // todo: what a flimsy criterion:
+                    bool addFlat = lastNonWhite != ';' and previous != '\n';
+                    Node &node = expressione(close);//word();
 #ifdef DEBUG
-					node.line = &line;
+                    node.line = &line;
 #endif
-					if (contains(import_keywords, (chars) node.first().name.data)) { //  use, include, require …
+                    if (contains(import_keywords, (chars) node.first().name.data)) { //  use, include, require …
                         node = direct_include(actual, node);
-					}
+                    }
 #ifndef RUNTIME_ONLY
-					if (precedence(node) or operator_list.has(node.name)) {
-						node.kind = operators;
+                    if (precedence(node) or operator_list.has(node.name)) {
+                        node.kind = operators;
 //						if(not isPrefixOperation(node))
 //						if(not contains(prefixOperators,node))
-					}
+                    }
 #endif
-					if (node.kind == operators and ch != ':') {
+                    if (node.kind == operators and ch != ':') {
                         if (isFunctor(node))
                             node.kind = functor;// todo: earlier
                         else actual.kind = expression;
-					}
-					if (node.length > 1 and addFlat) {
+                    }
+                    if (node.length > 1 and addFlat) {
                         for (Node arg: node)actual.add(arg);
                         actual.kind = node.kind;// was: expression
                     } else {
@@ -1657,67 +1698,67 @@ private:
                         else
                             actual.add(&node.flat());
                     }
-				}
-			}
-		}
+                }
+            }
+        }
         return actual.flat();
-	};
+    };
 
 };
 
 
 float precedence(char group) {
-	if (group == 0)return 1;
-	if (group == '}')return 1;
-	if (group == ']')return 1;
-	if (group == ')')return 1;
-	if (group == 0x0E or group == 0x0F)
-		return 1.1;
-	if (0 < group and group < 0x20)return 1.5;
-	if (group == '\n')return 2;
-	if (group == ';')return 3;
-	if (group == ',')return 4;
-	if (group == ' ')return 5;
-	if (group == '_')return 6;
+    if (group == 0)return 1;
+    if (group == '}')return 1;
+    if (group == ']')return 1;
+    if (group == ')')return 1;
+    if (group == 0x0E or group == 0x0F)
+        return 1.1;
+    if (0 < group and group < 0x20)return 1.5;
+    if (group == '\n')return 2;
+    if (group == ';')return 3;
+    if (group == ',')return 4;
+    if (group == ' ')return 5;
+    if (group == '_')return 6;
 //	error("unknown precedence for symbol: "s+group);
-	return 999;
+    return 999;
 }
 
 
 // test functions to check wasm->runtime interaction
 int oka() {
-	return 42;
+    return 42;
 }
 
 int oki(int i) {// used in wasm runtime test
-	return 42 + i;
+    return 42 + i;
 }
 
 float okf(float f) {
-	return 42 + f;
+    return 42 + f;
 }
 
 float okf5(float f) {
-	return 41.5 + f;
+    return 41.5 + f;
 }
 
 
 void not_ok() {
-	error1("");// assert_throws test
+    error1("");// assert_throws test
 }
 
 #ifdef BACKTRACE
 void handler(int sig) {
-	void *array[10];
-	size_t size;
+    void *array[10];
+    size_t size;
 
-	// get void*'s for all entries on the stack
-	size = backtrace(array, 10);
+    // get void*'s for all entries on the stack
+    size = backtrace(array, 10);
 
-	// print out all the frames to stderr
-	fprintf(stderr, "Error: signal %d:\n", sig);
-	backtrace_symbols_fd(array, size, STDERR_FILENO);
-	exit(1);
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+    exit(1);
 }
 #endif
 
@@ -1735,14 +1776,13 @@ void handler(int sig) {
 
 void load_parser_initialization() {
 //	if(operator_list.size()==0)
-	operator_list = List<chars>(operator_list0);// wasm hack
+    operator_list = List<chars>(operator_list0);// wasm hack
 //	load_aliases();
 }
 
 
 //static
-Node &parse(String source, ParserOptions *parserOptions) {
-
+Node &parse(String source, String current_dir, ParserOptions *parserOptions) {
     if (operator_list.size() == 0)
         load_parser_initialization();
     // WE HAVE A GENERAL PROBLEM:
@@ -1751,7 +1791,9 @@ Node &parse(String source, ParserOptions *parserOptions) {
 
     if (!source.data)return (Node &) NIL;
     info("Parsing: \n%s\n"s % source.data);
-    return Wasp().read(source);
+    Wasp wasp;
+    if (parserOptions) wasp.setParserOptions(*parserOptions);
+    return wasp.read(source);
 }
 
 // Mark/wasp has clean syntax with FULLY-TYPED data model (like JSON or even better)
@@ -1783,44 +1825,46 @@ char newline = '\n';
 //implicit entry/start for main executable
 
 //static
-Node parseFile(String filename) {
-	String found = findFile(filename);
-	if (not found)error("file not found "s + filename);
-	else
-		info("found "s + found);
-	if (found.endsWith("wast") or found.endsWith("wat")) {
+Node parseFile(String filename, String current_dir) {
+    String found = findFile(filename, current_dir);
+    if (not found)error("file not found "s + filename);
+    else
+        info("found "s + found);
+    if (found.endsWith("wast") or found.endsWith("wat")) {
 #ifndef WASM
-		system("/usr/local/bin/wat2wasm "s + found);
+        system("/usr/local/bin/wat2wasm "s + found);
 #endif
-		found = found.replace("wast", "wasm");
-		// and use it:
-	}
-	if (found.endsWith("wasm")) {// handle in Angle.cpp analysis, not in valueNode
-		//			read_wasm(found);
-		auto import = Node("include").setType(operators);
-		import.add(new Node(found));
-		return import;
-	} else if (found.endsWith("wasp"))
-		return Wasp().setFile(found).parse(readFile(found));
-	else if (not found.contains(".")) {
-		found = findFile(filename + ".wasp");
-		if (found)return parseFile(filename + ".wasp");
-		found = findFile(filename + ".wasm");
-		if (found)return parseFile(filename + ".wasm");
-		else
-			error("Can't find module "s + filename);
-	} else
-		error("Unknown extension in file "s + filename);
-	return NIL;
+        found = found.replace("wast", "wasm");
+        // and use it:
+    }
+    if (found.endsWith("wasm")) {// handle in Angle.cpp analysis, not in valueNode
+        //			read_wasm(found);
+        auto import = Node("include").setType(operators);
+        import.add(new Node(found));
+        return import;
+    } else if (found.endsWith("wasp"))
+        return Wasp().setFile(found).parse(readFile(found));
+    else if (found.endsWith("wit"))
+        return WitReader().read(found);
+    else if (not found.contains(".")) {
+        found = findFile(filename + ".wasp", current_dir);
+        if (found)return parseFile(filename + ".wasp", "");
+        found = findFile(filename + ".wasm", current_dir);
+        if (found)return parseFile(filename + ".wasm", "");
+        else
+            error("Can't find module "s + filename);
+    } else
+        error("Unknown extension in file "s + filename);
+    return NIL;
 }
 
 void usage() {
-	print("🐝 Wasp is a new compiled programming language");
-	print("wasp                   open interactive programming environment");// [repl/console]
+    print("🐝 Wasp is a new compiled programming language");
+    print("wasp                   open interactive programming environment");// [repl/console]
 //	print("wasp <file.wasp>       compile wasp to wasm or native and execute");
 //	print("wasp <file.wasm>       compile wasm to native and execute");
 //	print("wasp <file.html>       compile standalone webview app and execute");// bundle all wasm
-	print("wasp <files>           compile and link files into binary and execute");
+    print("wasp <files>           compile and link files into binary and execute");
 //	print("wasp compile <files>   compile and link files into binary");
 //	print("wasp test <files> 				");
 //	print("compile <files> 				");
@@ -1829,45 +1873,45 @@ void usage() {
 //	print("wasp remove <file> <functions>");// manually strip
 //	print("wasp rename <file> <function/global/module> <old> <new-name>");
 //	print("wasp move (really?) <files> 				");
-	print("wasp help              see https://github.com/pannous/wasp/wiki");
-	print("wasp tests ");
+    print("wasp help              see https://github.com/pannous/wasp/wiki");
+    print("wasp tests ");
 }
 
 
 // wasmer etc DO accept float/double return, just not from main!
 int main(int argc, char **argv) {
 #ifdef ErrorHandler
-	register_global_signal_exception_handler();
+    register_global_signal_exception_handler();
 #endif
-	try {
-		if (argc == 1) {
-			usage();
-			console();
-			return 42;
-		}// else
-		String arg = argv[1];
-		if (arg.endsWith(".html") or arg.endsWith(".htm")) {
+    try {
+        if (argc == 1) {
+            usage();
+            console();
+            return 42;
+        }// else
+        String arg = argv[1];
+        if (arg.endsWith(".html") or arg.endsWith(".htm")) {
 #ifdef WEBAPP
-			//				start_server(SERVER_PORT);
-						std::thread go(start_server, SERVER_PORT);
-						arg = "http://localhost:"s + SERVER_PORT + "/" + arg;
-						print("Serving "s + arg);
-						open_webview(arg);
-			//				arg.replaceMatch(".*\/", "http://localhost:SERVER_PORT/");
+            //				start_server(SERVER_PORT);
+                        std::thread go(start_server, SERVER_PORT);
+                        arg = "http://localhost:"s + SERVER_PORT + "/" + arg;
+                        print("Serving "s + arg);
+                        open_webview(arg);
+            //				arg.replaceMatch(".*\/", "http://localhost:SERVER_PORT/");
 #else
-			print("wasp compiled without webview");
+            print("wasp compiled without webview");
 #endif
-		}
-		if (arg.endsWith(".wasp")) {
-			String wasp_code = load(arg);
-			return eval(wasp_code).value.longy;
-		}
-		if (arg.endsWith(".wasm")) {
-			if (argc >= 3)
+        }
+        if (arg.endsWith(".wasp")) {
+            String wasp_code = load(arg);
+            return eval(wasp_code).value.longy;
+        }
+        if (arg.endsWith(".wasm")) {
+            if (argc >= 3)
 #ifdef WABT_MERGE
-				merge_files(--argc, ++argv);
+                merge_files(--argc, ++argv);
 #else
-				todo("linking files needs compilation with WABT_MERGE");
+                todo("linking files needs compilation with WABT_MERGE");
 #endif
             else
                 run_wasm_file(arg);
@@ -1897,45 +1941,45 @@ int main(int argc, char **argv) {
 #else
             print("wasp compiled without sdl/webview");
 #endif
-		}
+        }
 #ifdef SERVER
-		if (arg=="server" or arg=="serv")
-			std::thread go(start_server, 9999);
+        if (arg=="server" or arg=="serv")
+            std::thread go(start_server, 9999);
 //				start_server(9999);
 #else
-		print("wasp compiled without server");
+        print("wasp compiled without server");
 #endif
 
-		if (arg.contains("help"))
-			print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
+        if (arg.contains("help"))
+            print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
 #ifdef WASM
-		initSymbols();
+        initSymbols();
 //		String args(current);
-		String args((char*)alloc(1,1));// hack: written to by wasmx
+        String args((char*)alloc(1,1));// hack: written to by wasmx
 //		args.data[0] = '{';
-		print(args);
-		current += strlen0(args)+1;
+        print(args);
+        current += strlen0(args)+1;
 #endif
 
 // via arg
 //#ifndef NO_TESTS // RUNTIME_ONLY
 //		testCurrent();// needs init_graphics in WEBAPP to run wasm!
 //#endif
-		return 42;
-	} catch (Exception e) {
-		printf("\nException WOOW\n");
-	} catch (chars err) {
-		printf("\nERROR\n");
-		printf("%s", err);
-	} catch (String err) {
-		printf("\nERROR\n");
-		printf("%s", err.data);
-	} catch (SyntaxError *err) {
-		printf("\nERROR\n");
-		printf("%s", err->data);
-	}
+        return 42;
+    } catch (Exception e) {
+        printf("\nException WOOW\n");
+    } catch (chars err) {
+        printf("\nERROR\n");
+        printf("%s", err);
+    } catch (String err) {
+        printf("\nERROR\n");
+        printf("%s", err.data);
+    } catch (SyntaxError *err) {
+        printf("\nERROR\n");
+        printf("%s", err->data);
+    }
 //	usleep(1000000000);
-	return 1; //EXIT_FAILURE;
+    return 1; //EXIT_FAILURE;
 }
 
 //#endif
@@ -1944,8 +1988,8 @@ int main(int argc, char **argv) {
 //#ifndef RUNTIME_ONLY
 //extern int main(int argp, char **argv);
 extern "C" int _start() { // for wasm-ld
-	initSymbols();
-	return -42;// wasm-ld dummy should not be called, ok to test run_wasm("wasp.wasm")
+    initSymbols();
+    return -42;// wasm-ld dummy should not be called, ok to test run_wasm("wasp.wasm")
 //	return main(0, 0);
 }
 //#endif
@@ -1956,109 +2000,109 @@ extern "C" int _start() { // for wasm-ld
 // precedence should be in the Wasp header but the implementation is subject to moving
 // like c++ here HIGHER up == lower value == more important
 float precedence(String name) {
-	if (eq(name, "abs"))return 0.08;
-	if (eq(name, "‖"))return 0.10; // norms / abs
+    if (eq(name, "abs"))return 0.08;
+    if (eq(name, "‖"))return 0.10; // norms / abs
 
-	if (eq(name, "."))return 0.5;
-	if (eq(name, "of"))return 0.6;
-	if (eq(name, "in"))return 0.7;
-	if (eq(name, "from"))return 0.8;
+    if (eq(name, "."))return 0.5;
+    if (eq(name, "of"))return 0.6;
+    if (eq(name, "in"))return 0.7;
+    if (eq(name, "from"))return 0.8;
 
-	if (eq(name, "not"))return 1;
-	if (eq(name, "¬"))return 1;
-	if (eq(name, "-…"))return 1;// unary operators are immediate, no need for prescidence
-	if (eq(name, "!"))return 1;
-	if (eq(name, "√"))return 1;// !√1 √!-1
-	if (eq(name, "^"))return 2;// todo: ambiguity? 2^3+1 vs 2^(x+1)
-	if (eq(name, "**"))return 2;//
-	if (eq(name, "^^"))return 2;// how did it work without??
+    if (eq(name, "not"))return 1;
+    if (eq(name, "¬"))return 1;
+    if (eq(name, "-…"))return 1;// unary operators are immediate, no need for prescidence
+    if (eq(name, "!"))return 1;
+    if (eq(name, "√"))return 1;// !√1 √!-1
+    if (eq(name, "^"))return 2;// todo: ambiguity? 2^3+1 vs 2^(x+1)
+    if (eq(name, "**"))return 2;//
+    if (eq(name, "^^"))return 2;// how did it work without??
 
-	if (eq(name, "#"))return 3;// count
-	if (eq(name, "++"))return 3;
+    if (eq(name, "#"))return 3;// count
+    if (eq(name, "++"))return 3;
 //	if (eq(node.name, "+"))return 3;//
-	if (eq(name, "--"))return 3;
+    if (eq(name, "--"))return 3;
 
-	if (eq(name, "/"))return 4.9;
-	if (eq(name, "÷"))return 4.9;
+    if (eq(name, "/"))return 4.9;
+    if (eq(name, "÷"))return 4.9;
 
-	if (eq(name, "times"))return 5;
-	if (eq(name, "*"))return 5;
-	if (eq(name, "×"))return 5;
-	if (eq(name, "add"))return 6;
-	if (eq(name, "plus"))return 6;
-	if (eq(name, "+"))return 6;
-	if (eq(name, "minus"))return 6;
-	if (eq(name, "-"))return 6;
-	if (eq(name, "%"))return 6.1;
-	if (eq(name, "rem"))return 6.1;
-	if (eq(name, "modulo"))return 6.1;
-	if (eq(name, "upto"))return 6.3;// range
-	if (eq(name, "…"))return 6.3;
-	if (eq(name, "..."))return 6.3;
-	if (eq(name, ".."))return 6.3;// excluding range
-	if (eq(name, "..<"))return 6.3;// excluding range
-	if (eq(name, "<"))return 6.5;
-	if (eq(name, "<="))return 6.5;
-	if (eq(name, ">="))return 6.5;
-	if (eq(name, ">"))return 6.5;
-	if (eq(name, "≥"))return 6.5;
-	if (eq(name, "≤"))return 6.5;
-	if (eq(name, "≈"))return 6.5;
-	if (eq(name, "=="))return 6.6;
-	if (eq(name, "is"))return 6.6; // careful, use 'be' for := assignment
-	if (eq(name, "eq"))return 6.6;
-	if (eq(name, "equals"))return 6.6;
-	if (eq(name, "is not"))return 6.6;// ambiguity: a == !b vs a != b
-	if (eq(name, "isnt"))return 6.6;
-	if (eq(name, "isn't"))return 6.6;
-	if (eq(name, "equal"))return 10;
-	if (eq(name, "≠"))return 10;
-	if (eq(name, "!="))return 10;
+    if (eq(name, "times"))return 5;
+    if (eq(name, "*"))return 5;
+    if (eq(name, "×"))return 5;
+    if (eq(name, "add"))return 6;
+    if (eq(name, "plus"))return 6;
+    if (eq(name, "+"))return 6;
+    if (eq(name, "minus"))return 6;
+    if (eq(name, "-"))return 6;
+    if (eq(name, "%"))return 6.1;
+    if (eq(name, "rem"))return 6.1;
+    if (eq(name, "modulo"))return 6.1;
+    if (eq(name, "upto"))return 6.3;// range
+    if (eq(name, "…"))return 6.3;
+    if (eq(name, "..."))return 6.3;
+    if (eq(name, ".."))return 6.3;// excluding range
+    if (eq(name, "..<"))return 6.3;// excluding range
+    if (eq(name, "<"))return 6.5;
+    if (eq(name, "<="))return 6.5;
+    if (eq(name, ">="))return 6.5;
+    if (eq(name, ">"))return 6.5;
+    if (eq(name, "≥"))return 6.5;
+    if (eq(name, "≤"))return 6.5;
+    if (eq(name, "≈"))return 6.5;
+    if (eq(name, "=="))return 6.6;
+    if (eq(name, "is"))return 6.6; // careful, use 'be' for := assignment
+    if (eq(name, "eq"))return 6.6;
+    if (eq(name, "equals"))return 6.6;
+    if (eq(name, "is not"))return 6.6;// ambiguity: a == !b vs a != b
+    if (eq(name, "isnt"))return 6.6;
+    if (eq(name, "isn't"))return 6.6;
+    if (eq(name, "equal"))return 10;
+    if (eq(name, "≠"))return 10;
+    if (eq(name, "!="))return 10;
 
-	if (eq(name, "and"))return 7.1;
-	if (eq(name, "&&"))return 7.1;
-	if (eq(name, "&"))return 7.1;
-	if (eq(name, "∧"))return 7.1;
-	if (eq(name, "⋀"))return 7.1;
+    if (eq(name, "and"))return 7.1;
+    if (eq(name, "&&"))return 7.1;
+    if (eq(name, "&"))return 7.1;
+    if (eq(name, "∧"))return 7.1;
+    if (eq(name, "⋀"))return 7.1;
 
 
-	if (eq(name, "xor"))return 7.2;
-	if (eq(name, "^|"))return 7.2;
-	if (eq(name, "⊻"))return 7.2;
+    if (eq(name, "xor"))return 7.2;
+    if (eq(name, "^|"))return 7.2;
+    if (eq(name, "⊻"))return 7.2;
 
-	if (eq(name, "or"))return 7.2;
-	if (eq(name, "||"))return 7.2;
-	if (eq(name, "∨"))return 7.2;
-	if (eq(name, "⋁"))return 7.2;
+    if (eq(name, "or"))return 7.2;
+    if (eq(name, "||"))return 7.2;
+    if (eq(name, "∨"))return 7.2;
+    if (eq(name, "⋁"))return 7.2;
 //	if (eq(name, "|"))return 7.2;// todo pipe special
 
-	if (eq(name, ":"))return 7.5;// todo:
-	if (eq(name, "?"))return 7.6;
+    if (eq(name, ":"))return 7.5;// todo:
+    if (eq(name, "?"))return 7.6;
 
-	if (name.in(function_list))// f 1 > f 2
-		return 8;// 1000;// function calls outmost operation todo? add 3*square 4+1
+    if (name.in(function_list))// f 1 > f 2
+        return 8;// 1000;// function calls outmost operation todo? add 3*square 4+1
 
 
-	if (eq(name, "⇒"))return 11; // lambdas
-	if (eq(name, "=>"))return 11;
-	if (eq(name, "::"))return 11;// todo lambda symbol? square = x :: x*x
+    if (eq(name, "⇒"))return 11; // lambdas
+    if (eq(name, "=>"))return 11;
+    if (eq(name, "::"))return 11;// todo lambda symbol? square = x :: x*x
 
 //	if (eq(name, ":"))return 12;// construction
-	if (eq(name, "="))return 12;// declaration
-	if (eq(name, ":="))return 13;
-	if (eq(name, "be"))return 13;// counterpart 'is' for ==
-	if (eq(name, "::="))return 14; // globals setter
+    if (eq(name, "="))return 12;// declaration
+    if (eq(name, ":="))return 13;
+    if (eq(name, "be"))return 13;// counterpart 'is' for ==
+    if (eq(name, "::="))return 14; // globals setter
 //	if (eq(name, "is"))return 13;// careful, could be == (6.6)
 
-	if (eq(name, "else"))return 13.09;
-	if (eq(name, "then"))return 13.15;
-	if (eq(name, "if"))return 100;
-	if (eq(name, "while"))return 101;
+    if (eq(name, "else"))return 13.09;
+    if (eq(name, "then"))return 13.15;
+    if (eq(name, "if"))return 100;
+    if (eq(name, "while"))return 101;
 //	if (eq(name, "once"))return 101;
 //	if (eq(name, "go"))return 101;
-	if (name.in(functor_list))// f 1 > f 2
-		return function_precedence;// if, while, ... statements calls outmost operation todo? add 3*square 4+1
+    if (name.in(functor_list))// f 1 > f 2
+        return function_precedence;// if, while, ... statements calls outmost operation todo? add 3*square 4+1
 
-	if (eq(name, "return"))return 1000;
-	return 0;// no precedence
+    if (eq(name, "return"))return 1000;
+    return 0;// no precedence
 }

@@ -38,7 +38,6 @@ namespace wabt {
 
 		struct ExportInfo {
 			ExportInfo(const Export *export_, LinkerInputBinary *binary) : export_(export_), binary(binary) {}
-
 			const Export *export_;
 			LinkerInputBinary *binary;
 		};
