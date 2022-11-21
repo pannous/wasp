@@ -689,6 +689,10 @@ void print(char c) {
 	put_char(c);
 }
 
+void print(char const *s) {
+    put(s);
+//    printf("%s", s);
+}
 
 void print(String *s) {
 	if (s->shared_reference)print(s->clone());// add \0 !!

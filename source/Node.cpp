@@ -552,23 +552,28 @@ void Node::remove(Node &node) {
 }
 
 Node &Node::add(const Node *node) {
-	if ((long) node > MEMORY_SIZE)
-		error("node Out of Memory");
-	if (!node)return *this;
-	if (node->kind == groups and node->length == 0 and node->name.empty())
-		return *this;
-	if (kind == longs or kind == reals)
-		error("can't modify primitives, only their referenceIndices a=7 a.nice=yes");
-	if (length >= capacity - 1)
-		error("Out of node capacity "s + capacity + " in " + name);
-	if (lastChild >= maxNodes)
-		error("Out of global Memory");
-	if (!children) children = (Node *) calloc(sizeof(Node), capacity);
-	if (length > 0) children[length - 1].next = &children[length];
-	((Node *) node)->parent = this;// not const lol. allow to set and ignore NIL.parent
-	children[length] = *node; // invokes memcpy
-	length++;
-	return *this;
+    if ((long) node > MEMORY_SIZE)
+        error("node Out of Memory");
+    if (!node)return *this;
+    if (node->kind == groups and node->length == 0 and node->name.empty())
+        return *this;
+    if (kind == longs or kind == reals)
+        error("can't modify primitives, only their referenceIndices a=7 a.nice=yes");
+    if (length >= capacity - 1) {
+        warn("Out of node capacity "s + capacity + " in " + name);
+        capacity *= 2;
+        Node *new_children = (Node *) calloc(sizeof(Node), capacity);
+        memcpy(new_children, children, length);
+        children = new_children;
+    }
+    if (lastChild >= maxNodes)
+        error("Out of global Memory");
+    if (!children) children = (Node *) calloc(sizeof(Node), capacity);
+    if (length > 0) children[length - 1].next = &children[length];
+    ((Node *) node)->parent = this;// not const lol. allow to set and ignore NIL.parent
+    children[length] = *node; // invokes memcpy
+    length++;
+    return *this;
 }
 
 Node &Node::add(const Node &node) {
@@ -763,8 +768,10 @@ String Node::serializeValue(bool deep) const {
 //			;// pass through
 //	}
 	switch (kind) {
-		case strings:
-			return val.data ? "\""s + val.string + "\"" : "";
+        case 0:
+            return "ø";
+        case strings:
+            return val.data ? "\""s + val.string + "\"" : "";
 //		case ints:
 		case longs:
 			return itoa(val.longy);

@@ -36,8 +36,13 @@ static bool use_polish_notation;// prefix notation, s-expression parser flag  (h
 
 struct ParserOptions { // not just for parser but also for serialize!!
 //    bool polish_notation= false;// prefix notation, s-expression parser flag  (html (body)) vs html{body{}}
-    bool use_tags = false;// <html> or generic list<abc> , "less than" requires space, a<b can still be resolved as 'smaller' in analyzer
+    bool data_mode = false;
+    bool arrow = false; // treat -> arrow as map operator :
+    bool use_tags = false;// <html> or
+    bool use_generics = false;// generic list<abc> , "less than" requires spaces, a<b can still be resolved as 'smaller' in analyzer
     bool kebab_case = false;// kebab-case means: parse "-" as hypen instead of minus, or 1900 - 2000AD (easy with units)
+    bool space_brace = false;// resolve a {x} as a{x}
+    String current_dir = "./"; // where to look for includes
 };
 // a-b can still be resolved as minus in analyzer
 

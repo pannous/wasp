@@ -571,24 +571,24 @@ void testWasmLogicOnObjects() {
 }
 
 void testWasmLogic() {
-	skip(
-	// should be easy to do, but do we really want this?
-			assert_emit("true true and", true);
-			assert_emit("false true and", false);
-			assert_emit("false false and ", false);
-			assert_emit("true false and ", false);
-	)
-	check(parse("false and false").length == 3);
-	assert_emit("false and false", false);
-	assert_emit("false and true", false);
-	assert_emit("true and false", false);
-	assert_emit("true and true", true);
-	assert_emit("true or false and false", true);// == true or (false)
+    skip(
+    // should be easy to do, but do we really want this?
+            assert_emit("true true and", true);
+            assert_emit("false true and", false);
+            assert_emit("false false and ", false);
+            assert_emit("true false and ", false);
+    )
+    check(parse("false and false", "").length == 3);
+    assert_emit("false and false", false);
+    assert_emit("false and true", false);
+    assert_emit("true and false", false);
+    assert_emit("true and true", true);
+    assert_emit("true or false and false", true);// == true or (false)
 
-	assert_emit("false xor true", true);
-	assert_emit("true xor false", true);
-	assert_emit("false xor false", false);
-	assert_emit("true xor true", false);
+    assert_emit("false xor true", true);
+    assert_emit("true xor false", true);
+    assert_emit("false xor false", false);
+    assert_emit("true xor true", false);
 	assert_emit("false or true", true);
 	assert_emit("false or false", false);
 	assert_emit("true or false", true);
@@ -730,7 +730,7 @@ void testOldRandomBugs() {
 	assert(eval("2+1==2+1") == 1);
 	assert_emit("square 3", 9);
 	assert_emit("id (3+3)", (long) 6);
-	const Node &node = parse("x:40;x+1");
+    const Node &node = parse("x:40;x+1", "");
 	check(node.length == 2)
 	check(node[0]["x"] == 40)
 
@@ -824,27 +824,27 @@ void testWasmModuleExtension() {
 	printf("testWasmModuleExtension");
 #ifndef RUNTIME_ONLY
 	clearAnalyzerContext();
-	clearEmitterContext();
+    clearEmitterContext();
 //	memoryHandling=0;
-	Node charged = analyze(parse("test:=42"));
-	breakpoint_helper
+    Node charged = analyze(parse("test:=42", ""));
+    breakpoint_helper
 //	Code lib = emit(charged, 0, nil);// no main
-	Code lib = emit(charged, 0, 0);// "lib_main");
-	lib.save("lib.wasm");
+    Code lib = emit(charged, 0, 0);// "lib_main");
+    lib.save("lib.wasm");
 
-	Module module = read_wasm("lib.wasm");
-	declaredFunctions.clear();// <-- only newly declared functions (that nead a Code block later), others via functionIndex …
-	charged = analyze(parse("test"));// call test() from lib
-	Code main = emit(charged, &module, "main");
+    Module module = read_wasm("lib.wasm");
+    declaredFunctions.clear();// <-- only newly declared functions (that nead a Code block later), others via functionIndex …
+    charged = analyze(parse("test", ""));// call test() from lib
+    Code main = emit(charged, &module, "main");
 //	int ok1 = main.run();// todo: why not merge_wasm on emit? module data is all there? yeah but not in parsed Code … form
 //	check(ok1==42);
-	main.save("main.wasm");// this is NOT a valid wasm module, because all the indices are offset to the lib!
+    main.save("main.wasm");// this is NOT a valid wasm module, because all the indices are offset to the lib!
 
 // we do NOT wan't to add 10000 imports here, so that the indices match, do we?
 //	functionSignatures.clear();
-	Module prog = read_wasm("main.wasm");
-	Code merged = merge_wasm(module, prog);
-	merged.save("merged.wasm");
+    Module prog = read_wasm("main.wasm");
+    Code merged = merge_wasm(module, prog);
+    merged.save("merged.wasm");
 	read_wasm("merged.wasm");
 	int ok = merged.run();// why is wabt so SLOOOOW now??
 //	int ok = main.run();

@@ -17,7 +17,7 @@ extern codepoint opening_special_brackets[];// circumfixOperators «…»
 extern chars import_keywords[];
 extern List<chars> operator_list;
 
-Node &parse(String source, ParserOptions *parserOptions = 0);// wasp -> data
+Node &parse(String source, String current_dir, ParserOptions *parserOptions = 0);// wasp -> data
 bool is_operator(codepoint ch);// todo: next?
 //extern String operator_list[];// resolve xor->operator ... semantic wasp parser really?
 //extern List<chars> functor_list;
@@ -38,6 +38,6 @@ float precedence(char group); // special: don't mix
 //Node emit(String code);// moved to angle
 codepoint closingBracket(codepoint bracket);
 
-Node parseFile(String filename);
+Node parseFile(String filename, String current_dir);
 
 String &normOperator(String &alias);

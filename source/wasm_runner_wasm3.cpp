@@ -19,7 +19,7 @@ int sum(int a, int b) {
 }
 
 void *ext_memcpy0(void *dst, const void *arg, int32_t size) {
-	memcpy0((bytes) dst, (bytes) arg, (size_t) size);
+    memcpy1((bytes) dst, (bytes) arg, (size_t) size);
 	return dst;
 }
 

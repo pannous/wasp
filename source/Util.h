@@ -6,7 +6,8 @@ static bool I_know_what_I_am_doing = false;
 
 void trace0(const char *x);
 
-#define trace trace0
+#define trace print
+//#define trace  // DONT TRACE
 typedef unsigned char byte;
 typedef const char *chars;
 typedef byte *bytes;
@@ -96,7 +97,7 @@ void warn(String warning);
 
 bool fileExists(String filename);
 
-String findFile(String filename);// empty() if not found
+String findFile(String filename, String current_dir);// empty() if not found
 //char *findFile(char* filename);// 0 if not found
 String load(String file);
 
@@ -112,3 +113,7 @@ Node smartNode(long long smartPointer64);
 long file_last_modified(char *file);
 
 String demangle(String &fun);
+
+String extractPath(String file);
+
+bool isDir(const char *name);
