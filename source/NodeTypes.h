@@ -46,24 +46,26 @@ extern const Node Long;//.setType(type);
 // Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
 // todo dangerous overlap with Valtype in Type!? OK only accessible via mapTypeToWasm
 enum Kind {// todo: merge Node.kind with Node.class(?)
-	// plurals because of namespace clash
-	// TODO add subtypes of Class:Node Variable:Node etc ^^^
-	undefined = 0, // ≠ any?
-	unknown = 1, //
-	objects, // {…} block data with children closures
-	call = 0x10,
-	groups, // (…) meta params parameter attributes lists
-	patterns, // […] selectors matches, annotations! [public export extern] function mul(x,y){x*y}
-	key, // key with value
-	reference, // variable identifier name x
-	symbol, // one / plus / Jesus
-	operators, // TODO: semantic types don't belong here! they interfere with internal structural types key etc!!
-	functor, // while(xyz){abc} takes 1?/2/3 blocks if {condition} {then} {else}
-	expression, // one plus one
-	declaration, // x:=1
-	assignment, // x = 1 // really?? needs own TYPE?
-	strings,
-	codepoints, // boxed codepoint in value.longy field todo
+    // plurals because of namespace clash
+    // TODO add subtypes of Class:Node Variable:Node etc ^^^
+    undefined = 0, // ≠ any?
+    unknown = 1, //
+    objects, // {…} block data with children closures
+    call = 0x10,
+    groups, // (…) meta params parameter attributes lists
+    patterns, // […] selectors matches, annotations! [public export extern] function mul(x,y){x*y}
+    generics,// tag or list<string>
+    tags = generics,// <html>
+    key, // key with value
+    reference, // variable identifier name x
+    symbol, // one / plus / Jesus
+    operators, // TODO: semantic types don't belong here! they interfere with internal structural types key etc!!
+    functor, // while(xyz){abc} takes 1?/2/3 blocks if {condition} {then} {else}
+    expression, // one plus one
+    declaration, // x:=1
+    assignment, // x = 1 // really?? needs own TYPE?
+    strings,
+    codepoints, // boxed codepoint in value.longy field todo
 	buffers, // int[]
 	//	ints, // use longy field, but in wasm longs are pointers!
 	bools,

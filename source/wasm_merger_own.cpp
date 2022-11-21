@@ -817,7 +817,7 @@ void Linker::WriteLinkingSection(uint32_t data_size, uint32_t data_alignment) {
 
     if (data_size) {
 //    WriteU32Leb128(&stream_, LinkingEntryType::DataSize, "subsection code");
-//		TODO("WriteLinkingSection");
+        todo("WriteLinkingSection");
         Fixup fixup_subsection = WriteUnknownSize();
         WriteU32Leb128(&stream_, data_size, "data size");
         FixupSize(fixup_subsection);
@@ -929,8 +929,10 @@ void Linker::ResolveSymbols() {
                 printf("%s export kind %d '%s' index %d\n", binary->name, _export.kind, _export.name.data,
                        _export.index);
             if (export_map.FindIndex(_export.name) != kInvalidIndex) {
-                warn("Ignoring duplicate export name "s + _export.name);
-                continue;
+//                error
+                warn
+                        ("duplicate export name "s + _export.name);// Ignoring
+//                continue;
 //				binary->exports.erase(binary->exports.begin() + pos);
             }
             if (_export.kind == wabt::ExternalKind::Global) {
@@ -945,10 +947,13 @@ void Linker::ResolveSymbols() {
                 if (func.name.length > 0) {
                     export_map.emplace(func.name, Binding(position));
                     const String &demangled = demangle(func.name);
-                    if (func.name != demangled)
+                    if (func.name != demangled and not export_map.contains(demangled))
                         export_map.emplace(demangled, Binding(position));
                 }
-            } else warn("ignore export of kind %d %s"s % (short) _export.kind % GetKindName(_export.kind));
+            } else {
+                export_list.emplace_back(&_export, binary.get());
+                warn("ignore export of kind %d %s"s % (short) _export.kind % GetKindName(_export.kind));
+            }
         }
         for (const Func &func: binary->functions) {// only those with code, not imports
             if (not empty(func.name)) {
@@ -1007,16 +1012,16 @@ void Linker::ResolveSymbols() {
             if (export_number != kInvalidIndex) {
                 // We found the symbol exported by another module.
                 ExportInfo &export_info = export_list[export_number];
-                // TODO verify the foreign function has the correct signature.
+                // TODO ⚠️ verify the foreign function has the correct signature.
                 Index export_index = export_info.export_->index;
                 int nr_imports = export_info.binary->function_imports.size();
                 Func &exported = export_info.binary->functions[export_index - nr_imports];
-//				Index new_Index; // see RelocateFuncIndex(); ⚠️ WE CAN ONLY calculate the new index once ALL imports are collected!
                 Index old_index = import.sig_index;
                 import.active = false;
                 import.foreign_binary = export_info.binary;
-                import.foreign_index = export_index;
                 import.linked_function = &export_info;
+                import.foreign_index = export_index;
+//				Index new_Index; // see RelocateFuncIndex(); ⚠️ we can only calculate the new index once ALL imports are collected!
 //				import.relocated_function_index = export_number; see RelocateFuncIndex()
                 binary->active_function_imports--;// never used!?
                 char *import_name = import.name;

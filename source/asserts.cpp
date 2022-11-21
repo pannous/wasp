@@ -211,8 +211,8 @@ bool assert_isx(char *mark, bool expect) {
 
 Node assert_parsesx(chars mark) {
 	try {
-		result = parse(mark);
-		print(result);
+        result = parse(mark, "");
+        print(result);
 		return result;
 	} catch (chars err) {
 		printf("\nTEST FAILED WITH ERROR\n");
@@ -261,10 +261,10 @@ String normSerialization(String input) {
 
 
 void assertSerialize(const char *input) {
-	Node parsed = parse(input);
-	const String &serialized = parsed.serialize();
-	Node parsed2 = parse(serialized);
-	bool equalsX = assert_equals_x(parsed, parsed2);
+    Node parsed = parse(input, "");
+    const String &serialized = parsed.serialize();
+    Node parsed2 = parse(serialized, "");
+    bool equalsX = assert_equals_x(parsed, parsed2);
 	if (!equalsX) {
 		print(parsed);
 		print("≠");

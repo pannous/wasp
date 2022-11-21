@@ -60,3 +60,4 @@ playground/
 /FindSDL2.cmake
 /.idea.bad/
 /.cmake/api/v1/reply/
+/test/merge/target/
