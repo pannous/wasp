@@ -576,7 +576,8 @@ private:
     // Parse an identifier.
     String identifier() {
         // identifiers must start with a letter, _ or $.
-        if (!is_identifier(ch)) err("Unexpected identifier character "s + renderChar(ch));
+        if (!is_identifier(ch))
+            err("Unexpected identifier character "s + renderChar(ch));
         int start = at;
         bool kebab = parserOptions.kebab_case;
         // subsequent characters can contain ANYTHING except operators
@@ -1367,10 +1368,14 @@ private:
             lib = current[1].name;
         else if (node.empty()) {
             white();
+            if (ch == '"' or ch == '\'' or ch == '<')proceed();// include "c-style" // include <cpp-style>
             lib = (identifier());
+            if (ch == '"' or ch == '\'' or ch == '>')proceed();
         } else
             lib = (node.last().name);
 //		node.values(). first().name
+        if (lib == "memory")
+            return node;// todo ignore memory includes???
         if (file.endsWith(".wit"))
             lib = lib.replaceAll("-", "_");// stupid kebab case!
         if (!lib.empty()) // creates 'include' node for wasm …
