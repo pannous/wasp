@@ -78,7 +78,7 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
         {br_on_exn_,          block_index}, // branch on exception
 
         {end_block,           0}, //11
-        {br,                  block_index},
+        {br_branch,           block_index},
         {br_if,               block_index},
         {br_table,            block_index},
         {return_block,        block_index},

@@ -454,26 +454,26 @@ enum Opcodes {
 	if_i = 0x04,// precede by i32 result, follow by i32_type (7f)
 	elsa = 0x05,
 
-	// EXTENSIONS:
-	try_ = 0x06, // since Chrome 95
-	catch_ = 0x07,
-	throw_ = 0x08,
-	rethrow_ = 0x09,
-	br_on_exn_ = 0x0A, // branch on exception
-	delegate_ = 0x18,
+    // EXTENSIONS:
+    try_ = 0x06, // since Chrome 95
+    catch_ = 0x07,
+    throw_ = 0x08,
+    rethrow_ = 0x09,
+    br_on_exn_ = 0x0A, // branch on exception
+    delegate_ = 0x18,
 
-	end_block = 0x0b, //11
-	br = 0x0c,
-	br_if = 0x0d,
-	br_table = 0x0e,
-	return_block = 0x0f,
-	function_call = 0x10,
-	call_ = 0x10,
-	call_indirect = 0x11,
+    end_block = 0x0b, //11
+    br_branch = 0x0c,
+    br_if = 0x0d,
+    br_table = 0x0e,
+    return_block = 0x0f,
+    function_call = 0x10,
+    call_ = 0x10,
+    call_indirect = 0x11,
 
-	// EXTENSIONS:
-	return_call = 0x12,  // the tail-call version of call ≠ return_block
-	return_call_indirect = 0x13, // the tail-call version of call_indirect
+    // EXTENSIONS:
+    return_call = 0x12,  // the tail-call version of call ≠ return_block
+    return_call_indirect = 0x13, // the tail-call version of call_indirect
 	call_ref = 0x14, // [ts1 (ref $t)] -> [ts2] iff $t = [ts1] -> [ts2]
 	return_call_ref = 0x15,
 	func_bind = 0x16,// (type $t) 	$t : u32
@@ -764,13 +764,15 @@ class Variable {
 
 enum ABI {
 //	unknown,
-	erased = 0, // unknown type info erased
-	native = 0, // wasm/c
-	cpp, // _Z5abs_ff demangle
-	wasp,
-	wasp_smart_pointers, // compatible with lacking multi-value in wasm engine
-	meta, // types specified in custom meta section
-	meta_names, // types specified via naming convention square__int_as_int, square__float_as_float
+    erased = 0, // unknown type info erased
+    native = 0, // wasm/c also wasi?
+    cpp, // _Z5abs_ff demangle, ill defined type arguments
+    wasp,// multi-value return tuples (value, type), node header tuples (head, type, meta, size, children) see ABI.h
+    wasp_smart_pointers, // compatible with lacking multi-value in wasm engine
+    canonical, // type string = (pointer,length) …
+    wit = canonical, // lookup type and data schemes in wit 'header' files
+//	meta, // types specified in custom meta section
+//	meta_names, // function types specified via naming convention square__int_as_int, square__float_as_float
 };
 
 class Function;

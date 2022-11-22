@@ -99,7 +99,7 @@ String findFile(String filename, String current_dir) {
     return "";
 #else
     List<String> extensions = {"", ".wit", ".wasm", ".wast", ".wasp", ".witx"};
-    List<String> folders = {"lib", "src", "wasp", "source", "include", "sample", "samples", "test", "tests"};
+    List<String> folders = {"", "lib", "src", "wasp", "source", "include", "sample", "samples", "test", "tests"};
     List<String> paths;
     if (filename.contains("."))extensions = {""}; // don't do double extensions!
     if (isDir(filename)) {
