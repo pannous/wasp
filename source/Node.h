@@ -39,6 +39,7 @@ struct ParserOptions { // not just for parser but also for serialize!!
     bool data_mode = false;
     bool arrow = false; // treat -> arrow as map operator :
     bool dollar_names = false;// $name as in wat,wit
+    bool at_names = false;// @interface as in wat,wit
     bool use_tags = false;// <html> or
     bool use_generics = false;// generic list<abc> , "less than" requires spaces, a<b can still be resolved as 'smaller' in analyzer
     bool kebab_case = false;// kebab-case means: parse "-" as hypen instead of minus, or 1900 - 2000AD (easy with units)
