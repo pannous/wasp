@@ -887,7 +887,7 @@ private:
     };
 
 
-    Node &any_operator() {
+    Node &operatorr() {
         Node &node = *new Node(ch);
         node.value = 0;
         node.setType(operators);// todo ++
@@ -970,7 +970,7 @@ private:
 //			return (*new Node("abs")).setType(Kind::call, false);
         }
         if (is_operator(ch))
-            return any_operator();
+            return operatorr();
         if (is_identifier(ch))
             return *resolve(Node(identifier(), true)).clone();// or op
         error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
@@ -1435,10 +1435,16 @@ private:
             switch (ch) {
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 //				https://en.wikipedia.org/wiki/ASCII#Character_set
+                case '$':
+                    if (parserOptions.dollar_names)
+                        actual.add(Node(identifier()));
+                    else
+                        actual.add(operatorr());
+                    break;
                 case '<':
                     if (not(parserOptions.use_tags or parserOptions.use_generics) or
                         (previous == ' ' and next == ' ')) {
-                        Node &op = any_operator();
+                        Node &op = operatorr();
                         actual.add(op);
                         actual.kind = expression;
                     } else {
@@ -1524,7 +1530,7 @@ private:
                     else if (ch == '-' and next == '.')// todo bad criterion 1-.9 is BINOP!
                         actual.addSmart(numbero()); // -.9 -0.9 border case :(
                     else {
-                        Node *op = any_operator().clone();
+                        Node *op = operatorr().clone();
                         actual.add(op);
                         actual.kind = expression;
                     }
@@ -1572,7 +1578,7 @@ private:
                         add_raw = true;// == *=
 
 //					char prev = previous;// preserve
-                    Node op = any_operator();// extend *= ...
+                    Node op = operatorr();// extend *= ...
                     if (not(op.name == ":" or (data_mode and op.name == "=")))
                         add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
                     if (op.name.length > 1)
