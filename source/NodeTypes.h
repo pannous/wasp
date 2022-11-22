@@ -54,9 +54,13 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     call = 0x10,
     groups, // (…) meta params parameter attributes lists
     patterns, // […] selectors matches, annotations! [public export extern] function mul(x,y){x*y}
-    generics,// tag or list<string>
+    generics,// node tag or list<node>   NOT value.kind==strings !
     tags = generics,// <html>
+
     key, // key with value
+    fields, // key in struct / class / type / prototype / interface / record (wit) possibly WITHOUT VALUE
+    // todo do we really need strict schema separation from normal 'schema' of node{kind=clazz} ?
+
     reference, // variable identifier name x
     symbol, // one / plus / Jesus
     operators, // TODO: semantic types don't belong here! they interfere with internal structural types key etc!!
@@ -81,6 +85,8 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     longs = 0x7E, // the signature of parameters/variables is independent!
     structs,
     enums,
+    variants,
+    records, // todo merge concepts with wasp clazz?
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 

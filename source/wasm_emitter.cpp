@@ -1274,8 +1274,8 @@ Code emitWhile(Node &node, String context) {
 	code.addByte(none);// type:void_block
 //	code.addByte(int32);
 	code = code + emitExpression(then, context);// BODY
-	code.addByte(br);
-	code.addByte(1);
+	code.addByte(br_branch);
+    code.addByte(1);
 	code.addByte(end_block);// end if condition then action
 	code.addByte(end_block);// end while loop
 	// type should fall through
@@ -1830,10 +1830,9 @@ Code typeSection() {
 		Function &function = functions[fun];
 		Signature &signature = function.signature;
 		if (not function.emit /*export/declarations*/ and not function.is_used /*imports*/) {
-			trace("not function.emit => skipping unused type for %s");
-			trace(fun);
-			continue;
-		}
+            trace("not function.emit => skipping unused type for "s + fun);
+            continue;
+        }
 		if (function.is_runtime)
 			continue;
 		if (function.is_handled)
