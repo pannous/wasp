@@ -53,6 +53,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     objects, // {…} block data with children closures
     call = 0x10,
     groups, // (…) meta params parameter attributes lists
+    tuples = groups, // todo: with restrictions!
     patterns, // […] selectors matches, annotations! [public export extern] function mul(x,y){x*y}
     generics,// node tag or list<node>   NOT value.kind==strings !
     tags = generics,// <html>

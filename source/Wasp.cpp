@@ -171,7 +171,8 @@ bool is_identifier(codepoint ch) {
     if (ch == '.')return false;
     if (ch == '-')return false;// todo
     if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
-    return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$';// ch<0: UNICODE
+    return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
+           ch == '@';// ch<0: UNICODE
     //		not((ch != '_' and ch != '$') and (ch < 'a' or ch > 'z') and (ch < 'A' or ch > 'Z'));
 };
 
@@ -251,6 +252,7 @@ codepoint closingBracket(codepoint bracket) {
 // NEEDs complete codepoint, not just leading char because	☺ == e2 98 ba  √ == e2 88 9a
 bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
     //	0x0086	134	<control>: START OF SELECTED AREA	†
+
     if (ch == U'∞')return false;// or can it be made as operator!?
     if (ch == U'⅓')return false;// numbers are implicit operators 3y = 3*y
     if (ch == U'∅')return false;// Explicitly because it is part of the operator range 0x2200 - 0x2319
@@ -381,6 +383,10 @@ class Wasp {
 // U+0085 <control-0085> (NEL: NEXT LINE) ␤ NewLine
 // ‘Language Tag character’ (U+E0001) + en-us …
     bool closing(char ch, char closer) {
+        if (closer == '>')
+            return ch == '>';// nothing else closes!
+        if (closer == ' ' and ch == '>' and parserOptions.use_generics)// todo better
+            return true;
         if (ch == closer)
             return true;
         if (precedence(ch) <= precedence(closer))
@@ -969,6 +975,8 @@ private:
             return (*new Node("‖")).add(valueNode(u'‖').clone()).setType(operators, false);
 //			return (*new Node("abs")).setType(Kind::call, false);
         }
+        if (ch == '$' and parserOptions.dollar_names and is_identifier(next))
+            proceed(); // $name
         if (is_operator(ch))
             return operatorr();
         if (is_identifier(ch))
@@ -984,7 +992,9 @@ private:
         int pos = at - 1;
         while (pos < text.length and text[pos] != 0 and text[pos] != '\n' and braces >= 0) {
             if (text[pos] == '{')braces++;
-            if (text[pos] == ',' and braces == 0)return true;// ambiguity
+            // handle lists elsewhere! not in expression
+            if (text[pos] == ',' and braces == 0)
+                return true;// ambiguity because expression (1 , 2) vs ((expression 1), 2)
             if (text[pos] == ':' and braces == 0)return true;// ambiguity
             if (text[pos] == ';' and braces == 0)return true;// end of statement!
             if (text[pos] == '=' and braces == 0)
@@ -1016,7 +1026,9 @@ private:
             return expressionas;
         white();
         if (node.kind != operators) expressionas.kind = groups;
-        while (ch and ch != closer and (is_identifier(ch) or isalnum0(ch) or is_operator(ch))) {
+        bool tag = parserOptions.use_generics || parserOptions.use_tags;// todo, allow IFF ' < ' surrounded by spaces!
+        while (ch and ch != closer and
+               (is_identifier(ch) or isalnum0(ch) or (is_operator(ch) and (not tag or (ch != '<' and ch != '>'))))) {
             node = symbol();// including operators `=` ...
             if (node.kind == operators)expressionas.kind = expression;
             expressionas.add(&node);
@@ -1420,6 +1432,7 @@ private:
                 break;
             }// inner match ok
 
+
             if (contains(opening_special_brackets, ch)) {
                 // overloadable grouping operators, but not builtin (){}[]
                 let grouper = ch;
@@ -1435,18 +1448,22 @@ private:
             switch (ch) {
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 //				https://en.wikipedia.org/wiki/ASCII#Character_set
+                case '@':
                 case '$':
-                    if (parserOptions.dollar_names)
+                    if (parserOptions.dollar_names or parserOptions.at_names)
                         actual.add(Node(identifier()));
                     else
                         actual.add(operatorr());
                     break;
                 case '<':
+                case '>':
                     if (not(parserOptions.use_tags or parserOptions.use_generics) or
                         (previous == ' ' and next == ' ')) {
                         Node &op = operatorr();
                         actual.add(op);
                         actual.kind = expression;
+                    } else if (ch == '>') {
+                        return actual;
                     } else {
                         if (next == '/')
                             todo("closing </tags>");
@@ -1516,14 +1533,13 @@ private:
                         actual.last().addSmart(node);
                         continue;
                     }
-
                     if (parserOptions.kebab_case and isalpha(lastNonWhite))
                         error("kebab case should be handled in identifier");
-                case '.':
                     if (next == '>') {// -> => ⇨
                         next = u'⇨';
                         proceed();
                     }
+                case '.':
                     if (isDigit(next) and
                         (previous == 0 or contains(separator_list, previous) or is_operator(previous)))
                         actual.addSmart(numbero());// (2+2) != (2 +2) !!!
@@ -1579,6 +1595,8 @@ private:
 
 //					char prev = previous;// preserve
                     Node op = operatorr();// extend *= ...
+                    if (next == '>' and parserOptions.arrow)
+                        proceed(); // =>
                     if (not(op.name == ":" or (data_mode and op.name == "=")))
                         add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
                     if (op.name.length > 1)
@@ -1646,10 +1664,10 @@ private:
                             actual = neu;
                         } else
                             actual.separator = ch;
-                        char closer = ch;// need to keep troughout loop!
-                        while (ch == closer) {// same separator a , b , c
+                        char sep = ch;// need to keep troughout loop!
+                        while (ch == sep and not closing(ch, close)) {// same separator a , b , c
                             proceed();
-                            Node element = valueNode(closer);// todo stop copying!
+                            Node &element = valueNode(sep);
                             actual.add(element.flat());
                         }
                         break;
