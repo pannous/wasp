@@ -384,7 +384,7 @@ class Wasp {
 // ‘Language Tag character’ (U+E0001) + en-us …
     bool closing(char ch, char closer) {
         if (closer == '>')
-            return ch == '>';// nothing else closes!
+            return ch == '>' or ch == '\n';// nothing else closes!
         if (closer == ' ' and ch == '>' and parserOptions.use_generics)// todo better
             return true;
         if (ch == closer)
@@ -1463,6 +1463,7 @@ private:
                         actual.add(op);
                         actual.kind = expression;
                     } else if (ch == '>') {
+//                        actual.setType(parserOptions.use_generics ? generics : tags, false); NOT ON ELEMENT!
                         return actual;
                     } else {
                         if (next == '/')
@@ -1530,7 +1531,9 @@ private:
                         proceed();
                         proceed();
                         Node &node = valueNode(' ');
-                        actual.last().addSmart(node);
+                        Node &last = actual.last().setType(key, false);
+                        last.value.node = &node;
+//                        last.addSmart(node);
                         continue;
                     }
                     if (parserOptions.kebab_case and isalpha(lastNonWhite))

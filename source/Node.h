@@ -137,27 +137,28 @@ union Value {
 // The order of Type,Value is reverse to the Wasp ABI return tuple Value(int32), Type(int32)
 class Node {
 	// todo: sizeof(Node) can be reduced later by: shrinking header, merging type&kind, let *children own its length, make name String* offset
-	// sizeof(Node) == 64 (20 for name,
-	//	short _node_header_ = 0xDADA; //
-	int node_header = node_header_32;
+    // sizeof(Node) == 64 (20 for name,
+    //	short _node_header_ = 0xDADA; //
+//	static
+    int node_header = node_header_32;
 public:
-	Node *type = 0;// variable/reference type or object class?
-	int length = 0;// children
-	Node *children = nullptr;// LIST, not link. block body content
-	::Kind kind = unknown;// improved from 'undefined' upon construction
-	Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
+    Node *type = 0;// variable/reference type or object class?
+    int length = 0;// children
+    Node *children = nullptr;// LIST, not link. block body content
+    ::Kind kind = unknown;// improved from 'undefined' upon construction
+    Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 //	Type kind = unknown;// improved from 'undefined' upon construction
 
-	String name = empty_name;// nil_name;
-//	Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
-	Node *parent = nullptr;
-	// todo rename and alias:
-	// lets lads lats lates: lets because a=b;c=d …; lads children; lats laterals; lates delayed evaluation
-	Node *next = 0; // in children list, redundant with children[i+1] => for debugging only
-	char separator = 0;// " " ";" ","
+    String name = empty_name;// nil_name;
+    Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
+    Node *parent = nullptr;
+    // todo rename and alias:
+    // lets lads lats lates: lets because a=b;c=d …; lads children; lats laterals; lates delayed evaluation
+    Node *next = 0; // in children list, redundant with children[i+1] => for debugging only
+    char separator = 0;// " " ";" ","
 //	char grouper = 0;// "()", "{}", "[]" via kind!  «…» via type Group("«…»")
 
-	long _hash = 0;// set by hash(); should copy! on *x=node / clone()
+    long _hash = 0;// set by hash(); should copy! on *x=node / clone()
 #ifdef DEBUG
 // int code_position; // hash to external map
 //	int lineNumber;
@@ -242,7 +243,9 @@ public:
 //			name = String(itoa0(nr, 10)); // messes with setField contraction
 	}
 
-	explicit Node(int nr) : Node((long long) nr) {}
+    explicit Node(int nr) : Node((long long) nr) {}
+
+    explicit Node(Kind type) : Node() { kind = type; }
 
 	explicit Node(float nr) : Node((double) nr) {}
 
@@ -685,37 +688,43 @@ public:
 
 	int lastIndex(String &string, int start = 0);
 
-	int lastIndex(Node *node, int start = 0);
+    int lastIndex(Node *node, int start = 0);
 
-	int index(String string, int start = 0, bool reverse = false);
+    int index(String string, int start = 0, bool reverse = false);
 
-	void replace(int from, int to, Node &node);
+    void replace(int from, int to, Node &node);
 
-	void replace(int from, int to, Node *node);
+    void replace(int from, int to, Node *node);
 
-	void remove(int at, int to);
+    void remove(int at, int to);
 
-	Node &metas();
+    Node &metas() {
+        // todo List<Node> ?
+        if (!meta)meta = new Node(Kind::meta);
+        return *meta;
+    }
 
-	Node &setType(::Kind type, bool check = true);
+    Node &setType(::Kind type, bool check = true);
 
-	Node &setType(const char *string) {// setClass
+    Node &setType(const char *string) {// setClass
 //		type = &Node(string).setType(classe);
-		return *this;
-	}
+        return *this;
+    }
 
-	Node &setType(Node *_type) {
+    Node &setType(Node *_type) {
 //		type = &_type->setType(classe);
-		return *this;
-	}
+        return *this;
+    }
 
-	List<String> &toList();
+    List<String> &toList();
 
-	bool empty();
+    bool empty();
 
-	void clear();
+    void clear();
 
-	String *Line();
+    String *Line();
+
+    void addMeta(Node *pNode);
 };
 
 typedef const Node Nodec;

@@ -71,9 +71,9 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     assignment, // x = 1 // really?? needs own TYPE?
     strings,
     codepoints, // boxed codepoint in value.longy field todo
-	buffers, // int[]
-	//	ints, // use longy field, but in wasm longs are pointers!
-	bools,
+    buffers, // int[]
+    //	ints, // use longy field, but in wasm longs are pointers!
+    bools,
     errors, // internal wasp error, NOT to be used in Angle!
     clazz,
 
@@ -81,6 +81,8 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     //	vectors     use kind=array type=Any
 //	vectors, // any[] vs Node[]  list of type class!  e.g.  numbers xs => xs.type=number(type=vectors)
     arrays, // Node[] vs any[]  untyped array of Nodes. Unlike vector the node is NOT a class! todo: see Classes
+    linked_list, // via children or value field??
+    meta = linked_list,
     nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
     reals = 0x7C, /*  ≠ float64, just hides bugs, these concepts should not be mixed */
     longs = 0x7E, // the signature of parameters/variables is independent!

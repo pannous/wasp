@@ -585,6 +585,8 @@ void Node::addSmart(Node node) {// merge?
 void Node::addSmart(Node *node, bool flatten, bool clutch) { // flatten AFTER construction!
 // todo cleanup clutch LOL!, and or merge with flat()
     if (!node)return;
+    if (node->kind == generics and kind == groups)
+        kind = generics;
     if (use_polish_notation and node->length > 0) {
         if (name.empty())
             name = (*node)[0].name;
@@ -598,6 +600,13 @@ void Node::addSmart(Node *node, bool flatten, bool clutch) { // flatten AFTER co
         // a{x:1} != a {x:1} but {x:1} becomes child of a
         // a{x:1} == a:{x:1} ?
         Node &letzt = last();
+
+        if (node->kind == generics) {
+            letzt.addMeta(node);
+            letzt.metas()["generics"] = *node;
+            if (letzt.kind == reference)
+                letzt.kind = generics; // todo NOT ON THE reference!, on the value (?!?)
+        }
         // do NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
         //	only prefixOperators
         if (letzt.kind == functor and letzt.length == 0) {
@@ -793,6 +802,8 @@ String Node::serializeValue(bool deep) const {
 //            return ""s + name + "{…" + "}";// todo fields
         case objects:
             return deep ? "" : "{…}";// useful for debugging, but later return "" for
+        case linked_list:
+            return deep ? "" : "(:)";
         case groups:
             return deep ? "" : "(…)";
         case patterns:
@@ -857,14 +868,14 @@ String Node::serialize() const {
     }
     if (length >= 0) {
         if (kind == expression and not name.empty())wasp += ":";
-        if ((length > 1 or kind == patterns or kind == objects)) {
+        if ((kind == generics or kind == tags) and length > 0) wasp += "<";
+        else if ((length > 1 or kind == patterns or kind == objects)) {
             // skip single element braces: a == (a)
-            if (kind == groups and (not separator or separator == ' '))
-                wasp += "(";
+            if (kind == groups and (not separator or separator == ' ')) wasp += "(";
+            else if (kind == generics or kind == tags)wasp += "<";
             else if (kind == objects)wasp += "{";
             else if (kind == patterns)wasp += "[";
-            else if (length > 0 and not separator)
-                wasp += "(";// default
+            else if (length > 0 and not separator) wasp += "(";// default
         }
         if (use_polish_notation and not name.empty()) wasp += name;
         int i = 0;
@@ -876,8 +887,10 @@ String Node::serialize() const {
             if (i++ > 0) wasp += separator ? String(separator) : " ";
             wasp += node.serialize();
         }
-        if (length > 1 or kind == patterns or kind == objects) {
-            if (kind == groups and (not separator or separator == ' '))wasp += ")";
+
+        if ((kind == generics or kind == tags) and length > 0) wasp += ">";
+        else if (length > 1 or kind == patterns or kind == objects) {
+            if (kind == groups and (not separator or separator == ' ')) wasp += ")";
             else if (kind == objects)wasp += "}";
             else if (kind == patterns)wasp += "]";
             else if (length > 0 and not separator) wasp += ")";// default
@@ -1163,6 +1176,10 @@ String *Node::Line() {
     return new String("<missing line information>");
 }
 
+void Node::addMeta(Node *pNode) {
+    metas().add(pNode);
+}
+
 
 //String
 chars typeName(Kind t) {
@@ -1189,6 +1206,8 @@ chars typeName(Kind t) {
             return "expression";
         case strings:
             return "string";
+        case linked_list:
+            return "list";//"linked_list";
         case arrays:
             return "array";
         case buffers:

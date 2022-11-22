@@ -42,13 +42,13 @@ class WitReader {
         if (types.has(type.name))
             type = types[type.name];
         else {
-            type.kind = clazz;
+            type.kind = clazz;// losing generics, only in meta
             types.add(type.name, type);
         }
 //        Node &alias = node.from(3); // dataMode=false
         alias.kind = clazz;
 //        if(!type["aliases"].has(alias.name))
-        type["aliases"].add(alias);
+        type.metas()["aliases"].add(alias);
         String &name = alias.name;
         if (!types.has(name))
             types.add(name, type);// direct mapping!
@@ -119,9 +119,10 @@ class WitReader {
             field.kind = longs;
             // currently enum fields are just named numbers
             if (not globals.has(name))
-                globals.add(name, &field);
-            else
-                warn("enum entry %s already a registered symbol: "s % name + globals[name]);
+                globals.add(name, field.clone());
+            else {
+                warn("enum entry %s already a registered symbol: %o "s % name % *globals[name]);
+            }
         }
         String &name = enuma.name;
         if (!types.has(name))
@@ -232,7 +233,7 @@ class WitReader {
             } else if (n.name == "module") {
                 readModule(node);
                 break;
-            } else if (entry == "module" or entry == "world") {// we don't distinguish yet!
+            } else if (entry == "module" or entry == "world" or entry == "resource") {// we don't distinguish yet!
                 n.add(node[1]);// hack
                 readModule(n);
                 break;
