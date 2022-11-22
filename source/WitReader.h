@@ -9,29 +9,51 @@
 #include "Node.h"
 #include "Wasp.h"
 
+// https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md
+/*
+ * THIS prefix format is OUTDATED:
+ (@interface func (export "args_get")
+    (param $argv (@witx pointer (@witx pointer u8)))
+    (param $argv_buf (@witx pointer u8))
+    (result $error (expected (error $errno)))
+)
+ the current format looks like:
+
+resource request {
+    body: func() -> future<list<u8>>
+    headers: func() -> list<string>
+}
+
+// todo: map
+// option
+// expected
+// union
+// component 	all imports in the subtype must be present in the supertype with matching types;
+
+ */
 class WitReader {
+    Node &analyzeType(Node *pNode) {
+        return *pNode;
+    }
+
     Node &readType(Node node) {
         Node &alias = node[1];
-        Node &type = *node.value.node;
+        Node &type = analyzeType(node.value.node);
         if (types.has(type.name))
             type = types[type.name];
         else {
             type.kind = clazz;
-            types.add(type.name,
-                      type);
+            types.add(type.name, type);
         }
 //        Node &alias = node.from(3); // dataMode=false
         alias.kind = clazz;
 //        if(!type["aliases"].has(alias.name))
         type["aliases"].add(alias);
-        if (!types.has(alias.name))
-            types.add(alias.name,
-                      type);// direct mapping!
-        else {
-            if (types[alias.name] != type)
-                error(""s + alias.name + " already aliased to " + types[alias.name].name + "! Can't remap to " +
-                      type.name);
-        }
+        String &name = alias.name;
+        if (!types.has(name))
+            types.add(name, type);// direct mapping!
+        else if (types[name] != type)
+            error(""s + name + " already aliased to " + types[name].name + "! Can't remap to " + type.name);
 
         trace("\nwit type alias:");
         trace(type);
@@ -61,6 +83,10 @@ class WitReader {
 
     void readInterface(Node node) {
         Node &interface = node[1];
+        if (interface.name == "func") {
+            readFunc(interface);
+            return;
+        }
         for (auto field: interface) {
             Node &member = analyzeWit(field);
             member.kind = fields;
@@ -82,40 +108,48 @@ class WitReader {
 
     void readEnum(Node node) {
         if (node.length == 0)return;/* enum %bool { %false, %true, } nonsense */
-        Node enuma = node[1];
+        Node &enuma = node[1];
         enuma.kind = enums;
         int value = 0;
         for (auto field: enuma) {
+            String &name = field.name;
+            if (name.empty())
+                continue; // todo fix in valueNode
             field.value = value++;
             field.kind = longs;
             // currently enum fields are just named numbers
+            if (not globals.has(name))
+                globals.add(name, &field);
+            else
+                warn("enum entry %s already a registered symbol: "s % name + globals[name]);
         }
-        if (!types.has(enuma.name))
-            types.add(enuma.name,
-                      enuma);
-        if (types[enuma.name] != enuma)
-            error("enum already known:\n"s + enuma.serialize());
-        else warn("enum already known: "s + enuma.name);
+        String &name = enuma.name;
+        if (!types.has(name))
+            types.add(name, enuma);
+        if (types[name] != enuma)
+            error("enum already known with different fields :\n"s + enuma.serialize() + "\n≠\n" +
+                  types[name].serialize());
+        else warn("enum already known: "s + name);// ok, same layout
 
         trace("\nwit enum:");
         trace(enuma);
     }
 
     void readVariant(Node node) {
-        Node variant = node[1];
+        Node &variant = node[1];
         trace("\nwit variant:");
         trace(variant);
     }
 
 
     void readRecord(Node node) {
-        Node record = node[1];
+        Node &record = node[1];
         trace("\nwit record:");
         trace(record);
     }
 
     void readFlags(Node node) {
-        Node flags = node[1];
+        Node &flags = node[1];
         trace("\nwit flags:");
         trace(flags);
     }
@@ -141,6 +175,21 @@ class WitReader {
         trace(module);
     }
 
+    // outdated (@interface … ) format
+    void readInterfaceFunc(Node &node) {
+        Node &func = node[0][2];
+        Function &fun = *new Function();
+        if (func[0].name == "export")
+            fun.name = func[1].name;
+        Signature signature;
+        signature.functions.add(&fun);
+        for (int i = 1; i < node.length; ++i) {
+//            Node &arg = node[i];
+//            if(arg.name)
+        }
+
+    }
+
     Node &analyzeWit(Node &node) {
 
         if (node.first().name == "func")
@@ -150,7 +199,13 @@ class WitReader {
         keys = keys or (node.length == 3 and node[2].name == "interface");
         for (auto n: node) {
             if (keys)n = node;
+            if (n.kind == key)
+                n.add(n.value.node);
             String &entry = n.first().name;
+            if (entry == "@witx") {
+                node.remove(0, 0);
+                continue;
+            }
             if (entry == "static")
                 if (n.length == 0)continue;
                 else readFunc(n);
@@ -162,6 +217,8 @@ class WitReader {
                 readVariant(n);
             } else if (entry == "enum") {
                 readEnum(n);
+            } else if (entry == "@interface") {
+                readInterfaceFunc(node);
             } else if (entry == "interface") {
                 readInterface(n);
             } else if (entry == "record") {
@@ -186,7 +243,7 @@ class WitReader {
                 for (auto c: node)
                     analyzeWit(c);
             } else
-                error("UNKNOWN wit entry: "s + n.serialize());
+                error("UNKNOWN wit entry: "s + node.serialize());
             if (keys)break;
         }
         return node;
@@ -199,7 +256,9 @@ public:
                 .data_mode = false,
                 .arrow = true,
                 .dollar_names=true,
+                .at_names = true,
                 .use_tags = true,
+                .use_generics=true,
                 .kebab_case = true,
                 .space_brace = true,
         };

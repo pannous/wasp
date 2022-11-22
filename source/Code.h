@@ -463,7 +463,7 @@ enum Opcodes {
     delegate_ = 0x18,
 
     end_block = 0x0b, //11
-    br_branch = 0x0c,
+    br_branch = 0x0c,// ususally called 'br' but it interfered with c++ break autocomplete
     br_if = 0x0d,
     br_table = 0x0e,
     return_block = 0x0f,
