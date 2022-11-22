@@ -431,9 +431,6 @@ String s(chars &s) {
 //relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
 String nil_name = "nil";// ␀ ø
 String empty_name = "";
-String object_name = "{…}";
-String groups_name = "(…)";
-String patterns_name = "[…]";
 String EMPTY = String('\0');
 #else
 String nil_name;
@@ -453,11 +450,11 @@ bool String::empty() const {//this==0 in testMarkMulti!
 ////		return true;
 //#endif
 //	if (this == 0)return true;
-	if ((long) this < 1000)return true;// zero page broken object hack
-	if ((long long) data == 0x1ffffffff || (long long) data >= 0xffffffff00000000 ||
-	    ((long long) data >= 0x100000000LL and (long long) data <= 0x100100000))
-		return false;// todo: valgrind debug corruption, usually because of not enough memory
-	return length == 0 || !data || (long) data > MEMORY_SIZE || data[0] == 0 || data == object_name.data;
+    if ((long) this < 1000)return true;// zero page broken object hack
+    if ((long long) data == 0x1ffffffff || (long long) data >= 0xffffffff00000000 ||
+        ((long long) data >= 0x100000000LL and (long long) data <= 0x100100000))
+        return false;// todo: valgrind debug corruption, usually because of not enough memory
+    return length == 0 || !data || (long) data > MEMORY_SIZE || data[0] == 0;// || data == object_name.data;
 //		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
 }
 
