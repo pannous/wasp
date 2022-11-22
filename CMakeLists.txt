@@ -47,7 +47,6 @@ if (NOT WASM)
 endif () # else :
 
 
-
 if (INCLUDE_MERGER)
     message(INCLUDE_MERGER)
     ADD_DEFINITIONS(-DINCLUDE_MERGER)
@@ -61,12 +60,12 @@ if (INCLUDE_MERGER)
     #set(SOURCE_FILES ${SOURCE_FILES} FILES_MATCHING PATTERN "source/own_merge/*.cc")
     #set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer-spec.cc)
     set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binding-hash.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/feature.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/leb128.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/stream.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/utf8.cc)
-set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/ir.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/feature.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/leb128.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/stream.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/utf8.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/ir.cc)
 endif ()
 
 
@@ -163,14 +162,12 @@ if (DEBUG)
     ADD_COMPILE_FLAG(" -g3") # DEBUG
 endif ()
 
-
+if (TRACE)
+    ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+endif ()
 if (NOT TRACE)
     ADD_COMPILE_FLAG("-fno-inline")
 
-    if (NOT WASM)
-        ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
-        ADD_COMPILE_FLAG("-Wno-error=#warnings") # allow pragma warnings as message
-    endif ()
     # enable:
     #    ADD_COMPILE_FLAG("-Wall")
     ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
@@ -180,21 +177,24 @@ if (NOT TRACE)
 
     # disable:
     if (DEBUG)
-        add_compile_options(-Wall)
-        ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
-        ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
-        ADD_COMPILE_FLAG("-Wno-unused-function")
-        ADD_COMPILE_FLAG("-Wno-unused-variable")
-        ADD_COMPILE_FLAG("-Wno-unused-private-field")
-        ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
-        ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
-        ADD_COMPILE_FLAG("-Wno-writable-strings") # allow conversion from string literal to 'char *'
-        ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
-        ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
-        ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
-        ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
-        ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
+        if (NOT WASM)
+            ADD_COMPILE_FLAG("-Wno-error=#warnings") # allow pragma warnings as message
+        endif ()
+        #        add_compile_options(-Wall)
     endif ()
+    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
+    ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
+    ADD_COMPILE_FLAG("-Wno-unused-function")
+    ADD_COMPILE_FLAG("-Wno-unused-variable")
+    ADD_COMPILE_FLAG("-Wno-unused-private-field")
+    ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
+    ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
+    ADD_COMPILE_FLAG("-Wno-writable-strings") # allow conversion from string literal to 'char *'
+    ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
+    ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
+    ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
+    ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
+    ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
 endif ()
 
 if (VERBOSE)
@@ -254,22 +254,22 @@ if (NOT WASM)
     #    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
     #
     #    #    add_compile_options(-fsanitize=address) # currently crashes with AsanDie so don't use :(
-#    add_compile_options(-fno-stack-protector)
-#    add_compile_options(-fno-omit-frame-pointer)
-#    add_compile_options(-fsanitize=undefined)
-#    add_compile_options(-fsanitize-recover=address)
-#    add_compile_options(-fsanitize-recover=address)
-set(ASAN_OPTIONS=detect_stack_use_after_return=1) # unnecessary because -Wreturn-stack-address
-#add_compile_options(-fsanitize-address-use-after-return)
-#    #   add_compile & add_link NEEDS TO BE IN SYNC!
-#    #    add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
-#    add_link_options(-fno-omit-frame-pointer)
-#    add_link_options(-fsanitize-recover=address)
-#    add_link_options(-fsanitize-recover=address)
-#    add_link_options(-fsanitize=undefined)
-#    add_link_options(-rdynamic)
-#    add_link_options(-m64)
-#    add_link_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+    #    add_compile_options(-fno-stack-protector)
+    #    add_compile_options(-fno-omit-frame-pointer)
+    #    add_compile_options(-fsanitize=undefined)
+    #    add_compile_options(-fsanitize-recover=address)
+    #    add_compile_options(-fsanitize-recover=address)
+    set(ASAN_OPTIONS=detect_stack_use_after_return=1) # unnecessary because -Wreturn-stack-address
+    #add_compile_options(-fsanitize-address-use-after-return)
+    #    #   add_compile & add_link NEEDS TO BE IN SYNC!
+    #    #    add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
+    #    add_link_options(-fno-omit-frame-pointer)
+    #    add_link_options(-fsanitize-recover=address)
+    #    add_link_options(-fsanitize-recover=address)
+    #    add_link_options(-fsanitize=undefined)
+    #    add_link_options(-rdynamic)
+    #    add_link_options(-m64)
+    #    add_link_options(-D_GLIBCXX_USE_CXX11_ABI=0)
 endif ()
 
 #
