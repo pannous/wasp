@@ -1008,9 +1008,7 @@ extern String UNEXPECT_CHAR;// = "Unexpected character ";
 extern String empty_name;
 extern String nil_name;// = "nil";
 //extern String empty_name;// = "";
-extern String object_name;// = "{…}";
-extern String groups_name;// = "(…)";
-extern String patterns_name;// = "[…]";
+
 extern String EMPTY;// = String('\0');
 
 //String operator "" s(chars c, unsigned long );// wasm function signature contains illegal type

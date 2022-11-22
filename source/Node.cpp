@@ -86,94 +86,91 @@ Node NegInfinity = Node("-Infinity");
 Node NaN = Node("NaN");
 
 void initSymbols() {
-	print("initSymbols");
+    print("initSymbols");
 #ifdef WASI
-	return;
+    return;
 #elif  WASM
-	//	__wasm_call_ctors();??
-		if (True.kind == bools)
-			error("Wasm DOES init symbols!?");
+    //	__wasm_call_ctors();??
+        if (True.kind == bools)
+            error("Wasm DOES init symbols!?");
 #else
-	return; // no need outside WASM
+    return; // no need outside WASM
 #endif
-	nil_name = "nil";
-	empty_name = "";
-	object_name = "{…}";
-	groups_name = "(…)";
-	patterns_name = "[…]";
-	EMPTY = String('\0');
-	((Node) NIL) = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
+    nil_name = "nil";
+    empty_name = "";
+    EMPTY = String('\0');
+    ((Node) NIL) = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 //	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 //	Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
 //	Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
-	ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
-	True = Node("True").setType(bools).setValue(true);
-	False = Node("False").setType(bools);
-	Infinity = Node("Infinity");
-	NegInfinity = Node("-Infinity");
-	NaN = Node("NaN");
+    ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
+    True = Node("True").setType(bools).setValue(true);
+    False = Node("False").setType(bools);
+    Infinity = Node("Infinity");
+    NegInfinity = Node("-Infinity");
+    NaN = Node("NaN");
 }
 
 Node &Node::operator=(int i) {
-	value.longy = i;
-	kind = longs;
-	if (name.empty() or name.isNumber())
-		name = String(itoa(i));
-	return *this;
+    value.longy = i;
+    kind = longs;
+    if (name.empty() or name.isNumber())
+        name = String(itoa(i));
+    return *this;
 }
 
 Node &Node::operator=(chars c) {
-	value.string = new String(c);
-	kind = strings;
-	if (name == empty_name)name = *value.string;
-	return *this;
+    value.string = new String(c);
+    kind = strings;
+    if (name == empty_name)name = *value.string;
+    return *this;
 }
 
 // getter only / can't set unknown fields
 Node &Node::operator[](int i) {
-	if (i >= length) {
-		error(String("out of range index[] ") + i + " >= length " + length);
-	}
-	// todo: allow insertion of unknown indices? prefered method: not
-	return children[i];
+    if (i >= length) {
+        error(String("out of range index[] ") + i + " >= length " + length);
+    }
+    // todo: allow insertion of unknown indices? prefered method: not
+    return children[i];
 }
 
 Node &Nodec::operator[](int i) const {
-	if (i >= length) error(String("out of range index[] ") + i + " >= length " + length);
-	return children[i];
+    if (i >= length) error(String("out of range index[] ") + i + " >= length " + length);
+    return children[i];
 }
 
 Node &Node::operator[](String *s) {
-	if (!s)return *new Node();// NIL.copy();
-	return operator[](s->data);
+    if (!s)return *new Node();// NIL.copy();
+    return operator[](s->data);
 }
 
 //Node &Node::operator[](String s) {
 Node &Node::operator[](chars s) {
-	Node *found = has(s);
-	if (s[0] == '.') {
-		s++;
-		found = has(s);
-	}
+    Node *found = has(s);
+    if (s[0] == '.') {
+        s++;
+        found = has(s);
+    }
 //	if (found and found->kind==key and found->value.node)return *found->value.node;
 // ^^ DON'T DO THAT! a:{b:{c:'hi'}} => a["b"] must be c, not "hi"
-	if (found)return *found;
-	if (name == s) {// me.me == me ? really? let's see if it's a stupid idea…
-		if (kind == key and value.node)
-			return *value.node;
-		return (Node &) *this;
-	}
-	if (length == 1)
-		if (children[0].has(s))return children[0][s];
+    if (found)return *found;
+    if (name == s) {// me.me == me ? really? let's see if it's a stupid idea…
+        if (kind == key and value.node)
+            return *value.node;
+        return (Node &) *this;
+    }
+    if (length == 1)
+        if (children[0].has(s))return children[0][s];
 
-	Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
-	neu.kind = key;//nils; // until ref is set! but neu never knows when its set!! :(
-	neu.parent = (Node *) this;
-	neu.length = 0;
-	neu.children = 0;
-	if (neu.value.node)
-		return *neu.value.node;
-	else return neu;
+    Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
+    neu.kind = key;//nils; // until ref is set! but neu never knows when its set!! :(
+    neu.parent = (Node *) this;
+    neu.length = 0;
+    neu.children = 0;
+    if (neu.value.node)
+        return *neu.value.node;
+    else return neu;
 }
 
 //Node &Nodec::operator[](String s) const {
@@ -184,37 +181,37 @@ Node &Node::operator[](chars s) {
 //for (Node &child : liste) { // DOES effect liste
 //for (Node child : liste) { // Does NOT effect liste
 Node *Node::begin() const {
-	if (length <= 0)return 0;
-	return children;
+    if (length <= 0)return 0;
+    return children;
 }
 
 Node *Node::end() const {
-	if (children != 0 and length == 0)return children + 1;
-	return children + length;
+    if (children != 0 and length == 0)return children + 1;
+    return children + length;
 }
 
 // non-modifying
 Node &Node::merge(Node &other) {
-	if (kind == objects or kind == groups)
-		if (length == 0)return other;// ()+x == x
-	if (other.isNil()) {
-		return *this;
-	}
-	Node &neu = *clone();// non-modifying
-	if (other.length == 0) {
-		neu.add(other);
-	}// else
-	for (Node &item: other) {
-		neu.add(item);
-	}
-	return neu;
+    if (kind == objects or kind == groups)
+        if (length == 0)return other;// ()+x == x
+    if (other.isNil()) {
+        return *this;
+    }
+    Node &neu = *clone();// non-modifying
+    if (other.length == 0) {
+        neu.add(other);
+    }// else
+    for (Node &item: other) {
+        neu.add(item);
+    }
+    return neu;
 }// non-modifying
 Node &Node::merge(Node *other) {
-	return merge(*other);
+    return merge(*other);
 }
 
 Node &Node::operator[](char c) {
-	return (*this)[String(c)];
+    return (*this)[String(c)];
 }
 
 int capacity = 100;// TODO !!! lol lists>100 elements;)
@@ -226,12 +223,12 @@ int lastChild = 1;
 
 
 bool typesCompatible(Node &one, Node &other) {
-	if (one.kind == other.kind)return true;
-	if (one.kind == objects or one.kind == groups or one.kind == patterns or one.kind == expression)
-		return other.kind == objects or other.kind == groups or other.kind == patterns or other.kind == expression or
-		       other.kind == unknown;
-	if (one.kind != key and other.kind != key) return false;
-	return false;
+    if (one.kind == other.kind)return true;
+    if (one.kind == objects or one.kind == groups or one.kind == patterns or one.kind == expression)
+        return other.kind == objects or other.kind == groups or other.kind == patterns or other.kind == expression or
+               other.kind == unknown;
+    if (one.kind != key and other.kind != key) return false;
+    return false;
 }
 
 
@@ -240,39 +237,39 @@ Node &Node::set(String string, Node *node) {
 //	if (!children)children = static_cast<Node *>(alloc(capacity));
 //	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
 
-	if (!children) {
-		children = (Node *) calloc(sizeof(Node), capacity);
-		if (name == nil_name)name = object_name;
-	}
-	if (length >= capacity / 2)todo("GROW children");
+    if (!children) {
+        children = (Node *) calloc(sizeof(Node), capacity);
+        if (name == nil_name)name = "ø";
+    }
+    if (length >= capacity / 2)todo("GROW children");
 //	children = static_cast<Node *>(alloc(1000));// copy old
-	Node &entry = children[length];
-	if (&entry == &NIL)
-		error("IMPOSSIBLE");
-	if (length > 0) {
+    Node &entry = children[length];
+    if (&entry == &NIL)
+        error("IMPOSSIBLE");
+    if (length > 0) {
 //		Node &current = children[length - 1];
 //		current.next = &entry;// WE NEED TRIPLES cause objects can occur in many lists
 //		entry.previous=current;
-	}
-	entry.parent = this;
-	entry.name = string;
-	if (!node) {
+    }
+    entry.parent = this;
+    entry.name = string;
+    if (!node) {
 //		entry.value.node=&entry;// HACK to set reference to self!
-		entry.kind = key;
-		entry.value.node = &children[capacity - length - 1];//  HACK to get key and value node dummy from children
+        entry.kind = key;
+        entry.value.node = &children[capacity - length - 1];//  HACK to get key and value node dummy from children
 //		 todo: reduce capacity per node
-		entry.value.node->name = string;
-		entry.value.node->kind = Kind::unknown;
-		entry.value.node->parent = &entry;
+        entry.value.node->name = string;
+        entry.value.node->kind = Kind::unknown;
+        entry.value.node->parent = &entry;
 //		entry.value.node=Node();// dangling ref to be set
-	} else {
-		entry = *node;// copy by value OK
-		entry.parent = this;
-	}
-	if (length > 0)
-		children[length - 1].next = &entry;
-	length++;
-	return entry;
+    } else {
+        entry = *node;// copy by value OK
+        entry.parent = this;
+    }
+    if (length > 0)
+        children[length - 1].next = &entry;
+    length++;
+    return entry;
 }
 
 //Node::Node(chars string) {
@@ -284,76 +281,76 @@ bool Node::operator==(String other) {
 //	return (*this == other.data); // todo unify/simplify
 //	if (this == 0)return other.empty();
 //	if (kind == objects or kind == key)objects={…} NOT have value!  return *value.node == other or value.string == other;
-	if (kind == key) return other == name or (value.node and *value.node == other);// todo: a=3 a=="a" ??? really?
-	if (kind == longs)
-		return other == itoa(value.longy);// "3" == 3   php style ARE YOU SURE? ;) only if otherwise consistent!
-	if (kind == reals) return other == ftoa(value.real);// parseFloat(other)==value.real
+    if (kind == key) return other == name or (value.node and *value.node == other);// todo: a=3 a=="a" ??? really?
+    if (kind == longs)
+        return other == itoa(value.longy);// "3" == 3   php style ARE YOU SURE? ;) only if otherwise consistent!
+    if (kind == reals) return other == ftoa(value.real);// parseFloat(other)==value.real
 
-	if (kind == reference) return other == name or (value.node and *value.node == other);
-	if (kind == unknown) return other == name;
-	if (kind == operators) return other == name;
-	if (kind == strings)
-		return other == value.string;
-	return false;
+    if (kind == reference) return other == name or (value.node and *value.node == other);
+    if (kind == unknown) return other == name;
+    if (kind == operators) return other == name;
+    if (kind == strings)
+        return other == value.string;
+    return false;
 }
 
 bool Node::operator==(Node *other) {
-	if (other == 0)return isNil();
-	return *this == *other;
+    if (other == 0)return isNil();
+    return *this == *other;
 }
 
 bool Node::operator==(bool other) {
-	return other == operator bool();
+    return other == operator bool();
 }
 
 bool Node::operator==(char other) {
-	return kind == strings and *value.string == String(other);
+    return kind == strings and *value.string == String(other);
 }
 
 bool Node::operator==(chars other) {
-	if (kind == strings and value.data)
-		if (eq(value.string->data, other, value.string->shared_reference ? value.string->length : -1)) return true;
-	if (eq(name.data, other, name.shared_reference ? name.length : -1))return true;// todo really name==other?
-	if (kind == key and value.node and *value.node == other)return true;
-	return false;
+    if (kind == strings and value.data)
+        if (eq(value.string->data, other, value.string->shared_reference ? value.string->length : -1)) return true;
+    if (eq(name.data, other, name.shared_reference ? name.length : -1))return true;// todo really name==other?
+    if (kind == key and value.node and *value.node == other)return true;
+    return false;
 }
 
 bool Node::operator==(int other) {
 //	if (this == 0)return false;// HOW?
-	if ((kind == longs and value.longy == other) or (kind == reals and value.real == other))
-		return true;
-	if (kind == bools)return other == value.longy;
-	if (kind == key and value.node and *value.node == other)return true;
-	if (kind == strings and atoi0(value.string->data) == other)return true;
-	if (atoi0(name) == other)return true;
-	if (length == 1 and (kind == objects or kind == groups or kind == patterns))
-		return last() == other;
+    if ((kind == longs and value.longy == other) or (kind == reals and value.real == other))
+        return true;
+    if (kind == bools)return other == value.longy;
+    if (kind == key and value.node and *value.node == other)return true;
+    if (kind == strings and atoi0(value.string->data) == other)return true;
+    if (atoi0(name) == other)return true;
+    if (length == 1 and (kind == objects or kind == groups or kind == patterns))
+        return last() == other;
 //	if (type == objects)return value.node->numbere()==other;// WTF
-	return false;
+    return false;
 }
 
 bool Node::operator==(long other) {
-	if (kind == key and value.node and value.node->value.longy == other)return true;
-	return (kind == longs and value.longy == other) or (kind == reals and value.real == other) or
-	       (kind == bools and value.longy == other);
+    if (kind == key and value.node and value.node->value.longy == other)return true;
+    return (kind == longs and value.longy == other) or (kind == reals and value.real == other) or
+           (kind == bools and value.longy == other);
 }
 
 bool Node::operator==(double other) {
-	if (kind == key and value.node and value.node->value.real == other)return true;
-	return (kind == reals and similar(value.real, other)) or
-	       //			(kind == reals and (float )value.real == (float)other) or // lost precision
-	       (kind == longs and value.longy == other) or
-	       (kind == bools and value.longy == other);
+    if (kind == key and value.node and value.node->value.real == other)return true;
+    return (kind == reals and similar(value.real, other)) or
+           //			(kind == reals and (float )value.real == (float)other) or // lost precision
+           (kind == longs and value.longy == other) or
+           (kind == bools and value.longy == other);
 }
 
 bool Node::operator==(float other) {
-	if (kind == key and value.node and value.node->value.real == other)return true;
-	return (kind == reals and value.real == other) or
-	       (kind == longs and value.longy == other);
+    if (kind == key and value.node and value.node->value.real == other)return true;
+    return (kind == reals and value.real == other) or
+           (kind == longs and value.longy == other);
 }
 
 bool Node::operator==(const Node &other) {
-	return *this == (Node) other;
+    return *this == (Node) other;
 }
 
 //bool Node::operator===(const Node &other) {
@@ -361,107 +358,107 @@ bool Node::operator==(const Node &other) {
 //}
 // are {1,2} and (1,2) the same here? objects, params, groups, blocks
 bool Node::operator==(Node &other) {
-	if (kind == clazz or other.kind == clazz)
-		return name.lower() == other.name.lower();
+    if (kind == clazz or other.kind == clazz)
+        return name.lower() == other.name.lower();
 //	other = other.flat();// todo this.flat() too!
-	if (kind == errors)return other.kind == errors;
-	if (other.kind == errors)return kind == errors;
+    if (kind == errors)return other.kind == errors;
+    if (other.kind == errors)return kind == errors;
 
-	if (this == &other)return true;// same pointer!
+    if (this == &other)return true;// same pointer!
 
-	if (kind == longs and other.kind == longs)
-		return value.longy == other.value.longy;
-	if (kind == longs and other.kind == reals)
-		return value.longy == other.value.real;
-	if (kind == reals and other.kind == reals)
-		return value.real == other.value.real;
-	if (kind == reals and other.kind == longs)
-		return value.real == other.value.longy;
-	if (kind == bools or other.kind == bools) // 1 == true
-		return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
+    if (kind == longs and other.kind == longs)
+        return value.longy == other.value.longy;
+    if (kind == longs and other.kind == reals)
+        return value.longy == other.value.real;
+    if (kind == reals and other.kind == reals)
+        return value.real == other.value.real;
+    if (kind == reals and other.kind == longs)
+        return value.real == other.value.longy;
+    if (kind == bools or other.kind == bools) // 1 == true
+        return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
 //	if (kind.type == int_array and other.kind.type == int_array)
 //		return value.real == other.value.longy;
 
 //	auto a1 = isNil();
 //	auto a2 = other.isNil();
-	if (isNil() and other.isNil()) {
-		trace("NILS!");
-		return true;
-	}
+    if (isNil() and other.isNil()) {
+        trace("NILS!");
+        return true;
+    }
 
-	if (kind != strings and other.kind != strings and isEmpty() and other.isEmpty())
-		// todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
-		return true;
+    if (kind != strings and other.kind != strings and isEmpty() and other.isEmpty())
+        // todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
+        return true;
 
-	if (name == NIL.name.data or name == False.name.data or name == "")
-		if (other.name == NIL.name.data or other.name == False.name.data or other.name == "") {
-			trace("NILS!");
-			return true;// TODO: SHOULD already BE SAME by engine!
-		}
+    if (name == NIL.name.data or name == False.name.data or name == "")
+        if (other.name == NIL.name.data or other.name == False.name.data or other.name == "") {
+            trace("NILS!");
+            return true;// TODO: SHOULD already BE SAME by engine!
+        }
 
-	if (kind != operators and value.node == &other)
-		return true;// todo when is same value EVER enough??
-	if (kind != operators and this == other.value.node)
-		return true;// reference ~= its value
-	if (kind == key and value.node and *value.node == other)return true;// todo again?
-	if (kind == nils and other.kind == longs)return other.value.longy == 0;
-	if (other.kind == nils and kind == longs)return value.longy == 0;
+    if (kind != operators and value.node == &other)
+        return true;// todo when is same value EVER enough??
+    if (kind != operators and this == other.value.node)
+        return true;// reference ~= its value
+    if (kind == key and value.node and *value.node == other)return true;// todo again?
+    if (kind == nils and other.kind == longs)return other.value.longy == 0;
+    if (other.kind == nils and kind == longs)return value.longy == 0;
 
-	if (other.kind == unknown and name == other.name)
-		return true; // weak criterum for dangling unknowns!! TODO ok??
+    if (other.kind == unknown and name == other.name)
+        return true; // weak criterum for dangling unknowns!! TODO ok??
 
-	if ((kind == groups or kind == objects) and length == 1 and children[0] == other)
-		return true; // (x)==x
+    if ((kind == groups or kind == objects) and length == 1 and children[0] == other)
+        return true; // (x)==x
 
-	/*Node flattened=this->flat();// too expensive? but we want (x)=x ! other way: if kind==group and length==1
-	if(flattened.hash()!=hash() and flattened==other)
-		return true;*/
+    /*Node flattened=this->flat();// too expensive? but we want (x)=x ! other way: if kind==group and length==1
+    if(flattened.hash()!=hash() and flattened==other)
+        return true;*/
 
-	if (not typesCompatible(*this, other))
-		return false;
+    if (not typesCompatible(*this, other))
+        return false;
 
 //	CompileError: WebAssembly.Module(): Compiling function #53:"Node::operator==(Node&)" failed: expected 1 elements on the stack for fallthru to @3, found 0 @+5465
 //	or (other != NIL and other != False) or
 
-	if (kind == strings) {
-		::print(name);
-		::print(value.string);
-		::print(value.string);
-		::print(other.value.string);
-		return *value.string == *other.value.string or *value.string == other.name or
-		       name == other.value.string;// !? match by name??
-	}
+    if (kind == strings) {
+        ::print(name);
+        ::print(value.string);
+        ::print(value.string);
+        ::print(other.value.string);
+        return *value.string == *other.value.string or *value.string == other.name or
+               name == other.value.string;// !? match by name??
+    }
 
 
-	if (length != other.length)
-		return false;
+    if (length != other.length)
+        return false;
 
 
-	// if ... compare fields independent of type object {}, group [] ()
-	for (int i = 0; i < length; i++) {
-		Node &field = children[i];
-		field = field.flat();// [(1),2,3] == [1,2,3]
-		Node val = other.children[i];
-		if (field != val and !field.name.empty()) {
-			auto otherField = other.has(field.name);
-			if (!otherField)return false;
-			else val = *otherField;
-		}
-		if (field != val) {
-			if ((field.kind != key and field.kind != nils) or !field.value.node) {
-				trace("CHILD MISMATCH");
-				return false;
-			}
-			Node deep = *field.value.node;
-			if (deep != val) {
-				trace("CHILD MISMATCH");
-				return false;
-			}
-		}
-	}
-	if (name == other.name)
-		return true;
-	return false;
+    // if ... compare fields independent of type object {}, group [] ()
+    for (int i = 0; i < length; i++) {
+        Node &field = children[i];
+        field = field.flat();// [(1),2,3] == [1,2,3]
+        Node val = other.children[i];
+        if (field != val and !field.name.empty()) {
+            auto otherField = other.has(field.name);
+            if (!otherField)return false;
+            else val = *otherField;
+        }
+        if (field != val) {
+            if ((field.kind != key and field.kind != nils) or !field.value.node) {
+                trace("CHILD MISMATCH");
+                return false;
+            }
+            Node deep = *field.value.node;
+            if (deep != val) {
+                trace("CHILD MISMATCH");
+                return false;
+            }
+        }
+    }
+    if (name == other.name)
+        return true;
+    return false;
 }
 
 //bool Node::operator!=(Node &other) {
@@ -470,85 +467,85 @@ bool Node::operator==(Node &other) {
 //use of overloaded operator '!=' is ambiguous
 //expected 1 elements on the stack for fallthru  BAD somehow!?
 bool Node::operator!=(Node other) {
-	return not(*this == other);
+    return not(*this == other);
 }
 
 bool Node::operator>(Node other) {
-	if (kind == strings and other.kind == strings) {
-		return value.string > other.value.string;
-	}
-	if (kind == longs) {
-		if (other.kind == longs)return value.longy > other.value.longy;
-		if (other.kind == reals)return value.longy > other.value.real;
-	}
-	if (kind == reals) {
-		if (other.kind == longs)return value.real > other.value.longy;
-		if (other.kind == reals)return value.real > other.value.real;
-	}
-	if (other.kind == longs) {
-		if (kind == longs)return value.longy > other.value.longy;
-		if (kind == reals)return value.real > other.value.longy;
-		if (kind == objects or kind == groups or kind == patterns)
-			return length > other.value.longy;
-	}
-	if (other.kind == objects or other.kind == groups or other.kind == patterns) {
-		if (kind == longs)return value.longy > other.length;
-		if (kind == objects or kind == groups or kind == patterns)
-			return length > other.value.longy;
-	}
-	if (!has("compare") and !has("greater") and !has("less"))
-		error("Missing compare functions for objects %s > %s ?"s % name % other);
-	return false;
+    if (kind == strings and other.kind == strings) {
+        return value.string > other.value.string;
+    }
+    if (kind == longs) {
+        if (other.kind == longs)return value.longy > other.value.longy;
+        if (other.kind == reals)return value.longy > other.value.real;
+    }
+    if (kind == reals) {
+        if (other.kind == longs)return value.real > other.value.longy;
+        if (other.kind == reals)return value.real > other.value.real;
+    }
+    if (other.kind == longs) {
+        if (kind == longs)return value.longy > other.value.longy;
+        if (kind == reals)return value.real > other.value.longy;
+        if (kind == objects or kind == groups or kind == patterns)
+            return length > other.value.longy;
+    }
+    if (other.kind == objects or other.kind == groups or other.kind == patterns) {
+        if (kind == longs)return value.longy > other.length;
+        if (kind == objects or kind == groups or kind == patterns)
+            return length > other.value.longy;
+    }
+    if (!has("compare") and !has("greater") and !has("less"))
+        error("Missing compare functions for objects %s > %s ?"s % name % other);
+    return false;
 }
 
 Node Node::operator+(Node other) {
-	if (kind == strings and other.kind == longs)
-		return Node(value.string + other.value.longy);
-	if (kind == strings and other.kind == reals)
-		return Node(*value.string + other.value.real);
-	if (kind == strings and other.kind == strings)
-		return Node(*value.string + other.value.string);
-	if (kind == longs and other.kind == longs)
-		return Node(value.longy + other.value.longy);
-	if (kind == reals and other.kind == longs)
-		return Node(value.real + other.value.longy);
-	if (kind == longs and other.kind == reals)
-		return Node(value.longy + other.value.real);
-	if (kind == reals and other.kind == reals)
-		return Node(value.real + other.value.real);
-	if (kind == longs and other.kind == strings)
-		return Node(String(value.longy) + other.value.string);
+    if (kind == strings and other.kind == longs)
+        return Node(value.string + other.value.longy);
+    if (kind == strings and other.kind == reals)
+        return Node(*value.string + other.value.real);
+    if (kind == strings and other.kind == strings)
+        return Node(*value.string + other.value.string);
+    if (kind == longs and other.kind == longs)
+        return Node(value.longy + other.value.longy);
+    if (kind == reals and other.kind == longs)
+        return Node(value.real + other.value.longy);
+    if (kind == longs and other.kind == reals)
+        return Node(value.longy + other.value.real);
+    if (kind == reals and other.kind == reals)
+        return Node(value.real + other.value.real);
+    if (kind == longs and other.kind == strings)
+        return Node(String(value.longy) + other.value.string);
 //	if(type==floats and other.type==strings)
 //		return Node(value.real + other.value.string);
-	if (kind == unknown or kind == objects or kind == groups /*or kind == patterns*/)
-		return merge(other);
-	if (other.kind == objects)
-		return other.insert(*this, 0);
-	error(str("Operator + not supported for node types %s and %s") % typeName(kind) % typeName(other.kind));
-	return ERROR;
+    if (kind == unknown or kind == objects or kind == groups /*or kind == patterns*/)
+        return merge(other);
+    if (other.kind == objects)
+        return other.insert(*this, 0);
+    error(str("Operator + not supported for node types %s and %s") % typeName(kind) % typeName(other.kind));
+    return ERROR;
 };
 
 void Node::remove(Node *node) {
-	if (!children)return;// directly from pointer
-	if (length == 0)return;
-	if (node < children or node > children + length)return;
-	for (long j = node - children; j < length - 1; j++) {
-		children[j] = children[j + 1];
-	}
-	children[length - 1] = 0;
-	length--;
+    if (!children)return;// directly from pointer
+    if (length == 0)return;
+    if (node < children or node > children + length)return;
+    for (long j = node - children; j < length - 1; j++) {
+        children[j] = children[j + 1];
+    }
+    children[length - 1] = 0;
+    length--;
 }
 
 void Node::remove(Node &node) {
-	if (!children)return;
-	for (int i = 0; i < length; i++) {
-		if (children[i] == node) {
-			for (int j = i; j < length; j++) {
-				children[j] = children[j + 1];
-			}
-			length--;
-		}
-	}
+    if (!children)return;
+    for (int i = 0; i < length; i++) {
+        if (children[i] == node) {
+            for (int j = i; j < length; j++) {
+                children[j] = children[j + 1];
+            }
+            length--;
+        }
+    }
 }
 
 Node &Node::add(const Node *node) {
@@ -578,11 +575,11 @@ Node &Node::add(const Node *node) {
 
 Node &Node::add(const Node &node) {
 //	if (&node == 0)return *this;
-	return add(&node);
+    return add(&node);
 }
 
 void Node::addSmart(Node node) {// merge?
-	addSmart(&node, false, true);
+    addSmart(&node, false, true);
 }
 
 void Node::addSmart(Node *node, bool flatten, bool clutch) { // flatten AFTER construction!
@@ -599,56 +596,56 @@ void Node::addSmart(Node *node, bool flatten, bool clutch) { // flatten AFTER co
     }
     if (clutch) {
         // a{x:1} != a {x:1} but {x:1} becomes child of a
-		// a{x:1} == a:{x:1} ?
-		Node &letzt = last();
-		// do NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
-		//	only prefixOperators
-		if (letzt.kind == functor and letzt.length == 0) {
-			letzt.add(node);
-			return;
-		}
-		// f (x) == f(x) ~= f x
-		if (letzt.kind == reference or letzt.kind == key or
-		    letzt.name == "while" /*todo: functors, but not operators?*/)
-			letzt.addSmart(node);
-		else if (name.empty() and kind != expression and kind != groups)// last().kind==reference)
-			letzt.addSmart(node);
-		else
-			add(node);// don't loop to addSmart lol
-		return;
-	}
-	if (node->isNil() and ::empty(node->name) and node->kind != longs)
-		return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
-	node->parent = this;
-	if (node->length == 1 and flatten and ::empty(node->name))
-		node = &node->last();
+        // a{x:1} == a:{x:1} ?
+        Node &letzt = last();
+        // do NOT use letzt for node.kind==patterns: {a:1 b:2}[a]
+        //	only prefixOperators
+        if (letzt.kind == functor and letzt.length == 0) {
+            letzt.add(node);
+            return;
+        }
+        // f (x) == f(x) ~= f x
+        if (letzt.kind == reference or letzt.kind == key or
+            letzt.name == "while" /*todo: functors, but not operators?*/)
+            letzt.addSmart(node);
+        else if (name.empty() and kind != expression and kind != groups)// last().kind==reference)
+            letzt.addSmart(node);
+        else
+            add(node);// don't loop to addSmart lol
+        return;
+    }
+    if (node->isNil() and ::empty(node->name) and node->kind != longs)
+        return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
+    node->parent = this;
+    if (node->length == 1 and flatten and ::empty(node->name))
+        node = &node->last();
 
-	//  or node->kind == patterns  DON'T flatten patterns!
-	if (not children and (node->kind == objects or node->kind == groups) and
-	    ::empty(node->name)) {
-		children = node->children;
-		length = node->length;
-		for (Node &child: *this)
-			child.parent = this;
-		if (kind != groups) kind = node->kind; // todo: keep kind if … ?
-	} else {
-		add(node);
-	}
+    //  or node->kind == patterns  DON'T flatten patterns!
+    if (not children and (node->kind == objects or node->kind == groups) and
+        ::empty(node->name)) {
+        children = node->children;
+        length = node->length;
+        for (Node &child: *this)
+            child.parent = this;
+        if (kind != groups) kind = node->kind; // todo: keep kind if … ?
+    } else {
+        add(node);
+    }
 }
 
 //non-modifying
 Node Node::insert(Node &node, int at) {
-	if (length == 0)return node;//  todo: rescue value,name?
-	while (at < 0)at = length + at;
-	if (at >= length - 1) {
-		Node *clon = clone();
-		clon->add(node);
-		return *clon;
-	}
-	if (at == 0)return node + *this;
-	if (at > 0)
-		error("Not implemented: insert at offset");
-	return ERROR;
+    if (length == 0)return node;//  todo: rescue value,name?
+    while (at < 0)at = length + at;
+    if (at >= length - 1) {
+        Node *clon = clone();
+        clon->add(node);
+        return *clon;
+    }
+    if (at == 0)return node + *this;
+    if (at > 0)
+        error("Not implemented: insert at offset");
+    return ERROR;
 }
 //
 //void Node::add(Node &node) {
@@ -702,39 +699,39 @@ co_yield 	yield-expression (C++20)
 
 // Node* OK? else Node&
 Node *Node::has(String s, bool searchMeta, short searchDepth) const {
-	if (searchDepth < 0)return 0;
-	if ((kind == key) and value.node and s == value.node->name)
-		return value.node;
-	for (int i = 0; i < length; i++) {
-		Node &entry = children[i];
-		if (s == entry.name) {
-			if ((entry.kind == key or entry.kind == nils) and entry.value.node)
-				return entry.value.node;
-			else // danger overwrite a["b"]=c => a["b"].name == "c":
-				return &entry;
-		}
+    if (searchDepth < 0)return 0;
+    if ((kind == key) and value.node and s == value.node->name)
+        return value.node;
+    for (int i = 0; i < length; i++) {
+        Node &entry = children[i];
+        if (s == entry.name) {
+            if ((entry.kind == key or entry.kind == nils) and entry.value.node)
+                return entry.value.node;
+            else // danger overwrite a["b"]=c => a["b"].name == "c":
+                return &entry;
+        }
 
-	}
-	if (s == name.data)
-		return const_cast<Node *>(this);
+    }
+    if (s == name.data)
+        return const_cast<Node *>(this);
 //	if (meta and searchMeta and searchDepth == 0) {// todo: dont search leaves when searchDepth-->0
 //		Node *found = meta->has(s);
 //		if (found)return found;
 //	}
 
 
-	if (searchDepth > 0) {
-		for (int i = 0; i < length; i++) {
-			Node *found = children[i].has(s, searchMeta, searchDepth--);
-			if (found)return found;
-		}
-		if (kind == key)return value.node->has(s, searchMeta, searchDepth--);
-	}
-	return 0;// NIL
+    if (searchDepth > 0) {
+        for (int i = 0; i < length; i++) {
+            Node *found = children[i].has(s, searchMeta, searchDepth--);
+            if (found)return found;
+        }
+        if (kind == key)return value.node->has(s, searchMeta, searchDepth--);
+    }
+    return 0;// NIL
 }
 
 Node &Node::last() {
-	return length > 0 ? children[length - 1] : *this;
+    return length > 0 ? children[length - 1] : *this;
 }
 
 //bool Node::empty() {// nil!
@@ -742,20 +739,20 @@ Node &Node::last() {
 //}
 
 bool Node::isEmpty() {// not required here: name.empty()
-	return (length == 0 and value.longy == 0) or isNil();
+    return (length == 0 and value.longy == 0) or isNil();
 }
 
 // todo : [x y]+[z] = [x y z] BUT z isNil() ??  Node("z").kind==unknown ! empty referenceIndices ARE NIL OR NOT?? x==nil?
 bool Node::isNil() const { // required here: name.empty()
-	return this == &NIL or kind == nils or
-	       ((kind == key or kind == unknown or name.empty()) and length == 0 and value.data == nullptr);
+    return this == &NIL or kind == nils or
+           ((kind == key or kind == unknown or name.empty()) and length == 0 and value.data == nullptr);
 }
 
 // todo hide : use serialize() for true deep walk
 String Node::serializeValue(bool deep) const {
-	if (!this)return "";
+    if (!this)return "";
 //	String wasp = "";
-	Value val = value;
+    Value val = value;
 //	switch (kind.type) {
 //		case int_array:
 //			wasp = "[";
@@ -767,63 +764,77 @@ String Node::serializeValue(bool deep) const {
 //		default:
 //			;// pass through
 //	}
-	switch (kind) {
+
+    switch (kind) {
         case 0:
             return "ø";
         case strings:
             return val.data ? "\""s + val.string + "\"" : "";
 //		case ints:
-		case longs:
-			return itoa(val.longy);
-		case reals:
-			return ftoa(val.real);
-		case nils:
-			return "ø";
-		case objects:
-			return deep ? "" : object_name;// useful for debugging, but later return "" for
-		case groups:
-			return deep ? "" : groups_name;
-		case patterns:
-			return deep ? "" : patterns_name;
-		case key:
-			if (deep)
-				return val.node ? val.node->serialize() : "";// val.node->serialize();
-			else
-				return val.node ? val.node->name : "";// val.node->serialize();
+        case fields:
+            return val.node->name;
+        case errors:
+            return val.node ? val.node->name : "<ERROR>";
+        case codepoints:
+            return String((codepoint) val.longy);
+        case longs:
+            return itoa(val.longy);
+        case reals:
+            return ftoa(val.real);
+        case nils:
+            return "ø";
+        case generics:
+            return deep ? "" : "<"s + val.node->name + ">";// "<…>";
+        case structs:
+        case records:
+        case clazz:
+        case variants:
+        case enums:
+//            return ""s + name + "{…" + "}";// todo fields
+        case objects:
+            return deep ? "" : "{…}";// useful for debugging, but later return "" for
+        case groups:
+            return deep ? "" : "(…)";
+        case patterns:
+            return deep ? "" : "[…]";
+        case key:
+            if (deep)
+                return val.node ? val.node->serialize() : "";// val.node->serialize();
+            else
+                return val.node ? val.node->name : "";// val.node->serialize();
 
-		case reference:
-			return val.data ? val.node->name : "ø";
-		case symbol:
-			return *val.string;
-		case bools:
-			return val.longy > 0 ? "true" : "false";
-		case arrays:
-			return "[…]";//val.data type?
-		case buffers:
-			return "int[]";//val.data lenght?
-		case call:
-			return "!";//"{…}";
-		case operators:
-			return name;
-		case functor:
-			return name;
-
-		case declaration:
-		case expression:
-		case assignment:
-		case unknown:
-			return "?";
-		default:
-			breakpoint_helper
-			error("MISSING CASE for "s + kind + " " + typeName(kind));
-			return "MISSING CASE";
-	}
+        case reference:
+            return val.data ? val.node->name : "ø";
+        case symbol:
+            return *val.string;
+        case bools:
+            return val.longy > 0 ? "true" : "false";
+        case arrays:
+            return "[…]";//val.data type?
+        case buffers:
+            return "int[]";//val.data lenght?
+        case call:
+            return "!";//"{…}";
+        case operators:
+            return name;
+        case functor:
+            return name;
+        case declaration:
+        case expression:
+        case assignment:
+        case unknown:
+            return "?";
+//        default:
+//            breakpoint_helper
+//            return "MISSING CASE";
+    }
+    error("MISSING CASE for "s + kind + " " + typeName(kind));
 }
 
 // todo: (x)=>x when root
 String Node::serialize() const {
-	if (not this)return "";
-	String wasp = "";
+    if (not this)return "";
+    String wasp = "";
     if (not use_polish_notation or length == 0) {
         if (not name.empty()) wasp += name;
         String serializedValue = serializeValue();
@@ -835,17 +846,17 @@ String Node::serialize() const {
         if (kind == longs and name and (name.empty() or name == itoa(value.longy)))
             return serializedValue;// not "3":3
         if (kind == reals)// and name and (name.empty() or name==itoa(value.longy)))
-			return serializedValue;// not "3":3.14
-		if (serializedValue and value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
-		    !eq(serializedValue, "?")) {
-			if (not name.empty())
-				wasp += ":";
-			wasp += serializedValue;
-			wasp += " ";
-		}
-	}
-	if (length >= 0) {
-		if (kind == expression and not name.empty())wasp += ":";
+            return serializedValue;// not "3":3.14
+        if (serializedValue and value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
+            !eq(serializedValue, "?")) {
+            if (not name.empty())
+                wasp += ":";
+            wasp += serializedValue;
+            wasp += " ";
+        }
+    }
+    if (length >= 0) {
+        if (kind == expression and not name.empty())wasp += ":";
         if ((length > 1 or kind == patterns or kind == objects)) {
             // skip single element braces: a == (a)
             if (kind == groups and (not separator or separator == ' '))
@@ -856,224 +867,224 @@ String Node::serialize() const {
                 wasp += "(";// default
         }
         if (use_polish_notation and not name.empty()) wasp += name;
-		int i = 0;
-		if (length > 0)
-			if (kind == operators) wasp += " ";
-			for (Node &node: *this) {
-                if (length == 0)
-                    break;// how on earth is that possible??
-				if (i++ > 0) wasp += separator ? String(separator) : " ";
-				wasp += node.serialize();
-			}
-		if (length > 1 or kind == patterns or kind == objects) {
-			if (kind == groups and (not separator or separator == ' '))wasp += ")";
-			else if (kind == objects)wasp += "}";
-			else if (kind == patterns)wasp += "]";
-			else if (length > 0 and not separator) wasp += ")";// default
-		}
-		if (eq(name, "‖")) wasp += name;
-	}
-	return wasp;
+        int i = 0;
+        if (length > 0)
+            if (kind == operators) wasp += " ";
+        for (Node &node: *this) {
+            if (length == 0)
+                break;// how on earth is that possible??
+            if (i++ > 0) wasp += separator ? String(separator) : " ";
+            wasp += node.serialize();
+        }
+        if (length > 1 or kind == patterns or kind == objects) {
+            if (kind == groups and (not separator or separator == ' '))wasp += ")";
+            else if (kind == objects)wasp += "}";
+            else if (kind == patterns)wasp += "]";
+            else if (length > 0 and not separator) wasp += ")";// default
+        }
+        if (eq(name, "‖")) wasp += name;
+    }
+    return wasp;
 //	return name.empty()? string() : name;
 //	return empty(node.name)? node.string() : node.name;
 }
 
 chars Node::toString() {
-	return serialize();
+    return serialize();
 }
 
 chars Node::toString() const {
-	return serialize();
+    return serialize();
 }
 
 String toString(Node &node) {
-	return node.serialize();
+    return node.serialize();
 }
 
 
 Node &Node::setValue(Value v) {
-	value = v;
-	return *this;
+    value = v;
+    return *this;
 }
 
 
 // rest of node children split
 Node &Node::from(Node &match) {
-	return from(match.name);
+    return from(match.name);
 }
 
 
 Node &Node::from(int pos) {// inclusive
-	Node &lhs = *new Node();
-	for (int i = pos; i < length; i++) {
-		lhs.add(children[i]);
-	}
-	return lhs.flat();
+    Node &lhs = *new Node();
+    for (int i = pos; i < length; i++) {
+        lhs.add(children[i]);
+    }
+    return lhs.flat();
 }
 
 Node &Node::from(String match) {
-	Node lhs = *new Node();
-	bool start = false;
-	for (Node child: *this) {
-		if (start)lhs.add(&child);
-		if (child.name == match)start = true;
-	}
-	if (lhs.length == 0)
-		for (Node child: *this)
-			if (child.name == match)return child.values();
-	if (kind != call and kind != declaration)
-		lhs.kind = kind;
-	return lhs.flat();
+    Node lhs = *new Node();
+    bool start = false;
+    for (Node child: *this) {
+        if (start)lhs.add(&child);
+        if (child.name == match)start = true;
+    }
+    if (lhs.length == 0)
+        for (Node child: *this)
+            if (child.name == match)return child.values();
+    if (kind != call and kind != declaration)
+        lhs.kind = kind;
+    return lhs.flat();
 }
 
 Node &Node::to(String match) {
-	Node rhs = *new Node();
-	for (Node &child: *this) {
-		if (child.name == match)
-			break;
-		rhs.add(&child);
-	}
+    Node rhs = *new Node();
+    for (Node &child: *this) {
+        if (child.name == match)
+            break;
+        rhs.add(&child);
+    }
 //	if(rhs.length==0)// no match
 //		return *this;
-	if (kind != call and kind != declaration)
-		rhs.kind = kind;
-	return rhs.flat();
+    if (kind != call and kind != declaration)
+        rhs.kind = kind;
+    return rhs.flat();
 }
 
 Node &Node::to(Node match) {
-	return to(match.name);
+    return to(match.name);
 }
 
 //	Node& flatten(Node &current){
 Node &Node::flat() {
 //	if (kind == call)return *this;//->clone();
-	if (kind == patterns)return *this;// never flatten patterns x=[] "hi"[1] …
-	if (length == 0 and kind == key and name.empty() and value.node)return *value.node;
-	if (length == 1) {
-		Node &child = children[0];
-		if (child.kind == patterns and kind != groups)// huh?
-			return *this;// never flatten patterns x=[] "hi"[1] …
-		if (value.node == &child and name.empty())// todo remove redundancy
-			return *value.node;
-		if (kind == key and name.empty()) {// (x):y => x:y
-			if (not child.value.node and child.kind == reference) {
-				child.value.node = value.node;
-				child.kind = key;
-			}
-			return child;
-		}
-		if ((long) children < MEMORY_SIZE and not value.data and name.empty()) {
-			child.parent = parent;
-			return child.flat();
-		}
-		if (child.length > 0 and not child.value.data and child.name.empty()) {
-			// double flatten ((x y))=>x y   todo: via recursion
-			child.children[0].parent = this;
-			children = child.children;
-			length = child.length;
-			return *this;
-		}
-	}
-	return *this;//->clone();
+    if (kind == patterns)return *this;// never flatten patterns x=[] "hi"[1] …
+    if (length == 0 and kind == key and name.empty() and value.node)return *value.node;
+    if (length == 1) {
+        Node &child = children[0];
+        if (child.kind == patterns and kind != groups)// huh?
+            return *this;// never flatten patterns x=[] "hi"[1] …
+        if (value.node == &child and name.empty())// todo remove redundancy
+            return *value.node;
+        if (kind == key and name.empty()) {// (x):y => x:y
+            if (not child.value.node and child.kind == reference) {
+                child.value.node = value.node;
+                child.kind = key;
+            }
+            return child;
+        }
+        if ((long) children < MEMORY_SIZE and not value.data and name.empty()) {
+            child.parent = parent;
+            return child.flat();
+        }
+        if (child.length > 0 and not child.value.data and child.name.empty()) {
+            // double flatten ((x y))=>x y   todo: via recursion
+            child.children[0].parent = this;
+            children = child.children;
+            length = child.length;
+            return *this;
+        }
+    }
+    return *this;//->clone();
 }
 
 Node &Node::setName(char *name0) {
-	name = name0;
-	return *this;
+    name = name0;
+    return *this;
 }
 
 // extract value from this (remove name)
 Node &Node::values() {
-	if (kind == longs)return *new Node(value.longy);
-	if (kind == reals)return *new Node(value.real);
-	if (kind == strings)return *new Node(value.string);
-	if (kind == codepoints)return *new Node((codepoint) value.longy);
-	if (kind == bools)return value.data ? True : False;
-	if (kind == key)return *value.node;
-	if (length == 1 and not value.data) return children[0];// todo: reaaaly?
-	Node &val = clone()->setName("");
+    if (kind == longs)return *new Node(value.longy);
+    if (kind == reals)return *new Node(value.real);
+    if (kind == strings)return *new Node(value.string);
+    if (kind == codepoints)return *new Node((codepoint) value.longy);
+    if (kind == bools)return value.data ? True : False;
+    if (kind == key)return *value.node;
+    if (length == 1 and not value.data) return children[0];// todo: reaaaly?
+    Node &val = clone()->setName("");
 //	val.children = 0;
-	return val;
+    return val;
 }
 
 bool Node::isSetter() {
-	// todo BAD HEURISTIC!!
-	// todo properly via expression i=1 == (set i 1)
-	// todo proper constructor i:1 == (construct i (1))
-	// todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
-	if (kind == bools)return name != True.name and name != False.name;
-	if (kind == longs || kind == reals)// || kind==bools)
-		return not name.empty() and (not atoi0(name) and not name.contains('.'));// todo WTF hack
-	if (kind == key and value.data) return true;
-	if (kind == strings and name == value.string) return false;  // todo x="x" '123'="123" redundancy bites us here
-	if (kind == strings and value.data)
-		return true;
-	if (kind == reference and value.data) return true;
-	return length > 0;// i:4
+    // todo BAD HEURISTIC!!
+    // todo properly via expression i=1 == (set i 1)
+    // todo proper constructor i:1 == (construct i (1))
+    // todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
+    if (kind == bools)return name != True.name and name != False.name;
+    if (kind == longs || kind == reals)// || kind==bools)
+        return not name.empty() and (not atoi0(name) and not name.contains('.'));// todo WTF hack
+    if (kind == key and value.data) return true;
+    if (kind == strings and name == value.string) return false;  // todo x="x" '123'="123" redundancy bites us here
+    if (kind == strings and value.data)
+        return true;
+    if (kind == reference and value.data) return true;
+    return length > 0;// i:4
 }
 
 int Node::index(String string, int start, bool reverse) {
-	if (reverse)return lastIndex(string, start);
-	for (int i = start; i < length; ++i) {
-		if (children[i].name == string)
-			return i;
-	}
-	return -1;// throw "not found"
+    if (reverse)return lastIndex(string, start);
+    for (int i = start; i < length; ++i) {
+        if (children[i].name == string)
+            return i;
+    }
+    return -1;// throw "not found"
 }
 
 int Node::lastIndex(String &string, int start) {
-	if (start <= 0)start = length;
-	for (int i = start - 1; i >= 0; i--) {
-		if (children[i].name == string)
-			return i;
-	}
-	return -1;// throw "not found"
+    if (start <= 0)start = length;
+    for (int i = start - 1; i >= 0; i--) {
+        if (children[i].name == string)
+            return i;
+    }
+    return -1;// throw "not found"
 }
 
 int Node::lastIndex(Node *node, int start) {
-	if (start <= 0)start = length;
-	for (int i = start; i >= 0; --i) {
-		if (children[i] == node)
-			return i;
-	}
-	return -1;// throw "not found"
+    if (start <= 0)start = length;
+    for (int i = start; i >= 0; --i) {
+        if (children[i] == node)
+            return i;
+    }
+    return -1;// throw "not found"
 }
 
 // inclusive from…to
 // ⚠️ DANGER! any references pointing to children become INVALID!
 [[modifying]]
 void Node::replace(int from, int to, Node *node) {
-	if (from < 0 or from >= length)
-		error("Node::replace from<0 or from>=length");
-	children[from] = *node;
-	int i = 0;
-	if (to < from)
-		error("Node::replace from>to : "s + from + ">" + to);
-	while (to + i++ <= length) {
-		children[from + i] = children[to + i];// ok if beyond length
-		children[from + i - 1].next = &children[from + i];
-	}
-	length = length - (to - from);//  + 1 if not inclusive;
-	if (length > 0)children[length - 1].next = 0;
+    if (from < 0 or from >= length)
+        error("Node::replace from<0 or from>=length");
+    children[from] = *node;
+    int i = 0;
+    if (to < from)
+        error("Node::replace from>to : "s + from + ">" + to);
+    while (to + i++ <= length) {
+        children[from + i] = children[to + i];// ok if beyond length
+        children[from + i - 1].next = &children[from + i];
+    }
+    length = length - (to - from);//  + 1 if not inclusive;
+    if (length > 0)children[length - 1].next = 0;
 }
 
 // INCLUDING to: [a b c d].remove(1,2)==[a d]
 void Node::remove(int from, int to) {// including
-	if (to < 0)to = length;
-	if (to < from)to = from;
-	if (to >= length)to = length - 1;
-	int i = -1;
-	while (to + ++i < length) {
-		children[from + i] = children[to + i + 1];// ok if beyond length
-		if (children[from + i].next)
-			children[from + i].next = children + from + 1;
-	}
-	length = length - (to - from) - 1;
+    if (to < 0)to = length;
+    if (to < from)to = from;
+    if (to >= length)to = length - 1;
+    int i = -1;
+    while (to + ++i < length) {
+        children[from + i] = children[to + i + 1];// ok if beyond length
+        if (children[from + i].next)
+            children[from + i].next = children + from + 1;
+    }
+    length = length - (to - from) - 1;
 }
 
 
 void Node::replace(int from, int to, Node &node) {
-	replace(from, to, &node);
+    replace(from, to, &node);
 }
 
 //Node &Node::metas() {
@@ -1085,7 +1096,7 @@ void Node::replace(int from, int to, Node &node) {
 //}
 
 void print(Node &n) {
-	n.print();
+    n.print();
 }
 
 //void print(const Node &n0) {
@@ -1094,136 +1105,144 @@ void print(Node &n) {
 
 
 void print(Node *n0) {
-	if (!n0)return;
-	print(*n0);
+    if (!n0)return;
+    print(*n0);
 }
 
 
 Node &Node::setType(Kind type, bool check) {
-	if (kind == type)return *this;
-	if (kind == operators and type == expression)return *this;
-	if (kind == codepoints and type == operators)check = false;// and name==(codepoint)value.longy
-	if (kind == groups and type == expression)check = false;
-	if (kind == declaration and type == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
-	if (check) {
-		if (kind != unknown and kind != objects and
-		    kind != strings)// strings is default type after construction, ok to keep it in name
-			error("Node already has semantic type "s + typeName(kind) + "! Can't change to " + typeName(type));
-	}
-	if (value.data and (type == groups or type == objects))
-		return *this;
-	if (kind == nils and not value.data)
-		return *this;
-	kind = type;
+    if (kind == type)return *this;
+    if (kind == operators and type == expression)return *this;
+    if (kind == codepoints and type == operators)check = false;// and name==(codepoint)value.longy
+    if (kind == groups and type == expression)check = false;
+    if (kind == declaration and type == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
+    if (check) {
+        if (kind != unknown and kind != objects and
+            kind != strings)// strings is default type after construction, ok to keep it in name
+            error("Node already has semantic type "s + typeName(kind) + "! Can't change to " + typeName(type));
+    }
+    if (value.data and (type == groups or type == objects))
+        return *this;
+    if (kind == nils and not value.data)
+        return *this;
+    kind = type;
 //	if(name.empty() and debug){
 //		if(type==objects)name = object_name;
 //		if(type==groups)name = groups_name;
 //		if(type==patterns)name = patterns_name;
 //	}
-	return *this;
+    return *this;
 }
 
 List<String> &Node::toList() {
-	List<String> &values = *new List<String>();
-	for (Node &child: *this)
-		values.add(child.name);
-	return values;
+    List<String> &values = *new List<String>();
+    for (Node &child: *this)
+        values.add(child.name);
+    return values;
 }
 
 bool Node::empty() {
-	// we don't care about name here
-	return length == 0 and value.data == 0;
+    // we don't care about name here
+    return length == 0 and value.data == 0;
 }
 
 void Node::clear() {
-	next = 0;
-	length = 0;
-	children = 0;
+    next = 0;
+    length = 0;
+    children = 0;
 //	children[0] = 0; // messes with shared list!
-	if (kind == key)error("can't clear key(?)");
-	value.data = 0;
+    if (kind == key)error("can't clear key(?)");
+    value.data = 0;
 }
 
 String *Node::Line() {
 #if DEBUG
-	if (line)return line;
-	if (parent)return parent->Line();
+    if (line)return line;
+    if (parent)return parent->Line();
 #endif
-	return new String("<missing line information>");
+    return new String("<missing line information>");
 }
 
 
 //String
 chars typeName(Kind t) {
-	switch (t) {
-		case 0:
-			return "ø"; // unknown ?
-		case objects:
-			return "object";
-		case groups:
-			return "group";
-		case patterns:
-			return "pattern";
-		case key:
-			return "node";
-		case reference:
-			return "reference";
-		case symbol:
-			return "symbol";
-		case operators:
-			return "operator";
-		case expression:
-			return "expression";
-		case strings:
-			return "string";
-		case arrays:
-			return "array";
-		case buffers:
-			return "buffer";
-		case reals:
-			return "float";
-		case longs:
-			return "number";
-			//		case ints:
-			//			return "int";
-		case bools:
-			return "bool";
-		case nils:
-			return "nil";
-		case unknown :
-			return "unknown";
-		case call:
-			return "call";// function
-		case declaration:
-			return "declaration";
-		case assignment:
-			return "assignment";
-		case errors:
-			return "error";
-		case functor:
-			return "functor";
-		case codepoints:
-			return "codepoint";
-//		case 36:
-//			return "HUH??";
-//		case 255:
-//			return "data";
-		default:
-			error(str("MISSING Type Kind name mapping ") + t);
-			return "ERROR";
-	}
+    switch (t) {
+        case 0:
+            return "ø"; // unknown ?
+        case objects:
+            return "object";
+        case groups:
+            return "group";
+        case patterns:
+            return "pattern";
+        case key:
+            return "node";
+        case fields:
+            return "field";
+        case reference:
+            return "reference";
+        case symbol:
+            return "symbol";
+        case operators:
+            return "operator";
+        case expression:
+            return "expression";
+        case strings:
+            return "string";
+        case arrays:
+            return "array";
+        case buffers:
+            return "buffer";
+        case reals:
+            return "float";
+        case longs:
+            return "number";
+            //		case ints:
+            //			return "int";
+        case bools:
+            return "bool";
+        case nils:
+            return "nil";
+        case unknown :
+            return "unknown";
+        case call:
+            return "call";// function
+        case declaration:
+            return "declaration";
+        case assignment:
+            return "assignment";
+        case errors:
+            return "error";
+        case functor:
+            return "functor";
+        case codepoints:
+            return "codepoint";
+        case enums:
+            return "enum";
+        case variants:
+            return "variant";
+        case records:
+            return "record";
+        case generics:
+            return "generics";
+        case clazz:
+            return "class";
+        case structs:
+            return "struct";
+    }
+    error(str("MISSING Type Kind name mapping ") + t);
 }
 
 chars typeName(Type t) {
-	if (t.value < 0x1000)return typeName(t.kind);
-	if (t.value == Primitive::int_array)return "int[]";
-	if (t.value > 0x10000)return t.clazz->name;
-	error(str("MISSING Type name mapping ") + t.value);
-	return "ƒ";
+    if (t.value < 0x1000)return typeName(t.kind);
+    if (t.value == Primitive::int_array)return "int[]";
+    if (t.value > 0x10000)return t.clazz->name;
+    error(str("MISSING Type name mapping ") + t.value);
+    return "ƒ";
 }
 
 chars typeName(const Type *t) {
-	if (not t)return "ø undefined";
+    if (not t)return "ø undefined";
     return typeName(*t);
 }
 

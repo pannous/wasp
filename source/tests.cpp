@@ -17,8 +17,10 @@
 Node &result = *new Node();
 
 void testWit() {
-    Node &wit = (new WitReader())->read("test/merge/index.wit");
+    Node &wit = (new WitReader())->read("samples/bug.wit");
     wit = (new WitReader())->read("test/merge/example_dep/index.wit");
+    wit = (new WitReader())->read("test/merge/index.wit");
+    wit = (new WitReader())->read("test/merge/world.wit");
     wit = (new WitReader())->read("samples/wit/typenames.wit");
     wit = (new WitReader())->read("samples/wit/wasi_unstable.wit");
 //    check(wit.length > 0);
@@ -2343,6 +2345,7 @@ void testCurrent() {
     data_mode = true; // a=b => a{b}
 //	data_mode = false; // a=b => a,=,b before analysis
     testWit();
+    exit(1);
     assert_run("oka", 42);
     testMergeOwn();
 
