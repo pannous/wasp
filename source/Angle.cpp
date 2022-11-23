@@ -699,8 +699,8 @@ Node &groupOperators(Node &expression, String context = "main") {
         if (op == "-")
             debug = true;
         if (op == "-…") op = "-";// precedence hack
+        if (op == "%")functions["modulo_float"].is_used = true;// no wasm i32_rem_s i64_rem_s for float/double
         if (op == "%")functions["modulo_double"].is_used = true;
-        if (op == "%")functions["modulo_float"].is_used = true;
         if (op == "include")todo("include again!?");
         if (op != last) last_position = 0;
         bool fromRight = rightAssociatives.has(op) or isFunction(op);

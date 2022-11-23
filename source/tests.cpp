@@ -2343,13 +2343,14 @@ void testCurrent() {
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
     data_mode = true; // a=b => a{b}
-    assert_emit("i=10007;x=i%10000", 7);
-
+//    assert_emit("i=10007;x=i%10000", 7);
+//    exit(0);
 //    assert_is("x=(1 4 3);x#2=5;x#2", 5);
 //    assert_is("x=(1 4 3);x#2", 4);
     data_mode = false; // a=b => a,=,b before analysis
+    assert_emit("x==0;while x++<11: nop;", 0);
+    assert_emit("maxi=3840*2160", 3840 * 2160);
     assert_emit("i=10007;x=i%10000", 7);
-
     assert_is("x=(1 4 3);x#2=5;x#2", 5);
     assert_is("x=(1 4 3);x#2", 4);
 

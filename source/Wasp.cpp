@@ -2063,7 +2063,8 @@ float precedence(String name) {
     if (eq(name, "+"))return 6;
     if (eq(name, "minus"))return 6;
     if (eq(name, "-"))return 6;
-    if (eq(name, "%"))return 6.1;
+    if (eq(name, "%"))
+        return 6.1;
     if (eq(name, "rem"))return 6.1;
     if (eq(name, "modulo"))return 6.1;
     if (eq(name, "upto"))return 6.3;// range
