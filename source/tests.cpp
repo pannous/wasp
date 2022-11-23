@@ -2343,10 +2343,19 @@ void testCurrent() {
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
     data_mode = true; // a=b => a{b}
-//	data_mode = false; // a=b => a,=,b before analysis
-    testWit();
-    exit(1);
-    assert_run("oka", 42);
+    assert_emit("i=10007;x=i%10000", 7);
+
+//    assert_is("x=(1 4 3);x#2=5;x#2", 5);
+//    assert_is("x=(1 4 3);x#2", 4);
+    data_mode = false; // a=b => a,=,b before analysis
+    assert_emit("i=10007;x=i%10000", 7);
+
+    assert_is("x=(1 4 3);x#2=5;x#2", 5);
+    assert_is("x=(1 4 3);x#2", 4);
+
+//    testWit();
+//    exit(1);
+//    assert_run("oka", 42);
     testMergeOwn();
 
     testSubGroupingFlatten();

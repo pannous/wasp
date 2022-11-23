@@ -25,6 +25,7 @@ extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> l
 extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 
 extern Map<String, Node * /* modifiers/values/init expressions*/> globals; // access from Angle!
+void addGlobal(Node &node);
 extern Map<String /*name*/, Valtype> globalTypes;
 
 Node &groupWhile(Node n, String string);

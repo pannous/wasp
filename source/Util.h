@@ -1,13 +1,16 @@
 #ifndef _Util_h_
 #define _Util_h_
 
-static bool tracing = false;
 static bool I_know_what_I_am_doing = false;
 
-void trace0(const char *x);
-
+#ifdef TRACE
+static bool tracing = true;
 #define trace print
-//#define trace  // DONT TRACE
+#else // DONT TRACE
+static bool tracing = false;
+#define trace(x) if(tracing)print(x)
+#endif
+
 typedef unsigned char byte;
 typedef const char *chars;
 typedef byte *bytes;
