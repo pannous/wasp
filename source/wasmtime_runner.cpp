@@ -237,18 +237,20 @@ wasm_wrap *link_import(String name) {
 	if (name == "print") return &wrap_puts;
 	if (name == "logs") return &wrap_puts;
 	if (name == "logi") return &wrap_puti;
-	if (name == "logc") return &wrap_putc;
-	if (name == "puti") return &wrap_puti;
-	if (name == "puts") return &wrap_puts;
-	if (name == "putf") return &wrap_putf;
-	if (name == "putd") return &wrap_putd;
-	if (name == "putc") return &wrap_putc;
-	if (name == "log") return &wrap_log;
-	if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
-	if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
-	if (name == "main") return &hello_callback;
-	error("unmapped import "s + name);
-	return 0;
+    if (name == "logc") return &wrap_putc;
+    if (name == "puti") return &wrap_puti;
+    if (name == "puts") return &wrap_puts;
+    if (name == "putf") return &wrap_putf;
+    if (name == "putd") return &wrap_putd;
+    if (name == "putc") return &wrap_putc;
+    if (name == "log") return &wrap_log;
+    if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
+    if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
+    if (name == "main") return &hello_callback;
+    if (name == "memory")
+        return 0;// not a funciton
+    error("unmapped import "s + name);
+    return 0;
 }
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap) {
@@ -327,17 +329,18 @@ long run_wasm(unsigned char *data, int size) {
 	int i = 0;
 	// LINK IMPORTS!
 	for (String import_name: meta.import_names) {
-		if (import_name.empty())break;
-		print(import_name);
-		wasmtime_extern_t import;
-		wasmtime_func_t link;
+        if (import_name.empty())break;
+        if (import_name == "memory")continue;// todo filter before
+        print(import_name);
+        wasmtime_extern_t import;
+        wasmtime_func_t link;
 //		Signature &signature = meta.signatures[import_name];
-		Signature &signature = meta.functions[import_name].signature;
-		const wasm_functype_t *type = funcType(signature);
-		wasm_wrap (*callback) = link_import(import_name);
-		wasmtime_func_new(context, type, callback, NULL, NULL, &link);
-		import.kind = WASMTIME_EXTERN_FUNC;
-		import.of.func = link;
+        Signature &signature = meta.functions[import_name].signature;
+        const wasm_functype_t *type = funcType(signature);
+        wasm_wrap (*callback) = link_import(import_name);
+        wasmtime_func_new(context, type, callback, NULL, NULL, &link);
+        import.kind = WASMTIME_EXTERN_FUNC;
+        import.of.func = link;
 		imports[i++] = import;
 	}
 
@@ -423,14 +426,16 @@ const wasm_functype_t *funcType(Signature &signature) {
 	auto returnType = mapTypeToWasm(returnType0);
 	if (param_count == 0) {
 		switch (returnType) {
-			case none:
-			case voids:
-				return wasm_functype_new_0_0();
-			case int32:
-				return wasm_functype_new_0_1(i);
-			default:
-				break;
-		}
+            case none:
+            case voids:
+                return wasm_functype_new_0_0();
+            case int32:
+                return wasm_functype_new_0_1(i);
+            case int64:
+                return wasm_functype_new_0_1(I);
+            default:
+                break;
+        }
 	}
 	if (param_count == 1) {
 		Type &type = signature.types[0];
