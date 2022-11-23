@@ -159,7 +159,8 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
         if (eq(s, "-"))return i64_sub; // i64.sub
         if (eq(s, "*"))return i64_mul; // i64.mul
         if (eq(s, "/"))return i64_di𝗏_s; // i64.di𝗏_s
-        if (eq(s, "%"))return i64_rem_s; // i64.rem_s
+        if (eq(s, "%"))
+            return i64_rem_s; // i64.rem_s
         if (eq(s, "=="))return i64_eq; // i64.eq
         if (eq(s, "eq"))return i64_eq; // i64.eq
         if (eq(s, "equals"))return i64_eq; // i64.eq
@@ -1391,10 +1392,10 @@ Code emitCall(Node &fun, String context) {
 [[nodiscard]]
 [[nodiscard]]
 Code cast(Valtype from, Valtype to) {
-    last_type = to;// danger: hides last_type in caller!
     Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
     if (to == none or to == unknown_type or to == voids)return nop;// no cast needed magic VERSUS wasm drop!!!
     if (from == to)return nop;// nop
+    last_type = to;// danger: hides last_type in caller!
 
     if (from == array and to == charp)return nop;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
     if (from == i32t and to == charp)return nop;// assume i32 is a pointer here. todo?
@@ -1496,13 +1497,13 @@ Code emitSetter(Node &node, Node &value, String context) {
         error("variable %s in context %s missed by parser! "_s % variable % context);
     }
     int local_index = current.position(variable);
-    auto valtype = localTypes[context][local_index];
-    last_type = mapTypeToWasm(value);
-    if (valtype == unknown_type) {
-        valtype = last_type;// todo : could have been done in analysis!
+    auto variable_type = localTypes[context][local_index];
+    Valtype value_type = mapTypeToWasm(value);
+    if (variable_type == unknown_type or variable_type == voids) {
+        variable_type = last_type;// todo : could have been done in analysis!
         localTypes[context][local_index] = last_type;// NO! the type doesn't change: example: float x=7
     }
-    if (last_type == array or valtype == array or valtype == charp) {
+    if (last_type == array or variable_type == array or variable_type == charp) {
         referenceIndices.insert_or_assign(variable, data_index_end);// WILL be last_data !
         referenceMap[variable] = value;// node; // lookup types, array length …
     }
@@ -1512,10 +1513,11 @@ Code emitSetter(Node &node, Node &value, String context) {
         value = node.values();
     Code value1 = emitExpression(value, context);
     setter.add(value1);
-    setter.add(cast(last_type, valtype));
+    setter.add(cast(last_type, variable_type));
     setter.add(tee_local);
     setter.add(local_index);
-    last_type = valtype;// still the type of the local, not of the value. example: float x=7
+    if (variable_type != void_block)
+        last_type = variable_type;// still the type of the local, not of the value. example: float x=7
     return setter;
 }
 
