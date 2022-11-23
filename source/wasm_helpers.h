@@ -245,4 +245,3 @@ int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
 int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
 #endif
 
-void trace(chars x);

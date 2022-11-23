@@ -1285,6 +1285,8 @@ Node runtime_emit(String prog) {
     return ERROR;
 #endif
     libraries.clear();// todo reuse
+    clearAnalyzerContext();
+    clearEmitterContext();
     Module &runtime = loadModule("wasp.wasm");
     runtime.code.needs_relocate = false;
 //	check(libraries.size() == 1)
@@ -1437,5 +1439,17 @@ float precedence(Node &operater) {
     if (operater.name.in(function_list))return 999;// function call todo: remove here
     if (empty(name))return 0;// no precedence
     return precedence(name);
+}
+
+List<String> reserved_keywords = {"func"};// todo…
+void addGlobal(Node &node) {
+    String &name = node.name;
+    if (reserved_keywords.has(name) or contains(import_keywords, name))
+        error("Can't add reserved keyword "s + name);
+    if (not globals.has(name))
+        globals.add(name, node.clone());
+    else {
+        warn("enum entry %s already a registered symbol: %o "s % name % *globals[name]);
+    }
 }
 

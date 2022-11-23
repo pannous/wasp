@@ -336,9 +336,19 @@ public:
 //		neu.items=items;
 //		return  neu;
 //	}
-	bool empty() const {
-		return _size == 0 or items == 0;
-	}
+    bool empty() const {
+        return _size == 0 or items == 0;
+    }
+
+    void addAll(S *items[]) {
+        for (auto s: items)
+            add(s);
+    }
+
+    void addAll(S items[]) {
+        for (auto s: items)
+            add(s);
+    }
 };
 
 void print(List<String> list);
