@@ -118,11 +118,8 @@ class WitReader {
             field.value = value++;
             field.kind = longs;
             // currently enum fields are just named numbers
-            if (not globals.has(name))
-                globals.add(name, field.clone());
-            else {
-                warn("enum entry %s already a registered symbol: %o "s % name % *globals[name]);
-            }
+            addGlobal(field);
+
         }
         String &name = enuma.name;
         if (!types.has(name))
@@ -228,6 +225,10 @@ class WitReader {
                 readFlags(n);
             } else if (entry == "func") {
                 readFunc(n);
+            } else if (entry == "@interface") {
+                if (node.length > 1 and node[1] == "func")
+                    readFunc(node);
+                else warn("Old @interface syntax not supported");
             } else if (n.kind == key and n.value.node->name == "func") {
                 readFunc(n);
             } else if (n.name == "module") {

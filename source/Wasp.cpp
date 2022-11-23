@@ -1531,9 +1531,7 @@ private:
                         proceed();
                         proceed();
                         Node &node = valueNode(' ');
-                        Node &last = actual.last().setType(key, false);
-                        last.value.node = &node;
-//                        last.addSmart(node);
+                        actual.last().addSmart(node);
                         continue;
                     }
                     if (parserOptions.kebab_case and isalpha(lastNonWhite))
