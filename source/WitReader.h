@@ -25,10 +25,33 @@ resource request {
 }
 
 // todo: map
-// option
+// option  todo: add nullable
 // expected
-// union
+// union todo: how?
 // component 	all imports in the subtype must be present in the supertype with matching types;
+
+keyword ::= 'use'
+          | 'type'
+          | 'resource'
+          | 'func'
+          | 'u8' | 'u16' | 'u32' | 'u64'
+          | 's8' | 's16' | 's32' | 's64'
+          | 'float32' | 'float64'
+          | 'char'
+          | 'variant'
+          | 'union'
+          | 'bool'
+          | 'string'
+          | 'option'
+          | 'list'
+          | 'result'
+          | 'as'
+          | 'from'
+          | 'static'
+          | 'interface'
+          | 'tuple'
+          | 'future'
+          | 'stream'
 
  */
 class WitReader {
@@ -106,20 +129,23 @@ class WitReader {
         trace(interface);
     }
 
-    void readEnum(Node node) {
-        if (node.length == 0)return;/* enum %bool { %false, %true, } nonsense */
+    Node &readEnum(Node &node, Kind kind) {
+        if (node.length == 0)return node;/* enum %bool { %false, %true, } nonsense */
         Node &enuma = node[1];
         enuma.kind = enums;
         int value = 0;
+        if (kind == flags)value = 1;
         for (auto field: enuma) {
             String &name = field.name;
             if (name.empty())
                 continue; // todo fix in valueNode
-            field.value = value++;
+            if (kind == flags)
+                field.value = value * 2;// for boolean option1 and option2 …
+            else
+                field.value = value++;
             field.kind = longs;
             // currently enum fields are just named numbers
             addGlobal(field);
-
         }
         String &name = enuma.name;
         if (!types.has(name))
@@ -128,13 +154,13 @@ class WitReader {
             error("enum already known with different fields :\n"s + enuma.serialize() + "\n≠\n" +
                   types[name].serialize());
         else warn("enum already known: "s + name);// ok, same layout
-
-        trace("\nwit enum:");
+        trace("\nwit enum/option/variant:");
         trace(enuma);
+        return enuma;
     }
 
     void readVariant(Node node) {
-        Node &variant = node[1];
+        Node &variant = readEnum(node, variants);
         trace("\nwit variant:");
         trace(variant);
     }
@@ -147,7 +173,7 @@ class WitReader {
     }
 
     void readFlags(Node node) {
-        Node &flags = node[1];
+        readEnum(node, flags);
         trace("\nwit flags:");
         trace(flags);
     }
@@ -214,7 +240,9 @@ class WitReader {
             } else if (entry == "variant") {
                 readVariant(n);
             } else if (entry == "enum") {
-                readEnum(n);
+                readEnum(n, enums);
+            } else if (entry == "option") {
+//                todo("ignore, since all nodes are optionals by default unless marked as required!")
             } else if (entry == "@interface") {
                 readInterfaceFunc(node);
             } else if (entry == "interface") {
@@ -254,7 +282,7 @@ class WitReader {
 public:
 
     Node &read(String file) {
-        ParserOptions *options = new ParserOptions{
+        ParserOptions options{
                 .data_mode = false,
                 .arrow = true,
                 .dollar_names=true,
@@ -264,7 +292,7 @@ public:
                 .kebab_case = true,
                 .space_brace = true,
         };
-        Node &node = parse(file.data, "", options);
+        Node &node = parse(file.data, options);
         return analyzeWit(node);
     }
 };

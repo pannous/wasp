@@ -148,14 +148,14 @@ bool isFunction(Node &op) {
 
 
 Node interpret(String code) {
-    Node parsed = parse(code, "");
+    Node parsed = parse(code);
     return parsed.interpret();
 }
 
 
 // todo: merge with emit
 Node eval(String code) {
-    Node parsed = parse(code, "");
+    Node parsed = parse(code);
 #ifdef RUNTIME_ONLY
     return parsed; // no interpret, no emit => pure data  todo: WARN
 #else
@@ -1308,7 +1308,7 @@ Node runtime_emit_old(String prog) {
     clearAnalyzerContext();
     clearEmitterContext();
     Module &runtime = loadModule("wasp.wasm");
-    Node charged = analyze(parse(prog, ""));
+    Node charged = analyze(parse(prog));
     Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
     lib.save("main.wasm");// partial wasm!
     functionIndices.clear();// no longer needed
