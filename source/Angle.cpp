@@ -27,10 +27,9 @@ Map<String, bool> module_done;
 
 Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
-List<String> declaredFunctions;
-//List<String> declaredFunctions;
 
-// todo : proper context!
+Map<String, Function> declaredFunctions; // todo <<<
+// todo : use proper context ^^ instead of:
 Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 
@@ -510,15 +509,20 @@ bool addLocal(const char *context, String name, Valtype valtype) {
     if (not locals[context].has(name)) {
         locals[context].add(name);
         localTypes[context].add(valtype);
+        Function &function = declaredFunctions[context];
+        function.locals.insert_or_assign(name, Local{.position=locals.size() - 1, .name=name, .valtype=valtype});
         return true;// added
     }
 //#if DEBUG
     else {
         auto position = locals[context].position(name);
         auto oldType = localTypes[context][position];
-        if (oldType == none or oldType == unknown_type)
+        if (oldType == none or oldType == unknown_type) {
             localTypes[context][position] = valtype;
-        else if (oldType != valtype and valtype != void_block and valtype != voids and valtype != unknown_type) // trace
+            Function &function = declaredFunctions[context];
+            function.locals.values[position].valtype = valtype;
+        } else if (oldType != valtype and valtype != void_block and valtype != voids and
+                   valtype != unknown_type) // trace
             warn("local in context %s already known "s % s(context) + name +
                  " with type " + typeName(oldType) + ", ignoring new type " + typeName(valtype));
         // ok, could be cast'able!
@@ -544,14 +548,16 @@ List<String> aliases(String name);
 
 Node &groupDeclarations(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body) {
 //	String &name = fun.name;
-    if (name and not function_operators.has(name))
-        declaredFunctions.add(name);
 //	silent_assert(not is_operator(name[0]));
 //	trace_assert(not is_operator(name[0]));
     if (is_operator(name[0]))// todo ^^
         todo("is_operator!");// remove if it doesn't happen
     Function &function = functions[name];
     function.emit = true;
+    if (name and not function_operators.has(name)) {
+//        declaredFunctions.add(name);
+        declaredFunctions.insert_or_assign(name, function);
+    }
 
     // todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
     if (setter_operators.has(name) or key_pair_operators.has(name)) {

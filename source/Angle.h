@@ -15,12 +15,14 @@ extern Map<String, Function> functions;// for funcs AND imports, serialized diff
 // It is operator driven https://github.com/pannous/angle/wiki/
 class Angle {
 public:
-	static Node &analyze(Node code);
+    static Node &analyze(Node code);
 };
 
 void clearAnalyzerContext();
 
-extern List<String> declaredFunctions;
+//extern List<String> declaredFunctions;
+extern Map<String, Function> declaredFunctions; // todo <<<
+// todo add to Function as context! on the other hand declaredFunctions live in different world than imported ?
 extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 

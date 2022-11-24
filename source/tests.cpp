@@ -16,6 +16,33 @@
 
 Node &result = *new Node();
 
+void testIndexOffset() {
+    assert_emit("x=(5 6 7);y=(1 4 3);y#2", 4);
+    assert_emit("x=(5 6 7);(1 4 3)#2", 4);
+    assert_emit("y=(1 4 3)#2", 4);
+    assert_emit("(2 4 3)[1]", 4);
+    assert_emit("(2 4 3)#2", 4);
+    assert_is("x=(1 4 3);x#2=5;x#2", 5);
+    assert_is("x=(1 4 3);z=(9 8 7);x#2", 4);
+    skip(
+            assert_emit("y=(1 4 3);y[1]", 4);// CAN NOT WORK in data_mode because y[1] ≈ y:1 setter
+            assert_emit("x=(5 6 7);y=(1 4 3);y[1]", 4);
+    )
+    assert_emit("(5 6 7);(2 4 3)[0]", 2);
+    assert_emit("x=(5 6 7);y=(1 4 3);y#2", 4);
+    assert_emit("(5 6 7);(1 4 3)#2", 4);
+    assert_emit("x=(5 6 7);(1 4 3)#2", 4);
+    assert_emit("puts('ok');(1 4 3)#2", 4);
+    assert_emit("x=0;while x++<11: nop;", 0);
+//    assert_emit("i=10007;x=i%10000", 7);
+//    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+    assert_emit("maxi=3840*2160", 3840 * 2160);
+    assert_emit("i=10007;x=i%10000", 7);
+    assert_is("x=(1 4 3);x#2=5;x#2", 5);
+    assert_is("x=(1 4 3);x#2", 4);
+}
+
 void testFlagSafety() {
     auto code = "flags empty_flags{}; empty_flags my_flags = data_mode | space_brace;";
     Node &parsed = parse(code);
@@ -2248,6 +2275,7 @@ void testSubGroupingFlatten() { // ok [a (b,c) d] should be flattened to a (b,c)
 }
 
 void tests() {
+    testIndexOffset();
     testNodeConversions();
     testArrayIndices();
     testSinus();
@@ -2377,36 +2405,10 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
-    assert_emit("x=(5 6 7);y=(1 4 3);y#2", 4);
-    assert_emit("x=(5 6 7);(1 4 3)#2", 4);
-    assert_emit("y=(1 4 3)#2", 4);
-    assert_emit("(2 4 3)[1]", 4);
-    assert_emit("(2 4 3)#2", 4);
-    assert_is("x=(1 4 3);x#2=5;x#2", 5);
-    assert_is("x=(1 4 3);z=(9 8 7);x#2", 4);
-    skip(
-    // todo
-            assert_emit("y=(1 4 3);y[1]", 4);// CAN NOT WORK in data_mode because y[1] ≈ y:1 setter
-            assert_emit("x=(5 6 7);y=(1 4 3);y[1]", 4);
-            assert_emit("(5 6 7);(2 4 3)[0]", 2);
-    )
-
-
-//    assert_emit("(1 4 3)#2", 4);
-    assert_emit("x=(5 6 7);y=(1 4 3);y#2", 4);
-    assert_emit("(5 6 7);(1 4 3)#2", 4);
-//    exit(1);
-    assert_emit("x=(5 6 7);(1 4 3)#2", 4);
-    assert_emit("puts('ok');(1 4 3)#2", 4);
-    assert_emit("x=0;while x++<11: nop;", 0);
-//    assert_emit("i=10007;x=i%10000", 7);
-//    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
-    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
-    assert_emit("maxi=3840*2160", 3840 * 2160);
-    assert_emit("i=10007;x=i%10000", 7);
-    assert_is("x=(1 4 3);x#2=5;x#2", 5);
-    assert_is("x=(1 4 3);x#2", 4);
-
+    testStringIndicesWasm();
+    assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
+    testIndexOffset();
+    testIndexWasm();
 //    testWit();
 //    exit(1);
 //    assert_run("oka", 42);
