@@ -912,40 +912,50 @@ public:
 	}
 
 	void merge(Signature &s) {
-		if (type_index < 0)type_index = s.type_index;
+        if (type_index < 0)type_index = s.type_index;
 //		return_type = s.return_type;
-		wasm_return_type = s.wasm_return_type;
-		if (return_types.empty())
-			return_types = s.return_types;// todo copy construktor OK??
-		if (types.empty())
-			types = s.types;
-	}
+        wasm_return_type = s.wasm_return_type;
+        if (return_types.empty())
+            return_types = s.return_types;// todo copy construktor OK??
+        if (types.empty())
+            types = s.types;
+    }
 };
 
 
+struct Local { // todo: use
+    int position; // also implicit in Function{ List<Local> locals;}
+    String name;
+    Valtype valtype;
+};
+
 class Function {
 public:
-	int index = -1;
-	String name;
-	String export_name;
-	Signature signature;
+    int index = -1;
+    String name;
+    String export_name;
+    Signature signature;
 
-	bool is_import = false; // not serialized in functype section, but in import section wt
-	bool is_runtime = false;
-	bool is_builtin = false;// hard coded functions, tests only? todo remove
-	bool is_handled = false; // already emitted (e.g. as runtime)
-	bool is_used = false;// called
-	//	Valtype return_type = voids;
-	bool emit = false;// only those types/functions that are declared (export) or used in call
-	Function &handled() {
-		is_handled = true;
-		return *this;
-	}
+    bool is_import = false; // not serialized in functype section, but in import section wt
+    bool is_runtime = false;
+    bool is_builtin = false;// hard coded functions, tests only? todo remove
+    bool is_handled = false; // already emitted (e.g. as runtime)
+    bool is_used = false;// called
+    //	Valtype return_type = voids;
+    bool emit = false;// only those types/functions that are declared (export) or used in call
+    Code code; // todo: use
+//    List<Local> locals;  // todo: use, instead of global locals!
+    Map<String, Local> locals;  // todo: use, instead of global locals!
 
-	Function &import() {
-		is_import = true;
-		return *this;
-	}
+    Function &handled() {
+        is_handled = true;
+        return *this;
+    }
+
+    Function &import() {
+        is_import = true;
+        return *this;
+    }
 
 	Function &builtin() {
 		is_builtin = true;

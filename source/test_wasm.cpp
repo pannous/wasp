@@ -829,7 +829,6 @@ void testWasmModuleExtension() {
     lib.save("lib.wasm");
 
     Module module = read_wasm("lib.wasm");
-    declaredFunctions.clear();// <-- only newly declared functions (that nead a Code block later), others via functionIndex …
     charged = analyze(parse("test"));// call test() from lib
     Code main = emit(charged, &module, "main");
 //	int ok1 = main.run();// todo: why not merge_wasm on emit? module data is all there? yeah but not in parsed Code … form
