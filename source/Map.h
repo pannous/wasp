@@ -20,7 +20,7 @@
 #endif
 
 #define MAP_MAX_CAPACITY 100000
-#define MAP_INITIAL_CAPACITY 10
+#define MAP_INITIAL_CAPACITY 8
 
 // don't use template! just use int-map
 template<class S, class T>
