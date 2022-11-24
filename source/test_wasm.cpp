@@ -6,8 +6,8 @@
 //#import "asserts.cpp"
 
 
-#define assert_throws(αα)  {printf("%s\n%s:%d\n",αα,__FILE__,__LINE__);bool old=panicking;try{ \
-panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",(char*)αα);backtrace_line(); \
+#define assert_throws(αα)  {printf("%s\n%s:%d\n",#αα,__FILE__,__LINE__);bool old=panicking;try{ \
+panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#αα);backtrace_line(); \
 }catch(chars){}catch(String*){}catch(...){};panicking=old;}
 
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}

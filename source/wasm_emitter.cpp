@@ -673,6 +673,8 @@ Code emitIndexRead(Node op, String context, bool base_on_stack, bool offset_on_s
     Code load;
     if (offset_on_stack and base_on_stack) {// offset never precalculated, RIGHT?
         if (op.name == "#") {// todo: this is stupid code duplication of emitOffset!
+            if (pattern.kind == longs and pattern.value.longy < 1)
+                error("operator # starts from 1, use [] for zero-indexing");
             load.addConst(1);
             load.addByte(i32_sub);
         }
