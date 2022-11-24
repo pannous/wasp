@@ -34,7 +34,7 @@ chars wat = R"(module
 void testParse() {
 //	Mark::markmode();
 //	const Node &node = Mark::parseFile("/Users/me/dev/wasm/test.wat");
-	Node module = parse(wat, "");
+	Node module = parse(wat);
 	assert_equals(module, "module");
 	printf("%s", module.toString());
 	assert_equals(module.length, 8);

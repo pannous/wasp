@@ -73,6 +73,13 @@ extern void info(chars);
 
 bool data_mode = true;// todo ! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
 
+Node &wrapPattern(Node &n) { // y[1] => y:[1]
+    if (n.kind == patterns)return n;
+    if (n.kind == groups or n.kind == objects)return n.setType(patterns, false);
+    Node &wrap = *new Node(patterns);
+    wrap.add(n);
+    return wrap;
+}
 
 //List<codepoint>
 //List<chars> circumfixOperators/*Left*/ = {"‖", 0};
@@ -136,7 +143,7 @@ void load_aliases() {
     aliases.setDefault(List<String>());// uff!?
     hash_to_normed_alias.setDefault(new String());
     data_mode = true;
-    auto list = parseFile("aliases.wasp", "");
+    auto list = parseFile("aliases.wasp");
     for (auto key: list) {
         auto normed = key.name;
         aliases[normed] = key.toList();
@@ -416,14 +423,15 @@ public:
 //		at = -1;
 //	}
 
-    void setParserOptions(ParserOptions p) {
+    Wasp &setParserOptions(ParserOptions p) {
         this->parserOptions = p;
+        return *this;
     }
 
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
 // YUCK static magically applies to new() objects too!?!
-    Node parse(String source) {
+    Node &parse(String source) {
         info("Parsing: \n%s\n"s % source.data);
         return read(source);
     }
@@ -1391,7 +1399,7 @@ private:
         if (file.endsWith(".wit"))
             lib = lib.replaceAll("-", "_");// stupid kebab case!
         if (!lib.empty()) // creates 'include' node for wasm …
-            node = parseFile(lib, parserOptions.current_dir);
+            node = parseFile(lib, parserOptions);
         return node;
     }
 
@@ -1462,6 +1470,7 @@ private:
                         Node &op = operatorr();
                         actual.add(op);
                         actual.kind = expression;
+                        continue;
                     } else if (ch == '>') {
 //                        actual.setType(parserOptions.use_generics ? generics : tags, false); NOT ON ELEMENT!
                         return actual;
@@ -1501,7 +1510,9 @@ private:
                     proceed();
                     // wrap {x} … or todo: just don't flatten before?
                     Node &object = *new Node();
-                    Node objectValue = valueNode(closingBracket(bracket), parent ? parent : &actual.last());
+                    Node &objectValue = valueNode(closingBracket(bracket), parent ? parent : &actual.last());
+//                    if(bracket=='[' and not data_mode )
+//                        objectValue = wrapPattern(objectValue);
                     object.addSmart(objectValue);
 //						object.add(objectValue);
                     if (flatten) object = object.flat();
@@ -1598,7 +1609,7 @@ private:
                     Node op = operatorr();// extend *= ...
                     if (next == '>' and parserOptions.arrow)
                         proceed(); // =>
-                    if (not(op.name == ":" or (data_mode and op.name == "=")))
+                    if (not(op.name == ":" or (parserOptions.data_mode and op.name == "=")))
                         add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
                     if (op.name.length > 1)
                         add_raw = true;
@@ -1812,7 +1823,7 @@ void load_parser_initialization() {
 
 
 //static
-Node &parse(String source, String current_dir, ParserOptions *parserOptions) {
+Node &parse(String source, ParserOptions parserOptions) {
     if (operator_list.size() == 0)
         load_parser_initialization();
     // WE HAVE A GENERAL PROBLEM:
@@ -1822,7 +1833,7 @@ Node &parse(String source, String current_dir, ParserOptions *parserOptions) {
     if (!source.data)return (Node &) NIL;
     info("Parsing: \n%s\n"s % source.data);
     Wasp wasp;
-    if (parserOptions) wasp.setParserOptions(*parserOptions);
+    wasp.setParserOptions(parserOptions);
     return wasp.read(source);
 }
 
@@ -1855,8 +1866,8 @@ char newline = '\n';
 //implicit entry/start for main executable
 
 //static
-Node parseFile(String filename, String current_dir) {
-    String found = findFile(filename, current_dir);
+Node parseFile(String filename, ParserOptions options) {
+    String found = findFile(filename, options.current_dir);
     if (not found)error("file not found "s + filename);
     else
         info("found "s + found);
@@ -1873,14 +1884,14 @@ Node parseFile(String filename, String current_dir) {
         import.add(new Node(found));
         return import;
     } else if (found.endsWith("wasp"))
-        return Wasp().setFile(found).parse(readFile(found));
+        return Wasp().setParserOptions(options).setFile(found).parse(readFile(found));
     else if (found.endsWith("wit"))
         return WitReader().read(found);
     else if (not found.contains(".")) {
-        found = findFile(filename + ".wasp", current_dir);
-        if (found)return parseFile(filename + ".wasp", "");
-        found = findFile(filename + ".wasm", current_dir);
-        if (found)return parseFile(filename + ".wasm", "");
+        found = findFile(filename + ".wasp", options.current_dir);
+        if (found)return parseFile(found);
+        found = findFile(filename + ".wasm", options.current_dir);
+        if (found)return parseFile(found);
         else
             error("Can't find module "s + filename);
     } else
