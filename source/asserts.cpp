@@ -211,7 +211,7 @@ bool assert_isx(char *mark, bool expect) {
 
 Node assert_parsesx(chars mark) {
 	try {
-        result = parse(mark);
+        result = parse(mark, ParserOptions{.data_mode=true});
         print(result);
 		return result;
 	} catch (chars err) {
@@ -229,6 +229,7 @@ Node assert_parsesx(chars mark) {
 	return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
 //#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){printf("\n%s:%d\n",__FILE__,__LINE__);exit(1);}
+// ⚠️ CAREFUL parses in DATA_MODE !
 #define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(1);}
 
 #define skip(test) printf("\nSKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);

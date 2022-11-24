@@ -30,13 +30,20 @@ int last_object_pointer = 0;// outside stack
 //int last_data_pointer = 0;// last_data plus header
 //Map<String *, long> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
-Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^
+Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^ todo remove
 Map<String, Node> referenceMap; // lookup types…
+Map<String, int> typeMap;// wasm type index for funcTypeSection. todo keep in Function
+Map<String, int> functionIndices; // todo keep in Function
+Map<String, Code> functionCodes; // todo keep in Function
 //Map<String, Signature> functions;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
 
 //Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
-
+//Map<String, Valtype> return_types;
+//Map<int, List<String>> locals;
+//Map<int, Map<int, String>> locals;
+//List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
+//List<Function> imports;// from libraries. todo: these are inside functions<> for now!
 
 Module runtime;
 String start = "main";
@@ -54,14 +61,6 @@ enum MemoryHandling {
 };
 MemoryHandling memoryHandling;// set later = export_memory; // import_memory not with mergeMemorySections!
 
-//Map<String, Valtype> return_types;
-//Map<int, List<String>> locals;
-//Map<int, Map<int, String>> locals;
-//List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
-Map<String, int> functionIndices;
-//List<Function> imports;// from libraries. todo: these are inside functions<> for now!
-Map<String, Code> functionCodes;
-Map<String, int> typeMap;
 
 Code createSection(Sections sectionType, Code data);
 
@@ -404,10 +403,11 @@ Code emitArray(Node &node, String context) {
     emitIntData(node.kind);
     emitIntData(node.length);
 //	assert_equals((long) data_index_end, (long) pointer + array_header_length);
+    Code ignore;
     for (Node &child: node) {
 // todo: smart pointers?
 //        code.add(emitData(child, context));// pointers in flat i32/i64 format!
-        emitData(child, context);// we only need the object pointer on stack
+        ignore.add(emitData(child, context));// we only need the object pointer on stack
     }
     String ref = node.name;
     if (node.name.empty() and node.parent) {
@@ -454,7 +454,13 @@ int stackItemSize(Valtype valtype, bool throws = true) {
     return 0;
 }
 
-int currentStackItemSize(Node array) {
+int currentStackItemSize(Node array, String context) {
+    if (array.kind == reference) {
+        Function &function = declaredFunctions[context];
+        Local &local = function.locals[array.name];
+        return stackItemSize(local.valtype);
+    }
+    if (array.kind == strings) return 1;// char for now todo: call String.codepointAt()
     if (stackItemSize(last_type, false))
         return stackItemSize(last_type);
     error("unknown size for stack item "s + array.string());
@@ -526,7 +532,7 @@ Code emitOffset(Node array, Node offset_pattern, bool sharp, String context, int
 
 [[nodiscard]]
 Code emitIndexWrite(Node array, int base, Node offset, Node value0, String context) {
-    int size = currentStackItemSize(array);
+    int size = currentStackItemSize(array, context);
     Valtype targetType = last_type;
 
     //		localTypes[context]
@@ -596,7 +602,7 @@ Code emitIndexPattern(Node array, Node op, String context, bool base_on_stack) {
     if (op.kind != patterns and op.kind != longs and op.kind != reference)error("op expected in emitIndexPattern");
     if (op.length != 1 and op.kind != longs)error("exactly one op expected in emitIndexPattern");
     int base = base_on_stack ? 0 : last_object_pointer + headerOffset(array);// emitting directly without reference
-    int size = currentStackItemSize(array);
+    int size = currentStackItemSize(array, context);
     Node &pattern = op.first();
     Code load = emitOffset(array, pattern, op.name == "#", context, size, base, false);
     if (size == 1)load.add(i8_load);// i32.load8_u
@@ -632,7 +638,7 @@ Code emitIndexRead(Node op, String context, bool base_on_stack, bool offset_on_s
         error("index operator needs two arguments: node/array/reference and position");
     Node &array = op[0];// also String: byte array or codepoint array todo
     Node &pattern = op[1];
-    int size = currentStackItemSize(array);
+    int size = currentStackItemSize(array, context);
 //	if(op[0].kind==strings) todo?
     last_type = arg_type;
     int base; // …
@@ -1975,10 +1981,13 @@ Code codeSection(Node root) {
 //	int new_count;
 //	new_count = declaredFunctions.size();
     for (auto declared: declaredFunctions) {
+        Function &function = declaredFunctions[declared];// todo use more often;)
         print("declared function: "s + declared);
         if (!declared)error("empty function name (how?)");
-        if (not functionIndices.has(declared))// used or not!
+        if (not functionIndices.has(declared)) {// used or not!
             functionIndices[declared] = ++last_index;
+//            function.index=last_index; todo what if it already had different index!?
+        }
     }
 //	int index_size = functionIndices.size();
 //	bool has_main = start and (declaredFunctions.has(start) or functionIndices.has(start));
