@@ -1210,12 +1210,16 @@ void preRegisterFunctions() {
         check(functions["log10"].is_import)
         return;// don't overwrite is_handled status etc
     }
-    functions["log10"].import().signature.add(float64).returns(float64);
+    // runtime:
     functions["atoi0"].runtime().signature.add(charp).returns(int32);// todo int64
     functions["strlen0"].runtime().signature.add(charp).returns(int32);// todo int64
     functions["malloc"].runtime().signature.add(int64).returns(int64);
     functions["okf"].runtime().signature.add(float32).returns(float32);
     functions["okf5"].runtime().signature.add(float32).returns(float32);
+    functions["eq"].runtime().signature.add(charp).add(charp).returns(bools);
+
+    // import:
+    functions["log10"].import().signature.add(float64).returns(float64);
     functions["pow"].import().signature.add(float64).add(float64).returns(float64);
 //	functions["signature.import().signature.add(float32).returns(float32));
     functions["log"].import().signature.add(float64).returns(float64);
