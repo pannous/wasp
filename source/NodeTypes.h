@@ -88,8 +88,10 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     longs = 0x7E, // the signature of parameters/variables is independent!
     structs,
     enums,
+    flags,// just a boolean enum with “bit-boolean” values 1,2,4,8,…
     variants,
-    records, // todo merge concepts with wasp clazz?
+//    unions, // todo, also option
+    records, // todo merge concepts with module wasp clazz?
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 

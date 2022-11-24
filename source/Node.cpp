@@ -627,7 +627,8 @@ void Node::addSmart(Node *node, bool flatten, bool clutch) { // flatten AFTER co
         return;// skipp nils!  (NIL) is unrepresentable and always ()! todo?
     node->parent = this;
     if (node->length == 1 and flatten and ::empty(node->name))
-        node = &node->last();
+        if (not(node->kind == patterns))//  and data_mode
+            node = &node->last();
 
     //  or node->kind == patterns  DON'T flatten patterns!
     if (not children and (node->kind == objects or node->kind == groups) and
@@ -786,6 +787,16 @@ String Node::serializeValue(bool deep) const {
             return val.node ? val.node->name : "<ERROR>";
         case codepoints:
             return String((codepoint) val.longy);
+        case flags: { // todo: distinguish flags class from flags variables!
+            if (type) {
+                if (type->kind != flags)error("flags type ≠ flags?");
+                String flag_list;
+                for (auto flag: *type)
+                    if (val.longy && flag.value.longy)
+                        flag_list = flag.name + " | ";
+                return flag_list;
+            }
+        }
         case longs:
             return itoa(val.longy);
         case reals:
@@ -1006,7 +1017,7 @@ Node &Node::setName(char *name0) {
     return *this;
 }
 
-// extract value from this (remove name)
+// extract value from this (remove name to avoid emit-setter )
 Node &Node::values() {
     if (kind == longs)return *new Node(value.longy);
     if (kind == reals)return *new Node(value.real);
@@ -1248,6 +1259,8 @@ chars typeName(Kind t) {
             return "class";
         case structs:
             return "struct";
+        case flags:
+            return "flags";
     }
     error(str("MISSING Type Kind name mapping ") + t);
 }

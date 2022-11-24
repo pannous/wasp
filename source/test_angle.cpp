@@ -321,7 +321,7 @@ void testLogicPrecedence() {
 	check(precedence("and") < precedence("or"));
 	assert_is("true", true);
 	assert_is("false", false);
-    Node ok = parse("true or true", "");
+    Node ok = parse("true or true");
 //	const Node &ja = ok.interpret();// Undefined symbols if not compiled with Interpret.cpp
 //	print(ja);
 	assert_is("true or true", true);

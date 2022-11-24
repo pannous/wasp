@@ -26,6 +26,7 @@ extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> 
 
 extern Map<String, Node * /* modifiers/values/init expressions*/> globals; // access from Angle!
 void addGlobal(Node &node);
+
 extern Map<String /*name*/, Valtype> globalTypes;
 
 Node &groupWhile(Node n, String string);
@@ -33,16 +34,16 @@ Node &groupWhile(Node n, String string);
 bool isPrimitive(Node &node);
 
 bool isType(Node &node);
-
-enum ParseOptions {
-    nix = 0,
-    no_main = 1,
-    data_only = 2,
-    ignore_errors = 4,
-};
+//
+//enum ParseOptions {
+//    nix = 0,
+//    no_main = 1,
+//    data_only = 2,
+//    ignore_errors = 4,
+//};
 
 //List<String> collectOperators(Node &expression);// test/debug only
-ParserOptions parse(String code, ParseOptions *);// wasp -> data  // this is the pure Wasp part
+//ParserOptions parse(String code, ParseOptions *);// wasp -> data  // this is the pure Wasp part
 
 //__attribute__((export_name("analyze")))
 Node &analyze(Node &node, String context = "main");// wasp -> node  // build ast via operators
