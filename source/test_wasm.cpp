@@ -1000,10 +1000,10 @@ void testArrayIndicesWasm() {
     assert_emit("puts('ok');(1 4 3)#2", 4);
     assert_throws("(1 4 3)#0");
     skip(
-// todo patterns as lists
-            assert_emit("[1 4 3]#2", 4);
+            assert_emit("[1 4 3]#2", 4);// exactly one op expected in emitIndexPattern
             assert_is("[1 2 3]#2", 2);// check node based (non-primitive) interpretation first
-            assert_throws("(1 4 3)#4", 4);// todo THROW!
+            assert_throws("(1 4 3)#4");// todo THROW!
+// todo patterns as lists
     )
 
 
@@ -1392,11 +1392,12 @@ void testAllWasm() {
     testArrayIndicesWasm();
 
     skip( // todo DONT SKIP
-            testAssertRun();
-            testWasmRuntimeExtension();
             assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
+            testAssertRun();
             testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
+            testWasmRuntimeExtension();
             testWasmRuntimeExtensionMock();
+//    MISSING import/declaration for function eq Map problem?
     )
 //	data_mode = true;// allow
 }
