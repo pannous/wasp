@@ -19,29 +19,30 @@
 
 #endif
 
-#define MAP_ALLOCATION_RESERVED_COUNT 1024*8*2 // todo! dynamic grow maps (ugly name cuz ugly impl)
-
+#define MAP_MAX_CAPACITY 100000
+#define MAP_INITIAL_CAPACITY 10
 
 // don't use template! just use int-map
 template<class S, class T>
 class Map {
 public:
-	int _size = 0;
-	S *keys;// = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
-	T *values;// = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
+    int _size = 0;
+    int capacity = MAP_INITIAL_CAPACITY;// initial
+    S *keys;// = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
+    T *values;// = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
 
-	//	bool leave_blank == use_malloc_constructor = true;// return reference to freshly nulled malloc data, same ^^
-	bool use_constructor = true;// *new T() makes sense for List of references but NOT for list of Data!!
-	bool leave_blank = false;//true would be VERY BAD IDEA especially for pointers! todo what is the point?
-	bool use_default = false;// no, this would copy fields (e.g. pointers to same list)  todo what is the point?
+    //	bool leave_blank == use_malloc_constructor = true;// return reference to freshly nulled malloc data, same ^^
+    bool use_constructor = true;// *new T() makes sense for List of references but NOT for list of Data!!
+    bool leave_blank = false;//true would be VERY BAD IDEA especially for pointers! todo what is the point?
+    bool use_default = false;// no, this would copy fields (e.g. pointers to same list)  todo what is the point?
 
-	[[maybe_unused]] T defaulty;
+    [[maybe_unused]] T defaulty;
 
 	// unnecessary :
 	Map() {
-		keys = (S *) calloc(sizeof(S), MAP_ALLOCATION_RESERVED_COUNT);
-		values = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
-	}
+        keys = (S *) calloc(sizeof(S), capacity);
+        values = (T *) calloc(sizeof(T), capacity);
+    }
 
 	Map(T default0) : defaulty(default0) {}
 
@@ -74,8 +75,8 @@ public:
 
 	int position(S s) {
 		for (int i = 0; i < _size; i++) //  or keys[i]!=0
-			if (keys[i] == s)
-				return i;
+            if (s == keys[i])
+                return i;
 		return -1;
 	}
 
@@ -100,6 +101,7 @@ public:
 		keys[_size] = key;
 		values[_size] = value;
 		_size++;
+        if (_size >= capacity)grow();
 		return _size;
 	}
 
@@ -111,16 +113,19 @@ public:
 			values[found] = value;
 			return found;
 		} else {
-			keys[_size] = key;
-			values[_size] = value;
-			_size++;
-			return _size;
-		}
+            keys[_size] = key;
+            values[_size] = value;
+            _size++;
+            if (_size >= capacity)
+                grow();
+            return _size;
+        }
 	}
 
 // MUST USE map.has(x) instead of map[x] otherwise it is created!!
 	// prepare assignment a[b]=c  BAD because unknown symbols will be added!!
 	T &operator[](S key) {// CREATING on access! use map.has(x) if not desired
+        if (_size >= capacity)grow();
 		int position1 = position(key);
 		if (position1 < 0) {
 			if (leave_blank) {
@@ -148,25 +153,38 @@ public:
 		}
 		T &t = values[position1];
 		return t;
-	}
+    }
 //
 //	int operator[](S key) {
 //		return position(key);
 //	}
 
-	S &operator[](T value) {// inverse lookup (!?)
-		return keys[position(value)];
-	}
+    S &operator[](T value) {// inverse lookup (!?)
+        return keys[position(value)];
+    }
 
-	void clear() {
-//		free(keys);// todo  (interrupted by signal 6: SIGABRT) in WebApp why?
-//		free(values);
-		keys = (S *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
-		values = (T *) calloc(sizeof(T), MAP_ALLOCATION_RESERVED_COUNT);
-		_size = 0;
-	}
+    void grow() { // todo don't grow when holding references!
+        capacity = capacity * 2;
+        assert(capacity < MAP_MAX_CAPACITY);
+        S *new_keys = (S *) alloc(sizeof(S), capacity);
+        T *new_values = (T *) alloc(sizeof(T), capacity);
+        memcpy((void *) new_keys, (void *) keys, sizeof(S) * capacity / 2);
+        memcpy((void *) new_values, (void *) values, sizeof(T) * capacity / 2);
+        free(keys);
+        free(values);
+        keys = new_keys;
+        values = new_values;
+    }
 
-	void setDefault(T d) {
+    void clear() {
+        free(keys);// todo  (interrupted by signal 6: SIGABRT) in WebApp why?
+        free(values);
+        keys = (S *) calloc(sizeof(S), capacity);
+        values = (T *) calloc(sizeof(T), capacity);
+        _size = 0;
+    }
+
+    void setDefault(T d) {
 		if (sizeof(T) > 8)
 			todo("careful! only use setDefault for value types without nested data!");
 		defaulty = d;

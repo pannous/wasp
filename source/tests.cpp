@@ -2405,9 +2405,11 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
+    assert_emit("{1 4 3}#2", 4);
     testStringIndicesWasm();
     assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
     testIndexOffset();
+    testArrayIndicesWasm();
     testIndexWasm();
 //    testWit();
 //    exit(1);
