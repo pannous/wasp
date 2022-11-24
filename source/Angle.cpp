@@ -28,7 +28,7 @@ Map<String, bool> module_done;
 Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
 
-Map<String, Function> declaredFunctions; // todo <<<
+Map<String, Function> declaredFunctions; // todo Maps don't free memory and cause SIGKILL after some time <<<
 // todo : use proper context ^^ instead of:
 Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
