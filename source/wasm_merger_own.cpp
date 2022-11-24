@@ -67,7 +67,7 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
         {block,               leb},
         {loop,                0},
         {if_i,                0},// precede by i32 result}, follow by i32_type {7f}
-        {elsa,                0},
+        {else_,               0},
         {return_block,        0},
 
         // EXTENSIONS:
