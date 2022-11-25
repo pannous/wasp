@@ -34,6 +34,8 @@ class List;
 
 extern String &EMPTY_STRING;
 
+String &hex(long d);
+
 //What 'char' and 'wchar_t' represent are completely ambiguous.
 //You might think that they represent a "character", but depending on the encoding, that might not be true.
 //typedef byte char;// overloaded term that can mean many things but throws a compiler warning
@@ -109,9 +111,9 @@ typedef chars chars;
 //void* alloc(number size);// wasm | linux
 
 
-//extern void error1(chars message, chars file = 0, int line = 0);
+//extern void error(chars message, chars file = 0, int line = 0);
 
-//void error1(String message, chars file = 0, int line = 0);
+//void error(String message, chars file = 0, int line = 0);
 
 class String;
 
@@ -537,7 +539,7 @@ public:
             return this->replace("%l", itoa0(d));
         if (contains("%zu"))
             return this->replace("%zu", itoa0(d));
-        error1("missing placeholder %d in string modulo operation s%d");
+        error("missing placeholder %d in string modulo operation s%d");
         return "«ERROR»";
     }
 
@@ -557,7 +559,7 @@ public:
             return this->replace("%d", itoa0(d));
         else if (contains("%x"))
             return this->replace("%x", hex(d));
-        error1("missing placeholder %d in string modulo operation s%d");
+        error("missing placeholder %d in string modulo operation s%d");
         return "«ERROR»";
     }
 
@@ -1051,6 +1053,7 @@ bool empty(codepoint s);// todo: rename whitespace (and braces??)
 
 bool contains(chars str, chars match);
 
+String &hex(long d);
 
 #ifdef WEBAPP
 // todo expensive!
