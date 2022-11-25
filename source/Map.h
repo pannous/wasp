@@ -111,8 +111,8 @@ public:
 		int found = position(key);
 		if (found >= 0) {
 			values[found] = value;
-			return found;
-		} else {
+            return found;
+        } else {
             keys[_size] = key;
             values[_size] = value;
             _size++;
@@ -120,17 +120,40 @@ public:
                 grow();
             return _size;
         }
-	}
+    }
+
+    bool remove(S key) {
+        int found = position(key);
+        if (found >= 0) {
+            keys[found] = keys[_size - 1];
+            values[found] = values[_size - 1];
+            _size--;
+            return true;
+        } else warn("can't remove non-existing key");
+        return false;
+    }
+
+
+    bool remove(T val) {
+        int found = position(val);
+        if (found >= 0) {
+            values[found] = values[_size - 1];
+            keys[found] = keys[_size - 1];
+            _size--;
+            return true;
+        } else warn("can't remove non-existing value");
+        return false;
+    }
 
 // MUST USE map.has(x) instead of map[x] otherwise it is created!!
-	// prepare assignment a[b]=c  BAD because unknown symbols will be added!!
-	T &operator[](S key) {// CREATING on access! use map.has(x) if not desired
+    // prepare assignment a[b]=c  BAD because unknown symbols will be added!!
+    T &operator[](S key) {// CREATING on access! use map.has(x) if not desired
         if (_size >= capacity)grow();
-		int position1 = position(key);
-		if (position1 < 0) {
-			if (leave_blank) {
-				return values[_size++];// values already contain blank T's so ok
-			} else if (use_default and false) {
+        int position1 = position(key);
+        if (position1 < 0) {
+            if (leave_blank) {
+                return values[_size++];// values already contain blank T's so ok
+            } else if (use_default and false) {
 				// todo remove after you understand that this is a bad idea … and don't come up with that idea again
 				T &t = values[_size++];
 //				memcpy(t, defaulty, sizeof(T));// BAD because this would copy fields (e.g. pointers to same list)
@@ -145,22 +168,36 @@ public:
 				printf("MISSING KEY: ");
 //				put(key);
 //				printf("%s",key);// todo unsafe!! can be int etc!
-				printf("\n");
-				return values[_size++];
+                printf("\n");
+                return values[_size++];
 //				error("MISSING KEY");
-			}
+            }
 
-		}
-		T &t = values[position1];
-		return t;
+        }
+        T &t = values[position1];
+        return t;
     }
-//
-//	int operator[](S key) {
-//		return position(key);
-//	}
+
+//    T &operator[](int position) {
+//        return values[position]; // functions that differ only in their return type cannot be overloaded
+//    }
+
 
     S &operator[](T value) {// inverse lookup (!?)
         return keys[position(value)];
+    }
+
+    T &value(int position) {
+        check_silent(position >= 0);
+        check_silent(position < size());
+        return values[position];
+    }
+
+
+    T &at(int position) {
+        check_silent(position >= 0);
+        check_silent(position < size());
+        return values[position];
     }
 
     void grow() { // todo don't grow when holding references!
