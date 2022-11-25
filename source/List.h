@@ -7,7 +7,8 @@
 
 #include <cstdlib> // OK in WASM!
 
-#define LIST_ALLOCATION_RESERVED_COUNT 100 // Todo!
+#define LIST_DEFAULT_CAPACITY 100
+#define LIST_MAX_CAPACITY 10000 // debug only!
 
 #include "Util.h"
 #include "wasm_helpers.h"
@@ -134,23 +135,23 @@ void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
 template<class S>
 class List {
 public:
-	int header = array_header_32;
-	int _type = 0;// reflection on template class S
-	int _size = 0;
-	S *items;// In C++ References cannot be put into an array, if you try you get
+    int header = array_header_32;
+    int _type = 0;// reflection on template class S
+    int _size = 0;
+    S *items;// In C++ References cannot be put into an array, if you try you get
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
-    int _max_size = LIST_ALLOCATION_RESERVED_COUNT;// grow() by factor 2 internally on demand
+    int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
 
-	List() {
-		items = (S *) calloc(sizeof(S), LIST_ALLOCATION_RESERVED_COUNT);
-	}
+    List() {
+        items = (S *) calloc(sizeof(S), LIST_DEFAULT_CAPACITY);
+    }
 
-	List(Array_Header a) {
-		if (a.length == 0xA0000000)
-			error1("double header");// todo: just shift by 4 bytes
-		_size = a.length;
-		items = (S *) &a.data;// ok? copy data?
+    List(Array_Header a) {
+        if (a.length == 0xA0000000)
+            error1("double header");// todo: just shift by 4 bytes
+        _size = a.length;
+        items = (S *) &a.data;// ok? copy data?
 //		todo("a.typ");
 	}
 
@@ -168,7 +169,7 @@ public:
 
 	List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
 		if (args == 0)return;
-		while (args[_size] and _size < LIST_ALLOCATION_RESERVED_COUNT)_size++;
+        while (args[_size] and _size < LIST_DEFAULT_CAPACITY)_size++;
 		items = (S *) calloc(sizeof(S), _size + 1);
 		int i = _size;
 		while (i-- > 0)items[i] = args[i];
@@ -201,18 +202,18 @@ public:
 	}
 
 	void grow() {
-		S *neu = (S *) malloc(sizeof(S) * _max_size * 2);
-		memcpy((void *) neu, (void *) items, _max_size);
+        check_silent(capacity * 2 < LIST_MAX_CAPACITY);
+        S *neu = (S *) malloc(sizeof(S) * capacity * 2);
+        memcpy((void *) neu, (void *) items, capacity);
 //		for (int i = 0; i < size(); ++i) neu[i] = items[i];// doesn't help
-// 		todo
         warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
-		items = neu;
-		_max_size *= 2;
-	}
+        items = neu;
+        capacity *= 2;
+    }
 
 	S &add(S s) {
 		items[_size++] = s;
-		if (_size >= _max_size)grow();
+        if (_size >= capacity)grow();
 		return items[_size - 1];
 	}
 
@@ -241,7 +242,7 @@ public:
 		for (int i = 0; i < _size; ++i) {
 			if (items[i] == key)return items[i];
 		}
-		if (_size >= _max_size - 1)grow();
+        if (_size >= capacity - 1)grow();
 		return items[_size++];// create new!
 	}
 
@@ -306,7 +307,7 @@ public:
 	}
 
 	void clear() {
-		items = (S *) alloc(sizeof(S), LIST_ALLOCATION_RESERVED_COUNT);
+        items = (S *) alloc(sizeof(S), LIST_DEFAULT_CAPACITY);
 //		items = (S *) calloc(sizeof(S), LIST_ALLOCATION_RESERVED_COUNT);
 		_size = 0;
 	}
