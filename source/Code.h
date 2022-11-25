@@ -786,7 +786,8 @@ public:
 // todo: add true Wasp Type Signature to wasm Valtype Signature
 	List<Function *> functions;// using this Signature; debug only?
 	Map<int, Type> types;
-	List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
+    Map<int, String> parameter_names;
+    List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
 //	Type return_type{};// use return_types.last(default)
 	Valtype wasm_return_type;// debug only!
 
@@ -833,24 +834,26 @@ public:
 		return types.size();
 	}
 
-	Signature &add(Valtype t) {
+    Signature &add(Valtype t, String name = "?") {
 #ifdef DEBUG
-		debug_name += typeName(t);
-		debug_name += " ";
+        debug_name += typeName(t);
+        debug_name += " ";
 #endif
-		types.insert_or_assign(types.size(), t);
-		return *this;
-	}
+        types.insert_or_assign(types.size(), t);
+        parameter_names.add(parameter_names.size(), name);
+        return *this;
+    }
 
-	Signature &add(Node type) {
-		Valtype t = mapTypeToWasm(type);
+    Signature &add(Node type, String name = "?") {
+        Valtype t = mapTypeToWasm(type);
 #ifdef DEBUG
-		debug_name += typeName(t);
-		debug_name += " ";
+        debug_name += typeName(t);
+        debug_name += " ";
 #endif
-		types.insert_or_assign(types.size(), t);
-		return *this;
-	}
+        types.insert_or_assign(types.size(), t);
+        parameter_names.add(parameter_names.size(), name);
+        return *this;
+    }
 
 //
 //		Signature &returns(Node& type) {
@@ -911,7 +914,7 @@ public:
 		return f;
 	}
 
-	void merge(Signature &s) {
+    void merge(Signature &s) {
         if (type_index < 0)type_index = s.type_index;
 //		return_type = s.return_type;
         wasm_return_type = s.wasm_return_type;
@@ -920,10 +923,15 @@ public:
         if (types.empty())
             types = s.types;
     }
+
+    bool has(String string) {
+        return parameter_names.lookup(string);
+    }
 };
 
 
 struct Local { // todo: use
+    bool is_param; // function arguments and locals share same index space, but are emitted differently
     int position; // also implicit in Function{ List<Local> locals;}
     String name;
     Valtype valtype;
@@ -938,13 +946,15 @@ public:
     String export_name;
     Signature signature;
 
+
     bool is_import = false; // not serialized in functype section, but in import section wt
-    bool is_runtime = false;
-    bool is_builtin = false;// hard coded functions, tests only? todo remove
-    bool is_handled = false; // already emitted (e.g. as runtime)
-    bool is_used = false;// called
-    //	Valtype return_type = voids;
+    bool is_declared; // has fresh Code body to emit!
     bool emit = false;// only those types/functions that are declared (export) or used in call
+    bool is_runtime = false;// old special imports to wasm.wasm
+    bool is_handled = false; // already emitted (e.g. as runtime)
+    bool is_builtin = false;// hard coded functions, tests only? todo remove
+    bool is_used = false;// called imports / buildins
+    //	Valtype return_type = voids;
     Code code; // todo: use
 //    List<Local> locals;  // todo: use, instead of global locals!
     Map<String, Local> locals;  // todo: use, instead of global locals!
@@ -960,14 +970,20 @@ public:
     }
 
 	Function &builtin() {
-		is_builtin = true;
-		return *this;
-	}
+        is_builtin = true;
+        return *this;
+    }
 
-	Function &runtime() {
-		is_runtime = true;
-		return *this;
-	}
+    Function &runtime() {
+        is_runtime = true;
+        emit = false;
+        return *this;
+    }
+
+//    explicit
+    operator String() {
+        return name;
+    }
 
 };
 
