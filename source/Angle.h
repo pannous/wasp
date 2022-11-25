@@ -24,15 +24,15 @@ extern Module *module;// todo: put all these in <<<<
 //extern List<String> declaredFunctions;
 extern Map<String, Function> declaredFunctions; // todo <<<
 // todo add to Function as context! on the other hand declaredFunctions live in different world than imported ?
-extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
-extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
+//extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
+//extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 
 extern Map<String, Node * /* modifiers/values/init expressions*/> globals; // access from Angle!
 void addGlobal(Node &node);
 
 extern Map<String /*name*/, Valtype> globalTypes;
 
-Node &groupWhile(Node n, String string);
+Node &groupWhile(Node &n, String &string);
 
 bool isPrimitive(Node &node);
 
