@@ -1014,17 +1014,6 @@ void testArrayIndicesWasm() {
 //	check(construct["rhs"].kind == patterns or construct.length==1 and construct.first().kind==patterns);
 //	emit("pixel=[]");
 //	exit(0);
-
-
-    skip(
-// todo create empty array
-            assert_emit("pixel=[];pixel[1]=15;pixel[1]", 15);
-            assert_emit("pixel=();pixel#1=15;pixel#1", 15);// diadic ternary operator
-            assert_emit("pixel array;pixel#1=15;pixel#1", 15);// diadic ternary operator
-            assert_emit("pixel=100 ints;pixel[1]=15;pixel[1]", 15);
-    )
-
-
 }
 
 

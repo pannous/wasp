@@ -16,6 +16,87 @@
 
 Node &result = *new Node();
 
+void testArraySize() {
+    // requires struct lookup and aliases
+    assert_emit("pixel=[1 2 4];#pixel", 3);
+//  assert_emit("pixel=[1 2 4];pixel#", 3);
+    assert_emit("pixel=[1 2 4];pixel size", 3);
+    assert_emit("pixel=[1 2 4];pixel length", 3);
+    assert_emit("pixel=[1 2 4];pixel count", 3);
+    assert_emit("pixel=[1 2 4];pixel number", 3);// ambivalence type!
+    assert_emit("pixel=[1 2 4];pixel.size", 3);
+    assert_emit("pixel=[1 2 4];pixel.length", 3);
+    assert_emit("pixel=[1 2 4];pixel.count", 3);
+    assert_emit("pixel=[1 2 4];pixel.number", 3);// ambivalence cast
+    assert_emit("pixels=[1 2 4];number of pixels ", 3);
+    assert_emit("pixels=[1 2 4];size of pixels ", 3);
+    assert_emit("pixels=[1 2 4];length of pixels ", 3);
+    assert_emit("pixels=[1 2 4];count of pixels ", 3);
+    assert_emit("pixel=[1 2 3];pixel.add(5);#pixel", 4);
+}
+
+
+void testArrayOperations() {
+    testArraySize();
+    // todo 'do' notation to modify versus return different list!
+    assert_emit("pixel=[1 2 3];do add 4 to pixel; pixel", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];y=pixel + 4; pixel", Node(1, 2, 3, 0));
+
+//        assert_throws("pixel=[1 2 3];pixel + 4;pixel");// unused non-mutating operation
+    assert_emit("pixels=[1 2 4];pixel#3", 4);// plural!
+    assert_emit("pixel=[1 2 3];pixel + [4]", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel + 4", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel<<4", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];4>>pixel", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];add 4 to pixel", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel.add 4", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel add 4", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel.add(4)", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel.insert 4", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel insert 4", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel.insert(4)", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel.insert(4,-1)", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel.insert 4 at end", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel.insert 4 at -1", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];insert 4 at end of pixel", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];pixel.insert(4,0)", Node(4, 1, 2, 3, 0));
+    assert_emit("pixel=[1 2 3];pixel.insert 4 at 0", Node(4, 1, 2, 3, 0));
+    assert_emit("pixel=[1 2 3];pixel.insert 4 at start", Node(4, 1, 2, 3, 0));
+    assert_emit("pixel=[1 2 3];pixel.insert 4 at head", Node(4, 1, 2, 3, 0));
+    assert_emit("pixel=[1 2 3];pixel.insert 4 at beginning", Node(4, 1, 2, 3, 0));
+    assert_emit("pixels=[1 2 3];insert 4 at start of pixels", Node(4, 1, 2, 3, 0));
+    assert_emit("pixel=[1 2 3];pixel - [3]", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];pixel - 3", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];remove [3] from pixel", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];remove 3 from pixel", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];pixel.remove(3)", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];pixel.remove 3", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];pixel remove(3)", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];pixel remove 3", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];pixel.remove([3])", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];pixel.remove [3]", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];pixel remove([3])", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3];pixel remove [3]", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3 4];pixel.remove([3 4])", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3 4];pixel.remove [3 4]", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3 4];pixel remove([3 4])", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3 4];pixel remove [3 4]", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3 4];pixel remove 3 4", Node(1, 2, 0));
+    assert_emit("pixel=[1 2 3 4];pixel remove (3 4)", Node(1, 2, 0));
+    assert_emit("pixels=[1 2 3 4];pixels without (3 4)", Node(1, 2, 0));
+}
+
+void testArrayCreation() {
+//    skip(
+// todo create empty array
+    assert_emit("pixel=[];pixel[1]=15;pixel[1]", 15);
+    assert_emit("pixel=();pixel#1=15;pixel#1", 15);// diadic ternary operator
+    assert_emit("pixel array;pixel#1=15;pixel#1", 15);
+    assert_emit("pixel:int[100];pixel[1]=15;pixel[1]", 15);
+    assert_emit("pixel=int[100];pixel[1]=15;pixel[1]", 15);// todo wasp can't distinguish type ':' from value '=' OK?
+    assert_emit("pixel: 100 int;pixel[1]=15;pixel[1]", 15);// number times type = typed array
+}
+
 void testIndexOffset() {
     assert_emit("x=(5 6 7);y=(1 4 3);y#2", 4);
     assert_emit("x=(5 6 7);(1 4 3)#2", 4);
@@ -1807,9 +1888,7 @@ void testParamizedKeys() {
     assert_equals(node, "password");
     assert_equals(label0["for"], "password");
 
-
-
-// 1. paramize keys: label{param=(for:password)}:"Text"
+    // 1. paramize keys: label{param=(for:password)}:"Text"
     Node label1 = parse("label(for:password):'Passwort'");
     label1.print();
     assert_equals(label1, "Passwort");
@@ -2405,6 +2484,10 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
+    assert_emit("√π²", 3.1415);
+    testSinus();
+    assert_emit(".1", 0.1);
+
     assert_emit("{1 4 3}#2", 4);
     testStringIndicesWasm();
     assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
