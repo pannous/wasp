@@ -29,6 +29,7 @@ int data_index_end = 0;// position to write more data = end + length of data sec
 int last_object_pointer = 0;// outside stack
 //int last_data_pointer = 0;// last_data plus header
 //Map<String *, long> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
+// todo: put into Function.locals :
 Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
 Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^ todo remove
 Map<String, Node> referenceMap; // lookup types…
@@ -535,7 +536,7 @@ Code emitIndexWrite(Node array, int base, Node offset, Node value0, String conte
     int size = currentStackItemSize(array, context);
     Valtype targetType = last_type;
 
-    //		localTypes[context]
+    //		declaredFunctions[context]
 //	Valtype valType = last_type;
     Code store;
     store = store + emitOffset(array, offset, true, context, size, base, false);
@@ -575,16 +576,17 @@ Code emitIndexWrite(Node op, String context) {// todo offset - 1 when called via
 // "hi"#1="H"
 [[nodiscard]]
 Code emitPatternSetter(Node ref, Node offset, Node value, String context) {
-    List<String> &current = locals[context];
+    Function &function = declaredFunctions[context];
     String &variable = ref.name;
 
-    if (!current.has(variable)) {
-        current.add(variable);
+    if (!function.locals.has(variable))
         error("!! Variable missed by analyzer: "_s + variable);
-    }// else:
-    int local_index = current.position(variable);
-    last_type = localTypes[context][local_index];
+
+    Local &local = function.locals[variable];
+    last_type = local.valtype;
     int base = 0;
+    if (local.data_pointer)
+        base = local.data_pointer;
     if (referenceIndices.has(variable)) {
         base = referenceDataIndices[variable];// todo?
         ref = referenceMap[variable];// ref to value!
@@ -740,7 +742,7 @@ Code emitData(Node node, String context) {
             last_type = float64;
             break;
         case reference:
-            if (locals[current].has(name))
+            if (declaredFunctions[context].locals.has(name))
                 error("locals dont belong in emitData!");
             else if (referenceIndices.has(name))
                 todo("emitData reference makes no sense? "s + name);
@@ -843,16 +845,17 @@ Code emitValue(Node &node, String context) {
             break;
 //		case identifier:
         case reference: {
-            int local_index = locals[context].position(name);
-            if (local_index < 0)error("UNKNOWN symbol "s + name + " in context " + context);
+            Function &function = declaredFunctions[context];
+            if (!function.locals.has(name) and not globals.has(name))
+                error("UNKNOWN symbol "s + name + " in context " + context);
             if (node.value.node) {
                 Node &value = *node.value.node;
-                // todo HOLUP! x:41 is a reference? then *node.value.node makes no sense!!!
+                todo("HOLUP! x:41 is a reference? then *node.value.node makes no sense!!!");
                 code.add(emitSetter(node, value, context));
 
             } else {
                 code.addByte(get_local);// todo skip repeats
-                code.addByte(local_index);// base location stored in variable!
+                code.addByte(function.locals[name].position);// base location stored in variable!
                 if (node.length > 0) {
                     return emitIndexPattern(Node(), node, context, true);
                 }
@@ -943,7 +946,9 @@ Code emitOperator(Node node, String context) {
     String &name = node.name;
 //	name = normOperator(name);
     if (node.length == 0 and name == "=") return code;// BUG
+    Function &function = declaredFunctions[context];
     int index = functionIndices.position(name);
+    check_eq(index, function.index);
     if (name == "‖")index = -1;// AHCK!
     if (name == "then")return emitIf(*node.parent, context);// pure if handled before
     if (name == ":=")return emitDeclaration(node, node.first());
@@ -1077,12 +1082,10 @@ Code emitOperator(Node node, String context) {
             code.add(cast(last_type, float64));// todo all casts should be auto-cast (in emitCall) now, right?
         }
         if (node.length <= 1) {// use stack
+            if (not function.locals.has("n"))error("unknown n");
             code.add(get_local);
-            int local_index = 0;// last result / last_index / locals[context].size() -1
-            if (locals[context].has("n"))
-                local_index = locals[context].position("n");
-            code.addInt(local_index);
-            code.add(cast(localTypes[context][local_index], float64));// todo all casts should be auto-cast now, right?
+            code.addInt(function.locals["n"].position);
+            code.add(cast(function.locals["n"].valtype, float64));// todo all casts should be auto-cast now, right?
         }
         code.add(emitCall(*new Node("pow"), context));
 //		else
@@ -1095,8 +1098,7 @@ Code emitOperator(Node node, String context) {
     if (opcode == get_local and node.length == 1) {// arg AFTER op (not as const!)
         long last_local = node.first().value.longy;
         code.push(last_local);
-        last_type = localTypes[context][last_local];
-
+        last_type = function.locals.at(last_local).valtype;
     }
     if (opcode >= 0x45 and opcode <= 0x78)
         last_type = i32;// int ops (also f64.eqz …)
@@ -1164,11 +1166,12 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
     Code code;
     String &name = node.name;
 //	int index = functionIndices.position(name);
-//	if (index >= 0 and not locals[context].has(name))
+//	if (index >= 0 and not function.locals.has(name))
 //		error("locals should be analyzed in parser");
 //		locals[name] = List<String>();
 //	locals[index]= Map<int, String>();
-    if (node.kind == unknown and locals[context].has(node.name))
+    Function &function = declaredFunctions[context];
+    if (node.kind == unknown and function.locals.has(node.name))
         node.kind = reference;// todo clean fallback
 
     if (name == "if")
@@ -1180,7 +1183,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
 //		if(last_type==none or last_type==voids){
         code.addByte(get_local);
         code.addByte(last_local);
-        last_type = localTypes[context][last_local];
+        last_type = function.locals.at(last_local).valtype;
 //		}
         return code;
     }
@@ -1242,8 +1245,7 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
                 return Code();
             }
 //			Map<int, String>
-            List<String> &current_local_names = locals[context];
-            int local_index = current_local_names.position(name);// defined in block header
+            int local_index = function.locals.position(name);// defined in block header
             if (name.startsWith("$")) {// wasm style $0 = first arg
                 local_index = atoi0(name.substring(1));
             }
@@ -1258,13 +1260,11 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
                 else if (name == "π" or name == "pi") // if not provided as global
                     return emitValue(*new Node(3.141592653589793), current);
                 else if (!node.isSetter()) {
-                    print(locals[context]);
+//                    print(function.locals)
                     if (not node.type)
                         error("UNKNOWN local symbol ‘"s + name + "’ in context " + context);
                 } else {
                     error("local symbol ‘"s + name.trim() + "’ in " + context + " should be registered in analyze()!");
-                    current_local_names.add(name);// ad hoc x=42
-                    local_index = current_local_names.size() - 1;
                 }
             }
             if (node.isSetter()) { //SET
@@ -1272,19 +1272,19 @@ Code emitExpression(Node &node, String context/*="main"*/) { // expression, node
                     code = code + emitExpression(*node.value.node, context); // done above!
                 else
                     code = code + emitValue(node, context); // done above!
-                if (localTypes[context][local_index] == unknown_type)
-                    localTypes[context][local_index] = last_type;
+                if (function.locals.at(local_index).valtype == unknown_type)
+                    function.locals.at(local_index).valtype = last_type;
                 else
-                    code.add(cast(last_type, localTypes[context][local_index]));
+                    code.add(cast(last_type, function.locals.at(local_index).valtype));
 //				todo: convert if wrong type
                 code.addByte(tee_local);// set and get/keep
                 code.addByte(local_index);
                 // todo KF 2022-6-5 last_type set by emitExpression (?)
-//				last_type = localTypes[context][local_index];
+//				last_type = declaredFunctions[context.locals.at([local_index).valtype;
             } else {// GET
                 code.addByte(get_local);// todo: skip repeats
                 code.addByte(local_index);
-                last_type = localTypes[context][local_index];
+                last_type = function.locals.at(local_index).valtype;
             }
         }
             break;
@@ -1528,19 +1528,16 @@ Code emitSetter(Node &node, Node &value, String context) {
         if (node.length != 2)error("assignment needs 2 arguments");
         return emitSetter(node[0], node[1], context);
     }
-    List<String> &context_locals = locals[context];
     String &variable = node.name;
-    if (!context_locals.has(variable)) {
-        print(context_locals);
-        context_locals.add(variable);
+    if (!declaredFunctions[context].locals.has(variable)) {
         error("variable %s in context %s missed by parser! "_s % variable % context);
     }
-    int local_index = context_locals.position(variable);
-    auto variable_type = localTypes[context][local_index];
+    Local &local = declaredFunctions[context].locals[variable];
+    auto variable_type = local.valtype;
     Valtype value_type = mapTypeToWasm(value);
     if (variable_type == unknown_type or variable_type == voids) {
         variable_type = last_type;// todo : could have been done in analysis!
-        localTypes[context][local_index] = last_type;// NO! the type doesn't change: example: float x=7
+        local.valtype = last_type;// NO! the type doesn't change: example: float x).valtype7
     }
     if (last_type == array or variable_type == array or variable_type == charp) {
         referenceIndices.insert_or_assign(variable, data_index_end);// WILL be last_data !
@@ -1558,7 +1555,7 @@ Code emitSetter(Node &node, Node &value, String context) {
     setter.add(value1);
     setter.add(cast(last_type, variable_type));
     setter.add(tee_local);
-    setter.add(local_index);
+    setter.add(local.position);
     if (variable_type != void_block)
         last_type = variable_type;// still the type of the local, not of the value. example: float x=7
     return setter;
@@ -1724,15 +1721,16 @@ Code emitBlock(Node &node, String context) {
 //	Map<int, String>
 //	collect_locals(node, context);// DONE IN analyze
 //	int locals_count = current_local_names.size();
-//	locals[context] = current_local_names;
-
+//	function.locals = current_local_names;
+    Function &function = declaredFunctions[context];
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0, used after while(){} etc) !!!
 // todo: locals must ALWAYS be collected in analyze step, emitExpression is too late!
     last_local = 0;
     last_type = none;//int32;
-    int locals_count = locals[context].size();
+
+    int locals_count = function.locals.size();
     trace("found %d locals for %s"s % locals_count % context);
-//	print(locals[context]);
+//	print(function.locals);
     int argument_count = functions[context].signature.size();
     if (locals_count >= argument_count)
         locals_count = locals_count - argument_count;
@@ -1750,10 +1748,13 @@ Code emitBlock(Node &node, String context) {
 
     /// 1. Emit block type header
     block.addByte(locals_count);
-    for (int i = 0; i < locals_count; i++) {
-        auto name = locals[context][i];// add later to custom section, here only for debugging
-        Valtype valtype = localTypes[context][i];
+//    for (int i = 0; i < locals_count; i++) {
+//        auto name = function.locals.at(i);// add later to custom section, here only for debugging
+//        Valtype valtype = function[i];
+    for (auto name: function.locals) {
         trace("local "s + name);
+        Local &local = function.locals[name];
+        Valtype valtype = local.valtype;
 //		block.addByte(i + 1);// index
         block.addByte(1);// count! todo: group by type nah
         if (valtype == unknown_type)
@@ -1847,12 +1848,12 @@ Code emitBlock(Node &node, String context) {
 //Map<int, String>
 // todo: why can't they be all found in parser? 2021/9/4 : they can ;)
 List<String> collect_locals(Node node, String context) {
-	List<String> &current_locals = locals[context]; // no, because there might be gaps(unnamed locals!)
+	List<String> &current_locals = function.locals; // no, because there might be gaps(unnamed locals!)
 	for (Node n : node) {
 		Valtype type = mapTypeToWasm(n);
 		if (type != none and not current_locals.has(n.name)) {
 			current_locals.add(n.name);
-			localTypes[context].add(type);
+			declaredFunctions[context].add(type);
 		}
 	}
 	return current_locals;
@@ -2131,7 +2132,7 @@ Code globalSection() {
         globalsList.addByte(valtype);
         globalsList.addByte(0);// 1:mutable todo: default? not π ;)
         // expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
-        const Code &globalInit = emitExpression(global_node, "global");
+        const Code &globalInit = emitExpression(global_node, "global");// todo global is not a function!
         globalsList.add(globalInit);// todo names in global context!?
         globalsList.addByte(end_block);
         /*
@@ -2238,13 +2239,14 @@ Code nameSection() {
     for (int index = runtime_offset; index <= last_index; index++) {
         String *key = functionIndices.lookup(index);
         if (!key or key->empty())continue;
-        List<String> localNames = locals[*key];// including arguments
-        int local_count = localNames.size();
+        Function &function = declaredFunctions[*key];
+//        List<String> localNames = function.locals[*key];// including arguments
+        int local_count = function.locals.size();
         if (local_count == 0)continue;
         usedLocals++;
         localNameMap = localNameMap + Code(index) + Code(local_count); /*???*/
-        for (int i = 0; i < localNames.size(); ++i) {
-            String local_name = localNames[i];
+        for (int i = 0; i < function.locals.size(); ++i) {
+            String local_name = function.locals.at(i).name;
             localNameMap = localNameMap + Code(i) + Code(local_name);
         }
 //		error: expected local name count (1) <= local count (0) FOR FUNCTION ...
