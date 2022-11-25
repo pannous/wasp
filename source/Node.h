@@ -6,26 +6,21 @@
 #include "String.h"
 #include "smart_types.h"
 #include "NodeTypes.h"
-//#import  "String.h" // FFS
+
 //#ifndef WASI
 //SOMETIMES IT WORKS with WASI, sometimes it doesnt!? ./build-wasm.sh fails as of 2021/2
 #include <stdarg.h> // va_list OK IN WASM???
+//#include <cstdarg> // va_list ok in wasm even without wasi!
 #include <cstdlib> // OK in WASM!
 
 #ifndef WASM
-
 #include <initializer_list> // allow List x={1,2,3};
-
 #endif
 
-
-//#include <cstdarg> // va_list ok in wasm even without wasi!
-//#endif
+#define NODE_DEFAULT_CAPACITY 100
 
 typedef char const *chars;
 typedef unsigned char byte;//!
-
-#define min(a, b) (a < b ? a : b)
 
 extern bool debug;
 extern bool throwing;// false for error tests etc
@@ -184,6 +179,7 @@ public:
     char separator = 0;// " " ";" ","
 //	char grouper = 0;// "()", "{}", "[]" via kind!  «…» via type Group("«…»")
 
+    int capacity = NODE_DEFAULT_CAPACITY;
     long _hash = 0;// set by hash(); should copy! on *x=node / clone()
 #ifdef DEBUG
 // int code_position; // hash to external map
