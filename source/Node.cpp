@@ -371,9 +371,9 @@ bool Node::operator==(Node &other) {
     if (kind == longs and other.kind == reals)
         return value.longy == other.value.real;
     if (kind == reals and other.kind == reals)
-        return value.real == other.value.real;
+        return value.real == other.value.real or similar(value.real, other.value.real);
     if (kind == reals and other.kind == longs)
-        return value.real == other.value.longy;
+        return (long long) value.real == other.value.longy;
     if (kind == bools or other.kind == bools) // 1 == true
         return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
 //	if (kind.type == int_array and other.kind.type == int_array)
