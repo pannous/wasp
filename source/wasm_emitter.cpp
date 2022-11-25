@@ -469,6 +469,9 @@ int currentStackItemSize(Node &array, Function &context) {
 }
 
 int headerOffset(Node &array) {
+    if (array == NUL)
+        return array_header_length;
+//        error("how am I supposed to know the headerOffset??");
     switch (array.kind) {
         case objects:
         case arrays:
@@ -851,14 +854,14 @@ Code emitValue(Node &node, Function &context) {
                 error("UNKNOWN symbol "s + name + " in context " + context);
             if (node.value.node) {
                 Node &value = *node.value.node;
-                todo("HOLUP! x:41 is a reference? then *node.value.node makes no sense!!!");
+                warn("HOLUP! x:42 is a reference? then *node.value.node makes no sense!!!");// todo FIX!!
                 code.add(emitSetter(node, value, context));
 
             } else {
                 code.addByte(get_local);// todo skip repeats
                 code.addByte(function.locals[name].position);// base location stored in variable!
                 if (node.length > 0) {
-                    return emitIndexPattern(node[0], node, context, true);// todo?
+                    return emitIndexPattern(NUL, node, context, true);// todo?
                 }
             }
         }
@@ -948,6 +951,8 @@ Code emitOperator(Node &node, Function &context) {
     if (node.length == 0 and name == "=") return code;// BUG
     Function &function = context;
     int index = functionIndices.position(name);
+    if (function.index < 0)function.index = index;// tdoo remove cluch
+    if (index < 0)index = function.index;
     check_eq(index, function.index);
     if (name == "‖")index = -1;// AHCK!
     if (name == "then")return emitIf(*node.parent, context);// pure if handled before
@@ -1308,6 +1313,9 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
 //};
             return emitArray(node, context);
             break;
+        case undefined:
+        case unknown:// todo: proper NIL!
+            return code;
         default:
             error("unhandled node type «"s + node.name + "» : " + typeName(node.kind));
     }
@@ -1420,10 +1428,6 @@ Code emitCall(Node &fun, Function &context) {
     code.addInt(index);// as LEB!
     code.addByte(nop);// padding for potential relocation
     function.is_used = true;
-//    if(!function.is_import and !function.is_builtin and !function.is_runtime)
-//        if(function.emit)error("REDUNDANT:)");
-//        else
-//            function.emit = true;
 
     // todo multi-value
     const Type &return_type = signature.return_types.last(none);
@@ -1533,9 +1537,8 @@ Code emitSetter(Node &node, Node &value, Function &context) {
         return emitSetter(node[0], node[1], context);
     }
     String &variable = node.name;
-    if (!context.locals.has(variable)) {
+    if (!context.locals.has(variable))
         error("variable %s in context %s missed by parser! "_s % variable % context.name);
-    }
     Local &local = context.locals[variable];
     auto variable_type = local.valtype;
     Valtype value_type = mapTypeToWasm(value);
@@ -2046,7 +2049,6 @@ Code codeSection(Node &root) {
         }
     }
 
-    functions["main"] = functions["main"];
     Code main_block = emitBlock(root, functions["main"]);// after imports and builtins
 
     if (start) {
@@ -2504,7 +2506,7 @@ Code &compile(String code, bool clean) {
     }
 //	preRegisterSignatures();
     Node parsed = parse(code);
-    Node &ast = analyze(parsed, *new Function{.name="main"});
+    Node &ast = analyze(parsed, functions["main"]);
 //	preRegisterSignatures();// todo remove after fixing Signature BUG!!
 //	check(functions["log10"].is_import)
 //	check(functions["log10"].is_used)

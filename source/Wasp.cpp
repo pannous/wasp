@@ -837,6 +837,7 @@ private:
 //		}
         // Comments always begin with a # or / character.
         if (ch == '#') {
+            if (not(previous == ' ' or previous == '\n'))return false;
             if (next == '*' or next == '#')
                 blockComment();
             else

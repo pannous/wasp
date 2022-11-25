@@ -1048,9 +1048,13 @@ void testRecentRandomBugs() {
     assert_emit("maxi=3840*2160", 3840 * 2160);
     assert_emit("√π²", 3);
     assert_emit("i=-9;√-i", 3);
+    assert_emit("1- -3", 4);
     assert_throws("1--3");// should throw, variable missed by parser! 1 OK'ish
     assert_emit("width=height=400;height", 400);
-    assert_emit("x==0;while x++<11: nop;", 0);
+    skip(
+            assert_emit("x=0;while x++<11: nop;x", 11);
+            assert_throws("x==0;while x++<11: nop;x");
+    )
     assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
     assert_emit("‖-3‖", 3);
     assert_emit("√100²", 100);

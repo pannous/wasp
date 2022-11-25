@@ -934,7 +934,7 @@ struct Local { // todo: use
     bool is_param; // function arguments and locals share same index space, but are emitted differently
     int position; // also implicit in Function{ List<Local> locals;}
     String name;
-    Valtype valtype;
+    Valtype valtype = unknown_type;
     Node *ref;// why still needed?
     int data_pointer = 0;// compile time handling of reference data, e.g. after emitData()
 };
@@ -946,7 +946,6 @@ public:
     String export_name;
     Signature signature;
 
-
     bool is_import = false; // not serialized in functype section, but in import section wt
     bool is_declared; // has fresh Code body to emit!
     bool emit = false;// only those types/functions that are declared (export) or used in call
@@ -955,7 +954,7 @@ public:
     bool is_builtin = false;// hard coded functions, tests only? todo remove
     bool is_used = false;// called imports / buildins
     //	Valtype return_type = voids;
-    Code code; // todo: use
+//    Code* code; // todo: use
 //    List<Local> locals;  // todo: use, instead of global locals!
     Map<String, Local> locals;  // todo: use, instead of global locals!
 
