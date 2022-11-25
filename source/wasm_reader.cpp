@@ -20,8 +20,8 @@ typedef unsigned char *bytes;
 int pos = 0;
 int size = 0;
 byte *code;
+
 //Module& module=*new Module();
-Module *module;
 //extern Map<String, int> module->functionIndices;// todo: use function[String].index
 //extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 

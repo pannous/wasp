@@ -97,6 +97,7 @@ class Node;
 //
 
 extern const Node NIL;
+static Node &NUL = const_cast<Node &>(NIL);
 extern Node True;
 extern Node False;
 extern Node ERROR;
