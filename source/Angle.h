@@ -22,7 +22,7 @@ void clearAnalyzerContext();
 
 extern Module *module;// todo: put all these in <<<<
 //extern List<String> declaredFunctions;
-extern Map<String, Function> declaredFunctions; // todo <<<
+extern Map<String, Function> functions; // todo <<<
 // todo add to Function as context! on the other hand declaredFunctions live in different world than imported ?
 //extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 //extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
@@ -32,7 +32,7 @@ void addGlobal(Node &node);
 
 extern Map<String /*name*/, Valtype> globalTypes;
 
-Node &groupWhile(Node &n, String &string);
+Node &groupWhile(Node &n, Function &context);
 
 bool isPrimitive(Node &node);
 
@@ -49,7 +49,7 @@ bool isType(Node &node);
 //ParserOptions parse(String code, ParseOptions *);// wasp -> data  // this is the pure Wasp part
 
 //__attribute__((export_name("analyze")))
-Node &analyze(Node &node, String context = "main");// wasp -> node  // build ast via operators
+Node &analyze(Node &node, Function &function = *new Function{.name="main"});// wasp -> node  // build ast via operators
 Node eval(String code);// interpret OR emit :
 Node interpret(String code);// wasp -> code -> data   // interpreter mode vs:
 //Node emit(String code, ParseOptions options = nix);//  doesn't work with std::thread compile(emit, String(code.data()))
@@ -80,3 +80,5 @@ void refineSignatures(Map<String, Function> &map);
 Module &loadModule(String name);
 
 Function *findLibraryFunction(String name, bool searchAliases);
+
+bool addLocal(Function &context, String name, Valtype valtype, bool is_param);

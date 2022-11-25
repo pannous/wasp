@@ -442,6 +442,8 @@ public:
             setFile(source);
             source = readFile(findFile(source, parserOptions.current_dir));
         }
+        printf("Parsing:\n%s\n", source.data);
+
         if (source.empty()) return const_cast<Node &>(NIL);
         columnStart = 0;
         at = -1;

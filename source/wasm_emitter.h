@@ -30,39 +30,39 @@ Signature &getSignature(String name);
 
 
 // private, could be moved:
-Code emitWhile(Node &node, String context);
+Code emitWhile(Node &node, Function &context);
 
-Code emitIf(Node &node, String context);
+Code emitIf(Node &node, Function &context);
 
-Code emitCall(Node &node, String context);
+Code emitCall(Node &node, Function &context);
 
-Code emitDeclaration(Node fun, Node &body);
+Code emitDeclaration(Node &fun, Node &body);
 
-Code emitSetter(Node &node, Node &value, String context);
+Code emitSetter(Node &node, Node &value, Function &context);
 
-//Code emitExpression(Node *nodes, String context);
-Code emitExpression(Node &node, String context/*="main"*/);
+//Code emitExpression(Node *nodes, Function& context);
+Code emitExpression(Node &node, Function &context/*="main"*/);
 
 
 [[nodiscard]]
-Code emitBlock(Node &node, String functionContext);
+Code emitBlock(Node &node, Function &context);
 
 //Code emitExpression(Node *node)__attribute__((warn_unused_result));
 //Code emitExpression(Node *node)__attribute__((error_unused_result));
 
 
 //Map<int, String>
-List<String> collect_locals(Node node, String context);
+List<String> collect_locals(Node node, Function &context);
 
 
 [[nodiscard]]
 Code cast(Valtype from, Valtype to);
 
 [[nodiscard]]
-Code cast(Node &from, Node &to);
+Code cast(Node &from, Node &to, Function &context);
 
 [[nodiscard]]
-Code emitStringOp(Node op, String context);
+Code emitStringOp(Node &op, Function &context);
 
 //bytes
 [[nodiscard]]
@@ -72,13 +72,13 @@ Code signedLEB128(int i);
 Code encodeString(char *String);
 
 [[nodiscard]]
-Code emitValue(Node &node, String context);
+Code emitValue(Node &node, Function &context);
 // ≠ emitData
 
 // write data to DATA SEGMENT (vs emitValue on stack)
 // MAY return i32.const(pointer)
 [[nodiscard]]
-Code emitData(Node node, String context);
+Code emitData(Node &node, Function &context);
 
 //typedef Code any;
 //typedef Bytes any;

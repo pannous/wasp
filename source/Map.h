@@ -58,30 +58,36 @@ public:
 //		return *this;
 //	}
 
-	S *lookup(T t) {
-		for (int i = 0; (values[i] or keys[i]) and i < _size; i++)
-			if (values[i] == t)
-				return &keys[i];
-		return 0;
-	}
+    S *lookup(T &t) {
+        for (int i = 0; (values[i] or keys[i]) and i < _size; i++)
+            if (values[i] == t)
+                return &keys[i];
+        return 0;
+    }
 
-	T *lookup(S t) {
-		for (int i = 0; (values[i] or keys[i]) and i < _size; i++)
-			if (keys[i] == t)
-				return &values[i];
-		return 0;
-	}
+    T *lookup(S &t) {
+        for (int i = 0; i < _size; i++)
+            if (keys[i] == t)
+                return &values[i];
+        return 0;
+    }
 
+    S *has(T t) { return lookup(t); }
 
-	int position(S s) {
-		for (int i = 0; i < _size; i++) //  or keys[i]!=0
+    T *has(S s) { return lookup(s); }
+//    bool has(S s) {// todo has(nil) / has(String::empty) should be false
+//		return position(s) >= 0;
+//	}
+
+    int position(S s) {
+        for (int i = 0; i < _size; i++) //  or keys[i]!=0
             if (s == keys[i])
                 return i;
-		return -1;
-	}
+        return -1;
+    }
 
-	int position(T t) {
-		for (int i = 0; i < _size; i++) //  (values[i] or keys[i]) and
+    int position(T t) {
+        for (int i = 0; i < _size; i++) //  (values[i] or keys[i]) and
 			if (values[i] == t)
 				return i;
 		return -1;
@@ -96,14 +102,14 @@ public:
 	}
 
 	int add(S key, T value) {
-		int found = position(key);
-		if (found >= 0) error("DUPLICATE KEY: "s + key);
-		keys[_size] = key;
-		values[_size] = value;
-		_size++;
+        int found = position(key);
+        if (found >= 0) error("DUPLICATE KEY: "s + key); // or use insert_or_assign
+        keys[_size] = key;
+        values[_size] = value;
+        _size++;
         if (_size >= capacity)grow();
-		return _size;
-	}
+        return _size;
+    }
 
 	// currently same as map[key]=value
 	int insert_or_assign(S key, T value) {
@@ -236,9 +242,6 @@ public:
 		return &keys[_size];
 	}
 
-	bool has(S s) {// todo has(nil) / has(String::empty) should be false
-		return position(s) >= 0;
-	}
 
 //	void put() {
 //		error("use log(map) instead of map(put");
