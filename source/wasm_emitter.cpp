@@ -523,7 +523,7 @@ Code emitOffset(Node array, Node offset_pattern, bool sharp, String context, int
         //	rror("index out of bounds! %d > %d in %s (%s)"s % offset_pattern % );
         code.addConst(base + offset * size);
     } else
-        error("index operator todo");
+        todo("Internal reference declaration or index operator bug");
     if (base_on_stack)// and base<0)
         code.add(i32_add);
     return code;

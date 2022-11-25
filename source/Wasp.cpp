@@ -431,13 +431,13 @@ public:
 // Return the enclosed parse function. It will have access to all of the above functions and variables.
 //    Node return_fuck(auto source,auto options) {
 // YUCK static magically applies to new() objects too!?!
-    Node &parse(String source) {
-        info("Parsing: \n%s\n"s % source.data);
-        return read(source);
-    }
+
+
 
     // todo: flatten the parse->parse->read branch!!
-    Node &read(String source) {
+    Node &parse(String source, ParserOptions options = {}) {
+        if (!source.data)return (Node &) NIL;
+        parserOptions = options;
         if ((source.endsWith(".wasp") or source.endsWith(".wit")) and not source.contains("\n")) {
             setFile(source);
             source = readFile(findFile(source, parserOptions.current_dir));
@@ -450,6 +450,7 @@ public:
         text = source;
         while (empty(ch) and (ch or at < 0))
             proceed();// at=0
+        previous = 0;
         Node &result = valueNode(); // <<
         white();
         if (ch and ch != -1 and ch != DEDENT) {
@@ -860,15 +861,15 @@ private:
     };
 
     // Parse whitespace and comments.
-    void white() {
+    void white(bool skip_whitespace = false) {
         // Note that we're detecting comments by only a single / character.
         // This works since regular expression are not valid JSON(5), but this will
         // break if there are other valid values that begin with a / character!
         while (ch) {
-            if (ch == '/') {
+            if (ch == '/' or ch == '#') {
                 if (not comment()) return; // else loop on
                 // NEWLINE IS NOT A WHITE , it has semantics
-            } else if (ch == ' ' or ch == '\t') {
+            } else if (ch == ' ' or ch == '\t' or (skip_whitespace and (ch == '\r' or ch == '\n'))) {
                 proceed();
             } else
                 return;
@@ -1815,27 +1816,15 @@ void handler(int sig) {
 //	True.value.number = 1;
 //}
 
+// todo WE HAVE A GENERAL PROBLEM:
+// 1. top level objects are not constructed True
+// 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
 void load_parser_initialization() {
-//	if(operator_list.size()==0)
-    operator_list = List<chars>(operator_list0);// wasm hack
+    if (operator_list.size() == 0)
+        operator_list = List<chars>(operator_list0);// wasm hack
 //	load_aliases();
 }
 
-
-//static
-Node &parse(String source, ParserOptions parserOptions) {
-    if (operator_list.size() == 0)
-        load_parser_initialization();
-    // WE HAVE A GENERAL PROBLEM:
-    // 1. top level objects are not constructed True
-    // 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
-
-    if (!source.data)return (Node &) NIL;
-    info("Parsing: \n%s\n"s % source.data);
-    Wasp wasp;
-    wasp.setParserOptions(parserOptions);
-    return wasp.read(source);
-}
 
 // Mark/wasp has clean syntax with FULLY-TYPED data model (like JSON or even better)
 // Mark/wasp is generic and EXTENSIBLE (like XML or even better)
@@ -1884,7 +1873,7 @@ Node parseFile(String filename, ParserOptions options) {
         import.add(new Node(found));
         return import;
     } else if (found.endsWith("wasp"))
-        return Wasp().setParserOptions(options).setFile(found).parse(readFile(found));
+        return Wasp().setFile(found).parse(readFile(found), options);
     else if (found.endsWith("wit"))
         return WitReader().read(found);
     else if (not found.contains(".")) {
@@ -2147,4 +2136,12 @@ float precedence(String name) {
 
     if (eq(name, "return"))return 1000;
     return 0;// no precedence
+}
+
+
+//static
+Node &parse(String source, ParserOptions parserOptions) {
+    if (operator_list.size() == 0)
+        load_parser_initialization();
+    return Wasp().parse(source, parserOptions);
 }
