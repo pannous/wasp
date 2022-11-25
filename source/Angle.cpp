@@ -31,8 +31,8 @@ Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via sim
 
 Map<String, Function> declaredFunctions; // todo Maps don't free memory and cause SIGKILL after some time <<<
 // todo : use proper context ^^ instead of:
-Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
-Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
+//Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
+//Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 
 Map<String, Node * /* modifiers/values/init expressions! */> globals; // access from Angle!
 Map<String /*name*/, Valtype> globalTypes;
@@ -178,7 +178,7 @@ Node eval(String code) {
 
 }
 
-Node &groupTypes(Node &expression, const char *context);
+Node &groupTypes(Node &expression, String &context);
 
 List<Arg> groupFunctionArgs(String function, Node &params) {
     //			left = analyze(left, name) NO, we don't want args to become variables!
@@ -268,7 +268,7 @@ List<chars> key_pair_operators;
 //no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
 #endif
 
-Node &groupIf(Node n, String context) {
+Node &groupIf(Node n, String &context) {
     if (n.length == 0 and !n.value.data)
         error("no if condition given");
     if (n.length == 1 and !n.value.data)
@@ -380,7 +380,7 @@ List<String> collectOperators(Node &expression) {
     return operators;
 }
 
-Node &groupFunctionCalls(Node &expressiona, String context);
+Node &groupFunctionCalls(Node &expressiona, String &context);
 
 bool isVariable(Node &node) {
     if (node.kind != reference and node.kind != key and !node.isSetter())
@@ -415,9 +415,9 @@ void initTypes() {
 }
 
 
-bool addLocal(const char *context, String name, Valtype valtype);
+bool addLocal(String &context, String name, Valtype valtype);
 
-Node &groupTypes(Node &expression, const char *context) {
+Node &groupTypes(Node &expression, String &context) {
     // todo delete type declarations double x, but not double x=7
     // todo if expression.length = 0 and first.length=0 and not next is operator return ø
     if (types.size() == 0)initTypes();
@@ -495,11 +495,12 @@ Node &groupTypes(Node &expression, const char *context) {
 
 
 // return: done?
-bool addLocal(const char *context, String name, Valtype valtype) {
+bool addLocal(String &context, String name, Valtype valtype) {
     if (name.empty()) {
         warn("empty reference in "s + context);
         return true;// 'done' ;)
     }
+
     // todo: kotlin style context sensitive symbols!
     if (builtin_constants.has(name))
         return true;
@@ -507,38 +508,34 @@ bool addLocal(const char *context, String name, Valtype valtype) {
         error(name + " already declared as global"s);
     if (isFunction(name))
         error(name + " already declared as function"s);
-    if (not locals[context].has(name)) {
-        locals[context].add(name);
-        localTypes[context].add(valtype);
-        Function &function = declaredFunctions[context];
-        function.locals.insert_or_assign(name, Local{.position=locals.size() - 1, .name=name, .valtype=valtype});
+    Function &function = declaredFunctions[context];
+    if (not function.locals.has(name)) {
+        function.locals.insert_or_assign(name,
+                                         Local{.position=function.locals.size() - 1, .name=name, .valtype=valtype});
         return true;// added
     }
 //#if DEBUG
     else {
-        auto position = locals[context].position(name);
-        auto oldType = localTypes[context][position];
+        auto oldType = function.locals[name].valtype;
         if (oldType == none or oldType == unknown_type) {
-            localTypes[context][position] = valtype;
-            Function &function = declaredFunctions[context];
-            function.locals.values[position].valtype = valtype;
-        } else if (oldType != valtype and valtype != void_block and valtype != voids and
-                   valtype != unknown_type) // trace
-            warn("local in context %s already known "s % s(context) + name +
-                 " with type " + typeName(oldType) + ", ignoring new type " + typeName(valtype));
+            function.locals[name].valtype = valtype;
+        } else if (oldType != valtype and valtype != void_block and valtype != voids and valtype != unknown_type)
+            warn("local in context %s already known "s %
+                 context + name + " with type " + typeName(oldType) + ", ignoring new type " + typeName(valtype));
         // ok, could be cast'able!
     }
 //#endif
     return false;// already there
 }
 
-Node &groupSetter(String name, Node &body, String context) {
+Node &groupSetter(String name, Node &body, String &context) {
+    Function &function = declaredFunctions[context];
     Node *decl = new Node(name);//node.name+":={…}");
     decl->setType(assignment);
     decl->add(body.clone());// addChildren makes emitting harder
     if (not addLocal(context, name, mapType(body))) {
-        int i = locals[context].position(name);
-        localTypes[context][i] = mapType(body);// update type! todo: check if cast'able!
+        Local &local = function.locals[name];
+        local.valtype = mapType(body);// update type! todo: check if cast'able!
     }
     return *decl;
 }
@@ -547,7 +544,8 @@ Node extractReturnTypes(Node decl, Node body);
 
 List<String> aliases(String name);
 
-Node &groupDeclarations(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body) {
+Node &
+groupDeclarations(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body, String &context) {
 //	String &name = fun.name;
 //	silent_assert(not is_operator(name[0]));
 //	trace_assert(not is_operator(name[0]));
@@ -565,21 +563,20 @@ Node &groupDeclarations(String &name, Node *return_type, Node modifieres, Node &
         Node body = analyze(body, name);
         if (arguments.has("global"))
             globals.insert_or_assign(name, body.clone());
-        return groupSetter(name, body, String());
+        return groupSetter(name, body, context);
     }
 
     List<Arg> args = groupFunctionArgs(name, arguments);
-    List<String> &parameters = locals[name];// function context!
     Signature &signature = function.signature;
     for (Arg arg: args) {
         if (empty(arg.name))
             error("empty argument name");
-        if (locals[name].has(arg.name))
+        if (function.locals.has(arg.name))
             error("duplicate argument name: "s + arg.name);
         addLocal(name, arg.name, mapType(arg.type));
         signature.add(arg.type);// todo: arg type, or pointer
     }
-    if (signature.size() == 0 and parameters.size() == 0 and body.has("it", false, 100)) {
+    if (signature.size() == 0 and function.locals.size() == 0 and body.has("it", false, 100)) {
         addLocal(name, "it", f64);
         signature.add(f64);// todo: any / smarti! <<<
     }
@@ -594,13 +591,15 @@ Node &groupDeclarations(String &name, Node *return_type, Node modifieres, Node &
     return decl;
 }
 
-Node &groupDeclarations(Node &expression, const char *context) {
+Node &groupDeclarations(Node &expression, String &context) {
     auto first = expression.first();
     if (expression.length == 2 and isType(first.first()) and
         expression.last().kind == objects) {// c style double sin() {}
         expression = groupTypes(expression, context);
-        return groupDeclarations(first.name, first.type, NIL, first.values(), expression.last());
+        return groupDeclarations(first.name, first.type, NIL, first.values(), expression.last(), context);
     }
+    if (not declaredFunctions.has(context))
+        declaredFunctions.insert_or_assign(context, Function{.name=context});// todo nothing else known yet!?
 
     for (Node &node: expression) {
         String &op = node.name;
@@ -639,7 +638,7 @@ Node &groupDeclarations(Node &expression, const char *context) {
             left = node.first().first();// ARGS
             rest = node.last();
             if (rest.kind == declaration)rest = rest.values();
-            locals[context].remove(name);// not a variable!
+            declaredFunctions[context].locals.remove(name);// not a variable!
         }
 ////			todo i=1 vs i:=it*2  ok ?
 
@@ -650,11 +649,11 @@ Node &groupDeclarations(Node &expression, const char *context) {
             continue;
         }
 //			error("Symbol already declared as function: "s + name);
-        // if (locals[context].has(name)) // todo double := it * 2 ; double(4)
+        // if (function.locals.has(name)) // todo double := it * 2 ; double(4)
 //				error("Symbol already declared as variable: "s + name);
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
-        return groupDeclarations(name, 0, left, left, rest);
+        return groupDeclarations(name, 0, left, left, rest, context);
     }
     return expression;
 }
@@ -671,20 +670,19 @@ bool hasFunction(Node &n) {
     return false;
 }
 
-bool isVariable(String name, String context0) {
+bool isVariable(String name, String &context) {
     if (globals.has(name))return true;
-    String context = "main";// context0.name;// todo find/store proper enclosing context of expression
-    if (locals[context].has(name))return true;
+    Function function = declaredFunctions[context];
+    if (function.locals.has(name))return true;
     return false;
 }
 
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
 // maybe todo: normOperators step (in angle, not wasp!)  3**2 => 3^2
-Node &groupOperators(Node &expression, String context = "main") {
+Node &groupOperators(Node &expression, String &context) {
     if (analyzed.has(expression.hash()))
         return expression;
-    List<String> &localContext = locals[context];// todo: merge into Local object! :
-    List<Valtype> &localContextTypes = localTypes[context];
+    Function function = declaredFunctions[context];
     List<String> operators = collectOperators(expression);
     String last = "";
     int last_position = 0;
@@ -786,9 +784,8 @@ Node &groupOperators(Node &expression, String context = "main") {
                             error("self modifier on unknown reference "s + var);
                     } else {
                         // variable is known but not typed yet, or type again?
-                        int position = localContext.position(var);
-                        if (localContextTypes[position] == unknown_type)// todo 'none' ? default `var i` is int32???
-                            localContextTypes[position] = mapType(next);
+                        if (function.locals[name].valtype == unknown_type)// todo 'none' ? default `var i` is int32???
+                            function.locals[name].valtype = mapType(next);
                         // TODO  pre-evaluation of rest!!! keep old type?
                     }
                 }
@@ -798,7 +795,7 @@ Node &groupOperators(Node &expression, String context = "main") {
 
                 if (name == "::=") {
                     if (prev.kind != reference)error("only references can be assigned global (::=)"s + var);
-//					if(locals[context].has(prev.name))error("global already known as local "s +prev.name);// let's see what happens;)
+//					if(function.locals.has(prev.name))error("global already known as local "s +prev.name);// let's see what happens;)
                     if (globals.has(var))error("global already set "s + var);// todo reassign ok if …
 //					globals[prev.name] = &next;// don't forget to emit next as init expression!
                     globals[var] = next.clone();// don't forget to emit next as init expression!
@@ -863,7 +860,7 @@ bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
     return false;
 }
 
-Node &groupFunctionCalls(Node &expressiona, String context) {
+Node &groupFunctionCalls(Node &expressiona, String &context) {
     if (expressiona.kind == declaration)return expressiona;// handled before
     Function *import = findLibraryFunction(expressiona.name, false);
     if (import or isFunction(expressiona)) {
@@ -1030,7 +1027,7 @@ List<String> aliases(String name) {
 }
 
 // todo: un-adhoc this!
-Node &groupWhile(Node n, String context) {
+Node &groupWhile(Node &n, String &context) {
     if (n.length == 0 and !n.value.data)
         error("no if condition given");
     if (n.length == 1 and !n.value.data)
@@ -1185,7 +1182,7 @@ Node &analyze(Node &node, String context) {
         if (grouped.length > 0)
             for (Node &child: grouped) {// inner analysis while(i<3){i++}
 //				if (&child == 0)continue;
-                child = analyze(child);// REPLACE with their ast
+                child = analyze(child, context);// REPLACE with their ast
             }
         functions[name].is_used = true;
         return grouped;
@@ -1311,8 +1308,6 @@ void clearAnalyzerContext() {
     globals.clear();
     functionIndices.clear();
     functionIndices.setDefault(-1);
-    locals.clear();
-    localTypes.clear();
     declaredFunctions.clear();
     analyzed.clear();// todo move much into outer analyze function!
     functions.clear();// always needs to be followed by
