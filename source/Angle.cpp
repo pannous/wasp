@@ -400,8 +400,10 @@ bool isPrimitive(Node &node) {
 }
 
 Map<String, Node> types;
-const Node Long("Long", clazz);
-const Node Double("Double", clazz);//.setType(type);
+//const Node Long("Long", clazz);
+//const Node Double("Double", clazz);//.setType(type);
+Node Long("Long", clazz);
+Node Double("Double", clazz);//.setType(type);
 //const Node Double{.name="Double", .kind=classe};//.setType(type);
 //const Node Double{name:"Double", kind:classe};//.setType(type);
 
@@ -544,6 +546,8 @@ Node extractReturnTypes(Node decl, Node body);
 
 List<String> aliases(String name);
 
+Valtype preEvaluateType(Node &node, Function function);
+
 Node &
 groupDeclarations(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body, Function &context) {
 //	String &name = fun.name;
@@ -551,7 +555,6 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
 //	trace_assert(not is_operator(name[0]));
     if (is_operator(name[0]))// todo ^^
         todo("is_operator!");// remove if it doesn't happen
-
 
     if (name and not function_operators.has(name)) {
         if (context.name != "main")
@@ -666,20 +669,6 @@ Node extractReturnTypes(Node decl, Node body) {
     return Double;// Long;// todo
 }
 
-bool hasFunction(Node &n) {
-    for (Node &child: n) {
-        if (isFunction(child))
-            return true;
-    }
-    return false;
-}
-
-bool isVariable(String name, Function &context) {
-    if (globals.has(name))return true;
-    if (context.locals.has(name))return true;
-    return false;
-}
-
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
 // maybe todo: normOperators step (in angle, not wasp!)  3**2 => 3^2
 Node &groupOperators(Node &expression, Function &context) {
@@ -695,9 +684,7 @@ Node &groupOperators(Node &expression, Function &context) {
             warn(expression.serialize());
             Node &file = expression.values();
             loadModule(file.name);
-            return *new Node();
-//			expression.clear();
-//			return expression;
+            return NUL;
         }
 //		else todo("ungrouped dangling operator");
     }
@@ -728,10 +715,10 @@ Node &groupOperators(Node &expression, Function &context) {
         next = analyze(next, context);
         Node prev = expression.children[i - 1];
         if (i == 0)prev = NIL;
-        String &name = checkCanonicalName(op);
+        op = checkCanonicalName(op);
 
-        if (name == "^" or name == "^^" or name == "**") {// todo NORM operators earlier!
-            functions["pow"].is_used = true;
+        if (op == "^" or op == "^^" or op == "**") {// todo NORM operators earlier
+            functions["pow"].is_used = true;// todo just one
             functions["powd"].is_used = true;
             functions["powi"].is_used = true;
             functions["powf"].is_used = true;
@@ -746,19 +733,19 @@ Node &groupOperators(Node &expression, Function &context) {
             expression.replace(i, i + 1, node);
         } else {
             prev = analyze(prev, context);
-            if (suffixOperators.has(name)) { // x²
+            if (suffixOperators.has(op)) { // x²
                 // SUFFIX Operators
-                if (name == "ⁿ") functions["pow"].is_used = true;
+                if (op == "ⁿ") functions["pow"].is_used = true;
                 if (i < 1)error("suffix operator misses left side");
                 node.add(prev);
-                if (name == "²") {
+                if (op == "²") {
                     node.add(prev);
                     node.name = "*"; // x² => x*x
                 }
 //				analyzed.insert_or_assign(node.hash(), true);
                 expression.replace(i - 1, i, node);
                 i--;
-            } else if (name.in(function_list)) {// handled above!
+            } else if (op.in(function_list)) {// handled above!
                 while (i++ < node.length)
                     node.add(expression.children[i]);
                 expression.replace(i, node.length, node);
@@ -779,24 +766,26 @@ Node &groupOperators(Node &expression, Function &context) {
                  * x=7  needs pre-evaluation of rest!!!
                  * */
                 auto var = prev.name;
-                if (name.endsWith("=") and not name.startsWith("::") and prev.kind == reference) {
+                if (op.endsWith("=") and not op.startsWith("::") and prev.kind == reference) {
                     // todo can remove hack?
                     // x=7 and x*=7
-                    if (addLocal(context, var, mapType(next), false)) {
-                        if (name.length > 1 and name.endsWith("=")) // x+=1 etc
+                    Valtype inferred_type = preEvaluateType(next, context);
+                    if (addLocal(context, var, inferred_type, false)) {
+                        if (op.length > 1 and op.endsWith("=")) // x+=1 etc
                             error("self modifier on unknown reference "s + var);
                     } else {
+                        Local &local = function.locals[var];
                         // variable is known but not typed yet, or type again?
-                        if (function.locals[name].valtype == unknown_type)// todo 'none' ? default `var i` is int32???
-                            function.locals[name].valtype = mapType(next);
-                        // TODO  pre-evaluation of rest!!! keep old type?
+                        if (local.valtype == unknown_type) {
+                            local.valtype = inferred_type;// mapType(next);
+                        }
                     }
                 }
                 //#endif
                 node.add(prev);
                 node.add(next);
 
-                if (name == "::=") {
+                if (op == "::=") {
                     if (prev.kind != reference)error("only references can be assigned global (::=)"s + var);
 //					if(function.locals.has(prev.name))error("global already known as local "s +prev.name);// let's see what happens;)
                     if (globals.has(var))error("global already set "s + var);// todo reassign ok if …
@@ -809,7 +798,7 @@ Node &groupOperators(Node &expression, Function &context) {
                         // *= += etc
                         node.name = String(op.data[0]);
                         Node *setter = prev.clone();
-//					setter->setType(assignment); //
+//					setter->setType(assignment);
                         setter->value.node = node.clone();
                         node = *setter;
                     }
@@ -823,6 +812,21 @@ Node &groupOperators(Node &expression, Function &context) {
         last = op;
     }
     return expression;
+}
+
+Valtype preEvaluateType(Node &node, Function function) {
+    if (node.kind == expression) {
+        if (node.length == 1)return preEvaluateType(node.first(), function);
+        node = groupOperators(node, function);
+        return mapType(node);
+    }
+    if (node.kind == operators) {
+        Node &lhs = node[0];
+        Node &rhs = node[1];
+        return mapType(rhs);// todo lol
+//        if(lhs.kind==arrays)
+    }
+    return mapType(node);
 }
 
 Module &loadModule(String name) {
@@ -872,12 +876,9 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             error("missing import for function "s + expressiona.name);
 //		if (not expressiona.value.node and arity>0)error("missing args");
         functions[expressiona.name].is_used = true;
-//		functions[expressiona.name].is_used = true;
     }
 
-//	Node &expressiona = *expressiona.clone();
     for (int i = 0; i < expressiona.length; ++i) {
-//	for (int i = expressiona.length; i>0; --i) {
         Node &node = expressiona.children[i];
         String &name = node.name;
         if (name == "if") // kinda functor
@@ -905,7 +906,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
                 expressiona.remove(i + 1, i + remaining);
                 continue;
             } else {
-                Node &iff = groupWhile(expressiona.from("while"), context);// todo: sketchy!
+                Node n = expressiona.from("while");
+                Node &iff = groupWhile(n, context);// todo: sketchy!
                 int j = expressiona.lastIndex(iff.last().next) - 1;// huh?
                 if (j > i)expressiona.replace(i, j, iff);
             }
@@ -950,8 +952,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         if (rest.kind == groups or rest.kind == objects)// and rest.has(operator))
             rest.setType(expression);// todo f(1,2) vs f(1+2)
 //		if (hasFunction(rest) and rest.first().kind != groups)
-//			if (name != "id")// stupid but true id(x)+id(y)==id(x+id(y))
-//				error("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
+//				warn("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
         if (rest.first().kind == groups)
             rest = rest.first();
         // per-function precedence does NOT really increase readability or bug safety
@@ -1192,13 +1193,13 @@ Node &analyze(Node &node, Function &function) {
 //				if (&child == 0)continue;
                 child = analyze(child, function);// REPLACE with their ast
             }
-        functions[name].is_used = true;
+        if (is_function) functions[name].is_used = true;
         return grouped;
     }
 
     Node &groupedTypes = groupTypes(node, function);
     if (isPrimitive(node)) return node;
-    Node &groupedDeclarations = groupDeclarations(groupedTypes, function);
+    Node groupedDeclarations = groupDeclarations(groupedTypes, function);
     Node &groupedFunctions = groupFunctionCalls(groupedDeclarations, function);
     Node &grouped = groupOperators(groupedFunctions, function);
     if (analyzed[grouped.hash()])return grouped;// done!
