@@ -2,7 +2,8 @@
 
 # compiled to sin.wasm and automatically included whenever sin is referenced
 
-default module math
+# default module math
+module math
 
 double sin(double x){
 	S1  = -1.66666666666666324348e-01, /* 0xBFC55555, 0x55555549 */
