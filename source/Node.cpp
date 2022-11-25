@@ -433,9 +433,8 @@ bool Node::operator==(Node &other) {
 
     // if ... compare fields independent of type object {}, group [] ()
     for (int i = 0; i < length; i++) {
-        Node &field = children[i];
-        field = field.flat();// [(1),2,3] == [1,2,3]
-        Node val = other.children[i];
+        Node field = children[i].flat();
+        Node val = other.children[i].flat();
         if (field != val and !field.name.empty()) {
             auto otherField = other.has(field.name);
             if (!otherField)return false;
@@ -876,14 +875,13 @@ String Node::serialize() const {
     }
     if (length >= 0) {
         if (kind == expression and not name.empty())wasp += ":";
-        if ((kind == generics or kind == tags) and length > 0) wasp += "<";
-        else if ((length > 1 or kind == patterns or kind == objects)) {
+        else if ((length >= 1 or kind == patterns or kind == objects)) {
             // skip single element braces: a == (a)
             if (kind == groups and (not separator or separator == ' ')) wasp += "(";
             else if (kind == generics or kind == tags)wasp += "<";
             else if (kind == objects)wasp += "{";
             else if (kind == patterns)wasp += "[";
-            else if (length > 0 and not separator) wasp += "(";// default
+            else if (not separator) wasp += "(";// default and not…
         }
         if (use_polish_notation and not name.empty()) wasp += name;
         int i = 0;
@@ -896,12 +894,12 @@ String Node::serialize() const {
             wasp += node.serialize();
         }
 
-        if ((kind == generics or kind == tags) and length > 0) wasp += ">";
-        else if (length > 1 or kind == patterns or kind == objects) {
+        if (length > 0 or kind == patterns or kind == objects) {
             if (kind == groups and (not separator or separator == ' ')) wasp += ")";
+            else if (kind == generics or kind == tags) wasp += ">";
             else if (kind == objects)wasp += "}";
             else if (kind == patterns)wasp += "]";
-            else if (length > 0 and not separator) wasp += ")";// default
+            else if (not separator) wasp += ")";// default
         }
         if (eq(name, "‖")) wasp += name;
     }

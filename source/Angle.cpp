@@ -11,11 +11,12 @@
 #import "wasm_helpers.h" // IMPORT so that they don't get mangled!
 #include "wasm_emitter.h"
 
-bool use_interpreter = false; // todo
+Module *module; // todo: use?
+bool use_interpreter = false;
 
 List<String> builtin_constants
 #ifndef WASM
-        = {"pi", "π", "tau", "τ", "euler", "ℯ", 0}
+        = {"pi", "π", "tau", "τ", "euler", "ℯ"}
 #endif
 ;
 
@@ -141,6 +142,7 @@ bool isFunction(Node &op) {
 
 #include "Interpret.h"
 #include "wasm_merger.h"
+#include "WitReader.h"
 
 #ifndef RUNTIME_ONLY
 #endif
@@ -154,15 +156,14 @@ Node interpret(String code) {
 
 // todo: merge with emit
 Node eval(String code) {
-    Node parsed = parse(code);
 #ifdef RUNTIME_ONLY
     return parsed; // no interpret, no emit => pure data  todo: WARN
 #else
 #ifndef WASI
-    if (use_interpreter)
+    if (use_interpreter) {
+        Node parsed = parse(code);
         return parsed.interpret();
-
-    else
+    } else
 #endif
     {
         Code &binary = compile(code, true);
@@ -1100,6 +1101,29 @@ Node &groupWhile(Node n, String context) {
 //	return &analyze(node, "main");
 //}
 
+static List<String> wit_keywords = {
+        "module",
+        "static",
+        "interface",
+        "type",
+        "resource",
+        "record",
+        "func",
+        "variant",
+        "flags",
+        "enum",
+        "tuple",
+        "union",
+        "future",
+        "stream",
+        "option",
+        "char",
+        "u8", "u16", "u32", "u64",
+        "s8", "s16", "s32", "s64",
+        "float32", "float64",
+};
+
+
 Node &analyze(Node &node, String context) {
     long hash = node.hash();
     if (analyzed.has(hash))
@@ -1108,6 +1132,15 @@ Node &analyze(Node &node, String context) {
     // group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
     Kind type = node.kind;
     String &name = node.name;
+
+    if (name == "module") {
+        if (!module)module = new Module();
+        module->name = node.values().name; // todo: use?
+        return NUL;
+    }
+    if (wit_keywords.contains(name)) {
+        return (new WitReader())->analyzeWit(node);
+    }
 
     if (type == functor) {
         if (name == "while")return groupWhile(node, context);

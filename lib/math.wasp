@@ -119,6 +119,21 @@ class Complex is Number {
 
 	operator +=(other complex) := re += other.re; im += other.im 
 	operator -=(other complex) := re -= other.re; im -= other.im 
+	operator *=(other complex) := r=re;re *= other.re; re-= im*other.im; im *= other.re; im+=r*other.im
+	
+	operator +(other complex) := Complex(re + other.re, im + other.im)
+	operator -(other complex) := Complex(re - other.re, im - other.im)
+	operator *(other complex) := Complex(re *= other.re - im*other.im, im * other.re + re*other.im)
+	operator /(other complex) := {
+																		er:=other.re
+																		mi:=other.im
+																		r=re*er+im*mi
+																		i=im*er-re*mi
+																		frac := er^2 + mi^2
+																		Complex(r/frac,i/frac)
+																}
+				
+
 # ^^^ premature optimization: we get += for free :
 
 	// todo: distinguish inline modifying addition from
@@ -136,6 +151,10 @@ class Complex is Number {
 	norm := √(re*re + im*im)
 	complement := Complex(re,-im)
 	operator	̅ := complement
+
+#  TODO, parse as operator: COMBINING OVERLINE	̅ x̅ a̅  << click before sign, then type
+
+
 	∊ℝ := imaginary is 0
 	∊ℕ := imaginary is 0 and real∊ℕ
 	∊ℚ := imaginary is 0 and real∊ℚ
@@ -147,10 +166,14 @@ class Complex is Number {
 }
 
 alias ℂ = Complex
+local alias C:=Complex
+local alias i:=Complex()  # todo: distinguish type from instance!!
 ℂ:=Complex
 ι:=Complex()
 ɩ:=Complex()
-ï:=Complex(0,1) // explicit and clearest form, ï recognizable as ∊ ℝ² because of two dots
+ii:=Complex()
+# im:=Complex() danger: im is field in C
+ï:=Complex(0,1) // explicit and clearest form, ï recognizable as ∊ ℝ² because of two dots (typeable: hold i on mac)
 the imaginary number := ï  
 
 // danger: confusing 3+ï imaginary component 1 with imaginary part ï !!
