@@ -20,6 +20,7 @@ public:
 
 void clearAnalyzerContext();
 
+extern Module *module;// todo: put all these in <<<<
 //extern List<String> declaredFunctions;
 extern Map<String, Function> declaredFunctions; // todo <<<
 // todo add to Function as context! on the other hand declaredFunctions live in different world than imported ?
