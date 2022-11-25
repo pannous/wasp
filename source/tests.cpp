@@ -383,6 +383,7 @@ double sin(double x){
 }
 
 void testSinus() {
+    //k=78; fucks it up!!
     assert_emit("double sin(double x){\n"
                 "\tx = modulo_double(x,tau)\n"
                 "\tdouble z = x*x\n"
@@ -2503,10 +2504,19 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
+//    assert_emit("x=0;while x++<11: nop;x", 11);
+//    assert_throws("x==0;while x++<11: nop;x");
+    assert_emit("y=(1 4 3)#2", 4);
+
+    assert_emit("‖-3‖", 3);
+    assert_emit("x=0;while x<10: x++;x", 10);
+    assert_emit("x=0;while x++<10: x", 0);// while loops always return false from last condition. todo?
+    assert_emit("x='abcde';x#4", 'd');//
     assert_emit("√π²", 3.1415);
     testSinus();// todo FRAGILE fails before!
-    exit(1);
-    testSinus2();
+
+//    exit(1);
+//    testSinus2();
 //    test_sinus_wasp_import();
     assert_emit(".1", 0.1);
 
