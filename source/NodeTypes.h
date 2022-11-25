@@ -40,8 +40,10 @@ enum smart_pointer_masks {
 chars typeName(const Type *t);
 
 // types
-extern const Node Double;//.setType(type);
-extern const Node Long;//.setType(type);
+//extern const Node Double;//.setType(type);
+//extern const Node Long;//.setType(type);
+extern Node Double;//.setType(type);
+extern Node Long;//.setType(type);
 
 //#include "Util.h" // for error() :(
 //#include "Code.h"
