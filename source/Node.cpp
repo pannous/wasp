@@ -11,14 +11,15 @@
 #include <stdarg.h> // va_list OK in WASM!!
 #include <cstdlib> // OK in WASM!
 
-
 #ifndef WASM
 
 #include <stdio.h>
 
 #endif
 
-#define error(msg) error1(msg,__FILE__,__LINE__)
+
+#define MAX_NODE_CAPACITY 100000 // debug only, let it run out of memory naturally!
+int lastChild = 1;
 
 // todo: wrap parser-options
 //bool use_polish_notation = false;// f(a,b) => (f a b) also : lisp mode (a 1 2)==a(1)(2)==a{1 2}
@@ -213,10 +214,6 @@ Node &Node::merge(Node *other) {
 Node &Node::operator[](char c) {
     return (*this)[String(c)];
 }
-
-int capacity = 100;// TODO !!! lol lists>100 elements;)
-int maxNodes = 800;// TODO !!!
-int lastChild = 1;
 
 
 //Node *all = 0;// = (Node *)calloc(sizeof(Node), capacity * maxNodes);
@@ -563,8 +560,8 @@ Node &Node::add(const Node *node) {
         memcpy(new_children, children, length);
         children = new_children;
     }
-    if (lastChild >= maxNodes)
-        error("Out of global Memory");
+    if (lastChild >= MAX_NODE_CAPACITY)
+        error("Out of global Node memory");
     if (!children) children = (Node *) calloc(sizeof(Node), capacity);
     if (length > 0) children[length - 1].next = &children[length];
     ((Node *) node)->parent = this;// not const lol. allow to set and ignore NIL.parent
