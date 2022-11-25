@@ -156,7 +156,7 @@ void parseFuncTypeSection(Code &payload) {
 	// we don't know here if i32 is pointer … so we may have to refine later
 	for (int i = 0; i < module->code_count and payload.start < payload.length; ++i) {
 		int typ = unsignedLEB128(payload);// implicit?
-		String *fun = module->functionIndices.lookup(i + module->import_count);
+		String *fun = module->functionIndices.has((int) (i + module->import_count));
 		if (!fun)continue;
 //			error("no name for function "s+i);
 		Signature &s = module->funcTypes[typ];
