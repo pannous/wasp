@@ -829,7 +829,7 @@ void testWasmModuleExtension() {
     lib.save("lib.wasm");
 
     Module module = read_wasm("lib.wasm");
-    charged = analyze(parse("test"));// call test() from lib
+    charged = analyze(parse("test"), *new Function{.name="main"});// call test() from lib
     Code main = emit(charged, &module, "main");
 //	int ok1 = main.run();// todo: why not merge_wasm on emit? module data is all there? yeah but not in parsed Code … form
 //	check(ok1==42);
@@ -841,10 +841,10 @@ void testWasmModuleExtension() {
     Code merged = merge_wasm(module, prog);
     merged.save("merged.wasm");
     read_wasm("merged.wasm");
-    int ok = merged.run();// why is wabt so SLOOOOW now??
+    int ok1 = merged.run();// why is wabt so SLOOOOW now??
 //	int ok = main.run();
 //  WASM module load failed: multiple memories  in w.m.r.
-    assert_equals(ok, 42);
+    assert_equals(ok1, 42);
 #endif
 }
 

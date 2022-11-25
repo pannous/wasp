@@ -55,7 +55,6 @@ struct ParserOptions { // not just for parser but also for serialize!!
 // parse x[1] as x:1 reference with immediate value or x:[1] reference with pattern
 // parse x={y} as x:{y} as x{y} or keep operator =
     bool data_mode = false;
-
     bool arrow = false; // treat -> arrow as map operator :
     bool dollar_names = false;// $name as in wat,wit
     bool at_names = false;// @interface as in wat,wit
