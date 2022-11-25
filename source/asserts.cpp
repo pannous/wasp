@@ -44,10 +44,12 @@ bool assert_equals_x(Node a, const char *b, char *context = "") {
 
 
 bool assert_equals_x(Node a, int b, char *context = "") {
-	if (a != Node(b))print("\nFAILED assert_equals! %lld should be %d %s\n"s % a.value.longy % b % context);
-	else if (a.kind == reals) printf("OK %f==%f\n", a.value.real, (double) b);
-	else printf("OK %lld==%d\n", a.value.longy, b);
-	return a == b;
+    if (a != Node(b))
+        print("\nFAILED assert_equals! %lld should be %d %s\n"s % a.value.longy % b % context);
+    else if (a.kind == reals) printf("OK %f==%f\n", a.value.real, (double) b);
+    else
+        printf("OK %lld==%d\n", a.value.longy, b);
+    return a == b;
 }
 
 // WTF why is char* unexplicitly cast to bool!?!
@@ -64,9 +66,11 @@ bool assert_equals_x(Node &a, double b, char *context) {
 }
 
 bool assert_equals_x(Node a, double b, char *context = "") {
-	if (a != Node(b))print("\nFAILED assert_equals! %f should be %f %s\n"s % a.value.real % b % context);
-	else printf("OK %f==%f\n", a.value.real, b);
-	return a == b;
+    if (a != Node(b))
+        print("\nFAILED assert_equals! %f should be %f %s\n"s % a.value.real % b % context);
+    else
+        printf("OK %f==%f\n", a.value.real, b);
+    return a == b;
 }
 
 //bool assert_equals_x(Node &a, long b, char *context = "") {

@@ -165,7 +165,7 @@ public:
 
     void grow() { // todo don't grow when holding references!
         capacity = capacity * 2;
-        assert(capacity < MAP_MAX_CAPACITY);
+        check_silent(capacity < MAP_MAX_CAPACITY);
         S *new_keys = (S *) alloc(sizeof(S), capacity);
         T *new_values = (T *) alloc(sizeof(T), capacity);
         memcpy((void *) new_keys, (void *) keys, sizeof(S) * capacity / 2);
