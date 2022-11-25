@@ -11,6 +11,9 @@ class Node;
 
 union Type;
 
+#define error(msg) error1(msg,__FILE__,__LINE__)
+
+
 // todo move these to ABI.h once it is used:
 //	map_header_32 = USE Node!
 #define node_header_32   0x80000000 // more complex than array!
