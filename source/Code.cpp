@@ -191,12 +191,80 @@ Valtype mapTypeToWasm(Node &n) {
 	if (first == n)return int32;// array of sorts
 	if (n.kind == assignment)return mapTypeToWasm(first);// todo
 	if (n.kind == operators)return mapTypeToWasm(first);// todo
-	if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
-	n.print();
-	error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
-	return none;
+    if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
+    n.print();
+    error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
+    return none;
 }
 
 Code createSection(Sections sectionType, Code data) {
-	return Code((char) sectionType, encodeVector(data));
+    return Code((char) sectionType, encodeVector(data));
+}
+
+
+/*
+0 0 1
+128 80 2
+16384 4000 3
+2097152 200000 4
+268435456 10000000 5
+34359738368 800000000 6
+4398046511104 40000000000 7
+562949953421312 2000000000000 8
+36028797018963968 80000000000000 9
+ */
+short lebByteSize(unsigned long neu) {
+    short size = 0;
+    do {
+        size++;
+        neu = neu >> 7;
+    } while (neu > 0);
+    return size;
+}
+
+short lebByteSize(unsigned int neu) {
+    return lebByteSize((unsigned long) neu);
+}
+
+
+/*
+0 0 1
+64 40 2
+8192 2000 3
+1048576 100000 4
+134217728 8000000 5
+17179869184 400000000 6
+2199023255552 20000000000 7
+281474976710656 1000000000000 8
+36028797018963968 80000000000000 9
+-1 0 1
+-65 ffffffffffffffbf 2
+-8193 ffffffffffffdfff 3
+-1048577 ffffffffffefffff 4
+-134217729 fffffffff7ffffff 5
+-17179869185 fffffffbffffffff 6
+-2199023255553 fffffdffffffffff 7
+-281474976710657 fffeffffffffffff 8
+-36028797018963969 ff7fffffffffffff 9
+ */
+short lebByteSize(long aleb) {
+    int more = 1;
+    int size = 0;
+    long val = aleb;
+    while (more) {
+        uint8_t b = val & 0x7f;
+        /* sign bit of byte is second high order bit (0x40) */
+        val >>= 7;
+        bool clear = (b & 0x40) == 0;  /*sign bit of byte is clear*/
+        bool set = b & 0x40; /*sign bit of byte is set*/
+        if ((val == 0 && clear) || (val == -1 && set))
+            more = 0;
+        else {
+            b |= 0x80;// continuation bit:  set high order bit of byte;
+        }
+        size++;
+    }
+    return size;
+//    Code &leb128 = signedLEB128((long) leb);// todo later … optimize inline if…
+//    return leb128.length;
 }

@@ -56,6 +56,8 @@ type summary add --summary-string "${var%s} ${var[0-8]}" bytes
 
 type summary add  Function__LONG* --summary-string "#${var.index} ${var.name} ${var.export_name} ${var.signature} import:${var.is_import} used:${var.is_used} handled:${var.is_handled}"
 
+type summary add wabt::link::Export --summary-string "${var.name} #${var.index}"
+
 type summary add Local --summary-string "${var.name} #${var.position}"
 # #${var.is_param}
 

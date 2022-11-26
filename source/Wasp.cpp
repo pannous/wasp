@@ -58,9 +58,10 @@ char *memoryChars = (char *) memory;
 char *current = (char *) HEAP_OFFSET;
 #endif
 
+#include <cctype> // isalpha
+
 #ifndef WASM
 
-#include <cctype>
 #include <thread>
 #include "ErrorHandler.h"
 #include "Paint.h"
