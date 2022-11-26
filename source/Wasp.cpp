@@ -58,7 +58,6 @@ char *memoryChars = (char *) memory;
 char *current = (char *) HEAP_OFFSET;
 #endif
 
-#include <cctype> // isalpha
 
 #ifndef WASM
 
@@ -67,6 +66,11 @@ char *current = (char *) HEAP_OFFSET;
 #include "Paint.h"
 
 #endif
+
+
+bool isalpha0(codepoint c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
 
 extern void info(chars);
 
@@ -1550,7 +1554,7 @@ private:
                         actual.last().addSmart(node);
                         continue;
                     }
-                    if (parserOptions.kebab_case and isalpha(lastNonWhite))
+                    if (parserOptions.kebab_case and isalpha0(lastNonWhite))
                         error("kebab case should be handled in identifier");
                     if (next == '>') {// -> => ⇨
                         next = u'⇨';
@@ -2149,3 +2153,4 @@ Node &parse(String source, ParserOptions parserOptions) {
         load_parser_initialization();
     return Wasp().parse(source, parserOptions);
 }
+

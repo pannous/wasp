@@ -559,7 +559,3 @@ int run_wasm_file(chars file) {
 void console() { error(RUNTIME_ONLY_ERROR); }
 
 #endif
-
-#ifdef WASM
-DIR           *opendir(const char *);
-#endif
