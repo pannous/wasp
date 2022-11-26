@@ -68,7 +68,8 @@ bool isFunction(String op);
 // int is not a true angle type, just an alias for long.
 // todo: but what about interactions with other APIs? add explicit i32 !
 // todo: in fact hide most of this under 'number' magic umbrella
-extern Map<String, Node> types;// by name
+extern Map<String, Node *> types;// by name
+
 int run_wasm_file(chars file);
 
 bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);

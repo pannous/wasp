@@ -9,6 +9,29 @@
 #include "Node.h"
 #include "Wasp.h"
 
+
+static List<String> wit_keywords = {
+        "module",
+        "static",
+        "interface",
+        "type",
+        "resource",
+        "record",
+        "func",
+        "variant",
+        "flags",
+        "enum",
+        "tuple",
+        "union",
+        "future",
+        "stream",
+        "option",
+        "char",
+        "u8", "u16", "u32", "u64",
+        "s8", "s16", "s32", "s64",
+        "float32", "float64",
+};
+
 // https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md
 /*
  * THIS prefix format is OUTDATED:
@@ -63,10 +86,10 @@ class WitReader {
         Node &alias = node[1];
         Node &type = analyzeType(node.value.node);
         if (types.has(type.name))
-            type = types[type.name];
+            type = *types[type.name];
         else {
             type.kind = clazz;// losing generics, only in meta
-            types.add(type.name, type);
+            types.add(type.name, type.clone());
         }
 //        Node &alias = node.from(3); // dataMode=false
         alias.kind = clazz;
@@ -74,9 +97,9 @@ class WitReader {
         type.metas()["aliases"].add(alias);
         String &name = alias.name;
         if (!types.has(name))
-            types.add(name, type);// direct mapping!
+            types.add(name, type.clone());// direct mapping!
         else if (types[name] != type)
-            error(""s + name + " already aliased to " + types[name].name + "! Can't remap to " + type.name);
+            error(""s + name + " already aliased to " + types[name]->name + "! Can't remap to " + type.name);
 
         trace("\nwit type alias:");
         trace(type);
@@ -95,8 +118,7 @@ class WitReader {
             member.kind = fields;
         }
         if (!types.has(resource.name))
-            types.add(resource.name,
-                      resource);// direct mapping!
+            types.add(resource.name, resource.clone());// direct mapping!
         else if (types[resource.name] != resource)
             error("resource already known:\n"s + resource.serialize());
         else warn(("resource already known: "s + resource.name));
@@ -116,8 +138,7 @@ class WitReader {
         }
         interface.kind = clazz;// we don't distinguish between prototype classes with/without fields
         if (!types.has(interface.name))
-            types.add(interface.name,
-                      interface);// direct mapping!
+            types.add(interface.name, interface.clone());// direct mapping!
         else if (types[interface.name] != interface)
             error("interface already known:\n"s + interface.serialize());
         else
@@ -133,30 +154,35 @@ class WitReader {
     Node &readEnum(Node &node, Kind kind) {
         if (node.length == 0)return node;/* enum %bool { %false, %true, } nonsense */
         Node &enuma = node[1];
-        enuma.kind = enums;
+        String &name = enuma.name;
+        enuma.kind = kind;
+        if (not types.has(name))
+            types.add(name, enuma.clone(true));
+        else if (types[name] != enuma)
+            error("different enum already known:\n"s + enuma.serialize() + "\n≠\n" + types[name]->serialize());
+        else {
+            warn("enum already known: "s + name);// ok, same layout
+            return *types[name];
+        }
+        enuma = *types[name]; // switch to clone (be sure to be long living)
         int value = 0;
         if (kind == flags)value = 1;
-        for (auto field: enuma) {
+        for (Node &field: enuma) {
+            field.type = types[name];
+            field.kind = kind == flags ? flag_entry : kind == enums ? enum_entry : longs;
             String &name = field.name;
             if (name.empty())
                 continue; // todo fix in valueNode
-            if (kind == flags)
-                field.value = value * 2;// for boolean option1 and option2 …
-            else
+            if (kind == flags) {
+                field.value = value;// for boolean option1 and option2 …
+                value *= 2;
+            } else
                 field.value = value++;
-            field.kind = longs;
             // currently enum fields are just named numbers
 #ifndef RUNTIME_ONLY
             addGlobal(field);
 #endif
         }
-        String &name = enuma.name;
-        if (!types.has(name))
-            types.add(name, enuma);
-        if (types[name] != enuma)
-            error("enum already known with different fields :\n"s + enuma.serialize() + "\n≠\n" +
-                  types[name].serialize());
-        else warn("enum already known: "s + name);// ok, same layout
         trace("\nwit enum/option/variant:");
         trace(enuma);
         return enuma;
@@ -236,8 +262,9 @@ public:
     }
 
     Node &analyzeWit(Node &node) {
-        if (node.first().name == "func")
-            return readFunc(node);
+        Node &first = node.first();
+        if (wit_keywords.contains(first.name))
+            return analyzeWitEntry(first);
 
         bool keys = node.kind == key or (node.kind == groups and node.length == 2);
         keys = keys or (node.length == 3 and node[2].name == "interface");
@@ -263,13 +290,14 @@ public:
             } else if (entry == "@interface") {
                 return readInterfaceFunc(node);
             } else
-                n = analyzeWitEntry(n);
+                n = analyzeWitEntry(n.first());
         }
         return node;
     }
 
     Node &analyzeWitEntry(Node &n) {
-        String &entry = n.first().name;
+        String &entry = n.name;
+        if (n.length == 0)n.add(n.next).add(n.next);// todo: oterh ;)
         if (entry == "static")
             if (n.length == 0)return NUL;
             else return readFunc(n);
