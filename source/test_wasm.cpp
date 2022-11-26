@@ -1077,7 +1077,7 @@ void testRecentRandomBugs() {
 
 
 void testSquareExpWasm() {
-    let π = 3;//.141592653589793;
+    let π = 3.141592653589793;
 // todo smart pointer return from main for floats!
     assert_emit("3²", 9);
     assert_emit("3.0²", 9);

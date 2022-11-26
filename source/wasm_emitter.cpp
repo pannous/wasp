@@ -1995,7 +1995,8 @@ Code codeSection(Node &root) {
         if (declared == "global" or declared.empty())continue;
         Function &function = functions[declared];// todo use more often;)
         if (not function.emit)continue;
-        print("declared function: "s + declared);
+        if (declared != "main")
+            print("declared function: "s + declared);
         if (!declared)error("empty function name (how?)");
         if (not functionIndices.has(declared)) {// used or not!
             functionIndices[declared] = ++last_index;
