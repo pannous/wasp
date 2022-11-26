@@ -135,8 +135,9 @@ void testFlagSafety() {
     assert_throws(analyze(parse(code)));
 }
 
-void testFlags() {
-    testFlagSafety();
+
+void testFlags2() {
+//    testFlagSafety();
     // todo allow just parser-flags{…} in wasp > wit
     auto code = R"(  flags parser-flags{
         data_mode
@@ -145,7 +146,7 @@ void testFlags() {
        }
        my_flags = data_mode + space_brace
     )";
-    Node &parsed = parse(code);
+    Node &parsed = parse(code, {.kebab_case=true});
     Node &node = analyze(parsed);
     check(node.first().name == "parser-flags")
     check(node.first().kind == flags)
@@ -158,6 +159,24 @@ void testFlags() {
     check(globals.has("data_mode"))
     check(globals.has("parser-flags.data_mode")) //
 //    check(node.last().serialize() == "ParserOptions my_flags = data_mode | space_brace") // todo canonical type serialization!?
+}
+
+
+void testFlags() {
+    Node &parsed = parse("flags abc{a b c}");
+    Node &node = analyze(parsed);
+    check(node.name == "abc")
+    check(node.kind == flags)
+    check(node.length == 3);
+    check(node[0].name == "a");
+    check_is(typeName(node[0].kind), typeName(flag_entry));
+    check_is(node[0].kind, flag_entry);
+    check(node[0].kind == flag_entry);
+    check(node[0].value.longy == 1);
+    check(node[0].type);
+    check(node[0].type == node);
+    check(node[1].value.longy == 2);
+    check(node[2].value.longy == 4);
 }
 
 void testPattern() {
@@ -2522,7 +2541,7 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
-
+    testFlags();
     assert_emit("10007.0%10000", 7);
     assert_run("42", 42); //  assert_run sometimes causes Heap corruption! test earlier
     assert_run("x='123';x is '123'", true);// ok
