@@ -2512,8 +2512,8 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
+    assert_run("x='123';x is '123'", true);// ok
     assert_run("42", 42); //  assert_run sometimes causes Heap corruption! test earlier
-    exit(0);
     assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
     testAssertRun();
     testWasmModuleExtension();// multiple memories, egal, runtimeExtension works

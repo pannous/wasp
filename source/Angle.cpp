@@ -548,6 +548,8 @@ List<String> aliases(String name);
 
 Valtype preEvaluateType(Node &node, Function function);
 
+void use_import(const char *name);
+
 Node &
 groupDeclarations(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body, Function &context) {
 //	String &name = fun.name;
@@ -696,8 +698,11 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op == "-")
             debug = true;
         if (op == "-…") op = "-";// precedence hack
-        if (op == "%")functions["modulo_float"].is_used = true;// no wasm i32_rem_s i64_rem_s for float/double
-        if (op == "%")functions["modulo_double"].is_used = true;
+
+//        todo op=use_import();continue ?
+        if (op == "%")use_import("modulo_float");// no wasm i32_rem_s i64_rem_s for float/double
+        if (op == "%")use_import("modulo_double");
+        if (op == "==" or op == "is" or op == "equals")use_import("eq");
         if (op == "include")todo("include again!?");
         if (op != last) last_position = 0;
         bool fromRight = rightAssociatives.has(op) or isFunction(op);
@@ -814,6 +819,14 @@ Node &groupOperators(Node &expression, Function &context) {
         last = op;
     }
     return expression;
+}
+
+void use_import(const char *name) {
+    Function &function = functions[name];
+    if (not function.is_import and not function.is_runtime)
+        error("can only use import or runtime "s + name);
+    function.is_used = true;
+    function.is_import = true;
 }
 
 Valtype preEvaluateType(Node &node, Function function) {
