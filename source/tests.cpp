@@ -127,42 +127,54 @@ void testIndexOffset() {
 
 void testFlagSafety() {
     auto code = "flags empty_flags{}; empty_flags mine = data_mode | space_brace;";
-    Node &parsed = parse(code);
-    assert_throws(analyze(parsed)) // "data_mode not a member of empty_flags"s
-    code = "enum cant_combine{a;b}; a+b;";
-    assert_throws(analyze(parse(code)));
-    code = "enum context_x{a;b};enum context_y{b;c};b;";//
-    assert_throws(analyze(parse(code)));
+    assert_throws(code) // "data_mode not a member of empty_flags"s
+    assert_throws("enum cant_combine{a;b}; a+b;");
+    assert_throws("enum context_x{a;b};enum context_y{b;c};b;");
 }
 
 
 void testFlags2() {
 //    testFlagSafety();
     // todo allow just parser-flags{…} in wasp > wit
-    auto code = R"(  flags parser-flags{
+    auto code = R"(flags parser-flags{
         data_mode
         arrow
         space_brace
        }
-       my_flags = data_mode + space_brace
+       parser-flags my_flags = data_mode + space_brace
     )";
+    assert_emit(code, 5)// 1+4
+    exit(42);
     Node &parsed = parse(code, {.kebab_case=true});
     Node &node = analyze(parsed);
-    check(node.first().name == "parser-flags")
-    check(node.first().kind == flags)
-    check(node.last().type->name == "parser-flags") // deduced!
-    check(node.last().name == "my_flags")
-    check(node.last().kind == flags)
-    check(node.last().value.longy == 5) // 1+4 bit internal detail!
-    check(node.last().values().serialize() == "data_mode | space_brace")
-    check(globals.has("parser-flags"))
+    check(types.has("parser-flags"))
     check(globals.has("data_mode"))
     check(globals.has("parser-flags.data_mode")) //
+    Node &parserFlags = node.first();
+    check(parserFlags.name == "parser-flags")
+    check(parserFlags.kind == flags)
+    check(parserFlags.length == 3)
+    check(parserFlags[1].name == "arrow")
+    check(parserFlags[2].value.longy == 4)
+    Node &instance = node.last();
+    Node my_flags = instance.interpret();
+    print(instance);
+    print(my_flags);
+    check(my_flags.name == "my_flags")
+    check(my_flags.type)
+    check(my_flags.kind == flags) // kind? not really type! todo?
+    check(my_flags.type->name == "parser-flags") // deduced!
+    check(my_flags.value.longy == 5) // 1+4 bit internal detail!
+    skip(
+            check(my_flags.values().serialize() == "data_mode | space_brace")
+    )
+
 //    check(node.last().serialize() == "ParserOptions my_flags = data_mode | space_brace") // todo canonical type serialization!?
 }
 
 
 void testFlags() {
+    testFlags2();
     Node &parsed = parse("flags abc{a b c}");
     Node &node = analyze(parsed);
     check(node.name == "abc")
