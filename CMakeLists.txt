@@ -70,7 +70,7 @@ endif ()
 
 
 if (WASM)
-    set(WASI 0) # increases size by factor 10!! 100873 Oct 14  2021 wasp.wasm => 1074221 Oct 30 19:06 wasp.wasm_10x_with_WASI
+    set(WASI 0) # increases size by factor 10!! 100873 wasp.wasm => 1074221 wasp.wasm_10x_with_WASI
     #    set(RUNTIME_ONLY 1) NO, we want compiler version too!
     #    ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (NOT WASI)

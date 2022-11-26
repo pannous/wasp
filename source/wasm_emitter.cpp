@@ -1941,28 +1941,26 @@ Valtype fixValtype(Valtype valtype) {
 
 [[nodiscard]]
 Code importSection() {
-    if (runtime_offset) {
-//		breakpoint_helper
-        warn("runtime_offset & imports currently not supported\n");
-        import_count = 0;
-        return {};
-    }
     // the import section is a vector of imported functions
     Code import_code;
     import_count = 0;
-//	for (Function &fun: imports) {
-//		++import_count;
-//		import_code = import_code + encodeString("env") + encodeString(fun.name).addByte(func_export).addType(typeMap[fun.name]);
-//	}
     for (String fun: functions) {
         Function &function = functions[fun];
-//		Signature &signature = function.signature;
         if (function.is_import and function.is_used and not function.is_builtin) {
             ++import_count;
             import_code =
                     import_code + encodeString("env") + encodeString(fun).addByte(func_export).addType(typeMap[fun]);
         }
     }
+
+    if (runtime_offset) {
+        if (import_count > 0)
+            error("runtime_offset & imports currently not supported\n");
+//		breakpoint_helper
+        import_count = 0;
+        return {};
+    }
+
     int extra_mem = 0;
     if (memoryHandling == import_memory) {
         extra_mem = 1;// add to import_section but not to functions:import_count
@@ -1992,24 +1990,17 @@ Code codeSection(Node &root) {
 //	int new_count;
 //	new_count = declaredFunctions.size();
     for (auto declared: functions) {
-        if (declared == "global" or declared.empty())continue;
+        if (declared.empty())error("Bug: empty function name (how?)");
+        if (declared == "global")continue;
         Function &function = functions[declared];// todo use more often;)
         if (not function.emit)continue;
-        if (declared != "main")
-            print("declared function: "s + declared);
-        if (!declared)error("empty function name (how?)");
+        if (declared != "main") print("declared function: "s + declared);
         if (not functionIndices.has(declared)) {// used or not!
             functionIndices[declared] = ++last_index;
 //            function.index=last_index; todo what if it already had different index!?
         }
     }
-//	int index_size = functionIndices.size();
-//	bool has_main = start and (declaredFunctions.has(start) or functionIndices.has(start));
-//	if (import_count + builtin_count + has_main + new_count + runtime_offset != index_size) {
-//		print(functionIndices);
-//		String message = "inconsistent function_count %d import + %d builtin + %d new + %d runtime + %d main != %d"s;
-// 		error(message % import_count % builtin_count % new_count % runtime_offset % has_main % index_size);
-//	}
+
 // https://pengowray.github.io/wasm-ops/
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
 //	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
@@ -2019,9 +2010,10 @@ Code codeSection(Node &root) {
     byte code_square_d[] = {1/*locals_count*/, 1/*one local has type: */, f64t, get_local, 0, get_local, 0, f64_mul,
                             return_block, end_block};
 
+    // slightly confusing locals variable declaration count scheme:
     byte code_modulo_float[] = {1 /*locals declarations*/, 2 /*two of type*/, float32,
                                 0x20, 0x00, 0x20, 0x00, 0x20, 0x01, 0x95, 0x8f, 0x20, 0x01, 0x94, 0x93, 0x0b};
-    byte code_modulo_double[] = {1 /*locals variables*/, 2 /*two of type*/, float64,
+    byte code_modulo_double[] = {1 /*locals variable declarations:*/, 2 /*two of type*/, float64,
                                  0x20, 0x00, //                     | local.get 0
                                  0x20, 0x00, //                     | local.get 0
                                  0x20, 0x01, //                     | local.get 1

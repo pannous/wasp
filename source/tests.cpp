@@ -2505,13 +2505,21 @@ void tests() {
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp / wasmtime
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm build via wasm-runtime
-
+// 2022-10 : 3 sec without runtime_emit
 void testCurrent() {
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
+    assert_run("42", 42); //  assert_run sometimes causes Heap corruption! test earlier
+    exit(0);
+    assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
+    testAssertRun();
+    testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
+    testWasmRuntimeExtension();
+    testWasmRuntimeExtensionMock();
+
     assert_emit("x=0;while x++<10: x", 0);// while loops always return false from last condition. todo?
     assert_emit("x='abcde';x#4", 'd');//
     assert_emit("√π²", 3.1415);

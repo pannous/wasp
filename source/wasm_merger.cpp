@@ -75,7 +75,7 @@ Code mergeDataSection(Module lib, Module main) {
 
 Code &relocate(Module &add, Module &base) {
 	if (not add.code.needs_relocate)return add.code_data;
-	todo("relocate, maybe see wasm_merger_wabt.cpp");
+//	todo("relocate, maybe see wasm_merger_wabt.cpp");
 	return add.code_data;
 }
 
