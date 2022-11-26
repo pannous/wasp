@@ -61,7 +61,7 @@ struct ParserOptions { // not just for parser but also for serialize!!
     bool use_tags = false;// <html> or
     bool use_generics = false;// generic list<abc> , "less than" requires spaces, a<b can still be resolved as 'smaller' in analyzer
 
-    bool kebab_case = false;// kebab-case means: parse "-" as hypen instead of minus, or 1900 - 2000AD (easy with units)
+    bool kebab_case = true;//  false;// kebab-case means: parse "-" as hypen instead of minus, or 1900 - 2000AD (easy with units)
     // a-b can still be resolved as minus in analyzer
 
     bool space_brace = false;// resolve a {x} as a{x}
@@ -489,12 +489,14 @@ public:
 
 // Todo: deep cloning whole tree? definitely clone children
 		if (childs) {
-			if (kind == key and value.data)
-				copy->value.node = value.node->clone(false);
-			copy->children = 0;
-			copy->length = 0;
-			if (length > 0)for (Node &n: *this) copy->add(n);// necessary, else children is the same pointer!
-		}
+            if (kind == key and value.data)
+                copy->value.node = value.node->clone(false);
+            copy->children = 0;
+            copy->length = 0;
+            if (length > 0)
+                for (Node &n: *this)
+                    copy->add(n);// necessary, else children is the same pointer!
+        }
 		return copy;
 	}
 
@@ -762,6 +764,6 @@ public:
 	operator Node &() { return _b ? True : False; }
 };
 
-Node eval(Node n);
+Node interpret(Node &n);
 
 Node eval(String n);

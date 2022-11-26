@@ -101,8 +101,9 @@ bool isPlural(Node &word) {
 
 bool isType(Node &expression) {
     auto name = expression.name;
-    if (isPlural(expression))
-        return true;
+//    if (isPlural(expression))// very week criterion: houses=[1,2,3]
+//        return true;
+    if (name.empty())return false;
     return types.has(name);
 }
 
@@ -442,7 +443,8 @@ Node &groupTypes(Node &expression, Function &context) {
     }
     for (int i = 0; i < expression.length; i++) {
         Node &node = expression.children[i];
-        if (not isType(node))continue;
+        if (not isType(node))
+            continue;
         if (node.length > 0) {
             node = groupTypes(node, context);// double (x,y,z)
             continue;
@@ -466,6 +468,7 @@ Node &groupTypes(Node &expression, Function &context) {
 //			if (operator_list.has(typed.name))
 //				continue; // 3.3 as int …
         auto aType = types[node.name];
+        if (not aType)continue;
 
         if (typed.name == "as") { // danger edge cases!
             expression.remove(i - 1, i);
