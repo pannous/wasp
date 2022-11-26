@@ -82,3 +82,5 @@ Module &loadModule(String name);
 Function *findLibraryFunction(String name, bool searchAliases);
 
 bool addLocal(Function &context, String name, Valtype valtype, bool is_param);
+
+Node &groupFunctionCalls(Node &expressiona, Function &context);
