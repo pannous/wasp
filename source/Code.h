@@ -714,22 +714,22 @@ enum Opcodes {
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 enum Sections {
-	// with the exception of custom, these Sections must appear in the following order:
-	custom_section = (byte) 0,
-	type_section = 1,
-	import_section = 2,
-	functypes_section = 3,
-	table_section = 4,
-	memory_section = 5,
-	global_section = 6,
-	export_section = 7,
-	start_section = 8,
-	element_section = 9,
-	code_section = 10, // 0x0a
-	data_section = 11,
-	// extensions:
-	datacount = 12,
-	tag_section = 13
+    // with the exception of custom, these Sections must appear in the following order:
+    custom_section = (byte) 0,
+    type_section = 1,
+    import_section = 2,
+    functypes_section = 3,
+    table_section = 4,
+    memory_section = 5,
+    global_section = 6,
+    export_section = 7,
+    start_section = 8,
+    element_section = 9, // Element segments initialize a subrange of a table from a static vector of elements.
+    code_section = 10, // 0x0a
+    data_section = 11,
+    // extensions:
+    datacount = 12,
+    tag_section = 13
 };
 
 enum nameSubSectionTypes {
@@ -1017,6 +1017,7 @@ Signature &getSignature(String name);
 36028797018963968 80000000000000 9
  */
 short lebByteSize(unsigned long neu);// unsigned variants have delayed size increase by factor 2! ( 0x80 needs 2 bytes vs 0x40 signed!!)
+short lebByteSize(unsigned int neu);
 
 /*
 0 0 1

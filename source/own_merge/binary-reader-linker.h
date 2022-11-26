@@ -28,12 +28,7 @@ namespace wabt {
 
 		class LinkerInputBinary;
 
-		struct LinkOptions {
-			Stream *log_stream;
-			bool needs_relocate = true;
-		};
-
-		Result ReadBinaryLinker(LinkerInputBinary *input_info, LinkOptions *options);
+		Result ReadBinaryLinker(LinkerInputBinary *input_info);
 
 	} // namespace link
 }  // namespace wabt

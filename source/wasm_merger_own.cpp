@@ -602,7 +602,8 @@ void Linker::WriteExportSection() {
 
     for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
         for (const Export &export_: binary->exports) {
-            WriteStr(&stream_, s(export_.name), "export name");
+            WriteStr(&stream_, export_.name, "export name");
+
             stream_.WriteU8Enum(export_.kind, "export kind");
             Index index = export_.index;
             switch (export_.kind) {
@@ -629,25 +630,28 @@ void Linker::WriteExportSection() {
 void Linker::WriteElemSection(const SectionPtrVector &sections) {
     Fixup fixup = WriteUnknownSize();
 
-    Index total_elem_count = 0;
-    for (Section *section: sections) {
-        total_elem_count += section->binary->table_elem_count;
-    }
-
     WriteU32Leb128(&stream_, 1, "segment count");
-    WriteU32Leb128(&stream_, 0, "table index");
-    WriteOpcode(&stream_, Opcode::I32Const);
-    WriteS32Leb128(&stream_, 0U, "elem init literal");
-    WriteOpcode(&stream_, Opcode::End);
-    WriteU32Leb128(&stream_, total_elem_count, "num elements");
+    if (sections.size() > 1) {
+        todo("MERGE ELEM");
+        Index total_elem_count = 0;
+        for (Section *section: sections) {
+            total_elem_count += section->binary->table_elem_count;
+        }
+        WriteU32Leb128(&stream_, 0, "table index");
+        WriteOpcode(&stream_, Opcode::I32Const);
+        WriteS32Leb128(&stream_, 0U, "elem init literal");
+        WriteOpcode(&stream_, Opcode::End);
+        WriteU32Leb128(&stream_, total_elem_count, "num elements");
 
-    current_payload_offset_ = stream_.offset();
+        current_payload_offset_ = stream_.offset();
+    }
 
     for (Section *section: sections) {
         ApplyRelocations(section);
         WriteSectionPayload(section);
     }
 
+//    if(sections.size()>0)
     FixupSize(fixup);
 }
 
@@ -720,12 +724,10 @@ void Linker::WriteFunctionSection(const SectionPtrVector &sections,
         Offset input_offset = 0;
         Index sig_index = 0;
         const uint8_t *start = &sec->binary->data[sec->payload_offset];
-        const uint8_t *end =
-                &sec->binary->data[sec->payload_offset + sec->payload_size];
+        const uint8_t *end = &sec->binary->data[sec->payload_offset + sec->payload_size];
         while (count--) {
             input_offset += ReadU32Leb128(start + input_offset, end, &sig_index);
-            WriteU32Leb128(&stream_, sec->binary->RelocateTypeIndex(sig_index),
-                           "sig");
+            WriteU32Leb128(&stream_, sec->binary->RelocateTypeIndex(sig_index), "sig");
         }
     }
 
@@ -1333,7 +1335,6 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 }
 
 
-
 Code &code(std::vector<uint8_t> bin) {
     return *new Code(bin.data(), bin.size());
 }
@@ -1347,8 +1348,7 @@ Code merge_files(List<String> infiles) {
         if (!ok)continue;
         auto binary = new LinkerInputBinary(input_filename.data, file_data);
         linker.AppendBinary(binary);
-        LinkOptions options = {NULL};
-        ReadBinaryLinker(binary, &options);
+        ReadBinaryLinker(binary);
     }
     return code(linker.PerformLink().data);
 }
@@ -1366,9 +1366,8 @@ Code &merge_binaries(List<Code *> binaries) {
         const char *source = "<code>";
         if (not code.name.empty()) source = code.name.data;
         LinkerInputBinary *binary = new LinkerInputBinary(source, file_data);
-        binary->needs_relocate = code.needs_relocate;
-        LinkOptions options = {NULL, code.needs_relocate};
-        ReadBinaryLinker(binary, &options);
+        binary->needs_relocate = eq(source, "main.wasm");// false;//code.needs_relocate;
+        ReadBinaryLinker(binary);
 //		if (binary->filename == "main.wasm"s) {
 //			printf("currently no exports! they'd mess with library!\n");
 //			binary->exports.clear();
@@ -1413,8 +1412,11 @@ void Linker::ApplyRelocations(Section *section) {
 void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
     // whole section will be written to stream, so don't write to stream here!
     LinkerInputBinary *binary = section->binary;
-    std::vector<uint8_t> &data = binary->data;
-    uint8_t *section_start = &data[section->offset];
+    if (not binary->needs_relocate)
+        error("binary->needs_relocate marked false, but got a reloc!");
+
+    const std::vector<uint8_t> &immutable_data = binary->data;// if you insert, other sections get messed up!
+    uint8_t *section_start = (uint8_t *) &immutable_data[section->offset];// changing int values (offsets) is ok
     uint8_t *section_end = section_start + section->size;// safety to not write outside bounds
 
     Index cur_value = 0, new_value = -1;
@@ -1500,55 +1502,3 @@ std::vector<uint8_t> Linker::lebVector(Index value) {
     return neu;
 }
 
-
-short lebByteSize(unsigned long neu) {
-    short size = 0;
-    do {
-        size++;
-        neu = neu >> 7;
-    } while (neu > 0);
-    return size;
-}
-
-
-/*
-0 0 1
-64 40 2
-8192 2000 3
-1048576 100000 4
-134217728 8000000 5
-17179869184 400000000 6
-2199023255552 20000000000 7
-281474976710656 1000000000000 8
-36028797018963968 80000000000000 9
--1 0 1
--65 ffffffffffffffbf 2
--8193 ffffffffffffdfff 3
--1048577 ffffffffffefffff 4
--134217729 fffffffff7ffffff 5
--17179869185 fffffffbffffffff 6
--2199023255553 fffffdffffffffff 7
--281474976710657 fffeffffffffffff 8
--36028797018963969 ff7fffffffffffff 9
- */
-short lebByteSize(long aleb) {
-    int more = 1;
-    int size = 0;
-    long val = aleb;
-    while (more) {
-        uint8_t b = val & 0x7f;
-        /* sign bit of byte is second high order bit (0x40) */
-        val >>= 7;
-        bool clear = (b & 0x40) == 0;  /*sign bit of byte is clear*/
-        bool set = b & 0x40; /*sign bit of byte is set*/
-        if ((val == 0 && clear) || (val == -1 && set))
-            more = 0;
-        else {
-            b |= 0x80;// continuation bit:  set high order bit of byte;
-        }
-        size++;
-    }
-    return size;
-//    Code &leb128 = signedLEB128((long) leb);// todo later … optimize inline if…
-//    return leb128.length;
-}
