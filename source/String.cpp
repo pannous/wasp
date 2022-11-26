@@ -569,8 +569,9 @@ bool String::startsWith(chars string) {
 }
 
 bool String::endsWith(const char *string) {
-	int len1 = len(string);
-	return len1 <= length and eq(data + length - len1, string, len1);
+    int len1 = len(string);
+    length = strlen0(data);// todo LOST WHEN?
+    return len1 <= length and eq(data + length - len1, string, len1);
 }
 
 String String::to(const char *string) {
@@ -668,22 +669,26 @@ bool contains(chars str, chars match) {
 }
 
 void put(chars s) {
-	puts(s);
+    puts(s);
 #ifndef WASM    // console.put adds newline
-	puts("\n");
+    puts("\n");
 #endif
 }
 
 void print(const Node node) {
-	print(node.string());
+    print(node.string());
 }
 
+void newline();
+
 void print(long i) {
-	puti(i);
+    puti(i);
+    newline();
 }
 
 void print(char c) {
-	put_char(c);
+    put_char(c);
+    newline();
 }
 
 void print(char const *s) {

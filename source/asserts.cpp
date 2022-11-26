@@ -81,9 +81,10 @@ bool assert_equals_x(Node a, double b, char *context = "") {
 
 
 bool assert_equals_x(Node a, long b, char *context = "") {
-	if (!(a == b))print("\nFAILED assert_equals! %s %lld should be %ld %s\n"s % a.name.data % a.value.longy % b % context);
-	else print("OK %lld==%ld %s\n"s % a.value.longy % b % context);
-	return a == b;
+    if (!(a == b))
+        print("\nFAILED assert_equals! %s %lld should be %ld %s\n"s % a.name.data % a.value.longy % b % context);
+    else print("OK %lld==%ld %s\n"s % a.value.longy % b % context);
+    return a == b;
 }
 
 
@@ -132,9 +133,10 @@ bool assert_equals_x(Node *a, Node *b, char *context = "") {
 //}
 
 bool assert_equals_x(long a, long b, char *context) {
-	if (a != b)print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
-	else print("OK %ld==%ld %s\n"s % a % b % context);
-	return a == b;
+    if (a != b)
+        print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
+    else print("OK %ld==%ld %s\n"s % a % b % context);
+    return a == b;
 }
 
 bool assert_equals_x(int a, int b, char *context = "") {

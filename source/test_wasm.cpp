@@ -796,27 +796,9 @@ void testMergeWabtByHand() {
 }
 
 
-void testWasmRuntimeExtensionMock() {
-//#ifndef RUNTIME_ONLY
-//	functionIndices.setDefault(-1);
-//	Module runtime = read_wasm("lib.wasm");// test:=42
-//	Signature mock;// todo read Signature from wasm!?
-//	functionSignatures.insert_or_assign("test", mock.returns(int32));
-//	Node charged = analyze(parse("test"));
-//	Code calling = emit(charged, &runtime, "maine");
-//	calling.save("main.wasm");// partial wasm!
-//	Module main = read_wasm("main.wasm");
-//	Code code = merge_wasm(runtime, main);
-//	code.save("merged.wasm");
-//	read_wasm("merged.wasm");
-//	int result = code.run();
-//	check_eq(result, 42);
-//#endif
-}
-
 
 //testMerge
-void testWasmModuleExtension() {
+void testWasmModuleExtension_OUTDATED() {
     printf("testWasmModuleExtension");
 #ifndef RUNTIME_ONLY
     clearAnalyzerContext();
@@ -869,9 +851,14 @@ void testWasmRuntimeExtension() {
 
 //	functionSignatures["okf"].returns(float32);
     assert_run("okf(1)", 43);
-    assert_run("okf(1.0)", 43);
+    assert_run("okf(1.0)", 43.0);
     assert_run("42.5", 42.5);// truncation ≠ proper rounding!
     assert_run("okf5(1.5)", 43);
+    assert_run("okf5 1", 43.5);
+    skip(
+            assert_run("okf5", 41.5); //default args don't work in wasm! (how could they?)
+            assert_run("okf5", 41.5); /// … expected f32 but nothing on stack
+    )
 //	functionSignatures["atoi0"].returns(int32);
 //	assert_run("printf('123')", 123);
     assert_run("strlen0('123')", 3);

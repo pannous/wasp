@@ -224,6 +224,7 @@ public:
     void grow() { // todo don't grow when holding references!
         capacity = capacity * 2;
         check_silent(capacity < MAP_MAX_CAPACITY);
+//        warn("GROWING");
         S *new_keys = (S *) alloc(sizeof(S), capacity);
         T *new_values = (T *) alloc(sizeof(T), capacity);
         if (keys and values) {
