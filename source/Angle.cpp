@@ -74,12 +74,12 @@ Node getType(Node node) {
     }
     Node typ;
     if (types.has(name)) {
-        typ = types[name];
+        typ = *types[name];
         typ.kind = clazz;
     } else {
-        typ = Node(name);
+        typ = *new Node(name);
         typ.kind = clazz;
-        types[name] = typ;
+        types[name] = &typ;
     }
     if (vector) {
         // holup typ.kind = arrays needs to be applied to the typed object!
@@ -90,20 +90,19 @@ Node getType(Node node) {
     return typ;
 }
 
+bool isPlural(Node &word) {
+    auto name = word.name;
+    static List<String> plural_exceptions = {"flags", "puts", "plus", "minus", "times", "is", "has", "was", "does",
+                                             "equals"};
+    if (plural_exceptions.contains(name)) return false;
+    if (name.endsWith("s"))return true;
+    return false;
+}
 
 bool isType(Node &expression) {
     auto name = expression.name;
-    // todo makes … verbs!
-    if (name == "puts" or name == "plus" or name == "minus" or name == "times" or name == "is" or name == "has" or
-        name == "was" or name == "does" or
-        name == "equals")
-        return false;// todo …
-    // todo: whitelist known singular types?
-    if (name.endsWith("s")) { // numbers, persons …
-//		auto cut = name.substring(0, -2);
-        todo("cut plurals");
-        return true;// todo and register?
-    }
+    if (isPlural(expression))
+        return true;
     return types.has(name);
 }
 
@@ -193,7 +192,7 @@ List<Arg> groupFunctionArgs(Function &function, Node &params) {
     for (Node &arg: params) {
         if (isType(arg)) {
             if (args.size() > 0 and not args.last().type)
-                args.last().type = types[arg.name];
+                args.last().type = *types[arg.name];
             else nextType = arg;
         } else {
             if (arg.name != function.name)
@@ -399,7 +398,7 @@ bool isPrimitive(Node &node) {
     return false;
 }
 
-Map<String, Node> types;
+Map<String, Node *> types;
 //const Node Long("Long", clazz);
 //const Node Double("Double", clazz);//.setType(type);
 Node Long("Long", clazz);
@@ -409,12 +408,12 @@ Node Double("Double", clazz);//.setType(type);
 
 // todo: see NodeTypes.h for overlap with numerical returntype integer …
 void initTypes() {
-    types.add("int", Long);// until we really need it
-    types.add("long", Long);
-    types.add("double", Double);
-    types.add("float", Double);
+    types.add("int", &Long);// until we really need it
+    types.add("long", &Long);
+    types.add("double", &Double);
+    types.add("float", &Double);
     for (auto name: types)
-        types[name].setType(clazz);
+        types[name]->setType(clazz);
 }
 
 
@@ -425,7 +424,7 @@ Node &groupTypes(Node &expression, Function &context) {
     if (isType(expression)) {// double \n x,y,z  extra case :(
         if (expression.length > 0) {
             for (Node &typed: expression) {// double \n x = 4
-                typed.setType(&types[expression.name]);
+                typed.setType(types[expression.name]);
                 addLocal(context, typed.name, mapType(typed), false);
             }
             expression.name = 0;// hack
@@ -466,7 +465,7 @@ Node &groupTypes(Node &expression, Function &context) {
         }
 //			if (operator_list.has(typed.name))
 //				continue; // 3.3 as int …
-        auto aType = &types[node.name];
+        auto aType = types[node.name];
 
         if (typed.name == "as") { // danger edge cases!
             expression.remove(i - 1, i);
@@ -1119,28 +1118,8 @@ Node &groupWhile(Node &n, Function &context) {
 //	return &analyze(node, "main");
 //}
 
-static List<String> wit_keywords = {
-        "module",
-        "static",
-        "interface",
-        "type",
-        "resource",
-        "record",
-        "func",
-        "variant",
-        "flags",
-        "enum",
-        "tuple",
-        "union",
-        "future",
-        "stream",
-        "option",
-        "char",
-        "u8", "u16", "u32", "u64",
-        "s8", "s16", "s32", "s64",
-        "float32", "float64",
-};
 
+WitReader witReader;
 
 Node &analyze(Node &node, Function &function) {
     String &context = function.name;
@@ -1161,9 +1140,7 @@ Node &analyze(Node &node, Function &function) {
         module->name = node.values().name; // todo: use?
         return NUL;
     }
-    if (wit_keywords.contains(name)) {
-        return (new WitReader())->analyzeWit(node);
-    }
+
 
     if (type == functor) {
         if (name == "while")return groupWhile(node, function);
@@ -1225,6 +1202,8 @@ Node &analyze(Node &node, Function &function) {
         // children analyzed individually, not as expression WHY?
         if (grouped.length > 0)
             for (Node &child: grouped) {
+                if (wit_keywords.contains(child.name))
+                    return witReader.analyzeWit(node);
                 child = analyze(child, function);// REPLACE ref with their ast ok?
             }
     }
