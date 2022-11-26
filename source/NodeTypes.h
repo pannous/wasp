@@ -91,6 +91,8 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
     reals = 0x7C, /*  ≠ float64, just hides bugs, these concepts should not be mixed */
     longs = 0x7E, // the signature of parameters/variables is independent!
+    flag_entry = longs, // special semantics at compile time for now
+    enum_entry = longs, // special semantics at compile time for now
     structs,
     enums,
     flags,// just a boolean enum with “bit-boolean” values 1,2,4,8,…
