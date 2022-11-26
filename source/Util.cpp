@@ -81,6 +81,9 @@ class List;//<String>;
 #include <errno.h>
 
 bool isDir(const char *name) {
+#ifdef WASM
+    return false;
+#else
     DIR *directory = opendir(name);
     if (directory != NULL) {
         closedir(directory);
@@ -89,6 +92,7 @@ bool isDir(const char *name) {
     if (errno == ENOTDIR)
         return false;
     return false;// -1;
+#endif
 }
 
 //String findNewestFile(String filename) {

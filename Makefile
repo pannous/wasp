@@ -369,6 +369,30 @@ source/Wasp.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/Wasp.cpp.s
 .PHONY : source/Wasp.cpp.s
 
+source/WitReader.o: source/WitReader.cpp.o
+.PHONY : source/WitReader.o
+
+# target to build an object file
+source/WitReader.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/WitReader.cpp.o
+.PHONY : source/WitReader.cpp.o
+
+source/WitReader.i: source/WitReader.cpp.i
+.PHONY : source/WitReader.i
+
+# target to preprocess a source file
+source/WitReader.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/WitReader.cpp.i
+.PHONY : source/WitReader.cpp.i
+
+source/WitReader.s: source/WitReader.cpp.s
+.PHONY : source/WitReader.s
+
+# target to generate assembly for a file
+source/WitReader.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/WitReader.cpp.s
+.PHONY : source/WitReader.cpp.s
+
 source/console.o: source/console.cpp.o
 .PHONY : source/console.o
 
@@ -912,6 +936,9 @@ help:
 	@echo "... source/Wasp.o"
 	@echo "... source/Wasp.i"
 	@echo "... source/Wasp.s"
+	@echo "... source/WitReader.o"
+	@echo "... source/WitReader.i"
+	@echo "... source/WitReader.s"
 	@echo "... source/console.o"
 	@echo "... source/console.i"
 	@echo "... source/console.s"
