@@ -1398,7 +1398,6 @@ Code emitCall(Node &fun, Function &context) {
             error("unknown function "s + name + " (" + normed + ")");// checked before, remove
         else name = normed;
     }
-
     Function &function = functions[name];
     Signature &signature = function.signature;
     int index = function.index;
@@ -1431,6 +1430,8 @@ Code emitCall(Node &fun, Function &context) {
     // todo multi-value
     const Type &return_type = signature.return_types.last(none);
     last_type = mapTypeToWasm(return_type);
+    if (signature.wasm_return_type)
+        check_eq(last_type, signature.wasm_return_type);
 //	last_typo.clazz = &signature.return_type;// todo dodgy!
     return code;
 }
@@ -1872,7 +1873,7 @@ int last_index = -1;
 
 // typeSection created before code Section. All imports must be known in advance!
 [[nodiscard]]
-Code typeSection() {
+Code emitTypeSection() {
     // Function types are vectors of parameters and return types. Currently
     // the type section is a vector of function types
     // TODO optimise - some of the procs might have the same type signature
@@ -1939,7 +1940,7 @@ Valtype fixValtype(Valtype valtype) {
 }
 
 [[nodiscard]]
-Code importSection() {
+Code emitImportSection() {
     // the import section is a vector of imported functions
     Code import_code;
     import_count = 0;
@@ -1979,7 +1980,7 @@ int function_block_count;
 
 //int builtins_used=0;
 [[nodiscard]]
-Code codeSection(Node &root) {
+Code emitCodeSection(Node &root) {
     // the code section contains vectors of functions
     // index needs to be known before emitting code, so call $i works
 
@@ -2071,9 +2072,9 @@ Code codeSection(Node &root) {
 }
 
 [[nodiscard]]
-[[nodiscard]]
-Code exportSection() {
-    short exports_count = 1;// main
+Code emitExportSection() {
+//    https://webassembly.github.io/spec/core/binary/modules.html#binary-exportsec
+    short exports_count = 1;// just main … todo easy
 // the export section is a vector of exported functions etc
     if (!start)// todo : allow arbirtrary exports, or export all
         return createSection(export_section, Code(0));
@@ -2105,7 +2106,7 @@ Code exportSection() {
 int global_user_count = 0;
 
 [[nodiscard]]
-Code globalSection() {
+Code emitGlobalSection() {
     // global imports purely in IMPORT section
     // user global index += global_import_count !
     //referenced through global indices, starting with the smallest index not referencing a global import.
@@ -2183,7 +2184,9 @@ Code dataSection() { // needs memory section too!
 
 // Signatures
 [[nodiscard]]
-Code funcTypeSection() {// depends on codeSection, but must appear earlier in wasm
+Code emitFuncTypeSection() {// depends on codeSection, but must appear earlier in wasm
+//    https://webassembly.github.io/spec/core/binary/modules.html#binary-funcsec
+
     // funcType_count = function_count EXCLUDING imports, they encode their type inline!
     // the function section is a vector of type indices that indicate the type of each function in the code section
 
@@ -2198,11 +2201,10 @@ Code funcTypeSection() {// depends on codeSection, but must appear earlier in wa
             error("missing typeMap for index "s + index);
         } else {
             int typeIndex = typeMap[*fun];
-            if (typeIndex < 0) {
-                if (runtime_offset == 0) // todo else ASSUME all handled correctly before
-                    error("missing typeMap for function %s index %d "s % fun % i);
-            } else // just an implicit list funcId->typeIndex
-                types_of_functions.push((byte) typeIndex);
+            if (typeIndex >= 0) // just an implicit list funcId->typeIndex
+                types_of_functions.push((int) typeIndex, false);
+            else if (runtime_offset == 0) // todo else ASSUME all handled correctly before
+                error("missing typeMap for function %s index %d "s % fun % i);
         }
     }
     // @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
@@ -2212,7 +2214,7 @@ Code funcTypeSection() {// depends on codeSection, but must appear earlier in wa
 
 [[nodiscard]]
 Code functionSection() {
-    return funcTypeSection();// (misnomer) vs codeSection() !
+    return emitFuncTypeSection();// (misnomer) vs codeSection() !
 }
 
 // todo : convert library referenceIndices to named imports!
@@ -2375,7 +2377,7 @@ void add_builtins() {
 }
 
 [[nodiscard]]
-Code memorySection() {
+Code emitMemorySection() {
     if (memoryHandling == import_memory or memoryHandling == no_memory) return Code();// handled elsewhere
     /* limits https://webassembly.github.io/spec/core/binary/types.html#limits - indicates a min memory size of one page */
 //	int pages = 1;//  traps while(i<65336/4)k#i=0
@@ -2452,13 +2454,13 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
     // ^^^ currently causes malloc_error WHY??
 
     auto customSection = createSection(custom_section, customSectionvector);
-    Code typeSection1 = typeSection();// types must be defined in analyze(), not in code declaration
-    Code importSection1 = importSection();// needs type indices
-    Code globalSection1 = globalSection();//
-    Code codeSection1 = codeSection(root_ast); // needs functions and functionIndices prefilled!! :(
-    Code funcTypeSection1 = funcTypeSection();// signatures depends on codeSection, but must come before it in wasm
-    Code memorySection1 = memorySection();
-    Code exportSection1 = exportSection();// depends on codeSection, but must come before it!!
+    Code typeSection1 = emitTypeSection();// types must be defined in analyze(), not in code declaration
+    Code importSection1 = emitImportSection();// needs type indices
+    Code globalSection1 = emitGlobalSection();//
+    Code codeSection1 = emitCodeSection(root_ast); // needs functions and functionIndices prefilled!! :(
+    Code funcTypeSection1 = emitFuncTypeSection();// signatures depends on codeSection, but must come before it in wasm
+    Code memorySection1 = emitMemorySection();
+    Code exportSection1 = emitExportSection();// depends on codeSection, but must come before it!!
 
     Code code = Code(magicModuleHeader, 4)
                 + Code(moduleVersion, 4)

@@ -114,26 +114,30 @@ chars typeName(Valtype t, bool fail) {
 	switch (t) {
 		case Valtype::i32t:
 			return "i32";
-		case Valtype::i64:
-			return "i64";
-		case Valtype::float32:
-			return "f32";
-		case Valtype::float64:
-			return "f64";
-		case Valtype::array:
-			return "array";
-		case Valtype::charp:
-			return "char*";
-		case Valtype::voids:
-			return "void";
-		case Valtype::none:
-			return "void_block";
-		case Valtype::unknown_type:
-			return "unknown";// internal
-		case Valtype::ignore:
-			return "«ignore»";// or "" ;)
-		case Valtype::todoe:
-			return "«todo»";
+        case Valtype::i64:
+            return "i64";
+        case Valtype::float32:
+            return "f32";
+        case Valtype::float64:
+            return "f64";
+        case Valtype::array:
+            return "array";
+        case Valtype::charp:
+            return "char*";
+        case Valtype::node:
+            return "node";
+//		case Valtype::node_pointer:
+//			return "node";
+        case Valtype::voids:
+            return "void";
+        case Valtype::none:
+            return "void_block";
+        case Valtype::unknown_type:
+            return "unknown";// internal
+        case Valtype::ignore:
+            return "«ignore»";// or "" ;)
+        case Valtype::todoe:
+            return "«todo»";
 		default:
 //			if (t==30)return "BUG!";// hide bug lol
 			if (fail)

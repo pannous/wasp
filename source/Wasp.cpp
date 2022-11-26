@@ -72,6 +72,8 @@ bool isalpha0(codepoint c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
+void newline();
+
 extern void info(chars);
 
 #define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m)
@@ -1788,8 +1790,9 @@ float okf(float f) {
     return 42 + f;
 }
 
-float okf5(float f) {
-    return 41.5 + f;
+// default args don't work in wasm! (how could they?)
+float okf5(float f = 0) {
+    return 41.4 + f;
 }
 
 
@@ -1852,7 +1855,7 @@ struct Exception {
 //	ERR() = default;
 //	virtual ~ERR() = default;
 //};
-char newline = '\n';
+//char newline = '\n';
 //#ifndef _main_
 #define __MAIN__
 

@@ -7,7 +7,7 @@
 
 #include <cstdlib> // OK in WASM!
 
-#define LIST_DEFAULT_CAPACITY 100
+#define LIST_DEFAULT_CAPACITY 100 //
 #define LIST_MAX_CAPACITY 10000 // debug only!
 
 #include "Util.h"
@@ -37,98 +37,98 @@ void heapSort(S arr[], int n);
 
 template<class S>
 inline void swap(S *a, S *b) {
-	S c = *a;
-	*a = *b;
-	*b = c;
+    S c = *a;
+    *a = *b;
+    *b = c;
 }
 
 
 template<class S>
 void heapify(S arr[], int n, int i) {
-	int largest = i; // Initialize largest as root
-	int l = 2 * i + 1; // left = 2*i + 1
-	int r = 2 * i + 2; // right = 2*i + 2
-	// If left child is larger than root
-	if (l < n && arr[l] > arr[largest])
-		largest = l;
-	// If right child is larger than largest so far
-	if (r < n && arr[r] > arr[largest])
-		largest = r;
-	// If largest is not root
-	if (largest != i) {
-		swap(&arr[i], &arr[largest]);
-		// Recursively heapify the affected sub-tree
-		heapify(arr, n, largest);
-	}
+    int largest = i; // Initialize largest as root
+    int l = 2 * i + 1; // left = 2*i + 1
+    int r = 2 * i + 2; // right = 2*i + 2
+    // If left child is larger than root
+    if (l < n && arr[l] > arr[largest])
+        largest = l;
+    // If right child is larger than largest so far
+    if (r < n && arr[r] > arr[largest])
+        largest = r;
+    // If largest is not root
+    if (largest != i) {
+        swap(&arr[i], &arr[largest]);
+        // Recursively heapify the affected sub-tree
+        heapify(arr, n, largest);
+    }
 }
 
 template<class S>
 void heapify(S arr[], int n, int i, float (valuator)(S &)) {
-	int largest = i; // Initialize largest as root
-	int l = 2 * i + 1; // left = 2*i + 1
-	int r = 2 * i + 2; // right = 2*i + 2
-	// If left child is larger than root
-	if (l < n && valuator(arr[l]) > valuator(arr[largest]))
-		largest = l;
-	// If right child is larger than largest so far
-	if (r < n && valuator(arr[r]) > valuator(arr[largest]))
-		largest = r;
-	// If largest is not root
-	if (largest != i) {
-		swap(&arr[i], &arr[largest]);
-		// Recursively heapify the affected sub-tree
-		heapify(arr, n, largest, valuator);
-	}
+    int largest = i; // Initialize largest as root
+    int l = 2 * i + 1; // left = 2*i + 1
+    int r = 2 * i + 2; // right = 2*i + 2
+    // If left child is larger than root
+    if (l < n && valuator(arr[l]) > valuator(arr[largest]))
+        largest = l;
+    // If right child is larger than largest so far
+    if (r < n && valuator(arr[r]) > valuator(arr[largest]))
+        largest = r;
+    // If largest is not root
+    if (largest != i) {
+        swap(&arr[i], &arr[largest]);
+        // Recursively heapify the affected sub-tree
+        heapify(arr, n, largest, valuator);
+    }
 }
 
 
 template<class S>
 void heapify(S arr[], int n, int i, bool (comparator)(S &, S &)) {
-	int largest = i; // Initialize largest as root
-	int l = 2 * i + 1; // left = 2*i + 1
-	int r = 2 * i + 2; // right = 2*i + 2
-	if (l < n && comparator(arr[l], arr[largest]))
-		largest = l;
-	if (r < n && comparator(arr[r], arr[largest]))
-		largest = r;
-	if (largest != i) {
-		swap(&arr[i], &arr[largest]);
-		heapify(arr, n, largest, comparator);
-	}
+    int largest = i; // Initialize largest as root
+    int l = 2 * i + 1; // left = 2*i + 1
+    int r = 2 * i + 2; // right = 2*i + 2
+    if (l < n && comparator(arr[l], arr[largest]))
+        largest = l;
+    if (r < n && comparator(arr[r], arr[largest]))
+        largest = r;
+    if (largest != i) {
+        swap(&arr[i], &arr[largest]);
+        heapify(arr, n, largest, comparator);
+    }
 }
 
 
 template<class S>
 void heapSort(S arr[], int n) {
-	for (int i = n / 2 - 1; i >= 0; i--)
-		heapify(arr, n, i);
-	// One by one extract an element from heap
-	for (int i = n - 1; i > 0; i--) {
-		// Move current root to end
-		swap(&arr[0], &arr[i]);
-		// call max heapify on the reduced heap
-		heapify(arr, i, 0);
-	}
+    for (int i = n / 2 - 1; i >= 0; i--)
+        heapify(arr, n, i);
+    // One by one extract an element from heap
+    for (int i = n - 1; i > 0; i--) {
+        // Move current root to end
+        swap(&arr[0], &arr[i]);
+        // call max heapify on the reduced heap
+        heapify(arr, i, 0);
+    }
 }
 
 template<class S>
 void heapSort(S arr[], int n, float (valuator)(S &)) {
-	for (int i = n / 2 - 1; i >= 0; i--)
-		heapify(arr, n, i, valuator);
-	for (int i = n - 1; i > 0; i--) {
-		swap(&arr[0], &arr[i]);
-		heapify(arr, i, 0, valuator);
-	}
+    for (int i = n / 2 - 1; i >= 0; i--)
+        heapify(arr, n, i, valuator);
+    for (int i = n - 1; i > 0; i--) {
+        swap(&arr[0], &arr[i]);
+        heapify(arr, i, 0, valuator);
+    }
 }
 
 template<class S>
 void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
-	for (int i = n / 2 - 1; i >= 0; i--)
-		heapify(arr, n, i, comparator);
-	for (int i = n - 1; i > 0; i--) {
-		swap(&arr[0], &arr[i]);
-		heapify(arr, i, 0, comparator);
-	}
+    for (int i = n / 2 - 1; i >= 0; i--)
+        heapify(arr, n, i, comparator);
+    for (int i = n - 1; i > 0; i--) {
+        swap(&arr[0], &arr[i]);
+        heapify(arr, i, 0, comparator);
+    }
 }
 
 
@@ -138,13 +138,19 @@ public:
     int header = array_header_32;
     int _type = 0;// reflection on template class S
     int _size = 0;
-    S *items;// In C++ References cannot be put into an array, if you try you get
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
     int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
+    S *items;// In C++ References cannot be put into an array, if you try you get
+//    S items[LIST_DEFAULT_CAPACITY];// array type is not assignable
 
     List() {
-        items = (S *) calloc(sizeof(S), LIST_DEFAULT_CAPACITY);
+        items = (S *) calloc(capacity, sizeof(S));
+    }
+
+
+    List(const List &old) : items(old.items) { // todo: memcopy?
+        _size = old._size;
     }
 
     List(Array_Header a) {
@@ -153,27 +159,27 @@ public:
         _size = a.length;
         items = (S *) &a.data;// ok? copy data?
 //		todo("a.typ");
-	}
+    }
 
-	List(S first, ...) : List() {
+    List(S first, ...) : List() {
 //		items[0] = first;
-		va_list args;// WORKS WITHOUT WASI! with stdargs
-		va_start(args, first);
-		S *item = &first;
-		while (item) {
-			items[_size++] = item;
-			item = (S *) va_arg(args, S*);
-		}
-		va_end(args);
-	}
+        va_list args;// WORKS WITHOUT WASI! with stdargs
+        va_start(args, first);
+        S *item = &first;
+        while (item) {
+            items[_size++] = item;
+            item = (S *) va_arg(args, S*);
+        }
+        va_end(args);
+    }
 
-	List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
-		if (args == 0)return;
+    List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
+        if (args == 0)return;
         while (args[_size] and _size < LIST_DEFAULT_CAPACITY)_size++;
-		items = (S *) calloc(sizeof(S), _size + 1);
-		int i = _size;
-		while (i-- > 0)items[i] = args[i];
-	}
+        items = (S *) calloc(sizeof(S), _size + 1);
+        int i = _size;
+        while (i-- > 0)items[i] = args[i];
+    }
 
 //	List(S args) {// initiator list C style {x,y,z}
 //		if (args == 0)return;
@@ -187,149 +193,152 @@ public:
 
 #ifndef WASM
 
-	List(const std::initializer_list<S> &_items) : List() {
-		for (const S &s: _items) {
-			items[_size++] = s;
-		}
-	}
+    List(const std::initializer_list<S> &_items) : List() {
+        for (const S &s: _items) {
+            items[_size++] = s;
+        }
+    }
 
 #endif
 
-	int size() { return _size; };
+    int size() { return _size; };
 
-	void setType(Type type) {
-		_type = type;
-	}
+    void setType(Type type) {
+        _type = type;
+    }
 
-	void grow() {
+    void grow() {
         check_silent(capacity * 2 < LIST_MAX_CAPACITY);
-        S *neu = (S *) malloc(sizeof(S) * capacity * 2);
+        S *neu = (S *) alloc(capacity * 2, sizeof(S));
         memcpy((void *) neu, (void *) items, capacity);
 //		for (int i = 0; i < size(); ++i) neu[i] = items[i];// doesn't help
         warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
+//      indeed List<int> FUCKS UP just by growing even without references
         items = neu;
         capacity *= 2;
     }
 
-	S &add(S s) {
-		items[_size++] = s;
+    S &add(S s) {
+        items[_size++] = s;
         if (_size >= capacity)grow();
-		return items[_size - 1];
-	}
+        return items[_size - 1];
+    }
 
 //	S &push_back(S s) {// vector compatible
 //		add(s)
 //	}
 
-	// list after 1 element
+    // list after 1 element
 //	List &&operator++() {
 //		return List(items + 1);
 //	}
 
-	// list FROM index, e.g. [1,2,3]>>1 == [2, 3]
+    // list FROM index, e.g. [1,2,3]>>1 == [2, 3]
 //	List &&operator>>(short index) {
 //		return List(items + index);
 //	}
 
 
-	S &operator[](short index) {
-		if (index < 0 or index > _size) /* and not auto_grow*/
-			error("index out of range : %d > %d"s % index % _size);
-		return items[index];
-	}
+    S &operator[](short index) {
+        if (index == _size)_size++;// allow indexing one after end? todo ok?
+        if (_size >= capacity)grow();
+        if (index < 0 or index >= _size) /* and not auto_grow*/
+            error("index out of range : %d > %d"s % index % _size);
+        return items[index];
+    }
 
-	S &operator[](S key) {
-		for (int i = 0; i < _size; ++i) {
-			if (items[i] == key)return items[i];
-		}
-        if (_size >= capacity - 1)grow();
-		return items[_size++];// create new!
-	}
-
-
-	bool operator==(List<S> other) {
-		if (_size != other.size())return false;
-		for (int i = 0; i < _size; ++i) {
-			if (items[i] != other.items[i])return false;
-		}
-		return true;
-	}
-
-	S *begin() const {
-		return items;
-	}
-
-	S *end() const {
-		return &items[_size];
-	}
+//	S &operator[](S& key) {
+//		for (int i = 0; i < _size; ++i) {
+//			if (items[i] == key)return items[i];
+//		}
+//        if (_size >= capacity - 1)grow();
+//		return items[_size++];// create new!
+//	}
 
 
-	int position(S s) {
-		for (int i = 0; i < _size; ++i) {
-			if (items[i] == s)return i;
-			if (eq(items[i], s))return i;// char*
-		}
-		return -1;
-	}
+    bool operator==(List<S> other) {
+        if (_size != other.size())return false;
+        for (int i = 0; i < _size; ++i) {
+            if (items[i] != other.items[i])return false;
+        }
+        return true;
+    }
 
-	void sort(bool (comparator)(S a, S b)) {
-		heapSort(items, _size, comparator);
-	}
+    S *begin() const {
+        return items;
+    }
 
-	List<S> &sort(bool (comparator)(S &, S &)) {
-		heapSort(items, _size, comparator);
-		return *this;
-	}
+    S *end() const {
+        return &items[_size];
+    }
 
-	List<S> &sort(float (valuator)(S &a)) {
-		heapSort(items, _size, valuator);
-		return *this;
-	}
 
-	List<S> &sort() {
-		heapSort(items, _size);
-		return *this;
-	}
+    int position(S s) {
+        for (int i = 0; i < _size; ++i) {
+            if (items[i] == s)return i;
+            if (eq(items[i], s))return i;// char*
+        }
+        return -1;
+    }
 
-	bool has(S *item) {
-		return position(item) >= 0;
-	}
+    void sort(bool (comparator)(S a, S b)) {
+        heapSort(items, _size, comparator);
+    }
+
+    List<S> &sort(bool (comparator)(S &, S &)) {
+        heapSort(items, _size, comparator);
+        return *this;
+    }
+
+    List<S> &sort(float (valuator)(S &a)) {
+        heapSort(items, _size, valuator);
+        return *this;
+    }
+
+    List<S> &sort() {
+        heapSort(items, _size);
+        return *this;
+    }
+
+    bool has(S *item) {
+        return position(item) >= 0;
+    }
 
 //	bool has(S &item) {
 //		return position(item) >= 0;
 //	}
-	bool has(S item) {
-		return position(item) >= 0;
-	}
+    bool has(S item) {
+        return position(item) >= 0;
+    }
 
-	bool contains(S &item) {
-		return position(item) >= 0;
-	}
+    bool contains(S &item) {
+        return position(item) >= 0;
+    }
 
-	void clear() {
-        items = (S *) alloc(sizeof(S), LIST_DEFAULT_CAPACITY);
-//		items = (S *) calloc(sizeof(S), LIST_ALLOCATION_RESERVED_COUNT);
-		_size = 0;
-	}
+    void clear() {
+        free(items);
+        items = (S *) alloc(LIST_DEFAULT_CAPACITY, sizeof(S));
+        _size = 0;
+    }
 
-	void remove(S &item) {
-		auto pos = position(item);
-		if (pos < 0)return;
-		memcpy(items + pos, items + pos + 1, _size - pos);
-		_size--;
-	}
+    void remove(S &item) {
+        auto pos = position(item);
+        if (pos < 0)return;
+        memcpy(items + pos, items + pos + 1, _size - pos);
+        _size--;
+    }
 
-	S last(S defaulty) {
-		if (_size < 1)
-			return defaulty;
-		return items[_size - 1];
-	}
+    S last(S defaulty) {
+        if (_size < 1)
+            return defaulty;
+        return items[_size - 1];
+    }
 
-	S &last() {
-		if (_size < 1)
-			error("empty list");
-		return items[_size - 1];
-	}
+    S &last() {
+        if (_size < 1)
+            error("empty list");
+        return items[_size - 1];
+    }
 
 //	List<S>& clone() { // todo just create all return lists with new List() OR return List<> objects (no references) copy by value ok!!
 //		List &neu = *new List<S>();
