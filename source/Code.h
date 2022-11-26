@@ -790,7 +790,7 @@ public:
     List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
 //	Type return_type{};// use return_types.last(default)
 	Valtype wasm_return_type;// debug only!
-
+    bool is_handled = false;
 	// these explicit constructions are needed when using types return_types as reference!
 //	Signature() : return_types(*new List<Valtype>), types(*new Map<int, Valtype>) {}
 //	Signature() : return_types(*new List<Type>), types(*new Map<int, Type>) {}
