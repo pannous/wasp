@@ -1129,7 +1129,7 @@ Code emitStringOp(Node &op, Function &context) {
 //		op = Node("concat_char_const*__char_const*_");// wat name if not stripped in lib release build
         return emitCall(op, context);
 //		stringOp.addByte();
-    } else if (op == "=" or op == "==" or op == "is" or op == "equals") {
+    } else if (op == "==" or op == "is" or op == "equals") {
         op = Node("eq");//  careful : various signatures
         last_type = stringp;
         return Code(i32_const) + Code(-1) + emitCall(op, context);// third param required!
@@ -1409,10 +1409,9 @@ Code emitCall(Node &fun, Function &context) {
 //		warn("relying on function.index OK?");
 //		functionIndices[name] = function.index;
     }
-    if (index < 0) {
-        warn("typeSection created before code Section. All imports must be known in advance!");
-        error("MISSING import/declaration for function %s\n"s % name);
-    }
+    if (index < 0)
+        error("Calling %s NO INDEX. TypeSection created before code Section. All import indices must be known by now! "s %
+              name);
     int i = 0;
     // args may have already been emitted, e.g. "A"+"B" concat
     for (Node &arg: fun) {
@@ -1905,7 +1904,7 @@ Code typeSection() {
         }
         if (function.is_runtime)
             continue;
-        if (function.is_handled)
+        if (function.signature.is_handled)
             continue;
 //		if(function.is_import) // types in import section!
 //			continue;
@@ -1915,7 +1914,7 @@ Code typeSection() {
 
         typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
         function.signature.type_index = typeMap[fun];// todo check old index? todo shared signatures!?!
-        function.is_handled = true;
+        function.signature.is_handled = true;// todo remove
         int param_count = signature.size();
 //		Code td = {0x60 /*const type form*/, param_count};
         Code td = Code(func) + Code(param_count);
@@ -1947,9 +1946,9 @@ Code importSection() {
     for (String fun: functions) {
         Function &function = functions[fun];
         if (function.is_import and function.is_used and not function.is_builtin) {
-            ++import_count;
-            import_code =
-                    import_code + encodeString("env") + encodeString(fun).addByte(func_export).addType(typeMap[fun]);
+            function.index = import_count++;
+            int &type = typeMap[fun];
+            import_code = import_code + encodeString("env") + encodeString(fun).addByte(func_export).addType(type);
         }
     }
 
@@ -1990,10 +1989,10 @@ Code codeSection(Node &root) {
 //	int new_count;
 //	new_count = declaredFunctions.size();
     for (auto declared: functions) {
-        if (declared.empty())error("Bug: empty function name (how?)");
         if (declared == "global")continue;
         Function &function = functions[declared];// todo use more often;)
         if (not function.emit)continue;
+        if (declared.empty())error("Bug: empty function name (how?)");
         if (declared != "main") print("declared function: "s + declared);
         if (not functionIndices.has(declared)) {// used or not!
             functionIndices[declared] = ++last_index;
