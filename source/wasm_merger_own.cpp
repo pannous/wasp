@@ -1366,7 +1366,7 @@ Code &merge_binaries(List<Code *> binaries) {
         const char *source = "<code>";
         if (not code.name.empty()) source = code.name.data;
         LinkerInputBinary *binary = new LinkerInputBinary(source, file_data);
-        binary->needs_relocate = eq(source, "main.wasm");// false;//code.needs_relocate;
+        binary->needs_relocate = code.needs_relocate;
         ReadBinaryLinker(binary);
 //		if (binary->filename == "main.wasm"s) {
 //			printf("currently no exports! they'd mess with library!\n");

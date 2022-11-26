@@ -231,16 +231,20 @@ union Type {// todo string_header_64 make this union i64 ! is this desired??
 
 	Type(const Node &o);
 
-	Type() {
-	}
+    Type() {
+    }
 
-	Type(int value) {
-		this->value = value;
-	}
+    Type(int value) {
+        this->value = value;
+    }
 
-	Type(Primitive primitive) {
-		type = primitive;
-	}
+    Type(Primitive primitive) {
+        type = primitive;
+    }
+
+    bool operator==(Type other) {
+        return value == other.value;
+    }
 //	Type(Valtype valtype){
 //		value = valtype;// transparent subset equivalence
 //	}
