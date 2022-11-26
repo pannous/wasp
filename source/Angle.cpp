@@ -1240,7 +1240,8 @@ void preRegisterFunctions() {
     // functions
     // functions[ ] access is BROKEN!!! use functions.insert_or_assign so long!
     // ORDER MATTERS: will be used for functionIndices later! todo: huh?
-    globals.insert_or_assign("π", new Node(3.1415926535897932384626433));// todo: if used
+
+//    globals.insert_or_assign("π", new Node(3.1415926535897932384626433));// todo: if used
     //	functions.insert_or_assign("put", Signature().add(pointer).returns(voids));
 // todo: remove all as they come via wasp.wasm log.wasm etc
 // OK to pass stack Signature(), because copy by value functions not refs

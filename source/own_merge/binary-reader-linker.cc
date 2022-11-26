@@ -163,12 +163,8 @@ namespace wabt {
 			                                          String field_name,
 			                                          Index memory_index,
 			                                          const Limits *page_limits) {
-                if (memory_index == 0)
-                    warn("try ignoring imported memories, hoping for memory_index 0 in other binary");
-                else
                     WABT_FATAL("Linker does not support imported memories");
-//				return Result::Error;
-                return Result::Ok;
+				return Result::Error;
             }
 
 			Result BinaryReaderLinker::OnFunctionCount(Index count) {
@@ -306,16 +302,15 @@ namespace wabt {
 
 		}  // end anonymous namespace
 
-		Result ReadBinaryLinker(LinkerInputBinary *input_info, LinkOptions *options) {
-			BinaryReaderLinker reader(input_info);
-			ReadBinaryOptions read_options;
-			read_options.read_debug_names = true;
-			read_options.fail_on_custom_section_error = false;
-			read_options.stop_on_first_error = false;
-			read_options.log_stream = options->log_stream;
-			return ReadBinary(input_info->data.data(), input_info->data.size(),
-			                  &reader, (const ReadBinaryOptions) read_options);
-		}
+        Result ReadBinaryLinker(LinkerInputBinary *input_info) {
+            BinaryReaderLinker reader(input_info);
+            ReadBinaryOptions read_options;
+            read_options.read_debug_names = true;
+            read_options.fail_on_custom_section_error = false;
+            read_options.stop_on_first_error = false;
+            return ReadBinary(input_info->data.data(), input_info->data.size(), &reader,
+                              (const ReadBinaryOptions) read_options);
+        }
 
 	}  // namespace link
 }  // namespace wabt
