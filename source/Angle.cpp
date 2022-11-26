@@ -548,7 +548,15 @@ List<String> aliases(String name);
 
 Valtype preEvaluateType(Node &node, Function function);
 
-void use_import(const char *name);
+// bad : we don't know which
+void use_runtime(const char *function) {
+    findLibraryFunction(function, false);
+//    Function &function = functions[function];
+//    if (not function.is_import and not function.is_runtime)
+//        error("can only use import or runtime "s + function);
+//    function.is_used = true;
+//    function.is_import = true;// only in this module, not in original !
+}
 
 Node &
 groupDeclarations(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body, Function &context) {
@@ -700,9 +708,9 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op == "-…") op = "-";// precedence hack
 
 //        todo op=use_import();continue ?
-        if (op == "%")use_import("modulo_float");// no wasm i32_rem_s i64_rem_s for float/double
-        if (op == "%")use_import("modulo_double");
-        if (op == "==" or op == "is" or op == "equals")use_import("eq");
+        if (op == "%")use_runtime("modulo_float");// no wasm i32_rem_s i64_rem_s for float/double
+        if (op == "%")use_runtime("modulo_double");
+        if (op == "==" or op == "is" or op == "equals")use_runtime("eq");
         if (op == "include")todo("include again!?");
         if (op != last) last_position = 0;
         bool fromRight = rightAssociatives.has(op) or isFunction(op);
@@ -821,13 +829,6 @@ Node &groupOperators(Node &expression, Function &context) {
     return expression;
 }
 
-void use_import(const char *name) {
-    Function &function = functions[name];
-    if (not function.is_import and not function.is_runtime)
-        error("can only use import or runtime "s + name);
-    function.is_used = true;
-    function.is_import = true;
-}
 
 Valtype preEvaluateType(Node &node, Function function) {
     if (node.kind == expression) {
@@ -1005,13 +1006,14 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         int position = module->functions.position(name);
         if (position >= 0) {
             // ⚠️ this function now lives inside Module AND as import inside "main" functions list, with different wasm_index!
-            Function &import = module->functions.values[position];
-            functions[name].signature = import.signature;
-            functions[name].is_runtime = false;// because here it is an import!
-            functions[name].is_import = true;
-            functions[name].is_used = true;
+            Function &func = module->functions.values[position];
+            Function &import = functions[name];// copy function info from library/runtime to main module
+            import.signature = func.signature;
+            import.is_runtime = false;// because here it is an import!
+            import.is_import = true;
+            import.is_used = true;
             //		imports.add(*import); redundant!
-            return &import;
+            return &func;
         }
     }
     Function *function = 0;
@@ -1270,7 +1272,6 @@ void preRegisterFunctions() {
     functions["strlen0"].runtime().signature.add(charp).returns(int32);// todo int64
     functions["malloc"].runtime().signature.add(int64).returns(int64);
     functions["okf"].runtime().signature.add(float32).returns(float32);
-    functions["okf5"].runtime().signature.add(float32).returns(float32);
     functions["eq"].runtime().signature.add(charp).add(charp).returns(bools);
 
     // import:
@@ -1352,7 +1353,6 @@ Node runtime_emit(String prog) {
     clearEmitterContext();
     Module &runtime = loadModule("wasp.wasm");
     runtime.code.needs_relocate = false;
-//	check(libraries.size() == 1)
     Code code = compile(prog, false);// should use libraries!
     code.needs_relocate = false;
     code.save("merged.wasm");

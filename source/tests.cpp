@@ -1247,6 +1247,16 @@ void testLists() {
     skip(
             assert(result[0] == "1");// autocast
     )
+    List<int> a = {1, 2, 3};
+    List<int> b{1, 2, 3};
+    List<short> c{1, 2, 3};
+    List<short> d = {1, 2, 3};
+    check_eq(a, b);
+//    check_eq(a, c); // not comparable
+    check_eq(c, d);
+//List<double> c{1, 2, 3};
+//List<float> d={1, 2, 3};
+
 //	assert_is("[1,2,3]",1);
 }
 
@@ -2512,13 +2522,14 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
-    assert_run("x='123';x is '123'", true);// ok
+
+    assert_emit("10007.0%10000", 7);
     assert_run("42", 42); //  assert_run sometimes causes Heap corruption! test earlier
+    assert_run("x='123';x is '123'", true);// ok
     assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
     testAssertRun();
-    testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
+//    testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
     testWasmRuntimeExtension();
-    testWasmRuntimeExtensionMock();
 
     assert_emit("x=0;while x++<10: x", 0);// while loops always return false from last condition. todo?
     assert_emit("x='abcde';x#4", 'd');//

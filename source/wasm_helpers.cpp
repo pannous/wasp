@@ -200,8 +200,8 @@ extern "C" double sqrt(double);
 //void __stack_chk_fail(void) { /*print("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
 
 
-void *alloc(int size, int num) {
-	return calloc(size, num);
+void *alloc(int num, int size) {
+    return calloc(num, size);
 }
 
 
@@ -308,7 +308,7 @@ void error1(chars message, chars file, int line) {
 }
 
 void newline() {
-	print("\n");
+    put_char('\n');
 }
 
 void info(chars msg) {
