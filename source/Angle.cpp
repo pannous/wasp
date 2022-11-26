@@ -580,7 +580,9 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
         if (empty(arg.name))
             error("empty argument name");
         if (function.locals.has(arg.name)) {
+#ifdef DEBUG
             print(body.line);
+#endif
             error("duplicate argument name: "s + arg.name);
         }
         addLocal(function, arg.name, mapType(arg.type), true);

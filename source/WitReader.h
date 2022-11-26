@@ -146,7 +146,9 @@ class WitReader {
                 field.value = value++;
             field.kind = longs;
             // currently enum fields are just named numbers
+#ifndef RUNTIME_ONLY
             addGlobal(field);
+#endif
         }
         String &name = enuma.name;
         if (!types.has(name))
