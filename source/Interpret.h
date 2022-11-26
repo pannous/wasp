@@ -12,7 +12,7 @@
 #include "wasm_runner.h"
 
 
-Node eval(Node n);
+Node interpret(Node n);
 
 Node If(Node condition, Node then);
 

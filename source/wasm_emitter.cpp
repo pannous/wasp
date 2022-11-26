@@ -936,7 +936,8 @@ Code emitValue(Node &node, Function &context) {
             error("emitValue unknown type: "s + typeName(node.kind));
     }
     if (node.type) {
-        code.add(cast(node, *node.type, context));
+        if (node.type->kind != flags)
+            code.add(cast(node, *node.type, context));
     }
     // code.push(last_typo) only on return statement
     return code;
@@ -1206,6 +1207,8 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
 
     Node &first = node.first();
     switch (node.kind) {
+        case flags:
+            return code;// nothing to do since node is in `types` and all fields are in `globals`
         case objects:
         case groups:
             // todo: all cases of true list vs list of expression
@@ -1257,8 +1260,11 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
             if (local_index < 0) { // collected before, so can't be setter here
                 if (functionCodes.has(name) or functions.has(name))
                     return emitCall(node, context);
-                else if (globals.has(name)) return emitGetGlobal(node);
-                else if (name == "ℯ")
+                else if (globals.has(name)) {
+                    if (context.name == "global")
+                        return emitValue(node, context);
+                    return emitGetGlobal(node);
+                } else if (name == "ℯ")
                     return emitValue(*new Node(2.7182818284590), context);
                 else if (name == "τ" or name == "tau") // if not provided as global
                     return emitValue(*new Node(6.283185307179586), context);

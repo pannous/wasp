@@ -180,21 +180,23 @@ Valtype mapTypeToWasm(Node &n) {
 	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
 	if (n.kind == objects)return array;// todo
 //	if (n.kind.type == int_array)return array;// todo
-	if (n.kind == call) {
-		List<Type> &returnTypes = functions[n.name].signature.return_types;
-		if (returnTypes.size() > 1)
-			todo("multi-value");
-		Type &type = returnTypes.last();
-		return (Valtype) type.value;
-	}
-	if (n.kind == key and n.value.data) return mapTypeToWasm(*n.value.node);
-	//	if (n.kind == key and not n.value.data)return array;
-	if (n.kind == groups)return array;// uh todo?
-	if (n.kind == unknown) return int32;// blasphemy!
-	Node first = n.first();
-	if (first == n)return int32;// array of sorts
-	if (n.kind == assignment)return mapTypeToWasm(first);// todo
-	if (n.kind == operators)return mapTypeToWasm(first);// todo
+    if (n.kind == call) {
+        List<Type> &returnTypes = functions[n.name].signature.return_types;
+        if (returnTypes.size() > 1)
+            todo("multi-value");
+        Type &type = returnTypes.last();
+        return (Valtype) type.value;
+    }
+    if (n.kind == key and n.value.data) return mapTypeToWasm(*n.value.node);
+    //	if (n.kind == key and not n.value.data)return array;
+    if (n.kind == groups)return array;// uh todo?
+    if (n.kind == flags) return int64;
+    if (n.kind == enums) return int64;
+    if (n.kind == unknown) return int32;// blasphemy!
+    Node first = n.first();
+    if (first == n)return int32;// array of sorts
+    if (n.kind == assignment)return mapTypeToWasm(first);// todo
+    if (n.kind == operators)return mapTypeToWasm(first);// todo
     if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
     n.print();
     error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));

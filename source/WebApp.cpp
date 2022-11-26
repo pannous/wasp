@@ -213,7 +213,7 @@ long open_webview(String url = "") {
 	});
 	w.bind("$", [](std::string s) -> std::string {
 		printf("$('%s')? jquery needs to be injected!", s.data());
-		w.eval(s);
+        w.interpret(s);
 		return s;
 	});
 
@@ -242,23 +242,23 @@ long open_webview(String url = "") {
 	// [[config preferences] setValue:@YES forKey:@"developerExtrasEnabled"]
 
 //  onKeyPress='exit()'
-	if (page) w.navigate(page);
+    if (page) w.navigate(page);
 //    else // todo: simple templates? use wasp::String ;)
 //    w.eval("document.onclick=test");// no effect
-	// w.eval("document.onclick=exit");// no effect
+    // w.eval("document.onclick=exit");// no effect
 
 //    w.resolve("canvas? direct? may be hard or impossible",0,0);
-	//      std::wstring userDataFolder =
-	//        wideCharConverter.from_bytes(std::getenv("APPDATA"));
-	w.eval("alert('ok!?')");// was w.exec, js injected into current page
-	//    CGBitmapContextCreate(w.window(),1600,1200,32,8/*?*/, 0,0);
-	//    CGBitmapContextCreateWithData(w.window(),1600,1200,32,8/*?*/, 0,0,0,0);
-	//    webview_bind(w.window(),"custom_function")
-	//        webview::cocoa_wkwebview_engine;
+    //      std::wstring userDataFolder =
+    //        wideCharConverter.from_bytes(std::getenv("APPDATA"));
+    w.interpret("alert('ok!?')");// was w.exec, js injected into current page
+    //    CGBitmapContextCreate(w.window(),1600,1200,32,8/*?*/, 0,0);
+    //    CGBitmapContextCreateWithData(w.window(),1600,1200,32,8/*?*/, 0,0,0,0);
+    //    webview_bind(w.window(),"custom_function")
+    //        webview::cocoa_wkwebview_engine;
 
-	w.run(); //  we have to call our tests from js to continue in thread!!!
-	printf("DONE\n");//never reached, even after calling terminate() from js/c/wasp
-	return 0;
+    w.run(); //  we have to call our tests from js to continue in thread!!!
+    printf("DONE\n");//never reached, even after calling terminate() from js/c/wasp
+    return 0;
 }
 
 long init_graphics() {
@@ -273,35 +273,35 @@ void run_wasm_async(unsigned char *bytes, int length) {
 	std::stringstream ss;
 	ss << "code=new Uint8Array([";
 	for (int i = 0; i < length; i++) ss << ((short) bytes[i]) << ",";
-	ss << "]);wasmx(code);";
-	w.eval(ss.str());
+    ss << "]);wasmx(code);";
+    w.interpret(ss.str());
 }
 
 
 int paint(int wasm_offset) {
-	w.eval("paintWasmToCanvas()");// data coming from wasm
-	return 0;
+    w.interpret("paintWasmToCanvas()");// data coming from wasm
+    return 0;
 }
 
 // forced synchronous
 int run_wasm_sync(unsigned char *bytes, int length) {
-	// 1. save to APPDATA folder and then fetch via js
-	// NOPE "fetch api cannot load file" could bind my own fetch though!
+    // 1. save to APPDATA folder and then fetch via js
+    // NOPE "fetch api cannot load file" could bind my own fetch though!
 
-	// 2. serialize as ecma string "code=[0x00, 0x01, ..." and  eval
-	std::stringstream ss;
-	ss << "code=new Uint8Array([";
-	for (int i = 0; i < length; i++) {
-		ss << std::hex << std::showbase << ((int) bytes[i]) << ", ";
-	}
-	ss << "]);wasmx(code);";
-	w.eval(ss.str());// hangs if …
-	waiter.wait();
+    // 2. serialize as ecma string "code=[0x00, 0x01, ..." and  eval
+    std::stringstream ss;
+    ss << "code=new Uint8Array([";
+    for (int i = 0; i < length; i++) {
+        ss << std::hex << std::showbase << ((int) bytes[i]) << ", ";
+    }
+    ss << "]);wasmx(code);";
+    w.interpret(ss.str());// hangs if …
+    waiter.wait();
 
-	// 3. feed natively how? BBQ OMG JIT wasm LLInt (low level interpreter)
-	// irrelevant / unprofessional? https://www.youtube.com/watch?v=1v4wPoMskfo
-	// https://webkit.org/blog/9329
-	return waiter.result();// cant wait!
+    // 3. feed natively how? BBQ OMG JIT wasm LLInt (low level interpreter)
+    // irrelevant / unprofessional? https://www.youtube.com/watch?v=1v4wPoMskfo
+    // https://webkit.org/blog/9329
+    return waiter.result();// cant wait!
 }
 
 
