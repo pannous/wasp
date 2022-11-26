@@ -48,6 +48,7 @@ void testArrayOperations() {
     assert_emit("pixel=[1 2 3];pixel + 4", Node(1, 2, 3, 4, 0));
     assert_emit("pixel=[1 2 3];pixel<<4", Node(1, 2, 3, 4, 0));
     assert_emit("pixel=[1 2 3];4>>pixel", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];add(pixel, 4)", Node(1, 2, 3, 4, 0));// julia style
     assert_emit("pixel=[1 2 3];add 4 to pixel", Node(1, 2, 3, 4, 0));
     assert_emit("pixel=[1 2 3];pixel.add 4", Node(1, 2, 3, 4, 0));
     assert_emit("pixel=[1 2 3];pixel add 4", Node(1, 2, 3, 4, 0));
@@ -125,9 +126,13 @@ void testIndexOffset() {
 }
 
 void testFlagSafety() {
-    auto code = "flags empty_flags{}; empty_flags my_flags = data_mode | space_brace;";
+    auto code = "flags empty_flags{}; empty_flags mine = data_mode | space_brace;";
     Node &parsed = parse(code);
     assert_throws(analyze(parsed)) // "data_mode not a member of empty_flags"s
+    code = "enum cant_combine{a;b}; a+b;";
+    assert_throws(analyze(parse(code)));
+    code = "enum context_x{a;b};enum context_y{b;c};b;";//
+    assert_throws(analyze(parse(code)));
 }
 
 void testFlags() {
@@ -138,7 +143,7 @@ void testFlags() {
         arrow
         space_brace
        }
-       my_flags = data_mode | space_brace
+       my_flags = data_mode + space_brace
     )";
     Node &parsed = parse(code);
     Node &node = analyze(parsed);
@@ -149,6 +154,9 @@ void testFlags() {
     check(node.last().kind == flags)
     check(node.last().value.longy == 5) // 1+4 bit internal detail!
     check(node.last().values().serialize() == "data_mode | space_brace")
+    check(globals.has("parser-flags"))
+    check(globals.has("data_mode"))
+    check(globals.has("parser-flags.data_mode")) //
 //    check(node.last().serialize() == "ParserOptions my_flags = data_mode | space_brace") // todo canonical type serialization!?
 }
 
@@ -2504,12 +2512,6 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
-//    assert_emit("x=0;while x++<11: nop;x", 11);
-//    assert_throws("x==0;while x++<11: nop;x");
-    assert_emit("y=(1 4 3)#2", 4);
-
-    assert_emit("‖-3‖", 3);
-    assert_emit("x=0;while x<10: x++;x", 10);
     assert_emit("x=0;while x++<10: x", 0);// while loops always return false from last condition. todo?
     assert_emit("x='abcde';x#4", 'd');//
     assert_emit("√π²", 3.1415);
@@ -2518,11 +2520,7 @@ void testCurrent() {
 //    exit(1);
 //    testSinus2();
 //    test_sinus_wasp_import();
-    assert_emit(".1", 0.1);
-
-    assert_emit("{1 4 3}#2", 4);
     testStringIndicesWasm();
-    assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
     testIndexOffset();
     testArrayIndicesWasm();
     testIndexWasm();
