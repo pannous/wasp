@@ -20,7 +20,8 @@ typedef const char *chars;
 typedef byte *bytes;
 
 // silent ++
-#define check_eq(α, β) if((α)!=(β)){printf("%s != %s : ",#α,#β);print(α);printf("!=");print(β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define check_is(α, β) if((α)!=(β)){printf("%s != %s : ",#α,#β);print(α);printf("!=");print(β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define check_eq(α, β) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 
 //#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 #define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}

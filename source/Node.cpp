@@ -366,7 +366,7 @@ bool Node::operator==(Node &other) {
     if (kind == longs and other.kind == longs)
         return value.longy == other.value.longy;
     if (kind == longs and other.kind == reals)
-        return value.longy == other.value.real;
+        return value.longy == other.value.real or value.longy == (long) other.value.real; // rounding!
     if (kind == reals and other.kind == reals)
         return value.real == other.value.real or similar(value.real, other.value.real);
     if (kind == reals and other.kind == longs)

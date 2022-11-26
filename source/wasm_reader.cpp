@@ -225,6 +225,7 @@ void consumeTypeSection() {
     module->type_data = type_vector.rest();
 // todo: we need to parse this for automatic import and signatures
     parse_type_data(module->type_data);
+//    parseFuncTypeSection(); LATER connect implicit func index with type index (and names)
 }
 
 void consumeStartSection() {
@@ -347,6 +348,12 @@ void consumeFuncTypeSection() {
     module->code_count = unsignedLEB128(type_vector);// import type indices are part of import struct!
     if (debug_reader)printf("signatures: %d\n", module->code_count);
     module->functype_data = type_vector.rest();
+    Code &funcs_to_types = module->functype_data.clone();
+    for (int i = 0; i < module->code_count; ++i) {
+        int type = unsignedLEB128(funcs_to_types);
+        module->funcToTypeMap[i] = type;
+    }
+    // parsed AGAIN later in parseFuncTypeSection to connect names . todo unnecessary?
 }
 
 // todo: treat all functions (in library file) as exports if ExportSection is empty !?
@@ -369,9 +376,8 @@ List<String> demangle_args(String &fun) {
     int status;
 //	String *real_name = new
     char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
-    if (status != 1 or string == 0)return 0;
+    if (status != 0 or string == 0)return 0;
     String real_name = String(string);
-    if (status != 0)return 0;
     if (!real_name or !real_name.contains("("))return 0;
     String brace = real_name.substring(real_name.indexOf('(') + 1, real_name.indexOf(')'));//.clone();
     if (brace.contains("("))
@@ -381,6 +387,7 @@ List<String> demangle_args(String &fun) {
 
 
 // todo: treat all functions (in library file) as exports if ExportSection is empty !?
+// https://webassembly.github.io/spec/core/binary/modules.html#binary-exportsec
 void consumeExportSection() {
     Code exports_vector = vec();
     int exportCount = unsignedLEB128(exports_vector);
@@ -390,40 +397,35 @@ void consumeExportSection() {
     Code &payload = module->export_data;
     for (int i = 0; i < exportCount; i++) {
         String func0 = name(payload).clone();
-//		module->functions=Map<String,Function>();
         if (func0 == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
-//		if (func0=="_ZN6StringpLEPS_")continue;// bug!?
-        if (func0 == "_Z6concatPKcS0_")
-            debug = 1;
-        List<String> args = demangle_args(func0);
         String func = demangle(func0);
         Function &fun = module->functions[func];// demangled
         Function &fun0 = module->functions[func0];// mangled
         fun.name = func;
         fun0.name = func0;
-//		module->export_names.add(func.clone());// should be ok: item[_size]=value BUT IT IS NOT OK, corrupts memory later!!
-        int type = unsignedLEB128(payload);
-        int index = unsignedLEB128(payload);
-        if (type == 2 /*memory*/ or type == 3 /*global*/) {// todo !?
-            continue;
-        }
+        int export_type = unsignedLEB128(
+                payload);// don't confuse with function_type if export_type==0 (function_export)
+        int index = unsignedLEB128(payload);// for all types!
+        if (export_type == 3 /*global*/) continue; // todo !?
+        if (export_type == 2 /*memory*/) continue;
+        if (export_type == 1 /*table*/) continue;
+        if (export_type != 0 /*function export*/)continue;
         if (index < 0 or index > 100000)error("corrupt index "s + index);
+        int code_index = index - module->import_count;
         module->functionIndices[func0] = index;// mangled
         module->functionIndices[func] = index;// demangled
         fun0.index = index;
         fun.index = index;
+        int funcType = module->funcToTypeMap[code_index];
         // todo: demangling doesn't yield return type, is wasm_signature ok?
-        // todo: use wasm_signature if demangling fails
-        Signature &wasm_signature = module->funcTypes[type];
+        fun.signature.type_index = funcType;
+        check_silent(0 <= funcType and funcType <= module->funcTypes._size)
+        Signature &wasm_signature = module->funcTypes[funcType];
         Valtype returns = mapTypeToWasm(wasm_signature.return_types.last(Kind::undefined));
-        if (wasm_signature.wasm_return_type == void_block)returns = void_block;
-        if (i32 != returns) {
-//			print("returns "s + typeName(returns));
-//				returns = int32; // for now! todo
-//				// else 	assert_run("x='123';x + '4' is '1234'", true); // FAILS somehow!
-        }
+        if (wasm_signature.wasm_return_type == void_block) returns = void_block;
         fun.signature.returns(returns);
         // todo: use wasm_signature if demangling fails
+        List<String> args = demangle_args(func0);
         for (String arg: args) {
             if (arg.empty())continue;
             fun.signature.add(mapArgToValtype(arg));
@@ -450,10 +452,13 @@ Valtype mapArgToValtype(String arg) {
     else if (arg == "short")
         return Valtype::int32;// careful c++ ABI overflow? should be fine since wasm doesnt have short
     else if (arg == "int")return Valtype::int32;
+    else if (arg == "signed int")return Valtype::i32s;
+    else if (arg == "unsigned int")return Valtype::i32;
     else if (arg == "unsigned char")return Valtype::int32;
     else if (arg == "int*")return Valtype::pointer;
     else if (arg == "void*")return Valtype::pointer;
     else if (arg == "long")return Valtype::int64;
+    else if (arg == "long&")return Valtype::pointer;
     else if (arg == "long long")return Valtype::int64;
     else if (arg == "double")return Valtype::float64;
     else if (arg == "unsigned long")return Valtype::int64;
@@ -470,11 +475,13 @@ Valtype mapArgToValtype(String arg) {
     else if (arg == "String*")return Valtype::stringp;
     else if (arg == "String")return Valtype::stringp;// todo !DIFFERENT
     else if (arg == "String&")return Valtype::stringp;// todo: how does c++ handle refs?
-    else if (arg == "Node*")return Valtype::pointer;
     else if (arg == "char**")return Valtype::pointer;// to chars
-    else if (arg == "Node")return Valtype::pointer;
-    else if (arg == "Node&")return Valtype::pointer;// pointer? todo: how does c++ handle refs?
-    else if (arg == "Node const&")return Valtype::pointer;
+
+    else if (arg == "Node")return Valtype::node;
+    else if (arg == "Node&")return Valtype::node_pointer;// pointer? todo: how does c++ handle refs?
+    else if (arg == "Node const&")return Valtype::node_pointer;
+    else if (arg == "Node const*")return Valtype::node_pointer;
+    else if (arg == "Node*")return Valtype::node_pointer;
         // todo:
     else if (arg == "List<String>")return Valtype::todoe;
     else if (arg == "List<Valtype>")return Valtype::todoe;
@@ -486,16 +493,23 @@ Valtype mapArgToValtype(String arg) {
     else if (arg == "int>")return Valtype::ignore;// parse bug ^^
     else if (arg == "Code")return Valtype::ignore;
     else if (arg == "Code&")return Valtype::ignore;
+    else if (arg == "Code const&")return Valtype::ignore;
     else if (arg == "Module")return Valtype::ignore;
     else if (arg == "Section")return Valtype::ignore;
     else if (arg == "Valtype&")return Valtype::ignore;
     else if (arg == "Module const&")return Valtype::ignore;
+    else if (arg == "ParserOptions")return Valtype::ignore;
     else if (arg == "Value")return Valtype::ignore;
     else if (arg == "Arg")return Valtype::ignore; // truely internal, should not be exposed! e.g. Arg
     else if (arg == "Signature")return Valtype::ignore;
-    else if (arg == "Code const&")return Valtype::ignore;
-    else
-        printf("unmapped c++ argument type %s\n", arg.data);
+    else if (arg.endsWith("&")) return Valtype::pointer;
+    else if (arg.endsWith("*")) return Valtype::pointer;
+    else {
+//        breakpoint_helper
+//        printf("unmapped c++ argument type %s\n", arg.data);
+        bool dfsa = arg.endsWith("*");
+        error("unmapped c++ argument type %s\n"s % arg.data);
+    }
     return i32t;
 }
 
@@ -569,7 +583,9 @@ Module &read_wasm(bytes buffer, int size0) {
     consume(4, reinterpret_cast<byte *>(moduleVersion));
     consumeSections();
     module->total_func_count = module->import_count + module->code_count;
-    parseFuncTypeSection(module->functype_data);// only after we have the name, so we can connect functionSignatures!
+    parseFuncTypeSection(module->functype_data);
+    // todo: sanity checks?
+//    check_eq(module->funcToTypeMap._size, module->code_count)
     return *module;
 }
 
