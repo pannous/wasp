@@ -708,8 +708,8 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op == "-…") op = "-";// precedence hack
 
 //        todo op=use_import();continue ?
-        if (op == "%")use_runtime("modulo_float");// no wasm i32_rem_s i64_rem_s for float/double
-        if (op == "%")use_runtime("modulo_double");
+        if (op == "%")functions["modulo_float"].is_used = true;// no wasm i32_rem_s i64_rem_s for float/double
+        if (op == "%")functions["modulo_double"].is_used = true;
         if (op == "==" or op == "is" or op == "equals")use_runtime("eq");
         if (op == "include")todo("include again!?");
         if (op != last) last_position = 0;
