@@ -16,6 +16,35 @@
 
 Node &result = *new Node();
 
+
+void testStruct() {
+    assert_emit("struct a{x:int y:float};a{1 .2}.y", .2);
+    assert_emit("struct a{x:int y:float};b a{1 .2};b.y", .2);
+    assert_emit("struct a{x:int y:float};b:a{1 .2};b.y", .2);
+    assert_emit("struct a{x:int y:float};b=a{1 .2};b.y", .2);
+    assert_emit("struct a{x:int y:float};a b{1 .2};b.y", .2);
+    assert_emit("record a{x:u32 y:float32};a b{1 .2};b.y", .2);
+    assert_emit(R"(
+record person {
+    name: string,
+    age: u32,
+    has-lego-action-figure: bool,
+}; x=person{age:22}; x.age)", 22);
+}
+
+
+void testStruct2() {
+    const char *code0 = "struct point{a:int b:int c:string}";
+    Node &node = parse(code0);
+    assert_equals(node.kind, Kind::structs);
+    assert_equals(node.length, 3);
+    assert_equals(Int, node[1].type);
+//    const char *code = "struct point{a:int b:int c:string};x=point(1,2,'ok');x.b";
+// basal nodes act as structs
+    assert_emit("point{a:int b:int c:string};x=point(1,2,'ok');x.b", 2)
+    assert_emit("data=[1,2,3];struct point{a:int b:int c:string};x=data as struct;x.b", 2)
+}
+
 void testArraySize() {
     // requires struct lookup and aliases
     assert_emit("pixel=[1 2 4];#pixel", 3);
@@ -223,18 +252,6 @@ void testWitExport() {
     bindgen(node);
 }
 
-
-void testStruct() {
-    const char *code0 = "struct point{a:int b:int c:string}";
-    Node &node = parse(code0);
-    assert_equals(node.kind, Kind::structs);
-//    const char *code = "struct point{a:int b:int c:string};x=point(1,2,'ok');x.b";
-// basal nodes act as structs
-    const char *code = "point{a:int b:int c:string};x=point(1,2,'ok');x.b";
-    assert_emit(code, 2)
-    const char *code2 = "data=[1,2,3];struct point{a:int b:int c:string};x=data as struct;x.b";
-    assert_emit(code2, 2)
-}
 
 void testHyphenUnits() {
 //     const char *code = "1900 - 2000 AD";// (easy with units)
@@ -2525,6 +2542,7 @@ void tests() {
     testGroupCascade();
     testParams();
     testSignificantWhitespace();
+    testFlags();
 
     skip(
             testWrong0Termination();
@@ -2553,6 +2571,7 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
+    testStruct();
     testFlags();
     assert_emit("10007.0%10000", 7);
     assert_run("42", 42); //  assert_run sometimes causes Heap corruption! test earlier

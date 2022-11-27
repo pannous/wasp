@@ -1207,7 +1207,11 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
 
     Node &first = node.first();
     switch (node.kind) {
+        case records:
+        case clazz:
+        case structs:
         case flags:
+            // todo: emit reflection data / wit !
             return code;// nothing to do since node is in `types` and all fields are in `globals`
         case objects:
         case groups:
@@ -1322,6 +1326,8 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
         case undefined:
         case unknown:// todo: proper NIL!
             return code;
+        case constructor:
+            todo("constructor");
         default:
             error("unhandled node type «"s + node.name + "» : " + typeName(node.kind));
     }

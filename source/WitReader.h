@@ -10,6 +10,7 @@
 #include "Wasp.h"
 
 
+// https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md
 static List<String> wit_keywords = {
         "module",
         "static",
@@ -32,7 +33,6 @@ static List<String> wit_keywords = {
         "float32", "float64",
 };
 
-// https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md
 /*
  * THIS prefix format is OUTDATED:
  (@interface func (export "args_get")
