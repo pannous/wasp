@@ -40,10 +40,14 @@ enum smart_pointer_masks {
 chars typeName(const Type *t);
 
 // types
-//extern const Node Double;//.setType(type);
-//extern const Node Long;//.setType(type);
-extern Node Double;//.setType(type);
-extern Node Long;//.setType(type);
+//extern const Node Double;
+//extern const Node Long;
+extern Node Int; // maps to int32 in external abi! don't use internally much, only for struct
+extern Node Double;
+extern Node Long;
+extern Node Byte;
+extern Node Bool;
+extern Node Charpoint;
 
 //#include "Util.h" // for error() :(
 //#include "Code.h"
@@ -99,6 +103,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     variants,
 //    unions, // todo, also option
     records, // todo merge concepts with module wasp clazz?
+    constructor, // special call?
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 

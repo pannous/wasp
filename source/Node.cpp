@@ -832,11 +832,10 @@ String Node::serializeValue(bool deep) const {
         case buffers:
             return "int[]";//val.data lenght?
         case call:
-            return "!";//"{…}";
         case operators:
-            return name;
+        case constructor:
         case functor:
-            return name;
+            return name;// +"!"
         case declaration:
         case expression:
         case assignment:
@@ -1256,6 +1255,8 @@ chars typeName(Kind t) {
             return "struct";
         case flags:
             return "flags";
+        case constructor:
+            return "constructor";
     }
     error(str("MISSING Type Kind name mapping ") + t);
 }
