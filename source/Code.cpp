@@ -13,46 +13,46 @@ typedef uint8_t byt;
 //https://en.wikipedia.org/wiki/LEB128
 // little endian 257 = 0x81 (001) + 0x02 (256)
 Code &unsignedLEB128(long n) {
-	Code *buffer = new Code(); // IF RETURNING Code&
-	do {
-		byt byte = n & 0x7f;
-		n = n >> 7;
-		if (n != 0) {
-			byte |= 0x80;// continuation bit
-		}
-		buffer->add(byte);
-	} while (n > 0);
-	return *buffer;
+    Code *buffer = new Code(); // IF RETURNING Code&
+    do {
+        byt byte = n & 0x7f;
+        n = n >> 7;
+        if (n != 0) {
+            byte |= 0x80;// continuation bit
+        }
+        buffer->add(byte);
+    } while (n > 0);
+    return *buffer;
 }
 
 Code &signedLEB128(long value) {
 //	Code *buffer =(Code *) malloc(sizeof(Code));// new Code();
-	Code *buffer = new Code();
-	int more = 1;
+    Code *buffer = new Code();
+    int more = 1;
 //	bool negative = (value < 0);
-	long val = value;
+    long val = value;
 /* the size in bits of the variable value, e.g., 64 if value's type is int64_t */
 //	size = no. of bits in signed integer;
 //	int size = 64;
-	while (more) {
-		byt byte = val & 0x7f;
-		val >>= 7;
-		/* the following is only necessary if the implementation of >>= uses a
-		   logical shift rather than an arithmetic shift for a signed left operand */
+    while (more) {
+        byt byte = val & 0x7f;
+        val >>= 7;
+        /* the following is only necessary if the implementation of >>= uses a
+           logical shift rather than an arithmetic shift for a signed left operand */
 //		if (negative)
 //			val |= (~0 << (size - 7)); /* sign extend */
 
-		/* sign bit of byte is second high order bit (0x40) */
-		bool clear = (byte & 0x40) == 0;  /*sign bit of byte is clear*/
-		bool set = byte & 0x40; /*sign bit of byte is set*/
-		if ((val == 0 && clear) || (val == -1 && set))
-			more = 0;
-		else {
-			byte |= 0x80;// continuation bit:  set high order bit of byte;
-		}
-		buffer->add(byte); //		emit byte;
-	}
-	return *buffer;
+        /* sign bit of byte is second high order bit (0x40) */
+        bool clear = (byte & 0x40) == 0;  /*sign bit of byte is clear*/
+        bool set = byte & 0x40; /*sign bit of byte is set*/
+        if ((val == 0 && clear) || (val == -1 && set))
+            more = 0;
+        else {
+            byte |= 0x80;// continuation bit:  set high order bit of byte;
+        }
+        buffer->add(byte); //		emit byte;
+    }
+    return *buffer;
 }
 // https://webassembly.github.io/spec/core/binary/conventions.html#binary-vec
 // Vectors are encoded with their length followed by their element sequence
@@ -70,50 +70,50 @@ Code &signedLEB128(long value) {
 //Code& encodeVector (Code& data) {
 Code encodeVector(Code data) {
 //	return data.vector();
-	if (data.encoded)return data;
-	Code code = unsignedLEB128(data.length);
-	code = code + data;
+    if (data.encoded)return data;
+    Code code = unsignedLEB128(data.length);
+    code = code + data;
 //	Code code = Code((byte) data.length) + data;
-	code.encoded = true;
-	return code;
+    code.encoded = true;
+    return code;
 }
 
 
 String sectionName(Sections section) {
-	switch (section) {
-		case type_section:
-			return "type";
-		case table_section:
-			return "table";
-		case functypes_section:
-			return "func";
-		case import_section:
-			return "import";
-		case custom_section:
-			return "custom";
-		case global_section:
-			return "global";
-		case element_section:
-			return "element";
-		case export_section:
-			return "export_section";
-		case code_section:
-			return "code";
-		case data_section:
-			return "data";
-		case start_section:
-			return "start";
-		case memory_section:
-			return "memory";
-		default:
-			error("INVALID SECTION #%d\nprevious section must have been corrupted\n"s % section);
-	}
+    switch (section) {
+        case type_section:
+            return "type";
+        case table_section:
+            return "table";
+        case functypes_section:
+            return "func";
+        case import_section:
+            return "import";
+        case custom_section:
+            return "custom";
+        case global_section:
+            return "global";
+        case element_section:
+            return "element";
+        case export_section:
+            return "export_section";
+        case code_section:
+            return "code";
+        case data_section:
+            return "data";
+        case start_section:
+            return "start";
+        case memory_section:
+            return "memory";
+        default:
+            error("INVALID SECTION #%d\nprevious section must have been corrupted\n"s % section);
+    }
 }
 
 chars typeName(Valtype t, bool fail) {
-	switch (t) {
-		case Valtype::i32t:
-			return "i32";
+    switch (t) {
+        case Valtype::i32t:
+            return "i32";
         case Valtype::i64:
             return "i64";
         case Valtype::float32:
@@ -138,47 +138,54 @@ chars typeName(Valtype t, bool fail) {
             return "«ignore»";// or "" ;)
         case Valtype::todoe:
             return "«todo»";
-		default:
+        default:
 //			if (t==30)return "BUG!";// hide bug lol
-			if (fail)
-				error("missing name for Valtype %x "s % t + t);
-	}
-	return 0;
+            if (fail)
+                error("missing name for Valtype %x "s % t + t);
+    }
+    return 0;
 }
 
 // in final stage of emit, keep original types as long as possible
 Valtype mapTypeToWasm(Type t) {
-	if (t.value < 0x100)
-		return (Valtype) t.value;
-	todo("mapTypeToWasm");
-	return Valtype::int32;
+    if (t.value < 0x100)
+        return (Valtype) t.value;
+    todo("mapTypeToWasm");
+    return Valtype::int32;
 }
 
 Valtype mapTypeToWasm(Node &n) {
-	if (n == Double)
-		return float64;
-	if (n == Long)
-		return i64;
-	if (not n.name.empty() and functions.has(n.name)) {
-		List<Type> &returnTypes = functions[n.name].signature.return_types;
-		if (returnTypes.empty())return voids;
-		Valtype valtype = mapTypeToWasm(returnTypes.last());
-		return valtype;
-	}
+    if (n == Int)
+        return i32;
+    if (n == Byte)
+        return i32;// careful in structs!
+    if (n == Long)
+        return i64;
+    if (n == Double)
+        return float64;
+    if (n == Charpoint)
+        return codepoint32;
 
-	//	if(n.type)…
+    if (not n.name.empty() and functions.has(n.name)) {
+        List<Type> &returnTypes = functions[n.name].signature.return_types;
+        if (returnTypes.empty())return voids;
+        Valtype valtype = mapTypeToWasm(returnTypes.last());
+        return valtype;
+    }
 
-	// int is not a true angle type, just an alias for long.
-	// todo: but what about interactions with other APIs? add explicit i32 !
-	// todo: in fact hide most of this under 'number' magic umbrella
-	if (n.kind == bools)return int32;
-	if (n.kind == nils)return voids;// mapped to int32 later: ø=0
+    //	if(n.type)…
+
+    // int is not a true angle type, just an alias for long.
+    // todo: but what about interactions with other APIs? add explicit i32 !
+    // todo: in fact hide most of this under 'number' magic umbrella
+    if (n.kind == bools)return int32;
+    if (n.kind == nils)return voids;// mapped to int32 later: ø=0
 //	if (n.kind == reals)return float32;// float64; todo why 32???
-	if (n.kind == reals)return float64;
-	if (n.kind == longs)return int32;// int64; todo!!
-	if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
-	if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
-	if (n.kind == objects)return array;// todo
+    if (n.kind == reals)return float64;
+    if (n.kind == longs)return int32;// int64; todo!!
+    if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
+    if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
+    if (n.kind == objects)return array;// todo
 //	if (n.kind.type == int_array)return array;// todo
     if (n.kind == call) {
         List<Type> &returnTypes = functions[n.name].signature.return_types;

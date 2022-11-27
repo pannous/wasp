@@ -164,23 +164,23 @@ endif ()
 
 if (TRACE)
     ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+    add_compile_options(-Wall)
 endif ()
+
+# enable:
+ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
+ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
+ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
+ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
+ADD_COMPILE_FLAG("-fno-inline")
 if (NOT TRACE)
-    ADD_COMPILE_FLAG("-fno-inline")
-
-    # enable:
     #    ADD_COMPILE_FLAG("-Wall")
-    ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
-    ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
-    ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
-    ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
-
     # disable:
     if (DEBUG)
         if (NOT WASM)
             ADD_COMPILE_FLAG("-Wno-error=#warnings") # allow pragma warnings as message
         endif ()
-        #        add_compile_options(-Wall)
     endif ()
     ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
     ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
