@@ -19,6 +19,9 @@ List<String> builtin_constants
         = {"pi", "π", "tau", "τ", "euler", "ℯ"}
 #endif
 ;
+List<String> class_keywords = {"class", "prototype", "interface", "struct", "type"};// record see wit
+//List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
+
 
 //Map<String, Function> functions; // todo Maps don't free memory and cause SIGKILL after some time <<<
 Map<String, Function> functions;
@@ -404,12 +407,27 @@ Map<String, Node *> types;
 //const Node Double("Double", clazz);//.setType(type);
 Node Long("Long", clazz);
 Node Double("Double", clazz);//.setType(type);
+Node Int("Int", clazz);
+Node Byte("Byte", clazz);
+Node Bool("Bool", clazz);
+Node Charpoint("Charpoint", clazz);
+
 //const Node Double{.name="Double", .kind=classe};//.setType(type);
 //const Node Double{name:"Double", kind:classe};//.setType(type);
 
 // todo: see NodeTypes.h for overlap with numerical returntype integer …
+// these are all boxed class types, for primitive types see Type and Kind
 void initTypes() {
-    types.add("int", &Long);// until we really need it
+//    types.add("sint", &Int);
+    types.add("byte", &Byte);// use in u8.load etc
+//    types.add("char", &Byte);
+    types.add("char", &Charpoint);// todo : warn about abi conflict? CAN'T USE IN STRUCT
+    types.add("character", &Charpoint);
+    types.add("charpoint", &Charpoint);
+    types.add("i32", &Int);
+    types.add("int", &Int);
+    types.add("int32", &Int);
+    types.add("integer", &Int);
     types.add("long", &Long);
     types.add("double", &Double);
     types.add("float", &Double);
@@ -418,14 +436,19 @@ void initTypes() {
 }
 
 
+Node &constructInstance(Node &node, Function &function);
+
 Node &groupTypes(Node &expression, Function &context) {
     // todo delete type declarations double x, but not double x=7
     // todo if expression.length = 0 and first.length=0 and not next is operator return ø
     if (types.size() == 0)initTypes();
     if (isType(expression)) {// double \n x,y,z  extra case :(
-        if (expression.length > 0) {
+        Node &type = *types[expression.name];
+        if (type.kind == structs or type.kind == clazz)
+            return constructInstance(expression, context);
+        if (expression.length > 0) {// point{x=1 y=2} point{x y}
             for (Node &typed: expression) {// double \n x = 4
-                typed.setType(types[expression.name]);
+                typed.setType(&type);
                 addLocal(context, typed.name, mapType(typed), false);
             }
             expression.name = 0;// hack
@@ -496,6 +519,23 @@ Node &groupTypes(Node &expression, Function &context) {
     return expression.flat(); // (1) => 1
 }
 
+Node &constructInstance(Node &node, Function &function) {
+    Node &type = *types[node.name];
+    node.type = &type;// point{1 2} => Point(1,2)
+    check_eq_or(node.length, type.length, error("field count mismatch"));
+    node.kind = constructor;
+
+    for (int i = 0; i < node.length; ++i) {
+        node[i].type = type[i].type;
+//        Valtype valtype = mapType(*node[i].type);
+//        Valtype valtype1 = mapTypeToWasm(node[i].kind);
+//        check_eq_or(valtype , valtype1,
+//                    error("incompatible value for field %s of type "s % type[i].name + type.name + " in " + node.serialize()));
+
+    }
+    return node;
+}
+
 
 // return: done?
 // todo return clear enum known, added, ignore ?
@@ -549,6 +589,8 @@ Node extractReturnTypes(Node decl, Node body);
 List<String> aliases(String name);
 
 Valtype preEvaluateType(Node &node, Function function);
+
+Node &classDeclaration(Node &node, Function &function);
 
 // bad : we don't know which
 void use_runtime(const char *function) {
@@ -615,6 +657,7 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
     return decl;
 }
 
+
 Node &groupDeclarations(Node &expression, Function &context) {
     auto first = expression.first();
     if (expression.length == 2 and isType(first.first()) and
@@ -677,6 +720,45 @@ Node &groupDeclarations(Node &expression, Function &context) {
         return groupDeclarations(name, 0, left, left, rest, context);
     }
     return expression;
+}
+
+Node &classDeclaration(Node &node, Function &function) {
+    if (node.length < 2)error("wrong class declaration format; should be: class name{…}");
+    Node &dec = node[1];
+    Kind kind = clazz;
+    String &kind_name = node.first().name;
+    if (kind_name == "struct")
+        dec.kind = structs;
+    else if (kind_name == "class" or kind_name == "type")
+        dec.kind = clazz;
+    else
+        todo(kind_name);
+
+    String &name = dec.name;
+    int pos = 0;
+    Node *type;
+    for (Node &field: dec) {
+        if (isType(field)) {
+            type = &field;
+            continue;
+        } else
+            type = &field.values();
+        if (not type or not isType(*type) or not types.has(type->name))
+            error("class field needs type");
+        else
+            field.type = types[type->name]; // int => Int
+        field.kind = fields;
+        field["position"] = pos++;
+    }
+    if (types.position(name) >= 0) {
+        if (types[name] == dec)
+            warn("compatible declaration of %s already known"s % name);
+        else
+            error("incompatible structure %s already declared:\n"s % name + types[name]->serialize() /*+ node.line*/);
+    } else {
+        types.add(name, dec.clone());
+    }
+    return dec;
 }
 
 Node extractReturnTypes(Node decl, Node body) {
@@ -1194,6 +1276,9 @@ Node &analyze(Node &node, Function &function) {
         return grouped;
     }
 
+
+    if (class_keywords.contains(node.first().name))
+        return classDeclaration(node, function);
     Node &groupedTypes = groupTypes(node, function);
     if (isPrimitive(node)) return node;
     Node groupedDeclarations = groupDeclarations(groupedTypes, function);
