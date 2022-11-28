@@ -592,10 +592,13 @@ Valtype preEvaluateType(Node &node, Function function);
 
 Node &classDeclaration(Node &node, Function &function);
 
+void discard(Node &node) {
+// nop to explicitly ignore unused-variable (for debugging) or no-discard (e.g. in emitData of emitArray )
+}
+
 Node &classDeclaration(Node &node, Function &function) {
     if (node.length < 2)error("wrong class declaration format; should be: class name{…}");
     Node &dec = node[1];
-    Kind kind = clazz;
     String &kind_name = node.first().name;
     if (kind_name == "struct")
         dec.kind = structs;
@@ -810,12 +813,12 @@ Node &groupOperators(Node &expression, Function &context) {
             error("operator missing: "s + op);
         }
         // we can't keep references here because expression.children will get mutated later via replace(…)
-        Node node = expression.children[i];
+        Node &node = expression.children[i];
         if (node.length)continue;// already processed
-        Node next = expression.children[i + 1];
+        Node &next = expression.children[i + 1];
         next = analyze(next, context);
-        Node prev = expression.children[i - 1];
-        if (i == 0)prev = NIL;
+        Node prev;
+        if (i > 1)prev = expression.children[i - 1];
         op = checkCanonicalName(op);
 
         if (op == "^" or op == "^^" or op == "**") {// todo NORM operators earlier
@@ -925,11 +928,13 @@ Valtype preEvaluateType(Node &node, Function function) {
     if (node.kind == operators) {
         Node &lhs = node[0];
         Node &rhs = node[1];
+        discard(lhs);
         return mapType(rhs);// todo lol
 //        if(lhs.kind==arrays)
     }
     return mapType(node);
 }
+
 
 Module &loadModule(String name) {
     if (libraries.empty() or not module_done.has(name)) {

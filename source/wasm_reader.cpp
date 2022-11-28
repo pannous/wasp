@@ -507,8 +507,8 @@ Valtype mapArgToValtype(String arg) {
     else {
 //        breakpoint_helper
 //        printf("unmapped c++ argument type %s\n", arg.data);
-        bool dfsa = arg.endsWith("*");
-        error("unmapped c++ argument type %s\n"s % arg.data);
+        if (!arg.endsWith("*"))
+            error("unmapped c++ argument type %s\n"s % arg.data);
     }
     return i32t;
 }

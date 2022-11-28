@@ -1619,7 +1619,7 @@ Code emitSetter(Node &node, Node &value, Function &context) {
         error("variable %s in context %s missed by parser! "_s % variable % context.name);
     Local &local = context.locals[variable];
     auto variable_type = local.valtype;
-    Valtype value_type = mapTypeToWasm(value);
+//    Valtype value_type = mapTypeToWasm(value); // todo?
     if (variable_type == unknown_type or variable_type == voids) {
         variable_type = last_type;// todo : could have been done in analysis!
         local.valtype = last_type;// NO! the type doesn't change: example: float x).valtype7

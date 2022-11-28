@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wwritable-strings"
 #pragma once
 //
 // Created by pannous on 19.12.19.
@@ -768,7 +770,7 @@ public:
     }
 
     bool operator==(char *c) const {
-        if (!this)return false;// how lol e.g. me.children[0].name => nil.name
+//        if (!this)return false;// how lol e.g. me.children[0].name => nil.name
         return eq(data, c, shared_reference ? length : -1);
     }
 
@@ -908,7 +910,8 @@ public:
 
 //	MUST BE explicit, otherwise String("abc") != "abc"  : char* comparison hence false
 //	explicit cast
-    operator char *() const { return this ? data : 0; }
+    operator char *() const { return data; }
+//    operator char *() const { return this ? data : 0; }
 
 //	operator codepoint *() { return extractCodepoints(); }
 
@@ -1013,7 +1016,12 @@ String operator ""_(chars c, unsigned long);
 
 String operator ""_s(chars c, unsigned long);
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wuser-defined-literals"
+
 String operator ""s(chars c, unsigned long);
+
+#pragma clang diagnostic pop
 
 
 extern String UNEXPECT_END;// = "Unexpected end of input";
@@ -1060,3 +1068,5 @@ String &hex(long d);
 #include <sstream>
 void render(Node &node, std::stringstream *html = 0);
 #endif
+
+#pragma clang diagnostic pop
