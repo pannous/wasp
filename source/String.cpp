@@ -213,10 +213,10 @@ double atof0(chars string) {
 		multiplier = -1;
 	}
 
-	while (*string && (*string != '.'))
-		string++;
-	if (*string)
-		string++;
+	while (*string && (*string != '.') && (*string != 'e') && (*string != 'E'))
+        string++;
+    if (*string and (*string == '.'))
+        string++;
 	while (*string) {
 		if (*string == 'e' or *string == 'E')
 			return result * pow(10, atoi0(++string));

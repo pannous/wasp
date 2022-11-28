@@ -687,7 +687,7 @@ private:
             }
         }
 
-        if (string.contains(".")) {
+        if (string.contains(".") or string.contains("e-") or string.contains("E-")) {
             if (sign == '-') return *new Node(-atof0(string.data));
             else return *new Node(atof0(string.data));
         }
