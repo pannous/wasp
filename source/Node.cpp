@@ -551,6 +551,7 @@ Node &Node::add(const Node *node) {
         return *this;
     if (kind == longs or kind == reals)
         error("can't modify primitives, only their referenceIndices a=7 a.nice=yes");
+    if (capacity == 0)capacity = NODE_DEFAULT_CAPACITY;// how ;) copy constructor?
     if (length >= capacity - 1) {
         warn("Out of node capacity "s + capacity + " in " + name);
         capacity *= 2;
