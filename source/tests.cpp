@@ -2577,6 +2577,7 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
+//    assert_emit("a=3;b=2;b-a", -1);
     assert_emit("factorial:=it<2?1:it*factorial(it-1);factorial 5", 120);
     testSinus();
     assert_run("42", 42); //  assert_run sometimes causes Heap corruption! test earlier
