@@ -451,7 +451,7 @@ Node &groupTypes(Node &expression, Function &context) {
                 typed.setType(&type);
                 addLocal(context, typed.name, mapType(typed), false);
             }
-            expression.name = 0;// hack
+            expression.name = "";// hack
             expression.kind = groups;
             return expression.flat();
         } else if (expression.next) {
@@ -813,12 +813,12 @@ Node &groupOperators(Node &expression, Function &context) {
             error("operator missing: "s + op);
         }
         // we can't keep references here because expression.children will get mutated later via replace(…)
-        Node &node = expression.children[i];
+        Node node = expression.children[i];
         if (node.length)continue;// already processed
-        Node &next = expression.children[i + 1];
+        Node next = expression.children[i + 1];
         next = analyze(next, context);
         Node prev;
-        if (i > 1)prev = expression.children[i - 1];
+        if (i > 0)prev = expression.children[i - 1];
         op = checkCanonicalName(op);
 
         if (op == "^" or op == "^^" or op == "**") {// todo NORM operators earlier
