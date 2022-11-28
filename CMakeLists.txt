@@ -486,8 +486,10 @@ endif ()
 #set(CMAKE_SUPPRESS_REGENERATION)
 
 
-SET(SANITIZE 1)
+#SET(SANITIZE 1)
 if (SANITIZE)
+    # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
+    # Then print stacktrace with bt to see what was going wrong.
     MESSAGE("asan sanitize=address …")
     ADD_COMPILE_FLAG("-static-libsan ")
     set(ASAN_OPTIONS verbosity=3)

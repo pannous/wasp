@@ -430,7 +430,7 @@ void consumeExportSection() {
             if (arg.empty())continue;
             fun.signature.add(mapArgToValtype(arg));
         }
-        fun0.signature = fun.signature;// todo copy by value ok?
+        fun0.signature = fun.signature;// .clone();// todo copy by value ok? NO: heap-use-after-free on address
     }
 }
 
