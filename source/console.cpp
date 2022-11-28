@@ -1,10 +1,14 @@
 #undef Function
 
 #ifdef USE_READLINE
+
 #include <readline/history.h> // libreadline-dev
 #include <readline/readline.h>
 #include <cstdlib>
+#include <cstring>
+
 #endif
+
 #include "String.h"
 #include "Node.h"
 #include "tests.h"
@@ -18,32 +22,30 @@ void showHelpMessage() {
 //	print("⚠️  The wasp console currently works by re-executing after each new entry.");
 //	print("⚠️  Be careful with destructive or external effects!");
 //	print("");
-	printf("Detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
-	printf("AVAILABLE COMMANDS:");
-	printf("help :h or ? ; clean :c");
+    print("Detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
+    print("AVAILABLE COMMANDS:");
+    print("help :h or ? ; clean :c");
 }
 
 bool file_read_done = false;
 
 void getline(char *buf) {
 	if (buf == 0) return; // end
-//#ifdef USE_USE_READLINE
-//#ifndef CONSOLE
-//	print("wasp compiled without console");
-//#else
 #ifdef USE_READLINE
 	int MAXLENGTH = 10000;
 	const char *PROMPT = "wasp> ";
-	if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
-	char *tmp = readline(PROMPT);
-	if (tmp == 0 or strlen(tmp) == 0) {
-		return;
-	}
+    if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
+    char *tmp = readline(PROMPT);
+    if (tmp == 0 or strlen0(tmp) == 0) {
+        return;
+    }
 //	tmp=fixQuotesAndTrim(tmp);// LATER!
-	if (strncmp(tmp, buf, MAXLENGTH) and strlen(tmp) > 0) add_history(tmp); // only add new content
-	strncpy(buf, tmp, MAXLENGTH);
-	buf[MAXLENGTH - 1] = '\0';
-	write_history(".wasp_history");
+    if (strncmp(tmp, buf, MAXLENGTH) and strlen(tmp) > 0) add_history(tmp); // only add new content
+    strncpy(buf, tmp, MAXLENGTH);
+    buf[MAXLENGTH - 1] = '\0';
+    write_history(".wasp_history");
+#else
+    print("wasp compiled without console");
 #endif
 }
 
