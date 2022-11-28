@@ -20,6 +20,8 @@
 #include <cctype>
 #include <cerrno>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
 #define DUMP_OCTETS_PER_LINE 16
 #define DUMP_OCTETS_PER_GROUP 2
 
@@ -187,12 +189,14 @@ namespace wabt {
 	}
 
 	Result MemoryStream::TruncateImpl(size_t size) {
-		if (size > buf_->data.size()) {
-			return Result::Error;
-		}
-		buf_->data.resize(size);
-		return Result::Ok;
-	}
+        if (size > buf_->data.size()) {
+            return Result::Error;
+        }
+        buf_->data.resize(size);
+        return Result::Ok;
+    }
 
 
 }  // namespace wabt
+
+#pragma clang diagnostic pop
