@@ -169,7 +169,11 @@ public:
         return *this;
     }
 
-    Code operator+(Code more) {
+    Code operator+(Code more) { // todo use non-modifying version if …
+        return this->push(more);
+    }
+
+    Code operator+=(Code more) {
         return this->push(more);
     }
 

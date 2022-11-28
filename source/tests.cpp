@@ -18,7 +18,8 @@ Node &result = *new Node();
 
 
 void testStruct() {
-    assert_emit("struct a{x:int y:float};a{1 .2}.y", .2);
+    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
+    assert_emit("struct a{x:int y:float};a{1 3.2}.y", 3.2);
     assert_emit("struct a{x:int y:float};b a{1 .2};b.y", .2);
     assert_emit("struct a{x:int y:float};b:a{1 .2};b.y", .2);
     assert_emit("struct a{x:int y:float};b=a{1 .2};b.y", .2);

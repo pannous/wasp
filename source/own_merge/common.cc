@@ -29,18 +29,23 @@
 #include <cstdarg>
 
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+
 String StringPrintf(const char *format, ...) {
-	va_list args;
-	va_list args_copy;
-	va_start(args, format);
-	va_copy(args_copy, args);
-	size_t len = vsnprintf(nullptr, 0, format, args) + 1;  // For \0.
-	std::vector<char> buffer(len);
-	va_end(args);
-	vsnprintf(buffer.data(), len, format, args_copy);
-	va_end(args_copy);
+    va_list args;
+    va_list args_copy;
+    va_start(args, format);
+    va_copy(args_copy, args);
+    size_t len = vsnprintf(nullptr, 0, format, args) + 1;  // For \0.
+    std::vector<char> buffer(len);
+    va_end(args);
+    vsnprintf(buffer.data(), len, format, args_copy);
+    va_end(args_copy);
 	return String(buffer.data(), (int) len - 1);
 }
+
+#pragma clang diagnostic pop
 
 namespace wabt {
 

@@ -232,25 +232,28 @@ namespace wabt {
 		                           size_t size,
 		                           BinaryReaderDelegate *delegate,
 		                           const ReadBinaryOptions &options)
-				: read_end_(size),
-				  state_(static_cast<const uint8_t *>(data), size),
+                : read_end_(size),
+                  state_(static_cast<const uint8_t *>(data), size),
 //				  logging_delegate_(options.log_stream, delegate),
 //				  delegate_(options.log_stream ? &logging_delegate_ : delegate),
                   delegate_(delegate),
                   options_(options),
                   last_known_section_(SectionType::Invalid) {
-			delegate->OnSetState(&state_);
-		}
+            delegate->OnSetState(&state_);
+        }
 
-		void BinaryReader::PrintError(const char *format, ...) {
-			ErrorLevel error_level =
-					reading_custom_section_ && !options_.fail_on_custom_section_error
-					? ErrorLevel::Warning
-					: ErrorLevel::Error;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
 
-			WABT_SNPRINTF_ALLOCA(buffer, length, format);
-			Error error1(error_level, Location(state_.offset), buffer);
-			bool handled = false;
+        void BinaryReader::PrintError(const char *format, ...) {
+            ErrorLevel error_level =
+                    reading_custom_section_ && !options_.fail_on_custom_section_error
+                    ? ErrorLevel::Warning
+                    : ErrorLevel::Error;
+
+            WABT_SNPRINTF_ALLOCA(buffer, length, format);
+            Error error1(error_level, Location(state_.offset), buffer);
+            bool handled = false;
 //			error(buffer);
 //			bool handled = delegate_->OnError(error1);
 
@@ -260,6 +263,8 @@ namespace wabt {
 				        GetErrorLevelName(error_level), buffer);
 			}
 		}
+
+#pragma clang diagnostic pop
 
 		Result BinaryReader::ReportUnexpectedOpcode(Opcode opcode, const char *where) {
 			std::string message = "unexpected opcode";
