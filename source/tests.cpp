@@ -2577,6 +2577,10 @@ void testCurrent() {
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testRecentRandomBugs();
 //    testDataMode();
+    assert_emit("factorial:=it<2?1:it*factorial(it-1);factorial 5", 120);
+    testSinus();
+    assert_run("42", 42); //  assert_run sometimes causes Heap corruption! test earlier
+
     assert_emit("10007.0%10000", 7);
 
     assert_emit("√π²", 3.1415);
@@ -2584,7 +2588,6 @@ void testCurrent() {
 //    testStruct();
     testFlags();
 
-    assert_run("42", 42); //  assert_run sometimes causes Heap corruption! test earlier
     assert_run("x='123';x is '123'", true);// ok
     assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
     testAssertRun();
