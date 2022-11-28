@@ -2523,8 +2523,8 @@ Code &compile(String code, bool clean) {
     if (libraries.size() > 0) {
         binary.needs_relocate = true;
         List<Code *> merge_module_binaries;
-        for (Module *module: libraries)
-            merge_module_binaries.add(&module->code);
+        for (Module *library: libraries)
+            merge_module_binaries.add(&library->code);
         merge_module_binaries.add(&binary);
         Code &merged = merge_binaries(merge_module_binaries);
         merge_module_binaries.clear();
