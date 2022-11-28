@@ -806,8 +806,7 @@ void testWasmModuleExtension_OUTDATED() {
 //	memoryHandling=0;
     Node charged = analyze(parse("test:=42"));
     breakpoint_helper
-//	Code lib = emit(charged, 0, nil);// no main
-    Code lib = emit(charged, 0, 0);// "lib_main");
+    Code lib = emit(charged, 0, "");
     lib.save("lib.wasm");
 
     Module module = read_wasm("lib.wasm");
