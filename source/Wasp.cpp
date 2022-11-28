@@ -603,10 +603,9 @@ private:
         if (!is_identifier(ch))
             err("Unexpected identifier character "s + renderChar(ch));
         int start = at;
-        bool kebab = parserOptions.kebab_case;
         // subsequent characters can contain ANYTHING except operators
-        while ((proceed() and is_identifier(ch)) or isDigit(ch) or (kebab and ch == '-'))
-            if (is_operator(ch) and not(kebab and ch == '-'))
+        while ((proceed() and is_identifier(ch)) or isDigit(ch) or isKebabBridge())
+            if (is_operator(ch) and not isKebabBridge())
                 break;
         int to = at;
         while (to > 0 and empty(text[to - 1]))to--;
@@ -1556,7 +1555,7 @@ private:
                         actual.last().addSmart(node);
                         continue;
                     }
-                    if (parserOptions.kebab_case and isalpha0(lastNonWhite))
+                    if (isKebabBridge())
                         error("kebab case should be handled in identifier");
                     if (next == '>') {// -> => ⇨
                         next = u'⇨';
@@ -1755,6 +1754,10 @@ private:
         }
         return actual.flat();
     };
+
+    bool isKebabBridge() {
+        return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
+    }
 
 };
 
@@ -2157,4 +2160,3 @@ Node &parse(String source, ParserOptions parserOptions) {
         load_parser_initialization();
     return Wasp().parse(source, parserOptions);
 }
-

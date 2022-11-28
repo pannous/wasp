@@ -141,13 +141,14 @@ public:
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
     int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
+
+    // todo item references are UNSAFE after grow()
     S *items;// In C++ References cannot be put into an array, if you try you get
 //    S items[LIST_DEFAULT_CAPACITY];// array type is not assignable
 
     List() {
         items = (S *) calloc(capacity, sizeof(S));
     }
-
 
     List(const List &old) : items(old.items) { // todo: memcopy?
         _size = old._size;
