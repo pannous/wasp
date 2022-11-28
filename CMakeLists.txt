@@ -142,11 +142,7 @@ if (CONSOLE)
     message(CONSOLE)
     ADD_DEFINITIONS(-DCONSOLE)
     ADD_DEFINITIONS(-DUSE_READLINE)
-    ADD_COMPILE_FLAG("-lreadline")
     set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
-    #    find_package(Readline)
-    #    include_directories(${Readline_INCLUDE_DIR})
-    #    target_link_libraries(wasp  ${Readline_LIBRARY})
 endif ()
 
 
@@ -182,20 +178,22 @@ if (NOT TRACE)
             ADD_COMPILE_FLAG("-Wno-error=#warnings") # allow pragma warnings as message
         endif ()
     endif ()
-    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
+    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
     ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
     ADD_COMPILE_FLAG("-Wno-unused-function")
     ADD_COMPILE_FLAG("-Wno-unused-variable")
     ADD_COMPILE_FLAG("-Wno-unused-private-field")
     ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
     ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
-    ADD_COMPILE_FLAG("-Wno-writable-strings") # allow conversion from string literal to 'char *'
     ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
-    ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
     ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
     ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
     ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
 endif ()
+
+ADD_COMPILE_FLAG("-Wno-writable-strings") # ALWAYS allow conversion from string literal to 'char *'
+ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
+
 
 if (VERBOSE)
     ADD_COMPILE_FLAG("-v") # DEBUG lld
@@ -262,8 +260,7 @@ if (WASM) # OR WASI)
     endif ()
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
 
-    #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem ... -Oz -c ") # BREAKS BUILD! ???
-    ADD_COMPILE_FLAG("-fvisibility=hidden")
+    #    ADD_COMPILE_FLAG("-fvisibility=hidden") # ??
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
     #    ADD_COMPILE_FLAG("-nostdlib") # use our OWN memcpy (and printf?)
     #    ADD_COMPILE_FLAG("-fno-builtin")
@@ -487,7 +484,7 @@ endif ()
 
 
 #SET(SANITIZE 1)
-if (SANITIZE)
+if (SANITIZE) # or TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
     MESSAGE("asan sanitize=address …")
@@ -528,4 +525,18 @@ if (SANITIZE)
     #    add_link_options(-rdynamic)
     #    add_link_options(-m64)
     #    add_link_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+endif ()
+
+
+if (CONSOLE)
+    #        find_package(Readline)
+    find_library(Readline_LIBRARY NAMES readline HINTS ${Readline_ROOT_DIR}/lib
+            )
+
+    include_directories(${Readline_INCLUDE_DIR})
+    #        target_link_libraries(wasp  ${Readline_LIBRARY})
+    ADD_COMPILE_FLAG("-lreadline")
+    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
+
+    #    link_libraries(wasp readline)
 endif ()
