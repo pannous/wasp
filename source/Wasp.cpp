@@ -359,7 +359,7 @@ class Wasp {
         if (text[offset] == '\n' or text[offset] == '\r')offset++;
         while (text[offset] == '\t') {
             if (indentation_level > 0 and not indentation_by_tabs)
-                proceed() ? err("mixing tabs and spaces for indentation") : 0;
+                proceed() ? err("mixing tabs and spaces for indentation") : "";
             indentation_by_tabs = true;
             tabs++;
             offset++;
@@ -368,7 +368,7 @@ class Wasp {
             err("ambiguous indentation, mixing tabs and spaces");
         while (text[offset] == ' ') {
             if (indentation_level > 0 and indentation_by_tabs)
-                proceed() ? err("mixing tabs and spaces for indentation") : 0;
+                proceed() ? err("mixing tabs and spaces for indentation") : "";
             indentation_by_tabs = false;
             tabs = tabs + 1. / spaces_per_tab;
             offset++;
