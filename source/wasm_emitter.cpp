@@ -62,8 +62,15 @@ enum MemoryHandling {
 };
 MemoryHandling memoryHandling;// set later = export_memory; // import_memory not with mergeMemorySections!
 
+// todo: gather all 'private' headers here, not in between and in wasm_emitter.h
+Code emitConstruct(Node &node, Function &context);
 
 Code createSection(Sections sectionType, Code data);
+
+
+void discard(Code code) {
+    // nop, to explicitly silence functions declared with 'nodiscard' attribute
+}
 
 [[nodiscard]]
 Code Call(char *symbol);//Node* args
@@ -273,7 +280,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 
     if (tracing) breakpoint_helper
     trace("unknown or non-primitive operator %s\n"s % String(s));
-    // can still be matched as function etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
+    // can still be matched as context etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
 //		error("invalid operator");
     return 0;
 }
@@ -286,7 +293,7 @@ enum ExportType {
     global_export = 0x03
 };
 
-// http://webassembly.github.io/spec/core/binary/types.html#function-types
+// http://webassembly.github.io/spec/core/binary/types.html#context-types
 char functionType = 0x60;
 
 char emptyArray = 0x0;
@@ -321,13 +328,13 @@ enum NodTypes {
 
 
 bytes ieee754(float num) {
-    char data[4];
-    float *hack = ((float *) data);
+    char float_data[4];
+    float *hack = ((float *) float_data);
     *hack = num;
     byte *flip = static_cast<byte *>(alloc(1, 5));
     short i = 4;
 //	while (i--)flip[3 - i] = data[i];
-    while (i--)flip[i] = data[i];// don't flip, just copy to malloc
+    while (i--)flip[i] = float_data[i];// don't flip, just copy to malloc
     return flip;
 }
 
@@ -457,8 +464,7 @@ int stackItemSize(Valtype valtype, bool throws = true) {
 
 int currentStackItemSize(Node &array, Function &context) {
     if (array.kind == reference) {
-        Function &function = context;
-        Local &local = function.locals[array.name];
+        Local &local = context.locals[array.name];
         return stackItemSize(local.valtype);
     }
     if (array.kind == strings) return 1;// char for now todo: call String.codepointAt()
@@ -580,13 +586,12 @@ Code emitIndexWrite(Node &op, Function &context) {// todo offset - 1 when called
 // "hi"#1="H"
 [[nodiscard]]
 Code emitPatternSetter(Node &ref, Node offset, Node value, Function &context) {
-    Function &function = context;
     String &variable = ref.name;
 
-    if (!function.locals.has(variable))
+    if (!context.locals.has(variable))
         error("!! Variable missed by analyzer: "_s + variable);
 
-    Local &local = function.locals[variable];
+    Local &local = context.locals[variable];
     last_type = local.valtype;
     int base = 0;
     if (local.data_pointer)
@@ -782,6 +787,8 @@ Code emitData(Node &node, Function &context) {
             // keep last_type from last child, later if mixed types, last_type=ref or smarty
             return emitArray(node, context);
             break;
+        case constructor:
+            return emitConstruct(node, context);
         case key:
         case patterns:
         default:
@@ -849,8 +856,7 @@ Code emitValue(Node &node, Function &context) {
             break;
 //		case identifier:
         case reference: {
-            Function &function = context;
-            if (!function.locals.has(name) and not globals.has(name))
+            if (!context.locals.has(name) and not globals.has(name))
                 error("UNKNOWN symbol "s + name + " in context " + context);
             if (node.value.node) {
                 Node &value = *node.value.node;
@@ -859,7 +865,7 @@ Code emitValue(Node &node, Function &context) {
 
             } else {
                 code.addByte(get_local);// todo skip repeats
-                code.addByte(function.locals[name].position);// base location stored in variable!
+                code.addByte(context.locals[name].position);// base location stored in variable!
                 if (node.length > 0) {
                     return emitIndexPattern(NUL, node, context, true);// todo?
                 }
@@ -945,20 +951,63 @@ Code emitValue(Node &node, Function &context) {
 
 
 [[nodiscard]]
+Code emitAttributeSetter(Node &node, Function &context) {
+    Node *value = node.value.node;
+    if (!value)value = node.last().value.node;
+    if (!value)error("attribute setter missing value");
+    todo("emitAttributeSetter");
+//    return Code();
+}
+
+
+[[nodiscard]]
+Code emitAttribute(Node &node, Function &context) {
+    if (node.length < 2)error("need object and field");
+    if (node.length > 3)error("extra attribute stuff");
+    if (node.value.node or node.last().value.node)
+        return emitAttributeSetter(node, context);
+    Node field = node.last();// NOT ref, we resolve it to index!
+    Node &object = node.first();
+
+    if (!object.type and types.has(object.name))
+        object.type = types[object.name];
+
+    if (object.type) {
+        Node type = *object.type;
+        if (!type.has(field.name))
+            error("field %s missing in type %s of %s "s % field.name % type.name % node.serialize());
+        Node &member = type[field.name];
+        int index = member.value.longy;
+        if (member.kind == fields)// todo directly
+            index = member["position"].value.longy;
+        if (index < 0 or index > type.length)
+            error("invalid field index %d of %s in type %s of %s "s % index % field.name % type.name %
+                  node.serialize());
+        field = Node(index);
+    } else
+        error("attribute access needs type … todo OR dynamic!");
+
+    Code code = emitData(object, context);
+    // todo move => once done
+// a.b and a[b] are equivalent in angle
+    return emitIndexPattern(object, field, context, true);// emitIndexRead
+}
+
+[[nodiscard]]
 Code emitOperator(Node &node, Function &context) {
     Code code;
     String &name = node.name;
 //	name = normOperator(name);
     if (node.length == 0 and name == "=") return code;// BUG
-    Function &function = context;
     int index = functionIndices.position(name);
-    if (function.index < 0)function.index = index;// tdoo remove cluch
-    if (index < 0)index = function.index;
-    check_eq(index, function.index);
+    if (context.index < 0)context.index = index;// tdoo remove cluch
+    if (index < 0)index = context.index;
+    check_eq(index, context.index);
     if (name == "‖")index = -1;// AHCK!
     if (name == "then")return emitIf(*node.parent, context);// pure if handled before
     if (name == ":=")return emitDeclaration(node, node.first());
-    if (name == "=")return emitSetter(node, node.first(), context);
+    if (name == "=")return emitSetter(node, node.first(), context);// todo node.first dodgy
+    if (name == ".") return emitAttribute(node, context);
 //	if (name=="#")XXX return emitIndexPattern(node[0], node[1], context); elsewhere (and emit(node)!
     if (name == "::=")return emitGetGlobal(node); // globals ASSIGNMENT already handled in analyze / globalSection()
     if (node.length < 1 and not node.value.node and not node.next) {
@@ -986,7 +1035,7 @@ Code emitOperator(Node &node, Function &context) {
             last_type = commonType;
         else last_type = rhs_type;
 
-    } else if (node.length > 2) {// todo: n-ary? ∑? is just a function!
+    } else if (node.length > 2) {// todo: n-ary? ∑? is just a context!
         error("Too many args for operator "s + name);
 //	} else if (node.next) { // todo really? handle ungrouped HERE? just hiding bugs?
 //		const Code &arg_code = emitExpression(*node.next, context);
@@ -1069,7 +1118,7 @@ Code emitOperator(Node &node, Function &context) {
         code.add(i32_sub);
     } else if (name == "return") {
         // todo multi-value
-        List<Type> &returnTypes = function.signature.return_types;
+        List<Type> &returnTypes = context.signature.return_types;
         Valtype return_type = mapTypeToWasm(returnTypes.last());
         code.add(cast(last_type, return_type));
         code.add(return_block);
@@ -1088,10 +1137,10 @@ Code emitOperator(Node &node, Function &context) {
             code.add(cast(last_type, float64));// todo all casts should be auto-cast (in emitCall) now, right?
         }
         if (node.length <= 1) {// use stack
-            if (not function.locals.has("n"))error("unknown n");
+            if (not context.locals.has("n"))error("unknown n");
             code.add(get_local);
-            code.addInt(function.locals["n"].position);
-            code.add(cast(function.locals["n"].valtype, float64));// todo all casts should be auto-cast now, right?
+            code.addInt(context.locals["n"].position);
+            code.add(cast(context.locals["n"].valtype, float64));// todo all casts should be auto-cast now, right?
         }
         code.add(emitCall(*new Node("pow"), context));
 //		else
@@ -1104,12 +1153,13 @@ Code emitOperator(Node &node, Function &context) {
     if (opcode == get_local and node.length == 1) {// arg AFTER op (not as const!)
         long last_local = node.first().value.longy;
         code.push(last_local);
-        last_type = function.locals.at(last_local).valtype;
+        last_type = context.locals.at(last_local).valtype;
     }
     if (opcode >= 0x45 and opcode <= 0x78)
         last_type = i32;// int ops (also f64.eqz …)
     return code;
 }
+
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string) {
     if (lhs == float64 or rhs == float64)
@@ -1165,6 +1215,8 @@ bool isVariableName(String name) {
     return name[0] >= 'A';// todo
 }
 
+Code emitConstruct(Node &node, Function &context);
+
 // also init expressions of globals!
 [[nodiscard]]
 Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, node or BODY (list)
@@ -1172,12 +1224,11 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
     Code code;
     String &name = node.name;
 //	int index = functionIndices.position(name);
-//	if (index >= 0 and not function.locals.has(name))
+//	if (index >= 0 and not context.locals.has(name))
 //		error("locals should be analyzed in parser");
 //		locals[name] = List<String>();
 //	locals[index]= Map<int, String>();
-    Function &function = context;
-    if (node.kind == unknown and function.locals.has(node.name))
+    if (node.kind == unknown and context.locals.has(node.name))
         node.kind = reference;// todo clean fallback
 
     if (name == "if")
@@ -1189,7 +1240,7 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
 //		if(last_type==none or last_type==voids){
         code.addByte(get_local);
         code.addByte(last_local);
-        last_type = function.locals.at(last_local).valtype;
+        last_type = context.locals.at(last_local).valtype;
 //		}
         return code;
     }
@@ -1211,7 +1262,8 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
         case clazz:
         case structs:
         case flags:
-            // todo: emit reflection data / wit !
+            // TYPE info at compile time in types[] // todo: emit reflection data / wit !
+            // for INSTANCES see emitConstruct(node, context);
             return code;// nothing to do since node is in `types` and all fields are in `globals`
         case objects:
         case groups:
@@ -1257,7 +1309,7 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
                 return Code();
             }
 //			Map<int, String>
-            int local_index = function.locals.position(name);// defined in block header
+            int local_index = context.locals.position(name);// defined in block header
             if (name.startsWith("$")) {// wasm style $0 = first arg
                 local_index = atoi0(name.substring(1));
             }
@@ -1275,7 +1327,7 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
                 else if (name == "π" or name == "pi") // if not provided as global
                     return emitValue(*new Node(3.141592653589793), context);
                 else if (!node.isSetter()) {
-//                    print(function.locals)
+//                    print(context.locals)
                     if (not node.type)
                         error("UNKNOWN local symbol ‘"s + name + "’ in context " + context);
                 } else {
@@ -1287,10 +1339,10 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
                     code = code + emitExpression(*node.value.node, context); // done above!
                 else
                     code = code + emitValue(node, context); // done above!
-                if (function.locals.at(local_index).valtype == unknown_type)
-                    function.locals.at(local_index).valtype = last_type;
+                if (context.locals.at(local_index).valtype == unknown_type)
+                    context.locals.at(local_index).valtype = last_type;
                 else
-                    code.add(cast(last_type, function.locals.at(local_index).valtype));
+                    code.add(cast(last_type, context.locals.at(local_index).valtype));
 //				todo: convert if wrong type
                 code.addByte(tee_local);// set and get/keep
                 code.addByte(local_index);
@@ -1299,7 +1351,7 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
             } else {// GET
                 code.addByte(get_local);// todo: skip repeats
                 code.addByte(local_index);
-                last_type = function.locals.at(local_index).valtype;
+                last_type = context.locals.at(local_index).valtype;
             }
         }
             break;
@@ -1327,14 +1379,29 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
         case unknown:// todo: proper NIL!
             return code;
         case constructor:
-            todo("constructor");
+            return emitConstruct(node, context);
         default:
             error("unhandled node type «"s + node.name + "» : " + typeName(node.kind));
     }
     return code;
 }
 
-[[nodiscard]]
+void discard(Code code);
+
+Code emitConstruct(Node &node, Function &context) {
+    Code code;
+    int pointer = data_index_end;
+    for (Node &field: node) {
+        discard(emitData(field, context));// just write the values to memory and lastly return start-pointer
+    }
+    last_object = &node;
+    last_object_pointer = pointer;
+    last_typo = node.type;
+    last_type = Valtype::pointer;
+    code.addConst(pointer);// base for future index getter/setter [0] #1
+    return code;
+}
+
 [[nodiscard]]
 Code emitWhile(Node &node, Function &context) {
     Code code;
@@ -1407,18 +1474,18 @@ Code emitCall(Node &fun, Function &context) {
     if (not functions.has(name)) {
         auto normed = normOperator(name);
         if (not functions.has(normed))
-            error("unknown function "s + name + " (" + normed + ")");// checked before, remove
+            error("unknown context "s + name + " (" + normed + ")");// checked before, remove
         else name = normed;
     }
-    Function &function = functions[name];
+    Function &function = functions[name];// NEW context! but don't write context ref!
     Signature &signature = function.signature;
     int index = function.index;
     if (functionIndices.has(name))
         index = functionIndices[name];
     else {
 //		breakpoint_helper
-//		warn("relying on function.index OK?");
-//		functionIndices[name] = function.index;
+//		warn("relying on context.index OK?");
+//		functionIndices[name] = context.index;
     }
     if (index < 0)
         error("Calling %s NO INDEX. TypeSection created before code Section. All import indices must be known by now! "s %
@@ -1426,7 +1493,7 @@ Code emitCall(Node &fun, Function &context) {
     int i = 0;
     // args may have already been emitted, e.g. "A"+"B" concat
     for (Node &arg: fun) {
-        code.push(emitExpression(arg, context));
+        code.push(emitExpression(arg, function));
 //		Valtype argType = mapTypeToWasm(arg); // todo ((+ 1 2)) needs deep analysis, or:
         Valtype argType = last_type;// evaluated expression smarter than node arg!
         Type &sigType = signature.types[i++];
@@ -1437,7 +1504,7 @@ Code emitCall(Node &fun, Function &context) {
     code.addByte(function_call);
     code.addInt(index);// as LEB!
     code.addByte(nop);// padding for potential relocation
-    function.is_used = true;
+    context.is_used = true;
 
     // todo multi-value
     const Type &return_type = signature.return_types.last(none);
@@ -1530,14 +1597,13 @@ Code emitDeclaration(Node &fun, Node &body) {
 //	else {
 //		error("redeclaration of symbol: "s + fun.name);
 //	}
-    Function &function = functions[fun.name];
-//	Signature &signature = function.signature;
-    function.emit = true;// all are 'export' for now. also set in analyze!
-    functionCodes[fun.name] = emitBlock(body, function);
+    Function &context = functions[fun.name];
+//	Signature &signature = context.signature;
+    context.emit = true;// all are 'export' for now. also set in analyze!
+    functionCodes[fun.name] = emitBlock(body, context);
     last_type = none;// todo reference to new symbol x = (y:=z)
     return Code();// empty
 }
-
 
 [[nodiscard]]
 Code emitSetter(Node &node, Node &value, Function &context) {
@@ -1740,15 +1806,14 @@ Code emitBlock(Node &node, Function &context) {
 //	Map<int, String>
 //	collect_locals(node, context);// DONE IN analyze
 //	int locals_count = current_local_names.size();
-//	function.locals = current_local_names;
-    Function &function = context;
+//	context.locals = current_local_names;
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN BLOCK (index 0, used after while(){} etc) !!!
 // todo: locals must ALWAYS be collected in analyze step, emitExpression is too late!
     last_local = 0;
     last_type = none;//int32;
 
-    int locals_count = function.locals.size();// incuding params
-    int argument_count = function.signature.size();
+    int locals_count = context.locals.size();// incuding params
+    int argument_count = context.signature.size();
     if (locals_count >= argument_count)
         locals_count = locals_count - argument_count;
     else
@@ -1768,12 +1833,12 @@ Code emitBlock(Node &node, Function &context) {
     /// 1. Emit block type header
     block.addByte(locals_count);
 //    for (int i = 0; i < locals_count; i++) {
-//        auto name = function.locals.at(i);// add later to custom section, here only for debugging
-//        Valtype valtype = function[i];
-    for (auto name: function.locals) {
+//        auto name = context.locals.at(i);// add later to custom section, here only for debugging
+//        Valtype valtype = context[i];
+    for (auto name: context.locals) {
         trace("local "s + name);
-        Local &local = function.locals[name];
-        if (local.is_param)continue;// part of function type!
+        Local &local = context.locals[name];
+        if (local.is_param)continue;// part of context type!
         Valtype valtype = local.valtype;
 //		block.addByte(i + 1);// index
         block.addByte(1);// count! todo: group by type nah
@@ -1801,14 +1866,14 @@ Code emitBlock(Node &node, Function &context) {
     block.addConst32(last_typo.value);
 #endif
 
-    auto returnTypes = function.signature.return_types;
+    auto returnTypes = context.signature.return_types;
     //	for(Valtype return_type: returnTypes) uh, casting should have happened before for  multi-value
     Valtype return_type = mapTypeToWasm(returnTypes.last(voids));
     // switch back to return_types[context] for block?
     if (last_type == none) last_type = voids;
     if (last_type == void_block) last_type = voids;
     bool needs_cast = return_type != last_type;
-    auto abi = wasp_smart_pointers;// function.abi;
+    auto abi = wasp_smart_pointers;// context.abi;
     if (return_type == Valtype::voids and last_type != Valtype::voids)
         block.addByte(drop);
     else if (return_type == Valtype::i32t and last_type == Valtype::voids)
@@ -1850,7 +1915,7 @@ Code emitBlock(Node &node, Function &context) {
         block.add(cast(last_type, return_type));
     }
 
-//	if(context=="main" or (function.abi==wasp and returnTypes.size()<2))
+//	if(context=="main" or (context.abi==wasp and returnTypes.size()<2))
 //		block.addInt(last_typo);// should have been added to signature before, except for main!
 // make sure block has correct wasm type signature!
 
@@ -1868,7 +1933,7 @@ Code emitBlock(Node &node, Function &context) {
 //Map<int, String>
 // todo: why can't they be all found in parser? 2021/9/4 : they can ;)
 List<String> collect_locals(Node &node, Function& context) {
-	List<String> &current_locals = function.locals; // no, because there might be gaps(unnamed locals!)
+	List<String> &current_locals = context.locals; // no, because there might be gaps(unnamed locals!)
 	for (Node &n : node) {
 		Valtype type = mapTypeToWasm(n);
 		if (type != none and not current_locals.has(n.name)) {
@@ -1887,7 +1952,7 @@ int last_index = -1;
 [[nodiscard]]
 Code emitTypeSection() {
     // Function types are vectors of parameters and return types. Currently
-    // the type section is a vector of function types
+    // the type section is a vector of context types
     // TODO optimise - some of the procs might have the same type signature
     int typeCount = 0;
     Code type_data;
@@ -1898,7 +1963,7 @@ Code emitTypeSection() {
 //			print(functions);
             breakpoint_helper
             warn("empty functions[ø] because context=start=''");
-//			error("empty function creep functions[ø]");
+//			error("empty context creep functions[ø]");
             continue;
         }
         if (operator_list.has(fun)) {
@@ -1909,25 +1974,25 @@ Code emitTypeSection() {
             todo("how did we get here?");
             continue;
         }// todo how did we get here?
-        Function &function = functions[fun];
-        Signature &signature = function.signature;
-        if (not function.emit /*export/declarations*/ and not function.is_used /*imports*/) {
-            trace("not function.emit => skipping unused type for "s + fun);
+        Function &context = functions[fun];
+        Signature &signature = context.signature;
+        if (not context.emit /*export/declarations*/ and not context.is_used /*imports*/) {
+            trace("not context.emit => skipping unused type for "s + fun);
             continue;
         }
-        if (function.is_runtime)
+        if (context.is_runtime)
             continue;
-        if (function.signature.is_handled)
+        if (context.signature.is_handled)
             continue;
-//		if(function.is_import) // types in import section!
+//		if(context.is_import) // types in import section!
 //			continue;
         if (not functionIndices.has(fun))
             functionIndices[fun] = ++last_index;
-//			error("function %s should be registered in functionIndices by now"s % fun);
+//			error("context %s should be registered in functionIndices by now"s % fun);
 
         typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
-        function.signature.type_index = typeMap[fun];// todo check old index? todo shared signatures!?!
-        function.signature.is_handled = true;// todo remove
+        context.signature.type_index = typeMap[fun];// todo check old index? todo shared signatures!?!
+        context.signature.is_handled = true;// todo remove
         int param_count = signature.size();
 //		Code td = {0x60 /*const type form*/, param_count};
         Code td = Code(func) + Code(param_count);
@@ -1957,9 +2022,9 @@ Code emitImportSection() {
     Code import_code;
     import_count = 0;
     for (String fun: functions) {
-        Function &function = functions[fun];
-        if (function.is_import and function.is_used and not function.is_builtin) {
-            function.index = import_count++;
+        Function &context = functions[fun];
+        if (context.is_import and context.is_used and not context.is_builtin) {
+            context.index = import_count++;
             int &type = typeMap[fun];
             import_code = import_code + encodeString("env") + encodeString(fun).addByte(func_export).addType(type);
         }
@@ -2003,18 +2068,18 @@ Code emitCodeSection(Node &root) {
 //	new_count = declaredFunctions.size();
     for (auto declared: functions) {
         if (declared == "global")continue;
-        Function &function = functions[declared];// todo use more often;)
-        if (not function.emit)continue;
-        if (declared.empty())error("Bug: empty function name (how?)");
-        if (declared != "main") print("declared function: "s + declared);
+        Function &context = functions[declared];// todo use more often;)
+        if (not context.emit)continue;
+        if (declared.empty())error("Bug: empty context name (how?)");
+        if (declared != "main") print("declared context: "s + declared);
         if (not functionIndices.has(declared)) {// used or not!
             functionIndices[declared] = ++last_index;
-//            function.index=last_index; todo what if it already had different index!?
+//            context.index=last_index; todo what if it already had different index!?
         }
     }
 
 // https://pengowray.github.io/wasm-ops/
-//	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (function block)' opcode @+39
+//	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (context block)' opcode @+39
 //	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
     byte code_data_nop[] = {0/*locals_count*/, end_block};// NOP
     byte code_data_id[] = {1/*locals_count*/, 1/*one local has type: */, i32t, get_local, 0, return_block,
@@ -2063,7 +2128,7 @@ Code emitCodeSection(Node &root) {
             code_blocks = code_blocks + encodeVector(main_block);
     } else {
         if (main_block.length > 5)
-            error("no start function name given. null instead of 'main', can't assign block");
+            error("no start context name given. null instead of 'main', can't assign block");
         else warn("no start block (ok)");
     }
     for (String fun: functionCodes) {// MAIN block extra ^^^
@@ -2072,8 +2137,8 @@ Code emitCodeSection(Node &root) {
     }
     builtin_count = 0;
     for (auto name: functions) {
-        Function &function = functions[name];
-        if (function.is_builtin and function.is_used) builtin_count++;
+        Function &context = functions[name];
+        if (context.is_builtin and context.is_used) builtin_count++;
     }
 
     bool has_main = start and functionIndices.has(start);
@@ -2148,7 +2213,7 @@ Code emitGlobalSection() {
         globalsList.addByte(0);// 1:mutable todo: default? not π ;)
         // expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
         const Code &globalInit = emitExpression(global_node,
-                                                *new Function{.name="global"});// todo ⚠️ global is not a function!
+                                                *new Function{.name="global"});// todo ⚠️ global is not a context!
         globalsList.add(globalInit);// todo names in global context!?
         globalsList.addByte(end_block);
         /*
@@ -2200,7 +2265,7 @@ Code emitFuncTypeSection() {// depends on codeSection, but must appear earlier i
 //    https://webassembly.github.io/spec/core/binary/modules.html#binary-funcsec
 
     // funcType_count = function_count EXCLUDING imports, they encode their type inline!
-    // the function section is a vector of type indices that indicate the type of each function in the code section
+    // the context section is a vector of type indices that indicate the type of each context in the code section
 
     Code types_of_functions = Code(function_block_count);//  = Code(types_data, sizeof(types_data));
 //	order matters in functionType section! must be same as in functionIndices
@@ -2216,7 +2281,7 @@ Code emitFuncTypeSection() {// depends on codeSection, but must appear earlier i
             if (typeIndex >= 0) // just an implicit list funcId->typeIndex
                 types_of_functions.push((int) typeIndex, false);
             else if (runtime_offset == 0) // todo else ASSUME all handled correctly before
-                error("missing typeMap for function %s index %d "s % fun % i);
+                error("missing typeMap for context %s index %d "s % fun % i);
         }
     }
     // @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
@@ -2256,14 +2321,14 @@ Code nameSection() {
     for (int index = runtime_offset; index <= last_index; index++) {
         String *key = functionIndices.lookup(index);
         if (!key or key->empty())continue;
-        Function &function = functions[*key];
-//        List<String> localNames = function.locals[*key];// including arguments
-        int local_count = function.locals.size();
+        Function &context = functions[*key];
+//        List<String> localNames = context.locals[*key];// including arguments
+        int local_count = context.locals.size();
         if (local_count == 0)continue;
         usedLocals++;
         localNameMap = localNameMap + Code(index) + Code(local_count); /*???*/
-        for (int i = 0; i < function.locals.size(); ++i) {
-            String local_name = function.locals.at(i).name;
+        for (int i = 0; i < context.locals.size(); ++i) {
+            String local_name = context.locals.at(i).name;
             localNameMap = localNameMap + Code(i) + Code(local_name);
         }
 //		error: expected local name count (1) <= local count (0) FOR FUNCTION ...
@@ -2278,8 +2343,8 @@ Code nameSection() {
 
 //	localNameMap = localNameMap + Code((byte) 0) + Code((byte) 1) + Code((byte) 0) + Code((byte) 0);// 1 unnamed local
 //	localNameMap = localNameMap + Code((byte) 4) + Code((byte) 0);// no locals for function4
-//	Code exampleNames= Code((byte) 5) /*function index*/ + Code((byte) 1) /*count*/ + Code((byte) 0) /*l.nr*/ + Code("var1");
-    // function 5 with one local : var1
+//	Code exampleNames= Code((byte) 5) /*context index*/ + Code((byte) 1) /*count*/ + Code((byte) 0) /*l.nr*/ + Code("var1");
+    // context 5 with one local : var1
 
 //	localNameMap = localNameMap + exampleNames;
 
@@ -2307,16 +2372,16 @@ Code eventSection() {
 }
 
 /*
- *  There are currently two ways in which function indices are stored in the code section:
-    Immediate argument of the call instruction (calling a function)
-    Immediate argument of the i32.const instruction (taking the address of a function).
+ *  There are currently two ways in which context indices are stored in the code section:
+    Immediate argument of the call instruction (calling a context)
+    Immediate argument of the i32.const instruction (taking the address of a context).
     The immediate argument of all such instructions are stored as padded LEB128 such that they can be rewritten
     without altering the size of the code section. !
     For each such instruction a R_WASM_FUNCTION_INDEX_LEB or R_WASM_TABLE_INDEX_SLEB reloc entry is generated
     pointing to the offset of the immediate within the code section.
 
     R_WASM_FUNCTION_INDEX_LEB relocations may fail to be processed, in which case linking fails.
-    This occurs if there is a weakly-undefined function symbol, in which case there is no legal value that can be
+    This occurs if there is a weakly-undefined context symbol, in which case there is no legal value that can be
     written as the target of any call instruction. The frontend must generate calls to undefined weak symbols
     via a call_indirect instruction.
 */
@@ -2367,22 +2432,22 @@ void add_builtins() {
     import_count = 0;
     builtin_count = 0;
     for (auto sig: functions) {// imports first
-        Function &function = functions[sig];
-        if (function.is_import and function.is_used) {
+        Function &context = functions[sig];
+        if (context.is_import and context.is_used) {
             functionIndices[sig] = ++last_index;
-            if (function.index >= 0 and function.index != last_index)
-                error("function already has index %d ≠ %d"s % function.index % last_index);
-            function.index = last_index;
+            if (context.index >= 0 and context.index != last_index)
+                error("context already has index %d ≠ %d"s % context.index % last_index);
+            context.index = last_index;
             import_count++;
         }
     }
     for (auto sig: functions) {// now builtins
-        Function &function = functions[sig];
-        if (function.is_builtin and function.is_used) {
+        Function &context = functions[sig];
+        if (context.is_builtin and context.is_used) {
             functionIndices[sig] = ++last_index;
-            if (function.index >= 0 and function.index != last_index)
-                error("function already has index %d ≠ %d"s % function.index % last_index);
-            function.index = last_index;
+            if (context.index >= 0 and context.index != last_index)
+                error("context already has index %d ≠ %d"s % context.index % last_index);
+            context.index = last_index;
             builtin_count++;
         }
     }

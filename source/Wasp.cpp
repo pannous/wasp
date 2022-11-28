@@ -117,7 +117,7 @@ chars function_keywords[] = {"to", "ƒ", "fn", "fun", "func", "function", "metho
 // todo library functions need NOT be in this list (loaded when though?) "log10", "log₁₀", "log₂", "ln", "logₑ",
 // todo special UTF signs need NOT be in this list, as they are identified as operators via utf range
 chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
-                          "is", "equal", "equals", "==", "!=", "≠", "#", "=",
+                          "is", "equal", "equals", "==", "!=", "≠", "#", "=", "." /*attribute operator!*/,
                           "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":",
                           "upto", "…", "...", "..<" /*range*/,
                           "%", "mod", "modulo", "⌟", "2⌟", "10⌟", "⌞", "⌞2", "⌞10",
@@ -1900,6 +1900,7 @@ Node parseFile(String filename, ParserOptions options) {
 }
 
 void usage() {
+//    print("𓆤 Wasp is a new compiled programming language");
     print("🐝 Wasp is a new compiled programming language");
     print("wasp                   open interactive programming environment");// [repl/console]
 //	print("wasp <file.wasp>       compile wasp to wasm or native and execute");

@@ -1399,7 +1399,7 @@ void clearAnalyzerContext() {
 #ifndef RUNTIME_ONLY
     libraries.clear();// todo: keep runtime or keep as INACTIVE to save reparsing
     module_done.clear();
-
+    types.clear();
     globals.clear();
     functionIndices.clear();
     functionIndices.setDefault(-1);
