@@ -14,11 +14,7 @@
 Module *module; // todo: use?
 bool use_interpreter = false;
 
-List<String> builtin_constants
-#ifndef WASM
-        = {"pi", "π", "tau", "τ", "euler", "ℯ"}
-#endif
-;
+List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
 List<String> class_keywords = {"class", "prototype", "interface", "struct", "type"};// record see wit
 //List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
 
@@ -226,8 +222,7 @@ String extractFunctionName(Node &node) {
 //List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
 //chars ras[] = {"=", "?:", "+=", "++", 0};
 //List<chars> rightAssociatives = List(ras);
-#ifndef WASM
-List<chars> rightAssociatives = List<chars>{"=", "?:", "-…", "+=", "++…", 0};// a=b=1 == a=(b=1) => a=1
+List<chars> rightAssociatives = List<chars>{"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
 
 
 // still needs to check a-b vs -i !!
@@ -260,17 +255,6 @@ List<chars> declaration_operators = {":=", "=",
 // x=7
 // double:=it*2  // variable of type 'block' ?
 
-#else
-// TODO!
-List<chars> rightAssociatives;
-List<chars> prefixOperators;
-List<chars> suffixOperators;
-List<chars> setter_operators;
-List<chars> declaration_operators;
-List<chars> function_operators;
-List<chars> key_pair_operators;
-//no matching constructor for initialization of 'List<chars>' (aka 'List<const char *>')
-#endif
 
 Node &groupIf(Node n, Function &context) {
     if (n.length == 0 and !n.value.data)
@@ -588,7 +572,7 @@ Node extractReturnTypes(Node decl, Node body);
 
 List<String> aliases(String name);
 
-Valtype preEvaluateType(Node &node, Function function);
+Valtype preEvaluateType(Node &node, Function &function);
 
 Node &classDeclaration(Node &node, Function &function);
 
@@ -666,10 +650,10 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
 
     // todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
     if (setter_operators.has(name) or key_pair_operators.has(name)) {
-        Node body = analyze(body, function);
+        body = analyze(body, function);
         if (arguments.has("global"))
             globals.insert_or_assign(name, body.clone());
-        return groupSetter(name, body, context);
+        return groupSetter(name, body, function);
     }
 
     List<Arg> args = groupFunctionArgs(function, arguments);
@@ -812,21 +796,17 @@ Node &groupOperators(Node &expression, Function &context) {
             expression.print();
             error("operator missing: "s + op);
         }
+        op = checkCanonicalName(op);
+
         // we can't keep references here because expression.children will get mutated later via replace(…)
-        Node node = expression.children[i];
+        Node &node = expression.children[i];
         if (node.length)continue;// already processed
-        Node next = expression.children[i + 1];
+        Node &next = expression.children[i + 1];
         next = analyze(next, context);
         Node prev;
         if (i > 0)prev = expression.children[i - 1];
-        op = checkCanonicalName(op);
+//        else error("binop?");
 
-        if (op == "^" or op == "^^" or op == "**") {// todo NORM operators earlier
-            functions["pow"].is_used = true;// todo just one
-            functions["powd"].is_used = true;
-            functions["powi"].is_used = true;
-            functions["powf"].is_used = true;
-        }
         if (isPrefixOperation(node, prev, next)) {// ++x -i
             // PREFIX Operators
             isPrefixOperation(node, prev, next);
@@ -837,6 +817,12 @@ Node &groupOperators(Node &expression, Function &context) {
             expression.replace(i, i + 1, node);
         } else {
             prev = analyze(prev, context);
+            if (op == "^" or op == "^^" or op == "**") {// todo NORM operators earlier
+                functions["pow"].is_used = true;// todo just one
+                functions["powd"].is_used = true;
+                functions["powi"].is_used = true;
+                functions["powf"].is_used = true;
+            }
             if (suffixOperators.has(op)) { // x²
                 // SUFFIX Operators
                 if (op == "ⁿ") functions["pow"].is_used = true;
@@ -919,7 +905,7 @@ Node &groupOperators(Node &expression, Function &context) {
 }
 
 
-Valtype preEvaluateType(Node &node, Function function) {
+Valtype preEvaluateType(Node &node, Function &function) {
     if (node.kind == expression) {
         if (node.length == 1)return preEvaluateType(node.first(), function);
         node = groupOperators(node, function);
@@ -945,9 +931,9 @@ Module &loadModule(String name) {
         libraries.add(&import);
         return import;
     }
-    for (auto module: libraries)
-        if (module->name == name)
-            return *module;
+    for (auto lib: libraries)
+        if (lib->name == name)
+            return *lib;
     error("Module not found "s + name);
 }
 
@@ -1092,12 +1078,12 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
 //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
-    for (Module *module: libraries) {
+    for (Module *library: libraries) {
         // todo : multiple signatures! concat(bytes, chars, …) eq(…)
-        int position = module->functions.position(name);
+        int position = library->functions.position(name);
         if (position >= 0) {
             // ⚠️ this function now lives inside Module AND as import inside "main" functions list, with different wasm_index!
-            Function &func = module->functions.values[position];
+            Function &func = library->functions.values[position];
             Function &import = functions[name];// copy function info from library/runtime to main module
             import.signature = func.signature;
             import.is_runtime = false;// because here it is an import!

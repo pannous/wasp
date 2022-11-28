@@ -1493,7 +1493,7 @@ Code emitCall(Node &fun, Function &context) {
     int i = 0;
     // args may have already been emitted, e.g. "A"+"B" concat
     for (Node &arg: fun) {
-        code.push(emitExpression(arg, function));
+        code.push(emitExpression(arg, context));
 //		Valtype argType = mapTypeToWasm(arg); // todo ((+ 1 2)) needs deep analysis, or:
         Valtype argType = last_type;// evaluated expression smarter than node arg!
         Type &sigType = signature.types[i++];
