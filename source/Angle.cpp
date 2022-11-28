@@ -592,6 +592,47 @@ Valtype preEvaluateType(Node &node, Function function);
 
 Node &classDeclaration(Node &node, Function &function);
 
+Node &classDeclaration(Node &node, Function &function) {
+    if (node.length < 2)error("wrong class declaration format; should be: class name{…}");
+    Node &dec = node[1];
+    Kind kind = clazz;
+    String &kind_name = node.first().name;
+    if (kind_name == "struct")
+        dec.kind = structs;
+    else if (kind_name == "class" or kind_name == "type")
+        dec.kind = clazz;
+    else
+        todo(kind_name);
+
+    String &name = dec.name;
+    int pos = 0;
+    Node *type;
+    // todo other layouts and default values and class constructors, functions, getters … … …
+    for (Node &field: dec) {
+        if (isType(field)) {
+            type = &field;
+            continue;
+        } else
+            type = &field.values();
+        if (not type or not isType(*type) or not types.has(type->name))
+            error("class field needs type");
+        else
+            field.type = types[type->name]; // int => Int
+        field.kind = fields;
+        field["position"] = pos++;
+    }
+    if (types.position(name) >= 0) {
+        if (types[name] == dec)
+            warn("compatible declaration of %s already known"s % name);
+        else
+            error("incompatible structure %s already declared:\n"s % name + types[name]->serialize() /*+ node.line*/);
+    } else {
+        types.add(name, dec.clone());
+    }
+    return dec;
+}
+
+
 // bad : we don't know which
 void use_runtime(const char *function) {
     findLibraryFunction(function, false);
@@ -720,45 +761,6 @@ Node &groupDeclarations(Node &expression, Function &context) {
         return groupDeclarations(name, 0, left, left, rest, context);
     }
     return expression;
-}
-
-Node &classDeclaration(Node &node, Function &function) {
-    if (node.length < 2)error("wrong class declaration format; should be: class name{…}");
-    Node &dec = node[1];
-    Kind kind = clazz;
-    String &kind_name = node.first().name;
-    if (kind_name == "struct")
-        dec.kind = structs;
-    else if (kind_name == "class" or kind_name == "type")
-        dec.kind = clazz;
-    else
-        todo(kind_name);
-
-    String &name = dec.name;
-    int pos = 0;
-    Node *type;
-    for (Node &field: dec) {
-        if (isType(field)) {
-            type = &field;
-            continue;
-        } else
-            type = &field.values();
-        if (not type or not isType(*type) or not types.has(type->name))
-            error("class field needs type");
-        else
-            field.type = types[type->name]; // int => Int
-        field.kind = fields;
-        field["position"] = pos++;
-    }
-    if (types.position(name) >= 0) {
-        if (types[name] == dec)
-            warn("compatible declaration of %s already known"s % name);
-        else
-            error("incompatible structure %s already declared:\n"s % name + types[name]->serialize() /*+ node.line*/);
-    } else {
-        types.add(name, dec.clone());
-    }
-    return dec;
 }
 
 Node extractReturnTypes(Node decl, Node body) {
