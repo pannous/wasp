@@ -949,6 +949,10 @@ public:
     bool has(String string) {
         return parameter_names.contains(string);
     }
+
+    Signature clone() {
+        return *this;
+    }
 };
 
 

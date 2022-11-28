@@ -419,18 +419,22 @@ void consumeExportSection() {
         int funcType = module->funcToTypeMap[code_index];
         // todo: demangling doesn't yield return type, is wasm_signature ok?
         fun.signature.type_index = funcType;
+        fun0.signature.type_index = funcType;
         check_silent(0 <= funcType and funcType <= module->funcTypes._size)
         Signature &wasm_signature = module->funcTypes[funcType];
         Valtype returns = mapTypeToWasm(wasm_signature.return_types.last(Kind::undefined));
         if (wasm_signature.wasm_return_type == void_block) returns = void_block;
+        fun0.signature.returns(returns);
         fun.signature.returns(returns);
         // todo: use wasm_signature if demangling fails
         List<String> args = demangle_args(func0);
         for (String arg: args) {
             if (arg.empty())continue;
             fun.signature.add(mapArgToValtype(arg));
+            fun0.signature.add(mapArgToValtype(arg));
         }
-        fun0.signature = fun.signature;// .clone();// todo copy by value ok? NO: heap-use-after-free on address
+        // can't after free
+//        fun0.signature = fun.signature.clone();// todo copy by value ok? NO: heap-use-after-free on address
     }
 }
 
@@ -502,6 +506,7 @@ Valtype mapArgToValtype(String arg) {
     else if (arg == "Value")return Valtype::ignore;
     else if (arg == "Arg")return Valtype::ignore; // truely internal, should not be exposed! e.g. Arg
     else if (arg == "Signature")return Valtype::ignore;
+    else if (arg == "...")return Valtype::ignore;// varargs, interesting!
     else if (arg.endsWith("&")) return Valtype::pointer;
     else if (arg.endsWith("*")) return Valtype::pointer;
     else {
