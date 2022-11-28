@@ -60,27 +60,55 @@ Note how number simulataneously acts as type and variable name.
 Note how the unique argument `number` can be accessed via `it` keyword and some brackets are optional
 
 [Auto typed](https://github.com/pannous/wasp/wiki/type-inference) fibonacci in Angle is
+
 ```
 fib := if it<2 : 1 else fib(it-1) + fib it - 2
 ```
 
 Angle runs as wasm file inside browsers an as small lambdas in edge computing.
-Angle programms **compiled to wasm**, which dont make use of the standard api can be extremely small <1kb, just like handwritten [wast](https://www.richinfante.com/2020/01/03/webassembly-examples) but with much more comfort.
+Angle programms **compiled to wasm**, which dont make use of the standard api can be extremely small <1kb, just like
+handwritten [wast](https://www.richinfante.com/2020/01/03/webassembly-examples) but with much more comfort.
 
-Wasp and Angle are **free of dependencies** (other than gcc, if the (wasm) runtime is to be compiled from scratch).
+## built-in linker
+
+Like in swift, all files within the source file's directory are parsed and available without extra `use` / `include`
+keyword. However other projects and source files can be included dynamically or statically aot at compile time.
+
+## built-in component model
+
+The webassembly [component model](https://github.com/WebAssembly/component-model) is a first class citizen of
+angle: `wit` files and syntax can be included directly:
+
+```
+flags virtues{ 
+  fast
+  safe
+}
+
+virtues wasp_goal = fast + safe
+```
+
+No need for any bindgen, unless interfacing with components of other languages.
+In fact we hop to promote wit to a universal header file format.
+
+Wasp and Angle are **free of dependencies** (other than gcc, if the runtime is to be compiled from scratch).
 Only some optional features can make use of external dependencies:
 
-The natives runtimes can be configured to ship with a JIT wasm runtime (wasm3, wasmer, wasm-micro-runtime)
+The natives runtimes can be configured to ship with a JIT wasm runtime (wasmtime, wasmedge, wasm3, wasmer,
+wasm-micro-runtime and V8!)
 
-The **native** Wasp/Angle binary contains a small **WebView** connector making use of the host's browser component (Edge or WebKit).
-Since the Angle language can be compiled from wasm to wasm, this gives a whole self sufficient programming environment in less than 200kb,  
+The **native** Wasp/Angle binary contains a small **WebView** connector making use of the host's browser component (Edge
+or WebKit).
+Since the Angle language can be compiled from wasm to wasm, this gives a whole self sufficient programming environment
+in less than 200kb,  
 with similar power to [electron](https://www.electronjs.org/) and QT.
 
-Note: The full wasp_compiler.wasm is currently 2MB but can be shrunk back close to the 70kb of wasp_runtime.wasm once the lazy external references are removed
-again.
+Note: The full wasp_compiler.wasm is currently 2MB but can be shrunk back close to the 70kb of wasp_runtime.wasm once
+the lazy external references are removed again.
 
-Until a smart way is found to write directly to the WebViews canvas, angle ships with a low
-overhead **[graphics](https://github.com/pannous/wasp/wiki/graphics)** adapter (using SDL) for fast fullscreen painting in native wasp bundles.
+Until a smart way is found to write directly to the WebViews canvas, native angle ships with a low
+overhead **[graphics](https://github.com/pannous/wasp/wiki/graphics)** adapter (using SDL) for fast fullscreen painting
+in native wasp bundles.
 
 ## [Documentation](https://github.com/pannous/wasp/wiki/)
 

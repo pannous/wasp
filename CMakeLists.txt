@@ -13,7 +13,6 @@ LINK_DIRECTORIES(/usr/local/lib)
 #set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
 #set(DEBUG 1)
-
 #set(SDL 1) # Graphics
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
 #set(INCLUDE_MERGER 0)
@@ -142,7 +141,8 @@ ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it need
 if (CONSOLE)
     message(CONSOLE)
     ADD_DEFINITIONS(-DCONSOLE)
-    #    ADD_COMPILE_FLAG("-lreadline")
+    ADD_DEFINITIONS(-DUSE_READLINE)
+    ADD_COMPILE_FLAG("-lreadline")
     set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
     #    find_package(Readline)
     #    include_directories(${Readline_INCLUDE_DIR})
@@ -241,38 +241,6 @@ else ()
 
 endif ()
 
-if (NOT WASM)
-    MESSAGE("asan sanitize=address …")
-    set(ASAN_OPTIONS verbosity=3)
-    add_compile_options(-g)
-    #    add_compile_options(-enable-coverage)
-    #    add_compile_options(-Wno-missing-field-initializers)
-    #    add_compile_options(-Wformat=2)
-    #    #    add_compile_options(-Wpointer-arith)
-    #    add_compile_options(-m64)
-    #    add_compile_options(-D_LARGEFILE_SOURCE)
-    #    add_compile_options(-D_FILE_OFFSET_BITS=64)
-    #    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
-    #
-    #    #    add_compile_options(-fsanitize=address) # currently crashes with AsanDie so don't use :(
-    #    add_compile_options(-fno-stack-protector)
-    #    add_compile_options(-fno-omit-frame-pointer)
-    #    add_compile_options(-fsanitize=undefined)
-    #    add_compile_options(-fsanitize-recover=address)
-    #    add_compile_options(-fsanitize-recover=address)
-    set(ASAN_OPTIONS=detect_stack_use_after_return=1) # unnecessary because -Wreturn-stack-address
-    #add_compile_options(-fsanitize-address-use-after-return)
-    #    #   add_compile & add_link NEEDS TO BE IN SYNC!
-    #    #    add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
-    #    add_link_options(-fno-omit-frame-pointer)
-    #    add_link_options(-fsanitize-recover=address)
-    #    add_link_options(-fsanitize-recover=address)
-    #    add_link_options(-fsanitize=undefined)
-    #    add_link_options(-rdynamic)
-    #    add_link_options(-m64)
-    #    add_link_options(-D_GLIBCXX_USE_CXX11_ABI=0)
-endif ()
-
 #
 # END OF GENERAL CONFIGURATION
 #
@@ -295,7 +263,7 @@ if (WASM) # OR WASI)
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
 
     #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan -isystem ... -Oz -c ") # BREAKS BUILD! ???
-    #    ADD_COMPILE_FLAG("-fvisibility=hidden -static-libsan ")
+    ADD_COMPILE_FLAG("-fvisibility=hidden")
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
     #    ADD_COMPILE_FLAG("-nostdlib") # use our OWN memcpy (and printf?)
     #    ADD_COMPILE_FLAG("-fno-builtin")
@@ -490,20 +458,15 @@ elseif (V8)
     target_link_libraries(wasp PRIVATE v8 v8_libplatform wasm)
 else () # NORMAL:
     message(NO WASM "${WASM}")
-    if (DEBUG)
-        ADD_COMPILE_FLAG("-fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer  -shared-libasan ") # NOT FOR WASM
-        #    ADD_COMPILE_FLAG("-rdynamic -Wl,--no-as-needed -ldl") # just for backtrace
-    endif ()
     if (RELEASE)
         add_library(wasp SHARED ${SOURCE_FILES})
     else ()
         add_executable(wasp ${SOURCE_FILES})
     endif ()
-    #    TARGET_LINK_LIBRARIES(wasp curl)
     #    add_custom_target(BuildWasp ALL DEPENDS angle)
     target_include_directories(${PROJECT_NAME} PUBLIC source/own_merge)
-endif ()
 
+endif ()
 
 if (NOT WASM)
     if (WABT_MERGE)
@@ -521,3 +484,46 @@ endif ()
 #set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
 #set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 #set(CMAKE_SUPPRESS_REGENERATION)
+
+
+SET(SANITIZE 1)
+if (SANITIZE)
+    MESSAGE("asan sanitize=address …")
+    ADD_COMPILE_FLAG("-static-libsan ")
+    set(ASAN_OPTIONS verbosity=3)
+    set(ASAN_OPTIONS=detect_stack_use_after_return=1) # unnecessary because -Wreturn-stack-address
+    add_compile_options(-g)
+    add_compile_options(-enable-coverage)
+    add_compile_options(-Wno-missing-field-initializers)
+    add_compile_options(-Wformat=2)
+    #    #    add_compile_options(-Wpointer-arith)
+    #    add_compile_options(-m64)
+    #    add_compile_options(-D_LARGEFILE_SOURCE)
+    #    add_compile_options(-D_FILE_OFFSET_BITS=64)
+    #    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+    #
+    #    #    add_compile_options(-fsanitize=address) # currently crashes with AsanDie so don't use :(
+    add_compile_options(-fno-stack-protector)
+    add_compile_options(-fno-omit-frame-pointer)
+    add_compile_options(-fsanitize=undefined)
+    add_compile_options(-fsanitize-recover=address)
+    add_compile_options("-fsanitize-trap=undefined")
+    if (!WASM)
+        add_compile_options("-fsanitize=address") # unsupported option '-fsanitize=address' for target 'wasm32-unknown-unknown-wasm'
+    endif ()
+    if (!APPLE)
+        add_compile_options("-fsanitize=leak") # : unsupported option '-fsanitize=leak' for target 'arm64-apple-darwin22.1.0'
+    endif ()
+
+    #        add_compile_options(-fsanitize-address-use-after-return) #not supported by clang
+    #   add_compile & add_link NEEDS TO BE IN SYNC!
+    link_libraries("-fsanitize=address")
+    add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
+    add_link_options(-fno-omit-frame-pointer)
+    add_link_options(-fsanitize-recover=address)
+    add_link_options(-fsanitize-recover=address)
+    add_link_options(-fsanitize=undefined)
+    #    add_link_options(-rdynamic)
+    #    add_link_options(-m64)
+    #    add_link_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+endif ()
