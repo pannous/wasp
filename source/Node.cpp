@@ -216,7 +216,7 @@ Node &Node::operator[](char c) {
 }
 
 
-//Node *all = 0;// = (Node *)calloc(sizeof(Node), capacity * maxNodes);
+//Node *all = 0;// = (Node *)calloc capacity, (sizeof(Node * maxNodes);
 
 
 bool typesCompatible(Node &one, Node &other) {
@@ -232,10 +232,9 @@ bool typesCompatible(Node &one, Node &other) {
 // super wasteful, for debug
 Node &Node::set(String string, Node *node) {
 //	if (!children)children = static_cast<Node *>(alloc(capacity));
-//	if (!all)all = (Node *) calloc(sizeof(Node), capacity * maxNodes);
 
     if (!children) {
-        children = (Node *) calloc(sizeof(Node), capacity);
+        children = (Node *) calloc(capacity, sizeof(Node));
         if (name == nil_name)name = "ø";
     }
     if (length >= capacity / 2)todo("GROW children");
@@ -555,13 +554,13 @@ Node &Node::add(const Node *node) {
     if (length >= capacity - 1) {
         warn("Out of node capacity "s + capacity + " in " + name);
         capacity *= 2;
-        Node *new_children = (Node *) calloc(sizeof(Node), capacity);
+        Node *new_children = (Node *) calloc(capacity, sizeof(Node));
         memcpy(new_children, children, length);
         children = new_children;
     }
     if (lastChild >= MAX_NODE_CAPACITY)
         error("Out of global Node memory");
-    if (!children) children = (Node *) calloc(sizeof(Node), capacity);
+    if (!children) children = (Node *) calloc(capacity, sizeof(Node));
     if (length > 0) children[length - 1].next = &children[length];
     ((Node *) node)->parent = this;// not const lol. allow to set and ignore NIL.parent
     children[length] = *node; // invokes memcpy
@@ -756,7 +755,7 @@ bool Node::isNil() const { // required here: name.empty()
 
 // todo hide : use serialize() for true deep walk
 String Node::serializeValue(bool deep) const {
-    if (!this)return "";
+//    if (!this)return "";
 //	String wasp = "";
     Value val = value;
 //	switch (kind.type) {
@@ -850,7 +849,7 @@ String Node::serializeValue(bool deep) const {
 
 // todo: (x)=>x when root
 String Node::serialize() const {
-    if (not this)return "";
+//    if (not this)return "";
     String wasp = "";
     if (not use_polish_notation or length == 0) {
         if (not name.empty()) wasp += name;
@@ -1070,7 +1069,7 @@ int Node::lastIndex(Node *node, int start) {
 
 // inclusive from…to
 // ⚠️ DANGER! any references pointing to children become INVALID!
-[[modifying]]
+//[[modifying]]
 void Node::replace(int from, int to, Node *node) {
     if (from < 0 or from >= length)
         error("Node::replace from<0 or from>=length");
