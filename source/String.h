@@ -213,6 +213,12 @@ public:
         length = 0;
     }
 
+    String(String *copy_move_assignment) {
+        data = copy_move_assignment->data;
+        length = copy_move_assignment->length;
+        shared_reference = true;// better safe than sorry
+    }
+
 //#ifndef WASM
 ////	Error while importing "env"."_Znwm": unknown import.
     void *operator new(size_t size) {

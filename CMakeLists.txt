@@ -478,16 +478,17 @@ if (NOT WASM)
 endif ()
 
 
-#set(CMAKE_CXX_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
-#set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
-#set(CMAKE_SUPPRESS_REGENERATION)
+if (CONSOLE)
+    ADD_COMPILE_FLAG("-lreadline")
+    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # why??
+    #    link_libraries(wasp readline)
+endif ()
 
-
-#SET(SANITIZE 1)
+SET(SANITIZE 0)
 if (SANITIZE) # or TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
-    MESSAGE("asan sanitize=address …")
+    MESSAGE("ASAN sanitize=address …")
     ADD_COMPILE_FLAG("-static-libsan ")
     set(ASAN_OPTIONS verbosity=3)
     set(ASAN_OPTIONS=detect_stack_use_after_return=1) # unnecessary because -Wreturn-stack-address
@@ -513,30 +514,17 @@ if (SANITIZE) # or TRACE
     if (!APPLE)
         add_compile_options("-fsanitize=leak") # : unsupported option '-fsanitize=leak' for target 'arm64-apple-darwin22.1.0'
     endif ()
+    add_compile_options(-fsanitize-address-use-after-return) #not supported by clang
 
-    #        add_compile_options(-fsanitize-address-use-after-return) #not supported by clang
     #   add_compile & add_link NEEDS TO BE IN SYNC!
     link_libraries("-fsanitize=address")
     add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
+    add_link_options(-fsanitize=undefined)
     add_link_options(-fno-omit-frame-pointer)
     add_link_options(-fsanitize-recover=address)
-    add_link_options(-fsanitize-recover=address)
-    add_link_options(-fsanitize=undefined)
-    #    add_link_options(-rdynamic)
-    #    add_link_options(-m64)
-    #    add_link_options(-D_GLIBCXX_USE_CXX11_ABI=0)
 endif ()
 
+set(CMAKE_SUPPRESS_REGENERATION)
+set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
+set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
 
-if (CONSOLE)
-    #        find_package(Readline)
-    find_library(Readline_LIBRARY NAMES readline HINTS ${Readline_ROOT_DIR}/lib
-            )
-
-    include_directories(${Readline_INCLUDE_DIR})
-    #        target_link_libraries(wasp  ${Readline_LIBRARY})
-    ADD_COMPILE_FLAG("-lreadline")
-    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
-
-    #    link_libraries(wasp readline)
-endif ()
