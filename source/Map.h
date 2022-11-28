@@ -230,8 +230,13 @@ public:
         if (keys and values) {
             memcpy((void *) new_keys, (void *) keys, sizeof(S) * capacity / 2);
             memcpy((void *) new_values, (void *) values, sizeof(T) * capacity / 2);
+//            AddressSanitizer: heap-use-after-free
+// todo use free after … runtime is debugged or save Map invented
+// currently we can't guarantee that external references exist, e.g. fun.signature consumeExportSection() wasm_reader.cpp:433
             free(keys);
             free(values);
+// AddressSanitizer: heap-buffer-overflow if we don't free
+// A heap buffer overflow is when you access outside an array that was allocated on the heap
         }
         keys = new_keys;
         values = new_values;
