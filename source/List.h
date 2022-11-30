@@ -8,7 +8,7 @@
 #include <cstdlib> // OK in WASM!
 
 #define LIST_DEFAULT_CAPACITY 100 //
-#define LIST_MAX_CAPACITY 10000 // debug only!
+#define LIST_MAX_CAPACITY 0x1000000000l // debug only!
 
 #include "Util.h"
 #include "wasm_helpers.h"
@@ -23,6 +23,7 @@
 
 #endif
 
+//bool eq(int i,int j){return i==j;}// for List.has => eq
 
 //The template definition (the cpp file in your code) has to be included prior to instantiating a given template class
 template<class S>
@@ -132,11 +133,12 @@ void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
 }
 
 
+// ⚠️ references to List items are NOT safe during list construction due to List::grow()  ( invalid / forbidden )
 template<class S>
 class List {
 public:
     int header = array_header_32;
-    int _type = 0;// reflection on template class S
+    Type _type = 0;// reflection on template class S
     int _size = 0;
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
@@ -211,10 +213,10 @@ public:
     void grow() {
         check_silent(capacity * 2 < LIST_MAX_CAPACITY);
         S *neu = (S *) alloc(capacity * 2, sizeof(S));
-        memcpy((void *) neu, (void *) items, capacity);
-//		for (int i = 0; i < size(); ++i) neu[i] = items[i];// doesn't help
-        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
+        memcpy((void *) neu, (void *) items, capacity* sizeof(S));
+//        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
 //      indeed List<int> FUCKS UP just by growing even without references
+        free(items);
         items = neu;
         capacity *= 2;
     }
@@ -240,11 +242,11 @@ public:
 //	}
 
 
-    S &operator[](short index) {
+    S &operator[](unsigned long index) {
         if (index == _size)_size++;// allow indexing one after end? todo ok?
         if (_size >= capacity)grow();
         if (index < 0 or index >= _size) /* and not auto_grow*/
-            error("index out of range : %d > %d"s % index % _size);
+            error("index out of range : %d > %d"s % (long)index % _size);
         return items[index];
     }
 

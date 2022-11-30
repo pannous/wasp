@@ -31,6 +31,7 @@ typedef byte *bytes;
   if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 #include "String.h" // AFTER defines!
+#include "smart_types.h"
 
 [[noreturn]]
 extern void error1(chars message, chars file = 0, int line = 0);
@@ -98,7 +99,7 @@ String load(String file);
 bool isSmartPointer(long long d);
 
 //Node smartValue(long smartPointer);
-Node smartNode(long long smartPointer64);
+Node smartNode(smart_pointer_64 smartPointer64);
 
 long file_last_modified(char *file);
 
@@ -109,3 +110,5 @@ String extractPath(String file);
 bool isDir(const char *name);
 
 #define maxi(a, b) a<b?b:a
+
+typedef String Path;

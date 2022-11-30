@@ -19,7 +19,33 @@
 //} number_type;
 
 
+//class SmartPointer64;
+typedef long long SmartPointer64;
 
+// int 60 : we reserve the 4 highest bits for special semantics and values
+// whenever the first hex in a 16byte smartlong sequence is NOT 0, it means it is special:
+enum smartlongs{
+    zero=0, // lol
+    MAX_VALUE=0x0FFFFFFFFFFFFFFF, // ≠  Number.MAX_VALUE 2^^1024 - 1 ( Float 1.7976931348623157E+308 )
+//  MIN_VALUE=0x-FFFFFFF00000000, // todo
+//    infinity = smartlongs::MAX_VALUE * 2 , // *2 vs +1 => reserve 2^(64-1) special values!
+//    ∞=infinity=0x1FFFFFFFFFFFFFFF,
+//    -∞=minus_infinity=0xFFFFFFFFFFFFFFFF,
+//    minus_one_leb=0x7f01010101010101,// 7 nops
+//    NaN = 0xEEEE0000EEEE0000, // special semantics
+};
+
+/* JS:
+ hex(1152921504606847000-64)
+'1000000000000000'
+ hex(1152921504606847000-65)
+'fffffffffffff80'
+*/
+
+union smartlong{
+    long long lon;
+    SmartPointer64 smarty; // encoding NaN, Infinity, -Infinity, missing ≈ empty ≈ null AND OTHER types/data!!
+};
 
 
 #include "../Util.h"

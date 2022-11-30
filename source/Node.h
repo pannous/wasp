@@ -415,11 +415,11 @@ public:
 	}
 
 	explicit
-	Node(spointer spo) {
-		smartType type = getSmartType(spo);
+	Node(smart_pointer_32 spo) {
+		smartType4bit type4Bit = getSmartType(spo);
 		int payload = spo << 4 >> 4; // delete 4 bit type header
 //		if (type != int28 and type != float28 )payload = spo << 8 >> 8;
-		switch (type) {
+		switch (type4Bit) {
 			case int28:
 			case sint28:
 				value.longy = (int) spo;
@@ -767,3 +767,9 @@ public:
 Node interpret(Node &n);
 
 Node eval(String n);
+
+
+struct smart_value{
+    Type smartType;
+    Value value;
+};
