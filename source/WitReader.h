@@ -225,10 +225,10 @@ class WitReader {
     }
 
     Node &readModule(Node &node) {
-        Node &module = node[2];// node[1] == "$"
+        Node &mod = node[2];// node[1] == "$"
         trace("\nwit module:");
-        trace(module);
-        return module;
+        trace(mod);
+        return mod;
     }
 
     // outdated (@interface … ) format

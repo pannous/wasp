@@ -185,7 +185,7 @@ enum Primitive {
 
 
 typedef int Address;
-
+typedef long long SmartPointer64;
 /*
  * i32 paged union Type
  * 0x00 - 0xFF zero page : Valtype / Kind
@@ -193,20 +193,27 @@ typedef int Address;
  * 0x1000 - 0x10000 Todo Classes / pointer page ?
  * 0x10000 - string_header_32 pointer page: indirect types via address of describing Node{kind=clazz}
  * string_header_32 - 0xFFFFFFFF high page reserved (combinatorial types!) Todo e.g. person?[10] versus combinatorial primitive int[10]
+ * header_64
+ * check(sizeof(Type)==8) // otherwise all header structs fall apart
  * */
 // for (wasm) function type signatures see Signature class!
-union Type {// todo string_header_64 make this union i64 ! is this desired??
+union Type {//  i64 union 8 bytes with special ranges:
 	/* this union is partitioned in the int space:
 	 0x0000 - Ill defined
 	 0x0001 - 0x1000 : Kinds of Node MUST NOT CLASH with Valtype!?
-	 0x1000 - 0x10000: Classes
-	 0x10000 - …     : Addresses
+	 0x1000 - 0x10000: Classes (just the builtin ones) smarty32 " todo 150_000 classes should be enough for anyone ;)"
+	 // todo memory offset ok? (data 0x1000 …)
+	 0x10000 - … 2^60    : Addresses (including pointers to any Node including Node{type=clazz}
+	 0x10000000_00000000 - 2^64 : SmartPointer64 ≈ SmartPointer32 + 4 byte value
+	 //todo endianness?
+
 	 some Classes might be composing:
 	 0xA001 array of Type 1 ( objects )
 	*/
-	// ⚠️ Kind is short, not int!
+
 	// todo: this union is BAD because we can not READ it safely, instead we need mapType / extractors for all combinations!
 	int value = 0; // one of:
+    SmartPointer64 smarty;
 	Kind kind; // Node of this type
 //	Valtype valtype; // doesn't make sense here but try to avoid(guarantee?) overlap with type enum for future compatibility?
 	Primitive type;// c_string int_array long_array float_array etc, can also be type of value.data in boxed Node

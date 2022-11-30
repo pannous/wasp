@@ -843,7 +843,8 @@ private:
 //		}
         // Comments always begin with a # or / character.
         if (ch == '#') {
-            if (not(previous == ' ' or previous == '\n'))return false;
+            if (not(empty(previous)))
+                return false;
             if (next == '*' or next == '#')
                 blockComment();
             else
@@ -1781,20 +1782,20 @@ float precedence(char group) {
 
 
 // test functions to check wasm->runtime interaction
-int oka() {
+int test42() {
     return 42;
 }
 
-int oki(int i) {// used in wasm runtime test
+int test42i(int i) {// used in wasm runtime test
     return 42 + i;
 }
 
-float okf(float f) {
+float test42f(float f) {
     return 42 + f;
 }
 
 // default args don't work in wasm! (how could they?)
-float okf5(float f = 0) {
+float test41ff(float f = 0) {
     return 41.4 + f;
 }
 

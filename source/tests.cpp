@@ -322,8 +322,15 @@ void testLebByteSize() {
     }
 }
 
-// tested once, ok
 void testListGrow() {
+// tested once, ok
+    return;
+    List<int> oh = {0, 1, 2, 3};
+    for (int i = 4; i < 1000000000; ++i) {
+        oh.add(i);
+        unsigned int ix = random() % i;
+        check_silent(oh[ix] == ix)
+    }
     String aok = "ok";
     List<String> ja;// = {ok};
     ja.add(aok);
@@ -512,6 +519,8 @@ void testIteration() {
 
 
 void testUpperLowerCase() {
+    assert_emit("lowerCaseUTF('ÂÊÎÔÛ')", "âêîôû")
+
     char string[] = "ABC";
     lowerCase(string, 0);
     assert_equals(string, "abc");
@@ -836,7 +845,7 @@ void testNetBase() {
 //	print(url);
     chars json = fetch(url);
 //	print(json);
-    Node result = parse(json);
+    result = parse(json);
     Node results = result["results"];
 //	Node Erde = results[0];// todo : EEEEK, auto flatten can BACKFIRE! results=[{a b c}] results[0]={a b c}[0]=a !----
     Node Erde = results;
@@ -875,7 +884,7 @@ void testDivMark() {
 }
 
 void testDiv() {
-    Node result = parse("div{ class:'bold' 'text'}");
+    result = parse("div{ class:'bold' 'text'}");
     result.print();
     assert(result.length == 2);
     assert(result["class"] == "bold");
@@ -1769,7 +1778,7 @@ void testParentContext() {
     )
 }
 
-void testParentBUG() {
+void testParent() {
 //	chars source = "{a:'HIO' d:{} b:3 c:ø}";
     chars source = "{a:'HIO'}";
     assert_parses(source);
@@ -2248,7 +2257,6 @@ void testNodeBasics() {
 
 void testBUG();
 
-
 void testArrayIndices() {
     assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
     assert_is("[1 2 3]", Node(1, 2, 3, 0))
@@ -2258,10 +2266,6 @@ void testArrayIndices() {
 }
 
 
-void testBUG() {// move to tests() once done!
-    testUTF();// fails sometimes => bad pointer!?
-    testParentBUG();
-}
 
 
 void todos() {
@@ -2445,7 +2449,15 @@ void testSubGroupingFlatten() { // ok [a (b,c) d] should be flattened to a (b,c)
     assert_equals(result.last(), "d");
 }
 
+
+void testBUG() {// move to tests() once done!
+//        testRecentRandomBugs();
+}
+
+
 void tests() {
+    testParent();
+    testSubGroupingFlatten();
     testIndexOffset();
     testNodeConversions();
     testArrayIndices();
@@ -2457,7 +2469,6 @@ void tests() {
     )
 //	test_sin();
     testModulo();
-    testRecentRandomBugs();
     testIndentAsBlock();
     testDeepCopyDebugBugBug2();// SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!
     testDeepCopyDebugBugBug();
@@ -2544,12 +2555,13 @@ void tests() {
     testLogic01();
     testLogicOperators();
     testEqualities();
-    testRecentRandomBugs();
     testGroupCascade();
     testParams();
     testSignificantWhitespace();
     testFlags();
-
+    testMergeOwn();
+    testRecentRandomBugs();
+    testBUG();
     skip(
             testWrong0Termination();
             testErrors();// error: failed to call function   wasm trap: integer divide by zero
@@ -2560,62 +2572,62 @@ void tests() {
 #ifdef APPLE
     testAllSamples();
 #endif
-    testBUG();
-
     check(NIL.value.longy == 0);// should never be modified
     print("ALL TESTS PASSED");
 }
 
 
+void assurances(){
+    check(sizeof(Type)==8) // otherwise all header structs fall apart
+//    check(sizeof(void*)==4) // otherwise all header structs fall apart TODO adjust in 64bit wasm / NORMAL arm64 !!
+    check(sizeof(long long)==8)
+}
+
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp / wasmtime
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm build via wasm-runtime
-// 2022-10-26 : 3 sec without runtime_emit, 15  sec with runtime_emit  ALL TESTS PASSING
+// 2022-10-26 : 3 sec without runtime_emit, 15 sec with runtime_emit  ALL TESTS PASSING
+// 2022-11-29 : 5 sec WITH runtime_emit! how so fast? SANITIZE disabled?
 void testCurrent() {
+//    check(0x1000000000000000l==powi(2,60))
+//    assurances();
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
-//    testRecentRandomBugs();
 //    testDataMode();
 //    assert_emit("a=3;b=2;b-a", -1);
-    assert_emit("factorial:=it<2?1:it*factorial(it-1);factorial 5", 120);
-    testSinus();
-    assert_run("42", 42); //  assert_run sometimes causes Heap corruption! test earlier
+    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
 
-    assert_emit("10007.0%10000", 7);
-
-    assert_emit("√π²", 3.1415);
-    assert_emit("9e-04", 0.0009);
-//    testStruct();
-    testFlags();
-
-    assert_run("x='123';x is '123'", true);// ok
-    assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
-    testAssertRun();
-//    testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
-    testWasmRuntimeExtension();
-
-    assert_emit("x=0;while x++<10: x", 0);// while loops always return false from last condition. todo?
-    assert_emit("x='abcde';x#4", 'd');//
-    assert_emit("√π²", 3.1415);
-    testSinus();// todo FRAGILE fails before!
-
-//    exit(1);
+    testUpperLowerCase();
+skip(
+            assert_run("#'0123'", 4);// todo at compile?
+            assert_run("#[0 1 2 3]", 4);
+            assert_run("#[a b c d]", 4);
+            assert_run("len('0123')", 4);// todo at compile?
+            assert_run("len([0 1 2 3])", 4);
+            assert_run("size([a b c d])", 4);
+            assert_run("int('123')", 123);
+            assert_run("str(123)", "123");
+            assert_run("'a'", 'a');
+            assert_run("char(0x41)", 'a');
+            assert_run("string(123)", "123");
+            assert_run("String(123)", "123");
+            )
+    skip(
+    test_sinus_wasp_import();
+            )
 //    testSinus2();
-//    test_sinus_wasp_import();
-    testStringIndicesWasm();
-    testIndexOffset();
-    testArrayIndicesWasm();
-    testIndexWasm();
-//    testWit();
-//    exit(1);
-//    assert_run("oka", 42);
-    testMergeOwn();
+    testAssertRun();
 
-    testSubGroupingFlatten();
-    skip_wasm(
-            testIteration();
-    )
+//    testMergeOwn();
+//    testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
+//    testWasmRuntimeExtension();
+
+//    testWit();
+//    testSinus();// todo FRAGILE fails before!
+//    exit(1);
+
+    testIteration();
     tests();// make sure all still ok before changes
     todos();// those not passing yet (skip)
     testAllWasm();

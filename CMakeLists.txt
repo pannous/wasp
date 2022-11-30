@@ -484,8 +484,7 @@ if (CONSOLE)
     #    link_libraries(wasp readline)
 endif ()
 
-SET(SANITIZE 0)
-if (SANITIZE) # or TRACE
+if (SANITIZE OR TRACE) # or TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
     MESSAGE("ASAN sanitize=address …")

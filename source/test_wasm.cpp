@@ -553,16 +553,16 @@ void testWasmLogicUnary() {
 }
 
 void testWasmLogicOnObjects() {
-    assert_run("not 'a'", false);
-    assert_run("not {a:2}", false);
+    assert_emit("not 'a'", false);
+    assert_emit("not {a:2}", false);
     skip(
-            assert_run("not {a:0}", false);// maybe
+            assert_emit("not {a:0}", false);// maybe
     )
 
-    assert_run("not ()", true);
-    assert_run("not {}", true);
-    assert_run("not []", true);
-    assert_run("not ({[ø]})", true); // might skip :)
+    assert_emit("not ()", true);
+    assert_emit("not {}", true);
+    assert_emit("not []", true);
+    assert_emit("not ({[ø]})", true); // might skip :)
 
 }
 
@@ -832,44 +832,38 @@ void testWasmModuleExtension_OUTDATED() {
 
 // assert_run currently very slow 5 sec, used to be < .1 sec why??
 void testWasmRuntimeExtension() {
-    assert_run("x=123;x + 4 is 127", true);
-    assert_run("atoi0('123'+'456')", 123456);
-    assert_run("'123' is '123'", true);
-    assert_emit("x:43", 43);
-    assert_run("x:43", 43);
 
-//	functionSignatures["ok"].returns(int32);
-//	assert_emit("x='123';x + '4' is '1234'", true);// unknown function concat: needs runtime
-    assert_run("'123' + '4' is '1234'", true);// ok
-//	assert_run("x='123';x + '4' is '1234'", true);// not ok
-    skip( // was disabled
-            assert_run("oka+1", 43);
-    )
-    assert_run("oki(1)", 43);
-//	assert_run("not_ok",-1);// error
-
-//	functionSignatures["okf"].returns(float32);
-    assert_run("okf(1)", 43);
-    assert_run("okf(1.0)", 43.0);
-    assert_run("42.5", 42.5);// truncation ≠ proper rounding!
-    assert_run("okf5(1.5)", 43);
-    assert_run("okf5 1", 43.5);
-    skip(
-            assert_run("okf5", 41.5); //default args don't work in wasm! (how could they?)
-            assert_run("okf5", 41.5); /// … expected f32 but nothing on stack
-    )
-//	functionSignatures["atoi0"].returns(int32);
-//	assert_run("printf('123')", 123);
+	assert_run("43", 43);
     assert_run("strlen0('123')", 3);
     assert_run("atoi0('123')", 123);
     assert_run("atoi0('123000')+atoi0('456')", 123456);
     assert_run("atoi0('123'+'456')", 123456);
+
+    assert_run("x=123;x + 4 is 127", true);
+    assert_run("atoi0('123'+'456')", 123456);
+    assert_run("'123' is '123'", true);
+    assert_run("'123' + '4' is '1234'", true);// ok
+
+    assert_run("test42+1", 43);
+    assert_run("test42i(1)", 43);
+	assert_throws("not_ok");// error
+
+    assert_run("test42f(1)", 43);
+    assert_run("test42f(1.0)", 43.0);
+    assert_run("42.5", 42.5);// truncation ≠ proper rounding!
+    assert_run("test41ff(1.5)", 43);
+    assert_run("test41ff 1", 43.5);
+    skip(
+            assert_run("test42ff", 41.5); //default args don't work in wasm! (how could they?)
+            assert_run("test42ff", 41.5); /// … expected f32 but nothing on stack
+    )
+//	functionSignatures["atoi0"].returns(int32);
+//	assert_run("printf('123')", 123);
 // works with ./wasp but breaks in webapp
 //	assert_run("x=123;x + 4 is 127", true);
 // works with ./wasp but breaks now:
 
 //	assert_run("okf(1)", 43);
-//	assert_run("43", 43);
 //	assert_run("puts 'hello' 'world'", "hello world");
 //	assert_run("hello world", "hello world");// unresolved symbol printed as is
 
@@ -890,7 +884,6 @@ void testWasmRuntimeExtension() {
 //	check(Valtype::charp!=Valtype::pointer)
 
     skip(
-            assert_run("atoi0('123')", 123);
             assert_run("'123'", 123);// result printed and parsed?
             assert_run("printf('123')", 123);// result printed and parsed?
     )
@@ -1023,6 +1016,7 @@ bool testRecentRandomBugsAgain = true;
 void testRecentRandomBugs() {
     if (!testRecentRandomBugsAgain)return;
     testRecentRandomBugsAgain = false;
+
     // these fail LATER in tests!!
     assert_emit("1-‖3‖/-3", 2);
     assert_emit("i=true; not i", false);

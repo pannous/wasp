@@ -15,7 +15,7 @@ Module *module; // todo: use?
 bool use_interpreter = false;
 
 List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
-List<String> class_keywords = {"class", "prototype", "interface", "struct", "type"};// record see wit
+List<String> class_keywords = {"struct", "type", "class", "prototype", "interface", /*"trait", "impl"*/};// record see wit
 //List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
 
 
@@ -276,7 +276,9 @@ Node &groupIf(Node n, Function &context) {
 
     if (condition.kind == key and condition.value.data and !condition.next)
         then = condition.values();
-    if (condition.next and condition.next->name == "else")
+
+    // todo condition.next->length<0 reveals BUG!
+    if (condition.next and condition.next->length >= 0 and condition.next->name == "else")
         then = condition.values();
 
     // todo: UNMESS how?
@@ -776,6 +778,12 @@ Node &groupOperators(Node &expression, Function &context) {
 
     for (String &op: operators) {
         if (op == "else")continue;// handled in groupIf
+        if (op == "module") {
+            warn("todo modules");
+            if(module)
+            module->name = expression.last().name;
+            return NUL;
+        }
         if (op == "-")
             debug = true;
         if (op == "-…") op = "-";// precedence hack
@@ -784,7 +792,7 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op == "%")functions["modulo_float"].is_used = true;// no wasm i32_rem_s i64_rem_s for float/double
         if (op == "%")functions["modulo_double"].is_used = true;
         if (op == "==" or op == "is" or op == "equals")use_runtime("eq");
-        if (op == "include")todo("include again!?");
+        if (op == "include")return NUL;// todo("include again!?");
         if (op != last) last_position = 0;
         bool fromRight = rightAssociatives.has(op) or isFunction(op);
         fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
@@ -895,7 +903,10 @@ Node &groupOperators(Node &expression, Function &context) {
                 if (node.name == "?")
                     node = groupIf(node, context);// consumes prev and next
 //				analyzed.add(node.hash(), true);
-                expression.replace(i - 1, i + 1, node);
+                if (i > 0)
+                    expression.replace(i - 1, i + 1, node);
+                else
+                    warn("fdsa");
             }
         }
         last_position = i;
@@ -1215,7 +1226,7 @@ Node &analyze(Node &node, Function &function) {
 
     if (name == "module") {
         if (!module)module = new Module();
-        module->name = node.values().name; // todo: use?
+        module->name = node.string(); // todo: use?
         return NUL;
     }
 
@@ -1293,7 +1304,7 @@ Node &analyze(Node &node, Function &function) {
 }
 
 
-int run_wasm_file(chars file) {
+long run_wasm_file(chars file) {
     let buffer = load(String(file));
 #if RUNTIME_ONLY
     error("RUNTIME_ONLY");
@@ -1464,9 +1475,10 @@ void refineSignatures(Map<String, Function> &map) {
 
 // smart pointers returned if ABI does not allow multi-return, as in int main(){}
 
-Node smartNode(long long smartPointer64) {
-    if (!isSmartPointer(smartPointer64))
-        return Node(smartPointer64);
+Node smartNode(unsigned long long smartPointer64) {
+    if(smartPointer64==0)return NIL;
+//    if (!isSmartPointer(smartPointer64))
+//        return Node(smartPointer64);
     auto result = smartPointer64;
     if (smartPointer64 & double_mask_64 and not((smartPointer64 & negative_mask_64) == negative_mask_64)) {
         // todo rare cases, where doubles don't match 0x7F…
@@ -1500,6 +1512,7 @@ Node smartNode(long long smartPointer64) {
         return Node(((char *) wasm_memory) + smart_pointer);
     }
     breakpoint_helper
+    printf("smartPointer64 : %llxl\n", smartPointer64);
     error1("missing smart pointer type %x"s % smart_type + " “" + typeName(Type(smart_type)) + "”");
     return Node();
 }
