@@ -32,8 +32,10 @@ void *wasm_memory = 0;// c pointer of VM, NOT memory inside wasm module
 #endif
 
 #ifdef WASM
-#ifndef WASI
 void free(void*){/*lol*/}
+_LIBCPP_OVERRIDABLE_FUNC_VIS void  operator delete(void* __p) _NOEXCEPT{}
+
+#ifndef WASI
 
 void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
 	void *last = current;
@@ -522,9 +524,17 @@ Module& read_wasm(chars file){return *new Module();}
 
 // todo: INLINE into wasm code how? just use wasp runtime and wasm-gc wasm-opt to tree shake ok
 long powi(int a, int b) {
-	int res = a;
+	long res = a;
 	while (b-- > 1)
 		res *= a;
+	return res;
+}
+long powl(long a, int b) {
+	long res = a;
+	while (b-- > 1){
+		res *= a;
+//        if(res<a)return power(Number(a),b); // smartlong !
+    }
 	return res;
 }
 //number powl(number a, long b){// optimized for longs!
