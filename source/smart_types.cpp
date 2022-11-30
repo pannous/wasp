@@ -1,12 +1,12 @@
 #include "smart_types.h"
 
 //enum
-smartType getSmartType(spointer spo) {
+smartType4bit getSmartType(smart_pointer_32 spo) {
 //	printf("%08x",spo);
 //	char out[8];
 //	sprintf((char*)&out,"%08x",spo);
 	short byt = spo >> 28;
-	smartType ok = (smartType) byt;
+	smartType4bit ok = (smartType4bit) byt;
 	return ok;
 }
 
