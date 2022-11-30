@@ -212,6 +212,7 @@ wasm_wrap *link_import(String name) {
 	if (name == "fread") return &wrap_nop;// todo!?
 	if (name == "system") return &wrap_nop;// danger!
 
+
 	if (name == "__cxa_begin_catch") return &wrap_nop;
 	if (name == "_ZdlPv") return &wrap_nop;// delete
 
@@ -315,9 +316,9 @@ void add_wasmtime_memory() {
 long run_wasm(unsigned char *data, int size) {
 	if (!done)init_wasmtime();
 	wasmtime_error_t *error;
-	wasmtime_module_t *module = NULL;
+	wasmtime_module_t *modul = NULL;
 
-	error = wasmtime_module_new(engine, (uint8_t *) data, size, &module);
+	error = wasmtime_module_new(engine, (uint8_t *) data, size, &modul);
 	if (error != NULL)exit_with_error("failed to compile module", error, NULL);
 
 	wasm_trap_t *trap = NULL;// (wasm_trap_t *) malloc(10000); //wasm_trap_new((wasm_store_t *)store, NULL); //"Error?"
@@ -344,7 +345,7 @@ long run_wasm(unsigned char *data, int size) {
 		imports[i++] = import;
 	}
 
-	error = wasmtime_instance_new(context, module, imports, importCount, &instance, &trap);
+	error = wasmtime_instance_new(context, modul, imports, importCount, &instance, &trap);
 	if (error != NULL || trap != NULL) exit_with_error("failed to instantiate", error, trap);
 
 	wasmtime_extern_t run;
@@ -411,7 +412,7 @@ long run_wasm(unsigned char *data, int size) {
 			printf("TYPE: %s\n", (chars) type);
 		else printf("Unknown type %d\n", (int) type);
 	}
-	wasmtime_module_delete(module);
+	wasmtime_module_delete(modul);
 	return result;
 }
 

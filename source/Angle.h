@@ -70,7 +70,7 @@ bool isFunction(String op);
 // todo: in fact hide most of this under 'number' magic umbrella
 extern Map<String, Node *> types;// by name
 
-int run_wasm_file(chars file);
+long run_wasm_file(chars file);
 
 bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
 

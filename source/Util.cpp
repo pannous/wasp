@@ -11,8 +11,33 @@
 #include "unistd.h"
 #include "NodeTypes.h"
 #include "List.h"
+#include "Angle.h"
 
 #endif
+
+template <typename S, typename T>
+struct FuncLet
+{
+    typedef T (lambda)(S param);
+};
+
+
+template<class S,class T> // reads a wasm file and returns a function with signature f(S)->T
+typename FuncLet<S,T>::lambda wasmlet(Path file, String func=""){
+    if(func=="")func = file.substring(file.lastIndexOf("/")).substring(0, file.lastIndexOf(".wasm")); // or just main()!
+    // todo: capture [func] ?
+    auto lamb=[] (S s)->T{
+//  Module m=parse_wasm_file(file);
+//  return m.run(s)
+        todo("wasmlet");
+        return new T();
+   };
+   return lamb;
+}
+
+//template<class S,class T> T run_wasmlet(Path file, S arg){
+//    return S((smartNode(smarty)run_wasm_function(file,file,arg));
+//}
 
 
 //bool tracing = false;
@@ -256,17 +281,30 @@ bool similar(double a, double b) {
 //	return x - trunc(x / y) * y;
 //}
 
+void lowerCaseUTF(chars string, int length); // defined in lowerCaseUTF.c
+#ifndef WASM // native include lowerCaseUTF.wasm !
+void lowerCaseUTF(chars string, int length){
+//    auto myLowerCaseUTF=wasmlet<chars, chars>("lowerCaseUTF.wasm");
+//    chars lowered = myLowerCaseUTF(string);
+//    return lowered; in place!
+}
+#endif
+
 void lowerCase(char *string, int length) {
 	if (!string || !*string) return;
 	if (length <= 0)
 		length = strlen0(string);
-	while (length-- > 0) {
-		if (string[length] >= 'A' and string[length] <= 'Z')
-			string[length] += 32;
+	while (length-->0) {
+        char ch = string[length];
+        if (ch >= 'A' and ch <= 'Z')
+            ch += 32;
+        if(ch < 0 ){
+            lowerCaseUTF(string, length+2);// todo: go LTR to avoid corruption while(length >++len)
+            return;
+        }
 	}
 }
 
-void lowerCase(chars string, int length); // defined in lowerCase.c
 
 int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
 	bytes pStr1Low = 0;
@@ -426,3 +464,4 @@ String extractPath(String file) {
     if (!file.contains("/"))return "/";
     return file.substring(0, file.lastIndexOf("/"));
 }
+
