@@ -13,6 +13,7 @@
 
 Module *module; // todo: use?
 bool use_interpreter = false;
+Node &result = *new Node();
 
 List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
 List<String> class_keywords = {"struct", "type", "class", "prototype", "interface", /*"trait", "impl"*/};// record see wit
@@ -171,7 +172,9 @@ Node eval(String code) {
         long results = binary.run();
         auto resultNode = smartNode(results);
 //		print("» %l"s % results );
+#ifndef RELEASE
         print("» %s"s % resultNode.serialize().data);
+#endif
         return resultNode;
     }
 #endif
@@ -1511,6 +1514,8 @@ Node smartNode(unsigned long long smartPointer64) {
         // smart pointer for string
         return Node(((char *) wasm_memory) + smart_pointer);
     }
+    if (smart_type == 0)
+        return Node((long )smartPointer64);// as number
     breakpoint_helper
     printf("smartPointer64 : %llxl\n", smartPointer64);
     error1("missing smart pointer type %x"s % smart_type + " “" + typeName(Type(smart_type)) + "”");

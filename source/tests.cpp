@@ -14,8 +14,6 @@
 #include "wasm_runner.h"
 #include "WitReader.h"
 
-Node &result = *new Node();
-
 
 void testStruct() {
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
@@ -2590,15 +2588,15 @@ void assurances(){
 // 2022-11-29 : 5 sec WITH runtime_emit! how so fast? SANITIZE disabled?
 void testCurrent() {
 //    check(0x1000000000000000l==powi(2,60))
-//    assurances();
+    assurances();
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
 //    testDataMode();
 //    assert_emit("a=3;b=2;b-a", -1);
-    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
+//    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
 
-    testUpperLowerCase();
+//    testUpperLowerCase();
 skip(
             assert_run("#'0123'", 4);// todo at compile?
             assert_run("#[0 1 2 3]", 4);

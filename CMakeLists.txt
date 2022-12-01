@@ -80,7 +80,8 @@ endif ()
 
 if (RELEASE)
     MESSAGE(RELEASE)
-    set(RELEASE 1)
+    ADD_DEFINITIONS(-DRELEASE)
+
     #    set(RUNTIME_ONLY 1)
     set(NO_TESTS 1)
     SET(COPY_PHASE_STRIP YES)
@@ -213,7 +214,9 @@ endif ()
 # COMMON FOR ALL
 set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp)
 
-if (NOT NO_TESTS)
+if (NO_TESTS)
+    ADD_DEFINITIONS(-DNO_TESTS)
+else()
     set(SOURCE_FILES ${SOURCE_FILES} source/tests.cpp)
 endif ()
 
@@ -290,7 +293,6 @@ if (WASM) # OR WASI)
     ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
     ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # keep name section?
     if (RELEASE)
-        ADD_DEFINITIONS(-DNO_TESTS)
         #        ADD_COMPILE_FLAG("-Wl,--export-dynamic") #       Put symbols in the dynamic symbol table
         ADD_COMPILE_FLAG("-v")
         #        ADD_COMPILE_FLAG("-Wl,-vvv")
@@ -421,7 +423,13 @@ elseif (WASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
-    target_link_libraries(wasp PRIVATE wasmtime)
+#    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
+    LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
+    if(X86_64)
+        target_link_libraries(wasp PRIVATE wasmtime64)
+    else()
+        target_link_libraries(wasp PRIVATE wasmtime)
+    endif()
 elseif (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
     include(source/WebView.cmake)
