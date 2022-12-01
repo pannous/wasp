@@ -157,7 +157,7 @@ Valtype mapTypeToWasm(Type t) {
 Valtype mapTypeToWasm(Node &n) {
     if (n == Int)
         return i32;
-    if (n == Byte)
+    if (n == ByteType)
         return i32;// careful in structs!
     if (n == Long)
         return i64;
