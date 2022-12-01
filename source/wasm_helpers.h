@@ -77,7 +77,7 @@ long squarl(long a);// stupid test basic wasm import => runtime linking   remove
 //extern unsigned int *memory;
 //extern unsigned int *& __unused heap;
 
-typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
+typedef char32_t codepoint;// 'letter' ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
 
 extern "C" int puts(const char *);// stdio
 extern "C" void putx(int i);// hex
