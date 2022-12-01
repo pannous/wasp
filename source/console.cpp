@@ -30,10 +30,10 @@ void showHelpMessage() {
 bool file_read_done = false;
 
 void getline(char *buf) {
-	if (buf == 0) return; // end
+    if (buf == 0) return; // end
 #ifdef USE_READLINE
-	int MAXLENGTH = 10000;
-	const char *PROMPT = "wasp> ";
+    int MAXLENGTH = 10000;
+    const char *PROMPT = "wasp> ";
     if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
     char *tmp = readline(PROMPT);
     if (tmp == 0 or strlen0(tmp) == 0) {
@@ -64,27 +64,29 @@ char *version = "1.0";
 #ifdef signal
     setjmp(try_context); //recovery point
 #endif
-	debug = false;
-	String code;
-	while (true) {
-		getline(data);
-		if (eq(data, "help") or eq(data, ":help") or eq(data, ":h") or eq(data, "?")) {
-			showHelpMessage();
-		} elif (eq(data, "clear") or eq(data, ":clear") or eq(data, ":c") or eq(data, "\\L")) {
-			code = "";
-		} elif (eq(data, "clean") or eq(data, ":clean") or eq(data, ":reset") or eq(data, "reset")) {
-			code = "";
-		} else if (eq(data, "test") or eq(data, ":test") or eq(data, "tests") or eq(data, ":tests") or eq(data, ":t")) {
-			testCurrent();
-		} else {
-			code += data;
-			code += ";\n";
+    debug = false;
+    String code;
+    while (true) {
+        getline(data);
+        if (eq(data, "help") or eq(data, ":help") or eq(data, ":h") or eq(data, "?")) {
+            showHelpMessage();
+        } elif (eq(data, "clear") or eq(data, ":clear") or eq(data, ":c") or eq(data, "\\L")) {
+            code = "";
+        } elif (eq(data, "clean") or eq(data, ":clean") or eq(data, ":reset") or eq(data, "reset")) {
+            code = "";
+        } else if (eq(data, "test") or eq(data, ":test") or eq(data, "tests") or eq(data, ":tests") or eq(data, ":t")) {
+#ifndef NO_TESTS
+            testCurrent();
+#endif
+        } else {
+            code += data;
+            code += ";\n";
 //		Node &result = parse(code);// safeMode only for web access
             result = eval(code);
             printf(">>> ");
 //	result.interpret().print();
-			result.print();
-			print("");
-		}
-	}
+            result.print();
+            print("");
+        }
+    }
 }

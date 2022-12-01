@@ -568,4 +568,6 @@ int run_wasm_file(chars file) {
 
 void console() { error(RUNTIME_ONLY_ERROR); }
 
+void testCurrent(){}// why??
 #endif
+
