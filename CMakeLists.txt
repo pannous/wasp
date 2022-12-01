@@ -17,7 +17,7 @@ LINK_DIRECTORIES(/usr/local/lib)
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
 #set(INCLUDE_MERGER 0)
 #set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
-#ADD_DEFINITIONS(-DMULTI_VALUE)
+ADD_DEFINITIONS(-DMULTI_VALUE)
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
 
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
@@ -32,7 +32,7 @@ if (NOT WASM)
         #         SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :(
         SET(WASMTIME 1) # FASTEST!
         #        SET(WASMEDGE 1) todo smart multi-value returns
-        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        #                set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
         #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
@@ -160,6 +160,7 @@ if (DEBUG)
 endif ()
 
 if (TRACE)
+    message("TRACE => tracing=true")
     ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
     add_compile_options(-Wall)
 endif ()
@@ -424,7 +425,7 @@ elseif (WASMTIME)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
 #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
-    LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
+    #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
     if(X86_64)
         target_link_libraries(wasp PRIVATE wasmtime64)
     else()

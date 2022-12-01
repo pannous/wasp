@@ -386,13 +386,13 @@ Code emitPrimitiveArray(Node &node, Function &context) {
     }
 #ifdef MULTI_VALUE
     // and RETURN
-        code.addConst32(array_header_32 | node.length);// combined smart pointer? nah
-    //	code.addConst32(node.length);
+//        code.addConst(array_header_32 | node.length);// combined smart pointer? nah
+    code.addConst32(node.length);
     //	code.addConst32(array_header_32);
 #endif
 // the last element of the stack is what is returned if no MULTI_VALUE
 // the return statement makes drops superfluous and just takes as many elements from stack as needed (and ignores/drops the rest!)
-    code.addConst(pointer);
+    code.addConst32(pointer);
     last_type = mapTypeToWasm(node);
     return code;
 }
@@ -430,7 +430,7 @@ Code emitArray(Node &node, Function &context) {
 //	code.add(emitData(Node(0), context));// terminate list with 0.
     last_object_pointer = pointer;
     last_type = array;
-    code.addConst(pointer);// base for future index getter/setter [0] #1
+    code.addConst32(pointer);// base for future index getter/setter [0] #1
     return code;// pointer
 //	return code.addConst(pointer);// once written to data section, we also want to use it immediately
 }
@@ -510,15 +510,15 @@ emitOffset(Node &array, Node offset_pattern, bool sharp, Function &context, int 
         if (last_type != i32t)
             error("index must be of int type");
         if (sharp) {// todo remove if offset_pattern was static
-            code.addConst(1);
+            code.addConst32(1);
             code.add(i32_sub);
         }
         if (size > 1) {
-            code.addConst(size);
+            code.addConst32(size);
             code.add(i32_mul);
         }
         if (base > 0) { // after calculating offset!
-            code.addConst(base);
+            code.addConst32(base);
             code.add(i32_add);
         }
     } else if (offset_pattern.kind == longs) {
@@ -532,7 +532,7 @@ emitOffset(Node &array, Node offset_pattern, bool sharp, Function &context, int 
         // todo: sanity checks 1. at compiletime or 2. at runtime
         //	if(offset_pattern>op[0].length)e
         //	rror("index out of bounds! %d > %d in %s (%s)"s % offset_pattern % );
-        code.addConst(base + offset * size);
+        code.addConst32(base + offset * size);
     } else
         todo("Internal reference declaration or index operator bug");
     if (base_on_stack)// and base<0)
@@ -554,7 +554,7 @@ Code emitIndexWrite(Node &array, int base, Node offset, Node value0, Function &c
     if (value0.kind == strings)//todo stringcopy? currently just one char "abc"#2=B
     {
         char c = value0.value.string->charAt(0);
-        store.addConst(c);
+        store.addConst32(c);
     } else
         store = store + emitValue(value0, context);
 //	store.add(cast(last_type, valType));
@@ -686,13 +686,13 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
         if (op.name == "#") {// todo: this is stupid code duplication of emitOffset!
             if (pattern.kind == longs and pattern.value.longy < 1)
                 error("operator # starts from 1, use [] for zero-indexing");
-            load.addConst(1);
+            load.addConst32(1);
             load.addByte(i32_sub);
         }
-        load.addConst(size);
+        load.addConst32(size);
         load.addByte(i32_mul);
         load.addByte(i32_add);
-        load.addConst(headerOffset(array));
+        load.addConst32(headerOffset(array));
         load.addByte(i32_add);
     } else {
         error("why not on stack?");
@@ -796,7 +796,7 @@ Code emitData(Node &node, Function &context) {
     }
     // todo: ambiguity emit("1;'a'") => result is pointer to [1,'a'] or 'a' ? should be 'a', but why?
     last_object_pointer = last_pointer;
-    return code.addConst(last_pointer);
+    return code.addConst32(last_pointer);
 }
 
 [[nodiscard]]
@@ -1102,10 +1102,11 @@ Code emitOperator(Node &node, Function &context) {
     } else if (name == "²") {
 //		error("this should be handled universally in analyse: x² => x*x no matter what!");
         // BUT non-lazy calling twice? x² => x * result
+        Local &result = context.locals["result"];
         code.add(tee_local);// neeeeds result local
-        code.add(0);// careful, overwrites result OR SOMETHING ELSE!
+        code.add(result.position);
         code.add(get_local);
-        code.add(0);
+        code.add(result.position);
         code.add(opcodes("*", last_type));
     } else if (name == "**" or name == "to the" or name == "^" or name == "^^") {
 //		if(last_value==0)code.addConst(1);
@@ -1398,7 +1399,7 @@ Code emitConstruct(Node &node, Function &context) {
     last_object_pointer = pointer;
     last_typo = node.type;
     last_type = Valtype::pointer;
-    code.addConst(pointer);// base for future index getter/setter [0] #1
+    code.addConst32(pointer);// base for future index getter/setter [0] #1
     return code;
 }
 
@@ -1688,7 +1689,7 @@ Code emitIf(Node &node, Function &context) {
 Code zeroConst(Valtype returnType) {
     Code code;
     if (returnType == int32)
-        code.addConst(0);
+        code.addConst32(0);
     if (returnType == f32) {
         code.add(f32_const);
         code.push((bytes) malloc(4), 4);
@@ -1813,6 +1814,7 @@ Code emitBlock(Node &node, Function &context) {
     last_type = none;//int32;
 
     int locals_count = context.locals.size();// incuding params
+    context.locals.add("result", {.valtype=Valtype::i64, .position=locals_count++, .is_param=false, .name="result"});
     int argument_count = context.signature.size();
     if (locals_count >= argument_count)
         locals_count = locals_count - argument_count;
@@ -1855,20 +1857,10 @@ Code emitBlock(Node &node, Function &context) {
     // 2. emit code
     block.push(inner_code_data);
 
-    // 3. emit return fixtures
-#if MULTI_VALUE
-    // todo multi-value
-    // todo: we want the type to be on the stack IN FRONT of the value, so functions are backwards compatible and only depend on the func_type signature
-    // todo: we need to conserve the last value in case of casting
-//if(last_object)
-//	block.addConst32(mapTypeToWasm(*last_object));
-//else
-    block.addConst32(last_typo.value);
-#endif
-
+    // 3. force / cast last type to return type
     auto returnTypes = context.signature.return_types;
     //	for(Valtype return_type: returnTypes) uh, casting should have happened before for  multi-value
-    Valtype return_type = mapTypeToWasm(returnTypes.last(voids));
+    Valtype return_type = mapTypeToWasm(returnTypes[0]);
     // switch back to return_types[context] for block?
     if (last_type == none) last_type = voids;
     if (last_type == void_block) last_type = voids;
@@ -1877,7 +1869,7 @@ Code emitBlock(Node &node, Function &context) {
     if (return_type == Valtype::voids and last_type != Valtype::voids)
         block.addByte(drop);
     else if (return_type == Valtype::i32t and last_type == Valtype::voids)
-        block.addConst(0);
+        block.addConst32(0);
     else if (return_type == Valtype::i64t and last_type == Valtype::voids)
         block.addConst64(0);// 		needs_cast = false;
     else if (abi == wasp_smart_pointers) {
@@ -1914,6 +1906,23 @@ Code emitBlock(Node &node, Function &context) {
     if (needs_cast and last_type) {
         block.add(cast(last_type, return_type));
     }
+
+#if MULTI_VALUE
+    // 4. emit multi value result, type after result will unexpectedly yield array [result, type] in wasmtime, js, … ABI!
+    block.addConst32(last_typo.value);
+
+    // 4. emit multi value result, type BEFORE value
+    // SWAP as we want the type to be on the stack IN FRONT of the value, so functions are backwards compatible and only depend on the func_type signature
+    // this will result in an array [type, result] though, so DON'T SWAP!
+//    int result_local = context.locals["result"].position;
+//    block.add(tee_local);
+//    block.addInt(result_local);
+//    block.addConst32(last_typo.value);
+//    block.addConst64(last_typo.value);
+//    block.add(get_local);
+//    block.addInt(result_local);
+#endif
+
 
 //	if(context=="main" or (context.abi==wasp and returnTypes.size()<2))
 //		block.addInt(last_typo);// should have been added to signature before, except for main!
@@ -2607,6 +2616,7 @@ Code &compile(String code, bool clean) {
 #endif
     return binary;
 }
+
 
 Signature &getSignature(String name) {
     return functions[name].signature;

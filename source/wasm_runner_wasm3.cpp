@@ -74,28 +74,28 @@ int square2(int a) {
 int test_wasm3(const uint8_t *prog, int len) {
 //	std::cout << "Loading WebAssembly..." << std::endl;
 	try {
-		wasm3::environment env;
-		wasm3::module mod = env.parse_module(prog, len);
-		wasm3::runtime runtime = env.new_runtime(1024);
-		runtime.load(mod);
-		wasm_memory = runtime.getMemory();
+        wasm3::environment env;
+        wasm3::module mod = env.parse_module(prog, len);
+        wasm3::runtime runtime = env.new_runtime(1024);
+        runtime.load(mod);
+        wasm_memory = runtime.getMemory();
 
-		mod.link_optional<sum>("*", "sum");
-		mod.link_optional<ext_memcpy0>("*", "ext_memcpy0");
-		mod.link_optional<sqrt1>("*", "√");
-		mod.link_optional<square2>("*", "square");
-		mod.link_optional<powf>("*", "powf");
-		mod.link_optional<logf>("*", "log");// logarithm, not putf !
-		mod.link_optional<powd>("*", "pow");
-		mod.link_optional<powi>("*", "powi");
-		mod.link_optional<putf>("*", "logf");// danger logf is cuda function!
-		mod.link_optional<puti>("*", "logi");// danger logf is cuda function!
-		mod.link_optional<puts>("*", "puts");// todo: replace FAKE DUMMY with adhoc circle implementation
-		mod.link_optional<puts>("*", "puts");
-		mod.link_optional<puts>("*", "print");
+        mod.link_optional<sum>("*", "sum");
+        mod.link_optional<ext_memcpy0>("*", "ext_memcpy0");
+        mod.link_optional<sqrt1>("*", "√");
+        mod.link_optional<square2>("*", "square");
+        mod.link_optional<powd>("*", "powd");
+        mod.link_optional<logd>("*", "log");// logarithm, not putf !
+        mod.link_optional<powd>("*", "pow");
+        mod.link_optional<powi>("*", "powi");
+        mod.link_optional<putf>("*", "logf");// danger logf is cuda function!
+        mod.link_optional<puti>("*", "logi");// danger logf is cuda function!
+        mod.link_optional<puts>("*", "puts");// todo: replace FAKE DUMMY with adhoc circle implementation
+        mod.link_optional<puts>("*", "puts");
+        mod.link_optional<puts>("*", "print");
 //		mod.link_optional<putp>("*", "puts");// added m3_type_to_sig in wasm3_cpp.h !
-		mod.link_optional<panic>("*", "panic");
-		mod.link_optional<raise>("*", "raise");
+        mod.link_optional<panic>("*", "panic");
+        mod.link_optional<raise>("*", "raise");
 #ifdef SDL
 		mod.link_optional<init_graphics>("*", "init_graphics");// returns pointer to surface
 		mod.link_optional<requestAnimationFrame>("*", "requestAnimationFrame");// returns pointer to surface

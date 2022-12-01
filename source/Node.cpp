@@ -840,6 +840,7 @@ String Node::serializeValue(bool deep) const {
         case expression:
         case assignment:
         case unknown:
+        case last_kind:
             return "?";
 //        default:
 //            breakpoint_helper
@@ -1257,8 +1258,10 @@ chars typeName(Kind t) {
             return "flags";
         case constructor:
             return "constructor";
+        case last_kind:
+        default:
+            error(str("MISSING Type Kind name mapping ") + t);
     }
-    error(str("MISSING Type Kind name mapping ") + t);
 }
 
 chars typeName(Type t) {
