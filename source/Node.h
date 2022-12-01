@@ -235,30 +235,35 @@ public:
 			length++;
 		}
 		kind = groups;
-	}
+    }
 
-	explicit Node(int buffer[]) {
-		value.data = buffer;
-		kind = buffers;
+    explicit Node(int buffer[]) {
+        value.data = buffer;
+        kind = buffers;
 //		todo ("type of array");
 //		if (debug)name = "int[]";
 //			buffer.encoding = "a85";
-	}
+    }
 
-	explicit
-	Node(char c, bool withValue = false) {
-		name = String(c);
-		if (withValue) {
-			value.longy = c;
-			kind = codepoints;
-		}
-		// todo ^^ keep!
-//		value.string = new String(c);
-//		kind = strings;
-	}
+    explicit
+    Node(long long value, smart_type_64 type64) {
+        this->value.longy = value;// can also be double bytes:
+        this->kind = (Kind) type64; // todo other types!
+    }
 
-	explicit
-	Node(double nr) {
+
+    explicit
+    Node(char c, bool withValue = false /*todo why not, ever? */ ) {
+        name = String(c);
+        if (withValue) {
+            value.longy = c;
+            kind = codepoints;
+        }
+        // todo ^^ keep!
+    }
+
+    explicit
+    Node(double nr) {
 		value.real = nr;
 		kind = reals;
 		if (debug) name = String(ftoa(nr)); // messes with setField contraction

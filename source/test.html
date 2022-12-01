@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
+  <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
 </head>
 <!-- opened by WebView.cpp -->
 <!--onclick='test().then(_=>terminate0())' -->
@@ -29,6 +29,9 @@
 
 <!--    <script src="more.js">/*not allowed to load local resource*/</script>-->
 <script> // errors here fail silently :(
+BigInt.prototype.toJSON = function () {
+    return this.toString()
+}
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
@@ -77,9 +80,9 @@ function readFile() {// via classic html, not wasp
 }
 
 function print(...x) {
+    results.value += x + "\n"
     log(...x);// to stdout and window title!
     console.log(...x);
-    results.value += x + "\n"
 }
 
 window.onload = function () {
@@ -91,12 +94,56 @@ window.onload = function () {
 <script type="text/javascript">
     ignore = x => x
     nop = x => ignore(x)
+    const string_header_64 = 0x0010000000000000n // n means BigInt("…")
+    const double_mask_64 = 0x7F00000000000000n
+    const negative_mask_64 = 0xFF00000000000000n
+    // smart_mask_64 = 0x00FF000000000000L,
+    //	negative_mask_64 = 0x8000000000000000,
 
     let memory_size = 1024// pages à 64kb // 4GB!
     // let memoryBase = 1024 * 16
     // let table_size = 294
 
     let memory = new WebAssembly.Memory({initial: memory_size, maximum: 65336});
+
+    function is_smart_pointer(result) {
+        let got_smart_pointer = Number.isInteger(result) && (result >= 0x10000000 || result <= -0x10000000);
+        if (typeof result === "bigint") got_smart_pointer = result >= BigInt(0x4000000000000000)
+        if (typeof result === "bigint" || got_smart_pointer)
+            console.log(">>> 0x", hex(result), got_smart_pointer ? " SMART " : "");
+        if (Array.isArray(result)) got_smart_pointer = true;// multivalue of length 2 always assumed smart pair
+        return got_smart_pointer;
+    }
+
+    function smartResult(data = 0) {
+        var type = -1
+        var address = data;
+        if (!is_smart_pointer(data)) return data;
+        if (Array.isArray(data)) { // multivalue return always 'smarty
+            let _a = data
+            data = _a[0]
+            type = _a[1];
+        } else if (typeof data === "bigint") {
+            type = data / BigInt(0x100000000)
+            data = BigInt.asIntN(32, data)// drop high bits
+        } else { // smartpointer32
+            type = data & 0xF0000000;
+            address = data & 0x0FFFFFFF;
+            return string(address);
+        }
+
+        if (type === 0xC0 || type === 0x10000000 || type === string_header_64 || type === string_header_64 / 0x100000000n)
+            return string(address); // chars
+        if (type === 0x7E) // float64
+            return rei
+        if (!Number.isInteger(type))
+            console.error("smart type should be an integer: ", type, "of", data);
+        if (BigInt(type) & BigInt(0x40000000)) {// array
+            console.log("smart type: array")
+            console.log(memory[address])
+        }
+        return {data: data, type: type};
+    }
 
     function loadBytes(byte_start, len) {
         print("TODO loadBytes")
@@ -182,17 +229,17 @@ window.onload = function () {
                     __cxa_guard_release: nop,//
 
                     put_char: log,
+                    putchar: log,
+                    putc: log,
                     puts: log,
                     puti: log,
                     putf: log,
-                    putc: log,
                     logi: log,
                     logc: log,
                     logf: log,
                     printf: log,
                     puts: log,
                     logs: log,
-                    putchar: log,
                     memset,
                     paint: paintWasmToCanvas,
                     init_graphics: nop, // canvas init'ed by default
@@ -215,11 +262,13 @@ window.onload = function () {
             if (instance.exports.main) {
                 result = instance.exports.main()
                 print(result)
-                wasm_done(result);
+                print(smartResult(result))
+                wasm_done(result);// pass over raw result
             } else {
                 wasm_error("NO MAIN!");
             }
         } catch (error) {
+            print(error)
             print('COMPILE ERROR', error.message)
             wasm_error(error.message);
         }

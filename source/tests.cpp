@@ -45,6 +45,21 @@ void testStruct2() {
     assert_emit("data=[1,2,3];struct point{a:int b:int c:string};x=data as struct;x.b", 2)
 }
 
+
+void test_c_numbers() {
+//    check(0x1000000000000000l==powi(2,60))
+    unsigned int x = -1;
+    unsigned int y = 0xFFFFFFFF;
+//    signed int biggest = 0x7FFFFFFF;
+//    signed int smallest = 0x80000000;// "implementation defined" so might not always pass
+    signed int z = -1;
+
+    check(x == y)
+    check(x == z)
+    check(z == y)
+    check((int) -1 == (unsigned int) 0xFFFFFFFF)
+}
+
 void testArraySize() {
     // requires struct lookup and aliases
     assert_emit("pixel=[1 2 4];#pixel", 3);
@@ -2587,8 +2602,11 @@ void assurances(){
 // 2022-10-26 : 3 sec without runtime_emit, 15 sec with runtime_emit  ALL TESTS PASSING
 // 2022-11-29 : 5 sec WITH runtime_emit! how so fast? SANITIZE disabled?
 void testCurrent() {
-//    check(0x1000000000000000l==powi(2,60))
     assurances();
+//    assert_emit("42.7",42.7);
+    assert_emit("'42'", "42");
+//    assert_emit("42",42);
+    exit(1);
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
 //    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
@@ -2597,7 +2615,7 @@ void testCurrent() {
 //    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
 
 //    testUpperLowerCase();
-skip(
+    skip(
             assert_run("#'0123'", 4);// todo at compile?
             assert_run("#[0 1 2 3]", 4);
             assert_run("#[a b c d]", 4);
@@ -2615,7 +2633,7 @@ skip(
     test_sinus_wasp_import();
             )
 //    testSinus2();
-    testAssertRun();
+//    testAssertRun();
 
 //    testMergeOwn();
 //    testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
