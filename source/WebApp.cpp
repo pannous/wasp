@@ -1,3 +1,5 @@
+#define WEBVIEW_DEPRECATED_PRIVATE
+// ^^ undo deprecation ;)
 #include <webview.h>
 #include <iostream>
 #include <sstream>
@@ -41,35 +43,56 @@ defaults write com.apple.WebKit.WebContent WebKitDeveloperExtras -bool true
 
 class Wait {
 public:
-	void done(int result) {
-		pthread_mutex_lock(&m_mutex);
-		m_done = true;
-		m_result = result;
-		pthread_cond_broadcast(&m_cond);
-		pthread_mutex_unlock(&m_mutex);
-	}
+    void done(long result) {
+        pthread_mutex_lock(&m_mutex);
+        m_done = true;
+        m_result = result;
+        pthread_cond_broadcast(&m_cond);
+        pthread_mutex_unlock(&m_mutex);
+    }
 
-	void wait() {
-		pthread_mutex_lock(&m_mutex);
-		while (!m_done) pthread_cond_wait(&m_cond, &m_mutex);
-		pthread_mutex_unlock(&m_mutex);
-	}
+    void done(long result, long type) {
+        pthread_mutex_lock(&m_mutex);
+        m_done = true;
+        m_result = result;
+        m_type = type;
+        pthread_cond_broadcast(&m_cond);
+        pthread_mutex_unlock(&m_mutex);
+    }
 
-	int result() {
-		int r;
-		pthread_mutex_lock(&m_mutex);
-		r = m_result;
-		m_done = false;// restart / allow another wait
-		pthread_mutex_unlock(&m_mutex);
-		return r;
-	}
+    void wait() {
+        pthread_mutex_lock(&m_mutex);
+        while (!m_done)
+            pthread_cond_wait(&m_cond, &m_mutex);
+        pthread_mutex_unlock(&m_mutex);
+    }
+
+    long result() {
+        long r;
+        long t;
+        pthread_mutex_lock(&m_mutex);
+        r = m_result;
+        m_done = false;// restart / allow another wait
+        pthread_mutex_unlock(&m_mutex);
+        return r;
+    }
+
+
+    Node resultNode() {
+        pthread_mutex_lock(&m_mutex);
+        Node result(m_result, (smart_type_64) m_type);
+        m_done = false;// restart / allow another wait
+        pthread_mutex_unlock(&m_mutex);
+        return result;
+    }
 
 private:
 //	atomic_int
-	int m_result = -1;
-	pthread_mutex_t m_mutex;
-	pthread_cond_t m_cond;
-	bool m_done;
+    long m_result = -1;
+    long m_type = -1;
+    pthread_mutex_t m_mutex;
+    pthread_cond_t m_cond;
+    bool m_done;
 };
 
 //static
@@ -81,8 +104,8 @@ std::string testWebview(std::string s);
 void testCurrent();
 
 void render(String html) {
-	std::string data = html.data;
-	w.navigate("data:text/html," + data);
+    std::string data = html.data;
+    w.navigate("data:text/html," + data);
 }
 
 // this is useless because it can't be called from wasm, only from native code.
@@ -91,17 +114,17 @@ void render(String html) {
 // how to get Nodes from native <> linear memory?
 // WebView has no shared access to js `memory` object
 void render(Node &node, std::stringstream *html) {
-	if (not html)html = new std::stringstream();
-	if (node.kind != strings)
-		*html << "<" << node.name << ">";
-	else *html << "<" << node.value.string << ">";
-	for (Node &child : node) {
-		render(child, html);
-	}
-	if (node.kind != strings)
-		*html << "</" << node.name << ">";
-	printf("HTML:\n%s\n", html->str().data());
-	w.navigate("data:text/html," + html->str());
+    if (not html)html = new std::stringstream();
+    if (node.kind != strings)
+        *html << "<" << node.name << ">";
+    else *html << "<" << node.value.string << ">";
+    for (Node &child: node) {
+        render(child, html);
+    }
+    if (node.kind != strings)
+        *html << "</" << node.name << ">";
+    printf("HTML:\n%s\n", html->str().data());
+    w.navigate("data:text/html," + html->str());
 }
 //char *page=0;// use inline html, else go straight to page todo: file:// URLs?
 // char *page="test";// doesn't
@@ -127,119 +150,128 @@ const char *home = "https://wasm-feature-detect.surma.technology/";
 
 // bind any function to the webview, should also work for wasm/wasp functions, no?
 void bind(char *name, std::string (*func)(std::string)) {
-	w.bind(name, func);
+    w.bind(name, func);
 }
 
 void bind(char *name, char *(*func)(char *)) {
-	w.bind(name, [func](std::string s) -> std::string {
-		func(s.data());
-		return s;
-	});
+    w.bind(name, [func](std::string s) -> std::string {
+        func(s.data());
+        return s;
+    });
 }
 
 void splitLog(const std::string s) {
-	w.set_title(s);
-	int index = 0;
-	std::string item;
-	while (index < 100) {
-		item = webview::json_parse(s, "", index++);
-		std::cout << item << std::endl;
-		if (item.length() == 0)break;
-	}
+    w.set_title(s);
+    int index = 0;
+    std::cout << s << std::endl;
+    std::string item;
+//	while (index < 100) {
+//		item = webview::json_parse(s, "", index++);
+//		std::cout << item << std::endl;
+//		if (item.length() == 0)break;
+//	}
 }
 
 void navigate(String url) {
-	page = url;
-	w.navigate(page);
+    page = url;
+    w.navigate(page);
 }
 
 long open_webview(String url = "") {
-	if (!url.empty())page = url;
-	printf("\nWebView!\n");
+    if (!url.empty())page = url;
+    printf("\nWebView!\n");
 
-	// add [w] to closure to make it local
-	w.set_title("Example");
-	w.init("alert('js injected into every page')");
-	w.set_size(480 * 4, 320 * 4, WEBVIEW_HINT_NONE);// default
-	w.set_size(480, 320, WEBVIEW_HINT_MIN);// minimum size, also: MAX, FIXED
-	w.bind("run", [](std::string s) -> std::string {
-		throwing = false;
-		const std::string &code = webview::json_parse(s, "", 0);
-		printf("RUN: %s", code.data());
-		panicking = false;
-		std::thread compile(emit, String(code.data()));
-		compile.detach();
-		return "compiling…";// will run wasm HERE and print result
-	});
-	w.bind("exit", [](std::string s) -> std::string {
-		printf("EXIT");
-		exit(0);
-	});
-	w.bind("server", [](std::string s) -> std::string {
-		std::thread teste(start_server, 9999);
-		teste.detach();
-		return s;
-	});
-	w.bind("close", [](std::string s) -> std::string {
-		w.terminate();
-		exit(0);
-	});
-	w.bind("destroy", [](std::string s) -> std::string {
-		w.terminate();
-		return s;
-	});
+    // add [w] to closure to make it local
+    w.set_title("Example");
+    w.init("alert('js injected into every page')");
+    w.set_size(480 * 4, 320 * 4, WEBVIEW_HINT_NONE);// default
+    w.set_size(480, 320, WEBVIEW_HINT_MIN);// minimum size, also: MAX, FIXED
+    w.bind("run", [](std::string s) -> std::string {
+        throwing = false;
+        const std::string &code = webview::json_parse(s, "", 0);
+        printf("RUN: %s", code.data());
+        panicking = false;
+        std::thread compile(eval, String(code.data()));
+        compile.detach();
+        return "compiling…";// will run wasm HERE and print result
+    });
+    w.bind("exit", [](std::string s) -> std::string {
+        printf("EXIT");
+        exit(0);
+    });
+    w.bind("server", [](std::string s) -> std::string {
+        std::thread teste(start_server, 9999);
+        teste.detach();
+        return s;
+    });
+    w.bind("close", [](std::string s) -> std::string {
+        w.terminate();
+        exit(0);
+    });
+    w.bind("destroy", [](std::string s) -> std::string {
+        w.terminate();
+        return s;
+    });
 
-	w.bind("wasm_done", [](std::string s) -> std::string {
-		const std::string &string = webview::json_parse(s, "", 0);
-		int result0 = std::stoi(string);
-		printf("wasm_done  result = %d \n", result0);
-		waiter.done(result0);
-		return s;
-	});
-	w.bind("wasm_error", [](std::string s) -> std::string {
-		printf("wasm_error %s \n", s.data());
-		waiter.done(-1);
-		return s;
-	});
-	w.bind("terminate", [](std::string s) -> std::string {
-		w.terminate();
-		return s;
-	});
-	// w.bind("destroy", [](std::string s) -> std::string { w.destroy(); return s;}); NOPE
+    w.bind("wasm_done", [](std::string s) -> std::string {
+        printf("wasm_done  result json = %s", s.c_str());
+        const std::string &string = webview::json_parse(s, "", 0);
+#if MULTI_VALUE
+        auto type = webview::json_parse(string, "", 0);
+        auto val = webview::json_parse(string, "", 1);
+        waiter.done(std::stol(val), std::stol(type));
+#else
+        long result0 = std::stol(string);
+        printf("wasm_done  result = %d \n", result0);
+        waiter.done(result0);
+#endif
+        return s;
+    });
+    w.bind("wasm_error", [](std::string s) -> std::string {
+        printf("wasm_error %s \n", s.data());
+        waiter.done(-1);
+        return s;
+    });
+    w.bind("terminate", [](std::string s) -> std::string {
+        w.terminate();
+        return s;
+    });
+    // w.bind("destroy", [](std::string s) -> std::string { w.destroy(); return s;}); NOPE
 
-	w.bind("home", [](std::string s) -> std::string {
-		w.navigate(home);
-		return s;
-	});
-	w.bind("$", [](std::string s) -> std::string {
-		printf("$('%s')? jquery needs to be injected!", s.data());
-        w.interpret(s);
-		return s;
-	});
+    w.bind("home", [](std::string s) -> std::string {
+        w.navigate(home);
+        return s;
+    });
+    w.bind("$", [](std::string s) -> std::string {
+        printf("$('%s')? jquery needs to be injected!", s.data());
+        w.eval(s);
+//        w.eval(s);
+        return s;
+    });
 
-	// window.open and window.navigate don't work
-	// w.bind("test", [](std::string s) -> std::string { w.eval("window.location.href='https://www.yay.com/'"); return s;});
-	w.bind("test", [](std::string s) -> std::string {
-		testWebview(s);
-		return s;
-	});// works, with
-	w.bind("alert", [](std::string s) -> std::string {
-		splitLog(s);
-		return s;
-	});// no native popup?
-	// why does alert('a') print 'a' alert(1) print 1, even though lambda type is string?
-	w.bind("log", [](std::string s) -> std::string {
-		splitLog(s);
-		return s;
-	});
-	w.bind("add", [](std::string s) -> std::string {
-		auto a = std::stoi(webview::json_parse(s, "", 0));
-		auto b = std::stoi(webview::json_parse(s, "", 1));
-		return std::to_string(a + b);
-	});
-	// printf("%s",w.return("{'test':'value'}"));// json_parse_c()?
-	// w.on_message() private but interesting… !
-	// [[config preferences] setValue:@YES forKey:@"developerExtrasEnabled"]
+    // window.open and window.navigate don't work
+    // w.bind("test", [](std::string s) -> std::string { w.eval("window.location.href='https://www.yay.com/'"); return s;});
+    w.bind("test", [](std::string s) -> std::string {
+        testWebview(s);
+        return s;
+    });// works, with
+    w.bind("alert", [](std::string s) -> std::string {
+        splitLog(s);
+        return s;
+    });// no native popup?
+    // why does alert('a') print 'a' alert(1) print 1, even though lambda type is string?
+    w.bind("log", [](std::string s) -> std::string {
+        splitLog(s);
+        return s;
+    });
+    w.bind("add", [](std::string s) -> std::string {
+        auto a = std::stol(webview::json_parse(s, "", 0));
+        auto b = std::stol(webview::json_parse(s, "", 1));
+        return std::to_string(a + b);
+    });
+    // printf("%s",w.return("{'test':'value'}"));// json_parse_c()?
+    // w.on_message() private but interesting… !
+    // [[config preferences] setValue:@YES forKey:@"developerExtrasEnabled"]
 
 //  onKeyPress='exit()'
     if (page) w.navigate(page);
@@ -250,7 +282,8 @@ long open_webview(String url = "") {
 //    w.resolve("canvas? direct? may be hard or impossible",0,0);
     //      std::wstring userDataFolder =
     //        wideCharConverter.from_bytes(std::getenv("APPDATA"));
-    w.interpret("alert('ok!?')");// was w.exec, js injected into current page
+    w.eval("alert('ok!?')");// was w.exec, js injected into current page
+//    w.eval("alert('ok!?')");// was w.exec, js injected into current page
     //    CGBitmapContextCreate(w.window(),1600,1200,32,8/*?*/, 0,0);
     //    CGBitmapContextCreateWithData(w.window(),1600,1200,32,8/*?*/, 0,0,0,0);
     //    webview_bind(w.window(),"custom_function")
@@ -262,7 +295,7 @@ long open_webview(String url = "") {
 }
 
 long init_graphics() {
-	open_webview();
+    open_webview();
 }
 
 //int paint(int wasm_offset) {
@@ -270,21 +303,27 @@ long init_graphics() {
 //}
 
 void run_wasm_async(unsigned char *bytes, int length) {
-	std::stringstream ss;
-	ss << "code=new Uint8Array([";
-	for (int i = 0; i < length; i++) ss << ((short) bytes[i]) << ",";
+    std::stringstream ss;
+    ss << "code=new Uint8Array([";
+    for (int i = 0; i < length; i++) ss << ((short) bytes[i]) << ",";
     ss << "]);wasmx(code);";
-    w.interpret(ss.str());
+    w.eval(ss.str());
 }
 
 
 int paint(int wasm_offset) {
-    w.interpret("paintWasmToCanvas()");// data coming from wasm
+    w.eval("paintWasmToCanvas()");// data coming from wasm
     return 0;
 }
 
 // forced synchronous
-int run_wasm_sync(unsigned char *bytes, int length) {
+#if MULTI_VALUE
+
+Node
+#else
+long
+#endif
+run_wasm_sync(unsigned char *bytes, int length) {
     // 1. save to APPDATA folder and then fetch via js
     // NOPE "fetch api cannot load file" could bind my own fetch though!
 
@@ -295,26 +334,31 @@ int run_wasm_sync(unsigned char *bytes, int length) {
         ss << std::hex << std::showbase << ((int) bytes[i]) << ", ";
     }
     ss << "]);wasmx(code);";
-    w.interpret(ss.str());// hangs if …
+    const std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>>::string_type &js = ss.str();
+    w.eval(js);// hangs if …
     waiter.wait();
 
-    // 3. feed natively how? BBQ OMG JIT wasm LLInt (low level interpreter)
+    // 3. feed natively how? BBQ OMG JIT wasm LLInt (low level evaler)
     // irrelevant / unprofessional? https://www.youtube.com/watch?v=1v4wPoMskfo
     // https://webkit.org/blog/9329
+#if MULTI_VALUE
+    return waiter.resultNode();
+#else
     return waiter.result();// cant wait!
+#endif
 }
 
 
-int run_wasm(unsigned char *bytes, int length) {
-	run_wasm_sync(bytes, length);
-	return waiter.result();
+long run_wasm(unsigned char *bytes, int length) {
+    run_wasm_sync(bytes, length);
+    return waiter.result();
 }
 
 std::string testWebview(std::string s) {
-	std::thread teste(testCurrent);
-	teste.detach();
+    std::thread teste(testCurrent);
+    teste.detach();
 //	testCurrent();
-	return s;
+    return s;
 }
 
 std::string

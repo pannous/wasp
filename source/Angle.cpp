@@ -397,7 +397,7 @@ Map<String, Node *> types;
 Node Long("Long", clazz);
 Node Double("Double", clazz);//.setType(type);
 Node Int("Int", clazz);
-Node Byte("Byte", clazz);
+Node ByteType("Byte", clazz);// Byte conflicts with mac header
 Node Bool("Bool", clazz);
 Node Charpoint("Charpoint", clazz);
 
@@ -408,7 +408,7 @@ Node Charpoint("Charpoint", clazz);
 // these are all boxed class types, for primitive types see Type and Kind
 void initTypes() {
 //    types.add("sint", &Int);
-    types.add("byte", &Byte);// use in u8.load etc
+    types.add("byte", &ByteType);// use in u8.load etc
 //    types.add("char", &Byte);
     types.add("char", &Charpoint);// todo : warn about abi conflict? CAN'T USE IN STRUCT
     types.add("character", &Charpoint);
@@ -909,7 +909,7 @@ Node &groupOperators(Node &expression, Function &context) {
                 if (i > 0)
                     expression.replace(i - 1, i + 1, node);
                 else
-                    warn("fdsa");
+                    warn("operator missing argument");
             }
         }
         last_position = i;
@@ -1384,7 +1384,11 @@ void preRegisterFunctions() {
 //	functions["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
     functions["modulo_double"].builtin().signature.add(float64).add(float64).returns(float64);
 //	functions["main"] = Signature().returns(i64t); // ok in all modern environments~
+#if MULTI_VALUE
+    functions["main"].signature.returns(i64).returns(i32);// [result, type32] transparently (no flipped stack order)
+#else
     functions["main"].signature.returns(i64);
+#endif
 //	functions["main"].returns(isignature.32));
     functions["paint"].import().signature.returns(voids);// paint surface
     functions["init_graphics"].import().signature.returns(pointer);// surface
@@ -1514,11 +1518,15 @@ Node smartNode(unsigned long long smartPointer64) {
         // smart pointer for string
         return Node(((char *) wasm_memory) + smart_pointer);
     }
-    if (smart_type == 0)
-        return Node((long )smartPointer64);// as number
+    if (smart_type == 0x200000000l) {
+        trace("TYPE: Double");
+        return Node(*(double *) (void *) &smart_pointer);
+    }
+    if (smart_type == 0 or smart_type == 0xffffffff00000000)
+        return Node((long) smartPointer64);// as number
     breakpoint_helper
-    printf("smartPointer64 : %llxl\n", smartPointer64);
-    error1("missing smart pointer type %x"s % smart_type + " “" + typeName(Type(smart_type)) + "”");
+    printf("smartPointer64 : %llx\n", smartPointer64);
+    error1("missing smart pointer type %x "s % smart_type + " “" + typeName(Type(smart_type)) + "”");
     return Node();
 }
 

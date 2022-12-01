@@ -206,22 +206,22 @@ wasm_wrap *link_import(String name) {
 	if (name == "panic") return &wrap_exit;
 	if (name == "raise") return &wrap_exit;
 	if (name == "square") return &wrap_square;
-	if (name == "printf") return &wrap_puts;
-	if (name == "print") return &wrap_puts;
-	if (name == "logs") return &wrap_puts;
-	if (name == "logi") return &wrap_puti;
-	if (name == "logc") return &wrap_putc;
-	if (name == "puti") return &wrap_puti;
-	if (name == "puts") return &wrap_puts;
-	if (name == "putf") return &wrap_putf;
-	if (name == "putd") return &wrap_putd;
-	if (name == "putc") return &wrap_putc;
-	if (name == "log") return &wrap_log;
-	if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
-	if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
+    if (name == "printf") return &wrap_puts;
+    if (name == "print") return &wrap_puts;
+    if (name == "logs") return &wrap_puts;
+    if (name == "logi") return &wrap_puti;
+    if (name == "logc") return &wrap_putc;
+    if (name == "puti") return &wrap_puti;
+    if (name == "puts") return &wrap_puts;
+    if (name == "putf") return &wrap_putf;
+    if (name == "putd") return &wrap_putd;
+    if (name == "log") return &wrap_log;
+    if (name == "putc") return &wrap_putc;
+//	if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
+    if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
 //	if (name == "main") return &hello_callback;
-	error("unmapped import "s + name);
-	return 0;
+    error("unmapped import "s + name);
+    return 0;
 }
 
 

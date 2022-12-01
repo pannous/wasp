@@ -55,62 +55,62 @@ struct ReqInfo {
 	enum Req_Type type;
 	char *referer;
 	char *useragent;
-	char *resource;
-	int status;
+    char *resource;
+    int status;
 };
 
 pid_t pid;
-int listener, conn, closing = 0;
+int listener = 0;
 struct sockaddr_in servaddr;
 
 char const *query0;
 
-void handle_emit() {
-	emit(query0);
-}
+//void handle_emit() {
+//	emit(query0);
+//}
 
-int handle(char const *query, int conn) {
+int handle(char const *query, int connection_id) {
 //	const char *html_block = "<!DOCTYPE html><html><head><META HTTP-EQUIV='CONTENT-TYPE' CONTENT='text/html; charset=UTF-8'/></head>\n"\
                             "<link rel='stylesheet' href='wasp.css'>\n"\
                             "<body class='wasp'><div id='wasp_results'></div>\n<script>var results=";
 //	char buff[10000];
 //		const char *html_block = "<!DOCTYPE html><html><head><META HTTP-EQUIV='CONTENT-TYPE' CONTENT='text/html; charset=UTF-8'/></head>\n"
-	print("\nGOT WEB REQUEST "s + query + '\n');
+    print("\nGOT WEB REQUEST "s + query + '\n');
 //	Writeline(conn, "OK");
-	if (conn <= 0)printf("NO Connection");
-	if (conn <= 0)return 0;
-	char buffer[200];
-	sprintf(buffer, "<HTML>\n<HEAD>\n<TITLE>REQUEST %s</TITLE>\n</HEAD><BODY>JA</BODY></HTML>\n\n", query);
-	Writeline(conn, buffer, strlen(buffer));
+    if (connection_id <= 0)printf("NO Connection");
+    if (connection_id <= 0)return 0;
+    char buffer[200];
+    snprintf(buffer, 200, "<HTML>\n<HEAD>\n<TITLE>REQUEST %s</TITLE>\n</HEAD><BODY>JA</BODY></HTML>\n\n", query);
+    Writeline(connection_id, buffer, strlen(buffer));
 
-	// when calling FROM or TO the Webview:
+    // when calling FROM or TO the Webview:
 // The process has forked and you cannot use this CoreFoundation functionality safely. You MUST exec().
 //	exec(), which replaces the program in the current process with a brand new program.
 
 //	init_graphics();//  +[NSCell initialize] may have been in progress in another thread when fork() was called.
-	emit(query);
-
+    const Node &result = eval(query);
+    Writeline(connection_id, result.serialize());
 //	query0 = query;
 //	std::thread emitte(handle_emit);
 //	emitte.detach();
 //	const char *html_end = ";\n</script>\n<script src='wasp.js'></script></body></html>\n";
 //	if (format == html)Writeline(conn, html_end);
-	return 0;// 0K
+    return 0;// 0K
 }
 
 
 // WORKS FINE, but not when debugging
-int Service_Request(int conn) {
-	int ok = 0;
-	struct ReqInfo reqinfo;
-	InitReqInfo(&reqinfo);
-	/* Get HTTP request */
-	if (Get_Request(conn, &reqinfo) < 0)
-		return -1;
-	else if (reqinfo.type == FULL)
-		Output_HTTP_Headers(conn, &reqinfo);
+int Service_Request(int connectionId) {
+    int ok = 0;
+    struct ReqInfo reqinfo;
+    InitReqInfo(&reqinfo);
+    /* Get HTTP request */
+    if (Get_Request(connectionId, &reqinfo) < 0)
+        return -1;
+    else if (reqinfo.type == FULL)
+        Output_HTTP_Headers(connectionId, &reqinfo);
 
-	CleanURL(reqinfo.resource);
+    CleanURL(reqinfo.resource);
 //	initSharedMemory(); // for each forked process!
 	if (strlen(reqinfo.resource) > 1000)return 0;// safety
 //	char *q = substr(reqinfo.resource, 1, -1);
@@ -123,7 +123,7 @@ int Service_Request(int conn) {
 //	if(contains(q,"eval"))
 //		handle(q, conn); // <<<<<<< CENTRAL CALL
 //	else
-	Serve_Resource(reqinfo, conn);
+    Serve_Resource(reqinfo, connectionId);
 	// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 	FreeReqInfo(&reqinfo);
 	return ok;
@@ -346,33 +346,33 @@ int Parse_HTTP_Header(char *buffer, struct ReqInfo *reqinfo) {
  we use select() to set a maximum length of time we will
  wait for the next complete header. If we timeout before
  this is received, we terminate the connection.        */
-int Get_Request(int conn, struct ReqInfo *reqinfo) {
-	char buffer[MAX_REQ_LINE] = {0};
-	int rval;
-	fd_set fds;
-	struct timeval tv;
-	/* Set timeout to 5 seconds */
-	tv.tv_sec = 5;
-	tv.tv_usec = 0;
-	/* Loop through request headers. If we have a simple request,
+int Get_Request(int connection_id, struct ReqInfo *reqinfo) {
+    char buffer[MAX_REQ_LINE] = {0};
+    int rval;
+    fd_set fds;
+    struct timeval tv;
+    /* Set timeout to 5 seconds */
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+    /* Loop through request headers. If we have a simple request,
    then we will loop only once. Otherwise, we will loop until
    we receive a blank line which signifies the end of the headers,
    or until select() times out, whichever is sooner.        */
 	do {
-		/* Reset file descriptor set */
-		FD_ZERO(&fds);
-		FD_SET(conn, &fds);
-		/* Wait until the timeout to see if input is ready */
-		rval = select(conn + 1, &fds, NULL, NULL, &tv);
-		/* Take appropriate action based on return from select() */
-		if (rval < 0) {
-			Error_Quit("Error calling select() in get_request()");
-		} else if (rval == 0) {
+        /* Reset file descriptor set */
+        FD_ZERO(&fds);
+        FD_SET(connection_id, &fds);
+        /* Wait until the timeout to see if input is ready */
+        rval = select(connection_id + 1, &fds, NULL, NULL, &tv);
+        /* Take appropriate action based on return from select() */
+        if (rval < 0) {
+            Error_Quit("Error calling select() in get_request()");
+        } else if (rval == 0) {
 //			p(" input not ready after timeout "); seems non-severe? happened after 2017 why??
-			return -1;
-		} else {
-			/* We have an input line waiting, so retrieve it */
-			Readline(conn, buffer, MAX_REQ_LINE - 1);
+            return -1;
+        } else {
+            /* We have an input line waiting, so retrieve it */
+            Readline(connection_id, buffer, MAX_REQ_LINE - 1);
 			//	  Trim(buffer);
 			if (buffer[0] == '\0')
 				break;
@@ -441,20 +441,20 @@ int Check_Resource(struct ReqInfo *reqinfo) {
 
 int Return_Error_Msg(int conn, struct ReqInfo *reqinfo) {
 	char buffer[100];
-	sprintf(buffer, "<HTML>\n<HEAD>\n<TITLE>Server Error %d</TITLE>\n</HEAD>\n\n", reqinfo->status);
-	Writeline(conn, buffer, strlen(buffer));
-	sprintf(buffer, "<BODY>\n<H1>Server Error %d</H1>\n", reqinfo->status);
-	Writeline(conn, buffer, strlen(buffer));
-	sprintf(buffer, "<P>The request could not be completed.</P>\n"
-	                "</BODY>\n</HTML>\n");
+    snprintf(buffer, 100, "<HTML>\n<HEAD>\n<TITLE>Server Error %d</TITLE>\n</HEAD>\n\n", reqinfo->status);
+    Writeline(conn, buffer, strlen(buffer));
+    snprintf(buffer, 100, "<BODY>\n<H1>Server Error %d</H1>\n", reqinfo->status);
+    Writeline(conn, buffer, strlen(buffer));
+    snprintf(buffer, 100, "<P>The request could not be completed.</P>\n"
+                          "</BODY>\n</HTML>\n");
 	Writeline(conn, buffer, strlen(buffer));
 	return 0;
 }
 
 int Output_HTTP_Headers(int conn, struct ReqInfo *reqinfo) {
 	char buffer[100];
-	sprintf(buffer, "HTTP/1.1 %d OK\r\n", reqinfo->status);
-	Writeline(conn, buffer, strlen(buffer));
+    snprintf(buffer, 100, "HTTP/1.1 %d OK\r\n", reqinfo->status);
+    Writeline(conn, buffer, strlen(buffer));
 	if (contains(reqinfo->resource, "text/") or contains(reqinfo->resource, "txt/") or
 	    contains(reqinfo->resource, "plain/"))
 		Writeline(conn, "Content-Type: text/plain; charset=utf-8\r\n");
@@ -483,17 +483,17 @@ int Output_HTTP_Headers(int conn, struct ReqInfo *reqinfo) {
 	return 0;
 }
 
-void Serve_Resource(ReqInfo reqinfo, int conn) {
-	int resource = 0;
-	printf("Serve_Resource!!\n");
-	printf("%s\n", reqinfo.resource);
-	printf("%s\n", reqinfo.referer);
-	printf("%s\n", reqinfo.useragent);
-	/* Check whether resource exists, whether we have permission
+void Serve_Resource(ReqInfo reqinfo, int connection_id) {
+    int resource = 0;
+    printf("Serve_Resource!!\n");
+    printf("%s\n", reqinfo.resource);
+    printf("%s\n", reqinfo.referer);
+    printf("%s\n", reqinfo.useragent);
+    /* Check whether resource exists, whether we have permission
    to access it, and update status code accordingly.     */
-	bool bad = false;
-	if (reqinfo.status == 200)
-		if ((resource = Check_Resource(&reqinfo)) < 0) {
+    bool bad = false;
+    if (reqinfo.status == 200)
+        if ((resource = Check_Resource(&reqinfo)) < 0) {
 			if (errno == EACCES)
 				reqinfo.status = 401;
 			else
@@ -505,10 +505,10 @@ void Serve_Resource(ReqInfo reqinfo, int conn) {
 //		Output_HTTP_Headers(conn, &reqinfo);
 
 	/* Service the HTTP request */
-	bad = Return_Resource(conn, resource, &reqinfo);
+    bad = Return_Resource(connection_id, resource, &reqinfo);
 	if (bad) {
-		Return_Error_Msg(conn, &reqinfo);
-		Error_Quit("Something wrong returning resource.");
+        Return_Error_Msg(connection_id, &reqinfo);
+        Error_Quit("Something wrong returning resource.");
 	}
 	if (resource > 0)
 		if (close(resource) < 0)
@@ -554,7 +554,7 @@ void start_server(int port = SERVER_PORT) {
 	while (1) {
 		/* Wait for connection */
 		// NOT debuggable with XCODE nor Clion :(
-		conn = accept(listener, NULL, NULL);
+        int conn = accept(listener, NULL, NULL);
 		if (conn < 0)
 			Error_Quit("Error calling accept()! debugging not supported, are you debugging?");
 		else print("connection accept OK");

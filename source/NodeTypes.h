@@ -21,7 +21,7 @@ union Type;
 #define string_header_32 0x10000000 // compatible with String
 #define smart_mask_32 0x70000000
 #define negative_mask_32 0x80000000
-#define array_header_64 0x0040000000000000 // why 0x004? because first 2 bits indicate doubles/ints!
+#define array_header_64 0x0040000000000000 // why 0x004? because first 2 bats indicate doubles/ints!
 #define string_header_64 0x0010000000000000
 
 enum smart_pointer_masks {
@@ -45,7 +45,7 @@ chars typeName(const Type *t);
 extern Node Int; // maps to int32 in external abi! don't use internally much, only for struct
 extern Node Double;
 extern Node Long;
-extern Node Byte;
+extern Node ByteType;
 extern Node Bool;
 extern Node Charpoint;
 
@@ -54,12 +54,15 @@ extern Node Charpoint;
 
 // Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
 // todo dangerous overlap with Valtype in Type!? OK only accessible via mapTypeToWasm
+// needs to be stable: Kind is returned in multivalue and thus needs to be parsed by js!
 enum Kind {// todo: merge Node.kind with Node.class(?)
+    // todo smartType4bit first 16 values!!
     // plurals because of namespace clash
     // TODO add subtypes of Class:Node Variable:Node etc ^^^
     undefined = 0, // ≠ any?
     unknown = 1, //
     objects, // {…} block data with children closures
+    strings = 0x9,
     call = 0x10,
     groups, // (…) meta params parameter attributes lists
     tuples = groups, // todo: with restrictions!
@@ -78,7 +81,6 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     expression, // one plus one
     declaration, // x:=1
     assignment, // x = 1 // really?? needs own TYPE?
-    strings,
     codepoints, // boxed codepoint in value.longy field todo
     buffers, // int[]
     //	ints, // use longy field, but in wasm longs are pointers!
@@ -104,6 +106,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
 //    unions, // todo, also option
     records, // todo merge concepts with module wasp clazz?
     constructor, // special call?
+    last_kind
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 
@@ -198,31 +201,31 @@ typedef long long SmartPointer64;
  * */
 // for (wasm) function type signatures see Signature class!
 union Type {//  i64 union 8 bytes with special ranges:
-	/* this union is partitioned in the int space:
-	 0x0000 - Ill defined
-	 0x0001 - 0x1000 : Kinds of Node MUST NOT CLASH with Valtype!?
-	 0x1000 - 0x10000: Classes (just the builtin ones) smarty32 " todo 150_000 classes should be enough for anyone ;)"
-	 // todo memory offset ok? (data 0x1000 …)
-	 0x10000 - … 2^60    : Addresses (including pointers to any Node including Node{type=clazz}
-	 0x10000000_00000000 - 2^64 : SmartPointer64 ≈ SmartPointer32 + 4 byte value
-	 //todo endianness?
+    /* this union is partitioned in the int space:
+     0x0000 - Ill defined
+     0x0001 - 0x1000 : Kinds of Node MUST NOT CLASH with Valtype!?
+     0x1000 - 0x10000: Classes (just the builtin ones) smarty32 " todo 150_000 classes should be enough for anyone ;)"
+     // todo memory offset ok? (data 0x1000 …)
+     0x10000 - … 2^60    : Addresses (including pointers to any Node including Node{type=clazz}
+     0x10000000_00000000 - 2^64 : SmartPointer64 ≈ SmartPointer32 + 4 byte value
+     //todo endianness?
 
-	 some Classes might be composing:
-	 0xA001 array of Type 1 ( objects )
-	*/
+     some Classes might be composing:
+     0xA001 array of Type 1 ( objects )
+    */
 
-	// todo: this union is BAD because we can not READ it safely, instead we need mapType / extractors for all combinations!
-	int value = 0; // one of:
+    // todo: this union is BAD because we can not READ it safely, instead we need mapType / extractors for all combinations!
+    long long value = 0; // one of:
     SmartPointer64 smarty;
-	Kind kind; // Node of this type
+    Kind kind; // Node of this type
 //	Valtype valtype; // doesn't make sense here but try to avoid(guarantee?) overlap with type enum for future compatibility?
-	Primitive type;// c_string int_array long_array float_array etc, can also be type of value.data in boxed Node
-	Node *clazz;// same as
-	Address address;// pointer to Node
-	Type(Kind kind) {
-		this->kind = kind;
-		if ((int) kind > 0x1000)error("erroneous or unsafe Type construction");
-	}
+    Primitive type;// c_string int_array long_array float_array etc, can also be type of value.data in boxed Node
+    Node *clazz;// same as
+    Address address;// pointer to Node
+    Type(Kind kind) {
+        this->kind = kind;
+        if ((int) kind > 0x1000)error("erroneous or unsafe Type construction");
+    }
 
 	operator int() const { return this->value; }
 
