@@ -23,7 +23,7 @@
 #endif
 
 #ifndef WASM
-#warning NOT WASM
+//#warning NOT WASM
 
 
 #include <memory.h>

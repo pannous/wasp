@@ -54,27 +54,27 @@ static wasm_trap_t *hello_callback(
 	int n = args[0].of.i32;
 	results[0].of.i32 = n * n;
 //	results[0].kind.
-	return NULL;
+    return NULL;
 }
 
 // could be unified with wasmer via #define get(0,i32) args[0].data->of.i32 / args[0].of.i32
 wrap(square) {// stupid basic test, wasm import => runtime linking, of cause not useful
-	int n = args[0].of.i32;
-	results[0].of.i32 = n * n;
-	return NULL;
+    int n = args[0].of.i32;
+    results[0].of.i32 = n * n;
+    return NULL;
 }
 
-wrap(log) {
-	double n = args[0].of.f64;
-	results[0].of.f64 = log(n);
-	return NULL;
+wrap(logd) {
+    double n = args[0].of.f64;
+    results[0].of.f64 = log(n);
+    return NULL;
 }
 
 
 wrap(powd) {
-	double n = args[0].of.f64;
-	double x = args[1].of.f64;
-	results[0].of.f64 = powd(n, x);
+    double n = args[0].of.f64;
+    double x = args[1].of.f64;
+    results[0].of.f64 = powd(n, x);
 	return NULL;
 }
 
@@ -156,26 +156,26 @@ wrap(calloc) {
 
 wrap(todo) {
 	todo("this function should not be a wasm import, but part of the runtime!!");
-	return NULL;
+    return NULL;
 }
 
 wrap(absi) {
 //	todo("this function should not be a wasm import, but part of the runtime!!");
-	long i = args[0].of.i32;
-	results[0].of.i32 = i > 0 ? i : -1;
-	return NULL;
+    long i = args[0].of.i32;
+    results[0].of.i32 = i > 0 ? i : -1;
+    return NULL;
 }
 
-wrap(absf) {
+wrap(absf) {// todo remove, we have f64.abs!
 //	todo("this function should not be a wasm import, but part of the runtime!!");
-	double i = args[0].of.f32;
-	results[0].of.f32 = i > 0 ? i : -1;
-	return NULL;
+    double i = args[0].of.f32;
+    results[0].of.f32 = i > 0 ? i : -1;
+    return NULL;
 }
 
 
 void test_lambda() {
-	print("requestAnimationFrame lambda");
+    print("requestAnimationFrame lambda");
 };
 
 //wrap_any(requestAnimationFrame);
@@ -184,8 +184,6 @@ void test_lambda() {
 #define wrap_fun(fun) [](void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t)->wasm_trap_t*{fun();return NULL;};
 
 wasm_wrap *link_import(String name) {
-    if (name == "absf") return &wrap_absf;// todo: remove
-    if (name == "absi") return &wrap_absi;
     if (name == "todo") return &wrap_todo;
     if (name == "memset") return &wrap_memset;// should be provided by wasp!!
     if (name == "calloc") return &wrap_calloc;
@@ -206,46 +204,51 @@ wasm_wrap *link_import(String name) {
 //	if (name == "_Z8run_wasmPhi") return &wrap_nop;
 //	if (name == "_Z11testCurrentv") return &wrap_nop;// hmmm self test?
 
-	if (name == "fopen") return &wrap_nop;// todo!?
-	if (name == "fseek") return &wrap_nop;// todo!?
-	if (name == "ftell") return &wrap_nop;// todo!?
-	if (name == "fread") return &wrap_nop;// todo!?
-	if (name == "system") return &wrap_nop;// danger!
+
+    if (name == "fopen") return &wrap_nop;// todo!?
+    if (name == "fseek") return &wrap_nop;// todo!?
+    if (name == "ftell") return &wrap_nop;// todo!?
+    if (name == "fread") return &wrap_nop;// todo!?
+    if (name == "system") return &wrap_nop;// danger!
 
 
-	if (name == "__cxa_begin_catch") return &wrap_nop;
-	if (name == "_ZdlPv") return &wrap_nop;// delete
+    if (name == "__cxa_begin_catch") return &wrap_nop;
+    if (name == "_ZdlPv") return &wrap_nop;// delete
 
-	if (name == "_Z3powdd") return &wrap_powd;
-	if (name == "pow") return &wrap_powd;
-	if (name == "powd") return &wrap_powd;
-	if (name == "powf") return &wrap_powf;
-	if (name == "powi") return &wrap_powi;
-	if (name == "atoi") return &wrap_atoi;
+    // todo aot link wasm funclets
+    if (name == "absf") return &wrap_absf;// todo: remove
+    if (name == "absi") return &wrap_absi;
+    if (name == "pow") return &wrap_powd;
+    if (name == "powd") return &wrap_powd;
+    if (name == "_Z3powdd") return &wrap_powd;
+    if (name == "powf") return &wrap_powf;
+    if (name == "powi") return &wrap_powi;
+    if (name == "atoi") return &wrap_atoi;
 
-	// todo: merge!
-	if (name == "_Z5raisePKc") return &wrap_exit;
-	if (name == "_ZSt9terminatev") return &wrap_exit;
-	if (name == "__cxa_atexit") return &wrap_exit;
+    // todo: merge!
+    if (name == "_Z5raisePKc") return &wrap_exit;
+    if (name == "_ZSt9terminatev") return &wrap_exit;
+    if (name == "__cxa_atexit") return &wrap_exit;
 
-	if (name == "__cxa_demangle") return &wrap_nop;
-	if (name == "proc_exit") return &wrap_exit;
-	if (name == "panic") return &wrap_exit;
-	if (name == "raise") return &wrap_exit;
-	if (name == "square") return &wrap_square;
+    if (name == "__cxa_demangle") return &wrap_nop;
+    if (name == "proc_exit") return &wrap_exit;
+    if (name == "panic") return &wrap_exit;
+    if (name == "raise") return &wrap_exit;
+    if (name == "square") return &wrap_square;
 
-	if (name == "printf") return &wrap_puts;
-	if (name == "print") return &wrap_puts;
-	if (name == "logs") return &wrap_puts;
-	if (name == "logi") return &wrap_puti;
-    if (name == "logc") return &wrap_putc;
+    if (name == "printf") return &wrap_puts;
+    if (name == "print") return &wrap_puts;
+//	if (name == "logs") return &wrap_puts;
+//	if (name == "logi") return &wrap_puti;
+//    if (name == "logc") return &wrap_putc;
     if (name == "puti") return &wrap_puti;
     if (name == "puts") return &wrap_puts;
     if (name == "putf") return &wrap_putf;
     if (name == "putd") return &wrap_putd;
+    if (name == "log") return &wrap_logd;// logd
+    if (name == "logd") return &wrap_logd;// logd
     if (name == "putc") return &wrap_putc;
-    if (name == "log") return &wrap_log;
-    if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
+//    if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
     if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
     if (name == "main") return &hello_callback;
     if (name == "memory")
@@ -405,13 +408,19 @@ long run_wasm(unsigned char *data, int size) {
 	error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, nresults, &trap);
 	if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);
 	int64_t result = results.of.i64;
+//    printf("%lld", result);
 	if (nresults > 1) {
-		wasmtime_val_t results2 = *(&results + 1);
-		Type type = results2.of.i32;
-		if (type >= undefined and type <= arrays)
-			printf("TYPE: %s\n", (chars) type);
-		else printf("Unknown type %d\n", (int) type);
-	}
+        wasmtime_val_t results2 = *(&results + 1);
+        auto type = results2.of.i32;
+//      wasm multi-value ABI swaps stack order, so no need to swap here
+//		wasmtime_val_t results2 = *(&results + 1);
+//		result = results2.of.i64;
+//		auto type = results.of.i32;
+        if (type >= undefined and type <= last_kind) {
+//            if(tracing)
+            printf("TYPE: %s\n", typeName(type));
+        } else printf("Unknown type 0x%x\n", (unsigned int) type);
+    }
 	wasmtime_module_delete(modul);
 	return result;
 }

@@ -5,6 +5,9 @@
 #define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
 #define todo(msg) error1(str("TODO ") + msg,__FILE__,__LINE__)
 
+//typedef long long int64;  = 0x7E, in enum
+typedef unsigned long long uint64;
+
 static bool I_know_what_I_am_doing = false;
 
 #ifdef TRACE
