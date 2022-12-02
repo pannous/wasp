@@ -175,7 +175,9 @@ Node eval(String code) {
         Code &binary = compile(code, true);
         binary.save();// to debug
         long results = binary.run();
-        auto resultNode = smartNode(results);
+        auto _resultNode = smartNode(results);
+        if (!_resultNode)return ERROR;
+        Node &resultNode = *_resultNode;
 //		print("» %l"s % results );
 #ifndef RELEASE
         print("» %s"s % resultNode.serialize().data);
@@ -1315,7 +1317,7 @@ Node &analyze(Node &node, Function &function) {
 }
 
 
-long run_wasm_file(chars file) {
+extern "C" long run_wasm_file(chars file) {
     let buffer = load(String(file));
 #if RUNTIME_ONLY
     error("RUNTIME_ONLY");
@@ -1442,8 +1444,8 @@ Node runtime_emit(String prog) {
     Code code = compile(prog, false);// should use libraries!
     code.needs_relocate = false;
     code.save("merged.wasm");
-    long result = code.run();// todo parse stdout string as node and merge with emit() !
-    return smartNode(result);
+    long result_val = code.run();// todo parse stdout string as node and merge with emit() !
+    return *smartNode(result_val);
 }
 
 
@@ -1469,7 +1471,7 @@ Node runtime_emit_old(String prog) {
     smart_pointer_64 result = code.run();// todo parse stdout string as node and merge with emit() !
     clearAnalyzerContext();
     clearEmitterContext();
-    return smartNode(result);
+    return *smartNode(result);
 #else
     return NUL;
 #endif

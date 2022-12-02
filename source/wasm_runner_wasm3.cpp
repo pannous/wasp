@@ -85,7 +85,7 @@ int test_wasm3(const uint8_t *prog, int len) {
         mod.link_optional<sqrt1>("*", "√");
         mod.link_optional<square2>("*", "square");
         mod.link_optional<powd>("*", "powd");
-        mod.link_optional<logd>("*", "log");// logarithm, not putf !
+        mod.link_optional<logf>("*", "log");// logarithm, not putf !
         mod.link_optional<powd>("*", "pow");
         mod.link_optional<powi>("*", "powi");
         mod.link_optional<putf>("*", "logf");// danger logf is cuda function!
@@ -116,9 +116,9 @@ int test_wasm3(const uint8_t *prog, int len) {
 	}
 }
 
-long run_wasm(bytes wasm_bytes, int len) {
+extern "C" long run_wasm(bytes wasm_bytes, int len) {
 //	test_wasm3(test_prog_wasm, test_prog_wasm_len);
-	return test_wasm3((const uint8_t *) wasm_bytes, len);
+    return test_wasm3((const uint8_t *) wasm_bytes, len);
 }
 
 //

@@ -1102,7 +1102,7 @@ Code emitOperator(Node &node, Function &context) {
     } else if (name == "²") {
 //		error("this should be handled universally in analyse: x² => x*x no matter what!");
         // BUT non-lazy calling twice? x² => x * result
-        Local &result = context.locals["result"];
+        Local &result = context.locals.last();// ["result"];
         code.add(tee_local);// neeeeds result local
         code.add(result.position);
         code.add(get_local);
