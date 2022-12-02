@@ -86,11 +86,10 @@ void printf(chars format, int i) {
 	print(String(format) % i);
 }
 
-#ifndef WASM
-void printf(chars format, number i) {
-	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
+void printf(char const *format, long long l){
+    print(String(format)%l);
 }
-#endif
+
 
 void printf(chars format, chars value) {
 	print(String(format).replace("%s", value));
@@ -561,9 +560,9 @@ Node eval(String code) { return Node(RUNTIME_ONLY_ERROR); }
 
 Node interpret(String code) { return Node(RUNTIME_ONLY_ERROR); }
 
-int run_wasm_file(chars file) {
-	error(RUNTIME_ONLY_ERROR);
-	return -1;
+long run_wasm_file(chars file) {
+    error(RUNTIME_ONLY_ERROR);
+    return -1;
 }
 
 void console() { error(RUNTIME_ONLY_ERROR); }
@@ -571,3 +570,9 @@ void console() { error(RUNTIME_ONLY_ERROR); }
 void testCurrent(){}// why??
 #endif
 
+
+//#ifndef WASM
+//void printf(chars format, number i) {
+//	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
+//}
+//#endif

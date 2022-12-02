@@ -281,7 +281,8 @@ Node &groupIf(Node n, Function &context) {
         then = condition.values();
 
     // todo condition.next->length<0 reveals BUG!
-    if (condition.next and condition.next->length >= 0 and condition.next->name == "else")
+//    and condition.next->length >= 0
+    if (condition.next and condition.next->name == "else")
         then = condition.values();
 
     // todo: UNMESS how?
@@ -672,7 +673,8 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
 #endif
             error("duplicate argument name: "s + arg.name);
         }
-        addLocal(function, arg.name, mapType(arg.type), true);
+        Valtype argType = mapType(arg.type);
+        addLocal(function, arg.name, argType, true);
         signature.add(arg.type, arg.name);// todo: arg type, or pointer
     }
     if (signature.size() == 0 and function.locals.size() == 0 and body.has("it", false, 100)) {
@@ -795,7 +797,8 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op == "%")functions["modulo_float"].is_used = true;// no wasm i32_rem_s i64_rem_s for float/double
         if (op == "%")functions["modulo_double"].is_used = true;
         if (op == "==" or op == "is" or op == "equals")use_runtime("eq");
-        if (op == "include")return NUL;// todo("include again!?");
+        if (op == "include")
+            return NUL;// todo("include again!?");
         if (op != last) last_position = 0;
         bool fromRight = rightAssociatives.has(op) or isFunction(op);
         fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
@@ -1482,22 +1485,28 @@ void refineSignatures(Map<String, Function> &map) {
 
 // smart pointers returned if ABI does not allow multi-return, as in int main(){}
 
-Node smartNode(unsigned long long smartPointer64) {
-    if(smartPointer64==0)return NIL;
+// todo: make constructor
+Node smartNode(smart_pointer_64 smartPointer64) {
+    if (smartPointer64 == 0)return NIL;
 //    if (!isSmartPointer(smartPointer64))
 //        return Node(smartPointer64);
-    auto result = smartPointer64;
-    if (smartPointer64 & double_mask_64 and not((smartPointer64 & negative_mask_64) == negative_mask_64)) {
+    if ((smartPointer64 & negative_mask_64) == negative_mask_64) {
+        return Node((int64_t) smartPointer64);
+    }
+    if ((type_mask_64_word & smartPointer64) == 0)
+        return Node((long) smartPointer64);// as number
+
+    if (smartPointer64 & double_mask_64) {
         // todo rare cases, where doubles don't match 0x7F…
         double val = *(double *) &smartPointer64;
         return Node(val);
     }
 
-    auto smart_pointer = result & 0xFFFFFFFF;// data part
-    long long smart_type = result & 0xFFFFFFFF00000000;// type part
-    if (smart_type == array_header_64 /* and abi=wasp */ ) {
+    auto value = smartPointer64 & 0xFFFFFFFF;// data part
+    long long smart_type64 = smartPointer64 & 0xFFFFFFFF00000000;// type part
+    if (smart_type64 == array_header_64 /* and abi=wasp */ ) {
         // smart pointer to smart array
-        int *index = ((int *) wasm_memory) + smart_pointer;
+        int *index = ((int *) wasm_memory) + value;
         int kind = *index++;
         if (kind == array_header_32)
             kind = *index++;
@@ -1514,19 +1523,13 @@ Node smartNode(unsigned long long smartPointer64) {
 //			check(arr.type=…
         return arr;
     }
-    if (smart_type == string_header_64) {
+    if (smart_type64 == string_header_64) {
         // smart pointer for string
-        return Node(((char *) wasm_memory) + smart_pointer);
+        return Node(((char *) wasm_memory) + value);
     }
-    if (smart_type == 0x200000000l) {
-        trace("TYPE: Double");
-        return Node(*(double *) (void *) &smart_pointer);
-    }
-    if (smart_type == 0 or smart_type == 0xffffffff00000000)
-        return Node((long) smartPointer64);// as number
     breakpoint_helper
-    printf("smartPointer64 : %llx\n", smartPointer64);
-    error1("missing smart pointer type %x "s % smart_type + " “" + typeName(Type(smart_type)) + "”");
+    printf("smartPointer64 : %llx\n", (int64_t) smartPointer64);
+    error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");
     return Node();
 }
 

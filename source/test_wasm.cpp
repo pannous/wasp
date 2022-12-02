@@ -1218,9 +1218,16 @@ void testMathLibrary() {
 void testSmartReturn() {
     assert_emit("x='abcde';x[3]", 'd');
     assert_emit("1", 1);
-    assert_emit(("-2000000000000"), (long) -2000000000000l)
+    assert_emit("-2000000000000", (long) -2000000000000l)
+    assert_emit("2000000000000", (long) 2000000000000l)// auto long
     assert_emit("42.0/2.0", 21);
     assert_emit("42.0/2.0", 21.);
+    assert_emit("- √9", -3);
+    assert_emit("42/4.", 10.5);
+    skip(
+            assert_emit("42/4", 10.5);
+    )
+
     assert_emit("puts('ok');", 0);
     assert_equals(eval("42.0/2.0"), 21)
     assert_emit("x='abcde';x#4='x';x[3]", 'x');
@@ -1229,8 +1236,7 @@ void testSmartReturn() {
     assert_emit("10007.0%10000.0", 7);
     assert_emit("10007.0%10000", 7);
     assert_emit("x='abcde';x#4='x';x[3]", 'x');
-    assert_emit(("2000000000000"), (long) 2000000000000l)// auto long
-    assert_emit("- √9", -3);
+
 }
 
 void testMultiValue() {

@@ -271,9 +271,9 @@ bool similar(double a, double b) {
 	if (a == b)return true;
 	if (a == 0)return abs(b) < .0001;
 	if (b == 0)return abs(a) < .0001;
-	double epsilon = abs(a + b) / 10000.;// percentual ++ todo add 10^order parameter
-	bool ok = abs(a - b) <= epsilon;
-	return ok;
+    double epsilon = abs(a + b) / 10000.;// percentual ++ todo add 10^order parameter
+    bool ok = abs(a - b) <= epsilon;
+    return ok;
 }
 //
 //double pi = 3.141592653589793;
@@ -281,28 +281,28 @@ bool similar(double a, double b) {
 //	return x - trunc(x / y) * y;
 //}
 
-void lowerCaseUTF(chars string, int length); // defined in lowerCaseUTF.c
-#ifndef WASM // native include lowerCaseUTF.wasm !
-void lowerCaseUTF(chars string, int length){
-//    auto myLowerCaseUTF=wasmlet<chars, chars>("lowerCaseUTF.wasm");
-//    chars lowered = myLowerCaseUTF(string);
-//    return lowered; in place!
-}
-#endif
+//void lowerCaseUTF(chars string, int length); // defined in lowerCaseUTF.c
+//#if !WASM // native include lowerCaseUTF.wasm !
+//void lowerCaseUTF(chars string, int length){
+////    auto myLowerCaseUTF=wasmlet<chars, chars>("lowerCaseUTF.wasm");
+////    chars lowered = myLowerCaseUTF(string);
+////    return lowered; in place!
+//}
+//#endif
 
 void lowerCase(char *string, int length) {
-	if (!string || !*string) return;
-	if (length <= 0)
-		length = strlen0(string);
-	while (length-->0) {
-        char ch = string[length];
+    if (!string || !*string) return;
+    if (length <= 0)
+        length = strlen0(string);
+    while (length-- > 0) {
+        char &ch = string[length];
         if (ch >= 'A' and ch <= 'Z')
             ch += 32;
-        if(ch < 0 ){
-            lowerCaseUTF(string, length+2);// todo: go LTR to avoid corruption while(length >++len)
-            return;
-        }
-	}
+//        if(ch < 0 ){
+//            lowerCaseUTF(string, length+2);// todo: go LTR to avoid corruption while(length >++len)
+//            return;
+//        }
+    }
 }
 
 
