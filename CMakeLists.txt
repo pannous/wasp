@@ -17,7 +17,7 @@ LINK_DIRECTORIES(/usr/local/lib)
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
 #set(INCLUDE_MERGER 0)
 #set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
-ADD_DEFINITIONS(-DMULTI_VALUE)
+#ADD_DEFINITIONS(-DMULTI_VALUE)
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
 
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
@@ -172,6 +172,11 @@ ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not ret
 ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 ADD_COMPILE_FLAG("-fno-inline")
+
+ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
+ADD_COMPILE_FLAG("-Wno-non-pod-varargs") # usually only Plain Old Data structures!
+# todo Just use initiator lists? ^^
+
 if (NOT TRACE)
     #    ADD_COMPILE_FLAG("-Wall")
     # disable:
@@ -493,6 +498,7 @@ if (CONSOLE)
     #    link_libraries(wasp readline)
 endif ()
 
+set(SANITIZE 1)
 if (SANITIZE OR TRACE) # or TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.

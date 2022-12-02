@@ -339,14 +339,15 @@ long run_wasm(unsigned char *data, int size) {
         wasmtime_extern_t import;
         wasmtime_func_t link;
 //		Signature &signature = meta.signatures[import_name];
-        Signature &signature = meta.functions[import_name].signature;
+        Function &function = meta.functions[import_name];
+        Signature &signature = function.signature;
         const wasm_functype_t *type = funcType(signature);
         wasm_wrap (*callback) = link_import(import_name);
         wasmtime_func_new(context, type, callback, NULL, NULL, &link);
         import.kind = WASMTIME_EXTERN_FUNC;
         import.of.func = link;
-		imports[i++] = import;
-	}
+        imports[i++] = import;
+    }
 
 	error = wasmtime_instance_new(context, modul, imports, importCount, &instance, &trap);
 	if (error != NULL || trap != NULL) exit_with_error("failed to instantiate", error, trap);
@@ -426,16 +427,16 @@ long run_wasm(unsigned char *data, int size) {
 }
 
 const wasm_functype_t *funcType(Signature &signature) {
-	wasm_valtype_t *i = wasm_valtype_new(WASM_I32);
-	wasm_valtype_t *I = wasm_valtype_new(WASM_I64);
-	wasm_valtype_t *f = wasm_valtype_new(WASM_F32);
-	wasm_valtype_t *F = wasm_valtype_new(WASM_F64);
-	int param_count = signature.types.size();
-	// todo multi-value
-	auto returnType0 = signature.return_types.last(none);
-	auto returnType = mapTypeToWasm(returnType0);
-	if (param_count == 0) {
-		switch (returnType) {
+    wasm_valtype_t *i = wasm_valtype_new(WASM_I32);
+    wasm_valtype_t *I = wasm_valtype_new(WASM_I64);
+    wasm_valtype_t *f = wasm_valtype_new(WASM_F32);
+    wasm_valtype_t *F = wasm_valtype_new(WASM_F64);
+    int param_count = signature.types.size();
+    // todo multi-value
+    Type returnType0 = signature.return_types.last(none);
+    Valtype returnType = mapTypeToWasm(returnType0);
+    if (param_count == 0) {
+        switch (returnType) {
             case none:
             case voids:
                 return wasm_functype_new_0_0();
