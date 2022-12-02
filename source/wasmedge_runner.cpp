@@ -65,23 +65,23 @@ WasmEdge_ModuleInstanceContext *CreateExternModule() {
 }
 
 
-long run_wasm(bytes buffer, int buf_size) {
-	WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(0, 0);
-	WasmEdge_Value Params[1];
-	WasmEdge_Value Returns[1];
-	WasmEdge_String FuncName = WasmEdge_StringCreateByCString("test");
-	WasmEdge_Result Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName, Params, 0, Returns, 1);
-	if (WasmEdge_ResultOK(Res)) {
-		int32_t value = WasmEdge_ValueGetI32(Returns[0]);
-		printf("Get result: %d\n", value);
-		return (int) value;
-	} else printf("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
+extern "C" long run_wasm(bytes buffer, int buf_size) {
+    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(0, 0);
+    WasmEdge_Value Params[1];
+    WasmEdge_Value Returns[1];
+    WasmEdge_String FuncName = WasmEdge_StringCreateByCString("test");
+    WasmEdge_Result Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName, Params, 0, Returns, 1);
+    if (WasmEdge_ResultOK(Res)) {
+        int32_t value = WasmEdge_ValueGetI32(Returns[0]);
+        printf("Get result: %d\n", value);
+        return (int) value;
+    } else printf("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
 	return -1;
 }
 
 
 long run_wasm2(char *wasm_path) {
-//long run_wasm(char *wasm_path){
+//extern "C" long run_wasm(char *wasm_path){
 	/* Create the configure context and add the WASI support. */
 	/* This step is not necessary unless you need WASI support. */
 	WasmEdge_ConfigureContext *ConfCxt = WasmEdge_ConfigureCreate();

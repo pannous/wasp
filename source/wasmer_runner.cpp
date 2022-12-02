@@ -448,17 +448,17 @@ wasm_func_t *findFunction(wasm_extern_vec_t exports, wasm_exporttype_vec_t expor
 }
 
 
-long run_wasm(bytes wasm_bytes, int len) {
-	if (!done)init_wasmer();
-	wasm_byte_vec_t wasmBytes = {(size_t) len, (char *) wasm_bytes};
-	wasm_module_t *module = wasm_module_new(store, &wasmBytes);
-	if (!module) error("> Error compiling module!\n");
-	wasm_byte_vec_delete(&wasmBytes);
+extern "C" long run_wasm(bytes wasm_bytes, int len) {
+    if (!done)init_wasmer();
+    wasm_byte_vec_t wasmBytes = {(size_t) len, (char *) wasm_bytes};
+    wasm_module_t *module = wasm_module_new(store, &wasmBytes);
+    if (!module) error("> Error compiling module!\n");
+    wasm_byte_vec_delete(&wasmBytes);
 
-	Module meta = read_wasm(wasm_bytes, len);// wasm module* sucks so we read it ourselves!
+    Module meta = read_wasm(wasm_bytes, len);// wasm module* sucks so we read it ourselves!
 
-	wasm_extern_vec_t imports = WASM_EMPTY_VEC;
-	wasm_extern_t *externs[meta.import_count * 2];
+    wasm_extern_vec_t imports = WASM_EMPTY_VEC;
+    wasm_extern_t *externs[meta.import_count * 2];
 //	wasm_extern_t *externs[] = {link_imports2(), link_global()};
 	linkImports(externs, meta);
 	wasm_extern_vec_new(&imports, meta.import_count * 2, externs);

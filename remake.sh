@@ -1,3 +1,7 @@
+# compilation can also be achieved and sea lion by setting the target wasp.wasm in a Run/Debug Configuration. 
+# THEN in the "Edit Configurations" drop down next to ▶️ one can chose the CMake Profile WASM / WASM Runtime 
+# which should be created under preferences -> build / executions / deployment -> cmake
+
 # IF cmake fails to traverse to subdirectories:
 # echo cmake TODO MESSES WITH CLions CMAKE config!!
 # changed all cmake . && make || ninja -v => make || ninja -v

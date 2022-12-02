@@ -2611,13 +2611,15 @@ void assurances() {
 void testCurrent() {
 //    assurances();
 //    testLists();
-//    assert_emit("42.7",42.7);
+    testMergeGlobal();
+    assert_is("false", false);
+    assert_emit("'42'", "42");
     assert_is("square 3", 9)
+    assert_emit("42", 42);
+    assert_emit("42.7", 42.7);
+    assert_emit("2000000000000", (long) 2000000000000l)// auto long
     testListVarargs();//
 
-    assert_emit("2000000000000", (long) 2000000000000l)// auto long
-
-    assert_emit("'42'", "42");
 //    assert_emit("42/4", 10.5);
 
 //    assert_emit("42",42);
