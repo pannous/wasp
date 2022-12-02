@@ -20,19 +20,23 @@ typedef enum smartType4bit {
 	septet = 0x7, // 7 hexes à 4 bit OR 7 bytes in smart64!
 	utf8char = 0x8, // UTF24 Unicode
 	stringa = 0x9, // may start with 0x10 ... 0x1F
-	anys = 0xA, // angle array / object pointer to header! => i64 pointer : 32bit type + 32bit pointer indirect or in linear memory!
-	byter = 0xB, // unsigned char* with length ... ?
-	codes = 0xC,  // direct wasm code! interpreted inline OR:
+    anys = 0xA, // angle array / object pointer to header! => i64 pointer : 32bit type + 32bit pointer indirect or in linear memory!
+    byter = 0xB, // unsigned char* with length ... ?
+    codes = 0xC,  // direct wasm code! interpreted inline OR:
 //	code=0xC,  // angle code tree REDUNDANT wit 0xA / 0xD
-	datas = 0xD, // angle node tree as STRING vs 0xA as array
-	error_spo = 0xE,
-	sint28 = 0xF,// negatives
+    datas = 0xD, // angle node tree as STRING vs 0xA as array
+    error_spo = 0xE,
+    sint28 = 0xF,// negatives
 } smartType;
 
 
+typedef int SmartPointer32;
+typedef unsigned int uint;
 typedef unsigned int smart_pointer_32;// smart_pointer_32
+typedef unsigned long long SmartPointer64;
 typedef unsigned long long smart_pointer_64;
-typedef unsigned long long smart_type_64;
+//typedef unsigned long long smart_type_64;
 typedef smart_pointer_64 smarty;
+
 smartType4bit getSmartType(smart_pointer_32 spo);
 //smartType4bit getSmartType(smart_pointer_64 spo);

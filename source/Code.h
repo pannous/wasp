@@ -1066,4 +1066,4 @@ short lebByteSize(unsigned int neu);
 -285873023221760 fffefc0000000000 8
 -36591746972385280 ff7e000000000000 9
  */
-short lebByteSize(long neu);
+short lebByteSize(long long neu);

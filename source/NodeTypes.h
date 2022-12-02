@@ -3,9 +3,8 @@
 // Created by pannous on 19.12.19.
 //
 
-//#include "Angle.h"
-//#include "Node.h" include cycle :(
-//#include "Code.h" include cycle :( // Valtype
+#include "smart_types.h" // todo merge
+
 //enum Valtype;// forbids forward references to 'enum' types
 class Node;
 
@@ -21,15 +20,16 @@ union Type;
 #define string_header_32 0x10000000 // compatible with String
 #define smart_mask_32 0x70000000
 #define negative_mask_32 0x80000000
-#define array_header_64 0x0040000000000000 // why 0x004? because first 2 bats indicate doubles/ints!
-#define string_header_64 0x0010000000000000
+#define array_header_64 0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
+#define string_header_64 0x0010000000000000L
 
 enum smart_pointer_masks {
 //	float_header_64 = 0x0020000000000000, not needed, use:
-	double_mask_64 = 0x7F00000000000000L,
-	smart_mask_64 = 0x00FF000000000000L,
+    double_mask_64 = 0x7F00000000000000L,
+    smart_mask_64 = 0x00FF000000000000L,
 //	negative_mask_64 = 0x8000000000000000,
-	negative_mask_64 = 0xFF00000000000000L
+    negative_mask_64 = 0xFF00000000000000L,
+    type_mask_64_word = 0xFFFF000000000000L
 //	negative_long_mask_64 = 0xBFF0000000000000,
 };
 
@@ -188,7 +188,6 @@ enum Primitive {
 
 
 typedef int Address;
-typedef long long SmartPointer64;
 /*
  * i32 paged union Type
  * 0x00 - 0xFF zero page : Valtype / Kind
@@ -200,14 +199,22 @@ typedef long long SmartPointer64;
  * check(sizeof(Type)==8) // otherwise all header structs fall apart
  * */
 // for (wasm) function type signatures see Signature class!
-union Type {//  i64 union 8 bytes with special ranges:
+
+// on 64bit systems pointers (to types)
+union Type64 {//  i64 union, 8 bytes with special ranges:
+    long long value = 0; // one of:
+    SmartPointer64 smarty;
+    Node *clazz;// same 64 bit on normal systems!!!!
+//     0x10000000_00000000 - 2^64 : SmartPointer64 ≈ SmartPointer32 + 4 byte value
+};
+
+union Type {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ranges:
     /* this union is partitioned in the int space:
      0x0000 - Ill defined
      0x0001 - 0x1000 : Kinds of Node MUST NOT CLASH with Valtype!?
      0x1000 - 0x10000: Classes (just the builtin ones) smarty32 " todo 150_000 classes should be enough for anyone ;)"
      // todo memory offset ok? (data 0x1000 …)
      0x10000 - … 2^60    : Addresses (including pointers to any Node including Node{type=clazz}
-     0x10000000_00000000 - 2^64 : SmartPointer64 ≈ SmartPointer32 + 4 byte value
      //todo endianness?
 
      some Classes might be composing:
@@ -215,12 +222,13 @@ union Type {//  i64 union 8 bytes with special ranges:
     */
 
     // todo: this union is BAD because we can not READ it safely, instead we need mapType / extractors for all combinations!
-    long long value = 0; // one of:
-    SmartPointer64 smarty;
+    long value = 0; // one of:
+//    SmartPointer64 smarty;
+//    SmartPointer32 smarty;// when separating Types from values we don't need smart pointers
     Kind kind; // Node of this type
 //	Valtype valtype; // doesn't make sense here but try to avoid(guarantee?) overlap with type enum for future compatibility?
     Primitive type;// c_string int_array long_array float_array etc, can also be type of value.data in boxed Node
-    Node *clazz;// same as
+//    Node *clazz;// same as // 64 bit on normal systems!!!!
     Address address;// pointer to Node
     Type(Kind kind) {
         this->kind = kind;
