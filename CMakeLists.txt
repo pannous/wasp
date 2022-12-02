@@ -465,7 +465,6 @@ elseif (WASMX)
 elseif (V8)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_v8.cpp source/Util.cpp source/Util.h source/wasm_patcher.cpp source/wasm_patcher.h source/List.cpp source/List.h)
     add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/v8/include/)
     target_link_libraries(wasp PRIVATE v8 v8_libplatform wasm)
 else () # NORMAL:
@@ -543,3 +542,9 @@ set(CMAKE_SUPPRESS_REGENERATION)
 set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
 
+
+if (WASM) # OR WASI)     common to all!
+    target_include_directories(wasp.wasm PUBLIC Frameworks/wasm-c-api/include/)
+else ()
+    target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
+endif ()
