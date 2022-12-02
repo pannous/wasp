@@ -1814,7 +1814,7 @@ Code emitBlock(Node &node, Function &context) {
     last_type = none;//int32;
 
     int locals_count = context.locals.size();// incuding params
-    context.locals.add("result", {.valtype=Valtype::i64, .position=locals_count++, .is_param=false, .name="result"});
+    context.locals.add("result", {.is_param=false, .position=locals_count++, .name="result", .valtype=Valtype::i64,});
     int argument_count = context.signature.size();
     if (locals_count >= argument_count)
         locals_count = locals_count - argument_count;

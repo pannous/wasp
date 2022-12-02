@@ -175,6 +175,8 @@ void printf(char const *format, uint32_t i);
 
 void printf(char const *format, long l);
 
+void printf(char const *format, long long l);
+
 void printf(char const *format, double d);
 
 void printf(char const *format, chars, int);

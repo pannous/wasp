@@ -166,6 +166,12 @@ Valtype mapTypeToWasm(Node &n) {
     if (n == Charpoint)
         return codepoint32;
 
+    if (types.has(n.name)) {
+        Node *&typ = types[n.name];
+        if (typ != n) return mapTypeToWasm(typ); // ⚠️ beware circles!
+    }
+
+
     if (not n.name.empty() and functions.has(n.name)) {
         List<Type> &returnTypes = functions[n.name].signature.return_types;
         if (returnTypes.empty())return voids;
@@ -260,10 +266,10 @@ short lebByteSize(unsigned int neu) {
 -281474976710657 fffeffffffffffff 8
 -36028797018963969 ff7fffffffffffff 9
  */
-short lebByteSize(long aleb) {
+short lebByteSize(long long aleb) {
     int more = 1;
-    int size = 0;
-    long val = aleb;
+    short size = 0;
+    long long val = aleb;
     while (more) {
         uint8_t b = val & 0x7f;
         /* sign bit of byte is second high order bit (0x40) */

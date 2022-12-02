@@ -1267,7 +1267,12 @@ chars typeName(Kind t) {
 chars typeName(Type t) {
     if (t.value < 0x1000)return typeName(t.kind);
     if (t.value == Primitive::int_array)return "int[]";
-    if (t.value > 0x10000)return t.clazz->name;
+#if !WASM
+//    warn("Node pointers don't fit in 32 bit Type!")
+    todo("Node pointers don't fit in 32 bit Type!");
+#else
+    if (t.value > 0x10000)return ((Node*)t.address)->name;
+#endif
     error(str("MISSING Type name mapping ") + t.value);
     return "ƒ";
 }

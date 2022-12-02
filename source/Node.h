@@ -246,9 +246,9 @@ public:
     }
 
     explicit
-    Node(long long value, smart_type_64 type64) {
+    Node(long long value, Type64 type64) {
         this->value.longy = value;// can also be double bytes:
-        this->kind = (Kind) type64; // todo other types!
+        this->kind = (Kind) type64.value; // todo other types!
     }
 
 
