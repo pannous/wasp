@@ -4,12 +4,11 @@
 //
 
 typedef unsigned char *bytes;
+typedef const char *chars;
 
-long run_wasm(bytes buffer, int buf_size);
+extern "C" long run_wasm(bytes buffer, int buf_size);
 
-long run_wasm(char *wasm_path = "test.wasm");
-
-long run_wasm2(char *wasm_path = "test.wasm");
+extern "C" long run_wasm_file(chars wasm_path = "test.wasm");
 
 #ifdef WABT
 //#include "ir.h" // Intermediate representation

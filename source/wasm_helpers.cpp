@@ -560,7 +560,7 @@ Node eval(String code) { return Node(RUNTIME_ONLY_ERROR); }
 
 Node interpret(String code) { return Node(RUNTIME_ONLY_ERROR); }
 
-long run_wasm_file(chars file) {
+extern "C" long run_wasm_file(chars file) {
     error(RUNTIME_ONLY_ERROR);
     return -1;
 }

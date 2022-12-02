@@ -20,16 +20,24 @@ union Type;
 #define string_header_32 0x10000000 // compatible with String
 #define smart_mask_32 0x70000000
 #define negative_mask_32 0x80000000
+// 64 bit headers occur 1. if no multi value available
 #define array_header_64 0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
-#define string_header_64 0x0010000000000000L
+#define string_header_64 0x0010000000000000L // todo : what happened to 0x9 smartType4bit ??
 
+// smart_pointer_64 == 32 bits smart_type(header+payload) + 32 bit value
 enum smart_pointer_masks {
 //	float_header_64 = 0x0020000000000000, not needed, use:
+    smart_type_64_mask = 0xFFFFFFFF00000000L,
     double_mask_64 = 0x7F00000000000000L,
     smart_mask_64 = 0x00FF000000000000L,
 //	negative_mask_64 = 0x8000000000000000,
     negative_mask_64 = 0xFF00000000000000L,
-    type_mask_64_word = 0xFFFF000000000000L
+    type_mask_64_word = 0xFFFF000000000000L,
+    smart_pointer_value60_mask = 0x0FFFFFFFFFFFFFFFL,
+    smart_pointer_value56_mask = 0x00FFFFFFFFFFFFFFL,
+    smart_pointer_value52_mask = 0x000FFFFFFFFFFFFFL,
+    smart_pointer_value48_mask = 0x0000FFFFFFFFFFFFL,
+    smart_pointer_value32_mask = 0x00000000FFFFFFFFL, // or do shift << 32 >> 32 to remove header
 //	negative_long_mask_64 = 0xBFF0000000000000,
 };
 

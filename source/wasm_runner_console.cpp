@@ -27,17 +27,17 @@ int exec(char *command) {
 #endif
 }
 
-long run_wasm(char *wasm_path = "test.wasm") {
-	String command = "wasmx ";
-	system(command + wasm_path);
-	long ok = exec(command + wasm_path);
-	return ok;
+extern "C" long run_wasm_file(char *wasm_path = "test.wasm") {
+    String command = "wasmx ";
+    system(command + wasm_path);
+    long ok = exec(command + wasm_path);
+    return ok;
 }
 
-long run_wasm(bytes data, int length) {
-	char *file_name = "test.wasm";
-	FILE *file = fopen(file_name, "w");
-	fwrite(data, length, 1, file);
-	fclose(file);
-	return run_wasm(file_name);
+extern "C" long run_wasm(bytes data, int length) {
+    char *file_name = "test.wasm";
+    FILE *file = fopen(file_name, "w");
+    fwrite(data, length, 1, file);
+    fclose(file);
+    return run_wasm_file(file_name);
 }

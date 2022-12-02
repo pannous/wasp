@@ -1299,24 +1299,28 @@ int ord(Node &p) {
 
 
 // todo: make constructor
-Node smartNode(smart_pointer_64 smartPointer64) {
-    if (smartPointer64 == 0)return NIL;
+Node *smartNode(smart_pointer_64 smartPointer64) {
+    if (smartPointer64 == 0)return &False;//const_cast<Node *>(&NIL);
 //    if (!isSmartPointer(smartPointer64))
 //        return Node(smartPointer64);
     if ((smartPointer64 & negative_mask_64) == negative_mask_64) {
-        return Node((int64_t) smartPointer64);
+        return new Node((int64_t) smartPointer64);
     }
     if ((type_mask_64_word & smartPointer64) == 0)
-        return Node((long) smartPointer64);// as number
+        return new Node((long) smartPointer64);// as number
+    if ((smartPointer64 & smart_pointer_header_mask) == smart_pointer_node_signature)
+        return (Node *) (smartPointer64 & smart_pointer_value60_mask);
 
-    if (smartPointer64 & double_mask_64) {
+    if (smartPointer64 & double_mask_64) {// ok no other match since 0xFF already checked
         // todo rare cases, where doubles don't match 0x7F…
         double val = *(double *) &smartPointer64;
-        return Node(val);
+        return new Node(val);
     }
 
     auto value = smartPointer64 & 0xFFFFFFFF;// data part
     long long smart_type64 = smartPointer64 & 0xFFFFFFFF00000000;// type part
+    byte smart_type_4 = (smartPointer64 & 0xF000000000000000) >> 63;// type part
+//    short smart_type_payload = (short)(smartPointer64 & 0x0000FFFF00000000L)>>16;// type payload including length (of array)
     if (smart_type64 == array_header_64 /* and abi=wasp */ ) {
         // smart pointer to smart array
         int *index = ((int *) wasm_memory) + value;
@@ -1324,24 +1328,34 @@ Node smartNode(smart_pointer_64 smartPointer64) {
         if (kind == array_header_32)
             kind = *index++;
         int len = *index++; // todo: leb128 vector later
-        Node arr = Node();
+        Node *arr = new Node();
 //		arr.kind.value = kind;
         int pos = 0;
         while (len-- > 0) {
             auto val = index[pos++];
-            arr.add(new Node(val));
+            arr->add(new Node(val));
         }
-        arr.kind = objects;
+        arr->kind = objects;
 //			check_eq(arr.length,len);
 //			check(arr.type=…
         return arr;
     }
-    if (smart_type64 == string_header_64) {
+    if (smart_type64 == string_header_64 or smart_type_4 == stringa) {
         // smart pointer for string
-        return Node(((char *) wasm_memory) + value);
+//        if(smart_type_payload&string_meta::share)
+//        return new Node(new String((char *) wasm_memory) + value, false/*copy!*/);
+//        else
+        Node &pNode = *new Node(new String(((char *) wasm_memory) + value, true /*copy!*/ ), false /* not identifier*/);
+        pNode.setType(strings);
+        return &pNode;
     }
     breakpoint_helper
     printf("smartPointer64 : %llx\n", (int64_t) smartPointer64);
     error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");
-    return Node();
+    return new Node();
+}
+
+
+smart_pointer_64 toSmartPointer(Node *n) {
+    return n->toSmartPointer();
 }
