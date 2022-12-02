@@ -30,11 +30,11 @@ if (NOT WASM)
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         #         SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :(
-        SET(WASMTIME 1) # FASTEST!
+        #        SET(WASMTIME 1) # FASTEST!
         #        SET(WASMEDGE 1) todo smart multi-value returns
         #                set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
-        #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
-        #        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
+        #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
+        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         #                set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
@@ -352,7 +352,7 @@ elseif (MICRO) # wasm-micro-vm:
     #    quit()
     ADD_DEFINITIONS(-DWASM_ENABLE_INTERP)
     set(WAMR_BUILD_INTERP 1)
-    SET(WAMR_ROOT_DIR wasm-micro-runtime)
+    SET(WAMR_ROOT_DIR Frameworks/wasm-micro-runtime)
     if (APPLE)
         add_definitions(-DBH_PLATFORM_DARWIN)
         SET(WAMR_BUILD_PLATFORM darwin)

@@ -1899,7 +1899,7 @@ Node parseFile(String filename, ParserOptions options) {
         return import;
     } else if (found.endsWith("wasp"))
         return Wasp().setFile(found).parse(readFile(found), options);
-    else if (found.endsWith("wit"))
+    else if (found.endsWith("wit") or found.endsWith("wai"))
         return WitReader().read(found);
     else if (not found.contains(".")) {
         found = findFile(filename + ".wasp", options.current_dir);

@@ -102,7 +102,7 @@ String load(String file);
 bool isSmartPointer(long long d);
 
 //Node smartValue(long smartPointer);
-Node smartNode(smart_pointer_64 smartPointer64);
+Node *smartNode(smart_pointer_64 smartPointer64);
 
 long file_last_modified(char *file);
 

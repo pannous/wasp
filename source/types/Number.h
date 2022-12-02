@@ -20,7 +20,7 @@
 
 
 //class SmartPointer64;
-typedef long long SmartPointer64;
+typedef unsigned long long SmartPointer64;
 
 // https://en.wikipedia.org/wiki/NaN
 // signals and payloads are not new inventions ;)
@@ -36,31 +36,32 @@ typedef long long SmartPointer64;
 When encountered, a trap handler could decode the sNaN and return an index to the computed result.
  In practice, this approach is faced with many complications. */
 // int 60 : we reserve the 4 highest bits for special semantics and values
-// whenever the first hex in a 16byte smartlong sequence is NOT 0, it means it is special:
+// whenever the first hex in a 16byte smartlong sequence is NOT 0L, it means it is special:
 enum smartlongs {
-    zero = 0, // lol
-    LONG_MAX_VALUE = 0x7FFFFFFFFFFFFFFF, // ≠  Number.MAX_VALUE 2^^1024 - 1 ( Float 1.7976931348623157E+308 )
-    LONG_MIN_VALUE = 0x8000000000000000, // todo
-    max_value = 0x0EFFFFFFFFFFFFFFF,// different from usual LONG_MAX_VALUE 2^59 values ok? 'Only'
-    max_value_boarder = 0x0F00000000000000, // 2^56 room for special values between plus_infinity
-//    min_value=0xF100000000000000, // different from usual LONG_MIN_VALUE 2^59 values ok
-    min_value = 0xFFF1000000000000, // 51 bit negatives more than enough! why? to be compatible with NaN
-//    plus_infinity  = 0x0F000000000000000, //smartlongs::MAX_VALUE + 1 , // *2 vs +1 => reserve 2^(64-1) special values!
-    plus_infinity = 0x0FFFFFFFFFFFFFFFF,// ∞ inf
-    minus_infinity = 0xF0000000000000000,// -∞ -inf
-//    NaN = 0x0FFFFFFFFFFFFFFF,
-    NaN = 0xFFF0000000000000, // compatible with
+//unsigned long long
+    zero = 0L, // lol
+    LONG_MAX_VALUE = 0x7FFFFFFFFFFFFFFFL, // ≠  Number.MAX_VALUE 2^^1024 - 1 ( Float 1.7976931348623157E+308 )
+    LONG_MIN_VALUE = 0x8000000000000000L, // todo
+    max_value = 0x0EFFFFFFFFFFFFFFFL,// different from usual LONG_MAX_VALUE 2^59 values ok? 'Only'
+    max_value_boarder = 0x0F00000000000000L, // 2^56 room for special values between plus_infinity
+//    min_value=0xF100000000000000L, // different from usual LONG_MIN_VALUE 2^59 values ok
+    min_value = 0xFFF1000000000000L, // 51 bit negatives more than enough! why? to be compatible with NaN
+//    plus_infinity  = 0x0F000000000000000L, //smartlongs::MAX_VALUE + 1 , // *2 vs +1 => reserve 2^(64-1) special values!
+    plus_infinity = 0x0FFFFFFFFFFFFFFFL,// ∞ inf
+    minus_infinity = 0xF000000000000000L,// -∞ -inf
+//    NaN = 0x0FFFFFFFFFFFFFFFL,
+    NaN = 0xFFF0000000000000L, // compatible with
 //    NaN = 0b111111111xxxxxxx, NaN FLOAT representation in IEEE 754 single precision (32-bit)
 //    NaN = 0b011111111xxxxxxx, NaN FLOAT representation in JS!  IEEE 754 single precision (32-bit) =>
-    PlusNaN = 0x7FF0000000000000, // NaN FLOAT representation in JS  "The sign bit does not matter"
-//    PlusNaN = 0x7FFFFFFFFFFFFFFF, // NaN FLOAT representation in JS  "The sign bit does not matter"
-//    NaN = 0x0F0F0F0F0F0F0F0F,
-//    NaN = 0x0F0F000000000000,
-//    NAN = 0xF0F0F0F0F0F0F0F0,
-//    ∞=infinity=0x1FFFFFFFFFFFFFFF,
-//    -∞=minus_infinity=0xFFFFFFFFFFFFFFFF,
+    PlusNaN = 0x7FF0000000000000L, // NaN FLOAT representation in JS  "The sign bit does not matter"
+//    PlusNaN = 0x7FFFFFFFFFFFFFFFL, // NaN FLOAT representation in JS  "The sign bit does not matter"
+//    NaN = 0x0F0F0F0F0F0F0F0FL,
+//    NaN = 0x0F0F000000000000L,
+//    NAN = 0xF0F0F0F0F0F0F0F0L,
+//    ∞=infinity=0x1FFFFFFFFFFFFFFFL,
+//    -∞=minus_infinity=0xFFFFFFFFFFFFFFFFL,
 //    minus_one_leb=0x7f01010101010101,// 7 nops
-//    NaN = 0xEEEE0000EEEE0000, // special semantics
+//    NaN = 0xEEEE0000EEEE0000L, // special semantics
 };
 
 /* JS:

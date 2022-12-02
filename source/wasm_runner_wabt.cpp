@@ -89,17 +89,17 @@ void BindImports(Module *module, std::vector<Ref> &imports, Store &store) {
 }
 
 // wabt has HORRIBLE api, but ok
-long run_wasm(bytes buffer, int buf_size) {
-	Store store;
-	ModuleDesc module_desc;
-	bool kReadDebugNames = true;
-	bool kStopOnFirstError = true;
-	bool kFailOnCustomSectionError = true;
-	bool validate_wasm = true;
-	wabt::Features wabt_features;
-	wabt::ReadBinaryOptions options(wabt_features, 0, kReadDebugNames, kStopOnFirstError, kFailOnCustomSectionError);
-	wabt::Errors errors;
-	const wabt::Result &result1 = ReadBinaryInterp(buffer, buf_size, options, &errors, &module_desc);
+extern "C" long run_wasm(bytes buffer, int buf_size) {
+    Store store;
+    ModuleDesc module_desc;
+    bool kReadDebugNames = true;
+    bool kStopOnFirstError = true;
+    bool kFailOnCustomSectionError = true;
+    bool validate_wasm = true;
+    wabt::Features wabt_features;
+    wabt::ReadBinaryOptions options(wabt_features, 0, kReadDebugNames, kStopOnFirstError, kFailOnCustomSectionError);
+    wabt::Errors errors;
+    const wabt::Result &result1 = ReadBinaryInterp(buffer, buf_size, options, &errors, &module_desc);
 	if (Failed(result1)) {
 		printf("FAILED ReadBinaryInterp\n");
 		for (auto e : errors)
@@ -142,15 +142,15 @@ long run_wasm(bytes buffer, int buf_size) {
 	return -1;
 }
 
-int run_wasm(wabt::Module *module) {
-	// really such bahuuba necessary?
-	wabt::MemoryStream stream;
-	wabt::WriteBinaryOptions write_binary_options;
+int run_wasm_file(wabt::Module *module) {
+    // really such bahuuba necessary?
+    wabt::MemoryStream stream;
+    wabt::WriteBinaryOptions write_binary_options;
 //	write_binary_options.features = wabt_features;
-	WriteBinaryModule(&stream, module, write_binary_options);
-	wabt::OutputBuffer &outputBuffer = stream.output_buffer();
-	bytes data = outputBuffer.data.data();
-	return run_wasm(data, outputBuffer.size());
+    WriteBinaryModule(&stream, wasm_path, write_binary_options);
+    wabt::OutputBuffer &outputBuffer = stream.output_buffer();
+    bytes data = outputBuffer.data.data();
+    return run_wasm(data, outputBuffer.size());
 }
 
 
@@ -164,11 +164,11 @@ int fileSize1(char const *file) {
 }
 
 
-int run_wasm(char *file) {
-	int size = fileSize1(file);
-	if (size <= 0)error("File not found: "s + file);
-	unsigned char buffer[size];
-	fread(buffer, sizeof(buffer), size, fopen(file, "rb"));
-	return run_wasm(buffer, size);
+int run_wasm_file(char *file) {
+    int size = fileSize1(wasm_path);
+    if (size <= 0)error("File not found: "s + wasm_path);
+    unsigned char buffer[size];
+    fread(buffer, sizeof(buffer), size, fopen(wasm_path, "rb"));
+    return run_wasm(buffer, size);
 }
 

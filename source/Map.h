@@ -271,6 +271,11 @@ public:
     bool empty() {
         return _size <= 0;
     }
+
+    T &last() {
+        if (_size == 0)error("no last item in empty map");
+        return values[_size - 1];
+    }
 };
 
 void print(Map<String, int> map);

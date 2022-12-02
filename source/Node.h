@@ -428,27 +428,27 @@ public:
 			case int28:
 			case sint28:
 				value.longy = (int) spo;
-				kind = longs;
-				break;
-			case float28:
-				value.real = payload;// todo!
-				kind = reals;
-				break;
-			case anys:
-				*this = memory[payload];// todo
-				break;
-			case symbola:
-				name = String(&memoryChars[payload]); // todo 0x10 ... 0x1F or length header
-				kind = reference;
-				break;
-			case stringa:
-				value.string = new String(&memoryChars[payload]);
-				name = *value.string;
-				kind = strings;
-				break;
-			case codes:
-			case utf8char:
-				value.string = new String((wchar_t) payload);
+                kind = longs;
+                break;
+            case float28:
+                value.real = payload;// todo!
+                kind = reals;
+                break;
+            case anys:
+                *this = memory[payload];// todo
+                break;
+            case symbola:
+                name = String(&((char *) memory)[payload]); // todo 0x10 ... 0x1F or length header
+                kind = reference;
+                break;
+            case stringa:
+                value.string = new String(&((char *) memory)[payload]);
+                name = *value.string;
+                kind = strings;
+                break;
+            case codes:
+            case utf8char:
+                value.string = new String((wchar_t) payload);
 				name = *value.string;
 				kind = strings;
 				break;
@@ -655,24 +655,37 @@ public:
 		return kind == longs ? value.longy : value.real;// danger
 	}
 
-	Node *has(String s, bool searchMeta = true, short searchDepth = 0) const;
+    Node *has(String s, bool searchMeta = true, short searchDepth = 0) const;
 
 
 //		https://github.com/pannous/angle/wiki/truthiness
 //		if(name=="nil")return false;
 //		if(name=="0")return false;
-	explicit operator bool() {// TRUTHINESS operator, implicit in if, while
-		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
-	}
+    explicit operator bool() {// TRUTHINESS operator, implicit in if, while
+        return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
+    }
 
-	// type conversions
-	explicit operator bool() const {
-		return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
-	}
+    // todo ⚠️ NEVER CAST Node* to smart_pointer_64, THIS IS NOT WHAT WE WANT!!
+//    explicit operator smart_pointer_64 (){
+//        if(smart_pointer_header_mask & (smart_pointer_64)this)
+//            error("Node pointer out of reach > 2^48 ");
+//        return (smart_pointer_64)this & smart_pointer_node_signature;
+//    }
 
-	explicit operator int() const { return value.longy; }
+    smart_pointer_64 toSmartPointer() {
+        if (smart_pointer_header_mask & (smart_pointer_64) this)
+            error("Node pointer out of reach > 2^48 ");
+        return (smart_pointer_64) this | smart_pointer_node_signature;
+    }
 
-	explicit operator long() const { return value.longy; }
+    // type conversions
+    explicit operator bool() const {
+        return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
+    }
+
+    explicit operator int() const { return value.longy; }
+
+    explicit operator long() const { return value.longy; }
 
 	explicit operator float() const { return value.real; }
 
@@ -774,7 +787,9 @@ Node interpret(Node &n);
 Node eval(String n);
 
 
-struct smart_value{
+struct smart_value {
     Type smartType;
     Value value;
 };
+
+smart_pointer_64 toSmartPointer(Node *n);

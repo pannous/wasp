@@ -35,8 +35,7 @@ class Code;
 // wasmer via console, node/browser via import, webview  …
 // extern "C" for webview / other host
 extern "C" long run_wasm(bytes wasm_bytes, int len);
-
-long run_wasm(chars wasm_path);
+extern "C" long run_wasm_file(chars wasm_path);
 
 extern bytes magicModuleHeader;
 extern bytes moduleVersion;

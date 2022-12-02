@@ -316,16 +316,16 @@ void add_wasmtime_memory() {
 }
 
 
-long run_wasm(unsigned char *data, int size) {
-	if (!done)init_wasmtime();
-	wasmtime_error_t *error;
-	wasmtime_module_t *modul = NULL;
+extern "C" long run_wasm(unsigned char *data, int size) {
+    if (!done)init_wasmtime();
+    wasmtime_error_t *error;
+    wasmtime_module_t *modul = NULL;
 
-	error = wasmtime_module_new(engine, (uint8_t *) data, size, &modul);
-	if (error != NULL)exit_with_error("failed to compile module", error, NULL);
+    error = wasmtime_module_new(engine, (uint8_t *) data, size, &modul);
+    if (error != NULL)exit_with_error("failed to compile module", error, NULL);
 
-	wasm_trap_t *trap = NULL;// (wasm_trap_t *) malloc(10000); //wasm_trap_new((wasm_store_t *)store, NULL); //"Error?"
-	wasmtime_instance_t instance;
+    wasm_trap_t *trap = NULL;// (wasm_trap_t *) malloc(10000); //wasm_trap_new((wasm_store_t *)store, NULL); //"Error?"
+    wasmtime_instance_t instance;
 
 	Module &meta = read_wasm(data, size);// wasmtime module* sucks so we read it ourselves!
 	int importCount = meta.import_count;

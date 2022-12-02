@@ -275,6 +275,7 @@ public:
 
 //	explicit
     String(const char string[], bool copy = true/*false AFTER all is tested, for efficiency*/) {
+        // todo, make Node(string) copy = true in many situations?
         // todo (maybe dont) mark data as to-free on destruction once copy = false AND bool malloced = true
 //		data = const_cast<char *>(string);// todo heap may disappear, use copy!
         length = strlen0(string);
