@@ -349,7 +349,7 @@ run_wasm_sync(unsigned char *bytes, int length) {
 }
 
 
-long run_wasm(unsigned char *bytes, int length) {
+extern "C" long run_wasm(unsigned char *bytes, int length) {
     run_wasm_sync(bytes, length);
     return waiter.result();
 }

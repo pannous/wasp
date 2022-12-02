@@ -1418,7 +1418,7 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
     const std::vector<uint8_t> &immutable_data = binary->data;// if you insert, other sections get messed up!
     uint8_t *section_start = (uint8_t *) &immutable_data[section->offset];// changing int values (offsets) is ok
     uint8_t *section_end = section_start + section->size;// safety to not write outside bounds
-
+// 🪩
     Index cur_value = 0, new_value = -1;
     // todo: what if value at reloc location is not LEB ? does this ever happen?
     int leb_bytes = wabt::ReadS32Leb128(section_start + r->offset, section_end, &cur_value);

@@ -24,16 +24,15 @@ extern void error1(chars message, chars file, int line);
 // there are two aspects of wasm memory: the internal memory starting at 0 and the external c-pointer *wasm_memory if the VM provides it
 // worse there is the native_runtime which may hold the wasm_runtime running in the VM!
 
-extern "C" void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
-//extern "C" char *wasm_memory_chars;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
-
 // TODO: let the native_runtime mess with wasm_memory DIRECTLY?
 
 // todo : depends on clang_options! Sometimes it is needed sometimes it can't be there
 #ifndef WASM
 #endif
 extern "C" unsigned int *memory;// =0; always, BUT heap_offset/current is higher from beginning!
-extern "C" char *memoryChars;
+extern "C" void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
+//extern "C" char *wasm_memory_chars;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
+//extern "C" char *memoryChars;
 //extern "C" int __heap_base; ==
 //extern "C" int heap_offset; // via CMake  todo ?
 //extern "C" int memory_size; // via CMake  todo ?
