@@ -923,7 +923,7 @@ public:
 
 
     [[nodiscard]] bool isNumber() const {
-        return atoi0(data);
+        return data[0] == '0' or atoi0(data);
     }
 
     String format(int i) {

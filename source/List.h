@@ -164,15 +164,16 @@ public:
 //		todo("a.typ");
     }
 
+    // only Plain Old Data structures !
     List(S first, ...) : List() {
-//		items[0] = first;
+        _size = 0;
         va_list args;// WORKS WITHOUT WASI! with stdargs
         va_start(args, first);
-        S *item = &first;
-        while (item) {
+        S item = first;
+        do {
             items[_size++] = item;
-            item = (S *) va_arg(args, S*);
-        }
+            item = (S) va_arg(args, S);
+        } while (item);
         va_end(args);
     }
 
@@ -213,7 +214,7 @@ public:
     void grow() {
         check_silent(capacity * 2 < LIST_MAX_CAPACITY);
         S *neu = (S *) alloc(capacity * 2, sizeof(S));
-        memcpy((void *) neu, (void *) items, capacity* sizeof(S));
+        memcpy((void *) neu, (void *) items, capacity * sizeof(S));
 //        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
 //      indeed List<int> FUCKS UP just by growing even without references
         free(items);
@@ -242,11 +243,18 @@ public:
 //	}
 
 
+    S &operator[](unsigned long index) const {
+        if (index < 0 or index >= _size) /* and const means not auto_grow*/
+            error("index out of range : %d > %d"s % (long) index % _size);
+        return items[index];
+    }
+
+
     S &operator[](unsigned long index) {
         if (index == _size)_size++;// allow indexing one after end? todo ok?
         if (_size >= capacity)grow();
         if (index < 0 or index >= _size) /* and not auto_grow*/
-            error("index out of range : %d > %d"s % (long)index % _size);
+            error("index out of range : %d > %d"s % (long) index % _size);
         return items[index];
     }
 
