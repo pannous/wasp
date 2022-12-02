@@ -33,7 +33,8 @@ class Code;
 // Different environments offer different run_wasm implementations:
 // wasm JIT runtimes: wasm3, wasm-micro-runtime, wabt, V8 via webview:
 // wasmer via console, node/browser via import, webview  …
-long run_wasm(bytes wasm_bytes, int len);
+// extern "C" for webview / other host
+extern "C" long run_wasm(bytes wasm_bytes, int len);
 
 long run_wasm(chars wasm_path);
 
