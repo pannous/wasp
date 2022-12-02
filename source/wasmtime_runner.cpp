@@ -4,8 +4,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <wasmtime.h>
 #include <wasm.h>
-//#include <wasmtime.h>
 #include "Util.h"
 #include <math.h>
 
@@ -303,16 +303,16 @@ void init_wasmtime() {
 }
 
 void add_wasmtime_memory() {
-	wasm_limits_t limits = {
-			.min = 0,//100, SIGBUS / EXC_BAD_ACCESS if too small / out of bounds access (naturally)
+    wasm_limits_t limits = {
+            .min = 0,//100, SIGBUS / EXC_BAD_ACCESS if too small / out of bounds access (naturally)
 //			.max = 0x7FFFFFFF,//  assertion failed: … <= absolute_max
-	};
-	const wasm_memorytype_t *memtype = wasm_memorytype_new(&limits);
-	wasmtime_memory_t memory{.store_id=1, .index=0}; // filled later:
-	auto ok = wasmtime_memory_new(context, memtype, &memory);
+    };
+    const wasm_memorytype_t *memtype = wasm_memorytype_new(&limits);
+    wasmtime_memory_t wasmtimeMemory{.store_id=1, .index=0}; // filled later:
+    auto ok = wasmtime_memory_new(context, memtype, &wasmtimeMemory);
     if (!ok)error("wasmtime_memory_new failed");
-	uint8_t *memory_data = wasmtime_memory_data(context, &memory);
-	wasm_memory = memory_data;// todo: keep old?
+    uint8_t *memory_data = wasmtime_memory_data(context, &wasmtimeMemory);
+    wasm_memory = memory_data;// todo: keep old?
 }
 
 
@@ -363,13 +363,12 @@ long run_wasm(unsigned char *data, int size) {
 //	assert(ok);
 //	assert(memory_export.kind == WASMTIME_EXTERN_MEMORY);
 	if (ok) {
-		wasmtime_memory_t memory = memory_export.of.memory;
-		uint8_t *memory_data = wasmtime_memory_data(context, &memory);
-		if (memory_data)
-			wasm_memory = memory_data;
-		else
-			trace("wasm module exports no memory");
-	} else trace("wasm module exports no memory");
+        wasmtime_memory_t wasmtimeMemory = memory_export.of.memory;
+        uint8_t *memory_data = wasmtime_memory_data(context, &wasmtimeMemory);
+        if (memory_data)
+            wasm_memory = memory_data;
+        else trace("wasm module exports no memory");
+    } else trace("wasm module exports no memory");
 
 //	else error("wasmtime_instance_export_get failed");
 
@@ -422,9 +421,24 @@ long run_wasm(unsigned char *data, int size) {
             printf("TYPE: %s\n", typeName(type));
         } else printf("Unknown type 0x%x\n", (unsigned int) type);
     }
-	wasmtime_module_delete(modul);
-	return result;
+    wasmtime_module_delete(modul);
+    return result;
 }
+
+#define own
+
+static inline own wasm_functype_t *wasm_functype_new_4_1(
+        own wasm_valtype_t *p1, own wasm_valtype_t *p2, own wasm_valtype_t *p3, own wasm_valtype_t *p4,
+        own wasm_valtype_t *r
+) {
+    wasm_valtype_t *ps[4] = {p1, p2, p3, p4};
+    wasm_valtype_t *rs[1] = {r};
+    wasm_valtype_vec_t params, results;
+    wasm_valtype_vec_new(&params, 4, ps);
+    wasm_valtype_vec_new(&results, 1, rs);
+    return wasm_functype_new(&params, &results);
+}
+
 
 const wasm_functype_t *funcType(Signature &signature) {
     wasm_valtype_t *i = wasm_valtype_new(WASM_I32);
