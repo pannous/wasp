@@ -1,7 +1,13 @@
 #include "Angle.h" // emit
 #include "Wasp.h"
 #include "wasm_reader.h"
+
+#if INCLUDE_MERGER
+
 #include "wasm_merger.h"
+
+#endif
+
 #include "wasm_emitter.h"
 //#import "asserts.cpp"
 
@@ -21,23 +27,28 @@ panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#α�
 #endif
 
 void testMergeGlobal() {
+#if INCLUDE_MERGER
     Module &main = loadModule("test/merge/main_global.wasm");
     Module &lib = loadModule("test/merge/lib_global.wasm");
     Code merged = merge_binaries(main.code, lib.code);
     int i = merged.save().run();
     assert_equals(i, 42);
+#endif
 }
 
 void testMergeMemory() {
+#if INCLUDE_MERGER
     Module &main = loadModule("test/merge/main_memory.wasm");
     Module &lib = loadModule("test/merge/lib_memory.wasm");
     Code merged = merge_binaries(main.code, lib.code);
     int i = merged.save().run();
     assert_equals(i, 42);
+#endif
 }
 
 
 void testMergeRuntime() {
+#if INCLUDE_MERGER
     Module &runtime = loadModule("wasp.wasm");
     Module &main = loadModule("test/merge/main_memory.wasm");
     main.code.needs_relocate = true;
@@ -45,6 +56,7 @@ void testMergeRuntime() {
     Code merged = merge_binaries(runtime.code, main.code);
     int i = merged.save().run();
     assert_equals(i, 42);
+#endif
 }
 
 
@@ -796,7 +808,6 @@ void testMergeWabtByHand() {
 }
 
 
-
 //testMerge
 void testWasmModuleExtension_OUTDATED() {
     printf("testWasmModuleExtension");
@@ -819,6 +830,7 @@ void testWasmModuleExtension_OUTDATED() {
 // we do NOT wan't to add 10000 imports here, so that the indices match, do we?
 //	functionSignatures.clear();
     Module prog = read_wasm("main.wasm");
+#if INCLUDE_MERGER
     Code merged = merge_wasm(module, prog);
     merged.save("merged.wasm");
     read_wasm("merged.wasm");
@@ -827,13 +839,14 @@ void testWasmModuleExtension_OUTDATED() {
 //  WASM module load failed: multiple memories  in w.m.r.
     assert_equals(ok1, 42);
 #endif
+#endif
 }
 
 
 // assert_run currently very slow 5 sec, used to be < .1 sec why??
 void testWasmRuntimeExtension() {
 
-	assert_run("43", 43);
+    assert_run("43", 43);
     assert_run("strlen0('123')", 3);
     assert_run("atoi0('123')", 123);
     assert_run("atoi0('123000')+atoi0('456')", 123456);
@@ -846,7 +859,7 @@ void testWasmRuntimeExtension() {
 
     assert_run("test42+1", 43);
     assert_run("test42i(1)", 43);
-	assert_throws("not_ok");// error
+    assert_throws("not_ok");// error
 
     assert_run("test42f(1)", 43);
     assert_run("test42f(1.0)", 43.0);
@@ -903,10 +916,12 @@ void testMergeRelocate() {
     Module main = read_wasm("test/merge/main.wasm");
 //	Module main=read_wasm("test.wasm");
 //main.
+#if INCLUDE_MERGER
     Code merged = merge_wasm(lib, main);
     merged.save("merged.wasm");
     Module merged1 = read_wasm("merged.wasm");
     merged.run();
+#endif
 //	wabt::Module *merged=merge_wasm(lib, main);
 //	save_wasm(merged, "prog.wasm");
 #endif

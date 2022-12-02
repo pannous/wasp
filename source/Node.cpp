@@ -1296,3 +1296,52 @@ int ord(Node &p) {
         p.invoke("ord", 0);// self
     return p.value.longy;
 }
+
+
+// todo: make constructor
+Node smartNode(smart_pointer_64 smartPointer64) {
+    if (smartPointer64 == 0)return NIL;
+//    if (!isSmartPointer(smartPointer64))
+//        return Node(smartPointer64);
+    if ((smartPointer64 & negative_mask_64) == negative_mask_64) {
+        return Node((int64_t) smartPointer64);
+    }
+    if ((type_mask_64_word & smartPointer64) == 0)
+        return Node((long) smartPointer64);// as number
+
+    if (smartPointer64 & double_mask_64) {
+        // todo rare cases, where doubles don't match 0x7F…
+        double val = *(double *) &smartPointer64;
+        return Node(val);
+    }
+
+    auto value = smartPointer64 & 0xFFFFFFFF;// data part
+    long long smart_type64 = smartPointer64 & 0xFFFFFFFF00000000;// type part
+    if (smart_type64 == array_header_64 /* and abi=wasp */ ) {
+        // smart pointer to smart array
+        int *index = ((int *) wasm_memory) + value;
+        int kind = *index++;
+        if (kind == array_header_32)
+            kind = *index++;
+        int len = *index++; // todo: leb128 vector later
+        Node arr = Node();
+//		arr.kind.value = kind;
+        int pos = 0;
+        while (len-- > 0) {
+            auto val = index[pos++];
+            arr.add(new Node(val));
+        }
+        arr.kind = objects;
+//			check_eq(arr.length,len);
+//			check(arr.type=…
+        return arr;
+    }
+    if (smart_type64 == string_header_64) {
+        // smart pointer for string
+        return Node(((char *) wasm_memory) + value);
+    }
+    breakpoint_helper
+    printf("smartPointer64 : %llx\n", (int64_t) smartPointer64);
+    error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");
+    return Node();
+}
