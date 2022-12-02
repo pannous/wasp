@@ -78,6 +78,8 @@ function memset() {
 
 let nop = x => x
 
+puts = x => console.log(string(x))
+
 let min_memory_size = 65536 / 64 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: memory_size});
@@ -86,7 +88,7 @@ imports = {
         memset,
         atoi: x => parseInt(x),
         puti: x => console.log(x),
-        puts: x => console.log(string(x)),
+        puts,
         logi: x => console.log(x),
         logc: x => console.log(String.fromCodePoint(x)),
         logs: x => console.log(string(x)),
@@ -95,8 +97,10 @@ imports = {
 
         _Z13init_graphicsv: nop, // canvas init by default
         _Z21requestAnimationFramev: nop,
+        __cxa_allocate_exception: nop,
         __cxa_guard_acquire: nop,
         __cxa_guard_release: nop,
+        __cxa_throw: puts,
         __cxa_begin_catch: x => log("caught c++ exception", x),
         __cxa_demangle: nop,
         _ZSt9terminatev: terminate,
