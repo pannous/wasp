@@ -562,7 +562,8 @@ Node &Node::add(const Node *node) {
     if (lastChild >= MAX_NODE_CAPACITY)
         error("Out of global Node memory");
     if (!children) children = (Node *) calloc(capacity, sizeof(Node));
-    if (length > 0) children[length - 1].next = &children[length];
+    if (length > 0)
+        children[length - 1].next = &children[length];
     ((Node *) node)->parent = this;// not const lol. allow to set and ignore NIL.parent
     children[length] = *node; // invokes memcpy
     length++;
