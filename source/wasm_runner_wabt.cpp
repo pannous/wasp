@@ -1,12 +1,15 @@
 #include "String.h"
-#include "src/binary-reader.h"
+#include "binary-reader.h"
+//#include "src/binary-reader.h"
 #include <wast-lexer.h>
 #include <error.h>
 #include "stream.h" // module->data
 #include <shared-validator.h>
 #include <binary-writer.h>
-#include "src/interp/binary-reader-interp.h"
-#include "src/interp/interp.h"
+#include "interp/binary-reader-interp.h"
+#include "interp/interp.h"
+//#include "src/interp/binary-reader-interp.h"
+//#include "src/interp/interp.h"
 
 typedef unsigned char *bytes;
 #define pointer std::unique_ptr
@@ -16,7 +19,7 @@ using namespace wabt::interp;
 //using RefVec = std::vector<Ref>;
 
 double root(double n) {
-	double lo = 0, hi = n, mid;
+    double lo = 0, hi = n, mid;
 	for (int i = 0; i < 100; i++) {
 		mid = (lo + hi) / 2;
 		if (mid * mid == n) return mid;
@@ -73,19 +76,19 @@ void BindImports(Module *module, std::vector<Ref> &imports, Store &store) {
 	bool hostPrint = true;//false;
 	// convoluted shit, I don't like it
 	for (auto &&import : module->desc().imports) {
-		auto func_type = *wabt::cast<FuncType>(import.clazz.clazz.get());
-		if (import.clazz.name == "square")imports.push_back(HostFunc::New(store, func_type, do_square).ref());
-		else if (import.clazz.name == "puti")imports.push_back(HostFunc::New(store, func_type, do_puti).ref());
-		else if (import.clazz.name == "putf")imports.push_back(HostFunc::New(store, func_type, do_putf).ref());
-		else if (import.clazz.name == "puts")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
-		else if (import.clazz.name == "print")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
-		else if (import.clazz.name == "proc_exit")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
-		else if (import.clazz.name == "panic")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
-		else if (import.clazz.name == "raise")imports.push_back(HostFunc::New(store, func_type, do_raise).ref());
-		else if (import.clazz.name == "√")imports.push_back(HostFunc::New(store, func_type, do_sqrt).ref());
-		else imports.push_back(Ref::Null);
-		// By default, just push an null reference. This won't resolve, and instantiation will fail.
-	}
+        auto func_type = *wabt::cast<FuncType>(import.type.type.get());
+        if (import.type.name == "square")imports.push_back(HostFunc::New(store, func_type, do_square).ref());
+        else if (import.type.name == "puti")imports.push_back(HostFunc::New(store, func_type, do_puti).ref());
+        else if (import.type.name == "putf")imports.push_back(HostFunc::New(store, func_type, do_putf).ref());
+        else if (import.type.name == "puts")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
+        else if (import.type.name == "print")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
+        else if (import.type.name == "proc_exit")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
+        else if (import.type.name == "panic")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
+        else if (import.type.name == "raise")imports.push_back(HostFunc::New(store, func_type, do_raise).ref());
+        else if (import.type.name == "√")imports.push_back(HostFunc::New(store, func_type, do_sqrt).ref());
+        else imports.push_back(Ref::Null);
+        // By default, just push an null reference. This won't resolve, and instantiation will fail.
+    }
 }
 
 // wabt has HORRIBLE api, but ok
@@ -99,16 +102,17 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
     wabt::Features wabt_features;
     wabt::ReadBinaryOptions options(wabt_features, 0, kReadDebugNames, kStopOnFirstError, kFailOnCustomSectionError);
     wabt::Errors errors;
-    const wabt::Result &result1 = ReadBinaryInterp(buffer, buf_size, options, &errors, &module_desc);
-	if (Failed(result1)) {
-		printf("FAILED ReadBinaryInterp\n");
-		for (auto e : errors)
-			printf("%s", e.message.data());
+    const wabt::Result &result1 = ReadBinaryInterp(buffer, buf_size, options, &errors, &module_desc); // 2021
+//    const wabt::Result &result1 = ReadBinaryInterp("<code>", buffer, buf_size , options, &errors, &module_desc); // 2022
+    if (Failed(result1)) {
+        printf("FAILED ReadBinaryInterp\n");
+        for (auto e: errors)
+            printf("%s", e.message.data());
 //		printf("This HANGS the IDE. Todo: why?\n");
-		return -1;
-	}
-	auto module = wabt::interp::Module::New(store, module_desc);
-	RefVec imports;
+        return -1;
+    }
+    auto module = wabt::interp::Module::New(store, module_desc);
+    RefVec imports;
 #if WASI
 	uvwasi_t uvwasi;
 	std::vector<const char*> argv; // ...
@@ -124,19 +128,19 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
 	}
 
 	for (wabt::interp::ExportDesc export_ : module_desc.exports) {
-		if (export_.clazz.clazz->kind != wabt::ExternalKind::Func) continue;
-		if (export_.clazz.name != "main" and export_.clazz.name != "maine") continue;
-		auto *func_type = wabt::cast<wabt::interp::FuncType>(export_.clazz.clazz.get());
-		if (func_type->params.empty()) {
-			RefVec funcs = instance->funcs();
-			auto func = store.UnsafeGet<wabt::interp::Func>(funcs[export_.index]);
-			Values params;
-			Values results;
-			Trap::Ptr trap;
-			wabt::Result ok = func->Call(store, params, results, &trap, 0);
-			if (results.size() == 0)return 0;// no result
-			int result0 = results.front().Get<int>();
-			return result0;
+        if (export_.type.type->kind != wabt::ExternalKind::Func) continue;
+        if (export_.type.name != "main" and export_.type.name != "maine") continue;
+        auto *func_type = wabt::cast<wabt::interp::FuncType>(export_.type.type.get());
+        if (func_type->params.empty()) {
+            RefVec funcs = instance->funcs();
+            auto func = store.UnsafeGet<wabt::interp::Func>(funcs[export_.index]);
+            Values params;
+            Values results;
+            Trap::Ptr trap;
+            wabt::Result ok = func->Call(store, params, results, &trap, 0);
+            if (results.size() == 0)return 0;// no result
+            int result0 = results.front().Get<int>();
+            return result0;
 		}
 	}
 	return -1;
@@ -147,7 +151,7 @@ int run_wasm_file(wabt::Module *module) {
     wabt::MemoryStream stream;
     wabt::WriteBinaryOptions write_binary_options;
 //	write_binary_options.features = wabt_features;
-    WriteBinaryModule(&stream, wasm_path, write_binary_options);
+//    WriteBinaryModule(&stream, wasm_path, write_binary_options);
     wabt::OutputBuffer &outputBuffer = stream.output_buffer();
     bytes data = outputBuffer.data.data();
     return run_wasm(data, outputBuffer.size());
@@ -164,7 +168,7 @@ int fileSize1(char const *file) {
 }
 
 
-int run_wasm_file(char *file) {
+long run_wasm_file(char *wasm_path) {
     int size = fileSize1(wasm_path);
     if (size <= 0)error("File not found: "s + wasm_path);
     unsigned char buffer[size];

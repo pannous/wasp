@@ -2611,13 +2611,18 @@ void assurances() {
 void testCurrent() {
 //    assurances();
 //    testLists();
-    testMergeGlobal();
-    assert_is("false", false);
-    assert_emit("'42'", "42");
-    assert_is("square 3", 9)
     assert_emit("42", 42);
+    assert_emit("'a b c d e f g h i j k l m n o p q r s t u v w x y z'",
+                "a b c d e f g h i j k l m n o p q r s t u v w x y z");
+    assert_emit("'42'", "42");
+    assert_emit("42.7", 42.7);
+//        assert_is("square 3", 9) // AddressSanitizer can not provide additional info. WOW!  Exception: EXC_BAD_ACCESS (code=1,
+//        assert_emit("puts('ok');", 0);
+    assert_is("false", false);
+    testMergeGlobal();
     assert_emit("42.7", 42.7);
     assert_emit("2000000000000", (long) 2000000000000l)// auto long
+    assert_emit("'42'", "42");
     testListVarargs();//
 
 //    assert_emit("42/4", 10.5);
