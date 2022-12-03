@@ -464,6 +464,7 @@ Valtype mapArgToValtype(String arg) {
     else if (arg == "long")return Valtype::int64;
     else if (arg == "long&")return Valtype::pointer;
     else if (arg == "long long")return Valtype::int64;
+    else if (arg == "unsigned long long")return Valtype::int64;
     else if (arg == "double")return Valtype::float64;
     else if (arg == "unsigned long")return Valtype::int64;
     else if (arg == "float")return Valtype::float32;
