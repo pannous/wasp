@@ -319,7 +319,7 @@ public:
         return *this;
     }
 
-    long run() {
+    smart_pointer_64 run() {
         return run_wasm(data, length);
     }
 

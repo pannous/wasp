@@ -1311,6 +1311,7 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
     if ((smartPointer64 & smart_pointer_header_mask) == smart_pointer_node_signature)
         return (Node *) (smartPointer64 & smart_pointer_value60_mask);
 
+//        if ((smartPointer64 & double_mask_64) == double_mask_64)
     if (smartPointer64 & double_mask_64) {// ok no other match since 0xFF already checked
         // todo rare cases, where doubles don't match 0x7F…
         double val = *(double *) &smartPointer64;
@@ -1345,7 +1346,9 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
 //        if(smart_type_payload&string_meta::share)
 //        return new Node(new String((char *) wasm_memory) + value, false/*copy!*/);
 //        else
-        Node &pNode = *new Node(new String(((char *) wasm_memory) + value, true /*copy!*/ ), false /* not identifier*/);
+        char *string = ((char *) wasm_memory) + value;
+        String *pString = new String(string, true /*copy!*/ );
+        Node &pNode = *new Node(pString, false /* not identifier*/);
         pNode.setType(strings);
         return &pNode;
     }

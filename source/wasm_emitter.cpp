@@ -762,8 +762,8 @@ Code emitData(Node &node, Function &context) {
             int stringIndex = data_index_end + runtime.data_offset_end;// uh, todo?
             if (not node.value.string)error("empty node.value.string");
             String string = *node.value.string;
-            if (string and referenceDataIndices.has(
-                    string)) // todo: reuse same strings even if different pointer, aor make same pointer before
+            if (string and referenceDataIndices.has(string))
+                // todo: reuse same strings even if different pointer, aor make same pointer before
                 stringIndex = referenceDataIndices[string];
             else {
                 referenceDataIndices.insert_or_assign(string, data_index_end);
@@ -2498,7 +2498,8 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
     if (runtime0) {
 //		memoryHandling = no_memory;// done by runtime?
 //		memoryHandling = export_memory;// try to combine? duplicate export name `memory` already defined
-        memoryHandling = import_memory;// works
+//        memoryHandling = import_memory;// works
+        memoryHandling = internal_memory;
         runtime = *runtime0;// else filled with 0's
         runtime_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
         import_count = 0;
