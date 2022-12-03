@@ -284,15 +284,9 @@ Node &groupIf(Node n, Function &context) {
         then = n.from("then");
     }
 
-    if (condition.kind == key and condition.value.data and !condition.next)
+    if (condition.kind == key and condition.value.data)// or condition.next // and !condition.next)
         then = condition.values();
 
-    // todo condition.next->length<0 reveals BUG!
-//    and condition.next->length >= 0
-    if (condition.next and condition.next->name == "else")
-        then = condition.values();
-
-    // todo: UNMESS how?
     if (n.has(":") /*before else: */) {
         condition = n.to(":");
         if (condition.has("else"))
