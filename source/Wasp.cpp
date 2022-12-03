@@ -1626,9 +1626,9 @@ private:
                     Node &key = actual.last();
                     bool add_raw = actual.kind == expression or key.kind == expression or
                                    (actual.last().kind == groups and actual.length > 1);
-                    bool add_to_whole_expression = false; // a b : c => (a b):c  // todo: symbol :a !
-                    if (previous == ' ' and (next == ' ' or next == '\n'))// and lastNonWhite !=':' …
-                        add_to_whole_expression = true;
+                    bool add_to_whole_expression = false;
+                    if (previous == ' ' and (next == ' ' or next == '\n') and not parserOptions.colon_immediate)//  …
+                        add_to_whole_expression = true; // a b : c => (a b):c  // todo: symbol :a !
                     if (is_operator(previous))
                         add_raw = true;// == *=
 
@@ -1637,7 +1637,7 @@ private:
                     if (next == '>' and parserOptions.arrow)
                         proceed(); // =>
                     if (not(op.name == ":" or (parserOptions.data_mode and op.name == "=")))
-                        add_raw = true;// todo: treat ':' as implicit constructor and all other as expression for now!
+                        add_raw = true;
                     if (op.name.length > 1)
                         add_raw = true;
                     if (actual.kind == expression)
@@ -1647,6 +1647,8 @@ private:
                     }
                     char closer;// significant whitespace:
                     if (ch == '\n') closer = ';';// a: b c == a:(b c) newline or whatever!
+                    else if (op == ":" and parserOptions.colon_immediate)
+                        closer = ' '; // immediate a:b c == (a:b),c
                     else if (ch == INDENT) {
                         closer = DEDENT;
                         if (not actual.separator)
@@ -1654,7 +1656,7 @@ private:
                         proceed();
                         white();
                     } else if (ch == ' ') closer = ';';// a: b c == a:(b c) newline or whatever!
-                    else closer = ' ';// immediate a:b c == (a:b),c
+                    else closer = ' ';
                     Node &val = valueNode(closer, &key);// applies to WHOLE expression
                     if (add_to_whole_expression and actual.length > 1 and not add_raw) {
                         if (actual.value.node)todo("multi-body a:{b}{c}");

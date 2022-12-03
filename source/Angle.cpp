@@ -290,12 +290,15 @@ Node &groupIf(Node n, Function &context) {
         error("no if block given");
     Node &condition = n.first();
     Node then;
-    if (n.length > 0)then = n[1];
-    if (n.length == 0) then = n.values();
-    if (n.kind == key) {
+    if (n.length == 0)
+        then = n.values();
+    else if (n.kind == key) {
         condition = n.from(1);
         then = *n.value.node;
-    }
+    } else if (n.length > 0)then = n[1];
+    if (then == "else")
+        then = condition.values();
+
     if (n.has("then")) {
         condition = n.to("then");
         then = n.from("then");
@@ -304,7 +307,7 @@ Node &groupIf(Node n, Function &context) {
     if (condition.kind == key and condition.value.data)// or condition.next // and !condition.next)
         then = condition.values();
 
-    if (n.has(":") /*before else: */) {
+    if (n.has(":") /*before else: */) { // todo remove since ":" is always parsed immediate (right?)
         condition = n.to(":");
         if (condition.has("else"))
             condition = condition.to("else");// shouldn't happen?
@@ -314,6 +317,7 @@ Node &groupIf(Node n, Function &context) {
         then = condition.from(":");
         //		condition = condition.interpret();// compile time evaluation?!
     }
+
     Node otherwise;
     if (n.has("else"))
         otherwise = n["else"].values();
@@ -323,7 +327,7 @@ Node &groupIf(Node n, Function &context) {
         otherwise = then.from("else");
         then = then.to("else");
     }
-    if (then.name == ":") {
+    if (then.name == ":") { // todo remove since ":" is always parsed immediate (right?)
         if (then.length > 1)
             otherwise = then[1];
         if (then.length > 2)
