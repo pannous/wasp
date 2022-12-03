@@ -342,7 +342,7 @@ extern "C" long run_wasm(unsigned char *data, int size) {
 //		Signature &signature = meta.signatures[import_name];
         Function &function = meta.functions[import_name];
         Signature &signature = function.signature;
-        function.name = signature.debug_name = import_name;
+//        function.name = signature.debug_name = import_name;
         const wasm_functype_t *type = funcType(signature);
         wasm_wrap (*callback) = link_import(import_name);
         wasmtime_func_new(context, type, callback, NULL, NULL, &link);

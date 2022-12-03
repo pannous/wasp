@@ -2608,10 +2608,15 @@ void assurances() {
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm build via wasm-runtime
 // 2022-10-26 : 3 sec without runtime_emit, 15 sec with runtime_emit  ALL TESTS PASSING
 // 2022-11-29 : 5 sec WITH runtime_emit! how so fast? SANITIZE disabled?
+// 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
+// 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
 //    assurances();
 //    testLists();
 //    run_wasm(0, 0);
+    assert_run("x=123;x + 4 is 127", true);
+    testAssertRun();
+    testWasmRuntimeExtension();
 //    run_wasm_file();
     assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
 

@@ -843,7 +843,6 @@ void testWasmModuleExtension_OUTDATED() {
 }
 
 
-// assert_run currently very slow 5 sec, used to be < .1 sec why??
 void testWasmRuntimeExtension() {
 
     assert_run("43", 43);
