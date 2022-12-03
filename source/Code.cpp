@@ -208,6 +208,7 @@ Valtype mapTypeToWasm(Node &n) {
     if (n.kind == unknown) return int32;// blasphemy!
     Node first = n.first();
     if (first == n)return int32;// array of sorts
+    if (n.kind == generics)return mapTypeToWasm(first);// todo
     if (n.kind == assignment)return mapTypeToWasm(first);// todo
     if (n.kind == operators)return mapTypeToWasm(first);// todo
     if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!

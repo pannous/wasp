@@ -78,3 +78,4 @@ Module &read_wasm(chars file);
 Code &read_code(chars file);
 
 extern Module *module;
+

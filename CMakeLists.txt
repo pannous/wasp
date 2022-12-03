@@ -142,13 +142,6 @@ set(CMAKE_CXX_STANDARD 20)
 ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it needs for the declared range of possible values.
 # makes TypedValue 1+8 bytes, doesn't help for multi-value (int32 int64)
 
-if (CONSOLE)
-    message(CONSOLE)
-    ADD_DEFINITIONS(-DCONSOLE)
-    ADD_DEFINITIONS(-DUSE_READLINE)
-    set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp)
-endif ()
-
 
 if (DEBUG)
     MESSAGE("DEBUG!")
@@ -222,6 +215,14 @@ endif ()
 
 # COMMON FOR ALL
 set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp)
+
+if (CONSOLE)
+    message(CONSOLE)
+    ADD_DEFINITIONS(-DCONSOLE)
+    ADD_DEFINITIONS(-DUSE_READLINE)
+    set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp) # Needs to come after, because conflicting Function symbol
+endif ()
+
 
 if (NO_TESTS)
     ADD_DEFINITIONS(-DNO_TESTS)
