@@ -1024,12 +1024,12 @@ Node &Node::setName(char *name0) {
 
 // extract value from this (remove name to avoid emit-setter )
 Node &Node::values() {
+    if (kind == key)return *value.node;
     if (kind == longs)return *new Node(value.longy);
     if (kind == reals)return *new Node(value.real);
     if (kind == strings)return *new Node(value.string);
     if (kind == codepoints)return *new Node((codepoint) value.longy);
     if (kind == bools)return value.data ? True : False;
-    if (kind == key)return *value.node;
     if (length == 1 and not value.data) return children[0];// todo: reaaaly?
     Node &val = clone()->setName("");
 //	val.children = 0;
