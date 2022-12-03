@@ -295,11 +295,11 @@ void testEqualsBinding() {
 
 void testColonImmediateBinding() {
     // colon closes with space, not semicolon !
-    parse("a: float32, b: float32");
+    result = parse("a: float32, b: float32");
     check(result.length == 2);
     check(result["a"] == "float32");
     check(result[0] == Node("a").add(Node("float32")));
-    check(result[1] == Node("a").add(Node("float32")));
+    check(result[1] == Node("b").add(Node("float32")));
 }
 
 void testWit() {
@@ -698,11 +698,11 @@ void testSignificantWhitespace() {
     result = parse("a b:c");
     check(result.length == 2);// a , b:c
     check(result.last().kind == key);// a , b:c
-    result = parse("a: b c d");
+    result = parse("a: b c d", {.colon_immediate=false});
     check(result.length == 3);
     check(result.name == "a"); // "a"(b c d), NOT ((a:b) c d)
     check(result.kind == groups);// not key!
-    result = parse("a b : c");
+    result = parse("a b : c", {.colon_immediate=false});
     check(result.length == 1 or result.length == 2);// (a b):c
     assert_equals(result.kind, key);
     skip(
@@ -846,7 +846,7 @@ void testImport42() {
 //}
 
 void testColonLists() {
-    auto parsed = parse("a: b c d");
+    auto parsed = parse("a: b c d", {.colon_immediate=false});
     check(parsed.length == 3);
     check(parsed[1] == "c");
     check(parsed.name == "a");
@@ -2658,7 +2658,11 @@ void testCurrent() {
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
 //    assurances();
-    testWit();
+    assert_emit("if 2 : 3 else 4", 3);
+//    assert_emit("if 2:3 else 4", 3);
+
+    testColonImmediateBinding();
+//    testWit();
     testPattern();
 //    testAssertRun();
 //    assert_emit("42/4", 10.5);
