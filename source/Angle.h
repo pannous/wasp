@@ -85,3 +85,28 @@ Function *findLibraryFunction(String name, bool searchAliases);
 bool addLocal(Function &context, String name, Valtype valtype, bool is_param);
 
 Node &groupFunctionCalls(Node &expressiona, Function &context);
+
+
+struct ParserOptions { // not just for parser but also for serialize!!
+
+//    todo move polish_notation here! … how? polish_notation is also used in serialize() !
+//    bool polish_notation= false;// prefix notation, s-expression parser flag  (html (body)) vs html{body{}}
+
+// parse x[1] as x:1 reference with immediate value or x:[1] reference with pattern
+// parse x={y} as x:{y} as x{y} or keep operator =
+    bool data_mode = false;
+    bool arrow = true; // false; // treat -> arrow as map operator :
+    bool dollar_names = false;// $name as in wat,wit
+    bool percent_names = false;// escape keywords as names in wit   e.g.  %id %flags
+    bool colon_symbols = false;// :symbol ruby style ⚠️ careful with map Obviously
+    bool at_names = false;// @interface as in wat,wit
+    bool use_tags = false;// <html> or
+    bool use_generics = false;// generic list<abc> , "less than" requires spaces, a<b can still be resolved as 'smaller' in analyzer
+
+    bool kebab_case = true;//  false;// kebab-case means: parse "-" as hypen instead of minus, or 1900 - 2000AD (easy with units)
+    bool kebab_case_plus = false;//  parse ANY "-" as hypen instead of minus
+    // a-b can still be resolved as minus in analyzer
+
+    bool space_brace = false;// resolve a {x} as a{x}
+    String current_dir = "./"; // where to look for includes
+};

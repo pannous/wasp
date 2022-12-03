@@ -1259,13 +1259,16 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
 
     Node &first = node.first();
     switch (node.kind) {
+        case functor:
         case records:
         case clazz:
         case structs:
         case flags:
+            // nothing to do since meta info is in module
+            // node is in `types` / `functions` and all fields are in `globals`
             // TYPE info at compile time in types[] // todo: emit reflection data / wit !
             // for INSTANCES see emitConstruct(node, context);
-            return code;// nothing to do since node is in `types` and all fields are in `globals`
+            return code;
         case objects:
         case groups:
             // todo: all cases of true list vs list of expression

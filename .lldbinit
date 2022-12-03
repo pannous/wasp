@@ -61,6 +61,7 @@ type summary add wabt::link::Export --summary-string "${var.name} #${var.index}"
 type summary add Local --summary-string "${var.name} #${var.position}"
 # #${var.is_param}
 
+type summary add Module --summary-string "${var.name} ${var.total_func_count}"
 type summary add Function* --summary-string "${var.name}"
 type summary add Function --summary-string "${var.name}"
 type summary add Function__LONG --summary-string "#${var.index} ${var.name} ${var.export_name} ${var.signature}  import:${var.is_import} used:${var.is_used} handled:${var.is_handled}"

@@ -493,6 +493,7 @@ bool Node::operator>(Node other) {
     return false;
 }
 
+// non-modifying
 Node Node::operator+(Node other) {
     if (kind == strings and other.kind == longs)
         return Node(value.string + other.value.longy);
@@ -550,7 +551,7 @@ Node &Node::add(const Node *node) {
     if (node->kind == groups and node->length == 0 and node->name.empty())
         return *this;
     if (kind == longs or kind == reals)
-        error("can't modify primitives, only their referenceIndices a=7 a.nice=yes");
+        warn("can't modify primitives, only their referenceIndices");// e.g.  a=7 a.nice=yes
     if (capacity == 0)capacity = NODE_DEFAULT_CAPACITY;// how ;) copy constructor?
     if (length >= capacity - 1) {
         warn("Out of node capacity "s + capacity + " in " + name);
@@ -836,6 +837,7 @@ String Node::serializeValue(bool deep) const {
         case operators:
         case constructor:
         case functor:
+        case modul:
             return name;// +"!"
         case declaration:
         case expression:
@@ -866,12 +868,13 @@ String Node::serialize() const {
             return serializedValue;// not "3":3
         if (kind == reals)// and name and (name.empty() or name==itoa(value.longy)))
             return serializedValue;// not "3":3.14
-        if (serializedValue and value.data and !eq(name, serializedValue) and !eq(serializedValue, "{…}") and
+        if (serializedValue and (value.data or kind == longs) and !eq(name, serializedValue) and
+            !eq(serializedValue, "{…}") and
             !eq(serializedValue, "?")) {
             if (not name.empty())
                 wasp += ":";
             wasp += serializedValue;
-            wasp += " ";
+            if (kind != longs) wasp += " ";
         }
     }
     if (length >= 0) {
@@ -922,11 +925,16 @@ String toString(Node &node) {
 }
 
 
-Node &Node::setValue(Value v) {
+Node &Node::setValue(const Value v) {
     value = v;
     return *this;
 }
 
+
+Node &Node::setValue(long v) {
+    value.longy = v;
+    return *this;
+}
 
 // rest of node children split
 Node &Node::from(Node &match) {
@@ -978,7 +986,8 @@ Node &Node::to(Node match) {
 //	Node& flatten(Node &current){
 Node &Node::flat() {
 //	if (kind == call)return *this;//->clone();
-    if (kind == patterns)return *this;// never flatten patterns x=[] "hi"[1] …
+    if (kind == patterns or kind == modul)
+        return *this;// never flatten patterns x=[] "hi"[1] …
     if (length == 0 and kind == key and name.empty() and value.node)return *value.node;
     if (length == 1) {
         Node &child = children[0];
@@ -1130,22 +1139,25 @@ void print(Node *n0) {
 }
 
 
-Node &Node::setType(Kind type, bool check) {
-    if (kind == type)return *this;
-    if (kind == operators and type == expression)return *this;
-    if (kind == codepoints and type == operators)check = false;// and name==(codepoint)value.longy
-    if (kind == groups and type == expression)check = false;
-    if (kind == declaration and type == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
+Node &Node::setType(Kind kin, bool check) {
+    if (kind == kin)return *this;
+    if (kind == modul and kin == key)
+        return *this;// todo   import host: host-funcs     module{.name=host}.value=host-funcs
+    if (kind == operators and kin == expression)return *this;
+    if (kind == codepoints and kin == operators)check = false;// and name==(codepoint)value.longy
+    if (kind == groups and (kin == expression or kin == functor))check = false;
+    if (kind == reference and kin == key)check = false;
+    if (kind == declaration and kin == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
     if (check) {
         if (kind != unknown and kind != objects and
             kind != strings)// strings is default type after construction, ok to keep it in name
-            error("Node already has semantic type "s + typeName(kind) + "! Can't change to " + typeName(type));
+            error("Node already has semantic type "s + typeName(kind) + "! Can't change to " + typeName(kin));
     }
-    if (value.data and (type == groups or type == objects))
+    if (value.data and (kin == groups or kin == objects))
         return *this;
     if (kind == nils and not value.data)
         return *this;
-    kind = type;
+    kind = kin;
 //	if(name.empty() and debug){
 //		if(type==objects)name = object_name;
 //		if(type==groups)name = groups_name;
@@ -1200,7 +1212,8 @@ chars typeName(Kind t) {
         case patterns:
             return "pattern";
         case key:
-            return "node";
+            return "key";
+//            return "node";
         case fields:
             return "field";
         case reference:

@@ -47,27 +47,6 @@ enum class NodeFlags { // class makes it typesafe
 
 
 
-struct ParserOptions { // not just for parser but also for serialize!!
-
-//    todo move polish_notation here! … how? polish_notation is also used in serialize() !
-//    bool polish_notation= false;// prefix notation, s-expression parser flag  (html (body)) vs html{body{}}
-
-// parse x[1] as x:1 reference with immediate value or x:[1] reference with pattern
-// parse x={y} as x:{y} as x{y} or keep operator =
-    bool data_mode = false;
-    bool arrow = false; // treat -> arrow as map operator :
-    bool dollar_names = false;// $name as in wat,wit
-    bool at_names = false;// @interface as in wat,wit
-    bool use_tags = false;// <html> or
-    bool use_generics = false;// generic list<abc> , "less than" requires spaces, a<b can still be resolved as 'smaller' in analyzer
-
-    bool kebab_case = true;//  false;// kebab-case means: parse "-" as hypen instead of minus, or 1900 - 2000AD (easy with units)
-    // a-b can still be resolved as minus in analyzer
-
-    bool space_brace = false;// resolve a {x} as a{x}
-    String current_dir = "./"; // where to look for includes
-};
-
 //extern unsigned char __heap_base;
 //unsigned int bump_pointer = &__heap_base;
 
@@ -110,33 +89,41 @@ void print(Node &n);
 void print(Node *n0);
 //void print(const Node &);
 
+#undef Function
 
+class Module;
 //class String;
-union Value {
+//class Function readline.h:40:15: note: 'Function' declared here WTF
+
+// ⚠️ A Value is only useful with accompanying Type!
+union Value { // nodes can contain ANYTHING, especially types known in wasp
 //	sizeof(Value)==8 (long)
-	Node *node = 0;// todo DANGER, pointer can be lost :(   // todo same as child
+    Node *node = 0;// todo DANGER, pointer can be lost :(   // todo same as child
 //	Node *child = 0; //todo DANGER child and next are NOT REDUNDANT! (a:b c:d) == a(value=b next=c(value=d))
 //	Node **children = 0;// keep children separate for complex key nodes (a b c):(d e f)
-	String *string;// todo: wasm_chars*
-	void *data;// any bytes
-	long long longy;
+    String *string;// todo: wasm_chars*
+//    Function *function;
+    Module *module;
+
+    void *data;// any bytes
+    long long longy;
 //	codepoint chary;// use longy
-	double real;
+    double real;
 
-	Value() {}// = default;
-	Value(int i) { longy = i; }
-
-	Value(long i) { longy = i; }
-
-	Value(bool b) { longy = b; }
-
-	Value(double r) { real = r; }
-
-//	Value(String s) { string = &s; }
-
-	Value(String &s) { string = &s; }
-
-	Value(String *s) { string = s; }
+//	Value() {}// = default;
+//	explicit Value(int i) { longy = i; }
+//
+//	explicit Value(long i) { longy = i; }
+//
+//	Value(bool b) { longy = b; }
+//
+//	Value(double r) { real = r; }
+//
+////	Value(String s) { string = &s; }
+//
+//	Value(String &s) { string = &s; }
+//
+//	Value(String *s) { string = s; }
 
 //	~Value() = default;
 };
@@ -157,7 +144,7 @@ union Value {
 
 // The order of Type,Value is reverse to the Wasp ABI return tuple Value(int32), Type(int32)
 class Node {
-	// todo: sizeof(Node) can be reduced later by: shrinking header, merging type&kind, let *children own its length, make name String* offset
+    // todo: sizeof(Node) can be reduced later by: shrinking header, merging type&kind, let *children own its length, make name String* offset
     // sizeof(Node) == 64 (20 for name,
     //	short _node_header_ = 0xDADA; //
 //	static
@@ -166,8 +153,9 @@ public:
     Node *type = 0;// variable/reference type or object class?
     int length = 0;// children
     Node *children = nullptr;// LIST, not link. block body content
-    ::Kind kind = unknown;// improved from 'undefined' upon construction
-    Value value;// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
+    Kind kind = unknown;// improved from 'undefined' upon construction
+    Value value{
+            0};// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 //	Type kind = unknown;// improved from 'undefined' upon construction
 
     String name = empty_name;// nil_name;
@@ -512,7 +500,7 @@ public:
 //		this->kind = val.kind;
 //	}
 
-//	Node &operator=(Node& n);
+//	Node &operator^(Node& n)
 //	 DOESN'T work like this: referenceIndices are always set via internal reference mechanism, this is for value copy!
 //	Node& operator=(Node& val){
 //		if(name and kind==nils){
@@ -599,6 +587,7 @@ public:
 	Node &add(const Node *node);
 
 	Node &add(const Node &node);
+//	Node &add(Node node);
 
 //	void addSmart(Node &node);// modifying
 	void addSmart(Node node);
@@ -702,23 +691,25 @@ public:
 
 	chars toString();
 
-	chars toString() const;
+    chars toString() const;
 
-	String serialize() const;
+    String serialize() const;
 
-	String serializeValue(bool deep = true) const;
-
-
-	Node &setValue(Value v);
+    String serializeValue(bool deep = true) const;
 
 
-	Node &from(Node &node);// exclusive
-	Node &from(String match);
+    Node &setValue(Value v);
 
-	Node &from(int pos);
+    Node &setValue(long v);
 
-	Node &to(Node match);// exclusive
-	Node &to(String match);
+
+    Node &from(Node &node);// exclusive
+    Node &from(String match);
+
+    Node &from(int pos);
+
+    Node &to(Node match);// exclusive
+    Node &to(String match);
 
 	Node &flat();
 
@@ -746,7 +737,7 @@ public:
         return *meta;
     }
 
-    Node &setType(::Kind type, bool check = true);
+    Node &setType(Kind kin, bool check = true);
 
     Node &setType(const char *string) {// setClass
 //		type = &Node(string).setType(classe);
