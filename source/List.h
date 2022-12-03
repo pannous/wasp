@@ -165,30 +165,30 @@ public:
     }
 
 
-    List(S first, ...) : List() {
-//		items[0] = first;
-        va_list args;// WORKS WITHOUT WASI! with stdargs
-        va_start(args, first);
-        S *item = &first;
-        while (item) {
-            items[_size++] = *item;
-            item = (S *) va_arg(args, S*);
-        }
-        va_end(args);
-    }
-
-    // only Plain Old Data structures !
-//      List(S first, ...) : List() {
-//        _size = 0;
+//    List(S first, ...) : List() {
+////		items[0] = first;
 //        va_list args;// WORKS WITHOUT WASI! with stdargs
 //        va_start(args, first);
-//        S item = first;
-//        do {
-//            items[_size++] = item;
-//            item = (S) va_arg(args, S);
-//        } while (item);
+//        S *item = &first;
+//        while (item) {
+//            items[_size++] = *item;
+//            item = (S *) va_arg(args, S*);
+//        }
 //        va_end(args);
 //    }
+
+    // only Plain Old Data structures !
+    List(S first, ...) : List() {
+        _size = 0;
+        va_list args;// WORKS WITHOUT WASI! with stdargs
+        va_start(args, first);
+        S item = first;
+        do {
+            items[_size++] = item;
+            item = (S) va_arg(args, S);
+        } while (item);
+        va_end(args);
+    }
 
 //    List(S first, ...) : List() {
 //        _size = 0;
