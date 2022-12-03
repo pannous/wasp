@@ -9,11 +9,13 @@
 #include "Node.h"
 #include "Wasp.h"
 
+Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module *mod);
 
 // https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md
 static List<String> wit_keywords
 #if !WASM
         = {
+                "world",
                 "module",
                 "static",
                 "interface",
@@ -82,12 +84,19 @@ keyword ::= 'use'
 
  */
 class WitReader {
+    List<Module *> current_module;
     Node &analyzeType(Node *pNode) {
         return *pNode;
     }
 
     Node &readType(Node &node) {
         Node &alias = node[1];
+        if (!node.value.node) {
+            if (node.length == 2)
+                node.value.node = &node[0];
+            else
+                error("no type");
+        }
         Node &type = analyzeType(node.value.node);
         if (types.has(type.name))
             type = *types[type.name];
@@ -131,22 +140,36 @@ class WitReader {
         //  fuzzing?
     }
 
+    Module &findOrCreateModule(String name) {
+        for (Module *mod: libraries) {
+            if (mod->name == name)return *mod;
+        }
+        Module *mod = new Module();
+        mod->name = name;
+        libraries.add(mod);
+        return *mod;
+    }
+
     Node &readInterface(Node &node) {
         Node &interface = node[1];
         if (interface.name == "func") {
             return readFunc(interface);
         }
+        Module &mod = findOrCreateModule(interface.name);
+        Function modulHolder;
+        modulHolder.module = &mod;
         for (auto field: interface) {
-            Node &member = analyzeWit(field);
-            member.kind = fields;
+            Node &member = analyze(field, modulHolder);
+//            Node &member = analyzeWit(field);
+//            member.kind = fields;
         }
-        interface.kind = clazz;// we don't distinguish between prototype classes with/without fields
-        if (!types.has(interface.name))
-            types.add(interface.name, interface.clone());// direct mapping!
-        else if (types[interface.name] != interface)
-            error("interface already known:\n"s + interface.serialize());
-        else
-            warn("interface already known: "s + interface.name);
+//        interface.kind = clazz;// we don't distinguish between prototype classes with/without fields
+//        if (!types.has(interface.name))
+//            types.add(interface.name, interface.clone());// direct mapping!
+//        else if (types[interface.name] != interface)
+//            error("interface already known:\n"s + interface.serialize());
+//        else
+//            warn("interface already known: "s + interface.name);
         // todo: module namespacing ,
         //  fuzzing?
 
@@ -162,14 +185,16 @@ class WitReader {
         enuma.kind = kind;
         if (not types.has(name))
             types.add(name, enuma.clone(true));
-        else if (types[name] != enuma)
-            error("different enum already known:\n"s + enuma.serialize() + "\n≠\n" + types[name]->serialize());
-        else {
+        else if (types[name] !=
+                 enuma) { // todo other-colors(orange purple black {}) ≠ other-colors(orange:0 purple:1 black:2 0)
+            warn("different enum already known:\n"s + enuma.serialize() + "\n≠\n" + types[name]->serialize());
+            return *types[name];
+        } else {
             warn("enum already known: "s + name);// ok, same layout
             return *types[name];
         }
         enuma = *types[name]; // switch to clone (be sure to be long living)
-        int value = 0;
+        int value = 1; // 0;
         if (kind == flags)value = 1;
         for (Node &field: enuma) {
             field.type = types[name];
@@ -178,10 +203,10 @@ class WitReader {
             if (name.empty())
                 continue; // todo fix in valueNode
             if (kind == flags) {
-                field.value = value;// for boolean option1 and option2 …
+                field.value.longy = value;// for boolean option1 and option2 …
                 value *= 2;
             } else
-                field.value = value++;
+                field.value.longy = value++;
             // currently enum fields are just named numbers
 #ifndef RUNTIME_ONLY
             addGlobal(field);
@@ -216,23 +241,42 @@ class WitReader {
     Node &readFunc(Node &node) {
         String &name = node.name;
         if (name == "static")
-            name = node[1].name;
+            name = node.name = node[1].name;
         Node *func = node.value.node;
-        if (!func)return ERROR;
+        if (not functions.has(name))
+            functions.add(name, {.name=name});// todo …
+        if (!func) {
+            node.setType(functor).setValue({.data=&functions[name]});
+            return node;// with empty body
 //            error("missing func");
-        Node body = func->values();
+        }
+        Node returns = func->values();
+        Module *mod = current_module.size() > 0 ? current_module.last() : 0;
 //        body.children = func->children;
         trace("\nwit func signature:");
         trace(name);
-        trace(body);
-        return *func;
+        trace(returns);
+        return funcDeclaration(name, node, NUL, &returns, mod);
+//        return *func;
     }
 
     Node &readModule(Node &node) {
-        Node &mod = node[2];// node[1] == "$"
+        if (node.length < 2)
+            error("empty world");
+        Node &world = node.last();
+        Module &mod = findOrCreateModule(world.name);
+        current_module.add(&mod);
+        Function modulHolder;
+        modulHolder.module = &mod;
+        world.value.module = &mod;
+        world.kind = modul;
+        for (auto field: world) {
+//            Node &member = analyze(field, modulHolder);
+            Node &member = analyzeWit(field);
+        }
         trace("\nwit module:");
-        trace(mod);
-        return mod;
+        trace(world);
+        return world;
     }
 
     // outdated (@interface … ) format
@@ -252,58 +296,46 @@ class WitReader {
 
 public:
 
-    Node &read(String file) {
-        ParserOptions options{
-                .data_mode = false,
-                .arrow = true,
-                .dollar_names=true,
-                .at_names = true,
-                .use_tags = true,
-                .use_generics=true,
-                .kebab_case = true,
-                .space_brace = true,
-        };
-        Node &node = parse(file.data, options);
-        return analyzeWit(node);
-    }
-
     Node &analyzeWit(Node &node) {
+        if (node.kind == enums)
+            return node;// how did we get here?
         Node &first = node.first();
-        if (wit_keywords.contains(first.name))
-            return analyzeWitEntry(first);
-
         bool keys = node.kind == key or (node.kind == groups and node.length == 2);
         keys = keys or (node.length == 3 and node[2].name == "interface");
-        for (Node &n: node) {
-            if (keys)n = node;
-            if (n.kind == key)
-                n.add(n.value.node);
-            String &entry = n.first().name;
-            if (entry == "@witx") {
-                node.remove(0, 0);
-                continue;
-            } else if (entry == "module" or entry == "world" or entry == "resource") {// we don't distinguish yet!
-                n.add(node[1]);// hack
-                readModule(n);
-                break;
-            } else if (n.name == "module") {
-                readModule(node);
-                break;
-            } else if (entry == "@interface") {
-                if (node.length > 1 and node[1] == "func")
-                    readFunc(node);
-                else warn("Old @interface syntax not supported");
-            } else if (entry == "@interface") {
-                return readInterfaceFunc(node);
-            } else
-                n = analyzeWitEntry(n.first());
+        String &entry = first.name;
+        if (wit_keywords.contains(entry)) {
+            if (node.name.empty())node.name = entry;
+            return analyzeWitEntry(node);
         }
+        if (entry == "type")
+            return readType(node);
+        if (entry == "@witx") {
+//            node.remove(0, 0);
+        } else if (entry == "@interface") {
+            if (node.length > 1 and node[1] == "func")
+                return readFunc(node);
+            else {
+                warn("Old @interface syntax not supported");
+                return NUL;
+            }
+        } else if (entry == "@interface") {
+            return readInterfaceFunc(node);
+        } else {
+            if (keys) return analyzeWitEntry(node);
+        }
+        for (Node &n: node)
+            n = analyzeWitEntry(n);
+
         return node;
     }
 
     Node &analyzeWitEntry(Node &n) {
         String &entry = n.name;
-        if (n.length == 0)n.add(n.next).add(n.next);// todo: oterh ;)
+        if (entry.empty())
+            entry = n.first().name;
+        if (entry == "@witx")
+            return analyzeWitEntry(n.from(1));//skip
+//        if (n.length == 0)n.add(n.next).add(n.next);// todo: oterh ;)
         if (entry == "static")
             if (n.length == 0)return NUL;
             else return readFunc(n);
@@ -319,10 +351,15 @@ public:
             return readEnum(n, enums);
         } else if (entry == "option") {
 //                todo("ignore, since all nodes are optionals by default unless marked as required!")
+        } else if (entry == "world") {
+            return readModule(n);
         } else if (entry == "module") {
             return readModule(n);
+        } else if (entry == "default") {
+            return readModule(n);
         } else if (entry == "interface") {
-            return readInterface(n);
+            return readModule(n);
+//            return readInterface(n);
         } else if (entry == "record") {
             return readRecord(n);
         } else if (entry == "func") {
@@ -332,12 +369,34 @@ public:
         } else if (n.name == "%") {
             warn("wit % nonsense "s + n.serialize());
         } else if (n.kind == groups) {
+            if (n.first().name == "default")
+                return analyzeWitEntry(n.last());// default export interface …
             for (Node &c: n)
                 c = analyzeWit(c);
             return n;
+        } else if (n.empty()) {
+            return NUL;
         } else
             error("UNKNOWN wit entry: "s + n.serialize());
         return NUL;
+    }
+
+    Node &read(String file) {
+        ParserOptions options{
+                .data_mode = true, // treat = as : (type external-dep)=string
+//                .data_mode = false, // keep = as expression
+                .arrow = true,
+                .dollar_names=true,
+                .percent_names=true,
+                .at_names = true,
+                .use_tags = true,
+                .use_generics=true,
+                .kebab_case = true,
+                .kebab_case_plus = true,
+                .space_brace = true,
+        };
+        Node &node = parse(file.data, options);
+        return analyzeWit(node);
     }
 
 };

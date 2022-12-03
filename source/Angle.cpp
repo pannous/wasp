@@ -8,16 +8,27 @@
 #include "Node.h"
 #include "Util.h"
 #include "Map.h"
+#include "Interpret.h"
 #import "wasm_helpers.h" // IMPORT so that they don't get mangled!
 #include "wasm_emitter.h"
+#include "WitReader.h"
+
+#ifndef RUNTIME_ONLY
+#if INCLUDE_MERGER
+
+#include "wasm_merger.h"
+
+#endif
+#endif
 
 Module *module; // todo: use?
 bool use_interpreter = false;
 Node &result = *new Node();
+WitReader witReader;
 
 List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
 List<String> class_keywords = {"struct", "type", "class", "prototype",
-                               "interface", /*"trait", "impl"*/};// record see wit
+        /*"trait", "impl"*/};// "interface", record see wit -> module
 //List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
 
 
@@ -142,17 +153,6 @@ bool isFunction(Node &op) {
     return isFunction(op.name);
 }
 
-#include "Interpret.h"
-#include "WitReader.h"
-
-#ifndef RUNTIME_ONLY
-#if INCLUDE_MERGER
-
-#include "wasm_merger.h"
-
-#endif
-#endif
-
 
 Node interpret(String code) {
     Node parsed = parse(code);
@@ -190,7 +190,7 @@ Node eval(String code) {
 
 Node &groupTypes(Node &expression, Function &context);
 
-List<Arg> groupFunctionArgs(Function &function, Node &params) {
+Signature &groupFunctionArgs(Function &function, Node &params) {
     //			left = analyze(left, name) NO, we don't want args to become variables!
     List<Arg> args;
     Node nextType = Double;
@@ -209,7 +209,24 @@ List<Arg> groupFunctionArgs(Function &function, Node &params) {
                 args.add({function.name, arg.name, arg.type ? *arg.type : nextType, params});
         }
     }
-    return args;
+
+    Signature &signature = function.signature;
+    for (Arg arg: args) {
+        if (empty(arg.name))
+            error("empty argument name");
+        if (function.locals.has(arg.name)) {
+            error("duplicate argument name: "s + arg.name);
+        }
+        Valtype argType = mapType(arg.type);
+        addLocal(function, arg.name, argType, true);
+        signature.add(arg.type, arg.name);// todo: arg type, or pointer
+    }
+    if (params.value.node) {
+        Node &ret = params.values();
+        Valtype valtype = mapType(ret);
+        signature.returns(valtype);
+    }
+    return signature;
 }
 
 String extractFunctionName(Node &node) {
@@ -400,6 +417,7 @@ Node Long("Long", clazz);
 Node Double("Double", clazz);//.setType(type);
 Node Int("Int", clazz);
 Node ByteType("Byte", clazz);// Byte conflicts with mac header
+Node StringType("String", clazz);
 Node Bool("Bool", clazz);
 Node Charpoint("Charpoint", clazz);
 
@@ -512,6 +530,9 @@ Node &groupTypes(Node &expression, Function &context) {
 
 Node &constructInstance(Node &node, Function &function) {
     Node &type = *types[node.name];
+    if (node.values().name == "func") return node;
+//        /* todo what is this??  test-tuple: func(other: list<u8>, test-struct: test-struct, other-enum: test-enum) -> tuple<string, s64>
+
     node.type = &type;// point{1 2} => Point(1,2)
     check_eq_or(node.length, type.length, error("field count mismatch"));
     node.kind = constructor;
@@ -583,9 +604,6 @@ Valtype preEvaluateType(Node &node, Function &function);
 
 Node &classDeclaration(Node &node, Function &function);
 
-void discard(Node &node) {
-// nop to explicitly ignore unused-variable (for debugging) or no-discard (e.g. in emitData of emitArray )
-}
 
 Node &classDeclaration(Node &node, Function &function) {
     if (node.length < 2)error("wrong class declaration format; should be: class name{…}");
@@ -627,6 +645,23 @@ Node &classDeclaration(Node &node, Function &function) {
 }
 
 
+Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module *mod) {
+//    if(functions.has(name)) polymorph
+// is_used to fake test wit signatures
+    Function function = {.name=name, .module = mod, .is_import=true, .is_declared= not body.empty(), .is_used=true,};// todo: clone!
+    function.body = &body;
+    function.signature = groupFunctionArgs(function, node);
+    if (returns and function.signature.return_types.size() == 0)
+        function.signature.returns(mapType(*returns));
+    functions.insert_or_assign(name, function);
+    return Node().setType(functor).setValue(Value{.data=&function});// todo: clone!  todo functor => Function* !?!?
+}
+
+
+void discard(Node &node) {
+// nop to explicitly ignore unused-variable (for debugging) or no-discard (e.g. in emitData of emitArray )
+}
+
 // bad : we don't know which
 void use_runtime(const char *function) {
     findLibraryFunction(function, false);
@@ -663,26 +698,11 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
         return groupSetter(name, body, function);
     }
 
-    List<Arg> args = groupFunctionArgs(function, arguments);
-    Signature &signature = function.signature;
-    for (Arg arg: args) {
-        if (empty(arg.name))
-            error("empty argument name");
-        if (function.locals.has(arg.name)) {
-#ifdef DEBUG
-            print(body.line);
-#endif
-            error("duplicate argument name: "s + arg.name);
-        }
-        Valtype argType = mapType(arg.type);
-        addLocal(function, arg.name, argType, true);
-        signature.add(arg.type, arg.name);// todo: arg type, or pointer
-    }
+    Signature &signature = groupFunctionArgs(function, arguments);
     if (signature.size() == 0 and function.locals.size() == 0 and body.has("it", false, 100)) {
         addLocal(function, "it", f64, true);
         signature.add(f64, "it");// todo: any / smarti! <<<
     }
-
     body = analyze(body, function);// has to come after arg analysis!
     if (!return_type)
         return_type = extractReturnTypes(arguments, body).clone();
@@ -696,6 +716,7 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
 
 Node &groupDeclarations(Node &expression, Function &context) {
     auto first = expression.first();
+
     if (expression.length == 2 and isType(first.first()) and
         expression.last().kind == objects) {// c style double sin() {}
         expression = groupTypes(expression, context);
@@ -1215,8 +1236,6 @@ Node &groupWhile(Node &n, Function &context) {
 //}
 
 
-WitReader witReader;
-
 Node &analyze(Node &node, Function &function) {
     String &context = function.name;
     if (context != "global" and !functions.has(context)) {
@@ -1237,6 +1256,12 @@ Node &analyze(Node &node, Function &function) {
         return NUL;
     }
 
+//    if(node.length==1 and node.first().name=="func"){
+    if (node.kind == key and node.values().name == "func") {
+        // add: func(a: float32, b: float32) -> float32
+        return funcDeclaration(node.name, node.values(), NUL /* no body here */ , 0, function.module);
+//        return witReader.analyzeWit(node);
+    }
 
     if (type == functor) {
         if (name == "while")return groupWhile(node, function);
@@ -1297,6 +1322,7 @@ Node &analyze(Node &node, Function &function) {
     Node &grouped = groupOperators(groupedFunctions, function);
     if (analyzed[grouped.hash()])return grouped;// done!
     analyzed.insert_or_assign(grouped.hash(), 1);
+
     if (type == groups or type == objects or type == expression) {
         // children analyzed individually, not as expression WHY?
         if (grouped.length > 0)
@@ -1462,10 +1488,10 @@ Node runtime_emit_old(String prog) {
     Code code = merge_wasm(runtime, main);
     code.save("merged.wasm");
     read_wasm("merged.wasm");
-    smart_pointer_64 result = code.run();// todo parse stdout string as node and merge with emit() !
+    smart_pointer_64 smartPointer64 = code.run();// todo parse stdout string as node and merge with emit() !
     clearAnalyzerContext();
     clearEmitterContext();
-    return *smartNode(result);
+    return *smartNode(smartPointer64);
 #else
     return NUL;
 #endif
@@ -1528,7 +1554,7 @@ float function_precedence = 1000;
 chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "puts", "print", "printf",
                                                         "println",
                                                         "log", "ln", "log10", "log2", "similar",
-                                                        "putx", "putc", "id", "get", "set", "peek", "poke", "read",
+                                                        "putx", "putc", "get", "set", "peek", "poke", "read",
                                                         "write", 0, 0,
                                                         0};// MUST END WITH 0, else BUG
 chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
@@ -1558,7 +1584,7 @@ void addGlobal(Node &node) {
     if (not globals.has(name))
         globals.add(name, node.clone());
     else {
-        warn("enum entry %s already a registered symbol: %o "s % name % *globals[name]);
+        warn("global %s already a registered symbol: %o "s % name % *globals[name]);
     }
 }
 

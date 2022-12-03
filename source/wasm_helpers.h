@@ -79,9 +79,10 @@ long squarl(long a);// stupid test basic wasm import => runtime linking   remove
 typedef char32_t codepoint;// 'letter' ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
 
 extern "C" int puts(const char *);// stdio
-extern "C" void putx(int i);// hex
 extern "C" void putp(void *f);// pointer
 extern "C" void puti(int i);
+extern "C" void putl(long long l);
+extern "C" void putx(long long l);
 //extern "C" void putp(long *char_pointer);
 extern "C" void put_char(codepoint c);
 //extern "C" void put_char(char c);

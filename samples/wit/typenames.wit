@@ -562,7 +562,7 @@ record snapshot0-subscription-clock {
     /// The user-defined unique identifier of the clock.
     identifier: userdata,
     /// The clock against which to compare the timestamp.
-    id: snapshot0-clockid,
+    %id: snapshot0-clockid,
     /// The absolute or relative timestamp.
     timeout: timestamp,
     /// The amount of time that the implementation may wait additionally

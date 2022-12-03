@@ -487,20 +487,30 @@ void panic() {
 #ifndef WASI
 int puts(chars c) { // // int return needed for stdio compatibilty !
 //	if(from wasm)result=c
-	if (c)printf("%s", c);
-	return 1;// stdio
+    if (c)printf("%s", c);
+    return 1;// stdio
 }
+
 #endif
+
 void puti(int i) {
-	printf("%d", i);
+    printf("%d", i);
+}
+
+void putl(long long l) {
+    printf("%lld", l);
+}
+
+[[maybe_unused]] void putx(long long l) {
+    printf("%llx", l);
 }
 
 void putp(long char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
-	printf("%s", (char *) char_pointer);
+    printf("%s", (char *) char_pointer);
 }
 
 void put_char(codepoint c) {
-	printf("%c", c);
+    printf("%c", c);
 }
 
 void putx(int i) {
