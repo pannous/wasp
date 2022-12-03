@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
-LINK_DIRECTORIES(Frameworks)
+#LINK_DIRECTORIES(Frameworks)
 LINK_DIRECTORIES(Frameworks/lib)
 LINK_DIRECTORIES(/usr/local/lib)
 
@@ -29,15 +29,15 @@ if (NOT WASM)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
-        #         SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :(
-        #        SET(WASMTIME 1) # FASTEST!
-        #        SET(WASMEDGE 1) todo smart multi-value returns
-        #                set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
-        #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp
-        set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
-        #                        set(WABT 1) # EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
-        #            set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-        #                set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+        #    SET(WASMTIME 1) # FASTEST!
+        #    SET(WASMEDGE 1) # todo smart multi-value returns
+        #    set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying 2022-12: last release on Jun 2, 2021
+        #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
+        SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
+        #            set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
+        #    set(WASMX 1)  # doesn't work: cannot insert imports or function types!
+        #    set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
     endif ()
     #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
     # ^^ fixes <cmath> mac errors!
@@ -174,7 +174,7 @@ ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in
 ADD_COMPILE_FLAG("-fno-inline")
 
 ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
-ADD_COMPILE_FLAG("-Wno-non-pod-varargs") # usually only Plain Old Data structures!
+#ADD_COMPILE_FLAG("-Wno-non-pod-varargs") # usually only Plain Old Data structures!
 # todo Just use initiator lists? ^^
 
 if (NOT TRACE)
@@ -222,7 +222,7 @@ set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cp
 
 if (NO_TESTS)
     ADD_DEFINITIONS(-DNO_TESTS)
-else()
+else ()
     set(SOURCE_FILES ${SOURCE_FILES} source/tests.cpp)
 endif ()
 
@@ -239,7 +239,7 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_emitter.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/WitReader.h)
     if (WABT_MERGE)
-        set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt/src/ ./source/wasm_merger_wabt.cpp ./source/wasm_reader_wabt.cpp)
+        set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt/src/ Frameworks/include/wabt ./source/wasm_merger_wabt.cpp ./source/wasm_reader_wabt.cpp)
         set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt_merge/binary-reader-linker.cc)
         set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp) # for meta
         set(SOURCE_FILES ${SOURCE_FILES} source/wasm_merger.cpp) # for old mechanism
@@ -279,11 +279,11 @@ if (WASM) # OR WASI)
     #    OR  remove from CMAKE_CXX_LINK_FLAGS how
     #-lwasmer --entry=main,
 
-    #  16ca2e: 10 9d 82 80 80 00          | call 285 <Map<String, List<String> >::operator[](String)>
+    #  16ca2e: 10 9d 82 80 80 00  | call 285 <Map<String, List<String> >::operator[](String)>
     # names in wasm name section are demangled in debug build, BUT exports stay mangled no matter what!
     ADD_COMPILE_FLAG("-Wl,--demangle,--allow-undefined,--no-check-features") # wasm-ld flags forwarded from clang
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
-    #--import-memory        Import memory from the environment
+    #--import-memory    Import memory from the environment
     add_definitions(-DHEAP_OFFSET=65536)
     add_definitions(-DMEMORY_SIZE=117964800)
     ADD_COMPILE_FLAG("-Wl,--initial-memory=117964800") # stack size plus some
@@ -294,34 +294,34 @@ if (WASM) # OR WASI)
         #    ADD_COMPILE_FLAG("-Wl,--emit-relocs")
     endif ()
     if (DEBUG)
-        #        ADD_COMPILE_FLAG("-O0")
+        #    ADD_COMPILE_FLAG("-O0")
     endif ()
     ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
     ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
     ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # keep name section?
     if (RELEASE)
-        #        ADD_COMPILE_FLAG("-Wl,--export-dynamic") #       Put symbols in the dynamic symbol table
+        #    ADD_COMPILE_FLAG("-Wl,--export-dynamic") #   Put symbols in the dynamic symbol table
         ADD_COMPILE_FLAG("-v")
-        #        ADD_COMPILE_FLAG("-Wl,-vvv")
-        #        ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
-        #          --reproduce=<value>    Dump linker invocation and input files for debugging
+        #    ADD_COMPILE_FLAG("-Wl,-vvv")
+        #    ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
+        #  --reproduce=<value>    Dump linker invocation and input files for debugging
 
         # No support for creating shared libraries. The spec for shared libraries in WebAssembly is still in flux
         # https://github.com/rust-lang/rust/issues/60231#issuecomment-654645065
-        #        ADD_COMPILE_FLAG("-Wl,--shared")
-        #        ADD_COMPILE_FLAG("-Wl,--pie") #  position independent executable, does it help? NO
+        #    ADD_COMPILE_FLAG("-Wl,--shared")
+        #    ADD_COMPILE_FLAG("-Wl,--pie") #  position independent executable, does it help? NO
         #relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
-        #        ADD_COMPILE_FLAG("-fPIC") # does not help
+        #    ADD_COMPILE_FLAG("-fPIC") # does not help
         ADD_COMPILE_FLAG("-Wl,--compress-relocations,--strip-debug") # incompatible with output debug information. Please pass --strip-debug
         set(SOURCE_FILES ${SOURCE_FILES} source/exceptions.cpp)
         ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
-        #        --no-validation   --debug
+        #    --no-validation   --debug
         ADD_COMPILE_FLAG("-Oz -Qn")
         ADD_COMPILE_FLAG("-Wl,--gc-sections")
         ADD_COMPILE_FLAG("-Wl,-O4")
         ADD_COMPILE_FLAG("-O4")
         # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
-        # todo ^^       warning: unknown warning option '-Ws,--lto-O3,-O4,--gc-sections'  --lto-O3,
+        # todo ^^   warning: unknown warning option '-Ws,--lto-O3,-O4,--gc-sections'  --lto-O3,
         ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
         if (EMCC) # emscripten
             ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
@@ -398,19 +398,20 @@ elseif (MICRO) # wasm-micro-vm:
             ${WAMR_ROOT_DIR}/core/shared/platform/include/
             ${WAMR_ROOT_DIR}/core/shared/platform/darwin/
             ${WAMR_ROOT_DIR}/core/shared/mem-alloc
-            #            VERSUS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
+            #    VERSUS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
             )
 elseif (WABT)
     message(WABT)
     ADD_DEFINITIONS(-DWABT)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
-    #    include(wabt/cmake_install.cmake)
-    #    add_subdirectory(wabt)
+    #        include(wabt/cmake_install.cmake)
+    #        add_subdirectory(wabt)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wabt.cpp)
     add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC Frameworks/wabt)
+    target_include_directories(wasp PUBLIC Frameworks/wabt/include/)
+    target_include_directories(wasp PUBLIC Frameworks/wabt/include/wabt)
+    target_include_directories(wasp PUBLIC Frameworks/wabt/)
     target_include_directories(wasp PUBLIC Frameworks/wabt/src)
-    target_include_directories(wasp PUBLIC Frameworks/wabt/src/interp)
     target_link_libraries(wasp PRIVATE wasm)  # libwabt is called libwasm.dylib DANGER!
 elseif (WASMER)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmer_runner.cpp)
@@ -430,13 +431,13 @@ elseif (WASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
-#    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
+    #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
     #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
-    if(X86_64)
+    if (X86_64)
         target_link_libraries(wasp PRIVATE wasmtime64)
-    else()
+    else ()
         target_link_libraries(wasp PRIVATE wasmtime)
-    endif()
+    endif ()
 elseif (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
     include(source/WebView.cmake)
@@ -447,11 +448,15 @@ elseif (WASM3)
     MESSAGE(wasm3 VM)
     ADD_DEFINITIONS(-DWASM3)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
-    include(Frameworks/wasm3/cmake_install.cmake)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp source/types/Number.cpp source/types/Number.h)
-    add_subdirectory(Frameworks/wasm3/source ${CMAKE_BINARY_DIR}/m3)
+    #    add_subdirectory(Frameworks/wasm3/source ${CMAKE_BINARY_DIR}/m3) # wat?
+    include(Frameworks/uvwasi/cmake_install.cmake)
+    include(Frameworks/wasm3/cmake_install.cmake)    #    // 2022-12: last release on Jun 2, 2021
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp)
+    #    source/types/Number.cpp source/types/Number.h
     add_executable(wasp ${SOURCE_FILES})
+    #    target_include_directories(wasp PUBLIC Frameworks/wasm3/platforms/cpp/wasm3_cpp/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasm3/source)
+    target_include_directories(wasp PUBLIC Frameworks/uvwasi/include)
     target_link_libraries(wasp PRIVATE m3)
     if (SDL)
         target_link_libraries(wasp PRIVATE SDL2::SDL2)
@@ -463,8 +468,11 @@ elseif (WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
     add_executable(wasp ${SOURCE_FILES})
 elseif (V8)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_v8.cpp source/Util.cpp source/Util.h source/wasm_patcher.cpp source/wasm_patcher.h source/List.cpp source/List.h)
+    ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
+    LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/10.6.194.18/lib/)
+    set(SOURCE_FILES source/wasm_runner_v8.cpp source/Util.cpp source/Util.h source/List.cpp source/List.h ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
+    target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/v8/include/)
     target_link_libraries(wasp PRIVATE v8 v8_libplatform wasm)
 else () # NORMAL:
@@ -485,7 +493,7 @@ if (NOT WASM)
         target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt/src)
         target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt_merge/)
         target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt_merge/tools)
-        target_link_libraries(wasp PRIVATE wasm)     #    libwabt is called libwasm.dylib DANGER!
+        target_link_libraries(wasp PRIVATE wasm) #    libwabt is called libwasm.dylib DANGER!
 
         #    target_include_directories(wasp PUBLIC Frameworks/wabt/src/interp)
     endif ()
@@ -498,7 +506,7 @@ if (CONSOLE)
     #    link_libraries(wasp readline)
 endif ()
 
-set(SANITIZE 1)
+#set(SANITIZE 1)
 if (SANITIZE OR TRACE) # or TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
@@ -543,7 +551,7 @@ set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
 
 
-if (WASM) # OR WASI)     common to all!
+if (WASM) # OR WASI) common to all!
     target_include_directories(wasp.wasm PUBLIC Frameworks/wasm-c-api/include/)
 else ()
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)

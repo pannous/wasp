@@ -21,6 +21,7 @@
 #ifndef WASM
 
 #include <cstdio>
+#include <cstring>
 
 #else
 #endif
@@ -57,18 +58,22 @@ bool eq(chars dest, chars src, int length) {
 }
 
 int strlen0(chars x) {
-	if (!x)return 0;
-	int l = 0;
-	if ((long long) x >= MEMORY_SIZE || ((long long) x) == 0x200000000LL) {
-		puts(x);
-		puti((int) (long) x);// 0x1000000 16777216
-		error("corrupt string");
-	}
-	if ((long long) x == 0x1ffffffffLL || (long long) x >= 0xffffffff00000000LL ||
-	    ((long long) x >= 0x100000000LL and (long long) x <= 0x100100000LL))
-		return false;// todo: valgrind debug corruption, usually because of not enough memory
-	while (l < MAX_STRING_LENGTH and (long long) x < MEMORY_SIZE - 1 and *x++)l++;
-	return l;
+    if (!x)return 0;
+    int l = 0;
+    if ((long long) x >= MEMORY_SIZE || ((long long) x) == 0x200000000LL) {
+        puts(x);
+        puti((int) (long) x);// 0x1000000 16777216
+        error("corrupt string");
+    }
+    if ((long long) x == 0x1ffffffffLL || (long long) x >= 0xffffffff00000000LL ||
+        ((long long) x >= 0x100000000LL and (long long) x <= 0x100100000LL))
+        return false;// todo: valgrind debug corruption, usually because of not enough memory
+//#if !WASM
+//    return strlen(x);
+//#endif
+    while (l < MAX_STRING_LENGTH and (long long) x < MEMORY_SIZE - 1 and *x++)
+        l++;
+    return l;
 }
 
 
