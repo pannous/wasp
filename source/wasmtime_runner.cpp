@@ -445,10 +445,10 @@ const wasm_functype_t *funcType(Signature &signature) {
 // ⚠️ these CAN NOT BE REUSED! interrupted by signal 11: SIGSEGV or BIZARRE BUGS if you try!
 //     ⚠ wasm_valtype_t *i = wasm_valtype_new(WASM_I32);  ⚠️
 
-    int param_count = signature.types.size();
     // todo multi-value
     Type returnType0 = signature.return_types.last(none);
     Valtype returnType = mapTypeToWasm(returnType0);
+    int param_count = signature.types.size();
     if (param_count == 0) {
         switch (returnType) {
             case none:
