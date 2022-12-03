@@ -174,7 +174,7 @@ Node eval(String code) {
     {
         Code &binary = compile(code, true);
         binary.save();// to debug
-        long results = binary.run();
+        smart_pointer_64 results = binary.run();
         auto _resultNode = smartNode(results);
         if (!_resultNode)return ERROR;
         Node &resultNode = *_resultNode;

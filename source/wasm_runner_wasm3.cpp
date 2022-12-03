@@ -6,6 +6,7 @@
 #include "wasm3.h"
 #include <cstdio>
 #include "wasm3_cpp.h"
+// 2022-12: last release on Jun 2, 2021
 #include "wasm_helpers.h"
 #include "String.h"
 #include "Paint.h"
@@ -69,22 +70,25 @@ int64_t WASM_EXPORT test_memcpy0(void) {
 
 // todo: remove this useless test function
 int square2(int a) {
-	return a * a;
+    return a * a;
 }
-int test_wasm3(const uint8_t *prog, int len) {
+
+long run_wasm3(const uint8_t *prog, int len) {
 //	std::cout << "Loading WebAssembly..." << std::endl;
-	try {
+    try {
         wasm3::environment env;
         wasm3::module mod = env.parse_module(prog, len);
-        wasm3::runtime runtime = env.new_runtime(1024);
+        int stack_size_bytes = 1024;//*1024; //   BYTES !
+        wasm3::runtime runtime = env.new_runtime(
+                stack_size_bytes);// OK, WASM3 error: [trap] stack overflow == out of memory
         runtime.load(mod);
-        wasm_memory = runtime.getMemory();
+        wasm_memory = runtime.getMemory(); // be careful not to free it before result is handled/copied
 
         mod.link_optional<sum>("*", "sum");
         mod.link_optional<ext_memcpy0>("*", "ext_memcpy0");
         mod.link_optional<sqrt1>("*", "√");
         mod.link_optional<square2>("*", "square");
-        mod.link_optional<powd>("*", "powd");
+        mod.link_optional<powd>("*", "powd");// todo builtin!
         mod.link_optional<logf>("*", "log");// logarithm, not putf !
         mod.link_optional<powd>("*", "pow");
         mod.link_optional<powi>("*", "powi");
@@ -97,18 +101,22 @@ int test_wasm3(const uint8_t *prog, int len) {
         mod.link_optional<panic>("*", "panic");
         mod.link_optional<raise>("*", "raise");
 #ifdef SDL
-		mod.link_optional<init_graphics>("*", "init_graphics");// returns pointer to surface
-		mod.link_optional<requestAnimationFrame>("*", "requestAnimationFrame");// returns pointer to surface
+        mod.link_optional<init_graphics>("*", "init_graphics");// returns pointer to surface
+        mod.link_optional<requestAnimationFrame>("*", "requestAnimationFrame");// returns pointer to surface
 #endif
 //		wasm3::function main_fn = runtime.find_function("_start");
-		wasm3::function main_fn = runtime.find_function("main");
-		auto res = main_fn.call<int>();
-		return res;
+        wasm3::function main_fn = runtime.find_function("main");
+#if MULTI_VALUE
+        //		auto res = main_fn.call<long,int>();
+#else
+        auto res = main_fn.call<long>();
+#endif
+        return res;
 
-		//		wasm3::function test_fn = runtime.find_function("test");
+//		wasm3::function test_fn = runtime.find_function("test");
 //		auto test_res = test_fn.call<int>(15, 12);
 //		std::cout << "result is: " << test_res << std::endl;
-	}
+    }
 
 	catch (wasm3::error &e) {
 		std::cerr << "WASM3 error: " << e.what() << std::endl;
@@ -118,7 +126,7 @@ int test_wasm3(const uint8_t *prog, int len) {
 
 extern "C" long run_wasm(bytes wasm_bytes, int len) {
 //	test_wasm3(test_prog_wasm, test_prog_wasm_len);
-    return test_wasm3((const uint8_t *) wasm_bytes, len);
+    return run_wasm3((const uint8_t *) wasm_bytes, len);
 }
 
 //
