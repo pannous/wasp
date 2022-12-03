@@ -21,6 +21,8 @@ typedef unsigned char byte;
 typedef const char *chars;
 typedef byte *bytes;
 
+class Module;
+
 // in Util.h but we cant import
 bytes concat(bytes a, bytes b, int len_a, int len_b);
 
@@ -971,6 +973,9 @@ public:
     String name;
     String export_name;
     Signature signature;
+    Module *module;
+    Node *body;
+    Code *code;
 
     bool is_import = false; // not serialized in functype section, but in import section wt
     bool is_declared; // has fresh Code body to emit!

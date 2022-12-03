@@ -53,9 +53,10 @@ chars typeName(const Type *t);
 extern Node Int; // maps to int32 in external abi! don't use internally much, only for struct
 extern Node Double;
 extern Node Long;
-extern Node ByteType;
 extern Node Bool;
 extern Node Charpoint;
+extern Node ByteType;
+extern Node StringType;
 
 //#include "Util.h" // for error() :(
 //#include "Code.h"
@@ -114,6 +115,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
 //    unions, // todo, also option
     records, // todo merge concepts with module wasp clazz?
     constructor, // special call?
+    modul,// module, interface, resource, world, namespace, library, package ≈ class …
     last_kind
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 

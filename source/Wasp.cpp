@@ -924,7 +924,7 @@ private:
 
     Node &operatorr() {
         Node &node = *new Node(ch);
-        node.value = 0;
+        node.value.longy = 0;
         node.setType(operators);// todo ++
         proceed();
         while (ch == '=' or ch == previous) {// allow *= += ++ -- **  …
@@ -1326,7 +1326,7 @@ private:
             key.value = val.value;// direct copy value SURE?? what about meta data... ?
             key.kind = val.kind;
         } else {
-            key.kind = Kind::key;
+            key.setType(Kind::key, true);
             if (!key.children and empty(val.name) and val.length > 1) { // deep copy why?
                 key.children = val.children;
                 key.length = val.length;
@@ -1431,14 +1431,15 @@ private:
 // special : close=';' : single expression a = 1 + 2
 // significant whitespace a {} == a,{}{}
 // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
-// reason for strange name import instead of parse is better IDE findability, todo rename to parseNode()?
+// reason for strange name is better IDE findability, todo rename to readNode() / parseNode()?
     Node &valueNode(codepoint close = 0, Node *parent = 0) {
         // A JSON value could be an object, an array, a string, a number, or a word.
         Node &actual = *new Node();// current already used in super context
         actual.parent = parent;
         actual.setType(groups);// may be changed later, default (1 2)==1,2
 #ifdef DEBUG
-        actual.line = &line;
+        if (line != "}")
+            actual.line = &line;
 #endif
         auto length = text.length;
         int start = at;// line, expression, group, … start
@@ -1540,7 +1541,8 @@ private:
                     object.setType(type, false);
                     object.separator = objectValue.separator;
 #ifdef DEBUG
-                    object.line = &line;
+                    if (line != "}")
+                        object.line = &line;
 #endif
                     if (asListItem)
                         actual.add(object);
@@ -1560,10 +1562,14 @@ private:
 //				case '+': // todo WHO writes +1 ?
                 case '-':
                     if (parserOptions.arrow and next == '>') {
+                        // a->b immediate key:value
                         proceed();
                         proceed();
-                        Node &node = valueNode(' ');
-                        actual.last().addSmart(node);
+                        white();
+                        Node &node = valueNode(' '); // f: func() -> tuple<int,int>
+//                        Node &node = *new Node(identifier()); // ok for now
+                        actual.last().setValue({.node=&node}).setType(key, false);
+                        break;//
                         continue;
                     }
                     if (isKebabBridge())
@@ -1727,6 +1733,12 @@ private:
                         warn("comment should have been handled before!?");
                         continue;
                     }// else fall through to default … expressione
+                case '%': // escape keywords for names in wit
+                    if (parserOptions.percent_names) { // and…
+                        proceed();
+                        actual.add(Node(identifier()));// todo make sure not to mark as operator …
+                        continue;
+                    }
                 default: {
                     // a:b c != a:(b c)
                     // {a} ; b c vs {a} b c vs {a} + c
@@ -1734,7 +1746,8 @@ private:
                     bool addFlat = lastNonWhite != ';' and previous != '\n';
                     Node &node = expressione(close);//word();
 #ifdef DEBUG
-                    node.line = &line;
+                    if (line != "}")
+                        node.line = &line;
 #endif
                     if (contains(import_keywords, (chars) node.first().name.data)) { //  use, include, require …
                         node = direct_include(actual, node);
@@ -1767,6 +1780,7 @@ private:
     };
 
     bool isKebabBridge() {
+        if (parserOptions.kebab_case_plus and ch == '-')return true;
         return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
     }
 

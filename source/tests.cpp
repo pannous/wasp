@@ -8,11 +8,18 @@
 #include "tests.h"
 #include "Paint.h"
 
-#include "test_angle.cpp"
-#include "test_wast.cpp"
-#include "test_wasm.cpp"
+#import "test_angle.cpp"
+#import "test_wast.cpp"
+#import "test_wasm.cpp"
 #include "wasm_runner.h"
 #include "WitReader.h"
+
+
+void bindgen(Node &n) {
+//    todo parserOptions => formatOptions => Format ! inheritable
+//    todo interface host-funcs {current-user: func() -> string}
+    print(n.serialize());
+}
 
 
 void testStruct() {
@@ -247,22 +254,9 @@ void testPattern() {
 //    assert_emit("(2 4 3)[0]", 2);
 }
 
-void testWit() {
-    Node &wit = (new WitReader())->read("samples/bug.wit");
-    wit = (new WitReader())->read("test/merge/example_dep/index.wit");
-    wit = (new WitReader())->read("test/merge/index.wit");
-    wit = (new WitReader())->read("test/merge/world.wit");
-    wit = (new WitReader())->read("samples/wit/typenames.wit");
-    wit = (new WitReader())->read("samples/wit/wasi_unstable.wit");
-//    check(wit.length > 0);
-}
-
-void testWitImport() {
-
-}
-
-void bindgen(Node &n) {
-
+void testWitInterface() {
+    Node &mod = Node("host-funcs").setType(modul).add(Node("current-user").setType(functor).add(StringType));
+    assert_emit("interface host-funcs {current-user: func() -> string}", mod)
 }
 
 void testWitExport() {
@@ -271,6 +265,55 @@ void testWitExport() {
     bindgen(node);
 }
 
+
+void testWitFunction() {
+//    funcDeclaration
+// a:b,c vs a:b, c:d
+
+    assert_emit("add: func(a: float32, b: float32) -> float32", 0);
+    Module &mod = read_wasm("test.wasm");
+    print(mod.import_count);
+    check_is(mod.import_count, 1)
+    check_is(Node().setType(longs).serialize(), "0")
+    check_is(mod.import_names, List<String>{"add"});// or export names?
+}
+
+void testWitImport() {
+
+}
+
+void testEqualsBinding() {
+    // colon closes with space, not semicolon !
+    parse("a = float32, b: float32");
+    check(result.length == 1);
+    check(result["a"] == "float32");
+    Node val;
+    val.add(Node("float32"));
+    val.add(Node("b").add(Node("float32")));
+    check_is(result[0], val);
+}
+
+void testColonImmediateBinding() {
+    // colon closes with space, not semicolon !
+    parse("a: float32, b: float32");
+    check(result.length == 2);
+    check(result["a"] == "float32");
+    check(result[0] == Node("a").add(Node("float32")));
+    check(result[1] == Node("a").add(Node("float32")));
+}
+
+void testWit() {
+//    testWitFunction();
+//    testWitInterface();
+    Node wit;
+    wit = (new WitReader())->read("test/merge/world.wit");
+    wit = (new WitReader())->read("samples/bug.wit");
+    wit = (new WitReader())->read("test/merge/example_dep/index.wit");
+    wit = (new WitReader())->read("test/merge/index.wit");
+    wit = (new WitReader())->read("samples/wit/typenames.wit");
+    wit = (new WitReader())->read("samples/wit/wasi_unstable.wit");
+//    check(wit.length > 0);
+}
 
 void testHyphenUnits() {
 //     const char *code = "1900 - 2000 AD";// (easy with units)
@@ -498,7 +541,7 @@ void testIteration() {
     for (auto x: args)
         error("NO ITEM, should'nt be reached "s + x);
 
-#ifndef WASM
+//#ifndef WASM
     List<String> list = {"1", "2", "3"};// wow initializer_list now terminate!
 //	List<String> list = {"1", "2", "3", 0};
     int i = 0;
@@ -516,7 +559,7 @@ void testIteration() {
         trace(x);
     }
     assert_equals(i, 3);
-#endif
+//#endif
 }
 
 //void testLogarithmInRuntime(){
@@ -2476,6 +2519,7 @@ void testBUG() {// move to tests() once done!
 
 
 void tests() {
+    testPattern();
     testParent();
     testSubGroupingFlatten();
     testIndexOffset();
@@ -2611,39 +2655,25 @@ void assurances() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
+    //	throwing = false;// shorter stack trace
+    //	panicking = true;//
 //    assurances();
-//    testLists();
-//    run_wasm(0, 0);
-    assert_run("x=123;x + 4 is 127", true);
-    testAssertRun();
-    testWasmRuntimeExtension();
-//    run_wasm_file();
-    assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
-
+    testWit();
+    testPattern();
+//    testAssertRun();
+//    assert_emit("42/4", 10.5);
+//    assert_emit("a=3;b=2;b-a", -1);
     assert_emit("42", 42);
     assert_emit("'42'", "42");
     assert_emit("42.7", 42.7);
-//        assert_is("square 3", 9) // AddressSanitizer can not provide additional info. WOW!  Exception: EXC_BAD_ACCESS (code=1,
-//        assert_emit("puts('ok');", 0);
-    assert_is("false", false);
-    testMergeGlobal();
-    assert_emit("42.7", 42.7);
-    assert_emit("2000000000000", (long) 2000000000000l)// auto long
-    assert_emit("'42'", "42");
-    testListVarargs();//
+    assert_is("square 3",
+              9) // AddressSanitizer can not provide additional info. WOW!  Exception: EXC_BAD_ACCESS (code=1,
 
-//    assert_emit("42/4", 10.5);
-
-//    assert_emit("42",42);
-//    exit(1);
-    //	throwing = false;// shorter stack trace
-    //	panicking = true;//
-//    data_mode = true; // a=b => a{b}    treat equal like ":" as block builder
-//    testDataMode();
-//    assert_emit("a=3;b=2;b-a", -1);
-//    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
-
+    //    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
 //    testUpperLowerCase();
+//    exit(1);
+//    testDataMode();
+
     skip(
             assert_run("#'0123'", 4);// todo at compile?
             assert_run("#[0 1 2 3]", 4);
@@ -2659,17 +2689,12 @@ void testCurrent() {
             assert_run("String(123)", "123");
     )
     skip(
-            test_sinus_wasp_import();
     )
+//            test_sinus_wasp_import();
+//    testSinus();// todo FRAGILE fails before!
 //    testSinus2();
-//    testAssertRun();
-
-//    testMergeOwn();
-//    testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
-//    testWasmRuntimeExtension();
 
 //    testWit();
-//    testSinus();// todo FRAGILE fails before!
 //    exit(1);
 
     testIteration();

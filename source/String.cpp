@@ -35,26 +35,26 @@ class String;
 char *empty_string = "";
 
 bool eq(chars dest, chars src, int length) {
-	if (!dest || !src)
-		return false;
-	int i = 0;
-	if (dest == "" and src[0])return false;
-	if (length < 0 and strlen0(dest) != strlen0(src))
-		return false;
+    if (!dest || !src)
+        return false;
+    int i = 0;
+    if (dest == "" and src[0])return false;
+    if (length < 0 and strlen0(dest) != strlen0(src))
+        return false;
 //	if length>0 it forces comparison of reference strings terminated by length, not by 0!
-	while (char c = dest[i]) {
-		if (length >= 0 and i >= length)
-			break;
-		char d = src[i];
-		if (!d || !c)
-			return false;
-		if (d != c)
-			return false;
-		i++;
-	}
-	if (length > 0 and src[i] and not dest[i])// reference strings must be ≠0 for whole length
-		return false;
-	return true;
+    while (char c = dest[i]) {
+        if (length >= 0 and i >= length)
+            break;
+        char d = src[i];
+        if (!d || !c)
+            return false;
+        if (d != c)
+            return false;
+        i++;
+    }
+    if (length > 0 and src[i] and not dest[i])// reference strings must be ≠0 for whole length
+        return false;
+    return true;
 }
 
 int strlen0(chars x) {
@@ -80,22 +80,22 @@ int strlen0(chars x) {
 //#ifndef cstring
 // needs manual 0 termination, or copy with length + 1
 void strcpy2(char *dest, chars src, int length) {// =-1
-	if (!dest || !src)
-		return;
-	int i = 0;
-	if (length < 0)length = strlen0(src);
-	if (length <= 0)return;
+    if (!dest || !src)
+        return;
+    int i = 0;
+    if (length < 0)length = strlen0(src);
+    if (length <= 0)return;
 //	if(strlen(src)<length)error(string("Illegal strcpy2 length"));// could be filled with 0 :(
 //	if(strlen(dest)<length)error("Illegal strcpy2 length"_s);// could be filled with 0 :(
-	while (char c = src[i]) {
-		if (length-- == 0)break;
-		dest[i] = c;
-		i++;
-	}
+    while (char c = src[i]) {
+        if (length-- == 0)break;
+        dest[i] = c;
+        i++;
+    }
 }
 
 void strcpy2(char *dest, chars src) {
-	strcpy2(dest, src, -1);
+    strcpy2(dest, src, -1);
 }
 
 
@@ -159,79 +159,79 @@ int ones[] = {0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 
 
 // unlike atoi0 returns -1 if not a digit!
 int atoi1(codepoint c) {
-	int offset = -1;
-	if (c >= '0' and c <= '9')return c - '0';
-	while (zeros[++offset]) {
-		int k = zeros[offset];
-		short n = c - k;
-		if (n >= 0 and n <= 9)
-			return n;
-	}
-	offset = -1;
-	while (ones[++offset]) {
-		int k = ones[offset];
-		short n = c - k + 1;
-		if (n >= 1 and n <= 9)// most dont have #10
-			return n;
-	}
-	return -1;
+    int offset = -1;
+    if (c >= '0' and c <= '9')return c - '0';
+    while (zeros[++offset]) {
+        int k = zeros[offset];
+        short n = c - k;
+        if (n >= 0 and n <= 9)
+            return n;
+    }
+    offset = -1;
+    while (ones[++offset]) {
+        int k = ones[offset];
+        short n = c - k + 1;
+        if (n >= 1 and n <= 9)// most dont have #10
+            return n;
+    }
+    return -1;
 }
 
 // todo: 0 ambiguous "0" or "NaN"
 long atoi0(chars p) {
-	if (!p)return 0;
-	while (*p == '+')p++;
-	short sig = 1;
-	if (*p == '-') {
-		sig = -1;
-		p++;
-	}
-	long k = 0;
-	while (*p) {
-		long n;
-		short len;
-		n = atoi1(decode_unicode_character(p, &len));// inline!
-		p += len;
-		if (n < 0 or n > 9)break;
-		if (k < 0)k = 0;
-		k = (k << 3) + (k << 1) + n;
-	}
+    if (!p)return 0;
+    while (*p == '+')p++;
+    short sig = 1;
+    if (*p == '-') {
+        sig = -1;
+        p++;
+    }
+    long k = 0;
+    while (*p) {
+        long n;
+        short len;
+        n = atoi1(decode_unicode_character(p, &len));// inline!
+        p += len;
+        if (n < 0 or n > 9)break;
+        if (k < 0)k = 0;
+        k = (k << 3) + (k << 1) + n;
+    }
 
-	if (k > 0 and (*p == 'e' or *p == 'E'))
-		k *= pow(10, atoi0(++p));// we need float for E-10 == 1/10 …
-	return sig * k;
+    if (k > 0 and (*p == 'e' or *p == 'E'))
+        k *= pow(10, atoi0(++p));// we need float for E-10 == 1/10 …
+    return sig * k;
 }
 
 double atof0(chars string) {
-	double result = 0.0;
-	if (!string) return result;
+    double result = 0.0;
+    if (!string) return result;
 
-	double multiplier = 1;
-	double divisor = 1.0;
-	int integer_portion = 0;
+    double multiplier = 1;
+    double divisor = 1.0;
+    int integer_portion = 0;
 
-	integer_portion = atoi0(string);
+    integer_portion = atoi0(string);
 
-	result = (double) integer_portion;
-	if (*string == '-') {
-		result *= -1;
-		multiplier = -1;
-	}
+    result = (double) integer_portion;
+    if (*string == '-') {
+        result *= -1;
+        multiplier = -1;
+    }
 
-	while (*string && (*string != '.') && (*string != 'e') && (*string != 'E'))
+    while (*string && (*string != '.') && (*string != 'e') && (*string != 'E'))
         string++;
     if (*string and (*string == '.'))
         string++;
-	while (*string) {
-		if (*string == 'e' or *string == 'E')
-			return result * pow(10, atoi0(++string));
-		if (*string < '0' || *string > '9') return result;
-		divisor *= 10.0;
-		result += (double) (*string - '0') / divisor;
-		string++;
-	}
+    while (*string) {
+        if (*string == 'e' or *string == 'E')
+            return result * pow(10, atoi0(++string));
+        if (*string < '0' || *string > '9') return result;
+        divisor *= 10.0;
+        result += (double) (*string - '0') / divisor;
+        string++;
+    }
 
-	return result * multiplier;
+    return result * multiplier;
 }
 
 class String;
@@ -244,108 +244,108 @@ String toString(Node &node);
 
 
 char *itoa0(long num, int base = 10) {
-	// length 22 -> put(num)/2+2 for base 10
-	char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
+    // length 22 -> put(num)/2+2 for base 10
+    char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
 //	int addr=(int)(long)str;
 //	if(addr<0 or addr>memory_size)
 //		error("OUT OF MEMORY");
-	int len = 0;
-	bool isNegative = false;
-	/* Handle 0 explicitely, otherwise empty string is printed for 0 */
-	if (num == 0) {
-		str[len++] = '0';
-		str[len] = '\0';
-		return str;
-	}
-	// In standard itoa0(), negative numbers are handled only with
-	// base 10. Otherwise numbers are considered unsigned.
-	if (num < 0 && base == 10) {
-		isNegative = true;
-		num = -num;
-	}
-	// Process individual digits
-	while (num != 0 and len < 22) {
-		int rem = num % base;
-		str[len++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
-		num = num / base;
-	}
-	// If number is negative, append '-'
-	if (isNegative)
-		str[len++] = '-';
-	str[len] = '\0'; // Append string terminator
-	// Reverse the string
-	reverse(str, len);
-	return str;
+    int len = 0;
+    bool isNegative = false;
+    /* Handle 0 explicitely, otherwise empty string is printed for 0 */
+    if (num == 0) {
+        str[len++] = '0';
+        str[len] = '\0';
+        return str;
+    }
+    // In standard itoa0(), negative numbers are handled only with
+    // base 10. Otherwise numbers are considered unsigned.
+    if (num < 0 && base == 10) {
+        isNegative = true;
+        num = -num;
+    }
+    // Process individual digits
+    while (num != 0 and len < 22) {
+        int rem = num % base;
+        str[len++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
+        num = num / base;
+    }
+    // If number is negative, append '-'
+    if (isNegative)
+        str[len++] = '-';
+    str[len] = '\0'; // Append string terminator
+    // Reverse the string
+    reverse(str, len);
+    return str;
 }
 
 char *itoa0(long num) {
-	return itoa0(num, 10);
+    return itoa0(num, 10);
 }
 
 char *itoa(long num) {
-	return itoa0(num, 10);
+    return itoa0(num, 10);
 }
 
 
 //#define pow(val,exp)
 chars ftoa0(float num, int base = 10, int digits_after_zero = 4) {/*significant_digits*/
 //	int p = powi(base,digits_after_zero+1);
-	auto remainder = abs(num) - abs(long(num));
+    auto remainder = abs(num) - abs(long(num));
 //	auto remainder = abs_f(num) - abs_l(long(num));
 //	auto remainder = itoa0(abs(int((num - (long) num) * p)), base);
-	chars f = concat(itoa0(int(num), base), ".");
+    chars f = concat(itoa0(int(num), base), ".");
 //	significant_digits-=strlen(f)-1
-	while (digits_after_zero-- > 0) {
-		remainder *= base;
-		auto digit = itoa0(int(remainder), base);
-		remainder -= int(remainder);
-		f = concat(f, digit);
-	}
-	int len = strlen0(f);// cut trailing 0 : 1.1000 -> 1.1
-	for (int i = 1; i < len; ++i) {
-		if (f[len - i] == '0') ((char *) f)[len - i] = 0;
-		else break;
-	}
-	return f;
+    while (digits_after_zero-- > 0) {
+        remainder *= base;
+        auto digit = itoa0(int(remainder), base);
+        remainder -= int(remainder);
+        f = concat(f, digit);
+    }
+    int len = strlen0(f);// cut trailing 0 : 1.1000 -> 1.1
+    for (int i = 1; i < len; ++i) {
+        if (f[len - i] == '0') ((char *) f)[len - i] = 0;
+        else break;
+    }
+    return f;
 }
 
 
 // -123.4E-100\0
 chars ftoa2(float num, int significant_digits) {
-	int exp = 0;
-	while (num > 1 or num < -1) {
-		num /= 10;
-		exp++;
-	}
-	while (num < 1 and num > -1) {
-		num *= 10;
-		exp--;
-	}
-	char *f = static_cast<char *>(malloc(significant_digits + 8));// -123.4E-100\0
-	int pos = 0;
-	if (num < 0)f[pos++] = '-';
-	f[pos++] = '0' + int(num);
-	f[pos++] = '.';
-	while (significant_digits-- > 1) {
-		num -= int(num);
-		num *= 10;
-		f[pos++] = '0' + int(num);
-	}
-	while (pos > 0 and f[pos] == '0')f[pos--] = 0;
-	f[pos++] = 'E';
+    int exp = 0;
+    while (num > 1 or num < -1) {
+        num /= 10;
+        exp++;
+    }
+    while (num < 1 and num > -1) {
+        num *= 10;
+        exp--;
+    }
+    char *f = static_cast<char *>(malloc(significant_digits + 8));// -123.4E-100\0
+    int pos = 0;
+    if (num < 0)f[pos++] = '-';
+    f[pos++] = '0' + int(num);
+    f[pos++] = '.';
+    while (significant_digits-- > 1) {
+        num -= int(num);
+        num *= 10;
+        f[pos++] = '0' + int(num);
+    }
+    while (pos > 0 and f[pos] == '0')f[pos--] = 0;
+    f[pos++] = 'E';
 //	strcpy2(&f[pos],"×10^");
-	strcpy2(&f[pos], itoa(exp));
-	return f;
+    strcpy2(&f[pos], itoa(exp));
+    return f;
 }
 
 chars ftoa(float num) { return ftoa0(num, 10, 4); }
 
 void reverse(char *str, int len) {
-	for (int i = 0; i < len / 2; i++) {
-		char t = str[len - 1 - i];
-		str[len - 1 - i] = str[i];
-		str[i] = t;
-	}
+    for (int i = 0; i < len / 2; i++) {
+        char t = str[len - 1 - i];
+        str[len - 1 - i] = str[i];
+        str[i] = t;
+    }
 }
 
 //char itoa0(byte i) {
@@ -399,36 +399,36 @@ class Node;
 //	return String(c);
 //}
 String operator "" _s(chars c, unsigned long t) {// function signature contains illegal type WHYY??
-	return String(c);
+    return String(c);
 }
 
 String operator "" s(chars c, unsigned long t) {// function signature contains illegal type WHYY??
-	return String(c);
+    return String(c);
 }
 
 String operator "" _(chars c, unsigned long t) {
-	return String(c);
+    return String(c);
 }
 
 
 bool eq(String &dest, chars src) {
-	return dest.data == src;
+    return dest.data == src;
 }
 
 String string(chars &s) {
-	return String(s);
+    return String(s);
 }
 
 String str(chars &s) {
-	return String(s);
+    return String(s);
 }
 
 String str(char *s) {
-	return String(s);
+    return String(s);
 }
 
 String s(chars &s) {
-	return String(s);
+    return String(s);
 }
 
 
@@ -465,83 +465,83 @@ bool String::empty() const {//this==0 in testMarkMulti!
 
 
 codepoint *String::begin() {
-	if (!codepoints)extractCodepoints();
-	return &codepoints[0];
+    if (!codepoints)extractCodepoints();
+    return &codepoints[0];
 }
 
 codepoint *String::end() {
-	if (!codepoints)extractCodepoints();
-	return &codepoints[codepoint_count];
+    if (!codepoints)extractCodepoints();
+    return &codepoints[codepoint_count];
 }
 
 
 codepoint decode_unicode_character(chars text, short *len) {
-	if ((text[0] & 0b10000000) == 0) {
-		if (len)*len = 1; // 1 byte code point, ASCII
-		return (text[0] & 0b01111111);
-	} else if ((text[0] & 0b11100000) == 0b11000000) {
-		if (len)*len = 2; // 2 byte code point
-		return (text[0] & 0b00011111) << 6 | (text[0 + 1] & 0b00111111);
-	} else if ((text[0] & 0b11110000) == 0b11100000) {
-		if (len)*len = 3; // 3 byte code point
-		return (text[0] & 0b00001111) << 12 | (text[0 + 1] & 0b00111111) << 6 | (text[0 + 2] & 0b00111111);
-	} else {
-		if (len)*len = 4; // 4 byte code point
-		return (text[0] & 0b00000111) << 18 | (text[0 + 1] & 0b00111111) << 12 | (text[0 + 2] & 0b00111111) << 6 |
-		       (text[0 + 3] & 0b00111111);
-	}
+    if ((text[0] & 0b10000000) == 0) {
+        if (len)*len = 1; // 1 byte code point, ASCII
+        return (text[0] & 0b01111111);
+    } else if ((text[0] & 0b11100000) == 0b11000000) {
+        if (len)*len = 2; // 2 byte code point
+        return (text[0] & 0b00011111) << 6 | (text[0 + 1] & 0b00111111);
+    } else if ((text[0] & 0b11110000) == 0b11100000) {
+        if (len)*len = 3; // 3 byte code point
+        return (text[0] & 0b00001111) << 12 | (text[0 + 1] & 0b00111111) << 6 | (text[0 + 2] & 0b00111111);
+    } else {
+        if (len)*len = 4; // 4 byte code point
+        return (text[0] & 0b00000111) << 18 | (text[0 + 1] & 0b00111111) << 12 | (text[0 + 2] & 0b00111111) << 6 |
+               (text[0 + 3] & 0b00111111);
+    }
 }
 
 
 void encode_unicode_character(char *buffer, wchar_t ucs_character) {
-	int offset = 0;
-	if (ucs_character <= 0x7F) {
-		// Plain single-byte ASCII.
-		buffer[offset++] = (char) ucs_character;
-	} else if (ucs_character <= 0x7FF) {
-		// Two bytes.
-		buffer[offset++] = 0xC0 | (ucs_character >> 6);
-		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
-	} else if (ucs_character <= 0xFFFF) {
-		// Three bytes.
-		buffer[offset++] = 0xE0 | (ucs_character >> 12);
-		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
-		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
-	} else if (ucs_character <= 0x1FFFFF) {
-		// Four bytes.
-		buffer[offset++] = 0xF0 | (ucs_character >> 18);
-		buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
-		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
-		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
-	} else if (ucs_character <= 0x3FFFFFF) {
-		// Five bytes.
-		buffer[offset++] = 0xF8 | (ucs_character >> 24);
-		buffer[offset++] = 0x80 | ((ucs_character >> 18) & 0x3F);
-		buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
-		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
-		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
-	} else if (ucs_character <= 0x7FFFFFFF) {
-		// Six bytes.
-		buffer[offset++] = 0xFC | (ucs_character >> 30);
-		buffer[offset++] = 0x80 | ((ucs_character >> 24) & 0x3F);
-		buffer[offset++] = 0x80 | ((ucs_character >> 18) & 0x3F);
-		buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
-		buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
-		buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
-	} else {
-		warn("Invalid char; don't encode anything.");
-	}
+    int offset = 0;
+    if (ucs_character <= 0x7F) {
+        // Plain single-byte ASCII.
+        buffer[offset++] = (char) ucs_character;
+    } else if (ucs_character <= 0x7FF) {
+        // Two bytes.
+        buffer[offset++] = 0xC0 | (ucs_character >> 6);
+        buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+    } else if (ucs_character <= 0xFFFF) {
+        // Three bytes.
+        buffer[offset++] = 0xE0 | (ucs_character >> 12);
+        buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
+        buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+    } else if (ucs_character <= 0x1FFFFF) {
+        // Four bytes.
+        buffer[offset++] = 0xF0 | (ucs_character >> 18);
+        buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
+        buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
+        buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+    } else if (ucs_character <= 0x3FFFFFF) {
+        // Five bytes.
+        buffer[offset++] = 0xF8 | (ucs_character >> 24);
+        buffer[offset++] = 0x80 | ((ucs_character >> 18) & 0x3F);
+        buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
+        buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
+        buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+    } else if (ucs_character <= 0x7FFFFFFF) {
+        // Six bytes.
+        buffer[offset++] = 0xFC | (ucs_character >> 30);
+        buffer[offset++] = 0x80 | ((ucs_character >> 24) & 0x3F);
+        buffer[offset++] = 0x80 | ((ucs_character >> 18) & 0x3F);
+        buffer[offset++] = 0x80 | ((ucs_character >> 12) & 0x3F);
+        buffer[offset++] = 0x80 | ((ucs_character >> 6) & 0x3F);
+        buffer[offset++] = 0x80 | ((ucs_character >> 0) & 0x3F);
+    } else {
+        warn("Invalid char; don't encode anything.");
+    }
 }
 
 // utf8_byte_count on the first byte of a codepoint represented as utf8 is fine, however AUTO-CASTING U'√' to char is NOT fine!
 short utf8_byte_count(codepoint ucs_character) {
-	if (ucs_character <= 0x7F) return 1;
-	if (ucs_character <= 0x7FF) return 2;
-	if (ucs_character <= 0xFFFF) return 3;
-	if (ucs_character <= 0x1FFFFF) return 4;
-	if (ucs_character <= 0x3FFFFFF) return 5;
+    if (ucs_character <= 0x7F) return 1;
+    if (ucs_character <= 0x7FF) return 2;
+    if (ucs_character <= 0xFFFF) return 3;
+    if (ucs_character <= 0x1FFFFF) return 4;
+    if (ucs_character <= 0x3FFFFFF) return 5;
 // if (ucs_character <= 0x7FFFFFFF)
-	return 6;
+    return 6;
 }
 
 //List<codepoint> split_by_codepoint(String input) {
@@ -557,20 +557,20 @@ short utf8_byte_count(codepoint ucs_character) {
 
 
 codepoint *String::extractCodepoints(bool again) {
-	if (codepoints and not again)
-		return codepoints;
-	codepoint_count = 0;
-	codepoints = (codepoint *) calloc(length, sizeof(codepoint));
-	for (int i = 0; i < length;) {
-		short count;// = utf8_byte_count(data[i]);
-		codepoints[codepoint_count++] = decode_unicode_character(&data[i], &count);
-		i += count;
-	}
-	return codepoints;
+    if (codepoints and not again)
+        return codepoints;
+    codepoint_count = 0;
+    codepoints = (codepoint *) calloc(length, sizeof(codepoint));
+    for (int i = 0; i < length;) {
+        short count;// = utf8_byte_count(data[i]);
+        codepoints[codepoint_count++] = decode_unicode_character(&data[i], &count);
+        i += count;
+    }
+    return codepoints;
 }
 
 bool String::startsWith(chars string) {
-	return indexOf(string) == 0;
+    return indexOf(string) == 0;
 }
 
 bool String::endsWith(const char *string) {
@@ -580,57 +580,57 @@ bool String::endsWith(const char *string) {
 }
 
 String String::to(const char *string) {
-	return substring(0, indexOf(string), true);
+    return substring(0, indexOf(string), true);
 }
 
 List<String> String::split(const char *string) {
-	List<String> parts;
-	int len1 = len(string);
-	int start = 0;
-	for (int i = 0; i < length; i++) {
-		if (eq(data + i, string, len1)) {
-			String part = String(data + start, i - start, !debug);
-			parts.add(part);// copy by value, hopefully c++ optimizer is smart enough ;)
-			start = i + len1;
-		}
-	}
-	String rest = String(data + start, -1, true);
-	parts.add(rest);
-	return parts;//.clone();  return by copy value ok (list items[] separate)
+    List<String> parts;
+    int len1 = len(string);
+    int start = 0;
+    for (int i = 0; i < length; i++) {
+        if (eq(data + i, string, len1)) {
+            String part = String(data + start, i - start, !debug);
+            parts.add(part);// copy by value, hopefully c++ optimizer is smart enough ;)
+            start = i + len1;
+        }
+    }
+    String rest = String(data + start, -1, true);
+    parts.add(rest);
+    return parts;//.clone();  return by copy value ok (list items[] separate)
 }
 
 String String::trim() {
-	int start = 0;
-	while (start < length and (data[start] == ' ' or data[start] == '\t' or data[start] == '\n'))start++;
-	int end = length - 1;
-	while (0 <= end and (data[end] == ' ' or data[end] == '\n'))end--;
-	return String(data + start, end - start + 1, true);// share ok?
+    int start = 0;
+    while (start < length and (data[start] == ' ' or data[start] == '\t' or data[start] == '\n'))start++;
+    int end = length - 1;
+    while (0 <= end and (data[end] == ' ' or data[end] == '\n'))end--;
+    return String(data + start, end - start + 1, true);// share ok?
 }
 
 long String::hash() const {
-	return wordHash(data, min(length, 20));
+    return wordHash(data, min(length, 20));
 //	return (long)data;// only conflict: shared substring(0,i);
 }
 
 
 String &String::lower() {
-	String &clone1 = clone();
-	lowerCase(clone1.data, length);
-	return clone1;
+    String &clone1 = clone();
+    lowerCase(clone1.data, length);
+    return clone1;
 }
 
 void String::shift(int i) {
-	while (length > 0 and i-- > 0) {
-		data++;
-		length--;
-	}
+    while (length > 0 and i-- > 0) {
+        data++;
+        length--;
+    }
 }
 
 String EMPTY_STRING0 = "";
 String &EMPTY_STRING = EMPTY_STRING0;
 
 void error1(String message, chars file, int line) {
-	error1(message.data, file, line);
+    error1(message.data, file, line);
 }
 
 
@@ -652,25 +652,25 @@ bool empty(String *s) { return not s or s->empty(); }
 bool empty(chars s) { return not s or strlen0(s) == 0; }
 
 bool empty(codepoint s) {
-	return 0 <= s and s <= ' ';// not s or s == ' ' or s == '\n' or s == '\t' or s==0x0F or s==0x0E;
+    return 0 <= s and s <= ' ';// not s or s == ' ' or s == '\n' or s == '\t' or s==0x0F or s==0x0E;
 }
 
 
 bool contains(chars str, chars match) {
-	if (!str)
-		return false;
-	int l = strlen0(match);
-	for (int i = 0; str[i] != 0; i++) {
-		bool ok = true;
-		for (int j = 0; j < l; j++) {
-			if (str[i + j] != match[j]) {
-				ok = false;
-				break;
-			}
-		}
-		if (ok)return true;
-	}
-	return false;
+    if (!str)
+        return false;
+    int l = strlen0(match);
+    for (int i = 0; str[i] != 0; i++) {
+        bool ok = true;
+        for (int j = 0; j < l; j++) {
+            if (str[i + j] != match[j]) {
+                ok = false;
+                break;
+            }
+        }
+        if (ok)return true;
+    }
+    return false;
 }
 
 void put(chars s) {
@@ -686,9 +686,11 @@ void print(const Node node) {
 
 void newline();
 
+bool skip_newline = false;
 void print(long i) {
     puti(i);
-    newline();
+    if (skip_newline)skip_newline = false;// just skip one CANT make it
+    else newline();
 }
 
 void print(char c) {
@@ -702,26 +704,26 @@ void print(char const *s) {
 }
 
 void print(String *s) {
-	if (s->shared_reference)print(s->clone());// add \0 !!
-	else if (s)put(s->data);
+    if (s->shared_reference)print(s->clone());// add \0 !!
+    else if (s)put(s->data);
 }
 
 #ifndef WASM
 
 void print(String s) {
-	if (!s.shared_reference)
-		put(s.data);
-	else {
-		char tmp = s.data[s.length];
-		s.data[s.length] = 0;// hack not thread-safe
-		put(s.data);
-		s.data[s.length] = tmp;
-	}
+    if (!s.shared_reference)
+        put(s.data);
+    else {
+        char tmp = s.data[s.length];
+        s.data[s.length] = 0;// hack not thread-safe
+        put(s.data);
+        s.data[s.length] = tmp;
+    }
 }
 
 #else
 void print(String s){
-	put(s.data);
+    put(s.data);
 //   puts(s.data,s.length);
 }
 
