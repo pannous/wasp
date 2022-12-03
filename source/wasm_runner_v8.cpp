@@ -349,6 +349,12 @@ void print_frame(wasm_frame_t *frame) {
 
 typedef unsigned char *bytes;
 extern "C" long run_wasm(bytes data, int size) {
+
+//    test_V8_cpp_Javascript();
+//    v8_cpp_api();
+    test_v8();
+//    return 3;
+
     if (!done)init_wasm();
     wasm_byte_vec_t binary{(size_t) size, (wasm_byte_t *) data};
     // Compile.
@@ -361,10 +367,6 @@ extern "C" long run_wasm(bytes data, int size) {
     printf("Instantiating module...\n");
     wasm_extern_vec_t imports = WASM_EMPTY_VEC;
 
-//    test_V8_cpp_Javascript();
-//    v8_cpp_api();
-    test_v8();
-    return 3;
     //	wasm_trap_t x{};// incomplete type
 //	wasm_extern_t *externs[meta.import_count * 2];
 //	wasm_extern_t *externs[] = {link_imports2(), link_global()};

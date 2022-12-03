@@ -2,9 +2,12 @@ cmake_minimum_required(VERSION 3.10)
 project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
-#LINK_DIRECTORIES(Frameworks)
-LINK_DIRECTORIES(Frameworks/lib)
-LINK_DIRECTORIES(/usr/local/lib)
+
+if (X86_64)
+    LINK_DIRECTORIES(Frameworks/lib.x86)
+else ()
+    LINK_DIRECTORIES(Frameworks/lib)
+endif ()
 
 # SET these configurations via Preferences… Build->CMake->Profiles
 # MANUALLY force set these only for urgent debugging,
@@ -29,12 +32,12 @@ if (NOT WASM)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
-        #    SET(WASMTIME 1) # FASTEST!
+        SET(WASMTIME 1) # FASTEST!
         #    SET(WASMEDGE 1) # todo smart multi-value returns
         #    set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying 2022-12: last release on Jun 2, 2021
         #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
-        SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
+        #        SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
         #            set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #    set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         #    set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
@@ -430,14 +433,10 @@ elseif (WASMTIME)
     ADD_DEFINITIONS(-DWASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
-    #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
+    #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
+    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
     #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
-    if (X86_64)
-        target_link_libraries(wasp PRIVATE wasmtime64)
-    else ()
-        target_link_libraries(wasp PRIVATE wasmtime)
-    endif ()
+    target_link_libraries(wasp PRIVATE wasmtime)
 elseif (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
     include(source/WebView.cmake)
@@ -469,7 +468,6 @@ elseif (WASMX)
     add_executable(wasp ${SOURCE_FILES})
 elseif (V8)
     ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
-    LINK_DIRECTORIES(/opt/homebrew/Cellar/v8/10.6.194.18/lib/)
     set(SOURCE_FILES source/wasm_runner_v8.cpp source/Util.cpp source/Util.h source/List.cpp source/List.h ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)

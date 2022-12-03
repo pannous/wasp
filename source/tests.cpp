@@ -2611,9 +2611,11 @@ void assurances() {
 void testCurrent() {
 //    assurances();
 //    testLists();
+//    run_wasm(0, 0);
+//    run_wasm_file();
+    assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
+
     assert_emit("42", 42);
-    assert_emit("'a b c d e f g h i j k l m n o p q r s t u v w x y z'",
-                "a b c d e f g h i j k l m n o p q r s t u v w x y z");
     assert_emit("'42'", "42");
     assert_emit("42.7", 42.7);
 //        assert_is("square 3", 9) // AddressSanitizer can not provide additional info. WOW!  Exception: EXC_BAD_ACCESS (code=1,
