@@ -1568,7 +1568,10 @@ private:
                         white();
                         Node &node = valueNode(' '); // f: func() -> tuple<int,int>
 //                        Node &node = *new Node(identifier()); // ok for now
-                        actual.last().setValue({.node=&node}).setType(key, false);
+                        Node *last = &actual.last();// don't ref here, else actual.last gets overwritten!
+                        while (last->value.node and last->kind == key)
+                            last = last->value.node;// a:b:c:d
+                        last->setValue({.node=&node}).setType(key, false);
                         break;//
                         continue;
                     }

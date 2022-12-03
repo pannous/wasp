@@ -85,6 +85,7 @@ keyword ::= 'use'
  */
 class WitReader {
     List<Module *> current_module;
+
     Node &analyzeType(Node *pNode) {
         return *pNode;
     }
@@ -94,8 +95,11 @@ class WitReader {
         if (!node.value.node) {
             if (node.length == 2)
                 node.value.node = &node[0];
-            else
-                error("no type");
+            else {
+                warn("no type");// bug
+                return alias;
+            }
+//                error("no type");
         }
         Node &type = analyzeType(node.value.node);
         if (types.has(type.name))
@@ -363,6 +367,8 @@ public:
         } else if (entry == "record") {
             return readRecord(n);
         } else if (entry == "func") {
+            return readFunc(n);
+        } else if (n.values().name == "func") { // todo what is this? js style? current-user: func() -> string
             return readFunc(n);
         } else if (n.kind == key and n.value.node->name == "func") {
             return readFunc(n);
