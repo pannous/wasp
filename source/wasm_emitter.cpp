@@ -1304,6 +1304,8 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
 //			else
 //				todo("FALLTHROUGH to set x=\"123\"!");
         case key: // todo i=ø
+            if (isalnum0(name[0])) // if 0:3 else 4 hack
+                return emitValue(*new Node(atoi(name)), context);
             if (not isVariableName(name))
                 todo("proper key emission");
             // else:

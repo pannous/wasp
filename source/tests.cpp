@@ -420,6 +420,21 @@ void testWrong0Termination() {
 #endif
 }
 
+void testDeepColon() {
+    result = parse("current-user: func() -> string");
+    check_is(result.kind, key);
+    check_is(result.values().name, "func");
+    check_is(result.values().values().name, "string");
+};
+
+void testDeepColon2() {
+    result = parse("a:b:c:d");
+    check_is(result.kind, key);
+    check_is(result.values().name, "b");
+    check_is(result.values().values().values().name, "d");
+};
+
+
 void testStupidLongLong() {
     //	int a;
 //	long b;// 4 byte in wasm/windows grr
@@ -2519,6 +2534,8 @@ void testBUG() {// move to tests() once done!
 
 
 void tests() {
+    testDeepColon();
+    testDeepColon2();
     testPattern();
     testParent();
     testSubGroupingFlatten();
@@ -2658,11 +2675,16 @@ void testCurrent() {
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
 //    assurances();
-    assert_emit("if 2 : 3 else 4", 3);
+//    skip(
+    assert_is("{x:1}", true);// emitData( node! )
+//            )
+    assert_emit("if 0:3 else 4", 4);
+//    assert_emit("if 0 : 3 else 4", 4);
+//    assert_emit("if 2 : 3 else 4", 3);
 //    assert_emit("if 2:3 else 4", 3);
-
+//    exit(1);
+    testWit();
     testColonImmediateBinding();
-//    testWit();
     testPattern();
 //    testAssertRun();
 //    assert_emit("42/4", 10.5);
