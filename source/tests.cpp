@@ -1491,7 +1491,9 @@ void testTruthiness() {
 
 
     assert_is("{1}", true);
-    assert_is("{x:1}", true);
+    skip(
+            assert_is("{x:1}", true);
+    )
 
     todo_emit( // UNKNOWN local symbol ‘x’ in context main OK
             assert_is("x", false);
@@ -2676,7 +2678,15 @@ void testCurrent() {
     //	panicking = true;//
 //    assurances();
 //    skip(
-    assert_is("{x:1}", true);// emitData( node! )
+    assert_emit("x:41;x", 41)
+    assert_emit("x:41;x>2", 1)
+    assert_emit("x:41;x<2", 0)
+
+    assert_emit("x:41;if x>1 then 2 else 3", 2)
+
+    Node &node1 = parse("{x:1}");
+    assert_equals_x(node1, true);
+//    assert_is("{x:1}", true);// emitData( node! )
 //            )
     assert_emit("if 0:3 else 4", 4);
 //    assert_emit("if 0 : 3 else 4", 4);
@@ -2717,14 +2727,15 @@ void testCurrent() {
     skip(
     )
 //            test_sinus_wasp_import();
-//    testSinus();// todo FRAGILE fails before!
-//    testSinus2();
+    testSinus();// todo FRAGILE fails before!
+    testSinus2();
 
 //    testWit();
 //    exit(1);
 
     testIteration();
     tests();// make sure all still ok before changes
+    testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
     todos();// those not passing yet (skip)
     testAllWasm();
     print("CURRENT TESTS PASSED");
