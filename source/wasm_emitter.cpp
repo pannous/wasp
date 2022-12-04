@@ -716,6 +716,8 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
     //	i32.load
 }
 
+Code emitString(Node &node, Function &function);
+
 // write data to DATA SEGMENT (vs emitValue on stack)
 // MAY return const(pointer)
 [[nodiscard]]
@@ -758,29 +760,8 @@ Code emitData(Node &node, Function &context) {
             else
                 error("can't save unknown reference pointer "s + name);
             break;
-        case strings: {
-            int stringIndex = data_index_end + runtime.data_offset_end;// uh, todo?
-            if (not node.value.string)error("empty node.value.string");
-            String string = *node.value.string;
-            if (string and referenceDataIndices.has(string))
-                // todo: reuse same strings even if different pointer, aor make same pointer before
-                stringIndex = referenceDataIndices[string];
-            else {
-                referenceDataIndices.insert_or_assign(string, data_index_end);
-                referenceMap[string] = node;
-                //				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
-                //				strcpy2(data + data_index_end, (char*)lens.data, lens.length);
-                //				data_index_end += lens.length;// unsignedLEB128 encoded length of pString
-                strcpy2(data + data_index_end, string.data, string.length);
-                data[data_index_end + string.length] = 0;
-                // we add an extra 0, unlike normal wasm abi, because we have space in data section
-                data_index_end += string.length + 1;
-            }
-            if (I_know_what_I_am_doing)
-                last_object_pointer = stringIndex;
-            last_type = stringp;
-            break;
-        }
+        case strings:
+            return emitString(node, context);
         case objects:
         case groups:
             // todo hold up: print("ok") should not emit an array of group(string(ok)) !?
@@ -796,7 +777,37 @@ Code emitData(Node &node, Function &context) {
     }
     // todo: ambiguity emit("1;'a'") => result is pointer to [1,'a'] or 'a' ? should be 'a', but why?
     last_object_pointer = last_pointer;
-    return code.addConst32(last_pointer);
+    return code.addConst32(last_pointer);// redundant with returns ok
+}
+
+Code emitString(Node &node, Function &function) {
+    int last_pointer = data_index_end + runtime.data_offset_end;
+    int stringIndex = last_pointer;// uh, todo?
+    if (not node.value.string)error("empty node.value.string");
+    String string = *node.value.string;
+    if (string and referenceDataIndices.has(string))
+        // todo: reuse same strings even if different pointer, aor make same pointer before
+        stringIndex = referenceDataIndices[string];
+    else {
+        if ((Primitive) node.kind == leb_string) {
+            Code lens(string.length);// wasm abi to encode string as LEB-length + data:
+            strcpy2(data + data_index_end, (char *) lens.data, lens.length);
+            data_index_end += lens.length;// unsignedLEB128 encoded length of pString
+        } else { // wasp abi:
+            emitIntData(string_header_32);
+            emitIntData(0/*codepoint_count*/);
+            emitIntData(string.length);
+        }
+        referenceDataIndices.insert_or_assign(string, data_index_end);
+        referenceMap[string] = node;
+        strcpy2(data + data_index_end, string.data, string.length);
+        data[data_index_end + string.length] = 0;
+        // we add an extra 0, unlike normal wasm abi, because we have space in data section
+        data_index_end += string.length + 1;
+    }
+    last_type = stringp;
+    last_object_pointer = last_pointer;
+    return Code().addConst32(last_pointer);
 }
 
 [[nodiscard]]
@@ -1218,6 +1229,8 @@ bool isVariableName(String name) {
 
 Code emitConstruct(Node &node, Function &context);
 
+void emitNode(Node &node, Function &function);
+
 // also init expressions of globals!
 [[nodiscard]]
 Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, node or BODY (list)
@@ -1304,10 +1317,10 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
 //			else
 //				todo("FALLTHROUGH to set x=\"123\"!");
         case key: // todo i=ø
-            if (isalnum0(name[0])) // if 0:3 else 4 hack
+            if (name.length > 0 and name.charAt(0) >= '0' and name.charAt(0) <= '9') // if 0:3 else 4 hack
                 return emitValue(*new Node(atoi(name)), context);
             if (not isVariableName(name))
-                todo("proper key emission");
+                emitNode(node, context);
             // else:
         case reference: {
             if (name.empty()) {
@@ -1390,6 +1403,11 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
             error("unhandled node type «"s + node.name + "» : " + typeName(node.kind));
     }
     return code;
+}
+
+void emitNode(Node &node, Function &function) {
+    todo("proper key emission");
+
 }
 
 void discard(Code code);
