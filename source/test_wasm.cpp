@@ -1261,9 +1261,12 @@ void testMultiValue() {
     assert_emit("'OK'", "OK");
 }
 
-// may cause HEAP CORRUPTION! why??
 void testAssertRun() {
 // all these have been tested with assert_emit before. now check that it works with runtime
+    testWasmRuntimeExtension();
+
+    assert_run("42", 42);
+    assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
     assert_run("x='123';x is '123'", true);// ok
     assert_run("'hello';(1 2 3 4);10", 10);// -> data array […;…;10] ≠ 10
     assert_run("x='123';x + '4' is '1234'", true);// ok
@@ -1383,14 +1386,4 @@ void testAllWasm() {
     wasm_todos();
     testWasmTernary();
     testArrayIndicesWasm();
-
-    skip( // todo DONT SKIP
-            assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
-            testAssertRun();
-            testWasmModuleExtension();// multiple memories, egal, runtimeExtension works
-            testWasmRuntimeExtension();
-            testWasmRuntimeExtensionMock();
-//    MISSING import/declaration for function eq Map problem?
-    )
-//	data_mode = true;// allow
 }
