@@ -140,12 +140,12 @@ public:
     int header = array_header_32;
     Type _type = 0;// reflection on template class S
     int _size = 0;
+    int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
+    // previous entries must be aligned to long!
+    S *items;// In C++ References cannot be put into an array, if you try you get
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
-    int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
-
     // todo item references are UNSAFE after grow()
-    S *items;// In C++ References cannot be put into an array, if you try you get
 //    S items[LIST_DEFAULT_CAPACITY];// array type is not assignable
 
     List() {
