@@ -17,6 +17,9 @@
 //#include "asserts.h"
 
 //Map<String, Signature> functions;// todo Signature copy by value is broken
+Code emitString(Node &node, Function &context);
+
+Code emitArray(Node &node, Function &context);
 
 int runtime_offset = 0; // imports + funcs
 int import_count = 0;
@@ -27,9 +30,11 @@ char *data;// any data to be stored to wasm: values of variables, strings, nodes
 //int data_index_start = 0;
 int data_index_end = 0;// position to write more data = end + length of data section
 int last_object_pointer = 0;// outside stack
-//int last_data_pointer = 0;// last_data plus header
+//int last_data_pointer = 0;// last_data plus header , see referenceDataIndices
 //Map<String *, long> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 // todo: put into Function.locals :
+typedef int nodehash;
+Map<long, int> referenceNodeIndices;// wasm pointers to nodes
 Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
 Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^ todo remove
 Map<String, Node> referenceMap; // lookup types…
@@ -63,7 +68,10 @@ enum MemoryHandling {
 MemoryHandling memoryHandling;// set later = export_memory; // import_memory not with mergeMemorySections!
 
 // todo: gather all 'private' headers here, not in between and in wasm_emitter.h
+// private headers:
 Code emitConstruct(Node &node, Function &context);
+
+Code emitGetter(Node &node, Node &field, Function &context);
 
 Code createSection(Sections sectionType, Code data);
 
@@ -74,26 +82,6 @@ void discard(Code code) {
 
 [[nodiscard]]
 Code Call(char *symbol);//Node* args
-
-//Code& unsignedLEB128(int);
-//Code& flatten(byter);
-//Code& flatten (Code& data);
-//void todo1(char *message = "") {
-//	printf("TODO %s\n", message);
-//}
-
-//typedef int number;
-//typedef char byte;
-//typedef char* Code;
-//typedef char id;
-
-
-
-
-//class Bytes {
-//public:
-//	int length;
-//};
 
 
 // https://pengowray.github.io/wasm-ops/
@@ -312,20 +300,7 @@ Code encodeLocal(long count, Valtype type) {
 // sections are encoded by their type followed by their vector contents
 
 
-enum NodTypes {
-    numberLiteral,
-    identifier,
-    binaryExpression,
-    printStatement,
-    variableDeclaration,
-    variableAssignment,
-    functionDeclaration,
-    whileStatement,
-    ifStatement,
-    callStatement,
-    internalError,
-};
-
+Code emitNode(Node &node, Function &context);
 
 bytes ieee754(float num) {
     char float_data[4];
@@ -339,12 +314,12 @@ bytes ieee754(float num) {
 }
 
 bytes ieee754(double num) {
-    char data[8];
-    double *hack = ((double *) data);
+    char dat[8];
+    double *hack = ((double *) dat);
     *hack = num;
     byte *flip = static_cast<byte *>(alloc(1, 9));
     short i = 8;
-    while (i--)flip[i] = data[i];// don't flip, just copy to malloc
+    while (i--)flip[i] = dat[i];// don't flip, just copy to malloc
     return flip;
 }
 //Code emitExpression (Node* nodes);
@@ -362,19 +337,125 @@ bool isProperList(Node &node) {
     return true;
 }
 
-void emitIntData(int i) {// append int to wasm data memory
+// append padding bytes to wasm data memory
+void emitPadding(int num, byte val = 0) {
+    while (num-- > 0)
+        data[data_index_end++] = val;
+}
+
+// append byte to wasm data memory
+void emitByteData(byte i) {
+    *(byte *) (data + data_index_end++) = i;
+}
+
+
+// append short to wasm data memory
+void emitShortData(short i, bool pad) {// ⚠️ DON'T PAD INSIDE STRUCTS!?
+    if (pad)while (((long) (data + data_index_end) % 2))data_index_end++;// type 'int' requires 4 byte alignment
+    *(short *) (data + data_index_end) = i;
+    data_index_end += 2;
+}
+
+// append int to wasm data memory
+void emitIntData(int i, bool pad = true) {
+    if (pad)while (((long) (data + data_index_end) % 4))data_index_end++;// type 'int' requires 4 byte alignment
     *(int *) (data + data_index_end) = i;
     data_index_end += 4;
-//	while (((long)(data + data_index_end)%16))data_index_end++;// type 'long', which requires 4 byte alignment DO IT BEFORE!
 }
+
+// append long to wasm data memory
+void emitLongData(long i, bool pad) { // ⚠️ DON'T PAD INSIDE STRUCTS!?
+    if (pad)while (((long) (data + data_index_end) % 8))data_index_end++;// type 'long' requires 8 byte alignment
+    *(long *) (data + data_index_end) = i;
+    data_index_end += 8;
+}
+
+void emitSmartPointer(smart_pointer_64 p) {
+    emitLongData(p, true);
+}
+
+
+Code emitWaspString(Node &node, Function &context) {
+    // emit node as serialized wasp string
+    const String &string = node.serialize();
+    const Code &code = emitString(*new Node(string), context);
+    return code;
+}
+
+
+//typedef long long wasm_node_index;
+wasm_node_index emitNodeBinary(Node &node, Function &context) {
+//    if((long)&node < 0x100000000L)
+//        return (long)&node; // inside wasm stack context, we can just pass around the wasm_node_index. Todo, but not in compile context!
+    long hash = node.hash();
+    if (referenceNodeIndices.has(hash))
+        return referenceNodeIndices[hash];
+    else referenceNodeIndices[hash] = -1;// fixup marker for cyclic graphs todo …
+
+    int wasm_type_pointer = node.type ? emitNodeBinary(*node.type, context) : 0;// just drop smart header
+    int wasm_parent_pointer = 0;
+    int wasm_meta_pointer = 0;
+    int wasm_next_pointer = 0;
+    if (node.length > 0)
+        discard(emitArray(node, context));
+
+    int node_children_pointer = last_object_pointer + array_header_length;// directly into children, length is redundant
+
+
+//    emitLongData(0xFFEEDDCCBBAA9988L, true); // chaos monkey! randomly insert to check sanity
+
+    emitPadding((8 - (data_index_end % 8)) %
+                8);// fill up to long padding ⚠️ the field-sizes before node.value MUST sum up to n*8!
+//    emitPadding(1);// wrong padding DOES fuck up struct parsing even on the host side!
+    int node_start = data_index_end;
+    emitIntData(node_header_32, false);
+    emitIntData(wasm_type_pointer, false);
+    emitIntData(node.length, false);
+    emitIntData(node_children_pointer, false);
+    node.value.longy = 0xFFEEDDCCBBAA9988L;// debug
+    emitLongData(node.value.longy, false);// too late to pad, otherwise
+
+//    check_is(sizeof(node.kind), 1) // todo
+//    emitByteData(node.kind); // breaks alignment
+    emitIntData(node.kind); // breaks alignment
+    check_is(sizeof(node.kind), 4) // forced 32 bit for alignment!
+    emitIntData(wasm_parent_pointer);
+    emitString(*new Node("abcdef") /* node .name*/, context);// directly in place!
+    emitPadding(20);// pointers, hash, capacity, … extra fields
+//    emitIntData(wasm_meta_pointer);
+//    emitIntData(wasm_next_pointer);
+    referenceNodeIndices[hash] = node_start;
+    last_type = Valtype::node;
+    last_typo = node.type;
+    last_object = &node;
+    last_object_pointer = node_start;
+    printf("data_index_end %d\n", data_index_end);
+// already stored in emitArray() : usually enough, unless we want extra node meta data?
+//    referenceIndices.insert_or_assign(node.name, pointer);
+//    referenceDataIndices.insert_or_assign(node.name, pointer + array_header_length);
+//    referenceMap[node.name] = node;
+    return node_start;
+}
+
+
+[[nodiscard]]
+Code emitNode(Node &node, Function &context) {
+    return Code().addConst32(emitNodeBinary(node, context));
+}
+
+
+Signature &getSignature(String name) {// todo DEL
+    return functions[name].signature;
+}
+
 
 [[nodiscard]]
 Code emitPrimitiveArray(Node &node, Function &context) {
     let code = Code();
     if (!(node.kind == buffers)) todo("arrays of type "s + typeName(node.kind));
-    emitIntData(array_header_32); // array header
+    emitIntData(array_header_32, false); // array header
     int length = *(int *) node.value.data;// very fragile :(
-    emitIntData(length);
+    emitIntData(length, false);
 //	emitIntData(array_header_32 | int_array << 4 | node.length);
 //	emitIntData(node.kind |  node.length); // save 4 bytes, rlly?
     //	if pure_array:
@@ -382,7 +463,7 @@ Code emitPrimitiveArray(Node &node, Function &context) {
     for (int i = 0; i < length; i++) {
 //			if (node.kind.type == int_array) {
         int v = ((int *) node.value.data)[i];
-        emitIntData(v);
+        emitIntData(v, false);
     }
 #ifdef MULTI_VALUE
     // and RETURN
@@ -404,12 +485,13 @@ Code emitArray(Node &node, Function &context) {
     if (node.kind == buffers)
         return emitPrimitiveArray(node, context);
     let code = Code();
+    emitPadding(data_index_end % 4);// pad to int size
     int pointer = data_index_end;
-
 //	todo: sync with emitOffset
-    emitIntData(array_header_32);
-    emitIntData(node.kind);
-    emitIntData(node.length);
+    emitIntData(array_header_32, false);
+    emitIntData(node.kind, false);
+    emitIntData(node.length, false);
+//    last_value_pointer = data_index_end;
 //	assert_equals((long) data_index_end, (long) pointer + array_header_length);
     Code ignore;
     for (Node &child: node) {
@@ -609,8 +691,9 @@ Code emitPatternSetter(Node &ref, Node offset, Node value, Function &context) {
 // assumes value is on top of stack
 // todo merge with emitIndexRead !
 [[nodiscard]]
-Code emitIndexPattern(Node &array, Node op, Function &context, bool base_on_stack) {
+Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_stack) {
     if (op.kind != patterns and op.kind != longs and op.kind != reference)error("op expected in emitIndexPattern");
+    if (op.length == 0 and op.kind == reference)return emitGetter(array, op, context);
     if (op.length != 1 and op.kind != longs)error("exactly one op expected in emitIndexPattern");
     int base = base_on_stack ? 0 : last_object_pointer + headerOffset(array);// emitting directly without reference
     int size = currentStackItemSize(array, context);
@@ -716,7 +799,6 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
     //	i32.load
 }
 
-Code emitString(Node &node, Function &function);
 
 // write data to DATA SEGMENT (vs emitValue on stack)
 // MAY return const(pointer)
@@ -754,7 +836,8 @@ Code emitData(Node &node, Function &context) {
             break;
         case reference:
             if (context.locals.has(name))
-                error("locals dont belong in emitData!");
+                return emitNode(node, context);
+//                error("locals dont belong in emitData!");
             else if (referenceIndices.has(name))
                 todo("emitData reference makes no sense? "s + name);
             else
@@ -780,11 +863,14 @@ Code emitData(Node &node, Function &context) {
     return code.addConst32(last_pointer);// redundant with returns ok
 }
 
-Code emitString(Node &node, Function &function) {
+Code emitString(Node &node, Function &context) {
+    if (node.kind != strings)
+        return emitString((new Node(node.name))->setType(strings), context);
+//    emitPadding(data_index_end % 4);// pad to int size, too late if in node struct!
     int last_pointer = data_index_end + runtime.data_offset_end;
     int stringIndex = last_pointer;// uh, todo?
     if (not node.value.string)error("empty node.value.string");
-    String string = *node.value.string;
+    String &string = *node.value.string;
     if (string and referenceDataIndices.has(string))
         // todo: reuse same strings even if different pointer, aor make same pointer before
         stringIndex = referenceDataIndices[string];
@@ -794,9 +880,12 @@ Code emitString(Node &node, Function &function) {
             strcpy2(data + data_index_end, (char *) lens.data, lens.length);
             data_index_end += lens.length;// unsignedLEB128 encoded length of pString
         } else { // wasp abi:
-            emitIntData(string_header_32);
-            emitIntData(0/*codepoint_count*/);
-            emitIntData(string.length);
+            emitIntData(string_header_32, false);
+            emitIntData(0/*codepoint_count*/, false);
+            emitIntData(string.length, false);
+            emitIntData(0x06050403, false);// padding 2
+            emitLongData(data_index_end + 8, false);// POINTER to char[] which just follows:
+//            emitIntData(0, false);// padding to long: sizeof(char*)
         }
         referenceDataIndices.insert_or_assign(string, data_index_end);
         referenceMap[string] = node;
@@ -804,6 +893,7 @@ Code emitString(Node &node, Function &function) {
         data[data_index_end + string.length] = 0;
         // we add an extra 0, unlike normal wasm abi, because we have space in data section
         data_index_end += string.length + 1;
+        emitPadding(10);// shared, codepoints*
     }
     last_type = stringp;
     last_object_pointer = last_pointer;
@@ -971,12 +1061,29 @@ Code emitAttributeSetter(Node &node, Function &context) {
 }
 
 
+Code emitGetter(Node &node, Node &field, Function &context) {
+    Code code;
+    if (node.kind == reference)
+        code.add(emitValue(node, context));
+    else
+        todo("get pointer of node on stack");
+    Function &function1 = functions["getField"];
+    if (field.kind == strings)
+        code.add(emitString(field, context));
+    else
+        code.add(emitString(*new Node(field.name), context));
+    code.addByte(function_call);
+    code.addInt(context.index);
+    return code;
+}
+
+// todo ⚠️ discern get / set / call attribute! x.y x.y=z x.y()
 [[nodiscard]]
 Code emitAttribute(Node &node, Function &context) {
     if (node.length < 2)error("need object and field");
     if (node.length > 3)error("extra attribute stuff");
     if (node.value.node or node.last().value.node)
-        return emitAttributeSetter(node, context);
+        return emitAttributeSetter(node, context);// danger get->set ?
     Node field = node.last();// NOT ref, we resolve it to index!
     Node &object = node.first();
 
@@ -996,13 +1103,14 @@ Code emitAttribute(Node &node, Function &context) {
                   node.serialize());
         field = Node(index);
     } else
-        error("attribute access needs type … todo OR dynamic!");
+        emitGetter(object, field, context);
 
     Code code = emitData(object, context);
     // todo move => once done
 // a.b and a[b] are equivalent in angle
     return emitIndexPattern(object, field, context, true);// emitIndexRead
 }
+
 
 [[nodiscard]]
 Code emitOperator(Node &node, Function &context) {
@@ -1229,8 +1337,6 @@ bool isVariableName(String name) {
 
 Code emitConstruct(Node &node, Function &context);
 
-void emitNode(Node &node, Function &function);
-
 // also init expressions of globals!
 [[nodiscard]]
 Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, node or BODY (list)
@@ -1320,7 +1426,7 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
             if (name.length > 0 and name.charAt(0) >= '0' and name.charAt(0) <= '9') // if 0:3 else 4 hack
                 return emitValue(*new Node(atoi(name)), context);
             if (not isVariableName(name))
-                emitNode(node, context);
+                return emitNode(node, context);
             // else:
         case reference: {
             if (name.empty()) {
@@ -1403,11 +1509,6 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
             error("unhandled node type «"s + node.name + "» : " + typeName(node.kind));
     }
     return code;
-}
-
-void emitNode(Node &node, Function &function) {
-    todo("proper key emission");
-
 }
 
 void discard(Code code);
@@ -1546,7 +1647,8 @@ Code cast(Valtype from, Valtype to) {
     if (to == none or to == unknown_type or to == voids)return nop;// no cast needed magic VERSUS wasm drop!!!
     if (from == to)return nop;// nop
     last_type = to;// danger: hides last_type in caller!
-
+    if (from == node and to == i64t)
+        return Code(i64_extend_i32_s).addConst64(node_header_64) + Code(i64_or);// turn it into node_pointer_64 !
     if (from == array and to == charp)return nop;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
     if (from == i32t and to == charp)return nop;// assume i32 is a pointer here. todo?
     if (from == charp and to == i64t) return Code(i64_extend_i32_s);
@@ -1639,8 +1741,16 @@ Code emitSetter(Node &node, Node &value, Function &context) {
         return emitSetter(node[0], node[1], context);
     }
     String &variable = node.name;
-    if (!context.locals.has(variable))
-        error("variable %s in context %s missed by parser! "_s % variable % context.name);
+    if (!context.locals.has(variable)) {
+//        error("variable %s in context %s missed by parser! "_s % variable % context.name);
+        warn("variable %s in context %s emitted as node data:\n"_s % variable % context.name + node.serialize());
+        Code code = emitNode(node, context);
+//        addLocal(context, variable, Valtype::node, false);
+//        code.add(tee_local);
+//        code.add(context.locals[variable].position);
+        return code;// wasm_node_index 'pointer' (const.int)
+    }
+
     Local &local = context.locals[variable];
     auto variable_type = local.valtype;
 //    Valtype value_type = mapTypeToWasm(value); // todo?
@@ -2642,6 +2752,3 @@ Code &compile(String code, bool clean) {
 }
 
 
-Signature &getSignature(String name) {
-    return functions[name].signature;
-}

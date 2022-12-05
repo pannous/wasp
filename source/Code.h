@@ -714,6 +714,7 @@ enum Opcodes {
     table_size = 0xFC10,
     table_fill = 0xFC11,
 
+    float_rounding___ = 0xFC, // proposed prefix https://github.com/WebAssembly/design/issues/1456
 // SIMD
     simd____ = 0xFD,
 };
