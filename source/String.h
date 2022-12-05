@@ -177,6 +177,8 @@ extern char *empty_string;// = "";
 //char null_value[]={0};// todo make sure it's immutable!!
 
 // todo: make String struct-compatible with Node!?
+
+// following general Header struct / wasm32_node_struct
 class String {
 // sizeof(Node) == 20 == 5 * 4 int(*)
 
@@ -186,8 +188,9 @@ public:
     int header = string_header_32; // todo: protected
     int codepoint_count = -1;// 'type' field in list, node and array_header, semi compatible
     int length = -1;
-    int padding = 0x01020304;// todo use  child_pointer in node
+    int padding = 0x01020304;// todo use somehow.  ( child_pointer in node )
     char *data{};// UTF-8 sequence, unanalyzed Value in node
+
     codepoint *codepoints = 0;// extract on demand from data or via constructor
     bool shared_reference = false;// length terminated substrings! copy on modify if shared views. // todo: move to header?
     // todo is shared_reference sufficient for (im)mutable final const keywords?

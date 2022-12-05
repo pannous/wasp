@@ -343,6 +343,12 @@ void emitPadding(int num, byte val = 0) {
         data[data_index_end++] = val;
 }
 
+void emitPaddingAlignment(short size) { // e.g. 8 for long padding BEFORE emitLongData() / emitData(long)
+    emitPadding((size - (data_index_end % size)) %
+                size);// fill up to long padding ⚠️ the field-sizes before node.value MUST sum up to n*8!
+}
+
+
 // append byte to wasm data memory
 void emitByteData(byte i) {
     *(byte *) (data + data_index_end++) = i;
@@ -396,44 +402,50 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
     int wasm_parent_pointer = 0;
     int wasm_meta_pointer = 0;
     int wasm_next_pointer = 0;
-    if (node.length > 0)
-        discard(emitArray(node, context));
 
-    int node_children_pointer = last_object_pointer + array_header_length;// directly into children, length is redundant
-
+    int node_children_pointer = -1; // ignore children (debug)
+//    int node_children_pointer = data_index_end;
+//    for (auto child: node) {
+//        wasm_node_index child_index = emitNodeBinary(child, context);
+//    }
 
 //    emitLongData(0xFFEEDDCCBBAA9988L, true); // chaos monkey! randomly insert to check sanity
 
-    emitPadding((8 - (data_index_end % 8)) %
-                8);// fill up to long padding ⚠️ the field-sizes before node.value MUST sum up to n*8!
+    emitPaddingAlignment(8);
 //    emitPadding(1);// wrong padding DOES fuck up struct parsing even on the host side!
     int node_start = data_index_end;
+    referenceNodeIndices[hash] = node_start;
+
     emitIntData(node_header_32, false);
-    emitIntData(wasm_type_pointer, false);
     emitIntData(node.length, false);
-    emitIntData(node_children_pointer, false);
+    emitIntData(wasm_type_pointer, false);
+    emitIntData(node_children_pointer, false); // todo: we COULD write them directly behind all other fields!
     node.value.longy = 0xFFEEDDCCBBAA9988L;// debug
     emitLongData(node.value.longy, false);// too late to pad, otherwise
-
 //    check_is(sizeof(node.kind), 1) // todo
 //    emitByteData(node.kind); // breaks alignment
-    emitIntData(node.kind); // breaks alignment
+    emitIntData(node.kind);
     check_is(sizeof(node.kind), 4) // forced 32 bit for alignment!
-    emitIntData(wasm_parent_pointer);
-    emitString(*new Node("abcdef") /* node .name*/, context);// directly in place!
-    emitPadding(20);// pointers, hash, capacity, … extra fields
+    emitIntData(wasm_meta_pointer);
+    emitString(node /*.name*/, context);// directly in place!
+//    emitPadding(3*8);// pointers, hash, capacity, … extra fields
+//    emitPaddingAlignment(8);
 //    emitIntData(wasm_meta_pointer);
 //    emitIntData(wasm_next_pointer);
-    referenceNodeIndices[hash] = node_start;
     last_type = Valtype::node;
     last_typo = node.type;
     last_object = &node;
     last_object_pointer = node_start;
-    printf("data_index_end %d\n", data_index_end);
+    printf("node_start %d data_index_end %d\n", node_start, data_index_end);
 // already stored in emitArray() : usually enough, unless we want extra node meta data?
 //    referenceIndices.insert_or_assign(node.name, pointer);
 //    referenceDataIndices.insert_or_assign(node.name, pointer + array_header_length);
 //    referenceMap[node.name] = node;
+
+//    for (auto child: node) {
+//        wasm_node_index child_index = emitNodeBinary(child, context);
+//    }
+
     return node_start;
 }
 
@@ -881,11 +893,9 @@ Code emitString(Node &node, Function &context) {
             data_index_end += lens.length;// unsignedLEB128 encoded length of pString
         } else { // wasp abi:
             emitIntData(string_header_32, false);
-            emitIntData(0/*codepoint_count*/, false);
             emitIntData(string.length, false);
-            emitIntData(0x06050403, false);// padding 2
+            emitLongData(0/*codepoint_count*/, false);// type + child_pointer in node
             emitLongData(data_index_end + 8, false);// POINTER to char[] which just follows:
-//            emitIntData(0, false);// padding to long: sizeof(char*)
         }
         referenceDataIndices.insert_or_assign(string, data_index_end);
         referenceMap[string] = node;
@@ -893,7 +903,7 @@ Code emitString(Node &node, Function &context) {
         data[data_index_end + string.length] = 0;
         // we add an extra 0, unlike normal wasm abi, because we have space in data section
         data_index_end += string.length + 1;
-        emitPadding(10);// shared, codepoints*
+//        emitPadding(10);// shared, codepoints*
     }
     last_type = stringp;
     last_object_pointer = last_pointer;
@@ -2377,7 +2387,7 @@ Code emitGlobalSection() {
 }
 
 [[nodiscard]]
-Code dataSection() { // needs memory section too!
+Code emitDataSection() { // needs memory section too!
 //	Contents of section Data:
 //	0000042: 0100 4100 0b02 4869                      ..A...Hi
 //https://webassembly.github.io/spec/core/syntax/modules.html#syntax-datamode
@@ -2438,7 +2448,7 @@ Code functionSection() {
 
 // todo : convert library referenceIndices to named imports!
 [[nodiscard]]
-Code nameSection() {
+Code emitNameSection() {
     Code nameMap;
 
     int total_func_count = last_index + 1;// imports + function_count, all receive names
@@ -2691,9 +2701,9 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
                 + globalSection1
                 + exportSection1
                 + codeSection1 // depends on importSection, yields data for funcTypeSection!
-                + dataSection()
+                + emitDataSection()
                 //			+ linkingSection()
-                + nameSection()
+                + emitNameSection()
 //	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
     ;
