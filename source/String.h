@@ -180,25 +180,19 @@ extern char *empty_string;// = "";
 class String {
 // sizeof(Node) == 20 == 5 * 4 int(*)
 
-#ifdef WASM
-    //#define size_t unsigned number
-    //	void* calloc(size_t s,int idk);
-#else
-#ifndef __APPLE__
-    //#include <alloc.h>
-#endif
-#endif
-private:
-    // memory layout different to chars with leb length header!
-    static const int header = string_header_32;// to identify string structures in memory, CAN IT BE STATIC? (doubt!)
 public:
+//    static const
+// to identify string structures in memory, CAN IT BE STATIC? (doubt!)
+    int header = string_header_32; // todo: protected
     int codepoint_count = -1;// 'type' field in list, node and array_header, semi compatible
     int length = -1;
-    char *data{};// UTF-8 sequence, unanalyzed
+    int padding = 0x01020304;// todo use  child_pointer in node
+    char *data{};// UTF-8 sequence, unanalyzed Value in node
+    codepoint *codepoints = 0;// extract on demand from data or via constructor
     bool shared_reference = false;// length terminated substrings! copy on modify if shared views. // todo: move to header?
     // todo is shared_reference sufficient for (im)mutable final const keywords?
+// memory layout different to chars with leb length header!
 private:
-    codepoint *codepoints = 0;// extract on demand from data or via constructor
     // todo add UTF-16 representation as codepoint union?
 
 public:
@@ -227,7 +221,7 @@ public:
 //#endif
 
     void operator delete(void *) {
-        check(header == string_header_32);
+//        check(header == string_header_32);
         /*lol*/} // Todo ;)
 
 //	~String()=default;
@@ -550,6 +544,10 @@ public:
             return this->replace("%zu", itoa0(d));
         error("missing placeholder %d in string modulo operation s%d");
         return "«ERROR»";
+    }
+
+    String operator%(unsigned int d) {
+        return this->operator%((int) d);
     }
 
 

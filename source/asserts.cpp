@@ -140,9 +140,15 @@ bool assert_equals_x(long a, long b, char *context) {
 }
 
 bool assert_equals_x(int a, int b, char *context = "") {
-	if (a != b)print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
-	else print("OK %d==%d %s\n"s % a % b % context);
-	return a == b;
+    if (a != b)print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
+    else print("OK %d==%d %s\n"s % a % b % context);
+    return a == b;
+}
+
+bool assert_equals_x(Kind a, Kind b, char *context = "") {
+    if (a != b)print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
+    else print("OK %d==%d %s\n"s % a % b % context);
+    return a == b;
 }
 
 
