@@ -403,13 +403,21 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
     int wasm_meta_pointer = 0;
     int wasm_next_pointer = 0;
 
-    int node_children_pointer = -1; // ignore children (debug)
-//    int node_children_pointer = data_index_end;
-//    for (auto child: node) {
-//        wasm_node_index child_index = emitNodeBinary(child, context);
-//    }
+//    int node_children_pointer = -1; // ignore children (debug)
+    emitPaddingAlignment(8);
+    List<wasm_node_index> children;
+    for (auto child: node) {
+        wasm_node_index child_index = emitNodeBinary(child, context);
+        children.add(child_index);
+    }
+    emitPaddingAlignment(8);
+    int node_children_pointer = data_index_end;
+    for (auto child: children)
+        emitIntData(child);
 
 //    emitLongData(0xFFEEDDCCBBAA9988L, true); // chaos monkey! randomly insert to check sanity
+
+
 
     emitPaddingAlignment(8);
 //    emitPadding(1);// wrong padding DOES fuck up struct parsing even on the host side!
@@ -442,9 +450,6 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
 //    referenceDataIndices.insert_or_assign(node.name, pointer + array_header_length);
 //    referenceMap[node.name] = node;
 
-//    for (auto child: node) {
-//        wasm_node_index child_index = emitNodeBinary(child, context);
-//    }
 
     return node_start;
 }
@@ -2405,7 +2410,7 @@ Code emitDataSection() { // needs memory section too!
     datas.addInt(
             runtime.data_offset_end);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
     datas.addByte(0x0b);// mode: active?
-    datas.addByte(data_index_end); // size of data
+    datas.addInt(data_index_end); // size of data
     const Code &actual_data = Code((bytes) data, data_index_end);
     datas.add(actual_data);// now comes the actual data  encodeVector()? nah manual here!
     return createSection(data_section, encodeVector(datas));// size added via actual_data
@@ -2631,8 +2636,10 @@ void clearEmitterContext() {
 //	referenceMap.setDefault(Node());
     data_index_end = 0;
     last_object_pointer = 0;
-    data = (char *) malloc(MAX_DATA_LENGTH);
-//	while (((long)data)%16)data++;// type 'long', which requires 4 byte alignment
+    data = (char *) malloc(MAX_DATA_LENGTH);// todo grow
+    emitLongData(0, true);// NULL PAGE! no object shall ever read or write from address 0 (sanity measure)
+    emitString(*new Node("__WASP_DATA__\0"), *new Function());
+    while (((long) data) % 8)data++;// type 'long', which requires 8 byte alignment
 }
 
 [[nodiscard]]
