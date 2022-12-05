@@ -6,6 +6,7 @@
 #include "String.h"
 #include "smart_types.h"
 #include "NodeTypes.h"
+#include "ABI.h"
 
 //#ifndef WASI
 //SOMETIMES IT WORKS with WASI, sometimes it doesnt!? ./build-wasm.sh fails as of 2021/2
@@ -14,7 +15,9 @@
 #include <cstdlib> // OK in WASM!
 
 #ifndef WASM
+
 #include <initializer_list> // allow List x={1,2,3};
+
 #endif
 
 #define NODE_DEFAULT_CAPACITY 100
@@ -142,25 +145,54 @@ union Value { // nodes can contain ANYTHING, especially types known in wasp
 //	Node *node;
 //};
 
+
+// in wasm32 pointers are int instead of long, use this struct to transfer between both Node* spaces
+struct wasm32_node_struct {
+    int node_header = node_header_32;
+    int node_type_pointer;
+    int length;
+    int child_pointer;
+    Value value;
+    Kind kind;
+//    int head;
+//byte a1;
+//byte a12;
+//byte a13;
+//byte a14;
+//byte a15;
+//byte a16;
+//byte a17;
+//byte a11;
+//byte a21;
+//byte a31;
+//byte a41;
+//byte a51;
+//byte a61;
+//byte a71;
+    String name;// ok 64 bit compatible (except data which needs to be relocated to/fro wasm_memory anyways ) !
+
+};
+
 // The order of Type,Value is reverse to the Wasp ABI return tuple Value(int32), Type(int32)
 class Node {
     // todo: sizeof(Node) can be reduced later by: shrinking header, merging type&kind, let *children own its length, make name String* offset
     // sizeof(Node) == 64 (20 for name,
-    //	short _node_header_ = 0xDADA; //
-//	static
-    int node_header = node_header_32;
 public:
+    // ⚠️ ORDER of fields matter!
+//	static
+    //	short _node_header_ = 0xDADA; // can be combined with byte kind => 2*short !
+    int node_header = node_header_32;
     Node *type = 0;// variable/reference type or object class?
     int length = 0;// children
     Node *children = nullptr;// LIST, not link. block body content
-    Kind kind = unknown;// improved from 'undefined' upon construction
     Value value{
-            0};// value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
+            0}; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
+    Kind kind = unknown;// forced 32 bit,  improved from 'undefined' upon construction
 //	Type kind = unknown;// improved from 'undefined' upon construction
-
+    Node *parent = nullptr;// strange order necessary for alignment of String struct!?!
     String name = empty_name;// nil_name;
+
     Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
-    Node *parent = nullptr;
     // todo rename and alias:
     // lets lads lats lates: lets because a=b;c=d …; lads children; lats laterals; lates delayed evaluation
     Node *next = 0; // in children list, redundant with children[i+1] => for debugging only
@@ -172,7 +204,7 @@ public:
 #ifdef DEBUG
 // int code_position; // hash to external map
 //	int lineNumber;
-	String *line = 0;// debug! EXPENSIVE for non ast nodes!
+    String *line = 0;// debug! EXPENSIVE for non ast nodes!
 #endif
 
 // TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
@@ -184,45 +216,45 @@ public:
 // a{b}(c)[d] == a{body=b}->c->d // param deep chain, attention in algorithms
 //	Node *param = nullptr;// LINK, not list. attributes meta modifiers decorators annotations
 
-	/* don't mix children with param, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
-	 * conceptual cleanup needed... => DONE?
-	 * children["_body"] => children / $html.body
-	 * children["_attrib"] => params
-	 * children["_head"] => params / params.head / $html.head
-	 * children["_meta"] => params.meta
-	 * children["_name"] == name
-	 *
-	 * */
+    /* don't mix children with param, see for(i in xs) vs for(i of xs) hasOwnProperty, getOwnPropertyNames
+     * conceptual cleanup needed... => DONE?
+     * children["_body"] => children / $html.body
+     * children["_attrib"] => params
+     * children["_head"] => params / params.head / $html.head
+     * children["_meta"] => params.meta
+     * children["_name"] == name
+     *
+     * */
 //	Node *next = nullptr;// NO, WE NEED TRIPLES cause objects can occur in many lists + danger: don't use for any ref/var
 
 
-	//	Node(chars);
+    //	Node(chars);
 //	Node(va_list args) {
 //	}
 
-	void *operator new(size_t size) {
-		return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
-	}
+    void *operator new(size_t size) {
+        return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
+    }
 
-	void operator delete(void *a) {
-		todo("delete Node");
-	}
+    void operator delete(void *a) {
+        todo("delete Node");
+    }
 //	~Node()= default; // destructor
 //	virtual ~Node() = default;
 
 
-	Node() {
-		kind = objects;
+    Node() {
+        kind = objects;
 //		if(debug)name = "[]";
-	}
+    }
 
 
-	explicit Node(String *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
-		while (args[length] and length < MAX_DATA_LENGTH) {
-			children[length] = Node(args[length]);
-			length++;
-		}
-		kind = groups;
+    explicit Node(String *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
+        while (args[length] and length < MAX_DATA_LENGTH) {
+            children[length] = Node(args[length]);
+            length++;
+        }
+        kind = groups;
     }
 
     explicit Node(int buffer[]) {
@@ -252,34 +284,34 @@ public:
 
     explicit
     Node(double nr) {
-		value.real = nr;
-		kind = reals;
-		if (debug) name = String(ftoa(nr)); // messes with setField contraction
+        value.real = nr;
+        kind = reals;
+        if (debug) name = String(ftoa(nr)); // messes with setField contraction
 //			name = String(itoa0(nr, 10)); // messes with setField contraction
-	}
+    }
 
     explicit Node(int nr) : Node((long long) nr) {}
 
     explicit Node(Kind type) : Node() { kind = type; }
 
-	explicit Node(float nr) : Node((double) nr) {}
+    explicit Node(float nr) : Node((double) nr) {}
 
 // how to find how many no. of arguments actually passed to the function? YOU CAN'T! So …
 // Pass the number of arguments as the first variable OR
 // Require the last variable argument to be null, zero or whatever
 // BOXED
-	explicit Node(int a, int b, ...) {
-		kind = objects;// groups list
-		add(Node(a).clone());
-		va_list args;// WORK WITHOUT WASI!!
-		va_start(args, b);
-		int i = b;
-		while (i) {
-			addSmart(Node(i).clone());
-			i = (int) va_arg(args, int);
-		}
-		va_end(args);
-	}
+    explicit Node(int a, int b, ...) {
+        kind = objects;// groups list
+        add(Node(a).clone());
+        va_list args;// WORK WITHOUT WASI!!
+        va_start(args, b);
+        int i = b;
+        while (i) {
+            addSmart(Node(i).clone());
+            i = (int) va_arg(args, int);
+        }
+        va_end(args);
+    }
 
 // stupid little helper function to create ad-hoc arrays,
 // MUST NOT CONTAIN 0, as it is
@@ -303,63 +335,65 @@ public:
 //	}
 
 #ifndef WASM
-	Node(const std::initializer_list<String> &_items) : Node() {
-		for (const String &s: _items) {
-			add(new Node(s));
-		}
-	}
+
+    Node(const std::initializer_list<String> &_items) : Node() {
+        for (const String &s: _items) {
+            add(new Node(s));
+        }
+    }
+
 #endif
 
-	// why not auto null terminated on mac?
-	// vargs needs to be 0 terminated, otherwise pray!
-	explicit
-	Node(char *a, char *b, ...) {
-		kind = objects;// groups list
-		add(Node(a).clone());
-		va_list args;
-		va_start(args, b);
-		char *i = b;
-		while (i) {
-			Node *node = Node(i).clone();
-			add(node);
-			i = (char *) va_arg(args, char*);
-		}
-		va_end(args);
-	}
+    // why not auto null terminated on mac?
+    // vargs needs to be 0 terminated, otherwise pray!
+    explicit
+    Node(char *a, char *b, ...) {
+        kind = objects;// groups list
+        add(Node(a).clone());
+        va_list args;
+        va_start(args, b);
+        char *i = b;
+        while (i) {
+            Node *node = Node(i).clone();
+            add(node);
+            i = (char *) va_arg(args, char*);
+        }
+        va_end(args);
+    }
 
 
-	explicit
-	Node(long long nr) { // stupild
-		value.longy = nr;
-		kind = longs;
-		if (debug)name = String(itoa(nr)); // messes with setField contraction
-	}
+    explicit
+    Node(long long nr) { // stupild
+        value.longy = nr;
+        kind = longs;
+        if (debug)name = String(itoa(nr)); // messes with setField contraction
+    }
 
-	explicit
-	Node(long nr) { // stupild
-		value.longy = nr;
-		kind = longs;
-		if (debug)name = String(itoa(nr)); // messes with setField contraction
-	}
+    explicit
+    Node(long nr) { // stupild
+        value.longy = nr;
+        kind = longs;
+        if (debug)name = String(itoa(nr)); // messes with setField contraction
+    }
 
-	explicit // wow without explicit everything breaks WHY?
-	Node(bool yes) {
-		if (yes)
-			*this = True;
-		else
-			*this = False;
-	}
+    explicit // wow without explicit everything breaks WHY?
+    Node(bool yes) {
+        if (yes)
+            *this = True;
+        else
+            *this = False;
+    }
 
 
-	explicit Node(chars name) {
-		this->name = *new String(name);
+    explicit Node(chars name) {
+        this->name = *new String(name);
 //		type = strings NAH;// unless otherwise specified!
-	}
+    }
 
-	Node(String name, ::Kind type) {
-		this->name = name;
-		this->kind = type;
-	}
+    Node(String name, ::Kind type) {
+        this->name = name;
+        this->kind = type;
+    }
 //	explicit Node(bool truth) {
 //		error("DONT USE CONSTRUCTION, USE ok?True:False"); // todo : can't we auto-cast?  Node &bool::operator(){return True;}
 //		if (this == &NIL)
@@ -372,9 +406,9 @@ public:
 //	}
 
 
-	explicit Node(String s, bool identifier = false) {
+    explicit Node(String s, bool identifier = false) {
 //		identifier = identifier || !s.contains(" "); BULLSHIT 'hi' is strings!!
-		if (identifier) {
+        if (identifier) {
 //			if(check_reference and not symbol)...
             name = s;
             kind = reference;// kind / type must be concretized once value type is known!
@@ -384,38 +418,38 @@ public:
 //			type = numbers;
 //			}
 //		else if (atof(s)) { value.real = atoi(s); }
-		else {
-			kind = unknown;
+        else {
+            kind = unknown;
 //			kind = strings;
-			value.string = new String(s.data, s.length, true);// todo COPY AGAIN!?
-			if (name == empty_name)name = s;
-		}
-	}
+            value.string = new String(s.data, s.length, true);// todo COPY AGAIN!?
+            if (name == empty_name)name = s;
+        }
+    }
 
-	explicit Node(Node **pNode) {
-		children = pNode[0];
-		kind = arrays;
-		value.data = pNode[0];
-	}
+    explicit Node(Node **pNode) {
+        children = pNode[0];
+        kind = arrays;
+        value.data = pNode[0];
+    }
 
-	explicit
-	Node(codepoint c) {
-		name = String(c);
-		value.longy = c;
-		kind = codepoints;
+    explicit
+    Node(codepoint c) {
+        name = String(c);
+        value.longy = c;
+        kind = codepoints;
 //		value.string = &name;// todo uh, no, and danger! change name=>change value? hell no!
 //		kind = strings;
-	}
+    }
 
-	explicit
-	Node(smart_pointer_32 spo) {
-		smartType4bit type4Bit = getSmartType(spo);
-		int payload = spo << 4 >> 4; // delete 4 bit type header
+    explicit
+    Node(smart_pointer_32 spo) {
+        smartType4bit type4Bit = getSmartType(spo);
+        int payload = spo << 4 >> 4; // delete 4 bit type header
 //		if (type != int28 and type != float28 )payload = spo << 8 >> 8;
-		switch (type4Bit) {
-			case int28:
-			case sint28:
-				value.longy = (int) spo;
+        switch (type4Bit) {
+            case int28:
+            case sint28:
+                value.longy = (int) spo;
                 kind = longs;
                 break;
             case float28:
@@ -437,11 +471,11 @@ public:
             case codes:
             case utf8char:
                 value.string = new String((wchar_t) payload);
-				name = *value.string;
-				kind = strings;
-				break;
-			default:
-				error("unknown or unimplemented smart type");
+                name = *value.string;
+                kind = strings;
+                break;
+            default:
+                error("unknown or unimplemented smart type");
         }
     }
 
@@ -471,17 +505,17 @@ public:
 //	if you do not declare a copy constructor, the compiler gives you one implicitly.
 //	Node( Node& other ){// copy constructor!!
 
-	Node *clone(bool childs = true) {// const cast?
-		if (this == &NIL)return this;
-		if (this == &True)return this;
-		if (this == &False)return this;
-		// todo ...
-		Node *copy = new Node();
-		*copy = *this;// ok copies all values
-		copy->type = type;//
+    Node *clone(bool childs = true) {// const cast?
+        if (this == &NIL)return this;
+        if (this == &True)return this;
+        if (this == &False)return this;
+        // todo ...
+        Node *copy = new Node();
+        *copy = *this;// ok copies all values
+        copy->type = type;//
 
 // Todo: deep cloning whole tree? definitely clone children
-		if (childs) {
+        if (childs) {
             if (kind == key and value.data)
                 copy->value.node = value.node->clone(false);
             copy->children = 0;
@@ -490,10 +524,10 @@ public:
                 for (Node &n: *this)
                     copy->add(n);// necessary, else children is the same pointer!
         }
-		return copy;
-	}
+        return copy;
+    }
 
-	//	 explicit copy operator not neccessary
+    //	 explicit copy operator not neccessary
 //	Node& operator=(Node val){
 //		this->name = val.name;
 //		this->value = val.value;
@@ -514,34 +548,34 @@ public:
 //		return *this;
 //	}
 
-	bool operator==(bool other);
+    bool operator==(bool other);
 
-	bool operator==(char other);
+    bool operator==(char other);
 
-	bool operator==(int other);
+    bool operator==(int other);
 
-	bool operator==(long other);
+    bool operator==(long other);
 
-	bool operator==(float other);
+    bool operator==(float other);
 
-	bool operator==(double other);
+    bool operator==(double other);
 
-	bool operator==(chars other);
+    bool operator==(chars other);
 
-	bool operator==(String other);
+    bool operator==(String other);
 
 //	bool operator==(Node other);
-	bool operator==(Node &other);// equals
-	bool operator==(Node *other);// equals
+    bool operator==(Node &other);// equals
+    bool operator==(Node *other);// equals
 
-	bool operator==(const Node &other);// equals
+    bool operator==(const Node &other);// equals
 
 
-	bool operator!=(Node other);
+    bool operator!=(Node other);
 
-	bool operator>(Node other);
+    bool operator>(Node other);
 
-	Node operator+(Node other);
+    Node operator+(Node other);
 
 //	bool operator!=(Node &other);// why not auto
 
@@ -550,99 +584,99 @@ public:
 //	bool operator~();// MUST BE UNITARY:(
 
 
-	String string() const {
-		if (kind == strings)
-			return *value.string;
-		return name;
-		error((char *) (String("WRONG TYPE ") + String(kind)));
-	}
+    String string() const {
+        if (kind == strings)
+            return *value.string;
+        return name;
+        error((char *) (String("WRONG TYPE ") + String((long) kind)));
+    }
 
-	// moved outside because circular dependency
-	Node &operator[](int i);
+    // moved outside because circular dependency
+    Node &operator[](int i);
 
-	Node &operator[](int i) const;
+    Node &operator[](int i) const;
 
-	Node &operator[](char c);
+    Node &operator[](char c);
 
-	Node &operator[](chars s);
+    Node &operator[](chars s);
 
 //	Node &operator[](String s);
-	Node &operator[](String *s);
+    Node &operator[](String *s);
 
 //	Node &operator[](String s) const;
 
-	Node &operator=(int i);
+    Node &operator=(int i);
 
-	Node &operator=(chars s);
-
-
-	Node &set(String string, Node *node);
-
-	Node interpret(bool expectOperator = false);
-
-	Node insert(Node &node, int at = -1);// non-modifying
+    Node &operator=(chars s);
 
 
-	//	Node &add(Node node);  call to member function 'add' is ambiguous
-	Node &add(const Node *node);
+    Node &set(String string, Node *node);
 
-	Node &add(const Node &node);
+    Node interpret(bool expectOperator = false);
+
+    Node insert(Node &node, int at = -1);// non-modifying
+
+
+    //	Node &add(Node node);  call to member function 'add' is ambiguous
+    Node &add(const Node *node);
+
+    Node &add(const Node &node);
 //	Node &add(Node node);
 
 //	void addSmart(Node &node);// modifying
-	void addSmart(Node node);
+    void addSmart(Node node);
 
-	void addSmart(Node *node, bool flatten = true, bool clutch = false);
+    void addSmart(Node *node, bool flatten = true, bool clutch = false);
 
-	void remove(Node *node); // directly from children
-	void remove(Node &node); // via compare children
+    void remove(Node *node); // directly from children
+    void remove(Node &node); // via compare children
 
-	// danger: iterate by value or by reference?
-	[[nodiscard]] Node *begin() const;
+    // danger: iterate by value or by reference?
+    [[nodiscard]] Node *begin() const;
 
-	[[nodiscard]] Node *end() const;
+    [[nodiscard]] Node *end() const;
 
-	Node &merge(Node &other);// non-modifying
-	Node &merge(Node *other);
+    Node &merge(Node &other);// non-modifying
+    Node &merge(Node *other);
 
-	void print(bool internal_representation = false) {
-		printf("%s\n", serialize().data);
-		if (internal_representation) {
-			printf("node{");
-			if (this == &NIL || kind == nils) {
-				printf("NIL\n");
-				return;
-			}
-			if (name.data)
-				printf("name:%s", name.data);
-			printf(" length:%d", length);
-			if (kind < unknown)
-				printf(" type:%s", typeName(kind));
-			const String &string1 = serializeValue(false);
-			printf(" value:%s\n", string1.data);// NEEDS "%s", otherwise HACKABLE
-			printf(" children:[");// flat, non-recursive
-			for (int i = 0; i < min(length, 10); i++) {
-				Node &node = children[i];
-				if (!node.name.empty()) {
-					printf("%s", node.name.data);
-					printf(" ");
-				} else printf("{…} ");// overview
-			}
-			printf("]");
-			printf("}\n");
-		}
-	}
+    void print(bool internal_representation = false) {
+        printf("%s\n", serialize().data);
+        if (internal_representation) {
+            printf("node{");
+            if (this == &NIL || kind == nils) {
+                printf("NIL\n");
+                return;
+            }
+            if (name.data)
+                printf("name:%s", name.data);
+            printf(" length:%d", length);
+            if (kind < unknown)
+                printf(" type:%s", typeName(kind));
+            const String &string1 = serializeValue(false);
+            printf(" value:%s\n", string1.data);// NEEDS "%s", otherwise HACKABLE
+            printf(" children:[");// flat, non-recursive
+            for (int i = 0; i < min(length, 10); i++) {
+                Node &node = children[i];
+                if (!node.name.empty()) {
+                    printf("%s", node.name.data);
+                    printf(" ");
+                } else printf("{…} ");// overview
+            }
+            printf("]");
+            printf("}\n");
+        }
+    }
 
-	Node apply_op(Node left, Node op0, Node right);
+    Node apply_op(Node left, Node op0, Node right);
 
 
-	long long numbere() {
-		return kind == longs or kind == bools ? value.longy : value.real;// danger
-	}
+    long long numbere() {
+        return kind == longs or kind == bools ? value.longy : value.real;// danger
+    }
 
-	float floate() {
-		return kind == longs ? value.longy : value.real;// danger
-	}
+    float floate() {
+        return kind == longs ? value.longy : value.real;// danger
+    }
 
     Node *has(String s, bool searchMeta = true, short searchDepth = 0) const;
 
@@ -676,20 +710,20 @@ public:
 
     explicit operator long() const { return value.longy; }
 
-	explicit operator float() const { return value.real; }
+    explicit operator float() const { return value.real; }
 
-	explicit operator String() const { return *value.string; }
+    explicit operator String() const { return *value.string; }
 
-	explicit operator char *() const { return kind == strings ? value.string->data : name.data; }// todo: unsafe BS
+    explicit operator char *() const { return kind == strings ? value.string->data : name.data; }// todo: unsafe BS
 
-	Node &last();
+    Node &last();
 
 //	bool empty();// same:
-	bool isEmpty();
+    bool isEmpty();
 
-	bool isNil() const;
+    bool isNil() const;
 
-	chars toString();
+    chars toString();
 
     chars toString() const;
 
@@ -711,15 +745,15 @@ public:
     Node &to(Node match);// exclusive
     Node &to(String match);
 
-	Node &flat();
+    Node &flat();
 
-	Node &setName(char *name0);
+    Node &setName(char *name0);
 
-	Node &values();
+    Node &values();
 
-	bool isSetter();
+    bool isSetter();
 
-	int lastIndex(String &string, int start = 0);
+    int lastIndex(String &string, int start = 0);
 
     int lastIndex(Node *node, int start = 0);
 
@@ -758,19 +792,20 @@ public:
     String *Line();
 
     void addMeta(Node *pNode);
+
 };
 
 typedef const Node Nodec;
 
 void initSymbols();// wasm doesn't do it why!?
 class [[maybe_unused]] BoolBridge {
-	bool _b;
+    bool _b;
 public:
 //	Single-argument constructors must be marked explicit to avoid unintentional implicit conversions
 // but this is INTENTIONAL! doesn't work though
-	BoolBridge(bool b) { _b = b; }
+    BoolBridge(bool b) { _b = b; }
 
-	operator Node &() { return _b ? True : False; }
+    operator Node &() { return _b ? True : False; }
 };
 
 Node interpret(Node &n);

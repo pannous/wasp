@@ -82,7 +82,9 @@ Module &loadModule(String name);
 
 Function *findLibraryFunction(String name, bool searchAliases);
 
-bool addLocal(Function &context, String name, Valtype valtype, bool is_param);
+
+// register locals in analyze! must NOT be accessible from Emitter!
+// bool addLocal(Function &context, String name, Valtype valtype, bool is_param); must NOT be accessible from Emitter!
 
 Node &groupFunctionCalls(Node &expressiona, Function &context);
 

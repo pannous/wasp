@@ -31,7 +31,6 @@ List<String> class_keywords = {"struct", "type", "class", "prototype",
         /*"trait", "impl"*/};// "interface", record see wit -> module
 //List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
 
-
 //Map<String, Function> functions; // todo Maps don't free memory and cause SIGKILL after some time <<<
 Map<String, Function> functions;
 // todo ONLY emit of main module! for funcs AND imports, serialized differently (inline for imports and extra functype section)
@@ -71,6 +70,9 @@ Valtype mapType(Node &n) {
     return mapTypeToWasm(n);
 #endif
 }
+
+// 'private header'
+bool addLocal(Function &context, String name, Valtype valtype, bool is_param); // must NOT be accessible from Emitter!
 
 
 Node getType(Node node) {
@@ -1248,6 +1250,10 @@ Node &analyze(Node &node, Function &function) {
     }
     long hash = node.hash();
     if (analyzed.has(hash))
+        return node;
+
+    // data keyword leaves data completely unparsed, like lisp quote `()
+    if (node.first().name == "data" or node.first().name == "quote")
         return node;
 
     // group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
