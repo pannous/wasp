@@ -43,7 +43,7 @@ record person {
 void testStruct2() {
     const char *code0 = "struct point{a:int b:int c:string}";
     Node &node = parse(code0);
-    assert_equals(node.kind, Kind::structs);
+//    assert_equals(node.kind, Kind::structs);
     assert_equals(node.length, 3);
     assert_equals(Int, node[1].type);
 //    const char *code = "struct point{a:int b:int c:string};x=point(1,2,'ok');x.b";
@@ -2678,6 +2678,17 @@ void testCurrent() {
     //	panicking = true;//
 //    assurances();
 //    skip(
+    check_is(parse("y:{x:2 z:3}").serialize(), "y{x:2 z:3}");// todo y:{} vs y{}
+    assert_emit("y:{x:2 z:3}", 2);
+    exit(1);
+    assert_emit("y:{x:2 z:3};y.x", 2);
+    assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
+    assert_emit("y{x}", true); // emitData( node! ) emitNode()
+    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
+    assert_emit("{x:1}", true); // emitData( node! ) emitNode()
+    assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
+
+
     assert_emit("x:41;x", 41)
     assert_emit("x:41;x>2", 1)
     assert_emit("x:41;x<2", 0)
@@ -2686,7 +2697,7 @@ void testCurrent() {
 
     Node &node1 = parse("{x:1}");
     assert_equals_x(node1, true);
-//    assert_is("{x:1}", true);// emitData( node! )
+    assert_is("{x:1}", true);
 //            )
     assert_emit("if 0:3 else 4", 4);
 //    assert_emit("if 0 : 3 else 4", 4);

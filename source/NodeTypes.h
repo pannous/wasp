@@ -10,6 +10,8 @@ class Node;
 
 union Type;
 
+typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
+
 #define error(msg) error1(msg,__FILE__,__LINE__)
 
 
@@ -21,6 +23,7 @@ union Type;
 #define smart_mask_32 0x70000000
 #define negative_mask_32 0x80000000
 // 64 bit headers occur 1. if no multi value available
+#define node_header_64 0x0A000000000000000L // todo undup
 #define array_header_64 0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
 #define string_header_64 0x0010000000000000L // todo : what happened to 0x9 smartType4bit ??
 
@@ -116,7 +119,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     records, // todo merge concepts with module wasp clazz?
     constructor, // special call?
     modul,// module, interface, resource, world, namespace, library, package ≈ class …
-    last_kind
+    last_kind = 0x80000000, // 32 bit padding
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 
@@ -291,13 +294,31 @@ enum Modifiers {
 	constant,
 //	undefined,
 	missing,
-	unknowns,
-	privates,
-	protecteds,
-	publics,
+    unknowns,
+    privates,
+    protecteds,
+    publics,
 };
 
 //#endif //MARK_NODETYPES_H
 
 chars typeName(::Kind t);
+
 chars typeName(::Type t);
+
+
+// for Angle analyze / emitter . minimally more efficient than node.name=="if" …
+//enum NodTypes {
+//    numberLiteral,
+//    identifier,
+//    binaryExpression,
+//    printStatement,
+//    variableDeclaration,
+//    variableAssignment,
+//    functionDeclaration,
+//    whileStatement,
+//    ifStatement,
+//    callStatement,
+//    internalError,
+//};
+
