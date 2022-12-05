@@ -86,6 +86,8 @@ Node Infinity = Node("Infinity");
 Node NegInfinity = Node("-Infinity");
 Node NaN = Node("NaN");
 
+Node &reconstructWasmNode(wasm_node_index pointer);
+
 void initSymbols() {
     print("initSymbols");
 #ifdef WASI
@@ -849,7 +851,7 @@ String Node::serializeValue(bool deep) const {
 //            breakpoint_helper
 //            return "MISSING CASE";
     }
-    error("MISSING CASE for "s + kind + " " + typeName(kind));
+    error("MISSING CASE for "s + (int) kind + " " + typeName(kind));
 }
 
 // todo: (x)=>x when root
@@ -879,7 +881,7 @@ String Node::serialize() const {
     }
     if (length >= 0) {
         if (kind == expression and not name.empty())wasp += ":";
-        else if ((length >= 1 or kind == patterns or kind == objects)) {
+        if ((length >= 1 or kind == patterns or kind == objects)) {
             // skip single element braces: a == (a)
             if (kind == groups and (not separator or separator == ' ')) wasp += "(";
             else if (kind == generics or kind == tags)wasp += "<";
@@ -1274,7 +1276,7 @@ chars typeName(Kind t) {
             return "constructor";
         case last_kind:
         default:
-            error(str("MISSING Type Kind name mapping ") + t);
+            error(str("MISSING Type Kind name mapping ") + (int) t);
     }
 }
 
@@ -1320,10 +1322,18 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
     if ((smartPointer64 & negative_mask_64) == negative_mask_64) {
         return new Node((int64_t) smartPointer64);
     }
-    if ((type_mask_64_word & smartPointer64) == 0)
-        return new Node((long) smartPointer64);// as number
-    if ((smartPointer64 & smart_pointer_header_mask) == smart_pointer_node_signature)
-        return (Node *) (smartPointer64 & smart_pointer_value60_mask);
+    if ((type_mask_64_word & smartPointer64) == 0) {
+        long pure_long_60 = (long) smartPointer64;
+        return new Node(pure_long_60);
+    }// as number
+    if ((smartPointer64 & smart_pointer_header_mask) == smart_pointer_node_signature) {
+        smart_pointer_64 pointer = smartPointer64 & smart_pointer_value60_mask;
+        if (pointer < 0x100000000L) {// danger zone: unsafe reconstruction of Node from wasm memory
+            Node &reconstruct = reconstructWasmNode((int) pointer);
+            return &reconstruct;
+        }
+        return (Node *) pointer;
+    }
 
 //        if ((smartPointer64 & double_mask_64) == double_mask_64)
     if (smartPointer64 & double_mask_64) {// ok no other match since 0xFF already checked
@@ -1370,6 +1380,58 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
     printf("smartPointer64 : %llx\n", (int64_t) smartPointer64);
     error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");
     return new Node();
+}
+
+
+// ⚠️ Despite sanity checks, there's still a chance that parts here are unsafe!
+// todo put sanity checks for node / string in extra function!
+Node &reconstructWasmNode(wasm_node_index pointer) {
+    if (pointer == 0)return NUL;// we NEVER have nodes at 0
+    if ((long) pointer > MEMORY_SIZE)
+        error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % MEMORY_SIZE);
+#if WASM
+    return *(Node *) (long) pointer; // INSIDE wasm code INSIDE wasm linear wasm_memory
+#endif
+    if (not wasm_memory) error("no attached wasm memory");
+    // Host 64 bit pointer layout is different than wasm 32 bit pointer layout! Can NOT reconstruct objects directly!
+    // we don't want to mess with wasm_memory anyways, so do NOT use reference here
+    Node &reconstruct = *new Node();// we must NOT mess with Node object in wasm_memory, with internal pointers and layout
+    bool wasm32bit = true;// PER INSTANCE, has to be set by run_wasm
+    long wasm_name_offset;
+    if (wasm32bit) {
+        wasm32_node_struct nodeStruct = *(wasm32_node_struct *) ((long) wasm_memory + (long) pointer);
+        reconstruct.length = nodeStruct.length;
+        reconstruct.value = nodeStruct.value;
+        reconstruct.type = nodeStruct.node_type_pointer ? &reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
+        reconstruct.children = (Node *) malloc(reconstruct.length); // reconstruct from nodeStruct.child_pointer
+        reconstruct.name = nodeStruct.name;
+        reconstruct.kind = nodeStruct.kind;
+        int x = (long) nodeStruct.name.data;
+        for (int i = 0; i < reconstruct.length; ++i) {
+            long wasm_child_pointer = (long) ((int *) wasm_memory)[nodeStruct.child_pointer + i];
+//            reconstruct.children[i] = reconstructWasmNode(wasm_child_pointer);
+        }
+    } else { // 64 bit wasm
+        // object has same layout, but we still need to fix pointers later
+        reconstruct = *(Node *) ((long) wasm_memory + (long) pointer);
+        for (int i = 0; i < reconstruct.length; ++i) {
+            long wasm_child_pointer = (long) reconstruct.children[i];
+            reconstruct.children[i] = reconstructWasmNode(wasm_child_pointer);
+        }
+    }
+    if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
+        error("invalid string in smartPointer");
+    int string_pointer = (int) (long) reconstruct.name.data;
+    reconstruct.name.data = ((char *) wasm_memory) + (long) string_pointer;
+
+    check_is(reconstruct.node_header, node_header_32)
+    if (reconstruct.length < 0 or reconstruct.length > MAX_NODE_CAPACITY)
+        error("reconstruct node sanity check failed for length");
+    check_is(reconstruct.name.header, string_header_32);
+    if (reconstruct.name.length < 0 or reconstruct.name.length > MAX_NODE_CAPACITY)
+        error("reconstruct node sanity check failed for length");
+
+    return reconstruct;
 }
 
 
