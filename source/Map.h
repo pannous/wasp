@@ -26,6 +26,7 @@
 template<class S, class T>
 class Map {
 public:
+    int map_header = map_header_32;
     int _size = 0;
     int capacity = MAP_INITIAL_CAPACITY;// initial
     S *keys = (S *) calloc(sizeof(S), capacity);

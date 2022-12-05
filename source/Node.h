@@ -147,30 +147,18 @@ union Value { // nodes can contain ANYTHING, especially types known in wasp
 
 
 // in wasm32 pointers are int instead of long, use this struct to transfer between both Node* spaces
+// reconcilable with Node INSIDE wasm. ALWAYS PAIR ints so that they align with long, in 32 AND 64 bit modes!
 struct wasm32_node_struct {
     int node_header = node_header_32;
-    int node_type_pointer;
-    int length;
-    int child_pointer;
-    Value value;
-    Kind kind;
-//    int head;
-//byte a1;
-//byte a12;
-//byte a13;
-//byte a14;
-//byte a15;
-//byte a16;
-//byte a17;
-//byte a11;
-//byte a21;
-//byte a31;
-//byte a41;
-//byte a51;
-//byte a61;
-//byte a71;
+    int length; // number of children ≠ sizeof(Node)
+    int node_type_pointer;// int64 in 64 bit systems!
+    int child_pointer;    // int64 in 64 bit systems!
+    Value value;// int64 ok
+    Kind kind;  // int32 TODO needs padding in Node ( 64 bit ) how? PUT IN node_type(pointer). MIX GENERICS complicated :(
+    int meta_pointer;
+    // previous fields must be aligned to long!
     String name;// ok 64 bit compatible (except data which needs to be relocated to/fro wasm_memory anyways ) !
-
+    // ignore rest for now!
 };
 
 // The order of Type,Value is reverse to the Wasp ABI return tuple Value(int32), Type(int32)
@@ -182,19 +170,22 @@ public:
 //	static
     //	short _node_header_ = 0xDADA; // can be combined with byte kind => 2*short !
     int node_header = node_header_32;
-    Node *type = 0;// variable/reference type or object class?
     int length = 0;// children
+    Node *type = 0;// variable/reference type or object class?
     Node *children = nullptr;// LIST, not link. block body content
     Value value{
             0}; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
     Kind kind = unknown;// forced 32 bit,  improved from 'undefined' upon construction
+    Node *meta = 0;//  LINK, not list. attributes meta modifiers decorators annotations
+//    32bit in wasm TODO pad with string in 64 bit
 //	Type kind = unknown;// improved from 'undefined' upon construction
-    Node *parent = nullptr;// strange order necessary for alignment of String struct!?!
+    // previous fields must be aligned to long!
     String name = empty_name;// nil_name;
 
-    Node *meta = 0;// LINK, not list. attributes meta modifiers decorators annotations
     // todo rename and alias:
     // lets lads lats lates: lets because a=b;c=d …; lads children; lats laterals; lates delayed evaluation
+    // the rest can be reconstructed / ignored
+    Node *parent = nullptr;// strange order necessary for alignment of String struct!?!
     Node *next = 0; // in children list, redundant with children[i+1] => for debugging only
     char separator = 0;// " " ";" ","
 //	char grouper = 0;// "()", "{}", "[]" via kind!  «…» via type Group("«…»")
