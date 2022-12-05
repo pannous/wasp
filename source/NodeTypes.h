@@ -19,6 +19,7 @@ typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
 //	map_header_32 = USE Node!
 #define node_header_32   0x80000000 // more complex than array!
 #define array_header_32  0x40000000 // compatible with List
+#define map_header_32    0x60000000
 #define string_header_32 0x10000000 // compatible with String
 #define smart_mask_32 0x70000000
 #define negative_mask_32 0x80000000

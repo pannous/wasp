@@ -67,7 +67,7 @@ public:
     Map<String, Function> functions;
     Map<String, int> functionIndices; // lookup PER MODULE!
 //	int data_offset=0;// todo: read from data section! why not 0 ?
-    int data_offset_end;
+    int data_offset_end = 0;
 //	bool needs_relocate = true;// see Code
 };
 

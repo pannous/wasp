@@ -1386,7 +1386,7 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
 // ⚠️ Despite sanity checks, there's still a chance that parts here are unsafe!
 // todo put sanity checks for node / string in extra function!
 Node &reconstructWasmNode(wasm_node_index pointer) {
-    if (pointer == 0)return NUL;// we NEVER have nodes at 0
+//    if (pointer == 0)return NUL;// we NEVER have nodes at 0
     if ((long) pointer > MEMORY_SIZE)
         error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % MEMORY_SIZE);
 #if WASM
@@ -1404,13 +1404,17 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? &reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
         reconstruct.children = (Node *) malloc(reconstruct.length); // reconstruct from nodeStruct.child_pointer
+        reconstruct.capacity = reconstruct.length;// can grow later
         reconstruct.name = nodeStruct.name;
         reconstruct.kind = nodeStruct.kind;
-        int x = (long) nodeStruct.name.data;
-        for (int i = 0; i < reconstruct.length; ++i) {
-            long wasm_child_pointer = (long) ((int *) wasm_memory)[nodeStruct.child_pointer + i];
-//            reconstruct.children[i] = reconstructWasmNode(wasm_child_pointer);
-        }
+        int *child_pointers = ((int *) wasm_memory) + nodeStruct.child_pointer;
+        if (nodeStruct.child_pointer >= 0)// -1 means no children (debug/bug)
+            for (int i = 0; i < reconstruct.length; ++i) {
+                long wasm_child_pointer = child_pointers[i];
+                reconstruct.children[i] = reconstructWasmNode(wasm_child_pointer);
+                reconstruct.children[i].parent = &reconstruct;
+                if (i > 0)reconstruct.children[i - 1].next = &reconstruct.children[i];
+            }
     } else { // 64 bit wasm
         // object has same layout, but we still need to fix pointers later
         reconstruct = *(Node *) ((long) wasm_memory + (long) pointer);
