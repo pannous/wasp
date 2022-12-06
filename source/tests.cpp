@@ -2679,7 +2679,7 @@ void testCurrent() {
 //    assurances();
 //    skip(
     check_is(parse("y:{x:2 z:3}").serialize(), "y{x:2 z:3}");// todo y:{} vs y{}
-    assert_emit("y:{x:2 z:3}", 2);
+    assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));// looks trivial but is epitome of binary (de)serialization!
     exit(1);
     assert_emit("y:{x:2 z:3};y.x", 2);
     assert_emit("y{x:1}", true); // emitData( node! ) emitNode()

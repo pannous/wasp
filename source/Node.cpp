@@ -1388,9 +1388,9 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
 // ⚠️ Despite sanity checks, there's still a chance that parts here are unsafe!
 // todo put sanity checks for node / string in extra function!
 Node &reconstructWasmNode(wasm_node_index pointer) {
+    if (pointer == 0)return NUL;// we NEVER have nodes at 0
     if (pointer > 10000 and debug)
         error("pointer>10000"); // todo remove (in)sanity check
-//    if (pointer == 0)return NUL;// we NEVER have nodes at 0
     if ((long) pointer > MEMORY_SIZE)
         error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % MEMORY_SIZE);
 #if WASM
@@ -1411,19 +1411,22 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.length = nodeStruct.length;
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? &reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
-        reconstruct.children = (Node *) malloc(
-                reconstruct.length * sizeof(Node *)); // reconstruct from nodeStruct.child_pointer
-        reconstruct.capacity = reconstruct.length;// can grow later
         reconstruct.name = nodeStruct.name;
+        reconstruct.name = String(((char *) wasm_memory) + (long) reconstruct.name.data);// copy!
         reconstruct.kind = nodeStruct.kind;
-        int *child_pointers = ((int *) wasm_memory) + nodeStruct.child_pointer;
-        if (nodeStruct.child_pointer >= 0)// -1 means no children (debug/bug)
+        reconstruct.meta = nodeStruct.meta_pointer ? &reconstructWasmNode(nodeStruct.meta_pointer) : 0;
+        if (nodeStruct.child_pointer >= 0) {
+            // -1 means no children (debug/bug)
+            reconstruct.children = (Node *) malloc(reconstruct.length * sizeof(Node *)); // … :
+            reconstruct.capacity = reconstruct.length;// can grow later
+            int *child_pointers = (int *) (((char *) wasm_memory) + nodeStruct.child_pointer);
             for (int i = 0; i < reconstruct.length; ++i) {
-                int wasm_child_pointer = child_pointers[i];
+                long wasm_child_pointer = child_pointers[i];
                 reconstruct.children[i] = reconstructWasmNode(wasm_child_pointer);
                 reconstruct.children[i].parent = &reconstruct;
                 if (i > 0)reconstruct.children[i - 1].next = &reconstruct.children[i];
             }
+        }
     } else { // 64 bit wasm
         // object has same layout, but we still need to fix pointers later
         reconstruct = *(Node *) ((long) wasm_memory + (long) pointer);
@@ -1434,14 +1437,12 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
     }
     if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
         error("invalid string in smartPointer");
-    int string_pointer = (int) (long) reconstruct.name.data;
-    reconstruct.name.data = ((char *) wasm_memory) + (long) string_pointer;
-
-    check_is(reconstruct.node_header, node_header_32)
-    if (reconstruct.length < 0 or reconstruct.length > MAX_NODE_CAPACITY)
-        error("reconstruct node sanity check failed for length");
     check_is(reconstruct.name.header, string_header_32);
     if (reconstruct.name.length < 0 or reconstruct.name.length > MAX_NODE_CAPACITY)
+        error("reconstruct node sanity check failed for length");
+
+    check_is(reconstruct.node_header, node_header_32)
+    if (reconstruct.length < 0 or reconstruct.length > reconstruct.capacity or reconstruct.length > MAX_NODE_CAPACITY)
         error("reconstruct node sanity check failed for length");
 
     return reconstruct;
