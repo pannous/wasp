@@ -25,8 +25,9 @@ struct Header { // ⚠️ the first fields are shared among all Wasp classes, th
 // same for C_String but not for String which has extra fields and pointer to data
 struct Array_Header { /*Any_Header*/
     int header;
-    Type type;
+    Type kind;
     int length;
+    Type type; // useless, just for alignment padding
     void *data;// ⚠️ data… continuation in memory, not pointer to different data!
     // void *extra_fields…; // in objects without data continuation
 };

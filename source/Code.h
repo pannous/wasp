@@ -52,7 +52,7 @@ class Code {
 public:
 
     int header = array_header_32;// todo: code_header_32 if extra fields are needed beyond standard
-    int kind = byte_char;
+    int kind = byte_i8;
     int length = 0;
     bytes data = 0;
     int start = 0;// internal reader pointer
@@ -155,35 +155,35 @@ public:
         return data + length;
     }
 
-    Code operator++() {
-        if (length == 0)return Code();
+    Code &operator++() {
+        if (length == 0)return *this;
 //		start++;
         data++;
         length--;
         return *this;
     }
 
-    Code operator++(int postfix) {
+    Code &operator++(int postfix) {
         if (postfix == 0)postfix = 1;
-        if (length < postfix)return Code();
+        if (length < postfix)return *this;
         data += postfix;
         length -= postfix;
         return *this;
     }
 
-    Code operator+(Code more) { // todo use non-modifying version if …
+    Code &operator+(Code more) { // todo use non-modifying version if …
         return this->push(more);
     }
 
-    Code operator+=(Code more) {
+    Code &operator+=(Code more) {
         return this->push(more);
     }
 
-    Code operator+(char more) {
+    Code &operator+(char more) {
         return this->push(more);
     }
 
-    Code operator+(byte more) {
+    Code &operator+(byte more) {
         return this->push(more);
     }
 
@@ -211,7 +211,7 @@ public:
         return *this;
     }
 
-    Code addByte(byte opcode) {
+    Code &addByte(byte opcode) {
         data = concat(data, opcode, length);
         length++;
         return *this;
@@ -352,7 +352,7 @@ public:
         return *this;
     }
 
-    Code addConst64(long long i) {
+    Code &addConst64(long long i) {
 //		if (i < 0x100000000 and i > -0x100000000)
 //			add(0x41 /*i32_const*/);
 //		else
@@ -434,10 +434,16 @@ enum Valtype {
 //	smarti64 = 0xF6,
 };
 
+int stackItemSize(Valtype valtype, bool throws = true);
+
+int stackItemSize(Node &clazz);
+
 // in final stage of emit, keep original types as long as possible
 Valtype mapTypeToWasm(Type t);
 
 Valtype mapTypeToWasm(Node &n);
+
+Primitive mapTypeToPrimitive(Node &n);
 
 chars typeName(Valtype t, bool fail = true);
 
@@ -1073,3 +1079,4 @@ short lebByteSize(unsigned int neu);
 -36591746972385280 ff7e000000000000 9
  */
 short lebByteSize(long long neu);
+
