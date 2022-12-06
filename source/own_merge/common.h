@@ -433,24 +433,24 @@ namespace wabt {
 	static const int kExternalKindCount = WABT_ENUM_COUNT(ExternalKind);
 
 	struct Limits {
-		Limits() = default;
+        Limits() = default;
 
-		explicit Limits(uint64_t initial) : initial(initial) {}
+        explicit Limits(uint64_t initial) : initial(initial) {}
 
-		Limits(uint64_t initial, uint64_t max)
-				: initial(initial), max(max), has_max(true) {}
+        Limits(uint64_t initial, uint64_t maxo)
+                : initial(initial), max(maxo), has_max(true) {}
 
-		Limits(uint64_t initial, uint64_t max, bool is_shared)
-				: initial(initial), max(max), has_max(true), is_shared(is_shared) {}
+        Limits(uint64_t initial, uint64_t maxo, bool is_shared)
+                : initial(initial), max(maxo), has_max(true), is_shared(is_shared) {}
 
-		Limits(uint64_t initial, uint64_t max, bool is_shared, bool is_64)
-				: initial(initial),
-				  max(max),
-				  has_max(true),
-				  is_shared(is_shared),
-				  is_64(is_64) {}
+        Limits(uint64_t initial, uint64_t maxo, bool is_shared, bool is_64)
+                : initial(initial),
+                  max(maxo),
+                  has_max(true),
+                  is_shared(is_shared),
+                  is_64(is_64) {}
 
-		Type IndexType() const { return is_64 ? Type::I64 : Type::I32; }
+        Type IndexType() const { return is_64 ? Type::I64 : Type::I32; }
 
 		uint64_t initial = 0;
 		uint64_t max = 0;

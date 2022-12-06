@@ -180,6 +180,7 @@ extern char *empty_string;// = "";
 
 // following general Header struct / wasm32_node_struct
 class String {
+//    A UTF-8 environment can use non-synchronized continuation bytes as base64: 0b10   Base58 avoids lookalikes
 // sizeof(Node) == 20 == 5 * 4 int(*)
 
 public:
@@ -440,7 +441,7 @@ public:
     }
 
 
-    String &append(char *c, int byteCount = -1) {
+    String &append(chars c, int byteCount = -1) {
         if (byteCount < 0) byteCount = strlen0(c);
         if (!data) {
             data = (char *) (alloc(sizeof(char), byteCount + 1));
@@ -521,6 +522,7 @@ public:
     }
 
     String operator%(chars c) {
+        if (!this->contains("%s"))return this->append(c);
         return this->replace("%s", c);
     }
 
@@ -872,7 +874,9 @@ public:
         return indexOf(chr) >= 0;
     }
 
+
     [[nodiscard]]
+//    [[non-modifying]]
     __attribute__((__warn_unused_result__))
     String &replace(chars string, chars with) {// first only!
         int i = this->indexOf(string);
