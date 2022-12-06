@@ -370,7 +370,7 @@ void emitIntData(int i, bool pad = true) {
 }
 
 // append long to wasm data memory
-void emitLongData(long i, bool pad) { // ⚠️ DON'T PAD INSIDE STRUCTS!?
+void emitLongData(long i, bool pad = false) { // ⚠️ DON'T PAD INSIDE STRUCTS! pad before!
     if (pad)while (((long) (data + data_index_end) % 8))data_index_end++;// type 'long' requires 8 byte alignment
     *(long *) (data + data_index_end) = i;
     data_index_end += 8;
@@ -398,28 +398,38 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
         return referenceNodeIndices[hash];
     else referenceNodeIndices[hash] = -1;// fixup marker for cyclic graphs todo …
 
+//    if (node.value.longy != 0x01010101) {
+//        node.meta = new Node("Hahaha");
+//        node.meta->setValue(0x01010101);
+//    }
+
     int wasm_type_pointer = node.type ? emitNodeBinary(*node.type, context) : 0;// just drop smart header
-    int wasm_parent_pointer = 0;
-    int wasm_meta_pointer = 0;
+    int wasm_meta_pointer = node.meta ? emitNodeBinary(*node.meta, context) : 0;
+    int wasm_parent_pointer = 0; // reconstruct later
     int wasm_next_pointer = 0;
 
-//    int node_children_pointer = -1; // ignore children (debug)
     emitPaddingAlignment(8);
     List<wasm_node_index> children;
     for (auto child: node) {
         wasm_node_index child_index = emitNodeBinary(child, context);
         children.add(child_index);
     }
-    emitPaddingAlignment(8);
-    int node_children_pointer = data_index_end;
-    for (auto child: children)
-        emitIntData(child);
 
+    emitPaddingAlignment(8);
+    int node_children_pointer = -1; // ignore children (debug)
+    if (node.length > 0) {
+
+        emitLongData(0x5741535044415441L, false);
+        node_children_pointer = data_index_end;
+//        emitLongData(0xAA00aa00aa00, false);
+        for (auto child: children)
+            emitIntData(child);
+//        emitLongData(0xFFEEDDCCBBAA9988L, false);
+        emitLongData(0x5741535044415441L, false);
 //    emitLongData(0xFFEEDDCCBBAA9988L, true); // chaos monkey! randomly insert to check sanity
 
-
-
-    emitPaddingAlignment(8);
+        emitPaddingAlignment(8);
+    }
 //    emitPadding(1);// wrong padding DOES fuck up struct parsing even on the host side!
     int node_start = data_index_end;
     referenceNodeIndices[hash] = node_start;
@@ -428,7 +438,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
     emitIntData(node.length, false);
     emitIntData(wasm_type_pointer, false);
     emitIntData(node_children_pointer, false); // todo: we COULD write them directly behind all other fields!
-    node.value.longy = 0xFFEEDDCCBBAA9988L;// debug
+//    node.value.longy = 0xFFEEDDCCBBAA9988L;// debug
     emitLongData(node.value.longy, false);// too late to pad, otherwise
 //    check_is(sizeof(node.kind), 1) // todo
 //    emitByteData(node.kind); // breaks alignment
