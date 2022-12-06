@@ -2339,6 +2339,12 @@ void testNodeBasics() {
 
 void testBUG();
 
+
+void testNodeDataBinaryReconstruction() {
+    check_is(parse("y:{x:2 z:3}").serialize(), "y{x:2 z:3}");// todo y:{} vs y{}
+    assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));// looks trivial but is epitome of binary (de)serialization!
+}
+
 void testArrayIndices() {
     assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
     assert_is("[1 2 3]", Node(1, 2, 3, 0))
@@ -2678,16 +2684,19 @@ void testCurrent() {
     //	panicking = true;//
 //    assurances();
 //    skip(
-    check_is(parse("y:{x:2 z:3}").serialize(), "y{x:2 z:3}");// todo y:{} vs y{}
-    assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));// looks trivial but is epitome of binary (de)serialization!
-    exit(1);
-    assert_emit("y:{x:2 z:3};y.x", 2);
-    assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
-    assert_emit("y{x}", true); // emitData( node! ) emitNode()
-    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
-    assert_emit("{x:1}", true); // emitData( node! ) emitNode()
-    assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
+//testNodeDataBinaryReconstruction();
+//    assert_emit("y:{x:2 z:3};y.x", 2);
+//    exit(1);
+//    assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
+//    assert_emit("y{x}", true); // emitData( node! ) emitNode()
+//    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
+//    assert_emit("{x:1}", true); // emitData( node! ) emitNode()
+//    assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
+    Node &nod = Node(1, 2, 3, 0).setType(patterns);
+    assert_is("[1 2 3]", nod)
 
+    assert_emit("x=(3 4);x#2", 4);
+    assert_emit("x=(5 6 7);y=(1 4 3);y#2", 4);
 
     assert_emit("x:41;x", 41)
     assert_emit("x:41;x>2", 1)

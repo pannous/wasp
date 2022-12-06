@@ -84,6 +84,8 @@ void discard(Code code) {
 Code Call(char *symbol);//Node* args
 
 
+
+
 // https://pengowray.github.io/wasm-ops/
 // values outside WASM ABI: 0=unknown/handled internally
 // todo: norm operators before!
@@ -356,7 +358,7 @@ void emitByteData(byte i) {
 
 
 // append short to wasm data memory
-void emitShortData(short i, bool pad) {// ⚠️ DON'T PAD INSIDE STRUCTS!?
+void emitShortData(short i, bool pad = false) {// ⚠️ DON'T PAD INSIDE STRUCTS!?
     if (pad)while (((long) (data + data_index_end) % 2))data_index_end++;// type 'int' requires 4 byte alignment
     *(short *) (data + data_index_end) = i;
     data_index_end += 2;
@@ -478,21 +480,23 @@ Signature &getSignature(String name) {// todo DEL
 
 [[nodiscard]]
 Code emitPrimitiveArray(Node &node, Function &context) {
+    // todo emit with some __DATA__ header and or base64
     let code = Code();
-    if (!(node.kind == buffers)) todo("arrays of type "s + typeName(node.kind));
-    emitIntData(array_header_32, false); // array header
-    int length = *(int *) node.value.data;// very fragile :(
-    emitIntData(length, false);
+    if (!(node.kind == buffers))
+        todo("arrays of type "s + typeName(node.kind));
+    emitIntData(buffer_header_32, false); // array header
+    // todo LEB variant
+//    int length = *(int *) node.value.data;// very fragile :(
+//    emitIntData(length, false);
 //	emitIntData(array_header_32 | int_array << 4 | node.length);
 //	emitIntData(node.kind |  node.length); // save 4 bytes, rlly?
     //	if pure_array:
     int pointer = data_index_end; // return pure data
-    for (int i = 0; i < length; i++) {
-//			if (node.kind.type == int_array) {
-        int v = ((int *) node.value.data)[i];
-        emitIntData(v, false);
-    }
-#ifdef MULTI_VALUE
+    if (!node.meta or (*node.meta)["length"].kind != longs)
+        warn("buffer length should be stored in meta, not in node.length, for safety!");
+    int length = node.length;
+    memcpy(data + data_index_end, node.value.data, length);
+#if MULTI_VALUE
     // and RETURN
 //        code.addConst(array_header_32 | node.length);// combined smart pointer? nah
     code.addConst32(node.length);
@@ -505,27 +509,67 @@ Code emitPrimitiveArray(Node &node, Function &context) {
     return code;
 }
 
+short arrayElementSize(Node &node);
+
 [[nodiscard]]
 // todo emitPrimitiveArray vs just emitNode as it is (with child*)
 Code emitArray(Node &node, Function &context) {
 //	if (node.kind.type == int_array)
     if (node.kind == buffers)
         return emitPrimitiveArray(node, context);
+    // ⚠️careful primitive array (buffer) ≠ array of primitives, which follows …
+
+    List<wasm_node_index> children;
+    Kind value_kind = node.first().kind;
+    for (Node &child: node) {
+        if (not isPrimitive(child)) {
+            warn("non primitive element forces node emission");
+            return Code((long) emitNodeBinary(node, context), false);
+        }
+        if (child.kind != value_kind) {
+            // todo try coherence lifting e.g. [1 'a' 'ü'] => codepoint[]
+            warn("non coherent element forces node emission");
+            warn("collection kind %s versus element kind %s "s % typeName(value_kind) % typeName(child.kind));
+            return Code((long) emitNodeBinary(node, context), false);
+        }
+        children.add(child.value.longy);
+    }
+
+//    Primitive smallest_common_type = ::byte_char;// todo bit for bitvectors?
+//    short itemSize=0;// bit vector
+    short itemSize = arrayElementSize(node);
+    int stack_Item_Size = itemSize;//stackItemSize(mapTypeToWasm(value_kind), false);
+    wasm_node_index typ = 0;
+    if (node.type) typ = emitNodeBinary(*node.type, context);// danger! Byte now lives inside wasm!
+
     let code = Code();
-    emitPadding(data_index_end % 4);// pad to int size
+    emitPaddingAlignment(8);
     int pointer = data_index_end;
 //	todo: sync with emitOffset
     emitIntData(array_header_32, false);
-    emitIntData(node.kind, false);
+//    todo ⚠️really lose information here? use emitNodeBinary if full representation required
+    emitIntData(node.kind, false);// useless, always groups patterns or objects, who cares now?
+//    emitIntData(value_kind, false); // only works in homogenous arrays!
     emitIntData(node.length, false);
+//    emitIntData(stack_Item_Size, false);// reduntant via type
+    if (node.type) emitIntData(typ);// or node_header_32
+    else emitIntData(value_kind /*or kind_header_32*/);// todo make sure node.type > Kind AS PER Type enum
+
+    bool continuous = true;
+    if (!continuous) emitIntData(data_index_end + 4); // just emit immediately after
+    for (Node &child: node) {
+        // ok we checked for coherence before
+        int64_t i = child.value.longy;
+        if (stack_Item_Size == 1)emitByteData(i);
+        if (stack_Item_Size == 2)emitShortData(i);
+        if (stack_Item_Size == 4)emitIntData(i);
+        if (stack_Item_Size == 8)emitLongData(i);// ok can even be float, UNINTERPRETED here
+    }
+
 //    last_value_pointer = data_index_end;
 //	assert_equals((long) data_index_end, (long) pointer + array_header_length);
     Code ignore;
-    for (Node &child: node) {
-// todo: smart pointers?
-//        code.add(emitData(child, context));// pointers in flat i32/i64 format!
-        ignore.add(emitData(child, context));// we only need the object pointer on stack
-    }
+
     String ref = node.name;
     if (node.name.empty() and node.parent) {
         ref = node.parent->name;
@@ -538,10 +582,56 @@ Code emitArray(Node &node, Function &context) {
     }
 //	code.add(emitData(Node(0), context));// terminate list with 0.
     last_object_pointer = pointer;
+    last_object = &node;
     last_type = array;
     code.addConst32(pointer);// base for future index getter/setter [0] #1
     return code;// pointer
 //	return code.addConst(pointer);// once written to data section, we also want to use it immediately
+}
+
+// premature optimization BAD! but its so easy;)
+short arrayElementSize(Node &node) {
+    if (node.type)
+        return stackItemSize(mapTypeToWasm(node.type));
+    short smallestCommonitemSize = 1;// byte
+    for (Node &child: node) {
+        if (!isPrimitive(child))
+            error("shouldn't come here"); // return 8; // or 4 for wasm_node_index  can't be bigger, also don't change type!
+        if (child.kind == bools)continue;// can't be smaller
+        if (child.kind == reals) {
+            return 8; // can't be bigger, also don't change type!
+        }
+        if (child.kind == codepoints) {
+            if (child.value.longy >= 0x80)
+                return 8; // can't be bigger, also don't change type!
+            else
+                continue; // compress ascii
+        }
+        if (child.type) {
+            Valtype valtype = mapTypeToWasm(child.type);
+            smallestCommonitemSize = maxi(smallestCommonitemSize, stackItemSize(valtype));
+//            todo("child.type comparison");
+        } else {
+            unsigned long long val = abs(child.value.longy) * 2;// *2 for signed variants
+//        if(val<=1) bit vector
+//        if(val>1)itemSize = maxi(itemSize,1); // byte
+            if (val >= 0x100)smallestCommonitemSize = maxi(smallestCommonitemSize, 2);// short
+            else if (val >= 0x10000)smallestCommonitemSize = maxi(smallestCommonitemSize, 4);// ints
+            else if (val >= 0x100000000) {
+                smallestCommonitemSize = maxi(smallestCommonitemSize, 8);// longs
+                break;// can't be bigger
+            }
+        }
+    }
+    if (node.type) return smallestCommonitemSize;
+//    else set type!
+    if (smallestCommonitemSize == 1 and node.first().kind == longs)node.type = &ByteType;
+    if (smallestCommonitemSize == 1 and node.first().kind == Kind::codepoints)node.type = &ByteChar;
+    if (smallestCommonitemSize == 2)node.type = &ShortType;
+    if (smallestCommonitemSize == 4 and node.first().kind == longs)node.type = &Int;
+    if (smallestCommonitemSize == 4 and node.first().kind == Kind::codepoints)node.type = &Charpoint;
+    if (smallestCommonitemSize == 8)node.type = &Long;
+    return smallestCommonitemSize;
 }
 
 
@@ -552,23 +642,6 @@ bool isAssignable(Node &node, Node *type = 0) {
     //	if(type and type!=node.type)
     //		return false;
     return true;
-}
-
-// size of the primitive value, not sizeof(Node)
-int stackItemSize(Valtype valtype, bool throws = true) {
-    if (valtype == charp)return 1;// chars for now vs codepoint!
-    if (valtype == stringp)return 1;// chars for now vs pointer!
-    //	if (k == int16)return 2;
-    if (valtype == codepoint32)return 4;
-    if (valtype == int32)return 4;
-    if (valtype == array)return 4;// pointer todo!
-    if (valtype == int64)return 8;
-    if (valtype == float32)return 4;
-    if (valtype == float64)return 8;
-    if (valtype == void_block)return 4;// int32 pointer hack todo!
-    if (valtype == unknown_type)return 4;
-    if (throws)error("unknown size for stack item "s + typeName(valtype));
-    return 0;
 }
 
 int currentStackItemSize(Node &array, Function &context) {
@@ -734,8 +807,8 @@ Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_sta
     load.add(0x00);// ?
 
 
-    if (size == 1)
-        last_typo = byte_char;// last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
+    // careful could also be uint8!
+    if (size == 1) last_typo = byte_char;// last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
     else if (size <= 4)last_type = int32;
     else last_type = int64;
 //	if(op.kind==reference){
@@ -816,7 +889,7 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
     load.add(size > 2 ? 0x02 : 0);// alignment (?)
     load.add(0x00);// ?
 //	if (size == 1)last_type = codepoint32;// todo only if accessing codepoints, not when pointing into UTF8 byte!!
-    if (size == 1)
+    if (size == 1)   //last_typo = byte_char;
         last_typo = byte_char;
     else if (size <= 4)last_type = int32;
     else last_type = int64;
@@ -839,21 +912,27 @@ Code emitData(Node &node, Function &context) {
         case bools:
 //			error("reuse constants for nil/true/false");
         case longs:
+
             // todo: add header?
             // todo: wasteful? but compare to boxed values NOT wasteful!
             // todo: add smart-pointer header?
 //			if(leb)
 //			Code &leb128 = signedLEB128(node.value.longy);
 //			data_index_end+=leb128.length
+// todo: this dynamic emit is NOT COMPATIBLE with array emission with static element size!
+//            if (abs(node.value.longy<0x80)
+//                    *(byte *) (data + data_index_end) = node.value.longy;
+//            else
             if (node.value.longy > 0xF0000000) {
                 error("true long big ints currently not supported");
                 *(long *) (data + data_index_end) = node.value.longy;
                 data_index_end += 8;
                 last_type = i64t;
+            } else {
+                *(int *) (data + data_index_end) = node.value.longy;
+                data_index_end += 4;
+                last_type = int32;
             }
-            *(int *) (data + data_index_end) = node.value.longy;
-            data_index_end += 4;
-            last_type = int32;
             break;
         case reals:
 //			bytes varInt = ieee754(node.value.real);
@@ -1715,7 +1794,7 @@ Code cast(Valtype from, Valtype to) {
     if (from == void_block)return nop;// todo: pray
     if (from == unknown_type)return nop;// todo: don't pray
     if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
-    if (from == array and to == i64)return nop;// pray / assume i32 is a pointer here. todo!
+    if (from == array and to == i64)return Code(i64_extend_i32_u);;// pray / assume i32 is a pointer here. todo!
     if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
     if (from == f32 and to == array)return nop;// pray / assume f32 is a pointer here. LOL NO todo!
     if (from == i64 and to == array)return Code(i32_wrap_i64);;// pray / assume i32 is a pointer here. todo!
@@ -2034,6 +2113,7 @@ Code emitBlock(Node &node, Function &context) {
 //		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
 //		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string
         if (last_typo.type == int_array or last_type == array) {
+            block.add(cast(last_type, i64));
             block.addConst64(array_header_64).addByte(i64_or); // todo: other arrays
 //			if (return_type==float64)
 //			block.addByte(f64_reinterpret_i64);// hack smart pointers as main return: f64 has int range which is never hit
@@ -2403,22 +2483,16 @@ Code emitGlobalSection() {
 
 [[nodiscard]]
 Code emitDataSection() { // needs memory section too!
-//	Contents of section Data:
-//	0000042: 0100 4100 0b02 4869                      ..A...Hi
 //https://webassembly.github.io/spec/core/syntax/modules.html#syntax-datamode
     Code datas;
     if (data_index_end == 0)return datas;//empty
 
-    //Contents of section Data:
-//0013b83: 0005 00 41 8108 0b fd1d 63 6f72 7275 7074  ...A.....corrupt
-//	datas.addByte(00); WHY does module have extra 0x00 and 5 data sections???
-//	datas.addByte(00); // it seems heading 0's get jumped over until #segments >0 :
     datas.addByte(01);// one memory initialization / data segment
-    datas.addByte(00);// memory id always 0
+    datas.addByte(00);// memory id always 0 until multi-memory
 
     datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
-    datas.addInt(
-            runtime.data_offset_end);// actual offset in memory todo: WHY cant it start at 0? wx  todo: module offset + module data length
+    datas.addInt(runtime.data_offset_end); // actual offset in memory
+    // todo: WHY cant it start at 0? wx  todo: module offset + module data length
     datas.addByte(0x0b);// mode: active?
     datas.addInt(data_index_end); // size of data
     const Code &actual_data = Code((bytes) data, data_index_end);
@@ -2648,8 +2722,8 @@ void clearEmitterContext() {
     last_object_pointer = 0;
     data = (char *) malloc(MAX_DATA_LENGTH);// todo grow
     emitLongData(0, true);// NULL PAGE! no object shall ever read or write from address 0 (sanity measure)
-    emitString(*new Node("__WASP_DATA__\0"), *new Function());
-    while (((long) data) % 8)data++;// type 'long', which requires 8 byte alignment
+//    emitString(*new Node("__WASP_DATA__\0"), *new Function());
+//    while (((long) data) % 8)data++;// type 'long', which requires 8 byte alignment
 }
 
 [[nodiscard]]

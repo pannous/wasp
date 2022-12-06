@@ -6,7 +6,7 @@
 
 #include "Node.h"
 #include "List.h"
-
+#include "Code.h"
 //#include <cstdarg>
 #include <stdarg.h> // va_list OK in WASM!!
 #include <cstdlib> // OK in WASM!
@@ -1276,6 +1276,8 @@ chars typeName(Kind t) {
             return "flags";
         case constructor:
             return "constructor";
+        case modul:
+            return "module";
         case last_kind:
         default:
             error(str("MISSING Type Kind name mapping ") + (int) t);
@@ -1300,9 +1302,9 @@ chars typeName(const Type *t) {
     return typeName(*t);
 }
 
-Node &node(Type t, long value, char *name) {
-    return (*new Node(name)).setValue(value).setType(t, false);
-}
+//Node &node(Type t, long value, char *name) {
+//    return (*new Node(name)).setValue(value).setType(t, false);
+//}
 //
 //Type::Type(const Node &o) {
 //
@@ -1350,19 +1352,46 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
 //    short smart_type_payload = (short)(smartPointer64 & 0x0000FFFF00000000L)>>16;// type payload including length (of array)
     if (smart_type64 == array_header_64 /* and abi=wasp */ ) {
         // smart pointer to smart array
-        int *index = ((int *) wasm_memory) + value;
+        int *index = (int *) (((char *) wasm_memory) + value);
         int kind = *index++;
-        if (kind == array_header_32)
+        if (kind == array_header_32 or kind == node_header_32)// todo we know it's array but still. plz fix
             kind = *index++;
         int len = *index++; // todo: leb128 vector later
+        wasm_node_index type = *index++;
+        int stack_Item_Size = stackItemSize((Valtype) kind, false); // mapType(type);
+        Primitive value_kind;
+        if (type) {
+            Node &typ = reconstructWasmNode(type);
+            stack_Item_Size = stackItemSize(typ);
+            value_kind = mapTypeToPrimitive(typ);
+        }
+        if (stack_Item_Size < 0 or stack_Item_Size > 1000)
+            error("maybe internal emit out of sync. implausible stack_Item_Size for "s % typeName(kind));
+
+
+//        int capacity = *index++;// OR:
+//        wasm_node_index type = *index++;
         Node *arr = new Node();
-//		arr.kind.value = kind;
         int pos = 0;
         while (len-- > 0) {
-            auto val = index[pos++];
-            arr->add(new Node(val));
+            // index has advanced to continuous array item list
+            char *val = (((char *) index) + stack_Item_Size * pos++);
+            Node *chil;
+            if (value_kind == Primitive::byte_char)chil = new Node((codepoint) *val);
+            else if (value_kind == Primitive::byte_i8)chil = new Node((long) *val);
+            else if (value_kind == Primitive::codepointus)chil = new Node((codepoint) *(long *) val);
+            else if (value_kind == wasm_int32)chil = new Node(*(int *) val);
+            else if ((int) value_kind == longs)chil = new Node(*(long *) val);
+            else if ((int) value_kind == reals)chil = new Node(*(double *) val);
+            else
+                todo("smartNode of array with element kind "s + typeName(value_kind));
+            arr->add(chil);
         }
+//		arr.kind.value = kind;
+//arr->kind = kind
         arr->kind = objects;
+//        if(kind>Kind::last_kind)
+//            arr->type = &reconstructWasmNode(kind);
 //			check_eq(arr.length,len);
 //			check(arr.type=…
         return arr;
@@ -1451,4 +1480,18 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
 
 smart_pointer_64 toSmartPointer(Node *n) {
     return n->toSmartPointer();
+}
+
+//extern "C" Node* getField(Node* n, Node* field);
+extern "C" Node *getField(Node *n, smart_pointer_64 field) {
+    if (*(int *) field == node_header_32) {
+        Node &nod = *(Node *) field;
+        String &name = nod.name;
+        return &n->operator[](name);
+    }
+    if (*(int *) field == string_header_32) {
+        String &name = *(String *) field;
+        return &n->operator[](name);
+    }
+    return &n->operator[](*(int *) field);
 }

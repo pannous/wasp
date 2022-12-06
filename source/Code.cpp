@@ -154,6 +154,21 @@ Valtype mapTypeToWasm(Type t) {
     return Valtype::int32;
 }
 
+Primitive mapTypeToPrimitive(Node &n) {
+    if (n == Int)
+        return Primitive::wasm_int32;
+    if (n == ByteType)
+        return Primitive::byte_i8;// careful in structs!
+    if (n == Long)
+        return Primitive::wasm_int64;
+    if (n == Double)
+        return Primitive::wasm_float64;
+    if (n == Charpoint)
+        return Primitive::codepointus;
+    else
+        todo("mapTypeToPrimitive " + n.serialize());
+}
+
 Valtype mapTypeToWasm(Node &n) {
     if (n == Int)
         return i32;
