@@ -145,6 +145,25 @@ union Value { // nodes can contain ANYTHING, especially types known in wasp
 //	Node *node;
 //};
 
+struct debug_struct {
+    byte a1;
+    byte a12;
+    byte a13;
+    byte a14;
+    byte a15;
+    byte a16;
+    byte a17;
+    byte a11;
+    byte a21;
+    byte a31;
+    byte a41;
+    byte a51;
+    byte a61;
+    byte a71;
+    long rest1;
+    long rest2;
+    long rest3;
+};
 
 // in wasm32 pointers are int instead of long, use this struct to transfer between both Node* spaces
 // reconcilable with Node INSIDE wasm. ALWAYS PAIR ints so that they align with long, in 32 AND 64 bit modes!
