@@ -17,13 +17,18 @@ typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
 
 // todo move these to ABI.h once it is used:
 //	map_header_32 = USE Node!
+#define array_header_length 16 // 4*4 to align with long
+//#include "ABI.h"
 #define node_header_32   0x80000000 // more complex than array!
 #define array_header_32  0x40000000 // compatible with List
+#define buffer_header_32  0x44000000 // incompatible with List!
 #define map_header_32    0x60000000
+#define kind_header_32    0xDD000000
 #define string_header_32 0x10000000 // compatible with String
 #define smart_mask_32 0x70000000
 #define negative_mask_32 0x80000000
 // 64 bit headers occur 1. if no multi value available
+
 #define node_header_64 0x0A000000000000000L // todo undup
 #define array_header_64 0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
 #define string_header_64 0x0010000000000000L // todo : what happened to 0x9 smartType4bit ??
@@ -47,7 +52,6 @@ enum smart_pointer_masks {
 
 // 3 * sizeof(int32)  header, kind, length before *DATA !
 // sizeof(List) - sizeof(S*)
-#define array_header_length 12
 
 chars typeName(const Type *t);
 
@@ -60,6 +64,8 @@ extern Node Long;
 extern Node Bool;
 extern Node Charpoint;
 extern Node ByteType;
+extern Node ByteChar;
+extern Node ShortType;
 extern Node StringType;
 
 //#include "Util.h" // for error() :(
@@ -95,7 +101,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     declaration, // x:=1
     assignment, // x = 1 // really?? needs own TYPE?
     codepoints, // boxed codepoint in value.longy field todo
-    buffers, // int[]
+    buffers, // int[] DANGER todo length stored in node.length? or better in meta["length"] !
     //	ints, // use longy field, but in wasm longs are pointers!
     bools,
     errors, // internal wasp error, NOT to be used in Angle!
@@ -129,11 +135,11 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
 // todo use NodeTypes.h Type for smart-pointers :
 //	https://github.com/pannous/angle/wiki/smart-pointer
 enum Primitive {
-	wasm_leb = 0x77,
-	wasm_int32 = 0x7f,  // make sure to not confuse these with boxed Number nodes of kind longs, reals!
-	wasm_f32 = 0x7d,
-	wasm_int64 = 0x7E, // signed or unsigned? we don't care
-	wasm_float64 = 0x7C,
+    wasm_leb = 0x77,
+    wasm_float64 = 0x7C,
+    wasm_f32 = 0x7d,
+    wasm_int64 = 0x7E, // AS OPPOSED TO longs signed or unsigned? we don't care
+    wasm_int32 = 0x7f,  // make sure to not confuse these with boxed Number nodes of kind longs, reals!
 //	floats = 0x1010, // only useful for main(), otherwise we can return real floats or wrapped Node[reals]
 //	codepoint32 = int32, todo via map
 //	pointer = int32,// 0xF0, // internal
@@ -154,18 +160,19 @@ enum Primitive {
 ////	smarti32 = 0xF3,// see smartType
 ////	smarti64 = 0xF6,
 
-	byte_char = 0xB0, // when indexing byte array. todo: maybe codepoint into UTF8!?
-	codepointer = 0xC0,  // when indexing int32 array
+    byte_i8 = 0xB0, // when indexing uint8 byte array.
+    byte_char = 0xBC, // when indexing ascii array. todo: maybe codepoint into UTF8!?
+    codepointus = 0xC0,  // when indexing int32 array
 //	c_char = 0xB0, // when indexing byte array. todo: maybe codepoint into UTF8!?
-	array_start = 0xA000, // careful there are different kinds of arrays/lists/List/Node[lists]
-	list = 0xA100, // [len(int32), data*] compatible with List
-	vector = 0xA200, // [len(leb), data…] as in wasm, should never be boxed, but converted to list, string, objects… upon parsing
-	array_header = 0xA300, // [type, len, data*] or [type, len, data…] ? 0 termination for sanity (but data can be 0 too!)
+    array_start = 0xA000, // careful there are different kinds of arrays/lists/List/Node[lists]
+    list = 0xA100, // [len(int32), data*] compatible with List
+    vector = 0xA200, // [len(leb), data…] as in wasm, should never be boxed, but converted to list, string, objects… upon parsing
+    array_header = 0xA300, // [type, len, data*] or [type, len, data…] ? 0 termination for sanity (but data can be 0 too!)
 //	compatible with List after shift, compatible with array_start after two shifts
-	// TODO: array 0xA000 combinatorial with primitive types
-	int_array = 0xA07f, // primitive, unboxed, no length!?
-	long_array = 0xA07e,
-	float_array = 0xA07d,
+    // TODO: array 0xA000 combinatorial with primitive types
+    int_array = 0xA07f, // primitive, unboxed, no length!?
+    long_array = 0xA07e,
+    float_array = 0xA07d,
 	real_array = 0xA07c,
 //	longs_array= 0xA00E, todo: boxed Node{kind=longs}
 //	reals_array= 0xA00C, todo: boxed Node{kind=reals}

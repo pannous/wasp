@@ -465,3 +465,28 @@ String extractPath(String file) {
     return file.substring(0, file.lastIndexOf("/"));
 }
 
+// compressed arrays
+int stackItemSize(Node &clazz) {
+    if (clazz == Bool)return 1;//0;
+    if (clazz == ByteType)return 1;
+    if (clazz == ShortType)return 2;
+    if (clazz == Int)return 4;
+    return 8;
+}
+
+// size of the primitive value, not sizeof(Node)
+int stackItemSize(Valtype valtype, bool throws) {
+    if (valtype == charp)return 1;// chars for now vs codepoint!
+    if (valtype == stringp)return 1;// chars for now vs pointer!
+    //	if (k == int16)return 2;
+    if (valtype == codepoint32)return 4;
+    if (valtype == int32)return 4;
+    if (valtype == array)return 4;// pointer todo!
+    if (valtype == int64)return 8;
+    if (valtype == float32)return 4;
+    if (valtype == float64)return 8;
+    if (valtype == void_block)return 4;// int32 pointer hack todo!
+    if (valtype == unknown_type)return 4;
+    if (throws)error("unknown size for stack item "s + typeName(valtype));
+    return 0;
+}

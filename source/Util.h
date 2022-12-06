@@ -113,5 +113,10 @@ String extractPath(String file);
 bool isDir(const char *name);
 
 #define maxi(a, b) a<b?b:a
+//#define max(a, b) a<b?b:a too many conflicts with math.h common.h …
+static inline bool max(long a, long b) {
+    return a < b ? b : a;
+}
 
 typedef String Path;
+
