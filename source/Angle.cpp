@@ -423,6 +423,8 @@ Node Long("Long", clazz);
 Node Double("Double", clazz);//.setType(type);
 Node Int("Int", clazz);
 Node ByteType("Byte", clazz);// Byte conflicts with mac header
+Node ByteChar("ByteChar", clazz);// ugly by design: don't use ascii chars like that.
+Node ShortType("Short", clazz);// mainly for c abi interaction, not used internally (except for compact arrays)
 Node StringType("String", clazz);
 Node Bool("Bool", clazz);
 Node Charpoint("Charpoint", clazz);
