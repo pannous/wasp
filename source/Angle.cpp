@@ -952,6 +952,7 @@ Node &groupOperators(Node &expression, Function &context) {
 }
 
 
+short arrayElementSize(Node &node);
 Valtype preEvaluateType(Node &node, Function &function) {
     if (node.kind == expression) {
         if (node.length == 1)return preEvaluateType(node.first(), function);
@@ -964,6 +965,9 @@ Valtype preEvaluateType(Node &node, Function &function) {
         discard(lhs);
         return mapType(rhs);// todo lol
 //        if(lhs.kind==arrays)
+    }
+    if (node.kind == groups or node.kind == objects or node.kind == patterns) {
+        arrayElementSize(node);// adds type as BAD SIDE EFFECT
     }
     return mapType(node);
 }

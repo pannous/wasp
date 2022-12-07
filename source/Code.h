@@ -970,6 +970,8 @@ struct Local { // todo: use
     int position; // also implicit in Function{ List<Local> locals;}
     String name;
     Valtype valtype = unknown_type;
+//    Primitive grrr
+    Node *type;
     Node *ref;// why still needed?
     int data_pointer = 0;// compile time handling of reference data, e.g. after emitData()
 };

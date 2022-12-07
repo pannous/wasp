@@ -363,7 +363,7 @@ chars concat(chars a, chars b) {
 }
 
 bytes concat(bytes a, char b, int len) {
-	bytes c = new unsigned char[len + 1];
+	bytes c = new byte[len + 1];
     memcpy1(c, a, len);
     c[len] = b;
 	return c;
@@ -407,20 +407,20 @@ float log(float y, float base) {
 
 String load(String file) {
 #if WASM
-	return "";
+    return "";
 #else
-	FILE *ptr;
-	ptr = fopen(file, "rb");  // r for read, b for binary
-	if (!ptr)error("File not found "s + file);
-	fseek(ptr, 0L, SEEK_END);
-	int size = ftell(ptr);
-	unsigned char *buffer = (unsigned char *) malloc(size);
-	fseek(ptr, 0L, SEEK_SET);
-	int ok = fread(buffer, sizeof(buffer), size, ptr);
-	if (!ok)error("Empty file or error reading "s + file);
-	String *binary = new String((char *) buffer, size, false);
+    FILE *ptr;
+    ptr = fopen(file, "rb");  // r for read, b for binary
+    if (!ptr)error("File not found "s + file);
+    fseek(ptr, 0L, SEEK_END);
+    size_t size = ftell(ptr);
+    auto *buffer = (unsigned char *) malloc(size);
+    fseek(ptr, 0L, SEEK_SET);
+    size_t ok = fread(buffer, sizeof(buffer), size, ptr);
+    if (!ok)error("Empty file or error reading "s + file);
+    auto binary = new String((char *) buffer, size, false);
 //	assert_equals(binary->length, size);
-	return *binary;
+    return *binary;
 #endif
 }
 
@@ -454,7 +454,7 @@ String demangle(String &fun) {
     char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
     if (status < 0 or string == 0)
         return fun;// not demangled (e.g. "memory")
-    String real_name = String(string); // temp
+    auto real_name = String(string); // temp
     String ok = real_name.substring(0, real_name.indexOf('('));
     return ok;// .clone(); unnecessary: return by value copy
 }
@@ -471,7 +471,9 @@ int stackItemSize(Node &clazz) {
     if (clazz == ByteType)return 1;
     if (clazz == ShortType)return 2;
     if (clazz == Int)return 4;
-    return 8;
+    if (clazz == Long)return 4;
+    todo("stackItemSize for "s + clazz.serialize());
+    return stackItemSize(mapTypeToWasm(clazz));
 }
 
 // size of the primitive value, not sizeof(Node)

@@ -36,8 +36,8 @@ int last_object_pointer = 0;// outside stack
 typedef int nodehash;
 Map<long, int> referenceNodeIndices;// wasm pointers to nodes
 Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
-Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^ todo remove
-Map<String, Node> referenceMap; // lookup types…
+Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^ TODO REMOVE
+Map<String, Node> referenceMap; // lookup types… todo: Node pointer? or copy ok?
 Map<String, int> typeMap;// wasm type index for funcTypeSection. todo keep in Function
 Map<String, int> functionIndices; // todo keep in Function
 Map<String, Code> functionCodes; // todo keep in Function
@@ -407,8 +407,8 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
 
     int wasm_type_pointer = node.type ? emitNodeBinary(*node.type, context) : 0;// just drop smart header
     int wasm_meta_pointer = node.meta ? emitNodeBinary(*node.meta, context) : 0;
-    int wasm_parent_pointer = 0; // reconstruct later
-    int wasm_next_pointer = 0;
+//    int wasm_parent_pointer = 0; // reconstruct later
+//    int wasm_next_pointer = 0;
 
     emitPaddingAlignment(8);
     List<wasm_node_index> children;
@@ -420,16 +420,14 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
     emitPaddingAlignment(8);
     int node_children_pointer = -1; // ignore children (debug)
     if (node.length > 0) {
-
-        emitLongData(0x5741535044415441L, false);
+//        emitLongData(0x5741535044415441L, false);
         node_children_pointer = data_index_end;
 //        emitLongData(0xAA00aa00aa00, false);
         for (auto child: children)
             emitIntData(child);
 //        emitLongData(0xFFEEDDCCBBAA9988L, false);
-        emitLongData(0x5741535044415441L, false);
+//        emitLongData(0x5741535044415441L, false);
 //    emitLongData(0xFFEEDDCCBBAA9988L, true); // chaos monkey! randomly insert to check sanity
-
         emitPaddingAlignment(8);
     }
 //    emitPadding(1);// wrong padding DOES fuck up struct parsing even on the host side!
@@ -448,10 +446,10 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
     check_is(sizeof(node.kind), 4) // forced 32 bit for alignment!
     emitIntData(wasm_meta_pointer);
     emitString(node /*.name*/, context);// directly in place!
-//    emitPadding(3*8);// pointers, hash, capacity, … extra fields
-//    emitPaddingAlignment(8);
 //    emitIntData(wasm_meta_pointer);
 //    emitIntData(wasm_next_pointer);
+//    emitPadding(3*8);// pointers, hash, capacity, … extra fields
+//    emitPaddingAlignment(8);
     last_type = Valtype::node;
     last_typo = node.type;
     last_object = &node;
@@ -589,10 +587,29 @@ Code emitArray(Node &node, Function &context) {
 //	return code.addConst(pointer);// once written to data section, we also want to use it immediately
 }
 
+// todo better
+void addTypeFromSize(Node &array, short size) {
+    Kind kind = array.first().kind;
+//    kind= smallestCommonType(node)
+    if (size == 1 and kind == longs)array.type = &ByteType;
+    else if (size == 1 and kind == Kind::codepoints)array.type = &ByteChar;
+    else if (size == 2)array.type = &ShortType;
+    else if (size == 4 and kind == longs)array.type = &Int;
+    else if (size == 4 and kind == Kind::codepoints)array.type = &Charpoint;
+    else if (size == 8 and kind == longs) array.type = &Long;
+    else if (size == 8 and kind == reals) array.type = &Double;
+    else warn("can't infer type from size "s + size);
+}
+
+Node *smallestCommonType(Node &array) {
+    todo("smallestCommonType");
+}
+
 // premature optimization BAD! but its so easy;)
+// adds type as BAD SIDE EFFECT
 short arrayElementSize(Node &node) {
     if (node.type)
-        return stackItemSize(mapTypeToWasm(node.type));
+        return stackItemSize(*node.type);
     short smallestCommonitemSize = 1;// byte
     for (Node &child: node) {
         if (!isPrimitive(child))
@@ -625,12 +642,7 @@ short arrayElementSize(Node &node) {
     }
     if (node.type) return smallestCommonitemSize;
 //    else set type!
-    if (smallestCommonitemSize == 1 and node.first().kind == longs)node.type = &ByteType;
-    if (smallestCommonitemSize == 1 and node.first().kind == Kind::codepoints)node.type = &ByteChar;
-    if (smallestCommonitemSize == 2)node.type = &ShortType;
-    if (smallestCommonitemSize == 4 and node.first().kind == longs)node.type = &Int;
-    if (smallestCommonitemSize == 4 and node.first().kind == Kind::codepoints)node.type = &Charpoint;
-    if (smallestCommonitemSize == 8)node.type = &Long;
+    addTypeFromSize(node, smallestCommonitemSize);
     return smallestCommonitemSize;
 }
 
@@ -645,8 +657,17 @@ bool isAssignable(Node &node, Node *type = 0) {
 }
 
 int currentStackItemSize(Node &array, Function &context) {
+    if (array.type)
+        return stackItemSize(*array.type);
     if (array.kind == reference) {
         Local &local = context.locals[array.name];
+        // todo: fix up local elsewhere!
+        if (not local.ref)
+            local.ref = &referenceMap[array.name];
+        if (local.ref and not local.type)
+            local.type = local.ref->type;
+        if (local.type)
+            return stackItemSize(*local.type); // or
         return stackItemSize(local.valtype);
     }
     if (array.kind == strings) return 1;// char for now todo: call String.codepointAt()
@@ -972,33 +993,37 @@ Code emitData(Node &node, Function &context) {
 Code emitString(Node &node, Function &context) {
     if (node.kind != strings)
         return emitString((new Node(node.name))->setType(strings), context);
+    if (not node.value.string)
+        error("empty node.value.string");
 //    emitPadding(data_index_end % 4);// pad to int size, too late if in node struct!
     int last_pointer = data_index_end + runtime.data_offset_end;
-    int stringIndex = last_pointer;// uh, todo?
-    if (not node.value.string)error("empty node.value.string");
     String &string = *node.value.string;
-    if (string and referenceDataIndices.has(string))
+    referenceMap[string] = node;
+    if (string and referenceIndices.has(string)) {
         // todo: reuse same strings even if different pointer, aor make same pointer before
-        stringIndex = referenceDataIndices[string];
-    else {
-        if ((Primitive) node.kind == leb_string) {
-            Code lens(string.length);// wasm abi to encode string as LEB-length + data:
-            strcpy2(data + data_index_end, (char *) lens.data, lens.length);
-            data_index_end += lens.length;// unsignedLEB128 encoded length of pString
-        } else { // wasp abi:
-            emitIntData(string_header_32, false);
-            emitIntData(string.length, false);
-            emitLongData(0/*codepoint_count*/, false);// type + child_pointer in node
-            emitLongData(data_index_end + 8, false);// POINTER to char[] which just follows:
-        }
-        referenceDataIndices.insert_or_assign(string, data_index_end);
-        referenceMap[string] = node;
-        strcpy2(data + data_index_end, string.data, string.length);
-        data[data_index_end + string.length] = 0;
-        // we add an extra 0, unlike normal wasm abi, because we have space in data section
-        data_index_end += string.length + 1;
-//        emitPadding(10);// shared, codepoints*
+        last_object_pointer = referenceIndices[string];
+        return Code().addConst32(last_object_pointer);
     }
+
+    if ((Primitive) node.kind == leb_string) {
+        Code lens(string.length);// wasm abi to encode string as LEB-length + data:
+        strcpy2(data + data_index_end, (char *) lens.data, lens.length);
+        data_index_end += lens.length;// unsignedLEB128 encoded length of pString
+        // strcpy2 the string later: …
+    } else { // wasp abi:
+//            emitPaddingAlignment(8);
+        emitIntData(string_header_32, false);
+        emitIntData(string.length, false);
+        emitLongData(0/*codepoint_count*/, false);// type + child_pointer in node
+        emitLongData(data_index_end + 8, false);// POINTER to char[] which just follows:
+        // todo: is this long pointer wasm int pointer compatible?
+    }
+    // the actual string content:
+    strcpy2(data + data_index_end, string.data, string.length);
+    data[data_index_end + string.length] = 0;
+    // we add an extra 0, unlike normal wasm abi, because we have space in data section
+    referenceDataIndices.insert_or_assign(string, data_index_end);
+    data_index_end += string.length + 1;
     last_type = stringp;
     last_object_pointer = last_pointer;
     return Code().addConst32(last_pointer);
@@ -1167,17 +1192,20 @@ Code emitAttributeSetter(Node &node, Function &context) {
 
 Code emitGetter(Node &node, Node &field, Function &context) {
     Code code;
+    // todo we could match the field to data at compile time in some situations, but let's implement the general case first:
     if (node.kind == reference)
-        code.add(emitValue(node, context));
+        return emitIndexPattern(node, field, context, false);
+//        code.add(emitValue(node, context));
     else
         todo("get pointer of node on stack");
-    Function &function1 = functions["getField"];
     if (field.kind == strings)
         code.add(emitString(field, context));
     else
         code.add(emitString(*new Node(field.name), context));
+
+    Function &getField = functions["getField"];
     code.addByte(function_call);
-    code.addInt(context.index);
+    code.addInt(getField.index);
     return code;
 }
 

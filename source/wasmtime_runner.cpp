@@ -282,8 +282,7 @@ wasmtime_context_t *context;
 void init_wasmtime() {
     engine = wasm_engine_new();
     assert(engine != NULL);
-    void *some_meta_data = 0;
-    store = wasmtime_store_new(engine, some_meta_data, NULL);
+    store = wasmtime_store_new(engine, NULL, NULL);
     assert(store != NULL);
 //	wasmtime_context_get_data(context);// get some_meta_data
     context = wasmtime_store_context(store);
@@ -410,6 +409,8 @@ extern "C" long run_wasm(unsigned char *data, int size) {
     error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, nresults, &trap);
     if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);
     int64_t result = results.of.i64;
+    result = smartNode(result)->toSmartPointer();// COPY potential RESULT DATA from wasm memory to HOST!!
+
 //    printf("%lld", result);
     if (nresults > 1) {
         wasmtime_val_t results2 = *(&results + 1);
