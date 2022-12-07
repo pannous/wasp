@@ -2710,12 +2710,12 @@ void testCurrent() {
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
     testStruct();
     assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));
-//    assert_emit("y:{x:2 z:3};y.x", 2);
+    assert_emit("y:{x:2 z:3};y.x", 2);
+    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
 //    exit(1);
 /*
     assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
     assert_emit("y{x}", true); // emitData( node! ) emitNode()
-    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
     assert_emit("{x:1}", true); // emitData( node! ) emitNode()
     assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
 */
@@ -2750,6 +2750,7 @@ void testCurrent() {
     testSinus2();
     tests();// make sure all still ok before changes
     testAllWasm();
+    // ALL tests up to here take only 1 sec !
     testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
     todos();// those not passing yet (skip)
     print("CURRENT TESTS PASSED");
