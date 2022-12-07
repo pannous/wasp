@@ -472,7 +472,10 @@ int stackItemSize(Node &clazz) {
     if (clazz == ShortType)return 2;
     if (clazz == Int)return 4;
     if (clazz == Long)return 4;
-    todo("stackItemSize for "s + clazz.serialize());
+    if (clazz.kind == structs)
+        return 4;// todo: ignore and just get index from member (OR bad idea: sum up type sizes)
+//     typeName(clazz) +
+    todo("stackItemSize for "s + " " + clazz.serialize());
     return stackItemSize(mapTypeToWasm(clazz));
 }
 

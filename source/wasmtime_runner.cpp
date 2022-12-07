@@ -409,6 +409,8 @@ extern "C" long run_wasm(unsigned char *data, int size) {
     error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, nresults, &trap);
     if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);
     int64_t result = results.of.i64;
+    if (results.kind == WASMTIME_I32)
+        result = results.of.i32;
     result = smartNode(result)->toSmartPointer();// COPY potential RESULT DATA from wasm memory to HOST!!
 
 //    printf("%lld", result);
