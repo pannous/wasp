@@ -509,10 +509,14 @@ Code emitPrimitiveArray(Node &node, Function &context) {
 
 short arrayElementSize(Node &node);
 
+void addTypeFromSize(Node &array, short size);
+
 [[nodiscard]]
 // todo emitPrimitiveArray vs just emitNode as it is (with child*)
 Code emitArray(Node &node, Function &context) {
 //	if (node.kind.type == int_array)
+
+
     if (node.kind == buffers)
         return emitPrimitiveArray(node, context);
     // ⚠️careful primitive array (buffer) ≠ array of primitives, which follows …
@@ -536,8 +540,8 @@ Code emitArray(Node &node, Function &context) {
 //    Primitive smallest_common_type = ::byte_char;// todo bit for bitvectors?
 //    short itemSize=0;// bit vector
     short itemSize = arrayElementSize(node);
-    int stack_Item_Size = itemSize;//stackItemSize(mapTypeToWasm(value_kind), false);
     wasm_node_index typ = 0;
+    if (!node.type) /*node.type=*/addTypeFromSize(node, itemSize);
     if (node.type) typ = emitNodeBinary(*node.type, context);// danger! Byte now lives inside wasm!
 
     let code = Code();
@@ -555,13 +559,15 @@ Code emitArray(Node &node, Function &context) {
 
     bool continuous = true;
     if (!continuous) emitIntData(data_index_end + 4); // just emit immediately after
+
+//    for(wasm_node_index i:children){
     for (Node &child: node) {
         // ok we checked for coherence before
         int64_t i = child.value.longy;
-        if (stack_Item_Size == 1)emitByteData(i);
-        if (stack_Item_Size == 2)emitShortData(i);
-        if (stack_Item_Size == 4)emitIntData(i);
-        if (stack_Item_Size == 8)emitLongData(i);// ok can even be float, UNINTERPRETED here
+        if (itemSize == 1)emitByteData(i);
+        else if (itemSize == 2)emitShortData(i);
+        else if (itemSize == 4)emitIntData(i);
+        else if (itemSize == 8)emitLongData(i);// ok can even be float, UNINTERPRETED here
     }
 
 //    last_value_pointer = data_index_end;
@@ -612,8 +618,10 @@ short arrayElementSize(Node &node) {
         return stackItemSize(*node.type);
     short smallestCommonitemSize = 1;// byte
     for (Node &child: node) {
+        if (child.kind == reference)
+            return 4;// 8; // or 4 for wasm_node_index  can't be bigger, also don't change type!
         if (!isPrimitive(child))
-            error("shouldn't come here"); // return 8; // or 4 for wasm_node_index  can't be bigger, also don't change type!
+            error("shouldn't come here:\n!isPrimitive(child)\n"s + child.serialize());
         if (child.kind == bools)continue;// can't be smaller
         if (child.kind == reals) {
             return 8; // can't be bigger, also don't change type!
@@ -659,6 +667,8 @@ bool isAssignable(Node &node, Node *type = 0) {
 int currentStackItemSize(Node &array, Function &context) {
     if (array.type)
         return stackItemSize(*array.type);
+    else if (array.kind == groups or array.kind == objects or array.kind == patterns)
+        return arrayElementSize(array);// todo why AGAIN? why is type lost after emitArray?
     if (array.kind == reference) {
         Local &local = context.locals[array.name];
         // todo: fix up local elsewhere!
@@ -671,6 +681,8 @@ int currentStackItemSize(Node &array, Function &context) {
         return stackItemSize(local.valtype);
     }
     if (array.kind == strings) return 1;// char for now todo: call String.codepointAt()
+//    if (last_object) CAN BE PATTERN, not array!
+//        return stackItemSize(*last_object);
     if (stackItemSize(last_type, false))
         return stackItemSize(last_type);
     error("unknown size for stack item "s + array.string());
@@ -819,18 +831,20 @@ Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_sta
     int base = base_on_stack ? 0 : last_object_pointer + headerOffset(array);// emitting directly without reference
     int size = currentStackItemSize(array, context);
     Node &pattern = op.first();
-    Code load = emitOffset(array, pattern, op.name == "#", context, size, base, false);
+    Code load = emitOffset(array, pattern, op.name == "#", context, size, base, base_on_stack);
     if (size == 1)load.add(i8_load);// i32.load8_u
     if (size == 2)load.add(i16_load);
     if (size == 4)load.add(i32_load);
     if (size == 8)load.add(i64_load);
+    // memarg offset u32 align u32 DOESNT FIT:!?!
     load.add(size > 2 ? 0x02 : 0);// alignment (?)
     load.add(0x00);// ?
 
-
     // careful could also be uint8!
-    if (size == 1) last_typo = byte_char;// last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
-    else if (size <= 4)last_type = int32;
+    if (size == 1) {
+        last_typo = byte_char;// last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
+        last_type = int32; // even for bool!
+    } else if (size <= 4)last_type = int32;
     else last_type = int64;
 //	if(op.kind==reference){
 //		Node &reference = referenceMap[op.name];
@@ -841,6 +855,7 @@ Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_sta
 //			else
 //			last_typo=reference.kind;
 //	}
+
     return load;
 }
 
@@ -882,7 +897,7 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
     } else {
         if (not base_on_stack)
             todo("reference array (again)");
-        base = last_object_pointer + headerOffset(array);// todo: pray!
+        base = last_object_pointer;// + headerOffset(array);// todo: pray!
     }
 
     Code load;
@@ -910,8 +925,10 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
     load.add(size > 2 ? 0x02 : 0);// alignment (?)
     load.add(0x00);// ?
 //	if (size == 1)last_type = codepoint32;// todo only if accessing codepoints, not when pointing into UTF8 byte!!
-    if (size == 1)   //last_typo = byte_char;
+    if (size == 1) {
         last_typo = byte_char;
+        last_type = int32;// ! even bool is represented as int in wasm!!!
+    }   //last_typo = byte_char;
     else if (size <= 4)last_type = int32;
     else last_type = int64;
     return load;
@@ -1238,9 +1255,10 @@ Code emitAttribute(Node &node, Function &context) {
         emitGetter(object, field, context);
 
     Code code = emitData(object, context);
+    // base pointer on stack
     // todo move => once done
 // a.b and a[b] are equivalent in angle
-    return emitIndexPattern(object, field, context, true);// emitIndexRead
+    return code + emitIndexPattern(object, field, context, true);// emitIndexRead
 }
 
 
@@ -1618,8 +1636,11 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
                 return emitArray(node, context);
             else if (node.parent->kind == declaration)
                 return emitIndexWrite(*node.parent, context);
-            else
-                return emitIndexPattern(NUL, node, context, false);
+            else {
+                Node array1 = NUL;
+                if (node.parent)array1 = node.parent->first();
+                return emitIndexPattern(array1, node, context, false);
+            }
             // make sure array is on stack OR last_object_pointer is set!
         }
 //		case groups: todo: true list vs list of expression
@@ -2514,7 +2535,7 @@ Code emitDataSection() { // needs memory section too!
 //https://webassembly.github.io/spec/core/syntax/modules.html#syntax-datamode
     Code datas;
     if (data_index_end == 0)return datas;//empty
-
+// see clearEmitterContext() for NULL PAGE of data_index_end
     datas.addByte(01);// one memory initialization / data segment
     datas.addByte(00);// memory id always 0 until multi-memory
 
@@ -2739,6 +2760,7 @@ void clearEmitterContext() {
     referenceMap.clear();
     referenceIndices.clear();
     referenceDataIndices.clear();
+    referenceNodeIndices.clear();
     functionCodes.clear();
     functionIndices.setDefault(-1);
     functionIndices.clear();// ok preregistered functions are in functions
@@ -2854,6 +2876,7 @@ Code &compile(String code, bool clean) {
 //	check(functions["log10"].is_import)
 //	check(functions["log10"].is_used)
     Code &binary = emit(ast);
+
     binary.save("main.wasm");
 
 #ifdef INCLUDE_MERGER
