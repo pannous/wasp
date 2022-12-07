@@ -366,8 +366,13 @@ elseif (MICRO) # wasm-micro-vm:
     set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
     set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
-    #    set(WAMR_BUILD_TARGET "X86_64")
-    set(WAMR_BUILD_TARGET "AARCH64")
+    # Build as X86_32 by default in 32-bit platform
+    #    set (WAMR_BUILD_TARGET "X86_32")
+    if (X86_64)
+        set(WAMR_BUILD_TARGET "X86_64")
+    else ()
+        set(WAMR_BUILD_TARGET "AARCH64")
+    endif ()
     set(WAMR_BUILD_LIBC_BUILTIN 1)
 
     ################  wasm-micro-runtime  ################
@@ -376,8 +381,7 @@ elseif (MICRO) # wasm-micro-vm:
     include(${SHARED_DIR}/utils/uncommon/shared_uncommon.cmake)
 
     add_library(vmlib ${WAMR_RUNTIME_LIB_SOURCE})
-    # Build as X86_32 by default in 32-bit platform
-    #    set (WAMR_BUILD_TARGET "X86_32")
+
     #    ADD_DEFINITIONS(-DWASM_ENABLE_FAST_INTERP)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
 
@@ -435,8 +439,11 @@ elseif (WASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
-    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
+    #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
     #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
+    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-aarch64-macos-c-api/include)
+    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
+    target_link_libraries(wasp PRIVATE wasm)
     target_link_libraries(wasp PRIVATE wasmtime)
 elseif (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
@@ -504,8 +511,8 @@ if (CONSOLE)
     ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # why??
     #    link_libraries(wasp readline)
 endif ()
-
-#set(SANITIZE 1)
+add_compile_options(-Werror=bugprone-sizeof-expression)
+set(SANITIZE 1)
 if (SANITIZE OR TRACE) # or TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.

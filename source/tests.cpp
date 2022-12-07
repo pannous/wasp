@@ -21,10 +21,22 @@ void bindgen(Node &n) {
     print(n.serialize());
 }
 
+// https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md#item-use
+void testUse() {
+    parse("use * from other-file");
+    parse("use { a, list, of, names } from another-file");
+    parse("use { name as other-name } from yet-another-file");
+    // MY SYNTAX :
+    parse("use other-file");// MY SYNTAX
+    parse("use all from other-file");// MY SYNTAX redundant
+    parse("use name from yet-another-file");// MY SYNTAX
+    parse("use name from yet-another-file as other-name");// MY SYNTAX
+//    parse("use name as other-name from yet-another-file");// MY SYNTAX
+}
 
 void testStruct() {
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
-    return;
+//    return;
     assert_emit("struct a{x:int y:float};a{1 3.2}.y", 3.2);
     assert_emit("struct a{x:int y:float};b a{1 .2};b.y", .2);
     assert_emit("struct a{x:int y:float};b:a{1 .2};b.y", .2);
@@ -2685,17 +2697,33 @@ void testCurrent() {
 //    assurances();
 //    skip(
 //testNodeDataBinaryReconstruction();
-//    assert_emit("y:{x:2 z:3};y.x", 2);
-//    exit(1);
-//    assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
-//    assert_emit("y{x}", true); // emitData( node! ) emitNode()
-//    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
-//    assert_emit("{x:1}", true); // emitData( node! ) emitNode()
-//    assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
-    Node &nod = Node(1, 2, 3, 0).setType(patterns);
-    assert_is("[1 2 3]", nod)
 
     assert_emit("x=(3 4);x#2", 4);
+
+
+    Node &nod = parse("y:{x:2 z:3}");
+
+    nod.serialize();
+    nod.serialize();
+    nod.serialize();
+    nod.serialize();
+    const Node &node2 = eval("y:{x:2 z:3}");
+    node2.serialize();
+    node2.serialize();
+    node2.serialize();
+    node2.serialize();
+    assert_emit("y:{x:2 z:3}", nod);
+//    assert_emit("y:{x:2 z:3};y.x", 2);
+//    exit(1);
+/*
+    assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
+    assert_emit("y{x}", true); // emitData( node! ) emitNode()
+    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
+    assert_emit("{x:1}", true); // emitData( node! ) emitNode()
+    assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
+*/
+
+    testStruct();
     assert_emit("x=(5 6 7);y=(1 4 3);y#2", 4);
 
     assert_emit("x:41;x", 41)

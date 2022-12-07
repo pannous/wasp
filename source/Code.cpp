@@ -181,6 +181,9 @@ Valtype mapTypeToWasm(Node &n) {
     if (n == Charpoint)
         return codepoint32;
 
+    if (n.type and n.type != n)
+        return mapTypeToWasm(*n.type);
+
     if (types.has(n.name)) {
         Node *&typ = types[n.name];
         if (typ != n) return mapTypeToWasm(typ); // ⚠️ beware circles!
