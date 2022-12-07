@@ -83,6 +83,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     objects, // {…} block data with children closures
     strings = 0x9,
     call = 0x10,
+    // todo: make groups,  patterns, objects into ONE and differentiate via meta
     groups, // (…) meta params parameter attributes lists
     tuples = groups, // todo: with restrictions!
     patterns, // […] selectors matches, annotations! [public export extern] function mul(x,y){x*y}

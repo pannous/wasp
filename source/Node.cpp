@@ -1376,16 +1376,16 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
         while (len-- > 0) {
             // index has advanced to continuous array item list
             char *val = (((char *) index) + stack_Item_Size * pos++);
-            Node *chil;
-            if (value_kind == Primitive::byte_char)chil = new Node((codepoint) *val);
-            else if (value_kind == Primitive::byte_i8)chil = new Node((long) *val);
-            else if (value_kind == Primitive::codepointus)chil = new Node((codepoint) *(long *) val);
-            else if (value_kind == wasm_int32)chil = new Node(*(int *) val);
-            else if ((int) value_kind == longs)chil = new Node(*(long *) val);
-            else if ((int) value_kind == reals)chil = new Node(*(double *) val);
+            Node *chile;
+            if (value_kind == Primitive::byte_char)chile = new Node((codepoint) *val);
+            else if (value_kind == Primitive::byte_i8)chile = new Node((long) *val);
+            else if (value_kind == Primitive::codepointus)chile = new Node((codepoint) *(long *) val);
+            else if (value_kind == wasm_int32)chile = new Node(*(int *) val);
+            else if ((int) value_kind == longs)chile = new Node(*(long *) val);
+            else if ((int) value_kind == reals)chile = new Node(*(double *) val);
             else
                 todo("smartNode of array with element kind "s + typeName(value_kind));
-            arr->add(chil);
+            arr->add(chile);
         }
 //		arr.kind.value = kind;
 //arr->kind = kind
@@ -1441,12 +1441,16 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? &reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
         reconstruct.name = nodeStruct.name;
+        check_is(reconstruct.name.header, string_header_32);
+        if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
+            error("invalid string in smartPointer");
         reconstruct.name = String(((char *) wasm_memory) + (long) reconstruct.name.data);// copy!
         reconstruct.kind = nodeStruct.kind;
         reconstruct.meta = nodeStruct.meta_pointer ? &reconstructWasmNode(nodeStruct.meta_pointer) : 0;
         if (nodeStruct.child_pointer >= 0) {
             // -1 means no children (debug/bug)
-            reconstruct.children = (Node *) malloc(reconstruct.length * sizeof(Node *)); // … :
+
+            reconstruct.children = (Node *) malloc(reconstruct.length * sizeof(Node)); // … :
             reconstruct.capacity = reconstruct.length;// can grow later
             int *child_pointers = (int *) (((char *) wasm_memory) + nodeStruct.child_pointer);
             for (int i = 0; i < reconstruct.length; ++i) {
@@ -1469,7 +1473,6 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
     check_is(reconstruct.name.header, string_header_32);
     if (reconstruct.name.length < 0 or reconstruct.name.length > MAX_NODE_CAPACITY)
         error("reconstruct node sanity check failed for length");
-
     check_is(reconstruct.node_header, node_header_32)
     if (reconstruct.length < 0 or reconstruct.length > reconstruct.capacity or reconstruct.length > MAX_NODE_CAPACITY)
         error("reconstruct node sanity check failed for length");
