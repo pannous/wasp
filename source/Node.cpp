@@ -550,6 +550,10 @@ Node &Node::add(const Node *node) {
     if ((long) node > MEMORY_SIZE)
         error("node Out of Memory");
     if (!node)return *this;
+    if (this == &NIL) {
+        warn("adding to NIL!");
+        return *this;
+    }
     if (node->kind == groups and node->length == 0 and node->name.empty())
         return *this;
     if (kind == longs or kind == reals)
@@ -585,6 +589,10 @@ void Node::addSmart(Node node) {// merge?
 void Node::addSmart(Node *node, bool flatten, bool clutch) { // flatten AFTER construction!
 // todo cleanup clutch LOL!, and or merge with flat()
     if (!node)return;
+    if (this == &NIL) {
+        warn("adding smart to NIL!");
+        return;
+    }
     if (node->kind == generics and kind == groups)
         kind = generics;
     if (use_polish_notation and node->length > 0) {
@@ -645,6 +653,10 @@ void Node::addSmart(Node *node, bool flatten, bool clutch) { // flatten AFTER co
 
 //non-modifying
 Node Node::insert(Node &node, int at) {
+    if (this == &NIL) {
+        warn("insert to NIL!");
+        return *this;
+    }
     if (length == 0)return node;//  todo: rescue value,name?
     while (at < 0)at = length + at;
     if (at >= length - 1) {
@@ -1372,6 +1384,8 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
 //        int capacity = *index++;// OR:
 //        wasm_node_index type = *index++;
         Node *arr = new Node();
+        arr->kind = objects;
+//        arr->kind = kind;
         int pos = 0;
         while (len-- > 0) {
             // index has advanced to continuous array item list
@@ -1387,13 +1401,6 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
                 todo("smartNode of array with element kind "s + typeName(value_kind));
             arr->add(chile);
         }
-//		arr.kind.value = kind;
-//arr->kind = kind
-        arr->kind = objects;
-//        if(kind>Kind::last_kind)
-//            arr->type = &reconstructWasmNode(kind);
-//			check_eq(arr.length,len);
-//			check(arr.type=…
         return arr;
     }
     if (smart_type64 == string_header_64 or smart_type_4 == stringa) {
@@ -1417,7 +1424,8 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
 // ⚠️ Despite sanity checks, there's still a chance that parts here are unsafe!
 // todo put sanity checks for node / string in extra function!
 Node &reconstructWasmNode(wasm_node_index pointer) {
-    if (pointer == 0)return NUL;// we NEVER have nodes at 0
+    if (pointer == 0)
+        return NUL;// we NEVER have nodes at 0
     if (pointer > 10000 and debug)
         error("pointer>10000"); // todo remove (in)sanity check
     if ((long) pointer > MEMORY_SIZE)
@@ -1441,10 +1449,12 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? &reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
         reconstruct.name = nodeStruct.name;
-        check_is(reconstruct.name.header, string_header_32);
-        if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
-            error("invalid string in smartPointer");
-        reconstruct.name = String(((char *) wasm_memory) + (long) reconstruct.name.data);// copy!
+        if (reconstruct.name.header) {
+            check_is(reconstruct.name.header, string_header_32);
+            if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
+                error("invalid string in smartPointer");
+            reconstruct.name = String(((char *) wasm_memory) + (long) reconstruct.name.data);// copy!
+        } else reconstruct.name = "";// uh cheap fix?
         reconstruct.kind = nodeStruct.kind;
         reconstruct.meta = nodeStruct.meta_pointer ? &reconstructWasmNode(nodeStruct.meta_pointer) : 0;
         if (nodeStruct.child_pointer >= 0) {

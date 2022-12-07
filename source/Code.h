@@ -454,7 +454,7 @@ chars typeName(Valtype t, bool fail = true);
 //};
 
 // https://pengowray.github.io/wasm-ops/ <<< table
-// https://webassembly.github.io/spec/core/binary/instrunctions.html <<< list (chrome)
+// https://webassembly.github.io/spec/core/binary/instructions.html <<< list
 // USE wasm-objdump -d  to see function disassembled:
 enum Opcodes {
 //	start = 0x00,

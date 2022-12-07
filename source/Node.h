@@ -706,6 +706,8 @@ public:
 //    }
 
     smart_pointer_64 toSmartPointer() {
+        if (kind == longs)
+            return value.longy;
         if (smart_pointer_header_mask & (smart_pointer_64) this)
             error("Node pointer out of reach > 2^48 ");
         return (smart_pointer_64) this | smart_pointer_node_signature;
