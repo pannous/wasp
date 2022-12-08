@@ -84,7 +84,7 @@ public:
     bytes digits;
 
     BigInt(long l) {
-        digits = (bytes) itoa(l);// todo …
+        digits = (bytes) formatLong(l);// todo …
     }
 
     BigInt operator+(BigInt other) { todo("BigInt"); }
@@ -202,8 +202,8 @@ public:
 
     Number(chars a) {
         // todo auto BigInt
-        long i = atoi0(a);
-        double d = atof0(a);
+        long i = parseLong(a);
+        double d = parseDouble(a);
 //        value.digits = a;
 //        number_type = number_digits;
         // todo : BigInt maybe
@@ -249,3 +249,5 @@ public:
     }
 
 };
+
+Number parseNumber(chars string);

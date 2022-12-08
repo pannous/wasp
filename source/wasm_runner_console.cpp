@@ -20,7 +20,7 @@ int exec(char *command) {
 	pclose(fpipe);
 //	result.split("\n");
 	result = result.substring(result.indexOf(">>>") + 4);
-	return atoi0(result);
+	return parseLong(result);
 #else
 	print("no popen exec in Wasi since 6.0 https://github.com/WebAssembly/wasi-sdk/releases");
 	return -1;

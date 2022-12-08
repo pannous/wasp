@@ -248,6 +248,8 @@ public:
     }
 
     void operator delete(void *a) {
+//        delete a;
+        free(a);
         todo("delete Node");
     }
 //	~Node()= default; // destructor
@@ -377,14 +379,14 @@ public:
     Node(long long nr) { // stupild
         value.longy = nr;
         kind = longs;
-        if (debug)name = String(itoa(nr)); // messes with setField contraction
+        if (debug)name = String(formatLong(nr)); // messes with setField contraction
     }
 
     explicit
     Node(long nr) { // stupild
         value.longy = nr;
         kind = longs;
-        if (debug)name = String(itoa(nr)); // messes with setField contraction
+        if (debug)name = String(formatLong(nr)); // messes with setField contraction
     }
 
     explicit // wow without explicit everything breaks WHY?
@@ -498,6 +500,8 @@ public:
     }
 
     Node *invoke(String function, Node *arguments) {
+        print(function);
+        print(arguments);
         todo("dynamic dispatch");
         // i32.const fun
         // call_indirect(type,table)
@@ -786,13 +790,14 @@ public:
 
     Node &setType(Kind kin, bool check = true);
 
-    Node &setType(const char *string) {// setClass
-//		type = &Node(string).setType(classe);
-        return *this;
-    }
+//    Node &setType(const char *string) {// setClass
+//        if(types.has)
+////		type = &Node(string).setType(classe);
+//        return *this;
+//    }
 
     Node &setType(Node *_type) {
-//		type = &_type->setType(classe);
+        type = _type;
         return *this;
     }
 
