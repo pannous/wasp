@@ -122,22 +122,27 @@ String StringPrintf(const char *format, ...);
 #define PRIoffset PRIzx
 
 namespace wabt {
-	Result ReadFile(string_view filename, std::vector<uint8_t> *out_data);
+    Result ReadFile(string_view filename, std::vector<uint8_t> *out_data);
 
 #if WABT_BIG_ENDIAN
-	inline void MemcpyEndianAware(void *dst, const void *src, size_t dsize, size_t ssize, size_t doff, size_t soff, size_t len) {
-	  memcpy(static_cast<char*>(dst) + (dsize) - (len) - (doff),
-		static_cast<const char*>(src) + (ssize) - (len) - (soff),
-		(len));
-	}
+    inline void MemcpyEndianAware(void *dst, const void *src, size_t dsize, size_t ssize, size_t doff, size_t soff, size_t len) {
+      memcpy(static_cast<char*>(dst) + (dsize) - (len) - (doff),
+        static_cast<const char*>(src) + (ssize) - (len) - (soff),
+        (len));
+    }
 #else
 
-	inline void
-	MemcpyEndianAware(void *dst, const void *src, size_t dsize, size_t ssize, size_t doff, size_t soff, size_t len) {
-		memcpy(static_cast<char *>(dst) + (doff),
-		       static_cast<const char *>(src) + (soff),
-		       (len));
-	}
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter" // dsize, size_t ssize
+
+    inline void
+    MemcpyEndianAware(void *dst, const void *src, size_t dsize, size_t ssize, size_t doff, size_t soff, size_t len) {
+        memcpy(static_cast<char *>(dst) + (doff),
+               static_cast<const char *>(src) + (soff),
+               (len));
+    }
+
+#pragma clang diagnostic pop
 
 #endif
 }

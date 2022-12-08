@@ -118,7 +118,7 @@ Node &Node::operator=(int i) {
     value.longy = i;
     kind = longs;
     if (name.empty() or name.isNumber())
-        name = String(itoa(i));
+        name = String(formatLong(i));
     return *this;
 }
 
@@ -281,7 +281,7 @@ bool Node::operator==(String other) {
 //	if (kind == objects or kind == key)objects={…} NOT have value!  return *value.node == other or value.string == other;
     if (kind == key) return other == name or (value.node and *value.node == other);// todo: a=3 a=="a" ??? really?
     if (kind == longs)
-        return other == itoa(value.longy);// "3" == 3   php style ARE YOU SURE? ;) only if otherwise consistent!
+        return other == formatLong(value.longy);// "3" == 3   php style ARE YOU SURE? ;) only if otherwise consistent!
     if (kind == reals) return other == ftoa(value.real);// parseFloat(other)==value.real
 
     if (kind == reference) return other == name or (value.node and *value.node == other);
@@ -319,8 +319,8 @@ bool Node::operator==(int other) {
         return true;
     if (kind == bools)return other == value.longy;
     if (kind == key and value.node and *value.node == other)return true;
-    if (kind == strings and atoi0(value.string->data) == other)return true;
-    if (atoi0(name) == other)return true;
+    if (kind == strings and parseLong(value.string->data) == other)return true;
+    if (parseLong(name) == other)return true;
     if (length == 1 and (kind == objects or kind == groups or kind == patterns))
         return last() == other;
 //	if (type == objects)return value.node->numbere()==other;// WTF
@@ -811,8 +811,10 @@ String Node::serializeValue(bool deep) const {
             }
         }
         case longs:
-            return itoa(val.longy);
+        case longsI:
+            return formatLong(val.longy);
         case reals:
+        case realsF:
             return ftoa(val.real);
         case nils:
             return "ø";
@@ -858,8 +860,11 @@ String Node::serializeValue(bool deep) const {
         case expression:
         case assignment:
         case unknown:
-        case last_kind:
             return "?";
+        case last_kind:
+            return "";
+        case kind_padding:
+            error("kind_padding is not a Kind");
 //        default:
 //            breakpoint_helper
 //            return "MISSING CASE";
@@ -875,11 +880,11 @@ String Node::serialize() const {
         if (not name.empty()) wasp += name;
         String serializedValue = serializeValue();
         if (kind == longs or kind == reals)
-            if (not atoi0(name) and name and name.data and name.data[0] != '0')
+            if (not parseLong(name) and name and name.data and name.data[0] != '0')
                 return ""s + name + ":" + serializedValue;
         if (kind == strings and name and (name.empty() or name == value.string))
             return serializedValue;// not text:"text", just "text"
-        if (kind == longs and name and (name.empty() or name == itoa(value.longy)))
+        if (kind == longs and name and (name.empty() or name == formatLong(value.longy)))
             return serializedValue;// not "3":3
         if (kind == reals)// and name and (name.empty() or name==itoa(value.longy)))
             return serializedValue;// not "3":3.14
@@ -1060,7 +1065,7 @@ bool Node::isSetter() {
     // todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
     if (kind == bools)return name != True.name and name != False.name;
     if (kind == longs || kind == reals)// || kind==bools)
-        return not name.empty() and (not atoi0(name) and not name.contains('.'));// todo WTF hack
+        return not name.empty() and (not parseLong(name) and not name.contains('.'));// todo WTF hack
     if (kind == key and value.data) return true;
     if (kind == strings and name == value.string) return false;  // todo x="x" '123'="123" redundancy bites us here
     if (kind == strings and value.data)
@@ -1249,9 +1254,12 @@ chars typeName(Kind t) {
             return "array";
         case buffers:
             return "buffer";
+        case realsF:
         case reals:
-            return "float";
+//            return "float";
+            return "real";
         case longs:
+        case longsI:
             return "number";
             //		case ints:
             //			return "int";
@@ -1297,16 +1305,18 @@ chars typeName(Kind t) {
     }
 }
 
+chars typeName(Primitive p);
+
 chars typeName(Type t) {
-    if (t.value < 0x1000)return typeName(t.kind);
-    if (t.value == Primitive::int_array)return "int[]";
+    if (t.value < last_kind)return typeName(t.kind);
+    if (t.value < 0x1000)return typeName((Primitive) t);
 #if !WASM
 //    warn("Node pointers don't fit in 32 bit Type!")
     todo("Node pointers don't fit in 32 bit Type!");
 #else
     if (t.value > 0x10000)return ((Node*)t.address)->name;
 #endif
-    error(str("MISSING Type name mapping ") + t.value);
+    error(str("MISSING Type name mapping ") + t);
     return "ƒ";
 }
 

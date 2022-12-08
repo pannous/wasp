@@ -161,7 +161,8 @@ endif ()
 if (TRACE)
     message("TRACE => tracing=true")
     #    ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
-    add_compile_options(-Wall)
+    #    add_compile_options(-Wall)
+    #    add_compile_options(-Wextra)
 endif ()
 
 # enable:
@@ -190,7 +191,6 @@ if (NOT TRACE)
             endif ()
         endif ()
         ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
-        ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
         ADD_COMPILE_FLAG("-Wno-unused-function")
         ADD_COMPILE_FLAG("-Wno-unused-variable")
         ADD_COMPILE_FLAG("-Wno-unused-private-field")
@@ -257,6 +257,68 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} source/WitReader.h)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp)
 endif ()
+
+
+add_compile_options(-Werror=deprecated-enum-compare) # check(Primitive::charp == (Valtype) Primitive::charp) FAILS!!!
+add_compile_options(-Wdeprecated-enum-compare)
+#add_compile_options(-Wall)
+add_compile_options(-Wno-tautological-constant-out-of-range-compare) # todo remove
+ADD_COMPILE_FLAG("-Wno-unknown-pragmas") # always allow
+ADD_COMPILE_FLAG("-Wno-unused-parameter") # always
+ADD_COMPILE_FLAG("-Wno-deprecated-copy-with-user-provided-copy") # what's this?
+add_compile_options(-Werror)
+
+#set(SANITIZE 1)
+if (SANITIZE OR TRACE) # or TRACE
+    # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
+    # Then print stacktrace with bt to see what was going wrong.
+    MESSAGE("ASAN sanitize=address …")
+    #    if(APPLE)
+    #    ADD_COMPILE_FLAG("-static-libsan ")
+    #    else()
+    if (GCC)
+        ADD_COMPILE_FLAG("-static-libasan")
+    else ()
+        ADD_COMPILE_FLAG("-static-libsan")
+    endif ()
+    set(ASAN_OPTIONS verbosity=3)
+    set(ASAN_OPTIONS=detect_stack_use_after_return=1) # unnecessary because -Wreturn-stack-address
+    add_compile_options(-g)
+    #    add_compile_options(-enable-coverage)
+    add_compile_options(-Wno-missing-field-initializers)
+    add_compile_options(-Wformat=2)
+    #    #    add_compile_options(-Wpointer-arith)
+    #    add_compile_options(-m64)
+    #    add_compile_options(-D_LARGEFILE_SOURCE)
+    #    add_compile_options(-D_FILE_OFFSET_BITS=64)
+    #    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
+
+    add_compile_options(-fno-stack-protector)
+    add_compile_options(-fno-omit-frame-pointer)
+    add_compile_options(-fsanitize=undefined)
+    add_compile_options(-fsanitize-recover=address)
+    add_compile_options(-fsanitize-trap=undefined)
+    if (!WASM)
+        add_compile_options("-fsanitize=address") # unsupported option '-fsanitize=address' for target 'wasm32-unknown-unknown-wasm'
+    endif ()
+
+    if (!APPLE)
+        message("LINUX")
+        add_compile_options("-fsanitize=leak") # : unsupported option '-fsanitize=leak' for target 'arm64-apple-darwin22.1.0'
+        add_compile_options(-fsanitize-address-use-after-return) #not supported by clang
+        add_compile_options(-Wbugprone-sizeof-expression)
+        add_compile_options(-Werror=bugprone-sizeof-expression)
+    endif ()
+
+    #   add_compile & add_link NEEDS TO BE IN SYNC!
+    #    link_libraries("-fsanitize=address")
+    add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
+    add_link_options(-fsanitize=undefined)
+    add_link_options(-fsanitize-trap=undefined)
+    add_link_options(-fno-omit-frame-pointer)
+    add_link_options(-fsanitize-recover=address)
+endif ()
+
 
 #
 # END OF GENERAL CONFIGURATION
@@ -517,55 +579,6 @@ if (CONSOLE)
     #    link_libraries(wasp readline)
     TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
 endif ()
-add_compile_options(-Werror=bugprone-sizeof-expression)
-add_compile_options(-Wno-tautological-constant-out-of-range-compare) # todo remove
-set(SANITIZE 1)
-if (SANITIZE OR TRACE) # or TRACE
-    # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
-    # Then print stacktrace with bt to see what was going wrong.
-    MESSAGE("ASAN sanitize=address …")
-    #    if(APPLE)
-    #    ADD_COMPILE_FLAG("-static-libsan ")
-    #    else()
-    if (GCC)
-        ADD_COMPILE_FLAG("-static-libasan ")
-    else ()
-        ADD_COMPILE_FLAG("-static-libsan ")
-    endif ()
-    set(ASAN_OPTIONS verbosity=3)
-    set(ASAN_OPTIONS=detect_stack_use_after_return=1) # unnecessary because -Wreturn-stack-address
-    add_compile_options(-g)
-    add_compile_options(-enable-coverage)
-    add_compile_options(-Wno-missing-field-initializers)
-    add_compile_options(-Wformat=2)
-    #    #    add_compile_options(-Wpointer-arith)
-    #    add_compile_options(-m64)
-    #    add_compile_options(-D_LARGEFILE_SOURCE)
-    #    add_compile_options(-D_FILE_OFFSET_BITS=64)
-    #    add_compile_options(-D_GLIBCXX_USE_CXX11_ABI=0)
-    #
-    #    #    add_compile_options(-fsanitize=address) # currently crashes with AsanDie so don't use :(
-    add_compile_options(-fno-stack-protector)
-    add_compile_options(-fno-omit-frame-pointer)
-    add_compile_options(-fsanitize=undefined)
-    add_compile_options(-fsanitize-recover=address)
-    add_compile_options("-fsanitize-trap=undefined")
-    if (!WASM)
-        add_compile_options("-fsanitize=address") # unsupported option '-fsanitize=address' for target 'wasm32-unknown-unknown-wasm'
-    endif ()
-    if (!APPLE)
-        add_compile_options("-fsanitize=leak") # : unsupported option '-fsanitize=leak' for target 'arm64-apple-darwin22.1.0'
-    endif ()
-    add_compile_options(-fsanitize-address-use-after-return) #not supported by clang
-
-    #   add_compile & add_link NEEDS TO BE IN SYNC!
-    link_libraries("-fsanitize=address")
-    add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
-    add_link_options(-fsanitize=undefined)
-    add_link_options(-fno-omit-frame-pointer)
-    add_link_options(-fsanitize-recover=address)
-endif ()
-
 
 if (WASM) # OR WASI) common to all!
     target_include_directories(wasp.wasm PUBLIC Frameworks/wasm-c-api/include/)

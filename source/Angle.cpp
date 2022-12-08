@@ -71,7 +71,7 @@ Valtype mapType(Node &n) {
 }
 
 // 'private header'
-bool addLocal(Function &context, String name, Valtype valtype, bool is_param); // must NOT be accessible from Emitter!
+bool addLocal(Function &context, String name, Type Type, bool is_param); // must NOT be accessible from Emitter!
 
 
 Node getType(Node node) {
@@ -566,7 +566,7 @@ Node &constructInstance(Node &node, Function &function) {
 
 // return: done?
 // todo return clear enum known, added, ignore ?
-bool addLocal(Function &context, String name, Valtype valtype, bool is_param) {
+bool addLocal(Function &context, String name, Type type, bool is_param) {
     if (name.empty()) {
         warn("empty reference in "s + context);
         return true;// 'done' ;)
@@ -583,17 +583,17 @@ bool addLocal(Function &context, String name, Valtype valtype, bool is_param) {
         error(name + " already declared as function"s);
     if (not context.locals.has(name)) {
         int position = context.locals.size();
-        context.locals.add(name, Local{.is_param=is_param, .position=position, .name=name, .typo=valtype});
+        context.locals.add(name, Local{.is_param=is_param, .position=position, .name=name, .typo=type});
         return true;// added
     }
 //#if DEBUG
     else {
         auto oldType = context.locals[name].typo;
         if (oldType == none or oldType == unknown_type) {
-            context.locals[name].typo = valtype;
-        } else if (oldType != valtype and valtype != void_block and valtype != voids and valtype != unknown_type)
+            context.locals[name].typo = type;
+        } else if (oldType != type and type != void_block and type != voids and (Type) type != unknown_type)
             warn("local in context %s already known "s % context.name + name + " with type " + typeName(oldType) +
-                 ", ignoring new type " + typeName(valtype));
+                 ", ignoring new type " + typeName(type));
         // ok, could be cast'able!
     }
 //#endif
