@@ -415,9 +415,10 @@ bool isPrimitive(Node &node) {
     return false;
 }
 
-Map<String, Node *> types;
+Map<String, Node *> types; // builtin and defined Types
 //const Node Long("Long", clazz);
 //const Node Double("Double", clazz);//.setType(type);
+// todo : when do we really need THESE Nodes instead of Type / Primitives?
 Node Long("Long", clazz);
 Node Double("Double", clazz);//.setType(type);
 Node Int("Int", clazz);
@@ -434,8 +435,15 @@ Node Charpoint("Charpoint", clazz);
 // todo: see NodeTypes.h for overlap with numerical returntype integer …
 // these are all boxed class types, for primitive types see Type and Kind
 void initTypes() {
-//    types.add("sint", &Int);
+
+    types.add("i8", &ByteType);// use in u8.load etc
+    types.add("u8", &ByteType);// use in u8.load etc
+    types.add("int8", &ByteType);// use in u8.load etc
+    types.add("uint8", &ByteType);// use in u8.load etc
     types.add("byte", &ByteType);// use in u8.load etc
+//    types.add("sint8", &Int); NOT MAPPED until required
+//    types.add("sint", &Int);
+
 //    types.add("char", &Byte);
     types.add("char", &Charpoint);// todo : warn about abi conflict? CAN'T USE IN STRUCT
     types.add("character", &Charpoint);
@@ -575,14 +583,14 @@ bool addLocal(Function &context, String name, Valtype valtype, bool is_param) {
         error(name + " already declared as function"s);
     if (not context.locals.has(name)) {
         int position = context.locals.size();
-        context.locals.add(name, Local{.is_param=is_param, .position=position, .name=name, .valtype=valtype});
+        context.locals.add(name, Local{.is_param=is_param, .position=position, .name=name, .typo=valtype});
         return true;// added
     }
 //#if DEBUG
     else {
-        auto oldType = context.locals[name].valtype;
+        auto oldType = context.locals[name].typo;
         if (oldType == none or oldType == unknown_type) {
-            context.locals[name].valtype = valtype;
+            context.locals[name].typo = valtype;
         } else if (oldType != valtype and valtype != void_block and valtype != voids and valtype != unknown_type)
             warn("local in context %s already known "s % context.name + name + " with type " + typeName(oldType) +
                  ", ignoring new type " + typeName(valtype));
@@ -598,7 +606,7 @@ Node &groupSetter(String name, Node &body, Function &context) {
     decl->add(body.clone());// addChildren makes emitting harder
     if (not addLocal(context, name, mapType(body), false)) {
         Local &local = context.locals[name];
-        local.valtype = mapType(body);// update type! todo: check if cast'able!
+        local.typo = mapType(body);// update type! todo: check if cast'able!
     }
     return *decl;
 }
@@ -912,8 +920,8 @@ Node &groupOperators(Node &expression, Function &context) {
                     } else {
                         Local &local = function.locals[var];
                         // variable is known but not typed yet, or type again?
-                        if (local.valtype == unknown_type) {
-                            local.valtype = inferred_type;// mapType(next);
+                        if (local.typo == unknown_type) {
+                            local.typo = inferred_type;// mapType(next);
                         }
                     }
                 }
@@ -1493,34 +1501,6 @@ Node runtime_emit(String prog) {
     return *smartNode(result_val);
 }
 
-
-// 2MB Debug runtime needs 3 seconds in wasmtime! but wasp-runtime.wasm is only 70kb including export names!
-// test with SMALL runtime!!
-Node runtime_emit_old(String prog) {
-#ifdef RUNTIME_ONLY
-    printf("emit wasm not built into release runtime");
-    return ERROR;
-#endif
-    clearAnalyzerContext();
-    clearEmitterContext();
-    Module &runtime = loadModule("wasp.wasm");
-    Node charged = analyze(parse(prog), *new Function{.name="main"});
-    Code lib = emit(charged, &runtime, "main");// start already declared: main if not compiled/linked as lib
-    lib.save("main.wasm");// partial wasm!
-    functionIndices.clear();// no longer needed
-    Module main = read_wasm("main.wasm");
-#if INCLUDE_MERGER
-    Code code = merge_wasm(runtime, main);
-    code.save("merged.wasm");
-    read_wasm("merged.wasm");
-    smart_pointer_64 smartPointer64 = code.run();// todo parse stdout string as node and merge with emit() !
-    clearAnalyzerContext();
-    clearEmitterContext();
-    return *smartNode(smartPointer64);
-#else
-    return NUL;
-#endif
-}
 
 // reflection on wasp.wasm loses the original return type of functions
 // we may optimistically omit this since cast(int, charp) returns nop anyways
