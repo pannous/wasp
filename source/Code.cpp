@@ -122,8 +122,74 @@ chars typeName(Primitive p) {
             return "«ignore»";// or "" ;)
         case Primitive::todoe:
             return "«todo»";
-        default:
-            error("missing name for Primitive %x "s % p + p);
+        case unknown_type:
+            return "unknown";// internal
+        case codepoint32:
+            return "codepoint";
+//        default:
+//            error("missing name for Primitive %x "s % p + p);
+        case wasm_leb:
+            return "leb";
+        case wasm_float64:
+            return "wasm_float64";
+        case wasm_f32:
+            return "wasm_f32";
+        case wasm_int64:
+            return "wasm_int64";
+        case wasm_int32:
+            return "wasm_int32";
+        case typeo:
+            return "typeo";
+        case any:
+            return "any";
+        case string_struct:
+            return "string_struct";
+        case byte_i8:
+            return "byte_i8";
+        case byte_char:
+            return "byte_char";
+        case array_start:
+            return "array_start";
+        case list:
+            return "list";
+        case vector:
+            return "vector";
+        case array_header:
+            return "array_header";
+        case int_array:
+            return "int_array";
+        case long_array:
+            return "long_array";
+        case float_array:
+            return "float_array";
+        case real_array:
+            return "real_array";
+        case c_string:
+            return "c_string";
+        case leb_string:
+            return "leb_string";
+        case utf16_string:
+            return "utf16_string";
+        case utf32_string:
+            return "utf32_string";
+        case json5_string:
+            return "json5_string";
+        case json_string:
+            return "json_string";
+        case wasp_string:
+            return "wasp_string";
+        case wasp_data_string:
+            return "wasp_data_string";
+        case wasp_code_string:
+            return "wasp_code_string";
+        case nodes:
+            return "nodes";
+        case result_error:
+            return "result_error";
+        case fointer:
+            return "fointer";
+        case fointer_of_int32:
+            return "fointer_of_int32";
     }
     return 0;
 }
@@ -144,8 +210,8 @@ chars typeName(Valtype t, bool fail) {
             return "void";
         case Valtype::none:
             return "void_block";
-        case Valtype::unknown_type:
-            return "unknown";// internal
+//        case unknown_type:
+//            return "unknown";// internal
         default: {
             chars s = typeName((Primitive) t);
             if (s)return s;

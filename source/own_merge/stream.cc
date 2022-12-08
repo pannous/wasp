@@ -134,26 +134,12 @@ namespace wabt {
 		}
 	}
 
-	Result OutputBuffer::WriteToFile(string_view filename) const {
-//		return WriteToFile(filename.data);
-		return Result::Error;
-	}
 
 
 	MemoryStream::MemoryStream(Stream *log_stream) : Stream(log_stream), buf_(new OutputBuffer()) {}
 
-	MemoryStream::MemoryStream(std::unique_ptr<OutputBuffer> &&buf, Stream *log_stream)
-			: Stream(log_stream), buf_(std::move(buf)) {}
-
 	std::unique_ptr<OutputBuffer> MemoryStream::ReleaseOutputBuffer() {
 		return std::move(buf_);
-	}
-
-	void MemoryStream::Clear() {
-		if (buf_)
-			buf_->clear();
-		else
-			buf_.reset(new OutputBuffer());
 	}
 
 	Result MemoryStream::WriteDataImpl(size_t dst_offset, const void *src, size_t size) {

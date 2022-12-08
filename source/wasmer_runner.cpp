@@ -112,7 +112,7 @@ wrap(nop) {
 wrap(atoi) {
 	int n = args[0].data->of.i32;
 	auto a = (chars) ((char *) wasm_memory) + n;
-	int i = atoi0(a);
+    int i = parseLong(a);
 	results[0].data->of.i32 = i;
 	return NULL;
 }

@@ -1,4 +1,5 @@
 #pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Wwritable-strings"
 #pragma once
 //
@@ -71,17 +72,17 @@ codepoint decode_unicode_character(chars utf8bytes, short *len = 0);
 short utf8_byte_count(codepoint c);
 
 //decode_codepoint
-char *itoa0(long num, int base);
+char *formatLongWithBase(long num, int base);
 
-char *itoa0(long num);
+char *formatLong(long num);
 
-char *itoa(long num);
+char *formatLong(long num);
 
 int atoi1(codepoint c);
 
-long atoi0(chars str);
+long parseLong(chars str);
 
-double atof0(chars string);
+extern double parseDouble(chars string);
 
 void encode_unicode_character(char *buffer, wchar_t ucs_character);
 
@@ -140,11 +141,11 @@ extern "C" int strlen0(chars x);
 
 
 //chars ftoa(float num, int base = 10, int precision = 4);
-chars ftoa0(float num, int base, int precision);
+chars formatRealWithBaseAndPrecision(double num, int base, int precision);
 
-chars ftoa2(float num, int significant_digits = 4);
+chars ftoa2(double num, int significant_digits = 4);
 
-chars ftoa(float num);
+chars ftoa(double num);
 
 class Error {
 public:
@@ -304,17 +305,17 @@ public:
 //	explicit String(Type type) : String(typeName(type)) {}// lil hack to get String of specific enums
 
     explicit String(int integer) {
-        data = itoa(integer);// wasm function signature contains illegal type WHYYYY
+        data = formatLong(integer);// wasm function signature contains illegal type WHYYYY
         length = len(data);
     }
 
     explicit String(long number) {
-        data = itoa0(number);
+        data = formatLong(number);
         length = len(data);
     }
 
     explicit String(long long number) {
-        data = itoa0(number);
+        data = formatLong(number);
         length = len(data);
     }
 
@@ -347,7 +348,7 @@ public:
 
     explicit String(double real) {
         int max_length = 4;
-        data = itoa0(real);
+        data = formatLong(real);
         length = len(data);
 //		itof :
         append('.');
@@ -394,7 +395,7 @@ public:
 
     char charAt(int position) {
         if (position >= length)
-            error((String("IndexOutOfBounds at ") + itoa0(position) + " in " + data).data);
+            error((String("IndexOutOfBounds at ") + formatLong(position) + " in " + data).data);
         return data[position];
     }
 
@@ -536,17 +537,17 @@ public:
 
     String operator%(int d) {
         if (contains("%d"))
-            return this->replace("%d", itoa0(d));
+            return this->replace("%d", formatLong(d));
         if (contains("%x"))
             return this->replace("%x", hex(d));
         if (contains("%i"))
-            return this->replace("%i", itoa0(d));
+            return this->replace("%i", formatLong(d));
         if (contains("%li"))
-            return this->replace("%li", itoa0(d));
+            return this->replace("%li", formatLong(d));
         if (contains("%l"))
-            return this->replace("%l", itoa0(d));
+            return this->replace("%l", formatLong(d));
         if (contains("%zu"))
-            return this->replace("%zu", itoa0(d));
+            return this->replace("%zu", formatLong(d));
         error("missing placeholder %d in string modulo operation s%d");
         return "«ERROR»";
     }
@@ -562,13 +563,13 @@ public:
 
     String operator%(long long d) {
         if (contains("%lld"))
-            return this->replace("%lld", itoa0(d));
+            return this->replace("%lld", formatLong(d));
         else if (contains("%ld"))
-            return this->replace("%ld", itoa0(d));
+            return this->replace("%ld", formatLong(d));
         else if (contains("%l"))
-            return this->replace("%l", itoa0(d));
+            return this->replace("%l", formatLong(d));
         else if (contains("%d"))
-            return this->replace("%d", itoa0(d));
+            return this->replace("%d", formatLong(d));
         else if (contains("%x"))
             return this->replace("%x", hex(d));
         error("missing placeholder %d in string modulo operation s%d");
@@ -576,7 +577,7 @@ public:
     }
 
     String operator%(double f) {
-        String formated = String() + itoa0(f) + "." + itoa0((f - int(f)) * 10000);
+        String formated = String() + formatLong(f) + "." + formatLong((f - int(f)) * 10000);
         return this->replace("%f", formated);
     }
 //
@@ -915,10 +916,10 @@ public:
 
 // type conversions
 
-    explicit operator int() { return atoi0(data); }
+    explicit operator int() { return parseLong(data); }
 
 //	 operator char*()  { return data; }
-    explicit operator int() const { return atoi0(data); }
+    explicit operator int() const { return parseLong(data); }
 
 //	MUST BE explicit, otherwise String("abc") != "abc"  : char* comparison hence false
 //	explicit cast
@@ -929,15 +930,15 @@ public:
 
 
     [[nodiscard]] bool isNumber() const {
-        return data[0] == '0' or atoi0(data);
+        return data[0] == '0' or parseLong(data);
     }
 
     String format(int i) {
-        return this->replace("%d", itoa0(i));
+        return this->replace("%d", formatLong(i));
     }
 
     String format(long i) {
-        return this->replace("%d", itoa0(i));
+        return this->replace("%d", formatLong(i));
     }
 
     String format(double f) {

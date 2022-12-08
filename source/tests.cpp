@@ -1971,12 +1971,12 @@ void testString() {
     assert_equals(atoi1('x'), -1);
     assert_equals(atoi1('3'), 3);
     assert_is("١٢٣", 123);
-    assert_equals(atoi0("١٢٣"), 123l);
-    check_eq(atoi0("123"), 123l);// can crash!?!
+    assert_equals(parseLong("١٢٣"), 123l);
+    check_eq(parseLong("123"), 123l);// can crash!?!
 //	assert_equals( atoi1(u'₃'),3);// op
-    assert_equals(atoi0("0"), 0l);
-    assert_equals(atoi0("x"), 0l);// todo side channel?
-    assert_equals(atoi0("3"), 3l);
+    assert_equals(parseLong("0"), 0l);
+    assert_equals(parseLong("x"), 0l);// todo side channel?
+    assert_equals(parseLong("3"), 3l);
     check_eq(" a b c  \n"s.trim(), "a b c");
     assert_equals("     \n   malloc"s.trim(), "malloc");
     assert_equals("     \n   malloc     \n   "s.trim(), "malloc");
@@ -2463,7 +2463,7 @@ void testNodeImplicitConversions(){
 #endif
 
 void testUnits() {
-    assert_is("1 m + 1km", Node(1001).setType("m"));
+    assert_is("1 m + 1km", Node(1001).setType(types["m"]));
 }
 
 void testPaint() {
@@ -2707,7 +2707,11 @@ void testCurrent() {
 //    assert_is("[1 2 3]", Node(1, 2, 3, 0))
     check_is(stackItemSize(Primitive::wasm_float64), 8);
     Valtype yy = (Valtype) Primitive::charp;
-    check(yy == Primitive::charp);
+    check((Type) Primitive::charp == yy);
+    check((Type) yy == Primitive::charp);
+    check(Primitive::charp == (Type) yy);
+    check(yy == (Type) Primitive::charp);
+    check((int) yy == (int) Primitive::charp);
     loadModule("wasp");
     check(findLibraryFunction("_Z7strlen0PKc", false))
     assert_run("len('123')", 3);
