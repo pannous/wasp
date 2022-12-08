@@ -17,6 +17,7 @@
 // smartType4bit
 // as used in smartlong, smart_pointer_32 and EXTENDED TO upto 4 bytes in smart_pointer_64 !
 // OBSOLETE because wasm runtimes now support long return from main AND multi-value!
+// first bat of Primitive's < 0x100 !
 typedef enum smartType4bit {
     int28 = 0x0, // or long60 ?
 //	overflow=0x1,
@@ -26,13 +27,13 @@ typedef enum smartType4bit {
     symbola = 0x4, // ≈ stringa &memoryChars[payload]
     json5 = 0x5,
 //	long60p = 0x6, // pointer to long60
-    septet = 0x7, // 7 hexes à 4 bit OR 7 bytes in smart64!
+    septet = 0x7, // 7 hexes à 4 bit OR 7 bytes in smart64! 7 is NUMERIC through 0x7C…0x7F float32 etc
     utf8char = 0x8, // UTF24 Unicode
     stringa = 0x9, // may start with 0x10 ... 0x1F
     anys = 0xA, // Node* / angle array / object pointer to header! => i64 pointer : 32bit type + 32bit pointer indirect or in linear memory!
     nodep = 0xA,
     byter = 0xB, // unsigned char* with length ... ?
-    codes = 0xC,  // direct wasm code! interpreted inline OR:
+    codes = 0xC,  // direct wasm code! (char*) interpreted inline OR:
 //	code=0xC,  // angle code tree REDUNDANT wit 0xA / 0xD
     datas = 0xD, // angle node tree as STRING vs 0xA as array
     error_spo = 0xE,

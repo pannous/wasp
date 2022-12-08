@@ -98,7 +98,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 //	if (eq(s, "=$1"))return get_local;
 //	if (eq(s, "=$1"))return tee_local;
     if (eq(s, "return"))return return_block;
-    if (kind == unknown_type)
+    if ((Type) kind == unknown_type)
         error("unknown type should be inferred by now");
     if (kind == voids or kind == void_block or kind == i32t) { // INT32
         if (eq(s, "+"))return i32_add; // i32.add
@@ -1619,7 +1619,7 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
 //			Map<int, String>
             int local_index = context.locals.position(name);// defined in block header
             if (name.startsWith("$")) {// wasm style $0 = first arg
-                local_index = atoi0(name.substring(1));
+                local_index = parseLong(name.substring(1));
             }
             if (local_index < 0) { // collected before, so can't be setter here
                 if (functionCodes.has(name) or functions.has(name))
@@ -1830,8 +1830,10 @@ Code emitCall(Node &fun, Function &context) {
 [[nodiscard]]
 Code cast(Valtype from, Valtype to) {
     Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
-    if (to == none or to == unknown_type or to == voids)return nop;// no cast needed magic VERSUS wasm drop!!!
     if (from == to)return nop;// nop
+    if (from == void_block)return nop;// todo: pray
+    if ((Type) from == unknown_type)return nop;// todo: don't pray
+    if (to == none or (Type) to == unknown_type or to == voids)return nop;// no cast needed magic VERSUS wasm drop!!!
     last_type = to;// danger: hides last_type in caller!
     if (from == 0 and to == i32t)return nop;// nil or false ok as int? otherwise add const 0!
     if (from == float32 and to == float64)return Code(f64_from_f32);
@@ -1867,8 +1869,7 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==i32 and to==f32)	return Code(f32_reinterpret_i32);
 //	if(from==i64 and to==f64)	return Code(f64_reinterpret_i64);
     if (from == i64 and to == f32) return Code(f64_convert_i64_s).addByte(f32_from_f64);
-    if (from == void_block)return nop;// todo: pray
-    if (from == unknown_type)return nop;// todo: don't pray
+
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
     error("incompatible types "s + typeName(from) + " => " + typeName(to));
@@ -2332,7 +2333,8 @@ Code emitTypeSection() {
 }
 
 Valtype fixValtype(Valtype valtype) {
-    if (valtype == charp) return int32;
+    if (valtype == (Valtype) charp) return int32;
+    if ((int) valtype >= node) error("exposed internal Valtype");
     if (valtype > 0xC0)error("exposed internal Valtype");
     return valtype;
 }

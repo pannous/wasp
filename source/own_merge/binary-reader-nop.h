@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
 #ifndef WABT_BINARY_READER_NOP_H_
 #define WABT_BINARY_READER_NOP_H_
 
@@ -22,12 +24,15 @@
 
 namespace wabt {
 
-	class BinaryReaderNop : public BinaryReaderDelegate {
-	public:
+    class BinaryReaderNop : public BinaryReaderDelegate {
+    public:
 		bool OnError(const Error &) override { return false; }
 
-		/* Module */
-		Result BeginModule(uint32_t version) override { return Result::Ok; }
+        /* Module */
+        Result BeginModule(uint32_t version) override {
+            if (version > 1)printf("WASM version %d", version);
+            return Result::Ok;
+        }
 
 		Result EndModule() override { return Result::Ok; }
 
@@ -737,11 +742,13 @@ namespace wabt {
 			return Result::Ok;
 		}
 
-		Result OnInitExprRefFunc(Index index, Index func_index) override {
-			return Result::Ok;
-		}
-	};
+        Result OnInitExprRefFunc(Index index, Index func_index) override {
+            return Result::Ok;
+        }
+    };
 
 }  // namespace wabt
 
 #endif /* WABT_BINARY_READER_H_ */
+
+#pragma clang diagnostic pop

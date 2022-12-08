@@ -438,12 +438,21 @@ void consumeExportSection() {
         }
         // can't after free
 //        fun0.signature = fun.signature.clone();// todo copy by value ok? NO: heap-use-after-free on address
-        const String &argos = args.join(",");
-        if (debug_reader)
-            printf("ƒ%d %s(%s) ≈ %s%s\n", index, func0.data, argos.data, func.data, fun.signature.serialize().data);
+        if (debug_reader) {
+            const String &argos = args.join(",");
+            int status = 0;
+            char *string = abi::__cxa_demangle(func0.data, 0, 0, &status);
+//            printf("ƒ%d %s(%s) ≈\n", index, func0.data, string);
+            printf("ƒ%d %s ≈\n", index, func0.data);
+            printf("ƒ%d %s(%s)\n", index, func.data, argos.data);
+            printf("ƒ%d %s ≈\n", index, string);
+            char *sig = fun.signature.serialize().data;
+            printf("ƒ%d %s%s\n", index, func.data, sig);
+        }
 
     }
 }
+
 
 Type mapArgToType(String arg) {
 //	if(arg=="const char*")return charp;
@@ -452,7 +461,7 @@ Type mapArgToType(String arg) {
     else if (arg == "char const*")return charp;// pointer with special semantics
     else if (arg == "char const*&")return charp;// todo ?
     else if (arg == "char*")return charp;
-    else if (arg == "char32_t*")return charp;// huh? why now?
+    else if (arg == "char32_t*")return codepoints; // ≠ codepoint todo, not exactly: WITHOUT HEADER!
     else if (arg == "char const**")return pointer;
     else if (arg == "short")
         return int32;// careful c++ ABI overflow? should be fine since wasm doesnt have short
@@ -470,18 +479,18 @@ Type mapArgToType(String arg) {
     else if (arg == "unsigned long")return int64;
     else if (arg == "float")return float32;
     else if (arg == "bool")return int32;
-    else if (arg == "short*")return int32;
     else if (arg == "char")return int32;// c++ char < angle codepoint ok
     else if (arg == "wchar_t")return (Valtype) codepoint32;// angle codepoint ok
     else if (arg == "char32_t")return codepoint32;// angle codepoint ok
     else if (arg == "Type")return int32;// enum
     else if (arg == "Kind")return int32;// enum (short, ok)
     else if (arg == "Code")return (Valtype) ignore;
-    else if (arg == "Type")return int32;// enum
+    else if (arg == "Type")return typeo;// enum
     else if (arg == "String*")return (Valtype) stringp;
-    else if (arg == "String")return (Valtype) stringp;// todo !DIFFERENT
     else if (arg == "String&")return (Valtype) stringp;// todo: how does c++ handle refs?
+    else if (arg == "String")return (Valtype) string_struct;// todo !DIFFERENT
     else if (arg == "char**")return pointer;// to chars
+    else if (arg == "short*")return pointer;
 
     else if (arg == "Node")return node;// struct!
     else if (arg == "Node&")return nodes;// pointer? todo: how does c++ handle refs?

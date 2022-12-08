@@ -178,31 +178,31 @@ int atoi1(codepoint c) {
 }
 
 // todo: 0 ambiguous "0" or "NaN"
-long atoi0(chars p) {
-    if (!p)return 0;
-    while (*p == '+')p++;
+long parseLong(chars str) {
+    if (!str)return 0;
+    while (*str == '+')str++;
     short sig = 1;
-    if (*p == '-') {
+    if (*str == '-') {
         sig = -1;
-        p++;
+        str++;
     }
     long k = 0;
-    while (*p) {
+    while (*str) {
         long n;
         short len;
-        n = atoi1(decode_unicode_character(p, &len));// inline!
-        p += len;
+        n = atoi1(decode_unicode_character(str, &len));// inline!
+        str += len;
         if (n < 0 or n > 9)break;
         if (k < 0)k = 0;
         k = (k << 3) + (k << 1) + n;
     }
 
-    if (k > 0 and (*p == 'e' or *p == 'E'))
-        k *= pow(10, atoi0(++p));// we need float for E-10 == 1/10 …
+    if (k > 0 and (*str == 'e' or *str == 'E'))
+        k *= pow(10, parseLong(++str));// we need float for E-10 == 1/10 …
     return sig * k;
 }
 
-double atof0(chars string) {
+extern double parseDouble(chars string) {
     double result = 0.0;
     if (!string) return result;
 
@@ -210,7 +210,7 @@ double atof0(chars string) {
     double divisor = 1.0;
     int integer_portion = 0;
 
-    integer_portion = atoi0(string);
+    integer_portion = parseLong(string);
 
     result = (double) integer_portion;
     if (*string == '-') {
@@ -224,7 +224,7 @@ double atof0(chars string) {
         string++;
     while (*string) {
         if (*string == 'e' or *string == 'E')
-            return result * pow(10, atoi0(++string));
+            return result * pow(10, parseLong(++string));
         if (*string < '0' || *string > '9') return result;
         divisor *= 10.0;
         result += (double) (*string - '0') / divisor;
@@ -243,7 +243,8 @@ String toString(Node &node);
 // Implementation of itoa0()
 
 
-char *itoa0(long num, int base = 10) {
+char *formatLongWithBase(long num, int base = 10) {
+    if (base == 16)return hex(num);
     // length 22 -> put(num)/2+2 for base 10
     char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
 //	int addr=(int)(long)str;
@@ -278,26 +279,22 @@ char *itoa0(long num, int base = 10) {
     return str;
 }
 
-char *itoa0(long num) {
-    return itoa0(num, 10);
-}
-
-char *itoa(long num) {
-    return itoa0(num, 10);
+char *formatLong(long num) {
+    return formatLongWithBase(num, 10);
 }
 
 
 //#define pow(val,exp)
-chars ftoa0(float num, int base = 10, int digits_after_zero = 4) {/*significant_digits*/
+chars formatRealWithBaseAndPrecision(double num, int base = 10, int digits_after_zero = 4) {/*significant_digits*/
 //	int p = powi(base,digits_after_zero+1);
     auto remainder = abs(num) - abs(long(num));
 //	auto remainder = abs_f(num) - abs_l(long(num));
 //	auto remainder = itoa0(abs(int((num - (long) num) * p)), base);
-    chars f = concat(itoa0(int(num), base), ".");
+    chars f = concat(formatLongWithBase(int(num), base), ".");
 //	significant_digits-=strlen(f)-1
     while (digits_after_zero-- > 0) {
         remainder *= base;
-        auto digit = itoa0(int(remainder), base);
+        auto digit = formatLongWithBase(int(remainder), base);
         remainder -= int(remainder);
         f = concat(f, digit);
     }
@@ -308,6 +305,17 @@ chars ftoa0(float num, int base = 10, int digits_after_zero = 4) {/*significant_
     }
     return f;
 }
+
+chars formatRealWithSignificantDigits(double num, int digits_after_zero = 4) {/*significant_digits*/
+    return formatRealWithBaseAndPrecision(num, 10, digits_after_zero);
+}
+
+// todo: alias elsewhere
+extern "C" chars formatReal(double num) {/*significant_digits*/
+    return formatRealWithBaseAndPrecision(num, 10, 4);
+}
+
+chars ftoa(double num) { return formatRealWithBaseAndPrecision(num, 10, 4); }
 
 
 // -123.4E-100\0
@@ -334,11 +342,9 @@ chars ftoa2(float num, int significant_digits) {
     while (pos > 0 and f[pos] == '0')f[pos--] = 0;
     f[pos++] = 'E';
 //	strcpy2(&f[pos],"×10^");
-    strcpy2(&f[pos], itoa(exp));
+    strcpy2(&f[pos], formatLong(exp));
     return f;
 }
-
-chars ftoa(float num) { return ftoa0(num, 10, 4); }
 
 void reverse(char *str, int len) {
     for (int i = 0; i < len / 2; i++) {
