@@ -1,6 +1,11 @@
 #pragma once
 
-#define min(a, b) (a < b ? a : b)
+//#define min(a, b) (a < b ? a : b)
+static long min(long a, long b) { return (a < b ? a : b); }
+
+#if LINUX
+static bool isnumber(char x){return x>='0' and x<='9';}
+#endif
 #define error(msg) error1(msg,__FILE__,__LINE__)
 #define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
 #define todo(msg) error1(str("TODO ") + msg,__FILE__,__LINE__)

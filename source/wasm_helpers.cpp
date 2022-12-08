@@ -362,18 +362,18 @@ String Backtrace(int skip, int skipEnd){
 #endif
 
 void *memmove0(char *dest, const char *source, size_t num) {
-	while (num < MAX_MEM and --num >= 0)
-		dest[num] = source[num];
-	return dest;
+    while (num < MAX_MEM and --num >= 0)
+        dest[num] = source[num];
+    return dest;
 // memmove will never return anything other than dest.  It's useful for chaining
 }
 
 #ifndef WASI
 
 //defined in /opt/wasm/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libc.a
-void *memmove(void *dest, const void *source, size_t num) {
-	return memmove0((char *) dest, (char *) source, num);
-}
+//void *memmove(void *dest, const void *source, size_t num) noexcept{
+//	return memmove0((char *) dest, (char *) source, num);
+//}
 
 #endif
 

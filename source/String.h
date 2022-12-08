@@ -792,7 +792,7 @@ public:
         return !eq(data, c.data);
     }
 
-#define min(a, b) (a < b ? a : b)
+//#define min(a, b) (a < b ? a : b)
 
     bool operator>(String other) {
         for (int i = 0; i < min(length, other.length); ++i) {
