@@ -31,21 +31,21 @@ namespace wabt {
 //                      [this]() { enable_##variable(); });  \
 //  }
 
-	void Features::AddOptions(OptionParser *parser) {
-#define WABT_FEATURE(variable, flag, default_, help) if (default_ == true) { disable_##variable(); } else { enable_##variable(); };
-
-#include "feature.def"
-	}
+//	void Features::AddOptions(OptionParser *parser) {
+//#define WABT_FEATURE(variable, flag, default_, help) if (default_ == true) { disable_##variable(); } else { enable_##variable(); };
+//
+//#include "feature.def"
+//	}
 
 #undef WABT_FEATURE
 
 //		parser->AddOption("enable-all", "Enable all features", [this]() { EnableAll(); });
 //	}
 //
-	void Features::UpdateDependencies() {
-		// Exception handling requires reference types.
-		if (exceptions_enabled_) {
-			reference_types_enabled_ = true;
+    void Features::UpdateDependencies() {
+        // Exception handling requires reference types.
+        if (exceptions_enabled_) {
+            reference_types_enabled_ = true;
 		}
 
 		// Function references require reference types.

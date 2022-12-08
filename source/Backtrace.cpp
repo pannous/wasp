@@ -63,10 +63,6 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
 	return String(trace_buf.str().data());
 }
 
-int addr2line(const char *fname, void *pVoid) {
-	return 42;
-}
-
 
 
 // with line numbers only on linux /

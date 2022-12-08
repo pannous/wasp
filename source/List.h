@@ -138,7 +138,7 @@ template<class S>
 class List {
 public:
     int header = array_header_32;
-    Type _type = 0;// reflection on template class S
+    Type _type{};// reflection on template class S
     int _size = 0;
     int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
     // previous entries must be aligned to long!
@@ -253,7 +253,7 @@ public:
         memcpy((void *) neu, (void *) items, capacity * sizeof(S));
 //        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
 //      indeed List<int> FUCKS UP just by growing even without references
-        free(items);
+//        free(items);
         items = neu;
         capacity *= 2;
     }
@@ -424,8 +424,10 @@ public:
 
     String join(String string) {
         String s;
-        for (auto i: *this)
+        for (auto i: *this) {
             s += i;
+            s += string;
+        }
         return s;
     }
 };

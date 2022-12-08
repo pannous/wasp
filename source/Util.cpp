@@ -449,6 +449,7 @@ Node smartValue(long smartPointer);
 
 #include <cxxabi.h>
 
+//std::__2::enable_if<(std::is_arithmetic<int>::value) && (std::is_arithmetic<long>::value), std::__2::__promote<int, long, void> >::type::type pow<int, long>(int, long)
 String demangle(String &fun) {
     if (fun.length == 0)return "";
     int status;
@@ -456,7 +457,9 @@ String demangle(String &fun) {
     if (status < 0 or string == 0)
         return fun;// not demangled (e.g. "memory")
     auto real_name = String(string); // temp
-    String ok = real_name.substring(0, real_name.indexOf('('));
+    String ok = real_name.substring(0, real_name.lastIndexOf("("));
+    if (ok.contains(' '))
+        ok = ok.substring(ok.lastIndexOf(" "));
     return ok;// .clone(); unnecessary: return by value copy
 }
 

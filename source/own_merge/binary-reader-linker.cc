@@ -22,16 +22,18 @@
 #include "wasm-link.h"
 #include "leb128.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
 #define RELOC_SIZE 5
 
 namespace wabt {
-	namespace link {
+    namespace link {
 
-		namespace {
+        namespace {
 
-			class BinaryReaderLinker : public BinaryReaderNop { // < BinaryReaderDelegate {
-			public:
-				explicit BinaryReaderLinker(LinkerInputBinary *binary);
+            class BinaryReaderLinker : public BinaryReaderNop { // < BinaryReaderDelegate {
+            public:
+                explicit BinaryReaderLinker(LinkerInputBinary *binary);
 
 				Result BeginSection(Index section_index, SectionType section_type, Offset size) override;
 
@@ -108,9 +110,9 @@ namespace wabt {
                 }
 
 				for (const std::unique_ptr<Section> &section: binary_->sections) {
-					if ((int) section->section_code != section_code) {
-						continue;
-					}
+                    if ((int) section->section_code != (int) section_code) {
+                        continue;
+                    }
 					reloc_section_ = section.get();
 					return Result::Ok;
 				}
@@ -312,5 +314,7 @@ namespace wabt {
                               (const ReadBinaryOptions) read_options);
         }
 
-	}  // namespace link
+    }  // namespace link
 }  // namespace wabt
+
+#pragma clang diagnostic pop

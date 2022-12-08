@@ -696,13 +696,13 @@ private:
         }
 
         if (string.contains(".") or string.contains("e-") or string.contains("E-")) {
-            if (sign == '-') return *new Node(-atof0(string.data));
-            else return *new Node(atof0(string.data));
+            if (sign == '-') return *new Node(-parseDouble(string.data));
+            else return *new Node(parseDouble(string.data));
         }
         if (sign == '-') {
-            number0 = -atoi0(string.data);
+            number0 = -parseLong(string.data);
         } else {
-            number0 = +atoi0(string.data);
+            number0 = +parseLong(string.data);
         }
 //		if (!isFinite(number)) {
 //			error("Bad number");
@@ -1308,7 +1308,7 @@ private:
         val.parent = &key;// todo bug: might get lost!
         bool deep_copy = empty(val.name) or !debug or (key.kind == reference and empty(val.name));
         if (debug) {// todo make sure all works even with nested nodes! x="123" (node 'x' (child value='123')) vs (node 'x' value="123")
-            deep_copy = deep_copy or (val.kind == Kind::longs and val.name == itoa(val.value.longy));
+            deep_copy = deep_copy or (val.kind == Kind::longs and val.name == formatLong(val.value.longy));
             deep_copy = deep_copy or (val.kind == Kind::reals and val.name == ftoa(val.value.real));
             deep_copy = deep_copy or (val.kind == Kind::bools and
                                       (val.name == "True" or val.name == "False"));// todo why check name?

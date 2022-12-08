@@ -132,7 +132,7 @@ wrap(nop) {
 wrap(atoi) {
     int n = args[0].of.i32;
     auto a = (chars) ((char *) wasm_memory) + n;
-    int i = atoi0(a);
+    int i = parseLong(a);
     results[0].of.i32 = i;
     return NULL;
 }
@@ -469,7 +469,6 @@ const wasm_functype_t *funcType(Signature &signature) {
         Type &type = signature.parameter_types[0];
         Valtype valtype = mapTypeToWasm(type);
         switch (valtype) {
-            case charp:
             case int32:
                 switch (returnType) {
                     case none:

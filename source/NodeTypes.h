@@ -115,12 +115,6 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     arrays, // Node[] vs any[]  untyped array of Nodes. Unlike vector the node is NOT a class! todo: see Classes
     linked_list, // via children or value field??
     meta = linked_list,
-    nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
-    reals = 0x7C, /*  ≠ float64, just hides bugs, these concepts should not be mixed */
-    longs = 0x7E, // the signature of parameters/variables is independent!
-    flag_entry = longs, // special semantics at compile time for now
-    enum_entry = longs, // special semantics at compile time for now
-    structs,
     enums,
     flags,// just a boolean enum with “bit-boolean” values 1,2,4,8,…
     variants,
@@ -128,7 +122,18 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     records, // todo merge concepts with module wasp clazz?
     constructor, // special call?
     modul,// module, interface, resource, world, namespace, library, package ≈ class …
-    last_kind = 0x80000000, // 32 bit padding
+    nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
+    structs = 0x77, // TODO BEWARE OF OVERLAP with primitives! :
+
+    reals = 0x7C, /*  ≠ float64 , just hides bugs, these concepts should not be mixed */
+    realsF = 0x7D,/*  ≠ float32 , just hides bugs, these concepts should not be mixed */
+    longs = 0x7E, // the signature of parameters/variables is independent!
+    longsI = 0x7F, /*  ≠ int32 , just hides bugs, these concepts should not be mixed */
+
+    flag_entry = longs, // special semantics at compile time for now
+    enum_entry = longs, // special semantics at compile time for now
+    last_kind = 0x80,
+    kind_padding = 0x80000000, // 32 bit padding
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 
@@ -137,19 +142,20 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
 // Todo these should NOT appear as Node.kind except for Node{value.data=Address<Primitive>}
 // todo use NodeTypes.h Type for smart-pointers :
 //	https://github.com/pannous/angle/wiki/smart-pointer
-// todo: move all Valtype hacks here!
+// see header_4 / smartType4bit
+// todo universal micro bits for 1. POINTER 2. ARRAY 2. STRUCT with HEADER
 enum Primitive {
 //   redundant Valtype overlap
+    unknown_type = 0,
     wasm_leb = 0x77,
     wasm_float64 = 0x7C,
     wasm_f32 = 0x7d,
     wasm_int64 = 0x7E, // AS OPPOSED TO longs signed or unsigned? we don't care
     wasm_int32 = 0x7f,  // make sure to not confuse these with boxed Number nodes of kind longs, reals!
-
-    codepoint32 = wasm_int32,
     pointer = wasm_int32,// 0xF0, // internal todo: int64 on wasm-64
     node_pointer = wasm_int32,
 //	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
+    typeo = 0x80, // todo see smart_pointer_64 etc OK?
     node = 0xA0,
     angle = 0xA0,//  angle object pointer/offset versus smarti vs anyref
     any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
@@ -157,8 +163,9 @@ enum Primitive {
     array = 0xAA,
     charp = 0xC0, // vs
     stringp = 0xC0,// use charp?  pointer? enough?? no!??
+    codepoint32 = 0xC1, // just ONE codepoint as int! todo via map
+    string_struct = 0xC8,
 //	floats = 0x1010, // only useful for main(), otherwise we can return real floats or wrapped Node[reals]
-//	codepoint32 = int32, todo via map
 //	pointer = int32,// 0xF0, // internal
 ////	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
 ////	node = 0xA0,
@@ -211,6 +218,7 @@ enum Primitive {
 //    block = 0xB000,
     c_string = 0xC000, // pointer to utf-8 bytes in wasm's linear memory, 0 terminated
     leb_string = 0xC001, // LEB encoded length header -> wasm_string
+    // todo universal micro bits for 1. POINTER 2. ARRAY 2. STRUCT with HEADER
     utf16_string = 0xC016, // pointer to utf-16 bytes in wasm's linear memory, 0.0 terminated
     utf32_string = 0xC032, // pointer to utf-16 bytes in wasm's linear memory, 0.0 terminated
     json5_string = 0xC005,
@@ -273,7 +281,7 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
     */
 
     // todo: this union is BAD because we can not READ it safely, instead we need mapType / extractors for all combinations!
-    long value = 0; // one of:
+    unsigned long value = 0; // one of:
 //    SmartPointer64 smarty;
 //    SmartPointer32 smarty;// when separating Types from values we don't need smart pointers
     Kind kind; // Node of this type
@@ -301,12 +309,14 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
         this->kind = reals;
         error("TODO    Type32(const Node &o){");
     }
+//
+//    Type32(const Node &o) {
+//        if(!o.empty())
+////        error("TODO    Type32(const Node &o)"s+o.serialize());
+//        error("TODO    Type32(const Node &o)");
+//    }
 
-    Type32(const Node &o) {
-        error("TODO    Type32(const Node &o){");
-    }
-
-    Type32(int value) {
+    Type32(unsigned int value) {
         this->value = value;
     }
 
@@ -320,10 +330,13 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
         if ((int) kind > 0x1000)error("erroneous or unsafe Type construction");
     }
 
+    explicit
     operator int() const { return this->value; }
 
+    explicit
     operator Kind() const { return this->kind; }
 
+    explicit
     operator Primitive() const { return this->type; }
 
     explicit
@@ -347,17 +360,17 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
         return type == other;
     }
 
-    bool operator==(long other) {
-        return value == other;
-    }
+//    bool operator==(unsigned long other) {
+//        return value == other;
+//    }
 
-    bool operator==(int other) {
-        return value == other;
-    }
+//    bool operator==(unsigned int other) {
+//        return value == other;
+//    }
 
-    bool operator==(short other) {
-        return value == other;
-    }
+//    bool operator==(unsigned short other) {
+//        return value == other;
+//    }
 //	Type(Valtype valtype){
 //		value = valtype;// transparent subset equivalence
 //	}

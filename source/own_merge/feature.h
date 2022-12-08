@@ -25,13 +25,10 @@ namespace wabt {
 
 	class Features {
 	public:
-		void AddOptions(OptionParser *);
 
 		void EnableAll() {
 #define WABT_FEATURE(variable, flag, default_, help) enable_##variable();
-
 #include "feature.def"
-
 #undef WABT_FEATURE
 		}
 
