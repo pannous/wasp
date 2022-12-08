@@ -2705,6 +2705,7 @@ void testCurrent() {
 //    skip(
 //testNodeDataBinaryReconstruction();
 //    assert_is("[1 2 3]", Node(1, 2, 3, 0))
+    check_is(stackItemSize(Primitive::wasm_float64), 8);
     Valtype yy = (Valtype) Primitive::charp;
     check(yy == Primitive::charp);
     loadModule("wasp");

@@ -62,6 +62,10 @@ Code cast(Valtype from, Valtype to);
 Code cast(Node &from, Node &to, Function &context);
 
 [[nodiscard]]
+Code cast(Type from, Type to);
+
+
+[[nodiscard]]
 Code emitStringOp(Node &op, Function &context);
 
 //bytes
@@ -92,6 +96,8 @@ Code emitData(Node &node, Function &context);
 Valtype fixValtype(Valtype valtype);
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
+
+Type needsUpgrade(Type lhs, Type rhs);
 
 //Code emit(String code);//  wasp -> code -> wasm -> data
 Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "main");

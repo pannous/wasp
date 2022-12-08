@@ -205,12 +205,6 @@ public:
         return *this;
     }
 
-    Code &addType(short type) {
-        data = concat(data, type, length);
-        length++;
-        return *this;
-    }
-
     Code &addByte(byte opcode) {
         data = concat(data, opcode, length);
         length++;
@@ -436,7 +430,10 @@ enum Valtype {
 
 int stackItemSize(Valtype valtype, bool throws = true);
 
-int stackItemSize(Node &clazz);
+int stackItemSize(Node &clazz, bool throws = true);
+
+int stackItemSize(Type type, bool throws = true);
+
 
 // in final stage of emit, keep original types as long as possible
 Valtype mapTypeToWasm(Type t);
@@ -916,8 +913,6 @@ public:
         if (valtype != voids and valtype != none) {
             if (valtype == float64 or valtype == float32 or valtype == int32 or valtype == i64)
                 return_types.add(valtype);
-            else if (valtype == charp)
-                return_types.add(charp);// todo: move out of Valtype!
             else
                 error("UNKNOWN Valtype mapping "s + typeName(valtype));
 #ifdef DEBUG
@@ -929,7 +924,7 @@ public:
         return *this;
     }
 
-    String format() {
+    static String format() {
         String f;
 //#if RELEASE
 //#else
@@ -987,7 +982,8 @@ struct Local { // todo: use
     bool is_param; // function arguments and locals share same index space, but are emitted differently
     int position; // also implicit in Function{ List<Local> locals;}
     String name;
-    Valtype valtype = unknown_type;
+//    Valtype typo = unknown_type;
+    Type typo = unknown_type;
 //    Primitive grrr
     Node *type;
     Node *ref;// why still needed?
@@ -1050,7 +1046,7 @@ public:
 //String sectionName(::Section section);
 String sectionName(Sections section);
 
-Code createSection(Sections sectionType, Code data);
+Code createSection(Sections sectionType, const Code &data);
 
 //Code createSection(::Section sectionType, Code data);
 

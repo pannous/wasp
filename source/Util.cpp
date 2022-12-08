@@ -15,24 +15,25 @@
 
 #endif
 
-template <typename S, typename T>
-struct FuncLet
-{
+template<typename S, typename T>
+struct FuncLet {
     typedef T (lambda)(S param);
 };
 
 
-template<class S,class T> // reads a wasm file and returns a function with signature f(S)->T
-typename FuncLet<S,T>::lambda wasmlet(Path file, String func=""){
-    if(func=="")func = file.substring(file.lastIndexOf("/")).substring(0, file.lastIndexOf(".wasm")); // or just main()!
+template<class S, class T>
+// reads a wasm file and returns a function with signature f(S)->T
+typename FuncLet<S, T>::lambda wasmlet(Path file, String func = "") {
+    if (func == "")
+        func = file.substring(file.lastIndexOf("/")).substring(0, file.lastIndexOf(".wasm")); // or just main()!
     // todo: capture [func] ?
-    auto lamb=[] (S s)->T{
+    auto lamb = [](S s) -> T {
 //  Module m=parse_wasm_file(file);
 //  return m.run(s)
         todo("wasmlet");
         return new T();
-   };
-   return lamb;
+    };
+    return lamb;
 }
 
 //template<class S,class T> T run_wasmlet(Path file, S arg){
@@ -66,15 +67,15 @@ bool fileExists(String filename) {
 
 int fileSize(char const *file) {
 #ifndef WASM
-	FILE *ptr;
-	ptr = fopen(file, "rb");  // r for read, b for binary
-	if (!ptr)
-		error("File not found "s + file);
-	fseek(ptr, 0L, SEEK_END);
-	int sz = ftell(ptr);
-	return sz;
+    FILE *ptr;
+    ptr = fopen(file, "rb");  // r for read, b for binary
+    if (!ptr)
+        error("File not found "s + file);
+    fseek(ptr, 0L, SEEK_END);
+    int sz = ftell(ptr);
+    return sz;
 #endif
-	return -1;// todo
+    return -1;// todo
 }
 
 #if WASM && !WASI
@@ -84,8 +85,8 @@ int fileSize(char const *file) {
 #include <time.h>
 
 long file_last_modified(char *file) {
-	struct stat attr;
-	stat(file, &attr);
+    struct stat attr;
+    stat(file, &attr);
     return attr.st_mtime;
 }
 
@@ -148,43 +149,43 @@ String findFile(String filename, String current_dir) {
             for (auto extension: extensions) {
                 String &path = current_dir + "/" + folder + "/" + filename + extension;
                 if (fileExists(path)) paths.add(path);
-			}
-	}
-	if (paths.empty())return "";
-	paths.sort(&file_last_modified);
-	String &best = paths.last();
-	return best;
+            }
+    }
+    if (paths.empty())return "";
+    paths.sort(&file_last_modified);
+    String &best = paths.last();
+    return best;
 #endif
 }
 
 template<class S>
 bool contains(List<S> list, S match) {
-	return list.has(match);
+    return list.has(match);
 }
 
 template<class S>
 // list HAS TO BE 0 terminated! Dangerous C!! ;)
 bool contains(S list[], S match) {
-	S *elem = list;
-	do {
-		if (match == *elem)
-			return true;
-	} while (*elem++);
-	return false;
+    S *elem = list;
+    do {
+        if (match == *elem)
+            return true;
+    } while (*elem++);
+    return false;
 }
 
 short normChar(char c) {// 0..36 damn ;)
-	if (c == '\n')return 0;
-	if (c >= '0' and c <= '9') return c - '0' + 26;
-	if (c >= 'a' and c <= 'z') return c - 'a' + 1;// NOT 0!!!
-	if (c >= 'A' and c <= 'Z') return c - 'A' + 1;// NOT 0!!!
-	switch (c) {
-		case '"':
-		case '\'':
-		case '!':
-		case '(':
-		case '#':
-		case '$':
+    if (c == '\n')return 0;
+    if (c >= '0' and c <= '9') return c - '0' + 26;
+    if (c >= 'a' and c <= 'z') return c - 'a' + 1;// NOT 0!!!
+    if (c >= 'A' and c <= 'Z') return c - 'A' + 1;// NOT 0!!!
+    switch (c) {
+        case '"':
+        case '\'':
+        case '!':
+        case '(':
+        case '#':
+        case '$':
         case '+':
         case ' ':
         case '_':
@@ -213,29 +214,29 @@ unsigned int wordHash(const char *str, int max_chars) { // unsigned
         hash2 = hash2 * 31 + (short) (c);
         int next = normChar(c);//a_b-c==AbC
         if (next == 0)continue;
-		hash = hash * 33 + next;// ((hash << 5) + hash
-		hash = hash % maxNodes;
-	}
-	if (hash == 0)return hash2;
-	return hash;
+        hash = hash * 33 + next;// ((hash << 5) + hash
+        hash = hash % maxNodes;
+    }
+    if (hash == 0)return hash2;
+    return hash;
 }
 
 char *readFile(chars filename, int *size_out) {
-	if (!filename)error("no filename given");
-	if (!filename)return 0;
+    if (!filename)error("no filename given");
+    if (!filename)return 0;
 #ifndef WASM
-	FILE *f = fopen(filename, "rt");
-	if (!f)error("FILE NOT FOUND "_s + filename);
-	fseek(f, 0, SEEK_END);
-	long fsize = ftell(f);
-	if (size_out)*size_out = fsize;
-	fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-	char *s = (char *) (alloc(fsize, 2));
-	fread(s, 1, fsize, f);
-	fclose(f);
-	return s;
+    FILE *f = fopen(filename, "rt");
+    if (!f)error("FILE NOT FOUND "_s + filename);
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    if (size_out)*size_out = fsize;
+    fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+    char *s = (char *) (alloc(fsize, 2));
+    fread(s, 1, fsize, f);
+    fclose(f);
+    return s;
 #else
-	return 0;
+    return 0;
 #endif
 }
 
@@ -268,9 +269,9 @@ char *readFile(chars filename, int *size_out) {
 //	x-(long)x;// todo!
 //}
 bool similar(double a, double b) {
-	if (a == b)return true;
-	if (a == 0)return abs(b) < .0001;
-	if (b == 0)return abs(a) < .0001;
+    if (a == b)return true;
+    if (a == 0)return abs(b) < .0001;
+    if (b == 0)return abs(a) < .0001;
     double epsilon = abs(a + b) / 10000.;// percentual ++ todo add 10^order parameter
     bool ok = abs(a - b) <= epsilon;
     return ok;
@@ -307,39 +308,39 @@ void lowerCase(char *string, int length) {
 
 
 int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
-	bytes pStr1Low = 0;
-	bytes pStr2Low = 0;
-	bytes p1 = 0;
-	bytes p2 = 0;
-	if (s1 && *s1 && s2 && *s2) {
-		pStr1Low = (bytes) calloc(strlen0(s1) + 1, sizeof(unsigned char));
-		if (pStr1Low) {
-			pStr2Low = (bytes) calloc(strlen0(s2) + 1, sizeof(unsigned char));
-			if (pStr2Low) {
-				p1 = pStr1Low;
-				p2 = pStr2Low;
-				strcpy2((char *) pStr1Low, s1);
-				strcpy2((char *) pStr2Low, s2);
-				lowerCase((char *) pStr1Low, 0);
-				lowerCase((char *) pStr2Low, 0);
-				for (; ztCount--; p1++, p2++) {
-					int iDiff = *p1 - *p2;
-					if (iDiff != 0 || !*p1 || !*p2) {
+    bytes pStr1Low = 0;
+    bytes pStr2Low = 0;
+    bytes p1 = 0;
+    bytes p2 = 0;
+    if (s1 && *s1 && s2 && *s2) {
+        pStr1Low = (bytes) calloc(strlen0(s1) + 1, sizeof(unsigned char));
+        if (pStr1Low) {
+            pStr2Low = (bytes) calloc(strlen0(s2) + 1, sizeof(unsigned char));
+            if (pStr2Low) {
+                p1 = pStr1Low;
+                p2 = pStr2Low;
+                strcpy2((char *) pStr1Low, s1);
+                strcpy2((char *) pStr2Low, s2);
+                lowerCase((char *) pStr1Low, 0);
+                lowerCase((char *) pStr2Low, 0);
+                for (; ztCount--; p1++, p2++) {
+                    int iDiff = *p1 - *p2;
+                    if (iDiff != 0 || !*p1 || !*p2) {
 //						free(pStr1Low);
 //						free(pStr2Low);
-						return iDiff;
-					}
-				}
-				free(pStr1Low);
-				free(pStr2Low);
-				return 0;
-			}
-			free(pStr1Low);
-			return (-1);
-		}
-		return (-1);
-	}
-	return (-1);
+                        return iDiff;
+                    }
+                }
+                free(pStr1Low);
+                free(pStr2Low);
+                return 0;
+            }
+            free(pStr1Low);
+            return (-1);
+        }
+        return (-1);
+    }
+    return (-1);
 }
 
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
@@ -352,49 +353,49 @@ bytes concat(bytes a, bytes b, int len_a, int len_b) {
 
 chars concat(chars a, chars b) {
 //const char *concat(const char *a, const char *b) {
-	if (!b or b[0] == 0)return a;
-	int la = (int) strlen0(a);
-	int lb = (int) strlen0(b);
-	char *c = (char *) malloc((la + lb + 1) * sizeof(char));
-	strcpy2(c, a);
-	strcpy2(&c[la], b);
-	c[la + lb] = 0;
-	return c;
+    if (!b or b[0] == 0)return a;
+    int la = (int) strlen0(a);
+    int lb = (int) strlen0(b);
+    char *c = (char *) malloc((la + lb + 1) * sizeof(char));
+    strcpy2(c, a);
+    strcpy2(&c[la], b);
+    c[la + lb] = 0;
+    return c;
 }
 
 bytes concat(bytes a, char b, int len) {
-	bytes c = new byte[len + 1];
+    bytes c = new byte[len + 1];
     memcpy1(c, a, len);
     c[len] = b;
-	return c;
+    return c;
 }
 
 bytes concat(char a, bytes b, int len) {
-	bytes c = new unsigned char[len + 1];
+    bytes c = new unsigned char[len + 1];
     c[0] = a;
     memcpy1(c + 1, b, len);
-	return c;
+    return c;
 }
 
 float ln(float y) {// crappy!
 //	if(y==1)return 0;
-	float divisor, x, result;
-	int log2 = 0;
-	unsigned int v = y;
-	while (v >>= 1) {
-		log2++;
-	}
+    float divisor, x, result;
+    int log2 = 0;
+    unsigned int v = y;
+    while (v >>= 1) {
+        log2++;
+    }
 //	log2 = msb((int)y); // See: https://stackoverflow.com/a/4970859/6630230
-	divisor = (float) (1 << log2);
-	if (divisor == 0)return -1 / 0.000000000001;// todo;) noexcept
-	x = y / divisor;    // normalized value between [1.0, 2.0]
-	result = -1.7417939 + (2.8212026 + (-1.4699568 + (0.44717955 - 0.056570851 * x) * x) * x) * x;
-	result += ((float) log2) * 0.69314718; // ln(2) = 0.69314718
-	return result;
+    divisor = (float) (1 << log2);
+    if (divisor == 0)return -1 / 0.000000000001;// todo;) noexcept
+    x = y / divisor;    // normalized value between [1.0, 2.0]
+    result = -1.7417939 + (2.8212026 + (-1.4699568 + (0.44717955 - 0.056570851 * x) * x) * x) * x;
+    result += ((float) log2) * 0.69314718; // ln(2) = 0.69314718
+    return result;
 }
 
 float log(float y, float base) {
-	return ln(y) * ln(base);
+    return ln(y) * ln(base);
 }
 //float log10(float y) noexcept{
 //	return ln(y)*2.302585092994046; // ln(10)
@@ -426,13 +427,13 @@ String load(String file) {
 
 String &hex(long d) {
 #ifdef WASM
-	return * new String(itoa0(d));
+    return * new String(itoa0(d));
 #else
 //	char* s= (char*) malloc(1+64/4);// 0x ?
-	int size = 3 + 64 / 4;
-	char s[size];
-	snprintf(s, size, "0x%lx", d);
-	return *new String(s);// todo mark data as to-free
+    int size = 3 + 64 / 4;
+    char s[size];
+    snprintf(s, size, "0x%lx", d);
+    return *new String(s);// todo mark data as to-free
 #endif
 }
 
@@ -466,7 +467,7 @@ String extractPath(String file) {
 }
 
 // compressed arrays
-int stackItemSize(Node &clazz) {
+int stackItemSize(Node &clazz, bool throws) {
     if (clazz == Bool)return 1;//0;
     if (clazz == ByteType)return 1;
     if (clazz == ShortType)return 2;
@@ -475,23 +476,34 @@ int stackItemSize(Node &clazz) {
     if (clazz.kind == structs)
         return 4;// todo: ignore and just get index from member (OR bad idea: sum up type sizes)
 //     typeName(clazz) +
-    todo("stackItemSize for "s + " " + clazz.serialize());
+    if (throws)
+        todo("stackItemSize for "s + " " + clazz.serialize());
     return stackItemSize(mapTypeToWasm(clazz));
 }
 
 // size of the primitive value, not sizeof(Node)
-int stackItemSize(Valtype valtype, bool throws) {
-    if (valtype == charp)return 1;// chars for now vs codepoint!
-    if (valtype == stringp)return 1;// chars for now vs pointer!
+int stackItemSize(Type type, bool throws) {
+    if (type == charp)return 1;// chars for now vs codepoint!
+    if (type == stringp)return 1;// chars for now vs pointer!
     //	if (k == int16)return 2;
-    if (valtype == codepoint32)return 4;
-    if (valtype == int32)return 4;
-    if (valtype == array)return 4;// pointer todo!
-    if (valtype == int64)return 8;
-    if (valtype == float32)return 4;
-    if (valtype == float64)return 8;
-    if (valtype == void_block)return 4;// int32 pointer hack todo!
-    if (valtype == unknown_type)return 4;
-    if (throws)error("unknown size for stack item "s + typeName(valtype));
+    if (type == codepoint32)return 4;
+    if (type == int32)return 4;
+    if (type == array)return 4;// pointer todo!
+    if (type == int64)return 8;
+    if (type == float32)return 4;
+    if (type == float64)return 8;
+    if (type == void_block)return 4;// int32 pointer hack todo!
+    if (type == unknown_type)return 4;
+    if (throws)error("unknown size for stack item "s + typeName(type));
+    return 0;
+}
+
+int stackItemSize(Valtype type, bool throws) {
+    if (type == int32)return 4;
+    if (type == int64)return 8;
+    if (type == float32)return 4;
+    if (type == float64)return 8;
+    if (throws)
+        error("int stackItemSize(Valtype valtype, bool throws = true);");
     return 0;
 }
