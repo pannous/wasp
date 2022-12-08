@@ -412,6 +412,22 @@ public:
         for (auto s: items)
             add(s);
     }
+
+    template<class T>
+    List<T> map(T (*lambda)(S)) {
+        List<T> neu;
+        for (auto s: *this) {
+            neu.add(lambda(s));
+        }
+        return neu;
+    }
+
+    String join(String string) {
+        String s;
+        for (auto i: *this)
+            s += i;
+        return s;
+    }
 };
 
 void print(List<String> list);
