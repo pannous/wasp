@@ -110,3 +110,5 @@ struct ParserOptions { // not just for parser but also for serialize!!
     bool space_brace = false;// resolve a {x} as a{x}
     String current_dir = "./"; // where to look for includes
 };
+
+//extern Map<String, Module *> module_cache;

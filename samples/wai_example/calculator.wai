@@ -1,4 +1,0 @@
-// calculator.wai
-
-/// Add two numbers.
-add: func(a: float32, b: float32) -> float32

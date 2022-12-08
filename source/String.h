@@ -135,7 +135,7 @@ void strcpy2(char *dest, chars src);
 
 void strcpy2(char *dest, chars src, int length);
 
-int strlen0(chars x);
+extern "C" int strlen0(chars x);
 //size_t   strlen(chars __s);
 
 
@@ -1022,8 +1022,6 @@ public:
     }
 };
 
-#define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
-
 String operator ""_(chars c, unsigned long);
 
 String operator ""_s(chars c, unsigned long);
@@ -1055,7 +1053,7 @@ void print(char const *s);
 
 void print(String s);
 
-int puts(const char *);// int return needed for stdio compatibilty !
+extern "C" int puts(const char *);// int return needed for stdio compatibilty !
 //void puts(const char *);
 
 //#endif

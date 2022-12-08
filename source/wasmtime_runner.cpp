@@ -282,7 +282,7 @@ wasmtime_context_t *context;
 void init_wasmtime() {
     engine = wasm_engine_new();
     assert(engine != NULL);
-    store = wasmtime_store_new(engine, NULL, NULL);// Exception: EXC_BAD_ACCESS (code=1, address=0x0) WHEN??? wrong lib?
+    store = wasmtime_store_new(engine, NULL, NULL);
     assert(store != NULL);
 //	wasmtime_context_get_data(context);// get some_meta_data
     context = wasmtime_store_context(store);
@@ -451,7 +451,7 @@ const wasm_functype_t *funcType(Signature &signature) {
     // todo multi-value
     Type returnType0 = signature.return_types.last(none);
     Valtype returnType = mapTypeToWasm(returnType0);
-    int param_count = signature.types.size();
+    int param_count = signature.parameter_types.size();
     if (param_count == 0) {
         switch (returnType) {
             case none:
@@ -466,7 +466,7 @@ const wasm_functype_t *funcType(Signature &signature) {
         }
     }
     if (param_count == 1) {
-        Type &type = signature.types[0];
+        Type &type = signature.parameter_types[0];
         Valtype valtype = mapTypeToWasm(type);
         switch (valtype) {
             case charp:
