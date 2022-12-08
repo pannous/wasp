@@ -450,7 +450,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
 //    emitIntData(wasm_next_pointer);
 //    emitPadding(3*8);// pointers, hash, capacity, … extra fields
 //    emitPaddingAlignment(8);
-    last_type = Valtype::node;
+    last_type = Primitive::node;
     last_typo = node.type;
     last_object = &node;
     last_object_pointer = node_start;
@@ -1922,7 +1922,7 @@ Code emitSetter(Node &node, Node &value, Function &context) {
 //        error("variable %s in context %s missed by parser! "_s % variable % context.name);
         warn("variable %s in context %s emitted as node data:\n"_s % variable % context.name + node.serialize());
         Code code = emitNode(node, context);
-//        addLocal(context, variable, Valtype::node, false);
+//        addLocal(context, variable, Primitive::node, false);
 //        code.add(tee_local);
 //        code.add(context.locals[variable].position);
         return code;// wasm_node_index 'pointer' (const.int)
