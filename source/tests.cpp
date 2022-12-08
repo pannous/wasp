@@ -2705,6 +2705,8 @@ void testCurrent() {
 //    skip(
 //testNodeDataBinaryReconstruction();
 //    assert_is("[1 2 3]", Node(1, 2, 3, 0))
+    Valtype yy = (Valtype) Primitive::charp;
+    check(yy == Primitive::charp);
     loadModule("wasp");
     check(findLibraryFunction("_Z7strlen0PKc", false))
     assert_run("len('123')", 3);

@@ -26,10 +26,6 @@
 typedef unsigned char *bytes;
 
 
-Code createSection(Sections sectionType, Code data);
-
-Code &code(std::vector<uint8_t> bin);
-
 using namespace wabt;
 using namespace wabt::link;
 //using wabt::link::LinkerInputBinary;
