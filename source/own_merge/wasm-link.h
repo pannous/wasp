@@ -122,53 +122,53 @@ namespace wabt {
 			WABT_DISALLOW_COPY_AND_ASSIGN(LinkerInputBinary);
 
 
-			LinkerInputBinary(const char *filename, const std::vector<uint8_t> &data);
+			LinkerInputBinary(const char *filename, std::vector<uint8_t> data);
 
 			Index RelocateFuncIndex(Index findex);
 
-			Index RelocateTypeIndex(Index index);
+            Index RelocateTypeIndex(Index index) const;
 
-			Index RelocateMemoryIndex(Index memory_index);
+            Index RelocateMemoryIndex(Index memory_index) const;
 
 			Index RelocateGlobalIndex(Index index);
 
-            Index RelocateTable(Index findex);
+            Index RelocateTable(Index findex) const;
 
-			bool IsValidFunctionIndex(Index index);
+            bool IsValidFunctionIndex(Index index) const;
 
-			bool IsFunctionImport(Index index);
+            bool IsFunctionImport(Index index) const;
 
-			bool IsInactiveFunctionImport(Index index);
+            bool IsInactiveFunctionImport(Index index);
 
-			const char *name;
+            const char *name;
 
-			// ⚠️ # ALL IMPORTS of ALL modules plus all functions of all previous modules!
-			int delta;// previous function_count, offset all functions in this module if not mapped to specific import
+            // ⚠️ # ALL IMPORTS of ALL modules plus all functions of all previous modules!
+            int delta{};// previous function_count, offset all functions in this module if not mapped to specific import
 
-			std::vector<uint8_t> data;
-			std::vector<std::unique_ptr<Section>> sections;
-			std::vector<Export> exports;
-			std::vector<Func> functions;// only those with code, not imports:
-			std::vector<FunctionImport> function_imports;
-			Index active_function_imports;
-			std::vector<GlobalImport> global_imports;
-			Index active_global_imports;
+            std::vector<uint8_t> data;
+            std::vector<std::unique_ptr<Section>> sections;
+            std::vector<Export> exports;
+            std::vector<Func> functions;// only those with code, not imports:
+            std::vector<FunctionImport> function_imports;
+            Index active_function_imports;
+            std::vector<GlobalImport> global_imports;
+            Index active_global_imports;
 
 			Index type_index_offset;
 			Index function_index_offset; // globally after merging, RIGHT??
 			Index imported_function_index_offset;// for current binary or for ALL?
-			Index global_index_offset = 0;
-			Index imported_global_index_offset;
-			Index table_index_offset;
-			Index memory_page_count;
-			Index memory_page_offset;
+            Index global_index_offset = 0;
+            Index imported_global_index_offset{};
+            Index table_index_offset;
+            Index memory_page_count;
+            Index memory_page_offset;
 
-			Index table_elem_count = 0;
-			Index function_count = 0;
+            Index table_elem_count = 0;
+            Index function_count = 0;
 
-			std::vector<String> debug_names;
-			bool needs_relocate;// keep runtime untouched!
-		};
+            std::vector<String> debug_names;
+            bool needs_relocate{};// keep runtime untouched!
+        };
 
 	}  // namespace link
 }  // namespace wabt

@@ -8,7 +8,6 @@
 //enum Valtype;// forbids forward references to 'enum' types
 class Node;
 
-union Type;
 
 typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
 
@@ -53,7 +52,9 @@ enum smart_pointer_masks {
 // 3 * sizeof(int32)  header, kind, length before *DATA !
 // sizeof(List) - sizeof(S*)
 
-chars typeName(const Type *t);
+union Type32;
+
+chars typeName(const Type32 *t);
 
 // types
 //extern const Node Double;
@@ -258,7 +259,7 @@ union Type64 {//  i64 union, 8 bytes with special ranges:
 //     0x10000000_00000000 - 2^64 : SmartPointer64 ≈ SmartPointer32 + 4 byte value
 };
 
-union Type {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ranges:
+union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ranges:
     /* this union is partitioned in the int space:
      0x0000 - Ill defined
      0x0001 - 0x1000 : Kinds of Node MUST NOT CLASH with Valtype!?
@@ -280,7 +281,41 @@ union Type {// 64 bit due to pointer! todo: i32 union, 4 bytes with special rang
     Primitive type;// c_string int_array long_array float_array etc, can also be type of value.data in boxed Node
 //    Node *clazz;// same as // 64 bit on normal systems!!!!
     Address address;// pointer to Node
-    Type(Kind kind) {
+
+
+
+    Type32() {
+    }
+
+
+    Type32(Type32 *o) {
+        value = o->value;
+    }
+
+    Type32(Node *o) {
+        if (!o)
+            this->kind = Kind::nils;
+//			this->type=Type(Valtype::voids);
+//		if (o->kind)
+//		if (Double==*o)
+        this->kind = reals;
+        error("TODO    Type32(const Node &o){");
+    }
+
+    Type32(const Node &o) {
+        error("TODO    Type32(const Node &o){");
+    }
+
+    Type32(int value) {
+        this->value = value;
+    }
+
+    Type32(Primitive primitive) {
+        type = primitive;
+    }
+
+
+    Type32(Kind kind) {
         this->kind = kind;
         if ((int) kind > 0x1000)error("erroneous or unsafe Type construction");
     }
@@ -289,41 +324,46 @@ union Type {// 64 bit due to pointer! todo: i32 union, 4 bytes with special rang
 
     operator Kind() const { return this->kind; }
 
+    operator Primitive() const { return this->type; }
+
+    explicit
+    operator Node &() const {
+        if (this->value < 0x1000)
+            error("TODO mapTypeToNode");
+#if WASM
+            return *(Node*)(void*)(long)this->address;
+#else
+        error("Unknown mapping Type to Node");
+#endif
+    }
+
     operator chars() const { return typeName(this); }
 
-    Type(Type *o) {
-        value = o->value;
-    }
-
-    Type(Node *o) {
-        if (!o)
-            this->kind = Kind::nils;
-//			this->type=Type(Valtype::voids);
-//		if (o->kind)
-//		if (Double==*o)
-        this->kind = reals;
-    }
-
-    Type(const Node &o);
-
-    Type() {
-    }
-
-    Type(int value) {
-        this->value = value;
-    }
-
-    Type(Primitive primitive) {
-        type = primitive;
-    }
-
-    bool operator==(Type other) {
+    bool operator==(Type32 other) {
         return value == other.value;
+    }
+
+    bool operator==(Primitive other) {
+        return type == other;
+    }
+
+    bool operator==(long other) {
+        return value == other;
+    }
+
+    bool operator==(int other) {
+        return value == other;
+    }
+
+    bool operator==(short other) {
+        return value == other;
     }
 //	Type(Valtype valtype){
 //		value = valtype;// transparent subset equivalence
 //	}
 };
+
+typedef Type32 Type;
 
 
 enum Modifiers {

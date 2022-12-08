@@ -809,40 +809,6 @@ void testMergeWabtByHand() {
 }
 
 
-//testMerge
-void testWasmModuleExtension_OUTDATED() {
-    printf("testWasmModuleExtension");
-#ifndef RUNTIME_ONLY
-    clearAnalyzerContext();
-    clearEmitterContext();
-//	memoryHandling=0;
-    Node charged = analyze(parse("test:=42"));
-    breakpoint_helper
-    Code lib = emit(charged, 0, "");
-    lib.save("lib.wasm");
-
-    Module module = read_wasm("lib.wasm");
-    charged = analyze(parse("test"), *new Function{.name="main"});// call test() from lib
-    Code main = emit(charged, &module, "main");
-//	int ok1 = main.run();// todo: why not merge_wasm on emit? module data is all there? yeah but not in parsed Code … form
-//	check(ok1==42);
-    main.save("main.wasm");// this is NOT a valid wasm module, because all the indices are offset to the lib!
-
-// we do NOT wan't to add 10000 imports here, so that the indices match, do we?
-//	functionSignatures.clear();
-    Module prog = read_wasm("main.wasm");
-#if INCLUDE_MERGER
-    Code merged = merge_wasm(module, prog);
-    merged.save("merged.wasm");
-    read_wasm("merged.wasm");
-    int ok1 = merged.run();// why is wabt so SLOOOOW now??
-//	int ok = main.run();
-//  WASM module load failed: multiple memories  in w.m.r.
-    assert_equals(ok1, 42);
-#endif
-#endif
-}
-
 
 void testWasmRuntimeExtension() {
 
@@ -905,28 +871,6 @@ void testWasmRuntimeExtension() {
             assert_run("tests", 42);
     )
 }
-
-
-void testMergeRelocate() {
-#ifndef RUNTIME_ONLY
-// doesn't work: cannot insert imports or function types!
-//	emit("test");
-//	merge_files({"test.wasm", "test-lld-wasm/lib.wasm"});
-    Module lib = read_wasm("test/merge/lib.wasm");
-    Module main = read_wasm("test/merge/main.wasm");
-//	Module main=read_wasm("test.wasm");
-//main.
-#if INCLUDE_MERGER
-    Code merged = merge_wasm(lib, main);
-    merged.save("merged.wasm");
-    Module merged1 = read_wasm("merged.wasm");
-    merged.run();
-#endif
-//	wabt::Module *merged=merge_wasm(lib, main);
-//	save_wasm(merged, "prog.wasm");
-#endif
-}
-
 
 void testStringIndicesWasm() {
     assert_emit("'abcde'#4", 'd');//
