@@ -201,6 +201,17 @@ public:
 //        } while (item);
 //        va_end(args);
 //    }
+    List(S *args, int size, bool share = true) {
+        if (args == 0)return;
+        check_silent(size < LIST_DEFAULT_CAPACITY)
+        _size = size;
+        if (share)
+            items = args;
+        else {
+            items = (S *) calloc(sizeof(S), _size + 1);
+            memcpy(items, args, size);
+        }
+    }
 
     List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
         if (args == 0)return;
@@ -314,6 +325,12 @@ public:
             if (items[i] == s)return i;
             if (eq(items[i], s))return i;// char*
         }
+        return -1;
+    }
+
+    int position(S *s) {
+        for (int i = 0; i < _size; ++i)
+            if (&items[i] == s)return i;
         return -1;
     }
 

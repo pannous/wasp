@@ -1,5 +1,7 @@
 #pragma once
 
+#define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
+
 //#define min(a, b) (a < b ? a : b)
 static long min(long a, long b) { return (a < b ? a : b); }
 
@@ -8,12 +10,17 @@ static bool isnumber(char x){return x>='0' and x<='9';}
 #endif
 #define error(msg) error1(msg,__FILE__,__LINE__)
 #define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
-#define todo(msg) error1(str("TODO ") + msg,__FILE__,__LINE__)
 
 //typedef long long int64;  = 0x7E, in enum
 typedef unsigned long long uint64;
 
 static bool I_know_what_I_am_doing = false;
+
+#if RUNTIME_ONLY
+#define todo(msg)
+#else
+#define todo(msg) error1(str("TODO ") + msg,__FILE__,__LINE__)
+#endif
 
 #ifdef TRACE
 static bool tracing = true;
@@ -118,6 +125,7 @@ String extractPath(String file);
 bool isDir(const char *name);
 
 #define maxi(a, b) a<b?b:a
+
 //#define max(a, b) a<b?b:a too many conflicts with math.h common.h …
 static inline bool max(long a, long b) {
     return a < b ? b : a;
@@ -125,3 +133,9 @@ static inline bool max(long a, long b) {
 
 typedef String Path;
 
+#define quit(α) printf("quit %s",#α);breakpoint_helper;exit(42);
+//#include <cstdlib> // exit
+//static void quit(){
+//    breakpoint_helper;
+//    exit(42);
+//}
