@@ -328,6 +328,7 @@ bool Node::operator==(int other) {
 }
 
 bool Node::operator==(long other) {
+    if ((kind == strings or kind == unknown) and name.length == 0 and length == 0)return other == 0; // ""==0==ø
     if (kind == key and value.node and value.node->value.longy == other)return true;
     return (kind == longs and value.longy == other) or (kind == reals and value.real == other) or
            (kind == bools and value.longy == other);

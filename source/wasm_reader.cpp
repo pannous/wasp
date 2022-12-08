@@ -17,7 +17,7 @@
 String sectionName(Sections section);
 
 // compare with wasm-objdump -h
-bool debug_reader = false;
+bool debug_reader = true;//tracing;
 typedef unsigned char *bytes;
 int pos = 0;
 int size = 0;
@@ -30,7 +30,7 @@ byte *code;
 
 Valtype mapArgToValtype(String arg);
 
-#define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s:%d\n",__FILE__,__LINE__);exit(0);}
+#define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s\n%s:%d\n",#match,__FILE__,__LINE__);exit(0);}
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
     if (*pos + len > size)
@@ -128,6 +128,7 @@ void parseFunctionNames(Code &payload) {
         Function &function = module->functions[func];
         function.index = index;
         function.name = func;
+        if (debug_reader)printf("ƒ%d %s\n", index, func.data);
         if (module->functionIndices[func] > 0 and module->functionIndices[func] < function_count /*hack!*/) {
             if (module->functionIndices[func] == index)
                 continue; // identical match, lib parsed twice without cleaning module->functionIndices!?
@@ -396,13 +397,6 @@ void consumeExportSection() {
     module->export_data = exports_vector.rest();
     Code &payload = module->export_data;
     for (int i = 0; i < exportCount; i++) {
-        String func0 = name(payload).clone();
-        if (func0 == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
-        String func = demangle(func0);
-        Function &fun = module->functions[func];// demangled
-        Function &fun0 = module->functions[func0];// mangled
-        fun.name = func;
-        fun0.name = func0;
         int export_type = unsignedLEB128(
                 payload);// don't confuse with function_type if export_type==0 (function_export)
         int index = unsignedLEB128(payload);// for all types!
@@ -410,7 +404,16 @@ void consumeExportSection() {
         if (export_type == 2 /*memory*/) continue;
         if (export_type == 1 /*table*/) continue;
         if (export_type != 0 /*function export*/)continue;
+        String func0 = name(payload).clone();
+        if (func0 == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
+        String func = demangle(func0);
+        Function &fun = module->functions[func];// demangled
+        Function &fun0 = module->functions[func0];// mangled
+        fun.name = func;
+        fun0.name = func0;
         if (index < 0 or index > 100000)error("corrupt index "s + index);
+        if (debug_reader)printf("ƒ%d %s ≈ %s\n", index, func.data, func0.data);
+
         int code_index = index - module->import_count;
         module->functionIndices[func0] = index;// mangled
         module->functionIndices[func] = index;// demangled
@@ -420,7 +423,8 @@ void consumeExportSection() {
         // todo: demangling doesn't yield return type, is wasm_signature ok?
         fun.signature.type_index = funcType;
         fun0.signature.type_index = funcType;
-        check_silent(0 <= funcType and funcType <= module->funcTypes._size)
+        if (not(0 <= funcType and funcType <= module->funcTypes._size))
+            check_silent(0 <= funcType and funcType <= module->funcTypes._size)
         Signature &wasm_signature = module->funcTypes[funcType];
         Valtype returns = mapTypeToWasm(wasm_signature.return_types.last(Kind::undefined));
         if (wasm_signature.wasm_return_type == void_block) returns = void_block;
@@ -585,8 +589,8 @@ Module &read_wasm(bytes buffer, int size0) {
     pos = 0;
     code = buffer;
     size = size0;
-    consume(4, reinterpret_cast<byte *>(magicModuleHeader));
-    consume(4, reinterpret_cast<byte *>(moduleVersion));
+    consume(4, (byte *) (magicModuleHeader));
+    consume(4, (byte *) (moduleVersion));
     consumeSections();
     module->total_func_count = module->import_count + module->code_count;
     parseFuncTypeSection(module->functype_data);
@@ -595,20 +599,31 @@ Module &read_wasm(bytes buffer, int size0) {
     return *module;
 }
 
+//static
+Map<String, Module *> module_cache;
 Module &read_wasm(chars file) {
+    if (!s(file).endsWith(".wasm"))
+        file = concat(file, ".wasm");
 #if WASM
     return *new Module();
 #else
+    String name = file;
+    if (module_cache.has(name))
+        return *module_cache[name];
+
     if (debug_reader)printf("--------------------------\n");
-    if (debug_reader)printf("parsing: %s\n", file);
+    if (debug_reader)
+        printf("parsing: %s\n", file);
     size = fileSize(file);
     if (size <= 0)error("file not found: "s + file);
     bytes buffer = (bytes) alloc(1, size);// do not free
     FILE *stream = fopen(file, "rb");
     fread(buffer, sizeof(buffer), size, stream);
     Module &wasm = read_wasm(buffer, size);
+    wasm.code.name = name;
+    wasm.name = name;
     fclose(stream);
-    wasm.name = file;
+    module_cache.insert_or_assign(name, &wasm);
     return wasm;
 #endif
 }
