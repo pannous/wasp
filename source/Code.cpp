@@ -68,7 +68,7 @@ Code &signedLEB128(long value) {
 //	return code;
 //}
 //Code& encodeVector (Code& data) {
-Code encodeVector(Code data) {
+Code encodeVector(const Code &data) {
 //	return data.vector();
     if (data.encoded)return data;
     Code code = unsignedLEB128(data.length);
@@ -110,6 +110,24 @@ String sectionName(Sections section) {
     }
 }
 
+chars typeName(Primitive p) {
+    switch (p) {
+        case Primitive::array:
+            return "array";
+        case Primitive::charp:
+            return "char*";
+        case Primitive::node:
+            return "Node";
+        case Primitive::ignore:
+            return "«ignore»";// or "" ;)
+        case Primitive::todoe:
+            return "«todo»";
+        default:
+            error("missing name for Primitive %x "s % p + p);
+    }
+    return 0;
+}
+
 chars typeName(Valtype t, bool fail) {
     switch (t) {
         case Valtype::i32t:
@@ -120,13 +138,7 @@ chars typeName(Valtype t, bool fail) {
             return "f32";
         case Valtype::float64:
             return "f64";
-        case Valtype::array:
-            return "array";
-        case Valtype::charp:
-            return "char*";
-        case Valtype::node:
-            return "node";
-//		case Valtype::node_pointer:
+//		case Primitive::node_pointer:
 //			return "node";
         case Valtype::voids:
             return "void";
@@ -134,14 +146,13 @@ chars typeName(Valtype t, bool fail) {
             return "void_block";
         case Valtype::unknown_type:
             return "unknown";// internal
-        case Valtype::ignore:
-            return "«ignore»";// or "" ;)
-        case Valtype::todoe:
-            return "«todo»";
-        default:
+        default: {
+            chars s = typeName((Primitive) t);
+            if (s)return s;
 //			if (t==30)return "BUG!";// hide bug lol
             if (fail)
                 error("missing name for Valtype %x "s % t + t);
+        }
     }
     return 0;
 }
@@ -179,7 +190,7 @@ Valtype mapTypeToWasm(Node &n) {
     if (n == Double)
         return float64;
     if (n == Charpoint)
-        return codepoint32;
+        return (Valtype) codepoint32;
 
     if (n.type and n.type != n)
         return mapTypeToWasm(*n.type);
@@ -207,9 +218,10 @@ Valtype mapTypeToWasm(Node &n) {
 //	if (n.kind == reals)return float32;// float64; todo why 32???
     if (n.kind == reals)return float64;
     if (n.kind == longs)return int32;// int64; todo!!
-    if (n.kind == reference)return pointer;// todo? //	if and not functionIndices.has(n.name)
-    if (n.kind == strings)return stringp;// special internal Valtype, represented as i32 index to data / pointer!
-    if (n.kind == objects)return array;// todo
+    if (n.kind == reference)return (Valtype) pointer;// todo? //	if and not functionIndices.has(n.name)
+    if (n.kind == strings)
+        return (Valtype) stringp;// special internal Valtype, represented as i32 index to data / pointer!
+    if (n.kind == objects)return (Valtype) array;// todo
 //	if (n.kind.type == int_array)return array;// todo
     if (n.kind == call) {
         List<Type> &returnTypes = functions[n.name].signature.return_types;
@@ -220,7 +232,7 @@ Valtype mapTypeToWasm(Node &n) {
     }
     if (n.kind == key and n.value.data) return mapTypeToWasm(*n.value.node);
     //	if (n.kind == key and not n.value.data)return array;
-    if (n.kind == groups)return array;// uh todo?
+    if (n.kind == groups)return (Valtype) array;// uh todo?
     if (n.kind == flags) return int64;
     if (n.kind == enums) return int64;
     if (n.kind == unknown) return int32;// blasphemy!
@@ -232,11 +244,11 @@ Valtype mapTypeToWasm(Node &n) {
     if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
     n.print();
     error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
-    return none;
+//    return none;
 }
 
-Code createSection(Sections sectionType, Code data) {
-    return Code((char) sectionType, encodeVector(data));
+Code createSection(Sections sectionType, const Code &data) {
+    return {(char) sectionType, encodeVector(data)};
 }
 
 
@@ -298,7 +310,7 @@ short lebByteSize(long long aleb) {
         if ((val == 0 && clear) || (val == -1 && set))
             more = 0;
         else {
-            b |= 0x80;// continuation bit:  set high order bit of byte;
+            b |= 0x80;// todo NEVER USED!! continuation bit:  set high order bit of byte;
         }
         size++;
     }

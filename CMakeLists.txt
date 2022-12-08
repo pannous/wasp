@@ -250,21 +250,12 @@ if (RUNTIME_ONLY)
     set(INCLUDE_MERGER 0)
 else ()
     message("NOT RUNTIME_ONLY")
-    set(INCLUDE_MERGER 0)
     set(SOURCE_FILES ${SOURCE_FILES} source/Code.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/Interpret.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_emitter.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/WitReader.h)
-    if (WABT_MERGE)
-        set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt/src/ Frameworks/include/wabt ./source/wasm_merger_wabt.cpp ./source/wasm_reader_wabt.cpp)
-        set(SOURCE_FILES ${SOURCE_FILES} ./Frameworks/wabt_merge/binary-reader-linker.cc)
-        set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp) # for meta
-        set(SOURCE_FILES ${SOURCE_FILES} source/wasm_merger.cpp) # for old mechanism
-    else ()
-        set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp source/wasm_merger.cpp)
-    endif ()
-
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp)
 endif ()
 
 #
@@ -527,7 +518,7 @@ if (CONSOLE)
     TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
 endif ()
 add_compile_options(-Werror=bugprone-sizeof-expression)
-
+add_compile_options(-Wno-tautological-constant-out-of-range-compare) # todo remove
 set(SANITIZE 1)
 if (SANITIZE OR TRACE) # or TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.

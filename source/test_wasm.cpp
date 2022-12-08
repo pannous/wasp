@@ -894,7 +894,7 @@ void testWasmRuntimeExtension() {
 //	assert_run("oki(1)", 43);
 //	assert_emit("puts('123'+'456');", 123456);// via import not via wasp!
 //assert_emit("grow := it * 2 ; grow(4)", 8)
-//	check(Valtype::charp!=Valtype::pointer)
+//	check(Primitive::charp!=Valtype::pointer)
 
     skip(
             assert_run("'123'", 123);// result printed and parsed?
