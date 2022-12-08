@@ -1,0 +1,18 @@
+[package]
+name = "tutorial-01"
+version = "0.1.0"
+edition = "2021"
+description = "A simple calculator"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wai-bindgen-rust = "0.2.1"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[package.metadata.wapm]
+namespace = "pannous"  # The namespace to publish it to
+abi = "none" # How to compile the crate. "none" is "wasm32-unknown-unknown"
+bindings = { wai-version = "0.2.0", exports = "calculator.wai" }
