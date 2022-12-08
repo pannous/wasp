@@ -43,15 +43,17 @@ namespace wabt {
 		};
 
 		struct FunctionImport {
-			String module_name;
-			String name;
-			Index sig_index;
-			bool active; /* Is this import present in the linked binary */
-			Index relocated_function_index;
-			LinkerInputBinary *foreign_binary;
-			Index foreign_index;
-			ExportInfo *linked_function;
-		};
+            String module_name;
+            String name;
+            Index type_index;
+            bool active; /* Is this import present in the linked binary */
+            LinkerInputBinary *binary;// original, may be relinked to
+            LinkerInputBinary *foreign_binary;
+            Index relocated_function_index;
+            Index index;// implicit in list, but needed to link duplicate imports
+            Index foreign_index;// after link to foreign export
+            ExportInfo *linked_function;
+        };
 
 		struct GlobalImport {
 			String module_name;

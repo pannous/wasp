@@ -520,7 +520,7 @@ const wasm_functype_t *funcType(Signature &signature) {
 	wasm_valtype_t *f = wasm_valtype_new(WASM_F32);
 	wasm_valtype_t *f1 = wasm_valtype_new(WASM_F32);
 	wasm_valtype_t *F = wasm_valtype_new(WASM_F64);
-	int param_count = signature.types.size();
+    int param_count = signature.parameter_types.size();
 	// todo multi-value
 	auto returnType = signature.return_types.last(none);
 	if (param_count == 0) {
@@ -535,17 +535,17 @@ const wasm_functype_t *funcType(Signature &signature) {
 		}
 	}
 	if (param_count == 1) {
-		switch (signature.types[0]) {
-			case charp:
-			case f32:
-				switch (returnType) {
-					case none:
-					case voids:
-						return wasm_functype_new_1_0(f);
-					case f32:
-						return wasm_functype_new_1_1(f, f1);
-					default:
-						break;
+        switch (signature.parameter_types[0]) {
+            case charp:
+            case f32:
+                switch (returnType) {
+                    case none:
+                    case voids:
+                        return wasm_functype_new_1_0(f);
+                    case f32:
+                        return wasm_functype_new_1_1(f, f1);
+                    default:
+                        break;
 				}
 			case f64:
 				switch (returnType) {

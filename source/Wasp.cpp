@@ -15,7 +15,6 @@ bool isnumber(char c){ return c>='0' and c<='9'; }
 #else
 #include <cctype> // isnumber
 #endif
-
 #include <cstdlib> // OK in WASM!
 
 

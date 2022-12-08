@@ -135,9 +135,9 @@ namespace wabt {
 				binary_->function_imports.emplace_back();
 				FunctionImport *import = &binary_->function_imports.back();
 				import->module_name = module_name.data;
-				import->name = field_name.data;
-				import->sig_index = sig_index;
-				import->active = true;
+                import->name = field_name.data;
+                import->type_index = sig_index;
+                import->active = true;
 				binary_->active_function_imports++;
 				return Result::Ok;
 			}

@@ -801,7 +801,7 @@ public:
 
 //    List<Argument> params; :
     List<String> parameter_names;// per function 😕
-    List<Type> types;// implicit index
+    List<Type> parameter_types;// implicit index
 
     List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
 //	Type return_type{};// use return_types.last(default)
@@ -816,8 +816,8 @@ public:
 #endif
 
     bool operator==(Signature other) {
-        for (int i = 0; i < types.size(); ++i) {
-            if (types[i] != other.types[i])
+        for (int i = 0; i < parameter_types.size(); ++i) {
+            if (parameter_types[i] != other.parameter_types[i])
                 return false;
         }
         if (return_types != other.return_types)
@@ -862,7 +862,7 @@ public:
 //	}
 
     int size() {
-        return types.size();
+        return parameter_types.size();
     }
 
     Signature &add(Valtype t, String name = "?") {
@@ -870,7 +870,7 @@ public:
         debug_name += typeName(t);
         debug_name += " ";
 #endif
-        types.add(t);
+        parameter_types.add(t);
         parameter_names.add(name);
         return *this;
     }
@@ -881,7 +881,7 @@ public:
         debug_name += typeName(t);
         debug_name += " ";
 #endif
-        types.add(t);
+        parameter_types.add(t);
         parameter_names.add(name);
         return *this;
     }
@@ -951,8 +951,8 @@ public:
         wasm_return_type = s.wasm_return_type;
         if (return_types.empty())
             return_types = s.return_types;// todo copy construktor OK??
-        if (types.empty())
-            types = s.types;
+        if (parameter_types.empty())
+            parameter_types = s.parameter_types;
     }
 
     bool has(String string) {

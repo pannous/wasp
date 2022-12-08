@@ -460,6 +460,7 @@ Index LinkerInputBinary::RelocateFuncIndex(Index function_index) {
             return new_index;
         }
     }
+    // ok offset can be 0
     return function_index + offset;
 }
 
@@ -675,7 +676,7 @@ void Linker::WriteFunctionImport(const FunctionImport &import, Index offset) {
     WriteStr(&stream_, import.module_name, "import module name");
     WriteStr(&stream_, import.name, "import field name");
     stream_.WriteU8Enum(ExternalKind::Func, "import kind");
-    WriteU32Leb128(&stream_, import.sig_index + offset, "import signature index");
+    WriteU32Leb128(&stream_, import.type_index + offset, "import signature index");
 }
 
 void Linker::WriteGlobalImport(const GlobalImport &import) {
@@ -917,13 +918,35 @@ void Linker::ResolveSymbols() {
     std::vector<ExportInfo> export_list;
     std::vector<ExportInfo> globals_export_list;
     std::vector<FuncInfo> func_list;// internal index identical to func_map index!!
-    std::vector<FuncInfo> import_list;//
+//    std::vector<FuncInfo> import_list;//
+    Map<String, FunctionImport *> import_map;// currently only used to find duplicates FuncInfo
+
 
 // binary->functions not filled yet!
     for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
         printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
         unsigned long nr_imports = binary->function_imports.size();
 
+        // FIND DUPLICATE imports (no other purpose for now!)
+        int import_index = 0;
+        for (auto &import: binary->function_imports) {
+            if (import_map.has(import.name)) {
+                warn("DUPLICATE import "s + import.name);// todo: check signatures
+                import.active = false;
+                FunctionImport *&previous_import = import_map[import.name];
+                import.foreign_binary = previous_import->binary;
+                import.foreign_index = previous_import->index;
+//                auto *hack = new ExportInfo(new Export{.index=previous_import->sig_index}, previous_import->binary);
+//                import.linked_function= hack;
+                binary->active_function_imports--;
+            } else {
+                if (import.foreign_binary)
+                    error("my a");
+                import.binary = binary.get(); // todo earlier
+                import.index = import_index++;// only increase if active / not duplicate
+                import_map.add(import.name, &import);
+            }
+        }
 //        int pos = 0;
         for (const Export &_export: binary->exports) {// todo: why not store index directly?
 //            pos++;
@@ -932,8 +955,7 @@ void Linker::ResolveSymbols() {
                        _export.index);
             if (export_map.FindIndex(_export.name) != kInvalidIndex) {
 //                error
-                warn
-                        ("duplicate export name "s + _export.name);// Ignoring
+                warn("duplicate export name "s + _export.name);// Ignoring
 //                continue;
 //				binary->exports.erase(binary->exports.begin() + pos);
             }
@@ -948,9 +970,10 @@ void Linker::ResolveSymbols() {
                     func.name = _export.name;
                 if (func.name.length > 0) {
                     export_map.emplace(func.name, Binding(position));
-                    const String &demangled = demangle(func.name);
-                    if (func.name != demangled and not export_map.contains(demangled))
+                    String demangled = demangle(func.name);
+                    if (func.name != demangled and not export_map.contains(demangled)) {
                         export_map.emplace(demangled, Binding(position));
+                    }
                 }
             } else {
                 export_list.emplace_back(&_export, binary.get());
@@ -1018,7 +1041,7 @@ void Linker::ResolveSymbols() {
                 Index export_index = export_info.export_->index;
                 int nr_imports = export_info.binary->function_imports.size();
                 Func &exported = export_info.binary->functions[export_index - nr_imports];
-                Index old_index = import.sig_index;
+                Index old_index = import.type_index;
                 import.active = false;
                 import.foreign_binary = export_info.binary;
                 import.linked_function = &export_info;
@@ -1476,16 +1499,18 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
             WABT_FATAL("unhandled relocation type: %d\n", r->type);// GetRelocTypeName(r->type));
             // uh much to do!
     }
-    // THIS Write only makes sense for LEB types!
-    short current_size = lebByteSize((unsigned long) cur_value);
-    short new_size = lebByteSize((unsigned long) new_value);
-    if (new_size > current_size) {
-        uint8_t noper = *(section_start + r->offset + current_size);
-        if (noper != nop)
-            todo("grow big leb values");
-    }// memory messed up by now
-    if (new_value >= 0)
+    if (new_value >= 0) {
+        // THIS Write only makes sense for LEB types!
+        short current_size = lebByteSize((unsigned long) cur_value);
+        short new_size = lebByteSize((unsigned long) new_value);
+        if (new_size > current_size) {
+            uint8_t noper = *(section_start + r->offset + current_size);
+            if (noper != nop)
+                todo("grow big leb values %d >> %d (%d bytes > %d leb bytes)"s % new_value % cur_value % new_size %
+                     current_size);
+        }// memory messed up by now
         WriteU32Leb128Raw(section_start + r->offset, section_end, new_value);
+    }
 
     //			data.insert(data.begin() + section->offset + r->offset, new_value);// this messes up the DATA section somehow!
 //			std::vector<unsigned char> neu = lebVector(new_value);//  Code((long)new_value);

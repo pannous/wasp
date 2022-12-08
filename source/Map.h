@@ -277,6 +277,10 @@ public:
         if (_size == 0)error("no last item in empty map");
         return values[_size - 1];
     }
+
+    List<T> valueList() {
+        return List<T>(values, size());
+    }
 };
 
 void print(Map<String, int> map);
