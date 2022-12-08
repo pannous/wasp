@@ -131,16 +131,31 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
 
-// Todo these should NOT appear as Node.kind!
+// Raw types as encountered in C/C++ ABI
 // unboxed primitive raw data (list is compatible with List though!)
+// Todo these should NOT appear as Node.kind except for Node{value.data=Address<Primitive>}
 // todo use NodeTypes.h Type for smart-pointers :
 //	https://github.com/pannous/angle/wiki/smart-pointer
+// todo: move all Valtype hacks here!
 enum Primitive {
+//   redundant Valtype overlap
     wasm_leb = 0x77,
     wasm_float64 = 0x7C,
     wasm_f32 = 0x7d,
     wasm_int64 = 0x7E, // AS OPPOSED TO longs signed or unsigned? we don't care
     wasm_int32 = 0x7f,  // make sure to not confuse these with boxed Number nodes of kind longs, reals!
+
+    codepoint32 = wasm_int32,
+    pointer = wasm_int32,// 0xF0, // internal todo: int64 on wasm-64
+    node_pointer = wasm_int32,
+//	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
+    node = 0xA0,
+    angle = 0xA0,//  angle object pointer/offset versus smarti vs anyref
+    any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
+//	unknown = any,
+    array = 0xAA,
+    charp = 0xC0, // vs
+    stringp = 0xC0,// use charp?  pointer? enough?? no!??
 //	floats = 0x1010, // only useful for main(), otherwise we can return real floats or wrapped Node[reals]
 //	codepoint32 = int32, todo via map
 //	pointer = int32,// 0xF0, // internal
@@ -160,6 +175,19 @@ enum Primitive {
 //	ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
 ////	smarti32 = 0xF3,// see smartType
 ////	smarti64 = 0xF6,
+    todoe = 0xFE, // todo
+    ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
+
+    // todo: different levels
+//  error_header_4 = 0xE check(type >> 28 == error_header_4 )  / type64 >> 60
+//	error8 = 0xE0, why propagate?
+//	error_mask_32   = 0xEF000000
+//	error_header_32 = 0xE0000000   check(type & error_mask_32 = error_header_32)
+//	error_header_64 = 0xE000000000000000
+//	error_mask_60   = 0xEF00000000000000 NO, we split in type32 BEFORE!
+
+//	pointer = 0xF0,
+//	externalPointer = 0xFE,
 
     byte_i8 = 0xB0, // when indexing uint8 byte array.
     byte_char = 0xBC, // when indexing ascii array. todo: maybe codepoint into UTF8!?
@@ -174,33 +202,33 @@ enum Primitive {
     int_array = 0xA07f, // primitive, unboxed, no length!?
     long_array = 0xA07e,
     float_array = 0xA07d,
-	real_array = 0xA07c,
+    real_array = 0xA07c,
 //	longs_array= 0xA00E, todo: boxed Node{kind=longs}
 //	reals_array= 0xA00C, todo: boxed Node{kind=reals}
 //	byte_list = 0xB000, // not 0 terminated, length via 3rd return item??
 //	byte_vector = 0xB001, // LEB encoded length header
 //    block = 0xB000,
-	c_string = 0xC000, // pointer to utf-8 bytes in wasm's linear memory, 0 terminated
-	leb_string = 0xC001, // LEB encoded length header -> wasm_string
-	utf16_string = 0xC016, // pointer to utf-16 bytes in wasm's linear memory, 0.0 terminated
-	utf32_string = 0xC032, // pointer to utf-16 bytes in wasm's linear memory, 0.0 terminated
-	json5_string = 0xC005,
-	json_string = 0xC010,
-	wasp_string = 0xC0D0, // serialized Node ≠ Node address
-	wasp_data_string = 0xC0DA, // serialized Node ≠ Node address
-	wasp_code_string = 0xC0DE, // charged data, see https://github.com/pannous/wasp/wiki/charged
+    c_string = 0xC000, // pointer to utf-8 bytes in wasm's linear memory, 0 terminated
+    leb_string = 0xC001, // LEB encoded length header -> wasm_string
+    utf16_string = 0xC016, // pointer to utf-16 bytes in wasm's linear memory, 0.0 terminated
+    utf32_string = 0xC032, // pointer to utf-16 bytes in wasm's linear memory, 0.0 terminated
+    json5_string = 0xC005,
+    json_string = 0xC010,
+    wasp_string = 0xC0D0, // serialized Node ≠ Node address
+    wasp_data_string = 0xC0DA, // serialized Node ≠ Node address
+    wasp_code_string = 0xC0DE, // charged data, see https://github.com/pannous/wasp/wiki/charged
 //	maps, // our custom Map object todo: remove?
 
 // 🔋 main type of all non-primitive objects
-	nodes = 0xD000, // address of a Node in linear memory
+    nodes = 0xD000, // address of a Node in linear memory
 //	data = 0xDADA, // address of a Node in linear memory
 //	dada = 0xDADA, // address of a Node in linear memory
 
 //	three3D = 0xDA3D, // binary encoded three dimensional object
-	result_error = 0xE000, // different from well typed Nodes of kind 'error' and exceptions
-	fointer = 0xF000, // see Addresses starting from 0x10000
+    result_error = 0xE000, // different from well typed Nodes of kind 'error' and exceptions
+    fointer = 0xF000, // see Addresses starting from 0x10000
 //	⚠️ fointers are combinatorial:
-	fointer_of_int32 = 0xF07F, // int* etc
+    fointer_of_int32 = 0xF07F, // int* etc
 //	fointer_of_int32 = 0xFA7F, // int[]* etc
 //	ffointer = 0xFF00, // pointer pointer
 //	ffointer_of_int32 = 0xFF7F, // int** etc
@@ -257,26 +285,26 @@ union Type {// 64 bit due to pointer! todo: i32 union, 4 bytes with special rang
         if ((int) kind > 0x1000)error("erroneous or unsafe Type construction");
     }
 
-	operator int() const { return this->value; }
+    operator int() const { return this->value; }
 
-	operator Kind() const { return this->kind; }
+    operator Kind() const { return this->kind; }
 
-	operator chars() const { return typeName(this); }
+    operator chars() const { return typeName(this); }
 
-	Type(Type *o) {
-		value = o->value;
-	}
+    Type(Type *o) {
+        value = o->value;
+    }
 
-	Type(Node *o) {
-		if (!o)
-			this->kind = Kind::nils;
+    Type(Node *o) {
+        if (!o)
+            this->kind = Kind::nils;
 //			this->type=Type(Valtype::voids);
 //		if (o->kind)
 //		if (Double==*o)
-		this->kind = reals;
-	}
+        this->kind = reals;
+    }
 
-	Type(const Node &o);
+    Type(const Node &o);
 
     Type() {
     }
@@ -299,10 +327,10 @@ union Type {// 64 bit due to pointer! todo: i32 union, 4 bytes with special rang
 
 
 enum Modifiers {
-	final,
-	constant,
+    final,
+    constant,
 //	undefined,
-	missing,
+    missing,
     unknowns,
     privates,
     protecteds,

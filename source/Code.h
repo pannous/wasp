@@ -42,7 +42,7 @@ extern "C" long run_wasm_file(chars wasm_path);
 extern bytes magicModuleHeader;
 extern bytes moduleVersion;
 
-Code encodeVector(Code data);
+Code encodeVector(const Code &data);
 
 Code &unsignedLEB128(long n);
 
@@ -413,23 +413,23 @@ enum Valtype {
     // todo Signatures need a real Type, not a Valtype!
     // todo use NodeTypes.h Type for this:
     //	https://github.com/pannous/angle/wiki/smart-pointer
-    codepoint32 = int32,
-    pointer = int32,// 0xF0, // internal todo: int64 on wasm-64
-    node_pointer = int32,
-//	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
-    node = 0xA0,
-    angle = 0xA0,//  angle object pointer/offset versus smarti vs anyref
-    any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
-//	unknown = any,
-    array = 0xAA,
-    charp = 0xC0, // vs
-    stringp = 0xC0,// use charp?  pointer? enough?? no!??
-//	value = 0xA1,// wrapped node Value, used as parameter? extract and remove! / ignore
-    todoe = 0xFE, // todo
-//	error_ = 0xE0, why propagate?
-//	pointer = 0xF0,
-//	externalPointer = 0xFE,
-    ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
+//    codepoint32 = int32,
+//    pointer = int32,// 0xF0, // internal todo: int64 on wasm-64
+//    node_pointer = int32,
+////	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
+//    node = 0xA0,
+//    angle = 0xA0,//  angle object pointer/offset versus smarti vs anyref
+//    any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
+////	unknown = any,
+//    array = 0xAA,
+//    charp = 0xC0, // vs
+//    stringp = 0xC0,// use charp?  pointer? enough?? no!??
+////	value = 0xA1,// wrapped node Value, used as parameter? extract and remove! / ignore
+//    todoe = 0xFE, // todo
+////	error_ = 0xE0, why propagate?
+////	pointer = 0xF0,
+////	externalPointer = 0xFE,
+//    ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
 //	smarti32 = 0xF3,// see smartType
 //	smarti64 = 0xF6,
 };
@@ -961,6 +961,24 @@ public:
 
     Signature clone() {
         return *this;
+    }
+
+    String serialize() {
+        String s;
+//        s+=functions
+        s += "(";
+        for (int i = 0; i < parameter_types.size(); ++i) {
+            if (i > 0)s += ",";
+            s += " "s + typeName(parameter_types[i]);
+            s += " "s + parameter_names[i];
+        }
+        s += ")";
+        if (not return_types.empty()) {
+            s += " ⇨";
+            for (Type type: return_types)
+                s += " "s + typeName(type);
+        }
+        return s;
     }
 };
 
