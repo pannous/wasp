@@ -9,15 +9,14 @@
 #include "wasm_runner.h"
 #include "console.h"
 //#include "tests.h"
-#if WASM
+#if WASM or LINUX
 bool isnumber(char c){ return c>='0' and c<='9'; }
 // why cctype no work?
 #else
-
 #include <cctype> // isnumber
-
 #endif
-//#include <cstdlib> // OK in WASM!
+
+#include <cstdlib> // OK in WASM!
 
 
 #ifndef PURE_WASM
@@ -2063,11 +2062,11 @@ int main(int argc, char **argv) {
 #ifndef WASI
 //#ifndef RUNTIME_ONLY
 //extern int main(int argp, char **argv);
-extern "C" int _start() { // for wasm-ld
-    initSymbols();
-    return -42;// wasm-ld dummy should not be called, ok to test run_wasm("wasp.wasm")
-//	return main(0, 0);
-}
+//extern "C" int _start() { // for wasm-ld
+//    initSymbols();
+//    return -42;// wasm-ld dummy should not be called, ok to test run_wasm("wasp.wasm")
+////	return main(0, 0);
+//}
 //#endif
 #endif
 
