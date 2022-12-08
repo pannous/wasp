@@ -191,6 +191,7 @@ public:
     int node_header = node_header_32;
     int length = 0;// children
     Node *type = 0;// variable/reference type or object class?
+    Type64 type6;
     Node *children = nullptr;// LIST, not link. block body content
     Value value{
             0}; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?

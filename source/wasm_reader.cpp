@@ -28,7 +28,7 @@ byte *code;
 //extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 
 
-Valtype mapArgToValtype(String arg);
+Valtype mapArgToValtype(String &arg);
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s\n%s:%d\n",#match,__FILE__,__LINE__);exit(0);}
 

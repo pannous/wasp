@@ -18,6 +18,7 @@
 #include "wasm_reader.h"
 
 #include <map>
+#include <utility>
 #include "Map.h"
 #include "wasm_patcher.h"
 //#include "wasm_reader.h"
@@ -319,8 +320,8 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 
 // DANGER: modifies the start reader position of code, but not it's data!
 [[nodiscard]]
-int unsignedLEB128(bytes section_data, int length, int &start) {
-    int n = 0;
+long unsignedLEB128(bytes section_data, int length, int &start) {
+    long n = 0;
     short shift = 0;
     do {
         byte b = section_data[start++];
@@ -350,8 +351,8 @@ long unsignedLEB128(std::vector<byte> &section_data, int max_length, int &start_
     return unsignedLEB128(section_data, max_length, start);// keep start_reference untouched!
 }
 
-int unsignedLEB128(Code section_data, int length, int &start) {
-    int n = 0;
+long unsignedLEB128(Code section_data, int length, int &start) {
+    long n = 0;
     short shift = 0;
     do {
         byte b = section_data[start++];
@@ -382,9 +383,9 @@ Section::~Section() {
     }
 }
 
-LinkerInputBinary::LinkerInputBinary(const char *filename, const std::vector<uint8_t> &data)
+LinkerInputBinary::LinkerInputBinary(const char *filename, std::vector<uint8_t> data)
         : name(filename),
-          data(data),
+          data(std::move(data)),
           active_function_imports(0),
           active_global_imports(0),
           type_index_offset(0),
@@ -396,7 +397,7 @@ LinkerInputBinary::LinkerInputBinary(const char *filename, const std::vector<uin
           table_elem_count(0) {}
 
 
-bool LinkerInputBinary::IsFunctionImport(Index index) {
+bool LinkerInputBinary::IsFunctionImport(Index index) const {
 //	assert(IsValidFunctionIndex(index));
     return index < function_imports.size();
 }
@@ -405,7 +406,7 @@ bool LinkerInputBinary::IsInactiveFunctionImport(Index index) {
     return IsFunctionImport(index) && !function_imports[index].active;
 }
 
-bool LinkerInputBinary::IsValidFunctionIndex(Index index) {
+bool LinkerInputBinary::IsValidFunctionIndex(Index index) const {
     return index < function_imports.size() + function_count;
 }
 
@@ -460,15 +461,15 @@ Index LinkerInputBinary::RelocateFuncIndex(Index function_index) {
     return function_index + offset;
 }
 
-Index LinkerInputBinary::RelocateTypeIndex(Index type_index) {
+Index LinkerInputBinary::RelocateTypeIndex(Index type_index) const {
     return type_index + type_index_offset;
 }
 
-Index LinkerInputBinary::RelocateMemoryIndex(Index memory_index) {
+Index LinkerInputBinary::RelocateMemoryIndex(Index memory_index) const {
     return memory_index + memory_page_offset * 65536;
 }
 
-Index LinkerInputBinary::RelocateTable(Index global_index) {
+Index LinkerInputBinary::RelocateTable(Index global_index) const {
     if (needs_relocate)
         todo("RelocateTable");
     else return global_index;// shouldn't reach this anyways
@@ -539,7 +540,7 @@ private:
     void DumpRelocOffsets();
 
     MemoryStream stream_;
-    std::vector<std::unique_ptr<LinkerInputBinary>> inputs_;
+    std::vector<std::unique_ptr<LinkerInputBinary>> inputs_{};
     ssize_t current_payload_offset_ = 0;
 
     Section *getSection(std::unique_ptr<LinkerInputBinary> &uniquePtr, SectionType section);
@@ -897,8 +898,8 @@ bool Linker::WriteCombinedSection(SectionType section_code, const SectionPtrVect
 struct FuncInfo {
     FuncInfo(const Func *export_, LinkerInputBinary *binary) : func(export_), binary(binary) {}
 
-    const Func *func;
-    LinkerInputBinary *binary;
+    const Func *func{};
+    LinkerInputBinary *binary{};
 };
 
 void Linker::ResolveSymbols() {
@@ -1240,7 +1241,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
     int length = binary_data.size();
     size_t section_offset = section->offset;// into binary data
     int current_offset = section_offset;
-    int function_count = unsignedLEB128(binary_data, length, current_offset, true);
+    long function_count = unsignedLEB128(binary_data, length, current_offset, true);
 //	DataSegment section_data = ;// *pSection->data.data_segments->data();
 //    Index binary_delta = binary->delta;
     size_t section_size = section->size;
