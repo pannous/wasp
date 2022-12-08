@@ -775,15 +775,22 @@ Code emitIndexWrite(Node &array, int base, Node offset, Node value0, Function &c
 //	store.add(cast(last_type, valType));
 //	store.add(cast(valType, targetType));
     store.add(cast(last_type, targetType));
-
+    store.addByte(nop);// reloc padding
+    store.addByte(nop);
+    store.addByte(nop);
+    store.addByte(nop);
     if (size == 1)store.add(i8_store);
     if (size == 2)store.add(i16_store);
     if (size == 4)store.add(i32_store);
     if (size == 8)store.add(i64_store);
     //	The static address offset is added to the dynamic address operand
-    store.add(size > 2 ? 0x02 : 0);// alignment (?) "alignment must not be larger than natural" size > 2 ? 0x02 :
+    store.add(size > 2 ? 0x02 : 0);// alignment (?) "alignment must not be larger than natural"
     store.add(0);// extra offset (why, wasm?)
 //	store.add(base);// extra offset (why, wasm?)
+    store.addByte(nop);// reloc padding
+    store.addByte(nop);
+    store.addByte(nop);
+    store.addByte(nop);
 
     return store;
 /*  000101: 41 94 08                   | i32.const 1044
@@ -832,6 +839,10 @@ Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_sta
     int size = currentStackItemSize(array, context);
     Node &pattern = op.first();
     Code load = emitOffset(array, pattern, op.name == "#", context, size, base, base_on_stack);
+    load.addByte(nop);// reloc padding
+    load.addByte(nop);
+    load.addByte(nop);
+    load.addByte(nop);
     if (size == 1)load.add(i8_load);// i32.load8_u
     if (size == 2)load.add(i16_load);
     if (size == 4)load.add(i32_load);
@@ -839,6 +850,10 @@ Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_sta
     // memarg offset u32 align u32 DOESNT FIT:!?!
     load.add(size > 2 ? 0x02 : 0);// alignment (?)
     load.add(0x00);// ?
+    load.addByte(nop);
+    load.addByte(nop);
+    load.addByte(nop);
+    load.addByte(nop);
 
     // careful could also be uint8!
     if (size == 1) {
@@ -917,13 +932,21 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
         error("why not on stack?");
         load = load + emitOffset(array, pattern, op.name == "#", context, size, base, base_on_stack);
     }
-
+    load.addByte(nop);
+    load.addByte(nop);// reloc padding
+    load.addByte(nop);
+    load.addByte(nop);
     if (size == 1)load.add(i8_load);
     if (size == 2)load.add(i16_load);
     if (size == 4)load.add(i32_load);
     if (size == 8)load.add(i64_load);
     load.add(size > 2 ? 0x02 : 0);// alignment (?)
     load.add(0x00);// ?
+    load.addByte(nop);// reloc padding
+    load.addByte(nop);
+    load.addByte(nop);
+    load.addByte(nop);
+
 //	if (size == 1)last_type = codepoint32;// todo only if accessing codepoints, not when pointing into UTF8 byte!!
     if (size == 1) {
         last_typo = byte_char;
@@ -1445,6 +1468,7 @@ Code emitStringOp(Node &op, Function &context) {
     if (op == "+") {
         op = Node("_Z6concatPKcS0_");//demangled on readWasm, but careful, other signatures might overwrite desired one
         last_type = stringp;
+        functions["_Z6concatPKcS0_"].is_used = true;// too late imports must be known through analyzer
         functions["_Z6concatPKcS0_"].signature.returns(charp);// hack
 //		op = Node("_Z6concatPKcS0_");//concat c++ mangled export:
 //		op = Node("concat_char_const*__char_const*_");// wat name if not stripped in lib release build
@@ -1774,7 +1798,7 @@ Code emitCall(Node &fun, Function &context) {
         code.push(emitExpression(arg, context));
 //		Valtype argType = mapTypeToWasm(arg); // todo ((+ 1 2)) needs deep analysis, or:
         Valtype argType = last_type;// evaluated expression smarter than node arg!
-        Type &sigType = signature.types[i++];
+        Type &sigType = signature.parameter_types[i++];
         Valtype valtype = mapTypeToWasm(sigType);
         if (valtype != argType)
             code.push(cast(argType, valtype));
@@ -2294,7 +2318,7 @@ Code emitTypeSection() {
         Code td = Code(func) + Code(param_count);
 
         for (int i = 0; i < param_count; ++i) {
-            td = td + Code(fixValtype(mapTypeToWasm(signature.types[i])));
+            td = td + Code(fixValtype(mapTypeToWasm(signature.parameter_types[i])));
         }
         td.addByte(signature.return_types.size());
         for (Type ret: signature.return_types) {

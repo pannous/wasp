@@ -35,9 +35,8 @@ List<String> class_keywords = {"struct", "type", "class", "prototype",
 Map<String, Function> functions;
 // todo ONLY emit of main module! for funcs AND imports, serialized differently (inline for imports and extra functype section)
 //Map<String, Function> library_functions; see:
-List<Module *> libraries;// from (automatic) import statements e.g. import math; use log; …
-//List<Code*> merge_module_binaries;
-Map<String, bool> module_done;
+List<Module *> libraries;// used modules from (automatic) import statements e.g. import math; use log; …  ≠
+// functions of preloaded libraries are found WITHOUT `use` `import` statement (as in Swift) !
 
 Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
@@ -142,8 +141,8 @@ bool isFunction(String op) {
     if (functions.has(op))return true;// pre registered signatures
     if (op.in(function_list))
         return true;
-    if (findLibraryFunction(op, false))
-        return true;// linear lookup ok as long as #functions < 1000 ?
+    if (findLibraryFunction(op, true))
+        return true;// linear lookup ok as long as #functions < 1000 ? nah getting SLOW QUICKLY!!
 //	if(op.in(functor_list))
 //		return true;
     return false;
@@ -805,7 +804,8 @@ Node &groupOperators(Node &expression, Function &context) {
         if (expression.name == "include") {
             warn(expression.serialize());
             Node &file = expression.values();
-            loadModule(file.name);
+            Module &mod = loadModule(file.name);
+            libraries.add(&mod);
             return NUL;
         }
 //		else todo("ungrouped dangling operator");
@@ -824,8 +824,10 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op == "-…") op = "-";// precedence hack
 
 //        todo op=use_import();continue ?
-        if (op == "%")functions["modulo_float"].is_used = true;// no wasm i32_rem_s i64_rem_s for float/double
-        if (op == "%")functions["modulo_double"].is_used = true;
+        if (op == "%")
+            functions["modulo_float"].is_used = true;// no wasm i32_rem_s i64_rem_s for float/double
+        if (op == "%")
+            functions["modulo_double"].is_used = true;
         if (op == "==" or op == "is" or op == "equals")use_runtime("eq");
         if (op == "include")
             return NUL;// todo("include again!?");
@@ -953,6 +955,7 @@ Node &groupOperators(Node &expression, Function &context) {
 
 
 short arrayElementSize(Node &node);
+
 Valtype preEvaluateType(Node &node, Function &function) {
     if (node.kind == expression) {
         if (node.length == 1)return preEvaluateType(node.first(), function);
@@ -974,17 +977,10 @@ Valtype preEvaluateType(Node &node, Function &function) {
 
 
 Module &loadModule(String name) {
-    if (libraries.empty() or not module_done.has(name)) {
-        Module &import = read_wasm(name);// we need to read signatures!
-        import.code.name = name;
-        refineSignatures(import.functions);
-        module_done.insert_or_assign(name, true);
-        libraries.add(&import);
-        return import;
-    }
-    for (auto lib: libraries)
-        if (lib->name == name)
-            return *lib;
+    Module &import = read_wasm(name);// we need to read signatures!
+    import.code.name = name;
+    refineSignatures(import.functions);
+    return import;
     error("Module not found "s + name);
 }
 
@@ -1061,7 +1057,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         if (node.kind != call)
             continue;
 
-        if (not functions.has(name))// todo load lib!
+        Function *ok = findLibraryFunction(name, true);
+        if (not ok and not functions.has(name))// todo load lib!
             error("missing import for function "s + name);
         Function &function = functions[name];
         Signature &signature = function.signature;
@@ -1125,11 +1122,12 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
     return expressiona;
 }
 
+bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: libraries.has(library)
 // todo: clarify registerAsImport side effect
 Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
 //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
-    for (Module *library: libraries) {
+    for (Module *library: module_cache.valueList()) {
         // todo : multiple signatures! concat(bytes, chars, …) eq(…)
         int position = library->functions.position(name);
         if (position >= 0) {
@@ -1139,7 +1137,9 @@ Function *findLibraryFunction(String name, bool searchAliases) {
             import.signature = func.signature;
             import.is_runtime = false;// because here it is an import!
             import.is_import = true;
-            import.is_used = true;
+//            import.is_used = true; //  setting in emit too late: imports must be known through analyzer
+//            if(!libraries.has(library))
+//                libraries.add(library);// used
             //		imports.add(*import); redundant!
             return &func;
         }
@@ -1156,7 +1156,11 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 List<String> aliases(String name) {
     List<String> found;
 //	switch (name) // statement requires expression of integer type
-    if (name == "atoi") {
+
+    if (name == "len")
+        found.add("_Z7strlen0PKc");
+    if (name == "atoi" or name == "int") {
+        // todo type vs fun!
         found.add("_Z5atoi0PKc");
     }
     if (name == "+") {
@@ -1324,7 +1328,8 @@ Node &analyze(Node &node, Function &function) {
 //				if (&child == 0)continue;
                 child = analyze(child, function);// REPLACE with their ast
             }
-        if (is_function) functions[name].is_used = true;
+        if (is_function)
+            functions[name].is_used = true;
         return grouped;
     }
 
@@ -1371,6 +1376,11 @@ void fixFunctionNames() {
 
 void preRegisterFunctions() {
     functions.clear();
+    Module &runtime = loadModule("wasp"); // ok, cached!
+    runtime.code.needs_relocate = false; // may be set to true depending on main code emitted
+    for (auto fun: runtime.functions)
+        runtime.functions[fun].is_used = false;
+
 //	functions.use_constructor=true;
 //	functions.setDefault(Function());
     // TODO!!!
@@ -1383,42 +1393,41 @@ void preRegisterFunctions() {
 // todo: remove all as they come via wasp.wasm log.wasm etc
 // OK to pass stack Signature(), because copy by value functions not refs
     if (functions.has("log10")) {
-//		functions["log10"].import();// DIRTY HACK! REMOVE HIDES BUG!!!
         check(functions["log10"].is_import)
         return;// don't overwrite is_handled status etc
     }
     // runtime:
-    functions["atoi0"].runtime().signature.add(charp).returns(int32);// todo int64
-    functions["strlen0"].runtime().signature.add(charp).returns(int32);// todo int64
-    functions["malloc"].runtime().signature.add(int64).returns(int64);
-    functions["okf"].runtime().signature.add(float32).returns(float32);
-    functions["eq"].runtime().signature.add(charp).add(charp).returns(bools);
+//    functions["atoi0"].runtime().signature.add(charp).returns(int32);// todo int64
+//    functions["strlen0"].runtime().signature.add(charp).returns(int32);// todo int64
+//    functions["malloc"].runtime().signature.add(int64).returns(int64);
+//    functions["okf"].runtime().signature.add(float32).returns(float32);
+//    functions["eq"].runtime().signature.add(charp).add(charp).returns(bools);
 
     // import:
-    functions["log10"].import().signature.add(float64).returns(float64);
-    functions["pow"].import().signature.add(float64).add(float64).returns(float64);
+//    functions["log10"].import().signature.add(float64).returns(float64);
+//    functions["pow"].import().signature.add(float64).add(float64).returns(float64);
 //	functions["signature.import().signature.add(float32).returns(float32));
-    functions["log"].import().signature.add(float64).returns(float64);
-    functions["powd"].import().signature.add(float64).add(float64).returns(float64);
-    functions["powi"].import().signature.add(int32).add(int32).returns(int64);
-    functions["powf"].import().signature.add(float32).add(float32).returns(float32);
+//    functions["log"].import().signature.add(float64).returns(float64);
+//    functions["powd"].import().signature.add(float64).add(float64).returns(float64);
+//    functions["powi"].import().signature.add(int32).add(int32).returns(int64);
+//    functions["powf"].import().signature.add(float32).add(float32).returns(float32);
 
 //	if (functions.has("logs"))
 //		return;// already imported runtime!
 
-    functions["puti"].import().signature.add(int32).returns(voids);
-    functions["putf"].import().signature.add(float32).returns(voids);
-    functions["putd"].import().signature.add(float64).returns(voids);
+//    functions["puti"].import().signature.add(int32).returns(voids);
+//    functions["putf"].import().signature.add(float32).returns(voids);
+//    functions["putd"].import().signature.add(float64).returns(voids);
     //	functions["powl"].import().signature.add(int64).add(int64).returns(int64));
     //	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
-    functions["puts"].import().signature.add(charp).returns(voids);// int32
-    functions["print"].import().signature.add(charp).returns(voids);
+//    functions["puts"].import().signature.add(charp).returns(voids);// int32
+//    functions["print"].import().signature.add(charp).returns(voids);
 
 // TESTS! not useful otherwise!
     functions["square"].import().signature.add(int32).returns(int32);// test only!!
-    functions["not_ok"].signature.returns(voids);
-    functions["ok"].runtime().signature.returns(int32);// todo why not rely on read_wasm again?
-    functions["oki"].runtime().signature.add(int32).returns(int32);
+//    functions["not_ok"].signature.returns(voids);
+//    functions["ok"].runtime().signature.returns(int32);// todo why not rely on read_wasm again?
+//    functions["oki"].runtime().signature.add(int32).returns(int32);
 
 //	functions["render"].add(node)signature..add(pointer).returns(none));
 //	functions["render"].runtime().signature.add(node).returns(int32));
@@ -1436,14 +1445,14 @@ void preRegisterFunctions() {
     functions["main"].signature.returns(i64);
 #endif
 //	functions["main"].returns(isignature.32));
-    functions["paint"].import().signature.returns(voids);// paint surface
-    functions["init_graphics"].import().signature.returns(pointer);// surface
+//    functions["paint"].import().signature.returns(voids);// paint surface
+//    functions["init_graphics"].import().signature.returns(pointer);// surface
 
     // BUILTINS
     functions["nop"].builtin();
     functions["id"].builtin().signature.add(i32t).returns(i32t);
-    functions["concat"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
-    functions["_Z6concatPKcS0_"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
+//    functions["concat"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
+//    functions["_Z6concatPKcS0_"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
     // library signatures are parsed in consumeExportSection() via demangle
     // BUT their return type is not part of name, so it needs to be hardcoded, if ≠ int32:
     fixFunctionNames();
@@ -1453,7 +1462,7 @@ void clearAnalyzerContext() {
 //	needs to be outside analyze, because analyze is recursive
 #ifndef RUNTIME_ONLY
     libraries.clear();// todo: keep runtime or keep as INACTIVE to save reparsing
-    module_done.clear();
+    module_cache.clear();
     types.clear();
     globals.clear();
     functionIndices.clear();

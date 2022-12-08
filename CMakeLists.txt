@@ -6,9 +6,9 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 if (X86_64)
     LINK_DIRECTORIES(bin/mac/lib.x86)
 else ()
-#    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
+    #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
+    LINK_DIRECTORIES(bin/mac/lib)
     #    LINK_DIRECTORIES(bin/linux/arm64/lib/)
-LINK_DIRECTORIES(bin/mac/lib)
 endif ()
 
 # SET these configurations via Preferences… Build->CMake->Profiles
@@ -456,7 +456,7 @@ elseif (WASMTIME)
     #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
     #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-aarch64-macos-c-api/include)
-    #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
+    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
     target_link_libraries(wasp PRIVATE wasm)
     target_link_libraries(wasp PRIVATE wasmtime)
 elseif (WEBAPP)
@@ -521,30 +521,15 @@ endif ()
 
 
 if (CONSOLE)
-    #    find_path(Readline_ROOT_DIR NAMES include/readline/readline.h)
-    #    find_path(Readline_INCLUDE_DIR NAMES readline/readline.h HINTS ${Readline_ROOT_DIR}/include)
-    #    find_library(Readline_LIBRARY NAMES readline HINTS ${Readline_ROOT_DIR}/lib)
-    #
-    #    if (Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
-    #        set(READLINE_FOUND TRUE)
-    #    else (Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
-    #        FIND_LIBRARY(Readline_LIBRARY NAMES readline)
-    #        include(FindPackageHandleStandardArgs)
-    #        FIND_PACKAGE_HANDLE_STANDARD_ARGS(Readline DEFAULT_MSG Readline_INCLUDE_DIR Readline_LIBRARY)
-    #        MARK_AS_ADVANCED(Readline_INCLUDE_DIR Readline_LIBRARY)
-    #    endif ()
-    #    mark_as_advanced(Readline_ROOT_DIR Readline_INCLUDE_DIR Readline_LIBRARY)
-    #    include_directories(${Readline_INCLUDE_DIR})
-
-    #    ADD_COMPILE_FLAG("-lreadline")
-    #    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # why??
-    link_libraries(wasp readline)
+    find_package(Readline)
+    #    find_library(Readline)
+    #    link_libraries(wasp readline)
     TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
 endif ()
 add_compile_options(-Werror=bugprone-sizeof-expression)
 
-set(SANITIZE 0)
-if (SANITIZE) # or TRACE
+set(SANITIZE 1)
+if (SANITIZE OR TRACE) # or TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
     MESSAGE("ASAN sanitize=address …")

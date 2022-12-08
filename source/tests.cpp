@@ -2702,19 +2702,30 @@ void testCurrent() {
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
 //    assurances();
-    run_wasm_file();
-    exit(1);
-    assert_emit("42", 42);
-    assert_emit("'42'", "42");
-    assert_emit("42.7", 42.7);
 //    skip(
 //testNodeDataBinaryReconstruction();
 //    assert_is("[1 2 3]", Node(1, 2, 3, 0))
-//    assert_emit("{1 4 3}#2", 4);
-    testMergeGlobal();
+    loadModule("wasp");
+    check(findLibraryFunction("_Z7strlen0PKc", false))
+    assert_run("len('123')", 3);
+    assert_emit("putf 3.1", 3.1);
+
+    testWasmFunctionCalls();
+    check(Node(String("")) == (long) 0)
+    assert_emit("puts 'ok'", (long) 0);
+
+    assert_is("true or true", true);
+
+    loadModule("wasp");
+    testSinus();// todo FRAGILE fails before!
+    assert_emit("puts('ok');(1 4 3)#2", 4)
+    assert_emit("{1 4 3}#2", 4);
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
     testStruct();
     assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));
+//    quit();
+
+    testMergeGlobal();
 //    assert_emit("y:{x:2 z:3};y.x", 2);
 //    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
 //    exit(1);
@@ -2726,6 +2737,9 @@ void testCurrent() {
 */
     testWit();
     testColonImmediateBinding();
+    assert_emit("42", 42);
+    assert_emit("'42'", "42");
+    assert_emit("42.7", 42.7);
     assert_is("square 3", 9) // AddressSanitizer can not provide additional info. WOW!  Exception: EXC_BAD_ACCESS
 
     //    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")

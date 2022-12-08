@@ -57,7 +57,7 @@ bool eq(chars dest, chars src, int length) {
     return true;
 }
 
-int strlen0(chars x) {
+extern "C" int strlen0(chars x) {
     if (!x)return 0;
     int l = 0;
     if ((long long) x >= MEMORY_SIZE || ((long long) x) == 0x200000000LL) {
