@@ -15,7 +15,7 @@
       <file path="$PROJECT_DIR$/cmake-build-wasm" />
       <file path="$PROJECT_DIR$/cmake-build-wasm-release" />
       <file path="$PROJECT_DIR$/cmake-build-wasm-runtime" />
-      <file path="$PROJECT_DIR$/lib/Frameworks_lib" />
+      <file path="$PROJECT_DIR$/core/Frameworks_lib" />
       <file path="$PROJECT_DIR$/playground" />
       <file path="$PROJECT_DIR$/source/old" />
       <file path="$PROJECT_DIR$/test/merge" />
