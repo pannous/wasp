@@ -282,7 +282,7 @@ wasmtime_context_t *context;
 void init_wasmtime() {
     engine = wasm_engine_new();
     assert(engine != NULL);
-    store = wasmtime_store_new(engine, NULL, NULL);
+    store = wasmtime_store_new(engine, NULL, NULL);// Exception: EXC_BAD_ACCESS (code=1, address=0x0) WHEN??? wrong lib?
     assert(store != NULL);
 //	wasmtime_context_get_data(context);// get some_meta_data
     context = wasmtime_store_context(store);
