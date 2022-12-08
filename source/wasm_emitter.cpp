@@ -1210,7 +1210,7 @@ Code emitAttributeSetter(Node &node, Function &context) {
 Code emitGetter(Node &node, Node &field, Function &context) {
     Code code;
     // todo we could match the field to data at compile time in some situations, but let's implement the general case first:
-    if (node.kind == reference)
+    if (node.kind == reference and node.length > 0) // else loop!
         return emitIndexPattern(node, field, context, false);
 //        code.add(emitValue(node, context));
     else

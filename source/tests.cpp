@@ -2710,8 +2710,8 @@ void testCurrent() {
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
     testStruct();
     assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));
-    assert_emit("y:{x:2 z:3};y.x", 2);
-    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
+//    assert_emit("y:{x:2 z:3};y.x", 2);
+//    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
 //    exit(1);
 /*
     assert_emit("y{x:1}", true); // emitData( node! ) emitNode()

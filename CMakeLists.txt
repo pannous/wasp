@@ -4,9 +4,11 @@ project(wasp)
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
 if (X86_64)
-    LINK_DIRECTORIES(Frameworks/lib.x86)
+    LINK_DIRECTORIES(bin/mac/lib.x86)
 else ()
-    LINK_DIRECTORIES(Frameworks/lib)
+    #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
+    LINK_DIRECTORIES(bin/mac/lib)
+    #    LINK_DIRECTORIES(bin/linux/arm64/lib/)
 endif ()
 
 # SET these configurations via Preferences… Build->CMake->Profiles
@@ -16,6 +18,7 @@ endif ()
 #set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
 #set(DEBUG 1)
+#set(TRACE 1)
 #set(SDL 1) # Graphics
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
 #set(INCLUDE_MERGER 0)
@@ -157,15 +160,19 @@ endif ()
 
 if (TRACE)
     message("TRACE => tracing=true")
-    ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+    #    ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
     add_compile_options(-Wall)
 endif ()
 
 # enable:
-ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+#ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
-ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
+if (APPLE)
+    ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
+endif ()
+ADD_COMPILE_FLAG("-Wno-writable-strings") # ALWAYS allow conversion from string literal to 'char *'
+ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 ADD_COMPILE_FLAG("-fno-inline")
 
@@ -174,29 +181,36 @@ ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes def
 # todo Just use initiator lists? ^^
 
 if (NOT TRACE)
-    #    ADD_COMPILE_FLAG("-Wall")
-    # disable:
-    if (DEBUG)
-        if (NOT WASM)
-            ADD_COMPILE_FLAG("-Wno-error=#warnings") # allow pragma warnings as message
+    if (APPLE)
+        #    ADD_COMPILE_FLAG("-Wall")
+        # disable:
+        if (DEBUG)
+            if (NOT WASM)
+                ADD_COMPILE_FLAG("-Wno-error=#warnings") # allow pragma warnings as message
+            endif ()
         endif ()
+        ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
+        ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
+        ADD_COMPILE_FLAG("-Wno-unused-function")
+        ADD_COMPILE_FLAG("-Wno-unused-variable")
+        ADD_COMPILE_FLAG("-Wno-unused-private-field")
+        ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
+        ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
+        ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
+        ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
+        ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
+        ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
     endif ()
-    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
-    ADD_COMPILE_FLAG("-Wno-unknown-pragmas")
-    ADD_COMPILE_FLAG("-Wno-unused-function")
-    ADD_COMPILE_FLAG("-Wno-unused-variable")
-    ADD_COMPILE_FLAG("-Wno-unused-private-field")
-    ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
-    ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
-    ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
-    ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
-    ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
-    ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
 endif ()
 
-ADD_COMPILE_FLAG("-Wno-writable-strings") # ALWAYS allow conversion from string literal to 'char *'
-ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 
+if (GCC)
+    ADD_COMPILE_FLAG("-Wno-write-strings") # useless
+    ADD_COMPILE_FLAG("-Wno-literal-suffix") # useless
+    ADD_COMPILE_FLAG("-Wno-error=unused-variable")
+    ADD_COMPILE_FLAG("-Wno-unused-variable")
+    ADD_COMPILE_FLAG("-Wno-format") # useful!
+endif ()
 
 if (VERBOSE)
     ADD_COMPILE_FLAG("-v") # DEBUG lld
@@ -507,17 +521,41 @@ endif ()
 
 
 if (CONSOLE)
-    ADD_COMPILE_FLAG("-lreadline")
-    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # why??
-    #    link_libraries(wasp readline)
+    find_path(Readline_ROOT_DIR NAMES include/readline/readline.h)
+    find_path(Readline_INCLUDE_DIR NAMES readline/readline.h HINTS ${Readline_ROOT_DIR}/include)
+    find_library(Readline_LIBRARY NAMES readline HINTS ${Readline_ROOT_DIR}/lib)
+
+    if (Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
+        set(READLINE_FOUND TRUE)
+    else (Readline_INCLUDE_DIR AND Readline_LIBRARY AND Ncurses_LIBRARY)
+        FIND_LIBRARY(Readline_LIBRARY NAMES readline)
+        include(FindPackageHandleStandardArgs)
+        FIND_PACKAGE_HANDLE_STANDARD_ARGS(Readline DEFAULT_MSG Readline_INCLUDE_DIR Readline_LIBRARY)
+        MARK_AS_ADVANCED(Readline_INCLUDE_DIR Readline_LIBRARY)
+    endif ()
+    mark_as_advanced(Readline_ROOT_DIR Readline_INCLUDE_DIR Readline_LIBRARY)
+    include_directories(${Readline_INCLUDE_DIR})
+
+    #    ADD_COMPILE_FLAG("-lreadline")
+    #    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # why??
+    link_libraries(wasp readline)
+    TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
 endif ()
 add_compile_options(-Werror=bugprone-sizeof-expression)
+
 set(SANITIZE 1)
 if (SANITIZE OR TRACE) # or TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
     MESSAGE("ASAN sanitize=address …")
-    ADD_COMPILE_FLAG("-static-libsan ")
+    #    if(APPLE)
+    #    ADD_COMPILE_FLAG("-static-libsan ")
+    #    else()
+    if (GCC)
+        ADD_COMPILE_FLAG("-static-libasan ")
+    else ()
+        ADD_COMPILE_FLAG("-static-libsan ")
+    endif ()
     set(ASAN_OPTIONS verbosity=3)
     set(ASAN_OPTIONS=detect_stack_use_after_return=1) # unnecessary because -Wreturn-stack-address
     add_compile_options(-g)
@@ -552,13 +590,15 @@ if (SANITIZE OR TRACE) # or TRACE
     add_link_options(-fsanitize-recover=address)
 endif ()
 
-set(CMAKE_SUPPRESS_REGENERATION)
-set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
-set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
-
 
 if (WASM) # OR WASI) common to all!
     target_include_directories(wasp.wasm PUBLIC Frameworks/wasm-c-api/include/)
 else ()
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
 endif ()
+
+#set(CMAKE_SUPPRESS_REGENERATION)
+#set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
+#set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
+
+# Please either delete it manually or select another generation directory => delete CMakeCache.txt
