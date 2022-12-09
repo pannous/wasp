@@ -58,20 +58,6 @@ wrap(powd) {
 	return NULL;
 }
 
-wrap(powf) {
-	float n = args[0].data->of.f32;
-	float x = args[1].data->of.f32;
-	results[0].data->of.f32 = pow(n, x);
-	return NULL;
-}
-
-wrap(powi) {
-	int n = args[0].data->of.i32;
-	int x = args[1].data->of.i32;
-	results[0].data->of.i32 = powi(n, x);
-	return NULL;
-}
-
 wrap(puts) {
 	int n = args[0].data->of.i32;
 	if (wasm_memory)
@@ -88,7 +74,7 @@ wrap(puti) {
 }
 
 wrap(putf) {
-	float f = args[0].data->of.f32;
+	float f = args[0].data->of.float32;
 	printf("%f", f);
 	return NULL;
 }
@@ -148,9 +134,9 @@ wrap(absi) {
 
 wrap(absf) {
 //	todo("this function should not be a wasm import, but part of the runtime!!");
-	double i = args[0].data->of.f32;
-	results[0].data->of.f32 = i > 0 ? i : -1;
-	return NULL;
+    double i = args[0].data->of.float32;
+    results[0].data->of.float32 = i > 0 ? i : -1;
+    return NULL;
 }
 
 
@@ -189,12 +175,6 @@ wasm_wrap *link_import(String name) {
 	if (name == "__cxa_begin_catch") return &wrap_nop;
 	if (name == "_ZdlPv") return &wrap_nop;// delete
 
-	if (name == "_Z3powdd") return &wrap_powd;
-	if (name == "pow") return &wrap_powd;
-	if (name == "powd") return &wrap_powd;
-	if (name == "powf") return &wrap_powf;
-	if (name == "powi") return &wrap_powi;
-	if (name == "atoi") return &wrap_atoi;
 
 	// todo: merge!
 	if (name == "_Z5raisePKc") return &wrap_exit;
@@ -235,7 +215,7 @@ void wasm_val_print(wasm_val_t val) {
 			printf("%lld", val.of.i64);
 			break;
 		case WASM_F32:
-			printf("%f", val.of.f32);
+            printf("%f", val.of.float32);
 			break;
 		case WASM_F64:
 			printf("%g", val.of.f64);
@@ -537,17 +517,17 @@ const wasm_functype_t *funcType(Signature &signature) {
 	if (param_count == 1) {
         switch (signature.parameter_types[0]) {
             case charp:
-            case f32:
+            case float32:
                 switch (returnType) {
                     case none:
                     case voids:
                         return wasm_functype_new_1_0(f);
-                    case f32:
+                    case float32:
                         return wasm_functype_new_1_1(f, f1);
                     default:
                         break;
-				}
-			case f64:
+                }
+            case f64:
 				switch (returnType) {
 					case none:
 					case voids:

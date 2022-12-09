@@ -71,27 +71,6 @@ wrap(logd) {
 }
 
 
-wrap(powd) {
-    double n = args[0].of.f64;
-    double x = args[1].of.f64;
-    results[0].of.f64 = powd(n, x);
-    return NULL;
-}
-
-wrap(powf) {
-    float n = args[0].of.f32;
-    float x = args[1].of.f32;
-    results[0].of.f32 = pow(n, x);
-    return NULL;
-}
-
-wrap(powi) {
-    int n = args[0].of.i32;
-    int x = args[1].of.i32;
-    results[0].of.i32 = powi(n, x);
-    return NULL;
-}
-
 wrap(puts) {
     int n = args[0].of.i32;
     if (wasm_memory)
@@ -108,6 +87,8 @@ wrap(puti) {
 }
 
 wrap(putf) {
+    if ((long) args == 0x08)
+        return NULL;// BUG!
     float f = args[0].of.f32;
     printf("%f", f);
     return NULL;
@@ -214,16 +195,6 @@ wasm_wrap *link_import(String name) {
 
     if (name == "__cxa_begin_catch") return &wrap_nop;
     if (name == "_ZdlPv") return &wrap_nop;// delete
-
-    // todo aot link wasm funclets
-    if (name == "absf") return &wrap_absf;// todo: remove
-    if (name == "absi") return &wrap_absi;
-    if (name == "pow") return &wrap_powd;
-    if (name == "powd") return &wrap_powd;
-    if (name == "_Z3powdd") return &wrap_powd;
-    if (name == "powf") return &wrap_powf;
-    if (name == "powi") return &wrap_powi;
-    if (name == "atoi") return &wrap_atoi;
 
     // todo: merge!
     if (name == "_Z5raisePKc") return &wrap_exit;
@@ -488,12 +459,12 @@ const wasm_functype_t *funcType(Signature &signature) {
                     default:
                         break;
                 }
-            case f32:
+            case float32:
                 switch (returnType) {
                     case none:
                     case voids:
                         return wasm_functype_new_1_0(wasm_valtype_new(WASM_F32));
-                    case f32:
+                    case float32:
                         return wasm_functype_new_1_1(wasm_valtype_new(WASM_F32), wasm_valtype_new(WASM_F32));
                     default:
                         break;

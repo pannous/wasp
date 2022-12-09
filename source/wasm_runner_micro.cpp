@@ -54,25 +54,9 @@ RETURN VALUE: 42
 //int32_t is just int
 //int intToStr(int x, char *str, int str_len, int digit) {}// wavm can call char* ! no JS restrictions!!
 
-int get_pow(int x, int y) {
-    return x * y;
-}
-
-int32_t get_powx(wasm_exec_env_t exec_env, int32_t x, int32_t y) {
-    return x * y;
-}
-
 
 int square_x(wasm_exec_env_t exec_env, int x) {
     return x * x;
-}
-
-long get_pow2(long x, long y) {
-    return x * y;
-}
-
-long get_pow2x(wasm_exec_env_t grr, long x, long y) {
-    return x * y;
 }
 
 // f:float F:double i:int I:long no comma in arg list pow :: (FF)F
@@ -101,6 +85,7 @@ static NativeSymbol native_symbols[] =
                 {"square", (void *) square_x, "(i)i", NULL, false},
 //				{"square", (void *) square_x, "(i)i", NULL, true},
                 {"√", (void *) sqrt1, "(i)i", NULL, false},
+                {"fd_write", (void *) fd_write_host, "(iiii)i", NULL, false},
                 {"puti", (void *) puti, "(i)", NULL, false},
                 {"putf", (void *) putf, "(f)", NULL, false},
                 {"puts", (void *) puts, "(i)", NULL, false},// pointer

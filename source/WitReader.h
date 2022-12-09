@@ -262,13 +262,17 @@ class WitReader {
         trace("\nwit func signature:");
         trace(name);
         trace(returns);
+#if RUNTIME_ONLY
+        todo("funcDeclaration in runtime? how did we get here?")
+        return node;
+#else
         return funcDeclaration(name, node, NUL, &returns, mod);
+#endif
 //        return *func;
     }
 
     Node &readModule(Node &node) {
-        if (node.length < 2)
-            error("empty world");
+        if (node.length < 2) todow("empty world");
         Node &world = node.last();
         Module &mod = findOrCreateModule(world.name);
         current_module.add(&mod);

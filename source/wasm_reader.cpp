@@ -2,26 +2,20 @@
 // Created by me on 27.11.20.
 //
 #include "Code.h"
-
-#ifndef WASM
-
-#include "stdio.h"
-
-#endif
-
+#include <cstdio>
 #include "wasm_reader.h"
-//#include "wasm_emitter.h"
 #include "Util.h"
-
-// https://webassembly.github.io/spec/core/binary/modules.html#sections
-String sectionName(Sections section);
-
+//#include "wasm_emitter.h"
 // compare with wasm-objdump -h
-bool debug_reader = true;//tracing;
+
+#define POLYMORPH_function_index_marker -2
+bool debug_reader = tracing;//true;// tracing;
 typedef unsigned char *bytes;
 int pos = 0;
 int size = 0;
 byte *code;
+
+// https://webassembly.github.io/spec/core/binary/modules.html#sections
 
 //Module& module=*new Module();
 //extern Map<String, int> module->functionIndices;// todo: use function[String].index
@@ -68,13 +62,13 @@ int unsignedLEB128() {
 }
 
 // DANGER: modifies the start reader position of code, but not it's data!
-int unsignedLEB128(Code &byt) {
-    int n = 0;
+long unsignedLEB128(Code &byt) {
+    long n = 0;
     short shift = 0;
     do {
         byte b = byt.data[byt.start++];
         n = n | (((long) (b & 0x7f)) << shift);
-        if ((b & 0x80) == 0)break;
+        if ((b & 0x80) == 0)break;// no more continuation
         shift += 7;
     } while (byt.start < byt.length);
     return n;
@@ -105,8 +99,11 @@ Code vec(Code &data, bool consume = true) {
 }
 
 String &name(Code &wstring) {// Shared string view, so don't worry about trailing extra chars
-    int len = unsignedLEB128(wstring);
-    String *string = new String((char *) wstring.data + wstring.start, len, true);
+    long len = unsignedLEB128(wstring);
+    auto nam = (char *) wstring.data + wstring.start;
+//    while(nam[0]<=33)nam++;// WTH! hiding strange bug where there is a byte behind unsignedLEB128. NOT FULLY consumed
+    // // BUG SINC 2022-12-09 ~16-17pm
+    String *string = new String(nam, len, true);
     wstring.start += len;// advance internally
 //	if (len > 40)put(string);
     return *string;
@@ -159,8 +156,12 @@ void parseFuncTypeSection(Code &payload) {
     // we don't know here if i32 is pointer … so we may have to refine later
     for (int i = 0; i < module->code_count and payload.start < payload.length; ++i) {
         int typ = unsignedLEB128(payload);// implicit?
-        String *fun = module->functionIndices.has((int) (i + module->import_count));
+        auto code_index = (int) (i + module->import_count);
+        Function &function2 = module->functions.values[code_index];
+        String *fun = module->functionIndices.has(code_index);
         if (!fun)continue;
+//        if(*fun=="puts")
+//            breakpoint_helper
 //			error("no name for function "s+i);
         Signature &s = module->funcTypes[typ];
         Function &function = module->functions[*fun];
@@ -253,7 +254,7 @@ void consumeGlobalSection() {
 }
 
 void consumeNameSection(Code &data) {
-    if (debug_reader)printf("names: …\n");
+    if (debug_reader)print("names: …\n");
     module->name_data = data.clone();
     while (data.start < data.length) {
         int type = unsignedLEB128(data);
@@ -273,6 +274,8 @@ void consumeNameSection(Code &data) {
             case global_names:
                 module->global_names = payload;
                 break;
+            case todo_idk: todow("NAME TYPE 9");
+                break;
             default:
                 error("INVALID NAME TYPE "s + type);
         }
@@ -282,13 +285,13 @@ void consumeNameSection(Code &data) {
 
 // https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
 void consumeLinkingSection(Code &data) {
-    if (debug_reader)printf("linking: …\n");
+    if (debug_reader)print("linking: …\n");
     module->linking_section = data;
 //	int version = unsignedLEB128(data);
 }
 
 void consumeRelocateSection(Code &data) {
-    if (debug_reader)printf("relocate: …\n");
+    if (debug_reader)print("relocate: …\n");
     module->relocate_section = data;
 }
 
@@ -320,18 +323,18 @@ void consumeCustomSection() {
     Code customSectionDatas = vec();
     String type = name(customSectionDatas);
     Code payload = customSectionDatas.rest();
-    if (type == "names") {
+    if (type == "names" or type == "name") {
         consumeNameSection(payload);
     } else if (type == "target_features")
 //	https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md#target-features-section
 // 	atomics bulk-memory exception-handling multivalue mutable-globals nontrapping-fpoint sign-ext simd128 tail-call
-    todo("target_features detection not yet supported")
+    todow("target_features detection not yet supported")
     else if (type == "linking")
         // see https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md
         consumeLinkingSection(payload);
     else if (type == "dylink.0")
         // see https://github.com/WebAssembly/tool-conventions/blob/main/DynamicLinking.md
-    todo("dynamic linking not yet supported")
+    todow("dynamic linking not yet supported")
     else if (type.startsWith("reloc."))
         consumeRelocateSection(payload);// e.g. "reloc.CODE"
         // everything after the period is ignored and the specific target section is encoded in the reloc section itself.
@@ -340,10 +343,10 @@ void consumeCustomSection() {
         consumeRelocateSection(payload);
     else {
 //		pos = size;// force finish
-        warn("consumeCustomSection not implementated for "s + type);
+        todow("consumeCustomSection not implementated for "s + type);
         customSectionDatas.start = 0;// reset
 
-//		TODO REENABLE!! currently causes
+//		TODO REENABLE!! currently causes SIGSEGV
 //		module->custom_sections.add(customSectionDatas);// raw
     }
 }
@@ -377,14 +380,25 @@ void consumeCodeSection() {
 // todo ifdef CPP not WASM(?)
 #include <cxxabi.h> // for abi::__cxa_demangle
 
+void fixupGenerics(char *s, int len) {
+    int bra = 0;
+    for (int i = 0; i < len; ++i) {
+        if (s[i] == '<')bra++;
+        if (s[i] == '>')bra--;
+        if (bra and s[i] == ',')s[i] = ';';
+    }
+}
+
 // we can reconstruct arguments from demangled exports or retained wast names
 // _Z2eqPKcS0_i =>  func $eq_char_const*__char_const*__int_ <= eq(char const*, char const*, int)
 List<String> demangle_args(String &fun) {
     int status;
 //	String *real_name = new
+//"print(Map<String, int>)"
     char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
     if (status != 0 or string == 0)return 0;
     String real_name = String(string);
+    fixupGenerics(real_name.data, real_name.length);
     if (!real_name or !real_name.contains("("))return 0;
     String brace = real_name.substring(real_name.indexOf('(') + 1, real_name.indexOf(')'));//.clone();
     if (brace.contains("("))
@@ -403,18 +417,25 @@ void consumeExportSection() {
     module->export_data = exports_vector.rest();
     Code &payload = module->export_data;
     for (int i = 0; i < exportCount; i++) {
-        int export_type = unsignedLEB128(
-                payload);// don't confuse with function_type if export_type==0 (function_export)
+        String export_name = name(payload);
+        int export_type = unsignedLEB128(payload); // don't confuse with function_type if export_type==0
         int index = unsignedLEB128(payload);// for all types!
         if (export_type == 3 /*global*/) continue; // todo !?
         if (export_type == 2 /*memory*/) continue;
         if (export_type == 1 /*table*/) continue;
-        if (export_type != 0 /*function export*/)continue;
-        String func0 = name(payload).clone();
-        if (func0 == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
-        String func = demangle(func0);
+        if (export_type != 0 /*function export*/) {
+            error("UNKNOWN export_type "s + export_type + " for " + export_name + " at " + index);
+            continue;
+        }
+        String &func0 = export_name;
+        String func = extractFuncName(func0);
+        if (index < 0 or index > 100000)error("corrupt index "s + index);
+        int code_index = index + module->import_count;
+
+        if (func0 == "_Z5main4iPPc")
+            continue;// don't make libraries 'main' visible, use own
         int status = 0; // for debugging:
-        char *string = abi::__cxa_demangle(func0.data, 0, 0, &status);// function name and cpp args but no return value
+        String demangled = abi::__cxa_demangle(func0.data, 0, 0, &status);// function name and cpp args but not return
 
         Function &fun = module->functions[func];// demangled
         Function &fun0 = module->functions[func0];// mangled
@@ -422,18 +443,35 @@ void consumeExportSection() {
 
         fun.name = func;
         fun0.name = func0;
-        if (index < 0 or index > 100000)error("corrupt index "s + index);
 
-        int code_index = index - module->import_count;
-        module->functionIndices[func0] = index;// mangled
-        module->functionIndices[func] = index;// demangled
-        fun0.index = index;
-        fun.index = index;
-        if (index == 31)
-            breakpoint_helper
-//            check(func0=="_Zli2_sPKcm");
+        if (debug_reader) {
+            printf("ƒ%d %s ≈\n", index, func0.data);
+            printf("ƒ%d %s ≈\n", index, demangled.data);
+        }
+//        if(fun.name=="puts")
+//            breakpoint_helper
 
-        int funcType = module->funcToTypeMap[code_index];
+        if (fun.signature.size()) {
+            trace("function %s already has signature "s % func + fun.signature.serialize());
+            trace("function %s old index %d new index %d"s % func % fun.index % index);
+            Function &abstract = *new Function{.name=func, .module=module, .is_runtime=true, .is_polymorph=true};
+            abstract.variants.add(fun);
+            module->functions[func] = abstract;
+            fun = abstract.variants.items[2];
+            fun = *new Function{.name=func, .module=fun.module, .is_runtime=true};
+            module->functionIndices[func] = POLYMORPH_function_index_marker;
+        } else {
+            module->functionIndices[func] = code_index;// demangled
+        }
+        module->functionIndices[func0] = code_index;// mangled unique
+        fun0.index = code_index;
+        fun.index = code_index;
+
+
+//        if (code_index == 369 or index == 369)
+//            breakpoint_helper // todo operator+
+
+        int funcType = module->funcToTypeMap[index];
         // todo: demangling doesn't yield return type, is wasm_signature ok?
         fun.signature.type_index = funcType;
         fun0.signature.type_index = funcType;// todo: remove duplicate, try fun0.signature=fun.signature at end again
@@ -448,18 +486,20 @@ void consumeExportSection() {
 
         // todo: use wasm_signature if demangling fails, see merge(signature) below
 
-        if (func.contains("::"))
-            fun.signature.add(Primitive::self, "self");
+        if (demangled.contains("::")) {
+            String typ = demangled.to("::");
+            auto type = mapArgToType(typ);// Primitive::self
+            fun.signature.add(type, "self");
+        }
 // e.g. List<String>::add (String) has one arg, but wasm signature is (i32,i32):i32  ["_ZN4ListI6StringE3addES0_"]
 // todo: demangle further and put into multi-dispatch
 
         List<String> args = demangle_args(func0);
-        for (String arg: args) {
+        for (String &arg: args) {
             if (arg.empty())continue;
-            fun.signature.add(mapArgToType(arg), arg);
+            fun.signature.add(mapArgToType(arg));
             if (&fun != &fun0)
-
-                fun0.signature.add(mapArgToType(arg), arg);
+                fun0.signature.add(mapArgToType(arg));
         }
         // can't after free
 //        if (&fun != &fun0)
@@ -468,10 +508,8 @@ void consumeExportSection() {
         if (debug_reader) {
             const String &argos = args.join(",");
 //            printf("ƒ%d %s(%s) ≈\n", index, func0.data, string);
-            printf("ƒ%d %s ≈\n", index, func0.data);
-            printf("ƒ%d %s(%s)\n", index, func.data, argos.data);
-            printf("ƒ%d %s ≈\n", index, string);
             char *sig = fun.signature.serialize().data;
+            printf("ƒ%d %s(%s)\n", index, func.data, argos.data);
             printf("ƒ%d %s%s\n", index, func.data, sig);
         }
 
@@ -507,49 +545,79 @@ Type mapArgToType(String arg) {
     else if (arg == "char")return int32;// c++ char < angle codepoint ok
     else if (arg == "wchar_t")return (Valtype) codepoint32;// angle codepoint ok
     else if (arg == "char32_t")return codepoint32;// angle codepoint ok
-    else if (arg == "Type")return int32;// enum
-    else if (arg == "Kind")return int32;// enum (short, ok)
-    else if (arg == "Code")return (Valtype) ignore;
-    else if (arg == "Type")return type32;// enum
-    else if (arg == "String*")return (Valtype) stringp;
-    else if (arg == "String&")return (Valtype) stringp;// todo: how does c++ handle refs?
-    else if (arg == "String")return (Valtype) string_struct;// todo !DIFFERENT
+    else if (arg == "char16_t")return codepoint32;// !? ⚠️ careful
     else if (arg == "char**")return pointer;// to chars
     else if (arg == "short*")return pointer;
 
+
+        // Some INTERNAL TYPES are reflected upon / exposed as abi :
+    else if (arg == "Type")return int32;// enum
+    else if (arg == "Kind")return int32;// enum (short, ok)
+    else if (arg == "Type")return type32;// enum
+
+    else if (arg == "String*")return stringp;
+    else if (arg == "String&")return stringp;// todo: how does c++ handle refs?
+    else if (arg == "String")return string_struct;
+
     else if (arg == "Node")return node;// struct!
+
     else if (arg == "Node&")return nodes;// pointer? todo: how does c++ handle refs?
     else if (arg == "Node const&")return nodes;
     else if (arg == "Node const*")return nodes;
     else if (arg == "Node*")return nodes;
-        // todo:
-    else if (arg == "List<String>")return todoe;
-    else if (arg == "List<Type>")return todoe;
-    else if (arg == "std::is_arithmetic<int>::value")return todoe;// WAT?? PURE_WASM should work without std!!
-//	else if (arg == "List< …
 
-        // IGNORE INTERNAL TYPES:
-    else if (arg == "Map<String")return ignore;
-    else if (arg == "int>")return ignore;// parse bug ^^
+    else if (arg == "Type32")return type32;
+    else if (arg == "Type")return type32;
+    else if (arg == "Kind")return type32;
+    else if (arg == "Primitive")return type32;// good thing wasm has no polymorphism
+    else if (arg == "Valtype")return type32;// good enough!
+    else if (arg == "Type64")return ignore; // for now   return smarti64;
+    else if (arg == "Type64::Type64")return ignore; // for now   return smarti64;
+    else if (arg == "Type&")error("Type should only be used as value");
+
+    else if (arg == "List<String>")return list;
+    else if (arg == "List<Type>")return list;
+    else if (arg == "List<int>")return list;
+
+    else if (arg == "Module")return modul;
+    else if (arg == "Module const&")return modul;
+
+    else if (arg == "SyntaxError")return errors;
+//    else if (arg == "SyntaxError")return result_error;
+
+    else if (arg == "std::is_arithmetic<int>::value")return todoe;// WAT?? PURE_WASM should work without std!!
+
+
+        // IGNORE other INTERNAL TYPES:
     else if (arg == "Code")return ignore;
+//    else if (arg == "Map<String")return ignore;
+//    else if (arg == "int>")return ignore;// parse bug ^^
+    else if (arg == "Function")return ignore;
+    else if (arg == "Sections")return ignore;
+    else if (arg == "Local")return ignore;
     else if (arg == "Code&")return ignore;
     else if (arg == "Code const&")return ignore;
-    else if (arg == "Module")return ignore;
     else if (arg == "Section")return ignore;
-    else if (arg == "Type&")return ignore;
-    else if (arg == "Module const&")return ignore;
+    else if (arg == "Global")return ignore;
     else if (arg == "ParserOptions")return ignore;
     else if (arg == "Value")return ignore;
     else if (arg == "Arg")return ignore; // truely internal, should not be exposed! e.g. Arg
     else if (arg == "Signature")return ignore;
-    else if (arg == "...")return ignore;// varargs, interesting!
+    else if (arg == "Wasp")return ignore;
+    else if (arg == "WitReader")return ignore;
+    else if (arg == "__cxxabiv1")return ignore;
+    else if (arg == "...")return ignore;// varargs, todo interesting!
+    else if (arg.startsWith("Map")) return maps;
+    else if (arg.startsWith("List")) return list;
     else if (arg.endsWith("&")) return pointer;
     else if (arg.endsWith("*")) return pointer;
+
     else {
 //        breakpoint_helper
 //        printf("unmapped c++ argument type %s\n", arg.data);
         if (!arg.endsWith("*"))
-            error("unmapped c++ argument type %s\n"s % arg.data);
+            if (!arg.startsWith("Map<") and !arg.startsWith("List<"))
+                error("unmapped c++ argument type %s\n"s % arg.data);
     }
     return i32t;
 }
@@ -579,6 +647,7 @@ void consumeImportSection() {
 void consumeSections() {
     while (pos < size) {
         Sections section = typ();
+        trace("Consuming section "s + sectionName(section));
         switch (section) {
             case type_section:
                 consumeTypeSection();
@@ -657,9 +726,9 @@ Module &read_wasm(chars file) {
     if (module_cache.has(name))
         return *module_cache[name];
 
-    if (debug_reader)printf("--------------------------\n");
-    if (debug_reader)
-        printf("parsing: %s\n", file);
+    if (debug_reader)print("--------------------------\n");
+//    if (debug_reader)
+    printf("parsing: %s\n", file);
     size = fileSize(file);
     if (size <= 0)error("file not found: "s + file);
     bytes buffer = (bytes) alloc(1, size);// do not free

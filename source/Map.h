@@ -10,7 +10,7 @@
 #include "String.h"
 //#include "Node.h"
 #include "wasm_helpers.h"
-#include <stdarg.h> // va_list OK IN WASM???
+#include <cstdarg> // va_list OK IN WASM???
 //#include <cstdarg> // va_list ok in wasm even without wasi!
 
 #ifndef WASM
@@ -187,7 +187,7 @@ public:
                 insert_or_assign(key, T());// BAD because stack value? ok because copy by value? todo
                 return values[_size - 1];// increased above!
             } else {
-                error("MISSING KEY: "s + key);
+//                error("MISSING KEY: "s + key);
                 printf("MISSING KEY: ");
 //				put(key);
 //				printf("%s",key);// todo unsafe!! can be int etc!
