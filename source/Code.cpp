@@ -131,21 +131,21 @@ chars typeName(Primitive p) {
         case wasm_leb:
             return "leb";
         case wasm_float64:
-            return "wasm_float64";
+            return "float64";
         case wasm_f32:
-            return "wasm_f32";
+            return "float32";
         case wasm_int64:
-            return "wasm_int64";
+            return "int64";
         case wasm_int32:
-            return "wasm_int32";
-        case typeo:
+            return "int32";
+        case type32:
             return "typeo";
         case any:
             return "any";
         case string_struct:
             return "string_struct";
         case byte_i8:
-            return "byte_i8";
+            return "uint8";
         case byte_char:
             return "byte_char";
         case array_start:
@@ -223,11 +223,89 @@ chars typeName(Valtype t, bool fail) {
     return 0;
 }
 
+Valtype mapTypeToWasm(Primitive p) {
+    switch (p) {
+        case unknown_type:
+            error("unknown_type in final stage");
+        case wasm_leb:
+            error("wasm_leb in wasm write stage");
+        case wasm_float64:
+            return Valtype::float64;
+        case wasm_f32:
+            return Valtype::f32;
+        case wasm_int64:
+            return Valtype::i64;
+        case wasm_int32:
+            return Valtype::int32;
+        case type32:
+            return Valtype::int32;
+        case node: // todo 64 bit
+            return Valtype::wasm_pointer;// CAN ONLY MEAN POINTER HERE, NOT STRUCT!!
+        case nodes: // ⚠️ Node* Node** or Node[] ?
+            return Valtype::wasm_pointer;
+        case any:
+            return Valtype::wasm_pointer;
+        case array:
+        case list:
+        case vector:
+        case array_header:
+        case int_array:
+        case long_array:
+        case float_array:
+        case real_array:
+        case array_start:// todo What is the difference?
+            return Valtype::wasm_pointer;
+        case charp:
+            return Valtype::wasm_pointer;
+        case codepoint32:
+            return Valtype::int32;// easy ;)
+        case string_struct:
+//      a String struct is unrolled in the c/wasm-abi
+            error("struct in final stage");
+        case todoe:
+            return Valtype::none; // none is too weak, it needs to fail on access, when reaching emit / emitCall etc!
+            breakpoint_helper
+            todo("some unmapped Type, debug earlier in mapArgToType");
+        case ignore:
+            return Valtype::none;
+        case byte_i8:
+            // ⚠️ careful in arrays we may write byte_i8 as Byte !
+            return Valtype::int32;
+        case byte_char:
+            // ⚠️ careful in arrays we may write byte_char as ByteChar !
+            return Valtype::int32;
+        case c_string:
+        case leb_string:
+        case utf16_string:
+        case utf32_string:
+        case json5_string:
+        case json_string:
+        case wasp_string:
+        case wasp_data_string:
+        case wasp_code_string:
+            return Valtype::wasm_pointer;
+        case fointer: // unspecified pointer
+        case fointer_of_int32: // specified pointer but we don't care any more
+            return Valtype::wasm_pointer;
+        case result_error:
+            error("internal error or planned error as exception in wasm code?");
+//            return Valtype::int64;
+//            smart_pointer_64 ?
+    }
+}
+
 // in final stage of emit, keep original types as long as possible
+// todo: may depend on context?
 Valtype mapTypeToWasm(Type t) {
-    if (t.value < 0x100)
+    if (t.value < 0x80)
         return (Valtype) t.value;
-    todo("mapTypeToWasm");
+    if (t.value < 0x1000000) // todo
+        return mapTypeToWasm((Primitive) t);
+    Node *type_node = (Node *) t.value;
+    warn("Insecure mapTypeToWasm %x %d as Node*"s % t.value % t.value);
+    if (type_node->node_header == node_header_32)
+        return mapTypeToWasm(*type_node);// might crash
+    todo("mapTypeToWasm %x %d %s"s % t.value % t.value % typeName(t));
     return Valtype::int32;
 }
 
@@ -291,16 +369,15 @@ Valtype mapTypeToWasm(Node &n) {
 //	if (n.kind.type == int_array)return array;// todo
     if (n.kind == call) {
         List<Type> &returnTypes = functions[n.name].signature.return_types;
-        if (returnTypes.size() > 1)
-            todo("multi-value");
+        if (returnTypes.size() > 1) todo("multi-value");
         Type &type = returnTypes.last();
         return (Valtype) type.value;
     }
     if (n.kind == key and n.value.data) return mapTypeToWasm(*n.value.node);
     //	if (n.kind == key and not n.value.data)return array;
     if (n.kind == groups)return (Valtype) array;// uh todo?
-    if (n.kind == flags) return int64;
-    if (n.kind == enums) return int64;
+    if (n.kind == flags) return i64;
+    if (n.kind == enums) return i64;
     if (n.kind == unknown) return int32;// blasphemy!
     Node first = n.first();
     if (first == n)return int32;// array of sorts

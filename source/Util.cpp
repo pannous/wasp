@@ -5,6 +5,7 @@
 #include <stdlib.h> // abs(int)
 // #include "String.h"
 #include "Util.h"
+#include "Code.h"
 
 #ifndef WASM
 // ok as wasi?
@@ -427,7 +428,7 @@ String load(String file) {
 
 String &hex(long d) {
 #ifdef WASM
-    return * new String(itoa0(d));
+    return * new String(formatLong(d));
 #else
 //	char* s= (char*) malloc(1+64/4);// 0x ?
     int size = 3 + 64 / 4;
@@ -450,7 +451,7 @@ Node smartValue(long smartPointer);
 #include <cxxabi.h>
 
 //std::__2::enable_if<(std::is_arithmetic<int>::value) && (std::is_arithmetic<long>::value), std::__2::__promote<int, long, void> >::type::type pow<int, long>(int, long)
-String demangle(String &fun) {
+String demangle(const String &fun) {
     if (fun.length == 0)return "";
     int status;
     char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
@@ -490,11 +491,11 @@ int stackItemSize(Type type, bool throws) {
     if (type == stringp)return 1;// chars for now vs pointer!
     //	if (k == int16)return 2;
     if (type == codepoint32)return 4;
-    if (type == int32)return 4;
+    if (type == Valtype::int32)return 4;
     if (type == array)return 4;// pointer todo!
-    if (type == int64)return 8;
-    if (type == float32)return 4;
-    if (type == float64)return 8;
+    if (type == Valtype::i64)return 8;
+    if (type == Valtype::float32)return 4;
+    if (type == Valtype::float64)return 8;
     if (type == void_block)return 4;// int32 pointer hack todo!
     if (type == unknown_type)return 4;
     if (throws)error("unknown size for stack item "s + typeName(type));
@@ -502,10 +503,10 @@ int stackItemSize(Type type, bool throws) {
 }
 
 int stackItemSize(Valtype type, bool throws) {
-    if (type == int32)return 4;
-    if (type == int64)return 8;
-    if (type == float32)return 4;
-    if (type == float64)return 8;
+    if (type == Valtype::int32)return 4;
+    if (type == Valtype::i64)return 8;
+    if (type == Valtype::float32)return 4;
+    if (type == Valtype::float64)return 8;
     if (throws)
         error("int stackItemSize(Valtype valtype, bool throws = true);");
     return 0;

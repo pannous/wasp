@@ -124,7 +124,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     modul,// module, interface, resource, world, namespace, library, package ≈ class …
     nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
     structs = 0x77, // TODO BEWARE OF OVERLAP with primitives! :
-
+    number = 0x70, // SmartNumber or Number* as SmartPointer? ITS THE SAME!
     reals = 0x7C, /*  ≠ float64 , just hides bugs, these concepts should not be mixed */
     realsF = 0x7D,/*  ≠ float32 , just hides bugs, these concepts should not be mixed */
     longs = 0x7E, // the signature of parameters/variables is independent!
@@ -154,8 +154,9 @@ enum Primitive {
     wasm_int32 = 0x7f,  // make sure to not confuse these with boxed Number nodes of kind longs, reals!
     pointer = wasm_int32,// 0xF0, // internal todo: int64 on wasm-64
     node_pointer = wasm_int32,
+    self = pointer,
 //	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
-    typeo = 0x80, // todo see smart_pointer_64 etc OK?
+    type32 = 0x80, // todo see smart_pointer_64 etc OK?
     node = 0xA0,
     angle = 0xA0,//  angle object pointer/offset versus smarti vs anyref
     any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a

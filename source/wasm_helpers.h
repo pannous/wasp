@@ -7,6 +7,17 @@
 
 #include <cstddef> // size_t  FINE with wasm!
 
+// most important WASI function
+void fd_write(int FD, char **strp, int *len, int *nwritten);
+
+void print(char *str) {
+    int FD = 1;// stdout
+    int *len = new int;// these need to be on heap for i32.load!
+    int *nwritten = new int;
+    *len = strlen0(str);
+    fd_write(1, &str, len, nwritten);
+}
+
 typedef const char *chars;
 typedef unsigned char *bytes;
 

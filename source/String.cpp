@@ -241,8 +241,6 @@ String toString(Node &node);
 
 
 // Implementation of itoa0()
-
-
 char *formatLongWithBase(long num, int base = 10) {
     if (base == 16)return hex(num);
     // length 22 -> put(num)/2+2 for base 10
@@ -283,6 +281,9 @@ char *formatLong(long num) {
     return formatLongWithBase(num, 10);
 }
 
+char *ltoa(long num) {
+    return formatLongWithBase(num, 10);
+}
 
 //#define pow(val,exp)
 chars formatRealWithBaseAndPrecision(double num, int base = 10, int digits_after_zero = 4) {/*significant_digits*/
