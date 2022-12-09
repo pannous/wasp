@@ -5,7 +5,6 @@
 
 #include "String.h"
 #include "wasm_helpers.h"
-#include "Map.h"
 #include "List.h"
 #include "Code.h"
 #include "Util.h"
@@ -32,7 +31,7 @@ typedef chars chars;
 
 class String;
 
-char *empty_string = "";
+//char *empty_string = "";
 
 bool eq(chars dest, chars src, int length) {
     if (!dest || !src)
@@ -62,7 +61,7 @@ extern "C" int strlen0(chars x) {
     int l = 0;
     if ((long long) x >= MEMORY_SIZE || ((long long) x) == 0x200000000LL) {
         puts(x);
-        puti((int) (long) x);// 0x1000000 16777216
+//        puti((int) (long) x);// 0x1000000 16777216
         error("corrupt string");
     }
     if ((long long) x == 0x1ffffffffLL || (long long) x >= 0xffffffff00000000LL ||
@@ -151,11 +150,13 @@ Some start with 1…9 missing 0
  */
 // todo 0x2080, 0x2070 subscript OPERATOR vs x²⁺³ == x⁵
 // unicode ranges 0...9
-int zeros[] = {0x1D7F6, 0x1D7EC, 0x1D7E2, 0x1D7D8, 0x1D7CE, 0x11066, 0x1810, 0x17E0, 0x1040, 0x0F20, 0x0ED0, 0x0E50,
-               0x0CE6, 0x0C66, 0x0BE7, 0x0B66, 0x0AE6, 0x09E6, 0x0966, 0x06F0, 0x0660, 0, 0};
+static int zeros[] = {0x1D7F6, 0x1D7EC, 0x1D7E2, 0x1D7D8, 0x1D7CE, 0x11066, 0x1810, 0x17E0, 0x1040, 0x0F20, 0x0ED0,
+                      0x0E50,
+                      0x0CE6, 0x0C66, 0x0BE7, 0x0B66, 0x0AE6, 0x09E6, 0x0966, 0x06F0, 0x0660, 0, 0};
 // unicode ranges 1...9
-int ones[] = {0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 0x102EA, 0x10858, 0x10916, 0x10320,
-              0x1D360, 0x102E1, 0x3021, 0x2170, 0x2160, 0x1372, 0x2469, 0, 0};
+static int ones[] = {0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 0x102EA, 0x10858, 0x10916,
+                     0x10320,
+                     0x1D360, 0x102E1, 0x3021, 0x2170, 0x2160, 0x1372, 0x2469, 0, 0};
 
 // unlike atoi0 returns -1 if not a digit!
 int atoi1(codepoint c) {
@@ -198,20 +199,18 @@ long parseLong(chars str) {
     }
 
     if (k > 0 and (*str == 'e' or *str == 'E'))
-        k *= pow(10, parseLong(++str));// we need float for E-10 == 1/10 …
+        k *= powd(10, parseLong(++str));// we need float for E-10 == 1/10 …
     return sig * k;
 }
 
 extern double parseDouble(chars string) {
+// __extenddftf2
     double result = 0.0;
     if (!string) return result;
 
     double multiplier = 1;
     double divisor = 1.0;
-    int integer_portion = 0;
-
-    integer_portion = parseLong(string);
-
+    long integer_portion = parseLong(string);
     result = (double) integer_portion;
     if (*string == '-') {
         result *= -1;
@@ -223,8 +222,13 @@ extern double parseDouble(chars string) {
     if (*string and (*string == '.'))
         string++;
     while (*string) {
-        if (*string == 'e' or *string == 'E')
-            return result * pow(10, parseLong(++string));
+        if (*string == 'e' or *string == 'E') {
+#if MY_WASI
+            todo("EXP")
+#else
+            return result * (double) powl(10, parseLong(++string));
+#endif
+        }
         if (*string < '0' || *string > '9') return result;
         divisor *= 10.0;
         result += (double) (*string - '0') / divisor;
@@ -282,6 +286,10 @@ char *formatLong(long num) {
 }
 
 char *ltoa(long num) {
+    return formatLongWithBase(num, 10);
+}
+
+char *itoa0(long num) {// todo remove once you know the right call
     return formatLongWithBase(num, 10);
 }
 
@@ -445,7 +453,7 @@ String nil_name = "nil";// ␀ ø
 String empty_name = "";
 String EMPTY = String('\0');
 #else
-String nil_name;
+String nil_name="nil";
 String empty_name;
 String object_name;
 String groups_name;
@@ -581,18 +589,18 @@ bool String::startsWith(chars string) {
 }
 
 bool String::endsWith(const char *string) {
-    int len1 = len(string);
+    int len1 = strlen0(string);
     length = strlen0(data);// todo LOST WHEN?
     return len1 <= length and eq(data + length - len1, string, len1);
 }
 
 String String::to(const char *string) {
-    return substring(0, indexOf(string), true);
+    return substring(0, indexOf(string), true).clone();
 }
 
 List<String> String::split(const char *string) {
     List<String> parts;
-    int len1 = len(string);
+    int len1 = strlen0(string);
     int start = 0;
     for (int i = 0; i < length; i++) {
         if (eq(data + i, string, len1)) {
@@ -631,6 +639,10 @@ void String::shift(int i) {
         data++;
         length--;
     }
+}
+
+String String::from(const char *string) {
+    return substring(this->indexOf(string) + strlen0(string));
 }
 
 String EMPTY_STRING0 = "";
@@ -681,9 +693,14 @@ bool contains(chars str, chars match) {
 }
 
 void put(chars s) {
+#if WASM
+    int FD = 1;// stdout
+//    int *len = new int;// these need to be on heap for i32.load!
+    size_t *nwritten = new size_t;
+    size_t len = strlen0(s);
+    fd_write(1,(char **) &s, len, nwritten);
+#else
     puts(s);
-#ifndef WASM    // console.put adds newline
-    puts("\n");
 #endif
 }
 
@@ -691,11 +708,17 @@ void print(const Node node) {
     print(node.string());
 }
 
-void newline();
 
 bool skip_newline = false;
+
 void print(long i) {
+#if MY_WASM
     puti(i);
+#else
+//#if MY_WASI
+    printf("%ld", i);
+    // either through wasm_helpers or via stdio.wasm
+#endif
     if (skip_newline)skip_newline = false;// just skip one CANT make it
     else newline();
 }
@@ -738,3 +761,16 @@ void print(String s){
 //	print(&s);
 //}
 #endif
+
+
+void print(char *str) {
+#if MY_WASI
+    int FD = 1;// stdout
+//    int *len = new int;// these need to be on heap for i32.load!
+    size_t nwritten;
+    size_t len = strlen0(str);
+    fd_write(1, &str, len, &nwritten);
+#else
+    printf("%s", str);
+#endif
+}

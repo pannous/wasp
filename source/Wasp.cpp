@@ -13,8 +13,11 @@
 bool isnumber(char c){ return c>='0' and c<='9'; }
 // why cctype no work?
 #else
+
 #include <cctype> // isnumber
+
 #endif
+
 #include <cstdlib> // OK in WASM!
 
 
@@ -53,18 +56,6 @@ bool eval_via_emit = true;// << todo!  assert_is(…)
 
 #endif
 
-#ifdef WASM
-// NEEDS TO BE IN Wasp because __wasm_call_ctors !
-//unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(malloc(1000000));
-char *__heap_base = (char *) memory;
-//unsigned char* __heap_base=0;
-char *memoryChars = (char *) memory;
-//int HEAP_OFFSET=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
-//#define HEAP_OFFSET 65536
-//int memory_size=1048576-HEAP_OFFSET; // todo set in CMake !
-char *current = (char *) HEAP_OFFSET;
-#endif
-
 
 #ifndef WASM
 
@@ -79,11 +70,8 @@ bool isalpha0(codepoint c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-void newline();
 
-extern void info(chars);
-
-#define err(m) err1("\n%s:%d\n%s"s%__FILE__%__LINE__%m)
+#define err(m) err1("%s:%d\n%s"s%__FILE__%__LINE__%m)
 
 bool data_mode = true;// todo ! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
 
@@ -140,11 +128,11 @@ chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "th
 // todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
 //  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
 // ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
-#ifdef WASI
-List<chars> operator_list;
-#else
+//#ifdef WASI
+//List<chars> operator_list;
+//#else
 List<chars> operator_list(operator_list0);
-#endif
+//#endif
 
 
 Map<String, List<String>> aliases;
@@ -453,7 +441,7 @@ public:
         if (!source.data)
             return NUL;
         parserOptions = options;
-        if ((source.endsWith(".wasp") or source.endsWith(".wit")) and not source.contains("\n")) {
+        if ((source.endsWith(".wasp") or source.endsWith(".wit")) and not source.contains("")) {
             setFile(source);
             source = readFile(findFile(source, parserOptions.current_dir));
         }
@@ -523,10 +511,10 @@ private:
     String position() {
         auto columnNumber = at - columnStart;
         String msg;
-        msg = msg + " in line " + lineNumber + " column " + columnNumber + " (char#" + at + ")\n";
-        msg = msg + line + "\n";
+        msg = msg + " in line " + lineNumber + " column " + columnNumber + " (char#" + at + ")";
+        msg = msg + line + "";
         msg = msg + (s(" ").times(columnNumber - 1)) + "^";
-        if (not file.empty()) msg = msg + "\n" + file + ":" + lineNumber;
+        if (not file.empty()) msg = msg + "" + file + ":" + lineNumber;
 //		print(msg);
         return msg;
     }
@@ -536,7 +524,7 @@ private:
         // todo: Still to read can scan to end of line
         String msg = m;
         msg += position();
-//		msg = msg + s(" of the Mark data. \nStill to read: \n") + text.substring(at - 1, at + 30) + "\n^^ ...";
+//		msg = msg + s(" of the Mark data. \nStill to read: ") + text.substring(at - 1, at + 30) + "^^ ...";
 //		msg = msg + backtrace2();
         auto error = new SyntaxError(msg);
         error->at = at;
@@ -707,7 +695,7 @@ private:
 //		if (!isFinite(number)) {
 //			error("Bad number");
 //		} else {
-        if (base != 10)todo("base "s + base);
+        if (base != 10) todo("base "s + base);
         return *new Node(number0); // {number0}; //wow cPP
 //		}
     };
@@ -1179,7 +1167,7 @@ private:
         for (auto i = 0; i < 64; i++) {
             char charCode = text.charCodeAt(i);
             if (charCode < 0) // never true: charCode > 128 or
-                err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "\n" + text);
+                err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "" + text);
             lookup64[(short) charCode] = i;// todo: what is this?
         }
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
@@ -1320,7 +1308,7 @@ private:
 
         if (val.value.longy and val.kind != objects and deep_copy) {
             if (&key == &NIL or key.isNil() or key == NIL)
-                if (key.name == nil_name)
+                if (key.name == NIL_NAME)
                     warn("impossible");
             key.value = val.value;// direct copy value SURE?? what about meta data... ?
             key.kind = val.kind;
@@ -1496,8 +1484,7 @@ private:
 //                        actual.setType(parserOptions.use_generics ? generics : tags, false); NOT ON ELEMENT!
                         return actual;
                     } else {
-                        if (next == '/')
-                            todo("closing </tags>");
+                        if (next == '/') todo("closing </tags>");
                     } //fall through:
                 case u'﹝': // ﹞
                 case u'〔': // 〕
@@ -1661,7 +1648,7 @@ private:
                     else closer = ' ';
                     Node &val = valueNode(closer, &key);// applies to WHOLE expression
                     if (add_to_whole_expression and actual.length > 1 and not add_raw) {
-                        if (actual.value.node)todo("multi-body a:{b}{c}");
+                        if (actual.value.node) todo("multi-body a:{b}{c}");
                         actual.setType(Kind::key, false);// lose type group/expression etc ! ok?
                         // todo: might still be expression!
 //						object.setType(Type::valueExpression);
@@ -1841,7 +1828,7 @@ void handler(int sig) {
     size = backtrace(array, 10);
 
     // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
+    fprintf(stderr, "Error: signal %d:", sig);
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     exit(1);
 }
@@ -2041,16 +2028,16 @@ int main(int argc, char **argv) {
 //#endif
         return 42;
     } catch (Exception e) {
-        printf("\nException WOOW\n");
+        print("Exception WOOW");
     } catch (chars err) {
-        printf("\nERROR\n");
-        printf("%s", err);
+        print("ERROR");
+        print(err);
     } catch (String err) {
-        printf("\nERROR\n");
-        printf("%s", err.data);
+        print("ERROR");
+        print(err);
     } catch (SyntaxError *err) {
-        printf("\nERROR\n");
-        printf("%s", err->data);
+        print("ERROR");
+        print(err->data);
     }
 //	usleep(1000000000);
     return 1; //EXIT_FAILURE;

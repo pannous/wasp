@@ -447,11 +447,17 @@ bool isSmartPointer(long long d) {
 
 Node smartValue(long smartPointer);
 
+#if MY_WASI
+String demangle(const String &fun){
+    todo("demangle in pure wasm");
+    return fun;
+}
+#else
 
 #include <cxxabi.h>
 
 //std::__2::enable_if<(std::is_arithmetic<int>::value) && (std::is_arithmetic<long>::value), std::__2::__promote<int, long, void> >::type::type pow<int, long>(int, long)
-String demangle(const String &fun) {
+String extractFuncName(const String &fun) {
     if (fun.length == 0)return "";
     int status;
     char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
@@ -459,11 +465,14 @@ String demangle(const String &fun) {
         return fun;// not demangled (e.g. "memory")
     auto real_name = String(string); // temp
     String ok = real_name.substring(0, real_name.lastIndexOf("("));
+    if (ok.contains(':'))
+        ok = ok.substring(ok.lastIndexOf("::") + 2);
     if (ok.contains(' '))
-        ok = ok.substring(ok.lastIndexOf(" "));
+        ok = ok.substring(ok.lastIndexOf(" ") + 1);
     return ok;// .clone(); unnecessary: return by value copy
 }
 
+#endif
 
 String extractPath(String file) {
     if (!file.contains("/"))return "/";

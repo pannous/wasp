@@ -76,9 +76,12 @@ endif ()
 
 if (WASM)
     set(WASI 0) # increases size by factor 10!! 100873 wasp.wasm => 1074221 wasp.wasm_10x_with_WASI
+    set(MY_WASI 1) # manually write via fd_write, NOT via wasi-sdk printf=>fd_write
+    ADD_DEFINITIONS(-DMY_WASI)
+
     #    set(RUNTIME_ONLY 1) NO, we want compiler version too!
     #    ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
-    if (NOT WASI)
+    if (NOT WASI AND NOT MY_WASI)
         ADD_DEFINITIONS(-DPURE_WASM)
         ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
     endif ()
@@ -179,7 +182,7 @@ ADD_COMPILE_FLAG("-fno-inline")
 ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
 
 ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
-#ADD_COMPILE_FLAG("-Wno-non-pod-varargs") # usually only Plain Old Data structures!
+ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
 # todo Just use initiator lists? ^^
 
 if (NOT TRACE)
@@ -228,7 +231,7 @@ endif ()
 #ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
 
 # COMMON FOR ALL
-set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp)
+set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp source/Code.cpp)
 
 if (CONSOLE)
     message(CONSOLE)
@@ -319,6 +322,11 @@ if (SANITIZE OR TRACE) # or TRACE
     add_link_options(-fsanitize-recover=address)
 endif ()
 
+if (WASM)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_helpers_wasm.cpp)
+else ()
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_helpers_host.cpp)
+endif ()
 
 #
 # END OF GENERAL CONFIGURATION
@@ -327,12 +335,11 @@ endif ()
 if (WASM) # OR WASI)
     message(WASM)
     ADD_DEFINITIONS(-DWASM)
-    set(CMAKE_SYSROOT "") # via -DCMAKE_TOOLCHAIN_FILE=wasm.toolchain.cmake
     include(wasm.toolchain.cmake)
     if (WASI)
         ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
         set(CMAKE_ISYSROOT "") # typo? =>
-        set(CMAKE_SYSROOT "")
+        set(CMAKE_SYSROOT "") # via -DCMAKE_TOOLCHAIN_FILE=wasm.toolchain.cmake
         ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
     else ()
         ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
