@@ -157,86 +157,86 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
         {f32_eq,              0},
         {f32_ne,              0}, // !=
         {f32_lt,              0},
-        {f32_gt,              0},
-        {f32_le,              0},
-        {f32_ge,              0},
-        {f64_eq,              0},
-        {f64_ne,              0}, // !=
-        {f64_lt,              0},
-        {f64_gt,              0},
-        {f64_le,              0},
-        {f64_ge,              0},
+        {f32_gt,            0},
+        {f32_le,            0},
+        {f32_ge,            0},
+        {f64_eq,            0},
+        {f64_ne,            0}, // !=
+        {f64_lt,            0},
+        {f64_gt,            0},
+        {f64_le,            0},
+        {f64_ge,            0},
 
-        {i32_add,             0},
-        {i32_sub,             0},
-        {i32_mul,             0},
-        {i32_div,             0},
-        {i32_rem,             0}, // 5%4=1
-        {i32_modulo,          0},
-        {i32_rem_u,           0},
-        {i32_and,             0},
-        {i32_or,              0},
-        {i32_xor,             0},
-        {i32_shl,     0},
-        {i32_shr_s,   0},
-        {i32_shr_u,   0},
-        {i32_rotl,    0},
-        {i32_rotr,    0},
+        {i32_add,           0},
+        {i32_sub,           0},
+        {i32_mul,           0},
+        {i32_div,           0},
+        {i32_rem,           0}, // 5%4=1
+        {i32_modulo,        0},
+        {i32_rem_u,         0},
+        {i32_and,           0},
+        {i32_or,            0},
+        {i32_xor,           0},
+        {i32_shl,           0},
+        {i32_shr_s,         0},
+        {i32_shr_u,         0},
+        {i32_rotl,          0},
+        {i32_rotr,          0},
 
         //{⚠ warning: funny UTF characters ahead! todo: replace c => c etc?
-        {i64_clz,     0},
-        {i64_ctz,     0},
-        {i64_popcnt,  0},
-        {i64_add,     0},
-        {i64_sub,     0},
-        {i64_mul,     0},
+        {i64_clz,           0},
+        {i64_ctz,           0},
+        {i64_popcnt,        0},
+        {i64_add,           0},
+        {i64_sub,           0},
+        {i64_mul,           0},
 //		{i64_div_s,           0},
 //		{i64_div_u,           0},
-        {i64_rem_s,   0},
-        {i64_rem_u,   0},
-        {i64_and,     0},
-        {i64_or,      0},
-        {i64_xor,     0},
-        {i64_shl,     0},
-        {i64_shr_s,   0},
-        {i64_shr_u,   0},
-        {i64_rotl,    0},
-        {i64_rotr,    0},
+        {i64_rem_s,         0},
+        {i64_rem_u,         0},
+        {i64_and,           0},
+        {i64_or,            0},
+        {i64_xor,           0},
+        {i64_shl,           0},
+        {i64_shr_s,         0},
+        {i64_shr_u,         0},
+        {i64_rotl,          0},
+        {i64_rotr,          0},
 
         // beginning of float opcodes
         // todo : difference : ???
-        {f32_abs,     0},
-        {f32_neg,     0},
-        {f32_ceil,    0},
-        {f32_floor,   0},
-        {f32_trunc,   0},
-        {f32_round,   0},// truncation ≠ proper rounding!
-        {f32_nearest, 0},
+        {f32_abs,           0},
+        {f32_neg,           0},
+        {f32_ceil,          0},
+        {f32_floor,         0},
+        {f32_trunc,         0},
+        {f32_round,         0},// truncation ≠ proper rounding!
+        {f32_nearest,       0},
 
-        {f32_sqrt,    0},
-        {f32_add,     0},
-        {f32_sub,     0},
-        {f32_mul,     0},// f32.mul
-        {f32_div,     0},
+        {f32_sqrt,          0},
+        {f32_add,           0},
+        {f32_sub,           0},
+        {f32_mul,           0},// f32.mul
+        {f32_div,           0},
 
-        {f64_abs,     0},
-        {f64_neg,             0},
-        {f64_ceil,            0},
-        {f64_floor,           0},
-        {f64_trunc,           0},
-        {f64_nearest,         0},
-        {f64_sqrt,            0},
-        {f64_add,             0},
-        {f64_sub,             0},
-        {f64_mul,             0},
-        {f64_div,             0},
-        {f64_min,             0},
-        {f64_max,             0},
-        {f64_copysign,        0},
+        {f64_abs,           0},
+        {f64_neg,           0},
+        {f64_ceil,          0},
+        {f64_floor,         0},
+        {f64_trunc,         0},
+        {f64_nearest,       0},
+        {f64_sqrt,          0},
+        {f64_add,           0},
+        {f64_sub,           0},
+        {f64_mul,           0},
+        {f64_div,           0},
+        {f64_min,           0},
+        {f64_max,           0},
+        {f64_copysign,      0},
 
-        {f32_cast_to_i32_s,   0},// truncation ≠ proper rounding {f32_round, -1}!
-        {i32_trunc_f32_s,     0}, // cast/convert != reinterpret
-        {f32_convert_i32_s,   0},// convert FROM i32
+        {f32_cast_to_i32_s, 0},// truncation ≠ proper rounding {f32_round, -1}!
+        {i32_trunc_f32_s,   0}, // cast/convert != reinterpret
+        {f32_convert_i32_s, 0},// convert FROM i32
 //		{i32_cast_to_f32_s,                   -1},
         //{i32_cast_to_f64_s =
 
@@ -597,6 +597,7 @@ void Linker::WriteExportSection() {
     Fixup fixup = WriteUnknownSize();
     WriteU32Leb128(&stream_, total_exports, "export count");
 
+    int memories = 0;
     for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
         for (const Export &export_: binary->exports) {
             WriteStr(&stream_, export_.name, "export name");
@@ -612,6 +613,11 @@ void Linker::WriteExportSection() {
                     break;
                 case ExternalKind::Table:
                     index = binary->RelocateTable(index);
+                    break;
+                case ExternalKind::Memory:
+                    memories++;
+                    if (memories > 1)
+                        error("only one memory allowed");
                     break;
                 default:
                     WABT_FATAL("unsupport export type: %d %s\n", static_cast<int>(export_.kind), export_.name.data);
@@ -901,6 +907,11 @@ struct FuncInfo {
     LinkerInputBinary *binary{};
 };
 
+template<typename Collection, typename Element>
+void remove_from_efin_vec(Collection &c, const Element &e) {
+    c.erase(std::remove(c.begin(), c.end(), e), c.end());
+};
+
 void Linker::ResolveSymbols() {
     // Create hashmap of all exported symbols from all inputs.
 
@@ -919,6 +930,8 @@ void Linker::ResolveSymbols() {
 
 
 // binary->functions not filled yet!
+
+    int memories = 0;
     for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
         printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
         unsigned long nr_imports = binary->function_imports.size();
@@ -943,21 +956,27 @@ void Linker::ResolveSymbols() {
                 import_map.add(import.name, &import);
             }
         }
-//        int pos = 0;
-        for (const Export &_export: binary->exports) {// todo: why not store index directly?
-//            pos++;
+
+
+        short pos = 0;
+        for (Export &_export: binary->exports) {// todo: why not store index directly?
+            pos++;
             if (tracing)
                 printf("%s export kind %d '%s' index %d\n", binary->name, _export.kind, _export.name.data,
                        _export.index);
             if (export_map.FindIndex(_export.name) != kInvalidIndex) {
-//                error
                 warn("duplicate export name "s + _export.name);// Ignoring
-//                continue;
 //				binary->exports.erase(binary->exports.begin() + pos);
             }
             if (_export.kind == wabt::ExternalKind::Global) {
                 globals_export_list.emplace_back(&_export, binary.get());
                 export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
+            } else if (_export.kind == ExternalKind::Memory) {
+//                remove_from_efin_vec(binary->exports, _export);
+//                auto pos = std::find(binary->exports.begin(), binary->exports.end(), _export);
+                memories++;
+                if (memories > 1)
+                    binary->exports.remove(pos);
             } else if (_export.kind == ExternalKind::Func) {
                 Func &func = binary->functions[_export.index - nr_imports];
                 unsigned long position = export_list.size();
@@ -1501,9 +1520,9 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
         short new_size = lebByteSize((unsigned long) new_value);
         if (new_size > current_size) {
             uint8_t noper = *(section_start + r->offset + current_size);
-            if (noper != nop)
-                todo("grow big leb values %d >> %d (%d bytes > %d leb bytes)"s % new_value % cur_value % new_size %
-                     current_size);
+            if (noper != nop) todo(
+                    "grow big leb values %d >> %d (%d bytes > %d leb bytes)"s % new_value % cur_value % new_size %
+                    current_size);
         }// memory messed up by now
         WriteU32Leb128Raw(section_start + r->offset, section_end, new_value);
     }

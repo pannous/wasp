@@ -255,7 +255,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 //		right = *op0.param;
 //	}
     String &op = op0.name;
-    if (!isFunction(op)) // 1 + square 2  => "1+" kept dangling
+    if (!isFunction(op, true)) // 1 + square 2  => "1+" kept dangling
         left = left.interpret(false);
     bool lazy = (op == "or") and (bool) left;
     lazy = lazy || (op == "and" and not(bool) left);
@@ -267,7 +267,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
     if (!lazy)
         right = right.interpret(false);
 
-    if (isFunction(op))
+    if (isFunction(op, true))
         return do_call(left, op0, right);
 
     if (op == ".") {
@@ -459,7 +459,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
     if (op == "else" or op == "then")return right;// consume by "if"! todo COULD be used as or if there is no 'if'
     if (op == "if") return If(right);
     if (op == "while") return While(right);
-    if (isFunction(op)) {
+    if (isFunction(op, true)) {
 //		kind=Type::function; // functor same concept, different arguments
         // careful, functions take arguments, functors take bodies if(1,2,3)!=if{1}{2}{3}
     }

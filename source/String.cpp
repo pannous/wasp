@@ -698,7 +698,8 @@ void put(chars s) {
 //    int *len = new int;// these need to be on heap for i32.load!
     size_t *nwritten = new size_t;
     size_t len = strlen0(s);
-    fd_write(1,(char **) &s, len, nwritten);
+    fd_write(1,(char *) s, len, nwritten);
+//    fd_write(1,(char **) &s, len, nwritten);
 #else
     puts(s);
 #endif

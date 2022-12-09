@@ -381,6 +381,12 @@ public:
         _size--;
     }
 
+    void remove(short position) {
+        if (position < 0)return;
+        memcpy(items + position, items + position + 1, _size - position);
+        _size--;
+    }
+
     S last(S defaulty) {
         if (_size < 1)
             return defaulty;
@@ -429,6 +435,16 @@ public:
             s += string;
         }
         return s;
+    }
+
+    S &back() {
+        if (_size <= 0)error("no back() in empty list.");
+        return items[_size - 1];
+    }
+
+    void emplace_back() {
+        _size++;
+        if (_size >= capacity)grow();
     }
 };
 

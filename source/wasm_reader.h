@@ -81,6 +81,6 @@ Code &read_code(chars file);
 
 extern Module *module;
 
-extern Map<String, Module *> module_cache;
+extern Map<long, Module *> module_cache;
 
 Type mapArgToType(String arg);

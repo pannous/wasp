@@ -152,23 +152,16 @@ void parseFunctionNames(Code &payload) {
 }
 
 //Map<int, Signature> funcTypes;
+// import type indices are part of import struct!
 void parseFuncTypeSection(Code &payload) {
+    // imports stupidly have their own type,
     // we don't know here if i32 is pointer … so we may have to refine later
     for (int i = 0; i < module->code_count and payload.start < payload.length; ++i) {
-        int typ = unsignedLEB128(payload);// implicit?
-        auto code_index = (int) (i + module->import_count);
-        Function &function2 = module->functions.values[code_index];
-        String *fun = module->functionIndices.has(code_index);
-        if (!fun)continue;
-//        if(*fun=="puts")
-//            breakpoint_helper
-//			error("no name for function "s+i);
+        auto code_index = (int) (i + module->import_count); // implicit !?
+        int typ = unsignedLEB128(payload);
+        Function &function = module->functions.values[i];
         Signature &s = module->funcTypes[typ];
-        Function &function = module->functions[*fun];
-        if (function.name.empty())function.name = *fun;// late!
         function.signature.merge(s);
-        Signature &sic = getSignature(*fun);// todo merge global signatures later!
-        sic.merge(s);
     }
 }
 
@@ -362,6 +355,7 @@ void consumeFuncTypeSection() {
     for (int i = 0; i < module->code_count; ++i) {
         int type = unsignedLEB128(funcs_to_types);
         module->funcToTypeMap[i] = type;
+//        printf("func code_index %d => type %d\n", i, type);
     }
     // parsed AGAIN later in parseFuncTypeSection to connect names . todo unnecessary?
 }
@@ -712,7 +706,7 @@ Module &read_wasm(bytes buffer, int size0) {
 }
 
 //static
-Map<String, Module *> module_cache;
+Map<long, Module *> module_cache{.capacity=100};
 
 Module &read_wasm(chars file) {
     if (!s(file).endsWith(".wasm"))
@@ -723,8 +717,8 @@ Module &read_wasm(chars file) {
     String name = file;
     if (name.contains("~"))
         file = name.replace("~", "/Users/me"); // todo $HOME
-    if (module_cache.has(name))
-        return *module_cache[name];
+    if (module_cache.has(name.hash()))
+        return *module_cache[name.hash()];
 
     if (debug_reader)print("--------------------------\n");
 //    if (debug_reader)
@@ -738,7 +732,7 @@ Module &read_wasm(chars file) {
     wasm.code.name = name;
     wasm.name = name;
     fclose(stream);
-    module_cache.insert_or_assign(name, &wasm);
+    module_cache.add(name.hash(), &wasm);
     return wasm;
 #endif
 }
