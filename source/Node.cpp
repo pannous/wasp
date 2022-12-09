@@ -866,8 +866,9 @@ String Node::serializeValue(bool deep) const {
         case kind_padding:
             error("kind_padding is not a Kind");
 //        default:
-//            breakpoint_helper
-//            return "MISSING CASE";
+        case number:
+            breakpoint_helper
+            return "MISSING CASE";
     }
     error("MISSING CASE for "s + (int) kind + " " + typeName(kind));
 }
@@ -1255,12 +1256,15 @@ chars typeName(Kind t) {
         case buffers:
             return "buffer";
         case realsF:
+            return "float";
         case reals:
-//            return "float";
             return "real";
-        case longs:
-        case longsI:
+        case number: // SmartNumber or Number* ?
             return "number";
+        case longs:
+            return "long";
+        case longsI:
+            return "int";
             //		case ints:
             //			return "int";
         case bools:
@@ -1309,7 +1313,9 @@ chars typeName(Primitive p);
 
 chars typeName(Type t) {
     if (t.value < last_kind)return typeName(t.kind);
-    if (t.value < 0x1000)return typeName((Primitive) t);
+    if (t.value < 0x10000)return typeName((Primitive) t);
+    // todo : make sure to emit Nodes at > 0x10000 …
+    warn("typeName %x %d "s % t.value % t.value);
 #if !WASM
 //    warn("Node pointers don't fit in 32 bit Type!")
     todo("Node pointers don't fit in 32 bit Type!");

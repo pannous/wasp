@@ -96,7 +96,9 @@ public:
     BigInt operator/(BigInt other) { todo("BigInt"); }
 };
 
-
+// todo: reconcile with Valtype
+// todo: reconcile with Primitive … AGAIN!
+// todo: reconcile with SmartNumber / smarty4 smarty32 smarty64 HEADERs
 enum NumberType {
     number_undefined, // NaN
     number_null, // special zero
@@ -130,14 +132,15 @@ struct Complex {
     float imagine;
 };
 
-// can represent 60bit integers, floats
+// can represent 60bit integers, floats COMPATIBLE
+//  Node Kind number = 0x70, // SmartNumber or Number* as SmartPointer? ITS THE SAME!
 struct SmartNumber {
     byte header;// NumberType
     byte more;
     int number;
 };
 
-union NumberValue { // 64 bit:
+union NumberValue { // 64 bit: (56/60 bit if extracted from SmartNumber
     double doubl; // see Node.real
     long long longe; // see Node.longy
     Fraction fraction;// two int
@@ -149,6 +152,12 @@ union NumberValue { // 64 bit:
     NumberValue() {}
 };
 
+union SmartNumberUnion {
+    u64 raw;
+    NumberValue value;
+    SmartNumber type;// .header
+    SmartNumber number; // combined type and value
+};
 
 class Number {
     NumberType type;

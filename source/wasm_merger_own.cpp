@@ -177,49 +177,49 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
         {i32_and,             0},
         {i32_or,              0},
         {i32_xor,             0},
-        {i32_shl,             0},
-        {i32_shr_s,           0},
-        {i32_shr_u,           0},
-        {i32_rotl,            0},
-        {i32_rotr,            0},
+        {i32_shl,     0},
+        {i32_shr_s,   0},
+        {i32_shr_u,   0},
+        {i32_rotl,    0},
+        {i32_rotr,    0},
 
         //{⚠ warning: funny UTF characters ahead! todo: replace c => c etc?
-        {i64_clz,             0},
-        {i64_ctz,             0},
-        {i64_popcnt,          0},
-        {i64_add,             0},
-        {i64_sub,             0},
-        {i64_mul,             0},
+        {i64_clz,     0},
+        {i64_ctz,     0},
+        {i64_popcnt,  0},
+        {i64_add,     0},
+        {i64_sub,     0},
+        {i64_mul,     0},
 //		{i64_div_s,           0},
 //		{i64_div_u,           0},
-        {i64_rem_s,           0},
-        {i64_rem_u,           0},
-        {i64_and,             0},
-        {i64_or,              0},
-        {i64_xor,             0},
-        {i64_s𝗁l,             0},
-        {i64_s𝗁r_s,           0},
-        {i64_s𝗁r_u,           0},
-        {i64_rotl,            0},
-        {i64_rotr,            0},
+        {i64_rem_s,   0},
+        {i64_rem_u,   0},
+        {i64_and,     0},
+        {i64_or,      0},
+        {i64_xor,     0},
+        {i64_shl,     0},
+        {i64_shr_s,   0},
+        {i64_shr_u,   0},
+        {i64_rotl,    0},
+        {i64_rotr,    0},
 
         // beginning of float opcodes
         // todo : difference : ???
-        {f32_abs,             0},
-        {f32_neg,             0},
-        {f32_ceil,            0},
-        {f32_floor,           0},
-        {f32_trunc,           0},
-        {f32_round,           0},// truncation ≠ proper rounding!
-        {f32_nearest,         0},
+        {f32_abs,     0},
+        {f32_neg,     0},
+        {f32_ceil,    0},
+        {f32_floor,   0},
+        {f32_trunc,   0},
+        {f32_round,   0},// truncation ≠ proper rounding!
+        {f32_nearest, 0},
 
-        {f32_sqrt,            0},
-        {f32_add,             0},
-        {f32_sub,             0},
-        {f32_mul,             0},// f32.mul
-        {f32_div,             0},
+        {f32_sqrt,    0},
+        {f32_add,     0},
+        {f32_sub,     0},
+        {f32_mul,     0},// f32.mul
+        {f32_div,     0},
 
-        {f64_abs,             0},
+        {f64_abs,     0},
         {f64_neg,             0},
         {f64_ceil,            0},
         {f64_floor,           0},
@@ -470,8 +470,7 @@ Index LinkerInputBinary::RelocateMemoryIndex(Index memory_index) const {
 }
 
 Index LinkerInputBinary::RelocateTable(Index global_index) const {
-    if (needs_relocate)
-        todo("RelocateTable");
+    if (needs_relocate) todo("RelocateTable")
     else return global_index;// shouldn't reach this anyways
 }
 

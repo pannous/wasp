@@ -505,6 +505,7 @@ public:
         todo("dynamic dispatch");
         // i32.const fun
         // call_indirect(type,table)
+        return this;
     }
 
     Node &first() {
