@@ -320,21 +320,27 @@ void consumeCustomSection() {
     Code customSectionDatas = vec();
     String type = name(customSectionDatas);
     Code payload = customSectionDatas.rest();
-    if (type == "names") consumeNameSection(payload);
-    else if (type == "target_features") todo("target_features detection not yet supported");
+    if (type == "names") {
+        consumeNameSection(payload);
+    } else if (type == "target_features")
 //	https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md#target-features-section
 // 	atomics bulk-memory exception-handling multivalue mutable-globals nontrapping-fpoint sign-ext simd128 tail-call
-    else if (type == "linking") consumeLinkingSection(payload);
+    todo("target_features detection not yet supported")
+    else if (type == "linking")
         // see https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md
-    else if (type == "dylink.0") todo("dynamic linking not yet supported");
+        consumeLinkingSection(payload);
+    else if (type == "dylink.0")
         // see https://github.com/WebAssembly/tool-conventions/blob/main/DynamicLinking.md
-    else if (type.startsWith("reloc.")) consumeRelocateSection(payload);// e.g. "reloc.CODE"
+    todo("dynamic linking not yet supported")
+    else if (type.startsWith("reloc."))
+        consumeRelocateSection(payload);// e.g. "reloc.CODE"
         // everything after the period is ignored and the specific target section is encoded in the reloc section itself.
         // see https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md
-    else if (type == "relocate")consumeRelocateSection(payload);
+    else if (type == "relocate")
+        consumeRelocateSection(payload);
     else {
 //		pos = size;// force finish
-//		error("consumeCustomSection not implementated for "s + type);
+        warn("consumeCustomSection not implementated for "s + type);
         customSectionDatas.start = 0;// reset
 
 //		TODO REENABLE!! currently causes
@@ -407,8 +413,13 @@ void consumeExportSection() {
         String func0 = name(payload).clone();
         if (func0 == "_Z5main4iPPc")continue;// don't make libraries 'main' visible, use own
         String func = demangle(func0);
+        int status = 0; // for debugging:
+        char *string = abi::__cxa_demangle(func0.data, 0, 0, &status);// function name and cpp args but no return value
+
         Function &fun = module->functions[func];// demangled
         Function &fun0 = module->functions[func0];// mangled
+        // ⚠️ CAN BE THE SAME REFERENCE IF func==func0 !!! ⚠️
+
         fun.name = func;
         fun0.name = func0;
         if (index < 0 or index > 100000)error("corrupt index "s + index);
@@ -418,30 +429,44 @@ void consumeExportSection() {
         module->functionIndices[func] = index;// demangled
         fun0.index = index;
         fun.index = index;
+        if (index == 31)
+            breakpoint_helper
+//            check(func0=="_Zli2_sPKcm");
+
         int funcType = module->funcToTypeMap[code_index];
         // todo: demangling doesn't yield return type, is wasm_signature ok?
         fun.signature.type_index = funcType;
-        fun0.signature.type_index = funcType;
+        fun0.signature.type_index = funcType;// todo: remove duplicate, try fun0.signature=fun.signature at end again
         if (not(0 <= funcType and funcType <= module->funcTypes._size))
             check_silent(0 <= funcType and funcType <= module->funcTypes._size)
         Signature &wasm_signature = module->funcTypes[funcType];
         Valtype returns = mapTypeToWasm(wasm_signature.return_types.last(Kind::undefined));
         if (wasm_signature.wasm_return_type == void_block) returns = void_block;
-        fun0.signature.returns(returns);
         fun.signature.returns(returns);
-        // todo: use wasm_signature if demangling fails
+        if (&fun != &fun0)
+            fun0.signature.returns(returns);
+
+        // todo: use wasm_signature if demangling fails, see merge(signature) below
+
+        if (func.contains("::"))
+            fun.signature.add(Primitive::self, "self");
+// e.g. List<String>::add (String) has one arg, but wasm signature is (i32,i32):i32  ["_ZN4ListI6StringE3addES0_"]
+// todo: demangle further and put into multi-dispatch
+
         List<String> args = demangle_args(func0);
         for (String arg: args) {
             if (arg.empty())continue;
-            fun.signature.add(mapArgToValtype(arg));
-            fun0.signature.add(mapArgToValtype(arg));
+            fun.signature.add(mapArgToType(arg), arg);
+            if (&fun != &fun0)
+
+                fun0.signature.add(mapArgToType(arg), arg);
         }
         // can't after free
+//        if (&fun != &fun0)
+//            fun0.signature = fun.signature;// ⚠️ SHARING deep list fields now. this causes problems later:
 //        fun0.signature = fun.signature.clone();// todo copy by value ok? NO: heap-use-after-free on address
         if (debug_reader) {
             const String &argos = args.join(",");
-            int status = 0;
-            char *string = abi::__cxa_demangle(func0.data, 0, 0, &status);
 //            printf("ƒ%d %s(%s) ≈\n", index, func0.data, string);
             printf("ƒ%d %s ≈\n", index, func0.data);
             printf("ƒ%d %s(%s)\n", index, func.data, argos.data);
@@ -464,19 +489,19 @@ Type mapArgToType(String arg) {
     else if (arg == "char32_t*")return codepoints; // ≠ codepoint todo, not exactly: WITHOUT HEADER!
     else if (arg == "char const**")return pointer;
     else if (arg == "short")
-        return int32;// careful c++ ABI overflow? should be fine since wasm doesnt have short
+        return int32;// vec_i16! careful c++ ABI overflow? should be fine since wasm doesnt have short
     else if (arg == "int")return int32;
     else if (arg == "signed int")return i32s;
     else if (arg == "unsigned int")return i32;
     else if (arg == "unsigned char")return int32;
     else if (arg == "int*")return pointer;
     else if (arg == "void*")return pointer;
-    else if (arg == "long")return int64;
+    else if (arg == "long")return i64;
     else if (arg == "long&")return pointer;
-    else if (arg == "long long")return int64;
-    else if (arg == "unsigned long long")return int64;
+    else if (arg == "long long")return i64;
+    else if (arg == "unsigned long long")return i64;
     else if (arg == "double")return float64;
-    else if (arg == "unsigned long")return int64;
+    else if (arg == "unsigned long")return i64;
     else if (arg == "float")return float32;
     else if (arg == "bool")return int32;
     else if (arg == "char")return int32;// c++ char < angle codepoint ok
@@ -485,7 +510,7 @@ Type mapArgToType(String arg) {
     else if (arg == "Type")return int32;// enum
     else if (arg == "Kind")return int32;// enum (short, ok)
     else if (arg == "Code")return (Valtype) ignore;
-    else if (arg == "Type")return typeo;// enum
+    else if (arg == "Type")return type32;// enum
     else if (arg == "String*")return (Valtype) stringp;
     else if (arg == "String&")return (Valtype) stringp;// todo: how does c++ handle refs?
     else if (arg == "String")return (Valtype) string_struct;// todo !DIFFERENT
@@ -619,6 +644,7 @@ Module &read_wasm(bytes buffer, int size0) {
 
 //static
 Map<String, Module *> module_cache;
+
 Module &read_wasm(chars file) {
     if (!s(file).endsWith(".wasm"))
         file = concat(file, ".wasm");
@@ -626,6 +652,8 @@ Module &read_wasm(chars file) {
     return *new Module();
 #else
     String name = file;
+    if (name.contains("~"))
+        file = name.replace("~", "/Users/me"); // todo $HOME
     if (module_cache.has(name))
         return *module_cache[name];
 

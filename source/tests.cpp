@@ -2705,6 +2705,23 @@ void testCurrent() {
 //    skip(
 //testNodeDataBinaryReconstruction();
 //    assert_is("[1 2 3]", Node(1, 2, 3, 0))
+//__wasi_fd_write
+/*
+ * fd_write: wrap((fd, iovs, iovsLen, nwritten) => {
+        const stats = CHECK_FD(fd, WASI_RIGHT_FD_WRITE);
+        let written = 0;
+        getiovs(iovs, iovsLen)
+          .forEach((iov) => {
+            let w = 0;
+            while (w < iov.byteLength) {
+              w += fs.writeSync(stats.real, iov, w, iov.byteLength - w);
+            }
+            written += w;
+          });
+ * */
+    read_wasm("~/dev/wasm/wasi/wasi-demo.wasm");
+    quit()
+    check_is(demangle("_ZN6String17extractCodepointsEb"), "String::extractCodepoints");
     check_is(stackItemSize(Primitive::wasm_float64), 8);
     Valtype yy = (Valtype) Primitive::charp;
     check((Type) Primitive::charp == yy);

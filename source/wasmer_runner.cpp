@@ -575,10 +575,10 @@ const wasm_functype_t *funcType(Signature &signature) {
 		switch (returnType) {
 			case int32:
 				return wasm_functype_new_2_1(i, i, i); // printf(i32,i32)i32
-			case int64:
-				return wasm_functype_new_2_1(i, i, I);
-			case float32:
-				return wasm_functype_new_2_1(f, f, f);
+			case i64:
+                return wasm_functype_new_2_1(i, i, I);
+            case float32:
+                return wasm_functype_new_2_1(f, f, f);
 			case float64:
 				return wasm_functype_new_2_1(F, F, F); // powd(f64,f64)f64
 			default:

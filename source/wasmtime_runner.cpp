@@ -459,7 +459,7 @@ const wasm_functype_t *funcType(Signature &signature) {
                 return wasm_functype_new_0_0();
             case int32:
                 return wasm_functype_new_0_1(wasm_valtype_new(WASM_I32));
-            case int64:
+            case i64:
                 return wasm_functype_new_0_1(wasm_valtype_new(WASM_I64));
             default:
                 break;
@@ -478,12 +478,12 @@ const wasm_functype_t *funcType(Signature &signature) {
                     default:
                         break;
                 }
-            case int64:
+            case i64:
                 switch (returnType) {
                     case none:
                     case voids:
                         return wasm_functype_new_1_0(wasm_valtype_new(WASM_I64));
-                    case int64:
+                    case i64:
                         return wasm_functype_new_1_1(wasm_valtype_new(WASM_I64), wasm_valtype_new(WASM_I64));
                     default:
                         break;
@@ -517,7 +517,7 @@ const wasm_functype_t *funcType(Signature &signature) {
             case int32:
                 return wasm_functype_new_2_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
                                              wasm_valtype_new(WASM_I32)); // printf(i32,i32)i32
-            case int64:
+            case i64:
                 return wasm_functype_new_2_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
                                              wasm_valtype_new(WASM_I64));
             case float32:

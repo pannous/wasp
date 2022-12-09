@@ -177,9 +177,10 @@ public:
                 return values[_size++];// values already contain blank T's so ok
             } else if (use_default and false) {
                 // todo remove after you understand that this is a bad idea … and don't come up with that idea again
-                T &t = values[_size++];
 //				memcpy(t, defaulty, sizeof(T));// BAD because this would copy fields (e.g. pointers to same list)
 //				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
+                T &t = values[_size++]; // todo why is this bad though?;)
+                // can FAIL with "T not initialized" ?
                 return t;
             } else if (use_constructor) {
 //				insert_or_assign(key, *new T());

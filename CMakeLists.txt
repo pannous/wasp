@@ -176,6 +176,7 @@ ADD_COMPILE_FLAG("-Wno-writable-strings") # ALWAYS allow conversion from string 
 ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 ADD_COMPILE_FLAG("-fno-inline")
+ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
 
 ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
 #ADD_COMPILE_FLAG("-Wno-non-pod-varargs") # usually only Plain Old Data structures!
@@ -190,7 +191,6 @@ if (NOT TRACE)
                 ADD_COMPILE_FLAG("-Wno-error=#warnings") # allow pragma warnings as message
             endif ()
         endif ()
-        ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
         ADD_COMPILE_FLAG("-Wno-unused-function")
         ADD_COMPILE_FLAG("-Wno-unused-variable")
         ADD_COMPILE_FLAG("-Wno-unused-private-field")

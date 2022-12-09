@@ -561,6 +561,10 @@ public:
         return this->operator%((long long) d);
     }
 
+    String operator%(unsigned long d) {
+        return this->operator%((long long) d);
+    }
+
     String operator%(long long d) {
         if (contains("%lld"))
             return this->replace("%lld", formatLong(d));
@@ -858,7 +862,7 @@ public:
                 }
             }
             if (ok)
-                return i;
+                return i0;
         }
         return -1;//
     }
