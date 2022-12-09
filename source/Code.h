@@ -613,9 +613,11 @@ enum Opcodes {
     // todo : peek 65536 as float directly via opcode
     i64_load = 0x29, // memory.peek memory.get memory.read
     i64_store = 0x37, // memory.poke memory.set memory.write
-    i32_store_8 = 0x3A,
-    i32_store_16 = 0x3B,
+
+    i32_store_8 = 0x3A, // i32.store8
     i8_store = 0x3A,
+
+    i32_store_16 = 0x3B,
     i16_store = 0x3B,
 
 //	i32_store_byte = 0x3a,// store byte at i32 address

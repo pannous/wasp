@@ -2731,10 +2731,11 @@ void testCurrent() {
 //    assert_emit("print 'ok'", (long) 0);
 //    assert_emit("putf 3.1", 3.1);
 //List<chars> operator_list(operator_list0);
+    assert_is("x=(1 4 3);x#2=5;x#2", 5);
     assert_emit("x='abcde';x#4='x';x[3]", 'x');
 
     assert_emit("i=10007;x=i%10000", 7);
-    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+//    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
 
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
 
