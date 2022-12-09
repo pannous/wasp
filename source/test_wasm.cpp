@@ -816,7 +816,7 @@ void testMergeWabtByHand() {
 void testWasmRuntimeExtension() {
 
     assert_run("43", 43);
-    assert_run("len('123')", 3);
+//    assert_run("len('123')", 3);
     assert_run("int('123')", 123);
     assert_run("int('123000')+int('456')", 123456);
     assert_run("int('123'+'456')", 123456);
