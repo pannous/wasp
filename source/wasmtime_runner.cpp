@@ -94,6 +94,17 @@ wrap(putf) {
     return NULL;
 }
 
+wrap(fd_write) {
+    auto fd = args[0].of.i32;
+    char *s = ((char *) wasm_memory) + args[1].of.i32;
+    size_t len = args[2].of.i32;
+    if (!wasm_memory)
+        printf("wasm_memory not linked");
+    else
+        printf("%s", s);
+    return NULL;
+}
+
 wrap(putd) {
     float f = args[0].of.f64;
     printf("%f", f);
@@ -118,9 +129,9 @@ wrap(atoi) {
     return NULL;
 }
 
-wrap(exit) {
-    printf("exit, lol");
-//	exit(42);
+wrap(exit) { // proc_exit
+    printf("exit wasmtime");
+    exit(42);
     return NULL;
 }
 
@@ -216,6 +227,7 @@ wasm_wrap *link_import(String name) {
     if (name == "puts") return &wrap_puts;
     if (name == "putf") return &wrap_putf;
     if (name == "putd") return &wrap_putd;
+    if (name == "fd_write") return &wrap_fd_write;
     if (name == "log") return &wrap_logd;// logd
     if (name == "logd") return &wrap_logd;// logd
     if (name == "putc") return &wrap_putc;
@@ -311,7 +323,12 @@ extern "C" long run_wasm(unsigned char *data, int size) {
         wasmtime_func_t link;
 //		Signature &signature = meta.signatures[import_name];
         Function &function = meta.functions[import_name];
+        function.name = import_name;
         Signature &signature = function.signature;
+        if (import_name == "proc_exit") {
+            signature.return_types.clear();
+            signature.wasm_return_type = none;
+        }
 //        function.name = signature.debug_name = import_name;
         const wasm_functype_t *type = funcType(signature);
         wasm_wrap (*callback) = link_import(import_name);
@@ -339,8 +356,10 @@ extern "C" long run_wasm(unsigned char *data, int size) {
         uint8_t *memory_data = wasmtime_memory_data(context, &wasmtimeMemory);
         if (memory_data)
             wasm_memory = memory_data;
-        else trace("wasm module exports no memory");
-    } else trace("wasm module exports no memory");
+        else
+            warn("wasm module exports no memory");
+    } else
+        warn("wasm module exports no memory");
 
 //	else error("wasmtime_instance_export_get failed");
 

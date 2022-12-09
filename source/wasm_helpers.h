@@ -236,9 +236,9 @@ extern "C" int printf(chars s, ...);  //stdio
 
 extern "C"
 #if WASI or MY_WASI
-__attribute__((import_module("wasi_unstable"), import_name("fd_write")))
+//__attribute__((import_module("wasi_unstable"), import_name("fd_write")))
+__attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")))
 int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
-//__attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")));
 #else
 int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
 #endif

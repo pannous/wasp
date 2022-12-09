@@ -1057,6 +1057,7 @@ public:
             return_types = s.return_types;// todo copy construktor OK??
         if (parameter_types.empty())
             parameter_types = s.parameter_types;
+        // todo: fix debug name and parameter_names!
     }
 
     bool has(String string) {

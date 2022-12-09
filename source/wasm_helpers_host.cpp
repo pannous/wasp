@@ -14,7 +14,7 @@
 
 #include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
 
-unsigned int *memory = 0;
+extern "C" unsigned int *memory = 0;
 void *wasm_memory = 0;// c pointer of VM, NOT memory inside wasm module
 
 // these wrappers are helpful because different hosts have different signatures, so wasm_helpers.h would need many #if's

@@ -23,6 +23,7 @@
 #include "binary.h"
 #include "common.h"
 #include "type.h"
+#include "../List.h"
 
 namespace wabt {
 	namespace link {
@@ -147,7 +148,7 @@ namespace wabt {
 
             std::vector<uint8_t> data;
             std::vector<std::unique_ptr<Section>> sections;
-            std::vector<Export> exports;
+            List<Export> exports;
             std::vector<Func> functions;// only those with code, not imports:
             std::vector<FunctionImport> function_imports;
             Index active_function_imports;

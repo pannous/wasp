@@ -272,7 +272,7 @@ class WitReader {
     }
 
     Node &readModule(Node &node) {
-        if (node.length < 2) todow("empty world");
+//        if (node.length < 2) todow("empty world");
         Node &world = node.last();
         Module &mod = findOrCreateModule(world.name);
         current_module.add(&mod);
