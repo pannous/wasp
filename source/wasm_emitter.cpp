@@ -809,7 +809,7 @@ Code emitIndexWrite(Node &op, Function &context) {// todo offset - 1 when called
     return emitIndexWrite(op["array"], 0, op["offset"], op["value"], context);
 }
 
-// "hi"#1="H"
+// "hi"#1='H'
 [[nodiscard]]
 Code emitPatternSetter(Node &ref, Node offset, Node value, Function &context) {
     String &variable = ref.name;
@@ -826,6 +826,8 @@ Code emitPatternSetter(Node &ref, Node offset, Node value, Function &context) {
         base = referenceDataIndices[variable];// todo?
         ref = referenceMap[variable];// ref to value!
     }
+    if (referenceDataIndices.has(variable))
+        base = referenceDataIndices[variable];// todo?
 //	last_type = mapTypeToWasm(value);
     Code code = emitIndexWrite(ref, base, offset, value, context);
     return code;
@@ -1156,8 +1158,8 @@ Code emitValue(Node &node, Function &context) {
             int stringIndex = data_index_end + runtime.data_offset_end;// uh, todo?
             if (!node.value.string)error("missing node.value.string");
             String string = *node.value.string;
-            if (referenceDataIndices.has(
-                    string)) // todo: reuse same strings even if different pointer, aor make same pointer before
+            if (referenceDataIndices.has(string))
+                // todo: reuse same strings even if different pointer, aor make same pointer before
                 stringIndex = referenceDataIndices[string];
             else {
                 referenceDataIndices.insert_or_assign(string, data_index_end);
@@ -1182,7 +1184,8 @@ Code emitValue(Node &node, Function &context) {
                 // we add an extra 0, unlike normal wasm abi, because we have space in data section
                 data_index_end += string.length + 1;
             }
-            last_type = charp;//
+            last_type = charp;
+            last_object_pointer = stringIndex;
             code = Code(i32_const) + Code(stringIndex);// just a pointer
             if (node.length > 0) {
                 if (node.length > 1)error("only 1 op allowed");
@@ -1974,6 +1977,8 @@ Code emitSetter(Node &node, Node &value, Function &context) {
     setter.add(cast(last_type, variable_type));
     setter.add(tee_local);
     setter.add(local.position);
+    if (value.kind == strings)
+        referenceDataIndices[local.name] = last_object_pointer;// HAKC
     if (variable_type != void_block)
         last_type = variable_type;// still the type of the local, not of the value. example: float x=7
     return setter;

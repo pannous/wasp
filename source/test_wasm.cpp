@@ -1000,7 +1000,7 @@ void testRecentRandomBugs() {
     assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
     assert_emit("‖-3‖", 3);
     assert_emit("√100²", 100);
-    assert_emit("puts('ok');", 0);
+//    assert_emit("puts('ok');", 0);
     assert_emit("width=height=400;height", 400);
     assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
     assert_parses("{ç:☺}");
