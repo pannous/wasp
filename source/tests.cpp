@@ -14,6 +14,20 @@
 #include "wasm_runner.h"
 #include "WitReader.h"
 
+void testEnumConversion() {
+#if not TRACE
+    Valtype yy = (Valtype) Primitive::charp;
+    int i = (int) Primitive::charp;
+    int i1 = (int) yy;// CRASHES in Trace mode WHY?
+    check_is(stackItemSize(Primitive::wasm_float64), 8);
+    check_is(i, i1);
+    check((Type) Primitive::charp == yy);
+    check((Type) yy == Primitive::charp);
+    check(Primitive::charp == (Type) yy);
+    check(yy == (Type) Primitive::charp);
+    check((int) yy == (int) Primitive::charp);
+#endif
+}
 
 void bindgen(Node &n) {
 //    todo parserOptions => formatOptions => Format ! inheritable
@@ -177,10 +191,12 @@ void testIndexOffset() {
     assert_emit("x=(5 6 7);y=(1 4 3);y#2", 4);
     assert_emit("(5 6 7);(1 4 3)#2", 4);
     assert_emit("x=(5 6 7);(1 4 3)#2", 4);
-    assert_emit("puts('ok');(1 4 3)#2", 4);
+    skip(
+            assert_emit("puts('ok');(1 4 3)#2", 4);
+    )
     assert_emit("x=0;while x++<11: nop;", 0);
-//    assert_emit("i=10007;x=i%10000", 7);
-//    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+    assert_emit("i=10007;x=i%10000", 7);
+    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
     assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
     assert_emit("maxi=3840*2160", 3840 * 2160);
     assert_emit("i=10007;x=i%10000", 7);
@@ -578,8 +594,8 @@ void testIteration() {
     }
     assert_equals(i, 3);
 
-    Node items = {"1", "2", "3"};
-//	Node items = Node{"1", "2", "3", 0};
+//    Node items = {"1", "2", "3"};
+    Node items = Node{"1", "2", "3"};
     i = 0;
     for (auto x: list) {
         i++;
@@ -979,6 +995,7 @@ void testDiv() {
 
 void checkNil() {
     check(NIL.isNil());
+    assert_equals(NIL.name.data, NIL_NAME);
     check(nil_name == "nil");// WASM
     if (NIL.name.data != nil_name)
         assert_equals(NIL.name.data, nil_name);
@@ -1970,7 +1987,6 @@ void testString() {
     check("hi %s ok"s % "ja" == "hi ja ok");
     assert_equals(atoi1('x'), -1);
     assert_equals(atoi1('3'), 3);
-    assert_is("١٢٣", 123);
     assert_equals(parseLong("١٢٣"), 123l);
     check_eq(parseLong("123"), 123l);// can crash!?!
 //	assert_equals( atoi1(u'₃'),3);// op
@@ -1981,6 +1997,10 @@ void testString() {
     assert_equals("     \n   malloc"s.trim(), "malloc");
     assert_equals("     \n   malloc     \n   "s.trim(), "malloc");
     assert_equals("malloc     \n   "s.trim(), "malloc");
+    testStringConcatenation();
+    testStringReferenceReuse();
+    assert_equals_x(parse("١٢٣"), Node(123));
+    assert_is("١٢٣", 123);
 }
 
 
@@ -2561,6 +2581,7 @@ void testBUG() {// move to tests() once done!
 
 
 void tests() {
+    testEnumConversion();
     testDeepColon();
     testDeepColon2();
     testPattern();
@@ -2703,46 +2724,50 @@ void testCurrent() {
     //	panicking = true;//
 //    assurances();
 //    skip(
-//testNodeDataBinaryReconstruction();
+//    loadModule("cmake-build-wasm/wasp.wasm");
+//    loadModule("wasp");
+//    print(functions["puts"].signature.serialize());
+//    assert_emit("puts 'ok'", (long) 0);
+//    assert_emit("print 'ok'", (long) 0);
+//    assert_emit("putf 3.1", 3.1);
+//List<chars> operator_list(operator_list0);
+    assert_emit("x='abcde';x#4='x';x[3]", 'x');
+
+    assert_emit("i=10007;x=i%10000", 7);
+    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+
+    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
+
+    testSinus();// todo FRAGILE fails before!
+    check(operator_list.has("√"))
+    check(is_operator(u'√'))
+    auto node1 = parse("3 + √9");
+    check(node1.length == 4);
+    auto node2 = node1[2];
+    check(node2.name.startsWith("√"));
+    assert_emit("3 + √9", (long) 6);
+
+    testString();
+//    quit()
+    testNodeDataBinaryReconstruction();
 //    assert_is("[1 2 3]", Node(1, 2, 3, 0))
-//__wasi_fd_write
-/*
- * fd_write: wrap((fd, iovs, iovsLen, nwritten) => {
-        const stats = CHECK_FD(fd, WASI_RIGHT_FD_WRITE);
-        let written = 0;
-        getiovs(iovs, iovsLen)
-          .forEach((iov) => {
-            let w = 0;
-            while (w < iov.byteLength) {
-              w += fs.writeSync(stats.real, iov, w, iov.byteLength - w);
-            }
-            written += w;
-          });
- * */
+    check(findLibraryFunction("strlen0", false))
+    check_is(extractFuncName("_ZN6String17extractCodepointsEb"), "extractCodepoints");
     read_wasm("~/dev/wasm/wasi/wasi-demo.wasm");
-    quit()
-    check_is(demangle("_ZN6String17extractCodepointsEb"), "String::extractCodepoints");
-    check_is(stackItemSize(Primitive::wasm_float64), 8);
-    Valtype yy = (Valtype) Primitive::charp;
-    check((Type) Primitive::charp == yy);
-    check((Type) yy == Primitive::charp);
-    check(Primitive::charp == (Type) yy);
-    check(yy == (Type) Primitive::charp);
-    check((int) yy == (int) Primitive::charp);
-    loadModule("wasp");
-    check(findLibraryFunction("_Z7strlen0PKc", false))
-    assert_run("len('123')", 3);
-    assert_emit("putf 3.1", 3.1);
+    read_wasm("lib/stdio.wasm");
+
+//    check(findLibraryFunction("_Z7strlen0PKc", false))
+//    assert_run("len('123')", 3);
+//    assert_emit("putf 3.1", 3.1);
 
     testWasmFunctionCalls();
     check(Node(String("")) == (long) 0)
-    assert_emit("puts 'ok'", (long) 0);
-
+    skip(
+            assert_emit("puts 'ok'", (long) 0);
+            assert_emit("puts('ok');(1 4 3)#2", 4)
+    )
     assert_is("true or true", true);
 
-    loadModule("wasp");
-    testSinus();// todo FRAGILE fails before!
-    assert_emit("puts('ok');(1 4 3)#2", 4)
     assert_emit("{1 4 3}#2", 4);
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
     testStruct();

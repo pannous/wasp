@@ -148,8 +148,8 @@ public:
     // todo item references are UNSAFE after grow()
 //    S items[LIST_DEFAULT_CAPACITY];// array type is not assignable
 
-    List() {
-        items = (S *) calloc(capacity, sizeof(S));
+    List(int size = LIST_DEFAULT_CAPACITY) {
+        items = (S *) calloc(size, sizeof(S));
     }
 
     List(const List &old) : items(old.items) { // todo: memcopy?

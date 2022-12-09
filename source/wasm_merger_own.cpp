@@ -966,7 +966,7 @@ void Linker::ResolveSymbols() {
                     func.name = _export.name;
                 if (func.name.length > 0) {
                     export_map.emplace(func.name, Binding(position));
-                    String demangled = demangle(func.name);
+                    String demangled = extractFuncName(func.name);
                     if (func.name != demangled and not export_map.contains(demangled)) {
                         export_map.emplace(demangled, Binding(position));
                     }
