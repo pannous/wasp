@@ -157,7 +157,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
         //		if (eq(s, "-") and previous==none)return sign_flip; *-1
         if (eq(s, "-"))return i64_sub; // i64.sub
         if (eq(s, "*"))return i64_mul; // i64.mul
-        if (eq(s, "/"))return i64_di𝗏_s; // i64.di𝗏_s
+        if (eq(s, "/"))return i64_div_s; // i64.di𝗏_s
         if (eq(s, "%"))
             return i64_rem_s; // i64.rem_s
         if (eq(s, "=="))return i64_eq; // i64.eq
@@ -863,7 +863,7 @@ Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_sta
         last_typo = byte_char;// last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
         last_type = int32; // even for bool!
     } else if (size <= 4)last_type = int32;
-    else last_type = int64;
+    else last_type = i64;
 //	if(op.kind==reference){
 //		Node &reference = referenceMap[op.name];
 //		if(reference.type){
@@ -956,7 +956,7 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
         last_type = int32;// ! even bool is represented as int in wasm!!!
     }   //last_typo = byte_char;
     else if (size <= 4)last_type = int32;
-    else last_type = int64;
+    else last_type = i64;
     return load;
     //	i32.const 1028
     //	i32.const 3
@@ -1008,8 +1008,7 @@ Code emitData(Node &node, Function &context) {
             if (context.locals.has(name))
                 return emitNode(node, context);
 //                error("locals dont belong in emitData!");
-            else if (referenceIndices.has(name))
-                todo("emitData reference makes no sense? "s + name);
+            else if (referenceIndices.has(name)) todo("emitData reference makes no sense? "s + name)
             else
                 error("can't save unknown reference pointer "s + name);
             break;
@@ -2192,14 +2191,14 @@ Code emitBlock(Node &node, Function &context) {
             block.addConst64(array_header_64).addByte(i64_or); // todo: other arrays
 //			if (return_type==float64)
 //			block.addByte(f64_reinterpret_i64);// hack smart pointers as main return: f64 has int range which is never hit
-            last_type = int64;
+            last_type = i64;
         }
 //		block.addConst32(array_header_32).addByte(i32_or); // todo: other arrays
         else if (last_typo.kind == strings or last_typo.type == c_string) { // last_type == charp
             block.addByte(i64_extend_i32_u);
             block.addConst64(string_header_64);
             block.addByte(i64_or);
-            last_type = int64;
+            last_type = i64;
             needs_cast = return_type == i64;
         } else if (last_typo.kind == reference) {
 //			if (last_type==charp)
@@ -2209,7 +2208,7 @@ Code emitBlock(Node &node, Function &context) {
 //			block.addByte(i64_trunc_f64_s);
             block.addByte(
                     i64_reinterpret_f64);// hack smart pointers as main return: f64 has int range which is never hit
-            last_type = int64;
+            last_type = i64;
         }
 //		if(last_type==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string
 //		if(last_type==angle)block.addByte(i32_or).addInt(0xA000000);//

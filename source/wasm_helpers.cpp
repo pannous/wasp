@@ -484,13 +484,13 @@ void panic() {
 //	printf("%s", c);
 //}
 
-#ifndef WASI
+//#ifndef WASI
+#if MY_WASM
 extern "C" int puts(chars c) { // // int return needed for stdio compatibilty !
 //	if(from wasm)result=c
     if (c)printf("%s", c);
     return 1;// stdio
 }
-
 #endif
 
 void puti(int i) {

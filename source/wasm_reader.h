@@ -64,7 +64,8 @@ public:
     List<Signature> funcTypes;// c++ types from export name convention, implicit index
 //	List<Signature> wasmFuncTypes;// wasm types from funcTypes section implicit index
     Map<String, Signature> signatures;// also implicit index->Signature 0,1,2… ! before merging!
-    Map<String, Function> functions;
+    Map<String, Function> functions = {.capacity=10000};
+    // todo once we get above .capacity=10000 we need to fix Map.grow since functions map gets modified while growing!
     Map<String, int> functionIndices; // lookup PER MODULE!
 //	int data_offset=0;// todo: read from data section! why not 0 ?
     int data_offset_end = 0;
@@ -81,3 +82,5 @@ Code &read_code(chars file);
 extern Module *module;
 
 extern Map<String, Module *> module_cache;
+
+Type mapArgToType(String arg);
