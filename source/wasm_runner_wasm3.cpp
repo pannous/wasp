@@ -68,11 +68,6 @@ int64_t WASM_EXPORT test_memcpy0(void) {
 }
 
 
-// todo: remove this useless test function
-int square2(int a) {
-    return a * a;
-}
-
 long run_wasm3(const uint8_t *prog, int len) {
 //	std::cout << "Loading WebAssembly..." << std::endl;
     try {
@@ -87,7 +82,7 @@ long run_wasm3(const uint8_t *prog, int len) {
         mod.link_optional<sum>("*", "sum");
         mod.link_optional<ext_memcpy0>("*", "ext_memcpy0");
         mod.link_optional<sqrt1>("*", "√");
-        mod.link_optional<square2>("*", "square");
+        mod.link_optional<square>("*", "square");
         mod.link_optional<powd>("*", "powd");// todo builtin!
         mod.link_optional<logf>("*", "log");// logarithm, not putf !
         mod.link_optional<powd>("*", "pow");

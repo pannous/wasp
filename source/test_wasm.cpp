@@ -106,10 +106,10 @@ void testWasmFunctionDefiniton() {
             assert_emit("addy x:= y=2 ; x+y ; addy 3", (long) 5);
     )
 
-    assert_emit("grow x:=x*2;grow(4)", 8)
-    assert_emit("grow:=it*2; grow 3", 6)
-    assert_emit("grow:=it*2; grow 3*4", 24)
-    assert_emit("grow:=it*2; grow(3*42) > grow 2*3", 1)
+    assert_emit("grows x:=x*2;grows(4)", 8)
+    assert_emit("grows:=it*2; grows 3", 6)
+    assert_emit("grows:=it*2; grows 3*4", 24)
+    assert_emit("grows:=it*2; grows(3*42) > grows 2*3", 1)
     assert_emit("factorial:=it<2?1:it*factorial(it-1);factorial 5", 120);
 
     //0 , 1 , 1 , 2 , 3 , 5 , 8 , 13 , 21 , 34 , 55 , 89 , 144
@@ -158,9 +158,9 @@ void testWasmFunctionCalls() {
     assert_is("id 3+3", 6);
     assert_emit("putf 3.1", 0);
 //    assert_emit("putf 3.1", 3.1);
-//    assert_emit("puti 3", (long) 3);
-    assert_emit("puti 3", 0);// todo ()
-    assert_emit("puti 3+3", 0);
+    assert_emit("puti 3", (long) 3);
+//    assert_emit("puti 3", 0);// todo ()
+    assert_emit("puti 3+3", 6);
     assert_emit("4*5 + square 2*3", (long) 56);
     assert_emit("id 3+3", (long) 6);
     assert_emit("3 + square 3", (long) 12);
@@ -454,7 +454,7 @@ void testComparisonPrimitives() {
     assert_emit("8.33333333332248946124e-03", 0);
     assert_emit("8.33333333332248946124e+01", 83);
     assert_emit("S1  = -1.6666", -1);
-    assert_emit("grow S1  = -1.6666", -1);
+//    assert_emit("grows S1  = -1.6666", -1);
     // may be evaluated by compiler!
     assert_emit(("42>2"), 1)
     assert_emit(("1<2"), 1)
@@ -751,8 +751,8 @@ void testOldRandomBugs() {
     //	assert_emit("fib(it-1)",3);
     assert_emit("if 4>1 then 2 else 3", 2)
 
-    assert_emit("grow := it * 2 ; grow(4)", 8)
-    assert_emit("grow:=it*2;grow(4)", 8)
+    assert_emit("grows := it * 2 ; grows(4)", 8)
+    assert_emit("grows:=it*2;grows(4)", 8)
 
 //	assert_emit("1 -3 - square 3+4", (long) -51);
     assert_emit("1+2 + square 3+4", (long) 52);
@@ -862,7 +862,7 @@ void testWasmRuntimeExtension() {
 
 //	assert_run("oki(1)", 43);
 //	assert_emit("puts('123'+'456');", 123456);// via import not via wasp!
-//assert_emit("grow := it * 2 ; grow(4)", 8)
+//assert_emit("grows := it * 2 ; grows(4)", 8)
 //	check(Primitive::charp!=Valtype::pointer)
 
     skip(
@@ -960,14 +960,14 @@ void testArrayIndicesWasm() {
 
 // random stuff todo: put in proper tests
 void testWasmStuff() {
-    assert_emit("grow x := x * 2 ; grow(4)", 8)
-//	assert_emit("grow := it * 2 ; grow(4)", 8)
+    assert_emit("grows x := x * 2 ; grows(4)", 8)
+//	assert_emit("grows := it * 2 ; grows(4)", 8)
     assert_emit("-42", -42)
     assert_emit("x=41;x+1", 42)
     assert_emit("x=40;y=2;x+y", 42)
     assert_emit("id(4*42) > id 2+3", 1)
-    assert_emit("grow := it * 2 ; grow(4)", 8)
-    assert_emit("grow:=it*2; grow 3", 6)
+    assert_emit("grows := it * 2 ; grows(4)", 8)
+    assert_emit("grows:=it*2; grows 3", 6)
     assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
     assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)
     assert_emit("add1 x:=x+1;add1 3", (long) 4);
@@ -1005,7 +1005,6 @@ void testRecentRandomBugs() {
     assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
     assert_parses("{ç:☺}");
     assert(result["ç"] == "☺");
-// MEMORY CORRUPTION somehow!
 #ifndef WASMTIME
     assert_emit("n=3;2ⁿ", 8);
     //	function attempted to return an incompatible value WHAT DO YOU MEAN!?
@@ -1084,7 +1083,7 @@ void wasm_todos() {
             //			Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1`
             assert_emit("id 3*42 > id 2*3", 1)
             assert_emit("square 3*42 > square 2*3", 1)
-            assert_emit("grow:=it*2; grow 3*42 > grow 2*3", 1)
+            assert_emit("grows:=it*2; grows 3*42 > grows 2*3", 1)
 // is there a situation where a COMPARISON is ambivalent?
 // sleep ( time > 8pm ) and shower ≠ sleep time > ( 8pm and true)
     )

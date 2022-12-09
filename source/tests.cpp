@@ -2725,12 +2725,27 @@ void testCurrent() {
 //    assurances();
 //    skip(
 //    loadModule("cmake-build-wasm/wasp.wasm");
-//    loadModule("wasp");
+    assert_emit("x='hello';fd_write(1,8,5,0)", (long) 0);
+
+    loadModule("wasp");
+    check_is(module_cache.value(0)->functions["puts"].signature.size(), 1)
+    assert_emit("puts 'ok'", (long) 0);
+    assert_emit("putf 3.1", 0);
+
+    check(module_cache.has("wasp.wasm"s.hash()))
+
 //    print(functions["puts"].signature.serialize());
-//    assert_emit("puts 'ok'", (long) 0);
 //    assert_emit("print 'ok'", (long) 0);
 //    assert_emit("putf 3.1", 3.1);
 //List<chars> operator_list(operator_list0);
+    assert_emit("grows x:=x*2;grows(4)", 8)
+    skip(
+    // Map::grow !
+            assert_emit("grow x:=x*2;grow(4)", 8)
+    )
+
+    testIndexWasm();
+    assert_emit("i=1;k='hi';k[i]", 'i')
     assert_is("x=(1 4 3);x#2=5;x#2", 5);
     assert_emit("x='abcde';x#4='x';x[3]", 'x');
 
@@ -2752,7 +2767,7 @@ void testCurrent() {
 //    quit()
     testNodeDataBinaryReconstruction();
 //    assert_is("[1 2 3]", Node(1, 2, 3, 0))
-    check(findLibraryFunction("strlen0", false))
+//    check(findLibraryFunction("strlen0", false))
     check_is(extractFuncName("_ZN6String17extractCodepointsEb"), "extractCodepoints");
     read_wasm("~/dev/wasm/wasi/wasi-demo.wasm");
     read_wasm("lib/stdio.wasm");
