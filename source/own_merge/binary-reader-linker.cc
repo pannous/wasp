@@ -276,10 +276,6 @@ namespace wabt {
 			                                    ExternalKind kind,
 			                                    Index item_index,
 			                                    String name) {
-				if (kind == ExternalKind::Memory) {
-//    WABT_FATAL("Linker does not support exported memories");
-					return Result::Ok;
-				}
 				binary_->exports.emplace_back();
 				Export *export_ = &binary_->exports.back();
 				export_->name = name.data;

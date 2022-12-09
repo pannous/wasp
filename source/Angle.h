@@ -63,7 +63,7 @@ void preRegisterFunctions();
 
 bool isFunction(Node &op);
 
-bool isFunction(String op);
+bool isFunction(String op, bool deep_search = true);
 
 // int is not a true angle type, just an alias for long.
 // todo: but what about interactions with other APIs? add explicit i32 !
