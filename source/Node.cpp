@@ -7,13 +7,14 @@
 #include "Node.h"
 #include "List.h"
 #include "Code.h"
-//#include <cstdarg>
-#include <stdarg.h> // va_list OK in WASM!!
+
+
+#include <cstdarg> // va_list OK in WASM!!
 #include <cstdlib> // OK in WASM!
 
-#ifndef WASM
+#ifndef PURE_WASM
 
-#include <stdio.h>
+#include <cstdio>
 
 #endif
 
@@ -860,7 +861,7 @@ String Node::serializeValue(bool deep) const {
         case expression:
         case assignment:
         case unknown:
-            return "?";
+            return "";
         case last_kind:
             return "";
         case kind_padding:
@@ -1309,7 +1310,6 @@ chars typeName(Kind t) {
     }
 }
 
-chars typeName(Primitive p);
 
 chars typeName(Type t) {
     if (t.value < last_kind)return typeName(t.kind);

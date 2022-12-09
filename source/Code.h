@@ -8,11 +8,10 @@
 #include "Node.h"
 #include "List.h"
 
-#ifndef PURE_WASM
-
-#include <stdio.h>
-
-#endif
+//#ifndef PURE_WASM
+#include <cstdio>
+// header OK?
+//#endif
 //size_t strlen(const char *__s);
 
 #ifndef WASP_CODE_H
@@ -55,7 +54,7 @@ public:
     int kind = byte_i8;
     int length = 0;
     bytes data = 0;
-    int start = 0;// internal reader pointer
+    long start = 0;// internal reader pointer
     bool encoded = false;// first byte = size of vector
     bool shared = true;// can't free data until all views are destroyed OR because this is a view on other's data!!
     bool needs_relocate = true; // unless specified
@@ -481,8 +480,8 @@ enum Valtype {
 
     float32 = 0x7d,
     f32t = 0x7d,
-    f32 = 0x7d,
-    f32s = 0x7d,
+//    f32s = 0x7d,
+//    f32 = 0x7d, typedef float f32 in wasm2c, we MAY encounter it more often…
 //	f32u = 0x7d,// todo ignore!
 
     i64 = 0x7E, // signed or unsigned? we don't care
@@ -958,7 +957,7 @@ public:
         return parameter_types.size();
     }
 
-    Signature &add(Valtype t, String name = "_") {
+    Signature &add(Valtype t, String name = "") {
 #ifdef DEBUG
         debug_name += typeName(t);
         debug_name += " ";
@@ -969,7 +968,7 @@ public:
     }
 
 
-    Signature &add(Type t, String name = "_") {
+    Signature &add(Type t, String name = "") {
 #ifdef DEBUG
         debug_name += typeName(t);
         debug_name += " ";
@@ -1115,9 +1114,10 @@ public:
     bool is_handled = false; // already emitted (e.g. as runtime)
     bool is_builtin = false;// hard coded functions, tests only? todo remove
     bool is_used = false;// called imports / buildins
-    //	Valtype return_type = voids;
+    bool is_polymorph = false;// IF polymorph, this 'Function' acts as abstract only, all REAL Functions are in variants
+    List<Function> variants;// multi dispatch!
+
 //    Code* code; // todo: use
-//    List<Local> locals;  // todo: use, instead of global locals!
     Map<String, Local> locals;  // todo: use, instead of global locals!
 
     Function &handled() {

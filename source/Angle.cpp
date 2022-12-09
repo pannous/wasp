@@ -628,8 +628,7 @@ Node &classDeclaration(Node &node, Function &function) {
         dec.kind = structs;
     else if (kind_name == "class" or kind_name == "type")
         dec.kind = clazz;
-    else
-        todo(kind_name);
+    else todo(kind_name);
 
     String &name = dec.name;
     int pos = 0;
@@ -693,11 +692,10 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
 //	silent_assert(not is_operator(name[0]));
 //	trace_assert(not is_operator(name[0]));
     if (is_operator(name[0]))// todo ^^
-        todo("is_operator!");// remove if it doesn't happen
+    todo("is_operator!");// remove if it doesn't happen
 
     if (name and not function_operators.has(name)) {
-        if (context.name != "main")
-            todo("inner functions");
+        if (context.name != "main") todo("inner functions");
         if (not functions.has(name)) {
             functions.add(name, *new Function{.name=name});
         }
@@ -721,7 +719,8 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
     body = analyze(body, function);// has to come after arg analysis!
     if (!return_type)
         return_type = extractReturnTypes(arguments, body).clone();
-    signature.returns(Type(return_type));// explicit double sin(){} // todo other syntaxes+ multi
+    if (return_type)
+        signature.returns(mapTypeToPrimitive(*return_type));// explicit double sin(){} // todo other syntaxes+ multi
     Node &decl = *new Node(name);//node.name+":={…}");
     decl.setType(declaration);
     decl.add(body);
@@ -1110,8 +1109,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             minArity--;
         }
         if (arg_length < minArity)
-            error("missing arguments for function %s, given %d < expected %d. defaults and currying not yet supported"s %
-                  name % arg_length % minArity);
+            error("missing arguments for function %s, given %d < expected %d. "
+                  "defaults and currying not yet supported"s % name % arg_length % minArity);
         else if (arg_length == 0 and minArity > 0)
             error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
 //		else if (rest.first().kind == operators) { // random() + 1 == random + 1
@@ -1166,7 +1165,8 @@ List<String> aliases(String name) {
 //	switch (name) // statement requires expression of integer type
 
     if (name == "len")
-        found.add("_Z7strlen0PKc");
+        found.add("strlen0");
+//        found.add("_Z7strlen0PKc");
     if (name == "atoi" or name == "int") {
         // todo type vs fun!
         found.add("_Z5atoi0PKc");

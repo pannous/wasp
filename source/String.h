@@ -8,6 +8,7 @@
 #include "wasm_helpers.h"
 #include "Util.h"
 #include "NodeTypes.h"
+//#include "Map.h"
 //#include "NodeTypes.h"
 #include <cstdlib> // OK in WASM!
 
@@ -36,6 +37,8 @@ template<class S>
 class List;
 
 extern String &EMPTY_STRING;
+
+void newline();
 
 String &hex(long d);
 
@@ -170,7 +173,7 @@ public:
     IndexOutOfBounds(char *data, int i) : Error() {}
 };
 
-extern char *empty_string;// = "";
+//extern char *empty_string;// = "";
 
 //duplicate symbol '_empty_string'
 
@@ -283,6 +286,7 @@ public:
             if (copy) {
                 data = (char *) (alloc(sizeof(char), length + 1));
                 strcpy2(data, string, length);
+                data[length] = 0;
             } else {
                 shared_reference = true;
                 data = (char *) string;
@@ -306,50 +310,51 @@ public:
 
     explicit String(int integer) {
         data = formatLong(integer);// wasm function signature contains illegal type WHYYYY
-        length = len(data);
+        length = len();
     }
 
     explicit String(long number) {
         data = formatLong(number);
-        length = len(data);
+        length = len();
     }
 
     explicit String(long long number) {
         data = formatLong(number);
-        length = len(data);
+        length = len();
     }
 
 
     explicit String(char16_t utf16char) {
         data = (char *) (calloc(sizeof(char16_t), 2));
         encode_unicode_character(data, utf16char);
-        length = len(data);// at most 2 bytes
+        length = len();// at most 2 bytes
     }
 
 //	explicit String(char16_t* chars){
 //		data = (char*)(calloc(sizeof(char16_t),len(chars)));
 //		encode_unicode_characters(data, chars);
-//		length = len(data);
+//		length = len();
 //	}
 
 // char32_t same as codepoint!
     explicit String(char32_t utf32char) {// conflicts with int
-        data = (char *) (calloc(sizeof(char32_t), utf8_byte_count(utf32char) + 1));
+        auto byteCount = utf8_byte_count(utf32char);
+        data = (char *) (calloc(sizeof(char32_t), byteCount + 1));
         encode_unicode_character(data, utf32char);
-        length = len(data);// at most 4 bytes
+        length = byteCount;// at most 4 bytes
         data[length] = 0;// be sure
     }
 
     explicit String(wchar_t wideChar) {
         data = (char *) (calloc(sizeof(wchar_t), 2));
         encode_unicode_character(data, wideChar);
-        length = len(data);
+        length = 2;
     }
 
     explicit String(double real) {
         int max_length = 4;
         data = formatLong(real);
-        length = len(data);
+        length = len();
 //		itof :
         append('.');
         real = real - (long(real));
@@ -393,6 +398,10 @@ public:
         return -1;
     }
 
+    size_t len() {
+        return length >= 0 ? length : !shared_reference and strlen0(data);
+    }
+
     char charAt(int position) {
         if (position >= length)
             error((String("IndexOutOfBounds at ") + formatLong(position) + " in " + data).data);
@@ -426,20 +435,18 @@ public:
         if (from >= length) return EMPTY_STRING;
         int len = to - from;
         return String(data + from, len, ref);
-//		auto *neu = new String(data + from, len, ref);
-//		return *neu;
     }
-
-    int len(chars data) {
-        if (!data)data = this->data;
-        if (!data || data[0] == 0)
-            return 0;
-        int MAX = 10000;
-        for (int i = 0; i < MAX; ++i) {
-            if (!data[i])return i;
-        }
-        return -1;//error
-    }
+//
+//    int len(chars data) {
+//        if (!data)data = this->data;
+//        if (!data || data[0] == 0)
+//            return 0;
+//        int MAX = 10000;
+//        for (int i = 0; i < MAX; ++i) {
+//            if (!data[i])return i;
+//        }
+//        return -1;//error
+//    }
 
 
     String &append(chars c, int byteCount = -1) {
@@ -685,6 +692,10 @@ public:
     }
 
     String operator+(long i) {
+        return this->operator+(String((long long) i));
+    }
+
+    String operator+(unsigned long i) {
         return this->operator+(String((long long) i));
     }
 
@@ -1002,6 +1013,7 @@ public:
 //	void lower();
     void shift(int i);
 
+    String from(const char *string);
 };
 
 
@@ -1044,6 +1056,7 @@ extern String UNEXPECT_CHAR;// = "Unexpected character ";
 extern String empty_name;
 extern String nil_name;// = "nil";
 //extern String empty_name;// = "";
+#define NIL_NAME "nil"
 
 extern String EMPTY;// = String('\0');
 
@@ -1051,13 +1064,10 @@ extern String EMPTY;// = String('\0');
 //String operator "" _(chars c, unsigned long );
 //String operator "" _s(chars c, unsigned long );
 void print(String *s);
-
 void print(char const *s);
 //void print(char *s);
 //void print(const char *s);
-
 void print(String s);
-
 extern "C" int puts(const char *);// int return needed for stdio compatibilty !
 //void puts(const char *);
 

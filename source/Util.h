@@ -24,6 +24,8 @@ static bool I_know_what_I_am_doing = false;
 #define todo(msg)
 #else
 #define todo(msg) {breakpoint_helper;error1(str("TODO ") + msg,__FILE__,__LINE__);}
+#define todow(msg) {warn(str("TODO ") + msg);}
+//#define todow(msg) {breakpoint_helper;warn(str("TODO ") + msg);}
 #endif
 
 #ifdef TRACE
@@ -39,7 +41,7 @@ typedef const char *chars;
 typedef byte *bytes;
 
 // silent ++
-#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);printf(" != ");print(β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 #define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 #define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);ɣ;exit(0);}
 
@@ -47,7 +49,7 @@ typedef byte *bytes;
 #define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 #define check(test) printf("CHECKING %s\n%s:%d\n",#test,__FILE__,__LINE__); \
-  if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+  if(test){print("OK check passes: ");printf("%s\n",#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 #include "String.h" // AFTER defines!
 #include "smart_types.h"
@@ -122,7 +124,7 @@ Node *smartNode(smart_pointer_64 smartPointer64);
 
 long file_last_modified(char *file);
 
-String demangle(const String &fun);
+String extractFuncName(const String &fun);
 
 String extractPath(String file);
 

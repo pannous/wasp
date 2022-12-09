@@ -1,456 +1,24 @@
-//#pragma once
-//
-// Created by pannous on 15.07.20.
-//
-
-
-#ifdef WASI
-//#include <cstdio> // printf
-//#include </usr/local/Cellar/llvm/11.0.0/include/c++/v1/stdio.h> // printf NO!
-#endif
-
-#include <cstdlib> // OK in WASM!
-
+#include <cmath>
 #include "wasm_helpers.h"
-#include "String.h"
-#include "Backtrace.h"
-#include "Code.h"
-//extern unsigned int *memory;
+#include "Node.h"
 
-short fourty_two = 42;// to test wasm global import
 
-//#ifdef WASI
-//#include <stdio.h> // printf
-//#endif
-
-void *wasm_memory = 0;// c pointer of VM, NOT memory inside wasm module
-
-#ifndef WASM
-
-#include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
-
+#ifdef RUNTIME_ONLY // No Angle.cpp!
+const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm compiled as 'RUNTIME_ONLY'";
+void clearContext() {}
+Node &analyze(Node &node, String context) { return *new Node(RUNTIME_ONLY_ERROR); }
+Node eval(String code) { return Node(RUNTIME_ONLY_ERROR); }
+Node interpret(String code) { return Node(RUNTIME_ONLY_ERROR); }
+extern "C" long run_wasm_file(chars file) {
+    error(RUNTIME_ONLY_ERROR);
+    return -1;
+}
+void console() { error(RUNTIME_ONLY_ERROR); }
+//void testCurrent(){}// why??
 #endif
-
-#ifdef WASM
-void free(void*){/*lol*/}
-_LIBCPP_OVERRIDABLE_FUNC_VIS void  operator delete(void* __p) _NOEXCEPT{}
-
-#ifndef WASI
-
-void *malloc(size_t size){//}  __result_use_check __alloc_size(1){ // heap
-	void *last = current;
-	current += size;
-//	if(size>1000)
-//		error("TOO BIG LOL");
-	if (MEMORY_SIZE and (long) current >= MEMORY_SIZE) {
-#ifndef WASI
-		puti(sizeof(Node));// 64
-		puti(sizeof(String));// 20
-		puti(sizeof(Value));// 8 long
-		puti((int) last);
-		puti((int) memory);
-		puti((int) current);
-		puti((int) HEAP_OFFSET);
-		puti(MEMORY_SIZE);
-//		error("OUT OF MEMORY");// needs malloc :(
-#endif
-		panic();
-		last = current = (char *) (4 * HEAP_OFFSET);// reset HACK todo!
-	}
-	return last;
-}
-#endif
-
-void println(String s){
-	print(s);
-	put_char('\n');
-}
-//void printf(chars s) {
-//	puts(s);
-////	while(*s)put_char(*s++);
-//}
-
-// todo : just use WASI for printf (!?)
-
-
-void printf(chars format, uint32_t i) {
-	print(String(format) % (int) i);
-}
-
-
-void printf(chars format) {
-	print(format);
-}
-
-void printf(chars format, int i) {
-	print(String(format) % i);
-}
-
-void printf(char const *format, long long l){
-    print(String(format)%l);
-}
-
-
-void printf(chars format, chars value) {
-	print(String(format).replace("%s", value));
-}
-void printf(chars format, chars i, chars j){
-	print(String(format).replace("%s", i).replace("%s", j));
-}
-
-void printf(chars format, chars i, chars j, int l){
-	print(String(format).replace("%s", i).replace("%s", j).replace("%d", String(l)));
-}
-void printf(chars format, chars i, chars j, chars l){
-print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
-}
-
-void printf(chars format, long i, long j) {
-	if (contains(format, "%ld"))
-		print(String(format).replace("%ld", String(i)).replace("%ld", String(j)));
-	else
-		print(String(format).replace("%d", String(i)).replace("%d", String(j)));
-}
-
-void printf(chars format, int i, int j) {
-	print(String(format).replace("%d", String(i)).replace("%d", String(j)));
-}
-
-void printf(chars format, uint32_t i, uint32_t j) {
-	print(String(format).replace("%d", String((int) i)).replace("%d", String((int) j)));
-}
-
-
-void printf(chars format, double d) {
-	print(String(format) % d);
-}
-
-void printf(chars format, long l) {
-	print(String(format) % l);
-}
-
-void printf(chars format, double i, double j) {
-	print(String(format).replace("%f", String(i)).replace("%f", String(j)));
-}
-
-void printf(chars format, chars val, int value) {
-	print(String(format).format((char *) val).format(value));
-}
-
-void printf(chars format, void* value) {
-#ifndef WASM
-	print(String(format).replace("%p", String((number)value)));
-#else
-//	memory-value
-	print(String(format).replace("%p", 0));// TODO
-#endif
-
-}
-#endif
-int isalnum0(int c) {
-	return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z');// todo lol
-}
-//#define __cxa_allocate_exception 1
-//#define __cxa_throw 1
-//#include <typeinfo>       // operator typeid
-#ifndef WASM
-#ifndef WASI
-extern "C" unsigned int *memory = 0;// dummies, remove!
-extern "C" /*unsigned */ char *current = 0;// dummies, remove!
-
-
-double powd(double x, double y) {// why this crutch? maybe conflicting pow's in all those xyz_math.h
-	return pow(x, y);
-}
-
-int raise(chars error) {
-//#ifdef WASM3
-	Backtrace(3);
-	print(error);
-	if (panicking)
-		exit(EXIT_FAILURE);
-#ifdef WASM
-#endif
-//	if (!throwing)
-//#endif
-	if (throwing)
-		throw error;
-	return -1;
-}
-
-#else
-extern "C" void ___cxa_throw(
-		void* thrown_exception,
-		struct type_info *tinfo,
-		void (*dest)(void*));
-void raise(chars error){
-//	throw error;//  typeinfo for chars yadiya
-//	_raise(error);
-	printf("ERROR %s\n",error);
-	throw String(error);// OMG works in WASI, kinda, via exceptions.cpp polyfill, BUT doesn't add anything lol
-//	___cxa_throw(0,0,0);// absorbed in wasmer
-	exit(0);
-}
-#endif
-#endif
-int MAX_MEM = 65536 * 1024;// todo lol
-extern "C" double sqrt(double);
-
-//unsigned long __stack_chk_guard = 0xBAAAAAAD;
-//void __stack_chk_guard_setup(void) { __stack_chk_guard = 0xBAAAAAAD;/*provide some magic numbers*/ }
-//void __stack_chk_fail(void) { /*print("__stack_chk_fail");*/} //  Error message will be called when guard variable is corrupted
-
-
-void *alloc(int num, int size) {
-    return calloc(num, size);
-}
-
-
-//#ifdef PURE_WASM
-#ifdef WASM
-#ifndef WASI
-// unmapped import calloc : header provided by stdlib.h but we need our own implementation!
-//void *calloc(int size, int num) {// clean ('0') alloc
-///opt/wasm/wasi-sdk/share/wasi-sysroot/include/stdlib.h
-// /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h redundant!
-void *calloc(size_t num, size_t size) //__attribute__((__malloc__, __warn_unused_result__))
-{
-	char *mem =(char *) malloc(size * num);
-//#ifndef WASM
-	//fails in WASI, why??
-	while (num<MAX_MEM and num > 0) { ((char *) mem)[--num] = 0; }
-//#endif
-	return mem;
-}
-
-extern "C" void * memset ( void * ptr, int value, size_t num ){
-	int* p=(int*) ptr;
-	while(num-->0)*p++=value;
-	return ptr;//?
-}
-
-#endif
-#endif
-// WOW CALLED INTERNALLY FROM C!!
-//extern "C"
-
-#ifdef WASM
-
-// new operator for ALL objects
-void *operator new[](size_t size) { // stack
-	char *use = current;
-	current += size;
-	return use;
-}
-
-// new operator for ALL objects
-void *operator new(size_t size) { // stack
-	char *use = current;
-	current += size;
-	return use;
-}
-#endif
-
-// WHY NOT WORKING WHEN IMPORTED? FUCKING MANGLING!
-// bus error == access out of scope, e.g. put_char((void*)-1000)
-//void print(char* s) {
-//#ifdef WASM
-//	while(*s)put_char(*s++);
-//#else
-//	printf("%s\n", s);
-//#endif
-//}
-
-//void print(chars s) {
-//#ifdef WASM
-//	while(*s)put_char(*s++);
-//#else
-//	printf("%s\n", s);
-//#endif
-//}
-
-
-void _cxa_allocate_exception() {
-	print("_cxa_allocate_exception!");
-}
-
-void _cxa_throw() {
-	print("_cxa_throw");
-	error("OUT OF MEMORY");
-}
-
-
-#ifndef WASM
-
-
-//#import "Backtrace.cpp"
-//#include "ErrorHandler.h"
-#ifndef __APPLE__
-//#include <alloc.h>
-#endif
-
-#ifndef WASM
-#include <cstdio>
-
-#endif
-
-//NEEDED, else terminate called without an active exception?
-#endif
-
-[[noreturn]]
-void error1(chars message, chars file, int line) {
-#ifdef _Backtrace_
-//	Backtrace(2);// later, in raise
-#endif
-	if (file)printf("\n%s:%d\n", file, line);\
-    if (panicking) panic();// not reached
-	raise(message);
-	throw message;// not reached
-}
-
-void newline() {
-    put_char('\n');
-}
-
-void info(chars msg) {
-	if (not debug)return;// todo finer levels!
-	printf("%s", msg);
-	newline();
-}
-
-void warn(chars warning) {
-	printf("%s", warning);
-	newline();
-}
-
-void warn(String warning) {
-	printf("%s", warning.data);
-	newline();
-}
-
-void warning(chars warning) {
-	printf("%s", warning);// for now
-}
-
-
-int squari(int a) {
-	return a * a;
-}
-
-// function attempted to return an incompatible value
-long squarl(long a) {
-	return a * a;
-}
-// wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and print()
-double sqrt1(double a) {
-#ifndef WASM
-	return sqrt(a);
-#endif
-	todo("wasm has it's own sqrt");
-	return -1;
-}
-
-void printf(int i) {
-	printf("%d", i);
-}
-
-
-#ifdef WASI
-String Backtrace(int skip, int skipEnd){
-	return "Backtrace: TODO";
-}
-#endif
-
-void *memmove0(char *dest, const char *source, size_t num) {
-    while (num < MAX_MEM and --num >= 0)
-        dest[num] = source[num];
-    return dest;
-// memmove will never return anything other than dest.  It's useful for chaining
-}
-
-#ifndef WASI
-
-//defined in /opt/wasm/wasi-sdk/share/wasi-sysroot/lib/wasm32-wasi/libc.a
-//void *memmove(void *dest, const void *source, size_t num) noexcept{
-//	return memmove0((char *) dest, (char *) source, num);
-//}
-
-#endif
-
-
-void memcpy1(bytes dest, bytes source, int i) {
-    while (i < MAX_MEM and --i >= 0)
-        dest[i] = source[i];
-}
-
-void memcpy0(char *destination, char *source, size_t num) {
-	if ((long) destination + num >= MEMORY_SIZE)return;
-//		panic();
-	if ((long) source + num >= MEMORY_SIZE)return;
-//		panic();
-	if (num < 0)return;
-//		panic();
-	while (--num < MAX_MEM and num >= 0) {
-		destination[num] = source[num];
-	}
-}
-//void * memcpy (void * destination, const void * source, size_t num ){
-//	memcpy0((char *) destination, (char *) source, num);
-//}
-
-#ifdef WASM
-#ifndef WASI
-extern "C"
-void *memcpy(void *destination, const void *source, size_t num) {
-	memcpy0((char *) destination, (char *) source, num);
-	return destination;// yes?
-}
-#endif
-#endif
-
-typedef struct wasi_buffer {
-	const void *buf;
-	size_t buf_len;
-} wasi_buffer;
-
-
-#ifdef WASI
-
-#ifndef MY_WASM
-// String.cpp
-//extern "C" void put_char(char c){
-//	printf("%c" , c);
-//}
-//extern "C" void puti(int i) {
-//	printf("%d", i);
-//}
-#endif
-extern "C" int raise(chars error){
-	printf("%s" , error);
-	return -1;
-}
-
-//#include <stdlib.h>
-void exit0(){
-//	exit(0);
-}
-
-//wasm-ld: error: duplicate symbol: exit
-//extern "C" void exit(int fd){
-	// todo HOW??
-// Error while importing "wasi_snapshot_preview1"."proc_exit": unknown import.
-//}
-#endif
-
-//#ifdef RUNTIME_ONLY
-#if defined(RUNTIME_ONLY) || defined(WASM)
-//int read_wasm(chars wasm_path){return -1;};
-//int run_wasm(chars wasm_path){return -1;};
-//int run_wasm(bytes data,int size){return -1;}
-#endif
-
 #ifdef RUNTIME_ONLY_MOCK
 // mock
+const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm was compiled as 'RUNTIME_ONLY'";
 Node analyze(Node data){return data;};// wasp -> code  // build ast via operators
 Node eval(String code){return Node(code);};// wasp -> code -> data   // interpreter mode vs:
 Node emit(String code){return Node(code);};//  wasp -> code -> wasm  // to debug currently same as:
@@ -461,128 +29,84 @@ Node Node::evaluate(bool){ return *this; }
 int read_wasm(chars wasm_path){};
 int run_wasm(chars wasm_path){};
 int run_wasm(bytes data,int size){}
-#endif
-
-#ifndef MY_WASM
-
-void panic() {
-#ifndef WASM
-	raise("panic");
-#else
-	char* x=0;
-	x[-1]=2;// Bus error: 10
-#endif
-}
-
-#endif
-
-
-#ifndef MY_WASM
-
-//#pragma message "using wasm imports"
-//void puts(chars c) { // int return needed for stdio compatibilty !
-//	printf("%s", c);
-//}
-
-//#ifndef WASI
-#if MY_WASM
-extern "C" int puts(chars c) { // // int return needed for stdio compatibilty !
-//	if(from wasm)result=c
-    if (c)printf("%s", c);
-    return 1;// stdio
-}
-#endif
-
-void puti(int i) {
-    printf("%d", i);
-}
-
-void putl(long long l) {
-    printf("%lld", l);
-}
-
-[[maybe_unused]] void putx(long long l) {
-    printf("%llx", l);
-}
-
-void putp(long char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
-    printf("%s", (char *) char_pointer);
-}
-
-void put_char(codepoint c) {
-    printf("%c", c);
-}
-
-void putx(int i) {
-	printf("%x", i);
-}
-
-void putf(float f) {
-	printf("%f\n", f);
-}
-
-void putp(void *f) {
-	printf("%p\n", f);
-}
-#endif
-
-#ifdef RUNTIME_ONLY
-#include "Interpret.h"
 Module& read_wasm(chars file){return *new Module();}
-#endif
-
-// todo: INLINE into wasm code how? just use wasp runtime and wasm-gc wasm-opt to tree shake ok
-long powi(int a, int b) {
-	long res = a;
-	while (b-- > 1)
-		res *= a;
-	return res;
-}
-long powl(long a, int b) {
-	long res = a;
-	while (b-- > 1){
-		res *= a;
-//        if(res<a)return power(Number(a),b); // smartlong !
-    }
-	return res;
-}
-//number powl(number a, long b){// optimized for longs!
-//	long c=a;
-//	while (b-->0)c=c*a;
-//	return c;
-//}
-
-//#ifndef SDL
-//#ifndef WEBAPP
-//long init_graphics();
-//int paint(int wasm_offset){return -1;};
-//#endif
-//#endif
-
-#ifdef RUNTIME_ONLY // No Angle.cpp!
-const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm compiled as 'RUNTIME_ONLY'";
-
-void clearContext() {}
-
 Node &analyze(Node &node, String context) { return *new Node(RUNTIME_ONLY_ERROR); }
-
 Node eval(String code) { return Node(RUNTIME_ONLY_ERROR); }
-
 Node interpret(String code) { return Node(RUNTIME_ONLY_ERROR); }
-
+void clearContext() {}
 extern "C" long run_wasm_file(chars file) {
     error(RUNTIME_ONLY_ERROR);
     return -1;
 }
-
 void console() { error(RUNTIME_ONLY_ERROR); }
-
 void testCurrent(){}// why??
 #endif
 
 
-//#ifndef WASM
-//void printf(chars format, number i) {
-//	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
-//}
+//#if WASM
+// NEEDS TO BE IN Wasp because __wasm_call_ctors !
+//unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(malloc(1000000));
+char *__heap_base = (char *) memory;
+//unsigned char* __heap_base=0;
+char *memoryChars = (char *) memory;
+//int HEAP_OFFSET=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
+//#define HEAP_OFFSET 65536
+//int memory_size=1048576-HEAP_OFFSET; // todo set in CMake !
+char *current = (char *) HEAP_OFFSET;
 //#endif
+
+
+int isalnum0(int c) {
+    return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z');// todo lol
+}
+
+// todo put to util
+[[noreturn]]
+void error1(chars message, chars file, int line) {
+#ifdef _Backtrace_
+//	Backtrace(2);// later, in raise
+#endif
+    if (file)printf("\n%s:%d\n", file, line);\
+    raise(message);
+    if (panicking) panic();// not reached
+    throw message;// not reached
+}
+
+
+void newline() {
+    put_char('\n');
+}
+
+void info(chars msg) {
+    if (not debug)return;// todo finer levels!
+    printf("%s", msg);
+    newline();
+}
+
+void warn(chars warning) {
+    printf("%s", warning);
+    newline();
+}
+
+void warn(String warning) {
+    printf("%s", warning.data);
+    newline();
+}
+
+void warning(chars warning) {
+    printf("%s", warning);// for now
+}
+
+int raise(chars error) {
+    throw error;
+}
+
+
+// wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and print()
+double sqrt1(double a) {
+#ifndef WASM
+    return sqrt(a);
+#endif
+    todo("wasm has it's own sqrt. how to add wasm inline ");
+    return -1;
+}
