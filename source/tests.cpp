@@ -2726,6 +2726,7 @@ void testCurrent() {
 //    skip(
 //    loadModule("cmake-build-wasm/wasp.wasm");
     assert_emit("x='hello';fd_write(1,8,5,0)", (long) 0);
+//    assert_run("len('123')", 3); // Map::len
 
     loadModule("wasp");
     check_is(module_cache.value(0)->functions["puts"].signature.size(), 1)
