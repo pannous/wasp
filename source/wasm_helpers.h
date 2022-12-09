@@ -7,16 +7,7 @@
 
 #include <cstddef> // size_t  FINE with wasm!
 
-// most important WASI function
-void fd_write(int FD, char **strp, int *len, int *nwritten);
-
-void print(char *str) {
-    int FD = 1;// stdout
-    int *len = new int;// these need to be on heap for i32.load!
-    int *nwritten = new int;
-    *len = strlen0(str);
-    fd_write(1, &str, len, nwritten);
-}
+typedef char32_t codepoint;// 'letter' ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
 
 typedef const char *chars;
 typedef unsigned char *bytes;
@@ -24,24 +15,12 @@ typedef unsigned char *bytes;
 [[noreturn]]
 extern void error1(chars message, chars file, int line);
 
-#ifndef WASM
-#else
-//#ifdef PURE_WASM << unnecessary
-//#define size_t unsigned long
-//#define size_t unsigned int // error: 'operator new' takes type size_t ('unsigned long') as first parameter
-#endif
-
 
 // there are two aspects of wasm memory: the internal memory starting at 0 and the external c-pointer *wasm_memory if the VM provides it
 // worse there is the native_runtime which may hold the wasm_runtime running in the VM!
-
-// TODO: let the native_runtime mess with wasm_memory DIRECTLY?
-
 // todo : depends on clang_options! Sometimes it is needed sometimes it can't be there
-#ifndef WASM
-#endif
 extern "C" unsigned int *memory;// =0; always, BUT heap_offset/current is higher from beginning!
-extern "C" void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
+extern void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
 //extern "C" char *wasm_memory_chars;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
 //extern "C" char *memoryChars;
 //extern "C" int __heap_base; ==
@@ -68,11 +47,7 @@ extern "C" void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm
 
 extern "C" /*unsigned */ char *current;// memory + heap_offset
 extern "C" void panic();//
-#ifndef WASM_ENABLE_INTERP
-#ifndef SDL
-//extern "C" // conflicts with signal.h
-#endif
-#endif
+
 
 #ifndef WASM
 
@@ -80,27 +55,46 @@ int raise(chars error); // conflicts with signal.h if 'extern'
 #else
 extern "C" int raise(chars error); // conflicts with signal.h if 'extern'
 #endif
+//
+//#if WASM
+//extern "C" void *memmove(char *dest, const char *source, size_t num);
+//#endif
+//void *memcpy(void *destination, const void *source, size_t num);// asm ("memcpy");;
+#if LINUX
+extern "C" void* memcpy(void*, const void*, size_t) noexcept;
+extern "C" void *memset(void *ptr, int value, size_t num) noexcept;
+extern "C" void *memmove(void *__dst, const void *__src, size_t num) noexcept;
+#else
+extern "C" void *memcpy(void *, const void *, size_t);
+extern "C" void *memset(void *ptr, int value, size_t num);
+extern "C" void *memmove(void *__dst, const void *__src, size_t num);
+#endif
 
-int squari(int a);
-long squarl(long a);// stupid test basic wasm import => runtime linking   remove?
+//__attribute__((import_module("env"), import_name("memcpy")));;
+extern "C" void memcpy0(char *destination, char *source, size_t num);
 
-//extern unsigned int *memory;
-//extern unsigned int *& __unused heap;
+void memcpy1(bytes dest, bytes source, int i);
 
-typedef char32_t codepoint;// 'letter' ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
 
-extern "C" int puts(const char *);// stdio
-extern "C" void putp(void *f);// pointer
-extern "C" void puti(int i);
-extern "C" void putl(long long l);
-extern "C" void putx(long long l);
-//extern "C" void putp(long *char_pointer);
-extern "C" void put_char(codepoint c);
-//extern "C" void put_char(char c);
-//extern "C" int putchar(int c);// stdio
+// if MY_WASI make sure to IMPLEMENT THEM ALL via fd_write !!
+// todo: alias all to print
+extern "C" //  DESTROYS the export type signature! but required by stdio.h:178:6:
+int puts(const char *);// stdio
+void putp(void *f);// pointer
+void puti(int i);
 
-extern "C" void putf(float f);
-extern "C" int square(int n);// test wasm
+void putl(long long l);
+
+void putx(long long l);
+
+//void putp(long *char_pointer);
+void put_char(codepoint c);
+//void put_char(char c);
+//int putchar(int c);// stdio
+
+void putf(float f);
+
+int square(int n);// test wasm
 
 double powd(double x, double y);
 
@@ -108,11 +102,7 @@ long squarel(long n);// test wasm, otherwise use x² => x*x in analyze!
 double square_double(double n);// test wasm
 
 extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
-#ifndef WASM
 
-#endif
-
-long powi(int a, int b);// short harder
 
 //extern "C" double pow2(double x, double y);
 //extern "C"
@@ -124,7 +114,8 @@ long powi(int a, int b);// short harder
 
 //extern float powf(float x, float y);
 //void printf(int);
-void *alloc(int num, int size);
+
+void *alloc(int num, int size);// => malloc / calloc
 //void *calloc(int size, int num);// alloc cleared
 //void *calloc(size_t __count, size_t __size);// __result_use_check __alloc_size(1,2);
 //inline _LIBCPP_INLINE_VISIBILITY float       pow(float __lcpp_x, float __lcpp_y) _NOEXCEPT;
@@ -236,32 +227,18 @@ extern "C" int printf(chars s, ...);  //stdio
 
 
 
-//void *memcpy(void *destination, const void *source, size_t num);// asm ("memcpy");;
-#if LINUX
-extern "C" void* memcpy(void*, const void*, size_t) noexcept;
-extern "C" void *memset(void *ptr, int value, size_t num) noexcept;
-extern "C" void *memmove(void *__dst, const void *__src, size_t num) noexcept;
-#else
-extern "C" void *memcpy(void *, const void *, size_t);
-extern "C" void *memset(void *ptr, int value, size_t num);
-extern "C" void *memmove(void *__dst, const void *__src, size_t num);
-#endif
-
-//__attribute__((import_module("env"), import_name("memcpy")));;
-extern "C" void memcpy0(char *destination, char *source, size_t num);
-
-void memcpy1(bytes dest, bytes source, int i);
 
 
 
-
+// most important WASI function
 //extern "C" void _fd_write(int fd, const wasi_buffer *iovs, size_t iovs_len, size_t *nwritten);
+//void fd_write(int FD, char **strp, int *len, int *nwritten); // todo len or len* ?  wasi_buffer={char*, … ?}
+
 extern "C"
-#ifdef WASI
+#if WASI or MY_WASI
 __attribute__((import_module("wasi_unstable"), import_name("fd_write")))
 int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
 //__attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")));
-
 #else
 int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
 #endif

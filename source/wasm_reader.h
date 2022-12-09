@@ -61,7 +61,7 @@ public:
     List<Global> globals;
     List<String> import_names;
     List<String> export_names;
-    List<Signature> funcTypes;// c++ types from export name convention, implicit index
+    List<Signature> funcTypes = {1000};// c++ types from export name convention, implicit index
 //	List<Signature> wasmFuncTypes;// wasm types from funcTypes section implicit index
     Map<String, Signature> signatures;// also implicit index->Signature 0,1,2… ! before merging!
     Map<String, Function> functions = {.capacity=10000};

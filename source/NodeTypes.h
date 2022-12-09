@@ -145,8 +145,12 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
 // see header_4 / smartType4bit
 // todo universal micro bits for 1. POINTER 2. ARRAY 2. STRUCT with HEADER
 enum Primitive {
+    //    THE 0x00 …0x0F …0xF0 … range is reserved for numbers
 //   redundant Valtype overlap
-    unknown_type = 0,
+
+//    Kind::undefined = 0 ==
+    unknown_type = 0,// defaults to long!
+    missing_type = 0x40,// well defined
     wasm_leb = 0x77,
     wasm_float64 = 0x7C,
     wasm_f32 = 0x7d,
@@ -157,15 +161,19 @@ enum Primitive {
     self = pointer,
 //	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
     type32 = 0x80, // todo see smart_pointer_64 etc OK?
-    node = 0xA0,
-    angle = 0xA0,//  angle object pointer/offset versus smarti vs anyref
+////	smarti32 = 0xF3,// see smartType
+//	smarti64 = 0xF6,
+    node = 0xA0, // Node struct versus Node* nodes = 0xD000  todo better scheme 0xAF F for fointer!
+//    angle = 0xA4,//  angle object pointer/offset versus nodes smarti vs anyref todo What is this?
     any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
 //	unknown = any,
-    array = 0xAA,
-    charp = 0xC0, // vs
-    stringp = 0xC0,// use charp?  pointer? enough?? no!??
-    codepoint32 = 0xC1, // just ONE codepoint as int! todo via map
-    string_struct = 0xC8,
+    array = 0xAA,// compatible with List, Node (?)
+    charp = 0xC0, // vs chars pointer
+    string_struct = 0xC8,// String
+    stringp = 0xCF,// String*
+    codepoint32 = 0xC4, // just ONE codepoint as int! todo via map
+//    byte_char = 0xC1, // 0xBC
+
 //	floats = 0x1010, // only useful for main(), otherwise we can return real floats or wrapped Node[reals]
 //	pointer = int32,// 0xF0, // internal
 ////	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
@@ -182,9 +190,8 @@ enum Primitive {
 ////	pointer = 0xF0,
 ////	externalPointer = 0xFE,
 //	ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
-////	smarti32 = 0xF3,// see smartType
-////	smarti64 = 0xF6,
-    todoe = 0xFE, // todo
+
+    todoe = 0xE1, // todo
     ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
 
     // todo: different levels
@@ -201,6 +208,9 @@ enum Primitive {
     byte_i8 = 0xB0, // when indexing uint8 byte array.
     byte_char = 0xBC, // when indexing ascii array. todo: maybe codepoint into UTF8!?
     codepointus = 0xC0,  // when indexing int32 array
+
+//    THE 0xF0 … range is reserved for numbers
+
 //	c_char = 0xB0, // when indexing byte array. todo: maybe codepoint into UTF8!?
     array_start = 0xA000, // careful there are different kinds of arrays/lists/List/Node[lists]
     list = 0xA100, // [len(int32), data*] compatible with List
@@ -217,6 +227,7 @@ enum Primitive {
 //	byte_list = 0xB000, // not 0 terminated, length via 3rd return item??
 //	byte_vector = 0xB001, // LEB encoded length header
 //    block = 0xB000,
+    maps = 0xA0B0, // todo generics Map<String; int> …
     c_string = 0xC000, // pointer to utf-8 bytes in wasm's linear memory, 0 terminated
     leb_string = 0xC001, // LEB encoded length header -> wasm_string
     // todo universal micro bits for 1. POINTER 2. ARRAY 2. STRUCT with HEADER
@@ -302,13 +313,14 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
     }
 
     Type32(Node *o) {
-        if (!o)
+        if (!o) {
             this->kind = Kind::nils;
-//			this->type=Type(Valtype::voids);
-//		if (o->kind)
-//		if (Double==*o)
-        this->kind = reals;
-        error("TODO    Type32(const Node &o){");
+            return;
+        }
+        if (o == &Double)
+            this->kind = reals;
+        else
+            error("Type32(const Node &o)");
     }
 //
 //    Type32(const Node &o) {
@@ -396,6 +408,8 @@ enum Modifiers {
 chars typeName(::Kind t);
 
 chars typeName(::Type t);
+
+chars typeName(Primitive p);
 
 
 // for Angle analyze / emitter . minimally more efficient than node.name=="if" …

@@ -457,7 +457,8 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
 //    emitPadding(3*8);// pointers, hash, capacity, … extra fields
 //    emitPaddingAlignment(8);
     last_type = Primitive::node;
-    last_typo = node.type;
+    if (node.type)
+        last_typo = node.type;
     last_object = &node;
     last_object_pointer = node_start;
     printf("node_start %d data_index_end %d\n", node_start, data_index_end);
@@ -1353,7 +1354,7 @@ Code emitOperator(Node &node, Function &context) {
     byte opcode = opcodes(name, mapTypeToWasm(last_type), mapTypeToWasm(arg_type));
 
     if (opcode >= 0x8b and opcode <= 0x98)
-        code.add(cast(last_type, f32));// float ops
+        code.add(cast(last_type, float32));// float ops
     if (opcode >= 0x99 and opcode <= 0xA6)
         code.add(cast(last_type, f64)); // double ops
 
@@ -1406,7 +1407,7 @@ Code emitOperator(Node &node, Function &context) {
 //		if(last_value==0)code.addConst(1);
 //		if(last_value==1)return code;
         if (last_type == int32) code.add(emitCall(*new Node("powi"), context));
-        else if (last_type == f32) code.add(emitCall(*new Node("powf"), context));
+        else if (last_type == float32) code.add(emitCall(*new Node("powf"), context));
         else if (last_type == f64) code.add(emitCall(*new Node("pow"), context));
         else code.add(emitCall(*new Node("powi"), context));
     } else if (name.startsWith("-")) {
@@ -1708,7 +1709,8 @@ Code emitConstruct(Node &node, Function &context) {
     }
     last_object = &node;
     last_object_pointer = pointer;
-    last_typo = node.type;
+//    if(node.type)
+//    last_typo = mapTypeToPrimitive(*node.type);
     last_type = pointer;
     code.addConst32(pointer);// base for future index getter/setter [0] #1
     return code;
@@ -1808,7 +1810,7 @@ Code emitCall(Node &fun, Function &context) {
         code.push(emitExpression(arg, context));
 //		Valtype argType = mapTypeToWasm(arg); // todo ((+ 1 2)) needs deep analysis, or:
         Type argType = last_type;// evaluated expression smarter than node arg!
-        Type &sigType = signature.parameter_types[i++];
+        Type sigType = signature.parameter_types[i++];
         if (sigType != argType)
             code.push(cast(argType, sigType));
     };
@@ -1818,7 +1820,7 @@ Code emitCall(Node &fun, Function &context) {
     context.is_used = true;
 
     // todo multi-value
-    const Type &return_type = signature.return_types.last(none);
+    Type return_type = signature.return_types.last(none);
     last_type = mapTypeToWasm(return_type);
     if (signature.wasm_return_type)
         check_eq(last_type, signature.wasm_return_type);
@@ -1840,34 +1842,34 @@ Code cast(Valtype from, Valtype to) {
     if (from == i32t and to == float32)return Code(f32_from_int32);
 //	if (from == i32t and to == float64)return Code(i32_cast_to_f64_s);
     if (from == i64 and to == i32) return Code(i32_wrap_i64);
-    if (from == f32 and to == i32) return Code(i32_trunc_f32_s);
+    if (from == float32 and to == i32) return Code(i32_trunc_f32_s);
 //	if(from==f32u and to==i32)	return Code(i32_trunc_f32_𝗎);
     if (from == f64 and to == i32) return Code(i32_trunc_f64_s);
 //	if(from==f64u and to==i32)	return Code(i32_trunc_𝖿𝟨𝟦_𝗎);
     if (from == i32 and to == i64) return Code(i64_extend_i32_s);
 //	if(from==i32u and to==i64)	return Code(i64_extend_i32_𝗎);
-    if (from == f32 and to == i64) return Code(i64_trunc_f32_s);
+    if (from == float32 and to == i64) return Code(i64_trunc_f32_s);
 //	if(from==f32u and to==i64)	return Code(i64_trunc_f32_𝗎);
     if (from == f64 and to == i64) return Code(i64_trunc_f64_s);
 //	if(from==f64u and to==i64)	return Code(i64_trunc_𝖿𝟨𝟦_𝗎);
-    if (from == i32 and to == f32) return Code(f32_convert_i32_s);
+    if (from == i32 and to == float32) return Code(f32_convert_i32_s);
 //	if(from==i32u and to==f32)	return Code(f32_convert_i32_𝗎);
-    if (from == i64 and to == f32)
+    if (from == i64 and to == float32)
         return Code(f32_convert_i64_s);
 //	if(from==f64u and to==f32)	return Code(f32_convert_i64_𝗎);
-    if (from == f64 and to == f32) return Code(f32_demote_f64);
+    if (from == f64 and to == float32) return Code(f32_demote_f64);
     if (from == i32 and to == f64)
         return Code(f64_convert_i32_s);
 //	if(from==i32u and to==f64)	return Code(f64_convert_i32_𝗎);
     if (from == i64 and to == f64)
         return Code(f64_convert_i64_s);
 //	if(from==f64u and to==f64)	return Code(f64_convert_i64_𝗎);
-    if (from == f32 and to == f64) return Code(f64_promote_f32);
+    if (from == float32 and to == f64) return Code(f64_promote_f32);
 //	if(from==f32 and to==i32)	return Code(i32_reinterpret_f32);
 //	if(from==f64 and to==i64)	return Code(i64_reinterpret_𝖿𝟨𝟦);
 //	if(from==i32 and to==f32)	return Code(f32_reinterpret_i32);
 //	if(from==i64 and to==f64)	return Code(f64_reinterpret_i64);
-    if (from == i64 and to == f32) return Code(f64_convert_i64_s).addByte(f32_from_f64);
+    if (from == i64 and to == float32) return Code(f64_convert_i64_s).addByte(f32_from_f64);
 
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
@@ -1891,7 +1893,7 @@ Code cast(Type from, Type to) {
     if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
     if (from == array and to == i64)return Code(i64_extend_i32_u);;// pray / assume i32 is a pointer here. todo!
     if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
-    if (from == f32 and to == array)return nop;// pray / assume f32 is a pointer here. LOL NO todo!
+    if (from == float32 and to == array)return nop;// pray / assume f32 is a pointer here. LOL NO todo!
     if (from == i64 and to == array)return Code(i32_wrap_i64);;// pray / assume i32 is a pointer here. todo!
 //    if(Valtype)
     return cast(mapTypeToWasm(from), mapTypeToWasm(to));
@@ -2020,7 +2022,7 @@ Code zeroConst(Type returnType) {
     Code code;
     if (returnType == int32)
         code.addConst32(0);
-    if (returnType == f32) {
+    if (returnType == float32) {
         code.add(f32_const);
         code.push((bytes) malloc(4), 4);
     }

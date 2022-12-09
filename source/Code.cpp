@@ -115,9 +115,11 @@ chars typeName(Primitive p) {
         case Primitive::array:
             return "array";
         case Primitive::charp:
-            return "char*";
+            return "chars";
         case Primitive::node:
             return "Node";
+        case nodes:
+            return "node";// Node*
         case Primitive::ignore:
             return "«ignore»";// or "" ;)
         case Primitive::todoe:
@@ -143,9 +145,11 @@ chars typeName(Primitive p) {
         case any:
             return "any";
         case string_struct:
-            return "string_struct";
+            return "String";
+        case stringp:
+            return "string";
         case byte_i8:
-            return "uint8";
+            return "byte";
         case byte_char:
             return "byte_char";
         case array_start:
@@ -177,19 +181,18 @@ chars typeName(Primitive p) {
         case json_string:
             return "json_string";
         case wasp_string:
-            return "wasp_string";
         case wasp_data_string:
-            return "wasp_data_string";
         case wasp_code_string:
-            return "wasp_code_string";
-        case nodes:
-            return "nodes";
+            return "wasp";
         case result_error:
             return "result_error";
         case fointer:
-            return "fointer";
-        case fointer_of_int32:
-            return "fointer_of_int32";
+        case fointer_of_int32: // ...
+            return "pointer";
+        case missing_type:
+            return "missing"; // ≠ nul, undefined
+        case maps:
+            return "Map";
     }
     return 0;
 }
@@ -225,30 +228,29 @@ chars typeName(Valtype t, bool fail) {
 
 Valtype mapTypeToWasm(Primitive p) {
     switch (p) {
-        case unknown_type:
+        case unknown_type: // undefined
+        case missing_type: // well defined, but still:
             error("unknown_type in final stage");
         case wasm_leb:
             error("wasm_leb in wasm write stage");
         case wasm_float64:
             return Valtype::float64;
         case wasm_f32:
-            return Valtype::f32;
+            return Valtype::float32;
         case wasm_int64:
             return Valtype::i64;
         case wasm_int32:
             return Valtype::int32;
         case type32:
             return Valtype::int32;
-        case node: // todo 64 bit
-            return Valtype::wasm_pointer;// CAN ONLY MEAN POINTER HERE, NOT STRUCT!!
-        case nodes: // ⚠️ Node* Node** or Node[] ?
+        case stringp:
             return Valtype::wasm_pointer;
+        case nodes: // ⚠️ Node* Node** or Node[] ?
+            return Valtype::wasm_pointer; // CAN ONLY MEAN POINTER HERE, NOT STRUCT!!
         case any:
             return Valtype::wasm_pointer;
         case array:
-        case list:
         case vector:
-        case array_header:
         case int_array:
         case long_array:
         case float_array:
@@ -259,7 +261,13 @@ Valtype mapTypeToWasm(Primitive p) {
             return Valtype::wasm_pointer;
         case codepoint32:
             return Valtype::int32;// easy ;)
+
+        case node:
+        case list:
         case string_struct:
+        case array_header:
+        case maps:
+//            return none;// todo:
 //      a String struct is unrolled in the c/wasm-abi
             error("struct in final stage");
         case todoe:
@@ -291,6 +299,7 @@ Valtype mapTypeToWasm(Primitive p) {
             error("internal error or planned error as exception in wasm code?");
 //            return Valtype::int64;
 //            smart_pointer_64 ?
+
     }
 }
 
@@ -320,8 +329,8 @@ Primitive mapTypeToPrimitive(Node &n) {
         return Primitive::wasm_float64;
     if (n == Charpoint)
         return Primitive::codepointus;
-    else
-        todo("mapTypeToPrimitive " + n.serialize());
+    else todo("mapTypeToPrimitive " + n.serialize());
+    return Primitive::unknown_type;
 }
 
 Valtype mapTypeToWasm(Node &n) {
