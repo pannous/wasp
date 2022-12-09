@@ -1981,13 +1981,13 @@ int main(int argc, char **argv) {
             return eval(wasp_code).value.longy;
         }
         if (arg.endsWith(".wasm")) {
-            if (argc >= 3)
+            if (argc >= 3) {
 #ifdef WABT_MERGE
                 merge_files(--argc, ++argv);
 #else
-                todo("linking files needs compilation with WABT_MERGE");
+                todo("linking files needs compilation with WABT_MERGE")
 #endif
-            else
+            } else
                 run_wasm_file(arg);
         }
 #ifndef NO_TESTS

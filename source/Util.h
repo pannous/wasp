@@ -1,5 +1,10 @@
 #pragma once
 
+typedef long long int64;
+typedef unsigned long long uint64;
+typedef unsigned long long u64;
+//typedef unsigned long long bytes8;
+
 #define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
 
 //#define min(a, b) (a < b ? a : b)
@@ -12,14 +17,13 @@ static bool isnumber(char x){return x>='0' and x<='9';}
 #define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
 
 //typedef long long int64;  = 0x7E, in enum
-typedef unsigned long long uint64;
 
 static bool I_know_what_I_am_doing = false;
 
 #if RUNTIME_ONLY
 #define todo(msg)
 #else
-#define todo(msg) error1(str("TODO ") + msg,__FILE__,__LINE__)
+#define todo(msg) {breakpoint_helper;error1(str("TODO ") + msg,__FILE__,__LINE__);}
 #endif
 
 #ifdef TRACE
@@ -118,7 +122,7 @@ Node *smartNode(smart_pointer_64 smartPointer64);
 
 long file_last_modified(char *file);
 
-String demangle(String &fun);
+String demangle(const String &fun);
 
 String extractPath(String file);
 

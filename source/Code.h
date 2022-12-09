@@ -362,7 +362,7 @@ public:
 // https://github.com/WebAssembly/flexible-vectors/blob/main/proposals/flexible-vectors/BinaryFlexibleVectors.md
 enum VectorOpcodes { // Immediate operands in comments:
     vector_length_op = 0x00,
-    splat = 0x10,
+    vector_splat_op = 0x10,
     extract_lane_imm_u = 0x11, // i:ImmLaneIdx16 for i8, ImmLaneIdx4 for i32 etc ( product must be 64!)
     extract_lane_imm_s = 0x12, // i:ImmLaneIdx… ^^
     replace_lane_imm = 0x13,   // i:ImmLaneIdx… ^^
@@ -372,8 +372,9 @@ enum VectorOpcodes { // Immediate operands in comments:
     extract_lane_mod_u = 0x17,
     extract_lane_mod_s = 0x18,
     replace_lane_mod = 0x19,
-    lshl = 0x20, // (lane) shift left    VERSUS bitwise  	0x50
-    lshr = 0x21, // (lane) shift right
+
+    vector_lshl = 0x20, // (lane) shift left    VERSUS bitwise  	0x50
+    vector_lshr = 0x21, // (lane) shift right
 
     // Ints vec.i64.add  0x77.0x30 DIFFERENT to vec.f32.add 	0x76.0x94  GRRR!
     vector_add = 0x30, // ok overlap with i32.add … would be nonsensical
@@ -398,8 +399,8 @@ enum VectorOpcodes { // Immediate operands in comments:
     vector_andnot = 0x57,
     vector_bitselect = 0x58, // slice from to how?  Bits 3...7 of 01100101: 25 (_11001__)
 
-    any_true = 0x60,
-    all_true = 0x61,
+    vector_any_true = 0x60,
+    vector_all_true = 0x61,
 
     vector_eq = 0x70,
     vector_ne = 0x71,
@@ -484,15 +485,17 @@ enum Valtype {
     f32s = 0x7d,
 //	f32u = 0x7d,// todo ignore!
 
-    int64 = 0x7E, // signed or unsigned? we don't care
+    i64 = 0x7E, // signed or unsigned? we don't care
     i64t = 0x7E,
-    i64 = 0x7E,
     i64s = 0x7E,
+//    int64 = 0x7E,  // symbol now used as
+//    typedef long long int64
 
     int32 = 0X7F,
     i32t = 0x7f,
     i32 = 0x7f,
     i32s = 0x7f,
+    wasm_pointer = int32,
 //	i32u = 0x7f,// todo ignore!
 
     // SPECIAL INTERNAL TYPES ONLY, not part of spec but they ARE represented through c++=>wasm types (int32?) :
@@ -965,6 +968,18 @@ public:
         return *this;
     }
 
+
+    Signature &add(Type t, String name = "_") {
+#ifdef DEBUG
+        debug_name += typeName(t);
+        debug_name += " ";
+#endif
+        parameter_types.add(t);
+        parameter_names.add(name);
+        return *this;
+    }
+
+
     Signature &add(Node type, String name = "_") {
         Valtype t = mapTypeToWasm(type);
 #ifdef DEBUG
@@ -1033,7 +1048,7 @@ public:
         return f;
     }
 
-    void merge(Signature &s) {
+    void merge(Signature &s) { // ok don't duplicate, just fill empties
         if (type_index < 0)type_index = s.type_index;
 //		return_type = s.return_type;
         wasm_return_type = s.wasm_return_type;
