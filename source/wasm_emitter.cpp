@@ -1068,6 +1068,8 @@ Code emitString(Node &node, Function &context) {
     data[data_index_end + string.length] = 0;
     // we add an extra 0, unlike normal wasm abi, because we have space in data section
     referenceDataIndices.insert_or_assign(string, data_index_end);
+    // todo this is EVIL: we assign the STRING to data_index_end, not the REFERENCE!!!
+
     data_index_end += string.length + 1;
     last_type = stringp;
     last_object_pointer = last_pointer;
@@ -1387,7 +1389,7 @@ Code emitOperator(Node &node, Function &context) {
         else {
             return code + emitIndexRead(node, context, true, true);
         }
-    } else if (isFunction(name) or isFunction(normOperator(name))) {
+    } else if (isFunction(name, true) or isFunction(normOperator(name), true)) {
         emitCall(node, context);
     } else if (opcode > 0xC0) {
         error("internal opcode not handled"s + opcode);
@@ -1557,7 +1559,7 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
     //	or node.kind == groups ??? NO!
 
     if ((node.kind == call or node.kind == reference or node.kind == operators) and functionIndices.has(name)) {
-        if (not isFunction(name));//				todo("how?");
+        if (not isFunction(name, true));//				todo("how?");
         else
             return emitCall(node, context);
     }
@@ -1796,6 +1798,7 @@ Code emitCall(Node &fun, Function &context) {
     }
     Function &function = functions[name];// NEW context! but don't write context ref!
     Signature &signature = function.signature;
+
     int index = function.index;
     if (functionIndices.has(name))
         index = functionIndices[name];
@@ -1972,13 +1975,16 @@ Code emitSetter(Node &node, Node &value, Function &context) {
 //    value.parent = &node;
     if (value.kind == arrays or value.kind == objects or value.kind == groups)
         value.name = node.name;// HACK to store referenceIndices
+    value.parent = &node;// might have been lost through operator shuffle. todo: fix in analyze
     Code value1 = emitExpression(value, context);
     setter.add(value1);
     setter.add(cast(last_type, variable_type));
     setter.add(tee_local);
     setter.add(local.position);
-    if (value.kind == strings)
-        referenceDataIndices[local.name] = last_object_pointer;// HAKC
+//    if (value.kind == strings){
+//        referenceIndices.insert_or_assign(local.name,last_object_pointer);
+//        referenceDataIndices[local.name] = last_object_pointer;//-8;// todo HAKC and BUG!! this should be -8 !!
+//    }
     if (variable_type != void_block)
         last_type = variable_type;// still the type of the local, not of the value. example: float x=7
     return setter;
@@ -2902,14 +2908,15 @@ Code &compile(String code, bool clean) {
         clearEmitterContext();
         clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
     }
-//	preRegisterSignatures();
+
     Node parsed = parse(code);
+
     Node &ast = analyze(parsed, functions["main"]);
+    functions["fd_write"].signature.wasm_return_type = int32;
 //	preRegisterSignatures();// todo remove after fixing Signature BUG!!
 //	check(functions["log10"].is_import)
 //	check(functions["log10"].is_used)
     Code &binary = emit(ast);
-
     binary.save("main.wasm");
 
 #ifdef INCLUDE_MERGER

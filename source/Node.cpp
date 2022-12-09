@@ -240,7 +240,7 @@ Node &Node::set(String string, Node *node) {
         children = (Node *) calloc(capacity, sizeof(Node));
         if (name == nil_name)name = "ø";
     }
-    if (length >= capacity / 2)todo("GROW children");
+    if (length >= capacity / 2) todo("GROW children");
 //	children = static_cast<Node *>(alloc(1000));// copy old
     Node &entry = children[length];
     if (&entry == &NIL)
@@ -812,7 +812,7 @@ String Node::serializeValue(bool deep) const {
             }
         }
         case longs:
-        case longsI:
+        case long32:
             return formatLong(val.longy);
         case reals:
         case realsF:
@@ -1264,7 +1264,7 @@ chars typeName(Kind t) {
             return "number";
         case longs:
             return "long";
-        case longsI:
+        case long32:
             return "int";
             //		case ints:
             //			return "int";
@@ -1414,8 +1414,7 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
             else if (value_kind == wasm_int32)chile = new Node(*(int *) val);
             else if ((int) value_kind == longs)chile = new Node(*(long *) val);
             else if ((int) value_kind == reals)chile = new Node(*(double *) val);
-            else
-                todo("smartNode of array with element kind "s + typeName(value_kind));
+            else todo("smartNode of array with element kind "s + typeName(value_kind));
             arr->add(chile);
         }
         return arr;
@@ -1425,6 +1424,8 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
 //        if(smart_type_payload&string_meta::share)
 //        return new Node(new String((char *) wasm_memory) + value, false/*copy!*/);
 //        else
+        if (not wasm_memory)
+            error("wasm_memory not linked");
         char *string = ((char *) wasm_memory) + value;
         String *pString = new String(string, true /*copy!*/ );
         Node &pNode = *new Node(pString, false /* not identifier*/);

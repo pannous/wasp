@@ -132,7 +132,7 @@ Node constants(Node n) {
 
 //Map<long, int> _isFunction; INEFFICIENT! // true not a 'type'
 // Hashmap _isFunction; // todo
-bool isFunction(String op) {
+bool isFunction(String op, bool deep_search) {
 //	if(_isFunction[op.hash()])return true;
     if (op.empty())return false;
     if (op == "‖")return false;
@@ -141,7 +141,7 @@ bool isFunction(String op) {
     if (functions.has(op))return true;// pre registered signatures
     if (op.in(function_list))
         return true;
-    if (findLibraryFunction(op, true))
+    if (deep_search and findLibraryFunction(op, true))
         return true;// linear lookup ok as long as #functions < 1000 ? nah getting SLOW QUICKLY!!
 //	if(op.in(functor_list))
 //		return true;
@@ -579,7 +579,7 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
     }
     if (globals.has(name))
         error(name + " already declared as global"s);
-    if (isFunction(name))
+    if (isFunction(name, true))
         error(name + " already declared as function"s);
     if (not context.locals.has(name)) {
         int position = context.locals.size();
@@ -779,7 +779,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
 
         if (name.empty())
             continue;
-        if (isFunction(name)) {
+        if (isFunction(name, true)) {
             node.kind = call;
             continue;
         }
@@ -839,7 +839,7 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op == "include")
             return NUL;// todo("include again!?");
         if (op != last) last_position = 0;
-        bool fromRight = rightAssociatives.has(op) or isFunction(op);
+        bool fromRight = rightAssociatives.has(op) or isFunction(op, true);
         fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
         int i = expression.index(op, last_position, fromRight);
         if (i < 0) {
@@ -1094,7 +1094,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         }
         rest = expressiona.from(i + 1);
         int arg_length = rest.length;
-        if (rest.kind == reference and not arg_length) arg_length = 1;
+        if (not arg_length and rest.kind == reference) arg_length = 1;
+        if (not arg_length and rest.value.data) arg_length = 1;
         if (arg_length > 1)
             rest.setType(expression);// SUUURE?
         if (rest.kind == groups or rest.kind == objects)// and rest.has(operator))
@@ -1133,8 +1134,11 @@ bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: librari
 // todo: clarify registerAsImport side effect
 Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
+    if (isFunction(name, false) and libraries.size() == 0)
+        libraries.add(&loadModule("wasp"));// on demand
+
 //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
-    for (Module *library: module_cache.valueList()) {
+    for (Module *library: libraries) {//} module_cache.valueList()) {
         // todo : multiple signatures! concat(bytes, chars, …) eq(…)
         int position = library->functions.position(name);
         if (position >= 0) {
@@ -1386,8 +1390,16 @@ void preRegisterFunctions() {
     functions.clear();
     Module &runtime = loadModule("wasp"); // ok, cached!
     runtime.code.needs_relocate = false; // may be set to true depending on main code emitted
-    for (auto fun: runtime.functions)
-        runtime.functions[fun].is_used = false;
+//    functions["strlen0"] = runtime.functions["strlen0"];
+//    functions["strlen0"].name = "strlen0";
+//    functions["strlen0"].runtime().signature.add(charp).returns(int32);// todo int64
+
+    for (int i = 0; i < runtime.functions.size(); ++i)
+        runtime.functions.values[i].is_used = false;
+
+    functions["fd_write"].signature.wasm_return_type = int32;
+    if (functions["puts"].signature.size() == 0)
+        functions["puts"].signature.add(i32);
 
 //	functions.use_constructor=true;
 //	functions.setDefault(Function());
@@ -1406,7 +1418,6 @@ void preRegisterFunctions() {
     }
     // runtime:
 //    functions["atoi0"].runtime().signature.add(charp).returns(int32);// todo int64
-//    functions["strlen0"].runtime().signature.add(charp).returns(int32);// todo int64
 //    functions["malloc"].runtime().signature.add(int64).returns(int64);
 //    functions["okf"].runtime().signature.add(float32).returns(float32);
 //    functions["eq"].runtime().signature.add(charp).add(charp).returns(bools);
@@ -1470,7 +1481,7 @@ void clearAnalyzerContext() {
 //	needs to be outside analyze, because analyze is recursive
 #ifndef RUNTIME_ONLY
     libraries.clear();// todo: keep runtime or keep as INACTIVE to save reparsing
-    module_cache.clear();
+//    module_cache.clear(); NOO not the cache lol
     types.clear();
     globals.clear();
     functionIndices.clear();
@@ -1556,8 +1567,9 @@ float function_precedence = 1000;
 
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "puts", "print", "printf",
-                                                        "println",
+// pre-registered functions working without any import / include / require / use
+chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printf",
+                                                        "println", "puts", "putf", "len",
                                                         "log", "ln", "log10", "log2", "similar",
                                                         "putx", "putc", "get", "set", "peek", "poke", "read",
                                                         "write", 0, 0,

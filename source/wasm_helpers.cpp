@@ -110,3 +110,8 @@ double sqrt1(double a) {
     todo("wasm has it's own sqrt. how to add wasm inline ");
     return -1;
 }
+
+// todo: remove this useless test function
+int square(int a) {
+    return a * a;
+}
