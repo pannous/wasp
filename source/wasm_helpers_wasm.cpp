@@ -216,17 +216,7 @@ void _cxa_throw() {
 
 
 void printf(long l) {
-#if MY_WASI
-    int FD = 1;// stdout
-    char *str = formatLong(l);
-    size_t len = strlen0(str);
-    size_t nwritten;
-    fd_write(1, &str, len, &nwritten);
-#elif MY_WASM
-    puti(l);
-#else
     printf("%ld", l);
-#endif
 }
 
 
@@ -298,10 +288,15 @@ void panic() {
 }
 
 
-extern "C" // DESTROYS the export type signature! stdio.h:178:6
+void put_chars(char *c, size_t len) {
+    c_io_vector civ{.string=c, .length=len ? len : strlen0(c)};
+    fd_write(1, &civ, 1, 0);
+}
+
+extern "C" // destroys the export type signature! stdio.h:178:6
 int puts(chars c) { // // int return needed for stdio compatibilty !
-//	if(from wasm)result=c
-    if (c)printf("%s", c);
+    c_io_vector civ{.string=(char *) c, .length=(size_t) strlen0(c)};
+    fd_write(1, &civ, 1, 0);
     return 1;// stdio
 }
 
@@ -325,11 +320,14 @@ void put_char(codepoint c) {
     printf("%c", c);
 }
 
-void putx(int i) {
-    printf("%x", i);
+void putf(float f) {
+    puts(formatLong((long) f));
+    puts(".");
+    puts(formatLong(((long) (f * 1000)) % 1000));
+//    printf("%f\n", f);
 }
 
-void putf(float f) {
+void putd(double f) {
     printf("%f\n", f);
 }
 

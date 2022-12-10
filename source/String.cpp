@@ -693,16 +693,7 @@ bool contains(chars str, chars match) {
 }
 
 void put(chars s) {
-#if WASM
-    int FD = 1;// stdout
-//    int *len = new int;// these need to be on heap for i32.load!
-    size_t *nwritten = new size_t;
-    size_t len = strlen0(s);
-    fd_write(1,(char *) s, len, nwritten);
-//    fd_write(1,(char **) &s, len, nwritten);
-#else
     puts(s);
-#endif
 }
 
 void print(const Node node) {
@@ -739,38 +730,16 @@ void print(String *s) {
     else if (s)put(s->data);
 }
 
-#ifndef WASM
 
 void print(String s) {
-    if (!s.shared_reference)
-        put(s.data);
-    else {
-        char tmp = s.data[s.length];
-        s.data[s.length] = 0;// hack not thread-safe
-        put(s.data);
-        s.data[s.length] = tmp;
-    }
+    put_chars(s.data, s.length);
+    newline();
 }
-
-#else
-void print(String s){
-    put(s.data);
-//   puts(s.data,s.length);
-}
-
-//void print(String s) {
-//	print(&s);
-//}
-#endif
 
 
 void print(char *str) {
 #if MY_WASI
-    int FD = 1;// stdout
-//    int *len = new int;// these need to be on heap for i32.load!
-    size_t nwritten;
-    size_t len = strlen0(str);
-    fd_write(1, &str, len, &nwritten);
+    puts(str);
 #else
     printf("%s", str);
 #endif

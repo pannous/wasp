@@ -98,6 +98,8 @@ void warning(chars warning) {
 }
 
 int raise(chars error) {
+    if (panicking)
+        proc_exit(-1);
     throw error;
 }
 

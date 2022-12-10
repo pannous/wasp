@@ -94,10 +94,17 @@ wrap(putf) {
     return NULL;
 }
 
+//struct iovs{
+//    char* string;
+//    size_t length;
+//};
+
 wrap(fd_write) {
-    auto fd = args[0].of.i32;
-    char *s = ((char *) wasm_memory) + args[1].of.i32;
-    size_t len = args[2].of.i32;
+//    auto fd = args[0].of.i32;
+    auto iovs_offset = args[1].of.i32;
+    int string_offset = *(int *) (((char *) wasm_memory) + iovs_offset);
+    char *s = ((char *) wasm_memory) + string_offset;
+//    size_t iovs_count = args[2].of.i32;
     if (!wasm_memory)
         printf("wasm_memory not linked");
     else
@@ -130,7 +137,9 @@ wrap(atoi) {
 }
 
 wrap(exit) { // proc_exit
-    printf("exit wasmtime");
+    printf("\nEXIT!\n (only wasm instance, not host;)\n");
+    todow("how to stop instance?");
+//    throw "how to stop instance?";
     exit(42);
     return NULL;
 }

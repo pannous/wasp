@@ -425,16 +425,16 @@ namespace wabt {
 	};
 
 /* matches binary format, do not change */
-	enum class ExternalKind {
-		Func = 0,
-		Table = 1,
-		Memory = 2,
-		Global = 3,
-		Tag = 4,
+	enum class ExternalKind { // ExportType
+        Func = 0,
+        Table = 1,
+        Memory = 2,
+        Global = 3,
+        Tag = 4,
 
-		First = Func,
-		Last = Tag,
-	};
+        First = Func,
+        Last = Tag,
+    };
 	static const int kExternalKindCount = WABT_ENUM_COUNT(ExternalKind);
 
 	struct Limits {
