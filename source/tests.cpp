@@ -14,6 +14,25 @@
 #include "wasm_runner.h"
 #include "WitReader.h"
 
+void test_fd_write() {
+    //    assert_emit("x='hello';fd_write(1,20,1,8)", (long) 0);// 20 = &x+4 {char*,len}
+//    assert_emit("puts 'ok';proc_exit(1)\nputs 'no'", (long) 0);
+//    assert_emit("quit",0);
+    assert_emit("x='hello';fd_write(1,x,1,8)", (long) 0);// &x+4 {char*,len}
+//    assert_run("len('123')", 3); // Map::len
+//    quit()
+    assert_emit("puts 'ok'", (long) 0);
+    loadModule("wasp");
+    assert_emit("puts 'ok'", (long) 0);
+    assert_emit("puti 56", 56);
+    assert_emit("putl 56", 56);
+//    assert_emit("putx 56", 56);
+    assert_emit("putf 3.1", 0);
+
+    check(module_cache.has("wasp.wasm"s.hash()))
+
+}
+
 void testEnumConversion() {
 #if not TRACE
     Valtype yy = (Valtype) Primitive::charp;
@@ -2724,31 +2743,28 @@ void testCurrent() {
     //	panicking = true;//
 //    assurances();
 //    skip(
+//    char* x="abc";
+//    x[1]=u'√';
 //    loadModule("cmake-build-wasm/wasp.wasm");
-    assert_emit("x='hello';fd_write(1,8,5,0)", (long) 0);
-//    assert_run("len('123')", 3); // Map::len
+//        test_fd_write();
+//    assert_emit("i=1;k='hi';k[i]", 'i')
+    check_is(parseLong("123"), (long) 123);
+    auto wasp = loadModule("wasp");
+    check_is(wasp.functions["parseLong"].signature.wasm_return_type, i64);
+    assert_emit("parseLong('123')", 123)
+    assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));// looks trivial but is epitome of binary (de)serialization!
 
-    loadModule("wasp");
-    check_is(module_cache.value(0)->functions["puts"].signature.size(), 1)
-    assert_emit("puts 'ok'", (long) 0);
-    assert_emit("putf 3.1", 0);
-
-    check(module_cache.has("wasp.wasm"s.hash()))
-
-//    print(functions["puts"].signature.serialize());
-//    assert_emit("print 'ok'", (long) 0);
-//    assert_emit("putf 3.1", 3.1);
-//List<chars> operator_list(operator_list0);
+    assert_emit("x='abcde';x#4", 'd');
+    assert_emit("x='abcde';x[3]", 'd');
+    assert_emit("x='abcde';x#4='x';x[3]", 'x');
     assert_emit("grows x:=x*2;grows(4)", 8)
     skip(
     // Map::grow !
             assert_emit("grow x:=x*2;grow(4)", 8)
     )
 
-    testIndexWasm();
-    assert_emit("i=1;k='hi';k[i]", 'i')
+//    testIndexWasm();
     assert_is("x=(1 4 3);x#2=5;x#2", 5);
-    assert_emit("x='abcde';x#4='x';x[3]", 'x');
 
     assert_emit("i=10007;x=i%10000", 7);
 //    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
@@ -2770,7 +2786,7 @@ void testCurrent() {
 //    assert_is("[1 2 3]", Node(1, 2, 3, 0))
 //    check(findLibraryFunction("strlen0", false))
     check_is(extractFuncName("_ZN6String17extractCodepointsEb"), "extractCodepoints");
-    read_wasm("~/dev/wasm/wasi/wasi-demo.wasm");
+//    read_wasm("~/dev/wasm/wasi/wasi-demo.wasm");
     read_wasm("lib/stdio.wasm");
 
 //    check(findLibraryFunction("_Z7strlen0PKc", false))
@@ -2791,7 +2807,6 @@ void testCurrent() {
     assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));
 //    quit();
 
-    testMergeGlobal();
 //    assert_emit("y:{x:2 z:3};y.x", 2);
 //    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
 //    exit(1);
@@ -2827,10 +2842,12 @@ void testCurrent() {
             assert_run("string(123)", "123");
             assert_run("String(123)", "123");
     )
+    testWasmRuntimeExtension();
 //            test_sinus_wasp_import();
     testSinus();// todo FRAGILE fails before!
     testSinus2();
     tests();// make sure all still ok before changes
+    testMergeGlobal();
     testAllWasm();
     // ALL tests up to here take only 1 sec !
     testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)

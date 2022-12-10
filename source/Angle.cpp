@@ -963,6 +963,8 @@ Node &groupOperators(Node &expression, Function &context) {
 
 short arrayElementSize(Node &node);
 
+Function *use_required(Function *function);
+
 Valtype preEvaluateType(Node &node, Function &function) {
     if (node.kind == expression) {
         if (node.length == 1)return preEvaluateType(node.first(), function);
@@ -984,11 +986,7 @@ Valtype preEvaluateType(Node &node, Function &function) {
 
 
 Module &loadModule(String name) {
-    Module &import = read_wasm(name);// we need to read signatures!
-    import.code.name = name;
-    refineSignatures(import.functions);
-    return import;
-    error("Module not found "s + name);
+    return read_wasm(name);// we need to read signatures!
 }
 
 String &checkCanonicalName(String &name) {
@@ -1134,7 +1132,8 @@ bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: librari
 // todo: clarify registerAsImport side effect
 Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
-    if (isFunction(name, false) and libraries.size() == 0)
+    if (functions.has(name))return use_required(&functions[name]);
+    if (name.in(function_list) and libraries.size() == 0)
         libraries.add(&loadModule("wasp"));// on demand
 
 //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
@@ -1152,7 +1151,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 //            if(!libraries.has(library))
 //                libraries.add(library);// used
             //		imports.add(*import); redundant!
-            return &func;
+            return use_required(&func);
         }
     }
     Function *function = 0;
@@ -1161,6 +1160,17 @@ Function *findLibraryFunction(String name, bool searchAliases) {
             function = findLibraryFunction(alias, false);
         }
     }
+    return use_required(function);
+}
+
+Function *use_required(Function *function) {
+    if (!function)return 0;
+    if (function->name == "quit")
+        functions["proc_exit"].is_used = true;
+    if (function->name == "puts")
+        functions["fd_write"].is_used = true;
+//    for(Function& dep:function.required)
+//        dep.is_used = true;
     return function;
 }
 
@@ -1170,6 +1180,8 @@ List<String> aliases(String name) {
 
     if (name == "len")
         found.add("strlen0");
+    if (name == "int" or name == "atoi" or name == "atol" or name == "parseInt")
+        found.add("parseLong");
 //        found.add("_Z7strlen0PKc");
     if (name == "atoi" or name == "int") {
         // todo type vs fun!
@@ -1388,96 +1400,57 @@ void fixFunctionNames() {
 
 void preRegisterFunctions() {
     functions.clear();
-    Module &runtime = loadModule("wasp"); // ok, cached!
+
+    Module &runtime = read_wasm("wasp"); // ok, cached!
     runtime.code.needs_relocate = false; // may be set to true depending on main code emitted
-//    functions["strlen0"] = runtime.functions["strlen0"];
-//    functions["strlen0"].name = "strlen0";
-//    functions["strlen0"].runtime().signature.add(charp).returns(int32);// todo int64
 
     for (int i = 0; i < runtime.functions.size(); ++i)
-        runtime.functions.values[i].is_used = false;
+        runtime.functions.values[i].is_used = false; // reset after last used, as libraries are shared between tests
 
-    functions["fd_write"].signature.wasm_return_type = int32;
-    if (functions["puts"].signature.size() == 0)
-        functions["puts"].signature.add(i32);
+    functions["proc_exit"].import();
+    functions["proc_exit"].signature.add(int32, "exit_code");// file descriptor
+    functions["proc_exit"].module = new Module{.name="wasi_unstable"};
 
-//	functions.use_constructor=true;
-//	functions.setDefault(Function());
-    // TODO!!!
-    // functions
-    // functions[ ] access is BROKEN!!! use functions.insert_or_assign so long!
-    // ORDER MATTERS: will be used for functionIndices later! todo: huh?
+    functions["fd_write"].import();
+    functions["fd_write"].signature.add(int32, "fd");// file descriptor
+    functions["fd_write"].signature.add(pointer, "iovs");
+    functions["fd_write"].signature.add(size32, "iovs_len");
+    functions["fd_write"].signature.add(pointer, "nwritten");// size_t *  out !
+    functions["fd_write"].signature.returns(int32);
+//    functions["fd_write"].module=new Module{.name="wasi"};
+    functions["fd_write"].module = new Module{.name="wasi_unstable"};
+//    functions["fd_write"].module=new Module{.name="wasi_snapshot_preview1"};
 
-//    globals.insert_or_assign("π", new Node(3.1415926535897932384626433));// todo: if used
-    //	functions.insert_or_assign("put", Signature().add(pointer).returns(voids));
-// todo: remove all as they come via wasp.wasm log.wasm etc
-// OK to pass stack Signature(), because copy by value functions not refs
-    if (functions.has("log10")) {
-        check(functions["log10"].is_import)
-        return;// don't overwrite is_handled status etc
-    }
-    // runtime:
-//    functions["atoi0"].runtime().signature.add(charp).returns(int32);// todo int64
-//    functions["malloc"].runtime().signature.add(int64).returns(int64);
-//    functions["okf"].runtime().signature.add(float32).returns(float32);
-//    functions["eq"].runtime().signature.add(charp).add(charp).returns(bools);
+    functions["puts"].builtin();
+    functions["puts"].signature.add(stringp).returns(int32);// stdio conform!!
 
-    // import:
-//    functions["log10"].import().signature.add(float64).returns(float64);
-//    functions["pow"].import().signature.add(float64).add(float64).returns(float64);
-//	functions["signature.import().signature.add(float32).returns(float32));
-//    functions["log"].import().signature.add(float64).returns(float64);
-//    functions["powd"].import().signature.add(float64).add(float64).returns(float64);
-//    functions["powi"].import().signature.add(int32).add(int32).returns(int64);
-//    functions["powf"].import().signature.add(float32).add(float32).returns(float32);
+    functions["len"].builtin();// via wasp abi len(any)=*(&any)[1]
+    functions["len"].signature.add(array).returns(int32);// todo any wasp type
 
-//	if (functions.has("logs"))
-//		return;// already imported runtime!
-
-//    functions["puti"].import().signature.add(int32).returns(voids);
-//    functions["putf"].import().signature.add(float32).returns(voids);
-//    functions["putd"].import().signature.add(float64).returns(voids);
-    //	functions["powl"].import().signature.add(int64).add(int64).returns(int64));
-    //	js_sys::Math::pow  //pub fn pow(base: f64, exponent: f64) -> f64
-//    functions["puts"].import().signature.add(charp).returns(voids);// int32
-//    functions["print"].import().signature.add(charp).returns(voids);
+    functions["quit"].builtin();// no args, calls proc_exit(0)
 
 // TESTS! not useful otherwise!
-    functions["square"].import().signature.add(int32).returns(int32);// test only!!
-//    functions["not_ok"].signature.returns(voids);
-//    functions["ok"].runtime().signature.returns(int32);// todo why not rely on read_wasm again?
-//    functions["oki"].runtime().signature.add(int32).returns(int32);
+//    functions["square"].import().signature.add(int32).returns(int32);// test only!!
 
-//	functions["render"].add(node)signature..add(pointer).returns(none));
-//	functions["render"].runtime().signature.add(node).returns(int32));
-//functions["render"].add(node)signature..add(pointer).returns(int32));
-    // todo: long + double !
-    // imports
-//	functions["abs"].builtin().signature.add(float64).add(float64).returns(float64); OPERATOR!
-    functions["modulo_float"].builtin().signature.add(float32).add(float32).returns(float32);
-//	functions["modulo_double"] = Signature().builtin().add(float64).add(float64).returns(float64);
-    functions["modulo_double"].builtin().signature.add(float64).add(float64).returns(float64);
-//	functions["main"] = Signature().returns(i64t); // ok in all modern environments~
 #if MULTI_VALUE
     functions["main"].signature.returns(i64).returns(i32);// [result, type32] transparently (no flipped stack order)
 #else
     functions["main"].signature.returns(i64);
 #endif
-//	functions["main"].returns(isignature.32));
 //    functions["paint"].import().signature.returns(voids);// paint surface
 //    functions["init_graphics"].import().signature.returns(pointer);// surface
 
     // BUILTINS
     functions["nop"].builtin();
     functions["id"].builtin().signature.add(i32t).returns(i32t);
-//    functions["concat"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
-//    functions["_Z6concatPKcS0_"].runtime().signature.add(charp).add(charp).returns(charp);// chars to be precise
-    // library signatures are parsed in consumeExportSection() via demangle
-    // BUT their return type is not part of name, so it needs to be hardcoded, if ≠ int32:
+    functions["modulo_float"].builtin().signature.add(float32).add(float32).returns(float32);
+    functions["modulo_double"].builtin().signature.add(float64).add(float64).returns(float64);
+
     fixFunctionNames();
 }
 
 void clearAnalyzerContext() {
+//    clearEmitterContext()
 //	needs to be outside analyze, because analyze is recursive
 #ifndef RUNTIME_ONLY
     libraries.clear();// todo: keep runtime or keep as INACTIVE to save reparsing
@@ -1510,23 +1483,6 @@ Node runtime_emit(String prog) {
     code.save("merged.wasm");
     long result_val = code.run();// todo parse stdout string as node and merge with emit() !
     return *smartNode(result_val);
-}
-
-
-// reflection on wasp.wasm loses the original return type of functions
-// we may optimistically omit this since cast(int, charp) returns nop anyways
-void refineSignatures(Map<String, Function> &map) {
-    // hack on demand, i.e. in emitStringOp etc
-    // todo : create and read some custom wasm section!
-    //	(export "_Z6concatPKcS0_" (func 28))
-//  (export "_Z6concatPhS_ii" (func 210))
-//  (export "_Z6concatPhci" (func 212))
-//  (export "_Z6concatcPhi" (func 213))
-//	if (map["concat"].signature.functions.size() > 1)
-//	map["concat"].signature.return_types.clear();
-//	map["concat"].signature.returns(charp);
-//	map["_Z6concatPKcS0_"].signature.return_types.clear();
-//	map["_Z6concatPKcS0_"].signature.returns(charp);
 }
 
 
@@ -1569,11 +1525,17 @@ float function_precedence = 1000;
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
 // pre-registered functions working without any import / include / require / use
 chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printf",
-                                                        "println", "puts", "putf", "len",
+                                                        "println", "puts", "putf", "len", "quit", "parseLong",
+                                                        "parseDouble",
                                                         "log", "ln", "log10", "log2", "similar",
                                                         "putx", "putc", "get", "set", "peek", "poke", "read",
                                                         "write", 0, 0,
                                                         0};// MUST END WITH 0, else BUG
+
+//chars runtime_function_list[]={};
+chars wasi_function_list[] = {"proc_exit", "fd_write"};
+
+
 chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
 
 

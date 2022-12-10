@@ -176,7 +176,10 @@ struct wasm32_node_struct {
     Kind kind;  // int32 TODO needs padding in Node ( 64 bit ) how? PUT IN node_type(pointer). MIX GENERICS complicated :(
     int meta_pointer;
     // previous fields must be aligned to long!
-    String name;// ok 64 bit compatible (except data which needs to be relocated to/fro wasm_memory anyways ) !
+    int name_pointer;
+    int name_length;
+//    …
+//    String name;// ok 64 bit compatible (except data which needs to be relocated to/fro wasm_memory anyways ) !
     // ignore rest for now!
 };
 

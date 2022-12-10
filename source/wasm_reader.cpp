@@ -9,7 +9,7 @@
 // compare with wasm-objdump -h
 
 #define POLYMORPH_function_index_marker -2
-bool debug_reader = tracing;//true;// tracing;
+bool debug_reader = true;//;// tracing;
 typedef unsigned char *bytes;
 int pos = 0;
 int size = 0;
@@ -183,8 +183,6 @@ void parseImportNames(Code &payload) {// and TYPES!
         Signature &signature = module->funcTypes[type];
         module->functionIndices[name1] = i;
         module->functions[name1].signature.merge(signature);
-        Signature &sic = getSignature(name1);// global!
-        sic.merge(signature);// todo : LATER!
         module->import_names.add(name1);
     }
 //	module->signatures = functionSignatures; // todo merge into global functionSignatures, not the other way round!!
@@ -208,6 +206,8 @@ void parse_type_data(Code &payload) {
             sic.returns(rt);
         } else
             sic.returns(none);
+        if (module->funcTypes.size() != i)
+            error("module->funcTypes pre filled");
         module->funcTypes.add(sic);
     }
 }
@@ -423,11 +423,15 @@ void consumeExportSection() {
         }
         String &func0 = export_name;
         String func = extractFuncName(func0);
-        if (index < 0 or index > 100000)error("corrupt index "s + index);
-        int code_index = index + module->import_count;
+        // index here means call_index > code_index
+        if (index < module->import_count or index > 100000)
+            error("corrupt index "s + index);
+        int call_index = index;
+        int lower_index = index - module->import_count;// the index when called
+        int code_index = lower_index;
 
-        if (func0 == "_Z5main4iPPc")
-            continue;// don't make libraries 'main' visible, use own
+        if (func == "parseLong")
+            breakpoint_helper;// don't make libraries 'main' visible, use own
         int status = 0; // for debugging:
         String demangled = abi::__cxa_demangle(func0.data, 0, 0, &status);// function name and cpp args but not return
 
@@ -455,23 +459,23 @@ void consumeExportSection() {
             fun = *new Function{.name=func, .module=fun.module, .is_runtime=true};
             module->functionIndices[func] = POLYMORPH_function_index_marker;
         } else {
-            module->functionIndices[func] = code_index;// demangled
+            module->functionIndices[func] = lower_index;// demangled
         }
-        module->functionIndices[func0] = code_index;// mangled unique
-        fun0.index = code_index;
-        fun.index = code_index;
+        module->functionIndices[func0] = lower_index;// mangled unique
+        fun0.index = lower_index;
+        fun.index = lower_index;
 
 
 //        if (code_index == 369 or index == 369)
 //            breakpoint_helper // todo operator+
 
-        int funcType = module->funcToTypeMap[index];
+        int wasmFuncType = module->funcToTypeMap[code_index];// mainly used for return type here
         // todo: demangling doesn't yield return type, is wasm_signature ok?
-        fun.signature.type_index = funcType;
-        fun0.signature.type_index = funcType;// todo: remove duplicate, try fun0.signature=fun.signature at end again
-        if (not(0 <= funcType and funcType <= module->funcTypes._size))
-            check_silent(0 <= funcType and funcType <= module->funcTypes._size)
-        Signature &wasm_signature = module->funcTypes[funcType];
+        fun.signature.type_index = wasmFuncType;
+        fun0.signature.type_index = wasmFuncType;// todo: remove duplicate, try fun0.signature=fun.signature at end again
+        if (not(0 <= wasmFuncType and wasmFuncType <= module->funcTypes._size))
+            check_silent(0 <= wasmFuncType and wasmFuncType <= module->funcTypes._size)
+        Signature &wasm_signature = module->funcTypes[wasmFuncType];
         Valtype returns = mapTypeToWasm(wasm_signature.return_types.last(Kind::undefined));
         if (wasm_signature.wasm_return_type == void_block) returns = void_block;
         fun.signature.returns(returns);

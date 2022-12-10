@@ -67,6 +67,7 @@ void panic() {
 //#endif
 
 
+
 // replaces own puts()
 // poor man's WASI, only needed INTERNALLY if compiled without modern wasm runtime, link in diverse wasm runners as
 // {"fd_write", (void *) fd_write_host, "(iiii)i", NULL, false}, …
@@ -126,4 +127,12 @@ void putx(int i) {
 
 double powd(double x, double y) {
     return pow(x, y);
+}
+
+void put_chars(char *c, size_t len) {
+    printf("%s", c);
+}
+
+void proc_exit(int x) {
+    exit(x);
 }
