@@ -334,6 +334,13 @@ public:
         return -1;
     }
 
+//
+//    int position(S& s) {
+//        for (int i = 0; i < _size; ++i)
+//            if (&items[i] == s)return i;
+//        return -1;
+//    }
+
     void sort(bool (comparator)(S a, S b)) {
         heapSort(items, _size, comparator);
     }
@@ -381,10 +388,11 @@ public:
         _size--;
     }
 
-    void remove(short position) {
-        if (position < 0)return;
-        memcpy(items + position, items + position + 1, _size - position);
+    bool remove(short position) {
+        if (position < 0 or _size <= 0 or position >= _size)return false;
+        memcpy((void *) (items + position), (void *) (items + position + 1), (_size - position) * sizeof(S));
         _size--;
+        return true;
     }
 
     S last(S defaulty) {
