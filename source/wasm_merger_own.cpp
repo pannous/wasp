@@ -157,86 +157,86 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
         {f32_eq,              0},
         {f32_ne,              0}, // !=
         {f32_lt,              0},
-        {f32_gt,            0},
-        {f32_le,            0},
-        {f32_ge,            0},
-        {f64_eq,            0},
-        {f64_ne,            0}, // !=
-        {f64_lt,            0},
-        {f64_gt,            0},
-        {f64_le,            0},
-        {f64_ge,            0},
+        {f32_gt,              0},
+        {f32_le,              0},
+        {f32_ge,              0},
+        {f64_eq,              0},
+        {f64_ne,              0}, // !=
+        {f64_lt,              0},
+        {f64_gt,              0},
+        {f64_le,              0},
+        {f64_ge,              0},
 
-        {i32_add,           0},
-        {i32_sub,           0},
-        {i32_mul,           0},
-        {i32_div,           0},
-        {i32_rem,           0}, // 5%4=1
-        {i32_modulo,        0},
-        {i32_rem_u,         0},
-        {i32_and,           0},
-        {i32_or,            0},
-        {i32_xor,           0},
-        {i32_shl,           0},
-        {i32_shr_s,         0},
-        {i32_shr_u,         0},
-        {i32_rotl,          0},
-        {i32_rotr,          0},
+        {i32_add,             0},
+        {i32_sub,             0},
+        {i32_mul,             0},
+        {i32_div,             0},
+        {i32_rem,             0}, // 5%4=1
+        {i32_modulo,          0},
+        {i32_rem_u,           0},
+        {i32_and,             0},
+        {i32_or,              0},
+        {i32_xor,             0},
+        {i32_shl,             0},
+        {i32_shr_s,           0},
+        {i32_shr_u,           0},
+        {i32_rotl,            0},
+        {i32_rotr,            0},
 
         //{⚠ warning: funny UTF characters ahead! todo: replace c => c etc?
-        {i64_clz,           0},
-        {i64_ctz,           0},
-        {i64_popcnt,        0},
-        {i64_add,           0},
-        {i64_sub,           0},
-        {i64_mul,           0},
+        {i64_clz,             0},
+        {i64_ctz,             0},
+        {i64_popcnt,          0},
+        {i64_add,             0},
+        {i64_sub,             0},
+        {i64_mul,             0},
 //		{i64_div_s,           0},
 //		{i64_div_u,           0},
-        {i64_rem_s,         0},
-        {i64_rem_u,         0},
-        {i64_and,           0},
-        {i64_or,            0},
-        {i64_xor,           0},
-        {i64_shl,           0},
-        {i64_shr_s,         0},
-        {i64_shr_u,         0},
-        {i64_rotl,          0},
-        {i64_rotr,          0},
+        {i64_rem_s,           0},
+        {i64_rem_u,           0},
+        {i64_and,             0},
+        {i64_or,              0},
+        {i64_xor,             0},
+        {i64_shl,             0},
+        {i64_shr_s,           0},
+        {i64_shr_u,           0},
+        {i64_rotl,            0},
+        {i64_rotr,            0},
 
         // beginning of float opcodes
         // todo : difference : ???
-        {f32_abs,           0},
-        {f32_neg,           0},
-        {f32_ceil,          0},
-        {f32_floor,         0},
-        {f32_trunc,         0},
-        {f32_round,         0},// truncation ≠ proper rounding!
-        {f32_nearest,       0},
+        {f32_abs,             0},
+        {f32_neg,             0},
+        {f32_ceil,            0},
+        {f32_floor,           0},
+        {f32_trunc,           0},
+        {f32_round,           0},// truncation ≠ proper rounding!
+        {f32_nearest,         0},
 
-        {f32_sqrt,          0},
-        {f32_add,           0},
-        {f32_sub,           0},
-        {f32_mul,           0},// f32.mul
-        {f32_div,           0},
+        {f32_sqrt,            0},
+        {f32_add,             0},
+        {f32_sub,             0},
+        {f32_mul,             0},// f32.mul
+        {f32_div,             0},
 
-        {f64_abs,           0},
-        {f64_neg,           0},
-        {f64_ceil,          0},
-        {f64_floor,         0},
-        {f64_trunc,         0},
-        {f64_nearest,       0},
-        {f64_sqrt,          0},
-        {f64_add,           0},
-        {f64_sub,           0},
-        {f64_mul,           0},
-        {f64_div,           0},
-        {f64_min,           0},
-        {f64_max,           0},
-        {f64_copysign,      0},
+        {f64_abs,             0},
+        {f64_neg,             0},
+        {f64_ceil,            0},
+        {f64_floor,           0},
+        {f64_trunc,           0},
+        {f64_nearest,         0},
+        {f64_sqrt,            0},
+        {f64_add,             0},
+        {f64_sub,             0},
+        {f64_mul,             0},
+        {f64_div,             0},
+        {f64_min,             0},
+        {f64_max,             0},
+        {f64_copysign,        0},
 
-        {f32_cast_to_i32_s, 0},// truncation ≠ proper rounding {f32_round, -1}!
-        {i32_trunc_f32_s,   0}, // cast/convert != reinterpret
-        {f32_convert_i32_s, 0},// convert FROM i32
+        {f32_cast_to_i32_s,   0},// truncation ≠ proper rounding {f32_round, -1}!
+        {i32_trunc_f32_s,     0}, // cast/convert != reinterpret
+        {f32_convert_i32_s,   0},// convert FROM i32
 //		{i32_cast_to_f32_s,                   -1},
         //{i32_cast_to_f64_s =
 
@@ -529,6 +529,10 @@ private:
 
     bool WriteCombinedSection(SectionType section_code,
                               const SectionPtrVector &sections);
+
+    void RemoveRuntimeMainExport();
+
+    void RemoveAllExports();
 
     void ResolveSymbols();
 
@@ -912,6 +916,37 @@ void remove_from_efin_vec(Collection &c, const Element &e) {
     c.erase(std::remove(c.begin(), c.end(), e), c.end());
 };
 
+
+void Linker::RemoveRuntimeMainExport() {
+    for (auto &bin: inputs_) {
+        if (contains(bin->name, "wasp")) {
+            short pos = -1;
+            for (Export &ex: bin->exports) {
+                pos++;
+                while (ex.name == "main" or ex.name == "_start") {
+                    bin->exports.remove(pos);// ex
+                }
+            }
+        }
+    }
+}
+
+void Linker::RemoveAllExports() {// except _start for stupid wasmtime:
+//  (export "nil_name" (global 1))
+// 1: command export 'nil_name' is not a function
+    for (auto &bin: inputs_) {
+        short pos = -1;
+        for (Export &ex: bin->exports) {
+            pos++;
+            if (ex.kind != ExternalKind::Func)continue;
+            while (bin->exports._size > 0 and not(ex.name == "main" or ex.name == "_start")) {
+                if (ex.kind != ExternalKind::Func)break;
+                if (!bin->exports.remove(pos))break;
+            }
+        }
+    }
+}
+
 void Linker::ResolveSymbols() {
     // Create hashmap of all exported symbols from all inputs.
 
@@ -958,7 +993,7 @@ void Linker::ResolveSymbols() {
         }
 
 
-        short pos = 0;
+        short pos = -1;
         for (Export &_export: binary->exports) {// todo: why not store index directly?
             pos++;
             if (tracing)
@@ -966,7 +1001,8 @@ void Linker::ResolveSymbols() {
                        _export.index);
             if (export_map.FindIndex(_export.name) != kInvalidIndex) {
                 warn("duplicate export name "s + _export.name);// Ignoring
-//				binary->exports.erase(binary->exports.begin() + pos);
+                binary->exports.remove(pos);// todo: careful, does iterator skip an element now??
+//                _export.index = export_map.FindIndex(_export.name);// useless
             }
             if (_export.kind == wabt::ExternalKind::Global) {
                 globals_export_list.emplace_back(&_export, binary.get());
@@ -1195,13 +1231,6 @@ void Linker::WriteBinary() {
 
 void Linker::DumpRelocOffsets() {
     for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-        LOG_DEBUG("Relocation info for: %s\n", binary->name);
-        LOG_DEBUG(" - type index offset       : %d\n", binary->type_index_offset);
-        LOG_DEBUG(" - mem page offset         : %d\n", binary->memory_page_offset);
-        LOG_DEBUG(" - function index offset   : %d\n", binary->function_index_offset);
-        LOG_DEBUG(" - global index offset     : %d\n", binary->global_index_offset);
-        LOG_DEBUG(" - imported function offset: %d\n", binary->imported_function_index_offset);
-        LOG_DEBUG(" - imported global offset  : %d\n", binary->imported_global_index_offset);
         bool needs_relocate = false;
         needs_relocate = needs_relocate or binary->type_index_offset != 0;
         needs_relocate = needs_relocate or binary->memory_page_offset != 0;
@@ -1209,9 +1238,20 @@ void Linker::DumpRelocOffsets() {
         needs_relocate = needs_relocate or binary->global_index_offset != 0;
         needs_relocate = needs_relocate or binary->imported_function_index_offset != 0;
         needs_relocate = needs_relocate or binary->imported_global_index_offset != 0;
-        if (needs_relocate and not binary->needs_relocate)
-            error("Binary %s markes as needs_relocate=false, but context forces relocations (imports…)."s %
-                  String(binary->name));
+        if (needs_relocate) {
+            LOG_DEBUG("Relocation info for: %s\n", binary->name);
+            LOG_DEBUG(" - type index offset       : %d\n", binary->type_index_offset);
+            LOG_DEBUG(" - mem page offset         : %d\n", binary->memory_page_offset);
+            LOG_DEBUG(" - function index offset   : %d\n", binary->function_index_offset);
+            LOG_DEBUG(" - global index offset     : %d\n", binary->global_index_offset);
+            LOG_DEBUG(" - imported function offset: %d\n", binary->imported_function_index_offset);
+            LOG_DEBUG(" - imported global offset  : %d\n", binary->imported_global_index_offset);
+            if (not binary->needs_relocate)
+                error("Binary %s markes as needs_relocate=false, but context forces relocations (imports…)."s %
+                      String(binary->name));
+        } else {
+            LOG_DEBUG("Relocation info for: %s … NONE! Keeping binary as is.\n", binary->name);
+        }
     }
 }
 
@@ -1235,11 +1275,14 @@ void Linker::CreateRelocs() {
 }
 
 OutputBuffer Linker::PerformLink() {
+    RemoveRuntimeMainExport();
     CalculateRelocOffsets();
     ResolveSymbols(); // LINK import to exports …  binary->active_function_imports--
     CalculateRelocOffsets();// again: might be negative if import is removed!
     CreateRelocs();
     DumpRelocOffsets();
+//    if(final_product)
+    RemoveAllExports();
     WriteBinary();
 //	check(inputs_[1]->sections[4]->data.data_segments->at(0).data[0]=='*');
     return stream_.output_buffer();

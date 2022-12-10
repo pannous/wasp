@@ -1466,13 +1466,16 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.length = nodeStruct.length;
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? &reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
-        reconstruct.name = nodeStruct.name;
-        if (reconstruct.name.header) {
-            check_is(reconstruct.name.header, string_header_32);
-            if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
-                error("invalid string in smartPointer");
-            reconstruct.name = String(((char *) wasm_memory) + (long) reconstruct.name.data);// copy!
-        } else reconstruct.name = "";// uh cheap fix?
+        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MEMORY_SIZE)
+            reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
+//        else
+//            error("bad name");
+//        if (reconstruct.name.kind) {
+//            check_is(reconstruct.name.kind, string_header_32);// todo or similar
+//            if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
+//                error("invalid string in smartPointer");
+//            reconstruct.name = String(((char *) wasm_memory) + (long) reconstruct.name.data);// copy!
+//        } else reconstruct.name = "";// uh cheap fix?
         reconstruct.kind = nodeStruct.kind;
         reconstruct.meta = nodeStruct.meta_pointer ? &reconstructWasmNode(nodeStruct.meta_pointer) : 0;
         if (nodeStruct.child_pointer >= 0) {
@@ -1498,7 +1501,7 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
     }
     if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
         error("invalid string in smartPointer");
-    check_is(reconstruct.name.header, string_header_32);
+    check_is(reconstruct.name.kind, string_header_32);
     if (reconstruct.name.length < 0 or reconstruct.name.length > MAX_NODE_CAPACITY)
         error("reconstruct node sanity check failed for length");
     check_is(reconstruct.node_header, node_header_32)

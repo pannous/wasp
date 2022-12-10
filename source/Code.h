@@ -494,6 +494,7 @@ enum Valtype {
     i32t = 0x7f,
     i32 = 0x7f,
     i32s = 0x7f,
+    size32 = 0x7f,
     wasm_pointer = int32,
 //	i32u = 0x7f,// todo ignore!
 
@@ -959,16 +960,6 @@ public:
         return parameter_types.size();
     }
 
-    Signature &add(Valtype t, String name = "") {
-#ifdef DEBUG
-        debug_name += typeName(t);
-        debug_name += " ";
-#endif
-        parameter_types.add(t);
-        parameter_names.add(name);
-        return *this;
-    }
-
 
     Signature &add(Type t, String name = "") {
 #ifdef DEBUG
@@ -980,16 +971,12 @@ public:
         return *this;
     }
 
+    Signature &add(Valtype t, String name = "") {
+        return add((Type) t, name);
+    }
 
-    Signature &add(Node type, String name = "_") {
-        Valtype t = mapTypeToWasm(type);
-#ifdef DEBUG
-        debug_name += typeName(t);
-        debug_name += " ";
-#endif
-        parameter_types.add(t);
-        parameter_names.add(name);
-        return *this;
+    Signature &add(Node type, String name = "") {
+        return add(mapTypeToPrimitive(type), name);
     }
 
 //
@@ -1093,7 +1080,7 @@ struct Local { // todo: use
     int position; // also implicit in Function{ List<Local> locals;}
     String name;
 //    Valtype typo = unknown_type;
-    Type typo = unknown_type;
+    Type typo;// = unknown_type;
 //    Primitive grrr
     Node *type;
     Node *ref;// why still needed?
@@ -1168,8 +1155,6 @@ Code &signedLEB128(long value);
 #endif
 
 #endif //WASP_CODE_H
-
-Signature &getSignature(String name);
 
 /*
 0 0 1

@@ -163,7 +163,7 @@
   (@interface func (export "fd_pread")
     (param $fd $fd)
     /// List of scatter/gather vectors in which to store data.
-    (param $iovs $iovec_array)
+    (param $c_io_vector $iovec_array)
     /// The offset within the file at which to read.
     (param $offset $filesize)
     /// The number of bytes read.
@@ -191,7 +191,7 @@
   (@interface func (export "fd_pwrite")
     (param $fd $fd)
     /// List of scatter/gather vectors from which to retrieve data.
-    (param $iovs $ciovec_array)
+    (param $c_io_vector $ciovec_array)
     /// The offset within the file at which to write.
     (param $offset $filesize)
     /// The number of bytes written.
@@ -203,7 +203,7 @@
   (@interface func (export "fd_read")
     (param $fd $fd)
     /// List of scatter/gather vectors to which to store data.
-    (param $iovs $iovec_array)
+    (param $c_io_vector $iovec_array)
     /// The number of bytes read.
     (result $error (expected $size (error $errno)))
   )
@@ -278,7 +278,7 @@
   (@interface func (export "fd_write")
     (param $fd $fd)
     /// List of scatter/gather vectors from which to retrieve data.
-    (param $iovs $ciovec_array)
+    (param $c_io_vector $ciovec_array)
     (result $error (expected $size (error $errno)))
   )
 
