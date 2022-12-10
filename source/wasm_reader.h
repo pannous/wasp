@@ -13,22 +13,22 @@ struct Global {
 };
 
 class Module {
-public:
-	virtual ~Module() {
-		type_data = Code();
-//		free(type_data);
-//		free(type_data.data);
-	}
+//public:
+//	virtual ~Module() {
+//		type_data = Code();
+////		free(type_data);
+////		free(type_data.data);
+//	}
 
 public:
-	String name;
+    String name;
 
-	// unparsed (just the vector data and its length)
-	Code code;// the whole code unparsed, used in merge
-	Code type_data;
-	Code import_data;
-	Code export_data;
-	Code functype_data;
+    // unparsed (just the vector data and its length)
+    Code code;// the whole code unparsed, used in merge
+    Code type_data;
+    Code import_data;
+    Code export_data;
+    Code functype_data;
     Code code_data;
     Code globals_data;
     Code memory_data;
@@ -66,7 +66,7 @@ public:
     Map<String, Signature> signatures;// also implicit index->Signature 0,1,2… ! before merging!
     Map<String, Function> functions = {.capacity=10000};
     // todo once we get above .capacity=10000 we need to fix Map.grow since functions map gets modified while growing!
-    Map<String, int> functionIndices; // lookup PER MODULE!
+    Map<String, int> functionIndices = {.capacity=10000}; // lookup PER MODULE!
 //	int data_offset=0;// todo: read from data section! why not 0 ?
     int data_offset_end = 0;
 //	bool needs_relocate = true;// see Code

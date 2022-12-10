@@ -21,8 +21,6 @@ class Signature;
 //todo extern Map<String, Node> variableTypes;
 extern Map<String, int> functionIndices;// todo functions[].index
 
-Signature &getSignature(String name);
-
 //extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 //extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals; // access from Angle!
 //extern Map<String /* implicit indices 0,1,2,… */, Node* /* compile-time modifiers/values? */> globals; // access from Angle!

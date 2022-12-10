@@ -182,21 +182,26 @@ public:
 
 // todo: make String struct-compatible with Node!?
 
+//enum StringKind{
+//    Primitives
+//};
+
+
+//class CodepointList{
+//
+//};
+
 // following general Header struct / wasm32_node_struct
 class String {
 //    A UTF-8 environment can use non-synchronized continuation bytes as base64: 0b10   Base58 avoids lookalikes
 // sizeof(Node) == 20 == 5 * 4 int(*)
 
 public:
-//    static const
-// to identify string structures in memory, CAN IT BE STATIC? (doubt!)
-    int header = string_header_32; // todo: protected
-    int codepoint_count = -1;// 'type' field in list, node and array_header, semi compatible
+    char *data{};// UTF-8 sequence
     int length = -1;
-    int padding = 0x01020304;// todo use somehow.  ( child_pointer in node )
-    char *data{};// UTF-8 sequence, unanalyzed Value in node
-
-    codepoint *codepoints = 0;// extract on demand from data or via constructor
+    Primitive kind = (Primitive) string_header_32;  // post header ;) static const
+    codepoint *codepoints = 0;//  todo reuse data field after decode? nah, breaks fd_write  extract on demand from data or via constructor
+    int codepoint_count = -1;// 'type' field in list, node and array_header, semi compatible
     bool shared_reference = false;// length terminated substrings! copy on modify if shared views. // todo: move to header?
     // todo is shared_reference sufficient for (im)mutable final const keywords?
 // memory layout different to chars with leb length header!
@@ -215,10 +220,17 @@ public:
         length = 0;
     }
 
+    // can also be directly cast (String)c_io_vector, BUT need to set codepoint_count=-1 after!
+    String(c_io_vector ciov, bool shared = true) {
+        data = ciov.string;
+        length = ciov.length;
+        shared_reference = shared;
+    }
+
     String(String *copy_move_assignment) {
         data = copy_move_assignment->data;
         length = copy_move_assignment->length;
-        shared_reference = true;// better safe than sorry
+        shared_reference = true;// shared;// better safe than sorry
     }
 
 //#ifndef WASM
@@ -551,11 +563,19 @@ public:
             return this->replace("%i", formatLong(d));
         if (contains("%li"))
             return this->replace("%li", formatLong(d));
+        if (contains("%ld"))
+            return this->replace("%ld", formatLong(d));
         if (contains("%l"))
             return this->replace("%l", formatLong(d));
         if (contains("%zu"))
             return this->replace("%zu", formatLong(d));
-        error("missing placeholder %d in string modulo operation s%d");
+        puts("ERROR\nmissing placeholder %d in string modulo operation s%d:\n");
+        put_chars(this->data, this->length);
+        puts(" value:");
+        auto string = formatLong(d);
+        puts(string);
+//        puti(d);
+        proc_exit(-1);
         return "«ERROR»";
     }
 
@@ -577,6 +597,10 @@ public:
             return this->replace("%lld", formatLong(d));
         else if (contains("%ld"))
             return this->replace("%ld", formatLong(d));
+        else if (contains("%llx"))
+            return this->replace("%llx", hex(d));
+        else if (contains("%lx"))
+            return this->replace("%lx", hex(d));
         else if (contains("%l"))
             return this->replace("%l", formatLong(d));
         else if (contains("%d"))

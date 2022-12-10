@@ -152,7 +152,7 @@ enum Primitive {
     unknown_type = 0,// defaults to long!
     missing_type = 0x40,// well defined
     wasm_leb = 0x77,
-    wasm_float64 = 0x7C,
+    wasm_float64 = 0x7C, // float64
     wasm_f32 = 0x7d,
     wasm_int64 = 0x7E, // AS OPPOSED TO longs signed or unsigned? we don't care
     wasm_int32 = 0x7f,  // make sure to not confuse these with boxed Number nodes of kind longs, reals!
@@ -167,7 +167,7 @@ enum Primitive {
 //    angle = 0xA4,//  angle object pointer/offset versus nodes smarti vs anyref todo What is this?
     any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
 //	unknown = any,
-    array = 0xAA,// compatible with List, Node (?)
+    array = 0xAA,// compatible with List, Node, String (?)
     charp = 0xC0, // vs chars pointer
     string_struct = 0xC8,// String
     stringp = 0xCF,// String*
@@ -254,7 +254,7 @@ enum Primitive {
 //	ffointer = 0xFF00, // pointer pointer
 //	ffointer_of_int32 = 0xFF7F, // int** etc
 // for 32 bit smart pointers, as used in return of int main(){}
-
+    pad_to32_bit = 0xF0000000
 };
 
 

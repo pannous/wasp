@@ -282,7 +282,7 @@ byte opcodes(chars s, Type kind, Type previous = none) {
 
 
 // http://webassembly.github.io/spec/core/binary/modules.html#export-section
-enum ExportType {
+enum ExportType { // todo == ExternalKind
     func_export = (char) 0x00,
     table_export = 0x01,
     mem_export = 0x02,
@@ -353,7 +353,7 @@ void emitPadding(int num, byte val = 0) {
 
 void emitPaddingAlignment(short size) { // e.g. 8 for long padding BEFORE emitLongData() / emitData(long)
     emitPadding((size - (data_index_end % size)) %
-                        size);// fill up to long padding ⚠️ the field-sizes before node.value MUST sum up to n*8!
+                size);// fill up to long padding ⚠️ the field-sizes before node.value MUST sum up to n*8!
 }
 
 
@@ -478,17 +478,11 @@ Code emitNode(Node &node, Function &context) {
 }
 
 
-Signature &getSignature(String name) {// todo DEL
-    return functions[name].signature;
-}
-
-
 [[nodiscard]]
 Code emitPrimitiveArray(Node &node, Function &context) {
     // todo emit with some __DATA__ header and or base64
     let code = Code();
-    if (!(node.kind == buffers))
-        todo("arrays of type "s + typeName(node.kind));
+    if (!(node.kind == buffers)) todo("arrays of type "s + typeName(node.kind));
     emitIntData(buffer_header_32, false); // array header
     // todo LEB variant
 //    int length = *(int *) node.value.data;// very fragile :(
@@ -723,8 +717,7 @@ emitOffset(Node &array, Node offset_pattern, bool sharp, Function &context, int 
         if (sharp == true)error("sharp pattern?");
         if (offset_pattern.length == 1) {
             offset_pattern = offset_pattern.first();
-        } else
-            todo("complex range patterns");
+        } else todo("complex range patterns");
     }
     if (offset_pattern.kind == reference) {
         const Code &offset = emitExpression(offset_pattern, context);
@@ -755,9 +748,8 @@ emitOffset(Node &array, Node offset_pattern, bool sharp, Function &context, int 
         //	if(offset_pattern>op[0].length)e
         //	rror("index out of bounds! %d > %d in %s (%s)"s % offset_pattern % );
         code.addConst32(base + offset * size);
-    } else
-        todo("Internal reference declaration or index operator bug");
-    if (base_on_stack)// and base<0)
+    } else todo("Internal reference declaration or index operator bug");
+    if (base_on_stack)// and base>0)
         code.add(i32_add);
     return code;
     // calculated offset_pattern of 0 ususally points to ~6 bytes after Contents of section Data header 0100 4100 0b08
@@ -916,8 +908,7 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
         if (string)
             base = referenceDataIndices[*string];
     } else {
-        if (not base_on_stack)
-            todo("reference array (again)");
+        if (not base_on_stack) todo("reference array (again)");
         base = last_object_pointer;// + headerOffset(array);// todo: pray!
     }
 
@@ -929,11 +920,16 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
             load.addConst32(1);
             load.addByte(i32_sub);
         }
-        load.addConst32(size);
-        load.addByte(i32_mul);
+        if (size > 1) {
+            load.addConst32(size);
+            load.addByte(i32_mul);
+        }
         load.addByte(i32_add);
-        load.addConst32(headerOffset(array));
-        load.addByte(i32_add);
+        auto headerOffset1 = headerOffset(array);
+        if (headerOffset1 > 0) {
+            load.addConst32(headerOffset1);
+            load.addByte(i32_add);
+        }
     } else {
         error("why not on stack?");
         load = load + emitOffset(array, pattern, op.name == "#", context, size, base, base_on_stack);
@@ -1049,20 +1045,25 @@ Code emitString(Node &node, Function &context) {
         last_object_pointer = referenceIndices[string];
         return Code().addConst32(last_object_pointer);
     }
-
+    bool as_c_io_vector = true;
     if ((Primitive) node.kind == leb_string) {
         Code lens(string.length);// wasm abi to encode string as LEB-length + data:
         strcpy2(data + data_index_end, (char *) lens.data, lens.length);
         data_index_end += lens.length;// unsignedLEB128 encoded length of pString
         // strcpy2 the string later: …
-    } else { // wasp abi:
-//            emitPaddingAlignment(8);
-        emitIntData(string_header_32, false);
+    } else if (as_c_io_vector) { // wasp abi:
+        emitIntData(data_index_end + 8, false);// char* for ciov, redundant but also acts as checksum
         emitIntData(string.length, false);
-        emitLongData(0/*codepoint_count*/, false);// type + child_pointer in node
+    } else { // wasp abi:
+
+        emitIntData(string_header_32, false);
+        emitIntData(data_index_end + 20, false);
+        emitIntData(string.length, false);
+        emitIntData(1, false);// iovs len?
+//        emitIntData(string.codepoint_count, false);// type + child_pointer in node
         emitLongData(data_index_end + 8, false);// POINTER to char[] which just follows:
-        // todo: is this long pointer wasm int pointer compatible?
     }
+    int chars_start = data_index_end;
     // the actual string content:
     strcpy2(data + data_index_end, string.data, string.length);
     data[data_index_end + string.length] = 0;
@@ -1073,7 +1074,7 @@ Code emitString(Node &node, Function &context) {
     data_index_end += string.length + 1;
     last_type = stringp;
     last_object_pointer = last_pointer;
-    return Code().addConst32(last_pointer);
+    return Code().addConst32(chars_start);// direct data!
 }
 
 [[nodiscard]]
@@ -1157,19 +1158,22 @@ Code emitValue(Node &node, Function &context) {
             return emitExpression(node, context);
         case strings: {
             // append pString (as char*) to data section and access via stringIndex
-            int stringIndex = data_index_end + runtime.data_offset_end;// uh, todo?
             if (!node.value.string)error("missing node.value.string");
+            last_object_pointer = data_index_end + runtime.data_offset_end;// uh, todo?
             String string = *node.value.string;
             if (referenceDataIndices.has(string))
                 // todo: reuse same strings even if different pointer, aor make same pointer before
-                stringIndex = referenceDataIndices[string];
+                last_object_pointer = referenceDataIndices[string];
             else {
-                referenceDataIndices.insert_or_assign(string, data_index_end);
+                emitString(node, context);
+//                referenceDataIndices.insert_or_assign(string, data_index_end);
 //				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
 //				strcpy2(data + data_index_end, (char*)lens.data, lens.length);
 //				data_index_end += lens.length;// unsignedLEB128 encoded length of pString
-                strcpy2(data + data_index_end, string.data, string.length);
-                data[data_index_end + string.length] = 0;
+//                strcpy2(data + data_index_end, string.data, string.length);
+//                data[data_index_end + string.length] = 0;
+//                data_index_end += string.length + 1;
+
                 if (referenceIndices.has(name)) {
                     if (not isAssignable(node))
                         error("can't reassign reference "s + name);
@@ -1178,17 +1182,16 @@ Code emitValue(Node &node, Function &context) {
                 if (node.parent and (node.parent->kind == reference or node.parent->kind == key)) {
                     // todo move up! todo key bad criterion!!
                     // todo: add header or copy WHOLE string object!
-                    referenceIndices.insert_or_assign(node.parent->name, data_index_end);// safe ref to string
-                    referenceDataIndices.insert_or_assign(node.parent->name, data_index_end);// safe ref to string
+                    referenceIndices.insert_or_assign(node.parent->name, last_object_pointer);// safe ref to string
+                    referenceDataIndices.insert_or_assign(node.parent->name,
+                                                          last_object_pointer + 8);// safe ref to string
                     referenceMap.insert_or_assign(node.parent->name, node); // lookup types, array length …
                 }
 
                 // we add an extra 0, unlike normal wasm abi, because we have space in data section
-                data_index_end += string.length + 1;
             }
             last_type = charp;
-            last_object_pointer = stringIndex;
-            code = Code(i32_const) + Code(stringIndex);// just a pointer
+            code = Code(i32_const) + Code(last_object_pointer + 8);// just a pointer to DATA
             if (node.length > 0) {
                 if (node.length > 1)error("only 1 op allowed");
                 Node &pattern = node.first();
@@ -1244,8 +1247,7 @@ Code emitGetter(Node &node, Node &field, Function &context) {
     if (node.kind == reference and node.length > 0) // else loop!
         return emitIndexPattern(node, field, context, false);
 //        code.add(emitValue(node, context));
-    else
-        todo("get pointer of node on stack");
+    else todo("get pointer of node on stack");
     if (field.kind == strings)
         code.add(emitString(field, context));
     else
@@ -1280,7 +1282,7 @@ Code emitAttribute(Node &node, Function &context) {
             index = member["position"].value.longy;
         if (index < 0 or index > type.length)
             error("invalid field index %d of %s in type %s of %s "s % index % field.name % type.name %
-                          node.serialize());
+                  node.serialize());
         field = Node(index);
     } else
         emitGetter(object, field, context);
@@ -1501,8 +1503,7 @@ Code emitStringOp(Node &op, Function &context) {
     } else if (op == "logs" or op == "prints" or op == "print") {// should be handled before, but if not print anyways
         op = Node("puts");// todo: chars vs shared String& ?
         return emitCall(op, context);
-    } else
-        todo("string op not implemented: "s + op.name);
+    } else todo("string op not implemented: "s + op.name);
     return Code();
 }
 
@@ -1800,16 +1801,16 @@ Code emitCall(Node &fun, Function &context) {
     Signature &signature = function.signature;
 
     int index = function.index;
-    if (functionIndices.has(name))
+    if (functionIndices.has(name)) {
+        if (index != functionIndices[name]) todow("index!=functionIndices[name]");
         index = functionIndices[name];
-    else {
+    } else {
 //		breakpoint_helper
 //		warn("relying on context.index OK?");
 //		functionIndices[name] = context.index;
     }
     if (index < 0)
-        error("Calling %s NO INDEX. TypeSection created before code Section. All import indices must be known by now! "s %
-                      name);
+        error("Calling %s NO INDEX. TypeSection created before code Section. Indices must be known by now! "s % name);
     int i = 0;
     // args may have already been emitted, e.g. "A"+"B" concat
     for (Node &arg: fun) {
@@ -2357,11 +2358,15 @@ Code emitImportSection() {
     Code import_code;
     import_count = 0;
     for (String fun: functions) {
-        Function &context = functions[fun];
-        if (context.is_import and context.is_used and not context.is_builtin) {
-            context.index = import_count++;
+        String import_module = "env";
+        Function &function = functions[fun];
+        if (function.is_import and function.is_used and not function.is_builtin) {
+            function.index = import_count++;
+            if (function.module and not function.module->name.empty())
+                import_module = function.module->name;
             auto type = typeMap[fun];
-            import_code = import_code + encodeString("env") + encodeString(fun).addByte(func_export).addInt(type);
+            import_code =
+                    import_code + encodeString(import_module) + encodeString(fun).addByte(func_export).addInt(type);
         }
     }
 
@@ -2413,14 +2418,37 @@ Code emitCodeSection(Node &root) {
         }
     }
 
+    int fd_write_import = functionIndices.has("fd_write") ? functionIndices["fd_write"] : 0;
+    int main_offset = functionIndices.has(start) ? functionIndices[start] : 0;
+    if (main_offset >= 0x80) todow("leb main_offset")
+
+
 // https://pengowray.github.io/wasm-ops/
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (context block)' opcode @+39
-//	byte code_data_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
-    byte code_data_nop[] = {0/*locals_count*/, end_block};// NOP
-    byte code_data_id[] = {1/*locals_count*/, 1/*one local has type: */, i32t, get_local, 0, return_block,
-                           end_block}; // NOP
+//	byte code_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
+    byte code_nop[] = {0/*locals_count*/, end_block};// NOP
+    byte code_start[] = {0/*locals_count*/, call_, (byte) main_offset, nop, nop, drop, end_block};// needs own type etc
+    byte code_id[] = {1/*locals_count*/, 1/*one local has type: */, i32t, get_local, 0, return_block,
+                      end_block}; // NOP
     byte code_square_d[] = {1/*locals_count*/, 1/*one local has type: */, f64t, get_local, 0, get_local, 0, f64_mul,
                             return_block, end_block};
+
+    byte code_quit[] = {0/*locals_count*/, call_, 0, end_block};
+
+    byte code_puts[] = {1/*locals_count*/, 1 /*one of type*/, int32,
+                        i32_const, 1,// stdout
+                        local_get, 0,// string* or char** ⚠️ use put_chars for char*
+                        i32_const, 1,// #string
+                        i32_const, 8,// out chars written => &trash
+                        call_, (byte) fd_write_import, nop, nop,
+//                             local_get,0,// return string*  HAS to return something according to stdio
+                        end_block};
+
+    byte code_len[] = {1/*locals_count*/, 1 /*one of type*/, int32 /* wasm_pointer */ ,
+                       local_get, 0,// any structure in Wasp ABI
+                       i32_const, 4,// length is second field in ALL Wasp structs!
+                       i32_add, // offset = base + 4
+                       i32_load, 2, 0, end_block};
 
     // slightly confusing locals variable declaration count scheme:
     byte code_modulo_float[] = {1 /*locals declarations*/, 2 /*two of type*/, float32,
@@ -2441,16 +2469,22 @@ Code emitCodeSection(Node &root) {
     if (runtime.code_count == 0) {
         // order matters, in functionType section!
         if (functions["nop"].is_used)
-            code_blocks = code_blocks + encodeVector(Code(code_data_nop, sizeof(code_data_nop)));
-        if (functions["square_double"].is_used and
-                functions["square_double"].is_builtin)// can also be linked via runtime/import!
+            code_blocks = code_blocks + encodeVector(Code(code_nop, sizeof(code_nop)));
+        if (functions["square_double"].is_used and functions["square_double"].is_builtin)
+            // simple test function x=>x*x can also be linked via runtime/import!
             code_blocks = code_blocks + encodeVector(Code(code_square_d, sizeof(code_square_d)));
         if (functions["id"].is_used)
-            code_blocks = code_blocks + encodeVector(Code(code_data_id, sizeof(code_data_id)));
+            code_blocks = code_blocks + encodeVector(Code(code_id, sizeof(code_id)));
         if (functions["modulo_float"].is_used)
             code_blocks = code_blocks + encodeVector(Code(code_modulo_float, sizeof(code_modulo_float)));
-        if (functions["modulo_double"].is_used) {
+        if (functions["modulo_double"].is_used)
             code_blocks = code_blocks + encodeVector(Code(code_modulo_double, sizeof(code_modulo_double)));
+        if (functions["len"].is_used)
+            code_blocks = code_blocks + encodeVector(Code(code_len, sizeof(code_len)));
+        if (functions["puts"].is_used) {// calls import fd_write, can be import itself
+            code_blocks = code_blocks + encodeVector(Code(code_puts, sizeof(code_puts)));
+            if (functions["quit"].is_used)
+                code_blocks = code_blocks + encodeVector(Code(code_quit, sizeof(code_quit)));
         }
     }
 
@@ -2459,8 +2493,11 @@ Code emitCodeSection(Node &root) {
     if (start) {
         if (main_block.length == 0)
             functions[start].is_used = false;
-        else
+        else {
             code_blocks = code_blocks + encodeVector(main_block);
+            if (functions["_start"].is_used and functions["_start"].is_builtin)
+                code_blocks = code_blocks + encodeVector(Code(code_start, sizeof(code_start)));
+        }
     } else {
         if (main_block.length > 5)
             error("no start context name given. null instead of 'main', can't assign block");
@@ -2499,6 +2536,21 @@ Code emitExportSection() {
         memoryExport = encodeString("memory") + (byte) mem_export + Code(0);
 //code = code + createSection(export_section, encodeVector(Code(exports_count) + memoryExport));
     }
+    auto use_wasi = true;
+    if (use_wasi) {
+//        exports_count++;
+//        start = "_start";
+    }
+    Code mainExport = encodeString(start) + (byte) func_export + Code(main_offset);
+    if (use_wasi) {
+        exports_count++;
+        int start_offset = main_offset;
+        if (functionIndices["_start"])
+            start_offset = functionIndices["_start"];
+        mainExport = mainExport + encodeString("_start") + (byte) func_export + Code(start_offset);
+    }
+
+
     Code globalExports;
     for (int i = 0; i < globals.size(); i++) {
         String &name = globals.keys[i];
@@ -2506,10 +2558,8 @@ Code emitExportSection() {
         globalExports.add(globalExport); // todo << NOW
         exports_count++;
     }
-
     Code exportsData = encodeVector(
-            Code(exports_count) + encodeString(start) + (byte) func_export + Code(main_offset) + memoryExport +
-            globalExports);
+            Code(exports_count) + mainExport + memoryExport + globalExports);
 
     auto exportSection = createSection(export_section, exportsData);
     return exportSection;
@@ -2771,12 +2821,12 @@ void add_builtins() {
         }
     }
     for (auto sig: functions) {// now builtins
-        Function &context = functions[sig];
-        if (context.is_builtin and context.is_used) {
+        Function &function = functions[sig];
+        if (function.is_builtin and function.is_used) {
             functionIndices[sig] = ++last_index;
-            if (context.index >= 0 and context.index != last_index)
-                error("context already has index %d ≠ %d"s % context.index % last_index);
-            context.index = last_index;
+            if (function.index >= 0 and function.index != last_index)
+                error("function %s already has index %d ≠ %d"s % function.name % function.index % last_index);
+            function.index = last_index;
             builtin_count++;
         }
     }
@@ -2811,6 +2861,7 @@ void clearEmitterContext() {
     last_object_pointer = 0;
     data = (char *) malloc(MAX_DATA_LENGTH);// todo grow
     emitLongData(0, true);// NULL PAGE! no object shall ever read or write from address 0 (sanity measure)
+    emitLongData(0, true);// TRASH sink, e.g. for writing fd_write(fd,iov*,len, &trash out)
 //    emitString(*new Node("__WASP_DATA__\0"), *new Function());
 //    while (((long) data) % 8)data++;// type 'long', which requires 8 byte alignment
 }
@@ -2853,6 +2904,10 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 //			functionIndices[start] =runtime_offset ? runtime_offset + declaredFunctions.size() :  ++last_index;  // AFTER collecting imports!!
         else
             error("start already declared: "s + start + " with index " + functionIndices[start]);
+        if (start != "_start" and not functions.has("_start")) {
+            functions["_start"] = {.index=++last_index, .name="_start", .is_builtin=true, .is_used=true};
+            functionIndices["_start"] = last_index;
+        }
     } else {
 //		functions["_default_context_"] = Signature();
 //		start = "_default_context_";//_default_context_

@@ -78,6 +78,8 @@ void memcpy1(bytes dest, bytes source, int i);
 
 // if MY_WASI make sure to IMPLEMENT THEM ALL via fd_write !!
 // todo: alias all to print
+void put_chars(char *c, size_t len = 0);
+
 extern "C" //  DESTROYS the export type signature! but required by stdio.h:178:6:
 int puts(const char *);// stdio
 void putp(void *f);// pointer
@@ -93,6 +95,8 @@ void put_char(codepoint c);
 //int putchar(int c);// stdio
 
 void putf(float f);
+
+void putd(double f);
 
 int square(int n);// test wasm
 
@@ -234,12 +238,16 @@ extern "C" int printf(chars s, ...);  //stdio
 //extern "C" void _fd_write(int fd, const wasi_buffer *iovs, size_t iovs_len, size_t *nwritten);
 //void fd_write(int FD, char **strp, int *len, int *nwritten); // todo len or len* ?  wasi_buffer={char*, … ?}
 
-extern "C"
-#if WASI or MY_WASI
-//__attribute__((import_module("wasi_unstable"), import_name("fd_write")))
-__attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")))
-int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
-#else
-int fd_write(int fd, void *iovs, size_t iovs_len, size_t *nwritten);
-#endif
+struct c_io_vector {
+    char *string;
+    size_t length;
+};
 
+//#if WASI or MY_WASI
+//__attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")))
+__attribute__((import_module("wasi_unstable"), import_name("fd_write")))
+extern "C" int fd_write(int fd, c_io_vector *iovs, size_t iovs_count, size_t *nwritten);
+//void fd_write_host(int FD, char **strp, int *ignore, int *ignore) compatible signature
+
+__attribute__((import_module("wasi_unstable"), import_name("proc_exit")))
+extern "C" void proc_exit(int exitcode);

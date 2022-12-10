@@ -141,7 +141,7 @@ chars typeName(Primitive p) {
         case wasm_int32:
             return "int32";
         case type32:
-            return "typeo";
+            return "type";
         case any:
             return "any";
         case string_struct:
@@ -193,6 +193,9 @@ chars typeName(Primitive p) {
             return "missing"; // ≠ nul, undefined
         case maps:
             return "Map";
+        case pad_to32_bit:
+            error("don't use");
+            break;
     }
     return 0;
 }
@@ -299,7 +302,9 @@ Valtype mapTypeToWasm(Primitive p) {
             error("internal error or planned error as exception in wasm code?");
 //            return Valtype::int64;
 //            smart_pointer_64 ?
-
+        case pad_to32_bit:
+            error("don't use");
+            return Valtype::none;
     }
 }
 

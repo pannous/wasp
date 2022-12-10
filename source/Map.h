@@ -284,14 +284,23 @@ public:
     }
 };
 
-void print(Map<String, int> map);
 
 template<class S, class T>
 void print(Map<S, T> map) {
     printf("Map (size: %d)\n", map.size());
     for (int i = 0; i < map.size(); ++i)
-        printf("%s: %ld\n", map.keys[i]->data, map.values[i]);
+        printf("%s: %s\n", String(map.keys[i]).data, String(map.values[i]).data);
+    // todo external String(o) ≈ o.toString()
 }
+
+
+template<class T>
+void print(Map<String, T> map) {
+    printf("Map (size: %d)\n", map.size());
+    for (int i = 0; i < map.size(); ++i)
+        printf("%s: %s\n", map.keys[i].data, String(map.values[i]).data);
+}
+
 //void put(Map<S, T> map);
 
 
