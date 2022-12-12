@@ -37,12 +37,12 @@ wabt::Result do_square(Thread &thread, const Values &params, Values &results, Tr
 };
 
 wabt::Result do_puti(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
-	printf("%d\n", params.front().Get<int>());
+	printef("%d\n", params.front().Get<int>());
 	return wabt::Result::Ok;
 };
 
 wabt::Result do_putf(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
-	printf("%f\n", params.front().Get<float>());
+    printef("%f\n", params.front().Get<float>());
 	return wabt::Result::Ok;
 };
 
@@ -54,7 +54,7 @@ wabt::Result do_exit(Thread &thread, const Values &params, Values &results, Trap
 wabt::Result do_puts(Thread &thread, const Values &params, Values &results, Trap::Ptr *trap) {
 	Ref ref = params.front().Get<Ref>();
 	char *x = (char *) (void *) params.data();
-	printf("%s\n", x);
+    printef("%s\n", x);
 	return wabt::Result::Ok;
 };
 
@@ -105,10 +105,10 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
     const wabt::Result &result1 = ReadBinaryInterp(buffer, buf_size, options, &errors, &module_desc); // 2021
 //    const wabt::Result &result1 = ReadBinaryInterp("<code>", buffer, buf_size , options, &errors, &module_desc); // 2022
     if (Failed(result1)) {
-        printf("FAILED ReadBinaryInterp\n");
+        printef("FAILED ReadBinaryInterp\n");
         for (auto e: errors)
-            printf("%s", e.message.data());
-//		printf("This HANGS the IDE. Todo: why?\n");
+            printef("%s", e.message.data());
+//		printef("This HANGS the IDE. Todo: why?\n");
         return -1;
     }
     auto module = wabt::interp::Module::New(store, module_desc);
@@ -122,10 +122,10 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
 	RefPtr<Trap> trap;
 	Instance::Ptr instance = Instance::Instantiate(store, module.ref(), imports, &trap);
 	if (trap) {
-		printf("\nERROR in module\n");
-		printf("%s\n\n", trap.get()->message().data());
-		return -1;
-	}
+        printef("\nERROR in module\n");
+        printef("%s\n\n", trap.get()->message().data());
+        return -1;
+    }
 
 	for (wabt::interp::ExportDesc export_ : module_desc.exports) {
         if (export_.type.type->kind != wabt::ExternalKind::Func) continue;

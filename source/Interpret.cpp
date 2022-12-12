@@ -204,7 +204,7 @@ Node do_call(Node left, Node op0, Node right) {
 //	if (op == "square")return Node(square(right.numbere()));
     if (op == "square")return Node(right.numbere() * right.numbere());// don't test
     if (op == "√")return Node(sqrt1(right.numbere()));
-    if (op == "printf") {
+    if (op == "printef") {
         print(right);
         return right;
     }

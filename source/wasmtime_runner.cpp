@@ -11,8 +11,8 @@
 
 //#undef assert // assert.h:92 not as good!
 //#define assert(condition) try{\
-//if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
-//}catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(1);}
+//if((condition)==0){printef("\n%s\n",#condition);error("assert FAILED");}else printef("\nassert OK: %s\n",#condition);\
+//}catch(chars m){printef("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(1);}
 
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap);
@@ -48,8 +48,8 @@ static wasm_trap_t *hello_callback(
         wasmtime_val_t *results,
         size_t nresults
 ) {
-    printf("Calling back...\n");
-    printf("> Hello World!\n");
+    printef("Calling back...\n");
+    printef("> Hello World!\n");
 //	results=wasm_valtype_new_i32();
     int n = args[0].of.i32;
     results[0].of.i32 = n * n;
@@ -74,15 +74,15 @@ wrap(logd) {
 wrap(puts) {
     int n = args[0].of.i32;
     if (wasm_memory)
-        printf("%s\n", &((char *) wasm_memory)[n]);
+        printef("%s\n", &((char *) wasm_memory)[n]);
     else
-        printf("puts / printf can't access null wasm_memory at %d (internal error!)", n);
+        printef("puts / printef can't access null wasm_memory at %d (internal error!)", n);
     return NULL;
 }
 
 wrap(puti) {
     int i = args[0].of.i32;
-    printf("%d", i);
+    printef("%d", i);
     return NULL;
 }
 
@@ -90,7 +90,7 @@ wrap(putf) {
     if ((long) args == 0x08)
         return NULL;// BUG!
     float f = args[0].of.f32;
-    printf("%f", f);
+    printef("%f", f);
     return NULL;
 }
 
@@ -106,21 +106,21 @@ wrap(fd_write) {
     char *s = ((char *) wasm_memory) + string_offset;
 //    size_t iovs_count = args[2].of.i32;
     if (!wasm_memory)
-        printf("wasm_memory not linked");
+        printef("wasm_memory not linked");
     else
-        printf("%s", s);
+        printef("%s", s);
     return NULL;
 }
 
 wrap(putd) {
     float f = args[0].of.f64;
-    printf("%f", f);
+    printef("%f", f);
     return NULL;
 }
 
 wrap(putc) {// put_char
     int i = args[0].of.i32;
-    printf("%c", i);
+    printef("%c", i);
     return NULL;
 }
 
@@ -137,7 +137,7 @@ wrap(atoi) {
 }
 
 wrap(exit) { // proc_exit
-    printf("\nEXIT!\n (only wasm instance, not host;)\n");
+    printef("\nEXIT!\n (only wasm instance, not host;)\n");
     todow("how to stop instance?");
 //    throw "how to stop instance?";
     exit(42);
@@ -227,7 +227,7 @@ wasm_wrap *link_import(String name) {
     if (name == "raise") return &wrap_exit;
     if (name == "square") return &wrap_square;
 
-    if (name == "printf") return &wrap_puts;
+    if (name == "printef") return &wrap_puts;
     if (name == "print") return &wrap_puts;
 //	if (name == "logs") return &wrap_puts;
 //	if (name == "logi") return &wrap_puti;
@@ -251,7 +251,7 @@ wasm_wrap *link_import(String name) {
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap) {
 //	error(message);
-    fprintf(stderr, "error: %s\n", message);
+    fprintef(stderr, "error: %s\n", message);
     wasm_byte_vec_t error_message;
     if (error != NULL) {
         wasmtime_error_message(error, &error_message);
@@ -260,10 +260,10 @@ static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_t
         wasm_trap_message(trap, &error_message);
         wasm_trap_delete(trap);
     }
-    fprintf(stderr, "%.*s\n", (int) error_message.size, error_message.data);
+    fprintef(stderr, "%.*s\n", (int) error_message.size, error_message.data);
     wasm_byte_vec_delete(&error_message);
     // let Wasp handle this :
-    throw Error((char *) message);// todo copy sprintf error_message backtrace;
+    throw Error((char *) message);// todo copy sprintef error_message backtrace;
 }
 
 bool done = 0;
@@ -412,7 +412,7 @@ extern "C" long run_wasm(unsigned char *data, int size) {
         result = results.of.i32;
     result = smartNode(result)->toSmartPointer();// COPY potential RESULT DATA from wasm memory to HOST!!
 
-//    printf("%lld", result);
+//    printef("%lld", result);
     if (nresults > 1) {
         wasmtime_val_t results2 = *(&results + 1);
         auto type = results2.of.i32;
@@ -422,8 +422,8 @@ extern "C" long run_wasm(unsigned char *data, int size) {
 //		auto type = results.of.i32;
         if (type >= undefined and type <= last_kind) {
 //            if(tracing)
-            printf("TYPE: %s\n", typeName(type));
-        } else printf("Unknown type 0x%x\n", (unsigned int) type);
+            printef("TYPE: %s\n", typeName(type));
+        } else printef("Unknown type 0x%x\n", (unsigned int) type);
     }
     wasmtime_module_delete(modul);
     return result;
@@ -515,7 +515,7 @@ const wasm_functype_t *funcType(Signature &signature) {
         switch (returnType) {
             case int32:
                 return wasm_functype_new_2_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
-                                             wasm_valtype_new(WASM_I32)); // printf(i32,i32)i32
+                                             wasm_valtype_new(WASM_I32)); // printef(i32,i32)i32
             case i64:
                 return wasm_functype_new_2_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
                                              wasm_valtype_new(WASM_I64));

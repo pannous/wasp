@@ -433,7 +433,7 @@ String &hex(long d) {
 //	char* s= (char*) malloc(1+64/4);// 0x ?
     int size = 3 + 64 / 4;
     char s[size];
-    snprintf(s, size, "0x%lx", d);
+    snprintef(s, size, "0x%lx", d);
     return *new String(s);// todo mark data as to-free
 #endif
 }
@@ -453,14 +453,16 @@ String demangle(const String &fun){
     return fun;
 }
 #else
-
 #include <cxxabi.h>
-
 //std::__2::enable_if<(std::is_arithmetic<int>::value) && (std::is_arithmetic<long>::value), std::__2::__promote<int, long, void> >::type::type pow<int, long>(int, long)
+#endif
 String extractFuncName(const String &fun) {
     if (fun.length == 0)return "";
     int status;
-    char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
+    char *string;
+#if not WASM
+    *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
+#endif
     if (status < 0 or string == 0)
         return fun;// not demangled (e.g. "memory")
     auto real_name = String(string); // temp
@@ -472,7 +474,6 @@ String extractFuncName(const String &fun) {
     return ok;// .clone(); unnecessary: return by value copy
 }
 
-#endif
 
 String extractPath(String file) {
     if (!file.contains("/"))return "/";

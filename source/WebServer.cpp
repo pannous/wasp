@@ -77,10 +77,10 @@ int handle(char const *query, int connection_id) {
 //		const char *html_block = "<!DOCTYPE html><html><head><META HTTP-EQUIV='CONTENT-TYPE' CONTENT='text/html; charset=UTF-8'/></head>\n"
     print("\nGOT WEB REQUEST "s + query + '\n');
 //	Writeline(conn, "OK");
-    if (connection_id <= 0)printf("NO Connection");
+    if (connection_id <= 0)printef("NO Connection");
     if (connection_id <= 0)return 0;
     char buffer[200];
-    snprintf(buffer, 200, "<HTML>\n<HEAD>\n<TITLE>REQUEST %s</TITLE>\n</HEAD><BODY>JA</BODY></HTML>\n\n", query);
+    snprintef(buffer, 200, "<HTML>\n<HEAD>\n<TITLE>REQUEST %s</TITLE>\n</HEAD><BODY>JA</BODY></HTML>\n\n", query);
     Writeline(connection_id, buffer, strlen(buffer));
 
     // when calling FROM or TO the Webview:
@@ -116,7 +116,7 @@ int Service_Request(int connectionId) {
 //	char *q = substr(reqinfo.resource, 1, -1);
 	char *q = String(reqinfo.resource).substring(1, -1);
 	// ::::::::::::::::::::::::::::::
-	printf("reqinfo.resource %s\n", reqinfo.resource);
+    printef("reqinfo.resource %s\n", reqinfo.resource);
 //	if (not q or strlen(q) == 0 or q[0] == '?' or q[strlen(q) - 1] == '/'
 //	    or contains(q, wasp_js) or contains(q, wasp_css) or contains(q, favicon_ico) or contains(q, index_html) or
 //	    contains(q, "index.html"))
@@ -132,8 +132,8 @@ int Service_Request(int connectionId) {
 
 /* Prints an error message and quits */
 void Error_Quit(char const *msg) {
-	fprintf(stderr, "WEBSERV: %s\n", msg);
-	exit(EXIT_FAILURE);
+    fprintef(stderr, "WEBSERV: %s\n", msg);
+    exit(EXIT_FAILURE);
 }
 
 /* Read a line from a socket */
@@ -194,7 +194,7 @@ int Writeline(int sockd, const char *vptr, int n) {
 	buffer = vptr;
 	if (n == 0 or n == -1)
 		n = strlen(buffer);
-	//	printf("%d:%s\n",n,buffer);
+    //	printef("%d:%s\n",n,buffer);
 	nleft = n;
 
 	while (nleft > 0) {
@@ -441,19 +441,19 @@ int Check_Resource(struct ReqInfo *reqinfo) {
 
 int Return_Error_Msg(int conn, struct ReqInfo *reqinfo) {
 	char buffer[100];
-    snprintf(buffer, 100, "<HTML>\n<HEAD>\n<TITLE>Server Error %d</TITLE>\n</HEAD>\n\n", reqinfo->status);
+    snprintef(buffer, 100, "<HTML>\n<HEAD>\n<TITLE>Server Error %d</TITLE>\n</HEAD>\n\n", reqinfo->status);
     Writeline(conn, buffer, strlen(buffer));
-    snprintf(buffer, 100, "<BODY>\n<H1>Server Error %d</H1>\n", reqinfo->status);
+    snprintef(buffer, 100, "<BODY>\n<H1>Server Error %d</H1>\n", reqinfo->status);
     Writeline(conn, buffer, strlen(buffer));
-    snprintf(buffer, 100, "<P>The request could not be completed.</P>\n"
-                          "</BODY>\n</HTML>\n");
+    snprintef(buffer, 100, "<P>The request could not be completed.</P>\n"
+                           "</BODY>\n</HTML>\n");
 	Writeline(conn, buffer, strlen(buffer));
 	return 0;
 }
 
 int Output_HTTP_Headers(int conn, struct ReqInfo *reqinfo) {
 	char buffer[100];
-    snprintf(buffer, 100, "HTTP/1.1 %d OK\r\n", reqinfo->status);
+    snprintef(buffer, 100, "HTTP/1.1 %d OK\r\n", reqinfo->status);
     Writeline(conn, buffer, strlen(buffer));
 	if (contains(reqinfo->resource, "text/") or contains(reqinfo->resource, "txt/") or
 	    contains(reqinfo->resource, "plain/"))
@@ -485,20 +485,20 @@ int Output_HTTP_Headers(int conn, struct ReqInfo *reqinfo) {
 
 void Serve_Resource(ReqInfo reqinfo, int connection_id) {
     int resource = 0;
-    printf("Serve_Resource!!\n");
-    printf("%s\n", reqinfo.resource);
-    printf("%s\n", reqinfo.referer);
-    printf("%s\n", reqinfo.useragent);
+    printef("Serve_Resource!!\n");
+    printef("%s\n", reqinfo.resource);
+    printef("%s\n", reqinfo.referer);
+    printef("%s\n", reqinfo.useragent);
     /* Check whether resource exists, whether we have permission
    to access it, and update status code accordingly.     */
     bool bad = false;
     if (reqinfo.status == 200)
         if ((resource = Check_Resource(&reqinfo)) < 0) {
-			if (errno == EACCES)
-				reqinfo.status = 401;
-			else
-				reqinfo.status = 404;
-			bad = true;
+            if (errno == EACCES)
+                reqinfo.status = 401;
+            else
+                reqinfo.status = 404;
+            bad = true;
 		}
 	/* Output HTTP response headers if we have a full request */
 //	if (reqinfo.type == FULL)
@@ -520,7 +520,7 @@ void start_server(int port = SERVER_PORT) {
 	signal(SIGPIPE, SIG_IGN);
 	//	https://stackoverflow.com/questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
 
-	printf("STARTING SERVER!\n http://localhost:%d\n", port);
+    printef("STARTING SERVER!\n http://localhost:%d\n", port);
 	if (port < 1024)print("sudo wasp if port < 1024!");
 	fflush(stdout);
 	/* Create socket */
@@ -548,7 +548,7 @@ void start_server(int port = SERVER_PORT) {
 	if (listen(listener, LISTENQ) < 0)
 		Error_Quit("Call to listen failed.");
 
-	printf("listening on %d port %d\n", INADDR_ANY, port);
+    printef("listening on %d port %d\n", INADDR_ANY, port);
 
 	/* Loop infinitely to accept and service connections */
 	while (1) {

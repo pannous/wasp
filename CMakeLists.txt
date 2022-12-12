@@ -78,7 +78,7 @@ if (WASM)
     set(WASI 0) # increases size by factor 10!! 100873 wasp.wasm => 1074221 wasp.wasm_10x_with_WASI
     set(MY_WASI 1) # manually write via fd_write, NOT via wasi-sdk printf=>fd_write
     ADD_DEFINITIONS(-DMY_WASI)
-
+    ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
     #    set(RUNTIME_ONLY 1) NO, we want compiler version too!
     #    ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (NOT WASI AND NOT MY_WASI)
