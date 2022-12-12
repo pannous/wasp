@@ -122,7 +122,7 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
 	RefPtr<Trap> trap;
 	Instance::Ptr instance = Instance::Instantiate(store, module.ref(), imports, &trap);
 	if (trap) {
-        printf("\nERROR in module\n");
+        printf("\n⚠️ERROR in module\n");
         printf("%s\n\n", trap.get()->message().data());
         return -1;
     }

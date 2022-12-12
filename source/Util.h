@@ -5,6 +5,9 @@ typedef long long int64;
 typedef unsigned long long uint64;
 typedef unsigned long long u64;
 //typedef unsigned long long bytes8;
+typedef unsigned char byte;
+typedef const char *chars;
+typedef byte *bytes;
 
 #define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
 
@@ -14,7 +17,24 @@ static long min(long a, long b) { return (a < b ? a : b); }
 #if LINUX
 static bool isnumber(char x){return x>='0' and x<='9';}
 #endif
+
+// saves one backtrace entry:
+//#if WASM
+//#define error(msg) {\
+//put_chars("\nERROR\n"); \
+//put_chars(__FILE__);\
+//put_chars(":");\
+//puti(__LINE__);\
+//put_chars((char *) (msg));\
+//put_chars("\n");   \
+//proc_exit(-1); }
+//#else
 #define error(msg) error1(msg,__FILE__,__LINE__)
+#define werror(msg) warn(msg)
+//#endif
+
+
+
 #define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
 
 //typedef long long int64;  = 0x7E, in enum

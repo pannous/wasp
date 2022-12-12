@@ -112,11 +112,31 @@ wrap(fd_write) {
     return NULL;
 }
 
+
 wrap(putd) {
     float f = args[0].of.f64;
     printf("%f", f);
     return NULL;
 }
+
+wrap(args_sizes_get) { // mock
+//int args_sizes_get(char **argv, int *argc);
+    int charp = args[0].of.i32;
+    int intp = args[1].of.i32;
+    if (wasm_memory) {
+        char **argv_out = (char **) ((char *) wasm_memory) + charp;
+        int *intr = (int *) ((char *) wasm_memory) + intp;
+        char *write_args_to = (char *) wasm_memory + intp + 8;
+        *intr = 42;// mock test
+        write_args_to = "wasp";
+        *(&write_args_to + 5) = "prog";
+        argv_out[0] = write_args_to;
+        argv_out[1] = write_args_to + 5;
+    }
+    results[0].of.i32 = 42;
+    return NULL;
+}
+
 
 wrap(putc) {// put_char
     int i = args[0].of.i32;
@@ -236,6 +256,7 @@ wasm_wrap *link_import(String name) {
     if (name == "puts") return &wrap_puts;
     if (name == "putf") return &wrap_putf;
     if (name == "putd") return &wrap_putd;
+    if (name == "args_sizes_get")return &wrap_args_sizes_get;
     if (name == "fd_write") return &wrap_fd_write;
     if (name == "log") return &wrap_logd;// logd
     if (name == "logd") return &wrap_logd;// logd
@@ -327,7 +348,7 @@ extern "C" long run_wasm(unsigned char *data, int size) {
     for (String import_name: meta.import_names) {
         if (import_name.empty())break;
         if (import_name == "memory")continue;// todo filter before
-        print(import_name);
+//        printf("import: %s\n", import_name.data);
         wasmtime_extern_t import;
         wasmtime_func_t link;
 //		Signature &signature = meta.signatures[import_name];

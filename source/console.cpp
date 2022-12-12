@@ -36,7 +36,7 @@ void getline(char *buf) {
     const char *PROMPT = "wasp> ";
     if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
     char *tmp = readline(PROMPT);
-    if (tmp == 0 or strlen0(tmp) == 0) {
+    if (tmp == 0 or strlen(tmp) == 0) {
         return;
     }
 //	tmp=fixQuotesAndTrim(tmp);// LATER!

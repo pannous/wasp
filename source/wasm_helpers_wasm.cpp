@@ -3,25 +3,25 @@
 // Created by pannous on 15.07.20.
 //
 
-// ASSUME everything is MY_WASI from now on!
+// ALL FUNCTIONS IN THIS FILE WILL BE COMPILED IN WASM CONTEXT: the wasp.wasm runtime.
 
-#include <cstdlib> // OK in WASM!
+// ASSUME everything is MY_WASI from now on!
 
 #include "wasm_helpers.h"
 #include "String.h"
 #include "Backtrace.h"
 #include "Code.h"
-//extern unsigned int *memory;
+
+#include <typeinfo>       // operator typeid
+#include <cstdlib> // OK in WASM!
 
 int MAX_MEM = 65536 * 1024;// todo lol  INSIDE wasm memory!
-
 
 __attribute__ ((visibility("default")))
 void *get_heap_base(void) {
     return &__heap_base;
 }
 
-char *memoryChars = (char *) get_heap_base();
 char *current = (char *) get_heap_base() + 80000;
 
 extern "C" void *memmove(void *dest, const void *source, size_t num) {
@@ -109,7 +109,7 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
 
 int printf(const char *__restrict format, ...) {
 //    todo better
-    put_chars((char *) format, strlen0(format));
+    put_chars((char *) format, strlen(format));
     return 1;
 }
 
@@ -195,15 +195,18 @@ extern "C" int __cxa_atexit(int, int, int) {
     proc_exit(0);
     return 0;
 }
+
+#if not MY_WASM
 extern "C" long run_wasm(bytes buffer, int buf_size) {
-    print("wasp built without runtime?");
+    print("⚠️ run_wasm not available. wasp built without runtime and not embedded in a host which exposes the following function:");
+    print("extern long run_wasm(uint8* buffer, size_t buffer_length)");
+    print("Please vote here to make this a WASI standard: https://github.com/WebAssembly/WASI/issues/477");
+    error("⚠️ run_wasm not available. You can use wasp-full.wasm which comes with wasm-runtime builtin.");
+//    breakpoint_helper
     return 0;
 }
+#endif
 
-//#define __cxa_allocate_exception 1
-//#define
-
-#include <typeinfo>       // operator typeid
 
 void *alloc(int num, int size) {
     return calloc(num, size);
@@ -353,13 +356,13 @@ void panic() {
 
 
 void put_chars(char *c, size_t len) {
-    c_io_vector civ{.string=c, .length=len ? len : strlen0(c)};
+    c_io_vector civ{.string=c, .length=len ? len : strlen(c)};
     fd_write(1, &civ, 1, 0);
 }
 
 extern "C" // destroys the export type signature! stdio.h:178:6
 int puts(chars c) { // // int return needed for stdio compatibilty !
-    c_io_vector civ{.string=(char *) c, .length=(size_t) strlen0(c)};
+    c_io_vector civ{.string=(char *) c, .length=(size_t) strlen(c)};
     fd_write(1, &civ, 1, 0);
     return (int) c;// stdio
 }
@@ -413,11 +416,16 @@ int main(int argc, char **argv);
 
 extern "C" void _start() {
 #if RUNTIME_ONLY
-    print("Wasp runtime not meant to be executed. Use wasp or wasmer wasp.wasm \n");
+    print("Wasp runtime not meant to be executed. Use wasp or wasp.wasm \n");
 #else
     char *argv = (char *) malloc(1000);
     int argc;
     args_sizes_get(&argv, &argc);
     main(argc, &argv);
 #endif
+}
+
+extern "C" int putchar(int c) {// stdio
+    put_char(c);
+    return c;
 }

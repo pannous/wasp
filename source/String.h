@@ -103,8 +103,12 @@ void strcpy2(char *dest, chars src);
 
 void strcpy2(char *dest, chars src, int length);
 
-//extern "C"
-int strlen0(chars x);
+#if WASM
+extern "C" size_t strlen(const char *) __attribute__((__nothrow__, __leaf__, __pure__, __nonnull__(1)));
+#else
+extern "C" size_t strlen(const char *s);
+#endif
+//int strlen(chars x);
 //size_t   strlen(chars __s);
 
 
@@ -257,7 +261,7 @@ public:
         // todo, make Node(string) copy = true in many situations?
         // todo (maybe dont) mark data as to-free on destruction once copy = false AND bool malloced = true
 //		data = const_cast<char *>(string);// todo heap may disappear, use copy!
-        length = strlen0(string);
+        length = strlen(string);
         if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
         else {
             if (copy) {
@@ -376,7 +380,7 @@ public:
     }
 
     size_t len() {
-        return length >= 0 ? length : !shared_reference and strlen0(data);
+        return length >= 0 ? length : !shared_reference and strlen(data);
     }
 
     char charAt(int position) {
@@ -427,11 +431,13 @@ public:
 
 
     String &append(chars c, int byteCount = -1) {
-        if (byteCount < 0) byteCount = strlen0(c);
+        if (byteCount < 0) byteCount = strlen(c);
         if (!data) {
             data = (char *) (alloc(sizeof(char), byteCount + 1));
-        } else if (data + length + 1 == (char *) current) {// just append recent
-            current += byteCount + 1;
+#if WASM
+            } else if (data + length + 1 == (char *) current) {// just append recent
+                current += byteCount + 1;
+#endif
         } else {
             auto *neu = (char *) (alloc(sizeof(char), length + byteCount + 1));
             if (data)strcpy2(neu, data, length);
@@ -447,8 +453,10 @@ public:
         auto byteCount = utf8_byte_count(c);
         if (!data) {
             data = (char *) (alloc(sizeof(char), byteCount + 1));
+#if WASM
         } else if (data + length + 1 == (char *) current) {// just append recent
             current += byteCount + 1;
+#endif
         } else {
             auto *neu = (char *) (alloc(sizeof(char), length + 5));// we need 4 bytes because *(int*)…=c
             if (data)strcpy2(neu, data, length);
@@ -574,10 +582,10 @@ public:
             return this->replace("%d", formatLong(d));
         else if (contains("%x"))
             return this->replace("%x", hex(d));
-        printf("FORMAT:");
+        print("FORMAT:");
         printf("%s", data);
         printf("long arg:");
-        printf("%d", formatLong(d));
+        print(formatLong(d));
         error("missing placeholder %d in string modulo operation s%d");
         return "«ERROR»";
     }
@@ -859,7 +867,7 @@ public:
 
 
     int indexOf(chars string, bool reverse = false) {
-        int l = strlen0(string);
+        int l = strlen(string);
         if ((long) data + l > MEMORY_SIZE)
             error("corrupt string");
         for (int i = 0; i <= length - l; i++) {
@@ -896,7 +904,7 @@ public:
     String &replace(chars string, chars with) {// first only!
         int i = this->indexOf(string);
         if (i >= 0) {
-            unsigned int from = i + strlen0(string);
+            unsigned int from = i + strlen(string);
             return substring(0, i) + with + substring(from, -1);
         } else {
             return *this;
