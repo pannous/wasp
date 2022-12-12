@@ -25,11 +25,11 @@ chars fetch(chars url) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &out);
     CURLcode res = curl_easy_perform(curl);
     if (res != CURLE_OK)
-        printef("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-//		fprintef(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        printf("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+//		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     char *copy = (char *) malloc(sizeof(char) * out.str().length() + 1);
-    sprintef(copy, "%s", out.str().data());
+    sprintf(copy, "%s", out.str().data());
 //	strcpy(copy, data);
-//	printef("%s", copy);
+//	printf("%s", copy);
     return copy;
 }

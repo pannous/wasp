@@ -297,8 +297,8 @@ public:
     }
 
     void debug() {
-//		for (int i = 0; i < length; i++)printef("%s%02x", i % 4 == 0 ? " 0x" : "", data[i]);
-//		printef("\n");
+//		for (int i = 0; i < length; i++)printf("%s%02x", i % 4 == 0 ? " 0x" : "", data[i]);
+//		printf("\n");
         save();
     }
 

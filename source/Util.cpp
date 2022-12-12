@@ -433,7 +433,7 @@ String &hex(long d) {
 //	char* s= (char*) malloc(1+64/4);// 0x ?
     int size = 3 + 64 / 4;
     char s[size];
-    snprintef(s, size, "0x%lx", d);
+    snprintf(s, size, "0x%lx", d);
     return *new String(s);// todo mark data as to-free
 #endif
 }

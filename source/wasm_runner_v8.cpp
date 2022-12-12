@@ -57,7 +57,7 @@ int test_V8_cpp_Javascript() {
 
 			// Convert the result to an UTF8 string and print it.
 			v8::String::Utf8Value utf8(isolate, result);
-			printef("%s\n", *utf8);
+			printf("%s\n", *utf8);
 		}
 
         {
@@ -95,7 +95,7 @@ int test_V8_cpp_Javascript() {
 
 			// Convert the result to a uint32 and print it.
 			uint32_t number = result->Uint32Value(context).ToChecked();
-            printef("3 + 4 = %u\n", number);
+            printf("3 + 4 = %u\n", number);
 		}
 	}
 
@@ -113,27 +113,27 @@ int test_V8_cpp_Javascript() {
 void wasm_val_print(wasm_val_t val) {
     switch (val.kind) {
         case WASM_I32: {
-            printef("%" PRIu32, val.of.i32);
+            printf("%" PRIu32, val.of.i32);
         }
             break;
         case WASM_I64: {
-            printef("%" PRIu64, val.of.i64);
+            printf("%" PRIu64, val.of.i64);
         }
             break;
         case WASM_F32: {
-            printef("%f", val.of.f32);
+            printf("%f", val.of.f32);
         }
             break;
         case WASM_F64: {
-            printef("%g", val.of.f64);
+            printf("%g", val.of.f64);
         }
             break;
         case WASM_ANYREF:
         case WASM_FUNCREF: {
             if (val.of.ref == NULL) {
-                printef("null");
+                printf("null");
             } else {
-                printef("ref(%p)", val.of.ref);
+                printf("ref(%p)", val.of.ref);
             }
         }
             break;
@@ -144,9 +144,9 @@ void wasm_val_print(wasm_val_t val) {
 own wasm_trap_t *print_callback(
         const wasm_val_vec_t *args, wasm_val_vec_t *results
 ) {
-    printef("Calling back...\n> ");
+    printf("Calling back...\n> ");
     wasm_val_print(args->data[0]);
-    printef("\n");
+    printf("\n");
 
     wasm_val_copy(&results->data[0], &args->data[0]);
     return NULL;
@@ -158,8 +158,8 @@ own wasm_trap_t *closure_callback(
         void *env, const wasm_val_vec_t *args, wasm_val_vec_t *results
 ) {
     int i = *(int *) env;
-    printef("Calling back closure...\n");
-    printef("> %d\n", i);
+    printf("Calling back closure...\n");
+    printf("> %d\n", i);
 
     results->data[0].kind = WASM_I32;
     results->data[0].of.i32 = (int32_t) i;
@@ -169,15 +169,15 @@ own wasm_trap_t *closure_callback(
 
 int test_v8() {
     // Initialize.
-    printef("Initializing...\n");
+    printf("Initializing...\n");
     wasm_engine_t *engine = wasm_engine_new();
     wasm_store_t *store = wasm_store_new(engine);
 
     // Load binary.
-    printef("Loading binary...\n");
+    printf("Loading binary...\n");
     FILE *file = fopen("samples/callback.wasm", "rb");
     if (!file) {
-        printef("> Error loading module!\n");
+        printf("> Error loading module!\n");
         return 1;
     }
     fseek(file, 0L, SEEK_END);
@@ -186,23 +186,23 @@ int test_v8() {
     wasm_byte_vec_t binary;
     wasm_byte_vec_new_uninitialized(&binary, file_size);
     if (fread(binary.data, file_size, 1, file) != 1) {
-        printef("> Error loading module!\n");
+        printf("> Error loading module!\n");
         return 1;
     }
     fclose(file);
 
     // Compile.
-    printef("Compiling module...\n");
+    printf("Compiling module...\n");
     own wasm_module_t *module = wasm_module_new(store, &binary);
     if (!module) {
-        printef("> Error compiling module!\n");
+        printf("> Error compiling module!\n");
         return 1;
     }
 
     wasm_byte_vec_delete(&binary);
 
     // Create external print functions.
-    printef("Creating callback...\n");
+    printf("Creating callback...\n");
     own wasm_functype_t *print_type = wasm_functype_new_1_1(wasm_valtype_new_i32(), wasm_valtype_new_i32());
     own wasm_func_t *print_func = wasm_func_new(store, print_type, print_callback);
 
@@ -214,7 +214,7 @@ int test_v8() {
     wasm_functype_delete(closure_type);
 
     // Instantiate.
-    printef("Instantiating module...\n");
+    printf("Instantiating module...\n");
     wasm_extern_t *externs[] = {
             wasm_func_as_extern(print_func), wasm_func_as_extern(closure_func)
     };
@@ -222,7 +222,7 @@ int test_v8() {
     own wasm_instance_t *instance =
             wasm_instance_new(store, module, &imports, NULL);
     if (!instance) {
-        printef("> Error instantiating module!\n");
+        printf("> Error instantiating module!\n");
         return 1;
     }
 
@@ -230,16 +230,16 @@ int test_v8() {
     wasm_func_delete(closure_func);
 
     // Extract export.
-    printef("Extracting export...\n");
+    printf("Extracting export...\n");
     own wasm_extern_vec_t exports;
     wasm_instance_exports(instance, &exports);
     if (exports.size == 0) {
-        printef("> Error accessing exports!\n");
+        printf("> Error accessing exports!\n");
         return 1;
     }
     const wasm_func_t *run_func = wasm_extern_as_func(exports.data[0]);
     if (run_func == NULL) {
-        printef("> Error accessing export!\n");
+        printf("> Error accessing export!\n");
         return 1;
     }
 
@@ -247,29 +247,29 @@ int test_v8() {
     wasm_instance_delete(instance);
 
     // Call.
-    printef("Calling export...\n");
+    printf("Calling export...\n");
     wasm_val_t as[2] = {WASM_I32_VAL(3), WASM_I32_VAL(4)};
     wasm_val_t rs[1] = {WASM_INIT_VAL};
     wasm_val_vec_t args = WASM_ARRAY_VEC(as);
     wasm_val_vec_t results = WASM_ARRAY_VEC(rs);
     if (wasm_func_call(run_func, &args, &results)) {
-        printef("> Error calling function!\n");
+        printf("> Error calling function!\n");
         return 1;
     }
 
     wasm_extern_vec_delete(&exports);
 
     // Print result.
-    printef("Printing result...\n");
-    printef("> %u\n", rs[0].of.i32);
+    printf("Printing result...\n");
+    printf("> %u\n", rs[0].of.i32);
 
     // Shut down.
-    printef("Shutting down...\n");
+    printf("Shutting down...\n");
     wasm_store_delete(store);
     wasm_engine_delete(engine);
 
     // All done.
-    printef("Done.\n");
+    printf("Done.\n");
     return 0;
 }
 
@@ -316,7 +316,7 @@ namespace v8 {
 //	wasm::vec<wasm::Val> args(1);
 //	wasm::vec<wasm::Val> returns(1);
 //	auto ok = exports[0]->func()->call(args,returns);
-//	printef("RESULT %d", returns[0].i32());
+//	printf("RESULT %d", returns[0].i32());
 //}
 //}
 
@@ -339,11 +339,11 @@ void init_wasm() {
 
 
 void print_frame(wasm_frame_t *frame) {
-    printef("> %p @ 0x%zx = %d.0x%zx\n",
-            wasm_frame_instance(frame),
-            wasm_frame_module_offset(frame),
-            wasm_frame_func_index(frame),
-            wasm_frame_func_offset(frame)
+    printf("> %p @ 0x%zx = %d.0x%zx\n",
+           wasm_frame_instance(frame),
+           wasm_frame_module_offset(frame),
+           wasm_frame_func_index(frame),
+           wasm_frame_func_offset(frame)
     );
 }
 
@@ -358,13 +358,13 @@ extern "C" long run_wasm(bytes data, int size) {
     if (!done)init_wasm();
     wasm_byte_vec_t binary{(size_t) size, (wasm_byte_t *) data};
     // Compile.
-    printef("Compiling module...\n");
+    printf("Compiling module...\n");
     own wasm_module_t *module = wasm_module_new(store, &binary);
-    if (!module) printef("> Error compiling module!\n");
+    if (!module) printf("> Error compiling module!\n");
     wasm_byte_vec_delete(&binary);
 
     // Instantiate.
-    printef("Instantiating module...\n");
+    printf("Instantiating module...\n");
     wasm_extern_vec_t imports = WASM_EMPTY_VEC;
 
     //	wasm_trap_t x{};// incomplete type
@@ -377,27 +377,27 @@ extern "C" long run_wasm(bytes data, int size) {
     own wasm_trap_t *trap = traps[0];
     own wasm_instance_t *instance = wasm_instance_new(store, module, &imports, &trap);
 
-    if (!instance) printef("> Error instantiating module, expected trap!\n");
+    if (!instance) printf("> Error instantiating module, expected trap!\n");
 
 
     wasm_module_delete(module);
 
     // Print result.
-    printef("Printing message...\n");
+    printf("Printing message...\n");
     own wasm_name_t message;
     wasm_trap_message(trap, &message);
-    printef("> %s\n", message.data);
+    printf("> %s\n", message.data);
 
-    printef("Printing origin...\n");
+    printf("Printing origin...\n");
 	own wasm_frame_t *frame = wasm_trap_origin(trap);
 	if (frame) {
 		print_frame(frame);
 		wasm_frame_delete(frame);
 	} else {
-        printef("> Empty origin.\n");
+        printf("> Empty origin.\n");
 	}
 
-    printef("Printing trace...\n");
+    printf("Printing trace...\n");
 	own wasm_frame_vec_t trace;
 	wasm_trap_trace(trap, &trace);
 	if (trace.size > 0) {
@@ -405,7 +405,7 @@ extern "C" long run_wasm(bytes data, int size) {
 			print_frame(trace.data[i]);
 		}
 	} else {
-        printef("> Empty trace.\n");
+        printf("> Empty trace.\n");
 	}
 
 	wasm_frame_vec_delete(&trace);
@@ -413,12 +413,12 @@ extern "C" long run_wasm(bytes data, int size) {
 	wasm_name_delete(&message);
 
 	// Shut down.
-    printef("Shutting down...\n");
+    printf("Shutting down...\n");
     wasm_store_delete(store);
 	wasm_engine_delete(engine);
 
 	// All done.
-    printef("Done.\n");
+    printf("Done.\n");
 	return 0;
 }
 

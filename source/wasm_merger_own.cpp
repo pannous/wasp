@@ -50,7 +50,7 @@ String s(String x) { return x; }
 
 #define FIRST_KNOWN_SECTION SectionType::Type
 //#define LOG_DEBUG(fmt, ...) if (s_debug) s_log_stream->Writef(fmt, __VA_ARGS__);
-#define LOG_DEBUG(fmt, ...) if (s_debug) printef(fmt, __VA_ARGS__);
+#define LOG_DEBUG(fmt, ...) if (s_debug) printf(fmt, __VA_ARGS__);
 
 int unknown_opcode_length_TODO = -1;
 const int leb = -2;// special marker for varlength leb argument ( i32.const … )
@@ -859,7 +859,7 @@ bool Linker::WriteCombinedSection(SectionType section_code, const SectionPtrVect
     }
 
     if (section_code == wabt::SectionType::Data)
-        printef("");
+        printf("");
 
     stream_.WriteU8Enum(section_code, "section code");
 
@@ -968,7 +968,7 @@ void Linker::ResolveSymbols() {
 
     int memories = 0;
     for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-        printef("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
+        printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
         unsigned long nr_imports = binary->function_imports.size();
 
         // FIND DUPLICATE imports (no other purpose for now!)
@@ -997,8 +997,8 @@ void Linker::ResolveSymbols() {
         for (Export &_export: binary->exports) {// todo: why not store index directly?
             pos++;
             if (tracing)
-                printef("%s export kind %d '%s' index %d\n", binary->name, _export.kind, _export.name.data,
-                        _export.index);
+                printf("%s export kind %d '%s' index %d\n", binary->name, _export.kind, _export.name.data,
+                       _export.index);
             if (export_map.FindIndex(_export.name) != kInvalidIndex) {
                 warn("duplicate export name "s + _export.name);// Ignoring
                 binary->exports.remove(pos);// todo: careful, does iterator skip an element now??
@@ -1034,7 +1034,7 @@ void Linker::ResolveSymbols() {
         for (const Func &func: binary->functions) {// only those with code, not imports
             if (not empty(func.name)) {
                 if (tracing)
-                    printef("func.name %s, func.index %d\n", func.name.data, func.index);
+                    printf("func.name %s, func.index %d\n", func.name.data, func.index);
 //				check(func_list.size()==func.index);
                 func_map.emplace(func.name, func.index);
                 private_map[String(func.name)] = new FuncInfo{&func, binary.get()};
@@ -1046,7 +1046,7 @@ void Linker::ResolveSymbols() {
         // wasp.wasm currently has no binary->debug_names (only exports!) so ignore for now
 //		for (int i = 0; i < binary->debug_names.size(); ++i) {
 //			String &name = binary->debug_names[i];
-//			printef("DEBUG func.name %s, func.index %d\n", name.data, i);
+//			printf("DEBUG func.name %s, func.index %d\n", name.data, i);
 //			int true_index = i - binary->function_index_offset;
 //			if (i < 0) {
 //				continue;// debug name of import doesn't matter here!
@@ -1067,14 +1067,14 @@ void Linker::ResolveSymbols() {
             String &name = global_import.name;
             Index export_number = export_map.FindIndex(name);
             if (export_number == kInvalidIndex) {
-                printef("Ignoring unresolved global import %s\n", name.data);
+                printf("Ignoring unresolved global import %s\n", name.data);
                 continue;
             }
             ExportInfo &export_info = globals_export_list[export_number];
             String export_name = export_info.export_->name;
             Index export_index = export_info.export_->index;
-            printef("LINKING GLOBAL %s import #%d to export #%d %s \n", name.data, global_import.foreign_index,
-                    export_index, export_name.data);
+            printf("LINKING GLOBAL %s import #%d to export #%d %s \n", name.data, global_import.foreign_index,
+                   export_index, export_name.data);
             global_import.active = false;
             global_import.foreign_binary = export_info.binary;
             global_import.foreign_index = export_index;
@@ -1102,8 +1102,8 @@ void Linker::ResolveSymbols() {
                 binary->active_function_imports--;// never used!?
                 char *import_name = import.name;
                 char *export_name = exported.name;
-                printef("LINKED %s import #%d %s to export #%d %s relocated_function_index %d \n", name.data, old_index,
-                        import_name, export_index, export_name, export_number);
+                printf("LINKED %s import #%d %s to export #%d %s relocated_function_index %d \n", name.data, old_index,
+                       import_name, export_index, export_name, export_number);
             } else {
                 // todo all this is done in RelocateFuncIndex !
                 // link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
@@ -1128,7 +1128,7 @@ void Linker::ResolveSymbols() {
                 import.foreign_binary = funcInfo.binary;
                 import.foreign_index = funcInfo.func->index;
                 binary->active_function_imports--;
-                printef("LINKED unexported function to import: %s\n", name.data);
+                printf("LINKED unexported function to import: %s\n", name.data);
             }
         }
     }
@@ -1345,11 +1345,11 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
                 error("suspiciously many local_types. parser out of sync? %d\n"s % local_types);
             }// each type comes with a count e.g. (i32, 3) == 3 locals of type i32
             if (current_name.data and tracing)// else what is this #2 test/merge/main2.wasm :: (null)
-                printef("#%d -> #%d %s :: %s (#%d)\n", current_fun, real_function_index, binary->name,
-                        current_name.data,
-                        local_types);
+                printf("#%d -> #%d %s :: %s (#%d)\n", current_fun, real_function_index, binary->name,
+                       current_name.data,
+                       local_types);
             else if (tracing)
-                printef("#%d -> #%d (#%d)\n", current_fun, real_function_index, local_types);
+                printf("#%d -> #%d (#%d)\n", current_fun, real_function_index, local_types);
             current_offset += local_types * 2;// type + nr
         }
         byte b = binary_data[current_offset++];
@@ -1379,8 +1379,8 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
                 function_name = callee.name;
             }
             if (tracing)
-                printef("CALL %s %s calls %s $%lu -> %d\n", binary->name, current_name.data, function_name.data, index,
-                        neu);
+                printf("CALL %s %s calls %s $%lu -> %d\n", binary->name, current_name.data, function_name.data, index,
+                       neu);
 #endif
         } else if (op == global_get || op == global_set) {
             short index = unsignedLEB128(binary_data, length, current_offset, false);
@@ -1414,14 +1414,14 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
                                             true);// start passed as reference will be MODIFIED!!
             } // auto variable argument(s)
             else if (arg_bytes == -1) {
-                printef("previous opcode 0x%x %d “%s” ?\n", last_opcode, last_opcode,
-                        Opcode::FromCode(last_opcode).GetName());
-                printef("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
+                printf("previous opcode 0x%x %d “%s” ?\n", last_opcode, last_opcode,
+                       Opcode::FromCode(last_opcode).GetName());
+                printf("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
                 error("UNKNOWN OPCODE");
             }
             if (tracing)
-                printef("OPCODE 0x%x %d “%s” last_const=%ld  length: %d? \n", op, op, opcode.GetName(), last_const,
-                        arg_bytes);
+                printf("OPCODE 0x%x %d “%s” last_const=%ld  length: %d? \n", op, op, opcode.GetName(), last_const,
+                       arg_bytes);
         }
         last_opcode = op;
     }
@@ -1463,7 +1463,7 @@ Code &merge_binaries(List<Code *> binaries) {
         binary->needs_relocate = code.needs_relocate;
         ReadBinaryLinker(binary);
 //		if (binary->filename == "main.wasm"s) {
-//			printef("currently no exports! they'd mess with library!\n");
+//			printf("currently no exports! they'd mess with library!\n");
 //			binary->exports.clear();
 //			check(binary->exports.size()==0);
 //		}
