@@ -148,16 +148,16 @@ namespace wabt {
 
             std::vector<uint8_t> data;
             std::vector<std::unique_ptr<Section>> sections;
-            List<Export> exports;
+            List<Export> exports = 10000;// {.capacity=10000};
             std::vector<Func> functions;// only those with code, not imports:
             std::vector<FunctionImport> function_imports;
             Index active_function_imports;
             std::vector<GlobalImport> global_imports;
             Index active_global_imports;
 
-			Index type_index_offset;
-			Index function_index_offset; // globally after merging, RIGHT??
-			Index imported_function_index_offset;// for current binary or for ALL?
+            Index type_index_offset;
+            Index function_index_offset; // globally after merging, RIGHT??
+            Index imported_function_index_offset;// for current binary or for ALL?
             Index global_index_offset = 0;
             Index imported_global_index_offset{};
             Index table_index_offset;

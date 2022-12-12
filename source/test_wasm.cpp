@@ -817,12 +817,12 @@ void testWasmRuntimeExtension() {
     assert_run("43", 43);
     assert_run("len('123')", 3);
     assert_run("len('1235')", 4);
-    assert_run("int('123')", 123);
-    assert_run("int('123000')+int('456')", 123456);
-    assert_run("int('123'+'456')", 123456);
+    assert_run("parseLong('123')", 123);
+    assert_run("parseLong('123000')+parseLong('456')", 123456);
+    assert_run("parseLong('123'+'456')", 123456);
 
     assert_run("x=123;x + 4 is 127", true);
-    assert_run("int('123'+'456')", 123456);
+    assert_run("parseLong('123'+'456')", 123456);
     assert_run("'123' is '123'", true);
     assert_run("'123' + '4' is '1234'", true);// ok
 

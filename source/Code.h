@@ -845,7 +845,7 @@ enum nameSubSectionTypes {
     function_names = 1,
     local_names = 2,
     global_names = 7,
-    todo_idk = 9
+    data_names = 9
 };
 
 typedef enum constancy {
@@ -1039,9 +1039,12 @@ public:
     void merge(Signature &s) { // ok don't duplicate, just fill empties
         if (type_index < 0)type_index = s.type_index;
 //		return_type = s.return_type;
-        wasm_return_type = s.wasm_return_type;
-        if (return_types.empty())
+        if (return_types.empty()) {
+            wasm_return_type = s.wasm_return_type;
             return_types = s.return_types;// todo copy construktor OK??
+            if ((wasm_return_type == void_block or wasm_return_type == voids) and return_types._size > 0)
+                wasm_return_type = mapTypeToWasm(return_types.last());
+        }
         if (parameter_types.empty())
             parameter_types = s.parameter_types;
         // todo: fix debug name and parameter_names!
@@ -1089,7 +1092,8 @@ struct Local { // todo: use
 
 class Function {
 public:
-    int index = -1;// todo: split into code_index and call_index (== code_index + import_count) ???
+    int code_index = -1;// todo: split into code_index and call_index (== code_index + import_count) ???
+//    int call_index = -1;// code_index + module.function_import.size()
     String name;
     String export_name;
     Signature signature;

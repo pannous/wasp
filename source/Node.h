@@ -25,9 +25,27 @@
 typedef char const *chars;
 typedef unsigned char byte;//!
 
-extern bool debug;
-extern bool throwing;// false for error tests etc
-extern bool panicking;// false for error tests, webview, etc
+
+
+#define MAX_NODE_CAPACITY 100000 // debug only, let it run out of memory naturally!
+static int lastChild = 1;
+
+// todo: wrap parser-options
+//bool use_polish_notation = false;// f(a,b) => (f a b) also : lisp mode (a 1 2)==a(1)(2)==a{1 2}
+
+
+static bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
+static bool panicking = false;// false for error tests, webview, etc
+#ifdef RUNTIME_ONLY
+static bool debug = false;
+#else
+static bool debug = true;// clone sub-strings instead of sharing etc
+#endif
+
+
+//extern bool debug;
+//extern bool throwing;// false for error tests etc
+//extern bool panicking;// false for error tests, webview, etc
 
 // todo: wrap parser-options
 static bool use_polish_notation;// prefix notation, s-expression parser flag  (html (body)) vs html{body{}}
@@ -77,7 +95,11 @@ class Node;
 //extern const Node NaN;// = Node("NaN");
 //
 
+// non-existent. NOT a value, but a keyword! Values get marked as null via nil flag in corresponding Type info of abi
+//static const Node* NOL = new Node(nil_name).setType(nils).setValue(0);
+//static const Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 extern const Node NIL;
+//static const Node NIL=*NOL;
 static Node &NUL = const_cast<Node &>(NIL);
 extern Node True;
 extern Node False;

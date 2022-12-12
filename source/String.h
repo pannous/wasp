@@ -8,39 +8,32 @@
 #include "wasm_helpers.h"
 #include "Util.h"
 #include "NodeTypes.h"
-//#include "Map.h"
-//#include "NodeTypes.h"
-#include <cstdlib> // OK in WASM!
-
-#define MAX_STRING_LENGTH 100000
-#define MAX_DATA_LENGTH 0x1000000
-
 //#include "Map.h" recursive include error Node.h:60:9: error: field has incomplete type 'String'
+
+#include <cstdlib> // OK in WASM!
 
 #ifndef WASM
 
-#include <cstdlib>
 #include <cstdio> // printf
 
 #endif
 
-#ifdef STD_STRING
-// defeats the purpose of using a lightweight unicode-aware String class
-#endif
-
-
+#define MAX_STRING_LENGTH 100000
+#define MAX_DATA_LENGTH 0x1000000
+typedef chars chars;
 typedef const unsigned char *wasm_string;// wasm strings start with their LEB encoded length and do NOT end with 0 !! :(
 
 class String;
 
+class Node;
+
 template<class S>
 class List;
 
-extern String &EMPTY_STRING;
+#ifdef STD_STRING
+#warning STD_STRING defeats the purpose of using a lightweight unicode-aware String class
+#endif
 
-void newline();
-
-String &hex(long d);
 
 //What 'char' and 'wchar_t' represent are completely ambiguous.
 //You might think that they represent a "character", but depending on the encoding, that might not be true.
@@ -60,6 +53,11 @@ typedef String grapheme;// sequence of one or more code points that are displaye
 //https://stackoverflow.com/questions/27331819/whats-the-difference-between-a-character-a-code-point-a-glyph-and-a-grapheme
 // '\uD83D\uDC0A' UTF-16 code units expressing a single code point (U+1F40A)  char(0x1F40A) == '🐊'
 //https://github.com/foliojs/grapheme-breaker/blob/master/src/GraphemeBreaker.js
+
+
+void newline();
+
+String &hex(long d);
 
 enum sizeMeasure {
     by_char8s,// bytes
@@ -81,47 +79,13 @@ char *formatLong(long num);
 
 char *formatLong(long num);
 
-int atoi1(codepoint c);
+int atoi1(codepoint c);// usually byte 0…10, but with special signs for CYRILLIC MILLIONS ҉ we stick with int
 
-long parseLong(chars str);
+int64 parseLong(chars str);
 
 extern double parseDouble(chars string);
 
 void encode_unicode_character(char *buffer, wchar_t ucs_character);
-
-//void* calloc(int i);
-//extern "C" void* calloc(int size,int count);
-//extern "C" void* calloc(int size);
-//extern "C"
-
-//void *calloc(size_t nitems, size_t size);// __result_use_check __alloc_size(1,2);
-//void *calloc(size_t nitems, size_t size){
-//	void *mem = alloc(nitems*size);
-//	while (nitems > 0) { ((char *) mem)[--nitems] = 0; }
-//	return mem;
-//}
-
-//#include "Node.h"
-
-//#ifndef WASP_STRING
-//#define WASP_STRING
-class Node;
-
-typedef chars chars;
-
-#ifndef WASM
-//#include <string>
-//#include <stdlib.h> // pulls in declaration of malloc, free
-#else
-#endif
-//void* alloc(number size);// wasm | linux
-
-
-//extern void error(chars message, chars file = 0, int line = 0);
-
-//void error(String message, chars file = 0, int line = 0);
-
-class String;
 
 String toString(Node &node);
 
@@ -190,7 +154,6 @@ public:
 //class CodepointList{
 //
 //};
-
 // following general Header struct / wasm32_node_struct
 class String {
 //    A UTF-8 environment can use non-synchronized continuation bytes as base64: 0b10   Base58 avoids lookalikes
@@ -205,8 +168,9 @@ public:
     bool shared_reference = false;// length terminated substrings! copy on modify if shared views. // todo: move to header?
     // todo is shared_reference sufficient for (im)mutable final const keywords?
 // memory layout different to chars with leb length header!
-private:
     // todo add UTF-16 representation as codepoint union?
+private:
+//    static String* EMPTY_STRING;
 
 public:
     String() {
@@ -443,8 +407,8 @@ public:
         if (from < 0 or (from == 0 and (to == length or to == -1))) return *this;
         if (to < 0) to = length + to + 1;// -2 : skip last character
         if (to > length or to < -length) to = length;
-        if (to <= from) return EMPTY_STRING;
-        if (from >= length) return EMPTY_STRING;
+        if (to <= from) return "";//EMPTY_STRING;
+        if (from >= length) return "";//EMPTY_STRING;
         int len = to - from;
         return String(data + from, len, ref);
     }
@@ -754,6 +718,10 @@ public:
     bool operator==(char16_t c) {
         return this->operator==(String(c));
     }
+
+//    bool operator==(const String s) {
+//        return s == this;
+//    }
 
 //	check(U'牛' == "牛"s );// owh wow it works reversed
     bool operator==(char32_t c) {
@@ -1075,23 +1043,25 @@ String operator ""s(chars c, unsigned long);
 #pragma clang diagnostic pop
 
 
-extern String UNEXPECT_END;// = "Unexpected end of input";
-extern String UNEXPECT_CHAR;// = "Unexpected character ";
-extern String empty_name;
-extern String nil_name;// = "nil";
+static String UNEXPECT_END;// = "Unexpected end of input";
+static String UNEXPECT_CHAR;// = "Unexpected character ";
+static String empty_name = "";
+//extern String nil_name;// = "nil";
 //extern String empty_name;// = "";
-#define NIL_NAME "nil"
-
-extern String EMPTY;// = String('\0');
+static String nil_name = "nil";
+static String EMPTY = "";// = String('\0');
 
 //String operator "" s(chars c, unsigned long );// wasm function signature contains illegal type
 //String operator "" _(chars c, unsigned long );
 //String operator "" _s(chars c, unsigned long );
 void print(String *s);
+
 void print(char const *s);
+
 //void print(char *s);
 //void print(const char *s);
 void print(String s);
+
 extern "C" int puts(const char *);// int return needed for stdio compatibilty !
 //void puts(const char *);
 
@@ -1117,5 +1087,6 @@ String &hex(long d);
 #include <sstream>
 void render(Node &node, std::stringstream *html = 0);
 #endif
+
 
 #pragma clang diagnostic pop

@@ -1308,7 +1308,7 @@ private:
 
         if (val.value.longy and val.kind != objects and deep_copy) {
             if (&key == &NIL or key.isNil() or key == NIL)
-                if (key.name == NIL_NAME)
+                if (key.name == nil_name)
                     warn("impossible");
             key.value = val.value;// direct copy value SURE?? what about meta data... ?
             key.kind = val.kind;

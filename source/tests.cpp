@@ -1014,10 +1014,10 @@ void testDiv() {
 
 void checkNil() {
     check(NIL.isNil());
-    assert_equals(NIL.name.data, NIL_NAME);
-    check(nil_name == "nil");// WASM
-    if (NIL.name.data != nil_name)
-        assert_equals(NIL.name.data, nil_name);
+    assert_equals(NIL.name.data, nil_name);
+    check(nil_name == "nil"s);// WASM
+    if (NIL.name.data == nil_name)
+        assert_equals(NIL.name, nil_name);
     check(NIL.name.data == nil_name);
     check(NIL.length == 0);
     check(NIL.children == 0);
@@ -2739,19 +2739,22 @@ void assurances() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
+//    auto wasp = loadModule("wasp"); // cmake-build-wasm-runtime
+//    auto wasp = loadModule("cmake-build-wasm-debug/wasp.wasm");
+//    check_is(wasp.functions["parseLong"].signature.wasm_return_type, i64);
+
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
 //    assurances();
-//    skip(
-//    char* x="abc";
-//    x[1]=u'√';
-//    loadModule("cmake-build-wasm/wasp.wasm");
 //        test_fd_write();
 //    assert_emit("i=1;k='hi';k[i]", 'i')
-    check_is(parseLong("123"), (long) 123);
-    auto wasp = loadModule("wasp");
-    check_is(wasp.functions["parseLong"].signature.wasm_return_type, i64);
+//    check_is(parseLong("123"), (long) 123);
     assert_emit("parseLong('123')", 123)
+    assert_emit("x='123';parseLong(x)", 123)
+    assert_run("parseLong('123000')+parseLong('456')", 123456);
+//    assert_run("int('123')", 123);
+
+    assert_emit("'42'", "42");
     assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));// looks trivial but is epitome of binary (de)serialization!
 
     assert_emit("x='abcde';x#4", 'd');
