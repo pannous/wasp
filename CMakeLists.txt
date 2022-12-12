@@ -350,6 +350,7 @@ if (WASM) # OR WASI)
 
     #    ADD_COMPILE_FLAG("-fvisibility=hidden") # ??
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
+#    ADD_COMPILE_FLAG("-Wl,-Clink-arg=--export=__heap_base") # wasm-ld: error: unknown argument:
     #    ADD_COMPILE_FLAG("-nostdlib") # use our OWN memcpy (and printf?)
     #    ADD_COMPILE_FLAG("-fno-builtin")
     #    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const

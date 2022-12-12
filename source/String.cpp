@@ -254,7 +254,8 @@ String toString(Node &node);
 char *formatLongWithBase(long num, int base = 10) {
     if (base == 16)return hex(num);
     // length 22 -> put(num)/2+2 for base 10
-    char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
+    static char str[23];
+//    char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
 //	int addr=(int)(long)str;
 //	if(addr<0 or addr>memory_size)
 //		error("OUT OF MEMORY");
@@ -711,7 +712,7 @@ void print(char c) {
 }
 
 void print(char const *s) {
-    put(s);
+    puts(s);
     newline();
 //    printf("%s", s);
 }
