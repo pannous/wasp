@@ -1461,6 +1461,7 @@ void clearAnalyzerContext() {
     functions.clear();
     analyzed.clear();// todo move much into outer analyze function!
     functions.clear();// always needs to be followed by
+    functions.use_constructor = true;// WHY, wasm?
     preRegisterFunctions();// BUG Signature wrong cpp file
 #endif
 }
