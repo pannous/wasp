@@ -10,10 +10,10 @@
 
 //#ifndef WASI
 //SOMETIMES IT WORKS with WASI, sometimes it doesnt!? ./build-wasm.sh fails as of 2021/2
-#include <stdarg.h> // va_list OK IN WASM???
+#include <cstdarg> // va_list OK IN WASM???
 //#include <cstdarg> // va_list ok in wasm even without wasi!
 #include <cstdlib> // OK in WASM!
-
+#include <cstdio>
 #ifndef WASM
 
 #include <initializer_list> // allow List x={1,2,3};
@@ -681,30 +681,30 @@ public:
     Node &merge(Node *other);
 
     void print(bool internal_representation = false) {
-        printef("%s\n", serialize().data);
+        printf("%s\n", serialize().data);
         if (internal_representation) {
-            printef("node{");
+            printf("node{");
             if (this == &NIL || kind == nils) {
-                printef("NIL\n");
+                printf("NIL\n");
                 return;
             }
             if (name.data)
-                printef("name:%s", name.data);
-            printef(" length:%d", length);
+                printf("name:%s", name.data);
+            printf(" length:%d", length);
             if (kind < unknown)
-                printef(" type:%s", typeName(kind));
+                printf(" type:%s", typeName(kind));
             const String &string1 = serializeValue(false);
-            printef(" value:%s\n", string1.data);// NEEDS "%s", otherwise HACKABLE
-            printef(" children:[");// flat, non-recursive
+            printf(" value:%s\n", string1.data);// NEEDS "%s", otherwise HACKABLE
+            printf(" children:[");// flat, non-recursive
             for (int i = 0; i < min(length, 10); i++) {
                 Node &node = children[i];
                 if (!node.name.empty()) {
-                    printef("%s", node.name.data);
-                    printef(" ");
-                } else printef("{…} ");// overview
+                    printf("%s", node.name.data);
+                    printf(" ");
+                } else printf("{…} ");// overview
             }
-            printef("]");
-            printef("}\n");
+            printf("]");
+            printf("}\n");
         }
     }
 
