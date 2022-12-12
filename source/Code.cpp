@@ -114,8 +114,10 @@ chars typeName(Primitive p) {
     switch (p) {
         case Primitive::array:
             return "array";
-        case Primitive::charp:
+        case Primitive::charp: // char*
             return "chars";
+//        case c_string: // same as char*
+//            return "c_string";
         case Primitive::node:
             return "Node";
         case nodes:
@@ -168,8 +170,6 @@ chars typeName(Primitive p) {
             return "float_array";
         case real_array:
             return "real_array";
-        case c_string:
-            return "c_string";
         case leb_string:
             return "leb_string";
         case utf16_string:
@@ -285,7 +285,7 @@ Valtype mapTypeToWasm(Primitive p) {
         case byte_char:
             // ⚠️ careful in arrays we may write byte_char as ByteChar !
             return Valtype::int32;
-        case c_string:
+//        case c_string:// charp
         case leb_string:
         case utf16_string:
         case utf32_string:
@@ -333,7 +333,7 @@ Primitive mapTypeToPrimitive(Node &n) {
     if (n == Double)
         return Primitive::wasm_float64;
     if (n == Charpoint)
-        return Primitive::codepointus;
+        return Primitive::codepoint32;
     else todo("mapTypeToPrimitive " + n.serialize());
     return Primitive::unknown_type;
 }
