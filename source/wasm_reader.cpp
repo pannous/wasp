@@ -450,6 +450,8 @@ void consumeExportSection() {
 #endif
         Function &fun = module->functions[func];// demangled
         Function &fun0 = module->functions[func0];// mangled
+        fun.module = module;
+        fun0.module = module;
         // ⚠️ CAN BE THE SAME REFERENCE IF func==func0 !!! ⚠️
 
         fun.name = func;
@@ -479,7 +481,7 @@ void consumeExportSection() {
         fun.code_index = lower_index;
 
 
-//        if (code_index == 369 or index == 369)
+//        if (code_index == 27 or index == 27)// "_Z6concatPKcS0_"
 //            breakpoint_helper // todo operator+
 
         int wasmFuncType = module->funcToTypeMap[code_index];// mainly used for return type here
@@ -499,7 +501,7 @@ void consumeExportSection() {
 
         if (demangled.contains("::")) {
             String typ = demangled.to("::");
-            auto type = mapArgToType(typ);// Primitive::self
+            auto type = mapType(typ);// Primitive::self
             fun.signature.add(type, "self");
         }
 // e.g. List<String>::add (String) has one arg, but wasm signature is (i32,i32):i32  ["_ZN4ListI6StringE3addES0_"]
@@ -508,9 +510,13 @@ void consumeExportSection() {
         List<String> args = demangle_args(func0);
         for (String &arg: args) {
             if (arg.empty())continue;
-            fun.signature.add(mapArgToType(arg));
+            fun.signature.add(mapType(arg));
             if (&fun != &fun0)
-                fun0.signature.add(mapArgToType(arg));
+                fun0.signature.add(mapType(arg));
+        }
+        if (not(demangled.contains("("))) { // extern "C" pure function name
+            fun.signature = wasm_signature;
+            fun0.signature = wasm_signature;
         }
         // can't after free
 //        if (&fun != &fun0)
@@ -525,124 +531,6 @@ void consumeExportSection() {
         }
 
     }
-}
-
-
-Type mapArgToType(String arg) {
-//	if(arg=="const char*")return charp;
-    if (arg.empty() or arg == "" or arg == " ") return voids;
-    else if (arg == "unsigned char*")return charp;// pointer with special semantics
-    else if (arg == "char const*")return charp;// pointer with special semantics
-    else if (arg == "char const*&")return charp;// todo ?
-    else if (arg == "char*")return charp;
-    else if (arg == "char32_t*")return codepoints; // ≠ codepoint todo, not exactly: WITHOUT HEADER!
-    else if (arg == "char const**")return pointer;
-    else if (arg == "short")
-        return int32;// vec_i16! careful c++ ABI overflow? should be fine since wasm doesnt have short
-    else if (arg == "int")return int32;
-    else if (arg == "signed int")return i32s;
-    else if (arg == "unsigned int")return i32;
-    else if (arg == "unsigned char")return int32;
-    else if (arg == "int*")return pointer;
-    else if (arg == "void*")return pointer;
-    else if (arg == "long")return i64;
-    else if (arg == "long&")return pointer;
-    else if (arg == "long long")return i64;
-    else if (arg == "unsigned long long")return i64;
-    else if (arg == "double")return float64;
-    else if (arg == "unsigned long")return i64;
-    else if (arg == "float")return float32;
-    else if (arg == "bool")return int32;
-    else if (arg == "char")return int32;// c++ char < angle codepoint ok
-    else if (arg == "wchar_t")return (Valtype) codepoint32;// angle codepoint ok
-    else if (arg == "char32_t")return codepoint32;// angle codepoint ok
-    else if (arg == "char16_t")return codepoint32;// !? ⚠️ careful
-    else if (arg == "char**")return pointer;// to chars
-    else if (arg == "short*")return pointer;
-
-
-        // Some INTERNAL TYPES are reflected upon / exposed as abi :
-    else if (arg == "Type")return int32;// enum
-    else if (arg == "Kind")return int32;// enum (short, ok)
-    else if (arg == "Type")return type32;// enum
-
-    else if (arg == "String*")return stringp;
-    else if (arg == "String&")return stringp;// todo: how does c++ handle refs?
-    else if (arg == "String")return string_struct;
-
-    else if (arg == "Node")return node;// struct!
-
-    else if (arg == "Node&")return nodes;// pointer? todo: how does c++ handle refs?
-    else if (arg == "Node const&")return nodes;
-    else if (arg == "Node const*")return nodes;
-    else if (arg == "Node*")return nodes;
-
-    else if (arg == "Type32")return type32;
-    else if (arg == "Type")return type32;
-    else if (arg == "Kind")return type32;
-    else if (arg == "Primitive")return type32;// good thing wasm has no polymorphism
-    else if (arg == "Valtype")return type32;// good enough!
-    else if (arg == "Type64")return ignore; // for now   return smarti64;
-    else if (arg == "Type64::Type64")return ignore; // for now   return smarti64;
-    else if (arg == "Type&")error("Type should only be used as value");
-
-    else if (arg == "List<String>")return list;
-    else if (arg == "List<Type>")return list;
-    else if (arg == "List<int>")return list;
-
-    else if (arg == "Module")return modul;
-    else if (arg == "Module const&")return modul;
-
-    else if (arg == "SyntaxError")return errors;
-//    else if (arg == "SyntaxError")return result_error;
-
-    else if (arg == "std::is_arithmetic<int>::value")return todoe;// WAT?? PURE_WASM should work without std!!
-
-
-        // IGNORE other INTERNAL TYPES:
-    else if (arg == "Code")return ignore;
-//    else if (arg == "Map<String")return ignore;
-//    else if (arg == "int>")return ignore;// parse bug ^^
-    else if (arg == "Function")return ignore;
-    else if (arg == "Sections")return ignore;
-    else if (arg == "Local")return ignore;
-    else if (arg == "Code&")return ignore;
-    else if (arg == "Code const&")return ignore;
-    else if (arg == "Section")return ignore;
-    else if (arg == "Global")return ignore;
-    else if (arg == "ParserOptions")return ignore;
-    else if (arg == "Value")return ignore;
-    else if (arg == "Arg")return ignore; // truely internal, should not be exposed! e.g. Arg
-    else if (arg == "Signature")return ignore;
-    else if (arg == "Wasp")return ignore;
-    else if (arg == "WitReader")return ignore;
-    else if (arg == "__cxxabiv1")return ignore;
-    else if (arg == "...")return ignore;// varargs, todo interesting!
-    else if (arg.startsWith("Map")) return maps;
-    else if (arg.startsWith("List")) return list;
-    else if (arg.endsWith("&")) return pointer;
-    else if (arg.endsWith("*")) return pointer;
-
-    else {
-//        breakpoint_helper
-//        printf("unmapped c++ argument type %s\n", arg.data);
-        if (!arg.endsWith("*"))
-            if (!arg.startsWith("Map<") and !arg.startsWith("List<"))
-                error("unmapped c++ argument type %s\n"s % arg.data);
-    }
-    return i32t;
-}
-
-
-// four different types:
-// 1. wasm Valtype
-// 2. node.kind:Type
-// 3. Any<Node and
-// 4. some c++ types String List etc
-// the last three can be added as special internal values to Valtype, outside the wasm spec
-Valtype mapArgToValtype(String &arg) {
-    Type primitive = mapArgToType(arg);
-    return mapTypeToWasm(primitive);
 }
 
 void consumeImportSection() {
