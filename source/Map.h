@@ -188,10 +188,10 @@ public:
                 return values[_size - 1];// increased above!
             } else {
 //                error("MISSING KEY: "s + key);
-                printef("MISSING KEY: ");
+                printf("MISSING KEY: ");
 //				put(key);
-//				printef("%s",key);// todo unsafe!! can be int etc!
-                printef("\n");
+//				printf("%s",key);// todo unsafe!! can be int etc!
+                printf("\n");
                 return values[_size++];
 //				error("MISSING KEY");
             }
@@ -287,18 +287,18 @@ public:
 
 template<class S, class T>
 void print(Map<S, T> map) {
-    printef("Map (size: %d)\n", map.size());
+    printf("Map (size: %d)\n", map.size());
     for (int i = 0; i < map.size(); ++i)
-        printef("%s: %s\n", String(map.keys[i]).data, String(map.values[i]).data);
+        printf("%s: %s\n", String(map.keys[i]).data, String(map.values[i]).data);
     // todo external String(o) ≈ o.toString()
 }
 
 
 template<class T>
 void print(Map<String, T> map) {
-    printef("Map (size: %d)\n", map.size());
+    printf("Map (size: %d)\n", map.size());
     for (int i = 0; i < map.size(); ++i)
-        printef("%s: %s\n", map.keys[i].data, String(map.values[i]).data);
+        printf("%s: %s\n", map.keys[i].data, String(map.values[i]).data);
 }
 
 //void put(Map<S, T> map);

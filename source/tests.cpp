@@ -418,7 +418,7 @@ void testLebByteSize() {
 //    for (unsigned long i = 0; i < 0x100000000000000; ++i) {
         short size = lebByteSize(i);
         if (size > last) {
-//            printef("%ld %lx %d\n", i, i, size);
+//            printf("%ld %lx %d\n", i, i, size);
             last = size;
             i = i * 128 + 129;
         }
@@ -454,7 +454,7 @@ void testLeaks() {
     int reruns = 0;
 //	int reruns = 100000;
     for (int i = 0; i < reruns; ++i) {//
-        printef("\n\n    ===========================================\n%d\n\n\n", i);
+        printf("\n\n    ===========================================\n%d\n\n\n", i);
 //		assert_emit("i=-9;√-i", 3);// SIGKILL after about 3000 emits OK'ish ;)
         assert_run("i=-9;√-i", 3);// SIGKILL after about 120 runs … can be optimized ;)
     }
@@ -504,11 +504,11 @@ void testFloatReturnThroughMain() {
 //	double x=-1.1;// bff199999999999a
     long long y = *(long long *) &x;
 #ifndef WASM
-    printef("%llx\n", y);
+    printf("%llx\n", y);
 #endif
     y = 0x00FF000000000000;// -> 0.000000 OK
     x = *(double *) &y;
-    printef("%lf\n", x);
+    printf("%lf\n", x);
     assert_emit(("-1.1"), -1.1)
     assert_emit("10007.0%10000.0", 7);
 }
@@ -888,8 +888,8 @@ void testWasmSpeed() {
 	gettimeofday(&stop, NULL);
 	time(&e);
 
-	printef("took %ld sec\n", e - s);
-	printef("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+	printf("took %ld sec\n", e - s);
+	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
 
 	exit(0);
 }*/
@@ -917,7 +917,7 @@ void testColonLists() {
 
 void testModernCpp() {
     auto αα = 1. * 2;
-    printef("%f", αα);// lol
+    printf("%f", αα);// lol
 }
 
 void testDeepCopyBug() {
@@ -1088,11 +1088,11 @@ void testMarkSimple() {
 // test only once to understand
 void testUTFinCPP() {
     char32_t wc[] = U"zß水🍌"; // or
-    printef("%s", (char *) wc);
+    printf("%s", (char *) wc);
 
 //	char32_t wc2[] = "z\u00df\u6c34\U0001f34c";/* */ Initializing wide char array with non-wide string literal
     auto wc2 = "z\u00df\u6c34\U0001f34c";
-    printef("%s", wc2);
+    printf("%s", wc2);
 
 //	auto wc3 = "z\udf\u6c34\U1f34c";// not ok in cpp
 
@@ -1100,10 +1100,10 @@ void testUTFinCPP() {
 //	using namespace std;
 #ifndef WASM
     const char8_t str[9] = u8"عربى";// wow, 9 bytes!
-    printef("%s", (char *) str);
+    printf("%s", (char *) str);
 #endif
     const char str1[9] = "عربى";
-    printef("%s", (char *) str1);
+    printf("%s", (char *) str1);
     check(eq((char *) str1, str1));
 #ifndef WASM
 #ifdef std
@@ -1120,9 +1120,9 @@ void testUTFinCPP() {
     char16_t character = u'牛';
     char32_t hanzi = U'牛';
     wchar_t word = L'牛';
-    printef("%c", character);
-    printef("%c", hanzi);
-    printef("%c", word);
+    printf("%c", character);
+    printf("%c", hanzi);
+    printf("%c", word);
 
 //	for(auto c : str32)
 //		cout << uint_least32_t(c) << '\n';
@@ -1856,7 +1856,7 @@ void testParams() {
 
 void testDidYouMeanAlias() {
     skip(
-            Node ok1 = assert_parses("printef('hi')");
+            Node ok1 = assert_parses("printf('hi')");
             assert_equals(ok1[".warnings"], "DYM print");// THIS CAN NEVER HAVED WORKED! BUG IN TEST PIPELINE!
     )
 }
@@ -1975,7 +1975,7 @@ void testString() {
     String b = String("abc");
     String c = *a;
     check(b == "abc");
-    printef("...");
+    printf("...");
     check(c == "abc");
     check(b == c);
     check(b == a);
@@ -2002,7 +2002,7 @@ void testString() {
     check("hi %s ok"s.replace("%s", "ja") == "hi ja ok");
     auto x = "hi %s ok"s % "ja";
     check(x);
-    printef("%s", x.data);
+    printf("%s", x.data);
     check(x == "hi ja ok");
     check("hi %s ok"s % "ja" == "hi ja ok");
     assert_equals(atoi1('x'), -1);
@@ -2553,8 +2553,8 @@ void testPaintWasm() {
     compile(wasm_paint_routine);
 //	paint(0);
     gettimeofday(&stop, NULL);
-//	printef("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
-    printef("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+//	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
+    printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
 //	exit(0);
 //char *wasm_paint_routine = "init_graphics(); while(1){paint()}";// SDL bugs a bit
     while (1)paint(0);// help a little
@@ -2741,10 +2741,10 @@ void testCurrentWasmBugs() {
     chars source = "1";
     assert_parses(source);
 //    testDeepColon();
-//    printef("%d", 43);
-//    printef("%d", (long) 44);
-//    printef("%l", (long) 44);
-//    printef("%l", 44);
+//    printf("%d", 43);
+//    printf("%d", (long) 44);
+//    printf("%l", (long) 44);
+//    printf("%l", 44);
 //    exit(42);
 }
 

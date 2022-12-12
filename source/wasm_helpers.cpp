@@ -70,7 +70,7 @@ void error1(chars message, chars file, int line) {
 #ifdef _Backtrace_
     //	Backtrace(2);// later, in raise
 #endif
-    if (file)printef("\n%s:%d\n", file, line);\
+    if (file)printf("\n%s:%d\n", file, line);\
     raise(message);
     if (panicking) panic();// not reached
     throw message;// not reached
@@ -84,28 +84,28 @@ void newline() {
 
 void info(chars msg) {
     if (not debug)return;// todo finer levels!
-    printef("%s", msg);
+    printf("%s", msg);
     newline();
 }
 
 void warn(chars warning) {
-    printef("%s", warning);
+    printf("%s", warning);
     newline();
 }
 
 void warn(String warning) {
-    printef("%s", warning.data);
+    printf("%s", warning.data);
     newline();
 }
 
 void warning(chars warning) {
-    printef("%s", warning);// for now
+    printf("%s", warning);// for now
 }
 
 int raise(chars error) {
 #if WASM
-    printef("ERROR");
-    printef(error);
+    put_chars("ERROR");
+    put_chars((char *) error);
 #endif
     if (panicking)
         proc_exit(-1);
