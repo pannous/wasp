@@ -87,8 +87,11 @@ void memcpy1(bytes dest, bytes source, int i);
 // todo: alias all to print
 void put_chars(char *c, size_t len = 0);
 
-extern "C" //  DESTROYS the export type signature! but required by stdio.h:178:6:
+class String;
+
+extern "C" //  destroys the export type signature! but required by stdio.h:178:6:
 int puts(const char *);// stdio
+int put_s(String *);// stdio
 void putp(void *f);// pointer
 void puti(int i);
 
@@ -258,3 +261,14 @@ extern "C" int fd_write(int fd, c_io_vector *iovs, size_t iovs_count, size_t *nw
 
 __attribute__((import_module("wasi_unstable"), import_name("proc_exit")))
 extern "C" void proc_exit(int exitcode);
+
+
+__attribute__((import_module("wasi_unstable"), import_name("args_sizes_get")))
+extern "C" void args_sizes_get(char **argv, int *argc);
+
+static size_t argc() {
+    char *argv = (char *) alloc(1000, 1);
+    int argc;
+    args_sizes_get(&argv, &argc);
+    return argc;
+}

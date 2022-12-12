@@ -23,7 +23,7 @@ Code emitString(Node &node, Function &context);
 
 Code emitArray(Node &node, Function &context);
 
-int runtime_data_offset = 0x10000;
+int runtime_data_offset = 0;// 0x10000;
 int runtime_function_offset = 0; // imports + funcs
 int import_count = 0;
 short builtin_count = 0;// function_offset - import_count - runtime_offset;
@@ -1612,7 +1612,7 @@ Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, n
 //				todo("FALLTHROUGH to set x=\"123\"!");
         case key: // todo i=ø
             if (name.length > 0 and name.charAt(0) >= '0' and name.charAt(0) <= '9') // if 0:3 else 4 hack
-                return emitValue(*new Node(atoi(name)), context);
+                return emitValue(*new Node(parseLong(name)), context);
             if (not isVariableName(name))
                 return emitNode(node, context);
             // else:
@@ -2433,14 +2433,38 @@ Code emitCodeSection(Node &root) {
 
     byte code_quit[] = {0/*locals_count*/, call_, 0, end_block};
 
-    byte code_puts[] = {1/*locals_count*/, 1 /*one of type*/, int32,
+    // put_chars(char*) compatible with put_chars(chars,len)??
+//    byte put_chars[] = {1/*locals_count*/, 1 /*one of type*/, int32 /* (char*) */,
+//                        local_get, 0,// char* ⚠️ use puts for string& / char** / char* with header
+//                        i32_const, 8, // $temp
+//                        i32_store, 2 , 0,
+//                        i32_const, 1,// stdout
+//                        i32_const, 8, // $temp
+//                        i32_const, 1,// #string
+//                        i32_const, 8,// out chars written => &trash
+//                        call_, (byte) fd_write_import, nop, nop,
+//                        local_get, 0, return_block,// return string*  HAS to return something according to stdio
+//                        end_block};
+
+    // put_string(string&) / put_string(char**)
+    byte code_put_string[] = {1/*locals_count*/, 1 /*one of type*/, int32 /* string& */ ,
+                              i32_const, 1,// stdout
+                              local_get, 0,// string* or char** ⚠️ use put_chars for char*
+                              i32_const, 1,// #string
+                              i32_const, 8,// out chars written => &trash
+                              call_, (byte) fd_write_import, nop, nop,
+                              end_block};
+
+    // char* in wasp abi always have header at -8
+    byte code_puts[] = {1/*locals_count*/, 1 /*one of type*/, int32 /* string& */ ,
                         i32_const, 1,// stdout
                         local_get, 0,// string* or char** ⚠️ use put_chars for char*
+                        i32_const, 8, i32_sub,//  char* in wasp abi always have header at -8
                         i32_const, 1,// #string
                         i32_const, 8,// out chars written => &trash
                         call_, (byte) fd_write_import, nop, nop,
-//                             local_get,0,// return string*  HAS to return something according to stdio
                         end_block};
+
 
     byte code_len[] = {1/*locals_count*/, 1 /*one of type*/, int32 /* wasm_pointer */ ,
                        local_get, 0,// any structure in Wasp ABI
@@ -2479,11 +2503,12 @@ Code emitCodeSection(Node &root) {
             code_blocks = code_blocks + encodeVector(Code(code_modulo_double, sizeof(code_modulo_double)));
         if (functions["len"].is_used)
             code_blocks = code_blocks + encodeVector(Code(code_len, sizeof(code_len)));
-        if (functions["puts"].is_used) {// calls import fd_write, can be import itself
+        if (functions["puts"].is_used) // calls import fd_write, can be import itself
             code_blocks = code_blocks + encodeVector(Code(code_puts, sizeof(code_puts)));
-            if (functions["quit"].is_used)
-                code_blocks = code_blocks + encodeVector(Code(code_quit, sizeof(code_quit)));
-        }
+        if (functions["put_string"].is_used) // calls import fd_write, can be import itself
+            code_blocks = code_blocks + encodeVector(Code(code_put_string, sizeof(code_put_string)));
+        if (functions["quit"].is_used)
+            code_blocks = code_blocks + encodeVector(Code(code_quit, sizeof(code_quit)));
     }
 
     Code main_block = emitBlock(root, functions["main"]);// after imports and builtins

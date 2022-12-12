@@ -520,3 +520,17 @@ int stackItemSize(Valtype type, bool throws) {
         error("int stackItemSize(Valtype valtype, bool throws = true);");
     return 0;
 }
+
+
+[[maybe_unused]] List<String> arguments() {
+    List<String> args;
+#if WASM
+    char *argv = (char *) malloc(1000);
+    int argc;
+    args_sizes_get(&argv, &argc);
+    for (int i = 0; i < argc; ++i) {
+        args.add(String(argv[i]));
+    }
+#endif
+    return args;
+}

@@ -154,8 +154,20 @@ void printf(chars format, void *value) {
 }
 
 //#if MY_WASI
-#define __cxa_allocate_exception 1
-#define __cxa_throw 1
+
+extern "C" void *__cxa_allocate_exception(size_t thrown_size) { return 0; }
+extern "C" void __cxa_throw(
+        void *thrown_exception,
+        struct type_info *tinfo,
+        void (*dest)(void *)) {}
+extern "C" void __cxa_atexit() { proc_exit(0); }
+extern "C" long run_wasm(bytes buffer, int buf_size) {
+    print("wasp built without runtime?");
+    return 0;
+}
+
+//#define __cxa_allocate_exception 1
+//#define
 
 #include <typeinfo>       // operator typeid
 
@@ -297,7 +309,12 @@ extern "C" // destroys the export type signature! stdio.h:178:6
 int puts(chars c) { // // int return needed for stdio compatibilty !
     c_io_vector civ{.string=(char *) c, .length=(size_t) strlen0(c)};
     fd_write(1, &civ, 1, 0);
-    return 1;// stdio
+    return (int) c;// stdio
+}
+
+int put_s(String *s) {
+    fd_write(1, (c_io_vector *) s, 1, 0);
+    return (int) s;// stdio
 }
 
 void puti(int i) {
@@ -337,6 +354,15 @@ void putp(void *f) {
 
 #endif
 
+//extern "C"
+int main(int argc, char **argv);
 extern "C" void _start() {
-    print("OK");
+#if RUNTIME_ONLY
+    print("Wasp runtime not meant to be executed. Use wasp or wasmer wasp.wasm \n");
+#else
+    char *argv = (char *) malloc(1000);
+    int argc;
+    args_sizes_get(&argv, &argc);
+    main(argc, &argv);
+#endif
 }
