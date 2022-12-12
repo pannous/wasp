@@ -1974,15 +1974,48 @@ void testString() {
     String *a = new String("abc");
     String b = String("abc");
     String c = *a;
-    check(b == "abc");
+    print(a);
+    print(b);
+    print(c);
     printf("...");
+//    for (int i = 0; i < 1000; ++i) {
+//        puti(i);
+//        puts("… x y z");
+//        newline();
+//            check(c == "abc");
+//
+//        if (b == "abc");
+//        else check(b == "abc");
+//    }
+//    printf("DONE ...");
+//    exit(1);
     check(c == "abc");
-    check(b == c);
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
+    check(c == "abc");
     check(b == a);
-    check("hi %s ok"s.replace("%s", "ja") == "hi ja ok");
-    check("abc"_ == "abc");
+    check(b == a);
+    check(b == a);
+    check(b == a);
+    check(b == a);
+    check(b == c);
     check("%d"s % 5 == "5");
+    check("%d"s % 5 == "5");
+    check("%d"s % 5 == "5");
+    check("%d"s % 5 == "5");
+    check("%s"s % "a" == "a");
     check("%s"s % "ja" == "ja");
+    check("hi %s ok"s.replace("%s", "ja") == "hi ja ok");
     check("1234%d6789"s % 5 == "123456789");
     check("char %c"s % 'a' == "char a");
     check("%c %d"s % 'a' % 3 == "a 3");
@@ -2021,6 +2054,7 @@ void testString() {
     testStringReferenceReuse();
     assert_equals_x(parse("١٢٣"), Node(123));
     assert_is("١٢٣", 123);
+    check("abc"_ == "abc");
 }
 
 
@@ -2756,6 +2790,8 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
+    clearAnalyzerContext();
+    clearEmitterContext();
     testString();
 
     testCurrentWasmBugs();

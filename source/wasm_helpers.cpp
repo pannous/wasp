@@ -50,13 +50,14 @@ void testCurrent(){}// why??
 //#if WASM
 // NEEDS TO BE IN Wasp because __wasm_call_ctors !
 //unsigned int *memory=0;// NOT USED without wasm! static_cast<unsigned int *>(malloc(1000000));
-char *__heap_base = (char *) memory;
-//unsigned char* __heap_base=0;
-char *memoryChars = (char *) memory;
+
+// https://stackoverflow.com/questions/49980381/find-the-start-of-heap-using-lld-and-s2wasm
+
 //int HEAP_OFFSET=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
 //#define HEAP_OFFSET 65536
 //int memory_size=1048576-HEAP_OFFSET; // todo set in CMake !
-char *current = (char *) HEAP_OFFSET;
+//char *current = (char *) HEAP_OFFSET;
+//char *current = (char *) __heap_base;// HEAP_OFFSET;
 //#endif
 
 
@@ -104,7 +105,7 @@ void warning(chars warning) {
 
 int raise(chars error) {
 #if WASM
-    put_chars("ERROR");
+    put_chars("\nERROR\n");
     put_chars((char *) error);
 #endif
     if (panicking)
