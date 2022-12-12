@@ -380,6 +380,7 @@ if (WASM) # OR WASI)
     if (DEBUG)
         ADD_COMPILE_FLAG("-O0")
         #        ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
+#        the DWARF section information/references are invalid after wasm-pack, wasm-opt or any other tools,
     endif ()
     if (NOT RELEASE)
         ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
@@ -416,7 +417,11 @@ if (WASM) # OR WASI)
         endif ()
     endif ()
     #    add_library(wasp.wasm SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
-    add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
+    if (RUNTIME_ONLY)
+        add_executable(wasp-runtime.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
+    else ()
+        add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
+    endif ()
 elseif (WASI)
     #    TODO "System is unknown to cmake"
     message(WASI)
@@ -598,9 +603,9 @@ if (CONSOLE)
 endif ()
 
 if (WASM) # OR WASI) common to all!
-    target_include_directories(wasp.wasm PUBLIC Frameworks/wasm-c-api/include/)
-else ()
-    target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
+    #    target_include_directories(wasp.wasm PUBLIC Frameworks/wasm-c-api/include/)
+    #else ()
+    #    target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
 endif ()
 
 #set(CMAKE_SUPPRESS_REGENERATION)

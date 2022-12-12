@@ -29,7 +29,7 @@ void test_fd_write() {
 //    assert_emit("putx 56", 56);
     assert_emit("putf 3.1", 0);
 
-    check(module_cache.has("wasp.wasm"s.hash()))
+    check(module_cache.has("wasp-runtime.wasm"s.hash()))
 
 }
 
@@ -2609,7 +2609,6 @@ void tests() {
     testIndexOffset();
     testNodeConversions();
     testArrayIndices();
-    testSinus();
     testUpperLowerCase();
     testSerialize();
     skip(
@@ -2710,6 +2709,8 @@ void tests() {
     testMergeOwn();
     testRecentRandomBugs();
     testBUG();
+    testSinus();
+
     skip(
             testWrong0Termination();
             testErrors();// error: failed to call function   wasm trap: integer divide by zero
@@ -2749,6 +2750,12 @@ void testCurrent() {
 //        test_fd_write();
 //    assert_emit("i=1;k='hi';k[i]", 'i')
 //    check_is(parseLong("123"), (long) 123);
+    assert_emit("puts('ok')", "ok");
+//    assert_emit("puts('42')", "42");
+    quit()
+    assert_run("square(3)+square(3)", 18);
+    assert_run("parseLong('123000') + parseLong('456')", 123456);
+
     assert_emit("parseLong('123')", 123)
     assert_emit("x='123';parseLong(x)", 123)
     assert_run("parseLong('123000')+parseLong('456')", 123456);
@@ -2774,7 +2781,7 @@ void testCurrent() {
 
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
 
-    testSinus();// todo FRAGILE fails before!
+//    testSinus();// todo FRAGILE fails before!
     check(operator_list.has("√"))
     check(is_operator(u'√'))
     auto node1 = parse("3 + √9");

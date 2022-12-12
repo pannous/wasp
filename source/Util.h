@@ -141,8 +141,13 @@ static inline bool max(long a, long b) {
 typedef String Path;
 
 #define quit(α) printf("quit %s",#α);breakpoint_helper;exit(42);
+
 //#include <cstdlib> // exit
 //static void quit(){
 //    breakpoint_helper;
 //    exit(42);
 //}
+template<class S>
+class List;
+
+[[maybe_unused]] List<String> arguments();
