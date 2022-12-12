@@ -56,6 +56,7 @@ public:
     Code element_section;// todo?
     Code local_names;
     Code global_names;
+    Code data_names;
     Code function_names;
     int start_index;
     List<Global> globals;

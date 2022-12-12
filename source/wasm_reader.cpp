@@ -9,7 +9,10 @@
 // compare with wasm-objdump -h
 
 #define POLYMORPH_function_index_marker -2
-bool debug_reader = true;//;// tracing;
+
+bool debug_reader = tracing;
+//bool debug_reader = true;
+
 typedef unsigned char *bytes;
 int pos = 0;
 int size = 0;
@@ -268,7 +271,8 @@ void consumeNameSection(Code &data) {
             case global_names:
                 module->global_names = payload;
                 break;
-            case data_names: todow("NAME TYPE 9");
+            case data_names:
+                module->data_names = payload;
                 break;
             default:
                 error("INVALID NAME TYPE "s + type);

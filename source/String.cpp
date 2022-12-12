@@ -56,7 +56,8 @@ bool eq(chars dest, chars src, int length) {
     return true;
 }
 
-extern "C" int strlen0(chars x) {
+//extern "C"
+int strlen0(chars x) {
     if (!x)return 0;
     int l = 0;
     if ((long long) x >= MEMORY_SIZE || ((long long) x) == 0x200000000LL) {
@@ -201,6 +202,11 @@ int64 parseLong(chars str) {
     if (k > 0 and (*str == 'e' or *str == 'E'))
         k *= powd(10, parseLong(++str));// we need float for E-10 == 1/10 …
     return sig * k;
+}
+
+//extern "C"
+int atoi(char *s) {
+    return parseLong(s);
 }
 
 extern double parseDouble(chars string) {

@@ -13,12 +13,16 @@ extern "C" long run_wasm_file(chars file) {
     error(RUNTIME_ONLY_ERROR);
     return -1;
 }
-void console() { error(RUNTIME_ONLY_ERROR); }
 //void testCurrent(){}// why??
+#endif
+const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm was compiled as 'RUNTIME_ONLY'";
+#if not CONSOLE
+
+void console() { error(RUNTIME_ONLY_ERROR); }
+
 #endif
 #ifdef RUNTIME_ONLY_MOCK
 // mock
-const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm was compiled as 'RUNTIME_ONLY'";
 Node analyze(Node data){return data;};// wasp -> code  // build ast via operators
 Node eval(String code){return Node(code);};// wasp -> code -> data   // interpreter mode vs:
 Node emit(String code){return Node(code);};//  wasp -> code -> wasm  // to debug currently same as:
