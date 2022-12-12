@@ -12,16 +12,16 @@
 //#import "asserts.cpp"
 
 
-#define assert_throws(αα)  {printf("%s\n%s:%d\n",#αα,__FILE__,__LINE__);bool old=panicking;try{ \
-panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#αα);backtrace_line(); \
+#define assert_throws(αα)  {printef("%s\n%s:%d\n",#αα,__FILE__,__LINE__);bool old=panicking;try{ \
+panicking=false;throwing=true;eval(αα);printef("SHOULD HAVE THROWN!\n%s\n",#αα);backtrace_line(); \
 }catch(chars){}catch(String*){}catch(...){};panicking=old;}
 
-#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
-//#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
+#define assert_emit(α, β) printef("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printef("%s != %s",#α,#β);backtrace_line();}
+//#define assert_emit(α, β) try{printef("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printef("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printef("%s\nIN %s",x,α);backtrace_line();}
 
 #ifndef RUNTIME_ONLY
 // use assert_emit if runtime is not needed!! much easier to debug
-#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){printf("\n%s:%d\n", __FILE__, __LINE__);exit(1);}
+#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){printef("\n%s:%d\n", __FILE__, __LINE__);exit(1);}
 #else
 #define assert_run(a, b) skip(a)
 #endif
@@ -180,14 +180,14 @@ void testConstReturn() {
 void testPrint() {// does wasm print? (visual control!!)
     assert_emit(("print 42"), 42)
     print("OK");
-//	printf("%llx\n", -2000000000000ll);
-//	printf("%llx", -4615739258092021350ll);
+//	printef("%llx\n", -2000000000000ll);
+//	printef("%llx", -4615739258092021350ll);
     print("a %d c"s % 3);
     print("a %f c"s % 3.1);
     print("a %x c"s % 15);
-    printf("a %d c\n", 3);
-    printf("a %f c\n", 3.1);
-    printf("a %x c\n", 15);
+    printef("a %d c\n", 3);
+    printef("a %f c\n", 3.1);
+    printef("a %x c\n", 15);
 }
 
 void testMathPrimitives() {
@@ -703,8 +703,8 @@ void testWasmMemoryIntegrity() {
     if (!MEMORY_SIZE) {
         error("NO MEMORY");
     }
-    printf("MEMORY start at %ld\n", (long) memory);
-    printf("current start at %ld\n", (long) current);
+    printef("MEMORY start at %ld\n", (long) memory);
+    printef("current start at %ld\n", (long) current);
 //	Bus error: 10  if i > MEMORY_SIZE
 // Fails at 100000, works at 100001 WHERE IS THIS SET?
 //	int start=125608;
@@ -717,7 +717,7 @@ void testWasmMemoryIntegrity() {
         memory[i] = i;
 //		if(i%10000==0)logi(i);// logi USES STACK, so it can EXHAUST if called too often!
         if (memory[i] != i) {
-            printf("MEMORY CORRUPTION at %d", i);
+            printef("MEMORY CORRUPTION at %d", i);
             exit(0);
         }
         memory[i] = tmp;// else test fail
@@ -841,7 +841,7 @@ void testWasmRuntimeExtension() {
             assert_run("test42ff", 41.5); /// … expected f32 but nothing on stack
     )
 //	functionSignatures["int"].returns(int32);
-//	assert_run("printf('123')", 123);
+//	assert_run("printef('123')", 123);
 // works with ./wasp but breaks in webapp
 //	assert_run("x=123;x + 4 is 127", true);
 // works with ./wasp but breaks now:
@@ -868,7 +868,7 @@ void testWasmRuntimeExtension() {
 
     skip(
             assert_run("'123'", 123);// result printed and parsed?
-            assert_run("printf('123')", 123);// result printed and parsed?
+            assert_run("printef('123')", 123);// result printed and parsed?
     )
     skip( // if not compiled as RUNTIME_ONLY library:
             check(functionSignatures.has("tests"))

@@ -68,9 +68,9 @@ int isalnum0(int c) {
 [[noreturn]]
 void error1(chars message, chars file, int line) {
 #ifdef _Backtrace_
-//	Backtrace(2);// later, in raise
+    //	Backtrace(2);// later, in raise
 #endif
-    if (file)printf("\n%s:%d\n", file, line);\
+    if (file)printef("\n%s:%d\n", file, line);\
     raise(message);
     if (panicking) panic();// not reached
     throw message;// not reached
@@ -78,30 +78,35 @@ void error1(chars message, chars file, int line) {
 
 
 void newline() {
-    put_char('\n');
+    put_chars("\n", 1);
+//    put_char('\n');
 }
 
 void info(chars msg) {
     if (not debug)return;// todo finer levels!
-    printf("%s", msg);
+    printef("%s", msg);
     newline();
 }
 
 void warn(chars warning) {
-    printf("%s", warning);
+    printef("%s", warning);
     newline();
 }
 
 void warn(String warning) {
-    printf("%s", warning.data);
+    printef("%s", warning.data);
     newline();
 }
 
 void warning(chars warning) {
-    printf("%s", warning);// for now
+    printef("%s", warning);// for now
 }
 
 int raise(chars error) {
+#if WASM
+    printef("ERROR");
+    printef(error);
+#endif
     if (panicking)
         proc_exit(-1);
     throw error;

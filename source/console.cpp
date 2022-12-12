@@ -58,7 +58,7 @@ char *version = "1.0";
 
 // Todo: web version?
 [[noreturn]] void console() {
-    printf("\nWasp version %s\n", version);
+    printef("\nWasp version %s\n", version);
     showHelpMessage();
     char *data = (char *) malloc(10000);
 #ifdef signal
@@ -83,7 +83,7 @@ char *version = "1.0";
             code += ";\n";
 //		Node &result = parse(code);// safeMode only for web access
             result = eval(code);
-            printf(">>> ");
+            printef(">>> ");
 //	result.interpret().print();
             result.print();
             print("");

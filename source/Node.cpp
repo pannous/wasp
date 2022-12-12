@@ -1421,7 +1421,7 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
         return arr;
     }
     breakpoint_helper
-    printf("smartPointer64 : %llx\n", (int64_t) smartPointer64);
+    printef("smartPointer64 : %llx\n", (int64_t) smartPointer64);
     error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");
     return new Node();
 }
