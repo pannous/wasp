@@ -104,29 +104,29 @@ static NativeSymbol native_symbols[] =
 //wasm_func_callback_t hello_callback() {
 //wasm_func_callback_t hello_callback(const wasm_val_vec_t args[], wasm_val_vec_t results[]) {
 wasm_trap_t *hello_callback(const wasm_val_vec_t args[], wasm_val_vec_t results[]) {
-    printf("Calling back...\n");
-    printf("> Hello World!\n");
+    printef("Calling back...\n");
+    printef("> Hello World!\n");
     return NULL;
 }
 
 
 void logi2(wasm_exec_env_t exec_env, int x) {
-    printf("calling into native function: %s\n", __FUNCTION__);
-    printf("%d\n", x);
+    printef("calling into native function: %s\n", __FUNCTION__);
+    printef("%d\n", x);
 }
 //void logi(int x){
-//	printf("%d", x);
+//	printef("%d", x);
 //}
 
 
 int fail(chars format, chars val) {
-    printf(format, val);
+    printef(format, val);
 //	throw "FAIL";
     return -1;
 }
 
 int fail(chars string) {
-    printf("FAIL %s", string);
+    printef("FAIL %s", string);
     return -1;
 }
 
@@ -141,11 +141,11 @@ typedef struct wasm_byte_vec_t2 {
 void init_vm(RuntimeInitArgs init_args, NativeSymbol *native_symbols, int symbol_count) {
     static bool done;
     if (done) {
-//		printf("\nWARNING: init_vm was already called before");
-//		printf(" CAN'T LOAD NEW native_symbols\n");// 2021/9 why not?
+//		printef("\nWARNING: init_vm was already called before");
+//		printef(" CAN'T LOAD NEW native_symbols\n");// 2021/9 why not?
 //		return;// ONLY ONCE!!
     } else {
-        printf("INITIALIZING WASM VM\n");
+        printef("INITIALIZING WASM VM\n");
         done = true;
     }
     init_args.mem_alloc_type = Alloc_With_System_Allocator;// works with runtime!
@@ -223,7 +223,7 @@ long run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
 ////			return
 //		} else{
 //		float ret_val = *(float *) argv;// oh reuse args as return? that's evil ;) TODO
-//		printf("Native finished calling wasm function generate_float(), returned a float value: %ff\n", ret_val);
+//		printef("Native finished calling wasm function generate_float(), returned a float value: %ff\n", ret_val);
 //		}
 
 
@@ -241,7 +241,7 @@ long run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
             return fail("call wasm function main/_start FAILED. %s\n", wasm_runtime_get_exception(module_inst));
         }
         uint64 result = *(uint64 *) &argv;
-        printf("RETURN VALUE: %llx\n", result);
+        printef("RETURN VALUE: %llx\n", result);
 
         // Next we will pass a buffer to the WASM function
 //		uint32 argv2[4];
@@ -259,7 +259,7 @@ long run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
 //		}
 //
 //		if (wasm_runtime_call_wasm(exec_env, func2, 4, argv2)) {
-//			printf("Native finished calling wasm function: float_to_string, returned a formatted string: %s\n",
+//			printef("Native finished calling wasm function: float_to_string, returned a formatted string: %s\n",
 //			       native_buffer);
 //		} else {
 //			return fail("call wasm function float_to_string FAILED. error: %s\n",
@@ -282,8 +282,8 @@ long run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
         return result;
 
     } catch (chars err) {
-        printf("\nERROR\n");
-        printf("%s", err);
+        printef("\nERROR\n");
+        printef("%s", err);
     }
     return 1;
 }
@@ -305,8 +305,8 @@ extern "C" long run_wasm_file2(chars wasm_path) {
 
 
     } catch (chars err) {
-        printf("\nERROR\n");
-        printf("%s", err);
+        printef("\nERROR\n");
+        printef("%s", err);
     }
     return -1;
 }

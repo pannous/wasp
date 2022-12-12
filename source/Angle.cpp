@@ -1469,7 +1469,7 @@ void clearAnalyzerContext() {
 // emit via library merge
 Node runtime_emit(String prog) {
 #ifdef RUNTIME_ONLY
-    printf("emit wasm not built into release runtime");
+    printef("emit wasm not built into release runtime");
     return ERROR;
 #endif
     libraries.clear();// todo reuse
@@ -1523,7 +1523,7 @@ float function_precedence = 1000;
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
 // pre-registered functions working without any import / include / require / use
-chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printf",
+chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printef",
                                                         "println", "puts", "putf", "len", "quit", "parseLong",
                                                         "parseDouble",
                                                         "log", "ln", "log10", "log2", "similar",

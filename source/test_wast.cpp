@@ -36,7 +36,7 @@ void testParse() {
 //	const Node &node = Mark::parseFile("/Users/me/dev/wasm/test.wat");
 	Node module = parse(wat);
 	assert_equals(module, "module");
-	printf("%s", module.toString());
+	printef("%s", module.toString());
 	assert_equals(module.length, 8);
 //	assert_equals(node.length, 12);
 //	puts(node);
