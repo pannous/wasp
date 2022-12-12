@@ -1144,6 +1144,14 @@ void Linker::CalculateRelocOffsets() {
     Index total_function_imports = 0;
     Index total_global_imports = 0;
 
+    for (std::unique_ptr<LinkerInputBinary> &binary: inputs_)
+        for (std::unique_ptr<Section> &sec: binary->sections)
+            if (sec->section_code == SectionType::Data) {
+                binary->memory_data_start = sec->data.data_segments->front().offset;
+                break;
+            }
+
+
     for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
         binary->delta = my_function_count; // offset all functions if not mapped to import
 
@@ -1152,7 +1160,11 @@ void Linker::CalculateRelocOffsets() {
         // total.
         binary->imported_function_index_offset = total_function_imports;
         binary->imported_global_index_offset = total_global_imports;
-        binary->memory_page_offset = memory_page_offset;
+        if (binary->memory_data_start < memory_page_offset) {
+            // memory_page_count = page_limits->initial
+            // WE MAY HAVE OVERLAPPING MEMORY! especially when one component assumes memory growth! todo later: shared HEAP_END ?
+            binary->memory_page_offset = memory_page_offset;
+        }
 
         size_t delta = 0;// number of functions removed for this binary ( imports linked )
         for (size_t i = 0; i < binary->function_imports.size(); i++) {

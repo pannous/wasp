@@ -1432,7 +1432,7 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
 Node &reconstructWasmNode(wasm_node_index pointer) {
     if (pointer == 0)
         return NUL;// we NEVER have nodes at 0
-    if (pointer > 10000 and debug)
+    if (pointer > 100000 + 0x10000 and debug) // todo proper memory bound check including data/runtime_offset
         error("pointer>10000"); // todo remove (in)sanity check
     if ((long) pointer > MEMORY_SIZE)
         error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % MEMORY_SIZE);

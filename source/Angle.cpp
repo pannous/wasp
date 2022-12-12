@@ -397,7 +397,6 @@ List<String> collectOperators(Node &expression) {
     return operators;
 }
 
-Node &groupFunctionCalls(Node &expressiona, Function &context);
 
 bool isVariable(Node &node) {
     if (node.kind != reference and node.kind != key and !node.isSetter())
@@ -1134,7 +1133,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))return use_required(&functions[name]);
     if (name.in(function_list) and libraries.size() == 0)
-        libraries.add(&loadModule("wasp"));// on demand
+        libraries.add(&loadModule("wasp-runtime.wasm"));// on demand
 
 //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
     for (Module *library: libraries) {//} module_cache.valueList()) {
@@ -1401,7 +1400,7 @@ void fixFunctionNames() {
 void preRegisterFunctions() {
     functions.clear();
 
-    Module &runtime = read_wasm("wasp"); // ok, cached!
+    Module &runtime = read_wasm("wasp-runtime.wasm"); // ok, cached!
     runtime.code.needs_relocate = false; // may be set to true depending on main code emitted
 
     for (int i = 0; i < runtime.functions.size(); ++i)
@@ -1476,7 +1475,7 @@ Node runtime_emit(String prog) {
     libraries.clear();// todo reuse
     clearAnalyzerContext();
     clearEmitterContext();
-    Module &runtime = loadModule("wasp.wasm");
+    Module &runtime = loadModule("wasp-runtime.wasm");
     runtime.code.needs_relocate = false;
     Code code = compile(prog, false);// should use libraries!
     code.needs_relocate = false;
