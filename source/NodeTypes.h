@@ -4,15 +4,15 @@
 //
 
 #include "smart_types.h" // todo merge
+//#include "Code.h"
+//#include "String.h"
+#include "Util.h"
 
 //enum Valtype;// forbids forward references to 'enum' types
 class Node;
 
 
 typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
-
-#define error(msg) error1(msg,__FILE__,__LINE__)
-
 
 // todo move these to ABI.h once it is used:
 //	map_header_32 = USE Node!
@@ -54,7 +54,176 @@ enum smart_pointer_masks {
 
 union Type32;
 
-chars typeName(const Type32 *t);
+const char *typeName(const Type32 *t);
+
+
+// don't forget the PREFIX before each vector op:
+// combined with vector prefix Valtypes, e.g. vec_i64 = 0x77 => 0x7700 == vec_i64.length
+// https://github.com/WebAssembly/flexible-vectors/blob/main/proposals/flexible-vectors/BinaryFlexibleVectors.md
+enum VectorOpcodes { // Immediate operands in comments:
+    vector_length_op = 0x00,
+    vector_splat_op = 0x10,
+    extract_lane_imm_u = 0x11, // i:ImmLaneIdx16 for i8, ImmLaneIdx4 for i32 etc ( product must be 64!)
+    extract_lane_imm_s = 0x12, // i:ImmLaneIdx… ^^
+    replace_lane_imm = 0x13,   // i:ImmLaneIdx… ^^
+    extract_lane_u = 0x14,
+    extract_lane_s = 0x15,
+    replace_lane = 0x16,
+    extract_lane_mod_u = 0x17,
+    extract_lane_mod_s = 0x18,
+    replace_lane_mod = 0x19,
+
+    vector_lshl = 0x20, // (lane) shift left    VERSUS bitwise  	0x50
+    vector_lshr = 0x21, // (lane) shift right
+
+    // Ints vec.i64.add  0x77.0x30 DIFFERENT to vec.f32.add 	0x76.0x94  GRRR!
+    vector_add = 0x30, // ok overlap with i32.add … would be nonsensical
+    vector_sub = 0x31,
+    vector_mul = 0x32,
+    vector_neg = 0x33,
+    vector_min_u = 0x34,
+    vector_min_s = 0x35,
+    vector_max_u = 0x36,
+    vector_max_s = 0x37,
+    vector_avgr_u = 0x38, // average <3 !
+    vector_abs = 0x39,
+
+    vector_shl = 0x50, //  bitwise!     VERSUS (lane) shift left    lshl = 0x20,
+    vector_shr = 0x51, //  bitwise!     VERSUS (lane) shift right   lshr = 0x21,
+    vector_shr_s = 0x52,
+
+    vector_and = 0x53,
+    vector_or = 0x54,
+    vector_xor = 0x55,
+    vector_not = 0x56,
+    vector_andnot = 0x57,
+    vector_bitselect = 0x58, // slice from to how?  Bits 3...7 of 01100101: 25 (_11001__)
+
+    vector_any_true = 0x60,
+    vector_all_true = 0x61,
+
+    vector_eq = 0x70,
+    vector_ne = 0x71,
+    vector_lt_u = 0x72,
+    vector_lt_s = 0x73,
+    vector_lt = 0x74,
+    vector_le_u = 0x75,
+    vector_le_s = 0x76,
+    vector_le = 0x77,
+
+    vector_gt_u = 0x78,
+    vector_gt_s = 0x79,
+    vector_gt = 0x7a,
+    vector_ge_u = 0x7b,
+    vector_ge_s = 0x7c,
+    vector_ge = 0x7d,
+
+    vector_load = 0x80,
+    // … space!
+    vector_store = 0x87,
+
+// Floating-point :
+    vector_neg_f = 0x90,
+    vector_abs_f = 0x91,
+    vector_pmin = 0x92,
+    vector_pmax = 0x93,
+    vector_add_f = 0x94,
+    vector_sub_f = 0x95,
+    vector_mul_f = 0x96,
+    vector_sqrt_f = 0x97,
+
+    vector_convert_s = 0xA0,
+    vector_narrow_s = 0xA1,
+    vector_narrow_u = 0xA2,
+    vector_widen_low_u = 0xA3,
+    vector_widen_low_s = 0xA4,
+    vector_widen_high_u = 0xA5,
+    vector_widen_high_s = 0xA6,
+};
+
+
+typedef VectorOpcodes vecop;
+// https://webassembly.github.io/spec/core/binary/types.html
+// https://webassembly.github.io/spec/core/binary/values.html
+// Wasp/angle has four different types:
+// 1. wasm Valtype
+// 2. node.kind:Type
+// 3. Any<Node and
+// 4. some c++ types String List etc
+// the last three can be added as special internal values to Valtype, outside the wasm spec
+enum Valtype {
+//    unknown_type = -1,
+
+    voids = 0x00, // DANGER!=void_block  ⚠️ INTERNAL ⚠ only for return type
+    void_block = 0x40, // ⚠️
+    none = 0x40, // NOT voids!!!
+
+// extensions
+    anyref = 0x6f,// was conceptually an namewise merged into externref
+    externref = 0x6f, // -0x11
+    funcref = 0x70, // -0x10
+    func = 0x60,
+
+    vec_i8 = 0x7A,
+    vec_i16 = 0x79,
+    vec_i32 = 0x78,
+    vec_i64 = 0x77,
+    vec_f32 = 0x76, // ⚠ missed opportunity! :(
+    vec_f64 = 0x75, // could have been shared with vector PREFIX 0x777C => 0x77 'vector' of 0x7C float64 !
+
+    vec_v128 = 0x7B, // small 4 element SIMD vector todo or also 'real' vectors: ?
+//  [Flexible Vectors](https://github.com/WebAssembly/flexible-vectors/blob/main/proposals/flexible-vectors/FlexibleVectors.md)
+
+    // ⚠️ strange order!
+    float64 = 0x7C,
+    f64t = 0x7C,
+    f64 = 0x7C,
+
+    float32 = 0x7d,
+    f32t = 0x7d,
+//    f32s = 0x7d,
+//    f32 = 0x7d, typedef float f32 in wasm2c, we MAY encounter it more often…
+//	f32u = 0x7d,// todo ignore!
+
+    i64 = 0x7E, // signed or unsigned? we don't care
+    i64t = 0x7E,
+    i64s = 0x7E,
+//    int64 = 0x7E,  // symbol now used as
+//    typedef long long int64
+
+    int32 = 0X7F,
+    i32t = 0x7f,
+    i32 = 0x7f,
+    i32s = 0x7f,
+    size32 = 0x7f,
+    wasm_pointer = int32,
+//	i32u = 0x7f,// todo ignore!
+
+    // SPECIAL INTERNAL TYPES ONLY, not part of spec but they ARE represented through c++=>wasm types (int32?) :
+    // enums with the same value can NOT be distinguished thereafter!!! :(
+    // todo Signatures need a real Type, not a Valtype!
+    // todo use NodeTypes.h Type for this:
+    //	https://github.com/pannous/angle/wiki/smart-pointer
+//    codepoint32 = int32,
+//    pointer = int32,// 0xF0, // internal todo: int64 on wasm-64
+//    node_pointer = int32,
+////	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
+//    node = 0xA0,
+//    angle = 0xA0,//  angle object pointer/offset versus smarti vs anyref
+//    any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
+////	unknown = any,
+//    array = 0xAA,
+//    charp = 0xC0, // vs
+//    stringp = 0xC0,// use charp?  pointer? enough?? no!??
+////	value = 0xA1,// wrapped node Value, used as parameter? extract and remove! / ignore
+//    todoe = 0xFE, // todo
+////	error_ = 0xE0, why propagate?
+////	pointer = 0xF0,
+////	externalPointer = 0xFE,
+//    ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
+//	smarti32 = 0xF3,// see smartType
+//	smarti64 = 0xF6,
+};
 
 // types
 //extern const Node Double;
@@ -168,9 +337,9 @@ enum Primitive {
     any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
 //	unknown = any,
     array = 0xAA,// compatible with List, Node, String (?)
-    charp = 0xC0, // vs chars pointer
-    string_struct = 0xC8,// String
+    charp = 0xC0, // char* vs codepoint(*)
     stringp = 0xCF,// String*
+    string_struct = 0xC8,// String
 //    codepointus = 0xC1,  // when indexing int32 array
     codepoint32 = 0xC4, // just ONE codepoint as int! todo via map
 
@@ -281,6 +450,7 @@ union Type64 {//  i64 union, 8 bytes with special ranges:
 //     0x10000000_00000000 - 2^64 : SmartPointer64 ≈ SmartPointer32 + 4 byte value
 };
 
+//enum Valtype;// c++ forbids forward references to enums
 union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ranges:
     /* this union is partitioned in the int space:
      0x0000 - Ill defined
@@ -354,18 +524,25 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
     explicit
     operator Primitive() const { return this->type; }
 
+//    explicit
+//    operator Valtype() const { return this->type; }
+// c++ forbids forward references to enums
+//	Type(Valtype valtype){
+//		value = valtype;// transparent subset equivalence
+//	}
+
     explicit
     operator Node &() const {
         if (this->value < 0x1000)
             error("TODO mapTypeToNode");
 #if WASM
-            return *(Node*)(void*)(long)this->address;
+            return *(Node *) (void *) (long) this->address;
 #else
         error("Unknown mapping Type to Node");
 #endif
     }
 
-    operator chars() const { return typeName(this); }
+    explicit operator const char *() const { return typeName(this); }
 
     bool operator==(Type32 other) {
         return value == other.value;
@@ -386,13 +563,9 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
 //    bool operator==(unsigned short other) {
 //        return value == other;
 //    }
-//	Type(Valtype valtype){
-//		value = valtype;// transparent subset equivalence
-//	}
 };
 
 typedef Type32 Type;
-
 
 enum Modifiers {
     final,
@@ -428,4 +601,23 @@ chars typeName(Primitive p);
 //    callStatement,
 //    internalError,
 //};
+
+
+
+// in final stage of emit, keep original types as long as possible
+Valtype mapTypeToWasm(Type t);
+
+Valtype mapTypeToWasm(Node &n);
+
+Primitive mapTypeToPrimitive(Node &n);
+
+Valtype mapTypeToWasm(Primitive p);
+
+Type mapType(String arg);
+
+Type mapType(Node &arg);
+
+Type mapType(Node *arg);
+
+chars typeName(Valtype t, bool fail = true);
 

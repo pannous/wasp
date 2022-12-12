@@ -84,4 +84,3 @@ extern Module *module;
 
 extern Map<long, Module *> module_cache;
 
-Type mapArgToType(String arg);

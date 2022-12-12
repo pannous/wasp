@@ -282,7 +282,7 @@ long run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
         return result;
 
     } catch (chars err) {
-        printf("\nERROR\n");
+        printf("\n⚠️ERROR\n");
         printf("%s", err);
     }
     return 1;
@@ -305,7 +305,7 @@ extern "C" long run_wasm_file2(chars wasm_path) {
 
 
     } catch (chars err) {
-        printf("\nERROR\n");
+        printf("\n⚠️ERROR\n");
         printf("%s", err);
     }
     return -1;

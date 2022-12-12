@@ -295,7 +295,7 @@ bool similar(double a, double b) {
 void lowerCase(char *string, int length) {
     if (!string || !*string) return;
     if (length <= 0)
-        length = strlen0(string);
+        length = strlen(string);
     while (length-- > 0) {
         char &ch = string[length];
         if (ch >= 'A' and ch <= 'Z')
@@ -314,9 +314,9 @@ int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
     bytes p1 = 0;
     bytes p2 = 0;
     if (s1 && *s1 && s2 && *s2) {
-        pStr1Low = (bytes) calloc(strlen0(s1) + 1, sizeof(unsigned char));
+        pStr1Low = (bytes) calloc(strlen(s1) + 1, sizeof(unsigned char));
         if (pStr1Low) {
-            pStr2Low = (bytes) calloc(strlen0(s2) + 1, sizeof(unsigned char));
+            pStr2Low = (bytes) calloc(strlen(s2) + 1, sizeof(unsigned char));
             if (pStr2Low) {
                 p1 = pStr1Low;
                 p2 = pStr2Low;
@@ -355,8 +355,8 @@ bytes concat(bytes a, bytes b, int len_a, int len_b) {
 chars concat(chars a, chars b) {
 //const char *concat(const char *a, const char *b) {
     if (!b or b[0] == 0)return a;
-    int la = (int) strlen0(a);
-    int lb = (int) strlen0(b);
+    int la = (int) strlen(a);
+    int lb = (int) strlen(b);
     char *c = (char *) malloc((la + lb + 1) * sizeof(char));
     strcpy2(c, a);
     strcpy2(&c[la], b);
@@ -461,7 +461,7 @@ String extractFuncName(const String &fun) {
     int status;
     char *string;
 #if not WASM
-    *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
+    string = abi::__cxa_demangle(fun.data, 0, 0, &status);
 #endif
     if (status < 0 or string == 0)
         return fun;// not demangled (e.g. "memory")

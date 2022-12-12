@@ -2790,6 +2790,24 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
+    assert_emit("x=0;while x++<11: nop;", 0);
+//    testSinus();
+    assert_run("'123'+'456'", "123456");
+    assert_run("parseLong('123'+'456')", 123456);
+    auto runtime = loadModule("wasp-runtime");
+    auto function = runtime.functions["strlen"];
+    auto signature = function.signature;
+    check(runtime.functions["strlen"].signature.size() == 1)
+
+    assert_run("strlen('123')", 3);
+
+    assert_run("parseLong('123000') + 456", 123456);
+    assert_run("parseLong('123000')", 123000);
+    assert_run("parseLong('123000') + parseLong('456')", 123456);
+
+    assert_run("square(3)+square(3)", 18);
+    assert_run("square(1+2)+square(3)", 18);
+//    testSinus();
     clearAnalyzerContext();
     clearEmitterContext();
     testString();
@@ -2807,11 +2825,8 @@ void testCurrent() {
 //    check_is(parseLong("123"), (long) 123);
     tests();// make sure all still ok before changes
 
-    assert_emit("puts('ok')", "ok");
+//    assert_emit("puts('ok')", "ok");
 //    assert_emit("puts('42')", "42");
-    quit()
-    assert_run("square(3)+square(3)", 18);
-    assert_run("parseLong('123000') + parseLong('456')", 123456);
 
     assert_emit("parseLong('123')", 123)
     assert_emit("x='123';parseLong(x)", 123)
@@ -2910,8 +2925,8 @@ void testCurrent() {
     )
     testWasmRuntimeExtension();
 //            test_sinus_wasp_import();
-    testSinus();// todo FRAGILE fails before!
-    testSinus2();
+//    testSinus();// todo FRAGILE fails before!
+//    testSinus2();
     tests();// make sure all still ok before changes
     testMergeGlobal();
     testAllWasm();

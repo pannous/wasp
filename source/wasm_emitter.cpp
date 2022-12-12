@@ -23,7 +23,8 @@ Code emitString(Node &node, Function &context);
 
 Code emitArray(Node &node, Function &context);
 
-int runtime_data_offset = 0;// 0x10000;
+//int runtime_data_offset = 0;// 0x10000;
+int runtime_data_offset = 0x10000; // prevent memory clash with runtime.
 int runtime_function_offset = 0; // imports + funcs
 int import_count = 0;
 short builtin_count = 0;// function_offset - import_count - runtime_offset;
@@ -97,6 +98,8 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 //	if (eq(s, "=$1"))return get_local;
 //	if (eq(s, "=$1"))return tee_local;
     if (eq(s, "return"))return return_block;
+    if (eq(s, "nop") or eq(s, "pass"))
+        return nop;
     if ((Type) kind == unknown_type)
         error("unknown type should be inferred by now");
     if (kind == voids or kind == void_block or kind == i32t) { // INT32
@@ -621,7 +624,8 @@ short arrayElementSize(Node &node) {
         if (child.kind == reference)
             return 4;// 8; // or 4 for wasm_node_index  can't be bigger, also don't change type!
         if (!isPrimitive(child))
-            error("shouldn't come here:\n!isPrimitive(child)\n"s + child.serialize());
+            return 4;// wasm pointer
+//            error("shouldn't come here:\n!isPrimitive(child)\n"s + child.serialize());
         if (child.kind == bools)continue;// can't be smaller
         if (child.kind == reals) {
             return 8; // can't be bigger, also don't change type!
@@ -1299,6 +1303,7 @@ Code emitOperator(Node &node, Function &context) {
     Code code;
     String &name = node.name;
 //	name = normOperator(name);
+    if (node.name == "nop" or node.name == "pass")return code;
     if (node.length == 0 and name == "=") return code;// BUG
     int index = functionIndices.position(name);
     if (context.code_index < 0)context.code_index = index;// tdoo remove cluch
@@ -1364,9 +1369,10 @@ Code emitOperator(Node &node, Function &context) {
     if (opcode >= 0x99 and opcode <= 0xA6)
         code.add(cast(last_type, f64)); // double ops
 
-    if (last_type == stringp)
+    if (last_type == stringp or last_type == charp) {
         code.add(emitStringOp(node, context));
-    else if (opcode == f32_sqrt) {
+        return code;
+    } else if (opcode == f32_sqrt) {
         code.addByte(f32_sqrt);
         last_type = f32t;
     } else if (opcode == f32_eqz) { // hack for missing f32_eqz
@@ -1463,6 +1469,8 @@ Code emitOperator(Node &node, Function &context) {
 }
 
 Type needsUpgrade(Type lhs, Type rhs) {
+    if (lhs == i64 and rhs == int32) return i64;
+    if (lhs == int32 and rhs == i64) return i64;
     if (lhs == float64 or rhs == float64)
         return float64;
     if (lhs == float32 or rhs == float32)return float32;
@@ -1482,16 +1490,12 @@ Code emitStringOp(Node &op, Function &context) {
 //	op = normOperator(op.name);
     if (op == "+") {
         op = Node("_Z6concatPKcS0_");//demangled on readWasm, but careful, other signatures might overwrite desired one
-        last_type = stringp;
-        functions["_Z6concatPKcS0_"].is_used = true;// too late imports must be known through analyzer
-        functions["_Z6concatPKcS0_"].signature.returns(charp);// hack
-//		op = Node("_Z6concatPKcS0_");//concat c++ mangled export:
-//		op = Node("concat_char_const*__char_const*_");// wat name if not stripped in lib release build
+        functions["_Z6concatPKcS0_"].signature.return_types[0] = charp;// can't infer from demangled export name nor wasm type!
         return emitCall(op, context);
 //		stringOp.addByte();
     } else if (op == "==" or op == "is" or op == "equals") {
         op = Node("eq");//  careful : various signatures
-        last_type = stringp;
+        last_type = charp;//stringp;
         return Code(i32_const) + Code(-1) + emitCall(op, context);// third param required!
     } else if (op == "#") {// todo: all different index / op matches
         op = Node("getChar");//  careful : various signatures
@@ -1509,7 +1513,7 @@ Code emitStringOp(Node &op, Function &context) {
 // starting with 0!
 //inline haha you can't inline wasm
 char getChar(chars string, int nr) {
-    int len = strlen0(string);
+    int len = strlen(string);
     if (nr < 1)error("#index starts with 1, use [] if you want 0 indexing");
     if (nr > len)error("index out of bounds %i>%i "s % nr % len);
     return string[nr - 1 % len];
@@ -1793,7 +1797,7 @@ Code emitCall(Node &fun, Function &context) {
     if (not functions.has(name)) {
         auto normed = normOperator(name);
         if (not functions.has(normed))
-            error("unknown context "s + name + " (" + normed + ")");// checked before, remove
+            error("unknown context "s + name + " (" + normed + ")"); // checked before, remove
         else name = normed;
     }
     Function &function = functions[name];// NEW context! but don't write context ref!
@@ -1827,9 +1831,9 @@ Code emitCall(Node &fun, Function &context) {
 
     // todo multi-value
     Type return_type = signature.return_types.last(none);
-    last_type = mapTypeToWasm(return_type);
+    last_type = return_type;
     if (signature.wasm_return_type)
-        check_eq(last_type, signature.wasm_return_type);
+        check_eq(mapTypeToWasm(last_type), signature.wasm_return_type);
 //	last_typo.clazz = &signature.return_type;// todo dodgy!
     return code;
 }
@@ -2114,7 +2118,7 @@ Code Call(char *symbol) {//},Node* args=0) {
 
 [[nodiscard]]
 Code encodeString(char *str) {
-    size_t len = strlen0(str);
+    size_t len = strlen(str);
     Code code = Code(len, (bytes) str, len);
     return code;//.push(0);
 };
@@ -2490,8 +2494,8 @@ Code emitCodeSection(Node &root) {
 
     if (runtime.code_count == 0) {
         // order matters, in functionType section!
-        if (functions["nop"].is_used)
-            code_blocks = code_blocks + encodeVector(Code(code_nop, sizeof(code_nop)));
+//        if (functions["nop"].is_used)// NOT a function
+//            code_blocks = code_blocks + encodeVector(Code(code_nop, sizeof(code_nop)));
         if (functions["square_double"].is_used and functions["square_double"].is_builtin)
             // simple test function x=>x*x can also be linked via runtime/import!
             code_blocks = code_blocks + encodeVector(Code(code_square_d, sizeof(code_square_d)));
@@ -2856,7 +2860,7 @@ void add_builtins() {
         if (function.is_builtin and function.is_used) {
             functionIndices[sig] = ++last_index;
             if (function.code_index >= 0 and function.code_index != last_index)
-                error("function %s already has index %d ≠ %d"s % function.name % function.code_index % last_index);
+                werror("function %s already has index %d ≠ %d"s % function.name % function.code_index % last_index);
             function.code_index = last_index;
             builtin_count++;
         }
