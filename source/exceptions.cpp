@@ -38,7 +38,7 @@ char exception_buff[EXCEPTION_BUFF_SIZE];
 extern "C" {
 
 void *__cxa_allocate_exception(size_t thrown_size) {
-	if (thrown_size > EXCEPTION_BUFF_SIZE) printf("Exception too big");
+	if (thrown_size > EXCEPTION_BUFF_SIZE) printef("Exception too big");
 	return &exception_buff;
 }
 
@@ -52,12 +52,12 @@ void __cxa_throw(
 		void *thrown_exception,
 		struct type_info *tinfo,
 		void (*dest)(void *)) {
-	printf("Exception interception\n"); // works, but doesn't add anything to raise() function. Only in unmodified code
-	printf("%s\n", ((String *) thrown_exception)->data);// OMG THIS WORKS
-//	printf("%s\n",tinfo);
-	dest(thrown_exception);
-	exit(0);
-	// __cxa_throw never returns
+    printef("Exception interception\n"); // works, but doesn't add anything to raise() function. Only in unmodified code
+    printef("%s\n", ((String *) thrown_exception)->data);// OMG THIS WORKS
+//	printef("%s\n",tinfo);
+    dest(thrown_exception);
+    exit(0);
+    // __cxa_throw never returns
 }
 
 } // extern "C"

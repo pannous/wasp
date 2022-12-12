@@ -402,7 +402,7 @@ class Node;
 //#ifndef WASM
 //#include  <string>
 //void put(std::string s) {
-//	printf("%s\n", s.data());
+//	printef("%s\n", s.data());
 //}
 //#endif
 
@@ -683,6 +683,7 @@ bool contains(chars str, chars match) {
 
 void put(chars s) {
     puts(s);
+    newline();
 }
 
 void print(const Node node) {
@@ -697,12 +698,11 @@ void print(long i) {
     puti(i);
 #else
 //#if MY_WASI
-    printf("%ld", i);
+    printef("%ld\n", i);
     // either through wasm_helpers or via stdio.wasm
 #endif
 //    if (skip_newline)skip_newline = false;// just skip one CANT make it
 //    else
-    newline();
 }
 
 void print(char c) {
@@ -712,7 +712,8 @@ void print(char c) {
 
 void print(char const *s) {
     put(s);
-//    printf("%s", s);
+    newline();
+//    printef("%s", s);
 }
 
 void print(String *s) {
@@ -723,7 +724,7 @@ void print(String *s) {
 
 void print(String s) {
     put_chars(s.data, s.length);
-    newline();
+//    newline();
 }
 
 
@@ -731,6 +732,6 @@ void print(char *str) {
 #if MY_WASI
     puts(str);
 #else
-    printf("%s", str);
+    printef("%s", str);
 #endif
 }

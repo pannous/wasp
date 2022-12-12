@@ -435,7 +435,6 @@ public:
 // YUCK static magically applies to new() objects too!?!
 
 
-
     // todo: flatten the parse->parse->read branch!!
     Node &parse(String source, ParserOptions options = {}) {
         if (!source.data)
@@ -446,7 +445,7 @@ public:
             source = readFile(findFile(source, parserOptions.current_dir));
         }
 #ifndef RELEASE
-        printf("Parsing:\n%s\n", source.data);
+        printef("Parsing:\n%s\n", source.data);
 #endif
         if (source.empty()) return const_cast<Node &>(NIL);
         columnStart = 0;
@@ -460,7 +459,7 @@ public:
         Node &result = valueNode(); // <<
         white();
         if (ch and ch != -1 and ch != DEDENT) {
-            printf("UNEXPECTED CHAR %c", ch);
+            printef("UNEXPECTED CHAR %c", ch);
             print(position());
             error("Expect end of input");
             result = ERROR;
@@ -1830,7 +1829,7 @@ void handler(int sig) {
     size = backtrace(array, 10);
 
     // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:", sig);
+    fprintef(stderr, "Error: signal %d:", sig);
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     exit(1);
 }
@@ -1944,6 +1943,14 @@ void usage() {
 // wasmer etc DO accept float/double return, just not from main!
 //extern "C"
 int main(int argc, char **argv) {
+#if WASM
+    print("wasp.wasm v0.1.2");
+    print(42);
+    print(argc);
+    print(argv[0]);
+    testCurrent();
+//    debugWASM();
+#endif
 #ifdef ErrorHandler
     register_global_signal_exception_handler();
 #endif

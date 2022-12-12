@@ -83,73 +83,73 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
 #endif
 
 
-void printf(chars format, uint32_t i) {
+void printef(chars format, uint32_t i) {
     print(String(format) % (int) i);
 }
 
 
-void printf(chars format) {
+void printef(chars format) {
     print(format);
 }
 
-void printf(chars format, int i) {
+void printef(chars format, int i) {
     print(String(format) % i);
 }
 
-void printf(char const *format, long long l) {
+void printef(char const *format, long long l) {
     print(String(format) % l);
 }
 
 
-void printf(chars format, chars value) {
+void printef(chars format, chars value) {
     print(String(format).replace("%s", value));
 }
 
-void printf(chars format, chars i, chars j) {
+void printef(chars format, chars i, chars j) {
     print(String(format).replace("%s", i).replace("%s", j));
 }
 
-void printf(chars format, chars i, chars j, int l) {
+void printef(chars format, chars i, chars j, int l) {
     print(String(format).replace("%s", i).replace("%s", j).replace("%d", String(l)));
 }
 
-void printf(chars format, chars i, chars j, chars l) {
+void printef(chars format, chars i, chars j, chars l) {
     print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
 }
 
-void printf(chars format, long i, long j) {
+void printef(chars format, long i, long j) {
     if (contains(format, "%ld"))
         print(String(format).replace("%ld", String(i)).replace("%ld", String(j)));
     else
         print(String(format).replace("%d", String(i)).replace("%d", String(j)));
 }
 
-void printf(chars format, int i, int j) {
+void printef(chars format, int i, int j) {
     print(String(format).replace("%d", String(i)).replace("%d", String(j)));
 }
 
-void printf(chars format, uint32_t i, uint32_t j) {
+void printef(chars format, uint32_t i, uint32_t j) {
     print(String(format).replace("%d", String((int) i)).replace("%d", String((int) j)));
 }
 
 
-void printf(chars format, double d) {
+void printef(chars format, double d) {
     print(String(format) % d);
 }
 
-void printf(chars format, long l) {
+void printef(chars format, long l) {
     print(String(format) % l);
 }
 
-void printf(chars format, double i, double j) {
+void printef(chars format, double i, double j) {
     print(String(format).replace("%f", String(i)).replace("%f", String(j)));
 }
 
-void printf(chars format, chars val, int value) {
+void printef(chars format, chars val, int value) {
     print(String(format).format((char *) val).format(value));
 }
 
-void printf(chars format, void *value) {
+void printef(chars format, void *value) {
     print(String(format).replace("%p", String((long) value)));
 }
 
@@ -160,7 +160,10 @@ extern "C" void __cxa_throw(
         void *thrown_exception,
         struct type_info *tinfo,
         void (*dest)(void *)) {}
-extern "C" void __cxa_atexit() { proc_exit(0); }
+extern "C" int __cxa_atexit(int, int, int) {
+    proc_exit(0);
+    return 0;
+}
 extern "C" long run_wasm(bytes buffer, int buf_size) {
     print("wasp built without runtime?");
     return 0;
@@ -227,8 +230,8 @@ void _cxa_throw() {
 }
 
 
-void printf(long l) {
-    printf("%ld", l);
+void printef(long l) {
+    printef("%ld", l);
 }
 
 
@@ -272,7 +275,7 @@ typedef struct wasi_buffer {
 
 #if WASI and not MY_WASM
 extern "C" int raise(chars error){
-    printf("%s" , error);
+    printef("%s" , error);
     return -1;
 }
 #endif
@@ -318,38 +321,38 @@ int put_s(String *s) {
 }
 
 void puti(int i) {
-    printf("%d", i);
+    printef("%d", i);
 }
 
 void putl(long long l) {
-    printf("%lld", l);
+    printef("%lld", l);
 }
 
 [[maybe_unused]] void putx(long long l) {
-    printf("%llx", l);
+    printef("%llx", l);
 }
 
 void putp(long char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
-    printf("%s", (char *) char_pointer);
+    printef("%s", (char *) char_pointer);
 }
 
 void put_char(codepoint c) {
-    printf("%c", c);
+    printef("%c", c);
 }
 
 void putf(float f) {
     puts(formatLong((long) f));
     puts(".");
     puts(formatLong(((long) (f * 1000)) % 1000));
-//    printf("%f\n", f);
+//    printef("%f\n", f);
 }
 
 void putd(double f) {
-    printf("%f\n", f);
+    printef("%f\n", f);
 }
 
 void putp(void *f) {
-    printf("%p\n", f);
+    printef("%p\n", f);
 }
 
 #endif

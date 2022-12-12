@@ -27,7 +27,7 @@ byte *code;
 
 Valtype mapArgToValtype(String &arg);
 
-#define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s\n%s:%d\n",#match,__FILE__,__LINE__);exit(0);}
+#define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printef("\nNOT consuming %s\n%s:%d\n",#match,__FILE__,__LINE__);exit(0);}
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
     if (*pos + len > size)
@@ -128,7 +128,7 @@ void parseFunctionNames(Code &payload) {
         Function &function = module->functions[func];
         function.code_index = index;
         function.name = func;
-        if (debug_reader)printf("ƒ%d %s\n", index, func.data);
+        if (debug_reader)print("ƒ%d %s\n"s % index % func.data);
         if (module->functionIndices[func] > 0 and module->functionIndices[func] < function_count /*hack!*/) {
             if (module->functionIndices[func] == index)
                 continue; // identical match, lib parsed twice without cleaning module->functionIndices!?
@@ -220,7 +220,7 @@ void consumeTypeSection() {
     Code type_vector = vec();
     int typeCount = unsignedLEB128(type_vector);
     module->type_count = typeCount;
-    if (debug_reader)printf("types: %d\n", module->type_count);
+    if (debug_reader)printef("types: %d\n", module->type_count);
     module->type_data = type_vector.rest();
 // todo: we need to parse this for automatic import and signatures
     parse_type_data(module->type_data);
@@ -229,25 +229,25 @@ void consumeTypeSection() {
 
 void consumeStartSection() {
     module->start_index = unsignedLEB128();
-    if (debug_reader)printf("start: #%d \n", module->start_index);
+    if (debug_reader)printef("start: #%d \n", module->start_index);
 }
 
 void consumeTableSection() {
     module->table_data = vec();
     module->table_count = 1;// unsignedLEB128(module->table_data);
-    if (debug_reader)printf("tables: %d \n", module->table_count);
+    if (debug_reader)printef("tables: %d \n", module->table_count);
 }
 
 void consumeMemorySection() {
     module->memory_data = vec();// todo ?
 //	module->memory_count = unsignedLEB128(module->memory_data);//  always 1 in MVP
-    if (debug_reader)printf("memory_data: %d\n", module->memory_data.length);
+    if (debug_reader)printef("memory_data: %d\n", module->memory_data.length);
 }
 
 void consumeGlobalSection() {
     module->globals_data = vec();// todo
     module->global_count = unsignedLEB128(module->globals_data); // NO SUCH THING!?
-    if (debug_reader)printf("globals: %d\n", module->global_count);
+    if (debug_reader)printef("globals: %d\n", module->global_count);
 }
 
 void consumeNameSection(Code &data) {
@@ -307,14 +307,14 @@ void consumeDataSection() {
     // Todo ILL-DEFINED BEHAVIOUR! silent corruption if data_offset_end too small (why 100?)
 
 //	if (debug_reader)
-//printf("data sections: %d from offsets %d to %d \n", module->data_segments_count, data_offset,module->data_offset_end);
-//	if(debug_reader)printf("data section offset: %ld \n", offset);
+//printef("data sections: %d from offsets %d to %d \n", module->data_segments_count, data_offset,module->data_offset_end);
+//	if(debug_reader)printef("data section offset: %ld \n", offset);
 }
 
 void consumeElementSection() {
     module->element_section = vec();
-//	if(debug_reader)printf("element section (!?)");
-    if (debug_reader)printf("element sections: %d \n", module->element_section.length);
+//	if(debug_reader)printef("element section (!?)");
+    if (debug_reader)printef("element sections: %d \n", module->element_section.length);
 }
 
 void consumeCustomSection() {
@@ -354,13 +354,13 @@ void consumeCustomSection() {
 void consumeFuncTypeSection() {
     Code type_vector = vec();
     module->code_count = unsignedLEB128(type_vector);// import type indices are part of import struct!
-    if (debug_reader)printf("signatures: %d\n", module->code_count);
+    if (debug_reader)printef("signatures: %d\n", module->code_count);
     module->functype_data = type_vector.rest();
     Code &funcs_to_types = module->functype_data.clone();
     for (int i = 0; i < module->code_count; ++i) {
         int type = unsignedLEB128(funcs_to_types);
         module->funcToTypeMap[i] = type;
-//        printf("func code_index %d => type %d\n", i, type);
+//        printef("func code_index %d => type %d\n", i, type);
     }
     // parsed AGAIN later in parseFuncTypeSection to connect names . todo unnecessary?
 }
@@ -369,16 +369,17 @@ void consumeFuncTypeSection() {
 void consumeCodeSection() {
     Code codes_vector = vec();
     int codeCount = unsignedLEB128(codes_vector);
-    if (debug_reader)printf("codes: %d\n", codeCount);
+    if (debug_reader)printef("codes: %d\n", codeCount);
     if (module->code_count != codeCount)error("missing code/signatures");
     module->code_data = codes_vector.rest();
-    if (debug_reader)printf("code length: %d\n", module->code_data.length);
+    if (debug_reader)printef("code length: %d\n", module->code_data.length);
 }
 
 
 // todo ifdef CPP not WASM(?)
+#if not WASM
 #include <cxxabi.h> // for abi::__cxa_demangle
-
+#endif
 void fixupGenerics(char *s, int len) {
     int bra = 0;
     for (int i = 0; i < len; ++i) {
@@ -394,7 +395,12 @@ List<String> demangle_args(String &fun) {
     int status;
 //	String *real_name = new
 //"print(Map<String, int>)"
-    char *string = abi::__cxa_demangle(fun.data, 0, 0, &status);
+    char *string;
+#if not WASM
+    string = abi::__cxa_demangle(fun.data, 0, 0, &status);
+#else
+    todo("__cxa_demangle in wasm");
+#endif
     if (status != 0 or string == 0)return 0;
     String real_name = String(string);
     fixupGenerics(real_name.data, real_name.length);
@@ -411,7 +417,7 @@ List<String> demangle_args(String &fun) {
 void consumeExportSection() {
     Code exports_vector = vec();
     int exportCount = unsignedLEB128(exports_vector);
-    if (debug_reader)printf("export_section: %d\n", exportCount);
+    if (debug_reader)printef("export_section: %d\n", exportCount);
     module->export_count = exportCount;
     module->export_data = exports_vector.rest();
     Code &payload = module->export_data;
@@ -438,8 +444,10 @@ void consumeExportSection() {
 //        if (func == "parseLong")
 //            breakpoint_helper;// don't make libraries 'main' visible, use own
         int status = 0; // for debugging:
-        String demangled = abi::__cxa_demangle(func0.data, 0, 0, &status);// function name and cpp args but not return
-
+        String demangled;
+#if not WASM
+        demangled = abi::__cxa_demangle(func0.data, 0, 0, &status);// function name and cpp args but not return
+#endif
         Function &fun = module->functions[func];// demangled
         Function &fun0 = module->functions[func0];// mangled
         // ⚠️ CAN BE THE SAME REFERENCE IF func==func0 !!! ⚠️
@@ -448,8 +456,8 @@ void consumeExportSection() {
         fun0.name = func0;
 
         if (debug_reader) {
-            printf("#%d ƒ%d %s ≈\n", code_index, index, func0.data);
-            printf("#%d ƒ%d %s ≈\n", code_index, index, demangled.data);
+            print("#%d ƒ%d %s ≈\n"s % code_index % index % func0.data);
+            print("#%d ƒ%d %s ≈\n"s % code_index % index % demangled.data);
         }
 //        if(fun.name=="puts")
 //            breakpoint_helper
@@ -510,10 +518,10 @@ void consumeExportSection() {
 //        fun0.signature = fun.signature.clone();// todo copy by value ok? NO: heap-use-after-free on address
         if (debug_reader) {
             const String &argos = args.join(",");
-//            printf("ƒ%d %s(%s) ≈\n", index, func0.data, string);
+//            printef("ƒ%d %s(%s) ≈\n", index, func0.data, string);
             char *sig = fun.signature.serialize().data;
-            printf("#%d ƒ%d %s(%s)\n", code_index, index, func.data, argos.data);
-            printf("#%d ƒ%d %s%s\n", code_index, index, func.data, sig);
+            print("#%d ƒ%d %s(%s)\n"s % code_index % index % func.data % argos.data);
+            print("#%d ƒ%d %s%s\n"s % code_index % index % func.data % sig);
         }
 
     }
@@ -617,7 +625,7 @@ Type mapArgToType(String arg) {
 
     else {
 //        breakpoint_helper
-//        printf("unmapped c++ argument type %s\n", arg.data);
+//        printef("unmapped c++ argument type %s\n", arg.data);
         if (!arg.endsWith("*"))
             if (!arg.startsWith("Map<") and !arg.startsWith("List<"))
                 error("unmapped c++ argument type %s\n"s % arg.data);
@@ -643,7 +651,7 @@ void consumeImportSection() {
     module->import_count = importCount;
     module->import_data = imports_vector.rest();
     parseImportNames(imports_vector);
-    if (debug_reader)printf("imports: %d\n", importCount);
+    if (debug_reader)printef("imports: %d\n", importCount);
 }
 
 
@@ -731,7 +739,7 @@ Module &read_wasm(chars file) {
 
     if (debug_reader)print("--------------------------\n");
 //    if (debug_reader)
-    printf("parsing: %s\n", file);
+    printef("parsing: %s\n", file);
     size = fileSize(file);
     if (size <= 0)error("file not found: "s + file);
     bytes buffer = (bytes) alloc(1, size);// do not free

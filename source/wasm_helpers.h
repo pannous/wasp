@@ -127,7 +127,7 @@ extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
 //bl	0x100003f6c ; symbol stub for: _pow
 
 //extern float powf(float x, float y);
-//void printf(int);
+//void printef(int);
 
 void *alloc(int num, int size);// => malloc / calloc
 //void *calloc(int size, int num);// alloc cleared
@@ -177,40 +177,42 @@ int isalnum0(int c);
 
 #ifndef WASI
 #ifdef WASM
-//void printf(chars no_format);
+//void printef(chars no_format);
 typedef unsigned int uint32_t;
 
-void printf(chars);
+void printef(chars);
 
-void printf(chars, chars);
+void printef(chars, chars);
 
-void printf(char const *format, int i);
+void printef(char const *format, int i);
 
-void printf(char const *format, uint32_t i);
+void printef(char const *format, uint32_t i);
 
-void printf(char const *format, long l);
+void printef(char const *format, long l);
 
-void printf(char const *format, long long l);
+void printef(char const *format, long long l);
 
-void printf(char const *format, double d);
+void printef(char const *format, double d);
 
-void printf(char const *format, chars, int);
+void printef(char const *format, chars, int);
 
-void printf(chars format, int, int);
+void printef(chars format, int, int);
 
-void printf(chars format, uint32_t, uint32_t);
+void printef(chars format, uint32_t, uint32_t);
 
-void printf(chars format, long i, long);
+void printef(chars format, long i, long);
 
-void printf(chars format, double i, double j);
+void printef(chars format, double i, double j);
 
-void printf(chars format, chars i);
+void printef(chars format, chars i);
 
-void printf(chars format, chars i, chars j);
+void printef(chars format, chars i, chars j);
 
-void printf(chars format, chars i, chars j, int l);
-void printf(chars format, chars i, chars j, chars l);
-void printf(chars format, chars i, chars j, chars k, int l);
+void printef(chars format, chars i, chars j, int l);
+
+void printef(chars format, chars i, chars j, chars l);
+
+void printef(chars format, chars i, chars j, chars k, int l);
 
 #endif
 #endif
@@ -235,9 +237,9 @@ extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_un
 
 //#ifndef WASM
 #ifdef WASI
-extern "C" int printf(chars s, ...);  //stdio
+extern "C" int printef(chars s, ...);  //stdio
 #endif
-//extern "C" int printf(chars s, String c);  conflict
+//extern "C" int printef(chars s, String c);  conflict
 
 
 
@@ -264,7 +266,7 @@ extern "C" void proc_exit(int exitcode);
 
 
 __attribute__((import_module("wasi_unstable"), import_name("args_sizes_get")))
-extern "C" void args_sizes_get(char **argv, int *argc);
+extern "C" int args_sizes_get(char **argv, int *argc);
 
 static size_t argc() {
     char *argv = (char *) alloc(1000, 1);

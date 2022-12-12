@@ -460,7 +460,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
         last_type = node.type;
     last_object = &node;
     last_object_pointer = node_start;
-    printf("node_start %d data_index_end %d\n", node_start, data_index_end);
+    printef("node_start %d data_index_end %d\n", node_start, data_index_end);
 // already stored in emitArray() : usually enough, unless we want extra node meta data?
 //    referenceIndices.insert_or_assign(node.name, pointer);
 //    referenceDataIndices.insert_or_assign(node.name, pointer + array_header_length);
@@ -2927,7 +2927,7 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
         add_builtins();
     }
     if (start) {// now AFTER imports and builtins
-//		printf("start: %s\n", start.data);
+//		printef("start: %s\n", start.data);
 //		functions[start] = Signature().returns(i32t);
         functions[start].emit = true;
         if (!functionIndices.has(start))

@@ -61,33 +61,33 @@ wrap(powd) {
 wrap(puts) {
 	int n = args[0].data->of.i32;
 	if (wasm_memory)
-		printf("%s\n", &((char *) wasm_memory)[n]);
+		printef("%s\n", &((char *) wasm_memory)[n]);
 	else
-		printf("puts / printf can't access null wasm_memory at %d (internal error!)", n);
+        printef("puts / printef can't access null wasm_memory at %d (internal error!)", n);
 	return NULL;
 }
 
 wrap(puti) {
 	int i = args[0].data->of.i32;
-	printf("%d", i);
+    printef("%d", i);
 	return NULL;
 }
 
 wrap(putf) {
 	float f = args[0].data->of.float32;
-	printf("%f", f);
+    printef("%f", f);
 	return NULL;
 }
 
 wrap(putd) {
 	float f = args[0].data->of.f64;
-	printf("%f", f);
+    printef("%f", f);
 	return NULL;
 }
 
 wrap(putc) {// put_char
 	int i = args[0].data->of.i32;
-	printf("%c", i);
+    printef("%c", i);
 	return NULL;
 }
 
@@ -104,7 +104,7 @@ wrap(atoi) {
 }
 
 wrap(exit) {
-	printf("exit, lol");
+    printef("exit, lol");
 //	exit(42);
 	return NULL;
 }
@@ -185,8 +185,8 @@ wasm_wrap *link_import(String name) {
 	if (name == "proc_exit") return &wrap_exit;
 	if (name == "panic") return &wrap_exit;
 	if (name == "raise") return &wrap_exit;
-	if (name == "square") return &wrap_square;
-    if (name == "printf") return &wrap_puts;
+    if (name == "square") return &wrap_square;
+    if (name == "printef") return &wrap_puts;
     if (name == "print") return &wrap_puts;
     if (name == "logs") return &wrap_puts;
     if (name == "logi") return &wrap_puti;
@@ -209,38 +209,38 @@ wasm_wrap *link_import(String name) {
 void wasm_val_print(wasm_val_t val) {
 	switch (val.kind) {
 		case WASM_I32:
-			printf("%d", val.of.i32);
+            printef("%d", val.of.i32);
 			break;
 		case WASM_I64:
-			printf("%lld", val.of.i64);
+            printef("%lld", val.of.i64);
 			break;
 		case WASM_F32:
-            printf("%f", val.of.float32);
+            printef("%f", val.of.float32);
 			break;
 		case WASM_F64:
-			printf("%g", val.of.f64);
+            printef("%g", val.of.f64);
 			break;
-		case WASM_ANYREF:
-		case WASM_FUNCREF:
-			if (val.of.ref == NULL) printf("null");
-			else printf("ref(%p)", val.of.ref);
+        case WASM_ANYREF:
+        case WASM_FUNCREF:
+            if (val.of.ref == NULL) printef("null");
+            else printef("ref(%p)", val.of.ref);
 			break;
 	}
 }
 
 // A function to be called from Wasm code.
 own wasm_trap_t *print_callback(const wasm_val_vec_t *args, wasm_val_vec_t *results) {
-	printf("Calling back...\n> ");
-	wasm_val_print(args->data[0]);
-	printf("\n");
-	wasm_val_copy(&results->data[0], &args->data[0]);
+    printef("Calling back...\n> ");
+    wasm_val_print(args->data[0]);
+    printef("\n");
+    wasm_val_copy(&results->data[0], &args->data[0]);
 	return NULL;
 }
 
 // A function to be called from Wasm code.
 own wasm_trap_t *callback(const wasm_val_vec_t *args, wasm_val_vec_t *results) {
-	assert(args->data[0].kind == WASM_I32);
-	printf("> Thread %d running\n", args->data[0].of.i32);
+    assert(args->data[0].kind == WASM_I32);
+    printef("> Thread %d running\n", args->data[0].of.i32);
 	return NULL;
 }
 
@@ -271,45 +271,45 @@ void init_wasmer() {
 }
 
 void print_name(const wasm_name_t *name) {
-	printf("%.*s : ", (int) name->size, name->data);
+    printef("%.*s : ", (int) name->size, name->data);
 }
 
 
 void print_mutability(wasm_mutability_t mut) {
 	switch (mut) {
 		case WASM_VAR:
-			printf("var");
+            printef("var");
 			break;
 		case WASM_CONST:
-			printf("const");
+            printef("const");
 			break;
 	}
 }
 
 void print_limits(const wasm_limits_t *limits) {
-	printf("%ud", limits->min);
-	if (limits->max < wasm_limits_max_default) printf(" %ud", limits->max);
+    printef("%ud", limits->min);
+    if (limits->max < wasm_limits_max_default) printef(" %ud", limits->max);
 }
 
 void print_valtype(const wasm_valtype_t *type) {
 	switch (wasm_valtype_kind(type)) {
 		case WASM_I32:
-			printf("i32");
+            printef("i32");
 			break;
 		case WASM_I64:
-			printf("i64");
+            printef("i64");
 			break;
 		case WASM_F32:
-			printf("f32");
+            printef("f32");
 			break;
 		case WASM_F64:
-			printf("f64");
+            printef("f64");
 			break;
 		case WASM_ANYREF:
-			printf("anyref");
+            printef("anyref");
 			break;
 		case WASM_FUNCREF:
-			printf("funcref");
+            printef("funcref");
 			break;
 	}
 }
@@ -320,7 +320,7 @@ void print_valtypes(const wasm_valtype_vec_t *types) {
 		if (first) {
 			first = false;
 		} else {
-			printf(" ");
+            printef(" ");
 		}
 		print_valtype(types->data[i]);
 	}
@@ -331,45 +331,45 @@ void print_externtype(const wasm_externtype_t *type) {
 		case WASM_EXTERN_FUNC: {
 			const wasm_functype_t *functype =
 					wasm_externtype_as_functype_const(type);
-			printf("func ");
-			print_valtypes(wasm_functype_params(functype));
-			printf(" -> ");
-			print_valtypes(wasm_functype_results(functype));
+            printef("func ");
+            print_valtypes(wasm_functype_params(functype));
+            printef(" -> ");
+            print_valtypes(wasm_functype_results(functype));
 		}
 			break;
 		case WASM_EXTERN_GLOBAL: {
 			const wasm_globaltype_t *globaltype =
 					wasm_externtype_as_globaltype_const(type);
-			printf("global ");
-			print_mutability(wasm_globaltype_mutability(globaltype));
-			printf(" ");
-			print_valtype(wasm_globaltype_content(globaltype));
+            printef("global ");
+            print_mutability(wasm_globaltype_mutability(globaltype));
+            printef(" ");
+            print_valtype(wasm_globaltype_content(globaltype));
 		}
 			break;
 		case WASM_EXTERN_TABLE: {
 			const wasm_tabletype_t *tabletype =
 					wasm_externtype_as_tabletype_const(type);
-			printf("table ");
-			print_limits(wasm_tabletype_limits(tabletype));
-			printf(" ");
-			print_valtype(wasm_tabletype_element(tabletype));
+            printef("table ");
+            print_limits(wasm_tabletype_limits(tabletype));
+            printef(" ");
+            print_valtype(wasm_tabletype_element(tabletype));
 		}
 			break;
 		case WASM_EXTERN_MEMORY: {
 			const wasm_memorytype_t *memorytype =
 					wasm_externtype_as_memorytype_const(type);
-			printf("memory ");
-			print_limits(wasm_memorytype_limits(memorytype));
+            printef("memory ");
+            print_limits(wasm_memorytype_limits(memorytype));
 		}
 			break;
 	}
-	printf("\n");
+    printef("\n");
 }
 
 
 void print_frame(wasm_frame_t *frame) {
-	printf("..");
-//	printf("> %p @ 0x%zx = %u.0x%zx\n",
+    printef("..");
+//	printef("> %p @ 0x%zx = %u.0x%zx\n",
 //	       wasm_frame_instance(frame),
 //	       wasm_frame_module_offset(frame),
 //	       wasm_frame_func_index(frame),
@@ -378,7 +378,7 @@ void print_frame(wasm_frame_t *frame) {
 }
 
 void print_trace(wasm_trap_t *trap) {
-	printf("Printing trace...\n");
+    printef("Printing trace...\n");
 	own wasm_frame_vec_t trace;
 	wasm_trap_trace(trap, &trace);
 	if (trace.size > 0) {
@@ -447,8 +447,8 @@ extern "C" long run_wasm(bytes wasm_bytes, int len) {
 	if (!instance) {
 		int i = wasmer_last_error_length();
 		char error_buffer[1000];
-		wasmer_last_error_message(error_buffer, i);
-		printf("%s\n", error_buffer);
+        wasmer_last_error_message(error_buffer, i);
+        printef("%s\n", error_buffer);
 //		print_trace(trap);
 		error("Error instantiating module!\n");
 	}
@@ -458,18 +458,18 @@ extern "C" long run_wasm(bytes wasm_bytes, int len) {
 	wasm_instance_exports(instance, &exports);
 	if (exports.size == 0) error("> Error accessing exports!\n");
 
-	printf("Retrieving the `main` function...\n");
+    printef("Retrieving the `main` function...\n");
 	wasm_func_t *sum_func = findFunction(exports, export_types);
 	if (sum_func == NULL) error("> Failed to get the `main` function!\n");
-//	printf("Calling `sum` function...\n");
+//	printef("Calling `sum` function...\n");
 //wasm_val_t args_val[2] = {WASM_I32_VAL(3), WASM_I32_VAL(4)};
 	wasm_val_t args_val[0];// our main takes no args!
 	wasm_val_t results_val[1] = {WASM_INIT_VAL};
 	wasm_val_vec_t args = WASM_ARRAY_VEC(args_val);
 	wasm_val_vec_t results = WASM_ARRAY_VEC(results_val);
 
-	// wasmer is only good for calling utterly tested code, otherwise it gives ZERO info on what went wrong!
-	if (wasm_func_call(sum_func, &args, &results)) error("> Error calling the `main` function!\n");
+    // wasmer is only good for calling utterly tested code, otherwise it gives ZERO info on what went wrong!
+    if (wasm_func_call(sum_func, &args, &results)) error("> Error calling the `main` function!\n");
 
 //	int nresults=1;//results_val
 //	int64_t result = results_val->of.i64;
@@ -477,17 +477,17 @@ extern "C" long run_wasm(bytes wasm_bytes, int len) {
 //		wasm_val_t results2 = *(&results + 1);
 //		Type type = results2->of.i32;
 //		if (type >= undefined and type <= arrays)
-//			printf("TYPE: %s\n", (chars) type);
-//		else printf("Unknown type %d\n", (int) type);
+//			printef("TYPE: %s\n", (chars) type);
+//		else printef("Unknown type %d\n", (int) type);
 //	}
 
-	int32_t result = results_val->of.i32;
-	printf("Wasmer Result: %d\n", result);
+    int32_t result = results_val->of.i32;
+    printef("Wasmer Result: %d\n", result);
 
-	wasm_func_delete(sum_func);
-	wasm_module_delete(module);
+    wasm_func_delete(sum_func);
+    wasm_module_delete(module);
 //	wasm_extern_vec_delete(&exports);// SIG_KILL why?
-	wasm_instance_delete(instance);
+    wasm_instance_delete(instance);
 //	wasm_store_delete(store);
 //	wasm_engine_delete(engine);
 	return result;
@@ -553,17 +553,17 @@ const wasm_functype_t *funcType(Signature &signature) {
 	}
 	if (param_count == 2) {
 		switch (returnType) {
-			case int32:
-				return wasm_functype_new_2_1(i, i, i); // printf(i32,i32)i32
-			case i64:
+            case int32:
+                return wasm_functype_new_2_1(i, i, i); // printef(i32,i32)i32
+            case i64:
                 return wasm_functype_new_2_1(i, i, I);
             case float32:
                 return wasm_functype_new_2_1(f, f, f);
-			case float64:
-				return wasm_functype_new_2_1(F, F, F); // powd(f64,f64)f64
-			default:
-				break;
-		}
+            case float64:
+                return wasm_functype_new_2_1(F, F, F); // powd(f64,f64)f64
+            default:
+                break;
+        }
 	}
 	// todo unhack!
 	if (param_count == 3) return wasm_functype_new_3_1(i, i, i, i); //(char*,char*,i32,)i32 ;)
