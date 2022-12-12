@@ -32,7 +32,7 @@ List<String> class_keywords = {"struct", "type", "class", "prototype",
 //List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
 
 //Map<String, Function> functions; // todo Maps don't free memory and cause SIGKILL after some time <<<
-Map<String, Function> functions;
+Map<String, Function> functions = {.capacity=10000};
 // todo ONLY emit of main module! for funcs AND imports, serialized differently (inline for imports and extra functype section)
 //Map<String, Function> library_functions; see:
 List<Module *> libraries;// used modules from (automatic) import statements e.g. import math; use log; …  ≠
@@ -415,7 +415,7 @@ bool isPrimitive(Node &node) {
     return false;
 }
 
-Map<String, Node *> types; // builtin and defined Types
+Map<String, Node *> types = {.capacity=1000}; // builtin and defined Types
 //const Node Long("Long", clazz);
 //const Node Double("Double", clazz);//.setType(type);
 // todo : when do we really need THESE Nodes instead of Type / Primitives?

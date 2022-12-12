@@ -171,7 +171,9 @@ enum Primitive {
     charp = 0xC0, // vs chars pointer
     string_struct = 0xC8,// String
     stringp = 0xCF,// String*
+//    codepointus = 0xC1,  // when indexing int32 array
     codepoint32 = 0xC4, // just ONE codepoint as int! todo via map
+
 //    byte_char = 0xC1, // 0xBC
 
 //	floats = 0x1010, // only useful for main(), otherwise we can return real floats or wrapped Node[reals]
@@ -207,7 +209,6 @@ enum Primitive {
 
     byte_i8 = 0xB0, // when indexing uint8 byte array.
     byte_char = 0xBC, // when indexing ascii array. todo: maybe codepoint into UTF8!?
-    codepointus = 0xC0,  // when indexing int32 array
 
 //    THE 0xF0 … range is reserved for numbers
 
@@ -228,7 +229,8 @@ enum Primitive {
 //	byte_vector = 0xB001, // LEB encoded length header
 //    block = 0xB000,
     maps = 0xA0B0, // todo generics Map<String; int> …
-    c_string = 0xC000, // pointer to utf-8 bytes in wasm's linear memory, 0 terminated
+    c_string = 0xC0, // char* same as charp pointer to utf-8 bytes in wasm's linear memory, 0 terminated
+//    c_string = 0xC000, // pointer to utf-8 bytes in wasm's linear memory, 0 terminated
     leb_string = 0xC001, // LEB encoded length header -> wasm_string
     // todo universal micro bits for 1. POINTER 2. ARRAY 2. STRUCT with HEADER
     utf16_string = 0xC016, // pointer to utf-16 bytes in wasm's linear memory, 0.0 terminated

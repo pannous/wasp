@@ -133,7 +133,7 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
         auto *func_type = wabt::cast<wabt::interp::FuncType>(export_.type.type.get());
         if (func_type->params.empty()) {
             RefVec funcs = instance->funcs();
-            auto func = store.UnsafeGet<wabt::interp::Func>(funcs[export_.index]);
+            auto func = store.UnsafeGet<wabt::interp::Func>(funcs[export_.code_index]);
             Values params;
             Values results;
             Trap::Ptr trap;

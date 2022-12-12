@@ -123,7 +123,7 @@ void parseFunctionNames(Code &payload) {
             error("broken index"s + index);
         String func = name(payload).clone();// needs to be 0-terminated now
         Function &function = module->functions[func];
-        function.index = index;
+        function.code_index = index;
         function.name = func;
         if (debug_reader)printf("ƒ%d %s\n", index, func.data);
         if (module->functionIndices[func] > 0 and module->functionIndices[func] < function_count /*hack!*/) {
@@ -153,11 +153,12 @@ void parseFunctionNames(Code &payload) {
 
 //Map<int, Signature> funcTypes;
 // import type indices are part of import struct!
+// FOR ALL FUNCTIONS WITHOUT EXPORT!
 void parseFuncTypeSection(Code &payload) {
     // imports stupidly have their own type,
     // we don't know here if i32 is pointer … so we may have to refine later
     for (int i = 0; i < module->code_count and payload.start < payload.length; ++i) {
-        auto code_index = (int) (i + module->import_count); // implicit !?
+        auto call_index = (int) (i + module->import_count); // implicit !?
         int typ = unsignedLEB128(payload);
         Function &function = module->functions.values[i];
         Signature &s = module->funcTypes[typ];
@@ -267,7 +268,7 @@ void consumeNameSection(Code &data) {
             case global_names:
                 module->global_names = payload;
                 break;
-            case todo_idk: todow("NAME TYPE 9");
+            case data_names: todow("NAME TYPE 9");
                 break;
             default:
                 error("INVALID NAME TYPE "s + type);
@@ -426,12 +427,12 @@ void consumeExportSection() {
         // index here means call_index > code_index
         if (index < module->import_count or index > 100000)
             error("corrupt index "s + index);
-        int call_index = index;
+//        int call_index = index;// why does export section link to call_index, not to code_index?
         int lower_index = index - module->import_count;// the index when called
         int code_index = lower_index;
 
-        if (func == "parseLong")
-            breakpoint_helper;// don't make libraries 'main' visible, use own
+//        if (func == "parseLong")
+//            breakpoint_helper;// don't make libraries 'main' visible, use own
         int status = 0; // for debugging:
         String demangled = abi::__cxa_demangle(func0.data, 0, 0, &status);// function name and cpp args but not return
 
@@ -443,15 +444,15 @@ void consumeExportSection() {
         fun0.name = func0;
 
         if (debug_reader) {
-            printf("ƒ%d %s ≈\n", index, func0.data);
-            printf("ƒ%d %s ≈\n", index, demangled.data);
+            printf("#%d ƒ%d %s ≈\n", code_index, index, func0.data);
+            printf("#%d ƒ%d %s ≈\n", code_index, index, demangled.data);
         }
 //        if(fun.name=="puts")
 //            breakpoint_helper
 
         if (fun.signature.size()) {
             trace("function %s already has signature "s % func + fun.signature.serialize());
-            trace("function %s old index %d new index %d"s % func % fun.index % index);
+            trace("function %s old index %d new index %d"s % func % fun.code_index % index);
             Function &abstract = *new Function{.name=func, .module=module, .is_runtime=true, .is_polymorph=true};
             abstract.variants.add(fun);
             module->functions[func] = abstract;
@@ -462,8 +463,8 @@ void consumeExportSection() {
             module->functionIndices[func] = lower_index;// demangled
         }
         module->functionIndices[func0] = lower_index;// mangled unique
-        fun0.index = lower_index;
-        fun.index = lower_index;
+        fun0.code_index = lower_index;
+        fun.code_index = lower_index;
 
 
 //        if (code_index == 369 or index == 369)
@@ -507,8 +508,8 @@ void consumeExportSection() {
             const String &argos = args.join(",");
 //            printf("ƒ%d %s(%s) ≈\n", index, func0.data, string);
             char *sig = fun.signature.serialize().data;
-            printf("ƒ%d %s(%s)\n", index, func.data, argos.data);
-            printf("ƒ%d %s%s\n", index, func.data, sig);
+            printf("#%d ƒ%d %s(%s)\n", code_index, index, func.data, argos.data);
+            printf("#%d ƒ%d %s%s\n", code_index, index, func.data, sig);
         }
 
     }

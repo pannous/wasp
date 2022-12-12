@@ -952,16 +952,16 @@ void Linker::ResolveSymbols() {
 
     // ⚠️ all indices in func_map go into the function CODE section (LATER offset by the import count!)
     BindingHash func_map;
-    Map<String, int> name_map;// from debug section to
+    Map<String, int> name_map = {.capacity=10000};// from debug section to
     // ⚠️ all indices here map into into following LIST, not into wasm!! so TWO indirections!
     BindingHash export_map;// of all kinds
 //	BindingHash private_map;
-    Map<String, FuncInfo *> private_map;
+    Map<String, FuncInfo *> private_map = {.capacity=10000};
     std::vector<ExportInfo> export_list;
     std::vector<ExportInfo> globals_export_list;
     std::vector<FuncInfo> func_list;// internal index identical to func_map index!!
 //    std::vector<FuncInfo> import_list;//
-    Map<String, FunctionImport *> import_map;// currently only used to find duplicates FuncInfo
+    Map<String, FunctionImport *> import_map = {.capacity=10000};// currently only used to find duplicates FuncInfo
 
 
 // binary->functions not filled yet!

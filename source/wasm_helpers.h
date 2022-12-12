@@ -64,11 +64,18 @@ extern "C" int raise(chars error); // conflicts with signal.h if 'extern'
 extern "C" void* memcpy(void*, const void*, size_t) noexcept;
 extern "C" void *memset(void *ptr, int value, size_t num) noexcept;
 extern "C" void *memmove(void *__dst, const void *__src, size_t num) noexcept;
+//#else
+#elif WASM
+extern "C" void *memset(void *__dst, int __c, size_t __n) __attribute__((__nothrow__, __leaf__, __nonnull__(1)));
+extern "C" void *memcpy(void *__restrict__ __dst, const void *__restrict__ __src, size_t __n) __attribute__((__nothrow__, __leaf__, __nonnull__(1, 2)));
+extern "C" void *memmove(void *__dst, const void *__src, size_t __n) __attribute__((__nothrow__, __leaf__, __nonnull__(1, 2)));
 #else
 extern "C" void *memcpy(void *, const void *, size_t);
 extern "C" void *memset(void *ptr, int value, size_t num);
 extern "C" void *memmove(void *__dst, const void *__src, size_t num);
 #endif
+
+
 
 //__attribute__((import_module("env"), import_name("memcpy")));;
 extern "C" void memcpy0(char *destination, char *source, size_t num);
