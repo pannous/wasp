@@ -113,7 +113,8 @@ chars function_keywords[] = {"to", "ƒ", "fn", "fun", "func", "function", "metho
 // todo special UTF signs need NOT be in this list, as they are identified as operators via utf range
 chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
                           "is", "equal", "equals", "==", "!=", "≠", "#", "=", "." /*attribute operator!*/,
-                          "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":",
+                          "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "nop",
+                          "pass",
                           "upto", "…", "...", "..<" /*range*/,
                           "%", "mod", "modulo", "⌟", "2⌟", "10⌟", "⌞", "⌞2", "⌞10",
                           "plus", "times", "add", "minus",// todo via aliases.wasp / SPO PSO verb matching
@@ -1497,7 +1498,11 @@ private:
                 case '{': {
                     codepoint bracket = ch;
                     auto type = getType(bracket);
+#if not RUNTIME_ONLY
+                    bool flatten = not isFunction(actual.last());
+#else
                     bool flatten = true;
+#endif
                     bool addToLast = false;
                     bool asListItem =
                             lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
@@ -1533,8 +1538,8 @@ private:
                         actual.add(object);
                     else if (addToLast)
                         actual.last().last().addSmart(object);
-                    else if (actual.last().kind == operators)
-                        actual.last().add(object);
+//                    else if (actual.last().kind == operators)
+//                        actual.last().add(object);
                     else
                         actual.addSmart(object);
 //					current.addSmart(&object,flatten);
@@ -2029,7 +2034,7 @@ int main(int argc, char **argv) {
         String args((char*)alloc(1,1));// hack: written to by wasmx
 //		args.data[0] = '{';
         print(args);
-        current += strlen0(args)+1;
+        current += strlen(args)+1;
 #endif
 
 // via arg

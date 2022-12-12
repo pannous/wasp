@@ -50,7 +50,11 @@ if (NOT WASM)
     ADD_DEFINITIONS(-D_Backtrace_)
     set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
 endif () # else :
-
+#
+#if(WASP_FULL)
+#    # experiment: whole runtime included!
+#    SET(WASM3 1)
+#endif()
 
 if (INCLUDE_MERGER)
     message(INCLUDE_MERGER)
@@ -168,22 +172,24 @@ if (TRACE)
     #    add_compile_options(-Wextra)
 endif ()
 
-# enable:
+ADD_COMPILE_FLAG("-fno-inline") # why not? debug?
+
+# ENABLE:
 #ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
-if (APPLE)
-    ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
-endif ()
 ADD_COMPILE_FLAG("-Wno-writable-strings") # ALWAYS allow conversion from string literal to 'char *'
 ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
-ADD_COMPILE_FLAG("-fno-inline")
 ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
+ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
 
-ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
 ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
+ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
 # todo Just use initiator lists? ^^
+if (APPLE)
+    ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
+endif ()
 
 if (NOT TRACE)
     if (APPLE)
@@ -202,7 +208,6 @@ if (NOT TRACE)
         ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
         ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
         ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
-        ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
     endif ()
 endif ()
 
@@ -231,7 +236,7 @@ endif ()
 #ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
 
 # COMMON FOR ALL
-set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp source/Code.cpp)
+set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp source/Code.cpp source/NodeTypes.cpp)
 
 if (CONSOLE)
     message(CONSOLE)
@@ -420,6 +425,8 @@ if (WASM) # OR WASI)
     #    add_library(wasp.wasm SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
     if (RUNTIME_ONLY)
         add_executable(wasp-runtime.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
+    elseif (WASP_FULL)
+        add_executable(wasp-full.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
     else ()
         add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
     endif ()

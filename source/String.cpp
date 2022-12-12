@@ -38,7 +38,7 @@ bool eq(chars dest, chars src, int length) {
         return false;
     int i = 0;
     if (dest == "" and src[0])return false;
-    if (length < 0 and strlen0(dest) != strlen0(src))
+    if (length < 0 and strlen(dest) != strlen(src))
         return false;
 //	if length>0 it forces comparison of reference strings terminated by length, not by 0!
     while (char c = dest[i]) {
@@ -56,9 +56,11 @@ bool eq(chars dest, chars src, int length) {
     return true;
 }
 
-//extern "C"
-int strlen0(chars x) {
+extern "C"
+size_t strlen(const char *x) {
+#if not WASM
     if (!x)return 0;
+#endif
     int l = 0;
     if ((long long) x >= MEMORY_SIZE || ((long long) x) == 0x200000000LL) {
         puts(x);
@@ -83,7 +85,7 @@ void strcpy2(char *dest, chars src, int length) {// =-1
     if (!dest || !src)
         return;
     int i = 0;
-    if (length < 0)length = strlen0(src);
+    if (length < 0)length = strlen(src);
     if (length <= 0)return;
 //	if(strlen(src)<length)error(string("Illegal strcpy2 length"));// could be filled with 0 :(
 //	if(strlen(dest)<length)error("Illegal strcpy2 length"_s);// could be filled with 0 :(
@@ -314,7 +316,7 @@ chars formatRealWithBaseAndPrecision(double num, int base = 10, int digits_after
         remainder -= int(remainder);
         f = concat(f, digit);
     }
-    int len = strlen0(f);// cut trailing 0 : 1.1000 -> 1.1
+    int len = strlen(f);// cut trailing 0 : 1.1000 -> 1.1
     for (int i = 1; i < len; ++i) {
         if (f[len - i] == '0') ((char *) f)[len - i] = 0;
         else break;
@@ -459,16 +461,21 @@ String s(chars &s) {
 bool String::empty() const {//this==0 in testMarkMulti!
 //#ifdef WASM
 //	if(memory_size and data and (long) data > memory_size/*bug!*/)
-//		error("CORRUPT String pointer");
 ////		return true;
 //#endif
-//	if (this == 0)return true;
-    if ((long) this < 1000)return true;// zero page broken object hack
-    if ((long long) data == 0x1ffffffff || (long long) data >= 0xffffffff00000000 ||
-        ((long long) data >= 0x100000000LL and (long long) data <= 0x100100000))
-        return false;// todo: valgrind debug corruption, usually because of not enough memory
-    return length == 0 || !data || (long) data > MEMORY_SIZE || data[0] == 0;// || data == object_name.data;
-//		|| data=="" || data=="ø" || data=="[…]"  || data=="(…)"  || data=="{…}"  TODO
+    if (this == 0)return true;
+    if ((long) this < 8)return true;// zero page broken object hack
+    if (length == 0)return true;
+    if (this->data == 0)return true;
+#if WASM
+    if(this > (void*)current)return true;
+    if(this->data > (void*)current)return true;
+//		error("CORRUPT String pointer");
+#endif
+//    if ((long long) data == 0x1ffffffff || (long long) data >= 0xffffffff00000000 ||
+//        ((long long) data >= 0x100000000LL and (long long) data <= 0x100100000))
+//        return false;// todo: valgrind debug corruption, usually because of not enough memory
+    return (long) data > MEMORY_SIZE;
 }
 
 
@@ -582,8 +589,8 @@ bool String::startsWith(chars string) {
 }
 
 bool String::endsWith(const char *string) {
-    int len1 = strlen0(string);
-    length = strlen0(data);// todo LOST WHEN?
+    int len1 = strlen(string);
+    length = strlen(data);// todo LOST WHEN?
     return len1 <= length and eq(data + length - len1, string, len1);
 }
 
@@ -593,7 +600,7 @@ String String::to(const char *string) {
 
 List<String> String::split(const char *string) {
     List<String> parts;
-    int len1 = strlen0(string);
+    int len1 = strlen(string);
     int start = 0;
     for (int i = 0; i < length; i++) {
         if (eq(data + i, string, len1)) {
@@ -635,7 +642,7 @@ void String::shift(int i) {
 }
 
 String String::from(const char *string) {
-    return substring(this->indexOf(string) + strlen0(string));
+    return substring(this->indexOf(string) + strlen(string));
 }
 
 void error1(String message, chars file, int line) {
@@ -658,7 +665,7 @@ bool empty(String &s) { return s.empty(); }
 
 bool empty(String *s) { return not s or s->empty(); }
 
-bool empty(chars s) { return not s or strlen0(s) == 0; }
+bool empty(chars s) { return not s or strlen(s) == 0; }
 
 bool empty(codepoint s) {
     return 0 <= s and s <= ' ';// not s or s == ' ' or s == '\n' or s == '\t' or s==0x0F or s==0x0E;
@@ -668,7 +675,7 @@ bool empty(codepoint s) {
 bool contains(chars str, chars match) {
     if (!str)
         return false;
-    int l = strlen0(match);
+    int l = strlen(match);
     for (int i = 0; str[i] != 0; i++) {
         bool ok = true;
         for (int j = 0; j < l; j++) {

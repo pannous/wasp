@@ -971,7 +971,7 @@ void Linker::ResolveSymbols() {
         printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
         unsigned long nr_imports = binary->function_imports.size();
 
-        // FIND DUPLICATE imports (no other purpose for now!)
+        // FIND DUPLICATE imports and exports (no other purpose for now!)
         int import_index = 0;
         for (auto &import: binary->function_imports) {
             if (import_map.has(import.name)) {
@@ -992,27 +992,27 @@ void Linker::ResolveSymbols() {
             }
         }
 
-
         short pos = -1;
-        for (Export &_export: binary->exports) {// todo: why not store index directly?
+        for (Export &_export: binary->exports) {
             pos++;
-            if (tracing)
-                printf("%s export kind %d '%s' index %d\n", binary->name, _export.kind, _export.name.data,
-                       _export.index);
             if (export_map.FindIndex(_export.name) != kInvalidIndex) {
                 warn("duplicate export name "s + _export.name);// Ignoring
                 binary->exports.remove(pos);// todo: careful, does iterator skip an element now??
-//                _export.index = export_map.FindIndex(_export.name);// useless
             }
-            if (_export.kind == wabt::ExternalKind::Global) {
-                globals_export_list.emplace_back(&_export, binary.get());
-                export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
-            } else if (_export.kind == ExternalKind::Memory) {
-//                remove_from_efin_vec(binary->exports, _export);
-//                auto pos = std::find(binary->exports.begin(), binary->exports.end(), _export);
+            if (_export.kind == ExternalKind::Memory) {
                 memories++;
                 if (memories > 1)
                     binary->exports.remove(pos);
+            }
+        }
+
+        for (Export &_export: binary->exports) {// todo: why not store index directly?
+            if (tracing)
+                printf("%s export kind %d '%s' index %d\n", binary->name, _export.kind, _export.name.data,
+                       _export.index);
+            if (_export.kind == wabt::ExternalKind::Global) {
+                globals_export_list.emplace_back(&_export, binary.get());
+                export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
             } else if (_export.kind == ExternalKind::Func) {
                 Func &func = binary->functions[_export.index - nr_imports];
                 unsigned long position = export_list.size();

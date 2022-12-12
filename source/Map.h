@@ -26,18 +26,19 @@
 template<class S, class T>
 class Map {
 public:
-    int map_header = map_header_32;
-    int _size = 0;
     int capacity = MAP_INITIAL_CAPACITY;// initial
     S *keys = (S *) calloc(sizeof(S), capacity);
     T *values = (T *) calloc(sizeof(T), capacity);
+    int _size = 0;
+
+    int map_header = map_header_32;
 
     //	bool leave_blank == use_malloc_constructor = true;// return reference to freshly nulled malloc data, same ^^
-    bool use_constructor = true;// *new T() makes sense for List of references but NOT for list of Data!!
-    bool leave_blank = false;//true would be VERY BAD IDEA especially for pointers! todo what is the point?
-    bool use_default = false;// no, this would copy fields (e.g. pointers to same list)  todo what is the point?
-
     [[maybe_unused]] T defaulty;
+    bool use_default = false;// no, this would copy fields (e.g. pointers to same list)  todo what is the point?
+    bool leave_blank = false;//true would be VERY BAD IDEA especially for pointers! todo what is the point?
+    bool dont_use_constructor = false;// *new T() makes sense for List of references but NOT for list of Data!!
+
 
     // unnecessary :
 //    Map() {
@@ -182,11 +183,7 @@ public:
                 T &t = values[_size++]; // todo why is this bad though?;)
                 // can FAIL with "T not initialized" ?
                 return t;
-            } else if (use_constructor) {
-//				insert_or_assign(key, *new T());
-                insert_or_assign(key, T());// BAD because stack value? ok because copy by value? todo
-                return values[_size - 1];// increased above!
-            } else {
+            } else if (dont_use_constructor) {
                 error("MISSING KEY: "s + key);
                 breakpoint_helper
                 printf("MISSING KEY: ");
@@ -194,8 +191,10 @@ public:
                 printf("\n");
                 return values[_size++];
 //				error("MISSING KEY");
-            }
-
+            } else
+//				insert_or_assign(key, *new T());
+                insert_or_assign(key, T());// BAD because stack value? ok because copy by value? todo
+            return values[_size - 1];// increased above!
         }
         T &t = values[position1];
         return t;
@@ -252,8 +251,7 @@ public:
     }
 
     void setDefault(T d) {
-        if (sizeof(T) > 8)
-            todo("careful! only use setDefault for value types without nested data!");
+        if (sizeof(T) > 8) todo("careful! only use setDefault for value types without nested data!");
         defaulty = d;
         use_default = true;// we can't tell if defaulty is 'good' otherwise
     }

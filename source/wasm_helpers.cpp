@@ -3,8 +3,8 @@
 #include "Node.h"
 
 
-#ifdef RUNTIME_ONLY // No Angle.cpp!
 const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm compiled as 'RUNTIME_ONLY'";
+#ifdef RUNTIME_ONLY // No Angle.cpp!
 void clearContext() {}
 Node &analyze(Node &node, String context) { return *new Node(RUNTIME_ONLY_ERROR); }
 Node eval(String code) { return Node(RUNTIME_ONLY_ERROR); }
@@ -15,7 +15,6 @@ extern "C" long run_wasm_file(chars file) {
 }
 //void testCurrent(){}// why??
 #endif
-const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm was compiled as 'RUNTIME_ONLY'";
 #if not CONSOLE
 
 void console() { error(RUNTIME_ONLY_ERROR); }
@@ -71,10 +70,20 @@ void error1(chars message, chars file, int line) {
 #ifdef _Backtrace_
     //	Backtrace(2);// later, in raise
 #endif
+#if WASM
+    put_chars("\n⚠️ERROR\n");
+    put_chars(__FILE__);
+    put_chars(":");
+    puti(__LINE__);
+    put_chars((char *) (message));
+    put_chars("\n");
+    proc_exit(-1);
+#else
     if (file)printf("\n%s:%d\n", file, line);\
     raise(message);
     if (panicking) panic();// not reached
     throw message;// not reached
+#endif
 }
 
 
@@ -105,8 +114,9 @@ void warning(chars warning) {
 
 int raise(chars error) {
 #if WASM
-    put_chars("\nERROR\n");
+    put_chars("\n⚠️ERROR\n");
     put_chars((char *) error);
+    put_chars("\n");
 #endif
     if (panicking)
         proc_exit(-1);
@@ -127,3 +137,9 @@ double sqrt1(double a) {
 int square(int a) {
     return a * a;
 }
+
+#if NO_TESTS
+void testCurrent(){
+    print("no tests");
+}
+#endif
