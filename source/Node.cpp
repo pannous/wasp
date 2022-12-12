@@ -19,21 +19,6 @@
 #endif
 
 
-#define MAX_NODE_CAPACITY 100000 // debug only, let it run out of memory naturally!
-int lastChild = 1;
-
-// todo: wrap parser-options
-//bool use_polish_notation = false;// f(a,b) => (f a b) also : lisp mode (a 1 2)==a(1)(2)==a{1 2}
-
-
-bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
-bool panicking = false;// false for error tests, webview, etc
-#ifdef RUNTIME_ONLY
-bool debug = false;
-#else
-bool debug = true;// clone sub-strings instead of sharing etc
-#endif
-
 //#include <cmath>
 //#include <tgmath.h> // sqrt macro
 #include "String.h"
@@ -100,7 +85,7 @@ void initSymbols() {
 #else
     return; // no need outside WASM
 #endif
-    nil_name = "nil";
+//    nil_name = "nil";
     empty_name = "";
     EMPTY = String('\0');
     ((Node) NIL) = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
@@ -1379,6 +1364,22 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
     long long smart_type64 = smartPointer64 & 0xFFFFFFFF00000000;// type part
     byte smart_type_4 = (smartPointer64 & 0xF000000000000000) >> 63;// type part
 //    short smart_type_payload = (short)(smartPointer64 & 0x0000FFFF00000000L)>>16;// type payload including length (of array)
+
+    if (smart_type64 == string_header_64 or smart_type_4 == stringa) {
+        // smart pointer for string
+//        if(smart_type_payload&string_meta::share)
+//        return new Node(new String((char *) wasm_memory) + value, false/*copy!*/);
+//        else
+        if (not wasm_memory)
+            error("wasm_memory not linked");
+        char *string = ((char *) wasm_memory) + value;
+        String *pString = new String(string, true /*copy!*/ );
+        Node &pNode = *new Node(pString, false /* not identifier*/);
+        pNode.setType(strings);
+        return &pNode;
+    }
+
+
     if (smart_type64 == array_header_64 /* and abi=wasp */ ) {
         // smart pointer to smart array
         int *index = (int *) (((char *) wasm_memory) + value);
@@ -1410,7 +1411,7 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
             Node *chile;
             if (value_kind == Primitive::byte_char)chile = new Node((codepoint) *val);
             else if (value_kind == Primitive::byte_i8)chile = new Node((long) *val);
-            else if (value_kind == Primitive::codepointus)chile = new Node((codepoint) *(long *) val);
+            else if (value_kind == Primitive::codepoint32)chile = new Node((codepoint) *(long *) val);
             else if (value_kind == wasm_int32)chile = new Node(*(int *) val);
             else if ((int) value_kind == longs)chile = new Node(*(long *) val);
             else if ((int) value_kind == reals)chile = new Node(*(double *) val);
@@ -1418,19 +1419,6 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
             arr->add(chile);
         }
         return arr;
-    }
-    if (smart_type64 == string_header_64 or smart_type_4 == stringa) {
-        // smart pointer for string
-//        if(smart_type_payload&string_meta::share)
-//        return new Node(new String((char *) wasm_memory) + value, false/*copy!*/);
-//        else
-        if (not wasm_memory)
-            error("wasm_memory not linked");
-        char *string = ((char *) wasm_memory) + value;
-        String *pString = new String(string, true /*copy!*/ );
-        Node &pNode = *new Node(pString, false /* not identifier*/);
-        pNode.setType(strings);
-        return &pNode;
     }
     breakpoint_helper
     printf("smartPointer64 : %llx\n", (int64_t) smartPointer64);

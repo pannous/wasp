@@ -17,13 +17,13 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wstring-compare"
 
-#ifndef WASM
+//String* String::EMPTY_STRING=new String();
 
+//#ifndef WASM
 #include <cstdio>
 #include <cstring>
-
-#else
-#endif
+//#else
+//#endif
 
 
 typedef unsigned char byte;
@@ -178,8 +178,8 @@ int atoi1(codepoint c) {
     return -1;
 }
 
-// todo: 0 ambiguous "0" or "NaN"
-long parseLong(chars str) {
+// todo: 0 ambiguous "0" or "NaN"  use smartType!
+int64 parseLong(chars str) {
     if (!str)return 0;
     while (*str == '+')str++;
     short sig = 1;
@@ -447,20 +447,6 @@ String s(chars &s) {
 }
 
 
-#ifndef WASM
-//relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
-String nil_name = "nil";// ␀ ø
-String empty_name = "";
-String EMPTY = String('\0');
-#else
-String nil_name="nil";
-String empty_name;
-String object_name;
-String groups_name;
-String patterns_name;
-String EMPTY;
-#endif
-
 #pragma clang diagnostic pop
 
 bool String::empty() const {//this==0 in testMarkMulti!
@@ -645,9 +631,6 @@ String String::from(const char *string) {
     return substring(this->indexOf(string) + strlen0(string));
 }
 
-String EMPTY_STRING0 = "";
-String &EMPTY_STRING = EMPTY_STRING0;
-
 void error1(String message, chars file, int line) {
     error1(message.data, file, line);
 }
@@ -701,7 +684,7 @@ void print(const Node node) {
 }
 
 
-bool skip_newline = false;
+//bool skip_newline = false;
 
 void print(long i) {
 #if MY_WASM
@@ -711,8 +694,9 @@ void print(long i) {
     printf("%ld", i);
     // either through wasm_helpers or via stdio.wasm
 #endif
-    if (skip_newline)skip_newline = false;// just skip one CANT make it
-    else newline();
+//    if (skip_newline)skip_newline = false;// just skip one CANT make it
+//    else
+    newline();
 }
 
 void print(char c) {

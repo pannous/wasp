@@ -367,30 +367,40 @@ if (WASM) # OR WASI)
     ADD_COMPILE_FLAG("-Wl,--initial-memory=117964800") # stack size plus some
     ADD_COMPILE_FLAG("-Wl,-z,stack-size=104857600") # 1MB*10  pointers will START from high and go lower!
     ADD_COMPILE_FLAG("-Qn") # no producer metadata
+    ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
+    ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # keep name section?
+    #    ADD_COMPILE_FLAG("-Wl,--pie") #  position independent executable, does it help? NO
+    #    ADD_COMPILE_FLAG("-fPIC") # does not help creating PIEs, with -pie, is not yet stable
+
     if (VERBOSE)
         ADD_COMPILE_FLAG("-Wl,-t,--verbose,--export-table -O0") # ,-O0  VERBOSE!
-        #    ADD_COMPILE_FLAG("-Wl,--emit-relocs")
+        ADD_COMPILE_FLAG("-Wl,--emit-relocs")
+        #    ADD_COMPILE_FLAG("-Wl,-vvv")
     endif ()
     if (DEBUG)
-        #    ADD_COMPILE_FLAG("-O0")
+        ADD_COMPILE_FLAG("-O0")
+        #        ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
     endif ()
-    ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
-    ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
-    ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # keep name section?
+    if (NOT RELEASE)
+        ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
+    endif ()
     if (RELEASE)
-        #    ADD_COMPILE_FLAG("-Wl,--export-dynamic") #   Put symbols in the dynamic symbol table
+        if (RUNTIME_ONLY)
+            ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
+            # wasmtime bug can't handle with exported globals
+        else ()
+            ADD_COMPILE_FLAG("-Wl,--export=_start") # deletes all unused functions!
+        endif ()
+        #        ADD_COMPILE_FLAG("-Wl,--export-dynamic") #   Put symbols in the dynamic symbol table
         ADD_COMPILE_FLAG("-v")
-        #    ADD_COMPILE_FLAG("-Wl,-vvv")
-        #    ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
         #  --reproduce=<value>    Dump linker invocation and input files for debugging
 
         # No support for creating shared libraries. The spec for shared libraries in WebAssembly is still in flux
         # https://github.com/rust-lang/rust/issues/60231#issuecomment-654645065
         #    ADD_COMPILE_FLAG("-Wl,--shared")
-        #    ADD_COMPILE_FLAG("-Wl,--pie") #  position independent executable, does it help? NO
         #relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
-        #    ADD_COMPILE_FLAG("-fPIC") # does not help
-        ADD_COMPILE_FLAG("-Wl,--compress-relocations,--strip-debug") # incompatible with output debug information. Please pass --strip-debug
+        ADD_COMPILE_FLAG("-Wl,--compress-relocations") # incompatible with output debug information. Please pass --strip-debug
+        ADD_COMPILE_FLAG("-Wl,--strip-debug") # DEBUG-RELEASE
         set(SOURCE_FILES ${SOURCE_FILES} source/exceptions.cpp)
         ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
         #    --no-validation   --debug

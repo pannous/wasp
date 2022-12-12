@@ -149,6 +149,7 @@ public:
 //    S items[LIST_DEFAULT_CAPACITY];// array type is not assignable
 
     List(int size = LIST_DEFAULT_CAPACITY) {
+        capacity = size;
         items = (S *) calloc(size, sizeof(S));
     }
 
