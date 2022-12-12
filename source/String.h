@@ -103,7 +103,8 @@ void strcpy2(char *dest, chars src);
 
 void strcpy2(char *dest, chars src, int length);
 
-extern "C" int strlen0(chars x);
+//extern "C"
+int strlen0(chars x);
 //size_t   strlen(chars __s);
 
 

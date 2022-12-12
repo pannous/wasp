@@ -1534,6 +1534,8 @@ private:
                         actual.add(object);
                     else if (addToLast)
                         actual.last().last().addSmart(object);
+                    else if (actual.last().kind == operators)
+                        actual.last().add(object);
                     else
                         actual.addSmart(object);
 //					current.addSmart(&object,flatten);
@@ -1940,6 +1942,7 @@ void usage() {
 
 
 // wasmer etc DO accept float/double return, just not from main!
+//extern "C"
 int main(int argc, char **argv) {
 #ifdef ErrorHandler
     register_global_signal_exception_handler();

@@ -163,6 +163,7 @@ namespace wabt {
             Index table_index_offset;
             Index memory_page_count;
             Index memory_page_offset;
+            Index memory_data_start;
 
             Index table_elem_count = 0;
             Index function_count = 0;
