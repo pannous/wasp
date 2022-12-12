@@ -681,30 +681,30 @@ public:
     Node &merge(Node *other);
 
     void print(bool internal_representation = false) {
-        printf("%s\n", serialize().data);
+        printef("%s\n", serialize().data);
         if (internal_representation) {
-            printf("node{");
+            printef("node{");
             if (this == &NIL || kind == nils) {
-                printf("NIL\n");
+                printef("NIL\n");
                 return;
             }
             if (name.data)
-                printf("name:%s", name.data);
-            printf(" length:%d", length);
+                printef("name:%s", name.data);
+            printef(" length:%d", length);
             if (kind < unknown)
-                printf(" type:%s", typeName(kind));
+                printef(" type:%s", typeName(kind));
             const String &string1 = serializeValue(false);
-            printf(" value:%s\n", string1.data);// NEEDS "%s", otherwise HACKABLE
-            printf(" children:[");// flat, non-recursive
+            printef(" value:%s\n", string1.data);// NEEDS "%s", otherwise HACKABLE
+            printef(" children:[");// flat, non-recursive
             for (int i = 0; i < min(length, 10); i++) {
                 Node &node = children[i];
                 if (!node.name.empty()) {
-                    printf("%s", node.name.data);
-                    printf(" ");
-                } else printf("{…} ");// overview
+                    printef("%s", node.name.data);
+                    printef(" ");
+                } else printef("{…} ");// overview
             }
-            printf("]");
-            printf("}\n");
+            printef("]");
+            printef("}\n");
         }
     }
 

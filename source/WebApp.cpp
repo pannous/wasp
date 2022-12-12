@@ -123,7 +123,7 @@ void render(Node &node, std::stringstream *html) {
     }
     if (node.kind != strings)
         *html << "</" << node.name << ">";
-    printf("HTML:\n%s\n", html->str().data());
+    printef("HTML:\n%s\n", html->str().data());
     w.navigate("data:text/html," + html->str());
 }
 //char *page=0;// use inline html, else go straight to page todo: file:// URLs?
@@ -179,7 +179,7 @@ void navigate(String url) {
 
 long open_webview(String url = "") {
     if (!url.empty())page = url;
-    printf("\nWebView!\n");
+    printef("\nWebView!\n");
 
     // add [w] to closure to make it local
     w.set_title("Example");
@@ -189,14 +189,14 @@ long open_webview(String url = "") {
     w.bind("run", [](std::string s) -> std::string {
         throwing = false;
         const std::string &code = webview::json_parse(s, "", 0);
-        printf("RUN: %s", code.data());
+        printef("RUN: %s", code.data());
         panicking = false;
         std::thread compile(eval, String(code.data()));
         compile.detach();
         return "compiling…";// will run wasm HERE and print result
     });
     w.bind("exit", [](std::string s) -> std::string {
-        printf("EXIT");
+        printef("EXIT");
         exit(0);
     });
     w.bind("server", [](std::string s) -> std::string {
@@ -214,7 +214,7 @@ long open_webview(String url = "") {
     });
 
     w.bind("wasm_done", [](std::string s) -> std::string {
-        printf("wasm_done  result json = %s", s.c_str());
+        printef("wasm_done  result json = %s", s.c_str());
         const std::string &string = webview::json_parse(s, "", 0);
 #if MULTI_VALUE
         auto type = webview::json_parse(string, "", 0);
@@ -222,13 +222,13 @@ long open_webview(String url = "") {
         waiter.done(std::stol(val), std::stol(type));
 #else
         long result0 = std::stol(string);
-        printf("wasm_done  result = %d \n", result0);
+        printef("wasm_done  result = %d \n", result0);
         waiter.done(result0);
 #endif
         return s;
     });
     w.bind("wasm_error", [](std::string s) -> std::string {
-        printf("wasm_error %s \n", s.data());
+        printef("wasm_error %s \n", s.data());
         waiter.done(-1);
         return s;
     });
@@ -243,7 +243,7 @@ long open_webview(String url = "") {
         return s;
     });
     w.bind("$", [](std::string s) -> std::string {
-        printf("$('%s')? jquery needs to be injected!", s.data());
+        printef("$('%s')? jquery needs to be injected!", s.data());
         w.eval(s);
 //        w.eval(s);
         return s;
@@ -269,7 +269,7 @@ long open_webview(String url = "") {
         auto b = std::stol(webview::json_parse(s, "", 1));
         return std::to_string(a + b);
     });
-    // printf("%s",w.return("{'test':'value'}"));// json_parse_c()?
+    // printef("%s",w.return("{'test':'value'}"));// json_parse_c()?
     // w.on_message() private but interesting… !
     // [[config preferences] setValue:@YES forKey:@"developerExtrasEnabled"]
 
@@ -290,7 +290,7 @@ long open_webview(String url = "") {
     //        webview::cocoa_wkwebview_engine;
 
     w.run(); //  we have to call our tests from js to continue in thread!!!
-    printf("DONE\n");//never reached, even after calling terminate() from js/c/wasp
+    printef("DONE\n");//never reached, even after calling terminate() from js/c/wasp
     return 0;
 }
 

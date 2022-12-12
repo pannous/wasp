@@ -142,8 +142,8 @@ extern "C" long run_wasm(bytes wasm_bytes, int len) {
 //	IM3Environment environment=m3_NewEnvironment();
 //	IM3Module module;
 //	M3Result result = m3_ParseModule(environment, &module, buffer, sz);
-//	printf("parsed: %s\n", result);
-//	printf("Module: %s\n", module->name);
+//	printef("parsed: %s\n", result);
+//	printef("Module: %s\n", module->name);
 ////	M3Result  Module_AddFunction  (IM3Module io_module, u32 i_typeIndex, IM3ImportInfo i_importInfo)
 //
 //
