@@ -1152,6 +1152,7 @@ Node &Node::setType(Kind kin, bool check) {
     if (kind == kin)return *this;
     if (kind == modul and kin == key)
         return *this;// todo   import host: host-funcs     module{.name=host}.value=host-funcs
+    if (kind == 0)check = false;
     if (kind == operators and kin == expression)return *this;
     if (kind == codepoints and kin == operators)check = false;// and name==(codepoint)value.longy
     if (kind == groups and (kin == expression or kin == functor))check = false;
@@ -1208,113 +1209,6 @@ void Node::addMeta(Node *pNode) {
     metas().add(pNode);
 }
 
-
-//String
-chars typeName(Kind t) {
-    switch (t) {
-        case 0:
-            return "ø"; // unknown ?
-        case objects:
-            return "object";
-        case groups:
-            return "group";
-        case patterns:
-            return "pattern";
-        case key:
-            return "key";
-//            return "node";
-        case fields:
-            return "field";
-        case reference:
-            return "reference";
-        case symbol:
-            return "symbol";
-        case operators:
-            return "operator";
-        case expression:
-            return "expression";
-        case strings:
-            return "string";
-        case linked_list:
-            return "list";//"linked_list";
-        case arrays:
-            return "array";
-        case buffers:
-            return "buffer";
-        case realsF:
-            return "float";
-        case reals:
-            return "real";
-        case number: // SmartNumber or Number* ?
-            return "number";
-        case longs:
-            return "long";
-        case long32:
-            return "int";
-            //		case ints:
-            //			return "int";
-        case bools:
-            return "bool";
-        case nils:
-            return "nil";
-        case unknown :
-            return "unknown";
-        case call:
-            return "call";// function
-        case declaration:
-            return "declaration";
-        case assignment:
-            return "assignment";
-        case errors:
-            return "error";
-        case functor:
-            return "functor";
-        case codepoints:
-            return "codepoint";
-        case enums:
-            return "enum";
-        case variants:
-            return "variant";
-        case records:
-            return "record";
-        case generics:
-            return "generics";
-        case clazz:
-            return "class";
-        case structs:
-            return "struct";
-        case flags:
-            return "flags";
-        case constructor:
-            return "constructor";
-        case modul:
-            return "module";
-        case last_kind:
-        default:
-            error(str("MISSING Type Kind name mapping ") + (int) t);
-    }
-}
-
-
-chars typeName(Type t) {
-    if (t.value < last_kind)return typeName(t.kind);
-    if (t.value < 0x10000)return typeName((Primitive) t);
-    // todo : make sure to emit Nodes at > 0x10000 …
-    warn("typeName %x %d "s % t.value % t.value);
-#if !WASM
-//    warn("Node pointers don't fit in 32 bit Type!")
-    todo("Node pointers don't fit in 32 bit Type!");
-#else
-    if (t.value > 0x10000)return ((Node*)t.address)->name;
-#endif
-    error(str("MISSING Type name mapping ") + t);
-    return "ƒ";
-}
-
-chars typeName(const Type *t) {
-    if (not t)return "ø undefined";
-    return typeName(*t);
-}
 
 //Node &node(Type t, long value, char *name) {
 //    return (*new Node(name)).setValue(value).setType(t, false);

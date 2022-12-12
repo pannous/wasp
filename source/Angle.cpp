@@ -38,7 +38,7 @@ Map<String, Function> functions = {.capacity=10000};
 List<Module *> libraries;// used modules from (automatic) import statements e.g. import math; use log; …  ≠
 // functions of preloaded libraries are found WITHOUT `use` `import` statement (as in Swift) !
 
-Map<long, bool> analyzed;// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
+Map<long, bool> analyzed = {.capacity=10000};// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
 
 // todo : use proper context ^^ instead of:
@@ -58,20 +58,14 @@ public:
     String name;
 //	Valtype type;
 //	Valtype kind;
-    Node type;
+//    Type type;
+    Node *type;
     Node modifiers;
 };
 
-Valtype mapType(Node &n) {
-#ifdef RUNTIME_ONLY
-    return int32;
-#else
-    return mapTypeToWasm(n);
-#endif
-}
-
 // 'private header'
 bool addLocal(Function &context, String name, Type Type, bool is_param); // must NOT be accessible from Emitter!
+Type preEvaluateType(Node &node, Function &context);
 
 
 Node getType(Node node) {
@@ -194,20 +188,20 @@ Node &groupTypes(Node &expression, Function &context);
 Signature &groupFunctionArgs(Function &function, Node &params) {
     //			left = analyze(left, name) NO, we don't want args to become variables!
     List<Arg> args;
-    Node nextType = Double;
+    Node &nextType = Double;
     if (params.length == 0) {
         params = groupTypes(params, function);
         if (params.name != function.name)
-            args.add({function.name, params.name, params.type ? *params.type : nextType});
+            args.add({function.name, params.name, params.type ? params.type : &nextType});
     }
     for (Node &arg: params) {
         if (isType(arg)) {
             if (args.size() > 0 and not args.last().type)
-                args.last().type = *types[arg.name];
+                args.last().type = types[arg.name];
             else nextType = arg;
         } else {
             if (arg.name != function.name)
-                args.add({function.name, arg.name, arg.type ? *arg.type : nextType, params});
+                args.add({function.name, arg.name, arg.type ? arg.type : &nextType, params});
         }
     }
 
@@ -218,14 +212,13 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
         if (function.locals.has(arg.name)) {
             error("duplicate argument name: "s + arg.name);
         }
-        Valtype argType = mapType(arg.type);
-        addLocal(function, arg.name, argType, true);
+        addLocal(function, arg.name, arg.type, true);
         signature.add(arg.type, arg.name);// todo: arg type, or pointer
     }
     if (params.value.node) {
         Node &ret = params.values();
-        Valtype valtype = mapType(ret);
-        signature.returns(valtype);
+        Type type = mapType(ret.name);
+        signature.returns(type);
     }
     return signature;
 }
@@ -434,7 +427,6 @@ Node Charpoint("Charpoint", clazz);
 // todo: see NodeTypes.h for overlap with numerical returntype integer …
 // these are all boxed class types, for primitive types see Type and Kind
 void initTypes() {
-
     types.add("i8", &ByteType);// use in u8.load etc
     types.add("u8", &ByteType);// use in u8.load etc
     types.add("int8", &ByteType);// use in u8.load etc
@@ -472,7 +464,7 @@ Node &groupTypes(Node &expression, Function &context) {
         if (expression.length > 0) {// point{x=1 y=2} point{x y}
             for (Node &typed: expression) {// double \n x = 4
                 typed.setType(&type);
-                addLocal(context, typed.name, mapType(typed), false);
+                addLocal(context, typed.name, mapType(typed.name), false);
             }
             expression.name = "";// hack
             expression.kind = groups;
@@ -529,7 +521,7 @@ Node &groupTypes(Node &expression, Function &context) {
                (typed.kind == reference and typed.length == 0)) {// BAD criterion for next!
             typed.type = aType;// ref ok because types can't be deleted ... rIgHt?
             if (typed.kind == reference or typed.isSetter())
-                addLocal(context, typed.name, mapType(*aType), false);
+                addLocal(context, typed.name, mapType(aType->name), false);
             // HACK for double x,y,z => z.type=Double !
             if (i + 1 < expression.length)
                 typed = expression[++i];
@@ -603,9 +595,10 @@ Node &groupSetter(String name, Node &body, Function &context) {
     Node *decl = new Node(name);//node.name+":={…}");
     decl->setType(assignment);
     decl->add(body.clone());// addChildren makes emitting harder
-    if (not addLocal(context, name, mapType(body), false)) {
+    auto type = preEvaluateType(body, context);
+    if (not addLocal(context, name, type, false)) {
         Local &local = context.locals[name];
-        local.typo = mapType(body);// update type! todo: check if cast'able!
+        local.typo = type;// update type! todo: check if cast'able!
     }
     return *decl;
 }
@@ -614,7 +607,7 @@ Node extractReturnTypes(Node decl, Node body);
 
 List<String> aliases(String name);
 
-Valtype preEvaluateType(Node &node, Function &function);
+Type preEvaluateType(Node &node, Function &context);
 
 Node &classDeclaration(Node &node, Function &function);
 
@@ -665,7 +658,7 @@ Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module
     function.body = &body;
     function.signature = groupFunctionArgs(function, node);
     if (returns and function.signature.return_types.size() == 0)
-        function.signature.returns(mapType(*returns));
+        function.signature.returns(mapType(returns->name));
     functions.insert_or_assign(name, function);
     return Node().setType(functor).setValue(Value{.data=&function});// todo: clone!  todo functor => Function* !?!?
 }
@@ -742,7 +735,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
                 warn("Cant set globals yet!");
                 continue;
             }
-            addLocal(context, op, mapType(node), false);
+            addLocal(context, op, preEvaluateType(node, context), false);
             if (node.length >= 2)
                 info("c-style function?");
             else
@@ -869,6 +862,14 @@ Node &groupOperators(Node &expression, Function &context) {
             expression.replace(i, i + 1, node);
         } else {
             prev = analyze(prev, context);
+            auto lhs_type = preEvaluateType(prev, context);
+            if (op == "+" and (lhs_type == Primitive::charp or lhs_type == Primitive::stringp or lhs_type == strings)) {
+                auto libraryFunction = findLibraryFunction("concat", true);
+                findLibraryFunction("_Z6concatPKcS0_", true);
+                for (auto vari: libraryFunction->variants) {
+                    vari.is_used = true;
+                }
+            }
             if (op == "^" or op == "^^" or op == "**") {// todo NORM operators earlier
                 functions["pow"].is_used = true;// todo just one
                 functions["powd"].is_used = true;
@@ -911,7 +912,7 @@ Node &groupOperators(Node &expression, Function &context) {
                 if (op.endsWith("=") and not op.startsWith("::") and prev.kind == reference) {
                     // todo can remove hack?
                     // x=7 and x*=7
-                    Valtype inferred_type = preEvaluateType(next, context);
+                    Type inferred_type = preEvaluateType(next, context);
                     if (addLocal(context, var, inferred_type, false)) {
                         if (op.length > 1 and op.endsWith("=")) // x+=1 etc
                             error("self modifier on unknown reference "s + var);
@@ -964,21 +965,29 @@ short arrayElementSize(Node &node);
 
 Function *use_required(Function *function);
 
-Valtype preEvaluateType(Node &node, Function &function) {
+Type preEvaluateType(Node &node, Function &context) {
+    // todo: some kind of Interpret eval?
+    // todo: combine with compile time eval! <<<<<
     if (node.kind == expression) {
-        if (node.length == 1)return preEvaluateType(node.first(), function);
-        node = groupOperators(node, function);
-        return mapType(node);
+        if (node.length == 1)return preEvaluateType(node.first(), context);
+        node = groupOperators(node, context);
+        return mapType(node.name);
     }
     if (node.kind == operators) {
         Node &lhs = node[0];
+        if (node.length == 1)
+            return mapType(lhs);
         Node &rhs = node[1];
         discard(lhs);
-        return mapType(rhs);// todo lol
+        return preEvaluateType(rhs, context);// todo lol
 //        if(lhs.kind==arrays)
     }
     if (node.kind == groups or node.kind == objects or node.kind == patterns) {
         arrayElementSize(node);// adds type as BAD SIDE EFFECT
+    }
+    if (node.kind == reference) {
+        if (context.locals.has(node.name))
+            return context.locals[node.name].type;
     }
     return mapType(node);
 }
@@ -1128,7 +1137,17 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 }
 
 bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: libraries.has(library)
+
+void addLibraryFunctionAsImport(Function &func) {
+    func.is_used = true;
+    Function &import = functions[func.name];// copy function info from library/runtime to main module
+    import.signature = func.signature;
+    import.is_runtime = false;// because here it is an import!
+    import.is_import = true;
+}
+
 // todo: clarify registerAsImport side effect
+// todo: return the import, not the library function
 Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))return use_required(&functions[name]);
@@ -1142,10 +1161,6 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         if (position >= 0) {
             // ⚠️ this function now lives inside Module AND as import inside "main" functions list, with different wasm_index!
             Function &func = library->functions.values[position];
-            Function &import = functions[name];// copy function info from library/runtime to main module
-            import.signature = func.signature;
-            import.is_runtime = false;// because here it is an import!
-            import.is_import = true;
 //            import.is_used = true; //  setting in emit too late: imports must be known through analyzer
 //            if(!libraries.has(library))
 //                libraries.add(library);// used
@@ -1157,17 +1172,27 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (searchAliases) {
         for (String alias: aliases(name)) {
             function = findLibraryFunction(alias, false);
+            use_required(function);
         }
     }
-    return use_required(function);
+    return function;
 }
 
 Function *use_required(Function *function) {
+
     if (!function)return 0;
+    addLibraryFunctionAsImport(*function);
     if (function->name == "quit")
         functions["proc_exit"].is_used = true;
     if (function->name == "puts")
         functions["fd_write"].is_used = true;
+    for (Function &variant: function->variants) {
+        addLibraryFunctionAsImport(variant);
+    }
+    for (String &alias: aliases(function->name)) {
+        auto ali = findLibraryFunction(alias, false);
+        addLibraryFunctionAsImport(*ali);
+    }
 //    for(Function& dep:function.required)
 //        dep.is_used = true;
     return function;
@@ -1178,13 +1203,16 @@ List<String> aliases(String name) {
 //	switch (name) // statement requires expression of integer type
 
     if (name == "len")
-        found.add("strlen0");
+        found.add("strlen");
     if (name == "int" or name == "atoi" or name == "atol" or name == "parseInt")
         found.add("parseLong");
 //        found.add("_Z7strlen0PKc");
     if (name == "atoi" or name == "int") {
         // todo type vs fun!
         found.add("_Z5atoi0PKc");
+    }
+    if (name == "concat") {// todo: programmatic!
+        found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
     }
     if (name == "+") {
         found.add("add");
@@ -1329,7 +1357,7 @@ Node &analyze(Node &node, Function &function) {
             else if (node.length > 1)
                 error("unknown key expression: "s + node.serialize());
         }
-        addLocal(function, name, node.value.node ? mapType(*node.value.node) : none, false);
+        addLocal(function, name, node.value.node ? mapType(node.value.node) : none, false);
     }
     if (isPrimitive(node)) {
         if (isVariable(node))
@@ -1440,7 +1468,7 @@ void preRegisterFunctions() {
 //    functions["init_graphics"].import().signature.returns(pointer);// surface
 
     // BUILTINS
-    functions["nop"].builtin();
+//    functions["nop"].builtin(); NOT A FUNCTION! an op
     functions["id"].builtin().signature.add(i32t).returns(i32t);
     functions["modulo_float"].builtin().signature.add(float32).add(float32).returns(float32);
     functions["modulo_double"].builtin().signature.add(float64).add(float64).returns(float64);
@@ -1461,7 +1489,6 @@ void clearAnalyzerContext() {
     functions.clear();
     analyzed.clear();// todo move much into outer analyze function!
     functions.clear();// always needs to be followed by
-    functions.use_constructor = true;// WHY, wasm?
     preRegisterFunctions();// BUG Signature wrong cpp file
 #endif
 }
@@ -1523,10 +1550,10 @@ float function_precedence = 1000;
 
 // todo!
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-// pre-registered functions working without any import / include / require / use
+// pre-registered builtin/runtime functions working without any import / include / require / use
 chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printf",
                                                         "println", "puts", "putf", "len", "quit", "parseLong",
-                                                        "parseDouble",
+                                                        "parseDouble", "strlen", "concat",
                                                         "log", "ln", "log10", "log2", "similar",
                                                         "putx", "putc", "get", "set", "peek", "poke", "read",
                                                         "write", 0, 0,

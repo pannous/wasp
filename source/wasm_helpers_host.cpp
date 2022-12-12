@@ -133,6 +133,7 @@ void put_chars(char *c, size_t len) {
     printf("%s", c);
 }
 
+[[noreturn]]
 void proc_exit(int x) {
     exit(x);
 }

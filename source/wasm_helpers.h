@@ -102,7 +102,7 @@ void putx(long long l);
 //void putp(long *char_pointer);
 void put_char(codepoint c);
 //void put_char(char c);
-//int putchar(int c);// stdio
+extern "C" int putchar(int c);// stdio
 
 void putf(float f);
 
@@ -265,6 +265,7 @@ __attribute__((import_module("wasi_unstable"), import_name("fd_write")))
 extern "C" int fd_write(int fd, c_io_vector *iovs, size_t iovs_count, size_t *nwritten);
 //void fd_write_host(int FD, char **strp, int *ignore, int *ignore) compatible signature
 
+[[noreturn]]
 __attribute__((import_module("wasi_unstable"), import_name("proc_exit")))
 extern "C" void proc_exit(int exitcode);
 
