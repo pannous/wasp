@@ -35,16 +35,16 @@ extern void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM!
 #else
 //#define WASM_MEMORY_SIZE 0x20000000000
 
-//#define MEMORY_SIZE 0x2000000000000000  // ~ (2**64)/10 // what for?
-#define MEMORY_SIZE 0x2000000000000
+#define MEMORY_SIZE 0x2000000000000000  // ~ (2**64)/10 // what for?
+//#define MEMORY_SIZE 0x2000000000000
 //#define MEMORY_SIZE 0x20000000000  // not enough!
 //#define MEMORY_SIZE 0x200000000  // not enough!
 
 #endif
-#define HEAP_OFFSET 0
+#define HEAP_OFFSET 0x80000
 #endif
 
-
+extern unsigned char __heap_base;// set via lld with -Clink-arg=--export=__heap_base
 extern "C" /*unsigned */ char *current;// memory + heap_offset
 extern "C" void panic();//
 

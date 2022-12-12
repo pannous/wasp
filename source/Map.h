@@ -187,10 +187,10 @@ public:
                 insert_or_assign(key, T());// BAD because stack value? ok because copy by value? todo
                 return values[_size - 1];// increased above!
             } else {
-//                error("MISSING KEY: "s + key);
+                error("MISSING KEY: "s + key);
+                breakpoint_helper
                 printf("MISSING KEY: ");
-//				put(key);
-//				printf("%s",key);// todo unsafe!! can be int etc!
+                print(key);
                 printf("\n");
                 return values[_size++];
 //				error("MISSING KEY");

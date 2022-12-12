@@ -14,6 +14,16 @@
 //extern unsigned int *memory;
 
 int MAX_MEM = 65536 * 1024;// todo lol  INSIDE wasm memory!
+
+
+__attribute__ ((visibility("default")))
+void *get_heap_base(void) {
+    return &__heap_base;
+}
+
+char *memoryChars = (char *) get_heap_base();
+char *current = (char *) get_heap_base() + 80000;
+
 extern "C" void *memmove(void *dest, const void *source, size_t num) {
     while (num < MAX_MEM and --num >= 0)
         ((char *) dest)[num] = ((char *) source)[num];
@@ -58,12 +68,27 @@ double pow(double a, double b) {
 #ifndef WASI
 
 void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
+    if (size > 100000)
+        size = 10000;
+//        error("implausible size");
+    if ((int) current < 100000) {
+        puti((int) current);
+        print("get_heap_base:");
+        current = (char *) get_heap_base();
+        puti((int) current);
+        if ((int) current < 100000) {
+            print("current<100000");
+            print("setting current to 100000");
+            current = (char *) 1000000;
+        }
+    }
     void *last = current;
     current += size;
 //	if(size>1000)
-//		error("TOO BIG LOL");
-    if (MEMORY_SIZE and (long) current >= MEMORY_SIZE) {
+    bool check_overflow = false;// wasm trap: out of bounds memory access OK
+    if (check_overflow and MEMORY_SIZE and (long) current >= MEMORY_SIZE) {
 #ifndef WASI
+        error("TOO BIG LOL");
         puti(sizeof(Node));// 64
         puti(sizeof(String));// 20
         puti(sizeof(Value));// 8 long
@@ -84,7 +109,7 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
 
 int printf(const char *__restrict format, ...) {
 //    todo better
-    put_chars((char *) format, 0);
+    put_chars((char *) format, strlen0(format));
     return 1;
 }
 
@@ -191,12 +216,30 @@ void *alloc(int num, int size) {
 //void *calloc(int size, int num) {// clean ('0') alloc
 ///opt/wasm/wasi-sdk/share/wasi-sysroot/include/stdlib.h
 // /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h redundant!
+static char count[] = "0";
+int calloc_counter = 0;
+
+void debugCalloc(size_t num, size_t size) {
+    calloc_counter++;
+    if (calloc_counter == 1000) {
+
+
+        print("calloc");
+        puti(num);
+        print("*");
+        puti(size);
+        print("---calloc");
+    }
+
+}
+
 void *calloc(size_t num, size_t size) //__attribute__((__malloc__, __warn_unused_result__))
 {
+    debugCalloc(num, size);
     char *mem = (char *) malloc(size * num);
 //#ifndef WASM
     //fails in WASI, why??
-    while (num < MAX_MEM and num > 0) { ((char *) mem)[--num] = 0; }
+    while (num < MAX_MEM and size / 8 * num > 0) { ((long *) mem)[--num * size / 8] = 0; }
 //#endif
     return mem;
 }
@@ -327,7 +370,9 @@ int put_s(String *s) {
 }
 
 void puti(int i) {
-    printf("%d", i);
+    put_chars(formatLong(i), 0);
+    newline();
+//    printf("%d", i);
 }
 
 void putl(long long l) {
@@ -365,6 +410,7 @@ void putp(void *f) {
 
 //extern "C"
 int main(int argc, char **argv);
+
 extern "C" void _start() {
 #if RUNTIME_ONLY
     print("Wasp runtime not meant to be executed. Use wasp or wasmer wasp.wasm \n");
