@@ -43,16 +43,16 @@ using namespace wabt;
 
 const Label *ModuleContext::GetLabel(const Var &var) const {
 	if (var.is_name()) {
-		for (Index i = GetLabelStackSize(); i > 0; --i) {
-			auto label = &label_stack_[i - 1];
-			if (label->name == var.name()) {
-				return label;
-			}
-		}
-	} else if (var.index() < GetLabelStackSize()) {
-		auto label = &label_stack_[GetLabelStackSize() - var.index() - 1];
-		return label;
-	}
+        for (Index i = GetLabelStackSize(); i > 0; --i) {
+            auto label = &label_stack_[i - 1];
+            if (label->name == var.name()) {
+                return label;
+            }
+        }
+    } else if (var.code_index() < GetLabelStackSize()) {
+        auto label = &label_stack_[GetLabelStackSize() - var.code_index() - 1];
+        return label;
+    }
 	return nullptr;
 }
 

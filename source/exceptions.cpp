@@ -9,20 +9,20 @@
 #include "String.h"
 //#include <exception>
 //#include <typeinfo>
-
-namespace __cxxabiv1 {
-	struct __vmi_class_type_info {
-		virtual void foo() {}
-	} vmiClassTypeInfo;
-
-	struct __pointer_type_info {
-		virtual void foo() {}
-	} pointerTypeInfo;
-
-	struct __class_type_info {
-		virtual void foo() {}
-	} classTypeInfo;
-}
+//
+//namespace __cxxabiv1 {
+//	struct __vmi_class_type_info {
+//		virtual void foo() {}
+//	} vmiClassTypeInfo;
+//
+//	struct __pointer_type_info {
+//		virtual void foo() {}
+//	} pointerTypeInfo;
+//
+//	struct __class_type_info {
+//		virtual void foo() {}
+//	} classTypeInfo;
+//}
 //class type_info {
 //public:
 //	virtual ~type_info();
