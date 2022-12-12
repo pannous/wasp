@@ -73,9 +73,9 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
     WasmEdge_Result Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName, Params, 0, Returns, 1);
     if (WasmEdge_ResultOK(Res)) {
         int32_t value = WasmEdge_ValueGetI32(Returns[0]);
-        printef("Get result: %d\n", value);
+        printf("Get result: %d\n", value);
         return (int) value;
-    } else printef("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
+    } else printf("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
 	return -1;
 }
 
@@ -108,10 +108,10 @@ long run_wasm2(char *wasm_path) {
 
 	if (WasmEdge_ResultOK(Res)) {
 		int32_t i = WasmEdge_ValueGetI32(Returns[0]);
-        printef("Get result: %d\n", i);
+        printf("Get result: %d\n", i);
 		return (int) i;
 	} else {
-        printef("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
+        printf("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
 		return -1;
 	}
 

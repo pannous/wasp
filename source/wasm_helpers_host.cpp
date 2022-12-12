@@ -33,12 +33,12 @@ void println(String s) {
     print(s);
     put_char('\n');
 }
-//void printef(chars s) {
+//void printf(chars s) {
 //	puts(s);
 ////	while(*s)put_char(*s++);
 //}
 
-// todo : just use WASI for printef (!?)
+// todo : just use WASI for printf (!?)
 
 
 
@@ -61,7 +61,7 @@ void panic() {
 
 
 //#ifndef WASM
-//void printef(chars format, number i) {
+//void printf(chars format, number i) {
 //	print(String(format).replace("%d", String(i)).replace("%i", String(i)).replace("%li", String(i)));
 //}
 //#endif
@@ -73,7 +73,7 @@ void panic() {
 // {"fd_write", (void *) fd_write_host, "(iiii)i", NULL, false}, …
 void fd_write_host(int FD, char **strp, int *len, int *nwritten) {
 //#if
-    printef("%s", *strp);
+    printf("%s", *strp);
     error("fd_write_host should ONLY be called via wasm runtime without wasi");
 }
 //__wasi_fd_write
@@ -93,36 +93,36 @@ void fd_write_host(int FD, char **strp, int *len, int *nwritten) {
 
 
 void putf(float f) {
-    printef("%f\n", f);
+    printf("%f\n", f);
 }
 
 void putp(void *f) {
-    printef("%p\n", f);
+    printf("%p\n", f);
 }
 
 
 void puti(int i) {
-    printef("%d", i);
+    printf("%d", i);
 }
 
 void putl(long long l) {
-    printef("%lld", l);
+    printf("%lld", l);
 }
 
 [[maybe_unused]] void putx(long long l) {
-    printef("%llx", l);
+    printf("%llx", l);
 }
 
 void putp(long char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
-    printef("%s", (char *) char_pointer);
+    printf("%s", (char *) char_pointer);
 }
 
 void put_char(codepoint c) {
-    printef("%c", c);
+    printf("%c", c);
 }
 
 void putx(int i) {
-    printef("%x", i);
+    printf("%x", i);
 }
 
 double powd(double x, double y) {
@@ -130,7 +130,7 @@ double powd(double x, double y) {
 }
 
 void put_chars(char *c, size_t len) {
-    printef("%s", c);
+    printf("%s", c);
 }
 
 void proc_exit(int x) {

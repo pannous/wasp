@@ -6,7 +6,7 @@ typedef unsigned long long uint64;
 typedef unsigned long long u64;
 //typedef unsigned long long bytes8;
 
-#define breakpoint_helper printef("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
+#define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
 
 //#define min(a, b) (a < b ? a : b)
 static long min(long a, long b) { return (a < b ? a : b); }
@@ -42,15 +42,15 @@ typedef const char *chars;
 typedef byte *bytes;
 
 // silent ++
-#define check_is(α, β) if((α)!=(β)){printef("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);printef("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-#define check_eq(α, β) if((α)!=(β)){printef("%s != %s :\n",#α,#β);printef("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-#define check_eq_or(α, β, ɣ) if((α)!=(β)){printef("%s != %s : ",#α,#β);printef("\n%s:%d\n",__FILE__,__LINE__);ɣ;exit(0);}
+#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);ɣ;exit(0);}
 
-//#define assert(test) if(!(test)){printef("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-#define check_silent(test) if(!(test)){printef("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+//#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+#define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
-#define check(test) printef("CHECKING %s\n%s:%d\n",#test,__FILE__,__LINE__); \
-  if(test){print("OK check passes: ");printef("%s\n",#test);}else{printef("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+#define check(test) printf("CHECKING %s\n%s:%d\n",#test,__FILE__,__LINE__); \
+  if(test){print("OK check passes: ");printf("%s\n",#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
 
 #include "String.h" // AFTER defines!
 #include "smart_types.h"
@@ -140,7 +140,7 @@ static inline bool max(long a, long b) {
 
 typedef String Path;
 
-#define quit(α) printef("quit %s",#α);breakpoint_helper;exit(42);
+#define quit(α) printf("quit %s",#α);breakpoint_helper;exit(42);
 
 //#include <cstdlib> // exit
 //static void quit(){

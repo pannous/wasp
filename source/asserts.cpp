@@ -9,14 +9,14 @@
 
 #endif
 
-//#DANGER!!! DONT printef(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
+//#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
 
 // todo assert_is ≠ assert_run == assert_emit_with_wasm_runtime!
 
 
 bool assert_equals_x(String a, String b, char *context) {
-    if (a == b) printef("OK %s==%s %s\n", a.data, b.data, context);
-    else printef("FAILED assert_equals!\n %s should be %s %s\n", a.data, b.data, context);
+    if (a == b) printf("OK %s==%s %s\n", a.data, b.data, context);
+    else printf("FAILED assert_equals!\n %s should be %s %s\n", a.data, b.data, context);
     return a == b;
 }
 
@@ -26,15 +26,15 @@ bool assert_equals_x(String *a, String b, char *context = "") {
 
 bool assert_equals_x(Node &a, char *b, char *context = "") {
     if (a.name != b)
-        printef("FAILED assert_equals! %s should be %s %s\n", a.name.data ? a.name.data : "???", b, context);
-    else printef("OK %s==%s %s\n", a.name.data, b, context);
+        printf("FAILED assert_equals! %s should be %s %s\n", a.name.data ? a.name.data : "???", b, context);
+    else printf("OK %s==%s %s\n", a.name.data, b, context);
     return a == b;
 }
 
 
 bool assert_equals_x(Node a, const char *b, char *context = "") {
-    if (a.name != b)printef("FAILED assert_equals! %s should be %s %s\n", a.name.data, b, context);
-    else printef("OK %s==%s %s\n", a.name.data, b, context);
+    if (a.name != b)printf("FAILED assert_equals! %s should be %s %s\n", a.name.data, b, context);
+    else printf("OK %s==%s %s\n", a.name.data, b, context);
     return a == b;
 }
 
@@ -42,22 +42,22 @@ bool assert_equals_x(Node a, const char *b, char *context = "") {
 bool assert_equals_x(Node a, int b, char *context = "") {
     if (a != Node(b))
         print("\nFAILED assert_equals! %lld should be %d %s\n"s % a.value.longy % b % context);
-    else if (a.kind == reals) printef("OK %f==%f\n", a.value.real, (double) b);
+    else if (a.kind == reals) printf("OK %f==%f\n", a.value.real, (double) b);
     else
-        printef("OK %lld==%d\n", a.value.longy, b);
+        printf("OK %lld==%d\n", a.value.longy, b);
     return a == b;
 }
 
 // WTF why is char* unexplicitly cast to bool!?!
 bool assert_equals_x(Node a, bool b, char *context = "") {
     if (a != Node(b))print("\nFAILED assert_equals! %lld should be %d %s\n"s % a.value.longy % b % context);
-    else printef("OK %lld==%d\n", a.value.longy, b);
+    else printf("OK %lld==%d\n", a.value.longy, b);
 	return a == b;
 }
 
 bool assert_equals_x(Node &a, double b, char *context) {
     if (a != Node(b))print("\nFAILED assert_equals! %lld should be %f %s\n"s % a.value.longy % b % context);
-    else printef("OK %f==%f\n", a.value.real, b);
+    else printf("OK %f==%f\n", a.value.real, b);
 	return a == b;
 }
 
@@ -65,13 +65,13 @@ bool assert_equals_x(Node a, double b, char *context = "") {
     if (a != Node(b))
         print("\nFAILED assert_equals! %f should be %f %s\n"s % a.value.real % b % context);
     else
-        printef("OK %f==%f\n", a.value.real, b);
+        printf("OK %f==%f\n", a.value.real, b);
     return a == b;
 }
 
 //bool assert_equals_x(Node &a, long b, char *context = "") {
 //	if (!(a == b))prinft("FAILED assert_equals! %s should be %d %s\n"s, a.name, b, context);
-//	else printef("OK %ld==%ld %s\n", a.value.longy, b, context);
+//	else printf("OK %ld==%ld %s\n", a.value.longy, b, context);
 //	return a == b;
 //}
 
@@ -88,9 +88,9 @@ bool assert_equals_x(Node a, String b, char *context = "") {
 	String &name = a.name;
 	bool ok = name == b or a == b; //  b == name or  !(name != b and b != a.value.string;)
 	if (ok)
-        printef("OK %s==%s %s\n", name.data, b.data, context);
+        printf("OK %s==%s %s\n", name.data, b.data, context);
 	else
-        printef("FAILED assert_equals! %s should be %s %s\n", name.data, b.data, context);
+        printf("FAILED assert_equals! %s should be %s %s\n", name.data, b.data, context);
 	return ok;
 }
 
@@ -100,16 +100,16 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
     char *as = a.serialize().data;
     char *bs = b.serialize().data;
     if (a == b) {
-        printef("OK %s == %s   %s\n", as, bs, context);
+        printf("OK %s == %s   %s\n", as, bs, context);
     } else
-        printef("FAILED assert_equals! %s should be %s %s\n", as, bs, context);
-    printef("%s != %s\n", as, bs);
+        printf("FAILED assert_equals! %s should be %s %s\n", as, bs, context);
+    printf("%s != %s\n", as, bs);
     return a == b;
 }
 
 bool assert_equals_x(Node *a, const Node *b, char *context = "") {
 	if (!a) {
-        if (b)printef("FAILED assert_equals! NULL should be %s %s\n", b->serialize().data, context);
+        if (b)printf("FAILED assert_equals! NULL should be %s %s\n", b->serialize().data, context);
 		return !b;
 	}
 	return assert_equals_x(*a, *b, context);
@@ -123,8 +123,8 @@ bool assert_equals_x(Node *a, Node *b, char *context = "") {
 
 //bool assert_equals(chars a, chars b, char *context = "") {
 //	if (a != b)// err
-//		printef("F\nAILED assert_equals! %s should be %s %s\n"s % a % b % context);
-//	else printef("OK %s==%s %s\n"s % a % b % context);
+//		printf("F\nAILED assert_equals! %s should be %s %s\n"s % a % b % context);
+//	else printf("OK %s==%s %s\n"s % a % b % context);
 //	return a == b;
 //}
 
@@ -179,17 +179,17 @@ bool assert_isx(char *mark, Node expect) {
 		if (left != expect)
 			//			breakpoint_helper
 			if (left != expect)// Redundant for Breakpoint ;)
-                printef("FAILED %s ≠ %s\n", left.name.data, expect.name.data);
+                printf("FAILED %s ≠ %s\n", left.name.data, expect.name.data);
 		return left == expect;
 	} catch (SyntaxError *err) {
         print("ERROR IN TEST\n");
-        printef("%s", err->data);
+        printf("%s", err->data);
 	} catch (String *err) {
         print("ERROR IN TEST\n");
-        printef("%s", err->data);
+        printf("%s", err->data);
 	} catch (chars err) {
         print("ERROR IN TEST\n");
-        printef("%s\n", err);
+        printf("%s\n", err);
 	} catch (...) {
 		raise("\nERROR IN TEST (no further data):\n");
 	}
@@ -224,13 +224,13 @@ Node assert_parsesx(chars mark) {
 		return result;
 	} catch (chars err) {
         print("TEST FAILED WITH ERROR\n");
-        printef("%s\n", err);
+        printf("%s\n", err);
 	} catch (String &err) {
         print("TEST FAILED WITH ERRORs\n");
-        printef("%s\n", err.data);
+        printf("%s\n", err.data);
 	} catch (SyntaxError &err) {
         print("TEST FAILED WITH SyntaxError\n");
-        printef("%s\n", err.data);
+        printf("%s\n", err.data);
     } catch (...) {
         print("TEST FAILED WITH UNKNOWN ERROR (maybe POINTER String*)? \n");
     }
@@ -238,23 +238,23 @@ Node assert_parsesx(chars mark) {
 }
 //#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){print("%s:%d\n",__FILE__,__LINE__);exit(1);}
 // ⚠️ CAREFUL parses in DATA_MODE !
-#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printef("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(1);}
+#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(1);}
 
-#define skip(test) printef("SKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
-#define todo_emit(ɣ) if(not eval_via_emit){ɣ;}else printef("skipping emit case %s",#ɣ);
-#define skip_wasm(ɣ) if(not eval_via_emit){ɣ;}else printef("skipping emit case %s",#ɣ);
+#define skip(test) printf("SKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
+#define todo_emit(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
+#define skip_wasm(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
 //print("SKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
 bool ok;
 
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
 #define assert_is(mark, result) \
-printef("TEST %s==%s\n",#mark,#result); \
-printef("%s:%d\n",__FILE__,__LINE__);\
+printf("TEST %s==%s\n",#mark,#result); \
+printf("%s:%d\n",__FILE__,__LINE__);\
 ok=assert_isx(mark,result);\
-if(ok)printef("PASSED %s==%s\n",#mark,#result);\
-else{printef("FAILED %s==%s\n",#mark,#result);\
-printef("%s:%d\n",__FILE__,__LINE__);exit(1);}
+if(ok)printf("PASSED %s==%s\n",#mark,#result);\
+else{printf("FAILED %s==%s\n",#mark,#result);\
+printf("%s:%d\n",__FILE__,__LINE__);exit(1);}
 
 
 // for better readability, not (yet) semantic

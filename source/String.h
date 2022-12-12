@@ -14,7 +14,7 @@
 
 #ifndef WASM
 
-#include <cstdio> // printef
+#include <cstdio> // printf
 
 #endif
 
@@ -574,10 +574,10 @@ public:
             return this->replace("%d", formatLong(d));
         else if (contains("%x"))
             return this->replace("%x", hex(d));
-        printef("FORMAT:");
-        printef(data);
-        printef("long arg:");
-        printef(formatLong(d));
+        printf("FORMAT:");
+        printf("%s", data);
+        printf("long arg:");
+        printf("%d", formatLong(d));
         error("missing placeholder %d in string modulo operation s%d");
         return "«ERROR»";
     }
