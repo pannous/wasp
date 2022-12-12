@@ -82,74 +82,80 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
 
 #endif
 
+int printf(const char *__restrict format, ...) {
+//    todo better
+    put_chars((char *) format, 0);
+    return 1;
+}
 
-void printef(chars format, uint32_t i) {
+
+void printf(chars format, uint32_t i) {
     print(String(format) % (int) i);
 }
 
 
-void printef(chars format) {
+void printf(chars format) {
     print(format);
 }
 
-void printef(chars format, int i) {
+void printf(chars format, int i) {
     print(String(format) % i);
 }
 
-void printef(char const *format, long long l) {
+void printf(char const *format, long long l) {
     print(String(format) % l);
 }
 
 
-void printef(chars format, chars value) {
+void printf(chars format, chars value) {
     print(String(format).replace("%s", value));
 }
 
-void printef(chars format, chars i, chars j) {
+void printf(chars format, chars i, chars j) {
     print(String(format).replace("%s", i).replace("%s", j));
 }
 
-void printef(chars format, chars i, chars j, int l) {
+void printf(chars format, chars i, chars j, int l) {
     print(String(format).replace("%s", i).replace("%s", j).replace("%d", String(l)));
 }
 
-void printef(chars format, chars i, chars j, chars l) {
+void printf(chars format, chars i, chars j, chars l) {
     print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
 }
 
-void printef(chars format, long i, long j) {
+void printf(chars format, long i, long j) {
     if (contains(format, "%ld"))
         print(String(format).replace("%ld", String(i)).replace("%ld", String(j)));
     else
         print(String(format).replace("%d", String(i)).replace("%d", String(j)));
 }
 
-void printef(chars format, int i, int j) {
+void printf(chars format, int i, int j) {
     print(String(format).replace("%d", String(i)).replace("%d", String(j)));
 }
 
-void printef(chars format, uint32_t i, uint32_t j) {
+void printf(chars format, uint32_t i, uint32_t j) {
     print(String(format).replace("%d", String((int) i)).replace("%d", String((int) j)));
 }
 
 
-void printef(chars format, double d) {
+void printf(chars format, double d) {
     print(String(format) % d);
 }
 
-void printef(chars format, long l) {
+void printf(chars format, long l) {
     print(String(format) % l);
 }
 
-void printef(chars format, double i, double j) {
+void printf(chars format, double i, double j) {
     print(String(format).replace("%f", String(i)).replace("%f", String(j)));
 }
 
-void printef(chars format, chars val, int value) {
+void printf(chars format, chars val, int value) {
     print(String(format).format((char *) val).format(value));
 }
 
-void printef(chars format, void *value) {
+void printf(chars format, void *value) {
     print(String(format).replace("%p", String((long) value)));
 }
 
@@ -230,8 +236,8 @@ void _cxa_throw() {
 }
 
 
-void printef(long l) {
-    printef("%ld", l);
+void printf(long l) {
+    printf("%ld", l);
 }
 
 
@@ -275,7 +281,7 @@ typedef struct wasi_buffer {
 
 #if WASI and not MY_WASM
 extern "C" int raise(chars error){
-    printef("%s" , error);
+    printf("%s" , error);
     return -1;
 }
 #endif
@@ -321,38 +327,38 @@ int put_s(String *s) {
 }
 
 void puti(int i) {
-    printef("%d", i);
+    printf("%d", i);
 }
 
 void putl(long long l) {
-    printef("%lld", l);
+    printf("%lld", l);
 }
 
 [[maybe_unused]] void putx(long long l) {
-    printef("%llx", l);
+    printf("%llx", l);
 }
 
 void putp(long char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
-    printef("%s", (char *) char_pointer);
+    printf("%s", (char *) char_pointer);
 }
 
 void put_char(codepoint c) {
-    printef("%c", c);
+    printf("%c", c);
 }
 
 void putf(float f) {
     puts(formatLong((long) f));
     puts(".");
     puts(formatLong(((long) (f * 1000)) % 1000));
-//    printef("%f\n", f);
+//    printf("%f\n", f);
 }
 
 void putd(double f) {
-    printef("%f\n", f);
+    printf("%f\n", f);
 }
 
 void putp(void *f) {
-    printef("%p\n", f);
+    printf("%p\n", f);
 }
 
 #endif

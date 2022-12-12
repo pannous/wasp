@@ -445,7 +445,7 @@ public:
             source = readFile(findFile(source, parserOptions.current_dir));
         }
 #ifndef RELEASE
-        printef("Parsing:\n%s\n", source.data);
+        printf("Parsing:\n%s\n", source.data);
 #endif
         if (source.empty()) return const_cast<Node &>(NIL);
         columnStart = 0;
@@ -459,7 +459,7 @@ public:
         Node &result = valueNode(); // <<
         white();
         if (ch and ch != -1 and ch != DEDENT) {
-            printef("UNEXPECTED CHAR %c", ch);
+            printf("UNEXPECTED CHAR %c", ch);
             print(position());
             error("Expect end of input");
             result = ERROR;
@@ -1829,7 +1829,7 @@ void handler(int sig) {
     size = backtrace(array, 10);
 
     // print out all the frames to stderr
-    fprintef(stderr, "Error: signal %d:", sig);
+    fprintf(stderr, "Error: signal %d:", sig);
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     exit(1);
 }
