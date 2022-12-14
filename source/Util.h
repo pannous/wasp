@@ -47,8 +47,8 @@ static bool I_know_what_I_am_doing = false;
 #define todo(msg)
 #define todow(msg)
 #else
-#define todo(msg) {breakpoint_helper;error1(str("TODO ") + msg,__FILE__,__LINE__);}
-#define todow(msg) {warn(str("TODO ") + msg);}
+#define todo(msg) {breakpoint_helper;error1(String("TODO ") + String(msg),__FILE__,__LINE__);}
+#define todow(msg) {warn(String("TODO ") + String(msg));}
 //#define todow(msg) {breakpoint_helper;warn(str("TODO ") + msg);}
 #endif
 

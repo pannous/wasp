@@ -2132,8 +2132,11 @@ Code Call(char *symbol) {//},Node* args=0) {
 
 [[nodiscard]]
 Code encodeString(char *str) {
-    size_t len = strlen(str);
-    Code code = Code(len, (bytes) str, len);
+    int len = (int) strlen(str);
+    if (len >= 80) todo("leb len ");
+    Code code;
+    code.addInt(len);
+    code.push((bytes) str, len);// abusing section as len field
     return code;//.push(0);
 };
 

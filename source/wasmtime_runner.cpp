@@ -554,7 +554,7 @@ const wasm_functype_t *funcType(Signature &signature) {
             case float32:
                 return wasm_functype_new_2_1(wasm_valtype_new(WASM_F32), wasm_valtype_new(WASM_F32),
                                              wasm_valtype_new(WASM_F32));
-            case float64:
+            case float64: // why broken in wasmtime??
                 return wasm_functype_new_2_1(wasm_valtype_new(WASM_F64), wasm_valtype_new(WASM_F64),
                                              wasm_valtype_new(WASM_F64)); // powd(f64,f64)f64
             default:
