@@ -54,11 +54,16 @@ static bool I_know_what_I_am_doing = false;
 
 #ifdef TRACE
 static bool tracing = true;
-#define trace print
-#else // DONT TRACE
-static bool tracing = true;
-//static bool tracing = false;
 #define trace(x) if(tracing)print(x)
+#define tracef(x,...) if(tracing)printf(x,__VA_ARGS__)
+#else // DONT TRACE
+//static bool tracing = true;
+static bool tracing = false;
+//#define trace(x) if(tracing);
+//#define tracef(x,...) if(tracing);
+// SEND trace args to NIRVANA so they don't get emitted!
+#define trace(x)
+#define tracef(x, ...)
 #endif
 
 typedef unsigned char byte;
@@ -158,7 +163,8 @@ bool isDir(const char *name);
 #define maxi(a, b) a<b?b:a
 
 //#define max(a, b) a<b?b:a too many conflicts with math.h common.h …
-static inline bool max(long a, long b) {
+//inline just hides export name in wasm, no other optimization todo: maybe … somehow? use maxi! don't care!
+static bool max(long a, long b) {
     return a < b ? b : a;
 }
 

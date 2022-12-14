@@ -65,7 +65,7 @@ public:
     List<Signature> funcTypes;// = {1000};// c++ types from export name convention, implicit index
 //	List<Signature> wasmFuncTypes;// wasm types from funcTypes section implicit index
     Map<String, Signature> signatures;// also implicit index->Signature 0,1,2… ! before merging!
-    Map<String, Function> functions;// contains imports, so index via call_index, not code_index
+    Map<String, Function> functions = {1000};// contains imports, so index via call_index, not code_index
 //	int data_offset=0;// todo: read from data section! why not 0 ?
     int data_offset_end = 0;
 };

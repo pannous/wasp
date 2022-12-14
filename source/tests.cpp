@@ -768,10 +768,11 @@ void testSignificantWhitespace() {
     check(result.length == 1 or result.length == 2);// (a b):c
     assert_equals(result.kind, key);
     skip(
+            assert(eval("1 + 1 == 2"));
+            assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
 
     )
     //1 + 1 ≠ 1 +1 == [1 1]
-    assert(eval("1 + 1 == 2"));
     assert_is("1 +1", Node(1, 1, 0));
 //	assert_is("1 +1", parse("[1 1]"));
     skip(
@@ -2770,6 +2771,23 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
+//    assert(eval("1 + 1 == 2"));
+
+//#undef NANO_PREALLOCATE_BAND_VM
+    check("%s"s.replace("%s", "ja") == "ja"); // FAILS in universal TRACE
+
+//    assert_run("parseLong('123'+'456')", 123456);
+//    assert_run("'123'+'456'", "123456");
+////
+//
+//    assert_run("strlen('123')", 3);
+//
+//    assert_run("parseLong('123000') + 456", 123456);
+//    assert_run("parseLong('123000')", 123000);
+//    assert_run("parseLong('123000') + parseLong('456')", 123456);
+//
+//    assert_run("square(3)+square(3)", 18);
+//    assert_run("square(1+2)+square(3)", 18);
     assert_emit("n=3;2ⁿ", 8);
     eval("3*3");
 //    assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
@@ -2782,21 +2800,11 @@ void testCurrent() {
     assert_emit("x=0;while x++<11: nop;", 0);
 
 //    testSinus();
-    assert_run("'123'+'456'", "123456");
-    assert_run("parseLong('123'+'456')", 123456);
     auto runtime = loadModule("wasp-runtime");
     auto function = runtime.functions["strlen"];
     auto signature = function.signature;
     check(runtime.functions["strlen"].signature.size() == 1)
 
-    assert_run("strlen('123')", 3);
-
-    assert_run("parseLong('123000') + 456", 123456);
-    assert_run("parseLong('123000')", 123000);
-    assert_run("parseLong('123000') + parseLong('456')", 123456);
-
-    assert_run("square(3)+square(3)", 18);
-    assert_run("square(1+2)+square(3)", 18);
 //    testSinus();
     clearAnalyzerContext();
     clearEmitterContext();
