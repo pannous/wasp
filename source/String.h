@@ -158,7 +158,7 @@ public:
 //    Primitives
 //};
 
-
+String *empty_string();
 //class CodepointList{
 //
 //};
@@ -264,7 +264,7 @@ public:
         // todo, make Node(string) copy = true in many situations?
         // todo (maybe dont) mark data as to-free on destruction once copy = false AND bool malloced = true
 //		data = const_cast<char *>(string);// todo heap may disappear, use copy!
-        length = strlen(string);
+        length = string == 0 ? 0 : strlen(string);
         if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
         else {
             if (copy) {
@@ -294,7 +294,7 @@ public:
 
     explicit String(int integer) {
         data = formatLong(integer);// wasm function signature contains illegal type WHYYYY
-        length = len();
+        length = strlen(data);
     }
 
     explicit String(long number) {
@@ -902,7 +902,7 @@ public:
 
 
 //    [[non-modifying]]
-    [[nodiscard]]
+    [[nodiscard("replace generates a new string to be consumed!")]]
     __attribute__((__warn_unused_result__))
     String &replace(chars string, chars with) {// first only!
         int i = this->indexOf(string);
@@ -1088,7 +1088,8 @@ extern "C" int puts(const char *);// int return needed for stdio compatibilty !
 
 //#endif
 //unsigned  == unsigned int!
-inline short utf8_byte_count(char c);
+//inline
+short utf8_byte_count(char c);
 
 
 bool empty(String &s);
