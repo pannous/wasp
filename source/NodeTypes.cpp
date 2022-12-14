@@ -348,7 +348,7 @@ Primitive mapTypeToPrimitive(Node &n) {
         return Primitive::wasm_float64;
     if (n == Charpoint)
         return Primitive::codepoint32;
-    else todo("mapTypeToPrimitive " + n.serialize());
+    else todo("mapTypeToPrimitive "s + n.serialize());
     return Primitive::unknown_type;
 }
 
