@@ -732,9 +732,19 @@ void print(String *s) {
 
 void print(String s) {
     put_chars(s.data, s.length);
-//    newline();
+    if (tracing)
+        newline();
 }
 
+void println(String s) {
+    put_chars(s.data, s.length);
+    newline();
+}
+
+void put(String s) {
+    put_chars(s.data, s.length);
+    newline();
+}
 
 void print(char *str) {
 #if MY_WASI

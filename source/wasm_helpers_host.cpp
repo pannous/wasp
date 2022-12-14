@@ -29,22 +29,7 @@ void *alloc(int num, int size) {
 }
 
 
-void println(String s) {
-    print(s);
-    put_char('\n');
-}
-//void printf(chars s) {
-//	puts(s);
-////	while(*s)put_char(*s++);
-//}
-
-// todo : just use WASI for printf (!?)
-
-
-
-
 int MAX_MEM = 65536 * 1024;// todo lol
-
 
 void panic() {
 #ifndef WASM
