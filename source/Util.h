@@ -1,5 +1,7 @@
 #pragma once
 
+#define allow_untyped_nodes true  // IMPORTANT!  {a b c}#2"=="b" VALID or NOT ?!?
+
 //typedef long long i64;
 typedef long long int64;
 typedef unsigned long long uint64;
@@ -43,6 +45,7 @@ static bool I_know_what_I_am_doing = false;
 
 #if RUNTIME_ONLY
 #define todo(msg)
+#define todow(msg)
 #else
 #define todo(msg) {breakpoint_helper;error1(str("TODO ") + msg,__FILE__,__LINE__);}
 #define todow(msg) {warn(str("TODO ") + msg);}
@@ -53,7 +56,8 @@ static bool I_know_what_I_am_doing = false;
 static bool tracing = true;
 #define trace print
 #else // DONT TRACE
-static bool tracing = false;
+static bool tracing = true;
+//static bool tracing = false;
 #define trace(x) if(tracing)print(x)
 #endif
 

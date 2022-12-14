@@ -83,7 +83,7 @@ char *version = "1.0";
             code += ";\n";
 //		Node &result = parse(code);// safeMode only for web access
             result = eval(code);
-            printf(">>> ");
+            printf("» ");
 //	result.interpret().print();
             result.print();
             print("");

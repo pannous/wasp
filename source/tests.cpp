@@ -2298,7 +2298,7 @@ void testNodeConversions() {
     check(a2.value.real == 1.2f);
     Node as = Node('a', true);
     check(as.kind == strings or as.kind == codepoints);
-    if (as.kind == strings) { check(*as.value.string == 'a'); }
+    if (as.kind == strings) {check(*as.value.string == 'a'); }
     if (as.kind == codepoints) check((codepoint) as.value.longy == 'a');
 }
 
@@ -2429,7 +2429,6 @@ void testNodeBasics() {
 
 void testBUG();
 
-
 void testNodeDataBinaryReconstruction() {
     check_is(parse("y:{x:2 z:3}").serialize(), "y{x:2 z:3}");// todo y:{} vs y{}
     assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));// looks trivial but is epitome of binary (de)serialization!
@@ -2445,7 +2444,6 @@ void testArrayIndices() {
     assert_is("x=(1 4 3);x#2", 4);
     assert_is("x=(1 4 3);x#2=5;x#2", 5);
 }
-
 
 void todos() {
     skip(
@@ -2496,7 +2494,7 @@ void todos() {
 
             testNetBase();
 //	print("OK %s %d"s % ("WASM",1));// only 1 handed over
-            print("OK %d %d"s % (2, 1));// only 1 handed over
+            print(" OK %d %d"s % (2, 1));// only 1 handed over
     )
 }
 
@@ -2547,20 +2545,6 @@ void testPaint() {
 #endif
 }
 
-
-/*void print_timestamp() {
-	time_t rawtime;
-	struct tm *timeinfo;
-	time(&rawtime);
-	timeinfo = localtime(&rawtime);
-	char buffer[30];
-	strftime(buffer, 30, "%G/%m/%d-%H:%M:%S.%ffff", timeinfo);
-	prints(buffer);
-//	return reinterpret_cast<char *>(buffer);
-}*/
-
-#include <sys/time.h>
-
 void testPaintWasm() {
 #ifdef GRAFIX
     struct timeval stop, start;
@@ -2600,7 +2584,6 @@ void testNodesInWasm() {
     assert_emit("a{b:c}", parse("a{b:c}"));
 }
 
-
 void testSubGroupingIndent() {
     result = parse("x{\ta\n\tb,c,\n\td;\n\te");
     assert_equals(result.length, 3);
@@ -2619,7 +2602,6 @@ void testSubGrouping() {// todo dangling ',' should make '\n' not close
     assert_equals(result.last(), "e");
 }
 
-
 void testSubGroupingFlatten() { // ok [a (b,c) d] should be flattened to a (b,c) d
     result = parse("[a\nb,c\nd]");
 //	result=parse("a\nb,c\nd");// still wrapped!
@@ -2627,7 +2609,6 @@ void testSubGroupingFlatten() { // ok [a (b,c) d] should be flattened to a (b,c)
     assert_equals(result.first(), "a");
     assert_equals(result.last(), "d");
 }
-
 
 void testBUG() {// move to tests() once done!
 //        testRecentRandomBugs();
@@ -2762,7 +2743,6 @@ void tests() {
     print("ALL TESTS PASSED");
 }
 
-
 void assurances() {
     check(sizeof(Type) == 8) // otherwise all header structs fall apart
 //    check(sizeof(void*)==4) // otherwise all header structs fall apart TODO adjust in 64bit wasm / NORMAL arm64 !!
@@ -2790,7 +2770,17 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
+    assert_emit("n=3;2ⁿ", 8);
+    eval("3*3");
+//    assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
+    skip(
+            assert_emit("x=123;x + 4 is 127", true);// need polymorphism
+    )
+    assert_is("{a b c}#2", "b");
+    assert_emit("i=10007;x=i%10000", 7);
+    assert_emit("i=2;i++", 3);
     assert_emit("x=0;while x++<11: nop;", 0);
+
 //    testSinus();
     assert_run("'123'+'456'", "123456");
     assert_run("parseLong('123'+'456')", 123456);
@@ -2937,3 +2927,4 @@ void testCurrent() {
 }
 
 // valgrind --track-origins=yes ./wasp
+

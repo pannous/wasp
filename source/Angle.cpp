@@ -143,6 +143,7 @@ bool isFunction(String op, bool deep_search) {
 }
 
 bool isFunction(Node &op) {
+    if (op.name.empty())return false;
     if (op.kind == strings)return false;
     if (op.kind == declaration)return false;
     return isFunction(op.name);
@@ -173,9 +174,8 @@ Node eval(String code) {
         auto _resultNode = smartNode(results);
         if (!_resultNode)return ERROR;
         Node &resultNode = *_resultNode;
-//		print("» %l"s % results );
 #ifndef RELEASE
-        print("» %s"s % resultNode.serialize().data);
+        print("» %s\n"s % resultNode.serialize().data);
 #endif
         return resultNode;
     }
@@ -244,6 +244,7 @@ String extractFunctionName(Node &node) {
 //chars ras[] = {"=", "?:", "+=", "++", 0};
 //List<chars> rightAssociatives = List(ras);
 List<chars> rightAssociatives = List<chars>{"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
+// compound assignment
 
 
 // still needs to check a-b vs -i !!
@@ -427,6 +428,7 @@ Node Charpoint("Charpoint", clazz);
 // todo: see NodeTypes.h for overlap with numerical returntype integer …
 // these are all boxed class types, for primitive types see Type and Kind
 void initTypes() {
+    if (types.size() > 10)return;
     types.add("i8", &ByteType);// use in u8.load etc
     types.add("u8", &ByteType);// use in u8.load etc
     types.add("int8", &ByteType);// use in u8.load etc
@@ -446,8 +448,13 @@ void initTypes() {
     types.add("long", &Long);
     types.add("double", &Double);
     types.add("float", &Double);
-    for (auto name: types)
-        types[name]->setType(clazz);
+    for (int i = 0; i < types.size(); ++i) {
+        auto typ = types.values[i];
+        if (long(typ) < 0 or long(typ) > 10000000l)
+            continue;// todo: this type reflection is bad anyways?
+//            error("bad wasm type initialization");
+//        if(typ)typ->setType(clazz);
+    }
 }
 
 
@@ -719,10 +726,13 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
     return decl;
 }
 
+Node &groupOperators(Node &expression, Function &context);
 
 Node &groupDeclarations(Node &expression, Function &context) {
+    if (expression.contains("=") or expression.contains(":=")) {
+        return groupOperators(expression, context);
+    }
     auto first = expression.first();
-
     if (expression.length == 2 and isType(first.first()) and
         expression.last().kind == objects) {// c style double sin() {}
         expression = groupTypes(expression, context);
@@ -749,7 +759,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
         if (node.kind != declaration and not declaration_operators.has(op))
             continue;
         if (op.empty())continue;
-        if (op == "=") continue; // handle assignment via groupOperators !
+        if (op == "=" or op == ":=") continue; // handle assignment via groupOperators !
         if (op == "::=") continue; // handle globals assignment via groupOperators !
         // todo: public export function jaja (a:num …) := …
 
@@ -849,7 +859,9 @@ Node &groupOperators(Node &expression, Function &context) {
         Node &next = expression.children[i + 1];
         next = analyze(next, context);
         Node prev;
-        if (i > 0)prev = expression.children[i - 1];
+        if (i > 0)
+            prev = expression.children[i - 1];
+//            prev = expression.to(op);
 //        else error("binop?");
 
         if (isPrefixOperation(node, prev, next)) {// ++x -i
@@ -871,6 +883,7 @@ Node &groupOperators(Node &expression, Function &context) {
                 }
             }
             if (op == "^" or op == "^^" or op == "**") {// todo NORM operators earlier
+                findLibraryFunction("pow", false);
                 functions["pow"].is_used = true;// todo just one
                 functions["powd"].is_used = true;
                 functions["powi"].is_used = true;
@@ -878,7 +891,10 @@ Node &groupOperators(Node &expression, Function &context) {
             }
             if (suffixOperators.has(op)) { // x²
                 // SUFFIX Operators
-                if (op == "ⁿ") functions["pow"].is_used = true;
+                if (op == "ⁿ") {
+                    findLibraryFunction("pow", false);
+                    functions["pow"].is_used = true;
+                }
                 if (i < 1)error("suffix operator misses left side");
                 node.add(prev);
                 if (op == "²") {
@@ -910,8 +926,8 @@ Node &groupOperators(Node &expression, Function &context) {
                  * */
                 auto var = prev.name;
                 if (op.endsWith("=") and not op.startsWith("::") and prev.kind == reference) {
-                    // todo can remove hack?
                     // x=7 and x*=7
+                    // todo can remove hack?
                     Type inferred_type = preEvaluateType(next, context);
                     if (addLocal(context, var, inferred_type, false)) {
                         if (op.length > 1 and op.endsWith("=")) // x+=1 etc
@@ -975,19 +991,24 @@ Type preEvaluateType(Node &node, Function &context) {
     }
     if (node.kind == operators) {
         Node &lhs = node[0];
+        auto lhs_type = preEvaluateType(lhs, context);
         if (node.length == 1)
-            return mapType(lhs);
+            return lhs_type;
         Node &rhs = node[1];
-        discard(lhs);
-        return preEvaluateType(rhs, context);// todo lol
+        auto rhs_type = preEvaluateType(rhs, context);// todo lol
+        auto type = commonType(lhs_type, rhs_type);
+        // todo: operators which are not endofunctions
+        return type;
 //        if(lhs.kind==arrays)
     }
     if (node.kind == groups or node.kind == objects or node.kind == patterns) {
         arrayElementSize(node);// adds type as BAD SIDE EFFECT
     }
     if (node.kind == reference) {
-        if (context.locals.has(node.name))
-            return context.locals[node.name].type;
+        if (context.locals.has(node.name)) {
+            auto local = context.locals[node.name];
+            return local.typo;
+        }
     }
     return mapType(node);
 }
@@ -1136,21 +1157,30 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
     return expressiona;
 }
 
-bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: libraries.has(library)
 
 void addLibraryFunctionAsImport(Function &func) {
     func.is_used = true;
+    // ⚠️ this function now lives inside Module AND as import inside "main" functions list, with different wasm_index!
     Function &import = functions[func.name];// copy function info from library/runtime to main module
     import.signature = func.signature;
     import.is_runtime = false;// because here it is an import!
     import.is_import = true;
 }
 
+bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: libraries.has(library)
+
 // todo: clarify registerAsImport side effect
 // todo: return the import, not the library function
 Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))return use_required(&functions[name]);
+    if (contains(funclet_list, name)) {
+        Module &funclet_module = read_wasm(findFile(name, "lib"));
+        check(funclet_module.functions.has(name));
+        auto funclet = funclet_module.functions[name];
+//        libraries.add(&funclet_module);// link it later via import or use its code directly?
+        return use_required(&funclet);
+    }
     if (name.in(function_list) and libraries.size() == 0)
         libraries.add(&loadModule("wasp-runtime.wasm"));// on demand
 
@@ -1159,12 +1189,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         // todo : multiple signatures! concat(bytes, chars, …) eq(…)
         int position = library->functions.position(name);
         if (position >= 0) {
-            // ⚠️ this function now lives inside Module AND as import inside "main" functions list, with different wasm_index!
             Function &func = library->functions.values[position];
-//            import.is_used = true; //  setting in emit too late: imports must be known through analyzer
-//            if(!libraries.has(library))
-//                libraries.add(library);// used
-            //		imports.add(*import); redundant!
             return use_required(&func);
         }
     }
@@ -1179,7 +1204,6 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 }
 
 Function *use_required(Function *function) {
-
     if (!function)return 0;
     addLibraryFunctionAsImport(*function);
     if (function->name == "quit")
@@ -1221,11 +1245,11 @@ List<String> aliases(String name) {
         found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
     }
     if (name == "=") {
-        found.add("is");
-        found.add("be");
+//        found.add("is");
+//        found.add("be");
     }
     if (name == "#") {// todo
-        found.add("getChar");
+//        found.add("getChar");
     }
     return found;
 }
@@ -1427,12 +1451,12 @@ void fixFunctionNames() {
 
 void preRegisterFunctions() {
     functions.clear();
-
-    Module &runtime = read_wasm("wasp-runtime.wasm"); // ok, cached!
-    runtime.code.needs_relocate = false; // may be set to true depending on main code emitted
-
-    for (int i = 0; i < runtime.functions.size(); ++i)
-        runtime.functions.values[i].is_used = false; // reset after last used, as libraries are shared between tests
+//  postpone for simple programs!
+//    Module &runtime = read_wasm("wasp-runtime.wasm"); // ok, cached!
+//    runtime.code.needs_relocate = false; // may be set to true depending on main code emitted
+//
+//    for (int i = 0; i < runtime.functions.size(); ++i)
+//        runtime.functions.values[i].is_used = false; // reset after last used, as libraries are shared between tests
 
     functions["proc_exit"].import();
     functions["proc_exit"].signature.add(int32, "exit_code");// file descriptor
@@ -1544,27 +1568,6 @@ Node smartNode32(int smartPointer32) {
     error1("missing smart pointer type "s + typeName(Type(smartPointer32)));
     return Node();
 }
-
-
-float function_precedence = 1000;
-
-// todo!
-// moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-// pre-registered builtin/runtime functions working without any import / include / require / use
-chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printf",
-                                                        "println", "puts", "putf", "len", "quit", "parseLong",
-                                                        "parseDouble", "strlen", "concat",
-                                                        "log", "ln", "log10", "log2", "similar",
-                                                        "putx", "putc", "get", "set", "peek", "poke", "read",
-                                                        "write", 0, 0,
-                                                        0};// MUST END WITH 0, else BUG
-
-//chars runtime_function_list[]={};
-chars wasi_function_list[] = {"proc_exit", "fd_write"};
-
-
-chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
-
 
 float precedence(Node &operater) {
     String &name = operater.name;

@@ -18,8 +18,11 @@
 
 #endif
 
-#define MAX_STRING_LENGTH 100000
-#define MAX_DATA_LENGTH 0x1000000
+#define MAX_STRING_LENGTH 100000 // only for strlen()
+//#define MAX_WASM_DATA_LENGTH 0x1000000 // 16 MB
+//#define MAX_WASM_DATA_LENGTH 0x80000 // 1/2 MB
+#define MAX_WASM_DATA_LENGTH 0x20000 // 1/8 MB
+
 typedef chars chars;
 typedef const unsigned char *wasm_string;// wasm strings start with their LEB encoded length and do NOT end with 0 !! :(
 
@@ -898,8 +901,8 @@ public:
     }
 
 
-    [[nodiscard]]
 //    [[non-modifying]]
+    [[nodiscard]]
     __attribute__((__warn_unused_result__))
     String &replace(chars string, chars with) {// first only!
         int i = this->indexOf(string);
@@ -1076,6 +1079,9 @@ void print(char const *s);
 //void print(char *s);
 //void print(const char *s);
 void print(String s);
+
+void println(String s); // ==
+void put(String s);
 
 extern "C" int puts(const char *);// int return needed for stdio compatibilty !
 //void puts(const char *);

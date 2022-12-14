@@ -68,19 +68,17 @@ double pow(double a, double b) {
 #ifndef WASI
 
 void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
-    if (size > 100000)
-        size = 10000;
-//        error("implausible size");
+    if (size > 1000000) {
+        warn("malloc of huge memory chunk:");
+        printf("%x", size);
+        error("implausible size ;)");
+    }
+//        size = 10000;
     if ((int) current < 100000) {
-        puti((int) current);
-        print("get_heap_base:");
+//        puti((int) current);
+//        print("get_heap_base:");
         current = (char *) get_heap_base();
-        puti((int) current);
-        if ((int) current < 100000) {
-            print("current<100000");
-            print("setting current to 100000");
-            current = (char *) 1000000;
-        }
+//        puti((int) current);
     }
     void *last = current;
     current += size;
@@ -124,6 +122,10 @@ void printf(chars format) {
 }
 
 void printf(chars format, int i) {
+    print(String(format) % i);
+}
+
+void printf(char const *format, size_t i) {
     print(String(format) % i);
 }
 
@@ -224,9 +226,7 @@ int calloc_counter = 0;
 
 void debugCalloc(size_t num, size_t size) {
     calloc_counter++;
-    if (calloc_counter == 1000) {
-
-
+    if (calloc_counter == 1000 or num * size > 100000) {
         print("calloc");
         puti(num);
         print("*");
@@ -248,6 +248,7 @@ void *calloc(size_t num, size_t size) //__attribute__((__malloc__, __warn_unused
 }
 
 extern "C" void *memset(void *ptr, int value, size_t num) {
+    // todo very expensive
     int *p = (int *) ptr;
     while (num-- > 0)*p++ = value;
     return ptr;//?
@@ -414,14 +415,37 @@ void putp(void *f) {
 //extern "C"
 int main(int argc, char **argv);
 
+
+List<String> arguments() {
+    List<String> args;
+    int argc;
+    int len;
+    args_sizes_get(&argc, &len);
+//    print("argc");
+//    print(argc);
+    char **argv = (char **) alloc(argc, 8);
+    char *values = (char *) alloc(len, 1);
+    args_get(argv, values);
+    // is argv guaranteed to point into values?
+    if (argv[0] != values)
+            todo("wasmtime args_get is currently broken. Please use wasmer. ")
+        for (int i = 0; i < argc; i++) {
+            auto string = argv[i];
+            args.add(String(string));
+        }
+    args.capacity = (int) (long) argv;// hack ;)
+    return args;
+}
+
+
 extern "C" void _start() {
+    auto args = arguments();
+    for (auto arg: args)
+        put(arg);
+    main(args.size(), (char **) args.capacity /*hack ;)*/);
 #if RUNTIME_ONLY
     print("Wasp runtime not meant to be executed. Use wasp or wasp.wasm \n");
 #else
-    char *argv = (char *) malloc(1000);
-    int argc;
-    args_sizes_get(&argv, &argc);
-    main(argc, &argv);
 #endif
 }
 

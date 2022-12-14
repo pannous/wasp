@@ -71,6 +71,14 @@ wrap(logd) {
 }
 
 
+wrap(pow) {
+    double n = args[0].of.f64;
+    double x = args[1].of.f64;
+    results[0].of.f64 = powd(n, x);
+    return NULL;
+}
+
+
 wrap(puts) {
     int n = args[0].of.i32;
     if (wasm_memory)
@@ -258,6 +266,9 @@ wasm_wrap *link_import(String name) {
     if (name == "putd") return &wrap_putd;
     if (name == "args_sizes_get")return &wrap_args_sizes_get;
     if (name == "fd_write") return &wrap_fd_write;
+
+    if (name == "pow") return &wrap_pow;// logd
+
     if (name == "log") return &wrap_logd;// logd
     if (name == "logd") return &wrap_logd;// logd
     if (name == "putc") return &wrap_putc;
