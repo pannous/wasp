@@ -547,6 +547,10 @@ enum Opcodes {
     f32_sub = 0x93,
     f32_mul = 0x94,// f32.mul
     f32_div = 0x95,
+    // proposed for vector pipelin?
+    f32_min = 0x96,
+    f32_max = 0x97,
+    f32_copysign = 0x98,
 
     f64_abs = 0x99,
     f64_neg = 0x9a,
@@ -626,6 +630,9 @@ enum Opcodes {
 //i64_trunc_sat_f64_s=0xFC06,
 //i64_trunc_sat_f64_u=0xFC07,
 
+
+    math_prefix_s = 0xfc,
+
 // bulkMemory
     memory_init = 0xFC08,
     data_drop = 0xFC09,
@@ -642,6 +649,96 @@ enum Opcodes {
 // SIMD
     simd____ = 0xFD,
 };
+
+
+// don't forget the PREFIX before each vector op:
+// combined with vector prefix Valtypes, e.g. vec_i64 = 0x77 => 0x7700 == vec_i64.length
+// https://github.com/WebAssembly/flexible-vectors/blob/main/proposals/flexible-vectors/BinaryFlexibleVectors.md
+enum VectorOpcodes { // Immediate operands in comments:
+    vector_length_op = 0x00,
+    vector_splat_op = 0x10,
+    extract_lane_imm_u = 0x11, // i:ImmLaneIdx16 for i8, ImmLaneIdx4 for i32 etc ( product must be 64!)
+    extract_lane_imm_s = 0x12, // i:ImmLaneIdx… ^^
+    replace_lane_imm = 0x13,   // i:ImmLaneIdx… ^^
+    extract_lane_u = 0x14,
+    extract_lane_s = 0x15,
+    replace_lane = 0x16,
+    extract_lane_mod_u = 0x17,
+    extract_lane_mod_s = 0x18,
+    replace_lane_mod = 0x19,
+
+    vector_lshl = 0x20, // (lane) shift left    VERSUS bitwise  	0x50
+    vector_lshr = 0x21, // (lane) shift right
+
+    // Ints vec.i64.add  0x77.0x30 DIFFERENT to vec.f32.add 	0x76.0x94  GRRR!
+    vector_add = 0x30, // ok overlap with i32.add … would be nonsensical
+    vector_sub = 0x31,
+    vector_mul = 0x32,
+//    vector_div = 0x3x, "intentionally missing"  because not in simd128 either
+    vector_neg = 0x33,
+    vector_min_u = 0x34,
+    vector_min_s = 0x35,
+    vector_max_u = 0x36,
+    vector_max_s = 0x37,
+    vector_avgr_u = 0x38, // average <3 !
+    vector_abs = 0x39,
+
+    vector_shl = 0x50, //  bitwise!     VERSUS (lane) shift left    lshl = 0x20,
+    vector_shr = 0x51, //  bitwise!     VERSUS (lane) shift right   lshr = 0x21,
+    vector_shr_s = 0x52,
+
+    vector_and = 0x53,
+    vector_or = 0x54,
+    vector_xor = 0x55,
+    vector_not = 0x56,
+    vector_andnot = 0x57,
+    vector_bitselect = 0x58, // slice from to how?  Bits 3...7 of 01100101: 25 (_11001__)
+
+    vector_any_true = 0x60,
+    vector_all_true = 0x61,
+
+    vector_eq = 0x70,
+    vector_ne = 0x71,
+    vector_lt_u = 0x72,
+    vector_lt_s = 0x73,
+    vector_lt = 0x74,
+    vector_le_u = 0x75,
+    vector_le_s = 0x76,
+    vector_le = 0x77,
+
+    vector_gt_u = 0x78,
+    vector_gt_s = 0x79,
+    vector_gt = 0x7a,
+    vector_ge_u = 0x7b,
+    vector_ge_s = 0x7c,
+    vector_ge = 0x7d,
+
+    vector_load = 0x80,
+    // … space!
+    vector_store = 0x87,
+
+// Floating-point :
+    vector_neg_f = 0x90,
+    vector_abs_f = 0x91,
+    vector_pmin = 0x92,
+    vector_pmax = 0x93,
+    vector_add_f = 0x94,
+    vector_sub_f = 0x95,
+    vector_div_f = 0x96,
+    vector_mul_f = 0x97,
+    vector_sqrt_f = 0x98,
+
+    vector_convert_s = 0xA0,
+    vector_narrow_s = 0xA1,
+    vector_narrow_u = 0xA2,
+    vector_widen_low_u = 0xA3,
+    vector_widen_low_s = 0xA4,
+    vector_widen_high_u = 0xA5,
+    vector_widen_high_s = 0xA6,
+};
+
+
+typedef VectorOpcodes vecop;
 
 // https://webassembly.github.io/spec/core/binary/modules.html#sections
 enum Sections {

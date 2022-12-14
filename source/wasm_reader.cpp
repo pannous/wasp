@@ -115,42 +115,24 @@ String &name(Code &wstring) {// Shared string view, so don't worry about trailin
 // todo: treat all functions (in library file) as exports if ExportSection is empty !?
 // that is: add their signatures to module …
 void parseFunctionNames(Code &payload) {
-    module->functionIndices.setDefault(-1);
 //	module->functions.setDefault(Function());
 //	put(module->functionIndices);// what we got so far?
     int function_count = unsignedLEB128(payload);
-    int index = -1;
+    int call_index = -1;
     for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
-        index = unsignedLEB128(payload);
-        if (i != index)trace("i≠index => some functions not named (or other things named)");
-        if (index < 0 or index > 100000)
-            error("broken index"s + index);
+        call_index = unsignedLEB128(payload);
+        int code_index = call_index - module->import_count;
+        if (i != call_index)trace("i≠index => some functions not named (or other things named)");
+        if (call_index < 0 or call_index > 100000)
+            error("broken index"s + call_index);
         String func = name(payload).clone();// needs to be 0-terminated now
         Function &function = module->functions[func];
-        if (function.code_index >= 0 and function.code_index != index)
-            trace("already has index: "s + func + " " + function.code_index + "≠" + index);
-        function.code_index = index;
+        if (function.code_index >= 0 and function.code_index != code_index) {
+            trace("already has index: "s + func + " " + function.code_index + "≠" + code_index);
+        }
+        function.code_index = code_index;
         function.name = func;
-        if (debug_reader)print("ƒ%d %s\n"s % index % func.data);
-        auto old_index = module->functionIndices[func];
-        if (old_index > 0 and old_index < function_count /*hack!*/) {
-            if (old_index == index)
-                continue; // identical match, lib parsed twice without cleaning module->functionIndices!?
-            // export section ≠ name section (when overloading…)
-            trace("already has index: "s + func + " " + old_index + "≠" + index);
-            continue;
-            func = func + "_func_" + index;// hack ok to avoid duplicates
-            func = func.clone();
-        }
-        if (func.length > 0)
-//			module->functionIndices.insert_or_assign(func, index);
-            old_index = index;
-        else {
-            error("function without name at index "s + index);// happens with unicode π(x) etc
-            //			warn
-            module->functionIndices["func_"s + index] = index;
-//			module->functionIndices.insert_or_assign("func_"s + index, index);
-        }
+        if (debug_reader)print("ƒ%d %s\n"s % call_index % func.data);
     }
 //	  (import "env" "log_chars" (func (;0;) $logs (type 0)))  export / import names != internal names
 //	for (int i = function_count; i < module->total_func_count; i++)
@@ -165,9 +147,11 @@ void parseFuncTypeSection(Code &payload) {
     // imports stupidly have their own type,
     // we don't know here if i32 is pointer … so we may have to refine later
     for (int i = 0; i < module->code_count and payload.start < payload.length; ++i) {
-        auto call_index = (int) (i + module->import_count); // implicit !?
+//        uint code_index = i;
+        uint call_index = (int) (i + module->import_count); // implicit !?
         int typ = unsignedLEB128(payload);
-        Function &function = module->functions.values[i];
+        Function &function = module->functions.values[call_index];// module->functions contains imports
+//        check(function.code_index==i==code_index)
         Signature &s = module->funcTypes[typ];
         function.signature.merge(s);
     }
@@ -189,7 +173,6 @@ void parseImportNames(Code &payload) {// and TYPES!
             continue;
         }
         Signature &signature = module->funcTypes[type];
-        module->functionIndices[name1] = i;
         module->functions[name1].signature.merge(signature);
         module->import_names.add(name1);
     }
@@ -473,20 +456,16 @@ void consumeExportSection() {
 
         if (fun.signature.size()) {
             trace("function %s already has signature "s % func + fun.signature.serialize());
-            trace("function %s old index %d new index %d"s % func % fun.code_index % index);
+            trace("function %s old code_index %d new code_index %d"s % func % fun.code_index % lower_index);
             Function &abstract = *new Function{.name=func, .module=module, .is_runtime=true, .is_polymorph=true};
             abstract.variants.add(fun);
             module->functions[func] = abstract;
             fun = abstract.variants.items[2];
-            fun = *new Function{.name=func, .module=fun.module, .is_runtime=true};
-            module->functionIndices[func] = POLYMORPH_function_index_marker;
+            fun = *new Function{.code_index=lower_index, .name=func, .module=fun.module, .is_runtime=true};
         } else {
-            module->functionIndices[func] = lower_index;// demangled
+            fun0.code_index = lower_index;
+            fun.code_index = lower_index;
         }
-        module->functionIndices[func0] = lower_index;// mangled unique
-        fun0.code_index = lower_index;
-        fun.code_index = lower_index;
-
 
 //        if (code_index == 27 or index == 27)// "_Z6concatPKcS0_"
 //            breakpoint_helper // todo operator+
