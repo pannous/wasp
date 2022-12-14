@@ -908,7 +908,7 @@ struct Local { // todo: use
 //    Valtype typo = unknown_type;
     Type typo;// = unknown_type;
 //    Primitive grrr
-    Node *type;
+    Node *type; // todo: REMOVE!
     Node *ref;// why still needed?
     int data_pointer = 0;// compile time handling of reference data, e.g. after emitData()
 };

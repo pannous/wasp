@@ -272,7 +272,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
     if (eq(s, "%"))return 0;// handle later
 
     if (tracing) breakpoint_helper
-    trace("unknown or non-primitive operator %s\n"s % String(s));
+    trace("unknown or non-primitive operator %s\n"s % String(s));// OK! not (necessarily) a problem:
     // can still be matched as context etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
 //		error("invalid operator");
     return 0;
@@ -725,6 +725,8 @@ emitOffset(Node &array, Node offset_pattern, bool sharp, Function &context, int 
     if (offset_pattern.kind == reference) {
         const Code &offset = emitExpression(offset_pattern, context);
         code.add(offset);
+        if (last_type == i64)
+            code.add(cast(last_type, i32));
         if (last_type != i32t)
             error("index must be of int type");
         if (sharp) {// todo remove if offset_pattern was static
@@ -1311,8 +1313,9 @@ Code emitOperator(Node &node, Function &context) {
     check_eq(index, context.code_index);
     if (name == "‖")index = -1;// AHCK!
     if (name == "then")return emitIf(*node.parent, context);// pure if handled before
-    if (name == ":=")return emitDeclaration(node, node.first());
-    if (name == "=")return emitSetter(node, node.first(), context);// todo node.first dodgy
+    auto first = node.first();
+    if (name == ":=")return emitDeclaration(node, first);
+    if (name == "=")return emitSetter(node, first, context);// todo node.first dodgy
     if (name == ".") return emitAttribute(node, context);
 //	if (name=="#")XXX return emitIndexPattern(node[0], node[1], context); elsewhere (and emit(node)!
     if (name == "::=")return emitGetGlobal(node); // globals ASSIGNMENT already handled in analyze / globalSection()
@@ -1332,13 +1335,13 @@ Code emitOperator(Node &node, Function &context) {
         arg_type = last_type;// needs to be visible to array index [1,2,3]#1 gets FUCKED up in rhs operations!!
         const Code &rhs_code = emitExpression(rhs, context);
         Type rhs_type = last_type;
-        Type commonType = needsUpgrade(lhs_type, rhs_type);// 3.1 + 3 => 6.1 etc
+        Type common_type = commonType(lhs_type, rhs_type);// 3.1 + 3 => 6.1 etc
         code.push(lhs_code);// might be empty ok
-        code.add(cast(lhs_type, commonType));
+        code.add(cast(lhs_type, common_type));
         code.push(rhs_code);// might be empty ok
-        code.add(cast(rhs_type, commonType));
-        if (commonType != void_block)
-            last_type = commonType;
+        code.add(cast(rhs_type, common_type));
+        if (common_type != void_block)
+            last_type = common_type;
         else last_type = rhs_type;
 
     } else if (node.length > 2) {// todo: n-ary? ∑? is just a context!
@@ -1360,8 +1363,12 @@ Code emitOperator(Node &node, Function &context) {
         code.add(index);
         return code;
     }
-    if (last_type == unknown_type)
-        internal_error("unknown type should be inferred by now:\n"s + node.serialize());
+    if (last_type == unknown_type) {
+        if (allow_untyped_nodes)
+            last_type = Primitive::node;// anything
+        else
+            internal_error("unknown type should be inferred by now:\n"s + node.serialize());
+    }
     byte opcode = opcodes(name, mapTypeToWasm(last_type), mapTypeToWasm(arg_type));
 
     if (opcode >= 0x8b and opcode <= 0x98)
@@ -1387,9 +1394,9 @@ Code emitOperator(Node &node, Function &context) {
         last_type = i32t;// bool'ish
     } else if (name == "++" or name == "--") {
         Node increased = Node(name[0]).setType(operators);
-//		increased.add(node.first());
-        increased.add(new Node(1));
-        code.add(emitSetter(node.first(), increased, context));
+        increased.add(first); // if not first emitted
+        increased.add(new Node(1));// todo polymorph operator++ instead of +1 !
+        code.add(emitSetter(first, increased, context));
     } else if (name == "#") {// index operator
         if (node.parent and node.parent->name == "=")// setter!
             return code + emitIndexWrite(node[0], context);// todo
@@ -1459,7 +1466,7 @@ Code emitOperator(Node &node, Function &context) {
     }
 
     if (opcode == get_local and node.length == 1) {// arg AFTER op (not as const!)
-        long last_local = node.first().value.longy;
+        long last_local = first.value.longy;
         code.push(last_local);
         last_type = context.locals.at(last_local).typo;
     }
@@ -1468,13 +1475,14 @@ Code emitOperator(Node &node, Function &context) {
     return code;
 }
 
-Type needsUpgrade(Type lhs, Type rhs) {
+Type commonType(Type lhs, Type rhs) {
+    // todo: per function / operator!
     if (lhs == i64 and rhs == int32) return i64;
     if (lhs == int32 and rhs == i64) return i64;
-    if (lhs == float64 or rhs == float64)
-        return float64;
+    if (lhs == float64 or rhs == float64)return float64;
     if (lhs == float32 or rhs == float32)return float32;
-    return none;
+    // todo?
+    return lhs;
 }
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string) {
@@ -1730,9 +1738,11 @@ Code emitWhile(Node &node, Function &context) {
     Code code;
     Node condition = node[0].values();
     Node then = node[1].values();
+    Valtype loop_type = none; // todo: I thought everything is an expression!?
+//	Valtype loop_type = i64;// everything is an expression!
+
     code.addByte(loop);
-    code.addByte(none);// type:void_block todo: I thought everything is an expression!?
-//	code.addByte(int32);// everything is an expression!
+    code.addByte(loop_type);
 
     code = code + emitExpression(condition, context);// condition
     code.addByte(if_i);
@@ -1742,10 +1752,14 @@ Code emitWhile(Node &node, Function &context) {
     code.addByte(br_branch);
     code.addByte(1);
     code.addByte(end_block);// end if condition then action
+    if (loop_type == none) {
+        code.addByte(drop);
+        code.addByte(drop);
+    }
+    // else type should fall through
     code.addByte(end_block);// end while loop
-    // type should fall through
+    last_type = loop_type;
 //	int block_value= 0;// todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
-//	code.addByte(block_value);
     return code;
 }
 
@@ -1805,7 +1819,7 @@ Code emitCall(Node &fun, Function &context) {
 
     int index = function.code_index;
     if (functionIndices.has(name)) {
-        if (index != functionIndices[name]) todow("index!=functionIndices[name]");
+        if (index >= 0 and index != functionIndices[name]) todow("index!=functionIndices[name]");
         index = functionIndices[name];
     } else {
 //		breakpoint_helper
@@ -2430,12 +2444,11 @@ Code emitCodeSection(Node &root) {
 //	byte code_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
     byte code_nop[] = {0/*locals_count*/, end_block};// NOP
     byte code_start[] = {0/*locals_count*/, call_, (byte) main_offset, nop, nop, drop, end_block};// needs own type etc
-    byte code_id[] = {1/*locals_count*/, 1/*one local has type: */, i32t, get_local, 0, return_block,
-                      end_block}; // NOP
-    byte code_square_d[] = {1/*locals_count*/, 1/*one local has type: */, f64t, get_local, 0, get_local, 0, f64_mul,
+    byte code_id[] = {1/*locals_count*/, 1/*one of type: */, i32t, get_local, 0, return_block, end_block}; // NOP
+    byte code_square_d[] = {1/*locals_count*/, 1/* of type: */, f64t, get_local, 0, get_local, 0, f64_mul,
                             return_block, end_block};
 
-    byte code_quit[] = {0/*locals_count*/, call_, 0, end_block};
+    byte code_quit[] = {0/*locals_count*/, call_, 0 /*proc_exit*/, end_block};
 
     // put_chars(char*) compatible with put_chars(chars,len)??
 //    byte put_chars[] = {1/*locals_count*/, 1 /*one of type*/, int32 /* (char*) */,
@@ -2894,7 +2907,8 @@ void clearEmitterContext() {
 //    runtime_data_offset = 0x100000;
     data_index_end = runtime_data_offset; //0
     last_object_pointer = 0;
-    data = (char *) malloc(MAX_DATA_LENGTH);// todo grow
+    if (!data) data = (char *) malloc(MAX_WASM_DATA_LENGTH);// todo grow
+    else memset(data, 0, MAX_WASM_DATA_LENGTH);
     emitLongData(0, true);// NULL PAGE! no object shall ever read or write from address 0 (sanity measure)
     emitLongData(0, true);// TRASH sink, e.g. for writing fd_write(fd,iov*,len, &trash out)
 //    emitString(*new Node("__WASP_DATA__\0"), *new Function());

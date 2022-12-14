@@ -23,6 +23,7 @@
 #include "wasm_patcher.h"
 //#include "wasm_reader.h"
 #include "Code.h"
+#include "Angle.h"
 
 typedef unsigned char *bytes;
 
@@ -55,24 +56,26 @@ String s(String x) { return x; }
 int unknown_opcode_length_TODO = -1;
 const int leb = -2;// special marker for varlength leb argument ( i32.const … )
 int heaptype = -3;
+int datax = -4;// two leb params?
 int block_index = leb;
 int u32_type = 4;
 int i32_type = 4;
+
 // https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
 std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code (not the stack values! e.g. 4 bytes for f32.const )
-        {nop,                 0}, // useful for relocation padding call 1 -> call 10000000
-        {block,               leb},
-        {loop,                0},
-        {if_i,                0},// precede by i32 result}, follow by i32_type {7f}
-        {else_,               0},
-        {return_block,        0},
+        {nop,          0}, // useful for relocation padding call 1 -> call 10000000
+        {block,        leb},
+        {loop,         0},
+        {if_i,         0},// precede by i32 result}, follow by i32_type {7f}
+        {else_,        0},
+        {return_block, 0},
 
         // EXTENSIONS:
-        {try_,                block_index},
-        {catch_,              block_index},
-        {throw_,              block_index},
-        {rethrow_,            block_index},
-        {br_on_exn_,          block_index}, // branch on exception
+        {try_,         block_index},
+        {catch_,       block_index},
+        {throw_,       block_index},
+        {rethrow_,     block_index},
+        {br_on_exn_,   block_index}, // branch on exception
 
         {end_block,           0}, //11
         {br_branch,           block_index},
@@ -87,58 +90,58 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
         {func_bind,           u32_type},// {type $t} {$t : u32_type
         {let_local,           leb}, // {let <bt> <locals> {bt : blocktype}, locals : {as in functions}
 
-        {drop,                0}, // pop stack
-        {select_if,           0}, // a?b:c ternary todo: use!
-        {select_t,            1}, // extension … ?
-        {0x27,                1}, //bug?
-        {local_get,           leb},
-        {local_set,           leb},
-        {local_tee,           leb},
-        {get_local,           leb},// get to stack
-        {set_local,           leb},// set and pop
-        {tee_local,           leb},// set and leave on stack
+        {drop,         0}, // pop stack
+        {select_if,    0}, // a?b:c ternary todo: use!
+        {select_t,     1}, // extension … ?
+        {0x27,         1}, //bug?
+        {local_get,    leb},
+        {local_set,    leb},
+        {local_tee,    leb},
+        {get_local,    leb},// get to stack
+        {set_local,    leb},// set and pop
+        {tee_local,    leb},// set and leave on stack
 
-        {global_get,          leb},
-        {global_set,          leb},
+        {global_get,   leb},
+        {global_set,   leb},
 
         //{ Anyref/externref≠funcref tables}, Table.get and Table.set {for Anyref only}.
         //{Support for making Anyrefs from Funcrefs is out of scope
-        {table_get,           leb},
-        {table_set,           leb},
+        {table_get,    leb},
+        {table_set,    leb},
 
-        {i8_load,             0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-        {i16_load,            0}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
-        {i32_load,            0},// load word from i32 address
-        {f32_load,            0},
-        {i32_store,           0},// store word at i32 address
-        {f32_store,           0},
+        {i8_load,      datax}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+        {i16_load,     datax}, //== 𝟶𝚡𝟸𝙳}, i32.load𝟪_u
+        {i32_load,     datax},// load word from i32 address
+        {f32_load,     datax},
+        {i32_store,    datax},// store word at i32 address
+        {f32_store,    datax},
         // todo : peek 65536 as float directly via opcode
-        {i64_load,            0}, // memory.peek memory.get memory.read
-        {i64_store,           0}, // memory.poke memory.set memory.write
-        {i32_store_8,         0},
-        {i32_store_16,        0},
-        {i8_store,            0},
-        {i16_store,           0},
+        {i64_load,     datax}, // memory.peek memory.get memory.read
+        {i64_store,    datax}, // memory.poke memory.set memory.write
+        {i32_store_8,  datax},
+        {i32_store_16, datax},
+        {i8_store,     datax},
+        {i16_store,    datax},
 
         //{i32_store_byte, -1},// store byte at i32 address
-        {i32_auto,            leb},
-        {i32_const,           leb},
-        {i64_auto,            leb},
-        {i64_const,           leb},
-        {f32_auto,            4},
-        {f64_const,           8},
+        {i32_auto,     leb},
+        {i32_const,    leb},
+        {i64_auto,     leb},
+        {i64_const,    leb},
+        {f32_auto,     4},
+        {f64_const,    8},
 
-        {i32_eqz,             0}, // use for not!
+        {i32_eqz,      0}, // use for not!
 //		{negate,                              -1},
 //		{not_truty,                           -1},
-        {i32_eq,              0},
-        {i32_ne,              0},
-        {i32_lt,              0},
-        {i32_gt,              0},
-        {i32_le,              0},
-        {i32_ge,              0},
+        {i32_eq,       0},
+        {i32_ne,       0},
+        {i32_lt,       0},
+        {i32_gt,       0},
+        {i32_le,       0},
+        {i32_ge,       0},
 
-        {i64_eqz,             0},
+        {i64_eqz,      0},
         {f32_eqz,             0}, // HACK: no such thing!
 
 
@@ -470,8 +473,8 @@ Index LinkerInputBinary::RelocateMemoryIndex(Index memory_index) const {
 }
 
 Index LinkerInputBinary::RelocateTable(Index global_index) const {
-    if (needs_relocate) todo("RelocateTable")
-    else return global_index;// shouldn't reach this anyways
+    if (needs_relocate) todow("RelocateTable")
+    return global_index;// shouldn't reach this anyways
 }
 
 class Linker {
@@ -974,6 +977,8 @@ void Linker::ResolveSymbols() {
         // FIND DUPLICATE imports and exports (no other purpose for now!)
         int import_index = 0;
         for (auto &import: binary->function_imports) {
+            if (tracing)
+                printf("%s import %s index %d\n", binary->name, import.name.data, import.index);
             if (import_map.has(import.name)) {
                 warn("DUPLICATE import "s + import.name);// todo: check signatures
                 import.active = false;
@@ -1109,15 +1114,8 @@ void Linker::ResolveSymbols() {
                 // link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
                 Index func_index = func_map.FindIndex(name);
                 if (func_index == kInvalidIndex) {
-                    warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
-                    continue;
-//					import.active = false;// don'true
-//					binary->active_function_imports--;
-//					todo("")
-//					import.foreign_index =  binary.import_delta + import.sig_index;
-//					import.relocated_function_index =  binary.import_delta + import.sig_index;
-                    // no need for complicated calculations, just count the active imports so far
-                    warn("deleted unresolved import: "s + name);
+                    if (not contains(wasi_function_list, name.data))
+                        warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
                     continue;
                 }
 //				check(func_list[func_index].func);
@@ -1335,14 +1333,18 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
         long last_const = 0;// use stack value for i32.load index or offset?
         if (begin_function) {
             begin_function = false;
-            current_name = binary->functions[current_fun].name;
+            auto func1 = binary->functions[current_fun];
+            current_name = func1.name;
 //            fun_start = current;// use to create fun_length patches iff block needs leb insert
             int fun_length = unsignedLEB128(binary_data, length, current_offset, true);
             // length of ONE function code block, but don't proceed yet:
             fun_end = current_offset + fun_length;
             int local_types = unsignedLEB128(binary_data, length, current_offset, true);
-            if (local_types > 40) {// todo: just warn after thoroughly tested
-                error("suspiciously many local_types. parser out of sync? %d\n"s % local_types);
+            if (local_types > 100) {// todo: just warn after thoroughly tested
+                // it DOES HAPPEN, e.g. in pow.wasm
+                tracing = true;
+                error("suspiciously many local_types. parser out of sync? %s index %d types: %d\n"s % current_name %
+                      func1.index % local_types);
             }// each type comes with a count e.g. (i32, 3) == 3 locals of type i32
             if (current_name.data and tracing)// else what is this #2 test/merge/main2.wasm :: (null)
                 printf("#%d -> #%d %s :: %s (#%d)\n", current_fun, real_function_index, binary->name,
@@ -1353,7 +1355,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
             current_offset += local_types * 2;// type + nr
         }
         byte b = binary_data[current_offset++];
-        if (current_offset >= fun_end) {
+        if (current_offset > fun_end) {
             begin_function = true;
             current_fun++;
             real_function_index = function_imports_count + current_fun;
@@ -1409,7 +1411,10 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
             int arg_bytes = opcode_args[op];
             if (arg_bytes > 0)
                 current_offset += arg_bytes;
-            else if (arg_bytes == leb) {
+            else if (arg_bytes == datax) {
+                last_const = unsignedLEB128(binary_data, length, current_offset, true);// alignment
+                last_const = unsignedLEB128(binary_data, length, current_offset, true);// offset
+            } else if (arg_bytes == leb) {
                 last_const = unsignedLEB128(binary_data, length, current_offset,
                                             true);// start passed as reference will be MODIFIED!!
             } // auto variable argument(s)
