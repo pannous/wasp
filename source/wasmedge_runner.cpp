@@ -79,7 +79,6 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
 	return -1;
 }
 
-
 long run_wasm2(char *wasm_path) {
 //extern "C" long run_wasm(char *wasm_path){
 	/* Create the configure context and add the WASI support. */
