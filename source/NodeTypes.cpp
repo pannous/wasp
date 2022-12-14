@@ -9,6 +9,7 @@
 
 #include "Angle.h"
 
+
 #endif
 extern Map<String, Node *> types;// by name
 
@@ -62,10 +63,12 @@ Type mapType(Node &arg) {
         case call: {
             auto fun = arg.name;
 //            findLibraryFunction(fun, true); too much here
+#if not RUNTIME_ONLY
             if (functions.has(fun)) {
                 auto function = functions[fun];
                 return function.signature.return_types.last();
             }
+#endif
             todo("how to map "s + typeName(arg.kind) + " to (wasm) Type?");
         }
         case variants:
@@ -572,6 +575,8 @@ Valtype mapTypeToWasm(Primitive p) {
             return Valtype::int32;// easy ;)
 
         case node:
+            if (allow_untyped_nodes)
+                return Valtype::int32;// todo!
         case list:
         case string_struct:
         case array_header:

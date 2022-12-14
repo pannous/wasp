@@ -72,12 +72,12 @@ void error1(chars message, chars file, int line) {
 #endif
 #if WASM
     put_chars("\n⚠️ERROR\n");
-    put_chars(__FILE__);
+    put_chars((char *)file);
     put_chars(":");
-    puti(__LINE__);
+    puti(line);
     put_chars((char *) (message));
     put_chars("\n");
-    proc_exit(-1);
+    proc_exit(-1);// wasmtime hack to print backtrace:  exit with invalid exit status outside of [0..126) ;)
 #else
     if (file)printf("\n%s:%d\n", file, line);\
     raise(message);

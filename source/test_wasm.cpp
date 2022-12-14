@@ -846,15 +846,17 @@ void testWasmRuntimeExtension() {
 //	functionSignatures["int"].returns(int32);
 //	assert_run("printf('123')", 123);
 // works with ./wasp but breaks in webapp
-//	assert_run("x=123;x + 4 is 127", true);
 // works with ./wasp but breaks now:
 
 //	assert_run("okf(1)", 43);
 //	assert_run("puts 'hello' 'world'", "hello world");
 //	assert_run("hello world", "hello world");// unresolved symbol printed as is
 
+    skip(
+            assert_run("x=123;x + 4 is 127", true);
 //	assert_run("'123'='123'", true);// parsed as key a:b !?!? todo!
 //	assert_run("'123' = '123'", true);
+    )
     assert_run("'123' == '123'", true);
     assert_run("'123' is '123'", true);
     assert_run("'123' equals '123'", true);
@@ -1001,22 +1003,20 @@ void testRecentRandomBugs() {
             assert_emit("x=0;while x++<11: nop;x", 11);
             assert_throws("x==0;while x++<11: nop;x");
     )
-    assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
     assert_emit("‖-3‖", 3);
     assert_emit("√100²", 100);
 //    assert_emit("puts('ok');", 0);
-    assert_emit("width=height=400;height", 400);
     assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
     assert_parses("{ç:☺}");
     assert(result["ç"] == "☺");
 #ifndef WASMTIME
+    assert_run("x=123;x + 4 is 127", true);
     assert_emit("n=3;2ⁿ", 8);
     //	function attempted to return an incompatible value WHAT DO YOU MEAN!?
 #endif
 // move to tests() once OK'
     skip(
             assert_emit("i=ø; not i", true);// i not a setter if value ø
-            assert_run("x=123;x + 4 is 127", true);
     )
 }
 

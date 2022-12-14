@@ -13,12 +13,14 @@
       <file path="$PROJECT_DIR$/cmake-build-default" />
       <file path="$PROJECT_DIR$/cmake-build-release" />
       <file path="$PROJECT_DIR$/cmake-build-release-coverage" />
+      <file path="$PROJECT_DIR$/cmake-build-universal" />
       <file path="$PROJECT_DIR$/cmake-build-universal-debug-coverage" />
       <file path="$PROJECT_DIR$/cmake-build-wasm" />
       <file path="$PROJECT_DIR$/cmake-build-wasm-release" />
       <file path="$PROJECT_DIR$/cmake-build-wasm-runtime" />
       <file path="$PROJECT_DIR$/lib/Frameworks_lib" />
       <file path="$PROJECT_DIR$/lib/hello_spin" />
+      <file path="$PROJECT_DIR$/lib/old" />
       <file path="$PROJECT_DIR$/lib/wai_example" />
       <file path="$PROJECT_DIR$/lib/witgen_example" />
       <file path="$PROJECT_DIR$/playground" />

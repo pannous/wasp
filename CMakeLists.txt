@@ -183,7 +183,6 @@ ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
 ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
-
 ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
 ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
 # todo Just use initiator lists? ^^

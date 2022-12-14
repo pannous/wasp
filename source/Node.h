@@ -288,7 +288,7 @@ public:
 
 
     explicit Node(String *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
-        while (args[length] and length < MAX_DATA_LENGTH) {
+        while (args[length] and length < MAX_WASM_DATA_LENGTH) {
             children[length] = Node(args[length]);
             length++;
         }
@@ -837,6 +837,7 @@ public:
 
     void addMeta(Node *pNode);
 
+    bool contains(const char *string);
 };
 
 typedef const Node Nodec;
