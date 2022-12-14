@@ -1948,6 +1948,9 @@ void usage() {
 // wasmer etc DO accept float/double return, just not from main!
 //extern "C"
 int main(int argc, char **argv) {
+    String args;
+    for (int i = 1; i < argc; ++i) args += i > 1 ? String(" ") + argv[i] : String(argv[i]);
+//   String arg=extractArg(argv,argc);
 #if WASM
     print("wasp.wasm v0.1.2");
     print(42);
@@ -1965,8 +1968,7 @@ int main(int argc, char **argv) {
             console();
             return 42;
         }// else
-        String arg = argv[1];
-        if (arg.endsWith(".html") or arg.endsWith(".htm")) {
+        if (args.endsWith(".html") or args.endsWith(".htm")) {
 #ifdef WEBAPP
             //				start_server(SERVER_PORT);
                         std::thread go(start_server, SERVER_PORT);
@@ -1978,11 +1980,11 @@ int main(int argc, char **argv) {
             print("wasp compiled without webview");
 #endif
         }
-        if (arg.endsWith(".wasp")) {
-            String wasp_code = load(arg);
+        if (args.endsWith(".wasp")) {
+            String wasp_code = load(args);
             return eval(wasp_code).value.longy;
         }
-        if (arg.endsWith(".wasm")) {
+        if (args.endsWith(".wasm")) {
             if (argc >= 3) {
 #ifdef WABT_MERGE
                 merge_files(--argc, ++argv);
@@ -1990,23 +1992,30 @@ int main(int argc, char **argv) {
                 todo("linking files needs compilation with WABT_MERGE")
 #endif
             } else
-                run_wasm_file(arg);
+                run_wasm_file(args);
         }
-#ifndef NO_TESTS
-        if (arg == "test" or arg == "tests")
+        if (args == "test" or args == "tests")
+#if NO_TESTS
+            print("wasp release compiled without tests");
+#else
             testCurrent();
 #endif
-        if (arg == "repl" or arg == "console" or arg == "start" or arg == "run") {
+
+        if (args.startsWith("eval")) {
+            Node results = eval(args.from(" "));
+            print("» "s + results.serialize());
+        }
+        if (args == "repl" or args == "console" or args == "start" or args == "run") {
             console();
         }
-        if (arg == "2D" or arg == "2d" or arg == "SDL" or arg == "sdl") {
+        if (args == "2D" or args == "2d" or args == "SDL" or args == "sdl") {
 #ifdef GRAFIX
             init_graphics();
 #else
             print("wasp compiled without sdl/webview");
 #endif
         }
-        if (arg == "app" or arg == "webview" or arg == "browser") {
+        if (args == "app" or args == "webview" or args == "browser") {
 #ifndef WEBAPP
             print("wasp needs to be compiled with WEBAPP support");
             return -1;
@@ -2018,15 +2027,15 @@ int main(int argc, char **argv) {
             print("wasp compiled without sdl/webview");
 #endif
         }
+        if (args == "server" or args == "serv")
 #ifdef SERVER
-        if (arg=="server" or arg=="serv")
             std::thread go(start_server, 9999);
 //				start_server(9999);
 #else
-        print("wasp compiled without server");
+            print("wasp compiled without server");
 #endif
 
-        if (arg.contains("help"))
+        if (args.contains("help"))
             print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
 #ifdef WASM
         initSymbols();
@@ -2036,7 +2045,9 @@ int main(int argc, char **argv) {
         print(args);
         current += strlen(args)+1;
 #endif
-
+        // todo: eval?
+//        eval(args);
+//        print((args).serialize());
 // via arg
 //#ifndef NO_TESTS // RUNTIME_ONLY
 //		testCurrent();// needs init_graphics in WEBAPP to run wasm!

@@ -122,25 +122,29 @@ void parseFunctionNames(Code &payload) {
     int index = -1;
     for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
         index = unsignedLEB128(payload);
+        if (i != index)trace("i≠index => some functions not named (or other things named)");
         if (index < 0 or index > 100000)
             error("broken index"s + index);
         String func = name(payload).clone();// needs to be 0-terminated now
         Function &function = module->functions[func];
+        if (function.code_index >= 0 and function.code_index != index)
+            trace("already has index: "s + func + " " + function.code_index + "≠" + index);
         function.code_index = index;
         function.name = func;
         if (debug_reader)print("ƒ%d %s\n"s % index % func.data);
-        if (module->functionIndices[func] > 0 and module->functionIndices[func] < function_count /*hack!*/) {
-            if (module->functionIndices[func] == index)
+        auto old_index = module->functionIndices[func];
+        if (old_index > 0 and old_index < function_count /*hack!*/) {
+            if (old_index == index)
                 continue; // identical match, lib parsed twice without cleaning module->functionIndices!?
             // export section ≠ name section (when overloading…)
-            trace("already has index: "s + func + " " + module->functionIndices[func] + "≠" + index);
+            trace("already has index: "s + func + " " + old_index + "≠" + index);
             continue;
             func = func + "_func_" + index;// hack ok to avoid duplicates
             func = func.clone();
         }
         if (func.length > 0)
 //			module->functionIndices.insert_or_assign(func, index);
-            module->functionIndices[func] = index;
+            old_index = index;
         else {
             error("function without name at index "s + index);// happens with unicode π(x) etc
             //			warn
@@ -378,8 +382,11 @@ void consumeCodeSection() {
 
 // todo ifdef CPP not WASM(?)
 #if not WASM
+
 #include <cxxabi.h> // for abi::__cxa_demangle
+
 #endif
+
 void fixupGenerics(char *s, int len) {
     int bra = 0;
     for (int i = 0; i < len; ++i) {
@@ -613,21 +620,32 @@ Module &read_wasm(bytes buffer, int size0) {
 //static
 Map<long, Module *> module_cache{.capacity=100};
 
-Module &read_wasm(chars file) {
-    if (!s(file).endsWith(".wasm"))
+#include <stdlib.h>
+
+Module &read_wasm(String file) {
+    if (file.contains("~"))
+        file = file.replace("~", "/Users/me"); // todo $HOME
+    if (file.endsWith(".wast")) {
+        char *wast_compiler = "/usr/local/bin/wat2wasm  --enable-all --debug-names ";
+//        char *wast_compiler = "/usr/local/bin/wasm-as ";
+        int status = system(concat(wast_compiler, file));
+        if (status)
+            error("FAILED compiling wast dependencty "s + file);
+        file = file.replace(".wast", ".wasm");
+    }
+
+    if (!file.endsWith(".wasm"))
         file = concat(file, ".wasm");
 #if WASM
     return *new Module();
 #else
     String name = file;
-    if (name.contains("~"))
-        file = name.replace("~", "/Users/me"); // todo $HOME
     if (module_cache.has(name.hash()))
         return *module_cache[name.hash()];
 
     if (debug_reader)print("--------------------------\n");
 //    if (debug_reader)
-    printf("parsing: %s\n", file);
+    printf("parsing: %s\n", file.data);
     size = fileSize(file);
     if (size <= 0)error("file not found: "s + file);
     bytes buffer = (bytes) alloc(1, size);// do not free

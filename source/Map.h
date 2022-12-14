@@ -117,6 +117,7 @@ public:
 //        return _size;
 //    }
 
+// hopefully c++ is smart enough to not copy S & T twice
     int add(S key, T value) {
         int found = position(key);
         if (found >= 0) error("DUPLICATE KEY: "s + key); // or use insert_or_assign
@@ -127,6 +128,7 @@ public:
         _size++;
         return _size;
     }
+
 
     // currently same as map[key]=value
     int insert_or_assign(S key, T value) {

@@ -1209,6 +1209,12 @@ void Node::addMeta(Node *pNode) {
     metas().add(pNode);
 }
 
+bool Node::contains(const char *string) {
+    for (Node &chile: *this)
+        if (chile.name == string)return true;
+    return false;
+}
+
 
 //Node &node(Type t, long value, char *name) {
 //    return (*new Node(name)).setValue(value).setType(t, false);

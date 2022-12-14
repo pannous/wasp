@@ -143,13 +143,15 @@ String findFile(String filename, String current_dir) {
     if (filename.contains("/"))
         for (auto extension: extensions) {
             String &path = filename + extension;
-            if (fileExists(path)) paths.add(path);
+            if (fileExists(path))
+                paths.add(path);
         }
     else {
         for (auto folder: folders)
             for (auto extension: extensions) {
                 String &path = current_dir + "/" + folder + "/" + filename + extension;
-                if (fileExists(path)) paths.add(path);
+                if (fileExists(path))
+                    paths.add(path);
             }
     }
     if (paths.empty())return "";
@@ -453,9 +455,11 @@ String demangle(const String &fun){
     return fun;
 }
 #else
+
 #include <cxxabi.h>
 //std::__2::enable_if<(std::is_arithmetic<int>::value) && (std::is_arithmetic<long>::value), std::__2::__promote<int, long, void> >::type::type pow<int, long>(int, long)
 #endif
+
 String extractFuncName(const String &fun) {
     if (fun.length == 0)return "";
     int status;
@@ -490,8 +494,7 @@ int stackItemSize(Node &clazz, bool throws) {
     if (clazz.kind == structs)
         return 4;// todo: ignore and just get index from member (OR bad idea: sum up type sizes)
 //     typeName(clazz) +
-    if (throws)
-        todo("stackItemSize for "s + " " + clazz.serialize());
+    if (throws) todo("stackItemSize for "s + " " + clazz.serialize());
     return stackItemSize(mapTypeToWasm(clazz));
 }
 
@@ -522,16 +525,3 @@ int stackItemSize(Valtype type, bool throws) {
     return 0;
 }
 
-
-[[maybe_unused]] List<String> arguments() {
-    List<String> args;
-#if WASM
-    char *argv = (char *) malloc(1000);
-    int argc;
-    args_sizes_get(&argv, &argc);
-    for (int i = 0; i < argc; ++i) {
-        args.add(String(argv[i]));
-    }
-#endif
-    return args;
-}
