@@ -1752,8 +1752,7 @@ Code emitWhile(Node &node, Function &context) {
     code.addByte(br_branch);
     code.addByte(1);
     code.addByte(end_block);// end if condition then action
-    if (loop_type == none) {
-        code.addByte(drop);
+    if (loop_type == none and last_type != none) {
         code.addByte(drop);
     }
     // else type should fall through

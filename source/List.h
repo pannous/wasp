@@ -36,8 +36,9 @@ template<class S>
 void heapSort(S arr[], int n);
 
 
+//inline
 template<class S>
-inline void swap(S *a, S *b) {
+void swap(S *a, S *b) {
     S c = *a;
     *a = *b;
     *b = c;

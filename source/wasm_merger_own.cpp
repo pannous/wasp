@@ -748,7 +748,11 @@ void Linker::WriteDataSegment(const DataSegment &segment, Address offset) {
     assert(segment.memory_index == 0);
     WriteU32Leb128(&stream_, segment.memory_index, "memory index");
     WriteOpcode(&stream_, Opcode::I32Const);
-    WriteU32Leb128(&stream_, segment.offset + offset, "offset");
+    auto data_offset = segment.offset + offset;
+    check_silent(data_offset >= 0);
+//    tracing=1;
+    tracef("data_offset %llu\n", data_offset);
+    WriteU32Leb128(&stream_, data_offset, "offset");
     WriteOpcode(&stream_, Opcode::End);
     WriteU32Leb128(&stream_, segment.size, "segment size");
     stream_.WriteData(segment.data, segment.size, "segment data");
@@ -1312,6 +1316,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
     int length = binary_data.size();
     size_t section_offset = section->offset;// into binary data
     int current_offset = section_offset;
+    // #code_index =
     long function_count = unsignedLEB128(binary_data, length, current_offset, true);
 //	DataSegment section_data = ;// *pSection->data.data_segments->data();
 //    Index binary_delta = binary->delta;
@@ -1320,57 +1325,76 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
     unsigned long function_imports_count = binary->function_imports.size();
     unsigned long old_import_border = function_imports_count;
     bool begin_function = true;
-    int current_fun = 0;
-    int real_function_index = binary->imported_function_index_offset + current_fun;
+    int code_index = 0;
+    int call_index = binary->imported_function_index_offset + code_index;
     String current_name = "?";
 
     Opcodes last_opcode;// to debug
 //    int fun_start = 0;
     int fun_end = length;
 //    Reloc *patch_code_block_size;
-    while (current_fun < function_count && current_offset < length and
+    println("PARSING FUNCTION SECTION");
+    while (code_index < function_count && current_offset < length and
            current_offset - section_offset < section_size) {// go over ALL functions! ignore 00
         long last_const = 0;// use stack value for i32.load index or offset?
         if (begin_function) {
-            if (binary_data[current_offset - 1] != 0x0b and binary_data[current_offset - 1] != 0x0c)
-                breakpoint_helper;
-            if (current_fun > 0 and last_opcode != end_block)
+//            if (binary_data[current_offset - 1] != 0x0b and binary_data[current_offset - 1] != 0x0c)
+//                breakpoint_helper;
+            if (code_index > 0 and last_opcode != end_block)
                 breakpoint_helper;
             begin_function = false;
-            auto func1 = binary->functions[current_fun];
+            auto func1 = binary->functions[code_index];
             current_name = func1.name;
+            if (!current_name.data or current_name.empty()) {
+                //  ƒ146 empty because NO EXPORT in wasp-runtime.wasm why? some inline shit?
+//          (func (;146;) (type 1) (param i32) (result i32)
+//    local.get 0
+//    i32.const 10
+//    local.get 0
+//    i32.const 10
+//    i32.lt_s
+//    select)
+//                ƒ467 _start empty because deleted?
+                warn("current_name.empty ƒ"s + call_index + "!");
+                current_name = "ERR";
+            }
 //            fun_start = current;// use to create fun_length patches iff block needs leb insert
             int fun_length = unsignedLEB128(binary_data, length, current_offset, true);
             // length of ONE function code block, but don't proceed yet:
             fun_end = current_offset + fun_length;
-            int local_types = unsignedLEB128(binary_data, length, current_offset, true);
+            int local_types = unsignedLEB128(binary_data, length, current_offset, true);// PARAMS ARE NOT local vars!
             if (local_types > 100) {// todo: just warn after thoroughly tested
                 // it DOES HAPPEN, e.g. in pow.wasm
                 error("suspiciously many local_types. parser out of sync? %s index %d types: %d\n"s % current_name %
                       func1.index % local_types);
             }// each type comes with a count e.g. (i32, 3) == 3 locals of type i32
             if (current_name.data /*and tracing*/)// else what is this #2 test/merge/main2.wasm :: (null)
-                printf("#%d -> #%d %s :: %s (#%d) len %d\n", current_fun, real_function_index, binary->name,
-                       current_name.data,
-                       local_types, fun_length);
+                    tracef("code#%d -> ƒ%d %s :: %s (#%d) len %d\n", code_index, call_index, binary->name,
+                           current_name.data, local_types, fun_length);
+//            if (call_index == 144)
+//                tracing = true;
 //            else if (tracing)
-//                printf("#%d -> #%d (#%d)\n", current_fun, real_function_index, local_types);
+//                printf("#%d -> #%d (#%d)\n", current_fun, call_index, local_types);
             current_offset += local_types * 2;// type + nr
         }
         byte b = binary_data[current_offset++];
         Opcodes op = (Opcodes) b;
+//        if (call_index == 332)// op == i32_store and
+//            breakpoint_helper
         Opcode opcode = Opcode::FromCode(b);
         if (current_offset >= fun_end) {
             begin_function = true;
-            current_fun++;
+            code_index++;
+            call_index++;
             if (b != end_block) {
-                warn("unexpected opcode at function end "s + b + opcode.GetName());
+                error("unexpected opcode at function end %x "s % b + opcode.GetName());
                 breakpoint_helper;
             } else last_opcode = end_block;
-            real_function_index = function_imports_count + current_fun;
+            call_index = function_imports_count + code_index;
 //			trace("begin_function %d\n", current_fun);
             continue;
         }
+        int arg_bytes = opcode_args[op];
         if (op == call_) {
             unsigned long index = unsignedLEB128(binary_data, length, current_offset, true);
             Index neu = binary->RelocateFuncIndex(index);
@@ -1388,7 +1412,8 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
                 function_name = callee.name;
             }
             if (tracing)
-                printf("CALL %s %s calls %s $%lu -> %d\n", binary->name, current_name.data, function_name.data, index,
+                printf("CALL %s ƒ%d %s calls %s $%lu -> %d\n", binary->name, call_index, current_name.data,
+                       function_name.data, index,
                        neu);
 #endif
         } else if (op == global_get || op == global_set) {
@@ -1403,7 +1428,8 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
         } else if (op >= i32_load and op <= i32_store_16) {
 //            short alignment =
             unsignedLEB128(binary_data, length, current_offset, true);
-            short offset = unsignedLEB128(binary_data, length, current_offset, false);
+            long offset = unsignedLEB128(binary_data, length, current_offset, false);
+            last_const = offset;
             Index neu = binary->RelocateMemoryIndex(offset);
             if (offset != neu) {
                 // todo when is MemoryAddressI32 … used??
@@ -1415,7 +1441,6 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
             }
             current_offset += lebByteSize((unsigned long) offset);
         } else {
-            int arg_bytes = opcode_args[op];
             if (arg_bytes > 0)
                 current_offset += arg_bytes;
             else if (arg_bytes == datax) {
@@ -1431,10 +1456,11 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
                 printf("UNKNOWN OPCODE ARGS 0x%x %d “%s” length: %d?\n", op, op, opcode.GetName(), arg_bytes);
                 error("UNKNOWN OPCODE");
             }
-            if (tracing)
-                printf("OPCODE 0x%x %d “%s” last_const=%ld  length: %d? \n", op, op, opcode.GetName(), last_const,
-                       arg_bytes);
         }
+        if (tracing)
+            printf("ƒ%d OPCODE 0x%x %d “%s” last_const=%ld  length: %d? \n", call_index, op, op, opcode.GetName(),
+                   last_const,
+                   arg_bytes);
         last_opcode = op;
     }
     return relocs;
