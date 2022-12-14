@@ -1178,7 +1178,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         Module &funclet_module = read_wasm(findFile(name, "lib"));
         check(funclet_module.functions.has(name));
         auto funclet = funclet_module.functions[name];
-//        libraries.add(&funclet_module);// link it later via import or use its code directly?
+        libraries.add(&funclet_module);// link it later via import or use its code directly?
         return use_required(&funclet);
     }
     if (name.in(function_list) and libraries.size() == 0)

@@ -56,93 +56,8 @@ union Type32;
 
 const char *typeName(const Type32 *t);
 
+// for Opcodes see Code.h
 
-// don't forget the PREFIX before each vector op:
-// combined with vector prefix Valtypes, e.g. vec_i64 = 0x77 => 0x7700 == vec_i64.length
-// https://github.com/WebAssembly/flexible-vectors/blob/main/proposals/flexible-vectors/BinaryFlexibleVectors.md
-enum VectorOpcodes { // Immediate operands in comments:
-    vector_length_op = 0x00,
-    vector_splat_op = 0x10,
-    extract_lane_imm_u = 0x11, // i:ImmLaneIdx16 for i8, ImmLaneIdx4 for i32 etc ( product must be 64!)
-    extract_lane_imm_s = 0x12, // i:ImmLaneIdx… ^^
-    replace_lane_imm = 0x13,   // i:ImmLaneIdx… ^^
-    extract_lane_u = 0x14,
-    extract_lane_s = 0x15,
-    replace_lane = 0x16,
-    extract_lane_mod_u = 0x17,
-    extract_lane_mod_s = 0x18,
-    replace_lane_mod = 0x19,
-
-    vector_lshl = 0x20, // (lane) shift left    VERSUS bitwise  	0x50
-    vector_lshr = 0x21, // (lane) shift right
-
-    // Ints vec.i64.add  0x77.0x30 DIFFERENT to vec.f32.add 	0x76.0x94  GRRR!
-    vector_add = 0x30, // ok overlap with i32.add … would be nonsensical
-    vector_sub = 0x31,
-    vector_mul = 0x32,
-    vector_neg = 0x33,
-    vector_min_u = 0x34,
-    vector_min_s = 0x35,
-    vector_max_u = 0x36,
-    vector_max_s = 0x37,
-    vector_avgr_u = 0x38, // average <3 !
-    vector_abs = 0x39,
-
-    vector_shl = 0x50, //  bitwise!     VERSUS (lane) shift left    lshl = 0x20,
-    vector_shr = 0x51, //  bitwise!     VERSUS (lane) shift right   lshr = 0x21,
-    vector_shr_s = 0x52,
-
-    vector_and = 0x53,
-    vector_or = 0x54,
-    vector_xor = 0x55,
-    vector_not = 0x56,
-    vector_andnot = 0x57,
-    vector_bitselect = 0x58, // slice from to how?  Bits 3...7 of 01100101: 25 (_11001__)
-
-    vector_any_true = 0x60,
-    vector_all_true = 0x61,
-
-    vector_eq = 0x70,
-    vector_ne = 0x71,
-    vector_lt_u = 0x72,
-    vector_lt_s = 0x73,
-    vector_lt = 0x74,
-    vector_le_u = 0x75,
-    vector_le_s = 0x76,
-    vector_le = 0x77,
-
-    vector_gt_u = 0x78,
-    vector_gt_s = 0x79,
-    vector_gt = 0x7a,
-    vector_ge_u = 0x7b,
-    vector_ge_s = 0x7c,
-    vector_ge = 0x7d,
-
-    vector_load = 0x80,
-    // … space!
-    vector_store = 0x87,
-
-// Floating-point :
-    vector_neg_f = 0x90,
-    vector_abs_f = 0x91,
-    vector_pmin = 0x92,
-    vector_pmax = 0x93,
-    vector_add_f = 0x94,
-    vector_sub_f = 0x95,
-    vector_mul_f = 0x96,
-    vector_sqrt_f = 0x97,
-
-    vector_convert_s = 0xA0,
-    vector_narrow_s = 0xA1,
-    vector_narrow_u = 0xA2,
-    vector_widen_low_u = 0xA3,
-    vector_widen_low_s = 0xA4,
-    vector_widen_high_u = 0xA5,
-    vector_widen_high_s = 0xA6,
-};
-
-
-typedef VectorOpcodes vecop;
 // https://webassembly.github.io/spec/core/binary/types.html
 // https://webassembly.github.io/spec/core/binary/values.html
 // Wasp/angle has four different types:
@@ -164,7 +79,8 @@ enum Valtype {
     funcref = 0x70, // -0x10
     func = 0x60,
 
-    vec_i8 = 0x7A,
+    // these are followed by special vector opcodes ≠ normal opcodes
+    vec_i8 = 0x7A, // see VectorOpcodes @ Code.h
     vec_i16 = 0x79,
     vec_i32 = 0x78,
     vec_i64 = 0x77,
@@ -197,32 +113,6 @@ enum Valtype {
     i32s = 0x7f,
     size32 = 0x7f,
     wasm_pointer = int32,
-//	i32u = 0x7f,// todo ignore!
-
-    // SPECIAL INTERNAL TYPES ONLY, not part of spec but they ARE represented through c++=>wasm types (int32?) :
-    // enums with the same value can NOT be distinguished thereafter!!! :(
-    // todo Signatures need a real Type, not a Valtype!
-    // todo use NodeTypes.h Type for this:
-    //	https://github.com/pannous/angle/wiki/smart-pointer
-//    codepoint32 = int32,
-//    pointer = int32,// 0xF0, // internal todo: int64 on wasm-64
-//    node_pointer = int32,
-////	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
-//    node = 0xA0,
-//    angle = 0xA0,//  angle object pointer/offset versus smarti vs anyref
-//    any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
-////	unknown = any,
-//    array = 0xAA,
-//    charp = 0xC0, // vs
-//    stringp = 0xC0,// use charp?  pointer? enough?? no!??
-////	value = 0xA1,// wrapped node Value, used as parameter? extract and remove! / ignore
-//    todoe = 0xFE, // todo
-////	error_ = 0xE0, why propagate?
-////	pointer = 0xF0,
-////	externalPointer = 0xFE,
-//    ignore = 0xAF, // truely internal, should not be exposed! e.g. Arg
-//	smarti32 = 0xF3,// see smartType
-//	smarti64 = 0xF6,
 };
 
 // types
