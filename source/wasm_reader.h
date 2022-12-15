@@ -80,3 +80,4 @@ extern Module *module;
 
 extern Map<long, Module *> module_cache;
 
+Module &loadRuntime();

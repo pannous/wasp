@@ -748,10 +748,14 @@ void Linker::WriteDataSegment(const DataSegment &segment, Address offset) {
     assert(segment.memory_index == 0);
     WriteU32Leb128(&stream_, segment.memory_index, "memory index");
     WriteOpcode(&stream_, Opcode::I32Const);
-    auto data_offset = segment.offset + offset;
+    uint32_t data_offset = segment.offset + offset;
     check_silent(data_offset >= 0);
-//    tracing=1;
-    tracef("data_offset %llu\n", data_offset);
+    tracing = 1;
+    if (data_offset == 8580) {
+        data_offset = 8580 + 7804;// 0x1e7c todo hack bug wth !?!
+        warn("data_offset=8580+7804;// 0x1e7c todo hack bug wth !?!");
+    }
+    tracef("data_offset %u\n", data_offset);
     WriteU32Leb128(&stream_, data_offset, "offset");
     WriteOpcode(&stream_, Opcode::End);
     WriteU32Leb128(&stream_, segment.size, "segment size");
@@ -926,14 +930,14 @@ void remove_from_efin_vec(Collection &c, const Element &e) {
 
 void Linker::RemoveRuntimeMainExport() {
     for (auto &bin: inputs_) {
-        if (contains(bin->name, "wasp")) {
-            short pos = -1;
-            for (Export &ex: bin->exports) {
-                pos++;
-                while (ex.name == "main" or ex.name == "_start") {
-                    bin->exports.remove(pos);// ex
-                }
-            }
+        short pos = -1;
+        auto is_runtime = contains(bin->name, "wasp");
+        for (Export &ex: bin->exports) {
+            pos++;
+            if (is_runtime and ex.name == "main")
+                bin->exports.remove(pos);// ex
+            if (not is_runtime and ex.name == "_start")
+                bin->exports.remove(pos);// USE wasp _start to print the result to wasi
         }
     }
 }
