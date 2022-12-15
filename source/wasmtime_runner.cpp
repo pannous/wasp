@@ -292,7 +292,7 @@ static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_t
         wasm_trap_delete(trap);
     }
     fprintf(stderr, "%.*s\n", (int) error_message.size, error_message.data);
-    wasm_byte_vec_delete(&error_message);
+//    wasm_byte_vec_delete(&error_message);
     // let Wasp handle this :
     throw Error((char *) message);// todo copy sprintf error_message backtrace;
 }

@@ -2728,8 +2728,8 @@ void tests() {
     testMergeOwn();
     testRecentRandomBugs();
     testBUG();
-    testSinus();
     testBadInWasm();;
+//    testSinus();
     skip(
             testWrong0Termination();
             testErrors();// error: failed to call function   wasm trap: integer divide by zero
@@ -2771,8 +2771,10 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
-//    assert(eval("1 + 1 == 2"));
+    assert_emit("x='abcde';x#4", 'd');
 
+    assert_emit("parseLong('123')", 123)
+//    assert(eval("1 + 1 == 2"));
 //#undef NANO_PREALLOCATE_BAND_VM
     check("%s"s.replace("%s", "ja") == "ja"); // FAILS in universal TRACE
 

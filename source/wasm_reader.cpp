@@ -602,6 +602,8 @@ Map<long, Module *> module_cache{.capacity=100};
 #include <stdlib.h>
 
 Module &read_wasm(String file) {
+    if (module_cache.has(file.hash()))
+        return *module_cache[file.hash()];
     if (file.contains("~"))
         file = file.replace("~", "/Users/me"); // todo $HOME
     if (file.endsWith(".wast")) {
