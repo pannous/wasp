@@ -412,8 +412,6 @@ void putp(void *f) {
 
 #endif
 
-//extern "C"
-int main(int argc, char **argv);
 
 
 List<String> arguments() {
@@ -437,16 +435,27 @@ List<String> arguments() {
     return args;
 }
 
+//extern "C"
+int main(int argc, char **argv);
+
+#ifdef RUNTIME_ONLY
+extern "C" long main(); // error: 'main' must return 'int'
+//extern "C" long wasp_main();
+#endif
 
 extern "C" void _start() {
     auto args = arguments();
     for (auto arg: args)
         put(arg);
-    main(args.size(), (char **) args.capacity /*hack ;)*/);
 #if RUNTIME_ONLY
-    print("Wasp runtime not meant to be executed. Use wasp or wasp.wasm \n");
+    smart_pointer_64 result = main();
 #else
+    smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
 #endif
+    print(new Node(result));
+//#if RUNTIME_ONLY
+//    print("Wasp runtime not meant to be executed. Use wasp or wasp.wasm \n");
+//#endif
 }
 
 extern "C" int putchar(int c) {// stdio

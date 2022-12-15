@@ -710,8 +710,8 @@ void print(String *s) {
 
 void print(String s) {
     put_chars(s.data, s.length);
-    if (tracing)
-        newline();
+//    if (tracing)
+//        newline();
 }
 
 void println(String s) {
