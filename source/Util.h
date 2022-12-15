@@ -52,18 +52,18 @@ static bool I_know_what_I_am_doing = false;
 //#define todow(msg) {breakpoint_helper;warn(str("TODO ") + msg);}
 #endif
 
-#ifdef TRACE
-static bool tracing = true;
-#define trace(x) if(tracing)print(x)
-#define tracef(x,...) if(tracing)printf(x,__VA_ARGS__)
-#else // DONT TRACE
-//static bool tracing = true;
-static bool tracing = false;
-//#define trace(x) if(tracing);
-//#define tracef(x,...) if(tracing);
+#if RELEASE
 // SEND trace args to NIRVANA so they don't get emitted!
 #define trace(x)
 #define tracef(x, ...)
+#else
+#if TRACE
+static bool tracing = true;
+#else
+static bool tracing = false;
+#endif
+#define trace(x) if(tracing)print(x)
+#define tracef(x, ...) if(tracing)printf(x,__VA_ARGS__)
 #endif
 
 typedef unsigned char byte;

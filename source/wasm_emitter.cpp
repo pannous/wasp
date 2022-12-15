@@ -1520,7 +1520,9 @@ Code emitStringOp(Node &op, Function &context) {
 
 // starting with 0!
 //inline haha you can't inline wasm
+[[maybe_unused]]
 char getChar(chars string, int nr) {
+    // todo codepoint
     int len = strlen(string);
     if (nr < 1)error("#index starts with 1, use [] if you want 0 indexing");
     if (nr > len)error("index out of bounds %i>%i "s % nr % len);
