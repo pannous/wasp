@@ -873,6 +873,11 @@ Node &groupOperators(Node &expression, Function &context) {
             node.add(next);
             expression.replace(i, i + 1, node);
         } else {
+            if (op == "#") {
+                libraries.add(&loadRuntime());
+                findLibraryFunction("getChar", false);
+            }
+
             prev = analyze(prev, context);
             auto lhs_type = preEvaluateType(prev, context);
             if (op == "+" and (lhs_type == Primitive::charp or lhs_type == Primitive::stringp or lhs_type == strings)) {
@@ -974,6 +979,10 @@ Node &groupOperators(Node &expression, Function &context) {
         last = op;
     }
     return expression;
+}
+
+Module &loadRuntime() {
+    return read_wasm("wasp-runtime.wasm");
 }
 
 
