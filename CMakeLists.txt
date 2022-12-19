@@ -168,6 +168,8 @@ endif ()
 
 if (TRACE)
     message("TRACE => tracing=true")
+    ADD_DEFINITIONS(-DTRACE)
+
     #    ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
     #    add_compile_options(-Wall)
     #    add_compile_options(-Wextra)

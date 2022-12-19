@@ -1609,15 +1609,16 @@ private:
                     actual.add(id);
                     break;
                 }
+                case U'：':
+                case ':':
                 case U'≝':
                 case U'≔': // ≕ =:
                 case U'＝':
                 case U'﹦':
-                case U'：':
                 case u'⇨':
-                case ':':
                 case '=': { // assignments, declarations and map key-value-pairs
                     // todo {a b c:d} vs {a:b c:d}
+
                     Node &key = actual.last();
                     bool add_raw = actual.kind == expression or key.kind == expression or
                                    (actual.last().kind == groups and actual.length > 1);

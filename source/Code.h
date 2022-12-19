@@ -66,7 +66,7 @@ public:
         length = len;
         if (needs_copy) {
             shared = false; // free later
-            data = static_cast<bytes>(malloc(length));
+            data = static_cast<bytes>(calloc(length + 1, sizeof(bytes)));
             memcpy(data, a, length);
         }
     }
@@ -1022,8 +1022,7 @@ public:
     Code *code;
 
     bool is_import = false; // not serialized in functype section, but in import section wt
-    bool is_declared; // has fresh Code body to emit!
-    bool emit = false;// only those types/functions that are declared (export) or used in call
+    bool is_declared = false;// EMIT Code block only those types/functions that are declared (export) or used in call
     bool is_runtime = false;// old special imports to wasm.wasm
     bool is_handled = false; // already emitted (e.g. as runtime)
     bool is_builtin = false;// hard coded functions, tests only? todo remove
@@ -1051,7 +1050,7 @@ public:
 
     Function &runtime() {
         is_runtime = true;
-        emit = false;
+        is_declared = false;
         return *this;
     }
 
