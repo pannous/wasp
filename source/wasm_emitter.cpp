@@ -1374,7 +1374,7 @@ Code emitOperator(Node &node, Function &context) {
     if (opcode >= 0x8b and opcode <= 0x98)
         code.add(cast(last_type, float32));// float ops
     if (opcode >= 0x99 and opcode <= 0xA6)
-        code.add(cast(last_type, f64)); // double ops
+        code.add(cast(last_type, float64)); // double ops
 
     if (last_type == stringp or last_type == charp) {
         code.add(emitStringOp(node, context));
@@ -1427,7 +1427,7 @@ Code emitOperator(Node &node, Function &context) {
 //		if(last_value==1)return code;
         if (last_type == int32) code.add(emitCall(*new Node("powi"), context));
         else if (last_type == float32) code.add(emitCall(*new Node("powf"), context));
-        else if (last_type == f64) code.add(emitCall(*new Node("pow"), context));
+        else if (last_type == float64) code.add(emitCall(*new Node("pow"), context));
         else code.add(emitCall(*new Node("powi"), context));
     } else if (name.startsWith("-")) {
         code.add(i32_sub);
@@ -1869,27 +1869,27 @@ Code cast(Valtype from, Valtype to) {
     if (from == i64 and to == i32) return Code(i32_wrap_i64);
     if (from == float32 and to == i32) return Code(i32_trunc_f32_s);
 //	if(from==f32u and to==i32)	return Code(i32_trunc_f32_𝗎);
-    if (from == f64 and to == i32) return Code(i32_trunc_f64_s);
+    if (from == float64 and to == i32) return Code(i32_trunc_f64_s);
 //	if(from==f64u and to==i32)	return Code(i32_trunc_𝖿𝟨𝟦_𝗎);
     if (from == i32 and to == i64) return Code(i64_extend_i32_s);
 //	if(from==i32u and to==i64)	return Code(i64_extend_i32_𝗎);
     if (from == float32 and to == i64) return Code(i64_trunc_f32_s);
 //	if(from==f32u and to==i64)	return Code(i64_trunc_f32_𝗎);
-    if (from == f64 and to == i64) return Code(i64_trunc_f64_s);
+    if (from == float64 and to == i64) return Code(i64_trunc_f64_s);
 //	if(from==f64u and to==i64)	return Code(i64_trunc_𝖿𝟨𝟦_𝗎);
     if (from == i32 and to == float32) return Code(f32_convert_i32_s);
 //	if(from==i32u and to==f32)	return Code(f32_convert_i32_𝗎);
     if (from == i64 and to == float32)
         return Code(f32_convert_i64_s);
 //	if(from==f64u and to==f32)	return Code(f32_convert_i64_𝗎);
-    if (from == f64 and to == float32) return Code(f32_demote_f64);
-    if (from == i32 and to == f64)
+    if (from == float64 and to == float32) return Code(f32_demote_f64);
+    if (from == i32 and to == float64)
         return Code(f64_convert_i32_s);
 //	if(from==i32u and to==f64)	return Code(f64_convert_i32_𝗎);
-    if (from == i64 and to == f64)
+    if (from == i64 and to == float64)
         return Code(f64_convert_i64_s);
 //	if(from==f64u and to==f64)	return Code(f64_convert_i64_𝗎);
-    if (from == float32 and to == f64) return Code(f64_promote_f32);
+    if (from == float32 and to == float64) return Code(f64_promote_f32);
 //	if(from==f32 and to==i32)	return Code(i32_reinterpret_f32);
 //	if(from==f64 and to==i64)	return Code(i64_reinterpret_𝖿𝟨𝟦);
 //	if(from==i32 and to==f32)	return Code(f32_reinterpret_i32);
@@ -1928,7 +1928,7 @@ Code cast(Type from, Type to) {
 [[nodiscard]]
 Code cast(Node &from, Node &to, Function &context) {
     if (to == Long)return cast(mapTypeToWasm(from), i64);
-    if (to == Double)return cast(mapTypeToWasm(from), f64);
+    if (to == Double)return cast(mapTypeToWasm(from), float64);
     Node calle("cast");
     calle.add(from);
     calle.add(to);
@@ -2056,7 +2056,7 @@ Code zeroConst(Type returnType) {
         code.add(f32_const);
         code.push((bytes) malloc(4), 4);
     }
-    if (returnType == f64) {
+    if (returnType == float64) {
         code.add(f64_const);
         code.push((bytes) malloc(8), 8);
     }
