@@ -247,15 +247,16 @@ struct c_io_vector {
 };
 
 //#if WASI or MY_WASI
-//__attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")))
-__attribute__((import_module("wasi_unstable"), import_name("fd_write")))
+__attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")))  // Fucking WasmEdge doesn't support wasi_unstable
+//__attribute__((import_module("wasi_unstable"), import_name("fd_write")))
 extern "C" int fd_write(int fd, c_io_vector *iovs, size_t iovs_count, size_t *nwritten);
 //void fd_write_host(int FD, char **strp, int *ignore, int *ignore) compatible signature
 
 [[noreturn]]
-//__attribute__((import_module("wasi_snapshot_preview1"), import_name("proc_exit")))
-__attribute__((import_module("wasi_unstable"), import_name("proc_exit")))
+__attribute__((import_module("wasi_snapshot_preview1"), import_name("proc_exit"))) // Fucking WasmEdge doesn't support wasi_unstable
+//__attribute__((import_module("wasi_unstable"), import_name("proc_exit")))
 extern "C"
+
 void proc_exit(int exitcode);
 
 
@@ -264,7 +265,8 @@ void proc_exit(int exitcode);
  * Return command-line argument data sizes.
  * Returns the number of arguments and the size of the argument string data, or an error.
  */
-__attribute__((import_module("wasi_unstable"), import_name("args_sizes_get")))
+__attribute__((import_module("wasi_snapshot_preview1"), import_name("args_sizes_get")))
+//__attribute__((import_module("wasi_unstable"), import_name("args_sizes_get")))
 extern "C" int args_sizes_get(int *argc, int *buf_len);
 
 /**
@@ -272,7 +274,8 @@ extern "C" int args_sizes_get(int *argc, int *buf_len);
  * The size of the array should match that returned by `args_sizes_get`.
  * Each argument is expected to be `\0` terminated.
 */
-__attribute__((import_module("wasi_unstable"), import_name("args_get")))
+__attribute__((import_module("wasi_snapshot_preview1"), import_name("args_get")))
+//__attribute__((import_module("wasi_unstable"), import_name("args_get")))
 extern "C" int args_get(char **argv, char *argv_buf);
 
 template<class S>

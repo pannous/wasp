@@ -202,21 +202,21 @@ int test_v8() {
     wasm_byte_vec_delete(&binary);
 
     // Create external print functions.
-    printf("Creating callback...\n");
-    own wasm_functype_t *print_type = wasm_functype_new_1_1(wasm_valtype_new_i32(), wasm_valtype_new_i32());
-    own wasm_func_t *print_func = wasm_func_new(store, print_type, print_callback);
-
-    int i = 42;
-    own wasm_functype_t *closure_type = wasm_functype_new_0_1(wasm_valtype_new_i32());
-    own wasm_func_t *closure_func = wasm_func_new_with_env(store, closure_type, closure_callback, &i, NULL);
-
-    wasm_functype_delete(print_type);
-    wasm_functype_delete(closure_type);
+//    printf("Creating callback...\n");
+//    own wasm_functype_t *print_type = wasm_functype_new_1_1(wasm_valtype_new_i32(), wasm_valtype_new_i32());
+//    own wasm_func_t *print_func = wasm_func_new(store, print_type, print_callback);
+//
+//    int i = 42;
+//    own wasm_functype_t *closure_type = wasm_functype_new_0_1(wasm_valtype_new_i32());
+//    own wasm_func_t *closure_func = wasm_func_new_with_env(store, closure_type, closure_callback, &i, NULL);
+//
+//    wasm_functype_delete(print_type);
+//    wasm_functype_delete(closure_type);
 
     // Instantiate.
     printf("Instantiating module...\n");
     wasm_extern_t *externs[] = {
-            wasm_func_as_extern(print_func), wasm_func_as_extern(closure_func)
+//            wasm_func_as_extern(print_func), wasm_func_as_extern(closure_func)
     };
     wasm_extern_vec_t imports = WASM_ARRAY_VEC(externs);
     own wasm_instance_t *instance =
@@ -225,9 +225,9 @@ int test_v8() {
         printf("> Error instantiating module!\n");
         return 1;
     }
-
-    wasm_func_delete(print_func);
-    wasm_func_delete(closure_func);
+//
+//    wasm_func_delete(print_func);
+//    wasm_func_delete(closure_func);
 
     // Extract export.
     printf("Extracting export...\n");

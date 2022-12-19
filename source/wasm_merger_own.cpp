@@ -24,6 +24,7 @@
 //#include "wasm_reader.h"
 #include "Code.h"
 #include "Angle.h"
+#include "Util.h"
 
 typedef unsigned char *bytes;
 

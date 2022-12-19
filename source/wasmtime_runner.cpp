@@ -339,8 +339,8 @@ void add_wasmtime_memory() {
 
 
 extern "C" long run_wasm(unsigned char *data, int size) {
-//    if (!done)
-    init_wasmtime();
+    if (!done)
+        init_wasmtime();
     wasmtime_error_t *error;
     wasmtime_module_t *modul = NULL;
 
@@ -427,18 +427,22 @@ extern "C" long run_wasm(unsigned char *data, int size) {
 
     wasmtime_val_t results;
     wasmtime_func_t wasmtimeFunc = run.of.func;
+
+//    Undefined symbols for architecture arm64:
+//  "_wasmtime_error_delete", referenced from:
+    // todo wasmtime 4.0 api?
+
 //	int nresults = wasm_func_result_arity(wasmFunc); // needs workaround in wasmtime
-    auto funcType = wasmtime_func_type(context, &wasmtimeFunc);
 //	WDYM??? thread '<unnamed>' panicked at 'object used with the wrong store', /opt/wasm/wasmtime/crates/wasmtime/src/func.rs:682:9
-    auto functypeResults = wasm_functype_results(funcType);
-    int nresults = functypeResults->size;
-    if (nresults > 1)
-        print("Using multi-value!");
+//    auto functypeResults = wasm_functype_results(funcType); // workaround stopped working
+//    int nresults = functypeResults->size;
+//    if (nresults > 1)
+//        print("Using multi-value!");
 //	else
 //		print("Using single-value (smart pointer)");
 //	wasm_func_t* wasmFunc = (wasm_func_t*)&wasmtimeFunc;
 //	nargs=wasm_func_param_arity if nargs>0 args =[…]
-//	int nresults = 1;// todo how, wasmtime?
+    int nresults = 1;// todo how, wasmtime?
     error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, nresults, &trap);
     if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);
     int64_t result = results.of.i64;
@@ -531,12 +535,12 @@ const wasm_functype_t *funcType(Signature &signature) {
                     default:
                         break;
                 }
-            case f64:
+            case float64:
                 switch (returnType) {
                     case none:
                     case voids:
                         return wasm_functype_new_1_0(wasm_valtype_new(WASM_F64));
-                    case f64:
+                    case float64:
                         return wasm_functype_new_1_1(wasm_valtype_new(WASM_F64), wasm_valtype_new(WASM_F64));
                     default:
                         break;
