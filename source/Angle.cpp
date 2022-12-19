@@ -48,6 +48,12 @@ Map<long, bool> analyzed = {.capacity=10000};// avoid duplicate analysis (of if/
 Map<String, Node * /* modifiers/values/init expressions! */> globals; // access from Angle!
 Map<String /*name*/, Valtype> globalTypes;
 
+short arrayElementSize(Node &node);
+
+Function *use_required(Function *function);
+
+void addLibrary(Module *modul);
+
 
 // functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
 chars control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
@@ -686,7 +692,8 @@ void use_runtime(const char *function) {
 }
 
 Node &
-groupDeclarations(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body, Function &context) {
+groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body,
+                         Function &context) {
 //	String &name = fun.name;
 //	silent_assert(not is_operator(name[0]));
 //	trace_assert(not is_operator(name[0]));
@@ -696,11 +703,11 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
     if (name and not function_operators.has(name)) {
         if (context.name != "wasp_main") todo("inner functions");
         if (not functions.has(name)) {
-            functions.add(name, *new Function{.name=name});
+            functions.add(name, *new Function{.name=name, .is_declared=true, .is_used=true});
         }
     }
     Function &function = functions[name]; // different from context!
-    function.emit = true;
+    function.is_declared = true;
 
     // todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
     if (setter_operators.has(name) or key_pair_operators.has(name)) {
@@ -729,14 +736,16 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
 Node &groupOperators(Node &expression, Function &context);
 
 Node &groupDeclarations(Node &expression, Function &context) {
-    if (expression.contains("=") or expression.contains(":=")) {
-        return groupOperators(expression, context);
-    }
+    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
+    if (expression.index("=") == 1)return groupOperators(expression, context);//.setType(setter);
+    if (expression.index(":=") == 1)return groupOperators(expression, context);//.setType(setter); todo const var x := 7
+    if (expression.contains("::="))return groupOperators(expression, context);// global var
+    // else ƒ(x):=g(x)
     auto first = expression.first();
     if (expression.length == 2 and isType(first.first()) and
         expression.last().kind == objects) {// c style double sin() {}
         expression = groupTypes(expression, context);
-        return groupDeclarations(first.name, first.type, NIL, first.values(), expression.last(), context);
+        return groupFunctionDeclaration(first.name, first.type, NIL, first.values(), expression.last(), context);
     }
     for (Node &node: expression) {
         String &op = node.name;
@@ -759,7 +768,6 @@ Node &groupDeclarations(Node &expression, Function &context) {
         if (node.kind != declaration and not declaration_operators.has(op))
             continue;
         if (op.empty())continue;
-        if (op == "=" or op == ":=") continue; // handle assignment via groupOperators !
         if (op == "::=") continue; // handle globals assignment via groupOperators !
         // todo: public export function jaja (a:num …) := …
 
@@ -790,7 +798,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
 //				error("Symbol already declared as variable: "s + name);
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
-        return groupDeclarations(name, 0, left, left, rest, context);
+        return groupFunctionDeclaration(name, 0, left, left, rest, context);
     }
     return expression;
 }
@@ -813,8 +821,7 @@ Node &groupOperators(Node &expression, Function &context) {
         if (expression.name == "include") {
             warn(expression.serialize());
             Node &file = expression.values();
-            Module &mod = loadModule(file.name);
-            libraries.add(&mod);
+            addLibrary(&loadModule(file.name));
             return NUL;
         }
 //		else todo("ungrouped dangling operator");
@@ -873,19 +880,14 @@ Node &groupOperators(Node &expression, Function &context) {
             node.add(next);
             expression.replace(i, i + 1, node);
         } else {
-            if (op == "#") {
-                libraries.add(&loadRuntime());
+            if (op == "#")
                 findLibraryFunction("getChar", false);
-            }
 
             prev = analyze(prev, context);
             auto lhs_type = preEvaluateType(prev, context);
             if (op == "+" and (lhs_type == Primitive::charp or lhs_type == Primitive::stringp or lhs_type == strings)) {
-                auto libraryFunction = findLibraryFunction("concat", true);
+                findLibraryFunction("concat", true);
                 findLibraryFunction("_Z6concatPKcS0_", true);
-                for (auto vari: libraryFunction->variants) {
-                    vari.is_used = true;
-                }
             }
             if (op == "^" or op == "^^" or op == "**") {// todo NORM operators earlier
                 findLibraryFunction("pow", false);
@@ -985,10 +987,6 @@ Module &loadRuntime() {
     return read_wasm("wasp-runtime.wasm");
 }
 
-
-short arrayElementSize(Node &node);
-
-Function *use_required(Function *function);
 
 Type preEvaluateType(Node &node, Function &context) {
     // todo: some kind of Interpret eval?
@@ -1174,6 +1172,7 @@ void addLibraryFunctionAsImport(Function &func) {
     import.signature = func.signature;
     import.is_runtime = false;// because here it is an import!
     import.is_import = true;
+    import.is_used = true;
 }
 
 bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: libraries.has(library)
@@ -1187,7 +1186,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         Module &funclet_module = read_wasm(findFile(name, "lib"));
 //        check(funclet_module.functions.has(name));
         auto funclet = funclet_module.functions[name];
-        libraries.add(&funclet_module);// link it later via import or use its code directly?
+        addLibrary(&funclet_module);
         return use_required(&funclet);
     }
     if (name.in(function_list) and libraries.size() == 0)
@@ -1212,6 +1211,13 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     return function;
 }
 
+void addLibrary(Module *modul) {
+    if (not modul)return;
+    for (auto lib: libraries)
+        if (lib->name == modul->name)return;
+    libraries.add(modul);// link it later via import or use its code directly?
+}
+
 Function *use_required(Function *function) {
     if (!function)return 0;
     addLibraryFunctionAsImport(*function);
@@ -1225,6 +1231,9 @@ Function *use_required(Function *function) {
     for (String &alias: aliases(function->name)) {
         auto ali = findLibraryFunction(alias, false);
         addLibraryFunctionAsImport(*ali);
+    }
+    for (auto vari: function->variants) {
+        vari.is_used = true;
     }
 //    for(Function& dep:function.required)
 //        dep.is_used = true;
@@ -1517,8 +1526,8 @@ void clearAnalyzerContext() {
 //    module_cache.clear(); NOO not the cache lol
     types.clear();
     globals.clear();
-    functionIndices.clear();
-    functionIndices.setDefault(-1);
+    codeIndices.clear();
+    codeIndices.setDefault(-1);
     functions.clear();
     analyzed.clear();// todo move much into outer analyze function!
     functions.clear();// always needs to be followed by

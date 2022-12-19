@@ -146,6 +146,7 @@ Type mapType(String arg) {
     else if (arg == "Node const*")return nodes;
     else if (arg == "Node*")return nodes;
 
+    else if (arg == "Int")return type32;
     else if (arg == "Type32")return type32;
     else if (arg == "Type")return type32;
     else if (arg == "Kind")return type32;
@@ -529,6 +530,10 @@ chars typeName(Valtype t, bool fail) {
 //            return "unknown";// internal
         default: {
             chars s = typeName((Primitive) t);
+            if (s)return s;
+            s = typeName((Kind) t);
+            if (s)return s;
+            s = typeName((Valtype) t);
             if (s)return s;
 //			if (t==30)return "BUG!";// hide bug lol
             if (fail)
