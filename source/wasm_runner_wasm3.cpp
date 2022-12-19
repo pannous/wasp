@@ -100,7 +100,7 @@ long run_wasm3(const uint8_t *prog, int len) {
         mod.link_optional<requestAnimationFrame>("*", "requestAnimationFrame");// returns pointer to surface
 #endif
 //		wasm3::function main_fn = runtime.find_function("_start");
-        wasm3::function main_fn = runtime.find_function("main");
+        wasm3::function main_fn = runtime.find_function("wasp_main");
 #if MULTI_VALUE
         //		auto res = main_fn.call<long,int>();
 #else

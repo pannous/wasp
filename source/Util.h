@@ -71,15 +71,15 @@ typedef const char *chars;
 typedef byte *bytes;
 
 // silent ++
-#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-#define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
-#define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);ɣ;exit(0);}
+#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
+#define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
+#define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);ɣ;proc_exit(0);}
 
-//#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
-#define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}
+//#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
+#define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
 
 #define check(test) {printf("CHECKING %s\n%s:%d\n",#test,__FILE__,__LINE__); \
-  if(test){print("OK check passes: ");printf("%s\n",#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);exit(0);}}
+  if(test){print("OK check passes: ");printf("%s\n",#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}}
 
 #include "String.h" // AFTER defines!
 #include "smart_types.h"
@@ -170,7 +170,7 @@ static bool max(long a, long b) {
 
 typedef String Path;
 
-#define quit(α) printf("quit %s",#α);breakpoint_helper;exit(42);
+#define quit(α) printf("quit %s",#α);breakpoint_helper;proc_exit(42);
 
 //#include <cstdlib> // exit
 //static void quit(){

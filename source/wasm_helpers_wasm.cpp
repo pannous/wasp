@@ -413,7 +413,6 @@ void putp(void *f) {
 #endif
 
 
-
 List<String> arguments() {
     List<String> args;
     int argc;
@@ -438,24 +437,47 @@ List<String> arguments() {
 //extern "C"
 int main(int argc, char **argv);
 
-#ifdef RUNTIME_ONLY
-extern "C" long main(); // error: 'main' must return 'int'
-//extern "C" long wasp_main();
-#endif
+//extern "C" int64 wasp_main(); // directly linked
 
+long call_wasp_main(int index) {
+//    (elem (;0;) (i32.const 1) func 333 334)
+//    (func (;333;) (type 1) (param i32) (result i32)
+//    __asm ("local.get 0");
+//    __asm ("call_indirect()->(i32)"); // => clang Segmentation fault
+    /* (module
+      (table 1111 anyfunc)
+      (elem (i32.const 1110) $test)
+      (func $test (result i32) (i32.const 42) )
+      (func $main (result i32)
+        (call_indirect (result i32) ;; / (type $type_i)  redundant!
+          (i32.const 1110)
+    ) ) )   */
+//    __asm ("nop");
+//    __asm ("nop");
+//    __asm ("nop");
+//    __asm ("nop");
+    return index;
+}
+
+// un-export at link time to use main:_start
 extern "C" void _start() {
     auto args = arguments();
-    for (auto arg: args)
-        put(arg);
+//    smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
+//    print(smartNode(result));
 #if RUNTIME_ONLY
-    smart_pointer_64 result = main();
-#else
-    smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
+    print("Wasp runtime not meant to be executed. Use wasp or wasp.wasm \n");
+    // todo interpreter? // we can still use runtime for minimal parsing tasks?
 #endif
-    print(new Node(result));
-//#if RUNTIME_ONLY
-//    print("Wasp runtime not meant to be executed. Use wasp or wasp.wasm \n");
-//#endif
+//    smart_pointer_64 result = wasp_main();
+    // export linked to function with high index so we need to reloc:
+//    __asm ("nop");// works but too late! clang emits local.set 64 local.get 64
+//    __asm ("nop");
+//    __asm ("nop");
+//    __asm ("nop");
+//    __asm ("nop");
+//    __asm ("call 469");
+//    __asm (call_index_wasp_main);
+//    print(new Node(result));
 }
 
 extern "C" int putchar(int c) {// stdio
