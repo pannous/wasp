@@ -21,7 +21,8 @@
 #define MAX_STRING_LENGTH 100000 // only for strlen()
 //#define MAX_WASM_DATA_LENGTH 0x1000000 // 16 MB
 //#define MAX_WASM_DATA_LENGTH 0x80000 // 1/2 MB
-#define MAX_WASM_DATA_LENGTH 0x20000 // 1/8 MB
+#define MAX_WASM_DATA_LENGTH 0x40000 // 1/4 MB
+//#define MAX_WASM_DATA_LENGTH 0x20000 // 1/8 MB
 
 typedef chars chars;
 typedef const unsigned char *wasm_string;// wasm strings start with their LEB encoded length and do NOT end with 0 !! :(
@@ -1112,3 +1113,5 @@ void render(Node &node, std::stringstream *html = 0);
 
 
 #pragma clang diagnostic pop
+
+codepoint getChar(chars string, int nr);

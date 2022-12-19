@@ -703,10 +703,18 @@ void print(String *s) {
 }
 
 
-void print(String s) {
+void write(String s) {
     put_chars(s.data, s.length);
 //    if (tracing)
 //        newline();
+}
+
+
+// alias WriteLine
+void print(String s) {
+    put_chars(s.data, s.length);
+//    if (tracing)
+    newline();
 }
 
 void println(String s) {
@@ -732,4 +740,17 @@ String *EMPTY_STRING;
 String *empty_string() {
     if (!EMPTY_STRING)EMPTY_STRING = new String();
     return EMPTY_STRING;
+}
+
+
+// starting with 1!
+//inline haha you can't inline wasm
+[[maybe_unused]]
+codepoint getChar(chars string, int nr) {
+    return String(string).codepointAt(nr - 1);
+    // todo codepoint
+//    int len = strlen(string);
+//    if (nr < 1)error("#index starts with 1, use [] if you want 0 indexing");
+//    if (nr > len)error("index out of bounds %i>%i "s % nr % len);
+//    return string[nr - 1 % len];
 }

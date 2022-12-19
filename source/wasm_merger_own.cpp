@@ -484,7 +484,9 @@ public:
 
     Linker() = default;
 
-    void AppendBinary(LinkerInputBinary *binary) { inputs_.emplace_back(binary); }
+    void AppendBinary(LinkerInputBinary *binary) {
+        inputs_.emplace_back(binary);
+    }
 
     OutputBuffer PerformLink();
 
@@ -643,7 +645,7 @@ void Linker::WriteElemSection(const SectionPtrVector &sections) {
 
     WriteU32Leb128(&stream_, 1, "segment count");
     if (sections.size() > 1) {
-        todo("MERGE ELEM");
+//        todo("MERGE ELEM");
         Index total_elem_count = 0;
         for (Section *section: sections) {
             total_elem_count += section->binary->table_elem_count;
@@ -948,7 +950,7 @@ void Linker::RemoveAllExports() {// except _start for stupid wasmtime:
         for (Export &ex: bin->exports) {
             pos++;
             if (ex.kind != ExternalKind::Func)continue;
-            while (bin->exports._size > 0 and not(ex.name == "wasp_main" or ex.name == "_start")) {
+            while (bin->exports._size > 0 and not(ex.name == "wasp_main" or ex.name == "_start" or ex.name == "main")) {
                 if (ex.kind != ExternalKind::Func)break;
                 if (!bin->exports.remove(pos))break;
             }
@@ -1114,15 +1116,20 @@ void Linker::ResolveSymbols() {
                 binary->active_function_imports--;// never used!?
                 char *import_name = import.name;
                 char *export_name = exported.name;
-                printf("LINKED %s import #%d %s to export #%d %s relocated_function_index %d \n", name.data, old_index,
+                printf("LINKED %s:%s import #%d %s to export #%d %s relocated_function_index %d \n", binary->name,
+                       name.data, old_index,
                        import_name, export_index, export_name, export_number);
             } else {
                 // todo all this is done in RelocateFuncIndex !
                 // link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
                 Index func_index = func_map.FindIndex(name);
                 if (func_index == kInvalidIndex) {
-                    if (not contains(wasi_function_list, name.data))
-                        warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
+                    if (not contains(wasi_function_list, name.data)) {
+//                        warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
+                        warn("unresolved import: %s  ( setting inactive due to wasi ) "s % name);
+                        import.active = false;
+                        binary->active_function_imports--;// never used!?
+                    }
                     continue;
                 }
 //				check(func_list[func_index].func);
@@ -1372,8 +1379,8 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
                       func1.index % local_types);
             }// each type comes with a count e.g. (i32, 3) == 3 locals of type i32
             if (current_name.data /*and tracing*/)// else what is this #2 test/merge/main2.wasm :: (null)
-                    tracef("code#%d -> ƒ%d %s :: %s (#%d) len %d\n", code_index, call_index, binary->name,
-                           current_name.data, local_types, fun_length);
+                tracef("code#%d -> ƒ%d %s :: %s (#%d) len %d\n", code_index, call_index, binary->name,
+                       current_name.data, local_types, fun_length);
 //            if (call_index == 144)
 //                tracing = true;
 //            else if (tracing)
