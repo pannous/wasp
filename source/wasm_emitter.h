@@ -19,7 +19,7 @@ class Signature;
 
 //extern Map<String, Valtype> return_types;// redundant with functionSignatures todo: remove
 //todo extern Map<String, Node> variableTypes;
-extern Map<String, int> functionIndices;// todo functions[].index
+extern Map<String, int> codeIndices;// todo functions[].index
 
 //extern List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 //extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals; // access from Angle!
@@ -104,3 +104,4 @@ Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "wasp_main");
 Code &compile(String code, bool clean = true);// exposed to wasp.js
 
 void clearEmitterContext();// BEFORE analyze!
+

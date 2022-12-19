@@ -2779,7 +2779,17 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
-    run_wasm_file();
+//    assert_emit("grows int x:=x*2;grows(4)", 8)
+//    assert_emit("grows x:=x*2;grows(4)", 8)
+
+    assert_emit("x='abcde';x#4", 'd');
+
+    assert_run("parseLong('123000')+parseLong('456')", 123456);
+
+    assert_is("'hi'", "hi");
+
+    assert_is("x=(1 4 3);x#2=5;x#2", 5);
+//    run_wasm_file();
 //    assert_emit("x='abcde';x#4", 'd');
 //    assert_emit("parseLong('123')", 123)
 //    assert(eval("1 + 1 == 2"));
@@ -2838,7 +2848,6 @@ void testCurrent() {
 
     assert_emit("parseLong('123')", 123)
     assert_emit("x='123';parseLong(x)", 123)
-    assert_run("parseLong('123000')+parseLong('456')", 123456);
 //    assert_run("int('123')", 123);
 
     assert_emit("'42'", "42");
