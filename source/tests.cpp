@@ -2771,12 +2771,11 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
-    assert_emit("x='abcde';x#4", 'd');
-
-    assert_emit("parseLong('123')", 123)
+//    assert_emit("x='abcde';x#4", 'd');
+//    assert_emit("parseLong('123')", 123)
 //    assert(eval("1 + 1 == 2"));
 //#undef NANO_PREALLOCATE_BAND_VM
-    check("%s"s.replace("%s", "ja") == "ja"); // FAILS in universal TRACE
+//    check("%s"s.replace("%s", "ja") == "ja"); // FAILS in universal TRACE
 
 //    assert_run("parseLong('123'+'456')", 123456);
 //    assert_run("'123'+'456'", "123456");
@@ -2788,7 +2787,7 @@ void testCurrent() {
 //    assert_run("parseLong('123000')", 123000);
 //    assert_run("parseLong('123000') + parseLong('456')", 123456);
 //
-//    assert_run("square(3)+square(3)", 18);
+    assert_run("square(3)+square(3)", 18);
 //    assert_run("square(1+2)+square(3)", 18);
     assert_emit("n=3;2ⁿ", 8);
     eval("3*3");

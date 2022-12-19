@@ -39,9 +39,6 @@ typedef enum smartType4bit {
     error_spo = 0xE,
     sint28 = 0xF,// negatives
 } smartType;
-//todo stringa = 0x9 vs
-#define string_header_64 0x0010000000000000L // todo : what happened to 0x9 smartType4bit ??
-#define array_header_64  0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
 
 
 typedef int SmartPointer32;
@@ -58,6 +55,9 @@ smartType4bit getSmartType(smart_pointer_32 spo);
 static smart_pointer_64 smart_pointer_type_mask = 0xFFFFFFFF00000000L; // full : smartType4bit plus 12 specifier bit plus 16 bit type payload
 static smart_pointer_64 smart_pointer_header_mask = 0xFFFF000000000000L; // smartType4bit plus 12 specifier  todo maybe less F?
 static smart_pointer_64 smart_pointer_payload_mask = 0x0000FFFF00000000L; // todo maybe less F?
+//todo stringa = 0x9 vs
+#define string_header_64 0x0010000000000000L // todo : what happened to 0x9 smartType4bit ??
+#define array_header_64  0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
 
 static smart_pointer_64 smart_pointer_node_signature = 0xA000000000000000L;// ((smart_pointer_64)nodep) << 63; // 0xA0…0
 

@@ -129,7 +129,7 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
 
 	for (wabt::interp::ExportDesc export_ : module_desc.exports) {
         if (export_.type.type->kind != wabt::ExternalKind::Func) continue;
-        if (export_.type.name != "main" and export_.type.name != "maine") continue;
+        if (export_.type.name != "wasp_main" and export_.type.name != "maine") continue;
         auto *func_type = wabt::cast<wabt::interp::FuncType>(export_.type.type.get());
         if (func_type->params.empty()) {
             RefVec funcs = instance->funcs();

@@ -376,7 +376,7 @@ enum Opcodes {
 //	start = 0x00,
     start_function = 0x00,
 //	unreachable = 0x00,
-    nop = 0x01, // useful for relocation padding call 1 -> call 10000000
+    nop_ = 0x01, // useful for relocation padding call 1 -> call 10000000
     block = 0x02,
     loop = 0x03,
     if_i = 0x04,// precede by i32 result, follow by i32_type (7f)
@@ -896,7 +896,7 @@ public:
     }
 
     Signature &add(Node type, String name = "") {
-        return add(mapTypeToPrimitive(type), name);
+        return add((Type) mapTypeToPrimitive(type), name);
     }
 
 //

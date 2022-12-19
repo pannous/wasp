@@ -232,7 +232,7 @@ long run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
         /////////////////////////
 
         wasm_function_inst_t _start;
-        if (!(_start = wasm_runtime_lookup_function(module_inst, "main", NULL))) {
+        if (!(_start = wasm_runtime_lookup_function(module_inst, "wasp_main", NULL))) {
             if (!(_start = wasm_runtime_lookup_function(module_inst, "_start", NULL))) {
                 return fail("The main function is not found.\n");
             }

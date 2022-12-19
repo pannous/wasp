@@ -6,6 +6,7 @@
 // YOU NEED extern "C" to keep the name for UNIMPLEMENTED functions only
 
 #include <cstddef> // size_t  FINE with wasm!
+#include "smart_types.h"
 
 typedef char32_t codepoint;// 'letter' ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
 
@@ -168,6 +169,7 @@ void print(long i);
 //extern __inline int isalnum ( int c );
 int isalnum0(int c);
 
+extern "C" void printNode(smart_pointer_64 node);
 
 #ifdef WASM
 
@@ -222,22 +224,6 @@ void printf(chars format, chars i, chars j, chars k, int l);
 #endif
 #endif
 
-//extern "C" void * memset ( void * ptr, int value, size_t num ); not extern!
-//#ifndef WASI
-//#endif
-//int rand();
-//proc_exit, environ_get, environ_sizes_get
-
-#ifndef WASI
-extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_unstable"), import_name("proc_exit"))); // wasmtime ++
-#endif
-//extern "C" void exit(int fd) __attribute__((__noreturn__, import_module("wasi_snapshot_preview1"), import_name("proc_exit")));// wasmer WTF
-
-//extern "C" void exit(int code);
-//extern "C" void exit(int fd) __attribute__((__noreturn__));
-
-//void exit(int fd) __attribute__((import_module("wasi_snapshot_preview1"), import_name("exit")));
-
 #endif
 
 //#ifndef WASM
@@ -267,9 +253,9 @@ extern "C" int fd_write(int fd, c_io_vector *iovs, size_t iovs_count, size_t *nw
 //void fd_write_host(int FD, char **strp, int *ignore, int *ignore) compatible signature
 
 [[noreturn]]
+//__attribute__((import_module("wasi_snapshot_preview1"), import_name("proc_exit")))
 __attribute__((import_module("wasi_unstable"), import_name("proc_exit")))
 extern "C"
-
 void proc_exit(int exitcode);
 
 

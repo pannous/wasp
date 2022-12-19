@@ -56,8 +56,6 @@ bool eq(chars dest, chars src, int length) {
     return true;
 }
 
-
-//#ifndef cstring
 // needs manual 0 termination, or copy with length + 1
 void strcpy2(char *dest, chars src, int length) {// =-1
     if (!dest || !src)
@@ -224,11 +222,8 @@ extern double parseDouble(chars string) {
     return result * multiplier;
 }
 
-class String;
-
 class Node; // can't pre-access properties, BUT can use functions:
 String toString(Node &node);
-
 
 // Implementation of itoa0()
 char *formatLongWithBase(long num, int base = 10) {
