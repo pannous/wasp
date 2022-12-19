@@ -11,6 +11,7 @@ static float function_precedence = 1000;
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
 // pre-registered builtin/runtime functions working without any import / include / require / use
 static chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printf",
+                                                               "getChar",
                                                                "println", "puts", "putf", "len", "quit", "parseLong",
                                                                "parseDouble", "strlen", "concat",
                                                                "log", "ln", "log10", "log2", "similar",

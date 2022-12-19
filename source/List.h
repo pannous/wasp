@@ -442,6 +442,7 @@ public:
     String join(String string) {
         String s;
         for (auto i: *this) {
+            if (not i)continue;
             s += i;
             s += string;
         }
