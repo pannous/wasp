@@ -703,18 +703,10 @@ void print(String *s) {
 }
 
 
-void write(String s) {
-    put_chars(s.data, s.length);
-//    if (tracing)
-//        newline();
-}
-
-
-// alias WriteLine
 void print(String s) {
     put_chars(s.data, s.length);
 //    if (tracing)
-    newline();
+//        newline();
 }
 
 void println(String s) {
