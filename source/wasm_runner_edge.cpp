@@ -66,7 +66,15 @@ WasmEdge_ModuleInstanceContext *CreateExternModule() {
 
 
 extern "C" long run_wasm(bytes buffer, int buf_size) {
-    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(0, 0);
+
+
+    /* Create the configure context and add the WASI support. */
+    /* This step is not necessary unless you need WASI support. */
+    WasmEdge_ConfigureContext *ConfCxt = WasmEdge_ConfigureCreate();
+    WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
+    /* The configure and store context to the VM creation can be NULL. */
+    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(ConfCxt, NULL);
+//    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(0, 0); // no wasi
     WasmEdge_Value Params[1];
     WasmEdge_Value Returns[1];
     WasmEdge_String FuncName = WasmEdge_StringCreateByCString("test");
@@ -76,7 +84,7 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
         printf("Get result: %d\n", value);
         return (int) value;
     } else printf("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
-	return -1;
+    return -1;
 }
 
 long run_wasm2(char *wasm_path) {

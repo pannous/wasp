@@ -118,7 +118,10 @@ void put_chars(char *c, size_t len) {
     printf("%s", c);
 }
 
+#if not WASM
 [[noreturn]]
 void proc_exit(int x) {
     exit(x);
 }
+
+#endif

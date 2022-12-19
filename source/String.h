@@ -163,9 +163,10 @@ String *empty_string();
 //
 //};
 // following general Header struct / wasm32_node_struct
+
+// https://github.com/WebAssembly/stringref
 class String {
 //    A UTF-8 environment can use non-synchronized continuation bytes as base64: 0b10   Base58 avoids lookalikes
-// sizeof(Node) == 20 == 5 * 4 int(*)
 
 public:
     char *data{};// UTF-8 sequence
@@ -283,8 +284,7 @@ public:
         shared_reference = true;
         short length_bytes = 1;// LEB128 length encoding header
         length = s[0];
-        if (length < 0 or length >= 128)
-            todo("decode full LEB128");
+        if (length < 0 or length >= 128) todo("decode full LEB128");
         data = (char *) s + length_bytes;
     }
 
@@ -457,8 +457,8 @@ public:
         if (!data) {
             data = (char *) (alloc(sizeof(char), byteCount + 1));
 #if WASM
-        } else if (data + length + 1 == (char *) current) {// just append recent
-            current += byteCount + 1;
+            } else if (data + length + 1 == (char *) current) {// just append recent
+                current += byteCount + 1;
 #endif
         } else {
             auto *neu = (char *) (alloc(sizeof(char), length + 5));// we need 4 bytes because *(int*)…=c

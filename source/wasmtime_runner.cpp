@@ -273,7 +273,7 @@ wasm_wrap *link_import(String name) {
     if (name == "putc") return &wrap_putc;
 //    if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
     if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
-    if (name == "main") return &hello_callback;
+    if (name == "wasp_main") return &hello_callback;
     if (name == "memory")
         return 0;// not a funciton
     error("unmapped import "s + name);
@@ -388,7 +388,7 @@ extern "C" long run_wasm(unsigned char *data, int size) {
     wasmtime_extern_t memory_export;
     // WDYM?? 	thread '<unnamed>' panicked at 'index out of bounds: the len is 447 but the index is 4294967295'
     // wasmtime::instance::Instance::_get_export::h5e31a076a79e322b
-    bool ok = wasmtime_instance_export_get(context, &instance, "main", 4, &run);
+    bool ok = wasmtime_instance_export_get(context, &instance, "wasp_main", 4, &run);
 //	assert(ok);
 //	assert(run.kind == WASMTIME_EXTERN_FUNC);
     ok = wasmtime_instance_export_get(context, &instance, "memory", 6, &memory_export);
