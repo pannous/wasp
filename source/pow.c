@@ -18,7 +18,7 @@ typedef int32_t s32;
 typedef uint64_t u64;
 typedef int64_t s64;
 typedef float f32;
-typedef double f64;
+typedef double float64;
 #endif
 
 #include "wasm.h"
@@ -166,7 +166,7 @@ DEFINE_LOAD(i64_load, u64, u64, u64)
 
 DEFINE_LOAD(f32_load, f32, f32, f32)
 
-DEFINE_LOAD(f64_load, f64, f64, f64)
+DEFINE_LOAD(f64_load, float64, float64, float64)
 
 DEFINE_LOAD(i32_load8_s, s8, s32, u32)
 
@@ -194,7 +194,7 @@ DEFINE_STORE(i64_store, u64, u64)
 
 DEFINE_STORE(f32_store, f32, f32)
 
-DEFINE_STORE(f64_store, f64, f64)
+DEFINE_STORE(f64_store, float64, float64)
 
 DEFINE_STORE(i32_store8, u8, u32)
 
@@ -405,9 +405,9 @@ DEFINE_REINTERPRET(f32_reinterpret_i32, u32, f32)
 
 DEFINE_REINTERPRET(i32_reinterpret_f32, f32, u32)
 
-DEFINE_REINTERPRET(f64_reinterpret_i64, u64, f64)
+DEFINE_REINTERPRET(f64_reinterpret_i64, u64, float64)
 
-DEFINE_REINTERPRET(i64_reinterpret_f64, f64, u64)
+DEFINE_REINTERPRET(i64_reinterpret_f64, float64, u64)
 
 static float quiet_nanf(float x) {
     uint32_t tmp;
@@ -665,9 +665,9 @@ static void init_func_types(void) {
     func_types[1] = wasm_rt_register_func_type(2, 1, WASM_RT_F64, WASM_RT_I32, WASM_RT_F64);
 }
 
-static f64 w2c_pow(Z__instance_t *, f64, f64);
+static float64 w2c_pow(Z__instance_t *, float64, float64);
 
-static f64 w2c_pow_helper1(Z__instance_t *, f64, u32);
+static float64 w2c_pow_helper1(Z__instance_t *, float64, u32);
 
 static const u8 data_segment_data_w2c_d0[] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0x3f, 0x00, 0x00, 0x00, 0x00,
@@ -689,15 +689,15 @@ static void init_tables(Z__instance_t *instance) {
     wasm_rt_allocate_funcref_table(&instance->w2c_T0, 1, 1);
 }
 
-static f64 w2c_pow(Z__instance_t *instance, f64 w2c_p0, f64 w2c_p1) {
+static float64 w2c_pow(Z__instance_t *instance, float64 w2c_p0, float64 w2c_p1) {
     u32 w2c_l2 = 0, w2c_l3 = 0, w2c_l4 = 0, w2c_l5 = 0, w2c_l6 = 0, w2c_l7 = 0, w2c_l8 = 0, w2c_l9 = 0,
             w2c_l10 = 0;
     u64 w2c_l11 = 0, w2c_l12 = 0;
-    f64 w2c_l13 = 0, w2c_l14 = 0, w2c_l15 = 0, w2c_l16 = 0, w2c_l17 = 0;
+    float64 w2c_l13 = 0, w2c_l14 = 0, w2c_l15 = 0, w2c_l16 = 0, w2c_l17 = 0;
     FUNC_PROLOGUE;
     u32 w2c_i0, w2c_i1, w2c_i2, w2c_i3, w2c_i4, w2c_i5;
     u64 w2c_j0, w2c_j1, w2c_j2, w2c_j3, w2c_j4, w2c_j5;
-    f64 w2c_d0_0, w2c_d1, w2c_d2, w2c_d3, w2c_d4, w2c_d5, w2c_d6, w2c_d7,
+    float64 w2c_d0_0, w2c_d1, w2c_d2, w2c_d3, w2c_d4, w2c_d5, w2c_d6, w2c_d7,
             w2c_d8, w2c_d9, w2c_d10;
     w2c_d0_0 = 1;
     w2c_l13 = w2c_d0_0;
@@ -1314,7 +1314,7 @@ static f64 w2c_pow(Z__instance_t *instance, f64 w2c_p0, f64 w2c_p1) {
     w2c_d2 += w2c_d3;
     w2c_d1 += w2c_d2;
     w2c_i2 = w2c_l2;
-    w2c_d2 = (f64) (s32) (w2c_i2);
+    w2c_d2 = (float64) (s32) (w2c_i2);
     w2c_l13 = w2c_d2;
     w2c_d1 += w2c_d2;
     w2c_j1 = i64_reinterpret_f64(w2c_d1);
@@ -1596,11 +1596,11 @@ static f64 w2c_pow(Z__instance_t *instance, f64 w2c_p0, f64 w2c_p1) {
     return w2c_d0_0;
 }
 
-static f64 w2c_pow_helper1(Z__instance_t *instance, f64 w2c_p0, u32 w2c_p1) {
+static float64 w2c_pow_helper1(Z__instance_t *instance, float64 w2c_p0, u32 w2c_p1) {
     FUNC_PROLOGUE;
     u32 w2c_i0, w2c_i1, w2c_i2, w2c_i3;
     u64 w2c_j1, w2c_j2;
-    f64 w2c_d0_0, w2c_d1;
+    float64 w2c_d0_0, w2c_d1;
     w2c_i0 = w2c_p1;
     w2c_i1 = 1024u;
     w2c_i0 = (u32) ((s32) w2c_i0 < (s32) w2c_i1);

@@ -93,7 +93,7 @@ enum Valtype {
     // ⚠️ strange order!
     float64 = 0x7C,
     f64t = 0x7C,
-    f64 = 0x7C,
+//    f64 = 0x7C, // typedef double f64; in m3
 
     float32 = 0x7d,
     f32t = 0x7d,
