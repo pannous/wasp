@@ -8,7 +8,8 @@ if (X86_64)
 else ()
     #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
     LINK_DIRECTORIES(bin/mac/lib)
-    #    LINK_DIRECTORIES(bin/linux/arm64/lib/)
+    #    LINK_DIRECTORIES(bin/mac/lib/aarch64)
+    #        LINK_DIRECTORIES(bin/linux/arm64/lib/)
 endif ()
 
 # SET these configurations via Preferences… Build->CMake->Profiles
@@ -35,12 +36,12 @@ if (NOT WASM)
         # TO EXECUTE wasm:
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
-        #        SET(WASMTIME 1) # FASTEST!
+        #                SET(WASMTIME 1) # FASTEST!
         SET(WASMEDGE 1) # todo smart multi-value returns
         #    set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
-        #        set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying 2022-12: last release on Jun 2, 2021
+        #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying 2022-12: last release on Jun 2, 2021
         #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
-        #        SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
+        #                SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
         #            set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #    set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         #    set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
@@ -183,8 +184,8 @@ ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
 ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
-ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
 ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
+ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
 ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
 # todo Just use initiator lists? ^^
 if (APPLE)
@@ -535,11 +536,13 @@ elseif (WASMTIME)
     ADD_DEFINITIONS(-DWASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
-    #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
+    target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
+    target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/c-api/include/)
+    target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/wasm-c-api/include/)
     #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
     #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
-    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-aarch64-macos-c-api/include)
-    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
+    #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-aarch64-macos-c-api/include)
+    #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
     target_link_libraries(wasp PRIVATE wasm)
     target_link_libraries(wasp PRIVATE wasmtime)
 elseif (WEBAPP)

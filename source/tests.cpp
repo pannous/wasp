@@ -67,6 +67,14 @@ void testUse() {
 //    parse("use name as other-name from yet-another-file");// MY SYNTAX
 }
 
+void testClass() {
+    analyze(parse("public data class Person(string FirstName, string LastName);"));
+    analyze(parse("public data class Student : Person { int ID; }"));
+    analyze(parse("var person = new Person('Scott', 'Hunter'); // positional construction"));
+    analyze(parse("otherPerson = person with { LastName = \"Hanselman\" };"));
+//    "var (f, l) = person;                        // positional deconstruction"
+}
+
 void testStruct() {
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
     return;
@@ -2771,6 +2779,7 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
+    run_wasm_file();
 //    assert_emit("x='abcde';x#4", 'd');
 //    assert_emit("parseLong('123')", 123)
 //    assert(eval("1 + 1 == 2"));
@@ -2787,9 +2796,9 @@ void testCurrent() {
 //    assert_run("parseLong('123000')", 123000);
 //    assert_run("parseLong('123000') + parseLong('456')", 123456);
 //
+    assert_emit("n=3;2ⁿ", 8);
     assert_run("square(3)+square(3)", 18);
 //    assert_run("square(1+2)+square(3)", 18);
-    assert_emit("n=3;2ⁿ", 8);
     eval("3*3");
 //    assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
     skip(

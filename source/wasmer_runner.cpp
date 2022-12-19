@@ -45,17 +45,17 @@ wrap(square) {
 
 
 wrap(log) {
-	double n = args[0].data->of.f64;
-	results[0].data->of.f64 = log(n);
-	return NULL;
+    double n = args[0].data->of.float64;
+    results[0].data->of.float64 = log(n);
+    return NULL;
 }
 
 
 wrap(powd) {
-	double n = args[0].data->of.f64;
-	double x = args[1].data->of.f64;
-	results[0].data->of.f64 = powd(n, x);
-	return NULL;
+    double n = args[0].data->of.float64;
+    double x = args[1].data->of.float64;
+    results[0].data->of.float64 = powd(n, x);
+    return NULL;
 }
 
 wrap(puts) {
@@ -80,7 +80,7 @@ wrap(putf) {
 }
 
 wrap(putd) {
-	float f = args[0].data->of.f64;
+    float f = args[0].data->of.float64;
     printf("%f", f);
     return NULL;
 }
@@ -218,7 +218,7 @@ void wasm_val_print(wasm_val_t val) {
             printf("%f", val.of.float32);
 			break;
 		case WASM_F64:
-            printf("%g", val.of.f64);
+            printf("%g", val.of.float64);
 			break;
         case WASM_ANYREF:
         case WASM_FUNCREF:
@@ -527,17 +527,17 @@ const wasm_functype_t *funcType(Signature &signature) {
                     default:
                         break;
                 }
-            case f64:
-				switch (returnType) {
-					case none:
-					case voids:
-						return wasm_functype_new_1_0(F);
-					case f64:
-						return wasm_functype_new_1_1(F, F);
-					default:
-						break;
-				}
-			case int32:
+            case float64:
+                switch (returnType) {
+                    case none:
+                    case voids:
+                        return wasm_functype_new_1_0(F);
+                    case float64:
+                        return wasm_functype_new_1_1(F, F);
+                    default:
+                        break;
+                }
+            case int32:
 				switch (returnType) {
 					case none:
 					case voids:

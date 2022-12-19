@@ -712,8 +712,8 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
 
     Signature &signature = groupFunctionArgs(function, arguments);
     if (signature.size() == 0 and function.locals.size() == 0 and body.has("it", false, 100)) {
-        addLocal(function, "it", f64, true);
-        signature.add(f64, "it");// todo: any / smarti! <<<
+        addLocal(function, "it", float64, true);
+        signature.add(float64, "it");// todo: any / smarti! <<<
     }
     body = analyze(body, function);// has to come after arg analysis!
     if (!return_type)
@@ -1185,7 +1185,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (functions.has(name))return use_required(&functions[name]);
     if (contains(funclet_list, name)) {
         Module &funclet_module = read_wasm(findFile(name, "lib"));
-        check(funclet_module.functions.has(name));
+//        check(funclet_module.functions.has(name));
         auto funclet = funclet_module.functions[name];
         libraries.add(&funclet_module);// link it later via import or use its code directly?
         return use_required(&funclet);

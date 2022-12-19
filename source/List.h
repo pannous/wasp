@@ -203,6 +203,7 @@ public:
 //        } while (item);
 //        va_end(args);
 //    }
+
     List(S *args, int size, bool share = true) {
         if (args == 0)return;
         check_silent(size < LIST_DEFAULT_CAPACITY)
