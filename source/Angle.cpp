@@ -694,7 +694,7 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
     todo("is_operator!");// remove if it doesn't happen
 
     if (name and not function_operators.has(name)) {
-        if (context.name != "main") todo("inner functions");
+        if (context.name != "wasp_main") todo("inner functions");
         if (not functions.has(name)) {
             functions.add(name, *new Function{.name=name});
         }
@@ -1169,7 +1169,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 
 void addLibraryFunctionAsImport(Function &func) {
     func.is_used = true;
-    // ⚠️ this function now lives inside Module AND as import inside "main" functions list, with different wasm_index!
+    // ⚠️ this function now lives inside Module AND as import inside "wasp_main" functions list, with different wasm_index!
     Function &import = functions[func.name];// copy function info from library/runtime to main module
     import.signature = func.signature;
     import.is_runtime = false;// because here it is an import!
@@ -1332,7 +1332,7 @@ Node &groupWhile(Node &n, Function &context) {
 
 //
 //extern "C" Node *analyze(Node &node){
-//	return &analyze(node, "main");
+//	return &analyze(node, "wasp_main");
 //}
 
 
@@ -1473,19 +1473,19 @@ void preRegisterFunctions() {
 
     functions["fd_write"].import();
     functions["fd_write"].signature.add(int32, "fd");// file descriptor
-    functions["fd_write"].signature.add(pointer, "iovs");
+    functions["fd_write"].signature.add((Type) pointer, "iovs");
     functions["fd_write"].signature.add(size32, "iovs_len");
-    functions["fd_write"].signature.add(pointer, "nwritten");// size_t *  out !
+    functions["fd_write"].signature.add((Type) pointer, "nwritten");// size_t *  out !
     functions["fd_write"].signature.returns(int32);
 //    functions["fd_write"].module=new Module{.name="wasi"};
     functions["fd_write"].module = new Module{.name="wasi_unstable"};
 //    functions["fd_write"].module=new Module{.name="wasi_snapshot_preview1"};
 
     functions["puts"].builtin();
-    functions["puts"].signature.add(stringp).returns(int32);// stdio conform!!
+    functions["puts"].signature.add((Type) stringp).returns(int32);// stdio conform!!
 
     functions["len"].builtin();// via wasp abi len(any)=*(&any)[1]
-    functions["len"].signature.add(array).returns(int32);// todo any wasp type
+    functions["len"].signature.add((Type) array).returns(int32);// todo any wasp type
 
     functions["quit"].builtin();// no args, calls proc_exit(0)
 
@@ -1493,9 +1493,9 @@ void preRegisterFunctions() {
 //    functions["square"].import().signature.add(int32).returns(int32);// test only!!
 
 #if MULTI_VALUE
-    functions["main"].signature.returns(i64).returns(i32);// [result, type32] transparently (no flipped stack order)
+    functions["wasp_main"].signature.returns(i64).returns(i32);// [result, type32] transparently (no flipped stack order)
 #else
-    functions["main"].signature.returns(i64);
+    functions["wasp_main"].signature.returns(i64);
 #endif
 //    functions["paint"].import().signature.returns(voids);// paint surface
 //    functions["init_graphics"].import().signature.returns(pointer);// surface

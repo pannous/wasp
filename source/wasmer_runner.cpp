@@ -82,25 +82,25 @@ wrap(putf) {
 wrap(putd) {
 	float f = args[0].data->of.f64;
     printf("%f", f);
-	return NULL;
+    return NULL;
 }
 
 wrap(putc) {// put_char
-	int i = args[0].data->of.i32;
+    int i = args[0].data->of.i32;
     printf("%c", i);
-	return NULL;
+    return NULL;
 }
 
-wrap(nop) {
-	return NULL;
+wrap(nop_) {
+    return NULL;
 }
 
 wrap(atoi) {
-	int n = args[0].data->of.i32;
-	auto a = (chars) ((char *) wasm_memory) + n;
+    int n = args[0].data->of.i32;
+    auto a = (chars) ((char *) wasm_memory) + n;
     int i = parseLong(a);
-	results[0].data->of.i32 = i;
-	return NULL;
+    results[0].data->of.i32 = i;
+    return NULL;
 }
 
 wrap(exit) {
@@ -199,7 +199,7 @@ wasm_wrap *link_import(String name) {
     if (name == "putc") return &wrap_putc;
 //	if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
     if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
-//	if (name == "main") return &hello_callback;
+//	if (name == "wasp_main") return &hello_callback;
     error("unmapped import "s + name);
     return 0;
 }
@@ -420,7 +420,7 @@ wasm_func_t *findFunction(wasm_extern_vec_t exports, wasm_exporttype_vec_t expor
 		wasm_func_t *exporte = wasm_extern_as_func(exports.data[i]);
 		print_name(wasm_exporttype_name(export_types.data[i]));
 		print_externtype(wasm_exporttype_type(export_types.data[i]));
-//		if(exporte.name=="main") // uh todo!?
+//		if(exporte.name=="wasp_main") // uh todo!?
 		if (exporte)return exporte;
 	}
 	error("> Failed to get the `main` function!\n");

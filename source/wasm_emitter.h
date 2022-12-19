@@ -39,7 +39,7 @@ Code emitDeclaration(Node &fun, Node &body);
 Code emitSetter(Node &node, Node &value, Function &context);
 
 //Code emitExpression(Node *nodes, Function& context);
-Code emitExpression(Node &node, Function &context/*="main"*/);
+Code emitExpression(Node &node, Function &context/*="wasp_main"*/);
 
 
 [[nodiscard]]
@@ -98,7 +98,7 @@ Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 Type commonType(Type lhs, Type rhs);
 
 //Code emit(String code);//  wasp -> code -> wasm -> data
-Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "main");
+Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "wasp_main");
 
 //extern "C"
 Code &compile(String code, bool clean = true);// exposed to wasp.js

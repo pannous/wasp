@@ -72,7 +72,6 @@ Node Infinity = Node("Infinity");
 Node NegInfinity = Node("-Infinity");
 Node NaN = Node("NaN");
 
-Node &reconstructWasmNode(wasm_node_index pointer);
 
 void initSymbols() {
     print("initSymbols");
@@ -1247,7 +1246,7 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
     if ((smartPointer64 & smart_pointer_header_mask) == smart_pointer_node_signature) {
         smart_pointer_64 pointer = smartPointer64 & smart_pointer_value60_mask;
         if (pointer < 0x100000000L) {// danger zone: unsafe reconstruction of Node from wasm memory
-            Node &reconstruct = reconstructWasmNode((int) pointer);
+            Node &reconstruct = *reconstructWasmNode((int) pointer);
             return &reconstruct;
         }
         return (Node *) pointer;
@@ -1291,7 +1290,7 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
         int stack_Item_Size = stackItemSize((Valtype) kind, false); // mapType(type);
         Primitive value_kind;
         if (type) {
-            Node &typ = reconstructWasmNode(type);
+            Node &typ = *reconstructWasmNode(type);
             stack_Item_Size = stackItemSize(typ);
             value_kind = mapTypeToPrimitive(typ);
         }
@@ -1329,15 +1328,15 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
 
 // ⚠️ Despite sanity checks, there's still a chance that parts here are unsafe!
 // todo put sanity checks for node / string in extra function!
-Node &reconstructWasmNode(wasm_node_index pointer) {
+Node *reconstructWasmNode(wasm_node_index pointer) {
     if (pointer == 0)
-        return NUL;// we NEVER have nodes at 0
+        return &NUL;// we NEVER have nodes at 0
     if (pointer > 100000 + 0x10000 and debug) // todo proper memory bound check including data/runtime_offset
         error("pointer>10000"); // todo remove (in)sanity check
     if ((long) pointer > MEMORY_SIZE)
         error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % MEMORY_SIZE);
 #if WASM
-    return *(Node *) (long) pointer; // INSIDE wasm code INSIDE wasm linear wasm_memory
+    return (Node *) (long) pointer; // INSIDE wasm code INSIDE wasm linear wasm_memory
 #endif
     if (not wasm_memory) error("no attached wasm memory");
     // Host 64 bit pointer layout is different than wasm 32 bit pointer layout! Can NOT reconstruct objects directly!
@@ -1348,12 +1347,12 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
         wasm32_node_struct nodeStruct = *(wasm32_node_struct *) ((long) wasm_memory + (long) pointer);
         if (not nodeStruct.node_header) {
             warn("reconstruct node sanity check failed");
-            return reconstruct;
+            return &reconstruct;
             error("reconstruct node sanity check failed");
         }
         reconstruct.length = nodeStruct.length;
         reconstruct.value = nodeStruct.value;
-        reconstruct.type = nodeStruct.node_type_pointer ? &reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
+        reconstruct.type = nodeStruct.node_type_pointer ? reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
         if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MEMORY_SIZE)
             reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
 //        else
@@ -1365,7 +1364,7 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
 //            reconstruct.name = String(((char *) wasm_memory) + (long) reconstruct.name.data);// copy!
 //        } else reconstruct.name = "";// uh cheap fix?
         reconstruct.kind = nodeStruct.kind;
-        reconstruct.meta = nodeStruct.meta_pointer ? &reconstructWasmNode(nodeStruct.meta_pointer) : 0;
+        reconstruct.meta = nodeStruct.meta_pointer ? reconstructWasmNode(nodeStruct.meta_pointer) : 0;
         if (nodeStruct.child_pointer >= 0) {
             // -1 means no children (debug/bug)
 
@@ -1374,7 +1373,7 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
             int *child_pointers = (int *) (((char *) wasm_memory) + nodeStruct.child_pointer);
             for (int i = 0; i < reconstruct.length; ++i) {
                 long wasm_child_pointer = child_pointers[i];
-                reconstruct.children[i] = reconstructWasmNode(wasm_child_pointer);
+                reconstruct.children[i] = *reconstructWasmNode(wasm_child_pointer);
                 reconstruct.children[i].parent = &reconstruct;
                 if (i > 0)reconstruct.children[i - 1].next = &reconstruct.children[i];
             }
@@ -1384,7 +1383,7 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
         reconstruct = *(Node *) ((long) wasm_memory + (long) pointer);
         for (int i = 0; i < reconstruct.length; ++i) {
             long wasm_child_pointer = (long) reconstruct.children[i];
-            reconstruct.children[i] = reconstructWasmNode(wasm_child_pointer);
+            reconstruct.children[i] = *reconstructWasmNode(wasm_child_pointer);
         }
     }
     if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
@@ -1396,7 +1395,7 @@ Node &reconstructWasmNode(wasm_node_index pointer) {
     if (reconstruct.length < 0 or reconstruct.length > reconstruct.capacity or reconstruct.length > MAX_NODE_CAPACITY)
         error("reconstruct node sanity check failed for length");
 
-    return reconstruct;
+    return &reconstruct;
 }
 
 

@@ -10,7 +10,7 @@ chars wat = R"(module
   (memory (;0;) 2)
   (export "memory" (memory 0))
   (export "add1" (func 0))
-  (export "main" (func $main))
+  (export "wasp_main" (func $main))
 
   (type $ii_i (func (param i32 i32) (result i32)))
   (func $add (type $ii_i) (param i32 i32) (result i32)
