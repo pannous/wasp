@@ -2,6 +2,8 @@
 #include <cstdio>
 #include "wasmedge.h"
 #include "wasm_runner.h"
+#include "Util.h"
+#include "Node.h"
 //#include <stdio.h>
 // gcc wasmedge_runner.cpp -lwasmedge -o test_wasmedge
 
@@ -77,12 +79,13 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
 //    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(0, 0); // no wasi
     WasmEdge_Value Params[1];
     WasmEdge_Value Returns[1];
-    WasmEdge_String FuncName = WasmEdge_StringCreateByCString("test");
+    WasmEdge_String FuncName = WasmEdge_StringCreateByCString("wasp_main");
     WasmEdge_Result Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName, Params, 0, Returns, 1);
     if (WasmEdge_ResultOK(Res)) {
-        int32_t value = WasmEdge_ValueGetI32(Returns[0]);
-        printf("Get result: %d\n", value);
-        return (int) value;
+//        int32_t value = WasmEdge_ValueGetI32(Returns[0]);
+        int64_t value = WasmEdge_ValueGetI64(Returns[0]);
+        printf("Get result: %lld\n", value);
+        return smartNode(value)->toSmartPointer();
     } else printf("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
     return -1;
 }
