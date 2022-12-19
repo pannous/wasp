@@ -692,8 +692,7 @@ void use_runtime(const char *function) {
 }
 
 Node &
-groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body,
-                         Function &context) {
+groupDeclarations(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body, Function &context) {
 //	String &name = fun.name;
 //	silent_assert(not is_operator(name[0]));
 //	trace_assert(not is_operator(name[0]));
@@ -703,11 +702,11 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     if (name and not function_operators.has(name)) {
         if (context.name != "wasp_main") todo("inner functions");
         if (not functions.has(name)) {
-            functions.add(name, *new Function{.name=name, .is_declared=true, .is_used=true});
+            functions.add(name, *new Function{.name=name});
         }
     }
     Function &function = functions[name]; // different from context!
-    function.is_declared = true;
+    function.emit = true;
 
     // todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
     if (setter_operators.has(name) or key_pair_operators.has(name)) {
@@ -737,15 +736,14 @@ Node &groupOperators(Node &expression, Function &context);
 
 Node &groupDeclarations(Node &expression, Function &context) {
     if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
-    if (expression.index("=") == 1)return groupOperators(expression, context);//.setType(setter);
-    if (expression.index(":=") == 1)return groupOperators(expression, context);//.setType(setter); todo const var x := 7
-    if (expression.contains("::="))return groupOperators(expression, context);// global var
-    // else ƒ(x):=g(x)
+    if (expression.contains("=") or expression.contains(":=")) {
+        expression = groupOperators(expression, context);
+    }
     auto first = expression.first();
     if (expression.length == 2 and isType(first.first()) and
         expression.last().kind == objects) {// c style double sin() {}
         expression = groupTypes(expression, context);
-        return groupFunctionDeclaration(first.name, first.type, NIL, first.values(), expression.last(), context);
+        return groupDeclarations(first.name, first.type, NIL, first.values(), expression.last(), context);
     }
     for (Node &node: expression) {
         String &op = node.name;
@@ -768,6 +766,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
         if (node.kind != declaration and not declaration_operators.has(op))
             continue;
         if (op.empty())continue;
+        if (op == "=" or op == ":=") continue; // handle assignment via groupOperators !
         if (op == "::=") continue; // handle globals assignment via groupOperators !
         // todo: public export function jaja (a:num …) := …
 
@@ -798,7 +797,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
 //				error("Symbol already declared as variable: "s + name);
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
-        return groupFunctionDeclaration(name, 0, left, left, rest, context);
+        return groupDeclarations(name, 0, left, left, rest, context);
     }
     return expression;
 }
@@ -1526,8 +1525,8 @@ void clearAnalyzerContext() {
 //    module_cache.clear(); NOO not the cache lol
     types.clear();
     globals.clear();
-    codeIndices.clear();
-    codeIndices.setDefault(-1);
+    functionIndices.clear();
+    functionIndices.setDefault(-1);
     functions.clear();
     analyzed.clear();// todo move much into outer analyze function!
     functions.clear();// always needs to be followed by

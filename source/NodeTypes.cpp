@@ -146,7 +146,6 @@ Type mapType(String arg) {
     else if (arg == "Node const*")return nodes;
     else if (arg == "Node*")return nodes;
 
-    else if (arg == "Int")return type32;
     else if (arg == "Type32")return type32;
     else if (arg == "Type")return type32;
     else if (arg == "Kind")return type32;
@@ -349,7 +348,7 @@ Primitive mapTypeToPrimitive(Node &n) {
         return Primitive::wasm_float64;
     if (n == Charpoint)
         return Primitive::codepoint32;
-    else todo("mapTypeToPrimitive "s + n.serialize());
+    else todow("mapTypeToPrimitive "s + n.serialize());
     return Primitive::unknown_type;
 }
 
