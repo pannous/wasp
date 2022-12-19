@@ -14,6 +14,7 @@
 //#include <cstdarg> // va_list ok in wasm even without wasi!
 #include <cstdlib> // OK in WASM!
 #include <cstdio>
+
 #ifndef WASM
 
 #include <initializer_list> // allow List x={1,2,3};
@@ -49,6 +50,8 @@ static bool debug = true;// clone sub-strings instead of sharing etc
 
 // todo: wrap parser-options
 static bool use_polish_notation;// prefix notation, s-expression parser flag  (html (body)) vs html{body{}}
+
+Node *reconstructWasmNode(wasm_node_index pointer);
 
 // todo
 enum class NodeFlags { // class makes it typesafe
@@ -479,12 +482,25 @@ public:
 //		kind = strings;
     }
 
+
+    Node(smart_pointer_64 smart) {
+        *this = *smartNode(smart);
+    }
+
+//    Node(wasm_node_index index) {
+//        *this = *reconstructWasmNode(index);
+//    }
+
+// ⚠️ c polymorphism NOT TYPE SAFE: all unsigned int are treated as smart_pointer_32 !!
     explicit
     Node(smart_pointer_32 spo) {
         smartType4bit type4Bit = getSmartType(spo);
         int payload = spo << 4 >> 4; // delete 4 bit type header
 //		if (type != int28 and type != float28 )payload = spo << 8 >> 8;
         switch (type4Bit) {
+//            case 0:  duplicate case value: '0' and 'int28' both equal '0'
+//                *this = *reconstructWasmNode(payload);
+//                break;
             case int28:
             case sint28:
                 value.longy = (int) spo;

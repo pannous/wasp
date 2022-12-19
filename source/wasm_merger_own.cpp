@@ -63,7 +63,7 @@ int i32_type = 4;
 
 // https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
 std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code (not the stack values! e.g. 4 bytes for f32.const )
-        {nop,                 0}, // useful for relocation padding call 1 -> call 10000000
+        {nop_,                0}, // useful for relocation padding call 1 -> call 10000000
         {block,               leb},
         {loop,                0},
         {if_i,                0},// precede by i32 result}, follow by i32_type {7f}
@@ -750,13 +750,10 @@ void Linker::WriteDataSegment(const DataSegment &segment, Address offset) {
     WriteOpcode(&stream_, Opcode::I32Const);
     uint32_t data_offset = segment.offset + offset;
     check_silent(data_offset >= 0);
-    tracing = 1;
-    if (data_offset == 8580) {
-        data_offset = 8580 + 7804;// 0x1e7c todo hack bug wth !?!
-        warn("data_offset=8580+7804;// 0x1e7c todo hack bug wth !?!");
-    }
-    tracef("data_offset %u\n", data_offset);
-    WriteU32Leb128(&stream_, data_offset, "offset");
+//    tracing = 1;
+//    tracef("data_offset %u\n", data_offset);
+//    WriteU32Leb128(&stream_, data_offset, "offset"); // fails for data_offset >= 8192
+    WriteFixedU32Leb128(&stream_, data_offset, "offset");// kf 2022-12 'fixed' above ^^ (?)
     WriteOpcode(&stream_, Opcode::End);
     WriteU32Leb128(&stream_, segment.size, "segment size");
     stream_.WriteData(segment.data, segment.size, "segment data");
@@ -934,9 +931,9 @@ void Linker::RemoveRuntimeMainExport() {
         auto is_runtime = contains(bin->name, "wasp");
         for (Export &ex: bin->exports) {
             pos++;
-            if (is_runtime and ex.name == "main")
+            if (is_runtime and ex.name == "wasp_main")
                 bin->exports.remove(pos);// ex
-            if (not is_runtime and ex.name == "_start")
+            if (is_runtime and ex.name == "_start") // not
                 bin->exports.remove(pos);// USE wasp _start to print the result to wasi
         }
     }
@@ -950,7 +947,7 @@ void Linker::RemoveAllExports() {// except _start for stupid wasmtime:
         for (Export &ex: bin->exports) {
             pos++;
             if (ex.kind != ExternalKind::Func)continue;
-            while (bin->exports._size > 0 and not(ex.name == "main" or ex.name == "_start")) {
+            while (bin->exports._size > 0 and not(ex.name == "wasp_main" or ex.name == "_start")) {
                 if (ex.kind != ExternalKind::Func)break;
                 if (!bin->exports.remove(pos))break;
             }
@@ -993,6 +990,7 @@ void Linker::ResolveSymbols() {
                 FunctionImport *&previous_import = import_map[import.name];
                 import.foreign_binary = previous_import->binary;
                 import.foreign_index = previous_import->index;
+                printf("previous_import: %s %d\n", previous_import->binary->name, previous_import->index);
 //                auto *hack = new ExportInfo(new Export{.index=previous_import->sig_index}, previous_import->binary);
 //                import.linked_function= hack;
                 binary->active_function_imports--;
@@ -1206,7 +1204,7 @@ void Linker::CalculateRelocOffsets() {
                     global_count += sec->count;
                     break;
                 case SectionType::Function: {
-                    Index new_offset = total_function_imports - sec->binary->function_imports.size() + function_count;
+                    int new_offset = total_function_imports - sec->binary->function_imports.size() + function_count;
                     binary->function_index_offset = new_offset;
                     function_count += sec->count;
                 }
@@ -1618,7 +1616,7 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
         short new_size = lebByteSize((unsigned long) new_value);
         if (new_size > current_size) {
             uint8_t noper = *(section_start + r->offset + current_size);
-            if (noper != nop) todo(
+            if (noper != nop_) todo(
                     "grow big leb values %d >> %d (%d bytes > %d leb bytes)"s % new_value % cur_value % new_size %
                     current_size);
         }// memory messed up by now

@@ -10,7 +10,7 @@
 // This is googles recommended way of loading WebAssembly.
 <script type="text/javascript">
     ignore = x => x
-    nop = x => ignore(x)
+    nop_ = x => ignore(x)
     // log = x => console.log(x)
     logs = x => console.log(x)
 
@@ -65,24 +65,24 @@
             _Z3powdd: Math.pow,
             atoi: x => parseInt(x),
 
-            fopen: nop,// WASI
-            fseek: nop,
-            ftell: nop,
-            fread: nop,
-            system: nop,
-            access: nop,
+            fopen: nop_,// WASI
+            fseek: nop_,
+            ftell: nop_,
+            fread: nop_,
+            system: nop_,
+            access: nop_,
             _Z11testCurrentv: x => console.log("no tests!"),
             _Z5raisePKc: log,
-            _Z5tracePKc: nop,
-            _ZdlPv: nop,//operator delete(void*) lol
+            _Z5tracePKc: nop_,
+            _ZdlPv: nop_,//operator delete(void*) lol
             _ZSt9terminatev: terminate,
             panic: terminate,
             raise,
-            __cxa_begin_catch: nop,
+            __cxa_begin_catch: nop_,
             __cxa_atexit: log,
             __cxa_demangle: identity,
-            __cxa_guard_acquire: nop,//!?
-            __cxa_guard_release: nop,//
+            __cxa_guard_acquire: nop_,//!?
+            __cxa_guard_release: nop_,//
 
             logs: log,
             logi: log,
@@ -92,13 +92,13 @@
             puts: log,
             putchar: log,
             memset,
-            paint: nop,
-            init_graphics: nop, // canvas init'ed by default
-            requestAnimationFrame: nop,
-            _Z21requestAnimationFramev: nop, // why sometimes mangled?
-            _Z13init_graphicsv: nop,
+            paint: nop_,
+            init_graphics: nop_, // canvas init'ed by default
+            requestAnimationFrame: nop_,
+            _Z21requestAnimationFramev: nop_, // why sometimes mangled?
+            _Z13init_graphicsv: nop_,
             _Z8run_wasmPhi: (bytes, len) => wasmx(loadBytes(bytes, len)),// full circle yay!
-            ext_memcpy: nop,
+            ext_memcpy: nop_,
             sum: (x, y) => x + y,
         }
     };

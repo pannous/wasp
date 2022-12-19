@@ -56,7 +56,7 @@ Map<String, Code> functionCodes; // todo keep in Function
 //List<Function> imports;// from libraries. todo: these are inside functions<> for now!
 
 Module runtime;
-String start = "main";
+String start = "wasp_main";
 
 Type arg_type = voids;// autocast if not int
 //Type last_type = voids;// autocast if not int
@@ -99,7 +99,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
 //	if (eq(s, "=$1"))return tee_local;
     if (eq(s, "return"))return return_block;
     if (eq(s, "nop") or eq(s, "pass"))
-        return nop;
+        return nop_;
     if ((Type) kind == unknown_type)
         error("unknown type should be inferred by now");
     if (kind == voids or kind == void_block or kind == i32t) { // INT32
@@ -776,10 +776,10 @@ Code emitIndexWrite(Node &array, int base, Node offset, Node value0, Function &c
 //	store.add(cast(last_type, valType));
 //	store.add(cast(valType, targetType));
     store.add(cast(last_type, targetType));
-    store.addByte(nop);// reloc padding
-    store.addByte(nop);
-    store.addByte(nop);
-    store.addByte(nop);
+    store.addByte(nop_);// reloc padding
+    store.addByte(nop_);
+    store.addByte(nop_);
+    store.addByte(nop_);
     if (size == 1)store.add(i8_store);
     if (size == 2)store.add(i16_store);
     if (size == 4)store.add(i32_store);
@@ -788,10 +788,10 @@ Code emitIndexWrite(Node &array, int base, Node offset, Node value0, Function &c
     store.add(size > 2 ? 0x02 : 0);// alignment (?) "alignment must not be larger than natural"
     store.add(0);// extra offset (why, wasm?)
 //	store.add(base);// extra offset (why, wasm?)
-    store.addByte(nop);// reloc padding
-    store.addByte(nop);
-    store.addByte(nop);
-    store.addByte(nop);
+    store.addByte(nop_);// reloc padding
+    store.addByte(nop_);
+    store.addByte(nop_);
+    store.addByte(nop_);
 
     return store;
 /*  000101: 41 94 08                   | i32.const 1044
@@ -842,10 +842,10 @@ Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_sta
     int size = currentStackItemSize(array, context);
     Node &pattern = op.first();
     Code load = emitOffset(array, pattern, op.name == "#", context, size, base, base_on_stack);
-    load.addByte(nop);// reloc padding
-    load.addByte(nop);
-    load.addByte(nop);
-    load.addByte(nop);
+    load.addByte(nop_);// reloc padding
+    load.addByte(nop_);
+    load.addByte(nop_);
+    load.addByte(nop_);
     if (size == 1)load.add(i8_load);// i32.load8_u
     if (size == 2)load.add(i16_load);
     if (size == 4)load.add(i32_load);
@@ -853,10 +853,10 @@ Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_sta
     // memarg offset u32 align u32 DOESNT FIT:!?!
     load.add(size > 2 ? 0x02 : 0);// alignment (?)
     load.add(0x00);// ?
-    load.addByte(nop);
-    load.addByte(nop);
-    load.addByte(nop);
-    load.addByte(nop);
+    load.addByte(nop_);
+    load.addByte(nop_);
+    load.addByte(nop_);
+    load.addByte(nop_);
 
     // careful could also be uint8!
     if (size == 1) {
@@ -939,20 +939,20 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
         error("why not on stack?");
         load = load + emitOffset(array, pattern, op.name == "#", context, size, base, base_on_stack);
     }
-    load.addByte(nop);
-    load.addByte(nop);// reloc padding
-    load.addByte(nop);
-    load.addByte(nop);
+    load.addByte(nop_);
+    load.addByte(nop_);// reloc padding
+    load.addByte(nop_);
+    load.addByte(nop_);
     if (size == 1)load.add(i8_load);
     if (size == 2)load.add(i16_load);
     if (size == 4)load.add(i32_load);
     if (size == 8)load.add(i64_load);
     load.add(size > 2 ? 0x02 : 0);// alignment (?)
     load.add(0x00);// ?
-    load.addByte(nop);// reloc padding
-    load.addByte(nop);
-    load.addByte(nop);
-    load.addByte(nop);
+    load.addByte(nop_);// reloc padding
+    load.addByte(nop_);
+    load.addByte(nop_);
+    load.addByte(nop_);
 
 //	if (size == 1)last_type = codepoint32;// todo only if accessing codepoints, not when pointing into UTF8 byte!!
     if (size == 1) {
@@ -1541,7 +1541,7 @@ Code emitConstruct(Node &node, Function &context);
 
 // also init expressions of globals!
 [[nodiscard]]
-Code emitExpression(Node &node, Function &context/*="main"*/) { // expression, node or BODY (list)
+Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
     Code code;
     String &name = node.name;
@@ -1841,7 +1841,7 @@ Code emitCall(Node &fun, Function &context) {
     };
     code.addByte(function_call);
     code.addInt(index);// as LEB!
-    code.addByte(nop);// padding for potential relocation
+    code.addByte(nop_);// padding for potential relocation
     context.is_used = true;
 
     // todo multi-value
@@ -2270,7 +2270,7 @@ Code emitBlock(Node &node, Function &context) {
 #endif
 
 
-//	if(context=="main" or (context.abi==wasp and returnTypes.size()<2))
+//	if(context=="wasp_main" or (context.abi==wasp and returnTypes.size()<2))
 //		block.addInt(last_typo);// should have been added to signature before, except for main!
 // make sure block has correct wasm type signature!
 
@@ -2431,7 +2431,7 @@ Code emitCodeSection(Node &root) {
         Function &context = functions[declared];// todo use more often;)
         if (not context.emit)continue;
         if (declared.empty())error("Bug: empty context name (how?)");
-        if (declared != "main") print("declared context: "s + declared);
+        if (declared != "wasp_main") print("declared context: "s + declared);
         if (not functionIndices.has(declared)) {// used or not!
             functionIndices[declared] = ++last_index;
 //            context.index=last_index; todo what if it already had different index!?
@@ -2442,12 +2442,17 @@ Code emitCodeSection(Node &root) {
     int main_offset = functionIndices.has(start) ? functionIndices[start] : 0;
     if (main_offset >= 0x80) todow("leb main_offset")
 
+    int print_node_import = functionIndices.has("printNode") ? functionIndices["printNode"] : 0;
 
 // https://pengowray.github.io/wasm-ops/
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (context block)' opcode @+39
 //	byte code_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
     byte code_nop[] = {0/*locals_count*/, end_block};// NOP
-    byte code_start[] = {0/*locals_count*/, call_, (byte) main_offset, nop, nop, drop, end_block};// needs own type etc
+    byte code_start[] = {0/*locals_count*/, call_, (byte) main_offset, nop_, nop_, drop,
+                         end_block};// needs own type etc
+//    if(print_node_import)
+// needs runtime or merge with print_node.wasm
+//    byte code_start[] = {0 , call_, (byte) main_offset, nop_, nop_,call_,(byte)print_node_import, end_block};
     byte code_id[] = {1/*locals_count*/, 1/*one of type: */, i32t, get_local, 0, return_block, end_block}; // NOP
     byte code_square_d[] = {1/*locals_count*/, 1/* of type: */, f64t, get_local, 0, get_local, 0, f64_mul,
                             return_block, end_block};
@@ -2473,7 +2478,7 @@ Code emitCodeSection(Node &root) {
                               local_get, 0,// string* or char** ⚠️ use put_chars for char*
                               i32_const, 1,// #string
                               i32_const, 8,// out chars written => &trash
-                              call_, (byte) fd_write_import, nop, nop,
+                              call_, (byte) fd_write_import, nop_, nop_,
                               end_block};
 
     // char* in wasp abi always have header at -8
@@ -2483,7 +2488,7 @@ Code emitCodeSection(Node &root) {
                         i32_const, 8, i32_sub,//  char* in wasp abi always have header at -8
                         i32_const, 1,// #string
                         i32_const, 8,// out chars written => &trash
-                        call_, (byte) fd_write_import, nop, nop,
+                        call_, (byte) fd_write_import, nop_, nop_,
                         end_block};
 
 
@@ -2532,7 +2537,7 @@ Code emitCodeSection(Node &root) {
             code_blocks = code_blocks + encodeVector(Code(code_quit, sizeof(code_quit)));
     }
 
-    Code main_block = emitBlock(root, functions["main"]);// after imports and builtins
+    Code main_block = emitBlock(root, functions["wasp_main"]);// after imports and builtins
 
     if (start) {
         if (main_block.length == 0)
@@ -3019,7 +3024,7 @@ Code &compile(String code, bool clean) {
 
     Node parsed = parse(code);
 
-    Node &ast = analyze(parsed, functions["main"]);
+    Node &ast = analyze(parsed, functions["wasp_main"]);
     functions["fd_write"].signature.wasm_return_type = int32;
 //	preRegisterSignatures();// todo remove after fixing Signature BUG!!
 //	check(functions["log10"].is_import)

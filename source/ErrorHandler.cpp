@@ -118,7 +118,7 @@ static void signal_segv(int signum, siginfo_t *info, void *ptr) {
 						 dlinfo.dli_fname);
 
 
-			if(dlinfo.dli_sname && !strcmp(dlinfo.dli_sname, "main"))
+			if(dlinfo.dli_sname && !strcmp(dlinfo.dli_sname, "wasp_main"))
 				break;
 
 			ip = bp[1];
@@ -138,7 +138,6 @@ static void signal_segv(int signum, siginfo_t *info, void *ptr) {
 		sigsegv_outp("Not printing stack strace.");
 #endif
 #endif
-
 	_exit(-1);
 }
 // Alternative: turn SIGSEGV into c++ exception https://stackoverflow.com/questions/2350489/how-to-catch-segmentation-fault-in-linux

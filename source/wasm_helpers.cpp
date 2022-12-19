@@ -1,7 +1,15 @@
-#include <cmath>
 #include "wasm_helpers.h"
 #include "Node.h"
+#include <cmath>
 
+// functions in this file are wasm realted and applicable in both the guest and host context
+// For implementations witch are only applicable in guest OR host see wasm_helpers_host.cpp / wasm_helpers_wasm.cpp
+
+
+// call this from builtin _start => wasp_main !
+extern "C" void printNode(smart_pointer_64 node) {
+    print(smartNode(node));
+}
 
 const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm compiled as 'RUNTIME_ONLY'";
 #ifdef RUNTIME_ONLY // No Angle.cpp!
@@ -126,11 +134,15 @@ int raise(chars error) {
 
 // wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and print()
 double sqrt1(double a) {
-#ifndef WASM
+#if WASM
+    // IT WORKS!
+    __asm("local.get 0");
+    __asm("f64.sqrt");
+    __asm("local.set 0");
+    return a;
+#else
     return sqrt(a);
 #endif
-    todo("wasm has it's own sqrt. how to add wasm inline ");
-    return -1;
 }
 
 // todo: remove this useless test function
