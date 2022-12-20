@@ -1525,8 +1525,8 @@ void clearAnalyzerContext() {
 //    module_cache.clear(); NOO not the cache lol
     types.clear();
     globals.clear();
-    functionIndices.clear();
-    functionIndices.setDefault(-1);
+    code_indices.clear();
+    code_indices.setDefault(-1);
     functions.clear();
     analyzed.clear();// todo move much into outer analyze function!
     functions.clear();// always needs to be followed by
