@@ -25,6 +25,7 @@ Module *module; // todo: use?
 bool use_interpreter = false;
 Node &result = *new Node();
 WitReader witReader;
+List<String> aliases(String name);
 
 List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
 List<String> class_keywords = {"struct", "type", "class", "prototype",
@@ -382,6 +383,9 @@ List<String> collectOperators(Node &expression) {
         else if (operator_list.has(name))
             //			if (op.name.in(operator_list))
             operators.add(name);
+        else if (op.kind == Kind::operators)
+            operators.add(op.name);
+
 //else if (suffixOperators.has(op.name+"…"))
 //	operators.add(op.name);
         //		if (op.name.in(function_list))
@@ -618,7 +622,6 @@ Node &groupSetter(String name, Node &body, Function &context) {
 
 Node extractReturnTypes(Node decl, Node body);
 
-List<String> aliases(String name);
 
 Type preEvaluateType(Node &node, Function &context);
 
@@ -890,10 +893,9 @@ Node &groupOperators(Node &expression, Function &context) {
             }
             if (op == "^" or op == "^^" or op == "**") {// todo NORM operators earlier
                 findLibraryFunction("pow", false);
-                functions["pow"].is_used = true;// todo just one
-                functions["powd"].is_used = true;
-                functions["powi"].is_used = true;
-                functions["powf"].is_used = true;
+//                findLibraryFunction("powi", false);
+//                functions["pow"].is_used = true;
+//                functions["powi"].is_used = true;
             }
             if (suffixOperators.has(op)) { // x²
                 // SUFFIX Operators
@@ -1142,10 +1144,12 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             maxArity--;// ?
             minArity--;
         }
-        if (arg_length < minArity)
+        if (arg_length < minArity) {
+            print(function);
+            print((String) signature);
             error("missing arguments for function %s, given %d < expected %d. "
                   "defaults and currying not yet supported"s % name % arg_length % minArity);
-        else if (arg_length == 0 and minArity > 0)
+        } else if (arg_length == 0 and minArity > 0)
             error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
 //		else if (rest.first().kind == operators) { // random() + 1 == random + 1
 //			// keep whole expressiona for later analysis in groupOperators!
@@ -1171,6 +1175,8 @@ void addLibraryFunctionAsImport(Function &func) {
     // ⚠️ this function now lives inside Module AND as import inside "wasp_main" functions list, with different wasm_index!
     Function &import = functions[func.name];// copy function info from library/runtime to main module
     import.signature = func.signature;
+    import.signature.type_index = -1;
+    import.signature.parameter_types = func.signature.parameter_types;
     import.is_runtime = false;// because here it is an import!
     import.is_import = true;
     import.is_used = true;
@@ -1209,7 +1215,11 @@ Function *findLibraryFunction(String name, bool searchAliases) {
             use_required(function);
         }
     }
-    return function;
+    auto normed = normOperator(name);
+    if (normed == name)
+        return use_required(function);
+    else
+        return findLibraryFunction(normed, false);
 }
 
 void addLibrary(Module *modul) {
@@ -1245,6 +1255,10 @@ Function *use_required(Function *function) {
 List<String> aliases(String name) {
     List<String> found;
 //	switch (name) // statement requires expression of integer type
+    if (name == "pow") {
+        found.add("powi");
+        found.add("pow_long");
+    }
     if (name == "puti")
         found.add("_Z5printl");
     if (name == "len")
@@ -1264,6 +1278,10 @@ List<String> aliases(String name) {
         found.add("plus");
         found.add("concat");
         found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
+    }
+    if (name == "eq") {
+        found.add("_Z2eqPKcS0_i"); // eq(char const*, char const*, int)
+//        found.add("_Z2eqR6StringPKc"); // eq(String&, char const*)
     }
     if (name == "=") {
 //        found.add("is");
@@ -1548,7 +1566,7 @@ Node runtime_emit(String prog) {
     libraries.clear();// todo reuse
     clearAnalyzerContext();
     clearEmitterContext();
-    Module &runtime = loadModule("wasp-runtime.wasm");
+    Module &runtime = loadRuntime();
     runtime.code.needs_relocate = false;
     Code code = compile(prog, false);// should use libraries!
     code.needs_relocate = false;

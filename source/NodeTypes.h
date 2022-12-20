@@ -104,6 +104,8 @@ enum Valtype {
     i64 = 0x7E, // signed or unsigned? we don't care
     i64t = 0x7E,
     i64s = 0x7E,
+    int64s = 0x7E,  // symbol now used as
+
 //    int64 = 0x7E,  // symbol now used as
 //    typedef int64 int64
 
