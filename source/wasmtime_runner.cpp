@@ -88,14 +88,28 @@ wrap(puts) {
     return NULL;
 }
 
+
+wrap(putx) {
+    int64 i = args[0].of.i64;
+    printf("%lx", i);
+    return NULL;
+}
+
 wrap(puti) {
     int i = args[0].of.i32;
     printf("%d", i);
     return NULL;
 }
 
+
+wrap(putl) {
+    int64 i = args[0].of.i64;
+    printf("%ld", i);
+    return NULL;
+}
+
 wrap(putf) {
-    if ((long) args == 0x08)
+    if ((int64) args == 0x08)
         return NULL;// BUG!
     float f = args[0].of.f32;
     printf("%f", f);
@@ -188,7 +202,7 @@ wrap(todo) {
 
 wrap(absi) {
 //	todo("this function should not be a wasm import, but part of the runtime!!");
-    long i = args[0].of.i32;
+    int64 i = args[0].of.i32;
     results[0].of.i32 = i > 0 ? i : -1;
     return NULL;
 }
@@ -262,7 +276,10 @@ wasm_wrap *link_import(String name) {
 //	if (name == "logs") return &wrap_puts;
 //	if (name == "logi") return &wrap_puti;
 //    if (name == "logc") return &wrap_putc;
+// todo: map these to mangled print_xyz !
+    if (name == "putx") return &wrap_putx;
     if (name == "puti") return &wrap_puti;
+    if (name == "putl") return &wrap_puti;
     if (name == "puts") return &wrap_puts;
     if (name == "putf") return &wrap_putf;
     if (name == "putd") return &wrap_putd;
@@ -338,7 +355,7 @@ void add_wasmtime_memory() {
 }
 
 
-extern "C" long run_wasm(unsigned char *data, int size) {
+extern "C" int64 run_wasm(unsigned char *data, int size) {
     if (!done)
         init_wasmtime();
     wasmtime_error_t *error;

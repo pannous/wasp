@@ -92,7 +92,7 @@ void BindImports(Module *module, std::vector<Ref> &imports, Store &store) {
 }
 
 // wabt has HORRIBLE api, but ok
-extern "C" long run_wasm(bytes buffer, int buf_size) {
+extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     Store store;
     ModuleDesc module_desc;
     bool kReadDebugNames = true;
@@ -168,7 +168,7 @@ int fileSize1(char const *file) {
 }
 
 
-long run_wasm_file(char *wasm_path) {
+int64 run_wasm_file(char *wasm_path) {
     int size = fileSize1(wasm_path);
     if (size <= 0)error("File not found: "s + wasm_path);
     unsigned char buffer[size];

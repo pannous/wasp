@@ -127,7 +127,7 @@ wrap(todo) {
 
 wrap(absi) {
 //	todo("this function should not be a wasm import, but part of the runtime!!");
-	long i = args[0].data->of.i32;
+	int64 i = args[0].data->of.i32;
 	results[0].data->of.i32 = i > 0 ? i : -1;
 	return NULL;
 }
@@ -428,7 +428,7 @@ wasm_func_t *findFunction(wasm_extern_vec_t exports, wasm_exporttype_vec_t expor
 }
 
 
-extern "C" long run_wasm(bytes wasm_bytes, int len) {
+extern "C" int64 run_wasm(bytes wasm_bytes, int len) {
     if (!done)init_wasmer();
     wasm_byte_vec_t wasmBytes = {(size_t) len, (char *) wasm_bytes};
     wasm_module_t *module = wasm_module_new(store, &wasmBytes);

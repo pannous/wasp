@@ -43,7 +43,7 @@ defaults write com.apple.WebKit.WebContent WebKitDeveloperExtras -bool true
 
 class Wait {
 public:
-    void done(long result) {
+    void done(int64 result) {
         pthread_mutex_lock(&m_mutex);
         m_done = true;
         m_result = result;
@@ -51,7 +51,7 @@ public:
         pthread_mutex_unlock(&m_mutex);
     }
 
-    void done(long result, long type) {
+    void done(int64 result, int64 type) {
         pthread_mutex_lock(&m_mutex);
         m_done = true;
         m_result = result;
@@ -67,9 +67,9 @@ public:
         pthread_mutex_unlock(&m_mutex);
     }
 
-    long result() {
-        long r;
-        long t;
+    int64 result() {
+        int64 r;
+        int64 t;
         pthread_mutex_lock(&m_mutex);
         r = m_result;
         m_done = false;// restart / allow another wait
@@ -88,8 +88,8 @@ public:
 
 private:
 //	atomic_int
-    long m_result = -1;
-    long m_type = -1;
+    int64 m_result = -1;
+    int64 m_type = -1;
     pthread_mutex_t m_mutex;
     pthread_cond_t m_cond;
     bool m_done;
@@ -177,7 +177,7 @@ void navigate(String url) {
     w.navigate(page);
 }
 
-long open_webview(String url = "") {
+int64 open_webview(String url = "") {
     if (!url.empty())page = url;
     printf("\nWebView!\n");
 
@@ -221,7 +221,7 @@ long open_webview(String url = "") {
         auto val = webview::json_parse(string, "", 1);
         waiter.done(std::stol(val), std::stol(type));
 #else
-        long result0 = std::stol(string);
+        int64 result0 = std::stol(string);
         printf("wasm_done  result = %d \n", result0);
         waiter.done(result0);
 #endif
@@ -294,7 +294,7 @@ long open_webview(String url = "") {
     return 0;
 }
 
-long init_graphics() {
+int64 init_graphics() {
     open_webview();
 }
 
@@ -321,7 +321,8 @@ int paint(int wasm_offset) {
 
 Node
 #else
-long
+
+int64
 #endif
 run_wasm_sync(unsigned char *bytes, int length) {
     // 1. save to APPDATA folder and then fetch via js
@@ -349,7 +350,7 @@ run_wasm_sync(unsigned char *bytes, int length) {
 }
 
 
-extern "C" long run_wasm(unsigned char *bytes, int length) {
+extern "C" int64 run_wasm(unsigned char *bytes, int length) {
     run_wasm_sync(bytes, length);
     return waiter.result();
 }

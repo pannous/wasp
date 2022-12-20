@@ -35,19 +35,19 @@ char *data;// any data to be stored to wasm: values of variables, strings, nodes
 int data_index_end = 0;// position to write more data = end + length of data section
 int last_object_pointer = 0;// outside stack
 //int last_data_pointer = 0;// last_data plus header , see referenceDataIndices
-//Map<String *, long> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
+//Map<String *, int64> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 // todo: put into Function.locals :
 typedef int nodehash;
-Map<long, int> referenceNodeIndices;// wasm pointers to nodes
-Map<String, long> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
-Map<String, long> referenceDataIndices; // wasm pointers directly to object data, redundant ^^ TODO REMOVE
+Map<int64, int> referenceNodeIndices;// wasm pointers to nodes
+Map<String, int64> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
+Map<String, int64> referenceDataIndices; // wasm pointers directly to object data, redundant ^^ TODO REMOVE
 Map<String, Node> referenceMap; // lookup types… todo: Node pointer? or copy ok?
 Map<String, int> typeMap;// wasm type index for funcTypeSection. todo keep in Function
-Map<String, int> code_indices; // todo keep in Function
+Map<String, int> call_indices; // todo keep in Function
 Map<String, Code> functionCodes; // todo keep in Function
 //Map<String, Signature> functions;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
 
-//Map<long,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
+//Map<int64,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
 
 //Map<String, Valtype> return_types;
 //Map<int, List<String>> locals;
@@ -302,7 +302,7 @@ typedef unsigned char byte;
 
 // https://webassembly.github.io/spec/core/binary/modules.html#code-section
 [[nodiscard]]
-Code encodeLocal(long count, Valtype type) {
+Code encodeLocal(int64 count, Valtype type) {
     return unsignedLEB128(count).addByte(type);
 }
 
@@ -353,9 +353,9 @@ void emitPadding(int num, byte val = 0) {
         data[data_index_end++] = val;
 }
 
-void emitPaddingAlignment(short size) { // e.g. 8 for long padding BEFORE emitLongData() / emitData(long)
+void emitPaddingAlignment(short size) { // e.g. 8 for int64 padding BEFORE emitLongData() / emitData(int64)
     emitPadding((size - (data_index_end % size)) %
-                size);// fill up to long padding ⚠️ the field-sizes before node.value MUST sum up to n*8!
+                size);// fill up to int64 padding ⚠️ the field-sizes before node.value MUST sum up to n*8!
 }
 
 
@@ -367,22 +367,22 @@ void emitByteData(byte i) {
 
 // append short to wasm data memory
 void emitShortData(short i, bool pad = false) {// ⚠️ DON'T PAD INSIDE STRUCTS!?
-    if (pad)while (((long) (data + data_index_end) % 2))data_index_end++;// type 'int' requires 4 byte alignment
+    if (pad)while (((int64) (data + data_index_end) % 2))data_index_end++;// type 'int' requires 4 byte alignment
     *(short *) (data + data_index_end) = i;
     data_index_end += 2;
 }
 
 // append int to wasm data memory
 void emitIntData(int i, bool pad = true) {
-    if (pad)while (((long) (data + data_index_end) % 4))data_index_end++;// type 'int' requires 4 byte alignment
+    if (pad)while (((int64) (data + data_index_end) % 4))data_index_end++;// type 'int' requires 4 byte alignment
     *(int *) (data + data_index_end) = i;
     data_index_end += 4;
 }
 
-// append long to wasm data memory
-void emitLongData(long i, bool pad = false) { // ⚠️ DON'T PAD INSIDE STRUCTS! pad before!
-    if (pad)while (((long) (data + data_index_end) % 8))data_index_end++;// type 'long' requires 8 byte alignment
-    *(long *) (data + data_index_end) = i;
+// append int64 to wasm data memory
+void emitLongData(int64 i, bool pad = false) { // ⚠️ DON'T PAD INSIDE STRUCTS! pad before!
+    if (pad)while (((int64) (data + data_index_end) % 8))data_index_end++;// type 'int64' requires 8 byte alignment
+    *(int64 *) (data + data_index_end) = i;
     data_index_end += 8;
 }
 
@@ -399,11 +399,11 @@ Code emitWaspString(Node &node, Function &context) {
 }
 
 
-//typedef long long wasm_node_index;
+//typedef int64 wasm_node_index;
 wasm_node_index emitNodeBinary(Node &node, Function &context) {
-//    if((long)&node < 0x100000000L)
-//        return (long)&node; // inside wasm stack context, we can just pass around the wasm_node_index. Todo, but not in compile context!
-    long hash = node.hash();
+//    if((int64)&node < 0x100000000L)
+//        return (int64)&node; // inside wasm stack context, we can just pass around the wasm_node_index. Todo, but not in compile context!
+    int64 hash = node.hash();
     if (referenceNodeIndices.has(hash))
         return referenceNodeIndices[hash];
     else referenceNodeIndices[hash] = -1;// fixup marker for cyclic graphs todo …
@@ -529,13 +529,13 @@ Code emitArray(Node &node, Function &context) {
     for (Node &child: node) {
         if (not isPrimitive(child)) {
             warn("non primitive element forces node emission");
-            return Code((long) emitNodeBinary(node, context), false);
+            return Code((int64) emitNodeBinary(node, context), false);
         }
         if (child.kind != value_kind) {
             // todo try coherence lifting e.g. [1 'a' 'ü'] => codepoint[]
             warn("non coherent element forces node emission");
             warn("collection kind %s versus element kind %s "s % typeName(value_kind) % typeName(child.kind));
-            return Code((long) emitNodeBinary(node, context), false);
+            return Code((int64) emitNodeBinary(node, context), false);
         }
         children.add(child.value.longy);
     }
@@ -574,7 +574,7 @@ Code emitArray(Node &node, Function &context) {
     }
 
 //    last_value_pointer = data_index_end;
-//	assert_equals((long) data_index_end, (long) pointer + array_header_length);
+//	assert_equals((int64) data_index_end, (int64) pointer + array_header_length);
     Code ignore;
 
     String ref = node.name;
@@ -641,7 +641,7 @@ short arrayElementSize(Node &node) {
             smallestCommonitemSize = maxi(smallestCommonitemSize, stackItemSize(valtype));
 //            todo("child.type comparison");
         } else {
-            unsigned long long val = abs(child.value.longy) * 2;// *2 for signed variants
+            uint64 val = abs(child.value.longy) * 2;// *2 for signed variants
 //        if(val<=1) bit vector
 //        if(val>1)itemSize = maxi(itemSize,1); // byte
             if (val >= 0x100)smallestCommonitemSize = maxi(smallestCommonitemSize, 2);// short
@@ -992,8 +992,8 @@ Code emitData(Node &node, Function &context) {
 //                    *(byte *) (data + data_index_end) = node.value.longy;
 //            else
             if (node.value.longy > 0xF0000000) {
-                error("true long big ints currently not supported");
-                *(long *) (data + data_index_end) = node.value.longy;
+                error("true int64 big ints currently not supported");
+                *(int64 *) (data + data_index_end) = node.value.longy;
                 data_index_end += 8;
                 last_type = i64t;
             } else {
@@ -1307,11 +1307,7 @@ Code emitOperator(Node &node, Function &context) {
 //	name = normOperator(name);
     if (node.name == "nop" or node.name == "pass")return code;
     if (node.length == 0 and name == "=") return code;// BUG
-    int index = code_indices.position(name);
-    if (context.code_index < 0)context.code_index = index;// tdoo remove cluch
-    if (index < 0)index = context.code_index;
-    check_eq(index, context.code_index);
-    if (name == "‖")index = -1;// AHCK!
+
     if (name == "then")return emitIf(*node.parent, context);// pure if handled before
     auto first = node.first();
     if (name == ":=")return emitDeclaration(node, first);
@@ -1357,9 +1353,11 @@ Code emitOperator(Node &node, Function &context) {
      * PARAMETERS of operators (but not functions) are now on the STACK!!
         no more need for (Node &arg : node) emitExpression(arg,context);;
      * */
-    if (index >= 0) {// FUNCTION CALL
+    if (functions.has(name) and not(name == "‖")) {
         print("OPERATOR / FUNCTION CALL: %s\n"s % name);
         code.addByte(function_call);
+        int index = functions[name].call_index;// could be import
+        if (index < 0)error("function %s must have call_index by now"s % name);
         code.add(index);
         return code;
     }
@@ -1462,11 +1460,11 @@ Code emitOperator(Node &node, Function &context) {
 //			code.add(emitCall(*new Node("powi"), context));
 
     } else {
-        error("unknown opcode / call / symbol: "s + name + " : " + index);
+        error("unknown opcode / call / symbol: "s + name);
     }
 
     if (opcode == get_local and node.length == 1) {// arg AFTER op (not as const!)
-        long last_local = first.value.longy;
+        int64 last_local = first.value.longy;
         code.push(last_local);
         last_type = context.locals.at(last_local).typo;
     }
@@ -1562,7 +1560,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //	}
     //	or node.kind == groups ??? NO!
 
-    if ((node.kind == call or node.kind == reference or node.kind == operators) and code_indices.has(name)) {
+    if ((node.kind == call or node.kind == reference or node.kind == operators) and call_indices.has(name)) {
         if (not isFunction(name, true));//				todo("how?");
         else
             return emitCall(node, context);
@@ -1808,13 +1806,13 @@ Code emitCall(Node &fun, Function &context) {
     Function &function = functions[name];// NEW context! but don't write context ref!
     Signature &signature = function.signature;
 
-    int index = function.code_index;
-    if (code_indices.has(name)) {
-        if (index >= 0 and index != code_indices[name]) todow("index!=functionIndices[name]");
-        index = code_indices[name];
+    int index = function.call_index;
+    if (call_indices.has(name)) {
+        if (index >= 0 and index != call_indices[name]) todo("index!=functionIndices[name]");
+        index = call_indices[name];
     } else {
-//		breakpoint_helper
-//		warn("relying on context.index OK?");
+        breakpoint_helper
+        warn("relying on context.index OK?");
 //		functionIndices[name] = context.index;
     }
     if (index < 0)
@@ -1930,7 +1928,7 @@ Code cast(Node &from, Node &to, Function &context) {
 Code emitDeclaration(Node &fun, Node &body) {
     // todo: x := 7 vs x := y*y
     //
-    if (not code_indices.has(fun.name)) {
+    if (not call_indices.has(fun.name)) {
         error("Declaration %s need to be registered before in the parser so they can be called from main code!"s %
               fun.name);
 //		functionIndices[fun.name] = functionIndices.size();
@@ -2115,7 +2113,7 @@ Code emitIf_OLD(Node &node) {
 Code Call(char *symbol) {//},Node* args=0) {
     Code code;
     code.addByte(function_call);
-    int i = code_indices.position(symbol);
+    int i = call_indices.position(symbol);
     if (i < 0)error("UNKNOWN symbol "s + symbol);
 //	code.opcode(unsignedLEB128(i),8);
     code.addByte(i);
@@ -2320,25 +2318,30 @@ Code emitTypeSection() {
             todo("how did we get here?");
             continue;
         }// todo how did we get here?
-        Function &context = functions[fun];
-        Signature &signature = context.signature;
-        if (not context.emit /*export/declarations*/ and not context.is_used /*imports*/) {
+        Function &function = functions[fun];
+        Signature &signature = function.signature;
+        if (not function.emit /*export/declarations*/ and not function.is_used /*imports*/) {
             trace("not context.emit => skipping unused type for "s + fun);
             continue;
         }
-        if (context.is_runtime)
+        if (not call_indices.has(fun)) {
+            warn("call_indices too late?");
+            function.call_index = ++last_index;
+            call_indices[fun] = last_index;
+        }
+
+        if (function.is_runtime)
             continue;
-        if (context.signature.is_handled)
+        if (function.signature.is_handled)
             continue;
 //		if(context.is_import) // types in import section!
 //			continue;
-        if (not code_indices.has(fun))
-            code_indices[fun] = ++last_index;
+
 //			error("context %s should be registered in functionIndices by now"s % fun);
 
         typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
-        context.signature.type_index = typeMap[fun];// todo check old index? todo shared signatures!?!
-        context.signature.is_handled = true;// todo remove
+        function.signature.type_index = typeMap[fun];// todo check old index? todo shared signatures!?!
+        function.signature.is_handled = true;// todo remove
         int param_count = signature.size();
 //		Code td = {0x60 /*const type form*/, param_count};
         Code td = Code(func) + Code(param_count);
@@ -2369,10 +2372,15 @@ Code emitImportSection() {
     Code import_code;
     import_count = 0;
     for (String fun: functions) {
-        String import_module = "env";
         Function &function = functions[fun];
+        if (fun.empty() && function.is_used)error("empty function bug");
+        String import_module = "env";
+        if (function.module and not function.module->name.empty())
+            import_module = function.module->name;
         if (function.is_import and function.is_used and not function.is_builtin) {
-            function.code_index = import_count++;
+            if (function.call_index >= 0)
+                check_silent(function.call_index == import_count) // todo remove when tested
+            function.call_index = import_count++;
             if (function.module and not function.module->name.empty())
                 import_module = function.module->name;
             auto type = typeMap[fun];
@@ -2380,6 +2388,7 @@ Code emitImportSection() {
                     import_code + encodeString(import_module) + encodeString(fun).addByte(func_export).addInt(type);
         }
     }
+
 
     if (runtime_function_offset) {
         if (import_count > 0)
@@ -2417,23 +2426,29 @@ Code emitCodeSection(Node &root) {
 
 //	int new_count;
 //	new_count = declaredFunctions.size();
+//    check_is(last_index,import_count)
+
+// todo: this whole block can be removed as call_indices are assigned earlier
     for (auto declared: functions) {
         if (declared == "global")continue;
-        Function &context = functions[declared];// todo use more often;)
-        if (not context.emit)continue;
+        Function &function = functions[declared];// todo use more often;)
+        if (not function.emit)continue;
         if (declared.empty())error("Bug: empty context name (how?)");
         if (declared != "wasp_main") print("declared context: "s + declared);
-        if (not code_indices.has(declared)) {// used or not!
-            code_indices[declared] = ++last_index;
-//            context.index=last_index; todo what if it already had different index!?
+        if (not call_indices.has(declared)) {// used or not!
+            if (function.call_index >= 0 or function.code_index >= 0)
+                error("function %s #%d already has index %d ≠ %d"s %
+                      (String) function % function.code_index % function.call_index % last_index + 1);
+            function.code_index = ++last_index;
+            call_indices[declared] = last_index;
         }
     }
 
-    int fd_write_import = code_indices.has("fd_write") ? code_indices["fd_write"] : 0;
-    int main_offset = code_indices.has(start) ? code_indices[start] : 0;
+    int fd_write_import = call_indices.has("fd_write") ? call_indices["fd_write"] : 0;
+    int main_offset = call_indices.has(start) ? call_indices[start] : 0;
     if (main_offset >= 0x80) todow("leb main_offset")
 
-    int print_node_import = code_indices.has("printNode") ? code_indices["printNode"] : 0;
+    int print_node_import = call_indices.has("printNode") ? call_indices["printNode"] : 0;
 
 // https://pengowray.github.io/wasm-ops/
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (context block)' opcode @+39
@@ -2553,7 +2568,7 @@ Code emitCodeSection(Node &root) {
         if (context.is_builtin and context.is_used) builtin_count++;
     }
 
-    bool has_main = start and code_indices.has(start);
+    bool has_main = start and call_indices.has(start);
     int function_codes = functionCodes.size();
     function_block_count = has_main /*main*/ + builtin_count + function_codes;
     auto codeSection = createSection(code_section, Code(function_block_count) + code_blocks);
@@ -2568,8 +2583,8 @@ Code emitExportSection() {
     if (!start)// todo : allow arbirtrary exports, or export all
         return createSection(export_section, Code(0));
     int main_offset = 0;
-    if (code_indices.has(start))
-        main_offset = code_indices[start];
+    if (call_indices.has(start))
+        main_offset = call_indices[start];
     Code memoryExport;// empty by default
     if (memoryHandling == export_memory) {
         exports_count++;
@@ -2585,8 +2600,8 @@ Code emitExportSection() {
     if (use_wasi) {
         exports_count++;
         int start_offset = main_offset;
-        if (code_indices["_start"])
-            start_offset = code_indices["_start"];
+        if (call_indices["_start"])
+            start_offset = call_indices["_start"];
         mainExport = mainExport + encodeString("_start") + (byte) func_export + Code(start_offset);
     }
 
@@ -2691,19 +2706,19 @@ Code emitFuncTypeSection() {// depends on codeSection, but must appear earlier i
 
     Code types_of_functions = Code(function_block_count);//  = Code(types_data, sizeof(types_data));
 //	order matters in functionType section! must be same as in functionIndices
-    for (int i = 0; i < function_block_count; ++i) {
+    for (int code_index = 0; code_index < function_block_count; ++code_index) {
         //	import section types separate WTF wasm
-        int index = i + import_count + runtime_function_offset;
-        String *fun = code_indices.lookup(index);
+        int call_index = code_index + import_count + runtime_function_offset;
+        String *fun = call_indices.lookup(call_index);
         if (!fun) {
-            print(code_indices);
-            error("missing typeMap for index "s + index);
+            print(call_indices);
+            error("missing typeMap for index "s + call_index);
         } else {
             int typeIndex = typeMap[*fun];
             if (typeIndex >= 0) // just an implicit list funcId->typeIndex
                 types_of_functions.push((int) typeIndex, false);
             else if (runtime_function_offset == 0) // todo else ASSUME all handled correctly before
-                error("missing typeMap for context %s index %d "s % fun % i);
+                error("missing typeMap for context %s index %d "s % fun % code_index);
         }
     }
     // @ WASM : WHY DIDN'T YOU JUST ADD THIS AS A FIELD IN THE FUNC STRUCT???
@@ -2723,11 +2738,11 @@ Code emitNameSection() {
 
     int total_func_count = last_index + 1;// imports + function_count, all receive names
     int usedNames = 0;
+    // (import "env" "putf" (func $putf (type 1))) imports have name too
     for (int index = runtime_function_offset; index < total_func_count; index++) {
         // danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
-        String *name = code_indices.lookup(index);
-        if (not name)continue;// todo: no name bug (not enough mem?)
-        if (functions[*name].is_import and runtime_function_offset > 0)continue;
+        String *name = call_indices.lookup(index);
+        if (not name) todo("no name for %d! bug (not enough mem?)"s % index);
         nameMap = nameMap + Code(index) + Code(*name);
         usedNames += 1;
     }
@@ -2741,7 +2756,7 @@ Code emitNameSection() {
     Code localNameMap;
     int usedLocals = 0;
     for (int index = runtime_function_offset; index <= last_index; index++) {
-        String *key = code_indices.lookup(index);
+        String *key = call_indices.lookup(index);
         if (!key or key->empty())continue;
         Function &context = functions[*key];
 //        List<String> localNames = context.locals[*key];// including arguments
@@ -2855,16 +2870,18 @@ Code dwarfSection() {
  */
 
 // see preRegisterSignatures
-void add_builtins() {
+void add_imports_and_builtins() {
     import_count = 0;
     builtin_count = 0;
     for (auto sig: functions) {// imports first
-        Function &context = functions[sig];
-        if (context.is_import and context.is_used) {
-            code_indices[sig] = ++last_index;
-            if (context.code_index >= 0 and context.code_index != last_index)
-                error("context already has index %d ≠ %d"s % context.code_index % last_index);
-            context.code_index = last_index;
+        Function &function = functions[sig];
+        if (function.is_import and function.is_used) {
+            if (function.code_index >= 0)
+                error("imports have no code_index!");
+            if (function.call_index >= 0 and function.call_index != last_index)
+                error("context already has index %d ≠ %d"s % function.code_index % last_index);
+            function.call_index = ++last_index;
+            call_indices[sig] = last_index;
             import_count++;
         }
     }
@@ -2873,10 +2890,11 @@ void add_builtins() {
         if (function.is_builtin and function.is_used) {
             if (function.code_index >= 0 and function.code_index + 1 != last_index) {
                 werror("function %s already has index %d ≠ %d"s % function.name % function.code_index % last_index);
-                code_indices[sig] = function.code_index;
+                call_indices[sig] = function.code_index;
             } else {
-                code_indices[sig] = ++last_index;
-                function.code_index = last_index;
+                function.call_index = ++last_index;
+                function.code_index = function.call_index - import_count;
+                call_indices[sig] = last_index;
                 builtin_count++;
             }
         }
@@ -2901,8 +2919,8 @@ void clearEmitterContext() {
     referenceDataIndices.clear();
     referenceNodeIndices.clear();
     functionCodes.clear();
-    code_indices.setDefault(-1);
-    code_indices.clear();// ok preregistered functions are in functions
+    call_indices.setDefault(-1);
+    call_indices.clear();// ok preregistered functions are in functions
 //	functionCodes.setDefault(Code());
     typeMap.setDefault(-1);
     typeMap.clear();
@@ -2915,7 +2933,7 @@ void clearEmitterContext() {
     emitLongData(0, true);// NULL PAGE! no object shall ever read or write from address 0 (sanity measure)
     emitLongData(0, true);// TRASH sink, e.g. for writing fd_write(fd,iov*,len, &trash out)
 //    emitString(*new Node("__WASP_DATA__\0"), *new Function());
-//    while (((long) data) % 8)data++;// type 'long', which requires 8 byte alignment
+//    while (((int64) data) % 8)data++;// type 'int64', which requires 8 byte alignment
 }
 
 [[nodiscard]]
@@ -2945,20 +2963,20 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
         last_index = -1;
         runtime = *new Module();// all zero
         runtime_function_offset = 0;
-        add_builtins();
+        add_imports_and_builtins();
     }
     if (start) {// now AFTER imports and builtins
 //		printf("start: %s\n", start.data);
 //		functions[start] = Signature().returns(i32t);
         functions[start].emit = true;
-        if (!code_indices.has(start))
-            code_indices[start] = ++last_index;
+//            call_indices[start] = ++last_index;
 //			functionIndices[start] =runtime_offset ? runtime_offset + declaredFunctions.size() :  ++last_index;  // AFTER collecting imports!!
-        else
-            error("start already declared: "s + start + " with index " + code_indices[start]);
+//        else
+        if (call_indices.has(start))
+            error("start already declared: "s + start + " with index " + call_indices[start]);
         if (start != "_start" and not functions.has("_start")) {
-            functions["_start"] = {.code_index=++last_index, .name="_start", .is_builtin=true, .is_used=true};
-            code_indices["_start"] = last_index;
+            functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true};
+//            call_indices["_start"] = last_index;
         }
     } else {
 //		functions["_default_context_"] = Signature();

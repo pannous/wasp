@@ -2,11 +2,11 @@
 
 #define allow_untyped_nodes true  // IMPORTANT!  {a b c}#2"=="b" VALID or NOT ?!?
 
-//typedef long long i64;
+//typedef int64 i64;
 typedef long long int64;
 typedef unsigned long long uint64;
 typedef unsigned long long u64;
-//typedef unsigned long long bytes8;
+//typedef uint64 bytes8;
 typedef unsigned char byte;
 typedef const char *chars;
 typedef byte *bytes;
@@ -14,7 +14,7 @@ typedef byte *bytes;
 #define breakpoint_helper printf("\n%s:%d breakpoint_helper\n",__FILE__,__LINE__);
 
 //#define min(a, b) (a < b ? a : b)
-static long min(long a, long b) { return (a < b ? a : b); }
+static int64 min(int64 a, int64 b) { return (a < b ? a : b); }
 
 #if LINUX
 static bool isnumber(char x){return x>='0' and x<='9';}
@@ -39,7 +39,7 @@ static bool isnumber(char x){return x>='0' and x<='9';}
 
 #define internal_error(msg) error1("internal error: " msg,__FILE__,__LINE__)
 
-//typedef long long int64;  = 0x7E, in enum
+//typedef int64 int64;  = 0x7E, in enum
 
 static bool I_know_what_I_am_doing = false;
 
@@ -126,7 +126,7 @@ bytes concat(bytes a, char b, int len);
 bytes concat(char section, bytes a, int len_a);
 
 //inline int abs_i(int x) noexcept;
-//inline long abs_l(long x) noexcept;
+//inline int64 abs_l(int64 x) noexcept;
 //inline float abs_f(float x) noexcept;
 
 //float ln(float y);
@@ -148,12 +148,12 @@ String findFile(String filename, String current_dir);// empty() if not found
 //char *findFile(char* filename);// 0 if not found
 String load(String file);
 
-bool isSmartPointer(long long d);
+bool isSmartPointer(int64 d);
 
-//Node smartValue(long smartPointer);
+//Node smartValue(int64 smartPointer);
 Node *smartNode(smart_pointer_64 smartPointer64);
 
-long file_last_modified(char *file);
+int64 file_last_modified(char *file);
 
 String extractFuncName(const String &fun);
 
@@ -165,7 +165,7 @@ bool isDir(const char *name);
 
 //#define max(a, b) a<b?b:a too many conflicts with math.h common.h …
 //inline just hides export name in wasm, no other optimization todo: maybe … somehow? use maxi! don't care!
-static bool max(long a, long b) {
+static bool max(int64 a, int64 b) {
     return a < b ? b : a;
 }
 
