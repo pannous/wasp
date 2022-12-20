@@ -35,8 +35,8 @@ void free(void *) {/*lol*/}
 
 _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void *) _NOEXCEPT {}
 
-long powl(long a, int b) {
-    long res = 0;
+int64 powl(int64 a, int b) {
+    int64 res = 0;
     int n = 1;
     do {
         if (b & 1) res += a * n;
@@ -46,18 +46,18 @@ long powl(long a, int b) {
     return res;
 }
 
-inline long long doubleToLongBits(double a) {
-    return *((long *) &a);
+inline int64 doubleToLongBits(double a) {
+    return *((int64 *) &a);
 }
 
-inline double longBitsToDouble(long long a) {
+inline double longBitsToDouble(int64 a) {
     return *((double *) &a);
 }
 
 double powd(double a, double b) {
     int x = (int) (doubleToLongBits(a) >> 32);
     int y = (int) (b * (x - 1072632447) + 1072632447);
-    return longBitsToDouble(((long long) y) << 32);
+    return longBitsToDouble(((int64) y) << 32);
 }
 
 double pow(double a, double b) {
@@ -84,12 +84,12 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
     current += size;
 //	if(size>1000)
     bool check_overflow = false;// wasm trap: out of bounds memory access OK
-    if (check_overflow and MEMORY_SIZE and (long) current >= MEMORY_SIZE) {
+    if (check_overflow and MEMORY_SIZE and (int64) current >= MEMORY_SIZE) {
 #ifndef WASI
         error("TOO BIG LOL");
         puti(sizeof(Node));// 64
         puti(sizeof(String));// 20
-        puti(sizeof(Value));// 8 long
+        puti(sizeof(Value));// 8 int64
         puti((int) last);
         puti((int) memory);
         puti((int) current);
@@ -107,6 +107,7 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
 
 int printf(const char *__restrict format, ...) {
 //    todo better
+    error("printf not linked");
     put_chars((char *) format, strlen(format));
     return 1;
 }
@@ -129,7 +130,7 @@ void printf(char const *format, size_t i) {
     print(String(format) % i);
 }
 
-void printf(char const *format, long long l) {
+void printf(char const *format, int64 l) {
     print(String(format) % l);
 }
 
@@ -150,7 +151,7 @@ void printf(chars format, chars i, chars j, chars l) {
     print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
 }
 
-void printf(chars format, long i, long j) {
+void printf(chars format, int64 i, int64 j) {
     if (contains(format, "%ld"))
         print(String(format).replace("%ld", String(i)).replace("%ld", String(j)));
     else
@@ -170,10 +171,6 @@ void printf(chars format, double d) {
     print(String(format) % d);
 }
 
-void printf(chars format, long l) {
-    print(String(format) % l);
-}
-
 void printf(chars format, double i, double j) {
     print(String(format).replace("%f", String(i)).replace("%f", String(j)));
 }
@@ -183,7 +180,7 @@ void printf(chars format, chars val, int value) {
 }
 
 void printf(chars format, void *value) {
-    print(String(format).replace("%p", String((long) value)));
+    print(String(format).replace("%p", String((int64) value)));
 }
 
 //#if MY_WASI
@@ -199,9 +196,9 @@ extern "C" int __cxa_atexit(int, int, int) {
 }
 
 #if not MY_WASM
-extern "C" long run_wasm(bytes buffer, int buf_size) {
+extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     print("⚠️ run_wasm not available. wasp built without runtime and not embedded in a host which exposes the following function:");
-    print("extern long run_wasm(uint8* buffer, size_t buffer_length)");
+    print("extern int64 run_wasm(uint8* buffer, size_t buffer_length)");
     print("Please vote here to make this a WASI standard: https://github.com/WebAssembly/WASI/issues/477");
     error("⚠️ run_wasm not available. You can use wasp-full.wasm which comes with wasm-runtime builtin.");
 //    breakpoint_helper
@@ -242,7 +239,7 @@ void *calloc(size_t num, size_t size) //__attribute__((__malloc__, __warn_unused
     char *mem = (char *) malloc(size * num);
 //#ifndef WASM
     //fails in WASI, why??
-    while (num < MAX_MEM and size / 8 * num > 0) { ((long *) mem)[--num * size / 8] = 0; }
+    while (num < MAX_MEM and size / 8 * num > 0) { ((int64 *) mem)[--num * size / 8] = 0; }
 //#endif
     return mem;
 }
@@ -283,7 +280,7 @@ void _cxa_throw() {
 }
 
 
-void printf(long l) {
+void printf(int64 l) {
     printf("%ld", l);
 }
 
@@ -299,9 +296,9 @@ void memcpy1(bytes dest, bytes source, int i) {
 }
 
 void memcpy0(char *destination, char *source, size_t num) {
-    if ((long) destination + num >= MEMORY_SIZE)return;
+    if ((int64) destination + num >= MEMORY_SIZE)return;
 //		panic();
-    if ((long) source + num >= MEMORY_SIZE)return;
+    if ((int64) source + num >= MEMORY_SIZE)return;
 //		panic();
     while (--num < MAX_MEM) {
         destination[num] = source[num];
@@ -373,44 +370,54 @@ int put_s(String *s) {
     return (int) s;// stdio
 }
 
-void puti(int i) {
+int puti(int i) {
     put_chars(formatLong(i), 0);
-    newline();
+//    newline();
 //    printf("%d", i);
+    return i;
 }
 
-void putl(long long l) {
-    printf("%lld", l);
+int64 putl(int64 l) {
+    put_chars(formatLong(l), 0);
+//    printf("%lld", l);
+    return l;
 }
 
-[[maybe_unused]] void putx(long long l) {
+[[maybe_unused]] int64 putx(int64 l) {
     printf("%llx", l);
+    return l;
 }
 
-void putp(long char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
+void putp(int64 char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
     printf("%s", (char *) char_pointer);
 }
 
-void put_char(codepoint c) {
+codepoint put_char(codepoint c) {
     printf("%c", c);
+    return c;
 }
 
-void putf(float f) {
-    puts(formatLong((long) f));
+float putf(float f) {
+    puts(formatLong((int64) f));
     puts(".");
-    puts(formatLong(((long) (f * 1000)) % 1000));
+    puts(formatLong(((int64) (f * 1000)) % 1000));
+    return f;
 //    printf("%f\n", f);
 }
 
-void putd(double f) {
+
+double putd(double f) {
     printf("%f\n", f);
+    return f;
 }
 
-void putp(void *f) {
+void *putp(void *f) {
     printf("%p\n", f);
+    return f;
 }
 
 #endif
+
 
 
 List<String> arguments() {
@@ -430,7 +437,7 @@ List<String> arguments() {
             auto string = argv[i];
             args.add(String(string));
         }
-    args.capacity = (int) (long) argv;// hack ;)
+    args.capacity = (int) (int64) argv;// hack ;)
     return args;
 }
 
@@ -439,7 +446,7 @@ int main(int argc, char **argv);
 
 //extern "C" int64 wasp_main(); // directly linked
 
-long call_wasp_main(int index) {
+int64 call_wasp_main(int index) {
 //    (elem (;0;) (i32.const 1) func 333 334)
 //    (func (;333;) (type 1) (param i32) (result i32)
 //    __asm ("local.get 0");
@@ -492,18 +499,18 @@ size_t strlen(const char *x) {
     if (!x)return 0;
 #endif
     int l = 0;
-    if ((long long) x >= MEMORY_SIZE || ((long long) x) == 0x200000000LL) {
+    if ((int64) x >= MEMORY_SIZE || ((int64) x) == 0x200000000LL) {
         puts(x);
-//        puti((int) (long) x);// 0x1000000 16777216
+//        puti((int) (int64) x);// 0x1000000 16777216
         error("corrupt string");
     }
-    if ((long long) x == 0x1ffffffffLL || (long long) x >= 0xffffffff00000000LL ||
-        ((long long) x >= 0x100000000LL and (long long) x <= 0x100100000LL))
+    if ((int64) x == 0x1ffffffffLL || (int64) x >= 0xffffffff00000000LL ||
+        ((int64) x >= 0x100000000LL and (int64) x <= 0x100100000LL))
         return false;// todo: valgrind debug corruption, usually because of not enough memory
 //#if !WASM
 //    return strlen(x);
 //#endif
-    while (l < MAX_STRING_LENGTH and (long long) x < MEMORY_SIZE - 1 and *x++)
+    while (l < MAX_STRING_LENGTH and (int64) x < MEMORY_SIZE - 1 and *x++)
         l++;
     return l;
 }

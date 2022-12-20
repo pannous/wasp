@@ -16,7 +16,7 @@ if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else prin
 
 bool assert_equals_x(String a, String b, char *context = "");
 
-bool assert_equals_x(long a, long b, char *context = "");
+bool assert_equals_x(int64 a, int64 b, char *context = "");
 
 //bool assert_equals_x(float a, float b, char *context = "");
 bool assert_equals_x(double a, double b, char *context = "");

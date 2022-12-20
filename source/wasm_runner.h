@@ -5,10 +5,10 @@
 
 typedef unsigned char *bytes;
 typedef const char *chars;
+typedef long long int64;
+extern "C" int64 run_wasm(bytes buffer, int buf_size);
 
-extern "C" long run_wasm(bytes buffer, int buf_size);
-
-extern "C" long run_wasm_file(chars wasm_path = "test.wasm");
+extern "C" int64 run_wasm_file(chars wasm_path = "test.wasm");
 
 #ifdef WABT
 //#include "ir.h" // Intermediate representation

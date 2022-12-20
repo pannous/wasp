@@ -67,7 +67,7 @@ WasmEdge_ModuleInstanceContext *CreateExternModule() {
 }
 
 
-extern "C" long run_wasm(bytes buffer, int buf_size) {
+extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     // perfect except we can't access memory
 
 
@@ -109,8 +109,8 @@ extern "C" long run_wasm(bytes buffer, int buf_size) {
     return -1;
 }
 
-long run_wasm2(char *wasm_path) {
-//extern "C" long run_wasm(char *wasm_path){
+int64 run_wasm2(char *wasm_path) {
+//extern "C" int64 run_wasm(char *wasm_path){
     /* Create the configure context and add the WASI support. */
     /* This step is not necessary unless you need WASI support. */
     WasmEdge_ConfigureContext *ConfCxt = WasmEdge_ConfigureCreate();

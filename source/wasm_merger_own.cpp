@@ -324,12 +324,12 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 
 // DANGER: modifies the start reader position of code, but not it's data!
 [[nodiscard]]
-long unsignedLEB128(bytes section_data, int length, int &start) {
-    long n = 0;
+int64 unsignedLEB128(bytes section_data, int length, int &start) {
+    int64 n = 0;
     short shift = 0;
     do {
         byte b = section_data[start++];
-        n = n | (((long) (b & 0x7f)) << shift);
+        n = n | (((int64) (b & 0x7f)) << shift);
         if ((b & 0x80) == 0)break;
         shift += 7;
     } while (start < length);
@@ -337,30 +337,30 @@ long unsignedLEB128(bytes section_data, int length, int &start) {
 }
 
 
-long unsignedLEB128(std::vector<byte> &section_data, int length, int &start) {
-    long n = 0;
+int64 unsignedLEB128(std::vector<byte> &section_data, int length, int &start) {
+    int64 n = 0;
     short shift = 0;
     do {
         byte b = section_data[start++];
-        n = n | (((long) (b & 0x7f)) << shift);
+        n = n | (((int64) (b & 0x7f)) << shift);
         if ((b & 0x80) == 0)break;
         shift += 7;
     } while (start < length);
     return n;
 }
 
-long unsignedLEB128(std::vector<byte> &section_data, int max_length, int &start_reference, bool advance) {
+int64 unsignedLEB128(std::vector<byte> &section_data, int max_length, int &start_reference, bool advance) {
     if (advance)return unsignedLEB128(section_data, max_length, start_reference);
     int start = start_reference;// value
     return unsignedLEB128(section_data, max_length, start);// keep start_reference untouched!
 }
 
-long unsignedLEB128(Code section_data, int length, int &start) {
-    long n = 0;
+int64 unsignedLEB128(Code section_data, int length, int &start) {
+    int64 n = 0;
     short shift = 0;
     do {
         byte b = section_data[start++];
-        n = n | (((long) (b & 0x7f)) << shift);
+        n = n | (((int64) (b & 0x7f)) << shift);
         if ((b & 0x80) == 0)break;
         shift += 7;
     } while (start < length);
@@ -450,6 +450,10 @@ Index LinkerInputBinary::RelocateFuncIndex(Index function_index) {
         FunctionImport *import = &function_imports[function_index];
         if (!import->active) {
             function_index = import->foreign_index;
+            if (!import->foreign_binary) {
+                return function_index; // wat?
+//                check_silent(import->foreign_binary);
+            }
             offset = import->foreign_binary->function_index_offset;// todo function_index ADDED LATER to offset!
             LOG_DEBUG("reloc for disabled import %s : new index = %d + %d\n", import->name.data, function_index,
                       offset);
@@ -980,7 +984,7 @@ void Linker::ResolveSymbols() {
     int memories = 0;
     for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
         printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
-        unsigned long nr_imports = binary->function_imports.size();
+        uint64 nr_imports = binary->function_imports.size();
 
         // FIND DUPLICATE imports and exports (no other purpose for now!)
         int import_index = 0;
@@ -1029,7 +1033,7 @@ void Linker::ResolveSymbols() {
                 export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
             } else if (_export.kind == ExternalKind::Func) {
                 Func &func = binary->functions[_export.index - nr_imports];
-                unsigned long position = export_list.size();
+                uint64 position = export_list.size();
                 export_list.emplace_back(&_export, binary.get());
                 if (not func.name.data)
                     func.name = _export.name;
@@ -1206,7 +1210,7 @@ void Linker::CalculateRelocOffsets() {
                     type_count += sec->count;
                     break;
                 case SectionType::Global: {
-                    unsigned long new_offset = total_global_imports - sec->binary->global_imports.size() + global_count;
+                    uint64 new_offset = total_global_imports - sec->binary->global_imports.size() + global_count;
                     binary->global_index_offset = new_offset;
                 }
                     global_count += sec->count;
@@ -1327,13 +1331,13 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
     size_t section_offset = section->offset;// into binary data
     int current_offset = section_offset;
     // #code_index =
-    long function_count = unsignedLEB128(binary_data, length, current_offset, true);
+    int64 function_count = unsignedLEB128(binary_data, length, current_offset, true);
 //	DataSegment section_data = ;// *pSection->data.data_segments->data();
 //    Index binary_delta = binary->delta;
     size_t section_size = section->size;
 //	Index import_border = binary->imported_function_index_offset;// todo for current binary or for ALL?
-    unsigned long function_imports_count = binary->function_imports.size();
-    unsigned long old_import_border = function_imports_count;
+    uint64 function_imports_count = binary->function_imports.size();
+    uint64 old_import_border = function_imports_count;
     bool begin_function = true;
     int code_index = 0;
     int call_index = binary->imported_function_index_offset + code_index;
@@ -1346,7 +1350,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
     println("PARSING FUNCTION SECTION");
     while (code_index < function_count && current_offset < length and
            current_offset - section_offset < section_size) {// go over ALL functions! ignore 00
-        long last_const = 0;// use stack value for i32.load index or offset?
+        int64 last_const = 0;// use stack value for i32.load index or offset?
         if (begin_function) {
 //            if (binary_data[current_offset - 1] != 0x0b and binary_data[current_offset - 1] != 0x0c)
 //                breakpoint_helper;
@@ -1406,7 +1410,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
         }
         int arg_bytes = opcode_args[op];
         if (op == call_) {
-            unsigned long index = unsignedLEB128(binary_data, length, current_offset, true);
+            uint64 index = unsignedLEB128(binary_data, length, current_offset, true);
             Index neu = binary->RelocateFuncIndex(index);
             if (index != neu) {
                 Reloc reloc(wabt::RelocType::FuncIndexLEB, current_offset - section_offset - lebByteSize(index), neu);
@@ -1422,7 +1426,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
                 function_name = callee.name;
             }
             if (tracing)
-                printf("CALL %s ƒ%d %s calls %s $%lu -> %d\n", binary->name, call_index, current_name.data,
+                printf("CALL %s ƒ%d %s calls %s $%llu -> %d\n", binary->name, call_index, current_name.data,
                        function_name.data, index,
                        neu);
 #endif
@@ -1434,11 +1438,11 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
                 Reloc reloc(wabt::RelocType::GlobalIndexLEB, current_offset - section_offset, neu);
                 relocs.add(reloc);
             }
-            current_offset += lebByteSize((unsigned long) index);
+            current_offset += lebByteSize((uint64) index);
         } else if (op >= i32_load and op <= i32_store_16) {
 //            short alignment =
             unsignedLEB128(binary_data, length, current_offset, true);
-            long offset = unsignedLEB128(binary_data, length, current_offset, false);
+            int64 offset = unsignedLEB128(binary_data, length, current_offset, false);
             last_const = offset;
             Index neu = binary->RelocateMemoryIndex(offset);
             if (offset != neu) {
@@ -1449,7 +1453,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 //                Reloc patch_code_block_size{RelocType::PatchCodeBlockSize, (Index) fun_start - section_offset, (Index) diff};// add original fun_length later
 //                relocs.add(patch_code_block_size);
             }
-            current_offset += lebByteSize((unsigned long) offset);
+            current_offset += lebByteSize((uint64) offset);
         } else {
             if (arg_bytes > 0)
                 current_offset += arg_bytes;
@@ -1468,7 +1472,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
             }
         }
         if (tracing)
-            printf("ƒ%d OPCODE 0x%x %d “%s” last_const=%ld  length: %d? \n", call_index, op, op, opcode.GetName(),
+            printf("ƒ%d OPCODE 0x%x %d “%s” last_const=%lld  length: %d? \n", call_index, op, op, opcode.GetName(),
                    last_const,
                    arg_bytes);
         last_opcode = op;
@@ -1620,8 +1624,8 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
     }
     if (new_value >= 0) {
         // THIS Write only makes sense for LEB types!
-        short current_size = lebByteSize((unsigned long) cur_value);
-        short new_size = lebByteSize((unsigned long) new_value);
+        short current_size = lebByteSize((uint64) cur_value);
+        short new_size = lebByteSize((uint64) new_value);
         if (new_size > current_size) {
             uint8_t noper = *(section_start + r->offset + current_size);
             if (noper != nop_) todo(
@@ -1632,7 +1636,7 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
     }
 
     //			data.insert(data.begin() + section->offset + r->offset, new_value);// this messes up the DATA section somehow!
-//			std::vector<unsigned char> neu = lebVector(new_value);//  Code((long)new_value);
+//			std::vector<unsigned char> neu = lebVector(new_value);//  Code((int64)new_value);
 //			section->size += neu.size();
 //			section->payload_size += neu.size();
 //			data.insert(data.begin() + section->offset + r->offset, neu.begin(), neu.end());
@@ -1640,7 +1644,7 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
 
 std::vector<uint8_t> Linker::lebVector(Index value) {
     std::vector<uint8_t> neu;
-    Code &leb128 = unsignedLEB128((long) value);
+    Code &leb128 = unsignedLEB128((int64) value);
     for (auto b: leb128)
         neu.push_back((uint8_t) b);
     return neu;

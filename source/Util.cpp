@@ -85,7 +85,7 @@ int fileSize(char const *file) {
 #include <sys/stat.h>
 #include <time.h>
 
-long file_last_modified(char *file) {
+int64 file_last_modified(char *file) {
     struct stat attr;
     stat(file, &attr);
     return attr.st_mtime;
@@ -212,7 +212,7 @@ unsigned int wordHash(const char *str, int max_chars) { // unsigned
     if (!str) return 0;
     int maxNodes = 100000;
     char c;
-    unsigned int hash = 5381, hash2 = 7; // long
+    unsigned int hash = 5381, hash2 = 7; // int64
     while (max_chars-- > 0 and (c = *str++)) {
         hash2 = hash2 * 31 + (short) (c);
         int next = normChar(c);//a_b-c==AbC
@@ -231,7 +231,7 @@ char *readFile(chars filename, int *size_out) {
     FILE *f = fopen(filename, "rt");
     if (!f)error("FILE NOT FOUND "_s + filename);
     fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
+    int64 fsize = ftell(f);
     if (size_out)*size_out = fsize;
     fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
     char *s = (char *) (alloc(fsize, 2));
@@ -260,7 +260,7 @@ char *readFile(chars filename, int *size_out) {
 // inline int abs_i(int x) noexcept{
 //	return x > 0 ? x : -x;
 //}
-//inline long abs_l(long x) noexcept{
+//inline int64 abs_l(int64 x) noexcept{
 //	return x > 0 ? x : -x;
 //}
 //// native to wasm
@@ -269,7 +269,7 @@ char *readFile(chars filename, int *size_out) {
 //}
 //// native to wasm
 //inline float floor(float x) noexcept {
-//	x-(long)x;// todo!
+//	x-(int64)x;// todo!
 //}
 bool similar(double a, double b) {
     if (a == b)return true;
@@ -428,26 +428,26 @@ String load(String file) {
 #endif
 }
 
-String &hex(long d) {
+String &hex(int64 d) {
 #ifdef WASM
     return * new String(formatLong(d));
 #else
 //	char* s= (char*) malloc(1+64/4);// 0x ?
     int size = 3 + 64 / 4;
     char s[size];
-    snprintf(s, size, "0x%lx", d);
+    snprintf(s, size, "0x%llx", d);
     return *new String(s);// todo mark data as to-free
 #endif
 }
 
-bool isSmartPointer(long long d) {
+bool isSmartPointer(int64 d) {
 //	if((d&negative_mask_64)==negative_mask_64)return false;
     if ((d & negative_mask_64) == negative_mask_64)return false;
     if (d & double_mask_64)return true;
     return d & smart_mask_64 and not(d & negative_mask_64);
 }
 
-Node smartValue(long smartPointer);
+Node smartValue(int64 smartPointer);
 
 #if MY_WASI
 String demangle(const String &fun){
@@ -457,7 +457,7 @@ String demangle(const String &fun){
 #else
 
 #include <cxxabi.h>
-//std::__2::enable_if<(std::is_arithmetic<int>::value) && (std::is_arithmetic<long>::value), std::__2::__promote<int, long, void> >::type::type pow<int, long>(int, long)
+//std::__2::enable_if<(std::is_arithmetic<int>::value) && (std::is_arithmetic<int64>::value), std::__2::__promote<int, int64, void> >::type::type pow<int, int64>(int, int64)
 #endif
 
 String extractFuncName(const String &fun) {

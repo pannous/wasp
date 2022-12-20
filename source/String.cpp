@@ -166,9 +166,9 @@ int64 parseLong(chars str) {
         sig = -1;
         str++;
     }
-    long k = 0;
+    int64 k = 0;
     while (*str) {
-        long n;
+        int64 n;
         short len;
         n = atoi1(decode_unicode_character(str, &len));// inline!
         str += len;
@@ -194,7 +194,7 @@ extern double parseDouble(chars string) {
 
     double multiplier = 1;
     double divisor = 1.0;
-    long integer_portion = parseLong(string);
+    int64 integer_portion = parseLong(string);
     result = (double) integer_portion;
     if (*string == '-') {
         result *= -1;
@@ -226,12 +226,12 @@ class Node; // can't pre-access properties, BUT can use functions:
 String toString(Node &node);
 
 // Implementation of itoa0()
-char *formatLongWithBase(long num, int base = 10) {
+char *formatLongWithBase(int64 num, int base = 10) {
     if (base == 16)return hex(num);
     // length 22 -> put(num)/2+2 for base 10
     static char str[23];
 //    char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
-//	int addr=(int)(long)str;
+//	int addr=(int)(int64)str;
 //	if(addr<0 or addr>memory_size)
 //		error("OUT OF MEMORY");
     int len = 0;
@@ -263,24 +263,24 @@ char *formatLongWithBase(long num, int base = 10) {
     return str;
 }
 
-char *formatLong(long num) {
+char *formatLong(int64 num) {
     return formatLongWithBase(num, 10);
 }
 
-char *ltoa(long num) {
+char *ltoa(int64 num) {
     return formatLongWithBase(num, 10);
 }
 
-char *itoa0(long num) {// todo remove once you know the right call
+char *itoa0(int64 num) {// todo remove once you know the right call
     return formatLongWithBase(num, 10);
 }
 
 //#define pow(val,exp)
 chars formatRealWithBaseAndPrecision(double num, int base = 10, int digits_after_zero = 4) {/*significant_digits*/
 //	int p = powi(base,digits_after_zero+1);
-    auto remainder = abs(num) - abs(long(num));
-//	auto remainder = abs_f(num) - abs_l(long(num));
-//	auto remainder = itoa0(abs(int((num - (long) num) * p)), base);
+    auto remainder = abs(num) - abs(int64(num));
+//	auto remainder = abs_f(num) - abs_l(int64(num));
+//	auto remainder = itoa0(abs(int((num - (int64) num) * p)), base);
     chars f = concat(formatLongWithBase(int(num), base), ".");
 //	significant_digits-=strlen(f)-1
     while (digits_after_zero-- > 0) {
@@ -396,15 +396,15 @@ class Node;
 //	return String(c);
 //}
 String operator "" _s(chars c, unsigned long t) {// function signature contains illegal type WHYY??
-    return String(c);
+    return String(c, (int) t);
 }
 
 String operator "" s(chars c, unsigned long t) {// function signature contains illegal type WHYY??
-    return String(c);
+    return String(c, (int) t);
 }
 
 String operator "" _(chars c, unsigned long t) {
-    return String(c);
+    return String(c, (int) t);
 }
 
 
@@ -433,11 +433,11 @@ String s(chars &s) {
 
 bool String::empty() const {//this==0 in testMarkMulti!
 //#ifdef WASM
-//	if(memory_size and data and (long) data > memory_size/*bug!*/)
+//	if(memory_size and data and (int64) data > memory_size/*bug!*/)
 ////		return true;
 //#endif
     if (this == 0)return true;
-    if ((long) this < 8)return true;// zero page broken object hack
+    if ((int64) this < 8)return true;// zero page broken object hack
     if (length == 0)return true;
     if (this->data == 0)return true;
 #if WASM
@@ -445,10 +445,10 @@ bool String::empty() const {//this==0 in testMarkMulti!
     if(this->data > (void*)current)return true;
 //		error("CORRUPT String pointer");
 #endif
-//    if ((long long) data == 0x1ffffffff || (long long) data >= 0xffffffff00000000 ||
-//        ((long long) data >= 0x100000000LL and (long long) data <= 0x100100000))
+//    if ((int64) data == 0x1ffffffff || (int64) data >= 0xffffffff00000000 ||
+//        ((int64) data >= 0x100000000LL and (int64) data <= 0x100100000))
 //        return false;// todo: valgrind debug corruption, usually because of not enough memory
-    return (long) data > MEMORY_SIZE;
+    return (int64) data > MEMORY_SIZE;
 }
 
 
@@ -595,9 +595,9 @@ String String::trim() {
     return String(data + start, end - start + 1, true);// share ok?
 }
 
-long String::hash() const {
+int64 String::hash() const {
     return wordHash(data, min(length, 20));
-//	return (long)data;// only conflict: shared substring(0,i);
+//	return (int64)data;// only conflict: shared substring(0,i);
 }
 
 
@@ -674,12 +674,12 @@ void print(const Node node) {
 
 //bool skip_newline = false;
 
-void print(long i) {
+void print(int64 l) {
 #if MY_WASM
     puti(i);
 #else
 //#if MY_WASI
-    printf("%ld\n", i);
+    printf("%lld\n", l);
     // either through wasm_helpers or via stdio.wasm
 #endif
 //    if (skip_newline)skip_newline = false;// just skip one CANT make it
@@ -692,6 +692,7 @@ void print(char c) {
 }
 
 void print(char const *s) {
+//    put_chars(s, strlen(s));
     puts(s);
     newline();
 //    printf("%s", s);

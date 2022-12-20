@@ -17,7 +17,7 @@ void clearContext() {}
 Node &analyze(Node &node, String context) { return *new Node(RUNTIME_ONLY_ERROR); }
 Node eval(String code) { return Node(RUNTIME_ONLY_ERROR); }
 Node interpret(String code) { return Node(RUNTIME_ONLY_ERROR); }
-extern "C" long run_wasm_file(chars file) {
+extern "C" int64 run_wasm_file(chars file) {
     error(RUNTIME_ONLY_ERROR);
     return -1;
 }
@@ -45,7 +45,7 @@ Node &analyze(Node &node, String context) { return *new Node(RUNTIME_ONLY_ERROR)
 Node eval(String code) { return Node(RUNTIME_ONLY_ERROR); }
 Node interpret(String code) { return Node(RUNTIME_ONLY_ERROR); }
 void clearContext() {}
-extern "C" long run_wasm_file(chars file) {
+extern "C" int64 run_wasm_file(chars file) {
     error(RUNTIME_ONLY_ERROR);
     return -1;
 }
