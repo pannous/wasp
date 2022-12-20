@@ -2,7 +2,7 @@
 //
 // Created by me on 15.11.20.
 //
-
+typedef long long int64;
 //typedef int1_t bit / bool 0/1 (flag entry)
 //typedef uint2_t bibi™ ;) 0…3
 //typedef uint3_t boc / octal-char 0…7
@@ -10,18 +10,18 @@
 //typedef uint8_t byte / unsigned char
 //typedef uint16_t bort / word / short
 //typedef uint32_t pint / int
-//typedef uint64_t poins / long / point64 / poinsis
+//typedef uint64_t poins / int64 / point64 / poinsis
 //typedef uint128_t pegat
 
 // 32 bit i32 as [[smart pointer]]s with first hex (4bit) as type
 // smartType4bit
 // as used in smartlong, smart_pointer_32 and EXTENDED TO upto 4 bytes in smart_pointer_64 !
-// OBSOLETE because wasm runtimes now support long return from main AND multi-value!
+// OBSOLETE because wasm runtimes now support int64 return from main AND multi-value!
 // first bat of Primitive's < 0x100 !
 typedef enum smartType4bit {
     int28 = 0x0, // or long60 ?
 //	overflow=0x1,
-    plong = 0x1, // long pointer
+    plong = 0x1, // int64 pointer
     float28 = 0x2,
     //	foverflow=0x3,
     symbola = 0x4, // ≈ stringa &memoryChars[payload]
@@ -46,7 +46,7 @@ typedef unsigned int uint;
 typedef unsigned int smart_pointer_32;// smart_pointer_32
 typedef unsigned long long SmartPointer64;
 typedef unsigned long long smart_pointer_64;
-//typedef unsigned long long smart_type_64;
+//typedef uint64 smart_type_64;
 typedef smart_pointer_64 smarty;
 
 smartType4bit getSmartType(smart_pointer_32 spo);

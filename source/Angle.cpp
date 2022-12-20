@@ -38,7 +38,7 @@ Map<String, Function> functions = {.capacity=10000};
 List<Module *> libraries;// used modules from (automatic) import statements e.g. import math; use log; …  ≠
 // functions of preloaded libraries are found WITHOUT `use` `import` statement (as in Swift) !
 
-Map<long, bool> analyzed = {.capacity=10000};// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
+Map<int64, bool> analyzed = {.capacity=10000};// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
 
 // todo : use proper context ^^ instead of:
@@ -130,7 +130,7 @@ Node constants(Node n) {
 }
 
 
-//Map<long, int> _isFunction; INEFFICIENT! // true not a 'type'
+//Map<int64, int> _isFunction; INEFFICIENT! // true not a 'type'
 // Hashmap _isFunction; // todo
 bool isFunction(String op, bool deep_search) {
 //	if(_isFunction[op.hash()])return true;
@@ -142,7 +142,7 @@ bool isFunction(String op, bool deep_search) {
     if (op.in(function_list))
         return true;
     if (deep_search and findLibraryFunction(op, true))
-        return true;// linear lookup ok as long as #functions < 1000 ? nah getting SLOW QUICKLY!!
+        return true;// linear lookup ok as int64 as #functions < 1000 ? nah getting SLOW QUICKLY!!
 //	if(op.in(functor_list))
 //		return true;
     return false;
@@ -456,7 +456,7 @@ void initTypes() {
     types.add("float", &Double);
     for (int i = 0; i < types.size(); ++i) {
         auto typ = types.values[i];
-        if (long(typ) < 0 or long(typ) > 10000000l)
+        if (int64(typ) < 0 or int64(typ) > 10000000l)
             continue;// todo: this type reflection is bad anyways?
 //            error("bad wasm type initialization");
 //        if(typ)typ->setType(clazz);
@@ -1166,6 +1166,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 
 void addLibraryFunctionAsImport(Function &func) {
     func.is_used = true;
+    if (func.is_builtin)
+        return;
     // ⚠️ this function now lives inside Module AND as import inside "wasp_main" functions list, with different wasm_index!
     Function &import = functions[func.name];// copy function info from library/runtime to main module
     import.signature = func.signature;
@@ -1218,7 +1220,8 @@ void addLibrary(Module *modul) {
 }
 
 Function *use_required(Function *function) {
-    if (!function)return 0;
+    if (!function or not function->name or function->name.empty())
+        return 0;// todo how?
     addLibraryFunctionAsImport(*function);
     if (function->name == "quit")
         functions["proc_exit"].is_used = true;
@@ -1229,7 +1232,7 @@ Function *use_required(Function *function) {
     }
     for (String &alias: aliases(function->name)) {
         auto ali = findLibraryFunction(alias, false);
-        addLibraryFunctionAsImport(*ali);
+        if (ali)addLibraryFunctionAsImport(*ali);
     }
     for (auto vari: function->variants) {
         vari.is_used = true;
@@ -1242,7 +1245,8 @@ Function *use_required(Function *function) {
 List<String> aliases(String name) {
     List<String> found;
 //	switch (name) // statement requires expression of integer type
-
+    if (name == "puti")
+        found.add("_Z5printl");
     if (name == "len")
         found.add("strlen");
     if (name == "int" or name == "atoi" or name == "atol" or name == "parseInt")
@@ -1350,7 +1354,7 @@ Node &analyze(Node &node, Function &function) {
         function.is_declared = true;
         functions.add(context, function);// index not known yet
     }
-    long hash = node.hash();
+    int64 hash = node.hash();
     if (analyzed.has(hash))
         return node;
 
@@ -1450,7 +1454,7 @@ Node &analyze(Node &node, Function &function) {
 }
 
 
-extern "C" long run_wasm_file(chars file) {
+extern "C" int64 run_wasm_file(chars file) {
     let buffer = load(String(file));
 #if RUNTIME_ONLY
     error("RUNTIME_ONLY");
@@ -1525,8 +1529,8 @@ void clearAnalyzerContext() {
 //    module_cache.clear(); NOO not the cache lol
     types.clear();
     globals.clear();
-    code_indices.clear();
-    code_indices.setDefault(-1);
+    call_indices.clear();
+    call_indices.setDefault(-1);
     functions.clear();
     analyzed.clear();// todo move much into outer analyze function!
     functions.clear();// always needs to be followed by
@@ -1549,7 +1553,7 @@ Node runtime_emit(String prog) {
     Code code = compile(prog, false);// should use libraries!
     code.needs_relocate = false;
     code.save("merged.wasm");
-    long result_val = code.run();// todo parse stdout string as node and merge with emit() !
+    int64 result_val = code.run();// todo parse stdout string as node and merge with emit() !
     return *smartNode(result_val);
 }
 

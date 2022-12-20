@@ -15,15 +15,15 @@
 #include "WitReader.h"
 
 void test_fd_write() {
-    //    assert_emit("x='hello';fd_write(1,20,1,8)", (long) 0);// 20 = &x+4 {char*,len}
-//    assert_emit("puts 'ok';proc_exit(1)\nputs 'no'", (long) 0);
+    //    assert_emit("x='hello';fd_write(1,20,1,8)", (int64) 0);// 20 = &x+4 {char*,len}
+//    assert_emit("puts 'ok';proc_exit(1)\nputs 'no'", (int64) 0);
 //    assert_emit("quit",0);
-    assert_emit("x='hello';fd_write(1,x,1,8)", (long) 0);// &x+4 {char*,len}
+    assert_emit("x='hello';fd_write(1,x,1,8)", (int64) 0);// &x+4 {char*,len}
 //    assert_run("len('123')", 3); // Map::len
 //    quit()
-    assert_emit("puts 'ok'", (long) 0);
+    assert_emit("puts 'ok'", (int64) 0);
     loadModule("wasp");
-    assert_emit("puts 'ok'", (long) 0);
+    assert_emit("puts 'ok'", (int64) 0);
     assert_emit("puti 56", 56);
     assert_emit("putl 56", 56);
 //    assert_emit("putx 56", 56);
@@ -417,13 +417,13 @@ void testKebabCase() {
 
 // only test once, see lebByteSize for result
 void testLebByteSize() {
-    check_eq(lebByteSize((long long) -17179869185 + 1), 5)
-    check_eq(lebByteSize((long long) -17179869185), 6)
-    check_eq(lebByteSize((long long) -17179869185 - 1), 6)
+    check_eq(lebByteSize((int64) -17179869185 + 1), 5)
+    check_eq(lebByteSize((int64) -17179869185), 6)
+    check_eq(lebByteSize((int64) -17179869185 - 1), 6)
     short last = 1;
-    for (long long i = -63; i > -0x100000000000000l; --i) {
-//    for (long i = 0; i < 0x10000000000000l; ++i) {
-//    for (unsigned long i = 0; i < 0x100000000000000; ++i) {
+    for (int64 i = -63; i > -0x100000000000000l; --i) {
+//    for (int64 i = 0; i < 0x10000000000000l; ++i) {
+//    for (uint64 i = 0; i < 0x100000000000000; ++i) {
         short size = lebByteSize(i);
         if (size > last) {
 //            printf("%ld %lx %d\n", i, i, size);
@@ -492,14 +492,14 @@ void testDeepColon2() {
 
 void testStupidLongLong() {
     //	int a;
-//	long b;// 4 byte in wasm/windows grr
-//	long long c;// 8 bytes everywhere (still not guaranteed grr)
+//	int64 b;// 4 byte in wasm/windows grr
+//	int64 c;// 8 bytes everywhere (still not guaranteed grr)
     float a;
     double b;
     long double c;// 16 byte in wasm wow, don't use anyways;)
     print(sizeof(a));
     print(sizeof(b));
-    print(sizeof(c));
+    print(sizeof(c));// what? 16 bytes!?
 }
 
 void testFloatReturnThroughMain() {
@@ -510,7 +510,7 @@ void testFloatReturnThroughMain() {
 //	double x=-9999999999999999.99999999;// c3…
 //	double x=1.1;// 3ff199999999999a
 //	double x=-1.1;// bff199999999999a
-    long long y = *(long long *) &x;
+    int64 y = *(int64 *) &x;
 #ifndef WASM
     printf("%llx\n", y);
 #endif
@@ -944,8 +944,8 @@ void testDeepCopyDebugBugBug() {
     result.print();
     Node &c = result["deep"]['c'];
     Node &node = c['d'];
-    assert_equals(node.value.longy, (long) 1);
-    assert_equals(node, (long) 1);
+    assert_equals(node.value.longy, (int64) 1);
+    assert_equals(node, (int64) 1);
 }
 
 void testDeepCopyDebugBugBug2() {
@@ -954,8 +954,8 @@ void testDeepCopyDebugBugBug2() {
     assert_parses(source);
     Node &c = result["deep"]['c'];
     Node &node = c['d'];
-    assert_equals(node.value.longy, (long) 123);
-    assert_equals(node, (long) 123);
+    assert_equals(node.value.longy, (int64) 123);
+    assert_equals(node, (int64) 123);
 }
 
 
@@ -1067,8 +1067,8 @@ void testMarkAsMap() {
 void testMarkSimple() {
     print("testMarkSimple");
     Node a = assert_parses("{aa:3}");
-    assert_equals(a.value.longy, (long) 3);
-    assert_equals(a, long(3));
+    assert_equals(a.value.longy, (int64) 3);
+    assert_equals(a, int64(3));
     assert(a == 3);
     assert(a.kind == longs or a.kind == key and a.value.node->kind == longs);
     assert(a.name == "aa"_s);
@@ -1962,7 +1962,7 @@ void testStringConcatenation() {
     check_eq(huh.length, 2);
     check_eq(huh[0], 'a');
     check_eq(huh[1], '2');
-    check_eq(huh[2], (long) 0);
+    check_eq(huh[2], (int64) 0);
     check(eq("a2", "a2"));
     check(eq("a2", "a2", 3));
 
@@ -2473,13 +2473,13 @@ void todos() {
 
     // while without body
             assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
-            assert_emit("1 - 3 - square 3+4", (long) -51);// OK!
-            assert_emit("1 -3 - square 3+4", (long) -51);// warn "mixing math op with list items (1, -3 … ) !
+            assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
+            assert_emit("1 -3 - square 3+4", (int64) -51);// warn "mixing math op with list items (1, -3 … ) !
             assert_emit("1 - - 3", 4);// -1 uh ok?  warn "what are you doning?"
             assert_emit("use math;⅓ ≈ .3333333 ", 1);
             assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
             assert_throws("i*=3");// well:
-            assert_emit("i*=3", (long) 0);
+            assert_emit("i*=3", (int64) 0);
             globals.setDefault(new Node());
             globals["y"] = new Node();
             // todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
@@ -2755,7 +2755,7 @@ void tests() {
 void assurances() {
     check(sizeof(Type) == 8) // otherwise all header structs fall apart
 //    check(sizeof(void*)==4) // otherwise all header structs fall apart TODO adjust in 64bit wasm / NORMAL arm64 !!
-    check(sizeof(long long) == 8)
+    check(sizeof(int64) == 8)
 }
 
 void testCurrentWasmBugs() {
@@ -2765,8 +2765,8 @@ void testCurrentWasmBugs() {
     assert_parses(source);
 //    testDeepColon();
 //    printf("%d", 43);
-//    printf("%d", (long) 44);
-//    printf("%l", (long) 44);
+//    printf("%d", (int64) 44);
+//    printf("%l", (int64) 44);
 //    printf("%l", 44);
 //    exit(42);
 }
@@ -2780,6 +2780,16 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
 //    assert_emit("grows x:=x*2;grows(4)", 8)
+    assert_emit("putf 3.1", 3.1);
+    assert_emit("id 123", (int64) 123);
+    assert_emit("putl 123", (int64) 123);
+    assert_emit("putl 1;id 123", (int64) 123);
+    assert_emit("putl id 123", (int64) 123);
+    assert_emit("id (3+3)", (int64) 6);
+//    quit()
+    assert_is("id 3+3", 6);
+    assert_emit("3 + id 3+3", (int64) 9);
+    assert_emit("id(3*42) > id 2*3", 1)
 
     assert_emit("x='abcde';x#4", 'd');
 
@@ -2839,7 +2849,7 @@ void testCurrent() {
 //    assurances();
 //        test_fd_write();
 //    assert_emit("i=1;k='hi';k[i]", 'i')
-//    check_is(parseLong("123"), (long) 123);
+//    check_is(parseLong("123"), (int64) 123);
     tests();// make sure all still ok before changes
 
 //    assert_emit("puts('ok')", "ok");
@@ -2876,7 +2886,7 @@ void testCurrent() {
     check(node1.length == 4);
     auto node2 = node1[2];
     check(node2.name.startsWith("√"));
-    assert_emit("3 + √9", (long) 6);
+    assert_emit("3 + √9", (int64) 6);
 
 //    quit()
     testNodeDataBinaryReconstruction();
@@ -2891,9 +2901,9 @@ void testCurrent() {
 //    assert_emit("putf 3.1", 3.1);
 
     testWasmFunctionCalls();
-    check(Node(String("")) == (long) 0)
+    check(Node(String("")) == (int64) 0)
     skip(
-            assert_emit("puts 'ok'", (long) 0);
+            assert_emit("puts 'ok'", (int64) 0);
             assert_emit("puts('ok');(1 4 3)#2", 4)
     )
     assert_is("true or true", true);

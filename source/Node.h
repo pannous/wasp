@@ -125,7 +125,7 @@ class Module;
 
 // ⚠️ A Value is only useful with accompanying Type!
 union Value { // nodes can contain ANYTHING, especially types known in wasp
-//	sizeof(Value)==8 (long)
+//	sizeof(Value)==8 (int64)
     Node *node = 0;// todo DANGER, pointer can be lost :(   // todo same as child
 //	Node *child = 0; //todo DANGER child and next are NOT REDUNDANT! (a:b c:d) == a(value=b next=c(value=d))
 //	Node **children = 0;// keep children separate for complex key nodes (a b c):(d e f)
@@ -134,14 +134,14 @@ union Value { // nodes can contain ANYTHING, especially types known in wasp
     Module *module;
 
     void *data;// any bytes
-    long long longy;
+    int64 longy;
 //	codepoint chary;// use longy
     double real;
 
 //	Value() {}// = default;
 //	explicit Value(int i) { longy = i; }
 //
-//	explicit Value(long i) { longy = i; }
+//	explicit Value(int64 i) { longy = i; }
 //
 //	Value(bool b) { longy = b; }
 //
@@ -185,13 +185,13 @@ struct debug_struct {
     byte a51;
     byte a61;
     byte a71;
-    long rest1;
-    long rest2;
-    long rest3;
+    int64 rest1;
+    int64 rest2;
+    int64 rest3;
 };
 
-// in wasm32 pointers are int instead of long, use this struct to transfer between both Node* spaces
-// reconcilable with Node INSIDE wasm. ALWAYS PAIR ints so that they align with long, in 32 AND 64 bit modes!
+// in wasm32 pointers are int instead of int64, use this struct to transfer between both Node* spaces
+// reconcilable with Node INSIDE wasm. ALWAYS PAIR ints so that they align with int64, in 32 AND 64 bit modes!
 struct wasm32_node_struct {
     int node_header = node_header_32;
     int length; // number of children ≠ sizeof(Node)
@@ -200,7 +200,7 @@ struct wasm32_node_struct {
     Value value;// int64 ok
     Kind kind;  // int32 TODO needs padding in Node ( 64 bit ) how? PUT IN node_type(pointer). MIX GENERICS complicated :(
     int meta_pointer;
-    // previous fields must be aligned to long!
+    // previous fields must be aligned to int64!
     int name_pointer;
     int name_length;
 //    …
@@ -227,7 +227,7 @@ public:
     Node *meta = 0;//  LINK, not list. attributes meta modifiers decorators annotations
 //    32bit in wasm TODO pad with string in 64 bit
 //	Type kind = unknown;// improved from 'undefined' upon construction
-    // previous fields must be aligned to long!
+    // previous fields must be aligned to int64!
     String name = empty_name;// nil_name;
 
     // todo rename and alias:
@@ -239,7 +239,7 @@ public:
 //	char grouper = 0;// "()", "{}", "[]" via kind!  «…» via type Group("«…»")
 
     int capacity = NODE_DEFAULT_CAPACITY;
-    long _hash = 0;// set by hash(); should copy! on *x=node / clone()
+    int64 _hash = 0;// set by hash(); should copy! on *x=node / clone()
 #ifdef DEBUG
 // int code_position; // hash to external map
 //	int lineNumber;
@@ -307,7 +307,7 @@ public:
     }
 
     explicit
-    Node(long long value, Type64 type64) {
+    Node(int64 value, Type64 type64) {
         this->value.longy = value;// can also be double bytes:
         this->kind = (Kind) type64.value; // todo other types!
     }
@@ -331,7 +331,7 @@ public:
 //			name = String(itoa0(nr, 10)); // messes with setField contraction
     }
 
-    explicit Node(int nr) : Node((long long) nr) {}
+    explicit Node(int nr) : Node((int64) nr) {}
 
     explicit Node(Kind type) : Node() { kind = type; }
 
@@ -404,18 +404,12 @@ public:
 
 
     explicit
-    Node(long long nr) { // stupild
+    Node(int64 nr) { // stupild
         value.longy = nr;
         kind = longs;
         if (debug)name = String(formatLong(nr)); // messes with setField contraction
     }
 
-    explicit
-    Node(long nr) { // stupild
-        value.longy = nr;
-        kind = longs;
-        if (debug)name = String(formatLong(nr)); // messes with setField contraction
-    }
 
     explicit // wow without explicit everything breaks WHY?
     Node(bool yes) {
@@ -533,10 +527,10 @@ public:
         }
     }
 
-    long hash() {
+    int64 hash() {
         static int _object_count = 1;
 //		if (not _hash) _hash = random();//  expensive?
-        if (not _hash)_hash = _object_count++;// //  (long) (void *) this; could conflict on memory reuse
+        if (not _hash)_hash = _object_count++;// //  (int64) (void *) this; could conflict on memory reuse
         return _hash;
     }
 
@@ -611,7 +605,7 @@ public:
 
     bool operator==(int other);
 
-    bool operator==(long other);
+    bool operator==(int64 other);
 
     bool operator==(float other);
 
@@ -645,7 +639,7 @@ public:
         if (kind == strings)
             return *value.string;
         return name;
-        error((char *) (String("WRONG TYPE ") + String((long) kind)));
+        error((char *) (String("WRONG TYPE ") + String((int64) kind)));
     }
 
     // moved outside because circular dependency
@@ -727,7 +721,7 @@ public:
     Node apply_op(Node left, Node op0, Node right);
 
 
-    long long numbere() {
+    int64 numbere() {
         return kind == longs or kind == bools ? value.longy : value.real;// danger
     }
 
@@ -767,7 +761,7 @@ public:
 
     explicit operator int() const { return value.longy; }
 
-    explicit operator long() const { return value.longy; }
+    explicit operator int64() const { return value.longy; }
 
     explicit operator float() const { return value.real; }
 
@@ -793,7 +787,7 @@ public:
 
     Node &setValue(Value v);
 
-    Node &setValue(long v);
+    Node &setValue(int64 v);
 
 
     Node &from(Node &node);// exclusive

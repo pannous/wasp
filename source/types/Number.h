@@ -20,7 +20,7 @@
 
 
 //class SmartPointer64;
-typedef unsigned long long SmartPointer64;
+typedef uint64 SmartPointer64;
 
 // https://en.wikipedia.org/wiki/NaN
 // signals and payloads are not new inventions ;)
@@ -38,7 +38,7 @@ When encountered, a trap handler could decode the sNaN and return an index to th
 // int 60 : we reserve the 4 highest bits for special semantics and values
 // whenever the first hex in a 16byte smartlong sequence is NOT 0L, it means it is special:
 enum smartlongs {
-//unsigned long long
+//uint64
     zero = 0L, // lol
     LONG_MAX_VALUE = 0x7FFFFFFFFFFFFFFFL, // ≠  Number.MAX_VALUE 2^^1024 - 1 ( Float 1.7976931348623157E+308 )
     LONG_MIN_VALUE = 0x8000000000000000L, // todo
@@ -72,7 +72,7 @@ enum smartlongs {
 */
 
 union smartlong{
-    long long lon;
+    int64 lon;
     SmartPointer64 smarty; // encoding NaN, Infinity, -Infinity, missing ≈ empty ≈ null AND OTHER types/data!!
 };
 
@@ -83,7 +83,7 @@ class BigInt {
 public:
     bytes digits;
 
-    BigInt(long l) {
+    BigInt(int64 l) {
         digits = (bytes) formatLong(l);// todo …
     }
 
@@ -123,8 +123,8 @@ enum NumberType {
 };
 
 struct Fraction {
-    long nominator;
-    long denominator;
+    int64 nominator;
+    int64 denominator;
 };
 
 struct Complex {
@@ -142,7 +142,7 @@ struct SmartNumber {
 
 union NumberValue { // 64 bit: (56/60 bit if extracted from SmartNumber
     double doubl; // see Node.real
-    long long longe; // see Node.longy
+    int64 longe; // see Node.longy
     Fraction fraction;// two int
     Complex complex;// float
     char *digits; // todo
@@ -184,12 +184,12 @@ public:
         type = number_int;
     }
 
-    Number(long a) {
+    Number(int64 a) {
         value.longe = a;
         type = number_long;
     }
 
-    Number(long long a) {
+    Number(int64 a) {
         value.longe = a;
         type = number_long;
     }
@@ -211,7 +211,7 @@ public:
 
     Number(chars a) {
         // todo auto BigInt
-        long i = parseLong(a);
+        int64 i = parseLong(a);
         double d = parseDouble(a);
 //        value.digits = a;
 //        number_type = number_digits;
@@ -228,15 +228,14 @@ public:
     Number operator+(Number other) {
         NumberType type2 = other.type;
         if (type > number_long or type2 > number_long) {
-            if (type > number_double or type2 > number_double)
-                todo("Number operator +");
+            if (type > number_double or type2 > number_double) todo("Number operator +");
             return Number(value.doubl + other.value.doubl);
         }
-        long l1 = value.longe;
-        long l2 = other.value.longe;
+        int64 l1 = value.longe;
+        int64 l2 = other.value.longe;
         // overflow => bigger type
         if (abs(l1) + abs(l2) < 0)return Number(BigInt(l1) + BigInt(l2));
-        long sum = l1 + l2;
+        int64 sum = l1 + l2;
         if (sum > -2l << 32 and sum < 2l << 32) return Number((int) sum);// number fits int
         return Number(sum);// max(type2,number_type)
     }
@@ -244,15 +243,14 @@ public:
     Number operator*(Number other) {
         NumberType type2 = other.type;
         if (type > number_long or type2 > number_long) {
-            if (type > number_double or type2 > number_double)
-                todo("Number operator *");
+            if (type > number_double or type2 > number_double) todo("Number operator *");
             return Number(value.doubl * other.value.doubl);// ignore 10E330 overflow
         }
-        long l1 = value.longe;
-        long l2 = other.value.longe;
+        int64 l1 = value.longe;
+        int64 l2 = other.value.longe;
         if (abs(l1) * abs(l2) < 0) // overflow => bigger type
             return Number(BigInt(l1) + BigInt(l2));
-        long prod = l1 * l2;
+        int64 prod = l1 * l2;
         if (prod > -2l << 32 and prod < 2l << 32) return Number((int) prod);// number fits int
         return Number(prod);// max(type2,number_type)
     }

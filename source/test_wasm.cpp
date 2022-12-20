@@ -93,17 +93,17 @@ void testGlobals() {
 }
 
 void test_get_local() {
-    assert_emit("add1 x:=$0+1;add1 3", (long) 4);
+    assert_emit("add1 x:=$0+1;add1 3", (int64) 4);
 }
 
 void testWasmFunctionDefiniton() {
-//	assert_is("add1 x:=x+1;add1 3", (long) 4);
+//	assert_is("add1 x:=x+1;add1 3", (int64) 4);
 
-    assert_emit("add1 x:=x+1;add1 3", (long) 4);
-    assert_emit("add2 x:=x+2;add2 3", (long) 5);
+    assert_emit("add1 x:=x+1;add1 3", (int64) 4);
+    assert_emit("add2 x:=x+2;add2 3", (int64) 5);
     skip(
-            assert_emit("expression_as_return:=y=9;expression_as_return", (long) 9);
-            assert_emit("addy x:= y=2 ; x+y ; addy 3", (long) 5);
+            assert_emit("expression_as_return:=y=9;expression_as_return", (int64) 9);
+            assert_emit("addy x:= y=2 ; x+y ; addy 3", (int64) 5);
     )
 
     assert_emit("grows x:=x*2;grows(4)", 8)
@@ -150,27 +150,27 @@ void testLazyEvaluation() {
 
 void testWasmFunctionCalls() {
     skip(
-            assert_emit("puts 'ok'", (long) 0);
+            assert_emit("puts 'ok'", (int64) 0);
     )
-    assert_emit("id (3+3)", (long) 6);
     assert_emit("square 3", 9);
-    assert_emit("id 123", (long) 123);
-    assert_is("id 3+3", 6);
-    assert_emit("putf 3.1", 0);
-//    assert_emit("putf 3.1", 3.1);
-    assert_emit("puti 3", (long) 3);
-//    assert_emit("puti 3", 0);// todo ()
+//    assert_emit("putf 3.1", 0);
+    assert_emit("putf 3.1", 3.1);
+    assert_emit("puti 3", (int64) 3);
+//    assert_emit("puti 3", 0);
+    assert_emit("puti 3", 3);// todo ()
+//    assert_emit("puti 3+3", 0);
     assert_emit("puti 3+3", 6);
-    assert_emit("4*5 + square 2*3", (long) 56);
-    assert_emit("id 3+3", (long) 6);
-    assert_emit("3 + square 3", (long) 12);
-    assert_emit("1+2 + square 1+2", (long) 12);
+    assert_emit("4*5 + square 2*3", (int64) 56);
+    assert_emit("3 + square 3", (int64) 12);
+    assert_emit("1+2 + square 1+2", (int64) 12);
 
-    assert_is("id 3+3", 6);
-    assert_emit("3 + id 3+3", (long) 9);
-    assert_emit("3 + √9", (long) 6);
-    assert_emit("id(3*42) > id 2*3", 1)
+    assert_emit("3 + √9", (int64) 6);
     assert_emit("square(3*42) > square 2*3", 1)
+    assert_emit("id(3*42) > id 2*3", 1)
+    assert_emit("id 123", (int64) 123);
+    assert_emit("id (3+3)", (int64) 6);
+    assert_is("id 3+3", 6);
+    assert_emit("3 + id 3+3", (int64) 9);
 }
 
 void testConstReturn() {
@@ -201,14 +201,14 @@ void testMathPrimitives() {
             assert_emit(("2000000000"), 2000000000)// todo stupid smart pointers
             assert_emit(("-2000000000"), -2000000000)
     )
-    assert_emit(("2000000000000"), (long) 2000000000000)// auto long
-    assert_emit(("-2000000000000"), (long) -2000000000000L)
+    assert_emit(("2000000000000"), (int64) 2000000000000)// auto int64
+    assert_emit(("-2000000000000"), (int64) -2000000000000L)
 
     assert_emit("x=3;x*=3", 9)
     assert_emit("'hello';(1 2 3 4);10", 10);
 //	data_mode = false;
     assert_emit("i=ø; not i", true);
-    assert_emit("0.0", (long) 0);// can't emit float yet
+    assert_emit("0.0", (int64) 0);// can't emit float yet
     assert_emit(("x=15;x>=14"), 1)
     assert_emit("i=1.0;i", 1.0);// works first time but not later in code :(
     assert_emit("i=0.0;i", 0.0);//
@@ -292,7 +292,7 @@ void testNorm() {
 void testMathOperators() {
 //	assert_emit(("42 2 *"), 84)
     assert_emit("- -3", 3);
-    assert_emit("1 - 3 - square 3+4", (long) -51);// OK!
+    assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
     assert_emit("1- -3", 4);
     assert_emit("1 - -3", 4);
     skip(
@@ -491,12 +491,12 @@ void testWasmLogicPrimitives() {
 
     assert_emit("false", false);
     assert_emit("false", False);
-    assert_emit("false", (long) 0);
+    assert_emit("false", (int64) 0);
 
     assert_emit("nil", false);
     assert_emit("null", false);
-    assert_emit("null", (long) 0);
-    assert_emit("null", (long) nullptr);
+    assert_emit("null", (int64) 0);
+    assert_emit("null", (int64) nullptr);
     assert_emit("ø", false);
     assert_emit("nil", NIL);
 }
@@ -545,15 +545,15 @@ void testWasmLogicUnaryVariables() {
 }
 
 void testSelfModifying() {
-    assert_emit("i=3;i*=3", (long) 9);
-    assert_emit("i=3;i+=3", (long) 6);
-    assert_emit("i=3;i-=3", (long) 0);
-    assert_emit("i=3;i/=3", (long) 1);
-    //	assert_emit("i=3;i√=3", (long) ∛3); NO i TIMES √
+    assert_emit("i=3;i*=3", (int64) 9);
+    assert_emit("i=3;i+=3", (int64) 6);
+    assert_emit("i=3;i-=3", (int64) 0);
+    assert_emit("i=3;i/=3", (int64) 1);
+    //	assert_emit("i=3;i√=3", (int64) ∛3); NO i TIMES √
     skip(
-            assert_emit("i=3^1;i^=3", (long) 27);
+            assert_emit("i=3^1;i^=3", (int64) 27);
             assert_throws("i*=3");// well:
-            assert_emit("i*=3", (long) 0);
+            assert_emit("i*=3", (int64) 0);
     )
 }
 
@@ -703,13 +703,13 @@ void testWasmMemoryIntegrity() {
     if (!MEMORY_SIZE) {
         error("NO MEMORY");
     }
-    printf("MEMORY start at %ld\n", (long) memory);
-    printf("current start at %ld\n", (long) current);
+    printf("MEMORY start at %lld\n", (int64) memory);
+    printf("current start at %lld\n", (int64) current);
 //	Bus error: 10  if i > MEMORY_SIZE
 // Fails at 100000, works at 100001 WHERE IS THIS SET?
 //	int start=125608;
     int start = HEAP_OFFSET * 2;// out of bounds table access CORRUPTION!
-    long end = MEMORY_SIZE / 4; // /4 because 1 int = 4 bytes
+    int64 end = MEMORY_SIZE / 4; // /4 because 1 int = 4 bytes
     for (int i = start; i < end; ++i) {
         int tmp = memory[i];
 //		memory[i] = memory[i]+1;
@@ -741,7 +741,7 @@ void testOldRandomBugs() {
     assert(eval("3==2+1") == 1);
     assert(eval("2+1==2+1") == 1);
     assert_emit("square 3", 9);
-    assert_emit("id (3+3)", (long) 6);
+    assert_emit("id (3+3)", (int64) 6);
     const Node &node = parse("x:40;x+1");
     check(node.length == 2)
     check(node[0]["x"] == 40)
@@ -754,10 +754,10 @@ void testOldRandomBugs() {
     assert_emit("grows := it * 2 ; grows(4)", 8)
     assert_emit("grows:=it*2;grows(4)", 8)
 
-//	assert_emit("1 -3 - square 3+4", (long) -51);
-    assert_emit("1+2 + square 3+4", (long) 52);
+//	assert_emit("1 -3 - square 3+4", (int64) -51);
+    assert_emit("1+2 + square 3+4", (int64) 52);
 
-    assert_emit("4*5 + square 2*3", (long) 56);
+    assert_emit("4*5 + square 2*3", (int64) 56);
     //	assert_emit("id 3*42> id 2*3", 1)
     assert_emit("x:=41;if x>1 then 2 else 3", 2)
     assert_emit("x=41;if x>1 then 2 else 3", 2)
@@ -772,7 +772,7 @@ void testOldRandomBugs() {
     //	check(node.length==3)
     //	check(node[0]["x"]==40)
     //	exit(1);
-    assert_emit("3 + √9", (long) 6);
+    assert_emit("3 + √9", (int64) 6);
     assert_emit("square 3", 9);
     assert_emit("-42", -42)
 }
@@ -976,7 +976,7 @@ void testWasmStuff() {
     assert_emit("grows:=it*2; grows 3", 6)
     assert_emit("fib x:=if x<2 then x else fib(x-1)+fib(x-2);fib(7)", 13)
     assert_emit("fib x:=if x<2 then x else{fib(x-1)+fib(x-2)};fib(7)", 13)
-    assert_emit("add1 x:=x+1;add1 3", (long) 4);
+    assert_emit("add1 x:=x+1;add1 3", (int64) 4);
 }
 
 bool testRecentRandomBugsAgain = true;
@@ -989,9 +989,9 @@ void testRecentRandomBugs() {
     assert_emit("1-‖3‖/-3", 2);
     assert_emit("i=true; not i", false);
     skip(
-            assert_emit("i=3^1;i^=3", (long) 27);
+            assert_emit("i=3^1;i^=3", (int64) 27);
             assert_throws("i*=3");// well:
-            assert_emit("i*=3", (long) 0);
+            assert_emit("i*=3", (int64) 0);
     )
     assert_emit("maxi=3840*2160", 3840 * 2160);
     assert_emit("√π²", 3);
@@ -1183,8 +1183,8 @@ void testMathLibrary() {
 void testSmartReturn() {
     assert_emit("x='abcde';x[3]", 'd');
     assert_emit("1", 1);
-    assert_emit("-2000000000000", (long) -2000000000000l)
-    assert_emit("2000000000000", (long) 2000000000000l)// auto long
+    assert_emit("-2000000000000", (int64) -2000000000000l)
+    assert_emit("2000000000000", (int64) 2000000000000l)// auto int64
     assert_emit("42.0/2.0", 21);
     assert_emit("42.0/2.0", 21.);
     assert_emit("- √9", -3);

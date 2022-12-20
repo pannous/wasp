@@ -348,7 +348,7 @@ void print_frame(wasm_frame_t *frame) {
 }
 
 typedef unsigned char *bytes;
-extern "C" long run_wasm(bytes data, int size) {
+extern "C" int64 run_wasm(bytes data, int size) {
 
 //    test_V8_cpp_Javascript();
 //    v8_cpp_api();

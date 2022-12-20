@@ -68,7 +68,7 @@ int64_t WASM_EXPORT test_memcpy0(void) {
 }
 
 
-long run_wasm3(const uint8_t *prog, int len) {
+int64 run_wasm3(const uint8_t *prog, int len) {
 //	std::cout << "Loading WebAssembly..." << std::endl;
     try {
         wasm3::environment env;
@@ -102,9 +102,9 @@ long run_wasm3(const uint8_t *prog, int len) {
 //		wasm3::function main_fn = runtime.find_function("_start");
         wasm3::function main_fn = runtime.find_function("wasp_main");
 #if MULTI_VALUE
-        //		auto res = main_fn.call<long,int>();
+        //		auto res = main_fn.call<int64,int>();
 #else
-        auto res = main_fn.call<long>();
+        auto res = main_fn.call<int64>();
 #endif
         return res;
 
@@ -119,7 +119,7 @@ long run_wasm3(const uint8_t *prog, int len) {
 	}
 }
 
-extern "C" long run_wasm(bytes wasm_bytes, int len) {
+extern "C" int64 run_wasm(bytes wasm_bytes, int len) {
 //	test_wasm3(test_prog_wasm, test_prog_wasm_len);
     return run_wasm3((const uint8_t *) wasm_bytes, len);
 }

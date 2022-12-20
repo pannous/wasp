@@ -77,37 +77,39 @@ void fd_write_host(int FD, char **strp, int *len, int *nwritten) {
  * */
 
 
-void putf(float f) {
+float putf(float f) {
     printf("%f\n", f);
+    return f;
 }
 
-void putp(void *f) {
+void *putp(void *f) {
     printf("%p\n", f);
+    return f;
 }
 
 
-void puti(int i) {
+int puti(int i) {
     printf("%d", i);
+    return i;
 }
 
-void putl(long long l) {
+int64 putl(int64 l) {
     printf("%lld", l);
+    return l;
 }
 
-[[maybe_unused]] void putx(long long l) {
+[[maybe_unused]] int64 putx(int64 l) {
     printf("%llx", l);
+    return l;
 }
 
-void putp(long char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
-    printf("%s", (char *) char_pointer);
+void putp(int64 char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
+    printf("%llx", char_pointer);
 }
 
-void put_char(codepoint c) {
+codepoint put_char(codepoint c) {
     printf("%c", c);
-}
-
-void putx(int i) {
-    printf("%x", i);
+    return c;
 }
 
 double powd(double x, double y) {

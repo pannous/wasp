@@ -61,7 +61,7 @@ typedef String grapheme;// sequence of one or more code points that are displaye
 
 void newline();
 
-String &hex(long d);
+String &hex(int64 d);
 
 enum sizeMeasure {
     by_char8s,// bytes
@@ -77,11 +77,11 @@ codepoint decode_unicode_character(chars utf8bytes, short *len = 0);
 short utf8_byte_count(codepoint c);
 
 //decode_codepoint
-char *formatLongWithBase(long num, int base);
+char *formatLongWithBase(int64 num, int base);
 
-char *formatLong(long num);
+char *formatLong(int64 num);
 
-char *formatLong(long num);
+char *formatLong(int64 num);
 
 int atoi1(codepoint c);// usually byte 0…10, but with special signs for CYRILLIC MILLIONS ҉ we stick with int
 
@@ -298,16 +298,10 @@ public:
         length = strlen(data);
     }
 
-    explicit String(long number) {
+    explicit String(int64 number) {
         data = formatLong(number);
         length = len();
     }
-
-    explicit String(long long number) {
-        data = formatLong(number);
-        length = len();
-    }
-
 
     explicit String(char16_t utf16char) {
         data = (char *) (calloc(sizeof(char16_t), 2));
@@ -342,9 +336,9 @@ public:
         length = len();
 //		itof :
         append('.');
-        real = real - (long(real));
+        real = real - (int64(real));
         while (length < max_length) {
-            real = (real - long(real)) * 10;
+            real = (real - int64(real)) * 10;
             if (int(real) == 0)break;// todo 0.30303
             append(int(real) + '0');// = '0'+1,2,3
         }
@@ -562,16 +556,11 @@ public:
         return this->operator%((int) d);
     }
 
-
-    String operator%(long d) {
-        return this->operator%((long long) d);
+    String operator%(uint64 d) {
+        return this->operator%((int64) d);
     }
 
-    String operator%(unsigned long d) {
-        return this->operator%((long long) d);
-    }
-
-    String operator%(long long d) {
+    String operator%(int64 d) {
         if (contains("%lld"))
             return this->replace("%lld", formatLong(d));
         else if (contains("%ld"))
@@ -588,11 +577,16 @@ public:
             return this->replace("%x", hex(d));
         print("FORMAT:");
         printf("%s", data);
-        printf("long arg:");
+        printf("int64 arg:");
         print(formatLong(d));
         error("missing placeholder %d in string modulo operation s%d");
         return "«ERROR»";
     }
+
+    String operator%(size_t s) {
+        return *this % (int64) s;
+    }
+
 
     String operator%(double f) {
         String formated = String() + formatLong(f) + "." + formatLong((f - int(f)) * 10000);
@@ -694,16 +688,12 @@ public:
         return this->operator+(String(i));
     }
 
-    String operator+(long long i) {
-        return this->operator+(String(i));
+    String operator+(int64 i) {
+        return this->operator+(String((int64) i));
     }
 
-    String operator+(long i) {
-        return this->operator+(String((long long) i));
-    }
-
-    String operator+(unsigned long i) {
-        return this->operator+(String((long long) i));
+    String operator+(uint64 i) {
+        return this->operator+(String((int64) i));
     }
 
     String operator+(char c) {
@@ -872,7 +862,7 @@ public:
 
     int indexOf(chars string, bool reverse = false) {
         int l = strlen(string);
-        if ((long) data + l > MEMORY_SIZE)
+        if ((int64) data + l > MEMORY_SIZE)
             error("corrupt string");
         for (int i = 0; i <= length - l; i++) {
             bool ok = true;
@@ -963,7 +953,7 @@ public:
         return this->replace("%d", formatLong(i));
     }
 
-    String format(long i) {
+    String format(int64 i) {
         return this->replace("%d", formatLong(i));
     }
 
@@ -1017,7 +1007,7 @@ public:
 
     String trim();
 
-    long hash() const;
+    int64 hash() const;
 
     String &lower();
 
@@ -1050,7 +1040,7 @@ public:
     }
 };
 
-String operator ""_(chars c, unsigned long);
+String operator ""_(chars c, unsigned long);// invalid literal operator parameter type uint64
 
 String operator ""_s(chars c, unsigned long);
 
@@ -1070,9 +1060,9 @@ static String empty_name = "";
 static String nil_name = "nil";
 static String EMPTY = "";// = String('\0');
 
-//String operator "" s(chars c, unsigned long );// wasm function signature contains illegal type
-//String operator "" _(chars c, unsigned long );
-//String operator "" _s(chars c, unsigned long );
+//String operator "" s(chars c, uint64 );// wasm function signature contains illegal type
+//String operator "" _(chars c, uint64 );
+//String operator "" _s(chars c, uint64 );
 void print(String *s);
 
 void print(char const *s);
@@ -1103,7 +1093,7 @@ bool empty(codepoint s);// todo: rename whitespace (and braces??)
 
 bool contains(chars str, chars match);
 
-String &hex(long d);
+String &hex(int64 d);
 
 #ifdef WEBAPP
 // todo expensive!

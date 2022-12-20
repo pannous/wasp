@@ -137,7 +137,7 @@ List<chars> operator_list(operator_list0);
 
 
 Map<String, List<String>> aliases;
-Map<long/*hash*/, String *> hash_to_normed_alias;
+Map<int64/*hash*/, String *> hash_to_normed_alias;
 
 //bool aliases_loaded = false;
 bool aliases_loaded = true;// DON't load aliases!
@@ -629,7 +629,7 @@ private:
         auto sign = '\n';
         auto string = String("");
         short base = 10;
-        long number0;
+        int64 number0;
         if (ch == '0' and (next == 'x' or next == 'X'))return hexadecimal_number();// base=16;
         if (ch == '0' and (next == 'o' or next == 'O')) {
             todo("octal");
@@ -704,7 +704,7 @@ private:
         return next_digit - '0';
     }
 
-    String fromCharCode(long uffff) {// todo UTF
+    String fromCharCode(int64 uffff) {// todo UTF
         return String((char) (uffff));// itoa0(uffff);
     }
 
@@ -756,7 +756,7 @@ private:
 //					else { // escape sequence
 //						proceed();
 //						if (ch == 'u') { // unicode escape sequence
-//							long uffff = 0; // unicode
+//							int64 uffff = 0; // unicode
 //							for (i = 0; i < 4; i += 1) {
 //								hex = parseInt(proceed(), 16);
 ////								if (!isFinite(hex)) { break; }
@@ -1167,7 +1167,7 @@ private:
         for (auto i = 0; i < 64; i++) {
             char charCode = text.charCodeAt(i);
             if (charCode < 0) // never true: charCode > 128 or
-                err(("Invalid binary charCode %d "_s % (long) charCode) + text.substring(i, i + 2) + "" + text);
+                err(("Invalid binary charCode %d "_s % (int64) charCode) + text.substring(i, i + 2) + "" + text);
             lookup64[(short) charCode] = i;// todo: what is this?
         }
 // ' ', \t', '\r', '\n' spaces also allowed in base64 stream
@@ -1412,7 +1412,7 @@ private:
     }
 
 // ":" is short binding a b:c d == a (b:c) d
-// "=" is long-binding a b=c d == (a b)=(c d)   todo a=b c=d
+// "=" is int64-binding a b=c d == (a b)=(c d)   todo a=b c=d
 // "-" is post binding operator (analyzed in angle) OR short-binding in kebab-case
 // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
 // special : close=';' : single expression a = 1 + 2

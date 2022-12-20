@@ -78,6 +78,6 @@ Code &read_code(chars file);
 
 extern Module *module;
 
-extern Map<long, Module *> module_cache;
+extern Map<int64, Module *> module_cache;
 
 Module &loadRuntime();

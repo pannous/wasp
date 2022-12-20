@@ -115,11 +115,13 @@ Type mapType(String arg) {
     else if (arg == "int*")return pointer;
     else if (arg == "void*")return pointer;
     else if (arg == "long")return i64;
-    else if (arg == "long&")return pointer;
     else if (arg == "long long")return i64;
+    else if (arg == "unsigned long")return i64;// we don't care about unsigned
     else if (arg == "unsigned long long")return i64;
+    else if (arg == "long&")return pointer;
+    else if (arg == "int64")return i64;
+    else if (arg == "uint64")return i64;
     else if (arg == "double")return float64;
-    else if (arg == "unsigned long")return i64;
     else if (arg == "float")return float32;
     else if (arg == "bool")return int32;
     else if (arg == "char")return int32;// c++ char < angle codepoint ok
@@ -322,7 +324,7 @@ chars typeName(const Type *t) {
 }
 
 
-// in final stage of emit, keep original types as long as possible
+// in final stage of emit, keep original types as int64 as possible
 // todo: may depend on context?
 Valtype mapTypeToWasm(Type t) {
     if (t.value < 0x80)
@@ -382,7 +384,7 @@ Valtype mapTypeToWasm(Node &n) {
 
     //	if(n.type)…
 
-    // int is not a true angle type, just an alias for long.
+    // int is not a true angle type, just an alias for int64.
     // todo: but what about interactions with other APIs? add explicit i32 !
     // todo: in fact hide most of this under 'number' magic umbrella
     if (n.kind == bools)return int32;
