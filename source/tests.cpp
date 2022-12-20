@@ -1475,10 +1475,13 @@ void testMapsAsLists() {
 
 void testLogic() {
     assert_is("not true", false);
+    assert_is("not false", true);
+
     assert_is("false xor true", true);
     assert_is("true xor false", true);
     assert_is("false xor false", false);
     assert_is("true xor true", false);
+
     assert_is("false or true", true);
     assert_is("false or false", false);
     assert_is("true or false", true);
@@ -1489,7 +1492,6 @@ void testLogic() {
     assert_is("false and true", false);
     assert_is("false and false", false);
 
-    assert_is("not false", true);
 
 
     assert_is("¬ 1", 0);
@@ -2780,6 +2782,12 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
 //    assert_emit("grows x:=x*2;grows(4)", 8)
+//    assert_is("0 ⋁ 0", 0);
+    assert_emit("3^2", 9);
+
+    assert_run("test42+1", 43);
+    assert_is("0 ⊻ 0", 0);
+    assert_emit("'123' is '123'", true);
     assert_emit("putf 3.1", 3.1);
     assert_emit("id 123", (int64) 123);
     assert_emit("putl 123", (int64) 123);

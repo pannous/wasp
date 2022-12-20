@@ -455,7 +455,7 @@ Index LinkerInputBinary::RelocateFuncIndex(Index function_index) {
 //                check_silent(import->foreign_binary);
             }
             offset = import->foreign_binary->function_index_offset;// todo function_index ADDED LATER to offset!
-            LOG_DEBUG("reloc for disabled import %s : new index = %d + %d\n", import->name.data, function_index,
+            LOG_DEBUG("reloc for resolved import %s : new index = %d + %d\n", import->name.data, function_index,
                       offset);
         } else {
             Index new_index = import->relocated_function_index;
@@ -1628,8 +1628,8 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
         short new_size = lebByteSize((uint64) new_value);
         if (new_size > current_size) {
             uint8_t noper = *(section_start + r->offset + current_size);
-            if (noper != nop_) todo(
-                    "grow big leb values %d >> %d (%d bytes > %d leb bytes)"s % new_value % cur_value % new_size %
+            if (noper != nop_) todow(
+                    "grow big leb %d >> %d (%d bytes > %d leb bytes)"s % new_value % cur_value % new_size %
                     current_size);
         }// memory messed up by now
         WriteU32Leb128Raw(section_start + r->offset, section_end, new_value);

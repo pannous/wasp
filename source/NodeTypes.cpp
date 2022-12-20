@@ -298,7 +298,7 @@ chars typeName(Kind t) {
             return "module";
         case last_kind:
         default:
-            error(str("MISSING Type Kind name mapping ") + (int) t);
+            error("MISSING Type Kind name mapping "s + (int) t);
     }
 }
 
@@ -314,7 +314,7 @@ chars typeName(Type t) {
 #else
     if (t.value > 0x10000)return ((Node*)t.address)->name;
 #endif
-    error(str("MISSING Type name mapping ") + typeName(t));
+    error("MISSING Type name mapping "s + typeName(t));
     return "ƒ";
 }
 

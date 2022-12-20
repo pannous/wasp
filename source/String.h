@@ -1095,6 +1095,13 @@ bool contains(chars str, chars match);
 
 String &hex(int64 d);
 
+//extern "C"  // only pointers!
+String &string(chars chars);
+
+extern "C"  // only pointers!
+String *str(chars chars);
+
+
 #ifdef WEBAPP
 // todo expensive!
 #include <sstream>
@@ -1105,3 +1112,4 @@ void render(Node &node, std::stringstream *html = 0);
 #pragma clang diagnostic pop
 
 codepoint getChar(chars string, int nr);
+

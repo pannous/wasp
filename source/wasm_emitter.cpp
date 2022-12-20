@@ -1168,7 +1168,8 @@ Code emitValue(Node &node, Function &context) {
             String string = *node.value.string;
             if (referenceDataIndices.has(string))
                 // todo: reuse same strings even if different pointer, aor make same pointer before
-                last_object_pointer = referenceDataIndices[string];
+//                last_object_pointer = referenceIndices[string];
+                last_object_pointer = referenceDataIndices[string] - 8;
             else {
                 emitString(node, context);
 //                referenceDataIndices.insert_or_assign(string, data_index_end);
@@ -1421,12 +1422,16 @@ Code emitOperator(Node &node, Function &context) {
         code.add(result.position);
         code.add(opcodes("*", last_type));
     } else if (name == "**" or name == "to the" or name == "^" or name == "^^") {
+//        code.add(cast(last_type, Primitive::wasm_float64));
+//        code.add(emitCall(*new Node("pow"), context));
 //		if(last_value==0)code.addConst(1);
 //		if(last_value==1)return code;
         if (last_type == int32) code.add(emitCall(*new Node("powi"), context));
         else if (last_type == float32) code.add(emitCall(*new Node("powf"), context));
         else if (last_type == float64) code.add(emitCall(*new Node("pow"), context));
-        else code.add(emitCall(*new Node("powi"), context));
+        else if (last_type == int64s) code.add(emitCall(*new Node("pow_long"), context));
+        else todo("^ power with type "s + typeName(last_type));
+//         'powl' is a builtin with type 'long double (long double, long double)'
     } else if (name.startsWith("-")) {
         code.add(i32_sub);
     } else if (name == "return") {
@@ -1501,7 +1506,8 @@ Code emitStringOp(Node &op, Function &context) {
         return emitCall(op, context);
 //		stringOp.addByte();
     } else if (op == "==" or op == "is" or op == "equals") {
-        op = Node("eq");//  careful : various signatures
+        op = Node("_Z2eqPKcS0_i");//  careful : various signatures
+//        op = Node("_Z2eqR6StringPKc");//  careful : various signatures
         last_type = charp;//stringp;
         return Code(i32_const) + Code(-1) + emitCall(op, context);// third param required!
     } else if (op == "#") {// todo: all different index / op matches
@@ -1800,7 +1806,7 @@ Code emitCall(Node &fun, Function &context) {
     if (not functions.has(name)) {
         auto normed = normOperator(name);
         if (not functions.has(normed))
-            error("unknown context "s + name + " (" + normed + ")"); // checked before, remove
+            error("unknown function "s + name + " (" + normed + ")");
         else name = normed;
     }
     Function &function = functions[name];// NEW context! but don't write context ref!
@@ -1830,6 +1836,9 @@ Code emitCall(Node &fun, Function &context) {
     code.addByte(function_call);
     code.addInt(index);// as LEB!
     code.addByte(nop_);// padding for potential relocation
+    code.addByte(nop_);
+    code.addByte(nop_);
+    code.addByte(nop_);
     context.is_used = true;
 
     // todo multi-value
@@ -2325,7 +2334,7 @@ Code emitTypeSection() {
             continue;
         }
         if (not call_indices.has(fun)) {
-            warn("call_indices too late?");
+            warn("call_index %d for %s too late?"s % (last_index + 1) % fun);
             function.call_index = ++last_index;
             call_indices[fun] = last_index;
         }
