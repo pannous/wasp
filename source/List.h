@@ -439,6 +439,13 @@ public:
         return neu;
     }
 
+    S *find(bool (*lambda)(S &)) {
+        for (S *s: *this)
+            if (lambda(s))return s;
+        return 0;
+    }
+
+
     String join(String string) {
         String s;
         for (auto i: *this) {

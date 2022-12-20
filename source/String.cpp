@@ -747,3 +747,11 @@ codepoint getChar(chars string, int nr) {
 //    if (nr > len)error("index out of bounds %i>%i "s % nr % len);
 //    return string[nr - 1 % len];
 }
+
+//extern "C"  // only pointers!
+String &string(chars chars) { return *new String(chars); }
+
+extern "C"  // only pointers!
+String *str(chars chars) {
+    return new String(chars);
+}

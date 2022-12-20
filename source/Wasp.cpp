@@ -114,7 +114,7 @@ chars function_keywords[] = {"to", "ƒ", "fn", "fun", "func", "function", "metho
 chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
                           "is", "equal", "equals", "==", "!=", "≠", "#", "=", "." /*attribute operator!*/,
                           "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "nop",
-                          "pass",
+                          "pass", "typeof",
                           "upto", "…", "...", "..<" /*range*/,
                           "%", "mod", "modulo", "⌟", "2⌟", "10⌟", "⌞", "⌞2", "⌞10",
                           "plus", "times", "add", "minus",// todo via aliases.wasp / SPO PSO verb matching
@@ -168,6 +168,7 @@ String &normOperator(String &alias) {
     auto normed = hash_to_normed_alias[hash];
     if (not normed->empty() and alias != normed)
         trace(alias + " operator normed to " + normed);
+    if (alias == "is")return string("eq");
     return *normed;
 }
 
@@ -1616,9 +1617,9 @@ private:
                 case U'＝':
                 case U'﹦':
                 case u'⇨':
+                case u'←': // in apl assignment is a left arrow
                 case '=': { // assignments, declarations and map key-value-pairs
                     // todo {a b c:d} vs {a:b c:d}
-
                     Node &key = actual.last();
                     bool add_raw = actual.kind == expression or key.kind == expression or
                                    (actual.last().kind == groups and actual.length > 1);
@@ -2151,7 +2152,7 @@ float precedence(String name) {
     if (eq(name, "and"))return 7.1;
     if (eq(name, "&&"))return 7.1;
     if (eq(name, "&"))return 7.1;
-    if (eq(name, "∧"))return 7.1;
+    if (eq(name, "∧"))return 7.1;// ⚠️ todo this is POWER for non-boolean! NEVER bitwise and  1^0==0 vs 1^0==1 ⚠ WARN!
     if (eq(name, "⋀"))return 7.1;
 
 

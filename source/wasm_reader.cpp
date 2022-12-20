@@ -10,8 +10,8 @@
 
 #define POLYMORPH_function_index_marker -2
 
-bool debug_reader = tracing;
-//bool debug_reader = true;
+//bool debug_reader = tracing;
+bool debug_reader = true;
 
 typedef unsigned char *bytes;
 int pos = 0;
@@ -146,14 +146,28 @@ void parseFunctionNames(Code &payload) {
 void parseFuncTypeSection(Code &payload) {
     // imports stupidly have their own type,
     // we don't know here if i32 is pointer … so we may have to refine later
-    for (int i = 0; i < module->code_count and payload.start < payload.length; ++i) {
-//        uint code_index = i;
-        uint call_index = (int) (i + module->import_count); // implicit !?
+//        int offset = 0; O(1)
+    for (int code_index = 0; code_index < module->code_count and payload.start < payload.length; ++code_index) {
+        uint call_index = (int) (code_index + module->import_count); // implicit !?
         int typ = unsignedLEB128(payload);
-        Function &function = module->functions.values[call_index];// module->functions contains imports
-//        check(function.code_index==i==code_index)
+//        if (call_index == 389)
+//            breakpoint_helper
+        Function *function = 0;
+        int offset = 0;// O(n/2)
+        auto max = module->functions.size();
+        while (call_index + offset < max) {
+            function = &module->functions.values[call_index + offset];// module->functions contains imports
+            if (function->code_index == code_index or function->call_index == call_index)
+                break;
+            offset++;
+        }
+        if (!function)return;
         Signature &s = module->funcTypes[typ];
-        function.signature.merge(s);
+        function->signature.merge(s);
+        if (debug_reader) {
+            char *sig = function->signature.serialize().data;
+            print("#%d ƒ%d %s%s\n"s % code_index % call_index % function->name.data % sig);
+        }
     }
 }
 
@@ -427,7 +441,7 @@ void consumeExportSection() {
         // index here means call_index > code_index
         if (index < module->import_count or index > 100000)
             error("corrupt index "s + index);
-//        int call_index = index;// why does export section link to call_index, not to code_index?
+        int call_index = index;// why does export section link to call_index, not to code_index?
         int lower_index = index - module->import_count;// the index when called
         int code_index = lower_index;
 
@@ -467,8 +481,8 @@ void consumeExportSection() {
             fun.code_index = lower_index;
         }
 
-//        if (code_index == 27 or index == 27)// "_Z6concatPKcS0_"
-//            breakpoint_helper // todo operator+
+//        if (call_index == 389)//
+//            debug_reader = true;
 
         int wasmFuncType = module->funcToTypeMap[code_index];// mainly used for return type here
         // todo: demangling doesn't yield return type, is wasm_signature ok?
@@ -514,6 +528,7 @@ void consumeExportSection() {
             char *sig = fun.signature.serialize().data;
             print("#%d ƒ%d %s(%s)\n"s % code_index % index % func.data % argos.data);
             print("#%d ƒ%d %s%s\n"s % code_index % index % func.data % sig);
+//            check(module->functions["test42"].signature.size()==0)
         }
 
     }
@@ -589,8 +604,8 @@ Module &read_wasm(bytes buffer, int size0) {
     consume(4, (byte *) (magicModuleHeader));
     consume(4, (byte *) (moduleVersion));
     consumeSections();
-    module->total_func_count = module->import_count + module->code_count;
     parseFuncTypeSection(module->functype_data);
+
     // todo: sanity checks?
 //    check_eq(module->funcToTypeMap._size, module->code_count)
     return *module;
