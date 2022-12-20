@@ -142,7 +142,7 @@ public:
     Type _type{};// reflection on template class S
     int _size = 0;
     int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
-    // previous entries must be aligned to long!
+    // previous entries must be aligned to int64!
     S *items;// In C++ References cannot be put into an array, if you try you get
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
@@ -282,18 +282,18 @@ public:
 //	}
 
 
-    S &operator[](unsigned long index) const {
+    S &operator[](uint64 index) const {
         if (index < 0 or index >= _size) /* and const means not auto_grow*/
-            error("index out of range : %d > %d"s % (long) index % _size);
+            error("index out of range : %d > %d"s % (int64) index % _size);
         return items[index];
     }
 
 
-    S &operator[](unsigned long index) {
+    S &operator[](uint64 index) {
         if (index == _size)_size++;// allow indexing one after end? todo ok?
         if (_size >= capacity)grow();
         if (index < 0 or index >= _size) /* and not auto_grow*/
-            error("index out of range : %d > %d"s % (long) index % _size);
+            error("index out of range : %d > %d"s % (int64) index % _size);
         return items[index];
     }
 

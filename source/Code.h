@@ -35,17 +35,17 @@ class Code;
 // wasm JIT runtimes: wasm3, wasm-micro-runtime, wabt, V8 via webview:
 // wasmer via console, node/browser via import, webview  …
 // extern "C" for webview / other host
-extern "C" long run_wasm(bytes wasm_bytes, int len);
-extern "C" long run_wasm_file(chars wasm_path);
+extern "C" int64 run_wasm(bytes wasm_bytes, int len);
+extern "C" int64 run_wasm_file(chars wasm_path);
 
 extern bytes magicModuleHeader;
 extern bytes moduleVersion;
 
 Code encodeVector(const Code &data);
 
-Code &unsignedLEB128(long n);
+Code &unsignedLEB128(int64 n);
 
-Code &signedLEB128(long value);
+Code &signedLEB128(int64 value);
 
 class Code {
 public:
@@ -54,7 +54,7 @@ public:
     int kind = byte_i8;
     int length = 0;
     bytes data = 0;
-    long start = 0;// internal reader pointer
+    int64 start = 0;// internal reader pointer
     bool encoded = false;// first byte = size of vector
     bool shared = true;// can't free data until all views are destroyed OR because this is a view on other's data!!
     bool needs_relocate = true; // unless specified
@@ -99,13 +99,13 @@ public:
         }
     }
 
-    Code(long nr, bool LEB = true) {
+    Code(int64 nr, bool LEB = true) {
         if (LEB) {
             push(nr, false, LEB);
         } else {
             data = new byte[8];
             shared = false;
-            *(long *) data = nr;
+            *(int64 *) data = nr;
             length = 8;
         }
     }
@@ -246,7 +246,7 @@ public:
     }
 
 //	All integers are encoded using the LEB128 variable-length integer encoding!  LEB=false should ONLY occur in custom data section!
-    Code &push(long long nr, bool sign = true, bool LEB = true) {
+    Code &push(int64 nr, bool sign = true, bool LEB = true) {
         Code val;
         if (LEB) {
             if (sign)
@@ -258,22 +258,18 @@ public:
             length += l;
         } else {
             data = new byte[8];
-            *(long *) data = nr;
+            *(int64 *) data = nr;
             length = 8;
         }
         return *this;
     }
 
-    Code &push(long nr, bool sign = true, bool LEB = true) {
-        return push((long long) nr, sign, LEB);
-    }
-
     Code &push(int nr, bool sign = true, bool LEB = true) {
-        return push((long long) nr, sign, LEB);
+        return push((int64) nr, sign, LEB);
     }
 
     Code &push(unsigned int nr, bool sign = true, bool LEB = true) {
-        return push((long long) nr, sign, LEB);
+        return push((int64) nr, sign, LEB);
     }
 
     Code &push(bytes more, int len) {
@@ -333,19 +329,19 @@ public:
 
     // as LEB!
     Code addInt(int i, bool leb = true) {
-        push((long) i, true, leb);
+        push((int64) i, true, leb);
         return *this;
     }
 
     Code addConst32(unsigned int i) {
         add(0x41 /*i32_const*/);
-        if (i > 0x80000000)push(-(long) i, false, true);// stupid sign bit hack
+        if (i > 0x80000000)push(-(int64) i, false, true);// stupid sign bit hack
         else push(i, true, true);
 //		else push(i, false, true);
         return *this;
     }
 
-    Code &addConst64(long long i) {
+    Code &addConst64(int64 i) {
 //		if (i < 0x100000000 and i > -0x100000000)
 //			add(0x41 /*i32_const*/);
 //		else
@@ -907,7 +903,7 @@ public:
 //		{
 //			Valtype valtype = mapTypeToWasm(type);
 //			return_types.add(valtype);
-//		}// value, should map to int32 unless unboxing long, float
+//		}// value, should map to int32 unless unboxing int64, float
 //		return *this;
 //	}
 
@@ -1013,7 +1009,7 @@ struct Local { // todo: use
 class Function {
 public:
     int code_index = -1;// todo: split into code_index and call_index (== code_index + import_count) ???
-//    int call_index = -1;// code_index + module.function_import.size()
+    int call_index = -1;// code_index + module.function_import.size()
     String name;
     String export_name;
     Signature signature;
@@ -1072,9 +1068,9 @@ Code createSection(Sections sectionType, const Code &data);
 
 //Code createSection(::Section sectionType, Code data);
 
-Code &unsignedLEB128(long n);
+Code &unsignedLEB128(int64 n);
 
-Code &signedLEB128(long value);
+Code &signedLEB128(int64 value);
 
 #endif
 
@@ -1092,7 +1088,7 @@ Code &signedLEB128(long value);
 36028797018963968 80000000000000 9
  */
 short lebByteSize(
-        unsigned long neu);// unsigned variants have delayed size increase by factor 2! ( 0x80 needs 2 bytes vs 0x40 signed!!)
+        uint64 neu);// unsigned variants have delayed size increase by factor 2! ( 0x80 needs 2 bytes vs 0x40 signed!!)
 short lebByteSize(unsigned int neu);
 
 /*
@@ -1114,5 +1110,5 @@ short lebByteSize(unsigned int neu);
 -285873023221760 fffefc0000000000 8
 -36591746972385280 ff7e000000000000 9
  */
-short lebByteSize(long long neu);
+short lebByteSize(int64 neu);
 

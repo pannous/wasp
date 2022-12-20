@@ -59,7 +59,7 @@ int square_x(wasm_exec_env_t exec_env, int x) {
     return x * x;
 }
 
-// f:float F:double i:int I:long no comma in arg list pow :: (FF)F
+// f:float F:double i:int I:int64 no comma in arg list pow :: (FF)F
 
 // https://github.com/bytecodealliance/wasm-micro-runtime/blob/main/doc/export_native_api.md
 /*
@@ -165,7 +165,7 @@ void init_vm(RuntimeInitArgs init_args, NativeSymbol *native_symbols, int symbol
         fail("Init runtime environment FAILED.\n");
 }
 
-long run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
+int64 run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
     try {
         if (not init_args0) {
             static RuntimeInitArgs init_args;
@@ -289,7 +289,7 @@ long run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
 }
 
 
-extern "C" long run_wasm_file2(chars wasm_path) {
+extern "C" int64 run_wasm_file2(chars wasm_path) {
     try {
         RuntimeInitArgs init_args;
         memset(&init_args, 0, sizeof(RuntimeInitArgs));
@@ -311,6 +311,6 @@ extern "C" long run_wasm_file2(chars wasm_path) {
     return -1;
 }
 
-extern "C" long run_wasm(bytes buffer, int buf_size) {
+extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     return run_wasm(reinterpret_cast<uint8 *>(buffer), buf_size, 0);
 }

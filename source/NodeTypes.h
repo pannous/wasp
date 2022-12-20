@@ -16,7 +16,7 @@ typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
 
 // todo move these to ABI.h once it is used:
 //	map_header_32 = USE Node!
-#define array_header_length 16 // 4*4 to align with long
+#define array_header_length 16 // 4*4 to align with int64
 //#include "ABI.h"
 #define node_header_32   0x80000000 // more complex than array!
 #define array_header_32  0x40000000 // compatible with List
@@ -105,7 +105,7 @@ enum Valtype {
     i64t = 0x7E,
     i64s = 0x7E,
 //    int64 = 0x7E,  // symbol now used as
-//    typedef long long int64
+//    typedef int64 int64
 
     int32 = 0X7F,
     i32t = 0x7f,
@@ -208,7 +208,7 @@ enum Primitive {
 //   redundant Valtype overlap
 
 //    Kind::undefined = 0 ==
-    unknown_type = 0,// defaults to long!
+    unknown_type = 0,// defaults to int64!
     missing_type = 0x40,// well defined
     wasm_leb = 0x77,
     wasm_float64 = 0x7C, // float64
@@ -334,7 +334,7 @@ typedef int Address;
 
 // on 64bit systems pointers (to types)
 union Type64 {//  i64 union, 8 bytes with special ranges:
-    long long value = 0; // one of:
+    int64 value = 0; // one of:
     SmartPointer64 smarty;
     Node *clazz;// same 64 bit on normal systems!!!!
 //     0x10000000_00000000 - 2^64 : SmartPointer64 ≈ SmartPointer32 + 4 byte value
@@ -355,7 +355,7 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
     */
 
     // todo: this union is BAD because we can not READ it safely, instead we need mapType / extractors for all combinations!
-    unsigned long value = 0; // one of:
+    uint64 value = 0; // one of:
 //    SmartPointer64 smarty;
 //    SmartPointer32 smarty;// when separating Types from values we don't need smart pointers
     Kind kind; // Node of this type
@@ -426,7 +426,7 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
         if (this->value < 0x1000)
             error("TODO mapTypeToNode");
 #if WASM
-            return *(Node *) (void *) (long) this->address;
+            return *(Node *) (void *) (int64) this->address;
 #else
         error("Unknown mapping Type to Node");
 #endif
@@ -442,7 +442,7 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
         return type == other;
     }
 
-//    bool operator==(unsigned long other) {
+//    bool operator==(uint64 other) {
 //        return value == other;
 //    }
 
@@ -494,7 +494,7 @@ chars typeName(Primitive p);
 
 
 
-// in final stage of emit, keep original types as long as possible
+// in final stage of emit, keep original types as int64 as possible
 Valtype mapTypeToWasm(Type t);
 
 Valtype mapTypeToWasm(Node &n);

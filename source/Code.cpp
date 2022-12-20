@@ -12,7 +12,7 @@ typedef uint8_t byt;
 
 //https://en.wikipedia.org/wiki/LEB128
 // little endian 257 = 0x81 (001) + 0x02 (256)
-Code &unsignedLEB128(long n) {
+Code &unsignedLEB128(int64 n) {
     Code *buffer = new Code(); // IF RETURNING Code&
     do {
         byt byte = n & 0x7f;
@@ -25,12 +25,12 @@ Code &unsignedLEB128(long n) {
     return *buffer;
 }
 
-Code &signedLEB128(long value) {
+Code &signedLEB128(int64 value) {
 //	Code *buffer =(Code *) malloc(sizeof(Code));// new Code();
     Code *buffer = new Code();
     int more = 1;
 //	bool negative = (value < 0);
-    long val = value;
+    int64 val = value;
 /* the size in bits of the variable value, e.g., 64 if value's type is int64_t */
 //	size = no. of bits in signed integer;
 //	int size = 64;
@@ -126,7 +126,7 @@ Code createSection(Sections sectionType, const Code &data) {
 562949953421312 2000000000000 8
 36028797018963968 80000000000000 9
  */
-short lebByteSize(unsigned long neu) {
+short lebByteSize(uint64 neu) {
     short size = 0;
     do {
         size++;
@@ -136,7 +136,7 @@ short lebByteSize(unsigned long neu) {
 }
 
 short lebByteSize(unsigned int neu) {
-    return lebByteSize((unsigned long) neu);
+    return lebByteSize((uint64) neu);
 }
 
 
@@ -160,10 +160,10 @@ short lebByteSize(unsigned int neu) {
 -281474976710657 fffeffffffffffff 8
 -36028797018963969 ff7fffffffffffff 9
  */
-short lebByteSize(long long aleb) {
+short lebByteSize(int64 aleb) {
     int more = 1;
     short size = 0;
-    long long val = aleb;
+    int64 val = aleb;
     while (more) {
         uint8_t b = val & 0x7f;
         /* sign bit of byte is second high order bit (0x40) */
@@ -178,6 +178,6 @@ short lebByteSize(long long aleb) {
         size++;
     }
     return size;
-//    Code &leb128 = signedLEB128((long) leb);// todo later … optimize inline if…
+//    Code &leb128 = signedLEB128((int64) leb);// todo later … optimize inline if…
 //    return leb128.length;
 }

@@ -212,7 +212,7 @@ int Writeline(int sockd, const char *vptr, int n) {
 }
 
 int Trim(char *buffer) {
-	long n = strlen(buffer) - 1;
+	int64 n = strlen(buffer) - 1;
 
 	while (!isalnum(buffer[n]) and n >= 0)
 		buffer[n--] = '\0';
@@ -538,7 +538,7 @@ void start_server(int port = SERVER_PORT) {
 	servaddr.sin_port = htons(port);
 
 	/* Assign socket address to socket */
-	//	__bind<int&,sockaddr *,unsigned long> x=
+    //	__bind<int&,sockaddr *,uint64> x=
 	bind(listener, (struct sockaddr *) &servaddr, sizeof(servaddr));
 	if (listener < 0)
 		Error_Quit("Couldn't bind listening socket.");

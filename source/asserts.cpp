@@ -64,19 +64,21 @@ bool assert_equals_x(Node &a, double b, char *context) {
 bool assert_equals_x(Node a, double b, char *context = "") {
     if (a != Node(b))
         print("\nFAILED assert_equals! %f should be %f %s\n"s % a.value.real % b % context);
+    else if (a.kind == longs)
+        printf(" OK %lld==%f\n", a.value.longy, b);
     else
         printf(" OK %f==%f\n", a.value.real, b);
     return a == b;
 }
 
-//bool assert_equals_x(Node &a, long b, char *context = "") {
+//bool assert_equals_x(Node &a, int64 b, char *context = "") {
 //	if (!(a == b))prinft("FAILED assert_equals! %s should be %d %s\n"s, a.name, b, context);
 //	else printf(" OK %ld==%ld %s\n", a.value.longy, b, context);
 //	return a == b;
 //}
 
 
-bool assert_equals_x(Node a, long b, char *context = "") {
+bool assert_equals_x(Node a, int64 b, char *context = "") {
     if (!(a == b))
         print("\nFAILED assert_equals! %s %lld should be %ld %s\n"s % a.name.data % a.value.longy % b % context);
     else print(" OK %lld==%ld %s\n"s % a.value.longy % b % context);
@@ -128,7 +130,7 @@ bool assert_equals_x(Node *a, Node *b, char *context = "") {
 //	return a == b;
 //}
 
-bool assert_equals_x(long a, long b, char *context) {
+bool assert_equals_x(int64 a, int64 b, char *context) {
     if (a != b)
         print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
     else print(" OK %ld==%ld %s\n"s % a % b % context);
@@ -173,7 +175,7 @@ bool assert_isx(char *mark, Node expect) {
 		if (left.kind == reals or expect.kind == reals)
 			return assert_equals_x(left.floate(), expect.floate(), mark);
 		if (left.kind == longs or expect.kind == longs) {
-			long b = expect.numbere();
+            int64 b = expect.numbere();
 			return assert_equals_x(left.numbere(), b, mark);
 		}
 		if (left != expect)
@@ -204,8 +206,8 @@ bool assert_isx(char *mark, int expect) {
 	return assert_isx(mark, Node(expect));// explicit conversion ok!
 }
 
-bool assert_isx(char *mark, long expect) {
-	return assert_isx(mark, Node(expect));// explicit conversion ok!
+bool assert_isx(char *mark, int64 expect) {
+    return assert_isx(mark, Node(expect));// explicit conversion ok!
 }
 
 bool assert_isx(char *mark, double expect) {

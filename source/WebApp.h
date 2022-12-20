@@ -1,4 +1,4 @@
-long open_webview(String url = "");
+int64 open_webview(String url = "");
 
 void navigate(String url);
 
