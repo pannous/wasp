@@ -11,10 +11,11 @@ static float function_precedence = 1000;
 // moved here so that valueNode() works even without Angle.cpp component for micro wasm module
 // pre-registered builtin/runtime functions working without any import / include / require / use
 static chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printf",
-                                                               "getChar",
+                                                               "getChar", "eq", "concat",
+                                                               "test42", "test42i", "test42f",
                                                                "println", "puts", "putf", "putd", "puti", "putl", "len",
                                                                "quit", "parseLong",
-                                                               "parseDouble", "strlen", "concat",
+                                                               "parseDouble", "strlen",
                                                                "log", "ln", "log10", "log2", "similar",
                                                                "putx", "putc", "get", "set", "peek", "poke", "read",
                                                                "write", 0, 0,
@@ -27,12 +28,9 @@ static chars wasi_function_list[] = {"proc_exit", "fd_write", "args_sizes_get", 
 // they get automatically linked when used without requiring the wasp runtime
 // see aliases for discoverability
 // todo: pre-fill list from current directory(s) / funclet registry / wapm
-static chars funclet_list[] = {"pow", "log", "log10", "log2", "lowerCaseUTF", 0};
-
+static chars funclet_list[] = {"pow", "powi", "pow_long", "log", "log10", "log2", "lowerCaseUTF", 0};
 
 static chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
-
-
 
 extern bool throwing;
 extern List<Module *> libraries;// merged:
@@ -133,7 +131,7 @@ struct ParserOptions { // not just for parser but also for serialize!!
     bool percent_names = false;// escape keywords as names in wit   e.g.  %id %flags
     bool colon_symbols = false;// :symbol ruby style ⚠️ careful with map Obviously
     bool colon_immediate = true; // parse a:b,c as (a:b) c vs a:(b,c)   should be standard!
-    bool at_names = false;// @interface as in wat,wit
+    bool at_names = false;// @interface as in wat,wit  julia macros @code_llvm / @annotation ?
     bool use_tags = false;// <html> or
     bool use_generics = false;// generic list<abc> , "less than" requires spaces, a<b can still be resolved as 'smaller' in analyzer
     bool kebab_case = true;//  false;// kebab-case means: parse "-" as hypen instead of minus, or 1900 - 2000AD (easy with units)
@@ -143,3 +141,4 @@ struct ParserOptions { // not just for parser but also for serialize!!
 };
 
 //extern Map<String, Module *> module_cache;
+

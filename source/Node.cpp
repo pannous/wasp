@@ -506,7 +506,7 @@ Node Node::operator+(Node other) {
         return merge(other);
     if (other.kind == objects)
         return other.insert(*this, 0);
-    error(str("Operator + not supported for node types %s and %s") % typeName(kind) % typeName(other.kind));
+    error("Operator + not supported for node types %s and %s"s % typeName(kind) % typeName(other.kind));
     return ERROR;
 };
 

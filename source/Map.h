@@ -282,6 +282,20 @@ public:
     List<T> valueList() {
         return List<T>(values, size());
     }
+
+//    S* find(bool (lambda)(S&)) {
+//        for (S *s: *this)
+//            if (lambda(s))return s;
+//        return 0;
+//    }
+
+
+    T *find(bool (*lambda)(T &)) {
+        for (int i = 0; i < _size; ++i)
+            if (lambda(values[i]))return &values[i];
+        return 0;
+    }
+
 };
 
 
