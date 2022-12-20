@@ -51,8 +51,8 @@ struct Reto {
 };
 
 struct Retol {
-	long value;
-	Type type;
+	int64 value;
+    Type type;
 };
 
 

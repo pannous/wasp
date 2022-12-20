@@ -65,12 +65,12 @@ int unsignedLEB128() {
 }
 
 // DANGER: modifies the start reader position of code, but not it's data!
-long unsignedLEB128(Code &byt) {
-    long n = 0;
+int64 unsignedLEB128(Code &byt) {
+    int64 n = 0;
     short shift = 0;
     do {
         byte b = byt.data[byt.start++];
-        n = n | (((long) (b & 0x7f)) << shift);
+        n = n | (((int64) (b & 0x7f)) << shift);
         if ((b & 0x80) == 0)break;// no more continuation
         shift += 7;
     } while (byt.start < byt.length);
@@ -102,7 +102,7 @@ Code vec(Code &data, bool consume = true) {
 }
 
 String &name(Code &wstring) {// Shared string view, so don't worry about trailing extra chars
-    long len = unsignedLEB128(wstring);
+    int64 len = unsignedLEB128(wstring);
     auto nam = (char *) wstring.data + wstring.start;
 //    while(nam[0]<=33)nam++;// WTH! hiding strange bug where there is a byte behind unsignedLEB128. NOT FULLY consumed
     // // BUG SINC 2022-12-09 ~16-17pm
@@ -597,7 +597,7 @@ Module &read_wasm(bytes buffer, int size0) {
 }
 
 //static
-Map<long, Module *> module_cache{.capacity=100};
+Map<int64, Module *> module_cache{.capacity=100};
 
 #include <stdlib.h>
 

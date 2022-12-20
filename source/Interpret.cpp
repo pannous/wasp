@@ -282,7 +282,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
         if (left.length == 0) // length operator #{a b c} == 3
             return Node(right.length);// or right["size"] or right["count"]  or right["length"]
         else {  // index operator [a b c]#2 == b
-            long index = right.value.longy;
+            int64 index = right.value.longy;
             if (index <= 0)
                 error("index<=0 ! Angle index operator # starts from 1. So [a b c]#2 == b. Use [] operator for zero based indexing");
             if (index > left.length)error("Index out of range: %d > %d !"s % index % left.length);
@@ -323,7 +323,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
     }
     if (op == "|") {// bitwise or OR pipe!
         if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
-        if (left.kind == longs and right.kind == longs) return Node((long long) (left.value.longy | right.value.longy));
+        if (left.kind == longs and right.kind == longs) return Node((int64) (left.value.longy | right.value.longy));
         todo("PIPE a|b");
         // pipe todo
     }

@@ -12,7 +12,8 @@ static float function_precedence = 1000;
 // pre-registered builtin/runtime functions working without any import / include / require / use
 static chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printf",
                                                                "getChar",
-                                                               "println", "puts", "putf", "len", "quit", "parseLong",
+                                                               "println", "puts", "putf", "putd", "puti", "putl", "len",
+                                                               "quit", "parseLong",
                                                                "parseDouble", "strlen", "concat",
                                                                "log", "ln", "log10", "log2", "similar",
                                                                "putx", "putc", "get", "set", "peek", "poke", "read",
@@ -95,12 +96,12 @@ bool isFunction(Node &op);
 
 bool isFunction(String op, bool deep_search = true);
 
-// int is not a true angle type, just an alias for long.
+// int is not a true angle type, just an alias for int64.
 // todo: but what about interactions with other APIs? add explicit i32 !
 // todo: in fact hide most of this under 'number' magic umbrella
 extern Map<String, Node *> types;// by name
 
-extern "C" long run_wasm_file(chars file);
+extern "C" int64 run_wasm_file(chars file);
 
 bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
 

@@ -8,6 +8,7 @@
 #include <cstddef> // size_t  FINE with wasm!
 #include "smart_types.h"
 
+
 typedef char32_t codepoint;// 'letter' ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
 
 typedef const char *chars;
@@ -36,10 +37,10 @@ extern void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM!
 #else
 //#define WASM_MEMORY_SIZE 0x20000000000
 
-#define MEMORY_SIZE 0x2000000000000000  // ~ (2**64)/10 // what for?
-//#define MEMORY_SIZE 0x2000000000000
-//#define MEMORY_SIZE 0x20000000000  // not enough!
-//#define MEMORY_SIZE 0x200000000  // not enough!
+#define MEMORY_SIZE 0x2000000000000000L  // ~ (2**64)/10 // what for?
+//#define MEMORY_SIZE 0x2000000000000L
+//#define MEMORY_SIZE 0x20000000000L  // not enough!
+//#define MEMORY_SIZE 0x200000000L  // not enough!
 
 #endif
 #define HEAP_OFFSET 0x80000
@@ -92,28 +93,23 @@ class String;
 
 extern "C" //  destroys the export type signature! but required by stdio.h:178:6:
 int puts(const char *);// stdio
-int put_s(String *);// stdio
-void putp(void *f);// pointer
-void puti(int i);
-
-void putl(long long l);
-
-void putx(long long l);
-
-//void putp(long *char_pointer);
-void put_char(codepoint c);
+extern "C" String *put_string(String *);// stdio
+extern "C" void *putp(void *f);// pointer
+extern "C" int puti(int i);
+extern "C" int64 putl(int64 l);
+extern "C" int64 putx(int64 l);
+extern "C" float putf(float f);
+extern "C" double putd(double f);
+//void putp(int64 *char_pointer);
+extern "C" codepoint put_char(codepoint c);
 //void put_char(char c);
-extern "C" int putchar(int c);// stdio
-
-void putf(float f);
-
-void putd(double f);
+//extern "C" int putchar(int c);// stdio
 
 int square(int n);// test wasm
 
 double powd(double x, double y);
 
-long squarel(long n);// test wasm, otherwise use x² => x*x in analyze!
+int64 squarel(int64 n);// test wasm, otherwise use x² => x*x in analyze!
 double square_double(double n);// test wasm
 
 extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
@@ -164,7 +160,7 @@ void print(String);
 
 void print(String *s);
 
-void print(long i);
+void print(int64 l);
 
 //extern __inline int isalnum ( int c );
 int isalnum0(int c);
@@ -173,9 +169,9 @@ extern "C" void printNode(smart_pointer_64 node);
 
 #ifdef WASM
 
-// long is 4 byte in Wasm/Windows WTH
-//typedef long long long  // WTH
-//#define long long long  // WTH
+// int64 is 4 byte in Wasm/Windows WTH
+//typedef int64 int64  // WTH
+//#define int64 int64  // WTH
 
 #ifndef WASI
 #ifdef WASM
@@ -195,9 +191,9 @@ void printf(char const *format, size_t i);
 
 void printf(char const *format, uint32_t i);
 
-void printf(char const *format, long l);
+void printf(char const *format, int64 l);
 
-void printf(char const *format, long long l);
+void printf(char const *format, int64 l);
 
 void printf(char const *format, double d);
 
@@ -207,7 +203,7 @@ void printf(chars format, int, int);
 
 void printf(chars format, uint32_t, uint32_t);
 
-void printf(chars format, long i, long);
+void printf(chars format, int64 i, int64);
 
 void printf(chars format, double i, double j);
 

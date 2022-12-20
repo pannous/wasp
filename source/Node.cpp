@@ -312,7 +312,7 @@ bool Node::operator==(int other) {
     return false;
 }
 
-bool Node::operator==(long other) {
+bool Node::operator==(int64 other) {
     if ((kind == strings or kind == unknown) and name.length == 0 and length == 0)return other == 0; // ""==0==ø
     if (kind == key and value.node and value.node->value.longy == other)return true;
     return (kind == longs and value.longy == other) or (kind == reals and value.real == other) or
@@ -324,6 +324,7 @@ bool Node::operator==(double other) {
     return (kind == reals and similar(value.real, other)) or
            //			(kind == reals and (float )value.real == (float)other) or // lost precision
            (kind == longs and value.longy == other) or
+           (kind == longs and value.longy == (int64) other) or // rounding ok?
            (kind == bools and value.longy == other);
 }
 
@@ -353,11 +354,11 @@ bool Node::operator==(Node &other) {
     if (kind == longs and other.kind == longs)
         return value.longy == other.value.longy;
     if (kind == longs and other.kind == reals)
-        return value.longy == other.value.real or value.longy == (long) other.value.real; // rounding!
+        return value.longy == other.value.real or value.longy == (int64) other.value.real; // rounding!
     if (kind == reals and other.kind == reals)
         return value.real == other.value.real or similar(value.real, other.value.real);
     if (kind == reals and other.kind == longs)
-        return (long long) value.real == other.value.longy;
+        return (int64) value.real == other.value.longy;
     if (kind == bools or other.kind == bools) // 1 == true
         return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
 //	if (kind.type == int_array and other.kind.type == int_array)
@@ -513,7 +514,7 @@ void Node::remove(Node *node) {
     if (!children)return;// directly from pointer
     if (length == 0)return;
     if (node < children or node > children + length)return;
-    for (long j = node - children; j < length - 1; j++) {
+    for (int64 j = node - children; j < length - 1; j++) {
         children[j] = children[j + 1];
     }
     children[length - 1] = 0;
@@ -533,7 +534,7 @@ void Node::remove(Node &node) {
 }
 
 Node &Node::add(const Node *node) {
-    if ((long) node > MEMORY_SIZE)
+    if ((int64) node > MEMORY_SIZE)
         error("node Out of Memory");
     if (!node)return *this;
     if (this == &NIL) {
@@ -939,7 +940,7 @@ Node &Node::setValue(const Value v) {
 }
 
 
-Node &Node::setValue(long v) {
+Node &Node::setValue(int64 v) {
     value.longy = v;
     return *this;
 }
@@ -1010,7 +1011,7 @@ Node &Node::flat() {
             }
             return child;
         }
-        if ((long) children < MEMORY_SIZE and not value.data and name.empty()) {
+        if ((int64) children < MEMORY_SIZE and not value.data and name.empty()) {
             child.parent = parent;
             return child.flat();
         }
@@ -1216,7 +1217,7 @@ bool Node::contains(const char *string) {
 }
 
 
-//Node &node(Type t, long value, char *name) {
+//Node &node(Type t, int64 value, char *name) {
 //    return (*new Node(name)).setValue(value).setType(t, false);
 //}
 //
@@ -1241,7 +1242,7 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
         return new Node((int64_t) smartPointer64);
     }
     if ((type_mask_64_word & smartPointer64) == 0) {
-        long pure_long_60 = (long) smartPointer64;
+        int64 pure_long_60 = (int64) smartPointer64;
         return new Node(pure_long_60);
     }// as number
     if ((smartPointer64 & smart_pointer_header_mask) == smart_pointer_node_signature) {
@@ -1261,7 +1262,7 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
     }
 
     auto value = smartPointer64 & 0xFFFFFFFF;// data part
-    long long smart_type64 = smartPointer64 & 0xFFFFFFFF00000000;// type part
+    int64 smart_type64 = smartPointer64 & 0xFFFFFFFF00000000;// type part
     byte smart_type_4 = (smartPointer64 & 0xF000000000000000) >> 63;// type part
 //    short smart_type_payload = (short)(smartPointer64 & 0x0000FFFF00000000L)>>16;// type payload including length (of array)
 
@@ -1310,10 +1311,10 @@ Node *smartNode(smart_pointer_64 smartPointer64) {
             char *val = (((char *) index) + stack_Item_Size * pos++);
             Node *chile;
             if (value_kind == Primitive::byte_char)chile = new Node((codepoint) *val);
-            else if (value_kind == Primitive::byte_i8)chile = new Node((long) *val);
-            else if (value_kind == Primitive::codepoint32)chile = new Node((codepoint) *(long *) val);
+            else if (value_kind == Primitive::byte_i8)chile = new Node((int64) *val);
+            else if (value_kind == Primitive::codepoint32)chile = new Node((codepoint) *(int64 *) val);
             else if (value_kind == wasm_int32)chile = new Node(*(int *) val);
-            else if ((int) value_kind == longs)chile = new Node(*(long *) val);
+            else if ((int) value_kind == longs)chile = new Node(*(int64 *) val);
             else if ((int) value_kind == reals)chile = new Node(*(double *) val);
             else todo("smartNode of array with element kind "s + typeName(value_kind));
             arr->add(chile);
@@ -1334,10 +1335,10 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         return &NUL;// we NEVER have nodes at 0
     if (pointer > 100000 + 0x10000 and debug) // todo proper memory bound check including data/runtime_offset
         error("pointer>10000"); // todo remove (in)sanity check
-    if ((long) pointer > MEMORY_SIZE)
-        error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % MEMORY_SIZE);
+    if ((int64) pointer > MEMORY_SIZE)
+        error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % (int64) MEMORY_SIZE);
 #if WASM
-    return (Node *) (long) pointer; // INSIDE wasm code INSIDE wasm linear wasm_memory
+    return (Node *) (int64) pointer; // INSIDE wasm code INSIDE wasm linear wasm_memory
 #endif
     if (not wasm_memory) error("no attached wasm memory");
     // Host 64 bit pointer layout is different than wasm 32 bit pointer layout! Can NOT reconstruct objects directly!
@@ -1345,7 +1346,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
     Node &reconstruct = *new Node();// we must NOT mess with Node object in wasm_memory, with internal pointers and layout
     bool wasm32bit = true;// PER wasm INSTANCE, has to be set by run_wasm
     if (wasm32bit) {
-        wasm32_node_struct nodeStruct = *(wasm32_node_struct *) ((long) wasm_memory + (long) pointer);
+        wasm32_node_struct nodeStruct = *(wasm32_node_struct *) ((int64) wasm_memory + (int64) pointer);
         if (not nodeStruct.node_header) {
             warn("reconstruct node sanity check failed");
             return &reconstruct;
@@ -1360,9 +1361,9 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
 //            error("bad name");
 //        if (reconstruct.name.kind) {
 //            check_is(reconstruct.name.kind, string_header_32);// todo or similar
-//            if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
+//            if ((int64) reconstruct.name.data < 0 or (int64) reconstruct.name.data > MEMORY_SIZE)
 //                error("invalid string in smartPointer");
-//            reconstruct.name = String(((char *) wasm_memory) + (long) reconstruct.name.data);// copy!
+//            reconstruct.name = String(((char *) wasm_memory) + (int64) reconstruct.name.data);// copy!
 //        } else reconstruct.name = "";// uh cheap fix?
         reconstruct.kind = nodeStruct.kind;
         reconstruct.meta = nodeStruct.meta_pointer ? reconstructWasmNode(nodeStruct.meta_pointer) : 0;
@@ -1373,7 +1374,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
             reconstruct.capacity = reconstruct.length;// can grow later
             int *child_pointers = (int *) (((char *) wasm_memory) + nodeStruct.child_pointer);
             for (int i = 0; i < reconstruct.length; ++i) {
-                long wasm_child_pointer = child_pointers[i];
+                int64 wasm_child_pointer = child_pointers[i];
                 reconstruct.children[i] = *reconstructWasmNode(wasm_child_pointer);
                 reconstruct.children[i].parent = &reconstruct;
                 if (i > 0)reconstruct.children[i - 1].next = &reconstruct.children[i];
@@ -1381,13 +1382,13 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         }
     } else { // 64 bit wasm
         // object has same layout, but we still need to fix pointers later
-        reconstruct = *(Node *) ((long) wasm_memory + (long) pointer);
+        reconstruct = *(Node *) ((int64) wasm_memory + (int64) pointer);
         for (int i = 0; i < reconstruct.length; ++i) {
-            long wasm_child_pointer = (long) reconstruct.children[i];
+            int64 wasm_child_pointer = (int64) reconstruct.children[i];
             reconstruct.children[i] = *reconstructWasmNode(wasm_child_pointer);
         }
     }
-    if ((long) reconstruct.name.data < 0 or (long) reconstruct.name.data > MEMORY_SIZE)
+    if ((int64) reconstruct.name.data < 0 or (int64) reconstruct.name.data > MEMORY_SIZE)
         error("invalid string in smartPointer");
     check_is(reconstruct.name.kind, string_header_32);
     if (reconstruct.name.length < 0 or reconstruct.name.length > MAX_NODE_CAPACITY)

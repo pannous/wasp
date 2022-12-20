@@ -103,9 +103,9 @@ struct Size {
 };
 
 // returns image.data.length (of RGBA array)
-long init_graphics() {
-	init_sdl();
-	return (long) surface;// surface->w * surface->h * 4; //  (int *) surface->pixels;
+int64 init_graphics() {
+    init_sdl();
+    return (int64) surface;// surface->w * surface->h * 4; //  (int *) surface->pixels;
 }
 //int* init_graphics(int width, int height){
 //	if(width>0)SCREEN_WIDTH=width;
