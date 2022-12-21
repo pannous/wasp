@@ -39,9 +39,12 @@ void heapSort(S arr[], int n);
 //inline
 template<class S>
 void swap(S *a, S *b) {
+    // todo!!!
+#if SORTING
     S c = *a;
     *a = *b;
     *b = c;
+#endif
 }
 
 
@@ -251,7 +254,7 @@ public:
 
 #endif
 
-    int size() const { return _size; };
+    size_t size() const { return _size; };
 
     void setType(Type type) {
         _type = type;
@@ -312,7 +315,7 @@ public:
 //	}
 
 
-    bool operator==(List<S> other) {
+    bool operator==(List<S> other) const {
         if (_size != other.size())return false;
         for (int i = 0; i < _size; ++i) {
             if (items[i] != other.items[i])return false;

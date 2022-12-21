@@ -29,8 +29,9 @@
 
 #include "binding-hash.h"
 #include "common.h"
-#include "intrusive-list.h"
+//#include "intrusive-list.h"
 #include "opcode.h"
+#include "../Map.h"
 //#include "string-view.h"
 
 namespace wabt {
@@ -458,17 +459,17 @@ namespace wabt {
 		Delegate
 	};
 
-	class Expr : public intrusive_list_base<Expr> {
-	public:
-		WABT_DISALLOW_COPY_AND_ASSIGN(Expr);
+    class Expr : public List<Expr> {
+    public:
+        WABT_DISALLOW_COPY_AND_ASSIGN(Expr);
 
-		Expr() = delete;
+        Expr() = delete;
 
-		virtual ~Expr() = default;
+        virtual ~Expr() = default;
 
-		ExprType type() const { return type_; }
+        ExprType type() const { return type_; }
 
-		Location loc;
+        Location loc;
 
 	protected:
 		explicit Expr(ExprType type, const Location &loc = Location())
@@ -762,92 +763,28 @@ namespace wabt {
 		FuncDeclaration decl;
 	};
 
-	class LocalTypes {
-	public:
-        typedef std::pair<Type, Index> Decl;
-        typedef List<Decl> Decls;
+    typedef Map<Type, Index> LocalTypes;
 
-		struct const_iterator {
-			const_iterator(Decls::const_iterator decl, Index index)
-					: decl(decl), index(index) {}
+    struct Func {
+        explicit Func(string_view name) : name(name.data) {}
 
-			Type operator*() const { return decl->first; }
+        Type GetParamType(Index index) const { return decl.GetParamType(index); }
 
-			const_iterator &operator++();
+        Type GetResultType(Index index) const { return decl.GetResultType(index); }
 
-			const_iterator operator++(int);
+        Type GetLocalType(Index index);// const;
 
-			Decls::const_iterator decl;
-			Index index;
-		};
+        Type GetLocalType(const Var &var);// const;
 
-		void Set(const TypeVector &);
+        Index GetNumParams() const { return decl.GetNumParams(); }
 
-		const Decls &decls() const { return decls_; }
+        Index GetNumLocals() const { return local_types.size(); }
 
-		void AppendDecl(Type type, Index count) {
-			if (count != 0) {
-                decls_.add(type, count);
-			}
-		}
+        Index GetNumParamsAndLocals() const {
+            return GetNumParams() + GetNumLocals();
+        }
 
-		Index size() const;
-
-		Type operator[](Index) const;
-
-		const_iterator begin() const { return {decls_.begin(), 0}; }
-
-		const_iterator end() const { return {decls_.end(), 0}; }
-
-	private:
-		Decls decls_;
-	};
-
-	inline LocalTypes::const_iterator &LocalTypes::const_iterator::operator++() {
-		++index;
-		if (index >= decl->second) {
-			++decl;
-			index = 0;
-		}
-		return *this;
-	}
-
-	inline LocalTypes::const_iterator LocalTypes::const_iterator::operator++(int) {
-		const_iterator result = *this;
-		operator++();
-		return result;
-	}
-
-	inline bool operator==(const LocalTypes::const_iterator &lhs,
-	                       const LocalTypes::const_iterator &rhs) {
-		return lhs.decl == rhs.decl && lhs.index == rhs.index;
-	}
-
-	inline bool operator!=(const LocalTypes::const_iterator &lhs,
-	                       const LocalTypes::const_iterator &rhs) {
-		return !operator==(lhs, rhs);
-	}
-
-	struct Func {
-		explicit Func(string_view name) : name(name.data) {}
-
-		Type GetParamType(Index index) const { return decl.GetParamType(index); }
-
-		Type GetResultType(Index index) const { return decl.GetResultType(index); }
-
-		Type GetLocalType(Index index) const;
-
-		Type GetLocalType(const Var &var) const;
-
-		Index GetNumParams() const { return decl.GetNumParams(); }
-
-		Index GetNumLocals() const { return local_types.size(); }
-
-		Index GetNumParamsAndLocals() const {
-			return GetNumParams() + GetNumLocals();
-		}
-
-		Index GetNumResults() const { return decl.GetNumResults(); }
+        Index GetNumResults() const { return decl.GetNumResults(); }
 
 		Index GetLocalIndex(const Var &) const;
 
@@ -1017,17 +954,17 @@ namespace wabt {
 		Tag
 	};
 
-	class ModuleField : public intrusive_list_base<ModuleField> {
-	public:
-		WABT_DISALLOW_COPY_AND_ASSIGN(ModuleField);
+    class ModuleField : public List<ModuleField> {
+    public:
+        WABT_DISALLOW_COPY_AND_ASSIGN(ModuleField);
 
-		ModuleField() = delete;
+        ModuleField() = delete;
 
-		virtual ~ModuleField() = default;
+        virtual ~ModuleField() = default;
 
-		ModuleFieldType type() const { return type_; }
+        ModuleFieldType type() const { return type_; }
 
-		Location loc;
+        Location loc;
 
 	protected:
 		ModuleField(ModuleFieldType type, const Location &loc)

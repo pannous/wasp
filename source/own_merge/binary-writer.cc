@@ -639,7 +639,7 @@ namespace wabt {
 			// Add a new reloc section if needed
 			if (!current_reloc_section_ ||
 			    current_reloc_section_->section_index != section_count_) {
-                reloc_sections_.add(GetSectionName(last_section_type_), section_count_);
+                reloc_sections_.add(RelocSection(GetSectionName(last_section_type_), section_count_));
                 current_reloc_section_ = &reloc_sections_.back();
 			}
 
@@ -652,8 +652,7 @@ namespace wabt {
 				// no extra warning here is needed.
 				return;
 			}
-            current_reloc_section_->relocations.add(reloc_type, offset,
-                                                    symbol_index);
+            current_reloc_section_->relocations.add(Reloc(reloc_type, offset, symbol_index));
 		}
 
 		void BinaryWriter::WriteU32Leb128WithReloc(Index index,

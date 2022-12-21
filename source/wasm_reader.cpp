@@ -405,13 +405,13 @@ List<String> demangle_args(String &fun) {
 #else
     todo("__cxa_demangle in wasm");
 #endif
-    if (status != 0 or string == 0)return 0;
+    if (status != 0 or string == 0)return (size_t) 0;
     String real_name = String(string);
     fixupGenerics(real_name.data, real_name.length);
-    if (!real_name or !real_name.contains("("))return 0;
+    if (!real_name or !real_name.contains("("))return (size_t) 0;
     String brace = real_name.substring(real_name.indexOf('(') + 1, real_name.indexOf(')'));//.clone();
     if (brace.contains("("))
-        return 0;// function pointers not supported yet "List<String>::sort(bool (*)(String&, String&))"
+        return (size_t) 0;// function pointers not supported yet "List<String>::sort(bool (*)(String&, String&))"
     return brace.split(", ");
 }
 
