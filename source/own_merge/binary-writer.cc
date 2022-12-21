@@ -294,7 +294,7 @@ namespace wabt {
                 }
 
                 map->add(symbols_.size());
-                symbols_.add(name, flags, sym);
+                symbols_.add(Symbol(name, flags, sym));
                 return Result::Ok;
             };
 
@@ -1134,18 +1134,19 @@ namespace wabt {
 
 		void BinaryWriter::WriteFuncLocals(const Func *func,
 		                                   const LocalTypes &local_types) {
-			if (local_types.size() == 0) {
-				WriteU32Leb128(stream_, 0, "local decl count");
-				return;
-			}
+            if (local_types.size() == 0) {
+                WriteU32Leb128(stream_, 0, "local decl count");
+                return;
+            }
 
-			Index local_decl_count = local_types.decls().size();
-			WriteU32Leb128(stream_, local_decl_count, "local decl count");
-			for (auto decl: local_types.decls()) {
-				WriteU32Leb128(stream_, decl.second, "local type count");
-				WriteType(stream_, decl.first);
-			}
-		}
+            Index local_decl_count = local_types.size();
+            WriteU32Leb128(stream_, local_decl_count, "local decl count");
+            for (auto decl: local_types) {
+                auto x = *local_types.has(decl);
+                WriteU32Leb128(stream_, x, "local type count");
+                WriteType(stream_, decl);
+            }
+        }
 
 		void BinaryWriter::WriteFunc(const Func *func) {
 			WriteFuncLocals(func, func->local_types);
