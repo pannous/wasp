@@ -10,8 +10,8 @@
 
 #define POLYMORPH_function_index_marker -2
 
-//bool debug_reader = tracing;
-bool debug_reader = true;
+bool debug_reader = tracing;
+//bool debug_reader = true;
 
 typedef unsigned char *bytes;
 int pos = 0;

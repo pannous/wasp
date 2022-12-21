@@ -33,13 +33,13 @@ List<String> class_keywords = {"struct", "type", "class", "prototype",
 //List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
 
 //Map<String, Function> functions; // todo Maps don't free memory and cause SIGKILL after some time <<<
-Map<String, Function> functions = {.capacity=10000};
+Map<String, Function> functions = {.capacity=1000};
 // todo ONLY emit of main module! for funcs AND imports, serialized differently (inline for imports and extra functype section)
 //Map<String, Function> library_functions; see:
 List<Module *> libraries;// used modules from (automatic) import statements e.g. import math; use log; …  ≠
 // functions of preloaded libraries are found WITHOUT `use` `import` statement (as in Swift) !
 
-Map<int64, bool> analyzed = {.capacity=10000};// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
+Map<int64, bool> analyzed = {.capacity=1000};// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
 
 // todo : use proper context ^^ instead of:
@@ -143,7 +143,7 @@ bool isFunction(String op, bool deep_search) {
     if (op.in(function_list))
         return true;
     if (deep_search and findLibraryFunction(op, true))
-        return true;// linear lookup ok as int64 as #functions < 1000 ? nah getting SLOW QUICKLY!!
+        return true;// linear lookup ok as long as #functions < 1000 ? nah getting SLOW QUICKLY!!
 //	if(op.in(functor_list))
 //		return true;
     return false;
@@ -274,9 +274,9 @@ List<chars> infixOperators = operator_list;
 
 // handled different than other operators, because … they affect the namespace context
 List<chars> setter_operators = {"="};
-List<chars> key_pair_operators = {":"};
-List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
 List<chars> function_operators = {":="};// todo:
+List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
+List<chars> key_pair_operators = {":"};
 List<chars> declaration_operators = {":=", "=",
                                      "::=" /*until global keyword*/}; //  i:=it*2  vs i=1  OK?  NOT ":"! if 1 : 2 else 3
 
@@ -738,10 +738,10 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
 Node &groupOperators(Node &expression, Function &context);
 
 Node &groupDeclarations(Node &expression, Function &context) {
-    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
-    if (expression.contains("=") or expression.contains(":=")) {
-        expression = groupOperators(expression, context);
-    }
+//    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
+//    if (expression.contains("=") or expression.contains(":=")) {
+//        return groupOperators(expression, context);
+//    }
     auto first = expression.first();
     if (expression.length == 2 and isType(first.first()) and
         expression.last().kind == objects) {// c style double sin() {}
@@ -749,6 +749,10 @@ Node &groupDeclarations(Node &expression, Function &context) {
         return groupDeclarations(first.name, first.type, NIL, first.values(), expression.last(), context);
     }
     for (Node &node: expression) {
+        if (&node == 0) {
+            todow("BUG &node==0");
+            continue;
+        }
         String &op = node.name;
         if (isPrimitive(node) and node.isSetter()) {
             if (globals.has(op)) {
@@ -938,7 +942,7 @@ Node &groupOperators(Node &expression, Function &context) {
                     // todo can remove hack?
                     Type inferred_type = preEvaluateType(next, context);
                     if (addLocal(context, var, inferred_type, false)) {
-                        if (op.length > 1 and op.endsWith("=")) // x+=1 etc
+                        if (op.length > 1 and op.endsWith("=") and not op.startsWith(":")) // x+=1 etc
                             error("self modifier on unknown reference "s + var);
                     } else {
                         Local &local = function.locals[var];
@@ -959,7 +963,7 @@ Node &groupOperators(Node &expression, Function &context) {
 //					globals[prev.name] = &next;// don't forget to emit next as init expression!
                     globals[var] = next.clone();// don't forget to emit next as init expression!
                     // globalTypes[] set in globalSection, after emitExpression
-                } else if (op.length > 1 and op.endsWith("="))
+                } else if (op.length > 1 and op.endsWith("=") and op[0] != ':')
                     // Complicated way to express *= += -= … self assignments
                     if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and op[0] != '>') {
                         // *= += etc
