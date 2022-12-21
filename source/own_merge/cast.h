@@ -94,14 +94,14 @@ namespace wabt {
 
 	template<typename Derived, typename Base>
     const Derived *cast(const Base *&&base) {
-//        assert(isa<Derived>(base.get()));
+//        assert(isa<Derived>(base));
 //        return Derived * (static_cast<const Derived *>(base.release()));
         return base;
     };
 
     template<typename Derived, typename Base>
     Derived *cast(Base *&&base) {
-//        assert(isa<Derived>(base.get()));
+//        assert(isa<Derived>(base));
 //        return Derived * (static_cast<Derived *>(base.release()));
         return base;
     };

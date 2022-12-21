@@ -1142,14 +1142,16 @@ namespace wabt {
 
 		Index GetElemSegmentIndex(const Var &) const;
 
-		bool IsImport(ExternalKind kind, const Var &) const;
+        bool IsImport(ExternalKind kind, const Var &) const;
 
-		bool IsImport(const Export &export_) const {
-			return IsImport(export_.kind, export_.var);
-		}
+        bool IsImport(const Export &export_) const {
+            return IsImport(export_.kind, export_.var);
+        }
 
         // TODO(binji): move this into a builder class?
         void AppendField(DataSegmentModuleField *);
+
+        void AppendField(DataSegmentModuleField &);
 
         void AppendField(ElemSegmentModuleField *);
 

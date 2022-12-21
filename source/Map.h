@@ -263,11 +263,11 @@ public:
         use_default = true;// we can't tell if defaulty is 'good' otherwise
     }
 
-    S *begin() {
+    S *begin() const {
         return &keys[0];
     }
 
-    S *end() {
+    S *end() const {
         return &keys[_size];
     }
 
