@@ -44,7 +44,7 @@ Map<String, int64> referenceDataIndices; // wasm pointers directly to object dat
 Map<String, Node> referenceMap; // lookup types… todo: Node pointer? or copy ok?
 Map<String, int> typeMap;// wasm type index for funcTypeSection. todo keep in Function
 Map<String, int> call_indices; // todo keep in Function
-Map<String, Code> functionCodes; // todo keep in Function
+Map<String, Code> functionCodes; // EXCLUDING MAIN todo keep in Function
 //Map<String, Signature> functions;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
 
 //Map<int64,int> dataIndices; // wasm pointers to strings etc (key: hash!)  within wasm data
@@ -1938,21 +1938,15 @@ Code cast(Node &from, Node &to, Function &context) {
 [[nodiscard]]
 Code emitDeclaration(Node &fun, Node &body) {
     // todo: x := 7 vs x := y*y
-    //
-    if (not call_indices.has(fun.name)) {
-        error("Declaration %s need to be registered before in the parser so they can be called from main code!"s %
-              fun.name);
-//		functionIndices[fun.name] = functionIndices.size();
-    }
-//	else {
-//		error("redeclaration of symbol: "s + fun.name);
-//	}
-    Function &context = functions[fun.name];
+    if (not call_indices.has(fun.name))
+        error("Declaration %s need to be registered in the parser so they can be called!"s % fun.name);
+    info("emitting function "s % fun.name);
+    Function &declared = functions[fun.name];
 //	Signature &signature = context.signature;
-    context.emit = true;// all are 'export' for now. also set in analyze!
-    functionCodes[fun.name] = emitBlock(body, context);
+    declared.is_declared = true;// all are 'export' for now. also set in analyze!
+    functionCodes[fun.name] = emitBlock(body, declared);
     last_type = none;// todo reference to new symbol x = (y:=z)
-    return Code();// empty
+    return Code();// empty, no inner functions, not part of main
 }
 
 [[nodiscard]]
@@ -2331,7 +2325,7 @@ Code emitTypeSection() {
         }// todo how did we get here?
         Function &function = functions[fun];
         Signature &signature = function.signature;
-        if (not function.emit /*export/declarations*/ and not function.is_used /*imports*/) {
+        if (not function.is_declared /*export/declarations*/ and not function.is_used /*imports*/) {
             trace("not context.emit => skipping unused type for "s + fun);
             continue;
         }
@@ -2443,9 +2437,10 @@ Code emitCodeSection(Node &root) {
     for (auto declared: functions) {
         if (declared == "global")continue;
         Function &function = functions[declared];// todo use more often;)
-        if (not function.emit)continue;
+        if (not function.is_declared)continue;
+        function.is_import = false;
         if (declared.empty())error("Bug: empty context name (how?)");
-        if (declared != "wasp_main") print("declared context: "s + declared);
+        if (declared != "wasp_main") println("declared context: "s + declared);
         if (not call_indices.has(declared)) {// used or not!
             if (function.call_index >= 0 or function.code_index >= 0)
                 error("function %s #%d already has index %d ≠ %d"s %
@@ -2556,6 +2551,11 @@ Code emitCodeSection(Node &root) {
 
     Code main_block = emitBlock(root, functions["wasp_main"]);// after imports and builtins
 
+    for (String fun: functionCodes) {// MAIN block extra ^^^
+        Code &func = functionCodes[fun];
+        code_blocks = code_blocks + encodeVector(func);
+    }
+
     if (start) {
         if (main_block.length == 0)
             functions[start].is_used = false;
@@ -2569,14 +2569,11 @@ Code emitCodeSection(Node &root) {
             error("no start context name given. null instead of 'main', can't assign block");
         else warn("no start block (ok)");
     }
-    for (String fun: functionCodes) {// MAIN block extra ^^^
-        Code &func = functionCodes[fun];
-        code_blocks = code_blocks + encodeVector(func);
-    }
     builtin_count = 0;
     for (auto name: functions) {
         Function &context = functions[name];
-        if (context.is_builtin and context.is_used) builtin_count++;
+        if (context.is_builtin and context.is_used)
+            builtin_count++;
     }
 
     bool has_main = start and call_indices.has(start);
@@ -2717,7 +2714,7 @@ Code emitFuncTypeSection() {// depends on codeSection, but must appear earlier i
 
     Code types_of_functions = Code(function_block_count);//  = Code(types_data, sizeof(types_data));
 //	order matters in functionType section! must be same as in functionIndices
-    for (int code_index = 0; code_index < function_block_count; ++code_index) {
+    for (int code_index = 0; code_index < function_block_count; code_index++) {
         //	import section types separate WTF wasm
         int call_index = code_index + import_count + runtime_function_offset;
         String *fun = call_indices.lookup(call_index);
@@ -2893,6 +2890,7 @@ void add_imports_and_builtins() {
                 error("context already has index %d ≠ %d"s % function.code_index % last_index);
             function.call_index = ++last_index;
             call_indices[sig] = last_index;
+            info("using import "s + sig);
             import_count++;
         }
     }
@@ -2979,7 +2977,7 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
     if (start) {// now AFTER imports and builtins
 //		printf("start: %s\n", start.data);
 //		functions[start] = Signature().returns(i32t);
-        functions[start].emit = true;
+        functions[start].is_declared = true;
 //            call_indices[start] = ++last_index;
 //			functionIndices[start] =runtime_offset ? runtime_offset + declaredFunctions.size() :  ++last_index;  // AFTER collecting imports!!
 //        else
