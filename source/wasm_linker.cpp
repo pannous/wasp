@@ -553,12 +553,12 @@ private:
     void DumpRelocOffsets();
 
     MemoryStream stream_;
-    List<std::unique_ptr<LinkerInputBinary>> inputs_{};
+    List<LinkerInputBinary *> inputs_{};
     ssize_t current_payload_offset_ = 0;
 
-    Section *getSection(std::unique_ptr<LinkerInputBinary> &uniquePtr, SectionType section);
+    Section *getSection(LinkerInputBinary *&uniquePtr, SectionType section);
 
-    List<Reloc> CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section);
+    List<Reloc> CalculateRelocs(LinkerInputBinary *&binary, Section *section);
 
     List<uint8_t> lebVector(Index value);
 
@@ -604,7 +604,7 @@ void Linker::WriteTableSection(const SectionPtrVector &sections) {
 
 void Linker::WriteExportSection() {
     Index total_exports = 0;
-    for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (const LinkerInputBinary *&binary: inputs_) {
         total_exports += binary->exports.size();
     }
 
@@ -612,7 +612,7 @@ void Linker::WriteExportSection() {
     WriteU32Leb128(&stream_, total_exports, "export count");
 
     int memories = 0;
-    for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (const LinkerInputBinary *&binary: inputs_) {
         for (const Export &export_: binary->exports) {
             WriteStr(&stream_, export_.name, "export name");
 
@@ -705,7 +705,7 @@ void Linker::WriteGlobalImport(const GlobalImport &import) {
 
 void Linker::WriteImportSection() {
     Index num_imports = 0;
-    for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (const LinkerInputBinary *&binary: inputs_) {
         for (const FunctionImport &import: binary->function_imports)
             if (import.active) num_imports++;
         for (const GlobalImport &globalImport: binary->global_imports)
@@ -715,7 +715,7 @@ void Linker::WriteImportSection() {
     Fixup fixup = WriteUnknownSize();
     WriteU32Leb128(&stream_, num_imports, "num imports");
 
-    for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (const LinkerInputBinary *&binary: inputs_) {
         for (const FunctionImport &function_import: binary->function_imports) {
             if (function_import.active) {
                 WriteFunctionImport(function_import, binary->type_index_offset);
@@ -780,7 +780,7 @@ void Linker::WriteDataSection(const SectionPtrVector &sections, Index total_coun
 
 void Linker::WriteNamesSection() {
     Index total_count = 0;
-    for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (const LinkerInputBinary *&binary: inputs_) {
         for (size_t i = 0; i < binary->debug_names.size(); i++) {
             if (binary->debug_names[i].empty()) {
                 continue;
@@ -805,7 +805,7 @@ void Linker::WriteNamesSection() {
     WriteU32Leb128(&stream_, total_count, "element count");
 
     // Write import names.
-    for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (const LinkerInputBinary *&binary: inputs_) {
         for (size_t i = 0; i < binary->debug_names.size(); i++) {
             if (binary->debug_names[i].empty() || !binary->IsFunctionImport(i)) {
                 continue;
@@ -819,7 +819,7 @@ void Linker::WriteNamesSection() {
     }
 
     // Write non-import names.
-    for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (const LinkerInputBinary *&binary: inputs_) {
         for (size_t i = 0; i < binary->debug_names.size(); i++) {
             if (binary->debug_names[i].empty() || binary->IsFunctionImport(i)) {
                 continue;
@@ -982,7 +982,7 @@ void Linker::ResolveSymbols() {
 // binary->functions not filled yet!
 
     int memories = 0;
-    for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (const LinkerInputBinary *&binary: inputs_) {
         printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
         uint64 nr_imports = binary->function_imports.size();
 
@@ -1079,7 +1079,7 @@ void Linker::ResolveSymbols() {
 //	check(export_list[export_map.FindIndex("_Z5atoi0PKc")].export_->index == 18);// todo !!!
 
     // Iterate through all imported globals and functions resolving them against exported ones.
-    for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (LinkerInputBinary *&binary: inputs_) {
         if (not binary->needs_relocate)continue;
         for (GlobalImport &global_import: binary->global_imports) {
             String &name = global_import.name;
@@ -1160,15 +1160,15 @@ void Linker::CalculateRelocOffsets() {
     Index total_function_imports = 0;
     Index total_global_imports = 0;
 
-    for (std::unique_ptr<LinkerInputBinary> &binary: inputs_)
-        for (std::unique_ptr<Section> &sec: binary->sections)
+    for (LinkerInputBinary *&binary: inputs_)
+        for (Section *&sec: binary->sections)
             if (sec->section_code == SectionType::Data) {
                 binary->memory_data_start = sec->data.data_segments->front().offset;
                 break;
             }
 
 
-    for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (LinkerInputBinary *&binary: inputs_) {
         binary->delta = my_function_count; // offset all functions if not mapped to import
 
         // The imported_function_index_offset is the sum of all the function
@@ -1200,10 +1200,10 @@ void Linker::CalculateRelocOffsets() {
         my_function_count += binary->function_count;
     }
 
-    for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (LinkerInputBinary *&binary: inputs_) {
         binary->table_index_offset = table_elem_count;
         table_elem_count += binary->table_elem_count;
-        for (std::unique_ptr<Section> &sec: binary->sections) {
+        for (Section *&sec: binary->sections) {
             switch (sec->section_code) {
                 case SectionType::Type:
                     binary->type_index_offset = type_count;
@@ -1231,8 +1231,8 @@ void Linker::CalculateRelocOffsets() {
 void Linker::WriteBinary() {
     // Find all the sections of each type.
     SectionPtrVector sections[kBinarySectionCount];
-    for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
-        for (std::unique_ptr<Section> &sec: binary->sections) {
+    for (LinkerInputBinary *&binary: inputs_) {
+        for (Section *&sec: binary->sections) {
             Section *section = sec.get();
             int sectionCode = (int) sec->section_code;
             SectionPtrVector &sec_list = sections[sectionCode];
@@ -1258,7 +1258,7 @@ void Linker::WriteBinary() {
 }
 
 void Linker::DumpRelocOffsets() {
-    for (const std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (const LinkerInputBinary *&binary: inputs_) {
         bool needs_relocate = false;
         needs_relocate = needs_relocate or binary->type_index_offset != 0;
         needs_relocate = needs_relocate or binary->memory_page_offset != 0;
@@ -1284,7 +1284,7 @@ void Linker::DumpRelocOffsets() {
 }
 
 void Linker::CreateRelocs() {
-    for (std::unique_ptr<LinkerInputBinary> &binary: inputs_) {
+    for (LinkerInputBinary *&binary: inputs_) {
         if (not binary->needs_relocate) {
             trace("Skipping CreateRelocs for library "s + binary->name);
             continue;
@@ -1316,15 +1316,15 @@ OutputBuffer Linker::PerformLink() {
     return stream_.output_buffer();
 }
 
-Section *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, SectionType section) {
-    for (std::unique_ptr<Section> &sec: binary->sections) {
+Section *Linker::getSection(LinkerInputBinary *&binary, SectionType section) {
+    for (Section *&sec: binary->sections) {
         if (sec->section_code == section)return sec.get();
     }
     return nullptr;
 }
 
 // relocs can either be provided as custom section, or inferred from the linker.
-List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section) {
+List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section) {
     List<Reloc> relocs;
     List<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
     int length = binary_data.size();

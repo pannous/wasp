@@ -69,7 +69,7 @@ namespace wabt {
 		// construct/copy/destroy:
 		intrusive_list();
 
-		explicit intrusive_list(std::unique_ptr<T> node);
+		explicit intrusive_list(T *node);
 
 		explicit intrusive_list(T &&node);
 
@@ -129,11 +129,11 @@ namespace wabt {
 		template<class... Args>
         void add(Args &&... args);
 
-		void push_front(std::unique_ptr<T> node);
+        void push_front(T *node);
 
 		void push_front(T &&node);
 
-        void add(std::unique_ptr<T> node);
+        void add(T *node);
 
         void add(T &&node);
 
@@ -141,18 +141,18 @@ namespace wabt {
 
 		void pop_back();
 
-		std::unique_ptr<T> extract_front();
+        T *extract_front();
 
-		std::unique_ptr<T> extract_back();
+        T *extract_back();
 
 		template<class... Args>
 		iterator emplace(iterator pos, Args &&... args);
 
-		iterator insert(iterator pos, std::unique_ptr<T> node);
+        iterator insert(iterator pos, T *node);
 
 		iterator insert(iterator pos, T &&node);
 
-		std::unique_ptr<T> extract(iterator it);
+        T *extract(iterator it);
 
 		iterator erase(iterator pos);
 
@@ -309,10 +309,10 @@ namespace wabt {
 	template<typename T>
 	inline intrusive_list<T>::intrusive_list() {}
 
-	template<typename T>
-	inline intrusive_list<T>::intrusive_list(std::unique_ptr<T> node) {
+    template<typename T>
+    inline intrusive_list<T>::intrusive_list(T *node) {
         add(std::move(node));
-	}
+    }
 
 	template<typename T>
 	inline intrusive_list<T>::intrusive_list(T &&node) {
@@ -463,18 +463,18 @@ namespace wabt {
         add(MakeUnique<T>(std::forward<Args>(args)...));
     }
 
-	template<typename T>
-	inline void intrusive_list<T>::push_front(std::unique_ptr<T> node) {
-		assert(node->prev_ == nullptr && node->next_ == nullptr);
+    template<typename T>
+    inline void intrusive_list<T>::push_front(T *node) {
+        assert(node->prev_ == nullptr && node->next_ == nullptr);
 
-		T *node_p = node.release();
-		if (first_) {
-			node_p->next_ = first_;
-			first_->prev_ = node_p;
-		} else {
-			last_ = node_p;
-		}
-		first_ = node_p;
+        T *node_p = node.release();
+        if (first_) {
+            node_p->next_ = first_;
+            first_->prev_ = node_p;
+        } else {
+            last_ = node_p;
+        }
+        first_ = node_p;
 		size_++;
 	}
 
@@ -484,7 +484,7 @@ namespace wabt {
 	}
 
     template<typename T>
-    inline void intrusive_list<T>::add(std::unique_ptr<T> node) {
+    inline void intrusive_list<T>::add(T *node) {
         assert(node->prev_ == nullptr && node->next_ == nullptr);
 
         T *node_p = node.release();
@@ -513,34 +513,34 @@ namespace wabt {
 		extract_back();
 	}
 
-	template<typename T>
-	inline std::unique_ptr<T> intrusive_list<T>::extract_front() {
-		assert(!empty());
-		T *node = first_;
-		if (first_ == last_) {
-			first_ = last_ = nullptr;
-		} else {
-			first_ = first_->next_;
-			first_->prev_ = nullptr;
-		}
-		node->next_ = node->prev_ = nullptr;
-		size_--;
-		return std::unique_ptr<T>(node);
+    template<typename T>
+    inline T *intrusive_list<T>::extract_front() {
+        assert(!empty());
+        T *node = first_;
+        if (first_ == last_) {
+            first_ = last_ = nullptr;
+        } else {
+            first_ = first_->next_;
+            first_->prev_ = nullptr;
+        }
+        node->next_ = node->prev_ = nullptr;
+        size_--;
+        return T * (node);
 	}
 
-	template<typename T>
-	inline std::unique_ptr<T> intrusive_list<T>::extract_back() {
-		assert(!empty());
-		T *node = last_;
-		if (first_ == last_) {
-			first_ = last_ = nullptr;
-		} else {
-			last_ = last_->prev_;
-			last_->next_ = nullptr;
-		}
-		node->next_ = node->prev_ = nullptr;
-		size_--;
-		return std::unique_ptr<T>(node);
+    template<typename T>
+    inline T *intrusive_list<T>::extract_back() {
+        assert(!empty());
+        T *node = last_;
+        if (first_ == last_) {
+            first_ = last_ = nullptr;
+        } else {
+            last_ = last_->prev_;
+            last_->next_ = nullptr;
+        }
+        node->next_ = node->prev_ = nullptr;
+        size_--;
+        return T * (node);
 	}
 
 	template<typename T>
@@ -551,20 +551,20 @@ namespace wabt {
 		return insert(pos, MakeUnique<T>(std::forward<Args>(args)...));
 	}
 
-	template<typename T>
-	inline typename intrusive_list<T>::iterator intrusive_list<T>::insert(
-			iterator pos,
-			std::unique_ptr<T> node) {
-		assert(node->prev_ == nullptr && node->next_ == nullptr);
+    template<typename T>
+    inline typename intrusive_list<T>::iterator intrusive_list<T>::insert(
+            iterator pos,
+            T *node) {
+        assert(node->prev_ == nullptr && node->next_ == nullptr);
 
-		T *node_p;
-		if (pos == end()) {
+        T *node_p;
+        if (pos == end()) {
             add(std::move(node));
             node_p = &back();
-		} else {
-			node_p = node.release();
-			node_p->prev_ = pos->prev_;
-			node_p->next_ = &*pos;
+        } else {
+            node_p = node.release();
+            node_p->prev_ = pos->prev_;
+            node_p->next_ = &*pos;
 			if (pos->prev_) {
 				pos->prev_->next_ = node_p;
 			} else {
@@ -583,18 +583,18 @@ namespace wabt {
 		return insert(pos, MakeUnique<T>(std::move(node)));
 	}
 
-	template<typename T>
-	inline std::unique_ptr<T> intrusive_list<T>::extract(iterator pos) {
-		assert(!empty());
-		assert(pos != end());
-		T *node = &*pos;
-		if (first_ == last_) {
-			first_ = last_ = nullptr;
-		} else {
-			if (node->prev_) {
-				node->prev_->next_ = node->next_;
-			} else {
-				first_ = node->next_;
+    template<typename T>
+    inline T *intrusive_list<T>::extract(iterator pos) {
+        assert(!empty());
+        assert(pos != end());
+        T *node = &*pos;
+        if (first_ == last_) {
+            first_ = last_ = nullptr;
+        } else {
+            if (node->prev_) {
+                node->prev_->next_ = node->next_;
+            } else {
+                first_ = node->next_;
 			}
 
 			if (node->next_) {
@@ -605,7 +605,7 @@ namespace wabt {
 		}
 		node->next_ = node->prev_ = nullptr;
 		size_--;
-		return std::unique_ptr<T>(node);
+        return T * (node);
 	}
 
 	template<typename T>

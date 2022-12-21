@@ -170,12 +170,12 @@ namespace wabt {
 
 		explicit MemoryStream(Stream *log_stream = nullptr);
 
-		explicit MemoryStream(std::unique_ptr<OutputBuffer> &&,
-		                      Stream *log_stream = nullptr);
+		explicit MemoryStream(OutputBuffer *&&,
+                              Stream *log_stream = nullptr);
 
 		OutputBuffer &output_buffer() { return *buf_; }
 
-		std::unique_ptr<OutputBuffer> ReleaseOutputBuffer();
+        OutputBuffer *ReleaseOutputBuffer();
 
 		void Clear();
 
@@ -193,7 +193,7 @@ namespace wabt {
 		Result TruncateImpl(size_t size) override;
 
 	private:
-		std::unique_ptr<OutputBuffer> buf_;
+        OutputBuffer *buf_;
 	};
 
 	class FileStream : public Stream {
@@ -212,9 +212,9 @@ namespace wabt {
 
 		~FileStream() override;
 
-		static std::unique_ptr<FileStream> CreateStdout();
+        static FileStream *CreateStdout();
 
-		static std::unique_ptr<FileStream> CreateStderr();
+        static FileStream *CreateStderr();
 
 		bool is_open() const { return file_ != nullptr; }
 

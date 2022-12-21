@@ -138,9 +138,9 @@ namespace wabt {
 
 	MemoryStream::MemoryStream(Stream *log_stream) : Stream(log_stream), buf_(new OutputBuffer()) {}
 
-	std::unique_ptr<OutputBuffer> MemoryStream::ReleaseOutputBuffer() {
-		return std::move(buf_);
-	}
+	OutputBuffer *MemoryStream::ReleaseOutputBuffer() {
+        return std::move(buf_);
+    }
 
 	Result MemoryStream::WriteDataImpl(size_t dst_offset, const void *src, size_t size) {
 		if (size == 0) {
