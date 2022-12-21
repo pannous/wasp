@@ -482,6 +482,17 @@ public:
         items = neu;
         capacity = new_capacity;
     }
+
+    void insert(S *position, S *value, S *end) {
+        size_t len = end - value;
+        if (_size + len >= capacity)grow();
+        memcpy(position, value, len);
+        _size += len;
+    }
+
+    S *data() {
+        return items;
+    }
 };
 
 void print(List<String> list);

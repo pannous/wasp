@@ -420,7 +420,7 @@ namespace wabt {
 
 	class Expr;
 
-	typedef intrusive_list<Expr> ExprList;
+	typedef List<Expr> ExprList;
 
 	typedef FuncDeclaration BlockDeclaration;
 
@@ -1036,7 +1036,7 @@ namespace wabt {
 		ModuleFieldType type_;
 	};
 
-	typedef intrusive_list<ModuleField> ModuleFieldList;
+    typedef List<ModuleField> ModuleFieldList;
 
 	template<ModuleFieldType TypeEnum>
 	class ModuleFieldMixin : public ModuleField {
