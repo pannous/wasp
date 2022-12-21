@@ -72,11 +72,11 @@ wabt::Result do_sqrt(Thread &thread, const Values &params, Values &results, Trap
 
 
 void BindImports(Module *module, List<Ref> &imports, Store &store) {
-//	auto* stream = s_stdout_stream.get();
+//	auto* stream = s_stdout_stream;
     bool hostPrint = true;//false;
     // convoluted shit, I don't like it
     for (auto &&import: module->desc().imports) {
-        auto func_type = *wabt::cast<FuncType>(import.type.type.get());
+        auto func_type = *wabt::cast<FuncType>(import.type.type);
         if (import.type.name == "square")imports.add(HostFunc::New(store, func_type, do_square).ref());
         else if (import.type.name == "puti")imports.add(HostFunc::New(store, func_type, do_puti).ref());
         else if (import.type.name == "putf")imports.add(HostFunc::New(store, func_type, do_putf).ref());
@@ -117,20 +117,20 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     uvwasi_t uvwasi;
     List<const char*> argv; // ...
 #endif
-	BindImports(module.get(), imports, store);
+    BindImports(module, imports, store);
 
 	RefPtr<Trap> trap;
 	Instance::Ptr instance = Instance::Instantiate(store, module.ref(), imports, &trap);
 	if (trap) {
         printf("\n⚠️ERROR in module\n");
-        printf("%s\n\n", trap.get()->message().data());
+        printf("%s\n\n", trap->message().data());
         return -1;
     }
 
 	for (wabt::interp::ExportDesc export_ : module_desc.exports) {
         if (export_.type.type->kind != wabt::ExternalKind::Func) continue;
         if (export_.type.name != "wasp_main" and export_.type.name != "maine") continue;
-        auto *func_type = wabt::cast<wabt::interp::FuncType>(export_.type.type.get());
+        auto *func_type = wabt::cast<wabt::interp::FuncType>(export_.type.type);
         if (func_type->params.empty()) {
             RefVec funcs = instance->funcs();
             auto func = store.UnsafeGet<wabt::interp::Func>(funcs[export_.code_index]);

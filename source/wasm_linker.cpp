@@ -1009,7 +1009,7 @@ void Linker::ResolveSymbols() {
             } else {
                 if (import.foreign_binary)
                     error("my a");
-                import.binary = binary.get(); // todo earlier
+                import.binary = binary; // todo earlier
                 import.index = import_index++;// only increase if active / not duplicate
                 import_map.add(import.name, &import);
             }
@@ -1034,12 +1034,12 @@ void Linker::ResolveSymbols() {
                 printf("%s export kind %d '%s' index %d\n", binary->name, _export.kind, _export.name.data,
                        _export.index);
             if (_export.kind == wabt::ExternalKind::Global) {
-                globals_export_list.add(&_export, binary.get());
+                globals_export_list.add(ExportInfo(&_export, binary));
                 export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
             } else if (_export.kind == ExternalKind::Func) {
                 Func &func = binary->functions[_export.index - nr_imports];
                 uint64 position = export_list.size();
-                export_list.add(&_export, binary.get());
+                export_list.add(ExportInfo(&_export, binary));
                 if (not func.name.data)
                     func.name = _export.name;
                 if (func.name.length > 0) {
@@ -1050,7 +1050,7 @@ void Linker::ResolveSymbols() {
                     }
                 }
             } else {
-                export_list.add(&_export, binary.get());
+                export_list.add(ExportInfo(&_export, binary));
                 warn("ignore export of kind %d %s"s % (short) _export.kind % GetKindName(_export.kind));
             }
         }
@@ -1060,9 +1060,9 @@ void Linker::ResolveSymbols() {
                     printf("func.name %s, func.index %d\n", func.name.data, func.index);
 //				check(func_list.size()==func.index);
                 func_map.emplace(func.name, func.index);
-                private_map[String(func.name)] = new FuncInfo{&func, binary.get()};
+                private_map[String(func.name)] = new FuncInfo{&func, binary};
             }
-            func_list.add(&func, binary.get());
+            func_list.add(FuncInfo(&func, binary));
         }
 //		for (const Global &func: binary->globals) todo
 
@@ -1168,7 +1168,7 @@ void Linker::CalculateRelocOffsets() {
     for (LinkerInputBinary *&binary: inputs_)
         for (Section *&sec: binary->sections)
             if (sec->section_code == SectionType::Data) {
-                binary->memory_data_start = sec->data.data_segments->front().offset;
+                binary->memory_data_start = sec->data.data_segments->first().offset;
                 break;
             }
 
@@ -1238,7 +1238,7 @@ void Linker::WriteBinary() {
     SectionPtrVector sections[kBinarySectionCount];
     for (LinkerInputBinary *&binary: inputs_) {
         for (Section *&sec: binary->sections) {
-            Section *section = sec.get();
+            Section *section = sec;
             int sectionCode = (int) sec->section_code;
             SectionPtrVector &sec_list = sections[sectionCode];
             sec_list.add(section);
@@ -1323,7 +1323,7 @@ OutputBuffer Linker::PerformLink() {
 
 Section *Linker::getSection(LinkerInputBinary *&binary, SectionType section) {
     for (Section *&sec: binary->sections) {
-        if (sec->section_code == section)return sec.get();
+        if (sec->section_code == section)return sec;
     }
     return nullptr;
 }

@@ -214,6 +214,12 @@ public:
 //        va_end(args);
 //    }
 
+    List(S *data, S *end) {
+        _size = end - data;
+        if (capacity < _size)resize(_size);
+        memcpy(items, data, _size);
+    }
+
     List(S *args, int size, bool share = true) {
         if (args == 0)return;
         check_silent(size < LIST_DEFAULT_CAPACITY)
@@ -493,8 +499,12 @@ public:
         _size += len;
     }
 
-    S *data() {
+    S *data() const {
         return items;
+    }
+
+    S &first() {
+        return items[0];
     }
 };
 
