@@ -940,7 +940,8 @@ void testArrayIndicesWasm() {
 //	testArrayIndices(); //	check node based (non-primitive) interpretation first
 //	data_mode = true;// todo remove hack
     assert_emit("x={1 2 3}; x#3=4;x#3", 4);
-    assert_emit("puts('ok');", 0);
+    assert_emit("puts('ok');", 8);
+//    assert_emit("puts('ok');", 0);
     assert_emit("puts('ok');(1 4 3)#2", 4);
     assert_emit("{1 4 3}#2", 4);
 
