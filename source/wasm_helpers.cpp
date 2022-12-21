@@ -102,22 +102,19 @@ void newline() {
 
 void info(chars msg) {
     if (not debug)return;// todo finer levels!
-    printf("%s", msg);
-    newline();
+    printf("%s\n", msg);
 }
 
 void warn(chars warning) {
-    printf("%s", warning);
-    newline();
+    printf("%s\n", warning);
 }
 
 void warn(String warning) {
-    printf("%s", warning.data);
-    newline();
+    printf("%s\n", warning.data);
 }
 
 void warning(chars warning) {
-    printf("%s", warning);// for now
+    printf("%s\n", warning);// for now
 }
 
 int raise(chars error) {
