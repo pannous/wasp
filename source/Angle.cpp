@@ -1522,7 +1522,8 @@ void preRegisterFunctions() {
 
     functions["proc_exit"].import();
     functions["proc_exit"].signature.add(int32, "exit_code");// file descriptor
-    functions["proc_exit"].module = new Module{.name="wasi_unstable"};
+//    functions["proc_exit"].module = new Module{.name="wasi_unstable"};
+    functions["proc_exit"].module = new Module{.name="wasi_snapshot_preview1"}; // f'ing wasmedge can't wasi_unstable
 
     functions["fd_write"].import();
     functions["fd_write"].signature.add(int32, "fd");// file descriptor
@@ -1531,8 +1532,8 @@ void preRegisterFunctions() {
     functions["fd_write"].signature.add((Type) pointer, "nwritten");// size_t *  out !
     functions["fd_write"].signature.returns(int32);
 //    functions["fd_write"].module=new Module{.name="wasi"};
-    functions["fd_write"].module = new Module{.name="wasi_unstable"};
-//    functions["fd_write"].module=new Module{.name="wasi_snapshot_preview1"};
+//    functions["fd_write"].module = new Module{.name="wasi_unstable"};
+    functions["fd_write"].module = new Module{.name="wasi_snapshot_preview1"};
 
     functions["puts"].builtin();
     functions["puts"].signature.add((Type) stringp).returns(int32);// stdio conform!!

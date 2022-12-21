@@ -2551,24 +2551,20 @@ Code emitCodeSection(Node &root) {
 
     Code main_block = emitBlock(root, functions["wasp_main"]);// after imports and builtins
 
+    if (main_block.length == 0)
+        functions[start].is_used = false;
+    else
+        code_blocks = code_blocks + encodeVector(main_block);
+
+
     for (String fun: functionCodes) {// MAIN block extra ^^^
         Code &func = functionCodes[fun];
         code_blocks = code_blocks + encodeVector(func);
     }
 
-    if (start) {
-        if (main_block.length == 0)
-            functions[start].is_used = false;
-        else {
-            code_blocks = code_blocks + encodeVector(main_block);
-            if (functions["_start"].is_used and functions["_start"].is_builtin)
-                code_blocks = code_blocks + encodeVector(Code(code_start, sizeof(code_start)));
-        }
-    } else {
-        if (main_block.length > 5)
-            error("no start context name given. null instead of 'main', can't assign block");
-        else warn("no start block (ok)");
-    }
+    if (functions["_start"].is_used and functions["_start"].is_builtin)
+        code_blocks = code_blocks + encodeVector(Code(code_start, sizeof(code_start)));
+
     builtin_count = 0;
     for (auto name: functions) {
         Function &context = functions[name];
