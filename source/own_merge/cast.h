@@ -93,16 +93,16 @@ namespace wabt {
 // they won't always pass ownership back to the caller.
 
 	template<typename Derived, typename Base>
-	std::unique_ptr<const Derived> cast(std::unique_ptr<const Base> &&base) {
-		assert(isa<Derived>(base.get()));
-		return std::unique_ptr<Derived>(static_cast<const Derived *>(base.release()));
-	};
+    const Derived *cast(const Base *&&base) {
+        assert(isa<Derived>(base.get()));
+        return Derived * (static_cast<const Derived *>(base.release()));
+    };
 
-	template<typename Derived, typename Base>
-	std::unique_ptr<Derived> cast(std::unique_ptr<Base> &&base) {
-		assert(isa<Derived>(base.get()));
-		return std::unique_ptr<Derived>(static_cast<Derived *>(base.release()));
-	};
+    template<typename Derived, typename Base>
+    Derived *cast(Base *&&base) {
+        assert(isa<Derived>(base.get()));
+        return Derived * (static_cast<Derived *>(base.release()));
+    };
 
 }  // namespace wabt
 

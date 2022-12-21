@@ -1071,12 +1071,12 @@ namespace wabt {
 		explicit ImportModuleField(const Location &loc = Location())
 				: ModuleFieldMixin<ModuleFieldType::Import>(loc) {}
 
-		explicit ImportModuleField(std::unique_ptr<Import> import,
-		                           const Location &loc = Location())
-				: ModuleFieldMixin<ModuleFieldType::Import>(loc),
-				  import(std::move(import)) {}
+		explicit ImportModuleField(Import *import,
+                                   const Location &loc = Location())
+                : ModuleFieldMixin<ModuleFieldType::Import>(loc),
+                  import(std::move(import)) {}
 
-		std::unique_ptr<Import> import;
+        Import *import;
 	};
 
 	class ExportModuleField : public ModuleFieldMixin<ModuleFieldType::Export> {
@@ -1092,7 +1092,7 @@ namespace wabt {
 		explicit TypeModuleField(const Location &loc = Location())
 				: ModuleFieldMixin<ModuleFieldType::Type>(loc) {}
 
-		std::unique_ptr<TypeEntry> type;
+        TypeEntry *type;
 	};
 
 	class TableModuleField : public ModuleFieldMixin<ModuleFieldType::Table> {
@@ -1211,30 +1211,30 @@ namespace wabt {
 			return IsImport(export_.kind, export_.var);
 		}
 
-		// TODO(binji): move this into a builder class?
-		void AppendField(std::unique_ptr<DataSegmentModuleField>);
+        // TODO(binji): move this into a builder class?
+        void AppendField(DataSegmentModuleField *);
 
-		void AppendField(std::unique_ptr<ElemSegmentModuleField>);
+        void AppendField(ElemSegmentModuleField *);
 
-		void AppendField(std::unique_ptr<TagModuleField>);
+        void AppendField(TagModuleField *);
 
-		void AppendField(std::unique_ptr<ExportModuleField>);
+        void AppendField(ExportModuleField *);
 
-		void AppendField(std::unique_ptr<FuncModuleField>);
+        void AppendField(FuncModuleField *);
 
-		void AppendField(std::unique_ptr<TypeModuleField>);
+        void AppendField(TypeModuleField *);
 
-		void AppendField(std::unique_ptr<GlobalModuleField>);
+        void AppendField(GlobalModuleField *);
 
-		void AppendField(std::unique_ptr<ImportModuleField>);
+        void AppendField(ImportModuleField *);
 
-		void AppendField(std::unique_ptr<MemoryModuleField>);
+        void AppendField(MemoryModuleField *);
 
-		void AppendField(std::unique_ptr<StartModuleField>);
+        void AppendField(StartModuleField *);
 
-		void AppendField(std::unique_ptr<TableModuleField>);
+        void AppendField(TableModuleField *);
 
-		void AppendField(std::unique_ptr<ModuleField>);
+        void AppendField(ModuleField *);
 
 		void AppendFields(ModuleFieldList *);
 
@@ -1355,7 +1355,7 @@ namespace wabt {
 		ActionType type_;
 	};
 
-	typedef std::unique_ptr<Action> ActionPtr;
+    typedef Action *ActionPtr;
 
 	template<ActionType TypeEnum>
 	class ActionMixin : public Action {
@@ -1463,8 +1463,8 @@ namespace wabt {
 	template<CommandType TypeEnum>
 	class AssertModuleCommand : public CommandMixin<TypeEnum> {
 	public:
-		std::unique_ptr<ScriptModule> module;
-		String text;
+        ScriptModule *module;
+        String text;
 	};
 
 	typedef AssertModuleCommand<CommandType::AssertMalformed>
@@ -1475,7 +1475,7 @@ namespace wabt {
 	typedef AssertModuleCommand<CommandType::AssertUninstantiable>
 			AssertUninstantiableCommand;
 
-    typedef std::unique_ptr<Command> CommandPtr;
+    typedef Command *CommandPtr;
     typedef List<CommandPtr> CommandPtrVector;
 
 	struct Script {
