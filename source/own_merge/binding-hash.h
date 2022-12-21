@@ -72,7 +72,7 @@ namespace wabt {
 		}
 
 	private:
-		typedef std::vector<const value_type *> ValueTypeVector;
+		typedef List<const value_type *> ValueTypeVector;
 
 		void CreateDuplicatesVector(ValueTypeVector *out_duplicates) const;
 

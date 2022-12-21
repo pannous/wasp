@@ -60,7 +60,7 @@ endif () # else :
 if (INCLUDE_MERGER)
     message(INCLUDE_MERGER)
     ADD_DEFINITIONS(-DINCLUDE_MERGER)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_merger_own.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_linker.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/common.cc)
     set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary.cc)
     set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer.cc)

@@ -68,11 +68,11 @@ namespace wabt {
 		               PrintChars = PrintChars::No);
 
 		template<typename T>
-		void WriteData(const std::vector<T> src, const char *desc, PrintChars print_chars = PrintChars::No) {
-			if (!src.empty()) {
-				WriteData(src.data(), src.size() * sizeof(T), desc, print_chars);
-			}
-		}
+        void WriteData(const List<T> src, const char *desc, PrintChars print_chars = PrintChars::No) {
+            if (!src.empty()) {
+                WriteData(src.data(), src.size() * sizeof(T), desc, print_chars);
+            }
+        }
 
 		void WriteDataAt(size_t offset,
 		                 const void *src,
@@ -161,7 +161,7 @@ namespace wabt {
 
 		size_t size() const { return data.size(); }
 
-		std::vector<uint8_t> data;
+        List<uint8_t> data;
 	};
 
 	class MemoryStream : public Stream {
