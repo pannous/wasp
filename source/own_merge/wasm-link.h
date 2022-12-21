@@ -147,7 +147,7 @@ namespace wabt {
             int delta{};// previous function_count, offset all functions in this module if not mapped to specific import
 
             List<uint8_t> data;
-            List<std::unique_ptr<Section>> sections;
+            List<Section *> sections;
             List<Export> exports = 10000;// {.capacity=10000};
             List<Func> functions;// only those with code, not imports:
             List<FunctionImport> function_imports;
