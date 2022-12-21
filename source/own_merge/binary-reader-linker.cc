@@ -122,19 +122,20 @@ namespace wabt {
 			}
 
 			Result BinaryReaderLinker::OnReloc(RelocType type, Offset offset, Index index, uint32_t addend) {
-				if (offset + RELOC_SIZE > reloc_section_->size) {
-					WABT_FATAL("invalid relocation offset: %zu\n", offset);
-				}
-				reloc_section_->relocations.emplace_back(type, offset, index, addend);
-				return Result::Ok;
-			}
+                if (offset + RELOC_SIZE > reloc_section_->size) {
+                    WABT_FATAL("invalid relocation offset: %zu\n", offset);
+                }
+                reloc_section_->relocations.add(*new Reloc(type, offset, index, addend));
+//				reloc_section_->relocations.add(type, offset, index, addend);
+                return Result::Ok;
+            }
 
 			Result BinaryReaderLinker::OnImportFunc(Index import_index,
 			                                        String module_name,
 			                                        String field_name,
 			                                        Index global_index,
 			                                        Index sig_index) {
-				binary_->function_imports.emplace_back();
+                binary_->function_imports.add();
 				FunctionImport *import = &binary_->function_imports.back();
 				import->module_name = module_name.data;
                 import->name = field_name.data;
@@ -150,7 +151,7 @@ namespace wabt {
 			                                          Index global_index,
 			                                          Type type,
 			                                          bool mutable_) {
-				binary_->global_imports.emplace_back();
+                binary_->global_imports.add();
 				GlobalImport *import = &binary_->global_imports.back();
 				import->module_name = module_name.data;
 				import->name = field_name.data;
@@ -178,20 +179,20 @@ namespace wabt {
 			Result BinaryReaderLinker::OnFunction(Index index, Index sig_index) {
 //  binary_.
 //  FuncType& func_type = module_.func_types[sig_index];
-				Func fun;// = {index, sig_index};
-				fun.index = index;// not starting with 0 if there are imports
-				fun.name = "";// unresolved
-				binary_->functions.push_back(fun);
-				return Result::Ok;
-//  module_.funcs.push_back(FuncDesc{func_type, {}, 0});
-//  func_types_.push_back(func_type);
-			}
+                Func fun;// = {index, sig_index};
+                fun.index = index;// not starting with 0 if there are imports
+                fun.name = "";// unresolved
+                binary_->functions.add(fun);
+                return Result::Ok;
+//  module_.funcs.add(FuncDesc{func_type, {}, 0});
+//  func_types_.add(func_type);
+            }
 
 			Result BinaryReaderLinker::BeginSection(Index section_index, SectionType section_code,
 			                                        Offset size) {
 				Section *sec = new Section();
-				binary_->sections.emplace_back(sec);
-				current_section_ = sec;
+                binary_->sections.add(*sec);
+                current_section_ = sec;
 				sec->section_code = section_code;
 				sec->size = size;
 				sec->offset = state->offset;
@@ -242,9 +243,9 @@ namespace wabt {
 			Result BinaryReaderLinker::BeginDataSegment(Index index, Index memory_index, uint8_t options) {
 				Section *sec = current_section_;
 				if (!sec->data.data_segments) {
-					sec->data.data_segments = new std::vector<DataSegment>();
+                    sec->data.data_segments = new List<DataSegment>();
 				}
-				sec->data.data_segments->emplace_back();
+                sec->data.data_segments->add();
 				DataSegment &segment = sec->data.data_segments->back();
 				segment.memory_index = memory_index;
 				return Result::Ok;
@@ -276,7 +277,7 @@ namespace wabt {
 			                                    ExternalKind kind,
 			                                    Index item_index,
 			                                    String name) {
-				binary_->exports.emplace_back();
+                binary_->exports.add();
 				Export *export_ = &binary_->exports.back();
 				export_->name = name.data;
 				export_->kind = kind;

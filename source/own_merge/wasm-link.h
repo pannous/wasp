@@ -83,32 +83,32 @@ namespace wabt {
 		};
 
 		struct Section {
-			WABT_DISALLOW_COPY_AND_ASSIGN(Section);
+            WABT_DISALLOW_COPY_AND_ASSIGN(Section);
 
-			Section();
+            Section();
 
-			~Section();
+            ~Section();
 
-			/* The binary to which this section belongs */
-			LinkerInputBinary *binary;
-			std::vector<Reloc> relocations; /* The relocations for this section */
+            /* The binary to which this section belongs */
+            LinkerInputBinary *binary;
+            List<Reloc> relocations; /* The relocations for this section */
 
-			SectionType section_code;
-			size_t size;
-			size_t offset;
+            SectionType section_code;
+            size_t size;
+            size_t offset;
 
-			size_t payload_size;
-			size_t payload_offset;
-			size_t payload_increase;// after reloc LEB inserts
+            size_t payload_size;
+            size_t payload_offset;
+            size_t payload_increase;// after reloc LEB inserts
 
-			/* For known sections, the count of the number of elements in the section */
+            /* For known sections, the count of the number of elements in the section */
 			Index count;
 
 			union {
-				/* DATA section data */
-				std::vector<DataSegment> *data_segments;
-				/* MEMORY section data */
-				uint64_t initial;
+                /* DATA section data */
+                List<DataSegment> *data_segments;
+                /* MEMORY section data */
+                uint64_t initial;
 			} data;
 
 			/* The offset at which this section appears within the combined output
@@ -116,14 +116,14 @@ namespace wabt {
 			size_t output_payload_offset;
 		};
 
-		typedef std::vector<Section *> SectionPtrVector;
+        typedef List<Section *> SectionPtrVector;
 
 		class LinkerInputBinary {
 		public:
 			WABT_DISALLOW_COPY_AND_ASSIGN(LinkerInputBinary);
 
 
-			LinkerInputBinary(const char *filename, std::vector<uint8_t> data);
+            LinkerInputBinary(const char *filename, List<uint8_t> data);
 
 			Index RelocateFuncIndex(Index findex);
 
@@ -146,13 +146,13 @@ namespace wabt {
             // ⚠️ # ALL IMPORTS of ALL modules plus all functions of all previous modules!
             int delta{};// previous function_count, offset all functions in this module if not mapped to specific import
 
-            std::vector<uint8_t> data;
-            std::vector<std::unique_ptr<Section>> sections;
+            List<uint8_t> data;
+            List<std::unique_ptr<Section>> sections;
             List<Export> exports = 10000;// {.capacity=10000};
-            std::vector<Func> functions;// only those with code, not imports:
-            std::vector<FunctionImport> function_imports;
+            List<Func> functions;// only those with code, not imports:
+            List<FunctionImport> function_imports;
             Index active_function_imports;
-            std::vector<GlobalImport> global_imports;
+            List<GlobalImport> global_imports;
             Index active_global_imports;
 
             Index type_index_offset;
@@ -168,7 +168,7 @@ namespace wabt {
             Index table_elem_count = 0;
             Index function_count = 0;
 
-            std::vector<String> debug_names;
+            List<String> debug_names;
             bool needs_relocate{};// keep runtime untouched!
         };
 

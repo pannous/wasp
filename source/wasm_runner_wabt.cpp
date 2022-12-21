@@ -16,7 +16,7 @@ typedef unsigned char *bytes;
 
 using namespace wabt::interp;
 
-//using RefVec = std::vector<Ref>;
+//using RefVec = List<Ref>;
 
 double root(double n) {
     double lo = 0, hi = n, mid;
@@ -71,22 +71,22 @@ wabt::Result do_sqrt(Thread &thread, const Values &params, Values &results, Trap
 };
 
 
-void BindImports(Module *module, std::vector<Ref> &imports, Store &store) {
+void BindImports(Module *module, List<Ref> &imports, Store &store) {
 //	auto* stream = s_stdout_stream.get();
-	bool hostPrint = true;//false;
-	// convoluted shit, I don't like it
-	for (auto &&import : module->desc().imports) {
+    bool hostPrint = true;//false;
+    // convoluted shit, I don't like it
+    for (auto &&import: module->desc().imports) {
         auto func_type = *wabt::cast<FuncType>(import.type.type.get());
-        if (import.type.name == "square")imports.push_back(HostFunc::New(store, func_type, do_square).ref());
-        else if (import.type.name == "puti")imports.push_back(HostFunc::New(store, func_type, do_puti).ref());
-        else if (import.type.name == "putf")imports.push_back(HostFunc::New(store, func_type, do_putf).ref());
-        else if (import.type.name == "puts")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
-        else if (import.type.name == "print")imports.push_back(HostFunc::New(store, func_type, do_puts).ref());
-        else if (import.type.name == "proc_exit")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
-        else if (import.type.name == "panic")imports.push_back(HostFunc::New(store, func_type, do_exit).ref());
-        else if (import.type.name == "raise")imports.push_back(HostFunc::New(store, func_type, do_raise).ref());
-        else if (import.type.name == "√")imports.push_back(HostFunc::New(store, func_type, do_sqrt).ref());
-        else imports.push_back(Ref::Null);
+        if (import.type.name == "square")imports.add(HostFunc::New(store, func_type, do_square).ref());
+        else if (import.type.name == "puti")imports.add(HostFunc::New(store, func_type, do_puti).ref());
+        else if (import.type.name == "putf")imports.add(HostFunc::New(store, func_type, do_putf).ref());
+        else if (import.type.name == "puts")imports.add(HostFunc::New(store, func_type, do_puts).ref());
+        else if (import.type.name == "print")imports.add(HostFunc::New(store, func_type, do_puts).ref());
+        else if (import.type.name == "proc_exit")imports.add(HostFunc::New(store, func_type, do_exit).ref());
+        else if (import.type.name == "panic")imports.add(HostFunc::New(store, func_type, do_exit).ref());
+        else if (import.type.name == "raise")imports.add(HostFunc::New(store, func_type, do_raise).ref());
+        else if (import.type.name == "√")imports.add(HostFunc::New(store, func_type, do_sqrt).ref());
+        else imports.add(Ref::Null);
         // By default, just push an null reference. This won't resolve, and instantiation will fail.
     }
 }
@@ -114,8 +114,8 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     auto module = wabt::interp::Module::New(store, module_desc);
     RefVec imports;
 #if WASI
-	uvwasi_t uvwasi;
-	std::vector<const char*> argv; // ...
+    uvwasi_t uvwasi;
+    List<const char*> argv; // ...
 #endif
 	BindImports(module.get(), imports, store);
 

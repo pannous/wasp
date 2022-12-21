@@ -48,10 +48,10 @@ namespace wabt {
 		for (auto iter = std::next(first); iter != end(); ++iter) {
 			if (first->first == iter->first) {
 				if (is_first) {
-					out_duplicates->push_back(&*first);
+					out_duplicates->add(&*first);
 				}
-				out_duplicates->push_back(&*iter);
-				is_first = false;
+                out_duplicates->add(&*iter);
+                is_first = false;
 			} else {
 				is_first = true;
 				first = iter;
