@@ -2,7 +2,7 @@
 // Created by me on 07.12.20.
 //
 
-#include "wasm_merger_own.h"
+#include "wasm_linker.h"
 
 #include "own_merge/binary.h"
 #include "own_merge/wasm-link.h"
@@ -337,7 +337,7 @@ int64 unsignedLEB128(bytes section_data, int length, int &start) {
 }
 
 
-int64 unsignedLEB128(std::vector<byte> &section_data, int length, int &start) {
+int64 unsignedLEB128(List<byte> &section_data, int length, int &start) {
     int64 n = 0;
     short shift = 0;
     do {
@@ -349,7 +349,7 @@ int64 unsignedLEB128(std::vector<byte> &section_data, int length, int &start) {
     return n;
 }
 
-int64 unsignedLEB128(std::vector<byte> &section_data, int max_length, int &start_reference, bool advance) {
+int64 unsignedLEB128(List<byte> &section_data, int max_length, int &start_reference, bool advance) {
     if (advance)return unsignedLEB128(section_data, max_length, start_reference);
     int start = start_reference;// value
     return unsignedLEB128(section_data, max_length, start);// keep start_reference untouched!
@@ -387,7 +387,7 @@ Section::~Section() {
     }
 }
 
-LinkerInputBinary::LinkerInputBinary(const char *filename, std::vector<uint8_t> data)
+LinkerInputBinary::LinkerInputBinary(const char *filename, List<uint8_t> data)
         : name(filename),
           data(std::move(data)),
           active_function_imports(0),
@@ -489,7 +489,7 @@ public:
     Linker() = default;
 
     void AppendBinary(LinkerInputBinary *binary) {
-        inputs_.emplace_back(binary);
+        inputs_.add(binary);
     }
 
     OutputBuffer PerformLink();
@@ -553,14 +553,14 @@ private:
     void DumpRelocOffsets();
 
     MemoryStream stream_;
-    std::vector<std::unique_ptr<LinkerInputBinary>> inputs_{};
+    List<std::unique_ptr<LinkerInputBinary>> inputs_{};
     ssize_t current_payload_offset_ = 0;
 
     Section *getSection(std::unique_ptr<LinkerInputBinary> &uniquePtr, SectionType section);
 
     List<Reloc> CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section);
 
-    std::vector<uint8_t> lebVector(Index value);
+    List<uint8_t> lebVector(Index value);
 
 };
 
@@ -972,10 +972,10 @@ void Linker::ResolveSymbols() {
     BindingHash export_map;// of all kinds
 //	BindingHash private_map;
     Map<String, FuncInfo *> private_map = {.capacity=10000};
-    std::vector<ExportInfo> export_list;
-    std::vector<ExportInfo> globals_export_list;
-    std::vector<FuncInfo> func_list;// internal index identical to func_map index!!
-//    std::vector<FuncInfo> import_list;//
+    List<ExportInfo> export_list;
+    List<ExportInfo> globals_export_list;
+    List<FuncInfo> func_list;// internal index identical to func_map index!!
+//    List<FuncInfo> import_list;//
     Map<String, FunctionImport *> import_map = {.capacity=10000};// currently only used to find duplicates FuncInfo
 
 
@@ -1029,12 +1029,12 @@ void Linker::ResolveSymbols() {
                 printf("%s export kind %d '%s' index %d\n", binary->name, _export.kind, _export.name.data,
                        _export.index);
             if (_export.kind == wabt::ExternalKind::Global) {
-                globals_export_list.emplace_back(&_export, binary.get());
+                globals_export_list.add(&_export, binary.get());
                 export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
             } else if (_export.kind == ExternalKind::Func) {
                 Func &func = binary->functions[_export.index - nr_imports];
                 uint64 position = export_list.size();
-                export_list.emplace_back(&_export, binary.get());
+                export_list.add(&_export, binary.get());
                 if (not func.name.data)
                     func.name = _export.name;
                 if (func.name.length > 0) {
@@ -1045,7 +1045,7 @@ void Linker::ResolveSymbols() {
                     }
                 }
             } else {
-                export_list.emplace_back(&_export, binary.get());
+                export_list.add(&_export, binary.get());
                 warn("ignore export of kind %d %s"s % (short) _export.kind % GetKindName(_export.kind));
             }
         }
@@ -1057,7 +1057,7 @@ void Linker::ResolveSymbols() {
                 func_map.emplace(func.name, func.index);
                 private_map[String(func.name)] = new FuncInfo{&func, binary.get()};
             }
-            func_list.emplace_back(&func, binary.get());
+            func_list.add(&func, binary.get());
         }
 //		for (const Global &func: binary->globals) todo
 
@@ -1236,7 +1236,7 @@ void Linker::WriteBinary() {
             Section *section = sec.get();
             int sectionCode = (int) sec->section_code;
             SectionPtrVector &sec_list = sections[sectionCode];
-            sec_list.push_back(section);
+            sec_list.add(section);
         }
     }
 
@@ -1294,7 +1294,7 @@ void Linker::CreateRelocs() {
         if (!section)return;
         List<Reloc> relocs = CalculateRelocs(binary, section);
         for (Reloc &reloc: relocs)
-            section->relocations.push_back(reloc);
+            section->relocations.add(reloc);
 //		if(!section->data.data_segments)
 //			continue;
 //		for (const DataSegment &segment: *section->data.data_segments) {
@@ -1326,7 +1326,7 @@ Section *Linker::getSection(std::unique_ptr<LinkerInputBinary> &binary, SectionT
 // relocs can either be provided as custom section, or inferred from the linker.
 List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, Section *section) {
     List<Reloc> relocs;
-    std::vector<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
+    List<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
     int length = binary_data.size();
     size_t section_offset = section->offset;// into binary data
     int current_offset = section_offset;
@@ -1481,7 +1481,7 @@ List<Reloc> Linker::CalculateRelocs(std::unique_ptr<LinkerInputBinary> &binary, 
 }
 
 
-Code &code(std::vector<uint8_t> bin) {
+Code &code(List<uint8_t> bin) {
     return *new Code(bin.data(), bin.size());
 }
 
@@ -1489,7 +1489,7 @@ Code merge_files(List<String> infiles) {
     Linker linker;
     Result ok = Result::Ok;
     for (const String &input_filename: infiles) {
-        std::vector<uint8_t> file_data;
+        List<uint8_t> file_data;
         ok = ReadFile(input_filename.data, &file_data);
         if (!ok)continue;
         auto binary = new LinkerInputBinary(input_filename.data, file_data);
@@ -1508,7 +1508,7 @@ Code &merge_binaries(List<Code *> binaries) {
         return *binaries.items[0];
     for (Code *codep: binaries) {
         Code &code = *codep;
-        std::vector<uint8_t> file_data(code.data, code.data + code.length);
+        List<uint8_t> file_data(code.data, code.data + code.length);
         const char *source = "<code>";
         if (not code.name.empty()) source = code.name.data;
         LinkerInputBinary *binary = new LinkerInputBinary(source, file_data);
@@ -1561,7 +1561,7 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
     if (not binary->needs_relocate)
         error("binary->needs_relocate marked false, but got a reloc!");
 
-    const std::vector<uint8_t> &immutable_data = binary->data;// if you insert, other sections get messed up!
+    const List<uint8_t> &immutable_data = binary->data;// if you insert, other sections get messed up!
     uint8_t *section_start = (uint8_t *) &immutable_data[section->offset];// changing int values (offsets) is ok
     uint8_t *section_end = section_start + section->size;// safety to not write outside bounds
 // 🪩
@@ -1636,17 +1636,17 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
     }
 
     //			data.insert(data.begin() + section->offset + r->offset, new_value);// this messes up the DATA section somehow!
-//			std::vector<unsigned char> neu = lebVector(new_value);//  Code((int64)new_value);
+//			List<unsigned char> neu = lebVector(new_value);//  Code((int64)new_value);
 //			section->size += neu.size();
 //			section->payload_size += neu.size();
 //			data.insert(data.begin() + section->offset + r->offset, neu.begin(), neu.end());
 }
 
-std::vector<uint8_t> Linker::lebVector(Index value) {
-    std::vector<uint8_t> neu;
+List<uint8_t> Linker::lebVector(Index value) {
+    List<uint8_t> neu;
     Code &leb128 = unsignedLEB128((int64) value);
     for (auto b: leb128)
-        neu.push_back((uint8_t) b);
+        neu.add((uint8_t) b);
     return neu;
 }
 

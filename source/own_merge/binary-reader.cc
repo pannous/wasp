@@ -209,8 +209,8 @@ namespace wabt {
 			TypeVector param_types_;
 			TypeVector result_types_;
 			TypeMutVector fields_;
-			std::vector<Index> target_depths_;
-			const ReadBinaryOptions &options_;
+            List<Index> target_depths_;
+            const ReadBinaryOptions &options_;
 			SectionType last_known_section_ = SectionType::Invalid;
 			bool did_read_names_section_ = false;
 			bool reading_custom_section_ = false;
@@ -221,8 +221,8 @@ namespace wabt {
 			Index num_tag_imports_ = 0;
 			Index num_function_signatures_ = 0;
 			Index num_function_bodies_ = 0;
-			Index data_count_ = kInvalidIndex;
-			std::vector<Limits> memories;
+            Index data_count_ = kInvalidIndex;
+            List<Limits> memories;
 
 			using ReadEndRestoreGuard =
 					ValueRestoreGuard<size_t, &BinaryReader::read_end_>;
@@ -275,7 +275,7 @@ namespace wabt {
 
 			message += ":";
 
-			std::vector<uint8_t> bytes = opcode.GetBytes();
+            List<uint8_t> bytes = opcode.GetBytes();
 			assert(bytes.size() > 0);
 
 			for (uint8_t byte: bytes) {
@@ -674,7 +674,7 @@ namespace wabt {
 			out_page_limits->max = max;
 
 			// Have to keep a copy of these, to know how to interpret load/stores.
-			memories.push_back(*out_page_limits);
+            memories.add(*out_page_limits);
 			return Result::Ok;
 		}
 

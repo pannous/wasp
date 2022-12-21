@@ -149,10 +149,17 @@ public:
     // todo item references are UNSAFE after grow()
 //    S items[LIST_DEFAULT_CAPACITY];// array type is not assignable
 
-    List(int size = LIST_DEFAULT_CAPACITY) {
+
+//    List(int size = LIST_DEFAULT_CAPACITY) {
+//        capacity = size;
+//        items = (S *) calloc(size, sizeof(S));
+//    }
+
+    List(size_t size = LIST_DEFAULT_CAPACITY) {
         capacity = size;
         items = (S *) calloc(size, sizeof(S));
     }
+
 
     List(const List &old) : items(old.items) { // todo: memcopy?
         _size = old._size;
@@ -244,21 +251,14 @@ public:
 
 #endif
 
-    int size() { return _size; };
+    int size() const { return _size; };
 
     void setType(Type type) {
         _type = type;
     }
 
     void grow() {
-        check_silent(capacity * 2 < LIST_MAX_CAPACITY);
-        S *neu = (S *) alloc(capacity * 2, sizeof(S));
-        memcpy((void *) neu, (void *) items, capacity * sizeof(S));
-//        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
-//      indeed List<int> FUCKS UP just by growing even without references
-//        free(items);
-        items = neu;
-        capacity *= 2;
+        resize(capacity * 2);
     }
 
     S &add(S s) {
@@ -267,7 +267,13 @@ public:
         return items[_size - 1];
     }
 
-//	S &push_back(S s) {// vector compatible
+    S &add(S *s) {
+        items[_size++] = s;
+        if (_size >= capacity)grow();
+        return items[_size - 1];
+    }
+
+//	S &add(S s) {// vector compatible
 //		add(s)
 //	}
 
@@ -461,9 +467,20 @@ public:
         return items[_size - 1];
     }
 
-    void emplace_back() {
+    void add() {
         _size++;
         if (_size >= capacity)grow();
+    }
+
+    void resize(long new_capacity) {
+        check_silent(new_capacity < LIST_MAX_CAPACITY);
+        S *neu = (S *) alloc(new_capacity, sizeof(S));
+        memcpy((void *) neu, (void *) items, capacity * sizeof(S));
+//        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
+//      indeed List<int> FUCKS UP just by growing even without references
+//        free(items);
+        items = neu;
+        capacity = new_capacity;
     }
 };
 

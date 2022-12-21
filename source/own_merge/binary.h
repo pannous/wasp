@@ -27,7 +27,7 @@
 class ValueType;
 
 using Index = uint32_t;
-using TypeVector = std::vector<ValueType>;
+using TypeVector = List<ValueType>;
 
 class ValueType {
 public:
@@ -146,12 +146,12 @@ public:
 			case ValueType::F32:
 			case ValueType::F64:
 			case ValueType::V128:
-			case ValueType::FuncRef:
-			case ValueType::ExternRef:
-				return TypeVector(this, this + 1);
-
-			default:
-				WABT_UNREACHABLE;
+            case ValueType::FuncRef:
+            case ValueType::ExternRef:
+//				return TypeVector(this, this + 1);
+                return TypeVector(*this, this + 1);
+            default:
+                WABT_UNREACHABLE;
 		}
 	}
 

@@ -127,15 +127,15 @@ namespace wabt {
 		void emplace_front(Args &&... args);
 
 		template<class... Args>
-		void emplace_back(Args &&... args);
+        void add(Args &&... args);
 
 		void push_front(std::unique_ptr<T> node);
 
 		void push_front(T &&node);
 
-		void push_back(std::unique_ptr<T> node);
+        void add(std::unique_ptr<T> node);
 
-		void push_back(T &&node);
+        void add(T &&node);
 
 		void pop_front();
 
@@ -311,12 +311,12 @@ namespace wabt {
 
 	template<typename T>
 	inline intrusive_list<T>::intrusive_list(std::unique_ptr<T> node) {
-		push_back(std::move(node));
+        add(std::move(node));
 	}
 
 	template<typename T>
 	inline intrusive_list<T>::intrusive_list(T &&node) {
-		push_back(std::move(node));
+        add(std::move(node));
 	}
 
 	template<typename T>
@@ -457,11 +457,11 @@ namespace wabt {
 		push_front(MakeUnique<T>(std::forward<Args>(args)...));
 	}
 
-	template<typename T>
-	template<class... Args>
-	inline void intrusive_list<T>::emplace_back(Args &&... args) {
-		push_back(MakeUnique<T>(std::forward<Args>(args)...));
-	}
+    template<typename T>
+    template<class... Args>
+    inline void intrusive_list<T>::add(Args &&... args) {
+        add(MakeUnique<T>(std::forward<Args>(args)...));
+    }
 
 	template<typename T>
 	inline void intrusive_list<T>::push_front(std::unique_ptr<T> node) {
@@ -483,25 +483,25 @@ namespace wabt {
 		push_front(MakeUnique<T>(std::move(node)));
 	}
 
-	template<typename T>
-	inline void intrusive_list<T>::push_back(std::unique_ptr<T> node) {
-		assert(node->prev_ == nullptr && node->next_ == nullptr);
+    template<typename T>
+    inline void intrusive_list<T>::add(std::unique_ptr<T> node) {
+        assert(node->prev_ == nullptr && node->next_ == nullptr);
 
-		T *node_p = node.release();
-		if (last_) {
-			node_p->prev_ = last_;
-			last_->next_ = node_p;
-		} else {
-			first_ = node_p;
-		}
-		last_ = node_p;
+        T *node_p = node.release();
+        if (last_) {
+            node_p->prev_ = last_;
+            last_->next_ = node_p;
+        } else {
+            first_ = node_p;
+        }
+        last_ = node_p;
 		size_++;
 	}
 
-	template<typename T>
-	inline void intrusive_list<T>::push_back(T &&node) {
-		push_back(MakeUnique<T>(std::move(node)));
-	}
+    template<typename T>
+    inline void intrusive_list<T>::add(T &&node) {
+        add(MakeUnique<T>(std::move(node)));
+    }
 
 	template<typename T>
 	inline void intrusive_list<T>::pop_front() {
@@ -559,8 +559,8 @@ namespace wabt {
 
 		T *node_p;
 		if (pos == end()) {
-			push_back(std::move(node));
-			node_p = &back();
+            add(std::move(node));
+            node_p = &back();
 		} else {
 			node_p = node.release();
 			node_p->prev_ = pos->prev_;
