@@ -109,11 +109,11 @@ namespace wabt {
                     WABT_FATAL("relocation for custom sections not yet supported\n");
                 }
 
-				for (const Section *&section: binary_->sections) {
+				for (auto section: binary_->sections) {
                     if ((int) section->section_code != (int) section_code) {
                         continue;
                     }
-                    reloc_section_ = section.get();
+                    reloc_section_ = section;
                     return Result::Ok;
                 }
 
@@ -191,7 +191,7 @@ namespace wabt {
 			Result BinaryReaderLinker::BeginSection(Index section_index, SectionType section_code,
 			                                        Offset size) {
 				Section *sec = new Section();
-                binary_->sections.add(*sec);
+                binary_->sections.add(sec);
                 current_section_ = sec;
 				sec->section_code = section_code;
 				sec->size = size;
@@ -307,7 +307,7 @@ namespace wabt {
             read_options.read_debug_names = true;
             read_options.fail_on_custom_section_error = false;
             read_options.stop_on_first_error = false;
-            return ReadBinary(input_info->data.data(), input_info->data.size(), &reader,
+            return ReadBinary(input_info->data.items, input_info->data.size(), &reader,
                               (const ReadBinaryOptions) read_options);
         }
 

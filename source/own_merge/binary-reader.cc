@@ -200,33 +200,33 @@ namespace wabt {
 
 			Result ReadSections() WABT_WARN_UNUSED;
 
-			Result ReportUnexpectedOpcode(Opcode opcode, const char *message = nullptr);
+            Result ReportUnexpectedOpcode(Opcode opcode, const char *message = nullptr);
 
-			size_t read_end_ = 0;  // Either the section end or data_size.
-			BinaryReaderDelegate::State state_;
+            size_t read_end_ = 0;  // Either the section end or data_size.
+            BinaryReaderDelegate::State state_;
 //			BinaryReaderLogging logging_delegate_;
-			BinaryReaderDelegate *delegate_ = nullptr;
-			TypeVector param_types_;
-			TypeVector result_types_;
-			TypeMutVector fields_;
+            BinaryReaderDelegate *delegate_ = nullptr;
+            TypeVector param_types_;
+            TypeVector result_types_;
+            TypeMutVector fields_;
             List<Index> target_depths_;
             const ReadBinaryOptions &options_;
-			SectionType last_known_section_ = SectionType::Invalid;
-			bool did_read_names_section_ = false;
-			bool reading_custom_section_ = false;
-			Index num_func_imports_ = 0;
-			Index num_table_imports_ = 0;
-			Index num_memory_imports_ = 0;
-			Index num_global_imports_ = 0;
-			Index num_tag_imports_ = 0;
-			Index num_function_signatures_ = 0;
-			Index num_function_bodies_ = 0;
+            SectionType last_known_section_ = SectionType::Invalid;
+            bool did_read_names_section_ = false;
+            bool reading_custom_section_ = false;
+            Index num_func_imports_ = 0;
+            Index num_table_imports_ = 0;
+            Index num_memory_imports_ = 0;
+            Index num_global_imports_ = 0;
+            Index num_tag_imports_ = 0;
+            Index num_function_signatures_ = 0;
+            Index num_function_bodies_ = 0;
             Index data_count_ = kInvalidIndex;
             List<Limits> memories;
 
-			using ReadEndRestoreGuard =
-					ValueRestoreGuard<size_t, &BinaryReader::read_end_>;
-		};
+            using ReadEndRestoreGuard =
+                    ValueRestoreGuard<size_t, &BinaryReader::read_end_>;
+        };
 
 		BinaryReader::BinaryReader(const void *data,
 		                           size_t size,
