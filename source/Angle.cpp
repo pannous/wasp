@@ -3,6 +3,7 @@
 //
 #define _main_
 
+#include <functional>
 #include "Wasp.h"
 #include "Angle.h"
 #include "Node.h"
@@ -25,6 +26,7 @@ Module *module; // todo: use?
 bool use_interpreter = false;
 Node &result = *new Node();
 WitReader witReader;
+
 List<String> aliases(String name);
 
 List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
@@ -695,7 +697,8 @@ void use_runtime(const char *function) {
 }
 
 Node &
-groupDeclarations(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body, Function &context) {
+groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body,
+                         Function &context) {
 //	String &name = fun.name;
 //	silent_assert(not is_operator(name[0]));
 //	trace_assert(not is_operator(name[0]));
@@ -709,8 +712,8 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
         }
     }
     Function &function = functions[name]; // different from context!
-    function.emit = true;
-
+    function.is_declared = true;
+    function.is_import = false;
     // todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
     if (setter_operators.has(name) or key_pair_operators.has(name)) {
         body = analyze(body, function);
@@ -737,16 +740,31 @@ groupDeclarations(String &name, Node *return_type, Node modifieres, Node &argume
 
 Node &groupOperators(Node &expression, Function &context);
 
+List<String> function_modifiers = {"public", "static"};
+
+Node &groupFunctionDeclaration(Node &expression, Function &context) {
+    auto first = expression.first();
+    while (function_modifiers.contains(first.name)) {
+        expression.children++;
+        expression.length--;
+    }
+    auto left = expression.to(":=");
+    auto rest = expression.from(":=");
+    auto fun = left.first();
+    return groupFunctionDeclaration(fun.name, 0, left, left, rest, context);
+}
+
 Node &groupDeclarations(Node &expression, Function &context) {
 //    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
-//    if (expression.contains("=") or expression.contains(":=")) {
-//        return groupOperators(expression, context);
-//    }
+    if (expression.contains(":=")) {
+        return groupFunctionDeclaration(expression, context);
+    }
+
     auto first = expression.first();
     if (expression.length == 2 and isType(first.first()) and
         expression.last().kind == objects) {// c style double sin() {}
         expression = groupTypes(expression, context);
-        return groupDeclarations(first.name, first.type, NIL, first.values(), expression.last(), context);
+        return groupFunctionDeclaration(first.name, first.type, NIL, first.values(), expression.last(), context);
     }
     for (Node &node: expression) {
         if (&node == 0) {
@@ -804,7 +822,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
 //				error("Symbol already declared as variable: "s + name);
 //			if (isImmutable(name))
 //				error("Symbol declared as constant or immutable: "s + name);
-        return groupDeclarations(name, 0, left, left, rest, context);
+        return groupFunctionDeclaration(name, 0, left, left, rest, context);
     }
     return expression;
 }
@@ -1174,10 +1192,11 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 
 void addLibraryFunctionAsImport(Function &func) {
     func.is_used = true;
-    if (func.is_builtin)
-        return;
+    if (func.is_declared)return;
+    if (func.is_builtin)return;
     // ⚠️ this function now lives inside Module AND as import inside "wasp_main" functions list, with different wasm_index!
     Function &import = functions[func.name];// copy function info from library/runtime to main module
+    if (import.is_declared)return;
     import.signature = func.signature;
     import.signature.type_index = -1;
     import.signature.parameter_types = func.signature.parameter_types;
