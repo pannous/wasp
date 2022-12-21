@@ -340,7 +340,7 @@ namespace wabt {
 		}
 	}
 
-	void Module::AppendField(std::unique_ptr<DataSegmentModuleField> field) {
+	void Module::AppendField(DataSegmentModuleField *field) {
         DataSegment &data_segment = field->data_segment;
         if (!data_segment.name.empty()) {
             data_segment_bindings.emplace(data_segment.name,
@@ -350,7 +350,7 @@ namespace wabt {
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<ElemSegmentModuleField> field) {
+    void Module::AppendField(ElemSegmentModuleField *field) {
         ElemSegment &elem_segment = field->elem_segment;
         if (!elem_segment.name.empty()) {
             elem_segment_bindings.emplace(elem_segment.name,
@@ -360,7 +360,7 @@ namespace wabt {
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<TagModuleField> field) {
+    void Module::AppendField(TagModuleField *field) {
         Tag &tag = field->tag;
         if (!tag.name.empty()) {
             tag_bindings.emplace(tag.name, Binding(field->loc, tags.size()));
@@ -369,7 +369,7 @@ namespace wabt {
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<ExportModuleField> field) {
+    void Module::AppendField(ExportModuleField *field) {
         // Exported names are allowed to be empty.
         Export &export_ = field->export_;
         export_bindings.emplace(export_.name, Binding(field->loc, exports.size()));
@@ -377,7 +377,7 @@ namespace wabt {
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<FuncModuleField> field) {
+    void Module::AppendField(FuncModuleField *field) {
         Func &func = field->func;
         if (!func.name.empty()) {
             func_bindings.emplace(func.name, Binding(field->loc, funcs.size()));
@@ -386,7 +386,7 @@ namespace wabt {
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<TypeModuleField> field) {
+    void Module::AppendField(TypeModuleField *field) {
         TypeEntry &type = *field->type;
         if (!type.name.empty()) {
             type_bindings.emplace(type.name, Binding(field->loc, types.size()));
@@ -395,7 +395,7 @@ namespace wabt {
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<GlobalModuleField> field) {
+    void Module::AppendField(GlobalModuleField *field) {
         Global &global = field->global;
         if (!global.name.empty()) {
             global_bindings.emplace(global.name, Binding(field->loc, globals.size()));
@@ -404,17 +404,17 @@ namespace wabt {
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<ImportModuleField> field) {
-		Import *import = field->import.get();
-		const String *name = nullptr;
-		BindingHash *bindings = nullptr;
-		Index index = kInvalidIndex;
+    void Module::AppendField(ImportModuleField *field) {
+        Import *import = field->import.get();
+        const String *name = nullptr;
+        BindingHash *bindings = nullptr;
+        Index index = kInvalidIndex;
 
-		switch (import->kind()) {
-			case ExternalKind::Func: {
-				Func &func = cast<FuncImport>(import)->func;
-				name = &func.name;
-				bindings = &func_bindings;
+        switch (import->kind()) {
+            case ExternalKind::Func: {
+                Func &func = cast<FuncImport>(import)->func;
+                name = &func.name;
+                bindings = &func_bindings;
                 index = funcs.size();
                 funcs.add(&func);
                 ++num_func_imports;
@@ -470,7 +470,7 @@ namespace wabt {
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<MemoryModuleField> field) {
+    void Module::AppendField(MemoryModuleField *field) {
         Memory &memory = field->memory;
         if (!memory.name.empty()) {
             memory_bindings.emplace(memory.name, Binding(field->loc, memories.size()));
@@ -479,12 +479,12 @@ namespace wabt {
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<StartModuleField> field) {
+    void Module::AppendField(StartModuleField *field) {
         starts.add(&field->start);
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<TableModuleField> field) {
+    void Module::AppendField(TableModuleField *field) {
         Table &table = field->table;
         if (!table.name.empty()) {
             table_bindings.emplace(table.name, Binding(field->loc, tables.size()));
@@ -493,17 +493,17 @@ namespace wabt {
         fields.add(std::move(field));
     }
 
-	void Module::AppendField(std::unique_ptr<ModuleField> field) {
-		switch (field->type()) {
-			case ModuleFieldType::Func:
-				AppendField(cast<FuncModuleField>(std::move(field)));
-				break;
+    void Module::AppendField(ModuleField *field) {
+        switch (field->type()) {
+            case ModuleFieldType::Func:
+                AppendField(cast<FuncModuleField>(std::move(field)));
+                break;
 
-			case ModuleFieldType::Global:
-				AppendField(cast<GlobalModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::Global:
+                AppendField(cast<GlobalModuleField>(std::move(field)));
+                break;
 
-			case ModuleFieldType::Import:
+            case ModuleFieldType::Import:
 				AppendField(cast<ImportModuleField>(std::move(field)));
 				break;
 
@@ -543,7 +543,7 @@ namespace wabt {
 
 	void Module::AppendFields(ModuleFieldList *fields) {
 		while (!fields->empty())
-			AppendField(std::unique_ptr<ModuleField>(fields->extract_front()));
+            AppendField(ModuleField * (fields->extract_front()));
 	}
 
 	const Module *Script::GetFirstModule() const {
@@ -551,11 +551,11 @@ namespace wabt {
 	}
 
 	Module *Script::GetFirstModule() {
-		for (const std::unique_ptr<Command> &command: commands) {
-			if (auto *module_command = dyn_cast<ModuleCommand>(command.get())) {
-				return &module_command->module;
-			}
-		}
+        for (const Command *&command: commands) {
+            if (auto *module_command = dyn_cast<ModuleCommand>(command.get())) {
+                return &module_command->module;
+            }
+        }
 		return nullptr;
 	}
 

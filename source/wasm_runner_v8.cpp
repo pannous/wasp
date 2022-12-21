@@ -24,7 +24,7 @@ int test_V8_cpp_Javascript() {
     const char *path = "";
     v8::V8::InitializeICUDefaultLocation(path);
     v8::V8::InitializeExternalStartupData(path);
-    std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
+    v8::Platform *platform = v8::platform::NewDefaultPlatform();
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();
 
