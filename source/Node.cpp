@@ -300,8 +300,10 @@ bool Node::operator==(chars other) {
 
 bool Node::operator==(int other) {
 //	if (this == 0)return false;// HOW?
-    if ((kind == longs and value.longy == other) or (kind == reals and value.real == other))
-        return true;
+    if (kind == longs and value.longy == other) return true;
+    if (kind == reals and value.real == other)return true;
+    if (kind == reals and (int) value.real == other)return true;// rounding equivalence only in tests!
+    if (kind == reals)return similar(value.real, other);
     if (kind == bools)return other == value.longy;
     if (kind == key and value.node and *value.node == other)return true;
     if (kind == strings and parseLong(value.string->data) == other)return true;
@@ -358,7 +360,7 @@ bool Node::operator==(Node &other) {
     if (kind == reals and other.kind == reals)
         return value.real == other.value.real or similar(value.real, other.value.real);
     if (kind == reals and other.kind == longs)
-        return (int64) value.real == other.value.longy;
+        return (int64) value.real == other.value.longy or similar(value.real, other.value.longy);;
     if (kind == bools or other.kind == bools) // 1 == true
         return value.longy == other.value.longy;// or (value.data!= nullptr and other.value.data != nullptr a);
 //	if (kind.type == int_array and other.kind.type == int_array)

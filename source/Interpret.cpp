@@ -48,7 +48,7 @@ Node Node::interpret(bool expectOperator /* = true*/) {
     if (length == 1) {
         if (kind == expression and name.empty())
             return first().interpret(true);
-        if (kind == operators or name == "=" or isFunction(*this))
+        if (kind == operators or name == "=" or name == ":=" or isFunction(*this))
             return apply_op(NIL, *this, *children);
         else return constants(children[0]);
     }
