@@ -604,7 +604,7 @@ void Linker::WriteTableSection(const SectionPtrVector &sections) {
 
 void Linker::WriteExportSection() {
     Index total_exports = 0;
-    for (const LinkerInputBinary *&binary: inputs_) {
+    for (auto binary: inputs_) {
         total_exports += binary->exports.size();
     }
 
