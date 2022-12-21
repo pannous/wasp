@@ -109,13 +109,13 @@ namespace wabt {
                     WABT_FATAL("relocation for custom sections not yet supported\n");
                 }
 
-				for (const std::unique_ptr<Section> &section: binary_->sections) {
+				for (const Section *&section: binary_->sections) {
                     if ((int) section->section_code != (int) section_code) {
                         continue;
                     }
-					reloc_section_ = section.get();
-					return Result::Ok;
-				}
+                    reloc_section_ = section.get();
+                    return Result::Ok;
+                }
 
 				WABT_FATAL("section not found: %d\n", static_cast<int>(section_code));
 				return Result::Error;
