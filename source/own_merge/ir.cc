@@ -159,68 +159,53 @@ namespace wabt {
 				return GetMemoryIndex(var) < num_memory_imports;
 
 			case ExternalKind::Table:
-				return GetTableIndex(var) < num_table_imports;
+                return GetTableIndex(var) < num_table_imports;
 
-			case ExternalKind::Tag:
-				return GetTagIndex(var) < num_tag_imports;
+            case ExternalKind::Tag:
+                return GetTagIndex(var) < num_tag_imports;
 
-			default:
-				return false;
-		}
-	}
+            default:
+                return false;
+        }
+    }
 
-	void LocalTypes::Set(const TypeVector &types) {
-		decls_.clear();
-		if (types.empty()) {
-			return;
-		}
+//	void LocalTypes::Set(const TypeVector &types) {
+//		decls_.clear();
+//		if (types.empty()) {
+//			return;
+//		}
+//
+//		Type type = types[0];
+//		Index count = 1;
+//		for (Index i = 1; i < types.size(); ++i) {
+//			if (types[i] != type) {
+//				decls_.add(type, count);
+//                type = types[i];
+//				count = 1;
+//			} else {
+//				++count;
+//			}
+//		}
+//        decls_.add(type, count);
+//	}
 
-		Type type = types[0];
-		Index count = 1;
-		for (Index i = 1; i < types.size(); ++i) {
-			if (types[i] != type) {
-				decls_.add(type, count);
-                type = types[i];
-				count = 1;
-			} else {
-				++count;
-			}
-		}
-        decls_.add(type, count);
-	}
 
-	Index LocalTypes::size() const {
-		return std::accumulate(
-				decls_.begin(), decls_.end(), 0,
-				[](Index sum, const Decl &decl) { return sum + decl.second; });
-	}
 
-	Type LocalTypes::operator[](Index i) const {
-		Index count = 0;
-		for (auto decl: decls_) {
-			if (i < count + decl.second) {
-				return decl.first;
-			}
-			count += decl.second;
-		}
-		assert(i < count);
-		return Type::Any;
-	}
+    Type Func::GetLocalType(Index index) { //const
+        Index num_params = decl.GetNumParams();
+        if (index < num_params) {
+            return GetParamType(index);
+        } else {
+            index -= num_params;
+            assert(index < local_types.size());
+            return local_types[index];
+//            return *local_types.has(index);
+        }
+    }
 
-	Type Func::GetLocalType(Index index) const {
-		Index num_params = decl.GetNumParams();
-		if (index < num_params) {
-			return GetParamType(index);
-		} else {
-			index -= num_params;
-			assert(index < local_types.size());
-			return local_types[index];
-		}
-	}
-
-	Type Func::GetLocalType(const Var &var) const {
-		return GetLocalType(GetLocalIndex(var));
-	}
+    Type Func::GetLocalType(const Var &var) { // const
+        return GetLocalType(GetLocalIndex(var));
+    }
 
 	Index Func::GetLocalIndex(const Var &var) const {
 		if (var.is_index()) {
@@ -405,7 +390,7 @@ namespace wabt {
     }
 
     void Module::AppendField(ImportModuleField *field) {
-        Import *import = field->import.get();
+        Import *import = field->import;
         const String *name = nullptr;
         BindingHash *bindings = nullptr;
         Index index = kInvalidIndex;
@@ -552,7 +537,7 @@ namespace wabt {
 
 	Module *Script::GetFirstModule() {
         for (const Command *&command: commands) {
-            if (auto *module_command = dyn_cast<ModuleCommand>(command.get())) {
+            if (auto *module_command = dyn_cast<ModuleCommand>(command)) {
                 return &module_command->module;
             }
         }
@@ -564,7 +549,7 @@ namespace wabt {
 		if (index >= commands.size()) {
 			return nullptr;
 		}
-		auto *command = cast<ModuleCommand>(commands[index].get());
+        auto *command = cast<ModuleCommand>(commands[index]);
 		return &command->module;
 	}
 

@@ -62,46 +62,48 @@
 namespace wabt {
 
 	template<typename Derived, typename Base>
-	bool isa(const Base *base) {
+    bool isa(const Base *base) {
 //		WABT_STATIC_ASSERT((std::is_base_of<Base, Derived>::value));
-		return Derived::classof(base);
-	}
+        return Derived::classof(base);
+    }
 
-	template<typename Derived, typename Base>
-	const Derived *cast(const Base *base) {
-		assert(isa<Derived>(base));
-		return static_cast<const Derived *>(base);
-	};
+    template<typename Derived, typename Base>
+    const Derived *cast(const Base *base) {
+        assert(isa<Derived>(base));
+        return static_cast<const Derived *>(base);
+    };
+//
+//	template<typename Derived, typename Base>
+//	Derived *cast(Base *base) {
+//		assert(isa<Derived>(base));
+//		return static_cast<Derived *>(base);
+//	};
 
-	template<typename Derived, typename Base>
-	Derived *cast(Base *base) {
-		assert(isa<Derived>(base));
-		return static_cast<Derived *>(base);
-	};
+    template<typename Derived, typename Base>
+    const Derived *dyn_cast(const Base *base) {
+        return isa<Derived>(base) ? static_cast<const Derived *>(base) : nullptr;
+    };
 
-	template<typename Derived, typename Base>
-	const Derived *dyn_cast(const Base *base) {
-		return isa<Derived>(base) ? static_cast<const Derived *>(base) : nullptr;
-	};
-
-	template<typename Derived, typename Base>
-	Derived *dyn_cast(Base *base) {
-		return isa<Derived>(base) ? static_cast<Derived *>(base) : nullptr;
-	};
+    template<typename Derived, typename Base>
+    Derived *dyn_cast(Base *base) {
+        return isa<Derived>(base) ? static_cast<Derived *>(base) : nullptr;
+    };
 
 // Cast functionality for unique_ptr. isa and dyn_cast are not included because
 // they won't always pass ownership back to the caller.
 
 	template<typename Derived, typename Base>
     const Derived *cast(const Base *&&base) {
-        assert(isa<Derived>(base.get()));
-        return Derived * (static_cast<const Derived *>(base.release()));
+//        assert(isa<Derived>(base.get()));
+//        return Derived * (static_cast<const Derived *>(base.release()));
+        return base;
     };
 
     template<typename Derived, typename Base>
     Derived *cast(Base *&&base) {
-        assert(isa<Derived>(base.get()));
-        return Derived * (static_cast<Derived *>(base.release()));
+//        assert(isa<Derived>(base.get()));
+//        return Derived * (static_cast<Derived *>(base.release()));
+        return base;
     };
 
 }  // namespace wabt
