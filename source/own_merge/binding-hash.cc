@@ -16,18 +16,18 @@
 
 #include "binding-hash.h"
 
-#include <algorithm>
-#include <vector>
+//#include <algorithm>
+//#include <vector>
 
 #include "ir.h"
 
 namespace wabt {
 
-	void BindingHash::FindDuplicates(DuplicateCallback callback) const {
-		if (size() > 0) {
-			ValueTypeVector duplicates;
-			CreateDuplicatesVector(&duplicates);
-			SortDuplicatesVectorByLocation(&duplicates);
+    void BindingHash::FindDuplicates(DuplicateCallback callback) const {
+        if (size() > 0) {
+            ValueTypeVector duplicates;
+            CreateDuplicatesVector(&duplicates);
+            SortDuplicatesVectorByLocation(&duplicates);
 			CallCallbacks(duplicates, callback);
 		}
 	}

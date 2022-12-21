@@ -37,6 +37,11 @@ using namespace wabt::link;
 //using wabt::RelocType;
 //using wabt::WriteU32Leb128Raw;
 
+template<class S, class T>
+struct Pair {
+    S first;
+    S second;
+};
 
 //String s(String s) {
 //	return String(s.data(),s.size());
@@ -501,7 +506,7 @@ public:
     void ApplyRelocation(Section *section, const wabt::Reloc *r);
 
 private:
-    typedef std::pair<Offset, Offset> Fixup;
+    typedef Pair<Offset, Offset> Fixup;
 
     Fixup WriteUnknownSize();
 
@@ -575,7 +580,7 @@ Linker::Fixup Linker::WriteUnknownSize() {
     Offset fixup_offset = stream_.offset();
     WriteFixedU32Leb128(&stream_, 0, "unknown size");
     current_payload_offset_ = stream_.offset();
-    return std::make_pair(fixup_offset, current_payload_offset_);
+    return {.first=fixup_offset, .second=(unsigned long) current_payload_offset_};
 }
 
 void Linker::FixupSize(Fixup fixup) {
@@ -612,7 +617,7 @@ void Linker::WriteExportSection() {
     WriteU32Leb128(&stream_, total_exports, "export count");
 
     int memories = 0;
-    for (const LinkerInputBinary *&binary: inputs_) {
+    for (auto binary: inputs_) {
         for (const Export &export_: binary->exports) {
             WriteStr(&stream_, export_.name, "export name");
 
@@ -705,7 +710,7 @@ void Linker::WriteGlobalImport(const GlobalImport &import) {
 
 void Linker::WriteImportSection() {
     Index num_imports = 0;
-    for (const LinkerInputBinary *&binary: inputs_) {
+    for (auto binary: inputs_) {
         for (const FunctionImport &import: binary->function_imports)
             if (import.active) num_imports++;
         for (const GlobalImport &globalImport: binary->global_imports)
@@ -715,7 +720,7 @@ void Linker::WriteImportSection() {
     Fixup fixup = WriteUnknownSize();
     WriteU32Leb128(&stream_, num_imports, "num imports");
 
-    for (const LinkerInputBinary *&binary: inputs_) {
+    for (auto binary: inputs_) {
         for (const FunctionImport &function_import: binary->function_imports) {
             if (function_import.active) {
                 WriteFunctionImport(function_import, binary->type_index_offset);
@@ -780,7 +785,7 @@ void Linker::WriteDataSection(const SectionPtrVector &sections, Index total_coun
 
 void Linker::WriteNamesSection() {
     Index total_count = 0;
-    for (const LinkerInputBinary *&binary: inputs_) {
+    for (auto binary: inputs_) {
         for (size_t i = 0; i < binary->debug_names.size(); i++) {
             if (binary->debug_names[i].empty()) {
                 continue;
@@ -805,7 +810,7 @@ void Linker::WriteNamesSection() {
     WriteU32Leb128(&stream_, total_count, "element count");
 
     // Write import names.
-    for (const LinkerInputBinary *&binary: inputs_) {
+    for (auto binary: inputs_) {
         for (size_t i = 0; i < binary->debug_names.size(); i++) {
             if (binary->debug_names[i].empty() || !binary->IsFunctionImport(i)) {
                 continue;
@@ -819,7 +824,7 @@ void Linker::WriteNamesSection() {
     }
 
     // Write non-import names.
-    for (const LinkerInputBinary *&binary: inputs_) {
+    for (auto binary: inputs_) {
         for (size_t i = 0; i < binary->debug_names.size(); i++) {
             if (binary->debug_names[i].empty() || binary->IsFunctionImport(i)) {
                 continue;
@@ -982,7 +987,7 @@ void Linker::ResolveSymbols() {
 // binary->functions not filled yet!
 
     int memories = 0;
-    for (const LinkerInputBinary *&binary: inputs_) {
+    for (auto binary: inputs_) {
         printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
         uint64 nr_imports = binary->function_imports.size();
 
@@ -1258,7 +1263,7 @@ void Linker::WriteBinary() {
 }
 
 void Linker::DumpRelocOffsets() {
-    for (const LinkerInputBinary *&binary: inputs_) {
+    for (auto binary: inputs_) {
         bool needs_relocate = false;
         needs_relocate = needs_relocate or binary->type_index_offset != 0;
         needs_relocate = needs_relocate or binary->memory_page_offset != 0;
