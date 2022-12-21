@@ -1307,11 +1307,12 @@ Code emitOperator(Node &node, Function &context) {
     String &name = node.name;
 //	name = normOperator(name);
     if (node.name == "nop" or node.name == "pass")return code;
-    if (node.length == 0 and name == "=") return code;// BUG
+    if (node.length == 0 and (name == "=" or name == ":=")) return code;// BUG
 
     if (name == "then")return emitIf(*node.parent, context);// pure if handled before
     auto first = node.first();
-    if (name == ":=")return emitDeclaration(node, first);
+//    if (name == ":=")return emitDeclaration(node, first); todo!
+    if (name == ":=")return emitSetter(node, first, context);
     if (name == "=")return emitSetter(node, first, context);// todo node.first dodgy
     if (name == ".") return emitAttribute(node, context);
 //	if (name=="#")XXX return emitIndexPattern(node[0], node[1], context); elsewhere (and emit(node)!
@@ -1430,7 +1431,8 @@ Code emitOperator(Node &node, Function &context) {
         else if (last_type == float32) code.add(emitCall(*new Node("powf"), context));
         else if (last_type == float64) code.add(emitCall(*new Node("pow"), context));
         else if (last_type == int64s) code.add(emitCall(*new Node("pow_long"), context));
-        else todo("^ power with type "s + typeName(last_type));
+        else code.add(emitCall(*new Node("powi"), context));
+//        else todo("^ power with type "s + typeName(last_type));
 //         'powl' is a builtin with type 'long double (long double, long double)'
     } else if (name.startsWith("-")) {
         code.add(i32_sub);
@@ -1958,7 +1960,7 @@ Code emitSetter(Node &node, Node &value, Function &context) {
     if (node.first().name == "#") {// x#y=z
         return emitPatternSetter(node.first().first(), node.first().last(), node.last(), context);
     }
-    if (node.name == "=") {
+    if (node.name == "=" or node.name == ":=") {
         if (node.length != 2)error("assignment needs 2 arguments");
         return emitSetter(node[0], node[1], context);
     }
