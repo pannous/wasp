@@ -58,7 +58,7 @@ namespace wabt {
 		Type type;
 		bool mutable_;
 	};
-	using TypeMutVector = std::vector<TypeMut>;
+	using TypeMutVector = List<TypeMut>;
 
 	class BinaryReaderDelegate {
 	public:

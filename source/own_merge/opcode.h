@@ -98,7 +98,7 @@ namespace wabt {
 		}
 
 		// Get the byte sequence for this opcode, including prefix.
-		std::vector<uint8_t> GetBytes() const;
+        List<uint8_t> GetBytes() const;
 
 		// Get the lane count of an extract/replace simd op.
 		uint32_t GetSimdLaneCount() const;

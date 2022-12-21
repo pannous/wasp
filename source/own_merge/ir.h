@@ -91,7 +91,7 @@ namespace wabt {
 		};
 	};
 
-	typedef std::vector<Var> VarVector;
+	typedef List<Var> VarVector;
 
 	struct Const {
 		static constexpr uintptr_t kRefNullBits = ~uintptr_t(0);
@@ -241,7 +241,7 @@ namespace wabt {
 		ExpectedNan nan_[4];
 	};
 
-	typedef std::vector<Const> ConstVector;
+    typedef List<Const> ConstVector;
 
 	struct FuncSignature {
 		TypeVector param_types;
@@ -319,7 +319,7 @@ namespace wabt {
 		explicit StructType(string_view name = string_view())
 				: TypeEntry(TypeEntryKind::Struct) {}
 
-		std::vector<Field> fields;
+        List<Field> fields;
 	};
 
 	class ArrayType : public TypeEntry {
@@ -450,7 +450,7 @@ namespace wabt {
 		}
 	};
 
-	typedef std::vector<Catch> CatchVector;
+    typedef List<Catch> CatchVector;
 
 	enum class TryKind {
 		Plain,
@@ -764,8 +764,8 @@ namespace wabt {
 
 	class LocalTypes {
 	public:
-		typedef std::pair<Type, Index> Decl;
-		typedef std::vector<Decl> Decls;
+        typedef std::pair<Type, Index> Decl;
+        typedef List<Decl> Decls;
 
 		struct const_iterator {
 			const_iterator(Decls::const_iterator decl, Index index)
@@ -787,7 +787,7 @@ namespace wabt {
 
 		void AppendDecl(Type type, Index count) {
 			if (count != 0) {
-				decls_.emplace_back(type, count);
+                decls_.add(type, count);
 			}
 		}
 
@@ -894,7 +894,7 @@ namespace wabt {
 		Type type;  // Only used when kind == RefNull
 	};
 
-	typedef std::vector<ElemExpr> ElemExprVector;
+    typedef List<ElemExpr> ElemExprVector;
 
 	struct ElemSegment {
 		explicit ElemSegment(string_view name) : name(name.data) {}
@@ -924,8 +924,8 @@ namespace wabt {
 		SegmentKind kind = SegmentKind::Active;
 		String name;
 		Var memory_var;
-		ExprList offset;
-		std::vector<uint8_t> data;
+        ExprList offset;
+        List<uint8_t> data;
 	};
 
 	class Import {
@@ -1240,37 +1240,37 @@ namespace wabt {
 
 		Location loc;
 		String name;
-		ModuleFieldList fields;
+        ModuleFieldList fields;
 
-		Index num_tag_imports = 0;
-		Index num_func_imports = 0;
-		Index num_table_imports = 0;
-		Index num_memory_imports = 0;
-		Index num_global_imports = 0;
+        Index num_tag_imports = 0;
+        Index num_func_imports = 0;
+        Index num_table_imports = 0;
+        Index num_memory_imports = 0;
+        Index num_global_imports = 0;
 
-		// Cached for convenience; the pointers are shared with values that are
-		// stored in either ModuleField or Import.
-		std::vector<Tag *> tags;
-		std::vector<Func *> funcs;
-		std::vector<Global *> globals;
-		std::vector<Import *> imports;
-		std::vector<Export *> exports;
-		std::vector<TypeEntry *> types;
-		std::vector<Table *> tables;
-		std::vector<ElemSegment *> elem_segments;
-		std::vector<Memory *> memories;
-		std::vector<DataSegment *> data_segments;
-		std::vector<Var *> starts;
+        // Cached for convenience; the pointers are shared with values that are
+        // stored in either ModuleField or Import.
+        List<Tag *> tags;
+        List<Func *> funcs;
+        List<Global *> globals;
+        List<Import *> imports;
+        List<Export *> exports;
+        List<TypeEntry *> types;
+        List<Table *> tables;
+        List<ElemSegment *> elem_segments;
+        List<Memory *> memories;
+        List<DataSegment *> data_segments;
+        List<Var *> starts;
 
-		BindingHash tag_bindings;
-		BindingHash func_bindings;
-		BindingHash global_bindings;
-		BindingHash export_bindings;
-		BindingHash type_bindings;
-		BindingHash table_bindings;
-		BindingHash memory_bindings;
-		BindingHash data_segment_bindings;
-		BindingHash elem_segment_bindings;
+        BindingHash tag_bindings;
+        BindingHash func_bindings;
+        BindingHash global_bindings;
+        BindingHash export_bindings;
+        BindingHash type_bindings;
+        BindingHash table_bindings;
+        BindingHash memory_bindings;
+        BindingHash data_segment_bindings;
+        BindingHash elem_segment_bindings;
 	};
 
 	enum class ScriptModuleType {
@@ -1322,8 +1322,8 @@ namespace wabt {
 		const Location &location() const override { return loc; }
 
 		Location loc;
-		String name;
-		std::vector<uint8_t> data;
+        String name;
+        List<uint8_t> data;
 	};
 
 	typedef DataScriptModule<ScriptModuleType::Binary> BinaryScriptModule;
@@ -1475,8 +1475,8 @@ namespace wabt {
 	typedef AssertModuleCommand<CommandType::AssertUninstantiable>
 			AssertUninstantiableCommand;
 
-	typedef std::unique_ptr<Command> CommandPtr;
-	typedef std::vector<CommandPtr> CommandPtrVector;
+    typedef std::unique_ptr<Command> CommandPtr;
+    typedef List<CommandPtr> CommandPtrVector;
 
 	struct Script {
 		WABT_DISALLOW_COPY_AND_ASSIGN(Script);
@@ -1493,10 +1493,10 @@ namespace wabt {
 		BindingHash module_bindings;
 	};
 
-	void MakeTypeBindingReverseMapping(
-			size_t num_types,
-			const BindingHash &bindings,
-			std::vector<String> *out_reverse_mapping);
+    void MakeTypeBindingReverseMapping(
+            size_t num_types,
+            const BindingHash &bindings,
+            List<String> *out_reverse_mapping);
 
 }  // namespace wabt
 

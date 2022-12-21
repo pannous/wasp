@@ -179,14 +179,14 @@ namespace wabt {
 		Index count = 1;
 		for (Index i = 1; i < types.size(); ++i) {
 			if (types[i] != type) {
-				decls_.emplace_back(type, count);
-				type = types[i];
+				decls_.add(type, count);
+                type = types[i];
 				count = 1;
 			} else {
 				++count;
 			}
 		}
-		decls_.emplace_back(type, count);
+        decls_.add(type, count);
 	}
 
 	Index LocalTypes::size() const {
@@ -341,68 +341,68 @@ namespace wabt {
 	}
 
 	void Module::AppendField(std::unique_ptr<DataSegmentModuleField> field) {
-		DataSegment &data_segment = field->data_segment;
-		if (!data_segment.name.empty()) {
-			data_segment_bindings.emplace(data_segment.name,
-			                              Binding(field->loc, data_segments.size()));
-		}
-		data_segments.push_back(&data_segment);
-		fields.push_back(std::move(field));
-	}
+        DataSegment &data_segment = field->data_segment;
+        if (!data_segment.name.empty()) {
+            data_segment_bindings.emplace(data_segment.name,
+                                          Binding(field->loc, data_segments.size()));
+        }
+        data_segments.add(&data_segment);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<ElemSegmentModuleField> field) {
-		ElemSegment &elem_segment = field->elem_segment;
-		if (!elem_segment.name.empty()) {
-			elem_segment_bindings.emplace(elem_segment.name,
-			                              Binding(field->loc, elem_segments.size()));
-		}
-		elem_segments.push_back(&elem_segment);
-		fields.push_back(std::move(field));
-	}
+        ElemSegment &elem_segment = field->elem_segment;
+        if (!elem_segment.name.empty()) {
+            elem_segment_bindings.emplace(elem_segment.name,
+                                          Binding(field->loc, elem_segments.size()));
+        }
+        elem_segments.add(&elem_segment);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<TagModuleField> field) {
-		Tag &tag = field->tag;
-		if (!tag.name.empty()) {
-			tag_bindings.emplace(tag.name, Binding(field->loc, tags.size()));
-		}
-		tags.push_back(&tag);
-		fields.push_back(std::move(field));
-	}
+        Tag &tag = field->tag;
+        if (!tag.name.empty()) {
+            tag_bindings.emplace(tag.name, Binding(field->loc, tags.size()));
+        }
+        tags.add(&tag);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<ExportModuleField> field) {
-		// Exported names are allowed to be empty.
-		Export &export_ = field->export_;
-		export_bindings.emplace(export_.name, Binding(field->loc, exports.size()));
-		exports.push_back(&export_);
-		fields.push_back(std::move(field));
-	}
+        // Exported names are allowed to be empty.
+        Export &export_ = field->export_;
+        export_bindings.emplace(export_.name, Binding(field->loc, exports.size()));
+        exports.add(&export_);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<FuncModuleField> field) {
-		Func &func = field->func;
-		if (!func.name.empty()) {
-			func_bindings.emplace(func.name, Binding(field->loc, funcs.size()));
-		}
-		funcs.push_back(&func);
-		fields.push_back(std::move(field));
-	}
+        Func &func = field->func;
+        if (!func.name.empty()) {
+            func_bindings.emplace(func.name, Binding(field->loc, funcs.size()));
+        }
+        funcs.add(&func);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<TypeModuleField> field) {
-		TypeEntry &type = *field->type;
-		if (!type.name.empty()) {
-			type_bindings.emplace(type.name, Binding(field->loc, types.size()));
-		}
-		types.push_back(&type);
-		fields.push_back(std::move(field));
-	}
+        TypeEntry &type = *field->type;
+        if (!type.name.empty()) {
+            type_bindings.emplace(type.name, Binding(field->loc, types.size()));
+        }
+        types.add(&type);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<GlobalModuleField> field) {
-		Global &global = field->global;
-		if (!global.name.empty()) {
-			global_bindings.emplace(global.name, Binding(field->loc, globals.size()));
-		}
-		globals.push_back(&global);
-		fields.push_back(std::move(field));
-	}
+        Global &global = field->global;
+        if (!global.name.empty()) {
+            global_bindings.emplace(global.name, Binding(field->loc, globals.size()));
+        }
+        globals.add(&global);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<ImportModuleField> field) {
 		Import *import = field->import.get();
@@ -415,9 +415,9 @@ namespace wabt {
 				Func &func = cast<FuncImport>(import)->func;
 				name = &func.name;
 				bindings = &func_bindings;
-				index = funcs.size();
-				funcs.push_back(&func);
-				++num_func_imports;
+                index = funcs.size();
+                funcs.add(&func);
+                ++num_func_imports;
 				break;
 			}
 
@@ -425,9 +425,9 @@ namespace wabt {
 				Table &table = cast<TableImport>(import)->table;
 				name = &table.name;
 				bindings = &table_bindings;
-				index = tables.size();
-				tables.push_back(&table);
-				++num_table_imports;
+                index = tables.size();
+                tables.add(&table);
+                ++num_table_imports;
 				break;
 			}
 
@@ -435,9 +435,9 @@ namespace wabt {
 				Memory &memory = cast<MemoryImport>(import)->memory;
 				name = &memory.name;
 				bindings = &memory_bindings;
-				index = memories.size();
-				memories.push_back(&memory);
-				++num_memory_imports;
+                index = memories.size();
+                memories.add(&memory);
+                ++num_memory_imports;
 				break;
 			}
 
@@ -445,9 +445,9 @@ namespace wabt {
 				Global &global = cast<GlobalImport>(import)->global;
 				name = &global.name;
 				bindings = &global_bindings;
-				index = globals.size();
-				globals.push_back(&global);
-				++num_global_imports;
+                index = globals.size();
+                globals.add(&global);
+                ++num_global_imports;
 				break;
 			}
 
@@ -455,43 +455,43 @@ namespace wabt {
 				Tag &tag = cast<TagImport>(import)->tag;
 				name = &tag.name;
 				bindings = &tag_bindings;
-				index = tags.size();
-				tags.push_back(&tag);
-				++num_tag_imports;
-				break;
-			}
-		}
+                index = tags.size();
+                tags.add(&tag);
+                ++num_tag_imports;
+                break;
+            }
+        }
 
-		assert(name && bindings && index != kInvalidIndex);
-		if (!name->empty()) {
-			bindings->emplace(*name, Binding(field->loc, index));
-		}
-		imports.push_back(import);
-		fields.push_back(std::move(field));
-	}
+        assert(name && bindings && index != kInvalidIndex);
+        if (!name->empty()) {
+            bindings->emplace(*name, Binding(field->loc, index));
+        }
+        imports.add(import);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<MemoryModuleField> field) {
-		Memory &memory = field->memory;
-		if (!memory.name.empty()) {
-			memory_bindings.emplace(memory.name, Binding(field->loc, memories.size()));
-		}
-		memories.push_back(&memory);
-		fields.push_back(std::move(field));
-	}
+        Memory &memory = field->memory;
+        if (!memory.name.empty()) {
+            memory_bindings.emplace(memory.name, Binding(field->loc, memories.size()));
+        }
+        memories.add(&memory);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<StartModuleField> field) {
-		starts.push_back(&field->start);
-		fields.push_back(std::move(field));
-	}
+        starts.add(&field->start);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<TableModuleField> field) {
-		Table &table = field->table;
-		if (!table.name.empty()) {
-			table_bindings.emplace(table.name, Binding(field->loc, tables.size()));
-		}
-		tables.push_back(&table);
-		fields.push_back(std::move(field));
-	}
+        Table &table = field->table;
+        if (!table.name.empty()) {
+            table_bindings.emplace(table.name, Binding(field->loc, tables.size()));
+        }
+        tables.add(&table);
+        fields.add(std::move(field));
+    }
 
 	void Module::AppendField(std::unique_ptr<ModuleField> field) {
 		switch (field->type()) {
@@ -568,18 +568,18 @@ namespace wabt {
 		return &command->module;
 	}
 
-	void MakeTypeBindingReverseMapping(
-			size_t num_types,
-			const BindingHash &bindings,
-			std::vector<String> *out_reverse_mapping) {
-		out_reverse_mapping->clear();
-		out_reverse_mapping->resize(num_types);
-		for (const auto &pair: bindings) {
-			assert(static_cast<size_t>(pair.second.index) <
-			       out_reverse_mapping->size());
-			(*out_reverse_mapping)[pair.second.index] = pair.first;
-		}
-	}
+    void MakeTypeBindingReverseMapping(
+            size_t num_types,
+            const BindingHash &bindings,
+            List<String> *out_reverse_mapping) {
+        out_reverse_mapping->clear();
+        out_reverse_mapping->resize(num_types);
+        for (const auto &pair: bindings) {
+            assert(static_cast<size_t>(pair.second.index) <
+                   out_reverse_mapping->size());
+            (*out_reverse_mapping)[pair.second.index] = pair.first;
+        }
+    }
 
 	Var::Var(Index index, const Location &loc)
 			: loc(loc), type_(VarType::Index), index_(index) {}

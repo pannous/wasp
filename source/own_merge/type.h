@@ -20,14 +20,15 @@
 #include <cassert>
 #include <cstdint>
 #include <vector>
+#include "../List.h"
 
 
 namespace wabt {
 
 	class Type;
 
-	using Index = uint32_t;
-	using TypeVector = std::vector<Type>;
+    using Index = uint32_t;
+    using TypeVector = List<Type>;
 
 	// todo merge with ValueType
 	class Type {
@@ -139,22 +140,28 @@ namespace wabt {
 		TypeVector GetInlineVector() const {
 			assert(!IsIndex());
 			switch (enum_) {
-				case Type::Void:
-					return TypeVector();
+                case Type::Void:
+                    return TypeVector();
 
-				case Type::I32:
-				case Type::I64:
-				case Type::F32:
-				case Type::F64:
-				case Type::V128:
-				case Type::FuncRef:
-				case Type::ExternRef:
-					return TypeVector(this, this + 1);
+                case Type::I32:
+                case Type::I64:
+                case Type::F32:
+                case Type::F64:
+                case Type::V128:
+                case Type::FuncRef:
+                case Type::ExternRef: {
+//                    return TypeVector(this, this + 1); todo 2022-21 what does this mean?
+                    auto typeVector = TypeVector();
+                    typeVector.add(*this);
+//                    typeVector.add(*this+1);
+//                    typeVector.add(this->enum_);
+                    return typeVector;
+                }
 
-				default:
-					return TypeVector();
+                default:
+                    return TypeVector();
 //					WABT_UNREACHABLE;
-			}
+            }
 		}
 
 	private:
