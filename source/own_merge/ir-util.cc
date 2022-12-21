@@ -77,8 +77,8 @@ Index ModuleContext::GetFuncResultCount(const Var &var) const {
 }
 
 void ModuleContext::BeginBlock(LabelType label_type, const Block &block) {
-	label_stack_.emplace_back(label_type, block.label, block.decl.sig.param_types,
-	                          block.decl.sig.result_types);
+	label_stack_.add(label_type, block.label, block.decl.sig.param_types,
+                     block.decl.sig.result_types);
 }
 
 void ModuleContext::EndBlock() {
@@ -87,8 +87,8 @@ void ModuleContext::EndBlock() {
 
 void ModuleContext::BeginFunc(const Func &func) {
 	label_stack_.clear();
-	label_stack_.emplace_back(LabelType::Func, std::string(), TypeVector(),
-	                          func.decl.sig.result_types);
+    label_stack_.add(LabelType::Func, std::string(), TypeVector(),
+                     func.decl.sig.result_types);
 	current_func_ = &func;
 }
 
