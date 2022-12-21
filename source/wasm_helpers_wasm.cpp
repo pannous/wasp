@@ -362,12 +362,12 @@ extern "C" // destroys the export type signature! stdio.h:178:6
 int puts(chars c) { // // int return needed for stdio compatibilty !
     c_io_vector civ{.string=(char *) c, .length=(size_t) strlen(c)};
     fd_write(1, &civ, 1, 0);
-    return (int) c;// stdio
+    return 1;// OK (int) c;// stdio
 }
 
 int put_s(String *s) {
     fd_write(1, (c_io_vector *) s, 1, 0);
-    return (int) s;// stdio
+    return 0;//(int) s;// stdio
 }
 
 int puti(int i) {
