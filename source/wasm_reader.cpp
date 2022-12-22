@@ -488,8 +488,8 @@ void consumeExportSection() {
         // todo: demangling doesn't yield return type, is wasm_signature ok?
         fun.signature.type_index = wasmFuncType;
         fun0.signature.type_index = wasmFuncType;// todo: remove duplicate, try fun0.signature=fun.signature at end again
-        if (not(0 <= wasmFuncType and wasmFuncType <= module->funcTypes._size))
-            check_silent(0 <= wasmFuncType and wasmFuncType <= module->funcTypes._size)
+        if (not(0 <= wasmFuncType and wasmFuncType <= module->funcTypes.size_))
+            check_silent(0 <= wasmFuncType and wasmFuncType <= module->funcTypes.size_)
         Signature &wasm_signature = module->funcTypes[wasmFuncType];
         Valtype returns = mapTypeToWasm(wasm_signature.return_types.last(Kind::undefined));
         if (wasm_signature.wasm_return_type == void_block) returns = void_block;

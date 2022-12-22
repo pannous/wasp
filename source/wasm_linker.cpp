@@ -959,7 +959,7 @@ void Linker::RemoveAllExports() {// except _start for stupid wasmtime:
         for (Export &ex: bin->exports) {
             pos++;
             if (ex.kind != ExternalKind::Func)continue;
-            while (bin->exports._size > 0 and not(ex.name == "wasp_main" or ex.name == "_start" or ex.name == "main")) {
+            while (bin->exports.size_ > 0 and not(ex.name == "wasp_main" or ex.name == "_start" or ex.name == "main")) {
                 if (ex.kind != ExternalKind::Func)break;
                 if (!bin->exports.remove(pos))break;
             }

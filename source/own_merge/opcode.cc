@@ -398,10 +398,10 @@ namespace wabt {
         if (HasPrefix()) {
             result.add(GetPrefix());
             uint8_t buffer[5];
-            Offset length =
-                    WriteU32Leb128Raw(buffer, buffer + sizeof(buffer), GetCode());
+            Offset length = WriteU32Leb128Raw(buffer, buffer + sizeof(buffer), GetCode());
             assert(length != 0);
-            result.insert(result.end(), buffer, buffer + length);
+            result.append(buffer, length);
+//            result.insert(result.end(), buffer, buffer + length);
         } else {
             result.add(GetCode());
         }
