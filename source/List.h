@@ -143,7 +143,7 @@ class List {
 public:
     int header = array_header_32;
     Type _type{};// reflection on template class S
-    int _size = 0;
+    int size_ = 0;
     int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
     // previous entries must be aligned to int64!
     S *items;// In C++ References cannot be put into an array, if you try you get
@@ -165,13 +165,13 @@ public:
 
 
     List(const List &old) : items(old.items) { // todo: memcopy?
-        _size = old._size;
+        size_ = old.size_;
     }
 
     List(Array_Header a) {
         if (a.length == 0xA0000000)
             error1("double header");// todo: just shift by 4 bytes
-        _size = a.length;
+        size_ = a.length;
         items = (S *) &a.data;// ok? copy data?
 //		todo("a.typ");
     }
@@ -191,12 +191,12 @@ public:
 
     // only Plain Old Data structures !
     List(S first, ...) : List() {
-        _size = 0;
+        size_ = 0;
         va_list args;// WORKS WITHOUT WASI! with stdargs
         va_start(args, first);
         S item = first;
         do {
-            items[_size++] = item;
+            items[size_++] = item;
             item = (S) va_arg(args, S);
         } while (item);
         va_end(args);
@@ -215,28 +215,31 @@ public:
 //    }
 
     List(S *data, S *end) {
-        _size = end - data;
-        if (capacity < _size)resize(_size);
-        memcpy(items, data, _size);
+        size_ = end - data;
+        if (capacity < size_) {
+            items = (S *) calloc(size_, sizeof(S));
+            capacity = size_;
+        }
+        memcpy(items, data, size_);
     }
 
     List(S *args, int size, bool share = true) {
         if (args == 0)return;
         check_silent(size < LIST_DEFAULT_CAPACITY)
-        _size = size;
+        size_ = size;
         if (share)
             items = args;
         else {
-            items = (S *) calloc(sizeof(S), _size + 1);
+            items = (S *) calloc(sizeof(S), size_ + 1);
             memcpy(items, args, size);
         }
     }
 
     List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
         if (args == 0)return;
-        while (args[_size] and _size < LIST_DEFAULT_CAPACITY)_size++;
-        items = (S *) calloc(sizeof(S), _size + 1);
-        int i = _size;
+        while (args[size_] and size_ < LIST_DEFAULT_CAPACITY)size_++;
+        items = (S *) calloc(sizeof(S), size_ + 1);
+        int i = size_;
         while (i-- > 0)items[i] = args[i];
     }
 
@@ -254,13 +257,13 @@ public:
 
     List(const std::initializer_list<S> &_items) : List() {
         for (const S &s: _items) {
-            items[_size++] = s;
+            items[size_++] = s;
         }
     }
 
 #endif
 
-    size_t size() const { return _size; };
+    size_t size() const { return size_; };
 
     void setType(Type type) {
         _type = type;
@@ -271,15 +274,15 @@ public:
     }
 
     S &add(S s) {
-        items[_size++] = s;
-        if (_size >= capacity)grow();
-        return items[_size - 1];
+        items[size_++] = s;
+        if (size_ >= capacity)grow();
+        return items[size_ - 1];
     }
 
     S &add(S *s) {
-        items[_size++] = s;
-        if (_size >= capacity)grow();
-        return items[_size - 1];
+        items[size_++] = s;
+        if (size_ >= capacity)grow();
+        return items[size_ - 1];
     }
 
 //	S &add(S s) {// vector compatible
@@ -298,17 +301,21 @@ public:
 
 
     S &operator[](uint64 index) const {
-        if (index < 0 or index >= _size) /* and const means not auto_grow*/
-            error("index out of range : %d > %d"s % (int64) index % _size);
+        if (index < 0 or index >= size_) /* and const means not auto_grow*/
+            error("index out of range : %d > %d"s % (int64) index % size_);
         return items[index];
     }
 
 
     S &operator[](uint64 index) {
-        if (index == _size)_size++;// allow indexing one after end? todo ok?
-        if (_size >= capacity)grow();
-        if (index < 0 or index >= _size) /* and not auto_grow*/
-            error("index out of range : %d > %d"s % (int64) index % _size);
+        if (index == size_)size_++;// allow indexing one after end? todo ok?
+        if (size_ >= capacity)grow();
+//        if (index >= capacity)grow();
+        if (index < 0 or index >= size_) { /* and not auto_grow*/
+            if (index >= capacity)
+                error("index out of range : %d > %d"s % (int64) index % size_);
+            else size_ = index + 1;
+        }
         return items[index];
     }
 
@@ -322,8 +329,8 @@ public:
 
 
     bool operator==(List<S> other) const {
-        if (_size != other.size())return false;
-        for (int i = 0; i < _size; ++i) {
+        if (size_ != other.size())return false;
+        for (int i = 0; i < size_; ++i) {
             if (items[i] != other.items[i])return false;
         }
         return true;
@@ -334,12 +341,12 @@ public:
     }
 
     S *end() const {
-        return &items[_size];
+        return &items[size_];
     }
 
 
     int position(S s) {
-        for (int i = 0; i < _size; ++i) {
+        for (int i = 0; i < size_; ++i) {
             if (items[i] == s)return i;
             if (eq(items[i], s))return i;// char*
         }
@@ -347,7 +354,7 @@ public:
     }
 
     int position(S *s) {
-        for (int i = 0; i < _size; ++i)
+        for (int i = 0; i < size_; ++i)
             if (&items[i] == s)return i;
         return -1;
     }
@@ -360,21 +367,21 @@ public:
 //    }
 
     void sort(bool (comparator)(S a, S b)) {
-        heapSort(items, _size, comparator);
+        heapSort(items, size_, comparator);
     }
 
     List<S> &sort(bool (comparator)(S &, S &)) {
-        heapSort(items, _size, comparator);
+        heapSort(items, size_, comparator);
         return *this;
     }
 
     List<S> &sort(float (valuator)(S &a)) {
-        heapSort(items, _size, valuator);
+        heapSort(items, size_, valuator);
         return *this;
     }
 
     List<S> &sort() {
-        heapSort(items, _size);
+        heapSort(items, size_);
         return *this;
     }
 
@@ -396,33 +403,33 @@ public:
     void clear() {
         free(items);
         items = (S *) alloc(LIST_DEFAULT_CAPACITY, sizeof(S));
-        _size = 0;
+        size_ = 0;
     }
 
     void remove(S &item) {
         auto pos = position(item);
         if (pos < 0)return;
-        memcpy(items + pos, items + pos + 1, _size - pos);
-        _size--;
+        memcpy(items + pos, items + pos + 1, size_ - pos);
+        size_--;
     }
 
     bool remove(short position) {
-        if (position < 0 or _size <= 0 or position >= _size)return false;
-        memcpy((void *) (items + position), (void *) (items + position + 1), (_size - position) * sizeof(S));
-        _size--;
+        if (position < 0 or size_ <= 0 or position >= size_)return false;
+        memcpy((void *) (items + position), (void *) (items + position + 1), (size_ - position) * sizeof(S));
+        size_--;
         return true;
     }
 
     S last(S defaulty) {
-        if (_size < 1)
+        if (size_ < 1)
             return defaulty;
-        return items[_size - 1];
+        return items[size_ - 1];
     }
 
     S &last() {
-        if (_size < 1)
+        if (size_ < 1)
             error("empty list");
-        return items[_size - 1];
+        return items[size_ - 1];
     }
 
 //	List<S>& clone() { // todo just create all return lists with new List() OR return List<> objects (no references) copy by value ok!!
@@ -432,7 +439,7 @@ public:
 //		return  neu;
 //	}
     bool empty() const {
-        return _size == 0 or items == 0;
+        return size_ == 0 or items == 0;
     }
 
     void addAll(S *items[]) {
@@ -472,16 +479,17 @@ public:
     }
 
     S &back() {
-        if (_size <= 0)error("no back() in empty list.");
-        return items[_size - 1];
+        if (size_ <= 0)error("no back() in empty list.");
+        return items[size_ - 1];
     }
 
     void add() {
-        _size++;
-        if (_size >= capacity)grow();
+        size_++;
+        if (size_ >= capacity)grow();
     }
 
     void resize(long new_capacity) {
+        if (new_capacity < capacity)return;
         check_silent(new_capacity < LIST_MAX_CAPACITY);
         S *neu = (S *) alloc(new_capacity, sizeof(S));
         memcpy((void *) neu, (void *) items, capacity * sizeof(S));
@@ -492,12 +500,23 @@ public:
         capacity = new_capacity;
     }
 
-    void insert(S *position, S *value, S *end) {
-        size_t len = end - value;
-        if (_size + len >= capacity)grow();
-        memcpy(position, value, len);
-        _size += len;
+    void append(S *value, size_t len) {
+        if (size_ + len >= capacity) {
+            grow();
+        }
+        memcpy((void *) &items[size_], (void *) value, len * sizeof(S));
+        size_ += len;
     }
+
+//    void insert(S *position, S *value, S *end) {
+//        size_t len = end - value;
+//        if (_size + len >= capacity){
+//            grow();
+//            position = &last();
+//        }
+//        memcpy(position, value, len);
+//        _size += len;
+//    }
 
     S *data() const {
         return items;

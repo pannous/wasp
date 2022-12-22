@@ -2330,7 +2330,7 @@ Code emitTypeSection() {
             continue;
         }
         if (not call_indices.has(fun)) {
-            warn("call_index %d for %s too late?"s % (last_index + 1) % fun);
+//            warn("call_index %d for %s too late?"s % (last_index + 1) % fun);
             function.call_index = ++last_index;
             call_indices[fun] = last_index;
         }
