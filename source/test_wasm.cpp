@@ -1336,10 +1336,10 @@ void testAllWasm() {
     wasm_todos();
     testWasmTernary();
     testArrayIndicesWasm();
+    testWasmFunctionCalls();
+    testWasmFunctionDefiniton();
+    testWasmWhile();
     skip(
-            testWasmFunctionCalls();
-            testWasmFunctionDefiniton();
-            testWasmWhile();
             test_get_local();
 
             testCustomOperators();
