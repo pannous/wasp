@@ -179,7 +179,7 @@ private:
   V(Custom, custom, 0)                 \
   V(Type, type, 1)                     \
   V(Import, import, 2)                 \
-  V(Function, function, 3)             \
+  V(FuncType, function, 3)             \
   V(Table, table, 4)                   \
   V(Memory, memory, 5)                 \
   V(Tag, tag, 13)                      \
@@ -194,22 +194,22 @@ private:
 namespace wabt {
 
 /* clang-format off */
-	enum class SectionType {
-		Invalid = ~0, // ~0 ??
-		Custom = 0,
-		Type = 1,
-		Import = 2,
-		Function = 3,
-		Table = 4,
-		Memory = 5,
-		Global = 6,
-		Export = 7,
-		Start = 8,
-		Elem = 9,
-		Code = 10,
-		Data = 11,
-		DataCount = 12,
-		Event = 13,
+    enum class SectionType {
+        Invalid = ~0, // ~0 ??
+        Custom = 0,
+        Type = 1,
+        Import = 2,
+        FuncType = 3,
+        Table = 4,
+        Memory = 5,
+        Global = 6,
+        Export = 7,
+        Start = 8,
+        Elem = 9,
+        Code = 10,
+        Data = 11,
+        DataCount = 12,
+        Event = 13,
 		Tag = 14,
 #define V(Name, name, code) Name = code,
 //  WABT_FOREACH_BINARY_SECTION(V)

@@ -43,21 +43,22 @@
 
 namespace wabt {
 
-//	void WriteStr(Stream *stream, const String s, const char *desc, PrintChars print_chars) {
-//		WriteU32Leb128(stream, s.size(), "string length");
-//		stream->WriteData(s.c_str(), s.size(), desc, print_chars);
-//	}
-	void WriteStr(Stream *stream, String s, const char *desc, PrintChars print_chars) {
-		WriteU32Leb128(stream, s.length, "string length");
-		stream->WriteData(s.data, s.length, desc, print_chars);
-	}
+    void WriteStr(Stream *stream, const String &s, const char *desc, PrintChars print_chars) {
+        WriteU32Leb128(stream, s.length, "string length");
+        stream->WriteData(s.data, s.length, desc, print_chars);
+    }
 
-	void WriteOpcode(Stream *stream, Opcode opcode) {
-		if (opcode.HasPrefix()) {
-			stream->WriteU8(opcode.GetPrefix(), "prefix");
-			WriteU32Leb128(stream, opcode.GetCode(), opcode.GetName());
-		} else {
-			stream->WriteU8(opcode.GetCode(), opcode.GetName());
+    void WriteStr(Stream *stream, String &s, const char *desc, PrintChars print_chars) {
+        WriteU32Leb128(stream, s.length, "string length");
+        stream->WriteData(s.data, s.length, desc, print_chars);
+    }
+
+    void WriteOpcode(Stream *stream, Opcode opcode) {
+        if (opcode.HasPrefix()) {
+            stream->WriteU8(opcode.GetPrefix(), "prefix");
+            WriteU32Leb128(stream, opcode.GetCode(), opcode.GetName());
+        } else {
+            stream->WriteU8(opcode.GetCode(), opcode.GetName());
 		}
 	}
 
@@ -1277,8 +1278,7 @@ namespace wabt {
 		}
 
         template<typename T>
-        void BinaryWriter::WriteNames(const List<T *> &elems,
-                                      NameSectionSubsection type) {
+        void BinaryWriter::WriteNames(const List<T *> &elems, NameSectionSubsection type) {
             size_t num_named_elems = 0;
             for (const T *elem: elems) {
                 if (!elem->name.empty()) {
@@ -1288,7 +1288,7 @@ namespace wabt {
 
             if (!num_named_elems) {
                 return;
-			}
+            }
 
 			WriteU32Leb128(stream_, type, "name subsection type");
 			BeginSubsection("name subsection");
@@ -1411,8 +1411,8 @@ namespace wabt {
 			assert(module_->funcs.size() >= module_->num_func_imports);
 			Index num_funcs = module_->funcs.size() - module_->num_func_imports;
 			if (num_funcs) {
-				BeginKnownSection(SectionType::Function);
-				WriteU32Leb128(stream_, num_funcs, "num functions");
+                BeginKnownSection(SectionType::FuncType);
+                WriteU32Leb128(stream_, num_funcs, "num functions");
 
 				for (size_t i = 0; i < num_funcs; ++i) {
 					const Func *func = module_->funcs[i + module_->num_func_imports];
