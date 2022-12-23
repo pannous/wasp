@@ -66,7 +66,7 @@ Type mapType(Node &arg) {
 #if not RUNTIME_ONLY
             if (functions.has(fun)) {
                 auto function = functions[fun];
-                return function.signature.return_types.last();
+                return function.signature.return_types.last(voids);
             }
 #endif
             todo("how to map "s + typeName(arg.kind) + " to (wasm) Type?");

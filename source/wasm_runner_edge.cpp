@@ -84,10 +84,12 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     WasmEdge_Value Params[1];
     WasmEdge_Value Returns[1];
     WasmEdge_String FuncName = WasmEdge_StringCreateByCString("wasp_main");
-    WasmEdge_String FuncName2 = WasmEdge_StringCreateByCString("main");
     WasmEdge_Result Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName, Params, 0, Returns, 1);
-    if (not WasmEdge_ResultOK(Res))
+    if (not WasmEdge_ResultOK(Res)) {
+        print("Starting main() instead …");
+        WasmEdge_String FuncName2 = WasmEdge_StringCreateByCString("main");
         Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName2, Params, 0, Returns, 1);
+    }
     const WasmEdge_ModuleInstanceContext *module_ctx = WasmEdge_VMGetActiveModule(VMCxt);
     auto mem = WasmEdge_StringCreateByCString("memory");
     WasmEdge_MemoryInstanceContext *memory_ctx = WasmEdge_ModuleInstanceFindMemory(module_ctx, mem);
