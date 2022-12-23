@@ -225,7 +225,7 @@ public:
 
     List(S *args, int size, bool share = true) {
         if (args == 0)return;
-        check_silent(size < LIST_DEFAULT_CAPACITY)
+        check_silent(size < LIST_MAX_CAPACITY)
         size_ = size;
         if (share)
             items = args;
@@ -270,7 +270,15 @@ public:
     }
 
     void grow() {
-        resize(capacity * 2);
+        auto new_size = capacity * 2;
+        check_silent(new_size < LIST_MAX_CAPACITY);
+        S *neu = (S *) alloc(new_size, sizeof(S));
+        memcpy((void *) neu, (void *) items, capacity * sizeof(S));
+        free(items);
+//        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
+//      indeed List<int> FUCKS UP just by growing even without references
+        items = neu;
+        capacity = new_size;
     }
 
     S &add(S s) {
@@ -488,16 +496,9 @@ public:
         if (size_ >= capacity)grow();
     }
 
-    void resize(long new_capacity) {
-        if (new_capacity < capacity)return;
-        check_silent(new_capacity < LIST_MAX_CAPACITY);
-        S *neu = (S *) alloc(new_capacity, sizeof(S));
-        memcpy((void *) neu, (void *) items, capacity * sizeof(S));
-//        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
-//      indeed List<int> FUCKS UP just by growing even without references
-//        free(items);
-        items = neu;
-        capacity = new_capacity;
+    void resize(long new_size) {
+        if (new_size >= capacity)grow();
+        size_ = new_size;
     }
 
     void append(S *value, size_t len) {
