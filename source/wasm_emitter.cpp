@@ -1747,12 +1747,12 @@ Code emitWhile(Node &node, Function &context) {
     code.addByte(none);// type:void_block
 //	code.addByte(int32);
     code = code + emitExpression(then, context);// BODY
+
     code.addByte(br_branch);
     code.addByte(1);
     code.addByte(end_block);// end if condition then action
-    if (loop_type == none and last_type != none) {
-        code.addByte(drop);
-    }
+    if (loop_type == none and last_type == i32)
+        code.addByte(drop);//hack for nop todo
     // else type should fall through
     code.addByte(end_block);// end while loop
     last_type = loop_type;
