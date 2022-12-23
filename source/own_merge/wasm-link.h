@@ -77,10 +77,11 @@ namespace wabt {
 
 		struct Func {
 //        Var type_var;
-			Index index;
-			String name;// set later in name section
+            Index index;// code index
+            String name;// set later in name section
+            Index type_index;// =>
 //        wabt::FuncSignature sig;
-		};
+        };
 
 		struct Section {
             WABT_DISALLOW_COPY_AND_ASSIGN(Section);
@@ -123,7 +124,7 @@ namespace wabt {
 			WABT_DISALLOW_COPY_AND_ASSIGN(LinkerInputBinary);
 
 
-            LinkerInputBinary(const char *filename, List<uint8_t> data);
+            LinkerInputBinary(const char *filename, List<uint8_t> &data);
 
 			Index RelocateFuncIndex(Index findex);
 
@@ -146,7 +147,9 @@ namespace wabt {
             // ⚠️ # ALL IMPORTS of ALL modules plus all functions of all previous modules!
             int delta{};// previous function_count, offset all functions in this module if not mapped to specific import
 
-            List<uint8_t> data;
+//            List<uint8_t> data;//=(size_t)100000;// todo: safe sharing via offsets, not pointers … if resize()
+            uint8_t *data;
+            size_t size;
             List<Section *> sections;
             List<Export> exports = 10000;// {.capacity=10000};
             List<Func> functions;// only those with code, not imports:
