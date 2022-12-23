@@ -329,7 +329,8 @@ std::map<short, int> opcode_args = { // BYTES used by wasm op AFTER the op code 
 
 // DANGER: modifies the start reader position of code, but not it's data!
 [[nodiscard]]
-int64 unsignedLEB128(bytes section_data, int length, int &start) {
+int64 unsignedLEB128(bytes section_data, int length, int &start, bool advance = true) {
+    int old_start = start;
     int64 n = 0;
     short shift = 0;
     do {
@@ -338,6 +339,7 @@ int64 unsignedLEB128(bytes section_data, int length, int &start) {
         if ((b & 0x80) == 0)break;
         shift += 7;
     } while (start < length);
+    if (!advance)start = old_start;// reset
     return n;
 }
 
@@ -360,7 +362,9 @@ int64 unsignedLEB128(List<byte> &section_data, int max_length, int &start_refere
     return unsignedLEB128(section_data, max_length, start);// keep start_reference untouched!
 }
 
-int64 unsignedLEB128(Code section_data, int length, int &start) {
+
+int64 unsignedLEB128(Code section_data, int length, int &start, bool advance) {
+    int old_start = start;
     int64 n = 0;
     short shift = 0;
     do {
@@ -369,8 +373,11 @@ int64 unsignedLEB128(Code section_data, int length, int &start) {
         if ((b & 0x80) == 0)break;
         shift += 7;
     } while (start < length);
+    if (!advance)start = old_start;//reset
     return n;
 }
+
+
 
 static bool s_debug = true;
 
@@ -392,9 +399,10 @@ Section::~Section() {
     }
 }
 
-LinkerInputBinary::LinkerInputBinary(const char *filename, List<uint8_t> data)
+LinkerInputBinary::LinkerInputBinary(const char *filename, List<uint8_t> &data)
         : name(filename),
-          data(std::move(data)),
+          data(data.items),
+          size(data.size_),
           active_function_imports(0),
           active_global_imports(0),
           type_index_offset(0),
@@ -403,7 +411,8 @@ LinkerInputBinary::LinkerInputBinary(const char *filename, List<uint8_t> data)
           table_index_offset(0),
           memory_page_count(0),
           memory_page_offset(0),
-          table_elem_count(0) {}
+          table_elem_count(0) {
+}
 
 
 bool LinkerInputBinary::IsFunctionImport(Index index) const {
@@ -889,7 +898,7 @@ bool Linker::WriteCombinedSection(SectionType section_code, const SectionPtrVect
         case SectionType::Import:
             WriteImportSection();
             break;
-        case SectionType::Function:
+        case SectionType::FuncType:
             WriteFunctionSection(sections, total_count);
             break;
         case SectionType::Table:
@@ -1220,7 +1229,7 @@ void Linker::CalculateRelocOffsets() {
                 }
                     global_count += sec->count;
                     break;
-                case SectionType::Function: {
+                case SectionType::FuncType: {
                     int new_offset = total_function_imports - sec->binary->function_imports.size() + function_count;
                     binary->function_index_offset = new_offset;
                     function_count += sec->count;
@@ -1331,8 +1340,10 @@ Section *Linker::getSection(LinkerInputBinary *&binary, SectionType section) {
 // relocs can either be provided as custom section, or inferred from the linker.
 List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section) {
     List<Reloc> relocs;
-    List<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
-    int length = binary_data.size();
+//    List<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
+//    int length = binary_data.size();
+    uint8_t *binary_data = binary->data;// LATER plus section_offset todo shared Code view
+    int length = binary->size;
     size_t section_offset = section->offset;// into binary data
     int current_offset = section_offset;
     // #code_index =
@@ -1382,7 +1393,7 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
             // length of ONE function code block, but don't proceed yet:
             fun_end = current_offset + fun_length;
             int local_types = unsignedLEB128(binary_data, length, current_offset, true);// PARAMS ARE NOT local vars!
-            if (local_types > 100) {// todo: just warn after thoroughly tested
+            if (local_types > 200) {// todo: just warn after thoroughly tested
                 // it DOES HAPPEN, e.g. in pow.wasm
                 error("suspiciously many local_types. parser out of sync? %s index %d types: %d\n"s % current_name %
                       func1.index % local_types);
@@ -1398,6 +1409,8 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
         }
         byte b = binary_data[current_offset++];
         Opcodes op = (Opcodes) b;
+        if (b == 0)
+            breakpoint_helper
 //        if (call_index == 332)// op == i32_store and
 //            breakpoint_helper
         Opcode opcode = Opcode::FromCode(b);
@@ -1405,7 +1418,7 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
             begin_function = true;
             code_index++;
             call_index++;
-            if (b != end_block) {
+            if (b != end_block and b != 0) {
                 error("unexpected opcode at function end %x "s % b + opcode.GetName());
                 breakpoint_helper;
             } else last_opcode = end_block;
@@ -1445,8 +1458,7 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
             }
             current_offset += lebByteSize((uint64) index);
         } else if (op >= i32_load and op <= i32_store_16) {
-//            short alignment =
-            unsignedLEB128(binary_data, length, current_offset, true);
+            short alignment = unsignedLEB128(binary_data, length, current_offset, true);
             int64 offset = unsignedLEB128(binary_data, length, current_offset, false);
             last_const = offset;
             Index neu = binary->RelocateMemoryIndex(offset);
@@ -1566,7 +1578,8 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
     if (not binary->needs_relocate)
         error("binary->needs_relocate marked false, but got a reloc!");
 
-    const List<uint8_t> &immutable_data = binary->data;// if you insert, other sections get messed up!
+    const List<uint8_t> &immutable_data = List(binary->data,
+                                               binary->size);// if you insert, other sections get messed up!
     uint8_t *section_start = (uint8_t *) &immutable_data[section->offset];// changing int values (offsets) is ok
     uint8_t *section_end = section_start + section->size;// safety to not write outside bounds
 // 🪩

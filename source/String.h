@@ -367,7 +367,8 @@ public:
     int size(enum sizeMeasure by = by_codepoints) {
         if (by == by_char8s)return length;
         if (by == by_codepoints) {
-            if (codepoint_count < 0)extractCodepoints();
+            if (codepoint_count < 0)
+                extractCodepoints();
             return codepoint_count;
         }
         if (by == by_graphemes) {

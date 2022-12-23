@@ -149,6 +149,7 @@ namespace wabt {
 		size_t end = dst_offset + size;
 		if (end > buf_->data.size()) {
 			buf_->data.resize(end);
+//            buf_->data.size_ += end - buf_->data.size();
 		}
 		uint8_t *dst = &buf_->data[dst_offset];
 		memcpy(dst, src, size);

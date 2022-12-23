@@ -176,7 +176,7 @@ namespace wabt {
 
 			Result ReadImportSection(Offset section_size) WABT_WARN_UNUSED;
 
-			Result ReadFunctionSection(Offset section_size) WABT_WARN_UNUSED;
+			Result ReadFuncTypeSection(Offset section_size) WABT_WARN_UNUSED;
 
 			Result ReadTableSection(Offset section_size) WABT_WARN_UNUSED;
 
@@ -2441,20 +2441,19 @@ namespace wabt {
 			return Result::Ok;
 		}
 
-		Result BinaryReader::ReadFunctionSection(Offset section_size) {
-			CALLBACK(BeginFunctionSection, section_size);
-			CHECK_RESULT(
-					ReadCount(&num_function_signatures_, "function signature count"));
-			CALLBACK(OnFunctionCount, num_function_signatures_);
-			for (Index i = 0; i < num_function_signatures_; ++i) {
-				Index func_index = num_func_imports_ + i;
-				Index sig_index;
-				CHECK_RESULT(ReadIndex(&sig_index, "function signature index"));
-				CALLBACK(OnFunction, func_index, sig_index);
-			}
-			CALLBACK0(EndFunctionSection);
-			return Result::Ok;
-		}
+        Result BinaryReader::ReadFuncTypeSection(Offset section_size) {
+            CALLBACK(BeginFunctionSection, section_size);
+            CHECK_RESULT(ReadCount(&num_function_signatures_, "function signature count"));
+            CALLBACK(OnFunctionCount, num_function_signatures_);
+            for (Index i = 0; i < num_function_signatures_; ++i) {
+                Index func_index = num_func_imports_ + i;
+                Index sig_index;
+                CHECK_RESULT(ReadIndex(&sig_index, "function signature index"));
+                CALLBACK(OnFunction, func_index, sig_index);
+            }
+            CALLBACK0(EndFunctionSection);
+            return Result::Ok;
+        }
 
 		Result BinaryReader::ReadTableSection(Offset section_size) {
 			CALLBACK(BeginTableSection, section_size);
@@ -2750,28 +2749,28 @@ namespace wabt {
 							result |= section_result;
 						} else {
 							stop_on_first_error = false;
-						}
-						break;
-					case SectionType::Type:
-						section_result = ReadTypeSection(section_size);
-						result |= section_result;
-						break;
-					case SectionType::Import:
-						section_result = ReadImportSection(section_size);
-						result |= section_result;
-						break;
-					case SectionType::Function:
-						section_result = ReadFunctionSection(section_size);
-						result |= section_result;
-						break;
-					case SectionType::Table:
-						section_result = ReadTableSection(section_size);
-						result |= section_result;
-						break;
-					case SectionType::Memory:
-						section_result = ReadMemorySection(section_size);
-						result |= section_result;
-						break;
+                        }
+                        break;
+                    case SectionType::Type:
+                        section_result = ReadTypeSection(section_size);
+                        result |= section_result;
+                        break;
+                    case SectionType::Import:
+                        section_result = ReadImportSection(section_size);
+                        result |= section_result;
+                        break;
+                    case SectionType::FuncType: // connecting functions with Code to type (imports not handled here)
+                        section_result = ReadFuncTypeSection(section_size);
+                        result |= section_result;
+                        break;
+                    case SectionType::Table:
+                        section_result = ReadTableSection(section_size);
+                        result |= section_result;
+                        break;
+                    case SectionType::Memory:
+                        section_result = ReadMemorySection(section_size);
+                        result |= section_result;
+                        break;
 					case SectionType::Global:
 						section_result = ReadGlobalSection(section_size);
 						result |= section_result;
