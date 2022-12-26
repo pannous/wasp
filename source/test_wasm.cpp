@@ -21,7 +21,7 @@ panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#α�
 
 #ifndef RUNTIME_ONLY
 // use assert_emit if runtime is not needed!! much easier to debug
-#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){printf(">>>>>\n%s:%d\n", __FILE__, __LINE__);exit(1);}
+#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){printf(">>>>>\n%s:%d\n", __FILE__, __LINE__);proc_exit(1);}
 #else
 #define assert_run(a, b) skip(a)
 #endif
@@ -720,7 +720,7 @@ void testWasmMemoryIntegrity() {
 //		if(i%10000==0)logi(i);// logi USES STACK, so it can EXHAUST if called too often!
         if (memory[i] != i) {
             printf("MEMORY CORRUPTION at %d", i);
-            exit(0);
+            proc_exit(0);
         }
         memory[i] = tmp;// else test fail
     }

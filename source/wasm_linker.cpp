@@ -1409,8 +1409,8 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
         }
         byte b = binary_data[current_offset++];
         Opcodes op = (Opcodes) b;
-        if (b == 0)
-            breakpoint_helper
+//        if (b == 0)
+//            breakpoint_helper
 //        if (call_index == 332)// op == i32_store and
 //            breakpoint_helper
         Opcode opcode = Opcode::FromCode(b);

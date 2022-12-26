@@ -1405,7 +1405,7 @@ private:
 //		node.values(). first().name
         if (lib == "memory")
             return node;// todo ignore memory includes???
-        if (file.endsWith(".wit"))
+        if (not file.empty() and file.endsWith(".wit")) // todo file from where ??
             lib = lib.replaceAll("-", "_");// stupid kebab case!
         if (!lib.empty()) // creates 'include' node for wasm …
             node = parseFile(lib, parserOptions);
@@ -1838,7 +1838,8 @@ void handler(int sig) {
     // print out all the frames to stderr
     fprintf(stderr, "Error: signal %d:", sig);
     backtrace_symbols_fd(array, size, STDERR_FILENO);
-    exit(1);
+    proc_exit(0);
+*/
 }
 #endif
 

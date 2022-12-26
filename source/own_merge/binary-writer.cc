@@ -38,7 +38,7 @@
 #define PRINT_HEADER_NO_INDEX -1
 #define MAX_U32_LEB128_BYTES 5
 #undef assert
-#define assert(test) if(test);else{printf("\nAssert Failed:\n%s\n%s:%d\n",#test,__FILE__,__LINE__);exit(-42);}
+#define assert(test) if(test);else{printf("\nAssert Failed:\n%s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(-1);}
 
 
 namespace wabt {

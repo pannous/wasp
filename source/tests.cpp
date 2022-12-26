@@ -2780,182 +2780,39 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
-    assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
-    testMergeOwn();
+    testString();
+    tests();// make sure all still ok before changes
 
-    assert_emit("i=123;i+1", 124);
-    assert_emit("add1 x:=x+1;add1(7)", 8)
-    assert_emit("grows x:=x*2;grows(4)", 8)
-    assert_emit("i=123;i+1", 124);
-    assert_emit("i:=123;i+1", 124);
+    skip(
+//    assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
+//    testMergeOwn();
+            assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
+            assert_emit("y:{x:2 z:3};y.x", 2);
+            assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
+            assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
+            assert_emit("y{x}", true); // emitData( node! ) emitNode()
+            assert_emit("{x:1}", true); // emitData( node! ) emitNode()
+            assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
+    )
 
-    assert_emit("i=1;x=‖-3‖>i", 1);
-    assert_emit("f=4;x=‖-3‖<f", 1);
-    assert_emit("i=1;x=‖-3‖<i", 0);
-    assert_emit("f=4;x=‖-3‖>f", 0);
-    assert_is("0 ⋁ 0", 0);
-    assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
-
-    assert_emit("√π²", 3.1415);
-    assert_emit("√3^2", 3);
-    assert_emit("√3²", 3.0);
-    assert_emit("3^2", 9);
-
-    assert_run("test42+1", 43);
-    assert_is("0 ⊻ 0", 0);
-    assert_emit("'123' is '123'", true);
-    assert_emit("putf 3.1", 3.1);
-    assert_emit("id 123", (int64) 123);
-    assert_emit("putl 123", (int64) 123);
-    assert_emit("putl 1;id 123", (int64) 123);
-    assert_emit("putl id 123", (int64) 123);
-    assert_emit("id (3+3)", (int64) 6);
-//    quit()
-    assert_is("id 3+3", 6);
-    assert_emit("3 + id 3+3", (int64) 9);
-    assert_emit("id(3*42) > id 2*3", 1)
-
-    assert_emit("x='abcde';x#4", 'd');
-
-    println("parseLong fails in trace mode WHY?");
 #if not TRACE
+    println("parseLong fails in trace mode WHY?");
     assert_run("parseLong('123000')+parseLong('456')", 123456);
 #endif
-    assert_is("'hi'", "hi");
-
-    assert_is("x=(1 4 3);x#2=5;x#2", 5);
-//    run_wasm_file();
-//    assert_emit("x='abcde';x#4", 'd');
-//    assert_emit("parseLong('123')", 123)
-//    assert(eval("1 + 1 == 2"));
-//#undef NANO_PREALLOCATE_BAND_VM
-//    check("%s"s.replace("%s", "ja") == "ja"); // FAILS in universal TRACE
-
-//    assert_run("parseLong('123'+'456')", 123456);
-//    assert_run("'123'+'456'", "123456");
-////
-//
-//    assert_run("strlen('123')", 3);
-//
-//    assert_run("parseLong('123000') + 456", 123456);
-//    assert_run("parseLong('123000')", 123000);
-//    assert_run("parseLong('123000') + parseLong('456')", 123456);
-//
-    assert_emit("n=3;2ⁿ", 8);
-    assert_run("square(3)+square(3)", 18);
-//    assert_run("square(1+2)+square(3)", 18);
-    eval("3*3");
-//    assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
-    skip(
-            assert_emit("x=123;x + 4 is 127", true);// need polymorphism
-            assert_is("{a b c}#2", "b");// UNKNOWN local symbol ‘a’ in context wasp_main
-    )
-    assert_emit("i=10007;x=i%10000", 7);
-    assert_emit("i=2;i++", 3);
-    assert_emit("x=0;while x++<11: nop;", 0);
 
 //    testSinus();
-    auto runtime = loadModule("wasp-runtime");
-    auto function = runtime.functions["strlen"];
-    auto signature = function.signature;
-    check(runtime.functions["strlen"].signature.size() == 1)
-
-//    testSinus();
-    clearAnalyzerContext();
-    clearEmitterContext();
-    testString();
-
-    testCurrentWasmBugs();
-//    auto wasp = loadModule("wasp"); // cmake-build-wasm-runtime
-//    auto wasp = loadModule("cmake-build-wasm-debug/wasp.wasm");
-//    check_is(wasp.functions["parseLong"].signature.wasm_return_type, i64);
-
     //	throwing = false;// shorter stack trace
     //	panicking = true;//
 //    assurances();
-//        test_fd_write();
-//    assert_emit("i=1;k='hi';k[i]", 'i')
-//    check_is(parseLong("123"), (int64) 123);
-    tests();// make sure all still ok before changes
 
-//    assert_emit("puts('ok')", "ok");
-//    assert_emit("puts('42')", "42");
-
-    assert_emit("parseLong('123')", 123)
-    assert_emit("x='123';parseLong(x)", 123)
-//    assert_run("int('123')", 123);
-
-    assert_emit("'42'", "42");
-    assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));// looks trivial but is epitome of binary (de)serialization!
-
-    assert_emit("x='abcde';x#4", 'd');
-    assert_emit("x='abcde';x[3]", 'd');
-    assert_emit("x='abcde';x#4='x';x[3]", 'x');
-    skip(
-            assert_emit("grows x:=x*2;grows(4)", 8)
-            // Map::grow !
-            assert_emit("grow x:=x*2;grow(4)", 8)
-    )
-
-//    testIndexWasm();
-    assert_is("x=(1 4 3);x#2=5;x#2", 5);
-
-    assert_emit("i=10007;x=i%10000", 7);
-//    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
-
-    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
-
-//    testSinus();// todo FRAGILE fails before!
-    check(operator_list.has("√"))
-    check(is_operator(u'√'))
-    auto node1 = parse("3 + √9");
-    check(node1.length == 4);
-    auto node2 = node1[2];
-    check(node2.name.startsWith("√"));
-    assert_emit("3 + √9", (int64) 6);
-
-//    quit()
     testNodeDataBinaryReconstruction();
-//    assert_is("[1 2 3]", Node(1, 2, 3, 0))
-//    check(findLibraryFunction("strlen0", false))
-    check_is(extractFuncName("_ZN6String17extractCodepointsEb"), "extractCodepoints");
-//    read_wasm("~/dev/wasm/wasi/wasi-demo.wasm");
+
     read_wasm("lib/stdio.wasm");
-
-//    check(findLibraryFunction("_Z7strlen0PKc", false))
-//    assert_run("len('123')", 3);
-//    assert_emit("putf 3.1", 3.1);
-
-    check(Node(String("")) == (int64) 0)
-    skip(
-            assert_emit("puts 'ok'", (int64) 0);
-            assert_emit("puts('ok');(1 4 3)#2", 4)
-    )
-    assert_is("true or true", true);
-
-    assert_emit("{1 4 3}#2", 4);
-    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
     testStruct();
-    assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));
 //    quit();
 
-//    assert_emit("y:{x:2 z:3};y.x", 2);
-//    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
-//    exit(1);
-/*
-    assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
-    assert_emit("y{x}", true); // emitData( node! ) emitNode()
-    assert_emit("{x:1}", true); // emitData( node! ) emitNode()
-    assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
-*/
     testWit();
     testColonImmediateBinding();
-    assert_emit("42", 42);
-    assert_emit("'42'", "42");
-    assert_emit("42.7", 42.7);
-    assert_is("square 3", 9) // AddressSanitizer can not provide additional info. WOW!  Exception: EXC_BAD_ACCESS
-
-    //    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
 //    testUpperLowerCase();
 //    exit(1);
 //    testDataMode();

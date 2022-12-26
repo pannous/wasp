@@ -44,14 +44,14 @@ bool assert_equals_x(Node a, int b, char *context = "") {
         print("\nFAILED assert_equals! %lld should be %d %s\n"s % a.value.longy % b % context);
     else if (a.kind == reals) printf(" OK %f==%f\n", a.value.real, (double) b);
     else
-        printf(" OK %lld==%d\n", a.value.longy, b);
+        printf(" OK %lld==%lld\n", a.value.longy, (int64) b);
     return a == b;
 }
 
 // WTF why is char* unexplicitly cast to bool!?!
 bool assert_equals_x(Node a, bool b, char *context = "") {
     if (a != Node(b))print("\nFAILED assert_equals! %lld should be %d %s\n"s % a.value.longy % b % context);
-    else printf(" OK %lld==%d\n", a.value.longy, b);
+    else printf(" OK %d==%d\n", (int) a.value.longy, (int) b);
 	return a == b;
 }
 
@@ -65,7 +65,7 @@ bool assert_equals_x(Node a, double b, char *context = "") {
     if (a != Node(b))
         print("\nFAILED assert_equals! %f should be %f %s\n"s % a.value.real % b % context);
     else if (a.kind == longs)
-        printf(" OK %lld==%f\n", a.value.longy, b);
+        printf(" OK %lld==%lld\n", (int64) a.value.longy, (int64) b);
     else
         printf(" OK %f==%f\n", a.value.real, b);
     return a == b;
@@ -238,9 +238,9 @@ Node assert_parsesx(chars mark) {
     }
     return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
-//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){print("%s:%d\n",__FILE__,__LINE__);exit(1);}
+//#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){print("%s:%d\n",__FILE__,__LINE__);proc_exit(1);}
 // ⚠️ CAREFUL parses in DATA_MODE !
-#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);exit(1);}
+#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);proc_exit(1);}
 
 #define skip(test) printf("SKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 #define todo_emit(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
@@ -256,7 +256,7 @@ printf("%s:%d\n",__FILE__,__LINE__);\
 ok=assert_isx(mark,result);\
 if(ok)printf("PASSED %s==%s\n",#mark,#result);\
 else{printf("FAILED %s==%s\n",#mark,#result);\
-printf("%s:%d\n",__FILE__,__LINE__);exit(1);}
+printf("%s:%d\n",__FILE__,__LINE__);proc_exit(1);}
 
 
 // for better readability, not (yet) semantic
