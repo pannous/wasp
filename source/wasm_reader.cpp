@@ -621,7 +621,7 @@ Module &read_wasm(String file) {
     if (file.contains("~"))
         file = file.replace("~", "/Users/me"); // todo $HOME
     if (file.endsWith(".wast")) {
-        char *wast_compiler = "/usr/local/bin/wat2wasm  --enable-all --debug-names ";
+        chars wast_compiler = "/usr/local/bin/wat2wasm  --enable-all --debug-names ";
 //        char *wast_compiler = "/usr/local/bin/wasm-as ";
         int status = system(concat(wast_compiler, file));
         if (status)

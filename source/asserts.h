@@ -14,9 +14,9 @@ if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else prin
 //#define check_eq assert_equals
 //#define check_is assert_equals
 
-bool assert_equals_x(String a, String b, char *context = "");
+bool assert_equals_x(String a, String b, chars context = "");
 
-bool assert_equals_x(int64 a, int64 b, char *context = "");
+bool assert_equals_x(int64 a, int64 b, chars context = "");
 
-//bool assert_equals_x(float a, float b, char *context = "");
-bool assert_equals_x(double a, double b, char *context = "");
+//bool assert_equals_x(float a, float b, chars context = "");
+bool assert_equals_x(double a, double b, chars context = "");

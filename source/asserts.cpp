@@ -14,17 +14,17 @@
 // todo assert_is ≠ assert_run == assert_emit_with_wasm_runtime!
 
 
-bool assert_equals_x(String a, String b, char *context) {
+bool assert_equals_x(String a, String b, chars context) {
     if (a == b) printf(" OK %s==%s %s\n", a.data, b.data, context);
     else printf("FAILED assert_equals!\n %s should be %s %s\n", a.data, b.data, context);
     return a == b;
 }
 
-bool assert_equals_x(String *a, String b, char *context = "") {
-	return assert_equals_x(*a, b, context);
+bool assert_equals_x(String *a, String b, chars context = "") {
+    return assert_equals_x(*a, b, context);
 }
 
-bool assert_equals_x(Node &a, char *b, char *context = "") {
+bool assert_equals_x(Node &a, char *b, chars context = "") {
     if (a.name != b)
         printf("FAILED assert_equals! %s should be %s %s\n", a.name.data ? a.name.data : "???", b, context);
     else printf(" OK %s==%s %s\n", a.name.data, b, context);
@@ -32,14 +32,14 @@ bool assert_equals_x(Node &a, char *b, char *context = "") {
 }
 
 
-bool assert_equals_x(Node a, const char *b, char *context = "") {
+bool assert_equals_x(Node a, const char *b, chars context = "") {
     if (a.name != b)printf("FAILED assert_equals! %s should be %s %s\n", a.name.data, b, context);
     else printf(" OK %s==%s %s\n", a.name.data, b, context);
     return a == b;
 }
 
 
-bool assert_equals_x(Node a, int b, char *context = "") {
+bool assert_equals_x(Node a, int b, chars context = "") {
     if (a != Node(b))
         print("\nFAILED assert_equals! %lld should be %d %s\n"s % a.value.longy % b % context);
     else if (a.kind == reals) printf(" OK %f==%f\n", a.value.real, (double) b);
@@ -49,19 +49,19 @@ bool assert_equals_x(Node a, int b, char *context = "") {
 }
 
 // WTF why is char* unexplicitly cast to bool!?!
-bool assert_equals_x(Node a, bool b, char *context = "") {
+bool assert_equals_x(Node a, bool b, chars context = "") {
     if (a != Node(b))print("\nFAILED assert_equals! %lld should be %d %s\n"s % a.value.longy % b % context);
     else printf(" OK %d==%d\n", (int) a.value.longy, (int) b);
-	return a == b;
+    return a == b;
 }
 
-bool assert_equals_x(Node &a, double b, char *context) {
+bool assert_equals_x(Node &a, double b, chars context) {
     if (a != Node(b))print("\nFAILED assert_equals! %lld should be %f %s\n"s % a.value.longy % b % context);
     else printf(" OK %f==%f\n", a.value.real, b);
-	return a == b;
+    return a == b;
 }
 
-bool assert_equals_x(Node a, double b, char *context = "") {
+bool assert_equals_x(Node a, double b, chars context = "") {
     if (a != Node(b))
         print("\nFAILED assert_equals! %f should be %f %s\n"s % a.value.real % b % context);
     else if (a.kind == longs)
@@ -71,14 +71,14 @@ bool assert_equals_x(Node a, double b, char *context = "") {
     return a == b;
 }
 
-//bool assert_equals_x(Node &a, int64 b, char *context = "") {
+//bool assert_equals_x(Node &a, int64 b, chars context = "") {
 //	if (!(a == b))prinft("FAILED assert_equals! %s should be %d %s\n"s, a.name, b, context);
 //	else printf(" OK %ld==%ld %s\n", a.value.longy, b, context);
 //	return a == b;
 //}
 
 
-bool assert_equals_x(Node a, int64 b, char *context = "") {
+bool assert_equals_x(Node a, int64 b, chars context = "") {
     if (!(a == b))
         print("\nFAILED assert_equals! %s %lld should be %ld %s\n"s % a.name.data % a.value.longy % b % context);
     else print(" OK %lld==%ld %s\n"s % a.value.longy % b % context);
@@ -86,18 +86,18 @@ bool assert_equals_x(Node a, int64 b, char *context = "") {
 }
 
 
-bool assert_equals_x(Node a, String b, char *context = "") {
-	String &name = a.name;
-	bool ok = name == b or a == b; //  b == name or  !(name != b and b != a.value.string;)
-	if (ok)
+bool assert_equals_x(Node a, String b, chars context = "") {
+    String &name = a.name;
+    bool ok = name == b or a == b; //  b == name or  !(name != b and b != a.value.string;)
+    if (ok)
         printf(" OK %s==%s %s\n", name.data, b.data, context);
-	else
+    else
         printf("FAILED assert_equals! %s should be %s %s\n", name.data, b.data, context);
-	return ok;
+    return ok;
 }
 
 
-bool assert_equals_x(Node a, Node b, char *context = "") {
+bool assert_equals_x(Node a, Node b, chars context = "") {
     //	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
     char *as = a.serialize().data;
     char *bs = b.serialize().data;
@@ -109,59 +109,59 @@ bool assert_equals_x(Node a, Node b, char *context = "") {
     return a == b;
 }
 
-bool assert_equals_x(Node *a, const Node *b, char *context = "") {
-	if (!a) {
+bool assert_equals_x(Node *a, const Node *b, chars context = "") {
+    if (!a) {
         if (b)printf("FAILED assert_equals! NULL should be %s %s\n", b->serialize().data, context);
-		return !b;
-	}
-	return assert_equals_x(*a, *b, context);
+        return !b;
+    }
+    return assert_equals_x(*a, *b, context);
 }
 
-bool assert_equals_x(Node *a, Node *b, char *context = "") {
+bool assert_equals_x(Node *a, Node *b, chars context = "") {
     if (!a)return !b;
     if (!b)return false;
     return assert_equals_x(*a, *b, context);
 }
 
-//bool assert_equals(chars a, chars b, char *context = "") {
+//bool assert_equals(chars a, chars b, chars context = "") {
 //	if (a != b)// err
 //		printf("F\nAILED assert_equals! %s should be %s %s\n"s % a % b % context);
 //	else printf(" OK %s==%s %s\n"s % a % b % context);
 //	return a == b;
 //}
 
-bool assert_equals_x(int64 a, int64 b, char *context) {
+bool assert_equals_x(int64 a, int64 b, chars context) {
     if (a != b)
         print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
     else print(" OK %ld==%ld %s\n"s % a % b % context);
     return a == b;
 }
 
-bool assert_equals_x(int a, int b, char *context = "") {
+bool assert_equals_x(int a, int b, chars context = "") {
     if (a != b)print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
     else print(" OK %d==%d %s\n"s % a % b % context);
     return a == b;
 }
 
-bool assert_equals_x(Kind a, Kind b, char *context = "") {
+bool assert_equals_x(Kind a, Kind b, chars context = "") {
     if (a != b)print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
     else print(" OK %d==%d %s\n"s % a % b % context);
     return a == b;
 }
 
 
-bool assert_equals_x(double a, double b, char *context) {
-	auto ok = similar(a, b);
+bool assert_equals_x(double a, double b, chars context) {
+    auto ok = similar(a, b);
     if (!ok)print("\nFAILED assert_equals!\n %f should be %f %s\n"s % a % b % context);
     else print(" OK %f==%f %s\n"s % a % b % context);
-	return ok;
+    return ok;
 }
 
-bool assert_equals_x(float a, float b, char *context = "") {
-	auto ok = similar(a, b);
+bool assert_equals_x(float a, float b, chars context = "") {
+    auto ok = similar(a, b);
     if (!ok)print("\nFAILED assert_equals!\n %f should be %f %s\n"s % a % b % context);
     else print(" OK %f==%f %s\n"s % a % b % context);
-	return ok;
+    return ok;
 }
 
 //# DEFINES CAN MESS WITH LOCALS!! so use α, β
@@ -169,17 +169,17 @@ bool assert_equals_x(float a, float b, char *context = "") {
 //bool assert_isx(char *mark, Node expect);
 //bool assert_isx(char *mark, chars expect);
 
-bool assert_isx(char *mark, Node expect) {
-	try {
-		Node left = eval(mark);
-		if (left.kind == reals or expect.kind == reals)
-			return assert_equals_x(left.floate(), expect.floate(), mark);
-		if (left.kind == longs or expect.kind == longs) {
+bool assert_isx(chars mark, Node expect) {
+    try {
+        Node left = eval(mark);
+        if (left.kind == reals or expect.kind == reals)
+            return assert_equals_x(left.floate(), expect.floate(), mark);
+        if (left.kind == longs or expect.kind == longs) {
             int64 b = expect.numbere();
-			return assert_equals_x(left.numbere(), b, mark);
-		}
-		if (left != expect)
-			//			breakpoint_helper
+            return assert_equals_x(left.numbere(), b, mark);
+        }
+        if (left != expect)
+            //			breakpoint_helper
 			if (left != expect)// Redundant for Breakpoint ;)
                 printf("FAILED %s ≠ %s\n", left.name.data, expect.name.data);
 		return left == expect;

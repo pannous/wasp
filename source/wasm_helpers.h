@@ -87,7 +87,7 @@ void memcpy1(bytes dest, bytes source, int i);
 
 // if MY_WASI make sure to IMPLEMENT THEM ALL via fd_write !!
 // todo: alias all to print
-void put_chars(char *c, size_t len = 0);
+void put_chars(chars c, size_t len = 0);
 
 class String;
 
@@ -238,7 +238,7 @@ extern "C" int printf(chars s, ...);  //stdio
 //void fd_write(int FD, char **strp, int *len, int *nwritten); // todo len or len* ?  wasi_buffer={char*, … ?}
 
 struct c_io_vector {
-    char *string;
+    chars string;
     size_t length;
 };
 
