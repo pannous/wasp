@@ -85,11 +85,10 @@ let Backtrace = function (print = 1) {
 }
 
 function terminate() {
+    console.log("wasm wants to quit. shall we let it?")
+    // if(sure)throw
 }
 
-function memset() {
-    console.log("TODO, use provided wasp implementation!!")
-}
 
 let nop = x => 0 // careful, some wasi shim needs 0!
 
@@ -100,34 +99,20 @@ let memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: memory_size});
 imports = {
     env: {
-        memset,
-        atoi: x => parseInt(x),
         puti: x => console.log(x),
-        puts,
-        logi: x => console.log(x),
-        logc: x => console.log(String.fromCodePoint(x)),
-        logs: x => console.log(string(x)),
         put_char: x => console.log(String.fromCodePoint(x)),
         printf: x => console.log(string(x)),// todo
 
         _Z13init_graphicsv: nop, // canvas init by default
         _Z21requestAnimationFramev: nop,
+
         __cxa_allocate_exception: nop,
         __cxa_guard_acquire: nop,
         __cxa_guard_release: nop,
         __cxa_throw: puts,
         __cxa_begin_catch: x => log("caught c++ exception", x),
         __cxa_demangle: nop,
-        _ZSt9terminatev: terminate,
-        __cxa_atexit: terminate,
-        panic: terminate,
-        raise: terminate,
-        _Z5raisePKc: terminate, // why mangled double?
-        pow: Math.pow,
-        _ZdlPv: nop,//operator delete(void*) lol
-        _Z7consolev: nop, // no repl for now
         _Z11testCurrentv: nop, // internal tests only during compiler development 
-
     },
     wasi_unstable: {
         fd_write,
