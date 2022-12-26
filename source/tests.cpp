@@ -519,8 +519,6 @@ void testFloatReturnThroughMain() {
     y = 0x00FF000000000000;// -> 0.000000 OK
     x = *(double *) &y;
     printf("%lf\n", x);
-    assert_emit(("-1.1"), -1.1)
-    assert_emit("10007.0%10000.0", 7);
 }
 
 void testArrayS() {
@@ -2635,29 +2633,27 @@ void testBadInWasm() {
 }
 
 void tests() {
+    testMarkSimple();
+    testMarkAsMap();
+    testMarkMultiDeep();
     testParent();
     testSubGroupingFlatten();
-    testIndexOffset();
     testNodeConversions();
-    testArrayIndices();
     testUpperLowerCase();
+    testListGrow();
     testSerialize();
     skip(
             testPrimitiveTypes();
     )
 //	test_sin();
-    testModulo();
     testIndentAsBlock();
     testDeepCopyDebugBugBug2();// SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!
     testDeepCopyDebugBugBug();
     testComments();
     testEmptyLineGrouping();
-    testRoundFloorCeiling();
     testSwitch();
     testAsserts();
     testFloatReturnThroughMain();
-    testSmartReturn();
-    testMultiValue();
     testSuperfluousIndentation();
     testString();
     testEmptyLineGrouping();
@@ -2667,7 +2663,6 @@ void tests() {
     testStringConcatenation();
     testNodeBasics();
     testStringReferenceReuse();
-    testWasmString();// with length as header
     testTruthiness();
     testConcatenation();
     testMarkSimple();
@@ -2740,7 +2735,15 @@ void tests() {
     testMergeOwn();
     testRecentRandomBugs();
     testBUG();
-    testBadInWasm();;
+    // most result in wasm emit under the hood:
+    testBadInWasm();
+    testIndexOffset();
+    testArrayIndices();
+    testModulo();
+    testSmartReturn();
+    testWasmString();// with length as header
+    testMultiValue();
+
 //    testSinus();
     skip(
             testWrong0Termination();
@@ -2749,6 +2752,10 @@ void tests() {
             testMathExtra();// "one plus two times three"==7 used to work?
             testKitchensink();
     )
+//    part of
+//    testAllWasm() :
+//    testRoundFloorCeiling();
+
 #ifdef APPLE
     testAllSamples();
 #endif
@@ -2783,19 +2790,7 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
-//    testString();
-//    Node n= assert_parsesx("3.1");
-    Node n = parse("3.1");
-    check(n == 3.1);
-    assert(parse("3.") == 3.);
 
-    Node n1 = parse("1");
-    check(n1 == 1);
-    assert(parse("1") == 1);
-
-    testMarkSimple();
-    testMarkAsMap();
-    testMarkMultiDeep();
     tests();// make sure all still ok before changes
 
     skip(

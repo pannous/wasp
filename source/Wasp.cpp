@@ -473,10 +473,6 @@ public:
 //		return *result.clone();
     }
 
-    Node &parse(chars source0) {
-        return parse(source0, {});
-    }
-
 
     Wasp &setFile(String file) {
         this->file = file;
@@ -2205,7 +2201,7 @@ float precedence(String name) {
 }
 
 
-static Wasp wasp_parser;
+static Wasp wasp_parser; // todo: why can't we use instances in wasm?
 
 Node &parse(String source, ParserOptions parserOptions) {
     if (operator_list.size() == 0)
@@ -2214,7 +2210,7 @@ Node &parse(String source, ParserOptions parserOptions) {
 }
 
 Node &parse(chars source) {
-    return wasp_parser.parse(source);
+    return wasp_parser.parse(source, {});
 }
 
 extern Node &result;

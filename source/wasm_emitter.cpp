@@ -2378,7 +2378,11 @@ Code emitImportSection() {
     import_count = 0;
     for (String fun: functions) {
         Function &function = functions[fun];
-        if (fun.empty() && function.is_used)error("empty function bug");
+        if (fun.empty() && function.is_used) {
+//            error("empty function bug");
+            warn("empty function bug");
+            continue;
+        }
         String import_module = "env";
         if (function.module and not function.module->name.empty())
             import_module = function.module->name;

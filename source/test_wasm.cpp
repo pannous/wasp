@@ -1219,8 +1219,8 @@ void testMultiValue() {
 #ifdef MULTI_VALUE
     assert_emit("1,2,3", Node(1, 2, 3, 0));
     assert_emit("1;2;3", 3);
-#endif
     assert_emit("'OK'", "OK");
+#endif
 }
 
 void testAssertRun() {
@@ -1303,7 +1303,6 @@ void testAllWasm() {
     testMathLibrary();
     testStringIndicesWasm();
     testSquareExpWasm();
-    testRoundFloorCeiling();
     testWasmLogicCombined();
     testGlobals();
     testMergeWabt();
