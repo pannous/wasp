@@ -337,8 +337,6 @@ int system(chars command) {
     return -1;
 }
 
-#ifndef MY_WASM
-
 void panic() {
 #ifndef WASM
     raise("panic");
@@ -411,9 +409,6 @@ void *putp(void *f) {
     printf("%p\n", f);
     return f;
 }
-
-#endif
-
 
 List<String> arguments() {
     List<String> args;

@@ -663,7 +663,7 @@ bool contains(chars str, chars match) {
 }
 
 void put(chars s) {
-    puts(s);
+    put_chars(s);
     newline();
 }
 
@@ -675,15 +675,7 @@ void print(const Node node) {
 //bool skip_newline = false;
 
 void print(int64 l) {
-#if MY_WASM
-    puti(l);
-#else
-//#if MY_WASI
-    printf("%lld\n", l);
-    // either through wasm_helpers or via stdio.wasm
-#endif
-//    if (skip_newline)skip_newline = false;// just skip one CANT make it
-//    else
+    put_chars(formatLong(l));
 }
 
 void print(char c) {
@@ -692,10 +684,7 @@ void print(char c) {
 }
 
 void print(char const *s) {
-//    put_chars(s, strlen(s));
-    puts(s);
-//    newline();
-//    printf("%s", s);
+    put_chars(s, strlen(s));
 }
 
 void print(String *s) {
