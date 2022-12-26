@@ -163,7 +163,7 @@ if (DEBUG)
     SET(DWARF_DSYM_FILE_NAME "$(TARGET_NAME).dSYM")
     SET(DWARF_DSYM_FOLDER_PATH "$(CONFIGURATION_BUILD_DIR)/dSyms")
     SET(DEPLOYMENT_POSTPROCESSING YES)
-    ADD_COMPILE_FLAG(" -g3") # DEBUG
+    ADD_COMPILE_FLAG(" -g3") # DEBUG DWARF output only emscripten?
 endif ()
 
 if (TRACE)
@@ -375,7 +375,7 @@ if (WASM) # OR WASI)
     add_definitions(-DMEMORY_SIZE=117964800)
     ADD_COMPILE_FLAG("-Wl,--initial-memory=117964800") # stack size plus some
     ADD_COMPILE_FLAG("-Wl,-z,stack-size=104857600") # 1MB*10  pointers will START from high and go lower!
-    ADD_COMPILE_FLAG("-Qn") # no producer metadata
+    #    ADD_COMPILE_FLAG("-Qn") # no producer metadata
     ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
     ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # keep name section?
     #    ADD_COMPILE_FLAG("-Wl,--pie") #  position independent executable, does it help? NO

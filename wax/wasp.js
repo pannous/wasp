@@ -1,7 +1,7 @@
 // let WASM_FILE = 'merged.wasm'
-// let WASM_FILE = 'wasp.wasm'
+let WASM_FILE = 'wasp.wasm'
 // let WASM_FILE = 'hello-wasi.wasm'
-let WASM_FILE = 'test-printf.wasm'
+// let WASM_FILE = 'test-printf.wasm'
 // let WASM_FILE = '../cmake-build-wasm/wasp.wasm'
 // let WASM_FILE='../cmake-build-release/wasp.wasm'
 
@@ -37,10 +37,9 @@ function int32(pointer) { // little endian
 }
 
 const fd_write = function (x, y, z, k) {
-    console.log("fd_write", x, y, z, k);
     let string_ptr = int32(y)
     let len = int32(y + 4)
-    console.log(string(string_ptr, len));
+    console.log(string(string_ptr, len) || "\n");
     return -1; // todo
 };
 
@@ -140,16 +139,19 @@ imports.wasi_snapshot_preview1 = imports.wasi_unstable // fuck wasmedge!
 WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(obj => {
     instance = obj.instance
     exports = instance.exports
-        memory = exports.memory || exports._memory || memory
-        buffer = new Uint8Array(memory.buffer, 0, memory.length);
-        main = instance.start || exports.teste || exports.main || exports._start
-        // _Z11testCurrentv
-        if (main) {
-            console.log("got main")
-            result = main()
-        } else result = instance.exports//show what we've got
-        console.log(result);
-        console.log(exports)
+    memory = exports.memory || exports._memory || memory
+    buffer = new Uint8Array(memory.buffer, 0, memory.length);
+    main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
+    main = instance._Z11testCurrentv || main
+    if (main) {
+        console.log("got main")
+        result = main()
+    } else {
+        console.error("missing main function in wasp module!")
+        result = instance.exports//show what we've got
+    }
+    console.log(result);
+    // console.log(exports)
 
         //alert(result)
         // tests()
