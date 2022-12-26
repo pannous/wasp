@@ -401,8 +401,8 @@ Section::~Section() {
 
 LinkerInputBinary::LinkerInputBinary(const char *filename, List<uint8_t> &data)
         : name(filename),
-          data(data.items),
-          size(data.size_),
+          data(data.items, data.size_, false),
+//          size(data.size_),
           active_function_imports(0),
           active_global_imports(0),
           type_index_offset(0),
@@ -1340,10 +1340,10 @@ Section *Linker::getSection(LinkerInputBinary *&binary, SectionType section) {
 // relocs can either be provided as custom section, or inferred from the linker.
 List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section) {
     List<Reloc> relocs;
-//    List<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
-//    int length = binary_data.size();
-    uint8_t *binary_data = binary->data;// LATER plus section_offset todo shared Code view
-    int length = binary->size;
+    List<uint8_t> &binary_data = binary->data;// LATER plus section_offset todo shared Code view
+    int length = binary_data.size();
+//    uint8_t *binary_data = binary->data;// LATER plus section_offset todo shared Code view
+//    int length = binary->size;
     size_t section_offset = section->offset;// into binary data
     int current_offset = section_offset;
     // #code_index =
@@ -1578,8 +1578,8 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
     if (not binary->needs_relocate)
         error("binary->needs_relocate marked false, but got a reloc!");
 
-    const List<uint8_t> &immutable_data = List(binary->data,
-                                               binary->size);// if you insert, other sections get messed up!
+    const List<uint8_t> &immutable_data = binary->data; // if you insert, other sections mess up!
+//    const List<uint8_t> &immutable_data = List(binary->data, binary->size);// if you insert, other sections mess up!
     uint8_t *section_start = (uint8_t *) &immutable_data[section->offset];// changing int values (offsets) is ok
     uint8_t *section_end = section_start + section->size;// safety to not write outside bounds
 // 🪩
