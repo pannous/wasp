@@ -218,29 +218,9 @@ bool assert_isx(char *mark, bool expect) {
 	return assert_isx(mark, Node(expect));
 }
 
-
-Node assert_parsesx(chars mark) {
-	try {
-        result = parse(mark, ParserOptions{.data_mode=true});
-        print(result);
-		return result;
-	} catch (chars err) {
-        print("TEST FAILED WITH ERROR\n");
-        printf("%s\n", err);
-	} catch (String &err) {
-        print("TEST FAILED WITH ERRORs\n");
-        printf("%s\n", err.data);
-	} catch (SyntaxError &err) {
-        print("TEST FAILED WITH SyntaxError\n");
-        printf("%s\n", err.data);
-    } catch (...) {
-        print("TEST FAILED WITH UNKNOWN ERROR (maybe POINTER String*)? \n");
-    }
-    return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
-}
 //#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){print("%s:%d\n",__FILE__,__LINE__);proc_exit(1);}
 // ⚠️ CAREFUL parses in DATA_MODE !
-#define assert_parses(mark) result=assert_parsesx(mark);if(result==ERROR){printf("NOT PARSING %s\n%s:%d\n",#mark,__FILE__,__LINE__);proc_exit(1);}
+#define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s \n%s:%d\n",marka,__FILE__,__LINE__);proc_exit(1);}
 
 #define skip(test) printf("SKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 #define todo_emit(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
