@@ -438,9 +438,10 @@ public:
 
 
     // todo: flatten the parse->parse->read branch!!
-    Node &parse(String source, ParserOptions options = {}) {
-        if (!source.data) {
-            warn("parse !source.data");
+    Node &parse(chars source0, ParserOptions options) {
+        String source = source0;
+        if (!source0) {
+            warn("parse on empty source");
             return NUL;
         }
         parserOptions = options;
@@ -449,9 +450,8 @@ public:
             source = readFile(findFile(source, parserOptions.current_dir));
         }
 #ifndef RELEASE
-        printf("Parsing:\n%s\n", source.data);
+        printf("Parsing:\n%s\n", source);
 #endif
-        if (source.empty()) return const_cast<Node &>(NIL);
         columnStart = 0;
         at = -1;
         lineNumber = 1;
@@ -471,6 +471,10 @@ public:
         // Mark does not support the legacy JSON reviver function todo ??
         return result;
 //		return *result.clone();
+    }
+
+    Node &parse(chars source0) {
+        return parse(source0, {});
     }
 
 
@@ -2201,11 +2205,16 @@ float precedence(String name) {
 }
 
 
-//static
+static Wasp wasp_parser;
+
 Node &parse(String source, ParserOptions parserOptions) {
     if (operator_list.size() == 0)
         load_parser_initialization();
-    return Wasp().parse(source, parserOptions);
+    return wasp_parser.parse(source, parserOptions);
+}
+
+Node &parse(chars source) {
+    return wasp_parser.parse(source);
 }
 
 extern Node &result;
@@ -2214,7 +2223,7 @@ Node assert_parsesx(chars mark) {
     try {
         print("mark");
         print(mark);
-        result = Wasp().parse(mark, ParserOptions{.data_mode=true});
+        result = wasp_parser.parse(mark, ParserOptions{.data_mode=true});
         print(result);
         return result;
     } catch (chars err) {

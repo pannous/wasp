@@ -17,6 +17,8 @@ extern codepoint opening_special_brackets[];// circumfixOperators «…»
 extern chars import_keywords[];
 extern List<chars> operator_list;
 
+Node &parse(chars source);
+
 Node &parse(String source, ParserOptions parserOptions = {});// wasp -> data
 Node assert_parsesx(chars mark);
 
