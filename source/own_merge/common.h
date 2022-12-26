@@ -44,7 +44,7 @@ String s(String x);
 
 #define WABT_UNREACHABLE abort()
 
-#define WABT_FATAL(...) fprintf(stderr, __VA_ARGS__), exit(1)
+#define WABT_FATAL(...) fprintf(stderr, __VA_ARGS__),proc_exit(1);
 #define WABT_ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 #define WABT_USE(x) static_cast<void>(x)

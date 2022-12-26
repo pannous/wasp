@@ -122,12 +122,12 @@ void checkInput() {
 //			 case SDL_MOUSEMOTION:
             case SDL_MOUSEBUTTONDOWN:
                 cleanUp();
-                exit(0);
+                proc_exit(0);
             case SDL_KEYDOWN:
                 key = test_event.key;
                 if (key.keysym.sym == SDLK_ESCAPE) {
                     cleanUp();
-                    exit(0);
+                    proc_exit(0);
                 }
 		}
 	}
