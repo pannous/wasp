@@ -192,7 +192,8 @@ extern "C" void __cxa_throw(
         struct type_info *tinfo,
         void (*dest)(void *)) {}
 extern "C" int __cxa_atexit(int, int, int) {
-    proc_exit(0);
+    // registers a function to be called by exit or when a shared library is unloaded.
+    // todo free stuff?
     return 0;
 }
 
@@ -463,8 +464,10 @@ int64 call_wasp_main(int index) {
     return index;
 }
 
+extern "C" void __wasm_call_ctors();
 // un-export at link time to use main:_start
 extern "C" void _start() {
+    __wasm_call_ctors();
     auto args = arguments();
 //    smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
 //    print(smartNode(result));

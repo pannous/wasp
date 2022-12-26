@@ -1058,7 +1058,7 @@ static String UNEXPECT_CHAR;// = "Unexpected character ";
 static String empty_name = "";
 //extern String nil_name;// = "nil";
 //extern String empty_name;// = "";
-static String nil_name = "nil";
+static chars nil_name = "nil";
 static String EMPTY = "";// = String('\0');
 
 //String operator "" s(chars c, uint64 );// wasm function signature contains illegal type
