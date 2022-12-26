@@ -543,12 +543,10 @@ public:
             return this->replace("%zu", formatLong(d));
         if (contains("%c"))
             return this->replace("%c", String((codepoint) d));
-        puts("ERROR\nmissing placeholder %d in string modulo operation s%d:\n");
+        put_chars("ERROR\nmissing placeholder %d in string modulo operation s%d:\n");
         put_chars(this->data, this->length);
-        puts(" value:");
-        auto string = formatLong(d);
-        puts(string);
-//        puti(d);
+        put_chars(" value:");
+        put_chars(formatLong(d));
         proc_exit(-1);
         return "«ERROR»";
     }

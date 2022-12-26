@@ -98,6 +98,7 @@ let memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: memory_size});
 imports = {
     env: {
+        run_wasm,
         puti: x => console.log(x),
         put_char: x => console.log(String.fromCodePoint(x)),
         printf: x => console.log(string(x)),// todo
@@ -157,6 +158,24 @@ WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(obj => {
         tests()
     }
 )
+
+// allow wasm tests/plugins to build and execute small wasm files!
+function run_wasm(buf_pointer, buf_size) {
+    let funclet = {}
+    let wasm_bytes = new Uint8Array(memory.buffer, buf_pointer, buf_size);
+    let module = WebAssembly.compile(wasm_bytes.buffer).catch(error => {
+        throw error
+    })
+    funclet.memory = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
+    // funclet.table = new WebAssembly.Table({initial: 2, element: "anyfunc"});
+    funclet.instance = WebAssembly.instantiate(module, imports, memory)
+    funclet.exports = instance.exports
+    funclet.memory = exports.memory || exports._memory || memory
+    // funclet.buffer = new Uint8Array(funclet.memory.buffer, 0, memory.length);
+    let main = exports.main || exports.wasp_main || exports._start || instance.start
+    result = main()
+    return BigInt(result || 0);
+}
 
 
 function test() {
