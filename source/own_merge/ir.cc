@@ -159,68 +159,53 @@ namespace wabt {
 				return GetMemoryIndex(var) < num_memory_imports;
 
 			case ExternalKind::Table:
-				return GetTableIndex(var) < num_table_imports;
+                return GetTableIndex(var) < num_table_imports;
 
-			case ExternalKind::Tag:
-				return GetTagIndex(var) < num_tag_imports;
+            case ExternalKind::Tag:
+                return GetTagIndex(var) < num_tag_imports;
 
-			default:
-				return false;
-		}
-	}
+            default:
+                return false;
+        }
+    }
 
-	void LocalTypes::Set(const TypeVector &types) {
-		decls_.clear();
-		if (types.empty()) {
-			return;
-		}
+//	void LocalTypes::Set(const TypeVector &types) {
+//		decls_.clear();
+//		if (types.empty()) {
+//			return;
+//		}
+//
+//		Type type = types[0];
+//		Index count = 1;
+//		for (Index i = 1; i < types.size(); ++i) {
+//			if (types[i] != type) {
+//				decls_.add(type, count);
+//                type = types[i];
+//				count = 1;
+//			} else {
+//				++count;
+//			}
+//		}
+//        decls_.add(type, count);
+//	}
 
-		Type type = types[0];
-		Index count = 1;
-		for (Index i = 1; i < types.size(); ++i) {
-			if (types[i] != type) {
-				decls_.emplace_back(type, count);
-				type = types[i];
-				count = 1;
-			} else {
-				++count;
-			}
-		}
-		decls_.emplace_back(type, count);
-	}
 
-	Index LocalTypes::size() const {
-		return std::accumulate(
-				decls_.begin(), decls_.end(), 0,
-				[](Index sum, const Decl &decl) { return sum + decl.second; });
-	}
 
-	Type LocalTypes::operator[](Index i) const {
-		Index count = 0;
-		for (auto decl: decls_) {
-			if (i < count + decl.second) {
-				return decl.first;
-			}
-			count += decl.second;
-		}
-		assert(i < count);
-		return Type::Any;
-	}
+    Type Func::GetLocalType(Index index) { //const
+        Index num_params = decl.GetNumParams();
+        if (index < num_params) {
+            return GetParamType(index);
+        } else {
+            index -= num_params;
+            assert(index < local_types.size());
+            return local_types[index];
+//            return *local_types.has(index);
+        }
+    }
 
-	Type Func::GetLocalType(Index index) const {
-		Index num_params = decl.GetNumParams();
-		if (index < num_params) {
-			return GetParamType(index);
-		} else {
-			index -= num_params;
-			assert(index < local_types.size());
-			return local_types[index];
-		}
-	}
-
-	Type Func::GetLocalType(const Var &var) const {
-		return GetLocalType(GetLocalIndex(var));
-	}
+    Type Func::GetLocalType(const Var &var) { // const
+        return GetLocalType(GetLocalIndex(var));
+    }
 
 	Index Func::GetLocalIndex(const Var &var) const {
 		if (var.is_index()) {
@@ -338,212 +323,240 @@ namespace wabt {
 		} else {
 			return GetFuncTypeIndex(decl.sig);
 		}
-	}
+    }
 
-	void Module::AppendField(std::unique_ptr<DataSegmentModuleField> field) {
-		DataSegment &data_segment = field->data_segment;
-		if (!data_segment.name.empty()) {
-			data_segment_bindings.emplace(data_segment.name,
-			                              Binding(field->loc, data_segments.size()));
-		}
-		data_segments.push_back(&data_segment);
-		fields.push_back(std::move(field));
-	}
+    void Module::AppendField(DataSegmentModuleField *field) {
+        DataSegment &data_segment = field->data_segment;
+        if (!data_segment.name.empty()) {
+            data_segment_bindings.emplace(data_segment.name, Binding(field->loc, data_segments.size()));
+        }
+        data_segments.add(&data_segment);
+//        todo("fields.add((field));")
+    }
 
-	void Module::AppendField(std::unique_ptr<ElemSegmentModuleField> field) {
-		ElemSegment &elem_segment = field->elem_segment;
-		if (!elem_segment.name.empty()) {
-			elem_segment_bindings.emplace(elem_segment.name,
-			                              Binding(field->loc, elem_segments.size()));
-		}
-		elem_segments.push_back(&elem_segment);
-		fields.push_back(std::move(field));
-	}
 
-	void Module::AppendField(std::unique_ptr<TagModuleField> field) {
-		Tag &tag = field->tag;
-		if (!tag.name.empty()) {
-			tag_bindings.emplace(tag.name, Binding(field->loc, tags.size()));
-		}
-		tags.push_back(&tag);
-		fields.push_back(std::move(field));
-	}
+    void Module::AppendField(DataSegmentModuleField &field) {
+        DataSegment &data_segment = field.data_segment;
+        if (!data_segment.name.empty()) {
+            data_segment_bindings.emplace(data_segment.name, Binding(field.loc, data_segments.size()));
+        }
+        data_segments.add(&data_segment);
+    }
 
-	void Module::AppendField(std::unique_ptr<ExportModuleField> field) {
-		// Exported names are allowed to be empty.
-		Export &export_ = field->export_;
-		export_bindings.emplace(export_.name, Binding(field->loc, exports.size()));
-		exports.push_back(&export_);
-		fields.push_back(std::move(field));
-	}
 
-	void Module::AppendField(std::unique_ptr<FuncModuleField> field) {
-		Func &func = field->func;
-		if (!func.name.empty()) {
-			func_bindings.emplace(func.name, Binding(field->loc, funcs.size()));
-		}
-		funcs.push_back(&func);
-		fields.push_back(std::move(field));
-	}
+    void Module::AppendField(ElemSegmentModuleField *field) {
+        ElemSegment &elem_segment = field->elem_segment;
+        if (!elem_segment.name.empty()) {
+            elem_segment_bindings.emplace(elem_segment.name,
+                                          Binding(field->loc, elem_segments.size()));
+        }
+        elem_segments.add(&elem_segment);
+//        todo("fields.add((field));")
+//      fields.add((field));
+    }
 
-	void Module::AppendField(std::unique_ptr<TypeModuleField> field) {
-		TypeEntry &type = *field->type;
-		if (!type.name.empty()) {
-			type_bindings.emplace(type.name, Binding(field->loc, types.size()));
-		}
-		types.push_back(&type);
-		fields.push_back(std::move(field));
-	}
+    void Module::AppendField(TagModuleField *field) {
+        Tag &tag = field->tag;
+        if (!tag.name.empty()) {
+            tag_bindings.emplace(tag.name, Binding(field->loc, tags.size()));
+        }
+        tags.add(&tag);
+//        todo("fields.add((field));")
+//      fields.add((field));
+    }
 
-	void Module::AppendField(std::unique_ptr<GlobalModuleField> field) {
-		Global &global = field->global;
-		if (!global.name.empty()) {
-			global_bindings.emplace(global.name, Binding(field->loc, globals.size()));
-		}
-		globals.push_back(&global);
-		fields.push_back(std::move(field));
-	}
+    void Module::AppendField(ExportModuleField *field) {
+        // Exported names are allowed to be empty.
+        Export &export_ = field->export_;
+        export_bindings.emplace(export_.name, Binding(field->loc, exports.size()));
+        exports.add(&export_);
+//        todo("fields.add((field));")
+//      fields.add((field));
+    }
 
-	void Module::AppendField(std::unique_ptr<ImportModuleField> field) {
-		Import *import = field->import.get();
-		const String *name = nullptr;
-		BindingHash *bindings = nullptr;
-		Index index = kInvalidIndex;
+    void Module::AppendField(FuncModuleField *field) {
+        Func &func = field->func;
+        if (!func.name.empty()) {
+            func_bindings.emplace(func.name, Binding(field->loc, funcs.size()));
+        }
+        funcs.add(&func);
+//        todo("fields.add((field));")
+//      fields.add((field));
+    }
 
-		switch (import->kind()) {
-			case ExternalKind::Func: {
-				Func &func = cast<FuncImport>(import)->func;
-				name = &func.name;
-				bindings = &func_bindings;
-				index = funcs.size();
-				funcs.push_back(&func);
-				++num_func_imports;
+    void Module::AppendField(TypeModuleField *field) {
+        TypeEntry &type = *field->type;
+        if (!type.name.empty()) {
+            type_bindings.emplace(type.name, Binding(field->loc, types.size()));
+        }
+        types.add(&type);
+//        todo("fields.add((field));")
+//      fields.add((field));
+    }
+
+    void Module::AppendField(GlobalModuleField *field) {
+        Global &global = field->global;
+        if (!global.name.empty()) {
+            global_bindings.emplace(global.name, Binding(field->loc, globals.size()));
+        }
+        globals.add(&global);
+//        todo("fields.add((field));")
+//      fields.add((field));
+    }
+
+    void Module::AppendField(ImportModuleField *field) {
+        Import *import = field->import;
+        const String *name = nullptr;
+        BindingHash *bindings = nullptr;
+        Index index = kInvalidIndex;
+
+        switch (import->kind()) {
+            case ExternalKind::Func: {
+                Func func = cast<FuncImport>(import)->func;
+                name = &func.name;
+                bindings = &func_bindings;
+                index = funcs.size();
+                funcs.add(&func);
+                ++num_func_imports;
 				break;
 			}
 
 			case ExternalKind::Table: {
-				Table &table = cast<TableImport>(import)->table;
+                Table table = cast<TableImport>(import)->table;
 				name = &table.name;
 				bindings = &table_bindings;
-				index = tables.size();
-				tables.push_back(&table);
-				++num_table_imports;
+                index = tables.size();
+                tables.add(&table);
+                ++num_table_imports;
 				break;
 			}
 
 			case ExternalKind::Memory: {
-				Memory &memory = cast<MemoryImport>(import)->memory;
+                Memory memory = cast<MemoryImport>(import)->memory;
 				name = &memory.name;
 				bindings = &memory_bindings;
-				index = memories.size();
-				memories.push_back(&memory);
-				++num_memory_imports;
+                index = memories.size();
+                memories.add(&memory);
+                ++num_memory_imports;
 				break;
 			}
 
 			case ExternalKind::Global: {
-				Global &global = cast<GlobalImport>(import)->global;
+                Global global = cast<GlobalImport>(import)->global;
 				name = &global.name;
 				bindings = &global_bindings;
-				index = globals.size();
-				globals.push_back(&global);
-				++num_global_imports;
+                index = globals.size();
+                globals.add(&global);
+                ++num_global_imports;
 				break;
 			}
 
 			case ExternalKind::Tag: {
-				Tag &tag = cast<TagImport>(import)->tag;
+                Tag tag = cast<TagImport>(import)->tag;
 				name = &tag.name;
 				bindings = &tag_bindings;
-				index = tags.size();
-				tags.push_back(&tag);
-				++num_tag_imports;
-				break;
-			}
-		}
+                index = tags.size();
+                tags.add(&tag);
+                ++num_tag_imports;
+                break;
+            }
+        }
 
-		assert(name && bindings && index != kInvalidIndex);
-		if (!name->empty()) {
-			bindings->emplace(*name, Binding(field->loc, index));
-		}
-		imports.push_back(import);
-		fields.push_back(std::move(field));
-	}
+        assert(name && bindings && index != kInvalidIndex);
+        if (!name->empty()) {
+            bindings->emplace(*name, Binding(field->loc, index));
+        }
+        imports.add(import);
+//        todo("fields.add((field));")
+//      fields.add((field));
+    }
 
-	void Module::AppendField(std::unique_ptr<MemoryModuleField> field) {
-		Memory &memory = field->memory;
-		if (!memory.name.empty()) {
-			memory_bindings.emplace(memory.name, Binding(field->loc, memories.size()));
-		}
-		memories.push_back(&memory);
-		fields.push_back(std::move(field));
-	}
+    void Module::AppendField(MemoryModuleField *field) {
+        Memory &memory = field->memory;
+        if (!memory.name.empty()) {
+            memory_bindings.emplace(memory.name, Binding(field->loc, memories.size()));
+        }
+        memories.add(&memory);
+//        todo("fields.add((field));")
+//      fields.add((field));
+    }
 
-	void Module::AppendField(std::unique_ptr<StartModuleField> field) {
-		starts.push_back(&field->start);
-		fields.push_back(std::move(field));
-	}
+    void Module::AppendField(StartModuleField *field) {
+        starts.add(&field->start);
+//        todo("fields.add((field));")
+//      fields.add((field));
+    }
 
-	void Module::AppendField(std::unique_ptr<TableModuleField> field) {
-		Table &table = field->table;
-		if (!table.name.empty()) {
-			table_bindings.emplace(table.name, Binding(field->loc, tables.size()));
-		}
-		tables.push_back(&table);
-		fields.push_back(std::move(field));
-	}
+    void Module::AppendField(TableModuleField *field) {
+        Table &table = field->table;
+        if (!table.name.empty()) {
+            table_bindings.emplace(table.name, Binding(field->loc, tables.size()));
+        }
+        tables.add(&table);
+//        todo("fields.add((field));")
+//      fields.add((field));
+    }
 
-	void Module::AppendField(std::unique_ptr<ModuleField> field) {
-		switch (field->type()) {
-			case ModuleFieldType::Func:
-				AppendField(cast<FuncModuleField>(std::move(field)));
-				break;
+    void Module::AppendField(ModuleField *field) {
+        switch (field->type()) {
+            case ModuleFieldType::Func: todo()
+//"AppeField(cast<FuncModuleField>((field)));"//                AppeField(cast<FuncModuleField>((field)));
+                break;
 
-			case ModuleFieldType::Global:
-				AppendField(cast<GlobalModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::Global: todo()
+//"AppeField(cast<GlobalModuleField>((field)));"//                AppeField(cast<GlobalModuleField>((field)));
+                break;
 
-			case ModuleFieldType::Import:
-				AppendField(cast<ImportModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::Import:
+//                todo("Appendeld(cast<ImportModuleField>((field)));")
+//				Appendeld(cast<ImportModuleField>((field)));
+                break;
 
-			case ModuleFieldType::Export:
-				AppendField(cast<ExportModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::Export:
+//                todo("Appendeld(cast<ExportModuleField>((field)));")
+//				Appendeld(cast<ExportModuleField>((field)));
+                break;
 
-			case ModuleFieldType::Type:
-				AppendField(cast<TypeModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::Type:
+//                todo("Appendeld(cast<TypeModuleField>((field)));")
+//				Appendeld(cast<TypeModuleField>((field)));
+                break;
 
-			case ModuleFieldType::Table:
-				AppendField(cast<TableModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::Table:
+//                todo("Appendeld(cast<TableModuleField>((field)));")
+//				Appendeld(cast<TableModuleField>((field)));
+                break;
 
-			case ModuleFieldType::ElemSegment:
-				AppendField(cast<ElemSegmentModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::ElemSegment:
+//                todo("Appendeld(cast<ElemSegmentModuleField>((field)));")
+//				Appendeld(cast<ElemSegmentModuleField>((field)));
+                break;
 
-			case ModuleFieldType::Memory:
-				AppendField(cast<MemoryModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::Memory:
+//                todo("Appendeld(cast<MemoryModuleField>((field)));")
+//				Appendeld(cast<MemoryModuleField>((field)));
+                break;
 
-			case ModuleFieldType::DataSegment:
-				AppendField(cast<DataSegmentModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::DataSegment:
+//                todo("Appendeld(cast<DataSegmentModuleField>((field)));")
+//				Appendeld(cast<DataSegmentModuleField>((field)));
+                break;
 
-			case ModuleFieldType::Start:
-				AppendField(cast<StartModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::Start:
+//                todo("Appendeld(cast<StartModuleField>((field)));")
+//				Appendeld(cast<StartModuleField>((field)));
+                break;
 
-			case ModuleFieldType::Tag:
-				AppendField(cast<TagModuleField>(std::move(field)));
-				break;
+            case ModuleFieldType::Tag:
+//                todo("Appendeld(cast<TagModuleField>((field)));")
+//				Appendeld(cast<TagModuleField>((field)));
+                break;
 		}
 	}
 
 	void Module::AppendFields(ModuleFieldList *fields) {
 		while (!fields->empty())
-			AppendField(std::unique_ptr<ModuleField>(fields->extract_front()));
+            AppendField(&fields->first());
 	}
 
 	const Module *Script::GetFirstModule() const {
@@ -551,11 +564,11 @@ namespace wabt {
 	}
 
 	Module *Script::GetFirstModule() {
-		for (const std::unique_ptr<Command> &command: commands) {
-			if (auto *module_command = dyn_cast<ModuleCommand>(command.get())) {
-				return &module_command->module;
-			}
-		}
+        for (auto command: commands) {
+            if (auto *module_command = dyn_cast<ModuleCommand>(command)) {
+                return &module_command->module;
+            }
+        }
 		return nullptr;
 	}
 
@@ -564,22 +577,22 @@ namespace wabt {
 		if (index >= commands.size()) {
 			return nullptr;
 		}
-		auto *command = cast<ModuleCommand>(commands[index].get());
+        auto *command = cast<ModuleCommand>(commands[index]);
 		return &command->module;
 	}
 
-	void MakeTypeBindingReverseMapping(
-			size_t num_types,
-			const BindingHash &bindings,
-			std::vector<String> *out_reverse_mapping) {
-		out_reverse_mapping->clear();
-		out_reverse_mapping->resize(num_types);
-		for (const auto &pair: bindings) {
-			assert(static_cast<size_t>(pair.second.index) <
-			       out_reverse_mapping->size());
-			(*out_reverse_mapping)[pair.second.index] = pair.first;
-		}
-	}
+    void MakeTypeBindingReverseMapping(
+            size_t num_types,
+            const BindingHash &bindings,
+            List<String> *out_reverse_mapping) {
+        out_reverse_mapping->clear();
+        out_reverse_mapping->resize(num_types);
+        for (const auto &pair: bindings) {
+            assert(static_cast<size_t>(pair.second.index) <
+                   out_reverse_mapping->size());
+            (*out_reverse_mapping)[pair.second.index] = pair.first;
+        }
+    }
 
 	Var::Var(Index index, const Location &loc)
 			: loc(loc), type_(VarType::Index), index_(index) {}
@@ -588,8 +601,9 @@ namespace wabt {
 			: loc(loc), type_(VarType::Name), name_(name) {}
 
 	Var::Var(Var &&rhs) : Var(kInvalidIndex) {
-		*this = std::move(rhs);
-	}
+        todo()
+////"rhs);	this = (rhs);
+    }
 
 	Var::Var(const Var &rhs) : Var(kInvalidIndex) {
 		*this = rhs;
@@ -626,11 +640,12 @@ namespace wabt {
 	}
 
 	void Var::set_name(String &&name) {
-		Destroy();// wat !?
-		type_ = VarType::Name;
-		this->name_ = name;
-//		Construct(name_, std::move(name));
-	}
+        Destroy();// wat !?
+        type_ = VarType::Name;
+        this->name_ = name;
+//        todo("Construct(name_, (name));")
+//		Construct(name_, (name));
+    }
 
 //
 	void Var::set_name(string_view name) {

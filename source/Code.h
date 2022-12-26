@@ -958,7 +958,7 @@ public:
         if (return_types.empty()) {
             wasm_return_type = s.wasm_return_type;
             return_types = s.return_types;// todo copy construktor OK??
-            if ((wasm_return_type == void_block or wasm_return_type == voids) and return_types._size > 0)
+            if ((wasm_return_type == void_block or wasm_return_type == voids) and return_types.size_ > 0)
                 wasm_return_type = mapTypeToWasm(return_types.last());
         }
         if (parameter_types.empty())
