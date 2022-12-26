@@ -146,7 +146,7 @@ public:
     int size_ = 0;
     int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
     // previous entries must be aligned to int64!
-    S *items;// 32bit pointers in wasm! In C++ References cannot be put into an array, if you try you get
+    S *items = 0;// 32bit pointers in wasm! In C++ References cannot be put into an array, if you try you get
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
     // todo item references are UNSAFE after grow()
@@ -222,23 +222,25 @@ public:
         if (share)
             items = args;
         else {
-            if (capacity < size_) {
+            if (capacity < size_ or not items) {
                 items = (S *) calloc(size_ + 1, sizeof(S));
                 capacity = size_;
             }
-            memcpy(items, args, count);
+            memcpy((void *) items, (void *) args, count * sizeof(S));
         }
     }
 
 
     List(S *data, S *end, bool share = true) : List(data, (end - data) / sizeof(S), share) {}
 
+    // todo get rid in favor of vararg /  initializer_list!
     List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
         if (args == 0)return;
         while (args[size_] and size_ < LIST_DEFAULT_CAPACITY)size_++;
-        items = (S *) calloc(sizeof(S), size_ + 1);
-        int i = size_;
-        while (i-- > 0)items[i] = args[i];
+        items = args;
+//        items = (S *) calloc(sizeof(S), size_ + 1);
+//        int i = size_;
+//        while (i-- > 0)items[i] = args[i];
     }
 
 //	List(S args) {// initiator list C style {x,y,z}
@@ -319,7 +321,7 @@ public:
 
     S &operator[](uint64 index) {
         if (index == size_)size_++;// allow indexing one after end? todo ok?
-        if (size_ >= capacity)grow();
+        if (size_ > capacity)grow();
 //        if (index >= capacity)grow();
         if (index < 0 or index >= size_) { /* and not auto_grow*/
             if (index >= capacity)
