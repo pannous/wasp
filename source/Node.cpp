@@ -1052,7 +1052,7 @@ Node &Node::flat() {
     return *this;//->clone();
 }
 
-Node &Node::setName(char *name0) {
+Node &Node::setName(chars name0) {
     name = name0;
     return *this;
 }

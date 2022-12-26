@@ -388,12 +388,12 @@ public:
     // why not auto null terminated on mac?
     // vargs needs to be 0 terminated, otherwise pray!
     explicit
-    Node(char *a, char *b, ...) {
+    Node(chars a, chars b, ...) {
         kind = objects;// groups list
         add(Node(a).clone());
         va_list args;
         va_start(args, b);
-        char *i = b;
+        chars i = b;
         while (i) {
             Node *node = Node(i).clone();
             add(node);
@@ -800,7 +800,7 @@ public:
 
     Node &flat();
 
-    Node &setName(char *name0);
+    Node &setName(chars name0);
 
     Node &values();
 

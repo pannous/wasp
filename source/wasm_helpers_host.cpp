@@ -116,7 +116,7 @@ double powd(double x, double y) {
     return pow(x, y);
 }
 
-void put_chars(char *c, size_t len) {
+void put_chars(chars c, size_t len) {
     printf("%s", c);
 }
 

@@ -298,7 +298,7 @@ public:
         save();
     }
 
-    Code &save(char *file_name = "test.wasm") {
+    Code &save(chars file_name = "test.wasm") {
         if (name.empty())name = file_name;
 #ifndef WASM
         if (!String(file_name).endsWith(".wasm"))

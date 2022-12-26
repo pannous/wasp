@@ -348,14 +348,14 @@ void panic() {
 }
 
 
-void put_chars(char *c, size_t len) {
+void put_chars(chars c, size_t len) {
     c_io_vector civ{.string=c, .length=len ? len : strlen(c)};
     fd_write(1, &civ, 1, 0);
 }
 
 extern "C" // destroys the export type signature! stdio.h:178:6
 int puts(chars c) { // // int return needed for stdio compatibilty !
-    c_io_vector civ{.string=(char *) c, .length=(size_t) strlen(c)};
+    c_io_vector civ{.string=c, .length=(size_t) strlen(c)};
     fd_write(1, &civ, 1, 0);
     return 1;// OK (int) c;// stdio
 }
