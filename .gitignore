@@ -62,3 +62,4 @@ playground/
 /test/merge/target/
 .cmake
 wasp
+test/merge/
