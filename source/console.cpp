@@ -54,7 +54,7 @@ void getline(char *buf) {
 //static char *lastCommand;
 //static char *commandCode;
 #endif
-char *version = "1.0";
+chars version = "1.0";
 
 // Todo: web version?
 [[noreturn]] void console() {
