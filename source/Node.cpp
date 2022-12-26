@@ -59,7 +59,7 @@
 //const Node NaN = Node("NaN");
 
 // must never be used in non-const references!
-const Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
+const Node NIL = Node(String(nil_name, false)).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
 Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
