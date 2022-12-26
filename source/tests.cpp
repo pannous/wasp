@@ -2781,8 +2781,8 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
     assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
-
     testMergeOwn();
+
     assert_emit("i=123;i+1", 124);
     assert_emit("add1 x:=x+1;add1(7)", 8)
     assert_emit("grows x:=x*2;grows(4)", 8)
