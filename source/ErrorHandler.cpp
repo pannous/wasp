@@ -138,7 +138,7 @@ static void signal_segv(int signum, siginfo_t *info, void *ptr) {
 		sigsegv_outp("Not printing stack strace.");
 #endif
 #endif
-	_exit(-1);
+//	_exit(-1);
 }
 // Alternative: turn SIGSEGV into c++ exception https://stackoverflow.com/questions/2350489/how-to-catch-segmentation-fault-in-linux
 // Alternative: check if pointer is 'good' in advance … use rarely!!
