@@ -38,13 +38,13 @@ void heapSort(S arr[], int n);
 
 //inline
 template<class S>
-void swap(S *a, S *b) {
+void swap2(S *a, S *b) {
     // todo!!!
-#if SORTING
+//#if SORTING
     S c = *a;
     *a = *b;
     *b = c;
-#endif
+//#endif
 }
 
 
@@ -61,7 +61,7 @@ void heapify(S arr[], int n, int i) {
         largest = r;
     // If largest is not root
     if (largest != i) {
-        swap(&arr[i], &arr[largest]);
+        swap2(&arr[i], &arr[largest]);
         // Recursively heapify the affected sub-tree
         heapify(arr, n, largest);
     }
@@ -80,7 +80,7 @@ void heapify(S arr[], int n, int i, float (valuator)(S &)) {
         largest = r;
     // If largest is not root
     if (largest != i) {
-        swap(&arr[i], &arr[largest]);
+        swap2(&arr[i], &arr[largest]);
         // Recursively heapify the affected sub-tree
         heapify(arr, n, largest, valuator);
     }
@@ -97,7 +97,7 @@ void heapify(S arr[], int n, int i, bool (comparator)(S &, S &)) {
     if (r < n && comparator(arr[r], arr[largest]))
         largest = r;
     if (largest != i) {
-        swap(&arr[i], &arr[largest]);
+        swap2(&arr[i], &arr[largest]);
         heapify(arr, n, largest, comparator);
     }
 }
@@ -110,7 +110,7 @@ void heapSort(S arr[], int n) {
     // One by one extract an element from heap
     for (int i = n - 1; i > 0; i--) {
         // Move current root to end
-        swap(&arr[0], &arr[i]);
+        swap2(&arr[0], &arr[i]);
         // call max heapify on the reduced heap
         heapify(arr, i, 0);
     }
@@ -121,7 +121,7 @@ void heapSort(S arr[], int n, float (valuator)(S &)) {
     for (int i = n / 2 - 1; i >= 0; i--)
         heapify(arr, n, i, valuator);
     for (int i = n - 1; i > 0; i--) {
-        swap(&arr[0], &arr[i]);
+        swap2(&arr[0], &arr[i]);
         heapify(arr, i, 0, valuator);
     }
 }
@@ -131,7 +131,7 @@ void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
     for (int i = n / 2 - 1; i >= 0; i--)
         heapify(arr, n, i, comparator);
     for (int i = n - 1; i > 0; i--) {
-        swap(&arr[0], &arr[i]);
+        swap2(&arr[0], &arr[i]);
         heapify(arr, i, 0, comparator);
     }
 }
