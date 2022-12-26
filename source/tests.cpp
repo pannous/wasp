@@ -1429,9 +1429,9 @@ void testIterate() {
 
 void testListVarargs() {
     const List<int> &list1 = List<int>(1, 2, 3, 0);
-    if (list1._size != 3)
+    if (list1.size_ != 3)
         breakpoint_helper
-    check(list1._size == 3);
+    check(list1.size_ == 3);
     check(list1[2] == 3);
 }
 
@@ -2780,14 +2780,10 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
-//    testMergeOwn();
-    testMergeGlobal();
-    quit()
-    assert_emit("x=0;while x++<11: nop;", 0);
-    assert_emit("i=1;while i<9:i++;i+1", 10);
+    assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
 
-    assert_run("parseLong('123000')+parseLong('456')", 123456);// may FAIL IN TRACE mode why?
-
+    testMergeOwn();
+    assert_emit("i=123;i+1", 124);
     assert_emit("add1 x:=x+1;add1(7)", 8)
     assert_emit("grows x:=x*2;grows(4)", 8)
     assert_emit("i=123;i+1", 124);
@@ -2821,6 +2817,7 @@ void testCurrent() {
 
     assert_emit("x='abcde';x#4", 'd');
 
+    assert_run("parseLong('123000')+parseLong('456')", 123456);
 
     assert_is("'hi'", "hi");
 

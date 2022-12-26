@@ -63,7 +63,7 @@ static bool tracing = false;
 #define trace(x)
 #define tracef(x, ...)
 #else
-#define trace(x) if(tracing)print(x)
+#define trace(x) if(tracing)println(x)
 #define tracef(x, ...) if(tracing)printf(x,__VA_ARGS__)
 #endif
 

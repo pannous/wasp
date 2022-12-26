@@ -105,7 +105,6 @@ String &name(Code &wstring) {// Shared string view, so don't worry about trailin
     int64 len = unsignedLEB128(wstring);
     auto nam = (char *) wstring.data + wstring.start;
 //    while(nam[0]<=33)nam++;// WTH! hiding strange bug where there is a byte behind unsignedLEB128. NOT FULLY consumed
-    // // BUG SINC 2022-12-09 ~16-17pm
     String *string = new String(nam, len, true);
     wstring.start += len;// advance internally
 //	if (len > 40)put(string);
@@ -405,13 +404,13 @@ List<String> demangle_args(String &fun) {
 #else
     todo("__cxa_demangle in wasm");
 #endif
-    if (status != 0 or string == 0)return 0;
+    if (status != 0 or string == 0)return (size_t) 0;
     String real_name = String(string);
     fixupGenerics(real_name.data, real_name.length);
-    if (!real_name or !real_name.contains("("))return 0;
+    if (!real_name or !real_name.contains("("))return (size_t) 0;
     String brace = real_name.substring(real_name.indexOf('(') + 1, real_name.indexOf(')'));//.clone();
     if (brace.contains("("))
-        return 0;// function pointers not supported yet "List<String>::sort(bool (*)(String&, String&))"
+        return (size_t) 0;// function pointers not supported yet "List<String>::sort(bool (*)(String&, String&))"
     return brace.split(", ");
 }
 
@@ -488,8 +487,8 @@ void consumeExportSection() {
         // todo: demangling doesn't yield return type, is wasm_signature ok?
         fun.signature.type_index = wasmFuncType;
         fun0.signature.type_index = wasmFuncType;// todo: remove duplicate, try fun0.signature=fun.signature at end again
-        if (not(0 <= wasmFuncType and wasmFuncType <= module->funcTypes._size))
-            check_silent(0 <= wasmFuncType and wasmFuncType <= module->funcTypes._size)
+        if (not(0 <= wasmFuncType and wasmFuncType <= module->funcTypes.size_))
+            check_silent(0 <= wasmFuncType and wasmFuncType <= module->funcTypes.size_)
         Signature &wasm_signature = module->funcTypes[wasmFuncType];
         Valtype returns = mapTypeToWasm(wasm_signature.return_types.last(Kind::undefined));
         if (wasm_signature.wasm_return_type == void_block) returns = void_block;

@@ -58,14 +58,12 @@ namespace wabt {
 		Type type;
 		bool mutable_;
 	};
-	using TypeMutVector = std::vector<TypeMut>;
+	using TypeMutVector = List<TypeMut>;
 
 	class BinaryReaderDelegate {
 	public:
 		struct State {
-			State(const uint8_t *data, Offset size)
-					: data(data), size(size), offset(0) {}
-
+			State(const uint8_t *data, Offset size) : data(data), size(size), offset(0) {}
 			const uint8_t *data;
 			Offset size;
 			Offset offset;

@@ -53,7 +53,7 @@ namespace wabt {
         String message;
     };
 
-    using Errors = std::vector<Error>;
+    using Errors = List<Error>;
 
 }  // namespace wabt
 

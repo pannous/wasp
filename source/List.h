@@ -39,9 +39,12 @@ void heapSort(S arr[], int n);
 //inline
 template<class S>
 void swap(S *a, S *b) {
+    // todo!!!
+#if SORTING
     S c = *a;
     *a = *b;
     *b = c;
+#endif
 }
 
 
@@ -138,30 +141,37 @@ void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
 template<class S>
 class List {
 public:
-    int header = array_header_32;
+    int header = array_header_32;// wasn't this moved down ?
     Type _type{};// reflection on template class S
-    int _size = 0;
+    int size_ = 0;
     int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
     // previous entries must be aligned to int64!
-    S *items;// In C++ References cannot be put into an array, if you try you get
+    S *items;// 32bit pointers in wasm! In C++ References cannot be put into an array, if you try you get
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
     // todo item references are UNSAFE after grow()
 //    S items[LIST_DEFAULT_CAPACITY];// array type is not assignable
 
-    List(int size = LIST_DEFAULT_CAPACITY) {
+
+//    List(int size = LIST_DEFAULT_CAPACITY) {
+//        capacity = size;
+//        items = (S *) calloc(size, sizeof(S));
+//    }
+
+    List(size_t size = LIST_DEFAULT_CAPACITY) {
         capacity = size;
         items = (S *) calloc(size, sizeof(S));
     }
 
+
     List(const List &old) : items(old.items) { // todo: memcopy?
-        _size = old._size;
+        size_ = old.size_;
     }
 
     List(Array_Header a) {
         if (a.length == 0xA0000000)
             error1("double header");// todo: just shift by 4 bytes
-        _size = a.length;
+        size_ = a.length;
         items = (S *) &a.data;// ok? copy data?
 //		todo("a.typ");
     }
@@ -181,12 +191,12 @@ public:
 
     // only Plain Old Data structures !
     List(S first, ...) : List() {
-        _size = 0;
+        size_ = 0;
         va_list args;// WORKS WITHOUT WASI! with stdargs
         va_start(args, first);
         S item = first;
         do {
-            items[_size++] = item;
+            items[size_++] = item;
             item = (S) va_arg(args, S);
         } while (item);
         va_end(args);
@@ -204,23 +214,30 @@ public:
 //        va_end(args);
 //    }
 
-    List(S *args, int size, bool share = true) {
+
+    List(S *args, int count, bool share = true) {
         if (args == 0)return;
-        check_silent(size < LIST_DEFAULT_CAPACITY)
-        _size = size;
+        check_silent(count < LIST_MAX_CAPACITY)
+        size_ = count;
         if (share)
             items = args;
         else {
-            items = (S *) calloc(sizeof(S), _size + 1);
-            memcpy(items, args, size);
+            if (capacity < size_) {
+                items = (S *) calloc(size_ + 1, sizeof(S));
+                capacity = size_;
+            }
+            memcpy(items, args, count);
         }
     }
 
+
+    List(S *data, S *end, bool share = true) : List(data, (end - data) / sizeof(S), share) {}
+
     List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
         if (args == 0)return;
-        while (args[_size] and _size < LIST_DEFAULT_CAPACITY)_size++;
-        items = (S *) calloc(sizeof(S), _size + 1);
-        int i = _size;
+        while (args[size_] and size_ < LIST_DEFAULT_CAPACITY)size_++;
+        items = (S *) calloc(sizeof(S), size_ + 1);
+        int i = size_;
         while (i-- > 0)items[i] = args[i];
     }
 
@@ -233,41 +250,52 @@ public:
 
 
 //	List(S args[]) {}
+//    ~List() { // double-free
+//        if (not shared)
+//            free(items);
+//    }
 
 #ifndef WASM
 
     List(const std::initializer_list<S> &_items) : List() {
         for (const S &s: _items) {
-            items[_size++] = s;
+            items[size_++] = s;
         }
     }
 
 #endif
 
-    int size() { return _size; };
+    size_t size() const { return size_; };
 
     void setType(Type type) {
         _type = type;
     }
 
     void grow() {
-        check_silent(capacity * 2 < LIST_MAX_CAPACITY);
-        S *neu = (S *) alloc(capacity * 2, sizeof(S));
+        auto new_size = capacity * 2;
+        check_silent(new_size < LIST_MAX_CAPACITY);
+        S *neu = (S *) alloc(new_size, sizeof(S));
         memcpy((void *) neu, (void *) items, capacity * sizeof(S));
+        free(items);
 //        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
 //      indeed List<int> FUCKS UP just by growing even without references
-//        free(items);
         items = neu;
-        capacity *= 2;
+        capacity = new_size;
     }
 
     S &add(S s) {
-        items[_size++] = s;
-        if (_size >= capacity)grow();
-        return items[_size - 1];
+        items[size_++] = s;
+        if (size_ >= capacity)grow();
+        return items[size_ - 1];
     }
 
-//	S &push_back(S s) {// vector compatible
+    S &add(S *s) {
+        items[size_++] = s;
+        if (size_ >= capacity)grow();
+        return items[size_ - 1];
+    }
+
+//	S &add(S s) {// vector compatible
 //		add(s)
 //	}
 
@@ -283,17 +311,21 @@ public:
 
 
     S &operator[](uint64 index) const {
-        if (index < 0 or index >= _size) /* and const means not auto_grow*/
-            error("index out of range : %d > %d"s % (int64) index % _size);
+        if (index < 0 or index >= size_) /* and const means not auto_grow*/
+            error("index out of range : %d > %d"s % (int64) index % size_);
         return items[index];
     }
 
 
     S &operator[](uint64 index) {
-        if (index == _size)_size++;// allow indexing one after end? todo ok?
-        if (_size >= capacity)grow();
-        if (index < 0 or index >= _size) /* and not auto_grow*/
-            error("index out of range : %d > %d"s % (int64) index % _size);
+        if (index == size_)size_++;// allow indexing one after end? todo ok?
+        if (size_ >= capacity)grow();
+//        if (index >= capacity)grow();
+        if (index < 0 or index >= size_) { /* and not auto_grow*/
+            if (index >= capacity)
+                error("index out of range : %d > %d"s % (int64) index % size_);
+            else size_ = index + 1;
+        }
         return items[index];
     }
 
@@ -306,9 +338,9 @@ public:
 //	}
 
 
-    bool operator==(List<S> other) {
-        if (_size != other.size())return false;
-        for (int i = 0; i < _size; ++i) {
+    bool operator==(List<S> other) const {
+        if (size_ != other.size())return false;
+        for (int i = 0; i < size_; ++i) {
             if (items[i] != other.items[i])return false;
         }
         return true;
@@ -319,12 +351,12 @@ public:
     }
 
     S *end() const {
-        return &items[_size];
+        return &items[size_];
     }
 
 
     int position(S s) {
-        for (int i = 0; i < _size; ++i) {
+        for (int i = 0; i < size_; ++i) {
             if (items[i] == s)return i;
             if (eq(items[i], s))return i;// char*
         }
@@ -332,7 +364,7 @@ public:
     }
 
     int position(S *s) {
-        for (int i = 0; i < _size; ++i)
+        for (int i = 0; i < size_; ++i)
             if (&items[i] == s)return i;
         return -1;
     }
@@ -345,21 +377,21 @@ public:
 //    }
 
     void sort(bool (comparator)(S a, S b)) {
-        heapSort(items, _size, comparator);
+        heapSort(items, size_, comparator);
     }
 
     List<S> &sort(bool (comparator)(S &, S &)) {
-        heapSort(items, _size, comparator);
+        heapSort(items, size_, comparator);
         return *this;
     }
 
     List<S> &sort(float (valuator)(S &a)) {
-        heapSort(items, _size, valuator);
+        heapSort(items, size_, valuator);
         return *this;
     }
 
     List<S> &sort() {
-        heapSort(items, _size);
+        heapSort(items, size_);
         return *this;
     }
 
@@ -381,33 +413,21 @@ public:
     void clear() {
         free(items);
         items = (S *) alloc(LIST_DEFAULT_CAPACITY, sizeof(S));
-        _size = 0;
+        size_ = 0;
     }
 
     void remove(S &item) {
         auto pos = position(item);
         if (pos < 0)return;
-        memcpy(items + pos, items + pos + 1, _size - pos);
-        _size--;
+        memcpy(items + pos, items + pos + 1, size_ - pos);
+        size_--;
     }
 
     bool remove(short position) {
-        if (position < 0 or _size <= 0 or position >= _size)return false;
-        memcpy((void *) (items + position), (void *) (items + position + 1), (_size - position) * sizeof(S));
-        _size--;
+        if (position < 0 or size_ <= 0 or position >= size_)return false;
+        memcpy((void *) (items + position), (void *) (items + position + 1), (size_ - position) * sizeof(S));
+        size_--;
         return true;
-    }
-
-    S last(S defaulty) {
-        if (_size < 1)
-            return defaulty;
-        return items[_size - 1];
-    }
-
-    S &last() {
-        if (_size < 1)
-            error("empty list");
-        return items[_size - 1];
     }
 
 //	List<S>& clone() { // todo just create all return lists with new List() OR return List<> objects (no references) copy by value ok!!
@@ -417,7 +437,7 @@ public:
 //		return  neu;
 //	}
     bool empty() const {
-        return _size == 0 or items == 0;
+        return size_ == 0 or items == 0;
     }
 
     void addAll(S *items[]) {
@@ -456,15 +476,63 @@ public:
         return s;
     }
 
-    S &back() {
-        if (_size <= 0)error("no back() in empty list.");
-        return items[_size - 1];
+    S &back() {// same as last()
+        if (size_ <= 0)error("no back() in empty list.");
+        return items[size_ - 1];
     }
 
-    void emplace_back() {
-        _size++;
-        if (_size >= capacity)grow();
+    S &last() {
+        if (size_ < 1) error("empty list");
+        return items[size_ - 1];
     }
+
+
+    S last(S defaulty) {
+        if (size_ < 1)
+            return defaulty;
+        return items[size_ - 1];
+    }
+
+
+    S &add() {
+        size_++;
+        if (size_ >= capacity)grow();
+        return last();
+    }
+
+    void resize(long new_size) {
+        if (new_size >= capacity)
+            grow();
+        size_ = new_size;
+    }
+
+    void append(S *value, size_t len) {
+        if (size_ + len >= capacity) {
+            grow();
+        }
+        memcpy((void *) &items[size_], (void *) value, len * sizeof(S));
+        size_ += len;
+    }
+
+//    void insert(S *position, S *value, S *end) {
+//        size_t len = end - value;
+//        if (_size + len >= capacity){
+//            grow();
+//            position = &last();
+//        }
+//        memcpy(position, value, len);
+//        _size += len;
+//    }
+
+    S *data() const {
+        return items;
+    }
+
+    S &first() {
+        return items[0];
+    }
+
+    bool shared = false;
 };
 
 void print(List<String> list);
