@@ -198,8 +198,9 @@ namespace wabt {
                 if (sec->section_code != SectionType::Custom &&
                     sec->section_code != SectionType::Start) {
                     const uint8_t *start = &binary_->data[sec->offset];
+                    const uint8_t *end = start + binary_->data.size_;
                     // Must point to one-past-the-end, but we can't dereference end().
-                    const uint8_t *end = start + binary_->size;
+//                    const uint8_t *end = start + binary_->size;
                     size_t leb_bytes = ReadU32Leb128(start, end, &sec->count);
                     if (leb_bytes == 0) {
                         WABT_FATAL("error reading section element count\n");
@@ -295,7 +296,8 @@ namespace wabt {
             read_options.read_debug_names = true;
             read_options.fail_on_custom_section_error = false;
             read_options.stop_on_first_error = false;
-            return ReadBinary(input_info->data, input_info->size, &reader, (const ReadBinaryOptions) read_options);
+            return ReadBinary(input_info->data.items, input_info->data.size_, &reader,
+                              (const ReadBinaryOptions) read_options);
 
 //            return ReadBinary(input_info->data.items, input_info->data.size(), &reader, (const ReadBinaryOptions) read_options);
         }
