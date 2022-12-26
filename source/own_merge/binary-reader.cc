@@ -416,20 +416,15 @@ namespace wabt {
 			return Result::Ok;
 		}
 
-		Result BinaryReader::ReadBytes(const void **out_data,
-		                               Address64 *out_data_size,
-		                               const char *desc) {
-			uint32_t data_size = 0;
-			CHECK_RESULT(ReadU32Leb128(&data_size, "data size"));
-
-			ERROR_UNLESS(state_.offset + data_size <= read_end_,
-			             "unable to read data: %s", desc);
-
-			*out_data = static_cast<const uint8_t *>(state_.data) + state_.offset;
-			*out_data_size = data_size;
-			state_.offset += data_size;
-			return Result::Ok;
-		}
+		Result BinaryReader::ReadBytes(const void **out_data, Address64 *out_data_size, const char *desc) {
+            uint32_t data_size = 0;
+            CHECK_RESULT(ReadU32Leb128(&data_size, "data size"));
+            ERROR_UNLESS(state_.offset + data_size <= read_end_, "unable to read data: %s", desc);
+            *out_data = state_.data + state_.offset;
+            *out_data_size = data_size;
+            state_.offset += data_size;
+            return Result::Ok;
+        }
 
 		Result BinaryReader::ReadIndex(Index *index, const char *desc) {
 			uint32_t value;
@@ -2672,19 +2667,19 @@ namespace wabt {
 				if (flags & SegExplicitIndex) {
 					CHECK_RESULT(ReadIndex(&memory_index, "data segment memory index"));
 				}
-				CALLBACK(BeginDataSegment, i, memory_index, flags);
-				if (!(flags & SegPassive)) {
-					CALLBACK(BeginDataSegmentInitExpr, i);
-					CHECK_RESULT(ReadInitExpr(i, memories[0].IndexType()));
-					CALLBACK(EndDataSegmentInitExpr, i);
-				}
+                CALLBACK(BeginDataSegment, i, memory_index, flags);
+                if (!(flags & SegPassive)) {
+                    CALLBACK(BeginDataSegmentInitExpr, i);
+                    CHECK_RESULT(ReadInitExpr(i, memories[0].IndexType()));
+                    CALLBACK(EndDataSegmentInitExpr, i);
+                }
 
-				Address64 data_size;
-				const void *data;
-				CHECK_RESULT(ReadBytes(&data, &data_size, "data segment data"));
-				CALLBACK(OnDataSegmentData, i, data, data_size);
-				CALLBACK(EndDataSegment, i);
-			}
+                Address64 data_size;
+                const void *data;
+                CHECK_RESULT(ReadBytes(&data, &data_size, "data segment data"));
+                CALLBACK(OnDataSegmentData, i, data, data_size); // created by BeginDataSegment
+                CALLBACK(EndDataSegment, i);
+            }
 			CALLBACK0(EndDataSection);
 			return Result::Ok;
 		}

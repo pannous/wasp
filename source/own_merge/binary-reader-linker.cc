@@ -239,27 +239,26 @@ namespace wabt {
 				if (!sec->data.data_segments) {
                     sec->data.data_segments = new List<DataSegment>();
 				}
-                sec->data.data_segments->add();
-				DataSegment &segment = sec->data.data_segments->back();
+                DataSegment &segment = sec->data.data_segments->add();
 				segment.memory_index = memory_index;
 				return Result::Ok;
 			}
 
 			Result BinaryReaderLinker::OnInitExprI32ConstExpr(Index index, uint32_t value) {
-				Section *sec = current_section_;
-				// kf  or not sec->data.data_segments or sec->data.data_segments->size() == 0 ±
-				if (sec->section_code != SectionType::Data) {
-					return Result::Ok;
-				}
-				DataSegment &segment = sec->data.data_segments->back();
-				segment.offset = value;
-				return Result::Ok;
-			}
+                Section *sec = current_section_;
+                // kf  or not sec->data.data_segments or sec->data.data_segments->size() == 0 ±
+                if (sec->section_code != SectionType::Data) {
+                    return Result::Ok;
+                }
+                DataSegment &segment = sec->data.data_segments->back(); // created in BeginDataSegment?
+                segment.offset = value;
+                return Result::Ok;
+            }
 
             Result BinaryReaderLinker::OnDataSegmentData(Index index, const void *src_data, Address64 size) {
                 Section *sec = current_section_;
                 if (not sec->data.data_segments)error("sec->data.data_segments not initialized");
-                DataSegment &segment = sec->data.data_segments->back();
+                DataSegment &segment = sec->data.data_segments->back(); // created in BeginDataSegment
                 segment.data = static_cast<const uint8_t *>(src_data);
                 segment.size = size;
                 return Result::Ok;
