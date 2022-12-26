@@ -196,7 +196,7 @@ public:
 
     // can also be directly cast (String)c_io_vector, BUT need to set codepoint_count=-1 after!
     String(c_io_vector ciov, bool shared = true) {
-        data = ciov.string;
+        data = (char *) ciov.string;
         length = ciov.length;
         shared_reference = shared;
     }
@@ -509,9 +509,9 @@ public:
         return *this % *c;
     }
 
-    String operator%(chars &c) {
-        return this->replace("%s", c);
-    }
+//    String operator%(chars &c) {
+//        return this->replace("%s", c);
+//    }
 
     String operator%(chars c) {
         if (!this->contains("%s"))return this->append(c);

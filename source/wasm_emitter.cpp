@@ -2126,7 +2126,7 @@ Code Call(char *symbol) {//},Node* args=0) {
 }
 
 [[nodiscard]]
-Code encodeString(char *str) {
+Code encodeString(chars str) {
     int len = (int) strlen(str);
     if (len >= 80) todo("leb len ");
     Code code;

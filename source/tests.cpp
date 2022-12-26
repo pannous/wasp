@@ -449,7 +449,7 @@ void testListGrow() {
     ja.grow();
     String &o3 = ja[0];
     check(o1.data == o3.data);
-    o3.data = "hu";
+    o3.data = (char *) "hu";
     check(o1.data == o3.data);
 }
 
@@ -1139,8 +1139,8 @@ void testUTFinCPP() {
 //		cout << uint_least32_t(c) << '\n';
 //		char a = '☹';// char (by definition) is one byte (WTF)
 //		char[10] a='☹';// NOPE
-    char *a = "☹"; // OK
-    byte *b = reinterpret_cast<byte *>(a);
+    chars a = "☹"; // OK
+    byte *b = (byte *) a;
     check_eq(a[0], (char) -30); // '\xe2'
     check_eq(a[1], (char) -104); // '\x98'
     check_eq(a[2], (char) -71); // '\xb9'
@@ -1817,7 +1817,7 @@ void testRootLists() {
 
 void testRoots() {
     check(NIL.value.longy == 0);
-    assert_is("'hello'", "hello");
+    assert_is((char *) "'hello'", "hello");
     skip(assert_is("hello", "hello", 0));// todo reference==string really?
     assert_is("True", True)
     assert_is("False", False)
@@ -1837,7 +1837,6 @@ void testRoots() {
             assert_is("()", NIL);
             assert_is("{}", NIL);// NOP
     )
-    assert_is("\"hello\"", "hello")
 }
 
 
@@ -1899,7 +1898,7 @@ void testNodeName() {
 
 void testIndentAsBlock() {
     todo_emit(
-            assert_is("a\n\tb", "a{b}")
+            assert_is((char *) "a\n\tb", "a{b}")
     )
 // 0x0E 	SO 	␎ 	^N 		Shift Out
 // 0x0F 	SI 	␏ 	^O 		Shift In

@@ -71,7 +71,7 @@ Code emitStringOp(Node &op, Function &context);
 Code signedLEB128(int i);
 
 [[nodiscard]]
-Code encodeString(char *String);
+Code encodeString(chars String);
 
 [[nodiscard]]
 Code emitValue(Node &node, Function &context);
