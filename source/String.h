@@ -367,7 +367,8 @@ public:
     int size(enum sizeMeasure by = by_codepoints) {
         if (by == by_char8s)return length;
         if (by == by_codepoints) {
-            if (codepoint_count < 0)extractCodepoints();
+            if (codepoint_count < 0)
+                extractCodepoints();
             return codepoint_count;
         }
         if (by == by_graphemes) {
@@ -1070,6 +1071,8 @@ void print(char const *s);
 //void print(char *s);
 //void print(const char *s);
 void print(String s);
+
+void println(Node &s);
 
 void println(String s); // ==
 void put(String s);

@@ -67,16 +67,16 @@ public:
         return 0;
     }
 
-    T *lookup(S &t) {
+    T *lookup(S &t) const {
         for (int i = 0; i < _size; i++)
             if (keys[i] == t)
                 return &values[i];
         return 0;
     }
 
-    S *has(T t) { return lookup(t); }
+    S *has(T t) const { return lookup(t); }
 
-    T *has(S s) {
+    T *has(S s) const {
         return lookup(s);
     }
 //    bool has(S s) {// todo has(nil) / has(String::empty) should be false
@@ -101,7 +101,7 @@ public:
         return _size;
     }
 
-    int size() {
+    int size() const {
         return _size;
     }
 
@@ -211,6 +211,11 @@ public:
         return keys[position(value)];
     }
 
+
+    S &operator[](size_t value) {// inverse lookup (!?)
+        return keys[value];
+    }
+
     T &value(int position) {
         check_silent(position >= 0);
         check_silent(position < size());
@@ -258,11 +263,11 @@ public:
         use_default = true;// we can't tell if defaulty is 'good' otherwise
     }
 
-    S *begin() {
+    S *begin() const {
         return &keys[0];
     }
 
-    S *end() {
+    S *end() const {
         return &keys[_size];
     }
 

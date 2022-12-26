@@ -38,11 +38,12 @@ String StringPrintf(const char *format, ...) {
     va_start(args, format);
     va_copy(args_copy, args);
     size_t len = vsnprintf(nullptr, 0, format, args) + 1;  // For \0.
-    std::vector<char> buffer(len);
+    List<char> buffer(len);
     va_end(args);
-    vsnprintf(buffer.data(), len, format, args_copy);
+
+    vsnprintf(buffer.items, len, format, args_copy);
     va_end(args_copy);
-	return String(buffer.data(), (int) len - 1);
+    return String(buffer.items, (int) len - 1);
 }
 
 #pragma clang diagnostic pop
@@ -71,35 +72,35 @@ namespace wabt {
 	};
 //	WABT_STATIC_ASSERT(WABT_ARRAY_SIZE(g_reloc_type_name) == kRelocTypeCount);
 
-	static Result ReadStdin(std::vector<uint8_t> *out_data) {
-		out_data->resize(0);
-		uint8_t buffer[4096];
-		while (true) {
-			size_t bytes_read = fread(buffer, 1, sizeof(buffer), stdin);
-			if (bytes_read == 0) {
-				if (ferror(stdin)) {
-					fprintf(stderr, "error reading from stdin: %s\n", strerror(errno));
-					return Result::Error;
-				}
-				return Result::Ok;
+    static Result ReadStdin(List<uint8_t> *out_data) {
+        out_data->resize(0);
+        uint8_t buffer[4096];
+        while (true) {
+            size_t bytes_read = fread(buffer, 1, sizeof(buffer), stdin);
+            if (bytes_read == 0) {
+                if (ferror(stdin)) {
+                    fprintf(stderr, "error reading from stdin: %s\n", strerror(errno));
+                    return Result::Error;
+                }
+                return Result::Ok;
 			}
 			size_t old_size = out_data->size();
-			out_data->resize(old_size + bytes_read);
-			memcpy(out_data->data() + old_size, buffer, bytes_read);
+            out_data->resize(old_size + bytes_read);
+            memcpy(out_data->items + old_size, buffer, bytes_read);
 		}
 	}
 
-	Result ReadFile(string_view filename, std::vector<uint8_t> *out_data) {
-		String filename_str = filename.data;
-		const char *filename_cstr = filename_str.data;
+    Result ReadFile(string_view filename, List<uint8_t> *out_data) {
+        String filename_str = filename.data;
+        const char *filename_cstr = filename_str.data;
 
-		if (filename == "-") {
-			return ReadStdin(out_data);
-		}
+        if (filename == "-") {
+            return ReadStdin(out_data);
+        }
 
-		struct stat statbuf;
-		if (stat(filename_cstr, &statbuf) < 0) {
-			fprintf(stderr, "%s: %s\n", filename_cstr, strerror(errno));
+        struct stat statbuf;
+        if (stat(filename_cstr, &statbuf) < 0) {
+            fprintf(stderr, "%s: %s\n", filename_cstr, strerror(errno));
 			return Result::Error;
 		}
 
@@ -134,11 +135,11 @@ namespace wabt {
 		}
 
 		out_data->resize(size);
-		if (size != 0 && fread(out_data->data(), size, 1, infile) != 1) {
-			fprintf(stderr, "%s: fread failed: %s\n", filename_cstr, strerror(errno));
-			fclose(infile);
-			return Result::Error;
-		}
+        if (size != 0 && fread(out_data->items, size, 1, infile) != 1) {
+            fprintf(stderr, "%s: fread failed: %s\n", filename_cstr, strerror(errno));
+            fclose(infile);
+            return Result::Error;
+        }
 
 		fclose(infile);
 		return Result::Ok;
