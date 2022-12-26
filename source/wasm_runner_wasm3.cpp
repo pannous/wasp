@@ -127,17 +127,17 @@ extern "C" int64 run_wasm(bytes wasm_bytes, int len) {
 //
 //#ifdef WASM3
 //Code readWasmW3(char const *file) {
-//	result = ParseWatModule(lexer.get(), &module, &errors, &parse_wast_options);
+//	result = ParseWatModule(lexer, &module, &errors, &parse_wast_options);
 //
 //	if (Succeeded(result) && validate_wasm) {
 //		ValidateOptions options(wabt_features);
-//		result = ValidateModule(module.get(), &errors, options);
+//		result = ValidateModule(module, &errors, options);
 //	}
 //
 //	if (Succeeded(result)) {
-//		MemoryStream stream(s_log_stream.get());
+//		MemoryStream stream(s_log_stream);
 //		write_binary_options.features = wabt_features;
-//		result = WriteBinaryModule(&stream, module.get(), write_binary_options);
+//		result = WriteBinaryModule(&stream, module, write_binary_options);
 //
 //	IM3Environment environment=m3_NewEnvironment();
 //	IM3Module module;

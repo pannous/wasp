@@ -176,7 +176,7 @@ namespace wabt {
 
 			Result ReadImportSection(Offset section_size) WABT_WARN_UNUSED;
 
-			Result ReadFunctionSection(Offset section_size) WABT_WARN_UNUSED;
+			Result ReadFuncTypeSection(Offset section_size) WABT_WARN_UNUSED;
 
 			Result ReadTableSection(Offset section_size) WABT_WARN_UNUSED;
 
@@ -200,33 +200,33 @@ namespace wabt {
 
 			Result ReadSections() WABT_WARN_UNUSED;
 
-			Result ReportUnexpectedOpcode(Opcode opcode, const char *message = nullptr);
+            Result ReportUnexpectedOpcode(Opcode opcode, const char *message = nullptr);
 
-			size_t read_end_ = 0;  // Either the section end or data_size.
-			BinaryReaderDelegate::State state_;
+            size_t read_end_ = 0;  // Either the section end or data_size.
+            BinaryReaderDelegate::State state_;
 //			BinaryReaderLogging logging_delegate_;
-			BinaryReaderDelegate *delegate_ = nullptr;
-			TypeVector param_types_;
-			TypeVector result_types_;
-			TypeMutVector fields_;
-			std::vector<Index> target_depths_;
-			const ReadBinaryOptions &options_;
-			SectionType last_known_section_ = SectionType::Invalid;
-			bool did_read_names_section_ = false;
-			bool reading_custom_section_ = false;
-			Index num_func_imports_ = 0;
-			Index num_table_imports_ = 0;
-			Index num_memory_imports_ = 0;
-			Index num_global_imports_ = 0;
-			Index num_tag_imports_ = 0;
-			Index num_function_signatures_ = 0;
-			Index num_function_bodies_ = 0;
-			Index data_count_ = kInvalidIndex;
-			std::vector<Limits> memories;
+            BinaryReaderDelegate *delegate_ = nullptr;
+            TypeVector param_types_;
+            TypeVector result_types_;
+            TypeMutVector fields_;
+            List<Index> target_depths_;
+            const ReadBinaryOptions &options_;
+            SectionType last_known_section_ = SectionType::Invalid;
+            bool did_read_names_section_ = false;
+            bool reading_custom_section_ = false;
+            Index num_func_imports_ = 0;
+            Index num_table_imports_ = 0;
+            Index num_memory_imports_ = 0;
+            Index num_global_imports_ = 0;
+            Index num_tag_imports_ = 0;
+            Index num_function_signatures_ = 0;
+            Index num_function_bodies_ = 0;
+            Index data_count_ = kInvalidIndex;
+            List<Limits> memories;
 
-			using ReadEndRestoreGuard =
-					ValueRestoreGuard<size_t, &BinaryReader::read_end_>;
-		};
+            using ReadEndRestoreGuard =
+                    ValueRestoreGuard<size_t, &BinaryReader::read_end_>;
+        };
 
 		BinaryReader::BinaryReader(const void *data,
 		                           size_t size,
@@ -275,7 +275,7 @@ namespace wabt {
 
 			message += ":";
 
-			std::vector<uint8_t> bytes = opcode.GetBytes();
+            List<uint8_t> bytes = opcode.GetBytes();
 			assert(bytes.size() > 0);
 
 			for (uint8_t byte: bytes) {
@@ -416,20 +416,15 @@ namespace wabt {
 			return Result::Ok;
 		}
 
-		Result BinaryReader::ReadBytes(const void **out_data,
-		                               Address64 *out_data_size,
-		                               const char *desc) {
-			uint32_t data_size = 0;
-			CHECK_RESULT(ReadU32Leb128(&data_size, "data size"));
-
-			ERROR_UNLESS(state_.offset + data_size <= read_end_,
-			             "unable to read data: %s", desc);
-
-			*out_data = static_cast<const uint8_t *>(state_.data) + state_.offset;
-			*out_data_size = data_size;
-			state_.offset += data_size;
-			return Result::Ok;
-		}
+		Result BinaryReader::ReadBytes(const void **out_data, Address64 *out_data_size, const char *desc) {
+            uint32_t data_size = 0;
+            CHECK_RESULT(ReadU32Leb128(&data_size, "data size"));
+            ERROR_UNLESS(state_.offset + data_size <= read_end_, "unable to read data: %s", desc);
+            *out_data = state_.data + state_.offset;
+            *out_data_size = data_size;
+            state_.offset += data_size;
+            return Result::Ok;
+        }
 
 		Result BinaryReader::ReadIndex(Index *index, const char *desc) {
 			uint32_t value;
@@ -674,7 +669,7 @@ namespace wabt {
 			out_page_limits->max = max;
 
 			// Have to keep a copy of these, to know how to interpret load/stores.
-			memories.push_back(*out_page_limits);
+            memories.add(*out_page_limits);
 			return Result::Ok;
 		}
 
@@ -2441,20 +2436,19 @@ namespace wabt {
 			return Result::Ok;
 		}
 
-		Result BinaryReader::ReadFunctionSection(Offset section_size) {
-			CALLBACK(BeginFunctionSection, section_size);
-			CHECK_RESULT(
-					ReadCount(&num_function_signatures_, "function signature count"));
-			CALLBACK(OnFunctionCount, num_function_signatures_);
-			for (Index i = 0; i < num_function_signatures_; ++i) {
-				Index func_index = num_func_imports_ + i;
-				Index sig_index;
-				CHECK_RESULT(ReadIndex(&sig_index, "function signature index"));
-				CALLBACK(OnFunction, func_index, sig_index);
-			}
-			CALLBACK0(EndFunctionSection);
-			return Result::Ok;
-		}
+        Result BinaryReader::ReadFuncTypeSection(Offset section_size) {
+            CALLBACK(BeginFunctionSection, section_size);
+            CHECK_RESULT(ReadCount(&num_function_signatures_, "function signature count"));
+            CALLBACK(OnFunctionCount, num_function_signatures_);
+            for (Index i = 0; i < num_function_signatures_; ++i) {
+                Index func_index = num_func_imports_ + i;
+                Index sig_index;
+                CHECK_RESULT(ReadIndex(&sig_index, "function signature index"));
+                CALLBACK(OnFunction, func_index, sig_index);
+            }
+            CALLBACK0(EndFunctionSection);
+            return Result::Ok;
+        }
 
 		Result BinaryReader::ReadTableSection(Offset section_size) {
 			CALLBACK(BeginTableSection, section_size);
@@ -2673,19 +2667,19 @@ namespace wabt {
 				if (flags & SegExplicitIndex) {
 					CHECK_RESULT(ReadIndex(&memory_index, "data segment memory index"));
 				}
-				CALLBACK(BeginDataSegment, i, memory_index, flags);
-				if (!(flags & SegPassive)) {
-					CALLBACK(BeginDataSegmentInitExpr, i);
-					CHECK_RESULT(ReadInitExpr(i, memories[0].IndexType()));
-					CALLBACK(EndDataSegmentInitExpr, i);
-				}
+                CALLBACK(BeginDataSegment, i, memory_index, flags);
+                if (!(flags & SegPassive)) {
+                    CALLBACK(BeginDataSegmentInitExpr, i);
+                    CHECK_RESULT(ReadInitExpr(i, memories[0].IndexType()));
+                    CALLBACK(EndDataSegmentInitExpr, i);
+                }
 
-				Address64 data_size;
-				const void *data;
-				CHECK_RESULT(ReadBytes(&data, &data_size, "data segment data"));
-				CALLBACK(OnDataSegmentData, i, data, data_size);
-				CALLBACK(EndDataSegment, i);
-			}
+                Address64 data_size;
+                const void *data;
+                CHECK_RESULT(ReadBytes(&data, &data_size, "data segment data"));
+                CALLBACK(OnDataSegmentData, i, data, data_size); // created by BeginDataSegment
+                CALLBACK(EndDataSegment, i);
+            }
 			CALLBACK0(EndDataSection);
 			return Result::Ok;
 		}
@@ -2750,28 +2744,28 @@ namespace wabt {
 							result |= section_result;
 						} else {
 							stop_on_first_error = false;
-						}
-						break;
-					case SectionType::Type:
-						section_result = ReadTypeSection(section_size);
-						result |= section_result;
-						break;
-					case SectionType::Import:
-						section_result = ReadImportSection(section_size);
-						result |= section_result;
-						break;
-					case SectionType::Function:
-						section_result = ReadFunctionSection(section_size);
-						result |= section_result;
-						break;
-					case SectionType::Table:
-						section_result = ReadTableSection(section_size);
-						result |= section_result;
-						break;
-					case SectionType::Memory:
-						section_result = ReadMemorySection(section_size);
-						result |= section_result;
-						break;
+                        }
+                        break;
+                    case SectionType::Type:
+                        section_result = ReadTypeSection(section_size);
+                        result |= section_result;
+                        break;
+                    case SectionType::Import:
+                        section_result = ReadImportSection(section_size);
+                        result |= section_result;
+                        break;
+                    case SectionType::FuncType: // connecting functions with Code to type (imports not handled here)
+                        section_result = ReadFuncTypeSection(section_size);
+                        result |= section_result;
+                        break;
+                    case SectionType::Table:
+                        section_result = ReadTableSection(section_size);
+                        result |= section_result;
+                        break;
+                    case SectionType::Memory:
+                        section_result = ReadMemorySection(section_size);
+                        result |= section_result;
+                        break;
 					case SectionType::Global:
 						section_result = ReadGlobalSection(section_size);
 						result |= section_result;

@@ -77,7 +77,7 @@ namespace wabt {
 		const Module &module;
 	private:
 		const Func *current_func_ = nullptr;
-		std::vector <Label> label_stack_;
+        List <Label> label_stack_;
 	};
 
 }  // namespace wabt

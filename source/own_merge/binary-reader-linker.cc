@@ -109,32 +109,32 @@ namespace wabt {
                     WABT_FATAL("relocation for custom sections not yet supported\n");
                 }
 
-				for (const std::unique_ptr<Section> &section: binary_->sections) {
+				for (auto section: binary_->sections) {
                     if ((int) section->section_code != (int) section_code) {
                         continue;
                     }
-					reloc_section_ = section.get();
-					return Result::Ok;
-				}
+                    reloc_section_ = section;
+                    return Result::Ok;
+                }
 
 				WABT_FATAL("section not found: %d\n", static_cast<int>(section_code));
 				return Result::Error;
 			}
 
 			Result BinaryReaderLinker::OnReloc(RelocType type, Offset offset, Index index, uint32_t addend) {
-				if (offset + RELOC_SIZE > reloc_section_->size) {
-					WABT_FATAL("invalid relocation offset: %zu\n", offset);
-				}
-				reloc_section_->relocations.emplace_back(type, offset, index, addend);
-				return Result::Ok;
-			}
+                if (offset + RELOC_SIZE > reloc_section_->size) {
+                    WABT_FATAL("invalid relocation offset: %zu\n", offset);
+                }
+                reloc_section_->relocations.add(Reloc(type, offset, index, addend));
+                return Result::Ok;
+            }
 
 			Result BinaryReaderLinker::OnImportFunc(Index import_index,
 			                                        String module_name,
 			                                        String field_name,
 			                                        Index global_index,
 			                                        Index sig_index) {
-				binary_->function_imports.emplace_back();
+                binary_->function_imports.add();
 				FunctionImport *import = &binary_->function_imports.back();
 				import->module_name = module_name.data;
                 import->name = field_name.data;
@@ -150,7 +150,7 @@ namespace wabt {
 			                                          Index global_index,
 			                                          Type type,
 			                                          bool mutable_) {
-				binary_->global_imports.emplace_back();
+                binary_->global_imports.add();
 				GlobalImport *import = &binary_->global_imports.back();
 				import->module_name = module_name.data;
 				import->name = field_name.data;
@@ -174,54 +174,49 @@ namespace wabt {
 				return Result::Ok;
 			}
 
-// unnecessary: use debug_names
 			Result BinaryReaderLinker::OnFunction(Index index, Index sig_index) {
-//  binary_.
-//  FuncType& func_type = module_.func_types[sig_index];
-				Func fun;// = {index, sig_index};
-				fun.index = index;// not starting with 0 if there are imports
-				fun.name = "";// unresolved
-				binary_->functions.push_back(fun);
-				return Result::Ok;
-//  module_.funcs.push_back(FuncDesc{func_type, {}, 0});
-//  func_types_.push_back(func_type);
-			}
+                Func fun;// = {index, sig_index};
+                fun.index = index;// not starting with 0 if there are imports
+                fun.name = "";// unresolved
+                // todo 2022-12 why was signature (type) index ignored here?
+                fun.type_index = sig_index;
+                binary_->functions.add(fun);
+                return Result::Ok;
+//              FuncType& func_type = binary_.func_types[sig_index];
+//              func_types_.add(func_type);
+            }
 
-			Result BinaryReaderLinker::BeginSection(Index section_index, SectionType section_code,
-			                                        Offset size) {
-				Section *sec = new Section();
-				binary_->sections.emplace_back(sec);
-				current_section_ = sec;
-				sec->section_code = section_code;
-				sec->size = size;
-				sec->offset = state->offset;
-				sec->binary = binary_;
+            Result BinaryReaderLinker::BeginSection(Index section_index, SectionType section_code, Offset size) {
+                Section *sec = new Section();
+                binary_->sections.add(sec);
+                current_section_ = sec;
+                sec->section_code = section_code;
+                sec->size = size;
+                sec->offset = state->offset;
+                sec->binary = binary_;
 
-				if (sec->section_code != SectionType::Custom &&
-				    sec->section_code != SectionType::Start) {
-					const uint8_t *start = &binary_->data[sec->offset];
-					// Must point to one-past-the-end, but we can't dereference end().
-					const uint8_t *end = &binary_->data.back() + 1;
-					size_t bytes_read = ReadU32Leb128(start, end, &sec->count);
-					if (bytes_read == 0) {
-						WABT_FATAL("error reading section element count\n");
-					}
-					sec->payload_offset = sec->offset + bytes_read;
-					sec->payload_size = sec->size - bytes_read;
-				}
-				return Result::Ok;
-			}
-
-			Result BinaryReaderLinker::OnTable(Index index,
-			                                   Type elem_type,
-			                                   const Limits *elem_limits) {
-				if (elem_limits->has_max && (elem_limits->max != elem_limits->initial)) {
-					WABT_FATAL("Tables with max != initial not supported by wabt-link\n");
-				}
-
-				binary_->table_elem_count = elem_limits->initial;
+                if (sec->section_code != SectionType::Custom &&
+                    sec->section_code != SectionType::Start) {
+                    const uint8_t *start = &binary_->data[sec->offset];
+                    // Must point to one-past-the-end, but we can't dereference end().
+                    const uint8_t *end = start + binary_->size;
+                    size_t leb_bytes = ReadU32Leb128(start, end, &sec->count);
+                    if (leb_bytes == 0) {
+                        WABT_FATAL("error reading section element count\n");
+                    }
+                    sec->payload_offset = sec->offset + leb_bytes;
+                    sec->payload_size = sec->size - leb_bytes;
+                }
 				return Result::Ok;
 			}
+
+            Result BinaryReaderLinker::OnTable(Index index, Type elem_type, const Limits *elem_limits) {
+                if (elem_limits->has_max && (elem_limits->max != elem_limits->initial)) {
+                    WABT_FATAL("Tables with max != initial not supported by wabt-link\n");
+                }
+                binary_->table_elem_count = elem_limits->initial;
+                return Result::Ok;
+            }
 
 			Result BinaryReaderLinker::OnElemSegmentFunctionIndexCount(Index index, Index count) {
 				Section *sec = current_section_;
@@ -242,47 +237,41 @@ namespace wabt {
 			Result BinaryReaderLinker::BeginDataSegment(Index index, Index memory_index, uint8_t options) {
 				Section *sec = current_section_;
 				if (!sec->data.data_segments) {
-					sec->data.data_segments = new std::vector<DataSegment>();
+                    sec->data.data_segments = new List<DataSegment>();
 				}
-				sec->data.data_segments->emplace_back();
-				DataSegment &segment = sec->data.data_segments->back();
+                DataSegment &segment = sec->data.data_segments->add();
 				segment.memory_index = memory_index;
 				return Result::Ok;
 			}
 
 			Result BinaryReaderLinker::OnInitExprI32ConstExpr(Index index, uint32_t value) {
-				Section *sec = current_section_;
-				// kf  or not sec->data.data_segments or sec->data.data_segments->size() == 0 ±
-				if (sec->section_code != SectionType::Data) {
-					return Result::Ok;
-				}
-				DataSegment &segment = sec->data.data_segments->back();
-				segment.offset = value;
-				return Result::Ok;
-			}
+                Section *sec = current_section_;
+                // kf  or not sec->data.data_segments or sec->data.data_segments->size() == 0 ±
+                if (sec->section_code != SectionType::Data) {
+                    return Result::Ok;
+                }
+                DataSegment &segment = sec->data.data_segments->back(); // created in BeginDataSegment?
+                segment.offset = value;
+                return Result::Ok;
+            }
 
-			Result BinaryReaderLinker::OnDataSegmentData(Index index,
-			                                             const void *src_data,
-			                                             Address64 size) {
-				Section *sec = current_section_;
-				if (not sec->data.data_segments)error("sec->data.data_segments not initialized");
-				DataSegment &segment = sec->data.data_segments->back();
-				segment.data = static_cast<const uint8_t *>(src_data);
-				segment.size = size;
-				return Result::Ok;
-			}
+            Result BinaryReaderLinker::OnDataSegmentData(Index index, const void *src_data, Address64 size) {
+                Section *sec = current_section_;
+                if (not sec->data.data_segments)error("sec->data.data_segments not initialized");
+                DataSegment &segment = sec->data.data_segments->back(); // created in BeginDataSegment
+                segment.data = static_cast<const uint8_t *>(src_data);
+                segment.size = size;
+                return Result::Ok;
+            }
 
-			Result BinaryReaderLinker::OnExport(Index index,
-			                                    ExternalKind kind,
-			                                    Index item_index,
-			                                    String name) {
-				binary_->exports.emplace_back();
-				Export *export_ = &binary_->exports.back();
-				export_->name = name.data;
-				export_->kind = kind;
-				export_->index = item_index;
-				return Result::Ok;
-			}
+            Result BinaryReaderLinker::OnExport(Index index, ExternalKind kind, Index item_index, String name) {
+                binary_->exports.add();
+                Export *export_ = &binary_->exports.back();
+                export_->name = name.data;
+                export_->kind = kind;
+                export_->index = item_index;
+                return Result::Ok;
+            }
 
 			Result BinaryReaderLinker::BeginNamesSection(Offset size) {
 				binary_->debug_names.resize(binary_->function_count + binary_->function_imports.size());
@@ -306,8 +295,9 @@ namespace wabt {
             read_options.read_debug_names = true;
             read_options.fail_on_custom_section_error = false;
             read_options.stop_on_first_error = false;
-            return ReadBinary(input_info->data.data(), input_info->data.size(), &reader,
-                              (const ReadBinaryOptions) read_options);
+            return ReadBinary(input_info->data, input_info->size, &reader, (const ReadBinaryOptions) read_options);
+
+//            return ReadBinary(input_info->data.items, input_info->data.size(), &reader, (const ReadBinaryOptions) read_options);
         }
 
     }  // namespace link
