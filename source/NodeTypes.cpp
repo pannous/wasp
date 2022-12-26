@@ -186,6 +186,8 @@ Type mapType(String arg) {
     else if (arg == "Signature")return ignore;
     else if (arg == "Wasp")return ignore;
     else if (arg == "WitReader")return ignore;
+    else if (arg == "if")
+        return ignore; // bug!
     else if (arg == "__cxxabiv1")return ignore;
     else if (arg == "...")return ignore;// varargs, todo interesting!
     else if (arg.startsWith("Map")) return maps;

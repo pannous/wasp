@@ -715,6 +715,11 @@ void println(String s) {
     newline();
 }
 
+
+void println(Node &s) {
+    println(s.serialize());
+}
+
 void put(String s) {
     put_chars(s.data, s.length);
     newline();
