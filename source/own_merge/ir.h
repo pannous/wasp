@@ -29,8 +29,9 @@
 
 #include "binding-hash.h"
 #include "common.h"
-#include "intrusive-list.h"
+//#include "intrusive-list.h"
 #include "opcode.h"
+#include "../Map.h"
 //#include "string-view.h"
 
 namespace wabt {
@@ -91,7 +92,7 @@ namespace wabt {
 		};
 	};
 
-	typedef std::vector<Var> VarVector;
+	typedef List<Var> VarVector;
 
 	struct Const {
 		static constexpr uintptr_t kRefNullBits = ~uintptr_t(0);
@@ -241,7 +242,7 @@ namespace wabt {
 		ExpectedNan nan_[4];
 	};
 
-	typedef std::vector<Const> ConstVector;
+    typedef List<Const> ConstVector;
 
 	struct FuncSignature {
 		TypeVector param_types;
@@ -319,7 +320,7 @@ namespace wabt {
 		explicit StructType(string_view name = string_view())
 				: TypeEntry(TypeEntryKind::Struct) {}
 
-		std::vector<Field> fields;
+        List<Field> fields;
 	};
 
 	class ArrayType : public TypeEntry {
@@ -420,7 +421,7 @@ namespace wabt {
 
 	class Expr;
 
-	typedef intrusive_list<Expr> ExprList;
+	typedef List<Expr> ExprList;
 
 	typedef FuncDeclaration BlockDeclaration;
 
@@ -450,7 +451,7 @@ namespace wabt {
 		}
 	};
 
-	typedef std::vector<Catch> CatchVector;
+    typedef List<Catch> CatchVector;
 
 	enum class TryKind {
 		Plain,
@@ -458,17 +459,17 @@ namespace wabt {
 		Delegate
 	};
 
-	class Expr : public intrusive_list_base<Expr> {
-	public:
-		WABT_DISALLOW_COPY_AND_ASSIGN(Expr);
+    class Expr : public List<Expr> {
+    public:
+        WABT_DISALLOW_COPY_AND_ASSIGN(Expr);
 
-		Expr() = delete;
+        Expr() = delete;
 
-		virtual ~Expr() = default;
+        virtual ~Expr() = default;
 
-		ExprType type() const { return type_; }
+        ExprType type() const { return type_; }
 
-		Location loc;
+        Location loc;
 
 	protected:
 		explicit Expr(ExprType type, const Location &loc = Location())
@@ -762,92 +763,28 @@ namespace wabt {
 		FuncDeclaration decl;
 	};
 
-	class LocalTypes {
-	public:
-		typedef std::pair<Type, Index> Decl;
-		typedef std::vector<Decl> Decls;
+    typedef Map<Type, Index> LocalTypes;
 
-		struct const_iterator {
-			const_iterator(Decls::const_iterator decl, Index index)
-					: decl(decl), index(index) {}
+    struct Func {
+        explicit Func(string_view name) : name(name.data) {}
 
-			Type operator*() const { return decl->first; }
+        Type GetParamType(Index index) const { return decl.GetParamType(index); }
 
-			const_iterator &operator++();
+        Type GetResultType(Index index) const { return decl.GetResultType(index); }
 
-			const_iterator operator++(int);
+        Type GetLocalType(Index index);// const;
 
-			Decls::const_iterator decl;
-			Index index;
-		};
+        Type GetLocalType(const Var &var);// const;
 
-		void Set(const TypeVector &);
+        Index GetNumParams() const { return decl.GetNumParams(); }
 
-		const Decls &decls() const { return decls_; }
+        Index GetNumLocals() const { return local_types.size(); }
 
-		void AppendDecl(Type type, Index count) {
-			if (count != 0) {
-				decls_.emplace_back(type, count);
-			}
-		}
+        Index GetNumParamsAndLocals() const {
+            return GetNumParams() + GetNumLocals();
+        }
 
-		Index size() const;
-
-		Type operator[](Index) const;
-
-		const_iterator begin() const { return {decls_.begin(), 0}; }
-
-		const_iterator end() const { return {decls_.end(), 0}; }
-
-	private:
-		Decls decls_;
-	};
-
-	inline LocalTypes::const_iterator &LocalTypes::const_iterator::operator++() {
-		++index;
-		if (index >= decl->second) {
-			++decl;
-			index = 0;
-		}
-		return *this;
-	}
-
-	inline LocalTypes::const_iterator LocalTypes::const_iterator::operator++(int) {
-		const_iterator result = *this;
-		operator++();
-		return result;
-	}
-
-	inline bool operator==(const LocalTypes::const_iterator &lhs,
-	                       const LocalTypes::const_iterator &rhs) {
-		return lhs.decl == rhs.decl && lhs.index == rhs.index;
-	}
-
-	inline bool operator!=(const LocalTypes::const_iterator &lhs,
-	                       const LocalTypes::const_iterator &rhs) {
-		return !operator==(lhs, rhs);
-	}
-
-	struct Func {
-		explicit Func(string_view name) : name(name.data) {}
-
-		Type GetParamType(Index index) const { return decl.GetParamType(index); }
-
-		Type GetResultType(Index index) const { return decl.GetResultType(index); }
-
-		Type GetLocalType(Index index) const;
-
-		Type GetLocalType(const Var &var) const;
-
-		Index GetNumParams() const { return decl.GetNumParams(); }
-
-		Index GetNumLocals() const { return local_types.size(); }
-
-		Index GetNumParamsAndLocals() const {
-			return GetNumParams() + GetNumLocals();
-		}
-
-		Index GetNumResults() const { return decl.GetNumResults(); }
+        Index GetNumResults() const { return decl.GetNumResults(); }
 
 		Index GetLocalIndex(const Var &) const;
 
@@ -894,7 +831,7 @@ namespace wabt {
 		Type type;  // Only used when kind == RefNull
 	};
 
-	typedef std::vector<ElemExpr> ElemExprVector;
+    typedef List<ElemExpr> ElemExprVector;
 
 	struct ElemSegment {
 		explicit ElemSegment(string_view name) : name(name.data) {}
@@ -924,8 +861,8 @@ namespace wabt {
 		SegmentKind kind = SegmentKind::Active;
 		String name;
 		Var memory_var;
-		ExprList offset;
-		std::vector<uint8_t> data;
+        ExprList offset;
+        List<uint8_t> data;
 	};
 
 	class Import {
@@ -1017,17 +954,17 @@ namespace wabt {
 		Tag
 	};
 
-	class ModuleField : public intrusive_list_base<ModuleField> {
-	public:
-		WABT_DISALLOW_COPY_AND_ASSIGN(ModuleField);
+    class ModuleField : public List<ModuleField> {
+    public:
+        WABT_DISALLOW_COPY_AND_ASSIGN(ModuleField);
 
-		ModuleField() = delete;
+        ModuleField() = delete;
 
-		virtual ~ModuleField() = default;
+        virtual ~ModuleField() = default;
 
-		ModuleFieldType type() const { return type_; }
+        ModuleFieldType type() const { return type_; }
 
-		Location loc;
+        Location loc;
 
 	protected:
 		ModuleField(ModuleFieldType type, const Location &loc)
@@ -1036,7 +973,7 @@ namespace wabt {
 		ModuleFieldType type_;
 	};
 
-	typedef intrusive_list<ModuleField> ModuleFieldList;
+    typedef List<ModuleField> ModuleFieldList;
 
 	template<ModuleFieldType TypeEnum>
 	class ModuleFieldMixin : public ModuleField {
@@ -1071,12 +1008,12 @@ namespace wabt {
 		explicit ImportModuleField(const Location &loc = Location())
 				: ModuleFieldMixin<ModuleFieldType::Import>(loc) {}
 
-		explicit ImportModuleField(std::unique_ptr<Import> import,
-		                           const Location &loc = Location())
-				: ModuleFieldMixin<ModuleFieldType::Import>(loc),
-				  import(std::move(import)) {}
+		explicit ImportModuleField(Import *import,
+                                   const Location &loc = Location())
+                : ModuleFieldMixin<ModuleFieldType::Import>(loc),
+                  import(std::move(import)) {}
 
-		std::unique_ptr<Import> import;
+        Import *import;
 	};
 
 	class ExportModuleField : public ModuleFieldMixin<ModuleFieldType::Export> {
@@ -1092,7 +1029,7 @@ namespace wabt {
 		explicit TypeModuleField(const Location &loc = Location())
 				: ModuleFieldMixin<ModuleFieldType::Type>(loc) {}
 
-		std::unique_ptr<TypeEntry> type;
+        TypeEntry *type;
 	};
 
 	class TableModuleField : public ModuleFieldMixin<ModuleFieldType::Table> {
@@ -1205,72 +1142,74 @@ namespace wabt {
 
 		Index GetElemSegmentIndex(const Var &) const;
 
-		bool IsImport(ExternalKind kind, const Var &) const;
+        bool IsImport(ExternalKind kind, const Var &) const;
 
-		bool IsImport(const Export &export_) const {
-			return IsImport(export_.kind, export_.var);
-		}
+        bool IsImport(const Export &export_) const {
+            return IsImport(export_.kind, export_.var);
+        }
 
-		// TODO(binji): move this into a builder class?
-		void AppendField(std::unique_ptr<DataSegmentModuleField>);
+        // TODO(binji): move this into a builder class?
+        void AppendField(DataSegmentModuleField *);
 
-		void AppendField(std::unique_ptr<ElemSegmentModuleField>);
+        void AppendField(DataSegmentModuleField &);
 
-		void AppendField(std::unique_ptr<TagModuleField>);
+        void AppendField(ElemSegmentModuleField *);
 
-		void AppendField(std::unique_ptr<ExportModuleField>);
+        void AppendField(TagModuleField *);
 
-		void AppendField(std::unique_ptr<FuncModuleField>);
+        void AppendField(ExportModuleField *);
 
-		void AppendField(std::unique_ptr<TypeModuleField>);
+        void AppendField(FuncModuleField *);
 
-		void AppendField(std::unique_ptr<GlobalModuleField>);
+        void AppendField(TypeModuleField *);
 
-		void AppendField(std::unique_ptr<ImportModuleField>);
+        void AppendField(GlobalModuleField *);
 
-		void AppendField(std::unique_ptr<MemoryModuleField>);
+        void AppendField(ImportModuleField *);
 
-		void AppendField(std::unique_ptr<StartModuleField>);
+        void AppendField(MemoryModuleField *);
 
-		void AppendField(std::unique_ptr<TableModuleField>);
+        void AppendField(StartModuleField *);
 
-		void AppendField(std::unique_ptr<ModuleField>);
+        void AppendField(TableModuleField *);
+
+        void AppendField(ModuleField *);
 
 		void AppendFields(ModuleFieldList *);
 
 		Location loc;
 		String name;
-		ModuleFieldList fields;
+        ModuleFieldList fields;
 
-		Index num_tag_imports = 0;
-		Index num_func_imports = 0;
-		Index num_table_imports = 0;
-		Index num_memory_imports = 0;
-		Index num_global_imports = 0;
+        Index num_tag_imports = 0;
+        Index num_func_imports = 0;
+        Index num_table_imports = 0;
+        Index num_memory_imports = 0;
+        Index num_global_imports = 0;
 
-		// Cached for convenience; the pointers are shared with values that are
-		// stored in either ModuleField or Import.
-		std::vector<Tag *> tags;
-		std::vector<Func *> funcs;
-		std::vector<Global *> globals;
-		std::vector<Import *> imports;
-		std::vector<Export *> exports;
-		std::vector<TypeEntry *> types;
-		std::vector<Table *> tables;
-		std::vector<ElemSegment *> elem_segments;
-		std::vector<Memory *> memories;
-		std::vector<DataSegment *> data_segments;
-		std::vector<Var *> starts;
+        // Cached for convenience; the pointers are shared with values that are
+        // stored in either ModuleField or Import.
+        List<Tag *> tags;
+        List<Func *> funcs;
+        List<Global *> globals;
+        List<Import *> imports;
+        List<Export *> exports;
+        List<TypeEntry *> types;
+        List<Table *> tables;
+        List<ElemSegment *> elem_segments;
+        List<Memory *> memories;
+        List<DataSegment *> data_segments;
+        List<Var *> starts;
 
-		BindingHash tag_bindings;
-		BindingHash func_bindings;
-		BindingHash global_bindings;
-		BindingHash export_bindings;
-		BindingHash type_bindings;
-		BindingHash table_bindings;
-		BindingHash memory_bindings;
-		BindingHash data_segment_bindings;
-		BindingHash elem_segment_bindings;
+        BindingHash tag_bindings;
+        BindingHash func_bindings;
+        BindingHash global_bindings;
+        BindingHash export_bindings;
+        BindingHash type_bindings;
+        BindingHash table_bindings;
+        BindingHash memory_bindings;
+        BindingHash data_segment_bindings;
+        BindingHash elem_segment_bindings;
 	};
 
 	enum class ScriptModuleType {
@@ -1322,8 +1261,8 @@ namespace wabt {
 		const Location &location() const override { return loc; }
 
 		Location loc;
-		String name;
-		std::vector<uint8_t> data;
+        String name;
+        List<uint8_t> data;
 	};
 
 	typedef DataScriptModule<ScriptModuleType::Binary> BinaryScriptModule;
@@ -1355,7 +1294,7 @@ namespace wabt {
 		ActionType type_;
 	};
 
-	typedef std::unique_ptr<Action> ActionPtr;
+    typedef Action *ActionPtr;
 
 	template<ActionType TypeEnum>
 	class ActionMixin : public Action {
@@ -1463,8 +1402,8 @@ namespace wabt {
 	template<CommandType TypeEnum>
 	class AssertModuleCommand : public CommandMixin<TypeEnum> {
 	public:
-		std::unique_ptr<ScriptModule> module;
-		String text;
+        ScriptModule *module;
+        String text;
 	};
 
 	typedef AssertModuleCommand<CommandType::AssertMalformed>
@@ -1475,8 +1414,8 @@ namespace wabt {
 	typedef AssertModuleCommand<CommandType::AssertUninstantiable>
 			AssertUninstantiableCommand;
 
-	typedef std::unique_ptr<Command> CommandPtr;
-	typedef std::vector<CommandPtr> CommandPtrVector;
+    typedef Command *CommandPtr;
+    typedef List<CommandPtr> CommandPtrVector;
 
 	struct Script {
 		WABT_DISALLOW_COPY_AND_ASSIGN(Script);
@@ -1493,10 +1432,10 @@ namespace wabt {
 		BindingHash module_bindings;
 	};
 
-	void MakeTypeBindingReverseMapping(
-			size_t num_types,
-			const BindingHash &bindings,
-			std::vector<String> *out_reverse_mapping);
+    void MakeTypeBindingReverseMapping(
+            size_t num_types,
+            const BindingHash &bindings,
+            List<String> *out_reverse_mapping);
 
 }  // namespace wabt
 

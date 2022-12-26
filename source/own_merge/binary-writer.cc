@@ -43,21 +43,22 @@
 
 namespace wabt {
 
-//	void WriteStr(Stream *stream, const String s, const char *desc, PrintChars print_chars) {
-//		WriteU32Leb128(stream, s.size(), "string length");
-//		stream->WriteData(s.c_str(), s.size(), desc, print_chars);
-//	}
-	void WriteStr(Stream *stream, String s, const char *desc, PrintChars print_chars) {
-		WriteU32Leb128(stream, s.length, "string length");
-		stream->WriteData(s.data, s.length, desc, print_chars);
-	}
+    void WriteStr(Stream *stream, const String &s, const char *desc, PrintChars print_chars) {
+        WriteU32Leb128(stream, s.length, "string length");
+        stream->WriteData(s.data, s.length, desc, print_chars);
+    }
 
-	void WriteOpcode(Stream *stream, Opcode opcode) {
-		if (opcode.HasPrefix()) {
-			stream->WriteU8(opcode.GetPrefix(), "prefix");
-			WriteU32Leb128(stream, opcode.GetCode(), opcode.GetName());
-		} else {
-			stream->WriteU8(opcode.GetCode(), opcode.GetName());
+    void WriteStr(Stream *stream, String &s, const char *desc, PrintChars print_chars) {
+        WriteU32Leb128(stream, s.length, "string length");
+        stream->WriteData(s.data, s.length, desc, print_chars);
+    }
+
+    void WriteOpcode(Stream *stream, Opcode opcode) {
+        if (opcode.HasPrefix()) {
+            stream->WriteU8(opcode.GetPrefix(), "prefix");
+            WriteU32Leb128(stream, opcode.GetCode(), opcode.GetName());
+        } else {
+            stream->WriteU8(opcode.GetCode(), opcode.GetName());
 		}
 	}
 
@@ -110,7 +111,7 @@ namespace wabt {
 
 			const char *name;
 			Index section_index;
-			std::vector<Reloc> relocations;
+            List<Reloc> relocations;
 		};
 
 		class Symbol {
@@ -241,39 +242,39 @@ namespace wabt {
 			}
 		};
 
-		class SymbolTable {
-			WABT_DISALLOW_COPY_AND_ASSIGN(SymbolTable);
+        class SymbolTable {
+            WABT_DISALLOW_COPY_AND_ASSIGN(SymbolTable);
 
-			std::vector<Symbol> symbols_;
+            List<Symbol> symbols_;
 
-			std::vector<Index> functions_;
-			std::vector<Index> tables_;
-			std::vector<Index> globals_;
+            List<Index> functions_;
+            List<Index> tables_;
+            List<Index> globals_;
 
-			std::set<String> seen_names_;
+            std::set<String> seen_names_;
 
-			Result EnsureUnique(const String &name) {
-				if (seen_names_.count(name)) {
-					fprintf(stderr, "error: duplicate symbol when writing relocatable "
-					                "binary: %s\n", &name[0]);
-					return Result::Error;
-				}
-				seen_names_.insert(name);
+            Result EnsureUnique(const String &name) {
+                if (seen_names_.count(name)) {
+                    fprintf(stderr, "error: duplicate symbol when writing relocatable "
+                                    "binary: %s\n", &name[0]);
+                    return Result::Error;
+                }
+                seen_names_.insert(name);
 				return Result::Ok;
 			};
 
-			template<typename T>
-			Result AddSymbol(std::vector<Index> *map, String name, bool imported, bool exported, T &&sym) {
-				uint8_t flags = 0;
-				if (imported) {
-					flags |= WABT_SYMBOL_FLAG_UNDEFINED;
-					// Wabt currently has no way for a user to explicitly specify the name of
-					// an import, so never set the EXPLICIT_NAME flag, and ignore any display
-					// name fabricated by wabt.
-					name = String();
-				} else {
-					if (name.empty()) {
-						// Definitions without a name are local.
+            template<typename T>
+            Result AddSymbol(List<Index> *map, String name, bool imported, bool exported, T &&sym) {
+                uint8_t flags = 0;
+                if (imported) {
+                    flags |= WABT_SYMBOL_FLAG_UNDEFINED;
+                    // Wabt currently has no way for a user to explicitly specify the name of
+                    // an import, so never set the EXPLICIT_NAME flag, and ignore any display
+                    // name fabricated by wabt.
+                    name = String();
+                } else {
+                    if (name.empty()) {
+                        // Definitions without a name are local.
 						flags |= uint8_t(SymbolBinding::Local);
 						flags |= uint8_t(SymbolVisibility::Hidden);
 					} else {
@@ -283,27 +284,27 @@ namespace wabt {
 						if (name[0] == '$')name.shift(1);
 					}
 
-					if (exported) {
-						CHECK_RESULT(EnsureUnique(name));
-						flags |= uint8_t(SymbolVisibility::Hidden);
-						flags |= WABT_SYMBOL_FLAG_NO_STRIP;
-					}
-				}
-				if (exported) {
-					flags |= WABT_SYMBOL_FLAG_EXPORTED;
-				}
+                    if (exported) {
+                        CHECK_RESULT(EnsureUnique(name));
+                        flags |= uint8_t(SymbolVisibility::Hidden);
+                        flags |= WABT_SYMBOL_FLAG_NO_STRIP;
+                    }
+                }
+                if (exported) {
+                    flags |= WABT_SYMBOL_FLAG_EXPORTED;
+                }
 
-				map->push_back(symbols_.size());
-				symbols_.emplace_back(name, flags, sym);
-				return Result::Ok;
-			};
+                map->add(symbols_.size());
+                symbols_.add(Symbol(name, flags, sym));
+                return Result::Ok;
+            };
 
-			Index SymbolIndex(const std::vector<Index> &table, Index index) const {
-				// For well-formed modules, an index into (e.g.) functions_ will always be
-				// within bounds; the out-of-bounds case here is just to allow --relocatable
-				// to write known-invalid modules.
-				return index < table.size() ? table[index] : kInvalidIndex;
-			}
+            Index SymbolIndex(const List<Index> &table, Index index) const {
+                // For well-formed modules, an index into (e.g.) functions_ will always be
+                // within bounds; the out-of-bounds case here is just to allow --relocatable
+                // to write known-invalid modules.
+                return index < table.size() ? table[index] : kInvalidIndex;
+            }
 
 		public:
 			SymbolTable() {}
@@ -361,7 +362,7 @@ namespace wabt {
 				return Result::Ok;
 			}
 
-			const std::vector<Symbol> &symbols() const { return symbols_; }
+            const List<Symbol> &symbols() const { return symbols_; }
 
 			Index FunctionSymbolIndex(Index index) const {
 				return SymbolIndex(functions_, index);
@@ -457,16 +458,16 @@ namespace wabt {
 
 			void WriteLinkingSection();
 
-			template<typename T>
-			void WriteNames(const std::vector<T *> &elems, NameSectionSubsection type);
+            template<typename T>
+            void WriteNames(const List<T *> &elems, NameSectionSubsection type);
 
 			Stream *stream_;
 			const WriteBinaryOptions &options_;
 			const Module *module_;
 
-			SymbolTable symtab_;
-			std::vector<RelocSection> reloc_sections_;
-			RelocSection *current_reloc_section_ = nullptr;
+            SymbolTable symtab_;
+            List<RelocSection> reloc_sections_;
+            RelocSection *current_reloc_section_ = nullptr;
 
 			Index section_count_ = 0;
 			size_t last_section_offset_ = 0;
@@ -639,8 +640,8 @@ namespace wabt {
 			// Add a new reloc section if needed
 			if (!current_reloc_section_ ||
 			    current_reloc_section_->section_index != section_count_) {
-				reloc_sections_.emplace_back(GetSectionName(last_section_type_), section_count_);
-				current_reloc_section_ = &reloc_sections_.back();
+                reloc_sections_.add(RelocSection(GetSectionName(last_section_type_), section_count_));
+                current_reloc_section_ = &reloc_sections_.back();
 			}
 
 			// Add a new relocation to the curent reloc section
@@ -652,8 +653,7 @@ namespace wabt {
 				// no extra warning here is needed.
 				return;
 			}
-			current_reloc_section_->relocations.emplace_back(reloc_type, offset,
-			                                                 symbol_index);
+            current_reloc_section_->relocations.add(Reloc(reloc_type, offset, symbol_index));
 		}
 
 		void BinaryWriter::WriteU32Leb128WithReloc(Index index,
@@ -1135,18 +1135,19 @@ namespace wabt {
 
 		void BinaryWriter::WriteFuncLocals(const Func *func,
 		                                   const LocalTypes &local_types) {
-			if (local_types.size() == 0) {
-				WriteU32Leb128(stream_, 0, "local decl count");
-				return;
-			}
+            if (local_types.size() == 0) {
+                WriteU32Leb128(stream_, 0, "local decl count");
+                return;
+            }
 
-			Index local_decl_count = local_types.decls().size();
-			WriteU32Leb128(stream_, local_decl_count, "local decl count");
-			for (auto decl: local_types.decls()) {
-				WriteU32Leb128(stream_, decl.second, "local type count");
-				WriteType(stream_, decl.first);
-			}
-		}
+            Index local_decl_count = local_types.size();
+            WriteU32Leb128(stream_, local_decl_count, "local decl count");
+            for (auto decl: local_types) {
+                auto x = *local_types.has(decl);
+                WriteU32Leb128(stream_, x, "local type count");
+                WriteType(stream_, decl);
+            }
+        }
 
 		void BinaryWriter::WriteFunc(const Func *func) {
 			WriteFuncLocals(func, func->local_types);
@@ -1179,7 +1180,7 @@ namespace wabt {
 //			snprintf(section_name, sizeof(section_name), "%s.%s", WABT_BINARY_SECTION_RELOC, reloc_section->name);
 			BeginCustomSection(section_name);
 			WriteU32Leb128(stream_, reloc_section->section_index, "reloc section index");
-			const std::vector<Reloc> &relocs = reloc_section->relocations;
+            const List<Reloc> &relocs = reloc_section->relocations;
 			WriteU32Leb128(stream_, relocs.size(), "num relocs");
 
 			for (const Reloc &reloc: relocs) {
@@ -1224,7 +1225,7 @@ namespace wabt {
 		void BinaryWriter::WriteLinkingSection() {
 			BeginCustomSection(WABT_BINARY_SECTION_LINKING);
 			WriteU32Leb128(stream_, 2, "metadata version");
-			const std::vector<Symbol> &symbols = symtab_.symbols();
+            const List<Symbol> &symbols = symtab_.symbols();
 			if (symbols.size()) {
 				stream_->WriteU8Enum(LinkingEntryType::SymbolTable, "symbol table");
 				BeginSubsection("symbol table");
@@ -1276,19 +1277,18 @@ namespace wabt {
 			EndSection();
 		}
 
-		template<typename T>
-		void BinaryWriter::WriteNames(const std::vector<T *> &elems,
-		                              NameSectionSubsection type) {
-			size_t num_named_elems = 0;
-			for (const T *elem: elems) {
-				if (!elem->name.empty()) {
-					num_named_elems++;
-				}
-			}
+        template<typename T>
+        void BinaryWriter::WriteNames(const List<T *> &elems, NameSectionSubsection type) {
+            size_t num_named_elems = 0;
+            for (const T *elem: elems) {
+                if (!elem->name.empty()) {
+                    num_named_elems++;
+                }
+            }
 
-			if (!num_named_elems) {
-				return;
-			}
+            if (!num_named_elems) {
+                return;
+            }
 
 			WriteU32Leb128(stream_, type, "name subsection type");
 			BeginSubsection("name subsection");
@@ -1411,8 +1411,8 @@ namespace wabt {
 			assert(module_->funcs.size() >= module_->num_func_imports);
 			Index num_funcs = module_->funcs.size() - module_->num_func_imports;
 			if (num_funcs) {
-				BeginKnownSection(SectionType::Function);
-				WriteU32Leb128(stream_, num_funcs, "num functions");
+                BeginKnownSection(SectionType::FuncType);
+                WriteU32Leb128(stream_, num_funcs, "num functions");
 
 				for (size_t i = 0; i < num_funcs; ++i) {
 					const Func *func = module_->funcs[i + module_->num_func_imports];
@@ -1663,7 +1663,7 @@ namespace wabt {
 			}
 
 			if (options_.write_debug_names) {
-				std::vector<String> index_to_name;
+                List<String> index_to_name;
 
 				char desc[100];
 				BeginCustomSection(WABT_BINARY_SECTION_NAME);

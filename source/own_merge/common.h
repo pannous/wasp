@@ -122,7 +122,7 @@ String StringPrintf(const char *format, ...);
 #define PRIoffset PRIzx
 
 namespace wabt {
-    Result ReadFile(string_view filename, std::vector<uint8_t> *out_data);
+    Result ReadFile(string_view filename, List<uint8_t> *out_data);
 
 #if WABT_BIG_ENDIAN
     inline void MemcpyEndianAware(void *dst, const void *src, size_t dsize, size_t ssize, size_t doff, size_t soff, size_t len) {
@@ -257,7 +257,7 @@ namespace wabt {
 //		va_start(args, format);
 //		va_copy(args_copy, args);
 //		size_t len = vsnprintf(nullptr, 0, format, args) + 1;  // For \0.
-//		std::vector<char> buffer(len);
+//		List<char> buffer(len);
 //		va_end(args);
 //		vsnprintf(buffer.data(), len, format, args_copy);
 //		va_end(args_copy);
@@ -468,7 +468,7 @@ namespace wabt {
 		WABT_USE_NATURAL_ALIGNMENT = 0xFFFFFFFFFFFFFFFF
     };
 
-//	Result ReadFile(String filename, std::vector<uint8_t> *out_data);
+//	Result ReadFile(String filename, List<uint8_t> *out_data);
 
     void InitStdio();
 

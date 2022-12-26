@@ -24,8 +24,8 @@ int test_V8_cpp_Javascript() {
     const char *path = "";
     v8::V8::InitializeICUDefaultLocation(path);
     v8::V8::InitializeExternalStartupData(path);
-    std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
-    v8::V8::InitializePlatform(platform.get());
+    v8::Platform *platform = v8::platform::NewDefaultPlatform();
+    v8::V8::InitializePlatform(platform);
     v8::V8::Initialize();
 
     // Create a new Isolate and make it the current one.
@@ -293,25 +293,25 @@ namespace v8 {
 //int v8_cpp_api(size_t size,byte_t* data){
 //
 //	auto engine = wasm::Engine::make();
-//	wasm::Store *store = wasm::Store::make(engine.get());
+//	wasm::Store *store = wasm::Store::make(engine);
 //	wasm::vec<byte_t> binary((size_t)size,(byte_t*)data);
-//	auto module = wasm::Module::make(store.get(), binary);
+//	auto module = wasm::Module::make(store, binary);
 //	//	const vec<Extern*>& imports;
 //	//	wasm_extern_vec_t imports = WASM_EMPTY_VEC;
 //
 //	// Create external print functions.
 //	auto hello_type = wasm::FuncType::make(wasm::vec<wasm::own<wasm::ValType>>::make(), wasm::vec<wasm::own<wasm::ValType>>::make());
 //	wasm::Func::callback cb = &hello_callback;
-//	auto hello_func = wasm::Func::make(store, hello_type.get(), cb);
+//	auto hello_func = wasm::Func::make(store, hello_type, cb);
 //
 //	// Instantiate.
-//	wasm::Extern* imports[] = {hello_func.get()};
+//	wasm::Extern* imports[] = {hello_func};
 //
 //
-//	auto mod = module.get();
+//	auto mod = module;
 //	auto imports1 = mod->imports();
 //	wasm::own<wasm::Trap> trap;
-//	auto instance = wasm::Instance::make(store.get(), mod, NULL, &trap);
+//	auto instance = wasm::Instance::make(store, mod, NULL, &trap);
 //	auto exports = instance->exports();
 //	wasm::vec<wasm::Val> args(1);
 //	wasm::vec<wasm::Val> returns(1);

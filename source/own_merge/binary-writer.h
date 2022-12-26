@@ -41,21 +41,23 @@ namespace wabt {
 
 		Features features;
 		bool canonicalize_lebs = true;
-		bool relocatable = false;
-		bool write_debug_names = true;
-	};
+        bool relocatable = false;
+        bool write_debug_names = true;
+    };
 
-	Result WriteBinaryModule(Stream *, const Module *, const WriteBinaryOptions &);
+    Result WriteBinaryModule(Stream *, const Module *, const WriteBinaryOptions &);
 
-	void WriteType(Stream *stream, Type type, const char *desc = nullptr);
+    void WriteType(Stream *stream, Type type, const char *desc = nullptr);
 
 //	void WriteStr(Stream *stream, const String s, const char *desc, PrintChars print_chars = PrintChars::No);
 
-	void WriteStr(Stream *stream, String s, const char *desc, PrintChars print_chars = PrintChars::No);
+    void WriteStr(Stream *stream, const String &s, const char *desc, PrintChars print_chars = PrintChars::No);
 
-	void WriteOpcode(Stream *stream, Opcode opcode);
+    void WriteStr(Stream *stream, String &s, const char *desc, PrintChars print_chars = PrintChars::No);
 
-	void WriteLimits(Stream *stream, const Limits *limits);
+    void WriteOpcode(Stream *stream, Opcode opcode);
+
+    void WriteLimits(Stream *stream, const Limits *limits);
 
 }  // namespace wabt
 
