@@ -1393,10 +1393,10 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
             // length of ONE function code block, but don't proceed yet:
             fun_end = current_offset + fun_length;
             int local_types = unsignedLEB128(binary_data, length, current_offset, true);// PARAMS ARE NOT local vars!
-            if (local_types > 200) {// todo: just warn after thoroughly tested
+            if (local_types > 100) {// todo: just warn after thoroughly tested
                 // it DOES HAPPEN, e.g. in pow.wasm
-                error("suspiciously many local_types. parser out of sync? %s index %d types: %d\n"s % current_name %
-                      func1.index % local_types);
+                warn("suspiciously many local_types. parser out of sync? %s index %d types: %d\n"s % current_name %
+                     func1.index % local_types);
             }// each type comes with a count e.g. (i32, 3) == 3 locals of type i32
             if (current_name.data /*and tracing*/)// else what is this #2 test/merge/main2.wasm :: (null)
                 tracef("code#%d -> ƒ%d %s :: %s (#%d) len %d\n", code_index, call_index, binary->name,
