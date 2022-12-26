@@ -819,6 +819,10 @@ void testMergeWabtByHand() {
 
 
 void testWasmRuntimeExtension() {
+#if TRACE
+    printf("TRACE mode currently SIGTRAP's in testWasmRuntimeExtension. OK, Switch to Debug mode. WHY though?");
+#endif
+
     assert_run("43", 43);
     assert_run("strlen('123')", 3);
     skip(
@@ -829,7 +833,6 @@ void testWasmRuntimeExtension() {
     assert_run("parseLong('123')", 123);
     assert_run("parseLong('123'+'456')", 123456);
     assert_run("parseLong('123000') + parseLong('456')", 123456);
-
     assert_run("x=123;x + 4 is 127", true);
     assert_run("parseLong('123'+'456')", 123456);
     assert_run("'123' is '123'", true);
