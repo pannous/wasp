@@ -1072,6 +1072,8 @@ void print(char const *s);
 //void print(const char *s);
 void print(String s);
 
+void println(Node &s);
+
 void println(String s); // ==
 void put(String s);
 
