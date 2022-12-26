@@ -14,6 +14,8 @@
 #include "wasm_runner.h"
 #include "WitReader.h"
 
+#define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s \n%s:%d\n",marka,__FILE__,__LINE__);proc_exit(1);}
+
 void test_fd_write() {
     //    assert_emit("x='hello';fd_write(1,20,1,8)", (int64) 0);// 20 = &x+4 {char*,len}
 //    assert_emit("puts 'ok';proc_exit(1)\nputs 'no'", (int64) 0);
@@ -2782,6 +2784,15 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
 //    testString();
+//    Node n= assert_parsesx("3.1");
+    Node n = parse("3.1");
+    check(n == 3.1);
+    assert(parse("3.") == 3.);
+
+    Node n1 = parse("1");
+    check(n1 == 1);
+    assert(parse("1") == 1);
+
     testMarkSimple();
     testMarkAsMap();
     testMarkMultiDeep();

@@ -220,7 +220,6 @@ bool assert_isx(char *mark, bool expect) {
 
 //#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){print("%s:%d\n",__FILE__,__LINE__);proc_exit(1);}
 // ⚠️ CAREFUL parses in DATA_MODE !
-#define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s \n%s:%d\n",marka,__FILE__,__LINE__);proc_exit(1);}
 
 #define skip(test) printf("SKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 #define todo_emit(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);

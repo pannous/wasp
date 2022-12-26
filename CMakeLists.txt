@@ -181,11 +181,10 @@ ADD_COMPILE_FLAG("-fno-inline") # why not? debug?
 #ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
-#ADD_COMPILE_FLAG("-Wno-writable-strings") # ALWAYS allow conversion from string literal to 'char *'
-ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
+ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
-ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless if this == 0 check
+ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
 ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
 ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
 ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
@@ -354,7 +353,7 @@ if (WASM) # OR WASI)
 
     #    ADD_COMPILE_FLAG("-fvisibility=hidden") # ??
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
-#    ADD_COMPILE_FLAG("-Wl,-Clink-arg=--export=__heap_base") # wasm-ld: error: unknown argument:
+    #    ADD_COMPILE_FLAG("-Wl,-Clink-arg=--export=__heap_base") # wasm-ld: error: unknown argument:
     #    ADD_COMPILE_FLAG("-nostdlib") # use our OWN memcpy (and printf?)
     #    ADD_COMPILE_FLAG("-fno-builtin")
     #    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const
@@ -374,6 +373,7 @@ if (WASM) # OR WASI)
     #    ADD_COMPILE_FLAG("-Qn") # no producer metadata
     ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
     ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # keep name section?
+    ADD_COMPILE_FLAG("-fvisibility-inlines-hidden") # faster linking
     #    ADD_COMPILE_FLAG("-Wl,--pie") #  position independent executable, does it help? NO
     #    ADD_COMPILE_FLAG("-fPIC") # does not help creating PIEs, with -pie, is not yet stable
 
@@ -383,8 +383,8 @@ if (WASM) # OR WASI)
         #    ADD_COMPILE_FLAG("-Wl,-vvv")
     endif ()
     if (DEBUG)
-        #        ADD_COMPILE_FLAG("-O0")
-        ADD_COMPILE_FLAG("-Oz") # OK keeps variable names! DWARF only in emcc
+        ADD_COMPILE_FLAG("-O0")
+        #        ADD_COMPILE_FLAG("-Oz") # makes wasm Linking SLOOW! OK keeps variable names! DWARF only in emcc
         #        ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
         #        the DWARF section information/references are invalid after wasm-pack, wasm-opt or any other tools,
     endif ()

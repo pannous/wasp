@@ -75,6 +75,7 @@ Node NaN = Node("NaN");
 
 void initSymbols() {
     print("initSymbols");
+    ((Node) NIL).name = nil_name;
 #ifdef WASI
     return;
 #elif  WASM

@@ -1018,7 +1018,7 @@ void testRecentRandomBugs() {
     assert_emit("‖-3‖", 3);
     assert_emit("√100²", 100);
 //    assert_emit("puts('ok');", 0);
-    assert_parses("{ç:☺}");
+    assert_parsesx("{ç:☺}");
     assert(result["ç"] == "☺");
 #ifndef WASMTIME
     assert_run("x=123;x + 4 is 127", true);
