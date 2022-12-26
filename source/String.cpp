@@ -694,7 +694,7 @@ void print(char c) {
 void print(char const *s) {
 //    put_chars(s, strlen(s));
     puts(s);
-    newline();
+//    newline();
 //    printf("%s", s);
 }
 

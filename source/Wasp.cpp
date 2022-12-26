@@ -439,8 +439,10 @@ public:
 
     // todo: flatten the parse->parse->read branch!!
     Node &parse(String source, ParserOptions options = {}) {
-        if (!source.data)
+        if (!source.data) {
+            warn("parse !source.data");
             return NUL;
+        }
         parserOptions = options;
         if ((source.endsWith(".wasp") or source.endsWith(".wit")) and not source.contains("")) {
             setFile(source);
@@ -2204,4 +2206,28 @@ Node &parse(String source, ParserOptions parserOptions) {
     if (operator_list.size() == 0)
         load_parser_initialization();
     return Wasp().parse(source, parserOptions);
+}
+
+extern Node &result;
+
+Node assert_parsesx(chars mark) {
+    try {
+        print("mark");
+        print(mark);
+        result = Wasp().parse(mark, ParserOptions{.data_mode=true});
+        print(result);
+        return result;
+    } catch (chars err) {
+        print("TEST FAILED WITH ERROR\n");
+        printf("%s\n", err);
+    } catch (String &err) {
+        print("TEST FAILED WITH ERRORs\n");
+        printf("%s\n", err.data);
+    } catch (SyntaxError &err) {
+        print("TEST FAILED WITH SyntaxError\n");
+        printf("%s\n", err.data);
+    } catch (...) {
+        print("TEST FAILED WITH UNKNOWN ERROR (maybe POINTER String*)? \n");
+    }
+    return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
