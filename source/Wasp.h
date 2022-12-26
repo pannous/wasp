@@ -18,6 +18,8 @@ extern chars import_keywords[];
 extern List<chars> operator_list;
 
 Node &parse(String source, ParserOptions parserOptions = {});// wasp -> data
+Node assert_parsesx(chars mark);
+
 bool is_operator(codepoint ch);// todo: next?
 //extern String operator_list[];// resolve xor->operator ... semantic wasp parser really?
 //extern List<chars> functor_list;

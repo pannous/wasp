@@ -340,6 +340,27 @@ bool Node::operator==(const Node &other) {
     return *this == (Node) other;
 }
 
+void debugNode(Node &n) {
+    print("Node.name");
+    print(n.name);
+    print("Node.kind");
+    print(n.kind);
+    print("Node.length");
+    print(n.length);
+    print("Node.value.longy");
+    print(n.value.longy);
+    print("Node.children");
+    print(n.children);
+    print("Node.isNil");
+    print(n.isNil());
+    print("Node == Nil");
+    print(n == NIL);
+    print("Node == ERROR");
+    print(n == ERROR);
+    print("Node.serialize");
+    print(n.serialize());
+}
+
 //bool Node::operator===(const Node &other) {
 //	return hash() == (Node) other.hash();
 //}
@@ -368,6 +389,13 @@ bool Node::operator==(Node &other) {
 
 //	auto a1 = isNil();
 //	auto a2 = other.isNil();
+
+    if (name == NIL.name.data or name == False.name.data or name == "")
+        if (other.name == NIL.name.data or other.name == False.name.data or other.name == "") {
+            trace("NILS!");
+            return true;// TODO: SHOULD already BE SAME by engine!
+        }
+// todo ^^==::
     if (isNil() and other.isNil()) {
         trace("NILS!");
         return true;
@@ -376,17 +404,13 @@ bool Node::operator==(Node &other) {
     if (kind != strings and other.kind != strings and isEmpty() and other.isEmpty())
         // todo: THIS IS NOT ENOUGH!!! "plus" symbol  a!=b ,  "false and false" != "and false"
         return true;
-
-    if (name == NIL.name.data or name == False.name.data or name == "")
-        if (other.name == NIL.name.data or other.name == False.name.data or other.name == "") {
-            trace("NILS!");
-            return true;// TODO: SHOULD already BE SAME by engine!
-        }
-
     if (kind != operators and value.node == &other)
         return true;// todo when is same value EVER enough??
-    if (kind != operators and this == other.value.node)
+    if (kind != operators and other.value.node and other.kind == key and this == other.value.node) {
+        println("SELF REFERENCE");
+        debugNode(*other.value.node);
         return true;// reference ~= its value
+    }
     if (kind == key and value.node and *value.node == other)return true;// todo again?
     if (kind == nils and other.kind == longs)return other.value.longy == 0;
     if (other.kind == nils and kind == longs)return value.longy == 0;
