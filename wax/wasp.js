@@ -1,5 +1,7 @@
 // let WASM_FILE = 'merged.wasm'
-let WASM_FILE = 'wasp.wasm'
+// let WASM_FILE = 'wasp.wasm'
+// let WASM_FILE = 'hello-wasi.wasm'
+let WASM_FILE = 'test-printf.wasm'
 // let WASM_FILE = '../cmake-build-wasm/wasp.wasm'
 // let WASM_FILE='../cmake-build-release/wasp.wasm'
 
@@ -28,6 +30,19 @@ function string(pointer, length = -1, format = 'utf8') {
         return s
     }
 }
+
+function int32(pointer) { // little endian
+    buffer = new Uint8Array(memory.buffer, 0, memory.length);
+    return buffer[pointer + 3] * 2 ** 24 + buffer[pointer + 2] * 256 * 256 + buffer[pointer + 1] * 256 + buffer[pointer];
+}
+
+const fd_write = function (x, y, z, k) {
+    console.log("fd_write", x, y, z, k);
+    let string_ptr = int32(y)
+    let len = int32(y + 4)
+    console.log(string(string_ptr, len));
+    return -1; // todo
+};
 
 function tests() {
     exports._Z11testCurrentv()
@@ -76,7 +91,7 @@ function memset() {
     console.log("TODO, use provided wasp implementation!!")
 }
 
-let nop = x => x
+let nop = x => 0 // careful, some wasi shim needs 0!
 
 puts = x => console.log(string(x))
 
@@ -115,9 +130,21 @@ imports = {
 
     },
     wasi_unstable: {
-        proc_exit: terminate
+        fd_write,
+        proc_exit: terminate,
+        // ignore the rest for now
+        args_get: nop,
+        args_sizes_get: x => 0,
+        environ_get: nop,
+        environ_sizes_get: nop,
+        fd_fdstat_get: nop,
+        fd_prestat_get: nop,
+        fd_prestat_dir_name: nop,
+        fd_close: nop,
+        fd_seek: nop
     }
 }
+imports.wasi_snapshot_preview1 = imports.wasi_unstable // fuck wasmedge!
 
 // This is googles recommended way of loading WebAssembly.
 // try {
@@ -126,8 +153,8 @@ imports = {
 //const module = await WebAssembly.compileStreaming(fetch('wasp.wasm'));
 // const instance = await WebAssembly.instantiate(module,});
 WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(obj => {
-        instance = obj.instance
-        exports = instance.exports
+    instance = obj.instance
+    exports = instance.exports
         memory = exports.memory || exports._memory || memory
         buffer = new Uint8Array(memory.buffer, 0, memory.length);
         main = instance.start || exports.teste || exports.main || exports._start
