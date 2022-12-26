@@ -676,7 +676,7 @@ void print(const Node node) {
 
 void print(int64 l) {
 #if MY_WASM
-    puti(i);
+    puti(l);
 #else
 //#if MY_WASI
     printf("%lld\n", l);
