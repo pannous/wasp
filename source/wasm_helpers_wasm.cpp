@@ -107,7 +107,8 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
 
 int printf(const char *__restrict format, ...) {
 //    todo better
-    error("printf not linked");
+//    error("printf not linked");
+    warn("printf not linked");
     put_chars((char *) format, strlen(format));
     return 1;
 }
@@ -330,16 +331,10 @@ extern "C" int raise(chars error){
 }
 #endif
 
-//#include <stdlib.h>
-void exit0() {
-//	exit(0);
+int system(chars command) {
+    print("no system commands in current wasi!");
+    return -1;
 }
-
-//wasm-ld: error: duplicate symbol: exit
-//extern "C" void exit(int fd){
-// todo HOW??
-// Error while importing "wasi_snapshot_preview1"."proc_exit": unknown import.
-//}
 
 #ifndef MY_WASM
 
@@ -419,7 +414,6 @@ void *putp(void *f) {
 #endif
 
 
-
 List<String> arguments() {
     List<String> args;
     int argc;
@@ -431,12 +425,15 @@ List<String> arguments() {
     char *values = (char *) alloc(len, 1);
     args_get(argv, values);
     // is argv guaranteed to point into values?
-    if (argv[0] != values)
-            todo("wasmtime args_get is currently broken. Please use wasmer. ")
-        for (int i = 0; i < argc; i++) {
-            auto string = argv[i];
-            args.add(String(string));
-        }
+    if (argv[0] != values) {
+        warn("invalid wasi arguments. ignoring…");
+        return args;
+    }
+//            todo("wasmtime args_get is currently broken. Please use wasmer. ")
+    for (int i = 0; i < argc; i++) {
+        auto string = argv[i];
+        args.add(String(string));
+    }
     args.capacity = (int) (int64) argv;// hack ;)
     return args;
 }
@@ -500,9 +497,12 @@ size_t strlen(const char *x) {
 #endif
     int l = 0;
     if ((int64) x >= MEMORY_SIZE || ((int64) x) == 0x200000000LL) {
-        puts(x);
+        put_chars("corrupt string", 13);
+        put_chars(formatLong((int) x));
+        return 0;
+//        puts(x);
 //        puti((int) (int64) x);// 0x1000000 16777216
-        error("corrupt string");
+//        error("corrupt string");
     }
     if ((int64) x == 0x1ffffffffLL || (int64) x >= 0xffffffff00000000LL ||
         ((int64) x >= 0x100000000LL and (int64) x <= 0x100100000LL))
