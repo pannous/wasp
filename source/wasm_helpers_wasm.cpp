@@ -237,7 +237,7 @@ void debugCalloc(size_t num, size_t size) {
 
 void *calloc(size_t num, size_t size) //__attribute__((__malloc__, __warn_unused_result__))
 {
-    debugCalloc(num, size);
+//    debugCalloc(num, size);
     char *mem = (char *) malloc(size * num);
 //#ifndef WASM
     //fails in WASI, why??

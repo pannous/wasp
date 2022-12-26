@@ -631,7 +631,8 @@ Node &classDeclaration(Node &node, Function &function);
 
 
 Node &classDeclaration(Node &node, Function &function) {
-    if (node.length < 2)error("wrong class declaration format; should be: class name{…}");
+    if (node.length < 2)
+        error("wrong class declaration format; should be: class name{…}");
     Node &dec = node[1];
     String &kind_name = node.first().name;
     if (kind_name == "struct")
@@ -1402,7 +1403,8 @@ Node &analyze(Node &node, Function &function) {
         return node;
 
     // data keyword leaves data completely unparsed, like lisp quote `()
-    if (node.first().name == "data" or node.first().name == "quote")
+    auto first = node.first().name;
+    if (first == "data" or first == "quote")
         return node;
 
     // group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
@@ -1473,7 +1475,7 @@ Node &analyze(Node &node, Function &function) {
     }
 
 
-    if (class_keywords.contains(node.first().name))
+    if (not first.empty() and class_keywords.contains(first))
         return classDeclaration(node, function);
     Node &groupedTypes = groupTypes(node, function);
     if (isPrimitive(node)) return node;
