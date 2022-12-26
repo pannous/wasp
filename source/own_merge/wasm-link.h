@@ -112,8 +112,7 @@ namespace wabt {
                 uint64_t initial;
 			} data;
 
-			/* The offset at which this section appears within the combined output
-			 * section. */
+			/* The offset at which this section appears within the combined output section. */
 			size_t output_payload_offset;
 		};
 

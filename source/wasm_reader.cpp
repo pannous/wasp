@@ -105,7 +105,6 @@ String &name(Code &wstring) {// Shared string view, so don't worry about trailin
     int64 len = unsignedLEB128(wstring);
     auto nam = (char *) wstring.data + wstring.start;
 //    while(nam[0]<=33)nam++;// WTH! hiding strange bug where there is a byte behind unsignedLEB128. NOT FULLY consumed
-    // // BUG SINC 2022-12-09 ~16-17pm
     String *string = new String(nam, len, true);
     wstring.start += len;// advance internally
 //	if (len > 40)put(string);

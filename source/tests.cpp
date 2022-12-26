@@ -2780,6 +2780,8 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
+    assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
+
     testMergeOwn();
     assert_emit("i=123;i+1", 124);
     assert_emit("add1 x:=x+1;add1(7)", 8)
@@ -2791,7 +2793,6 @@ void testCurrent() {
     assert_emit("i=1;x=‖-3‖<i", 0);
     assert_emit("f=4;x=‖-3‖>f", 0);
     assert_is("0 ⋁ 0", 0);
-    assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
 
     assert_emit("√π²", 3.1415);
     assert_emit("√3^2", 3);

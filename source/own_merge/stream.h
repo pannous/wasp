@@ -161,7 +161,7 @@ namespace wabt {
 
 		size_t size() const { return data.size(); }
 
-        List<uint8_t> data;
+        List<uint8_t> data = (size_t) 1000000;
 	};
 
 	class MemoryStream : public Stream {

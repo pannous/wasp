@@ -33,33 +33,26 @@
 //#define ERROR(fmt, ...) fprintf(stderr, "%s:%d: " fmt, __FILE__, __LINE__, __VA_ARGS__)
 namespace wabt {
 
-	Stream::Stream(Stream *log_stream) : offset_(0), result_(Result::Ok), log_stream_(log_stream) {}
+    Stream::Stream(Stream *log_stream) : offset_(0), result_(Result::Ok), log_stream_(log_stream) {}
 
-	void Stream::AddOffset(ssize_t delta) {
-		offset_ += delta;
-	}
+    void Stream::AddOffset(ssize_t delta) {
+        offset_ += delta;
+    }
 
-	void Stream::WriteDataAt(size_t at,
-	                         const void *src,
-	                         size_t size,
-	                         const char *desc,
-	                         PrintChars print_chars) {
-		if (Failed(result_)) {
-			return;
-		}
-		if (log_stream_) {
-			log_stream_->WriteMemoryDump(src, size, at, print_chars, nullptr, desc);
-		}
-		result_ = WriteDataImpl(at, src, size);
-	}
+    void Stream::WriteDataAt(size_t at, const void *src, size_t size, const char *desc, PrintChars print_chars) {
+        if (Failed(result_)) { // why check last result_ here at beginning?
+            return;
+        }
+        if (log_stream_) {
+            log_stream_->WriteMemoryDump(src, size, at, print_chars, nullptr, desc);
+        }
+        result_ = WriteDataImpl(at, src, size);
+    }
 
-	void Stream::WriteData(const void *src,
-	                       size_t size,
-	                       const char *desc,
-	                       PrintChars print_chars) {
-		WriteDataAt(offset_, src, size, desc, print_chars);
-		offset_ += size;
-	}
+    void Stream::WriteData(const void *src, size_t size, const char *desc, PrintChars print_chars) {
+        WriteDataAt(offset_, src, size, desc, print_chars);
+        offset_ += size;
+    }
 
 	void Stream::MoveData(size_t dst_offset, size_t src_offset, size_t size) {
 		if (Failed(result_)) {

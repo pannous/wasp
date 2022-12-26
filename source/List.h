@@ -141,12 +141,12 @@ void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
 template<class S>
 class List {
 public:
-    int header = array_header_32;
+    int header = array_header_32;// wasn't this moved down ?
     Type _type{};// reflection on template class S
     int size_ = 0;
     int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
     // previous entries must be aligned to int64!
-    S *items;// In C++ References cannot be put into an array, if you try you get
+    S *items;// 32bit pointers in wasm! In C++ References cannot be put into an array, if you try you get
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
     // todo item references are UNSAFE after grow()
@@ -214,26 +214,24 @@ public:
 //        va_end(args);
 //    }
 
-    List(S *data, S *end) {
-        size_ = end - data;
-        if (capacity < size_) {
-            items = (S *) calloc(size_, sizeof(S));
-            capacity = size_;
-        }
-        memcpy(items, data, size_);
-    }
 
-    List(S *args, int size, bool share = true) {
+    List(S *args, int count, bool share = true) {
         if (args == 0)return;
-        check_silent(size < LIST_MAX_CAPACITY)
-        size_ = size;
+        check_silent(count < LIST_MAX_CAPACITY)
+        size_ = count;
         if (share)
             items = args;
         else {
-            items = (S *) calloc(sizeof(S), size_ + 1);
-            memcpy(items, args, size);
+            if (capacity < size_) {
+                items = (S *) calloc(size_ + 1, sizeof(S));
+                capacity = size_;
+            }
+            memcpy(items, args, count);
         }
     }
+
+
+    List(S *data, S *end, bool share = true) : List(data, (end - data) / sizeof(S), share) {}
 
     List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
         if (args == 0)return;
@@ -252,6 +250,10 @@ public:
 
 
 //	List(S args[]) {}
+//    ~List() { // double-free
+//        if (not shared)
+//            free(items);
+//    }
 
 #ifndef WASM
 
@@ -428,18 +430,6 @@ public:
         return true;
     }
 
-    S last(S defaulty) {
-        if (size_ < 1)
-            return defaulty;
-        return items[size_ - 1];
-    }
-
-    S &last() {
-        if (size_ < 1)
-            error("empty list");
-        return items[size_ - 1];
-    }
-
 //	List<S>& clone() { // todo just create all return lists with new List() OR return List<> objects (no references) copy by value ok!!
 //		List &neu = *new List<S>();
 //		neu._size=_size;
@@ -486,18 +476,33 @@ public:
         return s;
     }
 
-    S &back() {
+    S &back() {// same as last()
         if (size_ <= 0)error("no back() in empty list.");
         return items[size_ - 1];
     }
 
-    void add() {
+    S &last() {
+        if (size_ < 1) error("empty list");
+        return items[size_ - 1];
+    }
+
+
+    S last(S defaulty) {
+        if (size_ < 1)
+            return defaulty;
+        return items[size_ - 1];
+    }
+
+
+    S &add() {
         size_++;
         if (size_ >= capacity)grow();
+        return last();
     }
 
     void resize(long new_size) {
-        if (new_size >= capacity)grow();
+        if (new_size >= capacity)
+            grow();
         size_ = new_size;
     }
 
@@ -526,6 +531,8 @@ public:
     S &first() {
         return items[0];
     }
+
+    bool shared = false;
 };
 
 void print(List<String> list);

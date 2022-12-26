@@ -1015,6 +1015,8 @@ Type preEvaluateType(Node &node, Function &context) {
     // todo: some kind of Interpret eval?
     // todo: combine with compile time eval! <<<<<
     if (node.kind == expression) {
+        if (node.name == "if") // if … then (type 1) else (type 2)
+            return commonType(preEvaluateType(node["then"], context), preEvaluateType(node["else"], context));
         if (node.length == 1)return preEvaluateType(node.first(), context);
         node = groupOperators(node, context);
         return mapType(node.name);
