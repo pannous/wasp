@@ -1066,6 +1066,8 @@ void testMarkAsMap() {
 
 void testMarkSimple() {
     print("testMarkSimple");
+    char xx[] = "1";
+    Node x = assert_parses(xx);
     Node a = assert_parses("{aa:3}");
     assert_equals(a.value.longy, (int64) 3);
     assert_equals(a, int64(3));
@@ -2780,7 +2782,10 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
-    testString();
+//    testString();
+    testMarkSimple();
+    testMarkAsMap();
+    testMarkMultiDeep();
     tests();// make sure all still ok before changes
 
     skip(

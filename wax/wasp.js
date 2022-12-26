@@ -84,7 +84,7 @@ let Backtrace = function (print = 1) {
 }
 
 function terminate() {
-    console.log("wasm wants to quit. shall we let it?")
+    console.log("wasm terminate()")
     // if(sure)throw
 }
 
@@ -137,24 +137,24 @@ imports.wasi_snapshot_preview1 = imports.wasi_unstable // fuck wasmedge!
 //const module = await WebAssembly.compileStreaming(fetch('wasp.wasm'));
 // const instance = await WebAssembly.instantiate(module,});
 WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(obj => {
-    instance = obj.instance
-    exports = instance.exports
-    memory = exports.memory || exports._memory || memory
-    buffer = new Uint8Array(memory.buffer, 0, memory.length);
-    main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
-    main = instance._Z11testCurrentv || main
-    if (main) {
-        console.log("got main")
-        result = main()
-    } else {
-        console.error("missing main function in wasp module!")
-        result = instance.exports//show what we've got
-    }
-    console.log(result);
-    // console.log(exports)
+        instance = obj.instance
+        exports = instance.exports
+        memory = exports.memory || exports._memory || memory
+        buffer = new Uint8Array(memory.buffer, 0, memory.length);
+        main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
+        main = instance._Z11testCurrentv || main
+        if (main) {
+            console.log("got main")
+            result = main()
+        } else {
+            console.error("missing main function in wasp module!")
+            result = instance.exports//show what we've got
+        }
+        console.log(result);
+        // console.log(exports)
 
         //alert(result)
-        // tests()
+        tests()
     }
 )
 
