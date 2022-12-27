@@ -450,7 +450,7 @@ public:
             source = readFile(findFile(source, parserOptions.current_dir));
         }
 #ifndef RELEASE
-        printf("Parsing:\n%s\n", source);
+        printf("Parsing:\n%s\n", source.data);
 #endif
         columnStart = 0;
         at = -1;

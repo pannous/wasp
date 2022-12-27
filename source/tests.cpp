@@ -16,6 +16,13 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s \n%s:%d\n",marka,__FILE__,__LINE__);proc_exit(1);}
 
+void testHex() {
+    assert_equals(hex(18966001896603L), "113fddce4c9b");
+    assert_is("42", 42);
+    assert_is("0xFF", 255);
+    assert_is("0x100", 256);
+}
+
 void test_fd_write() {
     //    assert_emit("x='hello';fd_write(1,20,1,8)", (int64) 0);// 20 = &x+4 {char*,len}
 //    assert_emit("puts 'ok';proc_exit(1)\nputs 'no'", (int64) 0);
@@ -956,12 +963,6 @@ void testDeepCopyDebugBugBug2() {
     Node &node = c['d'];
     assert_equals(node.value.longy, (int64) 123);
     assert_equals(node, (int64) 123);
-}
-
-
-void testHex() {
-    assert_is("0xFF", 255);
-    assert_is("0x100", 256);
 }
 
 
@@ -2064,7 +2065,7 @@ void testString() {
     testStringConcatenation();
     testStringReferenceReuse();
     assert_equals_x(parse("١٢٣"), Node(123));
-    assert_is("١٢٣", 123);
+//    assert_is("١٢٣", 123);
     check("abc"_ == "abc");
 }
 
@@ -2735,7 +2736,10 @@ void tests() {
     testMergeOwn();
     testRecentRandomBugs();
     testBUG();
-    // most result in wasm emit under the hood:
+
+
+    // WASM test, most result in wasm emit under the hood:
+    testHex();
     testBadInWasm();
     testIndexOffset();
     testArrayIndices();
@@ -2790,7 +2794,6 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
-
     tests();// make sure all still ok before changes
 
     skip(

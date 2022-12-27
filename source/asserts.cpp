@@ -234,8 +234,8 @@ printf("TEST %s==%s\n",#mark,#result); \
 printf("%s:%d\n",__FILE__,__LINE__);\
 ok=assert_isx(mark,result);\
 if(ok)printf("PASSED %s==%s\n",#mark,#result);\
-else{printf("FAILED %s==%s\n",#mark,#result);\
-printf("%s:%d\n",__FILE__,__LINE__);proc_exit(1);}
+else{printf("FAILED %s==%s\n",#mark,#result); \
+backtrace_line()}
 
 
 // for better readability, not (yet) semantic
