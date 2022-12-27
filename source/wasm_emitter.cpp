@@ -2311,8 +2311,10 @@ Code emitTypeSection() {
 //			print(functionIndices);
 //			print(functions);
             breakpoint_helper
-            warn("empty functions[ø] because context=start=''");
-//			error("empty context creep functions[ø]");
+            if (start.empty())
+                warn("empty functions[ø] because context=start=''");
+            else
+                error("empty context creep functions[ø]");
             continue;
         }
         if (operator_list.has(fun)) {

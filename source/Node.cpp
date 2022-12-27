@@ -345,6 +345,7 @@ void debugNode(Node &n) {
     print("Node.name");
     print(n.name);
     print("Node.kind");
+    print(typeName(n.kind));
     print(n.kind);
     print("Node.length");
     print(n.length);
@@ -962,6 +963,8 @@ String toString(Node &node) {
 
 
 Node &Node::setValue(const Value v) {
+    print("setValue");
+    print(v.longy);
     value = v;
     return *this;
 }

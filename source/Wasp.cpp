@@ -1313,6 +1313,7 @@ private:
             if (&key == &NIL or key.isNil() or key == NIL)
                 if (key.name == nil_name)
                     warn("impossible");
+            print("SET key,val");
             key.value = val.value;// direct copy value SURE?? what about meta data... ?
             key.kind = val.kind;
         } else {
