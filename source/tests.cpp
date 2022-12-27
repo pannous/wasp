@@ -788,11 +788,11 @@ void testSignificantWhitespace() {
 
     )
     //1 + 1 ≠ 1 +1 == [1 1]
-    assert_is("1 +1", Node(1, 1, 0));
 //	assert_is("1 +1", parse("[1 1]"));
     skip(
-            assert_emit("1 +1 == [1 1]", 1);
             assert(eval("1 +1 == [1 1]"));
+            assert_is("1 +1", Node(1, 1, 0));
+            assert_emit("1 +1 == [1 1]", 1);
             assert_emit("1 +1 ≠ 1 + 1", 1);
             assert(eval("1 +1 ≠ 1 + 1"));
     )
@@ -1430,7 +1430,14 @@ void testIterate() {
     check(liste[0].value.longy == 11)
 }
 
+void testListInitializerList() {
+    List<int> ok = {1, 2, 3}; // easy!
+    check(ok.size_ == 3)
+    check(ok[2] == 3)
+}
+
 void testListVarargs() {
+    testListInitializerList();
     const List<int> &list1 = List<int>(1, 2, 3, 0);
     if (list1.size_ != 3)
         breakpoint_helper
@@ -2732,13 +2739,8 @@ void tests() {
     testUTF();// fails sometimes => bad pointer!?
     testUnicode_UTF16_UTF32();
     testConcatenationBorderCases();
-    testCall();
     testNewlineLists();
     testIndex();
-    testLogic();
-    testLogic01();
-    testLogicOperators();
-    testEqualities();
     testGroupCascade();
     testParams();
     testSignificantWhitespace();
@@ -2749,6 +2751,12 @@ void tests() {
     testAllAngle();
 
     // WASM emit tests under the hood:
+    // todo: split in test_wasp test_angle test_emit.cpp
+    testEqualities();
+    testLogic();
+    testLogic01();
+    testLogicOperators();
+    testCall();
     testRoots();
     testRootFloat();
     testTruthiness();
@@ -2809,7 +2817,14 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
-    testNilValues();
+    List<String> class_keywords2 = {"struct", "type", "class", "prototype"};
+    check(class_keywords2.size_ == 4);
+    print(class_keywords2);
+    auto last = class_keywords2.last();
+    print(last);
+    check(class_keywords2.last() == "prototype");
+    check(class_keywords2.contains("class"))
+    testFlags();
     tests();// make sure all still ok before changes
 
     skip(

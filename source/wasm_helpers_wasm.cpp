@@ -495,8 +495,9 @@ size_t strlen(const char *x) {
 #endif
     int l = 0;
     if ((int64) x >= MEMORY_SIZE || ((int64) x) == 0x200000000LL) {
-        put_chars("corrupt string", 13);
         put_chars(formatLong((int) x));
+        put_chars("corrupt string", 14);
+        error("corrupt string");
         return 0;
 //        puts(x);
 //        puti((int) (int64) x);// 0x1000000 16777216
