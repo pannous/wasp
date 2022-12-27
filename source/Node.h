@@ -209,11 +209,11 @@ struct wasm32_node_struct {
 };
 
 // The order of Type,Value is reverse to the Wasp ABI return tuple Value(int32), Type(int32)
+// hovering over it yields size(120), copy/move : construction, assignment
 class Node {
     // todo: sizeof(Node) can be reduced later by: shrinking header, merging type&kind, let *children own its length, make name String* offset
-    // sizeof(Node) == 64 (20 for name,
 public:
-    // ⚠️ ORDER of fields matter!
+    // ⚠️ ORDER of fields matter when (de)serializing / casting from List …
 //	static
     //	short _node_header_ = 0xDADA; // can be combined with byte kind => 2*short !
     int node_header = node_header_32;
@@ -221,8 +221,7 @@ public:
     int length = 0;// #children
     Node *type = 0;// variable/reference type or object class?
     Node *children = nullptr;// LIST, not link. block body content
-    Value value{
-            0}; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
+    Value value = {.longy=0}; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
     Kind kind = unknown;// forced 32 bit,  improved from 'undefined' upon construction
     Node *meta = 0;//  LINK, not list. attributes meta modifiers decorators annotations
 //    32bit in wasm TODO pad with string in 64 bit
@@ -874,3 +873,5 @@ struct smart_value {
 };
 
 smart_pointer_64 toSmartPointer(Node *n);
+
+void debugNode(Node &n);
