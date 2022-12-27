@@ -61,7 +61,7 @@ typedef String grapheme;// sequence of one or more code points that are displaye
 
 void newline();
 
-String &hex(int64 d);
+String &hex(int64 d, bool include_0x = false, bool upper_case = false);
 
 enum sizeMeasure {
     by_char8s,// bytes
@@ -1094,7 +1094,6 @@ bool empty(codepoint s);// todo: rename whitespace (and braces??)
 
 bool contains(chars str, chars match);
 
-String &hex(int64 d);
 
 //extern "C"  // only pointers!
 String &string(chars chars);

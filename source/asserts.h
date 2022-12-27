@@ -3,6 +3,8 @@
 
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
+//#define backtrace_line() {printf("\nfile://%s :%d\n",__FILE__,__LINE__);proc_exit(0);}
+//#define backtrace_line() {printf("\nsubl://%s :%d\n",__FILE__,__LINE__);proc_exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);proc_exit(1);}
 
 #define assert(condition) try{\

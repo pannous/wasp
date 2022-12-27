@@ -52,21 +52,6 @@ function compile_and_run(code) {
     console.log(node)
 }
 
-function run_wasm(pointer, length) {
-    let app = new Uint8Array(buffer.subarray(pointer, pointer + length));
-    const app_module = new WebAssembly.Module(app);
-    // code_instance ≠ wasp instance
-    const code_instance = WebAssembly.instantiate(app_module, imports);// await
-    const code_exports = code_instance.exports;
-    main = code_exports.start || code_exports.teste || code_exports.main || code_exports._start
-    if (main) {
-        console.log("got main")
-        result = main()
-    } else result = instance.exports//show what we've got
-    console.log(result);
-    //alert(result)
-}
-
 var stdout = '';
 write = function (s) {
     stdout += s;
@@ -93,9 +78,9 @@ let nop = x => 0 // careful, some wasi shim needs 0!
 
 puts = x => console.log(string(x))
 
-let min_memory_size = 65536 / 64 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
-let memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
-let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: memory_size});
+let min_memory_size = 100 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
+let max_memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
+let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: max_memory_size});
 imports = {
     env: {
         run_wasm,
@@ -159,20 +144,36 @@ WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(obj => {
     }
 )
 
+
+function run_wasm2(pointer, length) {
+    let app = new Uint8Array(buffer.subarray(pointer, pointer + length));
+    let app_module = WebAssembly.compile(app.buffer)
+    // const app_module = new WebAssembly.Module(app);
+    const code_instance = WebAssembly.instantiate(app_module, imports);// await code_instance ≠ wasp instance
+    const code_exports = code_instance.exports;
+    main = code_exports.start || code_exports.teste || code_exports.main || code_exports._start
+    if (main) {
+        console.log("got main")
+        result = main()
+    } else result = instance.exports//show what we've got
+    console.log(result);
+    alert(result)
+}
+
+
 // allow wasm tests/plugins to build and execute small wasm files!
 function run_wasm(buf_pointer, buf_size) {
     let funclet = {}
-    let wasm_bytes = new Uint8Array(memory.buffer, buf_pointer, buf_size);
-    let module = WebAssembly.compile(wasm_bytes.buffer).catch(error => {
-        throw error
-    })
+    let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
+    // console.log("wasm_buffer", wasm_buffer,debugs);
+    funclet.module = WebAssembly.compile(wasm_buffer)
     funclet.memory = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
     // funclet.table = new WebAssembly.Table({initial: 2, element: "anyfunc"});
-    funclet.instance = WebAssembly.instantiate(module, imports, memory)
-    funclet.exports = instance.exports
-    funclet.memory = exports.memory || exports._memory || memory
+    funclet.instance = WebAssembly.instantiate(funclet.module, imports, funclet.memory)
+    funclet.exports = funclet.instance.exports
+    funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
     // funclet.buffer = new Uint8Array(funclet.memory.buffer, 0, memory.length);
-    let main = exports.main || exports.wasp_main || exports._start || instance.start
+    let main = funclet.instance.start || funclet.exports.main || funclet.exports.wasp_main || funclet.exports._start
     result = main()
     return BigInt(result || 0);
 }

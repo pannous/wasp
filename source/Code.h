@@ -293,9 +293,11 @@ public:
     }
 
     void debug() {
-//		for (int i = 0; i < length; i++)printf("%s%02x", i % 4 == 0 ? " 0x" : "", data[i]);
-//		printf("\n");
-        save();
+        String s;
+        for (int i = 0; i < length; i++)
+            s += hex(data[i], 1) + " ";
+        print(s);
+//        save();
     }
 
     Code &save(chars file_name = "test.wasm") {

@@ -428,16 +428,34 @@ String load(String file) {
 #endif
 }
 
-String &hex(int64 d) {
-#ifdef WASM
-    return * new String(formatLong(d));
-#else
-//	char* s= (char*) malloc(1+64/4);// 0x ?
-    int size = 3 + 64 / 4;
+static String zerox = "0x00";
+static String ZERO = "0";
+
+String &hex(int64 d0, bool include_0x, bool upper_case) {
+    int64 d = abs(d0);
+    if (d == 0)
+        return include_0x ? zerox : ZERO;
+    int size = 4 + 64 / 4;
     char s[size];
-    snprintf(s, size, "0x%llx", d);
-    return *new String(s);// todo mark data as to-free
-#endif
+//#ifdef WASM
+    int i = 0;
+    while (d and size) {
+        if (d % 16 < 10)
+            s[i++] = '0' + d % 16;
+        else
+            s[i++] = (upper_case ? 'A' : 'a') + d % 16 - 10;
+        d /= 16;
+    }
+    if (include_0x) {
+        if (abs(d0) < 16)
+            s[i++] = '0';// pad 0x01
+        s[i++] = 'x';
+        s[i++] = '0';
+    }
+    if (d0 < 0)s[i++] = '-';
+    s[i] = 0;
+    reverse(s, i);
+    return *new String(s);
 }
 
 bool isSmartPointer(int64 d) {
