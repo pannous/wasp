@@ -17,9 +17,9 @@
 
 #include <stdarg.h> // va_list OK IN WASM???
 //#include <cstdarg> // va_list ok in wasm even without wasi!
-#ifndef WASM
+#include <initializer_list> // works in wasi!!  allow List x={1,2,3};
 
-#include <initializer_list> // allow List x={1,2,3};
+#ifndef WASM
 
 #endif
 
@@ -189,31 +189,44 @@ public:
 //        va_end(args);
 //    }
 
-    // only Plain Old Data structures !
+
+
+//#ifndef PURE_WASM
+    List(const std::initializer_list<S> &_items) : List() {
+        for (const S &s: _items) {
+            items[size_++] = s;
+        }
+    }
+//#endif
+
+// todo: can get removed thanks to initializer_list
+    // only Plain Old Data structures! works outside wasm but shouldn't
     List(S first, ...) : List() {
         size_ = 0;
         va_list args;// WORKS WITHOUT WASI! with stdargs
         va_start(args, first);
         S item = first;
         do {
+            print("va_arg#");
+            print(size_);
+            print(item);
             items[size_++] = item;
             item = (S) va_arg(args, S);
         } while (item);
         va_end(args);
     }
 
-//    List(S first, ...) : List() {
-//        _size = 0;
-//        va_list args;// WORKS WITHOUT WASI! with stdargs
-//        va_start(args, first);
-//        S item = first;
-//        do {
-//            items[_size++] = item;
-//            item = (S) va_arg(args, S);
-//        } while (item);
-//        va_end(args);
-//    }
 
+    // todo get rid in favor of vararg /  initializer_list!
+//	List(S args[])  same
+    List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
+        if (args == 0)return;
+        while (args[size_] and size_ < LIST_DEFAULT_CAPACITY)size_++;
+        items = args;
+//        items = (S *) calloc(sizeof(S), size_ + 1);
+//        int i = size_;
+//        while (i-- > 0)items[i] = args[i];
+    }
 
     List(S *args, int count, bool share = true) {
         if (args == 0)return;
@@ -233,15 +246,6 @@ public:
 
     List(S *data, S *end, bool share = true) : List(data, (end - data) / sizeof(S), share) {}
 
-    // todo get rid in favor of vararg /  initializer_list!
-    List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
-        if (args == 0)return;
-        while (args[size_] and size_ < LIST_DEFAULT_CAPACITY)size_++;
-        items = args;
-//        items = (S *) calloc(sizeof(S), size_ + 1);
-//        int i = size_;
-//        while (i-- > 0)items[i] = args[i];
-    }
 
 //	List(S args) {// initiator list C style {x,y,z}
 //		if (args == 0)return;
@@ -251,21 +255,11 @@ public:
 //	}
 
 
-//	List(S args[]) {}
 //    ~List() { // double-free
 //        if (not shared)
 //            free(items);
 //    }
 
-#ifndef WASM
-
-    List(const std::initializer_list<S> &_items) : List() {
-        for (const S &s: _items) {
-            items[size_++] = s;
-        }
-    }
-
-#endif
 
     size_t size() const { return size_; };
 
@@ -408,7 +402,11 @@ public:
         return position(item) >= 0;
     }
 
-    bool contains(S &item) {
+    bool contains(S *item) {
+        return position(item) >= 0;
+    }
+
+    bool contains(S item) {
         return position(item) >= 0;
     }
 
