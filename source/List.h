@@ -199,7 +199,7 @@ public:
     }
 //#endif
 
-// todo: can get removed thanks to initializer_list
+    // todo: can get removed thanks to initializer_list
     // only Plain Old Data structures! works outside wasm but shouldn't
     List(S first, ...) : List() {
         size_ = 0;
@@ -219,14 +219,15 @@ public:
 
     // todo get rid in favor of vararg /  initializer_list!
 //	List(S args[])  same
-    List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
-        if (args == 0)return;
-        while (args[size_] and size_ < LIST_DEFAULT_CAPACITY)size_++;
-        items = args;
-//        items = (S *) calloc(sizeof(S), size_ + 1);
-//        int i = size_;
-//        while (i-- > 0)items[i] = args[i];
-    }
+//    List(S *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
+//        if (args == 0)return;
+//        todo("get rid in favor of vararg /  initializer_list");
+//        while (args[size_] and size_ < LIST_DEFAULT_CAPACITY)size_++;
+//        items = args;
+////        items = (S *) calloc(sizeof(S), size_ + 1);
+////        int i = size_;
+////        while (i-- > 0)items[i] = args[i];
+//    }
 
     List(S *args, int count, bool share = true) {
         if (args == 0)return;

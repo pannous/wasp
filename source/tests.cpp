@@ -1457,10 +1457,10 @@ void testLists() {
     skip(
             assert(result[0] == "1");// autocast
     )
-    List<int> a = {1, 2, 3, 0};
-    List<int> b{1, 2, 3, 0};
-    List<short> c{1, 2, 3, 0};
-    List<short> d = {1, 2, 3, 0};
+    List<int> a = {1, 2, 3};
+    List<int> b{1, 2, 3};
+    List<short> c{1, 2, 3};
+    List<short> d = {1, 2, 3};
     check_eq(a.size_, 3);
     check_eq(b.size_, 3);
     check_eq(a.size_, b.size_);
@@ -2817,6 +2817,10 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
+    assert_eval("if 0 {3} else {4}", 4);
+
+    assert_eval("if(0):{3} else {4}", 4);
+    testIf();
     List<String> class_keywords2 = {"struct", "type", "class", "prototype"};
     check(class_keywords2.size_ == 4);
     print(class_keywords2);

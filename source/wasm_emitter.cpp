@@ -142,6 +142,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
         if (eq(s, "^"))return 0;// POWER handled on higher level
 
         if (eq(s, "or"))return i32_or; // i32.or
+//        if (eq(s, "else"))return i32_or; // i32.or
         if (eq(s, "∨"))return i32_or; // i32.or // looks like 'v' but isn't
         if (eq(s, "⋁"))return i32_or; // i32.or
         if (eq(s, "||"))return i32_or; // i32.or  // ≠ norm ‖
@@ -1548,7 +1549,10 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //	locals[index]= Map<int, String>();
     if (node.kind == unknown and context.locals.has(node.name))
         node.kind = reference;// todo clean fallback
-
+    if (node.name=="0") {
+        code.addConst32(0);
+        return code;
+    }
     if (name == "if")
         return emitIf(node, context);
     if (name == "while")

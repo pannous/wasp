@@ -91,7 +91,7 @@ wrap(puts) {
 
 wrap(putx) {
     int64 i = args[0].of.i64;
-    printf("%lx", i);
+    printf("%llx", i);
     return NULL;
 }
 
@@ -104,7 +104,7 @@ wrap(puti) {
 
 wrap(putl) {
     int64 i = args[0].of.i64;
-    printf("%ld", i);
+    printf("%lld", i);
     return NULL;
 }
 
@@ -461,6 +461,7 @@ extern "C" int64 run_wasm(unsigned char *data, int size) {
 //	nargs=wasm_func_param_arity if nargs>0 args =[…]
     int nresults = 1;// todo how, wasmtime?
     error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, nresults, &trap);
+    // object used with the wrong store WDYM??
     if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);
     int64_t result = results.of.i64;
     if (results.kind == WASMTIME_I32)
