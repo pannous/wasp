@@ -106,12 +106,19 @@ codepoint grouper_list[] = {' ', ',', ';', ':', '\n', '\t', '(', ')', '{', '}', 
 
 // predicates in of on from to
 // todo split keywords into binops and prefix functors
-chars import_keywords[] = {"use", "require", "import", "include", "using", 0};
-chars function_keywords[] = {"to", "ƒ", "fn", "fun", "func", "function", "method", "proc", "procedure", 0};
+chars import_keywords[] = {"use", "require", "import", "include", "using",0};
+chars function_keywords[] = {"to", "ƒ", "fn", "fun", "func", "function", "method", "proc", "procedure",0};
 // todo aliases need NOT be in this list:
 // todo library functions need NOT be in this list (loaded when though?) "log10", "log₁₀", "log₂", "ln", "logₑ",
 // todo special UTF signs need NOT be in this list, as they are identified as operators via utf range
-chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
+//chars operator_list0[] =  // "while" ...
+// todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
+//  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
+// ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
+//#ifdef WASI
+//List<chars> operator_list;
+//#else
+List<chars> operator_list={"return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
                           "is", "equal", "equals", "==", "!=", "≠", "#", "=", "." /*attribute operator!*/,
                           "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "nop",
                           "pass", "typeof",
@@ -124,15 +131,7 @@ chars operator_list0[] = {"return", "+", "-", "*", "/", ":=", "≔", "else", "th
                           "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
                           "abs" /* f64.abs! */, /* "norm", "‖" acts as GROUP, not as operator (when parsing) */
         // norm ‖…‖ quite complicated for parser! ‖x‖ := √∑xᵢ²
-                          0, 0, 0,
-                          0}; // "while" ...
-// todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
-//  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
-// ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
-//#ifdef WASI
-//List<chars> operator_list;
-//#else
-List<chars> operator_list(operator_list0);
+};
 //#endif
 
 
@@ -300,6 +299,7 @@ bool contains(S list[], S match) {
 
 bool contains(chars list[], chars match) {
     chars *elem = list;
+    if(not elem)return false;
     do {
         if (eq(match, *elem))
             return true;
@@ -1313,7 +1313,6 @@ private:
             if (&key == &NIL or key.isNil() or key == NIL)
                 if (key.name == nil_name)
                     warn("impossible");
-            print("SET key,val");
             key.value = val.value;// direct copy value SURE?? what about meta data... ?
             key.kind = val.kind;
         } else {
@@ -1861,9 +1860,10 @@ void handler(int sig) {
 // todo WE HAVE A GENERAL PROBLEM:
 // 1. top level objects are not constructed True
 // 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
-void load_parser_initialization() {
+void load_parser_initialization() { // todo: remove thx to __wasm_call_ctors
     if (operator_list.size() == 0)
-        operator_list = List<chars>(operator_list0);// wasm hack
+        error("operator_list should have been constructed in __wasm_call_ctors @ _start");
+//        operator_list = List<chars>(operator_list0);// wasm hack
 //	load_aliases();
 }
 
@@ -2083,7 +2083,7 @@ int main(int argc, char **argv) {
 //extern "C" int _start() { // for wasm-ld
 //    initSymbols();
 //    return -42;// wasm-ld dummy should not be called, ok to test run_wasm("wasp.wasm")
-////	return main(0, 0);
+////	return main(0);
 //}
 //#endif
 #endif
