@@ -294,12 +294,12 @@ Node &groupIf(Node n, Function &context) {
         error("no if block given");
     Node &condition = n.first();
     Node then;
-    if (n.length == 0)
+    if(n.value.data)
         then = n.values();
     else if (n.kind == key) {
         condition = n.from(1);
         then = *n.value.node;
-    } else if (n.length > 0)then = n[1];
+    }else if (n.length > 1)then = n[1];
     if (then == "else")
         then = condition.values();
 
@@ -323,8 +323,11 @@ Node &groupIf(Node n, Function &context) {
     }
 
     Node otherwise;
-    if (n.has("else"))
+    if (n.has("else")){
         otherwise = n["else"].values();
+        if(otherwise.empty())
+            otherwise = n.last();
+    }
     if (then.has("then"))
         then = n.from("then");
     if (then.has("else")) {
@@ -340,6 +343,14 @@ Node &groupIf(Node n, Function &context) {
     }
     if (n.length == 3 and otherwise.isEmpty())
         otherwise = n[2];
+    if (otherwise.isEmpty() and n.next) {
+        if (n.next->name == "else"){
+            otherwise = *n.next->next;
+//            otherwise = n.next->values();
+        }
+        else
+            otherwise = *n.next;
+    }
     Node *eff = new Node("if");
     Node &ef = *eff;
     ef.kind = expression;
@@ -1411,27 +1422,24 @@ Node &analyze(Node &node, Function &function) {
     Kind type = node.kind;
     String &name = node.name;
 
+    if (name == "if")return groupIf(node, function);
+    if (name == "while")return groupWhile(node, function);
+    if (name == "?")return groupIf(node, function);
     if (name == "module") {
         if (!module)module = new Module();
         module->name = node.string(); // todo: use?
         return NUL;
     }
-
-//    if(node.length==1 and node.first().name=="func"){
-    if (node.kind == key and node.values().name == "func") {
-        // add: func(a: float32, b: float32) -> float32
+    if (not first.empty() and class_keywords.contains(first))
+        return classDeclaration(node, function);
+    // if(function_operators.contains(name))...
+    if (node.kind == key and node.values().name == "func")
         return funcDeclaration(node.name, node.values(), NUL /* no body here */ , 0, function.module);
 //        return witReader.analyzeWit(node);
-    }
+    // add: func(a: float32, b: float32) -> float32
 
-    if (type == functor) {
-        if (name == "while")return groupWhile(node, function);
-        if (name == "if")return groupIf(node, function);
-        if (name == "?")return groupIf(node, function);
-    }
-    if ((type == expression and not name.empty())) {
+    if ((type == expression and not name.empty()))
         addLocal(function, name, int32, false);//  todo deep type analysis x = π * fun() % 4
-    }
     if (type == key) {
         if (node.value.node /* i=ø has no node */)
             node.value.node = analyze(*node.value.node, function).clone();
@@ -1475,8 +1483,6 @@ Node &analyze(Node &node, Function &function) {
     }
 
 
-    if (not first.empty() and class_keywords.contains(first))
-        return classDeclaration(node, function);
     Node &groupedTypes = groupTypes(node, function);
     if (isPrimitive(node)) return node;
     Node groupedDeclarations = groupDeclarations(groupedTypes, function);
