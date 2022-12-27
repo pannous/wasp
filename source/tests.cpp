@@ -1450,10 +1450,15 @@ void testLists() {
     skip(
             assert(result[0] == "1");// autocast
     )
-    List<int> a = {1, 2, 3};
-    List<int> b{1, 2, 3};
-    List<short> c{1, 2, 3};
-    List<short> d = {1, 2, 3};
+    List<int> a = {1, 2, 3, 0};
+    List<int> b{1, 2, 3, 0};
+    List<short> c{1, 2, 3, 0};
+    List<short> d = {1, 2, 3, 0};
+    check_eq(a.size_, 3);
+    check_eq(b.size_, 3);
+    check_eq(a.size_, b.size_);
+    check_eq(a[0], b[0]);
+    check_eq(a[2], b[2]);
     check_eq(a, b);
 //    check_eq(a, c); // not comparable
     check_eq(c, d);
@@ -2071,12 +2076,23 @@ void testString() {
 
 
 void testNilValues() {
-    assert_parses("{a:null}");
-    assert_equals(result["a"], NIL);
-
+    assert(NIL.name == nil_name);
+    assert(NIL.isNil());
     assert_parses("{ç:null}");
     Node &node1 = result["ç"];
+    debugNode(node1);
     assert(node1 == NIL);
+
+    assert_parses("{a:null}");
+    check(result["a"].value.data == 0)
+    check(result.value.data == 0)
+    check(result["a"].value.longy == 0)
+    check(result.value.longy == 0)
+    debugNode(result["a"]);
+    print(result["a"].serialize());
+    assert(result["a"] == NIL);
+    assert(result == NIL);
+    assert_equals(result["a"], NIL);
 
     assert_parses("{ç:ø}");
     Node &node = result["ç"];
@@ -2642,6 +2658,19 @@ void tests() {
     testNodeConversions();
     testUpperLowerCase();
     testListGrow();
+    testGroupCascade();
+    testNewlineLists();
+    testStackedLambdas();
+    testIterate();
+    testLists();
+    testMarkAsMap();
+    testEval();
+    testParamizedKeys();
+    testForEach();
+    testString();
+    testEmpty();
+    testDiv();
+    testRoot();
     testSerialize();
     skip(
             testPrimitiveTypes();
@@ -2664,7 +2693,6 @@ void tests() {
     testStringConcatenation();
     testNodeBasics();
     testStringReferenceReuse();
-    testTruthiness();
     testConcatenation();
     testMarkSimple();
     testMarkMulti();
@@ -2674,35 +2702,17 @@ void tests() {
     testGroupCascade0();
     testGraphQlQuery();
     print(testNodiscard());
-    testGroupCascade();
-    testNewlineLists();
-    testStackedLambdas();
-    testRootLists();
-    testIterate();
-    testLists();
-    testMarkAsMap();
-    testEval();
-    testParamizedKeys();
-    testForEach();
-    testString();
-    testEmpty();
-    testHex();
-    testDiv();
-    testRoot();
-    testLogicPrecedence();
-    testRootFloat();
     testCpp();
     testNilValues();
+    testMapsAsLists();
 
     testLists();
     testDeepLists();
     testGraphParams();
     testAddField();
     testOverwrite();
-    testMapsAsLists();
     testDidYouMeanAlias();
     testNetBase();
-    testRoots();
     testForEach();
     testLengthOperator();
     testLogicEmptySet();
@@ -2736,9 +2746,14 @@ void tests() {
     testMergeOwn();
     testRecentRandomBugs();
     testBUG();
+    testAllAngle();
 
-
-    // WASM test, most result in wasm emit under the hood:
+    // WASM emit tests under the hood:
+    testRoots();
+    testRootFloat();
+    testTruthiness();
+    testLogicPrecedence();
+    testRootLists();
     testHex();
     testBadInWasm();
     testIndexOffset();
@@ -2794,6 +2809,7 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
+    testNilValues();
     tests();// make sure all still ok before changes
 
     skip(
