@@ -311,7 +311,7 @@ public:
 
 //	explicit String(char16_t* chars){
 //		data = (char*)(calloc(sizeof(char16_t),len(chars)));
-//		encode_unicode_characters(data, chars);
+//		encode_unicode_characters(data,);
 //		length = len();
 //	}
 
@@ -1064,16 +1064,21 @@ static String EMPTY = "";// = String('\0');
 //String operator "" _s(chars c, uint64 );
 void print(String *s);
 
+void print(void *s);
+
 void print(char const *s);
 
 //void print(char *s);
 //void print(const char *s);
-void print(String s);
+void print(String);
 
 void println(Node &s);
 
-void println(String s); // ==
-void put(String s);
+void println(String); // ==
+
+void println(int64);
+
+void put(String);
 
 extern "C" int puts(const char *);// int return needed for stdio compatibilty !
 //void puts(const char *);
@@ -1088,18 +1093,18 @@ bool empty(String &s);
 
 bool empty(String *s);
 
-bool empty(chars s);
+bool empty(chars);
 
-bool empty(codepoint s);// todo: rename whitespace (and braces??)
+bool empty(codepoint);// todo: rename whitespace (and braces??)
 
 bool contains(chars str, chars match);
 
 
 //extern "C"  // only pointers!
-String &string(chars chars);
+String &string(chars);
 
 extern "C"  // only pointers!
-String *str(chars chars);
+String *str(chars);
 
 
 #ifdef WEBAPP
