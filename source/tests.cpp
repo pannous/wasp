@@ -16,87 +16,12 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s \n%s:%d\n",marka,__FILE__,__LINE__);proc_exit(1);}
 
-
-void testMaps0() {
-    Map<int, long> map;
-    check(map.values[0] == map[0]);
-    check(map.values == &(map[0]));
-    map[0] = 2;
-    check(map.values[0] == 2);
-    check(map.size() == 1);
-    map[2] = 4;
-    check(map.size() == 2);
-    check(map.values[1] == 4);
-    check(map.keys[1] == 2);
-    print(map[0]);
-    print(map[2]);
-    print(map[(size_t) 0]);
-    print(map[(size_t) 1]);
-    check(map[0] == 2);
-    check(map[2] == 4);
-}
-
-
-void testMapOfStrings() {
-    Map<String, chars> map;
-    map["a"] = "1";
-    check(map.size() == 1);
-    check(map.keys[0] == "a");
-    check(map.values[0] == "1"s);
-    check(map["a"] == "1"s);
-    map["b"] = "2";
-    check(map.size() == 2);
-    check(map.keys[1] == "b");
-    check(map.values[1] == "2"s);
-    check(map["b"] == "2"s);
-}
-
-void testMapOfStringValues() {
-    Map<chars, String> map;
-    map["a"] = "1";
-    check(map.size() == 1);
-    check(map.keys[0] == "a"s);
-    check(map.values[0] == "1"s);
-    check(map["a"] == "1"s);
-    map["b"] = "2";
-    check(map.size() == 2);
-    check(map.keys[1] == "b"s);
-    check(map.values[1] == "2"s);
-    check(map["b"] == "2"s);
-}
-
-void testMaps1() {
+void testMaps() {
     functions.clear();
-    functions.insert_or_assign("abcd", {.name="abcd"});
-    functions.insert_or_assign("efg", {.name="efg"});
-    check_is(functions.size(), 2);
-    check(functions["abcd"].name == "abcd");
-    check(functions["efg"].name == "efg");
-// ok
-}
-
-void testMaps2() {
-    functions.clear();
-    Function abcd;
-    abcd.name = "abcd";
-    functions["abcd"] = abcd;
-    functions["efg"] = {.name="efg"};
     functions["abcd"] = {.name="abcd"};
     functions["efg"] = {.name="efg"};
     check_is(functions.size(), 2);
-    print(functions["abcd"]);
-    print(functions["abcd"].name);
     check(functions["abcd"].name == "abcd");
-    check(functions["efg"].name == "efg");
-// ok
-}
-
-void testMaps() {
-    testMaps0();// ok
-    testMapOfStrings();
-    testMapOfStringValues();
-    testMaps1();
-    testMaps2();// now ok
 }
 
 void testHex() {
@@ -2904,6 +2829,11 @@ void wasp_tests();
 extern "C" void testCurrent() {
 //    wasp_tests();
 //    clearAnalyzerContext();
+    testMaps();
+    preRegisterFunctions();
+    check(functions.has("fd_write"));
+    check(functions["fd_write"].signature.size() == 4);
+    check(functions["fd_write"].name == "fd_write");
     assert_emit("42", 42);
     tests();// make sure all still ok before changes
     skip(
