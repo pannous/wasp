@@ -1426,7 +1426,6 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
     check_is(reconstruct.node_header, node_header_32)
     if (reconstruct.length < 0 or reconstruct.length > reconstruct.capacity or reconstruct.length > MAX_NODE_CAPACITY)
         error("reconstruct node sanity check failed for length");
-
     return &reconstruct;
 }
 
