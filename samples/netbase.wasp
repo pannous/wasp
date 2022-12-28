@@ -1,0 +1,6 @@
+use netbase
+load wikidata
+results = query "all cities with population > 100000"
+print first 10 of results
+debug results where country is germany
+
