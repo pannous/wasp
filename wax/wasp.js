@@ -15,6 +15,21 @@ window.console.log = function (...args) {
     args.forEach(arg => results.value += `${JSON.stringify(arg)}\n`);
 }
 
+function String(pointer) {
+    switch (typeof pointer) {
+        case "string":
+            let p = STACK
+            new_int(STACK + 8)
+            new_int(pointer.length)
+            chars(pointer);
+            return p;
+        case "bigint":
+        case "number":
+        default:
+            return string(int32(pointer), int32(pointer + 4))
+    }
+}
+
 function string(pointer, length = -1, format = 'utf8') {
     if (length < 0) { // auto length
         while (buffer[pointer + ++length]) ;
@@ -33,6 +48,19 @@ function string(pointer, length = -1, format = 'utf8') {
     }
 }
 
+function new_int(val) {
+    while (STACK % 4) STACK++;
+    let buf = new Uint32Array(memory.buffer, STACK, memory.length);
+    buf[0] = val
+    STACK += 4
+}
+
+function new_long(val) {
+    let buf = new Uint64Array(memory.buffer, STACK / 8, memory.length);
+    buf[0] = val
+    STACK += 8
+}
+
 function int32(pointer) { // little endian
     buffer = new Uint8Array(memory.buffer, 0, memory.length);
     return buffer[pointer + 3] * 2 ** 24 + buffer[pointer + 2] * 256 * 256 + buffer[pointer + 1] * 256 + buffer[pointer];
@@ -44,10 +72,6 @@ const fd_write = function (x, y, z, k) {
     console.log(string(string_ptr, len) || "\n");
     return -1; // todo
 };
-
-function tests() {
-    exports._Z11testCurrentv()
-}
 
 
 function chars(s) {
@@ -70,14 +94,6 @@ function parse(data) {
     let node = exports._Z5parse6String13ParserOptions(chars(data), 1)// also calls run()!
     console.log(node)
 }
-
-function test() {
-    let node = exports.testJS(chars("FULL CIRCLE"))
-    exports._Z7println6String(chars("full circle"))
-    exports._Z7reversePci(chars("abcd"))
-    console.log(string(node))
-}
-
 
 var stdout = '';
 write = function (s) {
@@ -181,14 +197,20 @@ WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(obj => {
             result = instance.exports//show what we've got
         }
         console.log(result);
-        // console.log(exports)
-        //alert(result)
-        try {
-            test()
-            // tests()
-            // compile_and_run("42")
-        } catch (x) {
-            console.log("Tests failed", x)
-        }
+        test()
     }
 )
+
+
+function test() {
+    // exports.testCurrent()
+    // let cmd="puts 'CYRC!'"
+    // let cmd="puti 123"
+    let cmd = "123"
+    let ok = exports.run(chars(cmd))
+    console.log(string(ok))
+    ok = exports.testJString(String("FULL circle"))
+    console.log(String(ok))
+    exports._Z7println6String(chars("full circle"))
+    exports._Z7reversePci(chars("abcd"))
+}

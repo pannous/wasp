@@ -148,7 +148,7 @@ int square(int a) {
 }
 
 #if NO_TESTS
-void testCurrent(){
+extern "C" void testCurrent(){
     print("no tests");
 }
 #endif

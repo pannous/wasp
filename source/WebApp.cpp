@@ -101,7 +101,6 @@ Wait waiter;
 webview::webview w(true, nullptr);// global for lambdas
 std::string testWebview(std::string s);
 
-void testCurrent();
 
 void render(String html) {
     std::string data = html.data;
@@ -133,9 +132,9 @@ void render(Node &node, std::stringstream *html) {
 // char *page="file://index.html";// doesn't
 // char *page="file:///Users/me/index.html";// works, but how to get local file paths AT COMPILE TIME?? ok for debugging!
 #ifdef SERVER
-char *page = "http://localhost:8080/test.html";
+chars page = "http://localhost:8080/test.html";
 #else
-char *page = "file:///Users/me/wasp/source/test.html";
+chars page = "file:///Users/me/wasp/source/test.html";
 #endif
 // char *page="data:text/html,<body onclick='close()'>test</body>";
 // char *page=page || "data:text/html,\n<html><body style='height:999px;' onclick='close()'>X</body></html>";// why not??

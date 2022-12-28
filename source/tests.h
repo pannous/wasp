@@ -1,3 +1,3 @@
 #pragma once
 extern Node &result;
-void testCurrent();
+extern "C" void testCurrent();
