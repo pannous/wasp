@@ -249,9 +249,7 @@ void testFlagSafety() {
 
 
 void testFlags2() {
-    return;
 
-//    testFlagSafety();
     // todo allow just parser-flags{…} in wasp > wit
     auto code = R"(flags parser-flags{
         data_mode
@@ -292,7 +290,6 @@ void testFlags2() {
 
 
 void testFlags() {
-    testFlags2();
     clearAnalyzerContext();
     Node &parsed = parse("flags abc{a b c}");
     Node &node = analyze(parsed);
@@ -2744,16 +2741,19 @@ void tests() {
     testGroupCascade();
     testParams();
     testSignificantWhitespace();
-    testFlags();
-    testMergeOwn();
-    testRecentRandomBugs();
     testBUG();
-    testAllAngle();
+    testFlags();
+//    testFlags2();
+//    testFlagSafety();
 
     // WASM emit tests under the hood:
     // todo: split in test_wasp test_angle test_emit.cpp
-    testEqualities();
+    assert_emit("42", 42);// basics
     testLogic();
+    testAllAngle();
+    testRecentRandomBugs();
+    testMergeOwn();
+    testEqualities();
     testLogic01();
     testLogicOperators();
     testCall();
@@ -2820,16 +2820,7 @@ void wasp_tests();
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
 //    wasp_tests();
-    assert_emit("i=-9;√-i", 3);
-    testIf();
-    List<String> class_keywords2 = {"struct", "type", "class", "prototype"};
-    check(class_keywords2.size_ == 4);
-    print(class_keywords2);
-    auto last = class_keywords2.last();
-    print(last);
-    check(class_keywords2.last() == "prototype");
-    check(class_keywords2.contains("class"))
-    testFlags();
+    assert_emit("42", 42);
     tests();// make sure all still ok before changes
 
     skip(

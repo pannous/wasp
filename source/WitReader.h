@@ -12,32 +12,28 @@
 Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module *mod);
 
 // https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md
-static List<String> wit_keywords
-#if !WASM
-        = {
-                "world",
-                "module",
-                "static",
-                "interface",
-                "type",
-                "resource",
-                "record",
-                "func",
-                "variant",
-                "flags",
-                "enum",
-                "tuple",
-                "union",
-                "future",
-                "stream",
-                "option",
-                "char",
-                "u8", "u16", "u32", "u64",
-                "s8", "s16", "s32", "s64",
-                "float32", "float64",
-        }
-#endif
-;
+static List<String> wit_keywords = {
+        "world",
+        "module",
+        "static",
+        "interface",
+        "type",
+        "resource",
+        "record",
+        "func",
+        "variant",
+        "flags",
+        "enum",
+        "tuple",
+        "union",
+        "future",
+        "stream",
+        "option",
+        "char",
+        "u8", "u16", "u32", "u64",
+        "s8", "s16", "s32", "s64",
+        "float32", "float64",
+};
 
 /*
  * THIS prefix format is OUTDATED:

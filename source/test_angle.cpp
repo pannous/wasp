@@ -346,7 +346,7 @@ void testLogicPrecedence() {
 }
 
 
-void testAllAngle() {
+void testAllAngle() {// emmitting or not
     testLogicPrecedence();
 //	testSmartTypes();
     testIf();
