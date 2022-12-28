@@ -23,9 +23,9 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
     return -1; // todo
 };
 
-imports = {
+let imports = {
     env: {
-        run_wasm,
+        run_wasm, // allow wasm modules to run plugins / compiler output
         init_graphics: nop, // canvas init by default
         requestAnimationFrame: nop,
     },
@@ -53,18 +53,18 @@ window.console.log = function (...args) {
     args.forEach(arg => results.value += `${JSON.stringify(arg)}\n`);
 }
 
-function String(pointer) {
-    switch (typeof pointer) {
+function String(data) { // wasm<>js interop
+    switch (typeof data) {
         case "string":
             let p = STACK
             new_int(STACK + 8)
-            new_int(pointer.length)
-            chars(pointer);
+            new_int(data.length)
+            chars(data);
             return p;
         case "bigint":
         case "number":
         default:
-            return string(int32(pointer), int32(pointer + 4))
+            return string(int32(data), int32(data + 4))
     }
 }
 
@@ -104,9 +104,8 @@ function int32(pointer) { // little endian
     return buffer[pointer + 3] * 2 ** 24 + buffer[pointer + 2] * 256 * 256 + buffer[pointer + 1] * 256 + buffer[pointer];
 }
 
-
 function chars(s) {
-    if (!s) return -1; //0 // 0 = 0 MAKE SURE!
+    if (!s) return 0;// MAKE SURE!
     current = STACK;
     const uint8array = new TextEncoder("utf-8").encode(s + "\0");
     buffer.set(uint8array, current);
@@ -116,10 +115,16 @@ function chars(s) {
 
 let str = chars
 
+function reset_heap() {
+    HEAP = exports.__heap_base; // ~68000
+    DATA_END = exports.__data_end
+    STACK = HEAP || DATA_END;
+}
+
 function compile_and_run(code) {
+    // reset at each run, discard previous data!
+    reset_heap();
     exports.run(chars(code));
-    // let node = exports._Z7compile6Stringb(chars(code), 1)// also calls run()!
-    // console.log(node)
 }
 
 function parse(data) {
@@ -192,13 +197,12 @@ WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(obj => {
 
 
 function test() {
-    // exports.testCurrent()
+    // exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
+    if (typeof (wasp_tests) !== "undefined")
+        wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
+
     // let cmd="puts 'CYRC!'"
     // let cmd="puti 123"
-    let cs = chars("abcd")
-    exports._Z7reversePci(cs, 4)
-    puts(cs)
-    console.log(string(cs));
     let cmd = "123"
     let ok = exports.run(chars(cmd))
     console.log(string(ok))
