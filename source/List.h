@@ -192,8 +192,10 @@ public:
 
 
 //#ifndef PURE_WASM
-    List(const std::initializer_list<S> &_items) : List() {
-        for (const S &s: _items) {
+    List(const std::initializer_list<S> &inis) : List() {
+        auto item_count = inis.end() - inis.begin();
+        while (item_count >= capacity)grow();
+        for (const S &s: inis) {
             items[size_++] = s;
         }
     }
