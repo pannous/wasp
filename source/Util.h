@@ -55,8 +55,8 @@ static bool I_know_what_I_am_doing = false;
 #if TRACE
 static bool tracing = true;
 #else
-//static bool tracing = false;
-static bool tracing = true;
+static bool tracing = false;
+//static bool tracing = true;
 #endif
 
 #if RELEASE

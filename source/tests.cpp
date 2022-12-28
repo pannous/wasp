@@ -37,6 +37,34 @@ void testMaps0() {
 }
 
 
+void testMapOfStrings() {
+    Map<String, chars> map;
+    map["a"] = "1";
+    check(map.size() == 1);
+    check(map.keys[0] == "a");
+    check(map.values[0] == "1"s);
+    check(map["a"] == "1"s);
+    map["b"] = "2";
+    check(map.size() == 2);
+    check(map.keys[1] == "b");
+    check(map.values[1] == "2"s);
+    check(map["b"] == "2"s);
+}
+
+void testMapOfStringValues() {
+    Map<chars, String> map;
+    map["a"] = "1";
+    check(map.size() == 1);
+    check(map.keys[0] == "a"s);
+    check(map.values[0] == "1"s);
+    check(map["a"] == "1"s);
+    map["b"] = "2";
+    check(map.size() == 2);
+    check(map.keys[1] == "b"s);
+    check(map.values[1] == "2"s);
+    check(map["b"] == "2"s);
+}
+
 void testMaps1() {
     functions.clear();
     functions.insert_or_assign("abcd", {.name="abcd"});
@@ -49,9 +77,15 @@ void testMaps1() {
 
 void testMaps2() {
     functions.clear();
+    Function abcd;
+    abcd.name = "abcd";
+    functions["abcd"] = abcd;
+    functions["efg"] = {.name="efg"};
     functions["abcd"] = {.name="abcd"};
     functions["efg"] = {.name="efg"};
     check_is(functions.size(), 2);
+    print(functions["abcd"]);
+    print(functions["abcd"].name);
     check(functions["abcd"].name == "abcd");
     check(functions["efg"].name == "efg");
 // ok
@@ -59,36 +93,10 @@ void testMaps2() {
 
 void testMaps() {
     testMaps0();// ok
+    testMapOfStrings();
+    testMapOfStringValues();
     testMaps1();
-    testMaps2();// not ok
-//    Map<chars, Function> map;
-    Map<String, Function> map;
-    map.clear();
-    check(map.position("abcd") == -1);
-    Function abcd{.name="abcd"};
-    check(abcd.name == "abcd")
-    Function &ABCD = map["abcd"];
-    check_is(map.position("abcd"), (long) 0);
-    check(map.size() == 1);
-    Function &ABCDb = map["abcd"];
-    check(map.size() == 1);
-    check(&ABCD == &ABCDb);
-    ABCD = abcd;// stack value abcd gets transferred to ABCD which lives in map
-    check(abcd.name == "abcd");
-    check(ABCD.name == "abcd");
-
-    map["abcd"] = abcd;
-//    check_is(&ABCD,&abcd);
-    check_is(&ABCD, &map["abcd"]);
-    check(&map.values[0] == &ABCD);
-    check(map.values[0].name == "abcd");
-    check(map.position("efg") == -1);
-    map["efg"] = {.name="efg"};
-    check(map.position("efg") == 1);
-    check(map["abcd"].name == "abcd");
-    check(map.at(0).name == "abcd");
-    check(map.at(1).name == "efg");
-    check_is(map.size(), 2);
+    testMaps2();// now ok
 }
 
 void testHex() {
