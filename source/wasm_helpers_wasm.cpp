@@ -77,16 +77,16 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
     if ((int) current < 100000) {
 //        puti((int) current);
 //        print("get_heap_base:");
-        current = (char *) get_heap_base();
 //        puti((int) current);
+        while (__heap_base % 8)__heap_base++;// align
+        current = (char *) get_heap_base();
     }
     void *last = current;
     current += size;
 //	if(size>1000)
     bool check_overflow = false;// wasm trap: out of bounds memory access OK
     if (check_overflow and MEMORY_SIZE and (int64) current >= MEMORY_SIZE) {
-#ifndef WASI
-        error("TOO BIG LOL");
+        put_chars("OUT OF MEMORY", 13);
         puti(sizeof(Node));// 64
         puti(sizeof(String));// 20
         puti(sizeof(Value));// 8 int64
@@ -95,10 +95,9 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
         puti((int) current);
         puti((int) HEAP_OFFSET);
         puti(MEMORY_SIZE);
-//		error("OUT OF MEMORY");// needs malloc :(
-#endif
+        error("OUT OF MEMORY");// needs malloc :(
         panic();
-        last = current = (char *) (4 * HEAP_OFFSET);// reset HACK todo!
+//        last = current = (char *) (4 * HEAP_OFFSET);// reset HACK todo!
     }
     return last;
 }

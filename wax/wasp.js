@@ -46,11 +46,17 @@ let imports = {
 }
 imports.wasi_snapshot_preview1 = imports.wasi_unstable // fuck wasmedge!
 
-let puts = x => console.log(string(x))
+let todo = x => console.error("TODO", x)
+let puts = x => console.log(string(x)) // char*
+let prints = x => console.log(String(x)) // char**
 const console_log = window.console.log;// redirect to text box
 window.console.log = function (...args) {
     console_log(...args);
     args.forEach(arg => results.value += `${JSON.stringify(arg)}\n`);
+}
+
+function check(ok) {
+    if (!ok) throw new Error("test failed");
 }
 
 function String(data) { // wasm<>js interop
@@ -64,7 +70,7 @@ function String(data) { // wasm<>js interop
         case "bigint":
         case "number":
         default:
-            return string(int32(data), int32(data + 4))
+            return string(read_int32(data), read_int32(data + 4))
     }
 }
 
@@ -99,10 +105,16 @@ function new_long(val) {
     STACK += 8
 }
 
-function int32(pointer) { // little endian
+function read_int32(pointer) { // little endian
     buffer = new Uint8Array(memory.buffer, 0, memory.length);
     return buffer[pointer + 3] * 2 ** 24 + buffer[pointer + 2] * 256 * 256 + buffer[pointer + 1] * 256 + buffer[pointer];
+}// todo: like this:
+
+function read_int64(pointer) {
+    buffer = new BigInt64Array(memory.buffer, pointer, memory.length);
+    return buffer[0]
 }
+
 
 function chars(s) {
     if (!s) return 0;// MAKE SURE!
@@ -127,17 +139,74 @@ function compile_and_run(code) {
     exports.run(chars(code));
 }
 
-function parse(data) {
-    let node = exports._Z5parse6String13ParserOptions(chars(data), 1)// also calls run()!
-    console.log(node)
+let wasm_pointer_size = 4;// 32 bit
+let node_header_32 = 0x80000000
+let size_of_string = 16;// todo
+//    32bit in wasm TODO pad with string in 64 bit
+class node {
+    name = ""
+
+    constructor(pointer) {
+        this.pointer = pointer
+        if (!pointer) return;//throw "avoid 0 pointer node constructor"
+        check(read_int32(pointer) == node_header_32)
+        pointer += 4;
+        this.length = read_int32(pointer);
+        pointer += 4;
+        this.kind = read_int32(pointer);
+        pointer += 4;
+        // this.type = read_int32(pointer);
+        // pointer += wasm_pointer_size;// forced 32 bit,  improved from 'undefined' upon construction
+        this.child_pointer = read_int32(pointer);
+        pointer += wasm_pointer_size;// LIST, not link. block body content
+        // console.log(pointer,pointer%8) // must be %8=0 by now
+        this.value = parseInt(read_int64(pointer));
+        pointer += 8; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
+        this.name = String(pointer);
+        // pointer += size_of_string; // todo
+        // this.meta = 0;
+        // pointer += wasm_pointer_size//  LINK, not list. attributes meta modifiers decorators annotations
+        // previous fields must be aligned to int64!
+    }
+
+    children() {
+        let list = []
+        let l = this.length;
+        let i = 0
+        let node_size = exports.size_of_node()
+        while (l-- > 0) {
+            list.push(new node(this.child_pointer + i * node_size));
+            i++
+        }
+        return list
+    }
+
+    serialize() {
+        if (!this.pointer) todo("only wasp nodes can be serialized");
+        return string(exports.serialize(this.pointer));
+    }
+
+    toString() {
+        return this.serialize()
+    }
+
+    debug() {
+        console.log(this.serialize());
+        console.log(this);
+        console.log(this.children());
+        console.log(this.name, ":",)
+        for (var childe of this.children()) {
+            console.log(childe.name)
+        }
+    }
 }
 
-var stdout = '';
-write = function (s) {
-    stdout += s;
-    for (var i; -1 !== (i = stdout.indexOf('\n')); stdout = stdout.slice(i + 1))
-        console.log(stdout.slice(0, i));
-};
+
+function parse(data) {
+    let node_pointer = exports.Parse(chars(data))// also calls run()!
+    let nod = new node(node_pointer);
+    nod.debug()
+}
 
 let Backtrace = function (print = 1) {
     try {
@@ -201,6 +270,8 @@ function test() {
     if (typeof (wasp_tests) !== "undefined")
         wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 
+    let nod = parse("a : (b ,c)")
+    prints(exports.serialize(nod))
     // let cmd="puts 'CYRC!'"
     // let cmd="puti 123"
     let cmd = "123"

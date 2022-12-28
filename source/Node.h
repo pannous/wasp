@@ -219,15 +219,14 @@ public:
     int node_header = node_header_32;
 //    Type64 type6;
     int length = 0;// #children
-    Node *type = 0;// variable/reference type or object class?
+    Kind kind = unknown;// forced 32 bit,  improved from 'undefined' upon construction
     Node *children = nullptr;// LIST, not link. block body content
     Value value = {.longy=0}; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
-    Kind kind = unknown;// forced 32 bit,  improved from 'undefined' upon construction
-    Node *meta = 0;//  LINK, not list. attributes meta modifiers decorators annotations
 //    32bit in wasm TODO pad with string in 64 bit
-//	Type kind = unknown;// improved from 'undefined' upon construction
     // previous fields must be aligned to int64!
     String name = empty_name;// nil_name;
+    Node *type = 0;// variable/reference type or object class?
+    Node *meta = 0;//  LINK, not list. attributes meta modifiers decorators annotations
 
     // todo rename and alias:
     // lets lads lats lates: lets because a=b;c=d …; lads children; lats laterals; lates delayed evaluation
@@ -271,6 +270,7 @@ public:
 //	}
 
     void *operator new(size_t size) {
+        while ((long) current % 8)current++;// align
         return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
     }
 
