@@ -35,7 +35,13 @@ class Code;
 // wasm JIT runtimes: wasm3, wasm-micro-runtime, wabt, V8 via webview:
 // wasmer via console, node/browser via import, webview  …
 // extern "C" for webview / other host
+//#include <future>
+//std::future<int64> run_wasm(bytes wasm_bytes, int len); // <thread> is not supported on this single threaded system
+#if MY_WASM
+extern "C" int run_wasm(bytes wasm_bytes, int len);
+#else
 extern "C" int64 run_wasm(bytes wasm_bytes, int len);
+#endif
 extern "C" int64 run_wasm_file(chars wasm_path);
 
 extern bytes magicModuleHeader;
