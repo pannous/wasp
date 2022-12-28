@@ -46,7 +46,7 @@ extern void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM!
 #define HEAP_OFFSET 0x80000
 #endif
 
-extern unsigned char __heap_base;// set via lld with -Clink-arg=--export=__heap_base
+extern int __heap_base;// set via -Wl,--export=__heap_base
 extern "C" /*unsigned */ char *current;// memory + heap_offset
 extern "C" void panic();//
 
