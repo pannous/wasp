@@ -2919,3 +2919,15 @@ extern "C" String *testJString(String *s) {
     println(s);
     return new String("OK!?");
 }
+
+extern "C" char *serialize(Node *n) {
+    if (!n)return 0;
+    return n->serialize();
+}
+
+extern "C" int size_of_node() {
+    return sizeof(Node);
+}
+extern "C" int size_of_string() {
+    return sizeof(String);
+}
