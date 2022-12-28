@@ -46,10 +46,12 @@ extern void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM!
 #define HEAP_OFFSET 0x80000
 #endif
 
-extern int __heap_base;// set via -Wl,--export=__heap_base
-extern "C" /*unsigned */ char *current;// memory + heap_offset
+typedef unsigned char byte;//!
+// __heap_base is provided by host and its ADDRESS position &__heap_base is the start of the heap area.
+extern byte __heap_base;// set via -Wl,--export=__heap_base
+extern byte __data_end;
+extern "C" /*unsigned */ char *current;// memory + heap_offset // todo merge with __data_end ?
 extern "C" void panic();//
-
 
 #ifndef WASM
 
@@ -281,3 +283,7 @@ template<class S>
 class List;
 
 List<String> arguments();
+
+#if MY_WASM
+extern "C" void wasp_module_reflection(bytes* buffer,size_t* size);
+#endif

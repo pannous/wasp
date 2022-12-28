@@ -23,11 +23,38 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
     return -1; // todo
 };
 
+function memcpy(src, srcOffset, dst, dstOffset, length) {
+    src = src.subarray || src.slice ? src : src.buffer
+    dst = dst.subarray || dst.slice ? dst : dst.buffer
+    src = srcOffset ? src.subarray ?
+        src.subarray(srcOffset, length && srcOffset + length) :
+        src.slice(srcOffset, length && srcOffset + length) : src
+    if (dst.set) {
+        dst.set(src, dstOffset)
+    } else {
+        for (var i = 0; i < src.length; i++) {
+            dst[i + dstOffset] = src[i]
+        }
+    }
+    return dst
+}
+
+
+function wasp_module_reflection(buf, sizep) {
+    let length = wasm_data.length
+    memcpy(wasm_data, 0, buffer, STACK, length)
+    set_int(buf, STACK);
+    set_int(sizep, length);
+    STACK += length
+}
+
 let imports = {
     env: {
         run_wasm, // allow wasm modules to run plugins / compiler output
         init_graphics: nop, // canvas init by default
         requestAnimationFrame: nop,
+        powi: (x, y) => x ** y,
+        wasp_module_reflection
     },
     wasi_unstable: {
         fd_write,
@@ -92,9 +119,15 @@ function string(pointer, length = -1, format = 'utf8') {
     }
 }
 
+function set_int(address, val) {
+    let buf = new Uint32Array(memory.buffer, address, 4);
+    buf[0] = val
+}
+
+
 function new_int(val) {
     while (STACK % 4) STACK++;
-    let buf = new Uint32Array(memory.buffer, STACK, memory.length);
+    let buf = new Uint32Array(memory.buffer, STACK, 4);
     buf[0] = val
     STACK += 4
 }
@@ -242,17 +275,18 @@ async function run_wasm(buf_pointer, buf_size) {
     return result; // returns Promise ! Do not know how to serialize a BigInt
 }
 
-WebAssembly.instantiateStreaming(fetch(WASM_FILE), imports).then(obj => {
-        instance = obj.instance
-        exports = instance.exports
-        HEAP = exports.__heap_base; // ~68000
-        DATA_END = exports.__data_end
-        STACK = HEAP || DATA_END;
-        memory = exports.memory || exports._memory || memory
-        buffer = new Uint8Array(memory.buffer, 0, memory.length);
-        main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
-        main = instance._Z11testCurrentv || main
-        if (main) {
+wasm_data = fetch(WASM_FILE)
+WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
+    instance = obj.instance
+    exports = instance.exports
+    HEAP = exports.__heap_base; // ~68000
+    DATA_END = exports.__data_end
+    STACK = HEAP || DATA_END;
+    memory = exports.memory || exports._memory || memory
+    buffer = new Uint8Array(memory.buffer, 0, memory.length);
+    main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
+    main = instance._Z11testCurrentv || main
+    if (main) {
             console.log("got main")
             result = main()
         } else {
@@ -274,9 +308,9 @@ function test() {
     prints(exports.serialize(nod))
     // let cmd="puts 'CYRC!'"
     // let cmd="puti 123"
-    let cmd = "123"
-    let ok = exports.run(chars(cmd))
-    console.log(string(ok))
+    // let cmd = "123"
+    // let ok = exports.run(chars(cmd))
+    // console.log(string(ok))
     ok = exports.testJString(String("FULL circle"))
     console.log(String(ok))
     exports._Z7println6String(String("full circle"))
