@@ -673,10 +673,18 @@ void print(const Node node) {
 
 
 //bool skip_newline = false;
-
+//void print(int l){
+//    put_chars(formatLong(l));
+//}
+//void print(long l) {
+//    put_chars(formatLong(l));
+//}
 void print(int64 l) {
     put_chars(formatLong(l));
 }
+//void print(size_t l) {
+//    put_chars(formatLong(l));
+//}
 
 void print(char c) {
     put_char(c);
@@ -692,6 +700,9 @@ void print(String *s) {
     else if (s)put(s->data);
 }
 
+void print(void *s) {
+    put_chars(hex((int64) s));
+}
 
 void print(String s) {
     put_chars(s.data, s.length);
@@ -701,6 +712,12 @@ void print(String s) {
 
 void println(String s) {
     put_chars(s.data, s.length);
+    newline();
+}
+
+
+void println(int64 s) {
+    put_chars(formatLong(s));
     newline();
 }
 

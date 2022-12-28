@@ -22,10 +22,9 @@
 #define MAP_MAX_CAPACITY 100000
 #define MAP_INITIAL_CAPACITY 8
 
-// don't use template! just use int-map
 template<class S, class T>
 class Map {
-public:
+public: // todo careful Map<char*,…> eq
     int capacity = MAP_INITIAL_CAPACITY;// initial
     S *keys = (S *) calloc(sizeof(S), capacity);
     T *values = (T *) calloc(sizeof(T), capacity);
@@ -33,11 +32,11 @@ public:
 
     int map_header = map_header_32;
 
-    //	bool leave_blank == use_malloc_constructor = true;// return reference to freshly nulled malloc data, same ^^
     [[maybe_unused]] T defaulty;
+    bool dont_use_constructor = false;// blank/copy makes sense for List of references but NOT for list of Objects
     bool use_default = false;// no, this would copy fields (e.g. pointers to same list)  todo what is the point? remove
-    bool leave_blank = false;// true would be VERY BAD IDEA! todo why again? map["x"] would return uninitialized &T so?
-    bool dont_use_constructor = false;// *new T() makes sense for List of references but NOT for list of Data!!
+    bool leave_blank = false;// true generally VERY BAD IDEA! map["x"] would return uninitialized &T, e.g. deep fields 0
+    //	bool leave_blank == use_malloc_constructor = true;// return reference to freshly nulled malloc data, same ^^
 
 
     // unnecessary :
@@ -80,9 +79,19 @@ public:
         return lookup(s);
     }
 
+    // returns -1 if not found
     int position(S s) {
         for (int i = 0; i < _size; i++) //  or keys[i]!=0
             if (s == keys[i])
+                return i;
+        return -1;
+    }
+
+    int position(S *s) {
+        if (s >= begin() and s <= end())
+            return s - begin();// pointer matches directly
+        for (int i = 0; i < _size; i++)
+            if (*s == keys[i])// compare VALUES!
                 return i;
         return -1;
     }
@@ -102,17 +111,17 @@ public:
         return _size;
     }
 
-    int add(S *key, T *value) {
-        int found = position(key);
-        if (found >= 0) error("DUPLICATE KEY: "s + key); // or use insert_or_assign
-        if (keys == 0)
-            error("how?");
-        keys[_size] = key;
-        values[_size] = value;
-        _size++;
-        if (_size >= capacity)grow();
-        return _size;
-    }
+//    int add(S *key, T *value) {
+//        int found = position(key);
+//        if (found >= 0) error("DUPLICATE KEY: "s + key); // or use insert_or_assign
+//        if (keys == 0)
+//            error("how?");
+//        keys[_size] = key;
+//        values[_size] = value;
+//        _size++;
+//        if (_size >= capacity)grow();
+//        return _size;
+//    }
 
 //
 // hopefully c++ is smart enough to not copy S / T twice
@@ -120,14 +129,13 @@ public:
         int found = position(key);
         if (found >= 0) error("DUPLICATE KEY: "s + key); // or use insert_or_assign
         if (keys == 0 or _size >= capacity) grow();
-
         keys[_size] = key;
         values[_size] = value;
         _size++;
         return _size;
     }
 
-    // currently same as map[key]=value
+    // similar to map[key]=value
     int insert_or_assign(S key, T value) {
         // todo:  key==nil / key.empty (String::) should not be allowed!
         int found = position(key);
@@ -144,7 +152,7 @@ public:
         }
     }
 
-    bool remove(S key) {
+    bool remove(S &key) {
         int found = position(key);
         if (found >= 0) {
             keys[found] = keys[_size - 1];
@@ -155,7 +163,7 @@ public:
         return false;
     }
 
-    bool remove(T val) {
+    bool remove(T &val) {
         int found = position(val);
         if (found >= 0) {
             values[found] = values[_size - 1];
@@ -170,48 +178,51 @@ public:
     // MUST USE map.has(x) instead of map[x] otherwise it is created!!
     // prepare assignment a[b]=c  BAD because unknown symbols will be added!!
     T &operator[](S key) {// CREATING on access! use map.has(x) if not desired
+//        trace("map[key]");
         if (_size >= capacity)grow();
         int position1 = position(key);
-        if (position1 < 0) {
-            if (leave_blank) {
-                return values[_size++];// values already contain blank T's so ok? no can FAIL with "T not initialized"
-            } else if (use_default and false) {
-                // todo remove after you understand that this is a bad idea … and don't come up with that idea again
+        if (position1 >= 0) {
+//            trace("Key known");
+            return values[position1];
+        }
+        if (leave_blank) { // leaves deep fields uninitialized.
+            // Problematic for functions["exit"].signature.return_types …
+            trace("leave_blank");
+            keys[_size] = key;
+            return values[_size++];// values already contain blank T's so ok? no can FAIL with "T not initialized"
+        } else if (use_default and false) {
+            // todo remove after you understand that this is a bad idea … and don't come up with that idea again
 //				memcpy(t, defaulty, sizeof(T));// BAD because this would copy fields (e.g. pointers to same list)
 //				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
-            } else if (dont_use_constructor) {
-                error("MISSING KEY: "s + key);
-            } else { // use default constructor
-                insert_or_assign(key, T()); // creates intermediate stack value, or is c++ smart?
-                return last();
-            }
+        } else if (dont_use_constructor) {
+            error("MISSING KEY: "s + key);
+        } else { // use default constructor
+            keys[_size] = key;
+            values[_size] = T();
+            _size++;
+//            insert_or_assign(key, T()); // creates intermediate stack value, or is c++ smart?
+            return last();
         }
-        T &t = values[position1];
-        return t;
     }
 
     T &operator[](S *key) {// CREATING on access! use map.has(x) if not desired
         if (_size >= capacity)grow();
         int position1 = position(key);
-        if (position1 < 0) {
-            if (leave_blank) {
-                return values[_size++];// values already contain blank T's so ok? no can FAIL with "T not initialized"
-            } else if (use_default and false) {
-                // todo remove after you understand that this is a bad idea … and don't come up with that idea again
-//				memcpy(t, defaulty, sizeof(T));// BAD because this would copy fields (e.g. pointers to same list)
-//				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
-            } else if (dont_use_constructor) {
-                error("MISSING KEY: "s + key);
-            } else { // use default constructor
-                insert_or_assign(key, T()); // creates intermediate stack value, or is c++ smart?
-                return last();
-            }
-        }
-        T &t = values[position1];
-        return t;
+        if (position1 >= 0)
+            return values[position1];
+        if (dont_use_constructor)
+            error("MISSING KEY: "s + key);
+        // use default constructor
+        keys[_size] = key;
+        values[_size] = T();
+        _size++;
+        return last();
     }
     // todo dangling intermediate which adds element only on assignment
 //    T& operator[]=(S s){}
+//   Return a proxy object which will have:
+//    operator=(T const &) overloaded for writes
+//    operator T() for reads
 
 
     S &operator[](T &value) {// inverse lookup (!?)

@@ -16,12 +16,79 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s \n%s:%d\n",marka,__FILE__,__LINE__);proc_exit(1);}
 
-void testMaps() {
+
+void testMaps0() {
+    Map<int, long> map;
+    check(map.values[0] == map[0]);
+    check(map.values == &(map[0]));
+    map[0] = 2;
+    check(map.values[0] == 2);
+    check(map.size() == 1);
+    map[2] = 4;
+    check(map.size() == 2);
+    check(map.values[1] == 4);
+    check(map.keys[1] == 2);
+    print(map[0]);
+    print(map[2]);
+    print(map[(size_t) 0]);
+    print(map[(size_t) 1]);
+    check(map[0] == 2);
+    check(map[2] == 4);
+}
+
+
+void testMaps1() {
+    functions.clear();
+    functions.insert_or_assign("abcd", {.name="abcd"});
+    functions.insert_or_assign("efg", {.name="efg"});
+    check_is(functions.size(), 2);
+    check(functions["abcd"].name == "abcd");
+    check(functions["efg"].name == "efg");
+// ok
+}
+
+void testMaps2() {
     functions.clear();
     functions["abcd"] = {.name="abcd"};
     functions["efg"] = {.name="efg"};
     check_is(functions.size(), 2);
     check(functions["abcd"].name == "abcd");
+    check(functions["efg"].name == "efg");
+// ok
+}
+
+void testMaps() {
+    testMaps0();// ok
+    testMaps1();
+    testMaps2();// not ok
+//    Map<chars, Function> map;
+    Map<String, Function> map;
+    map.clear();
+    check(map.position("abcd") == -1);
+    Function abcd{.name="abcd"};
+    check(abcd.name == "abcd")
+    Function &ABCD = map["abcd"];
+    check_is(map.position("abcd"), (long) 0);
+    check(map.size() == 1);
+    Function &ABCDb = map["abcd"];
+    check(map.size() == 1);
+    check(&ABCD == &ABCDb);
+    ABCD = abcd;// stack value abcd gets transferred to ABCD which lives in map
+    check(abcd.name == "abcd");
+    check(ABCD.name == "abcd");
+
+    map["abcd"] = abcd;
+//    check_is(&ABCD,&abcd);
+    check_is(&ABCD, &map["abcd"]);
+    check(&map.values[0] == &ABCD);
+    check(map.values[0].name == "abcd");
+    check(map.position("efg") == -1);
+    map["efg"] = {.name="efg"};
+    check(map.position("efg") == 1);
+    check(map["abcd"].name == "abcd");
+    check(map.at(0).name == "abcd");
+    check(map.at(1).name == "efg");
+    check_is(map.size(), 2);
 }
 
 void testHex() {
@@ -2717,7 +2784,7 @@ void tests() {
     testCpp();
     testNilValues();
     testMapsAsLists();
-
+    testMaps();
     testLists();
     testDeepLists();
     testGraphParams();

@@ -55,7 +55,8 @@ static bool I_know_what_I_am_doing = false;
 #if TRACE
 static bool tracing = true;
 #else
-static bool tracing = false;
+//static bool tracing = false;
+static bool tracing = true;
 #endif
 
 #if RELEASE
@@ -63,7 +64,7 @@ static bool tracing = false;
 #define trace(x)
 #define tracef(x, ...)
 #else
-#define trace(x) if(tracing)println(x)
+#define trace(x) if(tracing)print(x)
 #define tracef(x, ...) if(tracing)printf(x,__VA_ARGS__)
 #endif
 
