@@ -22,8 +22,6 @@ void *get_heap_base(void) {
     return &__heap_base;
 }
 
-char *current = (char *) get_heap_base() + 80000;
-
 extern "C" void *memmove(void *dest, const void *source, size_t num) {
     while (num < MAX_MEM and --num >= 0)
         ((char *) dest)[num] = ((char *) source)[num];
@@ -69,18 +67,16 @@ double pow(double a, double b) {
 
 void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
     if (size > 1000000) {
-        warn("malloc of huge memory chunk:");
-        printf("%x", size);
+        put_chars("malloc of huge memory chunk:");
+        putx(size);
         error("implausible size ;)");
     }
-//        size = 10000;
-    if ((int) current < 100000) {
-//        puti((int) current);
-//        print("get_heap_base:");
-//        puti((int) current);
-        while (__heap_base % 8)__heap_base++;// align
-        current = (char *) get_heap_base();
+    if ((long) current < 10000) {
+//        current = (char*)&__data_end;
+        current = (char *) &__heap_base;
+//        error("current not set");
     }
+//    while(((long)current)%8)current++;
     void *last = current;
     current += size;
 //	if(size>1000)
@@ -463,6 +459,17 @@ extern "C" void __wasm_call_ctors();
 // un-export at link time to use main:_start
 extern "C" void _start() {
     __wasm_call_ctors();
+    trace("__heap_base");
+    trace(&__heap_base);// VERY HIGH 0x54641ddb0
+    trace("__data_end");
+    trace(&__data_end);// perfect 541dda4
+//    current = (char*) &__data_end;
+    current = (char *) &__heap_base;
+//    trace("__global_base");
+//    trace(__global_base);
+//    trace("__memory_base");
+//    trace(__memory_base);
+
     auto args = arguments();
 //    smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
 //    print(smartNode(result));
@@ -486,7 +493,6 @@ extern "C" int putchar(int c) {// stdio
     put_char(c);
     return c;
 }
-
 
 extern "C"
 size_t strlen(const char *x) {

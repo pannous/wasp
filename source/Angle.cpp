@@ -1020,7 +1020,17 @@ Node &groupOperators(Node &expression, Function &context) {
 }
 
 Module &loadRuntime() {
+#if WASM
+    bytes buffer;
+    size_t size;
+    wasp_module_reflection(&buffer,&size);
+    Module &wasp = read_wasm(buffer, size);
+    wasp.code.name = "wasp";
+    wasp.name = "wasp";
+    return wasp;
+#else
     return read_wasm("wasp-runtime.wasm");
+#endif
 }
 
 
