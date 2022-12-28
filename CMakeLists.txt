@@ -357,7 +357,8 @@ if (WASM) # OR WASI)
 
     #    ADD_COMPILE_FLAG("-fvisibility=hidden") # ??
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
-    #    ADD_COMPILE_FLAG("-Wl,-Clink-arg=--export=__heap_base") # wasm-ld: error: unknown argument:
+    ADD_COMPILE_FLAG("-Wl,--export=__heap_base")
+    ADD_COMPILE_FLAG("-Wl,--export=__data_end")
     #    ADD_COMPILE_FLAG("-nostdlib") # use our OWN memcpy (and printf?)
     #    ADD_COMPILE_FLAG("-fno-builtin")
     #    ADD_COMPILE_FLAG("-fno-exceptions") # cannot use 'throw' with exceptions disabled. ok better than typeinfo for char const
@@ -370,7 +371,7 @@ if (WASM) # OR WASI)
     ADD_COMPILE_FLAG("-Wl,--demangle,--allow-undefined,--no-check-features") # wasm-ld flags forwarded from clang
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
     #--import-memory    Import memory from the environment
-    add_definitions(-DHEAP_OFFSET=65536)
+    add_definitions(-DHEAP_OFFSET=65536) # todo !?
     add_definitions(-DMEMORY_SIZE=117964800)
     ADD_COMPILE_FLAG("-Wl,--initial-memory=117964800") # stack size plus some
     ADD_COMPILE_FLAG("-Wl,-z,stack-size=104857600") # 1MB*10  pointers will START from high and go lower!
