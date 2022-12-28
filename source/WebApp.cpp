@@ -293,7 +293,7 @@ int64 open_webview(String url = "") {
     return 0;
 }
 
-int64 init_graphics() {
+extern "C" int64 init_graphics() {
     open_webview();
 }
 
