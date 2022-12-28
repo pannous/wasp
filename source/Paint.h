@@ -1,6 +1,6 @@
 //SDL_Surface *surface;
 //int* init_graphics(int width=0, int height=0);// returns pointer to RGBA surface
-int64 init_graphics();// returns data offset OUTSIDE wasm: pointer to RGBA surface
+extern "C" int64 init_graphics();// returns data offset OUTSIDE wasm: pointer to RGBA surface
 
 //
 /* call from wasp once surface is updated!

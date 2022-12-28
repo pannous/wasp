@@ -7,9 +7,47 @@ let WASM_FILE = 'wasp.wasm'
 
 var buffer;
 
-let print = console.log
+let min_memory_size = 100 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
+let max_memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
+let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: max_memory_size});
 
-const console_log = window.console.log;
+let nop = x => 0 // careful, some wasi shim needs 0!
+const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
+    while (iovs_count-- > 0) {
+        if (fd === 0)
+            console.error(String(c_io_vector) || "\n");
+        else
+            console.log(String(c_io_vector) || "\n");
+        c_io_vector += 8
+    }
+    return -1; // todo
+};
+
+imports = {
+    env: {
+        run_wasm,
+        init_graphics: nop, // canvas init by default
+        requestAnimationFrame: nop,
+    },
+    wasi_unstable: {
+        fd_write,
+        proc_exit: terminate,
+        // ignore the rest for now
+        args_sizes_get: x => 0,
+        args_get: nop,
+        environ_get: nop,
+        environ_sizes_get: nop,
+        fd_fdstat_get: nop,
+        fd_prestat_get: nop,
+        fd_prestat_dir_name: nop,
+        fd_close: nop,
+        fd_seek: nop
+    }
+}
+imports.wasi_snapshot_preview1 = imports.wasi_unstable // fuck wasmedge!
+
+let puts = x => console.log(string(x))
+const console_log = window.console.log;// redirect to text box
 window.console.log = function (...args) {
     console_log(...args);
     args.forEach(arg => results.value += `${JSON.stringify(arg)}\n`);
@@ -66,13 +104,6 @@ function int32(pointer) { // little endian
     return buffer[pointer + 3] * 2 ** 24 + buffer[pointer + 2] * 256 * 256 + buffer[pointer + 1] * 256 + buffer[pointer];
 }
 
-const fd_write = function (x, y, z, k) {
-    let string_ptr = int32(y)
-    let len = int32(y + 4)
-    console.log(string(string_ptr, len) || "\n");
-    return -1; // todo
-};
-
 
 function chars(s) {
     if (!s) return -1; //0 // 0 = 0 MAKE SURE!
@@ -86,8 +117,9 @@ function chars(s) {
 let str = chars
 
 function compile_and_run(code) {
-    let node = exports._Z7compile6Stringb(chars(code), 1)// also calls run()!
-    console.log(node)
+    exports.run(chars(code));
+    // let node = exports._Z7compile6Stringb(chars(code), 1)// also calls run()!
+    // console.log(node)
 }
 
 function parse(data) {
@@ -115,49 +147,6 @@ function terminate() {
     console.log("wasm terminate()")
     // if(sure)throw
 }
-
-
-let nop = x => 0 // careful, some wasi shim needs 0!
-
-puts = x => console.log(string(x))
-
-let min_memory_size = 100 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
-let max_memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
-let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: max_memory_size});
-imports = {
-    env: {
-        run_wasm,
-        puti: x => console.log(x),
-        put_char: x => console.log(String.fromCodePoint(x)),
-        printf: x => console.log(string(x)),// todo
-
-        _Z13init_graphicsv: nop, // canvas init by default
-        _Z21requestAnimationFramev: nop,
-
-        __cxa_allocate_exception: nop,
-        __cxa_guard_acquire: nop,
-        __cxa_guard_release: nop,
-        __cxa_throw: puts,
-        __cxa_begin_catch: x => log("caught c++ exception", x),
-        __cxa_demangle: nop,
-        _Z11testCurrentv: nop, // internal tests only during compiler development 
-    },
-    wasi_unstable: {
-        fd_write,
-        proc_exit: terminate,
-        // ignore the rest for now
-        args_get: nop,
-        args_sizes_get: x => 0,
-        environ_get: nop,
-        environ_sizes_get: nop,
-        fd_fdstat_get: nop,
-        fd_prestat_get: nop,
-        fd_prestat_dir_name: nop,
-        fd_close: nop,
-        fd_seek: nop
-    }
-}
-imports.wasi_snapshot_preview1 = imports.wasi_unstable // fuck wasmedge!
 
 
 // allow wasm tests/plugins to build and execute small wasm files!
@@ -206,11 +195,14 @@ function test() {
     // exports.testCurrent()
     // let cmd="puts 'CYRC!'"
     // let cmd="puti 123"
+    let cs = chars("abcd")
+    exports._Z7reversePci(cs, 4)
+    puts(cs)
+    console.log(string(cs));
     let cmd = "123"
     let ok = exports.run(chars(cmd))
     console.log(string(ok))
     ok = exports.testJString(String("FULL circle"))
     console.log(String(ok))
-    exports._Z7println6String(chars("full circle"))
-    exports._Z7reversePci(chars("abcd"))
+    exports._Z7println6String(String("full circle"))
 }
