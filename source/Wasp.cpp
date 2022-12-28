@@ -1312,9 +1312,10 @@ private:
         if (val.value.longy and val.kind != objects and deep_copy) {
             if (&key == &NIL or key.isNil() or key == NIL)
                 if (key.name == nil_name)
-                    warn("impossible");
+                    warn("impossible"); // if ø:3
             key.value = val.value;// direct copy value SURE?? what about meta data... ?
             key.kind = val.kind;
+            check_silent(NIL.value.longy == 0)
         } else {
             key.setType(Kind::key, true);
             if (!key.children and empty(val.name) and val.length > 1) { // deep copy why?
@@ -2236,4 +2237,8 @@ Node assert_parsesx(chars mark) {
         print("TEST FAILED WITH UNKNOWN ERROR (maybe POINTER String*)? \n");
     }
     return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
+}
+
+void wasp_tests() {
+    check(operator_list.contains("else"));
 }

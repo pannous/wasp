@@ -2809,6 +2809,8 @@ void testCurrentWasmBugs() {
 //    exit(42);
 }
 
+void wasp_tests();
+
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp / wasmtime
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm build via wasm-runtime
@@ -2817,9 +2819,8 @@ void testCurrentWasmBugs() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
-    assert_eval("if 0 {3} else {4}", 4);
-
-    assert_eval("if(0):{3} else {4}", 4);
+//    wasp_tests();
+    assert_emit("i=-9;√-i", 3);
     testIf();
     List<String> class_keywords2 = {"struct", "type", "class", "prototype"};
     check(class_keywords2.size_ == 4);
