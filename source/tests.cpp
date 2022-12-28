@@ -2904,14 +2904,8 @@ void wasp_tests();
 void testCurrent() {
 //    wasp_tests();
 //    clearAnalyzerContext();
-    testMaps();
-    preRegisterFunctions();
-    check(functions.has("fd_write"));
-    check(functions["fd_write"].signature.size() == 4);
-    check(functions["fd_write"].name == "fd_write");
     assert_emit("42", 42);
     tests();// make sure all still ok before changes
-
     skip(
 //    assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
 //    testMergeOwn();
@@ -2975,3 +2969,8 @@ void testCurrent() {
 
 // valgrind --track-origins=yes ./wasp
 
+extern "C" char *testJS(char *x) {
+    println("testJS…");
+    println(x);
+    return (char *) "OK?";
+}
