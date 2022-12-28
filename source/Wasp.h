@@ -6,7 +6,7 @@
 #define let auto
 extern bool eval_via_emit;
 
-void testCurrent();
+extern "C" void testCurrent();
 
 //static
 extern chars function_list[];
