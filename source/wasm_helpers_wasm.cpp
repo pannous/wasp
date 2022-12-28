@@ -415,6 +415,7 @@ List<String> arguments() {
     int argc;
     int len;
     args_sizes_get(&argc, &len);
+    if (argc == 0 or len == 0)return args;
 //    print("argc");
 //    print(argc);
     char **argv = (char **) alloc(argc, 8);
