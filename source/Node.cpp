@@ -346,7 +346,7 @@ void debugNode(Node &n) {
     print(n.name);
     print("Node.kind");
     print(typeName(n.kind));
-    print(n.kind);
+    print((int) n.kind);
     print("Node.length");
     print(n.length);
     print("Node.value.longy");

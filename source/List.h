@@ -275,7 +275,7 @@ public:
         check_silent(new_size < LIST_MAX_CAPACITY);
         S *neu = (S *) alloc(new_size, sizeof(S));
         memcpy((void *) neu, (void *) items, capacity * sizeof(S));
-        free(items);
+        if (items)free(items);
 //        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
 //      indeed List<int> FUCKS UP just by growing even without references
         items = neu;
@@ -283,6 +283,7 @@ public:
     }
 
     S &add(S s) {
+//        if(!items)grow();// how?
         items[size_++] = s;
         if (size_ >= capacity)grow();
         return items[size_ - 1];

@@ -160,7 +160,10 @@ void print(String);
 
 void print(String *s);
 
+//void print(int l);
+//void print(long l);
 void print(int64 l);
+//void print(size_t l);
 
 //extern __inline int isalnum ( int c );
 int isalnum0(int c);
