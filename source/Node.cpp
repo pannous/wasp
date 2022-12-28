@@ -409,8 +409,8 @@ bool Node::operator==(Node &other) {
     if (kind != operators and value.node == &other)
         return true;// todo when is same value EVER enough??
     if (kind != operators and other.value.node and other.kind == key and this == other.value.node) {
-        println("SELF REFERENCE");
-        debugNode(*other.value.node);
+//        println("SELF REFERENCE");
+//        debugNode(*other.value.node);
         return true;// reference ~= its value
     }
     if (kind == key and value.node and *value.node == other)return true;// todo again?

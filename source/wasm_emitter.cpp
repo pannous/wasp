@@ -1549,10 +1549,10 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //	locals[index]= Map<int, String>();
     if (node.kind == unknown and context.locals.has(node.name))
         node.kind = reference;// todo clean fallback
-    if (node.name=="0") {
-        code.addConst32(0);
-        return code;
-    }
+//    if (node.name=="0") {
+//        code.addConst32(0);
+//        return code;
+//    }
     if (name == "if")
         return emitIf(node, context);
     if (name == "while")
@@ -2016,6 +2016,8 @@ Code emitIf(Node &node, Function &context) {
     Code code;
     //	 gets rid of operator, we MAY want .flat() ?
     Node condition = node[0].values();
+    if (condition.isEmpty() or condition.isNil())
+        condition = Node(0);
 //	Node &condition = node["condition"];
     code = code + emitExpression(condition, context);
     code.add(cast(last_type, int32));
@@ -2814,7 +2816,7 @@ Code emitNameSection() {
             Code("name") + moduleName + functionNames + localNames + globalNames + dataNames);
     // global names are part of global section, as should be
     auto nameSection = createSection(custom_section, nameSectionData); // auto encodeVector AGAIN!
-    nameSection.debug();
+//    nameSection.debug();
     return nameSection.clone();
 }
 
@@ -3027,7 +3029,7 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 //	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
     ;
-    code.debug();
+//    code.debug();
 #ifndef WEBAPP
 //	free(data);// written to wasm code ok
 #endif
@@ -3057,7 +3059,7 @@ Code &compile(String code, bool clean) {
 //	check(functions["log10"].is_import)
 //	check(functions["log10"].is_used)
     Code &binary = emit(ast);
-    binary.debug();
+//    binary.debug();
     binary.save("main.wasm");
 
 #ifdef INCLUDE_MERGER

@@ -294,12 +294,12 @@ Node &groupIf(Node n, Function &context) {
         error("no if block given");
     Node &condition = n.first();
     Node then;
-    if(n.value.data)
+    if (n.value.data)
         then = n.values();
     else if (n.kind == key) {
         condition = n.from(1);
         then = *n.value.node;
-    }else if (n.length > 1)then = n[1];
+    } else if (n.length > 1)then = n[1];
     if (then == "else")
         then = condition.values();
 
@@ -323,9 +323,9 @@ Node &groupIf(Node n, Function &context) {
     }
 
     Node otherwise;
-    if (n.has("else")){
+    if (n.has("else")) {
         otherwise = n["else"].values();
-        if(otherwise.empty())
+        if (otherwise.empty())
             otherwise = n.last();
     }
     if (then.has("then"))
@@ -344,12 +344,12 @@ Node &groupIf(Node n, Function &context) {
     if (n.length == 3 and otherwise.isEmpty())
         otherwise = n[2];
     if (otherwise.isEmpty() and n.next) {
-        if (n.next->name == "else"){
+        if (n.next->name == "else") {
             otherwise = *n.next->next;
 //            otherwise = n.next->values();
         }
-        else
-            otherwise = *n.next;
+//        else
+//            otherwise = *n.next;
     }
     Node *eff = new Node("if");
     Node &ef = *eff;
@@ -358,6 +358,7 @@ Node &groupIf(Node n, Function &context) {
     if (condition.length > 0)condition.setType(expression);// so far treated as group!
     if (then.length > 0)then.setType(expression);
     if (otherwise.length > 0)otherwise.setType(expression);
+
     ef["condition"] = analyze(condition, context);
     ef["then"] = analyze(then, context);
     ef["else"] = analyze(otherwise, context);
