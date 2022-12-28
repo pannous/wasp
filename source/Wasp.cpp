@@ -2210,6 +2210,9 @@ Node &parse(String source, ParserOptions parserOptions) {
         load_parser_initialization();
     return wasp_parser.parse(source, parserOptions);
 }
+//extern "C" wasm_pointer parse(chars data){
+//    return (long) &parse(String(data),{});
+//}
 
 Node &parse(chars source) {
     return wasp_parser.parse(source, {});
