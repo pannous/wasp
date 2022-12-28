@@ -2901,7 +2901,7 @@ void wasp_tests();
 // 2022-11-29 : 5 sec WITH runtime_emit! how so fast? SANITIZE disabled?
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
-void testCurrent() {
+extern "C" void testCurrent() {
 //    wasp_tests();
 //    clearAnalyzerContext();
     assert_emit("42", 42);
@@ -2969,8 +2969,23 @@ void testCurrent() {
 
 // valgrind --track-origins=yes ./wasp
 
-extern "C" char *testJS(char *x) {
-    println("testJS…");
-    println(x);
-    return (char *) "OK?";
+extern "C" char *run(char *x) {
+    auto code = compile(x);
+    code.run();// async in js
+    return (char *) "need asyncify for result";
+}
+
+//
+//extern "C" char *parse(char *x) {
+//    auto code = compile(x);
+//    code.run();// async in js
+//    return (char *) "need asyncify for result";
+//}
+
+
+
+extern "C" String *testJString(String *s) {
+    println("testJString…");
+    println(s);
+    return new String("OK!?");
 }
