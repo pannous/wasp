@@ -16,6 +16,14 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s \n%s:%d\n",marka,__FILE__,__LINE__);proc_exit(1);}
 
+void testMaps() {
+    functions.clear();
+    functions["abcd"] = {.name="abcd"};
+    functions["efg"] = {.name="efg"};
+    check_is(functions.size(), 2);
+    check(functions["abcd"].name == "abcd");
+}
+
 void testHex() {
     assert_equals(hex(18966001896603L), "113fddce4c9b");
     assert_is("42", 42);
@@ -2820,6 +2828,12 @@ void wasp_tests();
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 void testCurrent() {
 //    wasp_tests();
+//    clearAnalyzerContext();
+    testMaps();
+    preRegisterFunctions();
+    check(functions.has("fd_write"));
+    check(functions["fd_write"].signature.size() == 4);
+    check(functions["fd_write"].name == "fd_write");
     assert_emit("42", 42);
     tests();// make sure all still ok before changes
 
