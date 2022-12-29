@@ -28,9 +28,6 @@ void *alloc(int num, int size) {
 //    return malloc(num * size);// good to find bugs
 }
 
-
-int MAX_MEM = 65536 * 1024;// todo lol
-
 void panic() {
 #ifndef WASM
     raise("panic");

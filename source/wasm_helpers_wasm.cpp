@@ -17,18 +17,6 @@
 
 extern int MAX_MEM;
 
-__attribute__ ((visibility("default")))
-void *get_heap_base(void) {
-    return &__heap_base;
-}
-
-extern "C" void *memmove(void *dest, const void *source, size_t num) {
-    while (num < MAX_MEM and num-- > 0)
-        ((char *) dest)[num] = ((char *) source)[num];
-    return dest;
-// memmove will never return anything other than dest.  It's useful for chaining
-}
-
 void free(void *) {/*lol*/}
 
 _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void *) _NOEXCEPT {}
@@ -203,11 +191,9 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
         puti((int) last);
         puti((int) memory);
         puti((int) current);
-        puti((int) HEAP_OFFSET);
         puti(MEMORY_SIZE);
         error("OUT OF MEMORY");// needs malloc :(
         panic();
-//        last = current = (char *) (4 * HEAP_OFFSET);// reset HACK todo!
     }
     return last;
 }
@@ -218,6 +204,15 @@ extern "C" void *memset(void *ptr, int value, size_t num) {
     while (num-- > 0)*p++ = value;
     return ptr;//?
 }
+
+
+extern "C" void *memmove(void *dest, const void *source, size_t num) {
+    while (num < MAX_MEM and num-- > 0)
+        ((char *) dest)[num] = ((char *) source)[num];
+    return dest;
+// memmove will never return anything other than dest.  It's useful for chaining
+}
+
 
 #endif
 

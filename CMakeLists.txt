@@ -371,7 +371,6 @@ if (WASM) # OR WASI)
     ADD_COMPILE_FLAG("-Wl,--demangle,--allow-undefined,--no-check-features") # wasm-ld flags forwarded from clang
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
     #--import-memory    Import memory from the environment
-    add_definitions(-DHEAP_OFFSET=65536) # todo !?
     add_definitions(-DMEMORY_SIZE=117964800)
     ADD_COMPILE_FLAG("-Wl,--initial-memory=117964800") # stack size plus some
     ADD_COMPILE_FLAG("-Wl,-z,stack-size=0") # 1MB*10  pointers will START from high and go lower!
