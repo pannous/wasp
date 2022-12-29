@@ -112,13 +112,10 @@ function String(data) { // wasm<>js interop
 }
 
 function string(pointer, length = -1, format = 'utf8') {
-    console.log(pointer)
-    console_log(length)
-
+    // console.log("string",pointer,length)
     if (length < 0) { // auto length
         let buffer = new Uint8Array(memory.buffer, pointer, memory.length);
-        while (buffer[pointer + ++length]) ;
-        console.log("GOT length", length)
+        while (buffer[++length]) ;// strlen ;)
     }
     //console.log("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
     if (typeof (TextDecoder) != 'undefined') {// WEB, text-encoding, Node 11
@@ -169,8 +166,9 @@ function chars(s) {
     const uint8array = new TextEncoder("utf-8").encode(s + "\0");
     buffer = new Uint8Array(memory.buffer, current, uint8array.length);
     buffer.set(uint8array, 0);
+    let c = current
     current += uint8array.length;
-    return current;
+    return c;
 }
 
 let str = chars
