@@ -15,7 +15,7 @@
 #include <typeinfo>       // operator typeid
 #include <cstdlib> // OK in WASM!
 
-int MAX_MEM = 65536 * 1024;// todo lol  INSIDE wasm memory!
+extern int MAX_MEM;
 
 __attribute__ ((visibility("default")))
 void *get_heap_base(void) {
@@ -62,8 +62,122 @@ double pow(double a, double b) {
     return powd(a, b);
 }
 
+int printf(const char *__restrict format, ...) {
+//    todo better
+//    error("printf not linked");
+    warn("printf not linked");
+    put_chars((char *) format, strlen(format));
+    return 1;
+}
+
+void printf(chars format, uint32_t i) {
+    print(String(format) % (int) i);
+}
+
+void printf(chars format) {
+    print(format);
+}
+
+void printf(chars format, int i) {
+    print(String(format) % i);
+}
+
+void printf(char const *format, size_t i) {
+    print(String(format) % i);
+}
+
+void printf(char const *format, int64 l) {
+    print(String(format) % l);
+}
+
+void printf(chars format, chars value) {
+    print(String(format).replace("%s", value));
+}
+
+void printf(chars format, chars i, chars j) {
+    print(String(format).replace("%s", i).replace("%s", j));
+}
+
+void printf(chars format, chars i, chars j, int l) {
+    print(String(format).replace("%s", i).replace("%s", j).replace("%d", String(l)));
+}
+
+void printf(chars format, chars i, chars j, chars l) {
+    print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
+}
+
+void printf(chars format, int64 i, int64 j) {
+    if (contains(format, "%ld"))
+        print(String(format).replace("%ld", String(i)).replace("%ld", String(j)));
+    else
+        print(String(format).replace("%d", String(i)).replace("%d", String(j)));
+}
+
+void printf(chars format, int i, int j) {
+    print(String(format).replace("%d", String(i)).replace("%d", String(j)));
+}
+
+void printf(chars format, uint32_t i, uint32_t j) {
+    print(String(format).replace("%d", String((int) i)).replace("%d", String((int) j)));
+}
+
+void printf(chars format, double d) {
+    print(String(format) % d);
+}
+
+void printf(chars format, double i, double j) {
+    print(String(format).replace("%f", String(i)).replace("%f", String(j)));
+}
+
+void printf(chars format, chars val, int value) {
+    print(String(format).format((char *) val).format(value));
+}
+
+void printf(chars format, void *value) {
+    print(String(format).replace("%p", String((int64) value)));
+}
+
+extern "C" void *__cxa_allocate_exception(size_t thrown_size) { return 0; }
+extern "C" void __cxa_throw(
+        void *thrown_exception,
+        struct type_info *tinfo,
+        void (*dest)(void *)) {}
+extern "C" int __cxa_atexit(int, int, int) {
+    // registers a function to be called by exit or when a shared library is unloaded.
+    // todo free stuff?
+    return 0;
+}
+
+
+void *alloc(int num, int size) {
+    return calloc(num, size);
+}
 
 #ifndef WASI
+// /opt/wasm/wasi-sdk/share/wasi-sysroot/include/stdlib.h
+// /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h redundant!
+
+int calloc_counter = 0;
+
+void debugCalloc(size_t num, size_t size) {
+    calloc_counter++;
+    if (calloc_counter == 1000 or num * size > 100000) {
+        print("calloc");
+        puti(num);
+        print("*");
+        puti(size);
+        print("---calloc");
+    }
+
+}
+
+//__attribute__((__malloc__, __warn_unused_result__))
+void *calloc(size_t num, size_t size) {
+//    debugCalloc(num, size);
+    char *mem = (char *) malloc(size * num);
+    while (num < MAX_MEM and size / 8 * num > 0) { ((int64 *) mem)[--num * size / 8] = 0; }
+    return mem;
+}
 
 void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
     if (size > 1000000) {
@@ -98,149 +212,6 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
     return last;
 }
 
-#endif
-
-int printf(const char *__restrict format, ...) {
-//    todo better
-//    error("printf not linked");
-    warn("printf not linked");
-    put_chars((char *) format, strlen(format));
-    return 1;
-}
-
-
-void printf(chars format, uint32_t i) {
-    print(String(format) % (int) i);
-}
-
-
-void printf(chars format) {
-    print(format);
-}
-
-void printf(chars format, int i) {
-    print(String(format) % i);
-}
-
-void printf(char const *format, size_t i) {
-    print(String(format) % i);
-}
-
-void printf(char const *format, int64 l) {
-    print(String(format) % l);
-}
-
-
-void printf(chars format, chars value) {
-    print(String(format).replace("%s", value));
-}
-
-void printf(chars format, chars i, chars j) {
-    print(String(format).replace("%s", i).replace("%s", j));
-}
-
-void printf(chars format, chars i, chars j, int l) {
-    print(String(format).replace("%s", i).replace("%s", j).replace("%d", String(l)));
-}
-
-void printf(chars format, chars i, chars j, chars l) {
-    print(String(format).replace("%s", i).replace("%s", j).replace("%d", l));
-}
-
-void printf(chars format, int64 i, int64 j) {
-    if (contains(format, "%ld"))
-        print(String(format).replace("%ld", String(i)).replace("%ld", String(j)));
-    else
-        print(String(format).replace("%d", String(i)).replace("%d", String(j)));
-}
-
-void printf(chars format, int i, int j) {
-    print(String(format).replace("%d", String(i)).replace("%d", String(j)));
-}
-
-void printf(chars format, uint32_t i, uint32_t j) {
-    print(String(format).replace("%d", String((int) i)).replace("%d", String((int) j)));
-}
-
-
-void printf(chars format, double d) {
-    print(String(format) % d);
-}
-
-void printf(chars format, double i, double j) {
-    print(String(format).replace("%f", String(i)).replace("%f", String(j)));
-}
-
-void printf(chars format, chars val, int value) {
-    print(String(format).format((char *) val).format(value));
-}
-
-void printf(chars format, void *value) {
-    print(String(format).replace("%p", String((int64) value)));
-}
-
-//#if MY_WASI
-
-extern "C" void *__cxa_allocate_exception(size_t thrown_size) { return 0; }
-extern "C" void __cxa_throw(
-        void *thrown_exception,
-        struct type_info *tinfo,
-        void (*dest)(void *)) {}
-extern "C" int __cxa_atexit(int, int, int) {
-    // registers a function to be called by exit or when a shared library is unloaded.
-    // todo free stuff?
-    return 0;
-}
-
-#if not MY_WASM
-extern "C" int64 run_wasm(bytes buffer, int buf_size) {
-    print("⚠️ run_wasm not available. wasp built without runtime and not embedded in a host which exposes the following function:");
-    print("extern int64 run_wasm(uint8* buffer, size_t buffer_length)");
-    print("Please vote here to make this a WASI standard: https://github.com/WebAssembly/WASI/issues/477");
-    error("⚠️ run_wasm not available. You can use wasp-full.wasm which comes with wasm-runtime builtin.");
-//    breakpoint_helper
-    return 0;
-}
-#endif
-
-
-void *alloc(int num, int size) {
-    return calloc(num, size);
-}
-
-
-#ifndef WASI
-
-// unmapped import calloc : header provided by stdlib.h but we need our own implementation!
-//void *calloc(int size, int num) {// clean ('0') alloc
-///opt/wasm/wasi-sdk/share/wasi-sysroot/include/stdlib.h
-// /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h redundant!
-static char count[] = "0";
-int calloc_counter = 0;
-
-void debugCalloc(size_t num, size_t size) {
-    calloc_counter++;
-    if (calloc_counter == 1000 or num * size > 100000) {
-        print("calloc");
-        puti(num);
-        print("*");
-        puti(size);
-        print("---calloc");
-    }
-
-}
-
-void *calloc(size_t num, size_t size) //__attribute__((__malloc__, __warn_unused_result__))
-{
-//    debugCalloc(num, size);
-    char *mem = (char *) malloc(size * num);
-//#ifndef WASM
-    //fails in WASI, why??
-    while (num < MAX_MEM and size / 8 * num > 0) { ((int64 *) mem)[--num * size / 8] = 0; }
-//#endif
-    return mem;
-}
-
 extern "C" void *memset(void *ptr, int value, size_t num) {
     // todo very expensive
     int *p = (int *) ptr;
@@ -249,9 +220,6 @@ extern "C" void *memset(void *ptr, int value, size_t num) {
 }
 
 #endif
-// WOW CALLED INTERNALLY FROM C!!
-//extern "C"
-
 
 // new operator for ALL objects
 void *operator new[](size_t size) { // stack
@@ -276,16 +244,13 @@ void _cxa_throw() {
     error("OUT OF MEMORY");
 }
 
-
 void printf(int64 l) {
     printf("%ld", l);
 }
 
-
 String Backtrace(int skip, int skipEnd) {
     return "Backtrace: TODO";
 }
-
 
 void memcpy1(bytes dest, bytes source, int i) {
     while (i < MAX_MEM and --i >= 0)
@@ -301,9 +266,6 @@ void memcpy0(char *destination, char *source, size_t num) {
         destination[num] = source[num];
     }
 }
-//void * memcpy (void * destination, const void * source, size_t num ){
-//	memcpy0((char *) destination, (char *) source, num);
-//}
 
 
 #ifndef WASI
@@ -393,7 +355,6 @@ float putf(float f) {
     return f;
 //    printf("%f\n", f);
 }
-
 
 double putd(double f) {
     printf("%f\n", f);
@@ -494,17 +455,20 @@ extern "C" int putchar(int c) {// stdio
     return c;
 }
 
-extern "C"
-size_t strlen(const char *x) {
-    if ((long) x == 0)return 0;
+extern "C" size_t strlen(const char *x) {
     int l = 0;
-//    if ((long) x >= MAX_MEM) {// bad criterion, still works due to auto grow_memory() ?
-//        put_chars("corrupt string", 14);
-//        puti((long) x);
-//        error("corrupt string");
-//        return 0;
-//    }
-    while (l < MAX_STRING_LENGTH and *x++) // and (int64) x < MAX_MEM - 1
-        l++;
+    while (l < MAX_STRING_LENGTH and *x++) l++; // and (int64) x < MAX_MEM - 1? … let it fail!
     return l;
 }
+
+
+#if not MY_WASM
+extern "C" int64 run_wasm(bytes buffer, int buf_size) {
+    print("⚠️ run_wasm not available. wasp built without runtime and not embedded in a host which exposes the following function:");
+    print("extern int64 run_wasm(uint8* buffer, size_t buffer_length)");
+    print("Please vote here to make this a WASI standard: https://github.com/WebAssembly/WASI/issues/477");
+    error("⚠️ run_wasm not available. You can use wasp-full.wasm which comes with wasm-runtime builtin.");
+//    breakpoint_helper
+    return 0;
+}
+#endif
