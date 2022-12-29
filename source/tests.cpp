@@ -2912,6 +2912,9 @@ void wasp_tests();
 extern "C" void testCurrent() {
 //    wasp_tests();
 //    clearAnalyzerContext();
+
+    auto string1 = "%lld should be %d %s"s % (int64) 1l % 1 % "!";
+    check_is(string1, "1 should be 1 !");
     testMaps();
     preRegisterFunctions();
     check(functions.has("fd_write"));
@@ -2997,24 +3000,13 @@ extern "C" char *run(char *x) {
 
 
 
-extern "C" String *testJString(String *s) {
+extern "C" String *testFromJS(String *s) {
     println("testJString…");
     println(s);
 //    Module wasp = loadRuntime();
 //    print(wasp.name);
 //    print("wasp.total_func_count");
 //    print(wasp.total_func_count);
-    return new String("OK!?");
-}
-
-extern "C" char *serialize(Node *n) {
-    if (!n)return 0;
-    return n->serialize();
-}
-
-extern "C" int size_of_node() {
-    return sizeof(Node);
-}
-extern "C" int size_of_string() {
-    return sizeof(String);
+    auto pString = new String("ok from WASP");
+    return pString;
 }

@@ -467,3 +467,16 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     return 0;
 }
 #endif
+
+
+extern "C" char *serialize(Node *n) {
+    if (!n)return 0;
+    return n->serialize();
+}
+
+extern "C" int size_of_node() {
+    return sizeof(Node);
+}
+extern "C" int size_of_string() {
+    return sizeof(String);
+}
