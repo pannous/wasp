@@ -1022,8 +1022,17 @@ Node &groupOperators(Node &expression, Function &context) {
 Module &loadRuntime() {
 #if WASM
     bytes buffer;
+    int buffer2;
     size_t size;
-    wasp_module_reflection(&buffer,&size);
+    buffer=(bytes)wasp_module_reflection((bytes)&buffer2,&size);
+    check_is(buffer,(bytes)buffer2);
+    print("read_wasm size");
+    print(size);
+    print(&buffer);
+    print(buffer[0]);
+    print(buffer[1]);
+    print(buffer[2]);
+    print(buffer[3]);
     Module &wasp = read_wasm(buffer, size);
     wasp.code.name = "wasp";
     wasp.name = "wasp";
