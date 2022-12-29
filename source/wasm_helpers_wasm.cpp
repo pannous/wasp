@@ -458,13 +458,13 @@ int64 call_wasp_main(int index) {
 extern "C" void __wasm_call_ctors();
 // un-export at link time to use main:_start
 extern "C" void _start() {
+    current = (char *) &__heap_base;
     __wasm_call_ctors();
     trace("__heap_base");
     trace(&__heap_base);// VERY HIGH 0x54641ddb0
     trace("__data_end");
     trace(&__data_end);// perfect 541dda4
 //    current = (char*) &__data_end;
-    current = (char *) &__heap_base;
 //    trace("__global_base");
 //    trace(__global_base);
 //    trace("__memory_base");

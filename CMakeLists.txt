@@ -374,7 +374,7 @@ if (WASM) # OR WASI)
     add_definitions(-DHEAP_OFFSET=65536) # todo !?
     add_definitions(-DMEMORY_SIZE=117964800)
     ADD_COMPILE_FLAG("-Wl,--initial-memory=117964800") # stack size plus some
-    ADD_COMPILE_FLAG("-Wl,-z,stack-size=104857600") # 1MB*10  pointers will START from high and go lower!
+    ADD_COMPILE_FLAG("-Wl,-z,stack-size=0") # 1MB*10  pointers will START from high and go lower!
     #    ADD_COMPILE_FLAG("-Qn") # no producer metadata
     ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
     ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # keep name section?
