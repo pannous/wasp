@@ -60,14 +60,6 @@ void testCurrent(){}// why??
 
 // https://stackoverflow.com/questions/49980381/find-the-start-of-heap-using-lld-and-s2wasm
 
-//int HEAP_OFFSET=65536/2; // todo: how done right? if too low, internal data gets corrupted ("out of bounds table access" etc)
-//#define HEAP_OFFSET 65536
-//int memory_size=1048576-HEAP_OFFSET; // todo set in CMake !
-//char *current = (char *) HEAP_OFFSET;
-//char *current = (char *) __heap_base;// HEAP_OFFSET;
-//#endif
-
-
 int isalnum0(int c) {
     return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z');// todo lol
 }
