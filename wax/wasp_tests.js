@@ -1,3 +1,5 @@
+let print = console.log // #!
+
 function check(ok) {
     backtrace_line("⚠️ TEST FAILED")
     if (!ok) throw "⚠️ TEST FAILED"
@@ -32,13 +34,16 @@ function testParse() {
 function testString() {
     backtrace_line();
     let ok = exports.testFromJS(String("test from JS"));
-    prints(String(ok))
+    console.log(String(ok))
+    prints(ok)
     check(String(ok) == "ok from WASP")
+    console.log("TEST OK")
 }
 
 function testReverse() {
     backtrace_line();
     let cs = chars("abcd")
+    puts(cs)
     exports._Z7reversePci(cs, 4)
     puts(cs)
     check(string(cs) == "dcba")
@@ -58,6 +63,7 @@ function testRun() {
 
 function wasp_tests() {
     console.log("wasp_tests")
+    // exports.puts(chars("JAAA"))
     // backtrace_line();
     // exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
     testString();
