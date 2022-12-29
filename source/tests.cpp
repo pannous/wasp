@@ -2917,7 +2917,10 @@ extern "C" char *run(char *x) {
 extern "C" String *testJString(String *s) {
     println("testJString…");
     println(s);
-
+    Module wasp = loadRuntime();
+    print(wasp.name);
+    print("wasp.total_func_count");
+    print(wasp.total_func_count);
     return new String("OK!?");
 }
 
