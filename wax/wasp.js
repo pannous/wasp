@@ -112,13 +112,12 @@ function String(data) { // wasm<>js interop
 }
 
 function string(pointer, length = -1, format = 'utf8') {
-    console.log(pointer)
-    console_log(length)
-
+    if (pointer === 0) return
+    if (typeof pointer == "string") return chars(s)
+    // console.log("string",pointer,length)
     if (length < 0) { // auto length
         let buffer = new Uint8Array(memory.buffer, pointer, memory.length);
-        while (buffer[pointer + ++length]) ;
-        console.log("GOT length", length)
+        while (buffer[++length]) ;// strlen ;)
     }
     //console.log("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
     if (typeof (TextDecoder) != 'undefined') {// WEB, text-encoding, Node 11
@@ -133,6 +132,19 @@ function string(pointer, length = -1, format = 'utf8') {
         return s
     }
 }
+
+
+function chars(data) {
+    if (!data) return 0;// MAKE SURE!
+    if (typeof data != "string") return string(data)
+    const uint8array = new TextEncoder("utf-8").encode(data + "\0");
+    buffer = new Uint8Array(memory.buffer, current, uint8array.length);
+    buffer.set(uint8array, 0);
+    let c = current
+    current += uint8array.length;
+    return c;
+}
+
 
 function set_int(address, val) {
     let buf = new Uint32Array(memory.buffer, address, 4);
@@ -163,17 +175,6 @@ function read_int64(pointer) {
     return buffer[0]
 }
 
-
-function chars(s) {
-    if (!s) return 0;// MAKE SURE!
-    const uint8array = new TextEncoder("utf-8").encode(s + "\0");
-    buffer = new Uint8Array(memory.buffer, current, uint8array.length);
-    buffer.set(uint8array, 0);
-    current += uint8array.length;
-    return current;
-}
-
-let str = chars
 
 function reset_heap() {
     HEAP = exports.__heap_base; // ~68000
