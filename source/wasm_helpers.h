@@ -79,7 +79,7 @@ class String;
 
 extern "C" //  destroys the export type signature! but required by stdio.h:178:6:
 int puts(const char *);// stdio
-extern "C" String *put_string(String *);// stdio
+extern "C" String *put_string(String *);
 extern "C" void *putp(void *f);// pointer
 extern "C" int puti(int i);
 extern "C" int64 putl(int64 l);

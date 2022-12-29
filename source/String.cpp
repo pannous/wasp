@@ -719,6 +719,7 @@ void println(Node &s) {
     println(s.serialize());
 }
 
+// don't extern "C", else demangle can't reflect … see put_string
 void put(String s) {
     put_chars(s.data, s.length);
     newline();
