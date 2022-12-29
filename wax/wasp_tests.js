@@ -42,6 +42,8 @@ function testString() {
 
 function testReverse() {
     backtrace_line();
+    exports._Z7println6String(String("full circle"))
+    exports.put_chars(chars("abcdefg"))
     let cs = chars("abcd")
     puts(cs)
     exports._Z7reversePci(cs, 4)
@@ -66,8 +68,8 @@ function wasp_tests() {
     // exports.puts(chars("JAAA"))
     // backtrace_line();
     // exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
-    testString();
-    // testReverse();
+    // testString();
+    testReverse();
     // testParse();
     // testRun()
 }
