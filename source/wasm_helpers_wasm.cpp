@@ -23,7 +23,7 @@ void *get_heap_base(void) {
 }
 
 extern "C" void *memmove(void *dest, const void *source, size_t num) {
-    while (num < MAX_MEM and --num >= 0)
+    while (num < MAX_MEM and num-- > 0)
         ((char *) dest)[num] = ((char *) source)[num];
     return dest;
 // memmove will never return anything other than dest.  It's useful for chaining
@@ -409,10 +409,9 @@ List<String> arguments() {
     List<String> args;
     int argc;
     int len;
-    args_sizes_get(&argc, &len);
-    if (argc == 0 or len == 0)return args;
-//    print("argc");
-//    print(argc);
+    int has_args = args_sizes_get(&argc, &len);
+    if (!has_args or argc == 0 or len == 0)return args;
+    check (argc < 1000);
     char **argv = (char **) alloc(argc, 8);
     char *values = (char *) alloc(len, 1);
     args_get(argv, values);
@@ -456,6 +455,7 @@ int64 call_wasp_main(int index) {
 }
 
 extern "C" void __wasm_call_ctors();
+
 // un-export at link time to use main:_start
 extern "C" void _start() {
     current = (char *) &__heap_base;
@@ -496,26 +496,15 @@ extern "C" int putchar(int c) {// stdio
 
 extern "C"
 size_t strlen(const char *x) {
-#if not WASM
-    if (!x)return 0;
-#endif
+    if ((long) x == 0)return 0;
     int l = 0;
-    if ((int64) x >= MEMORY_SIZE || ((int64) x) == 0x200000000LL) {
-        put_chars(formatLong((int) x));
-        put_chars("corrupt string", 14);
-        error("corrupt string");
-        return 0;
-//        puts(x);
-//        puti((int) (int64) x);// 0x1000000 16777216
+//    if ((long) x >= MAX_MEM) {// bad criterion, still works due to auto grow_memory() ?
+//        put_chars("corrupt string", 14);
+//        puti((long) x);
 //        error("corrupt string");
-    }
-    if ((int64) x == 0x1ffffffffLL || (int64) x >= 0xffffffff00000000LL ||
-        ((int64) x >= 0x100000000LL and (int64) x <= 0x100100000LL))
-        return false;// todo: valgrind debug corruption, usually because of not enough memory
-//#if !WASM
-//    return strlen(x);
-//#endif
-    while (l < MAX_STRING_LENGTH and (int64) x < MEMORY_SIZE - 1 and *x++)
+//        return 0;
+//    }
+    while (l < MAX_STRING_LENGTH and *x++) // and (int64) x < MAX_MEM - 1
         l++;
     return l;
 }

@@ -61,7 +61,7 @@ typedef String grapheme;// sequence of one or more code points that are displaye
 
 void newline();
 
-String &hex(int64 d, bool include_0x = false, bool upper_case = false);
+String &hex(int64 d, bool include_0x = true, bool upper_case = false);
 
 enum sizeMeasure {
     by_char8s,// bytes
