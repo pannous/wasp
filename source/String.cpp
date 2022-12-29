@@ -36,11 +36,13 @@ class String;
 bool eq(chars dest, chars src, int length) {
     if (!dest || !src)
         return false;
-    int i = 0;
-    if (dest == "" and src[0])return false;
+    if (dest[0] == 0 and src[0])return false;
+    if (src[0] == 0 and dest[0])return false;
+//	be sure check to src.length == dest.length before:
+//	length>0 forces comparison of reference strings terminated by length, not by 0!
     if (length < 0 and strlen(dest) != strlen(src))
         return false;
-//	if length>0 it forces comparison of reference strings terminated by length, not by 0!
+    int i = 0;
     while (char c = dest[i]) {
         if (length >= 0 and i >= length)
             break;
@@ -432,23 +434,13 @@ String s(chars &s) {
 #pragma clang diagnostic pop
 
 bool String::empty() const {//this==0 in testMarkMulti!
-//#ifdef WASM
 //	if(memory_size and data and (int64) data > memory_size/*bug!*/)
 ////		return true;
-//#endif
     if (this == 0)return true;
     if ((int64) this < 8)return true;// zero page broken object hack
     if (length == 0)return true;
     if (this->data == 0)return true;
-#if WASM
-    if(this > (void*)current)return true;
-    if(this->data > (void*)current)return true;
-//		error("CORRUPT String pointer");
-#endif
-//    if ((int64) data == 0x1ffffffff || (int64) data >= 0xffffffff00000000 ||
-//        ((int64) data >= 0x100000000LL and (int64) data <= 0x100100000))
-//        return false;// todo: valgrind debug corruption, usually because of not enough memory
-    return (int64) data > MEMORY_SIZE;
+    return false;
 }
 
 
@@ -481,7 +473,7 @@ codepoint decode_unicode_character(chars text, short *len) {
 }
 
 
-void encode_unicode_character(char *buffer, wchar_t ucs_character) {
+int encode_unicode_character(char *buffer, wchar_t ucs_character) {
     int offset = 0;
     if (ucs_character <= 0x7F) {
         // Plain single-byte ASCII.
@@ -519,6 +511,7 @@ void encode_unicode_character(char *buffer, wchar_t ucs_character) {
     } else {
         warn("Invalid char; don't encode anything.");
     }
+    return offset;
 }
 
 // utf8_byte_count on the first byte of a codepoint represented as utf8 is fine, however AUTO-CASTING U'√' to char is NOT fine!
