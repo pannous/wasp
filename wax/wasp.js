@@ -255,7 +255,7 @@ class node {
 function parse(data) {
     let node_pointer = exports.Parse(chars(data))// also calls run()!
     let nod = new node(node_pointer);
-    nod.debug()
+    return nod
 }
 
 let Backtrace = function (print = 1) {

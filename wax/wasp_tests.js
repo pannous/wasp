@@ -25,10 +25,12 @@ function backtrace_line(msg) {
 function testParse() {
     let nod = parse("a : (b ,c)")
     prints(exports.serialize(nod))
-    check(nod.name = "a")
+    // nod.debug()
+    check(nod.name == "a")
     check(nod.length = 2)
     check(nod.children().length = 2)
     check(nod.children()[1].name == "c")
+    console.log("TEST OK: testParse")
 }
 
 function testString() {
@@ -66,6 +68,6 @@ function wasp_tests() {
     // exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
     testString();
     testReverse();
-    // testParse();
+    testParse();
     // testRun()
 }

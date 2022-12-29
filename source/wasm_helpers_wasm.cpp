@@ -178,7 +178,7 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
         current = (char *) &__heap_base;
 //        error("current not set");
     }
-//    while(((long)current)%8)current++;
+    while (((long) current) % 8)current++;
     void *last = current;
     current += size;
 //	if(size>1000)

@@ -270,7 +270,7 @@ public:
 //	}
 
     void *operator new(size_t size) {
-        while ((long) current % 8)current++;// align
+//        while ((long) current % 8)current++;// align
         return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
     }
 
