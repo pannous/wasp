@@ -305,7 +305,9 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
 
 
 function test() {
-    // exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
+    ok = exports.testJString(String("FULL circle"))
+    console.log(String(ok))
+    exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
     if (typeof (wasp_tests) !== "undefined")
         wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 
@@ -320,8 +322,7 @@ function test() {
             wasm_data = buffer
             console.log(wasm_data)
             console.log(wasm_data.byteLength)
-            ok = exports.testJString(String("FULL circle"))
-            console.log(String(ok))
+
         }
     )
     // exports._Z7println6String(String("full circle"))
