@@ -17,33 +17,18 @@ typedef unsigned char *bytes;
 [[noreturn]]
 extern void error1(chars message, chars file, int line);
 
-
 // there are two aspects of wasm memory: the internal memory starting at 0 and the external c-pointer *wasm_memory if the VM provides it
 // worse there is the native_runtime which may hold the wasm_runtime running in the VM!
 // todo : depends on clang_options! Sometimes it is needed sometimes it can't be there
 extern "C" unsigned int *memory;// =0; always, BUT heap_offset/current is higher from beginning!
 extern void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
-//extern "C" char *wasm_memory_chars;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
-//extern "C" char *memoryChars;
-//extern "C" int __heap_base; ==
-//extern "C" int heap_offset; // via CMake  todo ?
-//extern "C" int memory_size; // via CMake  todo ?
-//#define memory_size 10485760
 
 #ifndef MEMORY_SIZE
 #ifdef WASM
-#define MEMORY_SIZE 117964800 // todo: usually via CMAKE!?
-#define WASM_MEMORY_SIZE 0xF0000000
+extern int MAX_MEM;
 #else
-//#define WASM_MEMORY_SIZE 0x20000000000
-
 #define MEMORY_SIZE 0x2000000000000000L  // ~ (2**64)/10 // what for?
-//#define MEMORY_SIZE 0x2000000000000L
-//#define MEMORY_SIZE 0x20000000000L  // not enough!
-//#define MEMORY_SIZE 0x200000000L  // not enough!
-
 #endif
-#define HEAP_OFFSET 0x80000
 #endif
 
 typedef unsigned char byte;//!
@@ -54,7 +39,6 @@ extern "C" /*unsigned */ char *current;// memory + heap_offset // todo merge wit
 extern "C" void panic();//
 
 #ifndef WASM
-
 int raise(chars error); // conflicts with signal.h if 'extern'
 #else
 extern "C" int raise(chars error); // conflicts with signal.h if 'extern'

@@ -710,8 +710,8 @@ void testWasmMemoryIntegrity() {
 //	Bus error: 10  if i > MEMORY_SIZE
 // Fails at 100000, works at 100001 WHERE IS THIS SET?
 //	int start=125608;
-    int start = HEAP_OFFSET * 2;// out of bounds table access CORRUPTION!
-    int64 end = MEMORY_SIZE / 4; // /4 because 1 int = 4 bytes
+    int start = __heap_base;
+    int64 end = 0x1000000;// MAX_MEM / 4; // /4 because 1 int = 4 bytes
     for (int i = start; i < end; ++i) {
         int tmp = memory[i];
 //		memory[i] = memory[i]+1;
