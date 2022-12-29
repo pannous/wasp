@@ -6,11 +6,11 @@ let WASM_RUNTIME = 'wasp-runtime.wasm'
 // let WASM_FILE = '../cmake-build-wasm/wasp.wasm'
 // let WASM_FILE='../cmake-build-release/wasp.wasm'
 
-var buffer;
-
+// MAX_MEM is NOT affected by -Wl,--initial-memory=117964800 NOR by this: HOW THEN??
 let min_memory_size = 100 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let max_memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: max_memory_size});
+// this memory object is NEVER USED if wasm file does not import memory and provides its own, hopefully exported!
 
 let nop = x => 0 // careful, some wasi shim needs 0!
 const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
@@ -43,22 +43,26 @@ function memcpy(src, srcOffset, dst, dstOffset, length) {
 
 function wasp_module_reflection(bufp, sizep) {
     let length = wasm_data.byteLength
-    while (STACK % 8) STACK++;
-    let buf = STACK
-    let dest = new Uint32Array(memory.buffer, STACK, length);
+    while (current % 8) current++;
+    let buf = current
+    let dest = new Uint32Array(memory.buffer, current, length);
     memcpy(wasm_data, 0, dest, 0, length)
-    set_int(bufp, STACK);
+    set_int(bufp, current);
     set_int(sizep, length);
-    STACK += length
+    current += length
     return buf;
 }
 
 let imports = {
     env: {
+        current: new WebAssembly.Global({value: "i32", mutable: true}, 0),// heap_end
+        memory, // optionally provide js Memory … alternatively use exports.memory in js, see below
+        // grow_memory:x=>memory.grow(1) // à 64k … NO NEED, host grows memory automagically!
         run_wasm, // allow wasm modules to run plugins / compiler output
         init_graphics: nop, // canvas init by default
         requestAnimationFrame: nop,
         powi: (x, y) => x ** y,
+        puti: x => console.log(x), // allows debugging of ints without format String allocation!
         wasp_module_reflection
     },
     wasi_unstable: {
@@ -84,18 +88,18 @@ let prints = x => console.log(String(x)) // char**
 const console_log = window.console.log;// redirect to text box
 window.console.log = function (...args) {
     console_log(...args);
-    args.forEach(arg => results.value += `${JSON.stringify(arg)}\n`);
+    args.forEach(arg => results.value += `${arg}\n`);
 }
 
 function check(ok) {
-    if (!ok) throw new Error("test failed");
+    if (!ok) throw new Error("⚠️ TEST FAILED!");
 }
 
 function String(data) { // wasm<>js interop
     switch (typeof data) {
         case "string":
-            let p = STACK
-            new_int(STACK + 8)
+            let p = current
+            new_int(current + 8)
             new_int(data.length)
             chars(data);
             return p;
@@ -131,16 +135,16 @@ function set_int(address, val) {
 
 
 function new_int(val) {
-    while (STACK % 4) STACK++;
-    let buf = new Uint32Array(memory.buffer, STACK, 4);
+    while (current % 4) current++;
+    let buf = new Uint32Array(memory.buffer, current, 4);
     buf[0] = val
-    STACK += 4
+    current += 4
 }
 
 function new_long(val) {
-    let buf = new Uint64Array(memory.buffer, STACK / 8, memory.length);
+    let buf = new Uint64Array(memory.buffer, current / 8, memory.length);
     buf[0] = val
-    STACK += 8
+    current += 8
 }
 
 function read_int32(pointer) { // little endian
@@ -156,10 +160,9 @@ function read_int64(pointer) {
 
 function chars(s) {
     if (!s) return 0;// MAKE SURE!
-    current = STACK;
     const uint8array = new TextEncoder("utf-8").encode(s + "\0");
     buffer.set(uint8array, current);
-    STACK += uint8array.length;
+    current += uint8array.length;
     return current;
 }
 
@@ -168,7 +171,8 @@ let str = chars
 function reset_heap() {
     HEAP = exports.__heap_base; // ~68000
     DATA_END = exports.__data_end
-    STACK = HEAP || DATA_END;
+    current = HEAP || DATA_END;
+    current += 0x100000; // todo
 }
 
 function compile_and_run(code) {
@@ -179,7 +183,7 @@ function compile_and_run(code) {
 
 let wasm_pointer_size = 4;// 32 bit
 let node_header_32 = 0x80000000
-let size_of_string = 16;// todo
+
 //    32bit in wasm TODO pad with string in 64 bit
 class node {
     name = ""
@@ -286,7 +290,8 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
         exports = instance.exports
         HEAP = exports.__heap_base; // ~68000
         DATA_END = exports.__data_end
-        STACK = HEAP || DATA_END;
+        current = HEAP || DATA_END;
+        current += 0x100000
         memory = exports.memory || exports._memory || memory
         buffer = new Uint8Array(memory.buffer, 0, memory.length);
         main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
@@ -303,11 +308,21 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
     }
 )
 
+// runtime_bytes for linking small wasp programs with runtime
+function load_runtime_bytes() {
+    fetch(WASM_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
+            runtime_bytes = buffer
+            console.log(runtime_bytes)
+            console.log(runtime_bytes.byteLength)
+        }
+    )
+}
 
 function test() {
-    ok = exports.testJString(String("FULL circle"))
-    console.log(String(ok))
     exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
+    let ok = exports.testFromJS(String("test from JS"));
+    check(String(ok) == "ok from WASP")
+    prints(ok)
     if (typeof (wasp_tests) !== "undefined")
         wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 
@@ -315,15 +330,8 @@ function test() {
     prints(exports.serialize(nod))
     // let cmd="puts 'CYRC!'"
     // let cmd="puti 123"
-    // let cmd = "123"
-    // let ok = exports.run(chars(cmd))
-    // console.log(string(ok))
-    fetch(WASM_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
-            wasm_data = buffer
-            console.log(wasm_data)
-            console.log(wasm_data.byteLength)
-
-        }
-    )
+    let cmd = "4*4"
+    let result = exports.run(chars(cmd))
+    console.log(string(result)) // "need asyncify for result" ;)
     // exports._Z7println6String(String("full circle"))
 }
