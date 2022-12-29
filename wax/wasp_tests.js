@@ -67,9 +67,9 @@ function wasp_tests() {
     console.log("wasp_tests")
     // exports.puts(chars("JAAA"))
     // backtrace_line();
-    // exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
+    exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
     // testString();
-    testReverse();
+    // testReverse();
     // testParse();
     // testRun()
 }
