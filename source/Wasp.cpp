@@ -2223,10 +2223,7 @@ extern Node &result;
 
 Node assert_parsesx(chars mark) {
     try {
-        print("mark");
-        print(mark);
         result = wasp_parser.parse(mark, ParserOptions{.data_mode=true});
-        print(result);
         return result;
     } catch (chars err) {
         print("TEST FAILED WITH ERROR\n");
