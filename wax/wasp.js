@@ -1,5 +1,6 @@
 // let WASM_FILE = 'merged.wasm'
 let WASM_FILE = 'wasp.wasm'
+let WASM_RUNTIME = 'wasp-runtime.wasm'
 // let WASM_FILE = 'hello-wasi.wasm'
 // let WASM_FILE = 'test-printf.wasm'
 // let WASM_FILE = '../cmake-build-wasm/wasp.wasm'
@@ -40,12 +41,16 @@ function memcpy(src, srcOffset, dst, dstOffset, length) {
 }
 
 
-function wasp_module_reflection(buf, sizep) {
-    let length = wasm_data.length
-    memcpy(wasm_data, 0, buffer, STACK, length)
-    set_int(buf, STACK);
+function wasp_module_reflection(bufp, sizep) {
+    let length = wasm_data.byteLength
+    while (STACK % 8) STACK++;
+    let buf = STACK
+    let dest = new Uint32Array(memory.buffer, STACK, length);
+    memcpy(wasm_data, 0, dest, 0, length)
+    set_int(bufp, STACK);
     set_int(sizep, length);
     STACK += length
+    return buf;
 }
 
 let imports = {
@@ -277,16 +282,16 @@ async function run_wasm(buf_pointer, buf_size) {
 
 wasm_data = fetch(WASM_FILE)
 WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
-    instance = obj.instance
-    exports = instance.exports
-    HEAP = exports.__heap_base; // ~68000
-    DATA_END = exports.__data_end
-    STACK = HEAP || DATA_END;
-    memory = exports.memory || exports._memory || memory
-    buffer = new Uint8Array(memory.buffer, 0, memory.length);
-    main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
-    main = instance._Z11testCurrentv || main
-    if (main) {
+        instance = obj.instance
+        exports = instance.exports
+        HEAP = exports.__heap_base; // ~68000
+        DATA_END = exports.__data_end
+        STACK = HEAP || DATA_END;
+        memory = exports.memory || exports._memory || memory
+        buffer = new Uint8Array(memory.buffer, 0, memory.length);
+        main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
+        main = instance._Z11testCurrentv || main
+        if (main) {
             console.log("got main")
             result = main()
         } else {
@@ -311,7 +316,13 @@ function test() {
     // let cmd = "123"
     // let ok = exports.run(chars(cmd))
     // console.log(string(ok))
-    ok = exports.testJString(String("FULL circle"))
-    console.log(String(ok))
-    exports._Z7println6String(String("full circle"))
+    fetch(WASM_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
+            wasm_data = buffer
+            console.log(wasm_data)
+            console.log(wasm_data.byteLength)
+            ok = exports.testJString(String("FULL circle"))
+            console.log(String(ok))
+        }
+    )
+    // exports._Z7println6String(String("full circle"))
 }

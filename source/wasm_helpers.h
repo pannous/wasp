@@ -285,5 +285,5 @@ class List;
 List<String> arguments();
 
 #if MY_WASM
-extern "C" void wasp_module_reflection(bytes* buffer,size_t* size);
+extern "C" int wasp_module_reflection(bytes buffer,size_t* size);
 #endif
