@@ -361,6 +361,12 @@ void *putp(void *f) {
     return f;
 }
 
+extern "C" String *put_string(String *s) {
+    if (!s)return 0;
+    put_chars(s->data, s->length);
+    return s;
+}
+
 List<String> arguments() {
     List<String> args;
     int argc;

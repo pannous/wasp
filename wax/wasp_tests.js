@@ -37,20 +37,15 @@ function testString() {
     console.log(String(ok))
     prints(ok)
     check(String(ok) == "ok from WASP")
-    console.log("TEST OK")
+    console.log("TEST OK: testString")
 }
 
 function testReverse() {
-    exports._Z7println6String(String("full circle"))
-    // exports.put_chars(chars("abcdefg"))
     let cs = chars("abcd")
-    console.log(string(cs))
-    puts(cs)
     exports._Z7reversePci(cs, 4)
-    console.log(string(cs))
-    puts(cs)
     check(string(cs) == "dcba")
-    console.log(string(cs));
+    exports.put_string(String("abcd -> dcba full circle"))
+    console.log("TEST OK: testReverse")
 }
 
 function testRun() {

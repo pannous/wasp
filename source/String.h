@@ -1087,6 +1087,7 @@ void println(String); // ==
 
 void println(int64);
 
+// don't extern "C", else demangle can't reflect … see put_string
 void put(String);
 
 extern "C" int puts(const char *);// int return needed for stdio compatibilty !
