@@ -3002,11 +3002,33 @@ extern "C" char *run(char *x) {
 
 extern "C" String *testFromJS(String *s) {
     println("testJString…");
-    println(s);
+    print(s);
+    print("test from JS"s);
+    println(s->length);
+    println("test from JS"s.length);
+    check(eq(s->data, "test from JS"s.data));
+    tracing = true;
+    check(eq("test from JS"s.data, s->data));
+    check("test from JS"s == s);
+//    check(*s == "test from JS"s);
+//    check(s == "test from JS"s);
+    check(String(u'☺').length == 3)
+    check(String(L'☺').length == 3)
+    check(String(U'☺').length == 3)
+
+    auto node1 = interpret("ç='☺'");
+    check(node1.kind == strings);
+    check(*node1.value.string == u'☺');
+    check(*node1.value.string == String(u'☺'));
+    assert(node1 == String(u'☺'));
+    assert(node1 == String(L'☺'));
+    assert(node1 == String(U'☺'));
 //    Module wasp = loadRuntime();
 //    print(wasp.name);
 //    print("wasp.total_func_count");
 //    print(wasp.total_func_count);
     auto pString = new String("ok from WASP");
-    return pString;
+    auto replaced = s->replace("test", "ok").replace("JS", "WASP");
+    check(pString == replaced);
+    return &replaced.clone();
 }

@@ -17,7 +17,7 @@
 #include <cstdio> // printf
 
 #endif
-
+typedef size_t codepoint_offset;
 #define MAX_STRING_LENGTH 100000 // only for strlen()
 //#define MAX_WASM_DATA_LENGTH 0x1000000 // 16 MB
 //#define MAX_WASM_DATA_LENGTH 0x80000 // 1/2 MB
@@ -89,7 +89,7 @@ int64 parseLong(chars str);
 
 extern double parseDouble(chars string);
 
-void encode_unicode_character(char *buffer, wchar_t ucs_character);
+int encode_unicode_character(char *buffer, wchar_t ucs_character);
 
 String toString(Node &node);
 
@@ -304,15 +304,14 @@ public:
     }
 
     explicit String(char16_t utf16char) {
-        data = (char *) (calloc(sizeof(char16_t), 2));
-        encode_unicode_character(data, utf16char);
-        length = len();// at most 2 bytes
+        data = (char *) (calloc(sizeof(char16_t), 4));// 2byte can be unrolled into 3(+??) bytes, e.g. u'☺'
+        length = encode_unicode_character(data, utf16char);
+        data[length] = 0;
     }
 
 //	explicit String(char16_t* chars){
-//		data = (char*)(calloc(sizeof(char16_t),len(chars)));
-//		encode_unicode_characters(data,);
-//		length = len();
+//		while ... data = (char*)(calloc(sizeof(char16_t),len(chars)));
+//		length+ = encode_unicode_characters(data,);
 //	}
 
 // char32_t same as codepoint!
@@ -326,8 +325,8 @@ public:
 
     explicit String(wchar_t wideChar) {
         data = (char *) (calloc(sizeof(wchar_t), 2));
-        encode_unicode_character(data, wideChar);
-        length = 2;
+        length = encode_unicode_character(data, wideChar);
+        data[length] = 0;// be sure
     }
 
     explicit String(double real) {
@@ -745,23 +744,17 @@ public:
     }
 
     bool operator==(chars c) {
-        return length != 0 && data && eq(data, c, shared_reference ? length : -1);
+        return eq(data, c, length);
     }
 
     bool operator==(char *c) {
-        return length != 0 && data && eq(data, c, shared_reference ? length : -1);
+        return eq(data, c, length);
     }
-
 
     bool operator==(String *c) const {
         if (!c)return this->empty();
         if (this->empty())return not c or c->empty();
-        return eq(data, c->data, shared_reference ? length : -1);
-    }
-
-    String &operator||(String &s) {// const
-        if (this->empty())return s;
-        return *this;
+        return eq(data, c->data, length);
     }
 
 //	bool operator!=(const String s) {// const
@@ -775,7 +768,8 @@ public:
     bool operator!=(String &s) {// const
         if (this->empty())return !s.empty();
         if (s.empty())return !this->empty();
-        return !eq(data, s.data, shared_reference ? length : -1);
+        if (s.length != length)return true;
+        return !eq(data, s.data, length);
     }
 
 //	bool operator==(const String other ) {
@@ -785,19 +779,20 @@ public:
     bool operator==(String &s) {// const
         if (this->empty())return s.empty();
         if (s.empty())return this->empty();
-        return eq(data, s.data, shared_reference ? length : -1);
+        if (s.length != length)return false;
+        return eq(data, s.data, length);
     }
 
     bool operator==(String *s) {// const
-        if (this->empty() and not s)return true;
-        if (this->empty())return s->empty();
-        if (s->empty())return this->empty();
-        return eq(data, s->data, shared_reference ? length : -1);
+        if (!s or s->empty())return empty();
+        if (this->empty())return not s or s->empty();
+        if (s->length != length)return false;
+        return eq(data, s->data, length);
     }
 
     bool operator==(char *c) const {
 //        if (!this)return false;// how lol e.g. me.children[0].name => nil.name
-        return eq(data, c, shared_reference ? length : -1);
+        return eq(data, c, length);
     }
 
     bool operator!=(char *c) {
@@ -805,7 +800,8 @@ public:
     }
 
     bool operator!=(const String &c) {
-        return !eq(data, c.data);
+        if (c.length != length)return false;
+        return !eq(data, c.data, length);
     }
 
 //#define min(a, b) (a < b ? a : b)
@@ -845,6 +841,20 @@ public:
 //	codepoint operator[](int i) {
 //		return codepointAt(i);
 //	}
+
+    String &operator||(String &s) {// const
+        if (this->empty())return s;
+        return *this;
+    }
+
+    codepoint operator[](codepoint_offset i) {
+        return codepointAt(i);
+    }
+
+//    grapheme operator[](grapheme_offset i) {
+//        return graphemeAt(i);
+//    }
+
 
     // internal usage
     char operator[](int i) {
@@ -914,7 +924,7 @@ public:
     __attribute__((__warn_unused_result__))
     String &replaceAll(String part, String with) {
         String &done = *this;
-        if (with.contains(part))todo("incremental replaceAll");
+        if (with.contains(part)) todo("incremental replaceAll");
         while (done.contains(part))
             done = done.replace(part, with);
         return done;

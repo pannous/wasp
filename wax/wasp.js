@@ -319,10 +319,9 @@ function load_runtime_bytes() {
 }
 
 function test() {
-    exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
     let ok = exports.testFromJS(String("test from JS"));
     check(String(ok) == "ok from WASP")
-    prints(ok)
+    exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
     if (typeof (wasp_tests) !== "undefined")
         wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 
