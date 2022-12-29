@@ -3013,14 +3013,13 @@ extern "C" char *run(char *x) {
 
 extern "C" String *testFromJS(String *s) {
     println("testJString…");
-    print("test from JS"s);
-    print(s);
-    check("test from JS"s == s);
+    check_is("test from JS"s, s);
 //    Module wasp = loadRuntime();
 //    print(wasp.name);
 //    print("wasp.total_func_count");
 //    print(wasp.total_func_count);
     auto replaced = s->replace("test", "ok").replace("JS", "WASP");
-    check("ok from WASP"s == replaced);
-    return &replaced.clone();
+    check_is("ok from WASP"s, replaced);
+//    return &replaced.clone();
+    return new String("ok from WASP");
 }
