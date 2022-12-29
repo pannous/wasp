@@ -41,16 +41,10 @@ function testString() {
 }
 
 function testReverse() {
-    exports._Z7println6String(String("full circle"))
-    // exports.put_chars(chars("abcdefg"))
     let cs = chars("abcd")
-    console.log(string(cs))
-    puts(cs)
     exports._Z7reversePci(cs, 4)
-    console.log(string(cs))
-    puts(cs)
     check(string(cs) == "dcba")
-    console.log(string(cs));
+    exports._Z7println6String(String("abcd -> dcba full circle"))
 }
 
 function testRun() {
