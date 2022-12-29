@@ -791,7 +791,6 @@ public:
     }
 
     bool operator==(char *c) const {
-//        if (!this)return false;// how lol e.g. me.children[0].name => nil.name
         return eq(data, c, length);
     }
 
