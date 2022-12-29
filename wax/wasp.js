@@ -98,6 +98,7 @@ function check(ok) {
 function String(data) { // wasm<>js interop
     switch (typeof data) {
         case "string":
+            while (current % 8) current++
             let p = current
             new_int(current + 8)
             new_int(data.length)
@@ -111,14 +112,19 @@ function String(data) { // wasm<>js interop
 }
 
 function string(pointer, length = -1, format = 'utf8') {
+    console.log(pointer)
+    console_log(length)
+
     if (length < 0) { // auto length
+        let buffer = new Uint8Array(memory.buffer, pointer, memory.length);
         while (buffer[pointer + ++length]) ;
+        console.log("GOT length", length)
     }
     //console.log("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
     if (typeof (TextDecoder) != 'undefined') {// WEB, text-encoding, Node 11
         const utf8_decoder = new TextDecoder('utf8');
         let decoder = format == 'utf8' ? utf8_decoder : utf16denoder
-        let arr = new Uint8Array(buffer.subarray(pointer, pointer + length));
+        let arr = new Uint8Array(memory.buffer, pointer, length);
         return decoder.decode(arr)
     } else { // fallback
         buf = Buffer.from(memory.buffer) // Node only!
