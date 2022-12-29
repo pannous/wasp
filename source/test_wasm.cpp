@@ -1345,6 +1345,7 @@ void testAllWasm() {
     testWasmFunctionCalls();
     testWasmFunctionDefiniton();
     testWasmWhile();
+    assert_is("١٢٣", 123);// todo UTF RTL control character!
     skip(
             test_get_local();
 

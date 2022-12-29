@@ -161,7 +161,8 @@ function read_int64(pointer) {
 function chars(s) {
     if (!s) return 0;// MAKE SURE!
     const uint8array = new TextEncoder("utf-8").encode(s + "\0");
-    buffer.set(uint8array, current);
+    buffer = new Uint8Array(memory.buffer, current, uint8array.length);
+    buffer.set(uint8array, 0);
     current += uint8array.length;
     return current;
 }
@@ -177,7 +178,7 @@ function reset_heap() {
 
 function compile_and_run(code) {
     // reset at each run, discard previous data!
-    reset_heap();
+    // reset_heap(); NOT COMPATIBLE WITH ASYNC CALLS!
     exports.run(chars(code));
 }
 
@@ -268,6 +269,7 @@ function terminate() {
 // allow wasm tests/plugins to build and execute small wasm files!
 // todo while wasp.wasm can successfully execute via run_wasm, it can't handle the result (until async wasm) OR :
 // https://web.dev/asyncify/
+var expect_test_result; // set before running in semi sync tests!
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
@@ -277,11 +279,13 @@ async function run_wasm(buf_pointer, buf_size) {
     funclet.exports = funclet.instance.exports
     // funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
     // funclet.buffer = new Uint8Array(funclet.memory.buffer, 0, memory.length);
-    let main = funclet.instance.start || funclet.exports.main || funclet.exports.wasp_main || funclet.exports._start
+    let main = funclet.exports.wasp_main || funclet.exports.main || funclet.instance.start || funclet.exports._start
     let result = main()
     console.log("GOT RESULT FROM WASM")
-    console.log(parseInt(result))
-    return result; // returns Promise ! Do not know how to serialize a BigInt
+    console.log(result)
+    if (expect_test_result)
+        check(expect_test_result == result)
+    return result; // returns Promise!
 }
 
 wasm_data = fetch(WASM_FILE)
@@ -304,7 +308,8 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
             result = instance.exports//show what we've got
         }
         console.log(result);
-        test()
+        setTimeout(test, 1);// make sync?
+        // test()
     }
 )
 
@@ -319,18 +324,10 @@ function load_runtime_bytes() {
 }
 
 function test() {
-    let ok = exports.testFromJS(String("test from JS"));
-    check(String(ok) == "ok from WASP")
-    exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
-    if (typeof (wasp_tests) !== "undefined")
-        wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
-
-    let nod = parse("a : (b ,c)")
-    prints(exports.serialize(nod))
-    // let cmd="puts 'CYRC!'"
-    // let cmd="puti 123"
-    let cmd = "4*4"
-    let result = exports.run(chars(cmd))
-    console.log(string(result)) // "need asyncify for result" ;)
-    // exports._Z7println6String(String("full circle"))
+    // if (typeof (wasp_tests) !== "undefined")
+    //     try {
+    wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
+    // } catch (x) {
+    //     console.log(x)
+    // }
 }
