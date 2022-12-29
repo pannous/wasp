@@ -308,8 +308,7 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
             result = instance.exports//show what we've got
         }
         console.log(result);
-        setTimeout(test, 1);// make sync?
-        // test()
+        setTimeout(test, 1);// make sync
     }
 )
 
