@@ -806,7 +806,8 @@ String Node::serializeValue(bool deep) const {
         case 0:
             return "ø";
         case fields:
-            return val.node->name;
+            return "??";
+//            return val.node->name;
         case strings:
             return val.data ? "\""s + val.string + "\"" : "";
 //		case ints:
