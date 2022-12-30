@@ -100,13 +100,15 @@ let puts = x => console.log(chars(x)) // char*
 let prints = x => console.log(string(x)) // char**
 const console_log = window.console.log;// redirect to text box
 
-window.console.log = function (...args) {
-    console_log(...args);
-    args.forEach(arg => results.value += `${format(arg)}\n`);
-}
+// #if not TRACE
+// redirect after testing!
+// window.console.log = function (...args) {
+//     console_log(...args);
+//     args.forEach(arg => results.value += `${format(arg)}\n`);
+// }
 
-function check(ok) {
-    if (!ok) throw new Error("⚠️ TEST FAILED!");
+function check(ok, msg) {
+    if (!ok) throw new Error("⚠️ TEST FAILED! " + msg || "");
 }
 
 function string(data) { // wasm<>js interop
