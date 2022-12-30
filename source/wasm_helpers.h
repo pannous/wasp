@@ -115,7 +115,7 @@ extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
 
 void *alloc(int num, int size);// => malloc / calloc
 #if WASM
-void *aligned_alloc(size_t __alignment, size_t __size);// stdlib.h
+extern "C" void *aligned_alloc(size_t __alignment, size_t __size);// stdlib.h
 #endif
 //void *calloc(int size, int num);// alloc cleared
 //void *calloc(size_t __count, size_t __size);// __result_use_check __alloc_size(1,2);
