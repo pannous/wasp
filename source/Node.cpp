@@ -805,11 +805,11 @@ String Node::serializeValue(bool deep) const {
     switch (kind) {
         case 0:
             return "ø";
+        case fields:
+            return val.node->name;
         case strings:
             return val.data ? "\""s + val.string + "\"" : "";
 //		case ints:
-        case fields:
-            return val.node->name;
         case errors:
             return val.node ? val.node->name : "<ERROR>";
         case codepoints:
