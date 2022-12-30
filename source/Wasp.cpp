@@ -2050,7 +2050,7 @@ int main(int argc, char **argv) {
         String args((char*)alloc(1,1));// hack: written to by wasmx
 //		args.data[0] = '{';
         print(args);
-        current += strlen(args)+1;
+        heap_end += strlen(args)+1;
 #endif
         // todo: eval?
 //        eval(args);

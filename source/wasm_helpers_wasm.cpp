@@ -166,6 +166,11 @@ void *calloc(size_t num, size_t size) {
     return mem;
 }
 
+void *aligned_alloc(size_t __alignment, size_t __size) {
+    while (((long) heap_end) % 8)heap_end++;
+    return malloc(__size);
+}
+
 void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
 
     if (size > 1000000) {
@@ -173,27 +178,27 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
         putx(size);
         error("implausible size ;)");
     }
-    if ((long) current < 10000) {
+    if ((long) heap_end < 10000) {
 //        current = (char*)&__data_end;
-        current = (char *) &__heap_base;
+        heap_end = (char *) &__heap_base;
 //        error("current not set");
     }
 //    while (((long) current) % 8)current++;// WE CAN'T ALIGN HERE!
 //    S *keys = (S *) calloc(sizeof(S), capacity);// WE CAN'T ALIGN HERE!
 
-    void *last = current;
-    current += size;
-    while (((long) current) % 8)current++; //
+    void *last = heap_end;
+    heap_end += size;
+    while (((long) heap_end) % 8)heap_end++; // pre-align after for what may follow
 //	if(size>1000)
     bool check_overflow = false;// wasm trap: out of bounds memory access OK
-    if (check_overflow and MEMORY_SIZE and (int64) current >= MEMORY_SIZE) {
+    if (check_overflow and MEMORY_SIZE and (int64) heap_end >= MEMORY_SIZE) {
         put_chars("OUT OF MEMORY", 13);
         puti(sizeof(Node));// 64
         puti(sizeof(String));// 20
         puti(sizeof(Value));// 8 int64
         puti((int) last);
         puti((int) memory);
-        puti((int) current);
+        puti((int) heap_end);
         puti(MEMORY_SIZE);
         error("OUT OF MEMORY");// needs malloc :(
         panic();
@@ -221,14 +226,14 @@ extern "C" void *memmove(void *dest, const void *source, size_t num) {
 
 // new operator for ALL objects
 void *operator new[](size_t size) { // stack
-    return alloc(1, size);
-//    aligned_alloc(size, 8);
+//    return calloc(size,1);
+    return aligned_alloc(8, size);
 }
 
 // new operator for ALL objects
 void *operator new(size_t size) { // stack
-    return alloc(1, size);
-//    return aligned_alloc(size, 8);
+//    return calloc(size,1);
+    return aligned_alloc(8, size);
 }
 
 void _cxa_allocate_exception() {
@@ -421,7 +426,7 @@ extern "C" void __wasm_call_ctors();
 
 // un-export at link time to use main:_start
 extern "C" void _start() {
-    current = (char *) &__heap_base;
+    heap_end = (char *) &__heap_base;
     __wasm_call_ctors();
     trace("__heap_base");
     trace(&__heap_base);// VERY HIGH 0x54641ddb0

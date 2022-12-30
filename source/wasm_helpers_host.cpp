@@ -22,7 +22,8 @@ void memcpy1(bytes dest, bytes source, int i) {
     memcpy(dest, source, i);
 }
 
-// NOT part of c! nice biforc
+
+// NOT part of c! nice bifork
 void *alloc(int num, int size) {
     return calloc(num, size);
 //    return malloc(num * size);// good to find bugs
