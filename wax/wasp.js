@@ -397,10 +397,6 @@ function load_runtime_bytes() {
 }
 
 function test() {
-    // if (typeof (wasp_tests) !== "undefined")
-    //     try {
-    wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
-    // } catch (x) {
-    //     console.log(x)
-    // }
+    if (typeof (wasp_tests) !== "undefined")
+        wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 }
