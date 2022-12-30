@@ -3009,7 +3009,8 @@ Code &compile(String code, bool clean) {
     Node parsed = parse(code);
 
     Node &ast = analyze(parsed, functions["wasp_main"]);
-    functions["fd_write"].signature.wasm_return_type = int32;
+    println(ast.serialize());
+//    functions["fd_write"].signature.wasm_return_type = int32;
 //	preRegisterSignatures();// todo remove after fixing Signature BUG!!
 //	check(functions["log10"].is_import)
 //	check(functions["log10"].is_used)
