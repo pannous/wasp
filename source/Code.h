@@ -301,7 +301,7 @@ public:
     void debug() {
         String s;
         for (int i = 0; i < length; i++)
-            s += hex(data[i], 1) + ",";
+            s += hex(data[i], 1) + ", ";
         print(s);
 //        save();
     }

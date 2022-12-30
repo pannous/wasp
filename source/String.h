@@ -433,8 +433,8 @@ public:
         if (!data) {
             data = (char *) (alloc(sizeof(char), byteCount + 1));
 #if WASM
-            } else if (data + length + 1 == (char *) current) {// just append recent
-                current += byteCount + 1;
+            } else if (data + length + 1 == heap_end) {// just append recent
+                heap_end += byteCount + 1;
 #endif
         } else {
             auto *neu = (char *) (alloc(sizeof(char), length + byteCount + 1));
@@ -452,8 +452,8 @@ public:
         if (!data) {
             data = (char *) (alloc(sizeof(char), byteCount + 1));
 #if WASM
-            } else if (data + length + 1 == (char *) current) {// just append recent
-                current += byteCount + 1;
+            } else if (data + length + 1 == heap_end) {// just append recent
+                heap_end += byteCount + 1;
 #endif
         } else {
             auto *neu = (char *) (alloc(sizeof(char), length + 5));// we need 4 bytes because *(int*)…=c

@@ -3016,7 +3016,7 @@ Code &compile(String code, bool clean) {
 //	check(functions["log10"].is_import)
 //	check(functions["log10"].is_used)
     Code &binary = emit(ast);
-    binary.debug();
+//    binary.debug();
     binary.save("main.wasm");
 
 #ifdef INCLUDE_MERGER

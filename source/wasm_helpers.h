@@ -35,10 +35,11 @@ typedef unsigned char byte;//!
 // __heap_base is provided by host and its ADDRESS position &__heap_base is the start of the heap area.
 extern byte __heap_base;// set via -Wl,--export=__heap_base
 extern byte __data_end;
-extern "C" /*unsigned */ char *current;// memory + heap_offset // todo merge with __data_end ?
+extern "C" /*unsigned */ char *heap_end;// memory + heap_offset // todo merge with __data_end ?
 extern "C" void panic();//
 
 #ifndef WASM
+
 int raise(chars error); // conflicts with signal.h if 'extern'
 #else
 extern "C" int raise(chars error); // conflicts with signal.h if 'extern'
@@ -113,6 +114,9 @@ extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
 //void printf(int);
 
 void *alloc(int num, int size);// => malloc / calloc
+#if WASM
+void *aligned_alloc(size_t __alignment, size_t __size);// stdlib.h
+#endif
 //void *calloc(int size, int num);// alloc cleared
 //void *calloc(size_t __count, size_t __size);// __result_use_check __alloc_size(1,2);
 //inline _LIBCPP_INLINE_VISIBILITY float       pow(float __lcpp_x, float __lcpp_y) _NOEXCEPT;

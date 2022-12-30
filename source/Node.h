@@ -270,8 +270,11 @@ public:
 //	}
 
     void *operator new(size_t size) {
-        while ((long) current % 8)current++;// align
+#if WASM
+        return aligned_alloc(8, size);// todo why not in native?
+#else
         return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
+#endif
     }
 
     void operator delete(void *a) {
