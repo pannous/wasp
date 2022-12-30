@@ -2964,9 +2964,8 @@ extern "C" void testCurrent() {
     bool y = String("0");// true OK,  via operator char *() const { return data; }!!
     bool x = String("1");
     bool z = String("");
-    assert_is("1 2 3", Node(1, 2, 3, 0))
-
-    assert_eval("1 and 0 or 4", 4);
+//    assert_is("1 2 3", Node(1, 2, 3, 0))
+//    assert_eval("1 and 0 or 4", 4);
 
 //    clearAnalyzerContext();
 //    tests();// make sure all still ok before changes
