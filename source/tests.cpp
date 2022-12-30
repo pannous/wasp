@@ -2923,9 +2923,10 @@ void wasp_tests();
 extern "C" void testCurrent() {
 //    wasp_tests();
 //    clearAnalyzerContext();
-
+    print("AT SOME POINT the whole mechanism falls apart. when and why?");
     auto string1 = "%lld should be %d %s"s % (int64) 1l % 1 % "!";
     check_is(string1, "1 should be 1 !");
+    return;
     testMaps();
     preRegisterFunctions();
     check(functions.has("fd_write"));
@@ -2998,6 +2999,7 @@ extern "C" void testCurrent() {
 
 extern "C" char *run(char *x) {
     auto code = compile(x);
+    testCurrent();
     code.run();// async in js
     return (char *) "need asyncify for result";
 }
@@ -3014,7 +3016,10 @@ extern "C" char *run(char *x) {
 extern "C" String *testFromJS(String *s) {
     println("testJString…");
     check_is("test from JS"s, s);
-    print(typeName((Kind) 9));
+    auto code = Code((bytes) "123", 3);
+    code.debug();
+
+
 //    Module wasp = loadRuntime();
 //    print(wasp.name);
 //    print("wasp.total_func_count");
