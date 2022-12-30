@@ -156,7 +156,6 @@ void debugCalloc(size_t num, size_t size) {
         puti(size);
         print("---calloc");
     }
-
 }
 
 //__attribute__((__malloc__, __warn_unused_result__))
@@ -178,7 +177,9 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
         current = (char *) &__heap_base;
 //        error("current not set");
     }
-    while (((long) current) % 8)current++;
+//    while (((long) current) % 8)current++;// WE CAN'T ALIGN HERE!
+//    S *keys = (S *) calloc(sizeof(S), capacity);// WE CAN'T ALIGN HERE!
+
     void *last = current;
     current += size;
 //	if(size>1000)
@@ -218,16 +219,14 @@ extern "C" void *memmove(void *dest, const void *source, size_t num) {
 
 // new operator for ALL objects
 void *operator new[](size_t size) { // stack
-    char *use = current;
-    current += size;
-    return use;
+    return alloc(1, size);
+//    aligned_alloc(size, 8);
 }
 
 // new operator for ALL objects
 void *operator new(size_t size) { // stack
-    char *use = current;
-    current += size;
-    return use;
+    return alloc(1, size);
+//    return aligned_alloc(size, 8);
 }
 
 void _cxa_allocate_exception() {
