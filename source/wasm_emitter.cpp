@@ -1547,7 +1547,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //		error("locals should be analyzed in parser");
 //		locals[name] = List<String>();
 //	locals[index]= Map<int, String>();
-    if (node.kind == unknown and not name.empty() and context.locals.has(name))
+    if (node.kind == unknown and context.locals.has(node.name))
         node.kind = reference;// todo clean fallback
 //    if (node.name=="0") {
 //        code.addConst32(0);
@@ -2144,7 +2144,6 @@ Code encodeString(chars str) {
 
 [[nodiscard]]
 Code emitBlock(Node &node, Function &context) {
-
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};
 // 0x00 == unreachable as block header !?
@@ -2167,6 +2166,7 @@ Code emitBlock(Node &node, Function &context) {
         locals_count = locals_count - argument_count;
     else
         warn("locals consumed by arguments"); // ok in  double := it * 2; => double(it){it*2}
+
     trace("found %d locals for %s"s % locals_count % context.name);
 
     // todo block.addByte(i+1) // index seems to be wrong: i==NUMBER of locals of type xyz ??
@@ -2312,7 +2312,7 @@ Code emitTypeSection() {
     int typeCount = 0;
     Code type_data;
 //	print(functionIndices);
-    for (String &fun: functions) {
+    for (String fun: functions) {
         if (!fun) {
 //			print(functionIndices);
 //			print(functions);
@@ -2557,6 +2557,7 @@ Code emitCodeSection(Node &root) {
         code_blocks = code_blocks + encodeVector(Code(code_put_string, sizeof(code_put_string)));
     if (functions["quit"].is_used)
         code_blocks = code_blocks + encodeVector(Code(code_quit, sizeof(code_quit)));
+
 
     Code main_block = emitBlock(root, functions["wasp_main"]);// after imports and builtins
 
@@ -3006,13 +3007,8 @@ Code &compile(String code, bool clean) {
     }
 
     Node parsed = parse(code);
-    println(parsed.serialize());
 
     Node &ast = analyze(parsed, functions["wasp_main"]);
-    println(ast.serialize());
-    println(ast.serialize());
-    println(ast.serialize());
-
     functions["fd_write"].signature.wasm_return_type = int32;
 //	preRegisterSignatures();// todo remove after fixing Signature BUG!!
 //	check(functions["log10"].is_import)

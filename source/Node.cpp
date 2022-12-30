@@ -942,7 +942,7 @@ String Node::serialize() const {
             else if (kind == patterns)wasp += "]";
             else if (not separator) wasp += ")";// default
         }
-        if (!name.empty() and eq(name, "‖")) wasp += name;
+        if (eq(name, "‖")) wasp += name;
     }
     return wasp;
 //	return name.empty()? string() : name;
