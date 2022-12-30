@@ -758,7 +758,8 @@ List<String> function_modifiers = {"public", "static"};
 Node &groupFunctionDeclaration(Node &expression, Function &context) {
     auto first = expression.first();
     while (function_modifiers.contains(first.name)) {
-        expression.children++;
+        if (expression.children)
+            expression.children++;
         expression.length--;
     }
     auto left = expression.to(":=");

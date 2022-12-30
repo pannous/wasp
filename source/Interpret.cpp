@@ -92,11 +92,12 @@ Node Node::interpret(bool expectOperator /* = true*/) {
             if (unknown_symbols.length > 0 and expectOperator)
                 error("unknown symbol "s + unknown_symbols.serialize());
         }
-        for (int i = 0; i < length; ++i) {
-            Node child = children[i];
-            Node evaled = child.interpret();
-            children[i] = evaled;
-        }
+        if (children)
+            for (int i = 0; i < length; ++i) {
+                Node child = children[i];
+                Node evaled = child.interpret();
+                children[i] = evaled;
+            }
         return *this;
     }
     Node *op = 0;

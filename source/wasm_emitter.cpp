@@ -1554,7 +1554,8 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //        return code;
 //    }
     if (name == "if")
-        return emitIf(node, context);
+        if (name == "if")
+            return emitIf(node, context);
     if (name == "while")
         return emitWhile(node, context);
     if (name == "it") {
@@ -3009,7 +3010,7 @@ Code &compile(String code, bool clean) {
     Node parsed = parse(code);
 
     Node &ast = analyze(parsed, functions["wasp_main"]);
-    println(ast.serialize());
+//    println(ast.serialize());// <<
 //    functions["fd_write"].signature.wasm_return_type = int32;
 //	preRegisterSignatures();// todo remove after fixing Signature BUG!!
 //	check(functions["log10"].is_import)

@@ -2959,6 +2959,13 @@ void wasp_tests();
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 extern "C" void testCurrent() {
+    if (String("0"))
+        String("1");
+    bool y = String("0");// true OK,  via operator char *() const { return data; }!!
+    bool x = String("1");
+    bool z = String("");
+    assert_is("1 2 3", Node(1, 2, 3, 0))
+
     assert_eval("1 and 0 or 4", 4);
 
 //    clearAnalyzerContext();

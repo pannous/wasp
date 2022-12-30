@@ -220,7 +220,7 @@ public:
 //    Type64 type6;
     int length = 0;// #children
     Kind kind = unknown;// forced 32 bit,  improved from 'undefined' upon construction
-    Node *children = nullptr;// LIST, not link. block body content
+    Node *children = nullptr;// GROW LATER! nullptr;// LIST, not link. block body content
     Value value = {.longy=0}; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 //    32bit in wasm TODO pad with string in 64 bit
     // previous fields must be aligned to int64!
@@ -292,8 +292,14 @@ public:
 //		if(debug)name = "[]";
     }
 
+    void init_children(int nr = -1) {
+        if (nr < 0)nr = capacity;
+        if (!children)children = (Node *) calloc(capacity, sizeof(Node));
+    }
+
 
     explicit Node(String *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
+        init_children();
         while (args[length] and length < MAX_WASM_DATA_LENGTH) {
             children[length] = Node(args[length]);
             length++;
@@ -345,13 +351,14 @@ public:
 // Require the last variable argument to be null, zero or whatever
 // BOXED
     explicit Node(int a, int b, ...) {
+        init_children();
         kind = objects;// groups list
-        add(Node(a).clone());
+        add(Node(a));
         va_list args;// WORK WITHOUT WASI!!
         va_start(args, b);
         int i = b;
         while (i) {
-            addSmart(Node(i).clone());
+            add(Node(i));
             i = (int) va_arg(args, int);
         }
         va_end(args);
@@ -547,10 +554,16 @@ public:
     }
 
     Node &first() {
-        if (length > 0)return children[0];
-        if (children)return children[0]; // hack for missing length!
-        if (kind == assignment and value.node)return *value.node;// todo sure??, could be direct type!?
-        if (kind == operators and next)return *next;// todo remove hack
+        if (length > 0 and children)
+            return children[0];
+//        if (children)
+//            return children[0]; // hack for missing length!
+        if (kind == assignment and value.node)
+            return *value.node;// todo sure??, could be direct type!?
+        if (kind == operators and next)
+            return *next;// todo remove hack
+        if (kind == key and value.node)
+            return *value.node;
         return *this;// (x)==x   danger: loops
 //		error("No such element");
 //		return ERROR;
@@ -709,13 +722,14 @@ public:
             const String &string1 = serializeValue(false);
             printf(" value:%s\n", string1.data);// NEEDS "%s", otherwise HACKABLE
             printf(" children:[");// flat, non-recursive
-            for (int i = 0; i < min(length, 10); i++) {
-                Node &node = children[i];
-                if (!node.name.empty()) {
-                    printf("%s", node.name.data);
-                    printf(" ");
-                } else printf("{…} ");// overview
-            }
+            if (children)
+                for (int i = 0; i < min(length, 10); i++) {
+                    Node &node = children[i];
+                    if (!node.name.empty()) {
+                        printf("%s", node.name.data);
+                        printf(" ");
+                    } else printf("{…} ");// overview
+                }
             printf("]");
             printf("}\n");
         }
@@ -738,9 +752,15 @@ public:
 //		https://github.com/pannous/angle/wiki/truthiness
 //		if(name=="nil")return false;
 //		if(name=="0")return false;
-    explicit operator bool() {// TRUTHINESS operator, implicit in if, while
-        return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
+//    explicit operator bool() {// TRUTHINESS operator, implicit in if, while
+//        return value.longy or length > 1 or (length == 1 and children and this != children and (bool) (children[0]));
+//    }
+
+    // type conversions
+    explicit operator bool() const {
+        return value.longy or length > 1 or (length == 1 and children and this != children and (bool) (children[0]));
     }
+
 
     // todo ⚠️ NEVER CAST Node* to smart_pointer_64, THIS IS NOT WHAT WE WANT!!
 //    explicit operator smart_pointer_64 (){
@@ -755,11 +775,6 @@ public:
         if (smart_pointer_header_mask & (smart_pointer_64) this)
             error("Node pointer out of reach > 2^48 ");
         return (smart_pointer_64) this | smart_pointer_node_signature;
-    }
-
-    // type conversions
-    explicit operator bool() const {
-        return value.longy or length > 1 or (length == 1 and this != children and (bool) (children[0]));
     }
 
     explicit operator int() const { return value.longy; }
@@ -785,7 +800,7 @@ public:
 
     String serialize() const;
 
-    String serializeValue(bool deep = true) const;
+    chars serializeValue(bool deep = true) const;
 
 
     Node &setValue(Value v);

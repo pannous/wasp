@@ -615,13 +615,12 @@ public:
 
     String *operator+=(char *c) {
         append(c);
-//		while (c and c[0])append(*(c++));
         return this;
     }
 
+//    operator+() should not return a reference type as it is a new (locally declared) instance that holds the result of the operation.
     String *operator+=(chars c) {
-        append((char *) c);
-//		while (c and c[0])append(*c++);
+        append(c);
         return this;
     }
 
@@ -750,6 +749,12 @@ public:
     bool operator==(char *c) {
         return eq(data, c, length);
     }
+
+// need name == (char*)"‖" WTH
+//    use of overloaded operator '==' is ambiguous WHY??
+//    bool operator==(const char *c) const{
+//        return eq(data, c, length);
+//    }
 
     bool operator==(String *c) const {
         if (!c)return this->empty();
@@ -946,8 +951,11 @@ public:
     explicit operator int() const { return parseLong(data); }
 
 //	MUST BE explicit, otherwise String("abc") != "abc"  : char* comparison hence false
-//	explicit cast
+//	explicit // cast // todo ^^^ HUH!?
     operator char *() const { return data; }
+
+    explicit // if(String("0")) OK, BUT bool x=String("0") calls operator char *() !
+    operator bool() const { return data and length; } // better safe then sorry!!
 //    operator char *() const { return this ? data : 0; }
 
 //	operator codepoint *() { return extractCodepoints(); }
