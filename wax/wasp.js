@@ -255,7 +255,13 @@ class node {
         this[this.name] = this; // make a:1 / {a:1} indistinguishable
         for (var child of this.children()) {
             if (child.kind === kinds.key)
-                this[child.name] = child.Value()
+                this[child.name] = child.Value() // flat values
+            else if (child.kind === kinds.long)
+                this[child.name] = child.value
+            else if (child.kind === kinds.real)
+                this[child.name] = child.Content
+            else if (child.kind === kinds.string)
+                this[child.name] = child.Content
             else
                 this[child.name] = child
         }
