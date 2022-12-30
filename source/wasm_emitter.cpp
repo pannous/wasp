@@ -2144,6 +2144,7 @@ Code encodeString(chars str) {
 
 [[nodiscard]]
 Code emitBlock(Node &node, Function &context) {
+
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};
 // 0x00 == unreachable as block header !?
@@ -2166,7 +2167,6 @@ Code emitBlock(Node &node, Function &context) {
         locals_count = locals_count - argument_count;
     else
         warn("locals consumed by arguments"); // ok in  double := it * 2; => double(it){it*2}
-
     trace("found %d locals for %s"s % locals_count % context.name);
 
     // todo block.addByte(i+1) // index seems to be wrong: i==NUMBER of locals of type xyz ??
@@ -2312,7 +2312,7 @@ Code emitTypeSection() {
     int typeCount = 0;
     Code type_data;
 //	print(functionIndices);
-    for (String fun: functions) {
+    for (String &fun: functions) {
         if (!fun) {
 //			print(functionIndices);
 //			print(functions);
@@ -2323,6 +2323,8 @@ Code emitTypeSection() {
                 error("empty context creep functions[ø]");
             continue;
         }
+        testCurrent();
+
         if (operator_list.has(fun)) {
             todow("how did we get here?");
             continue;
@@ -2955,12 +2957,15 @@ void clearEmitterContext() {
 
 [[nodiscard]]
 Code &emit(Node &root_ast, Module *runtime0, String _start) {
+
     start = _start;
+
     if (runtime0) {
 //		memoryHandling = no_memory;// done by runtime?
 //		memoryHandling = export_memory;// try to combine? duplicate export name `memory` already defined
 //        memoryHandling = import_memory;// works
         memoryHandling = internal_memory;
+        printf("            testCurrent();");
         runtime = *runtime0;// else filled with 0's
         runtime_function_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
         import_count = 0;
@@ -2978,7 +2983,11 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 //        memoryHandling = internal_memory; // works for wasm3
 //        memoryHandling = no_memory;
         last_index = -1;
+        print("        runtime = *new Module();// all zero");
         runtime = *new Module();// all zero
+        testCurrent();
+        print("        runtime = *new Module();// all zero XXX");
+
         runtime_function_offset = 0;
         add_imports_and_builtins();
     }
@@ -3000,19 +3009,35 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 //		start = "_default_context_";//_default_context_
 //		start = "";
     }
-
+    print("Code &emit(Node &root_ast, Module *runtime0, String _start) {");
+    testCurrent();
     const Code customSectionvector;
 //	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
     // ^^^ currently causes malloc_error WHY??
+    print("Code &emit(Node &root_ast, Module *runtime0, String _start) 222");
 
     auto customSection = createSection(custom_section, customSectionvector);
     Code typeSection1 = emitTypeSection();// types must be defined in analyze(), not in code declaration
+    print("Code &emit(Node &root_ast, Module *runtime0, String _start) 222");
+    testCurrent();
     Code importSection1 = emitImportSection();// needs type indices
+    testCurrent();
+
     Code globalSection1 = emitGlobalSection();//
+    testCurrent();
+
     Code codeSection1 = emitCodeSection(root_ast); // needs functions and functionIndices prefilled!! :(
+    testCurrent();
+
     Code funcTypeSection1 = emitFuncTypeSection();// signatures depends on codeSection, but must come before it in wasm
+    testCurrent();
+
     Code memorySection1 = emitMemorySection();
+    testCurrent();
+
     Code exportSection1 = emitExportSection();// depends on codeSection, but must come before it!!
+    testCurrent();
+
 
     Code code = Code(magicModuleHeader, 4)
                 + Code(moduleVersion, 4)
@@ -3029,6 +3054,8 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 //	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
     ;
+    testCurrent();
+
 //    code.debug();
 #ifndef WEBAPP
 //	free(data);// written to wasm code ok
@@ -3053,8 +3080,10 @@ Code &compile(String code, bool clean) {
 
     Node parsed = parse(code);
     print(parsed.serialize());
+
     Node &ast = analyze(parsed, functions["wasp_main"]);
     print(ast.serialize());
+
     functions["fd_write"].signature.wasm_return_type = int32;
 //	preRegisterSignatures();// todo remove after fixing Signature BUG!!
 //	check(functions["log10"].is_import)
