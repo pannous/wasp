@@ -32,7 +32,7 @@ short builtin_count = 0;// function_offset - import_count - runtime_offset;
 //bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
 char *data;// any data to be stored to wasm: values of variables, strings, nodes etc ( => memory in running app)
 //int data_index_start = 0;
-int heap_end = 0;// position to write more data = end + length of data section
+int data_index_end = 0;// position to write more data = end + length of data section
 int last_object_pointer = 0;// outside stack
 //int last_data_pointer = 0;// last_data plus header , see referenceDataIndices
 //Map<String *, int64> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
@@ -351,40 +351,40 @@ bool isProperList(Node &node) {
 // append padding bytes to wasm data memory
 void emitPadding(int num, byte val = 0) {
     while (num-- > 0)
-        data[heap_end++] = val;
+        data[data_index_end++] = val;
 }
 
 void emitPaddingAlignment(short size) { // e.g. 8 for int64 padding BEFORE emitLongData() / emitData(int64)
-    emitPadding((size - (heap_end % size)) %
+    emitPadding((size - (data_index_end % size)) %
                 size);// fill up to int64 padding ⚠️ the field-sizes before node.value MUST sum up to n*8!
 }
 
 
 // append byte to wasm data memory
 void emitByteData(byte i) {
-    *(byte *) (data + heap_end++) = i;
+    *(byte *) (data + data_index_end++) = i;
 }
 
 
 // append short to wasm data memory
 void emitShortData(short i, bool pad = false) {// ⚠️ DON'T PAD INSIDE STRUCTS!?
-    if (pad)while (((int64) (data + heap_end) % 2))heap_end++;// type 'int' requires 4 byte alignment
-    *(short *) (data + heap_end) = i;
-    heap_end += 2;
+    if (pad)while (((int64) (data + data_index_end) % 2))data_index_end++;// type 'int' requires 4 byte alignment
+    *(short *) (data + data_index_end) = i;
+    data_index_end += 2;
 }
 
 // append int to wasm data memory
 void emitIntData(int i, bool pad = true) {
-    if (pad)while (((int64) (data + heap_end) % 4))heap_end++;// type 'int' requires 4 byte alignment
-    *(int *) (data + heap_end) = i;
-    heap_end += 4;
+    if (pad)while (((int64) (data + data_index_end) % 4))data_index_end++;// type 'int' requires 4 byte alignment
+    *(int *) (data + data_index_end) = i;
+    data_index_end += 4;
 }
 
 // append int64 to wasm data memory
 void emitLongData(int64 i, bool pad = false) { // ⚠️ DON'T PAD INSIDE STRUCTS! pad before!
-    if (pad)while (((int64) (data + heap_end) % 8))heap_end++;// type 'int64' requires 8 byte alignment
-    *(int64 *) (data + heap_end) = i;
-    heap_end += 8;
+    if (pad)while (((int64) (data + data_index_end) % 8))data_index_end++;// type 'int64' requires 8 byte alignment
+    *(int64 *) (data + data_index_end) = i;
+    data_index_end += 8;
 }
 
 void emitSmartPointer(smart_pointer_64 p) {
@@ -430,7 +430,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
     int node_children_pointer = -1; // ignore children (debug)
     if (node.length > 0) {
 //        emitLongData(0x5741535044415441L, false);
-        node_children_pointer = heap_end;
+        node_children_pointer = data_index_end;
 //        emitLongData(0xAA00aa00aa00, false);
         for (auto child: children)
             emitIntData(child);
@@ -440,7 +440,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
         emitPaddingAlignment(8);
     }
 //    emitPadding(1);// wrong padding DOES fuck up struct parsing even on the host side!
-    int node_start = heap_end;
+    int node_start = data_index_end;
     referenceNodeIndices[hash] = node_start;
 
     emitIntData(node_header_32, false);
@@ -464,7 +464,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
         last_type = node.type;
     last_object = &node;
     last_object_pointer = node_start;
-    printf("node_start %d data_index_end %d\n", node_start, heap_end);
+    printf("node_start %d data_index_end %d\n", node_start, data_index_end);
 // already stored in emitArray() : usually enough, unless we want extra node metadata?
 //    referenceIndices.insert_or_assign(node.name, pointer);
 //    referenceDataIndices.insert_or_assign(node.name, pointer + array_header_length);
@@ -493,11 +493,11 @@ Code emitPrimitiveArray(Node &node, Function &context) {
 //	emitIntData(array_header_32 | int_array << 4 | node.length);
 //	emitIntData(node.kind |  node.length); // save 4 bytes, rlly?
     //	if pure_array:
-    int pointer = heap_end; // return pure data
+    int pointer = data_index_end; // return pure data
     if (!node.meta or (*node.meta)["length"].kind != longs)
         warn("buffer length should be stored in meta, not in node.length, for safety!");
     int length = node.length;
-    memcpy(data + heap_end, node.value.data, length);
+    memcpy(data + data_index_end, node.value.data, length);
 #if MULTI_VALUE
     // and RETURN
 //        code.addConst(array_header_32 | node.length);// combined smart pointer? nah
@@ -550,7 +550,7 @@ Code emitArray(Node &node, Function &context) {
 
     let code = Code();
     emitPaddingAlignment(8);
-    int pointer = heap_end;
+    int pointer = data_index_end;
 //	todo: sync with emitOffset
     emitIntData(array_header_32, false);
 //    todo ⚠️really lose information here? use emitNodeBinary if full representation required
@@ -562,7 +562,7 @@ Code emitArray(Node &node, Function &context) {
     else emitIntData(value_kind /*or kind_header_32*/);// todo make sure node.type > Kind AS PER Type enum
 
     bool continuous = true;
-    if (!continuous) emitIntData(heap_end + 4); // just emit immediately after
+    if (!continuous) emitIntData(data_index_end + 4); // just emit immediately after
 
 //    for(wasm_node_index i:children){
     for (Node &child: node) {
@@ -975,7 +975,7 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
 Code emitData(Node &node, Function &context) {
     String &name = node.name;
     Code code;// POINTER to DATA SEGMENT
-    int last_pointer = heap_end;
+    int last_pointer = data_index_end;
     switch (node.kind) {
         case nils:// also 0, false
         case bools:
@@ -994,19 +994,19 @@ Code emitData(Node &node, Function &context) {
 //            else
             if (node.value.longy > 0xF0000000) {
                 error("true int64 big ints currently not supported");
-                *(int64 *) (data + heap_end) = node.value.longy;
-                heap_end += 8;
+                *(int64 *) (data + data_index_end) = node.value.longy;
+                data_index_end += 8;
                 last_type = i64t;
             } else {
-                *(int *) (data + heap_end) = node.value.longy;
-                heap_end += 4;
+                *(int *) (data + data_index_end) = node.value.longy;
+                data_index_end += 4;
                 last_type = int32;
             }
             break;
         case reals:
 //			bytes varInt = ieee754(node.value.real);
-            *(double *) (data + heap_end) = node.value.real;
-            heap_end += 8;
+            *(double *) (data + data_index_end) = node.value.real;
+            data_index_end += 8;
             last_type = float64;
             break;
         case reference:
@@ -1043,7 +1043,7 @@ Code emitString(Node &node, Function &context) {
     if (not node.value.string)
         error("empty node.value.string");
 //    emitPadding(data_index_end % 4);// pad to int size, too late if in node struct!
-    int last_pointer = heap_end;
+    int last_pointer = data_index_end;
     String &string = *node.value.string;
     referenceMap[string] = node;
     if (string and referenceIndices.has(string)) {
@@ -1054,30 +1054,30 @@ Code emitString(Node &node, Function &context) {
     bool as_c_io_vector = true;
     if ((Primitive) node.kind == leb_string) {
         Code lens(string.length);// wasm abi to encode string as LEB-length + data:
-        strcpy2(data + heap_end, (char *) lens.data, lens.length);
-        heap_end += lens.length;// unsignedLEB128 encoded length of pString
+        strcpy2(data + data_index_end, (char *) lens.data, lens.length);
+        data_index_end += lens.length;// unsignedLEB128 encoded length of pString
         // strcpy2 the string later: …
     } else if (as_c_io_vector) { // wasp abi:
-        emitIntData(heap_end + 8, false);// char* for ciov, redundant but also acts as checksum
+        emitIntData(data_index_end + 8, false);// char* for ciov, redundant but also acts as checksum
         emitIntData(string.length, false);
     } else { // wasp abi:
 
         emitIntData(string_header_32, false);
-        emitIntData(heap_end + 20, false);
+        emitIntData(data_index_end + 20, false);
         emitIntData(string.length, false);
         emitIntData(1, false);// iovs len?
 //        emitIntData(string.codepoint_count, false);// type + child_pointer in node
-        emitLongData(heap_end + 8, false);// POINTER to char[] which just follows:
+        emitLongData(data_index_end + 8, false);// POINTER to char[] which just follows:
     }
-    int chars_start = heap_end;
+    int chars_start = data_index_end;
     // the actual string content:
-    strcpy2(data + heap_end, string.data, string.length);
-    data[heap_end + string.length] = 0;
+    strcpy2(data + data_index_end, string.data, string.length);
+    data[data_index_end + string.length] = 0;
     // we add an extra 0, unlike normal wasm abi, because we have space in data section
-    referenceDataIndices.insert_or_assign(string, heap_end);
+    referenceDataIndices.insert_or_assign(string, data_index_end);
     // todo this is EVIL: we assign the STRING to data_index_end, not the REFERENCE!!!
 
-    heap_end += string.length + 1;
+    data_index_end += string.length + 1;
     last_type = stringp;
     last_object_pointer = last_pointer;
     return Code().addConst32(chars_start);// direct data!
@@ -1165,7 +1165,7 @@ Code emitValue(Node &node, Function &context) {
         case strings: {
             // append pString (as char*) to data section and access via stringIndex
             if (!node.value.string)error("missing node.value.string");
-            last_object_pointer = heap_end;
+            last_object_pointer = data_index_end;
             String string = *node.value.string;
             if (referenceDataIndices.has(string))
                 // todo: reuse same strings even if different pointer, aor make same pointer before
@@ -1722,7 +1722,7 @@ void discard(Code code);
 
 Code emitConstruct(Node &node, Function &context) {
     Code code;
-    int pointer = heap_end;
+    int pointer = data_index_end;
     for (Node &field: node) {
         discard(emitData(field, context));// just write the values to memory and lastly return start-pointer
     }
@@ -1981,8 +1981,8 @@ Code emitSetter(Node &node, Node &value, Function &context) {
         local.typo = last_type;// NO! the type doesn't change: example: float x).valtype7
     }
     if (last_type == array or variable_type == array or variable_type == charp) {
-        referenceIndices.insert_or_assign(variable, heap_end);// WILL be last_data !
-        referenceDataIndices[variable] = heap_end + headerOffset(value);
+        referenceIndices.insert_or_assign(variable, data_index_end);// WILL be last_data !
+        referenceDataIndices[variable] = data_index_end + headerOffset(value);
         referenceMap[variable] = value;// node; // lookup types, array length …
     }
     Code setter;
@@ -2691,7 +2691,7 @@ Code emitGlobalSection() {
 Code emitDataSection() { // needs memory section too!
 //https://webassembly.github.io/spec/core/syntax/modules.html#syntax-datamode
     Code datas;
-    if (heap_end == 0 or heap_end == runtime_data_offset)return datas;//empty
+    if (data_index_end == 0 or data_index_end == runtime_data_offset)return datas;//empty
 // see clearEmitterContext() for NULL PAGE of data_index_end
     datas.addByte(01);// one memory initialization / data segment
     datas.addByte(00);// memory id always 0 until multi-memory
@@ -2700,7 +2700,7 @@ Code emitDataSection() { // needs memory section too!
     datas.addInt(runtime_data_offset ? runtime_data_offset : 0); // actual offset in memory
     // todo: WHY cant it start at 0? wx  todo: module offset + module data length
     datas.addByte(0x0b);// mode: active?
-    auto size_of_data = heap_end - runtime_data_offset;
+    auto size_of_data = data_index_end - runtime_data_offset;
     datas.addInt(size_of_data);
 //    const Code &actual_data = Code((bytes) data, size_of_data);
 // todo: WASTEFUL but clean, add/substruct offsets everywhere would be unsafe
@@ -2933,7 +2933,7 @@ void clearEmitterContext() {
     typeMap.clear();
 //	referenceMap.setDefault(Node());
 //    runtime_data_offset = 0x100000;
-    heap_end = runtime_data_offset; //0
+    data_index_end = runtime_data_offset; //0
     last_object_pointer = 0;
     if (!data) data = (char *) calloc(MAX_WASM_DATA_LENGTH, sizeof(char));// todo grow
     else memset(data, 0, MAX_WASM_DATA_LENGTH);
