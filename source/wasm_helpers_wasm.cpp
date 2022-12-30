@@ -167,6 +167,7 @@ void *calloc(size_t num, size_t size) {
 }
 
 void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
+
     if (size > 1000000) {
         put_chars("malloc of huge memory chunk:");
         putx(size);
@@ -182,6 +183,7 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
 
     void *last = current;
     current += size;
+    while (((long) current) % 8)current++; //
 //	if(size>1000)
     bool check_overflow = false;// wasm trap: out of bounds memory access OK
     if (check_overflow and MEMORY_SIZE and (int64) current >= MEMORY_SIZE) {
