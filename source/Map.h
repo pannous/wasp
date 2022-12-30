@@ -26,7 +26,7 @@ template<class S, class T>
 class Map {
 public: // todo careful Map<char*,…> eq
     int capacity = MAP_INITIAL_CAPACITY;// initial
-    S *keys = (S *) calloc(sizeof(S), capacity);
+    S *keys = (S *) calloc(sizeof(S), capacity);// WE CAN'T ALIGN HERE!
     T *values = (T *) calloc(sizeof(T), capacity);
     int _size = 0;
 
