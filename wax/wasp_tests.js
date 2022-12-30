@@ -91,5 +91,5 @@ function wasp_tests() {
     testReverse();
     testParse();
     exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
-    // testRun()
+    testRun()
 }

@@ -1,5 +1,6 @@
 #include "wasm_helpers.h"
 #include "Node.h"
+#include "Code.h"
 #include <cmath>
 
 // functions in this file are wasm realted and applicable in both the guest and host context
@@ -144,3 +145,10 @@ extern "C" void testCurrent(){
     print("no tests");
 }
 #endif
+
+Code &compile(String code, bool clean = true);// exposed to wasp.js
+extern "C" char *run(chars x) {
+    auto code = compile(x);
+    code.run();// async in js
+    return (char *) "need asyncify for result";
+}
