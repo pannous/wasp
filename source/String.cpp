@@ -36,8 +36,8 @@ class String;
 bool eq(chars dest, chars src, int length) {
     if (!dest || !src)
         return false;
-    if (dest[0] == 0 and src[0])return false;
-    if (src[0] == 0 and dest[0])return false;
+    if (dest[0] == 0)return !src[0];
+    if (src[0] == 0)return !dest[0];
 //	be sure check to src.length == dest.length before:
 //	length>0 forces comparison of reference strings terminated by length, not by 0!
     if (length < 0 and strlen(dest) != strlen(src))
