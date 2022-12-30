@@ -5,16 +5,17 @@ function check(ok) {
     if (!ok) throw "⚠️ TEST FAILED"
 }
 
-function backtrace_line(msg) {
-    function getErrorObject() {
-        try {
-            throw Error('')
-        } catch (err) {
-            return err;
-        }
-    }
 
-    var err = getErrorObject();
+function getBacktrace() {
+    try {
+        throw Error('')
+    } catch (err) {
+        return err;
+    }
+}
+
+function backtrace_line(msg) {
+    var err = getBacktrace();
     var caller_line = err.stack.split("\n")[msg ? 4 : 3];
     if (msg) console.log(msg)
     let short = caller_line.replace(/.*wax\//, "").replace(")", "");
@@ -36,6 +37,7 @@ function testParse() {
     check(a.Value() === 123);
     a = parse("a : 123.5")
     check(a.Value() === 123.5);
+    check(a.Content === 123.5);
     // nod = parse("a : 123.4")
     // check(nod.Value()==123.4);// 123.39999999999418 WTH!!
     a = parse("a:'ok'")
@@ -73,7 +75,7 @@ function testReverse() {
 function testRun() {
     // let cmd="puts 'CYRC!'"
     // let cmd="puti 123"
-    let cmd = "42"
+    let cmd = "42*2/2"
     let result = exports.run(chars(cmd))
     console.log(chars(result)) // "need asyncify for result" ;)
     expect_test_result = 42;
@@ -89,5 +91,5 @@ function wasp_tests() {
     testString();
     testReverse();
     testParse();
-    // testRun()
+    testRun()
 }
