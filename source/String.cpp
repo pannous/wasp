@@ -36,6 +36,7 @@ class String;
 bool eq(chars dest, chars src, int length) {
     if (!dest || !src)
         return false;
+    if (length == 0)return !src[0] and !dest[0];
     if (dest[0] == 0)return !src[0];
     if (src[0] == 0)return !dest[0];
 //	be sure check to src.length == dest.length before:
@@ -433,6 +434,7 @@ String s(chars &s) {
 
 #pragma clang diagnostic pop
 
+// can mostly be omitted via operator bool(){} / operator char *() const { return data; }!!
 bool String::empty() const {//this==0 in testMarkMulti!
 //	if(memory_size and data and (int64) data > memory_size/*bug!*/)
 ////		return true;

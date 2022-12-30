@@ -170,11 +170,12 @@ Node &Node::operator[](chars s) {
 //for (Node &child : liste) { // DOES effect liste
 //for (Node child : liste) { // Does NOT effect liste
 Node *Node::begin() const {
-    if (length <= 0)return 0;
+    if (length <= 0 or !children)return 0;
     return children;
 }
 
 Node *Node::end() const {
+    if (length <= 0 or !children)return 0;
     if (children != 0 and length == 0)return children + 1;
     return children + length;
 }
@@ -222,8 +223,8 @@ Node &Node::set(String string, Node *node) {
 //	if (!children)children = static_cast<Node *>(alloc(capacity));
 
     if (!children) {
-        children = (Node *) calloc(capacity, sizeof(Node));
-        if (name == nil_name)name = "ø";
+        init_children();
+//        if (name == nil_name)name = "ø";
     }
     if (length >= capacity / 2) todo("GROW children");
 //	children = static_cast<Node *>(alloc(1000));// copy old
@@ -583,11 +584,11 @@ Node &Node::add(const Node *node) {
     }
     if (lastChild >= MAX_NODE_CAPACITY)
         error("Out of global Node memory");
-    if (!children) children = (Node *) calloc(capacity, sizeof(Node));
+    init_children();
     if (length > 0)
         children[length - 1].next = &children[length];
     ((Node *) node)->parent = this;// not const lol. allow to set and ignore NIL.parent
-    children[length] = *node; // invokes memcpy
+    children[length] = *node; // invokes memcpy, so add(Node(1)) with stack value is ok!
     length++;
     return *this;
 }
@@ -786,8 +787,10 @@ bool Node::isNil() const { // required here: name.empty()
 }
 
 // todo hide : use serialize() for true deep walk
-String Node::serializeValue(bool deep) const {
+chars Node::serializeValue(bool deep) const {
+    // DON'T BE FOOLED!! CORRUPTION IN ONE PART HERE MAY CAUSE CORRUPTION MUCH LATER!!
 //    if (!this)return "";
+//    return "XXX";// DOES NOT EVEN HELP! so the issue must be in serialize() then !!!?!
 //	String wasp = "";
     Value val = value;
 //	switch (kind.type) {
@@ -890,11 +893,17 @@ String Node::serializeValue(bool deep) const {
 
 // todo: (x)=>x when root
 String Node::serialize() const {
+    // >>>>>>>>>>>> name != serializedValue <<<<<<<<<<  THIS causes BUG!
+    // DON'T BE FOOLED!! CORRUPTION IN ONE PART HERE e.g. serializeValue() MAY CAUSE CORRUPTION MucH LATER!!
+    // Start TRACE in RUN mode (NOT debug!!) to see AddressSanitizer output
+    // DON'T BE FOOLED!! just because all tests pass now doesn't mean the bug here (in serializeValue?) is fixed!
 //    if (not this)return "";
     String wasp = "";
     if (not use_polish_notation or length == 0) {
         if (not name.empty()) wasp += name;
-        String serializedValue = serializeValue();
+//        String serializedValue=serializeValue();// todo IS THIS A GENERAL STRING BUG!? can't return "XXX" => String !?!
+//        const String &serializedValue = "";
+        const String &serializedValue = *new String(serializeValue());
         if (kind == longs or kind == reals)
             if (not parseLong(name) and name and name.data and name.data[0] != '0')
                 return ""s + name + ":" + serializedValue;
@@ -904,17 +913,23 @@ String Node::serialize() const {
             return serializedValue;// not "3":3
         if (kind == reals)// and name and (name.empty() or name==itoa(value.longy)))
             return serializedValue;// not "3":3.14
-        if (serializedValue and (value.data or kind == longs) and !eq(name, serializedValue) and
-            !eq(serializedValue, "{…}") and
-            !eq(serializedValue, "?")) {
-            if (not name.empty())
+
+//   and !eq(serializedValue, "{…}") and
+//            !eq(serializedValue, "?")
+
+        // >>>>>>>>>>>> name != serializedValue <<<<<<<<<<  THIS causes BUG! (or before???)
+        if ((value.data or kind == longs) and serializedValue and not(name == serializedValue)) {
+            if (name)
                 wasp += ":";
+
             wasp += serializedValue;
             if (kind != longs) wasp += " ";
         }
     }
+
     if (length >= 0) {
-        if (kind == expression and not name.empty())wasp += ":";
+        if (kind == expression and name.empty())wasp += ":";
+
         if ((length >= 1 or kind == patterns or kind == objects)) {
             // skip single element braces: a == (a)
             if (kind == groups and (not separator or separator == ' ')) wasp += "(";
@@ -923,17 +938,27 @@ String Node::serialize() const {
             else if (kind == patterns)wasp += "[";
             else if (not separator) wasp += "(";// default and not…
         }
+
         if (use_polish_notation and not name.empty()) wasp += name;
         int i = 0;
         if (length > 0)
             if (kind == operators) wasp += " ";
-        for (Node &child: *this) {
+
+        for (const Node &child: *this) {
+
+
             if (!child.node_header)
                 continue;// broken child (e.g. in skipped reconstruct)
             if (length == 0)
                 break;// how on earth is that possible??
             if (i++ > 0) wasp += separator ? separator : ' ';
-            wasp += child.serialize();
+//            auto chil = "";// ok FOR NOW?? THIS 'fixes' it
+            const String &chil = new String(
+                    child.serialize()); // <<< HERE is the BUG! still makes it fail soon or LATER!
+            wasp += chil;// THIS results in test fail later!
+//            println(chil);// THIS results in MISSING Type LATER!! WTF C++
+//            wasp += *new String(chil);// ok FOR NOW??
+
         }
 
         if (length > 0 or kind == patterns or kind == objects) {
@@ -943,7 +968,7 @@ String Node::serialize() const {
             else if (kind == patterns)wasp += "]";
             else if (not separator) wasp += ")";// default
         }
-        if (eq(name, "‖")) wasp += name;
+//        if (name == (char*)"‖") wasp += name; // THIS LINE BREAKS IT!?! impossible!
     }
     return wasp;
 //	return name.empty()? string() : name;
@@ -1125,6 +1150,7 @@ int Node::lastIndex(Node *node, int start) {
 void Node::replace(int from, int to, Node *node) {
     if (from < 0 or from >= length)
         error("Node::replace from<0 or from>=length");
+    if (!children)error("can't replace without children");
     children[from] = *node;
     int i = 0;
     if (to < from)
@@ -1144,6 +1170,7 @@ void Node::remove(int from, int to) {// including
     if (to >= length)to = length - 1;
     int i = -1;
     while (to + ++i < length) {
+        if (!children)error("can't remove without children");
         children[from + i] = children[to + i + 1];// ok if beyond length
         if (children[from + i].next)
             children[from + i].next = children + from + 1;
@@ -1188,6 +1215,7 @@ Node &Node::setType(Kind kin, bool check) {
     if (kind == codepoints and kin == operators)check = false;// and name==(codepoint)value.longy
     if (kind == groups and (kin == expression or kin == functor))check = false;
     if (kind == reference and kin == key)check = false;
+    if (kind == groups and kin == key)check = false;
     if (kind == expression and kin == declaration)check = false;
     if (kind == declaration and kin == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
     if (check) {
