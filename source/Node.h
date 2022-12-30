@@ -273,7 +273,7 @@ public:
 #if WASM
         //        while ((long) current % 8)current++;// align
                 return aligned_alloc(8,size);
-#elif
+#else
         return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
 #endif
     }
