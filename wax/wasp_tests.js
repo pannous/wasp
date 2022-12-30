@@ -23,28 +23,31 @@ function backtrace_line(msg) {
 
 
 function testParse() {
-    let nod = parse("a : (b ,c)")
-    prints(exports.serialize(nod))
+    let a = parse("a : (b ,c)")
+    prints(exports.serialize(a))
     // nod.debug()
-    check(nod.name == "a")
-    check(nod.length = 2)
-    check(nod.children().length = 2)
-    check(nod.children()[1].name == "c")
+    check(a.name == "a")
+    check(a.length = 2)
+    check(a.children().length = 2)
+    check(a.children()[1].name == "c")
     console.log("TEST OK: testParse")
-    nod = parse("a : 123")
-    check(nod.value == 123);
-    check(nod.Value() == 123);
-    nod = parse("a : 123.5")
-    check(nod.Value() == 123.5);
+    a = parse("a : 123")
+    check(a.value === 123);
+    check(a.Value() === 123);
+    a = parse("a : 123.5")
+    check(a.Value() === 123.5);
     // nod = parse("a : 123.4")
     // check(nod.Value()==123.4);// 123.39999999999418 WTH!!
-    nod = parse("b:'ok'")
-    check(nod.Value() == 'ok');
-    nod = parse("{b:'ok'}")
-    check(nod.Value() == 'ok');
-    nod = parse("a : {b:'ok'}")
-    check(nod.b.Value() == 'ok');
-    console.log(nod.b)
+    a = parse("a:'ok'")
+    check(a.Value() === 'ok');
+    a = parse("{a:'ok'}")
+    check(a.Value() == 'ok');
+    a = parse("a : {b:'ok'}")
+    check(a.b.Value() == 'ok');
+    a = parse("a : {b:'hold…',c:{d=42;e='😼'}}")
+    console.log(a.b)
+    console.log(a.c)
+    check(a.c.e == '😼'); // flat keys!
     console.log("TEST OK: testParse")
 }
 

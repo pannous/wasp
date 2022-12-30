@@ -2212,7 +2212,7 @@ Node &parse(String source, ParserOptions parserOptions) {
 }
 
 extern "C" Node *Parse(chars data) {
-    return &wasp_parser.parse(data, {});
+    return &wasp_parser.parse(data, {.data_mode=true});
 }
 
 Node &parse(chars source) {

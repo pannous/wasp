@@ -254,7 +254,10 @@ class node {
         // post processing
         this[this.name] = this; // make a:1 / {a:1} indistinguishable
         for (var child of this.children()) {
-            this[child.name] = child
+            if (child.kind === kinds.key)
+                this[child.name] = child.Value()
+            else
+                this[child.name] = child
         }
         this.Kind = kinds[this.kind]
         this.Content = this.Value()
@@ -287,13 +290,14 @@ class node {
         if (this.kind == kinds.node) return new node(this.value);
         if (this.kind == kinds.long) return this.value;
         if (this.kind == kinds.reference) return this.Content || this.Childs;
-        if (this.kind == kinds.group) return this.Childs;
+        if (this.kind == kinds.object) return this.Content || this.Childs;
+        if (this.kind == kinds.group) return this.Content || this.Childs;
         if (this.kind == kinds.key) {
             let val = new node(this.value);
             if (val.kind == kinds.string) return String(val.value);// or just name
             return val;
         }
-        throw new Error("node kind not yet supported in js: " + this.kind + ":" + kinds[this.kind] + " value: " + this.value)
+        throw new Error("Node kind not yet supported in js: " + this.kind + " : " + kinds[this.kind] + " value: " + this.value)
         // return this.value;
     }
 
