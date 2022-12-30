@@ -55,7 +55,7 @@ Map<String, Code> functionCodes; // EXCLUDING MAIN todo keep in Function
 //List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 //List<Function> imports;// from libraries. todo: these are inside functions<> for now!
 
-Module runtime;
+int alignment_hack[10000];// todo: understand this nonsense!
 String start = "wasp_main";
 
 Type arg_type = voids;// autocast if not int
