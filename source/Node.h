@@ -270,8 +270,12 @@ public:
 //	}
 
     void *operator new(size_t size) {
-//        while ((long) current % 8)current++;// align
+#if WASM
+        //        while ((long) current % 8)current++;// align
+                return aligned_alloc(8,size);
+#elif
         return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
+#endif
     }
 
     void operator delete(void *a) {
