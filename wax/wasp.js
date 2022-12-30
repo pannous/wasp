@@ -29,9 +29,9 @@ let nop = x => 0 // careful, some wasi shim needs 0!
 const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
     while (iovs_count-- > 0) {
         if (fd === 0)
-            console.error(String(c_io_vector) || "\n");
+            console.error(string(c_io_vector) || "\n");
         else
-            console.log(String(c_io_vector) || "\n");
+            console.log(string(c_io_vector) || "\n");
         c_io_vector += 8
     }
     return -1; // todo
@@ -96,8 +96,8 @@ let imports = {
 imports.wasi_snapshot_preview1 = imports.wasi_unstable // fuck wasmedge!
 
 let todo = x => console.error("TODO", x)
-let puts = x => console.log(string(x)) // char*
-let prints = x => console.log(String(x)) // char**
+let puts = x => console.log(chars(x)) // char*
+let prints = x => console.log(string(x)) // char**
 const console_log = window.console.log;// redirect to text box
 
 window.console.log = function (...args) {
@@ -109,7 +109,7 @@ function check(ok) {
     if (!ok) throw new Error("⚠️ TEST FAILED!");
 }
 
-function String(data) { // wasm<>js interop
+function string(data) { // wasm<>js interop
     switch (typeof data) {
         case "string":
             while (heap_end % 8) heap_end++
@@ -121,11 +121,11 @@ function String(data) { // wasm<>js interop
         case "bigint":
         case "number":
         default:
-            return string(read_int32(data), read_int32(data + 4))
+            return chars(read_int32(data), read_int32(data + 4))
     }
 }
 
-function string(pointer, length = -1, format = 'utf8') {
+function load_chars(pointer, length = -1, format = 'utf8') {
     if (pointer === 0) return
     if (typeof pointer == "string") return chars(s)
     // console.log("string",pointer,length)
@@ -150,7 +150,7 @@ function string(pointer, length = -1, format = 'utf8') {
 
 function chars(data) {
     if (!data) return 0;// MAKE SURE!
-    if (typeof data != "string") return string(data)
+    if (typeof data != "string") return load_chars(data)
     const uint8array = new TextEncoder("utf-8").encode(data + "\0");
     buffer = new Uint8Array(memory.buffer, heap_end, uint8array.length);
     buffer.set(uint8array, 0);
@@ -218,7 +218,7 @@ let kinds = {}
 function loadKindMap() {
     for (let i = 0; i < 255; i++) {
         let kinda = exports.kindName(i);
-        let kindName = string(kinda)
+        let kindName = chars(kinda)
         if (!kinda || !kindName) continue
         kinds[kindName] = i
         kinds[i] = kindName
@@ -250,7 +250,7 @@ class node {
         // console.log(pointer,pointer%8) // must be %8=0 by now
         this.value = parseInt(read_int64(pointer));
         pointer += 8; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
-        this.name = String(pointer);
+        this.name = string(pointer);
         // post processing
         this[this.name] = this; // make a:1 / {a:1} indistinguishable
         for (var child of this.children()) {
@@ -291,7 +291,7 @@ class node {
     }
 
     Value() {
-        if (this.kind == kinds.string) return String(this.value);
+        if (this.kind == kinds.string) return string(this.value);
         if (this.kind == kinds.real) return reinterpretInt64AsFloat64(this.value);
         if (this.kind == kinds.node) return new node(this.value);
         if (this.kind == kinds.long) return this.value;
@@ -300,7 +300,7 @@ class node {
         if (this.kind == kinds.group) return this.Content || this.Childs;
         if (this.kind == kinds.key) {
             let val = new node(this.value);
-            if (val.kind == kinds.string) return String(val.value);// or just name
+            if (val.kind == kinds.string) return string(val.value);// or just name
             return val;
         }
         throw new Error("Node kind not yet supported in js: " + this.kind + " : " + kinds[this.kind] + " value: " + this.value)
@@ -309,7 +309,7 @@ class node {
 
     serialize() {
         if (!this.pointer) todo("only wasp nodes can be serialized");
-        return string(exports.serialize(this.pointer));
+        return chars(exports.serialize(this.pointer));
     }
 
     toString() {

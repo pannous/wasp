@@ -44,7 +44,8 @@ function testParse() {
     check(a.Value() == 'ok');
     a = parse("a : {b:'ok'}")
     check(a.b.Value() == 'ok');
-    a = parse("a : {b:'hold…',c:{d=42.0;e='😼'}}")
+    // check(a.b == 'ok'); // todo immediate key->key flattening
+    a = parse("a : {b:'hold…' c:{d=42.0,e='😼'}}")
     console.log(a.b)
     console.log(a.c)
     check(a.c.d === 42)
@@ -54,18 +55,18 @@ function testParse() {
 
 function testString() {
     backtrace_line();
-    let ok = exports.testFromJS(String("test from JS"));
-    console.log(String(ok))
+    let ok = exports.testFromJS(string("test from JS"));
+    console.log(string(ok))
     prints(ok)
-    check(String(ok) == "ok from WASP")
+    check(string(ok) === "ok from WASP")
     console.log("TEST OK: testString")
 }
 
 function testReverse() {
     let cs = chars("abcd")
     exports._Z7reversePci(cs, 4)
-    check(string(cs) == "dcba")
-    exports.put_string(String("abcd -> dcba full circle"))
+    check(chars(cs) === "dcba")
+    exports.put_string(string("abcd -> dcba full circle"))
     console.log("TEST OK: testReverse")
 }
 
@@ -74,10 +75,10 @@ function testRun() {
     // let cmd="puti 123"
     let cmd = "42"
     let result = exports.run(chars(cmd))
-    console.log(string(result)) // "need asyncify for result" ;)
+    console.log(chars(result)) // "need asyncify for result" ;)
     expect_test_result = 42;
     // check(result==42);
-    // exports._Z7println6String(String("full circle"))
+    // exports._Z7println6String(Str("full circle"))
 }
 
 function wasp_tests() {
