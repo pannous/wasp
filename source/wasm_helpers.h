@@ -113,6 +113,7 @@ extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
 //extern float powf(float x, float y);
 //void printf(int);
 
+extern "C" char *run(chars x);
 void *alloc(int num, int size);// => malloc / calloc
 #if WASM
 extern "C" void *aligned_alloc(size_t __alignment, size_t __size);// stdlib.h
