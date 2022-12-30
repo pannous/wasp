@@ -32,7 +32,7 @@ short builtin_count = 0;// function_offset - import_count - runtime_offset;
 //bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
 char *data;// any data to be stored to wasm: values of variables, strings, nodes etc ( => memory in running app)
 //int data_index_start = 0;
-int data_index_end = 0;// position to write more data = end + length of data section
+int heap_end = 0;// position to write more data = end + length of data section
 int last_object_pointer = 0;// outside stack
 //int last_data_pointer = 0;// last_data plus header , see referenceDataIndices
 //Map<String *, int64> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
@@ -236,7 +236,7 @@ byte opcodes(chars s, Valtype kind, Valtype previous = none) {
     if (eq(s, "√"))return f32_sqrt; // f32.sqrt
     if (eq(s, "sqrt"))return f32_sqrt; // f32.sqrt
     if (eq(s, "root"))return f32_sqrt; // f32.sqrt // conflicts with user keywords!
-    // string addition etc handled elsewhere!
+    // string addition etc. handled elsewhere!
     if (eq(s, "-…"))return f32_neg; // f32.neg
     if (eq(s, "negate"))return f32_neg; // f32.neg
 // the following functions force i32->f32
@@ -351,40 +351,40 @@ bool isProperList(Node &node) {
 // append padding bytes to wasm data memory
 void emitPadding(int num, byte val = 0) {
     while (num-- > 0)
-        data[data_index_end++] = val;
+        data[heap_end++] = val;
 }
 
 void emitPaddingAlignment(short size) { // e.g. 8 for int64 padding BEFORE emitLongData() / emitData(int64)
-    emitPadding((size - (data_index_end % size)) %
+    emitPadding((size - (heap_end % size)) %
                 size);// fill up to int64 padding ⚠️ the field-sizes before node.value MUST sum up to n*8!
 }
 
 
 // append byte to wasm data memory
 void emitByteData(byte i) {
-    *(byte *) (data + data_index_end++) = i;
+    *(byte *) (data + heap_end++) = i;
 }
 
 
 // append short to wasm data memory
 void emitShortData(short i, bool pad = false) {// ⚠️ DON'T PAD INSIDE STRUCTS!?
-    if (pad)while (((int64) (data + data_index_end) % 2))data_index_end++;// type 'int' requires 4 byte alignment
-    *(short *) (data + data_index_end) = i;
-    data_index_end += 2;
+    if (pad)while (((int64) (data + heap_end) % 2))heap_end++;// type 'int' requires 4 byte alignment
+    *(short *) (data + heap_end) = i;
+    heap_end += 2;
 }
 
 // append int to wasm data memory
 void emitIntData(int i, bool pad = true) {
-    if (pad)while (((int64) (data + data_index_end) % 4))data_index_end++;// type 'int' requires 4 byte alignment
-    *(int *) (data + data_index_end) = i;
-    data_index_end += 4;
+    if (pad)while (((int64) (data + heap_end) % 4))heap_end++;// type 'int' requires 4 byte alignment
+    *(int *) (data + heap_end) = i;
+    heap_end += 4;
 }
 
 // append int64 to wasm data memory
 void emitLongData(int64 i, bool pad = false) { // ⚠️ DON'T PAD INSIDE STRUCTS! pad before!
-    if (pad)while (((int64) (data + data_index_end) % 8))data_index_end++;// type 'int64' requires 8 byte alignment
-    *(int64 *) (data + data_index_end) = i;
-    data_index_end += 8;
+    if (pad)while (((int64) (data + heap_end) % 8))heap_end++;// type 'int64' requires 8 byte alignment
+    *(int64 *) (data + heap_end) = i;
+    heap_end += 8;
 }
 
 void emitSmartPointer(smart_pointer_64 p) {
@@ -430,7 +430,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
     int node_children_pointer = -1; // ignore children (debug)
     if (node.length > 0) {
 //        emitLongData(0x5741535044415441L, false);
-        node_children_pointer = data_index_end;
+        node_children_pointer = heap_end;
 //        emitLongData(0xAA00aa00aa00, false);
         for (auto child: children)
             emitIntData(child);
@@ -440,7 +440,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
         emitPaddingAlignment(8);
     }
 //    emitPadding(1);// wrong padding DOES fuck up struct parsing even on the host side!
-    int node_start = data_index_end;
+    int node_start = heap_end;
     referenceNodeIndices[hash] = node_start;
 
     emitIntData(node_header_32, false);
@@ -464,8 +464,8 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
         last_type = node.type;
     last_object = &node;
     last_object_pointer = node_start;
-    printf("node_start %d data_index_end %d\n", node_start, data_index_end);
-// already stored in emitArray() : usually enough, unless we want extra node meta data?
+    printf("node_start %d data_index_end %d\n", node_start, heap_end);
+// already stored in emitArray() : usually enough, unless we want extra node metadata?
 //    referenceIndices.insert_or_assign(node.name, pointer);
 //    referenceDataIndices.insert_or_assign(node.name, pointer + array_header_length);
 //    referenceMap[node.name] = node;
@@ -493,11 +493,11 @@ Code emitPrimitiveArray(Node &node, Function &context) {
 //	emitIntData(array_header_32 | int_array << 4 | node.length);
 //	emitIntData(node.kind |  node.length); // save 4 bytes, rlly?
     //	if pure_array:
-    int pointer = data_index_end; // return pure data
+    int pointer = heap_end; // return pure data
     if (!node.meta or (*node.meta)["length"].kind != longs)
         warn("buffer length should be stored in meta, not in node.length, for safety!");
     int length = node.length;
-    memcpy(data + data_index_end, node.value.data, length);
+    memcpy(data + heap_end, node.value.data, length);
 #if MULTI_VALUE
     // and RETURN
 //        code.addConst(array_header_32 | node.length);// combined smart pointer? nah
@@ -550,7 +550,7 @@ Code emitArray(Node &node, Function &context) {
 
     let code = Code();
     emitPaddingAlignment(8);
-    int pointer = data_index_end;
+    int pointer = heap_end;
 //	todo: sync with emitOffset
     emitIntData(array_header_32, false);
 //    todo ⚠️really lose information here? use emitNodeBinary if full representation required
@@ -562,7 +562,7 @@ Code emitArray(Node &node, Function &context) {
     else emitIntData(value_kind /*or kind_header_32*/);// todo make sure node.type > Kind AS PER Type enum
 
     bool continuous = true;
-    if (!continuous) emitIntData(data_index_end + 4); // just emit immediately after
+    if (!continuous) emitIntData(heap_end + 4); // just emit immediately after
 
 //    for(wasm_node_index i:children){
     for (Node &child: node) {
@@ -571,7 +571,7 @@ Code emitArray(Node &node, Function &context) {
         if (itemSize == 1)emitByteData(i);
         else if (itemSize == 2)emitShortData(i);
         else if (itemSize == 4)emitIntData(i);
-        else if (itemSize == 8)emitLongData(i);// ok can even be float, UNINTERPRETED here
+        else if (itemSize == 8)emitLongData(i);// ok can even be float64, UNINTERPRETED here
     }
 
 //    last_value_pointer = data_index_end;
@@ -615,7 +615,7 @@ Node *smallestCommonType(Node &array) {
     todo("smallestCommonType");
 }
 
-// premature optimization BAD! but its so easy;)
+// premature optimization BAD! but it's so easy;)
 // adds type as BAD SIDE EFFECT
 short arrayElementSize(Node &node) {
     if (node.type)
@@ -975,7 +975,7 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
 Code emitData(Node &node, Function &context) {
     String &name = node.name;
     Code code;// POINTER to DATA SEGMENT
-    int last_pointer = data_index_end;
+    int last_pointer = heap_end;
     switch (node.kind) {
         case nils:// also 0, false
         case bools:
@@ -994,19 +994,19 @@ Code emitData(Node &node, Function &context) {
 //            else
             if (node.value.longy > 0xF0000000) {
                 error("true int64 big ints currently not supported");
-                *(int64 *) (data + data_index_end) = node.value.longy;
-                data_index_end += 8;
+                *(int64 *) (data + heap_end) = node.value.longy;
+                heap_end += 8;
                 last_type = i64t;
             } else {
-                *(int *) (data + data_index_end) = node.value.longy;
-                data_index_end += 4;
+                *(int *) (data + heap_end) = node.value.longy;
+                heap_end += 4;
                 last_type = int32;
             }
             break;
         case reals:
 //			bytes varInt = ieee754(node.value.real);
-            *(double *) (data + data_index_end) = node.value.real;
-            data_index_end += 8;
+            *(double *) (data + heap_end) = node.value.real;
+            heap_end += 8;
             last_type = float64;
             break;
         case reference:
@@ -1043,7 +1043,7 @@ Code emitString(Node &node, Function &context) {
     if (not node.value.string)
         error("empty node.value.string");
 //    emitPadding(data_index_end % 4);// pad to int size, too late if in node struct!
-    int last_pointer = data_index_end + runtime.data_offset_end;
+    int last_pointer = heap_end;
     String &string = *node.value.string;
     referenceMap[string] = node;
     if (string and referenceIndices.has(string)) {
@@ -1054,30 +1054,30 @@ Code emitString(Node &node, Function &context) {
     bool as_c_io_vector = true;
     if ((Primitive) node.kind == leb_string) {
         Code lens(string.length);// wasm abi to encode string as LEB-length + data:
-        strcpy2(data + data_index_end, (char *) lens.data, lens.length);
-        data_index_end += lens.length;// unsignedLEB128 encoded length of pString
+        strcpy2(data + heap_end, (char *) lens.data, lens.length);
+        heap_end += lens.length;// unsignedLEB128 encoded length of pString
         // strcpy2 the string later: …
     } else if (as_c_io_vector) { // wasp abi:
-        emitIntData(data_index_end + 8, false);// char* for ciov, redundant but also acts as checksum
+        emitIntData(heap_end + 8, false);// char* for ciov, redundant but also acts as checksum
         emitIntData(string.length, false);
     } else { // wasp abi:
 
         emitIntData(string_header_32, false);
-        emitIntData(data_index_end + 20, false);
+        emitIntData(heap_end + 20, false);
         emitIntData(string.length, false);
         emitIntData(1, false);// iovs len?
 //        emitIntData(string.codepoint_count, false);// type + child_pointer in node
-        emitLongData(data_index_end + 8, false);// POINTER to char[] which just follows:
+        emitLongData(heap_end + 8, false);// POINTER to char[] which just follows:
     }
-    int chars_start = data_index_end;
+    int chars_start = heap_end;
     // the actual string content:
-    strcpy2(data + data_index_end, string.data, string.length);
-    data[data_index_end + string.length] = 0;
+    strcpy2(data + heap_end, string.data, string.length);
+    data[heap_end + string.length] = 0;
     // we add an extra 0, unlike normal wasm abi, because we have space in data section
-    referenceDataIndices.insert_or_assign(string, data_index_end);
+    referenceDataIndices.insert_or_assign(string, heap_end);
     // todo this is EVIL: we assign the STRING to data_index_end, not the REFERENCE!!!
 
-    data_index_end += string.length + 1;
+    heap_end += string.length + 1;
     last_type = stringp;
     last_object_pointer = last_pointer;
     return Code().addConst32(chars_start);// direct data!
@@ -1165,7 +1165,7 @@ Code emitValue(Node &node, Function &context) {
         case strings: {
             // append pString (as char*) to data section and access via stringIndex
             if (!node.value.string)error("missing node.value.string");
-            last_object_pointer = data_index_end + runtime.data_offset_end;// uh, todo?
+            last_object_pointer = heap_end;
             String string = *node.value.string;
             if (referenceDataIndices.has(string))
                 // todo: reuse same strings even if different pointer, aor make same pointer before
@@ -1519,7 +1519,7 @@ Code emitStringOp(Node &op, Function &context) {
     } else if (op == "not" or op == "¬") {// todo: all different index / op matches
         op = Node("empty");//  careful : various signatures for falsey falsy truthy
         return emitCall(op, context).add(i32_eqz);
-    } else if (op == "logs" or op == "prints" or op == "print") {// should be handled before, but if not print anyways
+    } else if (op == "logs" or op == "prints" or op == "print") {// should be handled before, but if not print anyway
         op = Node("puts");// todo: chars vs shared String& ?
         return emitCall(op, context);
     } else todo("string op not implemented: "s + op.name);
@@ -1722,7 +1722,7 @@ void discard(Code code);
 
 Code emitConstruct(Node &node, Function &context) {
     Code code;
-    int pointer = data_index_end;
+    int pointer = heap_end;
     for (Node &field: node) {
         discard(emitData(field, context));// just write the values to memory and lastly return start-pointer
     }
@@ -1981,8 +1981,8 @@ Code emitSetter(Node &node, Node &value, Function &context) {
         local.typo = last_type;// NO! the type doesn't change: example: float x).valtype7
     }
     if (last_type == array or variable_type == array or variable_type == charp) {
-        referenceIndices.insert_or_assign(variable, data_index_end);// WILL be last_data !
-        referenceDataIndices[variable] = data_index_end + headerOffset(value);
+        referenceIndices.insert_or_assign(variable, heap_end);// WILL be last_data !
+        referenceDataIndices[variable] = heap_end + headerOffset(value);
         referenceMap[variable] = value;// node; // lookup types, array length …
     }
     Code setter;
@@ -2323,8 +2323,6 @@ Code emitTypeSection() {
                 error("empty context creep functions[ø]");
             continue;
         }
-        testCurrent();
-
         if (operator_list.has(fun)) {
             todow("how did we get here?");
             continue;
@@ -2354,7 +2352,7 @@ Code emitTypeSection() {
 
 //			error("context %s should be registered in functionIndices by now"s % fun);
 
-        typeMap[fun] = runtime.type_count /* lib offset */ + typeCount++;
+        typeMap[fun] = typeCount++;
         function.signature.type_index = typeMap[fun];// todo check old index? todo shared signatures!?!
         function.signature.is_handled = true;// todo remove
         int param_count = signature.size();
@@ -2474,8 +2472,7 @@ Code emitCodeSection(Node &root) {
 //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (context block)' opcode @+39
 //	byte code_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
     byte code_nop[] = {0/*locals_count*/, end_block};// NOP
-    byte code_start[] = {0/*locals_count*/, call_, (byte) main_offset, nop_, nop_, drop,
-                         end_block};// needs own type etc
+    byte code_start[] = {0/*locals_count*/, call_, (byte) main_offset, nop_, nop_, drop, end_block}; // needs own type
 //    if(print_node_import)
 // needs runtime or merge with print_node.wasm
 //    byte code_start[] = {0 , call_, (byte) main_offset, nop_, nop_,call_,(byte)print_node_import, end_block};
@@ -2540,28 +2537,26 @@ Code emitCodeSection(Node &root) {
     };
     Code code_blocks;
 
-    if (runtime.code_count == 0) {
-        // order matters, in functionType section!
+    // order matters, in functionType section!
 //        if (functions["nop"].is_used)// NOT a function
 //            code_blocks = code_blocks + encodeVector(Code(code_nop, sizeof(code_nop)));
-        if (functions["square_double"].is_used and functions["square_double"].is_builtin)
-            // simple test function x=>x*x can also be linked via runtime/import!
-            code_blocks = code_blocks + encodeVector(Code(code_square_d, sizeof(code_square_d)));
-        if (functions["id"].is_used)
-            code_blocks = code_blocks + encodeVector(Code(code_id, sizeof(code_id)));
-        if (functions["modulo_float"].is_used)
-            code_blocks = code_blocks + encodeVector(Code(code_modulo_float, sizeof(code_modulo_float)));
-        if (functions["modulo_double"].is_used)
-            code_blocks = code_blocks + encodeVector(Code(code_modulo_double, sizeof(code_modulo_double)));
-        if (functions["len"].is_used)
-            code_blocks = code_blocks + encodeVector(Code(code_len, sizeof(code_len)));
-        if (functions["puts"].is_used) // calls import fd_write, can be import itself
-            code_blocks = code_blocks + encodeVector(Code(code_puts, sizeof(code_puts)));
-        if (functions["put_string"].is_used) // calls import fd_write, can be import itself
-            code_blocks = code_blocks + encodeVector(Code(code_put_string, sizeof(code_put_string)));
-        if (functions["quit"].is_used)
-            code_blocks = code_blocks + encodeVector(Code(code_quit, sizeof(code_quit)));
-    }
+    if (functions["square_double"].is_used and functions["square_double"].is_builtin)
+        // simple test function x=>x*x can also be linked via runtime/import!
+        code_blocks = code_blocks + encodeVector(Code(code_square_d, sizeof(code_square_d)));
+    if (functions["id"].is_used)
+        code_blocks = code_blocks + encodeVector(Code(code_id, sizeof(code_id)));
+    if (functions["modulo_float"].is_used)
+        code_blocks = code_blocks + encodeVector(Code(code_modulo_float, sizeof(code_modulo_float)));
+    if (functions["modulo_double"].is_used)
+        code_blocks = code_blocks + encodeVector(Code(code_modulo_double, sizeof(code_modulo_double)));
+    if (functions["len"].is_used)
+        code_blocks = code_blocks + encodeVector(Code(code_len, sizeof(code_len)));
+    if (functions["puts"].is_used) // calls import fd_write, can be import itself
+        code_blocks = code_blocks + encodeVector(Code(code_puts, sizeof(code_puts)));
+    if (functions["put_string"].is_used) // calls import fd_write, can be import itself
+        code_blocks = code_blocks + encodeVector(Code(code_put_string, sizeof(code_put_string)));
+    if (functions["quit"].is_used)
+        code_blocks = code_blocks + encodeVector(Code(code_quit, sizeof(code_quit)));
 
     Code main_block = emitBlock(root, functions["wasp_main"]);// after imports and builtins
 
@@ -2696,16 +2691,16 @@ Code emitGlobalSection() {
 Code emitDataSection() { // needs memory section too!
 //https://webassembly.github.io/spec/core/syntax/modules.html#syntax-datamode
     Code datas;
-    if (data_index_end == 0 or data_index_end == runtime_data_offset)return datas;//empty
+    if (heap_end == 0 or heap_end == runtime_data_offset)return datas;//empty
 // see clearEmitterContext() for NULL PAGE of data_index_end
     datas.addByte(01);// one memory initialization / data segment
     datas.addByte(00);// memory id always 0 until multi-memory
 
     datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
-    datas.addInt(runtime_data_offset ? runtime_data_offset : runtime.data_offset_end); // actual offset in memory
+    datas.addInt(runtime_data_offset ? runtime_data_offset : 0); // actual offset in memory
     // todo: WHY cant it start at 0? wx  todo: module offset + module data length
     datas.addByte(0x0b);// mode: active?
-    auto size_of_data = data_index_end - runtime_data_offset;
+    auto size_of_data = heap_end - runtime_data_offset;
     datas.addInt(size_of_data);
 //    const Code &actual_data = Code((bytes) data, size_of_data);
 // todo: WASTEFUL but clean, add/substruct offsets everywhere would be unsafe
@@ -2765,19 +2760,12 @@ Code emitNameSection() {
         usedNames += 1;
     }
 
-//	auto functionNames = Code(function_names) + encodeVector(Code(1) + Code((byte) 0) + Code("logi"));
-//	functions without parameters need  entry ( 00 01 00 00 )
-//  functions 5 with local 'hello' :  05 01 00 05 68 65 6c 6c 6f
-//  functions 5 with local 'hello' :  05 02 00 05 68 65 6c 6c 6f 01 00 AND unnamed (local i32t)
-// localMapEntry = (index nrLocals 00? string )
-
     Code localNameMap;
     int usedLocals = 0;
     for (int index = runtime_function_offset; index <= last_index; index++) {
         String *key = call_indices.lookup(index);
         if (!key or key->empty())continue;
         Function &context = functions[*key];
-//        List<String> localNames = context.locals[*key];// including arguments
         int local_count = context.locals.size();
         if (local_count == 0)continue;
         usedLocals++;
@@ -2837,7 +2825,7 @@ Code eventSection() {
     Immediate argument of the i32.const instruction (taking the address of a context).
     The immediate argument of all such instructions are stored as padded LEB128 such that they can be rewritten
     without altering the size of the code section. !
-    For each such instruction a R_WASM_FUNCTION_INDEX_LEB or R_WASM_TABLE_INDEX_SLEB reloc entry is generated
+    For each such instruction as R_WASM_FUNCTION_INDEX_LEB or R_WASM_TABLE_INDEX_SLEB reloc entry is generated
     pointing to the offset of the immediate within the code section.
 
     R_WASM_FUNCTION_INDEX_LEB relocations may fail to be processed, in which case linking fails.
@@ -2945,7 +2933,7 @@ void clearEmitterContext() {
     typeMap.clear();
 //	referenceMap.setDefault(Node());
 //    runtime_data_offset = 0x100000;
-    data_index_end = runtime_data_offset; //0
+    heap_end = runtime_data_offset; //0
     last_object_pointer = 0;
     if (!data) data = (char *) calloc(MAX_WASM_DATA_LENGTH, sizeof(char));// todo grow
     else memset(data, 0, MAX_WASM_DATA_LENGTH);
@@ -2957,87 +2945,28 @@ void clearEmitterContext() {
 
 [[nodiscard]]
 Code &emit(Node &root_ast, Module *runtime0, String _start) {
-
     start = _start;
-
-    if (runtime0) {
-//		memoryHandling = no_memory;// done by runtime?
-//		memoryHandling = export_memory;// try to combine? duplicate export name `memory` already defined
-//        memoryHandling = import_memory;// works
-        memoryHandling = internal_memory;
-        printf("            testCurrent();");
-        runtime = *runtime0;// else filled with 0's
-        runtime_function_offset = runtime.import_count + runtime.code_count;//  functionIndices.size();
-        import_count = 0;
-        builtin_count = 0;
-        //		data_index_end = runtime.data_offset_end;// insert after module data!
-        // todo: either write data_index_end DIRECTLY after module data and increase count of module data,
-        // or increase memory offset for second data section! (AND increase index nontheless?)
-//		int newly_pre_registered = 0;//declaredFunctions.size();
-        last_index = runtime_function_offset - 1;
-    } else {
-        memoryHandling = export_memory;
-//#ifdef IMPORT_MEMORY
+    memoryHandling = export_memory;
 //        memoryHandling = import_memory; // works for micro-runtime
-//#endif
 //        memoryHandling = internal_memory; // works for wasm3
-//        memoryHandling = no_memory;
-        last_index = -1;
-        print("        runtime = *new Module();// all zero");
-        runtime = *new Module();// all zero
-        testCurrent();
-        print("        runtime = *new Module();// all zero XXX");
+    last_index = -1;
+    runtime_function_offset = 0;
+    add_imports_and_builtins();
+    functions[start].is_declared = true;
+    if (start != "_start" and not functions.has("_start"))
+        functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true};
 
-        runtime_function_offset = 0;
-        add_imports_and_builtins();
-    }
-    if (start) {// now AFTER imports and builtins
-//		printf("start: %s\n", start.data);
-//		functions[start] = Signature().returns(i32t);
-        functions[start].is_declared = true;
-//            call_indices[start] = ++last_index;
-//			functionIndices[start] =runtime_offset ? runtime_offset + declaredFunctions.size() :  ++last_index;  // AFTER collecting imports!!
-//        else
-        if (call_indices.has(start))
-            error("start already declared: "s + start + " with index " + call_indices[start]);
-        if (start != "_start" and not functions.has("_start")) {
-            functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true};
-//            call_indices["_start"] = last_index;
-        }
-    } else {
-//		functions["_default_context_"] = Signature();
-//		start = "_default_context_";//_default_context_
-//		start = "";
-    }
-    print("Code &emit(Node &root_ast, Module *runtime0, String _start) {");
-    testCurrent();
     const Code customSectionvector;
 //	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
     // ^^^ currently causes malloc_error WHY??
-    print("Code &emit(Node &root_ast, Module *runtime0, String _start) 222");
-
     auto customSection = createSection(custom_section, customSectionvector);
     Code typeSection1 = emitTypeSection();// types must be defined in analyze(), not in code declaration
-    print("Code &emit(Node &root_ast, Module *runtime0, String _start) 222");
-    testCurrent();
     Code importSection1 = emitImportSection();// needs type indices
-    testCurrent();
-
     Code globalSection1 = emitGlobalSection();//
-    testCurrent();
-
     Code codeSection1 = emitCodeSection(root_ast); // needs functions and functionIndices prefilled!! :(
-    testCurrent();
-
     Code funcTypeSection1 = emitFuncTypeSection();// signatures depends on codeSection, but must come before it in wasm
-    testCurrent();
-
     Code memorySection1 = emitMemorySection();
-    testCurrent();
-
     Code exportSection1 = emitExportSection();// depends on codeSection, but must come before it!!
-    testCurrent();
-
 
     Code code = Code(magicModuleHeader, 4)
                 + Code(moduleVersion, 4)
@@ -3054,8 +2983,6 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
 //	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
     ;
-    testCurrent();
-
 //    code.debug();
 #ifndef WEBAPP
 //	free(data);// written to wasm code ok

@@ -69,10 +69,10 @@ public:
 //	int data_offset=0;// todo: read from data section! why not 0 ?
     int data_offset_end = 0;
 
-    void *operator new(size_t size) {
+//    void *operator new(size_t size) {
 //        while ((long) current % 8)current++;// align
-        return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
-    }
+//        return (Node *) (calloc(size, 1));// WOW THAT WORKS!!!
+//    }
 };
 
 Module &read_wasm(String file);
