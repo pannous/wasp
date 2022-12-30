@@ -2239,7 +2239,3 @@ Node assert_parsesx(chars mark) {
     }
     return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
 }
-
-void wasp_tests() {
-    check(operator_list.contains("else"));
-}

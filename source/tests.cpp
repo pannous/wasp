@@ -2581,56 +2581,88 @@ void testArrayIndices() {
 }
 
 void todos() {
-    skip(
-            assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
-            assert_emit("2,4 == 2,4", 1);
-            assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
-            assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
-    )
-    skip(
-            assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
-            testParams();
-            run("circle.wasp");
-            assert_emit("1 +1 == [1 1]", 1);
-            assert_emit("1 +1 ≠ 1 + 1", 1);
-            testWasmMutableGlobal();
-    )
-    skip( // todo soon
+    testSinus();
+
+#if not TRACE
+    println("parseLong fails in trace mode WHY?");
+    assert_run("parseLong('123000')+parseLong('456')", 123456);
+#endif
+
+    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
+    assert_emit("y:{x:2 z:3};y.x", 2);
+    assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
+    assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
+    assert_emit("y{x}", true); // emitData( node! ) emitNode()
+    assert_emit("{x:1}", true); // emitData( node! ) emitNode()
+    assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
+
+    testNodeDataBinaryReconstruction();
+
+    read_wasm("lib/stdio.wasm");
+    testStruct();
+
+    testWit();
+    testColonImmediateBinding();
+    testWasmRuntimeExtension();
+    testUpperLowerCase();
+//    exit(1);
+    testDataMode();
+
+    assert_run("#'0123'", 4);// todo at compile?
+    assert_run("#[0 1 2 3]", 4);
+    assert_run("#[a b c d]", 4);
+    assert_run("len('0123')", 4);// todo at compile?
+    assert_run("len([0 1 2 3])", 4);
+    assert_run("size([a b c d])", 4);
+    assert_run("int('123')", 123);
+    assert_run("str(123)", "123");
+    assert_run("'a'", 'a');
+    assert_run("char(0x41)", 'a');
+    assert_run("string(123)", "123");
+    assert_run("String(123)", "123");
+    test_sinus_wasp_import();
+    testSinus();// todo FRAGILE fails before!
+//    testSinus2();
+
+    assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
+    assert_emit("2,4 == 2,4", 1);
+    assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
+    assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
+    assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
+    testParams();
+    run("circle.wasp");
+    assert_emit("1 +1 == [1 1]", 1);
+    assert_emit("1 +1 ≠ 1 + 1", 1);
+    testWasmMutableGlobal();
 
     // while without body
-            assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
-            assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
-            assert_emit("1 -3 - square 3+4", (int64) -51);// warn "mixing math op with list items (1, -3 … ) !
-            assert_emit("1 - - 3", 4);// -1 uh ok?  warn "what are you doning?"
-            assert_emit("use math;⅓ ≈ .3333333 ", 1);
-            assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
-            assert_throws("i*=3");// well:
-            assert_emit("i*=3", (int64) 0);
-            globals.setDefault(new Node());
-            globals["y"] = new Node();
-            // todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
-            assert_throws("ceiling 3.7");
-            // default bug!
-            //    	subtract(other complex) := re -= other.re; im -= other.im
-            // := is terminated by \n, not by ;!
-            assert_throws("xyz 3.7"); // todo SHOULD THROW unknown symbol!
-    )
-    testSignificantWhitespace();
-    skip(
-            assert_eval("if(0):{3}", false);// 0:3 messy node
-            assert_equals(Node("1", 0) + Node("2"_s),
-                          Node("1", "2", 0));// 1+2 => 1:2  stupid border case because 1 not group (1)
-            assert_is("{a b c}#2", "b");// ok, but not for patterns:
-            assert_is("[a b c]#2", "b");// patterns
-            assert_is("i=3;i--", 2);// todo bring variables to interpreter
-            assert_is("i=3.7;.3+i", 4);// todo bring variables to interpreter
-            assert_is("i=3;i*-1", -3);// todo bring variables to interpreter
-            testAngle();// fails in WASM why?
+    assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
+    assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
+    assert_emit("1 -3 - square 3+4", (int64) -51);// warn "mixing math op with list items (1, -3 … ) !
+    assert_emit("1 - - 3", 4);// -1 uh ok?  warn "what are you doning?"
+    assert_emit("use math;⅓ ≈ .3333333 ", 1);
+    assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
+    assert_throws("i*=3");// well:
+    assert_emit("i*=3", (int64) 0);
+    globals.setDefault(new Node());
+    globals["y"] = new Node();
+    // todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
+    assert_throws("ceiling 3.7");
+    // default bug!
+    //    	subtract(other complex) := re -= other.re; im -= other.im
+    // := is terminated by \n, not by ;!
+    assert_throws("xyz 3.7"); // todo SHOULD THROW unknown symbol!
+    assert_eval("if(0):{3}", false);// 0:3 messy node
+    assert_equals(Node("1", 0) + Node("2"_s),
+                  Node("1", "2", 0));// 1+2 => 1:2  stupid border case because 1 not group (1)
+    assert_is((char *) "{a b c}#2", "b");// ok, but not for patterns:
+    assert_is((char *) "[a b c]#2", "b");// patterns
+    assert_is("i=3;i--", 2);// todo bring variables to interpreter
+    assert_is("i=3.7;.3+i", 4);// todo bring variables to interpreter
+    assert_is("i=3;i*-1", -3);// todo bring variables to interpreter
 
-            testNetBase();
 //	print("OK %s %d"s % ("WASM",1));// only 1 handed over
-            print(" OK %d %d"s % (2, 1));// only 1 handed over
-    )
+    print(" OK %d %d"s % (2, 1));// only 1 handed over
 }
 
 //int dump_nr = 1;
@@ -2848,6 +2880,11 @@ void tests() {
     testFlags();
 //    testFlags2();
 //    testFlagSafety();
+#if WASM
+    warn("Normal tests ALL PASSING in wasm!");
+    warn("WASM emit tests CURRENTLY __ALL__ SKIPPED");
+    return;
+#endif
 
     // WASM emit tests under the hood:
     // todo: split in test_wasp test_angle test_emit.cpp
@@ -2922,94 +2959,21 @@ void wasp_tests();
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 extern "C" void testCurrent() {
-//    wasp_tests();
 //    clearAnalyzerContext();
-
-    auto string1 = "%lld should be %d %s"s % (int64) 1l % 1 % "!";
-    check_is(string1, "1 should be 1 !");
-    testMaps();
-    preRegisterFunctions();
-    check(functions.has("fd_write"));
-    check(functions["fd_write"].signature.size() == 4);
-    check(functions["fd_write"].name == "fd_write");
-//    assert_emit("42", 42);
-    tests();// make sure all still ok before changes
-    skip(
-//    assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
-//    testMergeOwn();
-            assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
-            assert_emit("y:{x:2 z:3};y.x", 2);
-            assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
-            assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
-            assert_emit("y{x}", true); // emitData( node! ) emitNode()
-            assert_emit("{x:1}", true); // emitData( node! ) emitNode()
-            assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
-    )
-
-#if not TRACE
-    println("parseLong fails in trace mode WHY?");
-    assert_run("parseLong('123000')+parseLong('456')", 123456);
-#endif
-
-//    testSinus();
-    //	throwing = false;// shorter stack trace
-    //	panicking = true;//
-//    assurances();
-
-    testNodeDataBinaryReconstruction();
-
-    read_wasm("lib/stdio.wasm");
-    testStruct();
-//    quit();
-
-    testWit();
-    testColonImmediateBinding();
-//    testUpperLowerCase();
-//    exit(1);
-//    testDataMode();
-
-    skip(
-            assert_run("#'0123'", 4);// todo at compile?
-            assert_run("#[0 1 2 3]", 4);
-            assert_run("#[a b c d]", 4);
-            assert_run("len('0123')", 4);// todo at compile?
-            assert_run("len([0 1 2 3])", 4);
-            assert_run("size([a b c d])", 4);
-            assert_run("int('123')", 123);
-            assert_run("str(123)", "123");
-            assert_run("'a'", 'a');
-            assert_run("char(0x41)", 'a');
-            assert_run("string(123)", "123");
-            assert_run("String(123)", "123");
-    )
-    testWasmRuntimeExtension();
-//            test_sinus_wasp_import();
-//    testSinus();// todo FRAGILE fails before!
-//    testSinus2();
-    tests();// make sure all still ok before changes
+//    tests();// make sure all still ok before changes
+//    todos();
+    tests();// make sure all still ok after messing with memory
+#if not WASM
+    testAngle();// fails in WASM why?
     testMergeGlobal();
     testAllWasm();
     // ALL tests up to here take only 1 sec !
     testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
     todos();// those not passing yet (skip)
+#endif
     print("CURRENT TESTS PASSED");
 }
-
 // valgrind --track-origins=yes ./wasp
-
-extern "C" char *run(char *x) {
-    auto code = compile(x);
-    code.run();// async in js
-    return (char *) "need asyncify for result";
-}
-
-//
-//extern "C" char *parse(char *x) {
-//    auto code = compile(x);
-//    code.run();// async in js
-//    return (char *) "need asyncify for result";
-//}
-
 
 
 extern "C" String *testFromJS(String *s) {
