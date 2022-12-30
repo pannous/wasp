@@ -10,7 +10,20 @@ let WASM_RUNTIME = 'wasp-runtime.wasm'
 let min_memory_size = 100 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let max_memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: max_memory_size});
+
 // this memory object is NEVER USED if wasm file does not import memory and provides its own, hopefully exported!
+
+function format(object) {
+    if (object instanceof node)
+        return object.serialize()
+    if (typeof (object) == 'object')
+        return JSON.stringify(object);
+    return object;
+}
+
+function error(msg) {
+    throw new Error("⚠️ ERROR: " + msg)
+}
 
 let nop = x => 0 // careful, some wasi shim needs 0!
 const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
@@ -42,20 +55,20 @@ function memcpy(src, srcOffset, dst, dstOffset, length) {
 
 
 function wasp_module_reflection(bufp, sizep) {
-    let length = wasm_data.byteLength
-    while (current % 8) current++;
-    let buf = current
-    let dest = new Uint32Array(memory.buffer, current, length);
-    memcpy(wasm_data, 0, dest, 0, length)
-    set_int(bufp, current);
+    let length = runtime_bytes.byteLength
+    while (heap_end % 8) heap_end++;
+    let buf = heap_end
+    let dest = new Uint32Array(memory.buffer, heap_end, length);
+    memcpy(runtime_bytes, 0, dest, 0, length)
+    set_int(bufp, heap_end);
     set_int(sizep, length);
-    current += length
+    heap_end += length
     return buf;
 }
 
 let imports = {
     env: {
-        current: new WebAssembly.Global({value: "i32", mutable: true}, 0),// heap_end
+        heap_end: new WebAssembly.Global({value: "i32", mutable: true}, 0),// heap_end
         memory, // optionally provide js Memory … alternatively use exports.memory in js, see below
         // grow_memory:x=>memory.grow(1) // à 64k … NO NEED, host grows memory automagically!
         run_wasm, // allow wasm modules to run plugins / compiler output
@@ -86,9 +99,10 @@ let todo = x => console.error("TODO", x)
 let puts = x => console.log(string(x)) // char*
 let prints = x => console.log(String(x)) // char**
 const console_log = window.console.log;// redirect to text box
+
 window.console.log = function (...args) {
     console_log(...args);
-    args.forEach(arg => results.value += `${arg}\n`);
+    args.forEach(arg => results.value += `${format(arg)}\n`);
 }
 
 function check(ok) {
@@ -98,9 +112,9 @@ function check(ok) {
 function String(data) { // wasm<>js interop
     switch (typeof data) {
         case "string":
-            while (current % 8) current++
-            let p = current
-            new_int(current + 8)
+            while (heap_end % 8) heap_end++
+            let p = heap_end
+            new_int(heap_end + 8)
             new_int(data.length)
             chars(data);
             return p;
@@ -138,10 +152,10 @@ function chars(data) {
     if (!data) return 0;// MAKE SURE!
     if (typeof data != "string") return string(data)
     const uint8array = new TextEncoder("utf-8").encode(data + "\0");
-    buffer = new Uint8Array(memory.buffer, current, uint8array.length);
+    buffer = new Uint8Array(memory.buffer, heap_end, uint8array.length);
     buffer.set(uint8array, 0);
-    let c = current
-    current += uint8array.length;
+    let c = heap_end
+    heap_end += uint8array.length;
     return c;
 }
 
@@ -153,16 +167,16 @@ function set_int(address, val) {
 
 
 function new_int(val) {
-    while (current % 4) current++;
-    let buf = new Uint32Array(memory.buffer, current, 4);
+    while (heap_end % 4) heap_end++;
+    let buf = new Uint32Array(memory.buffer, heap_end, 4);
     buf[0] = val
-    current += 4
+    heap_end += 4
 }
 
 function new_long(val) {
-    let buf = new Uint64Array(memory.buffer, current / 8, memory.length);
+    let buf = new Uint64Array(memory.buffer, heap_end / 8, memory.length);
     buf[0] = val
-    current += 8
+    heap_end += 8
 }
 
 function read_int32(pointer) { // little endian
@@ -179,8 +193,8 @@ function read_int64(pointer) {
 function reset_heap() {
     HEAP = exports.__heap_base; // ~68000
     DATA_END = exports.__data_end
-    current = HEAP || DATA_END;
-    current += 0x100000; // todo
+    heap_end = HEAP || DATA_END;
+    heap_end += 0x100000; // todo
 }
 
 function compile_and_run(code) {
@@ -192,9 +206,33 @@ function compile_and_run(code) {
 let wasm_pointer_size = 4;// 32 bit
 let node_header_32 = 0x80000000
 
+function reinterpretInt64AsFloat64(n) { // aka reinterpret_cast long to double
+    const intArray = new BigInt64Array(1);
+    intArray[0] = BigInt(n)
+    const floatArray = new Float64Array(intArray.buffer);
+    return floatArray[0]
+}
+
+let kinds = {}
+
+function loadKindMap() {
+    for (let i = 0; i < 255; i++) {
+        let kinda = exports.kindName(i);
+        let kindName = string(kinda)
+        if (!kinda || !kindName) continue
+        kinds[kindName] = i
+        kinds[i] = kindName
+    }
+    // console.log("kinds:")
+    // console.log(kinds)
+}
+
 //    32bit in wasm TODO pad with string in 64 bit
 class node {
-    name = ""
+    name = "" // explicit fields yield order
+    Kind = ""
+    Content = 0
+    Childs = []
 
     constructor(pointer) {
         this.pointer = pointer
@@ -213,6 +251,16 @@ class node {
         this.value = parseInt(read_int64(pointer));
         pointer += 8; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
         this.name = String(pointer);
+        // post processing
+        this[this.name] = this; // make a:1 / {a:1} indistinguishable
+        for (var child of this.children()) {
+            this[child.name] = child
+        }
+        this.Kind = kinds[this.kind]
+        this.Content = this.Value()
+        if (this.length == 0 && this.kind == kinds.key)
+            if (this.Content instanceof node)
+                this[this.Content.name] = this.Content // make a:b:1 / a:{b:1} indistinguishable
         // pointer += size_of_string; // todo
         // this.meta = 0;
         // pointer += wasm_pointer_size//  LINK, not list. attributes meta modifiers decorators annotations
@@ -228,7 +276,25 @@ class node {
             list.push(new node(this.child_pointer + i * node_size));
             i++
         }
+        if (this.length)
+            this.Childs = list
         return list
+    }
+
+    Value() {
+        if (this.kind == kinds.string) return String(this.value);
+        if (this.kind == kinds.real) return reinterpretInt64AsFloat64(this.value);
+        if (this.kind == kinds.node) return new node(this.value);
+        if (this.kind == kinds.long) return this.value;
+        if (this.kind == kinds.reference) return this.Content || this.Childs;
+        if (this.kind == kinds.group) return this.Childs;
+        if (this.kind == kinds.key) {
+            let val = new node(this.value);
+            if (val.kind == kinds.string) return String(val.value);// or just name
+            return val;
+        }
+        throw new Error("node kind not yet supported in js: " + this.kind + ":" + kinds[this.kind] + " value: " + this.value)
+        // return this.value;
     }
 
     serialize() {
@@ -258,15 +324,6 @@ function parse(data) {
     return nod
 }
 
-let Backtrace = function (print = 1) {
-    try {
-        throw new Error()
-    } catch (ex) {
-        //trimStack(ex, 1)
-        if (print) console.error(ex); else return trimStack(ex)
-    }
-}
-
 function terminate() {
     console.log("wasm terminate()")
     // if(sure)throw
@@ -280,42 +337,41 @@ var expect_test_result; // set before running in semi sync tests!
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
-    // funclet.table = new WebAssembly.Table({initial: 2, element: "anyfunc"});
-    let funclet = await WebAssembly.instantiate(wasm_buffer, imports, memory2)
-    // funclet.instance = WebAssembly.instantiate(funclet.module, imports, funclet.memory)
+    let funclet = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
     funclet.exports = funclet.instance.exports
     // funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
-    // funclet.buffer = new Uint8Array(funclet.memory.buffer, 0, memory.length);
     let main = funclet.exports.wasp_main || funclet.exports.main || funclet.instance.start || funclet.exports._start
     let result = main()
     console.log("GOT RESULT FROM WASM")
     console.log(result)
     if (expect_test_result)
         check(expect_test_result == result)
-    return result; // returns Promise!
+    expect_test_result = 0
+    return result; // useless, returns Promise!
 }
 
 wasm_data = fetch(WASM_FILE)
 WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
-        instance = obj.instance
-        exports = instance.exports
-        HEAP = exports.__heap_base; // ~68000
-        DATA_END = exports.__data_end
-        current = HEAP || DATA_END;
-        current += 0x100000
-        memory = exports.memory || exports._memory || memory
-        buffer = new Uint8Array(memory.buffer, 0, memory.length);
-        main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
-        main = instance._Z11testCurrentv || main
-        if (main) {
-            console.log("got main")
-            result = main()
-        } else {
-            console.error("missing main function in wasp module!")
-            result = instance.exports//show what we've got
+    instance = obj.instance
+    exports = instance.exports
+    HEAP = exports.__heap_base; // ~68000
+    DATA_END = exports.__data_end
+    heap_end = HEAP || DATA_END;
+    heap_end += 0x100000
+    memory = exports.memory || exports._memory || memory
+    buffer = new Uint8Array(memory.buffer, 0, memory.length);
+    main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
+    main = instance._Z11testCurrentv || main
+    if (main) {
+        console.log("got main")
+        result = main()
+    } else {
+        console.error("missing main function in wasp module!")
+        result = instance.exports//show what we've got
         }
-        console.log(result);
-        setTimeout(test, 1);// make sync
+    console.log(result);
+    loadKindMap()
+    setTimeout(test, 1);// make sync
     }
 )
 

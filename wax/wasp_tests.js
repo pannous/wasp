@@ -31,6 +31,21 @@ function testParse() {
     check(nod.children().length = 2)
     check(nod.children()[1].name == "c")
     console.log("TEST OK: testParse")
+    nod = parse("a : 123")
+    check(nod.value == 123);
+    check(nod.Value() == 123);
+    nod = parse("a : 123.5")
+    check(nod.Value() == 123.5);
+    // nod = parse("a : 123.4")
+    // check(nod.Value()==123.4);// 123.39999999999418 WTH!!
+    nod = parse("b:'ok'")
+    check(nod.Value() == 'ok');
+    nod = parse("{b:'ok'}")
+    check(nod.Value() == 'ok');
+    nod = parse("a : {b:'ok'}")
+    check(nod.b.Value() == 'ok');
+    console.log(nod.b)
+    console.log("TEST OK: testParse")
 }
 
 function testString() {
