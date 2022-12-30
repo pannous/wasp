@@ -2959,6 +2959,8 @@ void wasp_tests();
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 extern "C" void testCurrent() {
+    assert_eval("1 and 0 or 4", 4);
+
 //    clearAnalyzerContext();
 //    tests();// make sure all still ok before changes
 //    todos();
