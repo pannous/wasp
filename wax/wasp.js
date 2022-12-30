@@ -10,7 +10,6 @@ let WASM_RUNTIME = 'wasp-runtime.wasm'
 let min_memory_size = 100 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let max_memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: max_memory_size});
-
 // this memory object is NEVER USED if wasm file does not import memory and provides its own, hopefully exported!
 
 function format(object) {

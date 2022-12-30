@@ -744,7 +744,7 @@ public:
     }
 
     bool operator==(chars c) {
-        return !empty() and eq(data, c, length);
+        return eq(data, c, length);
     }
 
     bool operator==(char *c) {
@@ -903,7 +903,7 @@ public:
 //    [[non-modifying]]
     [[nodiscard("replace generates a new string to be consumed!")]]
     __attribute__((__warn_unused_result__))
-    String replace(chars string, chars with) {// first only!
+    String &replace(chars string, chars with) {// first only!
         int i = this->indexOf(string);
         if (i >= 0) {
             unsigned int from = i + strlen(string);
@@ -915,7 +915,7 @@ public:
 
     [[nodiscard("replace generates a new string to be consumed!")]]
     __attribute__((__warn_unused_result__))
-    String replace(chars string, String with) {// first only!
+    String &replace(chars string, String with) {// first only!
         return replace(string, with.data);
     }
 
@@ -1087,7 +1087,6 @@ void println(String); // ==
 
 void println(int64);
 
-// don't extern "C", else demangle can't reflect … see put_string
 void put(String);
 
 extern "C" int puts(const char *);// int return needed for stdio compatibilty !

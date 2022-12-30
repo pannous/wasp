@@ -156,6 +156,7 @@ void debugCalloc(size_t num, size_t size) {
         puti(size);
         print("---calloc");
     }
+
 }
 
 //__attribute__((__malloc__, __warn_unused_result__))
@@ -172,7 +173,6 @@ void *aligned_alloc(size_t __alignment, size_t __size) {
 }
 
 void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
-
     if (size > 1000000) {
         put_chars("malloc of huge memory chunk:");
         putx(size);
@@ -183,12 +183,9 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
         heap_end = (char *) &__heap_base;
 //        error("current not set");
     }
-//    while (((long) current) % 8)current++;// WE CAN'T ALIGN HERE!
-//    S *keys = (S *) calloc(sizeof(S), capacity);// WE CAN'T ALIGN HERE!
-
+//    while(((long)current)%8)current++;
     void *last = heap_end;
     heap_end += size;
-    while (((long) heap_end) % 8)heap_end++; // pre-align after for what may follow
 //	if(size>1000)
     bool check_overflow = false;// wasm trap: out of bounds memory access OK
     if (check_overflow and MEMORY_SIZE and (int64) heap_end >= MEMORY_SIZE) {
@@ -226,14 +223,16 @@ extern "C" void *memmove(void *dest, const void *source, size_t num) {
 
 // new operator for ALL objects
 void *operator new[](size_t size) { // stack
-//    return calloc(size,1);
-    return aligned_alloc(8, size);
+    char *use = heap_end;
+    heap_end += size;
+    return use;
 }
 
 // new operator for ALL objects
 void *operator new(size_t size) { // stack
-//    return calloc(size,1);
-    return aligned_alloc(8, size);
+    char *use = heap_end;
+    heap_end += size;
+    return use;
 }
 
 void _cxa_allocate_exception() {

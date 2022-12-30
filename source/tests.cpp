@@ -2162,6 +2162,7 @@ void testString() {
     testStringConcatenation();
     testStringReferenceReuse();
     assert_equals_x(parse("١٢٣"), Node(123));
+//    assert_is("١٢٣", 123);
     check("abc"_ == "abc");
 
     check(String(u'☺').length == 3)
@@ -2913,9 +2914,6 @@ void testCurrentWasmBugs() {
 
 void wasp_tests();
 
-int aa(String x){return 1;}
-int aa(String* x){return 2;}
-
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp / wasmtime
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm build via wasm-runtime
@@ -2926,10 +2924,9 @@ int aa(String* x){return 2;}
 extern "C" void testCurrent() {
 //    wasp_tests();
 //    clearAnalyzerContext();
-    print("AT SOME POINT the whole mechanism falls apart. when and why?");
+
     auto string1 = "%lld should be %d %s"s % (int64) 1l % 1 % "!";
     check_is(string1, "1 should be 1 !");
-//    return;
     testMaps();
     preRegisterFunctions();
     check(functions.has("fd_write"));
