@@ -44,10 +44,11 @@ function testParse() {
     check(a.Value() == 'ok');
     a = parse("a : {b:'ok'}")
     check(a.b.Value() == 'ok');
-    a = parse("a : {b:'hold…',c:{d=42;e='😼'}}")
+    a = parse("a : {b:'hold…',c:{d=42.0;e='😼'}}")
     console.log(a.b)
     console.log(a.c)
-    check(a.c.e == '😼'); // flat keys!
+    check(a.c.d === 42)
+    check(a.c.e === '😼'); // flat keys!
     console.log("TEST OK: testParse")
 }
 
