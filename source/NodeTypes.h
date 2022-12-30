@@ -149,14 +149,14 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     groups, // (…) meta params parameter attributes lists
     tuples = groups, // todo: with restrictions!
     patterns, // […] selectors matches, annotations! [public export extern] function mul(x,y){x*y}
-    generics,// node tag or list<node>   NOT value.kind==strings !
-    tags = generics,// <html>
+    reference, // variable identifier name x
 
     key, // key with value
     fields, // key in struct / class / type / prototype / interface / record (wit) possibly WITHOUT VALUE
     // todo do we really need strict schema separation from normal 'schema' of node{kind=clazz} ?
 
-    reference, // variable identifier name x
+    generics,// node tag or list<node>   NOT value.kind==strings !
+    tags = generics,// <html>
     symbol, // one / plus / Jesus
     operators, // TODO: semantic types don't belong here! they interfere with internal structural types key etc!!
     functor, // while(xyz){abc} takes 1?/2/3 blocks if {condition} {then} {else}
@@ -472,7 +472,9 @@ enum Modifiers {
 
 //#endif //MARK_NODETYPES_H
 
-chars typeName(::Kind t);
+extern "C" chars kindName(::Kind t);
+
+chars typeName(::Kind t, bool throws = true);
 
 chars typeName(::Type t);
 

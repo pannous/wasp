@@ -3014,6 +3014,7 @@ extern "C" char *run(char *x) {
 extern "C" String *testFromJS(String *s) {
     println("testJString…");
     check_is("test from JS"s, s);
+    print(typeName((Kind) 9));
 //    Module wasp = loadRuntime();
 //    print(wasp.name);
 //    print("wasp.total_func_count");

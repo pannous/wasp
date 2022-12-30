@@ -218,8 +218,13 @@ static Valtype mapArgToValtype(String &arg) {
 }
 
 
+extern "C" chars kindName(::Kind t) {
+    return typeName(t, false);
+}
+
+
 //String
-chars typeName(Kind t) {
+chars typeName(Kind t, bool throws) {
     switch (t) {
         case 0:
             return "ø"; // unknown ?
@@ -300,7 +305,9 @@ chars typeName(Kind t) {
             return "module";
         case last_kind:
         default:
-            error("MISSING Type Kind name mapping "s + (int) t);
+            if (throws)
+                error("MISSING Type Kind name mapping "s + (int) t);
+            else return "";
     }
 }
 
