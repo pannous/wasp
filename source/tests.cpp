@@ -2913,6 +2913,9 @@ void testCurrentWasmBugs() {
 
 void wasp_tests();
 
+int aa(String x){return 1;}
+int aa(String* x){return 2;}
+
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp / wasmtime
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm build via wasm-runtime

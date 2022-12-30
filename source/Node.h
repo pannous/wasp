@@ -224,7 +224,7 @@ public:
     Value value = {.longy=0}; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
 //    32bit in wasm TODO pad with string in 64 bit
     // previous fields must be aligned to int64!
-    String name = empty_name;// nil_name;
+    String name;// = empty_name;// nil_name;
     Node *type = 0;// variable/reference type or object class?
     Node *meta = 0;//  LINK, not list. attributes meta modifiers decorators annotations
 

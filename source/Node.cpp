@@ -931,7 +931,7 @@ String Node::serialize() const {
                 continue;// broken child (e.g. in skipped reconstruct)
             if (length == 0)
                 break;// how on earth is that possible??
-            if (i++ > 0) wasp += separator ? String(separator) : " ";
+            if (i++ > 0) wasp += separator ? separator : ' ';
             wasp += child.serialize();
         }
 
@@ -942,7 +942,7 @@ String Node::serialize() const {
             else if (kind == patterns)wasp += "]";
             else if (not separator) wasp += ")";// default
         }
-        if (eq(name, "‖")) wasp += name;
+        if (!name.empty() and eq(name, "‖")) wasp += name;
     }
     return wasp;
 //	return name.empty()? string() : name;

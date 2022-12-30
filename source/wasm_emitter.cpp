@@ -1547,7 +1547,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //		error("locals should be analyzed in parser");
 //		locals[name] = List<String>();
 //	locals[index]= Map<int, String>();
-    if (node.kind == unknown and context.locals.has(node.name))
+    if (node.kind == unknown and not name.empty() and context.locals.has(name))
         node.kind = reference;// todo clean fallback
 //    if (node.name=="0") {
 //        code.addConst32(0);
@@ -3006,10 +3006,12 @@ Code &compile(String code, bool clean) {
     }
 
     Node parsed = parse(code);
-    print(parsed.serialize());
+    println(parsed.serialize());
 
     Node &ast = analyze(parsed, functions["wasp_main"]);
-    print(ast.serialize());
+    println(ast.serialize());
+    println(ast.serialize());
+    println(ast.serialize());
 
     functions["fd_write"].signature.wasm_return_type = int32;
 //	preRegisterSignatures();// todo remove after fixing Signature BUG!!
