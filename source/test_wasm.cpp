@@ -16,7 +16,12 @@
 panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#αα);backtrace_line(); \
 }catch(chars){}catch(String*){}catch(...){};panicking=old;}
 
-#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+// WASM async
+static List<String> done;
+extern "C" void assert_expect(Node *result);
+extern "C" void async_yield();// throw this run and reenter after run_wasm is done
+#define assert_emit(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
+//#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 //#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
 
 #ifndef RUNTIME_ONLY
