@@ -196,6 +196,7 @@ public:
         auto item_count = inis.end() - inis.begin();
         while (item_count >= capacity)grow();
         for (const S &s: inis) {
+            if (&s == nullptr)continue;
             items[size_++] = s;
         }
     }
@@ -364,6 +365,7 @@ public:
     }
 
     int position(S *s) {
+        if (!s)return -1;// don't allow null pointer!
         for (int i = 0; i < size_; ++i)
             if (&items[i] == s)return i;
         return -1;
@@ -396,6 +398,7 @@ public:
     }
 
     bool has(S *item) {
+        if (!item)return false;
         return position(item) >= 0;
     }
 

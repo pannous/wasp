@@ -180,7 +180,7 @@ void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
     }
     if ((long) heap_end < 10000) {
 //        current = (char*)&__data_end;
-        heap_end = (char *) &__heap_base;
+        heap_end = &__heap_base;
 //        error("current not set");
     }
 //    while(((long)current)%8)current++;
@@ -223,14 +223,14 @@ extern "C" void *memmove(void *dest, const void *source, size_t num) {
 
 // new operator for ALL objects
 void *operator new[](size_t size) { // stack
-    char *use = heap_end;
+    byte *use = heap_end;
     heap_end += size;
     return use;
 }
 
 // new operator for ALL objects
 void *operator new(size_t size) { // stack
-    char *use = heap_end;
+    byte *use = heap_end;
     heap_end += size;
     return use;
 }
@@ -425,8 +425,9 @@ extern "C" void __wasm_call_ctors();
 
 // un-export at link time to use main:_start
 extern "C" void _start() {
-    heap_end = (char *) &__heap_base;
+    heap_end = &__heap_base;
     __wasm_call_ctors();
+    __initial_heap_end = heap_end; // after internal initialization, safely(?) reset on different runs / as "GC" ?
     trace("__heap_base");
     trace(&__heap_base);// VERY HIGH 0x54641ddb0
     trace("__data_end");
