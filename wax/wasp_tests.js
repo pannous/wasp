@@ -88,7 +88,7 @@ function testRun() {
         resume = testRun // comeback here after first, 2ⁿᵈ … testRun
         exports.testRun();// going from one test to the next WITHIN WASP!
     } catch (x) {
-        if (x instanceof YieldThreadException) {
+        if (x instanceof YieldThread) {
             // print("test thread yielded, re-entering after run_wasm finished")
         } else throw x;
     }
