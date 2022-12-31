@@ -31,7 +31,7 @@ Code &signedLEB128(int64 value) {
     int more = 1;
 //	bool negative = (value < 0);
     int64 val = value;
-/* the size in bits of the variable value, e.g., 64 if value's type is int64_t */
+/* the size in bits of the variable value, e.g., 64 if value's type is int64 */
 //	size = no. of bits in signed integer;
 //	int size = 64;
     while (more) {
