@@ -10,6 +10,7 @@ let WASM_RUNTIME = 'wasp-runtime.wasm'
 let min_memory_size = 100 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let max_memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: max_memory_size});
+
 // this memory object is NEVER USED if wasm file does not import memory and provides its own, hopefully exported!
 
 function format(object) {
@@ -79,19 +80,19 @@ function terminate() {
 }
 
 var resume; // callback function resuming after run_wasm finished
-class YieldThreadException {
+class YieldThread { // unwind wasm, reenter through resume() after run_wasm finished
 }
 
 let imports = {
-    env: {
-        assert_expect: x => expect_test_result = new node(x).Value(),
-        async_yield: x => {
-            throw new YieldThreadException()
-        }, // unwind wasm, reenter through exports.testRun after run_wasm
-        heap_end: new WebAssembly.Global({value: "i32", mutable: true}, 0),// heap_end
+    env: { // MY_WASM custom wasp helpers
         memory, // optionally provide js Memory … alternatively use exports.memory in js, see below
-        // grow_memory:x=>memory.grow(1) // à 64k … NO NEED, host grows memory automagically!
+        heap_end: new WebAssembly.Global({value: "i32", mutable: true}, 0),// todo: use as heap_end
+        grow_memory: x => memory.grow(1), // à 64k … NO NEED, host grows memory automagically!
         run_wasm, // allow wasm modules to run plugins / compiler output
+        assert_expect: x => expect_test_result = new node(x).Value(),
+        async_yield: x => { // called from inside wasm, set callback handler resume before!
+            throw new YieldThread() // unwind wasm, reenter through resume() after run_wasm
+        },
         init_graphics: nop, // canvas init by default
         requestAnimationFrame: nop,
         powi: (x, y) => x ** y,
@@ -370,7 +371,6 @@ function download(data, filename, type) {
 }
 
 
-
 // allow wasm tests/plugins to build and execute small wasm files!
 // todo while wasp.wasm can successfully execute via run_wasm, it can't handle the result (until async wasm) OR :
 // https://web.dev/asyncify/
@@ -396,26 +396,26 @@ async function run_wasm(buf_pointer, buf_size) {
 
 wasm_data = fetch(WASM_FILE)
 WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
-    instance = obj.instance
-    exports = instance.exports
-    HEAP = exports.__heap_base; // ~68000
-    DATA_END = exports.__data_end
-    heap_end = HEAP || DATA_END;
-    heap_end += 0x100000
-    memory = exports.memory || exports._memory || memory
-    buffer = new Uint8Array(memory.buffer, 0, memory.length);
-    main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
-    main = instance._Z11testCurrentv || main
-    if (main) {
-        console.log("got main")
-        result = main()
-    } else {
-        console.error("missing main function in wasp module!")
-        result = instance.exports//show what we've got
+        instance = obj.instance
+        exports = instance.exports
+        HEAP = exports.__heap_base; // ~68000
+        DATA_END = exports.__data_end
+        heap_end = HEAP || DATA_END;
+        heap_end += 0x100000
+        memory = exports.memory || exports._memory || memory
+        buffer = new Uint8Array(memory.buffer, 0, memory.length);
+        main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
+        main = instance._Z11testCurrentv || main
+        if (main) {
+            console.log("got main")
+            result = main()
+        } else {
+            console.error("missing main function in wasp module!")
+            result = instance.exports//show what we've got
         }
-    console.log(result);
-    loadKindMap()
-    setTimeout(test, 1);// make sync
+        console.log(result);
+        loadKindMap()
+        setTimeout(test, 1);// make sync
     }
 )
 
