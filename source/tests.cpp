@@ -14,7 +14,7 @@
 #include "wasm_runner.h"
 #include "WitReader.h"
 
-#define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s \n%s:%d\n",marka,__FILE__,__LINE__);proc_exit(1);}
+#define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
 
 void testMaps0() {
@@ -2580,9 +2580,14 @@ void testArrayIndices() {
     assert_is("x=(1 4 3);x#2=5;x#2", 5);
 }
 
+// todo: move back into tests() once they work again
 void todos() {
     testSinus();
-
+    testWrong0Termination();
+    testErrors();// error: failed to call function   wasm trap: integer divide by zero
+    assert_is("one plus two times three", 7);
+    testMathExtra();// "one plus two times three"==7 used to work?
+    testKitchensink();
 #if not TRACE
     println("parseLong fails in trace mode WHY?");
     assert_run("parseLong('123000')+parseLong('456')", 123456);
@@ -2788,7 +2793,55 @@ void testBadInWasm() {
     testPattern();
 }
 
+
+void assurances() {
+    check(sizeof(Type) == 8) // otherwise all header structs fall apart
+//    check(sizeof(void*)==4) // otherwise all header structs fall apart TODO adjust in 64bit wasm / NORMAL arm64 !!
+    check(sizeof(int64) == 8)
+}
+
+// todo: merge with testAllWasm, move these to test_wasm.cpp
+void testAllEmit() {
+    // WASM emit tests under the hood:
+    assert_emit("42", 42);// basics
+    testLogic();
+    testAllAngle();
+    testRecentRandomBugs();
+    testMergeOwn();
+    testEqualities();
+    testLogic01();
+    testLogicOperators();
+    testCall();
+    testRoots();
+    testRootFloat();
+    testTruthiness();
+    testLogicPrecedence();
+    testRootLists();
+    testHex();
+    testBadInWasm();
+    testIndexOffset();
+    testArrayIndices();
+    testModulo();
+    testSmartReturn();
+    testWasmString();// with length as header
+    testMultiValue();
+    testBadInWasm();
+//    testSinus();
+
+//    part of
+//    testAllWasm() :
+//    testRoundFloorCeiling();
+
+#ifdef APPLE
+    testAllSamples();
+#endif
+    check(NIL.value.longy == 0);// should never be modified
+    print("ALL TESTS PASSED");
+}
+
+
 void tests() {
+    assurances();
     testMarkSimple();
     testMarkAsMap();
     testMarkMultiDeep();
@@ -2885,71 +2938,9 @@ void tests() {
     warn("WASM emit tests CURRENTLY __ALL__ SKIPPED");
     return;
 #endif
-
-    // WASM emit tests under the hood:
+    testAllEmit();
     // todo: split in test_wasp test_angle test_emit.cpp
-    assert_emit("42", 42);// basics
-    testLogic();
-    testAllAngle();
-    testRecentRandomBugs();
-    testMergeOwn();
-    testEqualities();
-    testLogic01();
-    testLogicOperators();
-    testCall();
-    testRoots();
-    testRootFloat();
-    testTruthiness();
-    testLogicPrecedence();
-    testRootLists();
-    testHex();
-    testBadInWasm();
-    testIndexOffset();
-    testArrayIndices();
-    testModulo();
-    testSmartReturn();
-    testWasmString();// with length as header
-    testMultiValue();
-
-//    testSinus();
-    skip(
-            testWrong0Termination();
-            testErrors();// error: failed to call function   wasm trap: integer divide by zero
-            assert_is("one plus two times three", 7);
-            testMathExtra();// "one plus two times three"==7 used to work?
-            testKitchensink();
-    )
-//    part of
-//    testAllWasm() :
-//    testRoundFloorCeiling();
-
-#ifdef APPLE
-    testAllSamples();
-#endif
-    check(NIL.value.longy == 0);// should never be modified
-    print("ALL TESTS PASSED");
 }
-
-void assurances() {
-    check(sizeof(Type) == 8) // otherwise all header structs fall apart
-//    check(sizeof(void*)==4) // otherwise all header structs fall apart TODO adjust in 64bit wasm / NORMAL arm64 !!
-    check(sizeof(int64) == 8)
-}
-
-void testCurrentWasmBugs() {
-    Node n = parse("1");
-    check_eq(n.value.longy, 1);
-    chars source = "1";
-    assert_parses(source);
-//    testDeepColon();
-//    printf("%d", 43);
-//    printf("%d", (int64) 44);
-//    printf("%l", (int64) 44);
-//    printf("%l", 44);
-//    exit(42);
-}
-
-void wasp_tests();
 
 // 2021-10 : 40 sec for Wasm3
 // 2021-10 : 10 sec in Webapp / wasmtime
@@ -2974,12 +2965,6 @@ extern "C" void testCurrent() {
 }
 // valgrind --track-origins=yes ./wasp
 
-extern "C" void testRun() {
-    assert_emit("42", 42)
-    assert_emit("43", 43)
-    assert_emit("44", 44)
-    print("testRun SUCCEEDED");
-}
 
 extern "C" String *testFromJS(String *s) {
     println("testJString…");
@@ -2994,4 +2979,12 @@ extern "C" String *testFromJS(String *s) {
     check_is("ok from WASP"s, replaced);
 //    return &replaced.clone();
     return new String("ok from WASP");
+}
+
+
+extern "C" void testRun() {
+//    assert_emit("42", 42);
+    testAllEmit();
+    testAllWasm();
+    print("testRun SUCCEEDED");
 }

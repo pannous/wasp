@@ -22,7 +22,8 @@ function format(object) {
 }
 
 function error(msg) {
-    throw new Error("⚠️ ERROR: " + msg)
+    // throw new Error("⚠️ ERROR: " + msg)
+    throw new Error("ERROR: " + msg)
 }
 
 let nop = x => 0 // careful, some wasi shim needs 0!
@@ -315,9 +316,10 @@ class node {
 
     Value() {
         if (this.kind == kinds.string) return string(this.value);
+        if (this.kind == kinds.long) return Number(this.value);
+        if (this.kind == kinds.bool) return Boolean(this.value);
         if (this.kind == kinds.real) return reinterpretInt64AsFloat64(this.value);
         if (this.kind == kinds.node) return new node(this.value);
-        if (this.kind == kinds.long) return this.value;
         if (this.kind == kinds.reference) return this.Content || this.Childs;
         if (this.kind == kinds.object) return this.Content || this.Childs;
         if (this.kind == kinds.group) return this.Content || this.Childs;
@@ -374,9 +376,9 @@ function download(data, filename, type) {
 // allow wasm tests/plugins to build and execute small wasm files!
 // todo while wasp.wasm can successfully execute via run_wasm, it can't handle the result (until async wasm) OR :
 // https://web.dev/asyncify/
-var expect_test_result; // set before running in semi sync tests!
+var expect_test_result = 42; // set before running in semi sync tests!
 async function run_wasm(buf_pointer, buf_size) {
-    let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
+    wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // download(wasm_buffer, "emit.wasm", "wasm")
     let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
     let funclet = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
@@ -384,12 +386,11 @@ async function run_wasm(buf_pointer, buf_size) {
     // funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
     let main = funclet.exports.wasp_main || funclet.exports.main || funclet.instance.start || funclet.exports._start
     let result = main()
-    console.log("GOT RESULT FROM WASM")
-    console.log(result)
-    if (expect_test_result) {
+    console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM WASM
+    if (expect_test_result || 1) {
         check(expect_test_result == result)
         expect_test_result = 0
-        setTimeout(resume, 0);// make sync
+        if (resume) setTimeout(resume, 1);
     }
     return result; // useless, returns Promise!
 }
@@ -429,9 +430,24 @@ function load_runtime_bytes() {
     )
 }
 
-function test() {
+async function test() {
+
+    // var work = new Worker("wasp_tests.js");
+    // work.postMessage({ a:8, b:9 });
+    // work.onmessage = (evt) => { console.log(evt.data); };
+    // resume=test // call this again once current test in wasp_tests is done!
+
     // if(code_input)
     //     compile_and_run(code_input.value);// execute index.html code input
-    if (typeof (wasp_tests) !== "undefined")
-        wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
+    // try {
+    while (!resume) {
+        // console.log("starting new testRunAsync")
+        await testRunAsync()
+        await new Promise(sleep => setTimeout(sleep, 1000));
+    }
+    // }catch (x){
+    //     download(wasm_buffer, "emit.wasm", "wasm") // save last buffer to debug
+    // }
+    // if (typeof (wasp_tests) !== "undefined")
+    //     wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 }
