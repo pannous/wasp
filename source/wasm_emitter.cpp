@@ -339,7 +339,7 @@ bytes ieee754(double num) {
 bool isProperList(Node &node) {
     if (node.kind != groups and node.kind != objects) return false;
     if (node.length < 1) return false;
-    for (Node &child: node) {
+    for (const Node &child: node) {
         if (child.kind != longs and child.kind != strings)// todo … evaluate?
             return false;
         if (child.isSetter())

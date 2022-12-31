@@ -17,11 +17,11 @@ set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 # SET these configurations via Preferences… Build->CMake->Profiles
 # MANUALLY force set these only for urgent debugging,
 #set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
-#set(RELEASE 0) # no tests todo VS:
+set(RELEASE 0) # no tests todo VS:
 #set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
-#set(DEBUG 1)
-#set(TRACE 1)
+set(DEBUG 1)
+set(TRACE 1)
 #set(SDL 1) # Graphics
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
 #set(INCLUDE_MERGER 0)
@@ -89,9 +89,9 @@ if (WASM)
     #    set(RUNTIME_ONLY 1) NO, we want compiler version too!
     #    ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (MY_WASM)
-#        execute_process(COMMAND node clean.js WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-message("MY_WASM!")
-ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
+        #        execute_process(COMMAND node clean.js WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+        message("MY_WASM!")
+        ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
     endif ()
     if (NOT WASI AND NOT MY_WASI)
         ADD_DEFINITIONS(-DPURE_WASM)
@@ -292,12 +292,14 @@ if (SANITIZE OR TRACE)
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
     MESSAGE("ASAN sanitize=address …")
-    if (GCC)
-        ADD_COMPILE_FLAG("-static-libasan")
-    else ()
-        ADD_COMPILE_FLAG("-static-libsan")
+    #    if (APPLE)
+    #        ADD_COMPILE_FLAG("-static-libsan")
+    #    else ()
+    #        ADD_COMPILE_FLAG("-static-libasan")
+    #    endif ()
+    if (VERBOSE)
+        set(ASAN_OPTIONS verbosity=3)
     endif ()
-    set(ASAN_OPTIONS verbosity=3)
     set(ASAN_OPTIONS=detect_stack_use_after_return=1) # unnecessary because -Wreturn-stack-address
     add_compile_options(-g)
     #    add_compile_options(-enable-coverage)
@@ -313,7 +315,6 @@ if (SANITIZE OR TRACE)
     add_compile_options(-fno-omit-frame-pointer)
     add_compile_options(-fsanitize=undefined)
     add_compile_options(-fsanitize-recover=address)
-    add_compile_options(-fsanitize-trap=undefined)
     if (!WASM)
         add_compile_options("-fsanitize=address") # unsupported option '-fsanitize=address' for target 'wasm32-unknown-unknown-wasm'
     endif ()
@@ -324,13 +325,15 @@ if (SANITIZE OR TRACE)
         add_compile_options(-fsanitize-address-use-after-return) #not supported by clang
         add_compile_options(-Wbugprone-sizeof-expression)
         add_compile_options(-Werror=bugprone-sizeof-expression)
+    else ()
+        #        add_compile_options(-fsanitize-trap=undefined)
+        #        add_link_options(-fsanitize-trap=undefined)
     endif ()
 
     #   add_compile & add_link NEEDS TO BE IN SYNC!
     #    link_libraries("-fsanitize=address")
     add_link_options(-fsanitize=address)  # currently crashes with AsanDie so don't use :(
     add_link_options(-fsanitize=undefined)
-    add_link_options(-fsanitize-trap=undefined)
     add_link_options(-fno-omit-frame-pointer)
     add_link_options(-fsanitize-recover=address)
 endif ()
