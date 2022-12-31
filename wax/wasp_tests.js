@@ -75,12 +75,11 @@ function testReverse() {
 function testRun1() {
     // let cmd="puts 'CYRC!'"
     // let cmd="puti 123"
+    // let cmd = "√3^2"
+    // let cmd = "123"
     let cmd = "42*2/2"
     let result = exports.run(chars(cmd))
-    console.log(chars(result)) // "need asyncify for result" ;)
-    expect_test_result = 42;
-    // check(result==42);
-    // exports._Z7println6String(Str("full circle"))
+    // console.log(chars(result)) // "need asyncify for result" ;)
 }
 
 function testRun() {
@@ -103,4 +102,5 @@ function wasp_tests() {
     testParse();
     exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
     testRun()
+    // testRun1();
 }
