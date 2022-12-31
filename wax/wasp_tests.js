@@ -114,7 +114,9 @@ async function testRunAsync() {
     } catch (x) {
         if (x instanceof YieldThread) {
             // print("test thread yielded, re-entering after run_wasm finished")
-        } else throw x;
+        } else {
+            throw x;
+        }
     }
 }
 
