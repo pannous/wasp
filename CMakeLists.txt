@@ -12,6 +12,8 @@ else ()
     #        LINK_DIRECTORIES(bin/linux/arm64/lib/)
 endif ()
 
+set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
+
 # SET these configurations via Preferences… Build->CMake->Profiles
 # MANUALLY force set these only for urgent debugging,
 #set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
