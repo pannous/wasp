@@ -386,6 +386,8 @@ async function run_wasm(buf_pointer, buf_size) {
     // funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
     let main = funclet.exports.wasp_main || funclet.exports.main || funclet.instance.start || funclet.exports._start
     let result = main()
+    if (result > 0x100000000)
+        result = new node(exports.smartNode(result)) // if wasp_main doesn't return type
     console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM WASM
     if (expect_test_result || 1) {
         if (expect_test_result != result) {
@@ -447,9 +449,9 @@ async function test() {
     try {
         while (!STOP) {
             // console.log("starting new testRunAsync")
-            print("STOP", STOP)
+            reset_heap()
             await testRunAsync()
-            await new Promise(sleep => setTimeout(sleep, 1000));
+            await new Promise(sleep => setTimeout(sleep, 10));
         }
     } catch (x) {
         STOP = 1

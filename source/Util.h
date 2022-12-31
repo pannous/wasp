@@ -156,7 +156,7 @@ String load(String file);
 bool isSmartPointer(int64 d);
 
 //Node smartValue(int64 smartPointer);
-Node *smartNode(smart_pointer_64 smartPointer64);
+extern "C" Node *smartNode(smart_pointer_64 smartPointer64);
 
 int64 file_last_modified(char *file);
 

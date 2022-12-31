@@ -1293,7 +1293,7 @@ int ord(Node &p) {
 
 
 // todo: make constructor
-Node *smartNode(smart_pointer_64 smartPointer64) {
+extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
     if (smartPointer64 == 0)return &False;//const_cast<Node *>(&NIL);
 //    if (!isSmartPointer(smartPointer64))
 //        return Node(smartPointer64);
