@@ -1554,7 +1554,6 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //        return code;
 //    }
     if (name == "if")
-        if (name == "if")
             return emitIf(node, context);
     if (name == "while")
         return emitWhile(node, context);
