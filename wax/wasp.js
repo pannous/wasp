@@ -130,7 +130,7 @@ const console_log = window.console.log;// redirect to text box
 // }
 
 function check(ok, msg) {
-    if (!ok) throw new Error("⚠️ TEST FAILED! " + msg || "");
+    if (!ok) throw new Error("⚠️ TEST FAILED! " + (msg || ""));
 }
 
 function string(data) { // wasm<>js interop
@@ -261,7 +261,7 @@ class node {
     constructor(pointer) {
         this.pointer = pointer
         if (!pointer) return;//throw "avoid 0 pointer node constructor"
-        check(read_int32(pointer) == node_header_32)
+        check(read_int32(pointer) == node_header_32, "node_header_32")
         pointer += 4;
         this.length = read_int32(pointer);
         pointer += 4;
@@ -388,6 +388,10 @@ async function run_wasm(buf_pointer, buf_size) {
     let result = main()
     console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM WASM
     if (expect_test_result || 1) {
+        if (expect_test_result != result) {
+            STOP = 1
+            download(wasm_buffer, "emit.wasm", "wasm") // resume
+        }
         check(expect_test_result == result)
         expect_test_result = 0
         if (resume) setTimeout(resume, 1);
@@ -430,6 +434,7 @@ function load_runtime_bytes() {
     )
 }
 
+var STOP = 0
 async function test() {
 
     // var work = new Worker("wasp_tests.js");
@@ -439,15 +444,17 @@ async function test() {
 
     // if(code_input)
     //     compile_and_run(code_input.value);// execute index.html code input
-    // try {
-    while (!resume) {
-        // console.log("starting new testRunAsync")
-        await testRunAsync()
-        await new Promise(sleep => setTimeout(sleep, 1000));
+    try {
+        while (!STOP) {
+            // console.log("starting new testRunAsync")
+            print("STOP", STOP)
+            await testRunAsync()
+            await new Promise(sleep => setTimeout(sleep, 1000));
+        }
+    } catch (x) {
+        STOP = 1
+        throw x;
     }
-    // }catch (x){
-    //     download(wasm_buffer, "emit.wasm", "wasm") // save last buffer to debug
-    // }
     // if (typeof (wasp_tests) !== "undefined")
     //     wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 }

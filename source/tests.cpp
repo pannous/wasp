@@ -2983,7 +2983,7 @@ extern "C" String *testFromJS(String *s) {
 
 
 extern "C" void testRun() {
-//    assert_emit("42", 42);
+//    assert_emit("42", 43);
     testAllEmit();
     testAllWasm();
     print("testRun SUCCEEDED");
