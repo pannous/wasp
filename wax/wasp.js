@@ -340,6 +340,25 @@ function terminate() {
     // if(sure)throw
 }
 
+// Function to download data to a file
+function download(data, filename, type) {
+    var file = new Blob([data], {type: type});
+    if (window.navigator.msSaveOrOpenBlob) // IE10+
+        window.navigator.msSaveOrOpenBlob(file, filename);
+    else { // Others
+        var a = document.createElement("a"),
+            url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 0);
+    }
+}
+
 
 // allow wasm tests/plugins to build and execute small wasm files!
 // todo while wasp.wasm can successfully execute via run_wasm, it can't handle the result (until async wasm) OR :
@@ -347,6 +366,7 @@ function terminate() {
 var expect_test_result; // set before running in semi sync tests!
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
+    download(wasm_buffer, "emit.wasm", "wasm")
     let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
     let funclet = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
     funclet.exports = funclet.instance.exports
