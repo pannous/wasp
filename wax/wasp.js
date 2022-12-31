@@ -430,6 +430,8 @@ function load_runtime_bytes() {
 }
 
 function test() {
+    // if(code_input)
+    //     compile_and_run(code_input.value);// execute index.html code input
     if (typeof (wasp_tests) !== "undefined")
         wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 }
