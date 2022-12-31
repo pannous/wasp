@@ -65,8 +65,29 @@ function wasp_module_reflection(bufp, sizep) {
     return buf;
 }
 
+
+function parse(data) {
+    let node_pointer = exports.Parse(chars(data))// also calls run()!
+    let nod = new node(node_pointer);
+    return nod
+}
+
+
+function terminate() {
+    console.log("wasm terminate()")
+    // if(sure)throw
+}
+
+var resume; // callback function resuming after run_wasm finished
+class YieldThreadException {
+}
+
 let imports = {
     env: {
+        assert_expect: x => expect_test_result = new node(x).Value(),
+        async_yield: x => {
+            throw new YieldThreadException()
+        }, // unwind wasm, reenter through exports.testRun after run_wasm
         heap_end: new WebAssembly.Global({value: "i32", mutable: true}, 0),// heap_end
         memory, // optionally provide js Memory … alternatively use exports.memory in js, see below
         // grow_memory:x=>memory.grow(1) // à 64k … NO NEED, host grows memory automagically!
@@ -329,17 +350,6 @@ class node {
 }
 
 
-function parse(data) {
-    let node_pointer = exports.Parse(chars(data))// also calls run()!
-    let nod = new node(node_pointer);
-    return nod
-}
-
-function terminate() {
-    console.log("wasm terminate()")
-    // if(sure)throw
-}
-
 // Function to download data to a file
 function download(data, filename, type) {
     var file = new Blob([data], {type: type});
@@ -360,13 +370,14 @@ function download(data, filename, type) {
 }
 
 
+
 // allow wasm tests/plugins to build and execute small wasm files!
 // todo while wasp.wasm can successfully execute via run_wasm, it can't handle the result (until async wasm) OR :
 // https://web.dev/asyncify/
 var expect_test_result; // set before running in semi sync tests!
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
-    download(wasm_buffer, "emit.wasm", "wasm")
+    // download(wasm_buffer, "emit.wasm", "wasm")
     let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
     let funclet = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
     funclet.exports = funclet.instance.exports
@@ -375,9 +386,11 @@ async function run_wasm(buf_pointer, buf_size) {
     let result = main()
     console.log("GOT RESULT FROM WASM")
     console.log(result)
-    if (expect_test_result)
+    if (expect_test_result) {
         check(expect_test_result == result)
-    expect_test_result = 0
+        expect_test_result = 0
+        setTimeout(resume, 0);// make sync
+    }
     return result; // useless, returns Promise!
 }
 
