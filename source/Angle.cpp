@@ -1525,10 +1525,8 @@ Node &analyze(Node &node, Function &function) {
         // children analyzed individually, not as expression WHY?
         if (grouped.length > 0)
             for (Node &child: grouped) {
-#if not WASM
                 if (!child.name.empty() and wit_keywords.contains(child.name))
                     return witReader.analyzeWit(node);
-#endif
                 child = analyze(child, function);// REPLACE ref with their ast ok?
             }
     }
