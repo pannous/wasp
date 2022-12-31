@@ -2982,11 +2982,11 @@ extern "C" String *testFromJS(String *s) {
     return new String("ok from WASP");
 }
 
-
+int x[0x10000];
 extern "C" void testRun() {
 //    assert_emit("42", 43);
     assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
-
+//    heap_end=__initial_heap_end+0x100000;// reset on each run!
     testAllEmit();
     testAllWasm();
     print("testRun SUCCEEDED");

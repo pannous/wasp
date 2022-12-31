@@ -214,11 +214,12 @@ function read_int64(pointer) {
 }
 
 
+var run = 1;
 function reset_heap() {
     HEAP = exports.__heap_base; // ~68000
     DATA_END = exports.__data_end
     heap_end = HEAP || DATA_END;
-    heap_end += 0x100000; // todo
+    heap_end += 0x100000 * run++; // todo
 }
 
 function compile_and_run(code) {
@@ -387,7 +388,7 @@ async function run_wasm(buf_pointer, buf_size) {
     let main = funclet.exports.wasp_main || funclet.exports.main || funclet.instance.start || funclet.exports._start
     let result = main()
     if (result > 0x100000000)
-        result = new node(exports.smartNode(result)) // if wasp_main doesn't return type
+        result = new node(exports.smartNode(result)).Value()
     console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM WASM
     if (expect_test_result || 1) {
         if (expect_test_result != result) {
@@ -407,9 +408,9 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
         exports = instance.exports
         HEAP = exports.__heap_base; // ~68000
         DATA_END = exports.__data_end
-        heap_end = HEAP || DATA_END;
-        heap_end += 0x100000
-        memory = exports.memory || exports._memory || memory
+    heap_end = HEAP || DATA_END;
+    heap_end += 0x10000000
+    memory = exports.memory || exports._memory || memory
         buffer = new Uint8Array(memory.buffer, 0, memory.length);
         main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
         main = instance._Z11testCurrentv || main
@@ -449,7 +450,7 @@ async function test() {
     try {
         while (!STOP) {
             // console.log("starting new testRunAsync")
-            reset_heap()
+            // reset_heap()
             await testRunAsync()
             await new Promise(sleep => setTimeout(sleep, 10));
         }

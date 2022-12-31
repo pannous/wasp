@@ -893,6 +893,7 @@ chars Node::serializeValue(bool deep) const {
 
 // todo: (x)=>x when root
 String Node::serialize() const {
+//    return "serialize currently has a bug";
     // >>>>>>>>>>>> name != serializedValue <<<<<<<<<<  THIS causes BUG!
     // DON'T BE FOOLED!! CORRUPTION IN ONE PART HERE e.g. serializeValue() MAY CAUSE CORRUPTION MucH LATER!!
     // Start TRACE in RUN mode (NOT debug!!) to see AddressSanitizer output

@@ -252,7 +252,9 @@ String extractFunctionName(Node &node) {
 //List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
 //chars ras[] = {"=", "?:", "+=", "++", 0};
 //List<chars> rightAssociatives = List(ras);
-List<chars> rightAssociatives = List<chars>{"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
+//List<chars> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
+//List<chars> rightAssociatives = {"=", "?:", "-…", "+=", "++…",0};// a=b=1 == a=(b=1) => a=1
+List<String> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
 // compound assignment
 
 
@@ -866,6 +868,10 @@ Node &groupOperators(Node &expression, Function &context) {
     }
 
     for (String &op: operators) {
+        trace("operator");
+        trace(op);
+        if (op.empty())
+            error("empty operator BUG");
         if (op == "else")continue;// handled in groupIf
         if (op == "module") {
             warn("todo modules");
@@ -886,7 +892,13 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op == "include")
             return NUL;// todo("include again!?");
         if (op != last) last_position = 0;
-        bool fromRight = rightAssociatives.has(op) or isFunction(op, true);
+        print("XXX");
+        print(rightAssociatives);
+        bool fromRight = rightAssociatives.has(op);
+        print("YYY");
+        fromRight = fromRight || isFunction(op, true);
+        print("ZZZ");
+
         fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
         int i = expression.index(op, last_position, fromRight);
         if (i < 0) {
@@ -1451,8 +1463,10 @@ Node &analyze(Node &node, Function &function) {
         module->name = node.string(); // todo: use?
         return NUL;
     }
+#if not WASM
     if (not first.empty() and class_keywords.contains(first))
         return classDeclaration(node, function);
+#endif
     // if(function_operators.contains(name))...
     if (node.kind == key and node.values().name == "func")
         return funcDeclaration(node.name, node.values(), NUL /* no body here */ , 0, function.module);
@@ -1516,8 +1530,10 @@ Node &analyze(Node &node, Function &function) {
         // children analyzed individually, not as expression WHY?
         if (grouped.length > 0)
             for (Node &child: grouped) {
-                if (wit_keywords.contains(child.name))
+#if not WASM
+                if (!child.name.empty() and wit_keywords.contains(child.name))
                     return witReader.analyzeWit(node);
+#endif
                 child = analyze(child, function);// REPLACE ref with their ast ok?
             }
     }
