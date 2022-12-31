@@ -868,8 +868,8 @@ Node &groupOperators(Node &expression, Function &context) {
     }
 
     for (String &op: operators) {
-        trace("operator");
-        trace(op);
+//        trace("operator");
+//        trace(op);
         if (op.empty())
             error("empty operator BUG");
         if (op == "else")continue;// handled in groupIf
@@ -892,13 +892,8 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op == "include")
             return NUL;// todo("include again!?");
         if (op != last) last_position = 0;
-        print("XXX");
-        print(rightAssociatives);
-        bool fromRight = rightAssociatives.has(op);
-        print("YYY");
+        bool fromRight = rightAssociatives.has(op);// << 2022-12-31 currently fails here after 3 runs
         fromRight = fromRight || isFunction(op, true);
-        print("ZZZ");
-
         fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
         int i = expression.index(op, last_position, fromRight);
         if (i < 0) {

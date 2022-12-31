@@ -215,6 +215,7 @@ function read_int64(pointer) {
 
 
 var run = 1;
+
 function reset_heap() {
     HEAP = exports.__heap_base; // ~68000
     DATA_END = exports.__data_end
@@ -437,9 +438,36 @@ function load_runtime_bytes() {
     )
 }
 
-var STOP = 0
-async function test() {
+let hex = x => x >= 0 ? x.toString(16) : (0xFFFFFFFF + x + 1).toString(16)
+let chr = x => String.fromCodePoint(x) // chr(65)=chr(0x41)='A' char
+function binary_diff(old_mem, new_mem) {
+    console.log("binary_diff")
+    old_mem = new Uint8Array(old_mem, 0, old_mem.length)
+    new_mem = new Uint8Array(new_mem, 0, new_mem.length)
+    if (old_mem.length != new_mem.length)
+        console.log("old_mem.length!=new_mem.length", old_mem.length, new_mem.length);
+    var badies = 0
+    for (let i = 0; i < old_mem.length && badies < 1000; i++) {
+        let x = old_mem[i];
+        let y = new_mem[i];
+        if (x && x != y) {
+            console.log("DIFF AT", i, ":", hex(x), hex(y), " ", chr(x), chr(y))
+            badies++
+        }
+    }
+}
 
+var STOP = 0
+
+async function test() {
+    if (typeof (wasp_tests) !== "undefined")
+        wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
+    return
+    let cs = chars("abcd")
+    copy_of_last_state = memory.buffer.slice(0, memory.length);
+    exports._Z7reversePci(cs, 4)
+    binary_diff(copy_of_last_state, memory.buffer)
+    return
     // var work = new Worker("wasp_tests.js");
     // work.postMessage({ a:8, b:9 });
     // work.onmessage = (evt) => { console.log(evt.data); };
@@ -451,13 +479,13 @@ async function test() {
         while (!STOP) {
             // console.log("starting new testRunAsync")
             // reset_heap()
+            copy_of_last_state = memory.buffer.slice(0, memory.length);
             await testRunAsync()
             await new Promise(sleep => setTimeout(sleep, 10));
         }
     } catch (x) {
+        // binary_diff(copy_of_last_state,memory.buffer)
         STOP = 1
         throw x;
     }
-    // if (typeof (wasp_tests) !== "undefined")
-    //     wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 }

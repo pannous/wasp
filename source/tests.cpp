@@ -2100,28 +2100,8 @@ void testString() {
 //    printf("DONE ...");
 //    exit(1);
     check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(c == "abc");
-    check(b == a);
-    check(b == a);
-    check(b == a);
-    check(b == a);
     check(b == a);
     check(b == c);
-    check("%d"s % 5 == "5");
-    check("%d"s % 5 == "5");
-    check("%d"s % 5 == "5");
     check("%d"s % 5 == "5");
     check("%s"s % "a" == "a");
     check("%s"s % "ja" == "ja");
@@ -2982,12 +2962,14 @@ extern "C" String *testFromJS(String *s) {
     return new String("ok from WASP");
 }
 
-int x[0x10000];
+//int x[0x10000];
 extern "C" void testRun() {
-//    assert_emit("42", 43);
-    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
-//    heap_end=__initial_heap_end+0x100000;// reset on each run!
+    assert_emit("42", 42); //
+    assert_emit("42", 43); // Error: ⚠️ TEST FAILED!  works
+//    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
     testAllEmit();
     testAllWasm();
+    testAllAngle();
+//    heap_end=__initial_heap_end+0x100000;// reset on each run!
     print("testRun SUCCEEDED");
 }
