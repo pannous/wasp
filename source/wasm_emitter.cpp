@@ -1540,6 +1540,8 @@ Code emitConstruct(Node &node, Function &context);
 [[nodiscard]]
 Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
+    print("emitExpression");
+    print(node.serialize());
     Code code;
     String &name = node.name;
 //	int index = functionIndices.position(name);
@@ -2145,6 +2147,8 @@ Code encodeString(chars str) {
 
 [[nodiscard]]
 Code emitBlock(Node &node, Function &context) {
+    print("emitBlock");
+    print(node.serialize());
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};
 // 0x00 == unreachable as block header !?
@@ -2306,7 +2310,9 @@ int last_index = -1;
 
 // typeSection created before code Section. All imports must be known in advance!
 [[nodiscard]]
-Code emitTypeSection() {
+Code emitTypeSection(Node &root_ast) {
+    trace("emitTypeSection");
+    trace(root_ast.serialize());
     // Function types are vectors of parameters and return types. Currently
     // the type section is a vector of context types
     // TODO optimise - some of the procs might have the same type signature
@@ -2370,6 +2376,8 @@ Code emitTypeSection() {
         }
         type_data = type_data + td;
     }
+    trace("emitTypeSection2");
+    trace(root_ast.serialize());
     return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();
 }
 
@@ -2436,6 +2444,8 @@ int function_block_count;
 //int builtins_used=0;
 [[nodiscard]]
 Code emitCodeSection(Node &root) {
+    trace("emitCodeSection");
+    trace(root.serialize());
     // the code section contains vectors of functions
     // index needs to be known before emitting code, so call $i works
 
@@ -2559,6 +2569,8 @@ Code emitCodeSection(Node &root) {
     if (functions["quit"].is_used)
         code_blocks = code_blocks + encodeVector(Code(code_quit, sizeof(code_quit)));
 
+    trace("emitCodeSection2");
+    trace(root.serialize());
 
     Code main_block = emitBlock(root, functions["wasp_main"]);// after imports and builtins
 
@@ -2955,14 +2967,24 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
     runtime_function_offset = 0;
     add_imports_and_builtins();
     functions[start].is_declared = true;
-    if (start != "_start" and not functions.has("_start"))
-        functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true};
-
+    if (start != "_start" and not functions.has("_start")) {
+        trace("emit root_ast OK");
+        trace(root_ast.serialize());
+//        functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true}; // THIS kills it!
+        trace("emit root_ast FAIL");
+        trace(root_ast.serialize());
+    }
     const Code customSectionvector;
 //	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
     // ^^^ currently causes malloc_error WHY??
+
     auto customSection = createSection(custom_section, customSectionvector);
-    Code typeSection1 = emitTypeSection();// types must be defined in analyze(), not in code declaration
+    trace("emit root_ast");
+    trace(root_ast.serialize());
+    Code typeSection1 = emitTypeSection(
+            *root_ast.clone());// types must be defined in analyze(), not in code declaration
+    trace("emit root_ast");
+    trace(root_ast.serialize());
     Code importSection1 = emitImportSection();// needs type indices
     Code globalSection1 = emitGlobalSection();//
     Code codeSection1 = emitCodeSection(root_ast); // needs functions and functionIndices prefilled!! :(
@@ -3008,13 +3030,9 @@ Code &compile(String code, bool clean) {
     }
 
     Node parsed = parse(code);
+    print(parsed.serialize());
 
     Node &ast = analyze(parsed, functions["wasp_main"]);
-//    println(ast.serialize());// <<
-//    functions["fd_write"].signature.wasm_return_type = int32;
-//	preRegisterSignatures();// todo remove after fixing Signature BUG!!
-//	check(functions["log10"].is_import)
-//	check(functions["log10"].is_used)
     Code &binary = emit(ast);
 //    binary.debug();
     binary.save("main.wasm");
