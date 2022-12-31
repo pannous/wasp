@@ -1574,15 +1574,12 @@ void testMapsAsLists() {
 
 
 void testLogic() {
-    assert_is("not true", false);
-    assert_is("not false", true);
-
-    assert_is("false xor true", true);
-    assert_is("true xor false", true);
-    assert_is("false xor false", false);
-    assert_is("true xor true", false);
-
+    assert_is("true or false", true);
     assert_is("false or true", true);
+
+    assert_is("not true", false);
+    assert_is("not false", true); // fourth test fails regardles of complexity?
+
     assert_is("false or false", false);
     assert_is("true or false", true);
     assert_is("true or true", true);
@@ -1592,6 +1589,10 @@ void testLogic() {
     assert_is("false and true", false);
     assert_is("false and false", false);
 
+    assert_is("false xor true", true);
+    assert_is("true xor false", true);
+    assert_is("false xor false", false);
+    assert_is("true xor true", false);
 
     assert_is("¬ 1", 0);
     assert_is("¬ 0", 1);
@@ -2984,6 +2985,8 @@ extern "C" String *testFromJS(String *s) {
 
 extern "C" void testRun() {
 //    assert_emit("42", 43);
+    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
+
     testAllEmit();
     testAllWasm();
     print("testRun SUCCEEDED");

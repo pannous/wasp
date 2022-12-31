@@ -3039,8 +3039,8 @@ Code &compile(String code, bool clean) {
 //	}
 #else
     if (libraries.size() > 0)
-        error("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
-//        warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
+//        error("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
+        warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
 #endif
     return binary;
 }
