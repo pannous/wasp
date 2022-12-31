@@ -1,8 +1,10 @@
 #pragma once
 #undef assert // <cassert> / <assert.h>  assert.h:92 not as good!
 
+#if MY_WASM
 extern "C" void assert_expect(Node *result);
 extern "C" void async_yield();// throw this run and reenter after run_wasm is done
+#endif
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
 #define debug_line() printf("\n%s:%d\n",__FILE__,__LINE__);
