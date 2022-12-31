@@ -72,7 +72,7 @@ function testReverse() {
     console.log("TEST OK: testReverse")
 }
 
-function testRun() {
+function testRun1() {
     // let cmd="puts 'CYRC!'"
     // let cmd="puti 123"
     let cmd = "42*2/2"
@@ -81,6 +81,17 @@ function testRun() {
     expect_test_result = 42;
     // check(result==42);
     // exports._Z7println6String(Str("full circle"))
+}
+
+function testRun() {
+    try {
+        resume = testRun // comeback here after first, 2ⁿᵈ … testRun
+        exports.testRun();// going from one test to the next WITHIN WASP!
+    } catch (x) {
+        if (x instanceof YieldThreadException) {
+            // print("test thread yielded, re-entering after run_wasm finished")
+        } else throw x;
+    }
 }
 
 function wasp_tests() {

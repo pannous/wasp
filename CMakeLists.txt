@@ -171,15 +171,6 @@ if (DEBUG)
     ADD_COMPILE_FLAG(" -g3") # DEBUG DWARF output only emscripten?
 endif ()
 
-if (TRACE)
-    message("TRACE => tracing=true")
-    ADD_DEFINITIONS(-DTRACE)
-
-    #    ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
-    #    add_compile_options(-Wall)
-    #    add_compile_options(-Wextra)
-endif ()
-
 ADD_COMPILE_FLAG("-fno-inline") # why not? debug?
 
 # ENABLE:
@@ -282,6 +273,16 @@ ADD_COMPILE_FLAG("-Wno-unknown-pragmas") # always allow
 ADD_COMPILE_FLAG("-Wno-unused-parameter") # always
 ADD_COMPILE_FLAG("-Wno-deprecated-copy-with-user-provided-copy") # what's this?
 add_compile_options(-Werror)
+
+
+if (TRACE)
+    message("TRACE => tracing=true")
+    ADD_DEFINITIONS(-DTRACE)
+
+    #    ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+    #    add_compile_options(-Wall)
+    #    add_compile_options(-Wextra)
+endif ()
 
 if (SANITIZE OR TRACE)
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
