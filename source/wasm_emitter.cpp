@@ -567,7 +567,7 @@ Code emitArray(Node &node, Function &context) {
 //    for(wasm_node_index i:children){
     for (Node &child: node) {
         // ok we checked for coherence before
-        int64_t i = child.value.longy;
+        int64 i = child.value.longy;
         if (itemSize == 1)emitByteData(i);
         else if (itemSize == 2)emitShortData(i);
         else if (itemSize == 4)emitIntData(i);
@@ -642,7 +642,7 @@ short arrayElementSize(Node &node) {
             smallestCommonitemSize = maxi(smallestCommonitemSize, stackItemSize(valtype));
 //            todo("child.type comparison");
         } else {
-            uint64 val = abs(child.value.longy) * 2;// *2 for signed variants
+            uint64 val = std::abs(child.value.longy) * 2;// *2 for signed variants
 //        if(val<=1) bit vector
 //        if(val>1)itemSize = maxi(itemSize,1); // byte
             if (val >= 0x100)smallestCommonitemSize = maxi(smallestCommonitemSize, 2);// short
@@ -2377,7 +2377,7 @@ Code emitTypeSection() {
 Valtype fixValtype(Valtype valtype) {
     if (valtype == (Valtype) charp) return int32;
     if ((int) valtype >= node) error("exposed internal Valtype");
-    if (valtype > 0xC0)error("exposed internal Valtype");
+//    if (valtype > 0xC0)error("exposed internal Valtype");
     return valtype;
 }
 

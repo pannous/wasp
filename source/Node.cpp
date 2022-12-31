@@ -1299,7 +1299,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
 //    if (!isSmartPointer(smartPointer64))
 //        return Node(smartPointer64);
     if ((smartPointer64 & negative_mask_64) == negative_mask_64) {
-        return new Node((int64_t) smartPointer64);
+        return new Node((int64) smartPointer64);
     }
     if ((type_mask_64_word & smartPointer64) == 0) {
         int64 pure_long_60 = (int64) smartPointer64;
@@ -1382,7 +1382,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
         return arr;
     }
     breakpoint_helper
-    printf("smartPointer64 : %llx\n", (int64_t) smartPointer64);
+    printf("smartPointer64 : %llx\n", (int64) smartPointer64);
     error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");
     return new Node();
 }
@@ -1415,8 +1415,8 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.length = nodeStruct.length;
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
-        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MEMORY_SIZE)
-            reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
+//        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MEMORY_SIZE)
+        reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
 //        else
 //            error("bad name");
 //        if (reconstruct.name.kind) {

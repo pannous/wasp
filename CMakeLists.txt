@@ -265,13 +265,15 @@ else ()
 endif ()
 
 
-add_compile_options(-Werror=deprecated-enum-compare) # check(Primitive::charp == (Valtype) Primitive::charp) FAILS!!!
-add_compile_options(-Wdeprecated-enum-compare)
-#add_compile_options(-Wall)
-add_compile_options(-Wno-tautological-constant-out-of-range-compare) # todo remove
-ADD_COMPILE_FLAG("-Wno-unknown-pragmas") # always allow
-ADD_COMPILE_FLAG("-Wno-unused-parameter") # always
-ADD_COMPILE_FLAG("-Wno-deprecated-copy-with-user-provided-copy") # what's this?
+if (APPLE)
+    add_compile_options(-Werror=deprecated-enum-compare) # check(Primitive::charp == (Valtype) Primitive::charp) FAILS!!!
+    #add_compile_options(-Wall)
+    add_compile_options(-Wno-tautological-constant-out-of-range-compare) # todo remove
+    ADD_COMPILE_FLAG("-Wno-unknown-pragmas") # always allow
+    ADD_COMPILE_FLAG("-Wno-unused-parameter") # always
+    add_compile_options(-Wdeprecated-enum-compare)
+    ADD_COMPILE_FLAG("-Wno-deprecated-copy-with-user-provided-copy") # what's this?
+endif ()
 add_compile_options(-Werror)
 
 

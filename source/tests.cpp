@@ -2648,7 +2648,7 @@ void todos() {
     assert_is("i=3;i*-1", -3);// todo bring variables to interpreter
 
 //	print("OK %s %d"s % ("WASM",1));// only 1 handed over
-    print(" OK %d %d"s % (2, 1));// only 1 handed over
+//    print(" OK %d %d"s % (2, 1));// error: expression result unused [-Werror,-Wunused-value] OK
 }
 
 //int dump_nr = 1;
