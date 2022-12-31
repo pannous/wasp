@@ -1,3 +1,27 @@
+// can be run as a worker!
+
+// class YieldThread { // unwind wasm, reenter through resume() after run_wasm finished
+// }
+
+// (A) ON RECEIVING DATA FROM "MAIN PAGE"
+onmessage = (evt) => {
+    // (A1) DO PROCESSING
+    console.log("Worker has received data");
+    console.log(evt.data);
+    testRun()
+    var result = parseInt(evt.data.a) + parseInt(evt.data.b);
+    // (A2) RESPOND BACK TO "MAIN PAGE"
+    postMessage(result);
+};
+
+// (B) OPTIONAL - HANDLE ERRORS
+onmessageerror = (err) => {
+    console.log(err);
+};
+onerror = (err) => {
+    console.log(err);
+};
+
 let print = console.log // #!
 
 function check(ok) {
@@ -82,9 +106,21 @@ function testRun1() {
     // console.log(chars(result)) // "need asyncify for result" ;)
 }
 
+async function testRunAsync() {
+    try {
+        let result = await exports.testRun();
+        console.log("GOT FINAL RESULT", result)
+        resume = true // tests done!
+    } catch (x) {
+        if (x instanceof YieldThread) {
+            // print("test thread yielded, re-entering after run_wasm finished")
+        } else throw x;
+    }
+}
+
 function testRun() {
     try {
-        resume = testRun // comeback here after first, 2ⁿᵈ … testRun
+        // resume = testRun // comeback here after first, 2ⁿᵈ … testRun
         exports.testRun();// going from one test to the next WITHIN WASP!
     } catch (x) {
         if (x instanceof YieldThread) {

@@ -9,6 +9,8 @@
 
 #endif
 
+#include "asserts.h"
+
 //#DANGER!!! DONT printf(#test) DIRECTLY if #test contains "%s" => VERY SUBTLE BUGS!!!
 
 // todo assert_is ≠ assert_run == assert_emit_with_wasm_runtime!
@@ -221,22 +223,26 @@ bool assert_isx(char *mark, bool expect) {
 //#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){print("%s:%d\n",__FILE__,__LINE__);proc_exit(1);}
 // ⚠️ CAREFUL parses in DATA_MODE !
 
-#define skip(test) printf("SKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
+#define skip(test) printf("SKIPPING %s\n",#test);debug_line();
 #define todo_emit(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
 #define skip_wasm(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
 //print("SKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
 
 bool ok;
 
+extern List<String> done;
+#if WASM
+#define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
+#else
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
 #define assert_is(mark, result) \
 printf("TEST %s==%s\n",#mark,#result); \
-printf("%s:%d\n",__FILE__,__LINE__);\
+debug_line();\
 ok=assert_isx(mark,result);\
 if(ok)printf("PASSED %s==%s\n",#mark,#result);\
 else{printf("FAILED %s==%s\n",#mark,#result); \
 backtrace_line()}
-
+#endif
 
 // for better readability, not (yet) semantic
 String normSerialization(String input) {

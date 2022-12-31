@@ -27,7 +27,7 @@ byte *code;
 
 Valtype mapArgToValtype(String &arg);
 
-#define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s\n%s:%d\n",#match,__FILE__,__LINE__);proc_exit(0);}
+#define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s",#match);backtrace_line();}
 
 bool consume_x(byte *code, int *pos, int len, byte *bytes) {
     if (*pos + len > size)

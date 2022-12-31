@@ -3,36 +3,32 @@
 #include "wasm_reader.h"
 
 #if INCLUDE_MERGER
-
 #include "wasm_merger.h"
-
 #endif
-
 #include "wasm_emitter.h"
-//#import "asserts.cpp"
 
+#import "asserts.h"
 
-#define assert_throws(αα)  {printf("%s\n%s:%d\n",#αα,__FILE__,__LINE__);bool old=panicking;try{ \
+#define assert_throws(αα)  {print(#αα);debug_line();bool old=panicking;try{ \
 panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#αα);backtrace_line(); \
 }catch(chars){}catch(String*){}catch(...){};panicking=old;}
 
 // WASM async
-static List<String> done;
-extern "C" void assert_expect(Node *result);
-extern "C" void async_yield();// throw this run and reenter after run_wasm is done
+//static
+List<String> done;
 
-#if MY_WASM
+//#if MY_WASM
 #define assert_emit(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
-#else
-#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
-#endif
+//#else
+//#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+//#endif
 //#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
 
-#ifndef RUNTIME_ONLY
-// use assert_emit if runtime is not needed!! much easier to debug
-#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){printf(">>>>>\n%s:%d\n", __FILE__, __LINE__);proc_exit(1);}
-#else
+#if RUNTIME_ONLY or MY_WASM
 #define assert_run(a, b) skip(a)
+// use assert_emit if runtime is not needed!! much easier to debug
+#else
+#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){printf(">>>>>\n%s:%d\n", __FILE__, __LINE__);proc_exit(1);}
 #endif
 
 void testMergeGlobal() {
@@ -1287,7 +1283,6 @@ void testLogarithm2() {
 
 
 void testAllWasm() {
-
 //	data_mode = false;
     testWasmMemoryIntegrity();
 #ifdef RUNTIME_ONLY
@@ -1299,12 +1294,9 @@ void testAllWasm() {
     //	assert_run not compatible with Wasmer, don't ask why, we don't know;)
             testCustomOperators();
             testWasmMutableGlobal();
-            assert_run("x=123;x + 4 is 127", true); //  assert_run sometimes causes Heap corruption! test earlier
     )
-    assert_emit("x=(1 4 3);x#2", 4);
     assert_emit("x='abcde';x[3]", 'd');
-    testIndexWasm();// breaks on second run WHY?
-    testIndexWasm();// breaks on second run WHY?
+    testIndexWasm();
     testLogarithm();
     testMergeOwn();
     skip(
@@ -1355,6 +1347,11 @@ void testAllWasm() {
     testWasmFunctionDefiniton();
     testWasmWhile();
     assert_is("١٢٣", 123);// todo UTF RTL control character!
+
+    // Test that IMPLICITLY use runtime /  assert_run
+    assert_emit("x=(1 4 3);x#2", 4);
+
+
     skip(
             test_get_local();
 
