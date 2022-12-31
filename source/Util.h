@@ -1,6 +1,9 @@
 #pragma once
 
 #define allow_untyped_nodes true  // IMPORTANT!  {a b c}#2"=="b" VALID or NOT ?!?
+//#include "asserts.h"
+#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
+#define debug_line() printf("\n%s:%d\n",__FILE__,__LINE__);
 
 //typedef int64 i64;
 typedef long long int64;
@@ -53,7 +56,8 @@ static bool I_know_what_I_am_doing = false;
 #endif
 
 #if TRACE
-static bool tracing = true;
+//static bool tracing = true;
+static bool tracing = false;  // todo
 #else
 static bool tracing = false;
 //static bool tracing = true;
@@ -73,15 +77,15 @@ typedef const char *chars;
 typedef byte *bytes;
 
 // silent ++
-#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
-#define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
-#define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("\n%s:%d\n",__FILE__,__LINE__);ɣ;proc_exit(0);}
+#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_line()}
+#define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);backtrace_line();}
+#define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);ɣ;backtrace_line();}
 
 //#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
-#define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
+#define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
 
-#define check(test) {printf("CHECKING %s\n%s:%d\n",#test,__FILE__,__LINE__); \
-  if(test){print("OK check passes: ");printf("%s\n",#test);}else{printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}}
+#define check(test) {print("CHECKING %s\n");debug_line(); \
+  if(test){print("OK check passes: ");printf("%s\n",#test);}else{printf("\nNOT PASSING %s\n",#test);backtrace_line()}}
 
 #include "String.h" // AFTER defines!
 #include "smart_types.h"

@@ -464,7 +464,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
         last_type = node.type;
     last_object = &node;
     last_object_pointer = node_start;
-    printf("node_start %d data_index_end %d\n", node_start, data_index_end);
+    tracef("node_start %d data_index_end %d\n", node_start, data_index_end);
 // already stored in emitArray() : usually enough, unless we want extra node metadata?
 //    referenceIndices.insert_or_assign(node.name, pointer);
 //    referenceDataIndices.insert_or_assign(node.name, pointer + array_header_length);
@@ -3039,7 +3039,8 @@ Code &compile(String code, bool clean) {
 //	}
 #else
     if (libraries.size() > 0)
-        warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
+        error("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
+//        warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
 #endif
     return binary;
 }

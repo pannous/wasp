@@ -183,7 +183,7 @@ Node eval(String code) {
         auto _resultNode = smartNode(results);
         if (!_resultNode)return ERROR;
         Node &resultNode = *_resultNode;
-#ifndef RELEASE
+#if not RELEASE and not MY_WASM
         print("» %s\n"s % resultNode.serialize().data);
 #endif
         return resultNode;
