@@ -433,7 +433,7 @@ public:
         if (!data) {
             data = (char *) (alloc(sizeof(char), byteCount + 1));
 #if WASM
-            } else if (data + length + 1 == heap_end) {// just append recent
+            } else if (data + length + 1 == (char*) heap_end) {// just append recent
                 heap_end += byteCount + 1;
 #endif
         } else {
@@ -452,7 +452,7 @@ public:
         if (!data) {
             data = (char *) (alloc(sizeof(char), byteCount + 1));
 #if WASM
-            } else if (data + length + 1 == heap_end) {// just append recent
+            } else if (data + length + 1 == (char*) heap_end) {// just append recent
                 heap_end += byteCount + 1;
 #endif
         } else {
