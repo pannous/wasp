@@ -372,17 +372,17 @@ public:
         return -1;
     }
 
-    size_t len() {
+    size_t len() const {
         return length >= 0 ? length : !shared_reference and strlen(data);
     }
 
-    char charAt(int position) {
+    char charAt(int position) const {
         if (position >= length)
             error((String("IndexOutOfBounds at ") + formatLong(position) + " in " + data).data);
         return data[position];
     }
 
-    char charCodeAt(int position) {
+    char charCodeAt(int position) const {
 //		if (position >= length)
 //			raise(IndexOutOfBounds(data, position).message);
 //		String("IndexOutOfBounds at ") + i + " in " + data;
@@ -390,7 +390,7 @@ public:
         return data[position];
     }
 
-    int indexOf(char c, int from = 0, bool reverse = false) {
+    int indexOf(char c, int from = 0, bool reverse = false) const {
         for (int j = from; j < length and j < MAX_STRING_LENGTH; j++) {
             if (reverse and data[j] == c)return j;
             if (!reverse and data[j] == c)return j;
@@ -868,7 +868,7 @@ public:
     bool empty() const;
 
 
-    int indexOf(chars string, bool reverse = false) {
+    int indexOf(chars string, bool reverse = false) const {
         int l = strlen(string);
         if ((int64) data + l > MEMORY_SIZE)
             error("corrupt string");
@@ -895,7 +895,7 @@ public:
         return indexOf(string) >= 0;
     }
 
-    bool contains(char chr) {
+    bool contains(char chr) const {
         return indexOf(chr) >= 0;
     }
 

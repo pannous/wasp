@@ -294,7 +294,7 @@ public:
 
     void init_children(int nr = -1) {
         if (nr < 0)nr = capacity;
-        if (!children)children = (Node *) calloc(capacity, sizeof(Node));
+        if (!children)children = (Node *) calloc(nr, sizeof(Node));
     }
 
 
@@ -822,7 +822,7 @@ public:
 
     Node &values();
 
-    bool isSetter();
+    bool isSetter() const;
 
     int lastIndex(String &string, int start = 0);
 
