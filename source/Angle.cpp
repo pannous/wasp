@@ -909,8 +909,7 @@ Node &groupOperators(Node &expression, Function &context) {
         Node &node = expression.children[i];
         if (node.length)continue;// already processed
         Node &next = expression.children[i + 1];
-        auto tmp = analyze(next, context);
-        next = tmp;// else Source and destination overlap in memcpy
+        next = analyze(next, context);
         Node prev;
         if (i > 0)
             prev = expression.children[i - 1];
@@ -929,8 +928,7 @@ Node &groupOperators(Node &expression, Function &context) {
             if (op == "#")
                 findLibraryFunction("getChar", false);
 
-            auto tmp = analyze(prev, context);
-            prev = tmp;// else "Source and destination overlap in memcpy"
+            prev = analyze(prev, context);
             auto lhs_type = preEvaluateType(prev, context);
             if (op == "+" and (lhs_type == Primitive::charp or lhs_type == Primitive::stringp or lhs_type == strings)) {
                 findLibraryFunction("concat", true);
@@ -1507,8 +1505,7 @@ Node &analyze(Node &node, Function &function) {
         if (grouped.length > 0)
             for (Node &child: grouped) {// inner analysis while(i<3){i++}
 //				if (&child == 0)continue;
-                auto tmp = analyze(child, function);// REPLACE with their ast
-                child = tmp; // Source and destination overlap in memcpy
+                child = analyze(child, function);// REPLACE with their ast
             }
         if (is_function)
             functions[name].is_used = true;
@@ -1530,8 +1527,7 @@ Node &analyze(Node &node, Function &function) {
             for (Node &child: grouped) {
                 if (!child.name.empty() and wit_keywords.contains(child.name))
                     return witReader.analyzeWit(node);
-                auto tmp = analyze(child, function);// REPLACE ref with their ast ok?
-                child = tmp;
+                child = analyze(child, function);// REPLACE ref with their ast ok?
             }
     }
     return grouped;
