@@ -2945,19 +2945,15 @@ void clearEmitterContext() {
 }
 
 [[nodiscard]]
-Code &emit(Node &root_ast, Module *runtime0, String _start) {
-    start = _start;
+Code &emit(Node &root_ast) {
     memoryHandling = export_memory;
 //        memoryHandling = import_memory; // works for micro-runtime
 //        memoryHandling = internal_memory; // works for wasm3
     last_index = -1;
     runtime_function_offset = 0;
     add_imports_and_builtins();
-    functions[start].is_declared = true;
-#if not WASM
-    if (start != "_start" and not functions.has("_start"))
-        functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
-#endif
+    functions["wasp_main"].is_declared = true;
+    functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
     const Code customSectionvector;
 //	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
     // ^^^ currently causes malloc_error WHY??
