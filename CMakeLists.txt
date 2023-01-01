@@ -12,16 +12,20 @@ else ()
     #        LINK_DIRECTORIES(bin/linux/arm64/lib/)
 endif ()
 
-#set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
+if (LINUX)
+    message("LINUX")
+    set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
+    set(DEBUG 1)
+endif ()
 
 # SET these configurations via Preferences… Build->CMake->Profiles
 # MANUALLY force set these only for urgent debugging,
 #set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
-set(RELEASE 0) # no tests todo VS:
+#set(RELEASE 0) # no tests todo VS:
 #set(NO_TESTS 1) # no tests
 #set(VERBOSE 1)
-set(DEBUG 1)
-set(TRACE 1)
+#set(TRACE 1)
+#set(SANITIZE 1)
 #set(SDL 1) # Graphics
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
 #set(INCLUDE_MERGER 0)
@@ -291,7 +295,7 @@ endif ()
 if (SANITIZE) #  OR TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
-    MESSAGE("ASAN sanitize=address …")
+    MESSAGE("ASAN sanitize=address ")
     if (GCC)
         ADD_COMPILE_FLAG("-static-libasan")
     else ()
@@ -319,15 +323,15 @@ if (SANITIZE) #  OR TRACE
         add_compile_options("-fsanitize=address") # unsupported option '-fsanitize=address' for target 'wasm32-unknown-unknown-wasm'
     endif ()
 
-    if (!APPLE)
+    if (APPLE)
+        add_compile_options(-fsanitize-trap=undefined)
+        add_link_options(-fsanitize-trap=undefined)
+    else ()
         message("LINUX")
         add_compile_options("-fsanitize=leak") # : unsupported option '-fsanitize=leak' for target 'arm64-apple-darwin22.1.0'
         add_compile_options(-fsanitize-address-use-after-return) #not supported by clang
         add_compile_options(-Wbugprone-sizeof-expression)
         add_compile_options(-Werror=bugprone-sizeof-expression)
-    else ()
-        #        add_compile_options(-fsanitize-trap=undefined)
-        #        add_link_options(-fsanitize-trap=undefined)
     endif ()
 
     #   add_compile & add_link NEEDS TO BE IN SYNC!

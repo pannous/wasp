@@ -55,7 +55,7 @@ Map<String, Code> functionCodes; // EXCLUDING MAIN todo keep in Function
 //List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 //List<Function> imports;// from libraries. todo: these are inside functions<> for now!
 
-int alignment_hack[10000];// todo: understand this nonsense!
+//int alignment_hack[1000];// todo: understand this nonsense!
 String start = "wasp_main";
 
 Type arg_type = voids;// autocast if not int
@@ -2054,15 +2054,15 @@ Code zeroConst(Type returnType) {
         code.addConst32(0);
     if (returnType == float32) {
         code.add(f32_const);
-        code.push((bytes) malloc(4), 4);
+        code.push((bytes) calloc(4, 1), 4);
     }
     if (returnType == float64) {
         code.add(f64_const);
-        code.push((bytes) malloc(8), 8);
+        code.push((bytes) calloc(8, 1), 8);
     }
     if (returnType == i64) {
         code.add(i64_const);
-        code.push((bytes) malloc(8), 8);
+        code.push((bytes) calloc(8, 1), 8);
     }
     return code;
 }
@@ -2362,7 +2362,7 @@ Code emitTypeSection() {
         Code td = Code(func) + Code(param_count);
 
         for (int i = 0; i < param_count; ++i) {
-            td = td + Code(fixValtype(mapTypeToWasm(signature.parameter_types[i])));
+            td += Code(fixValtype(mapTypeToWasm(signature.parameter_types[i])));
         }
         td.addByte(signature.return_types.size());
         for (Type ret: signature.return_types) {
@@ -2952,14 +2952,15 @@ Code &emit(const Node &root_ast) {
     last_index = -1;
     runtime_function_offset = 0;
     add_imports_and_builtins();
+    functions["_start"].is_declared = true;
     auto start = *new String("wasp_main");
     functions[start].is_declared = true;
 //#if not WASM
 //    if (start != String("_start") and not functions.has("_start"))
 //        functions["_start"] = *new Function{.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
 //#endif
-    const Code &customSectionvector = *new Code{};
-//	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
+//    const Code &customSectionvector = *new Code{};
+    const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
     // ^^^ currently causes malloc_error WHY??
 
     auto customSection = createSection(custom_section, customSectionvector);
@@ -3008,10 +3009,10 @@ Code &compile(String code, bool clean) {
         clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
     }
 
-    Node parsed = parse(code);
+    Node &parsed = parse(code);
     print(parsed.serialize());
 
-    Node &ast = analyze(parsed, functions["wasp_main"]);
+    const Node &ast = analyze(parsed, functions["wasp_main"]);
     Code &binary = emit(ast);
 //    binary.debug();
     binary.save("main.wasm");

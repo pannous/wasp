@@ -9,13 +9,6 @@
 #include "wasm_runner.h"
 #include "console.h"
 //#include "tests.h"
-#if WASM or LINUX
-//#ifndef _LIBCPP_CCTYPE
-bool isnumber(char c){ return c>='0' and c<='9'; }
-#endif
-// why cctype no work?
-//#else
-//#include <cctype> // isnumber
 
 
 #include <cstdlib> // OK in WASM!
@@ -40,22 +33,15 @@ bool isnumber(char c){ return c>='0' and c<='9'; }
 
 #include "WitReader.h"
 
-int SERVER_PORT = 1234;
-//bool eval_via_emit = false;// not all tests yet
-bool eval_via_emit = true;// << todo!  assert_is(…)
+//bool eval_via_emit = false;// Interpret … not all tests yet
+bool eval_via_emit = true;
 
-
-// get home dir :
-/*#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>*/
 
 #ifndef RUNTIME_ONLY
 
 #include "Interpret.h"
 
 #endif
-
 
 #ifndef WASM
 
@@ -65,11 +51,9 @@ bool eval_via_emit = true;// << todo!  assert_is(…)
 
 #endif
 
+static inline bool isnumber0(char c) { return c >= '0' and c <= '9'; }
 
-bool isalpha0(codepoint c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
-
+static inline bool isalpha0(codepoint c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
 
 #define err(m) err1("%s:%d\n%s"s%__FILE__%__LINE__%m)
 
@@ -106,8 +90,8 @@ codepoint grouper_list[] = {' ', ',', ';', ':', '\n', '\t', '(', ')', '{', '}', 
 
 // predicates in of on from to
 // todo split keywords into binops and prefix functors
-chars import_keywords[] = {"use", "require", "import", "include", "using",0};
-chars function_keywords[] = {"to", "ƒ", "fn", "fun", "func", "function", "method", "proc", "procedure",0};
+chars import_keywords[] = {"use", "require", "import", "include", "using", 0};
+chars function_keywords[] = {"to", "ƒ", "fn", "fun", "func", "function", "method", "proc", "procedure", 0};
 // todo aliases need NOT be in this list:
 // todo library functions need NOT be in this list (loaded when though?) "log10", "log₁₀", "log₂", "ln", "logₑ",
 // todo special UTF signs need NOT be in this list, as they are identified as operators via utf range
@@ -118,18 +102,19 @@ chars function_keywords[] = {"to", "ƒ", "fn", "fun", "func", "function", "metho
 //#ifdef WASI
 //List<chars> operator_list;
 //#else
-List<chars> operator_list={"return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
-                          "is", "equal", "equals", "==", "!=", "≠", "#", "=", "." /*attribute operator!*/,
-                          "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "nop",
-                          "pass", "typeof",
-                          "upto", "…", "...", "..<" /*range*/,
-                          "%", "mod", "modulo", "⌟", "2⌟", "10⌟", "⌞", "⌞2", "⌞10",
-                          "plus", "times", "add", "minus",// todo via aliases.wasp / SPO PSO verb matching
-                          "use", "using", "include", "require", "import", "module",
-                          "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
-                          "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^", "**",
-                          "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
-                          "abs" /* f64.abs! */, /* "norm", "‖" acts as GROUP, not as operator (when parsing) */
+List<chars> operator_list = {"return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
+                             "is", "equal", "equals", "==", "!=", "≠", "#", "=", "." /*attribute operator!*/,
+                             "not", "!", "¬", "|", "and", "or", "&", "++", "--", "to", "xor", "be", "?", ":", "nop",
+                             "pass", "typeof",
+                             "upto", "…", "...", "..<" /*range*/,
+                             "%", "mod", "modulo", "⌟", "2⌟", "10⌟", "⌞", "⌞2", "⌞10",
+                             "plus", "times", "add", "minus",// todo via aliases.wasp / SPO PSO verb matching
+                             "use", "using", "include", "require", "import", "module",
+                             "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
+                             "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^",
+                             "**",
+                             "from", "#", "$", "ceil", "floor", "round", "∧", "⋀", "⋁", "∨", "⊻",
+                             "abs" /* f64.abs! */, /* "norm", "‖" acts as GROUP, not as operator (when parsing) */
         // norm ‖…‖ quite complicated for parser! ‖x‖ := √∑xᵢ²
 };
 //#endif
@@ -299,7 +284,7 @@ bool contains(S list[], S match) {
 
 bool contains(chars list[], chars match) {
     chars *elem = list;
-    if(not elem)return false;
+    if (not elem)return false;
     do {
         if (eq(match, *elem))
             return true;
@@ -1783,7 +1768,7 @@ private:
 
     bool isKebabBridge() {
         if (parserOptions.kebab_case_plus and ch == '-')return true;
-        return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
+        return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber0(next) and next != '=';
     }
 
 };
@@ -1951,6 +1936,7 @@ void usage() {
     print("wasp tests ");
 }
 
+extern int SERVER_PORT;
 
 // wasmer etc DO accept float/double return, just not from main!
 //extern "C"

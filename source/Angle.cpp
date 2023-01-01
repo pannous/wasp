@@ -760,7 +760,7 @@ List<String> function_modifiers = {"public", "static"};
 Node &groupFunctionDeclaration(Node &expression, Function &context) {
     auto first = expression.first();
     while (function_modifiers.contains(first.name)) {
-        if (expression.children)
+        if (expression.children)// careful this shifts meaning of expression[i] for all subsequents!
             expression.children++;
         expression.length--;
     }
