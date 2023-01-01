@@ -26,7 +26,6 @@
 #include "Angle.h"
 #include "Util.h"
 
-int SERVER_PORT = 1234;
 int MAX_QUERY_LENGTH = 1000;
 
 bool allow_arbitrary_files = true;// full access to server_root but not above!

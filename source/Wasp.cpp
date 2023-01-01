@@ -9,7 +9,14 @@
 #include "wasm_runner.h"
 #include "console.h"
 //#include "tests.h"
+#if WASM or LINUX
+bool isnumber(char c){ return c>='0' and c<='9'; }
+// why cctype no work?
+#else
 
+#include <cctype> // isnumber
+
+#endif
 
 #include <cstdlib> // OK in WASM!
 
@@ -33,15 +40,22 @@
 
 #include "WitReader.h"
 
-//bool eval_via_emit = false;// Interpret … not all tests yet
-bool eval_via_emit = true;
+int SERVER_PORT = 1234;
+//bool eval_via_emit = false;// not all tests yet
+bool eval_via_emit = true;// << todo!  assert_is(…)
 
+
+// get home dir :
+/*#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>*/
 
 #ifndef RUNTIME_ONLY
 
 #include "Interpret.h"
 
 #endif
+
 
 #ifndef WASM
 
@@ -51,9 +65,11 @@ bool eval_via_emit = true;
 
 #endif
 
-static inline bool isnumber0(char c) { return c >= '0' and c <= '9'; }
 
-static inline bool isalpha0(codepoint c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
+bool isalpha0(codepoint c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
 
 #define err(m) err1("%s:%d\n%s"s%__FILE__%__LINE__%m)
 
@@ -1768,7 +1784,7 @@ private:
 
     bool isKebabBridge() {
         if (parserOptions.kebab_case_plus and ch == '-')return true;
-        return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber0(next) and next != '=';
+        return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
     }
 
 };
@@ -1936,7 +1952,6 @@ void usage() {
     print("wasp tests ");
 }
 
-extern int SERVER_PORT;
 
 // wasmer etc DO accept float/double return, just not from main!
 //extern "C"

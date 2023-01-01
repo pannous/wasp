@@ -239,9 +239,7 @@ Node &Node::set(String string, Node *node) {
     if (!node) {
 //		entry.value.node=&entry;// HACK to set reference to self!
         entry.kind = key;
-        int i = capacity - length - 1;
-        if (i < 0)error("lacking capacity");
-        entry.value.node = &children[i];//  HACK to get key and value node dummy from children
+        entry.value.node = &children[capacity - length - 1];//  HACK to get key and value node dummy from children
 //		 todo: reduce capacity per node
         entry.value.node->name = string;
         entry.value.node->kind = Kind::unknown;
@@ -1102,12 +1100,12 @@ Node &Node::values() {
     return val;
 }
 
-bool Node::isSetter() const {
+bool Node::isSetter() {
     // todo BAD HEURISTIC!!
     // todo properly via expression i=1 == (set i 1)
     // todo proper constructor i:1 == (construct i (1))
     // todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
-//    if (kind == bools)return name != True.name and name != False.name;
+
     if (kind == bools)return not(name == True.name.data) and not(name == False.name.data);
     if (kind == longs || kind == reals)// || kind==bools)
         return not name.empty() and (not parseLong(name) and not name.contains('.'));// todo WTF hack
@@ -1431,8 +1429,8 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         if (nodeStruct.child_pointer >= 0) {
             // -1 means no children (debug/bug)
 
-            reconstruct.children = (Node *) calloc(reconstruct.length + 1, sizeof(Node)); // … :
-            reconstruct.capacity = reconstruct.length + 1;// can grow later
+            reconstruct.children = (Node *) malloc(reconstruct.length * sizeof(Node)); // … :
+            reconstruct.capacity = reconstruct.length;// can grow later
             int *child_pointers = (int *) (((char *) wasm_memory) + nodeStruct.child_pointer);
             for (int i = 0; i < reconstruct.length; ++i) {
                 int64 wasm_child_pointer = child_pointers[i];
@@ -1455,7 +1453,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
     if (reconstruct.name.length < 0 or reconstruct.name.length > MAX_NODE_CAPACITY)
         error("reconstruct node sanity check failed for length");
     check_is(reconstruct.node_header, node_header_32)
-    if (reconstruct.length < 0 or reconstruct.length >= reconstruct.capacity or reconstruct.length > MAX_NODE_CAPACITY)
+    if (reconstruct.length < 0 or reconstruct.length > reconstruct.capacity or reconstruct.length > MAX_NODE_CAPACITY)
         error("reconstruct node sanity check failed for length");
     return &reconstruct;
 }
