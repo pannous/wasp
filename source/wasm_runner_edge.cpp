@@ -1,5 +1,5 @@
-//#include <wasmedge/wasmedge.h>
 #include <cstdio>
+//#include <wasmedge/wasmedge.h>
 #include "wasmedge.h"
 #include "wasm_runner.h"
 #include "Util.h"
@@ -101,7 +101,7 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
 
     if (WasmEdge_ResultOK(Res)) {
 //        int32_t value = WasmEdge_ValueGetI32(Returns[0]);
-        int64_t value = WasmEdge_ValueGetI64(Returns[0]);
+        int64 value = WasmEdge_ValueGetI64(Returns[0]);
 //        printf("Got result: 0x%llx\n", value);
         auto node1 = smartNode(value);
 //        print(node1);

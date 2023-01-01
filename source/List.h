@@ -8,7 +8,7 @@
 #include <cstdlib> // OK in WASM!
 
 #define LIST_DEFAULT_CAPACITY 100 //
-#define LIST_MAX_CAPACITY 0x1000000000l // debug only!
+#define LIST_MAX_CAPACITY 0x10000000l // debug only!
 
 #include "Util.h"
 #include "wasm_helpers.h"
@@ -426,13 +426,13 @@ public:
     void remove(S &item) {
         auto pos = position(item);
         if (pos < 0)return;
-        memcpy(items + pos, items + pos + 1, size_ - pos);
+        memmove(items + pos, items + pos + 1, size_ - pos);
         size_--;
     }
 
     bool remove(short position) {
         if (position < 0 or size_ <= 0 or position >= size_)return false;
-        memcpy((void *) (items + position), (void *) (items + position + 1), (size_ - position) * sizeof(S));
+        memmove((void *) (items + position), (void *) (items + position + 1), (size_ - position) * sizeof(S));
         size_--;
         return true;
     }

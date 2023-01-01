@@ -59,12 +59,20 @@ extern "C" void *memmove(void *__dst, const void *__src, size_t num) noexcept;
 extern "C" void *memset(void *__dst, int __c, size_t __n) __attribute__((__nothrow__, __leaf__, __nonnull__(1)));
 extern "C" void *memcpy(void *__restrict__ __dst, const void *__restrict__ __src, size_t __n) __attribute__((__nothrow__, __leaf__, __nonnull__(1, 2)));
 extern "C" void *memmove(void *__dst, const void *__src, size_t __n) __attribute__((__nothrow__, __leaf__, __nonnull__(1, 2)));
-#else
+extern "C" size_t strlen(const char *) __attribute__((__nothrow__, __leaf__, __pure__, __nonnull__(1)));
+#elif APPLE
 extern "C" void *memcpy(void *, const void *, size_t);
 extern "C" void *memset(void *ptr, int value, size_t num);
 extern "C" void *memmove(void *__dst, const void *__src, size_t num);
-#endif
+extern "C" size_t strlen(const char *s);
+#else // debian
 
+#include <cstring>
+//extern void *memset (void *__s, int __c, size_t __n) __THROW __nonnull ((1));
+//extern void *memcpy(void *, const void *, size_t) __THROW  __nonnull ((1,2));
+//extern void *memmove(void *__dst, const void *__src, size_t num) __THROW  __nonnull ((1,2));;
+//extern size_t strlen (const char *__s) __THROW __attribute_pure__ __nonnull ((1));;
+#endif
 
 
 //__attribute__((import_module("env"), import_name("memcpy")));;

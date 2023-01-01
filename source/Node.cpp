@@ -175,8 +175,8 @@ Node *Node::begin() const {
 }
 
 Node *Node::end() const {
-    if (length <= 0 or !children)return 0;
-    if (children != 0 and length == 0)return children + 1;
+    if (length <= 0 or !children) return 0;
+    check_silent(length < capacity);
     return children + length;
 }
 
@@ -229,8 +229,6 @@ Node &Node::set(String string, Node *node) {
     if (length >= capacity / 2) todo("GROW children");
 //	children = static_cast<Node *>(alloc(1000));// copy old
     Node &entry = children[length];
-    if (&entry == &NIL)
-        error("IMPOSSIBLE");
     if (length > 0) {
 //		Node &current = children[length - 1];
 //		current.next = &entry;// WE NEED TRIPLES cause objects can occur in many lists
@@ -241,7 +239,9 @@ Node &Node::set(String string, Node *node) {
     if (!node) {
 //		entry.value.node=&entry;// HACK to set reference to self!
         entry.kind = key;
-        entry.value.node = &children[capacity - length - 1];//  HACK to get key and value node dummy from children
+        int i = capacity - length - 1;
+        if (i < 0)error("lacking capacity");
+        entry.value.node = &children[i];//  HACK to get key and value node dummy from children
 //		 todo: reduce capacity per node
         entry.value.node->name = string;
         entry.value.node->kind = Kind::unknown;
@@ -1102,12 +1102,13 @@ Node &Node::values() {
     return val;
 }
 
-bool Node::isSetter() {
+bool Node::isSetter() const {
     // todo BAD HEURISTIC!!
     // todo properly via expression i=1 == (set i 1)
     // todo proper constructor i:1 == (construct i (1))
     // todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
-    if (kind == bools)return name != True.name and name != False.name;
+//    if (kind == bools)return name != True.name and name != False.name;
+    if (kind == bools)return not(name == True.name.data) and not(name == False.name.data);
     if (kind == longs || kind == reals)// || kind==bools)
         return not name.empty() and (not parseLong(name) and not name.contains('.'));// todo WTF hack
     if (kind == key and value.data) return true;
@@ -1299,7 +1300,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
 //    if (!isSmartPointer(smartPointer64))
 //        return Node(smartPointer64);
     if ((smartPointer64 & negative_mask_64) == negative_mask_64) {
-        return new Node((int64_t) smartPointer64);
+        return new Node((int64) smartPointer64);
     }
     if ((type_mask_64_word & smartPointer64) == 0) {
         int64 pure_long_60 = (int64) smartPointer64;
@@ -1382,7 +1383,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
         return arr;
     }
     breakpoint_helper
-    printf("smartPointer64 : %llx\n", (int64_t) smartPointer64);
+    printf("smartPointer64 : %llx\n", (int64) smartPointer64);
     error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");
     return new Node();
 }
@@ -1393,7 +1394,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
 Node *reconstructWasmNode(wasm_node_index pointer) {
     if (pointer == 0)
         return &NUL;// we NEVER have nodes at 0
-    if (pointer > 100000 + 0x10000 and debug) // todo proper memory bound check including data/runtime_offset
+    if (pointer > 0x1000000 and debug) // todo proper memory bound check including data/runtime_offset
         error("pointer>10000"); // todo remove (in)sanity check
     if ((int64) pointer > MEMORY_SIZE)
         error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % (int64) MEMORY_SIZE);
@@ -1415,8 +1416,8 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.length = nodeStruct.length;
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
-        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MEMORY_SIZE)
-            reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
+//        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MEMORY_SIZE)
+        reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
 //        else
 //            error("bad name");
 //        if (reconstruct.name.kind) {
@@ -1430,8 +1431,8 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         if (nodeStruct.child_pointer >= 0) {
             // -1 means no children (debug/bug)
 
-            reconstruct.children = (Node *) malloc(reconstruct.length * sizeof(Node)); // … :
-            reconstruct.capacity = reconstruct.length;// can grow later
+            reconstruct.children = (Node *) calloc(reconstruct.length + 1, sizeof(Node)); // … :
+            reconstruct.capacity = reconstruct.length + 1;// can grow later
             int *child_pointers = (int *) (((char *) wasm_memory) + nodeStruct.child_pointer);
             for (int i = 0; i < reconstruct.length; ++i) {
                 int64 wasm_child_pointer = child_pointers[i];
@@ -1454,7 +1455,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
     if (reconstruct.name.length < 0 or reconstruct.name.length > MAX_NODE_CAPACITY)
         error("reconstruct node sanity check failed for length");
     check_is(reconstruct.node_header, node_header_32)
-    if (reconstruct.length < 0 or reconstruct.length > reconstruct.capacity or reconstruct.length > MAX_NODE_CAPACITY)
+    if (reconstruct.length < 0 or reconstruct.length >= reconstruct.capacity or reconstruct.length > MAX_NODE_CAPACITY)
         error("reconstruct node sanity check failed for length");
     return &reconstruct;
 }

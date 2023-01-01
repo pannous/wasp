@@ -359,7 +359,7 @@ chars concat(chars a, chars b) {
     if (!b or b[0] == 0)return a;
     int la = (int) strlen(a);
     int lb = (int) strlen(b);
-    char *c = (char *) malloc((la + lb + 1) * sizeof(char));
+    char *c = (char *) calloc((la + lb + 1), sizeof(char));
     strcpy2(c, a);
     strcpy2(&c[la], b);
     c[la + lb] = 0;
@@ -418,7 +418,7 @@ String load(String file) {
     if (!ptr)error("File not found "s + file);
     fseek(ptr, 0L, SEEK_END);
     size_t size = ftell(ptr);
-    auto *buffer = (unsigned char *) malloc(size);
+    auto *buffer = (unsigned char *) calloc(size, 1);
     fseek(ptr, 0L, SEEK_SET);
     size_t ok = fread(buffer, sizeof(buffer), size, ptr);
     if (!ok)error("Empty file or error reading "s + file);

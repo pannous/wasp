@@ -1,3 +1,4 @@
+
 Frameworks/wasm-c-api
 /yarn.lock
 .idea/
@@ -28,6 +29,7 @@ wasp.cbp
 *.wast
 *.wasm
 *.o
+*.i
 *.dwarf
 cmake-build-*
 old
