@@ -9,12 +9,13 @@
 #include "wasm_runner.h"
 #include "console.h"
 //#include "tests.h"
-//#if WASM or LINUX
+#if WASM or LINUX
+//#ifndef _LIBCPP_CCTYPE
 bool isnumber(char c){ return c>='0' and c<='9'; }
+#endif
 // why cctype no work?
 //#else
-
-#include <cctype> // isnumber
+//#include <cctype> // isnumber
 
 
 #include <cstdlib> // OK in WASM!
