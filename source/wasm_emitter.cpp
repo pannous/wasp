@@ -2144,8 +2144,6 @@ Code encodeString(chars str) {
 
 [[nodiscard]]
 Code emitBlock(Node &node, Function &context) {
-    print("emitBlock");
-    print(node.serialize());
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};
 // 0x00 == unreachable as block header !?
@@ -3010,7 +3008,7 @@ Code &compile(String code, bool clean) {
     }
 
     Node parsed = parse(code);
-    print(parsed.serialize());
+//    print(parsed.serialize());
 
     Node &ast = analyze(parsed, functions["wasp_main"]);
     Code &binary = emit(ast);

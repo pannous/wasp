@@ -1087,7 +1087,12 @@ Type preEvaluateType(Node &node, Function &context) {
 
 
 Module &loadModule(String name) {
+#if WASM
+    todow("loadModule in WASM");
+    return *new Module();
+#else
     return read_wasm(name);// we need to read signatures!
+#endif
 }
 
 String &checkCanonicalName(String &name) {
