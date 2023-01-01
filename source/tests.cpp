@@ -2964,9 +2964,9 @@ extern "C" String *testFromJS(String *s) {
 
 //int x[0x10000];
 extern "C" void testRun() {
+    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
     assert_emit("42", 42); //
     assert_emit("42", 43); // Error: ⚠️ TEST FAILED!  works
-//    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
     testAllEmit();
     testAllWasm();
     testAllAngle();

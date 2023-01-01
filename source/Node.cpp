@@ -891,7 +891,7 @@ chars Node::serializeValue(bool deep) const {
 
 // todo: (x)=>x when root
 String Node::serialize() const {
-    return "serialize currently has a bug";
+//    return "serialize currently has a bug";
     // >>>>>>>>>>>> name != serializedValue <<<<<<<<<<  THIS causes BUG!
     // DON'T BE FOOLED!! CORRUPTION IN ONE PART HERE e.g. serializeValue() MAY CAUSE CORRUPTION MucH LATER!!
     // Start TRACE in RUN mode (NOT debug!!) to see AddressSanitizer output
@@ -1414,8 +1414,8 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.length = nodeStruct.length;
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
-//        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MEMORY_SIZE)
-        reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
+        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MEMORY_SIZE)
+            reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
 //        else
 //            error("bad name");
 //        if (reconstruct.name.kind) {
