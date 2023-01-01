@@ -1,5 +1,5 @@
-#include <cstdio>
 //#include <wasmedge/wasmedge.h>
+#include <cstdio>
 #include "wasmedge.h"
 #include "wasm_runner.h"
 #include "Util.h"

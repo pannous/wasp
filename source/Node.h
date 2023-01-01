@@ -225,7 +225,6 @@ public:
 //    32bit in wasm TODO pad with string in 64 bit
     // previous fields must be aligned to int64!
     String name = empty_name;// nil_name;
-//    String name{};
     Node *type = 0;// variable/reference type or object class?
     Node *meta = 0;//  LINK, not list. attributes meta modifiers decorators annotations
 
@@ -240,9 +239,9 @@ public:
     int capacity = NODE_DEFAULT_CAPACITY;
     int64 _hash = 0;// set by hash(); should copy! on *x=node / clone()
 #ifdef DEBUG
-    // int code_position; // hash to external map
-    //	int lineNumber;
-        String *line = 0;// debug! EXPENSIVE for non ast nodes!
+// int code_position; // hash to external map
+//	int lineNumber;
+    String *line = 0;// debug! EXPENSIVE for non ast nodes!
 #endif
 
 // TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
@@ -290,18 +289,16 @@ public:
 
     Node() {
         kind = objects;
-        name = empty_name;// "";
 //		if(debug)name = "[]";
     }
 
     void init_children(int nr = -1) {
         if (nr < 0)nr = capacity;
-        if (!children)children = (Node *) calloc(nr + 1, sizeof(Node));// todo +1 because end() points AFTER data!?
+        if (!children)children = (Node *) calloc(capacity, sizeof(Node));
     }
 
 
     explicit Node(String *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
-        name = empty_name;
         init_children();
         while (args[length] and length < MAX_WASM_DATA_LENGTH) {
             children[length] = Node(args[length]);
@@ -311,7 +308,6 @@ public:
     }
 
     explicit Node(int buffer[]) {
-        name = empty_name;
         value.data = buffer;
         kind = buffers;
 //		todo ("type of array");
@@ -321,7 +317,6 @@ public:
 
     explicit
     Node(int64 value, Type64 type64) {
-        name = empty_name;
         this->value.longy = value;// can also be double bytes:
         this->kind = (Kind) type64.value; // todo other types!
     }
@@ -342,8 +337,6 @@ public:
         value.real = nr;
         kind = reals;
         if (debug) name = String(ftoa(nr)); // messes with setField contraction
-        else name = empty_name;
-
 //			name = String(itoa0(nr, 10)); // messes with setField contraction
     }
 
@@ -358,7 +351,6 @@ public:
 // Require the last variable argument to be null, zero or whatever
 // BOXED
     explicit Node(int a, int b, ...) {
-        name = empty_name;
         init_children();
         kind = objects;// groups list
         add(Node(a));
@@ -395,7 +387,7 @@ public:
 
 #ifndef WASM
 
-    Node(const std::initializer_list <String> &_items) : Node() {
+    Node(const std::initializer_list<String> &_items) : Node() {
         for (const String &s: _items) {
             add(new Node(s));
         }
@@ -415,7 +407,7 @@ public:
         while (i) {
             Node *node = Node(i).clone();
             add(node);
-            i = (char *) va_arg(args, char * );
+            i = (char *) va_arg(args, char*);
         }
         va_end(args);
     }
@@ -830,7 +822,7 @@ public:
 
     Node &values();
 
-    bool isSetter() const;
+    bool isSetter();
 
     int lastIndex(String &string, int start = 0);
 

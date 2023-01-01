@@ -1060,7 +1060,7 @@ void Linker::ResolveSymbols() {
                 }
             } else {
                 export_list.add(ExportInfo(&_export, binary));
-//                warn("ignore export of kind %d %s"s % (short) _export.kind % GetKindName(_export.kind)); Invalid read of size 16
+                warn("ignore export of kind %d %s"s % (short) _export.kind % GetKindName(_export.kind));
             }
         }
         for (const Func &func: binary->functions) {// only those with code, not imports
