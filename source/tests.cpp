@@ -2931,6 +2931,10 @@ void tests() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 extern "C" void testCurrent() {
+    skip(
+            assert_is("square 3", 9)
+    )
+
 //    tests();// make sure all still ok before changes
 //    todos();
     tests();// make sure all still ok after messing with memory

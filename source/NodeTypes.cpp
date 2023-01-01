@@ -192,6 +192,7 @@ Type mapType(String arg) {
     else if (arg == "...")return ignore;// varargs, todo interesting!
     else if (arg.startsWith("Map")) return maps;
     else if (arg.startsWith("List")) return list;
+    else if (arg.startsWith("std")) return todoe;// #234 ƒ244 std::initializer_list<String>::end() const ≈
     else if (arg.endsWith("&")) return pointer;
     else if (arg.endsWith("*")) return pointer;
 
