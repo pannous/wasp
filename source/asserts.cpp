@@ -231,7 +231,7 @@ bool assert_isx(char *mark, bool expect) {
 bool ok;
 
 extern List<String> done;
-#if WASM
+#if MY_WASM
 #define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
 #else
 // MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376

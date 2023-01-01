@@ -1028,7 +1028,7 @@ Node &groupOperators(Node &expression, Function &context) {
 }
 
 Module &loadRuntime() {
-#if WASM
+#if MY_WASM
     bytes buffer;
     int buffer2;
     size_t size;

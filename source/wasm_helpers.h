@@ -117,6 +117,8 @@ extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
 extern "C" char *run(chars x);
 void *alloc(int num, int size);// => malloc / calloc
 #if WASM
+extern "C" void *malloc(size_t size);
+//extern "C" void *malloc(size_t __size) __attribute__((__malloc__, __warn_unused_result__));
 extern "C" void *aligned_alloc(size_t __alignment, size_t __size);// stdlib.h
 #endif
 //void *calloc(int size, int num);// alloc cleared
@@ -221,16 +223,7 @@ void printf(chars format, chars i, chars j, chars k, int l);
 #ifdef WASI
 extern "C" int printf(chars s, ...);  //stdio
 #endif
-//extern "C" int printf(chars s, String c);  conflict
 
-
-
-
-
-
-// most important WASI function
-//extern "C" void _fd_write(int fd, const wasi_buffer *iovs, size_t iovs_len, size_t *nwritten);
-//void fd_write(int FD, char **strp, int *len, int *nwritten); // todo len or len* ?  wasi_buffer={char*, … ?}
 
 struct c_io_vector {
     chars string;
@@ -238,36 +231,36 @@ struct c_io_vector {
 };
 
 //#if WASI or MY_WASI
-__attribute__((import_module("wasi_snapshot_preview1"), import_name("fd_write")))  // Fucking WasmEdge doesn't support wasi_unstable
-//__attribute__((import_module("wasi_unstable"), import_name("fd_write")))
-extern "C" int fd_write(int fd, c_io_vector *iovs, size_t iovs_count, size_t *nwritten);
-//void fd_write_host(int FD, char **strp, int *ignore, int *ignore) compatible signature
+
+#if WASMEDGE
+// Fucking WasmEdge doesn't support wasi_unstable
+#define WASI(import) __attribute__((import_module("wasi_snapshot_preview1"), import_name(#import))) extern "C"
+#else
+#define WASI(import) __attribute__((import_module("wasi_unstable"), import_name(#import))) extern "C"
+// Fucking wasmer doesn't support wasi_snapshot_preview1
+#endif
 
 [[noreturn]]
-__attribute__((import_module("wasi_snapshot_preview1"), import_name("proc_exit"))) // Fucking WasmEdge doesn't support wasi_unstable
-//__attribute__((import_module("wasi_unstable"), import_name("proc_exit")))
-extern "C"
+WASI(proc_exit)
 
 void proc_exit(int exitcode);
 
-
+WASI(fd_write)
+int fd_write(int fd, c_io_vector *iovs, size_t iovs_count, size_t *nwritten);
+//void fd_write_host(int FD, char **strp, int *ignore, int *ignore) compatible signature
 
 /**
  * Return command-line argument data sizes.
  * Returns the number of arguments and the size of the argument string data, or an error.
  */
-__attribute__((import_module("wasi_snapshot_preview1"), import_name("args_sizes_get")))
-//__attribute__((import_module("wasi_unstable"), import_name("args_sizes_get")))
-extern "C" int args_sizes_get(int *argc, int *buf_len);
+WASI(args_sizes_get) int args_sizes_get(int *argc, int *buf_len);
 
 /**
  * Read command-line argument data.
  * The size of the array should match that returned by `args_sizes_get`.
  * Each argument is expected to be `\0` terminated.
 */
-__attribute__((import_module("wasi_snapshot_preview1"), import_name("args_get")))
-//__attribute__((import_module("wasi_unstable"), import_name("args_get")))
-extern "C" int args_get(char **argv, char *argv_buf);
+WASI(args_get) int args_get(char **argv, char *argv_buf);
 
 template<class S>
 class List;
