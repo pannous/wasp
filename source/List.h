@@ -8,7 +8,7 @@
 #include <cstdlib> // OK in WASM!
 
 #define LIST_DEFAULT_CAPACITY 100 //
-#define LIST_MAX_CAPACITY 0x10000000l // debug only!
+#define LIST_MAX_CAPACITY 0x1000000000l // debug only!
 
 #include "Util.h"
 #include "wasm_helpers.h"

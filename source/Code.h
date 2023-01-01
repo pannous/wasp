@@ -64,7 +64,7 @@ public:
     bool encoded = false;// first byte = size of vector
     bool shared = true;// can't free data until all views are destroyed OR because this is a view on other's data!!
     bool needs_relocate = true; // unless specified
-    String name{};// function or file
+    String name;// function or file
     Code() {}
 
     Code(bytes a, int len, bool needs_copy = true) {
@@ -72,7 +72,7 @@ public:
         length = len;
         if (needs_copy) {
             shared = false; // free later
-            data = static_cast<bytes>(calloc(length + 1, 1));
+            data = static_cast<bytes>(calloc(length + 1, sizeof(bytes)));
             memcpy(data, a, length);
         }
     }
@@ -87,7 +87,7 @@ public:
 //	Code(byte *data0, int from, int pos, bool copy=false) : Code(data0,from,copy) {}
 
     Code(byte byte) {
-        data = (bytes) calloc(1, 2);// always one byte more for end() ?
+        data = (bytes) alloc(1, 1);
         data[0] = byte;
         length = 1;
     }
@@ -216,22 +216,16 @@ public:
         return *this;
     }
 
-    Code &add(Code &more) {
+//	Code &add(Code &more) {
+//		if (more.length > 0)
+//			push(more);
+//		return *this;
+//	}
+    Code &add(Code more) {
         if (more.length > 0)
             push(more);
         return *this;
     }
-
-    Code &add(const Code &more) {
-        if (more.length > 0)
-            push(more);
-        return *this;
-    }
-//    Code &add(Code more) {
-//        if (more.length > 0)
-//            push(more);
-//        return *this;
-//    }
 
     Code &add(byte opcode) {
         data = concat(data, opcode, length);
@@ -298,7 +292,7 @@ public:
         copy->length = length;
         if (deep) {
             copy->shared = false;
-            copy->data = static_cast<bytes>(calloc(length + 1, 1));
+            copy->data = static_cast<bytes>(malloc(length));
             memcpy(copy->data, data, length);
         } else shared = true;
         return *copy;

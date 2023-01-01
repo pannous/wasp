@@ -61,8 +61,7 @@ chars version = "1.0";
 [[noreturn]] void console() {
     printf("\nWasp version %s\n", version);
     showHelpMessage();
-    char *data = (char *) calloc(10000, 1);
-
+    char *data = (char *) malloc(10000);
 #ifdef signal
     setjmp(try_context); //recovery point
 #endif

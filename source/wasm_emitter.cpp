@@ -55,7 +55,7 @@ Map<String, Code> functionCodes; // EXCLUDING MAIN todo keep in Function
 //List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 //List<Function> imports;// from libraries. todo: these are inside functions<> for now!
 
-//int alignment_hack[1000];// todo: understand this nonsense!
+int alignment_hack[10000];// todo: understand this nonsense!
 String start = "wasp_main";
 
 Type arg_type = voids;// autocast if not int
@@ -339,7 +339,7 @@ bytes ieee754(double num) {
 bool isProperList(Node &node) {
     if (node.kind != groups and node.kind != objects) return false;
     if (node.length < 1) return false;
-    for (const Node &child: node) {
+    for (Node &child: node) {
         if (child.kind != longs and child.kind != strings)// todo … evaluate?
             return false;
         if (child.isSetter())
@@ -642,7 +642,7 @@ short arrayElementSize(Node &node) {
             smallestCommonitemSize = maxi(smallestCommonitemSize, stackItemSize(valtype));
 //            todo("child.type comparison");
         } else {
-            uint64 val = std::abs(child.value.longy) * 2;// *2 for signed variants
+            uint64 val = abs(child.value.longy) * 2;// *2 for signed variants
 //        if(val<=1) bit vector
 //        if(val>1)itemSize = maxi(itemSize,1); // byte
             if (val >= 0x100)smallestCommonitemSize = maxi(smallestCommonitemSize, 2);// short
@@ -2054,15 +2054,15 @@ Code zeroConst(Type returnType) {
         code.addConst32(0);
     if (returnType == float32) {
         code.add(f32_const);
-        code.push((bytes) calloc(4, 1), 4);
+        code.push((bytes) malloc(4), 4);
     }
     if (returnType == float64) {
         code.add(f64_const);
-        code.push((bytes) calloc(8, 1), 8);
+        code.push((bytes) malloc(8), 8);
     }
     if (returnType == i64) {
         code.add(i64_const);
-        code.push((bytes) calloc(8, 1), 8);
+        code.push((bytes) malloc(8), 8);
     }
     return code;
 }
@@ -2143,9 +2143,9 @@ Code encodeString(chars str) {
 
 
 [[nodiscard]]
-Code emitBlock(const Node &node, Function &context) {
-//    print("emitBlock");
-//    print(node.serialize());
+Code emitBlock(Node &node, Function &context) {
+    print("emitBlock");
+    print(node.serialize());
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};
 // 0x00 == unreachable as block header !?
@@ -2176,7 +2176,7 @@ Code emitBlock(const Node &node, Function &context) {
 //	013b76: 02 7f                      | local[1..2] type=i32
 //	013b78: 03 7f                      | local[3..5] type=i32
 
-    Code inner_code_data = emitExpression((Node &) node, context);
+    Code inner_code_data = emitExpression(node, context);
 
     // locals can still be updated in emitExpression
 
@@ -2436,12 +2436,12 @@ int function_block_count;
 
 //int builtins_used=0;
 [[nodiscard]]
-Code emitCodeSection(const Node &root) {
+Code emitCodeSection(Node &root) {
     // the code section contains vectors of functions
     // index needs to be known before emitting code, so call $i works
 
-//    if (root.kind == objects)
-//        root.kind = expression;// todo why hack?
+    if (root.kind == objects)
+        root.kind = expression;// todo why hack?
 
 //	int new_count;
 //	new_count = declaredFunctions.size();
@@ -2945,22 +2945,21 @@ void clearEmitterContext() {
 }
 
 [[nodiscard]]
-Code &emit(const Node &root_ast) {
+Code &emit(Node &root_ast, Module *runtime0, String _start) {
+    start = _start;
     memoryHandling = export_memory;
 //        memoryHandling = import_memory; // works for micro-runtime
 //        memoryHandling = internal_memory; // works for wasm3
     last_index = -1;
     runtime_function_offset = 0;
     add_imports_and_builtins();
-    functions["_start"].is_declared = true;
-    auto start = *new String("wasp_main");
     functions[start].is_declared = true;
-//#if not WASM
-//    if (start != String("_start") and not functions.has("_start"))
-//        functions["_start"] = *new Function{.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
-//#endif
-//    const Code &customSectionvector = *new Code{};
-    const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
+#if not WASM
+    if (start != "_start" and not functions.has("_start"))
+        functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
+#endif
+    const Code customSectionvector;
+//	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
     // ^^^ currently causes malloc_error WHY??
 
     auto customSection = createSection(custom_section, customSectionvector);
@@ -3009,10 +3008,10 @@ Code &compile(String code, bool clean) {
         clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
     }
 
-    Node &parsed = parse(code);
+    Node parsed = parse(code);
     print(parsed.serialize());
 
-    const Node &ast = analyze(parsed, functions["wasp_main"]);
+    Node &ast = analyze(parsed, functions["wasp_main"]);
     Code &binary = emit(ast);
 //    binary.debug();
     binary.save("main.wasm");
