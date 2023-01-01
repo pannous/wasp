@@ -146,9 +146,12 @@ extern "C" void testCurrent(){
 }
 #endif
 
+#if MY_WASM
 Code &compile(String code, bool clean = true);// exposed to wasp.js
+
 extern "C" char *run(chars x) {
     auto code = compile(x);
     code.run();// async in js
     return (char *) "need asyncify for result";
 }
+#endif

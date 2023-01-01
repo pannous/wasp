@@ -2616,7 +2616,7 @@ void todos() {
     assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
     assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
     testParams();
-    run("circle.wasp");
+//    run("circle.wasp");
     assert_emit("1 +1 == [1 1]", 1);
     assert_emit("1 +1 ≠ 1 + 1", 1);
     testWasmMutableGlobal();
