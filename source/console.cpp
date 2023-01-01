@@ -40,7 +40,8 @@ void getline(char *buf) {
         return;
     }
 //	tmp=fixQuotesAndTrim(tmp);// LATER!
-    if (strncmp(tmp, buf, MAXLENGTH) and strlen(tmp) > 0) add_history(tmp); // only add new content
+    if (strncmp(tmp, buf, MAXLENGTH) and strlen(tmp) > 0)
+        add_history(tmp); // only add new content
     strncpy(buf, tmp, MAXLENGTH);
     buf[MAXLENGTH - 1] = '\0';
     write_history(".wasp_history");
@@ -60,7 +61,8 @@ chars version = "1.0";
 [[noreturn]] void console() {
     printf("\nWasp version %s\n", version);
     showHelpMessage();
-    char *data = (char *) malloc(10000);
+    char *data = (char *) calloc(10000, 1);
+
 #ifdef signal
     setjmp(try_context); //recovery point
 #endif

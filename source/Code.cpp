@@ -72,7 +72,7 @@ Code encodeVector(const Code &data) {
 //	return data.vector();
     if (data.encoded)return data;
     Code code = unsignedLEB128(data.length);
-    code = code + data;
+    code.add(data);
 //	Code code = Code((byte) data.length) + data;
     code.encoded = true;
     return code;
