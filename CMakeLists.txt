@@ -87,9 +87,9 @@ if (WASM)
     #    set(RUNTIME_ONLY 1) NO, we want compiler version too!
     #    ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (MY_WASM)
-#        execute_process(COMMAND node clean.js WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-message("MY_WASM!")
-ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
+        #        execute_process(COMMAND node clean.js WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+        message("MY_WASM!")
+        ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
     endif ()
     if (NOT WASI AND NOT MY_WASI)
         ADD_DEFINITIONS(-DPURE_WASM)
