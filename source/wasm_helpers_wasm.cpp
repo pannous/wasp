@@ -141,7 +141,7 @@ void *alloc(int num, int size) {
     return calloc(num, size);
 }
 
-#if not WASI
+//#if not WASI
 // /opt/wasm/wasi-sdk/share/wasi-sysroot/include/stdlib.h
 // /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h redundant!
 
@@ -219,7 +219,7 @@ extern "C" void *memmove(void *dest, const void *source, size_t num) {
 }
 
 
-#endif
+//#endif
 
 // new operator for ALL objects
 void *operator new[](size_t size) { // stack
@@ -257,18 +257,18 @@ void memcpy1(bytes dest, bytes source, int i) {
         dest[i] = source[i];
 }
 
-void memcpy0(char *destination, char *source, size_t num) {
-    if ((int64) destination + num >= MEMORY_SIZE)return;
-//		panic();
-    if ((int64) source + num >= MEMORY_SIZE)return;
-//		panic();
-    while (--num < MAX_MEM) {
-        destination[num] = source[num];
-    }
+__attribute__((__nothrow__, __leaf__, __nonnull__(1, 2)))
+extern "C" void *memcpy(void *__restrict__ destination, const void *__restrict__ source, size_t num) {
+//extern "C" void* memcpy(char *destination, char *source, size_t num) {
+//    check_silent((int64) destination + num < MEMORY_SIZE)
+//    check_silent ((int64) source + num < MEMORY_SIZE)
+    while (--num < MAX_MEM)
+        ((char *) destination)[num] = ((char *) source)[num];
+    return destination;//?
 }
 
 
-#if not WASI
+#ifndef WASI
 extern "C"
 void *memcpy(void *destination, const void *source, size_t num) {
     memcpy0((char *) destination, (char *) source, num);

@@ -2565,16 +2565,16 @@ Code emitCodeSection(Node &root) {
     if (main_block.length == 0)
         functions[start].is_used = false;
     else
-        code_blocks += encodeVector(main_block);
+        code_blocks = code_blocks + encodeVector(main_block);
 
 
     for (String fun: functionCodes) {// MAIN block extra ^^^
         Code &func = functionCodes[fun];
-        code_blocks += encodeVector(func);
+        code_blocks = code_blocks + encodeVector(func);
     }
 
     if (functions["_start"].is_used and functions["_start"].is_builtin)
-        code_blocks += encodeVector(Code(code_start, sizeof(code_start)));
+        code_blocks = code_blocks + encodeVector(Code(code_start, sizeof(code_start)));
 
     builtin_count = 0;
     for (auto name: functions) {
@@ -2617,7 +2617,7 @@ Code emitExportSection() {
         int start_offset = main_offset;
         if (call_indices["_start"])
             start_offset = call_indices["_start"];
-        mainExport += encodeString("_start") + (byte) func_export + Code(start_offset);
+        mainExport = mainExport + encodeString("_start") + (byte) func_export + Code(start_offset);
     }
 
 
@@ -2667,7 +2667,8 @@ Code emitGlobalSection() {
         globalsList.addByte(valtype);
         globalsList.addByte(0);// 1:mutable todo: default? not π ;)
         // expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
-        const Code &globalInit = emitExpression(global_node, *new Function{.name="global"});// ⚠️ global not a context!
+        const Code &globalInit = emitExpression(global_node,
+                                                *new Function{.name="global"});// todo ⚠️ global is not a context!
         globalsList.add(globalInit);// todo names in global context!?
         globalsList.addByte(end_block);
         /*
@@ -2757,7 +2758,7 @@ Code emitNameSection() {
         // danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
         String *name = call_indices.lookup(index);
         if (not name) todo("no name for %d! bug (not enough mem?)"s % index);
-        nameMap += Code(index) + Code(*name);
+        nameMap = nameMap + Code(index) + Code(*name);
         usedNames += 1;
     }
 
@@ -2770,10 +2771,10 @@ Code emitNameSection() {
         int local_count = context.locals.size();
         if (local_count == 0)continue;
         usedLocals++;
-        localNameMap += Code(index) + Code(local_count); /*???*/
+        localNameMap = localNameMap + Code(index) + Code(local_count); /*???*/
         for (int i = 0; i < context.locals.size(); ++i) {
             String local_name = context.locals.at(i).name;
-            localNameMap += Code(i) + Code(local_name);
+            localNameMap = localNameMap + Code(i) + Code(local_name);
         }
 //		error: expected local name count (1) <= local count (0) FOR FUNCTION ...
     }
@@ -2782,7 +2783,7 @@ Code emitNameSection() {
     int usedGlobals = globals.count();// currently all
     for (int i = 0; i < globals.count(); i++) {
         String &globalName = globals.keys[i];
-        globalNameMap += Code(i) + Code(globalName);
+        globalNameMap = globalNameMap + Code(i) + Code(globalName);
     }
 
 
@@ -2945,15 +2946,19 @@ void clearEmitterContext() {
 }
 
 [[nodiscard]]
-Code &emit(Node &root_ast) {
+Code &emit(Node &root_ast, Module *runtime0, String _start) {
+    start = _start;
     memoryHandling = export_memory;
 //        memoryHandling = import_memory; // works for micro-runtime
 //        memoryHandling = internal_memory; // works for wasm3
     last_index = -1;
     runtime_function_offset = 0;
     add_imports_and_builtins();
-    functions["wasp_main"].is_declared = true;
-    functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
+    functions[start].is_declared = true;
+#if not WASM
+    if (start != "_start" and not functions.has("_start"))
+        functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
+#endif
     const Code customSectionvector;
 //	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
     // ^^^ currently causes malloc_error WHY??
