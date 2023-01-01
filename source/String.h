@@ -103,15 +103,11 @@ String s(chars &s);
 
 bool eq(chars dest, chars src, int length = -1);
 
+// strcpy adds a null terminator character '\0'. make sure to alloc +1
 void strcpy2(char *dest, chars src);
 
 void strcpy2(char *dest, chars src, int length);
 
-#if WASM
-extern "C" size_t strlen(const char *) __attribute__((__nothrow__, __leaf__, __pure__, __nonnull__(1)));
-#else
-extern "C" size_t strlen(const char *s);
-#endif
 //int strlen(chars x);
 //size_t   strlen(chars __s);
 
@@ -185,8 +181,8 @@ private:
 public:
     String() {
 //		assert(null_value[0] == 0);
-//		data = 0;
-        data = "";
+        data = 0;
+//        data = "";
 //		data = empty_string;
 //		data =  {0};//null_value;
 //		data = (char *)calloc(1, 1);
@@ -270,7 +266,7 @@ public:
         if (length == 0)data = 0;//SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
         else {
             if (copy) {
-                data = (char *) (alloc(sizeof(char), length + 1));
+                data = (char *) calloc(length + 1, 1);
                 strcpy2(data, string, length);
                 data[length] = 0;
             } else {
@@ -304,7 +300,8 @@ public:
     }
 
     explicit String(char16_t utf16char) {
-        data = (char *) (calloc(sizeof(char16_t), 4));// 2byte can be unrolled into 3(+??) bytes, e.g. u'☺'
+        auto byteCount = utf8_byte_count(utf16char);
+        data = (char *) calloc(byteCount + 1, 1);// 2byte can be unrolled into 3(+??) bytes, e.g. u'☺'
         length = encode_unicode_character(data, utf16char);
         data[length] = 0;
     }
@@ -317,26 +314,27 @@ public:
 // char32_t same as codepoint!
     explicit String(char32_t utf32char) {// conflicts with int
         auto byteCount = utf8_byte_count(utf32char);
-        data = (char *) (calloc(sizeof(char32_t), byteCount + 1));
+        data = (char *) calloc(byteCount + 1, 1);
         encode_unicode_character(data, utf32char);
         length = byteCount;// at most 4 bytes
         data[length] = 0;// be sure
     }
 
     explicit String(wchar_t wideChar) {
-        data = (char *) (calloc(sizeof(wchar_t), 2));
+        auto byteCount = utf8_byte_count(wideChar);
+        data = (char *) calloc(byteCount + 1, 1);// up to six bytes + 0
         length = encode_unicode_character(data, wideChar);
         data[length] = 0;// be sure
     }
 
     explicit String(double real) {
-        int max_length = 4;
+        int precision = 4;
         data = formatLong(real);
         length = len();
 //		itof :
         append('.');
         real = real - (int64(real));
-        while (length < max_length) {
+        while (length < precision) {
             real = (real - int64(real)) * 10;
             if (int(real) == 0)break;// todo 0.30303
             append(int(real) + '0');// = '0'+1,2,3
@@ -377,17 +375,17 @@ public:
         return -1;
     }
 
-    size_t len() {
+    size_t len() const {
         return length >= 0 ? length : !shared_reference and strlen(data);
     }
 
-    char charAt(int position) {
+    char charAt(int position) const {
         if (position >= length)
             error((String("IndexOutOfBounds at ") + formatLong(position) + " in " + data).data);
         return data[position];
     }
 
-    char charCodeAt(int position) {
+    char charCodeAt(int position) const {
 //		if (position >= length)
 //			raise(IndexOutOfBounds(data, position).message);
 //		String("IndexOutOfBounds at ") + i + " in " + data;
@@ -395,7 +393,7 @@ public:
         return data[position];
     }
 
-    int indexOf(char c, int from = 0, bool reverse = false) {
+    int indexOf(char c, int from = 0, bool reverse = false) const {
         for (int j = from; j < length and j < MAX_STRING_LENGTH; j++) {
             if (reverse and data[j] == c)return j;
             if (!reverse and data[j] == c)return j;
@@ -456,7 +454,7 @@ public:
                 heap_end += byteCount + 1;
 #endif
         } else {
-            auto *neu = (char *) (alloc(sizeof(char), length + 5));// we need 4 bytes because *(int*)…=c
+            auto *neu = (char *) (alloc(sizeof(char), length + byteCount + 1));// we need 4 bytes because *(int*)…=c
             if (data)strcpy2(neu, data, length);
             data = neu;
         }
@@ -709,9 +707,10 @@ public:
         return *this;
     }
 
+    // self modifying ok?
     String operator++(int postfix) {//
-        if (length <= 0)return "";
-        this->data += 1 + postfix;// self modifying ok?
+        if (length - postfix <= 0)return "";
+        this->data += 1 + postfix;
         length -= 1 + postfix;
         return *this;
     }
@@ -873,7 +872,7 @@ public:
     bool empty() const;
 
 
-    int indexOf(chars string, bool reverse = false) {
+    int indexOf(chars string, bool reverse = false) const {
         int l = strlen(string);
         if ((int64) data + l > MEMORY_SIZE)
             error("corrupt string");
@@ -900,7 +899,7 @@ public:
         return indexOf(string) >= 0;
     }
 
-    bool contains(char chr) {
+    bool contains(char chr) const {
         return indexOf(chr) >= 0;
     }
 

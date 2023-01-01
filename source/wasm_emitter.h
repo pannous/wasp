@@ -43,7 +43,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/);
 
 
 [[nodiscard]]
-Code emitBlock(Node &node, Function &context);
+Code emitBlock(const Node &node, Function &context);
 
 //Code emitExpression(Node *node)__attribute__((warn_unused_result));
 //Code emitExpression(Node *node)__attribute__((error_unused_result));
@@ -98,7 +98,9 @@ Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 Type commonType(Type lhs, Type rhs);
 
 //Code emit(String code);//  wasp -> code -> wasm -> data
-Code &emit(Node &root_ast, Module *runtime0 = 0, String _start = "wasp_main");
+//Code &emit(Node &root_ast, Module *runtime0 = 0);
+Code &emit(const Node &root_ast);
+
 
 //extern "C"
 Code &compile(String code, bool clean = true);// exposed to wasp.js
