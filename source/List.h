@@ -426,13 +426,13 @@ public:
     void remove(S &item) {
         auto pos = position(item);
         if (pos < 0)return;
-        memcpy(items + pos, items + pos + 1, size_ - pos);
+        memmove(items + pos, items + pos + 1, size_ - pos);
         size_--;
     }
 
     bool remove(short position) {
         if (position < 0 or size_ <= 0 or position >= size_)return false;
-        memcpy((void *) (items + position), (void *) (items + position + 1), (size_ - position) * sizeof(S));
+        memmove((void *) (items + position), (void *) (items + position + 1), (size_ - position) * sizeof(S));
         size_--;
         return true;
     }
