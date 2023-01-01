@@ -43,7 +43,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/);
 
 
 [[nodiscard]]
-Code emitBlock(Node &node, Function &context);
+Code emitBlock(const Node &node, Function &context);
 
 //Code emitExpression(Node *node)__attribute__((warn_unused_result));
 //Code emitExpression(Node *node)__attribute__((error_unused_result));

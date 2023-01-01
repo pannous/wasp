@@ -216,16 +216,22 @@ public:
         return *this;
     }
 
-//	Code &add(Code &more) {
-//		if (more.length > 0)
-//			push(more);
-//		return *this;
-//	}
-    Code &add(Code more) {
+    Code &add(Code &more) {
         if (more.length > 0)
             push(more);
         return *this;
     }
+
+    Code &add(const Code &more) {
+        if (more.length > 0)
+            push(more);
+        return *this;
+    }
+//    Code &add(Code more) {
+//        if (more.length > 0)
+//            push(more);
+//        return *this;
+//    }
 
     Code &add(byte opcode) {
         data = concat(data, opcode, length);
