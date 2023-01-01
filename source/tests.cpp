@@ -2648,7 +2648,7 @@ void todos() {
     assert_is("i=3;i*-1", -3);// todo bring variables to interpreter
 
 //	print("OK %s %d"s % ("WASM",1));// only 1 handed over
-    print(" OK %d %d"s % (2, 1));// only 1 handed over
+//    print(" OK %d %d"s % (2, 1));// error: expression result unused [-Werror,-Wunused-value] OK
 }
 
 //int dump_nr = 1;
@@ -2931,6 +2931,13 @@ void tests() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 extern "C" void testCurrent() {
+    check("abc"s++ == "bc");
+    check("a"s++ == "");
+    assert_is("square 3", 9)
+
+    skip(
+    )
+
 //    tests();// make sure all still ok before changes
 //    todos();
     tests();// make sure all still ok after messing with memory

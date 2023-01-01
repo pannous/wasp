@@ -643,9 +643,9 @@ Module &read_wasm(String file) {
     printf("parsing: %s\n", file.data);
     size = fileSize(file);
     if (size <= 0)error("file not found: "s + file);
-    bytes buffer = (bytes) alloc(1, size);// do not free
+    bytes buffer = (bytes) malloc(size + 4096 * 256);// do not free
     FILE *stream = fopen(file, "rb");
-    fread(buffer, sizeof(buffer), size, stream);
+    fread(buffer, sizeof(buffer), size, stream);// demands blocks of 4096!
     Module &wasm = read_wasm(buffer, size);
     wasm.code.name = name;
     wasm.name = name;

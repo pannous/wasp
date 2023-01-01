@@ -232,8 +232,8 @@ String toString(Node &node);
 char *formatLongWithBase(int64 num, int base = 10) {
     if (base == 16)return hex(num);
     // length 22 -> put(num)/2+2 for base 10
-    static char str[23];
-//    char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
+//    static char str[23];
+    char *str = (char *) calloc(22 + 1, sizeof(char));// -18446744073709552000  todo: from context.names char*
 //	int addr=(int)(int64)str;
 //	if(addr<0 or addr>memory_size)
 //		error("OUT OF MEMORY");
@@ -323,7 +323,7 @@ chars ftoa2(float num, int significant_digits) {
         num *= 10;
         exp--;
     }
-    char *f = static_cast<char *>(malloc(significant_digits + 8));// -123.4E-100\0
+    char *f = (char *) calloc(significant_digits + 8, 1);// -123.4E-100\0
     int pos = 0;
     if (num < 0)f[pos++] = '-';
     f[pos++] = '0' + int(num);

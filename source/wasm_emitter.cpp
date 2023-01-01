@@ -55,7 +55,7 @@ Map<String, Code> functionCodes; // EXCLUDING MAIN todo keep in Function
 //List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 //List<Function> imports;// from libraries. todo: these are inside functions<> for now!
 
-int alignment_hack[10000];// todo: understand this nonsense!
+//int alignment_hack[1000];// todo: understand this nonsense!
 String start = "wasp_main";
 
 Type arg_type = voids;// autocast if not int
@@ -339,7 +339,7 @@ bytes ieee754(double num) {
 bool isProperList(Node &node) {
     if (node.kind != groups and node.kind != objects) return false;
     if (node.length < 1) return false;
-    for (Node &child: node) {
+    for (const Node &child: node) {
         if (child.kind != longs and child.kind != strings)// todo … evaluate?
             return false;
         if (child.isSetter())
@@ -567,7 +567,7 @@ Code emitArray(Node &node, Function &context) {
 //    for(wasm_node_index i:children){
     for (Node &child: node) {
         // ok we checked for coherence before
-        int64_t i = child.value.longy;
+        int64 i = child.value.longy;
         if (itemSize == 1)emitByteData(i);
         else if (itemSize == 2)emitShortData(i);
         else if (itemSize == 4)emitIntData(i);
@@ -642,7 +642,7 @@ short arrayElementSize(Node &node) {
             smallestCommonitemSize = maxi(smallestCommonitemSize, stackItemSize(valtype));
 //            todo("child.type comparison");
         } else {
-            uint64 val = abs(child.value.longy) * 2;// *2 for signed variants
+            uint64 val = std::abs(child.value.longy) * 2;// *2 for signed variants
 //        if(val<=1) bit vector
 //        if(val>1)itemSize = maxi(itemSize,1); // byte
             if (val >= 0x100)smallestCommonitemSize = maxi(smallestCommonitemSize, 2);// short
@@ -2054,15 +2054,15 @@ Code zeroConst(Type returnType) {
         code.addConst32(0);
     if (returnType == float32) {
         code.add(f32_const);
-        code.push((bytes) malloc(4), 4);
+        code.push((bytes) calloc(4, 1), 4);
     }
     if (returnType == float64) {
         code.add(f64_const);
-        code.push((bytes) malloc(8), 8);
+        code.push((bytes) calloc(8, 1), 8);
     }
     if (returnType == i64) {
         code.add(i64_const);
-        code.push((bytes) malloc(8), 8);
+        code.push((bytes) calloc(8, 1), 8);
     }
     return code;
 }
@@ -2143,9 +2143,9 @@ Code encodeString(chars str) {
 
 
 [[nodiscard]]
-Code emitBlock(Node &node, Function &context) {
-    print("emitBlock");
-    print(node.serialize());
+Code emitBlock(const Node &node, Function &context) {
+//    print("emitBlock");
+//    print(node.serialize());
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
 //	char code_data[] = {0/*locals_count*/,i32_const,42,call,0 /*logi*/,i32_auto,21,return_block,end_block};
 // 0x00 == unreachable as block header !?
@@ -2176,7 +2176,7 @@ Code emitBlock(Node &node, Function &context) {
 //	013b76: 02 7f                      | local[1..2] type=i32
 //	013b78: 03 7f                      | local[3..5] type=i32
 
-    Code inner_code_data = emitExpression(node, context);
+    Code inner_code_data = emitExpression((Node &) node, context);
 
     // locals can still be updated in emitExpression
 
@@ -2362,14 +2362,14 @@ Code emitTypeSection() {
         Code td = Code(func) + Code(param_count);
 
         for (int i = 0; i < param_count; ++i) {
-            td = td + Code(fixValtype(mapTypeToWasm(signature.parameter_types[i])));
+            td += Code(fixValtype(mapTypeToWasm(signature.parameter_types[i])));
         }
         td.addByte(signature.return_types.size());
         for (Type ret: signature.return_types) {
             Valtype valtype = fixValtype(mapTypeToWasm(ret));
             td.addByte(valtype);
         }
-        type_data = type_data + td;
+        type_data += td;
     }
     return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();
 }
@@ -2377,7 +2377,7 @@ Code emitTypeSection() {
 Valtype fixValtype(Valtype valtype) {
     if (valtype == (Valtype) charp) return int32;
     if ((int) valtype >= node) error("exposed internal Valtype");
-    if (valtype > 0xC0)error("exposed internal Valtype");
+//    if (valtype > 0xC0)error("exposed internal Valtype");
     return valtype;
 }
 
@@ -2436,12 +2436,12 @@ int function_block_count;
 
 //int builtins_used=0;
 [[nodiscard]]
-Code emitCodeSection(Node &root) {
+Code emitCodeSection(const Node &root) {
     // the code section contains vectors of functions
     // index needs to be known before emitting code, so call $i works
 
-    if (root.kind == objects)
-        root.kind = expression;// todo why hack?
+//    if (root.kind == objects)
+//        root.kind = expression;// todo why hack?
 
 //	int new_count;
 //	new_count = declaredFunctions.size();
@@ -2541,43 +2541,40 @@ Code emitCodeSection(Node &root) {
 
     // order matters, in functionType section!
 //        if (functions["nop"].is_used)// NOT a function
-//            code_blocks = code_blocks + encodeVector(Code(code_nop, sizeof(code_nop)));
+//            code_blocks += encodeVector(Code(code_nop, sizeof(code_nop)));
     if (functions["square_double"].is_used and functions["square_double"].is_builtin)
         // simple test function x=>x*x can also be linked via runtime/import!
-        code_blocks = code_blocks + encodeVector(Code(code_square_d, sizeof(code_square_d)));
+        code_blocks += encodeVector(Code(code_square_d, sizeof(code_square_d)));
     if (functions["id"].is_used)
-        code_blocks = code_blocks + encodeVector(Code(code_id, sizeof(code_id)));
+        code_blocks += encodeVector(Code(code_id, sizeof(code_id)));
     if (functions["modulo_float"].is_used)
-        code_blocks = code_blocks + encodeVector(Code(code_modulo_float, sizeof(code_modulo_float)));
+        code_blocks += encodeVector(Code(code_modulo_float, sizeof(code_modulo_float)));
     if (functions["modulo_double"].is_used)
-        code_blocks = code_blocks + encodeVector(Code(code_modulo_double, sizeof(code_modulo_double)));
+        code_blocks += encodeVector(Code(code_modulo_double, sizeof(code_modulo_double)));
     if (functions["len"].is_used)
-        code_blocks = code_blocks + encodeVector(Code(code_len, sizeof(code_len)));
+        code_blocks += encodeVector(Code(code_len, sizeof(code_len)));
     if (functions["puts"].is_used) // calls import fd_write, can be import itself
-        code_blocks = code_blocks + encodeVector(Code(code_puts, sizeof(code_puts)));
+        code_blocks += encodeVector(Code(code_puts, sizeof(code_puts)));
     if (functions["put_string"].is_used) // calls import fd_write, can be import itself
-        code_blocks = code_blocks + encodeVector(Code(code_put_string, sizeof(code_put_string)));
+        code_blocks += encodeVector(Code(code_put_string, sizeof(code_put_string)));
     if (functions["quit"].is_used)
-        code_blocks = code_blocks + encodeVector(Code(code_quit, sizeof(code_quit)));
-
-    trace("emitCodeSection2");
-    trace(root.serialize());
+        code_blocks += encodeVector(Code(code_quit, sizeof(code_quit)));
 
     Code main_block = emitBlock(root, functions["wasp_main"]);// after imports and builtins
 
     if (main_block.length == 0)
         functions[start].is_used = false;
     else
-        code_blocks = code_blocks + encodeVector(main_block);
+        code_blocks += encodeVector(main_block);
 
 
     for (String fun: functionCodes) {// MAIN block extra ^^^
         Code &func = functionCodes[fun];
-        code_blocks = code_blocks + encodeVector(func);
+        code_blocks += encodeVector(func);
     }
 
     if (functions["_start"].is_used and functions["_start"].is_builtin)
-        code_blocks = code_blocks + encodeVector(Code(code_start, sizeof(code_start)));
+        code_blocks += encodeVector(Code(code_start, sizeof(code_start)));
 
     builtin_count = 0;
     for (auto name: functions) {
@@ -2620,7 +2617,7 @@ Code emitExportSection() {
         int start_offset = main_offset;
         if (call_indices["_start"])
             start_offset = call_indices["_start"];
-        mainExport = mainExport + encodeString("_start") + (byte) func_export + Code(start_offset);
+        mainExport += encodeString("_start") + (byte) func_export + Code(start_offset);
     }
 
 
@@ -2670,8 +2667,7 @@ Code emitGlobalSection() {
         globalsList.addByte(valtype);
         globalsList.addByte(0);// 1:mutable todo: default? not π ;)
         // expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
-        const Code &globalInit = emitExpression(global_node,
-                                                *new Function{.name="global"});// todo ⚠️ global is not a context!
+        const Code &globalInit = emitExpression(global_node, *new Function{.name="global"});// ⚠️ global not a context!
         globalsList.add(globalInit);// todo names in global context!?
         globalsList.addByte(end_block);
         /*
@@ -2761,7 +2757,7 @@ Code emitNameSection() {
         // danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
         String *name = call_indices.lookup(index);
         if (not name) todo("no name for %d! bug (not enough mem?)"s % index);
-        nameMap = nameMap + Code(index) + Code(*name);
+        nameMap += Code(index) + Code(*name);
         usedNames += 1;
     }
 
@@ -2774,10 +2770,10 @@ Code emitNameSection() {
         int local_count = context.locals.size();
         if (local_count == 0)continue;
         usedLocals++;
-        localNameMap = localNameMap + Code(index) + Code(local_count); /*???*/
+        localNameMap += Code(index) + Code(local_count); /*???*/
         for (int i = 0; i < context.locals.size(); ++i) {
             String local_name = context.locals.at(i).name;
-            localNameMap = localNameMap + Code(i) + Code(local_name);
+            localNameMap += Code(i) + Code(local_name);
         }
 //		error: expected local name count (1) <= local count (0) FOR FUNCTION ...
     }
@@ -2786,7 +2782,7 @@ Code emitNameSection() {
     int usedGlobals = globals.count();// currently all
     for (int i = 0; i < globals.count(); i++) {
         String &globalName = globals.keys[i];
-        globalNameMap = globalNameMap + Code(i) + Code(globalName);
+        globalNameMap += Code(i) + Code(globalName);
     }
 
 
@@ -2949,21 +2945,22 @@ void clearEmitterContext() {
 }
 
 [[nodiscard]]
-Code &emit(Node &root_ast, Module *runtime0, String _start) {
-    start = _start;
+Code &emit(const Node &root_ast) {
     memoryHandling = export_memory;
 //        memoryHandling = import_memory; // works for micro-runtime
 //        memoryHandling = internal_memory; // works for wasm3
     last_index = -1;
     runtime_function_offset = 0;
     add_imports_and_builtins();
+    functions["_start"].is_declared = true;
+    auto start = *new String("wasp_main");
     functions[start].is_declared = true;
-#if not WASM
-    if (start != "_start" and not functions.has("_start"))
-        functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
-#endif
-    const Code customSectionvector;
-//	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
+//#if not WASM
+//    if (start != String("_start") and not functions.has("_start"))
+//        functions["_start"] = *new Function{.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
+//#endif
+//    const Code &customSectionvector = *new Code{};
+    const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
     // ^^^ currently causes malloc_error WHY??
 
     auto customSection = createSection(custom_section, customSectionvector);
@@ -3012,10 +3009,10 @@ Code &compile(String code, bool clean) {
         clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
     }
 
-    Node parsed = parse(code);
+    Node &parsed = parse(code);
     print(parsed.serialize());
 
-    Node &ast = analyze(parsed, functions["wasp_main"]);
+    const Node &ast = analyze(parsed, functions["wasp_main"]);
     Code &binary = emit(ast);
 //    binary.debug();
     binary.save("main.wasm");
