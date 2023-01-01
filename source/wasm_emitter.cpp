@@ -2560,9 +2560,6 @@ Code emitCodeSection(const Node &root) {
     if (functions["quit"].is_used)
         code_blocks += encodeVector(Code(code_quit, sizeof(code_quit)));
 
-    trace("emitCodeSection2");
-    trace(root.serialize());
-
     Code main_block = emitBlock(root, functions["wasp_main"]);// after imports and builtins
 
     if (main_block.length == 0)
