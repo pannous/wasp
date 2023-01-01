@@ -288,15 +288,15 @@ if (TRACE)
     #    add_compile_options(-Wextra)
 endif ()
 
-if (SANITIZE OR TRACE)
+if (SANITIZE) #  OR TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
     MESSAGE("ASAN sanitize=address …")
-    #    if (APPLE)
-    #        ADD_COMPILE_FLAG("-static-libsan")
-    #    else ()
-    #        ADD_COMPILE_FLAG("-static-libasan")
-    #    endif ()
+    if (GCC)
+        ADD_COMPILE_FLAG("-static-libasan")
+    else ()
+        ADD_COMPILE_FLAG("-static-libsan")
+    endif ()
     if (VERBOSE)
         set(ASAN_OPTIONS verbosity=3)
     endif ()

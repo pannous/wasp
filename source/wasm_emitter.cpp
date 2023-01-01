@@ -2949,20 +2949,20 @@ void clearEmitterContext() {
 }
 
 [[nodiscard]]
-Code &emit(Node &root_ast, Module *runtime0, String _start) {
-    start = _start;
+Code &emit(const Node &root_ast) {
     memoryHandling = export_memory;
 //        memoryHandling = import_memory; // works for micro-runtime
 //        memoryHandling = internal_memory; // works for wasm3
     last_index = -1;
     runtime_function_offset = 0;
     add_imports_and_builtins();
+    auto start = "wasp_main";
     functions[start].is_declared = true;
 #if not WASM
-    if (start != "_start" and not functions.has("_start"))
-        functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
+    if (start != String("_start") and not functions.has("_start"))
+        functions["_start"] = *new Function{.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
 #endif
-    const Code customSectionvector;
+    const Code customSectionvector = {};
 //	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
     // ^^^ currently causes malloc_error WHY??
 
@@ -2970,7 +2970,7 @@ Code &emit(Node &root_ast, Module *runtime0, String _start) {
     Code typeSection1 = emitTypeSection();// types must be defined in analyze(), not in code declaration
     Code importSection1 = emitImportSection();// needs type indices
     Code globalSection1 = emitGlobalSection();//
-    Code codeSection1 = emitCodeSection(root_ast); // needs functions and functionIndices prefilled!! :(
+    Code codeSection1 = emitCodeSection((Node &) root_ast); // needs functions and functionIndices prefilled!! :(
     Code funcTypeSection1 = emitFuncTypeSection();// signatures depends on codeSection, but must come before it in wasm
     Code memorySection1 = emitMemorySection();
     Code exportSection1 = emitExportSection();// depends on codeSection, but must come before it!!
