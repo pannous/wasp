@@ -103,7 +103,7 @@ Since the Angle language can be compiled from wasm to wasm, this gives a whole s
 in less than 200kb,  
 with similar power to [electron](https://www.electronjs.org/) and QT.
 
-Note: The full wasp_compiler.wasm is currently 2MB but can be shrunk back close to the 70kb of wasp_runtime.wasm once
+Note: The full wasp_compiler.wasm is currently 2MB but can be shrunk back close to the 70kb of wasp-runtime.wasm once
 the lazy external references are removed again.
 
 Until a smart way is found to write directly to the WebViews canvas, native angle ships with a low

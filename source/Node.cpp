@@ -176,6 +176,7 @@ Node *Node::begin() const {
 
 Node *Node::end() const {
     if (length <= 0 or !children) return 0;
+    check_silent(length < capacity);
     return children + length;
 }
 
@@ -1393,7 +1394,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
 Node *reconstructWasmNode(wasm_node_index pointer) {
     if (pointer == 0)
         return &NUL;// we NEVER have nodes at 0
-    if (pointer > 100000 + 0x10000 and debug) // todo proper memory bound check including data/runtime_offset
+    if (pointer > 0x1000000 and debug) // todo proper memory bound check including data/runtime_offset
         error("pointer>10000"); // todo remove (in)sanity check
     if ((int64) pointer > MEMORY_SIZE)
         error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % (int64) MEMORY_SIZE);
@@ -1430,7 +1431,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         if (nodeStruct.child_pointer >= 0) {
             // -1 means no children (debug/bug)
 
-            reconstruct.children = (Node *) malloc(reconstruct.length + 1 * sizeof(Node)); // … :
+            reconstruct.children = (Node *) calloc(reconstruct.length + 1, sizeof(Node)); // … :
             reconstruct.capacity = reconstruct.length + 1;// can grow later
             int *child_pointers = (int *) (((char *) wasm_memory) + nodeStruct.child_pointer);
             for (int i = 0; i < reconstruct.length; ++i) {
