@@ -141,7 +141,7 @@ void *alloc(int num, int size) {
     return calloc(num, size);
 }
 
-#ifndef WASI
+#if not WASI
 // /opt/wasm/wasi-sdk/share/wasi-sysroot/include/stdlib.h
 // /opt/wasm/wasi-sdk/share/wasi-sysroot/include/__functions_malloc.h redundant!
 
@@ -172,7 +172,7 @@ void *aligned_alloc(size_t __alignment, size_t __size) {
     return malloc(__size);
 }
 
-void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
+extern "C" void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ // heap
     if (size > 1000000) {
         put_chars("malloc of huge memory chunk:");
         putx(size);
@@ -268,7 +268,7 @@ void memcpy0(char *destination, char *source, size_t num) {
 }
 
 
-#ifndef WASI
+#if not WASI
 extern "C"
 void *memcpy(void *destination, const void *source, size_t num) {
     memcpy0((char *) destination, (char *) source, num);
