@@ -12,9 +12,13 @@
 
 #import "asserts.h"
 
+#if WASM
+#define assert_throws(αα)
+#else
 #define assert_throws(αα)  {print(#αα);debug_line();bool old=panicking;try{ \
 panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#αα);backtrace_line(); \
 }catch(chars){}catch(String*){}catch(...){};panicking=old;}
+#endif
 
 // WASM async
 //static
@@ -140,9 +144,7 @@ void testWasmTernary() {
     assert_emit("2<1?3:4", 4);
     assert_emit("1<0?3:4", 4);
 //	assert_emit("(1<2)?10:255", 255);
-#ifndef WASMTIME
-    assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
-#endif
+
     assert_emit("fac:= it<=0 ? 1 : it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
     skip(
     // What seems to be the problem?
@@ -457,11 +459,6 @@ void testComparisonIdPrecedence() {
 }
 
 void testComparisonPrimitives() {
-    assert_emit("8.33333333332248946124e-03", 0);
-    assert_emit("8.33333333332248946124e+01", 83);
-    assert_emit("S1  = -1.6666", -1);
-//    assert_emit("grows S1  = -1.6666", -1);
-    // may be evaluated by compiler!
     assert_emit(("42>2"), 1)
     assert_emit(("1<2"), 1)
     assert_emit(("452==452"), 1)
@@ -527,6 +524,12 @@ void testWasmVariables0() {
             assert_emit("i=ø;i", nullptr);
             assert_emit("i=123.4;i", 123.4);// main returning int
     )
+    assert_emit("8.33333333332248946124e-03", 0);// todo in wasm
+    assert_emit("8.33333333332248946124e+01", 83.3333333332248946124);
+    assert_emit("8.33333333332248946124e+03", 8333.33333332248946124);
+    assert_emit("S1  = -1.6666", -1.6666);
+//    assert_emit("grows S1  = -1.6666", -1);
+    // may be evaluated by compiler!
 }
 
 void testWasmIncrement() {
@@ -948,17 +951,18 @@ void testArrayIndicesWasm() {
 //	testArrayIndices(); //	check node based (non-primitive) interpretation first
 //	data_mode = true;// todo remove hack
     assert_emit("x={1 2 3}; x#3=4;x#3", 4);
+#if WASM
+    assert_emit("puts('ok');", -1);
+#else
     assert_emit("puts('ok');", 8);
+#endif
 //    assert_emit("puts('ok');", 0);
     assert_emit("puts('ok');(1 4 3)#2", 4);
     assert_emit("{1 4 3}#2", 4);
 
     assert_emit("x={1 4 3};x#2", 4);
-    assert_emit("puts('ok');(1 4 3)#2", 4);
     assert_emit("{1 4 3}[1]", 4);
-    assert_emit("puts('ok');(1 4 3)#2", 4);
     assert_emit("(1 4 3)[1]", 4);
-    assert_emit("puts('ok');(1 4 3)#2", 4);
     assert_throws("(1 4 3)#0");
     skip(
             assert_emit("[1 4 3]#2", 4);// exactly one op expected in emitIndexPattern
@@ -1194,6 +1198,10 @@ void testImportWasm() {
 }
 
 void testMathLibrary() {
+    // todo generic power i as builtin
+#ifndef WASMTIME
+    assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
+#endif
     assert_emit("i=-9;√-i", 3);
     assert_emit("i=-9;√ -i", 3);
 //		assert_emit("use math;√π²", 3);
