@@ -3,8 +3,11 @@
 #include "wasm_reader.h"
 
 #if INCLUDE_MERGER
+
 #include "wasm_merger.h"
+
 #endif
+
 #include "wasm_emitter.h"
 
 #import "asserts.h"
@@ -232,7 +235,7 @@ void testMathPrimitives() {
 }
 
 void testFloatOperators() {
-    assert_equals(eval("42.0/2.0"), 21)
+    assert_is(("42.0/2.0"), 21)
     assert_emit(("3.0+3.0*3.0"), 12)
     assert_emit(("42.0/2.0"), 21)
     assert_emit(("42.0*2.0"), 84)
@@ -324,10 +327,10 @@ void testMathOperators() {
     assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
 
 #endif
-    assert_equals(eval("7%5"), 2)
+    assert_is(("7%5"), 2)
     skip(
 //			WebAssembly.Module doesn't validate: control flow returns with unexpected type. F32 is not a I32, in function at index 0
-            assert_equals(eval("42/2"), 21)
+            assert_is(("42/2"), 21)
     )
     assert_emit(("42/2"), 21)
     assert_emit(("42*2"), 84)
@@ -613,11 +616,13 @@ void testWasmLogic() {
     assert_emit("true or false", true);
     assert_emit("true or true", true);
 
+    assert_emit("¬ 1", 0);
+    assert_emit("¬ 0", 1);
 
-    assert_emit("0 ⊻ 0", 0);
-    assert_emit("0 ⊻ 1", 1);
-    assert_emit("1 ⊻ 0", 1);
-    assert_emit("1 ⊻ 1", 0);
+    assert_emit("0 ⋁ 0", 0);
+    assert_emit("0 ⋁ 1", 1);
+    assert_emit("1 ⋁ 0", 1);
+    assert_emit("1 ⋁ 1", 1);
 
     assert_emit("1 ∧ 1", 1);
     assert_emit("1 ∧ 0", 0);
@@ -631,13 +636,10 @@ void testWasmLogic() {
     assert_emit("0 ⋁ 0 ∧ 1", 0);
     assert_emit("¬ (0 ⋁ 0 ∧ 1)", 1);
 
-    assert_emit("¬ 1", 0);
-    assert_emit("¬ 0", 1);
-
-    assert_emit("0 ⋁ 0", 0);
-    assert_emit("0 ⋁ 1", 1);
-    assert_emit("1 ⋁ 0", 1);
-    assert_emit("1 ⋁ 1", 1);
+    assert_emit("0 ⊻ 0", 0);
+    assert_emit("0 ⊻ 1", 1);
+    assert_emit("1 ⊻ 0", 1);
+    assert_emit("1 ⊻ 1", 0);
 }
 
 void testWasmLogicNegated() {
@@ -707,7 +709,7 @@ void testWasmMemoryIntegrity() {
 #ifndef WASM
 #endif
 
-    if (!MEMORY_SIZE) {
+    if (!MAX_MEM) {
         error("NO MEMORY");
     }
     printf("MEMORY start at %lld\n", (int64) memory);
@@ -1053,17 +1055,19 @@ void testSquareExpWasm() {
     skip(
             assert_emit("π²", 9.869604401089358 /*π*π*/);
     )
+//    auto π = 3.1415926535897;
     assert_emit("π", 3.1415926535897);
-    assert_emit("π*1000000.", 3141592/*6535897*/);
-    assert_emit("π ²", 9/*.869604401089358 π*π*/);
-    assert_emit("π*1000000", 3141592/*6535897*/);
+//    pi = 3.1415926535897;
+//    assert_emit("π²", pi*pi);
+    assert_emit("π*1000000.", 3141592.6535897);
+    assert_emit("int i=π*1000000", 3141592);
     assert_emit("i=-9;-i", 9);
     assert_emit("- √9", -3);
     assert_emit(".1 + .9", 1);
     assert_emit("-.1 + -.9", -1);
     assert_emit("√9", 3);
 //	assert_emit("√-9 is -3i", -3);// if «use complex numbers»
-    assert_emit(".1", 0);
+    assert_emit(".1", .1);
 #ifndef WASMTIME
     skip(
             assert_emit("i=-9;√-i", 3);
@@ -1096,7 +1100,7 @@ void wasm_todos() {
     skip(
 
 //			WebAssembly.Module doesn't validate: control flow returns with unexpected type. F32 is not a I32, in function at index 0
-            assert_equals(eval("42/2"), 21)// in WEBAPP
+            assert_is(("42/2"), 21)// in WEBAPP
 
             assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
 
@@ -1212,7 +1216,7 @@ void testSmartReturn() {
             assert_emit("42/4", 10.5);
     )
 
-    assert_equals(eval("42.0/2.0"), 21)
+    assert_is(("42.0/2.0"), 21)
     assert_emit("x='abcde';x#4='x';x[3]", 'x');
     assert_emit(("-1.1"), -1.1)
     assert_emit("'OK'", "OK");
@@ -1295,19 +1299,18 @@ void testAllWasm() {
             testCustomOperators();
             testWasmMutableGlobal();
     )
-    assert_emit("x='abcde';x[3]", (int) 'd');
-    testSquareExpWasm();
-    testGlobals();
-
-    testIndexWasm();
-    testComparisonIdPrecedence();
-    testWasmStuff();
-    testFloatOperators();
+    testWasmLogicPrimitives();
     testWasmLogicUnary();
     testWasmLogicUnaryVariables();
     testWasmLogic();
     testWasmLogicNegated();
-    testWasmLogicPrimitives();
+    assert_emit("x='abcde';x[3]", (int) 'd');
+    testSquareExpWasm();
+    testGlobals();
+
+    testComparisonIdPrecedence();
+    testWasmStuff();
+    testFloatOperators();
     testConstReturn();
     testWasmIf();
     testMathOperators();
@@ -1317,8 +1320,6 @@ void testAllWasm() {
     testComparisonPrimitives();
     testComparisonMath();
     testComparisonId();
-    testWasmVariables0();
-    testWasmVariables0();
     testWasmTernary();
     testSquareExpWasm();
     testRoundFloorCeiling();
@@ -1329,6 +1330,10 @@ void testAllWasm() {
     testWasmWhile();
 
     // the following need MERGE or RUNTIME! todo : split
+    testWasmVariables0();
+
+
+    testIndexWasm();
 
     wasm_todos();
     testLogarithm();

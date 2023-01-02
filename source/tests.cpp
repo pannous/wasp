@@ -2968,12 +2968,20 @@ extern byte *stack_hack;
 extern "C" void testRun() {
 //    testSinus();
 
+    assert_emit("true", true)
+    assert_emit("false", false)
+    assert_emit("-42", -42)
     assert_emit("3.1415", 3.1415);
+    assert_emit("-3.1415", -3.1415);
     assert_emit("'ok'", "ok");
     assert_emit("'a'", "a");
     assert_emit("'a'", 'a');
     assert_emit("40", 40);
     assert_emit("41", 41);
+    assert_emit("1 ∧ 0", 0);
+    assert_emit("1 ∧ 0", 0);
+    assert_emit("1 ∧ 0", 0);
+
 //    return;
 //    assert_emit("42", 42);
 //    assert_emit("42", 43); // Error: ⚠️ TEST FAILED!  works

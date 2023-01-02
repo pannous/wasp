@@ -393,7 +393,7 @@ async function run_wasm(buf_pointer, buf_size) {
     // funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
     let main = funclet.exports.wasp_main || funclet.exports.main || funclet.instance.start || funclet.exports._start
     let result = main()
-    if (result > 0x100000000)
+    if (-0x100000000 > result || result > 0x100000000)
         result = new node(exports.smartNode(result)).Value()
     console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM WASM
     if (expect_test_result || 1) {

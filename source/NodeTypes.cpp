@@ -109,6 +109,7 @@ Type mapType(String arg) {
     else if (arg == "short")
         return int32;// vec_i16! careful c++ ABI overflow? should be fine since wasm doesnt have short
     else if (arg == "int")return int32;
+    else if (arg == "Int")return i32;
     else if (arg == "signed int")return i32s;
     else if (arg == "unsigned int")return i32;
     else if (arg == "unsigned char")return int32;
