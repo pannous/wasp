@@ -188,7 +188,7 @@ extern "C" void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ /
     heap_end += size;
 //	if(size>1000)
     bool check_overflow = false;// wasm trap: out of bounds memory access OK
-    if (check_overflow and MEMORY_SIZE and (int64) heap_end >= MEMORY_SIZE) {
+    if (check_overflow and MAX_MEM and (int64) heap_end >= MAX_MEM) {
         put_chars("OUT OF MEMORY", 13);
         puti(sizeof(Node));// 64
         puti(sizeof(String));// 20
@@ -196,7 +196,7 @@ extern "C" void *malloc(size_t size) {//}  __result_use_check __alloc_size(1){ /
         puti((int) last);
         puti((int) memory);
         puti((int) heap_end);
-        puti(MEMORY_SIZE);
+        puti(MAX_MEM);
         error("OUT OF MEMORY");// needs malloc :(
         panic();
     }

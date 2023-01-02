@@ -213,17 +213,21 @@ bool assert_isx(char *mark, int64 expect) {
 }
 
 bool assert_isx(char *mark, double expect) {
-	return assert_isx(mark, Node(expect));// explicit conversion ok!
+    return assert_isx(mark, Node(expect));// explicit conversion ok!
 }
 
 bool assert_isx(char *mark, bool expect) {
-	return assert_isx(mark, Node(expect));
+    return assert_isx(mark, Node(expect));
 }
 
 //#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){print("%s:%d\n",__FILE__,__LINE__);proc_exit(1);}
 // ⚠️ CAREFUL parses in DATA_MODE !
 
-#define skip(test) printf("SKIPPING %s\n",#test);debug_line();
+#if WASM
+#define skip(test)
+#else
+#define skip(test) print("SKIPPING");print(#test);debug_line();
+#endif
 #define todo_emit(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
 #define skip_wasm(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
 //print("SKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);

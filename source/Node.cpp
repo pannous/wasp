@@ -561,7 +561,7 @@ void Node::remove(Node &node) {
 }
 
 Node &Node::add(const Node *node) {
-    if ((int64) node > MEMORY_SIZE)
+    if ((int64) node > MAX_MEM)
         error("node Out of Memory");
     if (!node)return *this;
     if (this == &NIL) {
@@ -1066,7 +1066,7 @@ Node &Node::flat() {
             }
             return child;
         }
-        if ((int64) children < MEMORY_SIZE and not value.data and name.empty()) {
+        if ((int64) children < MAX_MEM and not value.data and name.empty()) {
             child.parent = parent;
             return child.flat();
         }
@@ -1394,8 +1394,8 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         return &NUL;// we NEVER have nodes at 0
     if (pointer > 0x1000000 and debug) // todo proper memory bound check including data/runtime_offset
         error("pointer>10000"); // todo remove (in)sanity check
-    if ((int64) pointer > MEMORY_SIZE)
-        error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % (int64) MEMORY_SIZE);
+    if ((int64) pointer > MAX_MEM)
+        error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % (int64) MAX_MEM);
 #if WASM
     return (Node *) (int64) pointer; // INSIDE wasm code INSIDE wasm linear wasm_memory
 #endif
@@ -1414,7 +1414,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.length = nodeStruct.length;
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
-        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MEMORY_SIZE)
+        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MAX_MEM)
             reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
 //        else
 //            error("bad name");
@@ -1447,7 +1447,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
             reconstruct.children[i] = *reconstructWasmNode(wasm_child_pointer);
         }
     }
-    if ((int64) reconstruct.name.data < 0 or (int64) reconstruct.name.data > MEMORY_SIZE)
+    if ((int64) reconstruct.name.data < 0 or (int64) reconstruct.name.data > MAX_MEM)
         error("invalid string in smartPointer");
     check_is(reconstruct.name.kind, string_header_32);
     if (reconstruct.name.length < 0 or reconstruct.name.length > MAX_NODE_CAPACITY)
