@@ -451,7 +451,8 @@ public:
             source = readFile(findFile(source, parserOptions.current_dir));
         }
 #ifndef RELEASE
-        printf("Parsing:\n%s\n", source.data);
+        put_chars("Parsing: ");
+        println(source.data);
 #endif
         columnStart = 0;
         at = -1;
@@ -1952,6 +1953,11 @@ void usage() {
     print("wasp tests ");
 }
 
+// provide stack space either through -Wl,-z,stack-size=1179648 or :
+//byte stack_hack[80000];// it turns out c++ DOES somehow need space before __heap_end
+// if value is too small we get all kinds of errors:
+// memory access out of bounds
+// THE SMALLER THE VALUE THE EARLIER IT FAILS
 
 // wasmer etc DO accept float/double return, just not from main!
 //extern "C"

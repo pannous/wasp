@@ -94,7 +94,7 @@ void testEmitter() {
 
 
 void testGlobals() {
-    assert_emit("π", 3);
+    assert_emit("π", 3.1415926535896688);
 }
 
 void test_get_local() {
@@ -614,14 +614,6 @@ void testWasmLogic() {
     assert_emit("true or true", true);
 
 
-    assert_emit("¬ 1", 0);
-    assert_emit("¬ 0", 1);
-
-    assert_emit("0 ⋁ 0", 0);
-    assert_emit("0 ⋁ 1", 1);
-    assert_emit("1 ⋁ 0", 1);
-    assert_emit("1 ⋁ 1", 1);
-
     assert_emit("0 ⊻ 0", 0);
     assert_emit("0 ⊻ 1", 1);
     assert_emit("1 ⊻ 0", 1);
@@ -638,6 +630,14 @@ void testWasmLogic() {
     assert_emit("0 ⋁ 1 ∧ 0", 0);
     assert_emit("0 ⋁ 0 ∧ 1", 0);
     assert_emit("¬ (0 ⋁ 0 ∧ 1)", 1);
+
+    assert_emit("¬ 1", 0);
+    assert_emit("¬ 0", 1);
+
+    assert_emit("0 ⋁ 0", 0);
+    assert_emit("0 ⋁ 1", 1);
+    assert_emit("1 ⋁ 0", 1);
+    assert_emit("1 ⋁ 1", 1);
 }
 
 void testWasmLogicNegated() {
@@ -1053,7 +1053,7 @@ void testSquareExpWasm() {
     skip(
             assert_emit("π²", 9.869604401089358 /*π*π*/);
     )
-    assert_emit("π", 3/*.1415926535897*/);
+    assert_emit("π", 3.1415926535897);
     assert_emit("π*1000000.", 3141592/*6535897*/);
     assert_emit("π ²", 9/*.869604401089358 π*π*/);
     assert_emit("π*1000000", 3141592/*6535897*/);
@@ -1295,30 +1295,12 @@ void testAllWasm() {
             testCustomOperators();
             testWasmMutableGlobal();
     )
-    assert_emit("x='abcde';x[3]", 'd');
-    testIndexWasm();
-    testLogarithm();
-    testMergeOwn();
-    skip(
-            testMergeRelocate();
-    )
-    testMergeWabt();
-    testMergeWabtByHand();
-    testEmitter();
-    testMathLibrary();
-    testStringIndicesWasm();
+    assert_emit("x='abcde';x[3]", (int) 'd');
     testSquareExpWasm();
-    testWasmLogicCombined();
     testGlobals();
-    testMergeWabt();
-    wasm_todos();
 
-//	exit(21);
-    testWasmIncrement();
-// TRUE TESTS:
+    testIndexWasm();
     testComparisonIdPrecedence();
-    testRecentRandomBugs();
-    testOldRandomBugs();
     testWasmStuff();
     testFloatOperators();
     testWasmLogicUnary();
@@ -1340,12 +1322,36 @@ void testAllWasm() {
     testWasmTernary();
     testSquareExpWasm();
     testRoundFloorCeiling();
-    wasm_todos();
     testWasmTernary();
     testArrayIndicesWasm();
     testWasmFunctionCalls();
     testWasmFunctionDefiniton();
     testWasmWhile();
+
+    // the following need MERGE or RUNTIME! todo : split
+
+    wasm_todos();
+    testLogarithm();
+
+
+    testMergeOwn();
+    skip(
+            testMergeRelocate();
+    )
+    testMergeWabt();
+    testMergeWabtByHand();
+    testEmitter();
+    testMathLibrary();
+    testStringIndicesWasm();
+    testWasmLogicCombined();
+    testMergeWabt();
+    wasm_todos();
+
+//	exit(21);
+    testWasmIncrement();
+// TRUE TESTS:
+    testRecentRandomBugs();
+    testOldRandomBugs();
     assert_is("١٢٣", 123);// todo UTF RTL control character!
 
     // Test that IMPLICITLY use runtime /  assert_run

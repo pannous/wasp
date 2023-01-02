@@ -231,26 +231,34 @@ bool assert_isx(char *mark, bool expect) {
 bool ok;
 
 extern List<String> done;
-#if MY_WASM
+
+//#if MY_WASM // todo WHY does if MY_WASM not work??
 #define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
-#else
-// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
-#define assert_is(mark, result) \
-printf("TEST %s==%s\n",#mark,#result); \
-debug_line();\
-ok=assert_isx(mark,result);\
-if(ok)printf("PASSED %s==%s\n",#mark,#result);\
-else{printf("FAILED %s==%s\n",#mark,#result); \
-backtrace_line()}
-#endif
+//#else
+//// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
+//#define assert_is(mark, result) \
+//printf("TEST %s==%s\n",#mark,#result); \
+//debug_line();\
+//ok=assert_isx(mark,result);\
+//if(ok)printf("PASSED %s==%s\n",#mark,#result);\
+//else{printf("FAILED %s==%s\n",#mark,#result); \
+//backtrace_line()}
+//#endif
+
+
+#define assert_eval assert_is
+//#define assert_ast(α, β) if (!assert_equals_x(analyze(parse(α)),parse(β))){printf("%s != %s",#α,#β);backtrace_line();}
+//#define assert_eval(α, β) if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+
+
 
 // for better readability, not (yet) semantic
 String normSerialization(String input) {
-	input = input.replaceAll("; ", ";");
-	input = input.replaceAll(" ;", ";");
-	input = input.replaceAll("( ", "(");
-	input = input.replaceAll("  ", " ");
-	input = input.replaceAll(":", "=");// danger!
+    input = input.replaceAll("; ", ";");
+    input = input.replaceAll(" ;", ";");
+    input = input.replaceAll("( ", "(");
+    input = input.replaceAll("  ", " ");
+    input = input.replaceAll(":", "=");// danger!
 //	input = input.replaceAll(" ", "");// VERY danger! (1 2 3) 123
 	return input;
 }
