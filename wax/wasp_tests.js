@@ -96,14 +96,11 @@ function testReverse() {
     console.log("TEST OK: testReverse")
 }
 
-function testRun1() {
-    // let cmd="puts 'CYRC!'"
-    // let cmd="puti 123"
-    // let cmd = "√3^2"
-    // let cmd = "123"
-    let cmd = "42*2/2"
-    let result = exports.run(chars(cmd))
-    // console.log(chars(result)) // "need asyncify for result" ;)
+function testMemoryDiff() {
+    let cs = chars("abcd")
+    copy_of_last_state = memory.buffer.slice(0, memory.length);//  heap_end
+    exports._Z7reversePci(cs, 4)
+    binary_diff(copy_of_last_state, memory.buffer)
 }
 
 async function testRunAsync() {
@@ -111,6 +108,7 @@ async function testRunAsync() {
         let result = await exports.testRun();
         console.log("GOT FINAL RESULT", result)
         resume = true // tests done!
+        STOP = 1
     } catch (x) {
         if (x instanceof YieldThread) {
             // print("test thread yielded, re-entering after run_wasm finished")
@@ -131,6 +129,38 @@ function testRun() {
     }
 }
 
+var STOP = 0
+
+async function testAll() {
+    try {
+        while (!STOP) {
+            // console.log("starting new testRunAsync")
+            // reset_heap()
+            copy_of_last_state = memory.buffer.slice(0, memory.length);
+            await testRunAsync()
+            var ms = 0;
+            while (++ms < 3 || expect_test_result && ms < 1000)
+                await new Promise(sleep => setTimeout(sleep, 10));
+        }
+    } catch (x) {
+        // binary_diff(copy_of_last_state,memory.buffer)
+        STOP = 1
+        throw x;
+    }
+}
+
+
+function testRun1() {
+    // let cmd="puts 'CYRC!'"
+    // let cmd="puti 123"
+    // let cmd = "√3^2"
+    // let cmd = "123"
+    let cmd = "42*2/2"
+    let result = exports.run(chars(cmd))
+    // console.log(chars(result)) // "need asyncify for result" ;)
+}
+
+
 function wasp_tests() {
     console.log("wasp_tests")
     // exports.puts(chars("JAAA"))
@@ -138,9 +168,18 @@ function wasp_tests() {
     testString();
     testReverse();
     testParse();
+    // testMemoryDiff();
     exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
-    if (0)
-        testRun1();// ONLY ONE !
-    else
-        testRun(); // don't do both!
+
+    let runmode = 3
+    switch (runmode) {
+        case 0:
+            return console.log("testRun disabled");
+        case 1:
+            return testRun1();
+        case 2:
+            return testRun();
+        default:
+            testAll()
+    }
 }

@@ -87,7 +87,8 @@ int atoi1(codepoint c);// usually byte 0…10, but with special signs for CYRILL
 
 int64 parseLong(chars str);
 
-extern double parseDouble(chars string);
+//float64
+double parseDouble(chars string);
 
 int encode_unicode_character(char *buffer, wchar_t ucs_character);
 

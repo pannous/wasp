@@ -190,7 +190,11 @@ int atoi(char *s) {
     return parseLong(s);
 }
 
-extern double parseDouble(chars string) {
+
+//extern "C" long double __floatditf (long i); // long double is float128!! we don't want that!
+int64 powl(int64 a, int b);
+
+double parseDouble(chars string) {
 // __extenddftf2
     double result = 0.0;
     if (!string) return result;
@@ -210,11 +214,11 @@ extern double parseDouble(chars string) {
         string++;
     while (*string) {
         if (*string == 'e' or *string == 'E') {
-#if MY_WASI
-            todo("EXP")
-#else
-            return result * (double) powl(10, parseLong(++string));
-#endif
+//#if MY_WASI
+//            todo("EXP")
+//#else
+            return result * (double) powl(10l, (int) parseLong(++string));
+//#endif
         }
         if (*string < '0' || *string > '9') return result;
         divisor *= 10.0;
@@ -227,6 +231,7 @@ extern double parseDouble(chars string) {
 
 class Node; // can't pre-access properties, BUT can use functions:
 String toString(Node &node);
+
 
 // Implementation of itoa0()
 char *formatLongWithBase(int64 num, int base = 10) {

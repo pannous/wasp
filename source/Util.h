@@ -84,7 +84,7 @@ typedef byte *bytes;
 //#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
 #define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
 
-#define check(test) {print("CHECKING %s\n");debug_line(); \
+#define check(test) {print("CHECKING ");print(#test);debug_line(); \
   if(test){print("OK check passes: ");printf("%s\n",#test);}else{printf("\nNOT PASSING %s\n",#test);backtrace_line()}}
 
 #include "String.h" // AFTER defines!

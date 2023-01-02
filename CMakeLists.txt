@@ -382,9 +382,15 @@ if (WASM) # OR WASI)
     #   #--allow-undefined-file= ,--export-all FUCKS UP __class_type_info!
     #--import-memory    Import memory from the environment
     add_definitions(-DMEMORY_SIZE=117964800)
-    ADD_COMPILE_FLAG("-Wl,--initial-memory=117964800") # stack size plus some
-    ADD_COMPILE_FLAG("-Wl,-z,stack-size=0") # 1MB*10  pointers will START from high and go lower!
+    ADD_COMPILE_FLAG("-Wl,--initial-memory=655360000") #
+    ADD_COMPILE_FLAG("   -Wl,-z,stack-size=16000000") #  16-byte aligned 1MB*10
+    # SOME "memory access out of bounds" come from too small stack-size!
+    #    used by  __wasm_call_ctors etc pointers will START from high and go lower!
+    #    ADD_COMPILE_FLAG("-Wl,-z,stack-size=1179648") # 1MB*10  pointers will START from high and go lower!
+    #    ADD_COMPILE_FLAG("-Wl,-z,stack-size=0") # do stack-stuff on heap via inspectable byte stack_hack[]
     #    ADD_COMPILE_FLAG("-Qn") # no producer metadata
+
+
     ADD_COMPILE_FLAG("-Wl,--whole-archive") #    Force load of all members in a static library
     ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # keep name section?
     ADD_COMPILE_FLAG("-fvisibility-inlines-hidden") # faster linking

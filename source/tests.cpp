@@ -590,7 +590,7 @@ void testStupidLongLong() {
 //	int64 c;// 8 bytes everywhere (still not guaranteed grr)
     float a;
     double b;
-    long double c;// 16 byte in wasm wow, don't use anyways;)
+    long double c;// float128 16 byte in wasm wow, don't use anyways;)
     print(sizeof(a));
     print(sizeof(b));
     print(sizeof(c));// what? 16 bytes!?
@@ -2786,9 +2786,7 @@ void testAllEmit() {
     // WASM emit tests under the hood:
     assert_emit("42", 42);// basics
     testLogic();
-    testAllAngle();
-    testRecentRandomBugs();
-    testMergeOwn();
+
     testEqualities();
     testLogic01();
     testLogicOperators();
@@ -2809,6 +2807,9 @@ void testAllEmit() {
     testBadInWasm();
 //    testSinus();
 
+    testAllAngle();
+    testRecentRandomBugs();
+    testMergeOwn();
 //    part of
 //    testAllWasm() :
 //    testRoundFloorCeiling();
@@ -2962,13 +2963,23 @@ extern "C" String *testFromJS(String *s) {
     return new String("ok from WASP");
 }
 
-//int x[0x10000];
+extern byte *stack_hack;
+
 extern "C" void testRun() {
-    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
-    assert_emit("42", 42); //
-    assert_emit("42", 43); // Error: ⚠️ TEST FAILED!  works
-    testAllEmit();
+//    testSinus();
+
+    assert_emit("3.1415", 3.1415);
+    assert_emit("'ok'", "ok");
+    assert_emit("'a'", "a");
+    assert_emit("'a'", 'a');
+    assert_emit("40", 40);
+    assert_emit("41", 41);
+//    return;
+//    assert_emit("42", 42);
+//    assert_emit("42", 43); // Error: ⚠️ TEST FAILED!  works
+//    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
     testAllWasm();
+    testAllEmit();
     testAllAngle();
 //    heap_end=__initial_heap_end+0x100000;// reset on each run!
     print("testRun SUCCEEDED");

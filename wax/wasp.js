@@ -90,7 +90,11 @@ let imports = {
         heap_end: new WebAssembly.Global({value: "i32", mutable: true}, 0),// todo: use as heap_end
         grow_memory: x => memory.grow(1), // à 64k … NO NEED, host grows memory automagically!
         run_wasm, // allow wasm modules to run plugins / compiler output
-        assert_expect: x => expect_test_result = new node(x).Value(),
+        assert_expect: x => {
+            if (expect_test_result)
+                error("already expecting value " + expect_test_result + " -> " + x)
+            expect_test_result = new node(x).Value()
+        },
         async_yield: x => { // called from inside wasm, set callback handler resume before!
             throw new YieldThread() // unwind wasm, reenter through resume() after run_wasm
         },
@@ -322,6 +326,7 @@ class node {
         if (this.kind == kinds.bool) return Boolean(this.value);
         if (this.kind == kinds.real) return reinterpretInt64AsFloat64(this.value);
         if (this.kind == kinds.node) return new node(this.value);
+        if (this.kind == kinds.unknown) return this.Content;// todo? bug?
         if (this.kind == kinds.reference) return this.Content || this.Childs;
         if (this.kind == kinds.object) return this.Content || this.Childs;
         if (this.kind == kinds.group) return this.Content || this.Childs;
@@ -378,7 +383,7 @@ function download(data, filename, type) {
 // allow wasm tests/plugins to build and execute small wasm files!
 // todo while wasp.wasm can successfully execute via run_wasm, it can't handle the result (until async wasm) OR :
 // https://web.dev/asyncify/
-var expect_test_result = 42; // set before running in semi sync tests!
+var expect_test_result = 0; // set before running in semi sync tests!
 async function run_wasm(buf_pointer, buf_size) {
     wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // download(wasm_buffer, "emit.wasm", "wasm")
@@ -457,35 +462,13 @@ function binary_diff(old_mem, new_mem) {
     }
 }
 
-var STOP = 0
+
+// var work = new Worker("wasp_tests.js");
+// work.postMessage({ a:8, b:9 });
+// work.onmessage = (evt) => { console.log(evt.data); };
+// resume=test // call this again once current test in wasp_tests is done!
 
 async function test() {
     if (typeof (wasp_tests) !== "undefined")
         wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
-    return
-    let cs = chars("abcd")
-    copy_of_last_state = memory.buffer.slice(0, memory.length);
-    exports._Z7reversePci(cs, 4)
-    binary_diff(copy_of_last_state, memory.buffer)
-    return
-    // var work = new Worker("wasp_tests.js");
-    // work.postMessage({ a:8, b:9 });
-    // work.onmessage = (evt) => { console.log(evt.data); };
-    // resume=test // call this again once current test in wasp_tests is done!
-
-    // if(code_input)
-    //     compile_and_run(code_input.value);// execute index.html code input
-    try {
-        while (!STOP) {
-            // console.log("starting new testRunAsync")
-            // reset_heap()
-            copy_of_last_state = memory.buffer.slice(0, memory.length);
-            await testRunAsync()
-            await new Promise(sleep => setTimeout(sleep, 10));
-        }
-    } catch (x) {
-        // binary_diff(copy_of_last_state,memory.buffer)
-        STOP = 1
-        throw x;
-    }
 }
