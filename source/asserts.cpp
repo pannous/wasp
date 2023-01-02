@@ -236,18 +236,18 @@ bool ok;
 
 extern List<String> done;
 
-//#if MY_WASM // todo WHY does if MY_WASM not work??
+#if WASM // todo WHY does if MY_WASM not work??
 #define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
-//#else
+#else
 //// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
-//#define assert_is(mark, result) \
-//printf("TEST %s==%s\n",#mark,#result); \
-//debug_line();\
-//ok=assert_isx(mark,result);\
-//if(ok)printf("PASSED %s==%s\n",#mark,#result);\
-//else{printf("FAILED %s==%s\n",#mark,#result); \
-//backtrace_line()}
-//#endif
+#define assert_is(mark, result) \
+printf("TEST %s==%s\n",#mark,#result); \
+debug_line();\
+ok=assert_isx(mark,result);\
+if(ok)printf("PASSED %s==%s\n",#mark,#result);\
+else{printf("FAILED %s==%s\n",#mark,#result); \
+backtrace_line()}
+#endif
 
 
 #define assert_eval assert_is

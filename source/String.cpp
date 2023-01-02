@@ -180,8 +180,13 @@ int64 parseLong(chars str) {
         k = (k << 3) + (k << 1) + n;
     }
 
-    if (k > 0 and (*str == 'e' or *str == 'E'))
-        k *= powd(10, parseLong(++str));// we need float for E-10 == 1/10 …
+    if (k > 0 and (*str == 'e' or *str == 'E')) {
+        auto ex = parseLong(++str);
+        if (ex > 0)
+            k *= powl(10l, (unsigned int) ex);
+        else
+            k /= powl(10l, (unsigned int) -ex);
+    }
     return sig * k;
 }
 
@@ -192,7 +197,6 @@ int atoi(char *s) {
 
 
 //extern "C" long double __floatditf (long i); // long double is float128!! we don't want that!
-int64 powl(int64 a, int b);
 
 double parseDouble(chars string) {
 // __extenddftf2
@@ -214,11 +218,11 @@ double parseDouble(chars string) {
         string++;
     while (*string) {
         if (*string == 'e' or *string == 'E') {
-//#if MY_WASI
-//            todo("EXP")
-//#else
-            return result * (double) powl(10l, (int) parseLong(++string));
-//#endif
+            auto ex = parseLong(++string);
+            if (ex > 0)
+                return result * powl(10l, (unsigned int) ex);
+            else
+                return result / powl(10l, (unsigned int) -ex);
         }
         if (*string < '0' || *string > '9') return result;
         divisor *= 10.0;

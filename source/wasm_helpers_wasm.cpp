@@ -21,17 +21,6 @@ void free(void *) {/*lol*/}
 
 _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void *) _NOEXCEPT {}
 
-int64 powl(int64 a, int b) {
-    int64 res = 0;
-    int n = 1;
-    do {
-        if (b & 1) res += a * n;
-        n *= 2;
-        b = b >> 1;
-    } while (b);
-    return res;
-}
-
 inline int64 doubleToLongBits(double a) {
     return *((int64 *) &a);
 }
@@ -41,6 +30,7 @@ inline double longBitsToDouble(int64 a) {
 }
 
 double powd(double a, double b) {
+    trace("VERY crude first approximation of power! 1/4 ≈ 0.22 …!");
     int x = (int) (doubleToLongBits(a) >> 32);
     int y = (int) (b * (x - 1072632447) + 1072632447);
     return longBitsToDouble(((int64) y) << 32);
@@ -321,12 +311,16 @@ int put_s(String *s) {
     return 0;//(int) s;// stdio
 }
 
+#if not MY_WASM
 int puti(int i) {
+    put_chars(">>>>");
     put_chars(formatLong(i), 0);
 //    newline();
 //    printf("%d", i);
     return i;
 }
+
+#endif
 
 int64 putl(int64 l) {
     put_chars(formatLong(l), 0);

@@ -244,7 +244,7 @@ void testFloatOperators() {
     assert_emit(("3.0+3.0*3.0"), 12)
     assert_emit(("3.1>3.0"), true)
     assert_emit(("2.1<3.0"), true)
-    assert_emit("i=123.4;i", 123);// main returning int
+    assert_emit("i=123.4;i", 123.4);// main returning int
     assert_emit("i=1.0;i", 1.0);
     assert_emit("i=3;i", 3);
     assert_emit("i=1.0;i", 1.0);
@@ -306,7 +306,6 @@ void testNorm() {
 void testMathOperators() {
 //	assert_emit(("42 2 *"), 84)
     assert_emit("- -3", 3);
-    assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
     assert_emit("1- -3", 4);
     assert_emit("1 - -3", 4);
     skip(
@@ -319,19 +318,9 @@ void testMathOperators() {
     assert_emit("‖-3‖", 3);
     assert_emit("-‖-3‖", -3);
     assert_emit("‖-3‖+1", 4);
-#ifndef WASMTIME
-    assert_emit("3^2", 9);
-    assert_emit("3^1", 3);
-    assert_emit("√3^2", 3);
-    assert_emit("√3^0", 1);
-    assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
-
-#endif
     assert_is(("7%5"), 2)
-    skip(
+    assert_is(("42/2"), 21)
 //			WebAssembly.Module doesn't validate: control flow returns with unexpected type. F32 is not a I32, in function at index 0
-            assert_is(("42/2"), 21)
-    )
     assert_emit(("42/2"), 21)
     assert_emit(("42*2"), 84)
     assert_emit(("42+2"), 44)
@@ -350,16 +339,15 @@ void testMathOperators() {
     assert_emit("3*-1", -3);
     assert_emit("-√9", -3);
 
-    assert_emit("i=3.70001;.3+i", 4);
-
-    assert_emit("i=3.71;.3+i", 4);
     assert_emit("i=3.7;.3+i", 4);
+    assert_emit("i=3.71;.3+i", 4.01);
+    assert_emit("i=3.70001;.3+i", 4.00001);
     assert_is("4-1", 3);//
 
     assert_emit("i=3;i++", 4);
     assert_emit("- √9", -3);
     assert_emit("i=-9;-i", 9);
-    assert_emit("√ π ²", 3);
+    assert_emit("√ π ²", 3.1415926535896688);
     assert_emit(("3²"), 9);
     skip(
             assert_emit(("3⁰"), 1);// get UNITY of set (1->e auto cast ok?)
@@ -370,7 +358,15 @@ void testMathOperators() {
 
     assert_emit("i=3.70001;.3+i", 4);
     assert_emit("i=3.7;.3+i", 4);
+}
 
+void testMathOperatorsRuntime() {
+    assert_emit("3^2", 9);
+    assert_emit("3^1", 3);
+    assert_emit("√3^2", 3);
+    assert_emit("√3^0", 1);
+    assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
+    assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
 }
 
 void testComparisonMath() {
@@ -1299,6 +1295,7 @@ void testAllWasm() {
             testCustomOperators();
             testWasmMutableGlobal();
     )
+    testMathOperators();
     testWasmLogicPrimitives();
     testWasmLogicUnary();
     testWasmLogicUnaryVariables();
@@ -1313,7 +1310,6 @@ void testAllWasm() {
     testFloatOperators();
     testConstReturn();
     testWasmIf();
-    testMathOperators();
     testMathPrimitives();
     testSelfModifying();
     testNorm();
@@ -1357,6 +1353,7 @@ void testAllWasm() {
 // TRUE TESTS:
     testRecentRandomBugs();
     testOldRandomBugs();
+    testMathOperatorsRuntime();
     assert_is("١٢٣", 123);// todo UTF RTL control character!
 
     // Test that IMPLICITLY use runtime /  assert_run
