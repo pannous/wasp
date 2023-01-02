@@ -55,7 +55,6 @@ Map<String, Code> functionCodes; // EXCLUDING MAIN todo keep in Function
 //List<String> declaredFunctions; only new functions that will get a Code block, no runtime/imports
 //List<Function> imports;// from libraries. todo: these are inside functions<> for now!
 
-int alignment_hack[10000];// todo: understand this nonsense!
 String start = "wasp_main";
 
 Type arg_type = voids;// autocast if not int
@@ -2944,23 +2943,17 @@ void clearEmitterContext() {
 }
 
 [[nodiscard]]
-Code &emit(Node &root_ast, Module *runtime0, String _start) {
-    start = _start;
+Code &emit(Node &root_ast) {
     memoryHandling = export_memory;
 //        memoryHandling = import_memory; // works for micro-runtime
 //        memoryHandling = internal_memory; // works for wasm3
     last_index = -1;
     runtime_function_offset = 0;
     add_imports_and_builtins();
+    start = "wasp_main";// necessary, else wax fail
     functions[start].is_declared = true;
-#if not WASM
-    if (start != "_start" and not functions.has("_start"))
-        functions["_start"] = {.name="_start", .is_builtin=true, .is_used=true}; // THIS kills root_ast in WASM BUG!!
-#endif
-    const Code customSectionvector;
-//	const Code &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
-    // ^^^ currently causes malloc_error WHY??
-
+//    const Code customSectionvector;
+    Code const &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
     auto customSection = createSection(custom_section, customSectionvector);
     Code typeSection1 = emitTypeSection();// types must be defined in analyze(), not in code declaration
     Code importSection1 = emitImportSection();// needs type indices

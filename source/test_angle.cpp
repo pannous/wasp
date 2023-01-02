@@ -9,10 +9,6 @@
 #import "asserts.cpp"
 #include "asserts.h"
 
-//#define assert_ast(α, β) if (!assert_equals_x(analyze(parse(α)),parse(β))){printf("%s != %s",#α,#β);backtrace_line();}
-#define assert_eval(α, β) if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
-
-
 void testFunctionParams() {
 //	assert_equals(parse("f(x)=x*x").param->first(),"x");
     assert_equals("f(x)=x*x;f(3)", "9");// functions => angle!
@@ -43,13 +39,13 @@ void testCall() {
 }
 
 void testIf() {
-    skip( // todo:
-            assert_eval("if '':3", false);
-            assert_eval("if ():3", false);
-            assert_eval("if ø:3", false);
-            assert_eval("if {}:3", false);
-            assert_eval("if x:3", false);
-    )
+//    skip( // todo:
+//            assert_eval("if '':3", false);
+//            assert_eval("if ():3", false);
+//            assert_eval("if ø:3", false);
+//            assert_eval("if {}:3", false);
+//            assert_eval("if x:3", false);
+//    )
 
     assert_eval("if(2):{3}", 3);
     assert_eval("if 2 : 3 else 4", 3);
