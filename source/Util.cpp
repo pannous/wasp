@@ -547,12 +547,7 @@ int stackItemSize(Valtype type, bool throws) {
 
 
 int64 powl(int64 a, unsigned int b) {
-    if (b == 0)return a;
-    int64 res = 0;
-    do {
-        if (b & 1) res += a;
-        a *= a;
-        b = b >> 1;
-    } while (b);
+    int64 res = 1;
+    while (b-- > 0)res = res * a;
     return res;
 }
