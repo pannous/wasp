@@ -187,3 +187,6 @@ template<class S>
 class List;
 
 [[maybe_unused]] List<String> arguments();
+
+int64 powl(int64 a, unsigned int b);
+

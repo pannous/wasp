@@ -2966,10 +2966,27 @@ extern "C" String *testFromJS(String *s) {
 extern byte *stack_hack;
 
 extern "C" void testRun() {
-//    testSinus();
+//    assert_equals(ftoa(8.33333333332248946124e-03), "0.0083");
+    assert_equals(powl(10, 1), 10l);
+    assert_equals(powl(10, 2), 100l);
+    assert_equals(powl(10, 4), 10000l);
+    assert_equals(powl(2, 2), 4l);
+    assert_equals(powl(2, 8), 256l);
+    skip(
+            assert_equals(powd(2, -2), 1 / 4.);
+            assert_equals(powd(2, -8), 1 / 256.);
+            assert_equals(powd(10, -2), 1 / 100.);
+            assert_equals(powd(10, -4), 1 / 10000.);
+    )
+    assert_equals(parseDouble("8.333e3"), 8333.0l);
+    assert_equals(parseDouble("8.333e-3"), 0.008333l);
 
-    assert_emit("true", true)
+//    testSinus();
+//    pi = 3.1415926535896688; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?
+//    assert_emit("√ π ²", pi);
+    assert_emit("true", true);
     assert_emit("false", false)
+    assert_emit("8.33333333332248946124e-03", 8.33333333332248946124e-03);
     assert_emit("-42", -42)
     assert_emit("3.1415", 3.1415);
     assert_emit("-3.1415", -3.1415);
