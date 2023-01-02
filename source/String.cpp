@@ -174,8 +174,8 @@ int64 parseLong(chars str) {
         int64 n;
         short len;
         n = atoi1(decode_unicode_character(str, &len));// inline!
-        str += len;
         if (n < 0 or n > 9)break;
+        str += len;
         if (k < 0)k = 0;
         k = (k << 3) + (k << 1) + n;
     }
@@ -184,8 +184,7 @@ int64 parseLong(chars str) {
         auto ex = parseLong(++str);
         if (ex > 0)
             k *= powl(10l, (unsigned int) ex);
-        else
-            k /= powl(10l, (unsigned int) -ex);
+        else todo("use float for negative exponential, e.g. 1.1E-3");
     }
     return sig * k;
 }

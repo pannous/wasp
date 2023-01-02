@@ -16,6 +16,32 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testPower() {
+    assert_equals(powl(10, 1), 10l);
+    assert_equals(powl(10, 2), 100l);
+    assert_equals(powl(10, 3), 1000l);
+    assert_equals(powl(10, 4), 10000l);
+    assert_equals(parseLong("8e6"), 8000000l);
+    skip(
+            assert_equals(parseLong("8e-6"), 1.0 / 8000000l);
+    )
+    assert_equals(parseDouble("8.333e-3"), 0.008333l);
+    assert_equals(parseDouble("8.333e3"), 8333.0l);
+    assert_equals(parseDouble("8.333e-3"), 0.008333l);
+//    assert_equals(ftoa(8.33333333332248946124e-03), "0.0083");
+    assert_equals(powl(10, 1), 10l);
+    assert_equals(powl(10, 2), 100l);
+    assert_equals(powl(10, 4), 10000l);
+    assert_equals(powl(2, 2), 4l);
+    assert_equals(powl(2, 8), 256l);
+    skip(
+            assert_equals(powd(2, -2), 1 / 4.);
+            assert_equals(powd(2, -8), 1 / 256.);
+            assert_equals(powd(10, -2), 1 / 100.);
+            assert_equals(powd(10, -4), 1 / 10000.);
+    )
+
+}
 
 void testMaps0() {
     Map<int, long> map;
@@ -2824,6 +2850,7 @@ void testAllEmit() {
 
 void tests() {
     assurances();
+    testPower();
     testMarkSimple();
     testMarkAsMap();
     testMarkMultiDeep();
@@ -2966,21 +2993,7 @@ extern "C" String *testFromJS(String *s) {
 extern byte *stack_hack;
 
 extern "C" void testRun() {
-//    assert_equals(ftoa(8.33333333332248946124e-03), "0.0083");
-    assert_equals(powl(10, 1), 10l);
-    assert_equals(powl(10, 2), 100l);
-    assert_equals(powl(10, 4), 10000l);
-    assert_equals(powl(2, 2), 4l);
-    assert_equals(powl(2, 8), 256l);
-    skip(
-            assert_equals(powd(2, -2), 1 / 4.);
-            assert_equals(powd(2, -8), 1 / 256.);
-            assert_equals(powd(10, -2), 1 / 100.);
-            assert_equals(powd(10, -4), 1 / 10000.);
-    )
-    assert_equals(parseDouble("8.333e3"), 8333.0l);
-    assert_equals(parseDouble("8.333e-3"), 0.008333l);
-
+    testPower();
 //    testSinus();
 //    pi = 3.1415926535896688; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?
 //    assert_emit("√ π ²", pi);
