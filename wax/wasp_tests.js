@@ -140,7 +140,7 @@ async function testAll() {
             await testRunAsync()
             var ms = 0;
             while (++ms < 3 || expect_test_result && ms < 1000)
-                await new Promise(sleep => setTimeout(sleep, 10));
+                await new Promise(sleep => setTimeout(sleep, 3));
         }
     } catch (x) {
         // binary_diff(copy_of_last_state,memory.buffer)
