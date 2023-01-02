@@ -877,8 +877,8 @@ public:
 
     int indexOf(chars string, bool reverse = false) {
         int l = strlen(string);
-        if ((int64) data + l > MEMORY_SIZE)
-            error("corrupt string");
+//        if ((int64) data + l > MAX_MEM)
+//            error("corrupt string"); // let it fail / auto-grow!?
         for (int i = 0; i <= length - l; i++) {
             bool ok = true;
             int i0 = reverse ? length - i : i;

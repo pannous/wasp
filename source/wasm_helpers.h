@@ -23,11 +23,11 @@ extern void error1(chars message, chars file, int line);
 extern "C" unsigned int *memory;// =0; always, BUT heap_offset/current is higher from beginning!
 extern void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
 
-#ifndef MEMORY_SIZE
+#ifndef MAX_MEM
 #ifdef WASM
 extern int MAX_MEM;
 #else
-#define MEMORY_SIZE 0x2000000000000000L  // ~ (2**64)/10 // what for?
+#define MAX_MEM 0x2000000000000000L  // ~ (2**64)/10 // what for?
 #endif
 #endif
 
