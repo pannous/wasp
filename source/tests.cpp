@@ -2993,7 +2993,7 @@ extern "C" String *testFromJS(String *s) {
 extern byte *stack_hack;
 
 extern "C" void testRun() {
-    testPower();
+//  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 //    testSinus();
 //    pi = 3.1415926535896688; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?
 //    assert_emit("√ π ²", pi);
