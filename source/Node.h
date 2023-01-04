@@ -323,13 +323,10 @@ public:
 
 
     explicit
-    Node(char c, bool withValue = true /*todo why not, ever? */ ) {
+    Node(char c) {
         name = String(c);
-        if (withValue) {
-            value.longy = c;
-            kind = codepoints;
-        }
-        // todo ^^ keep!
+        value.longy = c;
+        kind = codepoints;
     }
 
     explicit
