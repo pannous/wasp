@@ -105,9 +105,10 @@ bool assert_equals_x(Node a, Node b, chars context = "") {
     char *bs = b.serialize().data;
     if (a == b) {
         printf(" OK %s == %s   %s\n", as, bs, context);
-    } else
+    } else {
         printf("FAILED assert_equals! %s should be %s %s\n", as, bs, context);
-    printf("%s != %s\n", as, bs);
+        printf("%s != %s\n", as, bs);
+    }
     return a == b;
 }
 
@@ -182,30 +183,30 @@ bool assert_isx(chars mark, Node expect) {
         }
         if (left != expect)
             //			breakpoint_helper
-			if (left != expect)// Redundant for Breakpoint ;)
+            if (left != expect)// Redundant for Breakpoint ;)
                 printf("FAILED %s ≠ %s\n", left.name.data, expect.name.data);
-		return left == expect;
-	} catch (SyntaxError *err) {
+        return left == expect;
+    } catch (SyntaxError *err) {
         print("ERROR IN TEST\n");
         printf("%s", err->data);
-	} catch (String *err) {
+    } catch (String *err) {
         print("ERROR IN TEST\n");
         printf("%s", err->data);
-	} catch (chars err) {
+    } catch (chars err) {
         print("ERROR IN TEST\n");
         printf("%s\n", err);
-	} catch (...) {
-		raise("\nERROR IN TEST (no further data):\n");
-	}
-	return false;
+    } catch (...) {
+        raise("\nERROR IN TEST (no further data):\n");
+    }
+    return false;
 }
 
 bool assert_isx(char *mark, chars expect) {
-	return assert_isx(mark, Node(expect));// explicit conversion ok!
+    return assert_isx(mark, Node(expect));// explicit conversion ok!
 }
 
 bool assert_isx(char *mark, int expect) {
-	return assert_isx(mark, Node(expect));// explicit conversion ok!
+    return assert_isx(mark, Node(expect));// explicit conversion ok!
 }
 
 bool assert_isx(char *mark, int64 expect) {
@@ -264,7 +265,7 @@ String normSerialization(String input) {
     input = input.replaceAll("  ", " ");
     input = input.replaceAll(":", "=");// danger!
 //	input = input.replaceAll(" ", "");// VERY danger! (1 2 3) 123
-	return input;
+    return input;
 }
 
 
@@ -273,21 +274,21 @@ void assertSerialize(const char *input) {
     const String &serialized = parsed.serialize();
     Node parsed2 = parse(serialized);
     bool equalsX = assert_equals_x(parsed, parsed2);
-	if (!equalsX) {
-		print(parsed);
-		print("≠");
-		print(parsed2);
+    if (!equalsX) {
+        print(parsed);
+        print("≠");
+        print(parsed2);
 
-		print("----------------");
-		print(input);
-		print("≠");
-		print(serialized);
-		print("----------------");
-		print(normSerialization(input));
-		print("≠");
-		print(normSerialization(serialized));
-		error("Serialization Error");
-	}
+        print("----------------");
+        print(input);
+        print("≠");
+        print(serialized);
+        print("----------------");
+        print(normSerialization(input));
+        print("≠");
+        print(normSerialization(serialized));
+        error("Serialization Error");
+    }
 }
 
 

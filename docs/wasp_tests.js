@@ -150,18 +150,25 @@ async function testAll() {
 }
 
 
-function testRun1() {
+async function testRun1() {
     // let cmd="puts 'CYRC!'"
     // let cmd="puti 123"
     // let cmd = "√3^2"
     // let cmd = "123"
-    let cmd = "42*2/2"
-    let result = exports.run(chars(cmd))
+    // expect_test_result="abc"
+    // let cmd = "42*2/2"
+    expect_test_result = "a"
+    let cmd = "'a'"
+    let result = await exports.run(chars(cmd))
     // console.log(chars(result)) // "need asyncify for result" ;)
+    // console.log("!!!")
 }
 
 
-function wasp_tests() {
+async function wasp_tests() {
+    // console.log(new node(exports.testNodeJS())); // lives in wasp.wasm
+    // await testRun1() // result lives in emit.wasm!
+    // return;
     console.log("wasp_tests")
     // exports.puts(chars("JAAA"))
     // backtrace_line();

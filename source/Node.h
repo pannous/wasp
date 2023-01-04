@@ -298,14 +298,17 @@ public:
     }
 
 
-    explicit Node(String *args) {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
-        init_children();
-        while (args[length] and length < MAX_WASM_DATA_LENGTH) {
-            children[length] = Node(args[length]);
-            length++;
-        }
-        kind = groups;
+    explicit Node(String *args) : Node(*args) {
     }
+
+//    explicit Node(String *args) BAD! {// initiator list C style {x,y,z,0} ZERO 0 ø TERMINATED!!
+//        init_children();
+//        while (args[length] and length < MAX_WASM_DATA_LENGTH) {
+//            children[length] = Node(args[length]);
+//            length++;
+//        }
+//        kind = groups;
+//    }
 
     explicit Node(int buffer[]) {
         value.data = buffer;
@@ -425,7 +428,7 @@ public:
     }
 
 
-    explicit // wow without explicit everything breaks WHY?
+    explicit // wow without explicit everything breaks WHY? because Node(void*) goes here!!!
     Node(bool yes) {
         if (yes)
             *this = True;
@@ -468,8 +471,8 @@ public:
 //			}
 //		else if (atof(s)) { value.real = atoi(s); }
         else {
-            kind = unknown;
-//			kind = strings;
+//            kind = unknown;
+            kind = strings;
             value.string = new String(s.data, s.length, true);// todo COPY AGAIN!?
             if (name == empty_name)name = s;
         }

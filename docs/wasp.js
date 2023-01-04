@@ -89,7 +89,9 @@ let imports = {
         memory, // optionally provide js Memory … alternatively use exports.memory in js, see below
         heap_end: new WebAssembly.Global({value: "i32", mutable: true}, 0),// todo: use as heap_end
         grow_memory: x => memory.grow(1), // à 64k … NO NEED, host grows memory automagically!
-        run_wasm, // allow wasm modules to run plugins / compiler output
+        run_wasm: async (x, y) => {
+            return await run_wasm(x, y)
+        }, // allow wasm modules to run plugins / compiler output
         assert_expect: x => {
             if (expect_test_result)
                 error("already expecting value " + expect_test_result + " -> " + x)
@@ -137,6 +139,17 @@ function check(ok, msg) {
     if (!ok) throw new Error("⚠️ TEST FAILED! " + (msg || ""));
 }
 
+function debugMemory(pointer, num, mem) {
+    if (!mem) mem = memory
+    let buffer = new Uint8Array(mem.buffer, pointer, num);
+    let i = 0
+    while (num-- > 0) {
+        let x = buffer[i++]
+        if (i < 3 || x)
+            console.log("CHAR AT", i, hex(x), chr(x), x)
+    }
+}
+
 function string(data) { // wasm<>js interop
     switch (typeof data) {
         case "string":
@@ -149,26 +162,32 @@ function string(data) { // wasm<>js interop
         case "bigint":
         case "number":
         default:
-            return chars(read_int32(data), read_int32(data + 4))
+            let pointer = read_int32(data);
+            let length = read_int32(data + 4);
+            if (!pointer)
+                debugMemory(data - 10, 20)
+            let cs = load_chars(pointer, length);
+            return cs
     }
 }
 
-function load_chars(pointer, length = -1, format = 'utf8') {
+function load_chars(pointer, length = -1, format = 'utf8', module_memory) {
+    if (!module_memory) module_memory = memory
     if (pointer === 0) return
     if (typeof pointer == "string") return chars(s)
     // console.log("string",pointer,length)
     if (length < 0) { // auto length
-        let buffer = new Uint8Array(memory.buffer, pointer, memory.length);
+        let buffer = new Uint8Array(module_memory.buffer, pointer, module_memory.length);
         while (buffer[++length]) ;// strlen ;)
     }
     //console.log("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
     if (typeof (TextDecoder) != 'undefined') {// WEB, text-encoding, Node 11
         const utf8_decoder = new TextDecoder('utf8');
         let decoder = format == 'utf8' ? utf8_decoder : utf16denoder
-        let arr = new Uint8Array(memory.buffer, pointer, length);
+        let arr = new Uint8Array(module_memory.buffer, pointer, length);
         return decoder.decode(arr)
     } else { // fallback
-        buf = Buffer.from(memory.buffer) // Node only!
+        buf = Buffer.from(module_memory.buffer) // Node only!
         buf = buf.slice(pointer, pointer + length)
         s = buf.toString(format)// utf8 or 'utf16le'
         return s
@@ -325,7 +344,8 @@ class node {
         if (this.kind == kinds.long) return Number(this.value);
         if (this.kind == kinds.bool) return Boolean(this.value);
         if (this.kind == kinds.real) return reinterpretInt64AsFloat64(this.value);
-        if (this.kind == kinds.node) return new node(this.value);
+        if (this.kind == kinds.node) return new node(this.value); //.Value();
+        if (this.kind == kinds.codepoint) return String.fromCodePoint(this.value)
         if (this.kind == kinds.unknown) return this.Content;// todo? bug?
         if (this.kind == kinds.reference) return this.Content || this.Childs;
         if (this.kind == kinds.object) return this.Content || this.Childs;
@@ -380,6 +400,30 @@ function download(data, filename, type) {
 }
 
 
+// see [smart-pointers](https://github.com/pannous/wasp/wiki/smart-pointer)
+function smartNode(data0, type /*int32*/, memory) {
+    // console.log("smartNode")
+    type = data0 >> BigInt(32) // shift 32 bits ==
+    let data = Number(BigInt.asIntN(32, data0))// drop high bits
+    if (type == 0x10000000 || type == 0x100000) {
+        // console.log("data",data)
+        debugMemory(data - 100, 1000, memory);
+        return load_chars(data, length = -1, format = 'utf8', memory)
+    }
+    if (type == 0x7E || type8 == 0x3F || type8 == 0x40) // float64
+        return reinterpretInt64AsFloat64(data0)
+    if (type == 0x7D) // float32
+        return reinterpretInt32AsFloat32(data0)
+    if (!Number.isInteger(type))
+        console.error("smart type should be an integer: ", type, "of", data);
+    if (BigInt(type) & 0x40000000n) {// array
+        // todo get length, slice
+        console.log("smart type: array")
+        console.log(memory[address])
+    }
+    return {data: data, type: type}
+}
+
 // allow wasm tests/plugins to build and execute small wasm files!
 // todo while wasp.wasm can successfully execute via run_wasm, it can't handle the result (until async wasm) OR :
 // https://web.dev/asyncify/
@@ -390,12 +434,21 @@ async function run_wasm(buf_pointer, buf_size) {
     let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
     let funclet = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
     funclet.exports = funclet.instance.exports
-    // funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
+    funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
     let main = funclet.exports.wasp_main || funclet.exports.main || funclet.instance.start || funclet.exports._start
     let result = main()
-    if (-0x100000000 > result || result > 0x100000000)
-        result = new node(exports.smartNode(result)).Value()
-    console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM WASM
+    console.log("GOT raw ", result)
+    if (-0x100000000 > result || result > 0x100000000) {
+        if (!funclet.memory)
+            error("NO funclet.memory")
+        debugMemory(0, 1000000, funclet.memory)
+        result = smartNode(result, 0, funclet.memory)
+        //  result lives in emit.wasm!
+        // let nod = new node(exports.smartNode(result))
+        // console.log("GOT nod ", nod)
+        // result = nod.Value()
+    }
+    console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM emit.WASM
     if (expect_test_result || 1) {
         if (expect_test_result != result) {
             STOP = 1
@@ -410,23 +463,23 @@ async function run_wasm(buf_pointer, buf_size) {
 
 wasm_data = fetch(WASM_FILE)
 WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
-        instance = obj.instance
-        exports = instance.exports
-        HEAP = exports.__heap_base; // ~68000
-        DATA_END = exports.__data_end
+    instance = obj.instance
+    exports = instance.exports
+    HEAP = exports.__heap_base; // ~68000
+    DATA_END = exports.__data_end
     heap_end = HEAP || DATA_END;
     heap_end += 0x100000
     memory = exports.memory || exports._memory || memory
-        buffer = new Uint8Array(memory.buffer, 0, memory.length);
-        main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
-        main = instance._Z11testCurrentv || main
-        if (main) {
-            console.log("got main")
-            result = main()
-        } else {
-            console.error("missing main function in wasp module!")
-            result = instance.exports//show what we've got
-        }
+    buffer = new Uint8Array(memory.buffer, 0, memory.length);
+    main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
+    main = instance._Z11testCurrentv || main
+    if (main) {
+        console.log("got main")
+        result = main()
+    } else {
+        console.error("missing main function in wasp module!")
+        result = instance.exports//show what we've got
+    }
         console.log(result);
         loadKindMap()
         setTimeout(test, 1);// make sync
@@ -470,5 +523,5 @@ function binary_diff(old_mem, new_mem) {
 
 async function test() {
     if (typeof (wasp_tests) !== "undefined")
-        wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
+        await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 }
