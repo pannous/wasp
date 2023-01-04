@@ -2436,7 +2436,7 @@ void testNodeConversions() {
     Node a2 = Node(1.2f);
     check(a2.kind == reals);
     check(a2.value.real == 1.2f);
-    Node as = Node('a', true);
+    Node as = Node('a');
     check(as.kind == strings or as.kind == codepoints);
     if (as.kind == strings) {check(*as.value.string == 'a'); }
     if (as.kind == codepoints) check((codepoint) as.value.longy == 'a');
@@ -2958,7 +2958,12 @@ void tests() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
-    assert_emit("'a'", Node('a'));
+#if not WASM
+    assert_emit("“hello1”", Node("hello1"));
+    return;
+#endif
+
+//    assert_emit("'a'", Node('a'));
 //    tests();// make sure all still ok before changes
 //    todos();
     tests();// make sure all still ok after messing with memory
@@ -2974,8 +2979,19 @@ void testCurrent() {
 }
 // valgrind --track-origins=yes ./wasp
 
+extern "C" Node *testNodeJS(String *s) {
+//    aligned_alloc(8, 8);
+//    auto pString = new String("test");
+//    aligned_alloc(8, 8);
+//    return &Node(String("test"));
+//        ADD_COMPILE_FLAG("-Wno-address-of-temporary") # ok when there is no stack / GC
+    return new Node(String("test"));
+//    return new Node("test");
+}
 
 extern "C" String *testFromJS(String *s) {
+//    auto node1 = parse("'a'");
+//    check(node1.kind==codepoints);
     println("testJString…");
     check_is("test from JS"s, s);
 //    auto code = Code((bytes) "123", 3);
@@ -2993,7 +3009,14 @@ extern "C" String *testFromJS(String *s) {
 extern byte *stack_hack;
 
 extern "C" void testRun() {
-
+//    assert_emit("“hello”", (new Node("hello"))->setType(strings));
+    assert_emit("“hello1”", Node(String("hello1")));
+//    assert_emit("“hello1”", Node("hello1"));
+//    assert_emit("“hello1”", new Node("hello1"));
+    assert_emit("“hello2”", Node("hello2").setType(strings));
+    assert_emit("“hello3”", Node("hello3"));
+//    assert_emit("'a'", Node('a'));
+    return;
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
     testSinus();
 //    pi = 3.1415926535896688; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?

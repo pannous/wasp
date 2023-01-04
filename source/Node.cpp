@@ -510,7 +510,7 @@ bool Node::operator>(Node other) {
 // non-modifying
 Node Node::operator+(Node other) {
     if (kind == strings and other.kind == longs)
-        return Node(value.string + other.value.longy);
+        return Node(*value.string + other.value.longy);
     if (kind == strings and other.kind == reals)
         return Node(*value.string + other.value.real);
     if (kind == strings and other.kind == strings)
@@ -1089,7 +1089,7 @@ Node &Node::values() {
     if (kind == key)return *value.node;
     if (kind == longs)return *new Node(value.longy);
     if (kind == reals)return *new Node(value.real);
-    if (kind == strings)return *new Node(value.string);
+    if (kind == strings)return *new Node(*value.string);
     if (kind == codepoints)return *new Node((codepoint) value.longy);
     if (kind == bools)return value.data ? True : False;
     if (length == 1 and not value.data) return children[0];// todo: reaaaly?
@@ -1320,10 +1320,11 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
 
     auto value = smartPointer64 & 0xFFFFFFFF;// data part
     int64 smart_type64 = smartPointer64 & 0xFFFFFFFF00000000;// type part
+    uint32_t smart_type_32 = smart_type64 >> 32;
     byte smart_type_4 = (smartPointer64 & 0xF000000000000000) >> 63;// type part
 //    short smart_type_payload = (short)(smartPointer64 & 0x0000FFFF00000000L)>>16;// type payload including length (of array)
 
-    if (smart_type64 == string_header_64 or smart_type_4 == stringa) {
+    if (smart_type64 == string_header_64 or smart_type_4 == stringa or smart_type_32 == string_header_32) {
         // smart pointer for string
 //        if(smart_type_payload&string_meta::share)
 //        return new Node(new String((char *) wasm_memory) + value, false/*copy!*/);
@@ -1331,6 +1332,9 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
         if (not wasm_memory)
             error("wasm_memory not linked");
         char *string = ((char *) wasm_memory) + value;
+        print("string");
+        puti(value);
+        print(string);
         String *pString = new String(string, true /*copy!*/ );
         Node &pNode = *new Node(pString, false /* not identifier*/);
         pNode.setType(strings);
