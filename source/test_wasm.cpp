@@ -1208,7 +1208,6 @@ void testMathLibrary() {
 }
 
 void testSmartReturn() {
-    assert_emit("x='abcde';x[3]", 'd');
     assert_emit("1", 1);
     assert_emit("-2000000000000", (int64) -2000000000000l)
     assert_emit("2000000000000", (int64) 2000000000000l)// auto int64
@@ -1224,9 +1223,19 @@ void testSmartReturn() {
     assert_emit("x='abcde';x#4='x';x[3]", 'x');
     assert_emit(("-1.1"), -1.1)
     assert_emit("'OK'", "OK");
+    assert_emit("'a'", Node('a'));
+    assert_emit("'a'", Node(u'a'));
+    assert_emit("'a'", Node(U'a'));
+    assert_emit("'a'", String('a'));
+    assert_emit("'a'", String(u'a'));
+    assert_emit("'a'", String(U'a'));
+//    assert_emit("'a'", 'a'); // … should be 97
+//    assert_emit("'a'", u'a');
+//    assert_emit("'a'", U'a');
     assert_emit("10007.0%10000.0", 7);
     assert_emit("10007.0%10000", 7);
     assert_emit("x='abcde';x#4='x';x[3]", 'x');
+    assert_emit("x='abcde';x[3]", (int) 'd');
 
 }
 

@@ -375,6 +375,8 @@ void emitShortData(short i, bool pad = false) {// ⚠️ DON'T PAD INSIDE STRUCT
 // append int to wasm data memory
 void emitIntData(int i, bool pad = true) {
     if (pad)while (((int64) (data + data_index_end) % 4))data_index_end++;// type 'int' requires 4 byte alignment
+    if ((int64) (data + data_index_end) % 4)
+        warn("emitIntData unaligned!");
     *(int *) (data + data_index_end) = i;
     data_index_end += 4;
 }
@@ -382,6 +384,8 @@ void emitIntData(int i, bool pad = true) {
 // append int64 to wasm data memory
 void emitLongData(int64 i, bool pad = false) { // ⚠️ DON'T PAD INSIDE STRUCTS! pad before!
     if (pad)while (((int64) (data + data_index_end) % 8))data_index_end++;// type 'int64' requires 8 byte alignment
+    if ((int64) (data + data_index_end) % 8)
+        warn("emitLongData unaligned!");
     *(int64 *) (data + data_index_end) = i;
     data_index_end += 8;
 }
@@ -557,11 +561,11 @@ Code emitArray(Node &node, Function &context) {
 //    emitIntData(value_kind, false); // only works in homogenous arrays!
     emitIntData(node.length, false);
 //    emitIntData(stack_Item_Size, false);// reduntant via type
-    if (node.type) emitIntData(typ);// or node_header_32
-    else emitIntData(value_kind /*or kind_header_32*/);// todo make sure node.type > Kind AS PER Type enum
+    if (node.type) emitIntData(typ, false);// or node_header_32
+    else emitIntData(value_kind /*or kind_header_32*/, false);// todo make sure node.type > Kind AS PER Type enum
 
     bool continuous = true;
-    if (!continuous) emitIntData(data_index_end + 4); // just emit immediately after
+    if (!continuous) emitIntData(data_index_end + 4, false); // just emit immediately after
 
 //    for(wasm_node_index i:children){
     for (Node &child: node) {
@@ -569,8 +573,8 @@ Code emitArray(Node &node, Function &context) {
         int64 i = child.value.longy;
         if (itemSize == 1)emitByteData(i);
         else if (itemSize == 2)emitShortData(i);
-        else if (itemSize == 4)emitIntData(i);
-        else if (itemSize == 8)emitLongData(i);// ok can even be float64, UNINTERPRETED here
+        else if (itemSize == 4)emitIntData(i, false);
+        else if (itemSize == 8)emitLongData(i, false);// ok can even be float64, UNINTERPRETED here
     }
 
 //    last_value_pointer = data_index_end;
@@ -2936,6 +2940,7 @@ void clearEmitterContext() {
     last_object_pointer = 0;
     if (!data) data = (char *) calloc(MAX_WASM_DATA_LENGTH, sizeof(char));// todo grow
     else memset(data, 0, MAX_WASM_DATA_LENGTH);
+    while ((int64) data % 8)data++;// pre-align!
     emitLongData(0, true);// NULL PAGE! no object shall ever read or write from address 0 (sanity measure)
     emitLongData(0, true);// TRASH sink, e.g. for writing fd_write(fd,iov*,len, &trash out)
 //    emitString(*new Node("__WASP_DATA__\0"), *new Function());
