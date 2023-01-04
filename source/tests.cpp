@@ -2444,6 +2444,18 @@ void testNodeConversions() {
 
 
 void testWasmString() {
+    assert_emit("“hello1”", Node(String("hello1")));
+    assert_emit("“hello2”", Node("hello2").setType(strings));
+    assert_emit("“hello3”", Node("hello3"));
+    assert_emit("“hello4”", "hello4");
+    assert_emit("“a”", "a");
+    assert_emit("“b”", "b");
+    assert_emit("“c”", 'c');
+    assert_emit("\"d\"", 'd');
+    assert_emit("'e'", 'e');
+    assert_emit("'f'", u'f');
+    assert_emit("'g'", U'g');
+
     wasm_string x = reinterpret_cast<wasm_string>("\03abc");
     String y = String(x);
     check(y.length == 3);
@@ -3009,13 +3021,6 @@ extern "C" String *testFromJS(String *s) {
 extern byte *stack_hack;
 
 extern "C" void testRun() {
-//    assert_emit("“hello”", (new Node("hello"))->setType(strings));
-    assert_emit("“hello1”", Node(String("hello1")));
-//    assert_emit("“hello1”", Node("hello1"));
-//    assert_emit("“hello1”", new Node("hello1"));
-    assert_emit("“hello2”", Node("hello2").setType(strings));
-    assert_emit("“hello3”", Node("hello3"));
-//    assert_emit("'a'", Node('a'));
     return;
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
     testSinus();
