@@ -249,6 +249,10 @@ codepoint closingBracket(codepoint bracket) {
             return u'»';
         case u'“':
             return u'”';
+        case u'"':
+            return u'"';
+        case u'\'':
+            return u'\'';
         default:
             error("unknown bracket "s + bracket);
     }
@@ -713,7 +717,7 @@ private:
         return String((char) (uffff));// itoa0(uffff);
     }
 
-    Node string(char delim = '"') {
+    Node string(codepoint delim = '"') {
         proceed();
         int start = at;
         while (ch and ch != delim and previous != '\\')
@@ -1599,15 +1603,16 @@ private:
                 case '`': {// strings and templates
                     if (previous == '\\')continue;// escape
                     bool matches = close == ch;
+                    codepoint closer = closingBracket(ch);
                     matches = matches or (close == u'‘' and ch == u'’');
                     matches = matches or (close == u'’' and ch == u'‘');
                     matches = matches or (close == u'“' and ch == u'”');
                     matches = matches or (close == u'”' and ch == u'“');
                     if (!matches) { // open string
                         if (actual.last().kind == expression)
-                            actual.last().addSmart(string(ch));
+                            actual.last().addSmart(string(closer));
                         else
-                            actual.add(string(ch).clone());
+                            actual.add(string(closer).clone());
                         break;
                     }
                     Node id = Node(text.substring(start, at));

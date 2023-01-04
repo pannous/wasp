@@ -353,6 +353,8 @@ if (WASM) # OR WASI)
     message(WASM)
     ADD_DEFINITIONS(-DWASM)
     include(wasm.toolchain.cmake)
+    #    ADD_COMPILE_FLAG("-Wno-address-of-temporary") # ok when there is no stack / GC
+
     if (WASI)
         ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
         set(CMAKE_ISYSROOT "") # typo? =>
