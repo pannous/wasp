@@ -164,8 +164,10 @@ function string(data) { // wasm<>js interop
         default:
             let pointer = read_int32(data);
             let length = read_int32(data + 4);
-            if (!pointer)
+            if (!pointer) {
+                console.log("NO chars to read")
                 debugMemory(data - 10, 20)
+            }
             let cs = load_chars(pointer, length);
             return cs
     }
@@ -340,13 +342,13 @@ class node {
     }
 
     Value() {
-        if (this.kind == kinds.string) return string(this.value);
+        if (this.kind == kinds.string) return string(this.value) || this.name;
         if (this.kind == kinds.long) return Number(this.value);
         if (this.kind == kinds.bool) return Boolean(this.value);
         if (this.kind == kinds.real) return reinterpretInt64AsFloat64(this.value);
         if (this.kind == kinds.node) return new node(this.value); //.Value();
         if (this.kind == kinds.codepoint) return String.fromCodePoint(this.value)
-        if (this.kind == kinds.unknown) return this.Content;// todo? bug?
+        if (this.kind == kinds.unknown) return this.Content || this.name;// todo? bug?
         if (this.kind == kinds.reference) return this.Content || this.Childs;
         if (this.kind == kinds.object) return this.Content || this.Childs;
         if (this.kind == kinds.group) return this.Content || this.Childs;
@@ -405,23 +407,13 @@ function smartNode(data0, type /*int32*/, memory) {
     // console.log("smartNode")
     type = data0 >> BigInt(32) // shift 32 bits ==
     let data = Number(BigInt.asIntN(32, data0))// drop high bits
-    if (type == 0x10000000 || type == 0x100000) {
-        // console.log("data",data)
-        debugMemory(data - 100, 1000, memory);
+    if (type == 0x10000000 || type == 0x100000)
         return load_chars(data, length = -1, format = 'utf8', memory)
-    }
-    if (type == 0x7E || type8 == 0x3F || type8 == 0x40) // float64
-        return reinterpretInt64AsFloat64(data0)
-    if (type == 0x7D) // float32
-        return reinterpretInt32AsFloat32(data0)
-    if (!Number.isInteger(type))
-        console.error("smart type should be an integer: ", type, "of", data);
-    if (BigInt(type) & 0x40000000n) {// array
-        // todo get length, slice
-        console.log("smart type: array")
-        console.log(memory[address])
-    }
-    return {data: data, type: type}
+    let node = new node(exports.smartNode(data));
+    if (node.kind == kinds.real || node.kind == kinds.bool || node.kind == kinds.long)
+        return node.Value()
+    error("TODO emit.wasm values in wasp.wasm for kind " + node.Kind);
+    // return {data: data, type: type}
 }
 
 // allow wasm tests/plugins to build and execute small wasm files!
@@ -437,14 +429,12 @@ async function run_wasm(buf_pointer, buf_size) {
     funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
     let main = funclet.exports.wasp_main || funclet.exports.main || funclet.instance.start || funclet.exports._start
     let result = main()
-    console.log("GOT raw ", result)
+    // console.log("GOT raw ", result)
     if (-0x100000000 > result || result > 0x100000000) {
         if (!funclet.memory)
             error("NO funclet.memory")
-        debugMemory(0, 1000000, funclet.memory)
         result = smartNode(result, 0, funclet.memory)
         //  result lives in emit.wasm!
-        // let nod = new node(exports.smartNode(result))
         // console.log("GOT nod ", nod)
         // result = nod.Value()
     }
