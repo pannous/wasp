@@ -2950,7 +2950,7 @@ Code &emit(Node &root_ast) {
     last_index = -1;
     runtime_function_offset = 0;
     add_imports_and_builtins();
-    start = "wasp_main";// necessary, else wax fail
+    start = "wasp_main";// necessary, else docs fail
     functions[start].is_declared = true;
 //    const Code customSectionvector;
     Code const &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
