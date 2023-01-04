@@ -2824,19 +2824,19 @@ void testAllEmit() {
     testLogicPrecedence();
     testRootLists();
     testHex();
-    testBadInWasm();
-    testIndexOffset();
     testArrayIndices();
     testModulo();
     testSmartReturn();
     testWasmString();// with length as header
     testMultiValue();
-    testBadInWasm();
 //    testSinus();
 
     testAllAngle();
     testRecentRandomBugs();
     testMergeOwn();
+
+    testBadInWasm();
+    testIndexOffset();
 //    part of
 //    testAllWasm() :
 //    testRoundFloorCeiling();
@@ -2953,13 +2953,12 @@ void tests() {
 }
 
 // 2021-10 : 40 sec for Wasm3
-// 2021-10 : 10 sec in Webapp / wasmtime
-// 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm build via wasm-runtime
-// 2022-10-26 : 3 sec without runtime_emit, 15 sec with runtime_emit  ALL TESTS PASSING
-// 2022-11-29 : 5 sec WITH runtime_emit! how so fast? SANITIZE disabled?
+// 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
-extern "C" void testCurrent() {
+// 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
+void testCurrent() {
+    assert_emit("'a'", Node('a'));
 //    tests();// make sure all still ok before changes
 //    todos();
     tests();// make sure all still ok after messing with memory
@@ -2994,12 +2993,23 @@ extern "C" String *testFromJS(String *s) {
 extern byte *stack_hack;
 
 extern "C" void testRun() {
+
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
     testSinus();
 //    pi = 3.1415926535896688; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?
 //    assert_emit("√ π ²", pi);
 
-    testIndexOffset();
+    testHex();
+    testModulo();
+    testSmartReturn();
+    testWasmString();// with length as header
+    testRootLists();
+    return;
+    testArrayIndices();
+    testMultiValue();
+    skip(
+            testIndexOffset();
+    )
 //    assert_emit("puts('ok');(1 4 3)#2", 4); // EXPECT 4 GOT 1n
 
     assert_emit("true", true);

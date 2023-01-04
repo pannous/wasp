@@ -95,11 +95,11 @@ void newline() {
 
 void info(chars msg) {
     if (not debug)return;// todo finer levels!
-    printf("%s\n", msg);
+    print(msg);
 }
 
 void warn(chars warning) {
-    printf("%s\n", warning);
+    print(warning);
 }
 
 void warn(String warning) {
@@ -107,7 +107,7 @@ void warn(String warning) {
 }
 
 void warning(chars warning) {
-    printf("%s\n", warning);// for now
+    print(warning);// for now
 }
 
 int raise(chars error) {

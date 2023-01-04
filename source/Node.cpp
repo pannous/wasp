@@ -426,20 +426,18 @@ bool Node::operator==(Node &other) {
     if(flattened.hash()!=hash() and flattened==other)
         return true;*/
 
-    if (not typesCompatible(*this, other))
-        return false;
-
-//	CompileError: WebAssembly.Module(): Compiling function #53:"Node::operator==(Node&)" failed: expected 1 elements on the stack for fallthru to @3, found 0 @+5465
-//	or (other != NIL and other != False) or
 
     if (kind == strings) {
-        ::print(name);
-        ::print(value.string);
-        ::print(value.string);
-        ::print(other.value.string);
-        return *value.string == *other.value.string or *value.string == other.name or
-               name == other.value.string;// !? match by name??
+        if (other.kind == codepoints)
+            return *value.string == (codepoint) other.value.longy;
+        if (other.kind == strings)
+            return *value.string == *other.value.string or *value.string == other.name or
+                   name == other.value.string;// !? match by name??
+        return false;// no string->int etc conversion in angle!
     }
+
+    if (not typesCompatible(*this, other))
+        return false;
 
 
     if (length != other.length)
