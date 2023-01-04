@@ -30,11 +30,11 @@ int MAX_QUERY_LENGTH = 1000;
 
 bool allow_arbitrary_files = true;// full access to server_root but not above!
 
-char *server_root = "wax/";// todo!
+char *server_root = "docs/";// todo!
 
 static char index_html[100] = "index.html";
 //static char index_html[100] = "wasp.html";
-static char wasp_js[100] = "wasp.js";// wax
+static char wasp_js[100] = "wasp.js";// docs
 static char wasp_css[100] = "wasp.css";
 static char favicon_ico[100] = "favicon.ico";
 
@@ -44,7 +44,7 @@ static char favicon_ico[100] = "favicon.ico";
 #define LISTENQ     (4096)
 #define MAX_REQ_LINE     (4096)
 enum Req_Method {
-	GET, HEAD, UNSUPPORTED
+    GET, HEAD, UNSUPPORTED
 };
 enum Req_Type {
 	SIMPLE, FULL
