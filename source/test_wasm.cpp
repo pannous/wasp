@@ -955,9 +955,9 @@ void testArrayIndicesWasm() {
     assert_emit("puts('ok');", -1);
 #else
     assert_emit("puts('ok');", 8);
+    assert_emit("puts('ok');(1 4 3)#2", 4);
 #endif
 //    assert_emit("puts('ok');", 0);
-    assert_emit("puts('ok');(1 4 3)#2", 4);
     assert_emit("{1 4 3}#2", 4);
 
     assert_emit("x={1 4 3};x#2", 4);
