@@ -135,7 +135,7 @@ union Value { // nodes can contain ANYTHING, especially types known in wasp
 
     void *data;// any bytes
     int64 longy;
-//	codepoint chary;// use longy
+    codepoint codepoint;//chary;// use longy
     double real;
 
 //	Value() {}// = default;
@@ -659,6 +659,8 @@ public:
 
 
     String string() const {
+        if (kind == codepoints)
+            return String((char32_t) value.longy);
         if (kind == strings)
             return *value.string;
         return name;

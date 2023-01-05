@@ -60,6 +60,7 @@ String start = "wasp_main";
 Type arg_type = voids;// autocast if not int
 //Type last_type = voids;// autocast if not int
 Type last_type = Kind::unknown;
+Type last_value_type = Kind::unknown; // array<type>
 Node *last_object = 0;
 
 enum MemoryHandling {
@@ -362,6 +363,7 @@ void emitPaddingAlignment(short size) { // e.g. 8 for int64 padding BEFORE emitL
 // append byte to wasm data memory
 void emitByteData(byte i) {
     *(byte *) (data + data_index_end++) = i;
+    last_value_type = byte_i8;
 }
 
 
@@ -370,6 +372,9 @@ void emitShortData(short i, bool pad = false) {// ⚠️ DON'T PAD INSIDE STRUCT
     if (pad)while (((int64) (data + data_index_end) % 2))data_index_end++;// type 'int' requires 4 byte alignment
     *(short *) (data + data_index_end) = i;
     data_index_end += 2;
+    todo("emitShortData");
+//        last_value_type = shorty;
+
 }
 
 // append int to wasm data memory
@@ -672,7 +677,9 @@ bool isAssignable(Node &node, Node *type = 0) {
     return true;
 }
 
-int currentStackItemSize(Node &array, Function &context) {
+int currentStackItemSize(Node &array, Function &context, Type element_type) {
+    if (element_type != unknown)
+        return stackItemSize(element_type);
     if (array.type)
         return stackItemSize(*array.type);
     else if (array.kind == groups or array.kind == objects or array.kind == patterns)
@@ -766,7 +773,7 @@ emitOffset(Node &array, Node offset_pattern, bool sharp, Function &context, int 
 
 [[nodiscard]]
 Code emitIndexWrite(Node &array, int base, Node offset, Node value0, Function &context) {
-    int size = currentStackItemSize(array, context);
+    int size = currentStackItemSize(array, context, unknown);
     Type targetType = last_type;
 //    Valtype targetType = mapTypeToWasm(last_type);
     Code store = emitOffset(array, offset, true, context, size, base, false);
@@ -838,12 +845,12 @@ Code emitPatternSetter(Node &ref, Node offset, Node value, Function &context) {
 // assumes value is on top of stack
 // todo merge with emitIndexRead !
 [[nodiscard]]
-Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_stack) {
+Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_stack, Type element_type) {
     if (op.kind != patterns and op.kind != longs and op.kind != reference)error("op expected in emitIndexPattern");
     if (op.length == 0 and op.kind == reference)return emitGetter(array, op, context);
     if (op.length != 1 and op.kind != longs)error("exactly one op expected in emitIndexPattern");
     int base = base_on_stack ? 0 : last_object_pointer + headerOffset(array);// emitting directly without reference
-    int size = currentStackItemSize(array, context);
+    int size = currentStackItemSize(array, context, element_type);
     Node &pattern = op.first();
     Code load = emitOffset(array, pattern, op.name == "#", context, size, base, base_on_stack);
     load.addByte(nop_);// reloc padding
@@ -864,14 +871,18 @@ Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_sta
 
     // careful could also be uint8!
     if (size == 1) {
-        last_type = byte_char;// last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
-        last_type = int32; // even for bool!
-    } else if (size <= 4)last_type = int32;
+        if (element_type == stringp or element_type == charp or element_type == byte_char)
+            last_type = byte_char;
+        else
+            last_type = int32; // even for bool!
+    } else if (size <= 4)
+        last_type = int32;
+        // last_type = codepoint32;// todo and … bytes not exposed in ABI, so OK?
     else last_type = i64;
 //	if(op.kind==reference){
 //		Node &reference = referenceMap[op.name];
-//		if(reference.type){
-//			last_typo.clazz = reference.type;
+//		if(reference.element_type){
+//			last_typo.clazz = reference.element_type;
 //		}else if(reference.kind==strings)
 //			last_typo=
 //			else
@@ -890,7 +901,7 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
         error("index operator needs two arguments: node/array/reference and position");
     Node &array = op[0];// also String: byte array or codepoint array todo
     Node &pattern = op[1];
-    int size = currentStackItemSize(array, context);
+    int size = currentStackItemSize(array, context, unknown);
 //	if(op[0].kind==strings) todo?
     last_type = arg_type;
     int base; // …
@@ -1151,10 +1162,11 @@ Code emitValue(Node &node, Function &context) {
                 code.add(emitSetter(node, value, context));
 
             } else {
+                auto local = context.locals[name];
                 code.addByte(get_local);// todo skip repeats
-                code.addByte(context.locals[name].position);// base location stored in variable!
+                code.addByte(local.position);// base location stored in variable!
                 if (node.length > 0) {
-                    return emitIndexPattern(NUL, node, context, true);// todo?
+                    return emitIndexPattern(NUL, node, context, true, local.typo);// todo?
                 }
             }
         }
@@ -1207,7 +1219,7 @@ Code emitValue(Node &node, Function &context) {
                 Node &pattern = node.first();
                 if (pattern.kind != patterns and pattern.kind != longs)
                     error("only patterns allowed on string");
-                code.add(emitIndexPattern(NUL, pattern, context, false));
+                code.add(emitIndexPattern(NUL, pattern, context, false, charp));
             }
             return code;
 //			return Code(stringIndex).addInt(pString->length);// pointer + length
@@ -1218,7 +1230,8 @@ Code emitValue(Node &node, Function &context) {
                 return emitValue(value, context);// todo: make sure it is called from right context (after isSetter …)
             }
         case patterns:
-            return emitIndexPattern(NUL, node, context, false);// todo: make sure to have something indexable on stack!
+            // todo: make sure to have something indexable on stack!
+            return emitIndexPattern(NUL, node, context, false, last_type);
         case expression: {
             Node values = node.values();// remove setter part
             return emitExpression(values, context);
@@ -1255,7 +1268,7 @@ Code emitGetter(Node &node, Node &field, Function &context) {
     Code code;
     // todo we could match the field to data at compile time in some situations, but let's implement the general case first:
     if (node.kind == reference and node.length > 0) // else loop!
-        return emitIndexPattern(node, field, context, false);
+        return emitIndexPattern(node, field, context, false, unknown);
 //        code.add(emitValue(node, context));
     else todo("get pointer of node on stack");
     if (field.kind == strings)
@@ -1279,6 +1292,7 @@ Code emitAttribute(Node &node, Function &context) {
     Node field = node.last();// NOT ref, we resolve it to index!
     Node &object = node.first();
 
+    Type element_type = unknown;
     if (!object.type and types.has(object.name))
         object.type = types[object.name];
 
@@ -1288,10 +1302,12 @@ Code emitAttribute(Node &node, Function &context) {
             error("field %s missing in type %s of %s "s % field.name % type.name % node.serialize());
         Node &member = type[field.name];
         int index = member.value.longy;
-        if (member.kind == fields)// todo directly
+        if (member.kind == fields) {// todo directly
             index = member["position"].value.longy;
+            element_type = mapType(member["type"] /*.value*/);
+        }
         if (index < 0 or index > type.length)
-            error("invalid field index %d of %s in type %s of %s "s % index % field.name % type.name %
+            error("invalid field index %d of %s in element_type %s of %s "s % index % field.name % type.name %
                   node.serialize());
         field = Node(index);
     } else
@@ -1301,7 +1317,7 @@ Code emitAttribute(Node &node, Function &context) {
     // base pointer on stack
     // todo move => once done
 // a.b and a[b] are equivalent in angle
-    return code + emitIndexPattern(object, field, context, true);// emitIndexRead
+    return code + emitIndexPattern(object, field, context, true, element_type);// emitIndexRead
 }
 
 
@@ -1539,6 +1555,8 @@ bool isVariableName(String name) {
 
 Code emitConstruct(Node &node, Function &context);
 
+Primitive elementType(Type type32);
+
 // also init expressions of globals!
 [[nodiscard]]
 Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expression, node or BODY (list)
@@ -1557,7 +1575,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //        return code;
 //    }
     if (name == "if")
-            return emitIf(node, context);
+        return emitIf(node, context);
     if (name == "while")
         return emitWhile(node, context);
     if (name == "it") {
@@ -1672,7 +1690,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
                 if (context.locals.at(local_index).typo == unknown_type)
                     context.locals.at(local_index).typo = last_type;
                 else
-                    code.add(cast(last_type, context.locals.at(local_index).typo));
+                    code.add(cast(last_type, elementType(context.locals.at(local_index).typo)));
 //				todo: convert if wrong type
                 code.addByte(tee_local);// set and get/keep
                 code.addByte(local_index);
@@ -1694,7 +1712,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
             else {
                 Node array1 = NUL;
                 if (node.parent)array1 = node.parent->first();
-                return emitIndexPattern(array1, node, context, false);
+                return emitIndexPattern(array1, node, context, false, last_value_type);
             }
             // make sure array is on stack OR last_object_pointer is set!
         }
@@ -1717,6 +1735,12 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
             error("unhandled node type «"s + node.name + "» : " + typeName(node.kind));
     }
     return code;
+}
+
+Primitive elementType(Type type32) {
+    if (type32 == stringp)return byte_char;
+    if (type32 == longs)return Primitive::wasm_int64;// todo should not have reached here
+    error("elementType not implemented for "s + typeName(type32));
 }
 
 void discard(Code &code);
@@ -1869,6 +1893,8 @@ Code cast(Valtype from, Valtype to) {
     last_type = to;// danger: hides last_type in caller!
     if (from == 0 and to == i32t)return nop;// nil or false ok as int? otherwise add const 0!
     if (from == i32t and (Type) to == reference)return nop; // should be reference pointer, RIHGT??
+    if ((Type) from == codepoints and to == i64)
+        return Code(i64_extend_i32_s);
     if (from == float32 and to == float64)return Code(f64_from_f32);
     if (from == float32 and to == i32t) return Code(f32_cast_to_i32_s);
     if (from == i32t and to == float32)return Code(f32_from_int32);
@@ -1905,7 +1931,7 @@ Code cast(Valtype from, Valtype to) {
 
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
-    error("incompatible types "s + typeName(from) + " => " + typeName(to));
+    error("incompatible valtypes "s + typeName(from) + " => " + typeName(to));
     return nop;
 }
 
@@ -1923,6 +1949,8 @@ Code cast(Type from, Type to) {
     if (from == charp and to == i64t) return Code(i64_extend_i32_s);
     if (from == charp and to == i32t)return nop;// assume i32 is a pointer here. todo?
     if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
+    if (from == codepoint32 and to == i64t)return Code(i64_extend_i32_s);;
+    if (from == codepoints and to == i64t)return Code(i64_extend_i32_s);;
     if (from == array and to == i64)return Code(i64_extend_i32_u);;// pray / assume i32 is a pointer here. todo!
     if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
     if (from == float32 and to == array)return nop;// pray / assume f32 is a pointer here. LOL NO todo!
@@ -2246,6 +2274,12 @@ Code emitBlock(Node &node, Function &context) {
             // hack smart pointers as main return: f64 has range which is never hit by int
             block.addByte(i64_reinterpret_f64);
             last_type = i64;
+        } else if (last_type == byte_char) {
+            block.addByte(i64_extend_i32_u);
+            block.addConst64(codepoint_header_64);
+            block.addByte(i64_or);
+            last_type = i64;
+            needs_cast = return_type == i64;
         }
 //		if(last_type==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string
 //		if(last_type==angle)block.addByte(i32_or).addInt(0xA000000);//

@@ -402,6 +402,7 @@ function download(data, filename, type) {
 }
 
 
+
 // see [smart-pointers](https://github.com/pannous/wasp/wiki/smart-pointer)
 function smartNode(data0, type /*int32*/, memory) {
     // console.log("smartNode")
@@ -409,12 +410,13 @@ function smartNode(data0, type /*int32*/, memory) {
     let data = Number(BigInt.asIntN(32, data0))// drop high bits
     if (type == 0x10000000 || type == 0x100000)
         return load_chars(data, length = -1, format = 'utf8', memory)
-    let node = new node(exports.smartNode(data));
-    if (node.kind == kinds.real || node.kind == kinds.bool || node.kind == kinds.long)
-        return node.Value()
-    error("TODO emit.wasm values in wasp.wasm for kind " + node.Kind);
+    let nod = new node(exports.smartNode(data0));
+    if (nod.kind == kinds.real || nod.kind == kinds.bool || nod.kind == kinds.long)
+        return nod.Value()
+    error("TODO emit.wasm values in wasp.wasm for kind " + nod.Kind);
     // return {data: data, type: type}
 }
+
 
 // allow wasm tests/plugins to build and execute small wasm files!
 // todo while wasp.wasm can successfully execute via run_wasm, it can't handle the result (until async wasm) OR :
@@ -515,3 +517,4 @@ async function test() {
     if (typeof (wasp_tests) !== "undefined")
         await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 }
+
