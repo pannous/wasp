@@ -1046,7 +1046,10 @@ Module &loadRuntime() {
     wasp.name = "wasp";
     return wasp;
 #else
-    return read_wasm("wasp-runtime.wasm");
+    Module &wasp = read_wasm("wasp-runtime.wasm");
+    wasp.functions["getChar"].signature.returns(codepoints);
+    return wasp;
+
 #endif
 }
 

@@ -287,6 +287,7 @@ bool Node::operator==(bool other) {
 }
 
 bool Node::operator==(char other) {
+    if (kind == codepoints)return value.codepoint == other;
     return kind == strings and *value.string == String(other);
 }
 
@@ -1332,15 +1333,13 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
         if (not wasm_memory)
             error("wasm_memory not linked");
         char *string = ((char *) wasm_memory) + value;
-        print("string");
-        puti(value);
-        print(string);
         String *pString = new String(string, true /*copy!*/ );
         Node &pNode = *new Node(pString, false /* not identifier*/);
         pNode.setType(strings);
         return &pNode;
     }
-
+    if (smart_type64 == codepoint_header_64)
+        return new Node((codepoint) value);
 
     if (smart_type64 == array_header_64 /* and abi=wasp */ ) {
         // smart pointer to smart array

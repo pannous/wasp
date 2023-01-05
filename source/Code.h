@@ -20,6 +20,8 @@ typedef unsigned char byte;
 typedef const char *chars;
 typedef byte *bytes;
 
+static bool multi_value = false; // todo gather in one place: config.h
+
 class Module;
 
 // in Util.h but we cant import
@@ -918,7 +920,10 @@ public:
     Signature &returns(Type type) {
 //		return_type = type;
         if (type.kind != nils and type.kind != undefined and type.kind != unknown) {
-            return_types.add(type);
+            if (multi_value)
+                return_types.add(type);
+            else
+                return_types[0] = type;
 #ifdef DEBUG
             debug_name += ": ";
             debug_name += typeName(type);

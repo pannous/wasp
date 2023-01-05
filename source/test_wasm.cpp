@@ -1,7 +1,7 @@
 #include "Angle.h" // emit
 #include "Wasp.h"
 #include "wasm_reader.h"
-
+#include "wasm_helpers.h"
 #if INCLUDE_MERGER
 
 #include "wasm_merger.h"
@@ -24,6 +24,7 @@ panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#α�
 //static
 List<String> done;
 
+
 #if MY_WASM
 #define assert_emit(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
 #else
@@ -35,7 +36,11 @@ List<String> done;
 #define assert_run(a, b) skip(a)
 // use assert_emit if runtime is not needed!! much easier to debug
 #else
-#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){printf(">>>>>\n%s:%d\n", __FILE__, __LINE__);proc_exit(1);}
+#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){backtrace_line();}
+
+//#define assert_run(α, β)  auto α1=runtime_emit(α);bool Ok= α == Node(β); print(Ok?"OK":"FAILED"); \
+//    print(α1);print(Ok?'=':u'≠');print(β);} \
+//    if(!Ok){printf("%s != %s",#α,#β);backtrace_line();}
 #endif
 
 void testMergeGlobal() {
@@ -1235,7 +1240,8 @@ void testSmartReturn() {
     assert_emit("10007.0%10000.0", 7);
     assert_emit("10007.0%10000", 7);
     assert_emit("x='abcde';x#4='x';x[3]", 'x');
-    assert_emit("x='abcde';x[3]", (int) 'd');
+    assert_emit("x='abcde';x[3]", 'd');
+//    assert_emit("x='abcde';x[3]", (int) 'd');// currently FAILS … OK typesafe!
 
 }
 
@@ -1318,7 +1324,6 @@ void testAllWasm() {
     testWasmLogicUnaryVariables();
     testWasmLogic();
     testWasmLogicNegated();
-    assert_emit("x='abcde';x[3]", (int) 'd');
     testSquareExpWasm();
     testGlobals();
 

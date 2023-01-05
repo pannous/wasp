@@ -16,7 +16,7 @@
 
 #include "wasm-rt-impl.h"
 
-#include <asserts.cpp>
+//#include <asserts.cpp>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
