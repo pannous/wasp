@@ -1534,6 +1534,7 @@ Code emitStringOp(Node &op, Function &context) {
         return Code(i32_const) + Code(-1) + emitCall(op, context);// third param required!
     } else if (op == "#") {// todo: all different index / op matches
         op = Node("getChar");//  careful : various signatures
+        functions["getChar"].signature.return_types[0] = codepoints;// can't infer from demangled export name nor wasm
         return emitCall(op, context);
     } else if (op == "not" or op == "¬") {// todo: all different index / op matches
         op = Node("empty");//  careful : various signatures for falsey falsy truthy
@@ -1949,8 +1950,8 @@ Code cast(Type from, Type to) {
     if (from == charp and to == i64t) return Code(i64_extend_i32_s);
     if (from == charp and to == i32t)return nop;// assume i32 is a pointer here. todo?
     if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
-    if (from == codepoint32 and to == i64t)return Code(i64_extend_i32_s);;
-    if (from == codepoints and to == i64t)return Code(i64_extend_i32_s);;
+    if (from == codepoints and to == i64t)
+        return Code(i64_extend_i32_s);
     if (from == array and to == i64)return Code(i64_extend_i32_u);;// pray / assume i32 is a pointer here. todo!
     if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
     if (from == float32 and to == array)return nop;// pray / assume f32 is a pointer here. LOL NO todo!
@@ -2274,7 +2275,7 @@ Code emitBlock(Node &node, Function &context) {
             // hack smart pointers as main return: f64 has range which is never hit by int
             block.addByte(i64_reinterpret_f64);
             last_type = i64;
-        } else if (last_type == byte_char) {
+        } else if (last_type == byte_char or last_type == codepoints) {
             block.addByte(i64_extend_i32_u);
             block.addConst64(codepoint_header_64);
             block.addByte(i64_or);

@@ -291,6 +291,11 @@ bool Node::operator==(char other) {
     return kind == strings and *value.string == String(other);
 }
 
+bool Node::operator==(codepoint other) {
+    if (kind == codepoints)return value.codepoint == other;
+    return kind == strings and *value.string == String(other);
+}
+
 bool Node::operator==(chars other) {
     if (kind == strings and value.data)
         if (eq(value.string->data, other, value.string->shared_reference ? value.string->length : -1)) return true;
@@ -306,6 +311,7 @@ bool Node::operator==(int other) {
     if (kind == reals and (int) value.real == other)return true;// rounding equivalence only in tests!
     if (kind == reals)return similar(value.real, other);
     if (kind == bools)return other == value.longy;
+    if (kind == codepoints)return other == value.longy;// permissive here only!
     if (kind == key and value.node and *value.node == other)return true;
     if (kind == strings and parseLong(value.string->data) == other)return true;
     if (parseLong(name) == other)return true;
