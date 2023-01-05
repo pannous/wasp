@@ -2444,18 +2444,22 @@ void testNodeConversions() {
 
 
 void testWasmString() {
+    assert_emit("“c”", 'c');
     assert_emit("“hello1”", Node(String("hello1")));
     assert_emit("“hello2”", Node("hello2").setType(strings));
     assert_emit("“hello3”", Node("hello3"));
     assert_emit("“hello4”", "hello4");
     assert_emit("“a”", "a");
     assert_emit("“b”", "b");
-    assert_emit("“c”", 'c');
     assert_emit("\"d\"", 'd');
     assert_emit("'e'", 'e');
+#if WASM
     assert_emit("'f'", u'f');
     assert_emit("'g'", U'g');
-
+#endif
+    assert_emit("'h'", "h");
+    assert_emit("\"i\"", "i");
+    assert_emit("'j'", Node("j"));
     wasm_string x = reinterpret_cast<wasm_string>("\03abc");
     String y = String(x);
     check(y.length == 3);
@@ -2970,14 +2974,16 @@ void tests() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
-#if not WASM
-    assert_emit("“hello1”", Node("hello1"));
-    return;
-#endif
+    assert_emit("i=3;k='αβγδε';k#i", u'γ');
+    assert_emit("i=1;k='hi';k#i", 'h');
+    assert_emit("(2 4 3)[1]", 4);
+    assert_emit("x='abcde';x[3]", 'd');
+    assert_emit("x='abcde';x#4='x';x[3]", 'x');
 
 //    assert_emit("'a'", Node('a'));
 //    tests();// make sure all still ok before changes
 //    todos();
+    testWasmString();
     tests();// make sure all still ok after messing with memory
 #if not WASM
     testAngle();// fails in WASM why?
@@ -3002,26 +3008,20 @@ extern "C" Node *testNodeJS(String *s) {
 }
 
 extern "C" String *testFromJS(String *s) {
-//    auto node1 = parse("'a'");
-//    check(node1.kind==codepoints);
     println("testJString…");
     check_is("test from JS"s, s);
-//    auto code = Code((bytes) "123", 3);
-//    code.debug();
-//    Module wasp = loadRuntime();
 //    print(wasp.name);
 //    print("wasp.total_func_count");
 //    print(wasp.total_func_count);
     auto replaced = s->replace("test", "ok").replace("JS", "WASP");
     check_is("ok from WASP"s, replaced);
-//    return &replaced.clone();
-    return new String("ok from WASP");
+    return &replaced.clone();
+//    return new String("ok from WASP");
 }
 
 extern byte *stack_hack;
 
 extern "C" void testRun() {
-    return;
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
     testSinus();
 //    pi = 3.1415926535896688; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?

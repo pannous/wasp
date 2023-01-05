@@ -520,6 +520,8 @@ int stackItemSize(Node &clazz, bool throws) {
 
 // size of the primitive value, not sizeof(Node)
 int stackItemSize(Type type, bool throws) {
+    if (type == byte_i8)return 1;
+    if (type == byte_char)return 1;
     if (type == charp)return 1;// chars for now vs codepoint!
     if (type == stringp)return 1;// chars for now vs pointer!
     //	if (k == int16)return 2;

@@ -31,23 +31,26 @@ typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
 #define node_header_64 0x0A000000000000000L // todo undup
 #define array_header_64 0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
 #define string_header_64 0x0010000000000000L // todo : what happened to 0x9 smartType4bit ??
+#define codepoint_header_64 0x00C0000000000000L
 
 // smart_pointer_64 == 32 bits smart_type(header+payload) + 32 bit value
-enum smart_pointer_masks {
+//enum smart_pointer_masks {
+static int64
 //	float_header_64 = 0x0020000000000000, not needed, use:
-    smart_type_64_mask = 0xFFFFFFFF00000000L,
-    double_mask_64 = 0x7F00000000000000L,
-    smart_mask_64 = 0x00FF000000000000L,
+smart_type_64_mask = 0xFFFFFFFF00000000L,
+        double_mask_64 = 0x7F00000000000000L,
+        smart_mask_64 = 0x00FF000000000000L,
 //	negative_mask_64 = 0x8000000000000000,
-    negative_mask_64 = 0xFF00000000000000L,
-    type_mask_64_word = 0xFFFF000000000000L,
-    smart_pointer_value60_mask = 0x0FFFFFFFFFFFFFFFL,
-    smart_pointer_value56_mask = 0x00FFFFFFFFFFFFFFL,
-    smart_pointer_value52_mask = 0x000FFFFFFFFFFFFFL,
-    smart_pointer_value48_mask = 0x0000FFFFFFFFFFFFL,
-    smart_pointer_value32_mask = 0x00000000FFFFFFFFL, // or do shift << 32 >> 32 to remove header
+negative_mask_64 = 0xFF00000000000000L,
+        type_mask_64_word = 0xFFFF000000000000L,
+        smart_pointer_value60_mask = 0x0FFFFFFFFFFFFFFFL,
+        smart_pointer_value56_mask = 0x00FFFFFFFFFFFFFFL,
+        smart_pointer_value52_mask = 0x000FFFFFFFFFFFFFL,
+        smart_pointer_value48_mask = 0x0000FFFFFFFFFFFFL,
+        smart_pointer_value32_mask = 0x00000000FFFFFFFFL; // or do shift << 32 >> 32 to remove header
 //	negative_long_mask_64 = 0xBFF0000000000000,
-};
+
+//};
 
 // 3 * sizeof(int32)  header, kind, length before *DATA !
 // sizeof(List) - sizeof(S*)
@@ -163,7 +166,6 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     expression, // one plus one
     declaration, // x:=1
     assignment, // x = 1 // really?? needs own TYPE?
-    codepoints, // boxed codepoint in value.longy field todo
     buffers, // int[] DANGER todo length stored in node.length? or better in meta["length"] !
     //	ints, // use longy field, but in wasm longs are pointers!
     bools,
@@ -194,6 +196,8 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     flag_entry = longs, // special semantics at compile time for now
     enum_entry = longs, // special semantics at compile time for now
     last_kind = 0x80,
+    codepoints = 0xC4, // boxed codepoint in value.longy field todo
+
     kind_padding = 0x80000000, // 32 bit padding
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 
