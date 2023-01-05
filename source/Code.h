@@ -20,7 +20,6 @@ typedef unsigned char byte;
 typedef const char *chars;
 typedef byte *bytes;
 
-static bool multi_value = false; // todo gather in one place: config.h
 
 class Module;
 

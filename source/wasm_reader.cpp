@@ -668,3 +668,16 @@ Code &read_code(chars file) {
 
 
 //#import "wasm_patcher.cpp"
+void Module::file(const char *string) {
+
+}
+
+void Module::save(const char *file) {
+#if not WASM
+//    wasm_emitter::save(*this, file);
+//    wasm_writer::save(*this, file);
+    FILE *stream = fopen(file, "wb");
+    fwrite(code.data, sizeof(byte), code.length, stream);
+    fclose(stream);
+#endif
+}
