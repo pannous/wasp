@@ -73,6 +73,8 @@ Node NegInfinity = Node("-Infinity");
 Node NaN = Node("NaN");
 
 
+Node *reconstructArray(int *array_struct);
+
 void initSymbols() {
     print("initSymbols");
     ((Node) NIL).name = nil_name;
@@ -1373,49 +1375,55 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
         return new Node((codepoint) value);
 
     if (smart_type64 == array_header_64 /* and abi=wasp */ ) {
-        // smart pointer to smart array
-        int *index = (int *) (((char *) wasm_memory) + value);
-        int kind = *index++;
-        if (kind == array_header_32 or kind == node_header_32)// todo we know it's array but still. plz fix
-            kind = *index++;
-        int len = *index++; // todo: leb128 vector later
-        wasm_node_index type = *index++;
-        int stack_Item_Size = stackItemSize((Valtype) kind, false); // mapType(type);
-        Primitive value_kind;
-        if (type) {
-            Node &typ = *reconstructWasmNode(type);
-            stack_Item_Size = stackItemSize(typ);
-            value_kind = mapTypeToPrimitive(typ);
-        }
-        if (stack_Item_Size < 0 or stack_Item_Size > 1000)
-            error("maybe internal emit out of sync. implausible stack_Item_Size for "s % typeName(kind));
-
-
-//        int capacity = *index++;// OR:
-//        wasm_node_index type = *index++;
-        Node *arr = new Node();
-        arr->kind = objects;
-//        arr->kind = kind;
-        int pos = 0;
-        while (len-- > 0) {
-            // index has advanced to continuous array item list
-            char *val = (((char *) index) + stack_Item_Size * pos++);
-            Node *chile;
-            if (value_kind == Primitive::byte_char)chile = new Node((codepoint) *val);
-            else if (value_kind == Primitive::byte_i8)chile = new Node((int64) *val);
-            else if (value_kind == Primitive::codepoint32)chile = new Node((codepoint) *(int64 *) val);
-            else if (value_kind == wasm_int32)chile = new Node(*(int *) val);
-            else if ((int) value_kind == longs)chile = new Node(*(int64 *) val);
-            else if ((int) value_kind == reals)chile = new Node(*(double *) val);
-            else todo("smartNode of array with element kind "s + typeName(value_kind));
-            arr->add(chile);
-        }
-        return arr;
+        auto arrayStruct = (int *) (((char *) wasm_memory) + value);
+        return reconstructArray(arrayStruct);
     }
     breakpoint_helper
     printf("smartPointer64 : %llx\n", (int64) smartPointer64);
     error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");
     return new Node();
+}
+
+Node *reconstructArray(int *array_struct) {
+
+    // smart pointer to smart array
+    int kind = *array_struct++;
+    if (kind == array_header_32 or kind == node_header_32)// todo we know it's array but still. plz fix
+        kind = *array_struct++;
+    int len = *array_struct++; // todo: leb128 vector later
+    wasm_node_index type = *array_struct++;
+    int stack_Item_Size = stackItemSize(kind, false); // mapType(type);
+    Primitive value_kind;
+    if (type) {
+        Node &typ = *reconstructWasmNode(type);
+        stack_Item_Size = stackItemSize(typ);
+        value_kind = mapTypeToPrimitive(typ);
+    }
+    if (stack_Item_Size < 0 or stack_Item_Size > 1000)
+        error("maybe internal emit out of sync. implausible stack_Item_Size for "s % typeName(kind));
+
+
+//        int capacity = *array_struct++;// OR:
+//        wasm_node_index type = *array_struct++;
+    Node *arr = new Node();
+    arr->kind = objects;
+//        arr->kind = kind;
+    int pos = 0;
+    while (len-- > 0) {
+        // array_struct has advanced to continuous array item list
+        char *val = (((char *) array_struct) + stack_Item_Size * pos++);
+        Node *chile;
+        if (value_kind == Primitive::byte_char)chile = new Node((codepoint) *val);
+        else if (value_kind == Primitive::byte_i8)chile = new Node((int64) *val);
+        else if (value_kind == Primitive::codepoint32)chile = new Node((codepoint) *(int64 *) val);
+        else if (value_kind == wasm_int32)chile = new Node(*(int *) val);
+        else if (value_kind == int16)chile = new Node(*(short *) val);
+        else if ((int) value_kind == longs)chile = new Node(*(int64 *) val);
+        else if ((int) value_kind == reals)chile = new Node(*(double *) val);
+        else todo("smartNode of array with element kind "s + typeName(value_kind));
+        arr->add(chile);
+    }
+    return arr;
 }
 
 

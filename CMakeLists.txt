@@ -211,13 +211,14 @@ if (NOT TRACE)
     endif ()
 endif ()
 
-
 if (GCC)
     ADD_COMPILE_FLAG("-Wno-write-strings") # useless
     ADD_COMPILE_FLAG("-Wno-literal-suffix") # useless
     ADD_COMPILE_FLAG("-Wno-error=unused-variable")
     ADD_COMPILE_FLAG("-Wno-unused-variable")
     ADD_COMPILE_FLAG("-Wno-format") # useful!
+else ()
+    ADD_COMPILE_FLAG("-Wno-writable-strings") # useless
 endif ()
 
 if (VERBOSE)

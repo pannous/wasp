@@ -372,9 +372,7 @@ void emitShortData(short i, bool pad = false) {// ⚠️ DON'T PAD INSIDE STRUCT
     if (pad)while (((int64) (data + data_index_end) % 2))data_index_end++;// type 'int' requires 4 byte alignment
     *(short *) (data + data_index_end) = i;
     data_index_end += 2;
-    todo("emitShortData");
-//        last_value_type = shorty;
-
+    last_value_type = shorty;
 }
 
 // append int to wasm data memory

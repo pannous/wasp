@@ -208,7 +208,6 @@ bool assert_equals_x(float a, float b, chars context = "") {
 
 //# DEFINES CAN MESS WITH LOCALS!! so use α, β
 
-//bool assert_isx(char *mark, Node expect);
 //bool assert_isx(char *mark, chars expect);
 
 bool assert_isx(chars mark, Node expect) {

@@ -276,7 +276,8 @@ enum Primitive {
 
     byte_i8 = 0xB0, // when indexing uint8 byte array.
     byte_char = 0xBC, // when indexing ascii array. todo: maybe codepoint into UTF8!?
-
+    shorty = 0xB16,
+    int16 = 0xB16,
 //    THE 0xF0 … range is reserved for numbers
 
 //	c_char = 0xB0, // when indexing byte array. todo: maybe codepoint into UTF8!?

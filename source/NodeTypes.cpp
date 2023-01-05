@@ -356,6 +356,8 @@ Primitive mapTypeToPrimitive(Node &n) {
         return Primitive::wasm_int32;
     if (n == ByteType)
         return Primitive::byte_i8;// careful in structs!
+    if (n == ShortType)
+        return Primitive::int16;
     if (n == Long)
         return Primitive::wasm_int64;
     if (n == Double)
@@ -475,8 +477,10 @@ chars typeName(Primitive p) {
             return "string";
         case byte_i8:
             return "byte";
+        case Primitive::shorty:
+            return "short";
         case byte_char:
-            return "byte_char";
+            return "byte_char"; // ascii char
         case array_start:
             return "array_start";
         case list:
@@ -609,6 +613,7 @@ Valtype mapTypeToWasm(Primitive p) {
         case ignore:
             return Valtype::none;
         case byte_i8:
+        case int16:
             // ⚠️ careful in arrays we may write byte_i8 as Byte !
             return Valtype::int32;
         case byte_char:

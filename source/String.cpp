@@ -717,8 +717,9 @@ void print(Type type) {
 
 void print(String s) {
     put_chars(s.data, s.length);
-//    if (tracing)
-//        newline();
+#if not WASM
+    newline();
+#endif
 }
 
 void println(String s) {
