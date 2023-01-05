@@ -711,6 +711,10 @@ void print(void *s) {
     put_chars(hex((int64) s));
 }
 
+void print(Type type) {
+    print(typeName(type));
+}
+
 void print(String s) {
     put_chars(s.data, s.length);
 //    if (tracing)
