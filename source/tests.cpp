@@ -2996,6 +2996,7 @@ void tests() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+    assert_is("π**2", (double) 9.869604401089358);
     testFunctionDeclaration();
     testRenameWasmFunction();
 

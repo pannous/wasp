@@ -421,7 +421,7 @@ String load(String file) {
     auto *buffer = (unsigned char *) malloc(size);
     fseek(ptr, 0L, SEEK_SET);
     size_t ok = fread(buffer, sizeof(buffer), size, ptr);
-    if (!ok)error("Error reading "s + file + "of size "s + size);
+    if (!ok and size > 8)error("Error reading "s + file + " of size "s + size);
     auto binary = new String((char *) buffer, size, false);
 //	assert_equals(binary->length, size);
     return *binary;
@@ -524,7 +524,7 @@ int stackItemSize(Type type, bool throws) {
     if (type == byte_char)return 1;
     if (type == charp)return 1;// chars for now vs codepoint!
     if (type == stringp)return 1;// chars for now vs pointer!
-    //	if (k == int16)return 2;
+    if (type == int16)return 2;
     if (type == codepoint32)return 4;
     if (type == Valtype::int32)return 4;
     if (type == array)return 4;// pointer todo!
