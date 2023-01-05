@@ -638,6 +638,8 @@ public:
 
     bool operator==(String other);
 
+    bool operator==(codepoint other);
+
 //	bool operator==(Node other);
     bool operator==(Node &other);// equals
     bool operator==(Node *other);// equals

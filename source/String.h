@@ -543,6 +543,8 @@ public:
             return this->replace("%zu", formatLong(d));
         if (contains("%c"))
             return this->replace("%c", String((codepoint) d));
+        if (contains("%C"))
+            return this->replace("%C", String((codepoint) d));
         put_chars("ERROR\nmissing placeholder %d in string modulo operation s%d:\n");
         put_chars(this->data, this->length);
         put_chars(" value:");
@@ -552,6 +554,10 @@ public:
     }
 
     String operator%(unsigned int d) {
+        return this->operator%((int) d);
+    }
+
+    String operator%(codepoint d) {
         return this->operator%((int) d);
     }
 

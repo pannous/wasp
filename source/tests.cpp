@@ -2974,6 +2974,9 @@ void tests() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+    check_is("%c"s % u'γ', "γ");
+    check_is("%C"s % U'γ', "γ");
+    assert_emit("i=3;k='αβγδε';k#i", U'γ');
     assert_emit("i=3;k='αβγδε';k#i", u'γ');
     assert_emit("i=1;k='hi';k#i", 'h');
     assert_emit("(2 4 3)[1]", 4);

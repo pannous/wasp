@@ -58,6 +58,30 @@ bool assert_equals_x(Node a, char b, chars context = "") {
     return a == b;
 }
 
+bool assert_equals_x(Node a, wchar_t b, chars context = "") {
+    if (a != Node(b))
+        print("\nFAILED assert_equals! %lld should be %c %s\n"s % a.value.longy % b % context);
+    else
+        printf(" OK %lld==%c\n", a.value.longy, b);
+    return a == b;
+}
+
+bool assert_equals_x(Node a, char16_t b, chars context = "") {
+    if (a != Node(b))
+        print("\nFAILED assert_equals! %lld should be %c %s\n"s % a.value.longy % b % context);
+    else
+        printf(" OK %lld==%c\n", a.value.longy, b);
+    return a == b;
+}
+
+bool assert_equals_x(Node a, codepoint b, chars context = "") {
+    if (a != Node(b))
+        print("\nFAILED assert_equals! %lld should be %c %s\n"s % a.value.longy % b % context);
+    else
+        printf(" OK %lld==%c\n", a.value.longy, b);
+    return a == b;
+}
+
 // WTF why is char* unexplicitly cast to bool!?!
 bool assert_equals_x(Node a, bool b, chars context = "") {
     if (a != Node(b))print("\nFAILED assert_equals! %lld should be %d %s\n"s % a.value.longy % b % context);
