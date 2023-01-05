@@ -421,7 +421,7 @@ String load(String file) {
     auto *buffer = (unsigned char *) malloc(size);
     fseek(ptr, 0L, SEEK_SET);
     size_t ok = fread(buffer, sizeof(buffer), size, ptr);
-    if (!ok)error("Empty file or error reading "s + file);
+    if (!ok)error("Error reading "s + file + "of size "s + size);
     auto binary = new String((char *) buffer, size, false);
 //	assert_equals(binary->length, size);
     return *binary;

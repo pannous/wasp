@@ -688,6 +688,10 @@ public:
         return this->operator+(String(i));
     }
 
+    String operator+(size_t i) {
+        return this->operator+(int64(i));
+    }
+
     String operator+(int i) {
         return this->operator+(String(i));
     }
