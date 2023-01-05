@@ -68,6 +68,10 @@ public:
     Map<String, Function> functions = {1000};// contains imports, so index via call_index, not code_index
 //	int data_offset=0;// todo: read from data section! why not 0 ?
     int data_offset_end = 0;
+
+    void file(const char *string);
+
+    void save(const char *file);
 };
 
 Module &read_wasm(String file);

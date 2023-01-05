@@ -94,7 +94,7 @@ void newline() {
 }
 
 void info(chars msg) {
-    if (not debug)return;// todo finer levels!
+    if (not tracing)return;// todo finer levels!
     print(msg);
 }
 

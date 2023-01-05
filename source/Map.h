@@ -225,13 +225,18 @@ public: // todo careful Map<char*,…> eq
 //    operator T() for reads
 
 
-    S &operator[](T &value) {// inverse lookup (!?)
+    S &operator[](T &value) {// inverse lookup
         return keys[position(value)];
     }
 
-    S &operator[](size_t position) {// inverse lookup (!?)
+    /*T*/ S &operator[](size_t position) {
         return keys[position];
+//        return values[position];
     }
+
+//    T &operator[](int position) {
+//        return values[position];
+//    }
 
 //    T &operator[](size_t position) {
 //        return values[position]; // functions that differ only in their return type cannot be overloaded

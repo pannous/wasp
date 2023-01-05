@@ -16,6 +16,12 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testRenameWasmFunction() {
+    Module &module1 = loadModule("samples/test.wasm");
+    module1.functions.at(0).name = "test";
+    module1.save("samples/test2.wasm");
+}
+
 void testPower() {
     assert_equals(powl(10, 1), 10l);
     assert_equals(powl(10, 2), 100l);
@@ -2974,6 +2980,8 @@ void tests() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+    testRenameWasmFunction();
+
     check_is("%c"s % u'γ', "γ");
     check_is("%C"s % U'γ', "γ");
     assert_emit("i=3;k='αβγδε';k#i", U'γ');

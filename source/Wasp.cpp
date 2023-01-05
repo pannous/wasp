@@ -1969,12 +1969,10 @@ void usage() {
 int main(int argc, char **argv) {
     String args;
     for (int i = 1; i < argc; ++i) args += i > 1 ? String(" ") + argv[i] : String(argv[i]);
+    String path = argv[0];
+    print("🐝 Wasp "s + version);
 //   String arg=extractArg(argv,argc);
 #if WASM
-    print("wasp.wasm v0.1.2");
-    print(42);
-    print(argc);
-    print(argv[0]);
     testCurrent();
 //    debugWASM();
 #endif

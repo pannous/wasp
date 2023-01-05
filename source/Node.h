@@ -7,6 +7,7 @@
 #include "smart_types.h"
 #include "NodeTypes.h"
 #include "ABI.h"
+#include "Config.h"
 
 //#ifndef WASI
 //SOMETIMES IT WORKS with WASI, sometimes it doesnt!? ./build-wasm.sh fails as of 2021/2
@@ -30,26 +31,6 @@ typedef unsigned char byte;//!
 
 #define MAX_NODE_CAPACITY 100000 // debug only, let it run out of memory naturally!
 static int lastChild = 1;
-
-// todo: wrap parser-options
-//bool use_polish_notation = false;// f(a,b) => (f a b) also : lisp mode (a 1 2)==a(1)(2)==a{1 2}
-
-
-static bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
-static bool panicking = false;// false for error tests, webview, etc
-#ifdef RUNTIME_ONLY
-static bool debug = false;
-#else
-static bool debug = true;// clone sub-strings instead of sharing etc
-#endif
-
-
-//extern bool debug;
-//extern bool throwing;// false for error tests etc
-//extern bool panicking;// false for error tests, webview, etc
-
-// todo: wrap parser-options
-static bool use_polish_notation;// prefix notation, s-expression parser flag  (html (body)) vs html{body{}}
 
 Node *reconstructWasmNode(wasm_node_index pointer);
 
