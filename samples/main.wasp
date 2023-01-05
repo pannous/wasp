@@ -1,4 +1,5 @@
 #use lib
 puts "Hello main.wasp"
 #print "Hello main.wasp"
-int test(){ 42 }
+
+fun doub(float a):int{return a*2}
