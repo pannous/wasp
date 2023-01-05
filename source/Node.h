@@ -320,8 +320,7 @@ public:
         kind = codepoints;
     }
 
-    explicit
-    Node(double nr) {
+    explicit Node(double nr) {
         value.real = nr;
         kind = reals;
         if (debug) name = String(ftoa(nr)); // messes with setField contraction
@@ -465,8 +464,7 @@ public:
         value.data = pNode[0];
     }
 
-    explicit
-    Node(codepoint c) {
+    explicit Node(codepoint c) {
         name = String(c);
         value.longy = c;
         kind = codepoints;
@@ -475,7 +473,7 @@ public:
     }
 
 
-    Node(smart_pointer_64 smart) {
+    explicit Node(smart_pointer_64 smart) {
         *this = *smartNode(smart);
     }
 
