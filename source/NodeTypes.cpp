@@ -122,6 +122,7 @@ Type mapType(String arg) {
     else if (arg == "long&")return pointer;
     else if (arg == "int64")return i64;
     else if (arg == "uint64")return i64;
+    else if (arg == "Double")return float64;
     else if (arg == "double")return float64;
     else if (arg == "float")return float32;
     else if (arg == "bool")return int32;
@@ -634,4 +635,10 @@ Valtype mapTypeToWasm(Primitive p) {
             error("don't use");
             return Valtype::none;
     }
+}
+
+
+bool isGroup(Kind type) {
+    return type == groups or type == objects or type == patterns or type == expression;
+//    or (Primitive)type == nodes or type== lists or type == maps;
 }

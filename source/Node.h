@@ -858,6 +858,13 @@ public:
     void addMeta(Node *pNode);
 
     bool contains(const char *string);
+
+    chars containsAny(List<chars> strings);
+
+    int size();
+
+    Node &childs();
+
 };
 
 typedef const Node Nodec;

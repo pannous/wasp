@@ -315,7 +315,7 @@ bool Node::operator==(int other) {
     if (kind == key and value.node and *value.node == other)return true;
     if (kind == strings and parseLong(value.string->data) == other)return true;
     if (parseLong(name) == other)return true;
-    if (length == 1 and (kind == objects or kind == groups or kind == patterns))
+    if (length == 1 and (isGroup(kind)))
         return last() == other;
 //	if (type == objects)return value.node->numbere()==other;// WTF
     return false;
@@ -426,7 +426,7 @@ bool Node::operator==(Node &other) {
     if (other.kind == unknown and name == other.name)
         return true; // weak criterum for dangling unknowns!! TODO ok??
 
-    if ((kind == groups or kind == objects) and length == 1 and children[0] == other)
+    if ((isGroup(kind)) and length == 1 and children[0] == other)
         return true; // (x)==x
 
     /*Node flattened=this->flat();// too expensive? but we want (x)=x ! other way: if kind==group and length==1
@@ -501,12 +501,12 @@ bool Node::operator>(Node other) {
     if (other.kind == longs) {
         if (kind == longs)return value.longy > other.value.longy;
         if (kind == reals)return value.real > other.value.longy;
-        if (kind == objects or kind == groups or kind == patterns)
+        if (isGroup(kind))
             return length > other.value.longy;
     }
-    if (other.kind == objects or other.kind == groups or other.kind == patterns) {
+    if (isGroup(other.kind)) {
         if (kind == longs)return value.longy > other.length;
-        if (kind == objects or kind == groups or kind == patterns)
+        if (isGroup(kind))
             return length > other.value.longy;
     }
     if (!has("compare") and !has("greater") and !has("less"))
@@ -1279,6 +1279,31 @@ bool Node::contains(const char *string) {
         if (chile.name == string)return true;
     return false;
 }
+
+
+chars Node::containsAny(List<chars> strings) {
+    for (Node &chile: *this)
+        for (chars string: strings)
+            if (chile.name == string)return string;
+    return 0;
+}
+
+int Node::size() {
+    return length;
+}
+
+Node &Node::childs() {
+    Node &neu = *new Node();
+    if (isGroup(kind))
+        neu.kind = kind;
+    else
+        neu.kind = groups;
+    neu.children = children;
+    neu.length = length;
+    return neu;
+}
+
+
 
 
 //Node &node(Type t, int64 value, char *name) {

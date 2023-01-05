@@ -16,6 +16,22 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+
+void testFunctionDeclaration() {
+//    auto node1 = analyze(parse("fn main(){}"));
+//    check(node1.kind==declaration);
+//    check(node1.name=="main");
+
+    auto node2 = analyze(parse("fun test(float a):int{return a*2}"));
+    check(node2.kind == declaration);
+    check(node2.name == "test");
+    check_is(functions["test"].signature.size(), 1);
+    check_is(functions["test"].signature.parameter_names[0], "a");
+    check_is(functions["test"].signature.parameter_types[0], (Type) float_type);
+    check(functions["test"].body);
+    check_is(*functions["test"].body, analyze(parse("return a*2")));
+}
+
 void testRenameWasmFunction() {
     Module &module1 = loadModule("samples/test.wasm");
     module1.functions.at(0).name = "test";
@@ -2980,6 +2996,7 @@ void tests() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+    testFunctionDeclaration();
     testRenameWasmFunction();
 
     check_is("%c"s % u'γ', "γ");

@@ -216,13 +216,15 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 
     Signature &signature = function.signature;
     for (Arg arg: args) {
-        if (empty(arg.name))
-            error("empty argument name");
-        if (function.locals.has(arg.name)) {
-            error("duplicate argument name: "s + arg.name);
+        auto name = arg.name;
+        if (empty(name))
+            name = String("$"s + signature.size());
+//            error("empty argument name");
+        if (function.locals.has(name)) {
+            error("duplicate argument name: "s + name);
         }
-        addLocal(function, arg.name, arg.type, true);
-        signature.add(arg.type, arg.name);// todo: arg type, or pointer
+        addLocal(function, name, arg.type, true);
+        signature.add(arg.type, name);// todo: arg type, or pointer
     }
     if (params.value.node) {
         Node &ret = params.values();
@@ -278,7 +280,12 @@ List<chars> infixOperators = operator_list;
 
 // handled different than other operators, because … they affect the namespace context
 List<chars> setter_operators = {"="};
-List<chars> function_operators = {":="};// todo:
+List<chars> return_keywords = {"return", "yield", "as", "=>", ":", "->"}; // "convert … to " vs "to print(){}"
+List<chars> function_operators = {":="};//, "=>", "->" ,"<-"};
+List<chars> function_keywords = {"def", "defn", "define", "to", "ƒ", "fn", "fun", "func", "function", "method",
+                                 "proc", "procedure"};
+List<String> function_modifiers = {"public", "static", "export", "import", "extern", "C"};
+
 List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
 List<chars> key_pair_operators = {":"};
 List<chars> declaration_operators = {":=", "=",
@@ -426,6 +433,16 @@ bool isVariable(Node &node) {
 }
 
 bool isPrimitive(Node &node) {
+    // should never be cloned so always compare by reference ok?
+    if (&node == &Int)return true;
+    if (&node == &Bool)return true;
+    if (&node == &Long)return true;
+    if (&node == &Double)return true;
+    if (&node == &ByteType)return true;
+    if (&node == &ByteChar)return true;
+    if (&node == &Charpoint)return true;
+    if (&node == &ShortType)return true;
+    if (&node == &StringType)return true;
     Kind type = node.kind;
     if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
         return true;
@@ -492,8 +509,10 @@ Node &groupTypes(Node &expression, Function &context) {
     if (types.size() == 0)initTypes();
     if (isType(expression)) {// double \n x,y,z  extra case :(
         Node &type = *types[expression.name];
-        if (type.kind == structs or type.kind == clazz)
+        auto is_primitive = isPrimitive(type);
+        if (not is_primitive and (type.kind == structs or type.kind == clazz))
             return constructInstance(expression, context);
+
         if (expression.length > 0) {// point{x=1 y=2} point{x y}
             for (Node &typed: expression) {// double \n x = 4
                 typed.setType(&type);
@@ -750,22 +769,61 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     Node &decl = *new Node(name);//node.name+":={…}");
     decl.setType(declaration);
     decl.add(body);
+    function.body = &body;//.flat(); // debug or use?
     return decl;
 }
 
 Node &groupOperators(Node &expression, Function &context);
 
-List<String> function_modifiers = {"public", "static"};
+Node extractModifiers(Node &node);
 
-Node &groupFunctionDeclaration(Node &expression, Function &context) {
-    auto first = expression.first();
-    while (function_modifiers.contains(first.name)) {
-        if (expression.children)// careful this shifts meaning of expression[i] for all subsequents!
-            expression.children++;
-        expression.length--;
+
+Node extractModifiers(Node &expression) {
+    Node modifieres;
+    for (auto child: expression) {
+        if (function_modifiers.contains(child.name)) {
+            modifieres.add(child);
+            expression.remove(child);
+        }
     }
-    auto left = expression.to(":=");
-    auto rest = expression.from(":=");
+    return modifieres;
+}
+
+
+// def foo(x,y) => x+y  vs  groupFunctionDeclaration foo := x+y
+Node &groupFunctionDefinition(Node &expression, Function &context) {
+    auto first = expression.first();
+    Node modifieres = extractModifiers(expression);
+    auto kw = expression.containsAny(function_keywords);
+    if (expression.index(kw) != 0) error("function keywords must be first");
+    expression.children++;
+    expression.length--;
+    auto fun = expression.first();
+    Node return_type;
+    Node arguments = groupTypes(fun.childs(), context); // children f(x,y)
+    Node body;
+    auto ret = expression.containsAny(return_keywords);
+    if (ret) {
+        return_type = expression.from(ret);
+        expression = expression.to(ret);
+        body = return_type.values(); // f(x,y) -> int { x+y }
+    } else if (expression.size() == 3) {// f(x,y) int { x+y }
+        return_type = expression[1];
+        body = expression.last();
+    } else body = fun.values();
+
+    auto opa = expression.containsAny(function_operators); // fun x := x+1
+    if (opa)
+        body = expression.from(opa);
+    return groupFunctionDeclaration(fun.name, &return_type, NIL, arguments, body, context);
+}
+
+// f x:=x*x  vs groupFunctionDefinition fun x := x*x
+Node &groupFunctionDeclaration(Node &expression, Function &context) {
+    Node modifieres = extractModifiers(expression);
+    auto op = expression.containsAny(function_operators);
+    auto left = expression.to(op);
+    auto rest = expression.from(op);
     auto fun = left.first();
     return groupFunctionDeclaration(fun.name, 0, left, left, rest, context);
 }
@@ -1076,7 +1134,7 @@ Type preEvaluateType(Node &node, Function &context) {
         return type;
 //        if(lhs.kind==arrays)
     }
-    if (node.kind == groups or node.kind == objects or node.kind == patterns) {
+    if (isGroup(node.kind)) {
         arrayElementSize(node);// adds type as BAD SIDE EFFECT
     }
     if (node.kind == reference) {
@@ -1501,8 +1559,13 @@ Node &analyze(Node &node, Function &function) {
         return node;// nothing to be analyzed!
     }
 
-    bool is_function = isFunction(node);
+
+//    if(function_keywords.contains(first))
+    if (node.containsAny(function_keywords))
+        return groupFunctionDefinition(node, function);
+
     //todo merge/clean
+    bool is_function = isFunction(node); // call, NOT definition
     if (type == operators or type == call or is_function) {
 //		Function *import =
         findLibraryFunction(node.name, true);// sets functions[name].is_import = true;
@@ -1520,7 +1583,6 @@ Node &analyze(Node &node, Function &function) {
         return grouped;
     }
 
-
     Node &groupedTypes = groupTypes(node, function);
     if (isPrimitive(node)) return node;
     Node groupedDeclarations = groupDeclarations(groupedTypes, function);
@@ -1529,7 +1591,8 @@ Node &analyze(Node &node, Function &function) {
     if (analyzed[grouped.hash()])return grouped;// done!
     analyzed.insert_or_assign(grouped.hash(), 1);
 
-    if (type == groups or type == objects or type == expression) {
+
+    if (isGroup(type)) {
         // children analyzed individually, not as expression WHY?
         if (grouped.length > 0)
             for (Node &child: grouped) {
