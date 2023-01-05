@@ -107,7 +107,6 @@ codepoint grouper_list[] = {' ', ',', ';', ':', '\n', '\t', '(', ')', '{', '}', 
 // predicates in of on from to
 // todo split keywords into binops and prefix functors
 chars import_keywords[] = {"use", "require", "import", "include", "using", 0};
-chars function_keywords[] = {"to", "ƒ", "fn", "fun", "func", "function", "method", "proc", "procedure", 0};
 // todo aliases need NOT be in this list:
 // todo library functions need NOT be in this list (loaded when though?) "log10", "log₁₀", "log₂", "ln", "logₑ",
 // todo special UTF signs need NOT be in this list, as they are identified as operators via utf range

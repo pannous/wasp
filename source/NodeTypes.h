@@ -216,8 +216,10 @@ enum Primitive {
 //    Kind::undefined = 0 ==
     unknown_type = 0,// defaults to int64!
     missing_type = 0x40,// well defined
+    nulls = 0x40, // ≠ undefined
     wasm_leb = 0x77,
     wasm_float64 = 0x7C, // float64
+    float_type = wasm_float64,
     wasm_f32 = 0x7d,
     wasm_int64 = 0x7E, // AS OPPOSED TO longs signed or unsigned? we don't care
     wasm_int32 = 0x7f,  // make sure to not confuse these with boxed Number nodes of kind longs, reals!
@@ -519,3 +521,5 @@ Type mapType(Node *arg);
 
 chars typeName(Valtype t, bool fail = true);
 
+
+bool isGroup(Kind type);

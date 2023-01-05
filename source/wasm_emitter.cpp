@@ -1741,6 +1741,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 Primitive elementType(Type type32) {
     if (type32 == stringp)return byte_char;
     if (type32 == longs)return Primitive::wasm_int64;// todo should not have reached here
+    if (type32 == nils)return nulls;
     error("elementType not implemented for "s + typeName(type32));
 }
 
