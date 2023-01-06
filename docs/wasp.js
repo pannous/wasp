@@ -228,13 +228,33 @@ function new_long(val) {
     heap_end += 8
 }
 
-function read_int32(pointer) { // little endian
-    buffer = new Uint8Array(memory.buffer, 0, memory.length);
-    return buffer[pointer + 3] * 2 ** 24 + buffer[pointer + 2] * 256 * 256 + buffer[pointer + 1] * 256 + buffer[pointer];
-}// todo: like this:
+function read_byte(pointer, mem) {
+    if (!mem) mem = memory
+    // return mem.buffer[pointer]
+    let buffer = new Int8Array(mem.buffer, pointer, 1);
+    return buffer[0]
+}
 
-function read_int64(pointer) {
-    buffer = new BigInt64Array(memory.buffer, pointer, memory.length);
+
+function read_int32(pointer, mem) {
+    if (!mem) mem = memory
+    buffer = new Uint8Array(mem.buffer, 0, mem.length);
+    return buffer[pointer + 3] * 2 ** 24 + buffer[pointer + 2] * 256 * 256 + buffer[pointer + 1] * 256 + buffer[pointer];
+}
+
+// ONLY WORKS if pointer is 4 byte aligned!
+// todo align ALL ints …!
+// function read_int32(pointer, mem) {
+//     if (!mem) mem = memory
+// start offset of Int32Array should be a multiple of 4
+//     let buffer = new Int32Array(mem.buffer, pointer, 4);
+//     return buffer[0]
+// }
+
+
+function read_int64(pointer, mem) { // little endian
+    if (!mem) mem = memory
+    let buffer = new BigInt64Array(mem.buffer, pointer, 8);
     return buffer[0]
 }
 
@@ -285,23 +305,25 @@ class node {
     Content = 0
     Childs = []
 
-    constructor(pointer) {
+    constructor(pointer, mem) {
+        if (!mem) mem = memory
+        this.memory = mem // may be lost, or does JS GC keep it?
         this.pointer = pointer
         if (!pointer) return;//throw "avoid 0 pointer node constructor"
-        check(read_int32(pointer) == node_header_32, "node_header_32")
+        check(read_int32(pointer, mem) == node_header_32, "node_header_32")
         pointer += 4;
-        this.length = read_int32(pointer);
+        this.length = read_int32(pointer, mem);
         pointer += 4;
-        this.kind = read_int32(pointer);
+        this.kind = read_int32(pointer, mem);
         pointer += 4;
-        // this.type = read_int32(pointer);
+        // this.type = read_int32(pointer,mem);
         // pointer += wasm_pointer_size;// forced 32 bit,  improved from 'undefined' upon construction
-        this.child_pointer = read_int32(pointer);
+        this.child_pointer = read_int32(pointer, mem);
         pointer += wasm_pointer_size;// LIST, not link. block body content
         // console.log(pointer,pointer%8) // must be %8=0 by now
-        this.value = parseInt(read_int64(pointer));
+        this.value = parseInt(read_int64(pointer, mem));
         pointer += 8; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
-        this.name = string(pointer);
+        this.name = string(pointer, mem);
         // post processing
         this[this.name] = this; // make a:1 / {a:1} indistinguishable
         for (var child of this.children()) {
@@ -333,12 +355,16 @@ class node {
         let i = 0
         let node_size = exports.size_of_node()
         while (l-- > 0) {
-            list.push(new node(this.child_pointer + i * node_size));
+            list.push(new node(this.child_pointer + i * node_size, this.memory));
             i++
         }
         if (this.length)
             this.Childs = list
         return list
+    }
+
+    valueOf() {
+        return this.serialize()
     }
 
     Value() {
@@ -352,6 +378,7 @@ class node {
         if (this.kind == kinds.reference) return this.Content || this.Childs;
         if (this.kind == kinds.object) return this.Content || this.Childs;
         if (this.kind == kinds.group) return this.Content || this.Childs;
+        if (this.kind == 0) return this.Content || this.Childs;// todo null node probably bug!
         if (this.kind == kinds.key) {
             let val = new node(this.value);
             if (val.kind == kinds.string) return string(val.value);// or just name
@@ -363,6 +390,8 @@ class node {
 
     serialize() {
         if (!this.pointer) todo("only wasp nodes can be serialized");
+        if (!this.memory == memory)
+            todo("needs to serialize inside the correct memory!") // funclet.serialize()
         return chars(exports.serialize(this.pointer));
     }
 
@@ -402,18 +431,61 @@ function download(data, filename, type) {
 }
 
 
-
 // see [smart-pointers](https://github.com/pannous/wasp/wiki/smart-pointer)
+let string_header_32 = 0x10000000
+let array_header_32 = 0x40000000
+
+// holdup, this list layout is not compatible with the list layout pointer, length, kind, value
+function read_array(data, mem) {
+    console.log("read_array", data)
+    let array_header = read_int32(data, mem)
+    check(array_header == array_header_32, "array_header_32")
+    let kind = read_int32(data + 4, mem)
+    let length = read_int32(data + 8, mem)
+    let value_kind = read_int32(data + 12, mem)
+    let start = data + 16;// continuous mode!  read_int32(data+16, memory)
+    console.log("array start", start)
+    console.log("array length", length)
+    console.log("array kind", kind, kinds[kind])
+    console.log("value_kind", value_kind, kinds[value_kind])
+    let Kind = new node(value_kind, mem)
+    console.log("Kind", Kind)
+    let item_size = 1;
+    if (value_kind == kinds.byte) item_size = 1;
+    if (value_kind == kinds.short) item_size = 2;
+    if (value_kind == kinds.int) item_size = 4;
+    if (value_kind == kinds.float) item_size = 4;
+    if (value_kind == kinds.long) item_size = 8;
+    if (value_kind == kinds.real) item_size = 8;
+    if (value_kind == kinds.codepoints) item_size = 4;
+    if (length > 1000) throw "array too long"
+    let array = []
+    let value = 0;
+    for (let i = 0; i < length; i++) {
+        if (item_size == 1) value = read_byte(start + i * item_size, mem)
+        else if (item_size == 4) value = read_int32(start + i * item_size, mem)
+        else todo("general array read")
+        // todo: serialize as node[] to avoid logic duplication!? space expensive! not THAT many cases (yet?)
+        array.push(value)
+    }
+    console.log("array", array)
+    return array
+}
+
 function smartNode(data0, type /*int32*/, memory) {
     // console.log("smartNode")
     type = data0 >> BigInt(32) // shift 32 bits ==
     let data = Number(BigInt.asIntN(32, data0))// drop high bits
-    if (type == 0x10000000 || type == 0x100000)
+    if (type == string_header_32 || type == string_header_32 >> 8)
         return load_chars(data, length = -1, format = 'utf8', memory)
+    if (type == array_header_32 || type == array_header_32 >> 8)
+        return read_array(data, memory)
     let nod = new node(exports.smartNode(data0));
-    if (nod.kind == kinds.real || nod.kind == kinds.bool || nod.kind == kinds.long)
-        return nod.Value()
-    error("TODO emit.wasm values in wasp.wasm for kind " + nod.Kind);
+    if (nod.kind == kinds.real || nod.kind == kinds.bool || nod.kind == kinds.long || nod.kind == kinds.codepoint)
+        return nod.Value() // primitives independent of memory
+    // if (nod.kind == kinds.object)
+    //     return new node(nod.value)
+    error("TODO emit.wasm values in wasp.wasm for kind " + nod.Kind + " 0x" + hex(type));
     // return {data: data, type: type}
 }
 
@@ -422,6 +494,7 @@ function smartNode(data0, type /*int32*/, memory) {
 // todo while wasp.wasm can successfully execute via run_wasm, it can't handle the result (until async wasm) OR :
 // https://web.dev/asyncify/
 var expect_test_result = 0; // set before running in semi sync tests!
+
 async function run_wasm(buf_pointer, buf_size) {
     wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // download(wasm_buffer, "emit.wasm", "wasm")
@@ -446,7 +519,13 @@ async function run_wasm(buf_pointer, buf_size) {
             STOP = 1
             download(wasm_buffer, "emit.wasm", "wasm") // resume
         }
-        check(expect_test_result == result)
+        if (Array.isArray(expect_test_result) && Array.isArray(result)) {
+            for (let i = 0; i < result.length; i++) {
+                // console.log("EXPECT child ", expect_test_result[i], "GOT", result[i])
+                check(+expect_test_result[i] == +result[i])
+            }
+        } else
+            check(expect_test_result == result)
         expect_test_result = 0
         if (resume) setTimeout(resume, 1);
     }
@@ -455,23 +534,23 @@ async function run_wasm(buf_pointer, buf_size) {
 
 wasm_data = fetch(WASM_FILE)
 WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
-    instance = obj.instance
-    exports = instance.exports
-    HEAP = exports.__heap_base; // ~68000
-    DATA_END = exports.__data_end
-    heap_end = HEAP || DATA_END;
-    heap_end += 0x100000
-    memory = exports.memory || exports._memory || memory
-    buffer = new Uint8Array(memory.buffer, 0, memory.length);
-    main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
-    main = instance._Z11testCurrentv || main
-    if (main) {
-        console.log("got main")
-        result = main()
-    } else {
-        console.error("missing main function in wasp module!")
-        result = instance.exports//show what we've got
-    }
+        instance = obj.instance
+        exports = instance.exports
+        HEAP = exports.__heap_base; // ~68000
+        DATA_END = exports.__data_end
+        heap_end = HEAP || DATA_END;
+        heap_end += 0x100000
+        memory = exports.memory || exports._memory || memory
+        buffer = new Uint8Array(memory.buffer, 0, memory.length);
+        main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
+        main = instance._Z11testCurrentv || main
+        if (main) {
+            console.log("got main")
+            result = main()
+        } else {
+            console.error("missing main function in wasp module!")
+            result = instance.exports//show what we've got
+        }
         console.log(result);
         loadKindMap()
         setTimeout(test, 1);// make sync

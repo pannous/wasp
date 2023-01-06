@@ -2130,6 +2130,7 @@ void testStringConcatenation() {
 }
 
 void testString() {
+
     String *a = new String("abc");
     String b = String("abc");
     String c = *a;
@@ -2162,6 +2163,8 @@ void testString() {
     check("hi %s ok"s % "ja" == "hi ja ok");
     check("%s %d"s % "hu" % 3 == "hu 3");
     check("%s %s %d"s % "ha" % "hu" % 3 == "ha hu 3");
+    check_is("%c"s % u'γ', "γ");
+    check_is("%C"s % U'γ', "γ");
     assert_equals(String("abcd").substring(1, 2, false), "b");
     assert_equals(String("abcd").substring(1, 3, false), "bc");
     assert_equals(String("abcd").substring(1, 2, true/*share*/), "b");// excluding, like js
@@ -2996,23 +2999,12 @@ void tests() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
-    assert_is("π**2", (double) 9.869604401089358);
+
     testFunctionDeclaration();
-    testRenameWasmFunction();
+//    testRenameWasmFunction();
 
-    check_is("%c"s % u'γ', "γ");
-    check_is("%C"s % U'γ', "γ");
-    assert_emit("i=3;k='αβγδε';k#i", U'γ');
-    assert_emit("i=3;k='αβγδε';k#i", u'γ');
-    assert_emit("i=1;k='hi';k#i", 'h');
-    assert_emit("(2 4 3)[1]", 4);
-    assert_emit("x='abcde';x[3]", 'd');
-    assert_emit("x='abcde';x#4='x';x[3]", 'x');
-
-//    assert_emit("'a'", Node('a'));
 //    tests();// make sure all still ok before changes
 //    todos();
-    testWasmString();
     tests();// make sure all still ok after messing with memory
 #if not WASM
     testAngle();// fails in WASM why?
@@ -3052,6 +3044,8 @@ extern byte *stack_hack;
 
 extern "C" void testRun() {
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
+
+    assert_is("1 2 3", Node(1, 2, 3, 0))
     testSinus();
 //    pi = 3.1415926535896688; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?
 //    assert_emit("√ π ²", pi);

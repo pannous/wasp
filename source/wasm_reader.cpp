@@ -616,6 +616,7 @@ Map<int64, Module *> module_cache{.capacity=100};
 #include <stdlib.h>
 
 Module &read_wasm(String file) {
+    if (file.empty())error("read_wasm: empty file name");
     if (module_cache.has(file.hash()))
         return *module_cache[file.hash()];
     if (file.contains("~"))
