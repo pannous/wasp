@@ -1029,9 +1029,9 @@ public:
     String name;
     String export_name;
     Signature signature;
-    Module *module;
-    Node *body;
-    Code *code;
+    Module *module = 0;
+    Node *body = 0;
+    Code *code = 0;
 
     bool is_import = false; // not serialized in functype section, but in import section wt
 //    bool is_declared; // has fresh Code body to emit!

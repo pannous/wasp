@@ -407,6 +407,7 @@ public:
 //	operator std::string() const { return "Hi"; }
 
 // excluding to
+// todo ref param is confusing as one can expect it to be 'include = true/false'
     String substring(int from, int to = -1, bool ref = false /* true after all is tested*/) { // excluding to
         if (from < 0 or (from == 0 and (to == length or to == -1))) return *this;
         if (to < 0) to = length + to + 1;// -2 : skip last character

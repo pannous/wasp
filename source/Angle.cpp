@@ -768,8 +768,9 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
         signature.returns(mapTypeToPrimitive(*return_type));// explicit double sin(){} // todo other syntaxes+ multi
     Node &decl = *new Node(name);//node.name+":={…}");
     decl.setType(declaration);
-    decl.add(body);
-    function.body = &body;//.flat(); // debug or use?
+    decl.add(body.clone());
+    function.body = body.clone();//.flat(); // debug or use?
+//    function.body= &body;
     return decl;
 }
 
@@ -1157,10 +1158,10 @@ Module &loadModule(String name) {
 }
 
 String &checkCanonicalName(String &name) {
-    if (name == "**")warn("The power operator in angle is simply '^' : 3^2=9.");// todo: alias warning mechanism
-    if (name == "^^")warn("The power operator in angle is simply '^' : 3^2=9. Also note that 1 xor 1 = 0");
-    if (name == "||")warn("The disjunction operator in angle is simply 'or' : 1 or 0 = 1");
-    if (name == "&&")warn("The conjunction operator in angle is simply 'and' : 1 and 1 = 1");
+    if (name == "**")info("The power operator in angle is simply '^' : 3^2=9.");// todo: alias infoing mechanism
+    if (name == "^^")info("The power operator in angle is simply '^' : 3^2=9. Also note that 1 xor 1 = 0");
+    if (name == "||")info("The disjunction operator in angle is simply 'or' : 1 or 0 = 1");
+    if (name == "&&")info("The conjunction operator in angle is simply 'and' : 1 and 1 = 1");
     return name;
 }
 
@@ -1321,11 +1322,13 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))return use_required(&functions[name]);
     if (contains(funclet_list, name)) {
+#if not WASM
         Module &funclet_module = read_wasm(findFile(name, "lib"));
 //        check(funclet_module.functions.has(name));
         auto funclet = funclet_module.functions[name];
         addLibrary(&funclet_module);
         return use_required(&funclet);
+#endif
     }
     if (name.in(function_list) and libraries.size() == 0)
         libraries.add(&loadModule("wasp-runtime.wasm"));// on demand
