@@ -374,6 +374,7 @@ void testMathOperatorsRuntime() {
     assert_emit("√3^0", 1);
     assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE
     assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
+    assert_is("π**2", (double) 9.869604401089358);
 }
 
 void testComparisonMath() {
@@ -969,6 +970,10 @@ void testArrayIndicesWasm() {
     assert_emit("{1 4 3}[1]", 4);
     assert_emit("(1 4 3)[1]", 4);
     assert_throws("(1 4 3)#0");
+
+    assert_emit("'αβγδε'#3", U'γ');
+    assert_emit("i=3;k='αβγδε';k#i", u'γ');
+    assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ');
     skip(
             assert_emit("[1 4 3]#2", 4);// exactly one op expected in emitIndexPattern
             assert_is("[1 2 3]#2", 2);// check node based (non-primitive) interpretation first
@@ -1365,7 +1370,6 @@ void testAllWasm() {
     testMergeWabtByHand();
     testEmitter();
     testMathLibrary();
-    testStringIndicesWasm();
     testWasmLogicCombined();
     testMergeWabt();
     wasm_todos();
@@ -1380,6 +1384,7 @@ void testAllWasm() {
 
     // Test that IMPLICITLY use runtime /  assert_run
     assert_emit("x=(1 4 3);x#2", 4);
+    testStringIndicesWasm();
 
 
     skip(

@@ -178,6 +178,11 @@ Node *Node::begin() const {
 
 Node *Node::end() const {
     if (length <= 0 or !children) return 0;
+    if (length < capacity);
+    else {
+        puti(length);
+        puti(capacity);
+    }
     check_silent(length < capacity);
     return children + length;
 }
