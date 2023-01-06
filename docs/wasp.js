@@ -108,7 +108,7 @@ let imports = {
     },
     wasi_unstable: {
         fd_write,
-        proc_exit: terminate,
+        proc_exit: terminate, // all threads
         // ignore the rest for now
         args_sizes_get: x => 0,
         args_get: nop,
@@ -298,6 +298,15 @@ function loadKindMap() {
     // console.log(kinds)
 }
 
+function isGroup(kind) {
+    if (kind == kinds.group) return true;
+    if (kind == kinds.pattern) return true;
+    if (kind == kinds.object) return true;//!
+    if (kind == kinds.expression) return true;
+    // if(this.kind == kinds.list) return true;
+    return false;
+}
+
 //    32bit in wasm TODO pad with string in 64 bit
 class node {
     name = "" // explicit fields yield order
@@ -377,7 +386,7 @@ class node {
         if (this.kind == kinds.unknown) return this.Content || this.name;// todo? bug?
         if (this.kind == kinds.reference) return this.Content || this.Childs;
         if (this.kind == kinds.object) return this.Content || this.Childs;
-        if (this.kind == kinds.group) return this.Content || this.Childs;
+        if (isGroup(this.kind)) return this.Content || this.Childs;
         if (this.kind == 0) return this.Content || this.Childs;// todo null node probably bug!
         if (this.kind == kinds.key) {
             let val = new node(this.value);
@@ -515,17 +524,15 @@ async function run_wasm(buf_pointer, buf_size) {
     }
     console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM emit.WASM
     if (expect_test_result || 1) {
-        if (expect_test_result != result) {
+
+        if (Array.isArray(expect_test_result) && Array.isArray(result)) {
+            for (let i = 0; i < result.length; i++)
+                check(+expect_test_result[i] == +result[i])
+        } else if (expect_test_result != result) {
             STOP = 1
             download(wasm_buffer, "emit.wasm", "wasm") // resume
-        }
-        if (Array.isArray(expect_test_result) && Array.isArray(result)) {
-            for (let i = 0; i < result.length; i++) {
-                // console.log("EXPECT child ", expect_test_result[i], "GOT", result[i])
-                check(+expect_test_result[i] == +result[i])
-            }
-        } else
             check(expect_test_result == result)
+        }
         expect_test_result = 0
         if (resume) setTimeout(resume, 1);
     }
