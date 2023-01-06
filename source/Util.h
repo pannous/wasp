@@ -122,7 +122,7 @@ void lowerCase(char *string, int i);
 
 double mod_d(double x, double y);
 
-extern double pi;
+static double pi = 3.1415926535896688;
 
 bytes concat(bytes a, bytes b, int len_a, int len_b);
 

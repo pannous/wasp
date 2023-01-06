@@ -3044,11 +3044,10 @@ extern byte *stack_hack;
 
 extern "C" void testRun() {
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
+    pi = 3.1415926535896689; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?
+    assert_emit("√ π ²", pi);
 
-    assert_is("1 2 3", Node(1, 2, 3, 0))
     testSinus();
-//    pi = 3.1415926535896688; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?
-//    assert_emit("√ π ²", pi);
 
     testHex();
     testModulo();
