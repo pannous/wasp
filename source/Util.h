@@ -123,6 +123,8 @@ void lowerCase(char *string, int i);
 double mod_d(double x, double y);
 
 static double pi = 3.1415926535896688;
+//    pi = 3.1415926535896689; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?
+
 
 bytes concat(bytes a, bytes b, int len_a, int len_b);
 

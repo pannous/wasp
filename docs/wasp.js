@@ -10,8 +10,15 @@ let WASM_RUNTIME = 'wasp-runtime.wasm'
 let min_memory_size = 100 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let max_memory_size = 65536 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
 let memory = new WebAssembly.Memory({initial: min_memory_size, maximum: max_memory_size});
-
 // this memory object is NEVER USED if wasm file does not import memory and provides its own, hopefully exported!
+
+let wasm_pointer_size = 4;// 32 bit
+
+// see [smart-pointers](https://github.com/pannous/wasp/wiki/smart-pointer)
+let string_header_32 = 0x10000000
+let array_header_32 = 0x40000000
+let node_header_32 = 0x80000000
+
 
 function format(object) {
     if (object instanceof node)
@@ -27,6 +34,7 @@ function error(msg) {
 }
 
 let nop = x => 0 // careful, some wasi shim needs 0!
+
 const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
     while (iovs_count-- > 0) {
         if (fd === 0)
@@ -38,34 +46,6 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
     return -1; // todo
 };
 
-function memcpy(src, srcOffset, dst, dstOffset, length) {
-    src = src.subarray || src.slice ? src : src.buffer
-    dst = dst.subarray || dst.slice ? dst : dst.buffer
-    src = srcOffset ? src.subarray ?
-        src.subarray(srcOffset, length && srcOffset + length) :
-        src.slice(srcOffset, length && srcOffset + length) : src
-    if (dst.set) {
-        dst.set(src, dstOffset)
-    } else {
-        for (var i = 0; i < src.length; i++) {
-            dst[i + dstOffset] = src[i]
-        }
-    }
-    return dst
-}
-
-
-function wasp_module_reflection(bufp, sizep) {
-    let length = runtime_bytes.byteLength
-    while (heap_end % 8) heap_end++;
-    let buf = heap_end
-    let dest = new Uint32Array(memory.buffer, heap_end, length);
-    memcpy(runtime_bytes, 0, dest, 0, length)
-    set_int(bufp, heap_end);
-    set_int(sizep, length);
-    heap_end += length
-    return buf;
-}
 
 
 function parse(data) {
@@ -73,7 +53,6 @@ function parse(data) {
     let nod = new node(node_pointer);
     return nod
 }
-
 
 function terminate() {
     console.log("wasm terminate()")
@@ -104,7 +83,7 @@ let imports = {
         requestAnimationFrame: nop,
         powi: (x, y) => x ** y,
         puti: x => console.log(x), // allows debugging of ints without format String allocation!
-        wasp_module_reflection
+
     },
     wasi_unstable: {
         fd_write,
@@ -196,7 +175,6 @@ function load_chars(pointer, length = -1, format = 'utf8', module_memory) {
     }
 }
 
-
 function chars(data) {
     if (!data) return 0;// MAKE SURE!
     if (typeof data != "string") return load_chars(data)
@@ -208,12 +186,10 @@ function chars(data) {
     return c;
 }
 
-
 function set_int(address, val) {
     let buf = new Uint32Array(memory.buffer, address, 4);
     buf[0] = val
 }
-
 
 function new_int(val) {
     while (heap_end % 4) heap_end++;
@@ -235,22 +211,20 @@ function read_byte(pointer, mem) {
     return buffer[0]
 }
 
-
 function read_int32(pointer, mem) {
     if (!mem) mem = memory
     buffer = new Uint8Array(mem.buffer, 0, mem.length);
     return buffer[pointer + 3] * 2 ** 24 + buffer[pointer + 2] * 256 * 256 + buffer[pointer + 1] * 256 + buffer[pointer];
 }
 
+// function read_int32(pointer, mem) {
 // ONLY WORKS if pointer is 4 byte aligned!
 // todo align ALL ints …!
-// function read_int32(pointer, mem) {
 //     if (!mem) mem = memory
 // start offset of Int32Array should be a multiple of 4
 //     let buffer = new Int32Array(mem.buffer, pointer, 4);
 //     return buffer[0]
 // }
-
 
 function read_int64(pointer, mem) { // little endian
     if (!mem) mem = memory
@@ -258,9 +232,8 @@ function read_int64(pointer, mem) { // little endian
     return buffer[0]
 }
 
-
-var run = 1;
-
+// reset at each run, discard previous data!
+// NOT COMPATIBLE WITH ASYNC CALLS!
 function reset_heap() {
     HEAP = exports.__heap_base; // ~68000
     DATA_END = exports.__data_end
@@ -269,13 +242,9 @@ function reset_heap() {
 }
 
 function compile_and_run(code) {
-    // reset at each run, discard previous data!
-    // reset_heap(); NOT COMPATIBLE WITH ASYNC CALLS!
+    // reset_heap();
     exports.run(chars(code));
 }
-
-let wasm_pointer_size = 4;// 32 bit
-let node_header_32 = 0x80000000
 
 function reinterpretInt64AsFloat64(n) { // aka reinterpret_cast long to double
     const intArray = new BigInt64Array(1);
@@ -440,10 +409,6 @@ function download(data, filename, type) {
 }
 
 
-// see [smart-pointers](https://github.com/pannous/wasp/wiki/smart-pointer)
-let string_header_32 = 0x10000000
-let array_header_32 = 0x40000000
-
 // holdup, this list layout is not compatible with the list layout pointer, length, kind, value
 function read_array(data, mem) {
     console.log("read_array", data)
@@ -560,19 +525,10 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
         }
         console.log(result);
         loadKindMap()
-        setTimeout(test, 1);// make sync
+        load_runtime_bytes()
+        // setTimeout(test, 1);// make sync
     }
 )
-
-// runtime_bytes for linking small wasp programs with runtime
-function load_runtime_bytes() {
-    fetch(WASM_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
-            runtime_bytes = buffer
-            console.log(runtime_bytes)
-            console.log(runtime_bytes.byteLength)
-        }
-    )
-}
 
 let hex = x => x >= 0 ? x.toString(16) : (0xFFFFFFFF + x + 1).toString(16)
 let chr = x => String.fromCodePoint(x) // chr(65)=chr(0x41)='A' char
@@ -594,10 +550,35 @@ function binary_diff(old_mem, new_mem) {
 }
 
 
+function copy_runtime_bytes() {
+    let length = runtime_bytes.byteLength
+    while (heap_end % 8) heap_end++;
+    // new_int( 0x10203040);
+    let pointer = heap_end
+    console.log(hex(pointer), "copy_runtime_bytes", length)
+    let src = new Uint8Array(runtime_bytes, 0, length);
+    let dest = new Uint8Array(memory.buffer, heap_end, length);
+    dest.set(src) // memcpy
+    heap_end += length
+    exports.testRuntime(pointer, length)
+    // setTimeout(exports.testRuntime, 1);// make sync
+}
+
+// runtime_bytes for linking small wasp programs with runtime
+function load_runtime_bytes() {
+    fetch(WASM_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
+            runtime_bytes = buffer
+            console.log(runtime_bytes)
+            console.log(runtime_bytes.byteLength)
+            copy_runtime_bytes()
+        }
+    )
+}
+
+
 // var work = new Worker("wasp_tests.js");
 // work.postMessage({ a:8, b:9 });
 // work.onmessage = (evt) => { console.log(evt.data); };
-// resume=test // call this again once current test in wasp_tests is done!
 
 async function test() {
     if (typeof (wasp_tests) !== "undefined")

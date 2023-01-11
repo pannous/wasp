@@ -2613,6 +2613,8 @@ void testNodeBasics() {
 
 void testBUG();
 
+void testEmitBasics();
+
 void testNodeDataBinaryReconstruction() {
     check_is(parse("y:{x:2 z:3}").serialize(), "y{x:2 z:3}");// todo y:{} vs y{}
     assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));// looks trivial but is epitome of binary (de)serialization!
@@ -2853,6 +2855,19 @@ void assurances() {
 void testAllEmit() {
     // WASM emit tests under the hood:
     assert_emit("42", 42);// basics
+    assert_emit("√ π ²", pi);
+
+    testEmitBasics();
+    testSinus();
+
+    testHex();
+    testModulo();
+    testSmartReturn();
+    testWasmString();// with length as header
+    testRootLists();
+//    return;
+    testArrayIndices();
+    testMultiValue();
     testLogic();
 
     testEqualities();
@@ -2887,6 +2902,21 @@ void testAllEmit() {
 #endif
     check(NIL.value.longy == 0);// should never be modified
     print("ALL TESTS PASSED");
+}
+
+void testEmitBasics() {
+    assert_emit("true", true);
+    assert_emit("false", false)
+    assert_emit("8.33333333332248946124e-03", 8.33333333332248946124e-03);
+    assert_emit("-42", -42)
+    assert_emit("3.1415", 3.1415);
+    assert_emit("-3.1415", -3.1415);
+    assert_emit("'ok'", "ok");
+    assert_emit("'a'", "a");
+    assert_emit("'a'", 'a');
+    assert_emit("40", 40);
+    assert_emit("41", 41);
+    assert_emit("1 ∧ 0", 0);
 }
 
 
@@ -3019,13 +3049,8 @@ void testCurrent() {
 // valgrind --track-origins=yes ./wasp
 
 extern "C" Node *testNodeJS(String *s) {
-//    aligned_alloc(8, 8);
-//    auto pString = new String("test");
-//    aligned_alloc(8, 8);
-//    return &Node(String("test"));
 //        ADD_COMPILE_FLAG("-Wno-address-of-temporary") # ok when there is no stack / GC
     return new Node(String("test"));
-//    return new Node("test");
 }
 
 extern "C" String *testFromJS(String *s) {
@@ -3042,40 +3067,34 @@ extern "C" String *testFromJS(String *s) {
 
 extern byte *stack_hack;
 
-extern "C" void testRun() {
+extern "C" void testRuntime(bytes buffer, size_t size) {
+    print("read_wasm size");
+    print(size);
+    print(buffer);
+    print(buffer[0]);
+    print(buffer[1]);
+    print(buffer[2]);
+    print(buffer[3]);
+    heap_end = buffer + size;
+//    Code(buffer, size, false).debug();
+    Module &wasp = read_wasm(buffer, size);
+    wasp.code.name = "wasp";
+    wasp.name = "wasp";
+    module_cache.add("wasp"s.hash(), &wasp);
+    loadRuntime();
+    assert_emit("3^2", 9);
+}
+
+
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
-    pi = 3.1415926535896689; // ⚠ todo ⚠️ "memory access out of bounds" WHY CAN'T WE SET A GLOBAL? mut?
-    assert_emit("√ π ²", pi);
+extern "C" void testRun() {
 
-    testSinus();
-
-    testHex();
-    testModulo();
-    testSmartReturn();
-    testWasmString();// with length as header
-    testRootLists();
-    return;
-    testArrayIndices();
-    testMultiValue();
+    assert_emit("square 2", 4);
     skip(
             testIndexOffset();
     )
 //    assert_emit("puts('ok');(1 4 3)#2", 4); // EXPECT 4 GOT 1n
 
-    assert_emit("true", true);
-    assert_emit("false", false)
-    assert_emit("8.33333333332248946124e-03", 8.33333333332248946124e-03);
-    assert_emit("-42", -42)
-    assert_emit("3.1415", 3.1415);
-    assert_emit("-3.1415", -3.1415);
-    assert_emit("'ok'", "ok");
-    assert_emit("'a'", "a");
-    assert_emit("'a'", 'a');
-    assert_emit("40", 40);
-    assert_emit("41", 41);
-    assert_emit("1 ∧ 0", 0);
-    assert_emit("1 ∧ 0", 0);
-    assert_emit("1 ∧ 0", 0);
 
 //    return;
 //    assert_emit("42", 42);
