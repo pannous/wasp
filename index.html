@@ -18,10 +18,10 @@
         <option>Scene 3D</option>
     </select>
     <br/>
-    <textarea id="code_input" onkeyup="run(value)">√3^2</textarea>
+    <textarea id="code_input" onkeyup="compile_and_run(value)">√3^2</textarea>
     <br/>
     <input id="input_file" onselect="readFile()" type="file"/>
-    <button onclick="run(code_input.value)">RUN</button>
+  <button onclick="compile_and_run(code_input.value)">RUN</button>
     <button onclick="results.value=''">CLEAR</button>
     <br/>
     <textarea cols="80" id="results" placeholder="press run to compile and see result" rows="8">

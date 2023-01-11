@@ -1088,27 +1088,11 @@ Node &groupOperators(Node &expression, Function &context) {
 
 Module &loadRuntime() {
 #if MY_WASM
-    bytes buffer;
-    int buffer2;
-    size_t size;
-    buffer=(bytes)wasp_module_reflection((bytes)&buffer2,&size);
-    check_is(buffer,(bytes)buffer2);
-    print("read_wasm size");
-    print(size);
-    print(&buffer);
-    print(buffer[0]);
-    print(buffer[1]);
-    print(buffer[2]);
-    print(buffer[3]);
-    Module &wasp = read_wasm(buffer, size);
-    wasp.code.name = "wasp";
-    wasp.name = "wasp";
-    return wasp;
+    return *module_cache["wasp"s.hash()];
 #else
     Module &wasp = read_wasm("wasp-runtime.wasm");
     wasp.functions["getChar"].signature.returns(codepoints);
     return wasp;
-
 #endif
 }
 
@@ -1149,6 +1133,8 @@ Type preEvaluateType(Node &node, Function &context) {
 
 
 Module &loadModule(String name) {
+    if (name == "wasp-runtime.wasm")
+        return loadRuntime();
 #if WASM
     todow("loadModule in WASM");
     return *new Module();

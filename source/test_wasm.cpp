@@ -1323,6 +1323,7 @@ void testAllWasm() {
             testCustomOperators();
             testWasmMutableGlobal();
     )
+
     testMathOperators();
     testWasmLogicPrimitives();
     testWasmLogicUnary();
