@@ -301,8 +301,10 @@ public:
 
     void debug() {
         String s;
-        for (int i = 0; i < length; i++)
-            s += hex(data[i], 1) + " ";
+        for (int i = length - 1000; i < length; i++) {
+//            put_chars(hex(data[i]));
+            s += hex(data[i], 1) + ", ";
+        }
         print(s);
 //        save();
     }

@@ -171,6 +171,7 @@ if (DEBUG)
     SET(DWARF_DSYM_FOLDER_PATH "$(CONFIGURATION_BUILD_DIR)/dSyms")
     SET(DEPLOYMENT_POSTPROCESSING YES)
     ADD_COMPILE_FLAG(" -g3") # DEBUG DWARF output only emscripten?
+#    Compilers like Rust and Clang already support emitting DWARF information in WebAssembly modules.
 endif ()
 
 ADD_COMPILE_FLAG("-fno-inline") # why not? debug?

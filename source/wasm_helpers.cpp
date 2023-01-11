@@ -76,7 +76,7 @@ void error1(chars message, chars file, int line) {
     put_chars(""s+file+":"+line);
 //    put_chars((char *)file);
 //    put_chars(":");
-//    puti(line);
+//    puti(line); !!?
     put_chars((char *) (message));
     proc_exit(-1);// wasmtime hack to print backtrace:  exit with invalid exit status outside of [0..126) ;)
 #else
