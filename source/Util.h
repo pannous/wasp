@@ -190,5 +190,7 @@ class List;
 
 [[maybe_unused]] List<String> arguments();
 
-int64 powl(int64 a, unsigned int b);
+//int64 powi(int64 a, unsigned int b);
+int64 powi(int a, unsigned int b);
+//extern long double powi(long double, long double);
 

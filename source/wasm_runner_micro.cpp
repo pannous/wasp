@@ -93,7 +93,7 @@ static NativeSymbol native_symbols[] =
                 {"powd", (void *) powd, "(FF)F", NULL, false},
                 {"powf", (void *) powf, "(ff)f", NULL, false},
                 {"powi", (void *) powi, "(ii)I", NULL, false},
-//				{       "powl",              (void *) powl,          "(II)I", NULL, false},
+//				{       "powl",              (void *) powi,          "(II)I", NULL, false},
                 {"__cxa_begin_catch", (void *) powi, "(*)i", NULL, false},
 #ifdef SDL
                 {       "init_graphics",     (void *) init_graphics, "()I",   NULL, false},

@@ -46,10 +46,10 @@ void testRenameWasmFunction() {
 }
 
 void testPower() {
-    assert_equals(powl(10, 1), 10l);
-    assert_equals(powl(10, 2), 100l);
-    assert_equals(powl(10, 3), 1000l);
-    assert_equals(powl(10, 4), 10000l);
+    assert_equals(powi(10, 1), 10l);
+    assert_equals(powi(10, 2), 100l);
+    assert_equals(powi(10, 3), 1000l);
+    assert_equals(powi(10, 4), 10000l);
     assert_equals(parseLong("8e6"), 8000000l);
     skip(
             assert_equals(parseLong("8e-6"), 1.0 / 8000000l);
@@ -58,11 +58,11 @@ void testPower() {
     assert_equals(parseDouble("8.333e3"), 8333.0l);
     assert_equals(parseDouble("8.333e-3"), 0.008333l);
 //    assert_equals(ftoa(8.33333333332248946124e-03), "0.0083");
-    assert_equals(powl(10, 1), 10l);
-    assert_equals(powl(10, 2), 100l);
-    assert_equals(powl(10, 4), 10000l);
-    assert_equals(powl(2, 2), 4l);
-    assert_equals(powl(2, 8), 256l);
+    assert_equals(powi(10, 1), 10l);
+    assert_equals(powi(10, 2), 100l);
+    assert_equals(powi(10, 4), 10000l);
+    assert_equals(powi(2, 2), 4l);
+    assert_equals(powi(2, 8), 256l);
     skip(
             assert_equals(powd(2, -2), 1 / 4.);
             assert_equals(powd(2, -8), 1 / 256.);

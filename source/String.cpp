@@ -183,7 +183,7 @@ int64 parseLong(chars str) {
     if (k > 0 and (*str == 'e' or *str == 'E')) {
         auto ex = parseLong(++str);
         if (ex > 0)
-            k *= powl(10l, (unsigned int) ex);
+            k *= powi(10l, (unsigned int) ex);
         else todo("use float for negative exponential, e.g. 1.1E-3");
     }
     return sig * k;
@@ -219,9 +219,9 @@ double parseDouble(chars string) {
         if (*string == 'e' or *string == 'E') {
             auto ex = parseLong(++string);
             if (ex > 0)
-                return result * powl(10l, (unsigned int) ex);
+                return result * powi(10l, (unsigned int) ex);
             else
-                return result / powl(10l, (unsigned int) -ex);
+                return result / powi(10l, (unsigned int) -ex);
         }
         if (*string < '0' || *string > '9') return result;
         divisor *= 10.0;
