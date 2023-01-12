@@ -13,9 +13,15 @@
 #import "test_wasm.cpp"
 #include "wasm_runner.h"
 #include "WitReader.h"
+#include "types/Number.h"
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testNumbers() {
+    Number n = 1;
+    check(n == 1.0);
+    check(n / 2 == 0.5);
+}
 
 void testFunctionDeclaration() {
 //    auto node1 = analyze(parse("fn main(){}"));
@@ -2922,6 +2928,8 @@ void testEmitBasics() {
 
 void tests() {
     assurances();
+    testNumbers();
+    testFunctionDeclaration();
     testPower();
     testMarkSimple();
     testMarkAsMap();
@@ -3029,8 +3037,10 @@ void tests() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+    skip(
+            assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
+    )
 
-    testFunctionDeclaration();
 //    testRenameWasmFunction();
 
 //    tests();// make sure all still ok before changes
@@ -3047,62 +3057,3 @@ void testCurrent() {
     print("CURRENT TESTS PASSED");
 }
 // valgrind --track-origins=yes ./wasp
-
-extern "C" Node *testNodeJS(String *s) {
-//        ADD_COMPILE_FLAG("-Wno-address-of-temporary") # ok when there is no stack / GC
-    return new Node(String("test"));
-}
-
-extern "C" String *testFromJS(String *s) {
-    println("testJString…");
-    check_is("test from JS"s, s);
-//    print(wasp.name);
-//    print("wasp.total_func_count");
-//    print(wasp.total_func_count);
-    auto replaced = s->replace("test", "ok").replace("JS", "WASP");
-    check_is("ok from WASP"s, replaced);
-    return &replaced.clone();
-//    return new String("ok from WASP");
-}
-
-extern byte *stack_hack;
-
-extern "C" void testRuntime(bytes buffer, size_t size) {
-    print("read_wasm size");
-    print(size);
-    print(buffer);
-    print(buffer[0]);
-    print(buffer[1]);
-    print(buffer[2]);
-    print(buffer[3]);
-    heap_end = buffer + size;
-//    Code(buffer, size, false).debug();
-    Module &wasp = read_wasm(buffer, size);
-    wasp.code.name = "wasp";
-    wasp.name = "wasp";
-    module_cache.add("wasp"s.hash(), &wasp);
-    loadRuntime();
-    assert_emit("3^2", 9);
-}
-
-
-//  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
-extern "C" void testRun() {
-
-    assert_emit("square 2", 4);
-    skip(
-            testIndexOffset();
-    )
-//    assert_emit("puts('ok');(1 4 3)#2", 4); // EXPECT 4 GOT 1n
-
-
-//    return;
-//    assert_emit("42", 42);
-//    assert_emit("42", 43); // Error: ⚠️ TEST FAILED!  works
-//    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
-    testAllWasm();
-    testAllEmit();
-    testAllAngle();
-//    heap_end=__initial_heap_end+0x100000;// reset on each run!
-    print("testRun SUCCEEDED");
-}

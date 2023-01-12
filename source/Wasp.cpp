@@ -663,7 +663,7 @@ private:
 //			bool ok = word();
 //			if (!ok) { error('expected word to be NaN'); }
             // ignore sign as -NaN also is NaN
-            return NaN;
+            return Nan;
         }
 
         while (atoi1(ch) >= 0) { // -1 if not
@@ -1086,7 +1086,7 @@ private:
                 if (token("none")) { return False; }
                 break;
             case 'N':
-                if (token("NaN")) { return NaN; }
+                if (token("NaN")) { return Nan; }
                 if (token("Nil")) { return False; }
                 if (token("Nill")) { return False; }
                 if (token("Null")) { return False; }

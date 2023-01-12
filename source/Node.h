@@ -91,7 +91,13 @@ extern Node ERROR;
 extern Node Ignore;
 extern Node Infinity;// = Node("Infinity");
 extern Node NegInfinity;// = Node("Infinity");
-extern Node NaN;// = Node("NaN");
+extern Node Nan;// = Node("NaN");
+
+// math.h:
+//#define NAN       __builtin_nanf("")
+//#define INFINITY  __builtin_inff()
+//#define NAN       (0.0f/0.0f)
+//#define INFINITY  1e5000f
 
 void print(Node &n);
 

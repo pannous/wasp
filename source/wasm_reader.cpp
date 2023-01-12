@@ -396,13 +396,12 @@ void fixupGenerics(char *s, int len) {
 // _Z2eqPKcS0_i =>  func $eq_char_const*__char_const*__int_ <= eq(char const*, char const*, int)
 List<String> demangle_args(String &fun) {
     int status;
-//	String *real_name = new
-//"print(Map<String, int>)"
     char *string;
-#if not WASM
-    string = abi::__cxa_demangle(fun.data, 0, 0, &status);
-#else
+#if WASM
     todo("__cxa_demangle in wasm");
+//        // https://github.com/kripken/cxx_demangle/blob/master/demangle.js
+#else
+    string = abi::__cxa_demangle(fun.data, 0, 0, &status);
 #endif
     if (status != 0 or string == 0)return (size_t) 0;
     String real_name = String(string);
