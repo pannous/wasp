@@ -1451,7 +1451,7 @@ Code emitOperator(Node &node, Function &context) {
         else if (last_type == int64s) code.add(emitCall(*new Node("pow_long"), context));
         else code.add(emitCall(*new Node("powi"), context));
 //        else todo("^ power with type "s + typeName(last_type));
-//         'powl' is a builtin with type 'long double (long double, long double)'
+//         'powi' is a builtin with type 'long double (long double, long double)'
     } else if (name.startsWith("-")) {
         code.add(i32_sub);
     } else if (name == "return") {
