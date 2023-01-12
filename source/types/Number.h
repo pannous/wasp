@@ -18,6 +18,7 @@
 ////	floaty,
 //} number_type;
 
+#include "math.h"
 
 //class SmartPointer64;
 typedef uint64 SmartPointer64;
@@ -97,12 +98,18 @@ public:
     BigInt operator/(BigInt other) {todo("BigInt"); }
 };
 
+int64 gcd(int64 a, int64 b) {
+    if (a == 0) return b;
+    return gcd(b % a, a);
+}
+
 // todo: reconcile with Valtype
 // todo: reconcile with Primitive … AGAIN!
 // todo: reconcile with SmartNumber / smarty4 smarty32 smarty64 HEADERs
 enum NumberType {
     number_undefined, // NaN
-    number_null, // special zero
+    number_null, // special zero todo ??
+    number_zero,
     number_bool,
     number_byte,
     number_u8 = number_byte,
@@ -115,9 +122,10 @@ enum NumberType {
     number_float,
     number_double,
     number_float64 = number_double,
-    number_complex,// because why not
-    number_bigint,
-    number_fraction,
+    number_complex32x32,// because why not
+    number_bigint,// pointer to larger BigInt struct
+    number_fraction32x32,
+    number_epsilon, // type of value?
     number_infinite,
     number_minus_infinite,
     number_digits, // unparsed digits in char*
@@ -143,11 +151,11 @@ chars typeName(NumberType type) {
             return "float";
         case number_double:
             return "double";
-        case number_complex:
+        case number_complex32x32:
             return "complex";
         case number_bigint:
             return "bigint";
-        case number_fraction:
+        case number_fraction32x32:
             return "fraction";
         case number_infinite:
             return "infinite";
@@ -155,12 +163,21 @@ chars typeName(NumberType type) {
             return "-∞";
         case number_digits:
             return "digits";
+        case number_zero:
+            return "zero";
+        case number_epsilon:
+            return "epsilon";
     }
 }
 
-struct Fraction {
+struct Fraction64x64 {
     int64 nominator;
     int64 denominator;
+};
+
+struct Fraction {
+    int nominator;
+    int denominator;
 };
 
 struct Complex {
@@ -205,7 +222,7 @@ class Number {
         if (isInt(nominator) and isInt(denominator)) {
             value.fraction.nominator = nominator;
             value.fraction.denominator = denominator;
-            type = number_fraction;
+            type = number_fraction32x32;
         } else {
             value.doubl = nominator / denominator;// todo losing precision ok?
             type = number_double;
@@ -214,9 +231,9 @@ class Number {
         }
     }
 
-    NumberType type;
+    NumberType type = number_undefined;
     NumberValue value;
-    bool signable;// vs always unsigned positive
+
 public:
     Number(bool a) {
         value.longe = a;
@@ -274,63 +291,12 @@ public:
         }
     }
 
-    Number operator+(Number other) {
-        NumberType type2 = other.type;
-        if (type > number_long or type2 > number_long) {
-            if (type > number_double or type2 > number_double) todo("Number operator +");
-            return Number(value.doubl + other.value.doubl);
-        }
-        int64 l1 = value.longe;
-        int64 l2 = other.value.longe;
-        // overflow => bigger type
-        if (abs(l1) + abs(l2) < 0)return Number(BigInt(l1) + BigInt(l2));
-        int64 sum = l1 + l2;
-        if (sum > -2ll << 32 and sum < 2ll << 32) return Number((int) sum);// number fits int
-        return Number(sum);// max(type2,number_type)
-    }
-
-    Number operator*(Number other) {
-        NumberType type2 = other.type;
-        if (type > number_double or type2 > number_double) todo("Number operator *");
-        if (type > number_long or type2 > number_long) {
-            return Number(value.doubl * other.value.doubl);// ignore 10E330 overflow
-        }
-        int64 l1 = value.longe;
-        int64 l2 = other.value.longe;
-        if (abs(l1) * abs(l2) < 0) // overflow => bigger type
-            return Number(BigInt(l1) + BigInt(l2));
-        int64 prod = l1 * l2;
-        if (prod > -2ll << 32 and prod < 2ll << 32) return Number((int) prod);// number fits int
-        return Number(prod);// max(type2,number_type)
-    }
-
-
-    Number operator/(Number other) {
-        auto type2 = other.type;
-        auto value2 = other.value;
-        if (type <= number_long and type2 <= number_long) {
-            if (value.longe % value2.longe == 0)
-                return Number(value.longe / value2.longe);
-            return Number(value.longe, value2.longe);
-        }
-        if (type <= number_double and type2 <= number_long)
-            return value.doubl / value2.longe;
-        if (type <= number_long and type2 <= number_double)
-            return value.longe / value2.doubl;
-        if (type <= number_double and type2 <= number_double)
-            return value.longe / value2.doubl;
-        if (type == number_fraction and type2 == number_double)
-            return (double) *this == value2.doubl;
-
-        todo("Number operator /  for types "s + type + " and " + type2);
-    }
-
     explicit
     operator double() {
         if (type == number_double) return value.doubl;
         if (type == number_long) return value.longe;
-        if (type == number_fraction) return value.fraction.nominator / (double) value.fraction.denominator;
-        if (type == number_complex) {
+        if (type == number_fraction32x32) return value.fraction.nominator / (double) value.fraction.denominator;
+        if (type == number_complex32x32) {
             if (value.complex.imaginary == 0)
                 return value.complex.real;
             else
@@ -360,13 +326,118 @@ public:
             return value.longe == other.value.doubl;
         if (type <= number_double and type2 <= number_double)
             return value.longe == other.value.doubl;
-        if (type == number_fraction and type2 <= number_long)
+        if (type == number_fraction32x32 and type2 <= number_long)
             return value.fraction.nominator / value.fraction.denominator == other.value.longe;
-        if (type == number_fraction and type2 == number_double)
+        if (type == number_fraction32x32 and type2 == number_double)
             return (double) *this == other.value.doubl;
 //            return (float) *this == (float) other.value.doubl;
         todo("Number operator ==  for types "s + typeName(type) + " and " + typeName(type2));
     };
+
+
+    Number operator+(Number other) {
+        NumberType type2 = other.type;
+        if (type > number_long or type2 > number_long) {
+            if (type > number_double or type2 > number_double) todo("Number operator +");
+            return Number(value.doubl + other.value.doubl);
+        }
+        int64 l1 = value.longe;
+        int64 l2 = other.value.longe;
+        // overflow => bigger type
+        if (abs(l1) + abs(l2) < 0)
+            return Number(BigInt(l1) + BigInt(l2));
+        int64 sum = l1 + l2;
+        if (isInt(sum)) return Number((int) sum);// number fits int
+        return Number(sum);// max(type2,number_type)
+    }
+
+    Number operator^(Number other) {
+        NumberType type2 = other.type;
+        if (type <= number_long and type2 <= number_long)
+            return Number(pow(value.longe, other.value.longe));
+        if (type <= number_long and type2 <= number_double)
+            return Number(pow(value.longe, other.value.doubl));
+        if (type <= number_double and type2 <= number_long)
+            return Number(pow(value.doubl, other.value.longe));
+        if (type <= number_double and type2 <= number_double)
+            return Number(pow(value.doubl, other.value.doubl));
+        todo("Number operator ^ for "s + typeName(type) + " and " + typeName(type2));
+    }
+
+    Number operator*(Number other) {
+        NumberType type2 = other.type;
+        auto value2 = other.value;
+        if (type <= number_long and type2 <= number_long) {
+            int64 l1 = value.longe;
+            int64 l2 = value2.longe;
+            if (abs(l1) * abs(l2) < 0) // overflow => bigger type
+                return Number(BigInt(l1) * BigInt(l2));
+            int64 prod = l1 * l2;
+            if (isInt(prod)) return Number((int) prod);// number fits int
+            return Number(prod);// max(type2,number_type)
+        }
+        if (type <= number_double and type2 <= number_long)
+            return value.doubl * value2.longe;
+        if (type <= number_long and type2 <= number_double)
+            return value.longe * value2.doubl;
+        if (type <= number_double and type2 <= number_double)
+            return value.longe * value2.doubl;
+        if (type == number_fraction32x32 and type2 == number_double)
+            return (double) *this * value2.doubl;
+        if (type == number_fraction32x32 and type2 == number_long)
+            return Number(value.fraction.nominator * value2.longe, value.fraction.denominator);
+
+        if (type > number_long or type2 > number_long) {
+            return Number(value.doubl * value2.doubl);// ignore 10E330 overflow
+        }
+        todo("Number operator * for "s + typeName(type) + " and " + typeName(type2));
+
+    }
+
+    Number operator/(Number other) {
+        auto type2 = other.type;
+        auto value2 = other.value;
+        if (type <= number_long and type2 <= number_long) {
+            if (value.longe % value2.longe == 0)
+                return Number(value.longe / value2.longe);
+            return Number(value.longe, value2.longe);
+        }
+        if (type <= number_double and type2 <= number_long)
+            return value.doubl / value2.longe;
+        if (type <= number_long and type2 <= number_double)
+            return value.longe / value2.doubl;
+        if (type <= number_double and type2 <= number_double)
+            return value.longe / value2.doubl;
+        if (type == number_fraction32x32 and type2 == number_double)
+            return (double) *this / value2.doubl;
+        if (type == number_fraction32x32 and type2 == number_long)
+            return Number(value.fraction.nominator, value.fraction.denominator * value2.longe).simplify();
+
+        todo("Number operator /  for types "s + type + " and " + type2);
+    }
+
+    Number simplify() {
+        if (type <= number_long) {
+            if (value.longe == 0 or value.longe == 1)type = number_bool;
+            if (value.longe >= 0 and value.longe < 0x100)type = number_byte;
+            if (value.longe > -0x8000 and value.longe < 0x8000)type = number_short;
+            if (isInt(value.longe))type = number_int;
+            return *this;
+        }
+        if (type <= number_double) {
+            if ((int64) value.doubl == value.doubl)
+                return Number((int64) value.doubl);
+            return *this;
+        }
+        if (type == number_fraction32x32) {
+            auto gcd1 = gcd(value.fraction.nominator, value.fraction.denominator);
+            if (gcd1 == value.fraction.denominator)return Number(value.fraction.nominator);
+            return Number(value.fraction.nominator / gcd1, value.fraction.denominator / gcd1);
+        }
+        return *this;
+    }
+
+    //    bool signable();// vs always unsigned positive
 };
 
 Number parseNumber(chars string);

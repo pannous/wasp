@@ -21,6 +21,7 @@ void testNumbers() {
     Number n = 1;
     check(n == 1.0);
     check(n / 2 == 0.5);
+    check(((n * 2) ^ 10) == 1024);
 }
 
 void testFunctionDeclaration() {
