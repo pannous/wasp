@@ -1,6 +1,8 @@
 #pragma once
 #undef assert // <cassert> / <assert.h>  assert.h:92 not as good!
 
+#include "List.h"
+
 #if MY_WASM
 extern "C" void assert_expect(Node *result);
 extern "C" void async_yield();// throw this run and reenter after run_wasm is done
@@ -27,3 +29,24 @@ bool assert_equals_x(int64 a, int64 b, chars context = "");
 
 //bool assert_equals_x(float a, float b, chars context = "");
 bool assert_equals_x(double a, double b, chars context = "");
+
+
+static List<String> done;
+
+#if MY_WASM
+#define assert_emit(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
+#else
+#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+#endif
+//#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
+
+#if RUNTIME_ONLY or MY_WASM
+#define assert_run(a, b) skip(a)
+// use assert_emit if runtime is not needed!! much easier to debug
+#else
+#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){backtrace_line();}
+
+//#define assert_run(α, β)  auto α1=runtime_emit(α);bool Ok= α == Node(β); print(Ok?"OK":"FAILED"); \
+//    print(α1);print(Ok?'=':u'≠');print(β);} \
+//    if(!Ok){printf("%s != %s",#α,#β);backtrace_line();}
+#endif
