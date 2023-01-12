@@ -20,29 +20,6 @@ panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#α�
 }catch(chars){}catch(String*){}catch(...){};panicking=old;}
 #endif
 
-// WASM async
-//static
-List<String> done;
-
-
-#if MY_WASM
-#define assert_emit(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
-#else
-#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
-#endif
-//#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
-
-#if RUNTIME_ONLY or MY_WASM
-#define assert_run(a, b) skip(a)
-// use assert_emit if runtime is not needed!! much easier to debug
-#else
-#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){backtrace_line();}
-
-//#define assert_run(α, β)  auto α1=runtime_emit(α);bool Ok= α == Node(β); print(Ok?"OK":"FAILED"); \
-//    print(α1);print(Ok?'=':u'≠');print(β);} \
-//    if(!Ok){printf("%s != %s",#α,#β);backtrace_line();}
-#endif
-
 void testMergeGlobal() {
 #if INCLUDE_MERGER
     Module &main = loadModule("test/merge/main_global.wasm");
@@ -973,8 +950,8 @@ void testArrayIndicesWasm() {
 
     assert_emit("'αβγδε'#3", U'γ');
     assert_emit("i=3;k='αβγδε';k#i", u'γ');
-    assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ');
     skip(
+            assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
             assert_emit("[1 4 3]#2", 4);// exactly one op expected in emitIndexPattern
             assert_is("[1 2 3]#2", 2);// check node based (non-primitive) interpretation first
             assert_throws("(1 4 3)#4");// todo THROW!

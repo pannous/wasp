@@ -50,14 +50,15 @@ enum smartlongs {
     plus_infinity = 0x0FFFFFFFFFFFFFFFL,// ∞ inf
     minus_infinity = 0xF000000000000000L,// -∞ -inf
 //    NaN = 0x0FFFFFFFFFFFFFFFL,
-    NaN = 0xFFF0000000000000L, // compatible with
+    not_a_number = 0xFFF0000000000000L, // compatible with
+    NaN = not_a_number,
 //    NaN = 0b111111111xxxxxxx, NaN FLOAT representation in IEEE 754 single precision (32-bit)
 //    NaN = 0b011111111xxxxxxx, NaN FLOAT representation in JS!  IEEE 754 single precision (32-bit) =>
     PlusNaN = 0x7FF0000000000000L, // NaN FLOAT representation in JS  "The sign bit does not matter"
 //    PlusNaN = 0x7FFFFFFFFFFFFFFFL, // NaN FLOAT representation in JS  "The sign bit does not matter"
 //    NaN = 0x0F0F0F0F0F0F0F0FL,
 //    NaN = 0x0F0F000000000000L,
-//    NAN = 0xF0F0F0F0F0F0F0F0L,
+//    Nan = 0xF0F0F0F0F0F0F0F0L,
 //    ∞=infinity=0x1FFFFFFFFFFFFFFFL,
 //    -∞=minus_infinity=0xFFFFFFFFFFFFFFFFL,
 //    minus_one_leb=0x7f01010101010101,// 7 nops
@@ -71,7 +72,7 @@ enum smartlongs {
 'fffffffffffff80'
 */
 
-union smartlong{
+union smartlong {
     int64 lon;
     SmartPointer64 smarty; // encoding NaN, Infinity, -Infinity, missing ≈ empty ≈ null AND OTHER types/data!!
 };
@@ -87,13 +88,13 @@ public:
         digits = (bytes) formatLong(l);// todo …
     }
 
-    BigInt operator+(BigInt other) { todo("BigInt"); }
+    BigInt operator+(BigInt other) {todo("BigInt"); }
 
-    BigInt operator-(BigInt other) { todo("BigInt"); }
+    BigInt operator-(BigInt other) {todo("BigInt"); }
 
-    BigInt operator*(BigInt other) { todo("BigInt"); }
+    BigInt operator*(BigInt other) {todo("BigInt"); }
 
-    BigInt operator/(BigInt other) { todo("BigInt"); }
+    BigInt operator/(BigInt other) {todo("BigInt"); }
 };
 
 // todo: reconcile with Valtype
@@ -122,6 +123,41 @@ enum NumberType {
     number_digits, // unparsed digits in char*
 };
 
+chars typeName(NumberType type) {
+    switch (type) {
+        case number_undefined:
+            return "undefined";
+        case number_null:
+            return "null";
+        case number_bool:
+            return "bool";
+        case number_byte:
+            return "byte";
+        case number_short:
+            return "short";
+        case number_int:
+            return "int";
+        case number_long:
+            return "long";
+        case number_float:
+            return "float";
+        case number_double:
+            return "double";
+        case number_complex:
+            return "complex";
+        case number_bigint:
+            return "bigint";
+        case number_fraction:
+            return "fraction";
+        case number_infinite:
+            return "infinite";
+        case number_minus_infinite:
+            return "-∞";
+        case number_digits:
+            return "digits";
+    }
+}
+
 struct Fraction {
     int64 nominator;
     int64 denominator;
@@ -129,7 +165,7 @@ struct Fraction {
 
 struct Complex {
     float real;
-    float imagine;
+    float imaginary;
 };
 
 // can represent 60bit integers, floats COMPATIBLE
@@ -159,7 +195,25 @@ union SmartNumberUnion {
     SmartNumber number; // combined type and value
 };
 
+bool isInt(int64 i) {
+    return i < 0x80000000 and i >= -0x80000000l;
+}
+
 class Number {
+
+    Number(int64 nominator, int64 denominator) {
+        if (isInt(nominator) and isInt(denominator)) {
+            value.fraction.nominator = nominator;
+            value.fraction.denominator = denominator;
+            type = number_fraction;
+        } else {
+            value.doubl = nominator / denominator;// todo losing precision ok?
+            type = number_double;
+//            auto bigInt = BigInt(nominator) / BigInt(denominator);
+//            value.bigint=bigInt;
+        }
+    }
+
     NumberType type;
     NumberValue value;
     bool signable;// vs always unsigned positive
@@ -182,11 +236,6 @@ public:
     Number(int a) {
         value.longe = a;
         type = number_int;
-    }
-
-    Number(int64 a) {
-        value.longe = a;
-        type = number_long;
     }
 
     Number(int64 a) {
@@ -236,14 +285,14 @@ public:
         // overflow => bigger type
         if (abs(l1) + abs(l2) < 0)return Number(BigInt(l1) + BigInt(l2));
         int64 sum = l1 + l2;
-        if (sum > -2l << 32 and sum < 2l << 32) return Number((int) sum);// number fits int
+        if (sum > -2ll << 32 and sum < 2ll << 32) return Number((int) sum);// number fits int
         return Number(sum);// max(type2,number_type)
     }
 
     Number operator*(Number other) {
         NumberType type2 = other.type;
+        if (type > number_double or type2 > number_double) todo("Number operator *");
         if (type > number_long or type2 > number_long) {
-            if (type > number_double or type2 > number_double) todo("Number operator *");
             return Number(value.doubl * other.value.doubl);// ignore 10E330 overflow
         }
         int64 l1 = value.longe;
@@ -251,10 +300,73 @@ public:
         if (abs(l1) * abs(l2) < 0) // overflow => bigger type
             return Number(BigInt(l1) + BigInt(l2));
         int64 prod = l1 * l2;
-        if (prod > -2l << 32 and prod < 2l << 32) return Number((int) prod);// number fits int
+        if (prod > -2ll << 32 and prod < 2ll << 32) return Number((int) prod);// number fits int
         return Number(prod);// max(type2,number_type)
     }
 
+
+    Number operator/(Number other) {
+        auto type2 = other.type;
+        auto value2 = other.value;
+        if (type <= number_long and type2 <= number_long) {
+            if (value.longe % value2.longe == 0)
+                return Number(value.longe / value2.longe);
+            return Number(value.longe, value2.longe);
+        }
+        if (type <= number_double and type2 <= number_long)
+            return value.doubl / value2.longe;
+        if (type <= number_long and type2 <= number_double)
+            return value.longe / value2.doubl;
+        if (type <= number_double and type2 <= number_double)
+            return value.longe / value2.doubl;
+        if (type == number_fraction and type2 == number_double)
+            return (double) *this == value2.doubl;
+
+        todo("Number operator /  for types "s + type + " and " + type2);
+    }
+
+    explicit
+    operator double() {
+        if (type == number_double) return value.doubl;
+        if (type == number_long) return value.longe;
+        if (type == number_fraction) return value.fraction.nominator / (double) value.fraction.denominator;
+        if (type == number_complex) {
+            if (value.complex.imaginary == 0)
+                return value.complex.real;
+            else
+                error("Number is complex");
+        }
+        todo("Number cast to double for types "s + typeName(type));
+    }
+
+
+    explicit
+    operator float() {
+        return (double) *this;
+    }
+
+//    bool operator==(float other) {
+//        return Number(other) == *this;
+//    }
+
+    bool operator==(Number other) {
+        NumberType type2 = other.type;
+        // order matters since we test from simple to complex types
+        if (type <= number_long and type2 <= number_long)
+            return value.longe == other.value.longe;
+        if (type <= number_double and type2 <= number_long)
+            return value.doubl == other.value.longe;
+        if (type <= number_long and type2 <= number_double)
+            return value.longe == other.value.doubl;
+        if (type <= number_double and type2 <= number_double)
+            return value.longe == other.value.doubl;
+        if (type == number_fraction and type2 <= number_long)
+            return value.fraction.nominator / value.fraction.denominator == other.value.longe;
+        if (type == number_fraction and type2 == number_double)
+            return (double) *this == other.value.doubl;
+//            return (float) *this == (float) other.value.doubl;
+        todo("Number operator ==  for types "s + typeName(type) + " and " + typeName(type2));
+    };
 };
 
 Number parseNumber(chars string);

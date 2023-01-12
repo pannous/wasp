@@ -70,7 +70,7 @@ Node False = Node("False").setType(bools).setValue(false);
 Node Ignore = Node("Ignore");
 Node Infinity = Node("Infinity");
 Node NegInfinity = Node("-Infinity");
-Node NaN = Node("NaN");
+Node Nan = Node("NaN");
 
 
 Node *reconstructArray(int *array_struct);
@@ -99,7 +99,7 @@ void initSymbols() {
     False = Node("False").setType(bools);
     Infinity = Node("Infinity");
     NegInfinity = Node("-Infinity");
-    NaN = Node("NaN");
+    Nan = Node("NaN");
 }
 
 Node &Node::operator=(int i) {
