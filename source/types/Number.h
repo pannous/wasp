@@ -18,7 +18,16 @@
 ////	floaty,
 //} number_type;
 
-#include "math.h"
+//#include "math.h"
+
+#if WASM and not MY_WASM
+long double pow(long double __lcpp_x, long double __lcpp_y) _NOEXCEPT{
+    todo("pow in wasp.wasm, OK in wasp.js and when linked");
+}
+#else
+#include <cmath>
+#endif
+
 
 //class SmartPointer64;
 typedef uint64 SmartPointer64;

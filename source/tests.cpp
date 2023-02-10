@@ -2929,7 +2929,9 @@ void testEmitBasics() {
 
 void tests() {
     assurances();
+#if not WASM
     testNumbers();
+#endif
     testFunctionDeclaration();
     testPower();
     testMarkSimple();

@@ -179,6 +179,7 @@ typedef unsigned int uint32_t;
 //    void printf(chars);
 extern "C"
 int printf(const char *__restrict, ...);
+// printf in WASM messes up the stack, so we can't use it
 #endif
 
 void printf(chars, chars);
@@ -266,3 +267,5 @@ template<class S>
 class List;
 
 List<String> arguments();
+
+

@@ -20,6 +20,7 @@ let array_header_32 = 0x40000000
 let node_header_32 = 0x80000000
 
 
+
 function format(object) {
     if (object instanceof node)
         return object.serialize()
@@ -45,7 +46,6 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
     }
     return -1; // todo
 };
-
 
 
 function parse(data) {
@@ -81,9 +81,10 @@ let imports = {
         },
         init_graphics: nop, // canvas init by default
         requestAnimationFrame: nop,
-        powi: (x, y) => x ** y,
+        pow: (x, y) => x ** y,
         puti: x => console.log(x), // allows debugging of ints without format String allocation!
-
+        js_demangle: x => x,
+        _Z7compile6Stringb: nop, // todo bug! why is this called?
     },
     wasi_unstable: {
         fd_write,
@@ -552,25 +553,42 @@ function binary_diff(old_mem, new_mem) {
 
 function copy_runtime_bytes() {
     let length = runtime_bytes.byteLength
-    while (heap_end % 8) heap_end++;
-    // new_int( 0x10203040);
     let pointer = heap_end
-    console.log(hex(pointer), "copy_runtime_bytes", length)
     let src = new Uint8Array(runtime_bytes, 0, length);
     let dest = new Uint8Array(memory.buffer, heap_end, length);
     dest.set(src) // memcpy
     heap_end += length
     exports.testRuntime(pointer, length)
-    // setTimeout(exports.testRuntime, 1);// make sync
 }
+
+getArguments = function (func) {
+    var symbols = func.toString(),
+        start, end, register;
+    console.log("getArguments",func,symbols)
+    start = symbols.indexOf('function');
+    if (start !== 0 && start !== 1) return undefined;
+    start = symbols.indexOf('(', start);
+    end = symbols.indexOf(')', start);
+    var args = [];
+    symbols.substr(start + 1, end - start - 1).split(',').forEach(function (argument) {
+        args.push(argument);
+    });
+    return args;
+};
 
 // runtime_bytes for linking small wasp programs with runtime
 function load_runtime_bytes() {
     fetch(WASM_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
             runtime_bytes = buffer
-            console.log(runtime_bytes)
-            console.log(runtime_bytes.byteLength)
-            copy_runtime_bytes()
+            WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
+                //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
+                console.log(obj.instance.exports._ZN6StringC2EPKcb)
+                console.log(obj.instance.exports._ZN6StringC2EPKcb.length)
+                console.log(obj.instance.exports._ZN6StringC2EPKcb.arguments)
+                // console.log(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
+                // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
+            })
+            // copy_runtime_bytes()
         }
     )
 }
@@ -584,4 +602,3 @@ async function test() {
     if (typeof (wasp_tests) !== "undefined")
         await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
 }
-

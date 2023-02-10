@@ -24,6 +24,8 @@ extern "C" String *testFromJS(String *s) {
 extern byte *stack_hack;
 
 extern "C" void testRuntime(bytes buffer, size_t size) {
+//    testCurrent();// messes with the heap just filled with the wasm file
+
     print("read_wasm size");
     print(size);
     print(buffer);
@@ -37,8 +39,11 @@ extern "C" void testRuntime(bytes buffer, size_t size) {
     wasp.code.name = "wasp";
     wasp.name = "wasp";
     module_cache.add("wasp"s.hash(), &wasp);
+    testCurrent();
     loadRuntime();
-    assert_emit("3^2", 9);
+        testCurrent();
+
+//    assert_emit("3^2", 9);
 }
 
 

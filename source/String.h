@@ -1103,7 +1103,7 @@ void print(char const *s);
 void print(String);
 
 void print(Type);
-
+void print(Type32);
 void println(Node &s);
 
 void println(String); // ==

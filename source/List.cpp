@@ -8,8 +8,7 @@ void print(List<String> list) {
 	}
 }
 
-//template<class S>
-template<typename S>
+template<class S>
 void print(List<S> list) {
     for (auto s: list) {
         print(s);

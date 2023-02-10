@@ -14,6 +14,7 @@
 #include "wasm_helpers.h"
 #include "NodeTypes.h"
 #include "ABI.h"
+#include "Map.h"
 
 #include <stdarg.h> // va_list OK IN WASM???
 //#include <cstdarg> // va_list ok in wasm even without wasi!
@@ -272,6 +273,7 @@ public:
     }
 
     void grow() {
+//        warn("grow");
         auto new_size = capacity * 2;
         check_silent(new_size < LIST_MAX_CAPACITY);
         S *neu = (S *) alloc(new_size, sizeof(S));
@@ -318,17 +320,18 @@ public:
     }
 
 
-    S &operator[](uint64 index) {
-        if (index == size_)size_++;// allow indexing one after end? todo ok?
-        if (size_ > capacity)grow();
-//        if (index >= capacity)grow();
-        if (index < 0 or index >= size_) { /* and not auto_grow*/
-            if (index >= capacity)
-                error("index out of range : %d > %d"s % (int64) index % size_);
-            else size_ = index + 1;
-        }
-        return items[index];
-    }
+//    S &operator[](uint64 index) {
+//        if (index == size_)size_++;// allow indexing one after end? todo ok?
+//        bool auto_grow= false;
+//        if (auto_grow and size_ > capacity)grow();
+////        if (index >= capacity)grow();
+//        if (index < 0 or index >= size_) { /* and not auto_grow*/
+//            if (index >= capacity)
+//                error("index out of range : %d > %d"s % (int64) index % size_);
+//            else size_ = index + 1;
+//        }
+//        return items[index];
+//    }
 
 //	S &operator[](S& key) {
 //		for (int i = 0; i < _size; ++i) {
@@ -540,9 +543,17 @@ public:
     }
 
     bool shared = false;
+
+    S& at(int i){
+        if (i<0 or i>=size_)error("out of bounds");
+        return items[i];
+    }
 };
 
 void print(List<String> list);
+
+template<typename S>
+void print(List<S> list);
 
 //int String::in(List<chars> list){
 //	for(chars word : list){
