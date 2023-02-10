@@ -32,7 +32,7 @@ short builtin_count = 0;// function_offset - import_count - runtime_offset;
 //bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
 char *data;// any data to be stored to wasm: values of variables, strings, nodes etc ( => memory in running app)
 //int data_index_start = 0;
-int data_index_end = 0;// position to write more data = end + length of data section
+int data_index_end = 0;// position to write more data = end + length of data section when building ≠ heap_end in live app
 int last_object_pointer = 0;// outside stack
 //int last_data_pointer = 0;// last_data plus header , see referenceDataIndices
 //Map<String *, int64> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
@@ -1445,11 +1445,16 @@ Code emitOperator(Node &node, Function &context) {
 //        code.add(emitCall(*new Node("pow"), context));
 //		if(last_value==0)code.addConst(1);
 //		if(last_value==1)return code;
+#if WASM
+        getWasmFunction("pow");
+        code.add(emitCall(*new Node("pow"), context));
+#else
         if (last_type == int32) code.add(emitCall(*new Node("powi"), context));
         else if (last_type == float32) code.add(emitCall(*new Node("powf"), context));
         else if (last_type == float64) code.add(emitCall(*new Node("pow"), context));
         else if (last_type == int64s) code.add(emitCall(*new Node("pow_long"), context));
         else code.add(emitCall(*new Node("powi"), context));
+#endif
 //        else todo("^ power with type "s + typeName(last_type));
 //         'powi' is a builtin with type 'long double (long double, long double)'
     } else if (name.startsWith("-")) {
@@ -1842,6 +1847,9 @@ Code emitCall(Node &fun, Function &context) {
             error("unknown function "s + name + " (" + normed + ")");
         else name = normed;
     }
+    if(name=="pow")
+        functions["pow"].signature.add(reals).add(reals).returns(reals);
+
     Function &function = functions[name];// NEW context! but don't write context ref!
     Signature &signature = function.signature;
 
@@ -1878,7 +1886,7 @@ Code emitCall(Node &fun, Function &context) {
     Type return_type = signature.return_types.last(none);
     last_type = return_type;
     if (signature.wasm_return_type)
-        check_eq(mapTypeToWasm(last_type), signature.wasm_return_type);
+        check_is(mapTypeToWasm(last_type), signature.wasm_return_type);
 //	last_typo.clazz = &signature.return_type;// todo dodgy!
     return code;
 }

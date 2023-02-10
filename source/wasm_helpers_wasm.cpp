@@ -487,4 +487,11 @@ extern "C" int size_of_string() {
     return sizeof(String);
 }
 
+Function getWasmFunction(String name) {
+    Function f{.name=name};
+    if(name=="pow")f.signature.add(float64).add(float64).returns(float64);
+//    else if(name=="powi")f.signature.add(int32).add(int32).returns(int64s);
+    else todo("getWasmFunction "s + name);
+    return f;
+}
 
