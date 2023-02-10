@@ -9,7 +9,14 @@ extern "C" void async_yield();// throw this run and reenter after run_wasm is do
 #endif
 
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
+
+//#if WASM
+//#define debug_line() print(__FILE__);print(":");print(__LINE__);
+//// printf in WASM messes up the stack, so we can't use it
+//#else
+//#endif
 #define debug_line() printf("\n%s:%d\n",__FILE__,__LINE__);
+
 //#define backtrace_line() {printf("\nfile://%s :%d\n",__FILE__,__LINE__);proc_exit(0);}
 //#define backtrace_line() {printf("\nsubl://%s :%d\n",__FILE__,__LINE__);proc_exit(0);}
 //#define backtrace_line(msg) {printf("\n%s\n%s:%d\n",#msg,__FILE__,__LINE__);proc_exit(1);}

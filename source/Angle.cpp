@@ -165,6 +165,10 @@ Node interpret(String code) {
 }
 
 
+#ifndef RUNTIME_ONLY
+Code &compile(String code, bool clean = true);// exposed to wasp.js
+#endif
+
 // todo: merge with emit
 Node eval(String code) {
 #ifdef RUNTIME_ONLY
@@ -1088,7 +1092,9 @@ Node &groupOperators(Node &expression, Function &context) {
 
 Module &loadRuntime() {
 #if MY_WASM
-    return *module_cache["wasp"s.hash()];
+    Module &wasp=*module_cache["wasp"s.hash()];
+    wasp.functions["powi"].signature.returns(int32);
+    return wasp;
 #else
     Module &wasp = read_wasm("wasp-runtime.wasm");
     wasp.functions["getChar"].signature.returns(codepoints);
@@ -1300,6 +1306,10 @@ void addLibraryFunctionAsImport(Function &func) {
     import.is_used = true;
 }
 
+#if WASM
+Function getWasmFunction(String name);
+#endif
+
 bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: libraries.has(library)
 
 // todo: clarify registerAsImport side effect
@@ -1308,13 +1318,16 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))return use_required(&functions[name]);
     if (contains(funclet_list, name)) {
-#if not WASM
+#if WASM
+        print("funclet "s+ name);
+        auto funclet = getWasmFunction(name);
+#else
         Module &funclet_module = read_wasm(findFile(name, "lib"));
 //        check(funclet_module.functions.has(name));
         auto funclet = funclet_module.functions[name];
         addLibrary(&funclet_module);
-        return use_required(&funclet);
 #endif
+        return use_required(&funclet);
     }
     if (name.in(function_list) and libraries.size() == 0)
         libraries.add(&loadModule("wasp-runtime.wasm"));// on demand
@@ -1373,7 +1386,11 @@ Function *use_required(Function *function) {
 }
 
 List<String> aliases(String name) {
+
     List<String> found;
+    #if MY_WASM
+    return found;
+#endif
 //	switch (name) // statement requires expression of integer type
     if (name == "pow") {
         found.add("powi");

@@ -715,67 +715,80 @@ void print(Type type) {
     print(typeName(type));
 }
 
-void print(String s) {
-    put_chars(s.data, s.length);
+
+void print(Signature& signature) {
+    for (auto &type: signature.parameter_types) {
+        print(type);
+        print(" ");
+    }
+    print(":");
+    for (auto &type: signature.return_types) {
+        print(type);
+        print(" ");
+    }
+//        print(signature.debug_name);
+}
+    void print(String s) {
+        put_chars(s.data, s.length);
 #if not WASM
-    newline();
+        newline();
 #endif
-}
+    }
 
-void println(String s) {
-    put_chars(s.data, s.length);
-    newline();
-}
-
-
-void println(int64 s) {
-    put_chars(formatLong(s));
-    newline();
-}
+    void println(String s) {
+        put_chars(s.data, s.length);
+        newline();
+    }
 
 
-void println(Node &s) {
-    println(s.serialize());
-}
+    void println(int64 s) {
+        put_chars(formatLong(s));
+        newline();
+    }
+
+
+    void println(Node &s) {
+        println(s.serialize());
+    }
 
 // don't extern "C", else demangle can't reflect … see put_string
-void put(String s) {
-    put_chars(s.data, s.length);
-    newline();
-}
+    void put(String s) {
+        put_chars(s.data, s.length);
+        newline();
+    }
 
-void print(char *str) {
+    void print(char *str) {
 #if MY_WASI
-    puts(str);
+        puts(str);
 #else
-    printf("%s", str);
+        printf("%s", str);
 #endif
-}
+    }
 
-String *EMPTY_STRING;
+    String *EMPTY_STRING;
 
-String *empty_string() {
-    if (!EMPTY_STRING)EMPTY_STRING = new String();
-    return EMPTY_STRING;
-}
+    String *empty_string() {
+        if (!EMPTY_STRING)EMPTY_STRING = new String();
+        return EMPTY_STRING;
+    }
 
 
 // starting with 1!
 //inline haha you can't inline wasm
-[[maybe_unused]]
-codepoint getChar(chars string, int nr) {
-    return String(string).codepointAt(nr - 1);
-    // todo codepoint
+    [[maybe_unused]]
+    codepoint getChar(chars string, int nr) {
+        return String(string).codepointAt(nr - 1);
+        // todo codepoint
 //    int len = strlen(string);
 //    if (nr < 1)error("#index starts with 1, use [] if you want 0 indexing");
 //    if (nr > len)error("index out of bounds %i>%i "s % nr % len);
 //    return string[nr - 1 % len];
-}
+    }
 
 //extern "C"  // only pointers!
-String &string(chars chars) { return *new String(chars); }
+    String &string(chars chars) { return *new String(chars); }
 
-extern "C"  // only pointers!
-String *str(chars chars) {
-    return new String(chars);
-}
+    extern "C"  // only pointers!
+    String *str(chars chars) {
+        return new String(chars);
+    }

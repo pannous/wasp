@@ -3,6 +3,11 @@
 #define allow_untyped_nodes true  // IMPORTANT!  {a b c}#2"=="b" VALID or NOT ?!?
 //#include "asserts.h"
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
+//#if WASM
+//#define debug_line() print(__FILE__);print(":");print(__LINE__);
+//// printf in WASM messes up the stack, so we can't use it
+//#else
+//#endif
 #define debug_line() printf("\n%s:%d\n",__FILE__,__LINE__);
 
 //typedef int64 i64;
@@ -85,7 +90,7 @@ typedef byte *bytes;
 #define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
 
 #define check(test) {print("CHECKING ");print(#test);debug_line(); \
-  if(test){print("OK check passes: ");printf("%s\n",#test);}else{printf("\nNOT PASSING %s\n",#test);backtrace_line()}}
+  if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n",#test);backtrace_line()}}
 
 #include "String.h" // AFTER defines!
 #include "smart_types.h"

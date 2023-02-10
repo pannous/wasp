@@ -469,12 +469,23 @@ typedef Type32 Type;
 enum Modifiers {
     final,
     constant,
+    static_,
+    public_,
+    private_,
+    protected_,
+    virtual_,
+    override_,
+    abstract_,
+    sealed_,
+    synchronized_,
+    transient_,
+    volatile_,
+    native_,
+    internal_, // used in C# and Kotlin for internal classes and methods
+    external_,
 //	undefined,
     missing,
     unknowns,
-    privates,
-    protecteds,
-    publics,
 };
 
 //#endif //MARK_NODETYPES_H

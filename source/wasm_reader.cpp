@@ -326,19 +326,20 @@ void consumeCustomSection() {
     } else if (type == "target_features")
 //	https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md#target-features-section
 // 	atomics bulk-memory exception-handling multivalue mutable-globals nontrapping-fpoint sign-ext simd128 tail-call
-    todow("target_features detection not yet supported")
+     todow("target_features detection not yet supported")
     else if (type == "linking")
         // see https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md
         consumeLinkingSection(payload);
     else if (type == "dylink.0")
         // see https://github.com/WebAssembly/tool-conventions/blob/main/DynamicLinking.md
-    todow("dynamic linking not yet supported")
+        todow("dynamic linking not yet supported")
     else if (type.startsWith("reloc."))
         consumeRelocateSection(payload);// e.g. "reloc.CODE"
         // everything after the period is ignored and the specific target section is encoded in the reloc section itself.
         // see https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md
     else if (type == "relocate")
         consumeRelocateSection(payload);
+    else if (type == "producers");// ignore
     else {
 //		pos = size;// force finish
         todow("consumeCustomSection not implementated for "s + type);
@@ -397,8 +398,10 @@ void fixupGenerics(char *s, int len) {
 List<String> demangle_args(String &fun) {
     int status;
     char *string;
-#if WASM
+#if WASM and not MY_WASM
     todo("__cxa_demangle in wasm");
+#elif MY_WASM
+    string = js_demangle(fun);
 //        // https://github.com/kripken/cxx_demangle/blob/master/demangle.js
 #else
     string = abi::__cxa_demangle(fun.data, 0, 0, &status);

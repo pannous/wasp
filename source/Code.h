@@ -637,6 +637,7 @@ enum Opcodes {
 //i64_trunc_sat_f64_s=0xFC06,
 //i64_trunc_sat_f64_u=0xFC07,
 
+    struct_prefix = 0xfb, // struct.get, struct.set, struct.new, struct.narrow, struct.widen see ~/dev/wasm/gc_structs/module.wat
 
     math_prefix_s = 0xfc,
 
@@ -833,11 +834,11 @@ public:
 //	Signature() : return_types(*new List<Valtype>), types(*new Map<int, Valtype>) {}
 //	Signature() : return_types(*new List<Type>), types(*new Map<int, Type>) {}
 
-#ifdef DEBUG
+#if DEBUG and not WASM
     String debug_name;// todo can .lldbinit call format() !?!
 #endif
 
-    bool operator==(Signature other) {
+    bool operator==(const Signature &other) const {
         for (int i = 0; i < parameter_types.size(); ++i) {
             if (parameter_types[i] != other.parameter_types[i])
                 return false;
@@ -883,13 +884,13 @@ public:
 //		return *this;
 //	}
 
-    int size() {
+    int size() const {
         return parameter_types.size();
     }
 
 
     Signature &add(Type t, String name = "") {
-#ifdef DEBUG
+#if DEBUG and not WASM
         debug_name += typeName(t);
         debug_name += " ";
 #endif
@@ -921,11 +922,11 @@ public:
     Signature &returns(Type type) {
 //		return_type = type;
         if (type.kind != nils and type.kind != undefined and type.kind != unknown) {
-            if (multi_value)
+            if (multi_value or return_types.size() == 0)
                 return_types.add(type);
             else
                 return_types[0] = type;
-#ifdef DEBUG
+#if DEBUG and not WASM
             debug_name += ": ";
             debug_name += typeName(type);
 #endif
@@ -941,7 +942,7 @@ public:
                 return_types.add(valtype);
             else
                 error("UNKNOWN Valtype mapping "s + typeName(valtype));
-#ifdef DEBUG
+#if DEBUG and not WASM
             debug_name += ": ";
             debug_name += typeName(valtype);
 #endif
@@ -1073,6 +1074,9 @@ public:
     operator String() {
         return name;
     }
+    bool operator==(const Function &other) const {
+        return name == other.name and signature == other.signature;
+    }
 
 };
 
@@ -1130,3 +1134,9 @@ short lebByteSize(unsigned int neu);
  */
 short lebByteSize(int64 neu);
 
+#if MY_WASM
+extern "C" char* js_demangle(char* name);
+Function getWasmFunction(String name);
+#endif
+
+void print(Signature& signature);
