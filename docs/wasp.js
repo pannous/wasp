@@ -470,10 +470,45 @@ function smartNode(data0, type /*int32*/, memory) {
 // https://web.dev/asyncify/
 var expect_test_result = 0; // set before running in semi sync tests!
 
+
+async function link_runtime() {
+    const memory = new WebAssembly.Memory({initial: 16384, maximum: 65536});
+    const table = new WebAssembly.Table({initial: 2, element: "anyfunc"});
+    try {
+        let runtime_module = await WebAssembly.compile(runtime_bytes)
+        // runtime_imports= {env: {memory: memory, table: table}}
+        runtime_imports=imports
+        let runtime_instance = await WebAssembly.instantiate(runtime_module,runtime_imports) // , memory
+        imports = {env: runtime_instance.exports}
+        instance = await WebAssembly.instantiate(module,imports, runtime_instance.memory)
+        //  runtime_instance.exports
+        global.instance = instance
+        global.instance.module = module // global module already used by node!
+        exports = instance.exports
+        main=exports.wasp_main
+        if (main) {
+            console.log("Calling start function:", main);
+            result = main()
+        }
+        else
+            result = "NO MAIN! Entry function main not found."
+        print(result)
+    } catch (ex) {
+        console.error((ex));
+        return
+    }
+}
+
+needs_runtime = true
 async function run_wasm(buf_pointer, buf_size) {
     wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // download(wasm_buffer, "emit.wasm", "wasm")
     let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
+    if(needs_runtime){
+        let runtime_instance = await WebAssembly.instantiate(runtime_module,imports) // , memory
+        imports = {env: runtime_instance.exports}
+    }
+    instance = await WebAssembly.instantiate(module,imports, runtime_instance.memory)
     let funclet = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
     funclet.exports = funclet.instance.exports
     funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
@@ -527,7 +562,7 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
         console.log(result);
         loadKindMap()
         load_runtime_bytes()
-        // setTimeout(test, 1);// make sync
+        setTimeout(test, 1);// make sync
     }
 )
 
