@@ -1297,8 +1297,7 @@ Code emitAttribute(Node &node, Function &context) {
 
     if (object.kind == constructor and use_wasm_reference_types) {
         Code ref = emitReferenceTypeConstructor(object, context);
-        return ref + emitReferenceAttribute(object, field,
-                                            context); // todo: make sure it is called from right context (after isSetter …
+        return ref + emitReferenceAttribute(object, field, context);
     }
 
     Type element_type = unknown;
@@ -1329,22 +1328,22 @@ Code emitAttribute(Node &node, Function &context) {
     return code + emitIndexPattern(object, field, context, true, element_type);// emitIndexRead
 }
 
-Code emitReferenceAttribute(Node &object, Node field, Function &function) {
+Code emitReferenceAttribute(Node &object, Node field_name, Function &function) {
     Code code;
 //    return code; // todo
 
 //    // fb 03 00 00  struct.get $type(0) $field(0) (stack: instance-ref_type)
-    uint type_index = 0x01;//types[object.name]->value.longy;
+//    uint type_index = 0x01;
+//    uint field_index = 0x01;
 //    uint type_index = object.value.longy;
-    uint field_index = 0x01;// field.value.longy;
+    auto typ = *types[object.name];
+    uint type_index = typ.value.longy;
+    auto field = typ[field_name.name];
+    uint field_index = field.value.longy;
     code.add(struct_prefix);
     code.add(struct_get);
     code.add(type_index);
     code.add(field_index);
-    code.add(nop_);
-    code.add(nop_);
-    code.add(nop_);
-    code.addConst32(42);
     last_type = int32;// todo get type from field
     return code;
 }
@@ -1792,18 +1791,9 @@ Code emitReferenceTypeConstructor(Node &node, Function &context) {
         code += emitValue(field, context);// on stack
     }
     uint type_index = types[node.name]->value.longy;
-    code.add(nop_);
-    code.add(nop_);
-    code.add(nop_);
-
     code.add(struct_prefix);
     code.add(struct_new);
     code.add(type_index);
-    code.add(nop_);
-    code.add(nop_);
-    code.add(nop_);
-//    code.add(drop);
-//    code.addConst32(42);
     last_type = Valtype::wasm_struct;// HOLUP, we need to know the type of the struct! e.g. 6b00 => wasm_struct $0
     last_object = &node;
     last_object_pointer = pointer;

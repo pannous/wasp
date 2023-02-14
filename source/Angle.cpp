@@ -696,6 +696,7 @@ Node &classDeclaration(Node &node, Function &function) {
         else
             field.type = types[type->name]; // int => Int
         field.kind = fields;
+        field.value.longy = pos;
         field["position"] = pos++;
     }
     if (types.position(name) >= 0) {
