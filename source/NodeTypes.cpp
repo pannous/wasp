@@ -60,6 +60,8 @@ Type mapType(Node &arg) {
             return Primitive::wasm_int32;
         case flags:
             return Primitive::wasm_int64;
+        case wasm_type_struct:
+            return Primitive::wasm_type;
         case call: {
             auto fun = arg.name;
 //            findLibraryFunction(fun, true); too much here
@@ -88,6 +90,7 @@ Type mapType(Node &arg) {
         case expression:
         case declaration:
         case assignment: todo("how to map "s + typeName(arg.kind) + " to (wasm) Type?");
+            break;
     }
     return arg.kind;
 }
@@ -298,6 +301,7 @@ chars typeName(Kind t, bool throws) {
             return "generics";
         case clazz:
             return "class";
+        case wasm_type_struct:
         case structs:
             return "struct";
         case flags:
@@ -471,6 +475,8 @@ chars typeName(Primitive p) {
             return "type";
         case any:
             return "any";
+        case Primitive::wasm_type:
+            return "struct";
         case string_struct:
             return "String";
         case stringp:
@@ -562,6 +568,8 @@ chars typeName(Valtype t, bool fail) {
 
 Valtype mapTypeToWasm(Primitive p) {
     switch (p) {
+        case Primitive::wasm_type:
+            return wasm_struct;
         case unknown_type: // undefined
         case missing_type: // well defined, but still:
             error("unknown_type in final stage");

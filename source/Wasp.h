@@ -5,6 +5,7 @@
 
 #define let auto
 extern bool eval_via_emit;
+extern bool use_wasm_reference_types;
 
 extern "C" void testCurrent();
 

@@ -340,6 +340,7 @@ public:
 
     // as LEB!
     Code addInt(int i, bool leb = true) {
+//   ⚠️ use addConst32 in most cases in Code!
         push((int64) i, true, leb);
         return *this;
     }
@@ -657,6 +658,22 @@ enum Opcodes {
 // SIMD
     simd____ = 0xFD,
 };
+
+// struct_prefix 0xfb …
+enum struct_ops {
+    struct_get = 0x03, // fb 03 00 00  struct.get $type(0) $field(0) (stack: instance-ref)
+    struct_set = 0x06, // fb 06 00 00  struct.set $type(0) $mut_field(0) (stack: instance-ref value)
+    struct_new = 0x07, // fb 07 00  struct.new $type(0)  (stack: params)
+//    struct_narrow = 0x0?,
+//    struct_widen = 0x0?,
+};
+//field must be mutable
+//(type $array (array (mut i32)))
+
+//	(func $create (param $x f64) (param $y f64) (result (ref $Point))
+//		(struct.new $Point (local.get $x) (local.get $y))
+//	)
+
 
 
 // don't forget the PREFIX before each vector op:
