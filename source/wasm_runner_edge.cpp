@@ -50,8 +50,7 @@ WasmEdge_ModuleInstanceContext *CreateExternModule() {
     enum WasmEdge_ValType P[3], R[1];
 
     HostName = WasmEdge_StringCreateByCString("extern_module");
-    WasmEdge_ModuleInstanceContext *HostMod =
-            WasmEdge_ModuleInstanceCreate(HostName);
+    WasmEdge_ModuleInstanceContext *HostMod = WasmEdge_ModuleInstanceCreate(HostName);
     WasmEdge_StringDelete(HostName);
 
     // Add host function "functor_square": {externref, i32} -> {i32}
@@ -70,11 +69,11 @@ WasmEdge_ModuleInstanceContext *CreateExternModule() {
 extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     // perfect except we can't access memory
 
-
     /* Create the configure context and add the WASI support. */
     /* This step is not necessary unless you need WASI support. */
     WasmEdge_ConfigureContext *ConfCxt = WasmEdge_ConfigureCreate();
     WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
+//    Proposal::ReferenceTypes
     /* The configure and store context to the VM creation can be NULL. */
     WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(ConfCxt, NULL);
 //    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(0, 0); // no wasi

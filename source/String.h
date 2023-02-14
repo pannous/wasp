@@ -299,6 +299,11 @@ public:
         length = strlen(data);
     }
 
+    explicit String(uint integer) {
+        data = formatLong(integer);// wasm function signature contains illegal type WHYYYY
+        length = strlen(data);
+    }
+
     explicit String(int64 number) {
         data = formatLong(number);
         length = len();
@@ -694,6 +699,10 @@ public:
     }
 
     String operator+(int i) {
+        return this->operator+(String(i));
+    }
+
+    String operator+(uint i) {
         return this->operator+(String(i));
     }
 

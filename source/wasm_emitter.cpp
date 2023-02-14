@@ -1280,6 +1280,11 @@ Code emitGetter(Node &node, Node &field, Function &context) {
     return code;
 }
 
+
+Code emitReferenceAttribute(Node &object, Node field, Function &function);
+
+Code emitReferenceTypeConstructor(Node &node, Function &context);
+
 // todo ⚠️ discern get / set / call attribute! x.y x.y=z x.y()
 [[nodiscard]]
 Code emitAttribute(Node &node, Function &context) {
@@ -1289,6 +1294,12 @@ Code emitAttribute(Node &node, Function &context) {
         return emitAttributeSetter(node, context);// danger get->set ?
     Node field = node.last();// NOT ref, we resolve it to index!
     Node &object = node.first();
+
+    if (object.kind == constructor and use_wasm_reference_types) {
+        Code ref = emitReferenceTypeConstructor(object, context);
+        return ref + emitReferenceAttribute(object, field,
+                                            context); // todo: make sure it is called from right context (after isSetter …
+    }
 
     Type element_type = unknown;
     if (!object.type and types.has(object.name))
@@ -1316,6 +1327,26 @@ Code emitAttribute(Node &node, Function &context) {
     // todo move => once done
 // a.b and a[b] are equivalent in angle
     return code + emitIndexPattern(object, field, context, true, element_type);// emitIndexRead
+}
+
+Code emitReferenceAttribute(Node &object, Node field, Function &function) {
+    Code code;
+//    return code; // todo
+
+//    // fb 03 00 00  struct.get $type(0) $field(0) (stack: instance-ref_type)
+    uint type_index = 0x01;//types[object.name]->value.longy;
+//    uint type_index = object.value.longy;
+    uint field_index = 0x01;// field.value.longy;
+    code.add(struct_prefix);
+    code.add(struct_get);
+    code.add(type_index);
+    code.add(field_index);
+    code.add(nop_);
+    code.add(nop_);
+    code.add(nop_);
+    code.addConst32(42);
+    last_type = int32;// todo get type from field
+    return code;
 }
 
 
@@ -1608,8 +1639,9 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
         case functor:
         case records:
         case clazz:
-        case structs:
         case flags:
+        case structs:
+        case wasm_type_struct:
             // nothing to do since meta info is in module
             // node is in `types` / `functions` and all fields are in `globals`
             // TYPE info at compile time in types[] // todo: emit reflection data / wit !
@@ -1752,7 +1784,35 @@ void discard(Code &code);
 
 void discard(Code code);
 
+// wasm reference type constructor
+Code emitReferenceTypeConstructor(Node &node, Function &context) {
+    Code code;
+    int pointer = data_index_end;
+    for (Node &field: node) {
+        code += emitValue(field, context);// on stack
+    }
+    uint type_index = types[node.name]->value.longy;
+    code.add(nop_);
+    code.add(nop_);
+    code.add(nop_);
+
+    code.add(struct_prefix);
+    code.add(struct_new);
+    code.add(type_index);
+    code.add(nop_);
+    code.add(nop_);
+    code.add(nop_);
+//    code.add(drop);
+//    code.addConst32(42);
+    last_type = Valtype::wasm_struct;// HOLUP, we need to know the type of the struct! e.g. 6b00 => wasm_struct $0
+    last_object = &node;
+    last_object_pointer = pointer;
+    return code;
+}
+
 Code emitConstruct(Node &node, Function &context) {
+    if (use_wasm_reference_types)
+        return emitReferenceTypeConstructor(node, context);
     Code code;
     int pointer = data_index_end;
     for (Node &field: node) {
@@ -1847,7 +1907,7 @@ Code emitCall(Node &fun, Function &context) {
             error("unknown function "s + name + " (" + normed + ")");
         else name = normed;
     }
-    if(name=="pow")
+    if (name == "pow")
         functions["pow"].signature.add(reals).add(reals).returns(reals);
 
     Function &function = functions[name];// NEW context! but don't write context ref!
@@ -1970,6 +2030,7 @@ Code cast(Type from, Type to) {
 // casting in our case also means construction! (x, y) as point == point(x,y)
 [[nodiscard]]
 Code cast(Node &from, Node &to, Function &context) {
+    if (to == Int)return cast(mapTypeToWasm(from), i32);
     if (to == Long)return cast(mapTypeToWasm(from), i64);
     if (to == Double)return cast(mapTypeToWasm(from), float64);
     Node calle("cast");
@@ -2346,15 +2407,43 @@ List<String> collect_locals(Node &node, Function& context) {
 */
 
 
+//    01 14 03 5f 02 7c 01 7c
+// 01: type section
+// 14: length
+// 03: type count
+// 5f: reference type "struct"
+// 02: field count
+// 7c: f64 01: mutable …
+Code emitTypeSectionStructs(int &typeCount) {
+    Code type_data;
+    for (auto &name: types) {
+        Node &type = *types[name];
+        if (type.kind != wasm_type_struct)
+            continue;
+        type.value.longy = typeCount++;
+        print("struct "s + name + " " + type.value.longy);
+        type_data.addByte(0x5f /*wasm_type*/);
+        type_data.addByte(type.size());// field count
+        for (auto field: type) {
+            auto field_type = field.type;
+            auto valtype = fixValtype(mapTypeToWasm(field_type));
+            type_data.addByte(valtype);
+            type_data.addByte(0x01 /*mutable*/);
+        }
+    }
+    return type_data;
+}
+
 int last_index = -1;
+
 
 // typeSection created before code Section. All imports must be known in advance!
 [[nodiscard]]
 Code emitTypeSection() {
+    int typeCount = 0;
     // Function types are vectors of parameters and return types. Currently
     // the type section is a vector of context types
     // TODO optimise - some of the procs might have the same type signature
-    int typeCount = 0;
     Code type_data;
 //	print(functionIndices);
     for (String fun: functions) {
@@ -2414,6 +2503,10 @@ Code emitTypeSection() {
         }
         type_data += td;
     }
+
+    if (use_wasm_reference_types)
+        type_data += emitTypeSectionStructs(typeCount);
+
     return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();
 }
 

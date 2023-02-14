@@ -3043,9 +3043,10 @@ void testCurrent() {
     skip(
             assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
     )
+    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
 
 //    testRenameWasmFunction();
-
+//    testStruct();
 //    tests();// make sure all still ok before changes
 //    todos();
     tests();// make sure all still ok after messing with memory

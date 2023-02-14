@@ -514,7 +514,7 @@ Node &groupTypes(Node &expression, Function &context) {
     if (isType(expression)) {// double \n x,y,z  extra case :(
         Node &type = *types[expression.name];
         auto is_primitive = isPrimitive(type);
-        if (not is_primitive and (type.kind == structs or type.kind == clazz))
+        if (not is_primitive and (type.kind == structs or type.kind == wasm_type_struct or type.kind == clazz))
             return constructInstance(expression, context);
 
         if (expression.length > 0) {// point{x=1 y=2} point{x y}
@@ -672,9 +672,12 @@ Node &classDeclaration(Node &node, Function &function) {
         error("wrong class declaration format; should be: class name{…}");
     Node &dec = node[1];
     String &kind_name = node.first().name;
-    if (kind_name == "struct")
-        dec.kind = structs;
-    else if (kind_name == "class" or kind_name == "type")
+    if (kind_name == "struct") {
+        if (use_wasm_reference_types)
+            dec.kind = wasm_type_struct;
+        else
+            dec.kind = structs;
+    } else if (kind_name == "class" or kind_name == "type")
         dec.kind = clazz;
     else todo(kind_name);
 
