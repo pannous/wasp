@@ -2912,6 +2912,26 @@ Code emitNameSection() {
         globalNameMap = globalNameMap + Code(i) + Code(globalName);
     }
 
+    Code typeNameMap;
+    Code fieldNameMap;
+    int usedTypes = 0;
+    int usedFields = 0;
+    for (auto &type_name: types) {
+        auto typ = *types[type_name];
+        if (typ.kind != wasm_type_struct)
+            continue;
+        usedTypes++;
+        int typ_index = typ.value.longy;
+        typeNameMap = typeNameMap + Code(typ_index) + Code(typ.name);
+        // collect field names
+        int field_index = 0;
+        fieldNameMap = fieldNameMap + Code(typ_index) + Code(typ.size());
+        for (auto &field: typ) {
+            fieldNameMap = fieldNameMap + Code(field_index++) + Code(field.name);
+            usedFields++;
+        }
+    }
+    fieldNameMap = Code(usedTypes) + fieldNameMap; // prefixed !
 
 
 //	localNameMap = localNameMap + Code((byte) 0) + Code((byte) 1) + Code((byte) 0) + Code((byte) 0);// 1 unnamed local
@@ -2926,12 +2946,14 @@ Code emitNameSection() {
     auto localNames = Code(local_names) + encodeVector(Code(usedLocals) + localNameMap);
     auto globalNames = Code(global_names) + encodeVector(Code(usedGlobals) + globalNameMap);
     auto dataNames = Code(data_names) + encodeVector(Code(1)/*count*/ + Code(0) /*index*/ + Code("wasp_data"));
-
+    auto typeNames = Code(type_names) + encodeVector(Code(usedTypes) + typeNameMap);
+    auto fieldNames = Code(field_names) + encodeVector(Code(usedFields) + fieldNameMap);
+//    0408 0101
 
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
 //	The name section should appear only once in a module, and only after the data section.
     const Code &nameSectionData = encodeVector(
-            Code("name") + moduleName + functionNames + localNames + globalNames + dataNames);
+            Code("name") + moduleName + functionNames + localNames + globalNames + dataNames + typeNames + fieldNames);
     // global names are part of global section, as should be
     auto nameSection = createSection(custom_section, nameSectionData); // auto encodeVector AGAIN!
 //    nameSection.debug();

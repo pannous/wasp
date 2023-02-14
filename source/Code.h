@@ -789,8 +789,10 @@ enum nameSubSectionTypes {
     module_name = 0,
     function_names = 1,
     local_names = 2,
+    type_names = 4, // GC struct
     global_names = 7,
-    data_names = 9
+    data_names = 9,
+    field_names = 10, // GC struct.field
 };
 
 typedef enum constancy {
