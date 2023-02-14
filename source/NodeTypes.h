@@ -77,7 +77,9 @@ enum Valtype {
     none = 0x40, // NOT voids!!!
 
 // extensions
-    anyref = 0x6f,// was conceptually an namewise merged into externref
+    wasm_struct = 0x6b, // plus type id! vs 0xfb… for functions struct.new struct.get …
+    ref = wasm_struct,
+    anyref = 0x6f,// was conceptually and namewise merged into externref
     externref = 0x6f, // -0x11
     funcref = 0x70, // -0x10
     func = 0x60,
@@ -186,8 +188,9 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     constructor, // special call?
     modul,// module, interface, resource, world, namespace, library, package ≈ class …
     nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
-    structs = 0x77, // TODO BEWARE OF OVERLAP with primitives! :
+    wasm_type_struct = 0x6b, //0xFB,
     number = 0x70, // SmartNumber or Number* as SmartPointer? ITS THE SAME!
+    structs = 0x77, // TODO BEWARE OF OVERLAP with primitives! :
     reals = 0x7C, /*  ≠ float64 , just hides bugs, these concepts should not be mixed */
     realsF = 0x7D,/*  ≠ float32 , just hides bugs, these concepts should not be mixed */
     longs = 0x7E, // the signature of parameters/variables is independent!
@@ -197,6 +200,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     enum_entry = longs, // special semantics at compile time for now
     last_kind = 0x80,
     codepoints = 0xC4, // boxed codepoint in value.longy field todo
+
 
     kind_padding = 0x80000000, // 32 bit padding
 };// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
@@ -217,6 +221,7 @@ enum Primitive {
     unknown_type = 0,// defaults to int64!
     missing_type = 0x40,// well defined
     nulls = 0x40, // ≠ undefined
+    wasm_type = 0x6b, //0xFB,
     wasm_leb = 0x77,
     wasm_float64 = 0x7C, // float64
     float_type = wasm_float64,
@@ -279,7 +284,7 @@ enum Primitive {
     shorty = 0xB16,
     int16 = 0xB16,
 //    THE 0xF0 … range is reserved for numbers
-
+    // Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 //	c_char = 0xB0, // when indexing byte array. todo: maybe codepoint into UTF8!?
     array_start = 0xA000, // careful there are different kinds of arrays/lists/List/Node[lists]
     list = 0xA100, // [len(int32), data*] compatible with List
@@ -390,6 +395,8 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
         }
         if (o == &Double)
             this->kind = reals;
+        if (o == &Long)
+            this->kind = longs;
         else
             error("Type32(const Node &o)");
     }

@@ -853,6 +853,7 @@ chars Node::serializeValue(bool deep) const {
         case clazz:
         case variants:
         case enums:
+            return name;
 //            return ""s + name + "{…" + "}";// todo fields
         case objects:
             return deep ? "" : "{…}";// useful for debugging, but later return "" for
@@ -893,8 +894,10 @@ chars Node::serializeValue(bool deep) const {
             return "";
         case kind_padding:
             error("kind_padding is not a Kind");
-//        default:
+        case wasm_type_struct:
+            return name;
         case number:
+        default:
             breakpoint_helper
             return "MISSING CASE";
     }
