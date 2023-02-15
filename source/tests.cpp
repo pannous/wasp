@@ -3047,7 +3047,8 @@ void testCurrent() {
     use_wasm_strings = true;
 //    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
 //    exit(0);
-    assert_emit("abcde='fghij';42", 42);
+    assert_emit("'ab'+'cd'=='abcd'", 1);
+//    assert_emit("abcde='fghij';42", 42);
 
 //    assert_emit("abcd='fghij';#abcd", 5);
 //    assert_emit("abcde='fghij'", "fghij"); // main can't return stringrefs!
