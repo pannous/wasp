@@ -1063,11 +1063,9 @@ Code emitStringRef(Node &node, Function &context) {
     Code code;
     wasm_strings.add(*node.value.string);
     code.addOpcode(string_const);
-    code.addInt(1);// why 0? memory?
+    code.addInt(1);// memory index?
     code.addInt(wasm_strings.size() - 1);// string index
     last_type = string_ref;
-//    code.addByte(nop_);
-//    code.addByte(nop_);
     return code;
 }
 
