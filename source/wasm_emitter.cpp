@@ -1049,12 +1049,22 @@ Code emitData(Node &node, Function &context) {
     return code.addConst32(last_pointer);// redundant with returns ok
 }
 
+List<String> wasm_strings;
+
+Code emitStringRef(Node &node, Function &context) {
+    wasm_strings.add(*node.value.string);
+    last_type = string_ref;
+    return Code(string_const).addInt(wasm_strings.size()).addOpcode(string_measure_utf8);
+}
+
 Code emitString(Node &node, Function &context) {
     if (node.kind != strings)
         return emitString((new Node(node.name))->setType(strings), context);
     if (not node.value.string)
         error("empty node.value.string");
 //    emitPadding(data_index_end % 4);// pad to int size, too late if in node struct!
+
+
     int last_pointer = data_index_end;
     String &string = *node.value.string;
     referenceMap[string] = node;
@@ -1185,6 +1195,8 @@ Code emitValue(Node &node, Function &context) {
 //                last_object_pointer = referenceIndices[string];
                 last_object_pointer = referenceDataIndices[string] - 8;
             else {
+                if (use_wasm_strings)
+                    return emitStringRef(node, context);
                 emitString(node, context);
 //                referenceDataIndices.insert_or_assign(string, data_index_end);
 //				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
@@ -1340,8 +1352,8 @@ Code emitReferenceAttribute(Node &object, Node field_name, Function &function) {
     uint type_index = typ.value.longy;
     auto field = typ[field_name.name];
     uint field_index = field.value.longy;
-    code.add(struct_prefix);
-    code.add(struct_get);
+//    code.add(struct_prefix);
+    code.addOpcode(struct_get);
     code.add(type_index);
     code.add(field_index);
     last_type = int32;// todo get type from field
@@ -1791,8 +1803,8 @@ Code emitReferenceTypeConstructor(Node &node, Function &context) {
         code += emitValue(field, context);// on stack
     }
     uint type_index = types[node.name]->value.longy;
-    code.add(struct_prefix);
-    code.add(struct_new);
+//    code.add(struct_prefix);
+    code.addOpcode(struct_new);
     code.add(type_index);
     last_type = Valtype::wasm_struct;// HOLUP, we need to know the type of the struct! e.g. 6b00 => wasm_struct $0
     last_object = &node;
@@ -2716,6 +2728,16 @@ Code emitCodeSection(Node &root) {
     return codeSection.clone();
 }
 
+Code emitStringSection() {
+    Code strings(0);// ?
+    strings.addInt(wasm_strings.size());// count of strings
+    for (auto &s: wasm_strings) {
+        strings += encodeString(s);
+    }
+    return createSection(string_section, strings);
+
+}
+
 [[nodiscard]]
 Code emitExportSection() {
 //    https://webassembly.github.io/spec/core/binary/modules.html#binary-exportsec
@@ -2925,13 +2947,13 @@ Code emitNameSection() {
         typeNameMap = typeNameMap + Code(typ_index) + Code(typ.name);
         // collect field names
         int field_index = 0;
-        fieldNameMap = fieldNameMap + Code(typ_index) + Code(typ.size());
+        fieldNameMap = Code(typ_index) + Code(typ.size());
         for (auto &field: typ) {
             fieldNameMap = fieldNameMap + Code(field_index++) + Code(field.name);
             usedFields++;
         }
     }
-    fieldNameMap = Code(usedTypes) + fieldNameMap; // prefixed !
+//    fieldNameMap = Code(usedTypes) + fieldNameMap; // prefixed !
 
 
 //	localNameMap = localNameMap + Code((byte) 0) + Code((byte) 1) + Code((byte) 0) + Code((byte) 0);// 1 unnamed local
@@ -2944,16 +2966,15 @@ Code emitNameSection() {
     auto moduleName = Code(module_name) + encodeVector(Code("wasp_module"));
     auto functionNames = Code(function_names) + encodeVector(Code(usedNames) + nameMap);
     auto localNames = Code(local_names) + encodeVector(Code(usedLocals) + localNameMap);
+    auto typeNames = Code(type_names) + encodeVector(Code(usedTypes) + typeNameMap);
     auto globalNames = Code(global_names) + encodeVector(Code(usedGlobals) + globalNameMap);
     auto dataNames = Code(data_names) + encodeVector(Code(1)/*count*/ + Code(0) /*index*/ + Code("wasp_data"));
-    auto typeNames = Code(type_names) + encodeVector(Code(usedTypes) + typeNameMap);
-    auto fieldNames = Code(field_names) + encodeVector(Code(usedFields) + fieldNameMap);
-//    0408 0101
+    auto fieldNames = Code(field_names) + encodeVector(Code(usedTypes) + fieldNameMap);
 
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
 //	The name section should appear only once in a module, and only after the data section.
     const Code &nameSectionData = encodeVector(
-            Code("name") + moduleName + functionNames + localNames + globalNames + dataNames + typeNames + fieldNames);
+            Code("name") + moduleName + functionNames + localNames + typeNames + globalNames + dataNames + fieldNames);
     // global names are part of global section, as should be
     auto nameSection = createSection(custom_section, nameSectionData); // auto encodeVector AGAIN!
 //    nameSection.debug();
@@ -3119,6 +3140,7 @@ Code &emit(Node &root_ast) {
                 + Code(moduleVersion, 4)
                 + typeSection1
                 + importSection1
+                  //                + emitStringSection() // wasm stringref table
                 + funcTypeSection1 // signatures
                 + memorySection1 // Wasm MVP can only define one memory per module WHERE?
                 + globalSection1
@@ -3130,36 +3152,20 @@ Code &emit(Node &root_ast) {
 //	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
     ;
-//    code.debug();
-#ifndef WEBAPP
-//	free(data);// written to wasm code ok
-#endif
-//	if (runtime0)
-//		functions.clear(); // cleanup after NAJA
     return code.clone();
 }
-//
-//Code emit(String code){
-//	error("DEPRECATED");
-//	return 0;
-//}
 
-
-//extern "C"
 Code &compile(String code, bool clean) {
     if (clean) {
         clearEmitterContext();
         clearAnalyzerContext();// needs to be outside analyze, because analyze is recursive
     }
-
     Node parsed = parse(code);
 //    print(parsed.serialize());
-
     Node &ast = analyze(parsed, functions["wasp_main"]);
     Code &binary = emit(ast);
 //    binary.debug();
     binary.save("main.wasm");
-
 #ifdef INCLUDE_MERGER
     if (libraries.size() > 0) {
         binary.needs_relocate = true;
@@ -3171,15 +3177,8 @@ Code &compile(String code, bool clean) {
         merge_module_binaries.clear();
         return merged;
     }
-//	if (merge_module_binaries.size() > 0) {
-//		merge_module_binaries.add(binary);
-//		Code &merged = merge_binaries(merge_module_binaries);
-//		merge_module_binaries.clear();
-//		return merged;
-//	}
 #else
     if (libraries.size() > 0)
-//        error("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
         warn("wasp compiled without binary linking/merging. set(INCLUDE_MERGER 1) in CMakeList.txt");
 #endif
     return binary;

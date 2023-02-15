@@ -53,6 +53,19 @@ typedef String grapheme;// sequence of one or more code points that are displaye
 // TODO IS IT SAFE IF WE USE char IN WASP as synonym for codepoint, by merging graphemes and ignoring modifiers? we can return a¨ as  ä!!
 // ⚠ color is an invisible control character like in ascii ⚠️=⚠ + ef b8 8f
 
+/* WASM defines:
+ * https://github.com/WebAssembly/stringref/blob/main/proposals/stringref/Overview.md
+    codepoint: An integer in the range [0,0x10FFFF].
+    surrogate: A codepoint in the range [0xD800,0xDFFF].
+    unicode scalar value: A codepoint that is not a surrogate.
+    character: An imprecise concept that we try to avoid in this document.
+    code unit: An indivisible unit of an encoded unicode scalar value. For UTF-8 encodings, an integer in the range [0,0xFF] (a byte); for UTF-16 encodings, an integer in the range [0,0xFFFF]; for UTF-32, the unicode scalar value itself.
+    high surrogate: A surrogate in the range [0xD800,0xDBFF].
+    low surrogate: A surrogate which is not a high surrogate.
+    surrogate pair: A sequence of a high surrogate followed by a low surrogate, used by UTF-16 to encode a codepoint in the range [0x10000,0x10FFFF].
+    isolated surrogate: Any surrogate which is not part of a surrogate pair.
+ * */
+
 //typedef Image glyph; image, usually stored in a font (which is a collection of glyphs), used to represent graphemes
 //https://stackoverflow.com/questions/27331819/whats-the-difference-between-a-character-a-code-point-a-glyph-and-a-grapheme
 // '\uD83D\uDC0A' UTF-16 code units expressing a single code point (U+1F40A)  char(0x1F40A) == '🐊'

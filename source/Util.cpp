@@ -346,6 +346,7 @@ int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
     return (-1);
 }
 
+// todo merge with chars?
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
     bytes c = new unsigned char[len_a + len_b + 4];// why+4 ?? else heap-buffer-overflow
     memcpy1(c, a, len_a);
@@ -355,10 +356,26 @@ bytes concat(bytes a, bytes b, int len_a, int len_b) {
 }
 
 chars concat(chars a, chars b) {
-//const char *concat(const char *a, const char *b) {
+    if (!a or a[0] == 0)return b;
     if (!b or b[0] == 0)return a;
     int la = (int) strlen(a);
     int lb = (int) strlen(b);
+    return concat(a, b, la, lb);
+}
+
+extern "C" byte *heap_end;
+
+chars concat(chars a, chars b, uint la, uint lb) {
+    if (!a or a[0] == 0 or la == 0)return b;
+    if (!b or b[0] == 0 or lb == 0)return a;
+#if WASM
+    if ((byte *) a + la == heap_end) {
+        memcpy((void *) &a[la], b, lb + 1);
+        ((char *) a)[la + lb] = 0;
+        heap_end += lb + 1;
+        return a;
+    }
+#endif
     char *c = (char *) malloc((la + lb + 1) * sizeof(char));
     strcpy2(c, a);
     strcpy2(&c[la], b);
@@ -366,7 +383,14 @@ chars concat(chars a, chars b) {
     return c;
 }
 
-bytes concat(bytes a, char b, int len) {
+bytes concat(bytes a, byte b, int len) {
+#if WASM
+    if (a + len == heap_end) {
+        a[len] = b;
+        heap_end++;
+        return a;
+    }
+#endif
     bytes c = new byte[len + 1];
     memcpy1(c, a, len);
     c[len] = b;

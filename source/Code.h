@@ -26,7 +26,7 @@ class Module;
 // in Util.h but we cant import
 bytes concat(bytes a, bytes b, int len_a, int len_b);
 
-bytes concat(bytes a, char b, int len);
+bytes concat(bytes a, byte b, int len);
 
 bytes concat(char section, bytes a, int len_a);
 
@@ -229,10 +229,23 @@ public:
     }
 
     Code &add(byte opcode) {
+        // todo: append to last byte if possible
         data = concat(data, opcode, length);
         length++;
         return *this;
     }
+
+    Code &addOpcode(unsigned short opcode) {
+        // todo: append to last byte if possible
+        if (opcode < 0x100)
+            return add((byte) opcode);
+        data = concat(data, (byte) (opcode / 0x100), length);
+//        data = concat(data, 0xFB, length);
+        data = concat(data, (byte) (opcode % 0x100), length + 1);
+        length += 2;
+        return *this;
+    }
+
 
     Code &push(char opcode) {
         data = concat(data, opcode, length);
@@ -638,7 +651,9 @@ enum Opcodes {
 //i64_trunc_sat_f64_s=0xFC06,
 //i64_trunc_sat_f64_u=0xFC07,
 
-    struct_prefix = 0xfb, // struct.get, struct.set, struct.new, struct.narrow, struct.widen see ~/dev/wasm/gc_structs/module.wat
+// DON'T USE Prefixes directly, use the corresponding functions with 'short' opcodes e.g. 0xfb03
+//    struct_prefix = 0xfb, // struct.get, struct.set, struct.new, struct.narrow, struct.widen see ~/dev/wasm/gc_structs/module.wat
+//    string_prefix = 0xfb, // string_new, string_length, string_get, string_set, string_copy, string_fill, string_grow, string_size, string_drop
 
     math_prefix_s = 0xfc,
 
@@ -659,14 +674,111 @@ enum Opcodes {
     simd____ = 0xFD,
 };
 
+
 // struct_prefix 0xfb …
-enum struct_ops {
-    struct_get = 0x03, // fb 03 00 00  struct.get $type(0) $field(0) (stack: instance-ref)
-    struct_set = 0x06, // fb 06 00 00  struct.set $type(0) $mut_field(0) (stack: instance-ref value)
-    struct_new = 0x07, // fb 07 00  struct.new $type(0)  (stack: params)
+enum struct_ops { // on Valtype wasm_struct = 0x6b,
+    struct_get = (short) 0xfb03, // fb 03 00 00  struct.get $type(0) $field(0) (stack: instance-ref)
+    struct_set = 0xfb06, // fb 06 00 00  struct.set $type(0) $mut_field(0) (stack: instance-ref value)
+    struct_new = (short) 0xfb07, // fb 07 00  struct.new $type(0)  (stack: params)
+
+    structGet = 0xfb03, // struct.get
+    structGetS = 0xfb04, // struct.get_s
+    structGetU = 0xfb05, // struct.get_u
+    structSet = 0xfb06, // struct.set
+    structNew = 0xfb07, // struct.new
+    structNewDefault = 0xfb08, // struct.new_default
+    arrayGet = 0xfb13, // array.get
+    arrayGetS = 0xfb14, // array.get_s
+    arrayGetU = 0xfb15, // array.get_u
+    arraySet = 0xfb16, // array.set
+    arrayLenDeprecated = 0xfb17, // array.len
+    arrayCopy = 0xfb18, // array.copy") /* not standardized - V8 experimental */
+    arrayLen = 0xfb19, // array.len
+    arrayNewFixed = 0xfb1a, // array.new_fixed
+    arrayNew = 0xfb1b, // array.new
+    arrayNewDefault = 0xfb1c, // array.new_default
+    arrayNewData = 0xfb1d, // array.new_data
+    arrayNewElem = 0xfb1f, // array.new_elem
+    i31New = 0xfb20, // i31.new
+    i31GetS = 0xfb21, // i31.get_s
+    i31GetU = 0xfb22, // i31.get_u
+    refTest = 0xfb40, // ref.test
+    refTestDeprecated = 0xfb44, // ref.test
+    refCast = 0xfb45, // ref.cast
+    brOnCast = 0xfb46, // br_on_cast
+    brOnCastFail = 0xfb47, // br_on_cast_fail
+    refCastNop = 0xfb4c, // ref.cast_nop
+    refIsData = 0xfb51, // ref.is_data
+    refIsI31 = 0xfb52, // ref.is_i31
+    refIsArray = 0xfb53, // ref.is_array
+    refAsData = 0xfb59, // ref.as_data
+    refAsI31 = 0xfb5a, // ref.as_i31
+    refAsArray = 0xfb5b, // ref.as_array
+    brOnData = 0xfb61, // br_on_data
+    brOnI31 = 0xfb62, // br_on_i31
+    brOnArray = 0xfb66, // br_on_array
+    brOnNonData = 0xfb64, // br_on_non_data
+    brOnNonI31 = 0xfb65, // br_on_non_i31
+    brOnNonArray = 0xfb67, // br_on_non_array
+    externInternalize = 0xfb70, // extern.internalize
+    externExternalize = 0xfb71, // extern.externalize
 //    struct_narrow = 0x0?,
 //    struct_widen = 0x0?,
 };
+
+// string_prefix 0xfb …
+// https://github.com/WebAssembly/stringref
+// https://github.com/WebAssembly/stringref/blob/master/proposals/stringref/Overview.md
+// idx point to section stringrefs ::= section_14(0x00 vec(vec(u8)))
+enum string_ops { // on Valtype stringref = 0x64
+    string_new_utf8 = 0xfb80, // $mem:u32
+    string_new_wtf16 = 0xfb81, // $mem:u32   (Wobbly Transformation Format, 8-bit) unpaired surrogate halves (U+D800 through U+DFFF) are allowed.
+    string_const = 0xfb82, // $idx:u32 (idx points to section stringrefs) <<<
+    string_measure_utf8 = 0xfb83, //
+    string_measure_wtf8 = 0xfb84, //
+    string_measure_wtf16 = 0xfb85, //
+    string_encode_utf8 = 0xfb86, // $mem:u32
+    string_encode_wtf16 = 0xfb87, // $mem:u32
+    string_concat = 0xfb88, //
+    string_eq = 0xfb89, //
+    string_is_usv_sequence = 0xfb8a, //
+    string_new_lossy_utf8 = 0xfb8b, // $mem:u32
+    string_new_wtf8 = 0xfb8c, // $mem:u32
+    string_encode_lossy_utf8 = 0xfb8d, // $mem:u32
+    string_encode_wtf8 = 0xfb8e, // $mem:u32
+    string_as_wtf8 = 0xfb90, //
+    stringview_wtf8_advance = 0xfb91, //
+    stringview_wtf8_encode_utf8 = 0xfb92, // $mem:u32
+    stringview_wtf8_slice = 0xfb93, //
+    stringview_wtf8_encode_lossy_utf8 = 0xfb94, // $mem:u32
+    stringview_wtf8_encode_wtf8 = 0xfb95, // $mem:u32
+    string_as_wtf16 = 0xfb98, //
+    stringview_wtf16_length = 0xfb99, //
+    stringview_wtf16_get_codeunit = 0xfb9a, //
+    stringview_wtf16_encode = 0xfb9b, // $mem:u32
+    stringview_wtf16_slice = 0xfb9c, //
+    string_as_iter = 0xfba0, //
+    stringview_iter_next = 0xfba1, //
+    stringview_iter_advance = 0xfba2, //
+    stringview_iter_rewind = 0xfba3, //
+    stringview_iter_slice = 0xfba4, //
+
+    // chrome v8 :
+    string_compare = 0xfba8, // (str1: string, str2: string) -> int32  -1, 0 or 1 if the compared strings are lessThan, equal or greaterThan
+    string_from_code_point = 0xfba9, // (cp: int32) -> string
+    string_hash = 0xfbaa, // (str: string) -> int32
+
+    string_new_utf8_array = 0xfbb0, //           [gc]
+    string_new_wtf16_array = 0xfbb1, //           [gc]
+    string_encode_utf8_array = 0xfbb2, //           [gc]
+    string_encode_wtf16_array = 0xfbb3, //           [gc]
+    string_new_lossy_utf8_array = 0xfbb4, //           [gc]
+    string_new_wtf8_array = 0xfbb5, //           [gc]
+    string_encode_lossy_utf8_array = 0xfbb6, //           [gc]
+    string_encode_wtf8_array = 0xfbb7, //           [gc]
+};
+
+
 //field must be mutable
 //(type $array (array (mut i32)))
 
@@ -782,7 +894,8 @@ enum Sections {
     data_section = 11,
     // extensions:
     datacount = 12,
-    tag_section = 13
+    tag_section = 13,
+    string_section = 14, // wasm stringref table
 };
 
 enum nameSubSectionTypes {
@@ -1093,6 +1206,7 @@ public:
     operator String() {
         return name;
     }
+
     bool operator==(const Function &other) const {
         return name == other.name and signature == other.signature;
     }
@@ -1158,4 +1272,4 @@ extern "C" char* js_demangle(char* name);
 Function getWasmFunction(String name);
 #endif
 
-void print(Signature& signature);
+void print(Signature &signature);

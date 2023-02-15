@@ -13,6 +13,7 @@
 #endif
 extern Map<String, Node *> types;// by name
 
+
 Type mapType(Node &arg) {
     if (arg.type)
         return mapType(arg.type);
@@ -43,7 +44,10 @@ Type mapType(Node &arg) {
         case patterns:
             return Primitive::nodes;
         case strings:
-            return Primitive::stringp;
+            if (use_wasm_strings)
+                return string_ref;
+            else
+                return Primitive::stringp;
         case codepoints:
             return Primitive::codepoint32;
         case buffers:
