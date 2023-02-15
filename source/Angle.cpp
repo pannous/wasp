@@ -1143,12 +1143,12 @@ Type preEvaluateType(Node &node, Function &context) {
 
 
 Module &loadModule(String name) {
-    if (name == "wasp-runtime.wasm")
-        return loadRuntime();
 #if WASM
     todow("loadModule in WASM");
     return *new Module();
 #else
+    if (name == "wasp-runtime.wasm")
+        return loadRuntime();
     return read_wasm(name);// we need to read signatures!
 #endif
 }
