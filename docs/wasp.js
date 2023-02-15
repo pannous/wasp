@@ -475,7 +475,7 @@ async function link_runtime() {
     const memory = new WebAssembly.Memory({initial: 16384, maximum: 65536});
     const table = new WebAssembly.Table({initial: 2, element: "anyfunc"});
     try {
-        let runtime_module = await WebAssembly.compile(runtime_bytes)
+        runtime_module = await WebAssembly.compile(runtime_bytes)
         // runtime_imports= {env: {memory: memory, table: table}}
         runtime_imports=imports
         let runtime_instance = await WebAssembly.instantiate(runtime_module,runtime_imports) // , memory
@@ -501,15 +501,16 @@ async function link_runtime() {
 
 needs_runtime = true
 async function run_wasm(buf_pointer, buf_size) {
-    wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
+    let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // download(wasm_buffer, "emit.wasm", "wasm")
-    let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
-    if(needs_runtime){
-        let runtime_instance = await WebAssembly.instantiate(runtime_module,imports) // , memory
-        imports = {env: runtime_instance.exports}
+    if (needs_runtime) {
+        let runtime_instance = await WebAssembly.instantiateStreaming(fetch(WASM_RUNTIME), imports)
+        let runtime_imports = {env: runtime_instance.exports}
+        funclet = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
+    } else {
+        let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
+        funclet = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
     }
-    instance = await WebAssembly.instantiate(module,imports, runtime_instance.memory)
-    let funclet = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
     funclet.exports = funclet.instance.exports
     funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
     let main = funclet.exports.wasp_main || funclet.exports.main || funclet.instance.start || funclet.exports._start
