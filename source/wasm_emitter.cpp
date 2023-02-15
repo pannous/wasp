@@ -1052,9 +1052,15 @@ Code emitData(Node &node, Function &context) {
 List<String> wasm_strings;
 
 Code emitStringRef(Node &node, Function &context) {
+    Code code;
     wasm_strings.add(*node.value.string);
+    code.addOpcode(string_const);
+    code.addInt(wasm_strings.size());// string index
+    code.addInt(0);// why 0? memory?
     last_type = string_ref;
-    return Code(string_const).addInt(wasm_strings.size()).addOpcode(string_measure_utf8);
+    code.addByte(nop_);
+    code.addByte(nop_);
+    return code;
 }
 
 Code emitString(Node &node, Function &context) {
@@ -3140,7 +3146,7 @@ Code &emit(Node &root_ast) {
                 + Code(moduleVersion, 4)
                 + typeSection1
                 + importSection1
-                  //                + emitStringSection() // wasm stringref table
+                + emitStringSection() // wasm stringref table
                 + funcTypeSection1 // signatures
                 + memorySection1 // Wasm MVP can only define one memory per module WHERE?
                 + globalSection1

@@ -726,7 +726,7 @@ enum struct_ops { // on Valtype wasm_struct = 0x6b,
 //    struct_widen = 0x0?,
 };
 
-// string_prefix 0xfb …
+// string_prefix 0xfb (251) …
 // https://github.com/WebAssembly/stringref
 // https://github.com/WebAssembly/stringref/blob/master/proposals/stringref/Overview.md
 // idx point to section stringrefs ::= section_14(0x00 vec(vec(u8)))
