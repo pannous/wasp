@@ -316,6 +316,8 @@ chars typeName(Kind t, bool throws) {
             return "module";
         case last_kind:
         default:
+            if ((short) t == stringref)
+                return "stringref";// todo how here?
             if (throws)
                 error("MISSING Type Kind name mapping "s + (int) t);
             else return "";
@@ -590,6 +592,8 @@ Valtype mapTypeToWasm(Primitive p) {
         case type32:
             return Valtype::int32;
         case stringp:
+            if (use_wasm_strings)
+                return string_ref;
             return Valtype::wasm_pointer;
         case nodes: // ⚠️ Node* Node** or Node[] ?
             return Valtype::wasm_pointer; // CAN ONLY MEAN POINTER HERE, NOT STRUCT!!

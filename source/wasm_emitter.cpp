@@ -91,9 +91,17 @@ Code Call(char *symbol);//Node* args
 // values outside WASM ABI: 0=unknown/handled internally
 // todo: norm operators before!
 // * ∗ ⋅ ⋆ ✕ ×  …
-byte opcodes(chars s, Valtype kind, Valtype previous = none) {
+unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
     //	previous is lhs in binops!
-
+    if (kind == string_ref or previous == string_ref) {
+        if (eq(s, "+"))return string_concat;
+        if (eq(s, " "))return string_concat;
+        if (eq(s, "."))return string_concat;
+        if (eq(s, "="))return string_eq;
+        if (eq(s, "=="))return string_eq;
+        if (eq(s, "is"))return string_eq;
+        if (eq(s, "~"))return string_eq;// todo: regex
+    }
 //	if(eq(s,"$1="))return set_local;
 //	if (eq(s, "=$1"))return get_local;
 //	if (eq(s, "=$1"))return tee_local;
@@ -1055,11 +1063,11 @@ Code emitStringRef(Node &node, Function &context) {
     Code code;
     wasm_strings.add(*node.value.string);
     code.addOpcode(string_const);
-    code.addInt(wasm_strings.size());// string index
-    code.addInt(0);// why 0? memory?
+    code.addInt(1);// why 0? memory?
+    code.addInt(wasm_strings.size() - 1);// string index
     last_type = string_ref;
-    code.addByte(nop_);
-    code.addByte(nop_);
+//    code.addByte(nop_);
+//    code.addByte(nop_);
     return code;
 }
 
@@ -1435,7 +1443,7 @@ Code emitOperator(Node &node, Function &context) {
         else
             internal_error("unknown type should be inferred by now:\n"s + node.serialize());
     }
-    byte opcode = opcodes(name, mapTypeToWasm(last_type), mapTypeToWasm(arg_type));
+    unsigned short opcode = opcodes(name, mapTypeToWasm(last_type), mapTypeToWasm(arg_type));
 
     if (opcode >= 0x8b and opcode <= 0x98)
         code.add(cast(last_type, float32));// float ops
@@ -1471,13 +1479,15 @@ Code emitOperator(Node &node, Function &context) {
         }
     } else if (isFunction(name, true) or isFunction(normOperator(name), true)) {
         emitCall(node, context);
-    } else if (opcode > 0xC0) {
-        error("internal opcode not handled"s + opcode);
+    } else if (opcode > 0xC0 and opcode < 0xFB00) {
+        error("internal opcode not handled"s + hex(opcode));
     } else if (opcode > 0) {
-        code.addByte(opcode);
+        code.addOpcode(opcode);
+        if (opcode > 0xFB00)
+            code.add(0x01); // todo: memory index argument!?
         if (last_type == none or last_type == voids)
             last_type = i32t;
-        if (opcode >= 0x45 and opcode <= 0x78)
+        if (opcode >= 0x45 and opcode <= 0x78 or opcode == string_eq)
             last_type = i32;// int ops (also f64.eqz …)
     } else if (name == "²") {
 //		error("this should be handled universally in analyse: x² => x*x no matter what!");
