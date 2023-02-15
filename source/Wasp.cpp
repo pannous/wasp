@@ -44,6 +44,7 @@ int SERVER_PORT = 1234;
 //bool eval_via_emit = false;// not all tests yet
 bool eval_via_emit = true;// << todo!  assert_is(…)
 bool use_wasm_reference_types = true;// struct in wat
+bool use_wasm_strings = true;// string in wat
 
 
 

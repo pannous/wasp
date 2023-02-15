@@ -110,6 +110,8 @@ int fileSize(char const *file);
 
 chars concat(chars a, chars b);
 
+chars concat(chars a, chars b, uint len_a, uint len_b);
+
 template<class S>
 // list HAS TO BE 0 terminated! Dangerous C!! ;)
 bool contains(S list[], S match);
@@ -133,7 +135,7 @@ static double pi = 3.1415926535896688;
 
 bytes concat(bytes a, bytes b, int len_a, int len_b);
 
-bytes concat(bytes a, char b, int len);
+bytes concat(bytes a, byte b, int len);
 
 bytes concat(char section, bytes a, int len_a);
 

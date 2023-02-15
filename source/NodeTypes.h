@@ -11,7 +11,7 @@
 //enum Valtype;// forbids forward references to 'enum' types
 class Node;
 
-
+extern bool use_wasm_strings;
 typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
 
 // todo move these to ABI.h once it is used:
@@ -83,6 +83,11 @@ enum Valtype {
     externref = 0x6f, // -0x11
     funcref = 0x70, // -0x10
     func = 0x60,
+    string_ref = 0x64, // wasm stringref
+    stringref = string_ref,//         ; SLEB128(-0x1c)
+    stringview_wtf8 = 0x63,//    ; SLEB128(-0x1d)
+    stringview_wtf16 = 0x62,//   ; SLEB128(-0x1e)
+    stringview_iter = 0x61,//    ; SLEB128(-0x1f)
 
     // these are followed by special vector opcodes ≠ normal opcodes
     vec_i8 = 0x7A, // see VectorOpcodes @ Code.h
@@ -188,8 +193,8 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     constructor, // special call?
     modul,// module, interface, resource, world, namespace, library, package ≈ class …
     nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
-    wasm_type_struct = 0x6b, //0xFB,
     number = 0x70, // SmartNumber or Number* as SmartPointer? ITS THE SAME!
+    wasm_type_struct = 0x6b /* ⚠️ PLUS stuct ID! */, // opcodes 0xFB…
     structs = 0x77, // TODO BEWARE OF OVERLAP with primitives! :
     reals = 0x7C, /*  ≠ float64 , just hides bugs, these concepts should not be mixed */
     realsF = 0x7D,/*  ≠ float32 , just hides bugs, these concepts should not be mixed */
@@ -221,7 +226,7 @@ enum Primitive {
     unknown_type = 0,// defaults to int64!
     missing_type = 0x40,// well defined
     nulls = 0x40, // ≠ undefined
-    wasm_type = 0x6b, //0xFB,
+    wasm_type = 0x6b, /* ⚠️ PLUS stuct ID! */ // opcodes 0xFB…
     wasm_leb = 0x77,
     wasm_float64 = 0x7C, // float64
     float_type = wasm_float64,
@@ -241,7 +246,7 @@ enum Primitive {
 //	unknown = any,
     array = 0xAA,// compatible with List, Node, String (?)
     charp = 0xC0, // char* vs codepoint(*)
-    stringp = 0xCF,// String*
+    stringp = 0xCF,// String* vs stringref …
     string_struct = 0xC8,// String
 //    codepointus = 0xC1,  // when indexing int32 array
     codepoint32 = 0xC4, // just ONE codepoint as int! todo via map
