@@ -84,7 +84,7 @@ typedef byte *bytes;
 // silent ++
 #define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_line()}
 #define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);backtrace_line();}
-#define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);ɣ;backtrace_line();}
+#define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("%s",ɣ);backtrace_line();}
 
 //#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
 #define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
