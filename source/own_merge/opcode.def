@@ -444,7 +444,7 @@
 
 /* Bulk-memory (--enable-bulk-memory) */
 	WABT_OPCODE(___, I32, I32, I32,
-                0, 0xfc, 0x08, MemoryInit, "memory.value", "")
+                0, 0xfc, 0x08, MemoryInit, "memory.init", "")
 	WABT_OPCODE(___, ___, ___, ___,
 	            0, 0xfc, 0x09, DataDrop, "data.drop", "")
 	WABT_OPCODE(___, I32, I32, I32,
@@ -452,7 +452,7 @@
 	WABT_OPCODE(___, I32, I32, I32,
 	            0, 0xfc, 0x0b, MemoryFill, "memory.fill", "")
     WABT_OPCODE(___, I32, I32, I32,
-                0, 0xfc, 0x0c, TableInit, "table.value", "")
+                0, 0xfc, 0x0c, TableInit, "table.init", "")
 	WABT_OPCODE(___, ___, ___, ___,
 	            0, 0xfc, 0x0d, ElemDrop, "elem.drop", "")
 	WABT_OPCODE(___, I32, I32, I32,

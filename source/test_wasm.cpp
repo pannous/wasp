@@ -1118,20 +1118,20 @@ void testWasmMutableGlobal() {
     assert_emit("export int k=7", 7);//  all exports are globals, naturally.
     assert_emit("export int k=7", 7);//  all exports are globals, naturally.
     assert_emit("export int f:=7", 7);//  exports can be functions too.
-    assert_emit("global int k", 0);// todo error without value value?
+    assert_emit("global int k", 0);// todo error without init value?
     assert_emit("export int k", 0);//
 
     assert_emit("import int k", 7);//  all imports are globals, naturally.
     assert_emit("import const int k", 7);//  all imports are globals, naturally.
     assert_emit("import mutable int k", 7);//  all imports are globals, naturally.
 
-    assert_emit("import int k=7", 7);//  import with value
-    assert_emit("import const int k=7", 7);//  import with value
-    assert_emit("import mutable int k=7", 7);//  import with value
+    assert_emit("import int k=7", 7);//  import with initializer
+    assert_emit("import const int k=7", 7);//  import with initializer
+    assert_emit("import mutable int k=7", 7);//  import with initializer
 
-    assert_emit("import int k=7.1", 7);//  import with cast value
-    assert_emit("import const int k=7.1", 7);//  import with cast value
-    assert_emit("import mutable int k=7.1", 7);//  import with cast value
+    assert_emit("import int k=7.1", 7);//  import with cast initializer
+    assert_emit("import const int k=7.1", 7);//  import with cast initializer
+    assert_emit("import mutable int k=7.1", 7);//  import with cast initializer
 
     assert_emit("import k=7", 7);//  import with inferred type
     assert_emit("import const k=7", 7);//  import with inferred type
