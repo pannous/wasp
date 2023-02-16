@@ -280,7 +280,6 @@ bool similar(double a, double b) {
     return ok;
 }
 //
-//double pi = 3.141592653589793;
 //double mod_d(double x, double y) {
 //	return x - trunc(x / y) * y;
 //}

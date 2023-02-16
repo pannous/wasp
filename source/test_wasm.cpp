@@ -83,7 +83,7 @@ void testEmitter() {
 
 
 void testGlobals() {
-    assert_emit("π", 3.1415926535896688);
+    assert_emit("π", pi);
 }
 
 void test_get_local() {
@@ -1030,7 +1030,7 @@ void testRecentRandomBugs() {
 
 
 void testSquareExpWasm() {
-    let π = 3.141592653589793;
+    let π = pi; //3.141592653589793;
 // todo smart pointer return from main for floats!
     assert_emit("3²", 9);
     assert_emit("3.0²", 9);
@@ -1039,13 +1039,8 @@ void testSquareExpWasm() {
     assert_emit("√π ²", π);
     assert_emit("√ π²", π);
     assert_emit("√π²", π);
-    skip(
-            assert_emit("π²", 9.869604401089358 /*π*π*/);
-    )
-//    auto π = 3.1415926535897;
-    assert_emit("π", 3.1415926535897);
-//    pi = 3.1415926535897;
-//    assert_emit("π²", pi*pi);
+    assert_emit("π²", π * π);
+    assert_emit("π", pi);
     assert_emit("π*1000000.", 3141592.6535897);
     assert_emit("int i=π*1000000", 3141592);
     assert_emit("i=-9;-i", 9);

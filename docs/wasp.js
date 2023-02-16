@@ -81,6 +81,7 @@ let imports = {
         },
         init_graphics: nop, // canvas init by default
         requestAnimationFrame: nop,
+        exit: terminate, // should be wasi.proc_exit!
         pow: (x, y) => x ** y,
         puti: x => console.log(x), // allows debugging of ints without format String allocation!
         js_demangle: x => x,
