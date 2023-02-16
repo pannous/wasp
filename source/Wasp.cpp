@@ -1858,7 +1858,7 @@ void handler(int sig) {
 
 //void assert_is(char *wasp, Node result);
 
-//void value() {
+//void init() {
 //	NIL.kind = nils;
 //	NIL.value.number = 0;
 //	False.kind = bools;
