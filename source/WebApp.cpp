@@ -182,7 +182,7 @@ int64 open_webview(String url = "") {
 
     // add [w] to closure to make it local
     w.set_title("Example");
-    w.init("alert('js injected into every page')");
+    w.value("alert('js injected into every page')");
     w.set_size(480 * 4, 320 * 4, WEBVIEW_HINT_NONE);// default
     w.set_size(480, 320, WEBVIEW_HINT_MIN);// minimum size, also: MAX, FIXED
     w.bind("run", [](std::string s) -> std::string {

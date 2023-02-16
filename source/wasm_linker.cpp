@@ -670,7 +670,7 @@ void Linker::WriteElemSection(const SectionPtrVector &sections) {
         }
         WriteU32Leb128(&stream_, 0, "table index");
         WriteOpcode(&stream_, Opcode::I32Const);
-        WriteS32Leb128(&stream_, 0U, "elem init literal");
+        WriteS32Leb128(&stream_, 0U, "elem value literal");
         WriteOpcode(&stream_, Opcode::End);
         WriteU32Leb128(&stream_, total_elem_count, "num elements");
 

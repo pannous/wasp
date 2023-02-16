@@ -16,7 +16,9 @@
 //#include "wasm_runner.h"
 #include "wasm_reader.h"
 #include "wasm_merger.h"
+
 //#include "asserts.h"
+extern Map<String, Global> globals; // access from Angle!
 
 //Map<String, Signature> functions;// todo Signature copy by value is broken
 Code emitString(Node &node, Function &context);
@@ -1617,7 +1619,7 @@ Code emitConstruct(Node &node, Function &context);
 
 Primitive elementType(Type type32);
 
-// also init expressions of globals!
+// also value expressions of globals!
 [[nodiscard]]
 Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expression, node or BODY (list)
 //	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
@@ -2788,6 +2790,8 @@ Code emitExportSection() {
     Code globalExports;
     for (int i = 0; i < globals.size(); i++) {
         String &name = globals.keys[i];
+        if (globals[name].index != i)
+            error("global index mismatch");
         Code globalExport = encodeString(name) + (byte) global_export + Code(i);
         globalExports.add(globalExport); // todo << NOW
         exports_count++;
@@ -2819,9 +2823,9 @@ Code emitGlobalSection() {
 //	last_type = int32;
     for (int i = 0; i < global_user_count; i++) {
         String global_name = globals.keys[i];
-        Node *global_node = globals.values[i];
+        Node *global_node = globals.values[i].value;
         if (not global_node) {
-            warn("missing init for global "s + global_name);
+            warn("missing value for global "s + global_name);
             global_node = new Node();// dummy
         }
         if ((*global_node)["import"])continue;

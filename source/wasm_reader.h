@@ -3,14 +3,6 @@
 #include "Code.h"
 #include "List.h"
 
-struct Global {
-	int index;
-	String name;
-	Valtype type;
-	bool is_mutable;
-	bool is_import;
-	bool is_export;
-};
 
 class Module {
 //public:
