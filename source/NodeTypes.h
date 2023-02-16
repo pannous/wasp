@@ -400,9 +400,9 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
         }
         if (o == &Double)
             this->kind = reals;
-        if (o == &Long)
+        else if (o == &Long)
             this->kind = longs;
-        if (o == &Int)
+        else if (o == &Int)
             this->type = wasm_int32;
         else
             error("Type32(const Node &o)");

@@ -2743,6 +2743,8 @@ Code emitCodeSection(Node &root) {
 }
 
 Code emitStringSection() {
+    if (not use_wasm_strings)
+        return Code();
     Code strings(0);// ?
     strings.addInt(wasm_strings.size());// count of strings
     for (auto &s: wasm_strings) {
@@ -3116,6 +3118,7 @@ void clearEmitterContext() {
 //	functionCodes.setDefault(Code());
     typeMap.setDefault(-1);
     typeMap.clear();
+    types.clear();
 //	referenceMap.setDefault(Node());
 //    runtime_data_offset = 0x100000;
     data_index_end = runtime_data_offset; //0

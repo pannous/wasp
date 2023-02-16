@@ -50,6 +50,7 @@ Map<int64, bool> analyzed = {.capacity=1000};// avoid duplicate analysis (of if/
 
 Map<String, Node * /* modifiers/values/init expressions! */> globals; // access from Angle!
 Map<String /*name*/, Valtype> globalTypes;
+//List<Variable> globalVariables;
 
 short arrayElementSize(Node &node);
 

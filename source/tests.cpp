@@ -28,7 +28,7 @@ void testFunctionDeclaration() {
 //    auto node1 = analyze(parse("fn main(){}"));
 //    check(node1.kind==declaration);
 //    check(node1.name=="main");
-
+    clearAnalyzerContext();
     auto node2 = analyze(parse("fun test(float a):int{return a*2}"));
     check(node2.kind == declaration);
     check(node2.name == "test");
@@ -3043,17 +3043,17 @@ void testCurrent() {
     skip(
             assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
     )
-    use_wasm_reference_types = true;
-    use_wasm_strings = true;
-//    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
+//    use_wasm_reference_types = true;
+//    use_wasm_strings = true;
+    use_wasm_reference_types = false;
+    use_wasm_strings = false;
+    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
 //    exit(0);
-    assert_emit("'ab'+'cd'=='abcd'", 1);
+//    assert_emit("'ab'+'cd'=='abcd'", 1);
 //    assert_emit("abcde='fghij';42", 42);
 
 //    assert_emit("abcd='fghij';#abcd", 5);
 //    assert_emit("abcde='fghij'", "fghij"); // main can't return stringrefs!
-
-
 
 //    testRenameWasmFunction();
 //    testStruct();
