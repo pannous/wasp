@@ -351,9 +351,9 @@ public:
 //		return Code(data, start, length);
     }
 
-    // as LEB!
     Code addInt(int i, bool leb = true) {
-//   ⚠️ use addConst32 in most cases in Code!
+//  ⚠️ as op PARAM/VALUE , use addConst32 for STACK VALUE (prefixed with i32_const)
+//  ⚠️ leb = true in most cases in Code!
         push((int64) i, true, leb);
         return *this;
     }
@@ -729,6 +729,7 @@ enum struct_ops { // on Valtype wasm_struct = 0x6b,
 // string_prefix 0xfb (251) …
 // https://github.com/WebAssembly/stringref
 // https://github.com/WebAssembly/stringref/blob/master/proposals/stringref/Overview.md
+// https://github.com/WebAssembly/wabt/issues/2144 wat2wasm --enable-all --enable-stringref << IN PROGRESS!
 // idx point to section stringrefs ::= section_14(0x00 vec(vec(u8)))
 enum string_ops { // on Valtype stringref = 0x64
     string_new_utf8 = 0xfb80, // $mem:u32

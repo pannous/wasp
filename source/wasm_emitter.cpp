@@ -18,7 +18,7 @@
 #include "wasm_merger.h"
 
 //#include "asserts.h"
-extern Map<String, Global> globals; // access from Angle!
+extern Map<String, Global> globals;
 
 //Map<String, Signature> functions;// todo Signature copy by value is broken
 Code emitString(Node &node, Function &context);
@@ -1737,9 +1737,9 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
                 } else if (name == "ℯ")
                     return emitValue(*new Node(2.7182818284590), context);
                 else if (name == "τ" or name == "tau") // if not provided as global
-                    return emitValue(*new Node(6.283185307179586), context);
+                    return emitValue(*new Node(2 * pi), context);
                 else if (name == "π" or name == "pi") // if not provided as global
-                    return emitValue(*new Node(3.141592653589793), context);
+                    return emitValue(*new Node(pi), context);
                 else if (!node.isSetter()) {
 //                    print(context.locals)
                     if (not node.type)
@@ -2022,6 +2022,31 @@ Code cast(Valtype from, Valtype to) {
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
     error("incompatible valtypes "s + typeName(from) + " => " + typeName(to));
     return nop;
+}
+
+Code castStringToRef() {
+    Code code;
+    return code;
+}
+
+
+Code castRefToChars() {
+    Code code;
+//  (string.measure_utf8 local.get $stref)
+//  (string.encode_utf8 $memory $? $encoding (stack: $stref $heap_end)
+
+    // expects stringref on stack
+    code.addConst32(data_index_end);// heap_end
+    code.addOpcode(string_encode_utf8);
+    code.add(0);// memory
+    code.add(0);// ?
+    code.add(1/*utf8*/);// encoding 0:wtf 1:utf8 2:utf16 3:utf32
+    code.addOpcode(drop);// string_encode_utf8 returns the number of bytes written, we don't need it
+//    code.addOpcode(get_global);
+    code.addConst32(data_index_end);// heap_end
+    data_index_end += 100;// lol
+    return code;
+
 }
 
 
@@ -3167,9 +3192,9 @@ Code &emit(Node &root_ast) {
                 + Code(moduleVersion, 4)
                 + typeSection1
                 + importSection1
-                + emitStringSection() // wasm stringref table
                 + funcTypeSection1 // signatures
                 + memorySection1 // Wasm MVP can only define one memory per module WHERE?
+                + emitStringSection() // wasm stringref table
                 + globalSection1
                 + exportSection1
                 + codeSection1 // depends on importSection, yields data for funcTypeSection!
