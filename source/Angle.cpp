@@ -48,7 +48,6 @@ Map<int64, bool> analyzed = {.capacity=1000};// avoid duplicate analysis (of if/
 //Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 //Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 
-Map<String /*name*/, Valtype> globalTypes;
 Map<String, Global> globals;
 //List<Global> globalVariables;
 
@@ -597,7 +596,7 @@ Node &constructInstance(Node &node, Function &function) {
 //        /* todo what is this??  test-tuple: func(other: list<u8>, test-struct: test-struct, other-enum: test-enum) -> tuple<string, s64>
 
     node.type = &type;// point{1 2} => Point(1,2)
-    check_eq_or(node.length, type.length, error("field count mismatch"));
+    check_eq_or(node.length, type.length, "field count mismatch");
     node.kind = constructor;
 
     for (int i = 0; i < node.length; ++i) {

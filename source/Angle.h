@@ -59,8 +59,6 @@ extern Map<String, Global> globals; // access from Angle!
 
 void addGlobal(Node &node);
 
-extern Map<String /*name*/, Valtype> globalTypes;
-
 Node &groupWhile(Node &n, Function &context);
 
 bool isPrimitive(Node &node);
