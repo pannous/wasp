@@ -1123,12 +1123,15 @@ Code emitString(Node &node, Function &context) {
 Code emitGetGlobal(Node &node /* context : global ;) */) {
     Code code;
     String &name = node.first().name;
+    auto global = globals[name];
     int i = globals.position(name);
     if (i < 0)error("cant find global with name "s + name);
     if (i > globals.size())error("invalid index for global with name "s + name);
+    check_eq_or(i, global.index, "global index mismatch")
+    check_eq_or(global.name, name, "global name mismatch")
     code.addByte(global_get);
     code.addByte(i);
-    last_type = globalTypes.values[i];
+    last_type = global.type;
     return code;
 }
 
@@ -2823,15 +2826,18 @@ Code emitGlobalSection() {
 //	last_type = int32;
     for (int i = 0; i < global_user_count; i++) {
         String global_name = globals.keys[i];
-        Node *global_node = globals.values[i].value;
+        Global global = globals.values[i];
+        Node *global_node = global.value;
+        check_eq_or(global.index, i, "global index mismatch")
+        check_eq_or(global.name, global_name, "global name mismatch")
         if (not global_node) {
             warn("missing value for global "s + global_name);
             global_node = new Node();// dummy
         }
-        if ((*global_node)["import"])continue;
+        if (global.is_import or (*global_node)["import"])continue;
 //		Type type = global_node->kind;
         Valtype valtype = mapTypeToWasm(*global_node);
-        globalTypes.insert_or_assign(global_name, valtype);
+        check(globals[global_name].type == mapType(*global_node));
         globalsList.addByte(valtype);
         globalsList.addByte(0);// 1:mutable todo: default? not π ;)
         // expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
