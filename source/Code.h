@@ -1146,6 +1146,7 @@ public:
 
 
 struct Local { // todo: use
+//    bool is_global;
     bool is_param; // function arguments and locals share same index space, but are emitted differently
     int position; // also implicit in Function{ List<Local> locals;}
     String name;
