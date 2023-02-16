@@ -166,6 +166,7 @@ Node interpret(String code) {
 
 
 #ifndef RUNTIME_ONLY
+
 Code &compile(String code, bool clean = true);// exposed to wasp.js
 #endif
 
@@ -1393,7 +1394,7 @@ Function *use_required(Function *function) {
 List<String> aliases(String name) {
 
     List<String> found;
-    #if MY_WASM
+#if MY_WASM
     return found;
 #endif
 //	switch (name) // statement requires expression of integer type
@@ -1413,16 +1414,19 @@ List<String> aliases(String name) {
         found.add("_Z5atoi0PKc");
     }
     if (name == "concat") {// todo: programmatic!
-        found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
+        if (not use_wasm_strings)
+            found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
     }
     if (name == "+") {
         found.add("add");
         found.add("plus");
         found.add("concat");
-        found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
+        if (not use_wasm_strings)
+            found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
     }
     if (name == "eq") {
-        found.add("_Z2eqPKcS0_i"); // eq(char const*, char const*, int)
+        if (not use_wasm_strings)
+            found.add("_Z2eqPKcS0_i"); // eq(char const*, char const*, int)
 //        found.add("_Z2eqR6StringPKc"); // eq(String&, char const*)
     }
     if (name == "=") {
