@@ -583,16 +583,16 @@ namespace wabt {
 					break;
 				}
 
-				case Opcode::End:
-					return Result::Ok;
+                case Opcode::End:
+                    return Result::Ok;
 
-				default:
-					return ReportUnexpectedOpcode(opcode, "in value expression");
-			}
+                default:
+                    return ReportUnexpectedOpcode(opcode, "in initializer expression");
+            }
 
-			if (required == Type::I32 && opcode != Opcode::I32Const &&
-			    opcode != Opcode::GlobalGet) {
-				PrintError("expected i32 init_expr");
+            if (required == Type::I32 && opcode != Opcode::I32Const &&
+                opcode != Opcode::GlobalGet) {
+                PrintError("expected i32 init_expr");
                 return Result::Error;
             }
             if (required == Type::I64 && opcode != Opcode::I64Const &&
@@ -603,7 +603,7 @@ namespace wabt {
 
             CHECK_RESULT(ReadOpcode(&opcode, "opcode"));
             ERROR_UNLESS(opcode == Opcode::End,
-                         "expected END opcode after value expression");
+                         "expected END opcode after initializer expression");
             return Result::Ok;
         }
 
@@ -1682,7 +1682,7 @@ namespace wabt {
 					case Opcode::MemoryInit: {
                         Index segment;
                         ERROR_IF(data_count_ == kInvalidIndex,
-                                 "memory.value requires data count section");
+                                 "memory.init requires data count section");
                         CHECK_RESULT(ReadIndex(&segment, "elem segment index"));
                         uint8_t reserved;
                         CHECK_RESULT(ReadU8(&reserved, "reserved memory index"));
