@@ -2707,8 +2707,6 @@ void todos() {
     assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
     assert_throws("i*=3");// well:
     assert_emit("i*=3", (int64) 0);
-    globals.setDefault(new Node());
-    globals["y"] = new Node();
     // todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
     assert_throws("ceiling 3.7");
     // default bug!

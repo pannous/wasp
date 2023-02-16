@@ -181,7 +181,7 @@ void parseImportNames(Code &payload) {// and TYPES!
         int type = unsignedLEB128(payload);// i32 … for globals
         if (kind == 3 /*global import*/ ) {
             bool is_mutable = unsignedLEB128(payload);
-            Global global{i, name1, (Valtype) type, is_mutable, true, false};
+            Global global{i, name1, (Valtype) type,/*todo value*/0, is_mutable, true, false};
             module->globals.add(global);
             continue;
         }
