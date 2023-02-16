@@ -587,25 +587,25 @@ namespace wabt {
 					return Result::Ok;
 
 				default:
-					return ReportUnexpectedOpcode(opcode, "in initializer expression");
+					return ReportUnexpectedOpcode(opcode, "in value expression");
 			}
 
 			if (required == Type::I32 && opcode != Opcode::I32Const &&
 			    opcode != Opcode::GlobalGet) {
 				PrintError("expected i32 init_expr");
-				return Result::Error;
-			}
-			if (required == Type::I64 && opcode != Opcode::I64Const &&
-			    opcode != Opcode::GlobalGet) {
-				PrintError("expected i64 init_expr");
-				return Result::Error;
-			}
+                return Result::Error;
+            }
+            if (required == Type::I64 && opcode != Opcode::I64Const &&
+                opcode != Opcode::GlobalGet) {
+                PrintError("expected i64 init_expr");
+                return Result::Error;
+            }
 
-			CHECK_RESULT(ReadOpcode(&opcode, "opcode"));
-			ERROR_UNLESS(opcode == Opcode::End,
-			             "expected END opcode after initializer expression");
-			return Result::Ok;
-		}
+            CHECK_RESULT(ReadOpcode(&opcode, "opcode"));
+            ERROR_UNLESS(opcode == Opcode::End,
+                         "expected END opcode after value expression");
+            return Result::Ok;
+        }
 
 		Result BinaryReader::ReadTable(Type *out_elem_type, Limits *out_elem_limits) {
 			CHECK_RESULT(ReadRefType(out_elem_type, "table elem type"));
@@ -1680,17 +1680,17 @@ namespace wabt {
 					}
 
 					case Opcode::MemoryInit: {
-						Index segment;
-						ERROR_IF(data_count_ == kInvalidIndex,
-						         "memory.init requires data count section");
-						CHECK_RESULT(ReadIndex(&segment, "elem segment index"));
-						uint8_t reserved;
-						CHECK_RESULT(ReadU8(&reserved, "reserved memory index"));
-						ERROR_UNLESS(reserved == 0, "reserved value must be 0");
-						CALLBACK(OnMemoryInitExpr, segment);
-						CALLBACK(OnOpcodeUint32Uint32, segment, reserved);
-						break;
-					}
+                        Index segment;
+                        ERROR_IF(data_count_ == kInvalidIndex,
+                                 "memory.value requires data count section");
+                        CHECK_RESULT(ReadIndex(&segment, "elem segment index"));
+                        uint8_t reserved;
+                        CHECK_RESULT(ReadU8(&reserved, "reserved memory index"));
+                        ERROR_UNLESS(reserved == 0, "reserved value must be 0");
+                        CALLBACK(OnMemoryInitExpr, segment);
+                        CALLBACK(OnOpcodeUint32Uint32, segment, reserved);
+                        break;
+                    }
 
 					case Opcode::DataDrop:
 						ERROR_IF(data_count_ == kInvalidIndex,

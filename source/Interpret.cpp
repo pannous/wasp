@@ -243,12 +243,12 @@ Node Node::apply_op(Node left, Node op0, Node right) {
     }
     if (left.kind == reference) {
         if (globals.has(left.name))
-            left = *globals[left.name];
+            left = *globals[left.name].value;
     }
 
     if (right.kind == reference) {
         if (globals.has(right.name))
-            right = *globals[right.name];
+            right = *globals[right.name].value;
     }
 
 //	if(right.length==0 and op0.param){

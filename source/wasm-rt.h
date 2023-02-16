@@ -391,7 +391,7 @@ void wasm_rt_free_externref_table(wasm_rt_externref_table_t *);
 
 /**
  * Grow a Table object by `delta` elements (giving the new elements the value
- * `init`), and return the previous element count. If this new element count is
+ * `value`), and return the previous element count. If this new element count is
  * greater than the maximum element count, the grow fails and 0xffffffffu
  * (UINT32_MAX) is returned instead.
  */

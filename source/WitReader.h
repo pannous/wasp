@@ -213,7 +213,8 @@ class WitReader {
 #ifndef RUNTIME_ONLY
             addGlobal(field);
             String &namespaced = enuma.name + "." + field.name;
-            globals.add(namespaced, &field);// options.ok vs result.ok … to avoid name clashing
+            globals.add(namespaced, Global{globals.count(), field.name, mapType(field),
+                                           &field});// options.ok vs result.ok … to avoid name clashing
 #endif
         }
         trace("\nwit enum/flags/option/variant:");

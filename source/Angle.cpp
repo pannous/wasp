@@ -48,9 +48,9 @@ Map<int64, bool> analyzed = {.capacity=1000};// avoid duplicate analysis (of if/
 //Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 //Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 
-Map<String, Node * /* modifiers/values/init expressions! */> globals; // access from Angle!
 Map<String /*name*/, Valtype> globalTypes;
-//List<Variable> globalVariables;
+Map<String, Global> globals;
+//List<Global> globalVariables;
 
 short arrayElementSize(Node &node);
 
@@ -761,7 +761,8 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     if (setter_operators.has(name) or key_pair_operators.has(name)) {
         body = analyze(body, function);
         if (arguments.has("global"))
-            globals.insert_or_assign(name, body.clone());
+            globals.insert_or_assign(name, Global{.index=globals.count(), .name=name, .type=mapType(
+                    body.type), .value=body.clone()});
         return groupSetter(name, body, function);
     }
 
@@ -1067,9 +1068,9 @@ Node &groupOperators(Node &expression, Function &context) {
                     if (prev.kind != reference)error("only references can be assigned global (::=)"s + var);
 //					if(function.locals.has(prev.name))error("global already known as local "s +prev.name);// let's see what happens;)
                     if (globals.has(var))error("global already set "s + var);// todo reassign ok if …
-//					globals[prev.name] = &next;// don't forget to emit next as init expression!
-                    globals[var] = next.clone();// don't forget to emit next as init expression!
-                    // globalTypes[] set in globalSection, after emitExpression
+                    globals.add(var, Global{.index=globals.size(), .name=var, .type=unknown, .value=next.clone()});
+                    // type set in globalSection, after emitExpression
+                    // don't forget to emit
                 } else if (op.length > 1 and op.endsWith("=") and op[0] != ':')
                     // Complicated way to express *= += -= … self assignments
                     if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and op[0] != '>') {
@@ -1775,10 +1776,10 @@ void addGlobal(Node &node) {
     String &name = node.name;
     if (reserved_keywords.has(name) or contains(import_keywords, name))
         error("Can't add reserved keyword "s + name);
-    if (not globals.has(name))
-        globals.add(name, node.clone());
-    else {
-        warn("global %s already a registered symbol: %o "s % name % *globals[name]);
+    if (not globals.has(name)) {
+        globals.add(name, Global{/*id*/globals.count(), name, mapType(node.type), node.clone(), /*mutable=*/ true});
+    } else {
+        warn("global %s already a registered symbol: %o "s % name % globals[name].value);
     }
 }
 

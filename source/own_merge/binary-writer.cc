@@ -932,14 +932,14 @@ namespace wabt {
 					WriteU32Leb128(stream_, 0, "memory.grow reserved");
 					break;
 				case ExprType::MemoryInit: {
-					Index index =
-							module_->GetDataSegmentIndex(cast<MemoryInitExpr>(expr)->var);
-					WriteOpcode(stream_, Opcode::MemoryInit);
-					WriteU32Leb128(stream_, index, "memory.init segment");
-					WriteU32Leb128(stream_, 0, "memory.init reserved");
-					has_data_segment_instruction_ = true;
-					break;
-				}
+                    Index index =
+                            module_->GetDataSegmentIndex(cast<MemoryInitExpr>(expr)->var);
+                    WriteOpcode(stream_, Opcode::MemoryInit);
+                    WriteU32Leb128(stream_, index, "memory.value segment");
+                    WriteU32Leb128(stream_, 0, "memory.value reserved");
+                    has_data_segment_instruction_ = true;
+                    break;
+                }
 				case ExprType::MemorySize:
 					WriteOpcode(stream_, Opcode::MemorySize);
 					WriteU32Leb128(stream_, 0, "memory.size reserved");
@@ -961,15 +961,15 @@ namespace wabt {
 					break;
 				}
 				case ExprType::TableInit: {
-					auto *init_expr = cast<TableInitExpr>(expr);
-					Index table_index = module_->GetTableIndex(init_expr->table_index);
-					Index segment_index =
-							module_->GetElemSegmentIndex(init_expr->segment_index);
-					WriteOpcode(stream_, Opcode::TableInit);
-					WriteU32Leb128(stream_, segment_index, "table.init segment");
-					WriteTableNumberWithReloc(table_index, "table.init table");
-					break;
-				}
+                    auto *init_expr = cast<TableInitExpr>(expr);
+                    Index table_index = module_->GetTableIndex(init_expr->table_index);
+                    Index segment_index =
+                            module_->GetElemSegmentIndex(init_expr->segment_index);
+                    WriteOpcode(stream_, Opcode::TableInit);
+                    WriteU32Leb128(stream_, segment_index, "table.value segment");
+                    WriteTableNumberWithReloc(table_index, "table.value table");
+                    break;
+                }
 				case ExprType::TableGet: {
 					Index index =
 							module_->GetTableIndex(cast<TableGetExpr>(expr)->var);

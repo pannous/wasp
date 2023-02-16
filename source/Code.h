@@ -1145,6 +1145,16 @@ public:
 };
 
 
+struct Global {
+    int index = -1;// always set!
+    String name;
+    Type type = unknown;
+    Node *value; // expression
+    bool is_mutable = true;// default!
+    bool is_import = false;
+    bool is_export = true;
+};
+
 struct Local { // todo: use
 //    bool is_global;
     bool is_param; // function arguments and locals share same index space, but are emitted differently

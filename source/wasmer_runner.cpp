@@ -257,11 +257,11 @@ wasm_extern_t *link_imports2() {
 }
 
 wasm_extern_t *link_global() {
-	wasm_val_t val = WASM_I32_VAL(1);// init value or ID?
-	own wasm_globaltype_t *global_type = wasm_globaltype_new(wasm_valtype_new_i32(), WASM_CONST);
-	own wasm_global_t *global = wasm_global_new(store, global_type, &val);
-	wasm_globaltype_delete(global_type);
-	return wasm_global_as_extern(global);
+    wasm_val_t val = WASM_I32_VAL(1);// value value or ID?
+    own wasm_globaltype_t *global_type = wasm_globaltype_new(wasm_valtype_new_i32(), WASM_CONST);
+    own wasm_global_t *global = wasm_global_new(store, global_type, &val);
+    wasm_globaltype_delete(global_type);
+    return wasm_global_as_extern(global);
 }
 
 void init_wasmer() {
