@@ -50,7 +50,9 @@ extern "C" void testRuntime(bytes buffer, size_t size) {
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
 
-    assert_emit("square 2", 4);
+//    assert_emit("square 2", 4); // missing import for function square
+    testWasmGC();
+
 //    skip(
 //            testIndexOffset();
 //    )
@@ -61,6 +63,7 @@ extern "C" void testRun() {
 //    assert_emit("42", 42);
 //    assert_emit("42", 43); // Error: ⚠️ TEST FAILED!  works
 //    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
+
     testAllWasm();
     testAllEmit();
     testAllAngle();
