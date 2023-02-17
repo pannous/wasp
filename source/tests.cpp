@@ -3032,6 +3032,22 @@ void tests() {
     // todo: split in test_wasp test_angle test_emit.cpp
 }
 
+void testWasmGC() {
+    use_wasm_reference_types = true;
+    use_wasm_strings = true;
+//    use_wasm_reference_types = false;
+//    use_wasm_strings = false;
+
+    assert_emit("'abcd'", "abcd");
+    assert_emit("'ab'+'cd'=='abcd'", 1);
+    assert_emit("abcde='fghij';42", 42);
+    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
+//    assert_emit("abcd='fghij';#abcd", 5);
+//    assert_emit("abcde='fghij'", "fghij"); // main can't return stringrefs!
+
+//    exit(0);
+}
+
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
@@ -3041,25 +3057,16 @@ void testCurrent() {
     skip(
             assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
     )
-    use_wasm_reference_types = true;
-    use_wasm_strings = true;
-//    use_wasm_reference_types = false;
-//    use_wasm_strings = false;
-    assert_emit("abcde='fghij';42", 42);
-    exit(0);
-//    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
-//    exit(0);
-//    assert_emit("'ab'+'cd'=='abcd'", 1);
-
-//    assert_emit("abcd='fghij';#abcd", 5);
-//    assert_emit("abcde='fghij'", "fghij"); // main can't return stringrefs!
-
+#if not WASM
+    testWasmGC();
+#endif
 //    testRenameWasmFunction();
 //    testStruct();
 //    tests();// make sure all still ok before changes
 //    todos();
     tests();// make sure all still ok after messing with memory
 #if not WASM
+
     testAngle();// fails in WASM why?
     testMergeGlobal();
     testAllWasm();

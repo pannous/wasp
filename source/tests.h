@@ -7,3 +7,5 @@ void testAllEmit();
 void testAllWasm();
 
 void testAllAngle();
+
+void testWasmGC();
