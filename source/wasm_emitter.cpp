@@ -1867,10 +1867,10 @@ Code emitWhile(Node &node, Function &context) {
 
     code.addByte(br_branch);
     code.addByte(1);
-    code.addByte(end_block);// end if condition then action
+    code.addByte(end_block);// end if block
     if (loop_type == none and last_type == i32)
         code.addByte(drop);//hack for nop todo
-    // else type should fall through
+    // else fall through
     code.addByte(end_block);// end while loop
     last_type = loop_type;
 //	int block_value= 0;// todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
@@ -1972,6 +1972,40 @@ Code emitCall(Node &fun, Function &context) {
     return code;
 }
 
+
+Code stringRefLength() {
+    Code code;
+//    code.addOpcode(string_measure_utf8);
+    code.addOpcode(string_measure_wtf8);
+    code.add(1);// memory?
+    code.add(1);// encoding 0:utf8 1:wtf8  2:utf16 3:utf32 // todo why is utf8 'unreachable'?
+    last_type = i64;
+    code.addOpcode((i64_extend_i32_s));
+    return code;
+}
+
+
+Code castStringToRef() {
+    Code code;
+    return code;
+}
+
+Code castRefToChars() {
+    Code code;
+    // expects stringref on stack
+    code.addConst32(data_index_end);// heap_end
+//  (string.encode_utf8 $memory $? $encoding (stack: $stref $heap_end)
+    code.addOpcode(string_encode_wtf8);
+    code.add(1/*wtf8*/);// encoding 0:wtf 1:utf8 2:utf16 3:utf32
+    code.add(0);// memory
+    code.addOpcode(drop);// string_encode_utf8 returns the number of bytes written, we don't need it
+    code.addConst32(data_index_end);// heap_end
+    data_index_end += 100;// lol
+    last_type = charp;
+    return code;
+}
+
+
 [[nodiscard]]
 Code cast(Valtype from, Valtype to) {
     Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
@@ -2018,35 +2052,12 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==i64 and to==f64)	return Code(f64_reinterpret_i64);
     if (from == i64 and to == float32) return Code(f64_convert_i64_s).addByte(f32_from_f64);
 
+//    if (from == string_ref and to == i64)return stringRefLength();
+    if (from == string_ref and to == i64)return castRefToChars();
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
     error("incompatible valtypes "s + typeName(from) + " => " + typeName(to));
     return nop;
-}
-
-Code castStringToRef() {
-    Code code;
-    return code;
-}
-
-
-Code castRefToChars() {
-    Code code;
-//  (string.measure_utf8 local.get $stref)
-//  (string.encode_utf8 $memory $? $encoding (stack: $stref $heap_end)
-
-    // expects stringref on stack
-    code.addConst32(data_index_end);// heap_end
-    code.addOpcode(string_encode_utf8);
-    code.add(0);// memory
-    code.add(0);// ?
-    code.add(1/*utf8*/);// encoding 0:wtf 1:utf8 2:utf16 3:utf32
-    code.addOpcode(drop);// string_encode_utf8 returns the number of bytes written, we don't need it
-//    code.addOpcode(get_global);
-    code.addConst32(data_index_end);// heap_end
-    data_index_end += 100;// lol
-    return code;
-
 }
 
 
@@ -2375,7 +2386,9 @@ Code emitBlock(Node &node, Function &context) {
             last_type = i64;
         }
 //		block.addConst32(array_header_32).addByte(i32_or); // todo: other arrays
-        else if (last_type.kind == strings or last_type.type == c_string or last_type == charp) { //
+        else if (last_type.kind == strings or last_type.type == c_string or last_type == charp or
+                 last_type == string_ref) { //
+            if (last_type == string_ref)block += castRefToChars();
             block.addByte(i64_extend_i32_u);
             block.addConst64(string_header_64);
             block.addByte(i64_or);

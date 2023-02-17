@@ -235,6 +235,10 @@ public:
         return *this;
     }
 
+    Code &nop() {
+        return add(0x01);
+    }
+
     Code &addOpcode(unsigned short opcode) {
         // todo: append to last byte if possible
         if (opcode < 0x100)
