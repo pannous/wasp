@@ -4,6 +4,9 @@
 #include "wasm_runner.h"
 #include "Util.h"
 #include "Node.h"
+//#include <host/wasi/wasimodule.h>
+//#include <host/wasmedge_process/processmodule.h>
+
 //#include <stdio.h>
 // gcc wasmedge_runner.cpp -lwasmedge -o test_wasmedge
 
@@ -71,11 +74,22 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
 
     /* Create the configure context and add the WASI support. */
     /* This step is not necessary unless you need WASI support. */
-    WasmEdge_ConfigureContext *ConfCxt = WasmEdge_ConfigureCreate();
-    WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
+    WasmEdge_ConfigureContext *conf = WasmEdge_ConfigureCreate();
+    WasmEdge_ConfigureAddHostRegistration(conf, WasmEdge_HostRegistration_Wasi);
+
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_BulkMemoryOperations);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_FunctionReferences);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ReferenceTypes);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Annotations);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ImportExportMutGlobals);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiValue);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiMemories);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ExtendedConst);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ExceptionHandling);
+
 //    Proposal::ReferenceTypes
     /* The configure and store context to the VM creation can be NULL. */
-    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(ConfCxt, NULL);
+    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(conf, NULL);
 //    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(0, 0); // no wasi
 
 

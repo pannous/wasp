@@ -24,8 +24,6 @@
 
 #endif
 
-//bool eq(int i,int j){return i==j;}// for List.has => eq
-
 //The template definition (the cpp file in your code) has to be included prior to instantiating a given template class
 template<class S>
 void heapSort(S arr[], int n, bool (comparator)(S &, S &));
@@ -35,107 +33,6 @@ void heapSort(S arr[], int n, float (valuator)(S &));
 
 template<class S>
 void heapSort(S arr[], int n);
-
-
-//inline
-template<class S>
-void swap2(S *a, S *b) {
-    // todo!!!
-//#if SORTING
-    S c = *a;
-    *a = *b;
-    *b = c;
-//#endif
-}
-
-
-template<class S>
-void heapify(S arr[], int n, int i) {
-    int largest = i; // Initialize largest as root
-    int l = 2 * i + 1; // left = 2*i + 1
-    int r = 2 * i + 2; // right = 2*i + 2
-    // If left child is larger than root
-    if (l < n && arr[l] > arr[largest])
-        largest = l;
-    // If right child is larger than largest so far
-    if (r < n && arr[r] > arr[largest])
-        largest = r;
-    // If largest is not root
-    if (largest != i) {
-        swap2(&arr[i], &arr[largest]);
-        // Recursively heapify the affected sub-tree
-        heapify(arr, n, largest);
-    }
-}
-
-template<class S>
-void heapify(S arr[], int n, int i, float (valuator)(S &)) {
-    int largest = i; // Initialize largest as root
-    int l = 2 * i + 1; // left = 2*i + 1
-    int r = 2 * i + 2; // right = 2*i + 2
-    // If left child is larger than root
-    if (l < n && valuator(arr[l]) > valuator(arr[largest]))
-        largest = l;
-    // If right child is larger than largest so far
-    if (r < n && valuator(arr[r]) > valuator(arr[largest]))
-        largest = r;
-    // If largest is not root
-    if (largest != i) {
-        swap2(&arr[i], &arr[largest]);
-        // Recursively heapify the affected sub-tree
-        heapify(arr, n, largest, valuator);
-    }
-}
-
-
-template<class S>
-void heapify(S arr[], int n, int i, bool (comparator)(S &, S &)) {
-    int largest = i; // Initialize largest as root
-    int l = 2 * i + 1; // left = 2*i + 1
-    int r = 2 * i + 2; // right = 2*i + 2
-    if (l < n && comparator(arr[l], arr[largest]))
-        largest = l;
-    if (r < n && comparator(arr[r], arr[largest]))
-        largest = r;
-    if (largest != i) {
-        swap2(&arr[i], &arr[largest]);
-        heapify(arr, n, largest, comparator);
-    }
-}
-
-
-template<class S>
-void heapSort(S arr[], int n) {
-    for (int i = n / 2 - 1; i >= 0; i--)
-        heapify(arr, n, i);
-    // One by one extract an element from heap
-    for (int i = n - 1; i > 0; i--) {
-        // Move current root to end
-        swap2(&arr[0], &arr[i]);
-        // call max heapify on the reduced heap
-        heapify(arr, i, 0);
-    }
-}
-
-template<class S>
-void heapSort(S arr[], int n, float (valuator)(S &)) {
-    for (int i = n / 2 - 1; i >= 0; i--)
-        heapify(arr, n, i, valuator);
-    for (int i = n - 1; i > 0; i--) {
-        swap2(&arr[0], &arr[i]);
-        heapify(arr, i, 0, valuator);
-    }
-}
-
-template<class S>
-void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
-    for (int i = n / 2 - 1; i >= 0; i--)
-        heapify(arr, n, i, comparator);
-    for (int i = n - 1; i > 0; i--) {
-        swap2(&arr[0], &arr[i]);
-        heapify(arr, i, 0, comparator);
-    }
-}
 
 
 // ⚠️ references to List items are NOT safe during list construction due to List::grow()  ( invalid / forbidden )
@@ -600,6 +497,112 @@ struct ListNode : ListBase<T> {
 template<typename T>
 struct LinkedList : ListNode<T> {
 };
+
+
+//bool eq(int i,int j){return i==j;}// for List.has => eq
+
+
+
+
+//inline
+template<class S>
+void swap2(S *a, S *b) {
+    // todo!!!
+//#if SORTING
+    S c = *a;
+    *a = *b;
+    *b = c;
+//#endif
+}
+
+
+template<class S>
+void heapify(S arr[], int n, int i) {
+    int largest = i; // Initialize largest as root
+    int l = 2 * i + 1; // left = 2*i + 1
+    int r = 2 * i + 2; // right = 2*i + 2
+    // If left child is larger than root
+    if (l < n && arr[l] > arr[largest])
+        largest = l;
+    // If right child is larger than largest so far
+    if (r < n && arr[r] > arr[largest])
+        largest = r;
+    // If largest is not root
+    if (largest != i) {
+        swap2(&arr[i], &arr[largest]);
+        // Recursively heapify the affected sub-tree
+        heapify(arr, n, largest);
+    }
+}
+
+template<class S>
+void heapify(S arr[], int n, int i, float (valuator)(S &)) {
+    int largest = i; // Initialize largest as root
+    int l = 2 * i + 1; // left = 2*i + 1
+    int r = 2 * i + 2; // right = 2*i + 2
+    // If left child is larger than root
+    if (l < n && valuator(arr[l]) > valuator(arr[largest]))
+        largest = l;
+    // If right child is larger than largest so far
+    if (r < n && valuator(arr[r]) > valuator(arr[largest]))
+        largest = r;
+    // If largest is not root
+    if (largest != i) {
+        swap2(&arr[i], &arr[largest]);
+        // Recursively heapify the affected sub-tree
+        heapify(arr, n, largest, valuator);
+    }
+}
+
+
+template<class S>
+void heapify(S arr[], int n, int i, bool (comparator)(S &, S &)) {
+    int largest = i; // Initialize largest as root
+    int l = 2 * i + 1; // left = 2*i + 1
+    int r = 2 * i + 2; // right = 2*i + 2
+    if (l < n && comparator(arr[l], arr[largest]))
+        largest = l;
+    if (r < n && comparator(arr[r], arr[largest]))
+        largest = r;
+    if (largest != i) {
+        swap2(&arr[i], &arr[largest]);
+        heapify(arr, n, largest, comparator);
+    }
+}
+
+
+template<class S>
+void heapSort(S arr[], int n) {
+    for (int i = n / 2 - 1; i >= 0; i--)
+        heapify(arr, n, i);
+    // One by one extract an element from heap
+    for (int i = n - 1; i > 0; i--) {
+        // Move current root to end
+        swap2(&arr[0], &arr[i]);
+        // call max heapify on the reduced heap
+        heapify(arr, i, 0);
+    }
+}
+
+template<class S>
+void heapSort(S arr[], int n, float (valuator)(S &)) {
+    for (int i = n / 2 - 1; i >= 0; i--)
+        heapify(arr, n, i, valuator);
+    for (int i = n - 1; i > 0; i--) {
+        swap2(&arr[0], &arr[i]);
+        heapify(arr, i, 0, valuator);
+    }
+}
+
+template<class S>
+void heapSort(S arr[], int n, bool (comparator)(S &, S &)) {
+    for (int i = n / 2 - 1; i >= 0; i--)
+        heapify(arr, n, i, comparator);
+    for (int i = n - 1; i > 0; i--) {
+        swap2(&arr[0], &arr[i]);
+        heapify(arr, i, 0, comparator);
+    }
+}
 
 
 #endif //WASP_LIST_H
