@@ -259,10 +259,11 @@ public:
     int position(S s) {
         for (int i = 0; i < size_; ++i) {
             if (items[i] == s)return i;
-            if (eq(items[i], s))return i;// char*
+            if (eq(items[i], s))return i;// needs to be defined for all S
         }
         return -1;
     }
+
 
     int position(S *s) {
         if (!s)return -1;// don't allow null pointer!
@@ -441,9 +442,13 @@ public:
 
     bool shared = false;
 
-    S& at(int i){
-        if (i<0 or i>=size_)error("out of bounds");
+    S &at(int i) {
+        if (i < 0 or i >= size_)error("out of bounds");
         return items[i];
+    }
+
+    int indexOf(S &item) {
+        return position(&item);
     }
 };
 

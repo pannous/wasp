@@ -1,17 +1,16 @@
-//#include <wasmedge/wasmedge.h>
-#include <cstdio>
-#include "wasmedge.h"
+#include <wasmedge/wasmedge.h>
+//#include "wasmedge.h"
 #include "wasm_runner.h"
 #include "Util.h"
 #include "Node.h"
+#include <cstdio>
 //#include <host/wasi/wasimodule.h>
 //#include <host/wasmedge_process/processmodule.h>
 
-//#include <stdio.h>
 // gcc wasmedge_runner.cpp -lwasmedge -o test_wasmedge
 
 // supports externref threads …
-//https://wasmedge.org/book/en/sdk/c.html
+// https://wasmedge.org/book/en/sdk/c.html
 // https://wasmedge.org/book/en/sdk/c/externref.html
 
 #define VMCxt context
@@ -86,6 +85,11 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiMemories);
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ExtendedConst);
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ExceptionHandling);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_TailCall);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Memory64);
+//    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Threads);
+//    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_SIMD);
+
 
 //    Proposal::ReferenceTypes
     /* The configure and store context to the VM creation can be NULL. */

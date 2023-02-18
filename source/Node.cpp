@@ -894,8 +894,9 @@ chars Node::serializeValue(bool deep) const {
             return "";
         case kind_padding:
             error("kind_padding is not a Kind");
-        case wasm_type_struct:
-            return name;
+//        case wasmtype_struct:
+//        case wasmtype_array:
+//            return name;
         case number:
         default:
             breakpoint_helper

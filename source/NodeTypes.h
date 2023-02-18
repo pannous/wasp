@@ -11,7 +11,6 @@
 //enum Valtype;// forbids forward references to 'enum' types
 class Node;
 
-extern bool use_wasm_strings;
 typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
 
 // todo move these to ABI.h once it is used:
@@ -76,9 +75,9 @@ enum Valtype {
     void_block = 0x40, // ⚠️
     none = 0x40, // NOT voids!!!
 
-// extensions
-    wasm_struct = 0x6b, // plus type id! vs 0xfb… for functions struct.new struct.get …
-    ref = wasm_struct,
+    ref = 0x6b, // plus type id! vs 0xfb… for functions struct.new struct.get …  ≠ wasmtype_struct 0x5f
+    wasm_array = ref, // 0x6b ≠ wasmtype_array = 0x5e in type section
+    wasm_struct = ref, // 0x6b ≠ wasmtype_struct = 0x5f in type section
     anyref = 0x6f,// was conceptually and namewise merged into externref
     externref = 0x6f, // -0x11
     funcref = 0x70, // -0x10
@@ -194,7 +193,9 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     modul,// module, interface, resource, world, namespace, library, package ≈ class …
     nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
     number = 0x70, // SmartNumber or Number* as SmartPointer? ITS THE SAME!
-    wasm_type_struct = 0x6b /* ⚠️ PLUS stuct ID! */, // opcodes 0xFB…
+//    wasmtype_struct = 0x6b /* ⚠️ PLUS stuct ID! */, // opcodes 0xFB…
+//    wasmtype_array = 0xfb1a,
+
     structs = 0x77, // TODO BEWARE OF OVERLAP with primitives! :
     reals = 0x7C, /*  ≠ float64 , just hides bugs, these concepts should not be mixed */
     realsF = 0x7D,/*  ≠ float32 , just hides bugs, these concepts should not be mixed */
@@ -226,7 +227,10 @@ enum Primitive {
     unknown_type = 0,// defaults to int64!
     missing_type = 0x40,// well defined
     nulls = 0x40, // ≠ undefined
-    wasm_type = 0x6b, /* ⚠️ PLUS stuct ID! */ // opcodes 0xFB…
+    wasm_type = 0x6b, /* ⚠️ PLUS stuct type ID! */
+    wasm_ref = 0x6b,  /* ⚠️ PLUS ref type ID! */
+    wasmtype_struct = 0x5f, // as in type section
+    wasmtype_array = 0x5e, // as in type section
     wasm_leb = 0x77,
     wasm_float64 = 0x7C, // float64
     float_type = wasm_float64,

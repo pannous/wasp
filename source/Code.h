@@ -680,7 +680,7 @@ enum Opcodes {
 
 
 // struct_prefix 0xfb …
-enum struct_ops { // on Valtype wasm_struct = 0x6b,
+enum struct_opcodes { // on Valtype wasm_struct = 0x6b,
     struct_get = (short) 0xfb03, // fb 03 00 00  struct.get $type(0) $field(0) (stack: instance-ref)
     struct_set = 0xfb06, // fb 06 00 00  struct.set $type(0) $mut_field(0) (stack: instance-ref value)
     struct_new = (short) 0xfb07, // fb 07 00  struct.new $type(0)  (stack: params)
@@ -691,18 +691,27 @@ enum struct_ops { // on Valtype wasm_struct = 0x6b,
     structSet = 0xfb06, // struct.set
     structNew = 0xfb07, // struct.new
     structNewDefault = 0xfb08, // struct.new_default
+    //    struct_narrow = 0x0?,
+    //    struct_widen = 0x0?,
+};
+
+enum array_opcodes { // on Valtype wasm_array = 0x…,
     arrayGet = 0xfb13, // array.get
     arrayGetS = 0xfb14, // array.get_s
     arrayGetU = 0xfb15, // array.get_u
     arraySet = 0xfb16, // array.set
     arrayLenDeprecated = 0xfb17, // array.len
-    arrayCopy = 0xfb18, // array.copy") /* not standardized - V8 experimental */
+    arrayCopy = 0xfb18, // array.copy /* not standardized - V8 experimental */
     arrayLen = 0xfb19, // array.len
-    arrayNewFixed = 0xfb1a, // array.new_fixed
+    arrayNewFixed = 0xfb1a, // array.new_fixed  array.new_static in V8!
+    arrayInitStatic = arrayNewFixed, // ^^ array.init_static in V8!
     arrayNew = 0xfb1b, // array.new
     arrayNewDefault = 0xfb1c, // array.new_default
     arrayNewData = 0xfb1d, // array.new_data
     arrayNewElem = 0xfb1f, // array.new_elem
+};
+
+enum reference_opcodes { // on Valtype wasm_i31 = 0x…,
     i31New = 0xfb20, // i31.new
     i31GetS = 0xfb21, // i31.get_s
     i31GetU = 0xfb22, // i31.get_u
@@ -715,9 +724,9 @@ enum struct_ops { // on Valtype wasm_struct = 0x6b,
     refIsData = 0xfb51, // ref.is_data
     refIsI31 = 0xfb52, // ref.is_i31
     refIsArray = 0xfb53, // ref.is_array
-    refAsData = 0xfb59, // ref.as_data
+    refAsData = 0xfb59, // ref.as_data  !!!
     refAsI31 = 0xfb5a, // ref.as_i31
-    refAsArray = 0xfb5b, // ref.as_array
+    refAsArray = 0xfb5b, // ref.as_array !!!
     brOnData = 0xfb61, // br_on_data
     brOnI31 = 0xfb62, // br_on_i31
     brOnArray = 0xfb66, // br_on_array
@@ -726,8 +735,6 @@ enum struct_ops { // on Valtype wasm_struct = 0x6b,
     brOnNonArray = 0xfb67, // br_on_non_array
     externInternalize = 0xfb70, // extern.internalize
     externExternalize = 0xfb71, // extern.externalize
-//    struct_narrow = 0x0?,
-//    struct_widen = 0x0?,
 };
 
 // string_prefix 0xfb (251) …
