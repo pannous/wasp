@@ -3032,16 +3032,21 @@ void tests() {
     // todo: split in test_wasp test_angle test_emit.cpp
 }
 
+
 void testWasmGC() {
-    use_wasm_reference_types = true;
-    use_wasm_strings = true;
-    use_wasm_reference_types = false;
+//    use_wasm_structs = true;
+//    use_wasm_strings = true;
+//    use_wasm_arrays = true;
+    use_wasm_structs = false;
     use_wasm_strings = false;
+    use_wasm_arrays = false;
+//    assert_emit("x=[1 2 3];x[1]", 2);
+//    assert_emit("x=[1 2 3];x[1]=4;x[1]", 4);
+    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
 
     assert_emit("'abcd'", "abcd");
     assert_emit("'ab'+'cd'=='abcd'", 1);
     assert_emit("abcde='fghij';42", 42);
-    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
 //    assert_emit("abcd='fghij';#abcd", 5);
 //    assert_emit("abcde='fghij'", "fghij"); // main can't return stringrefs!
 

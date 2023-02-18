@@ -327,6 +327,13 @@ public: // todo careful Map<char*,…> eq
         return 0;
     }
 
+    bool contains(S key) {
+        return position(key) >= 0;
+    }
+
+    uint get(S key) {
+        return this[key];
+    }
 };
 
 

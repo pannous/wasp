@@ -672,6 +672,12 @@ public:
         return *this;
     }
 
+
+    [[nodiscard]]
+    String &operator+(Type type) {
+        return this->append(typeName(type));
+    }
+
     [[nodiscard]]
     String &operator+(String c) {
         if (c.length <= 0)
