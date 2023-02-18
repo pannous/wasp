@@ -3035,8 +3035,8 @@ void tests() {
 void testWasmGC() {
     use_wasm_reference_types = true;
     use_wasm_strings = true;
-//    use_wasm_reference_types = false;
-//    use_wasm_strings = false;
+    use_wasm_reference_types = false;
+    use_wasm_strings = false;
 
     assert_emit("'abcd'", "abcd");
     assert_emit("'ab'+'cd'=='abcd'", 1);
