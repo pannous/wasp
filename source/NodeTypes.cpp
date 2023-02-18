@@ -60,12 +60,14 @@ Type mapType(Node &arg) {
             return Primitive::type32;
         case arrays:
             return Primitive::array;
+//        case wasmtype_array:
+//            return Primitive::wasmtype_array;
+//        case wasmtype_struct:
+//            return Primitive::wasm_type;
         case enums:
             return Primitive::wasm_int32;
         case flags:
             return Primitive::wasm_int64;
-        case wasm_type_struct:
-            return Primitive::wasm_type;
         case call: {
             auto fun = arg.name;
 //            findLibraryFunction(fun, true); too much here
@@ -305,7 +307,7 @@ chars typeName(Kind t, bool throws) {
             return "generics";
         case clazz:
             return "class";
-        case wasm_type_struct:
+//        case wasmtype_struct:
         case structs:
             return "struct";
         case flags:
@@ -447,6 +449,7 @@ Valtype mapTypeToWasm(Node &n) {
 
 chars typeName(Primitive p) {
     switch (p) {
+        case Primitive::wasmtype_array:
         case Primitive::array:
             return "array";
         case Primitive::charp: // char*
@@ -482,6 +485,7 @@ chars typeName(Primitive p) {
         case any:
             return "any";
         case Primitive::wasm_type:
+        case Primitive::wasmtype_struct:
             return "struct";
         case string_struct:
             return "String";
@@ -574,8 +578,9 @@ chars typeName(Valtype t, bool fail) {
 
 Valtype mapTypeToWasm(Primitive p) {
     switch (p) {
+        case Primitive::wasmtype_struct:
         case Primitive::wasm_type:
-            return wasm_struct;
+            return wasm_struct;//  ⚠️ todo: plus struct type
         case unknown_type: // undefined
         case missing_type: // well defined, but still:
             error("unknown_type in final stage");
@@ -606,6 +611,9 @@ Valtype mapTypeToWasm(Primitive p) {
         case float_array:
         case real_array:
         case array_start:// todo What is the difference?
+        case wasmtype_array:
+            if (use_wasm_arrays)
+                return Valtype::wasm_array; //  ⚠️ todo plus a type!
             return Valtype::wasm_pointer;
         case charp:
             return Valtype::wasm_pointer;

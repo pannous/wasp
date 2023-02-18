@@ -531,15 +531,53 @@ short arrayElementSize(Node &node);
 
 void addTypeFromSize(Node &array, short size);
 
+
+bool eq(Type a, Type b) {
+    return a.value == b.value;
+}
+
+Map<Type, int> arrayTypes;
+
 [[nodiscard]]
+uint arrayTypeIndex(Type value_type) {
+    if (not arrayTypes.contains(value_type)) {
+        auto array_type_name = String(typeName(value_type)) + "s";// int-array -> “ints”
+        Node array_type;
+        addTypeFromSize(array_type, arrayElementSize(array_type)); // todo
+        arrayTypes.add(value_type, types.size());
+        types.add(array_type_name, array_type.clone());
+    }
+    return arrayTypes[value_type];
+}
+
+[[nodiscard]]
+Code emitWasmArray(Node &node, Function &context) {
+    Code code;
+    Type value_type = mapTypeToWasm(node.first()); // todo check all elements are of same type
+    uint type_index = arrayTypeIndex(value_type);
+    auto length = node.size();
+    code.addOpcode(arrayInitStatic);
+    code.addInt(type_index);
+    code.addInt(node.size());
+    for (auto &child: node) {
+        code.addConst32(child.value.longy);
+//        code.addConst64(child.value.longy);
+        // todo : float, string, struct, …
+    }
+    return code;
+}
+
 // todo emitPrimitiveArray vs just emitNode as it is (with child*)
+[[nodiscard]]
 Code emitArray(Node &node, Function &context) {
 //	if (node.kind.type == int_array)
-
 
     if (node.kind == buffers)
         return emitPrimitiveArray(node, context);
     // ⚠️careful primitive array (buffer) ≠ array of primitives, which follows …
+
+    if (use_wasm_arrays)
+        return emitWasmArray(node, context);
 
     List<wasm_node_index> children;
     Kind value_kind = node.first().kind;
@@ -560,9 +598,9 @@ Code emitArray(Node &node, Function &context) {
 //    Primitive smallest_common_type = ::byte_char;// todo bit for bitvectors?
 //    short itemSize=0;// bit vector
     short itemSize = arrayElementSize(node);
-    wasm_node_index typ = 0;
+    wasm_node_index typ_index = 0;
     if (!node.type) /*node.type=*/addTypeFromSize(node, itemSize);
-    if (node.type) typ = emitNodeBinary(*node.type, context);// danger! Byte now lives inside wasm!
+    if (node.type) typ_index = emitNodeBinary(*node.type, context);// danger! Byte now lives inside wasm!
 
     let code = Code();
     emitPaddingAlignment(8);
@@ -574,7 +612,7 @@ Code emitArray(Node &node, Function &context) {
 //    emitIntData(value_kind, false); // only works in homogenous arrays!
     emitIntData(node.length, false);
 //    emitIntData(stack_Item_Size, false);// reduntant via type
-    if (node.type) emitIntData(typ, false);// or node_header_32
+    if (node.type) emitIntData(typ_index, false);// or node_header_32
     else emitIntData(value_kind /*or kind_header_32*/, false);// todo make sure node.type > Kind AS PER Type enum
 
     bool continuous = true;
@@ -856,7 +894,8 @@ Code emitPatternSetter(Node &ref, Node offset, Node value, Function &context) {
 Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_stack, Type element_type) {
     if (op.kind != patterns and op.kind != longs and op.kind != reference)error("op expected in emitIndexPattern");
     if (op.length == 0 and op.kind == reference)return emitGetter(array, op, context);
-    if (op.length != 1 and op.kind != longs)error("exactly one op expected in emitIndexPattern");
+    if (op.length != 1 and op.kind != longs)
+        error("exactly one op expected in emitIndexPattern");
     int base = base_on_stack ? 0 : last_object_pointer + headerOffset(array);// emitting directly without reference
     int size = currentStackItemSize(array, context, element_type);
     Node &pattern = op.first();
@@ -997,6 +1036,8 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
 Code emitData(Node &node, Function &context) {
     String &name = node.name;
     Code code;// POINTER to DATA SEGMENT
+    // (data "\ff\33\01\00")
+    // (data (;1;) (i32.const 10) "⚠️segment# and offset CAN OVERLAP! ⚠️ \00")
     int last_pointer = data_index_end;
     switch (node.kind) {
         case nils:// also 0, false
@@ -1324,7 +1365,7 @@ Code emitAttribute(Node &node, Function &context) {
     Node field = node.last();// NOT ref, we resolve it to index!
     Node &object = node.first();
 
-    if (object.kind == constructor and use_wasm_reference_types) {
+    if (object.kind == constructor and use_wasm_structs) {
         Code ref = emitReferenceTypeConstructor(object, context);
         return ref + emitReferenceAttribute(object, field, context);
     }
@@ -1671,7 +1712,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
         case clazz:
         case flags:
         case structs:
-        case wasm_type_struct:
+//        case wasmtype_struct:
             // nothing to do since meta info is in module
             // node is in `types` / `functions` and all fields are in `globals`
             // TYPE info at compile time in types[] // todo: emit reflection data / wit !
@@ -1778,6 +1819,8 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
             else {
                 Node array1 = NUL;
                 if (node.parent)array1 = node.parent->first();
+                if (array1.kind == reference) // and …
+                    return emitArray(node, context);
                 return emitIndexPattern(array1, node, context, false, last_value_type);
             }
             // make sure array is on stack OR last_object_pointer is set!
@@ -1807,6 +1850,7 @@ Primitive elementType(Type type32) {
     if (type32 == stringp)return byte_char;
     if (type32 == longs)return Primitive::wasm_int64;// todo should not have reached here
     if (type32 == nils)return nulls;
+    if (type32 == byte_i8)return Primitive::byte_i8;
     error("elementType not implemented for "s + typeName(type32));
 }
 
@@ -1832,7 +1876,7 @@ Code emitReferenceTypeConstructor(Node &node, Function &context) {
 }
 
 Code emitConstruct(Node &node, Function &context) {
-    if (use_wasm_reference_types)
+    if (use_wasm_structs)
         return emitReferenceTypeConstructor(node, context);
     Code code;
     int pointer = data_index_end;
@@ -2147,7 +2191,7 @@ Code emitSetter(Node &node, Node &value, Function &context) {
     if (value.hash() == node.hash())
         value = node.values();
 //    value.parent = &node;
-    if (value.kind == arrays or value.kind == objects or value.kind == groups)
+    if (value.kind == arrays or value.kind == objects or value.kind == groups or value.kind == patterns)
         value.name = node.name;// HACK to store referenceIndices
     value.parent = &node;// might have been lost through operator shuffle. todo: fix in analyze
     Code value1 = emitExpression(value, context);
@@ -2477,11 +2521,12 @@ Code emitTypeSectionStructs(int &typeCount) {
     Code type_data;
     for (auto &name: types) {
         Node &type = *types[name];
-        if (type.kind != wasm_type_struct)
-            continue;
+        // todo 1. ALL structs? 2. only sealed structs?
+        if (type.kind != structs) // wasmtype_struct
+            continue; // todo classes too?
         type.value.longy = typeCount++;
         print("struct "s + name + " " + type.value.longy);
-        type_data.addByte(0x5f /*wasm_type*/);
+        type_data.addByte(0x5f /*wasmtype_struct*/);
         type_data.addByte(type.size());// field count
         for (auto field: type) {
             auto field_type = field.type;
@@ -2492,6 +2537,24 @@ Code emitTypeSectionStructs(int &typeCount) {
     }
     return type_data;
 }
+
+
+Code emitTypeSectionArrays(int &typeCount) {
+    Code type_data;
+    for (auto &name: types) {
+        Node &type = *types[name];
+        if (type.kind != arrays) // wasmtype_array
+            continue;
+        type.value.longy = typeCount++;
+        auto array_type = mapType(type.type);
+        print("array type "s + name + " " + typeName(array_type));
+        type_data.addByte(0x5e /*wasmtype_array*/);
+        type_data.addByte(mapTypeToWasm(array_type));
+        type_data.addByte(0x01 /*mutable*/);
+    }
+    return type_data;
+}
+
 
 int last_index = -1;
 
@@ -2563,8 +2626,10 @@ Code emitTypeSection() {
         type_data += td;
     }
 
-    if (use_wasm_reference_types)
+    if (use_wasm_structs)
         type_data += emitTypeSectionStructs(typeCount);
+    if (use_wasm_arrays)
+        type_data += emitTypeSectionArrays(typeCount);
 
     return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();
 }
@@ -3004,7 +3069,7 @@ Code emitNameSection() {
     int usedFields = 0;
     for (auto &type_name: types) {
         auto typ = *types[type_name];
-        if (typ.kind != wasm_type_struct)
+        if (typ.kind != structs) // wasmtype_struct
             continue;
         usedTypes++;
         int typ_index = typ.value.longy;

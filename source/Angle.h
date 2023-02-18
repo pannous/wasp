@@ -4,6 +4,9 @@
 #include "Code.h"
 #include "wasm_reader.h"
 
+extern bool use_wasm_structs;
+extern bool use_wasm_strings;
+extern bool use_wasm_arrays;
 
 static float function_precedence = 1000;
 
@@ -96,6 +99,7 @@ bool isFunction(String op, bool deep_search = true);
 // int is not a true angle type, just an alias for int64.
 // todo: but what about interactions with other APIs? add explicit i32 !
 // todo: in fact hide most of this under 'number' magic umbrella
+// todo: ALL types need to be emitted in type section to keep type indices valid? (wasm struct/arrays?)
 extern Map<String, Node *> types;// by name
 
 extern "C" int64 run_wasm_file(chars file);

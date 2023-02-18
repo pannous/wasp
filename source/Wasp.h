@@ -5,8 +5,10 @@
 
 #define let auto
 extern bool eval_via_emit;
-extern bool use_wasm_reference_types;
+//extern bool use_wasm_reference_types; :
+extern bool use_wasm_structs;
 extern bool use_wasm_strings;
+extern bool use_wasm_arrays;
 
 extern "C" void testCurrent();
 
