@@ -540,8 +540,12 @@ extern Map<Type, int> arrayTypes;
 
 [[nodiscard]]
 uint arrayTypeIndex(Type value_type) {
-    if (not arrayTypes.contains(value_type))
-        error("array types must be analyzed before the code section!");
+    if (not arrayTypes.contains(value_type)) {
+        if (isGeneric(value_type))
+            return arrayTypeIndex(value_type.generics.value_type);
+        else
+            error("array types must be analyzed before the code section! "s + typeName(value_type));
+    }
     return arrayTypes[value_type];
 }
 
@@ -2146,6 +2150,10 @@ Code cast(Valtype from, Valtype to) {
 [[nodiscard]]
 Code cast(Type from, Type to) {
     Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
+    if (isGeneric(from) or isGeneric(to)) {
+        if (from == wasmtype_array or from == to)return nop;
+        todo("generic cast");
+    }
     if (to == none or to == unknown_type or to == voids)return nop;// no cast needed magic VERSUS wasm drop!!!
     if (from == to)return nop;// nop
     last_type = to;// danger: hides last_type in caller!
@@ -2602,7 +2610,9 @@ Code emitTypeSectionArrays(int &typeCount) {
         type_data.addByte(0x01 /*mutable*/);
         arrayTypes[array_type] = type.value.longy;
     }
-    return type_data;
+    if (arrayTypes.size() > 0)
+        return type_data;
+    else return {};
 }
 
 
@@ -2678,7 +2688,7 @@ Code emitTypeSection() {
 
     if (use_wasm_structs)
         type_data += emitTypeSectionStructs(typeCount);
-    if (use_wasm_arrays and arrayTypes.size() > 0)
+    if (use_wasm_arrays)
         type_data += emitTypeSectionArrays(typeCount);
 
     return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();

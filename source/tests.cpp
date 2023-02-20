@@ -17,6 +17,13 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testDollarNames() {
+    auto nod = assert_parsesx("$[mut:i32]");
+    check_is(nod.name, "[mut:i32]");// dangerous name, perfect for fuzzing!
+    auto nod1 = assert_parsesx("$tee");
+    check_eq(nod1.name, "tee");
+}
+
 void testGenerics() {
     auto type = Type(Generics{.kind = array, .value_type = int16});
 //    auto header= type.value & array;
@@ -3067,16 +3074,17 @@ void tests() {
 
 
 void testWasmGC() {
-//    use_wasm_structs = true;
-//    use_wasm_strings = true;
-//    use_wasm_arrays = true;
-    use_wasm_structs = false;
-    use_wasm_strings = false;
-    use_wasm_arrays = false;
+
+    use_wasm_structs = true;
+    use_wasm_strings = true;
+    use_wasm_arrays = true;
+//    use_wasm_structs = false;
+//    use_wasm_strings = false;
+//    use_wasm_arrays = false;
 
 //    assert_emit("x=(1 2 3)", 0);
 //    assert_emit("x=(1 2 3);x[1]", 2);
-//    assert_emit("x=(1 2 3);2", 2);
+    assert_emit("x=(1 2 3);2", 2);
 //    assert_emit("(1 2 3)[1]", 2);
 //    exit(0);
 //    assert_emit("x=[1 2 3];x[1]", 2);
@@ -3102,11 +3110,11 @@ void testCurrent() {
 //    testBitField();
 //    assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
 //    testSinus();
-
+    testDollarNames();
     skip(
             assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
     )
-    testGenerics();
+//    testGenerics();
 #if not WASM
     testWasmGC();
 #endif

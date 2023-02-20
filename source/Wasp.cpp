@@ -1003,8 +1003,14 @@ private:
             return (*new Node("‖")).add(valueNode(u'‖').clone()).setType(operators, false);
 //			return (*new Node("abs")).setType(Kind::call, false);
         }
-        if (ch == '$' and parserOptions.dollar_names and is_identifier(next))
-            proceed(); // $name
+        bool excessive_dollar_names = true; // $[mut:i32] in wat (type $[mut:i32] (array (mut i32)))
+        if (ch == '$' and parserOptions.dollar_names and is_identifier(next) or excessive_dollar_names) {
+            int pos0 = at + 1;
+            while (ch != 0 and ch != ' ' and ch != '\t' and ch != '\n' and ch != '\r' and ch != '(' and ch != ')')
+                proceed();
+            auto substring = text.substring(pos0, at);
+            return *new Node(substring, true);
+        }
         if (is_operator(ch))
             return operatorr();
         if (is_identifier(ch))
@@ -1481,7 +1487,7 @@ private:
                 case '@':
                 case '$':
                     if (parserOptions.dollar_names or parserOptions.at_names)
-                        actual.add(Node(identifier()));
+                        actual.add(symbol());
                     else
                         actual.add(operatorr());
                     break;

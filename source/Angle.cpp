@@ -649,13 +649,14 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
         if (oldType == none or oldType == unknown_type) {
             local.type = type;
         } else if (oldType != type and type != void_block and type != voids and (Type) type != unknown_type) {
-            warn("local in context %s already known "s % context.name + name + " with type " + typeName(oldType) +
-                 ", ignoring new type " + typeName(type));
+
             if (use_wasm_arrays) {
                 // TODO: CLEANUP
-                if (oldType == node)
+                if (oldType == node) {
+                    if (isGeneric(type))
+                        addWasmArrayType(type.generics.value_type);
                     local.type = type;// make more specific!
-                else if (isGeneric(oldType)) {
+                } else if (isGeneric(oldType)) {
                     auto kind = oldType.generics.kind;
                     auto valueType1 = oldType.generics.value_type;
                     if (valueType1 != type) todow(
@@ -664,7 +665,9 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
                     addWasmArrayType(type);
                     local.type = genericType(array, type);
                 }
-            }
+            } else
+                warn("local in context %s already known "s % context.name + name + " with type " + typeName(oldType) +
+                     ", ignoring new type " + typeName(type));
         }
         // ok, could be cast'able!
     }
