@@ -367,13 +367,12 @@ chars typeName(const Type *t) {
 Valtype mapTypeToWasm(Type t) {
     if (t.value < 0x80)
         return (Valtype) t.value;
-    if (t.value < 0x10000 or t.value < 0x10000 and not use_wasm_arrays) // todo
+    if (t.value < 0x10000) // todo
         return mapTypeToWasm((Primitive) t);
-    if (isArrayType(t) and not use_wasm_arrays)
-        return mapTypeToWasm(array); // wasm_pointer
-    if (isGeneric(t) and use_wasm_arrays)
+    if (isGeneric(t))
         error("generics needs more than Valtype");
-//        return mapTypeToWasm(t.generics.value_type);
+    if (isArrayType(t))
+        return mapTypeToWasm(array); // wasm_pointer
     Node *type_node = (Node *) t.value;
     warn("Insecure mapTypeToWasm %x %d as Node*"s % t.value % t.value);
     if (type_node->node_header == node_header_32)
@@ -710,6 +709,5 @@ bool isArrayType(Type type) {
 }
 
 bool isGeneric(Type type) {
-    if (not use_wasm_arrays)return false;// todo: remove this
     return type.value & generics_mask;// >=0x10000;
 }

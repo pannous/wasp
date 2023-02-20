@@ -1336,6 +1336,7 @@ int ord(Node &p) {
 // todo: make constructor
 extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
     if (smartPointer64 == 0)return &False;//const_cast<Node *>(&NIL);
+    if (smartPointer64 == 0x8000000000000000)return new Node(0);
 //    if (!isSmartPointer(smartPointer64))
 //        return Node(smartPointer64);
     if ((smartPointer64 & negative_mask_64) == negative_mask_64) {
@@ -1387,6 +1388,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
         auto arrayStruct = (int *) (((char *) wasm_memory) + value);
         return reconstructArray(arrayStruct);
     }
+
     breakpoint_helper
     printf("smartPointer64 : %llx\n", (int64) smartPointer64);
     error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");

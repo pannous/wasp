@@ -890,8 +890,9 @@ Node &groupDeclarations(Node &expression, Function &context) {
         }
         if (node.kind == reference or (node.kind == key and isVariable(node))) {// only constructors here!
             if (not globals.has(op) and not isFunction(node)) {
-                auto evaluatedType = unknown_type;
-                if (use_wasm_arrays)preEvaluateType(node, context);// todo
+                Type evaluatedType = unknown_type;
+                if (use_wasm_arrays)
+                    evaluatedType = preEvaluateType(node, context);// todo turns sin π/2 into 1.5707963267948966 ;)
                 addLocal(context, op, evaluatedType, false);
             }
             continue;
@@ -954,7 +955,7 @@ Node &groupOperators(Node &expression, Function &context) {
             warn(expression.serialize());
             Node &file = expression.values();
             addLibrary(&loadModule(file.name));
-            return NUL;
+            return NUL;// no code, just meta
         }
 //		else todo("ungrouped dangling operator");
     }
