@@ -2678,7 +2678,7 @@ Code emitTypeSection() {
 
     if (use_wasm_structs)
         type_data += emitTypeSectionStructs(typeCount);
-    if (use_wasm_arrays)
+    if (use_wasm_arrays and arrayTypes.size() > 0)
         type_data += emitTypeSectionArrays(typeCount);
 
     return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();
