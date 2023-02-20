@@ -809,6 +809,8 @@ Node &groupOperators(Node &expression, Function &context);
 Node extractModifiers(Node &node);
 
 
+Node &groupKebabMinus(Node &node, Function &function);
+
 Node extractModifiers(Node &expression) {
     Node modifieres;
     for (auto child: expression) {
@@ -945,6 +947,10 @@ Node extractReturnTypes(Node decl, Node body) {
 Node &groupOperators(Node &expression, Function &context) {
     if (analyzed.has(expression.hash()))
         return expression;
+
+    if ((expression.kind == reference or expression.kind == Kind::expression) and expression.name.contains('-'))
+        return groupKebabMinus(expression, context); // extra logic for a-b kebab-case vs minus
+
     Function &function = context;
     List<String> operators = collectOperators(expression);
     String last = "";
@@ -959,6 +965,7 @@ Node &groupOperators(Node &expression, Function &context) {
         }
 //		else todo("ungrouped dangling operator");
     }
+
 
     for (String &op: operators) {
 //        trace("operator");
@@ -1021,6 +1028,7 @@ Node &groupOperators(Node &expression, Function &context) {
             if (op == "#")
                 findLibraryFunction("getChar", false);
 
+            prev.setType(Kind::expression, false);
             prev = analyze(prev, context);
             auto lhs_type = preEvaluateType(prev, context);
             if (op == "+" and (lhs_type == Primitive::charp or lhs_type == Primitive::stringp or lhs_type == strings)) {
@@ -1120,6 +1128,22 @@ Node &groupOperators(Node &expression, Function &context) {
     return expression;
 }
 
+// extra logic for a-b kebab-case vs minus operator
+Node &groupKebabMinus(Node &node, Function &context) {
+    auto name = node.name;
+    auto re = name.substring(0, name.indexOf('-'));
+    auto lhs = Node(re, true);
+    if (context.locals.has(re) or globals.has(re)) {
+        Node op = Node("-").setType(operators, true);
+        auto right = name.substring(name.indexOf('-') + 1);
+        auto rhs = analyze(*new Node(right, true), context);// todo expression!
+        op.add(lhs);
+        op.add(rhs);
+        return *op.clone();
+    }
+    return node;
+}
+
 Module &loadRuntime() {
 #if MY_WASM
     Module &wasp=*module_cache["wasp"s.hash()];
@@ -1139,6 +1163,14 @@ Type preEvaluateType(Node &node, Function &context) {
     if (node.kind == expression) {
         if (node.name == "if") // if … then (type 1) else (type 2)
             return commonType(preEvaluateType(node["then"], context), preEvaluateType(node["else"], context));
+        if (context.locals.contains(node.name)) {
+//            return Kind::reference;
+            auto &local = context.locals[node.name];
+            if (local.type != unknown_type)
+                return local.type;
+            else
+                return preEvaluateType(node.values(), context);// danger: loop
+        }
         if (node.length == 1)return preEvaluateType(node.first(), context);
         node = groupOperators(node, context);
         return mapType(node.name);
@@ -1580,7 +1612,7 @@ Node &analyze(Node &node, Function &function) {
 //        return witReader.analyzeWit(node);
     // add: func(a: float32, b: float32) -> float32
 
-    if ((type == expression and not name.empty()))
+    if ((type == expression and not name.empty() and not name.contains("-")))
         addLocal(function, name, int32, false);//  todo deep type analysis x = π * fun() % 4
     if (type == key) {
         if (node.value.node /* i=ø has no node */)
@@ -1643,7 +1675,7 @@ Node &analyze(Node &node, Function &function) {
         if (grouped.length > 0)
             for (Node &child: grouped) {
                 if (!child.name.empty() and wit_keywords.contains(child.name))
-                    return witReader.analyzeWit(node);
+                    return witReader.analyzeWit(node);// todo MOVE =>
                 child = analyze(child, function);// REPLACE ref with their ast ok?
             }
     }
