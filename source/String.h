@@ -422,6 +422,8 @@ public:
         return -1;
     }
 
+    int find(char c, int from = 0, bool reverse = false) { return indexOf(c, from, reverse); }
+
 //	operator std::string() const { return "Hi"; }
 
 // excluding to
