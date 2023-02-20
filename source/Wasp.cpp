@@ -1485,6 +1485,13 @@ private:
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 //				https://en.wikipedia.org/wiki/ASCII#Character_set
                 case '@':
+                    if (parserOptions.at_names)
+                        actual.add(Node(identifier()));
+                    else if (parserOptions.at_annotations)
+                        error("actual.add(annotation());");
+                    else
+                        actual.add(operatorr());
+                    break;
                 case '$':
                     if (parserOptions.dollar_names or parserOptions.at_names)
                         actual.add(symbol());

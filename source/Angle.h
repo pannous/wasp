@@ -134,7 +134,8 @@ struct ParserOptions { // not just for parser but also for serialize!!
     bool percent_names = false;// escape keywords as names in wit   e.g.  %id %flags
     bool colon_symbols = false;// :symbol ruby style ⚠️ careful with map Obviously
     bool colon_immediate = true; // parse a:b,c as (a:b) c vs a:(b,c)   should be standard!
-    bool at_names = false;// @interface as in wat,wit  julia macros @code_llvm / @annotation ?
+    bool at_names = false;// deprecated @interface as in wat,wit  julia macros @code_llvm / @annotation :
+    bool at_annotations = false;// @inline @color(x y z) as in wat,wit    m@tag = meta-tag
     bool use_tags = false;// <html> or
     bool use_generics = false;// generic list<abc> , "less than" requires spaces, a<b can still be resolved as 'smaller' in analyzer
     bool kebab_case = true;//  false;// kebab-case means: parse "-" as hypen instead of minus, or 1900 - 2000AD (easy with units)
