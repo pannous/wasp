@@ -43,9 +43,9 @@ bool isnumber(char c){ return c>='0' and c<='9'; }
 int SERVER_PORT = 1234;
 //bool eval_via_emit = false;// not all tests yet
 bool eval_via_emit = true;// << todo!  assert_is(…)
-bool use_wasm_structs = true;// struct in wat
-bool use_wasm_strings = true;// stringref in wat
-bool use_wasm_arrays = true; // array in wat
+bool use_wasm_structs = false;// struct in wat
+bool use_wasm_strings = false;// stringref in wat
+bool use_wasm_arrays = false; // array in wat
 
 
 

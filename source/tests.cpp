@@ -751,6 +751,7 @@ void testSinus() {
                 "\tdouble r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6)\n"
                 "\treturn x + z*x*(S1 + z*r)\n"
                 "};sin π/2", 1.000000000252271);// IT WORKS!!! todo: why imprecision?
+//    exit(1);
 }
 
 void test_sinus_wasp_import() {
@@ -2668,7 +2669,7 @@ void testArrayIndices() {
 
 // todo: move back into tests() once they work again
 void todos() {
-    testSinus();
+    testSinus();// still FRAGILE!
     testWrong0Termination();
     testErrors();// error: failed to call function   wasm trap: integer divide by zero
     assert_is("one plus two times three", 7);
@@ -3072,6 +3073,7 @@ void testWasmGC() {
     use_wasm_structs = false;
     use_wasm_strings = false;
     use_wasm_arrays = false;
+
 //    assert_emit("x=(1 2 3)", 0);
 //    assert_emit("x=(1 2 3);x[1]", 2);
 //    assert_emit("x=(1 2 3);2", 2);
@@ -3098,6 +3100,9 @@ void testWasmGC() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
 //    testBitField();
+//    assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
+//    testSinus();
+
     skip(
             assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
     )
