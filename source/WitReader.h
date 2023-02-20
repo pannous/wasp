@@ -358,7 +358,7 @@ public:
         } else if (entry == "enum") {
             return readEnum(n, enums);
         } else if (entry == "option") {
-//                todo("ignore, since all nodes are optionals by default unless marked as required!")
+//                todo("ignore, since all node_pointer are optionals by default unless marked as required!")
         } else if (entry == "world") {
             return readModule(n);
         } else if (entry == "module") {

@@ -38,7 +38,7 @@ Code emitDeclaration(Node &fun, Node &body);
 
 Code emitSetter(Node &node, Node &value, Function &context);
 
-//Code emitExpression(Node *nodes, Function& context);
+//Code emitExpression(Node *node_pointer, Function& context);
 Code emitExpression(Node &node, Function &context/*="wasp_main"*/);
 
 
