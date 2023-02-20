@@ -543,6 +543,7 @@ int stackItemSize(Node &clazz, bool throws) {
 
 // size of the primitive value, not sizeof(Node)
 int stackItemSize(Type type, bool throws) {
+    if (isGeneric(type))return stackItemSize(type.generics.value_type, throws);
     if (type == byte_i8)return 1;
     if (type == byte_char)return 1;
     if (type == charp)return 1;// chars for now vs codepoint!
@@ -556,6 +557,7 @@ int stackItemSize(Type type, bool throws) {
     if (type == Valtype::float64)return 8;
     if (type == void_block)return 4;// int32 pointer hack todo!
     if (type == unknown_type)return 4;
+//    if (type == node_pointer)return 4;
     if (throws)error("unknown size for stack item "s + typeName(type));
     return 0;
 }

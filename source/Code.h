@@ -1172,10 +1172,10 @@ struct Local { // todo: use
     bool is_param; // function arguments and locals share same index space, but are emitted differently
     int position; // also implicit in Function{ List<Local> locals;}
     String name;
-//    Valtype typo = unknown_type;
-    Type typo;// = unknown_type;
+//    Valtype type = unknown_type;
 //    Primitive grrr
-    Node *type; // todo: REMOVE!
+    Type type;// = unknown_type;
+    Node *typeXX; // todo: REMOVE!
     Node *ref;// why still needed?
     int data_pointer = 0;// compile time handling of reference data, e.g. after emitData()
 };

@@ -294,12 +294,12 @@ bool Node::operator==(bool other) {
 }
 
 bool Node::operator==(char other) {
-    if (kind == codepoints)return value.codepoint == other;
+    if (kind == codepoint1)return value.codepoint == other;
     return kind == strings and *value.string == String(other);
 }
 
 bool Node::operator==(codepoint other) {
-    if (kind == codepoints)return value.codepoint == other;
+    if (kind == codepoint1)return value.codepoint == other;
     return kind == strings and *value.string == String(other);
 }
 
@@ -318,7 +318,7 @@ bool Node::operator==(int other) {
     if (kind == reals and (int) value.real == other)return true;// rounding equivalence only in tests!
     if (kind == reals)return similar(value.real, other);
     if (kind == bools)return other == value.longy;
-    if (kind == codepoints)return other == value.longy;// permissive here only!
+    if (kind == codepoint1)return other == value.longy;// permissive here only!
     if (kind == key and value.node and *value.node == other)return true;
     if (kind == strings and parseLong(value.string->data) == other)return true;
     if (parseLong(name) == other)return true;
@@ -442,7 +442,7 @@ bool Node::operator==(Node &other) {
 
 
     if (kind == strings) {
-        if (other.kind == codepoints)
+        if (other.kind == codepoint1)
             return *value.string == (codepoint) other.value.longy;
         if (other.kind == strings)
             return *value.string == *other.value.string or *value.string == other.name or
@@ -826,7 +826,7 @@ chars Node::serializeValue(bool deep) const {
 //		case ints:
         case errors:
             return val.node ? val.node->name : "<ERROR>";
-        case codepoints:
+        case codepoint1:
             return String((codepoint) val.longy);
         case flags: { // todo: distinguish flags class from flags variables!
             if (type) {
@@ -1108,7 +1108,7 @@ Node &Node::values() {
     if (kind == longs)return *new Node(value.longy);
     if (kind == reals)return *new Node(value.real);
     if (kind == strings)return *new Node(*value.string);
-    if (kind == codepoints)return *new Node((codepoint) value.longy);
+    if (kind == codepoint1)return *new Node((codepoint) value.longy);
     if (kind == bools)return value.data ? True : False;
     if (length == 1 and not value.data) return children[0];// todo: reaaaly?
     Node &val = clone()->setName("");
@@ -1228,7 +1228,7 @@ Node &Node::setType(Kind kin, bool check) {
         return *this;// todo   import host: host-funcs     module{.name=host}.value=host-funcs
     if (kind == 0)check = false;
     if (kind == operators and kin == expression)return *this;
-    if (kind == codepoints and kin == operators)check = false;// and name==(codepoint)value.longy
+    if (kind == codepoint1 and kin == operators)check = false;// and name==(codepoint)value.longy
     if (kind == groups and (kin == expression or kin == functor))check = false;
     if (kind == reference and kin == key)check = false;
     if (kind == groups and kin == key)check = false;
@@ -1327,7 +1327,7 @@ Node &Node::childs() {
 
 
 int ord(Node &p) {
-    if (p.kind != codepoints)
+    if (p.kind != codepoint1)
         p.invoke("ord", 0);// self
     return p.value.longy;
 }
@@ -1440,7 +1440,7 @@ Node *reconstructArray(int *array_struct) {
 // todo put sanity checks for node / string in extra function!
 Node *reconstructWasmNode(wasm_node_index pointer) {
     if (pointer == 0)
-        return &NUL;// we NEVER have nodes at 0
+        return &NUL;// we NEVER have node_pointer at 0
     if (pointer > 0x1000000 and debug) // todo proper memory bound check including data/runtime_offset
         error("pointer>10000"); // todo remove (in)sanity check
     if ((int64) pointer > MAX_MEM)

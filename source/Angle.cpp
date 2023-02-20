@@ -74,7 +74,15 @@ public:
 
 // 'private header'
 bool addLocal(Function &context, String name, Type Type, bool is_param); // must NOT be accessible from Emitter!
-Type preEvaluateType(Node &node, Function &context);
+
+void addWasmArrayType(Type value_type) {
+    auto array_type_name = String(typeName(value_type)) + "s";// int-array -> “ints”
+    Node array_type;
+    array_type.kind = arrays;
+    array_type.type = types[typeName(value_type)];// todo more robust
+    types.add(array_type_name, array_type.clone());
+    // link to type index later
+}
 
 
 Node getType(Node node) {
@@ -451,7 +459,7 @@ bool isPrimitive(Node &node) {
     Kind type = node.kind;
     if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
         return true;
-    if (type == codepoints)// todo ...?
+    if (type == codepoint1)// todo ...?
         return true;
     return false;
 }
@@ -631,17 +639,33 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
         error(name + " already declared as function"s);
     if (not context.locals.has(name)) {
         int position = context.locals.size();
-        context.locals.add(name, Local{.is_param=is_param, .position=position, .name=name, .typo=type});
+        context.locals.add(name, Local{.is_param=is_param, .position=position, .name=name, .type=type});
         return true;// added
     }
 //#if DEBUG
     else {
-        auto oldType = context.locals[name].typo;
+        Local &local = context.locals[name];
+        auto oldType = local.type;
         if (oldType == none or oldType == unknown_type) {
-            context.locals[name].typo = type;
-        } else if (oldType != type and type != void_block and type != voids and (Type) type != unknown_type)
+            local.type = type;
+        } else if (oldType != type and type != void_block and type != voids and (Type) type != unknown_type) {
             warn("local in context %s already known "s % context.name + name + " with type " + typeName(oldType) +
                  ", ignoring new type " + typeName(type));
+            if (use_wasm_arrays) {
+                // TODO: CLEANUP
+                if (oldType == node)
+                    local.type = type;// make more specific!
+                else if (isGeneric(oldType)) {
+                    auto kind = oldType.generics.kind;
+                    auto valueType1 = oldType.generics.value_type;
+                    if (valueType1 != type) todow(
+                            "generic type mismatch "s + typeName(oldType) + " vs " + typeName(type));
+                } else if (oldType == wasmtype_array or oldType == array) {
+                    addWasmArrayType(type);
+                    local.type = genericType(array, type);
+                }
+            }
+        }
         // ok, could be cast'able!
     }
 //#endif
@@ -655,15 +679,13 @@ Node &groupSetter(String name, Node &body, Function &context) {
     auto type = preEvaluateType(body, context);
     if (not addLocal(context, name, type, false)) {
         Local &local = context.locals[name];
-        local.typo = type;// update type! todo: check if cast'able!
+        local.type = type;// update type! todo: check if cast'able!
     }
     return *decl;
 }
 
 Node extractReturnTypes(Node decl, Node body);
 
-
-Type preEvaluateType(Node &node, Function &context);
 
 Node &classDeclaration(Node &node, Function &function);
 
@@ -675,7 +697,7 @@ Node &classDeclaration(Node &node, Function &function) {
     String &kind_name = node.first().name;
     if (kind_name == "struct") {
 //        if (use_wasm_structs) distinguish implementation later!
-            dec.kind = structs;
+        dec.kind = structs;
     } else if (kind_name == "class" or kind_name == "type")
         dec.kind = clazz;
     else todo(kind_name);
@@ -867,8 +889,11 @@ Node &groupDeclarations(Node &expression, Function &context) {
                 continue;
         }
         if (node.kind == reference or (node.kind == key and isVariable(node))) {// only constructors here!
-            if (not globals.has(op) and not isFunction(node))
-                addLocal(context, op, unknown_type, false);
+            if (not globals.has(op) and not isFunction(node)) {
+                auto evaluatedType = unknown_type;
+                if (use_wasm_arrays)preEvaluateType(node, context);// todo
+                addLocal(context, op, evaluatedType, false);
+            }
             continue;
         }// todo danger, referenceIndices i=1 … could fall through to here:
         if (node.kind != declaration and not declaration_operators.has(op))
@@ -1053,8 +1078,8 @@ Node &groupOperators(Node &expression, Function &context) {
                     } else {
                         Local &local = function.locals[var];
                         // variable is known but not typed yet, or type again?
-                        if (local.typo == unknown_type) {
-                            local.typo = inferred_type;// mapType(next);
+                        if (local.type == unknown_type) {
+                            local.type = inferred_type;// mapType(next);
                         }
                     }
                 }
@@ -1101,7 +1126,7 @@ Module &loadRuntime() {
     return wasp;
 #else
     Module &wasp = read_wasm("wasp-runtime.wasm");
-    wasp.functions["getChar"].signature.returns(codepoints);
+    wasp.functions["getChar"].signature.returns(codepoint1);
     return wasp;
 #endif
 }
@@ -1131,12 +1156,19 @@ Type preEvaluateType(Node &node, Function &context) {
     }
     if (isGroup(node.kind)) {
         arrayElementSize(node);// adds type as BAD SIDE EFFECT
+        if (use_wasm_arrays) {// todo
+//        auto valueType = preEvaluateType(node.values(), context);
+            auto valueType = commonElementType(node);
+            return genericType(node.kind, valueType);
+        }
     }
     if (node.kind == reference) {
         if (context.locals.has(node.name)) {
             auto local = context.locals[node.name];
-            return local.typo;
+            return local.type;
         }
+        if (node.size() == 1 and use_wasm_arrays)// todo
+            return preEvaluateType(node.first(), context);
     }
     return mapType(node);
 }

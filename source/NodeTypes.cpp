@@ -20,6 +20,8 @@ Type mapType(Node &arg) {
     // 'UPGRADE' Kind to Type
     switch (arg.kind) {
         case reference:
+//            if(arg.size()==1)
+//                return mapType(arg[0]);
 //            if(context and context->locals.has(arg.name))
 //                return context->locals[arg.name].type;
 //            if(context.locals)
@@ -42,13 +44,16 @@ Type mapType(Node &arg) {
         case objects:
         case groups:
         case patterns:
-            return Primitive::nodes;
+            if (use_wasm_arrays)
+                return Primitive::wasmtype_array;// array
+            else
+                return Primitive::node_pointer;
         case strings:
             if (use_wasm_strings)
                 return string_ref;
             else
                 return Primitive::stringp;
-        case codepoints:
+        case codepoint1:
             return Primitive::codepoint32;
         case buffers:
             return Primitive::array;
@@ -113,7 +118,7 @@ Type mapType(String arg) {
     else if (arg == "char const*")return charp;// pointer with special semantics
     else if (arg == "char const*&")return charp;// todo ?
     else if (arg == "char*")return charp;
-    else if (arg == "char32_t*")return codepoints; // ≠ codepoint todo, not exactly: WITHOUT HEADER!
+    else if (arg == "char32_t*")return codepoint1; // ≠ codepoint todo, not exactly: WITHOUT HEADER!
     else if (arg == "char const**")return pointer;
     else if (arg == "short")
         return int32;// vec_i16! careful c++ ABI overflow? should be fine since wasm doesnt have short
@@ -154,10 +159,10 @@ Type mapType(String arg) {
 
     else if (arg == "Node")return node;// struct!
 
-    else if (arg == "Node&")return nodes;// pointer? todo: how does c++ handle refs?
-    else if (arg == "Node const&")return nodes;
-    else if (arg == "Node const*")return nodes;
-    else if (arg == "Node*")return nodes;
+    else if (arg == "Node&")return node_pointer;// pointer? todo: how does c++ handle refs?
+    else if (arg == "Node const&")return node_pointer;
+    else if (arg == "Node const*")return node_pointer;
+    else if (arg == "Node*")return node_pointer;
 
     else if (arg == "Type32")return type32;
     else if (arg == "Type")return type32;
@@ -295,7 +300,7 @@ chars typeName(Kind t, bool throws) {
             return "error";
         case functor:
             return "functor";
-        case codepoints:
+        case codepoint1:
             return "codepoint";
         case enums:
             return "enum";
@@ -320,6 +325,10 @@ chars typeName(Kind t, bool throws) {
         default:
             if ((short) t == stringref)
                 return "stringref";// todo how here?
+            if ((short) t == wasmtype_array)
+                return "array";
+            if ((short) t == ref)
+                return "ref(…)";
             if (throws)
                 error("MISSING Type Kind name mapping "s + (int) t);
             else return "";
@@ -330,6 +339,11 @@ chars typeName(Kind t, bool throws) {
 chars typeName(Type t) {
     if (t.value < last_kind)return typeName(t.kind);
     if (t.value < 0x10000)return typeName((Primitive) t);
+    if (isGeneric(t)) {
+        auto kind = t.generics.kind;
+        auto type = t.generics.value_type;
+        return ""s + typeName(kind) + "<" + typeName(type) + ">";
+    }
     // todo : make sure to emit Nodes at > 0x10000 …
     warn("typeName %x %d "s % t.value % t.value);
 #if !WASM
@@ -353,8 +367,13 @@ chars typeName(const Type *t) {
 Valtype mapTypeToWasm(Type t) {
     if (t.value < 0x80)
         return (Valtype) t.value;
-    if (t.value < 0x1000000) // todo
+    if (t.value < 0x10000 or t.value < 0x10000 and not use_wasm_arrays) // todo
         return mapTypeToWasm((Primitive) t);
+    if (isArrayType(t) and not use_wasm_arrays)
+        return mapTypeToWasm(array); // wasm_pointer
+    if (isGeneric(t) and use_wasm_arrays)
+        error("generics needs more than Valtype");
+//        return mapTypeToWasm(t.generics.value_type);
     Node *type_node = (Node *) t.value;
     warn("Insecure mapTypeToWasm %x %d as Node*"s % t.value % t.value);
     if (type_node->node_header == node_header_32)
@@ -458,7 +477,7 @@ chars typeName(Primitive p) {
 //            return "c_string";
         case Primitive::node:
             return "Node";
-        case nodes:
+        case node_pointer:
             return "node";// Node*
         case Primitive::ignore:
             return "«ignore»";// or "" ;)
@@ -600,7 +619,7 @@ Valtype mapTypeToWasm(Primitive p) {
             if (use_wasm_strings)
                 return string_ref;
             return Valtype::wasm_pointer;
-        case nodes: // ⚠️ Node* Node** or Node[] ?
+        case node_pointer: // ⚠️ Node* Node** or Node[] ?
             return Valtype::wasm_pointer; // CAN ONLY MEAN POINTER HERE, NOT STRUCT!!
         case any:
             return Valtype::wasm_pointer;
@@ -669,5 +688,28 @@ Valtype mapTypeToWasm(Primitive p) {
 
 bool isGroup(Kind type) {
     return type == groups or type == objects or type == patterns or type == expression;
-//    or (Primitive)type == nodes or type== lists or type == maps;
+//    or (Primitive)type == node_pointer or type== lists or type == maps;
+}
+
+// todo: use SINGLE BIT to denote a generic type, and the rest for the value type and other flags
+uint generics_mask = 0xF0FF0000;// ⚠️ preserve 4 bits for not generics flags ( static mutable … )
+Type valueType(Type type) {
+    if (type.value & generics_mask)
+        return type.generics.value_type;
+    error("not a generic type "s + typeName(type));
+}
+
+Type genericType(Type type, Type value_type) {
+    if (type.value >= 0x10000 or value_type.value >= 0x10000)
+        error("not a generic type holder "s + typeName(type) + " for " + typeName(value_type));
+    return Type(Generics{.kind = (short) type.value, .value_type = (short) value_type.value});
+}
+
+bool isArrayType(Type type) {
+    return isGroup(type.kind) or isGeneric(type) and isGroup((Kind) type.generics.kind);
+}
+
+bool isGeneric(Type type) {
+    if (not use_wasm_arrays)return false;// todo: remove this
+    return type.value & generics_mask;// >=0x10000;
 }

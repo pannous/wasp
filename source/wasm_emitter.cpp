@@ -31,8 +31,8 @@ int runtime_function_offset = 0; // imports + funcs
 int import_count = 0;
 short builtin_count = 0;// function_offset - import_count - runtime_offset;
 
-//bytes data;// any data to be stored to wasm: values of variables, strings, nodes etc
-char *data;// any data to be stored to wasm: values of variables, strings, nodes etc ( => memory in running app)
+//bytes data;// any data to be stored to wasm: values of variables, strings, node_pointer etc
+char *data;// any data to be stored to wasm: values of variables, strings, node_pointer etc ( => memory in running app)
 //int data_index_start = 0;
 int data_index_end = 0;// position to write more data = end + length of data section when building ≠ heap_end in live app
 int last_object_pointer = 0;// outside stack
@@ -40,7 +40,7 @@ int last_object_pointer = 0;// outside stack
 //Map<String *, int64> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 // todo: put into Function.locals :
 typedef int nodehash;
-Map<int64, int> referenceNodeIndices;// wasm pointers to nodes
+Map<int64, int> referenceNodeIndices;// wasm pointers to node_pointer
 Map<String, int64> referenceIndices; // wasm pointers to objects (currently: arrays?) within wasm data
 Map<String, int64> referenceDataIndices; // wasm pointers directly to object data, redundant ^^ TODO REMOVE
 Map<String, Node> referenceMap; // lookup types… todo: Node pointer? or copy ok?
@@ -343,7 +343,7 @@ bytes ieee754(double num) {
     while (i--)flip[i] = dat[i];// don't flip, just copy to malloc
     return flip;
 }
-//Code emitExpression (Node* nodes);
+//Code emitExpression (Node* node_pointer);
 
 // pure data ready to be emitted
 bool isProperList(Node &node) {
@@ -529,41 +529,59 @@ Code emitPrimitiveArray(Node &node, Function &context) {
 
 short arrayElementSize(Node &node);
 
-void addTypeFromSize(Node &array, short size);
+Primitive addTypeFromSize(Node &array, short size);
 
 
 bool eq(Type a, Type b) {
     return a.value == b.value;
 }
 
-Map<Type, int> arrayTypes;
+extern Map<Type, int> arrayTypes;
 
 [[nodiscard]]
 uint arrayTypeIndex(Type value_type) {
-    if (not arrayTypes.contains(value_type)) {
-        auto array_type_name = String(typeName(value_type)) + "s";// int-array -> “ints”
-        Node array_type;
-        addTypeFromSize(array_type, arrayElementSize(array_type)); // todo
-        arrayTypes.add(value_type, types.size());
-        types.add(array_type_name, array_type.clone());
-    }
+    if (not arrayTypes.contains(value_type))
+        error("array types must be analyzed before the code section!");
     return arrayTypes[value_type];
 }
+
+Code emitWasmArrayGetter(Node &node, Function &context, Local local) {
+    Code code;
+    Type value_type = last_value_type;
+    if (local.typeXX)
+        value_type = local.typeXX;
+    else {
+        todow("array value type");
+        value_type = byte_i8;// longs;
+    }
+    uint type_index = arrayTypes[value_type];
+    code.addConst32(node.value.longy);
+    code.addOpcode(arrayGet);
+    code.addInt(type_index);
+    last_type = value_type;
+    return code;
+}
+
 
 [[nodiscard]]
 Code emitWasmArray(Node &node, Function &context) {
     Code code;
-    Type value_type = mapTypeToWasm(node.first()); // todo check all elements are of same type
+    Type value_type = preEvaluateType(node,
+                                      context);// mapTypeToWasm(node.first()); // todo check all elements are of same type
     uint type_index = arrayTypeIndex(value_type);
+    for (auto &child: node) {
+        code.addConst32(child.value.longy);// even for i8!
+        // todo : float, string, struct, … :
+//        code.emitValue(child, context);
+    }
     auto length = node.size();
     code.addOpcode(arrayInitStatic);
     code.addInt(type_index);
     code.addInt(node.size());
-    for (auto &child: node) {
-        code.addConst32(child.value.longy);
-//        code.addConst64(child.value.longy);
-        // todo : float, string, struct, …
-    }
+
+    last_type = Type(Generics{.kind = array, .value_type = (short) value_type.value});
+    last_type = wasmtype_array;
+    last_value_type = value_type;
     return code;
 }
 
@@ -652,21 +670,35 @@ Code emitArray(Node &node, Function &context) {
 }
 
 // todo better
-void addTypeFromSize(Node &array, short size) {
+Primitive addTypeFromSize(Node &array, short size) {
     Kind kind = array.first().kind;
 //    kind= smallestCommonType(node)
     if (size == 1 and kind == longs)array.type = &ByteType;
-    else if (size == 1 and kind == Kind::codepoints)array.type = &ByteChar;
+    else if (size == 1 and kind == Kind::codepoint1)array.type = &ByteChar;
+    else if (size == 1)array.type = &ByteType;
     else if (size == 2)array.type = &ShortType;
     else if (size == 4 and kind == longs)array.type = &Int;
-    else if (size == 4 and kind == Kind::codepoints)array.type = &Charpoint;
+    else if (size == 4 and kind == Kind::codepoint1)array.type = &Charpoint;
     else if (size == 8 and kind == longs) array.type = &Long;
     else if (size == 8 and kind == reals) array.type = &Double;
-    else warn("can't infer type from size "s + size);
+    else
+        error("can't infer type from size "s + size);
+    return mapTypeToPrimitive(*array.type);
 }
 
-Node *smallestCommonType(Node &array) {
-    todo("smallestCommonType");
+
+Type commonElementType(Node &array) {
+    Type kind = array.first().kind;
+    if (kind == longs) {
+        auto element_size = arrayElementSize(array);
+        return addTypeFromSize(array, element_size);
+    }
+    for (Node &child: array) {
+        if (child.kind != kind) {
+            error("non coherent element forces node emission");
+        }
+    }
+    return kind;
 }
 
 // premature optimization BAD! but it's so easy;)
@@ -685,7 +717,7 @@ short arrayElementSize(Node &node) {
         if (child.kind == reals) {
             return 8; // can't be bigger, also don't change type!
         }
-        if (child.kind == codepoints) {
+        if (child.kind == codepoint1) {
             if (child.value.longy >= 0x80)
                 return 8; // can't be bigger, also don't change type!
             else
@@ -735,11 +767,11 @@ int currentStackItemSize(Node &array, Function &context, Type element_type) {
         // todo: fix up local elsewhere!
         if (not local.ref)
             local.ref = &referenceMap[array.name];
-        if (local.ref and not local.type)
-            local.type = local.ref->type;
-        if (local.type)
-            return stackItemSize(*local.type); // or
-        return stackItemSize(local.typo);
+        if (local.ref and not local.typeXX)
+            local.typeXX = local.ref->type;
+        if (local.typeXX)
+            return stackItemSize(*local.typeXX); // or
+        return stackItemSize(local.type);
     }
     if (array.kind == strings) return 1;// char for now todo: call String.codepointAt()
 //    if (last_object) CAN BE PATTERN, not array!
@@ -872,7 +904,7 @@ Code emitPatternSetter(Node &ref, Node offset, Node value, Function &context) {
         error("!! Variable missed by analyzer: "_s + variable);
 
     Local &local = context.locals[variable];
-    last_type = local.typo;
+    last_type = local.type;
     int base = 0;
     if (local.data_pointer)
         base = local.data_pointer;
@@ -929,11 +961,11 @@ Code emitIndexPattern(Node &array, Node &op, Function &context, bool base_on_sta
 //	if(op.kind==reference){
 //		Node &reference = referenceMap[op.name];
 //		if(reference.element_type){
-//			last_typo.clazz = reference.element_type;
+//			last_type.clazz = reference.element_type;
 //		}else if(reference.kind==strings)
-//			last_typo=
+//			last_type=
 //			else
-//			last_typo=reference.kind;
+//			last_type=reference.kind;
 //	}
 
     return load;
@@ -966,7 +998,7 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
             array = reference;
 //			if(reference.type)
 //			last_type = mapTypeToWasm(*reference.type);
-////			last_typo.clazz
+////			last_type.clazz
         }
 //		else error("reference should be mapped");
 
@@ -1016,11 +1048,11 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
     load.addByte(nop_);
     load.addByte(nop_);
 
-//	if (size == 1)last_type = codepoint32;// todo only if accessing codepoints, not when pointing into UTF8 byte!!
+//	if (size == 1)last_type = codepoint32;// todo only if accessing codepoint1, not when pointing into UTF8 byte!!
     if (size == 1) {
         last_type = byte_char;
         last_type = int32;// ! even bool is represented as int in wasm!!!
-    }   //last_typo = byte_char;
+    }   //last_type = byte_char;
     else if (size <= 4)last_type = int32;
     else last_type = i64;
     return load;
@@ -1185,7 +1217,7 @@ Code emitValue(Node &node, Function &context) {
     if (node.value.node)
         last_type = node.kind;// careful Kind::strings should map to Classes::c_string after emission!
     last_object = &node;// careful, could be on stack!
-    // code.push(last_typo) only on return statement
+    // code.push(last_type) only on return statement
     switch (node.kind) {
         case nils:// also 0, false
             code.addByte((byte) i32_auto);// nil is pointer
@@ -1232,7 +1264,9 @@ Code emitValue(Node &node, Function &context) {
                 code.addByte(get_local);// todo skip repeats
                 code.addByte(local.position);// base location stored in variable!
                 if (node.length > 0) {
-                    return emitIndexPattern(NUL, node, context, true, local.typo);// todo?
+                    if (use_wasm_arrays)
+                        return emitWasmArrayGetter(node, context, local);
+                    return emitIndexPattern(NUL, node, context, true, local.type);// todo?
                 }
             }
         }
@@ -1317,7 +1351,7 @@ Code emitValue(Node &node, Function &context) {
         if (node.type->kind != flags)
             code.add(cast(node, *node.type, context));
     }
-    // code.push(last_typo) only on return statement
+    // code.push(last_type) only on return statement
     return code;
 }
 
@@ -1585,7 +1619,7 @@ Code emitOperator(Node &node, Function &context) {
             if (not context.locals.has("n"))error("unknown n");
             code.add(get_local);
             code.addInt(context.locals["n"].position);
-            code.add(cast(context.locals["n"].typo, float64));// todo all casts should be auto-cast now, right?
+            code.add(cast(context.locals["n"].type, float64));// todo all casts should be auto-cast now, right?
         }
         code.add(emitCall(*new Node("pow"), context));
 //		else
@@ -1598,7 +1632,7 @@ Code emitOperator(Node &node, Function &context) {
     if (opcode == get_local and node.length == 1) {// arg AFTER op (not as const!)
         int64 last_local = first.value.longy;
         code.push(last_local);
-        last_type = context.locals.at(last_local).typo;
+        last_type = context.locals.at(last_local).type;
     }
     if (opcode >= 0x45 and opcode <= 0x78)
         last_type = i32;// int ops (also f64.eqz …)
@@ -1639,7 +1673,7 @@ Code emitStringOp(Node &op, Function &context) {
         return Code(i32_const) + Code(-1) + emitCall(op, context);// third param required!
     } else if (op == "#") {// todo: all different index / op matches
         op = Node("getChar");//  careful : various signatures
-        functions["getChar"].signature.return_types[0] = codepoints;// can't infer from demangled export name nor wasm
+        functions["getChar"].signature.return_types[0] = codepoint1;// can't infer from demangled export name nor wasm
         return emitCall(op, context);
     } else if (op == "not" or op == "¬") {// todo: all different index / op matches
         op = Node("empty");//  careful : various signatures for falsey falsy truthy
@@ -1666,7 +1700,7 @@ Primitive elementType(Type type32);
 // also value expressions of globals!
 [[nodiscard]]
 Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expression, node or BODY (list)
-//	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
+//	if(node_pointer==NIL)return Code();// emit nothing unless NIL is explicit! todo
     Code code;
     String &name = node.name;
 //	int index = functionIndices.position(name);
@@ -1689,7 +1723,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //		if(last_type==none or last_type==voids){
         code.addByte(get_local);
         code.addByte(last_local);
-        last_type = context.locals.at(last_local).typo;
+        last_type = context.locals.at(last_local).type;
 //		}
         return code;
     }
@@ -1789,15 +1823,17 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
                     error("local symbol ‘"s + name.trim() + "’ in " + context + " should be registered in analyze()!");
                 }
             }
+            auto local = context.locals.at(local_index);
             if (node.isSetter()) { //SET
                 if (node.kind == key)
                     code = code + emitExpression(*node.value.node, context); // done above!
                 else
                     code = code + emitValue(node, context); // done above!
-                if (context.locals.at(local_index).typo == unknown_type)
-                    context.locals.at(local_index).typo = last_type;
+                if (local.type == unknown_type)
+                    local.type = last_type;
+                else if (local.type == array or local.type == wasmtype_array) todow("array types")
                 else
-                    code.add(cast(last_type, elementType(context.locals.at(local_index).typo)));
+                    code.add(cast(last_type, elementType(local.type)));
 //				todo: convert if wrong type
                 code.addByte(tee_local);// set and get/keep
                 code.addByte(local_index);
@@ -1806,7 +1842,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
             } else {// GET
                 code.addByte(get_local);// todo: skip repeats
                 code.addByte(local_index);
-                last_type = context.locals.at(local_index).typo;
+                last_type = local.type;
             }
         }
             break;
@@ -1851,6 +1887,8 @@ Primitive elementType(Type type32) {
     if (type32 == longs)return Primitive::wasm_int64;// todo should not have reached here
     if (type32 == nils)return nulls;
     if (type32 == byte_i8)return Primitive::byte_i8;
+    if (isGeneric(type32))return (Primitive) type32.generics.value_type;
+    if (type32 == wasmtype_array) error("array should have a type!");;
     error("elementType not implemented for "s + typeName(type32));
 }
 
@@ -1886,7 +1924,7 @@ Code emitConstruct(Node &node, Function &context) {
     last_object = &node;
     last_object_pointer = pointer;
 //    if(node.type)
-//    last_typo = mapTypeToPrimitive(*node.type);
+//    last_type = mapTypeToPrimitive(*node.type);
     last_type = pointer;
     code.addConst32(pointer);// base for future index getter/setter [0] #1
     return code;
@@ -1958,7 +1996,7 @@ Code emitWhile2(Node &node, Function &context) {
 [[nodiscard]]
 Code emitExpression(Node *nodes, Function &context) {
     if (!nodes)return Code();
-//	if(nodes==NIL)return Code();// emit nothing unless NIL is explicit! todo
+//	if(node_pointer==NIL)return Code();// emit nothing unless NIL is explicit! todo
     return emitExpression(*nodes, context);
 }
 
@@ -2012,7 +2050,7 @@ Code emitCall(Node &fun, Function &context) {
     last_type = return_type;
     if (signature.wasm_return_type)
         check_is(mapTypeToWasm(last_type), signature.wasm_return_type);
-//	last_typo.clazz = &signature.return_type;// todo dodgy!
+//	last_type.clazz = &signature.return_type;// todo dodgy!
     return code;
 }
 
@@ -2060,7 +2098,7 @@ Code cast(Valtype from, Valtype to) {
     last_type = to;// danger: hides last_type in caller!
     if (from == 0 and to == i32t)return nop;// nil or false ok as int? otherwise add const 0!
     if (from == i32t and (Type) to == reference)return nop; // should be reference pointer, RIHGT??
-    if ((Type) from == codepoints and to == i64)
+    if ((Type) from == codepoint1 and to == i64)
         return Code(i64_extend_i32_s);
     if (from == float32 and to == float64)return Code(f64_from_f32);
     if (from == float32 and to == i32t) return Code(f32_cast_to_i32_s);
@@ -2097,7 +2135,7 @@ Code cast(Valtype from, Valtype to) {
     if (from == i64 and to == float32) return Code(f64_convert_i64_s).addByte(f32_from_f64);
 
 //    if (from == string_ref and to == i64)return stringRefLength();
-    if (from == string_ref and to == i64)return castRefToChars();
+//    if (from == string_ref and to == i64)return castRefToChars();
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
     error("incompatible valtypes "s + typeName(from) + " => " + typeName(to));
@@ -2118,7 +2156,7 @@ Code cast(Type from, Type to) {
     if (from == charp and to == i64t) return Code(i64_extend_i32_s);
     if (from == charp and to == i32t)return nop;// assume i32 is a pointer here. todo?
     if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
-    if (from == codepoints and to == i64t)
+    if (from == codepoint1 and to == i64t)
         return Code(i64_extend_i32_s);
     if (from == array and to == i64)return Code(i64_extend_i32_u);;// pray / assume i32 is a pointer here. todo!
     if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
@@ -2175,11 +2213,11 @@ Code emitSetter(Node &node, Node &value, Function &context) {
     }
 
     Local &local = context.locals[variable];
-    auto variable_type = local.typo;
+    auto variable_type = local.type;
 //    Valtype value_type = mapTypeToWasm(value); // todo?
     if (variable_type == unknown_type or variable_type == voids) {
         variable_type = last_type;// todo : could have been done in analysis!
-        local.typo = last_type;// NO! the type doesn't change: example: float x).valtype7
+        local.type = last_type;// NO! the type doesn't change: example: float x).valtype7
     }
     if (last_type == array or variable_type == array or variable_type == charp) {
         referenceIndices.insert_or_assign(variable, data_index_end);// WILL be last_data !
@@ -2361,7 +2399,7 @@ Code emitBlock(Node &node, Function &context) {
     last_type = none;//int32;
 
     int locals_count = context.locals.size();// incuding params
-    context.locals.add("result", {.is_param=false, .position=locals_count++, .name="result", .typo=Valtype::i64,});
+    context.locals.add("result", {.is_param=false, .position=locals_count++, .name="result", .type=Valtype::i64,});
     int argument_count = context.signature.size();
     if (locals_count >= argument_count)
         locals_count = locals_count - argument_count;
@@ -2388,17 +2426,27 @@ Code emitBlock(Node &node, Function &context) {
         trace("local "s + name);
         Local &local = context.locals[name];
         if (local.is_param)continue;// part of context type!
-        Type typo = local.typo;
+        Type type = local.type;
 //		block.addByte(i + 1);// index
         block.addByte(1);// count! todo: group by type nah
-        if (typo == unknown_type)
-            typo = int32;
+        if (type == unknown_type)
+            type = int32;
 // todo		internal_error("unknown type should be inferred by now for local "s + name);
-        if (typo == none or typo == voids)
-            typo = int32;
-        if (typo == charp or typo == array)
-            typo = int32; // int64? extend to smart pointer later!
-        block.addByte(mapTypeToWasm(typo));
+        if (type == none or type == voids)
+            type = int32;
+        if (type == charp or type == array)
+            type = int32; // int64? extend to smart pointer later!
+        if (use_wasm_arrays and isGeneric(local.type)) {
+            auto generics = local.type.generics;
+            if (isGroup((Kind) generics.kind)) {
+                auto type_index = arrayTypeIndex(valueType(local.type));
+                block.addByte(ref);
+                block.addByte(type_index);
+            } else
+                error("unknown generic type "s + typeName(local.type));
+        } else {
+            block.addByte(mapTypeToWasm(type));
+        }
     }
 
     // 2. emit code
@@ -2446,7 +2494,7 @@ Code emitBlock(Node &node, Function &context) {
             // hack smart pointers as main return: f64 has range which is never hit by int
             block.addByte(i64_reinterpret_f64);
             last_type = i64;
-        } else if (last_type == byte_char or last_type == codepoints) {
+        } else if (last_type == byte_char or last_type == codepoint1) {
             block.addByte(i64_extend_i32_u);
             block.addConst64(codepoint_header_64);
             block.addByte(i64_or);
@@ -2464,7 +2512,7 @@ Code emitBlock(Node &node, Function &context) {
 
 #if MULTI_VALUE
     // 4. emit multi value result, type after result will unexpectedly yield array [result, type] in wasmtime, js, … ABI!
-    block.addConst32(last_typo.value);
+    block.addConst32(last_type.value);
 
     // 4. emit multi value result, type BEFORE value
     // SWAP as we want the type to be on the stack IN FRONT of the value, so functions are backwards compatible and only depend on the func_type signature
@@ -2472,15 +2520,15 @@ Code emitBlock(Node &node, Function &context) {
 //    int result_local = context.locals["result"].position;
 //    block.add(tee_local);
 //    block.addInt(result_local);
-//    block.addConst32(last_typo.value);
-//    block.addConst64(last_typo.value);
+//    block.addConst32(last_type.value);
+//    block.addConst64(last_type.value);
 //    block.add(get_local);
 //    block.addInt(result_local);
 #endif
 
 
 //	if(context=="wasp_main" or (context.abi==wasp and returnTypes.size()<2))
-//		block.addInt(last_typo);// should have been added to signature before, except for main!
+//		block.addInt(last_type);// should have been added to signature before, except for main!
 // make sure block has correct wasm type signature!
 
 //	var [type, data]=result // wasm order PRESERVED! no stack inversion!
@@ -2538,6 +2586,7 @@ Code emitTypeSectionStructs(int &typeCount) {
     return type_data;
 }
 
+Map<Type, int> arrayTypes;
 
 Code emitTypeSectionArrays(int &typeCount) {
     Code type_data;
@@ -2547,10 +2596,11 @@ Code emitTypeSectionArrays(int &typeCount) {
             continue;
         type.value.longy = typeCount++;
         auto array_type = mapType(type.type);
-        print("array type "s + name + " " + typeName(array_type));
+        print("array "s + name + " of type " + typeName(array_type));
         type_data.addByte(0x5e /*wasmtype_array*/);
         type_data.addByte(mapTypeToWasm(array_type));
         type_data.addByte(0x01 /*mutable*/);
+        arrayTypes[array_type] = type.value.longy;
     }
     return type_data;
 }

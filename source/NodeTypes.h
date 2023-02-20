@@ -115,6 +115,9 @@ enum Valtype {
     i64s = 0x7E,
     int64s = 0x7E,  // symbol now used as
 
+    i8 = 0x7A, // == vec_i8 ⚠️ONLY in GC types array, struct, etc
+    i16 = 0x79, // == vec_i16 ⚠️
+
 //    int64 = 0x7E,  // symbol now used as
 //    typedef int64 int64
 
@@ -145,6 +148,7 @@ extern Node StringType;
 // Todo: can Type itself become a Node, making the distinction between type and kind superfluous?
 // todo dangerous overlap with Valtype in Type!? OK only accessible via mapTypeToWasm
 // needs to be stable: Kind is returned in multivalue and thus needs to be parsed by js!
+// todo change naming scheme: remove false plural 's' where inappropiate: 'strings' groups … … …
 enum Kind {// todo: merge Node.kind with Node.class(?)
     // todo smartType4bit first 16 values!!
     // plurals because of namespace clash
@@ -205,11 +209,10 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     flag_entry = longs, // special semantics at compile time for now
     enum_entry = longs, // special semantics at compile time for now
     last_kind = 0x80,
-    codepoints = 0xC4, // boxed codepoint in value.longy field todo
+    codepoint1 = 0xC4, // in value.longy field, boxed as node vs codepoint32 primitive todo?
 
-
-    kind_padding = 0x80000000, // 32 bit padding
-};// Type =>  must use 'enum' tag to refer to type 'Type' NAH!
+    kind_padding = 0x80000000, // TODO do 32 bit padding differently! keep kind in 8 bits! TODO remove!
+};
 
 
 // Raw types as encountered in C/C++ ABI
@@ -219,7 +222,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
 //	https://github.com/pannous/angle/wiki/smart-pointer
 // see header_4 / smartType4bit
 // todo universal micro bits for 1. POINTER 2. ARRAY 2. STRUCT with HEADER
-enum Primitive {
+enum Primitive /*32*/ {
     //    THE 0x00 …0x0F …0xF0 … range is reserved for numbers
 //   redundant Valtype overlap
 
@@ -236,16 +239,18 @@ enum Primitive {
     float_type = wasm_float64,
     wasm_f32 = 0x7d,
     wasm_int64 = 0x7E, // AS OPPOSED TO longs signed or unsigned? we don't care
-    wasm_int32 = 0x7f,  // make sure to not confuse these with boxed Number nodes of kind longs, reals!
-    pointer = wasm_int32,// 0xF0, // internal todo: int64 on wasm-64
-    node_pointer = wasm_int32,
+    wasm_int32 = 0x7f,  // make sure to not confuse these with boxed Number node_pointer of kind longs, reals!
+    pointer = wasm_int32,// 0xF0, // todo: lower later! internal todo: int64 on wasm-64
     self = pointer,
+//    node_pointer = wasm_int32,
+    node_pointer = 0xD000, // address of a Node in linear memory
+
 //	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
     type32 = 0x80, // todo see smart_pointer_64 etc OK?
 ////	smarti32 = 0xF3,// see smartType
 //	smarti64 = 0xF6,
-    node = 0xA0, // Node struct versus Node* nodes = 0xD000  todo better scheme 0xAF F for fointer!
-//    angle = 0xA4,//  angle object pointer/offset versus nodes smarti vs anyref todo What is this?
+    node = 0xA0, // Node struct versus Node* node_pointer = 0xD000  todo better scheme 0xAF F for fointer!
+//    angle = 0xA4,//  angle object pointer/offset versus node_pointer smarti vs anyref todo What is this?
     any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
 //	unknown = any,
     array = 0xAA,// compatible with List, Node, String (?)
@@ -325,7 +330,6 @@ enum Primitive {
 //	maps, // our custom Map object todo: remove?
 
 // 🔋 main type of all non-primitive objects
-    nodes = 0xD000, // address of a Node in linear memory
 //	data = 0xDADA, // address of a Node in linear memory
 //	dada = 0xDADA, // address of a Node in linear memory
 
@@ -342,28 +346,33 @@ enum Primitive {
 };
 
 
+// e.g. array<int> or array<stringref> or struct<id> array<struct_id>
+// ⚠️ 32 bit wasp generics condense to 16+ bit wasm types!
+struct Generics /*32 bit*/{
+    short kind; // kind is padded to 32 bit so cant use directly
+    short value_type;
+};
+
+
 typedef int Address;
+
+
 /*
  * i32 paged union Type
  * 0x00 - 0xFF zero page : Valtype / Kind
  * 0x100 - 0x1000 low page : reserved / Kind
  * 0x1000 - 0x10000 Todo Classes / pointer page ?
  * 0x10000 - string_header_32 pointer page: indirect types via address of describing Node{kind=clazz}
- * string_header_32 - 0xFFFFFFFF high page reserved (combinatorial types!) Todo e.g. person?[10] versus combinatorial primitive int[10]
- * header_64
+ * 0xAAAABBBB generic page: generic types (kind, value_type)
+ *  e.g. person?[10] versus combinatorial primitive int[10]
+ * string_header_32 - 0xFFFFFFFF high page reserved (combinatorial types!) Todo
  * check(sizeof(Type)==8) // otherwise all header structs fall apart
  * */
 // for (wasm) function type signatures see Signature class!
 
-// on 64bit systems pointers (to types)
-union Type64 {//  i64 union, 8 bytes with special ranges:
-    int64 value = 0; // one of:
-    SmartPointer64 smarty;
-    Node *clazz;// same 64 bit on normal systems!!!!
-//     0x10000000_00000000 - 2^64 : SmartPointer64 ≈ SmartPointer32 + 4 byte value
-};
-
 //enum Valtype;// c++ forbids forward references to enums
+// todo generic types Array<Type> … via type & array_mask
+// todo complicated types Array<struct{…}> … via mask and index into types map à la  >>> ref(type_index) <<<
 union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ranges:
     /* this union is partitioned in the int space:
      0x0000 - Ill defined
@@ -382,12 +391,11 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
 //    SmartPointer64 smarty;
 //    SmartPointer32 smarty;// when separating Types from values we don't need smart pointers
     Kind kind; // Node of this type
+    Generics generics;
 //	Valtype valtype; // doesn't make sense here but try to avoid(guarantee?) overlap with type enum for future compatibility?
     Primitive type;// c_string int_array long_array float_array etc, can also be type of value.data in boxed Node
 //    Node *clazz;// same as // 64 bit on normal systems!!!!
     Address address;// pointer to Node
-
-
 
     Type32() {
     }
@@ -422,6 +430,10 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
         this->value = value;
     }
 
+    Type32(Generics generics) {
+        this->generics = generics;
+    }
+
     Type32(Primitive primitive) {
         type = primitive;
     }
@@ -437,6 +449,9 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
 
     explicit
     operator Kind() const { return this->kind; }
+
+    explicit
+    operator Generics() const { return this->generics; }
 
     explicit
     operator Primitive() const { return this->type; }
@@ -483,6 +498,24 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
 };
 
 typedef Type32 Type;
+
+Type valueType(Type type);
+
+Type genericType(Type type, Type value_type);
+
+union Generics64 {
+    Type32 kind;
+    Type32 value_type;
+};
+
+// on 64bit systems pointers (to types)
+union Type64 {//  i64 union, 8 bytes with special ranges:
+    int64 value = 0; // one of:
+    SmartPointer64 smarty;
+    Node *clazz;// same 64 bit on normal systems!!!!
+//     0x10000000_00000000 - 2^64 : SmartPointer64 ≈ SmartPointer32 + 4 byte value
+};
+
 
 enum Modifiers {
     final,
@@ -552,4 +585,7 @@ Type mapType(Node *arg);
 chars typeName(Valtype t, bool fail = true);
 
 
-bool isGroup(Kind type);
+bool isGeneric(Type type);
+
+bool isGroup(Kind type); // Node of kind group
+bool isArrayType(Type type); // ^^ or generic (wasm) array

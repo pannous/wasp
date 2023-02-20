@@ -111,11 +111,11 @@ class Module;
 //class Function readline.h:40:15: note: 'Function' declared here WTF
 
 // ⚠️ A Value is only useful with accompanying Type!
-union Value { // nodes can contain ANYTHING, especially types known in wasp
+union Value { // node_pointer can contain ANYTHING, especially types known in wasp
 //	sizeof(Value)==8 (int64)
     Node *node = 0;// todo DANGER, pointer can be lost :(   // todo same as child
 //	Node *child = 0; //todo DANGER child and next are NOT REDUNDANT! (a:b c:d) == a(value=b next=c(value=d))
-//	Node **children = 0;// keep children separate for complex key nodes (a b c):(d e f)
+//	Node **children = 0;// keep children separate for complex key node_pointer (a b c):(d e f)
     String *string;// todo: wasm_chars*
 //    Function *function;
     Module *module;
@@ -228,7 +228,7 @@ public:
 #ifdef DEBUG
 // int code_position; // hash to external map
 //	int lineNumber;
-    String *line = 0;// debug! EXPENSIVE for non ast nodes!
+    String *line = 0;// debug! EXPENSIVE for non ast node_pointer!
 #endif
 
 // TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
@@ -316,14 +316,14 @@ public:
     Node(char c) {
         name = String(c);
         value.longy = c;
-        kind = codepoints;
+        kind = codepoint1;
     }
 
     explicit
     Node(char16_t c) {
         name = String(c);
         value.longy = c;
-        kind = codepoints;
+        kind = codepoint1;
     }
 
     explicit Node(double nr) {
@@ -473,7 +473,7 @@ public:
     explicit Node(codepoint c) {
         name = String(c);
         value.longy = c;
-        kind = codepoints;
+        kind = codepoint1;
 //		value.string = &name;// todo uh, no, and danger! change name=>change value? hell no!
 //		kind = strings;
     }
@@ -646,7 +646,7 @@ public:
 
 
     String string() const {
-        if (kind == codepoints)
+        if (kind == codepoint1)
             return String((char32_t) value.longy);
         if (kind == strings)
             return *value.string;

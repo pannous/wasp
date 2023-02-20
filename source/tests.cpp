@@ -17,6 +17,15 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testGenerics() {
+    auto type = Type(Generics{.kind = array, .value_type = int16});
+//    auto header= type.value & array;
+//    auto header= type.value & 0xFFFF0000;
+    auto header = type.value & 0x0000FFFF;
+    check_eq(header, array);
+}
+
+
 void testNumbers() {
     Number n = 1;
     check(n == 1.0);
@@ -252,7 +261,7 @@ void testStruct2() {
     assert_equals(node.length, 3);
     assert_equals(Int, node[1].type);
 //    const char *code = "struct point{a:int b:int c:string};x=point(1,2,'ok');x.b";
-// basal nodes act as structs
+// basal node_pointer act as structs
     assert_emit("point{a:int b:int c:string};x=point(1,2,'ok');x.b", 2)
     assert_emit("data=[1,2,3];struct point{a:int b:int c:string};x=data as struct;x.b", 2)
 }
@@ -1835,7 +1844,26 @@ void testEqualities() {
     assert_is("2!=2", False);
 }
 
+// test once: not a test, just documentation
+void testBitField() {
+    union mystruct {// bit fields
+        struct {
+            uint16_t Reserved1: 3;
+            uint16_t WordErr: 1;
+            uint16_t SyncErr: 1;
+            uint16_t WordCntErr: 1;
+//            uint16_t Reserved2: 10;
+        };
+        uint16_t word_field;
+    };
+    check_eq(sizeof(mystruct), 2 /*bytes */);
+    mystruct x;
+    x.WordErr = 1;
+    check_eq(x.word_field, 8);// 2^^3
+}
+
 void testCpp() {
+//    testBitField();
 //	esult of comparison of constant 3 with expression of type 'bool' is always true
 //	assert(1 < 2 < 3);// NOT WHAT YOU EXPECT!
 //	assert(3 > 2 > 1);// NOT WHAT YOU EXPECT!
@@ -2469,9 +2497,9 @@ void testNodeConversions() {
     check(a2.kind == reals);
     check(a2.value.real == 1.2f);
     Node as = Node('a');
-    check(as.kind == strings or as.kind == codepoints);
+    check(as.kind == strings or as.kind == codepoint1);
     if (as.kind == strings) {check(*as.value.string == 'a'); }
-    if (as.kind == codepoints) check((codepoint) as.value.longy == 'a');
+    if (as.kind == codepoint1) check((codepoint) as.value.longy == 'a');
 }
 
 
@@ -2851,7 +2879,11 @@ void testBadInWasm() {
 
 
 void assurances() {
+#if WASM
+    check(sizeof(Type32) == 4) // todo:
+#else
     check(sizeof(Type) == 8) // otherwise all header structs fall apart
+#endif
 //    check(sizeof(void*)==4) // otherwise all header structs fall apart TODO adjust in 64bit wasm / NORMAL arm64 !!
     check(sizeof(int64) == 8)
 }
@@ -3040,6 +3072,11 @@ void testWasmGC() {
     use_wasm_structs = false;
     use_wasm_strings = false;
     use_wasm_arrays = false;
+//    assert_emit("x=(1 2 3)", 0);
+    assert_emit("x=(1 2 3);x[1]", 2);
+    assert_emit("x=(1 2 3);2", 2);
+//    assert_emit("(1 2 3)[1]", 2);
+//    exit(0);
 //    assert_emit("x=[1 2 3];x[1]", 2);
 //    assert_emit("x=[1 2 3];x[1]=4;x[1]", 4);
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
@@ -3053,15 +3090,18 @@ void testWasmGC() {
 //    exit(0);
 }
 
+
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+//    testBitField();
     skip(
             assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
     )
+    testGenerics();
 #if not WASM
     testWasmGC();
 #endif
