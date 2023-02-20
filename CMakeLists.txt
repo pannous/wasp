@@ -362,7 +362,7 @@ if (WASM) # OR WASI)
 
     if (WASI)
         ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
-        set(CMAKE_ISYSROOT "") # typo? =>
+        set(CMAKE_ISYSROOT "") # type? =>
         set(CMAKE_SYSROOT "") # via -DCMAKE_TOOLCHAIN_FILE=wasm.toolchain.cmake
         ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
     else ()

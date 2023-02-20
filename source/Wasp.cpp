@@ -1307,7 +1307,7 @@ private:
             val = val.last();// singleton
         val.parent = &key;// todo bug: might get lost!
         bool deep_copy = empty(val.name) or !debug or (key.kind == reference and empty(val.name));
-        if (debug) {// todo make sure all works even with nested nodes! x="123" (node 'x' (child value='123')) vs (node 'x' value="123")
+        if (debug) {// todo make sure all works even with nested node_pointer! x="123" (node 'x' (child value='123')) vs (node 'x' value="123")
             deep_copy = deep_copy or (val.kind == Kind::longs and val.name == formatLong(val.value.longy));
             deep_copy = deep_copy or (val.kind == Kind::reals and val.name == ftoa(val.value.real));
             deep_copy = deep_copy or (val.kind == Kind::bools and

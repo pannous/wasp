@@ -317,7 +317,7 @@ void nl() {
     put_char('\n');
 }
 
-//Prescedence typo for Precedence
+//Prescedence type for Precedence
 void testLogicPrecedence() {
     check(precedence("and") > 1);
     check(precedence("and") < precedence("or"));
