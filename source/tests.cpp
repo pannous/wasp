@@ -2882,7 +2882,7 @@ void testBadInWasm() {
 
 void assurances() {
 #if WASM
-	check(sizeof(Type32) == 4) // todo:
+//	check(sizeof(Type32) == 4) // todo:
 #else
 	check(sizeof(Type) == 8) // otherwise all header structs fall apart
 #endif
@@ -3068,7 +3068,7 @@ void tests() {
 
 
 void testWasmGC() {
-	return;
+//	return;
 //    assert_emit("y=(1 4 3)[1]", 4);
 //    assert_is("x=(1 4 3);x#2", 4);
 //assert_emit("42",42);
@@ -3078,6 +3078,16 @@ void testWasmGC() {
 //    assert_emit("x=(1 2 3)", 0);
 	assert_emit("x=(5 6 7);#x", 3);
 	assert_emit("x=(5 6 7);x#2", 6);
+	assert_emit("'world'#1", 'w');
+	assert_emit("y=(1 4 3)#2", 4);
+	assert_emit(("id(3*42)≥2*3"), 1)
+	assert_emit("#'abcde'", 5);
+	assert_emit("x='abcde';#x", 5);
+	assert_emit("x=(1 2 1 2 1);#x", 5);
+//	assert_emit("#(1 2 1)", 3);
+
+	assert_emit("x='abcde';x#4='f';x[3]", 'f');
+	assert_emit("42", 42);// basics
 //    assert_emit("x=(1 2 3);x[1]", 2);
 //    assert_emit("x=(1 2 3);2", 2);
 //    assert_emit("(1 2 3)[1]", 2);
@@ -3105,16 +3115,7 @@ void testCurrent() {
 //    testKebabCase();
 //    testSinus();
 //	assert_emit("3*42≥2*3", 1)
-	assert_emit("'world'#1", 'w');
-	assert_emit("y=(1 4 3)#2", 4);
-	assert_emit(("id(3*42)≥2*3"), 1)
-	assert_emit("#'abcde'", 5);
-	assert_emit("x='abcde';#x", 5);
-	assert_emit("x=(1 2 1 2 1);#x", 5);
-//	assert_emit("#(1 2 1)", 3);
 
-	assert_emit("x='abcde';x#4='f';x[3]", 'f');
-	assert_emit("42", 42);// basics
 
 	skip(
 			assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);

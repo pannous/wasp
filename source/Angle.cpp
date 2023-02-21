@@ -1676,13 +1676,12 @@ Node &analyze(Node &node, Function &function) {
     if (analyzed[grouped.hash()])return grouped;// done!
     analyzed.insert_or_assign(grouped.hash(), 1);
 
-
     if (isGroup(type)) {
-        // children analyzed individually, not as expression WHY?
+        // children of lists analyzed individually
         if (grouped.length > 0)
             for (Node &child: grouped) {
                 if (!child.name.empty() and wit_keywords.contains(child.name) and child.kind != strings /* TODO … */)
-                    return witReader.analyzeWit(node);// todo MOVE =>
+                    return witReader.analyzeWit(node);// can't MOVE there:
                 child = analyze(child, function);// REPLACE ref with their ast ok?
             }
     }
