@@ -523,6 +523,13 @@ Node &constructInstance(Node &node, Function &function);
 Node &groupTypes(Node &expression, Function &context) {
     // todo delete type declarations double x, but not double x=7
     // todo if expression.length = 0 and first.length=0 and not next is operator return ø
+    // ways to set type:
+    /*
+	 * int x
+	 * x:int
+	 * x=7  via pre-evaluation of rest!!!
+	 * x int    unstable, discouraged!
+	 * */
     if (types.size() == 0)initTypes();
     if (isType(expression)) {// double \n x,y,z  extra case :(
         Node &type = *types[expression.name];
@@ -974,7 +981,7 @@ Node &groupOperators(Node &expression, Function &context) {
         }
 //		else todo("ungrouped dangling operator");
     }
-
+// inner ops get grouped first: 3*42≥2*3 => 1. group '*' : (3*42)≥(2*3)
     for (String &op: operators) {
 //        trace("operator");
 //        trace(op);
@@ -1024,6 +1031,7 @@ Node &groupOperators(Node &expression, Function &context) {
 //            prev = expression.to(op);
 //        else error("binop?");
 
+// todo move "#" case here:
         if (isPrefixOperation(node, prev, next)) {// ++x -i
             // PREFIX Operators
             isPrefixOperation(node, prev, next);
@@ -1076,13 +1084,6 @@ Node &groupOperators(Node &expression, Function &context) {
                 expression.remove(i, -1);
 
             } else {
-                //#ifndef RUNTIME_ONLY
-                // ways to set type:
-                /*
-                 * int x
-                 * x:int
-                 * x=7  needs pre-evaluation of rest!!!
-                 * */
                 auto var = prev.name;
                 if (op.endsWith("=") and not op.startsWith("::") and prev.kind == reference) {
                     // x=7 and x*=7
@@ -1129,6 +1130,9 @@ Node &groupOperators(Node &expression, Function &context) {
                 else {
                     expression.replace(i, i + 1, node);
                     warn("operator missing argument");
+                }
+                if (expression.length == 1 and expression.kind == Kind::groups) {
+                    return expression.first();//.setType(operators);
                 }
             }
         }
@@ -1677,7 +1681,7 @@ Node &analyze(Node &node, Function &function) {
         // children analyzed individually, not as expression WHY?
         if (grouped.length > 0)
             for (Node &child: grouped) {
-                if (!child.name.empty() and wit_keywords.contains(child.name))
+                if (!child.name.empty() and wit_keywords.contains(child.name) and child.kind != strings /* TODO … */)
                     return witReader.analyzeWit(node);// todo MOVE =>
                 child = analyze(child, function);// REPLACE ref with their ast ok?
             }
