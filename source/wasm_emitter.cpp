@@ -1256,11 +1256,10 @@ Code emitValue(Node &node, Function &context) {
             if (!context.locals.has(name) and not globals.has(name))
                 error("UNKNOWN symbol "s + name + " in context " + context);
             if (node.value.node) {
-//                value.node ill defined!
-                error("reference setters must be analyzed before! name:"s + name); // can't node.serialize() because
                 Node &value = *node.value.node;
-                error("HOLUP! x:42 is a reference? then *node.value.node makes no sense!!!");// todo FIX!!
+                warn("HOLUP! x:42 is a reference? then *node.value.node makes no sense!!!");// todo FIX!!
                 code.add(emitSetter(node, value, context));
+
             } else {
                 auto local = context.locals[name];
                 code.addByte(get_local);// todo skip repeats
@@ -1762,12 +1761,9 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //				return emitArray(node, context);
             }// else fallthough:
         case expression:
-            if (not name.empty()) {
-                if (node.isSetter())
-                    code.add(emitSetter(node, node, context));
-                else
-                    code.add(emitValue(node.setType(reference, false), context)); // getter etc
-            } else if (node.length > 0)
+            if (not name.empty())
+                code.add(emitSetter(node, node, context));
+            else if (node.length > 0)
                 for (Node &child: node) {
                     Code expression = emitExpression(child, context);
                     code.push(expression);
