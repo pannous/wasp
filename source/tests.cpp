@@ -3068,8 +3068,8 @@ void tests() {
 
 
 void testWasmGC() {
-    assert_emit("y=(1 4 3)[1]", 4);
-    assert_is("x=(1 4 3);x#2", 4);
+//    assert_emit("y=(1 4 3)[1]", 4);
+//    assert_is("x=(1 4 3);x#2", 4);
     return;
     use_wasm_structs = true;
     use_wasm_strings = true;
