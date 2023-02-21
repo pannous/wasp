@@ -541,7 +541,7 @@ extern Map<Type, int> arrayTypes;
 [[nodiscard]]
 uint arrayTypeIndex(Type value_type) {
     if (not arrayTypes.contains(value_type))
-        error("array types must be analyzed before the code section!");
+        error("array types must be analyzed before the code section! "s + typeName(value_type));
     return arrayTypes[value_type];
 }
 
@@ -566,8 +566,9 @@ Code emitWasmArrayGetter(Node &node, Function &context, Local local) {
 [[nodiscard]]
 Code emitWasmArray(Node &node, Function &context) {
     Code code;
-    Type value_type = preEvaluateType(node,
-                                      context);// mapTypeToWasm(node.first()); // todo check all elements are of same type
+    Type type = preEvaluateType(node,
+                                context);// mapTypeToWasm(node.first()); // todo check all elements are of same type
+    Type value_type = type.generics.value_type;
     uint type_index = arrayTypeIndex(value_type);
     for (auto &child: node) {
         code.addConst32(child.value.longy);// even for i8!
@@ -2151,6 +2152,7 @@ Code cast(Valtype from, Valtype to) {
 Code cast(Type from, Type to) {
     Code nop;// if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
     if (to == none or to == unknown_type or to == voids)return nop;// no cast needed magic VERSUS wasm drop!!!
+    if (from == wasmtype_array and isArrayType(to))return nop;// uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
     if (from == to)return nop;// nop
     last_type = to;// danger: hides last_type in caller!
     if (from == node and to == i64t)
@@ -2606,7 +2608,9 @@ Code emitTypeSectionArrays(int &typeCount) {
         type_data.addByte(0x01 /*mutable*/);
         arrayTypes[array_type] = type.value.longy;
     }
-    return type_data;
+    if (arrayTypes.size() > 0)
+        return type_data;
+    else return {};
 }
 
 
@@ -2682,7 +2686,7 @@ Code emitTypeSection() {
 
     if (use_wasm_structs)
         type_data += emitTypeSectionStructs(typeCount);
-    if (use_wasm_arrays and arrayTypes.size() > 0)
+    if (use_wasm_arrays)
         type_data += emitTypeSectionArrays(typeCount);
 
     return Code((char) type_section, encodeVector(Code(typeCount) + type_data)).clone();
