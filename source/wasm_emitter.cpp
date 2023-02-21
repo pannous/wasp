@@ -1468,7 +1468,8 @@ Code emitOperator(Node &node, Function &context) {
     if (name == ":=")return emitSetter(node, first, context);
     if (name == "=")return emitSetter(node, first, context);// todo node.first dodgy
     if (name == ".") return emitAttribute(node, context);
-//	if (name=="#")XXX return emitIndexPattern(node[0], node[1], context); elsewhere (and emit(node)!
+//    if (name=="#" and node.length==2 and use_wasm_arrays)return emitWasmArrayGetter(node, context);
+//	if (name=="#" and node.length==2)return emitIndexPattern(node[0], node[1], context, false, unknown); elsewhere
     if (name == "::=")return emitGetGlobal(node); // globals ASSIGNMENT already handled in analyze / globalSection()
     if (node.length < 1 and not node.value.node and not node.next) {
         if (name == "not")return emitValue(True, context);
@@ -1487,10 +1488,13 @@ Code emitOperator(Node &node, Function &context) {
         const Code &rhs_code = emitExpression(rhs, context);
         Type rhs_type = last_type;
         Type common_type = commonType(lhs_type, rhs_type);// 3.1 + 3 => 6.1 etc
+        bool same_domain = common_type != none; // todo: only some operators * / + - only sometimes autocast!
         code.push(lhs_code);// might be empty ok
-        code.add(cast(lhs_type, common_type));
+        if (same_domain)
+            code.add(cast(lhs_type, common_type));
         code.push(rhs_code);// might be empty ok
-        code.add(cast(rhs_type, common_type));
+        if (same_domain)
+            code.add(cast(rhs_type, common_type));
         if (common_type != void_block)
             last_type = common_type;
         else last_type = rhs_type;
@@ -1642,13 +1646,14 @@ Code emitOperator(Node &node, Function &context) {
 
 Type commonType(Type lhs, Type rhs) {
     // todo: per function / operator!
+    if (lhs == rhs)return lhs;
     if (lhs == i64 and rhs == int32) return i64;
     if (lhs == int32 and rhs == i64) return i64;
     if (lhs == unknown_type and rhs == i64) return i64;// bad guess, could be any object * n !
     if (lhs == float64 or rhs == float64)return float64;
     if (lhs == float32 or rhs == float32)return float32;
-    // todo?
-    return lhs;
+    return lhs; // todo!
+//    return none;
 }
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string) {

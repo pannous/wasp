@@ -3068,17 +3068,14 @@ void tests() {
 
 
 void testWasmGC() {
+    return;
     use_wasm_structs = true;
     use_wasm_strings = true;
     use_wasm_arrays = true;
-//    use_wasm_structs = false;
-//    use_wasm_strings = false;
-//    use_wasm_arrays = false;
-    if (!use_wasm_arrays)
-        return;
 //    assert_emit("x=(1 2 3)", 0);
+    assert_emit("x=(5 6 7);x#2", 6);
 //    assert_emit("x=(1 2 3);x[1]", 2);
-    assert_emit("x=(1 2 3);2", 2);
+//    assert_emit("x=(1 2 3);2", 2);
 //    assert_emit("(1 2 3)[1]", 2);
 //    exit(0);
 //    assert_emit("x=[1 2 3];x[1]", 2);

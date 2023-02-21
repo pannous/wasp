@@ -369,8 +369,12 @@ Valtype mapTypeToWasm(Type t) {
         return (Valtype) t.value;
     if (t.value < 0x10000) // todo
         return mapTypeToWasm((Primitive) t);
-    if (isGeneric(t))
+    if (isGeneric(t)) {
+        // todo!
+        return (Valtype) (((short) mapTypeToWasm(t.generics.kind)) * 0x100 +
+                          (short) mapTypeToWasm(t.generics.value_type));
         error("generics needs more than Valtype");
+    }
     if (isArrayType(t))
         return mapTypeToWasm(array); // wasm_pointer
     Node *type_node = (Node *) t.value;
