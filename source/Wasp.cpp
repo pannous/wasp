@@ -281,7 +281,8 @@ bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
     if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
     if (ch == u'¬')return true;
     if (ch == u'＝')return true;
-    if (ch == u'#')return true;
+    if (ch == u'#')
+        return true;
     if (operator_list.has(String(ch)))
         return true;
 
@@ -854,10 +855,12 @@ private:
         if (ch == '#') {
             if (not(empty(previous)))
                 return false;
+            if (empty(next))
+                inlineComment();
             if (next == '*' or next == '#')
                 blockComment();
             else
-                inlineComment();
+                return false;
             previous = lastNonWhite = preserveLast;
             return true;
         }
@@ -1737,6 +1740,9 @@ private:
                 case '#':
                     if (next == ' ') {
                         comment();
+                        continue;
+                    } else {
+                        actual.add(operatorr());
                         continue;
                     }
                 case '/':

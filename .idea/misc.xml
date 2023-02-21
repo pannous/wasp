@@ -26,6 +26,7 @@
       <file path="$PROJECT_DIR$/playground" />
       <file path="$PROJECT_DIR$/source/old" />
       <file path="$PROJECT_DIR$/test/merge" />
+      <file path="$PROJECT_DIR$/wapm" />
       <file path="$PROJECT_DIR$/xxx" />
     </excludeRoots>
   </component>
