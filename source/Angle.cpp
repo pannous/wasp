@@ -1033,7 +1033,7 @@ Node &groupOperators(Node &expression, Function &context) {
             node.add(next);
             expression.replace(i, i + 1, node);
         } else {
-            if (op == "#")
+            if (op == "#" and not use_wasm_strings)
                 findLibraryFunction("getChar", false);
 
             prev = analyze(prev, context);
@@ -1191,8 +1191,7 @@ Type preEvaluateType(Node &node, Function &context) {
 //        if (use_wasm_arrays) {// todo
 //        auto valueType = preEvaluateType(node.values(), context);
         auto valueType = commonElementType(node);
-        if (valueType == unknown_type)
-            return unknown_type;
+        if (valueType == unknown_type) return unknown_type;
         return genericType(node.kind, valueType);
 //        }
     }

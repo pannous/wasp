@@ -548,14 +548,10 @@ uint arrayTypeIndex(Type value_type) {
 Code emitWasmArrayGetter(Node &node, Function &context, Local local) {
     Code code;
     Type value_type = last_value_type;
-    if (local.typeXX)
-        value_type = local.typeXX;
-    else {
-        todow("array value type");
-        value_type = byte_i8;// longs;
-    }
+    if (local.type.isGeneric())
+        value_type = local.type.generics.value_type;
     uint type_index = arrayTypes[value_type];
-    code.addConst32(node.value.longy);
+    code.addConst32(node.value.longy - 1);// offset TODO use stack!
     code.addOpcode(arrayGet);
     code.addInt(type_index);
     last_type = value_type;
@@ -1002,6 +998,13 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
 //			if(reference.type)
 //			last_type = mapTypeToWasm(*reference.type);
 ////			last_type.clazz
+        }
+
+        if (use_wasm_arrays and local.type.isArray()) {
+            Code code;
+            code.addOpcode(get_local);
+            code.addByte(local.position);// base location stored in variable!
+            return code + emitWasmArrayGetter(pattern, context, local);
         }
 //		else error("reference should be mapped");
 
