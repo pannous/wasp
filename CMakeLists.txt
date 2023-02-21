@@ -6,10 +6,11 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 if (X86_64)
     LINK_DIRECTORIES(bin/mac/lib.x86)
 else ()
-    #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
-    LINK_DIRECTORIES(bin/mac/lib)
+    LINK_DIRECTORIES(lib/)
+    #    LINK_DIRECTORIES(bin/mac/lib)
     #    LINK_DIRECTORIES(bin/mac/lib/aarch64)
     #        LINK_DIRECTORIES(bin/linux/arm64/lib/)
+    #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
 endif ()
 
 #set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
@@ -35,18 +36,19 @@ if (NOT WASM)
     set(CONSOLE 1)
     if (NOT RUNTIME_ONLY)
         set(INCLUDE_MERGER 1) # works with WASI
-        # TO EXECUTE wasm:
+        # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         #        SET(WASMTIME 1) # FASTEST but very unstable / elusive bugs "object used with the wrong store" etc
         #    set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying 2022-12: last release on Jun 2, 2021
-        #            set(MICRO 1) # SLOW on Mac M1 wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
+        #            set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
         #            set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #    set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-        #    set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+        #            set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+        # others: WAVM WAMR
     endif ()
     #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
     # ^^ fixes <cmath> mac errors!
@@ -171,7 +173,7 @@ if (DEBUG)
     SET(DWARF_DSYM_FOLDER_PATH "$(CONFIGURATION_BUILD_DIR)/dSyms")
     SET(DEPLOYMENT_POSTPROCESSING YES)
     ADD_COMPILE_FLAG(" -g3") # DEBUG DWARF output only emscripten?
-#    Compilers like Rust and Clang already support emitting DWARF information in WebAssembly modules.
+    #    Compilers like Rust and Clang already support emitting DWARF information in WebAssembly modules.
 endif ()
 
 ADD_COMPILE_FLAG("-fno-inline") # why not? debug?

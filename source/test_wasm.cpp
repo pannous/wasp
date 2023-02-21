@@ -1205,7 +1205,7 @@ void testSmartReturn() {
     )
 
     assert_is(("42.0/2.0"), 21)
-    assert_emit("x='abcde';x#4='x';x[3]", 'x');
+    assert_emit("x='abcde';x#4='f';x[3]", 'f');
     assert_emit(("-1.1"), -1.1)
     assert_emit("'OK'", "OK");
     assert_emit("'a'", Node('a'));

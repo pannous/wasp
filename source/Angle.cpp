@@ -1100,7 +1100,8 @@ Node &groupOperators(Node &expression, Function &context) {
                     }
                 }
                 //#endif
-                node.add(prev);
+                if (not(op == "#" and prev.empty() and prev.kind != reference)) // ok for #(1,2,3) == len
+                    node.add(prev);
                 node.add(next);
 
                 if (op == "::=") {
@@ -1125,8 +1126,10 @@ Node &groupOperators(Node &expression, Function &context) {
 //				analyzed.add(node.hash(), true);
                 if (i > 0)
                     expression.replace(i - 1, i + 1, node);
-                else
+                else {
+                    expression.replace(i, i + 1, node);
                     warn("operator missing argument");
+                }
             }
         }
         last_position = i;

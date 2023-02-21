@@ -545,6 +545,81 @@ uint arrayTypeIndex(Type value_type) {
     return arrayTypes[value_type];
 }
 
+
+Code stringRefLength() {
+    Code code;
+//    code.addOpcode(string_measure_utf8);
+    code.addOpcode(string_measure_wtf8);
+    code.add(1);// memory?
+    code.add(1);// encoding 0:utf8 1:wtf8  2:utf16 3:utf32 // todo why is utf8 'unreachable'?
+    last_type = i64;
+    code.addOpcode((i64_extend_i32_s));
+    return code;
+}
+
+
+Code castStringToRef() {
+    Code code;
+    return code;
+}
+
+Code castRefToChars() {
+    Code code;
+    // expects stringref on stack
+    code.addConst32(data_index_end);// heap_end
+//  (string.encode_utf8 $memory $? $encoding (stack: $stref $heap_end)
+    code.addOpcode(string_encode_wtf8);
+    code.add(1/*wtf8*/);// encoding 0:wtf 1:utf8 2:utf16 3:utf32
+    code.add(0);// memory
+    code.addOpcode(drop);// string_encode_utf8 returns the number of bytes written, we don't need it
+    code.addConst32(data_index_end);// heap_end
+    data_index_end += 100;// lol
+    last_type = charp;
+    return code;
+}
+
+
+Code emitLength(Node &node, Function &context) {
+    Code code;
+//    code.addConst32(42);
+//    return code;
+    Type type = node.kind;
+    if (context.locals.contains(node.name)) {
+        Local local = context.locals[node.name];
+        type = local.type;
+//        if(not on_stack)
+//        code.addOpcode(local_get);
+//        code.addInt(local.position);
+    }
+    if (type.isArray()) {
+        auto valueType1 = valueType(type);
+        if (use_wasm_arrays) {
+            code.addOpcode(arrayLen);
+            code.addInt(arrayTypes[valueType1]);
+            last_type = i32;
+            return code;
+        } else todo("length of array");
+    }
+    if (type == stringp) {
+        code.addConst32(0x04);
+        code.addOpcode(i32_sub);
+        // offset to string length in our struct
+        code.addOpcode(i32_load);
+        code.add(0x02);// alignment (?)
+        code.add(0x00);//
+        last_type = i32;
+        return code;
+//        return emitCall(*new Node("strlen"), context);
+    }
+
+    if (type == strings) {
+        if (use_wasm_strings)
+            return stringRefLength();
+        else todo("length of string");
+    }
+    return code;
+}
+
 Code emitWasmArrayGetter(Node &node, Function &context, Local local) {
     Code code;
     Type value_type = last_value_type;
@@ -1473,6 +1548,7 @@ Code emitOperator(Node &node, Function &context) {
     if (name == ":=")return emitSetter(node, first, context);
     if (name == "=")return emitSetter(node, first, context);// todo node.first dodgy
     if (name == ".") return emitAttribute(node, context);
+//    if (name=="#" and node.length==1)return emitLength(node, context);
 //    if (name=="#" and node.length==2 and use_wasm_arrays)return emitWasmArrayGetter(node, context);
 //	if (name=="#" and node.length==2)return emitIndexPattern(node[0], node[1], context, false, unknown); elsewhere
     if (name == "::=")return emitGetGlobal(node); // globals ASSIGNMENT already handled in analyze / globalSection()
@@ -1560,6 +1636,8 @@ Code emitOperator(Node &node, Function &context) {
         increased.add(new Node(1));// todo polymorph operator++ instead of +1 !
         code.add(emitSetter(first, increased, context));
     } else if (name == "#") {// index operator
+        if (node.length == 1)
+            return code + emitLength(first, context);
         if (node.parent and node.parent->name == "=")// setter!
             return code + emitIndexWrite(node[0], context);// todo
         else {
@@ -1683,6 +1761,8 @@ Code emitStringOp(Node &op, Function &context) {
         last_type = charp;//stringp;
         return Code(i32_const) + Code(-1) + emitCall(op, context);// third param required!
     } else if (op == "#") {// todo: all different index / op matches
+        if (op.length == 1)
+            return emitLength(op.first(), context);
         op = Node("getChar");//  careful : various signatures
         functions["getChar"].signature.return_types[0] = codepoint1;// can't infer from demangled export name nor wasm
         return emitCall(op, context);
@@ -2064,40 +2144,6 @@ Code emitCall(Node &fun, Function &context) {
 //	last_type.clazz = &signature.return_type;// todo dodgy!
     return code;
 }
-
-
-Code stringRefLength() {
-    Code code;
-//    code.addOpcode(string_measure_utf8);
-    code.addOpcode(string_measure_wtf8);
-    code.add(1);// memory?
-    code.add(1);// encoding 0:utf8 1:wtf8  2:utf16 3:utf32 // todo why is utf8 'unreachable'?
-    last_type = i64;
-    code.addOpcode((i64_extend_i32_s));
-    return code;
-}
-
-
-Code castStringToRef() {
-    Code code;
-    return code;
-}
-
-Code castRefToChars() {
-    Code code;
-    // expects stringref on stack
-    code.addConst32(data_index_end);// heap_end
-//  (string.encode_utf8 $memory $? $encoding (stack: $stref $heap_end)
-    code.addOpcode(string_encode_wtf8);
-    code.add(1/*wtf8*/);// encoding 0:wtf 1:utf8 2:utf16 3:utf32
-    code.add(0);// memory
-    code.addOpcode(drop);// string_encode_utf8 returns the number of bytes written, we don't need it
-    code.addConst32(data_index_end);// heap_end
-    data_index_end += 100;// lol
-    last_type = charp;
-    return code;
-}
-
 
 [[nodiscard]]
 Code cast(Valtype from, Valtype to) {
@@ -2916,7 +2962,7 @@ Code emitCodeSection(Node &root) {
 }
 
 Code emitStringSection() {
-    if (not use_wasm_strings)
+    if (not use_wasm_strings or wasm_strings.size() == 0)
         return Code();
     Code strings(0);// ?
     strings.addInt(wasm_strings.size());// count of strings
@@ -2930,7 +2976,7 @@ Code emitStringSection() {
 [[nodiscard]]
 Code emitExportSection() {
 //    https://webassembly.github.io/spec/core/binary/modules.html#binary-exportsec
-    short exports_count = 1;// just main … todo easy
+    int exports_count = 1;// just main … todo easy
 // the export section is a vector of exported functions etc
     if (!start)// todo : allow arbirtrary exports, or export all
         return createSection(export_section, Code(0));
@@ -2968,7 +3014,7 @@ Code emitExportSection() {
         exports_count++;
     }
     Code exportsData = encodeVector(
-            Code(exports_count) + mainExport + memoryExport + globalExports);
+            Code(exports_count) + memoryExport + mainExport + globalExports);
 
     auto exportSection = createSection(export_section, exportsData);
     return exportSection;
@@ -2982,6 +3028,7 @@ Code emitGlobalSection() {
     // user global index += global_import_count !
     //referenced through global indices, starting with the smallest index not referencing a global import.
     global_user_count = globals.count();
+    if (global_user_count == 0)return Code();
     Code globalsList;
     globalsList.add(global_user_count);
     /* example:

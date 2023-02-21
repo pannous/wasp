@@ -93,6 +93,14 @@ public:
         length = 1;
     }
 
+    Code(short opcode) {
+        data = (bytes) alloc(2, 1);
+        data[0] = opcode % 0x100;
+        data[1] = opcode / 0x100;
+        length = 2;
+    }
+
+
     Code(int nr, bool LEB = true) {// ambiguous: byte (un)signedLEB128 or int32 !!
         if (LEB) {
 //			push(nr, false, LEB);
