@@ -624,6 +624,35 @@ Node &constructInstance(Node &node, Function &function) {
 }
 
 
+void updateLocal(Function &context, String name, Type type) {
+//#if DEBUG
+    Local &local = context.locals[name];
+    auto type_name = typeName(type);
+    auto oldType = local.type;
+    if (oldType == none or oldType == unknown_type) {
+        local.type = type;
+    } else if (oldType != type and type != void_block and type != voids and (Type) type != unknown_type) {
+        if (use_wasm_arrays) {
+            // TODO: CLEANUP
+            if (oldType == node) {
+                addWasmArrayType(type);
+                local.type = type;// make more specific!
+            } else if (isGeneric(oldType)) {
+                auto kind = oldType.generics.kind;
+                auto valueType1 = oldType.generics.value_type;
+                if (valueType1 != type) todow(
+                        "generic type mismatch "s + typeName(oldType) + " vs " + type_name);
+            } else if (oldType == wasmtype_array or oldType == array) {
+                addWasmArrayType(type);
+                local.type = genericType(array, type);
+            }
+        } else
+            warn("local in context %s already known "s % context.name + name + " with type " + typeName(oldType) +
+                 ", ignoring new type " + type_name);
+    }
+    // ok, could be cast'able!
+}
+
 // return: done?
 // todo return clear enum known, added, ignore ?
 bool addLocal(Function &context, String name, Type type, bool is_param) {
@@ -645,36 +674,11 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
         int position = context.locals.size();
         context.locals.add(name, Local{.is_param=is_param, .position=position, .name=name, .type=type});
         return true;// added
-    }
-//#if DEBUG
-    else {
-        Local &local = context.locals[name];
-        auto oldType = local.type;
-        if (oldType == none or oldType == unknown_type) {
-            local.type = type;
-        } else if (oldType != type and type != void_block and type != voids and (Type) type != unknown_type) {
-            if (use_wasm_arrays) {
-                // TODO: CLEANUP
-                if (oldType == node) {
-                    addWasmArrayType(type);
-                    local.type = type;// make more specific!
-                } else if (isGeneric(oldType)) {
-                    auto kind = oldType.generics.kind;
-                    auto valueType1 = oldType.generics.value_type;
-                    if (valueType1 != type) todow(
-                            "generic type mismatch "s + typeName(oldType) + " vs " + typeName(type));
-                } else if (oldType == wasmtype_array or oldType == array) {
-                    addWasmArrayType(type);
-                    local.type = genericType(array, type);
-                }
-            } else
-                warn("local in context %s already known "s % context.name + name + " with type " + typeName(oldType) +
-                     ", ignoring new type " + typeName(type));
-        }
-        // ok, could be cast'able!
+    } else {
+        updateLocal(context, name, type);
+        return false;// already there
     }
 //#endif
-    return false;// already there
 }
 
 Node &groupSetter(String name, Node &body, Function &context) {
@@ -1183,12 +1187,14 @@ Type preEvaluateType(Node &node, Function &context) {
 //        if(lhs.kind==arrays)
     }
     if (isGroup(node.kind)) {
-        arrayElementSize(node);// adds type as BAD SIDE EFFECT
-        if (use_wasm_arrays) {// todo
+//        arrayElementSize(node);// adds type as BAD SIDE EFFECT
+//        if (use_wasm_arrays) {// todo
 //        auto valueType = preEvaluateType(node.values(), context);
-            auto valueType = commonElementType(node);
-            return genericType(node.kind, valueType);
-        }
+        auto valueType = commonElementType(node);
+        if (valueType == unknown_type)
+            return unknown_type;
+        return genericType(node.kind, valueType);
+//        }
     }
     if (node.kind == reference) {
         if (context.locals.has(node.name)) {

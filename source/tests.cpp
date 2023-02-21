@@ -3068,6 +3068,8 @@ void tests() {
 
 
 void testWasmGC() {
+    assert_emit("y=(1 4 3)[1]", 4);
+    assert_is("x=(1 4 3);x#2", 4);
     return;
     use_wasm_structs = true;
     use_wasm_strings = true;
@@ -3098,16 +3100,13 @@ void testWasmGC() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
-//    testBitField();
-
 //    testKebabCase();
-//    assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
 //    testSinus();
-
     skip(
+            assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
             assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
+            testGenerics();
     )
-    testGenerics();
 #if not WASM
     testWasmGC();
 #endif
