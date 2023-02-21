@@ -953,8 +953,8 @@ Node &groupOperators(Node &expression, Function &context) {
     if (analyzed.has(expression.hash()))
         return expression;
 
-    if ((expression.kind == reference or expression.kind == Kind::expression) and expression.name.contains('-'))
-        return groupKebabMinus(expression, context); // extra logic for a-b kebab-case vs minus
+//    if ("a-b" and (expression.kind == reference or expression.kind == Kind::expression) and expression.name.contains('-'))
+//        return groupKebabMinus(expression, context); // extra logic for a-b kebab-case vs minus
 
     Function &function = context;
     List<String> operators = collectOperators(expression);
@@ -970,7 +970,6 @@ Node &groupOperators(Node &expression, Function &context) {
         }
 //		else todo("ungrouped dangling operator");
     }
-
 
     for (String &op: operators) {
 //        trace("operator");
@@ -1033,7 +1032,6 @@ Node &groupOperators(Node &expression, Function &context) {
             if (op == "#")
                 findLibraryFunction("getChar", false);
 
-            prev.setType(Kind::expression, false);
             prev = analyze(prev, context);
             auto lhs_type = preEvaluateType(prev, context);
             if (op == "+" and (lhs_type == Primitive::charp or lhs_type == Primitive::stringp or lhs_type == strings)) {
@@ -1168,14 +1166,6 @@ Type preEvaluateType(Node &node, Function &context) {
     if (node.kind == expression) {
         if (node.name == "if") // if … then (type 1) else (type 2)
             return commonType(preEvaluateType(node["then"], context), preEvaluateType(node["else"], context));
-        if (context.locals.contains(node.name)) {
-//            return Kind::reference;
-            auto &local = context.locals[node.name];
-            if (local.type != unknown_type)
-                return local.type;
-            else
-                return preEvaluateType(node.values(), context);// danger: loop
-        }
         if (node.length == 1)return preEvaluateType(node.first(), context);
         node = groupOperators(node, context);
         return mapType(node.name);

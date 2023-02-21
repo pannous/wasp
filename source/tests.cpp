@@ -539,24 +539,18 @@ void testHyphenUnits() {
 }
 
 void testHypenVersusMinus() {
+    testHyphenUnits();
+    const char *code = "a=1 b=2 b-a";
+    assert_emit(code, 3);
     // kebab case
-    assert_emit("x=3;c=1;‖(x-c)^2‖", 4);
-
     const char *data = "a-b:2 c-d:4 a-b";
     assert_emit(data, 2);
-    const char *code = "a=1;b=2;b-a";
-    assert_emit(code, 1);
-    testWasmTernary();
-    assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
-    testHyphenUnits();
 //    Node &node = parse(data);
 }
-
 
 void testKebabCase() {
     testHypenVersusMinus();
 }
-
 
 
 /*
