@@ -214,6 +214,8 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     kind_padding = 0x80000000, // TODO do 32 bit padding differently! keep kind in 8 bits! TODO remove!
 };
 
+bool isGroup(Kind type); // Node of kind group
+
 
 // Raw types as encountered in C/C++ ABI
 // unboxed primitive raw data (list is compatible with List though!)
@@ -495,6 +497,14 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
 //    bool operator==(unsigned short other) {
 //        return value == other;
 //    }
+    bool isGeneric() const {
+        return value >= 0x10000; // todo generic BIT!
+//        type.value & generics_mask;// >=0x10000;
+    }
+
+    bool isArray() const {
+        return kind == arrays or isGroup(kind) or isGeneric() and isGroup((Kind) generics.kind);
+    }
 };
 
 typedef Type32 Type;
@@ -587,5 +597,4 @@ chars typeName(Valtype t, bool fail = true);
 
 bool isGeneric(Type type);
 
-bool isGroup(Kind type); // Node of kind group
 bool isArrayType(Type type); // ^^ or generic (wasm) array

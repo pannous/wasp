@@ -987,13 +987,14 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
     int base; // …
     if (array.kind == reference or array.kind == key) {
         String &ref = array.name;
-//		last_type=array.data_kind;
+        auto local = context.locals[ref];
+        if (not local.type.isArray())
+            error("reference not declared as array type: "s + ref);
+        last_type = valueType(local.type);
         if (referenceIndices.has(ref))// also to strings
             base = referenceDataIndices[ref];
 //		else if (stringIndices.has(&ref))
 //			base += referenceIndices[ref];
-        else
-            error("reference not declared as array type: "s + ref);
         if (referenceMap.has(ref)) {
             Node &reference = referenceMap[ref];
             array = reference;
