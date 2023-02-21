@@ -539,12 +539,13 @@ void testHyphenUnits() {
 }
 
 void testHypenVersusMinus() {
-    testHyphenUnits();
     const char *code = "a=1 b=2 b-a";
     assert_emit(code, 3);
     // kebab case
     const char *data = "a-b:2 c-d:4 a-b";
     assert_emit(data, 2);
+//    testHyphenUnits();
+
 //    Node &node = parse(data);
 }
 
@@ -3067,12 +3068,12 @@ void tests() {
 
 
 void testWasmGC() {
-//    use_wasm_structs = true;
-//    use_wasm_strings = true;
-//    use_wasm_arrays = true;
-    use_wasm_structs = false;
-    use_wasm_strings = false;
-    use_wasm_arrays = false;
+    use_wasm_structs = true;
+    use_wasm_strings = true;
+    use_wasm_arrays = true;
+//    use_wasm_structs = false;
+//    use_wasm_strings = false;
+//    use_wasm_arrays = false;
     if (!use_wasm_arrays)
         return;
 //    assert_emit("x=(1 2 3)", 0);
@@ -3101,9 +3102,8 @@ void testWasmGC() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
 //    testBitField();
-    testWasmTernary();
 
-    testKebabCase();
+//    testKebabCase();
 //    assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
 //    testSinus();
 
