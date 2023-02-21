@@ -709,7 +709,7 @@ Type genericType(Type type, Type value_type) {
 }
 
 bool isArrayType(Type type) {
-    return isGroup(type.kind) or isGeneric(type) and isGroup((Kind) type.generics.kind);
+    return type.isArray();
 }
 
 bool isGeneric(Type type) {
