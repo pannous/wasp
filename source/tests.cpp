@@ -3104,10 +3104,14 @@ void testWasmGC() {
 void testCurrent() {
 //    testKebabCase();
 //    testSinus();
+//	assert_emit("3*42≥2*3", 1)
+	assert_emit("'world'#1", 'w');
+	assert_emit("y=(1 4 3)#2", 4);
+	assert_emit(("id(3*42)≥2*3"), 1)
 	assert_emit("#'abcde'", 5);
 	assert_emit("x='abcde';#x", 5);
 	assert_emit("x=(1 2 1 2 1);#x", 5);
-	assert_emit("#(1 2 1)", 3);
+//	assert_emit("#(1 2 1)", 3);
 
 	assert_emit("x='abcde';x#4='f';x[3]", 'f');
 	assert_emit("42", 42);// basics

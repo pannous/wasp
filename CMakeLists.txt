@@ -652,4 +652,6 @@ endif ()
 #set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
 #set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/INCREMENTAL:YES ${CMAKE_CXX_FLAGS_RELEASE}")
 
+# CLion SET cidr.asynchronous.refresh.after.build = false (in Find-Action -> Registry )
+
 # Please either delete it manually or select another generation directory => delete CMakeCache.txt
