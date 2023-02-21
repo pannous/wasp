@@ -1,6 +1,6 @@
-
 Frameworks/wasm-c-api
 /yarn.lock
+*/wapm
 .idea/
 .idea/*
 node_modules/
@@ -65,3 +65,4 @@ playground/
 .cmake
 wasp
 test/merge/
+/wapm/

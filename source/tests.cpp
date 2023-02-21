@@ -3104,9 +3104,9 @@ void testWasmGC() {
 void testCurrent() {
 //    testKebabCase();
 //    testSinus();
-	assert_emit("x='abcde';#x", 5);
 	assert_emit("#'abcde'", 5);
-	assert_emit("x=(1 2 1);#x", 3);
+	assert_emit("x='abcde';#x", 5);
+	assert_emit("x=(1 2 1 2 1);#x", 5);
 	assert_emit("#(1 2 1)", 3);
 
 	assert_emit("x='abcde';x#4='f';x[3]", 'f');
