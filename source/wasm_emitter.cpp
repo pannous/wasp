@@ -696,7 +696,8 @@ Type commonElementType(Node &array) {
     }
     for (Node &child: array) {
         if (child.kind != kind) {
-            error("non coherent element forces node emission");
+            warn("non coherent element forces node emission");
+            return unknown_type;
         }
     }
     return kind;
@@ -2101,6 +2102,7 @@ Code cast(Valtype from, Valtype to) {
     if (from == to)return nop;// nop
     if (from == void_block)return nop;// todo: pray
     if ((Type) from == unknown_type)return nop;// todo: don't pray
+    if ((Type) to == unknown_type)return nop;// todo: don't pray
     if (to == none or (Type) to == unknown_type or to == voids)return nop;// no cast needed magic VERSUS wasm drop!!!
     last_type = to;// danger: hides last_type in caller!
     if (from == 0 and to == i32t)return nop;// nil or false ok as int? otherwise add const 0!
