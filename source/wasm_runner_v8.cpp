@@ -9,6 +9,7 @@
 
 
 #define V8_COMPRESS_POINTERS 1
+
 #include "libplatform/libplatform.h"
 #include "v8-context.h"
 #include "v8-initialization.h"
@@ -18,15 +19,17 @@
 #include "v8-script.h"
 
 #define own
+typedef unsigned char *bytes;
+typedef long long int64;
 
 int test_V8_cpp_Javascript() {
-    // Initialize V8.
-    const char *path = "";
-    v8::V8::InitializeICUDefaultLocation(path);
-    v8::V8::InitializeExternalStartupData(path);
-    v8::Platform *platform = v8::platform::NewDefaultPlatform();
-    v8::V8::InitializePlatform(platform);
-    v8::V8::Initialize();
+	// Initialize V8.
+	const char *path = "";
+	v8::V8::InitializeICUDefaultLocation(path);
+	v8::V8::InitializeExternalStartupData(path);
+	v8::Platform *platform = v8::platform::NewDefaultPlatform().release();
+	v8::V8::InitializePlatform(platform);
+	v8::V8::Initialize();
 
     // Create a new Isolate and make it the current one.
     v8::Isolate::CreateParams create_params;
@@ -347,7 +350,7 @@ void print_frame(wasm_frame_t *frame) {
     );
 }
 
-typedef unsigned char *bytes;
+
 extern "C" int64 run_wasm(bytes data, int size) {
 
 //    test_V8_cpp_Javascript();
