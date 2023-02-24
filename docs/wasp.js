@@ -245,6 +245,7 @@ function reset_heap() {
 
 function compile_and_run(code) {
     // reset_heap();
+    expect_test_result = false
     exports.run(chars(code));
 }
 
@@ -500,7 +501,7 @@ async function link_runtime() {
     }
 }
 
-needs_runtime = true
+needs_runtime = false;
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // download(wasm_buffer, "emit.wasm", "wasm")
@@ -526,8 +527,7 @@ async function run_wasm(buf_pointer, buf_size) {
         // result = nod.Value()
     }
     console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM emit.WASM
-    if (expect_test_result || 1) {
-
+    if (expect_test_result) {
         if (Array.isArray(expect_test_result) && Array.isArray(result)) {
             for (let i = 0; i < result.length; i++)
                 check(+expect_test_result[i] == +result[i])
@@ -539,6 +539,7 @@ async function run_wasm(buf_pointer, buf_size) {
         expect_test_result = 0
         if (resume) setTimeout(resume, 1);
     }
+    results.value = result // JSON.stringify( Do not know how to serialize a BigInt
     return result; // useless, returns Promise!
 }
 

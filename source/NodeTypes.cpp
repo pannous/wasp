@@ -370,10 +370,13 @@ Valtype mapTypeToWasm(Type t) {
     if (t.value < 0x10000) // todo
         return mapTypeToWasm((Primitive) t);
     if (isGeneric(t)) {
-        // todo!
-        return (Valtype) (((short) mapTypeToWasm(t.generics.kind)) * 0x100 +
-                          (short) mapTypeToWasm(t.generics.value_type));
-        error("generics needs more than Valtype");
+	    warn("isGeneric Type");
+	    puti(t.value);
+	    warn(typeName(t));
+	    // todo!
+//        return (Valtype) (((short) mapTypeToWasm(t.generics.kind)) * 0x100 +
+//                          (short) mapTypeToWasm(t.generics.value_type));
+	    error("generics needs more than Valtype");
     }
     if (isArrayType(t))
         return mapTypeToWasm(array); // wasm_pointer
@@ -703,6 +706,7 @@ Type valueType(Type type) {
 }
 
 Type genericType(Type type, Type value_type) {
+	warn("genericType "s + typeName(type) + " for " + typeName(value_type));
     if (type.value >= 0x10000 or value_type.value >= 0x10000)
         error("not a generic type holder "s + typeName(type) + " for " + typeName(value_type));
     return Type(Generics{.kind = (short) type.value, .value_type = (short) value_type.value});

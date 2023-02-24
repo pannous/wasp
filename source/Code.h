@@ -751,22 +751,31 @@ enum reference_opcodes { // on Valtype wasm_i31 = 0x…,
 // https://github.com/WebAssembly/wabt/issues/2144 wat2wasm --enable-all --enable-stringref << IN PROGRESS!
 // idx point to section stringrefs ::= section_14(0x00 vec(vec(u8)))
 enum string_ops { // on Valtype stringref = 0x64
-    string_new_utf8 = 0xfb80, // $mem:u32
+    string_new_utf8 = 0xfb80, // $mem:u32  BROKEN!? use string_new_wtf8
     string_new_wtf16 = 0xfb81, // $mem:u32   (Wobbly Transformation Format, 8-bit) unpaired surrogate halves (U+D800 through U+DFFF) are allowed.
     string_const = 0xfb82, // $idx:u32 (idx points to section stringrefs) <<<
+
+    // length
     string_measure_utf8 = 0xfb83, //
     string_measure_wtf8 = 0xfb84, //
     string_measure_wtf16 = 0xfb85, //
+
+    // string to data
     string_encode_utf8 = 0xfb86, // $mem:u32
     string_encode_wtf16 = 0xfb87, // $mem:u32
+
     string_concat = 0xfb88, //
     string_eq = 0xfb89, //
     string_is_usv_sequence = 0xfb8a, //
+
+    // data to string
     string_new_lossy_utf8 = 0xfb8b, // $mem:u32
     string_new_wtf8 = 0xfb8c, // $mem:u32
+
     string_encode_lossy_utf8 = 0xfb8d, // $mem:u32
     string_encode_wtf8 = 0xfb8e, // $mem:u32
-    string_as_wtf8 = 0xfb90, //
+    string_as_wtf8 = 0xfb90, // ?
+
     stringview_wtf8_advance = 0xfb91, //
     stringview_wtf8_encode_utf8 = 0xfb92, // $mem:u32
     stringview_wtf8_slice = 0xfb93, //
@@ -788,6 +797,7 @@ enum string_ops { // on Valtype stringref = 0x64
     string_from_code_point = 0xfba9, // (cp: int32) -> string
     string_hash = 0xfbaa, // (str: string) -> int32
 
+    // array to stringref
     string_new_utf8_array = 0xfbb0, //           [gc]
     string_new_wtf16_array = 0xfbb1, //           [gc]
     string_encode_utf8_array = 0xfbb2, //           [gc]

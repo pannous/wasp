@@ -2882,7 +2882,7 @@ void testBadInWasm() {
 
 void assurances() {
 #if WASM
-//	check(sizeof(Type32) == 4) // todo:
+	//	check(sizeof(Type32) == 4) // todo:
 #else
 	check(sizeof(Type) == 8) // otherwise all header structs fall apart
 #endif
@@ -3068,7 +3068,7 @@ void tests() {
 
 
 void testWasmGC() {
-//	return;
+	return;
 //    assert_emit("y=(1 4 3)[1]", 4);
 //    assert_is("x=(1 4 3);x#2", 4);
 //assert_emit("42",42);
@@ -3076,6 +3076,26 @@ void testWasmGC() {
 	use_wasm_strings = true;
 	use_wasm_arrays = true;
 //    assert_emit("x=(1 2 3)", 0);
+	Node fun;
+	fun.name = "first";
+	fun.kind = declaration; // ≠ functor;
+	fun.type = types["u8"];
+
+	Node fun_type;
+	fun.name = "my_callback";
+	fun.kind = clazz;
+//	fun.kind = functor; todo
+
+//	testGcFunctionReferences();
+	assert_emit("(type $int_callback (func (result i32)))", fun_type); // e.g. random provider
+	assert_emit("(type $my_notification (func ))", fun_type);
+	assert_emit("(type $my_callback (func (param i32) (result i32)))", fun_type);
+//	testGcFunctionReferenceParameters();
+//	testGcReferenceParameters();
+	assert_emit("def first(array);", fun);
+	assert_emit("def first(array<u8>);", fun);
+	assert_emit("def first(list<u8>);", fun);
+	assert_emit("x=(5 4 3);u8 first(list<u8> y){y#1};first(x)", 5);
 	assert_emit("x=(5 6 7);#x", 3);
 	assert_emit("x=(5 6 7);x#2", 6);
 	assert_emit("'world'#1", 'w');
@@ -3114,7 +3134,8 @@ void testWasmGC() {
 void testCurrent() {
 //    testKebabCase();
 //    testSinus();
-//	assert_emit("3*42≥2*3", 1)
+	assert_emit("√3^2", 3)
+	assert_emit("3*42≥2*3", 1)
 
 
 	skip(
