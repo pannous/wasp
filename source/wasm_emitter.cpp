@@ -1230,7 +1230,6 @@ Code emitString(Node &node, Function &context) {
 		error("empty node.value.string");
 //    emitPadding(data_index_end % 4);// pad to int size, too late if in node struct!
 
-
 	int last_pointer = data_index_end;
 	String &string = *node.value.string;
 	referenceMap[string] = node;
@@ -1268,6 +1267,10 @@ Code emitString(Node &node, Function &context) {
 	data_index_end += string.length + 1;
 	last_type = stringp;
 	last_object_pointer = last_pointer;
+
+	if (use_wasm_strings) // via data instead of string_const
+		return Code().addInt(string.length).addInt(chars_start).addOpcode(string_new_wtf8);
+
 	return Code().addConst32(chars_start);// direct data!
 }
 
