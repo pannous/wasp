@@ -21,12 +21,18 @@ void free(void *) {/*lol*/}
 
 _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void *) _NOEXCEPT {}
 
+
+#if EMSCRIPTEN
+extern "C" void assert_expect(Node *result) {}
+extern "C" void async_yield() {}
+#endif
+
 inline int64 doubleToLongBits(double a) {
-    return *((int64 *) &a);
+	return *((int64 *) &a);
 }
 
 inline double longBitsToDouble(int64 a) {
-    return *((double *) &a);
+	return *((double *) &a);
 }
 
 double powd(double a, double b) {
@@ -247,7 +253,9 @@ void memcpy1(bytes dest, bytes source, int i) {
         dest[i] = source[i];
 }
 
+#if not EMSCRIPTEN
 __attribute__((__nothrow__, __leaf__, __nonnull__(1, 2)))
+#endif
 extern "C" void *memcpy(void *__restrict__ destination, const void *__restrict__ source, size_t num) {
 //extern "C" void* memcpy(char *destination, char *source, size_t num) {
 //    check_silent((int64) destination + num < MEMORY_SIZE)

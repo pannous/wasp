@@ -1850,17 +1850,17 @@ void testEqualities() {
 void testBitField() {
 	union mystruct {// bit fields
 		struct {
-			uint16_t Reserved1: 3;
-			uint16_t WordErr: 1;
-			uint16_t SyncErr: 1;
-			uint16_t WordCntErr: 1;
-//            uint16_t Reserved2: 10;
+			short Reserved1: 3;
+			short WordErr: 1;
+			short SyncErr: 1;
+			short WordCntErr: 1;
+//            short Reserved2: 10;
 		};
-		uint16_t word_field;
+		short word_field;
 	};
 	check_eq(sizeof(mystruct), 2 /*bytes */);
 	mystruct x;
-	x.WordErr = 1;
+	x.WordErr = true;
 	check_eq(x.word_field, 8);// 2^^3
 }
 
