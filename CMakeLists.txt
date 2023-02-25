@@ -3,6 +3,23 @@ project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
+# ⚠️ SET these configurations via Preferences… Build->CMake->Profiles
+#  MANUALLY force set these only for urgent debugging,
+#set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
+#set(RELEASE 0) # no tests todo VS:
+#set(NO_TESTS 1) # no tests
+#set(VERBOSE 1)
+#set(DEBUG 1)
+#set(TRACE 1)
+#set(SDL 1) # Graphics
+#set(WABT_MERGE 1) # not the whole WABT though, heavy
+#set(INCLUDE_MERGER 0)
+#set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
+#ADD_DEFINITIONS(-DMULTI_VALUE)
+#ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
+
+# binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
+
 if (X86_64)
     LINK_DIRECTORIES(bin/mac/lib.x86)
 else ()
@@ -19,26 +36,6 @@ if (EMSCRIPTEN)
     set(WASM 1)
     ADD_DEFINITIONS(-DEMSCRIPTEN)
 endif ()
-
-
-#set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
-
-# SET these configurations via Preferences… Build->CMake->Profiles
-# MANUALLY force set these only for urgent debugging,
-#set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
-#set(RELEASE 0) # no tests todo VS:
-#set(NO_TESTS 1) # no tests
-#set(VERBOSE 1)
-#set(DEBUG 1)
-#set(TRACE 1)
-#set(SDL 1) # Graphics
-#set(WABT_MERGE 1) # not the whole WABT though, heavy
-#set(INCLUDE_MERGER 0)
-#set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
-#ADD_DEFINITIONS(-DMULTI_VALUE)
-#ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
-
-# binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
 
 
 if (NOT WASM)
@@ -442,6 +439,7 @@ if (WASM) # OR WASI)
     endif ()
     if (DEBUG)
         ADD_COMPILE_FLAG("-O0")
+        ADD_COMPILE_FLAG("-g")
         #        ADD_COMPILE_FLAG("-Oz") # makes wasm Linking SLOOW! OK keeps variable names! DWARF only in emcc
         #        ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
         #        the DWARF section information/references are invalid after wasm-pack, wasm-opt or any other tools,
