@@ -98,13 +98,25 @@ public:
         digits = (bytes) formatLong(l);// todo …
     }
 
-    BigInt operator+(BigInt other) {todo("BigInt"); }
+    BigInt operator+(BigInt other) {
+        todo("BigInt");
+        return 0;
+    }
 
-    BigInt operator-(BigInt other) {todo("BigInt"); }
+    BigInt operator-(BigInt other) {
+        todo("BigInt");
+        return 0;
+    }
 
-    BigInt operator*(BigInt other) {todo("BigInt"); }
+    BigInt operator*(BigInt other) {
+        todo("BigInt");
+        return 0;
+    }
 
-    BigInt operator/(BigInt other) {todo("BigInt"); }
+    BigInt operator/(BigInt other) {
+        todo("BigInt");
+        return 0;
+    }
 };
 
 int64 gcd(int64 a, int64 b) {
@@ -312,6 +324,7 @@ public:
                 error("Number is complex");
         }
         todo("Number cast to double for types "s + typeName(type));
+        return 0;
     }
 
 
@@ -341,6 +354,7 @@ public:
             return (double) *this == other.value.doubl;
 //            return (float) *this == (float) other.value.doubl;
         todo("Number operator ==  for types "s + typeName(type) + " and " + typeName(type2));
+        return false;
     };
 
 
@@ -371,6 +385,7 @@ public:
         if (type <= number_double and type2 <= number_double)
             return Number(pow(value.doubl, other.value.doubl));
         todo("Number operator ^ for "s + typeName(type) + " and " + typeName(type2));
+        return Number(0);
     }
 
     Number operator*(Number other) {
@@ -400,7 +415,7 @@ public:
             return Number(value.doubl * value2.doubl);// ignore 10E330 overflow
         }
         todo("Number operator * for "s + typeName(type) + " and " + typeName(type2));
-
+        return Number(0);
     }
 
     Number operator/(Number other) {
@@ -423,6 +438,7 @@ public:
             return Number(value.fraction.nominator, value.fraction.denominator * value2.longe).simplify();
 
         todo("Number operator /  for types "s + type + " and " + type2);
+        return Number(0);
     }
 
     Number simplify() {
