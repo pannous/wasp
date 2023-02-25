@@ -689,6 +689,8 @@ Valtype mapTypeToWasm(Primitive p) {
         case pad_to32_bit:
             error("don't use");
             return Valtype::none;
+        default:
+            error("missing type in mapTypeToWasm "s + typeName(p));
     }
 }
 

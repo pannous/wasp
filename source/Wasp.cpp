@@ -43,6 +43,8 @@ bool isnumber(char c){ return c>='0' and c<='9'; }
 int SERVER_PORT = 1234;
 //bool eval_via_emit = false;// not all tests yet
 bool eval_via_emit = true;// << todo!  assert_is(…)
+
+// WE DON'T NEED THIS, we can just use CANONICAL ABI lowering, e.g. for strings: [i32, i32]
 bool use_wasm_structs = false;// struct in wat
 bool use_wasm_strings = false;// stringref in wat
 bool use_wasm_arrays = false; // array in wat
