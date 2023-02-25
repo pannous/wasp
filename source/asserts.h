@@ -3,7 +3,7 @@
 
 #include "List.h"
 
-#if MY_WASM or WASM and DEBUG
+#if MY_WASM or WASM and DEBUG //or EMSCRIPTEN
 extern "C" void assert_expect(Node *result);
 extern "C" void async_yield();// throw this run and reenter after run_wasm is done
 #endif

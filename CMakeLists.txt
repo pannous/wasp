@@ -13,6 +13,14 @@ else ()
     #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
 endif ()
 
+
+if (EMSCRIPTEN)
+    message("EMSCRIPTEN")
+    set(WASM 1)
+    ADD_DEFINITIONS(-DEMSCRIPTEN)
+endif ()
+
+
 #set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 
 # SET these configurations via Preferences… Build->CMake->Profiles
@@ -32,8 +40,11 @@ endif ()
 
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
 
+
 if (NOT WASM)
+
     set(CONSOLE 1)
+
     if (NOT RUNTIME_ONLY)
         set(INCLUDE_MERGER 1) # works with WASI
         # TO EXECUTE wasm provide _run_wasm :
@@ -52,14 +63,25 @@ if (NOT WASM)
     endif ()
     #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
     # ^^ fixes <cmath> mac errors!
-    ADD_DEFINITIONS(-D_Backtrace_)
-    set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
+    if (NOT EMSCRIPTEN)
+        ADD_DEFINITIONS(-D_Backtrace_)
+        set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
+    endif ()
 endif () # else :
 #
 #if(WASP_FULL)
 #    # experiment: whole runtime included!
 #    SET(WASM3 1)
 #endif()
+
+
+FUNCTION(ADD_COMPILE_FLAG value)
+    MESSAGE(STATUS "Building ${TARGET} with ${value}")
+    FOREACH (variable CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+        SET(${variable} "${${variable}} ${value}" PARENT_SCOPE)
+    ENDFOREACH (variable)
+ENDFUNCTION()
+
 
 if (INCLUDE_MERGER)
     message(INCLUDE_MERGER)
@@ -89,10 +111,11 @@ if (WASM)
     ADD_DEFINITIONS(-DMY_WASI)
     ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
     if (DEBUG)
-        ADD_DEFINITIONS(-g3)
-        ADD_DEFINITIONS(-gdwarf-5)
-        ADD_DEFINITIONS(-gembed-source)
-        ADD_DEFINITIONS(-fforce-dwarf-frame)
+        message("WASM DEBUG with DWARF!")
+        ADD_COMPILE_FLAG(-g3)
+        ADD_COMPILE_FLAG(-gdwarf-5)
+        ADD_COMPILE_FLAG(-gembed-source)
+        ADD_COMPILE_FLAG(-fforce-dwarf-frame)
     endif ()
     #    set(RUNTIME_ONLY 1) NO, we want compiler version too!
     #    ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
@@ -155,13 +178,6 @@ if (SDL)
     #    add_executable(wasp.sdl ${SOURCE_FILES}) # same as add_library, with or without --export-all
 endif ()
 
-
-FUNCTION(ADD_COMPILE_FLAG value)
-    MESSAGE(STATUS "Building ${TARGET} with ${value}")
-    FOREACH (variable CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
-        SET(${variable} "${${variable}} ${value}" PARENT_SCOPE)
-    ENDFOREACH (variable)
-ENDFUNCTION()
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -365,7 +381,14 @@ endif ()
 if (WASM) # OR WASI)
     message(WASM)
     ADD_DEFINITIONS(-DWASM)
-    include(wasm.toolchain.cmake)
+    if (EMSCRIPTEN)
+        ADD_COMPILE_FLAG("-sERROR_ON_UNDEFINED_SYMBOLS=0")
+        set(__aarch64__ 1)
+        ADD_DEFINITIONS(-D__aarch64__)
+    else ()
+        include(wasm.toolchain.cmake)
+        SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
+    endif ()
     #    ADD_COMPILE_FLAG("-Wno-address-of-temporary") # ok when there is no stack / GC
 
     if (WASI)
@@ -378,7 +401,6 @@ if (WASM) # OR WASI)
         ADD_COMPILE_FLAG("-nostdlib -march=wasm") #-v
         ADD_LINK_OPTIONS("-Wl,--no-entry") # if as library
     endif ()
-    SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
 
     #    ADD_COMPILE_FLAG("-fvisibility=hidden") # ??
     ADD_COMPILE_FLAG("-o wasp.wasm") # DIRECT OUTPUT!
@@ -471,9 +493,11 @@ elseif (WASI)
     message(WASI)
     ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
     #    only works with wasm.toolchain.cmake
-    SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
-    SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
-    ADD_COMPILE_FLAG("--sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot")
+    #    if(NOT EMSCRIPTEN)
+    #    SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
+    #    SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
+    #    ADD_COMPILE_FLAG("--sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot")
+    #    endif()
     #  ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
     #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
     add_executable(wasp.wasm ${SOURCE_FILES})

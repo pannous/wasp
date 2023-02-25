@@ -474,6 +474,7 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
 #else
         error("Unknown mapping Type to Node");
 #endif
+        return *(Node *) (void *) (int64) this->address;
     }
 
     explicit operator const char *() const { return typeName(this); }

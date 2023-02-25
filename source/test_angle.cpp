@@ -18,10 +18,15 @@ void testFunctionParams() {
 //	assert_ast("a and b", "and(a,b)");
 //}
 
+#if EMSCRIPTEN
+#define assert_expect(x)
+#define async_yield(y)
+#endif
+
 void testCall() {
 #if WASMTIME
-    warn("square 3  => SIGABRT in WASMTIME! must be bug there!?");
-    return ;
+	warn("square 3  => SIGABRT in WASMTIME! must be bug there!?");
+	return ;
 #endif
     assert_is("square 3", 9)
     assert_is("square(3)", 9)
