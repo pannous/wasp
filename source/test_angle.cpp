@@ -18,10 +18,12 @@ void testFunctionParams() {
 //	assert_ast("a and b", "and(a,b)");
 //}
 
-#if EMSCRIPTEN
-#define assert_expect(x)
-#define async_yield(y)
-#endif
+//#if EMSCRIPTEN
+//#define assert_expect(x)
+//#define async_yield(y)
+//#endif
+//
+
 
 void testCall() {
 #if WASMTIME
