@@ -14,9 +14,7 @@
 #include <cstdio>
 
 #ifndef WASM
-
 #include <initializer_list> // allow List x={1,2,3};
-
 #endif
 
 #define NODE_DEFAULT_CAPACITY 100
@@ -36,11 +34,11 @@ static int lastChild = 1;
 Node *reconstructWasmNode(wasm_node_index pointer);
 
 // todo
-enum class NodeFlags { // class makes it typesafe
+enum class NodeFlags { // class makes it typesafe (??)
 	is_mutable = 1, // reference / value ≠ let final , constant
-    is_required = 2, // not_nullable=2, // not_optional  strange default in 2022 but 'easy' unsafe c interaction ;)
-    is_static = 4, //
-    is_global = 8,
+	is_required = 2, // not_nullable=2, // not_optional  strange default in 2022 but 'easy' unsafe c interaction ;)
+	is_static = 4, //
+	is_global = 8,
 //    is_writable=2,
 //    is_readable=4,//?
 };
@@ -53,38 +51,14 @@ enum class NodeFlags { // class makes it typesafe
 
 
 
-//extern unsigned char __heap_base;
-//unsigned int bump_pointer = &__heap_base;
-
 typedef unsigned char byte;
 typedef chars chars;
 
-//extern "C" int isalnum(int _c);
-
-#ifdef WASM
-// message in CMAKE!
-//#warning COMPILING TO WASM
-#else
-//#warning COMPILING TO APPLE
-#endif
 
 
 class Node;
 
-//extern const Node True;
-//extern const Node False;
-//extern const Node NIL;
-//extern const Node ERROR;
-//extern const Node Infinity;// = Node("Infinity");
-//extern const Node NegInfinity;// = Node("Infinity");
-//extern const Node NaN;// = Node("NaN");
-//
-
-// non-existent. NOT a value, but a keyword! Values get marked as null via nil flag in corresponding Type info of abi
-//static const Node* NOL = new Node(nil_name).setType(nils).setValue(0);
-//static const Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 extern const Node NIL;
-//static const Node NIL=*NOL;
 static Node &NUL = const_cast<Node &>(NIL);
 extern Node True;
 extern Node False;
@@ -101,15 +75,14 @@ extern Node Nan;// = Node("NaN");
 //#define INFINITY  1e5000f
 
 void print(Node &n);
-
 void print(Node *n0);
 //void print(const Node &);
 
 #undef Function
+//class Function readline.h:40:15: note: 'Function' declared here WTF
 
 class Module;
 //class String;
-//class Function readline.h:40:15: note: 'Function' declared here WTF
 
 // ⚠️ A Value is only useful with accompanying Type!
 union Value { // node_pointer can contain ANYTHING, especially types known in wasp
