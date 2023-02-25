@@ -22,11 +22,6 @@ void free(void *) {/*lol*/}
 _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void *) _NOEXCEPT {}
 
 
-#if EMSCRIPTEN
-extern "C" void assert_expect(Node *result) {}
-extern "C" void async_yield() {}
-#endif
-
 inline int64 doubleToLongBits(double a) {
 	return *((int64 *) &a);
 }
@@ -42,9 +37,6 @@ double powd(double a, double b) {
     return longBitsToDouble(((int64) y) << 32);
 }
 
-double pow(double a, double b) {
-    return powd(a, b);
-}
 
 int printf(const char *__restrict format, ...) {
 //    todo better
@@ -503,3 +495,7 @@ Function getWasmFunction(String name) {
     return f;
 }
 
+double pow(double x, double y) { // _NOEXCEPT
+    return powd(x, y);
+//    return __builtin_pow(x, y);
+}

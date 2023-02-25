@@ -3,7 +3,9 @@
 
 #include "List.h"
 
-#if MY_WASM or WASM and DEBUG //or EMSCRIPTEN
+#if EMSCRIPTEN
+
+#elif MY_WASM or WASM and DEBUG
 extern "C" void assert_expect(Node *result);
 extern "C" void async_yield();// throw this run and reenter after run_wasm is done
 #endif
@@ -40,7 +42,9 @@ bool assert_equals_x(double a, double b, chars context = "");
 
 static List<String> done;
 
-#if MY_WASM
+#if EMSCRIPTEN
+#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+#elif MY_WASM and not EMSCRIPTEN
 #define assert_emit(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
 #else
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}

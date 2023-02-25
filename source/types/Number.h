@@ -18,17 +18,7 @@
 ////	floaty,
 //} number_type;
 
-//#include "math.h"
-
-#if WASM and not MY_WASM
-long double pow(long double __lcpp_x, long double __lcpp_y) _NOEXCEPT{
-    todo("pow in wasp.wasm, OK in wasp.js and when linked");
-    return 0;
-}
-#else
-#include <cmath>
-#endif
-
+//#include <cmath>
 
 //class SmartPointer64;
 typedef uint64 SmartPointer64;
@@ -292,10 +282,11 @@ public:
         type = number_double;
     }
 
-    Number(long double a) {
-        value.doubl = a;
-        type = number_double;
-    }
+    // float128 WE DONT WANT THAT
+//    Number(long double a) {
+//        value.doubl = a;
+//        type = number_double;
+//    }
 
 
     Number(BigInt b) {
@@ -384,13 +375,13 @@ public:
     Number operator^(Number other) {
         NumberType type2 = other.type;
         if (type <= number_long and type2 <= number_long)
-            return Number(pow(value.longe, other.value.longe));
+            return Number(powd(value.longe, other.value.longe));
         if (type <= number_long and type2 <= number_double)
-            return Number(pow(value.longe, other.value.doubl));
+            return Number(powd(value.longe, other.value.doubl));
         if (type <= number_double and type2 <= number_long)
-            return Number(pow(value.doubl, other.value.longe));
+            return Number(powd(value.doubl, other.value.longe));
         if (type <= number_double and type2 <= number_double)
-            return Number(pow(value.doubl, other.value.doubl));
+            return Number(powd(value.doubl, other.value.doubl));
         todo("Number operator ^ for "s + typeName(type) + " and " + typeName(type2));
         return Number(0);
     }
