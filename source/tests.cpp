@@ -2524,8 +2524,8 @@ void testWasmString() {
 	assert_emit("'j'", Node("j"));
 	wasm_string x = reinterpret_cast<wasm_string>("\03abc");
 	String y = String(x);
-	check(y.length == 3);
 	check(y == "abc");
+	check(y.length == 3);
 }
 
 void testGroupCascade0() {
