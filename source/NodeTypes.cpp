@@ -333,6 +333,7 @@ chars typeName(Kind t, bool throws) {
                 error("MISSING Type Kind name mapping "s + (int) t);
             else return "";
     }
+    return "";
 }
 
 
@@ -469,7 +470,7 @@ Valtype mapTypeToWasm(Node &n) {
     if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
     n.print();
     error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
-//    return none;
+	return none;
 }
 
 chars typeName(Primitive p) {
@@ -703,6 +704,7 @@ Type valueType(Type type) {
     if (type.value & generics_mask)
         return type.generics.value_type;
     error("not a generic type "s + typeName(type));
+	return none;
 }
 
 Type genericType(Type type, Type value_type) {

@@ -1444,7 +1444,7 @@ Code emitAttributeSetter(Node &node, Function &context) {
 	if (!value)value = node.last().value.node;
 	if (!value)error("attribute setter missing value");
 	todo("emitAttributeSetter");
-//    return Code();
+    return Code();
 }
 
 
@@ -1982,6 +1982,7 @@ Primitive elementType(Type type32) {
 	if (isGeneric(type32))return (Primitive) type32.generics.value_type;
 	if (type32 == wasmtype_array) error("array should have a type!");;
 	error("elementType not implemented for "s + typeName(type32));
+	return Primitive::wasm_int32;
 }
 
 void discard(Code &code);

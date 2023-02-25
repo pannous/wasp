@@ -107,6 +107,7 @@ String sectionName(Sections section) {
             return "memory";
         default:
             error("INVALID SECTION #%d\nprevious section must have been corrupted\n"s % section);
+            return "INVALID";
     }
 }
 

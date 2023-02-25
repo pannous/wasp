@@ -95,7 +95,7 @@ typedef byte *bytes;
 #include "String.h" // AFTER defines!
 #include "smart_types.h"
 
-[[noreturn]]
+// /* [[noreturn]] */
 extern void error1(chars message, chars file = 0, int line = 0);
 
 extern void info(chars);

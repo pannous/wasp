@@ -124,13 +124,13 @@ void testMapOfStringValues() {
 	map["a"] = "1";
 	check(map.size() == 1);
 	check(map.keys[0] == "a"s);
-	check(map.values[0] == "1"s);
-	check(map["a"] == "1"s);
+	check(map.values[0] == "1");
+	check(map["a"] == "1");
 	map["b"] = "2";
 	check(map.size() == 2);
 	check(map.keys[1] == "b"s);
-	check(map.values[1] == "2"s);
-	check(map["b"] == "2"s);
+	check(map.values[1] == "2");
+	check(map["b"] == "2");
 }
 
 void testMaps1() {
@@ -1084,8 +1084,8 @@ void testColonLists() {
 
 
 void testModernCpp() {
-	auto αα = 1. * 2;
-	printf("%f", αα);// lol
+	auto aa = 1. * 2;
+	printf("%f", aa);// lol
 }
 
 void testDeepCopyBug() {
@@ -1226,7 +1226,7 @@ void testMarkSimple() {
 	assert_equals(a, int64(3));
 	assert(a == 3);
 	assert(a.kind == longs or a.kind == key and a.value.node->kind == longs);
-	assert(a.name == "aa"_s);
+	assert(a.name == "aa");
 //	assert(a3.name == "a"_s);// todo? cant
 
 
@@ -1583,9 +1583,9 @@ void testIterate() {
 }
 
 void testListInitializerList() {
-	List<int> ok = {1, 2, 3}; // easy!
-	check(ok.size_ == 3)
-	check(ok[2] == 3)
+	List<int> oks = {1, 2, 3}; // easy!
+	check(oks.size_ == 3)
+	check(oks[2] == 3)
 }
 
 void testListVarargs() {
@@ -2242,7 +2242,7 @@ void testString() {
 	auto node1 = interpret("ç='☺'");
 	check(node1.kind == strings);
 	check(*node1.value.string == u'☺');
-	check(*node1.value.string == String(u'☺'));
+	check(*node1.value.string == u'☺');
 	assert(node1 == String(u'☺'));
 	assert(node1 == String(L'☺'));
 	assert(node1 == String(U'☺'));
@@ -2525,7 +2525,7 @@ void testWasmString() {
 	wasm_string x = reinterpret_cast<wasm_string>("\03abc");
 	String y = String(x);
 	check(y.length == 3);
-	check(y == "abc"s);
+	check(y == "abc");
 }
 
 void testGroupCascade0() {

@@ -66,7 +66,7 @@ int isalnum0(int c) {
 }
 
 // todo put to util
-[[noreturn]]
+/* [[noreturn]] */
 void error1(chars message, chars file, int line) {
 #ifdef _Backtrace_
     //	Backtrace(2);// later, in raise
