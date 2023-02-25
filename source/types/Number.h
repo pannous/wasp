@@ -23,6 +23,7 @@
 #if WASM and not MY_WASM
 long double pow(long double __lcpp_x, long double __lcpp_y) _NOEXCEPT{
     todo("pow in wasp.wasm, OK in wasp.js and when linked");
+    return 0;
 }
 #else
 #include <cmath>
@@ -290,6 +291,12 @@ public:
         value.doubl = a;
         type = number_double;
     }
+
+    Number(long double a) {
+        value.doubl = a;
+        type = number_double;
+    }
+
 
     Number(BigInt b) {
         value.bigint = b;
