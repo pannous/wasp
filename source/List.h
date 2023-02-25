@@ -132,7 +132,7 @@ public:
 
     List(S *args, int count, bool share = true) {
         if (args == 0)return;
-        check_silent(count < LIST_MAX_CAPACITY)
+//        check_silent(count < LIST_MAX_CAPACITY)
         size_ = count;
         if (share)
             items = args;

@@ -1465,7 +1465,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.length = nodeStruct.length;
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
-        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MAX_MEM)
+        if (nodeStruct.name_pointer > 0)// and nodeStruct.name_pointer < MAX_MEM)
             reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
 //        else
 //            error("bad name");
