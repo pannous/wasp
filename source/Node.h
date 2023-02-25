@@ -9,10 +9,7 @@
 #include "ABI.h"
 #include "Config.h"
 
-//#ifndef WASI
-//SOMETIMES IT WORKS with WASI, sometimes it doesnt!? ./build-wasm.sh fails as of 2021/2
-#include <cstdarg> // va_list OK IN WASM???
-//#include <cstdarg> // va_list ok in wasm even without wasi!
+#include <cstdarg> // va_list OK IN WASM even without wasi!
 #include <cstdlib> // OK in WASM!
 #include <cstdio>
 
