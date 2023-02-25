@@ -4,9 +4,6 @@
 #include "Code.h"
 #include "wasm_reader.h"
 
-extern bool use_wasm_structs;
-extern bool use_wasm_strings;
-extern bool use_wasm_arrays;
 
 static float function_precedence = 1000;
 
