@@ -1670,7 +1670,7 @@ Code emitOperator(Node &node, Function &context) {
 //        code.add(emitCall(*new Node("pow"), context));
 //		if(last_value==0)code.addConst(1);
 //		if(last_value==1)return code;
-#if WASM
+#if MY_WASM
 		getWasmFunction("pow");
 		code.add(emitCall(*new Node("pow"), context));
 #else
