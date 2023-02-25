@@ -2823,7 +2823,7 @@ Code emitCodeSection(Node &root) {
 		if (not function.is_declared)continue;
 		function.is_import = false;
 		if (declared.empty())error("Bug: empty context name (how?)");
-		if (declared != "wasp_main") println("declared context: "s + declared);
+		if (declared != "wasp_main"s) println("declared context: "s + declared);
 		if (not call_indices.has(declared)) {// used or not!
 			if (function.call_index >= 0 or function.code_index >= 0)
 				error("function %s #%d already has index %d ≠ %d"s %
@@ -3246,7 +3246,7 @@ Code eventSection() {
 [[nodiscard]]
 Code linkingSection() {
 //	https://github.com/WebAssembly/tool-conventions/blob/master/Linking.md#linking-metadata-section
-	short version = 2;
+	short linking_version = 2;
 	Code subsection;
 	short type = 5;// SEGMENT alignment & flags
 	short payload_len = 0;
@@ -3264,7 +3264,7 @@ Code linkingSection() {
 	COMDEF - (B0h) Uninitialized common data
  Thread-agnostic objects can be safely linked with objects that do or do not use atomics, although not both at the same time.
 */
-	return createSection(custom_section, encodeVector(Code("linking") + Code(version) + subsections));
+	return createSection(custom_section, encodeVector(Code("linking") + Code(linking_version) + subsections));
 }
 
 [[nodiscard]]

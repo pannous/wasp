@@ -328,7 +328,7 @@ public:
         String s;
         for (int i = length - 1000; i < length; i++) {
 //            put_chars(hex(data[i]));
-            s += hex(data[i], 1) + ", ";
+            s += hex(data[i], 1) + ", "s;
         }
         print(s);
 //        save();

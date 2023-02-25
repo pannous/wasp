@@ -179,7 +179,7 @@ Node If(Node n) {
     bool condition_fulfilled = (bool) condit;
     if (condition.kind == reals or condition.kind == longs)
         condition_fulfilled =
-                ((!condition.name or empty(condition.name)) and condition.value.data) or condition.name != "0";
+                ((!condition.name or empty(condition.name)) and condition.value.data) or condition.name != "0"s;
     else if (condition.value.data and condition.kind == objects) // or ...
         error("If statements need a space after colon");
     if (condition_fulfilled) {
@@ -237,9 +237,9 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
     if (debug) {
         trace("apply_op\n");
-        left.print();
-        op0.print();
-        right.print();
+        left.debug_print();
+        op0.debug_print();
+        right.debug_print();
     }
     if (left.kind == reference) {
         if (globals.has(left.name))

@@ -35,7 +35,7 @@ bool assert_equals_x(Node &a, char *b, chars context = "") {
 
 
 bool assert_equals_x(Node a, const char *b, chars context = "") {
-    if (a.name != b)printf("FAILED assert_equals! %s should be %s %s\n", a.name.data, b, context);
+    if (a.name != String(b))printf("FAILED assert_equals! %s should be %s %s\n", a.name.data, b, context);
     else printf(" OK %s==%s %s\n", a.name.data, b, context);
     return a == b;
 }

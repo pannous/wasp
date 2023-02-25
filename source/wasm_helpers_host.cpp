@@ -111,17 +111,20 @@ codepoint put_char(codepoint c) {
 }
 
 double powd(double x, double y) {
-    return pow(x, y);
+	return pow(x, y);
 }
 
 extern "C" void put_chars(chars c, size_t len) {
-    printf("%s", c);
+	printf("%s", c);
 }
 
 #if not WASM
+#if not EMSCRIPTEN
 [[noreturn]]
+#endif
+
 void proc_exit(int x) {
-    exit(x);
+	exit(x);
 }
 
 #endif

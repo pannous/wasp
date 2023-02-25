@@ -57,17 +57,21 @@ void getline(char *buf) {
 #endif
 
 // Todo: web version?
-[[noreturn]] void console() {
-    printf("\nWasp version %s\n", version);
-    showHelpMessage();
-    char *data = (char *) malloc(10000);
-#ifdef signal
-    setjmp(try_context); //recovery point
+#if not EMSCRIPTEN
+[[noreturn]]
 #endif
-    debug = false;
-    String code;
-    while (true) {
-        getline(data);
+
+void console() {
+	printf("\nWasp version %s\n", version);
+	showHelpMessage();
+	char *data = (char *) malloc(10000);
+#ifdef signal
+	setjmp(try_context); //recovery point
+#endif
+	debug = false;
+	String code;
+	while (true) {
+		getline(data);
         if (eq(data, "help") or eq(data, ":help") or eq(data, ":h") or eq(data, "?")) {
             showHelpMessage();
         } elif (eq(data, "clear") or eq(data, ":clear") or eq(data, ":c") or eq(data, "\\L")) {

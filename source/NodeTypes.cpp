@@ -464,7 +464,7 @@ Valtype mapTypeToWasm(Node &n) {
     if (n.kind == assignment)return mapTypeToWasm(first);// todo
     if (n.kind == operators)return mapTypeToWasm(first);// todo
     if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
-    n.print();
+    n.debug_print();
     error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
 //    return none;
 }

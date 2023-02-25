@@ -252,10 +252,10 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 }
 
 String extractFunctionName(Node &node) {
-    if (not node.name.empty() and node.name != ":=")
-        return node.name;
-    if (node.length > 1)
-        return node.first().name;
+    if (not node.name.empty() and node.name != ":="s)
+	    return node.name;
+	if (node.length > 1)
+		return node.first().name;
     // todo: public go home to family => go_home
     return node.name;
 }
@@ -785,10 +785,10 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     todo("is_operator!");// remove if it doesn't happen
 
     if (name and not function_operators.has(name)) {
-        if (context.name != "wasp_main") todo("inner functions");
-        if (not functions.has(name)) {
-            functions.add(name, *new Function{.name=name});
-        }
+	    if (context.name != "wasp_main"s) todo("inner functions");
+	    if (not functions.has(name)) {
+		    functions.add(name, *new Function{.name=name});
+	    }
     }
     Function &function = functions[name]; // different from context!
     function.is_declared = true;

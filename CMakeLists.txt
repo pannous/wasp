@@ -33,7 +33,7 @@ endif ()
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
 
 if (NOT WASM)
-    set(CONSOLE 1)
+#    set(CONSOLE 1)
     if (NOT RUNTIME_ONLY)
         set(INCLUDE_MERGER 1) # works with WASI
         # TO EXECUTE wasm provide _run_wasm :
@@ -181,7 +181,8 @@ ADD_COMPILE_FLAG("-fno-inline") # why not? debug?
 # ENABLE:
 #ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
-ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
+#ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
+ADD_COMPILE_FLAG("-Wno-return-type") # EMSCRIPTEN doesn't know [[noreturn]]
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
@@ -465,7 +466,7 @@ elseif (WASI)
     message(WASI)
     ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
     #    only works with wasm.toolchain.cmake
-    SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
+    #    SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
     SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
     ADD_COMPILE_FLAG("--sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot")
     #  ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?

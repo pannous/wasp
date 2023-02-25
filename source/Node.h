@@ -527,27 +527,27 @@ public:
             default:
                 error("unknown or unimplemented smart type");
         }
-    }
+	}
 
-    int64 hash() {
-        static int _object_count = 1;
+	int64 hash() {
+		static int _object_count = 1;
 //		if (not _hash) _hash = random();//  expensive?
-        if (not _hash)_hash = _object_count++;// //  (int64) (void *) this; could conflict on memory reuse
-        return _hash;
-    }
+		if (not _hash)_hash = _object_count++;// //  (int64) (void *) this; could conflict on memory reuse
+		return _hash;
+	}
 
-    Node *invoke(String function, Node *arguments) {
-        print(function);
-        print(arguments);
-        todo("dynamic dispatch");
-        // i32.const fun
-        // call_indirect(type,table)
-        return this;
-    }
+	Node *invoke(String function1, Node *arguments) {
+		print(function1.data);
+		print(arguments);
+		todo("dynamic dispatch");
+		// i32.const fun
+		// call_indirect(type,table)
+		return this;
+	}
 
-    Node &first() {
-        if (length > 0 and children)
-            return children[0];
+	Node &first() {
+		if (length > 0 and children)
+			return children[0];
 //        if (children)
 //            return children[0]; // hack for missing length!
         if (kind == assignment and value.node)
@@ -702,17 +702,17 @@ public:
     Node &merge(Node &other);// non-modifying
     Node &merge(Node *other);
 
-    void print(bool internal_representation = false) {
-        printf("%s\n", serialize().data);
-        if (internal_representation) {
-            printf("node{");
-            if (this == &NIL || kind == nils) {
-                printf("NIL\n");
-                return;
-            }
-            if (name.data)
-                printf("name:%s", name.data);
-            printf(" length:%d", length);
+	void debug_print(bool internal_representation = false) {
+		printf("%s\n", serialize().data);
+		if (internal_representation) {
+			printf("node{");
+			if (this == &NIL || kind == nils) {
+				printf("NIL\n");
+				return;
+			}
+			if (name.data)
+				printf("name:%s", name.data);
+			printf(" length:%d", length);
             if (kind < unknown)
                 printf(" type:%s", typeName(kind));
             const String &string1 = serializeValue(false);

@@ -295,12 +295,12 @@ bool Node::operator==(bool other) {
 
 bool Node::operator==(char other) {
     if (kind == codepoint1)return value.codepoint == other;
-    return kind == strings and *value.string == String(other);
+    return kind == strings and *value.string == String(other).data;
 }
 
 bool Node::operator==(codepoint other) {
     if (kind == codepoint1)return value.codepoint == other;
-    return kind == strings and *value.string == String(other);
+    return kind == strings and *value.string == String(other).data;
 }
 
 bool Node::operator==(chars other) {
@@ -924,7 +924,7 @@ String Node::serialize() const {
                 return ""s + name + ":" + serializedValue;
         if (kind == strings and name and (name.empty() or name == value.string))
             return serializedValue;// not text:"text", just "text"
-        if (kind == longs and name and (name.empty() or name == formatLong(value.longy)))
+        if (kind == longs and name and (name.empty() or name == (chars) formatLong(value.longy)))
             return serializedValue;// not "3":3
         if (kind == reals)// and name and (name.empty() or name==itoa(value.longy)))
             return serializedValue;// not "3":3.14
@@ -1208,7 +1208,7 @@ void Node::replace(int from, int to, Node &node) {
 //}
 
 void print(Node &n) {
-    n.print();
+    n.debug_print();
 }
 
 //void print(const Node &n0) {
@@ -1465,7 +1465,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         reconstruct.length = nodeStruct.length;
         reconstruct.value = nodeStruct.value;
         reconstruct.type = nodeStruct.node_type_pointer ? reconstructWasmNode(nodeStruct.node_type_pointer) : 0;
-        if (nodeStruct.name_pointer > 0 and nodeStruct.name_pointer < MAX_MEM)
+        if (nodeStruct.name_pointer > 0) // and nodeStruct.name_pointer < MAX_MEM
             reconstruct.name = String(((char *) wasm_memory) + nodeStruct.name_pointer);
 //        else
 //            error("bad name");

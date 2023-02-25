@@ -9,7 +9,7 @@
 #include "wasm_runner.h"
 #include "console.h"
 //#include "tests.h"
-#if WASM or LINUX
+#if WASM or LINUX or EMSCRIPTEN
 bool isnumber(char c){ return c>='0' and c<='9'; }
 // why cctype no work?
 #else

@@ -14,7 +14,10 @@ typedef char32_t codepoint;// 'letter' ☃ is a single code point but 3 UTF-8 co
 typedef const char *chars;
 typedef unsigned char *bytes;
 
+#if not EMSCRIPTEN
 [[noreturn]]
+#endif
+
 extern void error1(chars message, chars file, int line);
 
 // there are two aspects of wasm memory: the internal memory starting at 0 and the external c-pointer *wasm_memory if the VM provides it
@@ -241,7 +244,9 @@ struct c_io_vector {
 // Fucking wasmer doesn't support wasi_snapshot_preview1
 #endif
 
+#if not EMSCRIPTEN
 [[noreturn]]
+#endif
 WASI(proc_exit)
 
 void proc_exit(int exitcode);

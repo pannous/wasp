@@ -55,7 +55,7 @@ static bool I_know_what_I_am_doing = false;
 #define todo(msg)
 #define todow(msg)
 #else
-#define todo(msg) {breakpoint_helper;error1(String("TODO ") + String(msg),__FILE__,__LINE__);}
+#define todo(msg) {breakpoint_helper;error1((String("TODO ") + String(msg)).data,__FILE__,__LINE__);}
 #define todow(msg) {warn(String("TODO ") + String(msg));}
 //#define todow(msg) {breakpoint_helper;warn(str("TODO ") + msg);}
 #endif
@@ -82,9 +82,9 @@ typedef const char *chars;
 typedef byte *bytes;
 
 // silent ++
-#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_line()}
-#define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);backtrace_line();}
-#define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("%s",ɣ);backtrace_line();}
+#define check_is(α, β) if(not((α)==(β))){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_line()}
+#define check_eq(α, β) if(not((α)==(β))){printf("%s != %s :\n",#α,#β);backtrace_line();}
+#define check_eq_or(α, β, ɣ) if(not((α)==(β))){printf("%s != %s : ",#α,#β);printf("%s",ɣ);backtrace_line();}
 
 //#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
 #define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
@@ -95,8 +95,13 @@ typedef byte *bytes;
 #include "String.h" // AFTER defines!
 #include "smart_types.h"
 
+#if not EMSCRIPTEN
 [[noreturn]]
+#endif
+
 extern void error1(chars message, chars file = 0, int line = 0);
+
+extern void error1(String message, chars file = 0, int line = 0);
 
 extern void info(chars);
 

@@ -256,7 +256,7 @@ namespace wabt {
             Result EnsureUnique(const String &name) {
                 if (seen_names_.count(name)) {
                     fprintf(stderr, "error: duplicate symbol when writing relocatable "
-                                    "binary: %s\n", &name[0]);
+                                    "binary: %s\n", name.data);
                     return Result::Error;
                 }
                 seen_names_.insert(name);

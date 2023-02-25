@@ -108,29 +108,29 @@ void testMapOfStrings() {
 	map["a"] = "1";
 	check(map.size() == 1);
 	check(map.keys[0] == "a");
-	check(map.values[0] == "1"s);
-	check(map["a"] == "1"s);
+	check("1"s == map.values[0]);
+	check("1"s == map["a"]);
 //    check(!map.has("b"));
 	check(map.position("b") == -1);
 	map["b"] = "2";
 	check(map.size() == 2);
 	check(map.keys[1] == "b");
-	check(map.values[1] == "2"s);
-	check(map["b"] == "2"s);
+	check("2"s == map.values[1]);
+	check("2"s == map["b"]);
 }
 
 void testMapOfStringValues() {
 	Map<chars, String> map;
 	map["a"] = "1";
 	check(map.size() == 1);
-	check(map.keys[0] == "a"s);
-	check(map.values[0] == "1"s);
-	check(map["a"] == "1"s);
+//	check(map.keys[0] == "a");
+	check(map.values[0] == "1");
+	check(map["a"] == "1");
 	map["b"] = "2";
 	check(map.size() == 2);
-	check(map.keys[1] == "b"s);
-	check(map.values[1] == "2"s);
-	check(map["b"] == "2"s);
+	check("b"s == map.keys[1]);
+	check(map.values[1] == "2");
+	check(map["b"] == "2");
 }
 
 void testMaps1() {
@@ -1084,8 +1084,8 @@ void testColonLists() {
 
 
 void testModernCpp() {
-	auto αα = 1. * 2;
-	printf("%f", αα);// lol
+	auto aa = 1. * 2;
+	printf("%f", aa);// lol
 }
 
 void testDeepCopyBug() {
@@ -1100,7 +1100,7 @@ void testDeepCopyDebugBugBug() {
 	chars source = "{deep{a:3,b:4,c:{d:true}}}";
 	assert_parses(source);
 	check(result.name == "deep");
-	result.print();
+	result.debug_print();
 	Node &c = result["deep"]['c'];
 	Node &node = c['d'];
 	assert_equals(node.value.longy, (int64) 1);
@@ -1148,7 +1148,7 @@ void testNetBase() {
 void testDivDeep() {
 	Node div = parse("div{ span{ class:'bold' 'text'} br}");
 	Node &node = div["span"];
-	node.print();
+	node.debug_print();
 	assert(div["span"].length == 2);
 	assert(div["span"]["class"] == "bold");
 }
@@ -1157,7 +1157,7 @@ void testDivMark() {
 	use_polish_notation = true;
 	Node div = parse("{div {span class:'bold' 'text'} {br}}");
 	Node &span = div["span"];
-	span.print();
+	span.debug_print();
 	assert(span.length == 2);
 	assert(span["class"] == "bold");
 	use_polish_notation = false;
@@ -1165,7 +1165,7 @@ void testDivMark() {
 
 void testDiv() {
 	result = parse("div{ class:'bold' 'text'}");
-	result.print();
+	result.debug_print();
 	assert(result.length == 2);
 	assert(result["class"] == "bold");
 	testDivDeep();
@@ -1177,7 +1177,7 @@ void testDiv() {
 void checkNil() {
 	check(NIL.isNil());
 	assert_equals(NIL.name.data, nil_name);
-	check(nil_name == "nil"s);// WASM
+	check("nil"s == nil_name);// WASM
 	if (NIL.name.data == nil_name)
 		assert_equals(NIL.name, nil_name);
 	check(NIL.name.data == nil_name);
@@ -1226,7 +1226,7 @@ void testMarkSimple() {
 	assert_equals(a, int64(3));
 	assert(a == 3);
 	assert(a.kind == longs or a.kind == key and a.value.node->kind == longs);
-	assert(a.name == "aa"_s);
+	assert(a.name == "aa");
 //	assert(a3.name == "a"_s);// todo? cant
 
 
@@ -1508,7 +1508,7 @@ void testNewlineLists() {
 
 void testKitchensink() {
 	result = /*Wasp::*/parseFile("samples/kitchensink.wasp");
-	result.print();
+	result.debug_print();
 	assert(result['a'] == "classical json");
 	assert(result['b'] == "quotes optional");
 	assert(result['c'] == "commas optional");
@@ -1569,7 +1569,7 @@ void testIterate() {
 	}
 	check(nothing);
 	Node liste = parse("{1 2 3}");
-	liste.print();
+	liste.debug_print();
 	for (Node &child: liste) {
 		// SHOULD effect result
 		child.value.longy = child.value.longy + 10;
@@ -1583,9 +1583,9 @@ void testIterate() {
 }
 
 void testListInitializerList() {
-	List<int> ok = {1, 2, 3}; // easy!
-	check(ok.size_ == 3)
-	check(ok[2] == 3)
+	List<int> oki = {1, 2, 3}; // easy!
+	check(oki.size_ == 3)
+	check(oki[2] == 3)
 }
 
 void testListVarargs() {
@@ -1601,7 +1601,7 @@ void testListVarargs() {
 void testLists() {
 	testListVarargs();//
 	assert_parses("[1,2,3]");
-	result.print();
+	result.debug_print();
 	assert_equals(result.length, 3);
 	assert_equals(result.kind, patterns);
 	assert(result[2] == 3);
@@ -1904,15 +1904,15 @@ void testGraphQlQuery() {
 	                   "  }\n"
 	                   "}";
 	assert_parses(graphResult);
-	result.print();
+	result.debug_print();
 	Node &data = result["data"];
-	data.print();
+	data.debug_print();
 	Node &hero = data["hero"];
-	hero.print();
+	hero.debug_print();
 	Node &height = data["hero"]["height"];
-	height.print();
+	height.debug_print();
 	Node &id = hero["id"];
-	id.print();
+	id.debug_print();
 	assert(id == "R2-D2");
 	assert(height == 5.6430448);
 //	assert(height==5.643);
@@ -1949,7 +1949,7 @@ void testGraphParams() {
 	assert_parses("{\n  empireHero: hero(episode: EMPIRE){\n    name\n  }\n"
 	              "  jediHero: hero(episode: JEDI){\n    name\n  }\n}");
 	Node &hero = result["empireHero"];
-	hero.print();
+	hero.debug_print();
 	assert(hero["episode"] == "EMPIRE");
 	assert_parses("\nfragment comparisonFields on Character{\n"
 	              "  name\n  appearsIn\n  friends{\n    name\n  }\n }");
@@ -2094,9 +2094,9 @@ void testIndentAsBlock() {
 void testParentContext() {
 	chars source = "{a:'HIO' d:{} b:3 c:ø}";
 	assert_parses(source);
-	result.print();
+	result.debug_print();
 	Node &a = result["a"];
-	a.print();
+	a.debug_print();
 	assert_equals(a.kind, strings);
 	assert_equals(a.value.string, "HIO");
 	assert_equals(a.string(), "HIO");// keyNodes go to values!
@@ -2242,7 +2242,7 @@ void testString() {
 	auto node1 = interpret("ç='☺'");
 	check(node1.kind == strings);
 	check(*node1.value.string == u'☺');
-	check(*node1.value.string == String(u'☺'));
+	check(*node1.value.string == new String(u'☺'));
 	assert(node1 == String(u'☺'));
 	assert(node1 == String(L'☺'));
 	assert(node1 == String(U'☺'));
@@ -2317,13 +2317,13 @@ void testConcatenation() {
 //	check(&node1234.last() == four); not true, copied!
 	check(node1234.last() == four);
 	check(*four == "4");
-	node1234.print();
+	node1234.debug_print();
 
 	check_eq(node1234.length, 4);
 
-	node1234.children[node1234.length - 2].print();
-	node1234.children[node1234.length - 1].print();
-	node1234.last().print();
+	node1234.children[node1234.length - 2].debug_print();
+	node1234.children[node1234.length - 1].debug_print();
+	node1234.last().debug_print();
 	check(node1234.last() == "4");
 
 	assert_equals(node1, Node("1", "2", "3", "4", 0));
@@ -2358,14 +2358,14 @@ void testParamizedKeys() {
 
 // 0. parameters accessible
 	Node label0 = parse("label(for:password)");
-	label0.print();
+	label0.debug_print();
 	Node &node = label0["for"];
 	assert_equals(node, "password");
 	assert_equals(label0["for"], "password");
 
 	// 1. paramize keys: label{param=(for:password)}:"Text"
 	Node label1 = parse("label(for:password):'Passwort'");
-	label1.print();
+	label1.debug_print();
 	assert_equals(label1, "Passwort");
 	assert_equals(label1["for"], "password");
 //	assert_equals(label1["for:password"],"Passwort");
@@ -2390,7 +2390,7 @@ void testParamizedKeys() {
 
 void testStackedLambdas() {
 	result = parse("a{x:1}{y:2}{3}");
-	result.print();
+	result.debug_print();
 	check(result.length == 3);
 	check(result[0] == parse("{x:1}"));
 	check(result[0] == parse("x:1"));// grouping irrelevant
@@ -2403,7 +2403,7 @@ void testStackedLambdas() {
 
 void testIndex() {
 	assert_parses("[a b c]#2");
-	result.print();
+	result.debug_print();
 	check(result.length == 3);
 	skip(
 			assert_is("(a b c)#2", "b");
@@ -2525,7 +2525,7 @@ void testWasmString() {
 	wasm_string x = reinterpret_cast<wasm_string>("\03abc");
 	String y = String(x);
 	check(y.length == 3);
-	check(y == "abc"s);
+	check(y == "abc");
 }
 
 void testGroupCascade0() {
@@ -2579,7 +2579,7 @@ void testGroupCascade() {
 	               "a2 b2 c2, d2 e2 f2; g2 h2 i2 , j2 k2 l2}"
 	               "{a3 b3 c3, d3 e3 f3; g3 h3 i3 , j3 k3 l3 \n"
 	               "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
-	result.print();
+	result.debug_print();
 	assert_equals(result.kind, groups);// ( {} {} ) because 2 {}!
 	auto first = result.first();
 	assert_equals(first.kind, objects);// { a b c … }
