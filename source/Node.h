@@ -27,6 +27,10 @@
 typedef char const *chars;
 typedef unsigned char byte;//!
 
+//extern bool use_wasm_reference_types; :
+extern bool use_wasm_structs;
+extern bool use_wasm_strings;
+extern bool use_wasm_arrays;
 
 
 #define MAX_NODE_CAPACITY 100000 // debug only, let it run out of memory naturally!
@@ -36,7 +40,7 @@ Node *reconstructWasmNode(wasm_node_index pointer);
 
 // todo
 enum class NodeFlags { // class makes it typesafe
-    is_mutable = 1, // reference / value ≠ let final , constant
+	is_mutable = 1, // reference / value ≠ let final , constant
     is_required = 2, // not_nullable=2, // not_optional  strange default in 2022 but 'easy' unsafe c interaction ;)
     is_static = 4, //
     is_global = 8,
