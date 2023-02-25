@@ -374,8 +374,8 @@ Valtype mapTypeToWasm(Type t) {
 	    puti(t.value);
 	    warn(typeName(t));
 	    // todo!
-//        return (Valtype) (((short) mapTypeToWasm(t.generics.kind)) * 0x100 +
-//                          (short) mapTypeToWasm(t.generics.value_type));
+	    return (Valtype) (((short) mapTypeToWasm(t.generics.kind)) * 0x100 +
+	                      (short) mapTypeToWasm(t.generics.value_type));
 	    error("generics needs more than Valtype");
     }
     if (isArrayType(t))

@@ -88,6 +88,12 @@ if (WASM)
     set(MY_WASI 1) # manually write via fd_write, NOT via wasi-sdk printf=>fd_write
     ADD_DEFINITIONS(-DMY_WASI)
     ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
+    if (DEBUG)
+        ADD_DEFINITIONS(-g3)
+        ADD_DEFINITIONS(-gdwarf-5)
+        ADD_DEFINITIONS(-gembed-source)
+        ADD_DEFINITIONS(-fforce-dwarf-frame)
+    endif ()
     #    set(RUNTIME_ONLY 1) NO, we want compiler version too!
     #    ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (MY_WASM)
