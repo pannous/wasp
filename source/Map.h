@@ -203,6 +203,7 @@ public: // todo careful Map<char*,…> eq
 //            insert_or_assign(key, T()); // creates intermediate stack value, or is c++ smart?
             return last();
         }
+        return last();
     }
 
     T &operator[](S *key) {// CREATING on access! use map.has(x) if not desired

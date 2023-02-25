@@ -172,7 +172,7 @@ public:
     void grow() {
 //        warn("grow");
         auto new_size = capacity * 2;
-        check_silent(new_size < LIST_MAX_CAPACITY);
+//        check_silent(new_size < LIST_MAX_CAPACITY);
         S *neu = (S *) alloc(new_size, sizeof(S));
         memcpy((void *) neu, (void *) items, capacity * sizeof(S));
         if (items)free(items);
