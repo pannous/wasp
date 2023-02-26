@@ -12,7 +12,7 @@
 
 var lastType = "";
 
-export // needs extension.mjs or "type": "module" in package.json
+export // remove for index.html needs extension.mjs or "type": "module" in package.json
 function demangle(name) {
     if (!isMangled(name)) return name;
 
@@ -176,7 +176,7 @@ function demangle(name) {
             case 'y':
                 typeInfo.typeStr = "unsigned long long";
                 break;
-            case 'n':
+            case 'n': // BigInt, operator new in other context
                 typeInfo.typeStr = "__int128";
                 break;
             case 'o':
@@ -200,7 +200,13 @@ function demangle(name) {
             /* No type code. We have a type name instead */
             default: {
                 let number = parseInt(process.ch, 10);
-                if (!isNaN(number) || process.ch == "N") {
+                if (!isNaN(number) || process.ch == 'N') {
+
+                    if (process.ch == 'N' && process.str[0] == 'K') {
+                        process = popChar(process.str);
+                        typeInfo.isConst = true;
+                    }
+
                     // It's a custom type name
                     const tname = popName(process.ch.concat(process.str));
                     typeInfo.typeStr = typeInfo.typeStr.concat(tname.name);
@@ -244,6 +250,7 @@ function demangle(name) {
         .replace(/<, /g, "<").replace(/, >/g, ">").replace(/, </g, "<");
 }
 
+var const_function = false
 function popName(str) {
     /* The name is in the format <length><str> */
 
@@ -252,6 +259,15 @@ function popName(str) {
     let rlen = 0;
     const ostr = str;
     let isEntity = false;
+
+    let c = str[0];
+    if (c == 'N' && str[1] == 'K') {
+        str = str.substr(2);
+        const_function = true;
+        rlen += 2;
+    }
+
+    let handled = false;
 
     while (!isLast) {
         /* This is used for decoding names inside complex namespaces
@@ -279,14 +295,17 @@ function popName(str) {
             if (c == "n") {
                 namestr += "operator new"
                 rlen += 2
+                handled = true;
             }
             if (c === "C") { // constructor String::String()
                 namestr = namestr.concat(namestr.split("::")[0]);
                 rlen += 2
+                handled = true;
             }
             if (c === "p") {
                 namestr += getOperatorName(str[1])
                 rlen += 2
+                handled = true;
             } else
                 rlen -= 1;// ?
             break;
@@ -297,6 +316,13 @@ function popName(str) {
         namestr = namestr.concat(lastType);
         if (!isLast) namestr = namestr.concat("::");
         str = strstart.substr(len);
+    }
+    if (rlen > 0 && !handled) {
+        let fname = popName(str).name;
+        if (fname) {
+            namestr += "::" + fname; // String::empty
+            rlen += fname.length + 2;
+        }
     }
     if (isEntity) rlen += 2; // Take out the "E", the entity end mark
     let substr = ostr.substr(rlen);
