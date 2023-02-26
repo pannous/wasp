@@ -9,6 +9,11 @@
 // compare with wasm-objdump -h
 
 #define POLYMORPH_function_index_marker -2
+#if MY_WASM
+bool build_module = false;
+#else
+bool build_module = true;
+#endif
 
 bool debug_reader = tracing;
 //bool debug_reader = true;
@@ -218,6 +223,7 @@ void parse_type_data(Code &payload) {
 
 void consumeTypeSection() {
     Code type_vector = vec();
+    if (not build_module)return;
     int typeCount = unsignedLEB128(type_vector);
     module->type_count = typeCount;
     if (debug_reader)printf("types: %d\n", module->type_count);
@@ -295,6 +301,7 @@ void consumeRelocateSection(Code &data) {
 
 void consumeDataSection() {
     Code datas = vec();
+    if (not build_module)return;
 //	module->data_section = datas.clone();
     module->data_segments_count = unsignedLEB128(datas);
     module->data_segments = datas.rest();// whereever the start may be now
@@ -372,6 +379,7 @@ void consumeCodeSection() {
     int codeCount = unsignedLEB128(codes_vector);
     if (debug_reader)printf("codes: %d\n", codeCount);
     if (module->code_count != codeCount)error("missing code/signatures");
+    if (not build_module)return;
     module->code_data = codes_vector.rest();
     if (debug_reader)printf("code length: %d\n", module->code_data.length);
 }
@@ -421,6 +429,7 @@ List<String> demangle_args(String &fun) {
 // https://webassembly.github.io/spec/core/binary/modules.html#binary-exportsec
 void consumeExportSection() {
     Code exports_vector = vec();
+//    if(not build_module)return;
     int exportCount = unsignedLEB128(exports_vector);
     if (debug_reader)printf("export_section: %d\n", exportCount);
     module->export_count = exportCount;
@@ -593,27 +602,34 @@ void consumeSections() {
     }
 }
 
-#ifndef RUNTIME_ONLY
-
-
-Module &read_wasm(bytes buffer, int size0) {
-    module = new Module(); // todo: make pure, not global!
-    module->code = *new Code(buffer, size0, false);
-    pos = 0;
-    code = buffer;
-    size = size0;
-    consume(4, (byte *) (magicModuleHeader));
-    consume(4, (byte *) (moduleVersion));
-    consumeSections();
-    parseFuncTypeSection(module->functype_data);
-
-    // todo: sanity checks?
-//    check_eq(module->funcToTypeMap._size, module->code_count)
-    return *module;
-}
 
 //static
 Map<int64, Module *> module_cache{.capacity=100};
+
+Code &read_code(chars file) {
+    int size;
+    char *data = readFile(file, &size);
+    Code &cod = *new Code(data, size, false);
+    cod.name = String(file);
+    return cod;
+}
+
+
+//#import "wasm_patcher.cpp"
+void Module::file(const char *string) {
+
+}
+
+void Module::save(const char *file) {
+#if not WASM
+//    wasm_emitter::save(*this, file);
+//    wasm_writer::save(*this, file);
+    FILE *stream = fopen(file, "wb");
+    fwrite(code.data, sizeof(byte), code.length, stream);
+    fclose(stream);
+#endif
+}
+
 
 #include <stdlib.h>
 
@@ -640,7 +656,6 @@ Module &read_wasm(String file) {
     String name = file;
     if (module_cache.has(name.hash()))
         return *module_cache[name.hash()];
-
     if (debug_reader)print("--------------------------\n");
 //    if (debug_reader)
     printf("parsing: %s\n", file.data);
@@ -658,29 +673,15 @@ Module &read_wasm(String file) {
 #endif
 }
 
-#endif
-#undef pointerr
-
-Code &read_code(chars file) {
-    int size;
-    char *data = readFile(file, &size);
-    Code &cod = *new Code(data, size, false);
-    cod.name = String(file);
-    return cod;
-}
-
-
-//#import "wasm_patcher.cpp"
-void Module::file(const char *string) {
-
-}
-
-void Module::save(const char *file) {
-#if not WASM
-//    wasm_emitter::save(*this, file);
-//    wasm_writer::save(*this, file);
-    FILE *stream = fopen(file, "wb");
-    fwrite(code.data, sizeof(byte), code.length, stream);
-    fclose(stream);
-#endif
+Module &read_wasm(bytes buffer, int size0) {
+    module = new Module(); // todo: make pure, not global!
+    module->code = *new Code(buffer, size0, false);
+    pos = 0;
+    code = buffer;
+    size = size0;
+    consume(4, (byte *) (magicModuleHeader));
+    consume(4, (byte *) (moduleVersion));
+    consumeSections();
+    parseFuncTypeSection(module->functype_data);
+    return *module;
 }

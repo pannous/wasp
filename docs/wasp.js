@@ -20,7 +20,6 @@ let array_header_32 = 0x40000000
 let node_header_32 = 0x80000000
 
 
-
 function format(object) {
     if (object instanceof node)
         return object.serialize()
@@ -479,20 +478,19 @@ async function link_runtime() {
     try {
         runtime_module = await WebAssembly.compile(runtime_bytes)
         // runtime_imports= {env: {memory: memory, table: table}}
-        runtime_imports=imports
-        let runtime_instance = await WebAssembly.instantiate(runtime_module,runtime_imports) // , memory
+        runtime_imports = imports
+        let runtime_instance = await WebAssembly.instantiate(runtime_module, runtime_imports) // , memory
         imports = {env: runtime_instance.exports}
-        instance = await WebAssembly.instantiate(module,imports, runtime_instance.memory)
+        instance = await WebAssembly.instantiate(module, imports, runtime_instance.memory)
         //  runtime_instance.exports
         global.instance = instance
         global.instance.module = module // global module already used by node!
         exports = instance.exports
-        main=exports.wasp_main
+        main = exports.wasp_main
         if (main) {
             console.log("Calling start function:", main);
             result = main()
-        }
-        else
+        } else
             result = "NO MAIN! Entry function main not found."
         print(result)
     } catch (ex) {
@@ -502,6 +500,7 @@ async function link_runtime() {
 }
 
 needs_runtime = false;
+
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // download(wasm_buffer, "emit.wasm", "wasm")
@@ -564,10 +563,24 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
         }
         console.log(result);
         loadKindMap()
-        load_runtime_bytes()
-        setTimeout(test, 1);// make sync
+        // load_runtime_bytes()
+        register_wasp_functions(instance.exports)
+        // moduleReflection(wasm_data);
+        // setTimeout(test, 1);// make sync
     }
 )
+
+// .catch(err => console.error(err))
+
+function moduleReflection(wasm_data) {
+    WabtModule().then(wabt => {
+        let module = wabt.readWasm(wasm_data, {readDebugNames: true});
+        module.generateNames();
+        module.applyNames();
+        let output = module.toText({foldExprs: false, inlineExport: false});
+        console.log(output);
+    })
+}
 
 let hex = x => x >= 0 ? x.toString(16) : (0xFFFFFFFF + x + 1).toString(16)
 let chr = x => String.fromCodePoint(x) // chr(65)=chr(0x41)='A' char
@@ -600,9 +613,8 @@ function copy_runtime_bytes() {
 }
 
 getArguments = function (func) {
-    var symbols = func.toString(),
-        start, end, register;
-    console.log("getArguments",func,symbols)
+    var symbols = func.toString(), start, end, register;
+    // console.log("getArguments",func,symbols)
     start = symbols.indexOf('function');
     if (start !== 0 && start !== 1) return undefined;
     start = symbols.indexOf('(', start);
@@ -614,15 +626,37 @@ getArguments = function (func) {
     return args;
 };
 
+
+// reflection of all wasp functions to compiler, so it can link them
+function register_wasp_functions(exports) {
+    exports = exports || instance.exports
+    for (let name in exports) {
+        let func = exports[name]
+        if (typeof func == "function") {
+            console_log(func.name, name)
+            console_log(func)
+            // let args = getArguments(func)
+            // if (args && args.length>0)
+            //     console.log(name, args)
+            // wasp_functions[name] = func
+            name = demangle(name)
+            console.log("demangled", name)
+            // if(!name.startsWith("_"))
+            if (!name.match("<"))// no generics yet
+                instance.exports.registerWasmFunction(chars(name)) // derive its signature from its name
+        }
+    }
+}
+
 // runtime_bytes for linking small wasp programs with runtime
 function load_runtime_bytes() {
     fetch(WASM_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
-            runtime_bytes = buffer
-            WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
-                //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
-                console.log(obj.instance.exports._ZN6StringC2EPKcb)
-                console.log(obj.instance.exports._ZN6StringC2EPKcb.length)
-                console.log(obj.instance.exports._ZN6StringC2EPKcb.arguments)
+        runtime_bytes = buffer
+        WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
+            //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
+            console.log(obj.instance.exports._ZN6StringC2EPKcb)
+            console.log(obj.instance.exports._ZN6StringC2EPKcb.length)
+            console.log(obj.instance.exports._ZN6StringC2EPKcb.arguments)
                 // console.log(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
                 // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
             })

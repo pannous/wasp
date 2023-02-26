@@ -11,7 +11,7 @@
 #include "String.h"
 #include "Backtrace.h"
 #include "Code.h"
-
+#include "Angle.h"
 #include <typeinfo>       // operator typeid
 #include <cstdlib> // OK in WASM!
 
@@ -487,11 +487,28 @@ extern "C" int size_of_string() {
     return sizeof(String);
 }
 
+Type getReturnType(String name) {
+    if (name.contains("->(i32)"))return int32;
+    if (name.contains("->(f32)"))return float32;
+    if (name.contains("->(f64)"))return float64;
+    todow("getReturnType for "s + name);
+    return int32;
+}
+
+List<String> demangle_args(String &fun);
+
 Function getWasmFunction(String name) {
     Function f{.name=name};
-    if(name=="pow")f.signature.add(float64).add(float64).returns(float64);
+    if (name == "pow")f.signature.add(float64).add(float64).returns(float64);
+    else if (name.contains("(")) {
+        String brace = name.substring(name.indexOf('(') + 1, name.indexOf(')'));
+        auto args = brace.split(", ");
+        for (auto arg: args)
+            f.signature.add(mapType(arg));
+        f.signature.returns(getReturnType(name));
+    }
+//    else todo("getWasmFunction "s + name);
 //    else if(name=="powi")f.signature.add(int32).add(int32).returns(int64s);
-    else todo("getWasmFunction "s + name);
     return f;
 }
 
@@ -499,3 +516,9 @@ double pow(double x, double y) { // _NOEXCEPT
     return powd(x, y);
 //    return __builtin_pow(x, y);
 }
+
+
+extern "C" void registerWasmFunction(chars name) {
+    functions.add(name, getWasmFunction(name));
+}
+

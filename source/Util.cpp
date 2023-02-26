@@ -490,26 +490,27 @@ bool isSmartPointer(int64 d) {
 
 Node smartValue(int64 smartPointer);
 
-#if MY_WASI
-String demangle(const String &fun){
-    todo("demangle in pure wasm");
-    return fun;
-}
-#else
+#if not WASM
 
 #include <cxxabi.h>
-//std::__2::enable_if<(std::is_arithmetic<int>::value) && (std::is_arithmetic<int64>::value), std::__2::__promote<int, int64, void> >::type::type pow<int, int64>(int, int64)
+
 #endif
+
+String demangle(const String &fun) {
+    char *result = 0;
+    int status = -1;
+#if not WASM
+    result = abi::__cxa_demangle(fun.data, 0, 0, &status);
+#endif
+    if (status < 0 or result == 0)
+        return fun;// not demangled (e.g. "memory")
+    return result;
+}
 
 String extractFuncName(const String &fun) {
     if (fun.length == 0)return "";
     int status;
-    char *string;
-#if not WASM
-    string = abi::__cxa_demangle(fun.data, 0, 0, &status);
-#endif
-    if (status < 0 or string == 0)
-        return fun;// not demangled (e.g. "memory")
+    char *string = demangle(fun);
     auto real_name = String(string); // temp
     String ok = real_name.substring(0, real_name.lastIndexOf("("));
     if (ok.contains(':'))
