@@ -139,7 +139,6 @@ function demangle(name) {
                 break;
             case 'I':
                 // Template open bracket (<)
-
                 var ty = typeInfo
                 if (types.length > 0)
                     ty = types[types.length - 1]
@@ -293,17 +292,23 @@ function popName(str) {
         const len = parseInt(res[0], 10);
         if (isNaN(len)) {
             if (c == "n") {
-                namestr += "operator new"
+                namestr += "::operator new"
                 rlen += 2
                 handled = true;
             }
             if (c === "C") { // constructor String::String()
-                namestr = namestr.concat(namestr.split("::")[0]);
+                namestr += "::" + namestr
                 rlen += 2
                 handled = true;
             }
+            if (c === "I") {
+                let generic = popName(str.substr(1)).name
+                namestr += "<" + generic + ">::" + namestr
+                rlen += generic.length + 5
+                handled = true;
+            }
             if (c === "p") {
-                namestr += getOperatorName(str[1])
+                namestr += "::" + getOperatorName(str[1])
                 rlen += 2
                 handled = true;
             } else
@@ -314,13 +319,17 @@ function popName(str) {
         const strstart = str.substr(res[0].length);
         lastType = strstart.substr(0, len);
         namestr = namestr.concat(lastType);
-        if (!isLast) namestr = namestr.concat("::");
+        // if (!isLast && c!='I')
+        //     namestr = namestr.concat("::");
         str = strstart.substr(len);
     }
     if (rlen > 0 && !handled) {
         let fname = popName(str).name;
         if (fname) {
-            namestr += "::" + fname; // String::empty
+            if (c == 'I') {
+                namestr += fname + "::" + namestr; // List<String>::List hack
+            } else
+                namestr += "::" + fname; // String::empty
             rlen += fname.length + 2;
         }
     }
