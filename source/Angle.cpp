@@ -1382,9 +1382,6 @@ void addLibraryFunctionAsImport(Function &func) {
     import.is_used = true;
 }
 
-#if WASM
-Function getWasmFunction(String name);
-#endif
 
 bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: libraries.has(library)
 

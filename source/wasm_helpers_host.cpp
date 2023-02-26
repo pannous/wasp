@@ -119,7 +119,7 @@ extern "C" void put_chars(chars c, size_t len) {
 }
 
 #if not WASM
-/* [[noreturn]] */
+[[noreturn]]
 void proc_exit(int x) {
     exit(x);
 }

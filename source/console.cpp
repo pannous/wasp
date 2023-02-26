@@ -57,7 +57,7 @@ void getline(char *buf) {
 #endif
 
 // Todo: web version?
-/* [[noreturn]] */ void console() {
+[[noreturn]] void console() {
 	printf("\nWasp version %s\n", version);
 	showHelpMessage();
 	char *data = (char *) malloc(10000);
