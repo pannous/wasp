@@ -631,6 +631,7 @@ getArguments = function (func) {
 function register_wasp_functions(exports) {
     exports = exports || instance.exports
     for (let name in exports) {
+        if (name.startsWith("_Zl")) continue // operator"" literals
         let func = exports[name]
         if (typeof func == "function") {
             console_log(func.name, name)
