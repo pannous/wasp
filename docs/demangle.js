@@ -11,10 +11,14 @@
    Returns an object. The 'name' property is the name, the 'str' is the remainder of the string */
 
 var lastType = "";
+var const_function = false //  String::empty() const
 
 export // remove for index.html needs extension.mjs or "type": "module" in package.json
 function demangle(name) {
     if (!isMangled(name)) return name;
+
+    lastType = "";
+    const_function = false //  String::empty() const
 
     /* Encoding is the part between the _Z (the "mangling mark") and the dot, that prefix
        a vendor specific suffix. That suffix will not be treated here yet */
@@ -245,11 +249,13 @@ function demangle(name) {
 
     /* stupid shortcut to fix templates and make it fast Without that, we would need to complicate the code
        What it does is remove the commas where we would have the angle brackets for the templates */
-    return functionname.concat("(" + typelist.join(', ') + ")").replace(/<, /g, "<")
-        .replace(/<, /g, "<").replace(/, >/g, ">").replace(/, </g, "<");
+    let result = functionname.concat("(" + typelist.join(', ') + ")");
+    result = result.replace(/<, /g, "<").replace(/<, /g, "<")
+    result = result.replace(/, >/g, ">").replace(/, </g, "<");
+    if (const_function) result += " const";
+    return result
 }
 
-var const_function = false
 function popName(str) {
     /* The name is in the format <length><str> */
 
@@ -296,6 +302,11 @@ function popName(str) {
                 rlen += 2
                 handled = true;
             }
+            if (c == "i") {// index
+                namestr += "operator[]"
+                rlen += 4
+                handled = true;
+            }
             if (c === "C") { // constructor String::String()
                 namestr += "::" + namestr
                 rlen += 2
@@ -326,10 +337,7 @@ function popName(str) {
     if (rlen > 0 && !handled) {
         let fname = popName(str).name;
         if (fname) {
-            if (c == 'I') {
-                namestr += fname + "::" + namestr; // List<String>::List hack
-            } else
-                namestr += "::" + fname; // String::empty
+            namestr += "::" + fname; // String::empty
             rlen += fname.length + 2;
         }
     }
