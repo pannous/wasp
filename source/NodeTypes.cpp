@@ -156,6 +156,7 @@ Type mapType(String arg) {
     else if (arg == "String*")return stringp;
     else if (arg == "String&")return stringp;// todo: how does c++ handle refs?
     else if (arg == "String")return string_struct;
+    else if (arg == "const String")return string_struct;
 
     else if (arg == "Node")return node;// struct!
 
@@ -185,7 +186,7 @@ Type mapType(String arg) {
     else if (arg == "std::is_arithmetic<int>::value")return todoe;// WAT?? PURE_WASM should work without std!!
 
 
-        // IGNORE other INTERNAL TYPES:
+	    // IGNORE other INTERNAL TYPES:
     else if (arg == "Code")return ignore;
 //    else if (arg == "Map<String")return ignore;
 //    else if (arg == "int>")return ignore;// parse bug ^^
@@ -203,7 +204,7 @@ Type mapType(String arg) {
     else if (arg == "Wasp")return ignore;
     else if (arg == "WitReader")return ignore;
     else if (arg == "if")
-        return ignore; // bug!
+	    return ignore; // bug!
     else if (arg == "__cxxabiv1")return ignore;
     else if (arg == "...")return ignore;// varargs, todo interesting!
     else if (arg.startsWith("Map")) return maps;
@@ -215,9 +216,9 @@ Type mapType(String arg) {
     else {
 //        breakpoint_helper
 //        printf("unmapped c++ argument type %s\n", arg.data);
-        if (!arg.endsWith("*"))
-            if (!arg.startsWith("Map<") and !arg.startsWith("List<"))
-                error("unmapped c++ argument type %s\n"s % arg.data);
+	    if (!arg.endsWith("*"))
+		    if (!arg.startsWith("Map<") and !arg.startsWith("List<"))
+			    error("unmapped c++ argument type %s\n"s % arg.data);
     }
     return i32t;
 }
