@@ -7,6 +7,7 @@ function assertEqual(a, b) {
     console.log(`OK ${a} == ${b}`);
 }
 
+assertEqual(demangle("_ZN4ListI6StringEC2Em"), "List<String>::List(unsigned long)");
 // assertEqual(demangle("_Zli1sPKcm") , "operator\"\" s(char const*, unsigned long)");
 assertEqual(demangle("_ZNK6String5emptyEv"), "String::empty()"); // ignore const
 assertEqual(demangle("_ZN6StringplES_"), "String::operator+(String)");
