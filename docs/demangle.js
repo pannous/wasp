@@ -12,8 +12,9 @@
 
 var lastType = "";
 var const_function = false //  String::empty() const
+let isLower = (c) => c >= 'a' && c <= 'z'
 
-export // remove for index.html needs extension.mjs or "type": "module" in package.json
+// export // remove for index.html needs extension.mjs or "type": "module" in package.json
 function demangle(name) {
     if (!isMangled(name)) return name;
 
@@ -306,23 +307,13 @@ function popName(str) {
         const res = /(\d*)/.exec(str);
         const len = parseInt(res[0], 10);
         if (isNaN(len)) {
-            if (c == "n") {
-                namestr += "operator new"
-                rlen += 2
-                handled = true;
-            }
-            if (c == "i") {// index
-                namestr += "operator[]"
-                rlen += 4
-                handled = true;
-            }
             if (c === "C") { // constructor String::String()
                 namestr += namestr.substr(0, namestr.length - 2)
                 rlen += 2
                 handled = true;
                 isClass = false
             }
-            if (c === "I") {
+            if (c === "I") { // generic
                 isClass = false
                 let generic = popName(str.substr(1)).name
                 namestr = namestr.substr(0, namestr.length - 2)
@@ -331,8 +322,14 @@ function popName(str) {
                 handled = true;
                 break
             }
-            if (c === "p" || c == 'a' || c == 'e') {
-                namestr += getOperatorName(str[1])
+            if (c == "c") {// cast
+                // _ZNK6StringcvbEv
+                // function $String::operator bool() const()
+                namestr += " " // todo bool()
+                rlen += 4
+                handled = true;
+            } else if (isLower(c)) {
+                namestr += getOperatorName(c + str[1])
                 rlen += 2
                 handled = true;
             } else
@@ -378,6 +375,102 @@ function isMangled(name) {
 
 function getOperatorName(ch) {
     switch (ch) {
+        case 'nw':
+            return 'operator new'
+        case 'dl':
+            return 'operator delete'
+        case 'pl':
+            return 'operator+'
+        case 'na':
+            return "operator new[]"
+        case 'da':
+            return "operator delete[]"
+        case 'aw':
+            return "operator co_await"
+        case 'ng':
+            return "operator-" // negation
+        case 'mi':
+            return "operator-" // minus
+        case 'ad':
+            return "operator&"
+        case 'de':
+            return "operator*"
+        case 'co':
+            return "operator~"
+        case 'ml':
+            return "operator*"
+        case 'dv':
+            return "operator/"
+        case 'rm':
+            return "operator%"
+        case 'an':
+            return "operator&"
+        case 'or':
+            return "operator|"
+        case 'eo':
+            return "operator^"
+        case 'mI':
+            return "operator-="
+        case 'mL':
+            return "operator*="
+        case 'dV':
+            return "operator/="
+        case 'rM':
+            return "operator%="
+        case 'aN':
+            return "operator&="
+        case 'oR':
+            return "operator|="
+        case 'eO':
+            return "operator^="
+        case 'ls':
+            return "operator<<"
+        case 'rs':
+            return "operator>>"
+        case 'lS':
+            return "operator<<="
+        case 'rS':
+            return "operator>>="
+        case 'ne':
+            return "operator!="
+        case 'lt':
+            return "operator<"
+        case 'le':
+            return "operator<="
+        case 'ge':
+            return "operator>="
+        case 'ss':
+            return "operator<=>" // spaceship comparison
+        case 'nt':
+            return "operator!"
+        case 'aa':
+            return "operator&&"
+        case 'oo':
+            return "operator||"
+        case 'pp':
+            return "operator++"
+        case 'mm':
+            return "operator--"
+        case 'cm':
+            return "operator,"
+        case 'pm':
+            return "operator->*"
+        case 'pt':
+            return "operator->"
+        case 'cl':
+            return "operator()"
+        case 'qu':
+            return "operator?"
+        case 'pL':
+            return 'operator+='
+        case 'aS': // assign
+            return 'operator='
+        case 'eq': // eq
+            return 'operator=='
+        case 'gt':
+            return 'operator>'
+        case 'ix': // index
+            return 'operator[]'
         case 'C':
             return 'operator->'
         case 'D':
@@ -448,8 +541,6 @@ function getOperatorName(ch) {
             return 'operator=='
         case '9':
             return 'operator!='
-        case 'q': // eq
-            return 'operator=='
         default:
             return 'operator???' + ch;
     }
