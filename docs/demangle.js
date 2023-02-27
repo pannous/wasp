@@ -273,12 +273,21 @@ function popName(str) {
     }
 
     let handled = false;
+    let isClass = false
 
     while (!isLast) {
         /* This is used for decoding names inside complex namespaces
            Whenever we find an 'N' preceding a number, it's a prefix/namespace */
         let c = str[0];
-        isLast = c != "N";
+
+        if (c != "N" && c != 'K') {
+            if (!const_function)
+                handled = true;
+            isLast = true;
+        } else {
+            isClass = true;
+        }
+
         /* IF NOT IN popName St means std:: in the mangled string
            This std:: check is for inside the name, not outside,
            unlike the one in the demangle function
@@ -298,7 +307,7 @@ function popName(str) {
         const len = parseInt(res[0], 10);
         if (isNaN(len)) {
             if (c == "n") {
-                namestr += "::operator new"
+                namestr += "operator new"
                 rlen += 2
                 handled = true;
             }
@@ -308,18 +317,22 @@ function popName(str) {
                 handled = true;
             }
             if (c === "C") { // constructor String::String()
-                namestr += "::" + namestr
+                namestr += namestr.substr(0, namestr.length - 2)
                 rlen += 2
                 handled = true;
+                isClass = false
             }
             if (c === "I") {
+                isClass = false
                 let generic = popName(str.substr(1)).name
+                namestr = namestr.substr(0, namestr.length - 2)
                 namestr += "<" + generic + ">::" + namestr
                 rlen += generic.length + 5
                 handled = true;
+                break
             }
-            if (c === "p") {
-                namestr += "::" + getOperatorName(str[1])
+            if (c === "p" || c == 'a' || c == 'e') {
+                namestr += getOperatorName(str[1])
                 rlen += 2
                 handled = true;
             } else
@@ -329,20 +342,28 @@ function popName(str) {
         rlen += res[0].length + len;
         const strstart = str.substr(res[0].length);
         lastType = strstart.substr(0, len);
-        namestr = namestr.concat(lastType);
+        if (isClass) {
+            namestr += lastType + "::";
+            isClass = false;
+        } else
+            namestr = namestr.concat(lastType);
+
         // if (!isLast && c!='I')
         //     namestr = namestr.concat("::");
         str = strstart.substr(len);
     }
     if (rlen > 0 && !handled) {
-        let fname = popName(str).name;
+        let popped = popName(str);
+        let fname = popped.name;
         if (fname) {
             namestr += "::" + fname; // String::empty
-            rlen += fname.length + 2;
+            return {name: namestr, str: popped.str};
         }
     }
     if (isEntity) rlen += 2; // Take out the "E", the entity end mark
     let substr = ostr.substr(rlen);
+    if (substr.startsWith("E"))
+        substr = substr.substr(1)
     return {name: namestr, str: substr};
 }
 
@@ -427,6 +448,8 @@ function getOperatorName(ch) {
             return 'operator=='
         case '9':
             return 'operator!='
+        case 'q': // eq
+            return 'operator=='
         default:
             return 'operator???' + ch;
     }
