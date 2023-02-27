@@ -88,7 +88,7 @@ void initSymbols() {
     return; // no need outside WASM
 #endif
 //    nil_name = "nil";
-    empty_name = "";
+    EMPTY = "";
     EMPTY = String('\0');
     ((Node) NIL) = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 //	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
@@ -113,7 +113,7 @@ Node &Node::operator=(int i) {
 Node &Node::operator=(chars c) {
     value.string = new String(c);
     kind = strings;
-    if (name == empty_name)name = *value.string;
+    if (name == EMPTY)name = *value.string;
     return *this;
 }
 

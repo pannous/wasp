@@ -85,6 +85,12 @@ let imports = {
         puti: x => console.log(x), // allows debugging of ints without format String allocation!
         js_demangle: x => x,
         _Z7compile6Stringb: nop, // todo bug! why is this called?
+        _Z9read_wasmPhi: nop, // todo bug! why is this called?
+        _Z11loadRuntimev: nop, // todo bug! why is this called?
+        _Z10testWasmGCv: nop, // todo bug! why is this called?
+        _Z11testAllWasmv: nop, // todo bug! why is this called?
+        _Z11testAllEmitv: nop, // todo bug! why is this called?
+        _Z12testAllAnglev: nop, // todo bug! why is this called?
     },
     wasi_unstable: {
         fd_write,
@@ -563,10 +569,10 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
         }
         console.log(result);
         loadKindMap()
-        // load_runtime_bytes()
+        load_runtime_bytes()
         register_wasp_functions(instance.exports)
         // moduleReflection(wasm_data);
-        // setTimeout(test, 1);// make sync
+        setTimeout(test, 1);// make sync
     }
 )
 
@@ -615,8 +621,8 @@ function copy_runtime_bytes() {
 getArguments = function (func) {
     var symbols = func.toString(), start, end, register;
     // console.log("getArguments",func,symbols)
-    start = symbols.indexOf('function');
-    if (start !== 0 && start !== 1) return undefined;
+    // start = symbols.indexOf('function');
+    // if (start !== 0 && start !== 1) return undefined;
     start = symbols.indexOf('(', start);
     end = symbols.indexOf(')', start);
     var args = [];
@@ -629,22 +635,35 @@ getArguments = function (func) {
 
 // reflection of all wasp functions to compiler, so it can link them
 function register_wasp_functions(exports) {
+    console_log("⚠️ register_wasp_functions DEACTIVATED")
+    return
     exports = exports || instance.exports
+    // console_log(demangle("_Z6printfPKcS0_i"))
+    // console_log(demangle("_ZN6StringC2EPKhj"))
+    // console_log(demangle("_ZN6StringC2EPhj"))
+    // console_log(demangle("_Z2If4NodeS_"))
+    // return
     for (let name in exports) {
         if (name.startsWith("_Zl")) continue // operator"" literals
         let func = exports[name]
+        // get the internal name of a wasm function in JavaScript
+        // let internal_name = func.toString()//.match(/function\s+([^\s(]+)/)[1]
+        let internal_name = JSON.stringify(func)
+        console_log("internal_name", internal_name, func)
+        // Redirect js console output to string
+
         if (typeof func == "function") {
-            console_log(func.name, name)
-            console_log(func)
-            // let args = getArguments(func)
+            console_log(func.name, name, func)
+            // wasp_functions[name] = func
+            let demangled = demangle(name)
+            // let args = getArguments(name)
             // if (args && args.length>0)
             //     console.log(name, args)
-            // wasp_functions[name] = func
-            name = demangle(name)
-            console.log("demangled", name)
-            // if(!name.startsWith("_"))
-            if (!name.match("<") && !name.match("\\[") && !name.match(":: "))// no generics yet
-                instance.exports.registerWasmFunction(chars(name)) // derive its signature from its name
+            console.log(name, "⇨", demangled)
+            if (!demangled.match("<") && !demangled.match("\\[")
+                && !demangled.match(":: ") && !demangled.match("~"))// no generics yet
+                // instance.exports.registerWasmFunction(chars(demangled),chars(name)) // derive its signature from its name
+                ;
         }
     }
 }
