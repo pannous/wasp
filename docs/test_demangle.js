@@ -7,8 +7,9 @@ function assertEqual(a, b) {
     console.log(`OK ${a} == ${b}`);
 }
 
-assertEqual(demangle("_ZN4NodegtES_"), "Node::operator>(Node)");
 assertEqual(demangle("_ZNK6StringeqEPc"), "String::operator==(char*) const");
+assertEqual(demangle("_ZNK4Node3hasE6Stringbs"), "Node::has(String, bool, short) const");
+assertEqual(demangle("_ZN4NodegtES_"), "Node::operator>(Node)");
 assertEqual(demangle("_ZNK6String5emptyEv"), "String::empty() const"); // ignore const
 assertEqual(demangle("_Z8typeName4Kindb"), "typeName(Kind, bool)");
 assertEqual(demangle("_ZN6String5beginEv"), "String::begin()");

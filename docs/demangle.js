@@ -13,8 +13,9 @@
 var lastType = "";
 var const_function = false //  String::empty() const
 let isLower = (c) => c >= 'a' && c <= 'z'
+// let isTypeCode = c => "vwdufcCjSsPbNtLgDxXeEoOA".indexOf(c) >= 0
 
-// export // remove for index.html needs extension.mjs or "type": "module" in package.json
+export // remove for index.html needs extension.mjs or "type": "module" in package.json
 function demangle(name) {
     if (!isMangled(name)) return name;
 
@@ -139,7 +140,7 @@ function demangle(name) {
                     process = popChar(process.str);
                 break
             case 'B': // _Z3absB7v160000d $abs[abi:v160000](double)()
-                let bracket = popName(process.str);
+                let bracket = popName(process.str, false);
                 process.str = bracket.str;
                 break;
             case 'I':
@@ -212,7 +213,7 @@ function demangle(name) {
                     }
 
                     // It's a custom type name
-                    const tname = popName(process.ch.concat(process.str));
+                    const tname = popName(process.ch.concat(process.str), false);
                     typeInfo.typeStr = typeInfo.typeStr.concat(tname.name);
                     process.str = tname.str;
                 }
@@ -257,7 +258,7 @@ function demangle(name) {
     return result
 }
 
-function popName(str) {
+function popName(str, operators = true) {
     /* The name is in the format <length><str> */
 
     let isLast = false;
@@ -265,16 +266,20 @@ function popName(str) {
     let rlen = 0;
     const ostr = str;
     let isEntity = false;
+    let handled = false;
+    let isClass = false
+
 
     let c = str[0];
     if (c == 'N' && str[1] == 'K') {
         str = str.substr(2);
         const_function = true;
+        // isClass = true;
+        // isEntity= true;
+        operators = true
         rlen += 2;
     }
 
-    let handled = false;
-    let isClass = false
 
     while (!isLast) {
         /* This is used for decoding names inside complex namespaces
@@ -328,7 +333,8 @@ function popName(str) {
                 namestr += " " // todo bool()
                 rlen += 4
                 handled = true;
-            } else if (isLower(c)) {
+            } else if (isLower(c) && operators) {
+                // !isTypeCode(c) ambivalent
                 namestr += getOperatorName(c + str[1])
                 rlen += 2
                 handled = true;
@@ -350,7 +356,7 @@ function popName(str) {
         str = strstart.substr(len);
     }
     if (rlen > 0 && !handled) {
-        let popped = popName(str);
+        let popped = popName(str, operators);
         let fname = popped.name;
         if (fname) {
             namestr += "::" + fname; // String::empty
