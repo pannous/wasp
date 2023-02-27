@@ -2103,11 +2103,19 @@ Code emitCall(Node &fun, Function &context) {
 			error("unknown function "s + name + " (" + normed + ")");
 		else name = normed;
 	}
-	if (name == "pow")
-		functions["pow"].signature.add(reals).add(reals).returns(reals);
+	print("emitCall");
+	print(name);
+	print(fun);
+	if (name == "pow") {
+//		functions["pow"].signature.add(reals).add(reals).returns(reals);
+		print("GOT POW");
+	}
 
 	Function &function = functions[name];// NEW context! but don't write context ref!
 	Signature &signature = function.signature;
+
+	print("function");
+	print(function);
 
 	int index = function.call_index;
 	if (call_indices.has(name)) {
@@ -2139,10 +2147,12 @@ Code emitCall(Node &fun, Function &context) {
 	context.is_used = true;
 
 	// todo multi-value
+	print("signature");
+	print(signature);
 	Type return_type = signature.return_types.last(none);
 	last_type = return_type;
-	if (signature.wasm_return_type)
-		check_is(mapTypeToWasm(last_type), signature.wasm_return_type);
+	// if (signature.wasm_return_type)
+	// 	check_is(mapTypeToWasm(last_type), signature.wasm_return_type);
 //	last_type.clazz = &signature.return_type;// todo dodgy!
 	return code;
 }
@@ -2568,6 +2578,13 @@ Code emitBlock(Node &node, Function &context) {
 	}
 
 	if (needs_cast and last_type.value) {
+		print("last_type");
+		print(last_type);
+		print(typeName(last_type));
+		print("return_type");
+		print(return_type);
+		print(typeName(return_type));
+		print("needs_cast");
 		block.add(cast(last_type, return_type));
 	}
 
@@ -2685,6 +2702,7 @@ Code emitTypeSection() {
 		if (!fun) {
 //			print(functionIndices);
 //			print(functions);
+			print(fun);
 			breakpoint_helper
 			if (start.empty())
 				warn("empty functions[ø] because context=start=''");
