@@ -7,6 +7,10 @@ function assertEqual(a, b) {
     console.log(`OK ${a} == ${b}`);
 }
 
+assertEqual(demangle("_ZN6String7replaceEPKcS_"), "String::replace(const char*, String)");
+// assertEqual(demangle("_ZN6String7replaceEPKcS_" ), "String::replace(char const*, String)");
+assertEqual(demangle("_ZN6String7replaceEPKcS0"), "String::replace(const char*, const char*)");
+// assertEqual(demangle("_ZN6String7replaceEPKcS0"), "String::replace(char const*, char const*)");
 assertEqual(demangle("_ZNK6StringeqEPc"), "String::operator==(char*) const");
 assertEqual(demangle("_ZNK4Node3hasE6Stringbs"), "Node::has(String, bool, short) const");
 assertEqual(demangle("_ZN4NodegtES_"), "Node::operator>(Node)");

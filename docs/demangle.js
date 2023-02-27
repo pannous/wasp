@@ -11,6 +11,7 @@
    Returns an object. The 'name' property is the name, the 'str' is the remainder of the string */
 
 var lastType = "";
+var baseType = "";
 var const_function = false //  String::empty() const
 let isLower = (c) => c >= 'a' && c <= 'z'
 // let isTypeCode = c => "vwdufcCjSsPbNtLgDxXeEoOA".indexOf(c) >= 0
@@ -86,34 +87,10 @@ function demangle(name) {
         }
 
         /* Get the type code. Process it */
-        switch (process.ch) {
-            case 'v':
-                typeInfo.typeStr = ""; // void
-                break;
-            case 'w':
-                typeInfo.typeStr = "wchar_t";
-                break;
-            case 'b':
-                typeInfo.typeStr = "bool";
-                break;
-            case 'c':
-                typeInfo.typeStr = "char";
-                break;
-            case 'a':
-                typeInfo.typeStr = "signed char";
-                break;
-            case 'h':
-                typeInfo.typeStr = "unsigned char";
-                break;
-            case 's':
-                typeInfo.typeStr = "short";
-                break;
-            case 't':
-                typeInfo.typeStr = "unsigned short";
-                break;
-            case 'i':
-                typeInfo.typeStr = "int";
-                break;
+        let typeName = getTypeName(process.ch);
+        if (typeName)
+            typeInfo.typeStr = typeName;
+        else switch (process.ch) {
             case 'p':
                 process = popChar(process.str);
                 typeInfo.typeStr = getOperatorName(process.ch);
@@ -128,10 +105,11 @@ function demangle(name) {
                         typeInfo.typeStr = "char???";
                 }
                 break;
-            case 'S': // "self" last type duplicate
-                if (types.length > 0)
+            case 'S': // "self" type duplicate
+                if (types.length > 0 && str[1] == '0')
                     typeInfo = types[types.length - 1]
-                // types.push(types[types.length-1]);
+                else if (str[1] == '_')
+                    typeInfo.typeStr = baseType;
                 else
                     typeInfo.typeStr = lastType;
 
@@ -346,6 +324,7 @@ function popName(str, operators = true) {
         const strstart = str.substr(res[0].length);
         lastType = strstart.substr(0, len);
         if (isClass) {
+            baseType = lastType
             namestr += lastType + "::";
             isClass = false;
         } else
@@ -383,6 +362,8 @@ function getOperatorName(ch) {
     switch (ch) {
         case 'nw':
             return 'operator new'
+        case 'cv':
+            return 'operator ' // cast … bool() …
         case 'dl':
             return 'operator delete'
         case 'pl':
@@ -549,6 +530,56 @@ function getOperatorName(ch) {
             return 'operator!='
         default:
             return 'operator???' + ch;
+    }
+}
+
+
+function getTypeName(ch) {
+    switch (ch) {
+        case 'v':
+            return ""; // void
+        case 'i':
+            return "int";
+        case 'w':
+            return "wchar_t";
+        case 'd':
+            return "double";
+        case 'u':
+            return "unsigned int";
+        case 'f':
+            return "float";
+        case 'c':
+            return "char";
+        case 'C':
+            return "unsigned char";
+        case 'j':
+            return "unsigned int";
+        case 's':
+            return "short";
+        case 'P':
+            return "unsigned short";
+        case 'b':
+            return "bool";
+        case 'N':
+            return "__int128";
+        case 't':
+            return "unsigned __int128";
+        case 'L':
+            return "long";
+        case 'g':
+            return "unsigned long";
+        case 'D':
+            return "long double";
+        case 'x':
+            return "long long";
+        case 'X':
+            return "unsigned long long";
+        case 'e':
+            return "...";
+        case 'A':
+            return "__float128";
+        default:
+            return "";
     }
 }
 
