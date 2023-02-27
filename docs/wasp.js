@@ -112,6 +112,7 @@ imports.wasi_snapshot_preview1 = imports.wasi_unstable // fuck wasmedge!
 let todo = x => console.error("TODO", x)
 let puts = x => console.log(chars(x)) // char*
 let prints = x => console.log(string(x)) // char**
+const print = window.console.log;// redirect to text box
 const console_log = window.console.log;// redirect to text box
 
 // #if not TRACE
@@ -505,28 +506,44 @@ async function link_runtime() {
     }
 }
 
-needs_runtime = false;
+// needs_runtime = false;
+needs_runtime = true
 
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // download(wasm_buffer, "emit.wasm", "wasm")
     if (needs_runtime) {
-        let runtime_instance = await WebAssembly.instantiateStreaming(fetch(WASM_RUNTIME), imports)
-        let runtime_imports = {env: runtime_instance.exports}
-        funclet = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
+        print("needs_runtime runtime loading")
+
+        let runtime_instance = await WebAssembly.instantiateStreaming(fetch(WASM_RUNTIME), {
+            wasi_unstable: {
+                fd_write,
+                proc_exit: terminate, // all threads
+                // ignore the rest for now
+                args_sizes_get: x => 0,
+                args_get: nop,
+            },
+        })
+        print("runtime loaded")
+        // addSynonyms(runtime_instance.exports)
+        // let runtime_imports = {env: runtime_instance.exports}
+        let runtime_imports = {env: {square: x => x * x}}
+        app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
+        print("app loaded")
+
     } else {
         let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
-        funclet = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
+        app = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
     }
-    funclet.exports = funclet.instance.exports
-    funclet.memory = funclet.exports.memory || funclet.exports._memory || funclet.memory
-    let main = funclet.exports.wasp_main || funclet.exports.main || funclet.instance.start || funclet.exports._start
+    app.exports = app.instance.exports
+    app.memory = app.exports.memory || app.exports._memory || app.memory
+    let main = app.exports.wasp_main || app.exports.main || app.instance.start || app.exports._start
     let result = main()
     // console.log("GOT raw ", result)
     if (-0x100000000 > result || result > 0x100000000) {
-        if (!funclet.memory)
+        if (!app.memory)
             error("NO funclet.memory")
-        result = smartNode(result, 0, funclet.memory)
+        result = smartNode(result, 0, app.memory)
         //  result lives in emit.wasm!
         // console.log("GOT nod ", nod)
         // result = nod.Value()
@@ -546,6 +563,9 @@ async function run_wasm(buf_pointer, buf_size) {
     }
     results.value = result // JSON.stringify( Do not know how to serialize a BigInt
     return result; // useless, returns Promise!
+    // } catch (ex) {
+    //     console.error(ex)
+    // }
 }
 
 wasm_data = fetch(WASM_FILE)
@@ -567,12 +587,8 @@ WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
             console.error("missing main function in wasp module!")
             result = instance.exports//show what we've got
         }
-        console.log(result);
-        loadKindMap()
-        load_runtime_bytes()
-        register_wasp_functions(instance.exports)
-        // moduleReflection(wasm_data);
-        setTimeout(test, 1);// make sync
+    console.log(result);
+    wasp_ready()
     }
 )
 
@@ -635,8 +651,8 @@ getArguments = function (func) {
 
 // reflection of all wasp functions to compiler, so it can link them
 function register_wasp_functions(exports) {
-    console_log("⚠️ register_wasp_functions DEACTIVATED")
-    return
+    // console_log("⚠️ register_wasp_functions DEACTIVATED")
+    // return
     exports = exports || instance.exports
     // console_log(demangle("_Z6printfPKcS0_i"))
     // console_log(demangle("_ZN6StringC2EPKhj"))
@@ -646,37 +662,41 @@ function register_wasp_functions(exports) {
     for (let name in exports) {
         if (name.startsWith("_Zl")) continue // operator"" literals
         let func = exports[name]
-        // get the internal name of a wasm function in JavaScript
-        // let internal_name = func.toString()//.match(/function\s+([^\s(]+)/)[1]
-        let internal_name = JSON.stringify(func)
-        console_log("internal_name", internal_name, func)
-        // Redirect js console output to string
-
         if (typeof func == "function") {
-            console_log(func.name, name, func)
-            // wasp_functions[name] = func
+            // console_log(func.name, name, func)
             let demangled = demangle(name)
-            // let args = getArguments(name)
-            // if (args && args.length>0)
-            //     console.log(name, args)
-            console.log(name, "⇨", demangled)
+            if (demangled.match("square"))
+                console.log("GOT SQUARE", name, "⇨", demangled)
+            // console.log(name, "⇨", demangled)
+            exports[demangled] = func
             if (!demangled.match("<") && !demangled.match("\\[")
                 && !demangled.match(":: ") && !demangled.match("~"))// no generics yet
-                // instance.exports.registerWasmFunction(chars(demangled),chars(name)) // derive its signature from its name
+                instance.exports.registerWasmFunction(chars(demangled), chars(name)) // derive its signature from its name
                 ;
         }
     }
 }
 
+function addSynonyms(exports) {
+    for (let name in exports) {
+        let func = exports[name]
+        if (typeof func == "function") {
+            let demangled = demangle(name)
+            if (!exports[demangled]) exports[demangled] = func
+        }
+    }
+    return exports
+}
+
 // runtime_bytes for linking small wasp programs with runtime
 function load_runtime_bytes() {
     fetch(WASM_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
-        runtime_bytes = buffer
-        WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
-            //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
-            console.log(obj.instance.exports._ZN6StringC2EPKcb)
-            console.log(obj.instance.exports._ZN6StringC2EPKcb.length)
-            console.log(obj.instance.exports._ZN6StringC2EPKcb.arguments)
+            runtime_bytes = buffer
+            WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
+                //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
+                // console.log(obj.instance.exports._ZN6StringC2EPKcb)
+                // console.log(obj.instance.exports._ZN6StringC2EPKcb.length)
+                // console.log(obj.instance.exports._ZN6StringC2EPKcb.arguments)
                 // console.log(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
                 // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
             })
@@ -693,4 +713,14 @@ function load_runtime_bytes() {
 async function test() {
     if (typeof (wasp_tests) !== "undefined")
         await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
+}
+
+function wasp_ready() {
+    console.log("wasp is ready")
+    // moduleReflection(wasm_data);
+    loadKindMap()
+    // load_runtime_bytes()
+    register_wasp_functions(instance.exports)
+    testRun1()
+    // setTimeout(test, 1);// make sync
 }

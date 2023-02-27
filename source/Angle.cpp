@@ -1160,9 +1160,10 @@ Node &groupKebabMinus(Node &node, Function &context) {
 
 Module &loadRuntime() {
 #if MY_WASM
-    Module &wasp=*module_cache["wasp"s.hash()];
-    wasp.functions["powi"].signature.returns(int32);
-    return wasp;
+	static Module wasp;
+//    Module &wasp=*module_cache["wasp"s.hash()];
+//    wasp.functions["powi"].signature.returns(int32);
+	return wasp;
 #else
     Module &wasp = read_wasm("wasp-runtime.wasm");
     wasp.functions["getChar"].signature.returns(codepoint1);
@@ -1254,7 +1255,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
     if (import or isFunction(expressiona)) {
         expressiona.setType(call, false);
         if (not functions.has(expressiona.name))
-            error("missing import for function "s + expressiona.name);
+            error("! missing import for function "s + expressiona.name);
 //		if (not expressiona.value.node and arity>0)error("missing args");
         functions[expressiona.name].is_used = true;
     }
@@ -1390,12 +1391,15 @@ bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: librari
 Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))return use_required(&functions[name]);
+#if WASM
+    if (loadRuntime().functions.has(name))return use_required(&loadRuntime().functions[name]);
+#endif
     if (contains(funclet_list, name)) {
 #if WASM
-        print("funclet "s+ name);
-        auto funclet = getWaspFunction(name);
-        print(funclet);
-        print(funclet.signature);
+		print("funclet "s+ name);
+		auto funclet = getWaspFunction(name);
+		print(funclet);
+		print(funclet.signature);
 #else
         Module &funclet_module = read_wasm(findFile(name, "lib"));
 //        check(funclet_module.functions.has(name));
@@ -1854,3 +1858,122 @@ void addGlobal(Node &node) {
     }
 }
 
+
+List<String> demangle_args(String &fun);
+
+Function getWaspFunction(String name) {
+    if (loadRuntime().functions.has(name)) {
+//        print("already got function "s+name);
+        return loadRuntime().functions[name];
+    }
+    Function f{.name=name, .is_import=true, .is_runtime=true};
+    if (name.contains("(")) {
+        String brace = name.substring(name.indexOf('(') + 1, name.indexOf(')'));
+        f.name = name.substring(0, name.indexOf('('));
+        auto args = brace.split(", ");
+        for (auto arg: args)
+            f.signature.add(mapType(arg));
+        if (f.name == "square")f.signature.returns(int32);
+        if (f.name == "pow")f.signature.returns(float64);
+//        auto returnType = getReturnType(name);
+//        f.signature.returns(returnType);
+    } else {
+        if (name == "_start");
+        else if (name == "__wasm_call_ctors");
+        else if (name == "__cxa_allocate_exception");
+        else if (name == "__cxa_throw");
+        else if (name == "__cxa_end_catch");
+        else if (name == "__cxa_find_matching_catch");
+        else if (name == "__cxa_begin_catch");
+        else if (name == "__cxa_atexit");
+        else if (name == "__main_argc_argv")
+            f.signature.add(int32, name = "argc").add(i32, name = "argv").returns(int32);
+        else if (name == "getField")f.signature.add(node_pointer).add(smarti64).returns(node);// wth
+        else if (name == "smartNode")f.signature.add(int64s).returns(node);
+        else if (name == "pow")f.signature.add(float64).add(float64).returns(float64);
+        else if (name == "kindName")f.signature.add(type32).returns(charp);
+        else if (name == "formatReal")f.signature.add(float64).returns(charp);
+        else if (name == "strlen")f.signature.add(charp).returns(int32);
+        else if (name == "free")f.signature.add(pointer);
+        else if (name == "square")f.signature.add(int32).returns(int32);
+        else if (name == "malloc")f.signature.add(size32).returns(pointer);// todo 64
+        else if (name == "aligned_alloc")f.signature.add(size32, name = "alignment").add(size32).returns(pointer);
+        else if (name == "realloc")f.signature.add(pointer).add(size32).returns(pointer);
+        else if (name == "calloc")f.signature.add(size32).add(size32).returns(pointer);
+        else if (name == "memcpy")f.signature.add(pointer).add(pointer).add(size32);
+        else if (name == "memset")f.signature.add(pointer).add(int32).add(size32);
+        else if (name == "memcmp")f.signature.add(pointer).add(pointer).add(size32).returns(int32);
+        else if (name == "memmove")f.signature.add(pointer).add(pointer).add(size32);
+        else if (name == "memchr")f.signature.add(pointer).add(int32).add(size32).returns(pointer);
+        else if (name == "strchr")f.signature.add(charp).add(int32).returns(charp);
+        else if (name == "strrchr")f.signature.add(charp).add(int32).returns(charp);
+        else if (name == "strcat")f.signature.add(charp).add(charp).returns(charp);
+        else if (name == "strncat")f.signature.add(charp).add(charp).add(size32).returns(charp);
+        else if (name == "strcmp")f.signature.add(charp).add(charp).returns(int32);
+        else if (name == "strncmp")f.signature.add(charp).add(charp).add(size32).returns(int32);
+        else if (name == "strcpy")f.signature.add(charp).add(charp).returns(charp);
+        else if (name == "strncpy")f.signature.add(charp).add(charp).add(size32).returns(charp);
+        else if (name == "strdup")f.signature.add(charp).returns(charp);
+        else if (name == "strndup")f.signature.add(charp).add(size32).returns(charp);
+        else if (name == "strpbrk")f.signature.add(charp).add(charp).returns(charp);
+        else if (name == "strspn")f.signature.add(charp).add(charp).returns(size32);
+        else if (name == "strcspn")f.signature.add(charp).add(charp).returns(size32);
+        else if (name == "strstr")f.signature.add(charp).add(charp).returns(charp);
+        else if (name == "strtok")f.signature.add(charp).add(charp).returns(charp);
+        else if (name == "getchar")f.signature.returns(int32);
+        else if (name == "get_char")f.signature.returns(int32);
+        else if (name == "get_int")f.signature.returns(int32);
+        else if (name == "get_float")f.signature.returns(float32);
+        else if (name == "get_double")f.signature.returns(float64);
+        else if (name == "str")f.signature.add(charp).returns(strings);
+        else if (name == "puts")f.signature.add(charp);
+        else if (name == "putx")f.signature.add(int32);
+        else if (name == "putf")f.signature.add(float32);
+        else if (name == "putd")f.signature.add(float64);
+        else if (name == "putp")f.signature.add(pointer);
+        else if (name == "putl")f.signature.add(longs);
+        else if (name == "printf")f.signature.add(charp);// todo …
+        else if (name == "printNode")f.signature.add(node_pointer);
+        else if (name == "put_chars")f.signature.add(charp);
+        else if (name == "putchar")f.signature.add(int32);
+        else if (name == "put_char")f.signature.add(int32);
+        else if (name == "put_string")f.signature.add(charp);
+        else if (name == "put_int")f.signature.add(int32);
+        else if (name == "put_float")f.signature.add(float32);
+        else if (name == "put_double")f.signature.add(float64);
+        else if (name == "size_of_node")f.signature.returns(size32);
+        else if (name == "size_of_string")f.signature.returns(size32);
+        else if (name == "serialize")f.signature.add(node_pointer);// also Node::serialize
+        else if (name == "raise")f.signature.add(charp);
+        else if (name == "Parse")f.signature.add(charp).returns(node_pointer);
+        else if (name == "run")f.signature.add(charp).returns(charp);
+        else if (name == "system")f.signature.add(charp).returns(int32);
+        else if (name == "testCurrent");
+        else if (name == "run_wasm_file")f.signature.add(charp).returns(smarti64);
+        else if (name == "panic");
+            // IGNORE js bridges :
+        else if (name == "registerWasmFunction");
+        else if (name.startsWith("test"));
+        else todo("getWaspFunction "s + name);
+    }
+    if (!loadRuntime().functions.has(f.name)) {
+        loadRuntime().functions.add(f.name, f);
+        if (name == "square(int)") {
+            print("square<<<<<<<<<");
+            print(loadRuntime().functions.has("square"));
+            print(f.name);
+            print(f);
+            print(f.signature);
+        }
+    }
+//    else todo("getWaspFunction "s + name);
+//    else if(name=="powi")f.signature.add(int32).add(int32).returns(int64s);
+    return f;
+}
+
+extern "C" void registerWasmFunction(chars name, chars mangled) {
+    getWaspFunction(name);
+//    if (!functions.has(name))functions.add(name, getWaspFunction(name));
+//    if (!loadRuntime().functions.has(mangled))
+//	    loadRuntime().functions.add(mangled, getWaspFunction(name));
+}

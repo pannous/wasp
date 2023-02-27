@@ -444,7 +444,7 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
     Type32(Kind kind) {
         this->kind = kind;
         if ((int) kind > 0x1000)
-            error("erroneous or unsafe Type construction!!");
+            error("erroneous or unsafe Type construction");
     }
 
     explicit

@@ -94,10 +94,14 @@ public:
     }
 
     Code(short opcode) {
-        data = (bytes) alloc(2, 1);
-        data[0] = opcode % 0x100;
-        data[1] = opcode / 0x100;
-        length = 2;
+        if (opcode < 0x100)
+            add(opcode);
+        else {
+            data = (bytes) alloc(2, 1);
+            data[0] = opcode % 0x100;
+            data[1] = opcode / 0x100;
+            length = 2;
+        }
     }
 
 

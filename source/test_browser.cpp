@@ -49,9 +49,12 @@ extern "C" void testRuntime(bytes buffer, size_t size) {
 
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
-
-//    assert_emit("square 2", 4); // missing import for function square
-    testWasmGC();
+//	assert_emit("2+2", 4);
+//	assert_emit("2*2", 4);
+//	assert_emit("2^2", 4);
+//	assert_emit("√9", 3);
+//	assert_emit("square 2", 4); // missing import for function square
+	testWasmGC();
 
 //    skip(
 //            testIndexOffset();

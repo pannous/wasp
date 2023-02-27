@@ -381,18 +381,18 @@ Valtype mapTypeToWasm(Type t) {
     if (t.value < 0x80)
         return (Valtype) t.value;
     if (t.value < 0x10000) // todo
-        return mapTypeToWasm((Primitive) t);
-    if (isGeneric(t)) {
-	    warn("isGeneric Type");
-	    debug_line();
+	    return mapTypeToWasm((Primitive) t);
+	if (isGeneric(t) and use_wasm_arrays) {
+		warn("isGeneric Type");
+		debug_line();
 //	    warn(typeName(t));
-	    puti(t.value);
-	    // todo!
+		puti(t.value);
+		// todo!
 //	    print(typeName(kind));
 //	    print(typeName(valType));
-	    if (t.generics.value_type < 0)
-		    error1("generics with invalid Valtype");
-	    auto kind = (ushort) mapTypeToWasm((Kind) t.generics.kind);
+		if (t.generics.value_type < 0)
+			error1("generics with invalid Valtype");
+		auto kind = (ushort) mapTypeToWasm((Kind) t.generics.kind);
 	    auto valType = (ushort) mapTypeToWasm((Primitive) t.generics.value_type);
 	    puti(kind);
 	    puti(valType);

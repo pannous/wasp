@@ -22,7 +22,7 @@ onerror = (err) => {
     console.log(err);
 };
 
-let print = console.log // #!
+// let print = console.log // #!
 
 function check(ok) {
     if (!ok) backtrace_line("⚠️ TEST FAILED")
@@ -154,11 +154,15 @@ async function testRun1() {
     // let cmd="puts 'CYRC!'"
     // let cmd="puti 123"
     // let cmd = "√3^2"
+    // let cmd = "sqrt(3)^2"
     // let cmd = "123"
+    // let cmd = "square 3"
+    let cmd = "square(3)"
     // expect_test_result="abc"
     // let cmd = "42*2/2"
-    expect_test_result = "a"
-    let cmd = "'a'"
+    expect_test_result = 9
+    // let cmd = "'a'"
+    // expect_test_result = "a"
     let result = await exports.run(chars(cmd))
     // console.log(chars(result)) // "need asyncify for result" ;)
     // console.log("!!!")
