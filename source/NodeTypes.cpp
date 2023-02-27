@@ -143,6 +143,7 @@ Type mapType(String arg) {
 	else if (arg == "double")return float64;
 	else if (arg == "float")return float32;
 	else if (arg == "bool")return int32;
+	else if (arg == "const char")return byte_char;
 	else if (arg == "char")return byte_char;// c++ char < angle codepoint ok
 	else if (arg == "signed char")return byte_i8;
 	else if (arg == "wchar_t")return (Valtype) codepoint32;// angle codepoint ok

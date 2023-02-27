@@ -643,7 +643,7 @@ function register_wasp_functions(exports) {
             name = demangle(name)
             console.log("demangled", name)
             // if(!name.startsWith("_"))
-            if (!name.match("<"))// no generics yet
+            if (!name.match("<") && !name.match("\\["))// no generics yet
                 instance.exports.registerWasmFunction(chars(name)) // derive its signature from its name
         }
     }
