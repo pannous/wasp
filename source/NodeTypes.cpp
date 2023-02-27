@@ -116,6 +116,7 @@ Type mapType(String arg) {
 		arg = arg.substring(6);
 //	if(arg=="const char*")return charp;
 	if (arg.empty() or arg == "" or arg == " ") return voids;
+	else if (arg == "void")return voids;
 	else if (arg == "unsigned char*")return charp;// pointer with special semantics
 	else if (arg == "char const*")return charp;// pointer with special semantics
 	else if (arg == "char const*&")return charp;// todo ?
@@ -124,21 +125,22 @@ Type mapType(String arg) {
 	else if (arg == "char const**")return pointer;
 	else if (arg == "short")
 		return int32;// vec_i16! careful c++ ABI overflow? should be fine since wasm doesnt have short
-    else if (arg == "int")return int32;
-    else if (arg == "Int")return i32;
-    else if (arg == "signed int")return i32s;
-    else if (arg == "unsigned int")return i32;
-    else if (arg == "unsigned char")return int32;
-    else if (arg == "int*")return pointer;
-    else if (arg == "void*")return pointer;
-    else if (arg == "long")return i64;
-    else if (arg == "long long")return i64;
-    else if (arg == "unsigned long")return i64;// we don't care about unsigned
-    else if (arg == "unsigned long long")return i64;
-    else if (arg == "long&")return pointer;
-    else if (arg == "int64")return i64;
-    else if (arg == "uint64")return i64;
-    else if (arg == "Double")return float64;
+	else if (arg == "int")return int32;
+	else if (arg == "Int")return i32;
+	else if (arg == "signed int")return i32s;
+	else if (arg == "unsigned int")return i32;
+	else if (arg == "unsigned char")return int32;
+	else if (arg == "int*")return pointer;
+	else if (arg == "void*")return pointer;
+	else if (arg == "long")return i64;
+	else if (arg == "long long")return i64;
+	else if (arg == "unsigned long")return i64;// we don't care about unsigned
+	else if (arg == "unsigned long long")return i64;
+	else if (arg == "long&")return pointer;
+	else if (arg == "unsigned short")return shorty;
+	else if (arg == "int64")return i64;
+	else if (arg == "uint64")return i64;
+	else if (arg == "Double")return float64;
 	else if (arg == "long double")return float64;
 	else if (arg == "double")return float64;
 	else if (arg == "float")return float32;
@@ -170,6 +172,10 @@ Type mapType(String arg) {
 	else if (arg == "Node const*")return node_pointer;
 	else if (arg == "Node*")return node_pointer;
 
+	else if (arg == "NumberType")return ignore;// todo
+	else if (arg == "Number")return number;
+	else if (arg == "BigInt")return number;// todo
+	else if (arg == "Generics")return generics;
 	else if (arg == "Type32")return type32;
 	else if (arg == "Type")return type32;
 	else if (arg == "Kind")return type32;
@@ -347,9 +353,9 @@ chars typeName(Type t) {
     if (t.value < last_kind)return typeName(t.kind);
     if (t.value < 0x10000)return typeName((Primitive) t);
     if (isGeneric(t)) {
-        auto kind = t.generics.kind;
-        auto type = t.generics.value_type;
-        return ""s + typeName(kind) + "<" + typeName(type) + ">";
+	    auto kind = t.generics.kind;
+	    auto type = t.generics.value_type;
+	    return ""s + typeName((Kind) kind, false) + "<" + typeName((Primitive) type) + ">";
     }
     // todo : make sure to emit Nodes at > 0x10000 …
     warn("typeName %x %d "s % t.value % t.value);
@@ -378,11 +384,19 @@ Valtype mapTypeToWasm(Type t) {
         return mapTypeToWasm((Primitive) t);
     if (isGeneric(t)) {
 	    warn("isGeneric Type");
+	    debug_line();
+//	    warn(typeName(t));
 	    puti(t.value);
-	    warn(typeName(t));
 	    // todo!
-	    return (Valtype) (((short) mapTypeToWasm(t.generics.kind)) * 0x100 +
-	                      (short) mapTypeToWasm(t.generics.value_type));
+//	    print(typeName(kind));
+//	    print(typeName(valType));
+	    if (t.generics.value_type < 0)
+		    error1("generics with invalid Valtype");
+	    auto kind = (ushort) mapTypeToWasm((Kind) t.generics.kind);
+	    auto valType = (ushort) mapTypeToWasm((Primitive) t.generics.value_type);
+	    puti(kind);
+	    puti(valType);
+	    return (Valtype) (kind * 0x100 + valType);
 	    error("generics needs more than Valtype");
     }
     if (isArrayType(t))
@@ -558,21 +572,24 @@ chars typeName(Primitive p) {
         case wasp_string:
         case wasp_data_string:
         case wasp_code_string:
-            return "wasp";
-        case result_error:
-            return "result_error";
-        case fointer:
-        case fointer_of_int32: // ...
-            return "pointer";
-        case missing_type:
-            return "missing"; // ≠ nul, undefined
-        case maps:
-            return "Map";
-        case pad_to32_bit:
-            error("don't use");
-            break;
+	        return "wasp";
+	    case result_error:
+		    return "result_error";
+	    case fointer:
+	    case fointer_of_int32: // ...
+		    return "pointer";
+	    case missing_type:
+		    return "missing"; // ≠ nul, undefined
+	    case maps:
+		    return "Map";
+	    case smarti64:
+		    return "smarty";// wasp smart pointer int64 ABI vs multi value ABI (value, type)
+	    case pad_to32_bit:
+		    error("don't use");
+		    break;
+		    break;
     }
-    return 0;
+	return "?";
 }
 
 chars typeName(Valtype t, bool fail) {
@@ -685,18 +702,20 @@ Valtype mapTypeToWasm(Primitive p) {
         case wasp_data_string:
         case wasp_code_string:
             return Valtype::wasm_pointer;
-        case fointer: // unspecified pointer
-        case fointer_of_int32: // specified pointer but we don't care any more
-            return Valtype::wasm_pointer;
-        case result_error:
-            error("internal error or planned error as exception in wasm code?");
+	    case fointer: // unspecified pointer
+	    case fointer_of_int32: // specified pointer but we don't care any more
+		    return Valtype::wasm_pointer;
+	    case result_error:
+		    error("internal error or planned error as exception in wasm code?");
 //            return Valtype::int64;
 //            smart_pointer_64 ?
-        case pad_to32_bit:
-            error("don't use");
-            return Valtype::none;
-        default:
-            error("missing type in mapTypeToWasm "s + typeName(p));
+	    case pad_to32_bit:
+		    error("don't use");
+		    return Valtype::none;
+	    case Primitive::smarti64:
+		    return Valtype::i64;
+	    default:
+		    error("missing type in mapTypeToWasm "s + typeName(p));
     }
 }
 
@@ -719,7 +738,7 @@ Type genericType(Type type, Type value_type) {
 	warn("genericType "s + typeName(type) + " for " + typeName(value_type));
     if (type.value >= 0x10000 or value_type.value >= 0x10000)
         error("not a generic type holder "s + typeName(type) + " for " + typeName(value_type));
-    return Type(Generics{.kind = (short) type.value, .value_type = (short) value_type.value});
+	return Type(Generics{.kind = (ushort) type.value, .value_type = (ushort) value_type.value});
 }
 
 bool isArrayType(Type type) {

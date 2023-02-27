@@ -492,33 +492,120 @@ Type getReturnType(String name) {
     if (name.contains("->(f32)"))return float32;
     if (name.contains("->(f64)"))return float64;
     todow("getReturnType for "s + name);
-    return int32;
+    return unknown_type;
 }
 
 List<String> demangle_args(String &fun);
 
-Function getWasmFunction(String name) {
-    Function f{.name=name};
-    if (name == "pow")f.signature.add(float64).add(float64).returns(float64);
-    else if (name.contains("(")) {
-        String brace = name.substring(name.indexOf('(') + 1, name.indexOf(')'));
-        auto args = brace.split(", ");
-        for (auto arg: args)
-            f.signature.add(mapType(arg));
-        f.signature.returns(getReturnType(name));
-    }
-//    else todo("getWasmFunction "s + name);
+Function getWaspFunction(String name) {
+	if (functions.has(name))return functions[name];
+	Function f{.name=name, .is_import=true, .is_runtime=true};
+	if (name.contains("(")) {
+		String brace = name.substring(name.indexOf('(') + 1, name.indexOf(')'));
+		auto args = brace.split(", ");
+		for (auto arg: args)
+			f.signature.add(mapType(arg));
+		auto returnType = getReturnType(name);
+		f.signature.returns(returnType);
+	} else {
+		if (name == "_start");
+		else if (name == "__wasm_call_ctors");
+		else if (name == "__cxa_allocate_exception");
+		else if (name == "__cxa_throw");
+		else if (name == "__cxa_end_catch");
+		else if (name == "__cxa_find_matching_catch");
+		else if (name == "__cxa_begin_catch");
+		else if (name == "__cxa_atexit");
+		else if (name == "__main_argc_argv")
+			f.signature.add(int32, name = "argc").add(i32, name = "argv").returns(int32);
+		else if (name == "getField")f.signature.add(node_pointer).add(smarti64).returns(node);// wth
+		else if (name == "smartNode")f.signature.add(int64s).returns(node);
+		else if (name == "pow")f.signature.add(float64).add(float64).returns(float64);
+		else if (name == "kindName")f.signature.add(type32).returns(charp);
+		else if (name == "formatReal")f.signature.add(float64).returns(charp);
+		else if (name == "strlen")f.signature.add(charp).returns(int32);
+		else if (name == "free")f.signature.add(pointer);
+		else if (name == "malloc")f.signature.add(size32).returns(pointer);// todo 64
+		else if (name == "aligned_alloc")f.signature.add(size32, name = "alignment").add(size32).returns(pointer);
+		else if (name == "realloc")f.signature.add(pointer).add(size32).returns(pointer);
+		else if (name == "calloc")f.signature.add(size32).add(size32).returns(pointer);
+		else if (name == "memcpy")f.signature.add(pointer).add(pointer).add(size32);
+		else if (name == "memset")f.signature.add(pointer).add(int32).add(size32);
+		else if (name == "memcmp")f.signature.add(pointer).add(pointer).add(size32).returns(int32);
+		else if (name == "memmove")f.signature.add(pointer).add(pointer).add(size32);
+		else if (name == "memchr")f.signature.add(pointer).add(int32).add(size32).returns(pointer);
+		else if (name == "strchr")f.signature.add(charp).add(int32).returns(charp);
+		else if (name == "strrchr")f.signature.add(charp).add(int32).returns(charp);
+		else if (name == "strcat")f.signature.add(charp).add(charp).returns(charp);
+		else if (name == "strncat")f.signature.add(charp).add(charp).add(size32).returns(charp);
+		else if (name == "strcmp")f.signature.add(charp).add(charp).returns(int32);
+		else if (name == "strncmp")f.signature.add(charp).add(charp).add(size32).returns(int32);
+		else if (name == "strcpy")f.signature.add(charp).add(charp).returns(charp);
+		else if (name == "strncpy")f.signature.add(charp).add(charp).add(size32).returns(charp);
+		else if (name == "strdup")f.signature.add(charp).returns(charp);
+		else if (name == "strndup")f.signature.add(charp).add(size32).returns(charp);
+		else if (name == "strpbrk")f.signature.add(charp).add(charp).returns(charp);
+		else if (name == "strspn")f.signature.add(charp).add(charp).returns(size32);
+		else if (name == "strcspn")f.signature.add(charp).add(charp).returns(size32);
+		else if (name == "strstr")f.signature.add(charp).add(charp).returns(charp);
+		else if (name == "strtok")f.signature.add(charp).add(charp).returns(charp);
+		else if (name == "getchar")f.signature.returns(int32);
+		else if (name == "get_char")f.signature.returns(int32);
+		else if (name == "get_int")f.signature.returns(int32);
+		else if (name == "get_float")f.signature.returns(float32);
+		else if (name == "get_double")f.signature.returns(float64);
+		else if (name == "str")f.signature.add(charp).returns(strings);
+		else if (name == "puts")f.signature.add(charp);
+		else if (name == "putx")f.signature.add(int32);
+		else if (name == "putf")f.signature.add(float32);
+		else if (name == "putd")f.signature.add(float64);
+		else if (name == "putp")f.signature.add(pointer);
+		else if (name == "putl")f.signature.add(longs);
+		else if (name == "printf")f.signature.add(charp);// todo …
+		else if (name == "printNode")f.signature.add(node_pointer);
+		else if (name == "put_chars")f.signature.add(charp);
+		else if (name == "putchar")f.signature.add(int32);
+		else if (name == "put_char")f.signature.add(int32);
+		else if (name == "put_string")f.signature.add(charp);
+		else if (name == "put_int")f.signature.add(int32);
+		else if (name == "put_float")f.signature.add(float32);
+		else if (name == "put_double")f.signature.add(float64);
+		else if (name == "size_of_node")f.signature.returns(size32);
+		else if (name == "size_of_string")f.signature.returns(size32);
+		else if (name == "serialize")f.signature.add(node_pointer);// also Node::serialize
+		else if (name == "raise")f.signature.add(charp);
+		else if (name == "Parse")f.signature.add(charp).returns(node_pointer);
+		else if (name == "run")f.signature.add(charp).returns(charp);
+		else if (name == "system")f.signature.add(charp).returns(int32);
+		else if (name == "testCurrent");
+		else if (name == "run_wasm_file")f.signature.add(charp).returns(smarti64);
+		else if (name == "panic");
+			// IGNORE js bridges :
+		else if (name == "registerWasmFunction");
+		else if (name.startsWith("test"));
+		else todo("getWaspFunction "s + name);
+	}
+//	functions.add(name, f);
+//    else todo("getWaspFunction "s + name);
 //    else if(name=="powi")f.signature.add(int32).add(int32).returns(int64s);
-    return f;
+	return f;
 }
 
 double pow(double x, double y) { // _NOEXCEPT
-    return powd(x, y);
+	return powd(x, y);
 //    return __builtin_pow(x, y);
 }
 
 
-extern "C" void registerWasmFunction(chars name) {
-    functions.add(name, getWasmFunction(name));
+extern "C" void registerWasmFunction(chars name, chars mangled) {
+	if (!functions.has(name))functions.add(name, getWaspFunction(name));
+	if (!functions.has(mangled))functions.add(mangled, getWaspFunction(name));
 }
 
+#if RUNTIME_ONLY
+
+Module &read_wasm(bytes buffer, int size0) {
+	return *new Module();
+}
+
+#endif

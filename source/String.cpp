@@ -719,12 +719,16 @@ void print(Type type) {
 void print(Signature& signature) {
     for (auto &type: signature.parameter_types) {
         print(type);
+#if not WASM
         print(" ");
+#endif
     }
     print(":");
     for (auto &type: signature.return_types) {
         print(type);
+#if not WASM
         print(" ");
+#endif
     }
 //        print(signature.debug_name);
 }

@@ -44,6 +44,7 @@ typedef enum smartType4bit {
 
 typedef int SmartPointer32;
 typedef unsigned int uint;
+typedef unsigned short ushort;
 typedef unsigned int smart_pointer_32;// smart_pointer_32
 typedef unsigned long long SmartPointer64;
 typedef unsigned long long smart_pointer_64;

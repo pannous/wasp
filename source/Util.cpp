@@ -521,11 +521,6 @@ String extractFuncName(const String &fun) {
 }
 
 
-String extractPath(String file) {
-    if (!file.contains("/"))return "/";
-    return file.substring(0, file.lastIndexOf("/"));
-}
-
 // compressed arrays
 int stackItemSize(Node &clazz, bool throws) {
     if (clazz == Bool)return 1;//0;
@@ -570,12 +565,35 @@ int stackItemSize(Valtype type, bool throws) {
     if (type == Valtype::float64)return 8;
     if (throws)
         error("int stackItemSize(Valtype valtype, bool throws = true);");
-    return 0;
+	return 0;
 }
 
 
 int64 powi(int a, unsigned int b) {
-    int64 res = 1;
-    while (b-- > 0)res = res * a;
-    return res;
+	int64 res = 1;
+	while (b-- > 0)res = res * a;
+	return res;
+}
+
+
+char *dropPath(char *file0) {
+	auto file = String(file0);
+	return file.substring(file.lastIndexOf("/") + 1);
+
+}
+
+char *dropPath2(char *file) {
+	auto len = strlen(file);
+	for (int i = len; i > 0; --i)
+		if (file[i] == '/') {
+			file[i] = 0;
+			return file + 1;
+		}
+	return file;
+}
+
+
+String extractPath(String file) {
+	if (!file.contains("/"))return "/";
+	return file.substring(0, file.lastIndexOf("/"));
 }

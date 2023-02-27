@@ -272,5 +272,5 @@ class List;
 List<String> arguments();
 
 //#if MY_WASM
-extern "C" void registerWasmFunction(chars name);
+extern "C" void registerWasmFunction(chars name, chars mangled);
 //#endif
