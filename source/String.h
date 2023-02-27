@@ -1113,13 +1113,11 @@ String operator ""s(chars c, unsigned long);
 #pragma clang diagnostic pop
 
 
-static String UNEXPECT_END;// = "Unexpected end of input";
-static String UNEXPECT_CHAR;// = "Unexpected character ";
-static String empty_name = "";
-//extern String nil_name;// = "nil";
-//extern String empty_name;// = "";
-static chars nil_name = "nil";
+//#define UNEXPECT_END "Unexpected end of input"
+//#define UNEXPECT_CHAR "Unexpected character "
+
 static String EMPTY = "";// = String('\0');
+static chars nil_name = "nil";
 
 //String operator "" s(chars c, uint64 );// wasm function signature contains illegal type
 //String operator "" _(chars c, uint64 );

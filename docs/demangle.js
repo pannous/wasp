@@ -16,11 +16,12 @@ var const_function = false //  String::empty() const
 let isLower = (c) => c >= 'a' && c <= 'z'
 // let isTypeCode = c => "vwdufcCjSsPbNtLgDxXeEoOA".indexOf(c) >= 0
 
-export // remove for index.html needs extension.mjs or "type": "module" in package.json
+// export // remove for index.html needs extension.mjs or "type": "module" in package.json
 function demangle(name) {
     if (!isMangled(name)) return name;
 
     lastType = "";
+    baseType = "";
     const_function = false //  String::empty() const
 
     /* Encoding is the part between the _Z (the "mangling mark") and the dot, that prefix
@@ -66,7 +67,7 @@ function demangle(name) {
                     process = popChar(process.str);
                     break;
                 case 'r':
-                    typeInfo.isRestrict = true;
+                    typeInfo.isRestrict = true; // TODO: reach here means BUG
                     process = popChar(process.str);
                     break;
                 case 'V':
@@ -106,15 +107,15 @@ function demangle(name) {
                 }
                 break;
             case 'S': // "self" type duplicate
-                if (types.length > 0 && str[1] == '0')
+                if (types.length > 0 && (str[1] == '0' || str[1] == '1' || (str[1] == '_' && !baseType)))
                     typeInfo = types[types.length - 1]
-                else if (str[1] == '_')
+                else if (str[1] == '_' && baseType)
                     typeInfo.typeStr = baseType;
                 else
                     typeInfo.typeStr = lastType;
 
                 process = popChar(process.str);
-                if (process.ch == '_' || process.ch == '0')
+                while (process.str[0] == '_' || process.str[0] == '0' || process.str[0] == '1')
                     process = popChar(process.str);
                 break
             case 'B': // _Z3absB7v160000d $abs[abi:v160000](double)()
@@ -133,7 +134,7 @@ function demangle(name) {
                 break;
             case 'E':
                 if ((template_count <= 0)) {
-                    str = process.str;
+                    str = process.str; // TODO reached here = BUG!
                     // repeat type not here
                     // typeInfo.typeStr = typeInfo.typeStr.concat("$$$");
                     break;
@@ -216,7 +217,8 @@ function demangle(name) {
             if (t.isRef) typestr = typestr.concat("&");
             if (t.isRValueRef) typestr = typestr.concat("&&");
             for (let i = 0; i < t.numPtr; i++) typestr = typestr.concat("*");
-            if (t.isRestrict) typestr = typestr.concat(" __restrict");
+            if (t.isRestrict)
+                typestr = typestr.concat(" __restrict");
         }
 
         if (t.templateType) {
@@ -232,6 +234,7 @@ function demangle(name) {
     let result = functionname.concat("(" + typelist.join(', ') + ")");
     result = result.replace(/<, /g, "<").replace(/<, /g, "<")
     result = result.replace(/, >/g, ">").replace(/, </g, "<");
+    result = result.replace("(void)", "()");
     if (const_function) result += " const";
     return result
 }
@@ -292,6 +295,12 @@ function popName(str, operators = true) {
         if (isNaN(len)) {
             if (c === "C") { // constructor String::String()
                 namestr += namestr.substr(0, namestr.length - 2)
+                rlen += 2
+                handled = true;
+                isClass = false
+            }
+            if (c === "D") { // destructor String::~String()
+                namestr += "~" + namestr.substr(0, namestr.length - 2)
                 rlen += 2
                 handled = true;
                 isClass = false
@@ -537,9 +546,11 @@ function getOperatorName(ch) {
 function getTypeName(ch) {
     switch (ch) {
         case 'v':
-            return ""; // void
+            return "void"; // needed for void* vs ()
         case 'i':
             return "int";
+        case 'h':
+            return "unsigned char";
         case 'w':
             return "wchar_t";
         case 'd':
@@ -561,9 +572,9 @@ function getTypeName(ch) {
         case 'b':
             return "bool";
         case 'N':
-            return "__int128";
+            return "__int128";// bigint
         case 't':
-            return "unsigned __int128";
+            return "unsigned short";
         case 'L':
             return "long";
         case 'g':

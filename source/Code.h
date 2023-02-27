@@ -1310,7 +1310,7 @@ short lebByteSize(int64 neu);
 
 #if MY_WASM
 extern "C" char* js_demangle(char* name);
-Function getWasmFunction(String name);
+Function getWaspFunction(String name);
 #endif
 
 void print(Signature &signature);

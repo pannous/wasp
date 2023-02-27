@@ -250,7 +250,7 @@ enum Primitive /*32*/ {
 //	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
     type32 = 0x80, // todo see smart_pointer_64 etc OK?
 ////	smarti32 = 0xF3,// see smartType
-//	smarti64 = 0xF6,
+    smarti64 = 0xF6,
     node = 0xA0, // Node struct versus Node* node_pointer = 0xD000  todo better scheme 0xAF F for fointer!
 //    angle = 0xA4,//  angle object pointer/offset versus node_pointer smarti vs anyref todo What is this?
     any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
@@ -351,8 +351,8 @@ enum Primitive /*32*/ {
 // e.g. array<int> or array<stringref> or struct<id> array<struct_id>
 // ⚠️ 32 bit wasp generics condense to 16+ bit wasm types!
 struct Generics /*32 bit*/{
-    short kind; // kind is padded to 32 bit so cant use directly
-    short value_type;
+    ushort kind; // kind is padded to 32 bit so cant use directly
+    ushort value_type;
 };
 
 
@@ -443,7 +443,8 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
 
     Type32(Kind kind) {
         this->kind = kind;
-        if ((int) kind > 0x1000)error("erroneous or unsafe Type construction");
+        if ((int) kind > 0x1000)
+            error("erroneous or unsafe Type construction!!");
     }
 
     explicit

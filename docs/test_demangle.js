@@ -7,6 +7,7 @@ function assertEqual(a, b) {
     console.log(`OK ${a} == ${b}`);
 }
 
+assertEqual(demangle("_ZN4ListI6StringE3addES0_"), "List<String>::add(String)");
 assertEqual(demangle("_ZN6String7replaceEPKcS_"), "String::replace(const char*, String)");
 // assertEqual(demangle("_ZN6String7replaceEPKcS_" ), "String::replace(char const*, String)");
 assertEqual(demangle("_ZN6String7replaceEPKcS0"), "String::replace(const char*, const char*)");
@@ -26,6 +27,7 @@ assertEqual(demangle("_ZN6StringplES_"), "String::operator+(String)");
 assertEqual(demangle("_ZN6StringnwEm"), "String::operator new(unsigned long)");
 
 assertEqual(demangle("_ZN6StringC2Ev"), "String::String()");
+assertEqual(demangle("_ZN6StringC2EPh"), "String::String(unsigned char*)");
 // assertEqual(demangle("_Z6printfPKcS0_i") , "printf(char const*, char const*, int)");
 assertEqual(demangle("_Z6printfPKcS0_i"), "printf(const char*, const char*, int)");
 

@@ -649,7 +649,7 @@ Code emitWasmArray(Node &node, Function &context) {
 	code.addInt(type_index);
 	code.addInt(node.size());
 
-	last_type = Type(Generics{.kind = array, .value_type = (short) value_type.value});
+	last_type = Type(Generics{.kind = array, .value_type = (ushort) value_type.value});
 	last_type = wasmtype_array;
 	last_value_type = value_type;
 	return code;
@@ -1671,7 +1671,7 @@ Code emitOperator(Node &node, Function &context) {
 //		if(last_value==0)code.addConst(1);
 //		if(last_value==1)return code;
 #if MY_WASM
-		getWasmFunction("pow");
+		getWaspFunction("pow");
 		code.add(emitCall(*new Node("pow"), context));
 #else
 		if (last_type == int32) code.add(emitCall(*new Node("powi"), context));

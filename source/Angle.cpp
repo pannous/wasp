@@ -1393,7 +1393,9 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (contains(funclet_list, name)) {
 #if WASM
         print("funclet "s+ name);
-        auto funclet = getWasmFunction(name);
+        auto funclet = getWaspFunction(name);
+        print(funclet);
+        print(funclet.signature);
 #else
         Module &funclet_module = read_wasm(findFile(name, "lib"));
 //        check(funclet_module.functions.has(name));

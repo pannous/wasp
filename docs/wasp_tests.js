@@ -25,7 +25,7 @@ onerror = (err) => {
 let print = console.log // #!
 
 function check(ok) {
-    backtrace_line("⚠️ TEST FAILED")
+    if (!ok) backtrace_line("⚠️ TEST FAILED")
     if (!ok) throw "⚠️ TEST FAILED"
 }
 
