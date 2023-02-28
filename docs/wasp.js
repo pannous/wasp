@@ -527,7 +527,7 @@ async function run_wasm(buf_pointer, buf_size) {
         print("runtime loaded")
         // addSynonyms(runtime_instance.exports)
         // let runtime_imports = {env: runtime_instance.exports}
-        let runtime_imports = {env: {square: x => x * x}}
+        let runtime_imports = {env: {square: x => x * x, pow: Math.pow}}
         app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
         print("app loaded")
 
