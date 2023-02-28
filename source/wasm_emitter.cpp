@@ -2107,8 +2107,10 @@ Code emitCall(Node &fun, Function &context) {
 	print(name);
 	print(fun);
 	if (name == "pow") {
-//		functions["pow"].signature.add(reals).add(reals).returns(reals);
+		functions["pow"].signature.add(reals).add(reals).returns(reals);
 		print("GOT POW");
+		print(functions["pow"]);
+		print(functions["pow"].signature.size());
 	}
 
 	Function &function = functions[name];// NEW context! but don't write context ref!
@@ -2129,11 +2131,20 @@ Code emitCall(Node &fun, Function &context) {
 	if (index < 0)
 		error("Calling %s NO INDEX. TypeSection created before code Section. Indices must be known by now! "s % name);
 	int i = 0;
-	// args may have already been emitted, e.g. "A"+"B" concat
+	auto sig_size = signature.parameter_types.size();
+	if (fun.size() >= sig_size) {
+		print(function);
+		print(signature);
+		error("too many arguments for function %s %d >= %d "s % name % fun.size() % sig_size);
+	}
 	for (Node &arg: fun) {
 		code.push(emitExpression(arg, context));
 //		Valtype argType = mapTypeToWasm(arg); // todo ((+ 1 2)) needs deep analysis, or:
-		Type argType = last_type;// evaluated expression smarter than node arg!
+		Type argType = last_type;// TODO! evaluated expression smarter than node arg!
+		if (i >= sig_size) {
+			warn("args may have already been emitted");
+			break; // todo cast earlier / multi-value cast of stack!!
+		}
 		Type sigType = signature.parameter_types[i++];
 		if (sigType != argType)
 			code.push(cast(argType, sigType));
