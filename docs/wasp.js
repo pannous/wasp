@@ -1,10 +1,10 @@
-// let WASM_FILE = 'merged.wasm'
-let WASM_FILE = 'wasp.wasm'
-let WASM_RUNTIME = 'wasp-runtime.wasm'
-// let WASM_FILE = 'hello-wasi.wasm'
-// let WASM_FILE = 'test-printf.wasm'
-// let WASM_FILE = '../cmake-build-wasm/wasp.wasm'
-// let WASM_FILE='../cmake-build-release/wasp.wasm'
+// let WASP_FILE = 'merged.wasm'
+let WASP_FILE = 'wasp.wasm'
+let WASP_RUNTIME = 'wasp-runtime.wasm'
+// let WASP_FILE = 'hello-wasi.wasm'
+// let WASP_FILE = 'test-printf.wasm'
+// let WASP_FILE = '../cmake-build-wasm/wasp.wasm'
+// let WASP_FILE='../cmake-build-release/wasp.wasm'
 
 // MAX_MEM is NOT affected by -Wl,--initial-memory=117964800 NOR by this: HOW THEN??
 let min_memory_size = 100 // in 64k PAGES! 65536 is upper bound => 64k*64k=4GB
@@ -487,13 +487,14 @@ async function link_runtime() {
         // runtime_imports= {env: {memory: memory, table: table}}
         runtime_imports = imports
         let runtime_instance = await WebAssembly.instantiate(runtime_module, runtime_imports) // , memory
-        imports = {env: runtime_instance.exports}
-        instance = await WebAssembly.instantiate(module, imports, runtime_instance.memory)
+        app_imports = {env: runtime_instance.exports}
+        app_instance = await WebAssembly.instantiate(module, imports, runtime_instance.memory)
+        app_exports = instance.exports
         //  runtime_instance.exports
-        global.instance = instance
-        global.instance.module = module // global module already used by node!
-        exports = instance.exports
-        main = exports.wasp_main
+        global.app_instance = instance
+        global.app_instance.module = module // global module already used by node!
+        global.app_exports = exports
+        main = app_exports.wasp_main
         if (main) {
             console.log("Calling start function:", main);
             result = main()
@@ -515,14 +516,14 @@ async function run_wasm(buf_pointer, buf_size) {
     // download(wasm_buffer, "emit.wasm", "wasm")
     if (needs_runtime) {
         print("needs_runtime runtime loading")
-        if (!RUNTIME_BYTES) RUNTIME_BYTES = await fetch(WASM_RUNTIME)
+        // if (!RUNTIME_BYTES) // Cannot compile WebAssembly.Module from an already read Response TODO reuse!
+        RUNTIME_BYTES = await fetch(WASP_RUNTIME)
         let runtime_instance = await WebAssembly.instantiateStreaming(RUNTIME_BYTES, {
             wasi_unstable: {
                 fd_write,
                 proc_exit: terminate, // all threads
-                // ignore the rest for now
+                args_get: nop, // ignore the rest for now
                 args_sizes_get: x => 0,
-                args_get: nop,
             },
         })
         print("runtime loaded")
@@ -569,17 +570,17 @@ async function run_wasm(buf_pointer, buf_size) {
     // }
 }
 
-wasm_data = fetch(WASM_FILE)
+wasm_data = fetch(WASP_FILE)
 WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
-        instance = obj.instance
-        exports = instance.exports
-        HEAP = exports.__heap_base; // ~68000
-        DATA_END = exports.__data_end
-        heap_end = HEAP || DATA_END;
-        heap_end += 0x100000
-        memory = exports.memory || exports._memory || memory
-        buffer = new Uint8Array(memory.buffer, 0, memory.length);
-        main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
+    instance = obj.instance
+    exports = instance.exports
+    HEAP = exports.__heap_base; // ~68000
+    DATA_END = exports.__data_end
+    heap_end = HEAP || DATA_END;
+    heap_end += 0x100000
+    memory = exports.memory || exports._memory || memory
+    buffer = new Uint8Array(memory.buffer, 0, memory.length);
+    main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
         main = instance._Z11testCurrentv || main
         if (main) {
             console.log("got main")
@@ -688,17 +689,17 @@ function addSynonyms(exports) {
 
 // runtime_bytes for linking small wasp programs with runtime
 function load_runtime_bytes() {
-    fetch(WASM_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
-            runtime_bytes = buffer
-            WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
-                //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
-                // console.log(obj.instance.exports._ZN6StringC2EPKcb)
-                // console.log(obj.instance.exports._ZN6StringC2EPKcb.length)
-                // console.log(obj.instance.exports._ZN6StringC2EPKcb.arguments)
-                // console.log(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
-                // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
-            })
-            // copy_runtime_bytes()
+    fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
+        runtime_bytes = buffer
+        WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
+            //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
+            // console.log(obj.instance.exports._ZN6StringC2EPKcb)
+            // console.log(obj.instance.exports._ZN6StringC2EPKcb.length)
+            // console.log(obj.instance.exports._ZN6StringC2EPKcb.arguments)
+            // console.log(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
+            // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
+        })
+        // copy_runtime_bytes()
         }
     )
 }
@@ -709,8 +710,14 @@ function load_runtime_bytes() {
 // work.onmessage = (evt) => { console.log(evt.data); };
 
 async function test() {
-    if (typeof (wasp_tests) !== "undefined")
-        await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
+    try {
+        if (typeof (wasp_tests) !== "undefined")
+            await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
+    } catch (x) {
+        if (x instanceof YieldThread)
+            console.log("⚠️ CANNOT USE assert_emit in wasp_tests() or testCurrent() ONLY via testRun()")
+        throw x
+    }
 }
 
 function wasp_ready() {
@@ -719,6 +726,6 @@ function wasp_ready() {
     loadKindMap()
     // load_runtime_bytes()
     register_wasp_functions(instance.exports)
-    testRun1()
-    // setTimeout(test, 1);// make sync
+    // testRun1()
+    setTimeout(test, 1);// make sync
 }

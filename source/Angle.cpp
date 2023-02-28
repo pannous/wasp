@@ -1390,7 +1390,7 @@ void addLibraryFunctionAsImport(Function &func) {
     import.is_import = true;
     import.is_used = true;
 #if WASM
-	if(!function_known)
+//	if(!function_known)
 		functions.add(func.name, import);
 #endif
 }

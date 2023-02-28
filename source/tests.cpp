@@ -3059,7 +3059,7 @@ void tests() {
 //    testFlagSafety();
 #if WASM
 	warn("Normal tests ALL PASSING in wasm!");
-	warn("WASM emit tests CURRENTLY __ALL__ SKIPPED");
+	warn("WASM emit tests CURRENTLY __ALL__ SKIPPED or asynchroneous!");
 	return;
 #endif
 	testAllEmit();
@@ -3132,11 +3132,13 @@ void testWasmGC() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+// ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
+//	assert_emit("√3^2", 3)
+//	assert_emit("3*42≥2*3", 1)
+
+
 //    testKebabCase();
 //    testSinus();
-	assert_emit("√3^2", 3)
-	assert_emit("3*42≥2*3", 1)
-
 
 	skip(
 			assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
@@ -3155,9 +3157,9 @@ void testCurrent() {
 
 	testAngle();// fails in WASM why?
 	testMergeGlobal();
+	testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
 	testAllWasm();
 	// ALL tests up to here take only 1 sec !
-	testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
 //    todos();// those not passing yet (skip)
 #endif
 	print("CURRENT TESTS PASSED");
