@@ -508,14 +508,15 @@ async function link_runtime() {
 
 // needs_runtime = false;
 needs_runtime = true
+RUNTIME_BYTES = null
 
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // download(wasm_buffer, "emit.wasm", "wasm")
     if (needs_runtime) {
         print("needs_runtime runtime loading")
-
-        let runtime_instance = await WebAssembly.instantiateStreaming(fetch(WASM_RUNTIME), {
+        if (!RUNTIME_BYTES) RUNTIME_BYTES = await fetch(WASM_RUNTIME)
+        let runtime_instance = await WebAssembly.instantiateStreaming(RUNTIME_BYTES, {
             wasi_unstable: {
                 fd_write,
                 proc_exit: terminate, // all threads
@@ -663,16 +664,13 @@ function register_wasp_functions(exports) {
         if (name.startsWith("_Zl")) continue // operator"" literals
         let func = exports[name]
         if (typeof func == "function") {
-            // console_log(func.name, name, func)
             let demangled = demangle(name)
-            if (demangled.match("square"))
-                console.log("GOT SQUARE", name, "⇨", demangled)
+            // console_log(func.name, func)
             // console.log(name, "⇨", demangled)
             exports[demangled] = func
             if (!demangled.match("<") && !demangled.match("\\[")
                 && !demangled.match(":: ") && !demangled.match("~"))// no generics yet
-                instance.exports.registerWasmFunction(chars(demangled), chars(name)) // derive its signature from its name
-                ;
+                instance.exports.registerWasmFunction(chars(demangled), chars(name)) // derive signature from name
         }
     }
 }

@@ -2104,20 +2104,10 @@ Code emitCall(Node &fun, Function &context) {
 		else name = normed;
 	}
 	print("emitCall");
-	print(name);
 	print(fun);
-	if (name == "pow") {
-		functions["pow"].signature.add(reals).add(reals).returns(reals);
-		print("GOT POW");
-		print(functions["pow"]);
-		print(functions["pow"].signature.size());
-	}
 
 	Function &function = functions[name];// NEW context! but don't write context ref!
 	Signature &signature = function.signature;
-
-	print("function");
-	print(function);
 
 	int index = function.call_index;
 	if (call_indices.has(name)) {
@@ -2132,7 +2122,7 @@ Code emitCall(Node &fun, Function &context) {
 		error("Calling %s NO INDEX. TypeSection created before code Section. Indices must be known by now! "s % name);
 	int i = 0;
 	auto sig_size = signature.parameter_types.size();
-	if (fun.size() >= sig_size) {
+	if (fun.size() > sig_size) {
 		print(function);
 		print(signature);
 		error("too many arguments for function %s %d >= %d "s % name % fun.size() % sig_size);
@@ -2158,8 +2148,6 @@ Code emitCall(Node &fun, Function &context) {
 	context.is_used = true;
 
 	// todo multi-value
-	print("signature");
-	print(signature);
 	Type return_type = signature.return_types.last(none);
 	last_type = return_type;
 	// if (signature.wasm_return_type)
@@ -2589,13 +2577,6 @@ Code emitBlock(Node &node, Function &context) {
 	}
 
 	if (needs_cast and last_type.value) {
-		print("last_type");
-		print(last_type);
-		print(typeName(last_type));
-		print("return_type");
-		print(return_type);
-		print(typeName(return_type));
-		print("needs_cast");
 		block.add(cast(last_type, return_type));
 	}
 
