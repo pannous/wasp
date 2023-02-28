@@ -1373,7 +1373,7 @@ void addLibraryFunctionAsImport(Function &func) {
     if (func.is_declared)return;
     if (func.is_builtin)return;
     // ⚠️ this function now lives inside Module AND as import inside "wasp_main" functions list, with different wasm_index!
-    Function &import = functions[func.name];// copy function info from library/runtime to main module
+    Function import;// = functions[func.name];// copy function info from library/runtime to main module
     if (import.is_declared)return;
     import.signature = func.signature;
     import.signature.type_index = -1;
@@ -1381,8 +1381,8 @@ void addLibraryFunctionAsImport(Function &func) {
     import.is_runtime = false;// because here it is an import!
     import.is_import = true;
     import.is_used = true;
+    functions.add(func.name, import);
 }
-
 
 bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: libraries.has(library)
 
@@ -1392,14 +1392,13 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))return use_required(&functions[name]);
 #if WASM
-    if (loadRuntime().functions.has(name))return use_required(&loadRuntime().functions[name]);
+	if (loadRuntime().functions.has(name)){
+		return use_required(&loadRuntime().functions[name]);
+	}
 #endif
     if (contains(funclet_list, name)) {
 #if WASM
-		print("funclet "s+ name);
-		auto funclet = getWaspFunction(name);
-		print(funclet);
-		print(funclet.signature);
+        auto funclet = getWaspFunction(name);// todo!
 #else
         Module &funclet_module = read_wasm(findFile(name, "lib"));
 //        check(funclet_module.functions.has(name));
@@ -1459,6 +1458,12 @@ Function *use_required(Function *function) {
     for (auto vari: function->variants) {
         vari.is_used = true;
     }
+
+    Function fun = functions[function->name];
+    print(fun);
+    print(fun.signature);
+    print("------------------");
+
 //    for(Function& dep:function.required)
 //        dep.is_used = true;
     return function;
@@ -1963,7 +1968,7 @@ Function getWaspFunction(String name) {
             print(loadRuntime().functions.has("square"));
             print(f.name);
             print(f);
-            print(f.signature);
+            print(f.signature);// all good
         }
     }
 //    else todo("getWaspFunction "s + name);
