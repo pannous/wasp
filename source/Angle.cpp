@@ -1372,8 +1372,16 @@ void addLibraryFunctionAsImport(Function &func) {
     func.is_used = true;
     if (func.is_declared)return;
     if (func.is_builtin)return;
+//	auto function_known = functions.has(func.name);
+
     // ⚠️ this function now lives inside Module AND as import inside "wasp_main" functions list, with different wasm_index!
-    Function import;// = functions[func.name];// copy function info from library/runtime to main module
+#if WASM
+    Function& import=*new Function;
+#else
+    Function & import=functions[func.name];// copy function info from library/runtime to main module
+#endif
+//	if(function_known)
+//        import = functions[func.name];
     if (import.is_declared)return;
     import.signature = func.signature;
     import.signature.type_index = -1;
@@ -1381,7 +1389,10 @@ void addLibraryFunctionAsImport(Function &func) {
     import.is_runtime = false;// because here it is an import!
     import.is_import = true;
     import.is_used = true;
-    functions.add(func.name, import);
+#if WASM
+	if(!function_known)
+		functions.add(func.name, import);
+#endif
 }
 
 bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: libraries.has(library)
