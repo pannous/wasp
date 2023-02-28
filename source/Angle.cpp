@@ -1458,12 +1458,6 @@ Function *use_required(Function *function) {
     for (auto vari: function->variants) {
         vari.is_used = true;
     }
-
-    Function fun = functions[function->name];
-    print(fun);
-    print(fun.signature);
-    print("------------------");
-
 //    for(Function& dep:function.required)
 //        dep.is_used = true;
     return function;
@@ -1963,13 +1957,6 @@ Function getWaspFunction(String name) {
     }
     if (!loadRuntime().functions.has(f.name)) {
         loadRuntime().functions.add(f.name, f);
-        if (name == "square(int)") {
-            print("square<<<<<<<<<");
-            print(loadRuntime().functions.has("square"));
-            print(f.name);
-            print(f);
-            print(f.signature);// all good
-        }
     }
 //    else todo("getWaspFunction "s + name);
 //    else if(name=="powi")f.signature.add(int32).add(int32).returns(int64s);
