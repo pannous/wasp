@@ -126,14 +126,15 @@ public: // todo careful Map<char*,…> eq
 //
 // hopefully c++ is smart enough to not copy S / T twice
     int add(S key, T value) {
-        int found = position(key);
-        if (found >= 0) error("DUPLICATE KEY: "s + key); // or use insert_or_assign
-        if (keys == 0 or _size >= capacity) grow();
-        keys[_size] = key;
-        values[_size] = value;
-        _size++;
-        return _size;
-    }
+		int found = position(key);
+		if (found >= 0)
+			error("DUPLICATE KEY: "s + key); // or use insert_or_assign
+		if (keys == 0 or _size >= capacity) grow();
+		keys[_size] = key;
+		values[_size] = value;
+		_size++;
+		return _size;
+	}
 
     // similar to map[key]=value
     int insert_or_assign(S key, T value) {
