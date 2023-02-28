@@ -157,8 +157,8 @@ async function testRun1() {
     // let cmd = "sqrt(3)^2"
     // let cmd = "123"
     // let cmd = "square 3"
-    // let cmd = "square(3)"
-    let cmd = "pow(3,2)"
+    let cmd = "square(3)"
+    // let cmd = "pow(3,2)"
     // expect_test_result="abc"
     // let cmd = "42*2/2"
     expect_test_result = 9

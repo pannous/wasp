@@ -463,8 +463,6 @@ public:
 #ifndef RELEASE
         put_chars("Parsing: ");
         println(source.data);
-        print("functions.has(square)");
-        print(loadRuntime().functions.has("square"));
 #endif
         columnStart = 0;
         at = -1;
