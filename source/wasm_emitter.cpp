@@ -227,6 +227,20 @@ unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
 		if (eq(s, "‖"))return f64_abs; // ║  primitive norm operator ≠ || or
 		if (eq(s, "║"))
 			return f64_abs; // f32.abs // 10000000 comparisons for a char never encountered. Todo: 0 cost hash
+
+		if (eq(s, "⌊"))return f64_floor; // f64.floor
+		if (eq(s, "floor"))return f64_floor; // f64.floor // conflicts with user keywords!
+		if (eq(s, "⌋"))return f64_floor; // f64.floor // vs trunc towards 0?
+
+		if (eq(s, "⌈"))return f64_ceil; // f64.ceil
+		if (eq(s, "ceil"))return f64_ceil; // f64.ceil
+		if (eq(s, "⌉"))return f64_ceil; // f64.ceil
+
+		if (eq(s, "⌊"))return f64_nearest; // f64.nearest
+		if (eq(s, "round"))return f64_nearest; // f64.nearest // conflicts with user keywords!
+		if (eq(s, "⌋"))return f64_nearest; // f64.nearest
+
+
 	} else if (kind == f32t) {
 		if (eq(s, "not"))return f32_eqz; // f32.eqz  // f32.eqz  // HACK: no such thing!
 		if (eq(s, "¬"))return f32_eqz; // f32.eqz  // HACK: no such thing!
