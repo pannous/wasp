@@ -68,7 +68,13 @@ let imports = {
         heap_end: new WebAssembly.Global({value: "i32", mutable: true}, 0),// todo: use as heap_end
         grow_memory: x => memory.grow(1), // à 64k … NO NEED, host grows memory automagically!
         run_wasm: async (x, y) => {
-            return await run_wasm(x, y)
+            try {
+                return await run_wasm(x, y)
+            } catch (ex) {
+                wasm_buffer = buffer.subarray(x, x + y)
+                download(wasm_buffer, "emit.wasm", "wasm") // resume
+                error(ex)
+            }
         }, // allow wasm modules to run plugins / compiler output
         assert_expect: x => {
             if (expect_test_result)
@@ -507,17 +513,28 @@ async function link_runtime() {
     }
 }
 
-// needs_runtime = false;
-needs_runtime = true
-RUNTIME_BYTES = null
+var needs_runtime = false;
+var RUNTIME_BYTES = null
+var app_module
 
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // download(wasm_buffer, "emit.wasm", "wasm")
+
+    app_module = await WebAssembly.compile(wasm_buffer)
+    if (WebAssembly.Module.imports(app_module).length > 0) {
+        needs_runtime = true
+        print(app_module) // visible in browser console, not in terminal
+        print(WebAssembly.Module.customSections(app_module))
+        STOP = 1
+        return
+    } else
+        needs_runtime = false
+
     if (needs_runtime) {
         print("needs_runtime runtime loading")
-        // if (!RUNTIME_BYTES) // Cannot compile WebAssembly.Module from an already read Response TODO reuse!
-        RUNTIME_BYTES = await fetch(WASP_RUNTIME)
+        if (!RUNTIME_BYTES) // Cannot compile WebAssembly.Module from an already read Response TODO reuse!
+            RUNTIME_BYTES = await fetch(WASP_RUNTIME)
         let runtime_instance = await WebAssembly.instantiateStreaming(RUNTIME_BYTES, {
             wasi_unstable: {
                 fd_write,
@@ -665,6 +682,8 @@ function register_wasp_functions(exports) {
         if (name.startsWith("_Zl")) continue // operator"" literals
         let func = exports[name]
         if (typeof func == "function") {
+            // WebAssembly.Function({parameters: ["i32"], results: ["i32"]}, func)
+
             let demangled = demangle(name)
             // console_log(func.name, func)
             // console.log(name, "⇨", demangled)

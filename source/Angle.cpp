@@ -1872,6 +1872,9 @@ void addGlobal(Node &node) {
 List<String> demangle_args(String &fun);
 
 Function getWaspFunction(String name) {
+    if ("floor"s == name)error1("use builtin floor!");
+
+
     if (loadRuntime().functions.has(name)) {
 //        print("already got function "s+name);
         return loadRuntime().functions[name];
@@ -1975,6 +1978,7 @@ Function getWaspFunction(String name) {
 }
 
 extern "C" void registerWasmFunction(chars name, chars mangled) {
+    if ("floor"s == name)return; // use builtin!
     getWaspFunction(name);
 //    if (!functions.has(name))functions.add(name, getWaspFunction(name));
 //    if (!loadRuntime().functions.has(mangled))

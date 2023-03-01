@@ -133,10 +133,10 @@ var STOP = 0
 
 async function testAll() {
     try {
-        while (!STOP) {
+        while (!STOP) { // loop and re-enter async wasm function
             // console.log("starting new testRunAsync")
             // reset_heap()
-            copy_of_last_state = memory.buffer.slice(0, memory.length);
+            // copy_of_last_state = memory.buffer.slice(0, memory.length);
             await testRunAsync()
             var ms = 0;
             while (++ms < 3 || expect_test_result && ms < 1000)
@@ -150,23 +150,18 @@ async function testAll() {
 }
 
 
-async function testRun1() {
-    // let cmd="puts 'CYRC!'"
-    // let cmd="puti 123"
-    // let cmd = "√3^2"
-    // let cmd = "sqrt(3)^2"
-    // let cmd = "123"
-    // let cmd = "square 3"
-    let cmd = "square(3)"
-    // let cmd = "pow(3,2)"
-    // expect_test_result="abc"
-    // let cmd = "42*2/2"
-    expect_test_result = 9
-    // let cmd = "'a'"
-    // expect_test_result = "a"
-    let result = await exports.run(chars(cmd))
+async function assert_emit(command, expected) {
+    expect_test_result = expected
+    let result = await exports.run(chars(command))
     // console.log(chars(result)) // "need asyncify for result" ;)
-    // console.log("!!!")
+}
+
+async function testRun1() {
+    // assert_emit("not 0.0", true);
+    assert_emit("floor 3.7", 3);
+    // assert_emit("false or true", true);
+    // assert_emit("√3^2", 3)
+    // assert_emit("3*42≥2*3", 1)
 }
 
 
@@ -183,7 +178,7 @@ async function wasp_tests() {
     // testMemoryDiff();
     exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
 
-    let runmode = 3
+    let runmode = 1
     switch (runmode) {
         case 0:
             return console.log("testRun disabled");
