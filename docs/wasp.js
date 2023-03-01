@@ -73,7 +73,7 @@ let imports = {
                 return await run_wasm(x, y)
             } catch (ex) {
                 wasm_buffer = buffer.subarray(x, x + y)
-                download(wasm_buffer, "emit.wasm", "wasm") // resume
+                // download(wasm_buffer, "emit.wasm", "wasm") // resume
                 error(ex)
             }
         }, // allow wasm modules to run plugins / compiler output
@@ -526,9 +526,7 @@ async function run_wasm(buf_pointer, buf_size) {
     if (WebAssembly.Module.imports(app_module).length > 0) {
         needs_runtime = true
         print(app_module) // visible in browser console, not in terminal
-        print(WebAssembly.Module.customSections(app_module))
-        STOP = 1
-        return
+        // print(WebAssembly.Module.customSections(app_module)) // Argument 1 is required ?
     } else
         needs_runtime = false
 
@@ -547,7 +545,7 @@ async function run_wasm(buf_pointer, buf_size) {
         print("runtime loaded")
         // addSynonyms(runtime_instance.exports)
         // let runtime_imports = {env: runtime_instance.exports}
-        let runtime_imports = {env: {square: x => x * x, pow: Math.pow}}
+        let runtime_imports = {env: {square: x => x * x, pow: (x, y) => x ** y}} // pow: Math.pow
         app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
         print("app loaded")
 
