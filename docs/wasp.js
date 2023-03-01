@@ -525,12 +525,17 @@ async function run_wasm(buf_pointer, buf_size) {
     app_module = await WebAssembly.compile(wasm_buffer)
     if (WebAssembly.Module.imports(app_module).length > 0) {
         needs_runtime = true
+        use_big_runtime = true
         print(app_module) // visible in browser console, not in terminal
+        if (!exports.square) print("NO SQUARE")
+        if (!Wasp.square) print("NO SQUARE in Wasp")
         // print(WebAssembly.Module.customSections(app_module)) // Argument 1 is required ?
     } else
         needs_runtime = false
 
-    if (needs_runtime) {
+    if (needs_runtime && use_big_runtime) {
+        app = await WebAssembly.instantiate(wasm_buffer, {env: Wasp}, memory) // todo: tweaked imports if it calls out
+    } else if (needs_runtime) {
         print("needs_runtime runtime loading")
         if (!RUNTIME_BYTES) // Cannot compile WebAssembly.Module from an already read Response TODO reuse!
             RUNTIME_BYTES = await fetch(WASP_RUNTIME)
@@ -544,8 +549,9 @@ async function run_wasm(buf_pointer, buf_size) {
         })
         print("runtime loaded")
         // addSynonyms(runtime_instance.exports)
-        // let runtime_imports = {env: runtime_instance.exports}
-        let runtime_imports = {env: {square: x => x * x, pow: (x, y) => x ** y}} // pow: Math.pow
+        let runtime_imports = {env: runtime_instance.exports}
+        // let runtime_imports = {env: {square: x => x * x, pow: (x, y) => x ** y}} // pow: Math.pow
+        // let runtime_imports =
         app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
         print("app loaded")
 
