@@ -90,7 +90,8 @@ function testString() {
 
 function testReverse() {
     let cs = chars("abcd")
-    exports._Z7reversePci(cs, 4)
+    // exports.reverseInPlace(cs, 4)
+    exports._Z14reverseInPlacePci(cs, 4)
     check(chars(cs) === "dcba")
     exports.put_string(string("abcd -> dcba full circle"))
     console.log("TEST OK: testReverse")
@@ -99,7 +100,7 @@ function testReverse() {
 function testMemoryDiff() {
     let cs = chars("abcd")
     copy_of_last_state = memory.buffer.slice(0, memory.length);//  heap_end
-    exports._Z7reversePci(cs, 4)
+    exports.reverseInPlace(cs, 4)
     binary_diff(copy_of_last_state, memory.buffer)
 }
 
