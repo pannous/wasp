@@ -1606,7 +1606,6 @@ Code emitOperator(Node &node, Function &context) {
 	}
 	/*
 	 * PARAMETERS of operators (but not functions) are now on the STACK!!
-		no more need for (Node &arg : node) emitExpression(arg,context);;
 	 * */
 	if (functions.has(name) and not(name == "‖")) {
 		print("OPERATOR / FUNCTION CALL: %s\n"s % name);
