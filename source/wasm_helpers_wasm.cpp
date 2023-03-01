@@ -504,10 +504,7 @@ double pow(double x, double y) { // _NOEXCEPT
 
 
 #if RUNTIME_ONLY
-
-
 Module &read_wasm(bytes buffer, int size0) {
 	return *new Module();
 }
-
 #endif

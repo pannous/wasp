@@ -9,7 +9,9 @@
       <file path="$PROJECT_DIR$/.cmake" />
       <file path="$PROJECT_DIR$/.github" />
       <file path="$PROJECT_DIR$/.idea.bad" />
+      <file path="$PROJECT_DIR$/.vscode" />
       <file path="$PROJECT_DIR$/Frameworks" />
+      <file path="$PROJECT_DIR$/bin" />
       <file path="$PROJECT_DIR$/cmake-build-default" />
       <file path="$PROJECT_DIR$/cmake-build-release" />
       <file path="$PROJECT_DIR$/cmake-build-release-coverage" />
@@ -24,6 +26,7 @@
       <file path="$PROJECT_DIR$/lib/wai_example" />
       <file path="$PROJECT_DIR$/lib/witgen_example" />
       <file path="$PROJECT_DIR$/playground" />
+      <file path="$PROJECT_DIR$/source/file:" />
       <file path="$PROJECT_DIR$/source/old" />
       <file path="$PROJECT_DIR$/test/merge" />
       <file path="$PROJECT_DIR$/wapm" />

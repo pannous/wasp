@@ -83,7 +83,7 @@ enum sizeMeasure {
     by_graphemes
 };
 
-void reverse(char *str, int len);
+void reverseInPlace(char *str, int len);
 
 codepoint decode_unicode_character(chars utf8bytes, short *len = 0);
 
