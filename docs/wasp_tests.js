@@ -155,11 +155,13 @@ async function assert_emit(command, expected) {
     expect_test_result = expected
     let result = await exports.run(chars(command))
     // console.log(chars(result)) // "need asyncify for result" ;)
+    // return result
 }
 
 async function testRun1() {
     // assert_emit("not 0.0", true);
-    assert_emit("floor 3.7", 3);
+    return assert_emit("square(2)", 4);
+    // assert_emit("floor 3.7", 3);
     // assert_emit("false or true", true);
     // assert_emit("√3^2", 3)
     // assert_emit("3*42≥2*3", 1)
@@ -168,8 +170,8 @@ async function testRun1() {
 
 async function wasp_tests() {
     // console.log(new node(exports.testNodeJS())); // lives in wasp.wasm
-    // await testRun1() // result lives in emit.wasm!
-    // return;
+    await testRun1() // result lives in emit.wasm!
+    return;
     console.log("wasp_tests")
     // exports.puts(chars("JAAA"))
     // backtrace_line();
