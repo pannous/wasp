@@ -270,7 +270,7 @@ char *formatLongWithBase(int64 num, int base = 10) {
         str[len++] = '-';
     str[len] = '\0'; // Append string terminator
     // Reverse the string
-    reverse(str, len);
+    reverseInPlace(str, len);
     return str;
 }
 
@@ -348,7 +348,8 @@ chars ftoa2(float num, int significant_digits) {
     return f;
 }
 
-void reverse(char *str, int len) {
+void reverseInPlace(char *str, int len) {
+    if(len<=0)len = strlen(str);
     for (int i = 0; i < len / 2; i++) {
         char t = str[len - 1 - i];
         str[len - 1 - i] = str[i];

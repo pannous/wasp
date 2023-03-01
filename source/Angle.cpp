@@ -1409,14 +1409,16 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 #endif
     if (contains(funclet_list, name)) {
 #if WASM
-        auto funclet = getWaspFunction(name);// todo!
+//        auto funclet = getWaspFunclet(name);// todo!
+        todo("getWaspFunclet");
+        return 0;
 #else
         Module &funclet_module = read_wasm(findFile(name, "lib"));
 //        check(funclet_module.functions.has(name));
         auto funclet = funclet_module.functions[name];
         addLibrary(&funclet_module);
-#endif
         return use_required(&funclet);
+#endif
     }
     if (name.in(function_list) and libraries.size() == 0)
         libraries.add(&loadModule("wasp-runtime.wasm"));// on demand

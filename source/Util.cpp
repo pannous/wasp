@@ -477,7 +477,7 @@ String &hex(int64 d0, bool include_0x, bool upper_case) {
     }
     if (d0 < 0)s[i++] = '-';
     s[i] = 0;
-    reverse(s, i);
+    reverseInPlace(s, i);
     return *new String(s);
 }
 

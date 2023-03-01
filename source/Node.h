@@ -170,7 +170,7 @@ struct wasm32_node_struct {
     // ignore rest for now!
 };
 
-// The order of Type,Value is reverse to the Wasp ABI return tuple Value(int32), Type(int32)
+// The order of Type,Value is reverseInPlace to the Wasp ABI return tuple Value(int32), Type(int32)
 // hovering over it yields size(120), copy/move : construction, assignment
 class Node {
     // todo: sizeof(Node) can be reduced later by: shrinking header, merging type&kind, let *children own its length, make name String* offset

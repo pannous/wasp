@@ -1,4 +1,5 @@
 // let WASP_FILE = 'merged.wasm'
+let Wasp={}
 let WASP_FILE = 'wasp.wasm'
 let WASP_RUNTIME = 'wasp-runtime.wasm'
 // let WASP_FILE = 'hello-wasi.wasm'
@@ -499,7 +500,7 @@ async function link_runtime() {
         //  runtime_instance.exports
         global.app_instance = instance
         global.app_instance.module = module // global module already used by node!
-        global.app_exports = exports
+        global.app_exports = app_exports
         main = app_exports.wasp_main
         if (main) {
             console.log("Calling start function:", main);
@@ -591,6 +592,7 @@ wasm_data = fetch(WASP_FILE)
 WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
     instance = obj.instance
     exports = instance.exports
+    addSynonyms(exports)
     HEAP = exports.__heap_base; // ~68000
     DATA_END = exports.__data_end
     heap_end = HEAP || DATA_END;
@@ -698,9 +700,19 @@ function register_wasp_functions(exports) {
 function addSynonyms(exports) {
     for (let name in exports) {
         let func = exports[name]
+        Wasp[name] = func
         if (typeof func == "function") {
             let demangled = demangle(name)
-            if (!exports[demangled]) exports[demangled] = func
+            if(demangled!= name){
+            // if (!exports[demangled]) {
+                exports[demangled] = func
+                Wasp[demangled] = func
+                var short=demangled.substr(0,demangled.lastIndexOf("("))
+                Wasp[short] = func
+                if(name.match("reverse")){
+                    print("reverse",name,demangled,short)
+                }
+            }
         }
     }
     return exports
