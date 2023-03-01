@@ -3136,7 +3136,6 @@ void testCurrent() {
 //	assert_emit("√3^2", 3)
 //	assert_emit("3*42≥2*3", 1)
 
-
 //    testKebabCase();
 //    testSinus();
 
@@ -3154,7 +3153,6 @@ void testCurrent() {
 //    todos();
 	tests();// make sure all still ok after messing with memory
 #if not WASM
-
 	testAngle();// fails in WASM why?
 	testMergeGlobal();
 	testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
