@@ -92,8 +92,8 @@ void testMaps0() {
 	check(map.size() == 2);
 	check(map.values[1] == 4);
 	check(map.keys[1] == 2);
-	print(map[0]);
-	print(map[2]);
+	print((int) map[0]);
+	print((int) map[2]);
 	print(map[(size_t) 0]);
 	print(map[(size_t) 1]);
 	check(map[0] == 2);
@@ -657,9 +657,9 @@ void testStupidLongLong() {
 	float a;
 	double b;
 	long double c;// float128 16 byte in wasm wow, don't use anyways;)
-	print(sizeof(a));
-	print(sizeof(b));
-	print(sizeof(c));// what? 16 bytes!?
+	print((int) sizeof(a));
+	print((int) sizeof(b));
+	print((int) sizeof(c));// what? 16 bytes!?
 }
 
 void testFloatReturnThroughMain() {
@@ -3125,13 +3125,25 @@ void testWasmGC() {
 //    exit(0);
 }
 
+#import "pow.cpp"
 
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
+double powerd(double x, double y);
 void testCurrent() {
+//	check_is(exp(1), 2.718281828459045);
+	check_is(exp(5.5), 244.69193226422033);
+	auto x = powerd(1.5, 5.5);
+	printf("1.5^5.5=%f", x);
+	check_eq(x, 9.30040636712988);
+//	auto x = powerd(2.5, 1.5);
+//	printf("2.5^1.5=%f",x);
+//	check_eq(x,3.952847075210474);
+//	auto x=powerd(2.5, 3.5);
+//	check_eq(x,24.705294220065465);
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("√3^2", 3)
 //	assert_emit("3*42≥2*3", 1)

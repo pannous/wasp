@@ -122,6 +122,7 @@ async function testRunAsync() {
 function testRun() {
     try {
         // resume = testRun // comeback here after first, 2ⁿᵈ … testRun
+        print("testRun")
         exports.testRun();// going from one test to the next WITHIN WASP!
     } catch (x) {
         if (x instanceof YieldThread) {
@@ -160,7 +161,9 @@ async function assert_emit(command, expected) {
 
 async function testRun1() {
     // assert_emit("not 0.0", true);
-    return assert_emit("square(2)", 4);
+    // return assert_emit("square(2)", 4);
+    return assert_emit("pow(2,3)", 8);
+    // return assert_emit("pow(3,2)", 9);
     // assert_emit("floor 3.7", 3);
     // assert_emit("false or true", true);
     // assert_emit("√3^2", 3)
@@ -170,7 +173,8 @@ async function testRun1() {
 
 async function wasp_tests() {
     // console.log(new node(exports.testNodeJS())); // lives in wasp.wasm
-    await testRun1() // result lives in emit.wasm!
+    await testRun() // result lives in emit.wasm!
+    // await testRun1() // result lives in emit.wasm!
     return;
     console.log("wasp_tests")
     // exports.puts(chars("JAAA"))
@@ -181,7 +185,7 @@ async function wasp_tests() {
     // testMemoryDiff();
     exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
 
-    let runmode = 1
+    let runmode = 2
     switch (runmode) {
         case 0:
             return console.log("testRun disabled");
