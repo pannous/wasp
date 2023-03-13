@@ -2134,7 +2134,7 @@ Code emitCall(Node &fun, Function &context) {
 	if (index < 0)
 		error("Calling %s NO INDEX. TypeSection created before code Section. Indices must be known by now! "s % name);
 	int i = 0;
-	auto sig_size = signature.parameter_types.size();
+	auto sig_size = signature.parameters.size();
 	if (fun.size() > sig_size) {
 		print(function);
 		print(signature);
@@ -2148,7 +2148,7 @@ Code emitCall(Node &fun, Function &context) {
 			warn("args may have already been emitted");
 			break; // todo cast earlier / multi-value cast of stack!!
 		}
-		Type sigType = signature.parameter_types[i++];
+		Type sigType = signature.parameters[i++].type;
 		if (sigType != argType)
 			code.push(cast(argType, sigType));
 	};
@@ -2752,7 +2752,7 @@ Code emitTypeSection() {
 		Code td = Code(func) + Code(param_count);
 
 		for (int i = 0; i < param_count; ++i) {
-			td += Code(fixValtype(mapTypeToWasm(signature.parameter_types[i])));
+			td += Code(fixValtype(mapTypeToWasm(signature.parameters[i].type)));
 		}
 		td.addByte(signature.return_types.size());
 		for (Type ret: signature.return_types) {
