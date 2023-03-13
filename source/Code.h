@@ -982,13 +982,13 @@ class Function;
 
 class Arg {
 public:
-	String function;
-	String name;
+    String function;
+    String name;
 //	Valtype type;
 //	Valtype kind;
-//    Type type;
-	Node *type;
-	Node modifiers;
+    Type type = unknown_type;
+//	Node *type;
+    Node modifiers;
 };
 
 // todo we have a problem:  is_handled applies to a specific function, not it's Signature potentially shared with OTHER functions!
@@ -1001,9 +1001,9 @@ public:
 	List<Function *> functions;// using this Signature; debug only?
 
 //    List<Argument> params; :
-	List<String> parameter_names;// per function 😕
-	List<Type> parameter_types;// implicit index
-	List<Arg> parameters;// implicit index
+//	List<String> parameter_names;// per function 😕
+//	List<Type> parameters;// implicit index
+    List<Arg> parameters;// implicit index
 
 	List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
 //	Type return_type{};// use return_types.last(default)
@@ -1018,18 +1018,18 @@ public:
 #endif
 
     bool operator==(const Signature &other) const {
-	    if (size() != other.size())
-		    return false;
-	    for (int i = 0; i < parameter_types.size(); ++i) {
-		    auto type_x = parameter_types[i];
-		    auto type_y = other.parameter_types[i];
-		    if (type_x != type_y)
-			    return false;
-	    }
-	    if (return_types != other.return_types) {
-		    breakpoint_helper
-		    return false;
-	    }
+        if (size() != other.size())
+            return false;
+        for (int i = 0; i < parameters.size(); ++i) {
+            auto type_x = parameters[i];
+            auto type_y = other.parameters[i];
+            if (type_x.type != type_y.type)
+                return false;
+        }
+        if (return_types != other.return_types) {
+            breakpoint_helper
+            return false;
+        }
         for (int i = 0; i < return_types.size(); ++i) {
             if (return_types[i] != other.return_types[i])
                 return false;
@@ -1069,7 +1069,7 @@ public:
 //	}
 
     int size() const {
-        return parameter_types.size();
+        return parameters.size();
     }
 
 
@@ -1078,8 +1078,7 @@ public:
         debug_name += typeName(t);
         debug_name += " ";
 #endif
-        parameter_types.add(t);
-        parameter_names.add(name);
+        parameters.add(Arg{"", name, t, Node{}});// todo modifiers
         return *this;
     }
 
@@ -1160,13 +1159,15 @@ public:
             if ((wasm_return_type == void_block or wasm_return_type == voids) and return_types.size_ > 0)
                 wasm_return_type = mapTypeToWasm(return_types.last());
         }
-        if (parameter_types.empty())
-            parameter_types = s.parameter_types;
-        // todo: fix debug name and parameter_names!
+        if (parameters.empty())
+            parameters = s.parameters;
     }
 
     bool has(String string) {
-        return parameter_names.contains(string);
+        for (Arg &a: parameters)
+            if (a.name == string)
+                return true;
+        return false;
     }
 
     Signature clone() {
@@ -1181,10 +1182,11 @@ public:
         String s;
 //        s+=functions
         s += "(";
-        for (int i = 0; i < parameter_types.size(); ++i) {
+        for (int i = 0; i < parameters.size(); ++i) {
             if (i > 0)s += ",";
-            s += " "s + typeName(parameter_types[i]);
-            s += " "s + parameter_names[i];
+            auto arg = parameters[i];
+            s += " "s + typeName(arg.type);
+            s += " "s + arg.name;
         }
         s += ")";
         if (not return_types.empty()) {

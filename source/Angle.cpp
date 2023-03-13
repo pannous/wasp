@@ -211,12 +211,14 @@ Function &groupFunctionArgs(Function &function, Node &params) {
 	Node &nextType = Double;
 	if (params.length == 0) {
 		params = groupTypes(params, function);
-		if (params.name != function.name)
-			args.add({function.name, params.name, params.type ? params.type : &nextType});
+		if (params.name != function.name) {
+			auto typ = params.type ? params.type : &nextType;
+			args.add({function.name, params.name, mapType(typ)});
+		}
 	}
 	for (Node &arg: params) {
 		if (isType(arg)) {
-			if (args.size() > 0 and not args.last().type)
+			if (args.size() > 0 and args.last().type != unknown_type)
 				args.last().type = types[arg.name];
 			else nextType = arg;
 		} else {
@@ -237,8 +239,7 @@ Function &groupFunctionArgs(Function &function, Node &params) {
 		if (function.locals.has(name)) {
 			error("duplicate argument name: "s + name);
 		}
-		auto type = mapType(arg.type);
-		signature.add(type, name);// todo: arg type, or pointer
+		signature.add(arg.type, name);// todo: arg type, or pointer
 	}
 	if (params.value.node) {
 		Node &ret = params.values();
@@ -1439,7 +1440,7 @@ void addLibraryFunctionAsImport(Function &func) {
 	if (import.is_declared)return;
 	import.signature = func.signature;
 	import.signature.type_index = -1;
-	import.signature.parameter_types = func.signature.parameter_types;
+	import.signature.parameters = func.signature.parameters;
 	import.is_runtime = false;// because here it is an import!
 	import.is_import = true;
 	import.is_used = true;

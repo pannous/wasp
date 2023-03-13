@@ -506,7 +506,7 @@ const wasm_functype_t *funcType(Signature &signature) {
     // todo multi-value
     Type returnType0 = signature.return_types.last(none);
     Valtype returnType = mapTypeToWasm(returnType0);
-    int param_count = signature.parameter_types.size();
+	int param_count = signature.parameters.size();
     if (param_count == 0) {
         switch (returnType) {
             case none:
@@ -521,8 +521,8 @@ const wasm_functype_t *funcType(Signature &signature) {
         }
     }
     if (param_count == 1) {
-        Type &type = signature.parameter_types[0];
-        Valtype valtype = mapTypeToWasm(type);
+	    Type &type = signature.parameters[0].type;
+	    Valtype valtype = mapTypeToWasm(type);
         switch (valtype) {
             case int32:
                 switch (returnType) {

@@ -24,9 +24,9 @@ void testPolymorphism(){
 	check_is(function.is_polymorphic, true);
 	check_is(function.variants.size(), 2);
 	check_is(function.variants[0].signature.size(), 1);
-	check_is(function.variants[0].signature.parameter_types[0], (Type) int32);
+	check_is(function.variants[0].signature.parameters[0].type, (Type) int32);
 	check_is(function.variants[1].signature.size(), 1);
-	check_is(function.variants[1].signature.parameter_types[0], (Type) float32);
+	check_is(function.variants[1].signature.parameters[0].type, (Type) float32);
 }
 
 #import "pow.h"
@@ -68,8 +68,8 @@ void testFunctionDeclaration() {
 	check(node2.kind == declaration);
 	check(node2.name == "test");
 	check_is(functions["test"].signature.size(), 1);
-	check_is(functions["test"].signature.parameter_names[0], "a");
-	check_is(functions["test"].signature.parameter_types[0], (Type) float_type);
+	check_is(functions["test"].signature.parameters[0].name, "a");
+	check_is(functions["test"].signature.parameters[0].type, (Type) float_type);
 	check(functions["test"].body);
 	check_is(*functions["test"].body, analyze(parse("return a*2")));
 }
