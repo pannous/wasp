@@ -1220,7 +1220,7 @@ public:
     bool is_handled = false; // already emitted (e.g. as runtime)
     bool is_builtin = false;// hard coded functions, tests only? todo remove
     bool is_used = false;// called imports / buildins
-    bool is_polymorph = false;// IF polymorph, this 'Function' acts as abstract only, all REAL Functions are in variants
+    bool is_polymorphic = false;// IF polymorph, this 'Function' acts as abstract only, all REAL Functions are in variants
     List<Function> variants;// = 20;//={.capacity=20};// multi dispatch!
 
     //    Code* code; // todo: use

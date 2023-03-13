@@ -481,7 +481,7 @@ void consumeExportSection() {
         if (fun.signature.size()) {
             trace("function %s already has signature "s % func + fun.signature.serialize());
             trace("function %s old code_index %d new code_index %d"s % func % fun.code_index % lower_index);
-            Function &abstract = *new Function{.name=func, .module=module, .is_runtime=true, .is_polymorph=true};
+            Function &abstract = *new Function{.name=func, .module=module, .is_runtime=true, .is_polymorphic=true};
             abstract.variants.add(fun);
             module->functions[func] = abstract;
             fun = abstract.variants.items[2];
@@ -511,7 +511,7 @@ void consumeExportSection() {
 
         if (demangled.contains("::")) {
             String typ = demangled.to("::");
-            auto type = mapType(typ);// Primitive::self
+            auto type = mapType(typ, true);// Primitive::self
             fun.signature.add(type, "self");
         }
 // e.g. List<String>::add (String) has one arg, but wasm signature is (i32,i32):i32  ["_ZN4ListI6StringE3addES0_"]
@@ -520,9 +520,9 @@ void consumeExportSection() {
         List<String> args = demangle_args(func0);
         for (String &arg: args) {
             if (arg.empty())continue;
-            fun.signature.add(mapType(arg));
+            fun.signature.add(mapType(arg, true));
             if (&fun != &fun0)
-                fun0.signature.add(mapType(arg));
+                fun0.signature.add(mapType(arg, true));
         }
         if (not(demangled.contains("("))) { // extern "C" pure function name
             fun.signature = wasm_signature;
