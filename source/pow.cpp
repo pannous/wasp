@@ -69,7 +69,7 @@ double powerd(double x, int y) {
 
 unsigned long long factorial(int n) {
 	unsigned long long fact = 1;
-	if (n > 64)error1("long factorial limit 64!"); // overflow
+//	if (n > 64)error1("long factorial limit 64!"); // overflow
 	for (int i = 2; i <= n; i++) {
 		fact *= i;
 	}

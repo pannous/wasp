@@ -762,7 +762,7 @@ Primitive addTypeFromSize(Node &array, short size) {
 	else if (size == 1)array.type = &ByteType;
 	else if (size == 2)array.type = &ShortType;
 	else if (size == 4 and kind == longs)array.type = &Int;
-	else if (size == 4 and kind == Kind::codepoint1)array.type = &Charpoint;
+	else if (size == 4 and kind == Kind::codepoint1)array.type = &Codepoint;
 	else if (size == 8 and kind == longs) array.type = &Long;
 	else if (size == 8 and kind == reals) array.type = &Double;
 	else
