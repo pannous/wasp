@@ -20,6 +20,17 @@ let string_header_32 = 0x10000000
 let array_header_32 = 0x40000000
 let node_header_32 = 0x80000000
 
+function download(url) {
+    if (typeof url != "string") url = chars(url)
+    // console.log("download", url)
+    let xhr = new XMLHttpRequest();
+    xhr.open('GET', url, false);
+    xhr.send();
+    if (xhr.status === 200)
+        return chars(xhr.responseText.trim()) // to be used in WASM as string! use fetch() in JS
+    else
+        return null;
+}
 
 function format(object) {
     if (object instanceof node)
@@ -68,6 +79,11 @@ let imports = {
         memory, // optionally provide js Memory … alternatively use exports.memory in js, see below
         heap_end: new WebAssembly.Global({value: "i32", mutable: true}, 0),// todo: use as heap_end
         grow_memory: x => memory.grow(1), // à 64k … NO NEED, host grows memory automagically!
+        download: x => {
+            print("download");
+            print(x);
+            return download(x)
+        },
         run_wasm: async (x, y) => {
             try {
                 return await run_wasm(x, y)
@@ -115,6 +131,7 @@ let imports = {
     }
 }
 imports.wasi_snapshot_preview1 = imports.wasi_unstable // fuck wasmedge!
+Wasp = imports // provide global Wasp object for debugging, fill with wasi functions and runtime exports later!
 
 let todo = x => console.error("TODO", x)
 let puts = x => console.log(chars(x)) // char*
@@ -406,7 +423,7 @@ class node {
 
 
 // Function to download data to a file
-function download(data, filename, type) {
+function download_file(data, filename, type) {
     var file = new Blob([data], {type: type});
     if (window.navigator.msSaveOrOpenBlob) // IE10+
         window.navigator.msSaveOrOpenBlob(file, filename);
@@ -520,7 +537,7 @@ var app_module
 
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
-    // download(wasm_buffer, "emit.wasm", "wasm")
+    // download_file(wasm_buffer, "emit.wasm", "wasm")
 
     app_module = await WebAssembly.compile(wasm_buffer)
     if (WebAssembly.Module.imports(app_module).length > 0) {
@@ -529,6 +546,7 @@ async function run_wasm(buf_pointer, buf_size) {
         print(app_module) // visible in browser console, not in terminal
         if (!exports.square) print("NO SQUARE")
         if (!Wasp.square) print("NO SQUARE in Wasp")
+        Wasp.download = download
         // print(WebAssembly.Module.customSections(app_module)) // Argument 1 is required ?
     } else
         needs_runtime = false
@@ -579,7 +597,7 @@ async function run_wasm(buf_pointer, buf_size) {
                 check(+expect_test_result[i] == +result[i])
         } else if (expect_test_result != result) {
             STOP = 1
-            download(wasm_buffer, "emit.wasm", "wasm") // resume
+            download_file(wasm_buffer, "emit.wasm", "wasm") // resume
             check(expect_test_result == result)
         }
         expect_test_result = 0

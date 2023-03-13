@@ -748,3 +748,7 @@ bool isArrayType(Type type) {
 bool isGeneric(Type type) {
     return type.value & generics_mask;// >=0x10000;
 }
+
+void print(Kind k) {
+	print(typeName(k));
+}

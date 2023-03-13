@@ -157,10 +157,14 @@ void print(String);
 
 void print(String *s);
 
-//void print(int l);
+void print(int l);
+
 //void print(long l);
 void print(int64 l);
-//void print(size_t l);
+
+void print(double l);
+
+void print(size_t l);
 
 //extern __inline int isalnum ( int c );
 int isalnum0(int c);
@@ -271,7 +275,8 @@ class List;
 
 List<String> arguments();
 
-//#if MY_WASM
 extern "C" void registerWasmFunction(chars name, chars mangled);
-//#endif
+extern "C" chars download(chars name);// curl wget sync download via js / runtime!
+#if MY_WASM
+#endif
 

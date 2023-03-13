@@ -1491,22 +1491,22 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
             }
         }
     } else { // 64 bit wasm
-        // object has same layout, but we still need to fix pointers later
-        reconstruct = *(Node *) ((int64) wasm_memory + (int64) pointer);
-        for (int i = 0; i < reconstruct.length; ++i) {
-            int64 wasm_child_pointer = (int64) reconstruct.children[i];
-            reconstruct.children[i] = *reconstructWasmNode(wasm_child_pointer);
-        }
+	    // object has same layout, but we still need to fix pointers later
+	    reconstruct = *(Node *) ((int64) wasm_memory + (int64) pointer);
+	    for (int i = 0; i < reconstruct.length; ++i) {
+		    int64 wasm_child_pointer = (int64) reconstruct.children[i];
+		    reconstruct.children[i] = *reconstructWasmNode(wasm_child_pointer);
+	    }
     }
-    if ((int64) reconstruct.name.data < 0 or (int64) reconstruct.name.data > MAX_MEM)
-        error("invalid string in smartPointer");
-    check_is(reconstruct.name.kind, string_header_32);
-    if (reconstruct.name.length < 0 or reconstruct.name.length > MAX_NODE_CAPACITY)
-        error("reconstruct node sanity check failed for length");
-    check_is(reconstruct.node_header, node_header_32)
-    if (reconstruct.length < 0 or reconstruct.length > reconstruct.capacity or reconstruct.length > MAX_NODE_CAPACITY)
-        error("reconstruct node sanity check failed for length");
-    return &reconstruct;
+	if ((int64) reconstruct.name.data < 0 or (int64) reconstruct.name.data > MAX_MEM)
+		error("invalid string in smartPointer");
+	check_is((int64) reconstruct.name.kind, (int64) string_header_32);
+	if (reconstruct.name.length < 0 or reconstruct.name.length > MAX_NODE_CAPACITY)
+		error("reconstruct node sanity check failed for length");
+	check_is((int64) reconstruct.node_header, (int64) node_header_32)
+	if (reconstruct.length < 0 or reconstruct.length > reconstruct.capacity or reconstruct.length > MAX_NODE_CAPACITY)
+		error("reconstruct node sanity check failed for length");
+	return &reconstruct;
 }
 
 

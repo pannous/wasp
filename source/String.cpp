@@ -677,28 +677,34 @@ void print(const Node node) {
 
 
 //bool skip_newline = false;
-//void print(int l){
-//    put_chars(formatLong(l));
-//}
+void print(int l) {
+	put_chars(formatLong(l));
+}
+
 //void print(long l) {
 //    put_chars(formatLong(l));
 //}
 void print(int64 l) {
-    put_chars(formatLong(l));
+	put_chars(formatLong(l));
 }
-//void print(size_t l) {
-//    put_chars(formatLong(l));
-//}
+
+void print(double l) {
+	put_chars(formatReal(l));
+}
+
+void print(size_t l) {
+	put_chars(formatLong(l));
+}
 
 void print(char c) {
-    put_char(c);
-    newline();
+	put_char(c);
+	newline();
 }
 
 void print(char const *s) {
-    put_chars(s, strlen(s));
+	put_chars(s, strlen(s));
 #if not WASM
-    newline();// console.log adds newline
+	newline();// console.log adds newline
 #endif
 
 }

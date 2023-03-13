@@ -600,3 +600,5 @@ chars typeName(Valtype t, bool fail = true);
 bool isGeneric(Type type);
 
 bool isArrayType(Type type); // ^^ or generic (wasm) array
+
+void print(Kind k);
