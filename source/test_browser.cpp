@@ -3,6 +3,7 @@
 #include "tests.h"
 #include "asserts.h"
 #include "wasm_reader.h"
+#include "wasm_helpers.h"
 
 extern "C" Node *testNodeJS(String *s) {
 //        ADD_COMPILE_FLAG("-Wno-address-of-temporary") # ok when there is no stack / GC
@@ -24,6 +25,7 @@ extern "C" String *testFromJS(String *s) {
 extern byte *stack_hack;
 
 extern "C" void testRuntime(bytes buffer, size_t size) {
+// ⚠️ Problem arises before even doing anything with data…  :
 //    testCurrent();// messes with the heap just filled with the wasm file
 
     print("read_wasm size");
@@ -49,6 +51,10 @@ extern "C" void testRuntime(bytes buffer, size_t size) {
 
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
+	auto res = download("http://pannous.com/files/test");
+	print(res);
+	check_eq("test"s, res);
+	return;
 //	assert_emit("2+2", 4);
 //	assert_emit("2*2", 4);
 //	assert_emit("2^2", 4);

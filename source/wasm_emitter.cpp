@@ -482,7 +482,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
 //    check_is(sizeof(node.kind), 1) // todo
 //    emitByteData(node.kind); // breaks alignment
 	emitIntData(node.kind);
-	check_is(sizeof(node.kind), 4) // forced 32 bit for alignment!
+	check_is((int) sizeof(node.kind), 4) // forced 32 bit for alignment!
 	emitIntData(wasm_meta_pointer);
 	emitString(node /*.name*/, context);// directly in place!
 //    emitIntData(wasm_meta_pointer);
