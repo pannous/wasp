@@ -1078,7 +1078,8 @@ Node &Node::flat() {
         if (kind == key and name.empty()) {// (x):y => x:y
             if (not child.value.node and child.kind == reference) {
                 child.value.node = value.node;
-                child.kind = key;
+	            child.kind = key;
+	            child.type = type;
             }
             return child;
         }

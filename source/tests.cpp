@@ -18,15 +18,15 @@
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
 void testPolymorphism(){
-	auto node=parse("fun test(int a){return a+1};fun test(float a){return a+1}");
+	auto node = parse("fun test(string a){return a};fun test(float a){return a+1}");
 	auto fun = analyze(node);
 	auto function = functions["test"];
-	check_is(function.is_polymorph, true);
-	check_is(function.variants.size(),2);
-	check_is(function.variants[0].signature.size(),1);
-	check_is(function.variants[0].signature.parameter_types[0],(Type)int32);
-	check_is(function.variants[1].signature.size(),1);
-	check_is(function.variants[1].signature.parameter_types[0],(Type)float32);
+	check_is(function.is_polymorphic, true);
+	check_is(function.variants.size(), 2);
+	check_is(function.variants[0].signature.size(), 1);
+	check_is(function.variants[0].signature.parameter_types[0], (Type) int32);
+	check_is(function.variants[1].signature.size(), 1);
+	check_is(function.variants[1].signature.parameter_types[0], (Type) float32);
 }
 
 #import "pow.h"

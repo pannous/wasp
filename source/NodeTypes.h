@@ -136,7 +136,7 @@ extern Node Int; // maps to int32 in external abi! don't use internally much, on
 extern Node Double;
 extern Node Long;
 extern Node Bool;
-extern Node Charpoint;
+extern Node Codepoint;
 extern Node ByteType;
 extern Node ByteChar;
 extern Node ShortType;
@@ -418,6 +418,7 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
             this->kind = longs;
         else if (o == &Int)
             this->type = wasm_int32;
+//        else if (mapType())
         else
             error("Type32(const Node &o)");
     }
@@ -588,7 +589,7 @@ Primitive mapTypeToPrimitive(Node &n);
 
 Valtype mapTypeToWasm(Primitive p);
 
-Type mapType(String arg);
+Type mapType(String arg, bool throws);
 
 Type mapType(Node &arg);
 
