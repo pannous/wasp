@@ -969,34 +969,47 @@ enum ABI {
     erased = 0, // unknown type info erased
     native = 0, // wasm/c also wasi?
     cpp, // _Z5abs_ff demangle, ill defined type arguments
-    wasp,// multi-value return tuples (value, type), node header tuples (head, type, meta, size, children) see ABI.h
-    wasp_smart_pointers, // compatible with lacking multi-value in wasm engine
-    canonical, // type string = (pointer,length) …
-    wit = canonical, // lookup type and data schemes in wit 'header' files
+	wasp,// multi-value return tuples (value, type), node header tuples (head, type, meta, size, children) see ABI.h
+	wasp_smart_pointers, // compatible with lacking multi-value in wasm engine
+	canonical, // type string = (pointer,length) …
+	wit = canonical, // lookup type and data schemes in wit 'header' files
 //	meta, // types specified in custom meta section
 //	meta_names, // function types specified via naming convention square__int_as_int, square__float_as_float
 };
 
 class Function;
 
+
+class Arg {
+public:
+	String function;
+	String name;
+//	Valtype type;
+//	Valtype kind;
+//    Type type;
+	Node *type;
+	Node modifiers;
+};
+
 // todo we have a problem:  is_handled applies to a specific function, not it's Signature potentially shared with OTHER functions!
 // wasm function type signatures plus some…
 class Signature {
 public:
-    int type_index = -1;// in type section ≠ function index!!
-    ABI abi = wasp_smart_pointers;//erased;
+	int type_index = -1;// in type section ≠ function index!!
+	ABI abi = wasp_smart_pointers;//erased;
 // todo: add true Wasp Type Signature to wasm Valtype Signature
-    List<Function *> functions;// using this Signature; debug only?
+	List<Function *> functions;// using this Signature; debug only?
 
 //    List<Argument> params; :
-    List<String> parameter_names;// per function 😕
-    List<Type> parameter_types;// implicit index
+	List<String> parameter_names;// per function 😕
+	List<Type> parameter_types;// implicit index
+	List<Arg> parameters;// implicit index
 
-    List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
+	List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
 //	Type return_type{};// use return_types.last(default)
-    Valtype wasm_return_type = voids;// until checked debug only!
-    bool is_handled = false;
-    // these explicit constructions are needed when using types return_types as reference!
+	Valtype wasm_return_type = voids;// until checked debug only!
+	bool is_handled = false;
+	// these explicit constructions are needed when using types return_types as reference!
 //	Signature() : return_types(*new List<Valtype>), types(*new Map<int, Valtype>) {}
 //	Signature() : return_types(*new List<Type>), types(*new Map<int, Type>) {}
 
@@ -1005,13 +1018,18 @@ public:
 #endif
 
     bool operator==(const Signature &other) const {
-        for (int i = 0; i < parameter_types.size(); ++i) {
-            if (parameter_types[i] != other.parameter_types[i])
-                return false;
-        }
-        if (return_types != other.return_types)
-            breakpoint_helper
-//            return false;
+	    if (size() != other.size())
+		    return false;
+	    for (int i = 0; i < parameter_types.size(); ++i) {
+		    auto type_x = parameter_types[i];
+		    auto type_y = other.parameter_types[i];
+		    if (type_x != type_y)
+			    return false;
+	    }
+	    if (return_types != other.return_types) {
+		    breakpoint_helper
+		    return false;
+	    }
         for (int i = 0; i < return_types.size(); ++i) {
             if (return_types[i] != other.return_types[i])
                 return false;

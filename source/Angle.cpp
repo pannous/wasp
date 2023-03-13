@@ -61,16 +61,6 @@ void addLibrary(Module *modul);
 // functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
 chars control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
 
-class Arg {
-public:
-	String function;
-	String name;
-//	Valtype type;
-//	Valtype kind;
-//    Type type;
-	Node *type;
-	Node modifiers;
-};
 
 // 'private header'
 bool addLocal(Function &context, String name, Type Type, bool is_param); // must NOT be accessible from Emitter!
@@ -213,8 +203,10 @@ Node eval(String code) {
 
 Node &groupTypes(Node &expression, Function &context);
 
-Signature &groupFunctionArgs(Function &function, Node &params) {
-	//			left = analyze(left, name) NO, we don't want args to become variables!
+// sets function.signature
+// may change and return function variant based on args!
+Function &groupFunctionArgs(Function &function, Node &params) {
+	// left = analyze(left, name) NO, we don't want args to become variables!
 	List<Arg> args;
 	Node &nextType = Double;
 	if (params.length == 0) {
@@ -233,7 +225,7 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 		}
 	}
 
-	Signature &signature = function.signature;
+	Signature signature = function.signature;
 	auto already_defined = function.signature.size() > 0;
 	if (function.is_polymorphic or already_defined)
 		signature = *new Signature();
@@ -246,7 +238,6 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 			error("duplicate argument name: "s + name);
 		}
 		auto type = mapType(arg.type);
-		addLocal(function, name, type, true);
 		signature.add(type, name);// todo: arg type, or pointer
 	}
 	if (params.value.node) {
@@ -254,37 +245,39 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 		Type type = mapType(ret.name, true);
 		signature.returns(type);
 	}
-	if (already_defined) {
+
+	Function &variant = function;
+	if (already_defined /*but not yet polymorphic*/) {
 		if (signature == function.signature)
-			return function.signature; // ok compatible
+			return function;// function.signature; // ok compatible
 		// else split two variants
-		Function variant1 = function;// clone by value!
-		Function variant2 = function;// clone by value!
-		check_is(variant1.name, function.name);
-		variant1.signature = function.signature;
-		variant2.signature = signature;// ^^ different
+		Function old_variant = function;// clone by value!
+		Function new_variant = function;// clone by value!
+		check_is(old_variant.name, function.name);
+		old_variant.signature = function.signature;
+		new_variant.signature = signature;// ^^ different
 		function.is_polymorphic = true;
 //			function.is_used … todo copy other attributes?
 		function.signature = *new Signature();// empty
-		function.variants.add(variant1);
-		function.variants.add(variant2);
-		return signature;
+		function.variants.add(old_variant);
+		function.variants.add(new_variant);
+		variant = new_variant;
 	}
 
 	if (function.is_polymorphic) {
-		for (
-			auto fun
-				: function.variants)
+		variant = *new Function();
+		for (Function &fun: function.variants)
 			if (fun.signature == signature)
-				return
-						signature;
-		auto variant = *new Function();
+				return fun;// signature;
 		variant.name = function.name;
 		variant.signature = signature;
 		function.variants.add(variant);
 	}
-
-	return signature;
+	// NOW add locals to function context:
+	for (auto arg: variant.signature.parameters)
+		addLocal(variant, arg.name, arg.type, true);
+	return variant;
+//	return signature;
 }
 
 String extractFunctionName(Node &node) {
@@ -714,6 +707,7 @@ void updateLocal(Function &context, String name, Type type) {
 }
 
 // return: done?
+// ⚠️ Function &context may have same name when polymorphic!
 // todo return clear enum known, added, ignore ?
 bool addLocal(Function &context, String name, Type type, bool is_param) {
 	if (name.empty()) {
@@ -806,7 +800,8 @@ Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module
 // is_used to fake test wit signatures
 	Function function = {.name=name, .module = mod, .is_import=true, .is_declared= not body.empty(), .is_used=true,};// todo: clone!
 	function.body = &body;
-	function.signature = groupFunctionArgs(function, node);
+//	function.signature = set there:
+	groupFunctionArgs(function, node);
 	if (returns and function.signature.return_types.size() == 0)
 		function.signature.returns(mapType(returns->name, true));
 	functions.insert_or_assign(name, function);
@@ -844,6 +839,7 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 		}
 	}
 	Function &function = functions[name]; // different from context!
+	function.name = name;
 	function.is_declared = true;
 	function.is_import = false;
 	// todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
@@ -856,7 +852,8 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 		return groupSetter(name, body, function);
 	}
 
-	Signature &signature = groupFunctionArgs(function, arguments);
+	function = groupFunctionArgs(function, arguments);// may change function variant based on args!
+	Signature &signature = function.signature;
 	if (signature.size() == 0 and function.locals.size() == 0 and body.has("it", false, 100)) {
 		addLocal(function, "it", float64, true);
 		signature.add(float64, "it");// todo: any / smarti! <<<
@@ -904,7 +901,9 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
 	auto fun = expression.first();
 	Node return_type;
 	auto childs = fun.childs();
-	Node arguments = groupTypes(childs, context); // children f(x,y)
+	auto function = functions[fun.name];
+	function.name = fun.name;// for now just for context:
+	Node arguments = groupTypes(childs, function); // children f(x,y)
 	Node body;
 	auto ret = expression.containsAny(return_keywords);
 	if (ret) {
@@ -1739,10 +1738,10 @@ Node &analyze(Node &node, Function &function) {
 	}
 
 	if (isPrimitive(node)) return node;
-	Node &groupedTypes = groupTypes(node, function);
-	Node groupedDeclarations = groupDeclarations(groupedTypes, function);
-	Node &groupedFunctions = groupFunctionCalls(groupedDeclarations, function);
-	Node &grouped = groupOperators(groupedFunctions, function);
+	Node &groupFunctions = groupFunctionCalls(node, function);
+	Node &groupedDeclarations = groupDeclarations(groupFunctions, function);
+	Node &groupedTypes = groupTypes(groupedDeclarations, function);
+	Node &grouped = groupOperators(groupedTypes, function);
 	if (analyzed[grouped.hash()])return grouped;// done!
 	analyzed.insert_or_assign(grouped.hash(), 1);
 
