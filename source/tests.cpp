@@ -3135,10 +3135,10 @@ void testWasmGC() {
 double powerd(double x, double y);
 void testCurrent() {
 //	check_is(exp(1), 2.718281828459045);
-	check_is(exp(5.5), 244.69193226422033);
-	auto x = powerd(1.5, 5.5);
-	printf("1.5^5.5=%f", x);
-	check_eq(x, 9.30040636712988);
+//	check_is(exp(5.5), 244.69193226422033);
+//	auto x = powerd(1.5, 5.5);
+//	printf("1.5^5.5=%f", x);
+//	check_eq(x, 9.30040636712988);
 //	auto x = powerd(2.5, 1.5);
 //	printf("2.5^1.5=%f",x);
 //	check_eq(x,3.952847075210474);

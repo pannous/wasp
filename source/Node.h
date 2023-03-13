@@ -178,7 +178,7 @@ public:
     // ⚠️ ORDER of fields matter when (de)serializing / casting from List …
 //	static
     //	short _node_header_ = 0xDADA; // can be combined with byte kind => 2*short !
-    int node_header = node_header_32;
+    uint node_header = node_header_32;
 //    Type64 type6;
     int length = 0;// #children
     Kind kind = unknown;// forced 32 bit,  improved from 'undefined' upon construction
