@@ -71,6 +71,9 @@ endif () # else :
 #    SET(WASM3 1)
 #endif()
 
+if(NO_TESTS)
+    set(SOURCE_FILES ${SOURCE_FILES} source/pow.cpp)
+endif()
 
 FUNCTION(ADD_COMPILE_FLAG value)
     MESSAGE(STATUS "Building ${TARGET} with ${value}")

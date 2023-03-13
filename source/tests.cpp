@@ -17,9 +17,19 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testPolymorphism(){
+	auto node=parse("fun test(int a){return a+1};fun test(float a){return a+1}");
+	auto fun = analyze(node);
+	auto function = functions["test"];
+	check_is(function.is_polymorph, true);
+	check_is(function.variants.size(),2);
+	check_is(function.variants[0].signature.size(),1);
+	check_is(function.variants[0].signature.parameter_types[0],(Type)int32);
+	check_is(function.variants[1].signature.size(),1);
+	check_is(function.variants[1].signature.parameter_types[0],(Type)float32);
+}
 
 #import "pow.h"
-
 void testOwnPowerExponentialLogarithm() {
 	check_is(exp(1), 2.718281828459045);
 	check_is(exp(5.5), 244.69193226422033);
@@ -3148,6 +3158,7 @@ void testWasmGC() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+	testPolymorphism();
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("√3^2", 3)
 //	assert_emit("3*42≥2*3", 1)
