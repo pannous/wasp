@@ -813,7 +813,11 @@ public:
         return *meta;
     }
 
+    // can't rename to setKind WTH !?
     Node &setType(Kind kin, bool check = true);
+
+    // ≠ setKind ≠
+    void setType(Type type);
 
 //    Node &setType(const char *string) {// setClass
 //        if(types.has)

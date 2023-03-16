@@ -107,6 +107,7 @@ Type mapType(Node &arg) {
 }
 
 Type mapType(Node *arg) {
+	if (not arg)return ignore;// todo?
 	return mapTypeToPrimitive(*arg);
 //    todo("mapType Node")
 }
@@ -230,7 +231,8 @@ Type mapType(String arg, bool throws) {
 	else {
 //        breakpoint_helper
 //        printf("unmapped c++ argument type %s\n", arg.data);
-		if (not throws)return unknown_type;
+		if (not throws)
+			return unknown_type;
 		if (!arg.endsWith("*"))
 			if (!arg.startsWith("Map<") and !arg.startsWith("List<"))
 				error("unmapped c++ argument type %s\n"s % arg.data);
