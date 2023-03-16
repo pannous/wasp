@@ -22,6 +22,50 @@
 #endif
 #endif
 
+
+//https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
+//List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
+//chars ras[] = {"=", "?:", "+=", "++", 0};
+//List<chars> rightAssociatives = List(ras);
+//List<chars> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
+//List<chars> rightAssociatives = {"=", "?:", "-…", "+=", "++…",0};// a=b=1 == a=(b=1) => a=1
+List<String> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
+// compound assignment
+
+
+// still needs to check a-b vs -i !!
+List<chars> prefixOperators = {"abs",/*norm*/  "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
+                               "~", "&", "$", "return",
+                               "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
+List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", /* 23% vs 7%5 */ "％",
+                               "﹪", "٪",
+                               "‰"};// modulo % ≠ ％ percent
+//List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…"/*, "+…" /*useless!*/, "~…", "*…", "&…",
+//							  "sizeof", "new", "delete[]"};
+//List<chars> suffixOperators = { "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", "％", "﹪", "٪",
+//							   "‰"};// modulo % ≠ ％ percent
+
+
+
+List<chars> infixOperators = operator_list;
+
+// todo: norm all those unicode variants first!
+// ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
+
+// handled different than other operators, because … they affect the namespace context
+List<chars> setter_operators = {"="};
+List<chars> return_keywords = {"return", "yield", "as", "=>", ":", "->"}; // "convert … to " vs "to print(){}"
+List<chars> function_operators = {":="};//, "=>", "->" ,"<-"};
+List<chars> function_keywords = {"def", "defn", "define", "to", "ƒ", "fn", "fun", "func", "function", "method",
+                                 "proc", "procedure"};
+List<String> function_modifiers = {"public", "static", "export", "import", "extern", "C"};
+
+List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
+List<chars> key_pair_operators = {":"};
+List<chars> declaration_operators = {":=", "=",
+                                     "::=" /*until global keyword*/}; //  i:=it*2  vs i=1  OK?  NOT ":"! if 1 : 2 else 3
+
+
 Module *module; // todo: use?
 bool use_interpreter = false;
 Node &result = *new Node();
@@ -247,7 +291,7 @@ Function &groupFunctionArgs(Function &function, Node &params) {
 		signature.returns(type);
 	}
 
-	Function &variant = function;
+	Function *variant = &function;
 	if (already_defined /*but not yet polymorphic*/) {
 		if (signature == function.signature)
 			return function;// function.signature; // ok compatible
@@ -262,22 +306,22 @@ Function &groupFunctionArgs(Function &function, Node &params) {
 		function.signature = *new Signature();// empty
 		function.variants.add(old_variant);
 		function.variants.add(new_variant);
-		variant = new_variant;
-	}
-
-	if (function.is_polymorphic) {
-		variant = *new Function();
+		variant = &new_variant;
+	} else if (function.is_polymorphic) {
+		variant = new Function();
 		for (Function &fun: function.variants)
 			if (fun.signature == signature)
 				return fun;// signature;
-		variant.name = function.name;
-		variant.signature = signature;
-		function.variants.add(variant);
+		variant->name = function.name;
+		variant->signature = signature;
+		function.variants.add(*variant);
+	} else if (!already_defined) {
+		function.signature = signature;
 	}
 	// NOW add locals to function context:
-	for (auto arg: variant.signature.parameters)
-		addLocal(variant, arg.name, arg.type, true);
-	return variant;
+	for (auto arg: variant->signature.parameters)
+		addLocal(*variant, arg.name, arg.type, true);
+	return *variant;
 //	return signature;
 }
 
@@ -295,48 +339,6 @@ String extractFunctionName(Node &node) {
 // further right means higher prescedence/binding, gets grouped first
 // todo "=" ":" handled differently?
 
-
-
-//https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
-//List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
-//chars ras[] = {"=", "?:", "+=", "++", 0};
-//List<chars> rightAssociatives = List(ras);
-//List<chars> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
-//List<chars> rightAssociatives = {"=", "?:", "-…", "+=", "++…",0};// a=b=1 == a=(b=1) => a=1
-List<String> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
-// compound assignment
-
-
-// still needs to check a-b vs -i !!
-List<chars> prefixOperators = {"abs",/*norm*/  "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
-                               "~", "&", "$", "return",
-                               "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
-List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", /* 23% vs 7%5 */ "％",
-                               "﹪", "٪",
-                               "‰"};// modulo % ≠ ％ percent
-//List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…"/*, "+…" /*useless!*/, "~…", "*…", "&…",
-//							  "sizeof", "new", "delete[]"};
-//List<chars> suffixOperators = { "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", "％", "﹪", "٪",
-//							   "‰"};// modulo % ≠ ％ percent
-
-
-
-List<chars> infixOperators = operator_list;
-// todo: norm all those unicode variants first!
-// ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
-
-// handled different than other operators, because … they affect the namespace context
-List<chars> setter_operators = {"="};
-List<chars> return_keywords = {"return", "yield", "as", "=>", ":", "->"}; // "convert … to " vs "to print(){}"
-List<chars> function_operators = {":="};//, "=>", "->" ,"<-"};
-List<chars> function_keywords = {"def", "defn", "define", "to", "ƒ", "fn", "fun", "func", "function", "method",
-                                 "proc", "procedure"};
-List<String> function_modifiers = {"public", "static", "export", "import", "extern", "C"};
-
-List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
-List<chars> key_pair_operators = {":"};
-List<chars> declaration_operators = {":=", "=",
-                                     "::=" /*until global keyword*/}; //  i:=it*2  vs i=1  OK?  NOT ":"! if 1 : 2 else 3
 
 // ... todo maybe unify variable symbles with function symbols at angle level and differentiate only when emitting code?
 // x=7
@@ -479,7 +481,17 @@ bool isVariable(Node &node) {
 	return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'A';// todo;
 }
 
+bool isPrimitive(Type type) {
+	if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
+		return true;
+	if (type == codepoint1)// todo ...?
+		return true;
+	return false;
+}
+
 bool isPrimitive(Node &node) {
+	if (&node == null)
+		return false;
 	// should never be cloned so always compare by reference ok?
 	if (&node == &Int)return true;
 	if (&node == &Bool)return true;
@@ -491,11 +503,7 @@ bool isPrimitive(Node &node) {
 	if (&node == &ShortType)return true;
 	if (&node == &StringType)return true;
 	Kind type = node.kind;
-	if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
-		return true;
-	if (type == codepoint1)// todo ...?
-		return true;
-	return false;
+	return isPrimitive(type);
 }
 
 Map<String, Node *> types = {.capacity=1000}; // builtin and defined Types
@@ -564,14 +572,18 @@ Node &groupTypes(Node &expression, Function &context) {
 	 * */
 	if (types.size() == 0)initTypes();
 	if (isType(expression)) {// double \n x,y,z  extra case :(
-		Node &type = *types[expression.name];
+		Node *type0 = types[expression.name];
+		Type type = mapType(type0);
+		if (type0 == null and type == ignore)return expression;
+		if (type0 == null)
+			type0 = new Node(expression.name, clazz);
 		auto is_primitive = isPrimitive(type);
 		if (not is_primitive and (type.kind == structs or type.kind == clazz)) // or type == wasmtype_struct
 			return constructInstance(expression, context);
 
 		if (expression.length > 0) {// point{x=1 y=2} point{x y}
 			for (Node &typed: expression) {// double \n x = 4
-				typed.setType(&type);
+				typed.setType(type0);
 				addLocal(context, typed.name, mapType(typed.name, true), false);
 			}
 			expression.name = "";// hack
@@ -612,8 +624,10 @@ Node &groupTypes(Node &expression, Function &context) {
 			error("Type without object: "s+node.serialize());// may be ok
 #endif
 		}
-//			if (operator_list.has(typed.name))
-//				continue; // 3.3 as int …
+		if (operator_list.has(name)) // *
+			continue; // 3.3 as int …
+
+
 		auto aType = types[name];
 		if (not aType) {
 			auto type = mapType(name, false);
@@ -636,8 +650,8 @@ Node &groupTypes(Node &expression, Function &context) {
 			continue;
 		}
 
-		while (typed &&
-		       isPrimitive(*typed) or (typed->kind == reference and typed->length == 0)) {// BAD criterion for next!
+		while (typed && isPrimitive(*typed) or (typed->kind == reference and typed->length == 0)) {
+			// ^^ BAD criterion for next!
 			typed->type = aType;// ref ok because types can't be deleted ... rIgHt?
 			if (typed->kind == reference or typed->isSetter()) {
 				auto type = mapType(aType->name, false);
@@ -701,15 +715,14 @@ void updateLocal(Function &context, String name, Type type) {
 			}
 		} else
 			warn("local "s + name + " in context %s already known "s % context.name + " with type " +
-			     typeName(oldType) +
-			     ", ignoring new type " + type_name);
+			     typeName(oldType) + ", ignoring new type " + type_name);
 	}
 	// ok, could be cast'able!
 }
 
-// return: done?
 // ⚠️ Function &context may have same name when polymorphic!
 // todo return clear enum known, added, ignore ?
+// return: done?
 bool addLocal(Function &context, String name, Type type, bool is_param) {
 	if (name.empty()) {
 		warn("empty reference in "s + context);
@@ -932,13 +945,15 @@ Node &groupFunctionDeclaration(Node &expression, Function &context) {
 	return groupFunctionDeclaration(fun.name, 0, left, left, rest, context);
 }
 
+
+// todo: weak criteria, how to stabilize?
 Node &groupDeclarations(Node &expression, Function &context) {
 //    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
-	if (expression.contains(":=")) {
-		return groupFunctionDeclaration(expression, context);
-	}
+
 
 	auto first = expression.first();
+	if (contains(functor_list, first.name))
+		return expression;
 	if (expression.length == 2 and isType(first.first()) and
 	    expression.last().kind == objects) {// c style double sin() {}
 		expression = groupTypes(expression, context);
@@ -950,6 +965,8 @@ Node &groupDeclarations(Node &expression, Function &context) {
 			continue;
 		}
 		String &op = node.name;
+		if (isKeyword(op))
+			continue;
 		if (isPrimitive(node) and node.isSetter()) {
 			if (globals.has(op)) {
 				warn("Cant set globals yet!");
@@ -1007,6 +1024,16 @@ Node &groupDeclarations(Node &expression, Function &context) {
 		return groupFunctionDeclaration(name, 0, left, left, rest, context);
 	}
 	return expression;
+}
+
+bool isKeyword(String &op) {
+	if (operator_list.has(op))return true;
+	if (function_operators.has(op))return true;
+	if (prefixOperators.has(op))return true;
+	if (suffixOperators.has(op))return true;
+	if (contains(functor_list, op))return true;
+	if (contains(control_flows, op))return true;
+	return false;
 }
 
 Node extractReturnTypes(Node decl, Node body) {
@@ -1318,6 +1345,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 	for (int i = 0; i < expressiona.length; ++i) {
 		Node &node = expressiona.children[i];
 		String &name = node.name;
+
+		// todo: MOVE!
 		if (name == "if") // kinda functor
 		{
 			auto args = expressiona.from("if");
@@ -1326,6 +1355,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 			if (i == 0 and j == expressiona.length - 1)return iff;
 			if (j > i)
 				expressiona.replace(i, j, iff);// todo figure out if a>b c d e == if(a>b)then c else d; e boundary
+			if (i == 0)
+				return expressiona;
 			continue;
 		}
 		if (name == "while") {

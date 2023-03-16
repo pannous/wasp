@@ -1458,7 +1458,7 @@ Code emitAttributeSetter(Node &node, Function &context) {
 	if (!value)value = node.last().value.node;
 	if (!value)error("attribute setter missing value");
 	todo("emitAttributeSetter");
-    return Code();
+	return Code();
 }
 
 
@@ -3205,7 +3205,9 @@ Code emitNameSection() {
 	int usedTypes = 0;
 	int usedFields = 0;
 	for (auto &type_name: types) {
-		auto typ = *types[type_name];
+		Node *typ0 = types[type_name];
+		if (!typ0)continue;// how?
+		auto typ = *typ0;
 		if (typ.kind != structs) // wasmtype_struct
 			continue;
 		usedTypes++;
