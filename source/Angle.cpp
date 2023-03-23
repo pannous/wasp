@@ -218,6 +218,20 @@ Node interpret(String code) {
 Code &compile(String code, bool clean = true);// exposed to wasp.js
 #endif
 
+void debug_wasm_file() {
+#if not WASM
+	print("validate-main.sh");
+	print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+	system("./validate-main.sh");
+	auto errors = readFile("main.wasm.validation");
+	print(errors);
+	print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+	if(strlen(errors)>0) {
+		exit(1);
+	}
+#endif
+}
+
 // todo: merge with emit
 Node eval(String code) {
 #ifdef RUNTIME_ONLY
@@ -232,6 +246,7 @@ Node eval(String code) {
 	{
 		Code &binary = compile(code, true);
 		binary.save();// to debug
+		debug_wasm_file();
 		smart_pointer_64 results = binary.run();
 		auto _resultNode = smartNode(results);
 		if (!_resultNode)return ERROR;
@@ -378,7 +393,8 @@ Node &groupIf(Node n, Function &context) {
 	} else if (condition.has(":")) {// as child
 		then = condition.from(":");
 		//		condition = condition.interpret();// compile time evaluation?!
-	}
+	} else if (condition.name == "if")
+		condition = condition.values();
 
 	Node otherwise;
 	if (n.has("else")) {
@@ -724,6 +740,15 @@ void updateLocal(Function &context, String name, Type type) {
 // todo return clear enum known, added, ignore ?
 // return: done?
 bool addLocal(Function &context, String name, Type type, bool is_param) {
+	if (isKeyword(name))
+		error("keyword as local name: "s + name);
+	if (name == "conditon"){
+		todo("addLocal");
+	}
+	if (eq(name.data, "condition"))
+		return true;
+//		todo("addLocal");
+	if (name == "if") todo("addLocal");
 	if (name.empty()) {
 		warn("empty reference in "s + context);
 		return true;// 'done' ;)
@@ -1730,15 +1755,17 @@ Node &analyze(Node &node, Function &function) {
 			auto first = node.first().first();
 			if (isType(first))
 				return groupTypes(node, function);
-			else if (first.name == "while")
-				return groupWhile(node, function);
-			else if (first.name == "if")
-				return groupIf(node, function);
 			else if (node.length > 1)
 				error("unknown key expression: "s + node.serialize());
 		}
 		addLocal(function, name, node.value.node ? mapType(node.value.node) : none, false);
 	}
+
+	if (first == "while" and type == expression)
+		return groupWhile(node, function);
+	if (first == "if" and type == expression)
+		return groupIf(node, function);
+
 	if (isPrimitive(node)) {
 		if (isVariable(node))
 			addLocal(function, name, mapType(node), false);
@@ -1770,8 +1797,10 @@ Node &analyze(Node &node, Function &function) {
 	}
 
 	if (isPrimitive(node)) return node;
-	Node &groupFunctions = groupFunctionCalls(node, function);
-	Node &groupedDeclarations = groupDeclarations(groupFunctions, function);
+	if (node.contains(":=") or function_keywords.contains(first))
+		return groupFunctionDeclaration(node, function);
+	Node &functionCalls = groupFunctionCalls(node, function);
+	Node &groupedDeclarations = groupDeclarations(functionCalls, function);
 	Node &groupedTypes = groupTypes(groupedDeclarations, function);
 	Node &grouped = groupOperators(groupedTypes, function);
 	if (analyzed[grouped.hash()])return grouped;// done!
