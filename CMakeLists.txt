@@ -11,6 +11,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 #set(VERBOSE 1)
 #set(DEBUG 1)
 #set(TRACE 1)
+set(SERVER 1) # include server.cpp
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
 #set(INCLUDE_MERGER 0) # include wasm_linker.cpp
@@ -263,6 +264,11 @@ endif ()
 
 # COMMON FOR ALL
 set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp source/Code.cpp source/NodeTypes.cpp)
+
+if(SERVER AND NOT WASM)
+    set(SOURCE_FILES ${SOURCE_FILES} source/WebServer.cpp)
+    ADD_DEFINITIONS(-DSERVER)
+endif()
 
 if (CONSOLE)
     message(CONSOLE)
