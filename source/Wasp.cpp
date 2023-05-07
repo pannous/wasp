@@ -2057,8 +2057,8 @@ int main(int argc, char **argv) {
         }
         if (args == "server" or args == "serv")
 #ifdef SERVER
-            std::thread go(start_server, 9999);
-//				start_server(9999);
+//            std::thread go(start_server, 9999);
+				start_server(9999);
 #else
             print("wasp compiled without server");
 #endif
