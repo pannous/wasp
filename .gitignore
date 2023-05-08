@@ -24,9 +24,8 @@ eigen.natvis
 mark.cbp
 CMakeFiles
 wasp.cbp
+*.bak
 *.bc
-*.wat
-*.wast
 *.wasm
 *.o
 *.i
