@@ -120,6 +120,8 @@ bool isType(Node &expression) {
     auto name = expression.name;
     if (expression.kind == functor) //todo ...
         return false;
+    if (isPrimitive(expression))
+        return false;
     if (name.empty())return false;
 //    if (isPlural(expression))// very week criterion: houses=[1,2,3]
 //        return true;
