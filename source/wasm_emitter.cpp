@@ -3204,8 +3204,13 @@ Code emitNameSection() {
 	Code fieldNameMap;
 	int usedTypes = 0;
 	int usedFields = 0;
+	printf("types: %d\n", types.count());
+	print(types.key_list());
 	for (auto &type_name: types) {
-		auto typ = *types[type_name];
+		if (type_name.empty())continue;// HOW?
+		auto pNode = types[type_name];
+		if (!pNode)continue;// HOW? BUG!
+		auto typ = *pNode;
 		if (typ.kind != structs) // wasmtype_struct
 			continue;
 		usedTypes++;
@@ -3368,7 +3373,8 @@ void clearEmitterContext() {
 //	functionCodes.setDefault(Code());
 	typeMap.setDefault(-1);
 	typeMap.clear();
-	types.clear();
+	initTypes();
+
 //	referenceMap.setDefault(Node());
 //    runtime_data_offset = 0x100000;
 	data_index_end = runtime_data_offset; //0
