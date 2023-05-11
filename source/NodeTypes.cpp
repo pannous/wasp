@@ -127,7 +127,7 @@ Type mapType(String arg, bool throws) {
 	else if (arg == "short")
 		return int32;// vec_i16! careful c++ ABI overflow? should be fine since wasm doesnt have short
 	else if (arg == "int")return int32;
-	else if (arg == "Int")return i32;
+	else if (arg == "IntegerType")return i32;
 	else if (arg == "signed int")return i32s;
 	else if (arg == "unsigned int")return i32;
 	else if (arg == "unsigned char")return int32;
@@ -141,7 +141,7 @@ Type mapType(String arg, bool throws) {
 	else if (arg == "unsigned short")return shorty;
 	else if (arg == "int64")return i64;
 	else if (arg == "uint64")return i64;
-	else if (arg == "Double")return float64;
+	else if (arg == "DoubleType")return float64;
 	else if (arg == "long double")return float64;
 	else if (arg == "double")return float64;
 	else if (arg == "float")return float32;
@@ -160,7 +160,7 @@ Type mapType(String arg, bool throws) {
 	else if (arg == "Type")return int32;// enum
 	else if (arg == "Kind")return int32;// enum (short, ok)
 	else if (arg == "Type")return type32;// enum
-	else if (arg == "Codepoint")return charp;// enum
+	else if (arg == "CodepointType")return charp;// enum
 
 	else if (arg == "string")return stringp;
 	else if (arg == "String*")return stringp;
@@ -415,17 +415,17 @@ Valtype mapTypeToWasm(Type t) {
 }
 
 Primitive mapTypeToPrimitive(Node &n) {
-	if (n == Int)
+	if (n == IntegerType)
 		return Primitive::wasm_int32;
 	if (n == ByteType)
 		return Primitive::byte_i8;// careful in structs!
 	if (n == ShortType)
 		return Primitive::int16;
-	if (n == Long)
+	if (n == LongType)
 		return Primitive::wasm_int64;
-	if (n == Double)
+	if (n == DoubleType)
 		return Primitive::wasm_float64;
-	if (n == Codepoint)
+	if (n == CodepointType)
 		return Primitive::codepoint32;
 	else if (mapType(n.name, false) != unknown_type)
 		return mapType(n.name, false).type;
@@ -434,15 +434,15 @@ Primitive mapTypeToPrimitive(Node &n) {
 }
 
 Valtype mapTypeToWasm(Node &n) {
-	if (n == Int)
+	if (n == IntegerType)
 		return i32;
 	if (n == ByteType)
 		return i32;// careful in structs!
-	if (n == Long)
+	if (n == LongType)
 		return i64;
-	if (n == Double)
+	if (n == DoubleType)
 		return float64;
-	if (n == Codepoint)
+	if (n == CodepointType)
 		return (Valtype) codepoint32;
 
 	if (n.type and n.type != n)
@@ -697,7 +697,7 @@ Valtype mapTypeToWasm(Primitive p) {
 			// ⚠️ careful in arrays we may write byte_i8 as Byte !
 			return Valtype::int32;
 		case byte_char:
-			// ⚠️ careful in arrays we may write byte_char as ByteChar !
+			// ⚠️ careful in arrays we may write byte_char as ByteCharType !
 			return Valtype::int32;
 //        case c_string:// charp
 		case leb_string:

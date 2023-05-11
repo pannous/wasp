@@ -758,13 +758,13 @@ Primitive addTypeFromSize(Node &array, short size) {
 	Kind kind = array.first().kind;
 //    kind= smallestCommonType(node)
 	if (size == 1 and kind == longs)array.type = &ByteType;
-	else if (size == 1 and kind == Kind::codepoint1)array.type = &ByteChar;
+	else if (size == 1 and kind == Kind::codepoint1)array.type = &ByteCharType;
 	else if (size == 1)array.type = &ByteType;
 	else if (size == 2)array.type = &ShortType;
-	else if (size == 4 and kind == longs)array.type = &Int;
-	else if (size == 4 and kind == Kind::codepoint1)array.type = &Codepoint;
-	else if (size == 8 and kind == longs) array.type = &Long;
-	else if (size == 8 and kind == reals) array.type = &Double;
+	else if (size == 4 and kind == longs)array.type = &IntegerType;
+	else if (size == 4 and kind == Kind::codepoint1)array.type = &CodepointType;
+	else if (size == 8 and kind == longs) array.type = &LongType;
+	else if (size == 8 and kind == reals) array.type = &DoubleType;
 	else
 		error("can't infer type from size "s + size);
 	return mapTypeToPrimitive(*array.type);
@@ -2252,9 +2252,9 @@ Code cast(Type from, Type to) {
 // casting in our case also means construction! (x, y) as point == point(x,y)
 [[nodiscard]]
 Code cast(Node &from, Node &to, Function &context) {
-	if (to == Int)return cast(mapTypeToWasm(from), i32);
-	if (to == Long)return cast(mapTypeToWasm(from), i64);
-	if (to == Double)return cast(mapTypeToWasm(from), float64);
+	if (to == IntegerType)return cast(mapTypeToWasm(from), i32);
+	if (to == LongType)return cast(mapTypeToWasm(from), i64);
+	if (to == DoubleType)return cast(mapTypeToWasm(from), float64);
 	Node calle("cast");
 	calle.add(from);
 	calle.add(to);
