@@ -3163,7 +3163,6 @@ void testCurrent() {
 //	assert_emit("√3^2", 3)
 //	assert_emit("3*42≥2*3", 1)
 	assert_emit("i=3;i*-1", -3);
-
 	assert_eval("if(0):{3} else {4}", 4);
 
 //    testKebabCase();

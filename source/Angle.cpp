@@ -117,18 +117,20 @@ bool isPlural(Node &word) {
 }
 
 bool isType(Node &expression) {
-    auto name = expression.name;
-    if (expression.kind == functor) //todo ...
-        return false;
-    if (isPrimitive(expression))
-        return false;
-    if (name.empty())return false;
+	auto name = expression.name;
+	if (expression.kind == functor) //todo ...
+		return false;
+	if (expression.kind == operators)
+		return false;
+	if (isPrimitive(expression))
+		return false;
+	if (name.empty())return false;
 //    if (isPlural(expression))// very week criterion: houses=[1,2,3]
 //        return true;
-    auto type = mapType(name, false);
-    if (type != none and type != unknown_type)
-        return true;
-    return types.has(name);
+	auto type = mapType(name, false);
+	if (type != none and type != unknown_type)
+		return true;
+	return types.has(name);
 }
 
 
