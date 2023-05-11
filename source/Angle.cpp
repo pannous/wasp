@@ -91,8 +91,11 @@ Node getType(Node node) {
     }
     Node typ;
     if (types.has(name)) {
-        typ = *types[name];
-        typ.kind = clazz;
+	    auto pNode = types[name];
+	    if (not pNode)
+		    error1("getType: types corruption: type %s not found (NULL)", name);
+	    typ = *pNode;
+	    typ.kind = clazz;
     } else {
         typ = *new Node(name);
         typ.kind = clazz;
@@ -125,13 +128,15 @@ bool isType(Node &expression) {
 	if (isPrimitive(expression))
 		return false;
 
-    if (name.empty())return false;
+	if (name.empty())return false;
 //    if (isPlural(expression))// very week criterion: houses=[1,2,3]
 //        return true;
 	auto type = mapType(name, false);
-	if (type != none and type != unknown_type)
-		return true;
-	return types.has(name);
+	if (type == none || type == unknown_type)
+		return types.has(name);
+	if (not types.has(name))
+		types.add(name, &expression);
+	return true;
 }
 
 
@@ -784,14 +789,14 @@ Node &classDeclaration(Node &node, Function &function) {
         field.value.longy = pos;
         field["position"] = pos++;
     }
-    if (types.position(name) >= 0) {
-        if (types[name] == dec)
-            warn("compatible declaration of %s already known"s % name);
-        else
-            error("incompatible structure %s already declared:\n"s % name + types[name]->serialize() /*+ node.line*/);
-    } else {
-        types.add(name, dec.clone());
-    }
+	if (types.has(name)) {
+		if (types[name] == dec)
+			warn("compatible declaration of %s already known"s % name);
+		else
+			error("incompatible structure %s already declared:\n"s % name + types[name]->serialize() /*+ node.line*/);
+	} else {
+		types.add(name, dec.clone());
+	}
     return dec;
 }
 
