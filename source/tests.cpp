@@ -3158,7 +3158,7 @@ void testWasmGC() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
-//	testPolymorphism();
+	testPolymorphism();
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("√3^2", 3)
 //	assert_emit("3*42≥2*3", 1)
