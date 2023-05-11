@@ -210,17 +210,17 @@ bool assert_equals_x(float a, float b, chars context = "") {
 
 //bool assert_isx(char *mark, chars expect);
 
-bool assert_isx(chars mark, Node expect) {
-    try {
-        Node left = eval(mark);
-        if (left.kind == reals or expect.kind == reals)
-            return assert_equals_x(left.floate(), expect.floate(), mark);
-        if (left.kind == longs or expect.kind == longs) {
-            int64 b = expect.numbere();
-            return assert_equals_x(left.numbere(), b, mark);
-        }
-        if (left != expect)
-            //			breakpoint_helper
+bool assert_isx(chars wasp, Node expect) {
+	try {
+		Node left = eval(wasp);
+		if (left.kind == reals or expect.kind == reals)
+			return assert_equals_x(left.floate(), expect.floate(), wasp);
+		if (left.kind == longs or expect.kind == longs) {
+			int64 b = expect.numbere();
+			return assert_equals_x(left.numbere(), b, wasp);
+		}
+		if (left != expect)
+			//			breakpoint_helper
             if (left != expect)// Redundant for Breakpoint ;)
                 printf("FAILED %s ≠ %s\n", left.name.data, expect.name.data);
         return left == expect;
@@ -282,12 +282,12 @@ extern List<String> done;
 #define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
 #else
 //// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
-#define assert_is(mark, result) \
-printf("TEST %s==%s\n",#mark,#result); \
+#define assert_is(wasp, result) \
+printf("TEST %s==%s\n",#wasp,#result); \
 debug_line();\
-ok=assert_isx(mark,result);\
-if(ok)printf("PASSED %s==%s\n",#mark,#result);\
-else{printf("FAILED %s==%s\n",#mark,#result); \
+ok=assert_isx(wasp,result);\
+if(ok)printf("PASSED %s==%s\n",#wasp,#result);\
+else{printf("FAILED %s==%s\n",#wasp,#result); \
 backtrace_line()}
 #endif
 

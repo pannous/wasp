@@ -523,11 +523,11 @@ String extractFuncName(const String &fun) {
 
 // compressed arrays
 int stackItemSize(Node &clazz, bool throws) {
-    if (clazz == Bool)return 1;//0;
+    if (clazz == BoolType)return 1;//0;
     if (clazz == ByteType)return 1;
     if (clazz == ShortType)return 2;
-    if (clazz == Int)return 4;
-    if (clazz == Long)return 4;
+    if (clazz == IntegerType)return 4;
+    if (clazz == LongType)return 4;
     if (clazz.kind == unknown)return 4; // hack
     if (clazz.kind == structs)
         return 4;// todo: ignore and just get index from member (OR bad idea: sum up type sizes)

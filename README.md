@@ -127,14 +127,14 @@ in native wasp bundles.
 - It has built-in **mixed content** support *(like HTML5 or even better)*
 - It supports **high-order** composition *(like S-expression or even better)*
 
-|                        | [Wasp](https://github.com/pannous/wasp/wiki)/[Mark](https://github.com/henry-luo/mark)                           | JSON     | HTML | XML                            | S-expr                             | YAML                                  |
-| ---------------------- | ------------------------------ | -------- | ---- | ------------------------------ | ---------------------------------- | ------------------------------------- |
-| Clean syntax           | yes | yes| no   | yes | yes| yes|
-| Fully-typed            | yes | yes| no   | no| yes| yes |
-| Generic                | yes | yes| no   | yes | yes| yes |
-| Mixed content support  | yes | hard     | yes | yes | hard | hard                                  |
-| High-order composition | yes | possible | no   | yes | yes| possible                              |
-| Wide adoption          | not yet | yes| yes | yes | limited                            | limited                               |
+|                        | [Wasp](https://github.com/pannous/wasp/wiki)/[Mark](https://github.com/henry-luo/wasp) | JSON     | HTML | XML | S-expr  | YAML     |
+|------------------------|----------------------------------------------------------------------------------------|----------|------|-----|---------|----------|
+| Clean syntax           | yes                                                                                    | yes      | no   | yes | yes     | yes      |
+| Fully-typed            | yes                                                                                    | yes      | no   | no  | yes     | yes      |
+| Generic                | yes                                                                                    | yes      | no   | yes | yes     | yes      |
+| Mixed content support  | yes                                                                                    | hard     | yes  | yes | hard    | hard     |
+| High-order composition | yes                                                                                    | possible | no   | yes | yes     | possible |
+| Wide adoption          | not yet                                                                                | yes      | yes  | yes | limited | limited  |
 
 
 Wasp has a simple and fully-typed data model. 

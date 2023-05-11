@@ -147,3 +147,5 @@ Type preEvaluateType(Node &node, Function &context);
 Type commonElementType(Node &array);
 
 bool isKeyword(String &op);
+
+Node &groupTypes(Node &expression, Function &context);

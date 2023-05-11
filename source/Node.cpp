@@ -1180,16 +1180,18 @@ void Node::replace(int from, int to, Node *node) {
 }
 
 // INCLUDING to: [a b c d].remove(1,2)==[a d]
+// todo  ⚠️ HIGH DANGER !!! check for bugs
+[[modifying]]  // todo  ⚠️ DANGER! any references pointing to children become INVALID!   ⚠️
 void Node::remove(int from, int to) {// including
-    if (to < 0)to = length;
-    if (to < from)to = from;
-    if (to >= length)to = length - 1;
-    int i = -1;
-    while (to + ++i < length) {
-        if (!children)error("can't remove without children");
-        children[from + i] = children[to + i + 1];// ok if beyond length
-        if (children[from + i].next)
-            children[from + i].next = children + from + 1;
+	if (to < 0)to = length;
+	if (to < from)to = from;
+	if (to >= length)to = length - 1;
+	int i = -1;
+	while (to + ++i < length) {
+		if (!children)error("can't remove without children");
+		children[from + i] = children[to + i + 1];// ok if beyond length
+		if (children[from + i].next)
+			children[from + i].next = children + from + 1;
     }
     length = length - (to - from) - 1;
 }

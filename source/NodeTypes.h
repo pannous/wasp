@@ -130,15 +130,15 @@ enum Valtype {
 };
 
 // types
-//extern const Node Double;
-//extern const Node Long;
-extern Node Int; // maps to int32 in external abi! don't use internally much, only for struct
-extern Node Double;
-extern Node Long;
-extern Node Bool;
-extern Node Codepoint;
+//extern const Node DoubleType;
+//extern const Node LongType;
+extern Node IntegerType; // maps to int32 in external abi! don't use internally much, only for struct
+extern Node DoubleType;
+extern Node LongType;
+extern Node BoolType;
+extern Node CodepointType;// CharType CharacterType
 extern Node ByteType;
-extern Node ByteChar;
+extern Node ByteCharType;// ugyly by design
 extern Node ShortType;
 extern Node StringType;
 
@@ -182,7 +182,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     errors, // internal wasp error, NOT to be used in Angle!
     clazz,
 
-    // each class can be made into a typed list / vector int => int[] :, // as Java class,  primitive int vs Node(kind==int) == boxed Int.
+    // each class can be made into a typed list / vector int => int[] :, // as Java class,  primitive int vs Node(kind==int) == boxed IntegerType.
     //	vectors     use kind=array type=Any
 //	vectors, // any[] vs Node[]  list of type class!  e.g.  numbers xs => xs.type=number(type=vectors)
     arrays, // Node[] vs any[]  untyped array of Nodes. Unlike vector the node is NOT a class! todo: see Classes
@@ -412,11 +412,11 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
             this->kind = Kind::nils;
             return;
         }
-        if (o == &Double)
+        if (o == &DoubleType)
             this->kind = reals;
-        else if (o == &Long)
+        else if (o == &LongType)
             this->kind = longs;
-        else if (o == &Int)
+        else if (o == &IntegerType)
             this->type = wasm_int32;
 //        else if (mapType())
         else
