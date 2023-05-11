@@ -1,6 +1,6 @@
 #include "Util.h"
 
-static chars version = "0.1.1";
+static chars version = "0.1.0";
 
 static bool multi_value = false; // todo gather in one place: config.h
 

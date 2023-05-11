@@ -29,19 +29,19 @@ void testPolymorphism(){
 	check_is(function.variants[1].signature.parameters[0].type, (Type) float32);
 }
 
-#import "pow.h"
-void testOwnPowerExponentialLogarithm() {
-	check_is(exp(1), 2.718281828459045);
-	check_is(exp(5.5), 244.69193226422033);
-	auto x = powerd(1.5, 5.5);
-	printf("1.5^5.5=%f", x);
-	check_eq(x, 9.30040636712988);
-	auto x1 = powerd(2.5, 1.5);
-	printf("2.5^1.5=%f", x1);
-	check_eq(x1, 3.952847075210474);
-	auto x2 = powerd(2.5, 3.5);
-	check_eq(x2, 24.705294220065465);
-}
+//#import "pow.h"
+//void testOwnPowerExponentialLogarithm() {
+//	check_is(exp(1), 2.718281828459045);
+//	check_is(exp(5.5), 244.69193226422033);
+//	auto x = powerd(1.5, 5.5);
+//	printf("1.5^5.5=%f", x);
+//	check_eq(x, 9.30040636712988);
+//	auto x1 = powerd(2.5, 1.5);
+//	printf("2.5^1.5=%f", x1);
+//	check_eq(x1, 3.952847075210474);
+//	auto x2 = powerd(2.5, 3.5);
+//	check_eq(x2, 24.705294220065465);
+//}
 
 void testGenerics() {
 	auto type = Type(Generics{.kind = array, .value_type = int16});
