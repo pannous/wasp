@@ -18,7 +18,7 @@
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
 void testPolymorphism(){
-	auto node = parse("fun test(string a){return a};fun test(float a){return a+1}");
+	auto node = parse("fun test(string a){return a};\nfun test(float b){return b+1}");
 	auto fun = analyze(node);
 	auto function = functions["test"];
 	check_is(function.is_polymorphic, true);

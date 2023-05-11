@@ -134,8 +134,9 @@ bool isType(Node &expression) {
 	auto type = mapType(name, false);
 	if (type == none || type == unknown_type)
 		return types.has(name);
-	return types.has(name);
 //	if (not types.has(name))
+//		error1("isType: type %s not found"s% name);
+	return types.has(name);
 //		types.add(name, &expression);
 //	return true;
 }
@@ -518,7 +519,7 @@ bool isPrimitive(Node &node) {
 	if (&node == &ByteChar)return true;
 	if (&node == &Codepoint)return true;
 	if (&node == &ShortType)return true;
-	if (&node == &StringType)return true;
+	if (&node == &StringType)return true;// todo uh not really primitive!?
 	Kind type = node.kind;
 	if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
 		return true;
@@ -560,6 +561,7 @@ void initTypes() {
 	types.add("char", &Codepoint);// todo : warn about abi conflict? CAN'T USE IN STRUCT
 	types.add("character", &Codepoint);
 	types.add("charpoint", &Codepoint);
+	types.add("codepoint", &Codepoint);
 	types.add("i32", &Int);
 	types.add("int", &Int);
 	types.add("int32", &Int);
@@ -567,6 +569,7 @@ void initTypes() {
 	types.add("long", &Long);
 	types.add("double", &Double);
 	types.add("float", &Double);
+	types.add("string", &StringType);
 	for (int i = 0; i < types.size(); ++i) {
 		auto typ = types.values[i];
 		if (int64(typ) < 0 or int64(typ) > 10000000l)
@@ -714,8 +717,8 @@ void updateLocal(Function &context, String name, Type type) {
 				local.type = genericType(array, type);
 			}
 		} else
-			warn("local in context %s already known "s % context.name + name + " with type " + typeName(oldType) +
-			     ", ignoring new type " + type_name);
+			warn("local "s + name + " in context %s already known "s % context.name + " with type " +
+			     typeName(oldType) + ", ignoring new type " + type_name);
 	}
 	// ok, could be cast'able!
 }
@@ -723,6 +726,16 @@ void updateLocal(Function &context, String name, Type type) {
 // return: done?
 // todo return clear enum known, added, ignore ?
 bool addLocal(Function &context, String name, Type type, bool is_param) {
+	if (isKeyword(name))
+		error("keyword as local name: "s + name);
+//	if (name == "conditon"){
+//		todo("addLocal");
+//	}
+//	if (eq(name.data, "condition"))
+//		return true;
+////		todo("addLocal");
+//	if (name == "if")
+//		todo("addLocal");
 	if (name.empty()) {
 		warn("empty reference in "s + context);
 		return true;// 'done' ;)
@@ -851,14 +864,16 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 		}
 	}
 	Function &function = functions[name]; // different from context!
+	function.name = name;
 	function.is_declared = true;
 	function.is_import = false;
 	// todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
 	if (setter_operators.has(name) or key_pair_operators.has(name)) {
 		body = analyze(body, function);
-		if (arguments.has("global"))
-			globals.insert_or_assign(name, Global{.index=globals.count(), .name=name, .type=mapType(
-					body.type), .value=body.clone()});
+		if (arguments.has("global")) {
+			auto global = Global{.index=globals.count(), .name=name, .type=mapType(body.type), .value=body.clone()};
+			globals.insert_or_assign(name, global);
+		}
 		return groupSetter(name, body, function);
 	}
 
@@ -944,6 +959,8 @@ Node &groupDeclarations(Node &expression, Function &context) {
 	}
 
 	auto first = expression.first();
+//	if (contains(functor_list, first.name))
+//		return expression;
 	if (expression.length == 2 and isType(first.first()) and
 	    expression.last().kind == objects) {// c style double sin() {}
 		expression = groupTypes(expression, context);
@@ -955,6 +972,8 @@ Node &groupDeclarations(Node &expression, Function &context) {
 			continue;
 		}
 		String &op = node.name;
+		if (isKeyword(op))
+			continue;
 		if (isPrimitive(node) and node.isSetter()) {
 			if (globals.has(op)) {
 				warn("Cant set globals yet!");
@@ -1012,6 +1031,16 @@ Node &groupDeclarations(Node &expression, Function &context) {
 		return groupFunctionDeclaration(name, 0, left, left, rest, context);
 	}
 	return expression;
+}
+
+bool isKeyword(String &op) {
+	if (operator_list.has(op))return true;
+	if (function_operators.has(op))return true;
+	if (prefixOperators.has(op))return true;
+	if (suffixOperators.has(op))return true;
+	if (contains(functor_list, op))return true;
+	if (contains(control_flows, op))return true;
+	return false;
 }
 
 Node extractReturnTypes(Node decl, Node body) {
@@ -1323,6 +1352,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 	for (int i = 0; i < expressiona.length; ++i) {
 		Node &node = expressiona.children[i];
 		String &name = node.name;
+
+		// todo: MOVE!
 		if (name == "if") // kinda functor
 		{
 			auto args = expressiona.from("if");
@@ -1331,6 +1362,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 			if (i == 0 and j == expressiona.length - 1)return iff;
 			if (j > i)
 				expressiona.replace(i, j, iff);// todo figure out if a>b c d e == if(a>b)then c else d; e boundary
+			if (i == 0)
+				return expressiona;
 			continue;
 		}
 		if (name == "while") {
@@ -1446,7 +1479,6 @@ void addLibraryFunctionAsImport(Function &func) {
 	import.signature = func.signature;
 	import.signature.type_index = -1;
 	import.signature.parameters = func.signature.parameters;
-//    import.signature.parameter_types = func.signature.parameter_types;
 	import.is_runtime = false;// because here it is an import!
 	import.is_import = true;
 	import.is_used = true;
