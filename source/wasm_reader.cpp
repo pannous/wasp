@@ -510,9 +510,9 @@ void consumeExportSection() {
         // todo: use wasm_signature if demangling fails, see merge(signature) below
 
         if (demangled.contains("::")) {
-            String typ = demangled.to("::");
-            auto type = mapType(typ, true);// Primitive::self
-            fun.signature.add(type, "self");
+	        String typ = demangled.to("::");
+	        auto type = mapType(typ);// Primitive::self
+	        fun.signature.add(type, "self");
         }
 // e.g. List<String>::add (String) has one arg, but wasm signature is (i32,i32):i32  ["_ZN4ListI6StringE3addES0_"]
 // todo: demangle further and put into multi-dispatch
@@ -520,9 +520,9 @@ void consumeExportSection() {
         List<String> args = demangle_args(func0);
         for (String &arg: args) {
             if (arg.empty())continue;
-            fun.signature.add(mapType(arg, true));
+	        fun.signature.add(mapType(arg));
             if (&fun != &fun0)
-                fun0.signature.add(mapType(arg, true));
+	            fun0.signature.add(mapType(arg));
         }
         if (not(demangled.contains("("))) { // extern "C" pure function name
             fun.signature = wasm_signature;
