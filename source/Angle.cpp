@@ -252,8 +252,9 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 
 	Signature signature = function.signature;
 	auto already_defined = function.signature.size() > 0;
-	if (function.is_polymorphic or already_defined)
+	if (function.is_polymorphic or already_defined) {
 		signature = *new Signature();
+	}
 	for (Arg arg: args) {
 		auto name = arg.name;
 		if (empty(name))
@@ -262,9 +263,10 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 		if (function.locals.has(name)) {
 			error("duplicate argument name: "s + name);
 		}
-		addLocal(function, name, arg.type, true);
 		signature.add(arg.type, name);// todo: arg type, or pointer
+		addLocal(function, arg.name, arg.type, true);
 	}
+
 	if (params.value.node) {
 		Node &ret = params.values();
 		Type type = mapType(ret.name);
@@ -298,9 +300,12 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 	} else if (!already_defined) {
 		function.signature = signature;
 	}
-	// NOW add locals to function context:
-	for (auto arg: variant->signature.parameters)
+	for (auto arg: args) {
 		addLocal(*variant, arg.name, arg.type, true);
+	}
+	// NOW add locals to function context:
+//	for (auto arg: variant->signature.parameters)
+//		addLocal(*variant, arg.name, arg.type, true);
 	return variant->signature;
 //	return signature;
 }
