@@ -118,9 +118,14 @@ bool isPlural(Node &word) {
 
 bool isType(Node &expression) {
     auto name = expression.name;
+    if (expression.kind == functor) //todo ...
+        return false;
+    if (name.empty())return false;
 //    if (isPlural(expression))// very week criterion: houses=[1,2,3]
 //        return true;
-    if (name.empty())return false;
+    auto type = mapType(name, false);
+    if (type != none and type != unknown_type)
+        return true;
     return types.has(name);
 }
 
@@ -170,6 +175,20 @@ Node interpret(String code) {
 Code &compile(String code, bool clean = true);// exposed to wasp.js
 #endif
 
+void debug_wasm_file() {
+#if not WASM
+    print("validate-main.sh");
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+    system("./validate-main.sh");
+    auto errors = readFile("main.wasm.validation");
+    print(errors);
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+    if (strlen(errors) > 0) {
+        exit(1);
+    }
+#endif
+}
+
 // todo: merge with emit
 Node eval(String code) {
 #ifdef RUNTIME_ONLY
@@ -184,6 +203,7 @@ Node eval(String code) {
     {
         Code &binary = compile(code, true);
         binary.save();// to debug
+        debug_wasm_file();
         smart_pointer_64 results = binary.run();
         auto _resultNode = smartNode(results);
         if (!_resultNode)return ERROR;
@@ -219,7 +239,10 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
         }
     }
 
-    Signature &signature = function.signature;
+    Signature signature = function.signature;
+    auto already_defined = function.signature.size() > 0;
+    if (function.is_polymorphic or already_defined)
+        signature = *new Signature();
     for (Arg arg: args) {
         auto name = arg.name;
         if (empty(name))
@@ -236,7 +259,39 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
         Type type = mapType(ret.name);
         signature.returns(type);
     }
-    return signature;
+
+    Function *variant = &function;
+    if (already_defined /*but not yet polymorphic*/) {
+        if (signature == function.signature)
+            return function.signature;// function.signature; // ok compatible
+        // else split two variants
+        Function old_variant = function;// clone by value!
+        Function new_variant = function;// clone by value!
+        check_is(old_variant.name, function.name);
+        old_variant.signature = function.signature;
+        new_variant.signature = signature;// ^^ different
+        function.is_polymorphic = true;
+//			function.is_used … todo copy other attributes?
+        function.signature = *new Signature();// empty
+        function.variants.add(old_variant);
+        function.variants.add(new_variant);
+        variant = &new_variant;
+    } else if (function.is_polymorphic) {
+        variant = new Function();
+        for (Function &fun: function.variants)
+            if (fun.signature == signature)
+                return fun.signature;// signature;
+        variant->name = function.name;
+        variant->signature = signature;
+        function.variants.add(*variant);
+    } else if (!already_defined) {
+        function.signature = signature;
+    }
+    // NOW add locals to function context:
+    for (auto arg: variant->signature.parameters)
+        addLocal(*variant, arg.name, arg.type, true);
+    return variant->signature;
+//	return signature;
 }
 
 String extractFunctionName(Node &node) {
@@ -520,7 +575,7 @@ Node &groupTypes(Node &expression, Function &context) {
 	 * */
     if (types.size() == 0)initTypes();
     if (isType(expression)) {// double \n x,y,z  extra case :(
-        Node &type = *types[expression.name];
+        Node type = getType(expression);
         auto is_primitive = isPrimitive(type);
         if (not is_primitive and (type.kind == structs or type.kind == clazz)) // or type == wasmtype_struct
             return constructInstance(expression, context);

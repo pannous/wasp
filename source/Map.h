@@ -38,6 +38,13 @@ public: // todo careful Map<char*,…> eq
     bool leave_blank = false;// true generally VERY BAD IDEA! map["x"] would return uninitialized &T, e.g. deep fields 0
     //	bool leave_blank == use_malloc_constructor = true;// return reference to freshly nulled malloc data, same ^^
 
+    List<S> key_list() {
+        return List(keys, count());
+    }
+
+    List<T> value_list() {
+        return List(values, count());
+    }
 
     // unnecessary :
 //    Map() {
