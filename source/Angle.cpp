@@ -595,7 +595,7 @@ Node &groupTypes(Node &expression, Function &context) {
 	 * */
 	if (types.size() == 0)initTypes();
 	if (isType(expression)) {// double \n x,y,z  extra case :(
-		Node &type = *types[expression.name];
+		Node type = getType(expression);
 		auto is_primitive = isPrimitive(type);
 		if (not is_primitive and (type.kind == structs or type.kind == clazz)) // or type == wasmtype_struct
 			return constructInstance(expression, context);
@@ -626,63 +626,46 @@ Node &groupTypes(Node &expression, Function &context) {
 			node = groupTypes(node, context);// double (x,y,z)
 			continue;
 		}
-		auto name = node.name;
-
-		Node *typed = 0;
+		static Node typeDummy;// todo: remove how?
+		Node &typed = typeDummy;
 //		if (node.next and not is_operator(node.next->name[0])) {
 //			typed = *node.next;
-		expression.remove(i, i);// todo: DANGER node is no longer valid!
-		if (i < expression.length and not is_operator(expression.children[i].name[0])) {
-			typed = &expression.children[i];// was i+1 but removed i!
+		if (i < expression.length - 1 and not is_operator(expression.children[i + 1].name[0])) {
+			typed = expression.children[i + 1];
 		} else if (i > 1) {
-			typed = &expression.children[i - 1];
+			typed = expression.children[i - 1];
 		} else {
 #ifdef DEBUG
 			error("Type without object: "s + node.serialize() + "\n" + node.Line());// may be ok
 #else
 			error("Type without object: "s+node.serialize());// may be ok
 #endif
+			typed = NIL;
 		}
-		if (operator_list.has(name)) // *
-			continue; // 3.3 as int …
+//			if (operator_list.has(typed.name))
+//				continue; // 3.3 as int …
+		if (not types.has(node.name))continue;
+		auto aType = types[node.name];
+		if (not aType)continue;
 
-
-		auto aType = types[name];
-		if (not aType) {
-			auto type = mapType(name, false);
-			if (type == unknown_type) {
-				warn("Unknown type: "s + name);
-				continue;
-			} else {
-				aType = new Node(name);
-				aType->kind = clazz;
-			}
-		}
-		if (!typed)continue;
-
-		if (typed->name == "as") { // danger edge cases!
-			// todo fix
+		if (typed.name == "as") { // danger edge cases!
 			expression.remove(i - 1, i);
 			expression.children[i - 2].type = aType;// todo bug, should be same as
-			typed = &expression.children[i - 2];
-			typed->type = aType;
+			typed = expression.children[i - 2];
+			typed.type = aType;
 			continue;
 		} else {
 			expression.remove(i, i);
 		}
-
-		while (typed && isPrimitive(*typed) or (typed->kind == reference and typed->length == 0)) {
-			// ^^ BAD criterion for next!
-			typed->type = aType;// ref ok because types can't be deleted ... rIgHt?
-			if (typed->kind == reference or typed->isSetter()) {
-				auto type = mapType(aType->name, false);
-				addLocal(context, typed->name, type, false);
-			}
+		while (isPrimitive(typed) or
+		       (typed.kind == reference and typed.length == 0)) {// BAD criterion for next!
+			typed.type = aType;// ref ok because types can't be deleted ... rIgHt?
+			if (typed.kind == reference or typed.isSetter())
+				addLocal(context, typed.name, mapType(aType->name), false);
 			// HACK for double x,y,z => z.type=Double !
 			if (i + 1 < expression.length)
-				typed = &expression[++i];
-			else if (typed->next)// todo remove hack
-				typed = typed->next;
+				typed = expression[++i];
+			else if (typed.next) typed = *typed.next;
 				// else outer group types currently not supported ((double x) y z)
 			else break;
 		}
