@@ -612,18 +612,22 @@ String &String::lower() {
 }
 
 void String::shift(int i) {
-    while (length > 0 and i-- > 0) {
-        data++;
-        length--;
-    }
+	while (length > 0 and i-- > 0) {
+		data++;
+		length--;
+	}
 }
 
 String String::from(const char *string) {
-    return substring(this->indexOf(string) + strlen(string));
+	return substring(this->indexOf(string) + strlen(string));
+}
+
+String &String::neu(const char *string) {
+	return *new String(string);
 }
 
 void error1(String message, chars file, int line) {
-    error1(message.data, file, line);
+	error1(message.data, file, line);
 }
 
 

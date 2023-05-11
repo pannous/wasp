@@ -229,12 +229,10 @@ Node eval(String code) {
 
 }
 
-Node &groupTypes(Node &expression, Function &context);
-
 Signature &groupFunctionArgs(Function &function, Node &params) {
 	//			left = analyze(left, name) NO, we don't want args to become variables!
 	List<Arg> args;
-	Node &nextType = Double;
+	Node &nextType = DoubleType;
 	if (params.length == 0) {
 		params = groupTypes(params, function);
 		if (params.name != function.name)
@@ -511,13 +509,13 @@ bool isVariable(Node &node) {
 
 bool isPrimitive(Node &node) {
 	// should never be cloned so always compare by reference ok?
-	if (&node == &Int)return true;
-	if (&node == &Bool)return true;
-	if (&node == &Long)return true;
-	if (&node == &Double)return true;
+	if (&node == &IntegerType)return true;
+	if (&node == &BoolType)return true;
+	if (&node == &LongType)return true;
+	if (&node == &DoubleType)return true;
 	if (&node == &ByteType)return true;
-	if (&node == &ByteChar)return true;
-	if (&node == &Codepoint)return true;
+	if (&node == &ByteCharType)return true;
+	if (&node == &CodepointType)return true;
 	if (&node == &ShortType)return true;
 	if (&node == &StringType)return true;// todo uh not really primitive!?
 	Kind type = node.kind;
@@ -529,21 +527,21 @@ bool isPrimitive(Node &node) {
 }
 
 Map<String, Node *> types = {.capacity=1000}; // builtin and defined Types
-//const Node Long("Long", clazz);
-//const Node Double("Double", clazz);//.setType(type);
+//const Node LongType("LongType", clazz);
+//const Node DoubleType("DoubleType", clazz);//.setType(type);
 // todo : when do we really need THESE Nodes instead of Type / Primitives?
-Node Long("Long", clazz);
-Node Double("Double", clazz);//.setType(type);
-Node Int("Int", clazz);
+Node LongType("LongType", clazz);
+Node DoubleType("DoubleType", clazz);//.setType(type);
+Node IntegerType("IntegerType", clazz);
 Node ByteType("Byte", clazz);// Byte conflicts with mac header
-Node ByteChar("ByteChar", clazz);// ugly by design: don't use ascii chars like that.
+Node ByteCharType("ByteCharType", clazz);// ugly by design: don't use ascii chars like that.
 Node ShortType("Short", clazz);// mainly for c abi interaction, not used internally (except for compact arrays)
 Node StringType("String", clazz);
-Node Bool("Bool", clazz);
-Node Codepoint("Codepoint", clazz);
+Node BoolType("BoolType", clazz);
+Node CodepointType("CodepointType", clazz);
 
-//const Node Double{.name="Double", .kind=classe};//.setType(type);
-//const Node Double{name:"Double", kind:classe};//.setType(type);
+//const Node DoubleType{.name="DoubleType", .kind=classe};//.setType(type);
+//const Node DoubleType{name:"DoubleType", kind:classe};//.setType(type);
 
 // todo: see NodeTypes.h for overlap with numerical returntype integer …
 // these are all boxed class types, for primitive types see Type and Kind
@@ -554,21 +552,21 @@ void initTypes() {
 	types.add("int8", &ByteType);// use in u8.load etc
 	types.add("uint8", &ByteType);// use in u8.load etc
 	types.add("byte", &ByteType);// use in u8.load etc
-//    types.add("sint8", &Int); NOT MAPPED until required
-//    types.add("sint", &Int);
+//    types.add("sint8", &IntegerType); NOT MAPPED until required
+//    types.add("sint", &IntegerType);
 
 //    types.add("char", &Byte);
-	types.add("char", &Codepoint);// todo : warn about abi conflict? CAN'T USE IN STRUCT
-	types.add("character", &Codepoint);
-	types.add("charpoint", &Codepoint);
-	types.add("codepoint", &Codepoint);
-	types.add("i32", &Int);
-	types.add("int", &Int);
-	types.add("int32", &Int);
-	types.add("integer", &Int);
-	types.add("long", &Long);
-	types.add("double", &Double);
-	types.add("float", &Double);
+	types.add("char", &CodepointType);// todo : warn about abi conflict? CAN'T USE IN STRUCT
+	types.add("character", &CodepointType);
+	types.add("charpoint", &CodepointType);
+	types.add("codepoint", &CodepointType);
+	types.add("i32", &IntegerType);
+	types.add("int", &IntegerType);
+	types.add("int32", &IntegerType);
+	types.add("integer", &IntegerType);
+	types.add("long", &LongType);
+	types.add("double", &DoubleType);
+	types.add("float", &DoubleType);
 	types.add("string", &StringType);
 	for (int i = 0; i < types.size(); ++i) {
 		auto typ = types.values[i];
@@ -618,54 +616,52 @@ Node &groupTypes(Node &expression, Function &context) {
 			expression.type = getType(expression).clone();
 		}
 	}
+//	Node typed_list;
 	for (int i = 0; i < expression.length; i++) {
 		Node &node = expression.children[i];
 		if (not isType(node))
 			continue;
 		if (node.length > 0) {
 			node = groupTypes(node, context);// double (x,y,z)
+//			typed_list.add(node);
 			continue;
-		}
-		static Node typeDummy;// todo: remove how?
-		Node &typed = typeDummy;
-//		if (node.next and not is_operator(node.next->name[0])) {
-//			typed = *node.next;
-		if (i < expression.length - 1 and not is_operator(expression.children[i + 1].name[0])) {
-			typed = expression.children[i + 1];
-		} else if (i > 1) {
-			typed = expression.children[i - 1];
-		} else {
-#ifdef DEBUG
-			error("Type without object: "s + node.serialize() + "\n" + node.Line());// may be ok
-#else
-			error("Type without object: "s+node.serialize());// may be ok
-#endif
-			typed = NIL;
 		}
 //			if (operator_list.has(typed.name))
 //				continue; // 3.3 as int …
 		if (not types.has(node.name))continue;
 		auto aType = types[node.name];
 		if (not aType)continue;
+		expression.remove(i, i);// move type to type field of instance
 
-		if (typed.name == "as") { // danger edge cases!
-			expression.remove(i - 1, i);
-			expression.children[i - 2].type = aType;// todo bug, should be same as
-			typed = expression.children[i - 2];
-			typed.type = aType;
-			continue;
+		Node *typed = 0;
+		if (i < expression.length and not is_operator(expression.children[i].name[0])) {
+			typed = &expression.children[i];
+		} else if (i > 1) { // special reverse syntax a int, jeff as int
+			typed = &expression.children[i - 1];
+			if (typed->name == "as") { // danger edge cases!
+				expression.remove(i - 1, i);
+				expression.children[i - 2].type = aType;// todo bug, should be same as
+				typed = &expression.children[i - 2];
+				typed->type = aType;
+				continue;
+			}
 		} else {
-			expression.remove(i, i);
+#ifdef DEBUG
+			error("Type without object: "s + node.serialize() + "\n" + node.Line());// may be ok
+#else
+			error("Type without object: "s+node.serialize());// may be ok
+#endif
 		}
-		while (isPrimitive(typed) or
-		       (typed.kind == reference and typed.length == 0)) {// BAD criterion for next!
-			typed.type = aType;// ref ok because types can't be deleted ... rIgHt?
-			if (typed.kind == reference or typed.isSetter())
-				addLocal(context, typed.name, mapType(aType->name), false);
-			// HACK for double x,y,z => z.type=Double !
+
+		while (isPrimitive(*typed) or
+		       (typed->kind == reference and typed->length == 0)) {// BAD criterion for next!
+			typed->type = aType;// ref ok because types can't be deleted ... rIgHt?
+			if (typed->kind == reference or typed->isSetter())
+				addLocal(context, typed->name, mapType(aType->name), false);
+			// HACK for double x,y,z => z.type=DoubleType !
 			if (i + 1 < expression.length)
-				typed = expression[++i];
-			else if (typed.next) typed = *typed.next;
+				typed = &expression[++i];
+			else if (typed->next) typed = typed->next;
 				// else outer group types currently not supported ((double x) y z)
 			else break;
 		}
@@ -805,7 +801,7 @@ Node &classDeclaration(Node &node, Function &function) {
 		if (not type or not isType(*type) or not types.has(type->name))
 			error("class field needs type");
 		else
-			field.type = types[type->name]; // int => Int
+			field.type = types[type->name]; // int => IntegerType
 		field.kind = fields;
 		field.value.longy = pos;
 		field["position"] = pos++;
@@ -1045,7 +1041,7 @@ bool isKeyword(String &op) {
 }
 
 Node extractReturnTypes(Node decl, Node body) {
-	return Double;// Long;// todo
+	return DoubleType;// LongType;// todo
 }
 
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)

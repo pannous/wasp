@@ -17,7 +17,17 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
-void testPolymorphism(){
+void testTypes() {
+	result = analyze(parse("int a"));
+	check_is(result.kind, Kind::reference);
+	check_is(result.type, IntegerType);// IntegerType
+
+	result = analyze(parse("string b"));
+	check_is(result.kind, Kind::reference);
+	check_is(result.type, StringType);
+}
+
+void testPolymorphism() {
 	auto node = parse("fun test(string a){return a};\nfun test(float b){return b+1}");
 	auto fun = analyze(node);
 	auto function = functions["test"];
@@ -285,7 +295,7 @@ void testStruct2() {
 	Node &node = parse(code0);
 //    assert_equals(node.kind, Kind::structs);
 	assert_equals(node.length, 3);
-	assert_equals(Int, node[1].type);
+	assert_equals(IntegerType, node[1].type);
 //    const char *code = "struct point{a:int b:int c:string};x=point(1,2,'ok');x.b";
 // basal node_pointer act as structs
 	assert_emit("point{a:int b:int c:string};x=point(1,2,'ok');x.b", 2)
@@ -717,7 +727,7 @@ void testArrayS() {
 //	assert_equals( node.kind, reference);
 //	assert_equals( node.kind, arrays);
 	assert_equals(node.kind, groups);
-	assert_equals(node.type, &Double);
+	assert_equals(node.type, &DoubleType);
 }
 
 void testArrayInitialization() {// via Units
@@ -3158,6 +3168,8 @@ void testWasmGC() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+
+	testTypes();
 //	testPolymorphism();
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("√3^2", 3)

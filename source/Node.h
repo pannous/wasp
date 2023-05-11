@@ -805,6 +805,7 @@ public:
 
     void replace(int from, int to, Node *node);
 
+    [[modifying]]  // todo  ⚠️ DANGER! any references pointing to children become INVALID!   ⚠️
     void remove(int at, int to);
 
     Node &metas() {
