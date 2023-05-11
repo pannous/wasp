@@ -98,6 +98,7 @@ bool isFunction(String op, bool deep_search = true);
 // todo: in fact hide most of this under 'number' magic umbrella
 // todo: ALL types need to be emitted in type section to keep type indices valid? (wasm struct/arrays?)
 extern Map<String, Node *> types;// by name
+void initTypes();
 
 extern "C" int64 run_wasm_file(chars file);
 
