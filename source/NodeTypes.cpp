@@ -112,7 +112,6 @@ Type mapType(Node *arg) {
 //    todo("mapType Node")
 }
 
-// typeByName(name);
 Type mapType(String arg, bool throws) {
 	if (arg.startsWith("const "))
 		arg = arg.substring(6);

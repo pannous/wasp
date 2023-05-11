@@ -589,10 +589,11 @@ Primitive mapTypeToPrimitive(Node &n);
 
 Valtype mapTypeToWasm(Primitive p);
 
-Type mapType(String arg, bool throws);
+Type mapType(String arg, bool throws = false);
 
 Type mapType(Node &arg);
 
+//Type mapType(Node *arg,bool throws=false);
 Type mapType(Node *arg);
 
 chars typeName(Valtype t, bool fail = true);

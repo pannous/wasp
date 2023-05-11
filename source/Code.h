@@ -1027,8 +1027,8 @@ public:
                 return false;
         }
         if (return_types != other.return_types) {
-            breakpoint_helper
-            return false;
+	        breakpoint_helper
+	        return false;
         }
         for (int i = 0; i < return_types.size(); ++i) {
             if (return_types[i] != other.return_types[i])
@@ -1075,11 +1075,11 @@ public:
 
     Signature &add(Type t, String name = "") {
 #if DEBUG and not WASM
-        debug_name += typeName(t);
-        debug_name += " ";
+	    debug_name += typeName(t);
+	    debug_name += " ";
 #endif
-        parameters.add(Arg{"", name, t, Node{}});// todo modifiers
-        return *this;
+	    parameters.add(Arg{"", name, t, Node{}});// todo modifiers
+	    return *this;
     }
 
     Signature &add(Valtype t, String name = "") {

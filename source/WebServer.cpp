@@ -34,7 +34,7 @@ char *server_root = "docs/";// todo!
 
 static char index_html[100] = "index.html";
 //static char index_html[100] = "wasp.html";
-static char wasp_js[100] = "wasp.js";//
+static char wasp_js[100] = "wasp.js";// docs
 static char wasp_css[100] = "wasp.css";
 static char favicon_ico[100] = "favicon.ico";
 
@@ -59,6 +59,9 @@ struct ReqInfo {
 	int status;
 };
 
+pid_t pid;
+int listener = 0;
+struct sockaddr_in servaddr;
 
 char const *query0;
 
@@ -399,25 +402,12 @@ void FreeReqInfo(struct ReqInfo *reqinfo) {
 }
 
 int Return_Resource(int conn, int resource, struct ReqInfo *reqinfo) {
-	char buffer[BUFSIZ];
-	ssize_t nread;
-	while ((nread = read(resource, buffer, BUFSIZ)) > 0) {
-		if (write(conn, buffer, nread) < 1)
-			Error_Quit("Error sending file.");
-	}
-	return 0;
-}
-
-
-int xxxReturn_Resource(int conn, int resource, struct ReqInfo *reqinfo) {
-//	char c;
-	int chunk_length = 10000;
-	char cs[chunk_length];
+	char c;
 	size_t i;
-	while ((i = read(resource, &cs, chunk_length))) {
+	while ((i = read(resource, &c, 1))) {
 		if (i < 0)
 			Error_Quit("Error reading from file.");
-		if (write(conn, &cs, chunk_length) < 1)
+		if (write(conn, &c, 1) < 1)
 			Error_Quit("Error sending file.");
 	}
 	return 0;
@@ -434,21 +424,19 @@ int Check_Resource(struct ReqInfo *reqinfo) {
 	CleanURL(resource);// todo security!?
 	/* Concatenate resource name to server root, and try to open */
 	if (contains(resource, wasp_js))
-		return open(concat(server_root,wasp_js), O_RDONLY);
+		return open(wasp_js, O_RDONLY);
 	if (contains(resource, wasp_css))
-		return open(concat(server_root,wasp_css), O_RDONLY);
+		return open(wasp_css, O_RDONLY);
 	if (contains(resource, favicon_ico))
-		return open(concat(server_root,favicon_ico), O_RDONLY);
-	if (eq(resource, "/"))
-		return open(concat(server_root,index_html), O_RDONLY);
+		return open(favicon_ico, O_RDONLY);
 	if (allow_arbitrary_files) {
-		print("⚠️ Serve_Resource allow_arbitrary_file: "s + resource);
-		resource = (char *) concat(server_root, resource);// DONT allow arbitrary files
+		if (eq(resource, "/"))resource = index_html;
+		if (resource[0] == '/')resource = (char *) concat(".", resource);// DONT allow arbitrary files
+		else resource = (char *) concat(server_root, resource);// DONT allow arbitrary files
+		print("Serve_Resource "s + resource);
 		return open(resource, O_RDONLY);
-	} else {
-		print("Serve_Resource allow_arbitrary_files FORBIDDEN: "s + resource);
+	} else
 		return open(index_html, O_RDONLY);
-	}
 }
 
 int Return_Error_Msg(int conn, struct ReqInfo *reqinfo) {
@@ -498,15 +486,14 @@ int Output_HTTP_Headers(int conn, struct ReqInfo *reqinfo) {
 void Serve_Resource(ReqInfo reqinfo, int connection_id) {
 	int resource = 0;
 	printf("Serve_Resource!!\n");
-	printf("resource: %s\n", reqinfo.resource);
-	printf("referer: %s\n", reqinfo.referer);
-	printf("useragent: %s\n", reqinfo.useragent);
+	printf("%s\n", reqinfo.resource);
+	printf("%s\n", reqinfo.referer);
+	printf("%s\n", reqinfo.useragent);
 	/* Check whether resource exists, whether we have permission
    to access it, and update status code accordingly.     */
 	bool bad = false;
 	if (reqinfo.status == 200)
 		if ((resource = Check_Resource(&reqinfo)) < 0) {
-			printf("Check_Resource failed: %s\n", strerror(errno));
 			if (errno == EACCES)
 				reqinfo.status = 401;
 			else
@@ -515,7 +502,7 @@ void Serve_Resource(ReqInfo reqinfo, int connection_id) {
 		}
 	/* Output HTTP response headers if we have a full request */
 //	if (reqinfo.type == FULL)
-//		Output_HTTP_Headers(connection_id, &reqinfo);
+//		Output_HTTP_Headers(conn, &reqinfo);
 
 	/* Service the HTTP request */
 	bad = Return_Resource(connection_id, resource, &reqinfo);
@@ -531,125 +518,67 @@ void Serve_Resource(ReqInfo reqinfo, int connection_id) {
 
 void start_server(int port = SERVER_PORT) {
 	signal(SIGPIPE, SIG_IGN);
-	printf("STARTING SERVER!\nhttp://localhost:%d/\n", port);
-	fflush(stdout);
+	//	https://stackoverflow.com/questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
 
-	// Create the listening socket
-	int listener = socket(AF_INET, SOCK_STREAM, 0);
-	if (listener < 0)
+	printf("STARTING SERVER!\n http://localhost:%d\n", port);
+	if (port < 1024)print("sudo wasp if port < 1024!");
+	fflush(stdout);
+	/* Create socket */
+	if ((listener = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		Error_Quit("Couldn't create listening socket.");
 
-	// Enable address reuse on the listening socket
-	int flag = 1;
+	int flag = 1;// allow you to bind a local port that is in TIME_WAIT.
+	//	This is very useful to ensure you don't have to wait 4 minutes after killing a server before restarting it.
 	setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
 
-	// Bind the listening socket to the specified port
-	struct sockaddr_in servaddr = {0};
+	/* Populate socket address structure */
+	memset(&servaddr, 0, sizeof(servaddr));
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	servaddr.sin_port = htons(port);
-	if (bind(listener, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0)
+
+	/* Assign socket address to socket */
+	//	__bind<int&,sockaddr *,uint64> x=
+	bind(listener, (struct sockaddr *) &servaddr, sizeof(servaddr));
+	if (listener < 0)
 		Error_Quit("Couldn't bind listening socket.");
 
-	// Start listening for incoming connections
+	/* Make socket a listening socket */
+	//  	if (listen(listener, BACKLOG) < 0)
 	if (listen(listener, LISTENQ) < 0)
 		Error_Quit("Call to listen failed.");
 
-	// Accept incoming connections and handle them in child processes
+	printf("listening on %d port %d\n", INADDR_ANY, port);
+
+	/* Loop infinitely to accept and service connections */
 	while (1) {
+		/* Wait for connection */
+		// NOT debuggable with XCODE nor Clion :(
 		int conn = accept(listener, NULL, NULL);
-		if (conn < 0) {
-			perror("Error calling accept()");
-			continue;
-		}
-
-		pid_t pid = fork();
-		if (pid < 0) {
-			perror("Error forking child process");
-			close(conn);
-			continue;
-		} else if (pid == 0) {
-			// Child process handles incoming connection
-			close(listener);
+		if (conn < 0)
+			Error_Quit("Error calling accept()! debugging not supported, are you debugging?");
+		else print("connection accept OK");
+		// WORKS FINE, but not when debugging
+		/* Fork child process to service connection */
+		pid = fork();
+		if (pid == 0) {
+			/* This is now the forked child process, so close listening socket and service request  */
+			if (close(listener) < 0)
+				Error_Quit("Error closing listening socket in child.");
 			Service_Request(conn);
-			close(conn);
+			/* Close connected socket and exit forked process */
+			if (close(conn) < 0)
+				Error_Quit("Error closing connection socket.");
 			exit(EXIT_SUCCESS);
-		} else {
-			// Parent process continues accepting incoming connections
-			close(conn);
-			// Clean up any finished child processes
-			while (waitpid(-1, NULL, WNOHANG) > 0);
 		}
+		/* If we get here, we are still in the parent process,
+     so close the connected socket, clean up child processes,
+     and go back to accept a new connection.
+     */
+		waitpid(-1, NULL, WNOHANG);
+		if (close(conn) < 0)
+			Error_Quit("Error closing connection socket in parent.");
 	}
+	Error_Quit("FORK web server failed");
+	return; // EXIT_FAILURE;  /* We shouldn't get here */
 }
-
-
-//pid_t pid;
-//int listener = 0;
-//struct sockaddr_in servaddr;
-//void start_server2(int port = SERVER_PORT) {
-//	signal(SIGPIPE, SIG_IGN);
-//	//	https://stackoverflow.com/questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
-//
-//	printf("STARTING SERVER!\n http://localhost:%d\n", port);
-//	if (port < 1024)print("sudo wasp if port < 1024!");
-//	fflush(stdout);
-//	/* Create socket */
-//	if ((listener = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-//		Error_Quit("Couldn't create listening socket.");
-//
-//	int flag = 1;// allow you to bind a local port that is in TIME_WAIT.
-//	//	This is very useful to ensure you don't have to wait 4 minutes after killing a server before restarting it.
-//	setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
-//
-//	/* Populate socket address structure */
-//	memset(&servaddr, 0, sizeof(servaddr));
-//	servaddr.sin_family = AF_INET;
-//	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-//	servaddr.sin_port = htons(port);
-//
-//	/* Assign socket address to socket */
-//	//	__bind<int&,sockaddr *,uint64> x=
-//	bind(listener, (struct sockaddr *) &servaddr, sizeof(servaddr));
-//	if (listener < 0)
-//		Error_Quit("Couldn't bind listening socket.");
-//
-//	/* Make socket a listening socket */
-//	//  	if (listen(listener, BACKLOG) < 0)
-//	if (listen(listener, LISTENQ) < 0)
-//		Error_Quit("Call to listen failed.");
-//
-//	printf("listening on %d port %d\n", INADDR_ANY, port);
-//
-//	/* Loop infinitely to accept and service connections */
-//	while (1) {
-//		/* Wait for connection */
-//		// NOT debuggable with XCODE nor Clion :(
-//		int conn = accept(listener, NULL, NULL);
-//		if (conn < 0)
-//			Error_Quit("Error calling accept()! debugging not supported, are you debugging?");
-//		else print("connection accept OK");
-//		// WORKS FINE, but not when debugging
-//		/* Fork child process to service connection */
-//		pid = fork();
-//		if (pid == 0) {
-//			/* This is now the forked child process, so close listening socket and service request  */
-//			if (close(listener) < 0)
-//				Error_Quit("Error closing listening socket in child.");
-//			Service_Request(conn);
-//			/* Close connected socket and exit forked process */
-//			if (close(conn) < 0)
-//				Error_Quit("Error closing connection socket.");
-//			exit(EXIT_SUCCESS);
-//		}
-//		/* If we get here, we are still in the parent process,
-//     so close the connected socket, clean up child processes,
-//     and go back to accept a new connection.
-//     */
-//		waitpid(-1, NULL, WNOHANG);
-//		if (close(conn) < 0)
-//			Error_Quit("Error closing connection socket in parent.");
-//	}
-//	Error_Quit("FORK web server failed");
-//	return; // EXIT_FAILURE;  /* We shouldn't get here */
-//}

@@ -24,7 +24,6 @@
 #include "String.h"
 #include "NodeTypes.h"
 #include "Util.h"
-//#include "Angle.h"
 
 
 
@@ -1079,8 +1078,7 @@ Node &Node::flat() {
         if (kind == key and name.empty()) {// (x):y => x:y
             if (not child.value.node and child.kind == reference) {
                 child.value.node = value.node;
-	            child.kind = key;
-	            child.type = type;
+                child.kind = key;
             }
             return child;
         }
@@ -1223,11 +1221,6 @@ void print(Node *n0) {
     print(*n0);
 }
 
-void Node::setType(Type typ) {
-	// todo!
-	this->type = new Node(typeName(typ)); //  types[typeName(typ)];
-	this->type->setType(clazz);
-}
 
 Node &Node::setType(Kind kin, bool check) {
     if (kind == kin)return *this;

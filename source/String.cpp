@@ -701,12 +701,6 @@ void print(char c) {
 	newline();
 }
 
-void print(Arg a) {
-	print(a.name);
-	print(":");
-	print(a.type);
-}
-
 void print(char const *s) {
 	put_chars(s, strlen(s));
 #if not WASM
@@ -728,14 +722,19 @@ void print(Type type) {
     print(typeName(type));
 }
 
+void print(Arg &arg) {
+    print(arg.name);
+    print(":");
+    print(arg.type);
+}
 
 void print(Signature& signature) {
-	for (auto &type: signature.parameters) {
-		print(type);
+    for (auto &type: signature.parameters) {
+        print(type);
 #if not WASM
-		print(" ");
+        print(" ");
 #endif
-	}
+    }
     print(":");
     for (auto &type: signature.return_types) {
         print(type);
