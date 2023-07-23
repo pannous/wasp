@@ -47,8 +47,8 @@ if (NOT WASM)
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
-        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
-        #        SET(WASMTIME 1) # FASTEST but very unstable / elusive bugs "object used with the wrong store" etc
+#        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+                SET(WASMTIME 1) # FASTEST but very unstable / elusive bugs "object used with the wrong store" etc
         #    set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying 2022-12: last release on Jun 2, 2021
         #            set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?

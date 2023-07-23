@@ -25,6 +25,11 @@ void testTypes() {
 	result = analyze(parse("string b"));
 	check_is(result.kind, Kind::reference);
 	check_is(result.type, StringType);
+
+	result = analyze(parse("float a,string b"));
+	result = result[0];
+	check_is(result.kind, Kind::reference);
+	check_is(result.type, DoubleType);
 }
 
 void testPolymorphism() {
