@@ -1,0 +1,78 @@
+# hyperreals ( namespace implicit by file name )
+
+# https://en.wikipedia.org/wiki/Hyperreal_number
+
+
+axioms{
+	ε = epsilon # builtin!
+	ω = omega
+
+	ω ≈ ∞
+	ε ≈ 0
+
+# √-1=ï # this way round, because we extend the √ function!
+
+	#1/0 = ∞
+	1/0 = ω
+	1/ω = ε
+	1/∞ = 0
+}
+
+
+#𝕀 infinitesimal numbers
+𝕀 = span field <ε, ω>
+ℝ⋆ = ℝ(ε, ω) # ordered field extension
+ℝ⋆ = ℝ×𝕀   
+
+class HyperReal is Number {
+	# class ℝ⋆ 
+	alias Hyper
+
+# hyperreals ℝ⋆ are an ordered field extension of ℝ
+
+	Number real alias real part, re, standard part, st, shadow, sh
+	Number epsilon alias ep, eps # ⚠️ todo unlike Complex numbers ε^2 ≠ ε ?
+	Number omega alias om
+
+# transfer principle:  
+# first-order statements about ℝ are also valid in ℝ⋆
+
+	times(number) = Hyper(this.real*number,this.epsilon, this.omega)
+	plus(number)  = Hyper(this.real+number,this.epsilon, this.omega) # …
+	𝑎≃𝑏 if a.real = b.real
+}
+
+
+
+# external definition as in Julia
+times(ω,ε) = 1
+times(ε,ω) = 1
+times(number x,hyper y) = Hyper(x*y.real,x*y.epsilon, x*y.omega)
+times(hyper x,hyper y) = Hyper(x.real*y.real,x.real*y.epsilon+y.real*x.epsilon, hyper.omega)
+times(hyper x,ε) = Hyper(0, x.real, 0)
+times(hyper x,ε) = Hyper(0, x.real, 0)
+ε, 
+
+epsilon := Hyper(0,1,0)
+omega := Hyper(0,0,1)
+
+⚠️ free standing ε vs x.ε
+
+
+
+
+
+
+# Applications
+
+operator ∂ "define the derivative algebraically"
+∂f(x)=(f(x+ε)-f(x))/ε
+# e.g 
+# f(x)=x^2 
+# ∂f(x)=((x+ε)^2)-x^2)/ε = (2xε + ε^2)/ε = 2x + ε 
+
+
+real derivative (f) = st(∂f) 
+
+e = lim(n=>∞) (1+1/n)^n
+e = (1+1/ω)^ω = (1+ε)^ω

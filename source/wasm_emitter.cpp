@@ -3204,13 +3204,8 @@ Code emitNameSection() {
 	Code fieldNameMap;
 	int usedTypes = 0;
 	int usedFields = 0;
-	printf("types: %d\n", types.count());
-	print(types.key_list());
 	for (auto &type_name: types) {
-		if (type_name.empty())continue;// HOW?
-		auto pNode = types[type_name];
-		if (!pNode)continue;// HOW? BUG!
-		auto typ = *pNode;
+		auto typ = *types[type_name];
 		if (typ.kind != structs) // wasmtype_struct
 			continue;
 		usedTypes++;
