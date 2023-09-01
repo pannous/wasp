@@ -1,28 +1,55 @@
-# hyperreals ( namespace implicit by file name )
+#context hyperreals #( namespace implicit by file name )
 
 # https://en.wikipedia.org/wiki/Hyperreal_number
 
+#axioms
+ε = epsilon # builtin!
+ω = omega # := 1/ε theoretically but use different compute symbols
 
-axioms{
-	ε = epsilon # builtin!
-	ω = omega
-
-	ω ≈ ∞
-	ε ≈ 0
+ω ≈ ∞
+ε ≈ 0
 
 # √-1=ï # this way round, because we extend the √ function!
 
-	#1/0 = ∞
-	1/0 = ω
-	1/ω = ε
-	1/∞ = 0
-}
+1/ε = ω
+1/ω = ε
+ε*ω = 1 # gauge consistency
+#ε = ω⁻¹ # convenience definition
+#1/0 = ω
+1/0 = ∞
+1/∞ = 0
+#ε*∞ = ∞ ?
+#∞/ω = ∞ ?
+#r*∞ = ∞ for r in ℝ
+#ωⁿ > r*ω for r in ℝ, n>1
 
+
+# integral ε = 1
+∫ε = 1 # that is:
+∫(-∞,∞)(ε) = 1 # infinite line
+∫(-ω,ω)(ε) = 1 # -''-
+∫(-ε,ε)(ω) = 1 # spike
+
+⚠️ infinite sums of in the hyperreals don't really play the way one might expect:
+⚠️ The hyperreal universe has its own kinds of sequences and series, which are no longer indexed by ℕ but rather by ∗ℕ, the nonstandard natural numbers. 
+
+#derivatives
+∂(x==0)(0) = ω # derivative of spike function  # ∂(x==0)(y) = 0 for y≠0
+∂(x>0)(ε)  = ω # derivative of step function   # ∂(x>0 )(y) = 0 for y≠ε
+
+∂(x==0 and ω)(0) = ω² # second order spike
 
 #𝕀 infinitesimal numbers
 𝕀 = span field <ε, ω>
-ℝ⋆ = ℝ(ε, ω) # ordered field extension
+ℝ∗
+ℝ⋆ = ℝ(ε, ω)  # ordered field extension
+ℝ⋆ = ℝ(ε)     # because ω := 1/ε 
 ℝ⋆ = ℝ×𝕀   
+ℝ∗ = ℝ⋆
+
+Unit Omega   # treat it externally! give automatic arithmetics see Unitful in Julia
+Unit Epsilon # treat it externally too?
+# 1 km + 1 s DimensionError ill defined but 1 + ε exactly what we want
 
 class HyperReal is Number {
 	# class ℝ⋆ 
@@ -30,16 +57,35 @@ class HyperReal is Number {
 
 # hyperreals ℝ⋆ are an ordered field extension of ℝ
 
+	#Number omega alias om # omega ≠ 0 makes the following irrelevant:
+	# treat it externally!
 	Number real alias real part, re, standard part, st, shadow, sh
 	Number epsilon alias ep, eps # ⚠️ todo unlike Complex numbers ε^2 ≠ ε ?
-	Number omega alias om
 
 # transfer principle:  
 # first-order statements about ℝ are also valid in ℝ⋆
 
+	𝑎*𝑏 := 
 	times(number) = Hyper(this.real*number,this.epsilon, this.omega)
 	plus(number)  = Hyper(this.real+number,this.epsilon, this.omega) # …
-	𝑎≃𝑏 if a.real = b.real
+
+  a==b := a.omega==b.omega and a.real==b.real and a.epsilon==b.epsilon 
+
+	𝑎≃𝑏 := 
+	    a.omega==b.omega==0 and a.real==b.real==0 and a.epsilon == b.epsilon or
+	    a.omega==b.omega==0 and a.real==b.real or
+	    a.omega==b.omega 
+
+	𝑎>𝑏 := 
+	    a.omega==b.omega==0 and a.real==b.real==0 and a.epsilon > b.epsilon or
+	    a.omega==b.omega==0 and a.real>b.real or
+	    a.omega>b.omega 
+
+	𝑎<𝑏 := 
+	    a.omega==b.omega==0 and a.real==b.real==0 and a.epsilon > b.epsilon or
+	    a.omega==b.omega==0 and a.real>b.real or
+	    a.omega>b.omega 
+
 }
 
 
@@ -47,11 +93,17 @@ class HyperReal is Number {
 # external definition as in Julia
 times(ω,ε) = 1
 times(ε,ω) = 1
+simplify(hyper y) = 
+		Hyper(0, 0, y.omega) if y.omega
+		Hyper(y.real, 0, 0)  eif y.real
+		Hyper(0,y.epsilon,0) oif #otherwise
+
+# todo: add ε ω as two special values / flags in wasp number representation f64 see Inf, NaN …
+
 times(number x,hyper y) = Hyper(x*y.real,x*y.epsilon, x*y.omega)
 times(hyper x,hyper y) = Hyper(x.real*y.real,x.real*y.epsilon+y.real*x.epsilon, hyper.omega)
 times(hyper x,ε) = Hyper(0, x.real, 0)
 times(hyper x,ε) = Hyper(0, x.real, 0)
-ε, 
 
 epsilon := Hyper(0,1,0)
 omega := Hyper(0,0,1)
@@ -60,19 +112,49 @@ omega := Hyper(0,0,1)
 
 
 
-
-
-
 # Applications
 
-operator ∂ "define the derivative algebraically"
+## Derivatives
+"define the derivative algebraically"
+operator ∂ 
 ∂f(x)=(f(x+ε)-f(x))/ε
-# e.g 
-# f(x)=x^2 
-# ∂f(x)=((x+ε)^2)-x^2)/ε = (2xε + ε^2)/ε = 2x + ε 
-
+// e.g 
+// f(x)=x^2 
+// ∂f(x)=((x+ε)^2)-x^2)/ε = (2xε + ε^2)/ε = 2x + ε 
 
 real derivative (f) = st(∂f) 
 
+## Probabilities
+"Traditional probability theory introduced zero-sets to handle cases such as:"
+"Probability of hitting an exact number in the Uniform Distribution over an interval e.g. [0,1]"
+P(x=y)=ε for y in [0,1] # classically "'0' but not impossible"
+
+⚠️ different zero-sets can result in different (multiplier / exponent ) variants of ε
+
+### Defining Uniform Distribution over [-∞,∞] aka ℝ now possible?
+"TODO: Probability of hitting an exact number in the interval [-∞,∞] aka ℝ with Uniform Distribution"
+P(x in [0,1])=ε or
+P(x=y)=ε or 
+P(x=y)=εᵚ 
+
+## Measures
+"more generally than the above Probability values, we can allow Measure Theory to make use of HyperReal numbers"
+⚠️ todo
+
+
+# other
+"replace limes with algebraic expressions"
 e = lim(n=>∞) (1+1/n)^n
 e = (1+1/ω)^ω = (1+ε)^ω
+
+
+# desired theorem:
+ε == 1 - 0.9̅ # may or may not be true and is usually not of concern https://arxiv.org/abs/1007.3018
+⚠️ the above statement strongly depends on exact meaning / notation 0.9̅ vs 0.9̂ vs .999… vs .999…;…999
+indeed we just need proper definitions for
+0.9̅ = 0.9̂ + ε = 1
+likewise
+1/3 = 0.333… + ε
+# ∑𝑖∈ℕ 9/10^𝑖 does not have a supremum and thus does not make sense in nonstandard analysis.
+# academic questions, we are only interested in axiomatic algebraic Applications
+
