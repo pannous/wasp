@@ -66,3 +66,5 @@ playground/
 wasp
 test/merge/
 /wapm/
+
+.fake
