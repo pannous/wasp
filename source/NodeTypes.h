@@ -170,6 +170,8 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     // todo do we really need strict schema separation from normal 'schema' of node{kind=clazz} ?
 
     reference, // variable identifier name x
+    referencex, // external reference as per wasm spec
+    extern_reference = referencex,
     symbol, // one / plus / Jesus
     operators, // TODO: semantic types don't belong here! they interfere with internal structural types key etc!!
     functor, // while(xyz){abc} takes 1?/2/3 blocks if {condition} {then} {else}
@@ -233,7 +235,8 @@ enum Primitive /*32*/ {
     missing_type = 0x40,// well defined
     nulls = 0x40, // ≠ undefined
     wasm_type = 0x6b, /* ⚠️ PLUS stuct type ID! */
-    wasm_ref = 0x6b,  /* ⚠️ PLUS ref type ID! */
+    wasm_ref = 0x6b,  /* ⚠️ PLUS ref type ID! ≠ */
+    wasm_externref = 0x6f,
     wasmtype_struct = 0x5f, // as in type section
     wasmtype_array = 0x5e, // as in type section
     wasm_leb = 0x77,
@@ -344,7 +347,8 @@ enum Primitive /*32*/ {
 //	ffointer = 0xFF00, // pointer pointer
 //	ffointer_of_int32 = 0xFF7F, // int** etc
 // for 32 bit smart pointers, as used in return of int main(){}
-    pad_to32_bit = 0xF0000000
+    pad_to32_bit = 0xF0000000,
+
 };
 
 

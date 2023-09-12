@@ -1233,6 +1233,7 @@ Node &Node::setType(Kind kin, bool check) {
     if (kind == codepoint1 and kin == operators)check = false;// and name==(codepoint)value.longy
     if (kind == groups and (kin == expression or kin == functor))check = false;
     if (kind == reference and kin == key)check = false;
+    if (kind == referencex and kin == key)check = false; // careful we lose $ semantics!
     if (kind == groups and kin == key)check = false;
     if (kind == expression and kin == declaration)check = false;
     if (kind == declaration and kin == assignment)check = false;// todo wait who changes x:=7 to x=7 ??

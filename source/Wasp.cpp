@@ -1486,7 +1486,7 @@ private:
                 case '@':
                 case '$':
                     if (parserOptions.dollar_names or parserOptions.at_names)
-                        actual.add(Node(identifier()));
+                        actual.add(Node(identifier()).setType(referencex));
                     else
                         actual.add(operatorr());
                     break;
