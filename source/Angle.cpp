@@ -215,7 +215,9 @@ Node eval(String code) {
 	{
 		Code &binary = compile(code, true);
 		binary.save();// to debug
-		debug_wasm_file();
+#if NO_TESTS
+		debug_wasm_file(); // SLOW! use only to debug single file
+#endif
 		smart_pointer_64 results = binary.run();
 		auto _resultNode = smartNode(results);
 		if (!_resultNode)return ERROR;
