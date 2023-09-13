@@ -1839,7 +1839,7 @@ void preRegisterFunctions() {
 	functions["fd_write"].module = new Module{.name="wasi_snapshot_preview1"};
 
 	functions["getElementById"].import();//.builtin();
-	functions["getElementById"].signature.add((Type) strings).returns((Type) externref);
+	functions["getElementById"].signature.add((Type) charp).returns((Type) externref);
 
 //	functions["$"].import();//.builtin();
 //	functions["$"].signature.add((Type) strings).returns((Type) referencex);
