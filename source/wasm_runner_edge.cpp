@@ -94,18 +94,15 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_TailCall);
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Memory64);
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_FunctionReferences);// function pointers!!
-    // --enable-function-reference NOT YET https://github.com/WasmEdge/WasmEdge/pull/2122
-    // ⚠️ "Though the user can specify enabling the proposal, the support for the proposal is not implemented yet." :(
-
 //    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Threads);
 //    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_SIMD);
 
+    // --enable-function-reference NOT YET https://github.com/WasmEdge/WasmEdge/pull/2122
+    // ⚠️ "Though the user can specify enabling the proposal, the support for the proposal is not implemented yet." :(
 
-//    Proposal::ReferenceTypes
     /* The configure and store context to the VM creation can be NULL. */
     WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(conf, NULL);
 //    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(0, 0); // no wasi
-
 
 
     WasmEdge_Value Params[1];

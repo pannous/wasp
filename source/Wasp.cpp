@@ -283,8 +283,8 @@ bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
     if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
     if (ch == u'¬')return true;
     if (ch == u'＝')return true;
-    if (ch == u'#')
-        return true;
+//    if (ch == u'#' and prev=='\n' or next == ' ')return false;
+    if (ch == u'#') return true;// todo: # is NOT an operator, but a special symbol for size/count/length
     if (operator_list.has(String(ch)))
         return true;
 
@@ -831,7 +831,7 @@ private:
         do {
             proceed();
             if (ch == '*' or ch == '#') {
-                proceed();
+                proceed(); // closing */ or ##
                 if (ch == '/' or ch == '#') {
                     proceed();
                     return;
@@ -857,7 +857,7 @@ private:
         if (ch == '#') {
             if (not(empty(previous)))
                 return false;
-            if (empty(next))
+            if (empty(next) or previous == '\n' or previous == '\r' or previous == 0)
                 inlineComment();
             if (next == '*' or next == '#')
                 blockComment();
