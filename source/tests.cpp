@@ -20,7 +20,8 @@
 void testDom() {
 	result = analyze(parse("$canvas"));
 	assert_equals(result.kind, externref);
-	auto nod = eval("$canvas");
+	auto nod = eval("$canvas;123");
+	print(nod);
 //	embedder.trace('canvas = document.getElementById("canvas");')
 }
 

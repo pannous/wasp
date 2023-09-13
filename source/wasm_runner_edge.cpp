@@ -33,6 +33,18 @@ WasmEdge_Result ExternSquare(void *Data,
 }
 
 
+WasmEdge_Result getElementById(void *Data,
+                               const WasmEdge_CallingFrameContext *CallFrameCxt,
+                               const WasmEdge_Value *In, WasmEdge_Value *Out) {
+	// just a dummy! todo print the id anyways
+// Function type: {externref, i32} -> {i32}
+//	uint32_t (*Func)(uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
+//	uint32_t C = Func(WasmEdge_ValueGetI32(In[1]));
+//	Out[0] = WasmEdge_ValueGenI32(C);
+	return WasmEdge_Result_Success;
+}
+
+
 // Host function to call `AddFunc` by external reference
 WasmEdge_Result ExternAdd(void *Data,
                           const WasmEdge_CallingFrameContext *CallFrameCxt,
@@ -51,19 +63,29 @@ WasmEdge_ModuleInstanceContext *CreateExternModule() {
     WasmEdge_FunctionInstanceContext *HostFunc = NULL;
     enum WasmEdge_ValType P[3], R[1];
 
-    HostName = WasmEdge_StringCreateByCString("extern_module");
+	HostName = WasmEdge_StringCreateByCString("env");// extern_module
     WasmEdge_ModuleInstanceContext *HostMod = WasmEdge_ModuleInstanceCreate(HostName);
-    WasmEdge_StringDelete(HostName);
 
     // Add host function "functor_square": {externref, i32} -> {i32}
-    P[0] = WasmEdge_ValType_ExternRef;
-    P[1] = WasmEdge_ValType_I32;
-    R[0] = WasmEdge_ValType_I32;
-    HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
-    HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ExternSquare, NULL, 0);
+//    P[0] = WasmEdge_ValType_ExternRef;
+//    P[1] = WasmEdge_ValType_I32;
+//    R[0] = WasmEdge_ValType_I32;
+//    HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
+//    HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ExternSquare, NULL, 0);
+//    WasmEdge_FunctionTypeDelete(HostFType);
+//    HostName = WasmEdge_StringCreateByCString("functor_square");
+//    WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+
+	P[0] = WasmEdge_ValType_I32;// charp (id:string)
+//    P[0] = WasmEdge_ValType_I64;// id:node (mostly string)
+	R[0] = WasmEdge_ValType_ExternRef;
+	HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+	HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, getElementById, NULL, 0);
     WasmEdge_FunctionTypeDelete(HostFType);
-    HostName = WasmEdge_StringCreateByCString("functor_square");
+	HostName = WasmEdge_StringCreateByCString("getElementById");
     WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+
+	WasmEdge_StringDelete(HostName);
     return HostMod;
 }
 
