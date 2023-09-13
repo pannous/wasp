@@ -1720,6 +1720,7 @@ Node &analyze(Node &node, Function &function) {
 	if (not first.empty() and class_keywords.contains(first))
 		return classDeclaration(node, function);
 #endif
+	if (node.kind == referencex)functions["getElementById"].is_used = true;
 	// if(function_operators.contains(name))...
 	if (node.kind == key and node.values().name == "func")
 		return funcDeclaration(node.name, node.values(), NUL /* no body here */ , 0, function.module);
@@ -1836,6 +1837,12 @@ void preRegisterFunctions() {
 //    functions["fd_write"].module=new Module{.name="wasi"};
 //    functions["fd_write"].module = new Module{.name="wasi_unstable"};
 	functions["fd_write"].module = new Module{.name="wasi_snapshot_preview1"};
+
+	functions["getElementById"].import();//.builtin();
+	functions["getElementById"].signature.add((Type) strings).returns((Type) externref);
+
+//	functions["$"].import();//.builtin();
+//	functions["$"].signature.add((Type) strings).returns((Type) referencex);
 
 	functions["puts"].builtin();
 	functions["puts"].signature.add((Type) stringp).returns(int32);// stdio conform!!

@@ -622,6 +622,8 @@ chars typeName(Valtype t, bool fail) {
 			return "void";
 		case Valtype::none:
 			return "void_block";
+		case Valtype::externref:
+			return "ref";
 //        case unknown_type:
 //            return "unknown";// internal
 		default: {

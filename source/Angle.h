@@ -18,8 +18,9 @@ static chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square",
                                                                "parseDouble", "strlen",
                                                                "log", "ln", "log10", "log2", "similar",
                                                                "putx", "putc", "get", "set", "peek", "poke", "read",
-                                                               "write", 0, 0,
-                                                               0};// MUST END WITH 0, else BUG
+                                                               "write",
+                                                               "$" /* getElementById */,
+                                                               0, 0, 0};// MUST END WITH 0, else BUG
 
 //chars runtime_function_list[]={};
 static chars wasi_function_list[] = {"proc_exit", "fd_write", "args_sizes_get", "args_get", 0};

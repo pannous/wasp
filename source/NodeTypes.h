@@ -170,8 +170,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     // todo do we really need strict schema separation from normal 'schema' of node{kind=clazz} ?
 
     reference, // variable identifier name x
-    referencex, // external reference as per wasm spec
-    extern_reference = referencex,
+
     symbol, // one / plus / Jesus
     operators, // TODO: semantic types don't belong here! they interfere with internal structural types key etc!!
     functor, // while(xyz){abc} takes 1?/2/3 blocks if {condition} {then} {else}
@@ -198,6 +197,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     constructor, // special call?
     modul,// module, interface, resource, world, namespace, library, package ≈ class …
     nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
+	referencex = externref, // external reference as per wasm spec
     number = 0x70, // SmartNumber or Number* as SmartPointer? ITS THE SAME!
 //    wasmtype_struct = 0x6b /* ⚠️ PLUS stuct ID! */, // opcodes 0xFB…
 //    wasmtype_array = 0xfb1a,
@@ -422,6 +422,8 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
             this->kind = longs;
         else if (o == &IntegerType)
             this->type = wasm_int32;
+        else if (o == &StringType)
+	        this->kind = strings;
 //        else if (mapType())
         else
             error("Type32(const Node &o)");

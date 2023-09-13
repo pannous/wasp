@@ -376,6 +376,7 @@ endif ()
 #
 # DIFFERENT TARGETS :
 if (WASM) # OR WASI)
+    MESSAGE("USING PURE WASM")
     message(WASM)
     ADD_DEFINITIONS(-DWASM)
     if (EMSCRIPTEN)
@@ -487,6 +488,7 @@ if (WASM) # OR WASI)
         add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
     endif ()
 elseif (WASI)
+    MESSAGE("USING PURE WASI")
     #    TODO "System is unknown to cmake"
     message(WASI)
     ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
@@ -501,6 +503,7 @@ elseif (WASI)
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
 elseif (MICRO) # wasm-micro-vm:
+    MESSAGE("USING WASM MICRO VM")
     if (WASI)
         message(WASI and wasm-micro-vm no good!?)
         return()
@@ -577,6 +580,7 @@ elseif (WABT)
     target_include_directories(wasp PUBLIC Frameworks/wabt/src)
     target_link_libraries(wasp PRIVATE wasm)  # libwabt is called libwasm.dylib DANGER!
 elseif (WASMER)
+    MESSAGE("USING WASMER")
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmer_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmer-c-api)
@@ -588,8 +592,10 @@ elseif (WASMEDGE)
     set(SOURCE_FILES source/wasm_runner_edge.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmedge)
-    target_link_libraries(wasp PRIVATE wasmedge) # libwasmedge.dylib 88MB holy fuck!!
+    #    target_include_directories(wasp PUBLIC Frameworks/wasmedge_api)
+    target_link_libraries(wasp PRIVATE wasmedge) # libwasmedge.dylib 88MB -> now 5MB ok
 elseif (WASMTIME)
+    MESSAGE("USING WASMTIME")
     ADD_DEFINITIONS(-DWASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
