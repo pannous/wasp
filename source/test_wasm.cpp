@@ -1292,7 +1292,7 @@ void testLogarithm2() {
 
 
 void testAllWasm() {
-    testWasmGC();
+	testWasmGC();
 //	data_mode = false;
     testWasmMemoryIntegrity();
 #ifdef RUNTIME_ONLY

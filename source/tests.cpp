@@ -3181,6 +3181,7 @@ void testWasmGC() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+	assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
 
 	testTypes();
 //	testPolymorphism();
