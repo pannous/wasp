@@ -281,6 +281,7 @@ bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
     if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
     if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
     if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
+    if (ch == '-')return true;
     if (ch == u'¬')return true;
     if (ch == u'＝')return true;
 //    if (ch == u'#' and prev=='\n' or next == ' ')return false;
@@ -1800,6 +1801,7 @@ private:
     };
 
     bool isKebabBridge() {
+        if (not is_identifier(next))return false; // i-- i-1
         if (parserOptions.kebab_case_plus and ch == '-')return true;
         return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
     }
