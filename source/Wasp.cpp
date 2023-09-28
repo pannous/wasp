@@ -1800,7 +1800,7 @@ private:
         return actual.flat();
     };
 
-    bool isKebabBridge() {
+    bool isKebabBridge() { // isHyphen(Bridge) e.g. a-b in special ids like in component model
         if (not is_identifier(next))return false; // i-- i-1
         if (parserOptions.kebab_case_plus and ch == '-')return true;
         return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
