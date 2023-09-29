@@ -1458,7 +1458,7 @@ Code emitAttributeSetter(Node &node, Function &context) {
 	if (!value)value = node.last().value.node;
 	if (!value)error("attribute setter missing value");
 	todo("emitAttributeSetter");
-    return Code();
+	return Code();
 }
 
 
@@ -1896,7 +1896,19 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 				return emitValue(*new Node(parseLong(name)), context);
 			if (not isVariableName(name))
 				return emitNode(node, context);
-			// else:
+			else goto reference;// : fallthrough
+		case referencex: {
+			if (name.startsWith("$")) {
+				name = name.substring(1);
+			}
+			if (name[0] >= '0' && name[0] <= '9') goto reference; // wasm style $0 = first arg
+			//	In HTML and JavaScript ids can start with a letter an underscore (_), or a colon (:) so no conflict with $0
+			Node calle("getElementById"); // $
+			calle.add(Node(name));
+			return emitCall(calle, context);
+			break;
+		}
+		reference:
 		case reference: {
 			if (name.empty()) {
 //				error("empty reference!");
@@ -2132,7 +2144,8 @@ Code emitCall(Node &fun, Function &context) {
 //		functionIndices[name] = context.index;
 	}
 	if (index < 0)
-		error("Calling %s NO INDEX. TypeSection created before code Section. Indices must be known by now! "s % name);
+		error("Calling %s NO INDEX. TypeSection created before code Section. Indices must be known by now! Mark imports as used!"s %
+		      name);
 	int i = 0;
 	auto sig_size = signature.parameters.size();
 	if (fun.size() > sig_size) {
@@ -2180,6 +2193,7 @@ Code cast(Valtype from, Valtype to) {
 	last_type = to;// danger: hides last_type in caller!
 	if (from == 0 and to == i32t)return nop;// nil or false ok as int? otherwise add const 0!
 	if (from == i32t and (Type) to == reference)return nop; // should be reference pointer, RIHGT??
+	if (from == anyref and (Type) to == i64)return nop; // todo call $$ ref.value()
 	if ((Type) from == codepoint1 and to == i64)
 		return Code(i64_extend_i32_s);
 	if (from == float32 and to == float64)return Code(f64_from_f32);
@@ -2239,6 +2253,7 @@ Code cast(Type from, Type to) {
 	if (from == charp and to == i64t) return Code(i64_extend_i32_s);
 	if (from == charp and to == i32t)return nop;// assume i32 is a pointer here. todo?
 	if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
+	if (from == charp and to == strings)return nop;
 	if (from == codepoint1 and to == i64t)
 		return Code(i64_extend_i32_s);
 	if (from == array and to == i64)return Code(i64_extend_i32_u);;// pray / assume i32 is a pointer here. todo!
@@ -2252,6 +2267,8 @@ Code cast(Type from, Type to) {
 // casting in our case also means construction! (x, y) as point == point(x,y)
 [[nodiscard]]
 Code cast(Node &from, Node &to, Function &context) {
+	// todo: only cast directly if from is compatible, don't cast string(pointer) to int in "'123' as int"
+//	if( wasm_compatible(from, to))return cast(mapTypeToWasm(from), mapTypeToWasm(to));
 	if (to == IntegerType)return cast(mapTypeToWasm(from), i32);
 	if (to == LongType)return cast(mapTypeToWasm(from), i64);
 	if (to == DoubleType)return cast(mapTypeToWasm(from), float64);
@@ -2791,13 +2808,13 @@ Code emitImportSection() {
 		}
 		String import_module = "env";
 		if (function.module and not function.module->name.empty())
-		import_module = function.module->name;
+			import_module = function.module->name;
 		if (function.is_import and function.is_used and not function.is_builtin) {
 			if (function.call_index >= 0)
 				check_silent(function.call_index == import_count) // todo remove when tested
 			function.call_index = import_count++;
 			if (function.module and not function.module->name.empty())
-			import_module = function.module->name;
+				import_module = function.module->name;
 			auto type = typeMap[fun];
 			import_code =
 					import_code + encodeString(import_module) + encodeString(fun).addByte(func_export).addInt(type);

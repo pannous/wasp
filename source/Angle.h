@@ -18,8 +18,9 @@ static chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square",
                                                                "parseDouble", "strlen",
                                                                "log", "ln", "log10", "log2", "similar",
                                                                "putx", "putc", "get", "set", "peek", "poke", "read",
-                                                               "write", 0, 0,
-                                                               0};// MUST END WITH 0, else BUG
+                                                               "write",
+                                                               "$" /* getElementById */,
+                                                               0, 0, 0};// MUST END WITH 0, else BUG
 
 //chars runtime_function_list[]={};
 static chars wasi_function_list[] = {"proc_exit", "fd_write", "args_sizes_get", "args_get", 0};
@@ -118,7 +119,6 @@ Function *findLibraryFunction(String name, bool searchAliases);
 
 Node &groupFunctionCalls(Node &expressiona, Function &context);
 
-
 struct ParserOptions { // not just for parser but also for serialize!!
 
 //    todo move polish_notation here! … how? polish_notation is also used in serialize() !
@@ -128,7 +128,7 @@ struct ParserOptions { // not just for parser but also for serialize!!
 // parse x={y} as x:{y} as x{y} or keep operator =
     bool data_mode = false;
     bool arrow = true; // false; // treat -> arrow as map operator :
-    bool dollar_names = false;// $name as in wat,wit
+	bool dollar_names = true;// false;// $name as in wat,wit $extern_ref within wasp!
     bool percent_names = false;// escape keywords as names in wit   e.g.  %id %flags
     bool colon_symbols = false;// :symbol ruby style ⚠️ careful with map Obviously
     bool colon_immediate = true; // parse a:b,c as (a:b) c vs a:(b,c)   should be standard!

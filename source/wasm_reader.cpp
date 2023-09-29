@@ -408,7 +408,7 @@ List<String> demangle_args(String &fun) {
     char *string;
 #if WASM and not MY_WASM
     todo("__cxa_demangle in wasm");
-#elif MY_WASM
+#elif MY_WASM and not WEBAPP
     string = js_demangle(fun);
 //        // https://github.com/kripken/cxx_demangle/blob/master/demangle.js
 #else

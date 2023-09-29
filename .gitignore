@@ -67,4 +67,4 @@ wasp
 test/merge/
 /wapm/
 
-.fake
+.fakelib/libwasmedge.dylib

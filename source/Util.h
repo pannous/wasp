@@ -1,5 +1,8 @@
 #pragma once
 
+#define let auto
+//#define var auto // conflicts with const Var &var …
+
 #define allow_untyped_nodes true  // IMPORTANT!  {a b c}#2"=="b" VALID or NOT ?!?
 //#include "asserts.h"
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}

@@ -1164,13 +1164,17 @@ int Node::lastIndex(Node *node, int start) {
 // ⚠️ DANGER! any references pointing to children become INVALID!
 //[[modifying]]
 void Node::replace(int from, int to, Node *node) {
+    if (to < from)
+        error("Node::replace from>to : "s + from + ">" + to);
     if (from < 0 or from >= length)
         error("Node::replace from<0 or from>=length");
+    if (to >= length) {
+        warn("Node::replace to>=length");
+        to = length - 1;
+    }
     if (!children)error("can't replace without children");
     children[from] = *node;
     int i = 0;
-    if (to < from)
-        error("Node::replace from>to : "s + from + ">" + to);
     while (to + i++ <= length) {
         children[from + i] = children[to + i];// ok if beyond length
         children[from + i - 1].next = &children[from + i];
@@ -1233,6 +1237,7 @@ Node &Node::setType(Kind kin, bool check) {
     if (kind == codepoint1 and kin == operators)check = false;// and name==(codepoint)value.longy
     if (kind == groups and (kin == expression or kin == functor))check = false;
     if (kind == reference and kin == key)check = false;
+    if (kind == referencex and kin == key)check = false; // careful we lose $ semantics!
     if (kind == groups and kin == key)check = false;
     if (kind == expression and kin == declaration)check = false;
     if (kind == declaration and kin == assignment)check = false;// todo wait who changes x:=7 to x=7 ??

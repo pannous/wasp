@@ -20,6 +20,12 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
 
+
+if (!APPLE)
+    message("LINUX")
+    set(LINUX 1)
+endif ()
+
 if (X86_64)
     LINK_DIRECTORIES(bin/mac/lib.x86)
 else ()
@@ -47,9 +53,9 @@ if (NOT WASM)
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
-#        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
-                SET(WASMTIME 1) # FASTEST but very unstable / elusive bugs "object used with the wrong store" etc
-        #    set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        #                SET(WASMTIME 1) # FASTEST but very unstable / elusive bugs "object used with the wrong store" etc
+        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #                set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying 2022-12: last release on Jun 2, 2021
         #            set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #                SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
@@ -147,8 +153,10 @@ endif ()
 if (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
     ADD_DEFINITIONS(-DGRAFIX)
+    ADD_DEFINITIONS(-DMY_WASM)
     SET(WASM 0)
     set(WASI 0)
+    set(CONSOLE 0)
     #    SET(RUNTIME_ONLY 1) # we can emit to V8, right??
     set(SOURCE_FILES ${SOURCE_FILES} source/ErrorHandler.cpp) # no SIGSEGV mac popup
 endif ()
@@ -376,6 +384,7 @@ endif ()
 #
 # DIFFERENT TARGETS :
 if (WASM) # OR WASI)
+    MESSAGE("USING PURE WASM")
     message(WASM)
     ADD_DEFINITIONS(-DWASM)
     if (EMSCRIPTEN)
@@ -487,6 +496,7 @@ if (WASM) # OR WASI)
         add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
     endif ()
 elseif (WASI)
+    MESSAGE("USING PURE WASI")
     #    TODO "System is unknown to cmake"
     message(WASI)
     ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
@@ -501,6 +511,7 @@ elseif (WASI)
     add_executable(wasp.wasm ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
 elseif (MICRO) # wasm-micro-vm:
+    MESSAGE("USING WASM MICRO VM")
     if (WASI)
         message(WASI and wasm-micro-vm no good!?)
         return()
@@ -577,6 +588,7 @@ elseif (WABT)
     target_include_directories(wasp PUBLIC Frameworks/wabt/src)
     target_link_libraries(wasp PRIVATE wasm)  # libwabt is called libwasm.dylib DANGER!
 elseif (WASMER)
+    MESSAGE("USING WASMER")
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmer_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmer-c-api)
@@ -588,8 +600,10 @@ elseif (WASMEDGE)
     set(SOURCE_FILES source/wasm_runner_edge.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmedge)
-    target_link_libraries(wasp PRIVATE wasmedge) # libwasmedge.dylib 88MB holy fuck!!
+    #    target_include_directories(wasp PUBLIC Frameworks/wasmedge_api)
+    target_link_libraries(wasp PRIVATE wasmedge) # libwasmedge.dylib 88MB -> now 5MB ok
 elseif (WASMTIME)
+    MESSAGE("USING WASMTIME")
     ADD_DEFINITIONS(-DWASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
@@ -606,8 +620,8 @@ elseif (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
     include(source/WebView.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/WebApp.cpp source/WebServer.cpp)
-    add_executable(wasp ${SOURCE_FILES})
-    target_link_libraries(wasp PUBLIC webview)
+    add_executable(wasp-app ${SOURCE_FILES})
+    target_link_libraries(wasp-app PUBLIC webview)
 elseif (WASM3)
     MESSAGE(wasm3 VM)
     ADD_DEFINITIONS(-DWASM3)
@@ -663,7 +677,7 @@ if (NOT WASM)
 endif ()
 
 
-if (CONSOLE)
+if (CONSOLE AND NOT WEBAPP)
     find_package(Readline)
     #    find_library(Readline)
     #    link_libraries(wasp readline)

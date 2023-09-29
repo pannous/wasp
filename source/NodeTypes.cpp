@@ -19,6 +19,8 @@ Type mapType(Node &arg) {
 		return mapType(arg.type);
 	// 'UPGRADE' Kind to Type
 	switch (arg.kind) {
+		case referencex:
+			return Primitive::wasm_externref;
 		case reference:
 //            if(arg.size()==1)
 //                return mapType(arg[0]);
@@ -275,6 +277,8 @@ chars typeName(Kind t, bool throws) {
 			return "field";
 		case reference:
 			return "reference";
+		case referencex:
+			return "$reference";
 		case symbol:
 			return "symbol";
 		case operators:
@@ -589,12 +593,15 @@ chars typeName(Primitive p) {
 			return "missing"; // ≠ nul, undefined
 		case maps:
 			return "Map";
+		case wasm_externref:
+			return "$ref";
 		case smarti64:
 			return "smarty";// wasp smart pointer int64 ABI vs multi value ABI (value, type)
 		case pad_to32_bit:
 			error("don't use");
 			break;
 			break;
+
 	}
 	return "?";
 }
@@ -615,6 +622,8 @@ chars typeName(Valtype t, bool fail) {
 			return "void";
 		case Valtype::none:
 			return "void_block";
+		case Valtype::externref:
+			return "ref";
 //        case unknown_type:
 //            return "unknown";// internal
 		default: {
@@ -679,8 +688,10 @@ Valtype mapTypeToWasm(Primitive p) {
 		case node:
 			if (allow_untyped_nodes)
 				return Valtype::int32;// todo!
-		case list:
 		case string_struct:
+			//      a String struct is unrolled in the c/wasm-abi
+			error("string struct in final stage");
+		case list:
 		case array_header:
 		case maps:
 //            return none;// todo:
