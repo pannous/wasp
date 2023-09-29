@@ -281,10 +281,11 @@ bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
     if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
     if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
     if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
+    if (ch == '-')return true;
     if (ch == u'¬')return true;
     if (ch == u'＝')return true;
-    if (ch == u'#')
-        return true;
+//    if (ch == u'#' and prev=='\n' or next == ' ')return false;
+    if (ch == u'#') return true;// todo: # is NOT an operator, but a special symbol for size/count/length
     if (operator_list.has(String(ch)))
         return true;
 
@@ -411,7 +412,7 @@ class Wasp {
             return true;
         if (ch == closer)
             return true;
-        if (precedence(ch) <= precedence(closer))
+		if (group_precedence(ch) <= group_precedence(closer))
             return true;
         if (ch == INDENT)
             return false;// quite the opposite
@@ -422,7 +423,7 @@ class Wasp {
             return true;
         }// outer match unresolved so far
 
-        if (precedence(ch) <= precedence(closer))
+		if (group_precedence(ch) <= group_precedence(closer))
             return true;
         return false;
     }
@@ -831,7 +832,7 @@ private:
         do {
             proceed();
             if (ch == '*' or ch == '#') {
-                proceed();
+                proceed(); // closing */ or ##
                 if (ch == '/' or ch == '#') {
                     proceed();
                     return;
@@ -857,7 +858,7 @@ private:
         if (ch == '#') {
             if (not(empty(previous)))
                 return false;
-            if (empty(next))
+            if (empty(next) or previous == '\n' or previous == '\r' or previous == 0)
                 inlineComment();
             if (next == '*' or next == '#')
                 blockComment();
@@ -1486,7 +1487,7 @@ private:
                 case '@':
                 case '$':
                     if (parserOptions.dollar_names or parserOptions.at_names)
-                        actual.add(Node(identifier()));
+                        actual.add(Node(identifier()).setType(referencex));
                     else
                         actual.add(operatorr());
                     break;
@@ -1799,7 +1800,8 @@ private:
         return actual.flat();
     };
 
-    bool isKebabBridge() {
+    bool isKebabBridge() { // isHyphen(Bridge) e.g. a-b in special ids like in component model
+        if (not is_identifier(next))return false; // i-- i-1
         if (parserOptions.kebab_case_plus and ch == '-')return true;
         return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
     }
@@ -1807,14 +1809,15 @@ private:
 };
 
 
-float precedence(char group) {
+float group_precedence(char group) {
+	// ≠ float precedence(String operators);
     if (group == 0)return 1;
     if (group == '}')return 1;
     if (group == ']')return 1;
     if (group == ')')return 1;
-    if (group == 0x0E or group == 0x0F)
+	if (group == 0x0E or group == 0x0F) // indent, dedent
         return 1.1;
-    if (0 < group and group < 0x20)return 1.5;
+	if (0 < group and group < 0x20) return 1.5; // ascii control keys why?
     if (group == '\n')return 2;
     if (group == ';')return 3;
     if (group == ',')return 4;
@@ -2000,7 +2003,7 @@ int main(int argc, char **argv) {
 #ifdef WEBAPP
             //				start_server(SERVER_PORT);
                         std::thread go(start_server, SERVER_PORT);
-                        arg = "http://localhost:"s + SERVER_PORT + "/" + arg;
+                        auto arg = "http://localhost:"s + SERVER_PORT + "/" + args;
                         print("Serving "s + arg);
                         open_webview(arg);
             //				arg.replaceMatch(".*\/", "http://localhost:SERVER_PORT/");

@@ -11,8 +11,8 @@
 #include "Node.h"
 #include "Angle.h"
 #include "WebServer.hpp"
-
-
+#include "NodeTypes.h"
+#include "tests.h"
 /* supported in WebKit:
 ✔️	multiValue
 ✔️	mutableGlobals
@@ -80,7 +80,7 @@ public:
 
     Node resultNode() {
         pthread_mutex_lock(&m_mutex);
-        Node result(m_result, (smart_type_64) m_type);
+	    Node result(m_result, (SmartPointer64) m_type);
         m_done = false;// restart / allow another wait
         pthread_mutex_unlock(&m_mutex);
         return result;
@@ -182,7 +182,8 @@ int64 open_webview(String url = "") {
 
     // add [w] to closure to make it local
     w.set_title("Example");
-    w.value("alert('js injected into every page')");
+	w.set_html("<script>alert('js injected into every page')</script>");
+//    w.value("alert('js injected into every page')");
     w.set_size(480 * 4, 320 * 4, WEBVIEW_HINT_NONE);// default
     w.set_size(480, 320, WEBVIEW_HINT_MIN);// minimum size, also: MAX, FIXED
     w.bind("run", [](std::string s) -> std::string {
@@ -349,7 +350,7 @@ run_wasm_sync(unsigned char *bytes, int length) {
 }
 
 
-extern "C" int64 run_wasm(unsigned char *bytes, int length) {
+extern "C" int run_wasm(unsigned char *bytes, int length) {
     run_wasm_sync(bytes, length);
     return waiter.result();
 }

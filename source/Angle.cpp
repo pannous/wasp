@@ -213,9 +213,16 @@ Node eval(String code) {
 	} else
 #endif
 	{
+
+#if WEBAPP
+		// errors are not forwarded to js, so catch them here! todo WHY NOT?
+		try {
+#endif
 		Code &binary = compile(code, true);
 		binary.save();// to debug
-		debug_wasm_file();
+#if NO_TESTS
+		debug_wasm_file(); // SLOW! use only to debug single file
+#endif
 		smart_pointer_64 results = binary.run();
 		auto _resultNode = smartNode(results);
 		if (!_resultNode)return ERROR;
@@ -224,9 +231,23 @@ Node eval(String code) {
 		print("» %s\n"s % resultNode.serialize().data);
 #endif
 		return resultNode;
+#if WEBAPP
+		} catch (chars err) {
+			print("eval FAILED WITH internal ERROR\n");
+			printf("%s\n", err);
+		} catch (String &err) {
+			print("eval FAILED WITH ERRORs\n");
+			printf("%s\n", err.data);
+		} catch (SyntaxError &err) {
+			print("eval FAILED WITH SyntaxError\n");
+			printf("%s\n", err.data);
+		} catch (...) {
+			print("eval FAILED WITH UNKNOWN ERROR\n");
+		}
+		return ERROR;
+#endif
 	}
 #endif
-
 }
 
 Signature &groupFunctionArgs(Function &function, Node &params) {
@@ -1077,7 +1098,7 @@ Node &groupOperators(Node &expression, Function &context) {
 		if (op == "module") {
 			warn("todo modules");
 			if (module)
-			module->name = expression.last().name;
+				module->name = expression.last().name;
 			return NUL;
 		}
 		if (op == "-")
@@ -1718,6 +1739,7 @@ Node &analyze(Node &node, Function &function) {
 	if (not first.empty() and class_keywords.contains(first))
 		return classDeclaration(node, function);
 #endif
+	if (node.kind == referencex)functions["getElementById"].is_used = true;
 	// if(function_operators.contains(name))...
 	if (node.kind == key and node.values().name == "func")
 		return funcDeclaration(node.name, node.values(), NUL /* no body here */ , 0, function.module);
@@ -1834,6 +1856,12 @@ void preRegisterFunctions() {
 //    functions["fd_write"].module=new Module{.name="wasi"};
 //    functions["fd_write"].module = new Module{.name="wasi_unstable"};
 	functions["fd_write"].module = new Module{.name="wasi_snapshot_preview1"};
+
+	functions["getElementById"].import();//.builtin();
+	functions["getElementById"].signature.add((Type) charp).returns((Type) externref);
+
+//	functions["$"].import();//.builtin();
+//	functions["$"].signature.add((Type) strings).returns((Type) referencex);
 
 	functions["puts"].builtin();
 	functions["puts"].signature.add((Type) stringp).returns(int32);// stdio conform!!

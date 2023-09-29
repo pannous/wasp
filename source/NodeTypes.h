@@ -170,6 +170,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     // todo do we really need strict schema separation from normal 'schema' of node{kind=clazz} ?
 
     reference, // variable identifier name x
+
     symbol, // one / plus / Jesus
     operators, // TODO: semantic types don't belong here! they interfere with internal structural types key etc!!
     functor, // while(xyz){abc} takes 1?/2/3 blocks if {condition} {then} {else}
@@ -196,6 +197,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     constructor, // special call?
     modul,// module, interface, resource, world, namespace, library, package ≈ class …
     nils = 0x40, // ≈ void_block for compatibility!?  ≠ undefined
+	referencex = externref, // external reference as per wasm spec
     number = 0x70, // SmartNumber or Number* as SmartPointer? ITS THE SAME!
 //    wasmtype_struct = 0x6b /* ⚠️ PLUS stuct ID! */, // opcodes 0xFB…
 //    wasmtype_array = 0xfb1a,
@@ -233,7 +235,8 @@ enum Primitive /*32*/ {
     missing_type = 0x40,// well defined
     nulls = 0x40, // ≠ undefined
     wasm_type = 0x6b, /* ⚠️ PLUS stuct type ID! */
-    wasm_ref = 0x6b,  /* ⚠️ PLUS ref type ID! */
+    wasm_ref = 0x6b,  /* ⚠️ PLUS ref type ID! ≠ */
+    wasm_externref = 0x6f,
     wasmtype_struct = 0x5f, // as in type section
     wasmtype_array = 0x5e, // as in type section
     wasm_leb = 0x77,
@@ -344,7 +347,16 @@ enum Primitive /*32*/ {
 //	ffointer = 0xFF00, // pointer pointer
 //	ffointer_of_int32 = 0xFF7F, // int** etc
 // for 32 bit smart pointers, as used in return of int main(){}
-    pad_to32_bit = 0xF0000000
+    pad_to32_bit = 0xF0000000,
+
+};
+
+
+// e.g. array<int> or array<stringref> or struct<id> array<struct_id>
+// ⚠️ 32 bit wasp generics condense to 16+ bit wasm types!
+struct Generics /*32 bit*/{
+    ushort kind; // kind is padded to 32 bit so cant use directly
+    ushort value_type;
 };
 
 
@@ -418,6 +430,8 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
             this->kind = longs;
         else if (o == &IntegerType)
             this->type = wasm_int32;
+        else if (o == &StringType)
+	        this->kind = strings;
 //        else if (mapType())
         else
             error("Type32(const Node &o)");

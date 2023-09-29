@@ -39,11 +39,11 @@ bool is_operator(codepoint ch);// todo: next?
 
 extern float function_precedence;
 
-float precedence(String name);
+float precedence(String operators);
 
 float precedence(Node &operater);
 
-float precedence(char group); // special: don't mix
+float group_precedence(char group); // special: don't mix
 //Node emit(String code);// moved to angle
 codepoint closingBracket(codepoint bracket);
 
