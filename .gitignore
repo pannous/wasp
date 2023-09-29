@@ -66,5 +66,7 @@ playground/
 wasp
 test/merge/
 /wapm/
-
-.fakelib/libwasmedge.dylib
+.fake
+lib/libwasmedge.dylib
+*.dylib
+**/*.dylib
