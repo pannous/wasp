@@ -26,6 +26,10 @@
 #include "Angle.h"
 #include "Util.h"
 
+
+[[noreturn]]
+void proc_exit(int exitcode);
+
 typedef unsigned char *bytes;
 
 
