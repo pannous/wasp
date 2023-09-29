@@ -5,7 +5,7 @@
 #define ErrorHandler
 
 #include "ErrorHandler.h"
-
+#include "Util.h"
 //#include <zconf.h>
 //#include <execinfo.h>
 //#include <bits/types/siginfo_t.h>

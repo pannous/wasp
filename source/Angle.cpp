@@ -213,6 +213,11 @@ Node eval(String code) {
 	} else
 #endif
 	{
+
+#if WEBAPP
+		// errors are not forwarded to js, so catch them here! todo WHY NOT?
+		try {
+#endif
 		Code &binary = compile(code, true);
 		binary.save();// to debug
 #if NO_TESTS
@@ -226,9 +231,23 @@ Node eval(String code) {
 		print("» %s\n"s % resultNode.serialize().data);
 #endif
 		return resultNode;
+#if WEBAPP
+		} catch (chars err) {
+			print("eval FAILED WITH internal ERROR\n");
+			printf("%s\n", err);
+		} catch (String &err) {
+			print("eval FAILED WITH ERRORs\n");
+			printf("%s\n", err.data);
+		} catch (SyntaxError &err) {
+			print("eval FAILED WITH SyntaxError\n");
+			printf("%s\n", err.data);
+		} catch (...) {
+			print("eval FAILED WITH UNKNOWN ERROR\n");
+		}
+		return ERROR;
+#endif
 	}
 #endif
-
 }
 
 Signature &groupFunctionArgs(Function &function, Node &params) {
@@ -1079,7 +1098,7 @@ Node &groupOperators(Node &expression, Function &context) {
 		if (op == "module") {
 			warn("todo modules");
 			if (module)
-			module->name = expression.last().name;
+				module->name = expression.last().name;
 			return NUL;
 		}
 		if (op == "-")
