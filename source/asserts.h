@@ -10,6 +10,11 @@ extern "C" void assert_expect(Node *result);
 extern "C" void async_yield();// throw this run and reenter after run_wasm is done
 #endif
 
+#if WEBAPP
+extern "C" void assert_expect(Node*){} // dummies
+extern "C" void async_yield() {}
+#endif
+
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
 
 //#if WASM

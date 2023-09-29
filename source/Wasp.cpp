@@ -412,7 +412,7 @@ class Wasp {
             return true;
         if (ch == closer)
             return true;
-        if (precedence(ch) <= precedence(closer))
+		if (group_precedence(ch) <= group_precedence(closer))
             return true;
         if (ch == INDENT)
             return false;// quite the opposite
@@ -423,7 +423,7 @@ class Wasp {
             return true;
         }// outer match unresolved so far
 
-        if (precedence(ch) <= precedence(closer))
+		if (group_precedence(ch) <= group_precedence(closer))
             return true;
         return false;
     }
@@ -1809,14 +1809,15 @@ private:
 };
 
 
-float precedence(char group) {
+float group_precedence(char group) {
+	// ≠ float precedence(String operators);
     if (group == 0)return 1;
     if (group == '}')return 1;
     if (group == ']')return 1;
     if (group == ')')return 1;
-    if (group == 0x0E or group == 0x0F)
+	if (group == 0x0E or group == 0x0F) // indent, dedent
         return 1.1;
-    if (0 < group and group < 0x20)return 1.5;
+	if (0 < group and group < 0x20) return 1.5; // ascii control keys why?
     if (group == '\n')return 2;
     if (group == ';')return 3;
     if (group == ',')return 4;
@@ -2002,7 +2003,7 @@ int main(int argc, char **argv) {
 #ifdef WEBAPP
             //				start_server(SERVER_PORT);
                         std::thread go(start_server, SERVER_PORT);
-                        arg = "http://localhost:"s + SERVER_PORT + "/" + arg;
+                        auto arg = "http://localhost:"s + SERVER_PORT + "/" + args;
                         print("Serving "s + arg);
                         open_webview(arg);
             //				arg.replaceMatch(".*\/", "http://localhost:SERVER_PORT/");

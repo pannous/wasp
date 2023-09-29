@@ -51,7 +51,7 @@ extern "C" int raise(chars error); // conflicts with signal.h if 'extern'
 //#endif
 //void *memcpy(void *destination, const void *source, size_t num);// asm ("memcpy");;
 #if LINUX
-extern "C" void* memcpy(void*, const void*, size_t) noexcept;
+extern "C" void *memcpy(void*, const void*, size_t) noexcept;
 extern "C" void *memset(void *ptr, int value, size_t num) noexcept;
 extern "C" void *memmove(void *__dst, const void *__src, size_t num) noexcept;
 #elif EMSCRIPTEN

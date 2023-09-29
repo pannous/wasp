@@ -688,8 +688,10 @@ Valtype mapTypeToWasm(Primitive p) {
 		case node:
 			if (allow_untyped_nodes)
 				return Valtype::int32;// todo!
-		case list:
 		case string_struct:
+			//      a String struct is unrolled in the c/wasm-abi
+			error("string struct in final stage");
+		case list:
 		case array_header:
 		case maps:
 //            return none;// todo:

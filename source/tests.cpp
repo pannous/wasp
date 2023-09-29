@@ -2854,35 +2854,35 @@ void testPaint() {
 
 void testPaintWasm() {
 #ifdef GRAFIX
-	struct timeval stop, start;
-	gettimeofday(&start, NULL);
-	// todo: let compiler comprinte constant expressions like 1024*65536/4
-//	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
-//out of bounds memory access if only one Memory page!
-//	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0)// still slow, but < 1s
-	// wow, SLOWER in wasm-micro-runtime HOW!?
-//	exit(0);
+	//	struct timeval stop, start;
+	//	gettimeofday(&start, NULL);
+		// todo: let compiler comprinte constant expressions like 1024*65536/4
+	//	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
+	//out of bounds memory access if only one Memory page!
+	//	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0)// still slow, but < 1s
+		// wow, SLOWER in wasm-micro-runtime HOW!?
+	//	exit(0);
 
-//(√((x-c)^2+(y-c)^2)<r?0:255)
-//(x-c)^2+(y-c)^2
-//	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
-////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
-	char *wasm_paint_routine = "w=1920;c=500;r=100;surface=(1,2);i=0;"
-							   "while(i<1000000){"
-							   "i++;x=i%w;y=i/w;surface#i=(x-c)^2+(y-c)^2"
-							   "};paint";
-//((x-c)^2+(y-c)^2 < r^2)?0x44aa88:0xffeedd
-//char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
-//assert_emit(wasm_paint_routine, 0);
-//	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=i*(10-√i);};";
-	compile(wasm_paint_routine);
-//	paint(0);
-	gettimeofday(&stop, NULL);
-//	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
-	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
-//	exit(0);
-//char *wasm_paint_routine = "init_graphics(); while(1){paint()}";// SDL bugs a bit
-	while (1)paint(0);// help a little
+	//(√((x-c)^2+(y-c)^2)<r?0:255)
+	//(x-c)^2+(y-c)^2
+	//	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
+	////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
+		char *wasm_paint_routine = "w=1920;c=500;r=100;surface=(1,2);i=0;"
+								   "while(i<1000000){"
+								   "i++;x=i%w;y=i/w;surface#i=(x-c)^2+(y-c)^2"
+								   "};paint";
+	//((x-c)^2+(y-c)^2 < r^2)?0x44aa88:0xffeedd
+	//char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
+	//assert_emit(wasm_paint_routine, 0);
+	//	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=i*(10-√i);};";
+		eval(wasm_paint_routine);
+	//	paint(0);
+	//	gettimeofday(&stop, NULL);
+	//	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
+	//	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
+	//	exit(0);
+	//char *wasm_paint_routine = "init_graphics(); while(1){paint()}";// SDL bugs a bit
+		while (1)paint(0);// help a little
 #endif
 }
 
@@ -3181,6 +3181,10 @@ void testWasmGC() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+//	assert_emit("print('hi')", 0)
+//	assert_emit("puts('hi')", 8)
+//	exit(1);
+	assert_emit("√3^2", 3)
 	assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
 
 	testTypes();
