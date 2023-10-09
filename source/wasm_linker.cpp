@@ -27,11 +27,7 @@
 #include "Util.h"
 
 
-[[noreturn]]
-void proc_exit(int exitcode);
-
 typedef unsigned char *bytes;
-
 
 using namespace wabt;
 using namespace wabt::link;
@@ -892,7 +888,7 @@ bool Linker::WriteCombinedSection(SectionType section_code, const SectionPtrVect
     }
 
     if (section_code == wabt::SectionType::Data)
-        printf("");
+        printf("SectionType::Data\n");
 
     stream_.WriteU8Enum(section_code, "section code");
 
@@ -1044,7 +1040,7 @@ void Linker::ResolveSymbols() {
 
         for (Export &_export: binary->exports) {// todo: why not store index directly?
             if (tracing)
-                printf("%s export kind %d '%s' index %d\n", binary->name, _export.kind, _export.name.data,
+                printf("%s export kind %d '%s' index %d\n", binary->name, (int) _export.kind, _export.name.data,
                        _export.index);
             if (_export.kind == wabt::ExternalKind::Global) {
                 globals_export_list.add(ExportInfo(&_export, binary));

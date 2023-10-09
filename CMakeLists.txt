@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
+set(CROSSCOMPILE x86)
 
 # ⚠️ SET these configurations via CLion Preferences… Build->CMake->Profiles
 #  MANUALLY force set these only for urgent debugging,
@@ -25,6 +26,7 @@ if (APPLE)
 else ()
     message("LINUX")
     set(LINUX 1)
+    set(SANITIZE 0) # debian undefined reference to symbol 'dladdr@@GLIBC_2.17'
     ADD_DEFINITIONS(-DLINUX)
 endif ()
 
@@ -70,10 +72,7 @@ if (NOT WASM)
     endif ()
     #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
     # ^^ fixes <cmath> mac errors!
-    if (NOT EMSCRIPTEN)
-        ADD_DEFINITIONS(-D_Backtrace_)
-        set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
-    endif ()
+
 endif () # else :
 #
 #if(WASP_FULL)
@@ -191,20 +190,44 @@ ADD_COMPILE_FLAG("-fno-inline") # why not? debug?
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
+ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
 if (LINUX)
-    ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
     ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator")
     ADD_COMPILE_FLAG("-Wno-writable-strings") # dangerous! fix assert_is("square 3", 9)
-    ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
+    # DEBIAN
+    # 2023-10-9 /wasp/source/tests.cpp:48:25: gcc internal compiler error
+    # todo remove when gcc fixed
+    #    set(CMAKE_C_COMPILER clang)
+    #    set(CMAKE_CXX_COMPILER clang++)
+
+
+    #    find_package(Threads REQUIRED)
+    #    find_library(DL_LIBRARY dl)
+
+    ADD_COMPILE_FLAG("-w") # hide warnings because gcc is worse than clang
+    ADD_COMPILE_FLAG("-Wno-error=attributes") # [[maybe_unused]] attribute ignored ok
+    ADD_COMPILE_FLAG("-Wno-error=literal-suffix") # allow String operator ""s(chars c, unsigned long);
+    ADD_COMPILE_FLAG("-fpermissive") #  -fpermissive vs -pedantic-errors !
+    ADD_COMPILE_FLAG("-Wno-error=write-strings") # message = "error"; ??
+    #    error: declaration of ‘codepoint Value::codepoint’ changes meaning of ‘codepoint’  todo: just rename
 endif ()
+ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
+ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
+
 #if(NOT LINUX)
 #ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
 #ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
 #endif()
-ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
 # todo Just use initiator lists? ^^
 if (APPLE)
     ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
+endif ()
+
+if (CROSSCOMPILE=x86)
+    message("CROSSCOMPILE!")
+    set(CMAKE_SYSTEM_PROCESSOR x86_64) # crosscompile from aarch64
+    set(CMAKE_C_COMPILER_TARGET x86_64-linux-gnu)
+    set(CMAKE_CXX_COMPILER_TARGET x86_64-linux-gnu)
 endif ()
 
 if (NOT TRACE)
@@ -330,6 +353,13 @@ if (TRACE)
 endif ()
 
 if (SANITIZE) #  OR TRACE
+    message("SANITIZE")
+
+    if (NOT EMSCRIPTEN)
+        ADD_DEFINITIONS(-D_Backtrace_)
+        set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
+    endif ()
+
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
     MESSAGE("ASAN sanitize=address …")
@@ -566,6 +596,7 @@ elseif (MICRO) # wasm-micro-vm:
     if (APPLE)
         target_link_libraries(wasp vmlib -ldl -lpthread) # -lm
     else ()
+        target_link_libraries(wasp Threads::Threads ${DL_LIBRARY})
         target_link_libraries(wasp vmlib -ldl -lpthread -lrt)
     endif ()
     if (SDL)

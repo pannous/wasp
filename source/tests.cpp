@@ -8,9 +8,13 @@
 #include "tests.h"
 #include "Paint.h"
 
+#pragma GCC diagnostic ignored "-Wdeprecated"
 #import "test_angle.cpp"
 #import "test_wast.cpp"
 #import "test_wasm.cpp"
+
+#pragma GCC diagnostic pop
+
 #include "wasm_runner.h"
 #include "WitReader.h"
 #include "types/Number.h"
@@ -19,7 +23,7 @@
 
 void testDom() {
 	result = analyze(parse("$canvas"));
-	assert_equals(result.kind, externref);
+	assert_equals(result.kind, (int64) externref);
 	auto nod = eval("$canvas;123");
 	print(nod);
 //	embedder.trace('canvas = document.getElementById("canvas");')

@@ -16,6 +16,23 @@
 // todo assert_is ≠ assert_run == assert_emit_with_wasm_runtime!
 
 
+#if EMSCRIPTEN
+#define assert_is(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_isx(α,β)){printf("%s != %s",#α,#β);backtrace_line();}
+#elif MY_WASM and not EMSCRIPTEN // todo WHY does if MY_WASM not work??
+#define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
+#else
+//// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
+#define assert_is(wasp, result) \
+printf("TEST %s==%s\n",#wasp,#result); \
+debug_line();\
+ok=assert_isx(wasp,result);\
+if(ok)printf("PASSED %s==%s\n",#wasp,#result);\
+else{printf("FAILED %s==%s\n",#wasp,#result); \
+backtrace_line()}
+#endif
+
+#define assert_eval assert_is
+
 bool assert_equals_x(String a, String b, chars context) {
     if (a == b) printf(" OK %s==%s %s\n", a.data, b.data, context);
     else printf("FAILED assert_equals!\n %s should be %s %s\n", a.data, b.data, context);
@@ -275,24 +292,6 @@ bool ok;
 
 extern List<String> done;
 
-
-#if EMSCRIPTEN
-#define assert_is(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_isx(α,β)){printf("%s != %s",#α,#β);backtrace_line();}
-#elif MY_WASM and not EMSCRIPTEN // todo WHY does if MY_WASM not work??
-#define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
-#else
-//// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
-#define assert_is(wasp, result) \
-printf("TEST %s==%s\n",#wasp,#result); \
-debug_line();\
-ok=assert_isx(wasp,result);\
-if(ok)printf("PASSED %s==%s\n",#wasp,#result);\
-else{printf("FAILED %s==%s\n",#wasp,#result); \
-backtrace_line()}
-#endif
-
-
-#define assert_eval assert_is
 //#define assert_ast(α, β) if (!assert_equals_x(analyze(parse(α)),parse(β))){printf("%s != %s",#α,#β);backtrace_line();}
 //#define assert_eval(α, β) if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 

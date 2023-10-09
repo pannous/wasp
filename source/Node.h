@@ -97,7 +97,7 @@ union Value { // node_pointer can contain ANYTHING, especially types known in wa
 
     void *data;// any bytes
     int64 longy;
-    codepoint codepoint;//chary;// use longy
+//    codepoint codepoint;//chary;// use longy
     double real;
 
 //	Value() {}// = default;

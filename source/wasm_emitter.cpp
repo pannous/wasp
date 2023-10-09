@@ -3098,8 +3098,8 @@ Code emitGlobalSection() {
 		globalsList.addByte(valtype);
 		globalsList.addByte(0);// 1:mutable todo: default? not π ;)
 		// expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
-		const Code &globalInit = emitExpression(global_node,
-		                                        *new Function{.name="global"});// todo ⚠️ global is not a context!
+		Function fun{.name="global"};
+		const Code &globalInit = emitExpression(global_node, fun);// todo ⚠️ global is not a context!
 		globalsList.add(globalInit);// todo names in global context!?
 		globalsList.addByte(end_block);
 		/*

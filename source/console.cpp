@@ -83,10 +83,13 @@ void getline(char *buf) {
             code += ";\n";
 //		Node &result = parse(code);// safeMode only for web access
             result = eval(code);
-            printf("» ");
-//	result.interpret().print();
-            result.print();
-            print("");
+//#if not DEBUG
+#if RELEASE
+			// the reason this is #if'ed is that DEBUG already prints the result
+						printf("» ");
+						result.print();
+						print("");
+#endif
         }
     }
 }

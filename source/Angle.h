@@ -79,7 +79,7 @@ bool isType(Node &node);
 //__attribute__((export_name("analyze")))
 Node &
 analyze(Node &node, Function &function = *new Function{.name="wasp_main"});// wasp -> node  // build ast via operators
-Node eval(String code);// interpret OR emit :
+//Node eval(String code);// interpret OR emit :
 Node interpret(String code);// wasp -> code -> data   // interpreter mode vs:
 //Node emit(String code, ParseOptions options = nix);//  doesn't work with std::thread compile(emit, String(code.data()))
 //Node run(String source);// wasp -> code -> wasm() -> data

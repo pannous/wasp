@@ -13,6 +13,8 @@ class Module {
 //	}
 
 public:
+//    Module(){}
+//    Module(String name) : name(name) {}
     String name;
 
     // unparsed (just the vector data and its length)

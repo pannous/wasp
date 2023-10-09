@@ -153,30 +153,6 @@ source/Angle.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/Angle.cpp.s
 .PHONY : source/Angle.cpp.s
 
-source/Backtrace.o: source/Backtrace.cpp.o
-.PHONY : source/Backtrace.o
-
-# target to build an object file
-source/Backtrace.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/Backtrace.cpp.o
-.PHONY : source/Backtrace.cpp.o
-
-source/Backtrace.i: source/Backtrace.cpp.i
-.PHONY : source/Backtrace.i
-
-# target to preprocess a source file
-source/Backtrace.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/Backtrace.cpp.i
-.PHONY : source/Backtrace.cpp.i
-
-source/Backtrace.s: source/Backtrace.cpp.s
-.PHONY : source/Backtrace.s
-
-# target to generate assembly for a file
-source/Backtrace.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/Backtrace.cpp.s
-.PHONY : source/Backtrace.cpp.s
-
 source/Code.o: source/Code.cpp.o
 .PHONY : source/Code.o
 
@@ -729,6 +705,30 @@ source/own_merge/utf8.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/own_merge/utf8.cc.s
 .PHONY : source/own_merge/utf8.cc.s
 
+source/smart_types.o: source/smart_types.cpp.o
+.PHONY : source/smart_types.o
+
+# target to build an object file
+source/smart_types.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/smart_types.cpp.o
+.PHONY : source/smart_types.cpp.o
+
+source/smart_types.i: source/smart_types.cpp.i
+.PHONY : source/smart_types.i
+
+# target to preprocess a source file
+source/smart_types.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/smart_types.cpp.i
+.PHONY : source/smart_types.cpp.i
+
+source/smart_types.s: source/smart_types.cpp.s
+.PHONY : source/smart_types.s
+
+# target to generate assembly for a file
+source/smart_types.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/smart_types.cpp.s
+.PHONY : source/smart_types.cpp.s
+
 source/tests.o: source/tests.cpp.o
 .PHONY : source/tests.o
 
@@ -909,9 +909,6 @@ help:
 	@echo "... source/Angle.o"
 	@echo "... source/Angle.i"
 	@echo "... source/Angle.s"
-	@echo "... source/Backtrace.o"
-	@echo "... source/Backtrace.i"
-	@echo "... source/Backtrace.s"
 	@echo "... source/Code.o"
 	@echo "... source/Code.i"
 	@echo "... source/Code.s"
@@ -981,6 +978,9 @@ help:
 	@echo "... source/own_merge/utf8.o"
 	@echo "... source/own_merge/utf8.i"
 	@echo "... source/own_merge/utf8.s"
+	@echo "... source/smart_types.o"
+	@echo "... source/smart_types.i"
+	@echo "... source/smart_types.s"
 	@echo "... source/tests.o"
 	@echo "... source/tests.i"
 	@echo "... source/tests.s"
