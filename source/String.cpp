@@ -289,7 +289,7 @@ char *itoa0(int64 num) {// todo remove once you know the right call
 //#define pow(val,exp)
 chars formatRealWithBaseAndPrecision(double num, int base = 10, int digits_after_zero = 4) {/*significant_digits*/
 //	int p = powi(base,digits_after_zero+1);
-    auto remainder = abs(num) - abs(int64(num));
+    auto remainder = std::abs(num) - std::abs(int64(num));
 //	auto remainder = abs_f(num) - abs_l(int64(num));
 //	auto remainder = itoa0(abs(int((num - (int64) num) * p)), base);
     chars f = concat(formatLongWithBase(int(num), base), ".");

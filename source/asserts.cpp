@@ -208,7 +208,7 @@ bool assert_equals_x(float a, float b, chars context = "") {
 
 //# DEFINES CAN MESS WITH LOCALS!! so use α, β
 
-//bool assert_isx(char *mark, chars expect);
+//bool assert_isx(chars mark, chars expect);
 
 bool assert_isx(chars wasp, Node expect) {
 	try {
@@ -239,23 +239,23 @@ bool assert_isx(chars wasp, Node expect) {
     return false;
 }
 
-bool assert_isx(char *mark, chars expect) {
+bool assert_isx(chars mark, chars expect) {
     return assert_isx(mark, Node(expect));// explicit conversion ok!
 }
 
-bool assert_isx(char *mark, int expect) {
+bool assert_isx(chars mark, int expect) {
     return assert_isx(mark, Node(expect));// explicit conversion ok!
 }
 
-bool assert_isx(char *mark, int64 expect) {
+bool assert_isx(chars mark, int64 expect) {
     return assert_isx(mark, Node(expect));// explicit conversion ok!
 }
 
-bool assert_isx(char *mark, double expect) {
+bool assert_isx(chars mark, double expect) {
     return assert_isx(mark, Node(expect));// explicit conversion ok!
 }
 
-bool assert_isx(char *mark, bool expect) {
+bool assert_isx(chars mark, bool expect) {
     return assert_isx(mark, Node(expect));
 }
 

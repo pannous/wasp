@@ -311,6 +311,12 @@ bool Node::operator==(chars other) {
     return false;
 }
 
+bool Node::operator==(wchar_t other) {
+    if (kind == codepoint1)return other == value.longy;
+    if (kind == longs)return other == value.longy;
+    error1("Node::operator==(wchar_t other) must be kind codepoint or longs");
+}
+
 bool Node::operator==(int other) {
 //	if (this == 0)return false;// HOW?
     if (kind == longs and value.longy == other) return true;
@@ -1371,7 +1377,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
 
     auto value = smartPointer64 & 0xFFFFFFFF;// data part
     int64 smart_type64 = smartPointer64 & 0xFFFFFFFF00000000;// type part
-    uint32_t smart_type_32 = smart_type64 >> 32;
+    unsigned int smart_type_32 = smart_type64 >> 32;
     byte smart_type_4 = (smartPointer64 & 0xF000000000000000) >> 63;// type part
 //    short smart_type_payload = (short)(smartPointer64 & 0x0000FFFF00000000L)>>16;// type payload including length (of array)
 
