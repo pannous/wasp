@@ -600,7 +600,9 @@ public:
 
     bool operator==(codepoint other);
 
-//	bool operator==(Node other);
+    bool operator==(wchar_t other);
+
+    //	bool operator==(Node other);
     bool operator==(Node &other);// equals
     bool operator==(Node *other);// equals
 

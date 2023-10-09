@@ -124,7 +124,7 @@ void strcpy2(char *dest, chars src, int length);
 #if EMSCRIPTEN
 extern "C" size_t strlen(const char *);
 #elif LINUX
-extern size_t strlen (const char *__s)
+#include <string.h>
 #elif WASM
 extern "C" size_t strlen(const char *) __attribute__((__nothrow__, __leaf__, __pure__, __nonnull__(1)));
 #else

@@ -316,10 +316,10 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 //	if(!is_KNOWN_operator(op0))return call(left, op0, right);
 
     if (op == "‖") {
-        if (right.isEmpty() and left.kind == longs) return Node(abs(left.value.longy));
-        if (left.isEmpty() and right.kind == longs) return Node(abs(right.value.longy));
-        if (right.isEmpty() and left.kind == reals) return Node(abs(left.value.real));
-        if (left.isEmpty() and right.kind == reals) return Node(abs(right.value.real));
+        if (right.isEmpty() and left.kind == longs) return Node(std::abs(left.value.longy));
+        if (left.isEmpty() and right.kind == longs) return Node(std::abs(right.value.longy));
+        if (right.isEmpty() and left.kind == reals) return Node(std::abs(left.value.real));
+        if (left.isEmpty() and right.kind == reals) return Node(std::abs(right.value.real));
         error("missing value for ‖");
     }
     if (op == "|") {// bitwise or OR pipe!

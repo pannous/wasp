@@ -20,14 +20,18 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
 
-
-if (!APPLE)
+if (APPLE)
+    message("APPLE")
+else ()
     message("LINUX")
     set(LINUX 1)
+    ADD_DEFINITIONS(-DLINUX)
 endif ()
 
 if (X86_64)
     LINK_DIRECTORIES(bin/mac/lib.x86)
+    #elseif (LINUX) # ok, other extension .so
+    #    LINK_DIRECTORIES(lib/linux)
 else ()
     LINK_DIRECTORIES(lib/)
     #    LINK_DIRECTORIES(bin/mac/lib)
@@ -83,28 +87,6 @@ FUNCTION(ADD_COMPILE_FLAG value)
         SET(${variable} "${${variable}} ${value}" PARENT_SCOPE)
     ENDFOREACH (variable)
 ENDFUNCTION()
-
-
-if (INCLUDE_MERGER)
-    message(INCLUDE_MERGER)
-    ADD_DEFINITIONS(-DINCLUDE_MERGER)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_linker.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/common.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-reader-linker.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-reader.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode-code-table.c)
-    #set(SOURCE_FILES ${SOURCE_FILES} FILES_MATCHING PATTERN "source/own_merge/*.cc")
-    #set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer-spec.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binding-hash.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/feature.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/leb128.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/stream.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/utf8.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/ir.cc)
-endif ()
 
 
 if (WASM)
@@ -209,12 +191,15 @@ ADD_COMPILE_FLAG("-fno-inline") # why not? debug?
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
+if (LINUX)
+    ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
+    ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator")
+    ADD_COMPILE_FLAG("-Wno-writable-strings") # dangerous! fix assert_is("square 3", 9)
+    ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
+endif ()
 #if(NOT LINUX)
-#ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
 #ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
 #ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
-#ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
-#ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
 #endif()
 ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
 # todo Just use initiator lists? ^^
@@ -240,8 +225,6 @@ if (NOT TRACE)
         ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
     endif ()
 endif ()
-ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator")
-ADD_COMPILE_FLAG("-Wno-unknown-attributes")
 
 if (GCC)
     ADD_COMPILE_FLAG("-Wno-write-strings") # useless
@@ -269,7 +252,9 @@ endif ()
 #ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
 
 # COMMON FOR ALL
-set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp source/Wasp.cpp source/wasm_helpers.cpp source/Code.cpp source/NodeTypes.cpp)
+set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp
+        source/Wasp.cpp source/wasm_helpers.cpp source/Code.cpp source/NodeTypes.cpp source/smart_types.cpp)
+
 
 if (CONSOLE)
     message(CONSOLE)
@@ -298,6 +283,29 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} source/WitReader.h)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp)
 endif ()
+
+
+if (INCLUDE_MERGER)
+    message(INCLUDE_MERGER)
+    ADD_DEFINITIONS(-DINCLUDE_MERGER)
+    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_linker.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/common.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-reader-linker.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-reader.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode-code-table.c)
+    #set(SOURCE_FILES ${SOURCE_FILES} FILES_MATCHING PATTERN "source/own_merge/*.cc")
+    #set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer-spec.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binding-hash.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/feature.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/leb128.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/stream.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/utf8.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/ir.cc)
+endif ()
+
 
 
 if (APPLE)
@@ -602,7 +610,8 @@ elseif (WASMEDGE)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_edge.cpp)
     set(SOURCE_FILES source/wasm_runner_edge.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC Frameworks/wasmedge)
+    #    target_include_directories(wasp PUBLIC Frameworks/wasmedge)
+    target_include_directories(wasp PUBLIC Frameworks/wasmedge/include/api/)
     #    target_include_directories(wasp PUBLIC Frameworks/wasmedge_api)
     target_link_libraries(wasp PRIVATE wasmedge) # libwasmedge.dylib 88MB -> now 5MB ok
 elseif (WASMTIME)

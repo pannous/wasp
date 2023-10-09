@@ -249,7 +249,6 @@ struct c_io_vector {
 #endif
 
 WASI(proc_exit)
-
 [[noreturn]]
 void proc_exit(int exitcode);
 

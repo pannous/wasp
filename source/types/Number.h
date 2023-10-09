@@ -365,7 +365,7 @@ public:
         int64 l1 = value.longe;
         int64 l2 = other.value.longe;
         // overflow => bigger type
-        if (abs(l1) + abs(l2) < 0)
+        if (std::abs(l1) + std::abs(l2) < 0)
             return Number(BigInt(l1) + BigInt(l2));
         int64 sum = l1 + l2;
         if (isInt(sum)) return Number((int) sum);// number fits int
@@ -392,7 +392,7 @@ public:
         if (type <= number_long and type2 <= number_long) {
             int64 l1 = value.longe;
             int64 l2 = value2.longe;
-            if (abs(l1) * abs(l2) < 0) // overflow => bigger type
+            if (std::abs(l1) * std::abs(l2) < 0) // overflow => bigger type
                 return Number(BigInt(l1) * BigInt(l2));
             int64 prod = l1 * l2;
             if (isInt(prod)) return Number((int) prod);// number fits int
