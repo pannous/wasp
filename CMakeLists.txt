@@ -1,8 +1,12 @@
+# REMOVE CMakeCache.txt after switching between mac and linux / " Cannot generate into … " errors
+
 cmake_minimum_required(VERSION 3.10)
 project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
-set(CROSSCOMPILE x86)
+
+#set(CROSSCOMPILE x86) # needs more work
+#set(X86_64 1)
 
 # ⚠️ SET these configurations via CLion Preferences… Build->CMake->Profiles
 #  MANUALLY force set these only for urgent debugging,
@@ -223,6 +227,7 @@ if (APPLE)
     ADD_COMPILE_FLAG("-Wreturn-stack-address") # VERY USEFUL : disallow stack memory associated return!
 endif ()
 
+#if (X86_64)
 if (CROSSCOMPILE=x86)
     message("CROSSCOMPILE!")
     set(CMAKE_SYSTEM_PROCESSOR x86_64) # crosscompile from aarch64
