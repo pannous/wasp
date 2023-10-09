@@ -1300,11 +1300,12 @@ void testAllWasm() {
     puts("NO WASM emission...");
     //	return;
 #endif
-    skip(
+
     //	assert_run not compatible with Wasmer, don't ask why, we don't know;)
-            testCustomOperators();
-            testWasmMutableGlobal();
-    )
+//    skip(
+//            testCustomOperators();
+//            testWasmMutableGlobal();
+//    )
 
     testMathOperators();
     testWasmLogicPrimitives();
@@ -1370,11 +1371,10 @@ void testAllWasm() {
     testStringIndicesWasm();
 
 
-    skip(
-            test_get_local();
-
-            testCustomOperators();
-            testWasmLogicOnObjects();
-            testObjectPropertiesWasm();
-    )
+//    skip(
+//            test_get_local();
+//            testCustomOperators();
+//            testWasmLogicOnObjects();
+//            testObjectPropertiesWasm();
+//    )
 }

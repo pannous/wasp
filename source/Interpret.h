@@ -5,7 +5,8 @@
 
 #include "Wasp.h"
 #include "Angle.h"
-#import "wasm_helpers.h" // IMPORT so that they don't get mangled!
+//#import "wasm_helpers.h" // IMPORT so that they don't get mangled!
+#include "wasm_helpers.h" // IMPORT so that they don't get mangled! huh?
 #include "Node.h"
 #include "wasm_emitter.h"
 #include "Map.h"

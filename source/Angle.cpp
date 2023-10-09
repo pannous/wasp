@@ -10,7 +10,8 @@
 #include "Util.h"
 #include "Map.h"
 #include "Interpret.h"
-#import "wasm_helpers.h" // IMPORT so that they don't get mangled!
+//#import "wasm_helpers.h" // IMPORT so that they don't get mangled!
+#include "wasm_helpers.h" // IMPORT so that they don't get mangled! huh?
 #include "wasm_emitter.h"
 #include "WitReader.h"
 
@@ -878,7 +879,8 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 	if (name and not function_operators.has(name)) {
 		if (context.name != "wasp_main") todo("inner functions");
 		if (not functions.has(name)) {
-			functions.add(name, *new Function{.name=name});
+			Function fun{.name=name};
+			functions.add(name, fun);
 		}
 	}
 	Function &function = functions[name]; // different from context!
@@ -1844,8 +1846,7 @@ void preRegisterFunctions() {
 
 	functions["proc_exit"].import();
 	functions["proc_exit"].signature.add(int32, "exit_code");// file descriptor
-//    functions["proc_exit"].module = new Module{.name="wasi_unstable"};
-	functions["proc_exit"].module = new Module{.name="wasi_snapshot_preview1"}; // f'ing wasmedge can't wasi_unstable
+	functions["proc_exit"].module = new Module{.name="wasi_unstable"};
 
 	functions["fd_write"].import();
 	functions["fd_write"].signature.add(int32, "fd");// file descriptor

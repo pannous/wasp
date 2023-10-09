@@ -15,7 +15,7 @@ extern "C" void assert_expect(Node*){} // dummies
 extern "C" void async_yield() {}
 #endif
 
-#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
+//#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
 
 //#if WASM
 //#define debug_line() print(__FILE__);print(":");print(__LINE__);
@@ -41,8 +41,13 @@ bool assert_equals_x(String a, String b, chars context = "");
 
 bool assert_equals_x(int64 a, int64 b, chars context = "");
 
-//bool assert_equals_x(float a, float b, chars context = "");
 bool assert_equals_x(double a, double b, chars context = "");
+//bool assert_equals_x(float a, float b, chars context = "");
+
+//bool assert_equals_x(Node a, int b, chars context = "");
+
+//bool assert_isx(chars wasp, Node expect);
+
 
 
 static List<String> done;
@@ -66,3 +71,5 @@ static List<String> done;
 //    print(α1);print(Ok?'=':u'≠');print(β);} \
 //    if(!Ok){printf("%s != %s",#α,#β);backtrace_line();}
 #endif
+
+

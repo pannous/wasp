@@ -4,8 +4,8 @@
 #include "Code.h"
 #include "Interpret.h"
 
-bytes magicModuleHeader = new byte[]{0x00, 0x61, 0x73, 0x6d};
-bytes moduleVersion = new byte[]{0x01, 0x00, 0x00, 0x00};
+bytes magicModuleHeader = new byte[4]{0x00, 0x61, 0x73, 0x6d};
+bytes moduleVersion = new byte[4]{0x01, 0x00, 0x00, 0x00};
 
 typedef unsigned char uint8_t;
 typedef uint8_t byt;

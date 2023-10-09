@@ -6,7 +6,8 @@
 #include "Angle.h" // analyze
 #include "Node.h"
 #include "wasm_emitter.h"
-#import "asserts.cpp"
+
+#import "asserts.cpp" // todo: move to asserts.h
 #include "asserts.h"
 
 void testFunctionParams() {

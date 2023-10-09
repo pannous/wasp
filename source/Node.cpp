@@ -294,12 +294,12 @@ bool Node::operator==(bool other) {
 }
 
 bool Node::operator==(char other) {
-    if (kind == codepoint1)return value.codepoint == other;
+    if (kind == codepoint1)return (codepoint) value.longy == other;
     return kind == strings and *value.string == other;
 }
 
 bool Node::operator==(codepoint other) {
-    if (kind == codepoint1)return value.codepoint == other;
+    if (kind == codepoint1)return (codepoint) value.longy == other;
 	return kind == strings and *value.string == other;
 }
 

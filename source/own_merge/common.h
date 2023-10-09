@@ -35,8 +35,8 @@
 
 #define string_view String
 
-[[noreturn]]
-void proc_exit(int exitcode);
+//[[noreturn]]
+//void proc_exit(int exitcode);
 
 //String s(std::string &s);
 //String s(std::string s);
