@@ -209,11 +209,13 @@ ADD_COMPILE_FLAG("-fno-inline") # why not? debug?
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
-ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
-ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
-ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
-ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
-ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
+#if(NOT LINUX)
+#ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator") # useless
+#ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
+#ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
+#ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
+#ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
+#endif()
 ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
 # todo Just use initiator lists? ^^
 if (APPLE)
@@ -234,11 +236,12 @@ if (NOT TRACE)
         ADD_COMPILE_FLAG("-Wno-unused-private-field")
         ADD_COMPILE_FLAG("-Wno-comment") # allow /* an old nested /* comment */ */
         ADD_COMPILE_FLAG("-Wno-typedef-redefinition")
-        ADD_COMPILE_FLAG("-Wno-unknown-attributes") # wasi
         ADD_COMPILE_FLAG("-Wno-undefined-bool-conversion") # if (!this)return false
         ADD_COMPILE_FLAG("-Wno-user-defined-literals") # allow "hi"s for string("hi")
     endif ()
 endif ()
+ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator")
+ADD_COMPILE_FLAG("-Wno-unknown-attributes")
 
 if (GCC)
     ADD_COMPILE_FLAG("-Wno-write-strings") # useless
@@ -246,7 +249,7 @@ if (GCC)
     ADD_COMPILE_FLAG("-Wno-error=unused-variable")
     ADD_COMPILE_FLAG("-Wno-unused-variable")
     ADD_COMPILE_FLAG("-Wno-format") # useful!
-else ()
+elseif (APPLE)
     ADD_COMPILE_FLAG("-Wno-writable-strings") # useless
 endif ()
 

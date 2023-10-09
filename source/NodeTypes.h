@@ -359,15 +359,6 @@ struct Generics /*32 bit*/{
     ushort value_type;
 };
 
-
-// e.g. array<int> or array<stringref> or struct<id> array<struct_id>
-// ⚠️ 32 bit wasp generics condense to 16+ bit wasm types!
-struct Generics /*32 bit*/{
-    ushort kind; // kind is padded to 32 bit so cant use directly
-    ushort value_type;
-};
-
-
 typedef int Address;
 
 

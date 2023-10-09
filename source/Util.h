@@ -20,6 +20,8 @@
 #define debug_line() printf("\n%s:%d\n",__FILE__,__LINE__);
 #endif
 
+[[noreturn]]
+void proc_exit(int exitcode);
 //typedef int64 i64;
 typedef long long int64;
 typedef unsigned long long uint64;
