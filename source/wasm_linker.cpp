@@ -1641,7 +1641,8 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
         case RelocType::MemoryAddressTLSSLEB:
         case RelocType::MemoryAddressTLSI32:
         case RelocType::TagIndexLEB:
-            WABT_FATAL("unhandled relocation type: %d\n", r->type);// GetRelocTypeName(r->type));
+//            WABT_FATAL("unhandled relocation type: %s\n", GetRelocTypeName(r->type));
+            WABT_FATAL("unhandled relocation type: %d\n", (int) r->type);
             // uh much to do!
     }
     if (new_value >= 0) {

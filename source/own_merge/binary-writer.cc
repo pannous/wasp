@@ -630,8 +630,8 @@ namespace wabt {
                     // index is used directly.
                     return index;
                 default:
-                    fprintf(stderr, "warning: unsupported relocation type: %d\n",
-                            reloc_type);// GetRelocTypeName(reloc_type));
+	                fprintf(stderr, "warning: unsupported relocation type: %d\n",
+	                        (int) reloc_type);// GetRelocTypeName(reloc_type));
                     return kInvalidIndex;
             }
 		}
@@ -1214,8 +1214,8 @@ namespace wabt {
                     case RelocType::TableNumberLEB:
                         break;
                     default:
-                        fprintf(stderr, "warning: unsupported relocation type: %d\n",
-                                reloc.type);// GetRelocTypeName(reloc.type));
+	                    fprintf(stderr, "warning: unsupported relocation type: %d\n", (int) reloc.type);
+//						fprintf(stderr, "warning: unsupported relocation type: %s\n", GetRelocTypeName(reloc.type));
                 }
 			}
 
