@@ -5,13 +5,20 @@ project(wasp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
-#set(CROSSCOMPILE x86) # needs more work
-#set(X86_64 1)
+#set(CROSSCOMPILE x86) # needs more work / just use different docker images
+if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    message(STATUS "Architecture is x86_64")
+    set(X86_64 1)
+elseif (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+    message(STATUS "Architecture is arm64")
+else ()
+    message(STATUS "Architecture is ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+endif ()
 
 # ⚠️ SET these configurations via CLion Preferences… Build->CMake->Profiles
 #  MANUALLY force set these only for urgent debugging,
-#set(RELEASE 0) # no tests todo VS:
-#set(NO_TESTS 1) # no tests
+set(RELEASE 1) # no tests todo VS:
+set(NO_TESTS 1) # no tests
 #set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
 #set(VERBOSE 1)
 #set(DEBUG 1)
@@ -272,8 +279,9 @@ endif ()
 #else ()
 if (RELEASE)
     #    ADD_COMPILE_FLAG("-w") # hide warnings
-    if (NOT WASM)
-        ADD_COMPILE_FLAG("-Os -Oz") # NO WASM GENERATED wth. size should be ok? -O1 removes symbol names https://bugs.llvm.org/show_bug.cgi?id=45602 !
+    ADD_COMPILE_FLAG("-Os")
+    if (NOT WASM AND NOT LINUX)
+        ADD_COMPILE_FLAG("-Oz") # NO WASM GENERATED wth. size should be ok? -O1 removes symbol names https://bugs.llvm.org/show_bug.cgi?id=45602 !
     endif ()
 endif ()
 
@@ -658,8 +666,10 @@ elseif (WASMTIME)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/wasm-c-api/include/)
-    #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
-    #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
+    if (X86_64)
+        target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
+        LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
+    endif ()
     #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-aarch64-macos-c-api/include)
     #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
     target_link_libraries(wasp PRIVATE wasm)

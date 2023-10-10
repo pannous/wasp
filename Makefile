@@ -729,30 +729,6 @@ source/smart_types.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/smart_types.cpp.s
 .PHONY : source/smart_types.cpp.s
 
-source/tests.o: source/tests.cpp.o
-.PHONY : source/tests.o
-
-# target to build an object file
-source/tests.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/tests.cpp.o
-.PHONY : source/tests.cpp.o
-
-source/tests.i: source/tests.cpp.i
-.PHONY : source/tests.i
-
-# target to preprocess a source file
-source/tests.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/tests.cpp.i
-.PHONY : source/tests.cpp.i
-
-source/tests.s: source/tests.cpp.s
-.PHONY : source/tests.s
-
-# target to generate assembly for a file
-source/tests.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/tests.cpp.s
-.PHONY : source/tests.cpp.s
-
 source/wasm_emitter.o: source/wasm_emitter.cpp.o
 .PHONY : source/wasm_emitter.o
 
@@ -981,9 +957,6 @@ help:
 	@echo "... source/smart_types.o"
 	@echo "... source/smart_types.i"
 	@echo "... source/smart_types.s"
-	@echo "... source/tests.o"
-	@echo "... source/tests.i"
-	@echo "... source/tests.s"
 	@echo "... source/wasm_emitter.o"
 	@echo "... source/wasm_emitter.i"
 	@echo "... source/wasm_emitter.s"

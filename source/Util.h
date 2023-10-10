@@ -64,9 +64,9 @@ static bool isnumber(char x){return x>='0' and x<='9';}
 
 static bool I_know_what_I_am_doing = false;
 
-#if RUNTIME_ONLY
-#define todo(msg)
-#define todow(msg)
+#if RUNTIME_ONLY or RELEASE
+#define todo(msg) ;
+#define todow(msg) ;
 #else
 #define todo(msg) {breakpoint_helper;error1(String("TODO ") + String(msg),__FILE__,__LINE__);}
 #define todow(msg) {warn(String("TODO ") + String(msg));}
