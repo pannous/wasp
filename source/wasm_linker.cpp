@@ -57,7 +57,11 @@ String s(String x) { return x; }
 
 #define FIRST_KNOWN_SECTION SectionType::Type
 //#define LOG_DEBUG(fmt, ...) if (s_debug) s_log_stream->Writef(fmt, __VA_ARGS__);
+#if RELEASE
+#define LOG_DEBUG(fmt, ...)
+#else
 #define LOG_DEBUG(fmt, ...) if (s_debug) printf(fmt, __VA_ARGS__);
+#endif
 
 int unknown_opcode_length_TODO = -1;
 const int leb = -2;// special marker for varlength leb argument ( i32.const … )
@@ -888,7 +892,7 @@ bool Linker::WriteCombinedSection(SectionType section_code, const SectionPtrVect
     }
 
     if (section_code == wabt::SectionType::Data)
-        printf("SectionType::Data\n");
+	    info("SectionType::Data\n");
 
     stream_.WriteU8Enum(section_code, "section code");
 
@@ -997,7 +1001,9 @@ void Linker::ResolveSymbols() {
 
     int memories = 0;
     for (auto binary: inputs_) {
+#if not RELEASE
         printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
+#endif
         uint64 nr_imports = binary->function_imports.size();
 
         // FIND DUPLICATE imports and exports (no other purpose for now!)
@@ -1134,9 +1140,11 @@ void Linker::ResolveSymbols() {
                 binary->active_function_imports--;// never used!?
                 char *import_name = import.name;
                 char *export_name = exported.name;
+#if not RELEASE
                 printf("LINKED %s:%s import #%d %s to export #%d %s relocated_function_index %d \n", binary->name,
                        name.data, old_index,
                        import_name, export_index, export_name, export_number);
+#endif
             } else {
                 // todo all this is done in RelocateFuncIndex !
                 // link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
@@ -1363,7 +1371,7 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
 //    int fun_start = 0;
     int fun_end = length;
 //    Reloc *patch_code_block_size;
-    println("PARSING FUNCTION SECTION");
+	info("PARSING FUNCTION SECTION");
     while (code_index < function_count && current_offset < length and
            current_offset - section_offset < section_size) {// go over ALL functions! ignore 00
         int64 last_const = 0;// use stack value for i32.load index or offset?

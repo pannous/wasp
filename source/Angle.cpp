@@ -189,7 +189,7 @@ Code &compile(String code, bool clean = true);// exposed to wasp.js
 #endif
 
 void debug_wasm_file() {
-#if not WASM
+#if not WASM and not RELEASE
 	print("validate-main.sh");
 	print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 	system("./validate-main.sh");
@@ -221,7 +221,7 @@ Node eval(String code) {
 #endif
 		Code &binary = compile(code, true);
 		binary.save();// to debug
-#if NO_TESTS
+#if NO_TESTS and not RELEASE
 		debug_wasm_file(); // SLOW! use only to debug single file
 #endif
 		smart_pointer_64 results = binary.run();

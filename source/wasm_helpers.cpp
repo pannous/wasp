@@ -95,7 +95,9 @@ void newline() {
 
 void info(chars msg) {
     if (not tracing)return;// todo finer levels!
+#if not RELEASE
     print(msg);
+#endif
 }
 
 void warn(chars warning) {
@@ -103,7 +105,9 @@ void warn(chars warning) {
 }
 
 void warn(String warning) {
+#if not RELEASE
     printf("%s\n", warning.data);
+#endif
 }
 
 void warning(chars warning) {

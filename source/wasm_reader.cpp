@@ -658,7 +658,9 @@ Module &read_wasm(String file) {
         return *module_cache[name.hash()];
     if (debug_reader)print("--------------------------\n");
 //    if (debug_reader)
+#if not RELEASE
     printf("parsing: %s\n", file.data);
+#endif
     size = fileSize(file);
     if (size <= 0)error("file not found: "s + file);
     bytes buffer = (bytes) malloc(size + 4096 * 16);// do not free
