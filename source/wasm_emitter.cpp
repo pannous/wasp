@@ -164,6 +164,7 @@ unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
 
 		if (eq(s, "not"))return i32_eqz; // i32.eqz  // no such thing as i32_not, but the same if you think about it
 		if (eq(s, "¬"))return i32_eqz; // i32.eqz
+		if (eq(s, "!"))return i32_eqz; // i32.eqz
 
 	} else if (kind == i64t) { // INT32
 		if (eq(s, "+"))return i64_add; // i64.add

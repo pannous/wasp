@@ -7,18 +7,13 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
 #set(CROSSCOMPILE x86) # needs more work / just use different docker images
 if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    message(STATUS "Architecture is x86_64")
     set(X86_64 1)
-elseif (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
-    message(STATUS "Architecture is arm64")
-else ()
-    message(STATUS "Architecture is ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 endif ()
 
 # ⚠️ SET these configurations via CLion Preferences… Build->CMake->Profiles
-#  MANUALLY force set these only for urgent debugging,
-set(RELEASE 1) # no tests todo VS:
-set(NO_TESTS 1) # no tests
+#  MANUALLY force set these only for urgent debugging
+#set(RELEASE 1) # no tests todo VS:
+#set(NO_TESTS 1) # no tests
 #set(RUNTIME_ONLY 1) # no Angle eval emit merge etc! ≠ NO_TESTS
 #set(VERBOSE 1)
 #set(DEBUG 1)

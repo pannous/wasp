@@ -3188,6 +3188,8 @@ void testCurrent() {
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 //	exit(1);
+	assert_emit("!1", 0)
+	assert_emit("1!=1", 0)
 	assert_emit("√3^2", 3)
 	assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
 
