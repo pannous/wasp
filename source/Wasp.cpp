@@ -1535,12 +1535,19 @@ private:
 							warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
 					}
 					bool specialDeclaration = false;
-					if (type == patterns or (lastNonWhite == ')' and bracket == '{')) {
+					if (type == patterns) {
+						asListItem = false;
+						flatten = false;
+					}
+					if ((lastNonWhite == ')' and bracket == '{')) {
 						// declare (){} as special syntax in wiki!
 						// careful! using (1,2) {2,3} may yield hidden bug!
 						asListItem = false;
 						flatten = false;
 						specialDeclaration = true; // (){}
+						auto name = actual.first().name;
+						if (name == "while" or name == "if") // todo cleaner!
+							specialDeclaration = false; // if (){} is not a declaration!
 					}
 					proceed();
 					// wrap {x} … or todo: just don't flatten before?
