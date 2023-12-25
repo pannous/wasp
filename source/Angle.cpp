@@ -256,16 +256,18 @@ Node eval(String code) {
 Signature &groupFunctionArgs(Function &function, Node &params) {
 	//			left = analyze(left, name) NO, we don't want args to become variables!
 	List<Arg> args;
-	Node &nextType = DoubleType;
+	Node nextType = DoubleType;
 	if (params.length == 0) {
 		params = groupTypes(params, function);
 		if (params.name != function.name)
 			args.add({function.name, params.name, params.type ? params.type : &nextType});
 	}
 	for (Node &arg: params) {
+		Node *typ0 = arg.type ? arg.type : &nextType;
+		Type typ = mapType(typ0);
 		if (arg.kind == groups) {
 			arg = groupTypes(arg, function);
-			args.add({function.name, arg.name, arg.type ? arg.type : &nextType, params});
+			args.add({function.name, arg.name, typ, params});
 			continue;
 		}
 		if (isType(arg)) {
@@ -274,7 +276,7 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 			else nextType = arg;
 		} else {
 			if (arg.name != function.name)
-				args.add({function.name, arg.name, arg.type ? arg.type : &nextType, params});
+				args.add({function.name, arg.name, typ, params});
 		}
 	}
 
@@ -308,8 +310,8 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 		if (signature == function.signature)
 			return function.signature;// function.signature; // ok compatible
 		// else split two variants
+		Function new_variant = function;
 		Function old_variant = function;// clone by value!
-		Function new_variant = function;// clone by value!
 		check_is(old_variant.name, function.name);
 		old_variant.signature = function.signature;
 		new_variant.signature = signature;// ^^ different
@@ -318,7 +320,6 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 		function.signature = *new Signature();// empty
 		function.variants.add(old_variant);
 		function.variants.add(new_variant);
-		variant = &new_variant;
 	} else if (function.is_polymorphic) {
 		variant = new Function();
 		for (Function &fun: function.variants)
@@ -860,7 +861,7 @@ Node &classDeclaration(Node &node, Function &function) {
 	return dec;
 }
 
-
+// wit type
 Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module *mod) {
 //    if(functions.has(name)) polymorph
 // is_used to fake test wit signatures
@@ -927,7 +928,7 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 	if (!return_type)
 		return_type = extractReturnTypes(arguments, body).clone();
 	if (return_type)
-		signature.returns(mapTypeToPrimitive(*return_type));// explicit double sin(){} // todo other syntaxes+ multi
+		signature.returns(mapType(return_type));// explicit double sin(){} // todo other syntaxes+ multi
 	Node &decl = *new Node(name);//node.name+":={…}");
 	decl.setType(declaration);
 	decl.add(body.clone());
@@ -1010,17 +1011,23 @@ Node &groupDeclarations(Node &expression, Function &context) {
 		if (isType(first)) {
 			auto fun = expression[1];
 			String name = fun.name;
-			Node *typ = first.clone();
+			Node &typ = first;
 			Node modifieres = NIL;
 			Node &arguments = fun.values();
 			Node &body = expression.last();
-			return groupFunctionDeclaration(name, typ, NIL, arguments, body, context);
-		} else todo("declaration");
-	}
-	if (expression.length == 2 and isType(first.first()) and
-	    expression.last().kind == objects) {// c style double sin() {}
-		expression = groupTypes(expression, context);
-		return groupFunctionDeclaration(first.name, first.type, NIL, first.values(), expression.last(), context);
+			return groupFunctionDeclaration(name, &typ, NIL, arguments, body, context);
+		} else if (isType(first.first())) {
+			auto fun = first[1];
+			String name = fun.name;
+			Node &typ = first.first();
+			Node modifieres = NIL;
+			Node &arguments = expression[1];
+			Node &body = expression.last();
+			return groupFunctionDeclaration(name, &typ, NIL, arguments, body, context);
+		} else {
+			warn("declaration"s + expression.serialize());
+			return expression;
+		}
 	}
 	for (Node &node: expression) {
 		if (&node == 0) {

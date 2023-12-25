@@ -411,6 +411,7 @@ String operator "" _s(chars c, unsigned long t) {// function signature contains 
     return String(c, (int) t);
 }
 
+// ""s is reserved for std::string or future standardization
 String operator "" s(chars c, unsigned long t) {// function signature contains illegal type WHYY??
     return String(c, (int) t);
 }

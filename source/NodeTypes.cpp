@@ -431,6 +431,8 @@ Primitive mapTypeToPrimitive(Node &n) {
 		return Primitive::wasm_float64;
 	if (n == CodepointType)
 		return Primitive::codepoint32;
+	if (n == StringType)
+		return Primitive::stringp;
 	else if (mapType(n.name, false) != unknown_type)
 		return mapType(n.name, false).type;
 	else todow("mapTypeToPrimitive "s + n.serialize());
