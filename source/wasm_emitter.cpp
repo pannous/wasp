@@ -765,7 +765,7 @@ Primitive addTypeFromSize(Node &array, short size) {
 	else if (size == 4 and kind == longs)array.type = &IntegerType;
 	else if (size == 4 and kind == Kind::codepoint1)array.type = &CodepointType;
 	else if (size == 8 and kind == longs) array.type = &LongType;
-	else if (size == 8 and kind == reals) array.type = (Node *) &DoubleType;// const!
+	else if (size == 8 and kind == reals) array.type = &DoubleType;
 	else
 		error("can't infer type from size "s + size);
 	return mapTypeToPrimitive(*array.type);

@@ -9,6 +9,7 @@
 #include "Paint.h"
 
 #pragma GCC diagnostic ignored "-Wdeprecated"
+
 #import "test_angle.cpp"
 #import "test_wast.cpp"
 #import "test_wasm.cpp"
@@ -56,13 +57,15 @@ void testTypes() {
 
 
 void testTypedFunctions() {
-	result = analyze(parse("int id(float b, string c){b}"));
+	// todo name 'id' clashes with 'id' in preRegisterFunctions()
+	result = analyze(parse("int tee(float b, string c){b}"));
 	check_is(result.kind, Kind::declaration);
-	check_is(result.name, "id");
+	check_is(result.name, "tee");
 	auto signature_node = result["signature"];
+//	auto signature_node = result.metas()["signature"];
 	if (not signature_node.value.data)error("no signature");
 	Signature &signature = *(Signature *) signature_node.value.data;
-	check_is(signature.functions.first()->name, "id")
+	check_is(signature.functions.first()->name, "tee")
 	check_is(signature.parameters.size(), 2)
 	check_is(signature.parameters.first().name, "b")
 	check_is(signature.parameters.first().type, reals);// use real / number for float64  float32
@@ -1444,10 +1447,10 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 	assert(interpret("ç='☺'") == String(L'☺'));
 	assert(interpret("ç='☺'") == String(U'☺'));
 	skip(
-	assert(interpret("ç='☺'") == String(u"☺"));
-	assert(interpret("ç='☺'") == String(u8"☺"));
-	assert(interpret("ç='☺'") == String(L"☺"));
-	assert(interpret("ç='☺'") == String(U"☺"));
+			assert(interpret("ç='☺'") == String(u"☺"));
+			assert(interpret("ç='☺'") == String(u8"☺"));
+			assert(interpret("ç='☺'") == String(L"☺"));
+			assert(interpret("ç='☺'") == String(U"☺"));
 	)
 	check(String(u'牛') == "牛");
 	check(String(L'牛') == "牛");
@@ -3269,12 +3272,15 @@ void testCurrent() {
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 //	exit(1);
-//	assert_emit("x={1 2 3}; x#3=4;x#3", 4);
 
-	testTypedFunctions();
-	testPolymorphism();
-	assert_emit("x={1 2 3}; x#3=4;x#3", 4);
-
+	for (int i = 0; i < 1000; i++) {
+//		testPolymorphism();
+//		testTypedFunctions();
+		print("OK >>> %d\n"s % i);
+		assert_emit("(2 4 3)#2", 4);
+//		assert_emit("x={1 2 3}; x#3=4;x#3", 4);
+	}
+	exit(1);
 	testTypes();
 //	assert_emit("√3^2", 3)
 //	testSinus();

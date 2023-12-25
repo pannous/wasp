@@ -153,7 +153,9 @@ Node &Node::operator[](chars s) {
     }
     if (length == 1)
         if (children[0].has(s))return children[0][s];
-
+	if (meta and meta->has(s)) {
+		return (*meta)[s];
+	}
     Node &neu = set(s, 0);// for n["a"]=b // todo: return DANGLING/NIL
     neu.kind = key;//nils; // until ref is set! but neu never knows when its set!! :(
     neu.parent = (Node *) this;
