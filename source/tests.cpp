@@ -3250,6 +3250,10 @@ void testCurrent() {
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 //	exit(1);
+	assert_emit("(2 4 3)[1]", 4);
+	assert_eval("if (0) {3}", false);
+
+	testSubGroupingFlatten();
 	testTypedFunctions();
 	testTypes();
 //	testPolymorphism();
