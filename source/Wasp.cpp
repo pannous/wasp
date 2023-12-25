@@ -1484,6 +1484,8 @@ private:
             switch (ch) {
 //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
 //				https://en.wikipedia.org/wiki/ASCII#Character_set
+//                case 'Ü':
+//                    print("Ü");
                 case '@':
                 case '$':
                     if (parserOptions.dollar_names or parserOptions.at_names)

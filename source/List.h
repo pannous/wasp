@@ -358,6 +358,9 @@ public:
             add(s);
     }
 
+
+//    list.map(+[](Function *f) { return f->name; });
+// ⚠️ note the + in "+[]" to make it a lambda!
     template<class T>
     List<T> map(T (*lambda)(S)) {
         List<T> neu;
@@ -373,6 +376,12 @@ public:
         return 0;
     }
 
+
+	S *find(bool (*lambda)(S *)) {
+		for (S *s: *this)
+			if (lambda(s))return s;
+		return 0;
+	}
 
     String join(String string) {
         String s;
