@@ -3268,6 +3268,7 @@ void testCurrent() {
 	testPolymorphism();
 	testTypedFunctions();
 	testTypes();
+	// x
 //	assert_emit("√3^2", 3)
 //	testSinus();
 	testDom();
