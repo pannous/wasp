@@ -58,17 +58,18 @@ void testTypes() {
 void testTypedFunctions() {
 	result = analyze(parse("int id(float b, string c){b}"));
 	check_is(result.kind, Kind::declaration);
-	check_is(result.name, "a");
+	check_is(result.name, "id");
 	auto signature_node = result["signature"];
-	Signature signature = *(Signature *) signature_node.value.data;
-	check_is(signature.functions.first()->name, "a")
+	if (not signature_node.value.data)error("no signature");
+	Signature &signature = *(Signature *) signature_node.value.data;
+	check_is(signature.functions.first()->name, "id")
 	check_is(signature.parameters.size(), 2)
 	check_is(signature.parameters.first().name, "b")
-	check_is(signature.parameters.first().type, float32);// use real / number for float64
+	check_is(signature.parameters.first().type, reals);// use real / number for float64  float32
 	check_is(signature.parameters.last().name, "c")
 	check_is(signature.parameters.last().type, strings);
 	let params = signature.parameters.map(+[](Arg f) { return f.name; });
-	check_is(params.first(), "a");
+	check_is(params.first(), "b");
 }
 
 void testEmptyTypedFunctions() {
@@ -3249,7 +3250,7 @@ void testCurrent() {
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 //	exit(1);
-//	testTypedFunctions();
+	testTypedFunctions();
 	testTypes();
 //	testPolymorphism();
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()

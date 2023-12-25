@@ -446,6 +446,7 @@ public:
     }
 
     S &first() {
+        if (size_ < 1) error("empty list");
         return items[0];
     }
 
