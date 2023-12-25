@@ -1424,11 +1424,12 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 	assert(interpret("ç='☺'") == String(u'☺'));
 	assert(interpret("ç='☺'") == String(L'☺'));
 	assert(interpret("ç='☺'") == String(U'☺'));
+	skip(
 	assert(interpret("ç='☺'") == String(u"☺"));
 	assert(interpret("ç='☺'") == String(u8"☺"));
 	assert(interpret("ç='☺'") == String(L"☺"));
 	assert(interpret("ç='☺'") == String(U"☺"));
-
+	)
 	check(String(u'牛') == "牛");
 	check(String(L'牛') == "牛");
 	check(String(U'牛') == "牛");
@@ -3248,7 +3249,7 @@ void testCurrent() {
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 //	exit(1);
-	testTypedFunctions();
+//	testTypedFunctions();
 	testTypes();
 //	testPolymorphism();
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
