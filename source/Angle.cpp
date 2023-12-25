@@ -859,7 +859,7 @@ Node &classDeclaration(Node &node, Function &function) {
 	return dec;
 }
 
-// wit type
+
 Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module *mod) {
 //    if(functions.has(name)) polymorph
 // is_used to fake test wit signatures
@@ -934,10 +934,7 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 //	decl["signature"]=*new Node("signature");
 	if (signature.functions.size() == 0)
 		signature.functions.add(&function);
-//    decl["signature"].value.data = &signature;
-	auto pNode = new Node("signature");
-	pNode->value.data = &signature;
-	decl.addMeta(pNode);
+	decl["signature"].value.data = &signature;
 //    function.body= &body;
 	return decl;
 }
@@ -1012,11 +1009,11 @@ Node &groupDeclarations(Node &expression, Function &context) {
 		if (isType(first)) {
 			auto fun = expression[1];
 			String name = fun.name;
-			Node &typ = first;
+			Node *typ = first.clone();
 			Node modifieres = NIL;
 			Node &arguments = fun.values();
 			Node &body = expression.last();
-			return groupFunctionDeclaration(name, &typ, NIL, arguments, body, context);
+			return groupFunctionDeclaration(name, typ, NIL, arguments, body, context);
 		} else if (isType(first.first())) {
 			auto fun = first[1];
 			String name = fun.name;

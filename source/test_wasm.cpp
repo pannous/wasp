@@ -939,7 +939,6 @@ void testArrayIndicesWasm() {
 
 //	testArrayIndices(); //	check node based (non-primitive) interpretation first
 //	data_mode = true;// todo remove hack
-	clearAnalyzerContext();
     assert_emit("x={1 2 3}; x#3=4;x#3", 4);
 #if WASM
     assert_emit("puts('ok');", -1);
