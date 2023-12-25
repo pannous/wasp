@@ -1445,7 +1445,7 @@ private:
 		actual.setType(groups);// may be changed later, default (1 2)==1,2
 #ifdef DEBUG
 		if (line != "}")
-			actual.line = &line;
+			actual.line = &line.clone();
 #endif
 		auto length = text.length;
 		int start = at;// line, expression, group, … start
@@ -1562,7 +1562,7 @@ private:
 					object.separator = objectValue.separator;
 #ifdef DEBUG
 					if (line != "}")
-						object.line = &line;
+						object.line = &line.clone();
 #endif
 					if (asListItem)
 						actual.add(object);
@@ -1781,7 +1781,7 @@ private:
 					Node &node = expressione(close);//word();
 #ifdef DEBUG
 					if (line != "}")
-						node.line = &line;
+						node.line = &line.clone();
 #endif
 					if (contains(import_keywords, (chars) node.first().name.data)) { //  use, include, require …
 						node = direct_include(actual, node);
