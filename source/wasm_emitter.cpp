@@ -1668,7 +1668,7 @@ Code emitOperator(Node &node, Function &context) {
 			code.add(0x01); // todo: memory index argument!?
 		if (last_type == none or last_type == voids)
 			last_type = i32t;
-		if (opcode >= 0x45 and opcode <= 0x78 or opcode == string_eq)
+		if ((opcode >= 0x45 and opcode <= 0x78) or opcode == string_eq)
 			last_type = i32;// int ops (also f64.eqz …)
 	} else if (name == "²") {
 //		error("this should be handled universally in analyse: x² => x*x no matter what!");
@@ -3253,7 +3253,7 @@ Code emitNameSection() {
 	auto typeNames = Code(type_names) + encodeVector(Code(usedTypes) + typeNameMap);
 	auto globalNames = Code(global_names) + encodeVector(Code(usedGlobals) + globalNameMap);
 	auto dataNames = Code(data_names) + encodeVector(Code(1)/*count*/ + Code(0) /*index*/ + Code("wasp_data"));
-	auto fieldNames = Code(field_names) + encodeVector(Code(usedTypes) + fieldNameMap);
+	auto fieldNames = Code(field_names) + encodeVector(Code(usedFields) + fieldNameMap);// usedTypes ??
 
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.
 //	The name section should appear only once in a module, and only after the data section.

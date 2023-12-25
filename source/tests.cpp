@@ -3269,10 +3269,11 @@ void testCurrent() {
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 //	exit(1);
-	assert_emit("x={1 2 3}; x#3=4;x#3", 4);
+//	assert_emit("x={1 2 3}; x#3=4;x#3", 4);
 
-	testPolymorphism();
 	testTypedFunctions();
+	testPolymorphism();
+	assert_emit("x={1 2 3}; x#3=4;x#3", 4);
 
 	testTypes();
 //	assert_emit("√3^2", 3)

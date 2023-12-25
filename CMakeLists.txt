@@ -18,6 +18,7 @@ endif ()
 #set(VERBOSE 1)
 #set(DEBUG 1)
 #set(TRACE 1)
+set(STRICT 1)
 #set(SDL 1) # Graphics
 #set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
 #set(INCLUDE_MERGER 0) # include wasm_linker.cpp
@@ -193,11 +194,15 @@ endif ()
 ADD_COMPILE_FLAG("-fno-inline") # why not? debug?
 
 # ENABLE:
-#ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+if (STRICT)
+    ADD_COMPILE_FLAG("-Wall")
+    ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+endif ()
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
+#ADD_COMPILE_FLAG("-Wno-unused-but-set-variable")
 if (LINUX)
     ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator")
     ADD_COMPILE_FLAG("-Wno-writable-strings") # dangerous! fix assert_is("square 3", 9)
@@ -240,7 +245,6 @@ endif ()
 
 if (NOT TRACE)
     if (APPLE)
-        #    ADD_COMPILE_FLAG("-Wall")
         # disable:
         if (DEBUG)
             if (NOT WASM)

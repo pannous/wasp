@@ -1469,6 +1469,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 			continue;// already done how
 		}
 		if (minArity == 0)continue;
+		if (maxArity < 0)continue;// todo
 		Node rest;
 		if (i < expressiona.length - 1 and expressiona[i + 1].kind == groups) {// f(x)
 			// todo f (x) (y) (z)
