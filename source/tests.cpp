@@ -33,15 +33,70 @@ void testTypes() {
 	result = analyze(parse("int a"));
 	check_is(result.kind, Kind::reference);
 	check_is(result.type, IntegerType);// IntegerType
+	check_is(result.name, "a");
 
 	result = analyze(parse("string b"));
 	check_is(result.kind, Kind::reference);
 	check_is(result.type, StringType);
+	check_is(result.name, "b");
 
 	result = analyze(parse("float a,string b"));
-	result = result[0];
-	check_is(result.kind, Kind::reference);
-	check_is(result.type, DoubleType);
+	let result0 = result[0];
+	check_is(result0.kind, Kind::reference);
+//	check_is(result0.kind, Kind::declaration);
+//	todo at this stage it should be a declaration?
+
+	check_is(result0.type, DoubleType);
+	check_is(result0.name, "a");
+	let result1 = result[1];
+	check_is(result1.kind, Kind::reference);
+	check_is(result1.type, StringType);
+	check_is(result1.name, "b");
+}
+
+
+void testTypedFunctions() {
+	result = analyze(parse("int id(float b, string c){b}"));
+	check_is(result.kind, Kind::declaration);
+	check_is(result.name, "a");
+	auto signature_node = result["signature"];
+	Signature signature = *(Signature *) signature_node.value.data;
+	check_is(signature.functions.first()->name, "a")
+	check_is(signature.parameters.size(), 2)
+	check_is(signature.parameters.first().name, "b")
+	check_is(signature.parameters.first().type, float32);// use real / number for float64
+	check_is(signature.parameters.last().name, "c")
+	check_is(signature.parameters.last().type, strings);
+	let params = signature.parameters.map(+[](Arg f) { return f.name; });
+	check_is(params.first(), "a");
+}
+
+void testEmptyTypedFunctions() {
+	// todo int a(){} should be compiler error
+	// todo do we really want / need int a(); void a(){} ?
+//	if(ch=='{' and next=='}' and previous==')'){
+//		actual.setType(declaration, false);// a(){} => def a!
+//		proceed();
+//		proceed();
+//		break;
+//	}
+	result = analyze(parse("int a(){}"));
+	check_is(result.kind, Kind::declaration);
+	check_is(result.name, "a");
+	auto signature_node = result["signature"];
+	Signature signature = *(Signature *) signature_node.value.data;
+	check_is(signature.functions.first()->name, "a")
+	let names2 = signature.functions.map(+[](Function *f) {
+		return f->name;
+	});
+	check_is(names2.size(), 1);
+	check_is(names2.first(), "a");
+
+
+	result = analyze(parse("int a();"));
+	check_is(result.kind, Kind::declaration);// header signature
+	check_is(result.type, IntegerType);
+	check_is(result.name, "a");
 }
 
 void testPolymorphism() {
@@ -1357,7 +1412,7 @@ void testUTFinCPP() {
 }
 
 void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
-//	char letter = '牛';// Character too large for enclosing character literal type
+//	char letter = '牛';// Character too large for enclosing character literal type char ≈ byte
 	char16_t character = u'牛';
 	char32_t hanzi = U'牛';
 	wchar_t word = L'牛';
@@ -1365,9 +1420,14 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 	check(hanzi == word);
 //	use_interpreter=true
 // todo: let wasm return strings!
+	assert(interpret("ç='a'") == String(u8'a'));
 	assert(interpret("ç='☺'") == String(u'☺'));
 	assert(interpret("ç='☺'") == String(L'☺'));
 	assert(interpret("ç='☺'") == String(U'☺'));
+	assert(interpret("ç='☺'") == String(u"☺"));
+	assert(interpret("ç='☺'") == String(u8"☺"));
+	assert(interpret("ç='☺'") == String(L"☺"));
+	assert(interpret("ç='☺'") == String(U"☺"));
 
 	check(String(u'牛') == "牛");
 	check(String(L'牛') == "牛");
@@ -3188,11 +3248,7 @@ void testCurrent() {
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 //	exit(1);
-	assert_emit("!1", 0)
-	assert_emit("1!=1", 0)
-	assert_emit("√3^2", 3)
-	assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
-
+	testTypedFunctions();
 	testTypes();
 //	testPolymorphism();
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()

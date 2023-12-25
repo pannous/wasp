@@ -24,7 +24,8 @@ endif ()
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
 #ADD_DEFINITIONS(-DMULTI_VALUE) # change ABI to always return (value, type) tuple
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
-
+#ADD_DEFINITIONS(-DWINDOWS)
+#ADD_COMPILE_DEFINITIONS(-DWINDOWS)
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
 
 if (APPLE)

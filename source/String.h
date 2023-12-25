@@ -39,19 +39,19 @@ class List;
 #endif
 
 
-//What 'char' and 'wchar_t' represent are completely ambiguous.
-//You might think that they represent a "character", but depending on the encoding, that might not be true.
-//typedef byte char;// overloaded term that can mean many things but throws a compiler warning
-// character in the real world is LESS ambivalent then in the UTF world! on the other hand a new term like icon/grapheme cant hurt
-//typedef wchar_t character;// overloaded term that can mean many things:
+// What 'char' and 'wchar_t' represent is completely ambiguous.
+// You might think that they represent a "character", but depending on the encoding, that might not be true.
+// typedef byte char;// overloaded term that can mean many things but throws a compiler warning
+// character in the real world is LESS ambivalent than in the UTF world! on the other hand a new term like icon/grapheme cant hurt
+// typedef wchar_t character;// overloaded term that can mean many things:
 typedef char32_t codepoint;// ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
 //typedef codepoint operator_char;
 //class CodepointType{ char32_t nr; };// to avoid wrong autocast codepoint x=string[i]
-//typedef char* grapheme;// sequence of one or more code points that are displayed as a single 'character' ä may be two code points a¨, or one ä
-typedef String grapheme;// sequence of one or more code points that are displayed as a single 'character' ☀️=☀+_ e2 98 80 + ef b8 8f
+//typedef byte* grapheme;// sequence of one or more code points that are displayed as a single 'character' ä may be two code points a¨, or one ä
+typedef String grapheme;// sequence of one or more code points that are displayed as a single 'character' ☀️=☀+'icon' e2 98 80 + ef b8 8f
 //typedef String grapheme;// usually codepoint + color or something. no need yet? boycott idea?
 // TODO IS IT SAFE IF WE USE char IN WASP as synonym for codepoint, by merging graphemes and ignoring modifiers? we can return a¨ as  ä!!
-// ⚠ color is an invisible control character like in ascii ⚠️=⚠ + ef b8 8f
+// ⚠ color is an invisible control character like in ascii ⚠️=⚠ + 'icon' ef b8 8f
 
 /* WASM defines:
  * https://github.com/WebAssembly/stringref/blob/main/proposals/stringref/Overview.md
@@ -351,6 +351,38 @@ public:
         length = encode_unicode_character(data, wideChar);
         data[length] = 0;// be sure
     }
+
+	explicit String(char8_t aChar) {
+		data = (char *) (calloc(sizeof(char8_t), 2));
+		data[0] = aChar;
+		length = 1;
+		data[length] = 0;// be sure
+	}
+
+
+	explicit String(wchar_t *wideChar) {
+		todo("L\"wchar_t* literal\"");
+	}
+
+	explicit String(char32_t *const utf32char) {
+		todo("U\"char32_t* literal\"");
+	}
+
+	explicit String(char32_t const *utf32char) {
+		todo("U\"char32_t* literal\"");
+	}
+
+	explicit String(char16_t *const char16_ts) {
+		todo("u\"char16_t* literal\"");
+	}
+
+	explicit String(char16_t const *char16_ts) {
+		todo("u\"char16_t* literal\"");
+	}
+
+	explicit String(char8_t const *char8_ts) {
+		todo("u8\"char8_t* literal\"");
+	}
 
     explicit String(double real) {
         int max_length = 4;
