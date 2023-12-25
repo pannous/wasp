@@ -101,6 +101,10 @@ void testEmptyTypedFunctions() {
 }
 
 void testPolymorphism() {
+
+	// debug:
+	auto debug_node = parse("string aaa(string a){return a};\nfloat bbb(float b){return b+1}");
+	auto debug_fun = analyze(debug_node);
 	auto node = parse("string test(string a){return a};\nfloat test(float b){return b+1}");
 	auto fun = analyze(node);
 	auto function = functions["test"];
@@ -3265,10 +3269,12 @@ void testCurrent() {
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 //	exit(1);
+	assert_emit("x={1 2 3}; x#3=4;x#3", 4);
+
 	testPolymorphism();
 	testTypedFunctions();
+
 	testTypes();
-	// x
 //	assert_emit("√3^2", 3)
 //	testSinus();
 	testDom();

@@ -263,11 +263,9 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 			args.add({function.name, params.name, params.type ? params.type : &nextType});
 	}
 	for (Node &arg: params) {
-		Node *typ0 = arg.type ? arg.type : &nextType;
-		Type typ = mapType(typ0);
 		if (arg.kind == groups) {
 			arg = groupTypes(arg, function);
-			args.add({function.name, arg.name, typ, params});
+			args.add({function.name, arg.name, arg.type ? arg.type : mapType(&nextType), params});
 			continue;
 		}
 		if (isType(arg)) {
@@ -276,7 +274,7 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 			else nextType = arg;
 		} else {
 			if (arg.name != function.name)
-				args.add({function.name, arg.name, typ, params});
+				args.add({function.name, arg.name, arg.type ? arg.type : mapType(&nextType), params});
 		}
 	}
 
