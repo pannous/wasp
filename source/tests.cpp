@@ -101,6 +101,20 @@ void testEmptyTypedFunctions() {
 }
 
 void testPolymorphism() {
+	auto node = parse("string test(string a){return a};\nfloat test(float b){return b+1}");
+	auto fun = analyze(node);
+	auto function = functions["test"];
+	check_is(function.is_polymorphic, true);
+	check_is(function.variants.size(), 2);
+	check_is(function.variants[0].signature.size(), 1);
+//	check_is(function.variants[0].signature.parameters[0].type, (Type) strings); todo
+	check_is(function.variants[0].signature.parameters[0].type, (Type) stringp);
+	auto variant = function.variants[1];
+	check_is(variant.signature.size(), 1);
+	check_is(variant.signature.parameters[0].type, (Type) float32);
+}
+
+void testPolymorphism2() {
 	auto node = parse("fun test(string a){return a};\nfun test(float b){return b+1}");
 	auto fun = analyze(node);
 	auto function = functions["test"];
@@ -3247,17 +3261,13 @@ void testWasmGC() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+// ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 //	exit(1);
-	assert_emit("(2 4 3)[1]", 4);
-	assert_eval("if (0) {3}", false);
-
-	testSubGroupingFlatten();
+	testPolymorphism();
 	testTypedFunctions();
 	testTypes();
-//	testPolymorphism();
-// ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("√3^2", 3)
 //	testSinus();
 	testDom();

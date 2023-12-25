@@ -1105,10 +1105,10 @@ public:
     Signature &returns(Type type) {
 //		return_type = type;
         if (type.kind != nils and type.kind != undefined and type.kind != unknown) {
-            if (multi_value or return_types.size() == 0)
+//            if (multi_value or return_types.size() == 0)
                 return_types.add(type);
-            else
-                return_types[0] = type;
+//            else
+//                return_types[0] = type;
 #if DEBUG and not WASM
             debug_name += ": ";
             debug_name += typeName(type);

@@ -132,9 +132,11 @@ enum Valtype {
 // types
 //extern const Node DoubleType;
 //extern const Node LongType;
+// todo const!
+//extern Node const DoubleType; // FloatType RealType
+extern Node DoubleType; // FloatType RealType
 extern Node IntegerType; // maps to int32 in external abi! don't use internally much, only for struct
 extern Node LongType;
-extern Node DoubleType; // FloatType RealType
 extern Node BoolType;
 extern Node CodepointType;// CharType CharacterType
 extern Node ByteType;
