@@ -1072,7 +1072,7 @@ Node &Node::to(Node match) {
 //	Node& flatten(Node &current){
 Node &Node::flat() {
 //	if (kind == call)return *this;//->clone();
-    if (kind == patterns or kind == modul)
+    if (kind == patterns or kind == modul or kind == declaration)
         return *this;// never flatten patterns x=[] "hi"[1] …
     if (length == 0 and kind == key and name.empty() and value.node)return *value.node;
     if (length == 1) {

@@ -135,6 +135,8 @@ bool isType(Node &expression) {
 	auto type = mapType(name, false);
 	if (type == none || type == unknown_type)
 		return types.has(name);
+	else
+		return true;
 //	if (not types.has(name))
 //		error1("isType: type %s not found"s% name);
 	return types.has(name);
@@ -261,6 +263,11 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 			args.add({function.name, params.name, params.type ? params.type : &nextType});
 	}
 	for (Node &arg: params) {
+		if (arg.kind == groups) {
+			arg = groupTypes(arg, function);
+			args.add({function.name, arg.name, arg.type ? arg.type : &nextType, params});
+			continue;
+		}
 		if (isType(arg)) {
 			if (args.size() > 0 and args.last().type != unknown_type)
 				args.last().type = types[arg.name];
@@ -282,7 +289,9 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
 			name = String("$"s + signature.size());
 //            error("empty argument name");
 		if (function.locals.has(name)) {
-			error("duplicate argument name: "s + name);
+			// TODO
+			warn("Already declared as local OR duplicate argument name: "s + name);
+//			error("duplicate argument name: "s + name);
 		}
 		signature.add(arg.type, name);// todo: arg type, or pointer
 		addLocal(function, arg.name, arg.type, true);
@@ -613,6 +622,8 @@ Node &groupTypes(Node &expression, Function &context) {
 	 * x int    unstable, discouraged!
 	 * x::int clear verbosive not yet implemented
 	 * */
+	if (expression.kind == declaration)
+		return expression;// later
 	if (types.size() == 0)initTypes();
 	if (isType(expression)) {// double \n x,y,z  extra case :(
 		Node type = getType(expression);
@@ -713,6 +724,8 @@ Node &constructInstance(Node &node, Function &function) {
 }
 
 
+bool compatibleTypes(Type type32, Type type321);
+
 void updateLocal(Function &context, String name, Type type) {
 //#if DEBUG
 	Local &local = context.locals[name];
@@ -735,11 +748,19 @@ void updateLocal(Function &context, String name, Type type) {
 				addWasmArrayType(type);
 				local.type = genericType(array, type);
 			}
-		} else
-			warn("local "s + name + " in context %s already known "s % context.name + " with type " +
-			     typeName(oldType) + ", ignoring new type " + type_name);
+		} else {
+			if (!compatibleTypes(oldType, type))
+				warn("local "s + name + " in context %s already known "s % context.name + " with type " +
+				     typeName(oldType) + ", ignoring new type " + type_name);
+		}
 	}
 	// ok, could be cast'able!
+}
+
+bool compatibleTypes(Type type1, Type type2) {
+	if (type1 == type2)return true;
+	if (type1 == string_struct and type2 == strings)return true;
+	return false;
 }
 
 // return: done?
@@ -911,6 +932,10 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 	decl.setType(declaration);
 	decl.add(body.clone());
 	function.body = body.clone();//.flat(); // debug or use?
+//	decl["signature"]=*new Node("signature");
+	if (signature.functions.size() == 0)
+		signature.functions.add(&function);
+	decl["signature"].value.data = &signature;
 //    function.body= &body;
 	return decl;
 }
@@ -981,6 +1006,17 @@ Node &groupDeclarations(Node &expression, Function &context) {
 	auto first = expression.first();
 //	if (contains(functor_list, first.name))
 //		return expression;
+	if (expression.kind == declaration) {
+		if (isType(first)) {
+			auto fun = expression[1];
+			String name = fun.name;
+			Node *typ = first.clone();
+			Node modifieres = NIL;
+			Node &arguments = fun.values();
+			Node &body = expression.last();
+			return groupFunctionDeclaration(name, typ, NIL, arguments, body, context);
+		} else todo("declaration");
+	}
 	if (expression.length == 2 and isType(first.first()) and
 	    expression.last().kind == objects) {// c style double sin() {}
 		expression = groupTypes(expression, context);
@@ -1721,8 +1757,8 @@ Node &analyze(Node &node, Function &function) {
 		return node;
 
 	// data keyword leaves data completely unparsed, like lisp quote `()
-	auto first = node.first().name;
-	if (first == "data" or first == "quote")
+	auto firstName = node.first().name;
+	if (firstName == "data" or firstName == "quote")
 		return node;
 
 	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
@@ -1738,7 +1774,7 @@ Node &analyze(Node &node, Function &function) {
 		return NUL;
 	}
 #if not WASM
-	if (not first.empty() and class_keywords.contains(first))
+	if (not firstName.empty() and class_keywords.contains(firstName))
 		return classDeclaration(node, function);
 #endif
 	if (node.kind == referencex)functions["getElementById"].is_used = true;
@@ -1774,7 +1810,7 @@ Node &analyze(Node &node, Function &function) {
 	}
 
 
-//    if(function_keywords.contains(first))
+//    if(function_keywords.contains(firstName))
 	if (node.containsAny(function_keywords))
 		return groupFunctionDefinition(node, function);
 
