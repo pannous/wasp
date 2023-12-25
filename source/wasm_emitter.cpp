@@ -1668,7 +1668,7 @@ Code emitOperator(Node &node, Function &context) {
 			code.add(0x01); // todo: memory index argument!?
 		if (last_type == none or last_type == voids)
 			last_type = i32t;
-		if ((opcode >= 0x45 and opcode <= 0x78) or opcode == string_eq)
+		if (opcode >= 0x45 and opcode <= 0x78 or opcode == string_eq)
 			last_type = i32;// int ops (also f64.eqz …)
 	} else if (name == "²") {
 //		error("this should be handled universally in analyse: x² => x*x no matter what!");

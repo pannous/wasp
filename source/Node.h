@@ -607,7 +607,6 @@ public:
     bool operator==(Node *other);// equals
 	bool operator==(Node const *other);// equals
 
-//    bool operator==(Node const &other);// equals
     bool operator==(const Node &other);// equals
 
 

@@ -9,7 +9,6 @@
 #include "Paint.h"
 
 #pragma GCC diagnostic ignored "-Wdeprecated"
-
 #import "test_angle.cpp"
 #import "test_wast.cpp"
 #import "test_wasm.cpp"
@@ -3271,17 +3270,16 @@ void testCurrent() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
-//	exit(1);
 
-	for (int i = 0; i < 1000; i++) {
-//		testPolymorphism();
-//		testTypedFunctions();
-		print("OK >>> %d\n"s % i);
-		assert_emit("(2 4 3)#2", 4);
-//		assert_emit("x={1 2 3}; x#3=4;x#3", 4);
-	}
-	exit(1);
+
+//	exit(1);
+	assert_emit("(2 4 3)[1]", 4);
+	assert_eval("if (0) {3}", false);
+
+	testSubGroupingFlatten();
+	testTypedFunctions();
 	testTypes();
+	testPolymorphism();
 //	assert_emit("√3^2", 3)
 //	testSinus();
 	testDom();
