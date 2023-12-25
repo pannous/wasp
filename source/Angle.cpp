@@ -934,7 +934,10 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 //	decl["signature"]=*new Node("signature");
 	if (signature.functions.size() == 0)
 		signature.functions.add(&function);
-	decl["signature"].value.data = &signature;
+//    decl["signature"].value.data = &signature;
+	auto pNode = new Node("signature");
+	pNode->value.data = &signature;
+	decl.addMeta(pNode);
 //    function.body= &body;
 	return decl;
 }
@@ -1944,7 +1947,6 @@ void clearAnalyzerContext() {
 	globals.clear();
 	call_indices.clear();
 	call_indices.setDefault(-1);
-	functions.clear();
 	analyzed.clear();// todo move much into outer analyze function!
 	functions.clear();// always needs to be followed by
 	preRegisterFunctions();// BUG Signature wrong cpp file

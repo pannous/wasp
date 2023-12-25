@@ -399,7 +399,7 @@ public:
 
 
     explicit Node(chars name) {
-        this->name = *new String(name);
+        this->name = String(name);
 //		type = strings NAH;// unless otherwise specified!
     }
 
