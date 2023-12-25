@@ -513,7 +513,7 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
     }
 
     bool isArray() const {
-        return kind == arrays or isGroup(kind) or isGeneric() and isGroup((Kind) generics.kind);
+	    return kind == arrays or isGroup(kind) or (isGeneric() and isGroup((Kind) generics.kind));
     }
 };
 
