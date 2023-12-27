@@ -12,7 +12,7 @@
 
 #import "asserts.h"
 
-#if WASM
+#if WASM or WEBAPP
 #define assert_throws(αα)
 #else
 #define assert_throws(αα)  {print(#αα);debug_line();bool old=panicking;try{ \
@@ -1346,7 +1346,9 @@ void testAllWasm() {
     testLogarithm();
 
 
+#if INCLUDE_MERGER
     testMergeOwn();
+#endif
     skip(
             testMergeRelocate();
     )

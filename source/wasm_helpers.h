@@ -248,7 +248,9 @@ struct c_io_vector {
 // Fucking wasmer doesn't support wasi_snapshot_preview1
 #endif
 
+#if not WEBAPP // ??
 [[noreturn]]
+#endif
 WASI(proc_exit)
 void proc_exit(int exitcode);
 
