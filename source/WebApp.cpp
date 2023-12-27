@@ -163,10 +163,8 @@ void bind(char *name, char *(*func)(char *)) {
 }
 
 void splitLog(const std::string s) {
-	view.set_title(s);
+	std::string item;
     int index = 0;
-    std::cout << s << std::endl;
-    std::string item;
 //	while (index < 100) {
 //		item = webview::json_parse(s, "", index++);
 //		std::cout << item << std::endl;
@@ -263,12 +261,14 @@ int64 open_webview(String url = "") {
         testWebview(s);
         return s;
     });// works, with
-	view.bind("alert", [](std::string s) -> std::string {
-        splitLog(s);
-        return s;
-    });// no native popup?
+//	view.bind("alert", [](std::string s) -> std::string {
+//        splitLog(s);
+//        return s;
+//    });// no native popup?
     // why does alert('a') print 'a' alert(1) print 1, even though lambda type is string?
 	view.bind("log", [](std::string s) -> std::string {
+		std::cout << s << std::endl;
+		view.set_title(s);
         splitLog(s);
         return s;
     });

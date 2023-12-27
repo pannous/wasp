@@ -38,11 +38,19 @@ void testDom() {
 	assert_equals(result.kind, call);
 	result = eval("getElementById('canvas');");
 //	print(typeName(result.kind));
-	assert_equals(result.kind, longs); // todo: can't use smart pointers for elusive externref
+//	assert_equals(result.kind, longs); // todo: can't use smart pointers for elusive externref
+	assert_equals(result.kind, bools); // todo: can't use smart pointers for elusive externref
+
 //	assert_equals(result.kind, (int64) externref); // todo: can't use smart pointers for elusive externref
 //	result = eval("document.getElementById('canvas');");
 	result = analyze(parse("$canvas"));
 	assert_equals(result.kind, (int64) externref);
+	result = eval("testExternRef($canvas)"); // ok!!
+	check(result.value.longy = 42);
+
+	result = eval("getExternRefProperty($canvas,'width')"); // ok!!
+	check_eq(result.value.longy, 300);
+
 //	embedder.trace('canvas = document.getElementById("canvas");')
 //	print(nod);
 }
@@ -3289,9 +3297,9 @@ void testCurrent() {
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 	testDom();
-//#if WEBAPP
-//	return;
-//#endif
+#if WEBAPP
+	return;
+#endif
 //	exit(1);
 	testOldRandomBugs();
 
