@@ -1545,9 +1545,11 @@ Code &merge_binaries(List<Code *> binaries) {
 //			check(binary->exports.size()==0);
 //		}
         linker.AppendBinary(binary);
+//        free(binary);
     }
     const OutputBuffer &out = linker.PerformLink();
-    return code(out.data);// data already copied, no need to .clone();
+
+	return code(out.data);// data already copied, no need to .clone();
 }
 
 Code &merge_binaries(Code &main, Code &lib) {
