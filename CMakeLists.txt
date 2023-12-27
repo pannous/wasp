@@ -67,10 +67,10 @@ if (NOT WASM)
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
-        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        #        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         # SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
-        #  set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
-        #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying 2022-12: last release on Jun 2, 2021
+        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #  SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
         #  set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
@@ -151,12 +151,12 @@ if (WEBAPP)
 endif ()
 if (WASM)
     ADD_DEFINITIONS(-DWASM)
-    SET(WASM3 0) # No wasm-VM inside wasm
-    REMOVE_DEFINITIONS(WASM3)
     #    multi-value referenceTypes bulkMemory works in FF
     #    ADD_COMPILE_FLAG("-O0 -s WASM_BIGINT") should work in WebKit but we only use standard MVP features for now!
-    SET(WEBAPP 0) # just be sure
-    SET(SDL 0)
+    REMOVE_DEFINITIONS(WASM3) # ?
+    SET(WASM3 0) # No wasm-VM inside wasm
+    SET(WEBAPP 0) # just be sure, don't pack browser into wasm ;)
+    SET(SDL 0) # no c++ graphics in wasm, use canvas!
     # ^^ UNSET, or better don't set manually at all!
 endif ()
 
