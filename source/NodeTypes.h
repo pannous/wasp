@@ -79,7 +79,7 @@ enum Valtype {
     wasm_array = ref, // 0x6b ≠ wasmtype_array = 0x5e in type section
     wasm_struct = ref, // 0x6b ≠ wasmtype_struct = 0x5f in type section
     anyref = 0x6f,// was conceptually and namewise merged into externref
-    externref = 0x6f, // -0x11
+    externref = 0x6f, // -0x11 ≠ ref!!
     funcref = 0x70, // -0x10
     func = 0x60,
     string_ref = 0x64, // wasm stringref

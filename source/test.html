@@ -26,7 +26,7 @@
 <button onclick="run(code_input.value)">RUN</button>
 <button onclick="results.value=''">CLEAR</button>
 <br/>
-<textarea cols="80" id="results" placeholder="press run to compile and see result" rows="8">
+<textarea cols="180" id="results" placeholder="press run to compile and see result" rows="16">
 </textarea>
 <canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
 
@@ -198,6 +198,7 @@ window.onload = function () {
                 env: {
                     memory,
                     // table,
+                    getElementById: id => document.getElementById(id),
                     square: x => x * x, // usually native wasm, better test with 'grow'!
                     pow: Math.pow, // usually wasp lib, better test other function
                     powd: Math.pow,
@@ -279,6 +280,8 @@ window.onload = function () {
             // exit(1)
         }
     }
+
+    document.addEventListener("DOMContentLoaded", () => test());
 </script>
 
 <style>

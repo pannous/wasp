@@ -625,7 +625,9 @@ chars typeName(Valtype t, bool fail) {
 		case Valtype::none:
 			return "void_block";
 		case Valtype::externref:
-			return "ref";
+			return "ref"; // todo :
+		case Valtype::ref: // wasm struct / array
+			return "wasm_struct";
 //        case unknown_type:
 //            return "unknown";// internal
 		default: {

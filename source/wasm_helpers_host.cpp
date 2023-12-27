@@ -116,6 +116,10 @@ double powd(double x, double y) {
 
 extern "C" void put_chars(chars c, size_t len) {
     printf("%s", c);
+
+#if WEBAPP
+	console_log(c);
+#endif
 }
 
 #if not WASM
