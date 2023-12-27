@@ -120,7 +120,7 @@ chars import_keywords[] = {"use", "require", "import", "include", "using", 0};
 // todo ∨ ~ v ~ versus! "³", "⁴", define inside wasp
 //  or  & and ∨ or ¬  or  ~ not → implies ⊢ entails, proves ⊨ entails, therefore ∴  ∵ because
 // ⊃ superset ≡ iff  ∀ universal quantification ∃ existential  ⊤ true, tautology ⊥ false, contradiction
-//#ifdef WASI
+//#if WASI
 //List<chars> operator_list;
 //#else
 List<chars> operator_list = {"return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
@@ -1443,7 +1443,7 @@ private:
 		Node &actual = *new Node();// current already used in super context
 		actual.parent = parent;
 		actual.setType(groups);// may be changed later, default (1 2)==1,2
-#ifdef DEBUG
+#if DEBUG
 		if (line != "}")
 			actual.line = &line;
 #endif
@@ -1560,7 +1560,7 @@ private:
 					if (flatten) object = object.flat();
 					object.setType(type, false);
 					object.separator = objectValue.separator;
-#ifdef DEBUG
+#if DEBUG
 					if (line != "}")
 						object.line = &line;
 #endif
@@ -1779,7 +1779,7 @@ private:
 					// todo: what a flimsy criterion:
 					bool addFlat = lastNonWhite != ';' and previous != '\n';
 					Node &node = expressione(close);//word();
-#ifdef DEBUG
+#if DEBUG
 					if (line != "}")
 						node.line = &line;
 #endif
@@ -1864,7 +1864,7 @@ void not_ok() {
 	error1("");// assert_throws test
 }
 
-#ifdef BACKTRACE
+#if BACKTRACE
 void handler(int sig) {
 	void *array[10];
 	size_t size;
@@ -2003,7 +2003,7 @@ int main(int argc, char **argv) {
 	testCurrent();
 //    debugWASM();
 #endif
-#ifdef ErrorHandler
+#if ErrorHandler
 	register_global_signal_exception_handler();
 #endif
 	try {
@@ -2013,7 +2013,7 @@ int main(int argc, char **argv) {
 			return 42;
 		}// else
 		if (args.endsWith(".html") or args.endsWith(".htm")) {
-#ifdef WEBAPP
+#if WEBAPP
 			//				start_server(SERVER_PORT);
 						std::thread go(start_server, SERVER_PORT);
 						auto arg = "http://localhost:"s + SERVER_PORT + "/" + args;
@@ -2030,7 +2030,7 @@ int main(int argc, char **argv) {
 		}
 		if (args.endsWith(".wasm")) {
 			if (argc >= 3) {
-#ifdef WABT_MERGE
+#if WABT_MERGE
 				merge_files(--argc, ++argv);
 #else
 				todo("linking files needs compilation with WABT_MERGE")
@@ -2053,26 +2053,26 @@ int main(int argc, char **argv) {
 			console();
 		}
 		if (args == "2D" or args == "2d" or args == "SDL" or args == "sdl") {
-#ifdef GRAFIX
+#if GRAFIX
 			init_graphics();
 #else
 			print("wasp compiled without sdl/webview");
 #endif
 		}
 		if (args == "app" or args == "webview" or args == "browser") {
-#ifndef WEBAPP
+#if not WEBAPP
 			print("wasp needs to be compiled with WEBAPP support");
 			return -1;
 #endif
 //				start_server(9999);
-#ifdef GRAFIX
+#if GRAFIX
 			init_graphics();
 #else
 			print("wasp compiled without sdl/webview");
 #endif
 		}
 		if (args == "server" or args == "serv")
-#ifdef SERVER
+#if SERVER
 			std::thread go(start_server, 9999);
 //				start_server(9999);
 #else
@@ -2081,7 +2081,7 @@ int main(int argc, char **argv) {
 
 		if (args.contains("help"))
 			print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
-#ifdef WASM
+#if WASM
 		initSymbols();
 //		String args(current);
 		String args((char*)alloc(1,1));// hack: written to by wasmx
@@ -2089,13 +2089,6 @@ int main(int argc, char **argv) {
 		print(args);
 		heap_end += strlen(args)+1;
 #endif
-		// todo: eval?
-//        eval(args);
-//        print((args).serialize());
-// via arg
-//#ifndef NO_TESTS // RUNTIME_ONLY
-//		testCurrent();// needs init_graphics in WEBAPP to run wasm!
-//#endif
 		return 42;
 	} catch (Exception e) {
 		print("Exception WOOW");

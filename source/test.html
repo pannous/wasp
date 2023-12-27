@@ -277,6 +277,7 @@ window.onload = function () {
             print(error)
             print('COMPILE ERROR', error.message)
             wasm_error(error.message);
+          exit(1)
         }
     }
 </script>
