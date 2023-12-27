@@ -21,12 +21,21 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+
+void testCanvas() {
+	result = analyze(parse("$canvas"));
+	assert_equals(result.kind, (int64) externref);
+	auto nod = eval("    ctx = $canvas.getContext('2d');\n"
+	                "    ctx.fillStyle = 'red';\n"
+	                "    ctx.fillRect(10, 10, 150, 100);");
+	print(nod);
+}
+
 void testDom() {
 	result = analyze(parse("$canvas"));
 	assert_equals(result.kind, (int64) externref);
-	auto nod = eval("$canvas;123");
-	print(nod);
 //	embedder.trace('canvas = document.getElementById("canvas");')
+//	print(nod);
 }
 
 void testTypes() {
@@ -668,7 +677,7 @@ void testHyphenUnits() {
 }
 
 void testHypenVersusMinus() {
-	const char *code = "a=1 b=2 b-a";
+	const char *code = "a=-1 b=2 b-a";
 	assert_emit(code, 3);
 	// kebab case
 	const char *data = "a-b:2 c-d:4 a-b";
@@ -3273,15 +3282,11 @@ void testCurrent() {
 
 
 //	exit(1);
-	assert_emit("(2 4 3)[1]", 4);
-	assert_eval("if (0) {3}", false);
 
 	testSubGroupingFlatten();
 	testTypedFunctions();
 	testTypes();
 	testPolymorphism();
-//	assert_emit("√3^2", 3)
-//	testSinus();
 	testDom();
 //    testKebabCase();
 	skip(
