@@ -43,6 +43,7 @@ defaults write com.apple.WebKit.WebContent WebKitDeveloperExtras -bool true
 // Call `gtk_window_fullscreen`, convert window to `C.GtkWindow` pointer.
 //C.gtk_window_fullscreen((*C.GtkWindow)(window))
 
+
 class Wait {
 public:
     void done(int64 result) {
@@ -370,4 +371,16 @@ std::string testWebview(std::string s) {
 }
 
 std::string
-fetch(std::string s) { return "I can download/load any file I want!!"; }// but return type is wrong so we need json.parse or some cast!
+fetch(std::string s) {
+	todo("fetch in WebApp.cpp");
+	return "I can download/load any file I want!!";
+}// but return type is wrong so we need json.parse or some cast!
+
+
+void console_log(const char *s) {
+#if DEBUG
+	view.eval("print('" + std::string(s) + "')"); // to $results
+#else
+	view.eval("console.log('" + std::string(s) + "')");
+#endif
+}

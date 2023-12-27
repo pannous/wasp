@@ -11,3 +11,9 @@ void testAllAngle();
 void testWasmGC();
 
 #endif
+
+#if WEBAPP
+
+void console_log(const char *s);
+
+#endif

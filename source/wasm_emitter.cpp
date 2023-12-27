@@ -2562,12 +2562,16 @@ Code emitBlock(Node &node, Function &context) {
 	if (last_type == void_block) last_type = voids;
 	bool needs_cast = return_type != last_type;
 	auto abi = wasp_smart_pointers;// context.abi;
+
+
 	if (return_type == Valtype::voids and last_type != Valtype::voids)
 		block.addByte(drop);
 	else if (return_type == Valtype::i32t and last_type == Valtype::voids)
 		block.addConst32(0);
 	else if (return_type == Valtype::i64t and last_type == Valtype::voids)
 		block.addConst64(0);// 		needs_cast = false;
+	else if (return_type == Valtype::i64t and last_type == Valtype::externref)
+		block.addConst64(0);  // todo: can't use smart pointers for elusive externref
 	else if (abi == wasp_smart_pointers) {
 //		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
 //		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string

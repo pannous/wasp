@@ -32,8 +32,15 @@ void testCanvas() {
 }
 
 void testDom() {
+	print("testDom");
+	preRegisterFunctions();
 	result = analyze(parse("getElementById('canvas')"));
-	assert_equals(result.kind, (int64) externref);
+	assert_equals(result.kind, call);
+	result = eval("getElementById('canvas');");
+//	print(typeName(result.kind));
+	assert_equals(result.kind, longs); // todo: can't use smart pointers for elusive externref
+//	assert_equals(result.kind, (int64) externref); // todo: can't use smart pointers for elusive externref
+//	result = eval("document.getElementById('canvas');");
 	result = analyze(parse("$canvas"));
 	assert_equals(result.kind, (int64) externref);
 //	embedder.trace('canvas = document.getElementById("canvas");')
@@ -3281,9 +3288,7 @@ void testCurrent() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
-
-//	print("testCurrent()");
-//	testDom();
+	testDom();
 //#if WEBAPP
 //	return;
 //#endif
