@@ -32,6 +32,8 @@ void testCanvas() {
 }
 
 void testDom() {
+	result = analyze(parse("getElementById('canvas')"));
+	assert_equals(result.kind, (int64) externref);
 	result = analyze(parse("$canvas"));
 	assert_equals(result.kind, (int64) externref);
 //	embedder.trace('canvas = document.getElementById("canvas");')
@@ -3280,7 +3282,11 @@ void testCurrent() {
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
 
-
+//	print("testCurrent()");
+//	testDom();
+//#if WEBAPP
+//	return;
+//#endif
 //	exit(1);
 	testOldRandomBugs();
 

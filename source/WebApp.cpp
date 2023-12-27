@@ -13,6 +13,8 @@
 #include "WebServer.hpp"
 #include "NodeTypes.h"
 #include "tests.h"
+
+using namespace std;
 /* supported in WebKit:
 ✔️	multiValue
 ✔️	mutableGlobals
@@ -217,6 +219,10 @@ int64 open_webview(String url = "") {
 	view.bind("wasm_done", [](std::string s) -> std::string {
 		printf("wasm_done  result json = %s ", s.c_str());
         const std::string &string = webview::json_parse(s, "", 0);
+		if (string.find("[object Window]") != string::npos) { // todo !?
+			waiter.done(-1);
+			return s;
+		}
 #if MULTI_VALUE
         auto type = webview::json_parse(string, "", 0);
         auto val = webview::json_parse(string, "", 1);
