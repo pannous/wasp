@@ -151,8 +151,8 @@ if (WEBAPP)
 endif ()
 if (WASM)
     ADD_DEFINITIONS(-DWASM)
-    #    multi-value referenceTypes bulkMemory works in FF
     #    ADD_COMPILE_FLAG("-O0 -s WASM_BIGINT") should work in WebKit but we only use standard MVP features for now!
+    #    multi-value referenceTypes bulkMemory works in FF
     REMOVE_DEFINITIONS(WASM3) # ?
     SET(WASM3 0) # No wasm-VM inside wasm
     SET(WEBAPP 0) # just be sure, don't pack browser into wasm ;)
