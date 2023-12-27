@@ -78,18 +78,18 @@ function readFile() {// via classic html, not wasp
 }
 
 function print(...x) {
-    results.value += x + "\n"
-    log(...x);// to stdout and window title!
+    let xs = Array.isArray(x) ? x.join(' ') : x;
+    results.value += xs + "\n"
+    log(String(xs));// to stdout and window title!
+    // log(JSON.stringify(xs));// to stdout and window title!
     console.log(...x);
 }
 
-window.onload = function () {
-    // test()
-};
 </script>
 
 <p id="message">RUNNING WASM TESTS</p>
 <script type="text/javascript">
+    $ = id => document.getElementById(id), // .bind(document); for debugging
     ignore = x => x
     nop = x => ignore(x)
     const string_header_64 = 0x0010000000000000n // n means BigInt("…")
@@ -190,6 +190,16 @@ window.onload = function () {
     }
     identity = x => x
 
+    const utf8_decoder = new TextDecoder('utf8');
+
+    const string = function (pointer, length, format) {
+        let buffer = new Uint8Array(memory.buffer, 0, memory.buffer.byteLength);
+        if (!length) length = 0;
+        if (length <= 0) while (buffer[pointer + ++length]) ; // auto length
+        const arr = new Uint8Array(buffer.subarray(pointer, pointer + length));
+        return utf8_decoder.decode(arr);
+    };
+
     async function wasmx(code) {
         try {
             // let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
@@ -198,7 +208,35 @@ window.onload = function () {
                 env: {
                     memory,
                     // table,
-                    getElementById: id => document.getElementById(id),
+                    getElementById: id => {
+                        print("getElementById", id, string(id))
+                        return document.getElementById(string(id))
+                    },
+                    testExternRef: ref => {
+                        print("testExternRef OK ", ref);
+                        return 42;
+                    },
+                    getExternRefProperty: (ref, prop0) => {
+                        let prop = string(prop0)
+                        print("CALLING getExternRefProperty", ref, prop)
+                        if (ref && typeof ref[prop] !== 'undefined') {
+                            print("getExternRefProperty OK ", ref, prop, ref[prop])
+                            return ref[prop];
+                        } else {
+                            throw new Error(`'${prop}' is not a property of the provided reference`);
+                        }
+                    },
+                    invokeExternRef: (ref, fun, params) => {
+                        print("invokeExternRef", ref, fun, params)
+                        // Check if 'fun' is a valid method of 'ref'
+                        if (ref && typeof ref[fun] === 'function') {
+                            // Call the method with the provided parameters
+                            return ref[fun](...params);
+                        } else {
+                            // Handle the case where 'fun' is not a valid method
+                            throw new Error(`'${fun}' is not a function of the provided reference`);
+                        }
+                    },
                     square: x => x * x, // usually native wasm, better test with 'grow'!
                     pow: Math.pow, // usually wasp lib, better test other function
                     powd: Math.pow,
@@ -261,14 +299,17 @@ window.onload = function () {
             //const module = await WebAssembly.compileStreaming(fetch('program.wasm'));
             const instance = await WebAssembly.instantiate(module, imports, memory);
             memory = instance.memory || module.memory || instance.exports.memory || memory
+
             //const { instance } = await WebAssembly.instantiateStreaming(fetch('program.wasm'));
             // print("Exports: ", instance.exports);//show what we've got
             let main = instance.exports.main || instance.exports._start;
             if (main) {
-                result = main()
+                let result = main()
+                print("result")
                 print(result)
                 print(smartResult(result))
-                wasm_done(result);// pass over raw result
+                wasm_done(String(result));// pass over raw result
+                // wasm_done(JSON.stringify(result));// pass over raw result
             } else {
                 wasm_error("NO MAIN!");
             }
@@ -281,7 +322,8 @@ window.onload = function () {
         }
     }
 
-    document.addEventListener("DOMContentLoaded", () => test());
+    window.onload = () => test()
+    // window.onload = () => run(code_input.value)
 </script>
 
 <style>

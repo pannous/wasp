@@ -1902,8 +1902,20 @@ void preRegisterFunctions() {
 #else
 	functions["fd_write"].module = new Module{.name="wasi_unstable"};
 #endif
+
+	// DOM functions
 	functions["getElementById"].import();//.builtin();
-	functions["getElementById"].signature.add((Type) charp).returns((Type) externref);
+	functions["getElementById"].signature.add((Type) charp).returns((Type) externref /*!!*/);
+	functions["testExternRef"].import();//.builtin();
+	functions["testExternRef"].signature.add((Type) externref).returns(int32);//.returns((Type) externref);
+	functions["getExternRefProperty"].import();//.builtin();
+	functions["getExternRefProperty"].signature.add((Type) externref).add(charp).returns(i32);
+//	functions["getExternRefProperty"].signature.add((Type) externref).add(charp).returns(longs);
+//	functions["getExternRefProperty"].signature.add((Type) externref,"object").add(strings,"property").returns((Type)smarti64);
+
+//	functions["invokeExternRef"].import();//.builtin();
+//	functions["invokeExternRef"].signature.add((Type) externref).add(strings,"method").add(node,"params").returns((Type)Primitive::smarti64);
+
 
 //	functions["$"].import();//.builtin();
 //	functions["$"].signature.add((Type) strings).returns((Type) referencex);
