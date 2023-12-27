@@ -10,7 +10,7 @@ if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
     set(X86_64 1)
 endif ()
 
-# ⚠️ SET these configurations via CLion Preferences… Build->CMake->Profiles
+# ⚠️ SET these configurations VIA TOOLCHAIN: via CLion Preferences… Build->CMake->Profiles
 #  MANUALLY force set these only for urgent debugging
 #set(RELEASE 1) # no tests todo VS:
 #set(NO_TESTS 1) # no tests
@@ -18,8 +18,9 @@ endif ()
 #set(VERBOSE 1)
 #set(DEBUG 1)
 #set(TRACE 1)
+set(STRICT 1)
 #set(SDL 1) # Graphics
-#set(WASM 1) # no WebView, duh SET VIA TOOLCHAIN!
+#set(WASM 1) # SET VIA TOOLCHAIN!
 #set(INCLUDE_MERGER 0) # include wasm_linker.cpp
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
 #ADD_DEFINITIONS(-DMULTI_VALUE) # change ABI to always return (value, type) tuple
@@ -193,7 +194,10 @@ endif ()
 ADD_COMPILE_FLAG("-fno-inline") # why not? debug?
 
 # ENABLE:
-#ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+if (STRICT)
+    ADD_COMPILE_FLAG("-Wall")
+    ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
+endif ()
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
