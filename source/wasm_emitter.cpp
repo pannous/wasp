@@ -1376,7 +1376,8 @@ Code emitValue(Node &node, Function &context) {
 			return emitExpression(node, context);
 		case strings: {
 			// append pString (as char*) to data section and access via stringIndex
-			if (!node.value.string)error("missing node.value.string");
+			if (!node.value.string)
+				error("missing node.value.string");
 			last_object_pointer = data_index_end;
 			String string = *node.value.string;
 			if (referenceDataIndices.has(string))
@@ -1463,9 +1464,21 @@ Code emitAttributeSetter(Node &node, Function &context) {
 }
 
 
+// external reference ≠ wasm reference types (struct …) !
+[[nodiscard]]
+Code emitReferenceProperty(Node &node, Node &field, Function &function) {
+	auto op = Node("getExternRefProperty");
+	op.add(node);
+	op.add(Node(field.name));
+	return emitCall(op, function);
+}
+
+
 Code emitGetter(Node &node, Node &field, Function &context) {
 	Code code;
 	// todo we could match the field to data at compile time in some situations, but let's implement the general case first:
+	if (node.kind == referencex)
+		return emitReferenceProperty(node, field, context);
 	if (node.kind == reference and node.length > 0) // else loop!
 		return emitIndexPattern(node, field, context, false, unknown);
 //        code.add(emitValue(node, context));
@@ -1481,8 +1494,10 @@ Code emitGetter(Node &node, Node &field, Function &context) {
 	return code;
 }
 
+Code emitReferenceAttribute(Node &node, Node &field, Function &function) {
+	return Code();
+}
 
-Code emitReferenceAttribute(Node &object, Node field, Function &function);
 
 Code emitReferenceTypeConstructor(Node &node, Function &context);
 
@@ -1529,6 +1544,7 @@ Code emitAttribute(Node &node, Function &context) {
 	return code + emitIndexPattern(object, field, context, true, element_type);// emitIndexRead
 }
 
+// wasm reference ≠ external reference !
 Code emitReferenceAttribute(Node &object, Node field_name, Function &function) {
 	Code code;
 //    return code; // todo

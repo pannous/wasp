@@ -47,8 +47,14 @@ void testDom() {
 	assert_equals(result.kind, (int64) externref);
 	result = eval("testExternRef($canvas)"); // ok!!
 	check(result.value.longy = 42);
-
 	result = eval("getExternRefProperty($canvas,'width')"); // ok!!
+	check_eq(result.value.longy, 300);
+
+}
+
+void testDomProperty() {
+//	result = eval("width='width';$canvas.width");
+	result = eval("$canvas.width");
 	check_eq(result.value.longy, 300);
 
 //	embedder.trace('canvas = document.getElementById("canvas");')
@@ -3296,10 +3302,11 @@ void testCurrent() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
-	testDom();
+	testDomProperty();
 #if WEBAPP
 	return;
 #endif
+	testDom();
 //	exit(1);
 	testOldRandomBugs();
 
