@@ -1180,6 +1180,13 @@ Node &groupOperators(Node &expression, Function &context) {
 			prev = expression.children[i - 1];
 //            prev = expression.to(op);
 //        else error("binop?");
+		if (op == ".") {
+			if (prev.kind == referencex)
+				functions["getExternRefProperty"].is_used = true;
+			if (prev.kind == (Kind) Primitive::node)
+				functions["get"].is_used = true;
+		}
+
 
 // todo move "#" case here:
 		if (isPrefixOperation(node, prev, next)) {// ++x -i
@@ -1783,7 +1790,8 @@ Node &analyze(Node &node, Function &function) {
 	if (not firstName.empty() and class_keywords.contains(firstName))
 		return classDeclaration(node, function);
 #endif
-	if (node.kind == referencex)functions["getElementById"].is_used = true;
+	if (node.kind == referencex)
+		functions["getElementById"].is_used = true;
 	// if(function_operators.contains(name))...
 	if (node.kind == key and node.values().name == "func")
 		return funcDeclaration(node.name, node.values(), NUL /* no body here */ , 0, function.module);
