@@ -119,7 +119,9 @@ extern "C" void put_chars(chars c, size_t len) {
 }
 
 #if not WASM
+#if not WEBAPP // ??
 [[noreturn]]
+#endif
 void proc_exit(int x) {
     exit(x);
 }

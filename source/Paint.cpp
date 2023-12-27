@@ -136,7 +136,7 @@ void checkInput() {
 int paint(int wasm_offset) {// ready to paint!
 //	if changed
 //	char *wasm_memory=0;//getWasmMemory();
-	int nr_bytes = surface->w * surface->h * 4;
+	int nr_bytes = surface->view * surface->h * 4;
 	// if nr_bytes changed: skip frame!
 	if (wasm_memory and wasm_offset >= 0)
 		memcpy(surface->pixels, ((char *) wasm_memory + wasm_offset), nr_bytes);

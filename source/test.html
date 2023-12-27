@@ -17,7 +17,8 @@
 <p onclick='exit()'>exit</p>
 <p onclick='server()'>server</p>
 <p onclick='terminate()' style="background:gray;width:100px;height:100px">terminate</p>
-<textarea id="code_input" onkeyup="run(value)">√3^2</textarea>
+<textarea id="code_input" onkeyup="run(value)">3*3</textarea>
+<!-- √3^2 -->
 <br/>
 <!--application/wasp-->
 <!--accept="*/*"-->
@@ -107,6 +108,8 @@ window.onload = function () {
     // let table_size = 294
 
     let memory = new WebAssembly.Memory({initial: memory_size, maximum: 65336});
+
+    let hex = x => x >= 0 ? x.toString(16) : (0xFFFFFFFF + x + 1).toString(16) // '0x' + not for xdotool
 
     function is_smart_pointer(result) {
         let got_smart_pointer = Number.isInteger(result) && (result >= 0x10000000 || result <= -0x10000000);
@@ -261,8 +264,9 @@ window.onload = function () {
             memory = instance.memory || module.memory || instance.exports.memory || memory
             //const { instance } = await WebAssembly.instantiateStreaming(fetch('program.wasm'));
             // print("Exports: ", instance.exports);//show what we've got
-            if (instance.exports.main) {
-                result = instance.exports.main()
+          let main = instance.exports.main || instance.exports._start;
+          if (main) {
+            result = main()
                 print(result)
                 print(smartResult(result))
                 wasm_done(result);// pass over raw result

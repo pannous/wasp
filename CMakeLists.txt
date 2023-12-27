@@ -63,7 +63,6 @@ if (NOT WASM)
     set(CONSOLE 1)
 
     if (NOT RUNTIME_ONLY)
-        set(INCLUDE_MERGER 1) # works with WASI
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
@@ -77,6 +76,11 @@ if (NOT WASM)
         #  set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         #  set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
         # others: WAVM WAMR
+        if (WEBAPP)
+            set(INCLUDE_MERGER 0) # might work?
+        else ()
+            set(INCLUDE_MERGER 1) # works with WASI
+        endif ()
     endif ()
     #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
     # ^^ fixes <cmath> mac errors!
