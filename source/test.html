@@ -90,7 +90,7 @@ function print(...x) {
 <p id="message">RUNNING WASM TESTS</p>
 <script type="text/javascript">
     $ = id => document.getElementById(id), // .bind(document); for debugging
-    ignore = x => x
+        ignore = x => x
     nop = x => ignore(x)
     const string_header_64 = 0x0010000000000000n // n means BigInt("…")
     const double_mask_64 = 0x7F00000000000000n
@@ -116,7 +116,42 @@ function print(...x) {
         return got_smart_pointer;
     }
 
-    function smartResult(data = 0) {
+    // to it wasp side in WebApp.cpp !
+    // function new_string(str) {
+    //     let len = str.length;
+    //     let ptr = memory.buffer.byteLength - str.length - 1;
+    //     for (let i = 0; i < len; i++) {
+    //         memory[ptr + i] = str.charCodeAt(i);
+    //     }
+    //     memory[ptr + len] = 0;
+    //     return BigInt(ptr) | string_header_64;
+    // }
+
+    // async NOT WORKING in wasm: Failed to parse String to BigInt
+    function smartResult(object) {
+        // if(is_smart_pointer(object))
+        //     return parseSmartResult(object)
+        if (typeof object === "number")
+            return BigInt(object)
+        if (typeof object === "string" && !isNaN(object))
+            return BigInt(object)
+        // if (typeof object === "object")
+        //     return -123;// String(object) JSON.stringify(
+        try {
+            print("smartResult: ", object, "trying to parse to BigInt")
+            print("typeof object", typeof object)
+            print("object", object)
+            print(" !isNaN(object)", !isNaN(object))
+            // // let wrapped= await new_string(serialized) //
+            return BigInt(object)
+        } catch (ex) {
+            // todo error handling via print!
+            console.error("smartResult: ", object, "failed to parse to BigInt", ex)
+            return -1
+        }
+    }
+
+    function parseSmartResult(data = 0) {
         var type = -1
         var address = data;
         if (!is_smart_pointer(data)) return data;
@@ -216,12 +251,14 @@ function print(...x) {
                         print("testExternRef OK ", ref);
                         return 42;
                     },
+                    // getExternRefProperty: async (ref, prop0) => { async not working in wasm!
                     getExternRefProperty: (ref, prop0) => {
                         let prop = string(prop0)
                         print("CALLING getExternRefProperty", ref, prop)
                         if (ref && typeof ref[prop] !== 'undefined') {
                             print("getExternRefProperty OK ", ref, prop, ref[prop])
-                            return ref[prop];
+                            // return smartResult(ref[prop])
+                            return String(ref[prop])
                         } else {
                             throw new Error(`'${prop}' is not a property of the provided reference`);
                         }
@@ -307,8 +344,9 @@ function print(...x) {
                 let result = main()
                 print("result")
                 print(result)
-                print(smartResult(result))
-                wasm_done(String(result));// pass over raw result
+                let smart_result = parseSmartResult(result); // unwrap
+                print("smart_result", smart_result)
+                wasm_done(String(smart_result)); // wrap!
                 // wasm_done(JSON.stringify(result));// pass over raw result
             } else {
                 wasm_error("NO MAIN!");

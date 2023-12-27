@@ -84,6 +84,7 @@ enum Valtype {
     func = 0x60,
     string_ref = 0x64, // wasm stringref
     stringref = string_ref,//         ; SLEB128(-0x1c)
+	wasm_string_ref = string_ref,//      ; SLEB128(-0x1c)
     stringview_wtf8 = 0x63,//    ; SLEB128(-0x1d)
     stringview_wtf16 = 0x62,//   ; SLEB128(-0x1e)
     stringview_iter = 0x61,//    ; SLEB128(-0x1f)
