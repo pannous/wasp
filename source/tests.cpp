@@ -21,6 +21,16 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testFetch() {
+	// todo: use host fetch if available
+	auto string1 = fetch("https://pannous.com/files/test");
+	auto res = String(string1).trim();
+	if (res.contains("not available")) {
+		print("fetch not available. set CURL=1 in CMakelists.txt or use host function");
+		return;
+	}
+	check_eq(res, "test 2 5 3 7");
+}
 
 void testCanvas() {
 	result = analyze(parse("$canvas"));
@@ -56,6 +66,22 @@ void testDomProperty() {
 //	result = eval("width='width';$canvas.width");
 	result = eval("$canvas.width");
 	check_eq(result.value.longy, 300);
+//	return;
+	result = eval("$canvas.style");
+	check_eq(*result.value.string, "dfsa");
+//	getExternRefProperty OK  [object HTMLCanvasElement] style [object CSSStyleDeclaration]
+// ⚠️ But can't forward result as smarti or stringref:  SyntaxError: Failed to parse String to BigInt
+// todo : how to communicate new string as RETURN type of arbitrary function from js to wasp?
+// call Webview.getString(); ?
+/*
+extern "C" int64 run_wasm(unsigned char *bytes, int length) {
+	run_wasm_sync(bytes, length);
+	return waiter.result();
+}
+ waiter.result() set by js to result of MAIN function in wasm
+ hackable? but what if we have multible $canvas.style calls in our program?
+ it HAS to be written to wasm instance and then read back from there
+ */
 
 //	embedder.trace('canvas = document.getElementById("canvas");')
 //	print(nod);
@@ -3302,6 +3328,7 @@ void testCurrent() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
+	testFetch();
 	testDomProperty();
 #if WEBAPP
 	return;

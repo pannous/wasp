@@ -197,6 +197,7 @@ ADD_COMPILE_FLAG("-fno-inline") # why not? debug?
 
 # ENABLE:
 if (STRICT)
+    MESSAGE("STRICT!")
     ADD_COMPILE_FLAG("-Wall")
     ADD_COMPILE_FLAG("-Werror") # WARNINGS AS ERRORS!  use -Wno-error=… for exceptions
 endif ()
@@ -301,6 +302,18 @@ if (CONSOLE)
     set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp) # Needs to come after, because conflicting Function symbol
 endif ()
 
+if (WASM)
+    #elseif (MY_WASM)
+else ()
+    set(CURL 1)  # only 800 bytes via -lcurl !
+endif ()
+
+if (CURL)
+    find_package(CURL REQUIRED)
+    include_directories(${CURL_INCLUDE_DIRS})
+    set(SOURCE_FILES ${SOURCE_FILES} source/Fetch.cpp)
+    #    only 800 bytes via -lcurl !
+endif ()
 
 if (NO_TESTS)
     ADD_DEFINITIONS(-DNO_TESTS)
@@ -343,7 +356,6 @@ if (INCLUDE_MERGER)
     set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/utf8.cc)
     set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/ir.cc)
 endif ()
-
 
 
 if (APPLE)
@@ -608,15 +620,7 @@ elseif (MICRO) # wasm-micro-vm:
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
 
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
-    if (APPLE)
-        target_link_libraries(wasp vmlib -ldl -lpthread) # -lm
-    else ()
-        target_link_libraries(wasp Threads::Threads ${DL_LIBRARY})
-        target_link_libraries(wasp vmlib -ldl -lpthread -lrt)
-    endif ()
-    if (SDL)
-        target_link_libraries(wasp SDL2::SDL2)
-    endif ()
+
 
     #    add_custom_target(BuildEmitter ALL DEPENDS wasp) #.exe
     target_include_directories(wasp PUBLIC
@@ -630,7 +634,7 @@ elseif (MICRO) # wasm-micro-vm:
             ${WAMR_ROOT_DIR}/core/shared/platform/darwin/
             ${WAMR_ROOT_DIR}/core/shared/mem-alloc
             #    VERSUS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
-            )
+    )
 elseif (WABT)
     message(WABT)
     ADD_DEFINITIONS(-DWABT)
@@ -682,6 +686,10 @@ elseif (WEBAPP)
     set(SOURCE_FILES ${SOURCE_FILES} source/WebApp.cpp source/WebServer.cpp)
     add_executable(wasp-app ${SOURCE_FILES})
     target_link_libraries(wasp-app PUBLIC webview)
+    if (CURL)
+        target_link_libraries(wasp-app PUBLIC ${CURL_LIBRARIES})
+        target_link_libraries(wasp-app PUBLIC -lcurl)
+    endif ()
 elseif (WASM3)
     MESSAGE(wasm3 VM)
     ADD_DEFINITIONS(-DWASM3)
@@ -721,7 +729,10 @@ else () # NORMAL:
     endif ()
     #    add_custom_target(BuildWasp ALL DEPENDS angle)
     target_include_directories(${PROJECT_NAME} PUBLIC source/own_merge)
-
+    if (CURL)
+        target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
+        target_link_libraries(${PROJECT_NAME} -lcurl)
+    endif ()
 endif ()
 
 if (NOT WASM)
@@ -744,11 +755,6 @@ if (CONSOLE AND NOT WEBAPP)
     TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
 endif ()
 
-if (WASM) # OR WASI) common to all!
-    #    target_include_directories(wasp.wasm PUBLIC Frameworks/wasm-c-api/include/)
-    #else ()
-    #    target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
-endif ()
 
 #set(CMAKE_SUPPRESS_REGENERATION)
 #set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
@@ -757,3 +763,9 @@ endif ()
 # CLion SET cidr.asynchronous.refresh.after.build = false (in Find-Action -> Registry )
 
 # Please either delete it manually or select another generation directory => delete CMakeCache.txt
+
+
+if (SDL)
+    target_link_libraries(wasp SDL2::SDL2)
+endif ()
+

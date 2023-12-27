@@ -1917,7 +1917,9 @@ void preRegisterFunctions() {
 	functions["testExternRef"].import();//.builtin();
 	functions["testExternRef"].signature.add((Type) externref).returns(int32);//.returns((Type) externref);
 	functions["getExternRefProperty"].import();//.builtin();
-	functions["getExternRefProperty"].signature.add((Type) externref).add(charp).returns(i32);
+	functions["getExternRefProperty"].signature.add((Type) externref).add(charp).returns((Type) smarti64);
+//	functions["getExternRefProperty"].signature.add((Type) externref).add(charp).returns(stringref); // ⚠️ not yet in webview!
+
 //	functions["getExternRefProperty"].signature.add((Type) externref).add(charp).returns(longs);
 //	functions["getExternRefProperty"].signature.add((Type) externref,"object").add(strings,"property").returns((Type)smarti64);
 

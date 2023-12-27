@@ -117,7 +117,13 @@ extern void warn(chars);
 
 extern void warning(chars);
 
+// use host fetch if available, else c++ fetch (curl)
 extern chars fetch(chars url);
+
+#if not CURL // and not MY_WASM
+
+inline extern chars fetch(chars url) { return "fetch/curl not available"; } // only 800 bytes via -lcurl !
+#endif
 
 int fileSize(char const *file);
 

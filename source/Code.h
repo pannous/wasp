@@ -39,7 +39,7 @@ class Code;
 //#include <future>
 //std::future<int64> run_wasm(bytes wasm_bytes, int len); // <thread> is not supported on this single threaded system
 #if MY_WASM
-extern "C" int run_wasm(bytes wasm_bytes, int len);
+extern "C" int64 run_wasm(bytes wasm_bytes, int len);
 #else
 extern "C" int64 run_wasm(bytes wasm_bytes, int len);
 #endif
