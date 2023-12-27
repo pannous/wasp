@@ -3282,6 +3282,7 @@ void testCurrent() {
 
 
 //	exit(1);
+	testOldRandomBugs();
 
 	assert_emit("3^2", 9);
 	assert_emit("n=3;2ⁿ", 8);

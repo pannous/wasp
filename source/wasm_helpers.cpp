@@ -66,7 +66,9 @@ int isalnum0(int c) {
 }
 
 // todo put to util
+#if not WEBAPP
 [[noreturn]]
+#endif
 void error1(chars message, chars file, int line) {
 #ifdef _Backtrace_
     //	Backtrace(2);// later, in raise
@@ -83,7 +85,9 @@ void error1(chars message, chars file, int line) {
     if (file)printf("\n%s:%d\n", file, line);\
     raise(message);
     if (panicking) panic();// not reached
+#if not WEBAPP // not caught in std::thread teste(testCurrent);
     throw message;// not reached
+#endif
 #endif
 }
 
@@ -122,7 +126,10 @@ int raise(chars error) {
 #endif
     if (panicking)
         proc_exit(-1);
+#if not WEBAPP // not catchable in std::thread teste(testCurrent);
     throw error;
+#endif
+    return -1;
 }
 
 

@@ -357,7 +357,7 @@ extern "C" int run_wasm(unsigned char *bytes, int length) {
 }
 
 std::string testWebview(std::string s) {
-    std::thread teste(testCurrent);
+	std::thread teste(testCurrent);
     teste.detach();
 //	testCurrent();
     return s;
