@@ -212,7 +212,7 @@ public:
 
     S &operator[](uint64 index) const {
         if (index < 0 or index >= size_) /* and const means not auto_grow*/
-            error("index out of range : %d > %d"s % (int64) index % size_);
+	        error("List index out of range : %d > %d"s % (int64) index % size_);
         return items[index];
     }
 

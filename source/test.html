@@ -109,7 +109,8 @@ window.onload = function () {
 
     let memory = new WebAssembly.Memory({initial: memory_size, maximum: 65336});
 
-    let hex = x => x >= 0 ? x.toString(16) : (0xFFFFFFFF + x + 1).toString(16) // '0x' + not for xdotool
+    // todo negative bigint!
+    let hex = x => x >= 0 ? x.toString(16) : (BigInt(0xFFFFFFFF) + BigInt(x) + BigInt(1)).toString(16);
 
     function is_smart_pointer(result) {
         let got_smart_pointer = Number.isInteger(result) && (result >= 0x10000000 || result <= -0x10000000);
@@ -129,8 +130,9 @@ window.onload = function () {
             data = _a[0]
             type = _a[1];
         } else if (typeof data === "bigint") {
-            type = data / BigInt(0x100000000)
-            data = BigInt.asIntN(32, data)// drop high bits
+          // console.log("smartResult: bigint", hex(data))
+          type = Number(data / BigInt(0x100000000));
+          data = BigInt.asIntN(32, data)// drop high bits
         } else { // smartpointer32
             type = data & 0xF0000000;
             address = data & 0x0FFFFFFF;
@@ -196,7 +198,7 @@ window.onload = function () {
         try {
             // let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
             let imports = {
-                wasi_unstable: {proc_exit: terminate},
+              wasi_unstable: {proc_exit: terminate, fd_write: log, fd_read: nop, fd_seek: nop, fd_close: nop},
                 env: {
                     memory,
                     // table,
@@ -277,6 +279,7 @@ window.onload = function () {
             print(error)
             print('COMPILE ERROR', error.message)
             wasm_error(error.message);
+          // return error;
           exit(1)
         }
     }

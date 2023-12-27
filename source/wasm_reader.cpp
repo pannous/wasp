@@ -9,7 +9,7 @@
 // compare with wasm-objdump -h
 
 #define POLYMORPH_function_index_marker -2
-#if MY_WASM
+#if MY_WASM and not WEBAPP
 bool build_module = false;
 #else
 bool build_module = true;
@@ -429,7 +429,7 @@ List<String> demangle_args(String &fun) {
 // https://webassembly.github.io/spec/core/binary/modules.html#binary-exportsec
 void consumeExportSection() {
     Code exports_vector = vec();
-//    if(not build_module)return;
+	if (not build_module)return;
     int exportCount = unsignedLEB128(exports_vector);
     if (debug_reader)printf("export_section: %d\n", exportCount);
     module->export_count = exportCount;

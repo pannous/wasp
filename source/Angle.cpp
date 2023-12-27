@@ -1897,9 +1897,11 @@ void preRegisterFunctions() {
 	functions["fd_write"].signature.add((Type) pointer, "nwritten");// size_t *  out !
 	functions["fd_write"].signature.returns(int32);
 //    functions["fd_write"].module=new Module{.name="wasi"};
-//    functions["fd_write"].module = new Module{.name="wasi_unstable"};
+#if WASMEDGE
 	functions["fd_write"].module = new Module{.name="wasi_snapshot_preview1"};
-
+#else
+	functions["fd_write"].module = new Module{.name="wasi_unstable"};
+#endif
 	functions["getElementById"].import();//.builtin();
 	functions["getElementById"].signature.add((Type) charp).returns((Type) externref);
 
