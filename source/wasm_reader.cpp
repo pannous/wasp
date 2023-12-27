@@ -10,7 +10,7 @@
 
 #define POLYMORPH_function_index_marker -2
 #if MY_WASM and not WEBAPP
-bool build_module = false;
+bool build_module = false; // link via js
 #else
 bool build_module = true;
 #endif

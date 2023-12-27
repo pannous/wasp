@@ -123,7 +123,9 @@ extern "C" void put_chars(chars c, size_t len) {
 [[noreturn]]
 #endif
 void proc_exit(int x) {
+#if not WEBAPP // todo
     exit(x);
+#endif
 }
 
 #endif

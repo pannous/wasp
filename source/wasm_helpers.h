@@ -14,7 +14,9 @@ typedef char32_t codepoint;// 'letter' ☃ is a single code point but 3 UTF-8 co
 typedef const char *chars;
 typedef unsigned char *bytes;
 
+#if not WEBAPP
 [[noreturn]]
+#endif
 extern void error1(chars message, chars file, int line);
 
 // there are two aspects of wasm memory: the internal memory starting at 0 and the external c-pointer *wasm_memory if the VM provides it
@@ -40,7 +42,6 @@ extern "C" byte *heap_end;// memory + heap_offset // todo merge with __data_end 
 extern "C" void panic();//
 
 #ifndef WASM
-
 int raise(chars error); // conflicts with signal.h if 'extern'
 #else
 extern "C" int raise(chars error); // conflicts with signal.h if 'extern'
