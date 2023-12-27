@@ -1,18 +1,18 @@
 <!DOCTYPE html>
+<!-- opened by WebView.cpp -->
 <!-- this file tests V8 inside wasp as opposed to index.html which runs/tests wasp.wasm inside browser -->
 <!--todo unify ^^-->
 <html>
 <head>
-  <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
+    <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
 </head>
-<!-- opened by WebView.cpp -->
 <!--onclick='test().then(_=>terminate0())' -->
-<body style='height: 1000px;'>
+<body onload="test()" style='height: 1000px;'>
 <script src='webgl.js'></script><!--not allowed to access local resource--> <!-- start wasp in server mode!-->
 
 <!-- http://dataurl.net/#dataurlmaker -->
 
-<a href='https://wasm-feature-detect.surma.technology/'>WASM test</a>
+<a href='https://wasm-feature-detect.surma.technology/'>WASM browser features</a>
 <p onclick='test()'>test</p>
 <p onclick='exit()'>exit</p>
 <p onclick='server()'>server</p>
@@ -32,11 +32,9 @@
 
 <!--    <script src="more.js">/*not allowed to load local resource*/</script>-->
 <script> // errors here fail silently :(
-BigInt.prototype.toJSON = function () {
-    return this.toString()
-}
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+BigInt.prototype.toJSON = () => this.toString()
 
 function resizeCanvas() {
     canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
@@ -54,7 +52,6 @@ function loop() {
     window.requestAnimationFrame(loop);
 }
 
-
 function paint() {
     let data = imageData.data
     for (var i = 0; i < data.length; i += 4) {
@@ -66,8 +63,6 @@ function paint() {
     }
     ctx.putImageData(imageData, 0.5, 0.5);
 }
-
-resizeCanvas();
 
 function terminate0() {
     console.log("terminate0 disabled: enable by removing 0");
@@ -130,9 +125,9 @@ window.onload = function () {
             data = _a[0]
             type = _a[1];
         } else if (typeof data === "bigint") {
-          // console.log("smartResult: bigint", hex(data))
-          type = Number(data / BigInt(0x100000000));
-          data = BigInt.asIntN(32, data)// drop high bits
+            // console.log("smartResult: bigint", hex(data))
+            type = Number(data / BigInt(0x100000000));
+            data = BigInt.asIntN(32, data)// drop high bits
         } else { // smartpointer32
             type = data & 0xF0000000;
             address = data & 0x0FFFFFFF;
@@ -181,6 +176,7 @@ window.onload = function () {
     }
     let paintWasmToCanvas = (offset = 0) => {
         // paint()
+        resizeCanvas();
         let len = canvas.width * canvas.height * 4
         data = new Uint8Array(memory.buffer, offset, len + offset);
         // data = new Uint8Array(memory.buffer, 0, memory.buffer.byteLength);
@@ -198,7 +194,7 @@ window.onload = function () {
         try {
             // let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
             let imports = {
-              wasi_unstable: {proc_exit: terminate, fd_write: log, fd_read: nop, fd_seek: nop, fd_close: nop},
+                wasi_unstable: {proc_exit: terminate, fd_write: log, fd_read: nop, fd_seek: nop, fd_close: nop},
                 env: {
                     memory,
                     // table,
@@ -259,16 +255,16 @@ window.onload = function () {
                 }
             };
             // put("STARTING WASM!");
-            let module = await WebAssembly.compile(code)// global
+            let module = await WebAssembly.compile(code)
             // instance = await WebAssembly.instantiate(module, imports, memory).catch(ex => console.error(trimStack(ex)) || quit())
             //const module = await WebAssembly.compileStreaming(fetch('program.wasm'));
             const instance = await WebAssembly.instantiate(module, imports, memory);
             memory = instance.memory || module.memory || instance.exports.memory || memory
             //const { instance } = await WebAssembly.instantiateStreaming(fetch('program.wasm'));
             // print("Exports: ", instance.exports);//show what we've got
-          let main = instance.exports.main || instance.exports._start;
-          if (main) {
-            result = main()
+            let main = instance.exports.main || instance.exports._start;
+            if (main) {
+                result = main()
                 print(result)
                 print(smartResult(result))
                 wasm_done(result);// pass over raw result
@@ -279,8 +275,8 @@ window.onload = function () {
             print(error)
             print('COMPILE ERROR', error.message)
             wasm_error(error.message);
-          // return error;
-          // exit(1)
+            // return error;
+            // exit(1)
         }
     }
 </script>

@@ -75,7 +75,7 @@ if (NOT WASM)
         #  set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
         # others: WAVM WAMR
         if (WEBAPP)
-            set(INCLUDE_MERGER 0) # should work !?
+            set(INCLUDE_MERGER 1) # should work !?
         else ()
             set(INCLUDE_MERGER 1) # works with WASI
         endif ()
