@@ -45,7 +45,6 @@ extern "C" void testRuntime(bytes buffer, size_t size) {
     loadRuntime();
         testCurrent();
 
-//    assert_emit("3^2", 9);
 }
 
 

@@ -3283,6 +3283,12 @@ void testCurrent() {
 
 //	exit(1);
 
+	assert_emit("3^2", 9);
+	assert_emit("n=3;2ⁿ", 8);
+	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
+	assert_emit("'αβγδε'#3", U'γ');
+	assert_emit("√9*-‖-3‖/-3", 3);
+
 	testSubGroupingFlatten();
 	testTypedFunctions();
 	testTypes();
