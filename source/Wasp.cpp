@@ -44,9 +44,10 @@ int SERVER_PORT = 1234;
 //bool eval_via_emit = false;// not all tests yet
 bool eval_via_emit = true;// << todo!  assert_is(…)
 
-// WE DON'T NEED THIS, we can just use CANONICAL ABI lowering, e.g. for strings: [i32, i32]
-bool use_wasm_structs = false;// struct in wat
+// WE DON'T NEED THIS in main, we can just use CANONICAL ABI lowering, e.g. for strings: [i32, i32]
+// WE DO NEED THIS for easier WASM to js calls, avoiding new_string
 bool use_wasm_strings = false;// stringref in wat
+bool use_wasm_structs = false;// struct in wat
 bool use_wasm_arrays = false; // array in wat
 
 

@@ -810,6 +810,8 @@ enum string_ops { // on Valtype stringref = 0x64
     string_new_wtf8_array = 0xfbb5, //           [gc]
     string_encode_lossy_utf8_array = 0xfbb6, //           [gc]
     string_encode_wtf8_array = 0xfbb7, //           [gc]
+
+//    stringrefs ::= section_14(0x00 vec(vec(u8)))
 };
 
 

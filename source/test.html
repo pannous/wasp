@@ -110,25 +110,26 @@ function print(...x) {
     function is_smart_pointer(result) {
         let got_smart_pointer = Number.isInteger(result) && (result >= 0x10000000 || result <= -0x10000000);
         if (typeof result === "bigint") got_smart_pointer = result >= BigInt(0x4000000000000000)
+        if (typeof result === "bigint") got_smart_pointer ||= (result & string_header_64)
         if (typeof result === "bigint" || got_smart_pointer)
             console.log(">>> 0x", hex(result), got_smart_pointer ? " SMART " : "");
         if (Array.isArray(result)) got_smart_pointer = true;// multivalue of length 2 always assumed smart pair
         return got_smart_pointer;
     }
 
-    // to it wasp side in WebApp.cpp !
-    // function new_string(str) {
-    //     let len = str.length;
-    //     let ptr = memory.buffer.byteLength - str.length - 1;
-    //     for (let i = 0; i < len; i++) {
-    //         memory[ptr + i] = str.charCodeAt(i);
-    //     }
-    //     memory[ptr + len] = 0;
-    //     return BigInt(ptr) | string_header_64;
-    // }
+    // this is wasm side, can't do it wasp side in WebApp.cpp because of async bind!
+    function new_string(str) {
+        let len = str.length;
+        let ptr = memory.buffer.byteLength - str.length - 1;
+        for (let i = 0; i < len; i++) {
+            memory[ptr + i] = str.charCodeAt(i);
+        }
+        memory[ptr + len] = 0;
+        return BigInt(ptr) | string_header_64;
+    }
 
     // async NOT WORKING in wasm: Failed to parse String to BigInt
-    function smartResult(object) {
+    function smartResult(object) { // returns BigInt smart pointer to object
         // if(is_smart_pointer(object))
         //     return parseSmartResult(object)
         if (typeof object === "number")
@@ -136,14 +137,16 @@ function print(...x) {
         if (typeof object === "string" && !isNaN(object))
             return BigInt(object)
         // if (typeof object === "object")
-        //     return -123;// String(object) JSON.stringify(
+        //     return -123;//
         try {
             print("smartResult: ", object, "trying to parse to BigInt")
             print("typeof object", typeof object)
             print("object", object)
             print(" !isNaN(object)", !isNaN(object))
-            // // let wrapped= await new_string(serialized) //
-            return BigInt(object)
+            let serialized = String(object);
+            // if() serialized=JSON.stringify(object)
+            let wrapped = new_string(serialized) | string_header_64;
+            return BigInt(wrapped) // to be consumed by wasm, potentially returned to wasp via main and wasm_done
         } catch (ex) {
             // todo error handling via print!
             console.error("smartResult: ", object, "failed to parse to BigInt", ex)
@@ -154,6 +157,7 @@ function print(...x) {
     function parseSmartResult(data = 0) {
         var type = -1
         var address = data;
+        print("smartResult: ", hex(data))
         if (!is_smart_pointer(data)) return data;
         if (Array.isArray(data)) { // multivalue return always 'smarty
             let _a = data
@@ -166,13 +170,20 @@ function print(...x) {
         } else { // smartpointer32
             type = data & 0xF0000000;
             address = data & 0x0FFFFFFF;
+            print("smartResult 32 ", hex(data), hex(type), hex(address))
             return string(address);
         }
+        print("smartResult: ", hex(type), hex(data), hex(address))
 
-        if (type === 0xC0 || type === 0x10000000 || type === string_header_64 || type === string_header_64 / 0x100000000n)
-            return string(address); // chars
+        if (type === 0xC0 || type === 0x10000000 || type === 0x100000 || type === string_header_64 || type === string_header_64 / 0x100000000n) {
+            print("smartResult: string", hex(data))
+            let str = string(Number(data), 10);
+            print("smartResult: string", hex(data), str)
+            return str; // chars
+        }
         if (type === 0x7E) // float64
-            return rei
+            return reinterpretInt64AsFloat64(data) // wasp.js
+        // return reinterpret_f64(data);
         if (!Number.isInteger(type))
             console.error("smart type should be an integer: ", type, "of", data);
         if (BigInt(type) & BigInt(0x40000000)) {// array
@@ -274,14 +285,14 @@ function print(...x) {
                         print("CALLING getExternRefProperty", ref, prop)
                         if (ref && typeof ref[prop] !== 'undefined') {
                             print("getExternRefProperty OK ", ref, prop, ref[prop])
-                            // return smartResult(ref[prop])
-                            return String(ref[prop])
-
+                            return smartResult(ref[prop])
+                            // return String(ref[prop])
                         } else if (ref && typeof ref.getAttribute === 'function') {
                             // check attribute
                             let attribute = ref.getAttribute(prop);
                             print("getExternRefProperty OK ", ref, prop, attribute)
-                            return String(attribute)
+                            // return String(attribute)
+                            return smartResult(attribute)
                         } else {
                             throw new Error(`'${prop}' is not a property of the provided reference`);
                         }
@@ -367,6 +378,7 @@ function print(...x) {
                 let result = main()
                 print("result")
                 print(result)
+                print(hex(result))
                 let smart_result = parseSmartResult(result); // unwrap
                 print("smart_result", smart_result)
                 wasm_done(String(smart_result)); // wrap!

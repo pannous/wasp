@@ -2051,23 +2051,24 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 
 //extern "C" ExternRef createElement(ExternRef parent /*0*/, chars tag);
 //extern "C" ExternRef createElement2(ExternRef parent /*0*/,chars tag,chars id,chars className,chars innerHTML);
-//[[nodiscard]]
-//Code emitHtmlWasp(Node &node, Function &function, ExternRef parent = 0) {
-//	Code code;
-//	code.add(emitData(*new Node(parent), function));
-//	if (node.name == "html") {}
-//	else {
-////		if(parent)code.add(emitData(*new Node(parent), function));
-//		code.add(emitString(node, function));
-//		code.add(emitCall(*new Node("createElement"), function));
-////	addVariable(node.name, parent); // can't, must be in analyze!
-//	}
-//	for (Node &child: node) {
-////		getVariable( parent);
-//		code.add(emitHtml(child, function, 0));
-//	}
-//	return code;
-//}
+[[nodiscard]]
+Code emitHtmlWasp(Node &node, Function &function, ExternRef parent = 0) {
+	Code code;
+	if (node.name == "html") {
+		code.add(emitCall(*new Node("getDocumentBody"), function)); // document.body as parent
+	} else {
+//		if(parent)code.add(emitData(*new Node(parent), function)); todo ?
+		code.add(emitString(node, function));
+		code.add(emitCall(*new Node("createElement"), function));
+		//	addVariable(node.name, parent); // can't, must be in analyze!
+	}
+	for (Node &child: node) {
+//		getVariable( parent); // can't, must be in analyze or on top of stack!
+		code.add(emitHtml(child, function, 0));
+		code.add(drop);// we don't need this as parent, revert to original parent
+	}
+	return code;
+}
 
 Primitive elementType(Type type32) {
 	if (type32 == stringp)return byte_char;
