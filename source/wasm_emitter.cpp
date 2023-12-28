@@ -542,6 +542,27 @@ Code emitPrimitiveArray(Node &node, Function &context) {
 	return code;
 }
 
+
+// extern "C" ExternRef createHtml(ExternRef parent /*0*/,chars innerHTML); // html{bold{Hello}} => appendChild bold to body
+[[nodiscard]]
+Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
+	Code code;
+	if (parent)code.add(emitData(*new Node(parent), function));
+	else code.add(emitCall(*new Node("getDocumentBody"), function));
+	code.add(emitString(node, function));
+	code.add(emitCall(*new Node("createHtml"), function));
+	return code;
+}
+
+[[nodiscard]]
+Code emitScript(Node &node, Function &function) {
+	Code code;
+	code.add(emitString(node, function));
+	code.add(emitCall(*new Node("addScript"), function));
+	return code;
+}
+
+
 short arrayElementSize(Node &node);
 
 Primitive addTypeFromSize(Node &array, short size);
@@ -1845,6 +1866,9 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //    }
 	if (name == "html")
 		return emitHtml(node, context, 0);
+	if (name == "script" or name == "js" or name == "javascript")
+		return emitScript(node, context);
+//	or name == "wasm" or name == "wasm32" or name == "wasm64"
 	if (name == "if")
 		return emitIf(node, context);
 	if (name == "while")
@@ -2044,18 +2068,6 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //	}
 //	return code;
 //}
-
-// extern "C" ExternRef createHtml(ExternRef parent /*0*/,chars innerHTML); // html{bold{Hello}} => appendChild bold to body
-[[nodiscard]]
-Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
-	Code code;
-	if (parent)code.add(emitData(*new Node(parent), function));
-	else code.add(emitCall(*new Node("getDocumentBody"), function));
-	code.add(emitString(node, function));
-	code.add(emitCall(*new Node("createHtml"), function));
-	return code;
-}
-
 
 Primitive elementType(Type type32) {
 	if (type32 == stringp)return byte_char;

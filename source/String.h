@@ -1106,7 +1106,7 @@ public:
 
     codepoint *end();
 
-    bool startsWith(chars string);
+	bool startsWith(chars string, int from = 0);
 
     bool endsWith(const char *string);
 
