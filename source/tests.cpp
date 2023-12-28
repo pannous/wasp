@@ -115,7 +115,7 @@ void testDomProperty() {
 #endif
 
 	result = eval("getExternRefProperty($canvas,'width')"); // ok!!
-	check_eq(result.value.longy, 300);
+	check_eq(result.value.longy, 300); // only works because String "300" gets converted to BigInt 300
 //	result = eval("width='width';$canvas.width");
 	result = eval("$canvas.width");
 	check_eq(result.value.longy, 300);
@@ -3383,8 +3383,8 @@ void testCurrent() {
 //	assert_emit("puts('hi')", 8)
 //	testReplaceAll();
 //	testFetch();
-//	testDomProperty();
-	testInnerHtml();
+	testDomProperty();
+//	testInnerHtml();
 	return;
 #if WEBAPP
 #endif

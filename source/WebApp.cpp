@@ -237,12 +237,13 @@ int64 open_webview(String url = "") {
 		view.terminate();
 		return s;
 	});
-	view.bind("new_string", [](std::string s) -> std::string {
-		const std::string &string = webview::json_parse(s, "", 0);
-		String data = String(string.data());
-		Node &node = *new Node(data, strings);// todo?
-		return to_string(node.toSmartPointer());// parsed as BigInt later
-	});
+	// doesn't work because it returns async Promise, which can't be used in wasm
+//	view.bind("new_string", [](std::string s) -> std::string {
+//		const std::string &string = webview::json_parse(s, "", 0);
+//		String data = String(string.data());
+//		Node &node = *new Node(data, strings);// todo?
+//		return to_string(node.toSmartPointer());// parsed as BigInt later
+//	});
 	view.bind("wasm_done", [](std::string s) -> std::string {
 		printf("wasm_done  result json = %s ", s.c_str());
 		const std::string &string = webview::json_parse(s, "", 0);
