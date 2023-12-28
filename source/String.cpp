@@ -562,8 +562,10 @@ codepoint *String::extractCodepoints(bool again) {
     return codepoints;
 }
 
-bool String::startsWith(chars string) {
-    return indexOf(string) == 0;
+bool String::startsWith(chars string, int from) {
+	int len1 = strlen(string);
+	if (len1 > length)return false;
+	return eq(data + from, string, len1);
 }
 
 bool String::endsWith(const char *string) {

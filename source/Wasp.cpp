@@ -1494,17 +1494,27 @@ private:
 						actual.add(operatorr());
 					break;
 				case '<':
-					if (text.substring(at, at + 6) == "<html>") {
+					if (text.substring(at, at + 5) == "<html") {
 						int to = text.find("</html>", at);
-						if (to > 0) {
-							auto innerHtml = text.substring(at + 6, to);
-//							actual.add(Node("html").add(Node(innerHtml)));
-							actual.add(Node("html", strings).setValue(*new Value{.string=&innerHtml.clone()}));
-							at = to + 7;
-							previous = '>';
-							proceed();
-							break;
-						}
+						if (to < 0) to = text.length;// warn("unclosed html tag");
+						auto html = Node("html", strings);
+						html.value.string = &text.substring(text.find('>', at + 5) + 1, to).clone();
+						actual.add(html);
+						at = to + 7;
+						previous = '>';
+						proceed();
+						break;
+					}
+					if (text.startsWith("<script", at)) {
+						int to = text.find("</script>", at);
+						if (to < 0) to = text.length;// warn("unclosed script tag");
+						auto html = Node("script", strings);
+						html.value.string = &text.substring(text.find('>', at + 5) + 1, to).clone();
+						actual.add(html);
+						at = to + 9;
+						previous = '>';
+						proceed();
+						break;
 					}
 				case '>':
 					if (not(parserOptions.use_tags or parserOptions.use_generics) or
@@ -2027,10 +2037,10 @@ int main(int argc, char **argv) {
 		if (args.endsWith(".html") or args.endsWith(".htm")) {
 #if WEBAPP
 			//				start_server(SERVER_PORT);
-						std::thread go(start_server, SERVER_PORT);
-						auto arg = "http://localhost:"s + SERVER_PORT + "/" + args;
-						print("Serving "s + arg);
-						open_webview(arg);
+			std::thread go(start_server, SERVER_PORT);
+			auto arg = "http://localhost:"s + SERVER_PORT + "/" + args;
+			print("Serving "s + arg);
+			open_webview(arg);
 			//				arg.replaceMatch(".*\/", "http://localhost:SERVER_PORT/");
 #else
 			print("wasp compiled without webview");

@@ -1783,6 +1783,10 @@ Node &analyze(Node &node, Function &function) {
 		functions["createHtml"].is_used = true;
 		return node; // html builder currently not parsed
 	}
+	if (name == "js" or name == "script" or name == "javascript") {
+		functions["addScript"].is_used = true;
+		return node;
+	}
 	if (name == "if")return groupIf(node, function);
 	if (name == "while")return groupWhile(node, function);
 	if (name == "?")return groupIf(node, function);
@@ -1920,6 +1924,7 @@ void preRegisterFunctions() {
 	functions["getDocumentBody"].import().signature.returns(externref);
 	functions["createHtml"].import();
 	functions["createHtml"].signature.add(externref, "parent").add(charp, "innerHtml").returns(externref);
+	functions["addScript"].import().signature.add(charp, "js");
 
 	functions["getElementById"].import();//.builtin();
 	functions["getElementById"].signature.add(charp).returns(externref /*!!*/);

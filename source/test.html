@@ -225,6 +225,8 @@ function print(...x) {
     }
     identity = x => x
 
+    alert = print // pop up window NOT supported by WebView, so we use print instead
+
     const utf8_decoder = new TextDecoder('utf8');
 
     const string = function (pointer, length, format) {
@@ -250,6 +252,11 @@ function print(...x) {
                         if (!parent) parent = document.body;
                         parent.appendChild(element);
                         return element;
+                    },
+                    addScript: (scriptContent) => {
+                        let script = document.createElement('script');
+                        script.textContent = string(scriptContent);
+                        document.body.appendChild(script);
                     },
                     createHtmlElement: (tag, id) => {
                         let element = document.createElement(string(tag));

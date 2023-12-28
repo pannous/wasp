@@ -41,8 +41,12 @@ void testInnerHtml() {
 	check_is(*html.value.string, "<bold>test</bold>");
 	auto serialized = html.serialize();
 	check_is(serialized, "<html><bold>test</bold></html>");
+//	eval("<html><script>alert('ok')");
+//	eval("<html><script>alert('ok')</script></html>");
 	eval("<html><bold id=b ok=123>test</bold></html>");
 	assert_is("$b.ok", 123);
+	eval("<script>console.log('ok!')</script>");
+	eval("<script>alert('alert ok!')</script>");// // pop up window NOT supported by WebView, so we use print instead
 //	eval("$b.innerHTML='<i>ok</i>'");
 //	eval("<html><bold id='anchor'>…</bold></html>");
 //	eval("$anchor.innerHTML='<i>ok</i>'");
