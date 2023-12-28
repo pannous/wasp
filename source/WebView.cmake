@@ -5,11 +5,13 @@ FetchContent_Declare(
         webview
         GIT_REPOSITORY https://github.com/webview/webview.git
 )
+#FetchContent_MakeAvailable(webview)
 # <<<< check out regularly for update!
 # - The C++ interface in this repository is still changing often
 # still does not work for some platforms
 # Currently supported Ubuntu, macOS, Windows
 # Support for Android or iOS is still unclear, but might be possible and is highly desirable.
+
 
 FetchContent_GetProperties(webview)
 if (NOT webview_POPULATED)

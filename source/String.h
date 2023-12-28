@@ -460,6 +460,8 @@ public:
 
     int find(char c, int from = 0, bool reverse = false) { return indexOf(c, from, reverse); }
 
+	int find(String c, int from = 0, bool reverse = false) { return indexOf(c, from, reverse); }
+
 //	operator std::string() const { return "Hi"; }
 
 // excluding to
@@ -952,11 +954,11 @@ public:
     bool empty() const;
 
 
-    int indexOf(chars string, bool reverse = false) {
+	int indexOf(chars string, int from = 0, bool reverse = false) {
         int l = strlen(string);
 //        if ((int64) data + l > MAX_MEM)
 //            error("corrupt string"); // let it fail / auto-grow!?
-        for (int i = 0; i <= length - l; i++) {
+		for (int i = from; i <= length - l; i++) {
             bool ok = true;
             int i0 = reverse ? length - i : i;
             for (int j = 0; j < l; j++) {
@@ -987,8 +989,8 @@ public:
 //    [[non-modifying]]
     [[nodiscard("replace generates a new string to be consumed!")]]
     __attribute__((__warn_unused_result__))
-    String &replace(chars string, chars with) {// first only!
-        int i = this->indexOf(string);
+	String &replace(chars string, chars with, int start = 0) {// first only!
+		int i = this->indexOf(string, start, false);
         if (i >= 0) {
             unsigned int from = i + strlen(string);
             return substring(0, i) + with + substring(from, -1);
@@ -1003,15 +1005,27 @@ public:
         return replace(string, with.data);
     }
 
+	[[nodiscard]]
+	String &replaceAt(size_t at, int len, String with);
+
     [[nodiscard]]
     __attribute__((__warn_unused_result__))
     String &replaceAll(String part, String with) {
-        String &done = *this;
-        if (with.contains(part)) todo("incremental replaceAll");
-        while (done.contains(part))
-            done = done.replace(part, with);
+	    String &done = this->clone(); // non modifying
+	    int index = 0;
+	    while ((index = done.find(part, index)) >= 0) {
+		    done = done.replaceAt(index, part.length, with);
+		    index += with.length; // Move past the replacement
+	    }
         return done;
     }
+
+	void replaceAllInPlace(char part, char with) {
+		for (int i = 0; i < length; ++i) {
+			if (data[i] == part)
+				data[i] = with;
+		}
+	}
 
     String times(short i) {
         if (i < 0)

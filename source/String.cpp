@@ -627,6 +627,13 @@ String &String::neu(const char *string) {
 	return *new String(string);
 }
 
+[[nodiscard]]
+String &String::replaceAt(size_t at, int len, String with) {
+    if (at < 0)at = length + at;
+    String result = substring(0, at) + with + substring(at + len);
+    return result.clone();
+}
+
 void error1(String message, chars file, int line) {
 	error1(message.data, file, line);
 }

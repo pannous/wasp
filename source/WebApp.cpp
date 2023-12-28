@@ -393,6 +393,14 @@ std::string testWebview(std::string s) {
 	return s;
 }
 
+void load_script_include(String url) {
+	String data = readFile("test_include.js");
+	data.replaceAll("'", "\\'");
+	auto js = "var script = document.createElement('script');script.src = '"_s + data +
+	          "';document.head.appendChild(script);";
+	view.eval(js.data);
+}
+
 
 void console_log(const char *s) {
 #if DEBUG

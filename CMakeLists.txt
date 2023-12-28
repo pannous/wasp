@@ -65,8 +65,9 @@ if (NOT WASM)
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         # SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        #        SET(WASMEDGE 0)
         # SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
-        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #  SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
@@ -662,7 +663,9 @@ elseif (WASMEDGE)
     add_executable(wasp ${SOURCE_FILES})
     #    target_include_directories(wasp PUBLIC Frameworks/wasmedge)
     target_include_directories(wasp PUBLIC Frameworks/wasmedge/include/api/)
+
     #    target_include_directories(wasp PUBLIC Frameworks/wasmedge_api)
+    target_link_libraries(wasp PUBLIC -lcurl)
     target_link_libraries(wasp PRIVATE wasmedge) # libwasmedge.dylib 88MB -> now 5MB ok
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
