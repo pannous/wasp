@@ -221,19 +221,19 @@ Node eval(String code) {
 		// errors are not forwarded to js, so catch them here! todo WHY NOT?
 		try {
 #endif
-		Code &binary = compile(code, true);
-		binary.save();// to debug
+			Code &binary = compile(code, true);
+			binary.save();// to debug
 #if NO_TESTS and not RELEASE
-		debug_wasm_file(); // SLOW! use only to debug single file
+			debug_wasm_file(); // SLOW! use only to debug single file
 #endif
-		smart_pointer_64 results = binary.run();
-		auto _resultNode = smartNode(results);
-		if (!_resultNode)return ERROR;
-		Node &resultNode = *_resultNode;
+			smart_pointer_64 results = binary.run();
+			auto _resultNode = smartNode(results);
+			if (!_resultNode)return ERROR;
+			Node &resultNode = *_resultNode;
 #if not RELEASE and not MY_WASM
-		print("» %s\n"s % resultNode.serialize().data);
+			print("» %s\n"s % resultNode.serialize().data);
 #endif
-		return resultNode;
+			return resultNode;
 #if WEBAPP
 		} catch (chars err) {
 			print("eval FAILED WITH internal ERROR\n");
@@ -732,7 +732,7 @@ void updateLocal(Function &context, String name, Type type) {
 	auto oldType = local.type;
 	if (oldType == none or oldType == unknown_type) {
 		local.type = type;
-	} else if (oldType != type and type != void_block and type != voids and (Type) type != unknown_type) {
+	} else if (oldType != type and type != void_block and type != voids and type != unknown_type) {
 		if (use_wasm_arrays) {
 			// TODO: CLEANUP
 			if (oldType == node) {
@@ -1778,6 +1778,11 @@ Node &analyze(Node &node, Function &function) {
 	Kind type = node.kind;
 	String &name = node.name;
 
+	if (name == "html") {
+		functions["getDocumentBody"].is_used = true;
+		functions["createHtml"].is_used = true;
+		return node; // html builder currently not parsed
+	}
 	if (name == "if")return groupIf(node, function);
 	if (name == "while")return groupWhile(node, function);
 	if (name == "?")return groupIf(node, function);
@@ -1900,9 +1905,9 @@ void preRegisterFunctions() {
 
 	functions["fd_write"].import();
 	functions["fd_write"].signature.add(int32, "fd");// file descriptor
-	functions["fd_write"].signature.add((Type) pointer, "iovs");
+	functions["fd_write"].signature.add(pointer, "iovs");
 	functions["fd_write"].signature.add(size32, "iovs_len");
-	functions["fd_write"].signature.add((Type) pointer, "nwritten");// size_t *  out !
+	functions["fd_write"].signature.add(pointer, "nwritten");// size_t *  out !
 	functions["fd_write"].signature.returns(int32);
 //    functions["fd_write"].module=new Module{.name="wasi"};
 #if WASMEDGE
@@ -1912,29 +1917,31 @@ void preRegisterFunctions() {
 #endif
 
 	// DOM functions
-	functions["getElementById"].import();//.builtin();
-	functions["getElementById"].signature.add((Type) charp).returns((Type) externref /*!!*/);
-	functions["testExternRef"].import();//.builtin();
-	functions["testExternRef"].signature.add((Type) externref).returns(int32);//.returns((Type) externref);
-	functions["getExternRefProperty"].import();//.builtin();
-	functions["getExternRefProperty"].signature.add((Type) externref).add(charp).returns((Type) smarti64);
-//	functions["getExternRefProperty"].signature.add((Type) externref).add(charp).returns(stringref); // ⚠️ not yet in webview!
+	functions["getDocumentBody"].import().signature.returns(externref);
+	functions["createHtml"].import();
+	functions["createHtml"].signature.add(externref, "parent").add(charp, "innerHtml").returns(externref);
 
-//	functions["getExternRefProperty"].signature.add((Type) externref).add(charp).returns(longs);
-//	functions["getExternRefProperty"].signature.add((Type) externref,"object").add(strings,"property").returns((Type)smarti64);
+	functions["getElementById"].import();//.builtin();
+	functions["getElementById"].signature.add(charp).returns(externref /*!!*/);
+	functions["getExternRefProperty"].import();//.builtin();
+	functions["getExternRefProperty"].signature.add(externref).add(charp).returns(smarti64);
+//	functions["getExternRefProperty"].signature.add(externref).add(charp).returns(stringref); // ⚠️ not yet in webview!
+
+//	functions["getExternRefProperty"].signature.add(externref).add(charp).returns(longs);
+//	functions["getExternRefProperty"].signature.add(externref,"object").add(strings,"property").returns(marti64);
 
 //	functions["invokeExternRef"].import();//.builtin();
-//	functions["invokeExternRef"].signature.add((Type) externref).add(strings,"method").add(node,"params").returns((Type)Primitive::smarti64);
+//	functions["invokeExternRef"].signature.add(externref).add(strings,"method").add(node,"params").returns(rimitive::smarti64);
 
 
 //	functions["$"].import();//.builtin();
-//	functions["$"].signature.add((Type) strings).returns((Type) referencex);
+//	functions["$"].signature.add(strings).returns(referencex);
 
 	functions["puts"].builtin();
-	functions["puts"].signature.add((Type) stringp).returns(int32);// stdio conform!!
+	functions["puts"].signature.add(stringp).returns(int32);// stdio conform!!
 
 	functions["len"].builtin();// via wasp abi len(any)=*(&any)[1]
-	functions["len"].signature.add((Type) array).returns(int32);// todo any wasp type
+	functions["len"].signature.add(array).returns(int32);// todo any wasp type
 
 	functions["quit"].builtin();// no args, calls proc_exit(0)
 

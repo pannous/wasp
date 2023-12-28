@@ -1123,6 +1123,8 @@ public:
         if (valtype != voids and valtype != none) {
             if (valtype == float64 or valtype == float32 or valtype == int32 or valtype == i64)
                 return_types.add(valtype);
+            else if (valtype == externref)
+                return_types.add(valtype);
             else
                 error("UNKNOWN Valtype mapping "s + typeName(valtype));
 #if DEBUG and not WASM

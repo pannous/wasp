@@ -397,6 +397,11 @@ public:
             *this = False;
     }
 
+    explicit Node(ExternRef ref) {
+        value.data = ref;
+        kind = referencex; // == externref == wasm_externref
+    }
+
 
     explicit Node(chars name) {
         this->name = String(name);

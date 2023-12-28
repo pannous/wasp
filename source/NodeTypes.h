@@ -11,6 +11,8 @@
 //enum Valtype;// forbids forward references to 'enum' types
 class Node;
 
+typedef void *ExternRef;
+
 typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
 
 // todo move these to ABI.h once it is used:

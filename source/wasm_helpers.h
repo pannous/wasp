@@ -285,5 +285,4 @@ extern "C" chars download(chars name);// curl wget sync download via js / runtim
 
 #if WEBAPP
 void console_log(const char *s); // print from wasp to browser console ( in addition to stdout )
-//int testExternRef(void* externRef); // defined in wasp.js
 #endif

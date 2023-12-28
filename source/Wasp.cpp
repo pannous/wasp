@@ -1494,6 +1494,18 @@ private:
 						actual.add(operatorr());
 					break;
 				case '<':
+					if (text.substring(at, at + 6) == "<html>") {
+						int to = text.find("</html>", at);
+						if (to > 0) {
+							auto innerHtml = text.substring(at + 6, to);
+//							actual.add(Node("html").add(Node(innerHtml)));
+							actual.add(Node("html", strings).setValue(*new Value{.string=&innerHtml.clone()}));
+							at = to + 7;
+							previous = '>';
+							proceed();
+							break;
+						}
+					}
 				case '>':
 					if (not(parserOptions.use_tags or parserOptions.use_generics) or
 					    (previous == ' ' and next == ' ')) {
