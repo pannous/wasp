@@ -116,7 +116,6 @@ double powd(double x, double y) {
 
 extern "C" void put_chars(chars c, size_t len) {
     printf("%s", c);
-
 #if WEBAPP
 	console_log(c);
 #endif
@@ -132,4 +131,15 @@ void proc_exit(int x) {
 #endif
 }
 
+#endif
+
+
+// register these in preRegisterFunctions() in Angle.cpp
+#if MY_WASM
+extern "C" ExternRef document();
+extern "C" ExternRef
+createHtml(ExternRef parent /*0*/, chars innerHTML); // html{bold{Hello}} => appendChild bold to body
+//extern "C" ExternRef createScript(ExternRef parent /*0*/,chars innerHTML); // js{alert('Hello')} => <script>alert('Hello')</script>
+extern "C" ExternRef createElement(ExternRef parent /*0*/, chars tag);
+//extern "C" ExternRef createElement2(ExternRef parent /*0*/,chars tag,chars id,chars className,chars innerHTML);
 #endif

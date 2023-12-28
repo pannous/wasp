@@ -9,6 +9,7 @@
 #include "Paint.h"
 
 #pragma GCC diagnostic ignored "-Wdeprecated"
+
 #import "test_angle.cpp"
 #import "test_wast.cpp"
 #import "test_wasm.cpp"
@@ -21,6 +22,42 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testHtmlWasp() {
+	eval("html{bold{Hello}}"); // => <html><body><bold>Hello</bold></body></html> via appendChild bold to body
+//	eval("html{bold($myid style=red){Hello}}"); // => <bold id=myid style=red>Hello</bold>
+}
+
+void testJS() {
+	eval("js{alert('Hello')}"); // => <script>alert('Hello')</script>
+}
+
+void testInnerHtml() {
+#if not WEBAPP and not MY_WASM
+	return;
+#endif
+	auto html = parse("<html><bold>test</bold></html>");
+	check_is(html.kind, Kind::strings);
+	check(html.value.string);
+	check_is(*html.value.string, "<bold>test</bold>");
+	auto serialized = html.serialize();
+	check_is(serialized, "<html><bold>test</bold></html>");
+	eval("<html><bold id=b ok=123>test</bold></html>");
+	assert_is("$b.ok", 123);
+//	eval("$b.innerHTML='<i>ok</i>'");
+//	eval("<html><bold id='anchor'>…</bold></html>");
+//	eval("$anchor.innerHTML='<i>ok</i>'");
+//
+////	eval("x=<html><bold>test</bold></html>;$results.innerHTML=x");
+//	eval("$results.innerHTML='<bold>test</bold>'");
+}
+
+void testHtml() {
+//	testHtmlWasp();
+//	testJS();
+	testInnerHtml();
+}
+
+
 void testReplaceAll() {
 	String s = "abaabaa";
 	auto replaced = s.replaceAll("a", "ca");
@@ -28,6 +65,8 @@ void testReplaceAll() {
 	check_is(replaced, "cabcacabcaca");
 	auto replaced2 = replaced.replaceAll("ca", "a");
 	check_is(replaced2, "abaabaa");
+	replaced2.replaceAllInPlace('b', 'p');
+	check_is(replaced2, "apaapaa");
 }
 
 void testFetch() {
@@ -64,9 +103,6 @@ void testDom() {
 //	result = eval("document.getElementById('canvas');");
 	result = analyze(parse("$canvas"));
 	assert_equals(result.kind, (int64) externref);
-//	result = eval("testExternRef($canvas)"); // ok!!
-//	check(result.value.longy == 42);
-
 }
 
 void testDomProperty() {
@@ -3341,11 +3377,12 @@ void testCurrent() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
-	testReplaceAll();
-	testFetch();
-	testDomProperty();
-#if WEBAPP
+//	testReplaceAll();
+//	testFetch();
+//	testDomProperty();
+	testInnerHtml();
 	return;
+#if WEBAPP
 #endif
 	testDom();
 //	exit(1);

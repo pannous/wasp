@@ -14,6 +14,7 @@
 // https://wasmedge.org/book/en/sdk/c/externref.html
 
 #define VMCxt context
+typedef WasmEdge_CallingFrameContext FrameContext;
 
 uint32_t SquareFunc(uint32_t A) { return A * A; }
 
@@ -23,7 +24,7 @@ uint32_t MulFunc(uint32_t A, uint32_t B) { return A * B; }
 
 // Host function to call `SquareFunc` by external reference
 WasmEdge_Result ExternSquare(void *Data,
-                             const WasmEdge_CallingFrameContext *CallFrameCxt,
+                             const FrameContext *CallFrameCxt,
                              const WasmEdge_Value *In, WasmEdge_Value *Out) {
     // Function type: {externref, i32} -> {i32}
 //	uint32_t (*Func)(uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
@@ -32,21 +33,27 @@ WasmEdge_Result ExternSquare(void *Data,
     return WasmEdge_Result_Success;
 }
 
-
 WasmEdge_Result getElementById(void *Data,
-                               const WasmEdge_CallingFrameContext *CallFrameCxt,
+                               const FrameContext *CallFrameCxt,
                                const WasmEdge_Value *In, WasmEdge_Value *Out) {
-	// just a dummy! todo print the id anyways
-// Function type: {externref, i32} -> {i32}
-//	uint32_t (*Func)(uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
-//	uint32_t C = Func(WasmEdge_ValueGetI32(In[1]));
-//	Out[0] = WasmEdge_ValueGenI32(C);
-	return WasmEdge_Result_Success;
+    return WasmEdge_Result_Success;
 }
 
 
+WasmEdge_Result getDocumentBody(void *Data, const FrameContext *CallFrameCxt,
+                               const WasmEdge_Value *In, WasmEdge_Value *Out) {
+	return WasmEdge_Result_Success;
+}
+
+WasmEdge_Result createHtml(void *Data, const FrameContext *CallFrameCxt,
+                           const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    return WasmEdge_Result_Success;
+}
+
+
+
 WasmEdge_Result getExternRefProperty(void *Data,
-                                     const WasmEdge_CallingFrameContext *CallFrameCxt,
+                                     const FrameContext *CallFrameCxt,
                                      const WasmEdge_Value *In, WasmEdge_Value *Out) {
     // just a dummy! todo print the id anyways
 // Function type: {externref, i32} -> {i32}
@@ -59,7 +66,7 @@ WasmEdge_Result getExternRefProperty(void *Data,
 
 // Host function to call `AddFunc` by external reference
 WasmEdge_Result ExternAdd(void *Data,
-                          const WasmEdge_CallingFrameContext *CallFrameCxt,
+                          const FrameContext *CallFrameCxt,
                           const WasmEdge_Value *In, WasmEdge_Value *Out) {
     // Function type: {externref, i32, i32} -> {i32}
 //	uint32_t (*Func)(uint32_t, uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
@@ -100,7 +107,28 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         WasmEdge_StringDelete(HostName);
     }
 
-
+    {
+        enum WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValType_ExternRef;
+        HostFType = WasmEdge_FunctionTypeCreate(P, 0, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, getDocumentBody, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("getDocumentBody");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+    {
+        enum WasmEdge_ValType P[2], R[1];
+        R[0] = WasmEdge_ValType_ExternRef;
+        P[0] = WasmEdge_ValType_ExternRef;
+        P[1] = WasmEdge_ValType_I32;// string
+        HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, createHtml, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("createHtml");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
     return HostMod;
 }
 

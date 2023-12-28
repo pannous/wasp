@@ -1824,6 +1824,8 @@ Code emitConstruct(Node &node, Function &context);
 
 Primitive elementType(Type type32);
 
+Code emitHtml(Node &node, Function &function, ExternRef parent);
+
 // also value expressions of globals!
 [[nodiscard]]
 Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expression, node or BODY (list)
@@ -1841,6 +1843,8 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //        code.addConst32(0);
 //        return code;
 //    }
+	if (name == "html")
+		return emitHtml(node, context, 0);
 	if (name == "if")
 		return emitIf(node, context);
 	if (name == "while")
@@ -2021,6 +2025,38 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 	return code;
 }
 
+//extern "C" ExternRef createElement(ExternRef parent /*0*/, chars tag);
+//extern "C" ExternRef createElement2(ExternRef parent /*0*/,chars tag,chars id,chars className,chars innerHTML);
+//[[nodiscard]]
+//Code emitHtmlWasp(Node &node, Function &function, ExternRef parent = 0) {
+//	Code code;
+//	code.add(emitData(*new Node(parent), function));
+//	if (node.name == "html") {}
+//	else {
+////		if(parent)code.add(emitData(*new Node(parent), function));
+//		code.add(emitString(node, function));
+//		code.add(emitCall(*new Node("createElement"), function));
+////	addVariable(node.name, parent); // can't, must be in analyze!
+//	}
+//	for (Node &child: node) {
+////		getVariable( parent);
+//		code.add(emitHtml(child, function, 0));
+//	}
+//	return code;
+//}
+
+// extern "C" ExternRef createHtml(ExternRef parent /*0*/,chars innerHTML); // html{bold{Hello}} => appendChild bold to body
+[[nodiscard]]
+Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
+	Code code;
+	if (parent)code.add(emitData(*new Node(parent), function));
+	else code.add(emitCall(*new Node("getDocumentBody"), function));
+	code.add(emitString(node, function));
+	code.add(emitCall(*new Node("createHtml"), function));
+	return code;
+}
+
+
 Primitive elementType(Type type32) {
 	if (type32 == stringp)return byte_char;
 	if (type32 == longs)return Primitive::wasm_int64;// todo should not have reached here
@@ -2132,7 +2168,6 @@ Code emitWhile2(Node &node, Function &context) {
 	return code;
 }
 
-[[nodiscard]]
 [[nodiscard]]
 Code emitExpression(Node *nodes, Function &context) {
 	if (!nodes)return Code();
