@@ -1216,6 +1216,11 @@ Code emitData(Node &node, Function &context) {
 			break;
 		case constructor:
 			return emitConstruct(node, context);
+		case referencex: {
+			Node calle("getElementById"); // $
+			calle.add(Node(name));
+			return emitCall(calle, context);
+		}
 		case key:
 		case patterns:
 		default:
@@ -2234,6 +2239,8 @@ Code cast(Valtype from, Valtype to) {
 		return Code(f32_convert_i64_s);
 //	if(from==f64u and to==f32)	return Code(f32_convert_i64_𝗎);
 	if (from == float64 and to == float32) return Code(f32_demote_f64);
+//	if (from == i32 and to == wasm_string_ref)
+//		return nop;// todo: string_ref is a pointer, so cast to i32 is ok?
 	if (from == i32 and to == float64)
 		return Code(f64_convert_i32_s);
 //	if(from==i32u and to==f64)	return Code(f64_convert_i32_𝗎);

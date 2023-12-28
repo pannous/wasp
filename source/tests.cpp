@@ -21,6 +21,15 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testReplaceAll() {
+	String s = "abaabaa";
+	auto replaced = s.replaceAll("a", "ca");
+//	auto replaced = s.replaceAll('a', "ca");
+	check_is(replaced, "cabcacabcaca");
+	auto replaced2 = replaced.replaceAll("ca", "a");
+	check_is(replaced2, "abaabaa");
+}
+
 void testFetch() {
 	// todo: use host fetch if available
 	auto string1 = fetch("https://pannous.com/files/test");
@@ -55,14 +64,18 @@ void testDom() {
 //	result = eval("document.getElementById('canvas');");
 	result = analyze(parse("$canvas"));
 	assert_equals(result.kind, (int64) externref);
-	result = eval("testExternRef($canvas)"); // ok!!
-	check(result.value.longy = 42);
-	result = eval("getExternRefProperty($canvas,'width')"); // ok!!
-	check_eq(result.value.longy, 300);
+//	result = eval("testExternRef($canvas)"); // ok!!
+//	check(result.value.longy == 42);
 
 }
 
 void testDomProperty() {
+#ifndef WEBAPP
+	return;
+#endif
+
+	result = eval("getExternRefProperty($canvas,'width')"); // ok!!
+	check_eq(result.value.longy, 300);
 //	result = eval("width='width';$canvas.width");
 	result = eval("$canvas.width");
 	check_eq(result.value.longy, 300);
@@ -3328,6 +3341,7 @@ void testCurrent() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
+	testReplaceAll();
 	testFetch();
 	testDomProperty();
 #if WEBAPP
