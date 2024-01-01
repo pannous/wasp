@@ -233,6 +233,7 @@ function new_int(val) {
 }
 
 
+
 function new_long(val) {
     // memory.setUint32(addr + 0, val, true);
     // memory.setUint32(addr + 4, Math.floor(val / 4294967296), true);
@@ -273,52 +274,6 @@ function read_int64(pointer, mem) { // little endian
     let buffer = new BigInt64Array(mem.buffer, pointer, 8);
     return buffer[0]
 }
-
-// function read_float(pointer, mem) {}
-function storeValue_go(pointer, mem) {
-    let typeFlag = 0;
-    switch (typeof v) {
-        case "object":
-            if (v !== null) {
-                typeFlag = 1;
-            }
-            break;
-        case "string":
-            typeFlag = 2;
-            break;
-        case "symbol":
-            typeFlag = 3;
-            break;
-        case "function":
-            typeFlag = 4;
-            break;
-    }
-    this.mem.setUint32(addr + 4, nanHead | typeFlag, true);
-    this.mem.setUint32(addr, id, true);
-}
-
-// // func valueGet(v ref, p string) ref
-// "syscall/js.valueGet": (sp) => {
-//     sp >>>= 0;
-//     const result = Reflect.get(loadValue(sp + 8), loadString(sp + 16));
-//     sp = this._inst.exports.getsp() >>> 0; // see comment above
-//     storeValue(sp + 32, result);
-// },
-//
-//     // func valueSet(v ref, p string, x ref)
-//     "syscall/js.valueSet": (sp) => {
-//     sp >>>= 0;
-//     Reflect.set(loadValue(sp + 8), loadString(sp + 16), loadValue(sp + 32));
-// },
-// func valueInvoke(v ref, args []ref) (ref, bool)
-// "syscall/js.valueInvoke": (sp) => {
-//         const v = loadValue(sp + 8);
-//         const args = loadSliceOfValues(sp + 16);
-//         const result = Reflect.apply(v, undefined, args);
-//         sp = this._inst.exports.getsp() >>> 0; // see comment above
-//         storeValue(sp + 40, result);
-//         this.mem.setUint8(sp + 48, 1);
-
 
 // reset at each run, discard previous data!
 // NOT COMPATIBLE WITH ASYNC CALLS!
@@ -747,10 +702,6 @@ function load_runtime() {
             if (main) {
                 console.log("got main")
                 result = main()
-                // if (this.exited) {
-                //     this._resolveExitPromise();
-                // }
-                // await this._exitPromise;
             } else {
                 console.error("missing main function in wasp module!")
                 result = instance.exports//show what we've got
@@ -759,29 +710,8 @@ function load_runtime() {
             wasp_ready()
         }
     )
+
 }
-
-
-// _resume() {
-//     if (this.exited) {
-//         throw new Error("Go program has already exited");
-//     }
-//     this._inst.exports.resume();
-//     if (this.exited) {
-//         this._resolveExitPromise();
-//     }
-// }
-//
-// _makeFuncWrapper(id) {
-//     const go = this;
-//     return function () {
-//         const event = { id: id, this: this, args: arguments };
-//         go._pendingEvent = event;
-//         go._resume();
-//         return event.result;
-//     };
-// }
-
 
 async function run_wasm(buf_pointer, buf_size) {
     let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
