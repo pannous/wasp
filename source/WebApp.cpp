@@ -151,16 +151,16 @@ void render(Node &node, std::stringstream *html) {
 	printf("HTML:\n%s\n", html->str().data());
 	view.navigate("data:text/html," + html->str());
 }
-//char *page=0;// use inline html, else go straight to page todo: file:// URLs?
+// char *page=0;// use inline html, else go straight to page
 // char *page="test";// doesn't
-//char *page="data:text/html,test";// OK!
+// char *page="data:text/html,test";// OK!
 // char *page="https://wasm-feature-detect.surma.technology/";// referenceTypes supported in Safari but not in WebKit!?
 // char *page="file://index.html";// doesn't
 // char *page="file:///Users/me/index.html";// works, but how to get local file paths AT COMPILE TIME?? ok for debugging!
 #ifdef SERVER
 chars page = "http://localhost:8080/test.html";
 #else
-chars page = "file:///Users/me/wasp/source/test.html";
+chars page = "file:///Users/me/wasp/test/test.html";
 #endif
 // char *page="data:text/html,<body onclick='close()'>test</body>";
 // char *page=page || "data:text/html,\n<html><body style='height:999px;' onclick='close()'>X</body></html>";// why not??
@@ -200,141 +200,6 @@ void navigate(String url) {
 	view.navigate(page);
 }
 
-int64 open_webview(String url = "") {
-	if (!url.empty())page = url;
-	printf("\nWebView!\n");
-
-	// add [w] to closure to make it local
-	view.set_title("Example");
-	view.set_html("<script>alert('js injected into every page')</script>");
-//    w.value("alert('js injected into every page')");
-	view.set_size(480 * 4, 320 * 4, WEBVIEW_HINT_NONE);// default
-	view.set_size(480, 320, WEBVIEW_HINT_MIN);// minimum size, also: MAX, FIXED
-	view.bind("run", [](std::string s) -> std::string {
-		throwing = false;
-		panicking = false;
-		const std::string &code = webview::json_parse(s, "", 0);
-		printf("RUN code: %s\n", code.data());
-		std::thread compile(eval, String(code.data()));
-		compile.detach();
-//        printf("compiling …\n");
-		return "compiling…";// will run wasm HERE and print result
-	});
-	view.bind("exit", [](std::string s) -> std::string {
-		printf("EXIT");
-		exit(0);
-	});
-	view.bind("server", [](std::string s) -> std::string {
-		std::thread teste(start_server, 9999);
-		teste.detach();
-		return s;
-	});
-	view.bind("close", [](std::string s) -> std::string {
-		view.terminate();
-		exit(0);
-	});
-	view.bind("destroy", [](std::string s) -> std::string {
-		view.terminate();
-		return s;
-	});
-	// doesn't work because it returns async Promise, which can't be used in wasm
-//	view.bind("new_string", [](std::string s) -> std::string {
-//		const std::string &string = webview::json_parse(s, "", 0);
-//		String data = String(string.data());
-//		Node &node = *new Node(data, strings);// todo?
-//		return to_string(node.toSmartPointer());// parsed as BigInt later
-//	});
-	view.bind("wasm_done", [](std::string s) -> std::string {
-		printf("wasm_done  result json = %s ", s.c_str());
-		const std::string &string = webview::json_parse(s, "", 0);
-		long result = std::stol(string);
-		if (result)
-			waiter.done(std::stol(string));
-		else
-			waiter.done(string);
-//#if MULTI_VALUE
-//        auto type = webview::json_parse(string, "", 0);
-//        auto val = webview::json_parse(string, "", 1);
-//        waiter.done(std::stol(val), std::stol(type));
-//#else
-//        int64 result0 = std::stol(string);
-//        printf("wasm_done  result = %ld %lx \n", result0, result0);
-//        waiter.done(result0);
-//#endif
-		return s;
-	});
-	view.bind("wasm_error", [](std::string s) -> std::string {
-		printf("wasm_error %s \n", s.data());
-		waiter.done(-1);
-		return s;
-	});
-	view.bind("terminate", [](std::string s) -> std::string {
-		view.terminate();
-		return s;
-	});
-	// w.bind("destroy", [](std::string s) -> std::string { w.destroy(); return s;}); NOPE
-
-	view.bind("home", [](std::string s) -> std::string {
-		view.navigate(home);
-		return s;
-	});
-	view.bind("$", [](std::string s) -> std::string {
-		printf("$('%s')? jquery needs to be injected!", s.data());
-		view.eval(s);
-//        w.eval(s);
-		return s;
-	});
-
-	// window.open and window.navigate don't work
-	// w.bind("test", [](std::string s) -> std::string { w.eval("window.location.href='https://www.yay.com/'"); return s;});
-	view.bind("test", [](std::string s) -> std::string {
-		testWebview(s);
-		return s;
-	});// works, with
-//	view.bind("alert", [](std::string s) -> std::string {
-//        splitLog(s);
-//        return s;
-//    });// no native popup?
-	// why does alert('a') print 'a' alert(1) print 1, even though lambda type is string?
-	view.bind("log", [](std::string s) -> std::string {
-		std::cout << s << std::endl;
-		view.set_title(s);
-		splitLog(s);
-		return s;
-	});
-	view.bind("add", [](std::string s) -> std::string {
-		auto a = std::stol(webview::json_parse(s, "", 0));
-		auto b = std::stol(webview::json_parse(s, "", 1));
-		return std::to_string(a + b);
-	});
-	// printf("%s",w.return("{'test':'value'}"));// json_parse_c()?
-	// w.on_message() private but interesting… !
-	// [[config preferences] setValue:@YES forKey:@"developerExtrasEnabled"]
-
-//  onKeyPress='exit()'
-	if (page) view.navigate(page);
-//    else // todo: simple templates? use wasp::String ;)
-//    w.eval("document.onclick=test");// no effect
-	// w.eval("document.onclick=exit");// no effect
-
-//    w.resolve("canvas? direct? may be hard or impossible",0,0);
-	//      std::wstring userDataFolder =
-	//        wideCharConverter.from_bytes(std::getenv("APPDATA"));
-	view.eval("alert('ok!?')");// was w.exec, js injected into current page
-//    w.eval("alert('ok!?')");// was w.exec, js injected into current page
-	//    CGBitmapContextCreate(w.window(),1600,1200,32,8/*?*/, 0,0);
-	//    CGBitmapContextCreateWithData(w.window(),1600,1200,32,8/*?*/, 0,0,0,0);
-	//    webview_bind(w.window(),"custom_function")
-	//        webview::cocoa_wkwebview_engine;
-
-	view.run(); //  we have to call our tests from js to continue in thread!!!
-	printf("DONE\n");//never reached, even after calling terminate() from js/c/wasp
-	return 0;
-}
-
-extern "C" int64 init_graphics() {
-	open_webview();
-}
 
 void run_wasm_async(unsigned char *bytes, int length) {
 	std::stringstream ss;
@@ -345,6 +210,7 @@ void run_wasm_async(unsigned char *bytes, int length) {
 }
 
 
+// todo: replaced by requestAnimationFrame pull vs push
 int paint(int wasm_offset) {
 	view.eval("paintWasmToCanvas()");// data coming from wasm
 	return 0;
@@ -394,13 +260,6 @@ std::string testWebview(std::string s) {
 	return s;
 }
 
-void load_script_include(String url) {
-	String data = readFile("test_include.js");
-	data.replaceAll("'", "\\'");
-	auto js = "var script = document.createElement('script');script.src = '"_s + data +
-	          "';document.head.appendChild(script);";
-	view.eval(js.data);
-}
 
 
 void console_log(const char *s) {
@@ -409,4 +268,172 @@ void console_log(const char *s) {
 #else
 	view.eval("console.log('" + std::string(s) + "')");
 #endif
+}
+
+void load_script_include(String url) {
+
+//	https://github.com/webview/webview/issues/851 Custom URI scheme support
+
+//	https://github.com/MicrosoftEdge/WebView2Feedback/issues/1660
+//	WebView2.CoreWebView2.SetVirtualHostNameToFolderMapping("assets", "./assets", CoreWebView2HostResourceAccessKind.Allow);
+
+//	https://github.com/webview/webview/issues/859
+//	win32_edge_engine public interface: void set_virtual_hostname( const char *hostname, const char *folderpath)
+//	static_cast<ICoreWebView2_3*>(m_webview)->SetVirtualHostNameToFolderMapping(L"assets", L"./assets",COREWEBVIEW2_HOST_RESOURCE_ACCESS_KIND_DENY_CORS);
+//	https://appassets.example/assets/xxx -> Client/dist/xxx
+//
+//	String data = readFile("wasp.js");
+	String data = readFile("test/test_include.js");
+//	String safe=data.replaceAll("'", "\\'");
+//	auto js = "var script = document.createElement('script');script.src = '"_s + safe +
+//	          "';document.head.appendChild(script);console.log('XXXXXXXX script included',script);";
+//	view.eval(js.data);
+	view.eval(data.data);
+//	view.window().set_virtual_hostname("assets", "$PWD");
+	auto script = "<script>"_s + data + "</script>";
+	view.set_html(script.data);
+}
+
+
+int64 open_webview(String url = "") {
+	if (!url.empty())page = url;
+	printf("\nWebView!\n");
+
+	// add [w] to closure to make it local
+	view.set_title("Example");
+	view.set_html("<script>alert('js injected into every page')</script>");
+//    w.value("alert('js injected into every page')");
+	view.set_size(480 * 4, 320 * 4, WEBVIEW_HINT_NONE);// default
+	view.set_size(480, 320, WEBVIEW_HINT_MIN);// minimum size, also: MAX, FIXED
+	view.bind("run", [](std::string s) -> std::string {
+		throwing = false;
+		panicking = false;
+		const std::string &code = webview::json_parse(s, "", 0);
+		printf("RUN code: %s\n", code.data());
+		std::thread compile(eval, String(code.data()));
+		compile.detach();
+//        printf("compiling …\n");
+		return "compiling…";// will run wasm HERE and print result
+	});
+	view.bind("exit", [](std::string s) -> std::string {
+		printf("EXIT");
+		exit(0);
+	});
+	view.bind("server", [](std::string s) -> std::string {
+		std::thread teste(start_server, 9999);
+		teste.detach();
+		return s;
+	});
+	view.bind("close", [](std::string s) -> std::string {
+		view.terminate();
+		exit(0);
+	});
+	view.bind("destroy", [](std::string s) -> std::string {
+		view.terminate();
+		return s;
+	});
+	// doesn't work because it returns async Promise, which can't be used in wasm
+//	view.bind("new_string", [](std::string s) -> std::string {
+//		const std::string &string = webview::json_parse(s, "", 0);
+//		String data = String(string.data());
+//		Node &node = *new Node(data, strings);// todo?
+//		return to_string(node.toSmartPointer());// parsed as BigInt later
+//	});
+	view.bind("wasm_done", [](std::string s) -> std::string {
+		printf("wasm_done  result json = %s ", s.c_str());
+		const std::string &string = webview::json_parse(s, "", 0);
+		if (string.empty())return s;
+		if (string.starts_with('"')) {
+			waiter.done(string);
+			return s;
+		}
+		long result = std::stol(string);
+		if (result)
+			waiter.done(std::stol(string));
+		else
+			waiter.done(string);
+//#if MULTI_VALUE
+//        auto type = webview::json_parse(string, "", 0);
+//        auto val = webview::json_parse(string, "", 1);
+//        waiter.done(std::stol(val), std::stol(type));
+//#else
+//        int64 result0 = std::stol(string);
+//        printf("wasm_done  result = %ld %lx \n", result0, result0);
+//        waiter.done(result0);
+//#endif
+		return s;
+	});
+	view.bind("wasm_error", [](std::string s) -> std::string {
+		printf("wasm_error %s \n", s.data());
+		waiter.done(-1);
+		return s;
+	});
+	view.bind("terminate", [](std::string s) -> std::string {
+		view.terminate();
+		return s;
+	});
+	// w.bind("destroy", [](std::string s) -> std::string { w.destroy(); return s;}); NOPE
+
+	view.bind("home", [](std::string s) -> std::string {
+		view.navigate(home);
+		return s;
+	});
+//	view.bind("$", [](std::string s) -> std::string { // just use function $() in wasp.js
+//		printf("$('%s')? jquery needs to be injected!", s.data());
+//		view.eval(s);
+////        w.eval(s);
+//		return s;
+//	});
+
+	// window.open and window.navigate don't work
+	// w.bind("test", [](std::string s) -> std::string { w.eval("window.location.href='https://www.yay.com/'"); return s;});
+	view.bind("test", [](std::string s) -> std::string {
+		testWebview(s);
+		return s;
+	});// works, with
+//	view.bind("alert", [](std::string s) -> std::string {
+//        splitLog(s);
+//        return s;
+//    });// no native popup?
+	// why does alert('a') print 'a' alert(1) print 1, even though lambda type is string?
+	view.bind("log", [](std::string s) -> std::string {
+		std::cout << s << std::endl;
+		view.set_title(s);
+		splitLog(s);
+		return s;
+	});
+	view.bind("add", [](std::string s) -> std::string {
+		auto a = std::stol(webview::json_parse(s, "", 0));
+		auto b = std::stol(webview::json_parse(s, "", 1));
+		return std::to_string(a + b);
+	});
+	// printf("%s",w.return("{'test':'value'}"));// json_parse_c()?
+	// w.on_message() private but interesting… !
+	// [[config preferences] setValue:@YES forKey:@"developerExtrasEnabled"]
+
+//  onKeyPress='exit()'
+	if (page) view.navigate(page);
+//    else // todo: simple templates? use wasp::String ;)
+//    w.eval("document.onclick=test");// no effect
+	// w.eval("document.onclick=exit");// no effect
+
+//    w.resolve("canvas? direct? may be hard or impossible",0,0);
+	//      std::wstring userDataFolder =
+	//        wideCharConverter.from_bytes(std::getenv("APPDATA"));
+	view.eval("alert('ok!?')");// was w.exec, js injected into current page
+//    w.eval("alert('ok!?')");// was w.exec, js injected into current page
+	//    CGBitmapContextCreate(w.window(),1600,1200,32,8/*?*/, 0,0);
+	//    CGBitmapContextCreateWithData(w.window(),1600,1200,32,8/*?*/, 0,0,0,0);
+	//    webview_bind(w.window(),"custom_function")
+	//        webview::cocoa_wkwebview_engine;
+
+	load_script_include("wasp.js");
+
+	view.run(); //  we have to call our tests from js to continue in thread!!!
+	printf("DONE\n");//never reached, even after calling terminate() from js/c/wasp
+	return 0;
+}
+
+extern "C" int64 init_graphics() {
+	open_webview();
 }
