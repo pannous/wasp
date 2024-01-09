@@ -373,29 +373,38 @@ public:
 		data[length] = 0;// be sure
 	}
 
-	explicit String(char32_t *const utf32char) {
-		codepoints = (codepoint *) utf32char;
-		codepoint_count = strlen(utf32char);
-	}
+//	explicit String(char32_t *const utf32char) {
+//		// todo: copy or share?
+//		codepoints = (codepoint *) utf32char;
+//		codepoint_count = strlen(utf32char);
+//	}
 
 	explicit String(char32_t const *utf32char) {
+		// todo: copy or share?
 		codepoints = (codepoint *) utf32char;
 		codepoint_count = strlen(utf32char);
 	}
 
 	explicit String(wchar_t *wideChar) {
 		if (sizeof(wchar_t) == 4) {
+			// todo: copy or share?
 			codepoints = (codepoint *) wideChar;
 			codepoint_count = strlen(codepoints);
 		} else
 			initUtf16((char16_t *) wideChar);
 	}
 
-	explicit String(char16_t *const char16_ts) {
-		initUtf16(char16_ts);
+//	explicit String(char16_t *const char16_ts) {
+//		initUtf16(char16_ts);
+//	}
+
+	explicit String(char16_t const *char16_ts) {
+		initUtf16((char16_t *) char16_ts);
 	}
 
 	void initUtf16(char16_t *const char16_ts) {
+		// todo: third representation: UTF-16 (char16_t) code units for efficiency?
+		// UTF-16 is worst of both worlds, but used in JS and Java and MS, so we need it
 		codepoint_count = strlen(char16_ts);
 		codepoints = static_cast<codepoint *>(malloc(sizeof(codepoint) * codepoint_count + 1));
 
@@ -407,14 +416,11 @@ public:
 			} else if (char16_ts[i] >= 0xFFFE) {
 				codepoints[i] = 0xFFFD; // error
 			} else {
-				// non surrogate
-				codepoints[i] = char16_ts[i];
+				codepoints[i] = char16_ts[i]; // non surrogate
 			}
 			i++;
 		}
 	}
-
-	explicit String(char16_t const *char16_ts) : String((char16_t *) char16_ts) {}
 
 	explicit String(char8_t const *char8_ts) : String((char *) char8_ts) {}
 
