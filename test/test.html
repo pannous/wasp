@@ -32,8 +32,18 @@
 
 <!--    <script src="more.js">/*not allowed to load local resource*/</script>-->
 <script> // errors here fail silently :(
+const is_node = (typeof process !== 'undefined') && (process.release.name === 'node')
+const is_v8 = z => {
+    var s = '';
+    for (x in {3: 3, 1: 1}) {
+        s += x
+    }
+    ;
+    return !is_node && s == '13'
+}
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+if (is_node) window = global
 BigInt.prototype.toJSON = () => this.toString()
 
 function resizeCanvas() {
@@ -247,6 +257,15 @@ function print(...x) {
         const arr = new Uint8Array(buffer.subarray(pointer, pointer + length));
         return utf8_decoder.decode(arr);
     };
+
+    function reflect_global_js() {
+        for (builtin of Object.getOwnPropertyNames(window)) {
+            for (prop of Object.getOwnPropertyNames(window[builtin])) {
+                print("builtin", builtin, prop)
+            }
+        }
+        ;
+    }
 
     async function wasmx(code) {
         try {

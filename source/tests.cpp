@@ -1556,12 +1556,12 @@ void testUnicode_UTF16_UTF32() {// constructors/ conversion maybe later
 	assert(interpret("ç='☺'") == String(u'☺'));
 	assert(interpret("ç='☺'") == String(L'☺'));
 	assert(interpret("ç='☺'") == String(U'☺'));
-	skip(
-			assert(interpret("ç='☺'") == String(u"☺"));
-			assert(interpret("ç='☺'") == String(u8"☺"));
-			assert(interpret("ç='☺'") == String(L"☺"));
-			assert(interpret("ç='☺'") == String(U"☺"));
-	)
+//	skip(
+	assert(interpret("ç='☺'") == String(u"☺"));
+	assert(interpret("ç='☺'") == String(u8"☺"));
+	assert(interpret("ç='☺'") == String(L"☺"));
+	assert(interpret("ç='☺'") == String(U"☺"));
+//	)
 	check(String(u'牛') == "牛");
 	check(String(L'牛') == "牛");
 	check(String(U'牛') == "牛");
@@ -3378,6 +3378,8 @@ void testWasmGC() {
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 void testCurrent() {
+	testUnicode_UTF16_UTF32();
+
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 //	assert_emit("print('hi')", 0)
 //	assert_emit("puts('hi')", 8)
