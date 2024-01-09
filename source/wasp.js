@@ -630,12 +630,9 @@ function addSynonyms(exports) {
             if (demangled != name) {
                 // if (!exports[demangled]) {
                 exports[demangled] = func
-                Wasp[demangled] = func
+                Wasp[demangled] = func // keep signature for polymorphic calls
                 var short = demangled.substr(0, demangled.lastIndexOf("("))
                 Wasp[short] = func
-                if (name.match("reverse")) {
-                    print("reverse", name, demangled, short)
-                }
             }
         }
     }

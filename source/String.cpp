@@ -449,6 +449,7 @@ bool String::empty() const {//this==0 in testMarkMulti!
 //	if(memory_size and data and (int64) data > memory_size/*bug!*/)
 ////		return true;
     if (this == 0)return true;
+    if (codepoints and codepoint_count > 0)return false;
     if ((int64) this < 8)return true;// zero page broken object hack
     if (length == 0)return true;
     if (this->data == 0)return true;
