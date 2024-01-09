@@ -703,6 +703,10 @@ void print(int64 l) {
 	put_chars(formatLong(l));
 }
 
+void print(Primitive l) {
+    put_chars(typeName(l));
+}
+
 void print(double l) {
 	put_chars(formatReal(l));
 }

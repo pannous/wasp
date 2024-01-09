@@ -290,8 +290,8 @@ void load_script_include(String url) {
 //	view.eval(js.data);
 	view.eval(data.data);
 //	view.window().set_virtual_hostname("assets", "$PWD");
-	auto script = "<script>"_s + data + "</script>";
-	view.set_html(script.data);
+//	auto script = "<script>"_s + data + "</script>";
+//	view.set_html(script.data);
 }
 
 
@@ -307,7 +307,8 @@ int64 open_webview(String url = "") {
 	view.set_size(480, 320, WEBVIEW_HINT_MIN);// minimum size, also: MAX, FIXED
 	view.bind("run", [](std::string s) -> std::string {
 		throwing = false;
-		panicking = false;
+//		panicking = false;
+		panicking = true;
 		const std::string &code = webview::json_parse(s, "", 0);
 		printf("RUN code: %s\n", code.data());
 		std::thread compile(eval, String(code.data()));
@@ -340,9 +341,12 @@ int64 open_webview(String url = "") {
 //		return to_string(node.toSmartPointer());// parsed as BigInt later
 //	});
 	view.bind("wasm_done", [](std::string s) -> std::string {
-		printf("wasm_done  result json = %s ", s.c_str());
+		printf("wasm_done  result json = %s \n", s.c_str());
 		const std::string &string = webview::json_parse(s, "", 0);
-		if (string.empty())return s;
+		if (string.empty()) {
+			waiter.done("");
+			return s;
+		}
 		if (string.starts_with('"')) {
 			waiter.done(string);
 			return s;
