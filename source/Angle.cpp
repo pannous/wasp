@@ -1182,7 +1182,7 @@ Node &groupOperators(Node &expression, Function &context) {
 //        else error("binop?");
 		if (op == ".") {
 			if (prev.kind == referencex)
-				functions["getExternRefProperty"].is_used = true;
+				functions["getExternRefPropertyValue"].is_used = true;
 			if (prev.kind == (Kind) Primitive::node)
 				functions["get"].is_used = true;
 		}
@@ -1928,12 +1928,12 @@ void preRegisterFunctions() {
 
 	functions["getElementById"].import();//.builtin();
 	functions["getElementById"].signature.add(charp).returns(externref /*!!*/);
-	functions["getExternRefProperty"].import();//.builtin();
-	functions["getExternRefProperty"].signature.add(externref).add(charp).returns(smarti64);
-//	functions["getExternRefProperty"].signature.add(externref).add(charp).returns(stringref); // ⚠️ not yet in webview!
+	functions["getExternRefPropertyValue"].import();//.builtin();
+	functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(smarti64);
+//	functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(stringref); // ⚠️ not yet in webview!
 
-//	functions["getExternRefProperty"].signature.add(externref).add(charp).returns(longs);
-//	functions["getExternRefProperty"].signature.add(externref,"object").add(strings,"property").returns(marti64);
+//	functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(longs);
+//	functions["getExternRefPropertyValue"].signature.add(externref,"object").add(strings,"property").returns(marti64);
 
 //	functions["invokeExternRef"].import();//.builtin();
 //	functions["invokeExternRef"].signature.add(externref).add(strings,"method").add(node,"params").returns(rimitive::smarti64);

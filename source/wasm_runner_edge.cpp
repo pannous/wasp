@@ -51,8 +51,7 @@ WasmEdge_Result createHtml(void *Data, const FrameContext *CallFrameCxt,
 }
 
 
-
-WasmEdge_Result getExternRefProperty(void *Data,
+WasmEdge_Result getExternRefPropertyValue(void *Data,
                                      const FrameContext *CallFrameCxt,
                                      const WasmEdge_Value *In, WasmEdge_Value *Out) {
     // just a dummy! todo print the id anyways
@@ -88,9 +87,9 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         P[0] = WasmEdge_ValType_ExternRef;
         P[1] = WasmEdge_ValType_I32;
         HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
-        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, getExternRefProperty, NULL, 0);
+	    HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, getExternRefPropertyValue, NULL, 0);
         WasmEdge_FunctionTypeDelete(HostFType);
-        HostName = WasmEdge_StringCreateByCString("getExternRefProperty");
+	    HostName = WasmEdge_StringCreateByCString("getExternRefPropertyValue");
         WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
         WasmEdge_StringDelete(HostName);
     }

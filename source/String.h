@@ -204,7 +204,8 @@ class String {
 public:
 	char *data{};// UTF-8 sequence
 	int length = -1;
-	Primitive kind = (Primitive) string_header_32;  // post header ;) static const
+	int kind = string_header_32;  // post header ;) static const
+//	Primitive kind = (Primitive) string_header_32;  // post header ;) static const
 	codepoint *codepoints = 0;//  todo reuse data field after decode? nah, breaks fd_write  extract on demand from data or via constructor
 	int codepoint_count = -1;// 'type' field in list, node and array_header, semi compatible
 	bool shared_reference = false;// length terminated substrings! copy on modify if shared views. // todo: move to header?

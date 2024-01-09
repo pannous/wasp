@@ -162,6 +162,7 @@ void print(int l);
 
 //void print(long l);
 void print(int64 l);
+//void print(Primitive l);
 
 void print(double l);
 

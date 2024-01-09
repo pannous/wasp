@@ -1493,7 +1493,7 @@ Code emitAttributeSetter(Node &node, Function &context) {
 // external reference ≠ wasm reference types (struct …) !
 [[nodiscard]]
 Code emitReferenceProperty(Node &node, Node &field, Function &function) {
-	auto op = Node("getExternRefProperty");
+	auto op = Node("getExternRefPropertyValue");
 	op.add(node);
 	op.add(Node(field.name));
 	return emitCall(op, function);

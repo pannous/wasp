@@ -264,7 +264,6 @@ function print(...x) {
                 print("builtin", builtin, prop)
             }
         }
-        ;
     }
 
     async function wasmx(code) {
@@ -298,18 +297,18 @@ function print(...x) {
                         print("getElementById", id, string(id))
                         return document.getElementById(string(id))
                     },
-                    // getExternRefProperty: async (ref, prop0) => { async not working in wasm!
-                    getExternRefProperty: (ref, prop0) => {
+                    // getExternRefPropertyValue: async (ref, prop0) => { async not working in wasm!
+                    getExternRefPropertyValue: (ref, prop0) => {
                         let prop = string(prop0)
-                        print("CALLING getExternRefProperty", ref, prop)
+                        print("CALLING getExternRefPropertyValue", ref, prop)
                         if (ref && typeof ref[prop] !== 'undefined') {
-                            print("getExternRefProperty OK ", ref, prop, ref[prop])
+                            print("getExternRefPropertyValue OK ", ref, prop, ref[prop])
                             return smartResult(ref[prop])
                             // return String(ref[prop])
                         } else if (ref && typeof ref.getAttribute === 'function') {
                             // check attribute
                             let attribute = ref.getAttribute(prop);
-                            print("getExternRefProperty OK ", ref, prop, attribute)
+                            print("getExternRefPropertyValue OK ", ref, prop, attribute)
                             // return String(attribute)
                             return smartResult(attribute)
                         } else {
