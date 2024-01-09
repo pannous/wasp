@@ -273,6 +273,7 @@ public:
 	}
 
 	explicit String(char byte_character) {
+		// todo: reserve 256 String objects for all byte values 0…255
 		if (byte_character == 0) {
 			length = 0;
 			data = 0;//SUBTLE BUGS if setting data=""; data=empty_string;
@@ -283,6 +284,9 @@ public:
 		data[1] = 0;
 		length = 1;
 	}
+
+//	explicit
+	String(char8_t const *char8_ts) : String((char *) char8_ts) {}
 
 	String(const char string[], int length0) {// todo signature for merger experimental!
 //		shared_reference= true;
@@ -340,7 +344,8 @@ public:
 		length = len();
 	}
 
-	explicit String(char16_t utf16char) {
+//	explicit
+	String(char16_t utf16char) {
 		data = (char *) (calloc(sizeof(char16_t), 4));// 2byte can be unrolled into 3(+??) bytes, e.g. u'☺'
 		length = encode_unicode_character(data, utf16char);
 		data[length] = 0;
@@ -351,8 +356,9 @@ public:
 //		length+ = encode_unicode_characters(data,);
 //	}
 
-// char32_t same as codepoint!
-	explicit String(char32_t utf32char) {// conflicts with int
+//	explicit
+	String(char32_t utf32char) {// conflicts with int
+		// treat char32_t same as codepoint!
 		auto byteCount = utf8_byte_count(utf32char);
 		data = (char *) (calloc(sizeof(char32_t), byteCount + 1));
 		encode_unicode_character(data, utf32char);
@@ -360,13 +366,15 @@ public:
 		data[length] = 0;// be sure
 	}
 
-	explicit String(wchar_t wideChar) {
+//	explicit
+	String(wchar_t wideChar) {
 		data = (char *) (calloc(sizeof(wchar_t), 2));
 		length = encode_unicode_character(data, wideChar);
 		data[length] = 0;// be sure
 	}
 
-	explicit String(char8_t aChar) {
+//	explicit
+	String(char8_t aChar) {
 		data = (char *) (calloc(sizeof(char8_t), 2));
 		data[0] = aChar;
 		length = 1;
@@ -379,13 +387,15 @@ public:
 //		codepoint_count = strlen(utf32char);
 //	}
 
-	explicit String(char32_t const *utf32char) {
+//	explicit
+	String(char32_t const *utf32char) {
 		// todo: copy or share?
 		codepoints = (codepoint *) utf32char;
 		codepoint_count = strlen(utf32char);
 	}
 
-	explicit String(wchar_t *wideChar) {
+//	explicit
+	String(wchar_t *wideChar) {
 		if (sizeof(wchar_t) == 4) {
 			// todo: copy or share?
 			codepoints = (codepoint *) wideChar;
@@ -398,7 +408,8 @@ public:
 //		initUtf16(char16_ts);
 //	}
 
-	explicit String(char16_t const *char16_ts) {
+//	explicit
+	String(char16_t const *char16_ts) {
 		initUtf16((char16_t *) char16_ts);
 	}
 
@@ -421,8 +432,6 @@ public:
 			i++;
 		}
 	}
-
-	explicit String(char8_t const *char8_ts) : String((char *) char8_ts) {}
 
 	explicit String(double real) {
 		int max_length = 4;

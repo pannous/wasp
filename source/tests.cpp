@@ -3387,7 +3387,7 @@ void testCurrent() {
 //	testFetch();
 	testDomProperty();
 //	testInnerHtml();
-	return;
+//	return;
 #if WEBAPP
 #endif
 	testDom();
