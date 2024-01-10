@@ -14,6 +14,8 @@
 #include "NodeTypes.h"
 #include "tests.h"
 
+Node &parse(chars source);
+
 using namespace std;
 /* supported in WebKit:
 ✔️	multiValue
@@ -46,28 +48,15 @@ defaults write com.apple.WebKit.WebContent WebKitDeveloperExtras -bool true
 
 class Wait {
 public:
-	void done(int64 result) {
-		pthread_mutex_lock(&m_mutex);
-		m_done = true;
-		m_result = result;
-		pthread_cond_broadcast(&m_cond);
-		pthread_mutex_unlock(&m_mutex);
-	}
 
-	void done(std::string result) {
+	void done(chars result) {
+		String data = String(result);
+		if (data.contains("[Object object]"))
+			throw "wasm_done bad serialization [Object object]";
+		Node &object = parse(data);
 		pthread_mutex_lock(&m_mutex);
+		m_result = object.clone();// Node(data, strings).toSmartPointer();
 		m_done = true;
-		String data = String(result.data());
-		m_result = Node(data, strings).toSmartPointer();
-		pthread_cond_broadcast(&m_cond);
-		pthread_mutex_unlock(&m_mutex);
-	}
-
-	void done(int64 result, int64 type) {
-		pthread_mutex_lock(&m_mutex);
-		m_done = true;
-		m_result = result;
-		m_type = type;
 		pthread_cond_broadcast(&m_cond);
 		pthread_mutex_unlock(&m_mutex);
 	}
@@ -79,42 +68,20 @@ public:
 		pthread_mutex_unlock(&m_mutex);
 	}
 
-#if MULTI_VALUE
-	Node result() {
-		Node r;
+	Node *result() {
+		Node *r;
 		int64 t;
 		pthread_mutex_lock(&m_mutex);
-		r = m_result;
-		m_done = false;// restart / allow another wait
-		pthread_mutex_unlock(&m_mutex);
-		return r;
-	}
-#else
-
-	int64 result() {
-		int64 r;
-		int64 t;
-		pthread_mutex_lock(&m_mutex);
-		r = m_result;
+//		r = new Node("test", strings);
+		r = m_result->clone();
 		m_done = false;// restart / allow another wait
 		pthread_mutex_unlock(&m_mutex);
 		return r;
 	}
 
-#endif
-
-
-	Node resultNode() {
-		pthread_mutex_lock(&m_mutex);
-		Node result(m_result, (SmartPointer64) m_type);
-		m_done = false;// restart / allow another wait
-		pthread_mutex_unlock(&m_mutex);
-		return result;
-	}
 
 private:
-//	atomic_int
-	int64 m_result = -1;
+	Node *m_result = 0;
 	int64 m_type = -1;
 	pthread_mutex_t m_mutex;
 	pthread_cond_t m_cond;
@@ -217,12 +184,11 @@ int paint(int wasm_offset) {
 }
 
 // forced synchronous
-#if MULTI_VALUE
-Node
-#else
 
-int64
-#endif
+
+//Node*
+//void
+smart_pointer_64
 run_wasm_sync(unsigned char *bytes, int length) {
 	// 1. save to APPDATA folder and then fetch via js
 	// NOPE "fetch api cannot load file" could bind my own fetch though!
@@ -241,17 +207,18 @@ run_wasm_sync(unsigned char *bytes, int length) {
 	// 3. feed natively how? BBQ OMG JIT wasm LLInt (low level evaler)
 	// irrelevant / unprofessional? https://www.youtube.com/watch?v=1v4wPoMskfo
 	// https://webkit.org/blog/9329
-#if MULTI_VALUE
-	return waiter.resultNode();
-#else
-	return waiter.result();// cant wait!
-#endif
+
+//	return waiter.result();// cant wait!
+	return waiter.result()->toSmartPointer();// cant wait!
 }
 
 
 extern "C" int64 run_wasm(unsigned char *bytes, int length) {
-	run_wasm_sync(bytes, length);
-	return waiter.result();
+//	Node* result1 =
+	return run_wasm_sync(bytes, length);//->clone();
+	// todo: make (json)string as return type of wasp_main() in wasm until GC objects are supported?
+//	Node* result1 = waiter.result();
+//	return result1->toSmartPointer();
 }
 
 std::string testWebview(std::string s) {
@@ -259,7 +226,6 @@ std::string testWebview(std::string s) {
 	teste.detach();
 	return s;
 }
-
 
 
 void console_log(const char *s) {
@@ -294,6 +260,11 @@ void load_script_include(String url) {
 //	view.set_html(script.data);
 }
 
+std::string wasm_done(std::string s) {
+	const std::string &string = webview::json_parse(s, "", 0);
+	waiter.done(string.data());// pass JSON string to waiter!
+	return s;
+}
 
 int64 open_webview(String url = "") {
 	if (!url.empty())page = url;
@@ -340,36 +311,10 @@ int64 open_webview(String url = "") {
 //		Node &node = *new Node(data, strings);// todo?
 //		return to_string(node.toSmartPointer());// parsed as BigInt later
 //	});
-	view.bind("wasm_done", [](std::string s) -> std::string {
-		printf("wasm_done  result json = %s \n", s.c_str());
-		const std::string &string = webview::json_parse(s, "", 0);
-		if (string.empty()) {
-			waiter.done("");
-			return s;
-		}
-		if (string.starts_with('"')) {
-			waiter.done(string);
-			return s;
-		}
-		long result = std::stol(string);
-		if (result)
-			waiter.done(std::stol(string));
-		else
-			waiter.done(string);
-//#if MULTI_VALUE
-//        auto type = webview::json_parse(string, "", 0);
-//        auto val = webview::json_parse(string, "", 1);
-//        waiter.done(std::stol(val), std::stol(type));
-//#else
-//        int64 result0 = std::stol(string);
-//        printf("wasm_done  result = %ld %lx \n", result0, result0);
-//        waiter.done(result0);
-//#endif
-		return s;
-	});
+	view.bind("wasm_done", wasm_done);
 	view.bind("wasm_error", [](std::string s) -> std::string {
 		printf("wasm_error %s \n", s.data());
-		waiter.done(-1);
+//		waiter.done("error: " + s);
 		return s;
 	});
 	view.bind("terminate", [](std::string s) -> std::string {

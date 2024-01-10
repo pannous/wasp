@@ -545,6 +545,8 @@ public:
 //	Node( Node& other ){// copy constructor!!
 
     Node *clone(bool childs = true) {// const cast?
+        if (this == 0)
+            return &ERROR;
         if (this == &NIL)return this;
         if (this == &True)return this;
         if (this == &False)return this;
