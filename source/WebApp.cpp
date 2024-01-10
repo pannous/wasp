@@ -254,7 +254,7 @@ void load_script_include(String url) {
 //	auto js = "var script = document.createElement('script');script.src = '"_s + safe +
 //	          "';document.head.appendChild(script);console.log('XXXXXXXX script included',script);";
 //	view.eval(js.data);
-	view.eval(data.data);
+	view.eval(data.data); // NO EFFECT!?
 //	view.window().set_virtual_hostname("assets", "$PWD");
 //	auto script = "<script>"_s + data + "</script>";
 //	view.set_html(script.data);
