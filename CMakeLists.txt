@@ -754,8 +754,11 @@ endif ()
 if (CONSOLE AND NOT WEBAPP)
     find_package(Readline)
     #    find_library(Readline)
-    #    link_libraries(wasp readline)
+    if (WASM)
     TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
+    else ()
+        link_libraries(wasp readline)
+    endif ()
 endif ()
 
 
