@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <title>Wasp Editor</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/codemirror.min.css"
+          rel="stylesheet">
+    </link>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/codemirror.min.js"
+            type="text/javascript">
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.52.2/mode/javascript/javascript.min.js"
+            type="text/javascript">
+    </script>
+
+    <!-- 'gutters' : line numbers, error & warning hints -->
+    <!-- <script type="text/javascript"
+      src="https://cdnjs.cloudflare.com/ajax/libs/jshint/2.11.0/jshint.js">
+    </script>
+     -->
+</head>
+<body>
+<div id="editor"/>
+</body>
+<script type="text/javascript">
+
+    function myCompletions(context) {
+        let word = context.matchBefore(/\w*/)
+        if (word.from == word.to && !context.explicit) return null
+        return {
+            from: word.from,
+            options: [
+                {label: "match", type: "keyword"},
+                {label: "hello", type: "variable", info: "(World)"},
+                {label: "magic", type: "text", apply: "⠁⭒*.✩.*⭒⠁", detail: "macro"}
+            ]
+        }
+    }
+
+
+    mirror = CodeMirror(document.querySelector('#editor'), {
+        lineNumbers: true,
+        tabSize: 2,
+        value: 'console.log("Hello, World");',
+        mode: 'javascript'
+    });
+    mirror.on("inputRead", function (instance) {
+        if (instance.state.completionActive) {
+            return;
+        }
+        var cur = instance.getCursor();
+        var token = instance.getTokenAt(cur);
+        var string = '';
+        if (token.string.match(/^[.`\w@]\w*$/)) {
+            string = token.string;
+        }
+        if (string.length > 0) {
+            CodeMirror.commands.autocomplete(instance);
+        }
+    });
+</script>
+
+</html>
