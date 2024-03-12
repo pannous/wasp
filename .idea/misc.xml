@@ -12,6 +12,7 @@
       <file path="$PROJECT_DIR$/.vscode" />
       <file path="$PROJECT_DIR$/Frameworks" />
       <file path="$PROJECT_DIR$/bin" />
+      <file path="$PROJECT_DIR$/build" />
       <file path="$PROJECT_DIR$/cmake-build-default" />
       <file path="$PROJECT_DIR$/cmake-build-release" />
       <file path="$PROJECT_DIR$/cmake-build-release-coverage" />
@@ -20,6 +21,7 @@
       <file path="$PROJECT_DIR$/cmake-build-wasm" />
       <file path="$PROJECT_DIR$/cmake-build-wasm-release" />
       <file path="$PROJECT_DIR$/cmake-build-wasm-runtime" />
+      <file path="$PROJECT_DIR$/examples" />
       <file path="$PROJECT_DIR$/lib/Frameworks_lib" />
       <file path="$PROJECT_DIR$/lib/WasmEdge-0.13.4-Linux" />
       <file path="$PROJECT_DIR$/lib/hello_spin" />
