@@ -38,3 +38,11 @@ cd -
 ln -s cmake-build-debug/wasp .
 
 
+# IF cmake fails to traverse to subdirectories:
+# echo cmake TODO MESSES WITH CLions CMAKE config!!
+# changed all cmake . && make || ninja -v => make || ninja -v
+cd cmake-build-wasm-runtime/
+# cmake . && make
+make || ninja -v
+cp wasp-runtime.wasm ../wasp-runtime.wasm 
+cp wasp-runtime.wasm ../bin/wasp-runtime.wasm 
