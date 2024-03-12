@@ -743,8 +743,6 @@ async function run_wasm(buf_pointer, buf_size) {
         print("runtime loaded")
         // addSynonyms(runtime_instance.exports)
         let runtime_imports = {env: runtime_instance.exports}
-        // let runtime_imports = {env: {square: x => x * x, pow: (x, y) => x ** y}} // pow: Math.pow
-        // let runtime_imports =
         app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
         print("app loaded")
 
@@ -757,7 +755,7 @@ async function run_wasm(buf_pointer, buf_size) {
     let main = app.exports.wasp_main || app.exports.main || app.instance.start || app.exports._start
     let result = main()
     // console.log("GOT raw ", result)
-    if (-0x100000000 > result || result > 0x100000000) {
+    if (result < -0x100000000 || result > 0x100000000) {
         if (!app.memory)
             error("NO funclet.memory")
         result = smartNode(result, 0, app.memory)

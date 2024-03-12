@@ -25,7 +25,7 @@ typedef unsigned char byte;//!
 //extern bool use_wasm_reference_types; :
 // WE DON'T NEED THIS, we can just use CANONICAL ABI lowering, e.g. for strings: [i32, i32]
 extern bool use_wasm_structs;
-extern bool use_wasm_strings;
+extern bool use_wasm_strings; // used to work with wasm-as but Chrome removed flag?
 extern bool use_wasm_arrays;
 
 

@@ -128,23 +128,14 @@ void testDomProperty() {
 	check_eq(result.value.longy, 300);
 //	return;
 	result = eval("$canvas.style");
-//	check_is(result.kind, strings);
+	check_is(result.kind, strings);
 //	check_is(result.kind, stringp);
-//	if (result.value.string)
-//	check_eq(*result.value.string, "dfsa");
+	if (result.value.string)
+		check_eq(*result.value.string, "dfsa");
 //	getExternRefPropertyValue OK  [object HTMLCanvasElement] style [object CSSStyleDeclaration]
 // ⚠️ But can't forward result as smarti or stringref:  SyntaxError: Failed to parse String to BigInt
 // todo : how to communicate new string as RETURN type of arbitrary function from js to wasp?
 // call Webview.getString(); ?
-/*
-extern "C" int64 run_wasm(unsigned char *bytes, int length) {
-	run_wasm_sync(bytes, length);
-	return waiter.result();
-}
- waiter.result() set by js to result of MAIN function in wasm
- hackable? but what if we have multible $canvas.style calls in our program?
- it HAS to be written to wasm instance and then read back from there
- */
 
 //	embedder.trace('canvas = document.getElementById("canvas");')
 //	print(nod);
@@ -3396,6 +3387,7 @@ void testCurrent() {
 //	assert_emit("puts('hi')", 8)
 //	testReplaceAll();
 //	testFetch();
+//	return;
 	testDomProperty();
 //	testInnerHtml();
 //	return;

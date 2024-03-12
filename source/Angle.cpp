@@ -1406,6 +1406,27 @@ bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
 	return false;
 }
 
+// todo merge with groupFunctionCalls
+Node &groupOperatorCall(Node &node, Function &function) {
+	{
+		bool is_function = isFunction(node);
+		findLibraryFunction(node.name, true);// sets functions[name].is_import = true;
+		if (is_function and node.kind != operators) {
+			node.kind = call;
+		}
+		Node &grouped = groupOperators(node, function);// outer analysis id(3+3) => id(+(3,3))
+		if (grouped.length > 0)
+			for (Node &child: grouped) {// inner analysis while(i<3){i++}
+//				if (&child == 0)continue;
+				child = analyze(child, function);// REPLACE with their ast
+			}
+		if (is_function)
+			functions[node.name].is_used = true;
+		return grouped;
+	}
+}
+
+// todo merge with groupOperatorCall
 Node &groupFunctionCalls(Node &expressiona, Function &context) {
 	if (expressiona.kind == declaration)return expressiona;// handled before
 	Function *import = findLibraryFunction(expressiona.name, false);
@@ -1759,6 +1780,8 @@ Node &groupWhile(Node &n, Function &context) {
 //}
 
 
+Node &groupOperatorCall(Node &node, Function &function);
+
 Node &analyze(Node &node, Function &function) {
 	String &context = function.name;
 	if (context != "global" and !functions.has(context)) {
@@ -1769,14 +1792,12 @@ Node &analyze(Node &node, Function &function) {
 	if (analyzed.has(hash))
 		return node;
 
-	// data keyword leaves data completely unparsed, like lisp quote `()
-	auto firstName = node.first().name;
-	if (firstName == "data" or firstName == "quote")
-		return node;
-
-	// group: {1;2;3} ( 1 2 3 ) expression: (1 + 2) tainted by operator
 	Kind type = node.kind;
 	String &name = node.name;
+	auto firstName = node.first().name;
+
+	if (firstName == "data" or firstName == "quote")
+		return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
 	if (name == "html") {
 		functions["getDocumentBody"].is_used = true;
@@ -1799,7 +1820,7 @@ Node &analyze(Node &node, Function &function) {
 	if (not firstName.empty() and class_keywords.contains(firstName))
 		return classDeclaration(node, function);
 #endif
-	if (node.kind == referencex)
+	if (node.kind == referencex) // external reference, e.g. html
 		functions["getElementById"].is_used = true;
 	// if(function_operators.contains(name))...
 	if (node.kind == key and node.values().name == "func")
@@ -1831,33 +1852,15 @@ Node &analyze(Node &node, Function &function) {
 			addLocal(function, name, mapType(node), false);
 		return node;// nothing to be analyzed!
 	}
-
-
 //    if(function_keywords.contains(firstName))
 	if (node.containsAny(function_keywords))
 		return groupFunctionDefinition(node, function);
 
-	//todo merge/clean
-	bool is_function = isFunction(node); // call, NOT definition
-	if (type == operators or type == call or is_function) {
-//		Function *import =
-		findLibraryFunction(node.name, true);// sets functions[name].is_import = true;
-		if (is_function and type != operators) {
-			node.kind = call;
-		}
-		Node &grouped = groupOperators(node, function);// outer analysis id(3+3) => id(+(3,3))
-		if (grouped.length > 0)
-			for (Node &child: grouped) {// inner analysis while(i<3){i++}
-//				if (&child == 0)continue;
-				child = analyze(child, function);// REPLACE with their ast
-			}
-		if (is_function)
-			functions[name].is_used = true;
-		return grouped;
-	}
+	if (type == operators or type == call or isFunction(node)) //todo merge/clean
+		return groupOperatorCall(node, function); // call, NOT definition
 
 	Node &groupedTypes = groupTypes(node, function);
-	if (isPrimitive(node)) return node;
+	if (isPrimitive(node)) return node; // todo checked above, remove
 	Node groupedDeclarations = groupDeclarations(groupedTypes, function);
 	Node &groupedFunctions = groupFunctionCalls(groupedDeclarations, function);
 	Node &grouped = groupOperators(groupedFunctions, function);
@@ -1865,16 +1868,14 @@ Node &analyze(Node &node, Function &function) {
 	analyzed.insert_or_assign(grouped.hash(), 1);
 
 	if (isGroup(type)) {
-		// children of lists analyzed individually
 		if (grouped.length > 0)
-			for (Node &child: grouped) {
+			for (Node &child: grouped) { // children of lists analyzed individually
 				if (!child.name.empty() and wit_keywords.contains(child.name) and child.kind != strings /* TODO … */)
 					return witReader.analyzeWit(node);// can't MOVE there:
 				child = analyze(child, function);// REPLACE ref with their ast ok?
 			}
 	}
 	return grouped;
-//	return *grouped.clone();// why?? where is leak?
 }
 
 

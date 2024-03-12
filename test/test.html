@@ -138,24 +138,39 @@ function print(...x) {
         return BigInt(ptr) | string_header_64;
     }
 
+    var last_result = 0;
     // async NOT WORKING in wasm: Failed to parse String to BigInt
     function smartResult(object) { // returns BigInt smart pointer to object
         // if(is_smart_pointer(object))
         //     return parseSmartResult(object)
+        last_result = object
         if (typeof object === "number")
             return BigInt(object)
-        if (typeof object === "string" && !isNaN(object))
-            return BigInt(object)
+        // if (typeof object === "string" && !isNaN(object))
+        //     return BigInt(object)
         // if (typeof object === "object")
         //     return -123;//
         try {
-            print("smartResult: ", object, "trying to parse to BigInt")
-            print("typeof object", typeof object)
-            print("object", object)
-            print(" !isNaN(object)", !isNaN(object))
-            let serialized = String(object);
-            // if() serialized=JSON.stringify(object)
-            let wrapped = new_string(serialized) | string_header_64;
+            // print("smartResult: ", object, "trying to parse to BigInt")
+            let reflect = {}
+            for (let prop in object) {
+                if (typeof object[prop] === "function") {
+                    // reflect[prop] = object[prop].toString()
+                } else {
+                    reflect[prop] = object[prop]
+                }
+            }
+            let typed = {}
+            let typ = typeof object
+            if (typ === "object") typ = object.constructor.name
+            typed[typ] = reflect
+            // serialized=JSON.stringify(object)
+            serialized = JSON.stringify(typed)
+            // serialized=JSON.stringify(reflect)
+
+            print("smartResult: typeof", typeof object, ": ", object, " =>", serialized)
+            last_result = serialized
+            let wrapped = new_string(serialized)
             return BigInt(wrapped) // to be consumed by wasm, potentially returned to wasp via main and wasm_done
         } catch (ex) {
             // todo error handling via print!

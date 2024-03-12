@@ -186,9 +186,9 @@ int paint(int wasm_offset) {
 // forced synchronous
 
 
-//Node*
+Node *
 //void
-smart_pointer_64
+//smart_pointer_64
 run_wasm_sync(unsigned char *bytes, int length) {
 	// 1. save to APPDATA folder and then fetch via js
 	// NOPE "fetch api cannot load file" could bind my own fetch though!
@@ -209,13 +209,13 @@ run_wasm_sync(unsigned char *bytes, int length) {
 	// https://webkit.org/blog/9329
 
 //	return waiter.result();// cant wait!
-	return waiter.result()->toSmartPointer();// cant wait!
+	return waiter.result();//->toSmartPointer();// cant wait!
 }
 
 
 extern "C" int64 run_wasm(unsigned char *bytes, int length) {
 //	Node* result1 =
-	return run_wasm_sync(bytes, length);//->clone();
+	return run_wasm_sync(bytes, length)->toSmartPointer();//->clone();
 	// todo: make (json)string as return type of wasp_main() in wasm until GC objects are supported?
 //	Node* result1 = waiter.result();
 //	return result1->toSmartPointer();

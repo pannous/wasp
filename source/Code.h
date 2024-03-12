@@ -760,7 +760,7 @@ enum string_ops { // on Valtype stringref = 0x64
     string_const = 0xfb82, // $idx:u32 (idx points to section stringrefs) <<<
 
     // length
-    string_measure_utf8 = 0xfb83, //
+    string_measure_utf8 = 0xfb83, // todo use instead of strlen
     string_measure_wtf8 = 0xfb84, //
     string_measure_wtf16 = 0xfb85, //
 
