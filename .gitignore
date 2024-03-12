@@ -98,3 +98,5 @@ lib/hello_spin
 lib/wai_example
 *.bak
 /wasp-jetbrains-plugin/.idea/kotlinc.xml
+
+docs/out
