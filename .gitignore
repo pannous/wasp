@@ -94,3 +94,7 @@ test.wasm
 merged.wasm
 main.wasm
 lib.wasm
+lib/hello_spin
+lib/wai_example
+*.bak
+/wasp-jetbrains-plugin/.idea/kotlinc.xml
