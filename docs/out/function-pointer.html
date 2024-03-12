@@ -1,0 +1,19 @@
+<p>Functions in Angle are <a href="charged.html">charged</a>, like in ruby/<a href="crystal.html">crystal</a>:<br />
+:warning: <strong>Functions are invoked without
+parentheses!</strong></p>
+<pre><code>time := now
+time # prints 2020-11-11|11:00.12 or similar
+time # prints 2020-11-11|11:00.13 or similar</code></pre>
+<p>In <a href="blocks.html">blocks</a> (function body declarations), the <a href="evaluation.html">evaluation</a> is
+<a href="delayed.html">delayed</a>, as seen above</p>
+<p>Unlike ruby function pointers are first class citizens in Angle: The
+symbol :now is different from the function pointer &amp;now.</p>
+<p>If one prefers verbal syntax to sigils, function pointers can be used
+with <code>function</code> or <code>func</code> keyword:<br />
+<code>map function square on [1 2 3] == [1 4 9]</code></p>
+<p>:warning: Explicit function pointers are only necessary when the
+symbol could be mistaken for a function call otherwise:</p>
+<p><code>map square on [1 2 3] == [1 4 9]</code> would work just as fine
+because 1.) map has <a href="signature.html">signature</a> map of block and object
+…<code>2.) square is followed by keyword 'on' which can not be an argument to square  (unless there was a signature</code>square
+on list = …` even then the <a href="ambiguity.html">ambiguity</a> might be resolved)</p>

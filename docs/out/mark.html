@@ -1,0 +1,22 @@
+<p><a href="https://github.com/henry-luo/wasp">Mark</a> is a data format
+which gave some <a href="inspiration.html">inspiration</a> to <a href="wasp.html">wasp</a></p>
+<h2 id="differences-between-wasp-and-mark">Differences between Wasp and
+Mark:</h2>
+<p>Both are tree formats with very similar internal representation and
+similar syntax with this little exception:</p>
+<p>Mark has the object/node type <em>behind</em> the braces:
+<code>{html {body}}</code> in Mark is <code>html{body}</code> in Wasp /
+Angle.</p>
+<p>Difference between Wasp and <a
+href="https://github.com/henry-luo/wasp">Mark Notation</a> : Wasp has
+the object/node type on the left side of braces: Wasp:
+<code>html{ div{'hello world'}}</code> vs Mark:
+<code>{html {div 'hello world'}}</code></p>
+<p>The later ‘polish-notation’ (or sexp/lisp-notation with braces) can
+be used via compile flag (#pragma?).</p>
+<p>div{ class:“form-group” } vs div(class=“form-group”) vs div{
+class:{“form-group”}} ? Should be <a href="identities">identical</a>
+under most circumstances</p>
+<p>Similar Data Formats: <a
+href="https://github.com/kdl-org/kdl">kdl</a> ~ https://sdlang.org/ <a
+href="https://github.com/ekon-org/ekon">ekon</a></p>

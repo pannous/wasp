@@ -1,0 +1,166 @@
+<h1 id="features-of-the-angle-programming-language">Features of the
+Angle programming language</h1>
+<h2 id="adaptations-adoptions">Adaptations / Adoptions</h2>
+<p>Adaptions and <a href="guiding principles.html">guiding principles</a> are not new <a href="inventions.html">inventions</a>, but
+cherry-picking the most beautiful, powerful and sane <a href="features.html">features</a> of
+other modern programming languages, especially Julia, Swift, Crystal and
+Kotlin but definitely not Java.</p>
+<h3 id="speakablity">Speakablity</h3>
+<p>Angle most important <a href="guiding principles.html">guiding principles</a> are Speakablity and
+mathematical soundness. Kotlin and ruby are cute languages, but fail at
+basic mathematical principles such as logical operator
+precedence/associativity. While pronounciability of the code and
+mathematical brevity seem to be conflicting interests, beauty appears
+where both principles can be united:</p>
+<h3 id="opinionated-standards">Opinionated Standards</h3>
+<p>Angle has an excessive <a href="alias.html">alias</a> mechanisms, allowing multiple
+variants to be normed into a <a href="standard.html">standard</a> form. The compiler informs
+developers about the preferred way to do things, picking up newcomers
+who expect <code>puts</code> to output a string even if the standard
+form is called <code>print</code>. A linter might automatically
+transform between the angle standard form and the user preferred form
+(before and after git interactions).</p>
+<p>Exampes:</p>
+<ul>
+<li>tabs vs spaces</li>
+<li>snake_case, kebab_case-case, CamelCase, context case</li>
+<li>use, using, import, include, require</li>
+<li>print, puts, writeln, println, log</li>
+</ul>
+<h3 id="extended-unicode">Extended unicode</h3>
+<p>Julia made the beginning with allowing in the console (repl), now
+this approach shall become universally available in language identifiers
+and template strings:</p>
+<pre><code>\alpha = `4\beta+1`
+α==&quot;4β+1&quot;  #true
+\beta = \{aleph}a
+β = אa</code></pre>
+<p>The map of unicode names to code points is extensive (adding custom
+names available) but can be omitted in compiled backends: It is mostly
+sufficient to handle those in the fronend.</p>
+<p>The pure ascii representations such as <code>4\{beta}+1</code> shall
+be called <strong>Unicode-Entity-Format</strong> UEF. Our strings
+contain a bit to denote this data type.</p>
+<p>For (variable) identifiers and operators we even go one step further:
+Special unicode/ascii signs are universally equivalent in almost every
+respect: <code>1 + 2 == 1 add 2</code> in the earliest layers of the
+compiler, and indistinguishable by default (unless one really needs to
+know). Rendering these words as symbols or the other way around may even
+become a linter feature.</p>
+<p>Equivalence such as <code>1 + 2 == 1 add 2</code> requires a sound
+operator precedence system:</p>
+<h3 id="operators">operators</h3>
+<p>Like in swift and julia, most unicode symbols can be used as
+operators or functions. Angle goes one step further and lets you define
+<strong>prefix</strong>, <strong>infix</strong> and
+<strong>suffix</strong> operators with precedence on the spot. Now we
+can define within the language, without bloating the parts o and
+compile:</p>
+<pre><code>prefix operator ++ of a number reference n := increase n by one 
+operator ++ has precedence above operator *
+</code></pre>
+<p>This is very important and central to the language as making operator
+precedence a first class citizen makes much of the language seem less ad
+hoc, but instead like lisp complex syntax arises from very simple
+<em>first principles</em>.</p>
+<p>One experimental feature (which may rose eyebrows and needs further
+investigation) is the automatic alignment of arguments:</p>
+<pre><code>add 1 2
+1 add 2
+1 2 add</code></pre>
+<p>Can all be resolved to add(1,2)? The big question is: under which
+circumstances and with which rules can we allow such an agnostic
+application of operators without creating a mess? One simple case is If
+there is only one operator involved. Especially the last case
+<code>1 2 add</code> can cause a heavy burden on the reader, as can be
+experienced in WAT where stack notation and functional notation
+<em>can</em> be freely mixed.</p>
+<p>The <code>operator</code> keyword takes any symbol and treats it as
+quoted, similar to the <code>function</code> and <code>import</code>
+keyword. Should we turn this into a general language feature?
+<code>function blah of symbol =... ?</code>
+<code>macro name literal ...</code></p>
+<h3 id="code-data-and-objects">code, data and objects</h3>
+<p>These three are almost the same: person ={ name: James, born: now }
+Can be treated as code and evaluated to person={ name: James, born:
+date:2020-10-22 }</p>
+<p>when does code get executed or data get evaluated to final
+objects?</p>
+<p>This warrants a chapter of its own: see <a href="evaluation.html">evaluation</a></p>
+<h3 id="automatic-imports">Automatic imports</h3>
+<p>Like Swift all code in files in the same folder is accessible without
+specific <code>require</code> <code>include</code> <code>import</code> …
+keywords. To include high level bundles like Graphics, or to add
+external / online dependencies see the <a href="use.html">use</a> keyword.</p>
+<h3 id="automatic-number-type">Automatic number type</h3>
+<p>The internal <a href="number.html">number</a> types are mostly isolated from the user
+facing number type, which handles automatic casting, up and downgrading
+between all different kinds of numbers: integers, reals, rational and
+complex numbers. Developers can unknowingly accept an int8 and return a
+bignum pointer if their calculation grows out of hand. Unless they
+really want all they need is <code>number</code> as parameter or
+variable type. Or no type at all if they rely on automatic typing.</p>
+<h3 id="as-keyword-for-typing"><em>As</em> keyword for typing</h3>
+<p>Following the above equivalence of certain symbols with <a href="keywords.html">keywords</a>,
+‘as’ is the equivalent of ‘::’ in julia.</p>
+<p><code>x as number = 9</code> <code>number x = 9</code>
+<code>x is number 9</code> <code>x is number</code>
+<code>x is a number</code></p>
+<p>Because of [<a href="#optional-typing">optional typing</a>] and
+<a href="type inference.html">type inference</a> this is mostly superfluous, but can speed up compile
+time and stabilize APIs. Similar to how the ‘+’ operator is just a
+synonym for the <a href="polymorphism">overloadable</a> <em>add</em>
+function, if one says <code>9 as string</code> it calls a
+<code>convert</code> function if available. In this case
+<code>convert number to string: return atoi(number)</code>. As is a bit
+of a special case because it also denotes return types and
+arguments:</p>
+<pre><code>to render text as pdf:
+ return createPdf(text)</code></pre>
+<p>Again using <a href="inventions">types as parameter names</a></p>
+<p>Thanks to <strong>return</strong> <a href="polymorphism.html">polymorphism</a>, the concepts of
+arguments, functions and their return type become unified in a general
+<a href="matching">matching</a> framework:</p>
+<pre><code>to render text as docx:
+ return createDocx(text)
+
+render &quot;hello&quot; as pdf
+type of result == pdf
+
+docx example = render &quot;hello MS&quot;
+
+render &quot;now what&quot;   # error or interactive compiler question: 
+# 1. render text as docx or 
+# 2. render text as pdf
+</code></pre>
+<h3 id="of-keyword">of keyword</h3>
+<p>name <strong>of</strong> person = person.name<br />
+<code>person.name == name of person</code> What else needs to be
+said?</p>
+<p>By the way this is a beautiful example where readability,
+pronounceability and brevity can all be achieved at once.</p>
+<h3 id="it-keyword-in-closures">it keyword in closures</h3>
+<p>This little invention makes closures so much more beautiful:<br />
+<code>map contracts to name of it</code></p>
+<h3 id="itstheir-keyword">its/their keyword</h3>
+<p>The following are equivalent:
+<code>map(contacts, {c in c.name})</code> # old swift style
+<code>map contacts {.name}</code>
+<code>map contacts to name of it</code>
+<code>map contacts to its name</code></p>
+<h3 id="multiple-dispatch">multiple dispatch</h3>
+<h3 id="optional-typing">optional typing</h3>
+<h3 id="copy-on-write">copy on write</h3>
+<p>for large structures ideally “<strong>diff modification</strong>”
+This Megabyte object a’ is the same as a except for property x which is
+y instead of z. Difficult to implement and mention, but could bring
+performance boost in version 3.0</p>
+<h3 id="self-hosting">self hosting</h3>
+<p>(secondary goal to not bias language design)</p>
+<h3 id="online-packages">online packages</h3>
+<p><code>use units</code> looks up package units in default packages,
+local packages and online resources like http://github.com/angle/units
+and other sources. Downloading, compilation, installation and caching
+will happen in the background and usually should not need user
+intervention. The mapping of package names to versions and sources can
+of course be configured in <a href="package files.html">package files</a>.</p>

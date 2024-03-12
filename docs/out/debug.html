@@ -1,0 +1,16 @@
+<h1
+id="in-theory-wasp-could-be-debuggable-inside-chrome-httpsdeveloper.chrome.comblogwasm-debugging-2020">in
+theory wasp could be debuggable inside chrome
+https://developer.chrome.com/blog/wasm-debugging-2020/</h1>
+<h1 id="wasm-tool-conventions"><a href="wasm.html">wasm</a> tool conventions</h1>
+<p>https://github.com/WebAssembly/tool-conventions</p>
+<h1 id="dwarf">dwarf</h1>
+<p>custom sections contain dwarf in binary format which can be
+translated to text using llvm-dwarfdump</p>
+<p>.debug_info .debug_loc .debug_ranges .debug_abbrev .debug_line<br />
+.debug_str 0-terminted strings</p>
+<h1 id="source-map">source map</h1>
+<p>{“version”:3,“sources”:[“source.wasp””],“names”:[],“mappings”:“qeAOA,…”}</p>
+<p>the parser is available here:</p>
+<p>https://github.com/bmeurer/wasm-source-map</p>
+<p>WASM_LINKFORSHARED_DEBUG=“-gseparate-dwarf –emit-symbol-map”</p>

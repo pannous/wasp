@@ -1,0 +1,33 @@
+<h1 id="pattern-matching">Pattern matching</h1>
+<p>Pattern matching is different to <a href="matching.html">matching</a> by type name in that it
+matches against data <a href="schemes.html">schemes</a>.</p>
+<p>Pattern matching goes significantly beyond checking a values type. It
+adds the ability to specify exactly what case you’re dealing with. For
+example, a list of length three where the first and last elements are
+empty strings. Having to specify this with a series of if statements
+often leads to verbose and error-prone code, but it’s trivial in a
+language like reasonml:</p>
+<pre><code>switch (mylist) {
+  | [&quot;&quot;, _, &quot;&quot;] =&gt; x
+  | _ =&gt; y
+}</code></pre>
+<p>Moreover, pattern matching usually involves pulling information out
+of the object at the same time. In the above example, maybe you want to
+do something with the middle element:</p>
+<pre><code>switch (mylist) {
+  | [&quot;&quot;, middle, &quot;&quot;] =&gt; middle ++ &quot;!&quot;
+  | [&quot;foo&quot;, x] =&gt; String.reverseInPlace(x)
+  | _ =&gt; &quot;never mind&quot;
+}</code></pre>
+<p>All of this would be possible to do with a series of if conditions,
+but significantly harder to read and implement correctly. The power of
+pattern matching grows clearer as more complex data and rules are
+introduced. For example, it works just as well with nested lists:</p>
+<pre><code>switch (mylist) {
+  | [outer, [middle, [inner]]] =&gt; outer ++ middle ++ inner ++ &quot;!&quot;
+  | _ =&gt; &quot;never mind&quot;
+}</code></pre>
+<p>Scala example:</p>
+<p>myList match { case Nil =&gt; 0 case first :: Nil =&gt; first * 3
+case first :: second :: Nil =&gt; first - second case first :: second ::
+rest =&gt; first * second + sum(rest) }</p>

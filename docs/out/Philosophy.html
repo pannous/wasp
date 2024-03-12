@@ -1,0 +1,73 @@
+<p>Angle tries to bring the syntax of programming languages closer to
+english, where appropriate without introducing unnecessary redundancies
+or ambiguities. This is difference to Knuths old idea of <a
+href="https://en.wikipedia.org/wiki/Literate_programming">literate
+programming.</a></p>
+<p>This convergence towards a more readable <em>english dialect</em> is
+occurring across the board in many programming languages, notably the
+logic operators <code>and, or, not</code> in c++, the <code>in</code>
+operator in python and the <code>it</code> variable in lambdas as seen
+in kotlin.</p>
+<p>Angle adds to these gems the <a href="keyword.html">keyword</a>s <code>is</code>,
+<code>be</code>, <code>of</code>, <code>that</code>, <code>which</code>
+among others.</p>
+<p>This Philosophy section amends the Angle <a href="guiding principles.html">guiding principles</a> by
+containing more general insights, monologues and thought snippets.</p>
+<p>Brevity is <a href="beauty.html">beauty</a></p>
+<p>It is good that students learn Haskell to unlearn imperative
+patterns.</p>
+<p>SwiftUI is an epitome of a <a href="beauty">beautiful</a> declarative
+framework.</p>
+<h3 id="difficult-to-misuse">difficult to misuse</h3>
+<p>it’s not clear how to achieve it but being difficult to misuse seems
+like a very valuable goal.</p>
+<p>ergonomic, and performant</p>
+<h3 id="less-can-be-more"><a
+href="https://lukeplant.me.uk/blog/posts/less-powerful-languages/">Less
+can be more</a></h3>
+<p>Cleverness in code starts working against you as a code base and
+organizations scale</p>
+<p>The more powerful a language, the greater the burden on software
+tools, which either are needed to be more complicated in order to work,
+or are forced to do less than they could. This includes:</p>
+<pre><code>compilers — with big implications for performance
+automated refactoring and VCS tools — with big implications for maintenance.</code></pre>
+<p>Similarly, the burden also increases for humans — for anyone
+attempting to understand the code or modify it. Extreme: APL</p>
+<p>However we think the perfect language gives users the power to write
+APL like code yet discourage them through other means, or at least give
+a way to resolve those symbols into readable segments:</p>
+<p>Reasoning tools that help tame the power of expressive language
+features.</p>
+<h1 id="there-should-be-exactly-one-standard-way-to-do-things">there
+should be exactly one «standard» way to do things</h1>
+<p>Angles embracing of <a href="alias.html">alias</a>es seems to violate the good old python
+paradigm:</p>
+<p>“there should be exactly one way to do things”</p>
+<p>but is salvageable with the angle paradigm:</p>
+<p>let the compiler inform the developer which is the correct way; that
+is: <strong>capture and normalize all aliases</strong></p>
+<p>It is now established wisdom that</p>
+<h3 id="globals-should-be-discouraged">Globals should be
+discouraged</h3>
+<p>when you use a construct that affects your whole program, then you
+have to reason globally about the changes it makes.</p>
+<p>Interestingly this is why many dislike lisp: because all functions
+are global and not bound to objects, resulting in an incredible
+cluttering and ugly names (to counteract name clashing).</p>
+<h3 id="if-statements-should-be-discouraged">If statements should be
+discouraged</h3>
+<p>Instead we should aim for <a href="declarative.html">declarative</a> pattern <a href="matching.html">matching</a></p>
+<h3 id="statefulness-should-be-discouraged">Statefulness should be
+discouraged</h3>
+<h3
+id="principle_of_least_astonishment">Principle_of_least_astonishment?</h3>
+<p>We want to bring new idioms to development, that is surprise
+developers with new features. How can we at the sane time follow the <a
+href="https://en.wikipedia.org/wiki/Principle_of_least_astonishment?wprov=sfti1">Principle_of_least_astonishment</a>?</p>
+<p>By having forgiving interactive (meaning all kinds of common input
+are accepted) yet strict fundamentals (meaning the system behaves sound
+logically and reasonable)</p>
+<p>One example of breaking Pola would be to require specific syntax
+which makes no sense: “Note to C++ programmers: do not place a semicolon
+after the closing brace.”</p>

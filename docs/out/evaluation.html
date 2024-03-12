@@ -1,0 +1,122 @@
+<p>Code is Data that is charged. Code that is evaluated is Data.</p>
+<p>Objects are generally kept in their symbolic form until their lazy
+evaluation can no longer be delayed.</p>
+<p>In root contexts and function calls objects get fully evaluated. Root
+contexts are the shell, files and the main function.</p>
+<pre><code>z=y*y
+y=x+x
+x=3</code></pre>
+<p>:warning: In the <a href="shell.html">shell</a>, <a href="assignment.html">assignment</a>s are treated
+<a href="symbolic.html">symbolic</a>ally! <code>z=y*y</code> would be erroneous in a normal
+block, if y was not defined!</p>
+<p>In the <a href="shell.html">shell</a> objects are printed in their symbolic form and
+evaluated until their final value is revealed:</p>
+<pre><code>&gt;&gt;&gt; z
+y*y
+(x+x)*(x+x)
+(3+3)*(3+3)
+6*6
+36</code></pre>
+<p>To see the final value of directly, objects are evaluated with
+<code>o()</code> <code>o?</code> or <code>o!</code></p>
+<pre><code>&gt;&gt;&gt; z!
+36</code></pre>
+<p>The shell also has a <em>direct</em> mode in which the intermediate
+steps are omitted and just the final value is printed. Which way is
+default can be configured.</p>
+<p>Objects being <strong><a href="charged.html">charged</a></strong> means that data is treated
+as code, and that their symbol gets evaluated.</p>
+<pre><code>help={print:&quot;there is no help &quot;}
+&gt; help # nothing happens, help is **uncharged data**
+&gt; help! # turns data into code and executes it
+to help={print:&quot;there is help &quot;}
+&gt; help # prints the message, help was code
+help={info:{get help}}
+help # in root contexts like the shell help gets evaluated and ``get help`` is called
+info:{get help}
+info:&quot;whatever get help returned&quot;</code></pre>
+<p>Objects get charged with <a href="function.html">function</a> keywords like <em>to</em> as
+can be seen above.<br />
+To uncharge symbols/functions they can be prefixed with
+<em>function</em>,<em>code</em> or <em>data</em>.<br />
+E.g. <code>print function help</code> will print the function
+definition, and not call <code>get help</code>.</p>
+<p><strong>When calling a function all parameters are fully
+evaluated</strong> (unless being explicitly uncharged as above)</p>
+<p>It is important to note that <code>help={data:{get help}}</code> will
+not call <code>get help</code> until help is evaluated.<br />
+To create data with return values of evaluated functions on the spot,
+objects are evaluated with o() o? or o! help={info:{get help!}}
+help={info:“whatever get help returned”}</p>
+<p>The exclamation operator ‘!’ evaluates everything in an expression on
+its left side (on the spot).</p>
+<p>Later: As in lisp there can be several levels of quoting. macros are
+just second order functions of auto-quoted data. To force arguments as
+being auto quoted, they can be denoted as <em>data</em> =
+<em>quoted</em> or <em>code</em> = <em>block</em> . To do: are these
+really equal synonyms, or does the block keyword act differently to the
+code class?</p>
+<p>If in doubt, objects can be evaluated on the spot (in the current
+<a href="context.html">context</a>) with o() o? or o!</p>
+<p>The lisp concepts of quoted code as data closely resemble Angle’s
+concept of uncharged symbols aka data. <a
+href="https://stackoverflow.com/questions/18515295/why-isnt-there-an-unquote-lisp-primitive">Unlike
+lisp</a> in Angle charging and unchanging (un-quoting and quoting) are
+equal parts of the language.</p>
+<p>While lisp is “function default” angle is “data default”, that is:
+anything which is not a <a href="function.html">function</a> is treated as data, unless
+(explicitly) evaluated in which case that data is treated as code.</p>
+<p>The difference between code and charged symbols is subtle: A symbol
+which holds data is code once the symbol is evaluated. A charged symbol
+gets evaluated whenever it occurs. Code gets evaluated without being
+attached to a symbol. What sounds complicated shall be obvious in the
+examples from above</p>
+<pre><code>help={info:&quot;there is no help &quot;} # data
+help={info:{get help}}  # data until evaluated with help!
+help={info:{get help!}}  # data with value of `get help`
+to help={print &quot;there is no help &quot;} # charged symbol, call with help! or just `help`
+info:{get help} # code evaluated on the spot</code></pre>
+<p>() denotes code by default {} denotes data by default</p>
+<h3 id="closures"><a href="closure.html">closure</a>s</h3>
+<p>Is it possible to write <a href="closure.html">closure</a>s as <code>x : x*x</code> ? so
+<code>{x:x*x}(3)=9</code> ?</p>
+<p><code>map [1 2 3] x:x*x  == [1 4 9] ?</code></p>
+<p>Alternative syntax:</p>
+<pre><code>map [1 2 3] x:x*x
+map [1 2 3] x=&gt;x*x
+map [1 2 3] x-&gt;x*x
+map [1 2 3] (x){x*x}  
+map [1 2 3] {it*it}
+map [1 2 3] it*it # no! it could be already evaluated!!
+map [1 2 3] {|x| x*x} #meh
+map [1 2 3] {x in x*x} 
+</code></pre>
+<p># <a href="beauty.html">beauty</a>ful <a href="swift.html">swift</a></p>
+<h3 id="repeated-symbol-execution">repeated symbol execution</h3>
+<p>In which situations does a symbol get executed multiple times?</p>
+<pre><code>square x:=x*x # only once: x is argument
+square x=x*x  # only once: x is argument
+square:=x*x   # twice (or never if kept symbolically)
+square=x*x    # only once: x is context variable, or twice?</code></pre>
+<h3 id="result-keyword">result keyword</h3>
+<p>The <code>result</code> keyword always refers to the last object in
+the stack, either the last declaration or the return value of the last
+function call. ⚠️ since everything in angle is an expression, the
+special <code>result</code> variable is also set in code such as</p>
+<pre><code>if 1&gt;0 : print &quot;hi&quot; else : print &quot;ho&quot;
+print result  # =&gt; &quot;hi&quot; !</code></pre>
+<p>Functions which return void ‘return’ the last value in the result
+slot. Todo: <a href="bad.html">bad</a> concept? side effects and information leakage.</p>
+<h3 id="it-keyword">it keyword</h3>
+<p>In <a href="closures">lambda</a> expression, the <code>it</code>
+keyword refers to the first (implicit argument), otherwise it refers to
+<a href="self.html">self</a> or the last <a href="result.html">result</a>.</p>
+<pre><code>double:=it*2 # it creates implicit argument for function &#39;double&#39;
+double=it*2 # instant evaluation or it as last result
+double:it*2 # it may later be evaluated in contect</code></pre>
+<p>Todo: <a href="ambiguity.html">ambiguity</a></p>
+<h3 id="execution-of-lambdas">execution of lambdas</h3>
+<p>A block is executed by giving it a group on the right:
+<code>((fun f x -&gt; f (f x)) ((+)3) 7) (* 13 *)</code> since groups of
+one element are the element itself <code>(x)==x</code>, there is an
+<a href="ambiguity.html">ambiguity</a> if the braces are omitted</p>

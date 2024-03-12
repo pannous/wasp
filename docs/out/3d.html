@@ -1,0 +1,38 @@
+<p>Angle is meant to be an imperative language maximizing declarative
+expressability.</p>
+<p>It is clear that any wasm language should build upon WebGPU for it’s
+3d rendering : https://github.com/WebAssembly/WASI/issues/53 “WebGPU is
+the only universal GPU API that is safe, portable, high level, high
+performance, and supports modern GPU features like compute shaders.”</p>
+<p>We aim to define 3d scenarios on the highest level, reanimating ideas
+of VRML but with <a href="wasp.html">wasp</a> syntax. Object rendering is completely
+implicit to the point where a scene can be defined as:</p>
+<p>{ car, tree, tree, house }</p>
+<p>While the exact location and rotation of these objects are obviously
+under-specified, their size and upright orientation are normalized:</p>
+<p>The object liberty requires all entities to have natural size
+<a href="unit.html">unit</a>s: a tree should be about 1-50 meters high in the direction “up”
+etc.</p>
+<p>The scene renderer should make as many <strong>assumptions</strong>
+as possible, in desired contrast to low level APIs: WebGPU is the newest
+of the “modern” graphics APIs (e.g. Vulkan, DX12, Metal, Mantle), which
+I distinguish from the older APIs (OpenGL, DX11) as having explicit
+command queues opposed to implicit ones.</p>
+<p>Initial camera position, lighting etc etc can of cause also be
+specified explicitly, overwriting default or randomized values.</p>
+<p>Union types are useful if random object creation is desired: We may
+specify palm trees, apple trees, pine trees,… but if a scene contains a
+bag of trees, these will be randomly selected.</p>
+<p>On a lower level imperative angle looks into implementing a direct
+sub/superset of webgpu:
+https://gpuweb.github.io/gpuweb/wgsl/#matrix-types However mixing and
+emitting webgpu binaries would be challenging</p>
+<h1 id="coordinate-systems">Coordinate Systems</h1>
+<p>Angle uses the coordinate systems of D3D, wgpu and Metal: <img
+src="https://github.com/gfx-rs/wgpu/raw/master/etc/render_coordinates.png" /></p>
+<h1 id="algebra"><a href="Algebra.html">Algebra</a></h1>
+<p>Angle shall come with a custom Projective Geometric <a href="Algebra.html">Algebra</a></p>
+<h1 id="d-splines">3D splines</h1>
+<h2 id="non-uniform-rational-b-spline-nurb">non-uniform rational
+B-spline (“nurb”)</h2>
+<p>https://www.makeuseof.com/what-are-nurbs-curves/</p>

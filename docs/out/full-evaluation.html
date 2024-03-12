@@ -1,0 +1,22 @@
+<h3 id="full-instant-evaluation">full instant <a href="evaluation.html">evaluation</a></h3>
+<p>Un<a href="charged.html">charged</a> <a href="data.html">data</a>, <a href="block.html">block</a>s or <a href="quote.html">quote</a>d <a href="code.html">code</a> can be
+forced to be fully evaluated with the <code>interpret</code> keyword or
+with the <code>!!</code> sigil. This is usually not necessary: in most
+<a href="pure.html">pure</a> functions it is ok to treat symbols as lazily un-evaluated
+until the very last moment.</p>
+<p>One example where immediate fully evaluation can be desirable would
+be <code>friends{peter james created:now!!}</code> The
+<code>created</code> property of the <code>friends</code> object will be
+the current time at construction, even if the object remains
+un<a href="charged.html">charged</a> data.</p>
+<p>this is different to the following situation</p>
+<pre><code>friends{peter james updated:now}
+#do some other stuff which takes a while
+print friends!!
+#do some other stuff which takes a while
+print friends!!</code></pre>
+<p>here the print statement would each show different
+<code>updated</code> times</p>
+<p><a href="todo.html">todo</a> what about <a href="partial evaluation.html">partial evaluation</a></p>
+<pre><code>friends{peter james created:now!}
+print friends!</code></pre>

@@ -1,0 +1,27 @@
+<p><a href="Types.html">Types</a> and <a href="classes.html">classes</a> are the same<br />
+<a href="schema.html">schema</a>s are adhoc types orthogonal to data.</p>
+<p>The idea is to push the <a href="optional.html">optional</a>ity of fields to specific use
+cases:</p>
+<p>Fields can be made required in function declarations via
+<code>with</code> <a href="keyword.html">keyword</a> or nested <a href="schemas.html">schemas</a>:</p>
+<pre><code>age of car with year = car.year
+age of car{year} = car.year</code></pre>
+<p>Now the function <code>age</code> is applicable to all classes and
+sub-classes of <code>car</code> <em>provided they have a year
+property</em>!</p>
+<p>The <a href="scheme.html">scheme</a> of the type can be adhoc and deep within function
+declarations:<br />
+<code>arrival time of package{destination{address{zip or street}}} = calculate distance to zip …</code>
+To avoid redundancy, the type scheme leafs act as local symbols, so in
+the above example ‘zip’ is available to the block.</p>
+<p>The <a href="untyped.html">untyped</a> variant would just be
+<code>arrival time of package is calculate distance to its zip</code>
+Relying on deep <a href="accessor.html">accessor</a> <a href="indexing.html">indexing</a></p>
+<h3 id="structs-and-named-tuples"><a href="struct.html">struct</a>s and named tuples</h3>
+<p>structs are instances of classes without the <a href="header.html">header</a> in memory. Or
+put the other way round: classes are thin meta wrappers around structs.
+While the type information for struct instances is only available at
+compile time, the <a href="header.html">header</a> of <a href="class.html">class</a> <a href="instances.html">instances</a> is part of the
+data in memory.</p>
+<p>Compare with NamedTuple(x: Int32, y: String) in ruby and record in
+C#</p>

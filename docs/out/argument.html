@@ -1,0 +1,26 @@
+<p>arguments are parameters to <a href="function.html">function</a>s and <a href="closure.html">closure</a>s</p>
+<p>In angle they can be symbolic and subject to structural
+<a href="matching.html">matching</a></p>
+<p>They take the same semantics of <a href="optional.html">optional</a>, <a href="required.html">required</a>,
+<a href="constant.html">constant</a> and <a href="mutable.html">mutable</a> as other <a href="variable.html">variable</a>s:</p>
+<pre><code>to call person{name?, phone number, email?, mutable status} do
+  telephone.dial person.phone
+  person.status = called</code></pre>
+<p>unused optional fields can be omitted. Fields which are required in
+the callers object can be optional in the callees parameter and vice
+versa: an object of the following class can still be passed to the above
+call function:</p>
+<pre><code>class person{
+name, 
+phone?
+}</code></pre>
+<p>since the name is always provided it is OK to fill the optional name?
+parameter of the call function however it is required to fill the phone
+parameter to call the function:</p>
+<pre><code>person john:{name:&quot;Jonathan&quot; phone:&quot;899-573-5842&quot;}
+call john// ok
+call person {name:&quot;Dick&quot;} //  compile error: missing argument field phone</code></pre>
+<p>default values are allowed on all parameters.</p>
+<p>Angle seeks to encourage point-free (“argument-less”) tacit
+programming, especially by automatic <a href="broadcasting.html">broadcasting</a> but also by
+(inverse) function <a href="composition.html">composition</a> via <a href="and.html">and</a> &amp; <a href="pipe.html">pipe</a>.</p>

@@ -1,0 +1,36 @@
+<h1 id="goals">goals</h1>
+<h2 id="general-goal">general goal</h2>
+<p><a href="Wasp.html">Wasp</a> unifies data and code like lisp, adding nested maps (trees)
+and natural <a href="syntax.html">syntax</a>.</p>
+<p><a href="Angle.html">Angle</a> aims towards programming via voice while staying
+mathematically sound.</p>
+<h3 id="achieved-goals">achieved goals</h3>
+<p>☑ be self-contained and dependency free ☑ compile simple programs to
+minimal wasm ☑ produce runtime-free wasm for simple programs ☑ small
+(&lt;200kb) runtime for complex programs ✔️ batteries included</p>
+<h3 id="partially-achieved">partially achieved</h3>
+<p>☑ easy import of other code and modules (builtin wit reader and wasm
+linker)<br />
+☑ small (&lt;200kb) wasp compiler running in wasm, dependency free (
+reintroduced linker adds 2MB std::… ) ☐ universal <a href="serialization.html">serialization</a> ☐
+REPL console (todo: <a href="serialize.html">serialize</a> state between re-compilations) ☐ use
+the <a href="wit.html">wit</a> component model as native first class citizen</p>
+<h3 id="open-goals">open goals</h3>
+<p>☐ reuse ALL rust crates for native libraries, as default lookup path
+(needs semi-stable rust abi). ☐ minimal rust parser to read .rs files as
+headers (ignore all implementation). ☐ many <a href="todo.html">todo</a>s ☐ many concepts
+specified here still need implementation ☐ be self-hosted later on (even
+though the wasp compiler runs in wasm, it’s currently written in c(++))
+☐ is_declared <a
+href="https://yurydelendik.github.io/webassembly-dwarf/">DWARF</a>
+sections (or file) for <a
+href="https://web.dev/ps-on-the-web/">debugging</a> ☐ adhere to wasm
+smart contract standards</p>
+<h3 id="non-goals">non-goals</h3>
+<p>𐄂 be a systems language 𐄂 be 100% safe (relying on wasm safety
+instead of letting developers jump through hoops like <a href="rust.html">rust</a>) 𐄂
+produce optimal wasm (while wasp programs are small, they can still be
+optimized via wasm-opt and wasm-gc!) 𐄂 being self-hosted early on (even
+though the wasp compiler runs in wasm, it’s currently written in c(++))
+𐄂 builtin stable c/cpp FFI outside of <a href="wit.html">wit</a>. stable c abi is …
+non-existent. Use rust / wit / custom ffi package.</p>

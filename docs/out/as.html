@@ -1,0 +1,13 @@
+<p>The <code>as</code> keyword connects a <a href="value.html">value</a> to a <a
+href="type">type</a>.</p>
+<p>In ordinary expressions it acts as cast operator:
+<code>pi as int == 3</code></p>
+<p>In variable and function declarations it types the reference:
+<code>person as string</code> is semantically equivalent to other
+familiar syntaxes: <code>person:string</code> and
+<code>string person</code></p>
+<p>The return type of a function is defined by the <code>as</code>
+keyword:<br />
+<code>fib i as int:= if i&lt;2 : 1 else fib(i-1) + fib i-2</code></p>
+<p>Interestingly if the last parameter is untyped, the <a href="as.html">as</a> keyword
+also weakly hints at the parameter type.</p>

@@ -1,0 +1,51 @@
+<h1 id="constructors">constructors</h1>
+<p>There is a subtle difference between<br />
+<code>person{name:"Joe" address{street:"no way 123"}}</code><br />
+<code>person:{name="Joe" address:{street="no way 123"}}</code></p>
+<p>While both construct an object person, the variant with colon
+constructs pure data while the variant without colon constructs the
+person via a constructor, if available.</p>
+<pre><code>class person{
+ value{
+    id=random()
+ }
+}
+
+a=person{} // preferred way
+a=person() // works as constructor unless person is a function</code></pre>
+<p>By default classes are extendible, so
+<code>person{name:"Joe" address{street:"no way 123"}}</code> works as
+expected: the person object now has a name field and an id field via the
+<code>value</code> constructor.</p>
+<p>There are situations where objects are meant to be <a href="immutable.html">immutable</a> or
+non-<a href="extendible.html">extendible</a>, or where successful construction depends on the
+right data at initialization time. These <a href="required.html">required</a> fields can be
+denoted via exclamation wasp:</p>
+<pre><code>class person{
+  name!
+  parent?
+  address
+}</code></pre>
+<p>Now every construction <code>person{name:"blah"}</code> must provide
+the name argument/field property.</p>
+<p>The <a href="optional.html">optional</a> default for class fields is opposite to the function
+argument defaults, where un-required args can be marked with ‘?’ or with
+default value. <code>function log(n, base=10)=…</code></p>
+<p>To avoid senseless redundant constructors, given fields <em>need not
+be explicitly set by the constructors</em>!!<br />
+Instead all data given to the constructor gets matched automatically to
+the fields (as seen above in person{address=…} )<br />
+Only if special logic on the fields is desired, can they be set:</p>
+<pre><code>class person{
+  value(name){
+    this.name=name.upperCase
+ }
+}</code></pre>
+<p>In general, this special logic is to be avoided and it is often a
+sign of bad style.</p>
+<p>Instead it should be moved to class functions, traits or even avoided
+altogether if there are generalized functions for those fields:
+<code>print capitalized name of person</code> works perfectly fine if we
+have</p>
+<pre><code>name is a string
+capitalized string = it.upperCase</code></pre>

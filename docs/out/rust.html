@@ -1,0 +1,59 @@
+<p><a href="rant.html">rant</a></p>
+<p>I am used to working in abstract high-level language like python and
+swift, who doesn’t like the verbosity mandated(?) by a language aimed
+squarely at embedded/systems programming.</p>
+<p>Rust isn’t a panacea. Rust is complicated and hard, and often it’s
+not worth taking on that burden just to theoretically handle cases that
+rarely occur and even more rarely cause any problem. Programming is a
+means to an end, and the cost of using Rust (hiring, increased
+development time) is often not worth it.</p>
+<p>Rust made verbose ugliness a first class citizen.</p>
+<p><code>pub fn horror()-&gt;Result{Ok(Result(mut &amp;self))}</code></p>
+<p>Contrary to mainstream opinion and current hype, I find rust syntax
+to be abhorrently verbose. Look at <a href="swift.html">swift</a> to see how optional types
+can be expressed beautifully without wrapping everything with
+<code>-&gt;Result{Ok(Result(mut &amp;self))}</code></p>
+<p>It’s this mixture of abbreviations on the one hand and excessive
+<a href="sigil.html">sigil</a>s and verbosity on the other that really does not resonate
+well.</p>
+<p><code>pub fn horror()-&gt;Result{Ok(Result(mut &amp;self))}</code></p>
+<p>Functions return results, which may be ok. This should be an
+invisible fundamental of the <a href="ABI.html">ABI</a>.</p>
+<p>Oddly this ugliness is often mixed with modern beautiful
+expressiveness; <code>for i in 0 to 10 {}</code></p>
+<pre><code>Product {
+       id: 1,
+       name: &quot;Apple&quot;.to_string(),
+       price: 3.65,
+}</code></pre>
+<p>The beauty is disrupted by the ugly “to_string()”. What was “Apple”
+before being converted to string??</p>
+<p>Implicit return switch case without breaks:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode rust"><code class="sourceCode rust"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> value_in_cents(coin<span class="op">:</span> Coin) <span class="op">-&gt;</span> <span class="dt">u8</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">match</span> coin <span class="op">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="pp">Coin::</span>Penny <span class="op">=&gt;</span> <span class="dv">1</span><span class="op">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="pp">Coin::</span>Nickel <span class="op">=&gt;</span> <span class="dv">5</span><span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="pp">Coin::</span>Dime <span class="op">=&gt;</span> <span class="dv">10</span><span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="pp">Coin::</span>Quarter <span class="op">=&gt;</span> <span class="dv">25</span><span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>One has to admit that rust is currently <em>the</em> wasm language
+with the most momentum, and there are hundreds of promising projects
+such as</p>
+<ul>
+<li>minecraft: https://github.com/iceiix/stevenarella/issues/171</li>
+<li>a flash player</li>
+<li>…</li>
+</ul>
+<p>Should one ever consider to reimplementing parts of wasp in rust, one
+might start with https://github.com/mwerezak/sphinx-lang</p>
+<p>Explicitly can be good in systems languages, however</p>
+<p><code>pub fn horror()-&gt;Result{Ok(Result(mut &amp;self))}</code></p>
+<p>is just <a href="ugly.html">ugly</a> and braindead.</p>
+<p>“Good rust programmers don’t write like this”</p>
+<p>Then there is no good rust programmer. I’ve yet to see a project not
+splattered all over with hideous <code>.unwrap()</code>.</p>
+<p>Consolidation: Much of the hate for rust vanishes when comparing the
+cpython mess to clean rustpython!</p>
+<p>If you want rust without the cancer, switch to <a href="swift.html">swift</a></p>

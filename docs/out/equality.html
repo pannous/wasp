@@ -1,0 +1,7 @@
+<h1 id="equality">equality</h1>
+<p>Two variables or data node_pointer are equal if the types are
+<a href="compatible.html">compatible</a>, and if for every field, the values in both records are
+equal. The equality comparison descends into children with other
+children, but value focussed: a:{x: {y=3.0}}and b:{x:{y=3}} are equal,
+because the root name is considered the variable name and the fields
+x=3.0 (float) and x=3 (<a href="int.html">int</a>) are <a href="compatible.html">compatible</a>.</p>

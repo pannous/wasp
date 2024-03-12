@@ -1,0 +1,21 @@
+<h1 id="section">=</h1>
+<p>The <a href="operator.html">operator</a> <code>=</code> and its equivalent keyboard
+<code>is</code> can act as</p>
+<ul>
+<li><a href="variable.html">variable</a> <a href="assignment.html">assignment</a></li>
+<li><a href="function.html">function</a> <a href="declaration.html">declaration</a></li>
+<li><a href="equality.html">equality</a> <a href="comparison.html">comparison</a></li>
+</ul>
+<pre><code>five=5
+fib int i = if i&lt;2 : 1 else fib(i - 1) + fib i - 2
+if fib 3 = 5 : print &quot;of cause&quot;</code></pre>
+<p>Since one may quickly run into <a href="ambiguities.html">ambiguities</a> and there is a high
+chance that early versions of the compiler do not catch it, we strongly
+encourage to use other operators/keywords for function declaration and
+equality comparison:</p>
+<pre><code>fib := if it&lt;2 : 1 else fib(it - 1) + fib it - 2
+if fib 3 == 5 : print &quot;of cause&quot;</code></pre>
+<p>In fact it may be a <a href="bad.html">bad</a> idea to ever allow “natural” usage of
+<code>=</code></p>
+<p><strong>This implementation may turn out to be so difficult that it
+is currently postponed.</strong></p>

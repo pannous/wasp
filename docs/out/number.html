@@ -1,0 +1,57 @@
+<p>Number is an abstract type in Angle.</p>
+<p>It encapsulates <a href="integer.html">integer</a> <a href="float.html">float</a> (<a href="real.html">real</a>) <a href="bignum.html">bignum</a>
+<a href="natural.html">natural</a> <a href="rational.html">rational</a> and <a href="complex.html">complex</a> numbers</p>
+<p>as well as primitive/internal types <a href="bool.html">bool</a>, <a href="byte.html">byte</a> (unsigned
+int8), int32, i64 (always signed), <a href="leb128.html">leb128</a> and <a href="smart pointers.html">smart pointers</a> :
+<a href="int28.html">int28</a> and <a href="int60.html">int60</a></p>
+<p>The internal number types are mostly isolated from the user facing
+<code>number</code> <a href="type.html">type</a>, which handles automatic casting, up and
+downgrading between all different kinds of numbers: integers, reals,
+rational and complex numbers. Developers can unknowingly accept an int8
+and return a bignum pointer if their calculation grows out of hand.
+Unless they really want all they need is number as parameter or variable
+type. Or no type at all if they rely on <a href="type inference.html">type inference</a></p>
+<p>Number is usually the only type users should care about:
+<code>fibonacci number = if number&lt;2 : 0 else fibonacci(number - 1) + fibonacci it - 2</code></p>
+<p>They can even is_declared the number type if they want to let the
+<a href="auto-type.html">auto-type</a> compiler figure the signatures out
+<code>fib := if it&lt;2 : 0 else fib(it-1) + fib it - 2</code></p>
+<p>Only in specific situations, when accessing other APIs or system
+calls should specific types become relevant.</p>
+<p>If developers interact with different types, the integration
+(casting) should be made seamless by the compiler.</p>
+<h1 id="upcasting">Upcasting</h1>
+<p>Upcasting always works and downcasting may is_declared a warning.</p>
+<p>int28 supports automatic upgrading to int60 in case of overflows.</p>
+<p>JavaScript Numbers are doubles, that is, 64-bit floating-point
+values. Such a value can contain any 32-bit integer with full precision,
+but not all 64-bit ones. WebAssembly, on the other hand, has full
+support for 64-bit integers, the i64 type.
+https://v8.dev/features/wasm-bigint For connecting the two we now have
+the wasm BigInt <a href="wasm">supported</a> in mayor browsers:
+JavaScript BigInts can be read or written from WebAssembly memory using
+the BigInt proposal’s BigInt64Array or BigUint64Array In this way
+javascript BigInts are supported by all common desktop <a href="wasm.html">wasm</a>
+browsers.</p>
+<p>(unsigned) int16 (previously known as ‘word’) might be added for DOS
+legacy later.</p>
+<p>Internally numbers are always assigned to the smallest type for
+efficiency: i32*i32=&gt;i64 without overflow check.</p>
+<h3 id="implicit-multiplication">implicit multiplication</h3>
+<p>as in <a href="julia.html">julia</a> and <a href="math.html">math</a>, a number next to an object means
+multiplication:</p>
+<pre><code>3x == 3*x</code></pre>
+<p>we have a problem with <a href="significant whitespace.html">significant whitespace</a> though:</p>
+<pre><code>3 x == [3 x]</code></pre>
+<p>as defined by commaless <a href="list.html">list</a> semantics</p>
+<p>this should be a typical case of <a href="ambiguity.html">ambiguity</a> handled by the
+compiler by asking the user to specify the intent</p>
+<p>since the first case is unambivalent it works out of the box and is
+especially useful for <a href="unit.html">unit</a>s:</p>
+<pre><code>3km+10m = 3010 meters</code></pre>
+<h3 id="plate-numbers">plate numbers</h3>
+<p>Special user types such as <code>phone number</code> and
+<code>License plate number</code> should be of no conflict to the
+built-in abstract type.</p>
+<p>this would be hard to achieve and currently the easiest workaround is
+to drop the number word in those cases or hyphen it</p>

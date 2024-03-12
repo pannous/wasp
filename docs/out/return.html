@@ -1,0 +1,11 @@
+<p>Since everything is an <a href="expression.html">expression</a>, return <a href="statement.html">statement</a>s at the
+end of <a href="functions.html">functions</a> and <a href="closures.html">closures</a> can be omitted.</p>
+<p>Angle allows return type <a href="polymorphism.html">polymorphism</a></p>
+<p>The return type of a function is denied by the <code>as</code>
+keyword:<br />
+<code>fib i as int:= if i&lt;2 : 1 else fib(i-1) + fib i-2</code></p>
+<p>Interestingly if the last parameter is untyped, the <a href="as.html">as</a> keyword
+also weakly hints at the parameter type.</p>
+<p>Different <a href="list.html">list</a> separators have different bindings: While 1,2,3
+binds as one expression, 1;2;3 yields the last element as return
+value.</p>

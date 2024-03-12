@@ -1,0 +1,65 @@
+<p>A quote is an uninterpreted, unevaluated and possibly unanalyzed and
+unparsed block of data. In a sense, a <a href="block.html">block</a> is a first-level quote
+of code as data.</p>
+<p><strong><a href="String.html">String</a>s</strong> are extreme forms of quotes, in which
+every character is literally uninterpreted.
+<strong><a href="Template.html">Template</a>s</strong> are strings in which some parts ($values)
+are interpreted: <code>॓I am $age years old    ॓</code><br />
+other forms such as <a href="macro.html">macro</a>s have at least partial inner semantics.
+There is a historic reasons why strings are denoted with double-quotes:
+“example”. Literals are strings without quotes. The occur in contexts,
+where no code is expected (after certain keywords and functions) :</p>
+<p>In the examples</p>
+<pre><code>import &quot;test.h&quot;
+import test.h
+import graphics
+import github:pannous/angle</code></pre>
+<p>The arguments of the keyword import are read self-quoted, meaning
+that they are parsed literally (letter by letter instead of interpreted)
+without semantic connections to the programs <a href="reference.html">reference</a>s and
+<a href="symbol.html">symbol</a>s such as <a href="variable.html">variable</a>s. Even if graphics is an object
+declared before the import statement, it is naturally obvious that
+<code>import graphics</code> does not refer to it. (todo:wording)</p>
+<p>Auto-quoting keywords and functions are those which are followed by
+quotes without needing special notation upon occurrence. The
+<code>import</code> keyword is an example of an auto-quoting keyword, as
+seen above.</p>
+<p>Another form of quotes are <a href="block.html">block</a>s, expressed with curly
+braces:</p>
+<pre><code>{a:b} 
+{1+2}
+{x y z}
+{if 1&lt;2 : 3 else 4 }
+person:{name=James}</code></pre>
+<p>Even though they are often predestined to be evaluated
+<code>(1+2)=3</code> the point of blocks is that they can be passed
+around lazyly and evaluated later, if at all. This is different to
+groups (1+2), which (often) get <a href="evaluated.html">evaluated</a> on the spot.</p>
+<p>For more on the difference between <a href="data.html">data</a> and blocks see
+<a href="evaluation.html">evaluation</a> and <a href="closure.html">closure</a>s.</p>
+<p>To turn functions into auto-quoting symbols, there are two
+mechanisms:</p>
+<p>It could be defined via the <strong>literal</strong> argument type as
+<code>import package:literal := download(package) and interpret result</code></p>
+<p>Depending on the signature of download, the package literal could be
+auto converted to a string:=
+<code>download package:string := curl(package,cache=/tmp)</code></p>
+<h3 id="todo">TODO:</h3>
+<p>A more structured definition of <code>import</code> would be
+<code>import package:path</code> where path has a reduced/specified?
+literal constructur which expects specific forms such as
+github:pannous/angle. (protocol’:‘domain’/’resource)
+<code>curl path:string cache:path?:= ... where path=literal of form "/"+…</code></p>
+<p>This contrasts with <a href="block.html">block</a> as type keyword in function
+arguments:</p>
+<p><code>if condition:block then:block else:block = …</code> Here the
+then-block is not evalutated when the (fictional) if-function is called
+but handed over as a block which is lazyly only applied if the condition
+block evaluates to true (inside the call, or outside the call does not
+matter).</p>
+<ul>
+<li>The := construct acts as a soft-macro, taking any symbol as group
+<code>f x := 2x</code></li>
+</ul>
+<p>A quote can be unquoted and applied, whence it may become evaluatable
+depending on the context.</p>

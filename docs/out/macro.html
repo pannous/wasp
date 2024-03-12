@@ -1,0 +1,13 @@
+<p>Custom <a href="precedence.html">precedence</a> of custom <a href="operators.html">operators</a> is a [[first class
+citizen]] and key <a href="features">feature</a> of the <a
+href="Home">angle</a> programming language. It makes many macros
+unnecessary and instead allows building elegant code from first
+<a href="principles.html">principles</a>.</p>
+<p>So the if condition could be implemented entirely clean via:<br />
+<code>IF(condition:block then:block else:block?) = condition and then or !condition and else</code><br />
+(safe for some syntactic sugar such as <code>if 1:2 == 2</code></p>
+<p><a href="block.html">block</a>, <a href="code.html">code</a> and <a href="closure.html">closure</a> are very similar concepts:<br />
+* every <a href="data.html">data</a> with the intention of being <a
+href="evaluation">evaluated</a> is a <a href="block.html">block</a> * every <a href="block.html">block</a> with
+concrete binding is <a href="code.html">code</a> * every <a href="code.html">code</a> with a local-only binding
+is a <a href="closure.html">closure</a></p>

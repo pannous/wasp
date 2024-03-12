@@ -1,0 +1,86 @@
+<h2 id="why-swift-is-an-acceptable-rust">Why swift is an acceptable
+rust</h2>
+<p>Inspired by the <a
+href="http://www.randomhacks.net/2005/12/03/why-ruby-is-an-acceptable-lisp/">why-ruby-is-an-acceptable-lisp</a>
+de<a href="https://news.ycombinator.com/item?id=12470715">bate</a>.</p>
+<p>This is the easy part. Even <a href="rust.html">rust</a> lovers will probably readily
+agree that there are many situations in which Swift does suffice in
+solving the problem. But we go one step further:</p>
+<h2 id="why-swift-is-the-better-rust">Why swift is the better rust</h2>
+<p>Todo replace all emotional rant with purely objective
+observations.</p>
+<p>There might be specific situations in which the guarantees of rust
+are essential and not easily replicable in swift. However for the
+majority of use cases we argue that Rust is overkill in a not flattering
+way: It’s excessive verbosity and syntactic WTF’s are certainly
+detrimental to the developer experience but also in a way adverse to
+code quality: “Beauty is the ultimate defence against complexity.” David
+Gelernter</p>
+<p>Corollary: Syntax matters.</p>
+<p>Anyone with a half decent taste must be repelled by code such as the
+following:</p>
+<pre><code>impl&lt;T&gt; Debug for List&lt;T&gt; {
+    fn fmt(&amp;self, _: &amp;mut Formatter&lt;&#39;_&gt;) -&gt; Result&lt;(), std::fmt::Error&gt; {
+        todo!()
+    }
+}</code></pre>
+<p>For those who are blind let me outline the obvious: <code>fn</code>
+<code>impl</code> ok we get it: the shorter the better, <a
+href="https://en.wikipedia.org/wiki/APL_(programming_language)#Game_of_Life">APL
+is the ultimate</a></p>
+<p><code>Result&lt;(),…</code> what is this? Results are not first class
+citizens in your language? Of cause your fn returns a result, it’s a
+function after all. This is not helpful expliciticity, this is just
+stupid. Similar <code>std::fmt::</code> either you provide clear Error
+handling as first class citizen or you don’t. If you hide your Error
+mechanism in ugly std::fmt:: namespaces you deem it to be … (todo: find
+allegory) <em>so bad that you scream: don’t use it</em>?</p>
+<p>This pattern of horrid verbosity seems to be the leitmotif of Rust
+even without remembering to set <code>export RUST_BACKTRACE=short</code>
+the stacktraces (or ‘stack backtraces’ as Rust funnily coins them) are
+just …</p>
+<pre><code>stack backtrace:
+0:        0x10065bafc - std::backtrace_rs::backtrace::libunwind::trace::hfb13038f037c000a
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/../../backtrace/src/backtrace/libunwind.rs:90:5
+1:        0x10065bafc - std::backtrace_rs::backtrace::trace_unsynchronized::hfd5696347470fa7d
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/../../backtrace/src/backtrace/mod.rs:66:5
+2:        0x10065bafc - std::sys_common::backtrace::_print_fmt::hdf1e7b50816ccd2b
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/sys_common/backtrace.rs:67:5
+3:        0x10065bafc - &lt;std::sys_common::backtrace::_print::DisplayBacktrace as core::fmt::Display&gt;::fmt::h043213eec1d948a5
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/sys_common/backtrace.rs:46:22
+4:        0x10066ee94 - core::fmt::write::hf53968076cf4f14e
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/core/src/fmt/mod.rs:1092:17
+5:        0x100659994 - std::io::Write::write_fmt::h28b0246eee567fa4
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/io/mod.rs:1568:15
+6:        0x10065d688 - std::sys_common::backtrace::_print::h7a62d6bcf54b6634
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/sys_common/backtrace.rs:49:5
+7:        0x10065d688 - std::sys_common::backtrace::print::hb53039f14ad1e4cc
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/sys_common/backtrace.rs:36:9
+8:        0x10065d688 - std::panicking::default_hook::{{closure}}::h8d1966a8d6a15176
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/panicking.rs:208:50
+9:        0x10065d1b0 - std::panicking::default_hook::h9e61206a690d3893
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/panicking.rs:225:9
+10:        0x10065dc3c - std::panicking::rust_panic_with_hook::hd1308496ca12fe75
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/panicking.rs:591:17
+11:        0x10065d7f0 - std::panicking::begin_panic_handler::{{closure}}::h8b5bd5b2a5ff6ad8
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/panicking.rs:495:13
+12:        0x10065bf94 - std::sys_common::backtrace::__rust_end_short_backtrace::hd5101d74264c890c
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/sys_common/backtrace.rs:141:18
+13:        0x10065d780 - rust_begin_unwind
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/std/src/panicking.rs:493:5
+14:        0x100673a70 - core::panicking::panic_fmt::hbf2ae8920d2f2a82
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/core/src/panicking.rs:92:14
+15:        0x1006739fc - core::panicking::panic::hc1cef1a734b9fcd8
+   at /rustc/a15f484b918a4533ad633ea903ccce82910af342/library/core/src/panicking.rs:50:5</code></pre>
+<p>Do you see what is wrong with this? Do you see what is wrong with the
+code? It’s easy: In the line <code>println!("Foo = {:?}", Bar)</code>
+Bar does not implement the <code>Display</code> trait … or
+something.</p>
+<p>To wrap it up: If there is a future in which I will love, or even
+like/accept Rust, it has to quicken the recent goodwill efforts such as
+seen in Haskell: Rust will have to turn all it’s semantically sound
+inventions into syntactically beautiful first class citizens:
+Some(&amp;‘=’, Box&lt;Expression<U>&gt;).unwrap();</p>
+<p>Boxing, optionality and unwrapping should be internal concepts rather
+than anything a developer should ever encounter.</p>
+<p>Just look at swift.</p>

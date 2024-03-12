@@ -1,0 +1,22 @@
+<p>The <a href="all.html">all</a> keyword takes a <a href="block.html">block</a> making it a <a href="functor.html">functor</a> similar
+to <a href="map.html">map</a>: <code>all files{ delete it }</code></p>
+<p>If no block is given, then</p>
+<p>The <code>all</code> keyword is a destructor, splicing a list into
+its items.</p>
+<p>It is usually not needed:</p>
+<p>All functions are automatically <a href="broadcasting.html">broadcasting</a> on lists and pair
+values:</p>
+<pre><code>square number=number*number
+square [1 2 3] == [1 4 9]
+
+square [a:1 b:2 c:3] == [a:1 b:4 c:9]
+
+delete file = run `rm $file.name`
+delete files in ls /   # 🧐</code></pre>
+<p>In some cases the destructor <code>all</code> can differentiate
+between function signatures:</p>
+<pre><code>print numbers = print &quot;one at a time please&quot;
+print number  = printf(&quot;%d&quot;,d)
+
+print [1 2 3] == &quot;one at a time please&quot;
+print [1 2 3] == &quot;1&quot; &quot;2&quot; &quot;3&quot;</code></pre>

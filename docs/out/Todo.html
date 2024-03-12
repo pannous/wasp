@@ -1,0 +1,111 @@
+<h1 id="open-questions">open <a href="questions.html">questions</a></h1>
+<h1 id="norway-problem">norway-problem</h1>
+<p>https://www.bram.us/2022/01/11/yaml-the-norway-problem/ countries = [
+de, gb, no ] =&gt; no==false</p>
+<p>solution 1: distinguish between symbol and expression context / mode.
+in expression context countries = [ de, gb, no ] would throw because de
+is not a known symbol</p>
+<p>solution 2: add special syntax for lists of strings / symbols within
+expression contexts: similar to ruby %w[de gb no] maybe <a href="de gb no.html">de gb no</a> ==
+<a href="de, gb, no.html">de, gb, no</a> ?</p>
+<p>solution 3: add special context in which countries = [ de, gb, $no ]
+would access variable $no countries = [ de, gb, ${no} ] would access
+value no =&gt; false … if desired ;)</p>
+<h1 id="extern-c-all-imports">extern “c” all imports</h1>
+<h1 id="split-and-name-micro-data-segments-for-debugging">split and name
+micro data segments for debugging</h1>
+<p>(data $wasp_data (i32.const 65536)
+“\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\18\00\01\00\06\00\00\00canvas\00”))
+=&gt; (data $wasp_data (i32.const 65536)
+“\00\00\00\00\00\00\00\00\00\00\00\00\00") (data
+$wasp_data__canvas_string (i32.const 65536+12)
+“\00\00\00\18\00\01\00\06\00\00\00canvas\00”))</p>
+<h1 id="use-own-pow">USE OWN POW:</h1>
+<p>ƒ19 _
+Z3powIilENSt3__29enable_ifIXaasr3std13is_arithmeticIT_EE5valuesr3std13is_arithmeticIT0_EE5valueENS0_9_<em>promoteIS2_S3_vEEE4type4typeES2_S3</em>
+≈ ƒ19 std::__2::enable_if&lt;(std::is_arithmetic<int>::value,) ƒ19
+std::__2::enable_if&lt;(std::is_arithmetic<int>::value) &amp;&amp;
+(std::is_arithmetic<long>::value), std::__2::__promote&lt;int, long,
+void&gt; &gt;::type::type pow&lt;int, long&gt;(int, long) ≈ ƒ19
+std::__2::enable_if&lt;( «todo» ?) ⇨ number</p>
+<p>Node:: int capacity = 30;// TODO !!! lol lists&gt;100 elements;) int
+MAX_NODE_CAPACITY = 800;// TODO !!!</p>
+<h1 id="ambiguity"><a href="AMBIGUITY.html">AMBIGUITY</a></h1>
+<p>Different list separators have different bindings: While 1,2,3 binds
+as one expression, 1;2;3 yields the last element as return value.</p>
+<h2 id="merge-todo-with-questions">merge todo with questions?</h2>
+<p>in that: every question is a todo?</p>
+<h1 id="bugs"><a href="bugs.html">bugs</a></h1>
+<h1 id="update-wasmtime-for-speed-gain">update wasmtime for speed
+gain:</h1>
+<p>https://github.com/bytecodealliance/wasmtime/pull/4431 unload
+modules: https://github.com/bytecodealliance/wasmtime/issues/2210</p>
+<h3 id="norm-unicode">Norm unicode</h3>
+<p>We should follow Julia’s splendid approach to norm unicode: Exemplary
+the following should be treated identical early on: 0x0041 65 LATIN
+CAPITAL LETTER A A 0x0410 1040 CYRILLIC CAPITAL LETTER A А 0x0391 913
+GREEK CAPITAL LETTER ALPHA Α 0xFF21 65313 FULLWIDTH LATIN CAPITAL LETTER
+A Ａ</p>
+<p>0x0061 97 LATIN SMALL LETTER A a 0x0430 1072 CYRILLIC SMALL LETTER A
+а 0xFF41 65345 FULLWIDTH LATIN SMALL LETTER A ａ 0x0251 593 LATIN SMALL
+LETTER ALPHA ɑ</p>
+<p>As for signs which are <em>near identical</em>, but still
+distinguishable, one could also argue to unify them: U+1EFE Ỿ Latin
+Capital Letter Y with loop U+1EFF ỿ Latin Small Letter Y with loop</p>
+<p>However diacritic marks should distinguish symbols: Ḁ ≠ A ≠ Ⓐ</p>
+<p>omicron ‘ο’ is needs special care (later!)</p>
+<p>BUT 0x04D2 1234 CYRILLIC CAPITAL LETTER A WITH DIAERESIS Ӓ == German
+Ä</p>
+<p>To avoid confusion, one may decide to <em>disallow</em> some historic
+or obscure alphabets:<br />
+𐊆 66182 𐊆 10286 LYCIAN LETTER I 𐊇 66183 𐊇 10287 LYCIAN LETTER W 𐊈 66184
+𐊈 10288 LYCIAN LETTER Z 𐊊 66186 𐊊 1028A LYCIAN LETTER J 𐊍 66189 𐊍 1028D
+LYCIAN LETTER L 𐊎 66190 𐊎 1028E LYCIAN LETTER M 𐊏 66191 𐊏 1028F LYCIAN
+LETTER N 𐊐 66192 𐊐 10290 LYCIAN LETTER MM 𐊒 66194 𐊒 10292 LYCIAN LETTER
+U 𐊕 66197 𐊕 10295 LYCIAN LETTER R 0x0280 640 LATIN LETTER SMALL CAPITAL
+R ʀ</p>
+<h3 id="references-as-keys">References as keys</h3>
+<p><code>a=Mike(); my_map={a:b}; other_map={a:c}</code> The reference
+problem is orthogonal to the Question:</p>
+<h3 id="can-children-value-be-merged">can children &amp; value be
+merged?</h3>
+<p><a href="it.html">it</a> <a href="ambiguity.html">ambiguity</a> in nested scopes fix <a href="bad.html">bad</a> language design and
+<a href="ambiguity.html">ambiguity</a> Refine the concepts of <a href="mutable.html">mutable</a> values and
+variables</p>
+<h3 id="cleanup">Cleanup</h3>
+<h2 id="put-special-operators-functions-into-wasp-library">put special
+operators / functions into wasp library:</h2>
+<p>suffix operator ⁿ := c=it;while n–&gt;0 : c*=it; c</p>
+<p>isSetter ?</p>
+<h3 id="operator-for-bitwise-or">operator ⋁ for bitwise or!?</h3>
+<h3 id="section">“^=” ≠ “!=”</h3>
+<p>potence / logical and / logical not</p>
+<h1 id="allow-binary-ops-as-unary">allow binary ops as unary</h1>
+<pre><code>ø + 1 == +1 == 1
+/7 = 1/7</code></pre>
+<h1 id="danger">danger</h1>
+<p>Node&amp; Node::fun(){return *this;} // danger can’t turn a stack
+Node into heap Node reference!!</p>
+<h1 id="out-of-control">out of control</h1>
+<h3 id="default-args-dont-work-in-wasm-how-could-they">default args
+don’t work in wasm! (how could they?)</h3>
+<p>float okf5(float f=0) { return 41.5 + f; } assert_run(“okf5”, 41.5);
+/// … expected f32 but nothing on stack</p>
+<h1 id="quality-control">quality control</h1>
+<p>https://tmewett.com/c-tips/</p>
+<h1 id="wit-compliance">wit compliance</h1>
+<p>// Identifiers with the same name as keywords are quoted. %bool:
+func()</p>
+<h1 id="scratch">scratch</h1>
+<p>kids today grow up with scratch, the logo of this generation todo:
+add scratch library to replicate scratch functions
+https://scratch.mit.edu/projects/751647322</p>
+<h2 id="multi-dispatch">multi dispatch</h2>
+<p>&lt;&gt;</p>
+<h3 id="dynamic-calls">dynamic calls</h3>
+<p><a href="Todo.html">Todo</a> Currently <a href="Angle.html">Angle</a> is a compiled language. The (optional!)
+runtime does contain an interpreter (lacking in implementation) sharing
+the same parse -&gt; analyze pipeline. All dynamic calls should probably
+be passed through that eval mechanism.</p>
+<pre><code>getstatic java/lang/System/out Ljava/io/PrintStream;
+invokevirtual java/io/PrintStream/println(F)V</code></pre>
