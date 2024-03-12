@@ -1,4 +1,4 @@
-import {demangle} from "./demangle.js";
+import {demangle} from "docs/script/demangle.js";
 
 function assertEqual(a, b) {
     if (a !== b) {

@@ -1,0 +1,54 @@
+<h1 id="applescript">Applescript</h1>
+<p>Applescript was a great invention, almost a ‘speakable’ language,
+maybe a bit too much ahead of its time.</p>
+<p>It has great taste and many innovations.</p>
+<p>Such promising concepts such as ‘on …’ event listeners could have
+been taken to a new level.</p>
+<p>Unfortunately Applescript was restricted to narrow use cases and
+never felt like a first class citizen even on Mac OS.</p>
+<p>But it also had serious internal issues hindering its wider
+adoption:</p>
+<p>Applescripts bindings to the underlying objects (system / objective
+C) were often hit and miss, ill defined or buggy.</p>
+<p>Being closed source and Apple only ment that bug fixing, evolution
+and adoption of the language was slow.</p>
+<p>The communication via Apple events was not embraced by other
+languages so that connecting custom components was hard. Scripting
+Additions were cumbersome. AppleScriptObjC and ScriptingBridge are ugly
+and poorly documented. Script Libraries have restricted
+locations(?).</p>
+<p>The IDE was very lackluster (and bizarrely replaced source code with
+compiled code.)</p>
+<p>While application Scripting Dictionaries are fantastic for
+discoverability, they seem not to be integrated with the IDE. Even after
+enabling code completion (needs explicit enabling in settings!?!)
+nothing appears when typing in the editor.</p>
+<pre><code>set x to &quot;Hello, world&quot;
+x. # now what?</code></pre>
+<p>The general beauty was mixed with hideous syntax such as
+<code>changeCaseOfText("scripting is awesome!", "upper")</code></p>
+<p>Which is of cause impossible to find within the IDE (luckily so).</p>
+<p>Unexpected and in contrast to the welcoming syntax, batteries were
+not included: To split and trim text one had to look up and copy little
+functions:<br />
+https://developer.apple.com/library/archive/documentation/LanguagesUtilities/Conceptual/MacAutomationScriptingGuide/ManipulateText.html</p>
+<p>The extension “scptd” is offputting ;)</p>
+<p>In any case Applescript is more beautiful than JavaScript for
+Automation (JXA).</p>
+<p>Given that it is still evolving it might see a revival: It has
+finally sane comment syntax (‘#’ instead of ‘–’).</p>
+<h2 id="the-good-stuff">The good stuff</h2>
+<pre><code>characters of &quot;Hello&quot; # &#39;H&#39; &#39;e&#39; &#39;l&#39; &#39;l&#39; &#39;o&#39;
+length of &quot;Hello&quot; # 5
+offset of &quot;el&quot; in &quot;Hello&quot; # 2
+get the clipboard
+set xyz to the clipboard
+display alert (xyz as text)
+set myFile to (do shell script &quot;find … | head&quot;)
+text 1 thru 2 of &quot;xyz&quot;       is equivalent to 
+items 1 thru 2 of &quot;xyz&quot; as string. 
+set list to {1,2,3}
+set myMap to {key:&quot;value&quot;, myCount:2} 
+if item myCount of myMap is in list then return true </code></pre>
+<p>We want to learn from the mistakes of Applescript, which failed for
+the above reasons.</p>

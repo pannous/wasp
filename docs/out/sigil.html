@@ -1,0 +1,48 @@
+<p>Sigils are those ugly often unspeakable special chars
+(!@#$%^&amp;*[}…) of other languages</p>
+<p>The <a href="Angle.html">Angle</a> programming language strives to avoid all sigils
+(<a href="operator.html">operator</a> symbols / signs)</p>
+<p>this seems ironic since the underlying data format <a href="wasp.html">wasp</a> heavily
+relies on structured braces for trees. The main insight is that these
+trees can be represented completely without braces with indentation:</p>
+<pre><code>a{b;(c,d,e)}
+
+is equivalent to
+
+a
+ b
+ c d e</code></pre>
+<p>whichever visual representation one prefers is completely a matter of
+taste and has nothing to do with the language itself. unfortunately this
+brings up the old debate about spaces versus steps but thanks to modern
+IDEs this has become much less of a problem and Angel is <a href="agnostic.html">agnostic</a>
+about this preference that’s about any other preferences in
+<a href="syntactic.html">syntactic</a> representation because the Underlying <a href="structure.html">structure</a>
+remains identical.</p>
+<p>in fact one can freely mix these two representations. depending on
+context One might be preferable over the other, for example in
+mathematical context the first representation is of more readable
+whereas in natural language context the second representation has its
+charms.</p>
+<p>and most importantly the second representation is the canonical way
+to input code or data if one uses speech recognition.</p>
+<p>similarly as for brackets and braces there is always an equivalent
+<a href="keyword.html">keyword</a> for sigil operators:</p>
+<p>&amp; <a href="sigil.html">sigil</a> for <a href="function pointer.html">function pointer</a><br />
+<code>map &amp;square [1 2 3] == [1 4 9]</code><br />
+can be written without ‘&amp;’ as<br />
+<code>map function square on [1 2 3] == [1 4 9]</code><br />
+or just as<br />
+<code>square [1 2 3] == [1 4 9]</code><br />
+via universal <a href="broadcasting.html">broadcasting</a></p>
+<p>The equivalent keywords for sigil operators have the exact same
+<a href="precedence.html">precedence</a> associativity etc:</p>
+<pre><code>2+3×4==14
+two plus three times four is fourteen</code></pre>
+<p>Siri already outputs the mathematical version and it is much easier
+to read, however there are situations in which one or more of the
+keywords are not input as symbols or operators. For example writing pi
+on a keyboard is easier than typing π.</p>
+<p>in modern IDEs one can switch between these different representations
+with <a href="linter.html">linter</a> formatters, a special <a href="pragma.html">pragma</a> May be desired for code
+where the format should not be automatically modified.</p>

@@ -1,0 +1,36 @@
+<p>🐝 Wasp : Wasm Programming Language</p>
+<p>𓆤 <a href="https://github.com/pannous/wasp/wiki">Wasp</a> is a new
+unified notation for both markup/object data and code. Wasp is the
+foundation layer of the higher order programming language <a
+href="https://github.com/pannous/angle">angle</a>.</p>
+<p>«Data is Code and Code is Data»</p>
+<h1 id="examples">Examples</h1>
+<p>Hello World in Angle is<br />
+<code>"Hello World"</code></p>
+<p>The deep formal reason why this is a valid program is that the last
+object in a <a href="block.html">block</a> is its <a href="return.html">return</a> value and the last <a href="result.html">result</a> in
+the root block of the main file is printed.</p>
+<p>Fibonacci in Angle is</p>
+<pre><code>fibonacci number = if number&lt;2 : 1 else fibonacci(number - 1) + fibonacci it - 2</code></pre>
+<p>Note how <a href="number.html">number</a> simulataneously acts as <a href="type.html">type</a> and <a href="variable.html">variable</a>
+name. This <a href="invention.html">invention</a> is called <a href="matching.html">matching</a> by type name. Note how
+the unique <a href="argument.html">argument</a> <code>number</code> can be accessed via
+<code>it</code> keyword and brackets are optional</p>
+<p><a href="type-inference">Auto typed</a> fibonacci in Angle is</p>
+<pre><code>fib := if it&lt;2 : 1 else fib(it-1) + fib it - 2</code></pre>
+<p>A typical <a href="class.html">class</a> <a href="record.html">record</a> with <a href="optional.html">optional</a> fields can be
+expressed like this</p>
+<pre><code>class contact {
+ name 
+ email?
+ phone?
+ address {
+  street
+  city
+  zip?
+ }
+}</code></pre>
+<p>Again we have the concept of <a href="matching.html">matching</a> by type name: The field
+email is inferred to have type Email.</p>
+<p>For further reading scroll up and search or expand the
+<strong>pages</strong> section on the right</p>

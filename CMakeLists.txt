@@ -755,12 +755,15 @@ if (CONSOLE AND NOT WEBAPP)
     find_package(Readline)
     #    find_library(Readline)
     if (WASM)
-    TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
+        TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
     else ()
         link_libraries(wasp readline)
     endif ()
 endif ()
 
+if (SDL)
+    target_link_libraries(wasp SDL2::SDL2)
+endif ()
 
 #set(CMAKE_SUPPRESS_REGENERATION)
 #set(CMAKE_SKIP_RULE_DEPENDENCY TRUE) # incremental build
@@ -769,9 +772,4 @@ endif ()
 # CLion SET cidr.asynchronous.refresh.after.build = false (in Find-Action -> Registry )
 
 # Please either delete it manually or select another generation directory => delete CMakeCache.txt
-
-
-if (SDL)
-    target_link_libraries(wasp SDL2::SDL2)
-endif ()
 

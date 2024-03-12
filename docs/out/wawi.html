@@ -1,0 +1,14 @@
+<h1 id="wasp-web-interface">Wasp Web Interface</h1>
+<h2 id="context-wawi"><a href="context.html">context</a> wawi</h2>
+<p>API functions for wasp (or any other wasm language) to communicate
+with the Web:</p>
+<pre><code><a href="navigate.html">navigate</a> : url          |
+<a href="alert.html">alert</a> : text            | forward to js alert
+<a href="log.html">log</a>   : text            | forward to js Console.log and maybe other ( log text ≠ log number )
+<a href="paint.html">paint</a> : data            | add or create 2D/3D elements, objects and scenes
+<a href="fetch.html">fetch</a> : url -&gt; data     |</code></pre>
+<h3 id="examples">Examples</h3>
+<pre><code>&lt;script type=&quot;wasp&quot;&gt;
+    fetch test.com
+    alert √9
+&lt;/script&gt;</code></pre>

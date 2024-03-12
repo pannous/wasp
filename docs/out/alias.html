@@ -1,0 +1,54 @@
+<h1 id="alias">alias</h1>
+<p>Aliases are an important mechanism in angle to norm synonyms.</p>
+<p>The idea is that developers don’t need to memorize specific variants
+(length, size, count) but are directed to the standard (correct/main)
+form. The normed synonym is handled at an early system level, similar to
+how in python the ‘+’ operator resolves to the method ‘add’ on
+objects.</p>
+<h1 id="cross-resolution">cross resolution</h1>
+<p>If an object defines any synonym (e.g. one of length, size, count),
+this property can be accessed via all forms of its aliases.
+<!-- todo? A compiler warning may be emitted suggesting to use the 'main' form. --></p>
+<h1 id="ambiguous-resolution">ambiguous resolution</h1>
+<p>If an object defines multiple synonymous properties (e.g. length,
+size, count) these can still be used individually. A compiler warning
+may be emitted, warning developers that they are overloading
+aliases.</p>
+<h1 id="adding-aliases">adding aliases</h1>
+<p>aliases can be added at compile time and runtime via keyword
+<code>alias</code> : <code>alias length = count</code> or
+<code>alias length =&gt; count</code> to indicate the standard form.</p>
+<h1 id="aliasing-internal-keywords">aliasing internal keywords</h1>
+<p>internal keywords can have aliases too, similar to c’s
+<code>#define</code>, but they need to be quoted as <a href="symbol.html">symbol</a> :</p>
+<p><code>alias typedef =&gt; :alias</code></p>
+<h1 id="type-aliases">type aliases</h1>
+<p>same syntax as other aliases:</p>
+<pre><code>alias u32  =&gt; unsigned int
+alias i32u =&gt; u32</code></pre>
+<h1 id="aliases.wasp">aliases.wasp</h1>
+<p>#operator alias are important for unicode : The following shall be
+mapped early to minus early in parsing:</p>
+<pre><code>0x2010  8208    HYPHEN  ‐
+0x2011  8209    NON-BREAKING HYPHEN ‑
+0x2012  8210    FIGURE DASH ‒
+0x2013  8211    EN DASH –
+0x2014  8212    EM DASH —
+0x2015  8213    HORIZONTAL BAR  ―</code></pre>
+<p>etc</p>
+<p>range</p>
+<h1 id="aliases-in-wasm">aliases in wasm</h1>
+<p>To express aliases inside wast/wasm use the <code>_alias_</code>
+naming convention prefix:</p>
+<pre><code>    (export &quot;log10&quot;        (func $log10))
+  (export &quot;_alias_log₁₀&quot; (func $log10))
+  (export &quot;_alias_₁₀⌞&quot;   (func $log10))
+  (export &quot;_alias_10⌞&quot;   (func $log10))</code></pre>
+<p>Angle takes care of the semantics.</p>
+<p>⚠️ Todo: does wasp have access to the (func $log10) name? otherwise
+this convention is dependent on previous declaration of
+<code>(export "log10" (func $log10))</code>.</p>
+<p>Ugly workaround: <code>(export "_alias_log₁₀__log10")</code></p>
+<h1 id="todo-how-to-norm">Todo how to norm?</h1>
+<p>when to warn developers about the standard form and when not:</p>
+<p><code>"⚠️ log₁₀ is alias of log10 : 1. convert this log₁₀ to log10 2. convert all  log₁₀ to log10 3. convert this log10 to log₁₀ 4. convert all  log10 to log₁₀ 5. ignore this 6. ignore all alias warnings for log₁₀ Your choice will be stored in alias-preferences.wasp and can be edited any time.  Your preferences it will still be normed to the Angle default standard alias when using git. "</code></p>

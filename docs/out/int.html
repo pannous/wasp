@@ -1,0 +1,19 @@
+<h1 id="int">int</h1>
+<p>Short for integer, slightly different to natural <a href="number.html">number</a>s and ints
+of other languages: While <a href="<strong>number</strong>.html"><strong>number</strong></a> should be the only
+number type used by Angle developers, note that int in our context
+mostly means <a href="int32.html">int32</a> but can also mean <a href="i64.html">i64</a> “long” or <a href="int60.html">int60</a>
+(you won’t miss those extra 4 bits).</p>
+<p>The reason is that <a href="the.html">the</a> internal <a href="value.html">value</a> field of node_pointer
+is 64 bits, so this is the basis for all calculations.</p>
+<p>The 4 extra bits of <a href="int60.html">int60</a> handle <a href="sign.html">sign</a> ±<a href="infinity.html">infinity</a>
+<a href="nan.html">nan</a>/<a href="undefined.html">undefined</a> and <a href="overflow.html">overflow</a>. <a href="overflow.html">overflow</a> is useful because
+an overflow number is still comparible: infinity &lt; overflow &lt;
+max-int.</p>
+<p>In the primitive <a href="number.html">number</a> type as well as in its lightweight
+wrapper class Number, numbers get automatically upgraded: if you
+multiply two int8 (bytes) you may get an int16, if you multiply two
+int60 you may get a <a href="bignum.html">bignum</a> (which may or may not be different to
+javascripts bignum).</p>
+<p>If you interact with ABIs where int means int32 or i64, our runtime
+handles the conversion, or the compiler gives a warning.</p>

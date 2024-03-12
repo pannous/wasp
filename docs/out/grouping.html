@@ -1,0 +1,49 @@
+<h1 id="grouping">grouping</h1>
+<p>Angle is build on core principles: The wasp <a href="data.html">data</a> format has
+multible layers of grouping to create high dimensional data or separate
+nested code <a href="block.html">block</a>s:</p>
+<h1
+id="lists-can-be-formed-with-all-enclosing-symbols-and-grouping-characters"><a href="list.html">list</a>s
+can be formed with all <strong>enclosing symbols</strong> ‘()’ ‘[]’ ‘{}’
+and grouping characters :</h1>
+<ul>
+<li>space ’ ’</li>
+<li>comma ‘,’</li>
+<li>semicolon ‘;’</li>
+<li>pipe ‘|’,</li>
+<li>tab ’</li>
+<li>newline ‘’</li>
+</ul>
+<pre><code>items=1,2,3
+items=1;2;3
+items=1 2 3
+items=(1 2 3)
+items=[1,2,3]
+items={1;2;3}
+items={
+    a
+    b
+    c
+}
+etc …</code></pre>
+<p>The <a href="pipe.html">pipe</a> operator has special semantics</p>
+<p>This universal grouping principle might seem like superfluous
+<a href="ambivalence.html">ambivalence</a> at first, but becomes very handy to form nested higher
+order <a href="array.html">array</a>s, <a href="map.html">map</a>s, <a href="matrix">matrices</a>, <a href="tensor.html">tensor</a>s
+etc: <code>m=(1 2; 3 4)</code></p>
+<p>Since all 6 grouping separators above (” ,;|“) have increasing
+<a href="precedence.html">precedence</a>, in theory one could easily write six dimensional data in
+wasp. Practically this hierarchy leaves room to include list into other
+lists.</p>
+<p>Say you have a heterogenous list of objects
+<code>items={1;'a';bob}</code> you can just add a list with minimal
+syntax <code>items={1;'a';bob; 1,2,3}</code>. What is the benefit
+compared to wrapping every list in their own brace (as in <a href="lisp.html">lisp</a>)?</p>
+<p>One might say this is subjectively a matter of taste:</p>
+<pre><code>    (let
+    ((F1 (fibonacci (- N 1)))
+     (F2 (fibonacci (- N 2))))
+      (+ F1 F2))</code></pre>
+<p>Objectively it increases readability if each layer in the hierarchy
+has their own <a href="sigil.html">sigil</a>. ‘))))’ tells us nothing about which layer is
+being closed.</p>

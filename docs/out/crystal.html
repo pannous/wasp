@@ -1,0 +1,32 @@
+<p>We love the <a href="https://crystal-lang.org/">crystal</a>
+programming language. It’s only / main <strong>shortcomings</strong>
+are:</p>
+<ul>
+<li><p><a href="Type inference.html">Type inference</a> is <strong>slow</strong></p></li>
+<li><p>missing uniform serialization resulting in</p></li>
+<li><p>lack of caching:</p></li>
+<li><p>changing a line of code often results in the whole compilation of
+the project</p></li>
+<li><p>this makes compilation often very time consuming aka
+slow</p></li>
+<li><p><strong>missing WASM target</strong></p></li>
+<li><p>ugly operators &amp;&amp; || for and, or</p></li>
+<li><p><strong>data is second class citizen</strong></p></li>
+</ul>
+<p>minor issues: * verbose hash maps {1 =&gt; 2, 3 =&gt; 4} vs {1:2 3:4}
+* next = break * the block mechanism is cumbersome:</p>
+<pre><code>def twice(&amp;block)
+  yield
+  yield
+end</code></pre>
+<p><strong>best features</strong> of crystal: * clear syntax, yet
+compiled * <code>if</code> after blocks:
+<code>a = 2 if some_condition</code> * operator overloading * block of
+code is executed with the yield keyword</p>
+<p>Interesting:<br />
+* very clear statements of language goals * The difference between using
+do … end and { … } is that do … end binds to the left-most call, while *
+{ … } binds to the right-most call<br />
+* <a href="It.html">It</a> like operator &amp;. * method &amp;.some_method * with … yield
+* a non-captured block is always inlined</p>
+<p>https://github.com/pannous/cheats/edit/master/cheats.crystal</p>

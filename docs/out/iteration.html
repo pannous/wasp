@@ -1,0 +1,49 @@
+<p>Iteration is often implicit since all functions are automatically
+<a href="broadcast.html">broadcast</a>ed on <a href="list.html">list</a>s and pair values:</p>
+<pre><code>square number=number*number
+square [1 2 3] == [1 4 9]
+
+square [a:1 b:2 c:3] == [a:1 b:4 c:9]
+
+delete file = run `rm $file.name`
+delete files in ls /   # 🧐</code></pre>
+<p>The <a href="all.html">all</a> keyword takes a <a href="block.html">block</a> on the left or right making it
+a <a href="functor.html">functor</a> similar to <a href="map.html">map</a>: <code>delete all files</code>
+<code>all files {delete it}</code> <code>all processes start</code> //
+here start is un<a href="charged.html">charged</a> code, identical to
+<code>all processes {start it}</code>// or
+<code>all processes {it.start}</code></p>
+<p><a href="math.html">math</a>ematical signature:</p>
+<pre><code> all :: block `all` iteratable  | `all` iteratable block
+ each :: action `each` iteratable  | `each` iteratable action </code></pre>
+<p>Todo: what if the block retuns an iteratable? <a href="Ambiguity.html">Ambiguity</a>?</p>
+<p>Again <a href="broadcasting.html">broadcasting</a> should make the <code>all</code> keyword
+superfluous in many situations:</p>
+<pre><code>print all characters in &quot;hello&quot;
+print characters in &quot;hello&quot;</code></pre>
+<p>Other Iteration see <a href="for.html">for</a> keyword:</p>
+<pre><code>for 1..10 : print it 
+for chars in text: print it
+for friend in [foe1, friend1, foe2, friend2]: print it </code></pre>
+<p>Interesting: <a href="string.html">string</a> Iteration Interesting: (structurally)
+<a href="matching.html">matching</a> for <a href="condition.html">condition</a></p>
+<p>Here we see overlap with the <code>that</code> keyword:</p>
+<pre><code>nums=[1,2,3,4]
+print nums that are even</code></pre>
+<p>This works in the python implementation of <a href="Angle.html">Angle</a> but might need
+some time to be part of the <a href="Wasp.html">Wasp</a> implementation.</p>
+<p>The keywords, functions or functors <code>each</code>
+<code>any</code> and <code>all</code> are reserved but currently not in
+used.</p>
+<p><a href="Question.html">Question</a> when and why would <code>for</code>
+<code>for each</code> <code>for any</code> and <code>for all</code> ever
+differ?</p>
+<p>On the other hand we can have <code>each</code> <code>any</code> and
+<code>all</code> acting similar or identical to for:</p>
+<pre><code>each [1,2,3]: print it
+all [1,2,3]: print it
+all numbers &gt; 2: print it</code></pre>
+<p>The last example may seem difficult, but it is just the
+<code>&gt;</code> operator acting on the whole set via
+<a href="broadcasting.html">broadcasting</a></p>
+<p>open <a href="questions.html">questions</a></p>

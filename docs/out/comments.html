@@ -1,0 +1,12 @@
+<p>Comments in Wasp are either Java style <code>//</code> or bash style
+<code>#</code> or blocks <code>/*…*/</code> <code>/#…#/</code></p>
+<p>Comments and code position (line number + column) are stored in the
+<a href="meta.html">meta</a> field of <a href="node.html">node</a>s in debug mode.</p>
+<p>A special kind of comments which are also ignored in code analysis
+are:</p>
+<h1 id="documentation-comments">Documentation comments <code>///</code>
+<code>##</code> <code>/** **/</code></h1>
+<p>These may be used in automatic documentation generation but MUST NOT
+INFLUENCE any code behaviour.</p>
+<p>Use <a href="annotation.html">annotation</a>s for <a href="meta.html">meta</a> behaviour which may be
+effectful.</p>

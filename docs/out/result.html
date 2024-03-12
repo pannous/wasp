@@ -1,0 +1,18 @@
+<p>The <code>result</code> keyword yields a special variable which is
+set to the last declaration or the return value of the last function
+call. ⚠️ Since everything in angle is an expression, the special result
+variable is also set in code such as</p>
+<pre><code>if 1&gt;0 : print &quot;hi&quot; else : print &quot;ho&quot;
+print result  # =&gt; &quot;hi&quot; !</code></pre>
+<p>Internal note: To avoid code bloat and optimize speed, the
+<code>result</code> mechanism is only used immediately before the
+keyword result occurs. Todo: really? It’s just an internal variable
+which is exposed to the ABI without any overhead. <a href="todo.html">todo</a> : but wasm
+can’t tee the previous stack!?</p>
+<pre><code>def foo: hi=2*2
+foo
+result # =&gt; 4 OR void ??</code></pre>
+<p>The <code>result</code> keyword is similar to the <a href="it.html">it</a> keyword when
+no binding context is available.</p>
+<p>Functions which return void ‘return’ the last value in the result
+slot. Todo: bad concept? side effects and information leakage.</p>

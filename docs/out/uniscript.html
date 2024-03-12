@@ -1,0 +1,158 @@
+<h1 id="uniscript">Uniscript</h1>
+<p>Uniscript is a human readable and editable unicode encoding format
+which only uses ASCII characters to describe code points.</p>
+<p>The constituents of uniscript are entities and block types.</p>
+<p>Block types influencing the character stream would be</p>
+<p>• languages (greek a =&gt; α) • modifiers (upper A =&gt; ᴬ , italic A
+=&gt; 𝐴 , bold A =&gt; 𝝖 bold+italic A =&gt; 𝘼 … ) • calligraphic hands
+(fracture A =&gt; 𝔄 , double-struck A =&gt; 𝔸 … ) • ligature (ligature
+ae =&gt; æ ) • colors (red circle ○ =&gt; 🔴, brown heart ♡ =&gt; 🤎) •
+mirroring (reverseInPlace e =&gt; ɘ ) • text direction (phonician a b c
+=&gt; 𐤂 𐤁 𐤀 ) • icons (iconic warning ⚠ =&gt; ⚠️ emoji-style U+FE0F ) •
+plain (undo all styles to ⚠️ =&gt; ⚠ 𝐴 =&gt; A text-style 0xFE0E )</p>
+<p>Uniscript entities are case sensitive</p>
+<p>upper a =&gt; ᵃ upper A =&gt; ᴬ</p>
+<h1 id="representation">Representation</h1>
+<p>The textual representation of entities and blocks in Uniscript.</p>
+<p>Simple entities can be represented as <code>\:</code> followed by the
+entity name:</p>
+<p><code>\:infinity == ∞</code></p>
+<p>The essential marker for the beginning of complex uniscript elements
+is “&lt;:”.</p>
+<p>Enties are wrapped either in a single bracket of the form
+&lt;:entity&gt; or in a block of the form &lt;:block&gt; entities
+&lt;:/block&gt; For short sequences of entities there is an inline
+delineation &lt;:type entities&gt;</p>
+<h1 id="examples">Examples</h1>
+<p>&lt;:alpha&gt; ⩵ α</p>
+<p>&lt;:fracture A&gt; ⩵ 𝔄</p>
+<p>&lt;:fracture A b c &gt; ⩵ 𝔄 𝔟 𝔠</p>
+<p>&lt;:fracture&gt; A b c &lt;:&gt; ⩵ 𝔄 𝔟 𝔠</p>
+<p>&lt;:greek&gt; a b c &lt;:/greek&gt; ⩵ α β ζ</p>
+<h1 id="closing-blocks">Closing blocks</h1>
+<p>blocks are closed by repeating the opening type plus a slash:</p>
+<p>&lt;:greek&gt; a b c &lt;:/greek&gt; ⩵ α β ζ</p>
+<p>To support interoperability with xml/html the colon in
+&lt;:/greek&gt; must NOT be omitted!</p>
+<h1 id="spaces">Spaces</h1>
+<p>All spaces surrounding entities are only for visual appeal, are not
+part of the codepoint stream and will thus not be rendered in the
+resulting UTF-8 representation.</p>
+<h1 id="fonts">Fonts</h1>
+<p>Unicode and fonts have conceptual overlap in font faces such as bold
+and italic but there are also fonts rendereing a normal A as fracture
+𝔄.</p>
+<p>In an ideal world there would be a cleaner separation between unicode
+entities and visual variants. This is unfortunately out of scope. With a
+tiny chance uniscript would stop or even undo the proliferation of
+codepoint1 such as ♡ =&gt; 🤎 by adding colors as unicode control
+characters instead of arbitrarily combining a select number of entities
+with a select number of colors.</p>
+<p>https://en.wikipedia.org/wiki/Unicode_control_characters</p>
+<p>Likewise one might reinvestige clusters such ⚠ =&gt; ⚠️ and replace
+those surrogates with something cleaner. These visual aspects should
+really never have been put into unicode, whoever was responsible should
+be forced to undo these, or they should be boycotted in favor of a
+different approach.</p>
+<p>Emoji-style U+FE0F control characters are fine in principle, but
+should be prefixed to the following character, not subfixed.</p>
+<p>On the other hand</p>
+<h1 id="ide-support">IDE support</h1>
+<p>IDEs may render these brackets beautifully as ⟨alpha⟩ ⩵ α ⟨fracture
+A⟩ ⩵ 𝔄 ⟪greek⟫ a b c ⟪/greek⟫ ⩵ α β ζ</p>
+<p>WHY THOUGH?</p>
+<p>List of block types:</p>
+<p>⟪ligature⟫ ⟪fracture⟫</p>
+<h1 id="entities">Entities</h1>
+<p>All entity mapping shall be defined in one human readable mapping
+file, which hopefully will one day evolve into a standard. Custom entity
+names may be defined in an extension file.</p>
+<h1 id="block-types-versus-entities">Block types versus entities</h1>
+<p>In general overlap between entity names and type names can be
+intentionally ambiguous yet yield the same result &lt;:double&gt; d
+&lt;:&gt; block type marker ‘double’ influencing all characters, in this
+case ‘d’ =&gt; 𝕕 &lt;:double d&gt; block type double or entity ‘double
+d’ ? Irrelevant for users, the result is ‘𝕕’ &lt;:double-d&gt; one may
+write entity names unambiguously with hyphens.</p>
+<h1 id="uniscript-names">uniscript names</h1>
+<p>Alternative names for uniscript considered but rejected (not
+ultimately?) were: unitext plaincode plain-code pluni-code
+plunicode.</p>
+<p>Not to be confused with UTF-7.</p>
+<h1 id="alternative-format">Alternative format</h1>
+<p>An alternative format with the same concepts of entities and block
+types could be considered:</p>
+<p>:alpha :fracture Hello :</p>
+<p>Also revigorating and extending the HTML entity encoding format could
+be possible to encompass the comprehensive list of unicode codepoint
+entities with english names plus block type modifiers as declared
+above.</p>
+<p>&amp;ligature; ae &amp;end-ligature;</p>
+<h1 id="there-is-no-such-thing-as-plaintext">There is no such thing as
+plaintext</h1>
+<p>https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/</p>
+<p>So when using uniscript the encoding always needs to be explicit.</p>
+For example, in the future instead of tagging web pages with
+<meta charset="utf-8">
+One might use
+<meta charset="uniscript">
+<p>.</p>
+<h1 id="special-remark">Special remark</h1>
+<p>All texts containing “&lt;:” as a character sequence not inteded as
+control signal need to encode it (similar to &amp; within html
+entities).</p>
+<p>One proper encoding of “&lt;:” would be &lt;:less&gt;: or
+&lt;:&lt;&gt; or &lt;&lt;:colon&gt; or &lt;&lt;::&gt;</p>
+<p>Usually free standing “&lt;” characters need NOT be encoded as
+&lt;:less&gt; because only the combination of “&lt;:” forms a uniscript
+control signal. Likewise the character “&gt;” NEVER needs to be encoded
+as &lt;:greater&gt; because “&gt;” does not influence the unicode
+control flow except as closing entity/block marker AFTER the “&lt;:”
+marker.</p>
+<p>Since entity names are ascii only, there is no difficulty in parsing
+&lt;:alpha&gt; &gt; &lt;:beta&gt; as α &gt; β</p>
+<h1 id="html-entities">Html entities</h1>
+<p>Entities are similar to HTML but use a different encoding
+&lt;:alpha&gt; vs α HTML entities with cryptic names (𝕕 𝕕 ) are
+supported for backwards compatibility but are strongly discouraged.
+Uniscript entities are much more comprehensive and all cryptic
+abbreviations have one ore more equivalent descriptive long english
+entity names. For example 𝕕 𝕕 has unicode entity name &lt;:double
+d&gt;</p>
+<p>⟪ U+027EA ⟪ entity ⟫ U+027EB ⟫ entity ⟨ U+027E8 ⟨ entity ⟩ U+027E9 ⟩
+entity</p>
+<p>&amp;fr; &amp;fracture; &amp;opf; &amp;???; 𝕕 U+1D555 𝕕 entity</p>
+<p>&amp;DoubleType; 𝕕 ¨ ⇓ …</p>
+<p>À U+000C0 À entity à U+000E0 à entity ã U+000E3 ã entity ≔ U+02254 ≔
+entity * U+0002A * entity ∧ U+02227 ∧ entity ∠ U+02220 ∠ entity æ
+U+000E6 æ entity</p>
+<p>ℵ U+02135 ℵ entity α U+003B1 α entity ∵ U+02235 ∵ entity</p>
+<p>⨀ U+02A00 ⨀ entity ⨁ U+02A01 ⨁ entity ⨂ U+02A02 ⨂ entity ⨆ U+02A06 ⨆
+entity ★ U+02605 ★ entity ⋁ U+022C1 ⋁ entity ⋀ U+022C0 ⋀ entity █
+U+02588 █ entity</p>
+<p>▪ U+025AA ▪ entity ▴ U+025B4 ▴ entity ␣ U+02423 ␣ entity NOT
+BLANK;)</p>
+<p>⊥ U+022A5 ⊥ entity • U+02022 • entity · U+000B7 · entity</p>
+<p>✓ U+02713 ✓ entity ✓ U+02713 ✓ entity</p>
+<p>⊖ U+02296 ⊖ entity ⊕ U+02295 ⊕ entity ⊗ U+02297 ⊗ entity</p>
+<p>♣ U+02663 ♣ entity ♣ U+02663 ♣ entity ∷ U+02237 ∷ entity : U+0003A :
+entity © U+000A9 © entity ⨯ U+02A2F ⨯ entity ∪ U+0222A ∪ entity ‐
+U+02010 ‐ entity ° U+000B0 ° entity</p>
+<p>⋄ U+022C4 ⋄ entity ♦ U+02666 ♦ entity</p>
+<p>÷ U+000F7 ÷ entity ÷ U+000F7 ÷ entity</p>
+<p>$ U+00024 $ entity</p>
+<p>¨ U+000A8 ¨ entity ⇓ U+021D3 ⇓ entity ¨ U+000A8 ¨ entity ˙ U+002D9 ˙
+entity</p>
+<p>↓ U+02193 ↓ entity</p>
+<p>ð U+000F0 ð entity ∃ U+02203 ∃ entity ∃ U+02203 ∃ entity</p>
+<p>∀ U+02200 ∀ entity</p>
+<p>½ U+000BD ½ entity ½ U+000BD ½ entity …</p>
+<p>♥ U+02665 ♥ entity ♥ U+02665 ♥ entity ‐ U+02010 ‐ entity</p>
+<p>∈ U+02208 ∈ entity</p>
+<p>∫ U+0222B ∫ entity ⚠️ ℤ U+02124 ℤ entity ∫ U+0222B ∫ entity</p>
+<p>⁢ U+02062 ⁢ entity ⚠️ ??</p>
+<p>κ U+003BA κ entity λ U+003BB λ entity</p>
+<h1 id="abbreviations">abbreviations</h1>
+<p>open <a href="questions.html">questions</a> :</p>
+<p>• Should partial entity names be completed by the IDE or also be
+allowed in uniscript :nat :hyph :alp ?</p>

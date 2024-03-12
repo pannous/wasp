@@ -1,0 +1,83 @@
+<p>Angle usually uses the <a href="https://github.com/pannous/">wasp</a>
+data format:</p>
+<pre><code>person{name=&quot;Joe&quot;}
+person{name:&quot;Joe&quot; number:12345 address:{street=…}}</code></pre>
+<p>Everything is a <a href="node.html">node</a> internally. Nodes have internal primitive
+<a href="type.html">type</a>s:<br />
+* <code>{}</code> <a href="object.html">object</a>s, * <code>[]</code> <a href="pattern.html">pattern</a>s and *
+<code>()</code> <a href="group.html">group</a>s<br />
+Denoted by different braces: <code>{} [] ()</code></p>
+<p>In data, without <a href="evaluation.html">evaluation</a> these groupings are similar:<br />
+<code>{1 2 3} [1 2 3] (1 2 3)</code> all denote a <a href="list.html">list</a> with 3
+elements.<br />
+<code>{a:1 b:2 c:3} [a:1 b:2 c:3] (a:1 b:2 c:3)</code> all denote a
+<a href="map.html">map</a> with 3 elements.</p>
+<p>However upon <a href="evaluation.html">evaluation</a>, <a href="compilation.html">compilation</a> and <a href="interpretation.html">interpretation</a>
+they can have different semantics. <code>{}</code> is the most ambitious
+of those three groupings:</p>
+<p><a href="block.html">block</a>, <a href="code.html">code</a> and <a href="closure.html">closure</a> denoted by <code>{}</code> are
+very similar concepts:</p>
+<ul>
+<li>every <a href="data.html">data</a> with the intention of being <a
+href="evaluation">evaluated</a> is a <a href="block.html">block</a></li>
+<li>every <a href="block.html">block</a> with concrete binding is <a href="code.html">code</a></li>
+<li>every <a href="code.html">code</a> with a local-only binding is a <a href="closure.html">closure</a></li>
+</ul>
+<h2 id="active-data">active data</h2>
+<p>Active data means that elements will or can be <a href="evaluated.html">evaluated</a> at
+compile or runtime: <code>print(now)</code> in an active context
+evaluates <code>now</code> to the current time</p>
+<p>Whether data acts as active evaluated or evaluatable <a href="code.html">code</a> depends
+on the context.</p>
+<h2 id="passive-data">passive data</h2>
+<p>To force data being read / passed verbatim, without semantic
+analysis, use the <code>data</code> <code>quote</code> keyword.</p>
+<h2 id="significant-colon">Significant colon</h2>
+<p>There is a subtle difference between<br />
+<code>person{name:"Joe" address{street:"no way 123"}}</code><br />
+<code>person:{name="Joe" address:{street="no way 123"}}</code></p>
+<p>While both construct an object <code>person</code>, the variant with
+colon constructs pure data while the variant without colon constructs
+the person <strong>via a <a href="constructor.html">constructor</a></strong>, if available.</p>
+<p>So if previously <a href="type.html">type</a> person is defined like
+<code>a person has a random id</code> then Joe will automatically derive
+that id if constructed as person{name:“Joe”}. The pure data built with
+person:{name=“Joe”} only has a <a href="soft-type.html">soft-type</a> of person, an elusive
+unenforced type hint.</p>
+<p>Apart from the above canonical format, Angle can also consume
+<a href="lisp.html">lisp</a>/<a href="https://github.com/pannous/wasp">wasp</a>
+/polish-notation style data:<br />
+<code>(person (name Joe))</code></p>
+<p>Since these formats have different semantics, the lisp style needs a
+special keyword to activate the slightly modified parser.</p>
+<h3 id="kat-description-language">Kat description language</h3>
+<p>Another slightly different format called <a
+href="https://github.com/kdl-org/kdl">kdl</a> treats each line as a node
+instead of list:
+<code>katy data format html lang="en" {     head {         meta charset="utf-8"         meta name="viewport" content="width=device-width, initial-scale=1.0"         meta \             name="description" \             content="kdl is a document language, mostly based on SDLang, with xml-like semantics"         title "kdl - Kat's Document Language"         link rel="stylesheet" href="/styles/global.css"     }     body {         main {             h1 class="text-4xl text-center" "kdl - Kat's Document Language"             section class="kdl-section" id="description" {                 p {                     - "kdl is a document language, mostly based on "                     a href="https://sdlang.org" "SDLang"                     - " with xml-like semantics that looks like you're invoking a bunch of CLI commands"                 }                 p "It's meant to be used both as a serialization format and a configuration language, and is light compared to XML."             }         }     } }</code>
+To illustrate the difference, <code>mutable x=7</code> is parsed as
+<code>(mutable x)=7</code> in wasp and <code>mutable[x=7]</code> in <a
+href="https://github.com/kdl-org/kdl">kdl</a>. Another difference is a
+significant white space behind node ids: <code>form {}</code> in wasp is
+a compile time <a href="ambiguity.html">ambiguity</a>. The only thing I don’t like in kdl are *
+string values need to be quoted * the <code>-</code> for text
+node_pointer without name/identifier/key. The (false) reason is that
+quotes at the beginning of node_pointer denote complex identifiers:
+person “home address”:berlin This is fine, but the distinguishing syntax
+role should be: if a quoted node is empty it is a text node</p>
+<p>With that rule both formats are nearly compatible and the remaining
+difference can be put behind a parser directive or flag. It is really
+just a question of whether ‘space binds stronger than =’ as in wasp or
+not as in kdl.</p>
+<h3 id="border-cases-and-ambiguity">border cases and ambiguity</h3>
+<p>See <a href="significant whitespace.html">significant whitespace</a> and <a href="ambiguity.html">ambiguity</a><br />
+Since these are <a href="border case.html">border case</a>s, there is a compiler
+pragma/directive/flag to switch to each desired behavior on demand<br />
+e.g. when parsing lisp, sexp, wasp, csv or kdl <a href="data.html">data</a>; each such mode
+is also activated via file extension.</p>
+<p>These seemingly different <a href="data.html">data</a> formats are really structurally
+quite similar an create minimal bearing on the parser.</p>
+<h3 id="similar-data-formats">Similar Data Formats</h3>
+<p><a href="wasp.html">wasp</a> <a href="https://github.com/kdl-org/kdl">kdl</a> ~
+https://sdlang.org/ <a
+href="https://github.com/ekon-org/ekon">ekon</a></p>

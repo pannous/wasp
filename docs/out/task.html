@@ -1,0 +1,16 @@
+<p>A task object holds the state of <a href="async.html">async</a> function calls. Very
+similar to c# and java <a href="thread.html">thread</a>s, slightly similar to javascripts
+broken promises.</p>
+<pre><code>job=go download url
+job.stop</code></pre>
+<p>Tasks created with the <code>go</code> keywords are automatically
+started by default.</p>
+<p>A task is typed and from the developers perspective acts just as its
+type when passed as argument or when assigned:</p>
+<pre><code>content = go download url
+content2 = go download url2
+print parse content
+...</code></pre>
+<p>what happens under the hood is that the execution of parse and print
+is delayed until the download finished. It is however NOT delayed by the
+second download.</p>

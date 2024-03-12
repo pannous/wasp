@@ -1,0 +1,82 @@
+<p>Angle has different types of matching</p>
+<h3 id="type-matching">type matching</h3>
+<p>see <a href="type inference.html">type inference</a></p>
+<h3 id="match-by-type-name">Match by type name:</h3>
+<p>Merge the concept of type and variable (name) in simple
+functions:</p>
+<pre class="angle"><code>To assign a photo to a contact:
+contact.image = photo</code></pre>
+<p>Here both photo and contact act as matching types and as variable
+identifiers. What sounds pretty complicated is very obvious in code (see
+above).</p>
+<p>Fibonacci in Angle is</p>
+<pre><code>fibonacci number = if number&lt;2 : 0 else fibonacci(number - 1) + fibonacci it - 2</code></pre>
+<p>Note how <a href="number.html">number</a> simulataneously acts as <a href="type.html">type</a> and <a href="variable.html">variable</a>
+name. This <a href="invention.html">invention</a> is called <a href="matching.html">matching</a> by type name. Note how
+the unique <a href="argument.html">argument</a> <code>number</code> can be accessed via
+<code>it</code> keyword and brackets are optional</p>
+<p><a href="type-inference">Auto typed</a> fibonacci in Angle is</p>
+<pre><code>fib := if it&lt;2 : 0 else fib(it-1) + fib it - 2</code></pre>
+<p>A typical <a href="class.html">class</a> <a href="record.html">record</a> with <a href="optional.html">optional</a> fields can be
+expressed like this</p>
+<pre><code>class contact {
+ name 
+ email?
+ phone?
+ address {
+  street
+  city
+  zip?
+ }
+}</code></pre>
+<p>Again we have the concept of <a href="matching.html">matching</a> by type name: The field
+email is inferred to have type Email</p>
+<p>Usually if fields of the same type occur more than once there are
+natural distinguishing aspects:</p>
+<pre><code>class full name{
+    first name
+    last name
+}</code></pre>
+<p>However in some situations one may chose to disconnect the variable
+name from its <a href="type.html">type</a>:</p>
+<pre><code>class foo{
+    bar name
+    buz name
+    box name
+}</code></pre>
+<p>Todo: In case of future multi-word class names without hyphones: How
+to avoid undesired matching of class names from different contexts.</p>
+<h2 id="switch-pattern-matching">switch pattern matching</h2>
+<p>To match a <a href="list.html">list</a> of items against criteria, we could adopt the
+beautiful <a href="Rust.html">Rust</a> syntax:</p>
+<p><a href="https://doc.rust-lang.org/std/keyword.match.html.html">https://doc.rust-lang.org/std/keyword.match.html</a></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode rust"><code class="sourceCode rust"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> value_in_cents(coin<span class="op">:</span> Coin) <span class="op">-&gt;</span> <span class="dt">u8</span> <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">match</span> coin <span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="pp">Coin::</span>Penny <span class="op">=&gt;</span> <span class="dv">1</span><span class="op">,</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="pp">Coin::</span>Nickel <span class="op">=&gt;</span> <span class="dv">5</span><span class="op">,</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="pp">Coin::</span>Dime <span class="op">=&gt;</span> <span class="dv">10</span><span class="op">,</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="pp">Coin::</span>Quarter <span class="op">=&gt;</span> <span class="dv">25</span><span class="op">,</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<pre class="angle"><code>to get value of coin in cents:
+    match coin {
+        Penny : 1
+        Nickel : 5
+        Dime : 10
+        Quarter : 25
+    }</code></pre>
+<p>For such simple pattern matching, <a href="switch.html">switch</a> is identical to match.
+Use match to evaluate and match more complex expressions:</p>
+<p>Other pattern matching implementations: <a
+href="https://www.thomasclaudiushuber.com/2021/02/25/c-9-0-pattern-matching-in-switch-expressions/">C#</a>
+<a
+href="https://docs.oracle.com/en/java/javase/17/language/pattern-matching-switch-expressions-and-statements.html">ugly
+java</a> <a
+href="https://www.swiftbysundell.com/articles/pattern-matching-in-swift/">swift</a>
+<a href="https://grain-lang.org/docs/guide/pattern_matching">grain</a>
+<a
+href="https://doc.rust-lang.org/book/ch18-00-patterns.html">rust</a></p>
+<h1 id="variant-matching">variant matching</h1>
+<p><a href="enum.html">enum</a>s aka <a href="variant.html">variant</a>s are aliases which are only needed for
+interop, otherwise all node_pointer are prone to <a href="matching.html">matching</a></p>

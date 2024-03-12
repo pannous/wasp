@@ -1,0 +1,39 @@
+<p>The guiding philosophy of angle is to avoid false diachomies whenever
+possible. As a result Contrary to a popular mantra, there is often not
+“one and only one way to top things”, instead all obvious ways to do
+things should be captured by the language.</p>
+<p>Angle parses both # and // as comments</p>
+<p>One example is that we are <a href="agnostic.html">agnostic</a> to tabs vs spaces vs braces.
+The following are just preferences by the user and or <em>linter</em>:
+<code>example:{field}</code></p>
+<pre><code>example:
+ field</code></pre>
+<pre><code>example
+  field
+end</code></pre>
+<p>However in certain situations angle <em>is</em>
+<strong>opinionated</strong>:</p>
+<h3 id="significant-white-space-and-new-lines">significant white space
+and new lines:</h3>
+<p>In general whitespaces and newlines do carry semantics: newlines hint
+at block starts, block ends, and definitely end of expression. If one
+needs multiple expression, these can be expressed by<br />
+</p>
+<h3 id="there-is-no-difference-between-statements-and-expression">There
+is no difference between statements and expression</h3>
+<p>That is our choice: all things shall return things, return statements
+are optional and mostly a means of control flow</p>
+<h3 id="execution-by-default">execution by default</h3>
+<p>Iff a statement occurs in an <a href="execution context.html">execution context</a>, it will be
+executed without braces or exclamation wasp. to end this program: exit
+end this program!</p>
+<p>Is the explicit execution operator “!” ever needed? Only when
+encountering (quoted) data: not_really_a_program={exit}
+not_really_a_program # just returns {exit} not_really_a_program!</p>
+<p>What about not_really_a_program=exit not_really_a_program still
+executes</p>
+<p>this only seemingly contradicts:</p>
+<h3 id="constructiondelayed-execution-by-default">construction/delayed
+execution by default</h3>
+<p>In angle everything is treated symbolically with lazy/delayed
+execution/evaluation until the very end.</p>

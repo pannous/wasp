@@ -1,0 +1,33 @@
+<h1 id="key">key</h1>
+<p>In Wasp, a key is a node with another node as its <a href="value.html">value</a>.</p>
+<pre><code>a:1
+b:&quot;Hello&quot;
+c:fibonacci
+d:fibonacci(10)
+e: x+1
+person:{name:James, age:45}</code></pre>
+<p>The person example shows how key value <a href="pair.html">pair</a>s form natural nested
+<a href="data.html">data</a>: <a href="map.html">map</a>s and <a href="tree.html">tree</a>s.</p>
+<p>The difference to <code>person{name:James, age:45}</code> is, that
+here person contains name:James and age:45 as <a href="child.html">child</a>ren. In
+<code>person:{name:James, age:45}</code> person contains {name:James,
+age:45} as value. <code>{name:James, age:45}</code> itself is an unnamed
+object with children name:James and age:45.</p>
+<p>Internally these slightly different representations may be normed and
+<a href="flat.html">flat</a>tened at times.</p>
+<p>Semantically <code>person:{name:James, age:45}</code> is passive
+<a href="data.html">data</a> whereas <code>person{name:James, age:45}</code> denotes an
+active constructor of person if available, otherwise passive data
+too.</p>
+<h1 id="complex-keys">complex keys</h1>
+<p>In Wasp, keys need not be primitive values, but can be complex
+objects: <code>(a b c):(d e f)</code></p>
+<p>This is represented internally by having the left side as
+<a href="children.html">children</a> and the right side as <a href="value.html">value</a> ⚠️ In complex keys,
+children represent the key object, not the <a href="value.html">value</a>!</p>
+<h1 id="empty-values">empty values</h1>
+<p>The <a href="value.html">value</a> of a key can never be <a href="null.html">null</a>, but it can <a href="unknown.html">unknown</a>:
+Either as a <a href="reference.html">reference</a> to a node of type <a href="unknown.html">unknown</a>, or by pointing
+to <a href="null.html">null</a>. Such keys can still have a <a href="type.html">type</a>.</p>
+<p>Unlike other languages, a key in Wasp contains it’s value itself.</p>
+<p>In Wasp, a key is a node of internal kind Type::key.</p>

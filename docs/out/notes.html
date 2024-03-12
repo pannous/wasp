@@ -1,0 +1,27 @@
+<h1 id="notes">notes</h1>
+<h3 id="the---operator">the - operator</h3>
+<p>the - operator is actually one of the most difficult operators: it
+can act as</p>
+<ul>
+<li>sign -3</li>
+<li>sign-flip operation -i == i*-1</li>
+<li>subtraction a-3</li>
+<li>range age 12-15, 7000-6000 BC usually for unsigned</li>
+</ul>
+<p>Figuring out which is which needs special care!
+<code>-1-2-‖-3‖-4</code></p>
+<h3 id="abs-norm">abs norm</h3>
+<p>abs via float is still better than function calls as emitted by gcc
+-O3 !!</p>
+<p>(func $abs (type 2) (param i32) (result i32) (local i32) local.get 0
+local.get 0 i32.const 31 i32.shr_s local.tee 1 i32.add local.get 1
+i32.xor)</p>
+<h1 id="wasm-c-api">wasm-c-api</h1>
+<p>/opt/wasm/wasmtime/crates/c-api/wasm-c-api/README.md no passing of
+structs by-value or post-C99 features in C API.</p>
+<h2 id="kotlin-abi">kotlin-abi</h2>
+<p>case “object”: case “function”: return getObjectHashCode(obj); case
+“number”: return numberHashCode(obj); case “boolean”: return obj ? 1231
+: 1237; // interestingly, this is the same as
+java.lang.Boolean.hashCode() //
+https://stackoverflow.com/questions/3912303/boolean-hashcode</p>

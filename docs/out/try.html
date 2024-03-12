@@ -1,0 +1,17 @@
+<p>The try keyword, similar to Ruby, extends the simple Java mechanism
+and even the advanced Swift mechanism: Instead of</p>
+<pre><code>        guard let item = inventory[name] else {
+            throw VendingMachineError.invalidSelection
+        }</code></pre>
+<p>Angle gives you</p>
+<pre><code>try item = inventory[name] else invalidSelection</code></pre>
+<p>Once an error is assigned to a variable (item), it behaves like an
+unfulfilled optional: calling e.g. <code>item.count</code> without
+<a href="elvis.html">elvis</a> operator <code>.?</code> activates the throwing of the
+exception, in this case the invalidSelection Error.</p>
+<p>Instead of</p>
+<pre><code>        guard item.count &gt; 0 else {
+            throw VendingMachineError.outOfStock
+        }</code></pre>
+<p>In the assert macro, the else block is implicitly throwing:</p>
+<pre><code>assert item.count &gt; 0 else outOfStock</code></pre>

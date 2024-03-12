@@ -1,0 +1,27 @@
+<h1 id="constant">constant</h1>
+<p>As with <a href="mutability.html">mutability</a>, there are two kinds of constance:</p>
+<ul>
+<li>‘reference constant’: constant variables point to the same objects
+during their lifetime.</li>
+<li>‘value constant’: constant objects don’t change (their inner value)
+during their lifetime.</li>
+</ul>
+<p>To simplify the situation, Angle offers the <code>final</code>
+keyword which means both:</p>
+<pre><code>final x = Node()
+x = 7 // error can&#39;t change variable x
+x.y=z // error can&#39;t change Node x</code></pre>
+<p>In rare cases one may want to combine both concepts though:</p>
+<pre><code>mutable x = constant Node()
+x = 7 // ok value was constant, not variable
+x.y=z // error can&#39;t change inner value
+
+constant x = mutable Node()
+x = 7 // error
+x.y=z // ok can change x
+</code></pre>
+<!-- ⚠️ in dart `const` means 'value constant' whereas `final` means 'reference constant'!
+final xs=[1,2,3]; xs[0]=0; // OK in dart!
+const xs=[1,2,3]; xs[0]=0; // Error in dart!
+var xs = const [1,2,3]; // same !
+Concepts overlap in `final a=7; a=8; const b=7; b=8; // both error` -->

@@ -1,0 +1,28 @@
+<p><a href="key.html">key</a>-<a href="value.html">value</a> pairs are a fundamental building block of the angle
+language:<br />
+<code>hello:world</code> is an <a href="object.html">object</a> with name hello and value
+world (both unspecified symbols)</p>
+<p>builtin <a href="data.html">data</a> and <a href="block.html">block</a>s are <a href="map.html">map</a>s of key pairs.</p>
+<p>In fact any map is just a <a href="list.html">list</a> of pairs and any list of pairs is
+a <a href="map.html">map</a>.</p>
+<p>Since it is the fundamental building block of wasp there is no
+special node <a href="type.html">type</a> ‘map’</p>
+<p><a href="group.html">group</a>s of pairs are named <a href="tuple.html">tuple</a>s :
+<code>(a:1 b:2 c:3)</code></p>
+<p>⚠️ <code>a:b != (a b)</code><br />
+There is a fundamental difference between key-pairs and true pairs =
+2-<a href="tuple.html">tuple</a>s!<br />
+In key-pairs the key is always a symbol, in true pairs it can be any
+object.</p>
+<p>In the <a href="node.html">node</a> representation, the key is just the name string of
+the key node, unless the key also has children, in which case the the
+child is the key. This is useful for complex <a href="matching.html">matching</a> :</p>
+<pre><code>switch x:
+ x &gt; 1 : 
+</code></pre>
+<p>⚠️ <code>a:{x:1} != a{x:1}</code> keyNodes are different to
+node_pointer with values</p>
+<p>Todo: we need a better name for ‘key’: holder vessel couple slot duo
+twain duplet construct piece record–</p>
+<p><a href="❓.html">❓</a>⚠️ arbitrary keys ARE possible in builtin <a href="data.html">data</a> by using the
+next/children field of node_pointer</p>

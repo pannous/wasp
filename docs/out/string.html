@@ -1,0 +1,59 @@
+<p>The exposed string type is near identical to the internal string
+type: Both are a lightweight classes pointing to utf8 arrays, together
+with some meta information such as length.</p>
+<h3 id="different-aspects-of-unicode">different aspects of Unicode</h3>
+<p>Strings can be queried for their length in bytes chars graphemes and
+codepoint1:</p>
+<pre><code>text=&quot;你好👋&quot;
+print size of text in bytes
+print length of text in chars
+print count codepoint1 in text</code></pre>
+<p>size defaults to byte length, length defaults to codepoint1 (todo:
+graphemes). otherwise <code>size length and count</code> are identical
+and can be used to access all aspects</p>
+<h3 id="iteration">iteration</h3>
+<p>One can similarly iterate over a strings bytes chars graphemes and
+codepoint as such:</p>
+<p><code>for x in text: ...</code> untyped x defaults to chars otherwise
+use</p>
+<pre><code>text=&quot;你好👋&quot;
+for bytes in text: print it
+for chars in text: print it
+for graphemes in text: print it
+for codepoint1 in text: print it</code></pre>
+<p>Note that for extremely long texts, getting the different
+representations can become computationally expensive, but it is done
+only once internally.</p>
+<p>Other built in iterator types:</p>
+<pre><code>for word in text: print it
+for line in text: print it</code></pre>
+<p>custom iterators could be implemented such as:</p>
+<pre><code>for paragraph in text: print it 
+for Page in text: print it
+for letter in text: print it
+for syllable in word: print it
+for letter in text: print it
+for icon in text: print it</code></pre>
+<p>with the following <a href="dispatch.html">dispatch</a>
+<code>paragraphs of text:= split text by "&lt;p&gt;"  // heuristics;)</code></p>
+<p>that’s it because <code>for</code> loops over any list (here returned
+by <a href="plural.html">plural</a> aware <a href="property.html">property</a> <a href="selection.html">selection</a> ‘in’)</p>
+<h1 id="full-unicode-support-not">Full unicode support … not</h1>
+<p>Unicode data is ~1 MB. It’s needed to implement all the unicode-aware
+string functions like strings.EqualFold()</p>
+<p>We may get away with some smart workarounds that cover 99.99 % of the
+use cases</p>
+<h2 id="templates-interpolation">templates interpolation</h2>
+<p>template string are those which contain dynamic content which can be
+evaluated ad hoc or later:</p>
+<pre><code>&quot;Hello $friend&quot;
+&quot;It took ${time - start}&quot; milliseconds.
+$&quot;{name} is {now as year - born} years old&quot;</code></pre>
+<p>Whether a string is a template is checked at construction together
+with the length at no additional costs. Since unicode offers multiple
+quotation brackets some of them can be used for special templating
+behavior.</p>
+<p>To avoid accidental interpolation use single quotes ‘$100’ or special
+quotes “no $interpolation” ⚠️ $0 is a special keyword to access the
+first argument in functions (same for $1 … ) ⚠️ TODO also use in
+interpolation? Conflict with zero dollars!</p>

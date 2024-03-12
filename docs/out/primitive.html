@@ -1,0 +1,12 @@
+<p>Primitives are unboxed data types such as int32 and float32.</p>
+<p>In most cases developers need not and should care about system
+primitives and let wasp / angle handle the correct handling and
+marshalling of types.</p>
+<p>So use <code>number</code> instead of <code>int</code> or
+<code>int32</code> except for very rare cases when you want maximum
+control over non <a href="wit.html">wit</a> typed <a href="abi.html">abi</a> calls.</p>
+<p>While primitives can appear as a <a href="node.html">node</a> type, when reading or
+writing a primitives, the <a href="abi.html">abi</a> omits the node header and directly
+handles the primitives on stack or in memory.</p>
+<p><a href="structs.html">structs</a> are data schemes specifying the layout of potentially
+nested <a href="tuple.html">tuple</a>s of primitives.</p>

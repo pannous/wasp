@@ -1,0 +1,34 @@
+<!-- fatal git error: Unimplemented pathspec magic '=' in ':=.md' -->
+<p>:= is identical to <a href="<code>be</code>.html"><code>be</code></a> <a href="assignment.html">assignment</a> and <a href="charged.html">charged</a>
+<a href="method.html">method</a> <a href="definition.html">definition</a> : := is also used for <a href="constant.html">constant</a> assignments
+of <a href="variables.html">variables</a><br />
+Todo: <a href="Ambiguity.html">Ambiguity</a>? Functions are constant too, so both semantics could
+be reconcilable? Rule: if the right hand side contains a constant than
+it’s a variable. But what if we want to assign some calculated value to
+a constant? <code>𝛕:=2*calculate_pi()</code></p>
+<pre><code>square x be x*x
+square x := x*x
+to square x: x*x</code></pre>
+<p>All three are identical.</p>
+<p>Difference between symbolic assignment <code>:=</code>, lazy
+assignment <code>:=</code> and direct assignment <code>=</code> :</p>
+<p>If symbols in the body of <code>:=</code> do not occur on the right
+hand side, they remain lazy symbols waiting for <a href="evaluation.html">evaluation</a>.</p>
+<pre><code>square := x*x
+x = 3
+square == 9
+x = 4
+square == 16</code></pre>
+<p>Direct assignment <code>=</code> evaluates all symbols not occurring
+on the left hand side immediately:</p>
+<pre><code>square x = x*x # ok
+square = x*x # todo: error, unknown symbol x, or treat as := 
+x=3
+square = x*x # ok, use symbol x from context
+square == 9
+x = 4
+square == 9 # square was fully evaluated when x=3</code></pre>
+<p>Contrast the last behavior of <code>square = x*x</code> with<br />
+<code>square := x*x</code><br />
+<code>square x := x*x</code><br />
+<code>square x = x*x</code> <code>square = x : x*x</code></p>

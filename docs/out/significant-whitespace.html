@@ -1,0 +1,45 @@
+<p>Angle shamelessly has many situations with significant
+white-space:</p>
+<ul>
+<li><code>2x ≠ [2 x]</code> implicit multiplication vs <a href="list.html">list</a>s</li>
+<li><code>1 + 1 ≠ 1 +1 == [1 1]</code> (addition vs sign)</li>
+<li><code>1 - 1 ≠ 1 -1 == [1 -1]</code> (addition vs sign)</li>
+<li><code>a{x} ≠ a {x} == [a x]</code> // sure?</li>
+<li><code>f() ≠ f () == [f ø]</code> // function invocation f() vs empty
+list () // sure?</li>
+<li>friends=[bob tom]; 1.friend is bob // dot followed by symbol is
+index, otherwise number+dot is number 1.0 !</li>
+<li>“abc”#3 = ‘c’ # yet with whitespace, ‘#’ indicates comments</li>
+<li><code>a b c:d</code> versus
+<code>to skin a cat : do something</code> vs <code>a :symbol</code></li>
+<li><code>a.b ≠ a. b</code> property versus statement separator</li>
+</ul>
+<p>Many <a href="border-case.html">border-case</a>s might be ill defined:</p>
+<ul>
+<li><code>(a b):c == a b : c ≠ a b:c == a (b:c)</code></li>
+<li><code>while a &lt; b : c ≠ while a &lt; b:c == while a &lt; (b:c)</code></li>
+<li><code>a{x} b{x} ≠ a{x}b{x}</code> ( meta field b belongs to
+<a href="property.html">property</a> a, example: age{value}set{value=it} ) todo: what did I mean
+in the last example? getters and setters? age{get{} set{}}??</li>
+</ul>
+<p>Problematic is the <a href="ambiguity.html">ambiguity</a> in mixing ‘and’, comma and other
+operators</p>
+<pre><code>x, y == a, b 
+x, (y == a) , b   </code></pre>
+<p>The last reading is sometimes the desired one, e.g. in argument
+lists</p>
+<p>x, y as point == x, (y as point) or x, y as point == (x, y) as point
+== point(x,y)</p>
+<p>```</p>
+<p>Since these are border cases there is a compiler
+pragma/directive/flag to switch to each desired behavior on demand<br />
+e.g. when parsing lisp, sexp, wasp, csv or kdl <a href="data.html">data</a>; each such mode
+is also activated by file extension.</p>
+<p>Done: compiler warning: a {x} =&gt; DYM a{x} or a,{x}<br />
+Done: make +1 compiler warning: who writes unnecessary plus signs?<br />
+Todo: general warning or error as in swift “inconsistent white space on
+both sides of operator”</p>
+<h1 id="significant-colon">significant colon?</h1>
+<p>one day we MAY want to make type declaration keywords such as
+<code>struct point</code> a structural feature
+<code>point:{x:int y:int} point{1 2}</code></p>

@@ -1,0 +1,55 @@
+<p>The pipe operator chains function calls by passing the last result as
+argument to the next call, similar to bash:</p>
+<pre><code>2|square|root = root(square(2))
+square 2|root = root(square(2))</code></pre>
+<p>It is essentially the same as the dot notation in object oriented
+languages</p>
+<pre><code>2.square().root()
+
+2.square.root # if () are optional</code></pre>
+<p>The last notation is slightly ambiguous because of ambiguity between
+<code>(2.square).root</code> and <code>2.(square.root)</code> and the
+difference between dangling <a href="active.html">active</a> objects and immediate
+<a href="evaluation.html">evaluation</a> <code>2.square.root()</code>.</p>
+<p>The big difference to the classical dot ‘.’ operation is that piping
+is an algebraic operation on the function space. Similar to Sum Types,
+chained functions are assignable objects</p>
+<pre><code>printSum := sum|print
+printSum 1 2 3  
+# &quot;6&quot;</code></pre>
+<p>If the result is a <a href="multi-value.html">multi-value</a> or list, naturally it will be
+passed as list to the next function when applicable or otherwise via
+<a href="broadcast.html">broadcast</a>.</p>
+<h1 id="forward-and-backward-inverse-function-chaining">Forward and
+backward “inverse” function chaining:</h1>
+<p>The argument to such composed function can appear on the left or
+right side: <code>x|f|g := g(f(x))</code> <code>f|g x := g(f(x))</code>
+<code>x (f|g) := g(f(x))</code> <code>(f|g)(x) := g(f(x))</code></p>
+<p>Pipe sigils ‘|’ and ‘&amp;’ have very similar semantics:
+<code>(a|b)(c) := b(a(c))</code>
+<code>(a&amp;b)(c) := b(a(c))</code></p>
+<p>While natural for English speakers and beginners, the following
+syntax is likely unfamiliar for long time programmers:</p>
+<p><code>square &amp; print 2 == print(square(2))</code></p>
+<p>Unfortunately the Natural Language representations of such command
+chaining is a bit tricky and uses often ambiguous operator ‘and’ ‘comma’
+and ‘then￼’:</p>
+<p>wash and rinse the cup, then dry, polish and store it.</p>
+<p>Ideally this can someday be parsed as</p>
+<p>cup | wash | rinse | dry | polish | store or with cup: wash | rinse |
+dry | polish | store</p>
+<p>It doesn’t help that there is some ambiguity confusion about natural
+language and mathematical and | or.</p>
+<p>See <a href="monad.html">monad</a> for abstract handling of optional types and
+extensions.</p>
+<p>Todo: Conceptually clarify potential identity, similarities and
+differences between <code>dot et pipe . &amp; |</code> vs
+and/or/then/after/before function composition.</p>
+<p>With <a href="significant-whitespace.html">significant-whitespace</a> one could also use the pipe operator
+to denote <a href="lambda.html">lambda</a> functions but that is doubtful.</p>
+<h1 id="mirror-operator">mirror operator</h1>
+<p>The pipe operator can be understood to mirror the order of arguments
+to a function. <code>x | f := f x == f(x)</code></p>
+<h1 id="todo-right-side-application">todo right side application</h1>
+<p>would (x)f ever be valid syntax? would it be equivalent to f(x)?
+would it be desirable?</p>
