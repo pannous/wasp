@@ -44,7 +44,7 @@ bool assert_equals_x(int64 a, int64 b, chars context = "");
 bool assert_equals_x(double a, double b, chars context = "");
 //bool assert_equals_x(float a, float b, chars context = "");
 
-//bool assert_equals_x(Node a, int b, chars context = "");
+bool assert_equals_x(Node a, int b, chars context = "");
 
 //bool assert_isx(chars wasp, Node expect);
 

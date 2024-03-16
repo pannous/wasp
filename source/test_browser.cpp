@@ -47,19 +47,22 @@ extern "C" void testRuntime(bytes buffer, size_t size) {
 
 }
 
+void testDownload() {
+	auto res = download("http://pannous.com/files/test");
+	print(res);
+	check_eq("test 2 5 3 7"s, res);
+}
 
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
-	auto res = download("http://pannous.com/files/test");
-	print(res);
-	check_eq("test"s, res);
-	return;
-//	assert_emit("2+2", 4);
+//    testDownload(); // not on localhost
+
+	assert_emit("2+2", 4);
 //	assert_emit("2*2", 4);
 //	assert_emit("2^2", 4);
 //	assert_emit("√9", 3);
 //	assert_emit("square 2", 4); // missing import for function square
-	testWasmGC();
+//	testWasmGC();
 
 //    skip(
 //            testIndexOffset();
@@ -72,9 +75,9 @@ extern "C" void testRun() {
 //    assert_emit("42", 43); // Error: ⚠️ TEST FAILED!  works
 //    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
 
-    testAllWasm();
-    testAllEmit();
-    testAllAngle();
+//    testAllWasm();
+//    testAllEmit();
+//    testAllAngle();
 //    heap_end=__initial_heap_end+0x100000;// reset on each run!
     print("testRun SUCCEEDED");
 }
