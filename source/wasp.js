@@ -10,6 +10,7 @@ let WASP_RUNTIME = 'wasp-runtime.wasm'
 
 var RUNTIME_BYTES = null // for reflection or linking
 var needs_runtime = false;
+var run_tests = true; // todo NOT IN PRODUCTION!
 var app_module
 let kinds = {}
 
@@ -87,9 +88,11 @@ let imports = {
         async_yield: x => { // called from inside wasm, set callback handler resume before!
             throw new YieldThread() // unwind wasm, reenter through resume() after run_wasm
         },
-        run_wasm: async (x, y) => {
+        /* run_wasm: async (x, y) => { */ // Cannot convert [object Promise] to a BigInt
+        run_wasm: (x, y) => {
             try {
-                return await run_wasm(x, y)
+                run_wasm(x, y) // todo: await
+                return BigInt(42)
             } catch (ex) {
                 wasm_buffer = buffer.subarray(x, x + y)
                 // download(wasm_buffer, "emit.wasm", "wasm") // resume
@@ -682,6 +685,7 @@ function wasp_ready() {
     // load_runtime_bytes()
     register_wasp_functions(instance.exports)
     // testRun1()
+    if (run_tests)
     setTimeout(test, 1);// make sync
 }
 
@@ -768,8 +772,8 @@ async function run_wasm(buf_pointer, buf_size) {
         // console.log("GOT nod ", nod)
         // result = nod.Value()
     }
-    console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM emit.WASM
     if (expect_test_result) {
+        console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM emit.WASM
         if (Array.isArray(expect_test_result) && Array.isArray(result)) {
             for (let i = 0; i < result.length; i++)
                 check(+expect_test_result[i] == +result[i])
