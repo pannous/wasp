@@ -5,9 +5,11 @@
     <meta name="title" content="Wasp compiler example" />
     <meta name="color-scheme" content="dark light" >
     <!--<script src="https://unpkg.com/wabt/index.js" type="text/javascript"></script>-->
-    <script async src="script/demangle.js" type="text/javascript"></script> <!-- todo get rid of this dependency -->
-    <script async src="script/wasp.js" type="text/javascript"></script>
-    <script async src="script/wasp_tests.js" type="text/javascript"></script>
+    <script type="importmap">{ "imports": { "script": "/wasp/docs/assets/script" } }</script>
+    <script async src="assets/script/demangle.js" type="text/javascript"></script>
+    <!-- todo get rid of this dependency -->
+    <script async src="assets/script/wasp.js" type="text/javascript"></script>
+    <script async src="assets/script/wasp_tests.js" type="text/javascript"></script>
 </head>
 <body>
 <textarea id="code_input" onkeyup="compile_and_run(value)">√9</textarea><br/>
