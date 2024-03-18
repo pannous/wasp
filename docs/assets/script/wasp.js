@@ -686,7 +686,7 @@ function wasp_ready() {
     register_wasp_functions(instance.exports)
     // testRun1()
     if (run_tests)
-    setTimeout(test, 1);// make sync
+        setTimeout(test, 1);// make sync
 }
 
 function load_runtime() {
