@@ -242,17 +242,17 @@ struct c_io_vector {
 
 //#if WASI or MY_WASI
 
-#if WASMEDGE
+//#if WASMEDGE
 // Fucking WasmEdge doesn't support wasi_unstable
 #define WASI(import) __attribute__((import_module("wasi_snapshot_preview1"), import_name(#import))) extern
-#else
-#define WASI(import) __attribute__((import_module("wasi_unstable"), import_name(#import))) extern "C"
+//#else
 // Fucking wasmer doesn't support wasi_snapshot_preview1
-#endif
+//#define WASI(import) __attribute__((import_module("wasi_unstable"), import_name(#import))) extern "C"
+//#endif
 
-#if not WASM
-[[noreturn]]
-#endif
+//#if not WASM
+//[[noreturn]]
+//#endif
 WASI(proc_exit)
 void proc_exit(int exitcode);
 

@@ -33,6 +33,22 @@ WasmEdge_Result ExternSquare(void *Data,
     return WasmEdge_Result_Success;
 }
 
+
+WasmEdge_Result fd_write_wrap(void *Data,
+                              const FrameContext *CallFrameCxt,
+                              const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    printf("fd_write_wrap TODO\n");
+    return WasmEdge_Result_Success;
+}
+
+
+WasmEdge_Result proc_exit_wrap(void *Data,
+                               const FrameContext *CallFrameCxt,
+                               const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    exit(WasmEdge_ValueGetI32(In[0]));
+    return WasmEdge_Result_Success;
+}
+
 WasmEdge_Result getElementById(void *Data,
                                const FrameContext *CallFrameCxt,
                                const WasmEdge_Value *In, WasmEdge_Value *Out) {
@@ -74,6 +90,48 @@ WasmEdge_Result ExternAdd(void *Data,
     return WasmEdge_Result_Success;
 }
 
+WasmEdge_ModuleInstanceContext *CreateWasiModule() {
+    // wasi_snapshot_preview1 is BUILTIN
+    auto wasi_module_name = WasmEdge_StringCreateByCString("wasi_unstable");
+    WasmEdge_ModuleInstanceContext *HostModuleWasi = WasmEdge_ModuleInstanceCreate(wasi_module_name);
+    WasmEdge_String HostName;
+    WasmEdge_FunctionTypeContext *HostFType = NULL;
+    WasmEdge_FunctionInstanceContext *HostFunc = NULL;
+
+    {
+        enum WasmEdge_ValType P[1], R[0];
+        P[0] = WasmEdge_ValType_I32;// charp (id:string)
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 0);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, proc_exit_wrap, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("proc_exit");
+        WasmEdge_ModuleInstanceAddFunction(HostModuleWasi, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+
+    {
+//        void fd_write_host(int FD, char **strp, int *len, int *nwritten) {
+        enum WasmEdge_ValType P[2], R[1];
+//        Expected: FuncType {params{i32 , i32 , i32 , i32} returns{i32}} ,
+//        Got:      FuncType {params{i32 ,  ,  , } returns{i32}}
+// TODO we had the same shit before new WasmEdge_ValType_I32.clone??
+        P[0] = WasmEdge_ValType_I32;
+        P[1] = WasmEdge_ValType_I32;
+//        P[2] = WasmEdge_ValType_I32;
+//        P[3] = WasmEdge_ValType_I32;
+        R[0] = WasmEdge_ValType_I32; // return value???
+        HostName = WasmEdge_StringCreateByCString("fd_write");
+        HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fd_write_wrap, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        WasmEdge_ModuleInstanceAddFunction(HostModuleWasi, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+    return HostModuleWasi;
+}
+
+
+
 // Helper function to create the "extern_module" module instance.
 WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContext *HostMod = 0) {
     WasmEdge_String HostName;
@@ -81,6 +139,7 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     WasmEdge_FunctionInstanceContext *HostFunc = NULL;
     HostName = WasmEdge_StringCreateByCString("env");// extern_module
     if (not HostMod) HostMod = WasmEdge_ModuleInstanceCreate(HostName);
+
     {
         enum WasmEdge_ValType P[2], R[1];
         R[0] = WasmEdge_ValType_I64;
@@ -168,16 +227,14 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(conf, NULL);
 
     // link other modules
-
-//    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(0, 0); // no wasi
-
-
     auto HostMod = CreateExternModule();
     WasmEdge_Result ok = WasmEdge_VMRegisterModuleFromImport(VMCxt, HostMod);
     if (not WasmEdge_ResultOK(ok)) {
         auto err = WasmEdge_ResultGetMessage(ok);
         printf("Error message: %s\n", err);
     }
+//    auto WasiMod = CreateWasiModule();
+//    WasmEdge_VMRegisterModuleFromImport(VMCxt, WasiMod);
 
     WasmEdge_Value Params[1];
     WasmEdge_Value Returns[1];
@@ -223,6 +280,9 @@ int64 run_wasm2(char *wasm_path) {
     // link other modules
     auto HostMod = CreateExternModule(nullptr);
     WasmEdge_VMRegisterModuleFromImport(VMCxt, HostMod);
+    auto WasiMod = CreateWasiModule();
+    WasmEdge_VMRegisterModuleFromImport(VMCxt, WasiMod);
+
 //	WasmEdge_ValueGenExternRef(AddFunc);
 
 //	WasmEdge_VMGetFunctionList(context,)

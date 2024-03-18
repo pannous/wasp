@@ -3315,8 +3315,10 @@ void tests() {
 
 
 void testFibonacci() {
-	assert_emit("fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)\n"
-	            "fib(10)", 55);
+//	assert_emit("fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)\nfib(10)", 55);
+//	assert_emit("fib(n) := n < 2 ? n : fib(n - 1) + fib(n - 2)\nfib(10)", 55);
+//	assert_emit("fib = it < 2 ? 1 : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
+	assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
 }
 
 // 2021-10 : 40 sec for Wasm3
