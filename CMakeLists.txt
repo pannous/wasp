@@ -300,6 +300,7 @@ if (CONSOLE)
     message(CONSOLE)
     ADD_DEFINITIONS(-DCONSOLE)
     ADD_DEFINITIONS(-DUSE_READLINE)
+    link_libraries(readline)
     set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp) # Needs to come after, because conflicting Function symbol
 endif ()
 
@@ -750,14 +751,12 @@ if (NOT WASM)
     endif ()
 endif ()
 
-
+# todo CONSOLE checke above!?
 if (CONSOLE AND NOT WEBAPP)
     find_package(Readline)
-    #    find_library(Readline)
+    find_library(readline NAMES Readline)
     if (WASM)
         TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
-    else ()
-        link_libraries(wasp readline)
     endif ()
 endif ()
 

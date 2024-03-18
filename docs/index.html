@@ -1,24 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"/>
-    <meta name="title" content="Wasp compiler example" />
-    <meta name="color-scheme" content="dark light" >
-    <!--<script src="https://unpkg.com/wabt/index.js" type="text/javascript"></script>-->
-    <script type="importmap">{ "imports": { "script": "/wasp/docs/assets/script" } }</script>
+    <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src script-src 'self' 'unsafe-inline'  file://*"/> -->
+    <script src='wasp.js'></script>
+
     <script async src="assets/script/demangle.js" type="text/javascript"></script>
     <!-- todo get rid of this dependency -->
-    <script async src="assets/script/wasp.js" type="text/javascript"></script>
-    <script async src="assets/script/wasp_tests.js" type="text/javascript"></script>
+
 </head>
 <body>
-<textarea id="code_input" onkeyup="compile_and_run(value)">√9</textarea><br/>
-<!-- <input id="input_file" onselect="readFile()" type="file"/> -->
-<button onclick="compile_and_run(code_input.value)">▶️ RUN</button>
-<!--<button onclick="test()">TEST Node</button>-->
-<!--<button onclick="testCurrent()">TESTS</button>-->
-<button onclick="results.value=''">CLEAR</button>
-<br/>
-<textarea cols="80" id="results" placeholder="press run to compile and see result" rows="28"></textarea>
+
+<div>
+    <h1>🐝 Wasp </h1>
+    <h2>A new programming language for wasm</h2>
+    <label for="examples">Choose an Example:</label>
+    <select id="examples" onchange="code.value = exampleCode[value];compile_and_run(code.value)">
+        <option value="math">Math</option>
+        <option value="lists">Lists</option>
+        <option value="hello">Hello World</option>
+        <option value="fibonacci">Fibonacci</option>
+        <option value="paint2d">Paint 2D</option>
+        <option value="scene3d">Scene 3D</option>
+    </select>
+    <script>
+        let exampleCode = {
+            hello: `"Hello, World!"`,
+            math: `√3^2`,
+            lists: `a = [1, 2, 3]; a[1] == a#2`,
+            fibonacci: `fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)\n\nfib(10)`,
+            paint2d: `ctx.fillStyle = 'red'; ctx.fillRect(10, 10, 150, 100)`,
+            scene3d: `// draw a red rectangle\nctx.fillStyle = 'red';\nctx.fillRect(10, 10, 150, 100);`
+        }
+    </script>
+
+    <br/>
+    <textarea id="code" onkeyup="compile_and_run(value)">√3^2</textarea>
+    <br/>
+    <input id="input_file" onselect="readFile()" type="file"/>
+    <button onclick="compile_and_run(code.value)">RUN</button>
+    <button onclick="results.value=''">CLEAR</button>
+    <br/>
+    <textarea cols="80" id="results" placeholder="press run to compile and see result" rows="8">
+</textarea>
+</div>
 <canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
+
+
+<style>
+    html, body {
+        width: 100%;
+        height: 100%;
+        /*margin: 0;
+        padding: 0;*/
+        overflow: hidden;
+    }
+</style>
+
+<script type="text/javascript">
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    // draw a red rectangle
+    // ctx.fillStyle = 'red';
+    // ctx.fillRect(10, 10, 150, 100);
+</script>
+
 </body>
+
