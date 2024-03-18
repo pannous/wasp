@@ -3314,64 +3314,10 @@ void tests() {
 }
 
 
-void testWasmGC() {
-	return;
-//    assert_emit("y=(1 4 3)[1]", 4);
-//    assert_is("x=(1 4 3);x#2", 4);
-//assert_emit("42",42);
-	use_wasm_structs = true;
-	use_wasm_strings = true;
-	use_wasm_arrays = true;
-//    assert_emit("x=(1 2 3)", 0);
-	Node fun;
-	fun.name = "first";
-	fun.kind = declaration; // ≠ functor;
-	fun.type = types["u8"];
-
-	Node fun_type;
-	fun.name = "my_callback";
-	fun.kind = clazz;
-//	fun.kind = functor; todo
-
-//	testGcFunctionReferences();
-	assert_emit("(type $int_callback (func (result i32)))", fun_type); // e.g. random provider
-	assert_emit("(type $my_notification (func ))", fun_type);
-	assert_emit("(type $my_callback (func (param i32) (result i32)))", fun_type);
-//	testGcFunctionReferenceParameters();
-//	testGcReferenceParameters();
-	assert_emit("def first(array);", fun);
-	assert_emit("def first(array<u8>);", fun);
-	assert_emit("def first(list<u8>);", fun);
-	assert_emit("x=(5 4 3);u8 first(list<u8> y){y#1};first(x)", 5);
-	assert_emit("x=(5 6 7);#x", 3);
-	assert_emit("x=(5 6 7);x#2", 6);
-	assert_emit("'world'#1", 'w');
-	assert_emit("y=(1 4 3)#2", 4);
-	assert_emit(("id(3*42)≥2*3"), 1)
-	assert_emit("#'abcde'", 5);
-	assert_emit("x='abcde';#x", 5);
-	assert_emit("x=(1 2 1 2 1);#x", 5);
-//	assert_emit("#(1 2 1)", 3);
-
-	assert_emit("x='abcde';x#4='f';x[3]", 'f');
-	assert_emit("42", 42);// basics
-//    assert_emit("x=(1 2 3);x[1]", 2);
-//    assert_emit("x=(1 2 3);2", 2);
-//    assert_emit("(1 2 3)[1]", 2);
-//    exit(0);
-//    assert_emit("x=[1 2 3];x[1]", 2);
-//    assert_emit("x=[1 2 3];x[1]=4;x[1]", 4);
-	assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
-
-	assert_emit("'abcd'", "abcd");
-	assert_emit("'ab'+'cd'=='abcd'", 1);
-	assert_emit("abcde='fghij';42", 42);
-//    assert_emit("abcd='fghij';#abcd", 5);
-//    assert_emit("abcde='fghij'", "fghij"); // main can't return stringrefs!
-
-//    exit(0);
+void testFibonacci() {
+	assert_emit("fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)\n"
+	            "fib(10)", 55);
 }
-
 
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
@@ -3380,6 +3326,7 @@ void testWasmGC() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 void testCurrent() {
+	testFibonacci();
 //	initTypes();
 //	check_eq(types["u8"],types["byte"]);
 //	testUnicode_UTF16_UTF32();
