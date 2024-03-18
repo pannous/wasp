@@ -886,6 +886,10 @@ void testWasmRuntimeExtension() {
     )
 }
 
+void testStringConcatWasm() {
+    assert_emit("'Hello, ' + 'World!'", "Hello, World!");
+}
+
 void testStringIndicesWasm() {
     assert_emit("'abcde'#4", 'd');//
     assert_emit("x='abcde';x#4", 'd');//
@@ -1350,6 +1354,7 @@ void testLogarithm2() {
 
 
 void testAllWasm() {
+    testStringConcatWasm();
 	testWasmGC();
 //	data_mode = false;
     testWasmMemoryIntegrity();

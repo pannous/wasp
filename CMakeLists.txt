@@ -64,7 +64,7 @@ if (NOT WASM)
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
-        # SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         #        SET(WASMEDGE 0)
         # SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.

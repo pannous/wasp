@@ -76,6 +76,14 @@ function terminate() {
     // if(sure)throw
 }
 
+function createHtml(parent, innerHtml) {
+    let element = document.createElement("div"); // todo tag
+    element.innerHTML = string(innerHtml);
+    if (!parent) parent = document.body;
+    parent.appendChild(element);
+    return element;
+}
+
 var resume; // callback function resuming after run_wasm finished
 class YieldThread { // unwind wasm, reenter through resume() after run_wasm finished
 }
@@ -104,9 +112,58 @@ let imports = {
                 error("already expecting value " + expect_test_result + " -> " + x)
             expect_test_result = new node(x).Value()
         },
+        // HTML DOM JS functions
         download,
         init_graphics: nop, // canvas init by default
         requestAnimationFrame: nop, // todo
+        getDocumentBody: () => document.body,
+        createHtml,
+        addScript: (scriptContent) => {
+            let script = document.createElement('script');
+            script.textContent = string(scriptContent);
+            console.log("script", script.textContent)
+            document.body.appendChild(script);
+        },
+        createHtmlElement: (tag, id) => {
+            let element = document.createElement(string(tag));
+            element.id = string(id);
+            document.body.appendChild(element);
+            return element;
+        },
+        getElementById: id => {
+            print("getElementById", id, string(id))
+            return document.getElementById(string(id))
+        },
+        // getExternRefPropertyValue: async (ref, prop0) => { async not working in wasm!
+        getExternRefPropertyValue: (ref, prop0) => {
+            let prop = string(prop0)
+            print("CALLING getExternRefPropertyValue", ref, prop)
+            if (ref && typeof ref[prop] !== 'undefined') {
+                print("getExternRefPropertyValue OK ", ref, prop, ref[prop])
+                return smartResult(ref[prop])
+                // return String(ref[prop])
+            } else if (ref && typeof ref.getAttribute === 'function') {
+                // check attribute
+                let attribute = ref.getAttribute(prop);
+                print("getExternRefPropertyValue OK ", ref, prop, attribute)
+                // return String(attribute)
+                return smartResult(attribute)
+            } else {
+                throw new Error(`'${prop}' is not a property of the provided reference`);
+            }
+        },
+        invokeExternRef: (ref, fun, params) => {
+            print("invokeExternRef", ref, fun, params)
+            // Check if 'fun' is a valid method of 'ref'
+            if (ref && typeof ref[fun] === 'function') {
+                // Call the method with the provided parameters
+                return ref[fun](...params);
+            } else {
+                // Handle the case where 'fun' is not a valid method
+                throw new Error(`'${fun}' is not a function of the provided reference`);
+            }
+        },
+
         exit: terminate, // should be wasi.proc_exit!
         pow: (x, y) => x ** y,
         puti: x => console.log(x), // allows debugging of ints without format String allocation!
@@ -736,19 +793,21 @@ async function run_wasm(buf_pointer, buf_size) {
         needs_runtime = false
 
     if (needs_runtime && use_big_runtime) {
-        app = await WebAssembly.instantiate(wasm_buffer, {env: Wasp}, memory) // todo: tweaked imports if it calls out
+        // app = await WebAssembly.instantiate(wasm_buffer, {env: Wasp}, memory) // todo: tweaked imports if it calls out
+        app = await WebAssembly.instantiate(wasm_buffer, imports, memory) // todo: tweaked imports if it calls out
     } else if (needs_runtime) {
         print("needs_runtime runtime loading")
         if (!RUNTIME_BYTES) // Cannot compile WebAssembly.Module from an already read Response TODO reuse!
             RUNTIME_BYTES = await fetch(WASP_RUNTIME)
-        let runtime_instance = await WebAssembly.instantiateStreaming(RUNTIME_BYTES, {
-            wasi_unstable: {
-                fd_write,
-                proc_exit: terminate, // all threads
-                args_get: nop, // ignore the rest for now
-                args_sizes_get: x => 0,
-            },
-        })
+        let runtime_instance = await WebAssembly.instantiateStreaming(RUNTIME_BYTES, imports)
+        // {
+        // wasi_unstable: {
+        //     fd_write,
+        //     proc_exit: terminate, // all threads
+        //     args_get: nop, // ignore the rest for now
+        //     args_sizes_get: x => 0,
+        // },
+
         print("runtime loaded")
         // addSynonyms(runtime_instance.exports)
         let runtime_imports = {env: runtime_exports} // runtime_instance.exports

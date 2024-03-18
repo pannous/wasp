@@ -17,9 +17,9 @@ cd -
 cd cmake-build-debug/
 make || ninja -v
 cd -
-cd cmake-build-default/       
-make || ninja -v
-cd -
+# cd cmake-build-default/       
+# make || ninja -v
+# cd -
 cd cmake-build-release/       
 make || ninja -v
 cp wasp.wasm ../bin/mac/wasp

@@ -557,6 +557,7 @@ Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
 [[nodiscard]]
 Code emitScript(Node &node, Function &function) {
 	Code code;
+	printf("emitString node %s", node.serialize().data);
 	code.add(emitString(node, function));
 	code.add(emitCall(*new Node("addScript"), function));
 	return code;

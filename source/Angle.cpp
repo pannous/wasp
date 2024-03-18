@@ -1906,8 +1906,12 @@ void preRegisterFunctions() {
 
 	functions["proc_exit"].import();
 	functions["proc_exit"].signature.add(int32, "exit_code");// file descriptor
+//	wasp-runtime.wasm needs to be recompiled too!
+#if WASMEDGE
+	functions["proc_exit"].module = new Module{.name="wasi_snapshot_preview1"};
+#else
 	functions["proc_exit"].module = new Module{.name="wasi_unstable"};
-
+#endif
 	functions["fd_write"].import();
 	functions["fd_write"].signature.add(int32, "fd");// file descriptor
 	functions["fd_write"].signature.add(pointer, "iovs");
