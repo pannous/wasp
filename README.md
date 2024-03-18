@@ -85,7 +85,7 @@ flags virtues{
   safe
 }
 
-virtues wasp_goal = fast + safe
+wasp virtues  = fast + safe
 ```
 
 No need for any bindgen, unless interfacing with components of other languages.
