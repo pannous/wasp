@@ -89,7 +89,7 @@ virtues wasp_goal = fast + safe
 ```
 
 No need for any bindgen, unless interfacing with components of other languages.
-In fact we hop to promote wit to a universal header file format.
+In fact we hope to promote wit to a universal header file format.
 
 Wasp and Angle are **free of dependencies** (other than gcc, if the runtime is to be compiled from scratch).
 Only some optional features can make use of external dependencies:
