@@ -166,6 +166,7 @@ let imports = {
 
         exit: terminate, // should be wasi.proc_exit!
         pow: (x, y) => x ** y,
+        print: x => console.log(string(x)),
         puti: x => console.log(x), // allows debugging of ints without format String allocation!
         js_demangle: x => x,
         _Z7compile6Stringb: nop, // todo bug! why is this called?

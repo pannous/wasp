@@ -44,14 +44,14 @@
     <button onclick="compile_and_run(editor.getValue())">RUN</button>
     <button onclick="results.value=''">CLEAR</button>
     <br/>
-    <textarea cols="80" id="results" placeholder="RESULT\npress run to compile and see result" rows="8">
+    <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="8">
     </textarea>
 
 
     <script>
         let exampleCode = {
             hello: `"Hello, World!" // last item in root block is its return value, which is printed"`,
-            math: `√3^2`,
+            math: `√9^2`,
             lists: `a = [1, 2, 3]; a[1] == a#2`,
             lists2: `a = [1, 2] + [3, 4]; a[2] == a#3 == 3`,
             strings: `a = "Hello " +"🌎"; a#7 == '🌎'`,
@@ -80,6 +80,9 @@
             mode: "javascript",
             // theme: "monokai",
             extraKeys: {"Ctrl-Space": "autocomplete"}
+        });
+        editor.on('change', function () {
+            compile_and_run(editor.getValue())
         });
     </script>
 
