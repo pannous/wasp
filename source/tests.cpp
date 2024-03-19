@@ -3321,6 +3321,12 @@ void testFibonacci() {
 	assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
 }
 
+void pleaseFix() {
+	assert_emit("π/2^2", pi / 4);
+	assert_emit("(π/2)^2", pi / 4);
+
+}
+
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
