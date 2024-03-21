@@ -1592,8 +1592,8 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 #endif
 	if (contains(funclet_list, name)) {
 #if WASM
-		//        auto funclet = getWaspFunclet(name);// todo!
-				todo("getWaspFunclet");
+		//      auto funclet = getWaspFunclet(name);// todo get library function signature from wasp
+				todo("getWaspFunclet get library function signature from wasp");
 				return 0;
 #else
 		Module &funclet_module = read_wasm(findFile(name, "lib"));
