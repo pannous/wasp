@@ -1,6 +1,6 @@
 let exampleCode = {
     hello: `"Hello, World!" // last item in root block is its return value, which is printed"`,
-    math: `√9^2`,
+    math: `√π^2`,
     lists: `a = [1, 2, 3]; a[1] == a#2`,
     lists2: `a = [1, 2] + [3, 4]; a[2] == a#3 == 3`,
     strings: `a = "Hello " +"🌎"; a#7 == '🌎'`,
@@ -11,7 +11,7 @@ let exampleCode = {
     paint2d: `ctx.fillStyle = 'red'; ctx.fillRect(10, 10, 150, 100)`,
     html: `html: h1: "Hello, World!"`,
     // html: `html: <h1>Hello, World!</h1>`, // operator missing: <
-    alert: `script: alert("Hello, World!")`,
+    alert: 'script: alert("Hello, World!")',
     javascript: `html: div id="app"; app.innerHTML = "Hello, World!"`,
     draw_sine: `// sine wave\nfor i in 0..1000\n  ctx.lineTo(i, 100 + Math.sin(i / 10) * 50)\nctx.stroke()`,
     sine: `

@@ -3506,12 +3506,12 @@ Code &emit(Node &root_ast) {
 	            + funcTypeSection1 // signatures
 	            + memorySection1 // Wasm MVP can only define one memory per module WHERE?
 	            + emitStringSection() // wasm stringref table
-	            + globalSection1
+	              + globalSection1 // heap_end, etc
 	            + exportSection1
 	            + codeSection1 // depends on importSection, yields data for funcTypeSection!
 	            + emitDataSection()
 	            //			+ linkingSection()
-//	            + emitNameSection()
+	              + emitNameSection()
 //	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
 	;
