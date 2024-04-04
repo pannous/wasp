@@ -44,7 +44,7 @@ if (X86_64)
     if (LINUX)
         LINK_DIRECTORIES(bin/linux/lib.x86)
     else ()
-    LINK_DIRECTORIES(bin/mac/lib.x86)
+        LINK_DIRECTORIES(bin/mac/lib.x86)
     endif ()
 else ()
     LINK_DIRECTORIES(lib/)
@@ -61,6 +61,10 @@ if (EMSCRIPTEN)
     ADD_DEFINITIONS(-DEMSCRIPTEN)
 endif ()
 
+if (WASM)
+    #    if (NOT RUNTIME_ONLY)
+    set(MY_WASM 1) # host extensions like run_wasm()! todo remove for standalone wasmtime wasp.wasm => write to file
+endif ()
 
 if (NOT WASM)
     set(CONSOLE 1)
@@ -114,12 +118,13 @@ if (WASM)
         ADD_COMPILE_FLAG(-gdwarf-5)
         ADD_COMPILE_FLAG(-gembed-source)
         ADD_COMPILE_FLAG(-fforce-dwarf-frame)
+        #        Stripping the “name” section: In large projects, especially those with a lot of C++ template usage, the WebAssembly “name” section can be very large. In our example it's only a tiny fraction of the overall file size (see the output of llvm-objdump above) but in some cases it can be very significant. If the “name” section of your application is very large, and the dwarf debug information is sufficient for your debugging needs, it can be advantageous to strip the “name” section:
     endif ()
     #    set(RUNTIME_ONLY 1) NO, we want compiler version too!
     #    ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (MY_WASM)
         #        execute_process(COMMAND node clean.js WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-        message("MY_WASM!")
+        message("MY_WASM! wasp compiler/runtime plus browser imports")
         ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
     endif ()
     if (NOT WASI AND NOT MY_WASI)
@@ -459,7 +464,6 @@ endif ()
 #
 # DIFFERENT TARGETS :
 if (WASM) # OR WASI)
-    MESSAGE("USING PURE WASM")
     message(WASM)
     ADD_DEFINITIONS(-DWASM)
     if (EMSCRIPTEN)
@@ -467,6 +471,7 @@ if (WASM) # OR WASI)
         set(__aarch64__ 1)
         ADD_DEFINITIONS(-D__aarch64__)
     else ()
+        MESSAGE("USING PURE WASM without emscripten")
         include(wasm.toolchain.cmake)
         SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
     endif ()
@@ -523,7 +528,7 @@ if (WASM) # OR WASI)
     endif ()
     if (DEBUG)
         ADD_COMPILE_FLAG("-O0")
-        ADD_COMPILE_FLAG("-g")
+        #        ADD_COMPILE_FLAG("-g") # DWARF redundant above
         #        ADD_COMPILE_FLAG("-Oz") # makes wasm Linking SLOOW! OK keeps variable names! DWARF only in emcc
         #        ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
         #        the DWARF section information/references are invalid after wasm-pack, wasm-opt or any other tools,
