@@ -352,7 +352,7 @@ function demangle(name) {
 // .cjs
 module.exports = {demangle}
 module.exports.default = demangle
-exports.default = demangle
+compiler_exports.default = demangle
 
 // .mjs
 // export const demangle = demangle;

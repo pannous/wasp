@@ -3,22 +3,27 @@
 #include "wasm_reader.h"
 #include "wasm_helpers.h"
 #if INCLUDE_MERGER
-
 #include "wasm_merger.h"
-
 #endif
-
 #include "wasm_emitter.h"
-
 #import "asserts.h"
-
 #if WASM or WEBAPP
 #define assert_throws(αα)
 #else
+
 #define assert_throws(αα)  {print(#αα);debug_line();bool old=panicking;try{ \
 panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#αα);backtrace_line(); \
 }catch(chars){}catch(String*){}catch(...){};panicking=old;}
 #endif
+
+void testRange() {
+    assert_emit("0..3", Node(0, 1, 2));
+    assert_emit("0...3", Node(0, 1, 2, 3));
+    assert_emit("0 to 3", Node(0, 1, 2, 3));
+    assert_emit("[0 to 3]", Node(0, 1, 2, 3));
+//    assert_emit("(0 to 3)", Node(1,2)); open intervals nah
+    assert_emit("range 1 3", Node(1, 2, 3));
+}
 
 void testMergeGlobal() {
 #if INCLUDE_MERGER

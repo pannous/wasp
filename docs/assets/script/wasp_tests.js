@@ -49,7 +49,7 @@ function backtrace_line(msg) {
 
 function testParse() {
     let a = parse("a : (b ,c)")
-    prints(exports.serialize(a))
+    prints(compiler_exports.serialize(a))
     // nod.debug()
     check(a.name == "a")
     check(a.length = 2)
@@ -81,7 +81,7 @@ function testParse() {
 
 function testString() {
     backtrace_line();
-    let ok = exports.testFromJS(string("test from JS"));
+    let ok = compiler_exports.testFromJS(string("test from JS"));
     console.log(string(ok))
     prints(ok)
     check(string(ok) === "ok from WASP")
@@ -91,22 +91,22 @@ function testString() {
 function testReverse() {
     let cs = chars("abcd")
     // exports.reverseInPlace(cs, 4)
-    exports._Z14reverseInPlacePci(cs, 4)
+    compiler_exports._Z14reverseInPlacePci(cs, 4)
     check(chars(cs) === "dcba")
-    exports.put_string(string("abcd -> dcba full circle"))
+    compiler_exports.put_string(string("abcd -> dcba full circle"))
     console.log("TEST OK: testReverse")
 }
 
 function testMemoryDiff() {
     let cs = chars("abcd")
     copy_of_last_state = memory.buffer.slice(0, memory.length);//  heap_end
-    exports.reverseInPlace(cs, 4)
+    compiler_exports.reverseInPlace(cs, 4)
     binary_diff(copy_of_last_state, memory.buffer)
 }
 
 async function testRunAsync() {
     try {
-        let result = await exports.testRun();
+        let result = await compiler_exports.testRun();
         console.log("GOT FINAL RESULT", result)
         resume = true // tests done!
         STOP = 1
@@ -123,7 +123,7 @@ function testRun() {
     try {
         // resume = testRun // comeback here after first, 2ⁿᵈ … testRun
         print("testRun")
-        exports.testRun();// going from one test to the next WITHIN WASP!
+        compiler_exports.testRun();// going from one test to the next WITHIN WASP!
     } catch (x) {
         if (x instanceof YieldThread) {
             // print("test thread yielded, re-entering after run_wasm finished")
@@ -154,7 +154,7 @@ async function testAll() {
 
 async function assert_emit(command, expected) {
     expect_test_result = expected
-    let result = await exports.run(chars(command))
+    let result = await compiler_exports.run(chars(command))
     // console.log(chars(result)) // "need asyncify for result" ;)
     // return result
 }
@@ -183,7 +183,7 @@ async function wasp_tests() {
     testReverse();
     testParse();
     // testMemoryDiff();
-    exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
+    compiler_exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
 
     let runmode = 2
     switch (runmode) {
