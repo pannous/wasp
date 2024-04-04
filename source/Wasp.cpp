@@ -2020,7 +2020,7 @@ int main(int argc, char **argv) {
 	String args;
 	for (int i = 1; i < argc; ++i) args += i > 1 ? String(" ") + argv[i] : String(argv[i]);
 	String path = argv[0];
-	print("🐝 Wasp "s + version);
+	print("🐝 Wasp "s + wasp_version);
 //   String arg=extractArg(argv,argc);
 #if WASM
 	testCurrent();

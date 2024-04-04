@@ -1609,7 +1609,7 @@ Code emitOperator(Node &node, Function &context) {
 	if (name == "=")return emitSetter(node, first, context);// todo node.first dodgy
 	if (name == ".") return emitAttribute(node, context);
 //    if (name=="#" and node.length==1)return emitLength(node, context);
-//    if (name=="#" and node.length==2 and use_wasm_arrays)return emitWasmArrayGetter(node, context);
+//    if (name=="#" and node.length==2 and use_wasm_arrays  return emitWasmArrayGetter(node, context);
 //	if (name=="#" and node.length==2)return emitIndexPattern(node[0], node[1], context, false, unknown); elsewhere
 	if (name == "::=")return emitGetGlobal(node); // globals ASSIGNMENT already handled in analyze / globalSection()
 	if (node.length < 1 and not node.value.node and not node.next) {
@@ -3511,7 +3511,7 @@ Code &emit(Node &root_ast) {
 	            + codeSection1 // depends on importSection, yields data for funcTypeSection!
 	            + emitDataSection()
 	            //			+ linkingSection()
-	            + emitNameSection()
+//	            + emitNameSection()
 //	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
 	;

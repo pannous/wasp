@@ -5,7 +5,7 @@
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
 * */
 let Wasp = {}
-let WASP_FILE = 'wasp.wasm'
+let WASP_COMPILER = 'wasp.wasm'
 let WASP_RUNTIME = 'wasp-runtime.wasm'
 
 var RUNTIME_BYTES = null // for reflection or linking
@@ -48,6 +48,7 @@ function format(object) {
 }
 
 function error(msg) {
+    if (results) results.value = "⚠️ ERROR: " + msg + "\n";
     throw new Error("⚠️ ERROR: " + msg)
 }
 
@@ -667,7 +668,7 @@ getArguments = function (func) {
 function register_wasp_functions(exports) {
     // console_log("⚠️ register_wasp_functions DEACTIVATED")
     // return
-    exports = exports || instance.exports || runtime_exports
+    exports = exports || compiler_instance.exports || runtime_exports
     for (let name in exports) {
         if (name.startsWith("_Zl")) continue // operator"" literals
         let func = exports[name]
@@ -680,7 +681,7 @@ function register_wasp_functions(exports) {
             exports[demangled] = func
             if (!demangled.match("<") && !demangled.match("\\[")
                 && !demangled.match(":: ") && !demangled.match("~"))// no generics yet
-                instance.exports.registerWasmFunction(chars(demangled), chars(name)) // derive signature from name
+                compiler_instance.exports.registerWasmFunction(chars(demangled), chars(name)) // derive signature from name
         }
     }
 }
@@ -741,34 +742,34 @@ function wasp_ready() {
     // moduleReflection(wasm_data);
     loadKindMap()
     // load_runtime_bytes()
-    register_wasp_functions(instance.exports)
+    register_wasp_functions(compiler_instance.exports)
     // testRun1()
     if (run_tests)
         setTimeout(test, 1);// make sync
 }
 
 function load_runtime() {
-    wasm_data = fetch(WASP_FILE)
-    WebAssembly.instantiateStreaming(wasm_data, imports).then(obj => {
-            instance = obj.instance
-            exports = instance.exports
+    WASP_COMPILER_BYTES = fetch(WASP_COMPILER)
+    WebAssembly.instantiateStreaming(WASP_COMPILER_BYTES, imports).then(obj => {
+        compiler_instance = obj.instance
+        compiler_exports = compiler_instance.exports
             // global.
-            runtime_exports = exports
-            addSynonyms(exports)
-            HEAP = exports.__heap_base; // ~68000
-            DATA_END = exports.__data_end
+        runtime_exports = compiler_exports
+        addSynonyms(compiler_exports)
+        HEAP = compiler_exports.__heap_base; // ~68000
+        DATA_END = compiler_exports.__data_end
             heap_end = HEAP || DATA_END;
             heap_end += 0x100000
-            memory = exports.memory || exports._memory || memory
+        memory = compiler_exports.memory || compiler_exports._memory || memory
             buffer = new Uint8Array(memory.buffer, 0, memory.length);
-            main = instance.start || exports.teste || exports.main || exports.wasp_main || exports._start
-            main = instance._Z11testCurrentv || main
+        main = compiler_instance.start || compiler_exports.teste || compiler_exports.main || compiler_exports.wasp_main || compiler_exports._start
+        main = compiler_instance._Z11testCurrentv || main
             if (main) {
                 console.log("got main")
                 result = main()
             } else {
                 console.error("missing main function in wasp module!")
-                result = instance.exports//show what we've got
+                result = compiler_instance.exports//show what we've got
             }
             console.log(result);
             wasp_ready()
@@ -778,7 +779,9 @@ function load_runtime() {
 }
 
 async function run_wasm(buf_pointer, buf_size) {
-    let wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
+    try {
+        wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
+        wasm_to_wat(wasm_buffer)
     // download_file(wasm_buffer, "emit.wasm", "wasm")
 
     app_module = await WebAssembly.compile(wasm_buffer)
@@ -786,8 +789,6 @@ async function run_wasm(buf_pointer, buf_size) {
         needs_runtime = true
         use_big_runtime = true
         print(app_module) // visible in browser console, not in terminal
-        if (!runtime_exports.square) print("NO SQUARE")
-        if (!Wasp.square) print("NO SQUARE in Wasp")
         Wasp.download = download
         // print(WebAssembly.Module.customSections(app_module)) // Argument 1 is required ?
     } else
@@ -847,9 +848,39 @@ async function run_wasm(buf_pointer, buf_size) {
     }
     results.value = result // JSON.stringify( Do not know how to serialize a BigInt
     return result; // useless, returns Promise!
-    // } catch (ex) {
-    //     console.error(ex)
-    // }
+    } catch (ex) {
+        console.error(ex)
+        error(ex)
+    }
+}
+
+function wasm_to_wat(buffer) {
+    try {
+        wabtFeatures = {
+            exceptions: true,
+            mutable_globals: true,
+            sat_float_to_int: true,
+            sign_extension: true,
+            simd: true,
+            threads: true,
+            multi_value: true,
+            tail_call: true,
+            bulk_memory: true,
+            reference_types: true,
+            annotations: true,
+            gc: true,
+            memory64: true,
+        }
+
+        var module = wabt.readWasm(buffer, {readDebugNames: true}, wabtFeatures);
+        module.generateNames();
+        module.applyNames();
+        const result = module.toText({foldExprs: true, inlineExport: true});
+        // console.log(result);
+        editor.setValue(result)
+    } catch (e) {
+        error(e)
+    }
 }
 
 load_runtime()
