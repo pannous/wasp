@@ -18,7 +18,7 @@ endif ()
 #set(VERBOSE 1)
 #set(DEBUG 1)
 #set(TRACE 1)
-set(STRICT 1)
+set(STRICT 1) # ALL WARNINGS, AS ERRORS
 #set(SDL 1) # Graphics
 #set(WASM 1) # SET VIA TOOLCHAIN!
 #set(INCLUDE_MERGER 0) # include wasm_linker.cpp
@@ -28,6 +28,8 @@ set(STRICT 1)
 #ADD_DEFINITIONS(-DWINDOWS)
 #ADD_COMPILE_DEFINITIONS(-DWINDOWS)
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
+
+message(CMAKE_TOOLCHAIN_FILE)
 
 if (APPLE)
     message("APPLE")
@@ -39,9 +41,11 @@ else ()
 endif ()
 
 if (X86_64)
+    if (LINUX)
+        LINK_DIRECTORIES(bin/linux/lib.x86)
+    else ()
     LINK_DIRECTORIES(bin/mac/lib.x86)
-    #elseif (LINUX) # ok, other extension .so
-    #    LINK_DIRECTORIES(lib/linux)
+    endif ()
 else ()
     LINK_DIRECTORIES(lib/)
     #    LINK_DIRECTORIES(bin/mac/lib)
@@ -65,12 +69,12 @@ if (NOT WASM)
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
-        #        SET(WASMEDGE 0)
+        #                SET(WASMEDGE 0)
         # SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
-        #  SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
+        #          SET(V8 1) # 2024-04 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
         #  set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #  set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         #  set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
@@ -315,6 +319,7 @@ if (CURL)
     include_directories(${CURL_INCLUDE_DIRS})
     set(SOURCE_FILES ${SOURCE_FILES} source/Fetch.cpp)
     #    only 800 bytes via -lcurl !
+    #    target_link_libraries(wasp PUBLIC -lcurl)
 endif ()
 
 if (NO_TESTS)
@@ -666,7 +671,6 @@ elseif (WASMEDGE)
     target_include_directories(wasp PUBLIC Frameworks/wasmedge/include/api/)
 
     #    target_include_directories(wasp PUBLIC Frameworks/wasmedge_api)
-    target_link_libraries(wasp PUBLIC -lcurl)
     target_link_libraries(wasp PRIVATE wasmedge) # libwasmedge.dylib 88MB -> now 5MB ok
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
@@ -695,6 +699,7 @@ elseif (WEBAPP)
         target_link_libraries(wasp-app PUBLIC -lcurl)
     endif ()
 elseif (WASM3)
+    MESSAGE("USING WASM3 - bombed by russians")
     MESSAGE(wasm3 VM)
     ADD_DEFINITIONS(-DWASM3)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
@@ -718,6 +723,7 @@ elseif (WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
     add_executable(wasp ${SOURCE_FILES})
 elseif (V8)
+    MESSAGE("USING V8")
     ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
     set(SOURCE_FILES source/wasm_runner_v8.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
@@ -762,6 +768,13 @@ endif ()
 
 if (SDL)
     target_link_libraries(wasp SDL2::SDL2)
+endif ()
+
+
+if (CURL)
+    if (NOT APP)
+        target_link_libraries(wasp PUBLIC -lcurl)
+    endif ()
 endif ()
 
 #set(CMAKE_SUPPRESS_REGENERATION)
