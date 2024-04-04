@@ -49,7 +49,11 @@ function format(object) {
 
 function error(msg) {
     if (results) results.value = "⚠️ ERROR: " + msg + "\n";
-    throw new Error("⚠️ ERROR: " + msg)
+    // if(msg is error
+    if (msg instanceof Error)
+        throw msg
+    else
+        throw new Error("⚠️ ERROR: " + msg)
 }
 
 let nop = x => 0 // careful, some wasi shim needs 0!
@@ -92,7 +96,7 @@ class YieldThread { // unwind wasm, reenter through resume() after run_wasm fini
 let imports = {
     env: { // MY_WASM custom wasp helpers
         memory, // optionally provide js Memory … alternatively use exports.memory in js, see below
-        heap_end: new WebAssembly.Global({value: "i32", mutable: true}, 0),// todo: use as heap_end
+        HEAP_END: new WebAssembly.Global({value: "i32", mutable: true}, 0),// todo: use as HEAP_END
         grow_memory: x => memory.grow(1), // à 64k … NO NEED, host grows memory automagically!
         async_yield: x => { // called from inside wasm, set callback handler resume before!
             throw new YieldThread() // unwind wasm, reenter through resume() after run_wasm
@@ -227,9 +231,9 @@ function debugMemory(pointer, num, mem) {
 function string(data) { // wasm<>js interop
     switch (typeof data) {
         case "string":
-            while (heap_end % 8) heap_end++
-            let p = heap_end
-            new_int(heap_end + 8)
+            while (HEAP_END % 8) HEAP_END++
+            let p = HEAP_END
+            new_int(HEAP_END + 8)
             new_int(data.length)
             chars(data);
             return p;
@@ -274,10 +278,10 @@ function chars(data) {
     if (!data) return 0;// MAKE SURE!
     if (typeof data != "string") return load_chars(data)
     const uint8array = new TextEncoder("utf-8").encode(data + "\0");
-    buffer = new Uint8Array(memory.buffer, heap_end, uint8array.length);
+    buffer = new Uint8Array(memory.buffer, HEAP_END, uint8array.length);
     buffer.set(uint8array, 0);
-    let c = heap_end
-    heap_end += uint8array.length;
+    let c = HEAP_END
+    HEAP_END += uint8array.length;
     return c;
 }
 
@@ -288,19 +292,19 @@ function set_int(address, val) {
 }
 
 function new_int(val) {
-    while (heap_end % 4) heap_end++;
-    let buf = new Uint32Array(memory.buffer, heap_end, 4);
+    while (HEAP_END % 4) HEAP_END++;
+    let buf = new Uint32Array(memory.buffer, HEAP_END, 4);
     buf[0] = val
-    heap_end += 4
+    HEAP_END += 4
 }
 
 
 function new_long(val) {
     // memory.setUint32(addr + 0, val, true);
     // memory.setUint32(addr + 4, Math.floor(val / 4294967296), true);
-    let buf = new Uint64Array(memory.buffer, heap_end / 8, memory.length); // todo: /8??
+    let buf = new Uint64Array(memory.buffer, HEAP_END / 8, memory.length); // todo: /8??
     buf[0] = val
-    heap_end += 8
+    HEAP_END += 8
 }
 
 function read_byte(pointer, mem) {
@@ -341,12 +345,12 @@ function read_int64(pointer, mem) { // little endian
 function reset_heap() {
     HEAP = runtime_exports.__heap_base; // ~68000
     DATA_END = runtime_exports.__data_end
-    heap_end = HEAP || DATA_END;
-    heap_end += 0x100000 * run++; // todo
+    HEAP_END = HEAP || DATA_END;
+    HEAP_END += 0x100000 * run++; // todo
 }
 
 function compile_and_run(code) {
-    // if (typeof runtime_exports === 'undefined') load_runtime();
+    if (typeof runtime_exports === 'undefined') load_runtime();
     // reset_heap();
     expect_test_result = false
     runtime_exports.run(chars(code));
@@ -637,15 +641,15 @@ function binary_diff(old_mem, new_mem) {
     }
 }
 
-
-function copy_runtime_bytes() {
+// let compiler link/merge emitted wasm with small runtime
+function copy_runtime_bytes_to_compiler() {
     let length = runtime_bytes.byteLength
-    let pointer = heap_end
+    let pointer = HEAP_END
     let src = new Uint8Array(runtime_bytes, 0, length);
-    let dest = new Uint8Array(memory.buffer, heap_end, length);
-    dest.set(src) // memcpy
-    heap_end += length
-    runtime_exports.testRuntime(pointer, length)
+    let dest = new Uint8Array(memory.buffer, HEAP_END, length);
+    dest.set(src) // memcpy ⚠️ todo MAY FUCK UP compiler bytes!!!
+    HEAP_END += length
+    // compiler_exports.testRuntime(pointer, length)
 }
 
 // minimal demangler for wasm functions does not offer full reflection
@@ -704,7 +708,10 @@ function addSynonyms(exports) {
     return exports
 }
 
-// runtime_bytes for linking small wasp programs with runtime
+// runtime_bytes for linking small wasp programs with runtime. The result SHOULD BE standalone wasm!
+// this is NOT NEEDED when
+// 1. the wasm module is already standalone and doesn't import any functions from the runtime
+// 2. the host environment uses the full wasp.wasm (with compiler) as runtime
 function load_runtime_bytes() {
     fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
             runtime_bytes = buffer
@@ -716,7 +723,7 @@ function load_runtime_bytes() {
                 // console.log(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
                 // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
             })
-            // copy_runtime_bytes()
+        copy_runtime_bytes_to_compiler()
         }
     )
 }
@@ -741,14 +748,16 @@ function wasp_ready() {
     console.log("wasp is ready")
     // moduleReflection(wasm_data);
     loadKindMap()
-    // load_runtime_bytes()
+    load_runtime_bytes() // smaller than compiler
     register_wasp_functions(compiler_instance.exports)
     // testRun1()
     if (run_tests)
         setTimeout(test, 1);// make sync
 }
 
+// todo: CONFUSION between runtime and compiler!
 function load_runtime() {
+    if (typeof compiler_exports !== 'undefined') return
     WASP_COMPILER_BYTES = fetch(WASP_COMPILER)
     WebAssembly.instantiateStreaming(WASP_COMPILER_BYTES, imports).then(obj => {
         compiler_instance = obj.instance
@@ -758,8 +767,8 @@ function load_runtime() {
         addSynonyms(compiler_exports)
         HEAP = compiler_exports.__heap_base; // ~68000
         DATA_END = compiler_exports.__data_end
-            heap_end = HEAP || DATA_END;
-            heap_end += 0x100000
+        HEAP_END = HEAP || DATA_END;
+        HEAP_END += 0x100000
         memory = compiler_exports.memory || compiler_exports._memory || memory
             buffer = new Uint8Array(memory.buffer, 0, memory.length);
         main = compiler_instance.start || compiler_exports.teste || compiler_exports.main || compiler_exports.wasp_main || compiler_exports._start
@@ -781,73 +790,73 @@ function load_runtime() {
 async function run_wasm(buf_pointer, buf_size) {
     try {
         wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
-        wasm_to_wat(wasm_buffer)
-    // download_file(wasm_buffer, "emit.wasm", "wasm")
+        // wasm_to_wat(wasm_buffer)
+        // download_file(wasm_buffer, "emit.wasm", "wasm")
 
-    app_module = await WebAssembly.compile(wasm_buffer)
-    if (WebAssembly.Module.imports(app_module).length > 0) {
-        needs_runtime = true
-        use_big_runtime = true
-        print(app_module) // visible in browser console, not in terminal
-        Wasp.download = download
-        // print(WebAssembly.Module.customSections(app_module)) // Argument 1 is required ?
-    } else
-        needs_runtime = false
+        app_module = await WebAssembly.compile(wasm_buffer)
+        if (WebAssembly.Module.imports(app_module).length > 0) {
+            needs_runtime = true
+            use_big_runtime = true
+            print(app_module) // visible in browser console, not in terminal
+            Wasp.download = download
+            // print(WebAssembly.Module.customSections(app_module)) // Argument 1 is required ?
+        } else
+            needs_runtime = false
 
-    if (needs_runtime && use_big_runtime) {
-        // app = await WebAssembly.instantiate(wasm_buffer, {env: Wasp}, memory) // todo: tweaked imports if it calls out
-        app = await WebAssembly.instantiate(wasm_buffer, imports, memory) // todo: tweaked imports if it calls out
-    } else if (needs_runtime) {
-        print("needs_runtime runtime loading")
-        if (!RUNTIME_BYTES) // Cannot compile WebAssembly.Module from an already read Response TODO reuse!
-            RUNTIME_BYTES = await fetch(WASP_RUNTIME)
-        let runtime_instance = await WebAssembly.instantiateStreaming(RUNTIME_BYTES, imports)
-        // {
-        // wasi_unstable: {
-        //     fd_write,
-        //     proc_exit: terminate, // all threads
-        //     args_get: nop, // ignore the rest for now
-        //     args_sizes_get: x => 0,
-        // },
+        if (needs_runtime && use_big_runtime) {
+            // app = await WebAssembly.instantiate(wasm_buffer, {env: Wasp}, memory) // todo: tweaked imports if it calls out
+            app = await WebAssembly.instantiate(wasm_buffer, imports, memory) // todo: tweaked imports if it calls out
+        } else if (needs_runtime) {
+            print("needs_runtime runtime loading")
+            if (!RUNTIME_BYTES) // Cannot compile WebAssembly.Module from an already read Response TODO reuse!
+                RUNTIME_BYTES = await fetch(WASP_RUNTIME)
+            let runtime_instance = await WebAssembly.instantiateStreaming(RUNTIME_BYTES, imports)
+            // {
+            // wasi_unstable: {
+            //     fd_write,
+            //     proc_exit: terminate, // all threads
+            //     args_get: nop, // ignore the rest for now
+            //     args_sizes_get: x => 0,
+            // },
 
-        print("runtime loaded")
-        // addSynonyms(runtime_instance.exports)
-        let runtime_imports = {env: runtime_exports} // runtime_instance.exports
-        app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
-        print("app loaded")
+            print("runtime loaded")
+            // addSynonyms(runtime_instance.exports)
+            let runtime_imports = {env: runtime_exports} // runtime_instance.exports
+            app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
+            print("app loaded")
 
-    } else {
-        let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
-        app = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
-    }
-    app.exports = app.instance.exports
-    app.memory = app.exports.memory || app.exports._memory || app.memory
-    let main = app.exports.wasp_main || app.exports.main || app.instance.start || app.exports._start
-    let result = main()
-    // console.log("GOT raw ", result)
-    if (result < -0x100000000 || result > 0x100000000) {
-        if (!app.memory)
-            error("NO funclet.memory")
-        result = smartNode(result, 0, app.memory)
-        //  result lives in emit.wasm!
-        // console.log("GOT nod ", nod)
-        // result = nod.Value()
-    }
-    if (expect_test_result) {
-        console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM emit.WASM
-        if (Array.isArray(expect_test_result) && Array.isArray(result)) {
-            for (let i = 0; i < result.length; i++)
-                check(+expect_test_result[i] == +result[i])
-        } else if (expect_test_result != result) {
-            STOP = 1
-            download_file(wasm_buffer, "emit.wasm", "wasm") // resume
-            check(expect_test_result == result)
+        } else {
+            let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
+            app = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
         }
-        expect_test_result = 0
-        if (resume) setTimeout(resume, 1);
-    }
-    results.value = result // JSON.stringify( Do not know how to serialize a BigInt
-    return result; // useless, returns Promise!
+        app.exports = app.instance.exports
+        app.memory = app.exports.memory || app.exports._memory || app.memory
+        let main = app.exports.wasp_main || app.exports.main || app.instance.start || app.exports._start
+        let result = main()
+        // console.log("GOT raw ", result)
+        if (result < -0x100000000 || result > 0x100000000) {
+            if (!app.memory)
+                error("NO funclet.memory")
+            result = smartNode(result, 0, app.memory)
+            //  result lives in emit.wasm!
+            // console.log("GOT nod ", nod)
+            // result = nod.Value()
+        }
+        if (expect_test_result) {
+            console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM emit.WASM
+            if (Array.isArray(expect_test_result) && Array.isArray(result)) {
+                for (let i = 0; i < result.length; i++)
+                    check(+expect_test_result[i] == +result[i])
+            } else if (expect_test_result != result) {
+                STOP = 1
+                download_file(wasm_buffer, "emit.wasm", "wasm") // resume
+                check(expect_test_result == result)
+            }
+            expect_test_result = 0
+            if (resume) setTimeout(resume, 1);
+        }
+        results.value = result // JSON.stringify( Do not know how to serialize a BigInt
+        return result; // useless, returns Promise!
     } catch (ex) {
         console.error(ex)
         error(ex)
@@ -872,7 +881,11 @@ function wasm_to_wat(buffer) {
             memory64: true,
         }
 
-        var module = wabt.readWasm(buffer, {readDebugNames: true}, wabtFeatures);
+        // var readDebugNames = true;
+        var readDebugNames = false;
+        console.log("wasm_to_wat")
+        // console.log(wabt.validate(buffer, {readDebugNames}));
+        var module = wabt.readWasm(buffer, {readDebugNames}, wabtFeatures);
         module.generateNames();
         module.applyNames();
         const result = module.toText({foldExprs: true, inlineExport: true});
