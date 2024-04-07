@@ -2,6 +2,7 @@
 
 #ifdef USE_READLINE
 
+#include "readlinex.h"
 #include <readline/history.h> // libreadline-dev
 #include <readline/readline.h>
 #include <cstdlib>
@@ -34,7 +35,8 @@ void getline(char *buf) {
 #ifdef USE_READLINE
     int MAXLENGTH = 10000;
     const char *PROMPT = "wasp> ";
-    if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
+
+	if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
     char *tmp = readline(PROMPT);
     if (tmp == 0 or strlen(tmp) == 0) {
         return;

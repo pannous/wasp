@@ -1,41 +1,3 @@
-/* linenoise.h -- VERSION 1.0
- *
- * Guerrilla line editing library against the idea that a line editing lib
- * needs to be 20,000 lines of C code.
- *
- * See linenoise.c for more information.
- *
- * ------------------------------------------------------------------------
- *
- * Copyright (c) 2010-2023, Salvatore Sanfilippo <antirez at gmail dot com>
- * Copyright (c) 2010-2013, Pieter Noordhuis <pcnoordhuis at gmail dot com>
- *
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *  *  Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *
- *  *  Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 #ifndef __LINENOISE_H
 #define __LINENOISE_H
 
@@ -45,12 +7,12 @@ extern "C" {
 
 #include <stddef.h> /* For size_t. */
 
-extern char *linenoiseEditMore;
+extern char *readlinexEditMore;
 
-/* The linenoiseState structure represents the state during line editing.
+/* The readlinexState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
  * functionalities. */
-struct linenoiseState {
+struct readlinexState {
 	int in_completion;  /* The user pressed TAB and we are now in completion
                          * mode, so input is handled by completeLine(). */
 	size_t completion_idx; /* Index of next completion to propose. */
@@ -68,44 +30,44 @@ struct linenoiseState {
 	int history_index;  /* The history index we are currently editing. */
 };
 
-typedef struct linenoiseCompletions {
+typedef struct readlinexCompletions {
 	size_t len;
 	char **cvec;
-} linenoiseCompletions;
+} readlinexCompletions;
 
 /* Non blocking API. */
 int
-linenoiseEditStart(struct linenoiseState *l, int stdin_fd, int stdout_fd, char *buf, size_t buflen, const char *prompt);
-char *linenoiseEditFeed(struct linenoiseState *l);
-void linenoiseEditStop(struct linenoiseState *l);
-void linenoiseHide(struct linenoiseState *l);
-void linenoiseShow(struct linenoiseState *l);
+readlinexEditStart(struct readlinexState *l, int stdin_fd, int stdout_fd, char *buf, size_t buflen, const char *prompt);
+char *readlinexEditFeed(struct readlinexState *l);
+void readlinexEditStop(struct readlinexState *l);
+void readlinexHide(struct readlinexState *l);
+void readlinexShow(struct readlinexState *l);
 
 /* Blocking API. */
-char *linenoise(const char *prompt);
-void linenoiseFree(void *ptr);
+char *readlinex(const char *prompt);
+void readlinexFree(void *ptr);
 
 /* Completion API. */
-typedef void(linenoiseCompletionCallback)(const char *, linenoiseCompletions *);
-typedef char *(linenoiseHintsCallback)(const char *, int *color, int *bold);
-typedef void(linenoiseFreeHintsCallback)(void *);
-void linenoiseSetCompletionCallback(linenoiseCompletionCallback *);
-void linenoiseSetHintsCallback(linenoiseHintsCallback *);
-void linenoiseSetFreeHintsCallback(linenoiseFreeHintsCallback *);
-void linenoiseAddCompletion(linenoiseCompletions *, const char *);
+typedef void(readlinexCompletionCallback)(const char *, readlinexCompletions *);
+typedef char *(readlinexHintsCallback)(const char *, int *color, int *bold);
+typedef void(readlinexFreeHintsCallback)(void *);
+void readlinexSetCompletionCallback(readlinexCompletionCallback *);
+void readlinexSetHintsCallback(readlinexHintsCallback *);
+void readlinexSetFreeHintsCallback(readlinexFreeHintsCallback *);
+void readlinexAddCompletion(readlinexCompletions *, const char *);
 
 /* History API. */
-int linenoiseHistoryAdd(const char *line);
-int linenoiseHistorySetMaxLen(int len);
-int linenoiseHistorySave(const char *filename);
-int linenoiseHistoryLoad(const char *filename);
+int readlinexHistoryAdd(const char *line);
+int readlinexHistorySetMaxLen(int len);
+int readlinexHistorySave(const char *filename);
+int readlinexHistoryLoad(const char *filename);
 
 /* Other utilities. */
-void linenoiseClearScreen(void);
-void linenoiseSetMultiLine(int ml);
-void linenoisePrintKeyCodes(void);
-void linenoiseMaskModeEnable(void);
-void linenoiseMaskModeDisable(void);
+void readlinexClearScreen(void);
+void readlinexSetMultiLine(int ml);
+void readlinexPrintKeyCodes(void);
+void readlinexMaskModeEnable(void);
+void readlinexMaskModeDisable(void);
 
 #ifdef __cplusplus
 }
