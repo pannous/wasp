@@ -3514,8 +3514,7 @@ Code &emit(Node &root_ast) {
 	            + emitDataSection()
 	            //			+ linkingSection()
 	              + emitNameSection()
-//				  + emitDwarfSections()
-//	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
+	                + emitDwarfSections()  // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
 	;
 	return code.clone();

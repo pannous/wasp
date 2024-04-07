@@ -343,7 +343,7 @@ Code emit_dwarf_debug_info() { // DWARF 4
 		DW_AT_external	(true) // DW_FORM_flag_present
 
 */
-	return encodeVector(Code(".debug_info") + code);
+	return createSection(custom_section, encodeVector(Code(".debug_info") + code));
 }
 
 /*
@@ -532,7 +532,7 @@ DW_AT_ranges	DW_FORM_sec_offset
 	DW_AT_byte_size	DW_FORM_data1
 	 */
 	code = encodeVector(code); // length = 0x00000077
-	return encodeVector(Code(".debug_abbrev") + code);
+	return createSection(custom_section, encodeVector(Code(".debug_abbrev") + code));
 }
 
 Code emit_dwarf_debug_line() {
@@ -662,7 +662,7 @@ Address            Line   Column File   ISA Discriminator OpIndex Flags
 0x00000000000000f7     22      5      1   0             0       0  is_stmt
 0x0000000000000112     22      5      1   0             0       0  is_stmt end_sequence
 */
-	return encodeVector(Code(".debug_line") + code);
+	return createSection(custom_section, encodeVector(Code(".debug_line") + code));
 }
 
 /*
@@ -706,7 +706,7 @@ Code emit_dwarf_debug_str() {
 	for (String s: stringList) {
 		code += Code((chars) s.data, false, true);
 	}
-	return encodeVector(Code(".debug_str") + code);
+	return createSection(custom_section, encodeVector(Code(".debug_str") + code));
 }
 
 Code emit_dwarf_debug_ranges() {
@@ -727,11 +727,12 @@ Code emit_dwarf_debug_ranges() {
 // 0000c3 func[3] <tttt>:
 // 0000c4: 0e 7f                      | local[1..14] type=i32
 
-	return encodeVector(Code(".debug_ranges") + code);
+	return createSection(custom_section, encodeVector(Code(".debug_ranges") + code));
 }
 Code emit_dwarf_external_debug_info() {
 	Code code;
-	return encodeVector(Code("external_debug_info") + Code("main.dwo")); // relative path or URL to main.dwo
+	return createSection(custom_section, encodeVector(
+			Code("external_debug_info") + Code("main.dwo"))); // relative path or URL to main.dwo
 }
 Code emitDwarfSections() {
 	Code code;
