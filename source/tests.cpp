@@ -3334,7 +3334,7 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 void testCurrent() {
-	testFibonacci();
+//	testFibonacci();
 //	initTypes();
 //	check_eq(types["u8"],types["byte"]);
 //	testUnicode_UTF16_UTF32();

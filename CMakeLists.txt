@@ -63,7 +63,9 @@ endif ()
 
 if (WASM)
     #    if (NOT RUNTIME_ONLY)
-    set(MY_WASM 1) # host extensions like run_wasm()! todo remove for standalone wasmtime wasp.wasm => write to file
+    #    if(NOT PURE_WASM)
+    #        set(MY_WASM 1) # host extensions like run_wasm()! todo remove for standalone wasmtime wasp.wasm => write to file
+    #    endif ()
 endif ()
 
 if (NOT WASM)
@@ -343,6 +345,7 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/Interpret.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_emitter.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/DwarfEmitter.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/WitReader.h)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp)
 endif ()

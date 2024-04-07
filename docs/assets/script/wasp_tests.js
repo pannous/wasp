@@ -175,7 +175,7 @@ async function wasp_tests() {
     // console.log(new node(exports.testNodeJS())); // lives in wasp.wasm
     await testRun() // result lives in emit.wasm!
     // await testRun1() // result lives in emit.wasm!
-    return;
+    // return;
     console.log("wasp_tests")
     // exports.puts(chars("JAAA"))
     // backtrace_line();

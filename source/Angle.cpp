@@ -1572,9 +1572,11 @@ void addLibraryFunctionAsImport(Function &func) {
 	import.is_runtime = false;// because here it is an import!
 	import.is_import = true;
 	import.is_used = true;
+
 #if WASM
-	//	if(!function_known)
-			functions.add(func.name, import);
+	bool function_known = functions.has(func.name);
+	if(not !function_known)
+		functions.add(func.name, import);
 #endif
 }
 
@@ -2078,9 +2080,10 @@ Function getWaspFunction(String name) {
 	if ("floor"s == name)error1("use builtin floor!");
 
 
-	if (loadRuntime().functions.has(name)) {
+	auto runtime = loadRuntime();
+	if (runtime.functions.has(name)) {
 //        print("already got function "s+name);
-		return loadRuntime().functions[name];
+		return runtime.functions[name];
 	}
 	Function f{.name=name, .is_import=true, .is_runtime=true};
 	if (name.contains("(")) {
@@ -2172,8 +2175,8 @@ Function getWaspFunction(String name) {
 		else if (name.startsWith("test"));
 		else todo("getWaspFunction "s + name);
 	}
-	if (!loadRuntime().functions.has(f.name)) {
-		loadRuntime().functions.add(f.name, f);
+	if (!runtime.functions.has(f.name)) {
+		runtime.functions.add(f.name, f);
 	}
 //    else todo("getWaspFunction "s + name);
 //    else if(name=="powi")f.signature.add(int32).add(int32).returns(int64s);

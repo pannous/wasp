@@ -3478,6 +3478,8 @@ void clearEmitterContext() {
 //    while (((int64) data) % 8)data++;// type 'int64', which requires 8 byte alignment
 }
 
+Code emitDwarfSections(); // sorry, no DwarfEmitter.h
+
 [[nodiscard]]
 Code &emit(Node &root_ast) {
 	memoryHandling = export_memory;
@@ -3512,6 +3514,7 @@ Code &emit(Node &root_ast) {
 	            + emitDataSection()
 	            //			+ linkingSection()
 	              + emitNameSection()
+//				  + emitDwarfSections()
 //	 + dwarfSection() // https://yurydelendik.github.io/webassembly-dwarf/
 //	 + customSection
 	;

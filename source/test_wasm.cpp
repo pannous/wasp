@@ -726,8 +726,8 @@ void testWasmMemoryIntegrity() {
     }
 }
 
+// ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 void testOldRandomBugs() {
-
     skip(
             assert_emit("x:=41;if x>1 then 2 else 3", 2)
             assert_emit("x=41;if x>1 then 2 else 3", 2)
