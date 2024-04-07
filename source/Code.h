@@ -205,6 +205,26 @@ public:
         return this->push(more);
     }
 
+//    Code &operator+=(byte more) {
+//        return this->push(more);
+//    }
+//
+//    Code &operator+=(short more) {
+//        this->push((byte)(more&0xff));// little endian
+//        this->push((byte)(more>>8));// little endian
+//        return *this;
+//    }
+//
+//    Code &operator+=(uint more) {
+//        this->push((byte)(more&0xff));// little endian
+//        this->push((byte)(more>>8));// little endian
+//        this->push((byte)(more>>16));// little endian
+//        this->push((byte)(more>>24));// little endian
+//        return *this;
+//    }
+
+
+
     bool operator==(Code &other) {
         if (length != other.length)
             return false;
@@ -270,6 +290,7 @@ public:
     }
 
     Code &push(unsigned char opcode) {
+        // todo append to last byte if possible
         data = concat(data, opcode, length);
         length++;
         return *this;
@@ -391,6 +412,12 @@ public:
         return *this;
     }
 
+    void pushBigEndian(uint more) {
+        this->push((byte) (more >> 24));
+        this->push((byte) (more >> 16));
+        this->push((byte) (more >> 8));
+        this->push((byte) (more & 0xff));
+    }
 };
 
 
