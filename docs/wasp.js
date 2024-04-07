@@ -643,10 +643,10 @@ function binary_diff(old_mem, new_mem) {
 }
 
 // let compiler link/merge emitted wasm with small runtime
-function copy_RUNTIME_BYTES_to_compiler() {
-    let length = RUNTIME_BYTES.byteLength
+function copy_runtime_bytes_to_compiler() {
+    let length = runtime_bytes.byteLength
     let pointer = HEAP_END
-    let src = new Uint8Array(RUNTIME_BYTES, 0, length);
+    let src = new Uint8Array(runtime_bytes, 0, length);
     let dest = new Uint8Array(memory.buffer, HEAP_END, length);
     dest.set(src) // memcpy ⚠️ todo MAY FUCK UP compiler bytes!!!
     HEAP_END += length
@@ -709,11 +709,11 @@ function addSynonyms(exports) {
     return exports
 }
 
-// RUNTIME_BYTES for linking small wasp programs with runtime. The result SHOULD BE standalone wasm!
+// runtime_bytes for linking small wasp programs with runtime. The result SHOULD BE standalone wasm!
 // this is NOT NEEDED when
 // 1. the wasm module is already standalone and doesn't import any functions from the runtime
 // 2. the host environment uses the full wasp.wasm (with compiler) as runtime
-function load_RUNTIME_BYTES() {
+function load_runtime_bytes() {
     fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
         RUNTIME_BYTES = buffer
         WebAssembly.instantiate(RUNTIME_BYTES, imports).then(obj => {
@@ -724,7 +724,7 @@ function load_RUNTIME_BYTES() {
                 // console.log(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
                 // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
             })
-        copy_RUNTIME_BYTES_to_compiler()
+        copy_runtime_bytes_to_compiler()
         }
     )
 }
@@ -749,7 +749,7 @@ function wasp_ready() {
     console.log("wasp is ready")
     // moduleReflection(wasm_data);
     loadKindMap()
-    load_RUNTIME_BYTES() // smaller than compiler
+    load_runtime_bytes() // smaller than compiler
     register_wasp_functions(compiler_instance.exports)
     // testRun1()
     if (run_tests)
@@ -792,7 +792,7 @@ async function run_wasm(buf_pointer, buf_size) {
     try { // WE WANT PURE STACK TRACE
         wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
         // wasm_to_wat(wasm_buffer)
-        // download_file(wasm_buffer, "emit.wasm", "wasm")
+    // download_file(wasm_buffer, "emit.wasm", "wasm")
 
         app_module = await WebAssembly.compile(wasm_buffer)
         if (WebAssembly.Module.imports(app_module).length > 0) {
