@@ -68,8 +68,9 @@ if (WASM)
     #    endif ()
 endif ()
 
+
 if (NOT WASM)
-    set(CONSOLE 1)
+    set(CONSOLE 1) # can't get readline to work in wasm
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
@@ -309,6 +310,8 @@ set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cp
 
 if (CONSOLE)
     message(CONSOLE)
+    #    add CMAKE_MODULE_PATH for readline:
+
     ADD_DEFINITIONS(-DCONSOLE)
     ADD_DEFINITIONS(-DUSE_READLINE)
     link_libraries(readline)
@@ -767,9 +770,20 @@ endif ()
 
 # todo CONSOLE checke above!?
 if (CONSOLE AND NOT WEBAPP)
-    find_package(Readline)
+
     find_library(readline NAMES Readline)
+
+    # Include the Readline headers
+
     if (WASM)
+        #            set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/FindReadline.cmake")
+        #            set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/ReadlineConfig.cmake")
+        #            find_package(Readline)
+        #        target_include_directories(wasp.wasm PRIVATE ${READLINE_INCLUDE_DIR})
+        TARGET_LINK_LIBRARIES(wasp.wasm PRIVATE readline) # => libreadline
+    else ()
+        find_package(Readline)
+        target_include_directories(wasp PRIVATE ${READLINE_INCLUDE_DIR})
         TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
     endif ()
 endif ()

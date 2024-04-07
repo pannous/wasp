@@ -278,9 +278,9 @@ class List;
 
 List<String> arguments();
 
+#if MY_WASM
 extern "C" void registerWasmFunction(chars name, chars mangled);
 extern "C" chars download(chars name);// curl wget sync download via js / runtime!
-#if MY_WASM
 #endif
 
 
