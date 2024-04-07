@@ -48,9 +48,11 @@ extern "C" void testRuntime(bytes buffer, size_t size) {
 }
 
 void testDownload() {
+#if not WASM or MY_WASM
 	auto res = download("http://pannous.com/files/test");
 	print(res);
 	check_eq("test 2 5 3 7"s, res);
+#endif
 }
 
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!

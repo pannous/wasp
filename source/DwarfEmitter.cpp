@@ -729,11 +729,13 @@ Code emit_dwarf_debug_ranges() {
 
 	return createSection(custom_section, encodeVector(Code(".debug_ranges") + code));
 }
+
 Code emit_dwarf_external_debug_info() {
 	Code code;
 	return createSection(custom_section, encodeVector(
 			Code("external_debug_info") + Code("main.dwo"))); // relative path or URL to main.dwo
 }
+
 Code emitDwarfSections() {
 	Code code;
 //	code += emit_dwarf_external_debug_info(); // split separate debug info OR include:
