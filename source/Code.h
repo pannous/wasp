@@ -57,6 +57,16 @@ Code &signedLEB128(int64 value);
 class Code {
 public:
 
+    Code(byte string[]) {
+        data = (bytes) string;
+        length = strlen((char *) string);
+    }
+
+    Code(List<byte> list) {
+        length = list.size();
+        data = list.data(); // clone?
+    }
+
     int header = array_header_32;// todo: code_header_32 if extra fields are needed beyond standard
     int kind = byte_i8;
     int length = 0;
@@ -131,7 +141,7 @@ public:
 
     Code(chars string, bool size_header = true, bool null_terminated = false) {
         short len = strlen(string);
-        if (null_terminated)len++;
+//        if (null_terminated)len++;
         if (size_header) { push(len); }
         push((bytes) string, len);
         if (null_terminated)push((byte) 0);

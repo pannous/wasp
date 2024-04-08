@@ -1288,3 +1288,4 @@ void render(Node &node, std::stringstream *html = 0);
 
 codepoint getChar(chars string, int nr);
 
+typedef List<String> Strings;
