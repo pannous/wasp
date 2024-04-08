@@ -118,8 +118,9 @@ if (WASM)
     if (DEBUG)
         message("WASM DEBUG with DWARF!")
         ADD_COMPILE_FLAG(-g3)
-        ADD_COMPILE_FLAG(-gdwarf-5)
-        ADD_COMPILE_FLAG(-gembed-source)
+        ADD_COMPILE_FLAG(-gdwarf-4)
+        #        ADD_COMPILE_FLAG(-gdwarf-5) # /opt/homebrew/bin/wasmtime -D debug-info=y --dir . wasp.wasm --allow-unknown-exports test
+        #        ADD_COMPILE_FLAG(-gembed-source)
         ADD_COMPILE_FLAG(-fforce-dwarf-frame)
         #        Stripping the “name” section: In large projects, especially those with a lot of C++ template usage, the WebAssembly “name” section can be very large. In our example it's only a tiny fraction of the overall file size (see the output of llvm-objdump above) but in some cases it can be very significant. If the “name” section of your application is very large, and the dwarf debug information is sufficient for your debugging needs, it can be advantageous to strip the “name” section:
     endif ()

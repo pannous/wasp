@@ -303,11 +303,11 @@ Code emit_dwarf_debug_info() { // DWARF 4
 //	000022c: 0700 0000 0504 00
 
 	code += (byte) 0x01; // unit_type = DW_UT_compile OR [1] DW_TAG_compile_unit abbreviated as 0x01 OK
-	code += (int) 0x5d; // 0x000000 DW_AT_producer DW_FORM_strp LINK
+	code += (uint) 0x5d; // 0x000000 DW_AT_producer DW_FORM_strp LINK
 	code += (short) 0x1d; // 0x00 DW_LANG_C11 value 0x1D OK DW_FORM_data2
-	code += (int) 0x12; // 0x000000 DW_AT_name	    DW_FORM_strp "…/main.c"
-	code += (int) 0x00; // DW_AT_stmt_list 0x00000000
-	code += (int) 0x30; // DW_AT_comp_dir DW_FORM_strp "…/cmake-build-debug-gdb"
+	code += (uint) 0x12; // 0x000000 DW_AT_name	    DW_FORM_strp "…/main.c"
+	code += (uint) 0x00; // DW_AT_stmt_list 0x00000000
+	code += (uint) 0x30; // DW_AT_comp_dir DW_FORM_strp "…/cmake-build-debug-gdb"
 	code += (byte) 0x00; // DW_AT_low_pc	(0x00000000)
 	code += (byte) 0x00; // DW_AT_ranges(0x00000000)
 
@@ -552,9 +552,9 @@ Code emit_dwarf_debug_line() {
 0000357: 0001 0100 0502 c100 0000 0313 0105 050a  ................
 0000367: 0229 13c9 021b 0001 01                   .).......
 */
-	code += (int) 0x00000089; // length little as endian
+	code += (uint) 0x00000089; // length little as endian
 	code += (short) 0x0004; // format = DWARF32 version 4
-	code += (int) 0x35; // prologue_length = 0x35
+	code += (uint) 0x35; // prologue_length = 0x35
 	code += (byte) 0x01; // min_inst_length
 	code += (byte) 0x01; // max_ops_per_inst
 	code += (byte) 0x01; // default_is_stmt
@@ -577,8 +577,8 @@ Code emit_dwarf_debug_line() {
 	code += (byte) 0x00; // another zero byte already there ^^
 	code += "main.c"; // 0x6d 0x61 0x69 0x6e 0x2e 0x63 00
 	code += (byte) 0x01; // dir_index
-	code += (int) 0x00000000; // mod_time
-	code += (int) 0x00000000; // length
+	code += (uint) 0x00000000; // mod_time
+	code += (uint) 0x00000000; // length
 
 	/*
 0502 4a00 0000 030b 0105 0d0a 08bb 0511 0674 0513  ..J..............t..
@@ -600,7 +600,7 @@ Address            Line   Column File   ISA Discriminator OpIndex Flags
 0x000000000000006e     13     17      1   0             0       0
 	 */
 
-code += (int) 0x4a; // Address
+	code += (uint) 0x4a; // Address
 //code += (byte) 0x0c; // Line
 //	0x0000000000000067 NEVER APPEARS!!
 /*
