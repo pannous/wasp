@@ -2360,6 +2360,7 @@ void testParent() {
 	chars source = "{a:'HIO'}";
 	assert_parses(source);
 	Node &a = result["a"];
+	print(a);
 	check(a.kind == key or a.kind == strings);
 	check(a == "HIO");
 	check(a.parent == 0);// key a is highest level
@@ -2433,6 +2434,17 @@ void testString() {
 //    }
 //    printf("DONE ...");
 //    exit(1);
+	check_is(a, b);
+	check_is(a, c);
+	check_is(b, c);
+	let d = "abc";
+	print(a->data);
+	print(d);
+	check(eq(a->data, d));
+	check_is(b, "abc");
+	check_is(c, "abc");
+	check_eq(b, "abc");
+	check_eq(c, "abc");
 	check(c == "abc");
 	check(b == a);
 	check(b == c);
@@ -2863,6 +2875,10 @@ void testNodeBasics() {
 	check(a11 == 1.1);
 
 	Node a = Node("a");
+	print(a);
+	print(a.serialize());
+	print(a.name);
+	check_eq(a.name, "a");
 	check(a.name == "a");
 	check(a == "a");
 	Node b = Node("c");
@@ -3211,11 +3227,12 @@ void tests() {
 #if not WASM
 	testNumbers();
 #endif
-	testFunctionDeclaration();
 	testPower();
-	testMarkSimple();
-	testMarkAsMap();
-	testMarkMultiDeep();
+	testString();
+	testNodeBasics();
+	testIterate();
+	testLists();
+	testEval();
 	testParent();
 	testSubGroupingFlatten();
 	testNodeConversions();
@@ -3224,13 +3241,9 @@ void tests() {
 	testGroupCascade();
 	testNewlineLists();
 	testStackedLambdas();
-	testIterate();
-	testLists();
-	testMarkAsMap();
-	testEval();
+
 	testParamizedKeys();
 	testForEach();
-	testString();
 	testEmpty();
 	testDiv();
 	testRoot();
@@ -3254,7 +3267,6 @@ void tests() {
 	testGraphParams();
 	testNodeName();
 	testStringConcatenation();
-	testNodeBasics();
 	testStringReferenceReuse();
 	testConcatenation();
 	testMarkSimple();
@@ -3305,6 +3317,14 @@ void tests() {
 //    testFlags2();
 //    testFlagSafety();
 #if WASM
+	warn("Currently NOT PASSING via wasmtime -D debug-info=y --dir . wasp.wasm test");
+#endif
+	testMarkAsMap();
+	testFunctionDeclaration();
+	testMarkSimple();
+	testMarkMultiDeep();
+
+#if WASM
 	warn("Normal tests ALL PASSING in wasm!");
 	warn("WASM emit tests CURRENTLY __ALL__ SKIPPED or asynchroneous!");
 	return;
@@ -3348,21 +3368,21 @@ void testCurrent() {
 //	return;
 #if WEBAPP
 #endif
-	testDom();
+//	testDom();
 //	exit(1);
-	testOldRandomBugs();
+//	testOldRandomBugs();
 
-	assert_emit("3^2", 9);
-	assert_emit("n=3;2ⁿ", 8);
-	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
-	assert_emit("'αβγδε'#3", U'γ');
-	assert_emit("√9*-‖-3‖/-3", 3);
+//	assert_emit("3^2", 9);
+//	assert_emit("n=3;2ⁿ", 8);
+//	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
+//	assert_emit("'αβγδε'#3", U'γ');
+//	assert_emit("√9*-‖-3‖/-3", 3);
 
-	testSubGroupingFlatten();
-	testTypedFunctions();
-	testTypes();
-	testPolymorphism();
-	testDom();
+//	testSubGroupingFlatten();
+//	testTypedFunctions();
+//	testTypes();
+//	testPolymorphism();
+//	testDom();
 //    testKebabCase();
 	skip(
 			assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);

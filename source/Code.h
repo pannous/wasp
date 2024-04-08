@@ -205,23 +205,23 @@ public:
         return this->push(more);
     }
 
-//    Code &operator+=(byte more) {
-//        return this->push(more);
-//    }
-//
-//    Code &operator+=(short more) {
-//        this->push((byte)(more&0xff));// little endian
-//        this->push((byte)(more>>8));// little endian
-//        return *this;
-//    }
-//
-//    Code &operator+=(uint more) {
-//        this->push((byte)(more&0xff));// little endian
-//        this->push((byte)(more>>8));// little endian
-//        this->push((byte)(more>>16));// little endian
-//        this->push((byte)(more>>24));// little endian
-//        return *this;
-//    }
+    Code &operator+=(byte more) {
+        return this->push(more);
+    }
+
+    Code &operator+=(short more) {
+        this->push((byte) (more & 0xff));// little endian
+        this->push((byte) (more >> 8));// little endian
+        return *this;
+    }
+
+    Code &operator+=(uint more) {
+        this->push((byte) (more & 0xff));// little endian
+        this->push((byte) (more >> 8));// little endian
+        this->push((byte) (more >> 16));// little endian
+        this->push((byte) (more >> 24));// little endian
+        return *this;
+    }
 
 
 

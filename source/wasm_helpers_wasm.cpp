@@ -41,7 +41,9 @@ double powd(double a, double b) {
 int printf(const char *__restrict format, ...) {
 //    todo better
 //    error("printf not linked");
+#if not WASM
 	warn("printf not linked");
+#endif
 	put_chars((char *) format, strlen(format));
 	return 1;
 }
@@ -261,8 +263,8 @@ extern "C" void *memcpy(void *__restrict__ destination, const void *__restrict__
 #ifndef WASI
 extern "C"
 void *memcpy(void *destination, const void *source, size_t num) {
-    memcpy0((char *) destination, (char *) source, num);
-    return destination;// yes?
+	memcpy0((char *) destination, (char *) source, num);
+	return destination;// yes?
 }
 #endif
 
@@ -274,8 +276,8 @@ typedef struct wasi_buffer {
 
 #if WASI and not MY_WASM
 extern "C" int raise(chars error){
-    printf("%s" , error);
-    return -1;
+	printf("%s" , error);
+	return -1;
 }
 #endif
 
@@ -312,6 +314,7 @@ int put_s(String *s) {
 }
 
 #if not MY_WASM
+
 int puti(int i) {
 	put_chars(">>>>");
 	put_chars(formatLong(i), 0);
@@ -433,8 +436,8 @@ extern "C" void _start() {
 //    trace(__memory_base);
 
 	auto args = arguments();
-//    smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
-//    print(smartNode(result));
+	smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
+	print(smartNode(result));
 #if RUNTIME_ONLY
 	print("Wasp runtime not meant to be executed. Use native wasp or wasp.wasm \n");
 	// todo interpreter? // we can still use runtime for minimal parsing tasks?
@@ -457,6 +460,12 @@ extern "C" int putchar(int c) {// stdio
 }
 
 extern "C" size_t strlen(const char *x) {
+#if WASM
+//	memory fault at wasm address 0xffffffff in linear memory of size 0x40000000
+	if ((long) x >= 0x40000000) return 0;
+//		error("strlen: invalid address");
+#endif
+
 	int l = 0;
 	while (l < MAX_STRING_LENGTH and *x++) l++; // and (int64) x < MAX_MEM - 1? … let it fail!
 	return l;
@@ -500,7 +509,6 @@ double pow(double x, double y) { // _NOEXCEPT
 	return powd(x, y);
 //    return __builtin_pow(x, y);
 }
-
 
 
 #if RUNTIME_ONLY
