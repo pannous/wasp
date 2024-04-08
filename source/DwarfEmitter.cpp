@@ -1,5 +1,15 @@
 //#include "DwarfEmitter.h"
 #include "dwarf.h"
+
+typedef unsigned char byte;
+byte DW_OP_WASM_location = 0xED;     // takes 1 byte before DW_OP_stack_value 0x9f
+byte DW_OP_WASM_location_int = 0xEE; // takes 4 bytes __stack_pointer
+enum {
+	DW_OP_WASM_global_local = 0,
+	DW_OP_WASM_global_leb = 1,
+	DW_OP_WASM_stack = 2,
+	DW_OP_WASM_global_u32 = 3
+};
 // https://dwarfstd.org/
 // https://dwarfstd.org/doc/DWARF4.pdf
 // https://dwarfstd.org/doc/DWARF5.pdf
@@ -308,11 +318,11 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	code += (uint) 0x12; // 0x000000 DW_AT_name	    DW_FORM_strp "…/main.c"
 	code += (uint) 0x00; // DW_AT_stmt_list 0x00000000
 	code += (uint) 0x30; // DW_AT_comp_dir DW_FORM_strp "…/cmake-build-debug-gdb"
-	code += (byte) 0x00; // DW_AT_low_pc	(0x00000000)
-	code += (byte) 0x00; // DW_AT_ranges(0x00000000)
+	code += (uint) 0x00; // DW_AT_low_pc	(0x00000000)
+	code += (uint) 0x00; // DW_AT_ranges(0x00000000)
 
 	/*
-	0x0000000b: DW_TAG_compile_unit
+	  DW_TAG_compile_unit
 			  	DW_AT_producer	DW_FORM_strp	("clang version 16.0.0 (https://github.com/llvm/llvm-project 434575c026c81319b393f64047025b54e69e24c2)")
 			  	DW_AT_language	DW_FORM_data2	(DW_LANG_C11)
 			  	DW_AT_name	    DW_FORM_strp	("/opt/wasm/c-wasm-debug/main.c")
@@ -328,23 +338,102 @@ Code emit_dwarf_debug_info() { // DWARF 4
 //	00001ec: 0200 0000 010b 7300 0000 0302 910c 1000  ......s.........
 //	00001fc: 0000 010b 7300 0000 0402 9108 0000 0000  ....s...........
 	/*
-	 * 0x00000026:   DW_TAG_subprogram ( abbreviated as 0x02 OK)
-		DW_AT_low_pc	(0x0000004a)  DW_FORM_addr
-		DW_AT_high_pc	(0x000000c0)  DW_FORM_data4 // 76 0000 00  hex(0xc0 - 0x4a) OK!!!
-0x04 ?? DW_CC_pass_by_reference? DW_UT_skeleton ? DW_TAG_enumeration_type nope ?  Attribute encoding? DW_FORM_block4?
-		DW_OP_WASM_location := 0xED ;; available DWARF extension code
-	    DW_OP_WASM_location => local :=0  global_leb := 0x01 i:uleb128 stack := 0x02 i:uleb128  global_u32 := 0x03
-		DW_AT_frame_base	(DW_OP_WASM_location(0xED) 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
-		DW_AT_name	("tttt") // DW_FORM_strp 0x02000000
-		DW_AT_decl_file	("/opt/wasm/c-wasm-debug/main.c") // 0x01? DW_FORM_data1 means just 1 byte
-		DW_AT_decl_line	(11) // 0x0b DW_FORM_data1 means just 1 byte
-		DW_AT_prototyped	(true) // DW_FORM_flag_present NOT THERE / 0x01 comes BEFORE 0x0b !!!
-		DW_AT_type	(0x00000073 "int")
-		DW_AT_external	(true) // DW_FORM_flag_present
+	 * 0x00000026:   */
+	code += (byte) 0x02; // ( abbreviated type DW_TAG_subprogram [2] )
+	code += (uint) 0x0000004a;//	DW_AT_low_pc DW_FORM_addr
+	code += (uint) 0xc0 - 0x4a;//DW_AT_high_pc	(0x000000c0)  DW_FORM_data4 // 76 0000 00  hex(0xc0 - 0x4a) OK!!!
 
+	code += (byte) 0x04;// length of DW_FORM_exprloc:
+	code += (byte) DW_OP_WASM_location;// := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
+	code += (byte) 0; // DW_AT_frame_base / DW_OP_WASM_global_local ?
+	code += (byte) 3; // func#3?  TI_GLOBAL_RELOC / / DW_OP_WASM_global_u32 / 1 byte __stack_pointer ?  main/$_start=0x02 OK
+	code += (byte) DW_OP_stack_value; // 0x9F
+
+	code += (uint) 0x02;// DW_AT_name	("tttt") // DW_FORM_strp
+	code += (byte) 0x01; //DW_AT_decl_file	("/opt/wasm/c-wasm-debug/main.c") // DW_FORM_data1 means just 1 byte
+	code += (byte) 0x0b;// DW_AT_decl_line	(11) // 0x0b DW_FORM_data1 means just 1 byte
+//		DW_AT_prototyped	(true) // DW_FORM_flag_present NOT THERE / 0x01 comes BEFORE 0x0b !!!
+	code += (uint) 0x00000073;//	DW_AT_type	( "int")
+//		DW_AT_external	(true) // DW_FORM_flag_present
+
+/*
+[3] DW_TAG_formal_parameter	DW_CHILDREN_no
+	DW_AT_location	DW_FORM_exprloc
+	DW_AT_name	DW_FORM_strp
+	DW_AT_decl_file	DW_FORM_data1
+	DW_AT_decl_line	DW_FORM_data1
+	DW_AT_type	DW_FORM_ref4
+								  0302 910c 1000  ......s.........
+00001fc: 0000 010b 7300 0000
+                             0402 9108 0000 0000  ....s...........
+000020c: 010d 7300 0000 0005 c100 0000 5100 0000  ..s.........Q...
+000021c: 04ed 0002 9f0b 0000 0001 1373 0000 0006  ...........s....
+000022c: 0700 0000 0504 00
+
+ 0x0000003e:     DW_TAG_formal_parameter
+                  DW_AT_location	(DW_OP_fbreg  +12 0x91 0x0c)
+                  DW_AT_name	("j")
+                  DW_AT_decl_file	("/opt/wasm/c-wasm-debug/main.c")
+                  DW_AT_decl_line	(11)
+                  DW_AT_type	(0x00000073 "int")
 */
-	return createSection(custom_section, encodeVector(Code(".debug_info") + code));
+//code += (byte)DW_TAG_formal_parameter;
+	code += (byte) 0x03; // abbreviated type 3
+	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
+	code += (byte) DW_OP_fbreg;
+	code += (byte) 0x0c; // + 12
+	code += (uint) 0x10; // DW_AT_name	("j") // DW_FORM_strp
+	code += (byte) 0x01; // DW_AT_decl_file (1)	("/opt/wasm/c-wasm-debug/main.c") // DW_FORM_data1 means just 1 byte
+	code += (byte) 0x0b; // DW_AT_decl_line	(11) DW_FORM_data1 means just 1 byte
+	code += (uint) 0x73; // DW_AT_type	(0x00000073 "int")
+
+/*
+[4] DW_TAG_variable	DW_CHILDREN_no
+	DW_AT_location	DW_FORM_exprloc
+	DW_AT_name	DW_FORM_strp
+	DW_AT_decl_file	DW_FORM_data1
+	DW_AT_decl_line	DW_FORM_data1
+	DW_AT_type	DW_FORM_ref4
+ */
+	code += (byte) 0x04; // abbreviated type 4
+	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
+	code += (byte) DW_OP_fbreg;
+	code += (byte) 0x08; // + 8
+	code += (uint) 0x00; // DW_AT_name	("x") // DW_FORM_strp
+	code += (byte) 0x01; // DW_AT_decl_file (1)	("/opt/wasm/c-wasm-debug/main.c") // DW_FORM_data1 means just 1 byte
+	code += (byte) 0x0d; // DW_AT_decl_line	(13) DW_FORM_data1 means just 1 byte
+	code += (uint) 0x73; // DW_AT_type	(0x00000073 "int")
+
+	code += (byte) 0x00; // NULL why?
+
+	List<byte> others = {0x05, 0xc1, 0x00, 0x00, 0x00, 0x51, 0x00, 0x00, 0x00,
+	                     0x04, 0xed, 0x00, 0x02, 0x9f, 0x0b, 0x00, 0x00, 0x00, 0x01, 0x13, 0x73, 0x00, 0x00, 0x00, 0x06,
+	                     0x07, 0x00, 0x00, 0x00, 0x05, 0x04, 0x00};
+	code += others;
+	/*
+
+	[5] DW_TAG_subprogram	DW_CHILDREN_no
+	DW_AT_low_pc	DW_FORM_addr
+	DW_AT_high_pc	DW_FORM_data4
+	DW_AT_frame_base	DW_FORM_exprloc
+	DW_AT_name	DW_FORM_strp
+	DW_AT_decl_file	DW_FORM_data1
+	DW_AT_decl_line	DW_FORM_data1
+	DW_AT_type	DW_FORM_ref4
+	DW_AT_external	DW_FORM_flag_present
+
+[6] DW_TAG_base_type	DW_CHILDREN_no
+	DW_AT_name	DW_FORM_strp
+	DW_AT_encoding	DW_FORM_data1
+	DW_AT_byte_size	DW_FORM_data1
+ */
+
+
+//	code = encodeVector(code);
+	Code len = Code(code.length - 3);// why -3 ??
+	return createSection(custom_section, encodeVector(Code(".debug_info") + len + code));
 }
+
 
 /*
  * Contents of section Custom: DWARF 5
@@ -422,6 +511,7 @@ DW_AT_ranges	DW_FORM_sec_offset
 	code += (byte) 0x13; // DW_FORM_ref4
 	code += (byte) 0x3f; // DW_AT_external :
 	code += (byte) 0x19; // DW_FORM_flag_present
+	code += (byte) 0x00; // end of ?
 	code += (byte) 0x00; // end of abbrev
 	/*
 
@@ -531,7 +621,7 @@ DW_AT_ranges	DW_FORM_sec_offset
 	DW_AT_encoding	DW_FORM_data1
 	DW_AT_byte_size	DW_FORM_data1
 	 */
-	code = encodeVector(code); // length = 0x00000077
+	code += (byte) 0x00; // final end of abbrev
 	return createSection(custom_section, encodeVector(Code(".debug_abbrev") + code));
 }
 
@@ -573,12 +663,12 @@ Code emit_dwarf_debug_line() {
 	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_prologue_end] = 0
 	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_epilogue_begin] = 0
 	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_isa] = 1
-	code += "/opt/wasm/c-wasm-debug"; // 0x2f 0x6f 0x70 0x74 0x2f 0x77 0x61 0x73 0x6d 0x2f 0x63 0x2d 0x77 0x61 0x73 0x6d 0x2d 0x64 0x65 0x62 0x75 0x67 0x00
+	code += Code("/opt/wasm/c-wasm-debug", false,
+	             true); // 0x2f 0x6f 0x70 0x74 0x2f 0x77 0x61 0x73 0x6d 0x2f 0x63 0x2d 0x77 0x61 0x73 0x6d 0x2d 0x64 0x65 0x62 0x75 0x67 0x00
 	code += (byte) 0x00; // another zero byte already there ^^
-	code += "main.c"; // 0x6d 0x61 0x69 0x6e 0x2e 0x63 00
+	code += Code("main.c", false, true); // 0x6d 0x61 0x69 0x6e 0x2e 0x63 00
 	code += (byte) 0x01; // dir_index
-	code += (uint) 0x00000000; // mod_time
-	code += (uint) 0x00000000; // length
+	code += (uint) 0x00000000; // mod_time length ?
 
 	/*
 0502 4a00 0000 030b 0105 0d0a 08bb 0511 0674 0513  ..J..............t..
@@ -601,6 +691,12 @@ Address            Line   Column File   ISA Discriminator OpIndex Flags
 	 */
 
 	code += (uint) 0x4a; // Address
+	List<byte> bytes = {0x03, 0x0b, 0x01, 0x05, 0x0d, 0x0a, 0x08, 0xbb, 0x05, 0x11, 0x06, 0x74, 0x05, 0x13,
+	                    0x74, 0x05, 0x12, 0x74, 0x05, 0x0f, 0x74, 0x05, 0x09, 0x74, 0x06, 0x75, 0x05, 0x0a, 0x06, 0x74,
+	                    0x05, 0x07, 0xac, 0x05, 0x0c, 0x06, 0x75, 0x05, 0x0e, 0x06, 0x74, 0x05, 0x05, 0xac, 0x02, 0x04,
+	                    0x00, 0x01, 0x01, 0x00, 0x05, 0x02, 0xc1, 0x00, 0x00, 0x00, 0x03, 0x13, 0x01, 0x05, 0x05, 0x0a,
+	                    0x02, 0x29, 0x13, 0xc9, 0x02, 0x1b, 0x00, 0x01, 0x01};
+	code += bytes;
 //code += (byte) 0x0c; // Line
 //	0x0000000000000067 NEVER APPEARS!!
 /*
@@ -702,12 +798,14 @@ Address            Line   Column File   ISA Discriminator OpIndex Flags
 
 Code emit_dwarf_debug_str() {
 	Code code;
-	List<String> stringList;
+	List<String> stringList = {"x", "tttt", "int", "main", "j", "/opt/wasm/c-wasm-debug/main.c",
+	                           "/opt/wasm/c-wasm-debug/cmake-build-debug-gdb.clang", "version16.0.0",
+	                           "(https://github.com/llvm/llvm-project434575c026c81319b393"};//f64047025b54e69e24c2)."};
 	for (String s: stringList) {
 		code += Code((chars) s.data, false, true);
 	}
 	return createSection(custom_section, encodeVector(Code(".debug_str") + code));
-}
+};
 
 Code emit_dwarf_debug_ranges() {
 	Code code;
@@ -717,12 +815,19 @@ Code emit_dwarf_debug_ranges() {
 00000000 0000004a 000000c0
 00000000 000000c1 00000112
 00000000 <End of list>*/
-	code.pushBigEndian(0x00000000);
-	code.pushBigEndian(0x0000004a); // Address of tttt() {
-	code.pushBigEndian(0x000000c0); // Address of tttt() }
-	code.pushBigEndian(0x000000c1); // Address of main() {
-	code.pushBigEndian(0x00000112); // Address of main() }
-	code.pushBigEndian(0x00000000); // End of list
+//	code.pushBigEndian(0x00000000); // implicit start
+//	code.pushBigEndian(0x0000004a); // Address of tttt() {
+//	code.pushBigEndian(0x000000c0); // Address of tttt() }
+//	code.pushBigEndian(0x000000c1); // Address of main() {
+//	code.pushBigEndian(0x00000112); // Address of main() }
+//	code.pushBigEndian(0x00000000); // End of list
+	code += (uint) 0x0000004a; // Address of tttt() {
+	code += (uint) 0x000000c0; // Address of tttt() }
+	code += (uint) 0x000000c1; // Address of main() {
+	code += (uint) 0x00000112; // Address of main() }
+	code += (uint) 0x00000000; // End of list
+	code += (uint) 0x00000000; // End of list?
+
 // I don't know how 4a and c0 are calculated. They are not in the .wasm file: nor in the source code: 326 chars to tttt()
 // 0000c3 func[3] <tttt>:
 // 0000c4: 0e 7f                      | local[1..14] type=i32

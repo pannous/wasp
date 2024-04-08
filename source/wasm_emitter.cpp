@@ -3390,9 +3390,20 @@ Code linkingSection() {
 }
 
 [[nodiscard]]
-Code dwarfSection() {
+Code dwarfSection() { // see emitDwarfSections in DwarfEmitter.cpp
 	return createSection(custom_section, encodeVector(Code("external_debug_info") + Code("main.dwarf")));
 }
+
+[[nodiscard]]
+Code emitProducers() {
+	Code producers;
+	producers.addByte(1);// count
+	producers += Code("wasp "s + wasp_version);
+	return createSection(custom_section, encodeVector(Code("producers") + producers));
+}
+
+[[nodiscard]]
+Code emitTargetFeatures() {
 
 /*
  * The generally accepted features are:
@@ -3406,6 +3417,18 @@ Code dwarfSection() {
     simd128
     tail-call
  */
+//	Strings features={"simd128","nontrapping-fptoint","sign-ext","tail-call","mutable-global","bulk-memory","exception-handling","atomics","multivalue","gc","reference-types","memory64","memory-packing","simd","relaxed-simd","threads","multi-value","tail-call","reference-types","bulk-memory","nontrapping-fptoint","sign-ext","simd128","tail-call","exception-handling","atomics","mutable-globals","nontrapping-fptoint","sign-ext","simd128","tail-call"};
+	Strings features = {"sign-ext", "mutable-globals"};
+	Code code;
+	code += (byte) (features.size());
+	for (String feature: features) {
+		code.addByte(0x2b);// "+"
+		code += Code(feature);
+	}
+	return createSection(custom_section, encodeVector(Code("target_features") + code));
+};
+
+
 
 // see preRegisterSignatures
 void add_imports_and_builtins() {
@@ -3514,7 +3537,9 @@ Code &emit(Node &root_ast) {
 	            + emitDataSection()
 	            //			+ linkingSection()
 	              + emitNameSection()
-	                + emitDwarfSections()  // https://yurydelendik.github.io/webassembly-dwarf/
+	              + emitDwarfSections()  // https://yurydelendik.github.io/webassembly-dwarf/
+	              //	              + emitProducers()
+	              + emitTargetFeatures()
 //	 + customSection
 	;
 	return code.clone();

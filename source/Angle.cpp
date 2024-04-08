@@ -1621,7 +1621,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 	if (searchAliases) {
 		for (String alias: aliases(name)) {
 			function = findLibraryFunction(alias, false);
-			use_required(function);
+//			use_required(function); // no, NOT required yet
 		}
 	}
 	auto normed = normOperator(name);
@@ -1687,13 +1687,13 @@ List<String> aliases(String name) {
 		if (not use_wasm_strings)
 			found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
 	}
-	if (name == "+") {
-		found.add("add");
-		found.add("plus");
-		found.add("concat");
-		if (not use_wasm_strings)
-			found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
-	}
+//	if (name == "+") {
+//		found.add("add");
+//		found.add("plus");
+//		found.add("concat");
+//		if (not use_wasm_strings)
+//			found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
+//	}
 	if (name == "eq") {
 		if (not use_wasm_strings)
 			found.add("_Z2eqPKcS0_i"); // eq(char const*, char const*, int)

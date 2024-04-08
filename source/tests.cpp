@@ -22,6 +22,14 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testDwarf() {
+//	DwarfReader reader("samples/test.wasm");
+//	reader.read();
+//	reader.print();
+//	assert_emit("fun tttt(int j){x=j+1;x};tttt(3)",4);
+	assert_emit("int tttt(int j){x=j+1;x};tttt(3)", 4);
+}
+
 void testHtmlWasp() {
 	eval("html{bold{Hello}}"); // => <html><body><bold>Hello</bold></body></html> via appendChild bold to body
 //	eval("html{bold($myid style=red){Hello}}"); // => <bold id=myid style=red>Hello</bold>
@@ -3354,6 +3362,8 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 void testCurrent() {
+	testDwarf();
+	return;
 //	testFibonacci();
 //	initTypes();
 //	check_eq(types["u8"],types["byte"]);
