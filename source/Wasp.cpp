@@ -2033,7 +2033,8 @@ int main(int argc, char **argv) {
 		if (argc == 1) {
 			usage();
 			console();
-			return 42;
+			return 0;
+//			return 42; // funny, but breaks IDE chaining
 		}// else
 		if (args.endsWith(".html") or args.endsWith(".htm")) {
 #if WEBAPP
@@ -2112,7 +2113,8 @@ int main(int argc, char **argv) {
 		print(args);
 		heap_end += strlen(args)+1;
 #endif
-		return 42;
+		return 0;
+//			return 42; // funny, but breaks IDE chaining
 	} catch (Exception e) {
 		print("Exception WOOW");
 	} catch (chars err) {

@@ -166,7 +166,7 @@ enum {
 	/* 0x0f reserved.  */
 	DW_AT_stmt_list = 0x10,
 	DW_AT_low_pc = 0x11,
-	DW_AT_high_pc = 0x12,
+	DW_AT_high_pc = 0x12, // OFFSET to low_pc !
 	DW_AT_language = 0x13,
 	/* 0x14 reserved.  */
 	DW_AT_discr = 0x15,
