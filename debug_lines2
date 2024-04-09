@@ -1,0 +1,167 @@
+
+Code emit_dwarf_debug_line() {
+	Code code;
+	let start_address= 0x0000002B;
+	// The .debug_line DWARF section maps instruction pointers to source locations.
+	//	 offset of an instruction relative within the Code section of the WebAssembly file.
+
+	/* Contents of section Custom: DWARF 4
+0000378: 0b2e 6465 6275 675f 6c69 6e65 a600 0000  ..debug_line....
+0000388: 0400 3500 0000 0101 01fb 0e0d 0001 0101  ..5.............
+0000398: 0100 0000 0100 0001 2f6f 7074 2f77 6173  ......../opt/was
+00003a8: 6d2f 632d 7761 736d 2d64 6562 7567 0000  m/c-wasm-debug..
+00003b8: 6d61 696e 2e63 0001 0000 0000 0502 4a00  main.c........J.
+00003c8: 0000 030d 0105 020a 3d02 0800 0101 0005  ........=.......
+00003d8: 0257 0000 0003 1301 0506 0a08 bb05 07ad  .W..............
+00003e8: 0883 0504 0883 0507 0883 0504 0883 0507  ................
+00003f8: 0883 0504 0674 0509 0608 4b05 0b06 7405  .....t....K...t.
+0000408: 02ac 0204 0001 0100 0502 2f01 0000 031f  ........../.....
+0000418: 0105 020a 0229 1305 0ec9 050c 0682 0502  .....)..........
+0000428: ac02 1700 0101 
+*/
+	code += (uint) 0x00000089; // length as little endian
+	code += (short) 0x0004; // format = DWARF32 version 4
+	code += (uint) 0x35; // prologue_length = 0x35
+	code += (byte) 0x01; // min_inst_length
+	code += (byte) 0x01; // max_ops_per_inst maximum_operations_per_instruction
+	code += (byte) 0x01; // default_is_stmt
+	code += (byte) 0xfb; // line_base = -5 // minimum value which a special opcode can add to the line register
+	code += (byte) 0x0e; // line_range = 14 // range of values it can add to the line register.
+	code += (byte) 0x0d; // opcode_base = 13
+	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_copy] = 0
+	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_advance_pc] = 1   // single unsigned LEB128 operand
+	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_advance_line] = 1 // single signed LEB128 operand
+	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_file] = 1   // single unsigned LEB128 operand
+	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_column] = 1  // single unsigned LEB128
+	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_negate_stmt] = 0 // is_stmt = !is_stmt
+	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_basic_block] = 0
+	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_const_add_pc] = 0
+	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_fixed_advance_pc] = 1 // takes a single uhalf (unencoded)
+	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_prologue_end] = 0
+	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_epilogue_begin] = 0
+	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_isa] = 1
+	// we have 6 out of 13 standard opcodes active(?) but opcode_base = 13 nontheless
+	code += Code("/opt/wasm/c-wasm-debug", false,
+	             true); // 0x2f 0x6f 0x70 0x74 0x2f 0x77 0x61 0x73 0x6d 0x2f 0x63 0x2d 0x77 0x61 0x73 0x6d 0x2d 0x64 0x65 0x62 0x75 0x67 0x00
+	code += (byte) 0x00; // another zero byte already there ^^
+	code += Code("main.c", false, true); // 0x6d 0x61 0x69 0x6e 0x2e 0x63 00
+	code += (byte) 0x01; // dir_index
+	code += (uint) 0x00000000; // mod_time length ?
+/*
+
+//	code += (byte) DW_LNS_copy;
+	code += (byte) DW_LNS_advance_pc; // 0x02
+	code += (byte) DW_LNS_advance_line; // 0x03
+	code += (byte) DW_LNS_set_file; // 0x04
+	code += (byte) DW_LNS_set_column; // 0x05  single unsigned LEB128 operand
+//	code += (byte) DW_LNS_negate_stmt; // 0x06 // is_stmt = !is_stmt DOES OCCUR!!
+//	code += (byte) DW_LNS_set_basic_block;
+//	code += (byte) DW_LNS_const_add_pc; // 0x08
+	code += (byte) DW_LNS_fixed_advance_pc; // 0x09
+//	code += (byte) DW_LNS_set_prologue_end; // 0x0a
+//	code += (byte) DW_LNS_set_epilogue_begin;
+	code += (byte) DW_LNS_set_isa;
+*/
+
+	/*
+0502 4a00 0000 030b 0105 0d0a 08bb 0511 0674 0513  ..J..............t..
+	 */
+
+//	for special opcodes we need to add / subtract these:
+//	code += (byte) 0xfb; // line_base = -5 // minimum value which a special opcode can add to the line register
+//	code += (byte) 0x0e; // line_range = 14 // range of values it can add to the line register.
+//	code += (byte) 0x0d; // opcode_base = 13
+// PAGE 115 DWARF 4 / Page 161 DWARF 5
+//  (special) opcode = (desired line increment - line_base) + (line_range * operation_advance) + opcode_base
+//	adjusted opcode = opcode - opcode_base
+//	operation_advance = adjusted opcode / line_range
+//	address += minimum_instruction_length * ((op_index + operation_advance) / maximum_operations_per_instruction)
+//	address += op_index + operation_advance  // min & max = 1 !
+//	line increment = line_base + (adjusted opcode % line_range)
+//	op_index ALWAYS 0 when maximum_operations_per_instruction = 1	 new op_index = (op_index + operation_advance) % maximum_operations_per_instruction
+// When the maximum_operations_per_instruction field is 1, op_index is always 0 and these calculations simplify
+
+// GPT says:
+//	address += (opcode - opcode_base) / line_range * minimum_instruction_length
+
+	code += (byte) 0x05; // 5 bytes length of the extended opcode that follows:
+	code += (byte) 0x02; // DW_LNE_set_address:
+	code += (uint) start_address;// 0x4a; //    -> +0x1d = 0x67 OK
+
+//11: int tttt(int j)
+//12: {
+//13:    int x = j + j*j
+//14:    x = x+1;
+// …
+/*
+Address            Line   Column File   ISA Discriminator OpIndex Flags
+------------------ ------ ------ ------ --- ------------- ------- -------------
+0x000000000000004a     12      0      1   0             0       0  is_stmt // {
+0x0000000000000067     13     13      1   0             0       0  is_stmt prologue_end // int x =
+0x000000000000006e     13     17      1   0             0       0
+0x0000000000000075     13     19      1   0             0       0
+0x000000000000007c     13     18      1   0             0       0
+0x0000000000000083     13     15      1   0             0       0
+0x000000000000008a     13      9      1   0             0       0
+0x0000000000000091     14      9      1   0             0       0  is_stmt
+0x0000000000000098     14     10      1   0             0       0
+0x00000000000000a3     14      7      1   0             0       0
+0x00000000000000aa     15     12      1   0             0       0  is_stmt
+0x00000000000000b1     15     14      1   0             0       0
+0x00000000000000bc     15      5      1   0             0       0
+0x00000000000000c0     15      5      1   0             0       0  end_sequence
+
+0x00000000000000c1     20      0      1   0             0       0  is_stmt
+0x00000000000000ea     21      5      1   0             0       0  is_stmt prologue_end
+0x00000000000000f7     22      5      1   0             0       0  is_stmt
+0x0000000000000112     22      5      1   0             0       0  is_stmt end_sequence
+*/
+
+// OPCODES
+//	Special opcodes in the DWARF .debug_line section serve a dual purpose. They simultaneously encode an instruction to increment the address (i.e., the machine code location), and to step through the source lines.
+/* All of the special opcodes do those same seven things; they differ only in what values they add to the line, address and op_index (row) registers.
+1. Add a signed integer to the line register.
+2. Modify the operation pointer by incrementing the address and op_index
+3. registers as described below.
+4. Append a row to the matrix using the current values of the state machine registers.
+5. Set the basic_block register to “false.” Set the prologue_end register to “false.” Set the epilogue_begin register to “false.” Set the discriminator register to 0.
+*/
+
+	List<byte> bytes = {
+						DW_LNS_advance_line /*0x03*/ , 12 -1 /*+1*/, 0x01, // DW_LNE_end_sequence: state machine should reset?
+						DW_LNS_set_column, 0x0d /* 13 */,
+						DW_LNS_set_prologue_end,
+						DW_LNS_const_add_pc, // NO operants!
+						0xbb, // address+=0x1d line+=1 is_stmt
+						DW_LNS_set_column, 0x11 /* 17 */,
+						DW_LNS_negate_stmt, 0x74, // address+=7 line+=0
+						DW_LNS_set_column, 0x13 /* 19 */ , 0x74, // address+=7 line+=0
+						DW_LNS_set_column, 0x12 /* 18 */ , 0x74, // address+=7 line+=0
+						DW_LNS_set_column, 0x0f /* 15 */ , 0x74, // address+=7 line+=0
+						DW_LNS_set_column, 0x09 /* 9 */  , 0x74, // address+=7 line+=0
+						DW_LNS_negate_stmt, 0x75, // address+=7 line+=1 is_stmt, keep column 9
+						DW_LNS_set_column, 0x0a /* 10 */, DW_LNS_negate_stmt, 0x74,
+	                    DW_LNS_set_column, 0x07 /* 7 */ , 0xac, // address+=11
+						DW_LNS_set_column, 0x0c, DW_LNS_negate_stmt, 0x75, // address+=7 line+=1
+						DW_LNS_set_column, 0x0e, DW_LNS_negate_stmt, 0x74, // address+=7 line+=0
+						DW_LNS_set_column, 0x05 /* 5 */ , 0xac, // address+=11
+
+						DW_LNS_advance_pc, 0x04 /* 4 */, // address+=4*1 // why like this here? IDK/new function:
+						0x00, 0x01, 0x01, 0x00, // DW_LNE_end_sequence + reset
+
+						0x05, // 5 bytes length of the extended opcode that follows:
+						DW_LNE_set_address, 0xc1, 0x00, 0x00, 0x00, // 0x00000000000000c1
+						DW_LNS_advance_line, 0x13, // 19+1=20
+						DW_LNE_end_sequence,
+
+						DW_LNS_set_column, 0x05, // keep till end
+						DW_LNS_set_prologue_end /*0x0a*/,
+						DW_LNS_advance_pc /*0x02*/, 0x29, // address+=41,
+						0x13, // line+=1 ???
+						0xc9, // address+=13 coincidence!
+						DW_LNS_advance_pc, 0x1b, // address+=27
+						0x00, 0x01, 0x01 // DW_LNE_end_sequence
+	};
+	code += bytes;
+	return createSection(custom_section, encodeVector(Code(".debug_line") + code));
+}
