@@ -451,10 +451,51 @@ Code emit_dwarf_debug_line() {
 	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_prologue_end] = 0
 	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_epilogue_begin] = 0
 	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_isa] = 1
+
+// embedded code
+/*
+	code += (byte) 0x1f; // DW_FORM_line_strp
+	code += (byte) 0x02;  // 2 entries
+	code += (uint) 0x00000035; // include_directories[  0] =  .debug_line_str[0x00000035] = "/opt/wasm/c-wasm-debug/cmake-build-debug-gdb"
+	code += (uint) 0x00000000; // include_directories[  1] =  .debug_line_str[0x00000000] = "/opt/wasm/c-wasm-debug"
+//	code += (byte) 0x04; // DW_MACRO_end_file ?
+
+//	0401 1f02 0f05 1e81 40   ELUSIVE PREAMBLE
+	code += (byte) 0x04; // DW_FORM_block4 DW_EH_PE_udata8 DW_UT_skeleton ??
+	code += (byte) 0x01; // ??
+
+	code += (byte) 0x1f; // DW_FORM_line_strp AGAIN LATER!
+	code += (byte) 0x02;  // 2 entries
+
+	code += (byte) 0x0f; // DW_FORM_udata DW_AT_element_list ??
+	code += (byte) 0x05;
+	code += (byte) 0x1e;
+	code += (byte) 0x81;
+	code += (byte) 0x40;
+
+// now the files
+// 00005ed: 1f0217 0000 0000    66e6 2fd1 4c40 0588 a9dd  ......f./.L@....
+// 000063a: 90da 38f1 5994	  6200 0000
+	code += (byte) 0x1f; // DW_FORM_line_strp
+	code += (byte) 0x01;  // 1 entry
+	code += (uint) 0x00000017; // file_names[  0] =  .debug_line_str[0x00000017] = "/opt/wasm/c-wasm-debug/main.c"
+	code += (bytes) "66e62fd14c400588a9dd90da38f15994"; // checksum
+	code += (uint) 0x00000062; // source: .debug_line_str[0x00000062] = <main.c code>
+
+			/* file_names[  0]:
+					  name:  .debug_line_str[0x00000017] = "/opt/wasm/c-wasm-debug/main.c"
+				 dir_index: 0
+			  md5_checksum: 66e62fd14c400588a9dd90da38f15994
+					source:  .debug_line_str[0x00000062] = <main.c code>
+*/
+
+
+	// external code
 	code += Code("/opt/wasm/c-wasm-debug", false, true);
 	code += (byte) 0x00;
 	code += Code("main.c", false, true);
 	code += (byte) 0x01; // dir_index
+
 	code += (uint) 0x00000000; // mod_time length ?
 
 	List<byte> bytes = {
@@ -462,7 +503,7 @@ Code emit_dwarf_debug_line() {
 			DW_LNE_set_address,
 			(byte) (0x4A - OFFSET), 0x00, 0x00, 0x00, // start_address
 			DW_LNS_advance_line, 0x13, // line += 19
-			DW_LNE_end_sequence,
+			DW_LNS_copy, // DW_LNE_end_sequence,
 			DW_LNS_set_prologue_end,
 			DW_LNS_set_column, 0x02,
 //			DW_LNS_advance_pc, 0x0a, // address += 10
@@ -730,6 +771,26 @@ Code emit_dwarf_external_debug_info() {
 			Code("external_debug_info") + Code("main.dwo"))); // relative path or URL to main.dwo
 }
 
+// source file names and embedded source code
+Code emit_dwarf_debug_line_str() {
+	Code code;
+	List<String> stringList = {"/opt/wasm/c-wasm-debug/", "/opt/wasm/c-wasm-debug/main.c", readFile("main.c")};
+	for (String s: stringList) {
+		code += Code((chars) s.data, false, true);
+	}
+	return createSection(custom_section, encodeVector(Code(".debug_line_str") + code));
+
+}
+
+
+Code emit_dwarf_debug_debug_addr() { // since DWARF 5
+	Code code;
+//DW_OP_addrx
+//		The DW_OP_addrx operation has a single operand that encodes an unsigned LEB128 value, which is a zero-based index into the .debug_addr section, where a machine address is stored. This index is relative to the value of the DW_AT_addr_base attribute of the associated compilation unit.
+//		For example, if the DW_AT_addr_base attribute has the value 0x1000, and the operand of the DW_OP_addrx operation has the value 0x01, then the address is 0x1001.
+	return createSection(custom_section, encodeVector(Code(".debug_addr") + code));
+}
+
 Code emitDwarfSections() {
 	Code code;
 //	code += emit_dwarf_external_debug_info(); // split separate debug info OR include:
@@ -738,6 +799,8 @@ Code emitDwarfSections() {
 	code += emit_dwarf_debug_abbrev();// kinda struct defines for DW_TAG_compile_unit, DW_TAG_subprogram
 	code += emit_dwarf_debug_line();
 	code += emit_dwarf_debug_str();
+	code += emit_dwarf_debug_line_str(); // source file names and embedded source code
+//	code += emit_dwarf_debug_rnglists(); // DWARF 5
 //	code.save("dwarf_sections.wasm");
 	return code;
 }
