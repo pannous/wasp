@@ -15,19 +15,14 @@
 // MAYBE in browser:
 // https://github.com/jawilk/lldb2wasm
 // line length: 16, 1,
-int tttt(int j) {
-	int x = 7;
-	x += 7;
-	x += 8;
-	x += 9;
-	x += 8;
-	x += 7;
-	x += j;
-	return x * 2;
-}
 
 
 int main() {
 	tttt(42); // easier to set breakpoint in lldb / gdb because main is also in wasmtime
-	return 42;
 }
+
+int tttt(int j) {
+	int x = j + 1;
+	return x * 2;
+}
+
