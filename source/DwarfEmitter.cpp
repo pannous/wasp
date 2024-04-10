@@ -22,9 +22,9 @@ typedef unsigned char byte;
 
 // 7 bytes valid region:
 //byte OFFSET = 0x48; // Breakpoint reached: tttt  Stack: tttt main.c:24 YAY
-byte OFFSET = 0x47; // in the range of 0x7b … 0x7f _start
+//byte OFFSET = 0x47; // in the range of 0x7b … 0x7f _start
 //byte OFFSET = 0x46;
-//byte OFFSET = 0x41;
+byte OFFSET = 0x41;
 
 //byte OFFSET = 0x40; // XX
 //byte OFFSET = 0x44 - 0x19;
@@ -44,7 +44,7 @@ byte OFFSET = 0x47; // in the range of 0x7b … 0x7f _start
 byte DW_OP_WASM_location = 0xED;     // takes 1 byte before DW_OP_stack_value 0x9f
 byte DW_OP_WASM_location_int = 0xEE; // takes 4 bytes __stack_pointer
 enum {
-	DW_OP_WASM_global_local = 0,
+	DW_OP_WASM_local = 0,
 	DW_OP_WASM_global_leb = 1,
 	DW_OP_WASM_stack = 2,
 	DW_OP_WASM_global_u32 = 3
@@ -78,18 +78,6 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	code += (byte) 0x00; // ??
 	code += (byte) 0x04; // addr_size = 0x04
 	// start of compile unit DW_TAG_compile_unit
-// NUMBERS are little endian 7300 0000 = 0x00000073
-//	00001ac: 0b2e 6465 6275 675f 696e 666f 7700 0000  ..debug_infow...
-//	00001bc: 0400 0000 0000 04 // offset 0b = 11 bytes from start of compile unit
-//	00001bc:                  01 5d00 0000 1d00 1200  ........].......
-//	00001cc: 0000 0000 0000 3000 0000 0000 0000 0000  ......0.........
-//	00001dc: 0000
-//	00001dc:      024a 0000 0076 0000 0004 ed00 039f  ...J...v........
-//	00001ec: 0200 0000 010b 7300 0000 0302 910c 1000  ......s.........
-//	00001fc: 0000 010b 7300 0000 0402 9108 0000 0000  ....s...........
-//	000020c: 010d 7300 0000 0005 c100 0000 5100 0000  ..s.........Q...
-//	000021c: 04ed 0002 9f0b 0000 0001 1373 0000 0006  ...........s....
-//	000022c: 0700 0000 0504 00
 
 	code += (byte) 0x01; // unit_type = DW_UT_compile OR [1] DW_TAG_compile_unit abbreviated as 0x01 OK
 	code += (uint) 0x0000005d; //  DW_AT_producer DW_FORM_strp LINK
@@ -100,34 +88,14 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	code += (uint) 0x00000000; // DW_AT_low_pc
 	code += (uint) 0x00000000; // DW_AT_ranges
 
-	/*
-	  DW_TAG_compile_unit
-			  	DW_AT_producer	DW_FORM_strp	("clang version 16.0.0 (https://github.com/llvm/llvm-project 434575c026c81319b393f64047025b54e69e24c2)")
-			  	DW_AT_language	DW_FORM_data2	(DW_LANG_C11)
-			  	DW_AT_name	    DW_FORM_strp	("/Users/me/dev/apps/wasp/main.c")
-			  	DW_AT_stmt_list	DW_FORM_sec_offset	(0x00000000)
-			  	DW_AT_comp_dir	DW_FORM_strp	("/Users/me/dev/apps/wasp/cmake-build-debug-gdb")
-			  	DW_AT_low_pc	DW_FORM_addr	(0x00000000)
-			  	DW_AT_ranges	DW_FORM_sec_offset	(0x00000000
-				 [0x0000004a, 0x000000c0)
-				 [0x000000c1, 0x00000112))
-				 */
-
-//	00001dc:      024a 0000 0076 0000 0004 ed00 039f  ...J...v........
-//	00001ec: 0200 0000 010b 7300 0000 0302 910c 1000  ......s.........
-//	00001fc: 0000 010b 7300 0000 0402 9108 0000 0000  ....s...........
-	/*
-	 * 0x00000026:   */
 	code += (byte) 0x02; // ( abbreviated type DW_TAG_subprogram [2] ) // main
 	code += (uint) 0x0000004a - OFFSET;//	DW_AT_low_pc DW_FORM_addr
 	code += (uint) 0x62 - 0x4a;// DW_AT_high_pc	offset (0x000000c0)  DW_FORM_data4 // 76 0000 00  hex(0xc0 - 0x4a) OK!!!
-
 	code += (byte) 0x04;// length of DW_FORM_exprloc:
 	code += (byte) DW_OP_WASM_location;// := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
-	code += (byte) 0; // DW_AT_frame_base / DW_OP_WASM_global_local ?
-	code += (byte) 3; // NO EFFECT? // func#3?  TI_GLOBAL_RELOC / / DW_OP_WASM_global_u32 / 1 byte __stack_pointer ?  main/$_start=0x02 OK
+	code += (byte) 0; // DW_OP_WASM_function_number ??
+	code += (byte) 0; // NO EFFECT? // func#3?  TI_GLOBAL_RELOC / / DW_OP_WASM_global_u32 / 1 byte __stack_pointer ?  main/$_start=0x02 OK
 	code += (byte) DW_OP_stack_value; // 0x9F
-
 	code += (uint) 0x02;// DW_AT_name	("main") // DW_FORM_strp
 	code += (byte) 0x01; //DW_AT_decl_file	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 	code += (byte) 0x14;// DW_AT_decl_line	(20) // 0x0b DW_FORM_data1 means just 1 byte
@@ -136,100 +104,92 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	code += (uint) 0x00000073;//	DW_AT_type	( "int") // Type of subroutine return
 //		DW_AT_external	(true) // DW_FORM_flag_present
 
-/*
-[3] DW_TAG_formal_parameter	DW_CHILDREN_no
-	DW_AT_location	DW_FORM_exprloc
-	DW_AT_name	DW_FORM_strp
-	DW_AT_decl_file	DW_FORM_data1
-	DW_AT_decl_line	DW_FORM_data1
-	DW_AT_type	DW_FORM_ref4
-								  0302 910c 1000  ......s.........
-00001fc: 0000 010b 7300 0000
-                             0402 9108 0000 0000  ....s...........
-000020c: 010d 7300 0000 0005 c100 0000 5100 0000  ..s.........Q...
-000021c: 04ed 0002 9f0b 0000 0001 1373 0000 0006  ...........s....
-000022c: 0700 0000 0504 00
-
- 0x0000003e:     DW_TAG_formal_parameter
-                  DW_AT_location	(DW_OP_fbreg  +12 0x91 0x0c)
-                  DW_AT_name	("j")
-                  DW_AT_decl_file	("/Users/me/dev/apps/wasp/main.c")
-                  DW_AT_decl_line	(11)
-                  DW_AT_type	(0x00000073 "int")
-*/
-//code += (byte)DW_TAG_formal_parameter;
-	code += (byte) 0x03; // abbreviated type 3
-	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
-	code += (byte) DW_OP_fbreg; // offset to DW_AT_frame_base:
-	code += (byte) 0x0c; // + 12
-	code += (uint) 0x10; // DW_AT_name	("j") // DW_FORM_strp
-	code += (byte) 0x01; // DW_AT_decl_file (1)	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
-//	code += (byte) 0x0b; // DW_AT_decl_line	(11) DW_FORM_data1 means just 1 byte
-	code += (byte) 24;   // DW_AT_decl_line	(20) DW_FORM_data1 means just 1 byte
-	code += (uint) 0x73; // DW_AT_type	(0x00000073 "int")
-
-/*
-[4] DW_TAG_variable	DW_CHILDREN_no
-	DW_AT_location	DW_FORM_exprloc
-	DW_AT_name	DW_FORM_strp
-	DW_AT_decl_file	DW_FORM_data1
-	DW_AT_decl_line	DW_FORM_data1
-	DW_AT_type	DW_FORM_ref4
-
- 0x0000004c:     DW_TAG_variable
-      DW_AT_location	(DW_OP_fbreg +8)
-      DW_AT_name	("x")
-      DW_AT_decl_file	("/Users/me/dev/apps/wasp/main.c")
-      DW_AT_decl_line	(13)
-      DW_AT_type	(0x00000073 "int")
- */
-	code += (byte) 0x04; // abbreviated type 4 DW_TAG_variable 'x'
-	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
-	code += (byte) DW_OP_fbreg;
-	code += (byte) 0x08; // + 8
-	code += (uint) 0x00; // DW_AT_name	("x") // DW_FORM_strp
-	code += (byte) 0x01; // DW_AT_decl_file (1)	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
-//	code += (byte) 0x0d; // DW_AT_decl_line	(13) DW_FORM_data1 means just 1 byte
-	code += (byte) 25; // DW_AT_decl_line	(20) DW_FORM_data1 means just 1 byte
-	code += (uint) 0x73; // DW_AT_type	(0x00000073 "int") ≠ int32 == 0x7F
-
-	code += (byte) 0x00; // NULL why?
-
-
-
-//	[5] DW_TAG_subprogram	DW_CHILDREN_no
-//	DW_AT_low_pc	DW_FORM_addr
-//	DW_AT_high_pc	DW_FORM_data4
-//	DW_AT_frame_base	DW_FORM_exprloc
-//	DW_AT_name	DW_FORM_strp
-//	DW_AT_decl_file	DW_FORM_data1
-//	DW_AT_decl_line	DW_FORM_data1
-//	DW_AT_type	DW_FORM_ref4
-//	DW_AT_external	DW_FORM_flag_present
-
 //	0x0000005b:   DW_TAG_subprogram [5]   (0x0000000b)
-	code += (byte) 0x05; // abbreviated type 5
+	code += (byte) 0x03; // abbreviated type 5
 	code += (uint) 0x00000063 - OFFSET; // DW_AT_low_pc DW_FORM_addr
 	code += (uint) 0x000000a4 - 0x63; // DW_AT_high_pc offset (0x000000c0)  DW_FORM_data4
+
+//	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
+//	code += (byte) DW_OP_fbreg; // offset to DW_AT_frame_base:
+//	code += (byte) 0x00;
+
 	code += (byte) 0x04; // length of DW_FORM_exprloc:
 	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
-	code += (byte) 0; // DW_AT_frame_base / DW_OP_WASM_global_local ?
-	code += (byte) 2;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	(DW_OP_WASM_location 0x0 0x2, DW_OP_stack_value)
+	code += (byte) 0;    // DW_OP_WASM_local ?  0,1,2 work 3 hit end 4… fail  R_WASM_FUNCTION_OFFSET_I32 ?
+	code += (byte) 0x1;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
 	code += (byte) DW_OP_stack_value;//  0x9f vs  DW_OP_WASM_location_int; // 0xEE
+
+
 //	DW_AT_name [DW_FORM_strp]	( .debug_str[0x0000000b] = "tttt")
 	code += (uint) 0x0000000b; // DW_AT_name	("tttt") // DW_FORM_strp
 	code += (byte) 0x01; // DW_AT_decl_file[DW_FORM_data1]	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 	code += (byte) 0x19; // DW_AT_decl_line[DW_FORM_data1]	(25) // 0x0b DW_FORM_data1 means just 1 byte
 	code += (uint) 0x00000073; // DW_AT_type[DW_FORM_ref4]	( "int") // Type of subroutine return
 //	DW_AT_external [DW_FORM_flag_present]	(true)
-//	List<byte> others = {0x05, (byte) (0x63 - OFFSET), 0x00, 0x00, 0x00, (byte) (0xa4 - 0x63), 0x00, 0x00, 0x00,
-//	                     0x04, 0xed, 0x00, 0x02, 0x9f, 0x0b, 0x00, 0x00, 0x00, 0x01, 0x13, 0x73, 0x00, 0x00, 0x00}
+
+
+
+
+/*
+ * To enable the recovery of the values of variables, parameters, statics, etc... of a debuggee program at runtime, DWARF has location descriptions (see 2.6 of [DWARF]). There are four kinds of base, non-composite location description:
+    Empty location descriptions (see 2.6.1.1.1 of [DWARF]) are used for optimized-away variables, or data that is otherwise unavailable.
+    Memory location descriptions (see 2.6.1.1.2 of [DWARF]) are used when a value is located at some address in memory.
+    Register location descriptions (see 2.6.1.1.3 of [DWARF]) are used when a value is located in a register.
+    Implicit location descriptions (see 2.6.1.1.4 of [DWARF]) are used when a value does not have any runtime representation, but has a known value anyways.
+Each of these location descriptions are applicable to values in WebAssembly, and may be used as they normally are, except for the third: register location descriptions. WebAssembly does not have registers per se. Instead, it has three distinct kinds of virtual registers (globals, locals, and the operand stack) and may use up to 232 - 1 instances of each virtual register.
+ */
+
+//	DW_OP_fbreg: in WASM three distinct kinds of virtual registers (globals, locals, and the operand stack)
+
+	code += (byte) 0x04; // abbreviated type 3  DW_TAG_formal_parameter; 'j'
+
+	code += (byte) 0x03; // length of DW_FORM_exprloc:
+	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
+	code += (byte) DW_OP_WASM_local;    // DW_AT_frame_base / DW_OP_WASM_global_local ?  0,1,2 work 3 hit end 4… fail
+	code += (byte) 0x1;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
+//	code += (byte) DW_OP_stack_value;//  0x9f vs  DW_OP_WASM_location_int; // 0xEE
+
+//	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
+//	code += (byte) DW_OP_fbreg; // offset to DW_AT_frame_base:
+//	code += (byte) 0x0c; // + 12
+
+	code += (uint) 0x10; // DW_AT_name	("j") // DW_FORM_strp [16]
+	code += (byte) 0x01; // DW_AT_decl_file (1)	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
+//	code += (byte) 0x0b; // DW_AT_decl_line	(11) DW_FORM_data1 means just 1 byte
+	code += (byte) 24;   // DW_AT_decl_line	(20) DW_FORM_data1 means just 1 byte
+	code += (uint) 0x73; // DW_AT_type	(0x00000073 "int")
+
+	code += (byte) 0x05; // abbreviated type 4 DW_TAG_variable 'x'
+
+//	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
+//	code += (byte) DW_OP_fbreg; // DWARF form encoding
+//	code += (byte) 0x08; // + 8
+//
+
+	code += (byte) 0x03; // length of DW_FORM_exprloc:
+	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
+	code += (byte) DW_OP_WASM_local;    // DW_AT_frame_base / DW_OP_WASM_global_local ?  0,1,2 work 3 hit end 4… fail
+	code += (byte) 0x2;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
+//	code += (byte) DW_OP_stack_value;//  0x9f vs  DW_OP_WASM_location_int; // 0xEE
+
+
+	code += (uint) 0x00; // DW_AT_name	("x") // DW_FORM_strp
+	code += (byte) 0x01; // DW_AT_decl_file (1)	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
+//	code += (byte) 0x0d; // DW_AT_decl_line	(13) DW_FORM_data1 means just 1 byte
+	code += (byte) 25; // DW_AT_decl_line	(20) DW_FORM_data1 means just 1 byte
+	code += (uint) 0x73; // DW_AT_type	(0x00000073 "int") ≠ int32 == 0x7F
+
+//	code += (byte) 0x00; // NULL why?
 
 //						 0x06, 0x07, 0x00, 0x00, 0x00, 0x05, 0x04, 0x00};
 	code += (byte) 0x06; // abbreviated type 6 DW_TAG_base_type 'int'
 	code += (uint) 0x00000007; // DW_AT_name	("int") // DW_FORM_strp .debug_str[0x00000007] = "int"
 	code += (byte) 0x05; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
 	code += (byte) 0x04; // DW_AT_byte_size:	(0x04) // DW_FORM_data1
+
+
+
+
 
 //	code = encodeVector(code);
 	Code len = Code(code.length - 3);// why -3 ??
@@ -330,53 +290,8 @@ DW_AT_ranges	DW_FORM_sec_offset
    DW_AT_external	DW_FORM_flag_present
 	*/
 
-	/* Contents of section Custom: DWARF 4 continued
-	 *                          0305 0002 1803 0e3a  '.I.?..........:
-   000029d: 0b3b 0b49 1300                             >......
-	*/
-	code += (byte) 0x03; // third abbrev
-	code += (byte) 0x05; // DW_TAG_formal_parameter
-	code += (byte) 0x00; // DW_CHILDREN_no
-	code += (byte) 0x02; // DW_AT_location :
-	code += (byte) 0x18; // DW_FORM_exprloc
-	code += (byte) 0x03; // DW_AT_name :
-	code += (byte) 0x0e; // DW_FORM_strp // code += (byte) 0x25; // DW_FORM_strx1 in DWARF 5
-	code += (byte) 0x3a; // DW_AT_decl_file :
-	code += (byte) 0x0b; // DW_FORM_data1
-	code += (byte) 0x3b; // DW_AT_decl_line :
-	code += (byte) 0x0b; // DW_FORM_data1
-	code += (byte) 0x49; // DW_AT_type :
-	code += (byte) 0x13; // DW_FORM_ref4
-	code += (byte) 0x00; // end of abbrev
-	code += (byte) 0x00; // end of abbrev
-/*                         0004 3400 0218 030e 3a0b  .;.I....4.....:.
-   00002ad: 3b0b 4913 0000 052e 0011 0112 0640 1803  ;.I..........@..
-   00002bd: 0e3a 0b3b 0b49 133f 1900 0006 2400 030e  .:.;.I.?....$...
-   00002cd: 3e0b 0b0b 0000 00 */
-	code += (byte) 0x04; // fourth abbrev
-	code += (byte) 0x34; // DW_TAG_variable
-	code += (byte) 0x00; // DW_CHILDREN_no
-	code += (byte) 0x02; // DW_AT_location :
-	code += (byte) 0x18; // DW_FORM_exprloc
-	code += (byte) 0x03; // DW_AT_name :
-	code += (byte) 0x0e; // DW_FORM_strp // code += (byte) 0x25; // DW_FORM_strx1 in DWARF 5
-	code += (byte) 0x3a; // DW_AT_decl_file :
-	code += (byte) 0x0b; // DW_FORM_data1
-	code += (byte) 0x3b; // DW_AT_decl_line :
-	code += (byte) 0x0b; // DW_FORM_data1
-	code += (byte) 0x49; // DW_AT_type :
-	code += (byte) 0x13; // DW_FORM_ref4
-	code += (byte) 0x00; // end of abbrev
-	code += (byte) 0x00; // end of abbrev
-/*
-	 * [4] DW_TAG_variable	DW_CHILDREN_no
-   DW_AT_location	DW_FORM_exprloc
-   DW_AT_name	DW_FORM_strp
-   DW_AT_decl_file	DW_FORM_data1
-   DW_AT_decl_line	DW_FORM_data1
-   DW_AT_type	DW_FORM_ref4
-	 */
-	code += (byte) 0x05; // fifth abbrev
+
+	code += (byte) 0x03; // fifth abbrev
 	code += (byte) 0x2e; // DW_TAG_subprogram
 	code += (byte) 0x00; // DW_CHILDREN_no
 	code += (byte) 0x11; // DW_AT_abstract_origin :
@@ -407,6 +322,55 @@ DW_AT_ranges	DW_FORM_sec_offset
 	DW_AT_type	DW_FORM_ref4
 	DW_AT_external	DW_FORM_flag_present
  */
+
+	/* Contents of section Custom: DWARF 4 continued
+	 *                          0305 0002 1803 0e3a  '.I.?..........:
+   000029d: 0b3b 0b49 1300                             >......
+	*/
+	code += (byte) 0x04; // third abbrev
+	code += (byte) 0x05; // DW_TAG_formal_parameter
+	code += (byte) 0x00; // DW_CHILDREN_no
+	code += (byte) 0x02; // DW_AT_location :
+	code += (byte) 0x18; // DW_FORM_exprloc
+	code += (byte) 0x03; // DW_AT_name :
+	code += (byte) 0x0e; // DW_FORM_strp // code += (byte) 0x25; // DW_FORM_strx1 in DWARF 5
+	code += (byte) 0x3a; // DW_AT_decl_file :
+	code += (byte) 0x0b; // DW_FORM_data1
+	code += (byte) 0x3b; // DW_AT_decl_line :
+	code += (byte) 0x0b; // DW_FORM_data1
+	code += (byte) 0x49; // DW_AT_type :
+	code += (byte) 0x13; // DW_FORM_ref4
+	code += (byte) 0x00; // end of abbrev
+	code += (byte) 0x00; // end of abbrev
+/*                         0004 3400 0218 030e 3a0b  .;.I....4.....:.
+   00002ad: 3b0b 4913 0000 052e 0011 0112 0640 1803  ;.I..........@..
+   00002bd: 0e3a 0b3b 0b49 133f 1900 0006 2400 030e  .:.;.I.?....$...
+   00002cd: 3e0b 0b0b 0000 00 */
+	code += (byte) 0x05; // fourth abbrev
+	code += (byte) 0x34; // DW_TAG_variable
+	code += (byte) 0x00; // DW_CHILDREN_no
+	code += (byte) 0x02; // DW_AT_location :
+	code += (byte) 0x18; // DW_FORM_exprloc
+	code += (byte) 0x03; // DW_AT_name :
+	code += (byte) 0x0e; // DW_FORM_strp // code += (byte) 0x25; // DW_FORM_strx1 in DWARF 5
+	code += (byte) 0x3a; // DW_AT_decl_file :
+	code += (byte) 0x0b; // DW_FORM_data1
+	code += (byte) 0x3b; // DW_AT_decl_line :
+	code += (byte) 0x0b; // DW_FORM_data1
+	code += (byte) 0x49; // DW_AT_type :
+	code += (byte) 0x13; // DW_FORM_ref4
+	code += (byte) 0x00; // end of abbrev
+	code += (byte) 0x00; // end of abbrev
+/*
+	 * [4] DW_TAG_variable	DW_CHILDREN_no
+   DW_AT_location	DW_FORM_exprloc
+   DW_AT_name	DW_FORM_strp
+   DW_AT_decl_file	DW_FORM_data1
+   DW_AT_decl_line	DW_FORM_data1
+   DW_AT_type	DW_FORM_ref4
+	 */
+
+
 	code += (byte) 0x06; // sixth abbrev
 	code += (byte) 0x24; // DW_TAG_base_type
 	code += (byte) 0x00; // DW_CHILDREN_no
