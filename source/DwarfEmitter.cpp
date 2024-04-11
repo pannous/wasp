@@ -270,9 +270,7 @@ DW_AT_ranges	DW_FORM_sec_offset
 Code emit_dwarf_debug_info() { // DWARF 4
 	Code code;
 //	0x00000000: Compile Unit: length = 0x00000077, format = DWARF32, version = 0x0004, abbr_offset = 0x0000, addr_size = 0x04 (next unit at 0x0000007b)
-	code += (byte) 0x00;
-	code += (short) 0x00; // format = DWARF32
-	code += (short) 0x04; // version = 0x0004
+	code += (short) 0x04; // format = DWARF32 version = 0x0004
 //	code += (short) 0x05; // version = 0x0004 // DW_UT_*` value for this unit is not supported yet
 	code += (short) 0x00; // abbr_offset = 0x0000
 	code += (short) 0x00;
@@ -380,11 +378,16 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 
 	code += (byte) 0x00; // NULL unindent children of DW_TAG_subprogram tttt
 
+
+	// int
+	code += (byte) 0x06; // abbreviated type 6 DW_TAG_base_type 'int'
+	code += (uint) 0x00000007; // DW_AT_name	("int") // DW_FORM_strp .debug_str[0x00000007] = "int"
+	code += (byte) 0x05; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
+	code += (byte) 0x04; // DW_AT_byte_size:	(0x04) // DW_FORM_data1
+
 	code += (byte) 0x00; // NULL end of compile unit
 
-//	code = encodeVector(code);
-	Code len = Code(code.length - 3);// why -3 ??
-	// todo maybe add 0x00000000 to the end of code
+	Code len = Code(code.length, false);
 	return createSection(custom_section, encodeVector(Code(".debug_info") + len + code));
 }
 
