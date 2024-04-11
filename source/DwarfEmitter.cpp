@@ -262,18 +262,6 @@ DW_AT_ranges	DW_FORM_sec_offset
 	DW_AT_byte_size	DW_FORM_data1
 	 */
 
-	code += (byte) 0x07; // sixth abbrev
-	code += (byte) 0x24; // DW_TAG_base_type
-	code += (byte) 0x00; // DW_CHILDREN_no
-	code += (byte) 0x03; // DW_AT_name :
-	code += (byte) 0x0e; // DW_FORM_strp // code += (byte) 0x25; // DW_FORM_strx1 in DWARF 5
-	code += (byte) 0x3e; // DW_AT_encoding :
-	code += (byte) 0x0b; // DW_FORM_data1
-	code += (byte) 0x0b; // DW_AT_byte_size :
-	code += (byte) 0x0b; // DW_FORM_data1
-	code += (byte) 0x00; // end of abbrev
-	code += (byte) 0x00; // end of abbrev
-
 	code += (byte) 0x00; // final end of abbrev
 	return createSection(custom_section, encodeVector(Code(".debug_abbrev") + code));
 }
@@ -283,15 +271,13 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	Code code;
 //	0x00000000: Compile Unit: length = 0x00000077, format = DWARF32, version = 0x0004, abbr_offset = 0x0000, addr_size = 0x04 (next unit at 0x0000007b)
 	code += (byte) 0x00;
-	code += (byte) 0x00; // format = DWARF32
-	code += (byte) 0x00;
-	code += (byte) 0x04; // version = 0x0004
-	code += (byte) 0x00;
-	code += (byte) 0x00; // abbr_offset = 0x0000
-	code += (byte) 0x00;
-	code += (byte) 0x00;
-	code += (byte) 0x00; // ??
+	code += (short) 0x00; // format = DWARF32
+	code += (short) 0x04; // version = 0x0004
+//	code += (short) 0x05; // version = 0x0004 // DW_UT_*` value for this unit is not supported yet
+	code += (short) 0x00; // abbr_offset = 0x0000
+	code += (short) 0x00;
 	code += (byte) 0x04; // addr_size = 0x04 32-bit addresses
+
 
 	// start of compile unit DW_TAG_compile_unit
 	code += (byte) 0x01; // unit_type = DW_UT_compile OR [1] DW_TAG_compile_unit abbreviated as 0x01 OK
@@ -303,6 +289,20 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	code += (uint) 0x00000000; // DW_AT_low_pc
 	code += (uint) 0x00000000; // DW_AT_ranges
 
+
+	// int64 long
+	code += (byte) 0x06; // abbreviated type 6 DW_TAG_base_type 'int'
+	code += (uint) 40;   // DW_AT_name	("int") // DW_FORM_strp .debug_str[] = "int64"
+	code += (byte) 0x05; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
+	code += (byte) 0x08; // DW_AT_byte_size:	(0x04) // DW_FORM_data1
+
+	// int
+//	code += (byte) 0x06; // abbreviated type 6 DW_TAG_base_type 'int'
+//	code += (uint) 0x00000007; // DW_AT_name	("int") // DW_FORM_strp .debug_str[0x00000007] = "int"
+//	code += (byte) 0x05; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
+//	code += (byte) 0x04; // DW_AT_byte_size:	(0x04) // DW_FORM_data1
+
+	// main
 	code += (byte) 0x02; // ( abbreviated type DW_TAG_subprogram [2] ) // main
 	code += (uint) 0x0000004a - OFFSET;//	DW_AT_low_pc DW_FORM_addr
 	code += (uint) 0x62 - 0x4a;// DW_AT_high_pc	offset (0x000000c0)  DW_FORM_data4 // 76 0000 00  hex(0xc0 - 0x4a) OK!!!
@@ -314,15 +314,8 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	code += (uint) 0x02;// DW_AT_name	("main") // DW_FORM_strp todo: wasp_main
 	code += (byte) 0x01; //DW_AT_decl_file	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 	code += (byte) 0x14;// DW_AT_decl_line	(20) // 0x0b DW_FORM_data1 means just 1 byte
-//	code += (byte) 0x0b;// DW_AT_decl_line	(11) // 0x0b DW_FORM_data1 means just 1 byte
-//		DW_AT_prototyped	(true) // DW_FORM_flag_present NOT THERE / 0x01 comes BEFORE 0x0b !!!
-//	code += (uint) 0x0b;//	DW_AT_type	( "int") // Type of subroutine return reference to the type named by the typedef
-	code += (uint) 0x00000078;//	DW_AT_type	( "int") // Type of subroutine return reference to the type named by the typedef
-//	error: invalid DIE reference 0x00000073. Offset is in between DIEs:
+	code += (uint) 0x00000026;//	DW_AT_type	( "int") // Type of subroutine return reference to the type named by the typedef
 //		DW_AT_external	(true) // DW_FORM_flag_present
-
-//	code += (byte) 0x00; // NULL why?
-
 
 // 'tttt'
 	code += (byte) 0x03; // abbreviated type ;
@@ -339,10 +332,8 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	code += (uint) 0x0000000b; // DW_AT_name	("tttt") // DW_FORM_strp
 	code += (byte) 0x01; // DW_AT_decl_file[DW_FORM_data1]	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 	code += (byte) 0x19; // DW_AT_decl_line[DW_FORM_data1]	(25) // 0x0b DW_FORM_data1 means just 1 byte
-	code += (uint) 0x00000078; // DW_AT_type[DW_FORM_ref4]	( "int") // Type of subroutine return
+	code += (uint) 0x00000026; // DW_AT_type[DW_FORM_ref4]	( "int") // Type of subroutine return
 //	DW_AT_external [DW_FORM_flag_present]	(true)
-
-
 
 /*
  * To enable the recovery of the values of variables, parameters, statics, etc... of a debuggee program at runtime, DWARF has location descriptions (see 2.6 of [DWARF]). There are four kinds of base, non-composite location description:
@@ -368,7 +359,7 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 	code += (uint) 0x10; // DW_AT_name	("j") // DW_FORM_strp [16]
 	code += (byte) 0x01; // DW_AT_decl_file (1)	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 	code += (byte) 24;   // DW_AT_decl_line	(20) DW_FORM_data1 means just 1 byte
-	code += (uint) 0x78; // DW_AT_type	(0x00000073 "int")
+	code += (uint) 0x26; // DW_AT_type	(0x00000073 "int")
 
 	// x
 	code += (byte) 0x05; // abbreviated type 4 DW_TAG_variable 'x'
@@ -385,25 +376,11 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 	code += (byte) 0x01; // DW_AT_decl_file (1)	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 //	code += (byte) 0x0d; // DW_AT_decl_line	(13) DW_FORM_data1 means just 1 byte
 	code += (byte) 25; // DW_AT_decl_line	(20) DW_FORM_data1 means just 1 byte
-	code += (uint) 0x78; // DW_AT_type	(0x00000073 "int") ≠ int32 == 0x7F
+	code += (uint) 0x26; // DW_AT_type	(0x00000073 "int") ≠ int32 == 0x7F
 
 	code += (byte) 0x00; // NULL unindent children of DW_TAG_subprogram tttt
 
-	// int
-	code += (byte) 0x06; // abbreviated type 6 DW_TAG_base_type 'int'
-	code += (uint) 0x00000007; // DW_AT_name	("int") // DW_FORM_strp .debug_str[0x00000007] = "int"
-	code += (byte) 0x05; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
-	code += (byte) 0x04; // DW_AT_byte_size:	(0x04) // DW_FORM_data1
-
 	code += (byte) 0x00; // NULL end of compile unit
-
-// int64 i64
-//	code += (byte) 0x07; // abbreviated type 6 DW_TAG_base_type 'int'
-//	code += (uint) 0x00000008; // DW_AT_name	("i64") // DW_FORM_strp .debug_str[0x000000027]
-//	code += (byte) 0x05; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
-//	code += (byte) 0x08; // DW_AT_byte_size:	(0x04) // DW_FORM_data1
-
-//	code += (byte) 0x00; // NULL end of compile unit
 
 //	code = encodeVector(code);
 	Code len = Code(code.length - 3);// why -3 ??
@@ -711,7 +688,7 @@ Code emit_dwarf_debug_str() {
 //	List<String> stringList = {"x", "tttt", "int", "main", "j", "/Users/me/dev/apps/wasp/main.c",
 //	                           "/Users/me/dev/apps/wasp/","bla","bla","bla","bla","bla","bla"};
 // flipped tttt, main!!
-	List<String> stringList = {"x", "main", "int", "tttt", "j", "/Users/me/dev/apps/wasp/main.c",
+	List<String> stringList = {"x", "main", "int", "tttt", "j", "/Users/me/wasp/main.c", "int64",
 	                           "/Users/me/dev/apps/wasp/", "bla", "bla", "bla", "bla", "bla", "bla"};
 	List<String> stringListX = {"x", "tttt", "int", "main", "j", "/Users/me/dev/apps/wasp/main.c",
 	                            "/Users/me/dev/apps/wasp/cmake-build-debug-gdb.clang", "version16.0.0",
