@@ -20,11 +20,17 @@ typedef unsigned char byte;
 //byte OFFSET = 0x4A; // XX
 //byte OFFSET = 0x49; // XX
 
+//byte OFFSET = 0x48; // Breakpoint reached: tttt  Stack: tttt main.c:24 wrong ;)
 // 7 bytes valid region:
-//byte OFFSET = 0x48; // Breakpoint reached: tttt  Stack: tttt main.c:24 YAY
-//byte OFFSET = 0x47; // in the range of 0x7b … 0x7f _start
+// ALL SHOW MISBEHAVIOUR wrong step into ≈ step out
+//byte OFFSET = 0x47; // OK in the range of 0x7b … 0x7f _start
 //byte OFFSET = 0x46;
-byte OFFSET = 0x47;
+byte OFFSET = 0x45;
+//byte OFFSET = 0x44;
+//byte OFFSET = 0x43;// error: Couldn't materialize: couldn't get the value of variable j: no location, value may have been optimized out
+//byte OFFSET = 0x42; // perfect but no j,x
+//error: errored out in DoExecute, couldn't PrepareToExecuteJITExpression
+//byte OFFSET = 0x41;
 
 //byte OFFSET = 0x40; // XX
 //byte OFFSET = 0x44 - 0x19;
@@ -255,6 +261,19 @@ DW_AT_ranges	DW_FORM_sec_offset
 	DW_AT_encoding	DW_FORM_data1
 	DW_AT_byte_size	DW_FORM_data1
 	 */
+
+	code += (byte) 0x07; // sixth abbrev
+	code += (byte) 0x24; // DW_TAG_base_type
+	code += (byte) 0x00; // DW_CHILDREN_no
+	code += (byte) 0x03; // DW_AT_name :
+	code += (byte) 0x0e; // DW_FORM_strp // code += (byte) 0x25; // DW_FORM_strx1 in DWARF 5
+	code += (byte) 0x3e; // DW_AT_encoding :
+	code += (byte) 0x0b; // DW_FORM_data1
+	code += (byte) 0x0b; // DW_AT_byte_size :
+	code += (byte) 0x0b; // DW_FORM_data1
+	code += (byte) 0x00; // end of abbrev
+	code += (byte) 0x00; // end of abbrev
+
 	code += (byte) 0x00; // final end of abbrev
 	return createSection(custom_section, encodeVector(Code(".debug_abbrev") + code));
 }
@@ -292,7 +311,7 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	code += (byte) DW_OP_WASM_global_u32; // 0x03
 	code += (uint) 0; // function offset?
 	code += (byte) DW_OP_stack_value; // 0x9F
-	code += (uint) 0x02;// DW_AT_name	("main") // DW_FORM_strp
+	code += (uint) 0x02;// DW_AT_name	("main") // DW_FORM_strp todo: wasp_main
 	code += (byte) 0x01; //DW_AT_decl_file	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 	code += (byte) 0x14;// DW_AT_decl_line	(20) // 0x0b DW_FORM_data1 means just 1 byte
 //	code += (byte) 0x0b;// DW_AT_decl_line	(11) // 0x0b DW_FORM_data1 means just 1 byte
@@ -369,13 +388,22 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 	code += (uint) 0x78; // DW_AT_type	(0x00000073 "int") ≠ int32 == 0x7F
 
 	code += (byte) 0x00; // NULL unindent children of DW_TAG_subprogram tttt
-//
+
+	// int
 	code += (byte) 0x06; // abbreviated type 6 DW_TAG_base_type 'int'
 	code += (uint) 0x00000007; // DW_AT_name	("int") // DW_FORM_strp .debug_str[0x00000007] = "int"
 	code += (byte) 0x05; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
 	code += (byte) 0x04; // DW_AT_byte_size:	(0x04) // DW_FORM_data1
 
 	code += (byte) 0x00; // NULL end of compile unit
+
+// int64 i64
+//	code += (byte) 0x07; // abbreviated type 6 DW_TAG_base_type 'int'
+//	code += (uint) 0x00000008; // DW_AT_name	("i64") // DW_FORM_strp .debug_str[0x000000027]
+//	code += (byte) 0x05; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
+//	code += (byte) 0x08; // DW_AT_byte_size:	(0x04) // DW_FORM_data1
+
+//	code += (byte) 0x00; // NULL end of compile unit
 
 //	code = encodeVector(code);
 	Code len = Code(code.length - 3);// why -3 ??
