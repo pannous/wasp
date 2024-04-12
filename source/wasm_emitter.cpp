@@ -3077,6 +3077,7 @@ Code emitCodeSection(Node &root) {
 	bool has_main = start and call_indices.has(start);
 	int function_codes = functionCodes.size();
 	function_block_count = has_main /*main*/ + builtin_count + function_codes;
+	// 0a:code_section 30:len 02:block_count ( 19:len-block-1  02:locals 01:one-of 7f 01:one-of  7e … body … 0b: end_block)
 	auto codeSection = createSection(code_section, Code(function_block_count) + code_blocks);
 	return codeSection.clone();
 }

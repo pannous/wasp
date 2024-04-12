@@ -2,14 +2,20 @@
 #include "dwarf.h"
 #include "Code.h"
 
+//byte OFFSET = 0x0;
+byte OFFSET = 0x42; // main_start - OFFSET = 0x0000000000000002 we're onto something!
+
+
+// 0x001031b4034 wasp_main:
+// 0x001031b40b8 _start ?
 uint main_start = 0x44;
 uint main_end = 0x5d;
 
-uint tttt_start = 0x5e + 8;
-uint tttt_end = 0x71;
+// 0x00105178060 tttt:
+uint tttt_start = 0x5e;
+uint tttt_end = 0x72;
 
-byte OFFSET = main_start - 2; // todo why 2?
-//byte OFFSET = 0; // to see real layout
+
 
 /* 0x00000639:   DW_TAG_structure_type
                 DW_AT_name	("target.Target.Os.LinuxVersionRange")
@@ -36,7 +42,10 @@ byte OFFSET = main_start - 2; // todo why 2?
 // b tttt
 // run
 
-
+// special opcodes under defaults:
+//  prolog += (byte) 0xfb; // line_base = -5
+//  prolog += (byte) 0x0e; // line_range = 14
+//  prolog += (byte) 0x0d; // opcode_base = 13
 //			0x12, // address += 0, line += 0, is_stmt
 //			0x13, // address += 0, line += 1
 //			0x20, // address += 1, line += 0
@@ -48,100 +57,103 @@ byte OFFSET = main_start - 2; // todo why 2?
 //			0x4a, // address += 4, line += 0
 //			0x4b, // address += 4, line += 1
 
+// is_stmt:
+// A boolean indicating that the current instruction is a recommended breakpoint location.
+// A recommended breakpoint location is intended to “represent” a line, a statement and/or a semantically distinct subpart of a statement.
+//	DW_LNS_negate_stmt,  just leave it on to allow breakpoints everywhere
 List<byte> getDwarf5LineTable() {
 	List<byte> dwarf5_bytes = {
-			0x00, // todo are these the two unaccounted OFFSET bytes??
-			0x05, // 5 bytes length of the extended opcode that follows:
+			0x00, 0x05, // 5 bytes length of the extended opcode that follows:
 			DW_LNE_set_address,
 			(byte) (main_start - OFFSET), 0x00, 0x00, 0x00, // start_address
 			DW_LNS_set_file, 0x00, // 0
-//			DW_LNS_const_add_pc, // pc += 11 !!!
-//			0x2e, // address += 2, line += 0
-			DW_LNS_negate_stmt,
+//			DW_LNS_negate_stmt,
 			DW_LNS_advance_line, 6, // implicit main block starts after(!) function tttt
 			DW_LNS_copy,
 
 //			000044 func[0] <wasp_main>:
-//			DW_LNS_negate_stmt,
 			0x20, // address += 1, line += 0
+////			DW_LNS_negate_stmt,
 //			000045: 01 7f                      | local[0] type=i32
 			0x2e, // address += 2, line += 0
 //			000047: 01 7e                      | local[1] type=i64
 			0x2e, // address += 2, line += 0
-//			DW_LNS_set_prologue_end,
 //			000049: 41 03                      | i32.const 3
+			0x2e, // address += 2, line += 0
 			DW_LNS_advance_line, 1,
 			DW_LNS_set_column, 0x01, // 10
-			DW_LNS_negate_stmt,
-			0x2e, // address += 2, line += 0
+//			DW_LNS_negate_stmt,
 			DW_LNS_set_column, 0x02, // 10
 			0x2e, // address += 2, line += 0  call 1 <tttt>
 			DW_LNS_set_column, 0x03, // 10
-			DW_LNS_negate_stmt,
+//			DW_LNS_negate_stmt,
 			0x4a, // address += 4, line += 0  nop * 4
 			DW_LNS_advance_line, 0x01, // line += 1
 			DW_LNS_set_column, 0x01, // 10
-			DW_LNS_negate_stmt,
+//			DW_LNS_negate_stmt,
 			0x2e, // address += 2, line += 0  i32.const 3
 			DW_LNS_set_column, 0x02, // 10
 			0x2e, // address += 2, line += 0  call 1 <tttt>
 			DW_LNS_set_column, 0x03, // 10
-			DW_LNS_negate_stmt,
+//			DW_LNS_negate_stmt,
 			0x4a, // address += 4, line += 0  nop * 4
 			0x20, // address += 1, line += 0 // i64.extend_i32_s nop
 			0x20, // address += 1, line += 0 // nop
-			DW_LNS_negate_stmt,
+//			DW_LNS_negate_stmt,
 			0x20, // address += 1, line += 0 // return
-			0x20, // address += 1, line += 0 // end
 //			DW_LNS_set_prologue_end,
 //			DW_LNS_const_add_pc, // NO operands!
 			0x00, 0x01, 0x01, // DW_LNE_end_sequence
 
 			// tttt
-			0x00,
-			0x05, // 5 bytes length of the extended opcode that follows:
+			0x00, 0x05, // 5 bytes length of the extended opcode that follows:
 			DW_LNE_set_address, (byte) (tttt_start - OFFSET), 0x00, 0x00, 0x00, // 0x0000000000000063
-			DW_LNS_negate_stmt,
-			DW_LNS_advance_line, 1, // line += 1 for // comment
 			DW_LNS_set_file, 0x00, // 0
+//			DW_LNS_negate_stmt,
+			DW_LNS_advance_line, 1, // line += 1 for // comment
 			DW_LNS_copy,
 //			00005e func[1] <tttt>:
+////			DW_LNS_negate_stmt,
 			0x20, // address += 1, line += 0
-//			DW_LNS_negate_stmt,
 //			00005f: 01 7e                      | local[1] type=i64
 			0x2e, // address += 2, line += 0  i32.const 3
 //			000061: 01 7e                      | local[2] type=i64
 			0x2e, // address += 2, line += 0  i32.const 3
-//			DW_LNS_set_prologue_end,
+			DW_LNS_set_column, 0x01, // 10
+			DW_LNS_set_prologue_end,
 //			000063: 20 00                      | local.get 0 <j>
-			0x2e, // address += 2, line += 0  i32.const 3
-			DW_LNS_negate_stmt,
+			0x2f, // address += 2, line += 1
+			DW_LNS_set_column, 0x01, // 10
+//			DW_LNS_negate_stmt,
 //			000065: 41 01                      | i32.const 1
-			0x2f, // address += 2, line += 1  i32.const 3
-			DW_LNS_set_column, 0x04, // 10
+			0x2e, // address += 2, line += 0  i32.const 3
+			DW_LNS_set_column, 15, // plus sign j + 1
 //			000067: 6a                         | i32.add
 			0x20, // address += 1, line += 0
-			DW_LNS_set_column, 0x08, // 10
+			DW_LNS_set_column, 16, // plus sign j + 1
 //			000068: ac                         | i64.extend_i32_s
 			0x20, // address += 1, line += 0
-			DW_LNS_negate_stmt,
+//			DW_LNS_negate_stmt,
 //			000069: 01                         | nop
 			0x20, // address += 1, line += 0
+			DW_LNS_set_column, 11, // = sign in x = j + 1
 //			00006a: 22 01                      | local.tee 1
-			0x2f, // address += 2, line += 1
-			DW_LNS_set_column, 0x04, // 10
-			DW_LNS_negate_stmt,
+			0x2e, // address += 2, line += 1
+			DW_LNS_set_column, 0x02, // 10
 //			00006c: 20 01                      | local.get 1 <x>
 			0x2e, // address += 2, line += 0
 //			00006e: a7                         | i32.wrap_i64
-			0x21, // address += 1, line += 1
+			0x20, // address += 1, line += 0
 //			00006f: 01                         | nop
+//			DW_LNS_negate_stmt,
 			0x20, // address += 1, line += 0
 //			000070: 0f                         | return
-			0x20, // address += 1, line += 0
+			0x21, // address += 1, line += 1
 //			000071: 0b                         | end
-//			0x21, // address += 1, line += 1  HUH one too far
+//			0x20, // address += 1, line += 0
+//			DW_LNE_end_sequence,
 //			DW_LNS_set_prologue_end,
+//			DW_LNS_const_add_pc, // NO operands!
 			0x00, 0x01, 0x01 // DW_LNE_end_sequence
 	};
 	return dwarf5_bytes;
@@ -174,15 +186,15 @@ List<byte> dwarf4_bytes = {
 		DW_LNS_const_add_pc, // NO operands!
 		0xbb, // address += 29, line += 1, is_stmt
 		DW_LNS_set_column, 0x0b, // 11
-		DW_LNS_negate_stmt,
+//		DW_LNS_negate_stmt, nice but has no effect, ZERO?
 		0x74, // address += 7, line += 0
 		DW_LNS_set_column, 0x06,
 		0xac, // address += 11
 		DW_LNS_set_column, 0x09,
-		DW_LNS_negate_stmt,
+//		DW_LNS_negate_stmt,
 		0x75, // address += 7, line += 1, is_stmt
 //			DW_LNS_advance_pc, 0x02, // address += 2
-		DW_LNS_negate_stmt,
+//		DW_LNS_negate_stmt,
 //			DW_LNS_set_column, 2,
 		0x74, // address += 7, line += 0
 		DW_LNS_advance_pc, 0x04, // address += 4
