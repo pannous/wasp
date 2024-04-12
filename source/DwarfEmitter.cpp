@@ -1,7 +1,29 @@
 //#include "DwarfEmitter.h"
 #include "dwarf.h"
+#include "Code.h"
 
-typedef unsigned char byte;
+//byte OFFSET = 0x0;
+//byte OFFSET = 0x18;
+//byte OFFSET = 0x28;
+//byte OFFSET = 0x30;
+//byte OFFSET = 0x38;
+//byte OFFSET = 0x40;
+byte OFFSET = 0x42;
+
+
+/* 0x00000639:   DW_TAG_structure_type
+                DW_AT_name	("target.Target.Os.LinuxVersionRange")
+                DW_AT_byte_size	(0x54)
+                DW_AT_alignment	(4)
+
+0x00000640:     DW_TAG_member
+                  DW_AT_name	("range")
+                  DW_AT_type	(0x000005dc "SemanticVersion.Range")
+                  DW_AT_alignment	(4)
+                  DW_AT_data_member_location	(0x00)
+                  */
+
+//typedef unsigned char byte;
 // VALIDATE via
 // llvm-dwarfdump -a --verify main.wasm
 // llvm-dwarfdump -a --verbose main.wasm
@@ -14,38 +36,159 @@ typedef unsigned char byte;
 // b tttt
 // run
 
-//byte OFFSET = 0x4D; // The end of an address range must not be before the beginning
-//byte OFFSET = 0x4C; // XX why not -''-
-//byte OFFSET = 0x4B; // XX why not -''-
-//byte OFFSET = 0x4A; // XX
-//byte OFFSET = 0x49; // XX
+// 0x001031b4034 wasp_main:
+// 0x001031b40b8 _start ?
+uint main_start = 0x44;
+uint main_end = 0x5d;
 
-//byte OFFSET = 0x48; // Breakpoint reached: tttt  Stack: tttt main.c:24 wrong ;)
-// 7 bytes valid region:
-// ALL SHOW MISBEHAVIOUR wrong step into ≈ step out
-//byte OFFSET = 0x47; // OK in the range of 0x7b … 0x7f _start
-//byte OFFSET = 0x46;
-byte OFFSET = 0x45;
-//byte OFFSET = 0x44;
-//byte OFFSET = 0x43;// error: Couldn't materialize: couldn't get the value of variable j: no location, value may have been optimized out
-//byte OFFSET = 0x42; // perfect but no j,x
-//error: errored out in DoExecute, couldn't PrepareToExecuteJITExpression
-//byte OFFSET = 0x41;
+// 0x00105178060 tttt:
+uint tttt_start = 0x5e;
+uint tttt_end = 0x7e;
 
-//byte OFFSET = 0x40; // XX
-//byte OFFSET = 0x44 - 0x19;
-//byte OFFSET = 0x3A; // XX
-//byte OFFSET = 0x36; // takes tttt for main!!! NOT OK ;)
-//byte OFFSET = 0x30; // -''-
-//byte OFFSET = 0x2F; // -''-
-//byte OFFSET = 0x2E; // last 'good' offset
-//byte OFFSET = 0x2B; // XX
-//byte OFFSET = 0x20; // XX
-//byte OFFSET = 0x10; // XX
-//byte OFFSET = 0;
-//byte OFFSET = -0x10;
-//byte OFFSET = -0x20;
 
+// OFFSET 0x0000004a in .debug_line section AHA!!!
+List<byte> getDwarf5LineTable() {
+	List<byte> dwarf5_bytes = {
+			0x00, 0x05, // 5 bytes length of the extended opcode that follows:
+			DW_LNE_set_address,
+			(byte) (main_start - OFFSET), 0x00, 0x00, 0x00, // start_address
+			DW_LNS_set_file, 0x00, // 0
+			DW_LNS_advance_line, 6, // implicit main block starts after(!) function tttt
+			DW_LNS_copy,
+//			0x12, // address += 0, line += 0, is_stmt
+//			0x13, // address += 0, line += 1
+//			0x20, // address += 1, line += 0
+//			0x21, // address += 1, line += 1
+//			0x2e, // address += 2, line += 0
+//			0x2f, // address += 2, line += 1
+//			0x3c, // address += 3, line += 0
+//			0x3e, // address += 3, line += 1
+//			0x4a, // address += 4, line += 0
+//			0x4b, // address += 4, line += 1
+
+//			000044 func[0] <wasp_main>:
+			DW_LNS_negate_stmt,
+			0x20, // address += 1, line += 0
+//			000045: 01 7f                      | local[0] type=i32
+			0x2e, // address += 2, line += 0
+//			000047: 01 7e                      | local[1] type=i64
+			0x2e, // address += 2, line += 0
+//			000049: 41 03                      | i32.const 3
+			DW_LNS_set_column, 0x01, // 10
+			DW_LNS_negate_stmt,
+			0x2e, // address += 2, line += 0
+			DW_LNS_set_column, 0x02, // 10
+			0x2e, // address += 2, line += 0  call 1 <tttt>
+			DW_LNS_set_column, 0x03, // 10
+			DW_LNS_negate_stmt,
+			0x4a, // address += 4, line += 0  nop * 4
+			DW_LNS_advance_line, 0x01, // line += 1
+			DW_LNS_set_column, 0x01, // 10
+			DW_LNS_negate_stmt,
+			0x2e, // address += 2, line += 0  i32.const 3
+			DW_LNS_set_column, 0x02, // 10
+			0x2e, // address += 2, line += 0  call 1 <tttt>
+			DW_LNS_set_column, 0x03, // 10
+			DW_LNS_negate_stmt,
+			0x4a, // address += 4, line += 0  nop * 4
+			0x20, // address += 1, line += 0 // i64.extend_i32_s nop
+			0x20, // address += 1, line += 0 // nop
+			DW_LNS_negate_stmt,
+			0x20, // address += 1, line += 0 // return
+//			DW_LNS_set_prologue_end,
+//			DW_LNS_const_add_pc, // NO operands!
+			0x00, 0x01, 0x01, // DW_LNE_end_sequence
+
+			// tttt
+			0x00, 0x05, // 5 bytes length of the extended opcode that follows:
+			DW_LNE_set_address, (byte) (tttt_start - OFFSET), 0x00, 0x00, 0x00, // 0x0000000000000063
+			DW_LNS_set_file, 0x00, // 0
+			DW_LNS_advance_line, 1, // line += 1 for // comment
+			DW_LNS_copy,
+//			00005e func[1] <tttt>:
+			DW_LNS_negate_stmt,
+			0x20, // address += 1, line += 0
+//			00005f: 01 7e                      | local[1] type=i64
+			0x2e, // address += 2, line += 0  i32.const 3
+//			000061: 01 7e                      | local[2] type=i64
+			0x2e, // address += 2, line += 0  i32.const 3
+//			000063: 20 00                      | local.get 0 <j>
+			DW_LNS_negate_stmt,
+			0x2e, // address += 2, line += 0  i32.const 3
+//			000065: 41 01                      | i32.const 1
+			0x2f, // address += 2, line += 1  i32.const 3
+//			000067: 6a                         | i32.add
+			0x20, // address += 1, line += 0
+//			000068: ac                         | i64.extend_i32_s
+			0x20, // address += 1, line += 0
+//			000069: 01                         | nop
+			0x20, // address += 1, line += 0
+//			00006a: 22 01                      | local.tee 1
+			0x2f, // address += 2, line += 1
+//			00006c: 20 01                      | local.get 1 <x>
+			0x2e, // address += 2, line += 0
+//			00006e: a7                         | i32.wrap_i64
+			0x20, // address += 1, line += 0
+//			00006f: 01                         | nop
+			0x20, // address += 1, line += 0
+//			000070: 0f                         | return
+			0x20, // address += 1, line += 0
+//			000071: 0b                         | end
+			0x20, // address += 1, line += 0
+//			DW_LNE_end_sequence,
+//			DW_LNS_set_prologue_end,
+//			DW_LNS_const_add_pc, // NO operands!
+			0x00, 0x01, 0x01 // DW_LNE_end_sequence
+	};
+	return dwarf5_bytes;
+}
+
+
+List<byte> dwarf4_bytes = {
+//		0x00,
+		0x05,                   // 5 bytes length of the extended opcode that follows:
+		DW_LNE_set_address,
+		(byte) (0x4A - OFFSET), 0x00, 0x00, 0x00, // start_address
+		DW_LNS_advance_line, 0x13, // line += 19
+		DW_LNS_copy, // DW_LNE_end_sequence,
+		DW_LNS_set_prologue_end,
+		DW_LNS_set_column, 0x02,
+//			DW_LNS_advance_pc, 0x0a, // address += 10
+		0x3d, // address += 5, line += 1, is_stmt
+		DW_LNS_set_column, 0x01,
+		0xc9, // address += 13
+		DW_LNS_advance_pc, 0x08, // address += 8
+		0x00, 0x01, 0x01, 0x00, // DW_LNE_end_sequence + reset
+
+		0x05, // 5 bytes length of the extended opcode that follows:
+		DW_LNE_set_address, (byte) (0x63 - OFFSET), 0x00, 0x00, 0x00, // 0x0000000000000063
+		DW_LNS_advance_line, 0x17, // line += 23
+		DW_LNE_end_sequence,
+		DW_LNS_set_column, 0x05,
+		DW_LNS_set_prologue_end,
+		DW_LNS_set_column, 0x0a, // 10
+		DW_LNS_const_add_pc, // NO operands!
+		0xbb, // address += 29, line += 1, is_stmt
+		DW_LNS_set_column, 0x0b, // 11
+		DW_LNS_negate_stmt,
+		0x74, // address += 7, line += 0
+		DW_LNS_set_column, 0x06,
+		0xac, // address += 11
+		DW_LNS_set_column, 0x09,
+		DW_LNS_negate_stmt,
+		0x75, // address += 7, line += 1, is_stmt
+//			DW_LNS_advance_pc, 0x02, // address += 2
+		DW_LNS_negate_stmt,
+//			DW_LNS_set_column, 2,
+		0x74, // address += 7, line += 0
+		DW_LNS_advance_pc, 0x04, // address += 4
+		0x00, 0x01, 0x01 // DW_LNE_end_sequence
+};
+/*
+0x0000000000000099     26      9      1   0             0       0  is_stmt
+0x00000000000000a0     26      2      1   0             0       0
+0x00000000000000a4     26      2      1   0             0       0  end_sequence
+ */
 
 byte DW_OP_WASM_location = 0xED;     // takes 1 byte before DW_OP_stack_value 0x9f
 byte DW_OP_WASM_location_int = 0xEE; // takes 4 bytes __stack_pointer
@@ -68,7 +211,6 @@ enum {
  • Vendor Extension: DWARF allows for vendor-specific extensions, including the use of language codes in a specific range reserved for vendor-specific use. You can define a unique code for your language within this range. This approach requires coordination with the tools that will consume the DWARF data (debuggers, profilers, etc.) to ensure they correctly interpret the vendor-specific code.
  • DWARF Custom Attributes: Instead of relying solely on the language code, use DWARF's mechanism for custom attributes to provide additional information about the language. This allows you to use a generic language code but still convey specific details about your language through these attributes. *
 */
-#include "Code.h"
 
 
 /*
@@ -308,23 +450,25 @@ Code emit_dwarf_debug_info() { // DWARF 4
 
 	// main
 	code += (byte) 0x02; // ( abbreviated type DW_TAG_subprogram [2] ) // main
-	code += (uint) 0x0000004a - OFFSET;//	DW_AT_low_pc DW_FORM_addr
-	code += (uint) 0x62 - 0x4a;// DW_AT_high_pc	offset (0x000000c0)  DW_FORM_data4 // 76 0000 00  hex(0xc0 - 0x4a) OK!!!
+	code += (uint) main_start - OFFSET;//	DW_AT_low_pc DW_FORM_addr
+	code += (uint) main_end -
+	        main_start;// DW_AT_high_pc	offset (0x000000c0)  DW_FORM_data4 // 76 0000 00  hex(0xc0 - 0x4a) OK!!!
 	code += (byte) 0x07;// length of DW_FORM_exprloc:
 	code += (byte) DW_OP_WASM_location;// := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
 	code += (byte) DW_OP_WASM_global_u32; // 0x03
 	code += (uint) 0; // function offset?
 	code += (byte) DW_OP_stack_value; // 0x9F
-	code += (uint) 0x02;// DW_AT_name	("main") // DW_FORM_strp todo: wasp_main
-	code += (byte) 0x01; //DW_AT_decl_file	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
+//	code += (uint) 0x02;// DW_AT_name	("main") // DW_FORM_strp todo: wasp_main
+	code += (uint) 46;// DW_AT_name	("wasp_main")
+	code += (byte) 0x00; //DW_AT_decl_file "main.wasp"	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 	code += (byte) 0x14;// DW_AT_decl_line	(20) // 0x0b DW_FORM_data1 means just 1 byte
 	code += base_type_int64;//	DW_AT_type	Type of subroutine return, 'address' of the typedef above
 //		DW_AT_external	(true) // DW_FORM_flag_present
 
 // 'tttt'
 	code += (byte) 0x03; // abbreviated type ;
-	code += (uint) 0x00000063 - OFFSET; // DW_AT_low_pc DW_FORM_addr
-	code += (uint) 0x000000a4 - 0x63; // DW_AT_high_pc offset (0x000000c0)  DW_FORM_data4
+	code += (uint) tttt_start - OFFSET; // DW_AT_low_pc DW_FORM_addr
+	code += (uint) tttt_end - tttt_start; // DW_AT_high_pc offset (0x000000c0)  DW_FORM_data4
 	code += (byte) 0x04; // length of DW_FORM_exprloc:
 	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
 	code += (byte) 0;    // DW_OP_WASM_local ?  0,1,2 work 3 hit end 4… fail  R_WASM_FUNCTION_OFFSET_I32 ?
@@ -332,8 +476,8 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	code += (byte) DW_OP_stack_value;//  0x9f vs  DW_OP_WASM_location_int; // 0xEE
 //	DW_AT_name [DW_FORM_strp]	( .debug_str[0x0000000b] = "tttt")
 	code += (uint) 0x0000000b; // DW_AT_name	("tttt") // DW_FORM_strp
-	code += (byte) 0x01; // DW_AT_decl_file[DW_FORM_data1]	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
-	code += (byte) 0x19; // DW_AT_decl_line[DW_FORM_data1]	(25) // 0x0b DW_FORM_data1 means just 1 byte
+	code += (byte) 0x00; // DW_AT_decl_file[DW_FORM_data1] "main.wasp"	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
+	code += (byte) 0x00; // DW_AT_decl_line[DW_FORM_data1]	(25)
 	code += base_type_int; // DW_AT_type[DW_FORM_ref4]	( "int") // Type of subroutine return
 //	DW_AT_external [DW_FORM_flag_present]	(true)
 
@@ -348,33 +492,41 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 
 //	DW_OP_fbreg: in WASM three distinct kinds of virtual registers (globals, locals, and the operand stack)
 
-// j
+// j JIT mapped to register $w2
 	code += (byte) 0x04; // abbreviated type 3  DW_TAG_formal_parameter; 'j'
 	code += (byte) 0x03; // length of DW_FORM_exprloc:
 	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
-	code += (byte) DW_OP_WASM_stack;    // DW_AT_frame_base / DW_OP_WASM_global_local ?  0,1,2 work 3 hit end 4… fail
-	code += (byte) 0x10;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
+	code += (byte) DW_OP_WASM_stack; // stack from bottom:0
+	code += (byte) 0x0;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
 //	code += (byte) DW_OP_stack_value;//  0x9f vs  DW_OP_WASM_location_int; // 0xEE
 //	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
 //	code += (byte) DW_OP_fbreg; // offset to DW_AT_frame_base:
 //	code += (byte) 0x0c; // + 12
 	code += (uint) 0x10; // DW_AT_name	("j") // DW_FORM_strp [16]
-	code += (byte) 0x01; // DW_AT_decl_file (1)	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
+	code += (byte) 0x00; // DW_AT_decl_file (1) "main.wasp"	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 	code += (byte) 24;   // DW_AT_decl_line	(20) DW_FORM_data1 means just 1 byte
 	code += base_type_int; // DW_AT_type	(0x00000026 "int")
 
-	// x
-	code += (byte) 0x05; // abbreviated type 4 DW_TAG_variable 'x'
-	code += (byte) 0x03; // length of DW_FORM_exprloc:
-	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
-	code += (byte) DW_OP_WASM_local;    // DW_AT_frame_base / DW_OP_WASM_global_local ?  0,1,2 work 3 hit end 4… fail
-	code += (byte) 0x1;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
+	// x JIT mapped to register $w5
+	code += (byte) 0x05; // abbreviated type 5 DW_TAG_variable
+	code += (byte) 0x04; // length of DW_FORM_exprloc:
+	code += (byte) DW_OP_regx;
+	code += (byte) 0x05; // DW_OP_reg5
+	code += (byte) DW_OP_piece;
+	code += (byte) 0x04; // 4 bytes
+
+//	code += (byte) 0x01; // length of DW_FORM_exprloc:
+//	code += (byte) DW_OP_reg2;
+//	code += (byte) 0x03; // length of DW_FORM_exprloc:
+//	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
+//	code += (byte) DW_OP_WASM_local;    // DW_AT_frame_base / DW_OP_WASM_global_local ?  0,1,2 work 3 hit end 4… fail
+//	code += (byte) 0x1;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
 //	code += (byte) DW_OP_stack_value;//  0x9f vs  DW_OP_WASM_location_int; // 0xEE
 //	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
 //	code += (byte) DW_OP_fbreg; // offset to DW_AT_frame_base:
 //	code += (byte) 0x08; // + 12
 	code += (uint) 0x00; // DW_AT_name	("x") // DW_FORM_strp
-	code += (byte) 0x01; // DW_AT_decl_file (1)	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
+	code += (byte) 0x00; // DW_AT_decl_file (1) "main.wasp"	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 //	code += (byte) 0x0d; // DW_AT_decl_line	(13) DW_FORM_data1 means just 1 byte
 	code += (byte) 25; // DW_AT_decl_line	(20) DW_FORM_data1 means just 1 byte
 	code += base_type_int64; // DW_AT_type	(0x00000026 "int64") ≠ int32 == 0x7F
@@ -383,20 +535,22 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 
 	// a aaaa
 	code += (byte) 0x05; // abbreviated type 4 DW_TAG_variable 'a'
-	code += (byte) 0x04; // length of DW_FORM_exprloc:
+//	code += (byte) 0x01; // length of DW_FORM_exprloc:
+//	code += (byte) DW_OP_reg2;
+	code += (byte) 0x03; // length of DW_FORM_exprloc:
 	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
 	code += (byte) DW_OP_WASM_local;    // DW_AT_frame_base / DW_OP_WASM_global_local ?  0,1,2 work 3 hit end 4… fail
-	code += (byte) 0x10;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
-	code += (byte) DW_OP_stack_value;//  0x9f vs  DW_OP_WASM_location_int; // 0xEE
+	code += (byte) 0x0;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
+//	code += (byte) DW_OP_stack_value;//  0x9f vs  DW_OP_WASM_location_int; // 0xEE
 //	code += (byte) DW_OP_regval_type;
 //	code += (byte) DW_AT_type_int; //DW_AT_type_int64; // LEB128
 //	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
 //	code += (byte) DW_OP_fbreg; // offset to DW_AT_frame_base:
 //	code += (byte) 0x10; // + 12
-	code += (uint) 46; // DW_AT_name	("a") // DW_FORM_strp
-	code += (byte) 0x01; // DW_AT_decl_file (1)	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
-	code += (byte) 25; // DW_AT_decl_line
-	code += base_type_int64; // DW_AT_type	(0x0000002d "int64") ≠ int32 == 0x7F
+	code += (uint) 48; // DW_AT_name	("a") // DW_FORM_strp
+	code += (byte) 0x00; // DW_AT_decl_file "main.wasp"
+	code += (byte) 24; // DW_AT_decl_line
+	code += base_type_int; // DW_AT_type	(0x0000002d "int64") ≠ int32 == 0x7F
 
 	code += (byte) 0x00; // NULL unindent children of DW_TAG_subprogram tttt
 
@@ -406,263 +560,96 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 	return createSection(custom_section, encodeVector(Code(".debug_info") + len + code));
 }
 
+List<byte> getDwarf5LineTable();
 
 Code emit_dwarf_debug_line() {
-	Code code;
-//	let start_address = 0x0000004A;
 
-	code += (uint) 0x00000074; // length as little endian
-	code += (short) 0x0004; // format = DWARF32 version 4
-	code += (uint) 0x35; // prologue_length = 0x35
-	code += (byte) 0x01; // min_inst_length
-	code += (byte) 0x01; // max_ops_per_inst maximum_operations_per_instruction
-	code += (byte) 0x01; // default_is_stmt
-	code += (byte) 0xfb; // line_base = -5
-	code += (byte) 0x0e; // line_range = 14
-	code += (byte) 0x0d; // opcode_base = 13
-	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_copy] = 0
-	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_advance_pc] = 1
-	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_advance_line] = 1
-	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_file] = 1
-	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_column] = 1
-	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_negate_stmt] = 0
-	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_basic_block] = 0
-	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_const_add_pc] = 0
-	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_fixed_advance_pc] = 1
-	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_prologue_end] = 0
-	code += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_epilogue_begin] = 0
-	code += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_isa] = 1
+	Code code;
+//	prologue += (short) 0x0004; // format = DWARF32 version 4
+
+	code += (short) 0x0005; // format = DWARF32 version 5
+	code += (byte) 0x4;// address_size: 4 (DWARF5!)
+	code += (byte) 0; // seg_select_size: (DWARF5!)
+
+	Code prolog;
+	prolog += (byte) 0x01; // min_inst_length
+	prolog += (byte) 0x01; // max_ops_per_inst maximum_operations_per_instruction
+	prolog += (byte) 0x01; // default_is_stmt
+	prolog += (byte) 0xfb; // line_base = -5
+	prolog += (byte) 0x0e; // line_range = 14
+	prolog += (byte) 0x0d; // opcode_base = 13
+	prolog += (byte) 0x00; // standard_opcode_lengths[DW_LNS_copy] = 0
+	prolog += (byte) 0x01; // standard_opcode_lengths[DW_LNS_advance_pc] = 1
+	prolog += (byte) 0x01; // standard_opcode_lengths[DW_LNS_advance_line] = 1
+	prolog += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_file] = 1
+	prolog += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_column] = 1
+	prolog += (byte) 0x00; // standard_opcode_lengths[DW_LNS_negate_stmt] = 0
+	prolog += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_basic_block] = 0
+	prolog += (byte) 0x00; // standard_opcode_lengths[DW_LNS_const_add_pc] = 0
+	prolog += (byte) 0x01; // standard_opcode_lengths[DW_LNS_fixed_advance_pc] = 1
+	prolog += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_prologue_end] = 0
+	prolog += (byte) 0x00; // standard_opcode_lengths[DW_LNS_set_epilogue_begin] = 0
+	prolog += (byte) 0x01; // standard_opcode_lengths[DW_LNS_set_isa] = 1
+
+	prolog += (byte) 0x01; // DWARF 5: dir ?
+	prolog += (byte) 0x01; // DWARF 5: file ?
 
 // embedded code
-/*
-	code += (byte) 0x1f; // DW_FORM_line_strp
-	code += (byte) 0x02;  // 2 entries
-	code += (uint) 0x00000035; // include_directories[  0] =  .debug_line_str[0x00000035] = "/opt/wasm/c-wasm-debug/cmake-build-debug-gdb"
-	code += (uint) 0x00000000; // include_directories[  1] =  .debug_line_str[0x00000000] = "/opt/wasm/c-wasm-debug"
+
+	prolog += (byte) 0x1f; // DW_FORM_line_strp
+//	code += (byte) 0x02;  // 2 entries
+	prolog += (byte) 0x01;  // 1 entry
+	prolog += (uint) 0x00000000; // include_directories[  0] =  .debug_line_str[0x00000000] = "/opt/wasm/c-wasm-debug"
+//	code += (uint) 0x00000035; // include_directories[  1] =  .debug_line_str[0x00000035] = "/opt/wasm/c-wasm-debug/cmake-build-debug-gdb"
 //	code += (byte) 0x04; // DW_MACRO_end_file ?
 
 //	0401 1f02 0f05 1e81 40   ELUSIVE PREAMBLE
-	code += (byte) 0x04; // DW_FORM_block4 DW_EH_PE_udata8 DW_UT_skeleton ??
-	code += (byte) 0x01; // ??
+	prolog += (byte) 0x04; // DW_FORM_block4 DW_EH_PE_udata8 DW_UT_skeleton ??
+	prolog += (byte) 0x01; // file entry 0
 
-	code += (byte) 0x1f; // DW_FORM_line_strp AGAIN LATER!
-	code += (byte) 0x02;  // 2 entries
+	prolog += (byte) 0x1f; // DW_FORM_line_strp AGAIN LATER!
+	prolog += (byte) 0x02;  // 2 entries
 
-	code += (byte) 0x0f; // DW_FORM_udata DW_AT_element_list ??
-	code += (byte) 0x05;
-	code += (byte) 0x1e;
-	code += (byte) 0x81;
-	code += (byte) 0x40;
+	prolog += (byte) 0x0f; // DW_FORM_udata DW_AT_element_list ??
+	prolog += (byte) 0x05;
+	prolog += (byte) 0x1e; // DW_AT_default_value / DW_FORM_data16
+	prolog += (byte) 0x81;
+	prolog += (byte) 0x40;
 
 // now the files
 // 00005ed: 1f0217 0000 0000    66e6 2fd1 4c40 0588 a9dd  ......f./.L@....
 // 000063a: 90da 38f1 5994	  6200 0000
-	code += (byte) 0x1f; // DW_FORM_line_strp
-	code += (byte) 0x01;  // 1 entry
-	code += (uint) 0x00000017; // file_names[  0] =  .debug_line_str[0x00000017] = "/opt/wasm/c-wasm-debug/main.c"
-	code += (bytes) "66e62fd14c400588a9dd90da38f15994"; // checksum
-	code += (uint) 0x00000062; // source: .debug_line_str[0x00000062] = <main.c code>
+	prolog += (byte) 0x1f; // DW_FORM_line_strp
+	prolog += (byte) 0x01;  // 1 entry
+	prolog += (uint) 16; // file_names[  0] =  .debug_line_str[0x00000017] = "main.c"
+	prolog += (byte) 0x00; // dir_index
+	List<byte> md5_checksum = {0x66, 0xe6, 0x2f, 0xd1, 0x4c, 0x40, 0x05, 0x88, 0xa9, 0xdd, 0x90, 0xda, 0x38, 0xf1, 0x59,
+	                           0x94};
+	prolog += md5_checksum; // 16 bytes
+	prolog += (uint) 23 + 3/*wasp*/; // source: .debug_line_str[0x00000062] = <main.c code>
 
-			/* file_names[  0]:
-					  name:  .debug_line_str[0x00000017] = "/opt/wasm/c-wasm-debug/main.c"
-				 dir_index: 0
-			  md5_checksum: 66e62fd14c400588a9dd90da38f15994
-					source:  .debug_line_str[0x00000062] = <main.c code>
+	/* file_names[  0]:
+			  name:  .debug_line_str[0x00000017] = "/opt/wasm/c-wasm-debug/main.c"
+		 dir_index: 0
+	  md5_checksum: 66e62fd14c400588a9dd90da38f15994
+			source:  .debug_line_str[0x00000062] = <main.c code>
 */
 
 
 	// external code
-	code += Code("/opt/wasm/c-wasm-debug", false, true);
-	code += (byte) 0x00;
-	code += Code("main.c", false, true);
-	code += (byte) 0x01; // dir_index
+//	code += Code("/opt/wasm/c-wasm-debug", false, true);
+//	code += (byte) 0x00;
+//	code += Code("main.c", false, true);
+//	code += (byte) 0x01; // dir_index
+//	code += (uint) 0x00000000; // mod_time + length ?
 
-	code += (uint) 0x00000000; // mod_time length ?
+	code += (uint) prolog.length;;// (uint) 0x35; // prologue_length = 0x35
+	code += prolog;
 
-	List<byte> bytes = {
-			0x05,                   // 5 bytes length of the extended opcode that follows:
-			DW_LNE_set_address,
-			(byte) (0x4A - OFFSET), 0x00, 0x00, 0x00, // start_address
-			DW_LNS_advance_line, 0x13, // line += 19
-			DW_LNS_copy, // DW_LNE_end_sequence,
-			DW_LNS_set_prologue_end,
-			DW_LNS_set_column, 0x02,
-//			DW_LNS_advance_pc, 0x0a, // address += 10
-			0x3d, // address += 5, line += 1, is_stmt
-			DW_LNS_set_column, 0x01,
-			0xc9, // address += 13
-			DW_LNS_advance_pc, 0x08, // address += 8
-			0x00, 0x01, 0x01, 0x00, // DW_LNE_end_sequence + reset
-
-			0x05, // 5 bytes length of the extended opcode that follows:
-			DW_LNE_set_address, (byte) (0x63 - OFFSET), 0x00, 0x00, 0x00, // 0x0000000000000063
-			DW_LNS_advance_line, 0x17, // line += 23
-			DW_LNE_end_sequence,
-			DW_LNS_set_column, 0x05,
-			DW_LNS_set_prologue_end,
-			DW_LNS_set_column, 0x0a, // 10
-			DW_LNS_const_add_pc, // NO operands!
-			0xbb, // address += 29, line += 1, is_stmt
-			DW_LNS_set_column, 0x0b, // 11
-			DW_LNS_negate_stmt,
-			0x74, // address += 7, line += 0
-			DW_LNS_set_column, 0x06,
-			0xac, // address += 11
-			DW_LNS_set_column, 0x09,
-			DW_LNS_negate_stmt,
-			0x75, // address += 7, line += 1, is_stmt
-//			DW_LNS_advance_pc, 0x02, // address += 2
-			DW_LNS_negate_stmt,
-//			DW_LNS_set_column, 2,
-			0x74, // address += 7, line += 0
-			DW_LNS_advance_pc, 0x04, // address += 4
-			0x00, 0x01, 0x01 // DW_LNE_end_sequence
-	};
-	/*
-0x0000000000000099     26      9      1   0             0       0  is_stmt
-0x00000000000000a0     26      2      1   0             0       0
-0x00000000000000a4     26      2      1   0             0       0  end_sequence
-	 */
-
-	code += bytes;
-	return createSection(custom_section, encodeVector(Code(".debug_line") + code));
-}
-
-Code emit_dwarf_debug_lineX() {
-	Code code;
-//	let start_address = 0x0000004A;
-//	let start_address = 0x0000004A - OFFSET;
-
-	code += (uint) 0x000000A6;  // length as little endian
-	code += (short) 0x0004;     // format = DWARF32 version 4
-	code += (uint) 0x35;        // prologue_length = 0x35
-	code += (byte) 0x01;        // min_inst_length
-	code += (byte) 0x01;        // max_ops_per_inst maximum_operations_per_instruction
-	code += (byte) 0x01;        // default_is_stmt
-	code += (byte) 0xfb;        // line_base = -5
-	code += (byte) 0x0e;        // line_range = 14
-	code += (byte) 0x0d;        // opcode_base = 13
-	code += (byte) 0x00;        // standard_opcode_lengths[DW_LNS_copy] = 0
-	code += (byte) 0x01;        // standard_opcode_lengths[DW_LNS_advance_pc] = 1
-	code += (byte) 0x01;        // standard_opcode_lengths[DW_LNS_advance_line] = 1
-	code += (byte) 0x01;        // standard_opcode_lengths[DW_LNS_set_file] = 1
-	code += (byte) 0x00;        // standard_opcode_lengths[DW_LNS_set_column] = 0
-	code += (byte) 0x00;        // standard_opcode_lengths[DW_LNS_negate_stmt] = 0
-	code += (byte) 0x00;        // standard_opcode_lengths[DW_LNS_set_basic_block] = 0
-	code += (byte) 0x01;        // standard_opcode_lengths[DW_LNS_const_add_pc] = 1
-	code += (byte) 0x00;        // standard_opcode_lengths[DW_LNS_fixed_advance_pc] = 0
-	code += (byte) 0x00;        // standard_opcode_lengths[DW_LNS_set_prologue_end] = 0
-	code += (byte) 0x01;        // standard_opcode_lengths[DW_LNS_set_epilogue_begin] = 1
-
-	code += Code("/opt/wasm/c-wasm-debug", false, true);
-	code += (byte) 0x00;
-	code += Code("main.c", false, true);
-	code += (byte) 0x01;        // dir_index
-	code += (uint) 0x00000000;  // mod_time length
-
-	List<byte> bytes = {
-			0x05,                   // 5 bytes length of the extended opcode that follows:
-			DW_LNE_set_address,
-			(byte) (0x4A - OFFSET), 0x00, 0x00, 0x00, // start_address
-			DW_LNS_advance_line,
-			0x0D,                   // line += 13
-			0x01,
-			0x05,
-			DW_LNS_advance_pc,
-			0x0A,                   // address += 10
-			0x3D,                   // line += 3, address += 5
-			DW_LNS_advance_pc,
-			0x08,                   // address += 8
-			0x00,
-			0x01,
-			0x01,
-			0x00,
-
-			0x05,                   // 5 bytes length of the extended opcode that follows:
-			DW_LNE_set_address,
-			(byte) (0x57 - OFFSET), 0x00, 0x00, 0x00, // address = 0x57
-			DW_LNS_advance_line,
-			0x13,                   // line += 19
-			0x01,
-			0x05,
-			DW_LNS_negate_stmt,
-			0x0A,
-			0x08,
-			0xBB,                   // line += 1, address += 29
-			0x05,
-			0x07,
-			0xAD,                   // line += 1, address += 22
-			0x08,
-			0x83,                   // line += 0, address += 16
-			0x05,
-			0x04,
-			0x08,
-			0x83,                   // line += 0, address += 16
-			0x05,
-			0x07,
-			0x08,
-			0x83,                   // line += 0, address += 16
-			0x05,
-			0x04,
-			0x08,
-			0x83,                   // line += 0, address += 16
-			0x05,
-			0x07,
-			0x08,
-			0x83,                   // line += 0, address += 16
-			0x05,
-			0x04,
-			0x06,
-			0x74,                   // line += 0, address += 7
-			0x05,
-			0x09,
-			0x06,
-			0x08,
-			0x4B,                   // line += 3, address += 5
-			0x05,
-			0x0B,
-			0x06,
-			0x74,                   // line += 0, address += 7
-			0x05,
-			DW_LNS_advance_pc,
-			0xAC,                   // address += 172
-			DW_LNS_advance_pc,
-			0x04,                   // address += 4
-			0x00,
-			0x01,
-			0x01,
-			0x00,
-			0x05,                   // 5 bytes length of the extended opcode that follows:
-			DW_LNE_set_address,
-			0x2F, 0x01, 0x00, 0x00, // address = 0x12F
-			DW_LNS_advance_line,
-			0x1F,                   // line += 31
-			0x01,
-			0x05,
-			DW_LNS_advance_pc,
-			0x0A,                   // address += 10
-			DW_LNS_advance_pc,
-			0x29,                   // address += 41
-			0x13,
-			0x05,
-			0x0E,
-			0xC9,                   // line += 1, address += 25
-			0x05,
-			0x0C,
-			0x06,
-			0x82,                   // line += 0, address += 15
-			0x05,
-			DW_LNS_advance_pc,
-			0xAC,                   // address += 172
-			DW_LNS_advance_pc,
-			0x17,                   // address += 23
-			0x00,
-			0x01,
-			0x01
-	};
-
-	code += bytes;
-	return createSection(custom_section, encodeVector(Code(".debug_line") + code));
+//	code += dwarf4_bytes;//
+	code += getDwarf5LineTable();
+	Code len = Code(code.length, false);
+	return createSection(custom_section, encodeVector(Code(".debug_line") + len + code));
 }
 
 
@@ -703,7 +690,7 @@ Code emit_dwarf_debug_lineX() {
 
 Code emit_dwarf_debug_str() {
 	Code code;
-	List<String> stringList = {"x", "main", "int", "tttt", "j", "/Users/me/wasp/main.c", "int64", "a", "b", "c",
+	List<String> stringList = {"x", "main", "int", "tttt", "j", "/Users/me/wasp/main.c", "int64", "wasp_main", "a", "b",
 	                           "/Users/me/wasp/", "a", "bla", "bla", "bla", "bla", "blablablablablablablablablabla"};
 
 	for (String s: stringList) {
@@ -714,29 +701,12 @@ Code emit_dwarf_debug_str() {
 
 Code emit_dwarf_debug_ranges() {
 	Code code;
-	/*
-	 * Contents of section Custom: DWARF 4
-/*.debug_ranges contents:
-00000000 0000004a 000000c0
-00000000 000000c1 00000112
-00000000 <End of list>*/
-//	code.pushBigEndian(0x00000000); // implicit start
-//	code.pushBigEndian(0x0000004a); // Address of tttt() {
-//	code.pushBigEndian(0x000000c0); // Address of tttt() }
-//	code.pushBigEndian(0x000000c1); // Address of main() {
-//	code.pushBigEndian(0x00000112); // Address of main() }
-//	code.pushBigEndian(0x00000000); // End of list
-	code += (uint) 0x0000004a - OFFSET; // Address of tttt() {
-	code += (uint) 0x00000062 - OFFSET; // Address of tttt() }
-	code += (uint) 0x00000063 - OFFSET; // Address of main() {
-	code += (uint) 0x000000a4 - OFFSET; // Address of main() }
+	code += (uint) main_start - OFFSET; // Address of tttt() {
+	code += (uint) main_end - OFFSET; // Address of tttt() }
+	code += (uint) tttt_start - OFFSET; // Address of main() {
+	code += (uint) tttt_end - OFFSET; // Address of main() }
 	code += (uint) 0x00000000; // End of list
 	code += (uint) 0x00000000; // End of list?
-
-// I don't know how 4a and c0 are calculated. They are not in the .wasm file: nor in the source code: 326 chars to tttt()
-// 0000c3 func[3] <tttt>:
-// 0000c4: 0e 7f                      | local[1..14] type=i32
-
 	return createSection(custom_section, encodeVector(Code(".debug_ranges") + code));
 }
 
@@ -750,6 +720,7 @@ Code emit_dwarf_external_debug_info() {
 Code emit_dwarf_debug_line_str() {
 	Code code;
 	List<String> stringList = {"/Users/me/wasp/", "main.c", readFile("main.c")};
+//	List<String> stringList = {"/Users/me/wasp/", "main.wasp", readFile("main.wasp")};
 	for (String s: stringList) {
 		code += Code((chars) s.data, false, true);
 	}
@@ -778,4 +749,88 @@ Code emitDwarfSections() {
 //	code += emit_dwarf_debug_rnglists(); // DWARF 5
 //	code.save("dwarf_sections.wasm");
 	return code;
+}
+
+
+// Function to encode a single integer using VLQ
+String encodeVLQ(uint num) {
+	const chars base64_chars =
+			"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			"abcdefghijklmnopqrstuvwxyz"
+			"0123456789+/";
+
+	unsigned int n = num;
+	if (num < 0) {
+		n = (n << 1) | 1; // Set the low bit if negative
+	} else {
+		n <<= 1; // Just shift left to leave the low bit zero
+	}
+
+	String result;
+	do {
+		unsigned int digit = n & 31; // Take the low 5 bits
+		n >>= 5;
+		if (n > 0) { // More digits to come
+			digit |= 32;
+		}
+		result += (base64_chars[digit]);
+	} while (n > 0);
+
+	return result;
+}
+
+struct SourceMapping {
+	int wasm_byte_offset, source_file_index, original_line, original_column, name_index = 0;
+};
+
+String generateMappings(const List<SourceMapping> &mappings_data) {
+	String mappings;
+	int last_generated_line = 0;
+	int last_generated_column = 0;
+	int last_source = 0;
+	int last_original_line = 0;
+	int last_original_column = 0;
+
+	for (auto &mapping: mappings_data) {
+
+		if (!mappings.empty()) {
+			mappings += ",";
+		}
+
+		// Delta encoding each field
+		mappings += encodeVLQ(mapping.wasm_byte_offset - last_generated_column);
+		mappings += encodeVLQ(mapping.source_file_index - last_source);
+		mappings += encodeVLQ(mapping.original_line - last_original_line);
+		mappings += encodeVLQ(mapping.original_column - last_original_column);
+		if (mapping.name_index) { /* index zero = NONE, skip optional name */
+			mappings += encodeVLQ(mapping.name_index);
+		}
+
+		last_generated_column = mapping.wasm_byte_offset;
+		last_source = mapping.source_file_index;
+		last_original_line = mapping.original_line;
+		last_original_column = mapping.original_column;
+	}
+
+	return mappings;
+}
+
+[[nodiscard]]
+String generateSourceMap(List<String> names, const List<SourceMapping> &mappings_data) {
+	String json = R"(
+	{"version":3,"sources":["main.wasp"],"names":[%s],"mappings":"%s"};
+	)";
+	String mappings = generateMappings(mappings_data);
+	return json % names.join(",") % mappings;
+}
+
+void testSourceMap() {
+	List<String> names = {"ø" /* index zero = NONE, skip optional name */, "j", "x", "tttt", "main"};
+	List<SourceMapping> mappings = {{0, 0, 1, 0, 0},
+	                                {1, 0, 2, 0, 1},
+	                                {2, 0, 3, 0, 2},
+	                                {3, 0, 4, 0, 3},
+	                                {4, 0, 5, 0, 4}};
+	let maps = generateSourceMap(names, mappings);
+	print(maps);
 }

@@ -308,6 +308,8 @@ endif ()
 set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp
         source/Wasp.cpp source/wasm_helpers.cpp source/Code.cpp source/NodeTypes.cpp source/smart_types.cpp)
 
+set(SOURCE_FILES ${SOURCE_FILES} main.c) # hack to set wasm breakpoint in wasp_main(
+
 
 if (CONSOLE)
     message(CONSOLE)
@@ -737,7 +739,8 @@ elseif (WASMX)
 elseif (V8)
     MESSAGE("USING V8")
     ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
-    set(SOURCE_FILES source/wasm_runner_v8.cpp ${SOURCE_FILES})
+    set(SOURCE_FILES source/wasm_runner_v8.cpp ${SOURCE_FILES}
+            main.c)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/v8/include/)

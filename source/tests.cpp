@@ -22,7 +22,9 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
+void testSourceMap();
 void testDwarf() {
+	testSourceMap();
 //	DwarfReader reader("samples/test.wasm");
 //	reader.read();
 //	reader.print();
