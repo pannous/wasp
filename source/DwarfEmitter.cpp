@@ -2,28 +2,14 @@
 #include "dwarf.h"
 #include "Code.h"
 
-//byte OFFSET = 0x0;
-//byte OFFSET = 0x18;
-//byte OFFSET = 0x28;
-//byte OFFSET = 0x30;
-//byte OFFSET = 0x38;
-//byte OFFSET = 0x40;
-//byte OFFSET = 0x42; // main_start - OFFSET = 0x0000000000000002 we're onto something!
-//byte OFFSET = 0x43; // CANT go higher! maybe make first 'instruction' is_stmt = 0 ?
-byte OFFSET = 0x44;
-
-// 0x001031b4034 wasp_main:
-// 0x001031b40b8 _start ?
-//uint main_start = 0x48;
 uint main_start = 0x44;
 uint main_end = 0x5d;
 
-// 0x00105178060 tttt:
-uint tttt_start = 0x5e;
-//uint tttt_start = 0x5f; // fixes line!
+uint tttt_start = 0x5e + 8;
 uint tttt_end = 0x71;
 
-
+byte OFFSET = main_start - 2; // todo why 2?
+//byte OFFSET = 0; // to see real layout
 
 /* 0x00000639:   DW_TAG_structure_type
                 DW_AT_name	("target.Target.Os.LinuxVersionRange")
@@ -50,17 +36,7 @@ uint tttt_end = 0x71;
 // b tttt
 // run
 
-// OFFSET 0x0000004a in .debug_line section AHA!!!
-List<byte> getDwarf5LineTable() {
-	List<byte> dwarf5_bytes = {
-			0x00,
-			0x05, // 5 bytes length of the extended opcode that follows:
-			DW_LNE_set_address,
-			(byte) (main_start - OFFSET), 0x00, 0x00, 0x00, // start_address
-			DW_LNS_set_file, 0x00, // 0
-			DW_LNS_negate_stmt,
-			DW_LNS_advance_line, 6, // implicit main block starts after(!) function tttt
-			DW_LNS_copy,
+
 //			0x12, // address += 0, line += 0, is_stmt
 //			0x13, // address += 0, line += 1
 //			0x20, // address += 1, line += 0
@@ -72,6 +48,19 @@ List<byte> getDwarf5LineTable() {
 //			0x4a, // address += 4, line += 0
 //			0x4b, // address += 4, line += 1
 
+List<byte> getDwarf5LineTable() {
+	List<byte> dwarf5_bytes = {
+			0x00, // todo are these the two unaccounted OFFSET bytes??
+			0x05, // 5 bytes length of the extended opcode that follows:
+			DW_LNE_set_address,
+			(byte) (main_start - OFFSET), 0x00, 0x00, 0x00, // start_address
+			DW_LNS_set_file, 0x00, // 0
+//			DW_LNS_const_add_pc, // pc += 11 !!!
+//			0x2e, // address += 2, line += 0
+			DW_LNS_negate_stmt,
+			DW_LNS_advance_line, 6, // implicit main block starts after(!) function tttt
+			DW_LNS_copy,
+
 //			000044 func[0] <wasp_main>:
 //			DW_LNS_negate_stmt,
 			0x20, // address += 1, line += 0
@@ -79,7 +68,7 @@ List<byte> getDwarf5LineTable() {
 			0x2e, // address += 2, line += 0
 //			000047: 01 7e                      | local[1] type=i64
 			0x2e, // address += 2, line += 0
-			DW_LNS_set_prologue_end,
+//			DW_LNS_set_prologue_end,
 //			000049: 41 03                      | i32.const 3
 			DW_LNS_advance_line, 1,
 			DW_LNS_set_column, 0x01, // 10
@@ -113,7 +102,7 @@ List<byte> getDwarf5LineTable() {
 			0x05, // 5 bytes length of the extended opcode that follows:
 			DW_LNE_set_address, (byte) (tttt_start - OFFSET), 0x00, 0x00, 0x00, // 0x0000000000000063
 			DW_LNS_negate_stmt,
-//			DW_LNS_advance_line, 1, // line += 1 for // comment
+			DW_LNS_advance_line, 1, // line += 1 for // comment
 			DW_LNS_set_file, 0x00, // 0
 			DW_LNS_copy,
 //			00005e func[1] <tttt>:
@@ -123,6 +112,7 @@ List<byte> getDwarf5LineTable() {
 			0x2e, // address += 2, line += 0  i32.const 3
 //			000061: 01 7e                      | local[2] type=i64
 			0x2e, // address += 2, line += 0  i32.const 3
+//			DW_LNS_set_prologue_end,
 //			000063: 20 00                      | local.get 0 <j>
 			0x2e, // address += 2, line += 0  i32.const 3
 			DW_LNS_negate_stmt,
@@ -150,7 +140,7 @@ List<byte> getDwarf5LineTable() {
 //			000070: 0f                         | return
 			0x20, // address += 1, line += 0
 //			000071: 0b                         | end
-			0x21, // address += 1, line += 1
+//			0x21, // address += 1, line += 1  HUH one too far
 //			DW_LNS_set_prologue_end,
 			0x00, 0x01, 0x01 // DW_LNE_end_sequence
 	};
