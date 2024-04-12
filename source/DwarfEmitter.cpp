@@ -8,8 +8,8 @@
 //byte OFFSET = 0x30;
 //byte OFFSET = 0x38;
 //byte OFFSET = 0x40;
-byte OFFSET = 0x42;
-
+byte OFFSET = 0x42; // main_start - OFFSET = 0x0000000000000002 we're onto something!
+//byte OFFSET = 0x43; // CANT go higher! maybe make first 'instruction' is_stmt = 0 ?
 
 /* 0x00000639:   DW_TAG_structure_type
                 DW_AT_name	("target.Target.Os.LinuxVersionRange")
