@@ -1,6 +1,7 @@
 /////////////// ;)
 int tttt(int j) {
 	char *x = "abcd";// j + 1;
+//	void* y = &x;
 	return x == 0;// (int)x;
 }
 

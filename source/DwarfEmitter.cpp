@@ -436,6 +436,21 @@ DW_AT_ranges	DW_FORM_sec_offset
 	DW_AT_byte_size	DW_FORM_data1
 	 */
 
+//
+
+	code += (byte) 0x07; // sixth abbrev
+	code += (byte) DW_TAG_pointer_type;
+	code += (byte) 0x00; // DW_CHILDREN_no
+//	code += (byte) 0x03; // DW_AT_name : skip name
+//	code += (byte) 0x0e; // DW_FORM_strp // code += (byte) 0x25; // DW_FORM_strx1 in DWARF 5
+//	code += (byte) 0x3e; // DW_AT_encoding :
+	code += (byte) DW_AT_type;
+	code += (byte) DW_FORM_ref4;
+	code += (byte) 0x0b; // DW_AT_byte_size :
+	code += (byte) 0x0b; // DW_FORM_data1
+	code += (byte) 0x00; // end of abbrev
+	code += (byte) 0x00; // end of abbrev
+
 	code += (byte) 0x00; // final end of abbrev
 	return createSection(custom_section, encodeVector(Code(".debug_abbrev") + code));
 }
@@ -473,18 +488,25 @@ Code emit_dwarf_debug_info() { // DWARF 4
 	code += (byte) DW_ATE_signed; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
 	code += (byte) 0x08; // DW_AT_byte_size:	(0x04) // DW_FORM_data1
 
-	uint base_type_pointer = 0x34; // implicit offset ^^ 32/64? bit pointer
+	uint base_type_chars = 0x34; // implicit offset ^^ 32/64? bit pointer
 	code += (byte) 0x06; // abbreviated type 6 DW_TAG_base_type
-	code += (uint) 40;   // DW_AT_name	("int") // DW_FORM_strp .debug_str[] = "int64"
-	code += (byte) DW_ATE_ASCII; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
+	code += (uint) 0x3a;   // DW_AT_name	 DW_FORM_strp .debug_str[0x3a] = "char"
+	code += (byte) DW_ATE_unsigned_char;
+//	code += (byte) DW_ATE_ASCII; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
 	code += (byte) 0x01; // DW_AT_byte_size // DW_FORM_data1
 
+// Define a pointer type pointing to char
+	uint pointer_type_char = 0x3b; // implicit offset ^^ 32/64? bit pointer
+	code += (byte) 0x07;
+//	code += (byte) 0x0f; // DW_TAG_pointer_type
+	code += base_type_chars; // DW_AT_type with offset pointing to base_type_char
+	code += (byte) 0x04; // DW_AT_byte_size for pointer (usually 8 on 64-bit systems)
 
-//	uint base_type_pointer = 0x34; // implicit offset ^^ 32/64? bit pointer
-//	code += (byte) 0x06; // abbreviated type 6 DW_TAG_base_type
-//	code += (uint) 40;   // DW_AT_name	("int") // DW_FORM_strp .debug_str[] = "int64"
-//	code += (byte) DW_ATE_address; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
-//	code += (byte) 0x04; // DW_AT_byte_size // DW_FORM_data1
+	uint base_type_pointer = 0x43; // New pointer type offset for char pointer
+	code += (byte) 0x06; // abbreviated type 6 DW_TAG_base_type
+	code += (uint) 40;   // DW_AT_name	("int") // DW_FORM_strp .debug_str[] = "int64"
+	code += (byte) DW_ATE_address; // DW_AT_encoding: DW_ATE_signed // DW_FORM_data1
+	code += (byte) 0x04; // DW_AT_byte_size // DW_FORM_data1
 
 
 	// main
@@ -536,7 +558,6 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
 	code += (byte) DW_OP_WASM_local;    // DW_AT_frame_base / DW_OP_WASM_global_local ?  0,1,2 work 3 hit end 4… fail
 	code += (byte) 0x0;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
-//
 //	code += (byte) 0x03; // length of DW_FORM_exprloc:
 //	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
 //	code += (byte) DW_OP_WASM_stack; // stack from bottom:0
@@ -548,30 +569,20 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 	code += (uint) 0x10; // DW_AT_name	("j") // DW_FORM_strp [16]
 	code += (byte) 0x00; // DW_AT_decl_file (1) "main.wasp"	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 	code += (byte) 2;   // DW_AT_decl_line	(20) DW_FORM_data1 means just 1 byte
-	code += base_type_int; // DW_AT_type	(0x00000026 "int")
+	code += base_type_int64; // DW_AT_type	(0x00000026 "int")
 
 	// x JIT mapped to register $w5
 	code += (byte) 0x05; // abbreviated type 5 DW_TAG_variable
-//	code += (byte) 0x04; // length of DW_FORM_exprloc:
-//	code += (byte) DW_OP_regx;
-//	code += (byte) 0x05; // DW_OP_reg5
-//	code += (byte) DW_OP_piece;
-//	code += (byte) 0x04; // 4 bytes
-
-//	code += (byte) 0x01; // length of DW_FORM_exprloc:
-//	code += (byte) DW_OP_reg2;
 	code += (byte) 0x03; // length of DW_FORM_exprloc:
 	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
 	code += (byte) DW_OP_WASM_local;    // DW_AT_frame_base / DW_OP_WASM_global_local ?  0,1,2 work 3 hit end 4… fail
 	code += (byte) 0x1;// ? //	DW_AT_frame_base [DW_FORM_exprloc]	// 0… 0x7F ok, 0x80 : Hit the end of input before it was expected
-//	code += (byte) DW_OP_stack_value;//  0x9f vs  DW_OP_WASM_location_int; // 0xEE
-//	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
-//	code += (byte) DW_OP_fbreg; // offset to DW_AT_frame_base:
-//	code += (byte) 0x08; // + 12
 	code += (uint) 0x00; // DW_AT_name	("x") // DW_FORM_strp
 	code += (byte) 0x00; // DW_AT_decl_file (1) "main.wasp"	("/Users/me/dev/apps/wasp/main.c") // DW_FORM_data1 means just 1 byte
 	code += (byte) 3; // DW_AT_decl_line
-	code += base_type_int64; // DW_AT_type	(0x00000026 "int64") ≠ int32 == 0x7F
+//	code += base_type_int64; // pointer => (char*)(&x) gives desired result
+//	code += base_type_chars;
+	code += pointer_type_char;
 
 
 
@@ -579,10 +590,15 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 	code += (byte) 0x05; // abbreviated type 4 DW_TAG_variable 'a'
 //	code += (byte) 0x01; // length of DW_FORM_exprloc:
 //	code += (byte) DW_OP_reg2;
-	code += (byte) 0x03; // length of DW_FORM_exprloc:
-	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
-	code += (byte) DW_OP_WASM_global_leb;    // DW_AT_frame_base / DW_OP_WASM_global_local ?  0,1,2 work 3 hit end 4… fail
-	code += (byte) 0x20;// 0x8f - 0x6f
+//	code += (byte) 0x03; // length of DW_FORM_exprloc:
+//	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
+//	code += (byte) DW_OP_WASM_global_leb;    // DW_AT_frame_base / DW_OP_WASM_global_local ?  0,1,2 work 3 hit end 4… fail
+//	code += (byte) 0x20;// 0x8f - 0x6f
+
+	code += (byte) 0x05;
+	code += (byte) DW_OP_addr;
+	code += (uint) 0x20;
+//	code += (uint) 0x00;
 
 //	code += (byte) 0x03; // length of DW_FORM_exprloc:
 //	code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
@@ -594,7 +610,7 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 //	code += (byte) 0x02; // length of DW_AT_location DW_FORM_exprloc:
 //	code += (byte) DW_OP_fbreg; // offset to DW_AT_frame_base:
 //	code += (byte) 0x10; // + 12
-	code += (uint) 48; // DW_AT_name	("a") // DW_FORM_strp
+	code += (uint) 0x38; // DW_AT_name	("a") // DW_FORM_strp
 	code += (byte) 0x00; // DW_AT_decl_file "main.wasp"
 	code += (byte) 2; // DW_AT_decl_line
 	code += base_type_pointer; // DW_AT_type	(0x0000002d "int64") ≠ int32 == 0x7F
@@ -737,7 +753,8 @@ Code emit_dwarf_debug_line() {
 
 Code emit_dwarf_debug_str() {
 	Code code;
-	List<String> stringList = {"x", "main", "int", "tttt", "j", "/Users/me/wasp/main.c", "int64", "wasp_main", "a", "b",
+	List<String> stringList = {"x", "main", "int", "tttt", "j", "/Users/me/wasp/main.c", "int64", "wasp_main", "a",
+	                           "char",
 	                           "/Users/me/wasp/", "a", "bla", "bla", "bla", "bla", "blablablablablablablablablabla"};
 
 	for (String s: stringList) {
