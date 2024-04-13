@@ -1,7 +1,7 @@
 /////////////// ;)
 int tttt(int j) {
-	int x = j + 1;
-	return x;
+	char *x = "abcd";// j + 1;
+	return x == 0;// (int)x;
 }
 
 int wasp_main() {
