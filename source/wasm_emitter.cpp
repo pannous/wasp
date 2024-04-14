@@ -3431,10 +3431,10 @@ Code emitTargetFeatures() {
 
 [[nodiscard]]
 Code emitSourceMap(String program) {
-//	Code code=Code("http://localhost:8000/main.wasm.map");
 //	Code code=Code("data:text/plain;base64,"s + base64_encode("//# sourceMappingURL=main.wasm.map"));
 //	Code code=Code("data:text/json;base64,"s + base64_encode("//# sourceMappingURL=main.wasm.map"));
-	Code code = Code("data:text/json;base64,"s + base64_encode(program));
+//	Code code = Code("data:text/json;base64,"s + base64_encode(program));
+	Code code = Code("http://localhost:8000/main.wasm.map");
 	return createSection(custom_section, encodeVector(Code("sourceMappingURL") + code));
 }
 

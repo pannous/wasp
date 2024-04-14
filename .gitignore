@@ -104,3 +104,7 @@ docs/out
 dwarf
 
 dwarf -f
+
+main.wasm.map
+
+main.wasm.json

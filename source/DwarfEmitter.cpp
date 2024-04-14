@@ -854,7 +854,7 @@ String generateMappings(const List<SourceMapping> &mappings_data) {
 	int last_generated_line = 0;
 	int last_generated_column = 0;
 	int last_source = 0;
-	int last_original_line = 0;
+	int last_original_line = 1; // DWARF line numbers are 1-based   IS THAT WHY??
 	int last_original_column = 0;
 
 	for (auto &mapping: mappings_data) {
@@ -880,11 +880,25 @@ String generateMappings(const List<SourceMapping> &mappings_data) {
 
 [[nodiscard]]
 String generateSourceMap(List<String> names, const List<SourceMapping> &mappings_data) {
-	String json = R"(
-	{"version":3,"sources":["main.wasp"],"names":["%s"],"mappings":"%s","file":"main.wasm","sourcesContent": ["%s"],};
-	)";
+//	String json = R"(
+//	{"version":3,"sources":["main.wasp"],"names":["%s"],"mappings":"%s","file":"main.wasm","sourcesContent": ["%s"],};
+//	)";
+	String json = R"({
+		"version":3,
+		"sources":["main.wasp"],
+		"names":["%s"],
+		"mappings":"%s",
+		"file":"main.wasm",
+		"sourcesContent":["%s"]
+	})";
+//	"file":"wasp_module-baeacad2",
+
 //	List<String> sourcesContent = readLines("main.wasp");
 	String sourcesContent = readFile("main.wasp");
+	sourcesContent = sourcesContent.replaceAll("\n", "\\n");
+	sourcesContent = sourcesContent.replaceAll("\t", "\\t");
+	sourcesContent = sourcesContent.replaceAll("\"", "\\\"");
+
 	String mappings = generateMappings(mappings_data);
 	return json % names.join("\",\"") % mappings % sourcesContent;
 }
@@ -896,11 +910,18 @@ List<String> readLines(const char *string) {
 
 void testSourceMap() {
 	List<String> names = {"ø" /* index zero = NO NAME, skip optional name index */, "j", "x", "tttt", "main"};
-	List<SourceMapping> mappings = {{0, 0, 1, 0, 0},
-	                                {2,    0, 2, 0, 1},
-	                                {8,    0, 3, 0, 2},
-	                                {0x10, 0, 4, 0, 3},
-	                                {0x20, 0, 5, 0, 4}};
+	List<SourceMapping> mappings = {
+			{0x0,  0, 0, 0,  0},
+			{0x42, 0, 6, 0,  4},
+			{0x4b, 0, 7, 0,  0},
+			{0x51, 0, 8, 0,  0},
+			{0x5D, 0, 2, 0,  3},
+			{0x5d, 0, 2, 14, 1},
+			{0x63, 0, 2, 0,  2},
+			{0x67, 0, 3, 0,  2},
+			{0x6c, 0, 3, 0,  2},
+			{0x6e, 0, 4, 0,  0},
+	};
 	let maps = generateSourceMap(names, mappings);
 
 	let file = "main.wasm.map";
@@ -916,6 +937,6 @@ void testDwarf() {
 //	reader.print();
 //	assert_emit("fun tttt(int j){x=j+1;x};tttt(3)",4);
 //	assert_emit("global z=7;int tttt(int j){x=j+1;x};tttt(3)", 4);
-//	assert_emit("int tttt(int j){x=j+1;x};tttt(3);tttt(7)", 8);
-	assert_emit("int tttt(int j){x='abcd';x};tttt(3);tttt(7)", 8);
+	assert_emit("int tttt(int j){x=j+1;x};tttt(3);tttt(7)", 8);
+//	assert_emit("int tttt(int j){x='abcd';x};tttt(3);tttt(7)", 8);
 }
