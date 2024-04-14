@@ -3429,7 +3429,14 @@ Code emitTargetFeatures() {
 	return createSection(custom_section, encodeVector(Code("target_features") + code));
 };
 
-
+[[nodiscard]]
+Code emitSourceMap(String program) {
+//	Code code=Code("http://localhost:8000/main.wasm.map");
+//	Code code=Code("data:text/plain;base64,"s + base64_encode("//# sourceMappingURL=main.wasm.map"));
+//	Code code=Code("data:text/json;base64,"s + base64_encode("//# sourceMappingURL=main.wasm.map"));
+	Code code = Code("data:text/json;base64,"s + base64_encode(program));
+	return createSection(custom_section, encodeVector(Code("sourceMappingURL") + code));
+}
 
 // see preRegisterSignatures
 void add_imports_and_builtins() {
@@ -3505,7 +3512,7 @@ void clearEmitterContext() {
 Code emitDwarfSections(); // sorry, no DwarfEmitter.h
 
 [[nodiscard]]
-Code &emit(Node &root_ast) {
+Code &emit(Node &root_ast, String program) {
 	memoryHandling = export_memory;
 //        memoryHandling = import_memory; // works for micro-runtime
 //        memoryHandling = internal_memory; // works for wasm3
@@ -3541,6 +3548,8 @@ Code &emit(Node &root_ast) {
 	              + emitDwarfSections()  // https://yurydelendik.github.io/webassembly-dwarf/
 	              //	              + emitProducers()
 	              + emitTargetFeatures()
+	                + emitSourceMap(program)
+
 //	 + customSection
 	;
 	return code.clone();
@@ -3554,7 +3563,7 @@ Code &compile(String code, bool clean) {
 	Node parsed = parse(code);
 //    print(parsed.serialize());
 	Node &ast = analyze(parsed, functions["wasp_main"]);
-	Code &binary = emit(ast);
+	Code &binary = emit(ast, code);
 //    binary.debug();
 	binary.save("main.wasm");
 #ifdef INCLUDE_MERGER

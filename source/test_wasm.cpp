@@ -80,7 +80,7 @@ void testEmitter() {
     clearAnalyzerContext();
     clearEmitterContext();
     Node node = Node(42);
-    Code &code = emit(node);
+    Code &code = emit(node, "42");
     int result = code.run();
     check(result == 42);
 #endif
