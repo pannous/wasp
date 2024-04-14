@@ -98,13 +98,8 @@ lib/hello_spin
 lib/wai_example
 *.bak
 /wasp-jetbrains-plugin/.idea/kotlinc.xml
-
 docs/out
-
 dwarf
-
-dwarf -f
-
 main.wasm.map
-
 main.wasm.json
+*.map
