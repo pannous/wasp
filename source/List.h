@@ -460,6 +460,11 @@ public:
     int indexOf(S &item) {
         return position(&item);
     }
+
+    void push(S &item) {
+//        insert(item);
+        add(item);
+    }
 };
 
 void print(List<String> list);

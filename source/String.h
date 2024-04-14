@@ -1182,6 +1182,8 @@ public:
 	String from(const char *string);
 
 	static String &neu(const char *string);
+
+	void save(const char string[14]);
 };
 
 

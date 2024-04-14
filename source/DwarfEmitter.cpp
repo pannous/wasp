@@ -18,18 +18,18 @@
 
 // 0x001031b4034 wasp_main:
 // 0x001031b40b8 _start ?
-uint main_start = 0x44;
+uint main_start = 0x44 + 5; // in Chrome the first byte and the parameter bytes (2*2) are not included so offset is 5
 uint main_end = 0x5d;
 
 //byte OFFSET = 0x0;
-byte OFFSET = main_start - 0x2; // todo: find out why this is needed
+byte OFFSET = main_start - 2; // todo: find out why this is needed
 
 // 0x00105178060 tttt:
 //uint tttt_start = 0x74; // OUT
 //uint tttt_start = 0x69; // same as 0x5e! one more goes to line 2, but still no step splitting
-uint tttt_start = 0x5e;
+uint tttt_start = 0x5e + 5; // - main OFFSET
 //uint tttt_start = 0x5c; // XX
-uint tttt_end = tttt_start + 0xF0;// 0x72-0x5e;
+uint tttt_end = tttt_start + 0xF0;// 0x72-0x5e; // 0x6c - 0x5e
 
 
 
@@ -625,6 +625,8 @@ Each of these location descriptions are applicable to values in WebAssembly, and
 
 List<byte> getDwarf5LineTable();
 
+List<String> readLines(const char *string);
+
 Code emit_dwarf_debug_line() {
 
 	Code code;
@@ -856,11 +858,8 @@ String generateMappings(const List<SourceMapping> &mappings_data) {
 	int last_original_column = 0;
 
 	for (auto &mapping: mappings_data) {
-
-		if (!mappings.empty()) {
+		if (!mappings.empty())
 			mappings += ",";
-		}
-
 		// Delta encoding each field
 		mappings += encodeVLQ(mapping.wasm_byte_offset - last_generated_column);
 		mappings += encodeVLQ(mapping.source_file_index - last_source);
@@ -882,21 +881,31 @@ String generateMappings(const List<SourceMapping> &mappings_data) {
 [[nodiscard]]
 String generateSourceMap(List<String> names, const List<SourceMapping> &mappings_data) {
 	String json = R"(
-	{"version":3,"sources":["main.wasp"],"names":[%s],"mappings":"%s"};
+	{"version":3,"sources":["main.wasp"],"names":["%s"],"mappings":"%s","file":"main.wasm","sourcesContent": ["%s"],};
 	)";
+//	List<String> sourcesContent = readLines("main.wasp");
+	String sourcesContent = readFile("main.wasp");
 	String mappings = generateMappings(mappings_data);
-	return json % names.join(",") % mappings;
+	return json % names.join("\",\"") % mappings % sourcesContent;
+}
+
+List<String> readLines(const char *string) {
+	String content = readFile(string);
+	return content.split("\n");
 }
 
 void testSourceMap() {
-	List<String> names = {"ø" /* index zero = NONE, skip optional name */, "j", "x", "tttt", "main"};
+	List<String> names = {"ø" /* index zero = NO NAME, skip optional name index */, "j", "x", "tttt", "main"};
 	List<SourceMapping> mappings = {{0, 0, 1, 0, 0},
-	                                {1, 0, 2, 0, 1},
-	                                {2, 0, 3, 0, 2},
-	                                {3, 0, 4, 0, 3},
-	                                {4, 0, 5, 0, 4}};
+	                                {2,    0, 2, 0, 1},
+	                                {8,    0, 3, 0, 2},
+	                                {0x10, 0, 4, 0, 3},
+	                                {0x20, 0, 5, 0, 4}};
 	let maps = generateSourceMap(names, mappings);
-	print(maps);
+
+	let file = "main.wasm.map";
+	maps.save(file);
+//save("source_map.json", maps);
 }
 
 

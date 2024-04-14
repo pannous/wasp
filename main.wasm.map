@@ -1,0 +1,10 @@
+
+	{"version":3,"sources":["main.wasp"],"names":["ø","j","x","tttt","main",""],"mappings":"AACA,EACAC,MACAE,QACAG,gBACAI","file":"main.wasm","sourcesContent": ["/////////////// ;)
+int tttt(int j){
+	int x=j+1;
+	return x;
+}
+
+tttt(3)
+tttt(7)"],};
+	

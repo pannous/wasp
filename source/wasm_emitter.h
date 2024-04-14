@@ -98,7 +98,7 @@ Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 Type commonType(Type lhs, Type rhs);
 
 //Code emit(String code);//  wasp -> code -> wasm -> data
-Code &emit(Node &root_ast);
+Code &emit(Node &root_ast, String program);
 
 //#if MY_WASM
 ////extern "C"

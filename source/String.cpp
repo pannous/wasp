@@ -637,6 +637,14 @@ String &String::replaceAt(size_t at, int len, String with) {
     return result.clone();
 }
 
+void String::save(const char *file) {
+#if not WASM or WASI
+	FILE *stream = fopen(file, "wb");
+	fwrite(data, sizeof(byte), length, stream);
+	fclose(stream);
+#endif
+}
+
 void error1(String message, chars file, int line) {
 	error1(message.data, file, line);
 }

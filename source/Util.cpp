@@ -597,3 +597,39 @@ String extractPath(String file) {
 	if (!file.contains("/"))return "/";
 	return file.substring(0, file.lastIndexOf("/"));
 }
+
+//String base64_encode(String program) {
+//
+//}
+
+
+// Base64 encoding table
+
+// Function to encode a string to Base64
+char *base64_encode(const char *data) {
+	static const char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	size_t data_len = strlen(data);
+	size_t encoded_len = 4 * ((data_len + 2) / 3);
+	char *encoded = (char *) malloc(encoded_len + 1);
+
+	if (encoded == NULL) return NULL; // Memory allocation failed
+
+	unsigned char b;
+	for (size_t i = 0, j = 0; i < data_len;) {
+		uint32_t octet_a = i < data_len ? (unsigned char) data[i++] : 0;
+		uint32_t octet_b = i < data_len ? (unsigned char) data[i++] : 0;
+		uint32_t octet_c = i < data_len ? (unsigned char) data[i++] : 0;
+
+		uint32_t triple = (octet_a << 16) + (octet_b << 8) + octet_c;
+
+		encoded[j++] = base64_table[(triple >> 18) & 0x3F];
+		encoded[j++] = base64_table[(triple >> 12) & 0x3F];
+		b = (triple >> 6) & 0x3F;
+		encoded[j++] = (i > data_len + 1) ? '=' : base64_table[b];
+		b = triple & 0x3F;
+		encoded[j++] = (i > data_len) ? '=' : base64_table[b];
+	}
+
+	encoded[encoded_len] = '\0';
+	return encoded;
+}

@@ -1175,134 +1175,152 @@ private:
 	// {: 00aacc :} base64 values todo: USE
 	Node binary() {
 // Parse binary value
-// Use a lookup table to find the index.
+
+		at++;  // skip the starting '{:'
+		if (next == '~') { // base85
+			at++;  // skip '~'
+			return decodeBase85(text);
+		} else { // base64
+			// code based on https://github.com/niklasvh/base64-arraybuffer
+			let buffer = decodeBase64(text);
+			// console.put('binary decoded length:', p);
+//			buffer.encoding = "b64";
+			return buffer;
+		}
+	};
+
+	Node decodeBase85(String text) {
+		// Use a lookup table to find the index.
+		byte lookup85[128];
+		for (auto i = 0; i < 128; i++)
+			lookup85[i] = 86;
+		for (auto i = 0; i < 128; i++) {
+			if (33 <= i and i <= 117)
+				lookup85[i] = i - 33;
+		}
+		lookup85[32] = lookup85[9] = lookup85[13] = lookup85[10] = 85;
+// ' ', \t', '\r', '\n' spaces also allowed in base85 stream
+
+		// code based on https://github.com/noseglid/base85/blob/master/lib/base85.js
+		auto end = text.indexOf('}', at + 1);  // scan binary end
+		if (end < 0) { err("Missing ascii85 end delimiter"); }
+
+		// first run decodes into base85 int values, and skip the spaces
+		auto p = 0;
+		byte base[end - at + 3];  // 3 extra bytes of padding
+		while (at < end) {
+			auto code = lookup85[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
+			if (code > 85) { err("Invalid ascii85 character"); }
+			if (code < 85) { base[p++] = code; }
+			// else skip spaces
+			at++;
+		}
+		at = end + 2;
+		proceed();  // skip '~}'
+		// check length
+		if (p % 5 == 1) { err("Invalid ascii85 stream length"); }
+
+		// second run decodes into actual binary data
+		auto dataLength = p, padding = (dataLength % 5 == 0) ? 0 : 5 - dataLength % 5;
+		int buffer[4 * dataLength / 5 - padding];
+//				bytes = new DataView(buffer),
+		int *bytes = buffer;// views:
+		auto *bytes8 = reinterpret_cast<byte *>(buffer);
+		auto *bytes16 = reinterpret_cast<short *>(buffer);
+		int trail = dataLength - 4;//buffer.byteLength - 4;
+		base[p] = base[p + 1] = base[p + 2] = 84;  // 3 extra bytes of padding
+		// console.put('base85 byte length: ', buffer.byteLength);
+		for (auto i = 0, p = 0; i < dataLength; i += 5, p += 4) {
+			auto num = (((base[i] * 85 + base[i + 1]) * 85 + base[i + 2]) * 85 + base[i + 3]) * 85 + base[i + 4];
+			// console.put("set byte to val:", p, num, String.fromCodePoint(num >> 24), String.fromCodePoint((num >> 16) & 0xff),
+			//	String.fromCodePoint((num >> 8) & 0xff), String.fromCodePoint(num & 0xff));
+			// write the uint32 value
+			if (p <= trail) { // bulk of bytes
+				bytes[p] = num; // big endian
+			} else { // trailing bytes
+				switch (padding) {
+					case 1:
+						bytes8[p + 2] = (num >> 8) & 0xff;  // fall through
+					case 2:
+						bytes16[p] = num >> 16;
+						break;
+					case 3:
+						bytes8[p] = num >> 24;
+					default:
+						break;
+				}
+			}
+		}
+		return Node(buffer);// {buffer};
+	}
+
+	Node decodeBase64(String text) {
+
+		auto end = text.indexOf('}', at), bufEnd = end, pad = 0;  // scan binary end
+		if (end < 0) { err("Missing base64 end delimiter"); }
+
+		// Use a lookup table to find the index.
 		byte lookup64[128];
 		byte lookup85[128];
 
-		for (auto i = 0; i < 128; i++) {
+		for (auto i = 0; i < 128; i++)
 			lookup64[i] = 65;
-			lookup85[i] = 86;
-		}
 		for (auto i = 0; i < 64; i++) {
 			char charCode = text.charCodeAt(i);
 			if (charCode < 0) // never true: charCode > 128 or
 				err(("Invalid binary charCode %d "_s % (int64) charCode) + text.substring(i, i + 2) + "" + text);
 			lookup64[(short) charCode] = i;// todo: what is this?
 		}
-// ' ', \t', '\r', '\n' spaces also allowed in base64 stream
 		lookup64[32] = lookup64[9] = lookup64[13] = lookup64[10] = 64;
-		for (auto i = 0; i < 128; i++) { if (33 <= i and i <= 117) lookup85[i] = i - 33; }
-// ' ', \t', '\r', '\n' spaces also allowed in base85 stream
-		lookup85[32] = lookup85[9] = lookup85[13] = lookup85[10] = 85;
+// ' ', \t', '\r', '\n' spaces also allowed in base64 stream
 
 
-		at++;  // skip the starting '{:'
-		if (next == '~') { // base85
-			at++;  // skip '~'
-			// code based on https://github.com/noseglid/base85/blob/master/lib/base85.js
-			auto end = text.indexOf('}', at + 1);  // scan binary end
-			if (end < 0) { err("Missing ascii85 end delimiter"); }
-
-			// first run decodes into base85 int values, and skip the spaces
-			auto p = 0;
-			byte base[end - at + 3];  // 3 extra bytes of padding
-			while (at < end) {
-				auto code = lookup85[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
-				if (code > 85) { err("Invalid ascii85 character"); }
-				if (code < 85) { base[p++] = code; }
-				// else skip spaces
-				at++;
-			}
-			at = end + 2;
-			proceed();  // skip '~}'
-			// check length
-			if (p % 5 == 1) { err("Invalid ascii85 stream length"); }
-
-			// second run decodes into actual binary data
-			auto dataLength = p, padding = (dataLength % 5 == 0) ? 0 : 5 - dataLength % 5;
-			int buffer[4 * dataLength / 5 - padding];
-//				bytes = new DataView(buffer),
-			int *bytes = buffer;// views:
-			auto *bytes8 = reinterpret_cast<byte *>(buffer);
-			auto *bytes16 = reinterpret_cast<short *>(buffer);
-			int trail = dataLength - 4;//buffer.byteLength - 4;
-			base[p] = base[p + 1] = base[p + 2] = 84;  // 3 extra bytes of padding
-			// console.put('base85 byte length: ', buffer.byteLength);
-			for (auto i = 0, p = 0; i < dataLength; i += 5, p += 4) {
-				auto num = (((base[i] * 85 + base[i + 1]) * 85 + base[i + 2]) * 85 + base[i + 3]) * 85 + base[i + 4];
-				// console.put("set byte to val:", p, num, String.fromCodePoint(num >> 24), String.fromCodePoint((num >> 16) & 0xff),
-				//	String.fromCodePoint((num >> 8) & 0xff), String.fromCodePoint(num & 0xff));
-				// write the uint32 value
-				if (p <= trail) { // bulk of bytes
-					bytes[p] = num; // big endian
-				} else { // trailing bytes
-					switch (padding) {
-						case 1:
-							bytes8[p + 2] = (num >> 8) & 0xff;  // fall through
-						case 2:
-							bytes16[p] = num >> 16;
-							break;
-						case 3:
-							bytes8[p] = num >> 24;
-						default:
-							break;
-					}
-				}
-			}
-			return Node(buffer);// {buffer};
-		} else { // base64
-			// code based on https://github.com/niklasvh/base64-arraybuffer
-			auto end = text.indexOf('}', at), bufEnd = end, pad = 0;  // scan binary end
-			if (end < 0) { err("Missing base64 end delimiter"); }
-			// strip optional padding
-			if (text[bufEnd - 1] == '=') { // 1st padding
+		// strip optional padding
+		if (text[bufEnd - 1] == '=') { // 1st padding
+			bufEnd--;
+			pad = 1;
+			if (text[bufEnd - 1] == '=') { // 2nd padding
 				bufEnd--;
-				pad = 1;
-				if (text[bufEnd - 1] == '=') { // 2nd padding
-					bufEnd--;
-					pad = 2;
-				}
+				pad = 2;
 			}
-			// console.put('binary char length: ', bufEnd - at);
-
-			// first run decodes into base64 int values, and skip the spaces
-			byte base[bufEnd - at];
-			auto p = 0;
-			while (at < bufEnd) {
-				auto code = lookup64[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
-				if (code > 64) { err("Invalid base64 character"); }
-				if (code < 64) { base[p++] = code; }
-				// else skip spaces
-				at++;
-			}
-			at = end + 1;
-			proceed();  // skip '}'
-			// check length
-			if ((pad and (p + pad) % 4 != 0) or (!pad and p % 4 == 1)) {
-				err("Invalid base64 stream length");
-			}
-
-			// second run decodes into actual binary data
-			auto len = int(p * 0.75);
-			int code1, code2, code3, code4 = 0;
-			int buffer[len];
-			auto *bytes = reinterpret_cast<byte *>(buffer);// views:
-			// console.put('binary length: ', len);
-			for (auto i = 0, p = 0; p < len; i += 4) {
-				code1 = base[i];
-				code2 = base[i + 1];
-				code3 = base[i + 2];
-				code4 = base[i + 3];
-				bytes[p++] = (code1 << 2) | (code2 >> 4);
-				// extra undefined bytes casted into 0 by JS binary operator
-				bytes[p++] = ((code2 & 15) << 4) | (code3 >> 2);
-				bytes[p++] = ((code3 & 3) << 6) | (code4 & 63);
-			}
-			// console.put('binary decoded length:', p);
-//			buffer.encoding = "b64";
-			return Node(buffer);
 		}
-	};
+		// console.put('binary char length: ', bufEnd - at);
+
+		// first run decodes into base64 int values, and skip the spaces
+		byte base[bufEnd - at];
+		auto p = 0;
+		while (at < bufEnd) {
+			auto code = lookup64[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
+			if (code > 64) { err("Invalid base64 character"); }
+			if (code < 64) { base[p++] = code; }
+			// else skip spaces
+			at++;
+		}
+		at = end + 1;
+		proceed();  // skip '}'
+		// check length
+		if ((pad and (p + pad) % 4 != 0) or (!pad and p % 4 == 1)) {
+			err("Invalid base64 stream length");
+		}
+
+		// second run decodes into actual binary data
+		auto len = int(p * 0.75);
+		int code1, code2, code3, code4 = 0;
+		int buffer[len];
+		auto *bytes = reinterpret_cast<byte *>(buffer);// views:
+		// console.put('binary length: ', len);
+		for (auto i = 0, p = 0; p < len; i += 4) {
+			code1 = base[i];
+			code2 = base[i + 1];
+			code3 = base[i + 2];
+			code4 = base[i + 3];
+			bytes[p++] = (code1 << 2) | (code2 >> 4);
+			// extra undefined bytes casted into 0 by JS binary operator
+			bytes[p++] = ((code2 & 15) << 4) | (code3 >> 2);
+			bytes[p++] = ((code3 & 3) << 6) | (code4 & 63);
+		}
+		return Node(buffer);// {buffer};
+	}
 
 	bool isDigit(codepoint c) {
 		return (c >= '0' and c <= '9') or atoi1(c) != -1;

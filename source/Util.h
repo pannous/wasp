@@ -220,3 +220,4 @@ class List;
 int64 powi(int a, unsigned int b);
 //extern long double powi(long double, long double);
 
+char *base64_encode(const char *data);

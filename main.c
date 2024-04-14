@@ -4,7 +4,6 @@ int tttt(int j) {
 //	void* y = &x;
 	return x == 0;// (int)x;
 }
-
 int wasp_main() {
 	tttt(3);
 	return tttt(7);

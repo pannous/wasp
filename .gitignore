@@ -100,3 +100,7 @@ lib/wai_example
 /wasp-jetbrains-plugin/.idea/kotlinc.xml
 
 docs/out
+
+dwarf
+
+dwarf -f
