@@ -25,6 +25,8 @@ Code emitString(Node &node, Function &context);
 
 Code emitArray(Node &node, Function &context);
 
+Map<int, uint> sourceMap;// line number to wasm offset
+
 //int runtime_data_offset = 0;// 0x10000;
 int runtime_data_offset = 0x10000; // prevent memory clash with runtime.
 int runtime_function_offset = 0; // imports + funcs
@@ -422,10 +424,11 @@ void emitSmartPointer(smart_pointer_64 p) {
 	emitLongData(p, true);
 }
 
-
 Code emitWaspString(Node &node, Function &context) {
 	// emit node as serialized wasp string
 	const String &string = node.serialize();
+	sourceMap[node.lineNumber] = data_index_end; // todo how to keep track of growing code?
+//	code.position = {.line = node.lineNumber, .column = node.column};
 	const Code &code = emitString(*new Node(string), context);
 	return code;
 }

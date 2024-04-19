@@ -202,7 +202,8 @@ public:
     int64 _hash = 0;// set by hash(); should copy! on *x=node / clone()
 #ifdef DEBUG
 // int code_position; // hash to external map
-//	int lineNumber;
+	int lineNumber;
+	int column;
     String *line = 0;// debug! EXPENSIVE for non ast node_pointer!
 #endif
 

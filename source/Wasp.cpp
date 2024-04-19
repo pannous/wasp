@@ -1463,8 +1463,11 @@ private:
 		actual.parent = parent;
 		actual.setType(groups);// may be changed later, default (1 2)==1,2
 #if DEBUG
-		if (line != "}")
+		if (line != "}") // why?
 			actual.line = &line;
+		actual.lineNumber = lineNumber;
+		actual.column = columnStart; // todo
+		actual.file = &file;
 #endif
 		auto length = text.length;
 		int start = at;// line, expression, group, … start
