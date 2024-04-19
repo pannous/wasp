@@ -53,19 +53,16 @@ Code encodeVector(const Code &data);
 Code &unsignedLEB128(int64 n);
 
 Code &signedLEB128(int64 value);
+//
+//struct Position {
+//    int line;
+//    int column;
+////	int fileIndex;
+//};
 
 class Code {
 public:
 
-    Code(byte string[]) {
-        data = (bytes) string;
-        length = strlen((char *) string);
-    }
-
-    Code(List<byte> list) {
-        length = list.size();
-        data = list.data(); // clone?
-    }
 
     int header = array_header_32;// todo: code_header_32 if extra fields are needed beyond standard
     int kind = byte_i8;
@@ -76,8 +73,18 @@ public:
     bool shared = true;// can't free data until all views are destroyed OR because this is a view on other's data!!
     bool needs_relocate = true; // unless specified
     String name;// function or file
+//    Position position; makes little sense since code segments constitute several lines
     Code() {}
 
+	Code(byte string[]) {
+		data = (bytes) string;
+		length = strlen((char *) string);
+	}
+
+	Code(List<byte> list) {
+		length = list.size();
+		data = list.data(); // clone?
+	}
     Code(bytes a, int len, bool needs_copy = true) {
         data = a;
         length = len;

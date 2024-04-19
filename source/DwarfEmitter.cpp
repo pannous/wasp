@@ -854,7 +854,7 @@ String generateMappings(const List<SourceMapping> &mappings_data) {
 	int last_generated_line = 0;
 	int last_generated_column = 0;
 	int last_source = 0;
-	int last_original_line = 1; // DWARF line numbers are 1-based    IS THAT WHY??
+	int last_original_line = 1; // DWARF line numbers are 1-based    IS THAT WHY?? or my hack?
 	int last_original_column = 0;
 
 	for (auto &mapping: mappings_data) {
