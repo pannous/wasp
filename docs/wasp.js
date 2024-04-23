@@ -1,4 +1,4 @@
-/*
+/* 
 * WASP: WebAssembly Programming Language API/ABI
 * This file contains the javascript counterpoint to the WASP runtime,
 * offering host functions to wasi/wasp modules, like download() and run_wasm()
@@ -49,8 +49,8 @@ function format(object) {
 }
 
 function error(msg) {
-    if (results) results.value = "⚠️ ERROR: " + msg + "\n";
-    // if(msg is error
+    if (typeof results !== 'undefined')
+        results.value = "⚠️ ERROR: " + msg + "\n";
     if (msg instanceof Error)
         throw msg
     else
@@ -94,7 +94,46 @@ var resume; // callback function resuming after run_wasm finished
 class YieldThread { // unwind wasm, reenter through resume() after run_wasm finished
 }
 
+function matrix_multiply(a, b, k = 1) {
+    warn("vector.dot / mul shim via webgpu-blas until wasm vector proposal is available")
+    a = node(a, memory)
+    b = node(b, memory)
+    // todo other types
+    if (a.kind == kinds.list && a.type == kinds.float32)
+        a.kind = kinds.vector // todo add offset and length
+    if (a.kind == kinds.buffer && a.type == kinds.float32)
+        a.kind = kinds.vector
+    if (b.kind == kinds.buffer && b.type == kinds.float32)
+        b.kind = kinds.vector
+    if (b.kind == kinds.matrix)
+        k = b.row_count
+    if (b.kind == kinds.matrix)
+        k = b.column_count
+    if (a.kind != kinds.vector || b.kind != kinds.vector)
+        throw new Error("dot product only for vectors")
+    // efficient implementation, the condition m % 32 === 0 && n % 64 === 0 && k % 4 === 0 && alpha === 1.0 have to met.
+
+    include("https://github.com/milhidaka/webgpu-blas/releases/download/v1.2.3/webgpublas.js")
+    let array_a = new Float32Array(buffer, a.offset, a.length)
+    let array_b = new Float32Array(buffer, b.offset, b.length)
+
+    const alpha = 1.0; // ?
+    let m = a.length / k
+    let n = b.length / k
+    // await
+    const result = webgpublas.sgemm(m, n, k, alpha, array_a, array_b);
+    console.log(result); // m*n row-major matrix (Float32Array)
+    return result
+}
+
 let imports = {
+    vector: { // todo: use wasm vector proposal when available, using webgpu-blas as a shim
+        dot: (a, b) => {
+            matrix_multiply(a, b, 1)
+        },
+        mul: matrix_multiply,
+        matrix_multiply
+    },
     env: { // MY_WASM custom wasp helpers
         memory, // optionally provide js Memory … alternatively use exports.memory in js, see below
         HEAP_END: new WebAssembly.Global({value: "i32", mutable: true}, 0),// todo: use as HEAP_END
@@ -724,7 +763,7 @@ function load_runtime_bytes() {
                 // console.log(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
                 // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
             })
-        copy_runtime_bytes_to_compiler()
+        // copy_runtime_bytes()
         }
     )
 }
@@ -750,7 +789,11 @@ function wasp_ready() {
     // moduleReflection(wasm_data);
     loadKindMap()
     load_runtime_bytes() // smaller than compiler
-    register_wasp_functions(compiler_instance.exports)
+    try {
+        register_wasp_functions(compiler_instance.exports)
+    } catch (err) {
+        error(err)
+    }
     // testRun1()
     if (run_tests)
         setTimeout(test, 1);// make sync
@@ -806,10 +849,7 @@ async function run_wasm(buf_pointer, buf_size) {
 
         if (needs_runtime && use_big_runtime) {
             // app = await WebAssembly.instantiate(wasm_buffer, {env: Wasp}, memory) // todo: tweaked imports if it calls out
-            // let merged_imports = {...Wasp, ...imports};
-            // let merged_imports = {env:Wasp}
-            let merged_imports = imports // compiler_exports
-            app = await WebAssembly.instantiate(wasm_buffer, merged_imports, memory) // todo: tweaked imports if it calls out
+            app = await WebAssembly.instantiate(wasm_buffer, imports, memory) // todo: tweaked imports if it calls out
         } else if (needs_runtime) {
             print("needs_runtime runtime loading")
             if (!RUNTIME_BYTES) // Cannot compile WebAssembly.Module from an already read Response TODO reuse!
@@ -888,11 +928,7 @@ function wasm_to_wat(buffer) {
             memory64: true,
         }
 
-        // var readDebugNames = true;
-        var readDebugNames = false;
-        console.log("wasm_to_wat")
-        // console.log(wabt.validate(buffer, {readDebugNames}));
-        var module = wabt.readWasm(buffer, {readDebugNames}, wabtFeatures);
+        var module = wabt.readWasm(buffer, {readDebugNames: true}, wabtFeatures);
         module.generateNames();
         module.applyNames();
         const result = module.toText({foldExprs: true, inlineExport: true});
