@@ -70,8 +70,9 @@ public:
     bytes data = 0;
     int64 start = 0;// internal reader pointer
     bool encoded = false;// first byte = size of vector
-    bool shared = true;// can't free data until all views are destroyed OR because this is a view on other's data!!
     bool needs_relocate = true; // unless specified
+	mutable bool shared = true; // can be changed in const clone()
+	// can't free data until all views are destroyed OR because this is a view on other's data!!
     String name;// function or file
 //    Position position; makes little sense since code segments constitute several lines
     Code() {}
@@ -353,7 +354,7 @@ public:
         return *this;
     }
 
-    Code &clone(bool deep = true) {
+	Code &clone(bool deep = true) const {
         Code *copy = new Code();
 //		*copy = *this;// DOESNT!
         copy->data = data;
@@ -365,6 +366,10 @@ public:
         } else shared = true;
         return *copy;
     }
+
+	bool contains(Code other) {
+		return ::contains(data, other.data, length, other.length);
+	}
 
     void debug() {
         String s;
@@ -1324,6 +1329,22 @@ public:
         return name == other.name and signature == other.signature;
     }
 
+	void track(Node &node, const Code &statement, int offset = -1) {
+		if (code) {
+			if (code->contains(statement)) // todo double statements x==0 etc
+				warn("Statement already tracked");
+			else
+				code->add(statement);
+		} else code = &statement.clone();
+		if (offset < 0)offset = code->length;
+//        if (offset >= 0)
+//            code->position = {.line = node.lineNumber, .column = node.column, .offset = offset};
+//        else
+//            code->position = {.line = node.lineNumber, .column = node.column};
+
+//        sourceMap[node.lineNumber] = data_index_end; // todo how to keep track of growing code?
+//	code.position = {.line = node.lineNumber, .column = node.column};
+	}
 };
 
 

@@ -3,6 +3,8 @@
 #include "Code.h"
 #include "asserts.h"
 
+// wasm-tools addr2line main.wasm 0x50
+
 // NEITHER CHROME NOR FIREFOX SUPPORTS DWARF DEBUGGING of DW_OP_WASM_local IN WASM YET
 //code += (byte) 0x03; // length of DW_FORM_exprloc:
 //code += (byte) DW_OP_WASM_location; // := 0xED ;; available DWARF extension code 0x0 0x3, DW_OP_stack_value 0x9f OK ) DW_FORM_exprloc
