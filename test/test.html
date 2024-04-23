@@ -22,7 +22,7 @@
 <br/>
 <!--application/wasp-->
 <!--accept="*/*"-->
-<input id="input_file" onselect="readFile()" type="file"/>
+<input id="input_file" onchange="readFile()" type="file"/>
 <button onclick="run(code_input.value)">RUN</button>
 <button onclick="results.value=''">CLEAR</button>
 <br/>
@@ -78,14 +78,6 @@ function terminate0() {
     console.log("terminate0 disabled: enable by removing 0");
 }
 
-function readFile() {// via classic html, not wasp
-    const file = input_file.files[0]
-    const reader = new FileReader
-    reader.addEventListener('load', () => {
-        code_input.innerHTML = reader.result
-    })
-    reader.readAsText(file, 'UTF-8')
-}
 
 function print(...x) {
     let xs = Array.isArray(x) ? x.join(' ') : x;

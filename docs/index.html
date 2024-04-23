@@ -61,8 +61,8 @@
     <br/>
     <textarea id="code" onkeyup="compile_and_run(editor.getValue())">√3^2</textarea>
     <br/>
-    <input id="input_file" onselect="readFile()" type="file"/>
-    <button onclick="compile_and_run(editor.getValue())">RUN</button>
+    <input id="input_file" onchange="readFile()" type="file"/>
+    <button onclick="compile_and_run(editor.getValue())">RUN!</button>
     <button onclick="results.value=''">CLEAR</button>
     <button onclick="download_file(editor.getValue(), 'source.wasp', 'wasp')" title="download wasp">💾 wasp</button>
     <button onclick="download_file(wasm_buffer, 'emit.wasm', 'wasm')" title="download wasm">💾 wasm</button>
