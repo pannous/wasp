@@ -962,4 +962,21 @@ function wasm_to_wat(buffer) {
     }
 }
 
+
+function readFile() {// via classic html, not wasp
+    console.log("readFile")
+    const file = input_file.files[0]
+    const reader = new FileReader
+    reader.addEventListener('load', () => {
+        console.log("readFile load")
+        console.log(reader.result)
+        if (typeof code_input !== 'undefined')
+            code_input.innerHTML = reader.result
+        if (typeof editor !== 'undefined')
+            editor.setValue(reader.result)
+    })
+    reader.readAsText(file, 'UTF-8')
+}
+
 load_runtime()
+
