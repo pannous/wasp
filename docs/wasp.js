@@ -8,7 +8,7 @@ let Wasp = {}
 let WASP_COMPILER = 'wasp.wasm'
 let WASP_RUNTIME = 'wasp-runtime.wasm'
 
-var RUNTIME_BYTES = null // for reflection or linking
+var runtime_bytes = null // for reflection or linking
 var needs_runtime = false;
 var use_big_runtime = true; // use compiler as runtime for now
 var run_tests = true; // todo NOT IN PRODUCTION!
@@ -390,10 +390,15 @@ function reset_heap() {
 }
 
 function compile_and_run(code) {
-    if (typeof runtime_exports === 'undefined') load_runtime();
+    if (typeof runtime_exports === 'undefined')
+        load_runtime();
     // reset_heap();
     expect_test_result = false
-    runtime_exports.run(chars(code));
+    try {
+        runtime_exports.run(chars(code));
+    } catch (err) {
+        error(err)
+    }
 }
 
 function reinterpretInt64AsFloat64(n) { // aka reinterpret_cast long to double
@@ -619,13 +624,13 @@ var expect_test_result = 0; // set before running in semi sync tests!
 
 
 // todo don't confuse app (wasp runtime) with app_instance (compiled wasm module)
-// todo wasm_data = fetch(WASP_FILE) vs RUNTIME_BYTES = fetch(WASP_RUNTIME)
+// todo wasm_data = fetch(WASP_FILE) vs runtime_bytes = fetch(WASP_RUNTIME)
 // wasp compiler and wasp runtime are different things here!
 async function link_runtime() {
     const memory = new WebAssembly.Memory({initial: 16384, maximum: 65536});
     const table = new WebAssembly.Table({initial: 2, element: "anyfunc"});
     try {
-        runtime_module = await WebAssembly.compile(RUNTIME_BYTES)
+        runtime_module = await WebAssembly.compile(runtime_bytes)
         // runtime_imports= {env: {memory: memory, table: table}}
         runtime_imports = imports
         let runtime_instance = await WebAssembly.instantiate(runtime_module, runtime_imports) // , memory
@@ -736,6 +741,8 @@ function addSynonyms(exports) {
         Wasp[name] = func
         if (typeof func == "function") {
             let demangled = demangle(name)
+            if (demangled.lastIndexOf("run") >= 0)
+                console.log(demangled)
             if (demangled != name) {
                 // if (!exports[demangled]) {
                 exports[demangled] = func
@@ -754,8 +761,8 @@ function addSynonyms(exports) {
 // 2. the host environment uses the full wasp.wasm (with compiler) as runtime
 function load_runtime_bytes() {
     fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
-        RUNTIME_BYTES = buffer
-        WebAssembly.instantiate(RUNTIME_BYTES, imports).then(obj => {
+        runtime_bytes = buffer
+        WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
                 //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
                 // console.log(obj.instance.exports._ZN6StringC2EPKcb)
                 // console.log(obj.instance.exports._ZN6StringC2EPKcb.length)
@@ -788,7 +795,6 @@ function wasp_ready() {
     console.log("wasp is ready")
     // moduleReflection(wasm_data);
     loadKindMap()
-    load_runtime_bytes() // smaller than compiler
     try {
         register_wasp_functions(compiler_instance.exports)
     } catch (err) {
@@ -799,16 +805,56 @@ function wasp_ready() {
         setTimeout(test, 1);// make sync
 }
 
-// todo: CONFUSION between runtime and compiler!
+
+// todo: CONFUSION between runtime, compiler and app!  todo: unified memory possible without components?
+// WHICH memory, HEAP etc… => node() string() of which memory ??
+// todo let app IMPORT its memory when using runtime as a module!
+// todo let app EXPORT its memory when being standalone!
+// todo how can IMPORTED memory be cleanly initialized with data?
 function load_runtime() {
-    if (typeof compiler_exports !== 'undefined') return
+    if (typeof runtime_exports !== 'undefined') return
+    if (!use_big_runtime)
+        load_release_runtime()
+    else load_compiler_as_runtime()
+}
+
+function load_release_runtime() {
+    fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
+        runtime_bytes = buffer
+        WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
+            runtime_instance = obj.instance
+            runtime_exports = runtime_instance.exports
+            addSynonyms(runtime_exports)
+            HEAP = runtime_exports.__heap_base; // ~68000
+            DATA_END = runtime_exports.__data_end
+            HEAP_END = HEAP || DATA_END;
+            HEAP_END += 0x100000
+            memory = runtime_exports.memory || runtime_exports._memory || memory
+            buffer = new Uint8Array(memory.buffer, 0, memory.length);
+            main = runtime_instance.start || runtime_exports.teste || runtime_exports.main || runtime_exports.wasp_main || runtime_exports._start
+            main = runtime_instance._Z11testCurrentv || main
+            if (main) {
+                console.log("got main")
+                result = main()
+            } else {
+                console.error("missing main function in wasp module!")
+                result = runtime_instance.exports//show what we've got
+            }
+            console.log(result);
+            wasp_ready()
+        });
+    });
+}
+
+function load_compiler_as_runtime() {
+    if (typeof runtime_exports !== 'undefined') return
     WASP_COMPILER_BYTES = fetch(WASP_COMPILER)
     WebAssembly.instantiateStreaming(WASP_COMPILER_BYTES, imports).then(obj => {
         compiler_instance = obj.instance
         compiler_exports = compiler_instance.exports
             // global.
-        runtime_exports = compiler_exports
         addSynonyms(compiler_exports)
+        runtime_exports = compiler_exports
         HEAP = compiler_exports.__heap_base; // ~68000
         DATA_END = compiler_exports.__data_end
         HEAP_END = HEAP || DATA_END;
@@ -828,7 +874,6 @@ function load_runtime() {
             wasp_ready()
         }
     )
-
 }
 
 async function run_wasm(buf_pointer, buf_size) {
@@ -839,37 +884,17 @@ async function run_wasm(buf_pointer, buf_size) {
 
         app_module = await WebAssembly.compile(wasm_buffer)
         if (WebAssembly.Module.imports(app_module).length > 0) {
-            needs_runtime = true
-            // use_big_runtime = false
+            needs_runtime = true // todo WASI or Wasp runtime?
             print(app_module) // visible in browser console, not in terminal
             Wasp.download = download
             // print(WebAssembly.Module.customSections(app_module)) // Argument 1 is required ?
         } else
             needs_runtime = false
 
-        if (needs_runtime && use_big_runtime) {
-            // app = await WebAssembly.instantiate(wasm_buffer, {env: Wasp}, memory) // todo: tweaked imports if it calls out
+        if (needs_runtime) {
             app = await WebAssembly.instantiate(wasm_buffer, imports, memory) // todo: tweaked imports if it calls out
-        } else if (needs_runtime) {
-            print("needs_runtime runtime loading")
-            if (!RUNTIME_BYTES) // Cannot compile WebAssembly.Module from an already read Response TODO reuse!
-                RUNTIME_BYTES = await fetch(WASP_RUNTIME)
-            let runtime_instance = await WebAssembly.instantiateStreaming(RUNTIME_BYTES, imports)
-            runtime_exports = runtime_instance.exports
-            // {
-            // wasi_unstable: {
-            //     fd_write,
-            //     proc_exit: terminate, // all threads
-            //     args_get: nop, // ignore the rest for now
-            //     args_sizes_get: x => 0,
-            // },
-
-            print("runtime loaded")
-            // addSynonyms(runtime_instance.exports)
-            let runtime_imports = {env: runtime_exports} // runtime_instance.exports
-            app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
+            // app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
             print("app loaded")
-
         } else {
             let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
             app = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out

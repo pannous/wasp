@@ -1937,12 +1937,13 @@ void handler(int sig) {
 //}
 
 // todo WE HAVE A GENERAL PROBLEM:
-// 1. top level objects are not constructed True
+// 1. top level objects are not constructed
 // 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
 void load_parser_initialization() { // todo: remove thx to __wasm_call_ctors
 	if (operator_list.size() == 0)
-		error("operator_list should have been constructed in __wasm_call_ctors @ _start");
-//        operator_list = List<chars>(operator_list0);// wasm hack
+		warn("operator_list should have been constructed in __wasm_call_ctors @ _start");
+//		error("operator_list should have been constructed in __wasm_call_ctors @ _start");
+	operator_list = List<chars>(operator_list0);// wasm hack
 //	load_aliases();
 }
 
