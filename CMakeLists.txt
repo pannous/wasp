@@ -811,3 +811,13 @@ endif ()
 
 # Please either delete it manually or select another generation directory => delete CMakeCache.txt
 
+
+set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/version_increment.py)
+
+# Custom target to always run the python script
+add_custom_target(run_version_script ALL
+        COMMAND ${PYTHON_EXECUTABLE} ${VERSION_SCRIPT}
+        COMMENT "Running Version increment script")
+
+# Add a dependency to the version script to the build target
+add_dependencies(wasp run_version_script)
