@@ -390,12 +390,12 @@ function reset_heap() {
 }
 
 function compile_and_run(code) {
-    if (typeof runtime_exports === 'undefined')
-        load_runtime();
+    if (typeof compiler_exports === 'undefined')
+        load_compiler_as_runtime()
     // reset_heap();
     expect_test_result = false
     try {
-        runtime_exports.run(chars(code));
+        compiler_exports.run(chars(code));
     } catch (err) {
         error(err)
     }
@@ -741,8 +741,6 @@ function addSynonyms(exports) {
         Wasp[name] = func
         if (typeof func == "function") {
             let demangled = demangle(name)
-            if (demangled.lastIndexOf("run") >= 0)
-                console.log(demangled)
             if (demangled != name) {
                 // if (!exports[demangled]) {
                 exports[demangled] = func
